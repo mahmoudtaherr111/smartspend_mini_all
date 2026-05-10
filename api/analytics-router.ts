@@ -1,0 +1,104 @@
+import { z } from "zod";
+import { router, authedProcedure, moderatorProcedure } from "./middleware";
+import { getDb } from "./queries/connection";
+import { userAnalytics, expenses, localUsers, users } from "../db/schema";
+import { eq, and, gte, sql, desc } from "drizzle-orm";
+
+export const analyticsRouter = router({
+  trackEvent: authedProcedure
+    .input(z.object({
+      event: z.string(),
+      metadata: z.record(z.any()).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = getDb();
+      await db.insert(userAnalytics).values({
+        userId: ctx.user!.id,
+        userType: ctx.user!.type,
+        event: input.event,
+        metadata: input.metadata ?? {},
+      });
+      return { success: true };
+    }),
+
+  getMyAnalytics: authedProcedure.query(async ({ ctx }) => {
+    const db = getDb();
+    const result = await db
+      .select()
+      .from(userAnalytics)
+      .where(and(eq(userAnalytics.userId, ctx.user!.id), eq(userAnalytics.userType, ctx.user!.type)))
+      .orderBy(desc(userAnalytics.createdAt))
+      .limit(50);
+    return result;
+  }),
+
+  getAllUserStats: moderatorProcedure.query(async () => {
+    const db = getDb();
+
+    const local = await db.select({
+      id: localUsers.id, name: localUsers.name, email: localUsers.email,
+      role: localUsers.role, plan: localUsers.plan,
+      createdAt: localUsers.createdAt, lastSignInAt: localUsers.lastSignInAt,
+    }).from(localUsers);
+
+    const oauth = await db.select({
+      id: users.id, name: users.name, email: users.email,
+      role: users.role, plan: users.plan,
+      createdAt: users.createdAt, lastSignInAt: users.lastSignInAt,
+    }).from(users);
+
+    const allUsers = [
+      ...local.map(u => ({ ...u, userType: "local" as const })),
+      ...oauth.map(u => ({ ...u, userType: "oauth" as const })),
+    ];
+
+    return Promise.all(allUsers.map(async (user) => {
+      const expenseCount = await db.select({ count: sql`count(*)` })
+        .from(expenses).where(and(eq(expenses.userId, user.id), eq(expenses.userType, user.userType)));
+
+      const totalSpent = await db.select({ total: sql`COALESCE(SUM(${expenses.amount}), 0)` })
+        .from(expenses).where(and(eq(expenses.userId, user.id), eq(expenses.userType, user.userType), eq(expenses.type, "expense")));
+
+      const totalIncome = await db.select({ total: sql`COALESCE(SUM(${expenses.amount}), 0)` })
+        .from(expenses).where(and(eq(expenses.userId, user.id), eq(expenses.userType, user.userType), eq(expenses.type, "income")));
+
+      return {
+        ...user,
+        expenseCount: expenseCount[0]?.count || 0,
+        totalSpent: totalSpent[0]?.total || 0,
+        totalIncome: totalIncome[0]?.total || 0,
+      };
+    }));
+  }),
+
+  getDashboardStats: moderatorProcedure.query(async () => {
+    const db = getDb();
+
+    const totalLocalUsers = await db.select({ count: sql`count(*)` }).from(localUsers);
+    const totalOAuthUsers = await db.select({ count: sql`count(*)` }).from(users);
+    const totalExpenses = await db.select({ count: sql`count(*)` }).from(expenses);
+    const totalAmount = await db.select({ total: sql`COALESCE(SUM(${expenses.amount}), 0)` }).from(expenses).where(eq(expenses.type, "expense"));
+    const totalIncome = await db.select({ total: sql`COALESCE(SUM(${expenses.amount}), 0)` }).from(expenses).where(eq(expenses.type, "income"));
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayExpenses = await db.select({ count: sql`count(*)` }).from(expenses).where(and(gte(expenses.createdAt, today), eq(expenses.type, "expense")));
+
+    const adminCount = await db.select({ count: sql`count(*)` }).from(localUsers).where(eq(localUsers.role, "admin"));
+    const moderatorCount = await db.select({ count: sql`count(*)` }).from(localUsers).where(eq(localUsers.role, "moderator"));
+    const proCount = await db.select({ count: sql`count(*)` }).from(localUsers).where(eq(localUsers.plan, "pro"));
+
+    return {
+      totalUsers: (totalLocalUsers[0]?.count || 0) + (totalOAuthUsers[0]?.count || 0),
+      totalLocalUsers: totalLocalUsers[0]?.count || 0,
+      totalOAuthUsers: totalOAuthUsers[0]?.count || 0,
+      totalExpenses: totalExpenses[0]?.count || 0,
+      totalAmount: totalAmount[0]?.total || 0,
+      totalIncome: totalIncome[0]?.total || 0,
+      todayExpenses: todayExpenses[0]?.count || 0,
+      adminCount: adminCount[0]?.count || 0,
+      moderatorCount: moderatorCount[0]?.count || 0,
+      proCount: proCount[0]?.count || 0,
+    };
+  }),
+});
