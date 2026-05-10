@@ -1,0 +1,21 @@
+@media print {
+  .no-print, .no-print * {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .card {
+    break-inside: avoid;
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+  }
+  table {
+    font-size: 12px;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+  }
+}

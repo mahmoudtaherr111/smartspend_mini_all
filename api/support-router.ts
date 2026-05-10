@@ -1,0 +1,112 @@
+import { z } from "zod";
+import { router, authedProcedure, moderatorProcedure, adminProcedure } from "./middleware";
+import { db } from "./queries/connection";
+import { supportTickets } from "../db/schema";
+import { eq, desc, and, sql, count } from "drizzle-orm";
+
+export const supportRouter = router({
+  // ─── Create Ticket ───
+  create: authedProcedure
+    .input(z.object({
+      subject: z.string().min(3).max(255),
+      message: z.string().min(10),
+      priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await db.insert(supportTickets).values({
+        userId: ctx.user.id,
+        userType: ctx.user.type,
+        subject: input.subject,
+        message: input.message,
+        priority: input.priority,
+        status: "open",
+      });
+      return { success: true, ticketId: Number(result[0].insertId) };
+    }),
+
+  // ─── List My Tickets ───
+  listMine: authedProcedure.query(async ({ ctx }) => {
+    return await db.select().from(supportTickets)
+      .where(and(
+        eq(supportTickets.userId, ctx.user.id),
+        eq(supportTickets.userType, ctx.user.type)
+      ))
+      .orderBy(desc(supportTickets.createdAt));
+  }),
+
+  // ─── Get Ticket Details ───
+  getById: authedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const ticket = await db.select().from(supportTickets).where(eq(supportTickets.id, input.id)).limit(1);
+      if (!ticket[0]) throw new Error("التذكرة غير موجودة");
+      // Allow if owner or moderator/admin
+      if (ticket[0].userId !== ctx.user.id || ticket[0].userType !== ctx.user.type) {
+        if (ctx.user.role !== "moderator" && ctx.user.role !== "admin") {
+          throw new Error("غير مصرح");
+        }
+      }
+      return ticket[0];
+    }),
+
+  // ─── List All Tickets (Moderator+) ───
+  listAll: moderatorProcedure
+    .input(z.object({
+      status: z.string().optional(),
+      priority: z.string().optional(),
+      page: z.number().default(1),
+      limit: z.number().default(20),
+    }).optional())
+    .query(async ({ input }) => {
+      const { status, priority, page = 1, limit = 20 } = input ?? {};
+      const offset = (page - 1) * limit;
+      let query = db.select().from(supportTickets).orderBy(desc(supportTickets.createdAt));
+      if (status) query = query.where(eq(supportTickets.status, status)) as any;
+      if (priority) query = query.where(eq(supportTickets.priority, priority)) as any;
+      const list = await query.limit(limit).offset(offset);
+      const total = await db.select({ count: count() }).from(supportTickets);
+      return { list, total: total[0]?.count ?? 0, page, limit };
+    }),
+
+  // ─── Respond to Ticket ───
+  respond: moderatorProcedure
+    .input(z.object({
+      id: z.number(),
+      response: z.string().min(1),
+      status: z.enum(["open", "in_progress", "resolved", "closed"]).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const updates: any = { response: input.response, respondedAt: new Date() };
+      if (input.status) updates.status = input.status;
+      await db.update(supportTickets).set(updates).where(eq(supportTickets.id, input.id));
+      return { success: true, message: "تم الرد على التذكرة" };
+    }),
+
+  // ─── Assign Ticket ───
+  assign: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      moderatorId: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      await db.update(supportTickets)
+        .set({ assignedTo: input.moderatorId, status: "in_progress" })
+        .where(eq(supportTickets.id, input.id));
+      return { success: true, message: "تم تعيين التذكرة" };
+    }),
+
+  // ─── Close Ticket ───
+  close: authedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const ticket = await db.select().from(supportTickets).where(eq(supportTickets.id, input.id)).limit(1);
+      if (!ticket[0]) throw new Error("غير موجود");
+      if (ticket[0].userId !== ctx.user.id || ticket[0].userType !== ctx.user.type) {
+        if (ctx.user.role !== "moderator" && ctx.user.role !== "admin") {
+          throw new Error("غير مصرح");
+        }
+      }
+      await db.update(supportTickets).set({ status: "closed" }).where(eq(supportTickets.id, input.id));
+      return { success: true };
+    }),
+});
