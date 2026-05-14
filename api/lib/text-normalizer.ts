@@ -45,6 +45,16 @@ const COLLOQUIAL_NUMBERS: Record<string, number> = {
   "تلاتلاف": 3000, "اربعتلاف": 4000,
 };
 
+const COMMON_PHRASE_NORMALIZATIONS: Record<string, string> = {
+  "فكيت بنزين": "دفعت بنزين",
+  "حطيت للسايس": "دفعت سايس",
+  "حطيت للراجل بتاع الركنة": "دفعت ركنة",
+  "جددت الباقة": "دفعت باقة انترنت",
+  "شحنت رصيد": "دفعت شحن رصيد",
+  "دفعت عربون": "دفعت عربون",
+  "حطيت فلوس في الكارت": "حولت فلوس كارت",
+};
+
 /**
  * Full text normalization pipeline
  */
@@ -56,6 +66,12 @@ export function normalizeText(text: string): string {
 
   // 2. Remove extra whitespace
   result = result.replace(/\s+/g, " ");
+
+  // 2.5 Normalize frequent Egyptian colloquial phrases before token-level normalization
+  for (const [source, target] of Object.entries(COMMON_PHRASE_NORMALIZATIONS)) {
+    const regex = new RegExp(source, "gi");
+    result = result.replace(regex, target);
+  }
 
   // 3. Remove weird symbols but keep Arabic, English, numbers, basic punctuation
   result = result.replace(/[^\u0600-\u06FF\u0750-\u077Fa-zA-Z0-9\s.,،؟?!٪%\-\/]/g, "");

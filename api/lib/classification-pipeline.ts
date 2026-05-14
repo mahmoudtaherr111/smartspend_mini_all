@@ -49,6 +49,29 @@ export interface PipelineLog {
   finalDecision: string;
 }
 
+function postProcessItems(items: ParsedTransaction[]): ParsedTransaction[] {
+  const byKey = new Map<string, ParsedTransaction>();
+  for (const item of items) {
+    const key = `${item.type}|${item.amount}|${item.category}|${item.subCategory}`;
+    const prev = byKey.get(key);
+    if (!prev) {
+      byKey.set(key, item);
+      continue;
+    }
+
+    // Keep higher confidence item and merge sparse fields.
+    const winner = prev.confidence >= item.confidence ? prev : item;
+    const loser = winner === prev ? item : prev;
+    byKey.set(key, {
+      ...winner,
+      description: winner.description || loser.description,
+      merchant: winner.merchant || loser.merchant,
+      ambiguityFlags: [...(winner.ambiguityFlags || []), ...(loser.ambiguityFlags || [])],
+    });
+  }
+  return Array.from(byKey.values());
+}
+
 /**
  * Get confidence thresholds from admin settings
  */
@@ -192,7 +215,8 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
   }
 
   // ── Step 6+7: Confidence Scoring + Decision ──
-  const scored = scoreAndDecide(items, input.text, thresholds);
+  const postProcessed = postProcessItems(items);
+  const scored = scoreAndDecide(postProcessed, input.text, thresholds);
 
   log.finalConfidence = scored.overallConfidence;
   log.finalDecision = scored.decision;

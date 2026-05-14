@@ -54,6 +54,9 @@ export const expenses = mysqlTable("expenses", {
   description: text("description"),
   rawText: text("raw_text"),
   source: varchar("source", { length: 50 }).notNull().default("manual"), // voice | manual
+  paymentMethod: varchar("payment_method", { length: 50 }),
+  placeHint: varchar("place_hint", { length: 150 }),
+  parsedMetadata: json("parsed_metadata"),
   date: datetime("date").notNull(),
   createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
@@ -303,6 +306,11 @@ export const classificationLogs = mysqlTable("classification_logs", {
   finalResult: json("final_result"),
   confidence: int("confidence").default(0),
   decision: varchar("decision", { length: 50 }), // auto_save | review | clarify
+  classificationVersion: varchar("classification_version", { length: 20 }).default("v2.1"),
+  reasoningTraceLight: json("reasoning_trace_light"),
+  ambiguityFlags: json("ambiguity_flags"),
+  inputChannel: varchar("input_channel", { length: 20 }).default("text"),
+  needsFollowup: boolean("needs_followup").default(false),
   wasCorrected: boolean("was_corrected").default(false),
   correction: json("correction"),
   modelUsed: varchar("model_used", { length: 100 }),

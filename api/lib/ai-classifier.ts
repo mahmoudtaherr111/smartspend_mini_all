@@ -48,7 +48,10 @@ ${buildCategoryList()}
     "confidence": 0-100,
     "needs_review": boolean,
     "merchant": "اسم المحل/الخدمة أو null",
-    "notes": "وصف مختصر"
+    "notes": "وصف مختصر",
+    "ambiguity_flags": ["optional_flag"],
+    "inference_source": "ai",
+    "confidence_breakdown": { "intent": 0-100, "taxonomy": 0-100, "heuristics": 0-100 }
   }],
   "needs_clarification": false,
   "clarification_question": null,
@@ -83,6 +86,14 @@ export interface AIClassificationResult {
   modelUsed: string;
 }
 
+const CLARIFICATION_POLICY_PROMPT = `
+Additional policy:
+- Prefer precise subcategory mapping and avoid generic fallback categories when context exists.
+- If clarification is needed, ask ONE critical clarification question only.
+- If user selected skip clarification, never ask a question and proceed with best-effort classification.
+- For multi-transaction text, split and classify each operation independently.
+`;
+
 /**
  * Classify text using Gemini AI
  */
@@ -114,7 +125,7 @@ export async function aiClassify(
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: modelName,
-      systemInstruction: SYSTEM_PROMPT,
+      systemInstruction: `${SYSTEM_PROMPT}\n${CLARIFICATION_POLICY_PROMPT}`,
       generationConfig: {
         temperature: 0.2,
         maxOutputTokens: maxTokens,
@@ -135,7 +146,7 @@ export async function aiClassify(
         const genAI2 = new GoogleGenerativeAI(apiKey2);
         const model2 = genAI2.getGenerativeModel({
           model: modelName,
-          systemInstruction: SYSTEM_PROMPT,
+          systemInstruction: `${SYSTEM_PROMPT}\n${CLARIFICATION_POLICY_PROMPT}`,
           generationConfig: {
             temperature: 0.2,
             maxOutputTokens: maxTokens,
@@ -257,6 +268,9 @@ function parseAIResponse(response: string, modelName: string): AIClassificationR
     currency: item.currency || "EGP",
     needsReview: item.needs_review || item.confidence < 85,
     parsedBy: "ai" as const,
+    inferenceSource: item.inference_source || "ai",
+    ambiguityFlags: item.ambiguity_flags || undefined,
+    confidenceBreakdown: item.confidence_breakdown || undefined,
   }));
 
   return {

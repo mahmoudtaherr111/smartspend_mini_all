@@ -222,6 +222,16 @@ export const expenseRouter = router({
       })).sort((a, b) => b.value - a.value);
 
       const sortedCategories = [...categoryBreakdown].sort((a, b) => b.value - a.value);
+      const hierarchicalBreakdown = sortedCategories.map((main) => ({
+        name: main.name,
+        value: main.value,
+        count: main.count,
+        children: subCategoryBreakdown.filter((s) => items.some((it) => it.category === main.name && it.subCategory === s.name)),
+      }));
+
+      const recurringHints = subCategoryBreakdown
+        .filter((s) => s.count >= 2 && ["اشتراك", "باقات", "قسط", "إنترنت", "كهرباء"].some((k) => s.name.includes(k)))
+        .slice(0, 8);
 
       // Day trend (Income vs Expense)
       const cashFlowMap: Record<string, { expense: number; income: number }> = {};
@@ -256,6 +266,8 @@ export const expenseRouter = router({
         dayTrend,
         hourTrend: Object.entries(hourMap).map(([hour, amount]) => ({ hour: parseInt(hour), amount })).sort((a, b) => a.hour - b.hour),
         dayOfWeekTrend: Object.entries(dayOfWeekMap).map(([name, amount]) => ({ name, amount })),
+        hierarchicalBreakdown,
+        recurringBreakdown: recurringHints,
         items,
       };
     }),

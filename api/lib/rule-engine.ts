@@ -9,6 +9,7 @@ import { detectIntent, type TransactionIntent } from "./intent-detector";
 import { extractAmounts, type ExtractedAmount } from "./entity-extractor";
 import { normalizeText } from "./text-normalizer";
 import { CATEGORIES } from "./category-registry";
+import { findTaxonomyMatch } from "./taxonomy-adapter";
 
 export interface RuleEngineResult {
   items: ParsedTransaction[];
@@ -28,6 +29,13 @@ export interface ParsedTransaction {
   currency: string;
   needsReview: boolean;
   parsedBy: "rule_engine" | "ai" | "manual";
+  inferenceSource?: "synonym" | "rule" | "dictionary" | "ai";
+  ambiguityFlags?: string[];
+  confidenceBreakdown?: {
+    intent: number;
+    taxonomy: number;
+    heuristics: number;
+  };
 }
 
 /** Sub-category mapping from dictionary keywords */
@@ -219,6 +227,8 @@ export function runRuleEngine(
     let category = intentResult.intent === "income" ? "مرتب" : "متنوعات";
     let subCategory = "عام";
     let confidence = 30;
+    let inferenceSource: ParsedTransaction["inferenceSource"] = "rule";
+    let ambiguityFlags: string[] | undefined;
     const words = allContext.split(/\s+/).filter(w => w.length >= 2);
 
     // 1. User dictionary (highest priority)
@@ -229,8 +239,21 @@ export function runRuleEngine(
         category = userMatch.category;
         subCategory = userMatch.subCategory || "عام";
         confidence = 100;
+        inferenceSource = "dictionary";
         found = true;
         break;
+      }
+    }
+
+    if (!found) {
+      const synonymMatch = findTaxonomyMatch(allContext);
+      if (synonymMatch) {
+        category = synonymMatch.category;
+        subCategory = synonymMatch.subCategory;
+        confidence = synonymMatch.confidence;
+        inferenceSource = "synonym";
+        ambiguityFlags = synonymMatch.ambiguityFlags;
+        found = true;
       }
     }
 
@@ -241,6 +264,7 @@ export function runRuleEngine(
           category = SUB_CATEGORY_MAP[word].category;
           subCategory = SUB_CATEGORY_MAP[word].subCategory;
           confidence = 90;
+          inferenceSource = "rule";
           found = true;
           break;
         }
@@ -255,6 +279,7 @@ export function runRuleEngine(
           category = SUB_CATEGORY_MAP[phrase].category;
           subCategory = SUB_CATEGORY_MAP[phrase].subCategory;
           confidence = 88;
+          inferenceSource = "rule";
           found = true;
           break;
         }
@@ -268,6 +293,7 @@ export function runRuleEngine(
           category = CATEGORY_DICTIONARY[word];
           subCategory = "عام";
           confidence = 85;
+          inferenceSource = "dictionary";
           found = true;
           break;
         }
@@ -282,6 +308,7 @@ export function runRuleEngine(
           category = CATEGORY_DICTIONARY[phrase];
           subCategory = "عام";
           confidence = 80;
+          inferenceSource = "dictionary";
           found = true;
           break;
         }
@@ -296,6 +323,7 @@ export function runRuleEngine(
           category = fuzzyResult;
           subCategory = "عام";
           confidence = 60;
+          inferenceSource = "dictionary";
           found = true;
           break;
         }
@@ -339,6 +367,13 @@ export function runRuleEngine(
       currency: "EGP",
       needsReview: confidence < 85,
       parsedBy: "rule_engine",
+      inferenceSource,
+      ambiguityFlags,
+      confidenceBreakdown: {
+        intent: intentResult.confidence,
+        taxonomy: confidence,
+        heuristics: Math.min(100, Math.max(20, Math.round((intentResult.confidence + confidence) / 2))),
+      },
     });
   }
 

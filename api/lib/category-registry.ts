@@ -232,6 +232,54 @@ export const CATEGORIES: MainCategory[] = [
     ],
   },
   {
+    id: "daily_commitments", name: "Daily Commitments", name_ar: "التزامات يومية",
+    icon: "🧾", color: "#ef4444", type: "expense",
+    subcategories: [
+      { id: "electricity_daily", name: "Electricity", name_ar: "كهرباء" },
+      { id: "water_daily", name: "Water", name_ar: "مياه" },
+      { id: "internet_bundle", name: "Internet Bundle", name_ar: "باقات إنترنت" },
+      { id: "mobile_recharge_new", name: "Mobile Recharge", name_ar: "شحن موبايل" },
+      { id: "daily_general", name: "General", name_ar: "عام" },
+    ],
+  },
+  {
+    id: "digital_services", name: "Digital Services", name_ar: "خدمات رقمية",
+    icon: "💻", color: "#0ea5e9", type: "expense",
+    subcategories: [
+      { id: "vpn_sub", name: "VPN", name_ar: "اشتراك VPN" },
+      { id: "cloud_sub", name: "Cloud", name_ar: "اشتراك Cloud" },
+      { id: "ai_tools", name: "AI Tools", name_ar: "أدوات AI" },
+      { id: "domains", name: "Domains", name_ar: "دومينات" },
+      { id: "hosting_new", name: "Hosting", name_ar: "استضافة" },
+      { id: "digital_general", name: "General", name_ar: "عام" },
+    ],
+  },
+  {
+    id: "car_services", name: "Car Services", name_ar: "خدمات سيارات",
+    icon: "🚗", color: "#3b82f6", type: "expense",
+    subcategories: [
+      { id: "toll", name: "Toll", name_ar: "كارتة" },
+      { id: "parking_valet", name: "Parking", name_ar: "ركنة" },
+      { id: "oil_change", name: "Oil Change", name_ar: "تغيير زيت" },
+      { id: "car_violation", name: "Violation", name_ar: "مخالفة" },
+      { id: "battery", name: "Battery", name_ar: "بطارية" },
+      { id: "tires", name: "Tires", name_ar: "إطارات" },
+      { id: "car_general", name: "General", name_ar: "عام" },
+    ],
+  },
+  {
+    id: "outings", name: "Outings", name_ar: "خروجات",
+    icon: "🎉", color: "#f59e0b", type: "expense",
+    subcategories: [
+      { id: "cinema_new", name: "Cinema", name_ar: "سينما" },
+      { id: "playstation", name: "PlayStation", name_ar: "PlayStation" },
+      { id: "board_games", name: "Board Games Cafe", name_ar: "كافيه بورد جيم" },
+      { id: "friends_outing", name: "Friends Outing", name_ar: "خروجة صحاب" },
+      { id: "corniche", name: "Corniche", name_ar: "كورنيش" },
+      { id: "outing_general", name: "General", name_ar: "فسحة" },
+    ],
+  },
+  {
     id: "miscellaneous", name: "Miscellaneous", name_ar: "متنوعات",
     icon: "📦", color: "#94a3b8", type: "expense",
     subcategories: [

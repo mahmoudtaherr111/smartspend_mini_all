@@ -18,6 +18,9 @@ export interface ExtractedEntities {
   people: string[];
   merchants: string[];
   hasMultipleTransactions: boolean;
+  places: string[];
+  paymentMethods: string[];
+  dateHints: string[];
 }
 
 /** Known merchant patterns */
@@ -38,6 +41,18 @@ const PERSON_PATTERNS = [
   /(?:حولت|اديت|سلفت|بعتت)\s+(?:ل|لـ)\s*(\S+)/g,
   /(?:من|عند)\s+(\S+)/g,
   /(?:حولي|حولولي|بعتلي)\s+(\S+)/g,
+];
+
+const PLACE_PATTERNS = [
+  "كورنيش", "سينما", "كافيه", "جيم", "مكتب", "جامعة", "مدرسة", "بيت", "شغل",
+];
+
+const PAYMENT_METHOD_PATTERNS = [
+  "كاش", "فيزا", "ماستر", "محفظة", "انستاباي", "فودافون كاش", "تحويل",
+];
+
+const DATE_HINT_PATTERNS = [
+  "النهاردة", "امبارح", "بكرة", "آخر الشهر", "بداية الشهر", "نص الشهر", "الاسبوع ده",
 ];
 
 /**
@@ -95,6 +110,18 @@ export function extractMerchants(text: string): string[] {
   return merchants;
 }
 
+function extractPlaces(text: string): string[] {
+  return PLACE_PATTERNS.filter((p) => text.includes(p));
+}
+
+function extractPaymentMethods(text: string): string[] {
+  return PAYMENT_METHOD_PATTERNS.filter((p) => text.includes(p));
+}
+
+function extractDateHints(text: string): string[] {
+  return DATE_HINT_PATTERNS.filter((p) => text.includes(p));
+}
+
 /**
  * Full entity extraction
  */
@@ -108,6 +135,9 @@ export function extractEntities(normalizedText: string): ExtractedEntities {
   const multiIndicators = ["و", "وكمان", "وبعدين", "بعدها", "ومنهم", "ومنه"];
   const hasMultipleTransactions = amounts.length > 1 ||
     multiIndicators.some(ind => normalizedText.includes(` ${ind} `));
+  const places = extractPlaces(normalizedText);
+  const paymentMethods = extractPaymentMethods(normalizedText);
+  const dateHints = extractDateHints(normalizedText);
 
-  return { amounts, currency, people, merchants, hasMultipleTransactions };
+  return { amounts, currency, people, merchants, hasMultipleTransactions, places, paymentMethods, dateHints };
 }
