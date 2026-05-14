@@ -24,6 +24,9 @@ export default function Support() {
       toast.success("تم إرسال التذكرة بنجاح!");
       setSubject(""); setMessage(""); setPriority("medium");
       myTickets.refetch();
+    },
+    onError: (error) => {
+      toast.error(error.message || "حدث خطأ أثناء الإرسال");
     }
   });
 

@@ -60,10 +60,17 @@ export const supportRouter = router({
     .query(async ({ input }) => {
       const { status, priority, page = 1, limit = 20 } = input ?? {};
       const offset = (page - 1) * limit;
-      let query = db.select().from(supportTickets).orderBy(desc(supportTickets.createdAt));
-      if (status) query = query.where(eq(supportTickets.status, status)) as any;
-      if (priority) query = query.where(eq(supportTickets.priority, priority)) as any;
-      const list = await query.limit(limit).offset(offset);
+      
+      const filters = [];
+      if (status) filters.push(eq(supportTickets.status, status));
+      if (priority) filters.push(eq(supportTickets.priority, priority));
+      
+      const list = await db.select().from(supportTickets)
+        .where(filters.length > 0 ? and(...filters) : undefined)
+        .orderBy(desc(supportTickets.createdAt))
+        .limit(limit)
+        .offset(offset);
+
       const total = await db.select({ count: count() }).from(supportTickets);
       return { list, total: total[0]?.count ?? 0, page, limit };
     }),

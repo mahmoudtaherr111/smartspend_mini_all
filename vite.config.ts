@@ -9,7 +9,7 @@ import { inspectAttr } from 'kimi-plugin-inspect-react'
 export default defineConfig({
   plugins: [
     devServer({ entry: "api/boot.ts", exclude: [/^\/(?!api\/).*$/] }),
-    inspectAttr(), react()],
+    react()],
   server: {
     port: 3000,
   },

@@ -7,8 +7,9 @@ export interface AuthUser {
   email?: string | null;
   avatar?: string | null;
   role: "user" | "moderator" | "admin";
-  plan: "free" | "pro";
+  plan: "free" | "pro" | "ultra";
   type: "oauth" | "local";
+  phone?: string | null;
 }
 
 export function useAuth() {
@@ -49,7 +50,7 @@ export function useAuth() {
           email: oauthUser.email,
           avatar: oauthUser.avatar,
           role: oauthUser.role as "user" | "moderator" | "admin",
-          plan: oauthUser.plan as "free" | "pro",
+          plan: oauthUser.plan as "free" | "pro" | "ultra",
           type: "oauth",
         });
       } else if (localUser) {
@@ -58,8 +59,9 @@ export function useAuth() {
           name: localUser.name,
           email: localUser.email,
           role: localUser.role as "user" | "moderator" | "admin",
-          plan: localUser.plan as "free" | "pro",
+          plan: localUser.plan as "free" | "pro" | "ultra",
           type: "local",
+          phone: localUser.phone,
         });
       } else {
         setUser(null);

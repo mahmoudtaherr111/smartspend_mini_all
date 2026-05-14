@@ -13,16 +13,17 @@ export const adsRouter = router({
     }).optional())
     .query(async ({ input }) => {
       const now = new Date();
-      let query = db.select().from(ads)
-        .where(and(
-          eq(ads.isActive, true),
-          sql`${ads.startDate} IS NULL OR ${ads.startDate} <= ${now}`,
-          sql`${ads.endDate} IS NULL OR ${ads.endDate} >= ${now}`
-        ));
+      const conditions = [
+        eq(ads.isActive, true),
+        sql`${ads.startDate} IS NULL OR ${ads.startDate} <= ${now}`,
+        sql`${ads.endDate} IS NULL OR ${ads.endDate} >= ${now}`,
+      ];
 
-      if (input?.placement) query = query.where(eq(ads.placement, input.placement)) as any;
+      if (input?.placement) {
+        conditions.push(eq(ads.placement, input.placement) as any);
+      }
 
-      const list = await query;
+      const list = await db.select().from(ads).where(and(...conditions));
       // Filter by target plan
       return list.filter(ad => ad.targetPlan === "all" || ad.targetPlan === input?.userPlan || input?.userPlan === "pro");
     }),

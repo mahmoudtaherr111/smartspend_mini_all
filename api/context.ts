@@ -1,6 +1,5 @@
 import { HonoRequest } from "hono";
 import { verify } from "hono/jwt";
-import { getCookie } from "hono/cookie";
 import { db } from "./queries/connection";
 import { localUsers, users, sessions } from "../db/schema";
 import { eq, and, gt } from "drizzle-orm";
@@ -12,7 +11,7 @@ export type UnifiedUser = {
   email?: string | null;
   avatar?: string | null;
   role: "user" | "moderator" | "admin";
-  plan: "free" | "pro";
+  plan: "free" | "pro" | "ultra";
   type: "oauth" | "local";
   phone?: string | null;
 };
@@ -22,14 +21,35 @@ export type Context = {
   req: HonoRequest;
 };
 
-export async function createContext(req: HonoRequest): Promise<Context> {
+// Parse cookies from request header manually (works with both HonoRequest and raw Request)
+function parseCookie(req: HonoRequest | Request, name: string): string | undefined {
+  let cookieHeader: string | null | undefined;
+  if ('header' in req && typeof req.header === 'function') {
+    cookieHeader = (req as HonoRequest).header("cookie");
+  } else {
+    cookieHeader = (req as Request).headers.get("cookie");
+  }
+  if (!cookieHeader) return undefined;
+  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  return match ? match[1] : undefined;
+}
+
+// Get authorization header from either request type
+function getAuthHeader(req: HonoRequest | Request): string | undefined {
+  if ('header' in req && typeof req.header === 'function') {
+    return (req as HonoRequest).header("Authorization");
+  }
+  return (req as Request).headers.get("Authorization") ?? undefined;
+}
+
+export async function createContext(req: HonoRequest | Request): Promise<Context> {
   let user: UnifiedUser | null = null;
 
   // 1. Try Google OAuth (cookie)
-  const googleToken = getCookie(req, "google_session");
+  const googleToken = parseCookie(req, "google_session");
   if (googleToken) {
     try {
-      const payload = await verify(googleToken, env.JWT_SECRET);
+      const payload = await verify(googleToken, env.JWT_SECRET, "HS256");
       if (payload && payload.userId) {
         const dbUser = await db.query.users.findFirst({
           where: eq(users.id, Number(payload.userId)),
@@ -41,7 +61,7 @@ export async function createContext(req: HonoRequest): Promise<Context> {
             email: dbUser.email,
             avatar: dbUser.avatar,
             role: dbUser.role as "user" | "moderator" | "admin",
-            plan: dbUser.plan as "free" | "pro",
+            plan: dbUser.plan as "free" | "pro" | "ultra",
             type: "oauth",
           };
         }
@@ -53,11 +73,11 @@ export async function createContext(req: HonoRequest): Promise<Context> {
 
   // 2. Try Local Auth (Bearer token)
   if (!user) {
-    const authHeader = req.header("Authorization");
+    const authHeader = getAuthHeader(req);
     if (authHeader?.startsWith("Bearer ")) {
       const token = authHeader.slice(7);
       try {
-        const payload = await verify(token, env.JWT_SECRET);
+        const payload = await verify(token, env.JWT_SECRET, "HS256");
         if (payload && payload.userId) {
           // Verify session exists and not expired
           const session = await db.query.sessions.findFirst({
@@ -79,7 +99,7 @@ export async function createContext(req: HonoRequest): Promise<Context> {
                 name: dbUser.name,
                 email: dbUser.email,
                 role: dbUser.role as "user" | "moderator" | "admin",
-                plan: dbUser.plan as "free" | "pro",
+                plan: dbUser.plan as "free" | "pro" | "ultra",
                 type: "local",
                 phone: dbUser.phone,
               };
@@ -92,5 +112,5 @@ export async function createContext(req: HonoRequest): Promise<Context> {
     }
   }
 
-  return { user, req };
+  return { user, req: req as HonoRequest };
 }

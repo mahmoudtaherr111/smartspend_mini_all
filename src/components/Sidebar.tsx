@@ -16,8 +16,11 @@ import {
   X,
   ChevronLeft,
   Crown,
-  Sparkles
+  Sparkles,
+  Sun,
+  Moon
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -40,6 +43,7 @@ const bottomItems = [
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const { user, isAdmin, isModerator, isPro, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
   const location = useLocation();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
@@ -59,12 +63,12 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
           "fixed right-0 top-0 h-full z-50 transition-all duration-500 ease-out",
           "bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950",
           "border-l border-white/10 shadow-2xl",
-          isOpen ? "w-72 translate-x-0" : "w-72 translate-x-full lg:translate-x-0 lg:w-20"
+          isOpen ? "w-72 translate-x-0" : "w-72 translate-x-full lg:translate-x-0"
         )}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-white/10">
-          <div className={cn("flex items-center gap-3 transition-all duration-300", !isOpen && "lg:opacity-0 lg:w-0")}>
+          <div className="flex items-center gap-3 transition-all duration-300">
             <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
               <span className="text-white font-bold text-lg">SS</span>
             </div>
@@ -77,22 +81,29 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
               )}
             </div>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={onToggle}
-            className="text-white/70 hover:text-white hover:bg-white/10"
-          >
-            {isOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="text-white/70 hover:text-white hover:bg-white/10"
+            >
+              {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onToggle}
+              className="text-white/70 hover:text-white hover:bg-white/10 lg:hidden"
+            >
+              {isOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
+          </div>
         </div>
 
         {/* User info */}
         {user && (
-          <div className={cn(
-            "px-5 py-4 border-b border-white/10 transition-all duration-300",
-            !isOpen && "lg:px-2 lg:py-3"
-          )}>
+          <div className="px-5 py-4 border-b border-white/10 transition-all duration-300">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold shrink-0">
                 {user.avatar ? (
@@ -101,7 +112,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   user.name?.charAt(0) || "U"
                 )}
               </div>
-              <div className={cn("transition-all duration-300 overflow-hidden", !isOpen && "lg:w-0 lg:opacity-0")}>
+              <div className="transition-all duration-300 overflow-hidden">
                 <p className="text-white font-medium text-sm truncate">{user.name}</p>
                 <p className="text-white/50 text-xs truncate">{user.plan === "pro" ? "PRO" : "Free"}</p>
               </div>
@@ -131,19 +142,10 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   "w-5 h-5 shrink-0 transition-transform duration-300",
                   hoveredItem === item.label && "scale-110"
                 )} />
-                <span className={cn(
-                  "text-sm font-medium transition-all duration-300 whitespace-nowrap",
-                  !isOpen && "lg:w-0 lg:opacity-0"
-                )}>
+                <span className="text-sm font-medium transition-all duration-300 whitespace-nowrap">
                   {item.label}
                 </span>
 
-                {/* Tooltip for collapsed state */}
-                {!isOpen && (
-                  <div className="absolute right-full mr-3 px-3 py-2 bg-slate-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl border border-white/10">
-                    {item.label}
-                  </div>
-                )}
               </Link>
             );
           })}
@@ -151,7 +153,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
           {/* Admin/Moderator links */}
           {(isAdmin || isModerator) && (
             <>
-              <div className={cn("pt-4 pb-2 transition-all duration-300", !isOpen && "lg:opacity-0")}>
+              <div className="pt-4 pb-2 transition-all duration-300">
                 <p className="text-xs text-white/40 px-3 uppercase tracking-wider">لوحة التحكم</p>
               </div>
               <Link
@@ -163,7 +165,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                 )}
               >
                 <Shield className="w-5 h-5 shrink-0" />
-                <span className={cn("text-sm font-medium transition-all duration-300", !isOpen && "lg:w-0 lg:opacity-0")}>
+                <span className="text-sm font-medium transition-all duration-300">
                   {isAdmin ? "الأدمن" : "المدير"}
                 </span>
               </Link>
@@ -182,7 +184,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                 className="flex items-center gap-3 px-3 py-3 rounded-xl text-white/70 hover:bg-white/10 hover:text-white transition-all duration-300 group relative"
               >
                 <Icon className="w-5 h-5 shrink-0" />
-                <span className={cn("text-sm font-medium transition-all duration-300", !isOpen && "lg:w-0 lg:opacity-0")}>
+                <span className="text-sm font-medium transition-all duration-300">
                   {item.label}
                 </span>
               </Link>
@@ -194,7 +196,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
             className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-red-400/70 hover:bg-red-500/10 hover:text-red-400 transition-all duration-300"
           >
             <LogOut className="w-5 h-5 shrink-0" />
-            <span className={cn("text-sm font-medium transition-all duration-300", !isOpen && "lg:w-0 lg:opacity-0")}>
+            <span className="text-sm font-medium transition-all duration-300">
               خروج
             </span>
           </button>

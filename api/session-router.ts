@@ -63,7 +63,7 @@ export const sessionRouter = router({
   trackEvent: authedProcedure
     .input(z.object({
       event: z.string(),
-      metadata: z.record(z.any()).optional(),
+      metadata: z.record(z.string(), z.any()).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       await db.insert(userAnalytics).values({

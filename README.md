@@ -1,73 +1,74 @@
-# React + TypeScript + Vite
+# SmartSpend: AI Financial Copilot (Architecture & Intelligence Documentation)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+هذا الملف مصمم ليكون المرجع الشامل والنهائي لمشروع SmartSpend، موجه للمبرمجين أو لنماذج الذكاء الاصطناعي لفهم بنية النظام، منطق العمل، وهيكلة البيانات.
 
-Currently, two official plugins are available:
+## 🌟 نظرة عامة (Overview)
+SmartSpend هو مساعد مالي ذكي يعتمد على الذكاء الاصطناعي (Gemini AI) لتحليل العمليات المالية المدخلة باللهجة المصرية (صوتياً أو نصياً). يتميز النظام بقدرته على "التعلم" من تفضيلات المستخدم وتقديم تصنيفات دقيقة جداً تشمل فئات فرعية (Sub-categories) وتمييز للعلامات التجارية (Brands).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## 🏗️ البنية التقنية (Tech Stack)
+- **Frontend**: React (Vite) + TailwindCSS + ShadcnUI.
+- **Backend**: Node.js (tRPC) - يضمن التوافق التام بين الأنواع (Type-safety) بين الواجهة والخلفية.
+- **Database**: MySQL/MariaDB مع **Drizzle ORM**.
+- **AI**: Google Gemini Flash/Pro (عبر `@google/generative-ai`).
+- **State Management**: React Query (عبر tRPC hooks).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 📁 دليل الملفات والمسارات (Files & Paths Directory)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 📂 **1. قاعدة البيانات (Database Layer) - `/db`**
+*   `db/schema.ts`: **(العمود الفقري للبيانات)** - يحتوي على تعريف الجداول (العمليات، القاموس الشخصي، المستخدمين) وعلاقاتها.
+*   `db/index.ts`: **(نقطة الاتصال)** - المسؤول عن تهيئة الاتصال بقاعدة البيانات وتصدير كائن الـ DB للاستخدام.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 📂 **2. منطق الواجهة الخلفية (Backend/API) - `/api`**
+*   `api/ai-router.ts`: **(محرك الذكاء)** - قلب النظام؛ يدير تحليل النصوص، استدعاء Gemini، وتعليم النظام كلمات جديدة.
+*   `api/expense-router.ts`: **(مدير العمليات)** - يدير كل ما يتعلق بالمصاريف (إضافة، حذف، جلب الإحصائيات الشهرية).
+*   `api/lib/egyptian-dictionary.ts`: **(الموسوعة المحلية)** - يحتوي على القاموس المصري المصنف للفئات والبراندات.
+*   `api/lib/fuzzy-match.ts`: **(المصحح اللغوي)** - أدوات لتنظيف النصوص العربية والمطابقة التقريبية للكلمات.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### 📂 **3. الواجهة الأمامية (Frontend) - `/src`**
+*   `src/components/expenses/ExpenseForm.tsx`: **(مدخلات المستخدم)** - الفورم الرئيسي؛ يجمع بين التسجيل الصوتي، التحليل، والمراجعة اليدوية.
+*   `src/components/expenses/RecentExpenses.tsx`: **(سجل المعاملات)** - عرض آخر المصاريف مع دعم إظهار الفئات الفرعية وتفاصيل كل عملية.
+*   `src/components/dashboard/ExpenseChart.tsx`: **(لوحة التحكم)** - مسؤول عن الرسوم البيانية (Pie/Bar Charts) وتوزيع المصاريف.
+*   `src/pages/Home.tsx`: **(الصفحة الرئيسية)** - تجمع كل المكونات في واجهة واحدة وتدير حالة البيانات العامة.
+*   `src/providers/trpc.tsx`: **(جسر التواصل)** - إعداد عميل tRPC للربط بين الـ Frontend والـ Backend.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### 📂 **4. ملفات الإعدادات (Config)**
+*   `package.json`: قائمة المكتبات والأوامر (Scripts) لتشغيل المشروع.
+*   `drizzle.config.ts`: إعدادات أداة Drizzle للتعامل مع قاعدة البيانات.
+*   `.env`: (ملف مخفي) يحتوي على مفاتيح السر (API Keys) وبيانات قاعدة البيانات.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🧠 ذكاء التصنيف (Classification Intelligence)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+النظام يتبع استراتيجية **"الثقة المتدرجة" (Tiered Confidence Strategy)** عند تحليل أي نص:
+
+1. **المستوى الأول (User Context):** يبحث النظام في `user_dictionaries` الخاص بالمستخدم نفسه. إذا قام المستخدم سابقاً بتصنيف "كارفور" كـ "سوبر ماركت"، سيتم اعتماد ذلك فوراً.
+2. **المستوى الثاني (Structured Dictionary):** إذا لم يجد في قاموس المستخدم، يبحث في القاموس العام (`egyptian-dictionary.ts`) الذي يدعم الفئات الفرعية والبراندات.
+3. **المستوى الثالث (AI Fallback):** إذا كانت الجملة معقدة أو الكلمة غير موجودة، يتم إرسال النص إلى Gemini AI مع سياق مالي كامل (الدخل، المصاريف الحالية، التاريخ) لاستنتاج التصنيف.
+
+---
+
+## 🔄 دورة حياة العملية المالية (Transaction Lifecycle)
+
+1. **المدخل (Input):** المستخدم يقول "دفعت 200 جنيه في ماكدونالدز".
+2. **التحليل (Parsing):**
+    - يتم استخراج المبلغ (200).
+    - يتم استخراج الكلمة المفتاحية (ماكدونالدز).
+3. **المراجعة (Review UI):** يظهر كارت للمستخدم يقول: "لقيت عملية بـ 200 جنيه، الفئة: أكل وشرب، الفئة الفرعية: مطاعم. هل ده صح؟".
+4. **التعلم (Learning):** إذا قام المستخدم بتغيير الفئة الفرعية إلى "وجبات سريعة"، يتم استدعاء `learnWord` ليصبح "ماكدونالدز" مرتبطاً بـ "وجبات سريعة" لهذا المستخدم للأبد.
+5. **الحفظ (Storage):** يتم حفظ العملية في جدول `expenses` مع كامل التفاصيل.
+
+---
+
+## 🛠️ تعليمات للمطورين (Notes for AI/Developers)
+- **tRPC**: كل التواصل بين Frontend و Backend يتم عبر `api/trpc`. لا تستخدم fetch العادي.
+- **Drizzle**: عند تغيير الـ Schema، تأكد من تحديث `db/schema.ts` واستخدام سكربتات الترحيل.
+- **Arabic Handling**: النظام يعتمد بكثافة على `normalizeArabic` في `fuzzy-match.ts` لتوحيد الحروف (مثل أ، ا، إ). دائماً مرر الكلمات عبرها قبل المقارنة.
+- **Sub-category Logic**: أي ميزة جديدة يجب أن تدعم `subCategory`. لا تكتفي بالفئات الرئيسية فقط.
+
+---
+*تم إنشاء هذا الملف بواسطة Antigravity AI لضمان استمرارية وفهم المشروع.*
