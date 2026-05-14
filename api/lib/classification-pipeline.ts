@@ -23,6 +23,13 @@ export interface PipelineInput {
   modelName: string;
   maxTokens: number;
   monthlyContext: { totalIncome: number; totalExpense: number };
+  userProfileContext?: {
+    promptSummary?: string;
+    hasChildren?: boolean | null;
+    responsibleForFamily?: boolean | null;
+    supportsOthers?: unknown;
+    fixedMonthlyCommitments?: unknown;
+  };
   skipClarification?: boolean;
 }
 
@@ -127,7 +134,7 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
 
   // ── Step 3+4: Intent Detection + Rule Engine ──
   log.ruleEngineResult.attempted = true;
-  const ruleResult = runRuleEngine(normalizedText, input.userDict);
+  const ruleResult = runRuleEngine(normalizedText, input.userDict, input.userProfileContext);
 
   if (!ruleResult.needsAI && ruleResult.items.length > 0) {
     // Rule engine succeeded!
@@ -160,6 +167,7 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
             totalIncome: input.monthlyContext.totalIncome,
             totalExpense: input.monthlyContext.totalExpense,
             currentDate,
+            userProfileContext: input.userProfileContext?.promptSummary,
           },
           input.skipClarification
         );

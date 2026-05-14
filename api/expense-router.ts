@@ -55,8 +55,9 @@ export const expenseRouter = router({
     .query(async ({ ctx, input }) => {
       const db = getDb();
       const userId = ctx.user!.id;
+      const userType = ctx.user!.type;
 
-      const conditions = [eq(expenses.userId, userId)];
+      const conditions = [eq(expenses.userId, userId), eq(expenses.userType, userType)];
 
       if (input?.startDate) conditions.push(gte(expenses.date, new Date(input.startDate)));
       if (input?.endDate) conditions.push(lte(expenses.date, new Date(input.endDate)));
@@ -84,10 +85,11 @@ export const expenseRouter = router({
     .query(async ({ ctx, input }) => {
       const db = getDb();
       const userId = ctx.user!.id;
+      const userType = ctx.user!.type;
       const result = await db
         .select()
         .from(expenses)
-        .where(and(eq(expenses.id, input.id), eq(expenses.userId, userId)));
+        .where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType)));
       return result[0] || null;
     }),
 
@@ -106,6 +108,7 @@ export const expenseRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = getDb();
       const userId = ctx.user!.id;
+      const userType = ctx.user!.type;
 
       const updateData: Record<string, any> = {};
       if (input.amount !== undefined) updateData.amount = input.amount.toString();
@@ -115,7 +118,7 @@ export const expenseRouter = router({
       if (input.rawText !== undefined) updateData.rawText = input.rawText;
       if (input.date !== undefined) updateData.date = new Date(input.date);
 
-      await db.update(expenses).set(updateData).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId)));
+      await db.update(expenses).set(updateData).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType)));
       return { success: true };
     }),
 
@@ -124,7 +127,8 @@ export const expenseRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = getDb();
       const userId = ctx.user!.id;
-      await db.delete(expenses).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId)));
+      const userType = ctx.user!.type;
+      await db.delete(expenses).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType)));
       return { success: true };
     }),
 
@@ -133,6 +137,7 @@ export const expenseRouter = router({
     .query(async ({ ctx, input }) => {
       const db = getDb();
       const userId = ctx.user!.id;
+      const userType = ctx.user!.type;
 
       const startDate = new Date(input.month + "-01");
       const endDate = new Date(startDate);
@@ -142,7 +147,7 @@ export const expenseRouter = router({
       const firstExpense = await db
         .select({ date: expenses.date })
         .from(expenses)
-        .where(eq(expenses.userId, userId))
+        .where(and(eq(expenses.userId, userId), eq(expenses.userType, userType)))
         .orderBy(expenses.date)
         .limit(1);
 
@@ -151,10 +156,20 @@ export const expenseRouter = router({
       const items = await db
         .select()
         .from(expenses)
-        .where(and(eq(expenses.userId, userId), gte(expenses.date, startDate), lte(expenses.date, endDate)));
+        .where(and(eq(expenses.userId, userId), eq(expenses.userType, userType), gte(expenses.date, startDate), lte(expenses.date, endDate)));
+
+      const prevStartDate = new Date(startDate);
+      prevStartDate.setMonth(prevStartDate.getMonth() - 1);
+      const prevEndDate = new Date(startDate);
+      const previousItems = await db
+        .select()
+        .from(expenses)
+        .where(and(eq(expenses.userId, userId), eq(expenses.userType, userType), gte(expenses.date, prevStartDate), lte(expenses.date, prevEndDate)));
 
       const totalExpense = items.filter(i => i.type === "expense").reduce((sum, item) => sum + Number(item.amount), 0);
       const totalIncome = items.filter(i => i.type === "income").reduce((sum, item) => sum + Number(item.amount), 0);
+      const previousTotalExpense = previousItems.filter(i => i.type === "expense").reduce((sum, item) => sum + Number(item.amount), 0);
+      const previousTotalIncome = previousItems.filter(i => i.type === "income").reduce((sum, item) => sum + Number(item.amount), 0);
 
       // Day map (expenses only)
       // Day map, Week map, Hour map, Day of week map
@@ -251,8 +266,48 @@ export const expenseRouter = router({
       const endOfMonth = endDate > today ? today : endDate;
       const activeDays = Math.max(1, Math.ceil((endOfMonth.getTime() - userStartDate.getTime()) / (1000 * 60 * 60 * 24)));
       const dailyAverage = totalExpense / Math.min(activeDays, 30);
+      const previousNetFlow = previousTotalIncome - previousTotalExpense;
+      const expenseChangePercent = previousTotalExpense > 0
+        ? Math.round(((totalExpense - previousTotalExpense) / previousTotalExpense) * 100)
+        : null;
+      const incomeChangePercent = previousTotalIncome > 0
+        ? Math.round(((totalIncome - previousTotalIncome) / previousTotalIncome) * 100)
+        : null;
+      const previousCategoryMap: Record<string, number> = {};
+      const previousSubCategoryMap: Record<string, number> = {};
+      previousItems.filter(i => i.type === "expense").forEach((item) => {
+        previousCategoryMap[item.category] = (previousCategoryMap[item.category] || 0) + Number(item.amount);
+        if (item.subCategory) previousSubCategoryMap[item.subCategory] = (previousSubCategoryMap[item.subCategory] || 0) + Number(item.amount);
+      });
+      const categoryChanges = sortedCategories.map((cat) => {
+        const previous = previousCategoryMap[cat.name] || 0;
+        return {
+          name: cat.name,
+          current: cat.value,
+          previous,
+          changePercent: previous > 0 ? Math.round(((cat.value - previous) / previous) * 100) : null,
+        };
+      });
+      const subCategoryChanges = subCategoryBreakdown.map((sub) => {
+        const previous = previousSubCategoryMap[sub.name] || 0;
+        return {
+          name: sub.name,
+          current: sub.value,
+          previous,
+          changePercent: previous > 0 ? Math.round(((sub.value - previous) / previous) * 100) : null,
+        };
+      });
+      const mostRecurringExpense = subCategoryBreakdown.slice().sort((a, b) => b.count - a.count)[0] || null;
 
       return {
+        structuredMonthlyBreakdown: {
+          totalIncome,
+          totalExpense,
+          netFlow: totalIncome - totalExpense,
+          previousTotalIncome,
+          previousTotalExpense,
+          previousNetFlow,
+        },
         totalExpense,
         totalIncome,
         netFlow: totalIncome - totalExpense,
@@ -268,6 +323,23 @@ export const expenseRouter = router({
         dayOfWeekTrend: Object.entries(dayOfWeekMap).map(([name, amount]) => ({ name, amount })),
         hierarchicalBreakdown,
         recurringBreakdown: recurringHints,
+        behavioralInsights: {
+          topSpendingDay: highestDay ? { date: highestDay[0], amount: highestDay[1] } : null,
+          mostRecurringExpense,
+          expenseChangePercent,
+          incomeChangePercent,
+          spendingIncreased: expenseChangePercent === null ? null : expenseChangePercent > 0,
+        },
+        comparativeAnalysis: {
+          previousMonth: {
+            totalIncome: previousTotalIncome,
+            totalExpense: previousTotalExpense,
+            netFlow: previousNetFlow,
+          },
+          categoryChanges,
+          subCategoryChanges,
+          trend: expenseChangePercent === null ? "new" : expenseChangePercent > 0 ? "up" : expenseChangePercent < 0 ? "down" : "flat",
+        },
         items,
       };
     }),
@@ -277,6 +349,7 @@ export const expenseRouter = router({
     .query(async ({ ctx, input }) => {
       const db = getDb();
       const userId = ctx.user!.id;
+      const userType = ctx.user!.type;
 
       const startDate = new Date(input.year + "-01-01");
       const endDate = new Date(input.year + "-12-31");
@@ -284,7 +357,7 @@ export const expenseRouter = router({
       const items = await db
         .select()
         .from(expenses)
-        .where(and(eq(expenses.userId, userId), gte(expenses.date, startDate), lte(expenses.date, endDate)));
+        .where(and(eq(expenses.userId, userId), eq(expenses.userType, userType), gte(expenses.date, startDate), lte(expenses.date, endDate)));
 
       const totalExpense = items.filter(i => i.type === "expense").reduce((sum, item) => sum + Number(item.amount), 0);
       const totalIncome = items.filter(i => i.type === "income").reduce((sum, item) => sum + Number(item.amount), 0);
@@ -326,6 +399,7 @@ export const expenseRouter = router({
       const db = getDb();
       await db.insert(expenseCategories).values({
         userId: ctx.user!.id,
+        userType: ctx.user!.type,
         name: input.name,
         icon: input.icon,
         color: input.color,

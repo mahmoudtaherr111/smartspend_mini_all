@@ -64,3 +64,508 @@ voice_usage table is missing. Falling back to 0 usage.
 voice_usage table is missing. Falling back to 0 usage.
 voice_usage table is missing. Falling back to 0 usage.
 voice_usage table is missing. Falling back to 0 usage.
+[2m٧:٤٢:٠١ م[22m [31m[1m[vite][22m[39m [31m[2m(ssr)[22m[39m [31mError when evaluating SSR module api/boot.ts: Transform failed with 1 error:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |  
+  27 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٧:٤٢:٠١ م[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |  
+  27 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٧:٤٢:٠١ م[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |  
+  27 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٧:٤٢:٠٢ م[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |  
+  27 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٧:٤٢:٠٥ م[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |  
+  27 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٧:٤٢:٠٧ م[22m [31m[1m[vite][22m[39m [31m[2m(ssr)[22m[39m [31mError when evaluating SSR module api/boot.ts: Transform failed with 1 error:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |  
+  27 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٧:٤٢:٠٧ م[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |  
+  27 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٧:٤٢:٠٨ م[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |  
+  27 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٧:٤٢:١١ م[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |  
+  27 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٧:٤٢:١٦ م[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |  
+  27 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٧:٤٣:٣٦ م[22m [31m[1m[vite][22m[39m [31m[2m(ssr)[22m[39m [31mError when evaluating SSR module api/boot.ts: Transform failed with 1 error:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |  
+  27 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٧:٤٣:٣٦ م[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |  
+  27 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٧:٤٣:٣٧ م[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |  
+  27 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٧:٤٣:٤٠ م[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |  
+  27 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٧:٤٣:٤٥ م[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 1 error:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |  
+  27 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٧:٤٤:١٥ م[22m [31m[1m[vite][22m[39m [31m[2m(ssr)[22m[39m [31mError when evaluating SSR module api/boot.ts: Transform failed with 2 errors:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared
+E:/smartspend_V1_fixed/api/expense-router.ts:26:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |        const userType = ctx.user!.type;
+  27 |  
+  
+  [33mThe symbol "userType" has already been declared[33m
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+  26 |        const userType = ctx.user!.type;
+     |              ^
+  27 |  
+  28 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٧:٤٤:١٥ م[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 2 errors:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared
+E:/smartspend_V1_fixed/api/expense-router.ts:26:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |        const userType = ctx.user!.type;
+  27 |  
+  
+  [33mThe symbol "userType" has already been declared[33m
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+  26 |        const userType = ctx.user!.type;
+     |              ^
+  27 |  
+  28 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٧:٤٤:١٦ م[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 2 errors:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared
+E:/smartspend_V1_fixed/api/expense-router.ts:26:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |        const userType = ctx.user!.type;
+  27 |  
+  
+  [33mThe symbol "userType" has already been declared[33m
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+  26 |        const userType = ctx.user!.type;
+     |              ^
+  27 |  
+  28 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٧:٤٤:١٩ م[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 2 errors:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared
+E:/smartspend_V1_fixed/api/expense-router.ts:26:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |        const userType = ctx.user!.type;
+  27 |  
+  
+  [33mThe symbol "userType" has already been declared[33m
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+  26 |        const userType = ctx.user!.type;
+     |              ^
+  27 |  
+  28 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٧:٤٤:٢٤ م[22m [31m[1m[vite][22m[39m [31mInternal server error: Transform failed with 2 errors:
+E:/smartspend_V1_fixed/api/expense-router.ts:25:12: ERROR: The symbol "userType" has already been declared
+E:/smartspend_V1_fixed/api/expense-router.ts:26:12: ERROR: The symbol "userType" has already been declared[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mE:/smartspend_V1_fixed/api/expense-router.ts[39m:25:12
+[33m  
+  [33mThe symbol "userType" has already been declared[33m
+  23 |        const userId = ctx.user!.id;
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+     |              ^
+  26 |        const userType = ctx.user!.type;
+  27 |  
+  
+  [33mThe symbol "userType" has already been declared[33m
+  24 |        const userType = ctx.user!.type;
+  25 |        const userType = ctx.user!.type;
+  26 |        const userType = ctx.user!.type;
+     |              ^
+  27 |  
+  28 |        const expenseDate = input.date ? new Date(input.date) : new Date();
+  [39m
+      at failureErrorWithLog (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:1467:15)
+      at E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (E:\smartspend_V1_fixed\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
