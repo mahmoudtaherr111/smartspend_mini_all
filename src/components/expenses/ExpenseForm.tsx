@@ -22,6 +22,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
   const [clarificationQuestion, setClarificationQuestion] = useState<string | null>(null);
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
   const [isSkipping, setIsSkipping] = useState(false);
+  const [flowStage, setFlowStage] = useState<"idle" | "recording" | "processing" | "parsed" | "clarify" | "review">("idle");
 
   const { data: userLimits } = trpc.ai.getUserLimits.useQuery();
 
@@ -36,6 +37,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
   const sttMutation = trpc.ai.speechToText.useMutation({
     onSuccess: (data) => {
       setText(data.text);
+      setFlowStage("parsed");
       toast.success("تم فهم التسجيل!");
       // Automatically trigger parsing after STT
       parseMutation.mutate({ text: data.text });
@@ -55,9 +57,11 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
       if (data.decision === "auto_save" && data.items && data.items.length > 0) {
         saveItems(data.items, true);
       } else if (data.decision === "review") {
+        setFlowStage("review");
         setParsedItems(data.items || []);
       } else if (data.decision === "clarify") {
         setClarificationQuestion(data.clarificationQuestion || "ممكن توضح أكتر؟");
+        setFlowStage("clarify");
         setParsedItems(null);
       }
 
@@ -71,6 +75,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
       toast.error("حدث خطأ أثناء تحليل النص.");
       setIsProcessingVoice(false);
       setIsSkipping(false);
+      setFlowStage("idle");
     }
   });
 
@@ -131,6 +136,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
         reader.onloadend = () => {
           const base64Audio = (reader.result as string).split(",")[1];
           setIsProcessingVoice(true);
+          setFlowStage("processing");
           sttMutation.mutate({
             audioBase64: base64Audio,
             mimeType: mimeType,
@@ -142,6 +148,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
 
       mediaRecorder.start();
       setIsRecording(true);
+      setFlowStage("recording");
       setRecordingDuration(0);
 
       timerRef.current = setInterval(() => {
@@ -190,6 +197,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
     setParsedItems(null);
     setDecision(null);
     setText("");
+    setFlowStage("idle");
     toast.success(isAuto ? `تم الحفظ تلقائياً (${items.length} عملية) ✨` : "تم الحفظ بنجاح!");
   };
 
@@ -204,11 +212,13 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
     e.preventDefault();
     if (!text.trim()) return;
     setIsProcessingVoice(true);
+    setFlowStage("processing");
     parseMutation.mutate({ text });
   };
 
   const handleSkip = () => {
     setIsSkipping(true);
+    setFlowStage("processing");
     parseMutation.mutate({ text, skipClarification: true });
   };
 
@@ -237,6 +247,9 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
       </CardHeader>
 
       <CardContent className="space-y-6">
+        <div className="text-xs text-muted-foreground text-center">
+          الحالة: {flowStage === "idle" ? "جاهز" : flowStage === "recording" ? "تسجيل" : flowStage === "processing" ? "معالجة" : flowStage === "parsed" ? "تم استخراج النص" : flowStage === "clarify" ? "توضيح" : "مراجعة"}
+        </div>
         {/* ─── Main Input Area (Professional UI) ─── */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative group">

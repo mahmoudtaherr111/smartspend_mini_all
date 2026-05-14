@@ -58,6 +58,11 @@ function adjustConfidence(item: ParsedTransaction): ParsedTransaction {
  * Generate smart clarification questions
  */
 function generateClarification(items: ParsedTransaction[], originalText: string): string | undefined {
+  const hasAmbiguityFlags = items.some(i => (i.ambiguityFlags?.length || 0) > 0);
+  if (hasAmbiguityFlags) {
+    return "في تفاصيل مش واضحة (زي نوع العملية أو وجهتها). وضحها بكلمة واحدة عشان أصنف بدقة.";
+  }
+
   // Check for ambiguous transfers
   if (originalText.match(/حولت|اديت|سلفت/) && !originalText.match(/حولت\s+ل|اديت\s+ل/)) {
     return "هل العملية دي:\n• تحويل لشخص؟\n• دين/سلفة؟\n• مصروف شخصي؟";
@@ -114,8 +119,15 @@ export function scoreAndDecide(
   // Decision logic
   let decision: "auto_save" | "review" | "clarify";
   let clarificationQuestion: string | undefined;
+  const hasCriticalMissingFields = scoredItems.some(i => !i.category || !i.subCategory || !i.amount);
+  const hasIntentTaxonomyConflict = scoredItems.some(
+    (i) => i.type === "income" && ["أكل وشرب", "خروجات", "خدمات سيارات", "التزامات يومية"].includes(i.category)
+  );
 
-  if (overallConfidence >= thresholds.autoSave && scoredItems.every(i => i.confidence >= thresholds.autoSave)) {
+  if (hasCriticalMissingFields || hasIntentTaxonomyConflict) {
+    decision = "clarify";
+    clarificationQuestion = generateClarification(scoredItems, originalText);
+  } else if (overallConfidence >= thresholds.autoSave && scoredItems.every(i => i.confidence >= thresholds.autoSave)) {
     decision = "auto_save";
   } else if (overallConfidence >= thresholds.review) {
     decision = "review";

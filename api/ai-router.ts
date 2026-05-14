@@ -31,6 +31,34 @@ async function trackTokens(userId: number, userType: string, tokens: number) {
   }
 }
 
+function isMissingTableError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err ?? "");
+  return msg.includes("voice_usage") && (
+    msg.includes("doesn't exist") ||
+    msg.includes("ER_NO_SUCH_TABLE") ||
+    msg.includes("Failed query:")
+  );
+}
+
+async function getVoiceSecondsSince(userId: number, userType: string, cycleStart: Date): Promise<number> {
+  try {
+    const usageResult = await db.select({ total: sql`COALESCE(SUM(duration_seconds), 0)` })
+      .from(voiceUsage)
+      .where(and(
+        eq(voiceUsage.userId, userId),
+        eq(voiceUsage.userType, userType),
+        gte(voiceUsage.createdAt, cycleStart)
+      ));
+    return Number(usageResult[0]?.total || 0);
+  } catch (err) {
+    if (isMissingTableError(err)) {
+      console.warn("voice_usage table is missing. Falling back to 0 usage.");
+      return 0;
+    }
+    throw err;
+  }
+}
+
 async function getAiClient(taskType: "parse" | "report", userPlan: string = "free") {
   const settings = await db.select().from(systemSettings);
   const cfg: Record<string, string> = {};
@@ -432,6 +460,15 @@ export const aiRouter = router({
         finalResult: result.items,
         confidence: result.overallConfidence,
         decision: result.decision,
+        classificationVersion: "v2.1",
+        reasoningTraceLight: {
+          entities: result.log.entitiesFound,
+          ruleEngine: result.log.ruleEngineResult,
+          ai: result.log.aiResult,
+        },
+        ambiguityFlags: result.items.flatMap((item: any) => item.ambiguityFlags || []),
+        inputChannel: "text",
+        needsFollowup: result.decision === "clarify" || result.overallConfidence < 60,
         modelUsed: result.modelUsed,
         tokensUsed: result.tokensUsed,
         processingTimeMs: result.processingTimeMs,
@@ -514,15 +551,7 @@ export const aiRouter = router({
       }
     }
 
-    const usageResult = await db.select({ total: sql`COALESCE(SUM(duration_seconds), 0)` })
-      .from(voiceUsage)
-      .where(and(
-        eq(voiceUsage.userId, ctx.user.id),
-        eq(voiceUsage.userType, ctx.user.type),
-        gte(voiceUsage.createdAt, cycleStart)
-      ));
-
-    const usedVoiceSeconds = Number(usageResult[0]?.total || 0);
+    const usedVoiceSeconds = await getVoiceSecondsSince(ctx.user.id, ctx.user.type, cycleStart);
     const voiceLimit = voiceLimits[ctx.user.plan] || 300;
     
     return {
@@ -569,15 +598,7 @@ export const aiRouter = router({
       }
 
       // Check voice limits
-      const usageResult = await db.select({ total: sql`COALESCE(SUM(duration_seconds), 0)` })
-        .from(voiceUsage)
-        .where(and(
-          eq(voiceUsage.userId, ctx.user.id),
-          eq(voiceUsage.userType, ctx.user.type),
-          gte(voiceUsage.createdAt, cycleStart)
-        ));
-
-      const usedSeconds = Number(usageResult[0]?.total || 0);
+      const usedSeconds = await getVoiceSecondsSince(ctx.user.id, ctx.user.type, cycleStart);
 
       // Get voice limits from settings
       const settings = await db.select().from(systemSettings);

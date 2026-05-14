@@ -1,0 +1,66 @@
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+AI Insights Error: GoogleGenerativeAIFetchError: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent: [503 Service Unavailable] This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.
+    at handleResponseNotOk (file:///E:/smartspend_V1_fixed/node_modules/@google/generative-ai/dist/index.mjs:432:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async makeRequest (file:///E:/smartspend_V1_fixed/node_modules/@google/generative-ai/dist/index.mjs:401:9)
+    at async generateContent (file:///E:/smartspend_V1_fixed/node_modules/@google/generative-ai/dist/index.mjs:865:22)
+    at async eval (E:/smartspend_V1_fixed/api/ai-router.ts:761:24)
+    at async resolveMiddleware (file:///E:/smartspend_V1_fixed/node_modules/@trpc/server/dist/initTRPC-BRf4imah.mjs:221:17)
+    at async callRecursive (file:///E:/smartspend_V1_fixed/node_modules/@trpc/server/dist/initTRPC-BRf4imah.mjs:256:18)
+    at async callRecursive (file:///E:/smartspend_V1_fixed/node_modules/@trpc/server/dist/initTRPC-BRf4imah.mjs:256:18)
+    at async callRecursive (file:///E:/smartspend_V1_fixed/node_modules/@trpc/server/dist/initTRPC-BRf4imah.mjs:256:18)
+    at async procedure (file:///E:/smartspend_V1_fixed/node_modules/@trpc/server/dist/initTRPC-BRf4imah.mjs:281:18)
+    at async file:///E:/smartspend_V1_fixed/node_modules/@trpc/server/dist/resolveResponse-CdASWfAV.mjs:1969:18
+    at async Promise.all (index 0)
+    at async resolveResponse (file:///E:/smartspend_V1_fixed/node_modules/@trpc/server/dist/resolveResponse-CdASWfAV.mjs:2184:20)
+    at async fetchRequestHandler (file:///E:/smartspend_V1_fixed/node_modules/@trpc/server/dist/adapters/fetch/index.mjs:27:9)
+    at async file:///E:/smartspend_V1_fixed/node_modules/@hono/trpc-server/dist/index.js:21:10
+    at async dispatch (file:///E:/smartspend_V1_fixed/node_modules/hono/dist/compose.js:22:17)
+    at async cors2 (file:///E:/smartspend_V1_fixed/node_modules/hono/dist/middleware/cors/index.js:82:5)
+    at async dispatch (file:///E:/smartspend_V1_fixed/node_modules/hono/dist/compose.js:22:17)
+    at async logger2 (file:///E:/smartspend_V1_fixed/node_modules/hono/dist/middleware/logger/index.js:38:5)
+    at async dispatch (file:///E:/smartspend_V1_fixed/node_modules/hono/dist/compose.js:22:17)
+    at async file:///E:/smartspend_V1_fixed/node_modules/hono/dist/hono-base.js:301:25
+    at async getRequestListener.overrideGlobalObjects (file:///E:/smartspend_V1_fixed/node_modules/@hono/vite-dev-server/dist/dev-server.js:108:32)
+    at async responseViaResponseObject (file:///E:/smartspend_V1_fixed/node_modules/@hono/node-server/dist/index.mjs:478:15)
+    at async file:///E:/smartspend_V1_fixed/node_modules/@hono/node-server/dist/index.mjs:630:14 {
+  status: 503,
+  statusText: 'Service Unavailable',
+  errorDetails: undefined
+}
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
+voice_usage table is missing. Falling back to 0 usage.
