@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAdmin } from "../hooks/useAdmin";
 import { useAuth } from "../hooks/useAuth";
 import { trpc } from "../providers/trpc";
@@ -6,7 +6,8 @@ import { SEOMeta } from "../components/seo/SEOMeta";
 import { 
   Users, Shield, Trash2, Search, Download, Printer, Eye, 
   XCircle, CheckCircle, Clock, Ticket, BarChart3, Activity,
-  ChevronLeft, ChevronRight, Crown, UserCheck, FileSpreadsheet, FileJson
+  ChevronLeft, ChevronRight, Crown, UserCheck, FileSpreadsheet, FileJson,
+  Brain, Mic, Settings2, Info
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,8 @@ export default function Admin() {
   const { user } = useAuth();
   const { stats, users, updateRole, updatePlan, deleteUser, revokeSession } = useAdmin();
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [planFilter, setPlanFilter] = useState("all");
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showSessions, setShowSessions] = useState(false);
   const [showTickets, setShowTickets] = useState(false);
@@ -35,7 +37,7 @@ export default function Admin() {
 
   const ticketsQuery = trpc.support.listAll.useQuery(
     { page: 1, limit: 50 },
-    { enabled: showTickets }
+    { enabled: activeTab === "tickets" }
   );
 
   const exportMutation = trpc.export.allUsers.useMutation({
@@ -66,8 +68,9 @@ export default function Admin() {
 
   const filteredUsers = users.data?.users?.filter((u: any) => {
     const matchSearch = !search || u.name?.includes(search) || u.email?.includes(search) || u.phone?.includes(search);
-    const matchRole = !roleFilter || u.role === roleFilter;
-    return matchSearch && matchRole;
+    const matchRole = roleFilter === "all" || u.role === roleFilter;
+    const matchPlan = planFilter === "all" || u.plan === planFilter;
+    return matchSearch && matchRole && matchPlan;
   }) || [];
 
   if (user?.role !== "admin" && user?.role !== "moderator") {
@@ -108,7 +111,12 @@ export default function Admin() {
             <TabsTrigger value="users"><Users className="w-4 h-4 ml-1" /> المستخدمين</TabsTrigger>
             <TabsTrigger value="tickets"><Ticket className="w-4 h-4 ml-1" /> التذاكر</TabsTrigger>
             {user?.role === "admin" && (
-              <TabsTrigger value="activity"><Activity className="w-4 h-4 ml-1" /> النشاط</TabsTrigger>
+              <>
+                <TabsTrigger value="activity"><Activity className="w-4 h-4 ml-1" /> النشاط</TabsTrigger>
+                <TabsTrigger value="classification"><Brain className="w-4 h-4 ml-1" /> محرك التصنيف</TabsTrigger>
+                <TabsTrigger value="voice"><Mic className="w-4 h-4 ml-1" /> استهلاك الصوت</TabsTrigger>
+                <TabsTrigger value="settings"><Shield className="w-4 h-4 ml-1" /> إعدادات الذكاء الاصطناعي</TabsTrigger>
+              </>
             )}
           </TabsList>
 
@@ -155,10 +163,20 @@ export default function Admin() {
                         <SelectValue placeholder="الدور" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">الكل</SelectItem>
+                        <SelectItem value="all">كل الأدوار</SelectItem>
                         <SelectItem value="user">مستخدم</SelectItem>
                         <SelectItem value="moderator">مشرف</SelectItem>
                         <SelectItem value="admin">أدمن</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={planFilter} onValueChange={setPlanFilter}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="الخطة" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">كل الخطط</SelectItem>
+                        <SelectItem value="free">مجاني</SelectItem>
+                        <SelectItem value="pro">برو</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -169,13 +187,14 @@ export default function Admin() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-right py-3 px-2">المستخدم</th>
-                        <th className="text-right py-3 px-2">النوع</th>
-                        <th className="text-right py-3 px-2">الدور</th>
-                        <th className="text-right py-3 px-2">الخطة</th>
-                        <th className="text-right py-3 px-2">المصاريف</th>
-                        <th className="text-right py-3 px-2">آخر دخول</th>
-                        {user?.role === "admin" && <th className="text-right py-3 px-2">إجراءات</th>}
+                        <th className="text-right py-3 px-2 min-w-[150px]">المستخدم</th>
+                        <th className="text-right py-3 px-2 min-w-[80px]">النوع</th>
+                        <th className="text-right py-3 px-2 min-w-[120px]">الدور</th>
+                        <th className="text-right py-3 px-2 min-w-[100px]">الخطة</th>
+                        <th className="text-right py-3 px-2 min-w-[120px]">المصاريف</th>
+                        <th className="text-right py-3 px-2 min-w-[100px]">توكنز AI</th>
+                        <th className="text-right py-3 px-2 min-w-[100px]">آخر دخول</th>
+                        {user?.role === "admin" && <th className="text-right py-3 px-2 min-w-[100px]">إجراءات</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -194,7 +213,7 @@ export default function Admin() {
                           </td>
                           <td className="py-3 px-2">
                             {user?.role === "admin" ? (
-                              <Select value={u.role} onValueChange={(v) => updateRole.mutate({ userId: u.id, userType: u.userType, role: v as any })}>
+                              <Select value={u.role || "user"} onValueChange={(v) => updateRole.mutate({ userId: u.id, userType: u.userType, role: v as any })}>
                                 <SelectTrigger className="w-28 h-8">
                                   <SelectValue />
                                 </SelectTrigger>
@@ -206,30 +225,34 @@ export default function Admin() {
                               </Select>
                             ) : (
                               <Badge variant={u.role === "admin" ? "destructive" : u.role === "moderator" ? "default" : "outline"}>
-                                {u.role}
+                                {u.role || "user"}
                               </Badge>
                             )}
                           </td>
                           <td className="py-3 px-2">
                             {user?.role === "admin" ? (
-                              <Select value={u.plan} onValueChange={(v) => updatePlan.mutate({ userId: u.id, userType: u.userType, plan: v as any })}>
+                              <Select value={u.plan || "free"} onValueChange={(v) => updatePlan.mutate({ userId: u.id, userType: u.userType, plan: v as any })}>
                                 <SelectTrigger className="w-24 h-8">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="free">مجاني</SelectItem>
                                   <SelectItem value="pro">برو</SelectItem>
+                                  <SelectItem value="ultra">ألترا</SelectItem>
                                 </SelectContent>
                               </Select>
                             ) : (
-                              <Badge variant={u.plan === "pro" ? "default" : "secondary"}>
-                                {u.plan === "pro" ? "برو" : "مجاني"}
+                              <Badge variant={u.plan === "pro" ? "default" : u.plan === "ultra" ? "destructive" : "secondary"}>
+                                {u.plan === "pro" ? "برو" : u.plan === "ultra" ? "ألترا 💎" : "مجاني"}
                               </Badge>
                             )}
                           </td>
                           <td className="py-3 px-2">
                             <p className="font-medium">{Number(u.totalSpent || 0).toLocaleString()} ج.م</p>
-                            <p className="text-xs text-muted-foreground">{u.expenseCount} عملية</p>
+                            <p className="text-xs text-muted-foreground">{u.expenseCount || 0} عملية</p>
+                          </td>
+                          <td className="py-3 px-2">
+                            <p className="font-medium text-xs">{Number(u.aiTokensUsed || 0).toLocaleString()}</p>
                           </td>
                           <td className="py-3 px-2 text-xs text-muted-foreground">
                             {u.lastSignInAt ? new Date(u.lastSignInAt).toLocaleDateString("ar-EG") : "-"}
@@ -254,6 +277,16 @@ export default function Admin() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Classification Engine */}
+          <TabsContent value="classification">
+            <ClassificationDashboard />
+          </TabsContent>
+
+          {/* Voice Usage */}
+          <TabsContent value="voice">
+            <VoiceUsageDashboard />
           </TabsContent>
 
           {/* Tickets */}
@@ -313,9 +346,14 @@ export default function Admin() {
 
           {/* Activity */}
           {user?.role === "admin" && (
-            <TabsContent value="activity">
-              <ActivityLog />
-            </TabsContent>
+            <>
+              <TabsContent value="activity">
+                <ActivityLog />
+              </TabsContent>
+              <TabsContent value="settings">
+                <AdminSettings />
+              </TabsContent>
+            </>
           )}
         </Tabs>
 
@@ -397,25 +435,467 @@ function ActivityLog() {
   const { activity } = useAdmin();
   return (
     <Card>
-      <CardHeader><CardTitle>سجل النشاط</CardTitle></CardHeader>
+      <CardHeader><CardTitle>سجل الجلسات والنشاط</CardTitle></CardHeader>
       <CardContent>
         <div className="space-y-2 max-h-[600px] overflow-y-auto">
           {activity.data?.map((a: any) => (
-            <div key={a.id} className="flex items-center gap-3 p-3 border rounded-lg text-sm">
-              <div className={`w-2 h-2 rounded-full ${
-                a.event === "login" ? "bg-green-500" : 
-                a.event === "logout" ? "bg-red-500" : 
-                a.event === "expense_create" ? "bg-blue-500" : "bg-gray-500"
-              }`} />
-              <div className="flex-1">
-                <p className="font-medium">{a.event}</p>
-                <p className="text-xs text-muted-foreground">{JSON.stringify(a.metadata)}</p>
+            <div key={a.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-lg text-sm bg-card hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3 mb-2 sm:mb-0">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <div>
+                  <p className="font-bold">{a.userName}</p>
+                  <p className="text-xs text-muted-foreground flex gap-2">
+                    <Badge variant="outline" className="text-[10px] h-4 px-1">{a.userType === "oauth" ? "جوجل" : "محلي"}</Badge>
+                    <span>IP: {a.ipAddress}</span>
+                  </p>
+                </div>
               </div>
-              <span className="text-xs text-muted-foreground">{new Date(a.createdAt).toLocaleString("ar-EG")}</span>
+              <div className="text-right">
+                <p className="text-xs font-medium text-muted-foreground">{a.userAgent?.substring(0, 40)}{a.userAgent?.length > 40 ? "..." : ""}</p>
+                <p className="text-xs">دخول: {new Date(a.createdAt).toLocaleString("ar-EG")}</p>
+              </div>
             </div>
           ))}
+          {(!activity.data || activity.data.length === 0) && (
+            <p className="text-center text-muted-foreground py-8">لا يوجد نشاط مسجل</p>
+          )}
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function AdminSettings() {
+  const { data: settings, refetch } = trpc.admin.getSettings.useQuery();
+  const { data: modelsData } = trpc.admin.getAvailableModels.useQuery();
+  const updateSettings = trpc.admin.updateSettings.useMutation({
+    onSuccess: () => {
+      toast.success("تم تحديث الإعدادات بنجاح ✅");
+      refetch();
+    },
+    onError: () => toast.error("حدث خطأ أثناء التحديث"),
+  });
+
+  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    if (settings && !isLoaded) {
+      setFormData({ ...settings });
+      setIsLoaded(true);
+    }
+  }, [settings, isLoaded]);
+
+  const updateField = (key: string, value: string) => {
+    setFormData(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateSettings.mutate(formData);
+  };
+
+  const models = modelsData?.models || [];
+
+  return (
+    <div className="space-y-6" dir="rtl">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* ─── API Key ─── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">🔑 مفتاح API</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-w-xl">
+              <label className="text-sm font-medium">Gemini API Key</label>
+              <Input 
+                type="password"
+                placeholder="AIzaSy..." 
+                value={formData.ai_api_key || ""}
+                onChange={(e) => updateField("ai_api_key", e.target.value)}
+                dir="ltr"
+              />
+              <p className="text-xs text-muted-foreground">مفتاح Google AI Studio - يُستخدم لكل طلبات الذكاء الاصطناعي</p>
+            </div>
+            <div className="space-y-2 max-w-xl mt-4">
+              <label className="text-sm font-medium">Gemini API Key 2 (الاحتياطي)</label>
+              <Input 
+                type="password"
+                placeholder="AIzaSy..." 
+                value={formData.ai_api_key_2 || ""}
+                onChange={(e) => updateField("ai_api_key_2", e.target.value)}
+                dir="ltr"
+              />
+              <p className="text-xs text-muted-foreground">مفتاح احتياطي يعمل تلقائياً في حال نفاذ الحد الأقصى للمفتاح الأول.</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ─── Model Selection ─── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">🤖 اختيار الموديلات</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { key: "ai_model_free", label: "موديل المجاني", desc: "للمستخدمين المجانيين" },
+                { key: "ai_model_pro", label: "موديل البرو", desc: "لمشتركين البرو" },
+                { key: "ai_model_ultra", label: "موديل الألترا", desc: "لمشتركين الألترا" },
+                { key: "ai_model_reports", label: "موديل التقارير", desc: "للتحليلات الشهرية" },
+              ].map(({ key, label, desc }) => (
+                <div key={key} className="space-y-2">
+                  <label className="text-sm font-medium">{label}</label>
+                  <Select value={formData[key] || ""} onValueChange={(v) => updateField(key, v)}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="اختر موديل" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {models.map((m: any) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          <div className="flex items-center gap-2">
+                            <span>{m.name}</span>
+                            <Badge variant="outline" className="text-[10px] h-4 px-1">{m.tier}</Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">{desc}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ─── Token Limits ─── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">🎫 حدود التوكنز (إجمالي)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { key: "free_token_limit", label: "مجاني", color: "text-slate-600" },
+                { key: "pro_token_limit", label: "برو", color: "text-blue-600" },
+                { key: "ultra_token_limit", label: "ألترا", color: "text-purple-600" },
+              ].map(({ key, label, color }) => (
+                <div key={key} className="space-y-2">
+                  <label className={`text-sm font-medium ${color}`}>حد التوكنز - {label}</label>
+                  <Input 
+                    type="number" dir="ltr"
+                    value={formData[key] || ""}
+                    onChange={(e) => updateField(key, e.target.value)}
+                  />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ─── Daily Limits ─── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">📊 الحد اليومي (عدد الطلبات)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { key: "free_daily_limit", label: "مجاني" },
+                { key: "pro_daily_limit", label: "برو" },
+                { key: "ultra_daily_limit", label: "ألترا" },
+              ].map(({ key, label }) => (
+                <div key={key} className="space-y-2">
+                  <label className="text-sm font-medium">طلبات يومية - {label}</label>
+                  <Input 
+                    type="number" dir="ltr"
+                    value={formData[key] || ""}
+                    onChange={(e) => updateField(key, e.target.value)}
+                  />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ─── Per-Request Max Tokens ─── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">⚡ أقصى توكنز للطلب الواحد</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { key: "free_max_per_request", label: "مجاني" },
+                { key: "pro_max_per_request", label: "برو" },
+                { key: "ultra_max_per_request", label: "ألترا" },
+              ].map(({ key, label }) => (
+                <div key={key} className="space-y-2">
+                  <label className="text-sm font-medium">حد الطلب - {label}</label>
+                  <Input 
+                    type="number" dir="ltr"
+                    value={formData[key] || ""}
+                    onChange={(e) => updateField(key, e.target.value)}
+                  />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ─── Voice Recording Limits ─── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">🎤 حدود التسجيل الصوتي (بالثواني)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <h4 className="text-sm font-bold mb-3">الحد الشهري للتسجيل</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { key: "voice_limit_free", label: "مجاني", desc: "300 = 5 دقائق" },
+                  { key: "voice_limit_pro", label: "برو", desc: "1800 = 30 دقيقة" },
+                  { key: "voice_limit_ultra", label: "ألترا", desc: "0 = غير محدود" },
+                ].map(({ key, label, desc }) => (
+                  <div key={key} className="space-y-2">
+                    <label className="text-sm font-medium">شهري - {label}</label>
+                    <Input 
+                      type="number" dir="ltr"
+                      value={formData[key] || ""}
+                      onChange={(e) => updateField(key, e.target.value)}
+                    />
+                    <p className="text-[10px] text-muted-foreground">{desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <h4 className="text-sm font-bold mb-3">أقصى مدة للتسجيل الواحد (Per Request)</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { key: "voice_per_req_free", label: "مجاني", desc: "مثال: 60 (دقيقة واحدة)" },
+                  { key: "voice_per_req_pro", label: "برو", desc: "مثال: 180 (3 دقائق)" },
+                  { key: "voice_per_req_ultra", label: "ألترا", desc: "مثال: 300 (5 دقائق)" },
+                ].map(({ key, label, desc }) => (
+                  <div key={key} className="space-y-2">
+                    <label className="text-sm font-medium">للمرة الواحدة - {label}</label>
+                    <Input 
+                      type="number" dir="ltr"
+                      value={formData[key] || ""}
+                      onChange={(e) => updateField(key, e.target.value)}
+                    />
+                    <p className="text-[10px] text-muted-foreground">{desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ─── Confidence Thresholds ─── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">🎯 حدود الثقة للتصنيف (0-100)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { key: "confidence_auto_save", label: "الحفظ التلقائي", desc: "أعلى من القيمة دي هيتحفظ فوراً" },
+                { key: "confidence_review", label: "المراجعة", desc: "أعلى من دي وأقل من الحفظ هيظهر في المراجعة" },
+              ].map(({ key, label, desc }) => (
+                <div key={key} className="space-y-2">
+                  <label className="text-sm font-medium">{label}</label>
+                  <Input 
+                    type="number" dir="ltr"
+                    value={formData[key] || ""}
+                    onChange={(e) => updateField(key, e.target.value)}
+                  />
+                  <p className="text-[10px] text-muted-foreground">{desc}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ─── AI Response Settings ─── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">🧠 إعدادات ردود الذكاء الاصطناعي</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">طول الرد التحليلي</label>
+                <Select value={formData.ai_response_length || "medium"} onValueChange={(v) => updateField("ai_response_length", v)}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="اختر طول الرد" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="short">مختصر جداً</SelectItem>
+                    <SelectItem value="medium">متوسط (متوازن)</SelectItem>
+                    <SelectItem value="detailed">تحليلي متعمق ومفصل</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-[10px] text-muted-foreground">يتحكم في طول وكثافة الشرح في تقارير الذكاء الاصطناعي.</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">تركيز التحليل</label>
+                <Select value={formData.ai_focus || "balanced"} onValueChange={(v) => updateField("ai_focus", v)}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="اختر التركيز" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="balanced">متوازن (نصائح وإحصائيات)</SelectItem>
+                    <SelectItem value="statistics">الإحصائيات والأرقام فقط</SelectItem>
+                    <SelectItem value="tips">النصائح المالية والتوفير</SelectItem>
+                    <SelectItem value="patterns">الأنماط السلوكية الاستهلاكية</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-[10px] text-muted-foreground">يحدد الجانب الذي يركز عليه الذكاء الاصطناعي أكثر في رده.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ─── Feature Toggles ─── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">🔧 صلاحيات الميزات</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {["free", "pro", "ultra"].map((plan) => (
+                <div key={plan} className="border rounded-lg p-4 space-y-3">
+                  <h4 className="font-bold text-sm capitalize">
+                    {plan === "free" ? "🆓 مجاني" : plan === "pro" ? "⭐ برو" : "💎 ألترا"}
+                  </h4>
+                  {[
+                    { key: `${plan}_ai_parse`, label: "تحليل الرسائل بالـ AI" },
+                    { key: `${plan}_ai_analysis`, label: "التحليل الشهري بالـ AI" },
+                  ].map(({ key, label }) => (
+                    <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={formData[key] !== "false"}
+                        onChange={(e) => updateField(key, e.target.checked ? "true" : "false")}
+                        className="rounded"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Button type="submit" className="w-full" disabled={updateSettings.isPending}>
+          {updateSettings.isPending ? "جاري الحفظ..." : "💾 حفظ جميع الإعدادات"}
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+function ClassificationDashboard() {
+  const { classificationStats, classificationLogs } = useAdmin();
+  
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {classificationStats.data?.stats.map((s: any) => (
+          <Card key={s.parsedBy}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <Badge variant={s.parsedBy === "ai" ? "default" : s.parsedBy === "rule_engine" ? "secondary" : "outline"}>
+                  {s.parsedBy === "ai" ? "🤖 AI" : s.parsedBy === "rule_engine" ? "⚡ Rule Engine" : "🔀 Hybrid"}
+                </Badge>
+              </div>
+              <p className="text-2xl font-bold mt-4">{s.count}</p>
+              <p className="text-sm text-muted-foreground">عملية مصنفة</p>
+              <div className="mt-2 text-xs flex justify-between">
+                <span>متوسط الثقة: {Math.round(s.avgConfidence)}%</span>
+                <span>توكنز: {Number(s.totalTokens).toLocaleString()}</span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardHeader><CardTitle>سجل التصنيف الأخير</CardTitle></CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-right py-2">المستخدم</th>
+                  <th className="text-right py-2">النص الأصلي</th>
+                  <th className="text-right py-2">بواسطة</th>
+                  <th className="text-right py-2">الثقة</th>
+                  <th className="text-right py-2">القرار</th>
+                  <th className="text-right py-2">الوقت</th>
+                </tr>
+              </thead>
+              <tbody>
+                {classificationLogs.data?.logs.map((l: any) => (
+                  <tr key={l.id} className="border-b hover:bg-muted/30">
+                    <td className="py-2">{l.userName}</td>
+                    <td className="py-2 max-w-[200px] truncate" title={l.originalText}>{l.originalText}</td>
+                    <td className="py-2">
+                      <Badge variant="outline" className="text-[10px]">{l.parsedBy}</Badge>
+                    </td>
+                    <td className="py-2">
+                      <span className={l.confidence >= 85 ? "text-green-600" : l.confidence >= 60 ? "text-orange-600" : "text-red-600"}>
+                        {l.confidence}%
+                      </span>
+                    </td>
+                    <td className="py-2">
+                      <Badge variant={l.decision === "auto_save" ? "default" : l.decision === "review" ? "secondary" : "destructive"} className="text-[10px]">
+                        {l.decision}
+                      </Badge>
+                    </td>
+                    <td className="py-2 text-muted-foreground">{new Date(l.createdAt).toLocaleString("ar-EG", { hour: '2-digit', minute: '2-digit' })}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function VoiceUsageDashboard() {
+  const { voiceUsage } = useAdmin();
+  const usage = voiceUsage.data?.usage || [];
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">🎤 استهلاك الصوت لشهر {voiceUsage.data?.month}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {usage.map((u: any) => (
+              <div key={u.userType} className="border rounded-xl p-6 space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-bold text-lg">{u.userType === "oauth" ? "مستخدمين جوجل" : "مستخدمين محليين"}</h3>
+                  <Badge>{u.count} تسجيل</Badge>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-3xl font-bold">{Math.round(u.totalSeconds / 60)} دقيقة</p>
+                  <p className="text-sm text-muted-foreground">{u.totalSeconds} ثانية إجمالاً</p>
+                </div>
+              </div>
+            ))}
+            {usage.length === 0 && <p className="text-center py-8 text-muted-foreground col-span-2">لا يوجد استهلاك مسجل هذا الشهر</p>}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

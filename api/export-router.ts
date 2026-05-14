@@ -15,14 +15,16 @@ export const exportRouter = router({
       type: z.enum(["income", "expense", "all"]).default("all"),
     }))
     .mutation(async ({ ctx, input }) => {
-      let query = db.select().from(expenses)
-        .where(and(eq(expenses.userId, ctx.user.id), eq(expenses.userType, ctx.user.type)));
+      const conditions = [
+        eq(expenses.userId, ctx.user.id),
+        eq(expenses.userType, ctx.user.type),
+      ];
 
-      if (input.startDate) query = query.where(gte(expenses.date, new Date(input.startDate))) as any;
-      if (input.endDate) query = query.where(lte(expenses.date, new Date(input.endDate))) as any;
-      if (input.type !== "all") query = query.where(eq(expenses.type, input.type)) as any;
+      if (input.startDate) conditions.push(gte(expenses.date, new Date(input.startDate)));
+      if (input.endDate) conditions.push(lte(expenses.date, new Date(input.endDate)));
+      if (input.type !== "all") conditions.push(eq(expenses.type, input.type));
 
-      const data = await query;
+      const data = await db.select().from(expenses).where(and(...conditions));
       const formatted = data.map(e => ({
         التاريخ: e.date.toISOString().split("T")[0],
         النوع: e.type === "income" ? "دخل" : "مصروف",

@@ -3,6 +3,7 @@ import { trpc } from "@/providers/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -23,11 +24,13 @@ import {
 } from "lucide-react";
 
 interface RecentExpensesProps {
-  onRefresh: () => void;
+  onRefresh?: () => void;
+  limit?: number;
 }
 
 const categoryColors: Record<string, string> = {
   "أكل": "bg-red-100 text-red-700",
+  "أكل وشرب": "bg-red-100 text-red-700",
   "مواصلات": "bg-blue-100 text-blue-700",
   "تسوق": "bg-green-100 text-green-700",
   "فواتير": "bg-amber-100 text-amber-700",
@@ -44,11 +47,11 @@ const categoryColors: Record<string, string> = {
   "صيانة": "bg-yellow-100 text-yellow-700",
   "اشتراكات": "bg-lime-100 text-lime-700",
   "أخرى": "bg-slate-100 text-slate-700",
+  "متنوعات": "bg-slate-100 text-slate-700",
 };
 
-export function RecentExpenses({ onRefresh }: RecentExpensesProps) {
+export function RecentExpenses({ onRefresh, limit = 10 }: RecentExpensesProps) {
   const [page, setPage] = useState(0);
-  const limit = 10;
 
   const { data, isLoading, refetch } = trpc.expense.list.useQuery({
     limit,
@@ -59,7 +62,7 @@ export function RecentExpenses({ onRefresh }: RecentExpensesProps) {
     onSuccess: () => {
       toast.success("تم حذف المصروف.");
       refetch();
-      onRefresh();
+      if (onRefresh) onRefresh();
     },
     onError: () => {
       toast.error("فيه مشكلة في الحذف.");
@@ -72,7 +75,7 @@ export function RecentExpenses({ onRefresh }: RecentExpensesProps) {
     }
   };
 
-  const totalPages = data ? Math.ceil(data.total / limit) : 0;
+  const totalPages = data ? Math.ceil(Number(data.total) / limit) : 0;
 
   if (isLoading) {
     return (
@@ -103,7 +106,7 @@ export function RecentExpenses({ onRefresh }: RecentExpensesProps) {
           <CardTitle className="text-lg flex items-center gap-2">
             <Receipt className="w-5 h-5 text-blue-500" />
             آخر المصاريف
-            <Badge variant="secondary">{data.total} مصروف</Badge>
+            <Badge variant="secondary">{Number(data.total)} مصروف</Badge>
           </CardTitle>
           <Button variant="ghost" size="sm" onClick={() => refetch()}>
             <RefreshCw className="w-4 h-4" />
@@ -162,10 +165,11 @@ function ExpenseItem({
     id: number;
     amount: string;
     category: string;
+    subCategory: string | null;
     description: string | null;
-    rawText: string;
+    rawText: string | null;
     source: string;
-    date: Date;
+    date: string | Date;
   };
   onDelete: (id: number) => void;
   isDeleting: boolean;
@@ -178,22 +182,28 @@ function ExpenseItem({
   });
 
   return (
-    <div className="border rounded-lg p-3 hover:bg-muted/50 transition-colors">
+    <div className="border rounded-lg p-3 hover:bg-muted/50 transition-colors shadow-sm bg-white dark:bg-slate-900/40">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="text-right">
             <div className="font-bold text-lg">{Number(expense.amount).toFixed(0)} جنيه</div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
               <Calendar className="w-3 h-3" />
               {dateStr}
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge className={categoryColors[expense.category] || "bg-gray-100"}>
-            <Tag className="w-3 h-3 ml-1" />
-            {expense.category}
-          </Badge>
+          <div className="flex flex-col items-end gap-1">
+            <Badge className={cn("border-0", categoryColors[expense.category] || "bg-gray-100")}>
+              {expense.category}
+            </Badge>
+            {expense.subCategory && expense.subCategory !== "عام" && (
+              <span className="text-[10px] text-muted-foreground px-1 bg-slate-100 dark:bg-slate-800 rounded">
+                {expense.subCategory}
+              </span>
+            )}
+          </div>
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="ghost" size="sm">
@@ -205,33 +215,37 @@ function ExpenseItem({
                 <DialogTitle>تفاصيل المصروف</DialogTitle>
               </DialogHeader>
               <div className="space-y-3" dir="rtl">
-                <div>
+                <div className="flex justify-between border-b pb-2">
                   <span className="text-sm text-muted-foreground">المبلغ:</span>
-                  <span className="font-bold mr-2">{Number(expense.amount).toFixed(2)} جنيه</span>
+                  <span className="font-bold">{Number(expense.amount).toFixed(2)} جنيه</span>
                 </div>
-                <div>
+                <div className="flex justify-between border-b pb-2">
                   <span className="text-sm text-muted-foreground">الفئة:</span>
-                  <Badge className={`mr-2 ${categoryColors[expense.category] || "bg-gray-100"}`}>
+                  <Badge className={categoryColors[expense.category] || "bg-gray-100 text-gray-700"}>
                     {expense.category}
                   </Badge>
                 </div>
-                {expense.description && (
-                  <div>
-                    <span className="text-sm text-muted-foreground">الوصف:</span>
-                    <span className="mr-2">{expense.description}</span>
+                {expense.subCategory && (
+                  <div className="flex justify-between border-b pb-2">
+                    <span className="text-sm text-muted-foreground">الفئة الفرعية:</span>
+                    <span className="font-medium">{expense.subCategory}</span>
                   </div>
                 )}
-                <div>
-                  <span className="text-sm text-muted-foreground">النص الأصلي:</span>
-                  <p className="mr-2 text-sm bg-muted p-2 rounded">{expense.rawText}</p>
-                </div>
-                <div>
-                  <span className="text-sm text-muted-foreground">المصدر:</span>
-                  <span className="mr-2">{expense.source === "voice" ? "صوتي" : "يدوي"}</span>
-                </div>
-                <div>
-                  <span className="text-sm text-muted-foreground">التاريخ:</span>
-                  <span className="mr-2">{date.toLocaleString("ar-EG")}</span>
+                {expense.description && expense.description !== "?" && (
+                  <div className="border-b pb-2">
+                    <span className="text-sm text-muted-foreground block mb-1">الوصف:</span>
+                    <span className="text-sm">{expense.description}</span>
+                  </div>
+                )}
+                {expense.rawText && expense.rawText !== "?" && (
+                  <div className="border-b pb-2">
+                    <span className="text-sm text-muted-foreground block mb-1">النص الأصلي:</span>
+                    <p className="text-xs bg-muted p-2 rounded">{expense.rawText}</p>
+                  </div>
+                )}
+                <div className="flex justify-between text-xs text-muted-foreground pt-2">
+                  <span>المصدر: {expense.source === "voice" ? "صوتي" : expense.source === "ai_parsed" ? "نصي (AI)" : "يدوي"}</span>
+                  <span>{date.toLocaleString("ar-EG")}</span>
                 </div>
               </div>
             </DialogContent>

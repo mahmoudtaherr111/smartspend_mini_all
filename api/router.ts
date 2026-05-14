@@ -12,6 +12,7 @@ import { proRouter } from "./pro-router";
 import { adsRouter } from "./ads-router";
 import { referralRouter } from "./referral-router";
 import { seoRouter } from "./seo-router";
+import { profileRouter } from "./profile-router";
 
 export const appRouter = router({
   auth: authRouter,
@@ -27,6 +28,7 @@ export const appRouter = router({
   ads: adsRouter,
   referral: referralRouter,
   seo: seoRouter,
+  profile: profileRouter,
 });
 
 export type AppRouter = typeof appRouter;

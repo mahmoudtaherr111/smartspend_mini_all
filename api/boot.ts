@@ -15,6 +15,17 @@ app.use("*", cors({
   credentials: true,
 }));
 
+// Error handling
+app.onError((err, c) => {
+  console.error("Hono Error:", err);
+  return c.json({ error: err.message || "Internal Server Error" }, 500);
+});
+
+app.notFound((c) => {
+  console.warn("404 Not Found:", c.req.url);
+  return c.json({ error: "Not Found" }, 404);
+});
+
 // Google OAuth callback (server-side redirect)
 app.get("/api/auth/google/callback", async (c) => {
   const code = c.req.query("code");
@@ -33,7 +44,7 @@ app.get("/api/auth/google/callback", async (c) => {
 });
 
 // tRPC endpoint
-app.use("/api/trpc", trpcServer({
+app.use("/api/trpc/*", trpcServer({
   router: appRouter,
   createContext: async ({ req }) => createContext(req),
 }));

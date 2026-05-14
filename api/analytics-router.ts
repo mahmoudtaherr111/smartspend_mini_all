@@ -8,7 +8,7 @@ export const analyticsRouter = router({
   trackEvent: authedProcedure
     .input(z.object({
       event: z.string(),
-      metadata: z.record(z.any()).optional(),
+      metadata: z.record(z.string(), z.any()).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const db = getDb();
@@ -89,16 +89,16 @@ export const analyticsRouter = router({
     const proCount = await db.select({ count: sql`count(*)` }).from(localUsers).where(eq(localUsers.plan, "pro"));
 
     return {
-      totalUsers: (totalLocalUsers[0]?.count || 0) + (totalOAuthUsers[0]?.count || 0),
-      totalLocalUsers: totalLocalUsers[0]?.count || 0,
-      totalOAuthUsers: totalOAuthUsers[0]?.count || 0,
-      totalExpenses: totalExpenses[0]?.count || 0,
-      totalAmount: totalAmount[0]?.total || 0,
-      totalIncome: totalIncome[0]?.total || 0,
-      todayExpenses: todayExpenses[0]?.count || 0,
-      adminCount: adminCount[0]?.count || 0,
-      moderatorCount: moderatorCount[0]?.count || 0,
-      proCount: proCount[0]?.count || 0,
+      totalUsers: Number(totalLocalUsers[0]?.count || 0) + Number(totalOAuthUsers[0]?.count || 0),
+      totalLocalUsers: Number(totalLocalUsers[0]?.count || 0),
+      totalOAuthUsers: Number(totalOAuthUsers[0]?.count || 0),
+      totalExpenses: Number(totalExpenses[0]?.count || 0),
+      totalAmount: Number(totalAmount[0]?.total || 0),
+      totalIncome: Number(totalIncome[0]?.total || 0),
+      todayExpenses: Number(todayExpenses[0]?.count || 0),
+      adminCount: Number(adminCount[0]?.count || 0),
+      moderatorCount: Number(moderatorCount[0]?.count || 0),
+      proCount: Number(proCount[0]?.count || 0),
     };
   }),
 });

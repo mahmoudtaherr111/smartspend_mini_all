@@ -53,13 +53,22 @@ export const referralRouter = router({
       }
 
       // Find referrer
-      let referrer = await db.select().from(users).where(eq(users.referralCode, input.code)).limit(1);
+      const oauthReferrer = await db.select().from(users).where(eq(users.referralCode, input.code)).limit(1);
       let referrerType: "oauth" | "local" = "oauth";
-      if (referrer.length === 0) {
-        referrer = await db.select().from(localUsers).where(eq(localUsers.referralCode, input.code)).limit(1);
-        referrerType = "local";
+      let referrerId: number | null = null;
+
+      if (oauthReferrer.length > 0) {
+        referrerId = oauthReferrer[0].id;
+        referrerType = "oauth";
+      } else {
+        const localReferrer = await db.select().from(localUsers).where(eq(localUsers.referralCode, input.code)).limit(1);
+        if (localReferrer.length > 0) {
+          referrerId = localReferrer[0].id;
+          referrerType = "local";
+        }
       }
-      if (referrer.length === 0) {
+
+      if (referrerId === null) {
         throw new TRPCError({ code: "NOT_FOUND", message: "الكود غير موجود" });
       }
 
@@ -72,7 +81,7 @@ export const referralRouter = router({
       }
 
       await db.insert(referrals).values({
-        referrerId: referrer[0].id,
+        referrerId: referrerId,
         referrerType,
         referredId: ctx.user.id,
         referredType: ctx.user.type,
@@ -81,7 +90,7 @@ export const referralRouter = router({
       });
 
       // Update referredBy
-      await db.update(myTable).set({ referredBy: referrer[0].id }).where(eq(myTable.id, ctx.user.id));
+      await db.update(myTable).set({ referredBy: referrerId }).where(eq(myTable.id, ctx.user.id));
 
       return { success: true, message: "تم تطبيق الكود بنجاح!" };
     }),

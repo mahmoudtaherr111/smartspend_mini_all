@@ -11,6 +11,7 @@ export const expenseRouter = router({
         amount: z.number().positive(),
         type: z.enum(["income", "expense"]).default("expense"),
         category: z.string().min(1),
+        subCategory: z.string().optional(),
         description: z.string().optional(),
         rawText: z.string().min(1),
         source: z.enum(["voice", "manual", "ai_parsed"]).default("manual"),
@@ -30,6 +31,7 @@ export const expenseRouter = router({
         type: input.type,
         amount: input.amount.toString(),
         category: input.category,
+        subCategory: input.subCategory || "عام",
         description: input.description || "",
         rawText: input.rawText,
         source: input.source,
@@ -155,41 +157,84 @@ export const expenseRouter = router({
       const totalIncome = items.filter(i => i.type === "income").reduce((sum, item) => sum + Number(item.amount), 0);
 
       // Day map (expenses only)
+      // Day map, Week map, Hour map, Day of week map
       const dayMap: Record<string, number> = {};
+      const weekMap: Record<string, number> = {};
+      const hourMap: Record<number, number> = {};
+      const dayOfWeekMap: Record<string, number> = {};
+      
+      const dayNames = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+
       items.filter(i => i.type === "expense").forEach((item) => {
-        const day = new Date(item.date).toISOString().split("T")[0];
-        dayMap[day] = (dayMap[day] || 0) + Number(item.amount);
+        const date = new Date(item.date);
+        
+        // Day Map
+        const dayStr = date.toISOString().split("T")[0];
+        dayMap[dayStr] = (dayMap[dayStr] || 0) + Number(item.amount);
+        
+        // Week Map
+        const weekNum = Math.ceil(date.getDate() / 7);
+        const weekKey = `الأسبوع ${weekNum}`;
+        weekMap[weekKey] = (weekMap[weekKey] || 0) + Number(item.amount);
+
+        // Hour Map
+        const hour = date.getHours();
+        hourMap[hour] = (hourMap[hour] || 0) + Number(item.amount);
+
+        // Day of Week Map
+        const dow = dayNames[date.getDay()];
+        dayOfWeekMap[dow] = (dayOfWeekMap[dow] || 0) + Number(item.amount);
       });
 
       const highestDay = Object.entries(dayMap).sort((a, b) => b[1] - a[1])[0];
 
-      // Week map
-      const weekMap: Record<string, number> = {};
-      items.filter(i => i.type === "expense").forEach((item) => {
-        const date = new Date(item.date);
-        const weekNum = Math.ceil(date.getDate() / 7);
-        const key = `الأسبوع ${weekNum}`;
-        weekMap[key] = (weekMap[key] || 0) + Number(item.amount);
-      });
-
       // Category map (expenses only)
-      const categoryMap: Record<string, number> = {};
+      const categoryMap: Record<string, { value: number; count: number }> = {};
+      const subCategoryMap: Record<string, { value: number; count: number }> = {};
+      
       items.filter(i => i.type === "expense").forEach((item) => {
-        categoryMap[item.category] = (categoryMap[item.category] || 0) + Number(item.amount);
+        const amt = Number(item.amount);
+        if (!categoryMap[item.category]) categoryMap[item.category] = { value: 0, count: 0 };
+        categoryMap[item.category].value += amt;
+        categoryMap[item.category].count += 1;
+
+        if (item.subCategory && item.subCategory !== "عام") {
+          if (!subCategoryMap[item.subCategory]) subCategoryMap[item.subCategory] = { value: 0, count: 0 };
+          subCategoryMap[item.subCategory].value += amt;
+          subCategoryMap[item.subCategory].count += 1;
+        }
       });
 
-      const categoryBreakdown = Object.entries(categoryMap).map(([name, value]) => ({
+      const categoryBreakdown = Object.entries(categoryMap).map(([name, data]) => ({
         name,
-        value,
-        percentage: totalExpense > 0 ? Math.round((value / totalExpense) * 100) : 0,
+        value: data.value,
+        count: data.count,
+        avg: data.count > 0 ? Math.round(data.value / data.count) : 0,
+        percentage: totalExpense > 0 ? Math.round((data.value / totalExpense) * 100) : 0,
       }));
+
+      const subCategoryBreakdown = Object.entries(subCategoryMap).map(([name, data]) => ({
+        name,
+        value: data.value,
+        count: data.count,
+        avg: data.count > 0 ? Math.round(data.value / data.count) : 0,
+        percentage: totalExpense > 0 ? Math.round((data.value / totalExpense) * 100) : 0,
+      })).sort((a, b) => b.value - a.value);
 
       const sortedCategories = [...categoryBreakdown].sort((a, b) => b.value - a.value);
 
-      // Day trend
-      const dayTrend = Object.entries(dayMap)
+      // Day trend (Income vs Expense)
+      const cashFlowMap: Record<string, { expense: number; income: number }> = {};
+      items.forEach((item) => {
+        const dateStr = new Date(item.date).toISOString().split("T")[0];
+        if (!cashFlowMap[dateStr]) cashFlowMap[dateStr] = { expense: 0, income: 0 };
+        if (item.type === "expense") cashFlowMap[dateStr].expense += Number(item.amount);
+        if (item.type === "income") cashFlowMap[dateStr].income += Number(item.amount);
+      });
+
+      const dayTrend = Object.entries(cashFlowMap)
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([date, amount]) => ({ date: date.slice(5), amount }));
+        .map(([date, data]) => ({ date: date.slice(5), amount: data.expense, income: data.income }));
 
       // Date-aware daily average: from user's first expense date to today (or month end)
       const today = new Date();
@@ -204,10 +249,13 @@ export const expenseRouter = router({
         count: items.length,
         dailyAverage,
         categoryBreakdown: sortedCategories,
+        subCategoryBreakdown,
         topCategories: sortedCategories.slice(0, 5),
         highestDay: highestDay ? { date: highestDay[0], amount: highestDay[1] } : null,
         weekBreakdown: Object.entries(weekMap).map(([name, amount]) => ({ name, amount })),
         dayTrend,
+        hourTrend: Object.entries(hourMap).map(([hour, amount]) => ({ hour: parseInt(hour), amount })).sort((a, b) => a.hour - b.hour),
+        dayOfWeekTrend: Object.entries(dayOfWeekMap).map(([name, amount]) => ({ name, amount })),
         items,
       };
     }),
@@ -269,7 +317,7 @@ export const expenseRouter = router({
         name: input.name,
         icon: input.icon,
         color: input.color,
-        isDefault: "false",
+        isDefault: false,
       });
       return { success: true };
     }),

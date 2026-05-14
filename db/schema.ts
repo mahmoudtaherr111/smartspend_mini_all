@@ -9,12 +9,13 @@ export const users = mysqlTable("users", {
   email: varchar("email", { length: 255 }),
   avatar: varchar("avatar", { length: 500 }),
   role: varchar("role", { length: 50 }).notNull().default("user"), // user | moderator | admin
-  plan: varchar("plan", { length: 50 }).notNull().default("free"), // free | pro
+  plan: varchar("plan", { length: 50 }).notNull().default("free"), // free | pro | ultra
   referralCode: varchar("referral_code", { length: 50 }).unique(),
   referredBy: int("referred_by"),
   createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
   lastSignInAt: datetime("last_sign_in_at"),
+  aiTokensUsed: int("ai_tokens_used").default(0),
 }, (t) => [
   index("users_role_idx").on(t.role),
   index("users_plan_idx").on(t.plan),
@@ -29,12 +30,13 @@ export const localUsers = mysqlTable("local_users", {
   password: varchar("password", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }),
   role: varchar("role", { length: 50 }).notNull().default("user"),
-  plan: varchar("plan", { length: 50 }).notNull().default("free"),
+  plan: varchar("plan", { length: 50 }).notNull().default("free"), // free | pro | ultra
   referralCode: varchar("referral_code", { length: 50 }).unique(),
   referredBy: int("referred_by"),
   createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
   lastSignInAt: datetime("last_sign_in_at"),
+  aiTokensUsed: int("ai_tokens_used").default(0),
 }, (t) => [
   index("local_users_role_idx").on(t.role),
   index("local_users_plan_idx").on(t.plan),
@@ -48,6 +50,7 @@ export const expenses = mysqlTable("expenses", {
   type: varchar("type", { length: 50 }).notNull().default("expense"), // income | expense
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
   category: varchar("category", { length: 100 }).notNull(),
+  subCategory: varchar("sub_category", { length: 100 }), // New: Sub-category for deeper insights
   description: text("description"),
   rawText: text("raw_text"),
   source: varchar("source", { length: 50 }).notNull().default("manual"), // voice | manual
@@ -237,3 +240,90 @@ export const seoPages = mysqlTable("seo_pages", {
   canonicalUrl: varchar("canonical_url", { length: 500 }),
   updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
 });
+
+// ─── System Settings ───
+export const systemSettings = mysqlTable("system_settings", {
+  key: varchar("key", { length: 100 }).primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+});
+
+// ─── User Profiles (Financial Context for AI) ───
+export const userProfiles = mysqlTable("user_profiles", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").notNull(),
+  userType: varchar("user_type", { length: 50 }).notNull(),
+  monthlyIncome: decimal("monthly_income", { precision: 12, scale: 2 }),
+  financialGoal: varchar("financial_goal", { length: 100 }), // saving | debt_payoff | investing | budgeting
+  financialPersonality: varchar("financial_personality", { length: 50 }), // impulsive | conservative | balanced | stressed
+  profileCompleted: boolean("profile_completed").default(false),
+  lastAskedAt: datetime("last_asked_at"),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+}, (t) => [
+  uniqueIndex("profile_user_idx").on(t.userId, t.userType),
+]);
+
+// ─── Onboarding Questions (Admin-controlled) ───
+export const onboardingQuestions = mysqlTable("onboarding_questions", {
+  id: int("id").primaryKey().autoincrement(),
+  questionText: varchar("question_text", { length: 500 }).notNull(),
+  questionKey: varchar("question_key", { length: 100 }).notNull().unique(), // monthly_income | financial_goal
+  inputType: varchar("input_type", { length: 50 }).notNull().default("text"), // text | select | number
+  options: json("options"), // for select type: ["توفير", "سداد ديون", ...]
+  isActive: boolean("is_active").default(true),
+  sortOrder: int("sort_order").default(0),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+// ─── User Personal Dictionary (AI Learning) ───
+export const userDictionaries = mysqlTable("user_dictionaries", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").notNull(),
+  userType: varchar("user_type", { length: 50 }).notNull(),
+  word: varchar("word", { length: 100 }).notNull(),
+  category: varchar("category", { length: 100 }).notNull(),
+  subCategory: varchar("sub_category", { length: 100 }),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [
+  index("user_dict_user_idx").on(t.userId, t.userType),
+  uniqueIndex("user_dict_word_unique").on(t.userId, t.userType, t.word),
+]);
+
+// ─── AI Classification Logs ───
+export const classificationLogs = mysqlTable("classification_logs", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").notNull(),
+  userType: varchar("user_type", { length: 50 }).notNull(),
+  originalText: text("original_text").notNull(),
+  normalizedText: text("normalized_text"),
+  parsedBy: varchar("parsed_by", { length: 50 }).notNull(), // rule_engine | ai | hybrid | manual
+  ruleEngineResult: json("rule_engine_result"),
+  aiResult: json("ai_result"),
+  finalResult: json("final_result"),
+  confidence: int("confidence").default(0),
+  decision: varchar("decision", { length: 50 }), // auto_save | review | clarify
+  wasCorrected: boolean("was_corrected").default(false),
+  correction: json("correction"),
+  modelUsed: varchar("model_used", { length: 100 }),
+  tokensUsed: int("tokens_used").default(0),
+  processingTimeMs: int("processing_time_ms").default(0),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [
+  index("cls_log_user_idx").on(t.userId, t.userType),
+  index("cls_log_parsed_idx").on(t.parsedBy),
+  index("cls_log_date_idx").on(t.createdAt),
+]);
+
+// ─── Voice Usage Tracking ───
+export const voiceUsage = mysqlTable("voice_usage", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").notNull(),
+  userType: varchar("user_type", { length: 50 }).notNull(),
+  durationSeconds: int("duration_seconds").notNull(),
+  month: varchar("month", { length: 7 }).notNull(), // YYYY-MM
+  source: varchar("source", { length: 50 }).default("gemini_stt"), // gemini_stt | browser_api
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [
+  index("voice_user_month_idx").on(t.userId, t.userType, t.month),
+]);

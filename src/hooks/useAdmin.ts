@@ -7,6 +7,9 @@ export function useAdmin() {
   const users = trpc.admin.listAllUsers.useQuery({ page: 1, limit: 50 });
   const sessions = trpc.admin.getUserSessions.useQuery({ userId: 0, userType: "oauth" }, { enabled: false });
   const activity = trpc.admin.getActivityLog.useQuery({ limit: 50 });
+  const classificationStats = trpc.admin.getAIClassificationStats.useQuery();
+  const classificationLogs = trpc.admin.getClassificationLogs.useQuery({ page: 1, limit: 50 });
+  const voiceUsage = trpc.admin.getVoiceUsageStats.useQuery();
 
   const updateRole = trpc.admin.updateUserRole.useMutation({ onSuccess: () => utils.admin.listAllUsers.invalidate() });
   const updatePlan = trpc.admin.updateUserPlan.useMutation({ onSuccess: () => utils.admin.listAllUsers.invalidate() });
@@ -14,7 +17,7 @@ export function useAdmin() {
   const revokeSession = trpc.admin.revokeSession.useMutation({ onSuccess: () => utils.admin.getUserSessions.invalidate() });
 
   return {
-    stats, users, sessions, activity,
+    stats, users, sessions, activity, classificationStats, classificationLogs, voiceUsage,
     updateRole, updatePlan, deleteUser, revokeSession,
   };
 }

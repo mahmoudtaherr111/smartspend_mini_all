@@ -2059,51 +2059,51 @@ var require_denque = __commonJS({
       }
       return item;
     };
-    Denque.prototype.remove = function remove(index2, count3) {
+    Denque.prototype.remove = function remove(index2, count4) {
       var i = index2;
       var removed;
-      var del_count = count3;
+      var del_count = count4;
       if (i !== (i | 0)) {
         return void 0;
       }
       if (this._head === this._tail) return void 0;
       var size = this.size();
       var len = this._list.length;
-      if (i >= size || i < -size || count3 < 1) return void 0;
+      if (i >= size || i < -size || count4 < 1) return void 0;
       if (i < 0) i += size;
-      if (count3 === 1 || !count3) {
+      if (count4 === 1 || !count4) {
         removed = new Array(1);
         removed[0] = this.removeOne(i);
         return removed;
       }
-      if (i === 0 && i + count3 >= size) {
+      if (i === 0 && i + count4 >= size) {
         removed = this.toArray();
         this.clear();
         return removed;
       }
-      if (i + count3 > size) count3 = size - i;
+      if (i + count4 > size) count4 = size - i;
       var k;
-      removed = new Array(count3);
-      for (k = 0; k < count3; k++) {
+      removed = new Array(count4);
+      for (k = 0; k < count4; k++) {
         removed[k] = this._list[this._head + i + k & this._capacityMask];
       }
       i = this._head + i & this._capacityMask;
-      if (index2 + count3 === size) {
-        this._tail = this._tail - count3 + len & this._capacityMask;
-        for (k = count3; k > 0; k--) {
+      if (index2 + count4 === size) {
+        this._tail = this._tail - count4 + len & this._capacityMask;
+        for (k = count4; k > 0; k--) {
           this._list[i = i + 1 + len & this._capacityMask] = void 0;
         }
         return removed;
       }
       if (index2 === 0) {
-        this._head = this._head + count3 + len & this._capacityMask;
-        for (k = count3 - 1; k > 0; k--) {
+        this._head = this._head + count4 + len & this._capacityMask;
+        for (k = count4 - 1; k > 0; k--) {
           this._list[i = i + 1 + len & this._capacityMask] = void 0;
         }
         return removed;
       }
       if (i < size / 2) {
-        this._head = this._head + index2 + count3 + len & this._capacityMask;
+        this._head = this._head + index2 + count4 + len & this._capacityMask;
         for (k = index2; k > 0; k--) {
           this.unshift(this._list[i = i - 1 + len & this._capacityMask]);
         }
@@ -2115,8 +2115,8 @@ var require_denque = __commonJS({
         if (index2 < 0) this._tail = i;
       } else {
         this._tail = i;
-        i = i + count3 + len & this._capacityMask;
-        for (k = size - (count3 + index2); k > 0; k--) {
+        i = i + count4 + len & this._capacityMask;
+        for (k = size - (count4 + index2); k > 0; k--) {
           this.push(this._list[i++]);
         }
         i = this._tail;
@@ -2128,7 +2128,7 @@ var require_denque = __commonJS({
       if (this._head < 2 && this._tail > 1e4 && this._tail <= len >>> 2) this._shrinkArray();
       return removed;
     };
-    Denque.prototype.splice = function splice(index2, count3) {
+    Denque.prototype.splice = function splice(index2, count4) {
       var i = index2;
       if (i !== (i | 0)) {
         return void 0;
@@ -2148,13 +2148,13 @@ var require_denque = __commonJS({
           for (k = 0; k < i; k++) {
             temp[k] = this._list[this._head + k & this._capacityMask];
           }
-          if (count3 === 0) {
+          if (count4 === 0) {
             removed = [];
             if (i > 0) {
               this._head = this._head + i + len & this._capacityMask;
             }
           } else {
-            removed = this.remove(i, count3);
+            removed = this.remove(i, count4);
             this._head = this._head + i + len & this._capacityMask;
           }
           while (arg_len > arguments_index) {
@@ -2164,18 +2164,18 @@ var require_denque = __commonJS({
             this.unshift(temp[k - 1]);
           }
         } else {
-          temp = new Array(size - (i + count3));
+          temp = new Array(size - (i + count4));
           var leng = temp.length;
           for (k = 0; k < leng; k++) {
-            temp[k] = this._list[this._head + i + count3 + k & this._capacityMask];
+            temp[k] = this._list[this._head + i + count4 + k & this._capacityMask];
           }
-          if (count3 === 0) {
+          if (count4 === 0) {
             removed = [];
             if (i != size) {
               this._tail = this._head + i + len & this._capacityMask;
             }
           } else {
-            removed = this.remove(i, count3);
+            removed = this.remove(i, count4);
             this._tail = this._tail - leng + len & this._capacityMask;
           }
           while (arguments_index < arg_len) {
@@ -2187,7 +2187,7 @@ var require_denque = __commonJS({
         }
         return removed;
       } else {
-        return this.remove(i, count3);
+        return this.remove(i, count4);
       }
     };
     Denque.prototype.clear = function clear() {
@@ -38354,9 +38354,9 @@ var require_xlsx = __commonJS({
         return val;
       }
       function parse_PtgExtraMem(blob, cce, opts) {
-        var count3 = blob.read_shift(opts.biff == 12 ? 4 : 2);
+        var count4 = blob.read_shift(opts.biff == 12 ? 4 : 2);
         var out = [];
-        for (var i = 0; i != count3; ++i) out.push((opts.biff == 12 ? parse_UncheckedRfX : parse_Ref8U)(blob, 8));
+        for (var i = 0; i != count4; ++i) out.push((opts.biff == 12 ? parse_UncheckedRfX : parse_Ref8U)(blob, 8));
         return out;
       }
       function parse_PtgExtraArray(blob, length, opts) {
@@ -58198,7 +58198,7 @@ function _takeWithGrace() {
       const iterator = _usingCtx$1.a(iteratorResource(iterable));
       let result;
       const timer = _usingCtx$1.u(timerResource(opts.gracePeriodMs));
-      let count3 = opts.count;
+      let count4 = opts.count;
       let timerPromise = new Promise(() => {
       });
       while (true) {
@@ -58206,7 +58206,7 @@ function _takeWithGrace() {
         if (result === disposablePromiseTimerResult) throwAbortError();
         if (result.done) return result.value;
         yield result.value;
-        if (--count3 === 0) timerPromise = timer.start();
+        if (--count4 === 0) timerPromise = timer.start();
         result = null;
       }
     } catch (_) {
@@ -59636,9 +59636,23 @@ var initTRPC = new TRPCBuilder();
 var t = initTRPC.context().create();
 var router = t.router;
 var publicProcedure = t.procedure;
+var rateLimitMap = /* @__PURE__ */ new Map();
+var RATE_LIMIT_WINDOW = 60 * 1e3;
+var MAX_REQUESTS = 100;
 var authedProcedure = t.procedure.use(async ({ ctx, next }) => {
   if (!ctx.user) {
     throw new TRPCError({ code: "UNAUTHORIZED", message: "\u064A\u062C\u0628 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B" });
+  }
+  const key = `${ctx.user.type}:${ctx.user.id}`;
+  const now = Date.now();
+  const limit = rateLimitMap.get(key);
+  if (!limit || now > limit.resetAt) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+  } else {
+    limit.count++;
+    if (limit.count > MAX_REQUESTS) {
+      throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "\u0637\u0644\u0628\u0627\u062A \u0643\u062A\u064A\u0631 \u062C\u062F\u0627\u064B! \u0627\u0647\u062F\u0649 \u0634\u0648\u064A\u0629." });
+    }
   }
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
@@ -59664,8 +59678,17 @@ var proProcedure = t.procedure.use(async ({ ctx, next }) => {
   if (!ctx.user) {
     throw new TRPCError({ code: "UNAUTHORIZED", message: "\u064A\u062C\u0628 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B" });
   }
-  if (ctx.user.plan !== "pro" && ctx.user.role !== "admin") {
+  if (ctx.user.plan !== "pro" && ctx.user.plan !== "ultra" && ctx.user.role !== "admin") {
     throw new TRPCError({ code: "FORBIDDEN", message: "\u0647\u0630\u0647 \u0627\u0644\u0645\u064A\u0632\u0629 \u0645\u062A\u0627\u062D\u0629 \u0641\u0642\u0637 \u0644\u0644\u0628\u0631\u0648" });
+  }
+  return next({ ctx: { ...ctx, user: ctx.user } });
+});
+var ultraProcedure = t.procedure.use(async ({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "\u064A\u062C\u0628 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B" });
+  }
+  if (ctx.user.plan !== "ultra" && ctx.user.role !== "admin") {
+    throw new TRPCError({ code: "FORBIDDEN", message: "\u0647\u0630\u0647 \u0627\u0644\u0645\u064A\u0632\u0629 \u0645\u062A\u0627\u062D\u0629 \u0641\u0642\u0637 \u0644\u0645\u0634\u062A\u0631\u0643\u064A \u0627\u0644\u0623\u0644\u062A\u0631\u0627 \u{1F48E}" });
   }
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
@@ -64154,8 +64177,8 @@ function az_default() {
 }
 
 // node_modules/zod/v4/locales/be.js
-function getBelarusianPlural(count3, one, few, many) {
-  const absCount = Math.abs(count3);
+function getBelarusianPlural(count4, one, few, many) {
+  const absCount = Math.abs(count4);
   const lastDigit = absCount % 10;
   const lastTwoDigits = absCount % 100;
   if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
@@ -65979,8 +66002,8 @@ function hu_default() {
 }
 
 // node_modules/zod/v4/locales/hy.js
-function getArmenianPlural(count3, one, many) {
-  return Math.abs(count3) === 1 ? one : many;
+function getArmenianPlural(count4, one, many) {
+  return Math.abs(count4) === 1 ? one : many;
 }
 function withDefiniteArticle(word) {
   if (!word)
@@ -67988,8 +68011,8 @@ function pt_default() {
 }
 
 // node_modules/zod/v4/locales/ru.js
-function getRussianPlural(count3, one, few, many) {
-  const absCount = Math.abs(count3);
+function getRussianPlural(count4, one, few, many) {
+  const absCount = Math.abs(count4);
   const lastDigit = absCount % 10;
   const lastTwoDigits = absCount % 100;
   if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
@@ -75336,6 +75359,17 @@ function extractTablesRelationalConfig(schema, configHelpers) {
   }
   return { tables: tablesConfig, tableNamesMap };
 }
+function relations(table, relations2) {
+  return new Relations(
+    table,
+    (helpers) => Object.fromEntries(
+      Object.entries(relations2(helpers)).map(([key, value]) => [
+        key,
+        value.withFieldName(key)
+      ])
+    )
+  );
+}
 function createOne(sourceTable) {
   return function one(table, config2) {
     return new One(
@@ -79834,18 +79868,24 @@ __export(schema_exports, {
   adClicks: () => adClicks,
   ads: () => ads,
   aiSummaries: () => aiSummaries,
+  classificationLogs: () => classificationLogs,
   discountCodes: () => discountCodes,
   expenseCategories: () => expenseCategories,
   expenses: () => expenses,
   localUsers: () => localUsers,
   monthlyReports: () => monthlyReports,
+  onboardingQuestions: () => onboardingQuestions,
   proSubscriptions: () => proSubscriptions,
   referrals: () => referrals,
   seoPages: () => seoPages,
   sessions: () => sessions,
   supportTickets: () => supportTickets,
+  systemSettings: () => systemSettings,
   userAnalytics: () => userAnalytics,
-  users: () => users
+  userDictionaries: () => userDictionaries,
+  userProfiles: () => userProfiles,
+  users: () => users,
+  voiceUsage: () => voiceUsage
 });
 var users = mysqlTable("users", {
   id: int2("id").primaryKey().autoincrement(),
@@ -79856,12 +79896,13 @@ var users = mysqlTable("users", {
   role: varchar("role", { length: 50 }).notNull().default("user"),
   // user | moderator | admin
   plan: varchar("plan", { length: 50 }).notNull().default("free"),
-  // free | pro
+  // free | pro | ultra
   referralCode: varchar("referral_code", { length: 50 }).unique(),
   referredBy: int2("referred_by"),
   createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: datetime3("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
-  lastSignInAt: datetime3("last_sign_in_at")
+  lastSignInAt: datetime3("last_sign_in_at"),
+  aiTokensUsed: int2("ai_tokens_used").default(0)
 }, (t2) => [
   index("users_role_idx").on(t2.role),
   index("users_plan_idx").on(t2.plan),
@@ -79875,11 +79916,13 @@ var localUsers = mysqlTable("local_users", {
   email: varchar("email", { length: 255 }),
   role: varchar("role", { length: 50 }).notNull().default("user"),
   plan: varchar("plan", { length: 50 }).notNull().default("free"),
+  // free | pro | ultra
   referralCode: varchar("referral_code", { length: 50 }).unique(),
   referredBy: int2("referred_by"),
   createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: datetime3("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
-  lastSignInAt: datetime3("last_sign_in_at")
+  lastSignInAt: datetime3("last_sign_in_at"),
+  aiTokensUsed: int2("ai_tokens_used").default(0)
 }, (t2) => [
   index("local_users_role_idx").on(t2.role),
   index("local_users_plan_idx").on(t2.plan)
@@ -79893,6 +79936,8 @@ var expenses = mysqlTable("expenses", {
   // income | expense
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
   category: varchar("category", { length: 100 }).notNull(),
+  subCategory: varchar("sub_category", { length: 100 }),
+  // New: Sub-category for deeper insights
   description: text("description"),
   rawText: text("raw_text"),
   source: varchar("source", { length: 50 }).notNull().default("manual"),
@@ -80071,6 +80116,124 @@ var seoPages = mysqlTable("seo_pages", {
   canonicalUrl: varchar("canonical_url", { length: 500 }),
   updatedAt: datetime3("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`)
 });
+var systemSettings = mysqlTable("system_settings", {
+  key: varchar("key", { length: 100 }).primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: datetime3("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`)
+});
+var userProfiles = mysqlTable("user_profiles", {
+  id: int2("id").primaryKey().autoincrement(),
+  userId: int2("user_id").notNull(),
+  userType: varchar("user_type", { length: 50 }).notNull(),
+  monthlyIncome: decimal("monthly_income", { precision: 12, scale: 2 }),
+  financialGoal: varchar("financial_goal", { length: 100 }),
+  // saving | debt_payoff | investing | budgeting
+  financialPersonality: varchar("financial_personality", { length: 50 }),
+  // impulsive | conservative | balanced | stressed
+  profileCompleted: boolean4("profile_completed").default(false),
+  lastAskedAt: datetime3("last_asked_at"),
+  createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime3("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`)
+}, (t2) => [
+  uniqueIndex("profile_user_idx").on(t2.userId, t2.userType)
+]);
+var onboardingQuestions = mysqlTable("onboarding_questions", {
+  id: int2("id").primaryKey().autoincrement(),
+  questionText: varchar("question_text", { length: 500 }).notNull(),
+  questionKey: varchar("question_key", { length: 100 }).notNull().unique(),
+  // monthly_income | financial_goal
+  inputType: varchar("input_type", { length: 50 }).notNull().default("text"),
+  // text | select | number
+  options: json2("options"),
+  // for select type: ["توفير", "سداد ديون", ...]
+  isActive: boolean4("is_active").default(true),
+  sortOrder: int2("sort_order").default(0),
+  createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+});
+var userDictionaries = mysqlTable("user_dictionaries", {
+  id: int2("id").primaryKey().autoincrement(),
+  userId: int2("user_id").notNull(),
+  userType: varchar("user_type", { length: 50 }).notNull(),
+  word: varchar("word", { length: 100 }).notNull(),
+  category: varchar("category", { length: 100 }).notNull(),
+  subCategory: varchar("sub_category", { length: 100 }),
+  createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+}, (t2) => [
+  index("user_dict_user_idx").on(t2.userId, t2.userType),
+  uniqueIndex("user_dict_word_unique").on(t2.userId, t2.userType, t2.word)
+]);
+var classificationLogs = mysqlTable("classification_logs", {
+  id: int2("id").primaryKey().autoincrement(),
+  userId: int2("user_id").notNull(),
+  userType: varchar("user_type", { length: 50 }).notNull(),
+  originalText: text("original_text").notNull(),
+  normalizedText: text("normalized_text"),
+  parsedBy: varchar("parsed_by", { length: 50 }).notNull(),
+  // rule_engine | ai | hybrid | manual
+  ruleEngineResult: json2("rule_engine_result"),
+  aiResult: json2("ai_result"),
+  finalResult: json2("final_result"),
+  confidence: int2("confidence").default(0),
+  decision: varchar("decision", { length: 50 }),
+  // auto_save | review | clarify
+  wasCorrected: boolean4("was_corrected").default(false),
+  correction: json2("correction"),
+  modelUsed: varchar("model_used", { length: 100 }),
+  tokensUsed: int2("tokens_used").default(0),
+  processingTimeMs: int2("processing_time_ms").default(0),
+  createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+}, (t2) => [
+  index("cls_log_user_idx").on(t2.userId, t2.userType),
+  index("cls_log_parsed_idx").on(t2.parsedBy),
+  index("cls_log_date_idx").on(t2.createdAt)
+]);
+var voiceUsage = mysqlTable("voice_usage", {
+  id: int2("id").primaryKey().autoincrement(),
+  userId: int2("user_id").notNull(),
+  userType: varchar("user_type", { length: 50 }).notNull(),
+  durationSeconds: int2("duration_seconds").notNull(),
+  month: varchar("month", { length: 7 }).notNull(),
+  // YYYY-MM
+  source: varchar("source", { length: 50 }).default("gemini_stt"),
+  // gemini_stt | browser_api
+  createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+}, (t2) => [
+  index("voice_user_month_idx").on(t2.userId, t2.userType, t2.month)
+]);
+
+// db/relations.ts
+var relations_exports = {};
+__export(relations_exports, {
+  categoriesRelations: () => categoriesRelations,
+  expensesRelations: () => expensesRelations,
+  localUsersRelations: () => localUsersRelations,
+  sessionsRelations: () => sessionsRelations,
+  usersRelations: () => usersRelations
+});
+var usersRelations = relations(users, ({ many }) => ({
+  expenses: many(expenses)
+}));
+var localUsersRelations = relations(localUsers, ({ many }) => ({
+  expenses: many(expenses)
+}));
+var expensesRelations = relations(expenses, ({ one }) => ({
+  user: one(localUsers, {
+    fields: [expenses.userId],
+    references: [localUsers.id]
+  })
+}));
+var categoriesRelations = relations(expenseCategories, ({ one }) => ({
+  user: one(localUsers, {
+    fields: [expenseCategories.userId],
+    references: [localUsers.id]
+  })
+}));
+var sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(localUsers, {
+    fields: [sessions.userId],
+    references: [localUsers.id]
+  })
+}));
 
 // api/lib/env.ts
 var envSchema = external_exports.object({
@@ -80084,8 +80247,9 @@ var envSchema = external_exports.object({
   JWT_SECRET: external_exports.string().min(1),
   // AI
   GEMINI_API_KEY: external_exports.string().min(1),
-  GEMINI_MODEL_DEFAULT: external_exports.string().default("gemini-1.5-flash"),
+  GEMINI_MODEL_FREE: external_exports.string().default("gemini-1.5-flash"),
   GEMINI_MODEL_PRO: external_exports.string().default("gemini-1.5-pro"),
+  GEMINI_MODEL_REPORTS: external_exports.string().default("gemini-1.5-pro"),
   // App
   NODE_ENV: external_exports.enum(["development", "production"]).default("development"),
   PORT: external_exports.string().default("3000"),
@@ -80098,88 +80262,15 @@ var env = envSchema.parse(process.env);
 // api/queries/connection.ts
 var pool = import_promise.default.createPool({
   uri: env.DATABASE_URL,
+  charset: "utf8mb4",
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
 });
-var db = drizzle(pool, { schema: schema_exports, mode: "default" });
+var db = drizzle(pool, { schema: { ...schema_exports, ...relations_exports }, mode: "default" });
 function getDb() {
   return db;
 }
-
-// node_modules/hono/dist/utils/cookie.js
-var validCookieNameRegEx = /^[\w!#$%&'*.^`|~+-]+$/;
-var validCookieValueRegEx = /^[ !#-:<-[\]-~]*$/;
-var trimCookieWhitespace = (value) => {
-  let start = 0;
-  let end = value.length;
-  while (start < end) {
-    const charCode = value.charCodeAt(start);
-    if (charCode !== 32 && charCode !== 9) {
-      break;
-    }
-    start++;
-  }
-  while (end > start) {
-    const charCode = value.charCodeAt(end - 1);
-    if (charCode !== 32 && charCode !== 9) {
-      break;
-    }
-    end--;
-  }
-  return start === 0 && end === value.length ? value : value.slice(start, end);
-};
-var parse3 = (cookie, name) => {
-  if (name && cookie.indexOf(name) === -1) {
-    return {};
-  }
-  const pairs = cookie.split(";");
-  const parsedCookie = {};
-  for (const pairStr of pairs) {
-    const valueStartPos = pairStr.indexOf("=");
-    if (valueStartPos === -1) {
-      continue;
-    }
-    const cookieName = trimCookieWhitespace(pairStr.substring(0, valueStartPos));
-    if (name && name !== cookieName || !validCookieNameRegEx.test(cookieName)) {
-      continue;
-    }
-    let cookieValue = trimCookieWhitespace(pairStr.substring(valueStartPos + 1));
-    if (cookieValue.startsWith('"') && cookieValue.endsWith('"')) {
-      cookieValue = cookieValue.slice(1, -1);
-    }
-    if (validCookieValueRegEx.test(cookieValue)) {
-      parsedCookie[cookieName] = cookieValue.indexOf("%") !== -1 ? tryDecode(cookieValue, decodeURIComponent_) : cookieValue;
-      if (name) {
-        break;
-      }
-    }
-  }
-  return parsedCookie;
-};
-
-// node_modules/hono/dist/helper/cookie/index.js
-var getCookie = (c, key, prefix) => {
-  const cookie = c.req.raw.headers.get("Cookie");
-  if (typeof key === "string") {
-    if (!cookie) {
-      return void 0;
-    }
-    let finalKey = key;
-    if (prefix === "secure") {
-      finalKey = "__Secure-" + key;
-    } else if (prefix === "host") {
-      finalKey = "__Host-" + key;
-    }
-    const obj2 = parse3(cookie, finalKey);
-    return obj2[finalKey];
-  }
-  if (!cookie) {
-    return {};
-  }
-  const obj = parse3(cookie);
-  return obj;
-};
 
 // node_modules/hono/dist/utils/encode.js
 var decodeBase64Url = (str) => {
@@ -81018,6 +81109,7 @@ var expenseRouter = router({
       amount: external_exports.number().positive(),
       type: external_exports.enum(["income", "expense"]).default("expense"),
       category: external_exports.string().min(1),
+      subCategory: external_exports.string().optional(),
       description: external_exports.string().optional(),
       rawText: external_exports.string().min(1),
       source: external_exports.enum(["voice", "manual", "ai_parsed"]).default("manual"),
@@ -81034,6 +81126,7 @@ var expenseRouter = router({
       type: input.type,
       amount: input.amount.toString(),
       category: input.category,
+      subCategory: input.subCategory || "\u0639\u0627\u0645",
       description: input.description || "",
       rawText: input.rawText,
       source: input.source,
@@ -81106,32 +81199,62 @@ var expenseRouter = router({
     const firstExpense = await db3.select({ date: expenses.date }).from(expenses).where(eq(expenses.userId, userId)).orderBy(expenses.date).limit(1);
     const userStartDate = firstExpense[0]?.date ? new Date(firstExpense[0].date) : startDate;
     const items = await db3.select().from(expenses).where(and(eq(expenses.userId, userId), gte(expenses.date, startDate), lte(expenses.date, endDate)));
-    const totalExpense = items.filter((i) => i.type === "expense").reduce((sum2, item) => sum2 + Number(item.amount), 0);
-    const totalIncome = items.filter((i) => i.type === "income").reduce((sum2, item) => sum2 + Number(item.amount), 0);
+    const totalExpense = items.filter((i) => i.type === "expense").reduce((sum3, item) => sum3 + Number(item.amount), 0);
+    const totalIncome = items.filter((i) => i.type === "income").reduce((sum3, item) => sum3 + Number(item.amount), 0);
     const dayMap = {};
-    items.filter((i) => i.type === "expense").forEach((item) => {
-      const day = new Date(item.date).toISOString().split("T")[0];
-      dayMap[day] = (dayMap[day] || 0) + Number(item.amount);
-    });
-    const highestDay = Object.entries(dayMap).sort((a, b) => b[1] - a[1])[0];
     const weekMap = {};
+    const hourMap = {};
+    const dayOfWeekMap = {};
+    const dayNames = ["\u0627\u0644\u0623\u062D\u062F", "\u0627\u0644\u0625\u062B\u0646\u064A\u0646", "\u0627\u0644\u062B\u0644\u0627\u062B\u0627\u0621", "\u0627\u0644\u0623\u0631\u0628\u0639\u0627\u0621", "\u0627\u0644\u062E\u0645\u064A\u0633", "\u0627\u0644\u062C\u0645\u0639\u0629", "\u0627\u0644\u0633\u0628\u062A"];
     items.filter((i) => i.type === "expense").forEach((item) => {
       const date6 = new Date(item.date);
+      const dayStr = date6.toISOString().split("T")[0];
+      dayMap[dayStr] = (dayMap[dayStr] || 0) + Number(item.amount);
       const weekNum = Math.ceil(date6.getDate() / 7);
-      const key = `\u0627\u0644\u0623\u0633\u0628\u0648\u0639 ${weekNum}`;
-      weekMap[key] = (weekMap[key] || 0) + Number(item.amount);
+      const weekKey = `\u0627\u0644\u0623\u0633\u0628\u0648\u0639 ${weekNum}`;
+      weekMap[weekKey] = (weekMap[weekKey] || 0) + Number(item.amount);
+      const hour = date6.getHours();
+      hourMap[hour] = (hourMap[hour] || 0) + Number(item.amount);
+      const dow = dayNames[date6.getDay()];
+      dayOfWeekMap[dow] = (dayOfWeekMap[dow] || 0) + Number(item.amount);
     });
+    const highestDay = Object.entries(dayMap).sort((a, b) => b[1] - a[1])[0];
     const categoryMap = {};
+    const subCategoryMap = {};
     items.filter((i) => i.type === "expense").forEach((item) => {
-      categoryMap[item.category] = (categoryMap[item.category] || 0) + Number(item.amount);
+      const amt = Number(item.amount);
+      if (!categoryMap[item.category]) categoryMap[item.category] = { value: 0, count: 0 };
+      categoryMap[item.category].value += amt;
+      categoryMap[item.category].count += 1;
+      if (item.subCategory && item.subCategory !== "\u0639\u0627\u0645") {
+        if (!subCategoryMap[item.subCategory]) subCategoryMap[item.subCategory] = { value: 0, count: 0 };
+        subCategoryMap[item.subCategory].value += amt;
+        subCategoryMap[item.subCategory].count += 1;
+      }
     });
-    const categoryBreakdown = Object.entries(categoryMap).map(([name, value]) => ({
+    const categoryBreakdown = Object.entries(categoryMap).map(([name, data]) => ({
       name,
-      value,
-      percentage: totalExpense > 0 ? Math.round(value / totalExpense * 100) : 0
+      value: data.value,
+      count: data.count,
+      avg: data.count > 0 ? Math.round(data.value / data.count) : 0,
+      percentage: totalExpense > 0 ? Math.round(data.value / totalExpense * 100) : 0
     }));
+    const subCategoryBreakdown = Object.entries(subCategoryMap).map(([name, data]) => ({
+      name,
+      value: data.value,
+      count: data.count,
+      avg: data.count > 0 ? Math.round(data.value / data.count) : 0,
+      percentage: totalExpense > 0 ? Math.round(data.value / totalExpense * 100) : 0
+    })).sort((a, b) => b.value - a.value);
     const sortedCategories = [...categoryBreakdown].sort((a, b) => b.value - a.value);
-    const dayTrend = Object.entries(dayMap).sort(([a], [b]) => a.localeCompare(b)).map(([date6, amount]) => ({ date: date6.slice(5), amount }));
+    const cashFlowMap = {};
+    items.forEach((item) => {
+      const dateStr = new Date(item.date).toISOString().split("T")[0];
+      if (!cashFlowMap[dateStr]) cashFlowMap[dateStr] = { expense: 0, income: 0 };
+      if (item.type === "expense") cashFlowMap[dateStr].expense += Number(item.amount);
+      if (item.type === "income") cashFlowMap[dateStr].income += Number(item.amount);
+    });
+    const dayTrend = Object.entries(cashFlowMap).sort(([a], [b]) => a.localeCompare(b)).map(([date6, data]) => ({ date: date6.slice(5), amount: data.expense, income: data.income }));
     const today = /* @__PURE__ */ new Date();
     const endOfMonth = endDate > today ? today : endDate;
     const activeDays = Math.max(1, Math.ceil((endOfMonth.getTime() - userStartDate.getTime()) / (1e3 * 60 * 60 * 24)));
@@ -81143,10 +81266,13 @@ var expenseRouter = router({
       count: items.length,
       dailyAverage,
       categoryBreakdown: sortedCategories,
+      subCategoryBreakdown,
       topCategories: sortedCategories.slice(0, 5),
       highestDay: highestDay ? { date: highestDay[0], amount: highestDay[1] } : null,
       weekBreakdown: Object.entries(weekMap).map(([name, amount]) => ({ name, amount })),
       dayTrend,
+      hourTrend: Object.entries(hourMap).map(([hour, amount]) => ({ hour: parseInt(hour), amount })).sort((a, b) => a.hour - b.hour),
+      dayOfWeekTrend: Object.entries(dayOfWeekMap).map(([name, amount]) => ({ name, amount })),
       items
     };
   }),
@@ -81156,8 +81282,8 @@ var expenseRouter = router({
     const startDate = /* @__PURE__ */ new Date(input.year + "-01-01");
     const endDate = /* @__PURE__ */ new Date(input.year + "-12-31");
     const items = await db3.select().from(expenses).where(and(eq(expenses.userId, userId), gte(expenses.date, startDate), lte(expenses.date, endDate)));
-    const totalExpense = items.filter((i) => i.type === "expense").reduce((sum2, item) => sum2 + Number(item.amount), 0);
-    const totalIncome = items.filter((i) => i.type === "income").reduce((sum2, item) => sum2 + Number(item.amount), 0);
+    const totalExpense = items.filter((i) => i.type === "expense").reduce((sum3, item) => sum3 + Number(item.amount), 0);
+    const totalIncome = items.filter((i) => i.type === "income").reduce((sum3, item) => sum3 + Number(item.amount), 0);
     const monthMap = {};
     for (let i = 1; i <= 12; i++) {
       monthMap[`${input.year}-${String(i).padStart(2, "0")}`] = 0;
@@ -81190,7 +81316,7 @@ var expenseRouter = router({
       name: input.name,
       icon: input.icon,
       color: input.color,
-      isDefault: "false"
+      isDefault: false
     });
     return { success: true };
   })
@@ -82203,155 +82329,2221 @@ var GoogleGenerativeAI = class {
   }
 };
 
-// api/ai-router.ts
-var genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
-var MODELS = {
-  flash: "gemini-1.5-flash",
-  pro: "gemini-1.5-pro",
-  ultra: "gemini-1.0-ultra",
-  gemma: "gemma-3-27b-it"
+// api/lib/text-normalizer.ts
+function arabicToEnglishNumbers(str) {
+  return str.replace(/[٠-٩]/g, (d) => "\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669".indexOf(d).toString());
+}
+var WORD_NUMBERS = {
+  // Units
+  "\u0648\u0627\u062D\u062F": 1,
+  "\u0627\u062A\u0646\u064A\u0646": 2,
+  "\u062A\u0644\u0627\u062A\u0647": 3,
+  "\u062A\u0644\u0627\u062A\u0629": 3,
+  "\u0627\u0631\u0628\u0639\u0629": 4,
+  "\u0623\u0631\u0628\u0639\u0629": 4,
+  "\u062E\u0645\u0633\u0629": 5,
+  "\u062E\u0645\u0633\u0647": 5,
+  "\u0633\u062A\u0629": 6,
+  "\u0633\u062A\u0647": 6,
+  "\u0633\u0628\u0639\u0629": 7,
+  "\u0633\u0628\u0639\u0647": 7,
+  "\u062A\u0645\u0627\u0646\u064A\u0629": 8,
+  "\u062A\u0645\u0646\u064A\u0629": 8,
+  "\u062A\u0645\u0627\u0646\u064A\u0647": 8,
+  "\u062A\u0633\u0639\u0629": 9,
+  "\u062A\u0633\u0639\u0647": 9,
+  // Tens
+  "\u0639\u0634\u0631\u0629": 10,
+  "\u0639\u0634\u0631\u0647": 10,
+  "\u0639\u0634\u0631\u064A\u0646": 20,
+  "\u062A\u0644\u0627\u062A\u064A\u0646": 30,
+  "\u062B\u0644\u0627\u062B\u064A\u0646": 30,
+  "\u0627\u0631\u0628\u0639\u064A\u0646": 40,
+  "\u0623\u0631\u0628\u0639\u064A\u0646": 40,
+  "\u062E\u0645\u0633\u064A\u0646": 50,
+  "\u0633\u062A\u064A\u0646": 60,
+  "\u0633\u0628\u0639\u064A\u0646": 70,
+  "\u062A\u0645\u0627\u0646\u064A\u0646": 80,
+  "\u062B\u0645\u0627\u0646\u064A\u0646": 80,
+  "\u062A\u0633\u0639\u064A\u0646": 90,
+  // Hundreds
+  "\u0645\u064A\u0629": 100,
+  "\u0645\u0627\u0626\u0629": 100,
+  "\u0645\u064A\u0647": 100,
+  "\u0645\u064A\u062A\u064A\u0646": 200,
+  "\u0645\u062A\u064A\u0646": 200,
+  "\u062A\u0644\u062A\u0645\u064A\u0629": 300,
+  "\u062A\u0644\u062A\u0645\u064A\u0647": 300,
+  "\u0631\u0628\u0639\u0645\u064A\u0629": 400,
+  "\u0631\u0628\u0639\u0645\u064A\u0647": 400,
+  "\u062E\u0645\u0633\u0645\u064A\u0629": 500,
+  "\u062E\u0645\u0633\u0645\u064A\u0647": 500,
+  "\u0633\u062A\u0645\u064A\u0629": 600,
+  "\u0633\u062A\u0645\u064A\u0647": 600,
+  "\u0633\u0628\u0639\u0645\u064A\u0629": 700,
+  "\u0633\u0628\u0639\u0645\u064A\u0647": 700,
+  "\u062A\u0645\u0646\u0645\u064A\u0629": 800,
+  "\u062A\u0645\u0646\u0645\u064A\u0647": 800,
+  "\u062A\u0633\u0639\u0645\u064A\u0629": 900,
+  "\u062A\u0633\u0639\u0645\u064A\u0647": 900,
+  // Thousands
+  "\u0627\u0644\u0641": 1e3,
+  "\u0623\u0644\u0641": 1e3,
+  "\u0627\u0644\u0641\u064A\u0646": 2e3,
+  "\u0623\u0644\u0641\u064A\u0646": 2e3,
+  // Colloquial
+  "\u0646\u0635": 0.5,
+  "\u0631\u0628\u0639": 0.25,
+  "\u062A\u0644\u062A": 0.333
 };
-function hybridParse(text2) {
-  const incomeKeywords = ["\u062E\u062F\u062A", "\u062C\u0627\u0644\u064A", "\u0645\u0631\u062A\u0628", "\u0623\u0631\u0628\u0627\u062D", "\u0645\u0643\u0627\u0641\u0623\u0629", "\u0639\u0645\u0648\u0644\u0629", "\u062D\u0635\u0644\u062A", "\u0627\u0633\u062A\u0644\u0645\u062A"];
-  const expenseKeywords = ["\u0635\u0631\u0641\u062A", "\u062F\u0641\u0639\u062A", "\u0627\u0634\u062A\u0631\u064A\u062A", "\u0631\u0643\u0628\u062A", "\u0623\u0643\u0644\u062A", "\u0641\u0627\u062A\u0648\u0631\u0629", "\u0634\u0631\u062D\u062A", "\u062D\u0648\u0644\u062A"];
-  const items = [];
-  const regex = /(\d+(?:\.\d+)?)\s*(جنيه|ج| pound|egp)?/gi;
+var COLLOQUIAL_NUMBERS = {
+  "\u0646\u0635 \u0623\u0644\u0641": 500,
+  "\u0646\u0635 \u0627\u0644\u0641": 500,
+  "\u0646\u0635\u0641 \u0623\u0644\u0641": 500,
+  "\u0631\u0628\u0639 \u0623\u0644\u0641": 250,
+  "\u0631\u0628\u0639 \u0627\u0644\u0641": 250,
+  "\u062E\u0645\u0633 \u062A\u0644\u0627\u0641": 5e3,
+  "\u0639\u0634\u0631 \u062A\u0644\u0627\u0641": 1e4,
+  "\u0639\u0634\u0631\u062A\u0644\u0627\u0641": 1e4,
+  "\u062E\u0645\u0633\u062A\u0644\u0627\u0641": 5e3,
+  "\u062E\u0645\u0633\u062A\u0627\u0644\u0627\u0641": 5e3,
+  "\u062A\u0644\u0627\u062A\u0644\u0627\u0641": 3e3,
+  "\u0627\u0631\u0628\u0639\u062A\u0644\u0627\u0641": 4e3
+};
+function normalizeText(text2) {
+  let result = text2.trim();
+  result = arabicToEnglishNumbers(result);
+  result = result.replace(/\s+/g, " ");
+  result = result.replace(/[^\u0600-\u06FF\u0750-\u077Fa-zA-Z0-9\s.,،؟?!٪%\-\/]/g, "");
+  result = result.replace(/[إأآٱ]/g, "\u0627").replace(/ى$/g, "\u064A").replace(/ة/g, "\u0647").replace(/ؤ/g, "\u0648").replace(/ئ/g, "\u064A");
+  for (const [expr, num] of Object.entries(COLLOQUIAL_NUMBERS)) {
+    const regex = new RegExp(expr, "g");
+    result = result.replace(regex, num.toString());
+  }
+  for (const [word, num] of Object.entries(WORD_NUMBERS)) {
+    const regex = new RegExp(`\\b${word}\\b`, "g");
+    result = result.replace(regex, num.toString());
+  }
+  result = result.replace(/(\d+)\s*(الف|ألف)/g, (_, num) => {
+    return (parseFloat(num) * 1e3).toString();
+  });
+  result = result.replace(/(\d+)\s*[kK]/g, (_, num) => {
+    return (parseFloat(num) * 1e3).toString();
+  });
+  return result.trim();
+}
+function extractCurrency(text2) {
+  if (/دولار|\$|dollar/i.test(text2)) return "USD";
+  if (/يورو|€|euro/i.test(text2)) return "EUR";
+  if (/ريال|riyal/i.test(text2)) return "SAR";
+  if (/درهم|dirham/i.test(text2)) return "AED";
+  return "EGP";
+}
+
+// api/lib/entity-extractor.ts
+var MERCHANT_PATTERNS = {
+  "\u0645\u0627\u0643\u062F\u0648\u0646\u0627\u0644\u062F\u0632": "McDonald's",
+  "\u0643\u0646\u062A\u0627\u0643\u064A": "KFC",
+  "\u0647\u0627\u0631\u062F\u064A\u0632": "Hardee's",
+  "\u0628\u064A\u062A\u0632\u0627 \u0647\u062A": "Pizza Hut",
+  "\u0628\u0631\u062C\u0631 \u0643\u064A\u0646\u062C": "Burger King",
+  "\u0628\u0627\u0641\u0644\u0648": "Buffalo Burger",
+  "\u0643\u0634\u0631\u064A": "Koshary",
+  "\u0627\u0644\u0634\u0628\u0631\u0627\u0648\u064A": "El Shabrawy",
+  "\u0627\u0628\u0648 \u0637\u0627\u0631\u0642": "Abu Tarek",
+  "\u0627\u0648\u0628\u0631": "Uber",
+  "\u0643\u0631\u064A\u0645": "Careem",
+  "\u0633\u0648\u064A\u0641\u0644": "Swvl",
+  "\u0646\u062A\u0641\u0644\u0643\u0633": "Netflix",
+  "\u0633\u0628\u0648\u062A\u064A\u0641\u0627\u064A": "Spotify",
+  "\u0634\u0627\u0647\u062F": "Shahid",
+  "\u0641\u0648\u062F\u0627\u0641\u0648\u0646": "Vodafone",
+  "\u0627\u0648\u0631\u0646\u062C": "Orange",
+  "\u0627\u062A\u0635\u0627\u0644\u0627\u062A": "Etisalat",
+  "\u0648\u064A": "WE",
+  "\u0641\u0648\u0631\u064A": "Fawry",
+  "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A": "Instapay",
+  "\u0641\u0627\u0644\u064A\u0648": "valu",
+  "\u0632\u0627\u0631\u0627": "Zara",
+  "\u0627\u062F\u064A\u062F\u0627\u0633": "Adidas",
+  "\u0646\u0627\u064A\u0643\u064A": "Nike",
+  "\u0643\u0627\u0631\u0641\u0648\u0631": "Carrefour",
+  "\u0633\u0628\u064A\u0646\u064A\u0633": "Spinneys"
+};
+var PERSON_PATTERNS = [
+  /(?:حولت|اديت|سلفت|بعتت)\s+(?:ل|لـ)\s*(\S+)/g,
+  /(?:من|عند)\s+(\S+)/g,
+  /(?:حولي|حولولي|بعتلي)\s+(\S+)/g
+];
+function extractAmounts(text2) {
+  const amounts = [];
+  const amountPattern = /(\d+(?:\.\d+)?)\s*(جنيه|ج\.م|ج|الف|ألف)?/g;
   let match2;
-  while ((match2 = regex.exec(text2)) !== null) {
-    const amount = parseFloat(match2[1]);
-    const before = text2.substring(Math.max(0, match2.index - 50), match2.index);
-    const isIncome = incomeKeywords.some((k) => before.includes(k));
-    const isExpense = expenseKeywords.some((k) => before.includes(k));
-    const type = isIncome && !isExpense ? "income" : "expense";
-    let category = "\u0645\u062A\u0646\u0648\u0639\u0627\u062A";
-    const catMap = {
-      "\u0623\u0643\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-      "\u0641\u0627\u0643\u0647\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-      "\u0645\u0637\u0639\u0645": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-      "\u0645\u0648\u0627\u0635\u0644\u0627\u062A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
-      "\u0623\u062C\u0631\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
-      "\u062A\u0643\u0633\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
-      "\u0623\u0648\u0628\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
-      "\u0641\u0627\u062A\u0648\u0631\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
-      "\u0643\u0647\u0631\u0628\u0627": "\u0641\u0648\u0627\u062A\u064A\u0631",
-      "\u0645\u064A\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
-      "\u0646\u062A": "\u0641\u0648\u0627\u062A\u064A\u0631",
-      "\u0645\u0631\u062A\u0628": "\u062F\u062E\u0644",
-      "\u0623\u0631\u0628\u0627\u062D": "\u062F\u062E\u0644",
-      "\u0645\u0643\u0627\u0641\u0623\u0629": "\u062F\u062E\u0644",
-      "\u062A\u0633\u0648\u0642": "\u062A\u0633\u0648\u0642",
-      "\u0645\u0644\u0627\u0628\u0633": "\u062A\u0633\u0648\u0642",
-      "\u0647\u062F\u0627\u064A\u0627": "\u062A\u0633\u0648\u0642",
-      "\u0635\u062D\u0629": "\u0635\u062D\u0629",
-      "\u062F\u0643\u062A\u0648\u0631": "\u0635\u062D\u0629",
-      "\u062F\u0648\u0627": "\u0635\u062D\u0629",
-      "\u062A\u0639\u0644\u064A\u0645": "\u062A\u0639\u0644\u064A\u0645",
-      "\u0643\u0648\u0631\u0633": "\u062A\u0639\u0644\u064A\u0645",
-      "\u0643\u062A\u0627\u0628": "\u062A\u0639\u0644\u064A\u0645",
-      "\u062A\u0631\u0641\u064A\u0647": "\u062A\u0631\u0641\u064A\u0647",
-      "\u0633\u064A\u0646\u0645\u0627": "\u062A\u0631\u0641\u064A\u0647",
-      "\u0644\u0639\u0628\u0629": "\u062A\u0631\u0641\u064A\u0647"
+  while ((match2 = amountPattern.exec(text2)) !== null) {
+    let amount = parseFloat(match2[1]);
+    const suffix = match2[2]?.trim();
+    if (suffix === "\u0627\u0644\u0641" || suffix === "\u0623\u0644\u0641") amount *= 1e3;
+    if (amount <= 0 || amount > 5e7) continue;
+    amounts.push({
+      amount,
+      index: match2.index,
+      length: match2[0].length,
+      rawMatch: match2[0]
+    });
+  }
+  return amounts;
+}
+function extractPeople(text2) {
+  const people = [];
+  for (const pattern of PERSON_PATTERNS) {
+    const regex = new RegExp(pattern.source, pattern.flags);
+    let match2;
+    while ((match2 = regex.exec(text2)) !== null) {
+      const name = match2[1]?.trim();
+      if (name && name.length >= 2 && !/^\d+$/.test(name)) {
+        people.push(name);
+      }
+    }
+  }
+  return [...new Set(people)];
+}
+function extractMerchants(text2) {
+  const merchants = [];
+  for (const [ar, en] of Object.entries(MERCHANT_PATTERNS)) {
+    if (text2.includes(ar)) {
+      merchants.push(en);
+    }
+  }
+  return merchants;
+}
+function extractEntities(normalizedText) {
+  const amounts = extractAmounts(normalizedText);
+  const currency = extractCurrency(normalizedText);
+  const people = extractPeople(normalizedText);
+  const merchants = extractMerchants(normalizedText);
+  const multiIndicators = ["\u0648", "\u0648\u0643\u0645\u0627\u0646", "\u0648\u0628\u0639\u062F\u064A\u0646", "\u0628\u0639\u062F\u0647\u0627", "\u0648\u0645\u0646\u0647\u0645", "\u0648\u0645\u0646\u0647"];
+  const hasMultipleTransactions = amounts.length > 1 || multiIndicators.some((ind) => normalizedText.includes(` ${ind} `));
+  return { amounts, currency, people, merchants, hasMultipleTransactions };
+}
+
+// api/lib/egyptian-dictionary.ts
+var CATEGORY_DICTIONARY = {
+  "\u0639\u0643\u0627\u0648\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0637\u062D\u0627\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u0631\u0627\u062E": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062F\u0648\u0627\u062C\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0648\u0631\u0627\u0643": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0635\u062F\u0648\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0627\u0646\u064A\u0647": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0634\u064A\u0634": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0645\u0643": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u0645\u0628\u0631\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0644\u0637\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0648\u0631\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0642\u0627\u0631\u0648\u0635": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062F\u0646\u064A\u0633": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u064A \u0641\u0648\u062F": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0631\u0646\u062C\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u0633\u064A\u062E": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0644\u0648\u062D\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0642\u0627\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0642\u0627\u0644\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0637\u0627\u0631\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u0631\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u062E\u0628\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u064A\u0646\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0644\u062F\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u064A\u0627\u062D\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0631\u0642\u0627\u0642": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u0644\u0627\u0634": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0645\u064A\u062F": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0642\u0633\u0645\u0627\u0637": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0627\u062A\u064A\u0647": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0631\u0648\u0627\u0633\u0648\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u064A\u0646\u0627\u0628\u0648\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062F\u0648\u0646\u0627\u062A\u0633": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062A\u0648\u0631\u062A\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u0627\u062A\u0648\u0647": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062D\u0644\u0648\u064A\u0627\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0634\u0631\u0642\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u063A\u0631\u0628\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0631\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0627\u0631\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0643\u0631\u0648\u0646\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0643\u0631\u0648\u0646\u0647": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0644\u0633\u0627\u0646 \u0639\u0635\u0641\u0648\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0634\u0639\u0631\u064A\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062F\u0642\u064A\u0642": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0643\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0632\u064A\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0645\u0646\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0632\u0628\u062F\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0635\u0644\u0635\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0644\u062D": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0647\u0627\u0631\u0627\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u0644\u0641\u0644 \u0627\u0633\u0648\u062F": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0645\u0648\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0634\u0627\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0644\u064A\u0628\u062A\u0648\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0627\u0644\u0639\u0631\u0648\u0633\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0642\u0647\u0648\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0646\u0633\u0643\u0627\u0641\u064A\u0647": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0627\u0643\u0627\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0644\u0628\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u064A\u0636": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u0628\u0646\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0631\u0648\u0645\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u064A\u0636\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0646\u0633\u062A\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0642\u0631\u064A\u0634": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0644\u0627\u0646\u0634\u0648\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0633\u0637\u0631\u0645\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062A\u0648\u0646\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0633\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0631\u0628\u0649": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0637\u062D\u064A\u0646\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062D\u0644\u0627\u0648\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u0648\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0637\u0639\u0645\u064A\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u0644\u0627\u0641\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0627\u0646\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062D\u0627\u062C\u0629 \u0633\u0627\u0642\u0639\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u064A\u0628\u0633\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0648\u0643\u0627\u0643\u0648\u0644\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0641\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0634\u0648\u064A\u0628\u0633": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u064A\u0631\u0648\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0631\u064A\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0631\u0627\u0646\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0635\u064A\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u0647\u064A\u0646\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0627\u0644\u0645\u0631\u0627\u0639\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0644\u0645\u0627\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u064A\u062A\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u064A\u0627\u0647": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0639\u062F\u0646\u064A\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0646\u0633\u062A\u0644\u0647": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062F\u0633\u0627\u0646\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0627\u0643\u0648\u0627\u0641\u064A\u0646\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0637\u0639\u0645": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062A\u064A\u0643 \u0627\u0648\u0627\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062F\u0644\u064A\u0641\u0631\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0646\u062A\u0627\u0643\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0627\u0643\u062F\u0648\u0646\u0627\u0644\u062F\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0647\u0627\u0631\u062F\u064A\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0631\u062C\u0631 \u0643\u064A\u0646\u062C": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0627\u0632\u0648\u0643\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0647\u0627\u0631\u062A \u0627\u062A\u0627\u0643": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0627\u0641\u0644\u0648 \u0628\u0631\u062C\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0648\u064A\u0644\u064A\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0632\u0643\u0633": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u064A\u062A\u0632\u0627 \u0647\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0627\u0628\u0627 \u062C\u0648\u0646\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0631\u064A\u0645\u0648 \u0628\u064A\u062A\u0632\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0627\u0644\u0628\u064A\u062A\u0632\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0627\u0644\u0641\u0637\u064A\u0631\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0634\u0644\u062A\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0634\u0627\u0648\u0631\u0645\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0627\u0628\u0648 \u0627\u0646\u0633": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0632\u064A\u0646 \u0627\u0644\u0634\u0627\u0645": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0634\u0631\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0627\u0628\u0648 \u0637\u0627\u0631\u0642": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u064A\u062F \u062D\u0646\u0641\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0627\u0644\u062A\u062D\u0631\u064A\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0647\u0646\u062F": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u0627\u062F": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0627\u0644\u0642\u0632\u0627\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0627\u0644\u0634\u0628\u0631\u0627\u0648\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0627\u0631\u0627\u0628\u064A\u0627\u062A\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0627\u0644\u062A\u0627\u0628\u0639\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0627\u0644\u0628\u063A\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u062D\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u0644\u0641\u0644\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0627\u0644\u0645\u0646\u0648\u0641\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0627\u0644\u0628\u0631\u0646\u0633": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0635\u0628\u062D \u0643\u0627\u0628\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u062D\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0627\u0644\u0631\u0641\u0627\u0639\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062D\u0648\u0627\u0648\u0634\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0631\u064A\u0628": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0648\u0627\u0641\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0646\u062F\u0648\u062A\u0634\u0627\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0648\u062C\u0628\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0648\u0627\u0635\u0644\u0627\u062A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u0643\u0633\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u0627\u0643\u0633\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0627\u062C\u0631\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u0648\u0635\u064A\u0644\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0628\u0627\u0635": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0623\u062A\u0648\u0628\u064A\u0633": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u064A\u0643\u0631\u0648\u0628\u0627\u0635": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u0634\u0631\u0648\u0639": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u062A\u0631\u0648": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0642\u0637\u0627\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0642\u0637\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u0648\u0643\u062A\u0648\u0643": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u0643\u062A\u0643": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u0631\u0648\u0633\u064A\u0643\u0644": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u0648\u062A\u0648\u0633\u064A\u0643\u0644": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0639\u062C\u0644\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0633\u0643\u0648\u062A\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0627\u0648\u0628\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0623\u0648\u0628\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0643\u0631\u064A\u0645": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0627\u0646\u062F\u0631\u0627\u064A\u0641\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062F\u064A\u062F\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0633\u0648\u064A\u0641\u0644": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062D\u062C\u0632 \u0637\u064A\u0631\u0627\u0646": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u0630\u0643\u0631\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0643\u0627\u0631\u062A \u0627\u0644\u0645\u062A\u0631\u0648": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0627\u0634\u062A\u0631\u0627\u0643": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0628\u0646\u0632\u064A\u0646": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u0641\u0648\u064A\u0644\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0668\u0660": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0669\u0662": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0669\u0665": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0633\u0648\u0644\u0627\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u063A\u0627\u0632 \u0639\u0631\u0628\u064A\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u063A\u064A\u064A\u0631 \u0632\u064A\u062A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0634\u062D\u0645": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u063A\u0633\u064A\u0644 \u0639\u0631\u0628\u064A\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0643\u064A\u0645\u0627\u0648\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0628\u0648\u0644\u064A\u0634": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0631\u0643\u0646\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062C\u0631\u0627\u062C": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0633\u0627\u064A\u0633": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0643\u0627\u0631\u062A\u0647": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0628\u0648\u0627\u0628\u0627\u062A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0635\u064A\u0627\u0646\u0629 \u0639\u0631\u0628\u064A\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u064A\u0643\u0627\u0646\u064A\u0643\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0643\u0647\u0631\u0628\u0627\u0626\u064A \u0633\u064A\u0627\u0631\u0627\u062A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0639\u0641\u0634\u062C\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0633\u0645\u0643\u0631\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062F\u0648\u0643\u0648": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0633\u0631\u0648\u062C\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062F\u0648\u0627\u0633\u0627\u062A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0643\u0627\u0648\u062A\u0634": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u0631\u0635\u064A\u0635": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0632\u0648\u0627\u064A\u0627": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062C\u0646\u0648\u0637": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0628\u0637\u0627\u0631\u064A\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062F\u064A\u0646\u0627\u0645\u0648": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u0627\u0631\u0634": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0637\u0631\u0645\u0628\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0631\u062F\u064A\u0627\u062A\u064A\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0628\u0648\u062C\u064A\u0647\u0627\u062A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0641\u0644\u0627\u062A\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u064A\u0644 \u0641\u0631\u0627\u0645\u0644": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0637\u0646\u0627\u0628\u064A\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0643\u0648\u0628\u0644\u0646": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u0633\u0627\u0639\u062F\u064A\u0646": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u0642\u0635\u0627\u062A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0639\u0644\u0628\u0629 \u0634\u0643\u0645\u0627\u0646": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0641\u0648\u0627\u0646\u064A\u0633": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u0631\u0627\u064A\u0627\u062A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0627\u0643\u0635\u062F\u0627\u0645": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0631\u0641\u0631\u0641": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0643\u0628\u0648\u062A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0632\u062C\u0627\u062C \u0639\u0631\u0628\u064A\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0641\u0631\u064A\u0648\u0646": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0639\u0645\u0631\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u0648\u062A\u0648\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0641\u062A\u064A\u0633": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062F\u064A\u0628\u0631\u064A\u0627\u062C": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u062C\u062F\u064A\u062F \u0631\u062E\u0635\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0641\u062D\u0635": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u062E\u0627\u0644\u0641\u0627\u062A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u0631\u0648\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0637\u0641\u0627\u064A\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0641\u0627\u062A\u0648\u0631\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0648\u0635\u0644": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0641\u0648\u0627\u062A\u064A\u0631": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0643\u0647\u0631\u0628\u0627": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0645\u064A\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u063A\u0627\u0632": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0646\u0648\u0631": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0632\u0628\u0627\u0644\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u0644\u064A\u0641\u0648\u0646": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0627\u0631\u0636\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0646\u062A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0631\u0627\u0648\u062A\u0631": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0628\u0627\u0642\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0631\u0635\u064A\u062F": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0634\u062D\u0646": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0643\u0627\u0631\u062A \u0641\u0643\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0641\u0643\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0627\u0648\u0631\u0646\u062C": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0641\u0648\u062F\u0627\u0641\u0648\u0646": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0627\u062A\u0635\u0627\u0644\u0627\u062A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0648\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "WE": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0643\u0627\u0634": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u062D\u0648\u064A\u0644": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "Instapay": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0641\u0648\u0631\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0645\u0635\u0627\u0631\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0628\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062E\u0627\u0644\u0635": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0627\u0645\u0627\u0646": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0642\u0633\u0637": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0627\u0642\u0633\u0627\u0637": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0641\u0627\u0644\u064A\u0648": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0643\u0648\u0646\u062A\u0643\u062A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0628\u0631\u064A\u0645\u064A\u0648\u0645": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0633\u0647\u0648\u0644\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0642\u0633\u0637 \u0627\u0644\u0628\u0646\u0643": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0642\u0633\u0637 \u0627\u0644\u0639\u0631\u0628\u064A\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0642\u0633\u0637 \u0627\u0644\u0634\u0642\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0641\u064A\u0632\u0627": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0645\u062F\u064A\u0648\u0646\u064A\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062F\u064A\u0646": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0633\u0644\u0641\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0633\u062F\u0627\u062F": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0642\u0631\u0636": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0636\u0631\u0627\u0626\u0628": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0636\u0631\u0627\u064A\u0628": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0646\u0642\u0627\u0628\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0627\u0634\u062A\u0631\u0627\u0643 \u0646\u0627\u062F\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u0623\u0645\u064A\u0646": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0627\u064A\u062C\u0627\u0631": "\u0633\u0643\u0646",
+  "\u0625\u064A\u062C\u0627\u0631": "\u0633\u0643\u0646",
+  "\u0633\u0643\u0646": "\u0633\u0643\u0646",
+  "\u0628\u064A\u062A": "\u0633\u0643\u0646",
+  "\u0634\u0642\u0629": "\u0633\u0643\u0646",
+  "\u0645\u0646\u0632\u0644": "\u0633\u0643\u0646",
+  "\u0639\u0645\u0627\u0631\u0629": "\u0633\u0643\u0646",
+  "\u0628\u0648\u0627\u0628": "\u0633\u0643\u0646",
+  "\u0646\u0638\u0627\u0641\u0629": "\u0633\u0643\u0646",
+  "\u0633\u0628\u0627\u0643": "\u0633\u0643\u0646",
+  "\u0643\u0647\u0631\u0628\u0627\u0626\u064A": "\u0633\u0643\u0646",
+  "\u0646\u0642\u0627\u0634": "\u0633\u0643\u0646",
+  "\u0646\u062C\u0627\u0631": "\u0633\u0643\u0646",
+  "\u0627\u0644\u0648\u0645\u064A\u062A\u0627\u0644": "\u0633\u0643\u0646",
+  "\u062D\u062F\u0627\u062F": "\u0633\u0643\u0646",
+  "\u0641\u0646\u064A \u062A\u0643\u064A\u064A\u0641": "\u0633\u0643\u0646",
+  "\u0641\u0644\u062A\u0631 \u0645\u064A\u0629": "\u0633\u0643\u0646",
+  "\u0634\u063A\u0627\u0644\u0629": "\u0633\u0643\u0646",
+  "\u0645\u0643\u0648\u062C\u064A": "\u0633\u0643\u0646",
+  "\u0645\u063A\u0633\u0644\u0629": "\u0633\u0643\u0646",
+  "\u062F\u0631\u0627\u064A \u0643\u0644\u064A\u0646": "\u0633\u0643\u0646",
+  "\u0639\u0641\u0634": "\u0633\u0643\u0646",
+  "\u0627\u062B\u0627\u062B": "\u0633\u0643\u0646",
+  "\u0627\u0646\u062A\u0631\u064A\u0647": "\u0633\u0643\u0646",
+  "\u0635\u0627\u0644\u0648\u0646": "\u0633\u0643\u0646",
+  "\u0633\u0641\u0631\u0629": "\u0633\u0643\u0646",
+  "\u0627\u0648\u0636\u0629 \u0646\u0648\u0645": "\u0633\u0643\u0646",
+  "\u062F\u0648\u0644\u0627\u0628": "\u0633\u0643\u0646",
+  "\u0633\u0631\u064A\u0631": "\u0633\u0643\u0646",
+  "\u0645\u0631\u062A\u0628\u0629": "\u0633\u0643\u0646",
+  "\u0633\u062C\u0627\u062F": "\u0633\u0643\u0646",
+  "\u0633\u062A\u0627\u064A\u0631": "\u0633\u0643\u0646",
+  "\u0646\u062C\u0641": "\u0633\u0643\u0646",
+  "\u0644\u0645\u0628\u0627\u062A": "\u0633\u0643\u0646",
+  "\u0641\u064A\u0634\u0629": "\u0633\u0643\u0646",
+  "\u0645\u0646\u0638\u0641\u0627\u062A": "\u0633\u0643\u0646",
+  "\u0635\u0627\u0628\u0648\u0646": "\u0633\u0643\u0646",
+  "\u0643\u0644\u0648\u0631": "\u0633\u0643\u0646",
+  "\u0627\u0631\u064A\u0627\u0644": "\u0633\u0643\u0646",
+  "\u0628\u0631\u0633\u064A\u0644": "\u0633\u0643\u0646",
+  "\u062A\u0627\u064A\u062F": "\u0633\u0643\u0646",
+  "\u062F\u0627\u0648\u0646\u064A": "\u0633\u0643\u0646",
+  "\u0645\u0637\u0647\u0631": "\u0633\u0643\u0646",
+  "\u0645\u0646\u0627\u062F\u064A\u0644": "\u0633\u0643\u0646",
+  "\u0628\u0627\u0645\u0628\u0631\u0632": "\u0633\u0643\u0646",
+  "\u062D\u0641\u0627\u0636\u0627\u062A": "\u0633\u0643\u0646",
+  "\u0628\u0648\u062A\u0627\u062C\u0627\u0632": "\u0633\u0643\u0646",
+  "\u062A\u0644\u0627\u062C\u0629": "\u0633\u0643\u0646",
+  "\u063A\u0633\u0627\u0644\u0629": "\u0633\u0643\u0646",
+  "\u0633\u062E\u0627\u0646": "\u0633\u0643\u0646",
+  "\u062E\u0644\u0627\u0637": "\u0633\u0643\u0646",
+  "\u0645\u0643\u0646\u0633\u0629": "\u0633\u0643\u0646",
+  "\u0645\u0631\u0648\u062D\u0629": "\u0633\u0643\u0646",
+  "\u0634\u0641\u0627\u0637": "\u0633\u0643\u0646",
+  "\u0647\u062F\u0648\u0645": "\u062A\u0633\u0648\u0642",
+  "\u0644\u0628\u0633": "\u062A\u0633\u0648\u0642",
+  "\u0645\u0644\u0627\u0628\u0633": "\u062A\u0633\u0648\u0642",
+  "\u0642\u0645\u064A\u0635": "\u062A\u0633\u0648\u0642",
+  "\u062A\u064A\u0634\u0631\u062A": "\u062A\u0633\u0648\u0642",
+  "\u0628\u0646\u0637\u0644\u0648\u0646": "\u062A\u0633\u0648\u0642",
+  "\u062C\u0627\u0643\u064A\u062A": "\u062A\u0633\u0648\u0642",
+  "\u0628\u062F\u0644\u0629": "\u062A\u0633\u0648\u0642",
+  "\u0634\u0631\u0627\u0628": "\u062A\u0633\u0648\u0642",
+  "\u062F\u0627\u062E\u0644\u064A": "\u062A\u0633\u0648\u0642",
+  "\u0628\u064A\u062C\u0627\u0645\u0629": "\u062A\u0633\u0648\u0642",
+  "\u0643\u0648\u062A\u0634\u064A": "\u062A\u0633\u0648\u0642",
+  "\u062C\u0632\u0645\u0629": "\u062A\u0633\u0648\u0642",
+  "\u0634\u0628\u0634\u0628": "\u062A\u0633\u0648\u0642",
+  "\u0633\u0644\u064A\u0628\u0631": "\u062A\u0633\u0648\u0642",
+  "\u0634\u0646\u0637\u0629": "\u062A\u0633\u0648\u0642",
+  "\u0633\u0627\u0639\u0629": "\u062A\u0633\u0648\u0642",
+  "\u0646\u0636\u0627\u0631\u0629": "\u062A\u0633\u0648\u0642",
+  "\u0628\u0631\u0641\u0627\u0646": "\u062A\u0633\u0648\u0642",
+  "\u0645\u0643\u064A\u0627\u062C": "\u062A\u0633\u0648\u0642",
+  "\u0645\u064A\u0643 \u0627\u0628": "\u062A\u0633\u0648\u0642",
+  "\u0634\u0627\u0645\u0628\u0648": "\u062A\u0633\u0648\u0642",
+  "\u0628\u0644\u0633\u0645": "\u062A\u0633\u0648\u0642",
+  "\u0645\u0639\u062C\u0648\u0646": "\u062A\u0633\u0648\u0642",
+  "\u0641\u0631\u0634\u0629": "\u062A\u0633\u0648\u0642",
+  "\u062D\u0644\u0627\u0642\u0629": "\u062A\u0633\u0648\u0642",
+  "\u062D\u0644\u0627\u0642": "\u062A\u0633\u0648\u0642",
+  "\u0643\u0648\u0627\u0641\u064A\u0631": "\u062A\u0633\u0648\u0642",
+  "\u0628\u064A\u0648\u062A\u064A \u0633\u0646\u062A\u0631": "\u062A\u0633\u0648\u0642",
+  "\u0644\u064A\u0632\u0631": "\u062A\u0633\u0648\u0642",
+  "\u062A\u062C\u0645\u064A\u0644": "\u062A\u0633\u0648\u0642",
+  "\u0645\u0648\u0628\u0627\u064A\u0644": "\u062A\u0633\u0648\u0642",
+  "\u0627\u064A\u0641\u0648\u0646": "\u062A\u0633\u0648\u0642",
+  "\u0633\u0627\u0645\u0633\u0648\u0646\u062C": "\u062A\u0633\u0648\u0642",
+  "\u0644\u0627\u0628 \u062A\u0648\u0628": "\u062A\u0633\u0648\u0642",
+  "\u0633\u0645\u0627\u0639\u0629": "\u062A\u0633\u0648\u0642",
+  "\u0634\u0627\u062D\u0646": "\u062A\u0633\u0648\u0642",
+  "\u0627\u064A\u0631\u0628\u0648\u062F\u0632": "\u062A\u0633\u0648\u0642",
+  "\u062A\u0627\u0628\u0644\u062A": "\u062A\u0633\u0648\u0642",
+  "\u0633\u0627\u0639\u0629 \u0633\u0645\u0627\u0631\u062A": "\u062A\u0633\u0648\u0642",
+  "\u0645\u0648\u0644": "\u062A\u0633\u0648\u0642",
+  "\u0633\u064A\u062A\u064A \u0633\u062A\u0627\u0631\u0632": "\u062A\u0633\u0648\u0642",
+  "\u0643\u0627\u064A\u0631\u0648 \u0641\u064A\u0633\u062A\u064A\u0641\u0627\u0644": "\u062A\u0633\u0648\u0642",
+  "\u0645\u0648\u0644 \u0627\u0644\u0639\u0631\u0628": "\u062A\u0633\u0648\u0642",
+  "\u0648\u0633\u0637 \u0627\u0644\u0628\u0644\u062F": "\u062A\u0633\u0648\u0642",
+  "\u0627\u0644\u0639\u062A\u0628\u0629": "\u062A\u0633\u0648\u0642",
+  "\u0627\u0644\u0645\u0648\u0633\u0643\u064A": "\u062A\u0633\u0648\u0642",
+  "\u0628\u0631\u0627\u0646\u062F": "\u062A\u0633\u0648\u0642",
+  "\u0632\u0627\u0631\u0627": "\u062A\u0633\u0648\u0642",
+  "H&M": "\u062A\u0633\u0648\u0642",
+  "\u0646\u0627\u064A\u0643\u064A": "\u062A\u0633\u0648\u0642",
+  "\u0627\u062F\u064A\u062F\u0627\u0633": "\u062A\u0633\u0648\u0642",
+  "\u062F\u0643\u062A\u0648\u0631": "\u0635\u062D\u0629",
+  "\u0639\u064A\u0627\u062F\u0629": "\u0635\u062D\u0629",
+  "\u0643\u0634\u0641": "\u0635\u062D\u0629",
+  "\u0627\u0633\u062A\u0634\u0627\u0631\u0629": "\u0635\u062D\u0629",
+  "\u0641\u064A\u0632\u064A\u062A\u0627": "\u0635\u062D\u0629",
+  "\u0631\u0648\u0634\u062A\u0629": "\u0635\u062D\u0629",
+  "\u0635\u064A\u062F\u0644\u064A\u0629": "\u0635\u062D\u0629",
+  "\u062F\u0648\u0627": "\u0635\u062D\u0629",
+  "\u0639\u0644\u0627\u062C": "\u0635\u062D\u0629",
+  "\u062D\u0642\u0646\u0629": "\u0635\u062D\u0629",
+  "\u062A\u062D\u0627\u0644\u064A\u0644": "\u0635\u062D\u0629",
+  "\u0645\u0639\u0645\u0644": "\u0635\u062D\u0629",
+  "\u0627\u0634\u0639\u0629": "\u0635\u062D\u0629",
+  "\u0645\u0633\u062A\u0634\u0641\u0649": "\u0635\u062D\u0629",
+  "\u0637\u0648\u0627\u0631\u0626": "\u0635\u062D\u0629",
+  "\u0639\u0645\u0644\u064A\u0629": "\u0635\u062D\u0629",
+  "\u0627\u0633\u0646\u0627\u0646": "\u0635\u062D\u0629",
+  "\u062D\u0634\u0648": "\u0635\u062D\u0629",
+  "\u062E\u0644\u0639": "\u0635\u062D\u0629",
+  "\u0646\u0638\u0627\u0631\u0629": "\u0635\u062D\u0629",
+  "\u0639\u062F\u0633\u0627\u062A": "\u0635\u062D\u0629",
+  "\u0641\u064A\u062A\u0627\u0645\u064A\u0646\u0627\u062A": "\u0635\u062D\u0629",
+  "\u0645\u062F\u0631\u0633\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u062D\u0636\u0627\u0646\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u062C\u0627\u0645\u0639\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0643\u0644\u064A\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u062F\u0631\u0633": "\u062A\u0639\u0644\u064A\u0645",
+  "\u062F\u0631\u0648\u0633": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0633\u0646\u062A\u0631": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u062F\u0631\u0633": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u0635\u0627\u0631\u064A\u0641 \u0645\u062F\u0631\u0633\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0628\u0627\u0635 \u0645\u062F\u0631\u0633\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0643\u062A\u0628": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0643\u0634\u0643\u0648\u0644": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0634\u0646\u0637\u0629 \u0645\u062F\u0631\u0633\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u064A\u0648\u0646\u064A\u0641\u0648\u0631\u0645": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0643\u0648\u0631\u0633": "\u062A\u0639\u0644\u064A\u0645",
+  "\u062F\u0628\u0644\u0648\u0645\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u0627\u062C\u0633\u062A\u064A\u0631": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0627\u0645\u062A\u062D\u0627\u0646\u0627\u062A": "\u062A\u0639\u0644\u064A\u0645",
+  "\u062E\u0631\u0648\u062C\u0629": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0641\u0633\u062D\u0629": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0633\u0647\u0631\u0629": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0633\u064A\u0646\u0645\u0627": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0645\u0633\u0631\u062D": "\u062A\u0631\u0641\u064A\u0647",
+  "\u062D\u0641\u0644\u0629": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0643\u0627\u0641\u064A\u0647": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0634\u064A\u0634\u0629": "\u062A\u0631\u0641\u064A\u0647",
+  "\u062D\u062C\u0632 \u0643\u0648\u0631\u0629": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0628\u0644\u0627\u064A\u0633\u062A\u064A\u0634\u0646": "\u062A\u0631\u0641\u064A\u0647",
+  "\u062C\u064A\u0645": "\u062A\u0631\u0641\u064A\u0647",
+  "GYM": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0646\u0627\u062F\u064A": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0631\u062D\u0644\u0629": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0633\u0641\u0631": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0645\u0635\u064A\u0641": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0628\u062D\u0631": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0634\u0627\u0644\u064A\u0647": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0641\u0646\u062F\u0642": "\u062A\u0631\u0641\u064A\u0647",
+  "\u062A\u064A\u0643\u062A": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0645\u0644\u0627\u0647\u064A": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0646\u062A\u0641\u0644\u0643\u0633": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0634\u0627\u0647\u062F": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0647\u062F\u064A\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0639\u064A\u062F \u0645\u064A\u0644\u0627\u062F": "\u0647\u062F\u0627\u064A\u0627",
+  "\u062E\u0637\u0648\u0628\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0641\u0631\u062D": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0643\u062A\u0628 \u0643\u062A\u0627\u0628": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0639\u064A\u062F\u064A\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0633\u0628\u0648\u0639": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0646\u0642\u0637\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0645\u062C\u0627\u0645\u0644\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  "\u062A\u0628\u0631\u0639": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0635\u062F\u0642\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0632\u0643\u0627\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0631\u0633\u0627\u0644\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0627\u0644\u0627\u0648\u0631\u0645\u0627\u0646": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0645\u0633\u062A\u0634\u0641\u0649 \u0665\u0667": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0634\u0646\u0637\u0629 \u0631\u0645\u0636\u0627\u0646": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0630\u0647\u0628": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u062F\u0647\u0628": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0633\u0628\u064A\u0643\u0629": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u062C\u0646\u064A\u0647 \u062F\u0647\u0628": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u062F\u0648\u0644\u0627\u0631": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0628\u0648\u0631\u0635\u0629": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0627\u0633\u0647\u0645": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u062B\u0627\u0646\u062F\u0631": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0634\u0647\u0627\u062F\u0629": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0648\u062F\u064A\u0639\u0629": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631"
+};
+
+// api/lib/fuzzy-match.ts
+function levenshtein(a, b) {
+  const matrix = [];
+  for (let i = 0; i <= a.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return matrix[a.length][b.length];
+}
+function normalizeArabic(text2) {
+  return text2.replace(/[\u064B-\u065F\u0670]/g, "").replace(/[إأآٱ]/g, "\u0627").replace(/ى/g, "\u064A").replace(/ة/g, "\u0647").replace(/ؤ/g, "\u0648").replace(/ئ/g, "\u064A").trim();
+}
+function fuzzyFindCategory(word, dictionary, maxDistance = 2) {
+  const normalized = normalizeArabic(word);
+  if (normalized.length < 2) return null;
+  if (dictionary[word]) return dictionary[word];
+  if (dictionary[normalized]) return dictionary[normalized];
+  let bestMatch = null;
+  let bestDist = maxDistance + 1;
+  for (const key of Object.keys(dictionary)) {
+    const normKey = normalizeArabic(key);
+    if (Math.abs(normKey.length - normalized.length) > maxDistance) continue;
+    const dist = levenshtein(normalized, normKey);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestMatch = dictionary[key];
+    }
+  }
+  return bestDist <= maxDistance ? bestMatch : null;
+}
+
+// api/lib/intent-detector.ts
+var STRONG_INCOME = [
+  "\u0645\u0631\u062A\u0628",
+  "\u0645\u0631\u062A\u0628\u064A",
+  "\u0642\u0628\u0636\u062A",
+  "\u0627\u0644\u0642\u0628\u0636",
+  "\u0627\u0633\u062A\u0644\u0645\u062A",
+  "\u0627\u0644\u0645\u0627\u0647\u064A\u0647",
+  "\u062C\u0627\u0644\u064A \u0645\u0646",
+  "\u062D\u0648\u0644\u064A \u0645\u0646",
+  "\u062D\u0648\u0644\u0648\u0644\u064A",
+  "\u0627\u062A\u062D\u0648\u0644\u062A\u0644\u064A",
+  "\u0627\u0631\u0628\u0627\u062D\u064A",
+  "\u0642\u0628\u0636\u062A \u0627\u0644\u062C\u0645\u0639\u064A\u0647",
+  "\u0633\u0647\u0645\u064A \u0641\u064A \u0627\u0644\u062C\u0645\u0639\u064A\u0647",
+  "\u0633\u0628\u0648\u0628\u0647",
+  "\u0634\u063A\u0644\u0627\u0646\u0647 \u0628\u0631\u0627\u0646\u064A",
+  "\u062F\u062E\u0644\u064A",
+  "\u0627\u064A\u0631\u0627\u062F\u064A",
+  "\u0631\u062C\u0639\u0648\u0644\u064A",
+  "\u0631\u062C\u0639\u0644\u064A \u0641\u0644\u0648\u0633",
+  "\u0643\u0627\u0634 \u0628\u0627\u0643"
+];
+var INCOME_KEYWORDS = [
+  "\u0645\u0631\u062A\u0628",
+  "\u0645\u0631\u062A\u0628\u064A",
+  "\u0642\u0628\u0636\u062A",
+  "\u0627\u0644\u0642\u0628\u0636",
+  "\u0627\u0633\u062A\u0644\u0645\u062A",
+  "\u0627\u0644\u0645\u0627\u0647\u064A\u0647",
+  "\u0627\u0644\u0645\u0639\u0627\u0634",
+  "\u0631\u0627\u062A\u0628",
+  "\u062C\u0627\u0644\u064A",
+  "\u0648\u0635\u0644\u0646\u064A",
+  "\u0631\u0632\u0642",
+  "\u0645\u0643\u0633\u0628",
+  "\u0643\u0633\u0628\u062A",
+  "\u0627\u0631\u0628\u0627\u062D",
+  "\u0641\u0648\u0627\u064A\u062F",
+  "\u0639\u0627\u0626\u062F",
+  "\u0645\u0643\u0627\u0641\u0627\u0647",
+  "\u0628\u0648\u0646\u0635",
+  "\u0627\u0648\u0641\u0631 \u062A\u0627\u064A\u0645",
+  "\u0627\u0636\u0627\u0641\u064A",
+  "\u0628\u062F\u0644",
+  "\u062D\u0648\u0627\u0641\u0632",
+  "\u062D\u0648\u0644\u064A",
+  "\u062D\u0648\u0644\u0648\u0644\u064A",
+  "\u0627\u062A\u062D\u0648\u0644\u062A\u0644\u064A",
+  "\u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0643\u0627\u0634",
+  "\u062C\u0645\u0639\u064A\u0647",
+  "\u0642\u0628\u0636\u062A \u0627\u0644\u062C\u0645\u0639\u064A\u0647",
+  "\u0633\u0647\u0645\u064A",
+  "\u0627\u064A\u062F\u0627\u0639",
+  "\u062F\u062E\u0644",
+  "\u0627\u064A\u0631\u0627\u062F",
+  "\u0645\u0628\u064A\u0639\u0627\u062A",
+  "\u0628\u064A\u0639\u0647",
+  "\u0639\u0645\u0648\u0644\u0647",
+  "\u0633\u0628\u0648\u0628\u0647",
+  "\u0628\u0631\u0627\u0646\u064A",
+  "\u0634\u063A\u0644\u0627\u0646\u0647",
+  "\u0647\u062F\u064A\u0647",
+  "\u0639\u064A\u062F\u064A\u0647",
+  "\u0646\u0642\u0637\u0647",
+  "\u0646\u0641\u0642\u0647"
+];
+var STRONG_EXPENSE = [
+  "\u062F\u0641\u0639\u062A",
+  "\u0635\u0631\u0641\u062A",
+  "\u0627\u0634\u062A\u0631\u064A\u062A",
+  "\u0633\u062F\u062F\u062A",
+  "\u062D\u0627\u0633\u0628\u062A",
+  "\u062D\u0648\u0644\u062A \u0644",
+  "\u0627\u062F\u064A\u062A \u0644",
+  "\u0637\u0644\u0639\u062A \u0644",
+  "\u062E\u0631\u062C\u062A \u0644",
+  "\u0631\u0643\u0628\u062A",
+  "\u0637\u0644\u0628\u062A",
+  "\u062D\u062C\u0632\u062A",
+  "\u0634\u062D\u0646\u062A \u0631\u0635\u064A\u062F",
+  "\u062F\u0641\u0639\u062A \u0642\u0633\u0637",
+  "\u062F\u0641\u0639\u0646\u0627",
+  "\u0627\u0643\u0644\u062A",
+  "\u0634\u0631\u0628\u062A",
+  "\u0639\u0632\u0645\u062A"
+];
+var EXPENSE_KEYWORDS = [
+  "\u0635\u0631\u0641\u062A",
+  "\u0635\u0631\u0641",
+  "\u0645\u0635\u0631\u0648\u0641",
+  "\u0645\u0635\u0627\u0631\u064A\u0641",
+  "\u062E\u0631\u062C\u064A",
+  "\u062A\u0628\u0630\u064A\u0631",
+  "\u062F\u0641\u0639\u062A",
+  "\u0633\u062F\u062F\u062A",
+  "\u062E\u0644\u0635\u062A",
+  "\u062D\u0627\u0633\u0628\u062A",
+  "\u0627\u0634\u062A\u0631\u064A\u062A",
+  "\u062C\u0628\u062A",
+  "\u0646\u0632\u0644\u062A",
+  "\u0637\u0644\u0628\u062A",
+  "\u062F\u0644\u064A\u0641\u0631\u064A",
+  "\u0631\u0643\u0628\u062A",
+  "\u062A\u0648\u0635\u064A\u0644\u0647",
+  "\u0631\u0648\u062D\u062A",
+  "\u0633\u0627\u0641\u0631\u062A",
+  "\u0627\u0643\u0644\u062A",
+  "\u0634\u0631\u0628\u062A",
+  "\u0639\u0632\u0645\u062A",
+  "\u0641\u0627\u062A\u0648\u0631\u0647",
+  "\u0634\u062D\u0646\u062A",
+  "\u0631\u0635\u064A\u062F",
+  "\u062D\u0648\u0644\u062A",
+  "\u0627\u062F\u064A\u062A",
+  "\u0637\u0644\u0639\u062A",
+  "\u0648\u0632\u0639\u062A",
+  "\u0627\u0634\u062A\u0631\u0627\u0643",
+  "\u062C\u062F\u062F\u062A",
+  "\u062D\u062C\u0632\u062A",
+  "\u0643\u0644\u0641\u0646\u064A",
+  "\u0648\u0627\u0642\u0641 \u0639\u0644\u064A\u0627",
+  "\u062E\u0633\u0631\u062A",
+  "\u0639\u0644\u064A\u0627",
+  "\u062F\u064A\u0646",
+  "\u0642\u0633\u0637",
+  "\u0627\u0642\u0633\u0627\u0637",
+  "\u0645\u062F\u064A\u0648\u0646\u064A\u0647"
+];
+var TRANSFER_KEYWORDS = [
+  "\u062D\u0648\u0644\u062A \u0644",
+  "\u062D\u0648\u0644\u062A \u0644\u0640",
+  "\u062A\u062D\u0648\u064A\u0644",
+  "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A",
+  "\u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0643\u0627\u0634",
+  "\u0633\u062D\u0628\u062A \u0645\u0646",
+  "\u0633\u062D\u0628 ATM",
+  "\u0627\u064A\u062F\u0627\u0639",
+  "\u062D\u0637\u064A\u062A \u0641\u064A",
+  "\u0633\u0644\u0641\u062A",
+  "\u0633\u0644\u0641\u0647",
+  "\u0627\u062F\u064A\u062A \u0633\u0644\u0641\u0647"
+];
+var INVESTMENT_KEYWORDS = [
+  "\u0630\u0647\u0628",
+  "\u062F\u0647\u0628",
+  "\u0633\u0628\u064A\u0643\u0647",
+  "\u062C\u0646\u064A\u0647 \u062F\u0647\u0628",
+  "\u062F\u0648\u0644\u0627\u0631",
+  "\u0628\u0648\u0631\u0635\u0647",
+  "\u0627\u0633\u0647\u0645",
+  "\u0634\u0647\u0627\u062F\u0647",
+  "\u0648\u062F\u064A\u0639\u0647",
+  "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0639\u0642\u0627\u0631",
+  "\u0627\u0631\u0636",
+  "\u0634\u0642\u0647 \u062A\u0645\u0644\u064A\u0643"
+];
+function detectIntent(context) {
+  let incomeScore = 0;
+  let expenseScore = 0;
+  let transferScore = 0;
+  let investmentScore = 0;
+  for (const kw of STRONG_INCOME) if (context.includes(kw)) incomeScore += 50;
+  for (const kw of STRONG_EXPENSE) if (context.includes(kw)) expenseScore += 50;
+  for (const kw of INCOME_KEYWORDS) if (context.includes(kw)) incomeScore += 15;
+  for (const kw of EXPENSE_KEYWORDS) if (context.includes(kw)) expenseScore += 15;
+  for (const kw of TRANSFER_KEYWORDS) if (context.includes(kw)) transferScore += 40;
+  for (const kw of INVESTMENT_KEYWORDS) if (context.includes(kw)) investmentScore += 40;
+  if (/حولت\s*(ل|لـ)/.test(context)) {
+    transferScore += 30;
+    expenseScore -= 20;
+  }
+  if (/حول(ي|ى|ولي|ولى)/.test(context)) {
+    incomeScore += 40;
+  }
+  if (/اد(ي|ى)ت\s*(ل|لـ)/.test(context)) {
+    expenseScore += 30;
+  }
+  if (/سلفت/.test(context)) {
+    transferScore += 30;
+  }
+  if (/رجع(و|)لي/.test(context)) {
+    incomeScore += 40;
+  }
+  const scores = { income: incomeScore, expense: expenseScore, transfer: transferScore, investment: investmentScore };
+  const maxScore = Math.max(incomeScore, expenseScore, transferScore, investmentScore);
+  let intent = "expense";
+  if (maxScore === 0) {
+    intent = "expense";
+  } else if (investmentScore === maxScore) {
+    intent = "investment";
+  } else if (transferScore === maxScore && transferScore > expenseScore) {
+    intent = "transfer";
+  } else if (incomeScore > expenseScore) {
+    intent = "income";
+  } else {
+    intent = "expense";
+  }
+  const totalScore = incomeScore + expenseScore + transferScore + investmentScore;
+  const confidence = totalScore > 0 ? Math.round(maxScore / totalScore * 100) : 30;
+  return { intent, incomeScore, expenseScore, transferScore, investmentScore, confidence };
+}
+
+// api/lib/rule-engine.ts
+var SUB_CATEGORY_MAP = {
+  // Food subcategories
+  "\u0643\u0646\u062A\u0627\u0643\u064A": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0648\u062C\u0628\u0627\u062A \u0633\u0631\u064A\u0639\u0629" },
+  "\u0645\u0627\u0643\u062F\u0648\u0646\u0627\u0644\u062F\u0632": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0648\u062C\u0628\u0627\u062A \u0633\u0631\u064A\u0639\u0629" },
+  "\u0647\u0627\u0631\u062F\u064A\u0632": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0648\u062C\u0628\u0627\u062A \u0633\u0631\u064A\u0639\u0629" },
+  "\u0628\u0631\u062C\u0631 \u0643\u064A\u0646\u062C": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0648\u062C\u0628\u0627\u062A \u0633\u0631\u064A\u0639\u0629" },
+  "\u0628\u064A\u062A\u0632\u0627 \u0647\u062A": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0648\u062C\u0628\u0627\u062A \u0633\u0631\u064A\u0639\u0629" },
+  "\u0634\u0627\u0648\u0631\u0645\u0627": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0648\u062C\u0628\u0627\u062A \u0633\u0631\u064A\u0639\u0629" },
+  "\u0643\u0634\u0631\u064A": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0645\u0637\u0639\u0645" },
+  "\u0645\u0637\u0639\u0645": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0645\u0637\u0639\u0645" },
+  "\u062F\u0644\u064A\u0641\u0631\u064A": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u062F\u0644\u064A\u0641\u0631\u064A" },
+  "\u062A\u064A\u0643 \u0627\u0648\u0627\u064A": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u062F\u0644\u064A\u0641\u0631\u064A" },
+  "\u0642\u0647\u0648\u0647": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0642\u0647\u0648\u0629 \u0648\u0643\u0627\u0641\u064A\u0647" },
+  "\u0646\u0633\u0643\u0627\u0641\u064A\u0647": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0642\u0647\u0648\u0629 \u0648\u0643\u0627\u0641\u064A\u0647" },
+  "\u0643\u0627\u0641\u064A\u0647": { category: "\u062A\u0631\u0641\u064A\u0647", subCategory: "\u0643\u0627\u0641\u064A\u0647 \u0648\u0634\u064A\u0634\u0629" },
+  "\u0628\u0642\u0627\u0644\u0647": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0628\u0642\u0627\u0644\u0629" },
+  "\u0628\u0642\u0627\u0644": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0628\u0642\u0627\u0644\u0629" },
+  "\u0633\u0645\u0643": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0633\u064A \u0641\u0648\u062F" },
+  "\u062C\u0645\u0628\u0631\u064A": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0633\u064A \u0641\u0648\u062F" },
+  "\u0641\u0631\u0627\u062E": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0644\u062D\u0648\u0645 \u0648\u062F\u0648\u0627\u062C\u0646" },
+  "\u0644\u062D\u0645\u0647": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0644\u062D\u0648\u0645 \u0648\u062F\u0648\u0627\u062C\u0646" },
+  "\u0641\u0631\u0646": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0645\u062E\u0628\u0648\u0632\u0627\u062A" },
+  "\u0645\u062E\u0628\u0632": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0645\u062E\u0628\u0648\u0632\u0627\u062A" },
+  "\u0639\u064A\u0634": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0645\u062E\u0628\u0648\u0632\u0627\u062A" },
+  // Transport subcategories
+  "\u0627\u0648\u0628\u0631": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0623\u0648\u0628\u0631/\u0643\u0631\u064A\u0645" },
+  "\u0643\u0631\u064A\u0645": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0623\u0648\u0628\u0631/\u0643\u0631\u064A\u0645" },
+  "\u0645\u062A\u0631\u0648": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0645\u062A\u0631\u0648" },
+  "\u0627\u062A\u0648\u0628\u064A\u0633": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0623\u062A\u0648\u0628\u064A\u0633" },
+  "\u0628\u0627\u0635": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0623\u062A\u0648\u0628\u064A\u0633" },
+  "\u062A\u0643\u0633\u064A": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u062A\u0627\u0643\u0633\u064A" },
+  "\u062A\u0627\u0643\u0633\u064A": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u062A\u0627\u0643\u0633\u064A" },
+  "\u0628\u0646\u0632\u064A\u0646": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0628\u0646\u0632\u064A\u0646" },
+  "\u062A\u0641\u0648\u064A\u0644\u0647": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0628\u0646\u0632\u064A\u0646" },
+  "\u0631\u0643\u0646\u0647": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0631\u0643\u0646\u0629" },
+  "\u062C\u0631\u0627\u062C": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0631\u0643\u0646\u0629" },
+  "\u062A\u0648\u0643\u062A\u0648\u0643": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u062A\u0648\u0643\u062A\u0648\u0643" },
+  "\u0635\u064A\u0627\u0646\u0647 \u0639\u0631\u0628\u064A\u0647": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0635\u064A\u0627\u0646\u0629 \u0639\u0631\u0628\u064A\u0629" },
+  // Bills subcategories
+  "\u0643\u0647\u0631\u0628\u0627": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0643\u0647\u0631\u0628\u0627\u0621" },
+  "\u0646\u0648\u0631": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0643\u0647\u0631\u0628\u0627\u0621" },
+  "\u0645\u064A\u0647": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0645\u064A\u0627\u0647" },
+  "\u063A\u0627\u0632": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u063A\u0627\u0632" },
+  "\u0646\u062A": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0625\u0646\u062A\u0631\u0646\u062A" },
+  "\u0631\u0627\u0648\u062A\u0631": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0625\u0646\u062A\u0631\u0646\u062A" },
+  "\u0634\u062D\u0646": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0634\u062D\u0646 \u0631\u0635\u064A\u062F" },
+  "\u0631\u0635\u064A\u062F": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0634\u062D\u0646 \u0631\u0635\u064A\u062F" },
+  "\u0642\u0633\u0637": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0623\u0642\u0633\u0627\u0637" },
+  "\u0627\u0642\u0633\u0627\u0637": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0623\u0642\u0633\u0627\u0637" },
+  "\u062A\u0627\u0645\u064A\u0646": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u062A\u0623\u0645\u064A\u0646" },
+  "\u0636\u0631\u0627\u064A\u0628": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0636\u0631\u0627\u0626\u0628" },
+  // Home subcategories
+  "\u0627\u064A\u062C\u0627\u0631": { category: "\u0633\u0643\u0646", subCategory: "\u0625\u064A\u062C\u0627\u0631" },
+  "\u0639\u0641\u0634": { category: "\u0633\u0643\u0646", subCategory: "\u0623\u062B\u0627\u062B" },
+  "\u0633\u0628\u0627\u0643": { category: "\u0633\u0643\u0646", subCategory: "\u0635\u064A\u0627\u0646\u0629" },
+  "\u0643\u0647\u0631\u0628\u0627\u0626\u064A": { category: "\u0633\u0643\u0646", subCategory: "\u0635\u064A\u0627\u0646\u0629" },
+  "\u0646\u0642\u0627\u0634": { category: "\u0633\u0643\u0646", subCategory: "\u0635\u064A\u0627\u0646\u0629" },
+  "\u0646\u062C\u0627\u0631": { category: "\u0633\u0643\u0646", subCategory: "\u0635\u064A\u0627\u0646\u0629" },
+  "\u0634\u063A\u0627\u0644\u0647": { category: "\u0633\u0643\u0646", subCategory: "\u0646\u0638\u0627\u0641\u0629" },
+  "\u0645\u0646\u0638\u0641\u0627\u062A": { category: "\u0633\u0643\u0646", subCategory: "\u0645\u0646\u0638\u0641\u0627\u062A" },
+  "\u063A\u0633\u0627\u0644\u0647": { category: "\u0633\u0643\u0646", subCategory: "\u0623\u062C\u0647\u0632\u0629 \u0645\u0646\u0632\u0644\u064A\u0629" },
+  "\u062A\u0644\u0627\u062C\u0647": { category: "\u0633\u0643\u0646", subCategory: "\u0623\u062C\u0647\u0632\u0629 \u0645\u0646\u0632\u0644\u064A\u0629" },
+  // Shopping subcategories
+  "\u0647\u062F\u0648\u0645": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0645\u0644\u0627\u0628\u0633" },
+  "\u0644\u0628\u0633": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0645\u0644\u0627\u0628\u0633" },
+  "\u0645\u0648\u0628\u0627\u064A\u0644": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0623\u062C\u0647\u0632\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629" },
+  "\u0644\u0627\u0628 \u062A\u0648\u0628": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0623\u062C\u0647\u0632\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629" },
+  "\u0627\u064A\u0641\u0648\u0646": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0623\u062C\u0647\u0632\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629" },
+  "\u0643\u0648\u062A\u0634\u064A": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0623\u062D\u0630\u064A\u0629" },
+  "\u062C\u0632\u0645\u0647": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0623\u062D\u0630\u064A\u0629" },
+  // Health subcategories
+  "\u062F\u0643\u062A\u0648\u0631": { category: "\u0635\u062D\u0629", subCategory: "\u062F\u0643\u062A\u0648\u0631" },
+  "\u0635\u064A\u062F\u0644\u064A\u0647": { category: "\u0635\u062D\u0629", subCategory: "\u0635\u064A\u062F\u0644\u064A\u0629" },
+  "\u062F\u0648\u0627": { category: "\u0635\u062D\u0629", subCategory: "\u0635\u064A\u062F\u0644\u064A\u0629" },
+  "\u062A\u062D\u0627\u0644\u064A\u0644": { category: "\u0635\u062D\u0629", subCategory: "\u062A\u062D\u0627\u0644\u064A\u0644" },
+  "\u0645\u0633\u062A\u0634\u0641\u0649": { category: "\u0635\u062D\u0629", subCategory: "\u0645\u0633\u062A\u0634\u0641\u0649" },
+  "\u0627\u0633\u0646\u0627\u0646": { category: "\u0635\u062D\u0629", subCategory: "\u0623\u0633\u0646\u0627\u0646" },
+  // Education subcategories
+  "\u0645\u062F\u0631\u0633\u0647": { category: "\u062A\u0639\u0644\u064A\u0645", subCategory: "\u0645\u062F\u0631\u0633\u0629" },
+  "\u062C\u0627\u0645\u0639\u0647": { category: "\u062A\u0639\u0644\u064A\u0645", subCategory: "\u062C\u0627\u0645\u0639\u0629" },
+  "\u0643\u0648\u0631\u0633": { category: "\u062A\u0639\u0644\u064A\u0645", subCategory: "\u0643\u0648\u0631\u0633\u0627\u062A" },
+  "\u062F\u0631\u0633": { category: "\u062A\u0639\u0644\u064A\u0645", subCategory: "\u062F\u0631\u0648\u0633 \u062E\u0635\u0648\u0635\u064A\u0629" },
+  "\u062F\u0631\u0648\u0633": { category: "\u062A\u0639\u0644\u064A\u0645", subCategory: "\u062F\u0631\u0648\u0633 \u062E\u0635\u0648\u0635\u064A\u0629" },
+  // Entertainment subcategories
+  "\u0633\u064A\u0646\u0645\u0627": { category: "\u062A\u0631\u0641\u064A\u0647", subCategory: "\u0633\u064A\u0646\u0645\u0627" },
+  "\u062C\u064A\u0645": { category: "\u062A\u0631\u0641\u064A\u0647", subCategory: "\u0631\u064A\u0627\u0636\u0629 \u0648\u062C\u064A\u0645" },
+  "\u0646\u0627\u062F\u064A": { category: "\u062A\u0631\u0641\u064A\u0647", subCategory: "\u0631\u064A\u0627\u0636\u0629 \u0648\u062C\u064A\u0645" },
+  "\u0633\u0641\u0631": { category: "\u062A\u0631\u0641\u064A\u0647", subCategory: "\u0633\u0641\u0631" },
+  "\u0645\u0635\u064A\u0641": { category: "\u062A\u0631\u0641\u064A\u0647", subCategory: "\u0633\u0641\u0631" },
+  "\u062E\u0631\u0648\u062C\u0647": { category: "\u062A\u0631\u0641\u064A\u0647", subCategory: "\u062E\u0631\u0648\u062C\u0629" },
+  "\u0634\u064A\u0634\u0647": { category: "\u062A\u0631\u0641\u064A\u0647", subCategory: "\u0643\u0627\u0641\u064A\u0647 \u0648\u0634\u064A\u0634\u0629" },
+  // Subscriptions
+  "\u0646\u062A\u0641\u0644\u0643\u0633": { category: "\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A", subCategory: "\u0646\u062A\u0641\u0644\u0643\u0633" },
+  "\u0633\u0628\u0648\u062A\u064A\u0641\u0627\u064A": { category: "\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A", subCategory: "\u0633\u0628\u0648\u062A\u064A\u0641\u0627\u064A" },
+  // Gifts
+  "\u0647\u062F\u064A\u0647": { category: "\u0647\u062F\u0627\u064A\u0627 \u0648\u0635\u062F\u0642\u0627\u062A", subCategory: "\u0639\u0627\u0645" },
+  "\u0635\u062F\u0642\u0647": { category: "\u0647\u062F\u0627\u064A\u0627 \u0648\u0635\u062F\u0642\u0627\u062A", subCategory: "\u0635\u062F\u0642\u0629/\u062A\u0628\u0631\u0639" },
+  "\u0632\u0643\u0627\u0647": { category: "\u0647\u062F\u0627\u064A\u0627 \u0648\u0635\u062F\u0642\u0627\u062A", subCategory: "\u0632\u0643\u0627\u0629" },
+  "\u0639\u064A\u062F\u064A\u0647": { category: "\u0647\u062F\u0627\u064A\u0627 \u0648\u0635\u062F\u0642\u0627\u062A", subCategory: "\u0639\u064A\u062F\u064A\u0629" },
+  // Investment
+  "\u0630\u0647\u0628": { category: "\u0627\u0633\u062A\u062B\u0645\u0627\u0631", subCategory: "\u0630\u0647\u0628" },
+  "\u062F\u0647\u0628": { category: "\u0627\u0633\u062A\u062B\u0645\u0627\u0631", subCategory: "\u0630\u0647\u0628" },
+  "\u0627\u0633\u0647\u0645": { category: "\u0627\u0633\u062A\u062B\u0645\u0627\u0631", subCategory: "\u0623\u0633\u0647\u0645" },
+  "\u0634\u0647\u0627\u062F\u0647": { category: "\u0627\u0633\u062A\u062B\u0645\u0627\u0631", subCategory: "\u0634\u0647\u0627\u062F\u0627\u062A" },
+  // Income subcategories
+  "\u0645\u0631\u062A\u0628": { category: "\u0645\u0631\u062A\u0628", subCategory: "\u0645\u0631\u062A\u0628 \u0623\u0633\u0627\u0633\u064A" },
+  "\u0628\u0648\u0646\u0635": { category: "\u0645\u0631\u062A\u0628", subCategory: "\u0645\u0643\u0627\u0641\u0623\u0629/\u0628\u0648\u0646\u0635" },
+  "\u0645\u0643\u0627\u0641\u0627\u0647": { category: "\u0645\u0631\u062A\u0628", subCategory: "\u0645\u0643\u0627\u0641\u0623\u0629/\u0628\u0648\u0646\u0635" },
+  "\u0639\u0645\u0648\u0644\u0647": { category: "\u0639\u0645\u0644 \u062D\u0631", subCategory: "\u0639\u0645\u0648\u0644\u0629" },
+  "\u0633\u0628\u0648\u0628\u0647": { category: "\u0639\u0645\u0644 \u062D\u0631", subCategory: "\u0633\u0628\u0648\u0628\u0629" }
+};
+function isSimpleText(text2) {
+  const normalizedLen = text2.length;
+  const wordCount = text2.split(/\s+/).length;
+  if (normalizedLen > 50 || wordCount > 10) return false;
+  const amounts = extractAmounts(text2);
+  if (amounts.length > 2) return false;
+  const ambiguousPatterns = [
+    /حولت\s+\S+/,
+    // "حولت لأحمد" - ambiguous
+    /حطيت\s+فلوس/,
+    // "حطيت فلوس" - ambiguous
+    /حوالي/,
+    // approximate amount
+    /ولا\s+\d/,
+    // "خمسين ولا ستين" - uncertain
+    /كده/,
+    // approximate
+    /تقريبا/
+    // approximate
+  ];
+  for (const pattern of ambiguousPatterns) {
+    if (pattern.test(text2)) return false;
+  }
+  return true;
+}
+function runRuleEngine(normalizedText, userDict = []) {
+  const amounts = extractAmounts(normalizedText);
+  if (amounts.length === 0) {
+    return {
+      items: [],
+      usedAI: false,
+      needsAI: true,
+      reason: "no_amounts_found"
     };
-    for (const [key, val] of Object.entries(catMap)) {
-      if (before.includes(key) || text2.substring(match2.index, match2.index + 30).includes(key)) {
-        category = val;
+  }
+  if (!isSimpleText(normalizedText)) {
+    return {
+      items: [],
+      usedAI: false,
+      needsAI: true,
+      reason: "complex_text"
+    };
+  }
+  const items = [];
+  for (let i = 0; i < amounts.length; i++) {
+    const { amount, index: index2, length } = amounts[i];
+    const contextStart = i > 0 ? amounts[i - 1].index + amounts[i - 1].length : 0;
+    const contextEnd = i < amounts.length - 1 ? amounts[i + 1].index : normalizedText.length;
+    const beforeAmount = normalizedText.slice(contextStart, index2).trim();
+    const afterAmount = normalizedText.slice(index2 + length, contextEnd).trim();
+    const allContext = (beforeAmount + " " + afterAmount).trim();
+    const intentResult = detectIntent(allContext);
+    let category = intentResult.intent === "income" ? "\u0645\u0631\u062A\u0628" : "\u0645\u062A\u0646\u0648\u0639\u0627\u062A";
+    let subCategory = "\u0639\u0627\u0645";
+    let confidence = 30;
+    const words = allContext.split(/\s+/).filter((w) => w.length >= 2);
+    let found = false;
+    for (const word of words) {
+      const userMatch = userDict.find((ud) => ud.word === word);
+      if (userMatch) {
+        category = userMatch.category;
+        subCategory = userMatch.subCategory || "\u0639\u0627\u0645";
+        confidence = 100;
+        found = true;
         break;
       }
     }
-    items.push({ amount, category, description: before.trim().slice(-20) || text2.slice(match2.index, match2.index + 20), type });
+    if (!found) {
+      for (const word of words) {
+        if (SUB_CATEGORY_MAP[word]) {
+          category = SUB_CATEGORY_MAP[word].category;
+          subCategory = SUB_CATEGORY_MAP[word].subCategory;
+          confidence = 90;
+          found = true;
+          break;
+        }
+      }
+    }
+    if (!found) {
+      for (let w = 0; w < words.length - 1; w++) {
+        const phrase = words[w] + " " + words[w + 1];
+        if (SUB_CATEGORY_MAP[phrase]) {
+          category = SUB_CATEGORY_MAP[phrase].category;
+          subCategory = SUB_CATEGORY_MAP[phrase].subCategory;
+          confidence = 88;
+          found = true;
+          break;
+        }
+      }
+    }
+    if (!found) {
+      for (const word of words) {
+        if (CATEGORY_DICTIONARY[word]) {
+          category = CATEGORY_DICTIONARY[word];
+          subCategory = "\u0639\u0627\u0645";
+          confidence = 85;
+          found = true;
+          break;
+        }
+      }
+    }
+    if (!found) {
+      for (let w = 0; w < words.length - 1; w++) {
+        const phrase = words[w] + " " + words[w + 1];
+        if (CATEGORY_DICTIONARY[phrase]) {
+          category = CATEGORY_DICTIONARY[phrase];
+          subCategory = "\u0639\u0627\u0645";
+          confidence = 80;
+          found = true;
+          break;
+        }
+      }
+    }
+    if (!found) {
+      for (const word of words) {
+        const fuzzyResult = fuzzyFindCategory(word, CATEGORY_DICTIONARY, 2);
+        if (fuzzyResult && typeof fuzzyResult === "string") {
+          category = fuzzyResult;
+          subCategory = "\u0639\u0627\u0645";
+          confidence = 60;
+          found = true;
+          break;
+        }
+      }
+    }
+    if (intentResult.intent === "income" && !found) {
+      category = "\u0645\u0631\u062A\u0628";
+      subCategory = "\u0639\u0627\u0645";
+      confidence = intentResult.confidence;
+    }
+    if (category === "\u0645\u062A\u0646\u0648\u0639\u0627\u062A" && confidence < 60) {
+      return {
+        items: [],
+        usedAI: false,
+        needsAI: true,
+        reason: "low_confidence_category"
+      };
+    }
+    let description = allContext.replace(/\d+(\.\d+)?/g, "").replace(/(جنيه|ج\.م|ج|الف|ألف)/g, "").replace(/\s+/g, " ").trim().slice(0, 60);
+    if (!description || description.length < 2) {
+      description = intentResult.intent === "income" ? "\u062F\u062E\u0644" : category;
+    }
+    items.push({
+      amount,
+      category,
+      subCategory,
+      description,
+      type: intentResult.intent,
+      confidence,
+      currency: "EGP",
+      needsReview: confidence < 85,
+      parsedBy: "rule_engine"
+    });
   }
-  return items.length > 0 ? items : null;
+  const needsAI = items.some((it) => it.category === "\u0645\u062A\u0646\u0648\u0639\u0627\u062A" || it.confidence < 60);
+  return { items, usedAI: false, needsAI };
 }
-async function aiParse(text2, model) {
-  const aiModel = genAI.getGenerativeModel({ model });
-  const prompt = `\u062D\u0644\u0644 \u0627\u0644\u0646\u0635 \u0627\u0644\u0645\u0635\u0631\u064A \u062F\u0647 \u0648\u0627\u0637\u0644\u0639 \u0645\u0635\u0627\u0631\u064A\u0641/\u062F\u062E\u0644 \u0645\u0646\u0638\u0645\u0629 \u0628\u0635\u064A\u063A\u0629 JSON:
-[{"amount": \u0631\u0642\u0645, "category": "\u0641\u0626\u0629", "description": "\u0648\u0635\u0641", "type": "income|expense"}]
-\u0627\u0644\u0646\u0635: "${text2}"
-\u0631\u062F \u0628\u0640 JSON \u0641\u0642\u0637.`;
-  const result = await aiModel.generateContent(prompt);
-  const response = result.response.text();
+
+// api/lib/category-registry.ts
+var CATEGORIES = [
+  {
+    id: "food",
+    name: "Food & Drinks",
+    name_ar: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+    icon: "\u{1F354}",
+    color: "#f97316",
+    type: "expense",
+    subcategories: [
+      { id: "fast_food", name: "Fast Food", name_ar: "\u0648\u062C\u0628\u0627\u062A \u0633\u0631\u064A\u0639\u0629" },
+      { id: "restaurant", name: "Restaurant", name_ar: "\u0645\u0637\u0639\u0645" },
+      { id: "coffee", name: "Coffee & Cafe", name_ar: "\u0642\u0647\u0648\u0629 \u0648\u0643\u0627\u0641\u064A\u0647" },
+      { id: "snacks", name: "Snacks", name_ar: "\u0633\u0646\u0627\u0643\u0633" },
+      { id: "groceries", name: "Groceries", name_ar: "\u0628\u0642\u0627\u0644\u0629" },
+      { id: "bakery", name: "Bakery", name_ar: "\u0645\u062E\u0628\u0648\u0632\u0627\u062A" },
+      { id: "drinks", name: "Drinks", name_ar: "\u0645\u0634\u0631\u0648\u0628\u0627\u062A" },
+      { id: "delivery", name: "Delivery", name_ar: "\u062F\u0644\u064A\u0641\u0631\u064A" },
+      { id: "meat_poultry", name: "Meat & Poultry", name_ar: "\u0644\u062D\u0648\u0645 \u0648\u062F\u0648\u0627\u062C\u0646" },
+      { id: "seafood", name: "Seafood", name_ar: "\u0633\u064A \u0641\u0648\u062F" },
+      { id: "general_food", name: "General", name_ar: "\u0639\u0627\u0645" }
+    ]
+  },
+  {
+    id: "transport",
+    name: "Transport",
+    name_ar: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+    icon: "\u{1F697}",
+    color: "#3b82f6",
+    type: "expense",
+    subcategories: [
+      { id: "uber", name: "Uber/Careem", name_ar: "\u0623\u0648\u0628\u0631/\u0643\u0631\u064A\u0645" },
+      { id: "metro", name: "Metro", name_ar: "\u0645\u062A\u0631\u0648" },
+      { id: "bus", name: "Bus", name_ar: "\u0623\u062A\u0648\u0628\u064A\u0633" },
+      { id: "taxi", name: "Taxi", name_ar: "\u062A\u0627\u0643\u0633\u064A" },
+      { id: "fuel", name: "Fuel", name_ar: "\u0628\u0646\u0632\u064A\u0646" },
+      { id: "parking", name: "Parking", name_ar: "\u0631\u0643\u0646\u0629" },
+      { id: "maintenance", name: "Car Maintenance", name_ar: "\u0635\u064A\u0627\u0646\u0629 \u0639\u0631\u0628\u064A\u0629" },
+      { id: "toktok", name: "TokTok", name_ar: "\u062A\u0648\u0643\u062A\u0648\u0643" },
+      { id: "flight", name: "Flight", name_ar: "\u0637\u064A\u0631\u0627\u0646" },
+      { id: "general_transport", name: "General", name_ar: "\u0639\u0627\u0645" }
+    ]
+  },
+  {
+    id: "bills",
+    name: "Bills",
+    name_ar: "\u0641\u0648\u0627\u062A\u064A\u0631",
+    icon: "\u{1F4C4}",
+    color: "#ef4444",
+    type: "expense",
+    subcategories: [
+      { id: "electricity", name: "Electricity", name_ar: "\u0643\u0647\u0631\u0628\u0627\u0621" },
+      { id: "water", name: "Water", name_ar: "\u0645\u064A\u0627\u0647" },
+      { id: "gas", name: "Gas", name_ar: "\u063A\u0627\u0632" },
+      { id: "internet", name: "Internet", name_ar: "\u0625\u0646\u062A\u0631\u0646\u062A" },
+      { id: "phone", name: "Phone", name_ar: "\u062A\u0644\u064A\u0641\u0648\u0646" },
+      { id: "mobile_recharge", name: "Mobile Recharge", name_ar: "\u0634\u062D\u0646 \u0631\u0635\u064A\u062F" },
+      { id: "installments", name: "Installments", name_ar: "\u0623\u0642\u0633\u0627\u0637" },
+      { id: "insurance", name: "Insurance", name_ar: "\u062A\u0623\u0645\u064A\u0646" },
+      { id: "taxes", name: "Taxes", name_ar: "\u0636\u0631\u0627\u0626\u0628" },
+      { id: "general_bills", name: "General", name_ar: "\u0639\u0627\u0645" }
+    ]
+  },
+  {
+    id: "home",
+    name: "Home",
+    name_ar: "\u0633\u0643\u0646",
+    icon: "\u{1F3E0}",
+    color: "#8b5cf6",
+    type: "expense",
+    subcategories: [
+      { id: "rent", name: "Rent", name_ar: "\u0625\u064A\u062C\u0627\u0631" },
+      { id: "furniture", name: "Furniture", name_ar: "\u0623\u062B\u0627\u062B" },
+      { id: "home_maintenance", name: "Maintenance", name_ar: "\u0635\u064A\u0627\u0646\u0629" },
+      { id: "cleaning", name: "Cleaning", name_ar: "\u0646\u0638\u0627\u0641\u0629" },
+      { id: "appliances", name: "Appliances", name_ar: "\u0623\u062C\u0647\u0632\u0629 \u0645\u0646\u0632\u0644\u064A\u0629" },
+      { id: "cleaning_supplies", name: "Cleaning Supplies", name_ar: "\u0645\u0646\u0638\u0641\u0627\u062A" },
+      { id: "general_home", name: "General", name_ar: "\u0639\u0627\u0645" }
+    ]
+  },
+  {
+    id: "shopping",
+    name: "Shopping",
+    name_ar: "\u062A\u0633\u0648\u0642",
+    icon: "\u{1F6CD}\uFE0F",
+    color: "#ec4899",
+    type: "expense",
+    subcategories: [
+      { id: "clothes", name: "Clothes", name_ar: "\u0645\u0644\u0627\u0628\u0633" },
+      { id: "electronics", name: "Electronics", name_ar: "\u0623\u062C\u0647\u0632\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629" },
+      { id: "personal_care", name: "Personal Care", name_ar: "\u0639\u0646\u0627\u064A\u0629 \u0634\u062E\u0635\u064A\u0629" },
+      { id: "accessories", name: "Accessories", name_ar: "\u0625\u0643\u0633\u0633\u0648\u0627\u0631\u0627\u062A" },
+      { id: "shoes", name: "Shoes", name_ar: "\u0623\u062D\u0630\u064A\u0629" },
+      { id: "general_shopping", name: "General", name_ar: "\u0639\u0627\u0645" }
+    ]
+  },
+  {
+    id: "health",
+    name: "Health",
+    name_ar: "\u0635\u062D\u0629",
+    icon: "\u{1F3E5}",
+    color: "#10b981",
+    type: "expense",
+    subcategories: [
+      { id: "doctor", name: "Doctor", name_ar: "\u062F\u0643\u062A\u0648\u0631" },
+      { id: "pharmacy", name: "Pharmacy", name_ar: "\u0635\u064A\u062F\u0644\u064A\u0629" },
+      { id: "lab", name: "Lab Tests", name_ar: "\u062A\u062D\u0627\u0644\u064A\u0644" },
+      { id: "hospital", name: "Hospital", name_ar: "\u0645\u0633\u062A\u0634\u0641\u0649" },
+      { id: "dental", name: "Dental", name_ar: "\u0623\u0633\u0646\u0627\u0646" },
+      { id: "optical", name: "Optical", name_ar: "\u0646\u0638\u0627\u0631\u0627\u062A" },
+      { id: "general_health", name: "General", name_ar: "\u0639\u0627\u0645" }
+    ]
+  },
+  {
+    id: "education",
+    name: "Education",
+    name_ar: "\u062A\u0639\u0644\u064A\u0645",
+    icon: "\u{1F4DA}",
+    color: "#6366f1",
+    type: "expense",
+    subcategories: [
+      { id: "school", name: "School", name_ar: "\u0645\u062F\u0631\u0633\u0629" },
+      { id: "university", name: "University", name_ar: "\u062C\u0627\u0645\u0639\u0629" },
+      { id: "courses", name: "Courses", name_ar: "\u0643\u0648\u0631\u0633\u0627\u062A" },
+      { id: "books", name: "Books", name_ar: "\u0643\u062A\u0628" },
+      { id: "tutoring", name: "Tutoring", name_ar: "\u062F\u0631\u0648\u0633 \u062E\u0635\u0648\u0635\u064A\u0629" },
+      { id: "general_education", name: "General", name_ar: "\u0639\u0627\u0645" }
+    ]
+  },
+  {
+    id: "entertainment",
+    name: "Entertainment",
+    name_ar: "\u062A\u0631\u0641\u064A\u0647",
+    icon: "\u{1F3AE}",
+    color: "#f59e0b",
+    type: "expense",
+    subcategories: [
+      { id: "cinema", name: "Cinema", name_ar: "\u0633\u064A\u0646\u0645\u0627" },
+      { id: "cafe", name: "Cafe & Shisha", name_ar: "\u0643\u0627\u0641\u064A\u0647 \u0648\u0634\u064A\u0634\u0629" },
+      { id: "travel", name: "Travel", name_ar: "\u0633\u0641\u0631" },
+      { id: "sports", name: "Sports & Gym", name_ar: "\u0631\u064A\u0627\u0636\u0629 \u0648\u062C\u064A\u0645" },
+      { id: "gaming", name: "Gaming", name_ar: "\u0623\u0644\u0639\u0627\u0628" },
+      { id: "streaming", name: "Streaming", name_ar: "\u0645\u0646\u0635\u0627\u062A \u0645\u0634\u0627\u0647\u062F\u0629" },
+      { id: "outing", name: "Outing", name_ar: "\u062E\u0631\u0648\u062C\u0629" },
+      { id: "general_entertainment", name: "General", name_ar: "\u0639\u0627\u0645" }
+    ]
+  },
+  {
+    id: "subscriptions",
+    name: "Subscriptions",
+    name_ar: "\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A",
+    icon: "\u{1F4F1}",
+    color: "#14b8a6",
+    type: "expense",
+    subcategories: [
+      { id: "netflix", name: "Netflix", name_ar: "\u0646\u062A\u0641\u0644\u0643\u0633" },
+      { id: "spotify", name: "Spotify", name_ar: "\u0633\u0628\u0648\u062A\u064A\u0641\u0627\u064A" },
+      { id: "chatgpt", name: "ChatGPT", name_ar: "\u0634\u0627\u062A \u062C\u064A \u0628\u064A \u062A\u064A" },
+      { id: "google_ai", name: "Google AI", name_ar: "\u062C\u0648\u062C\u0644 AI" },
+      { id: "saas", name: "SaaS", name_ar: "\u0628\u0631\u0645\u062C\u064A\u0627\u062A" },
+      { id: "general_subs", name: "General", name_ar: "\u0639\u0627\u0645" }
+    ]
+  },
+  {
+    id: "gifts",
+    name: "Gifts & Charity",
+    name_ar: "\u0647\u062F\u0627\u064A\u0627 \u0648\u0635\u062F\u0642\u0627\u062A",
+    icon: "\u{1F381}",
+    color: "#f43f5e",
+    type: "expense",
+    subcategories: [
+      { id: "birthday", name: "Birthday", name_ar: "\u0639\u064A\u062F \u0645\u064A\u0644\u0627\u062F" },
+      { id: "wedding", name: "Wedding", name_ar: "\u0641\u0631\u062D/\u062E\u0637\u0648\u0628\u0629" },
+      { id: "charity", name: "Charity", name_ar: "\u0635\u062F\u0642\u0629/\u062A\u0628\u0631\u0639" },
+      { id: "zakat", name: "Zakat", name_ar: "\u0632\u0643\u0627\u0629" },
+      { id: "eidiya", name: "Eidiya", name_ar: "\u0639\u064A\u062F\u064A\u0629" },
+      { id: "general_gifts", name: "General", name_ar: "\u0639\u0627\u0645" }
+    ]
+  },
+  {
+    id: "pets",
+    name: "Pets",
+    name_ar: "\u062D\u064A\u0648\u0627\u0646\u0627\u062A \u0623\u0644\u064A\u0641\u0629",
+    icon: "\u{1F43E}",
+    color: "#a855f7",
+    type: "expense",
+    subcategories: [
+      { id: "pet_food", name: "Pet Food", name_ar: "\u0623\u0643\u0644" },
+      { id: "vet", name: "Vet", name_ar: "\u0637\u0628\u064A\u0628 \u0628\u064A\u0637\u0631\u064A" },
+      { id: "pet_accessories", name: "Accessories", name_ar: "\u0645\u0633\u062A\u0644\u0632\u0645\u0627\u062A" }
+    ]
+  },
+  {
+    id: "work",
+    name: "Work",
+    name_ar: "\u0639\u0645\u0644",
+    icon: "\u{1F4BC}",
+    color: "#64748b",
+    type: "expense",
+    subcategories: [
+      { id: "office_supplies", name: "Office Supplies", name_ar: "\u0645\u0633\u062A\u0644\u0632\u0645\u0627\u062A \u0645\u0643\u062A\u0628" },
+      { id: "hosting", name: "Hosting", name_ar: "\u0627\u0633\u062A\u0636\u0627\u0641\u0629" },
+      { id: "apis", name: "APIs", name_ar: "\u0648\u0627\u062C\u0647\u0627\u062A \u0628\u0631\u0645\u062C\u064A\u0629" },
+      { id: "coworking", name: "Coworking", name_ar: "\u0645\u0633\u0627\u062D\u0629 \u0639\u0645\u0644" },
+      { id: "general_work", name: "General", name_ar: "\u0639\u0627\u0645" }
+    ]
+  },
+  // ─── Income Categories ───
+  {
+    id: "salary",
+    name: "Salary",
+    name_ar: "\u0645\u0631\u062A\u0628",
+    icon: "\u{1F4B5}",
+    color: "#22c55e",
+    type: "income",
+    subcategories: [
+      { id: "main_salary", name: "Main Salary", name_ar: "\u0645\u0631\u062A\u0628 \u0623\u0633\u0627\u0633\u064A" },
+      { id: "overtime", name: "Overtime", name_ar: "\u0623\u0648\u0641\u0631 \u062A\u0627\u064A\u0645" },
+      { id: "bonus", name: "Bonus", name_ar: "\u0645\u0643\u0627\u0641\u0623\u0629/\u0628\u0648\u0646\u0635" },
+      { id: "allowance", name: "Allowance", name_ar: "\u0628\u062F\u0644\u0627\u062A" }
+    ]
+  },
+  {
+    id: "freelance",
+    name: "Freelance",
+    name_ar: "\u0639\u0645\u0644 \u062D\u0631",
+    icon: "\u{1F4BB}",
+    color: "#06b6d4",
+    type: "income",
+    subcategories: [
+      { id: "project", name: "Project", name_ar: "\u0645\u0634\u0631\u0648\u0639" },
+      { id: "commission", name: "Commission", name_ar: "\u0639\u0645\u0648\u0644\u0629" },
+      { id: "side_hustle", name: "Side Hustle", name_ar: "\u0633\u0628\u0648\u0628\u0629" }
+    ]
+  },
+  {
+    id: "investment_income",
+    name: "Investment Income",
+    name_ar: "\u0639\u0648\u0627\u0626\u062F \u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+    icon: "\u{1F4C8}",
+    color: "#84cc16",
+    type: "income",
+    subcategories: [
+      { id: "dividends", name: "Dividends", name_ar: "\u0623\u0631\u0628\u0627\u062D" },
+      { id: "interest", name: "Interest", name_ar: "\u0641\u0648\u0627\u0626\u062F" },
+      { id: "cashback", name: "Cashback", name_ar: "\u0643\u0627\u0634 \u0628\u0627\u0643" },
+      { id: "refund", name: "Refund", name_ar: "\u0627\u0633\u062A\u0631\u062C\u0627\u0639" }
+    ]
+  },
+  // ─── Financial / Transfer Categories ───
+  {
+    id: "transfer",
+    name: "Transfer",
+    name_ar: "\u062A\u062D\u0648\u064A\u0644",
+    icon: "\u{1F3E7}",
+    color: "#0ea5e9",
+    type: "transfer",
+    subcategories: [
+      { id: "atm", name: "ATM Withdrawal", name_ar: "\u0633\u062D\u0628 ATM" },
+      { id: "bank_transfer", name: "Bank Transfer", name_ar: "\u062A\u062D\u0648\u064A\u0644 \u0628\u0646\u0643\u064A" },
+      { id: "instapay", name: "Instapay", name_ar: "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A" },
+      { id: "vodafone_cash", name: "Vodafone Cash", name_ar: "\u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0643\u0627\u0634" },
+      { id: "savings", name: "Savings", name_ar: "\u0627\u062F\u062E\u0627\u0631" },
+      { id: "debt", name: "Debt/Loan", name_ar: "\u062F\u064A\u0646/\u0633\u0644\u0641\u0629" }
+    ]
+  },
+  {
+    id: "investment",
+    name: "Investment",
+    name_ar: "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+    icon: "\u{1F4CA}",
+    color: "#eab308",
+    type: "investment",
+    subcategories: [
+      { id: "gold", name: "Gold", name_ar: "\u0630\u0647\u0628" },
+      { id: "stocks", name: "Stocks", name_ar: "\u0623\u0633\u0647\u0645" },
+      { id: "certificates", name: "Certificates", name_ar: "\u0634\u0647\u0627\u062F\u0627\u062A" },
+      { id: "real_estate", name: "Real Estate", name_ar: "\u0639\u0642\u0627\u0631\u0627\u062A" },
+      { id: "crypto", name: "Crypto", name_ar: "\u0639\u0645\u0644\u0627\u062A \u0631\u0642\u0645\u064A\u0629" }
+    ]
+  },
+  {
+    id: "miscellaneous",
+    name: "Miscellaneous",
+    name_ar: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A",
+    icon: "\u{1F4E6}",
+    color: "#94a3b8",
+    type: "expense",
+    subcategories: [
+      { id: "general", name: "General", name_ar: "\u0639\u0627\u0645" }
+    ]
+  }
+];
+
+// api/lib/ai-classifier.ts
+function buildCategoryList() {
+  return CATEGORIES.map((c) => {
+    const subs = c.subcategories.map((s) => s.name_ar).join("\u060C ");
+    return `${c.icon} ${c.name_ar} (${c.type}): [${subs}]`;
+  }).join("\n");
+}
+var SYSTEM_PROMPT = `\u0623\u0646\u062A "SmartSpend AI" \u2014 \u0645\u0635\u0646\u0641 \u0645\u0627\u0644\u064A \u0645\u0635\u0631\u064A \u0645\u062A\u062E\u0635\u0635 \u0628\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A.
+
+\u0645\u0647\u0645\u062A\u0643 \u0627\u0644\u0648\u062D\u064A\u062F\u0629: \u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0646\u0635\u0648\u0635 \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0627\u0644\u0645\u0643\u062A\u0648\u0628\u0629 \u0628\u0627\u0644\u0639\u0627\u0645\u064A\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629 \u0648\u0627\u0633\u062A\u062E\u0631\u0627\u062C \u0627\u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0645\u0646\u0647\u0627 \u0628\u062F\u0642\u0629 \u0639\u0627\u0644\u064A\u0629 \u062C\u062F\u0627\u064B.
+
+## \u0627\u0644\u0642\u0648\u0627\u0639\u062F \u0627\u0644\u0635\u0627\u0631\u0645\u0629:
+1. \u0627\u0641\u0647\u0645 \u0627\u0644\u0639\u0627\u0645\u064A\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629 \u0628\u0643\u0644 \u0627\u062E\u062A\u0635\u0627\u0631\u0627\u062A\u0647\u0627 (\u0645\u062B\u0644\u0627\u064B: "\u0642\u0628\u0636\u062A" = \u0627\u0633\u062A\u0644\u0645\u062A \u0631\u0627\u062A\u0628\u060C "\u0633\u0644\u0641\u062A" = \u0623\u0642\u0631\u0636\u062A\u060C "\u0634\u062D\u0646\u062A \u0627\u0644\u0639\u0631\u0628\u064A\u0629" = \u0628\u0646\u0632\u064A\u0646)
+2. \u0641\u0631\u0651\u0642 \u0628\u062F\u0642\u0629 \u0628\u064A\u0646: expense (\u0645\u0635\u0631\u0648\u0641), income (\u062F\u062E\u0644), transfer (\u062A\u062D\u0648\u064A\u0644), investment (\u0627\u0633\u062A\u062B\u0645\u0627\u0631)
+3. \u062D\u062F\u062F \u0627\u0644\u0641\u0626\u0629 \u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0629 (main_category) \u0648\u0627\u0644\u0641\u0626\u0629 \u0627\u0644\u0641\u0631\u0639\u064A\u0629 (sub_category) \u0628\u062F\u0642\u0629 \u2014 \u0627\u0644\u0641\u0626\u0629 \u0627\u0644\u0641\u0631\u0639\u064A\u0629 \u0623\u0647\u0645 \u0628\u0643\u062A\u064A\u0631
+4. \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u0643\u0628\u064A\u0631\u0629 (\u0623\u0643\u062B\u0631 \u0645\u0646 10,000) \u0646\u0627\u062F\u0631\u0627\u064B \u0645\u0627 \u062A\u0643\u0648\u0646 \u0623\u0643\u0644 \u0623\u0648 \u0645\u0648\u0627\u0635\u0644\u0627\u062A \u2014 \u063A\u0627\u0644\u0628\u0627\u064B: \u0625\u064A\u062C\u0627\u0631\u060C \u0623\u062C\u0647\u0632\u0629\u060C \u0633\u064A\u0627\u0631\u0629\u060C \u0627\u0633\u062A\u062B\u0645\u0627\u0631
+5. "\u0634\u062D\u0646\u062A" \u0648\u062D\u062F\u0647\u0627 = \u0634\u062D\u0646 \u0631\u0635\u064A\u062F (\u0641\u0648\u0627\u062A\u064A\u0631)\u060C "\u0634\u062D\u0646\u062A \u0627\u0644\u0639\u0631\u0628\u064A\u0629" = \u0628\u0646\u0632\u064A\u0646 (\u0645\u0648\u0627\u0635\u0644\u0627\u062A)
+6. "\u062D\u0648\u0644\u062A \u0644\u0640" = \u062A\u062D\u0648\u064A\u0644 \u0623\u0648 \u0645\u0635\u0631\u0648\u0641\u060C "\u062D\u0648\u0644\u0648\u0644\u064A" = \u062F\u062E\u0644
+7. "\u0633\u0644\u0641\u062A \u0635\u0627\u062D\u0628\u064A" = \u062F\u064A\u0646/\u0633\u0644\u0641\u0629 (\u062A\u062D\u0648\u064A\u0644)
+8. \u0641\u0643\u0643 \u0627\u0644\u062C\u0645\u0644 \u0627\u0644\u0645\u062A\u0639\u062F\u062F\u0629 \u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A \u0645\u0646\u0641\u0635\u0644\u0629
+9. \u0644\u0627 \u062A\u0636\u0639 \u0645\u0635\u0631\u0648\u0641 \u062A\u062D\u062A "\u0645\u062A\u0646\u0648\u0639\u0627\u062A" \u0625\u0644\u0627 \u0625\u0630\u0627 \u0643\u0627\u0646 \u0627\u0644\u0646\u0635 \u063A\u0627\u0645\u0636\u0627\u064B \u062A\u0645\u0627\u0645\u0627\u064B \u2014 \u0627\u0633\u062A\u0646\u062A\u062C \u0627\u0644\u0633\u064A\u0627\u0642
+10. \u0627\u0644\u0623\u062C\u0647\u0632\u0629 \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629 (\u0645\u0648\u0628\u0627\u064A\u0644\u060C \u0644\u0627\u0628\u062A\u0648\u0628) = "\u062A\u0633\u0648\u0642" / "\u0623\u062C\u0647\u0632\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629" \u0648\u0644\u064A\u0633 "\u0641\u0648\u0627\u062A\u064A\u0631"
+11. \u0631\u0643\u0651\u0632 \u0639\u0644\u0649 \u0627\u0644\u0641\u0626\u0629 \u0627\u0644\u0641\u0631\u0639\u064A\u0629 \u0623\u0643\u062A\u0631 \u0645\u0646 \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629 \u2014 \u062F\u064A \u0627\u0644\u0644\u064A \u0628\u062A\u0641\u0631\u0642 \u0641\u064A \u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631
+
+## \u0627\u0644\u0641\u0626\u0627\u062A \u0627\u0644\u0645\u062A\u0627\u062D\u0629:
+${buildCategoryList()}
+
+## \u0635\u064A\u063A\u0629 \u0627\u0644\u0631\u062F (JSON \u0641\u0642\u0637):
+{
+  "items": [{
+    "type": "expense|income|transfer|investment",
+    "amount": number,
+    "currency": "EGP",
+    "main_category": "\u0627\u0633\u0645 \u0627\u0644\u0641\u0626\u0629 \u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0629 \u0628\u0627\u0644\u0639\u0631\u0628\u064A",
+    "sub_category": "\u0627\u0633\u0645 \u0627\u0644\u0641\u0626\u0629 \u0627\u0644\u0641\u0631\u0639\u064A\u0629 \u0628\u0627\u0644\u0639\u0631\u0628\u064A",
+    "confidence": 0-100,
+    "needs_review": boolean,
+    "merchant": "\u0627\u0633\u0645 \u0627\u0644\u0645\u062D\u0644/\u0627\u0644\u062E\u062F\u0645\u0629 \u0623\u0648 null",
+    "notes": "\u0648\u0635\u0641 \u0645\u062E\u062A\u0635\u0631"
+  }],
+  "needs_clarification": false,
+  "clarification_question": null,
+  "alertMessage": "\u0631\u0633\u0627\u0644\u0629 \u062A\u0646\u0628\u064A\u0647 \u0630\u0643\u064A\u0629 \u0644\u0648 \u0641\u064A\u0647 \u062A\u0628\u0630\u064A\u0631 (\u0627\u062E\u062A\u064A\u0627\u0631\u064A\u060C \u0623\u0648 null)"
+}
+
+## \u0642\u0648\u0627\u0639\u062F \u0627\u0644\u062B\u0642\u0629:
+- confidence >= 90: \u0648\u0627\u0636\u062D \u062C\u062F\u0627\u064B \u0648\u0645\u0624\u0643\u062F
+- confidence 70-89: \u063A\u0627\u0644\u0628\u0627\u064B \u0635\u062D \u0628\u0633 \u0645\u062D\u062A\u0627\u062C \u0645\u0631\u0627\u062C\u0639\u0629
+- confidence < 70: \u0641\u064A\u0647 \u063A\u0645\u0648\u0636 \u2192 \u0627\u0639\u0645\u0644 needs_review = true
+- \u0644\u0648 \u0627\u0644\u0646\u0635 \u063A\u0627\u0645\u0636 \u062A\u0645\u0627\u0645\u0627\u064B: needs_clarification = true \u0648\u0627\u0633\u0623\u0644 \u0633\u0624\u0627\u0644 \u062A\u0648\u0636\u064A\u062D\u064A \u0630\u0643\u064A \u0628\u0627\u0644\u0639\u0627\u0645\u064A\u0629`;
+var STT_SYSTEM_PROMPT = `\u0623\u0646\u062A "SmartSpend Voice Engine" \u2014 \u0646\u0638\u0627\u0645 \u0627\u0644\u062A\u0639\u0631\u0641 \u0627\u0644\u0635\u0648\u062A\u064A \u0644\u0645\u0648\u0642\u0639 \u0648\u062A\u0637\u0628\u064A\u0642 \u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641 "SmartSpend".
+
+\u0645\u0647\u0645\u062A\u0643 \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629: \u062A\u062D\u0648\u064A\u0644 \u0643\u0644\u0627\u0645 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 (\u0627\u0644\u0630\u064A \u064A\u062A\u062D\u062F\u062B \u0628\u0627\u0644\u0639\u0627\u0645\u064A\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629) \u0644\u062A\u0633\u062C\u064A\u0644 \u0645\u0635\u0627\u0631\u064A\u0641\u0647 \u0627\u0644\u064A\u0648\u0645\u064A\u0629 \u0625\u0644\u0649 \u0646\u0635 \u062F\u0642\u064A\u0642 \u0648\u0645\u0641\u0647\u0648\u0645 \u062C\u062F\u0627\u064B.
+\u0627\u0644\u0647\u062F\u0641: \u0623\u062E\u0630 \u0647\u0630\u0627 \u0627\u0644\u0646\u0635 \u0628\u0639\u062F \u0630\u0644\u0643 \u0644\u062A\u062D\u0644\u064A\u0644\u0647 \u0648\u062A\u0635\u0646\u064A\u0641\u0647 \u0645\u0627\u0644\u064A\u0627\u064B.
+
+\u0627\u0644\u0642\u0648\u0627\u0639\u062F \u0627\u0644\u0635\u0627\u0631\u0645\u0629 \u0644\u0644\u062A\u0641\u0631\u064A\u063A \u0627\u0644\u0635\u0648\u062A\u064A (STT):
+1. **\u062A\u0631\u062C\u0645\u0629 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u0645\u0646\u0637\u0648\u0642\u0629:** \u062D\u0648\u0644 \u0623\u064A \u0631\u0642\u0645 \u0645\u0633\u0645\u0648\u0639 \u0625\u0644\u0649 \u0623\u0631\u0642\u0627\u0645 \u0631\u064A\u0627\u0636\u064A\u0629 \u0641\u0648\u0631\u0627\u064B (\u0645\u062B\u0627\u0644: "\u0635\u0631\u0641\u062A \u062A\u0644\u0627\u062A\u064A\u0646 \u062C\u0646\u064A\u0647" \u2192 "\u0635\u0631\u0641\u062A 30 \u062C\u0646\u064A\u0647"\u060C "\u062E\u0645\u0633\u0645\u064A\u0629" \u2192 "500").
+2. **\u0627\u0644\u062D\u0641\u0627\u0638 \u0639\u0644\u0649 \u0627\u0644\u0633\u064A\u0627\u0642 \u0627\u0644\u0645\u0627\u0644\u064A:** \u062D\u0627\u0641\u0638 \u0628\u062F\u0642\u0629 \u0639\u0644\u0649 \u0643\u0644\u0645\u0627\u062A \u0645\u062B\u0644 (\u0645\u0631\u062A\u0628\u060C \u0633\u0644\u0641\u0629\u060C \u0642\u0628\u0636\u062A\u060C \u062F\u0641\u0639\u062A\u060C \u0625\u064A\u062C\u0627\u0631\u060C \u0645\u0648\u0627\u0635\u0644\u0627\u062A\u060C \u0623\u0648\u0628\u0631\u060C \u0643\u0631\u064A\u0645\u060C \u0641\u0648\u0627\u062A\u064A\u0631).
+3. **\u0644\u0627 \u062A\u0636\u0641 \u0623\u064A \u0646\u0635 \u0623\u0648 \u062A\u0641\u0633\u064A\u0631 \u0645\u0646 \u0639\u0646\u062F\u0643:** \u0641\u0642\u0637 \u062D\u0648\u0644 \u0645\u0627 \u0642\u0627\u0644\u0647 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0646\u0635\u0627\u064B.
+4. **\u062A\u062C\u0627\u0647\u0644 \u0627\u0644\u062A\u0623\u062A\u0623\u0629 (Ums and Ahs):** \u0631\u0643\u0632 \u0639\u0644\u0649 \u0627\u0644\u0645\u0639\u0644\u0648\u0645\u0627\u062A \u0627\u0644\u0645\u0627\u0644\u064A\u0629.
+5. **\u0627\u0644\u0646\u0627\u062A\u062C \u0647\u0648 \u0646\u0635 \u0641\u0648\u0631\u064A \u062C\u0627\u0647\u0632 \u0644\u0645\u0633\u0627\u0639\u062F \u0645\u0627\u0644\u064A \u0644\u0645\u0639\u0627\u0644\u062C\u062A\u0647.**`;
+async function aiClassify(text2, apiKey, apiKey2, modelName, maxTokens, contextObj, skipClarification) {
+  let userPrompt = `\u0627\u0644\u0633\u064A\u0627\u0642 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u062D\u0627\u0644\u064A:
+- \u0625\u062C\u0645\u0627\u0644\u064A \u062F\u062E\u0644 \u0627\u0644\u0634\u0647\u0631: ${contextObj.totalIncome} \u062C.\u0645
+- \u0625\u062C\u0645\u0627\u0644\u064A \u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u0634\u0647\u0631: ${contextObj.totalExpense} \u062C.\u0645  
+- \u0627\u0644\u062A\u0627\u0631\u064A\u062E: ${contextObj.currentDate}
+
+\u0627\u0644\u0646\u0635 \u0627\u0644\u0645\u0637\u0644\u0648\u0628 \u062A\u062D\u0644\u064A\u0644\u0647: "${text2}"`;
+  if (skipClarification) {
+    userPrompt += `
+
+**\u0645\u0644\u0627\u062D\u0638\u0629 \u0647\u0627\u0645\u0629 \u062C\u062F\u0627\u064B**: \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0637\u0644\u0628 \u062A\u062E\u0637\u064A \u0627\u0644\u062A\u0648\u0636\u064A\u062D (Skip). \u0645\u0645\u0646\u0648\u0639 \u0637\u0644\u0628 \u062A\u0648\u0636\u064A\u062D (\u0627\u062C\u0639\u0644 needs_clarification = false \u062F\u0627\u0626\u0645\u064B\u0627). \u0642\u0645 \u0628\u062A\u062E\u0645\u064A\u0646 \u0627\u0644\u0641\u0626\u0627\u062A \u0627\u0644\u0645\u062C\u0647\u0648\u0644\u0629 \u0628\u0646\u0627\u0621\u064B \u0639\u0644\u0649 \u0627\u0644\u0633\u064A\u0627\u0642\u060C \u0648\u0623\u0639\u062F \u0623\u0641\u0636\u0644 \u0627\u0633\u062A\u0646\u062A\u0627\u062C \u0645\u0645\u0643\u0646 \u0648\u0636\u0639 \u0646\u0633\u0628\u0629 \u0627\u0644\u062B\u0642\u0629 confidence \u0645\u0646\u0627\u0633\u0628\u0629 \u0644\u062A\u0648\u0642\u0639\u0643.`;
+  }
+  let response = "";
+  let tokensUsed = 0;
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: modelName,
+      systemInstruction: SYSTEM_PROMPT,
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: maxTokens,
+        responseMimeType: "application/json"
+      }
+    });
+    const result = await model.generateContent(userPrompt);
+    response = result.response.text();
+    tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
+  } catch (error48) {
+    console.error("AI Classify Error (Key 1):", error48.message);
+    if (apiKey2) {
+      try {
+        console.log("AI Classifier: switching to failover key...");
+        const genAI2 = new GoogleGenerativeAI(apiKey2);
+        const model2 = genAI2.getGenerativeModel({
+          model: modelName,
+          systemInstruction: SYSTEM_PROMPT,
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: maxTokens,
+            responseMimeType: "application/json"
+          }
+        });
+        const result = await model2.generateContent(userPrompt);
+        response = result.response.text();
+        tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
+      } catch (fallbackError) {
+        console.error("AI Classify Error (Key 2):", fallbackError);
+        return null;
+      }
+    } else {
+      return null;
+    }
+  }
+  const parsed = parseAIResponse(response, modelName);
+  if (parsed) {
+    parsed.tokensUsed = tokensUsed;
+  }
+  return parsed;
+}
+async function geminiSpeechToText(audioBase64, mimeType, apiKey, modelName = "gemini-2.5-flash") {
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: modelName,
+      systemInstruction: STT_SYSTEM_PROMPT,
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 512
+      }
+    });
+    const result = await model.generateContent([
+      { text: "\u062D\u0648\u0651\u0644 \u0627\u0644\u0635\u0648\u062A \u062F\u0647 \u0644\u0646\u0635 \u0645\u0643\u062A\u0648\u0628 \u0628\u0627\u0644\u0639\u0627\u0645\u064A\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629. \u0627\u0643\u062A\u0628 \u0627\u0644\u0646\u0635 \u0641\u0642\u0637 \u0628\u062F\u0648\u0646 \u0623\u064A \u0634\u0631\u062D:" },
+      {
+        inlineData: {
+          mimeType,
+          data: audioBase64
+        }
+      }
+    ]);
+    const text2 = result.response.text().trim();
+    const tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
+    return { text: text2, tokensUsed };
+  } catch (error48) {
+    console.error("Gemini STT Error:", error48);
+    return null;
+  }
+}
+function parseAIResponse(response, modelName) {
   const stripCodeFences = (s) => s.replace(/```json?/g, "").replace(/```/g, "").trim();
+  const cleaned = stripCodeFences(response);
   const tryParse = (s) => {
     try {
       const j = JSON.parse(s);
-      return Array.isArray(j) ? j : j && (j.expenses || j.items) || null;
+      if (j.items && Array.isArray(j.items)) return j;
+      if (Array.isArray(j)) return { items: j, alertMessage: null, needs_clarification: false };
+      return null;
     } catch {
       return null;
     }
   };
-  const cleaned = stripCodeFences(response);
   let parsed = tryParse(cleaned);
-  if (parsed) return parsed;
-  const blockMatch = cleaned.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
-  if (blockMatch && blockMatch[0]) {
-    parsed = tryParse(blockMatch[0]);
-    if (parsed) return parsed;
+  if (!parsed) {
+    const blockMatch = cleaned.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+    if (blockMatch) parsed = tryParse(blockMatch[0]);
   }
-  const firstIdx = cleaned.search(/[\{\[]/);
-  if (firstIdx !== -1) {
-    const substr = cleaned.slice(firstIdx);
-    for (let end = substr.length; end > 0; end--) {
-      const attempt = substr.slice(0, end);
-      parsed = tryParse(attempt);
-      if (parsed) return parsed;
-    }
-  }
-  const fallback = cleaned.replace(/^[^\{\[]*/g, "");
-  parsed = tryParse(fallback);
-  if (parsed) return parsed;
-  try {
-    console.error("aiParse: failed to parse AI response as JSON. snippet:", cleaned.slice(0, 1e3));
-  } catch {
-  }
-  return [];
-}
-var aiRouter = router({
-  // ─── Parse Expense (Hybrid) ───
-  parseExpense: authedProcedure.input(external_exports.object({ text: external_exports.string(), model: external_exports.enum(["flash", "pro", "ultra", "gemma"]).default("flash") })).mutation(async ({ ctx, input }) => {
-    if (ctx.user.plan !== "pro") {
-      const today = /* @__PURE__ */ new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayUsage = await db.select({ count: sql`COUNT(*)` }).from(aiSummaries).where(and(eq(aiSummaries.userId, ctx.user.id), eq(aiSummaries.userType, ctx.user.type), gte(aiSummaries.createdAt, today)));
-      if ((todayUsage[0]?.count ?? 0) >= 10) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "\u0648\u0635\u0644\u062A \u0644\u0644\u062D\u062F \u0627\u0644\u064A\u0648\u0645\u064A. \u062D\u062F\u062B \u0644\u0628\u0631\u0648!" });
+  if (!parsed) {
+    const firstIdx = cleaned.search(/[\{\[]/);
+    if (firstIdx !== -1) {
+      const substr = cleaned.slice(firstIdx);
+      for (let end = substr.length; end > 0; end--) {
+        parsed = tryParse(substr.slice(0, end));
+        if (parsed) break;
       }
     }
-    let items = hybridParse(input.text);
-    const modelName = MODELS[input.model];
-    if (!items || items.length === 0 || input.text.length > 100) {
-      items = await aiParse(input.text, modelName);
+  }
+  if (!parsed || !parsed.items) {
+    console.error("AI response parse failed. Snippet:", cleaned.slice(0, 500));
+    return null;
+  }
+  const items = parsed.items.map((item) => ({
+    amount: item.amount || 0,
+    category: item.main_category || item.category || "\u0645\u062A\u0646\u0648\u0639\u0627\u062A",
+    subCategory: item.sub_category || item.subCategory || "\u0639\u0627\u0645",
+    description: item.notes || item.description || "",
+    type: item.type || "expense",
+    confidence: item.confidence || 70,
+    merchant: item.merchant || void 0,
+    currency: item.currency || "EGP",
+    needsReview: item.needs_review || item.confidence < 85,
+    parsedBy: "ai"
+  }));
+  return {
+    items,
+    alertMessage: parsed.alertMessage || null,
+    needsClarification: parsed.needs_clarification || false,
+    clarificationQuestion: parsed.clarification_question || null,
+    tokensUsed: 0,
+    modelUsed: modelName
+  };
+}
+
+// api/lib/confidence-scorer.ts
+var DEFAULT_THRESHOLDS = {
+  autoSave: 85,
+  // >= 85% → save automatically
+  review: 60,
+  // 60-84% → show review screen
+  clarify: 0
+  // < 60% → ask for clarification
+};
+function adjustConfidence(item) {
+  let conf = item.confidence;
+  if (item.category === "\u0645\u062A\u0646\u0648\u0639\u0627\u062A") conf = Math.min(conf, 40);
+  if (item.subCategory === "\u0639\u0627\u0645" && item.category !== "\u0645\u062A\u0646\u0648\u0639\u0627\u062A") {
+    conf = Math.max(conf - 10, 30);
+  }
+  if (item.confidence === 100) conf = 100;
+  if (item.amount > 1e4 && ["\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", "\u0645\u0648\u0627\u0635\u0644\u0627\u062A"].includes(item.category)) {
+    conf = Math.min(conf, 60);
+  }
+  if (item.amount <= 500 && ["\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", "\u0645\u0648\u0627\u0635\u0644\u0627\u062A"].includes(item.category)) {
+    conf = Math.min(conf + 5, 100);
+  }
+  if (item.type === "income" && item.amount < 100) {
+    conf = Math.min(conf, 70);
+  }
+  return { ...item, confidence: conf, needsReview: conf < 85 };
+}
+function generateClarification(items, originalText) {
+  if (originalText.match(/حولت|اديت|سلفت/) && !originalText.match(/حولت\s+ل|اديت\s+ل/)) {
+    return "\u0647\u0644 \u0627\u0644\u0639\u0645\u0644\u064A\u0629 \u062F\u064A:\n\u2022 \u062A\u062D\u0648\u064A\u0644 \u0644\u0634\u062E\u0635\u061F\n\u2022 \u062F\u064A\u0646/\u0633\u0644\u0641\u0629\u061F\n\u2022 \u0645\u0635\u0631\u0648\u0641 \u0634\u062E\u0635\u064A\u061F";
+  }
+  if (originalText.match(/حطيت|حط|ودعت/)) {
+    return "\u0647\u0644 \u062A\u0642\u0635\u062F:\n\u2022 \u062F\u062E\u0644 (\u0627\u0633\u062A\u0644\u0645\u062A \u0641\u0644\u0648\u0633)\u061F\n\u2022 \u0625\u064A\u062F\u0627\u0639 \u0628\u0646\u0643\u064A\u061F\n\u2022 \u062A\u062D\u0648\u064A\u0644\u061F";
+  }
+  if (originalText.match(/حوالي|تقريبا|كده/)) {
+    return "\u0627\u0644\u0645\u0628\u0644\u063A \u0645\u0634 \u0648\u0627\u0636\u062D \u0628\u0627\u0644\u0638\u0628\u0637. \u0645\u0645\u0643\u0646 \u062A\u0642\u0648\u0644\u064A \u0627\u0644\u0631\u0642\u0645 \u0628\u0627\u0644\u0638\u0628\u0637\u061F";
+  }
+  if (originalText.match(/ولا\s+\d/)) {
+    return "\u0645\u0634 \u0645\u062A\u0623\u0643\u062F \u0645\u0646 \u0627\u0644\u0645\u0628\u0644\u063A. \u0645\u0645\u0643\u0646 \u062A\u0623\u0643\u062F\u0644\u064A\u061F";
+  }
+  if (items.length > 0 && items.every((i) => i.confidence < 50)) {
+    return "\u0645\u0634 \u0642\u0627\u062F\u0631 \u0623\u0641\u0647\u0645 \u0627\u0644\u0639\u0645\u0644\u064A\u0629 \u0643\u0648\u064A\u0633. \u0645\u0645\u0643\u0646 \u062A\u0643\u062A\u0628\u0647\u0627 \u0628\u0637\u0631\u064A\u0642\u0629 \u062A\u0627\u0646\u064A\u0629\u061F";
+  }
+  return void 0;
+}
+function scoreAndDecide(items, originalText, thresholds = DEFAULT_THRESHOLDS) {
+  if (items.length === 0) {
+    return {
+      items: [],
+      overallConfidence: 0,
+      decision: "clarify",
+      clarificationQuestion: "\u0645\u0634 \u0642\u0627\u062F\u0631 \u0623\u0641\u0647\u0645. \u0645\u0645\u0643\u0646 \u062A\u0643\u062A\u0628 \u0627\u0644\u0645\u0635\u0631\u0648\u0641 \u0623\u0648 \u0627\u0644\u062F\u062E\u0644 \u0628\u0637\u0631\u064A\u0642\u0629 \u0623\u0648\u0636\u062D\u061F"
+    };
+  }
+  const scoredItems = items.map(adjustConfidence);
+  const overallConfidence = Math.round(
+    scoredItems.reduce((sum3, item) => sum3 + item.confidence, 0) / scoredItems.length
+  );
+  let decision;
+  let clarificationQuestion;
+  if (overallConfidence >= thresholds.autoSave && scoredItems.every((i) => i.confidence >= thresholds.autoSave)) {
+    decision = "auto_save";
+  } else if (overallConfidence >= thresholds.review) {
+    decision = "review";
+  } else {
+    decision = "clarify";
+    clarificationQuestion = generateClarification(scoredItems, originalText);
+  }
+  return { items: scoredItems, overallConfidence, decision, clarificationQuestion };
+}
+
+// api/lib/classification-pipeline.ts
+async function getThresholds() {
+  try {
+    const settings = await db.select().from(systemSettings);
+    const cfg = {};
+    settings.forEach((s) => {
+      if (s.value) cfg[s.key] = s.value;
+    });
+    return {
+      autoSave: parseInt(cfg.confidence_auto_save || "85"),
+      review: parseInt(cfg.confidence_review || "60"),
+      clarify: 0
+    };
+  } catch {
+    return DEFAULT_THRESHOLDS;
+  }
+}
+async function runPipeline(input) {
+  const startTime = Date.now();
+  const thresholds = await getThresholds();
+  const normalizedText = normalizeText(input.text);
+  const entities = extractEntities(normalizedText);
+  const log2 = {
+    originalText: input.text,
+    normalizedText,
+    entitiesFound: {
+      amountCount: entities.amounts.length,
+      people: entities.people,
+      merchants: entities.merchants
+    },
+    ruleEngineResult: { attempted: false, succeeded: false },
+    aiResult: { attempted: false, succeeded: false },
+    finalConfidence: 0,
+    finalDecision: ""
+  };
+  let items = [];
+  let parsedBy = "rule_engine";
+  let modelUsed = "rule_engine";
+  let alertMessage = null;
+  let tokensUsed = 0;
+  log2.ruleEngineResult.attempted = true;
+  const ruleResult = runRuleEngine(normalizedText, input.userDict);
+  if (!ruleResult.needsAI && ruleResult.items.length > 0) {
+    items = ruleResult.items;
+    log2.ruleEngineResult.succeeded = true;
+    parsedBy = "rule_engine";
+    modelUsed = "rule_engine";
+  } else {
+    log2.ruleEngineResult.succeeded = false;
+    log2.ruleEngineResult.reason = ruleResult.reason;
+    log2.aiResult.attempted = true;
+    const isComplexText = input.text.length > 35 || entities.hasMultipleTransactions;
+    const isWeakRuleResult = ruleResult.items.some(
+      (it) => it.category === "\u0645\u062A\u0646\u0648\u0639\u0627\u062A" || it.confidence < 60
+    );
+    if (isComplexText || isWeakRuleResult || ruleResult.needsAI) {
+      try {
+        const currentDate = (/* @__PURE__ */ new Date()).toLocaleString("ar-EG", { timeZone: "Africa/Cairo" });
+        const aiResult = await aiClassify(
+          input.text,
+          input.apiKey,
+          input.apiKey2,
+          input.modelName,
+          input.maxTokens,
+          {
+            totalIncome: input.monthlyContext.totalIncome,
+            totalExpense: input.monthlyContext.totalExpense,
+            currentDate
+          },
+          input.skipClarification
+        );
+        if (aiResult && aiResult.items.length > 0) {
+          items = aiResult.items;
+          alertMessage = aiResult.alertMessage || null;
+          tokensUsed = aiResult.tokensUsed;
+          modelUsed = aiResult.modelUsed;
+          parsedBy = ruleResult.items.length > 0 ? "hybrid" : "ai";
+          log2.aiResult.succeeded = true;
+          log2.aiResult.modelUsed = aiResult.modelUsed;
+          if (aiResult.needsClarification) {
+            const scored2 = scoreAndDecide([], input.text, thresholds);
+            scored2.clarificationQuestion = aiResult.clarificationQuestion || scored2.clarificationQuestion;
+            log2.finalConfidence = 0;
+            log2.finalDecision = "clarify";
+            return {
+              items: [],
+              parsedBy,
+              modelUsed,
+              overallConfidence: 0,
+              decision: "clarify",
+              clarificationQuestion: aiResult.clarificationQuestion || "\u0645\u0634 \u0642\u0627\u062F\u0631 \u0623\u0641\u0647\u0645. \u0645\u0645\u0643\u0646 \u062A\u0648\u0636\u062D \u0623\u0643\u062A\u0631\u061F",
+              alertMessage,
+              tokensUsed,
+              processingTimeMs: Date.now() - startTime,
+              log: log2
+            };
+          }
+        } else {
+          log2.aiResult.succeeded = false;
+          if (ruleResult.items.length > 0) {
+            items = ruleResult.items;
+            parsedBy = "rule_engine";
+          }
+        }
+      } catch (err) {
+        console.error("Pipeline AI Error:", err);
+        log2.aiResult.succeeded = false;
+        if (ruleResult.items.length > 0) {
+          items = ruleResult.items;
+          parsedBy = "rule_engine";
+        }
+      }
+    } else if (ruleResult.items.length > 0) {
+      items = ruleResult.items;
     }
+  }
+  const scored = scoreAndDecide(items, input.text, thresholds);
+  log2.finalConfidence = scored.overallConfidence;
+  log2.finalDecision = scored.decision;
+  return {
+    items: scored.items,
+    parsedBy,
+    modelUsed,
+    overallConfidence: scored.overallConfidence,
+    decision: scored.decision,
+    clarificationQuestion: scored.clarificationQuestion,
+    alertMessage,
+    tokensUsed,
+    processingTimeMs: Date.now() - startTime,
+    log: log2
+  };
+}
+async function runSTTPipeline(audioBase64, mimeType, apiKey, modelName = "gemini-2.5-flash") {
+  return geminiSpeechToText(audioBase64, mimeType, apiKey, modelName);
+}
+
+// api/ai-router.ts
+async function trackTokens(userId, userType, tokens) {
+  if (!tokens || tokens <= 0) return;
+  try {
+    if (userType === "oauth") {
+      await db.update(users).set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` }).where(eq(users.id, userId));
+    } else {
+      await db.update(localUsers).set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` }).where(eq(localUsers.id, userId));
+    }
+  } catch (err) {
+    console.error("Failed to track tokens:", err);
+  }
+}
+async function getAiClient(taskType, userPlan = "free") {
+  const settings = await db.select().from(systemSettings);
+  const cfg = {};
+  settings.forEach((s) => {
+    if (s.value) cfg[s.key] = s.value;
+  });
+  let apiKey = cfg.ai_api_key || env.GEMINI_API_KEY;
+  let apiKey2 = cfg.ai_api_key_2 || "AIzaSyCTbqi-uF65bRYw8T32DbVOciM9CIMjRuo";
+  let modelName;
+  if (taskType === "parse") {
+    if (userPlan === "ultra") modelName = cfg.ai_model_ultra || "gemini-2.5-pro";
+    else if (userPlan === "pro") modelName = cfg.ai_model_pro || env.GEMINI_MODEL_PRO;
+    else modelName = cfg.ai_model_free || env.GEMINI_MODEL_FREE;
+  } else {
+    modelName = cfg.ai_model_reports || env.GEMINI_MODEL_REPORTS;
+  }
+  const tokenLimits = {
+    free: parseInt(cfg.free_token_limit || "50000"),
+    pro: parseInt(cfg.pro_token_limit || "500000"),
+    ultra: parseInt(cfg.ultra_token_limit || "2000000")
+  };
+  const maxPerRequest = {
+    free: parseInt(cfg.free_max_per_request || "256"),
+    pro: parseInt(cfg.pro_max_per_request || "512"),
+    ultra: parseInt(cfg.ultra_max_per_request || "1024")
+  };
+  const dailyLimits = {
+    free: parseInt(cfg.free_daily_limit || "10"),
+    pro: parseInt(cfg.pro_daily_limit || "100"),
+    ultra: parseInt(cfg.ultra_daily_limit || "500")
+  };
+  const canUseAnalysis = cfg[`${userPlan}_ai_analysis`] !== "false";
+  const canUseParse = cfg[`${userPlan}_ai_parse`] !== "false";
+  if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY") {
+    throw new Error("Demo Mode");
+  }
+  const plan = userPlan;
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const aiModel = genAI.getGenerativeModel({
+    model: modelName,
+    generationConfig: {
+      temperature: 0.3,
+      maxOutputTokens: taskType === "parse" ? maxPerRequest[plan] || 512 : maxPerRequest[plan] || 1024
+    }
+  });
+  return {
+    aiModel,
+    modelName,
+    apiKey,
+    apiKey2,
+    tokenLimit: tokenLimits[plan] || 5e4,
+    dailyLimit: dailyLimits[plan] || 10,
+    maxPerRequest: maxPerRequest[plan] || 512,
+    canUseAnalysis,
+    canUseParse,
+    freeTokenLimit: tokenLimits.free,
+    proTokenLimit: tokenLimits.pro
+  };
+}
+var aiRouter = router({
+  // ─── Parse Expense (New Pipeline) ───
+  parseExpense: authedProcedure.input(external_exports.object({ text: external_exports.string(), model: external_exports.enum(["flash", "pro", "ultra", "gemma"]).default("flash"), skipClarification: external_exports.boolean().optional() })).mutation(async ({ ctx, input }) => {
+    const today = /* @__PURE__ */ new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayUsage = await db.select({ count: sql`COUNT(*)` }).from(aiSummaries).where(and(eq(aiSummaries.userId, ctx.user.id), eq(aiSummaries.userType, ctx.user.type), gte(aiSummaries.createdAt, today)));
+    let dailyLimit = 10;
+    let tokenLimit = 5e4;
+    let apiKey = env.GEMINI_API_KEY;
+    let apiKey2 = "";
+    let modelName = env.GEMINI_MODEL_FREE;
+    let maxPerRequest = 512;
+    try {
+      const client = await getAiClient("parse", ctx.user.plan);
+      dailyLimit = client.dailyLimit;
+      tokenLimit = client.tokenLimit;
+      apiKey = client.apiKey;
+      apiKey2 = client.apiKey2;
+      modelName = client.modelName;
+      maxPerRequest = client.maxPerRequest;
+    } catch {
+    }
+    if ((todayUsage[0]?.count ?? 0) >= dailyLimit) {
+      const upgradeTo = ctx.user.plan === "free" ? "\u0628\u0631\u0648" : "\u0623\u0644\u062A\u0631\u0627";
+      throw new TRPCError({ code: "FORBIDDEN", message: `\u0648\u0635\u0644\u062A \u0644\u0644\u062D\u062F \u0627\u0644\u064A\u0648\u0645\u064A (${dailyLimit} \u0637\u0644\u0628). \u062D\u062F\u062B \u0644\u0640${upgradeTo}!` });
+    }
+    const userRecord = ctx.user.type === "oauth" ? await db.query.users.findFirst({ where: eq(users.id, ctx.user.id) }) : await db.query.localUsers.findFirst({ where: eq(localUsers.id, ctx.user.id) });
+    const usedTokens = userRecord?.aiTokensUsed || 0;
+    if (usedTokens >= tokenLimit) {
+      const upgradeTo = ctx.user.plan === "free" ? "\u0628\u0631\u0648" : "\u0623\u0644\u062A\u0631\u0627";
+      throw new TRPCError({ code: "FORBIDDEN", message: `\u0627\u0633\u062A\u0647\u0644\u0643\u062A \u0631\u0635\u064A\u062F\u0643 \u0627\u0644\u0634\u0647\u0631\u064A (${tokenLimit} \u0643\u0644\u0645\u0629). \u062D\u062F\u062B \u0644\u0640${upgradeTo}!` });
+    }
+    const userDict = await db.select().from(userDictionaries).where(and(eq(userDictionaries.userId, ctx.user.id), eq(userDictionaries.userType, ctx.user.type))).then((rows) => rows.map((row) => ({ word: row.word, category: row.category, subCategory: row.subCategory ?? void 0 })));
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const currentMonthOps = await db.select().from(expenses).where(and(eq(expenses.userId, ctx.user.id), eq(expenses.userType, ctx.user.type), gte(expenses.date, startOfMonth)));
+    const totalIncome = currentMonthOps.filter((e) => e.type === "income").reduce((s, e) => s + Number(e.amount), 0);
+    const totalExpense = currentMonthOps.filter((e) => e.type === "expense").reduce((s, e) => s + Number(e.amount), 0);
+    const result = await runPipeline({
+      text: input.text,
+      userId: ctx.user.id,
+      userType: ctx.user.type,
+      userPlan: ctx.user.plan,
+      userDict,
+      apiKey,
+      apiKey2,
+      modelName,
+      maxTokens: maxPerRequest,
+      monthlyContext: { totalIncome, totalExpense },
+      skipClarification: input.skipClarification
+    });
+    if (result.tokensUsed > 0) {
+      await trackTokens(ctx.user.id, ctx.user.type, result.tokensUsed);
+    }
+    await db.insert(classificationLogs).values({
+      userId: ctx.user.id,
+      userType: ctx.user.type,
+      originalText: input.text,
+      normalizedText: result.log.normalizedText,
+      parsedBy: result.parsedBy,
+      ruleEngineResult: result.log.ruleEngineResult,
+      aiResult: result.log.aiResult,
+      finalResult: result.items,
+      confidence: result.overallConfidence,
+      decision: result.decision,
+      modelUsed: result.modelUsed,
+      tokensUsed: result.tokensUsed,
+      processingTimeMs: result.processingTimeMs
+    }).catch(() => {
+    });
     await db.insert(aiSummaries).values({
       userId: ctx.user.id,
       userType: ctx.user.type,
       period: "daily",
       periodValue: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
-      model: modelName,
-      content: JSON.stringify(items)
+      model: result.modelUsed,
+      content: JSON.stringify(result.items || [])
     }).catch(() => {
     });
-    return { items, model: modelName, parsedBy: items && items.length > 0 ? "hybrid" : "ai" };
+    return {
+      items: result.items,
+      model: result.modelUsed,
+      parsedBy: result.parsedBy,
+      alertMessage: result.alertMessage,
+      decision: result.decision,
+      overallConfidence: result.overallConfidence,
+      clarificationQuestion: result.clarificationQuestion,
+      processingTimeMs: result.processingTimeMs
+    };
   }),
-  // ─── Generate Monthly Insights ───
+  // ─── Get User Limits (Voice, AI) ───
+  getUserLimits: authedProcedure.query(async ({ ctx }) => {
+    const settings = await db.select().from(systemSettings);
+    const cfg = {};
+    settings.forEach((s) => {
+      if (s.value) cfg[s.key] = s.value;
+    });
+    const voiceLimits = {
+      free: parseInt(cfg.voice_limit_free || "300"),
+      pro: parseInt(cfg.voice_limit_pro || "1800"),
+      ultra: parseInt(cfg.voice_limit_ultra || "0")
+    };
+    const now = /* @__PURE__ */ new Date();
+    let cycleStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    if (ctx.user.plan !== "free") {
+      const sub = await db.query.proSubscriptions.findFirst({
+        where: (table, { and: and2, eq: eq2 }) => and2(eq2(table.userId, ctx.user.id), eq2(table.userType, ctx.user.type), eq2(table.status, "active"))
+      });
+      if (sub) {
+        cycleStart = sub.startDate;
+        const day = cycleStart.getDate();
+        const currentMonthCycle = new Date(now.getFullYear(), now.getMonth(), day);
+        if (now < currentMonthCycle) {
+          cycleStart = new Date(now.getFullYear(), now.getMonth() - 1, day);
+        } else {
+          cycleStart = currentMonthCycle;
+        }
+      }
+    } else {
+      const userRec = ctx.user.type === "oauth" ? await db.query.users.findFirst({ where: (table, { eq: eq2 }) => eq2(table.id, ctx.user.id) }) : await db.query.localUsers.findFirst({ where: (table, { eq: eq2 }) => eq2(table.id, ctx.user.id) });
+      if (userRec && userRec.createdAt) {
+        const day = userRec.createdAt.getDate();
+        const currentMonthCycle = new Date(now.getFullYear(), now.getMonth(), day);
+        if (now < currentMonthCycle) {
+          cycleStart = new Date(now.getFullYear(), now.getMonth() - 1, day);
+        } else {
+          cycleStart = currentMonthCycle;
+        }
+      }
+    }
+    const usageResult = await db.select({ total: sql`COALESCE(SUM(duration_seconds), 0)` }).from(voiceUsage).where(and(
+      eq(voiceUsage.userId, ctx.user.id),
+      eq(voiceUsage.userType, ctx.user.type),
+      gte(voiceUsage.createdAt, cycleStart)
+    ));
+    const usedVoiceSeconds = Number(usageResult[0]?.total || 0);
+    const voiceLimit = voiceLimits[ctx.user.plan] || 300;
+    return {
+      voice: {
+        limit: voiceLimit,
+        used: usedVoiceSeconds,
+        remaining: voiceLimit > 0 ? Math.max(0, voiceLimit - usedVoiceSeconds) : -1,
+        resetDate: new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, cycleStart.getDate()).toISOString()
+      }
+    };
+  }),
+  // ─── Speech-to-Text via Gemini ───
+  speechToText: authedProcedure.input(external_exports.object({
+    audioBase64: external_exports.string(),
+    mimeType: external_exports.string().default("audio/webm"),
+    durationSeconds: external_exports.number().default(0)
+  })).mutation(async ({ ctx, input }) => {
+    const now = /* @__PURE__ */ new Date();
+    let cycleStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    if (ctx.user.plan !== "free") {
+      const sub = await db.query.proSubscriptions.findFirst({
+        where: (table, { and: and2, eq: eq2 }) => and2(eq2(table.userId, ctx.user.id), eq2(table.userType, ctx.user.type), eq2(table.status, "active"))
+      });
+      if (sub) {
+        const day = sub.startDate.getDate();
+        const currentMonthCycle = new Date(now.getFullYear(), now.getMonth(), day);
+        cycleStart = now < currentMonthCycle ? new Date(now.getFullYear(), now.getMonth() - 1, day) : currentMonthCycle;
+      }
+    } else {
+      const userRec = ctx.user.type === "oauth" ? await db.query.users.findFirst({ where: (table, { eq: eq2 }) => eq2(table.id, ctx.user.id) }) : await db.query.localUsers.findFirst({ where: (table, { eq: eq2 }) => eq2(table.id, ctx.user.id) });
+      if (userRec && userRec.createdAt) {
+        const day = userRec.createdAt.getDate();
+        const currentMonthCycle = new Date(now.getFullYear(), now.getMonth(), day);
+        cycleStart = now < currentMonthCycle ? new Date(now.getFullYear(), now.getMonth() - 1, day) : currentMonthCycle;
+      }
+    }
+    const usageResult = await db.select({ total: sql`COALESCE(SUM(duration_seconds), 0)` }).from(voiceUsage).where(and(
+      eq(voiceUsage.userId, ctx.user.id),
+      eq(voiceUsage.userType, ctx.user.type),
+      gte(voiceUsage.createdAt, cycleStart)
+    ));
+    const usedSeconds = Number(usageResult[0]?.total || 0);
+    const settings = await db.select().from(systemSettings);
+    const cfg = {};
+    settings.forEach((s) => {
+      if (s.value) cfg[s.key] = s.value;
+    });
+    const voiceLimits = {
+      free: parseInt(cfg.voice_limit_free || "300"),
+      // 5 min
+      pro: parseInt(cfg.voice_limit_pro || "1800"),
+      // 30 min
+      ultra: parseInt(cfg.voice_limit_ultra || "0")
+      // unlimited
+    };
+    const limit = voiceLimits[ctx.user.plan] || 300;
+    if (limit > 0 && usedSeconds >= limit) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: `\u0648\u0642\u062A \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0635\u0648\u062A\u064A \u062E\u0644\u0635 (${Math.floor(limit / 60)} \u062F\u0642\u064A\u0642\u0629/\u0634\u0647\u0631). \u062D\u062F\u062B \u0644\u0644\u0628\u0631\u0648 \u0644\u0644\u0645\u0632\u064A\u062F!`
+      });
+    }
+    let apiKey = cfg.ai_api_key || env.GEMINI_API_KEY;
+    const sttModel = cfg.stt_model || "gemini-2.5-flash";
+    const result = await runSTTPipeline(input.audioBase64, input.mimeType, apiKey, sttModel);
+    if (!result) {
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "\u0641\u0634\u0644 \u062A\u062D\u0648\u064A\u0644 \u0627\u0644\u0635\u0648\u062A. \u062C\u0631\u0628 \u062A\u0627\u0646\u064A." });
+    }
+    const currentMonthStr = (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
+    await db.insert(voiceUsage).values({
+      userId: ctx.user.id,
+      userType: ctx.user.type,
+      durationSeconds: input.durationSeconds,
+      month: currentMonthStr,
+      source: "gemini_stt"
+    }).catch(() => {
+    });
+    if (result.tokensUsed > 0) {
+      await trackTokens(ctx.user.id, ctx.user.type, result.tokensUsed);
+    }
+    const remaining = limit > 0 ? Math.max(0, limit - usedSeconds - input.durationSeconds) : -1;
+    return {
+      text: result.text,
+      tokensUsed: result.tokensUsed,
+      remainingSeconds: remaining,
+      remainingFormatted: remaining >= 0 ? `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}` : "\u063A\u064A\u0631 \u0645\u062D\u062F\u0648\u062F"
+    };
+  }),
+  // ─── Financial Copilot: Personal Learning ───
+  learnWord: authedProcedure.input(external_exports.object({
+    word: external_exports.string(),
+    category: external_exports.string(),
+    subCategory: external_exports.string().optional()
+  })).mutation(async ({ ctx, input }) => {
+    await db.insert(userDictionaries).values({
+      userId: ctx.user.id,
+      userType: ctx.user.type,
+      word: input.word.trim().toLowerCase(),
+      category: input.category,
+      subCategory: input.subCategory || "\u0639\u0627\u0645"
+    }).onDuplicateKeyUpdate({
+      set: {
+        category: input.category,
+        subCategory: input.subCategory || "\u0639\u0627\u0645"
+      }
+    });
+    return { success: true };
+  }),
+  // ─── Financial Copilot: Monthly Insights ───
   generateMonthlyInsights: authedProcedure.input(external_exports.object({
     month: external_exports.string(),
-    // YYYY-MM
     model: external_exports.enum(["flash", "pro", "ultra", "gemma"]).default("flash")
   })).mutation(async ({ ctx, input }) => {
-    const modelName = MODELS[input.model];
-    const cached2 = await db.select().from(aiSummaries).where(and(
-      eq(aiSummaries.userId, ctx.user.id),
-      eq(aiSummaries.userType, ctx.user.type),
-      eq(aiSummaries.period, "monthly"),
-      eq(aiSummaries.periodValue, input.month),
-      eq(aiSummaries.model, modelName)
-    )).limit(1);
-    if (cached2[0] && new Date(cached2[0].createdAt).getTime() > Date.now() - 24 * 60 * 60 * 1e3) {
-      return { insights: cached2[0].content, cached: true, model: modelName };
-    }
     const [year2, month] = input.month.split("-");
     const startDate = new Date(parseInt(year2), parseInt(month) - 1, 1);
     const endDate = new Date(parseInt(year2), parseInt(month), 0);
+    const daysInMonth = endDate.getDate();
     const userExpenses = await db.select().from(expenses).where(and(
       eq(expenses.userId, ctx.user.id),
       eq(expenses.userType, ctx.user.type),
@@ -82359,30 +84551,247 @@ var aiRouter = router({
       lte(expenses.date, endDate)
     ));
     if (userExpenses.length === 0) {
-      return { insights: "\u0645\u0641\u064A\u0634 \u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u0634\u0647\u0631 \u062F\u0647. \u0627\u0628\u062F\u0623 \u062A\u0633\u062C\u0644!", cached: false, model: modelName };
+      return { insights: JSON.stringify({ response_text: "\u0645\u0641\u064A\u0634 \u0645\u0635\u0627\u0631\u064A\u0641 \u0645\u0633\u062C\u0644\u0629 \u0627\u0644\u0634\u0647\u0631 \u062F\u0647 \u0644\u0633\u0647. \u0627\u0628\u062F\u0623 \u0633\u062C\u0644 \u0648\u0647\u0646\u062D\u0644\u0644\u0643 \u0643\u0644 \u062D\u0627\u062C\u0629! \u{1F4B0}", alerts: [], personality_flag: "new_user", data_table: null }), cached: false, model: "backend" };
     }
-    const total = userExpenses.reduce((s, e) => s + Number(e.amount), 0);
-    const byCategory = userExpenses.reduce((acc, e) => {
-      acc[e.category] = (acc[e.category] || 0) + Number(e.amount);
-      return acc;
-    }, {});
-    const aiModel = genAI.getGenerativeModel({ model: modelName });
-    const prompt = `\u062D\u0644\u0644 \u0628\u064A\u0627\u0646\u0627\u062A \u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u0634\u0647\u0631 \u062F\u0647 \u0628\u0627\u0644\u0639\u0627\u0645\u064A\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629:
-\u0625\u062C\u0645\u0627\u0644\u064A: ${total} \u062C\u0646\u064A\u0647
-\u0627\u0644\u0641\u0626\u0627\u062A: ${Object.entries(byCategory).map(([k, v]) => `${k}: ${v}`).join(", ")}
-\u0627\u0639\u0645\u0644 \u062A\u062D\u0644\u064A\u0644 \u0645\u0627\u0644\u064A \u0645\u062E\u062A\u0635\u0631 \u0648\u0646\u0635\u0627\u0626\u062D \u0628\u0627\u0644\u0644\u0647\u062C\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629.`;
-    const result = await aiModel.generateContent(prompt);
-    const insights = result.response.text();
+    const prevStart = new Date(parseInt(year2), parseInt(month) - 2, 1);
+    const prevEnd = new Date(parseInt(year2), parseInt(month) - 1, 0);
+    const prevExpenses = await db.select().from(expenses).where(and(
+      eq(expenses.userId, ctx.user.id),
+      eq(expenses.userType, ctx.user.type),
+      gte(expenses.date, prevStart),
+      lte(expenses.date, prevEnd)
+    ));
+    const profile = await db.select().from(userProfiles).where(and(eq(userProfiles.userId, ctx.user.id), eq(userProfiles.userType, ctx.user.type))).limit(1);
+    const userProfile = profile[0] || null;
+    const totalExpense = userExpenses.filter((e) => e.type === "expense").reduce((s, e) => s + Number(e.amount), 0);
+    const totalIncome = userExpenses.filter((e) => e.type === "income").reduce((s, e) => s + Number(e.amount), 0);
+    const prevTotal = prevExpenses.filter((e) => e.type === "expense").reduce((s, e) => s + Number(e.amount), 0);
+    const dailyAvg = Math.round(totalExpense / daysInMonth);
+    const byCategory = {};
+    userExpenses.filter((e) => e.type === "expense").forEach((e) => {
+      byCategory[e.category] = (byCategory[e.category] || 0) + Number(e.amount);
+    });
+    const sortedCats = Object.entries(byCategory).sort((a, b) => b[1] - a[1]);
+    const topCategory = sortedCats[0];
+    const topCategoryPercent = topCategory ? Math.round(topCategory[1] / totalExpense * 100) : 0;
+    const bySubCategory = {};
+    userExpenses.filter((e) => e.type === "expense").forEach((e) => {
+      const subKey = e.subCategory && e.subCategory !== "\u0639\u0627\u0645" ? `${e.category} > ${e.subCategory}` : e.category;
+      if (!bySubCategory[subKey]) bySubCategory[subKey] = { amount: 0, mainCat: e.category };
+      bySubCategory[subKey].amount += Number(e.amount);
+    });
+    const sortedSubs = Object.entries(bySubCategory).sort((a, b) => b[1].amount - a[1].amount);
+    const topSubCategories = sortedSubs.slice(0, 10).map(([name, data]) => ({
+      name,
+      amount: data.amount,
+      mainCat: data.mainCat,
+      percent: totalExpense > 0 ? Math.round(data.amount / totalExpense * 100) : 0
+    }));
+    const prevByCategory = {};
+    prevExpenses.filter((e) => e.type === "expense").forEach((e) => {
+      prevByCategory[e.category] = (prevByCategory[e.category] || 0) + Number(e.amount);
+    });
+    const catChanges = [];
+    for (const [cat, amount] of sortedCats) {
+      const prev = prevByCategory[cat] || 0;
+      const change = prev > 0 ? Math.round((amount - prev) / prev * 100) : 100;
+      catChanges.push({ cat, current: amount, prev, changePercent: change });
+    }
+    const monthlyChange = prevTotal > 0 ? Math.round((totalExpense - prevTotal) / prevTotal * 100) : 0;
+    const flexCats = ["\u062A\u0631\u0641\u064A\u0647", "\u062A\u0633\u0648\u0642", "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", "\u0631\u0641\u0627\u0647\u064A\u0629", "\u0647\u062F\u0627\u064A\u0627"];
+    const currentFlexSpend = sortedCats.filter(([k]) => flexCats.includes(k)).reduce((s, [, v]) => s + v, 0);
+    const flexPercent = totalExpense > 0 ? Math.round(currentFlexSpend / totalExpense * 100) : 0;
+    let personality = "balanced";
+    if (flexPercent > 45) personality = "impulsive";
+    else if (flexPercent < 15 && totalExpense > 0) personality = "conservative";
+    if (monthlyChange > 30) personality = "stressed";
+    const alerts = [];
+    if (topCategory && topCategoryPercent > 60) {
+      alerts.push(`\u26A0\uFE0F ${topCategory[0]} \u0648\u0627\u062E\u062F ${topCategoryPercent}% \u0645\u0646 \u0645\u064A\u0632\u0627\u0646\u064A\u062A\u0643 - \u0627\u0639\u062A\u0645\u0627\u062F \u0639\u0627\u0644\u064A \u0639\u0644\u0649 \u0628\u0646\u062F \u0648\u0627\u062D\u062F`);
+    }
+    if (monthlyChange > 20 && prevTotal > 0) alerts.push(`\u{1F4C8} \u0645\u0635\u0627\u0631\u064A\u0641\u0643 \u0632\u0627\u062F\u062A ${monthlyChange}% \u0639\u0646 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0644\u064A \u0641\u0627\u062A`);
+    if (monthlyChange < -15 && prevTotal > 0) alerts.push(`\u2705 \u0623\u062D\u0633\u0646\u062A! \u0645\u0635\u0627\u0631\u064A\u0641\u0643 \u0642\u0644\u062A ${Math.abs(monthlyChange)}% \u0639\u0646 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0644\u064A \u0641\u0627\u062A`);
+    const comparisonIncome = totalIncome > 0 ? totalIncome : Number(userProfile?.monthlyIncome || 0);
+    const incomeRatio = comparisonIncome > 0 ? Math.round(totalExpense / comparisonIncome * 100) : null;
+    if (incomeRatio && incomeRatio > 90) alerts.push(`\u{1F6A8} \u0635\u0631\u0641\u062A ${incomeRatio}% \u0645\u0646 \u062F\u062E\u0644\u0643 - \u062E\u0637\u0631 \u0639\u0644\u0649 \u0627\u0644\u0645\u064A\u0632\u0627\u0646\u064A\u0629!`);
+    if (incomeRatio && incomeRatio < 50 && totalExpense > 0) alerts.push(`\u{1F4B0} \u0645\u0630\u0647\u0644! \u0623\u0646\u062A \u0628\u062A\u0648\u0641\u0631 \u0623\u0643\u062A\u0631 \u0645\u0646 \u0646\u0635 \u062F\u062E\u0644\u0643.`);
+    const recurringBills = [];
+    const billCategories = ["\u0641\u0648\u0627\u062A\u064A\u0631", "\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A", "\u0633\u0643\u0646"];
+    const currentBills = userExpenses.filter((e) => billCategories.includes(e.category) || e.subCategory && e.subCategory.includes("\u0627\u0634\u062A\u0631\u0627\u0643"));
+    const prevBills = prevExpenses.filter((e) => billCategories.includes(e.category) || e.subCategory && e.subCategory.includes("\u0627\u0634\u062A\u0631\u0627\u0643"));
+    prevBills.forEach((pb) => {
+      const isPaid = currentBills.some((cb) => cb.category === pb.category && (cb.description === pb.description || Math.abs(Number(cb.amount) - Number(pb.amount)) < 50));
+      if (!isPaid && !recurringBills.some((r) => r.includes(pb.category))) {
+        recurringBills.push(`${pb.description || pb.category} (~${pb.amount} \u062C.\u0645)`);
+      }
+    });
+    const prevFlexSpend = prevExpenses.filter((e) => flexCats.includes(e.category)).reduce((s, e) => s + Number(e.amount), 0);
+    let patternMemory = "";
+    if (prevFlexSpend > 0) {
+      if (currentFlexSpend > prevFlexSpend + 100) {
+        patternMemory = `\u062A\u0646\u0628\u064A\u0647 \u0646\u0645\u0637 \u0633\u0644\u0648\u0643\u064A: \u0625\u0646\u0641\u0627\u0642 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0639\u0644\u0649 "\u0627\u0644\u0631\u0641\u0627\u0647\u064A\u0627\u062A" (\u0627\u0644\u0645\u0637\u0627\u0639\u0645/\u0627\u0644\u062A\u0633\u0648\u0642) \u0627\u0631\u062A\u0641\u0639 \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631 \u0628\u0634\u0643\u0644 \u0645\u0644\u062D\u0648\u0638 \u0645\u0642\u0627\u0631\u0646\u0629 \u0628\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0645\u0627\u0636\u064A (${currentFlexSpend} \u062C.\u0645 \u0645\u0642\u0627\u0628\u0644 ${prevFlexSpend} \u062C.\u0645).`;
+      } else if (currentFlexSpend < prevFlexSpend - 100) {
+        patternMemory = `\u0646\u0645\u0637 \u0625\u064A\u062C\u0627\u0628\u064A: \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0646\u062C\u062D \u0641\u064A \u062A\u0642\u0644\u064A\u0644 \u0625\u0646\u0641\u0627\u0642\u0647 \u0639\u0644\u0649 "\u0627\u0644\u0631\u0641\u0627\u0647\u064A\u0627\u062A" \u0628\u0634\u0643\u0644 \u0645\u0645\u062A\u0627\u0632 \u0645\u0642\u0627\u0631\u0646\u0629 \u0628\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0645\u0627\u0636\u064A (${currentFlexSpend} \u062C.\u0645 \u0645\u0642\u0627\u0628\u0644 ${prevFlexSpend} \u062C.\u0645).`;
+      } else {
+        patternMemory = `\u0646\u0645\u0637 \u0645\u0633\u062A\u0642\u0631: \u0625\u0646\u0641\u0627\u0642 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0639\u0644\u0649 "\u0627\u0644\u0631\u0641\u0627\u0647\u064A\u0627\u062A" \u0634\u0628\u0647 \u062B\u0627\u0628\u062A \u062D\u0648\u0644 \u0645\u0633\u062A\u0648\u0649 ${currentFlexSpend} \u062C.\u0645.`;
+      }
+    }
+    const today = /* @__PURE__ */ new Date();
+    let forecast = "";
+    if (today.getMonth() === endDate.getMonth() && today.getFullYear() === endDate.getFullYear()) {
+      const currentDay = Math.max(1, today.getDate());
+      const runRate = Math.round(totalExpense / currentDay * daysInMonth);
+      if (comparisonIncome > 0) {
+        if (runRate > comparisonIncome) {
+          const runwayDays = Math.floor(comparisonIncome / (totalExpense / currentDay));
+          forecast = `\u062A\u062D\u0630\u064A\u0631 \u0633\u064A\u0648\u0644\u0629 (Burn Rate): \u0627\u0633\u062A\u0645\u0631\u0627\u0631 \u0627\u0644\u0625\u0646\u0641\u0627\u0642 \u0628\u0647\u0630\u0627 \u0627\u0644\u0645\u0639\u062F\u0644 \u0633\u064A\u0624\u062F\u064A \u0625\u0644\u0649 \u0646\u0641\u0627\u062F \u0627\u0644\u0645\u064A\u0632\u0627\u0646\u064A\u0629 \u0627\u0644\u0645\u062A\u0628\u0642\u064A\u0629 \u0641\u064A \u064A\u0648\u0645 ${runwayDays} \u0645\u0646 \u0627\u0644\u0634\u0647\u0631 (\u0627\u0644\u0627\u0633\u062A\u0647\u0644\u0627\u0643 \u0627\u0644\u0645\u062A\u0648\u0642\u0639 ${runRate}\u060C \u0627\u0644\u062F\u062E\u0644 ${comparisonIncome}).`;
+        } else {
+          const projectedSavings = comparisonIncome - runRate;
+          forecast = `\u062A\u0648\u0642\u0639 \u0645\u0627\u0644\u064A \u0622\u0645\u0646: \u0627\u0644\u0645\u0639\u062F\u0644 \u0627\u0644\u062D\u0627\u0644\u064A \u0645\u0645\u062A\u0627\u0632\u060C \u0627\u0644\u0645\u062A\u0648\u0642\u0639 \u0628\u0646\u0647\u0627\u064A\u0629 \u0627\u0644\u0634\u0647\u0631 \u062A\u0648\u0641\u064A\u0631 \u062D\u0648\u0627\u0644\u064A ${projectedSavings} \u062C.\u0645.`;
+        }
+      }
+    }
+    const subCatSummary = topSubCategories.slice(0, 8).map((s) => `${s.name}: ${s.amount}\u062C (${s.percent}%)`).join(" | ");
+    const summaryForAI = `\u0627\u0644\u0634\u0647\u0631: ${input.month}
+\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641: ${totalExpense} \u062C.\u0645 | \u0627\u0644\u062F\u062E\u0644: ${comparisonIncome} \u062C.\u0645
+${prevTotal > 0 ? `\u062A\u063A\u064A\u0631 \u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641 \u0639\u0646 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0633\u0627\u0628\u0642: ${monthlyChange > 0 ? "+" : ""}${monthlyChange}%` : "\u0647\u0630\u0627 \u0623\u0648\u0644 \u0634\u0647\u0631 \u064A\u062A\u0645 \u062A\u0633\u062C\u064A\u0644\u0647"}
+\u0623\u0643\u0628\u0631 \u0628\u0646\u062F \u0625\u0646\u0641\u0627\u0642 \u0631\u0626\u064A\u0633\u064A: ${topCategory ? `${topCategory[0]} (${topCategoryPercent}%)` : "\u0644\u0627 \u064A\u0648\u062C\u062F"}
+\u062A\u0641\u0627\u0635\u064A\u0644 \u0627\u0644\u0641\u0626\u0627\u062A \u0627\u0644\u0641\u0631\u0639\u064A\u0629 (\u0627\u0644\u0623\u0643\u062B\u0631 \u0627\u0633\u062A\u0647\u0644\u0627\u0643\u0627\u064B): ${subCatSummary}
+\u062A\u063A\u064A\u0631\u0627\u062A \u0627\u0644\u0641\u0626\u0627\u062A \u0639\u0646 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0633\u0627\u0628\u0642: ${catChanges.slice(0, 4).map((c) => `${c.cat}: ${c.current}\u062C ${c.prev > 0 ? `(${c.changePercent > 0 ? "+" : ""}${c.changePercent}%)` : ""}`).join(" | ")}
+\u0645\u062A\u0648\u0633\u0637 \u0627\u0644\u0625\u0646\u0641\u0627\u0642 \u0627\u0644\u064A\u0648\u0645\u064A \u0627\u0644\u0641\u0639\u0644\u064A: ${dailyAvg} \u062C.\u0645
+\u0627\u0644\u0634\u062E\u0635\u064A\u0629 \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0627\u0644\u062A\u062D\u0644\u064A\u0644\u064A\u0629: ${personality}
+---
+\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u062A\u0642\u062F\u0645 (Perfect Memory & Mimicry):
+- \u0630\u0627\u0643\u0631\u0629 \u0627\u0644\u0623\u0646\u0645\u0627\u0637: ${patternMemory || "\u0644\u0627 \u064A\u0648\u062C\u062F \u0628\u064A\u0627\u0646\u0627\u062A \u0643\u0627\u0641\u064A\u0629 \u0644\u0644\u0645\u0642\u0627\u0631\u0646\u0629 \u0627\u0644\u062A\u0627\u0631\u064A\u062E\u064A\u0629"}
+- \u0641\u0648\u0627\u062A\u064A\u0631 \u0648\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A \u0645\u062A\u0648\u0642\u0639\u0629 \u0642\u0631\u064A\u0628\u0627\u064B: ${recurringBills.length > 0 ? recurringBills.join(" | ") : "\u0644\u0627 \u064A\u0648\u062C\u062F \u0641\u0648\u0627\u062A\u064A\u0631 \u0645\u0639\u0644\u0642\u0629 \u0645\u0643\u062A\u0634\u0641\u0629 \u0628\u0646\u0627\u0621\u064B \u0639\u0644\u0649 \u0627\u0644\u0633\u062C\u0644 \u0627\u0644\u0633\u0627\u0628\u0642"}
+- \u0627\u0644\u062A\u0648\u0642\u0639 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0633\u062A\u0642\u0628\u0644\u064A (Forecasting): ${forecast || "\u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u0644\u0639\u062F\u0645 \u0643\u0641\u0627\u064A\u0629 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u062F\u062E\u0644/\u0627\u0644\u0623\u064A\u0627\u0645"}`;
+    let aiModel;
+    let modelName = "backend";
+    let aiResponseLength = "medium";
+    let aiFocus = "balanced";
+    try {
+      const client = await getAiClient("report", ctx.user.plan);
+      aiModel = client.aiModel;
+      modelName = client.modelName;
+      const settings = await db.select().from(systemSettings);
+      settings.forEach((s) => {
+        if (s.key === "ai_response_length" && s.value) aiResponseLength = s.value;
+        if (s.key === "ai_focus" && s.value) aiFocus = s.value;
+      });
+      const tokenField = ctx.user.type === "oauth" ? await db.select({ t: users.aiTokensUsed }).from(users).where(eq(users.id, ctx.user.id)) : await db.select({ t: localUsers.aiTokensUsed }).from(localUsers).where(eq(localUsers.id, ctx.user.id));
+      const usedTokens = tokenField[0]?.t || 0;
+      const limit = ctx.user.plan === "pro" ? client.proTokenLimit : client.freeTokenLimit;
+      if (usedTokens >= limit) {
+        aiModel = null;
+        modelName = "backend";
+      }
+    } catch (e) {
+    }
+    let responseJson;
+    if (aiModel) {
+      try {
+        let lengthInstruction = "\u0627\u0643\u062A\u0628 \u062A\u062D\u0644\u064A\u0644\u0627\u064B \u0645\u062A\u0648\u0627\u0632\u0646\u0627\u064B \u0648\u0645\u0646\u0627\u0633\u0628\u0627\u064B \u0644\u0644\u0634\u0631\u062D \u0628\u0623\u0633\u0644\u0648\u0628 \u0645\u0647\u0646\u064A.";
+        if (aiResponseLength === "short") lengthInstruction = "\u0627\u0643\u062A\u0628 \u0645\u0648\u062C\u0632\u0627\u064B \u062A\u0646\u0641\u064A\u0630\u064A\u0627\u064B (Executive Summary) \u0645\u062E\u062A\u0635\u0631\u0627\u064B \u0648\u0645\u0628\u0627\u0634\u0631\u0627\u064B \u0648\u0636\u0639 \u0627\u0644\u0646\u0642\u0627\u0637 \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629 \u0644\u0644\u0642\u0631\u0627\u0631 \u0627\u0644\u0645\u0627\u0644\u064A.";
+        if (aiResponseLength === "detailed") lengthInstruction = "\u0627\u0643\u062A\u0628 \u062A\u0642\u0631\u064A\u0631\u0627\u064B \u0645\u0627\u0644\u064A\u0627\u064B (Financial Report) \u0645\u062A\u0639\u0645\u0642\u0627\u064B \u062C\u062F\u0627\u064B \u0648\u0645\u0641\u0635\u0644\u0627\u064B \u064A\u0634\u0631\u062D \u0643\u0644 \u0627\u0644\u062C\u0648\u0627\u0646\u0628\u060C \u0648\u064A\u062D\u0644\u0644 \u0627\u0644\u0645\u062E\u0627\u0637\u0631\u060C \u0648\u0627\u0644\u0641\u0631\u0635\u060C \u0648\u0627\u0644\u0623\u0646\u0645\u0627\u0637 \u0628\u0634\u0643\u0644 \u062F\u0642\u064A\u0642 \u0648\u0627\u062D\u062A\u0631\u0627\u0641\u064A.";
+        lengthInstruction += ` (\u0645\u0644\u0627\u062D\u0638\u0629: \u0627\u0644\u0646\u0638\u0627\u0645 \u064A\u062D\u062A\u0648\u064A \u0639\u0644\u0649 \u062A\u0641\u0627\u0635\u064A\u0644 ${userExpenses.length} \u0645\u0639\u0627\u0645\u0644\u0629. \u064A\u0631\u062C\u0649 \u062A\u0643\u064A\u064A\u0641 \u0643\u062B\u0627\u0641\u0629 \u0648\u0639\u0645\u0642 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0644\u064A\u0639\u0643\u0633 \u0647\u0630\u0627 \u0627\u0644\u062D\u062C\u0645 \u0645\u0646 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0628\u062F\u0642\u0629).`;
+        let focusInstruction = "\u0631\u0643\u0632 \u0639\u0644\u0649 \u0625\u0639\u0637\u0627\u0621 \u0645\u0632\u064A\u062C \u0645\u062A\u0648\u0627\u0632\u0646 \u0628\u064A\u0646 \u0627\u0644\u0625\u062D\u0635\u0627\u0626\u064A\u0627\u062A\u060C \u0648\u0645\u0624\u0634\u0631\u0627\u062A \u0627\u0644\u0623\u062F\u0627\u0621\u060C \u0648\u0627\u0644\u062A\u0648\u0635\u064A\u0627\u062A.";
+        if (aiFocus === "statistics") focusInstruction = "\u0631\u0643\u0632 \u0628\u0634\u0643\u0644 \u0643\u0627\u0645\u0644 \u0639\u0644\u0649 \u0627\u0644\u0623\u0631\u0642\u0627\u0645\u060C \u0627\u0644\u0646\u0633\u0628 \u0627\u0644\u0645\u0626\u0648\u064A\u0629\u060C \u0648\u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0627\u062A \u0627\u0644\u0625\u062D\u0635\u0627\u0626\u064A\u0629 \u0627\u0644\u062F\u0642\u064A\u0642\u0629\u060C \u0648\u0627\u0644\u0645\u0624\u0634\u0631\u0627\u062A \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0645\u062B\u0644 \u0645\u0639\u062F\u0644 \u0627\u0644\u062D\u0631\u0642 \u0627\u0644\u0645\u0627\u0644\u064A \u0648\u0627\u0644\u0627\u062F\u062E\u0627\u0631.";
+        if (aiFocus === "tips") focusInstruction = "\u0631\u0643\u0632 \u0628\u0634\u0643\u0644 \u0643\u0628\u064A\u0631 \u0639\u0644\u0649 \u062A\u0642\u062F\u064A\u0645 \u062A\u0648\u0635\u064A\u0627\u062A \u0627\u0633\u062A\u0631\u0627\u062A\u064A\u062C\u064A\u0629 \u0648\u062D\u0644\u0648\u0644 \u0639\u0645\u0644\u064A\u0629 \u0644\u0625\u0639\u0627\u062F\u0629 \u0647\u064A\u0643\u0644\u0629 \u0627\u0644\u0645\u064A\u0632\u0627\u0646\u064A\u0629 \u0648\u062A\u062D\u0633\u064A\u0646 \u0643\u0641\u0627\u0621\u0629 \u0627\u0644\u0625\u0646\u0641\u0627\u0642.";
+        if (aiFocus === "patterns") focusInstruction = "\u0631\u0643\u0632 \u0639\u0644\u0649 \u0627\u0643\u062A\u0634\u0627\u0641 \u0627\u0644\u0623\u0646\u0645\u0627\u0637 \u0627\u0644\u0633\u0644\u0648\u0643\u064A\u0629\u060C \u0648\u062A\u0641\u0633\u064A\u0631 \u062A\u0648\u062C\u0647\u0627\u062A \u0627\u0644\u0625\u0646\u0641\u0627\u0642 (Spending Trends)\u060C \u0648\u062A\u0642\u064A\u064A\u0645 \u0627\u0644\u0633\u0644\u0648\u0643 \u0627\u0644\u0645\u0627\u0644\u064A \u0639\u0644\u0649 \u0627\u0644\u0645\u062F\u0649 \u0627\u0644\u0637\u0648\u064A\u0644.";
+        const prompt = `\u0623\u0646\u062A "\u0645\u062D\u0644\u0644 \u0645\u0627\u0644\u064A \u062E\u0628\u064A\u0631" (Expert Financial Analyst) \u062A\u0639\u0645\u0644 \u0641\u064A \u0646\u0638\u0627\u0645 \u0630\u0643\u0627\u0621 \u0623\u0639\u0645\u0627\u0644 \u0645\u0624\u0633\u0633\u064A (Enterprise Financial Platform).
+\u0627\u0644\u0645\u0637\u0644\u0648\u0628 \u0645\u0646\u0643 \u062A\u062D\u0644\u064A\u0644 \u0647\u0630\u0647 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0644\u0644\u0645\u0633\u062A\u062E\u062F\u0645\u060C \u0648\u062A\u0642\u062F\u064A\u0645 \u062A\u0642\u0631\u064A\u0631 \u0627\u0633\u062A\u0634\u0627\u0631\u064A \u0639\u0627\u0644\u064A \u0627\u0644\u0645\u0633\u062A\u0648\u0649 \u0628\u0627\u0644\u0644\u063A\u0629 \u0627\u0644\u0639\u0631\u0628\u064A\u0629 \u0627\u0644\u0641\u0635\u062D\u0649 \u0627\u0644\u0645\u0639\u0627\u0635\u0631\u0629 (\u0644\u063A\u0629 \u0627\u0644\u0623\u0639\u0645\u0627\u0644 \u0648\u0627\u0644\u0623\u0645\u0648\u0627\u0644). \u0644\u0627 \u062A\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0639\u0627\u0645\u064A\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629.
+
+\u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0625\u062D\u0635\u0627\u0626\u064A\u0629:
+${summaryForAI}
+
+\u0625\u0631\u0634\u0627\u062F\u0627\u062A \u0627\u0644\u062A\u0642\u0631\u064A\u0631:
+- \u0627\u0644\u0637\u0648\u0644 \u0648\u0627\u0644\u0639\u0645\u0642: ${lengthInstruction}
+- \u0627\u0644\u062A\u0631\u0643\u064A\u0632 \u0627\u0644\u0623\u0633\u0627\u0633\u064A: ${focusInstruction}
+
+\u0635\u064A\u063A\u0629 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629 (\u064A\u062C\u0628 \u0623\u0646 \u062A\u0631\u062F \u0628\u0640 JSON \u0641\u0642\u0637 \u0628\u062F\u0648\u0646 \u0623\u064A \u0646\u0635\u0648\u0635 \u062E\u0627\u0631\u062C\u064A\u0629):
+{
+  "response_text": "\u0646\u0635 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0647\u0646\u0627. \u064A\u062C\u0628 \u0623\u0646 \u064A\u0643\u0648\u0646 \u0628\u0623\u0633\u0644\u0648\u0628 \u0645\u0624\u0633\u0633\u064A \u0645\u062D\u062A\u0631\u0641. \u0627\u0633\u062A\u062E\u062F\u0645 \u0645\u0635\u0637\u0644\u062D\u0627\u062A \u0645\u062B\u0644: \u062A\u0634\u064A\u0631 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0625\u0644\u0649\u060C \u062A\u0645\u0631\u0643\u0632 \u0627\u0644\u0625\u0646\u0641\u0627\u0642\u060C \u0645\u0639\u062F\u0644\u0627\u062A \u0627\u0644\u0646\u0645\u0648\u060C \u0645\u0631\u0648\u0646\u0629 \u0627\u0644\u0645\u064A\u0632\u0627\u0646\u064A\u0629\u060C \u0627\u0644\u0647\u064A\u0643\u0644\u0629 \u0627\u0644\u0645\u0627\u0644\u064A\u0629. \u0642\u0633\u0645 \u0627\u0644\u0646\u0635 \u0644\u0641\u0642\u0631\u0627\u062A \u0645\u0631\u064A\u062D\u0629 \u0628\u0635\u0631\u064A\u0627\u064B.",
+  "alerts": ["\u062A\u0646\u0628\u064A\u0647 \u0645\u0627\u0644\u064A \u0645\u062D\u062A\u0631\u0641 1", "\u062A\u0646\u0628\u064A\u0647 \u0645\u0627\u0644\u064A \u0645\u062D\u062A\u0631\u0641 2"],
+  "personality_flag": "${personality}",
+  "data_table": [{"category":"\u0627\u0644\u0641\u0626\u0629","amount":\u0631\u0642\u0645,"percent":\u0631\u0642\u0645,"change":"\u0646\u0635 \u064A\u0634\u0631\u062D \u0627\u0644\u062A\u063A\u064A\u0631"}]
+}
+
+\u0642\u0648\u0627\u0639\u062F \u0635\u0627\u0631\u0645\u0629 \u062C\u062F\u0627\u064B:
+- \u0623\u0633\u0644\u0648\u0628 \u0627\u0644\u0643\u062A\u0627\u0628\u0629: \u0627\u062D\u062A\u0631\u0627\u0641\u064A \u062C\u062F\u0627\u064B\u060C \u0631\u0632\u064A\u0646\u060C \u0648\u0645\u0648\u0636\u0648\u0639\u064A (Objective & Analytical).
+- \u064A\u062C\u0628 \u062F\u0645\u062C "\u0627\u0644\u062A\u0648\u0642\u0639 \u0627\u0644\u0645\u0627\u0644\u064A" \u0648"\u0630\u0627\u0643\u0631\u0629 \u0627\u0644\u0623\u0646\u0645\u0627\u0637" \u0648"\u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A \u0627\u0644\u0645\u062A\u0648\u0642\u0639\u0629" \u0641\u064A \u0633\u064A\u0627\u0642 \u062A\u0642\u0631\u064A\u0631\u0643 \u0628\u0623\u0633\u0644\u0648\u0628 \u0627\u062D\u062A\u0631\u0627\u0641\u064A \u0644\u062A\u0628\u062F\u0648 \u0643\u0623\u0646\u0647\u0627 \u0627\u0633\u062A\u0646\u062A\u0627\u062C\u0627\u062A \u0630\u0643\u064A\u0629 \u062C\u062F\u0627\u064B \u0645\u0646 \u0637\u0631\u0641\u0643 \u0648\u0630\u0627\u0643\u0631\u0629 \u0642\u0648\u064A\u0629 \u0644\u0644\u0646\u0638\u0627\u0645.
+- \u062A\u062C\u0646\u0628 \u0627\u0644\u0639\u0628\u0627\u0631\u0627\u062A \u0627\u0644\u0645\u0628\u062A\u0630\u0644\u0629 \u0645\u062B\u0644 "\u0644\u0627 \u062A\u0635\u0631\u0641 \u0643\u062B\u064A\u0631\u0627\u064B"\u060C \u0648\u0627\u0633\u062A\u062E\u062F\u0645 \u0628\u062F\u0644\u0627\u064B \u0645\u0646\u0647\u0627 "\u064A\u0648\u0635\u0649 \u0628\u0625\u0639\u0627\u062F\u0629 \u062A\u0642\u064A\u064A\u0645 \u062D\u062C\u0645 \u0627\u0644\u0625\u0646\u0641\u0627\u0642 \u0641\u064A \u0647\u0630\u0627 \u0627\u0644\u0628\u0646\u062F \u0644\u062A\u062D\u0633\u064A\u0646 \u062A\u062F\u0641\u0642\u0627\u062A \u0627\u0644\u0633\u064A\u0648\u0644\u0629".
+- \u064A\u062C\u0628 \u0623\u0646 \u064A\u0643\u0648\u0646 \u0627\u0644\u062A\u0646\u0633\u064A\u0642 JSON \u0635\u0627\u0644\u062D\u0627\u064B \u0628\u0646\u0633\u0628\u0629 100%.`;
+        const result = await aiModel.generateContent(prompt);
+        const raw2 = result.response.text().replace(/```json?/g, "").replace(/```/g, "").trim();
+        const tokens = result.response.usageMetadata?.totalTokenCount || 0;
+        await trackTokens(ctx.user.id, ctx.user.type, tokens);
+        try {
+          responseJson = JSON.parse(raw2);
+        } catch {
+          const match2 = raw2.match(/\{[\s\S]*\}/);
+          if (match2) try {
+            responseJson = JSON.parse(match2[0]);
+          } catch {
+          }
+        }
+      } catch (err) {
+        console.error("AI Insights Error:", err);
+      }
+    }
+    if (!responseJson) {
+      modelName = "backend";
+      let text2 = "";
+      if (topCategoryPercent > 50) {
+        text2 += `\u0639\u0646\u062F\u0643 \u0627\u0639\u062A\u0645\u0627\u062F \u0639\u0627\u0644\u064A \u062C\u062F\u0627\u064B \u0639\u0644\u0649 \u0628\u0646\u062F "${topCategory[0]}" (${topCategoryPercent}% \u0645\u0646 \u0635\u0631\u0641\u0643). \u0623\u064A \u0632\u064A\u0627\u062F\u0629 \u0628\u0633\u064A\u0637\u0629 \u0641\u064A \u0627\u0644\u0628\u0646\u062F \u062F\u0647 \u0645\u0645\u0643\u0646 \u062A\u0636\u063A\u0637 \u0645\u064A\u0632\u0627\u0646\u064A\u062A\u0643 \u0628\u0634\u0643\u0644 \u0648\u0627\u0636\u062D.
+
+`;
+      }
+      if (monthlyChange > 0 && prevTotal > 0) {
+        text2 += `\u0645\u0635\u0627\u0631\u064A\u0641\u0643 \u0632\u0627\u062F\u062A ${monthlyChange}% \u0639\u0646 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0644\u064A \u0641\u0627\u062A. `;
+        const biggestIncrease = catChanges.find((c) => c.changePercent > 20 && c.prev > 0);
+        if (biggestIncrease) text2 += `\u0623\u0643\u0628\u0631 \u0632\u064A\u0627\u062F\u0629 \u0643\u0627\u0646\u062A \u0641\u064A "${biggestIncrease.cat}" (${biggestIncrease.changePercent}%).`;
+        text2 += "\n\n";
+      } else if (monthlyChange < 0 && prevTotal > 0) {
+        text2 += `\u0623\u062D\u0633\u0646\u062A! \u0648\u0641\u0631\u062A ${Math.abs(monthlyChange)}% \u0639\u0646 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0644\u064A \u0641\u0627\u062A. \u0643\u0645\u0644 \u0639\u0644\u0649 \u0643\u062F\u0647! \u{1F4AA}
+
+`;
+      }
+      if (incomeRatio && incomeRatio > 80) {
+        text2 += `\u26A0\uFE0F \u0635\u0631\u0641\u062A ${incomeRatio}% \u0645\u0646 \u062F\u062E\u0644\u0643. \u0644\u0627\u0632\u0645 \u062A\u0633\u064A\u0628 \u0647\u0627\u0645\u0634 \u0623\u0645\u0627\u0646 20% \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644.
+
+`;
+      }
+      text2 += `\u0645\u062A\u0648\u0633\u0637 \u0635\u0631\u0641\u0643 \u0627\u0644\u064A\u0648\u0645\u064A ${dailyAvg} \u062C.\u0645 (${totalExpense} \u062C.\u0645 \u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0634\u0647\u0631).`;
+      if (personality === "impulsive") text2 += "\n\n\u0644\u0627\u062D\u0638 \u0625\u0646 \u0646\u0633\u0628\u0629 \u0643\u0628\u064A\u0631\u0629 \u0645\u0646 \u0635\u0631\u0641\u0643 \u0639\u0644\u0649 \u062D\u0627\u062C\u0627\u062A \u0645\u0631\u0646\u0629 (\u062A\u0631\u0641\u064A\u0647/\u062A\u0633\u0648\u0642). \u062D\u0627\u0648\u0644 \u062A\u062D\u0637 \u0644\u064A\u0647\u0627 \u062D\u062F \u0634\u0647\u0631\u064A.";
+      responseJson = {
+        response_text: text2,
+        alerts,
+        personality_flag: personality,
+        data_table: sortedCats.slice(0, 5).map(([cat, amt]) => ({
+          category: cat,
+          amount: amt,
+          percent: Math.round(amt / totalExpense * 100),
+          change: prevByCategory[cat] ? `${Math.round((amt - prevByCategory[cat]) / prevByCategory[cat] * 100)}%` : "\u062C\u062F\u064A\u062F"
+        }))
+      };
+    }
+    await db.insert(userProfiles).values({
+      userId: ctx.user.id,
+      userType: ctx.user.type,
+      financialPersonality: personality
+    }).onDuplicateKeyUpdate({ set: { financialPersonality: personality } }).catch(() => {
+    });
+    const insightsStr = JSON.stringify(responseJson);
     await db.insert(aiSummaries).values({
       userId: ctx.user.id,
       userType: ctx.user.type,
       period: "monthly",
       periodValue: input.month,
       model: modelName,
-      content: insights
+      content: insightsStr
     }).catch(() => {
     });
-    return { insights, cached: false, model: modelName };
+    return { insights: insightsStr, cached: false, model: modelName };
   }),
   // ─── Compare Months ───
   compareMonths: authedProcedure.input(external_exports.object({
@@ -82390,8 +84799,14 @@ var aiRouter = router({
     month2: external_exports.string(),
     model: external_exports.enum(["flash", "pro", "ultra", "gemma"]).default("flash")
   })).mutation(async ({ ctx, input }) => {
-    const modelName = MODELS[input.model];
-    const aiModel = genAI.getGenerativeModel({ model: modelName });
+    let aiModel;
+    let modelName = "demo";
+    try {
+      const client = await getAiClient("report", ctx.user.plan);
+      aiModel = client.aiModel;
+      modelName = client.modelName;
+    } catch (e) {
+    }
     const getMonthData = async (monthStr) => {
       const [y, m] = monthStr.split("-");
       const start = new Date(parseInt(y), parseInt(m) - 1, 1);
@@ -82405,22 +84820,42 @@ var aiRouter = router({
 ${input.month1}: ${d1.total} \u062C\u0646\u064A\u0647 (${d1.count} \u0639\u0645\u0644\u064A\u0629)
 ${input.month2}: ${d2.total} \u062C\u0646\u064A\u0647 (${d2.count} \u0639\u0645\u0644\u064A\u0629)
 \u0627\u0639\u0645\u0644 \u0645\u0642\u0627\u0631\u0646\u0629 \u0645\u062E\u062A\u0635\u0631\u0629.`;
-    const result = await aiModel.generateContent(prompt);
-    return { comparison: result.response.text(), model: modelName, data: { month1: d1, month2: d2 } };
+    let comparison = "";
+    try {
+      if (!aiModel) throw new Error("Demo Mode or Client Error");
+      const result = await aiModel.generateContent(prompt);
+      comparison = result.response.text();
+      const tokens = result.response.usageMetadata?.totalTokenCount || 0;
+      await trackTokens(ctx.user.id, ctx.user.type, tokens);
+    } catch (err) {
+      console.error("AI Compare Error:", err);
+      comparison = `(Fallback Mode) \u0645\u0642\u0627\u0631\u0646\u0629 \u0628\u064A\u0646 \u0627\u0644\u0634\u0647\u0648\u0631:
+\u0645\u0642\u0627\u0631\u0646\u0629 \u0628\u064A\u0646 ${input.month1} \u0648 ${input.month2}.
+\u0645\u0635\u0627\u0631\u064A\u0641 ${input.month1}: ${d1.total} \u062C\u0646\u064A\u0647
+\u0645\u0635\u0627\u0631\u064A\u0641 ${input.month2}: ${d2.total} \u062C\u0646\u064A\u0647
+\u0627\u0644\u0641\u0631\u0642 \u0647\u0648 ${Math.abs(d1.total - d2.total)} \u062C\u0646\u064A\u0647.`;
+    }
+    return { comparison, model: modelName, data: { month1: d1, month2: d2 } };
   }),
   // ─── Generate Yearly Insights ───
   generateYearlyInsights: authedProcedure.input(external_exports.object({
     year: external_exports.string(),
     model: external_exports.enum(["flash", "pro", "ultra", "gemma"]).default("pro")
   })).mutation(async ({ ctx, input }) => {
-    const modelName = MODELS[input.model];
-    const aiModel = genAI.getGenerativeModel({ model: modelName });
+    let aiModel;
+    let modelName = "demo";
+    try {
+      const client = await getAiClient("report", ctx.user.plan);
+      aiModel = client.aiModel;
+      modelName = client.modelName;
+    } catch (e) {
+    }
     const start = new Date(parseInt(input.year), 0, 1);
     const end = new Date(parseInt(input.year), 11, 31);
     const exps = await db.select().from(expenses).where(and(eq(expenses.userId, ctx.user.id), eq(expenses.userType, ctx.user.type), gte(expenses.date, start), lte(expenses.date, end)));
     const total = exps.reduce((s, e) => s + Number(e.amount), 0);
     const byMonth = exps.reduce((acc, e) => {
-      const m = e.date.getMonth() + 1;
+      const m = new Date(e.date).getMonth() + 1;
       acc[m] = (acc[m] || 0) + Number(e.amount);
       return acc;
     }, {});
@@ -82428,8 +84863,20 @@ ${input.month2}: ${d2.total} \u062C\u0646\u064A\u0647 (${d2.count} \u0639\u0645\
 \u0625\u062C\u0645\u0627\u0644\u064A: ${total} \u062C\u0646\u064A\u0647
 \u0627\u0644\u0634\u0647\u0648\u0631: ${Object.entries(byMonth).map(([k, v]) => `\u0634\u0647\u0631 ${k}: ${v}`).join(", ")}
 \u0627\u0639\u0645\u0644 \u0645\u0644\u062E\u0635 \u0633\u0646\u0648\u064A \u0648\u062A\u0648\u0642\u0639\u0627\u062A.`;
-    const result = await aiModel.generateContent(prompt);
-    return { insights: result.response.text(), model: modelName, total };
+    let insights = "";
+    try {
+      if (!aiModel) throw new Error("Demo Mode or Client Error");
+      const result = await aiModel.generateContent(prompt);
+      insights = result.response.text();
+      const tokens = result.response.usageMetadata?.totalTokenCount || 0;
+      await trackTokens(ctx.user.id, ctx.user.type, tokens);
+    } catch (err) {
+      console.error("AI Yearly Error:", err);
+      insights = `(Fallback Mode) \u0645\u0644\u062E\u0635 \u0633\u0646\u0629 ${input.year}:
+\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641: ${total} \u062C\u0646\u064A\u0647.
+\u062A\u0623\u0643\u062F \u0645\u0646 \u0625\u0639\u062F\u0627\u062F\u0627\u062A \u0627\u0644\u0640 API Key \u0644\u0644\u062D\u0635\u0648\u0644 \u0639\u0644\u0649 \u062A\u062D\u0644\u064A\u0644 \u0630\u0643\u064A.`;
+    }
+    return { insights, model: modelName, total };
   })
 });
 
@@ -82437,7 +84884,7 @@ ${input.month2}: ${d2.total} \u062C\u0646\u064A\u0647 (${d2.count} \u0639\u0645\
 var analyticsRouter = router({
   trackEvent: authedProcedure.input(external_exports.object({
     event: external_exports.string(),
-    metadata: external_exports.record(external_exports.any()).optional()
+    metadata: external_exports.record(external_exports.string(), external_exports.any()).optional()
   })).mutation(async ({ ctx, input }) => {
     const db3 = getDb();
     await db3.insert(userAnalytics).values({
@@ -82503,16 +84950,16 @@ var analyticsRouter = router({
     const moderatorCount = await db3.select({ count: sql`count(*)` }).from(localUsers).where(eq(localUsers.role, "moderator"));
     const proCount = await db3.select({ count: sql`count(*)` }).from(localUsers).where(eq(localUsers.plan, "pro"));
     return {
-      totalUsers: (totalLocalUsers[0]?.count || 0) + (totalOAuthUsers[0]?.count || 0),
-      totalLocalUsers: totalLocalUsers[0]?.count || 0,
-      totalOAuthUsers: totalOAuthUsers[0]?.count || 0,
-      totalExpenses: totalExpenses[0]?.count || 0,
-      totalAmount: totalAmount[0]?.total || 0,
-      totalIncome: totalIncome[0]?.total || 0,
-      todayExpenses: todayExpenses[0]?.count || 0,
-      adminCount: adminCount[0]?.count || 0,
-      moderatorCount: moderatorCount[0]?.count || 0,
-      proCount: proCount[0]?.count || 0
+      totalUsers: Number(totalLocalUsers[0]?.count || 0) + Number(totalOAuthUsers[0]?.count || 0),
+      totalLocalUsers: Number(totalLocalUsers[0]?.count || 0),
+      totalOAuthUsers: Number(totalOAuthUsers[0]?.count || 0),
+      totalExpenses: Number(totalExpenses[0]?.count || 0),
+      totalAmount: Number(totalAmount[0]?.total || 0),
+      totalIncome: Number(totalIncome[0]?.total || 0),
+      todayExpenses: Number(todayExpenses[0]?.count || 0),
+      adminCount: Number(adminCount[0]?.count || 0),
+      moderatorCount: Number(moderatorCount[0]?.count || 0),
+      proCount: Number(proCount[0]?.count || 0)
     };
   })
 });
@@ -82552,16 +84999,20 @@ var adminRouter = router({
   }).optional()).query(async ({ input }) => {
     const { search, role, plan, page = 1, limit = 20 } = input ?? {};
     const offset = (page - 1) * limit;
-    let oauthQuery = db.select().from(users);
+    let oauthQuery = db.select().from(users).$dynamic();
     if (role) oauthQuery = oauthQuery.where(eq(users.role, role));
     if (plan) oauthQuery = oauthQuery.where(eq(users.plan, plan));
-    if (search) oauthQuery = oauthQuery.where(sql`name LIKE ${`%${search}%`} OR email LIKE ${`%${search}%`}`);
+    if (search) {
+      oauthQuery = oauthQuery.where(sql`${users.name} LIKE ${`%${search}%`} OR ${users.email} LIKE ${`%${search}%`}`);
+    }
     const oauthUsers = await oauthQuery.limit(limit).offset(offset);
     const oauthCount = await db.select({ count: count() }).from(users);
-    let localQuery = db.select().from(localUsers);
+    let localQuery = db.select().from(localUsers).$dynamic();
     if (role) localQuery = localQuery.where(eq(localUsers.role, role));
     if (plan) localQuery = localQuery.where(eq(localUsers.plan, plan));
-    if (search) localQuery = localQuery.where(sql`name LIKE ${`%${search}%`} OR phone LIKE ${`%${search}%`}`);
+    if (search) {
+      localQuery = localQuery.where(sql`${localUsers.name} LIKE ${`%${search}%`} OR ${localUsers.phone} LIKE ${`%${search}%`}`);
+    }
     const localUsersList = await localQuery.limit(limit).offset(offset);
     const localCount = await db.select({ count: count() }).from(localUsers);
     const enrichedOAuth = await Promise.all(oauthUsers.map(async (u) => {
@@ -82629,16 +85080,179 @@ var adminRouter = router({
     return { success: true, message: "\u062A\u0645 \u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u062C\u0644\u0633\u0629" };
   }),
   // ─── Get Activity Log ───
-  getActivityLog: moderatorProcedure.input(external_exports.object({
-    userId: external_exports.number().optional(),
-    event: external_exports.string().optional(),
-    limit: external_exports.number().default(50)
+  getActivityLog: moderatorProcedure.input(external_exports.object({ limit: external_exports.number().default(50) }).optional()).query(async ({ input }) => {
+    const { limit = 50 } = input ?? {};
+    const activeSessions = await db.select().from(sessions).orderBy(desc(sessions.createdAt)).limit(limit);
+    const enriched = await Promise.all(activeSessions.map(async (s) => {
+      let name = "\u0645\u062C\u0647\u0648\u0644";
+      if (s.userType === "oauth") {
+        const u = await db.select({ name: users.name }).from(users).where(eq(users.id, s.userId));
+        if (u[0]) name = u[0].name;
+      } else {
+        const u = await db.select({ name: localUsers.name }).from(localUsers).where(eq(localUsers.id, s.userId));
+        if (u[0]) name = u[0].name;
+      }
+      return {
+        id: s.id,
+        userName: name,
+        userType: s.userType,
+        ipAddress: s.ipAddress || "\u063A\u064A\u0631 \u0645\u062A\u0648\u0641\u0631",
+        userAgent: s.userAgent || "\u063A\u064A\u0631 \u0645\u062A\u0648\u0641\u0631",
+        createdAt: s.createdAt,
+        expiresAt: s.expiresAt
+      };
+    }));
+    return enriched;
+  }),
+  // ─── AI System Settings (Professional) ───
+  getSettings: adminProcedure.query(async () => {
+    const settings = await db.select().from(systemSettings);
+    const config2 = {
+      ai_api_key: env.GEMINI_API_KEY || "",
+      ai_model_free: env.GEMINI_MODEL_FREE || "gemini-2.0-flash",
+      ai_model_pro: env.GEMINI_MODEL_PRO || "gemini-2.5-flash",
+      ai_model_ultra: "gemini-2.5-pro",
+      ai_model_reports: env.GEMINI_MODEL_REPORTS || "gemini-2.5-flash",
+      // Token limits
+      free_token_limit: "50000",
+      pro_token_limit: "500000",
+      ultra_token_limit: "2000000",
+      // Daily limits (requests per day)
+      free_daily_limit: "10",
+      pro_daily_limit: "100",
+      ultra_daily_limit: "500",
+      // Per-request max tokens
+      free_max_per_request: "256",
+      pro_max_per_request: "512",
+      ultra_max_per_request: "1024",
+      // Feature toggles
+      free_ai_analysis: "false",
+      pro_ai_analysis: "true",
+      ultra_ai_analysis: "true",
+      free_ai_parse: "true",
+      pro_ai_parse: "true",
+      ultra_ai_parse: "true",
+      // New Pipeline Settings
+      voice_limit_free: "300",
+      // 5 min
+      voice_limit_pro: "1800",
+      // 30 min
+      voice_limit_ultra: "0",
+      // unlimited
+      confidence_auto_save: "85",
+      confidence_review: "60",
+      stt_model: "gemini-2.5-flash",
+      // AI Response Settings
+      ai_response_length: "medium",
+      // short, medium, detailed
+      ai_focus: "balanced"
+      // statistics, tips, patterns, balanced
+    };
+    settings.forEach((s) => {
+      if (s.value) config2[s.key] = s.value;
+    });
+    return config2;
+  }),
+  updateSettings: adminProcedure.input(external_exports.record(external_exports.string(), external_exports.string())).mutation(async ({ input }) => {
+    for (const [key, value] of Object.entries(input)) {
+      if (value !== void 0 && value !== null) {
+        await db.insert(systemSettings).values({ key, value }).onDuplicateKeyUpdate({ set: { value } });
+      }
+    }
+    return { success: true, message: "\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A \u0628\u0646\u062C\u0627\u062D" };
+  }),
+  // ─── Update User Plan (with Ultra) ───
+  updateUserPlanV2: adminProcedure.input(external_exports.object({
+    userId: external_exports.number(),
+    userType: external_exports.enum(["oauth", "local"]),
+    plan: external_exports.enum(["free", "pro", "ultra"])
+  })).mutation(async ({ input }) => {
+    const table = input.userType === "oauth" ? users : localUsers;
+    await db.update(table).set({ plan: input.plan }).where(eq(table.id, input.userId));
+    return { success: true, message: "\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u0627\u0644\u062E\u0637\u0629 \u0628\u0646\u062C\u0627\u062D" };
+  }),
+  // ─── Reset User Tokens ───
+  resetUserTokens: adminProcedure.input(external_exports.object({
+    userId: external_exports.number(),
+    userType: external_exports.enum(["oauth", "local"])
+  })).mutation(async ({ input }) => {
+    const table = input.userType === "oauth" ? users : localUsers;
+    await db.update(table).set({ aiTokensUsed: 0 }).where(eq(table.id, input.userId));
+    return { success: true, message: "\u062A\u0645 \u0625\u0639\u0627\u062F\u0629 \u062A\u0639\u064A\u064A\u0646 \u0627\u0644\u062A\u0648\u0643\u0646\u0632" };
+  }),
+  // ─── Get Available Gemini Models ───
+  getAvailableModels: adminProcedure.query(async () => {
+    return {
+      models: [
+        { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash Lite", tier: "free", description: "\u062E\u0641\u064A\u0641 \u0648\u0633\u0631\u064A\u0639 \u062C\u062F\u0627\u064B \u0644\u0644\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0645\u062A\u0643\u0631\u0631\u0629" },
+        { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", tier: "free", description: "\u0627\u0642\u062A\u0635\u0627\u062F\u064A \u0648\u0633\u0631\u064A\u0639 \u0644\u0644\u0645\u0647\u0627\u0645 \u0627\u0644\u0628\u0633\u064A\u0637\u0629" },
+        { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", tier: "free", description: "\u0633\u0631\u064A\u0639 \u0648\u0627\u0642\u062A\u0635\u0627\u062F\u064A" },
+        { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", tier: "pro", description: "\u062F\u0642\u064A\u0642 \u0648\u0645\u062A\u0642\u062F\u0645" },
+        { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", tier: "free", description: "\u0627\u0644\u062C\u064A\u0644 \u0627\u0644\u0633\u0627\u0628\u0642 - \u0633\u0631\u064A\u0639" },
+        { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash", tier: "free", description: "\u0643\u0644\u0627\u0633\u064A\u0643\u064A - \u0627\u0642\u062A\u0635\u0627\u062F\u064A" },
+        { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro", tier: "pro", description: "\u0643\u0644\u0627\u0633\u064A\u0643\u064A - \u0645\u062A\u0642\u062F\u0645" },
+        { id: "gemma-3-27b-it", name: "Gemma 3 27B", tier: "free", description: "\u0645\u0641\u062A\u0648\u062D \u0627\u0644\u0645\u0635\u062F\u0631" },
+        { id: "gemma-4-12b-it", name: "Gemma 4 12B", tier: "free", description: "\u0645\u0641\u062A\u0648\u062D \u0627\u0644\u0645\u0635\u062F\u0631 - \u062E\u0641\u064A\u0641" },
+        { id: "gemma-4-27b-it", name: "Gemma 4 27B", tier: "pro", description: "\u0645\u0641\u062A\u0648\u062D \u0627\u0644\u0645\u0635\u062F\u0631 - \u0642\u0648\u064A" }
+      ]
+    };
+  }),
+  // ─── AI Classification Stats ───
+  getAIClassificationStats: adminProcedure.query(async () => {
+    const stats = await db.select({
+      parsedBy: classificationLogs.parsedBy,
+      count: count(),
+      avgConfidence: sql`AVG(${classificationLogs.confidence})`,
+      totalTokens: sql`SUM(${classificationLogs.tokensUsed})`
+    }).from(classificationLogs).groupBy(classificationLogs.parsedBy);
+    const totalLogs = await db.select({ count: count() }).from(classificationLogs);
+    return {
+      stats,
+      totalClassifications: totalLogs[0]?.count ?? 0
+    };
+  }),
+  // ─── Get Classification Logs ───
+  getClassificationLogs: moderatorProcedure.input(external_exports.object({
+    page: external_exports.number().default(1),
+    limit: external_exports.number().default(20),
+    parsedBy: external_exports.string().optional()
   }).optional()).query(async ({ input }) => {
-    const { userId, event, limit = 50 } = input ?? {};
-    let query = db.select().from(userAnalytics).orderBy(desc(userAnalytics.createdAt)).limit(limit);
-    if (userId) query = query.where(eq(userAnalytics.userId, userId));
-    if (event) query = query.where(eq(userAnalytics.event, event));
-    return await query;
+    const { page = 1, limit = 20, parsedBy } = input ?? {};
+    const offset = (page - 1) * limit;
+    let query = db.select().from(classificationLogs).$dynamic();
+    if (parsedBy) query = query.where(eq(classificationLogs.parsedBy, parsedBy));
+    const logs = await query.orderBy(desc(classificationLogs.createdAt)).limit(limit).offset(offset);
+    const total = await db.select({ count: count() }).from(classificationLogs);
+    const enriched = await Promise.all(logs.map(async (l) => {
+      let name = "\u0645\u062C\u0647\u0648\u0644";
+      if (l.userType === "oauth") {
+        const u = await db.select({ name: users.name }).from(users).where(eq(users.id, l.userId));
+        if (u[0]) name = u[0].name;
+      } else {
+        const u = await db.select({ name: localUsers.name }).from(localUsers).where(eq(localUsers.id, l.userId));
+        if (u[0]) name = u[0].name;
+      }
+      return { ...l, userName: name };
+    }));
+    return {
+      logs: enriched,
+      total: total[0]?.count ?? 0,
+      page,
+      limit
+    };
+  }),
+  // ─── Get Voice Usage Stats ───
+  getVoiceUsageStats: adminProcedure.query(async () => {
+    const currentMonth = (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
+    const usage = await db.select({
+      userType: voiceUsage.userType,
+      totalSeconds: sum(voiceUsage.durationSeconds),
+      count: count()
+    }).from(voiceUsage).where(eq(voiceUsage.month, currentMonth)).groupBy(voiceUsage.userType);
+    return {
+      month: currentMonth,
+      usage
+    };
   })
 });
 
@@ -82687,10 +85301,10 @@ var supportRouter = router({
   }).optional()).query(async ({ input }) => {
     const { status, priority, page = 1, limit = 20 } = input ?? {};
     const offset = (page - 1) * limit;
-    let query = db.select().from(supportTickets).orderBy(desc(supportTickets.createdAt));
-    if (status) query = query.where(eq(supportTickets.status, status));
-    if (priority) query = query.where(eq(supportTickets.priority, priority));
-    const list = await query.limit(limit).offset(offset);
+    const filters = [];
+    if (status) filters.push(eq(supportTickets.status, status));
+    if (priority) filters.push(eq(supportTickets.priority, priority));
+    const list = await db.select().from(supportTickets).where(filters.length > 0 ? and(...filters) : void 0).orderBy(desc(supportTickets.createdAt)).limit(limit).offset(offset);
     const total = await db.select({ count: count() }).from(supportTickets);
     return { list, total: total[0]?.count ?? 0, page, limit };
   }),
@@ -82737,11 +85351,14 @@ var exportRouter = router({
     endDate: external_exports.string().optional(),
     type: external_exports.enum(["income", "expense", "all"]).default("all")
   })).mutation(async ({ ctx, input }) => {
-    let query = db.select().from(expenses).where(and(eq(expenses.userId, ctx.user.id), eq(expenses.userType, ctx.user.type)));
-    if (input.startDate) query = query.where(gte(expenses.date, new Date(input.startDate)));
-    if (input.endDate) query = query.where(lte(expenses.date, new Date(input.endDate)));
-    if (input.type !== "all") query = query.where(eq(expenses.type, input.type));
-    const data = await query;
+    const conditions = [
+      eq(expenses.userId, ctx.user.id),
+      eq(expenses.userType, ctx.user.type)
+    ];
+    if (input.startDate) conditions.push(gte(expenses.date, new Date(input.startDate)));
+    if (input.endDate) conditions.push(lte(expenses.date, new Date(input.endDate)));
+    if (input.type !== "all") conditions.push(eq(expenses.type, input.type));
+    const data = await db.select().from(expenses).where(and(...conditions));
     const formatted = data.map((e) => ({
       \u0627\u0644\u062A\u0627\u0631\u064A\u062E: e.date.toISOString().split("T")[0],
       \u0627\u0644\u0646\u0648\u0639: e.type === "income" ? "\u062F\u062E\u0644" : "\u0645\u0635\u0631\u0648\u0641",
@@ -82846,7 +85463,7 @@ var sessionRouter = router({
   // ─── Track Event ───
   trackEvent: authedProcedure.input(external_exports.object({
     event: external_exports.string(),
-    metadata: external_exports.record(external_exports.any()).optional()
+    metadata: external_exports.record(external_exports.string(), external_exports.any()).optional()
   })).mutation(async ({ ctx, input }) => {
     await db.insert(userAnalytics).values({
       userId: ctx.user.id,
@@ -82932,13 +85549,15 @@ var adsRouter = router({
     userPlan: external_exports.enum(["free", "pro", "all"]).default("free")
   }).optional()).query(async ({ input }) => {
     const now = /* @__PURE__ */ new Date();
-    let query = db.select().from(ads).where(and(
+    const conditions = [
       eq(ads.isActive, true),
       sql`${ads.startDate} IS NULL OR ${ads.startDate} <= ${now}`,
       sql`${ads.endDate} IS NULL OR ${ads.endDate} >= ${now}`
-    ));
-    if (input?.placement) query = query.where(eq(ads.placement, input.placement));
-    const list = await query;
+    ];
+    if (input?.placement) {
+      conditions.push(eq(ads.placement, input.placement));
+    }
+    const list = await db.select().from(ads).where(and(...conditions));
     return list.filter((ad) => ad.targetPlan === "all" || ad.targetPlan === input?.userPlan || input?.userPlan === "pro");
   }),
   // ─── Track Impression ───
@@ -83038,13 +85657,20 @@ var referralRouter = router({
     if (me[0]?.referralCode === input.code) {
       throw new TRPCError({ code: "BAD_REQUEST", message: "\u0645\u0634 \u0645\u0645\u0643\u0646 \u062A\u0633\u062A\u062E\u062F\u0645 \u0643\u0648\u062F\u0643" });
     }
-    let referrer = await db.select().from(users).where(eq(users.referralCode, input.code)).limit(1);
+    const oauthReferrer = await db.select().from(users).where(eq(users.referralCode, input.code)).limit(1);
     let referrerType = "oauth";
-    if (referrer.length === 0) {
-      referrer = await db.select().from(localUsers).where(eq(localUsers.referralCode, input.code)).limit(1);
-      referrerType = "local";
+    let referrerId = null;
+    if (oauthReferrer.length > 0) {
+      referrerId = oauthReferrer[0].id;
+      referrerType = "oauth";
+    } else {
+      const localReferrer = await db.select().from(localUsers).where(eq(localUsers.referralCode, input.code)).limit(1);
+      if (localReferrer.length > 0) {
+        referrerId = localReferrer[0].id;
+        referrerType = "local";
+      }
     }
-    if (referrer.length === 0) {
+    if (referrerId === null) {
       throw new TRPCError({ code: "NOT_FOUND", message: "\u0627\u0644\u0643\u0648\u062F \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
     }
     const existing = await db.select().from(referrals).where(
@@ -83054,14 +85680,14 @@ var referralRouter = router({
       throw new TRPCError({ code: "BAD_REQUEST", message: "\u0623\u0646\u062A \u0645\u0633\u062C\u0644 \u0628\u0627\u0644\u0641\u0639\u0644 \u0628\u0643\u0648\u062F \u0625\u062D\u0627\u0644\u0629" });
     }
     await db.insert(referrals).values({
-      referrerId: referrer[0].id,
+      referrerId,
       referrerType,
       referredId: ctx.user.id,
       referredType: ctx.user.type,
       codeUsed: input.code,
       status: "completed"
     });
-    await db.update(myTable).set({ referredBy: referrer[0].id }).where(eq(myTable.id, ctx.user.id));
+    await db.update(myTable).set({ referredBy: referrerId }).where(eq(myTable.id, ctx.user.id));
     return { success: true, message: "\u062A\u0645 \u062A\u0637\u0628\u064A\u0642 \u0627\u0644\u0643\u0648\u062F \u0628\u0646\u062C\u0627\u062D!" };
   }),
   // ─── My Referrals ───
@@ -83140,6 +85766,56 @@ ${allPaths.map((path) => `  <url>
   })
 });
 
+// api/profile-router.ts
+var profileRouter = router({
+  getMyProfile: authedProcedure.query(async ({ ctx }) => {
+    const profile = await db.select().from(userProfiles).where(and(eq(userProfiles.userId, ctx.user.id), eq(userProfiles.userType, ctx.user.type))).limit(1);
+    return profile[0] || { profileCompleted: false };
+  }),
+  updateProfile: authedProcedure.input(external_exports.object({
+    monthlyIncome: external_exports.number().optional(),
+    financialGoal: external_exports.string().optional()
+  })).mutation(async ({ ctx, input }) => {
+    await db.insert(userProfiles).values({
+      userId: ctx.user.id,
+      userType: ctx.user.type,
+      monthlyIncome: input.monthlyIncome?.toString(),
+      financialGoal: input.financialGoal,
+      profileCompleted: true,
+      lastAskedAt: /* @__PURE__ */ new Date()
+    }).onDuplicateKeyUpdate({
+      set: {
+        monthlyIncome: input.monthlyIncome?.toString(),
+        financialGoal: input.financialGoal,
+        profileCompleted: true,
+        lastAskedAt: /* @__PURE__ */ new Date()
+      }
+    });
+    return { success: true };
+  }),
+  getQuestions: authedProcedure.query(async () => {
+    return await db.select().from(onboardingQuestions).where(eq(onboardingQuestions.isActive, true)).orderBy(onboardingQuestions.sortOrder);
+  }),
+  updateUserInfo: authedProcedure.input(external_exports.object({
+    name: external_exports.string().min(2).optional(),
+    phone: external_exports.string().optional()
+  })).mutation(async ({ ctx, input }) => {
+    if (ctx.user.type === "oauth") {
+      if (input.name) {
+        await db.update(users).set({ name: input.name }).where(eq(users.id, ctx.user.id));
+      }
+    } else {
+      const updates = {};
+      if (input.name) updates.name = input.name;
+      if (input.phone) updates.phone = input.phone;
+      if (Object.keys(updates).length > 0) {
+        await db.update(localUsers).set(updates).where(eq(localUsers.id, ctx.user.id));
+      }
+    }
+    return { success: true };
+  })
+});
+
 // api/router.ts
 var appRouter = router({
   auth: authRouter,
@@ -83154,16 +85830,34 @@ var appRouter = router({
   pro: proRouter,
   ads: adsRouter,
   referral: referralRouter,
-  seo: seoRouter
+  seo: seoRouter,
+  profile: profileRouter
 });
 
 // api/context.ts
+function parseCookie(req, name) {
+  let cookieHeader;
+  if ("header" in req && typeof req.header === "function") {
+    cookieHeader = req.header("cookie");
+  } else {
+    cookieHeader = req.headers.get("cookie");
+  }
+  if (!cookieHeader) return void 0;
+  const match2 = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  return match2 ? match2[1] : void 0;
+}
+function getAuthHeader(req) {
+  if ("header" in req && typeof req.header === "function") {
+    return req.header("Authorization");
+  }
+  return req.headers.get("Authorization") ?? void 0;
+}
 async function createContext(req) {
   let user = null;
-  const googleToken = getCookie(req, "google_session");
+  const googleToken = parseCookie(req, "google_session");
   if (googleToken) {
     try {
-      const payload = await verify2(googleToken, env.JWT_SECRET);
+      const payload = await verify2(googleToken, env.JWT_SECRET, "HS256");
       if (payload && payload.userId) {
         const dbUser = await db.query.users.findFirst({
           where: eq(users.id, Number(payload.userId))
@@ -83184,11 +85878,11 @@ async function createContext(req) {
     }
   }
   if (!user) {
-    const authHeader = req.header("Authorization");
+    const authHeader = getAuthHeader(req);
     if (authHeader?.startsWith("Bearer ")) {
       const token = authHeader.slice(7);
       try {
-        const payload = await verify2(token, env.JWT_SECRET);
+        const payload = await verify2(token, env.JWT_SECRET, "HS256");
         if (payload && payload.userId) {
           const session = await db.query.sessions.findFirst({
             where: and(
@@ -83229,6 +85923,14 @@ app.use("*", cors({
   origin: env.APP_URL,
   credentials: true
 }));
+app.onError((err, c) => {
+  console.error("Hono Error:", err);
+  return c.json({ error: err.message || "Internal Server Error" }, 500);
+});
+app.notFound((c) => {
+  console.warn("404 Not Found:", c.req.url);
+  return c.json({ error: "Not Found" }, 404);
+});
 app.get("/api/auth/google/callback", async (c) => {
   const code = c.req.query("code");
   if (!code) return c.json({ error: "No code provided" }, 400);
@@ -83241,7 +85943,7 @@ app.get("/api/auth/google/callback", async (c) => {
     return c.redirect(`${env.APP_URL}/login?error=auth_failed`);
   }
 });
-app.use("/api/trpc", trpcServer({
+app.use("/api/trpc/*", trpcServer({
   router: appRouter,
   createContext: async ({ req }) => createContext(req)
 }));

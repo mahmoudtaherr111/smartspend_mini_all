@@ -27,7 +27,7 @@ export function MonthlyStats({
           <Receipt className="w-4 h-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{total.toFixed(0)} جنيه</div>
+          <div className="text-2xl font-bold">{total.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} <span className="text-sm font-normal text-muted-foreground">ج.م</span></div>
           {change !== 0 && (
             <div
               className={`flex items-center text-xs ${
@@ -51,7 +51,7 @@ export function MonthlyStats({
           <Calendar className="w-4 h-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{count}</div>
+          <div className="text-2xl font-bold">{count.toLocaleString("en-US")}</div>
           <p className="text-xs text-muted-foreground">عملية</p>
         </CardContent>
       </Card>
@@ -62,7 +62,7 @@ export function MonthlyStats({
           <TrendingUp className="w-4 h-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{dailyAverage.toFixed(0)} جنيه</div>
+          <div className="text-2xl font-bold">{dailyAverage.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} <span className="text-sm font-normal text-muted-foreground">ج.م</span></div>
           <p className="text-xs text-muted-foreground">في اليوم</p>
         </CardContent>
       </Card>
@@ -74,7 +74,7 @@ export function MonthlyStats({
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            {count > 0 ? (total / count).toFixed(0) : 0} جنيه
+            {count > 0 ? (total / count).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : 0} <span className="text-sm font-normal text-muted-foreground">ج.م</span>
           </div>
           <p className="text-xs text-muted-foreground">للمصروف الواحد</p>
         </CardContent>
