@@ -160,6 +160,40 @@ export function AIInsights({ month }: AIInsightsProps) {
                   </div>
                 )}
 
+                {parsed.personalization && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="rounded-lg border bg-white dark:bg-slate-900 p-3">
+                      <p className="text-xs text-muted-foreground mb-1">الاستقرار</p>
+                      <p className="font-semibold text-sm">
+                        {parsed.personalization.behavioral_summary?.financial_stability || "-"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border bg-white dark:bg-slate-900 p-3">
+                      <p className="text-xs text-muted-foreground mb-1">السلوك</p>
+                      <p className="font-semibold text-sm">
+                        {parsed.personalization.behavioral_summary?.spending_behavior || "-"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border bg-white dark:bg-slate-900 p-3">
+                      <p className="text-xs text-muted-foreground mb-1">الاتجاه</p>
+                      <p className="font-semibold text-sm">
+                        {parsed.personalization.comparative_analysis?.trend || "-"}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {parsed.personalization?.saving_opportunities?.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold">فرص توفير</p>
+                    {parsed.personalization.saving_opportunities.map((item: string, i: number) => (
+                      <div key={i} className="rounded-lg border bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900 p-2 text-sm">
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Personality Badge */}
                 {parsed.personality_flag && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
