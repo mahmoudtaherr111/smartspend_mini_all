@@ -615,3 +615,42 @@
 <-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
 --> GET /api/trpc/auth.googleUrl,ads.list?batch=1&input=%7B%221%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D [32m200[0m 6ms
 --> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 11ms
+[2m٨:٠٢:٤٨ م[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/OnboardingCard.tsx[22m
+[2m٨:٠٢:٤٨ م[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/OnboardingCard.tsx[22m
+<-- GET /api/trpc/profile.getSmartProfile,profile.getNextOnboardingQuestion?batch=1&input=%7B%7D
+--> GET /api/trpc/profile.getSmartProfile,profile.getNextOnboardingQuestion?batch=1&input=%7B%7D [31m500[0m 9ms
+[2m٨:٠٨:٣٣ م[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/dashboard/MonthlyStats.tsx[22m
+[2m٨:٠٨:٣٣ م[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/dashboard/MonthlyStats.tsx[22m
+[2m٨:٠٨:٤٢ م[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Settings.tsx, /src/index.css[22m
+[2m٨:١٠:٥٠ م[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Home.tsx, /src/index.css[22m
+[2m٨:١٠:٥٠ م[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/Home.tsx, /src/index.css[22m
+<-- GET /api/trpc/profile.getSmartProfile,profile.getNextOnboardingQuestion,auth.me,localAuth.me,expense.getMonthlyStats?batch=1&input=%7B%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/profile.getSmartProfile,profile.getNextOnboardingQuestion,auth.me,localAuth.me,expense.getMonthlyStats?batch=1&input=%7B%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 10ms
+[2m٨:١١:١٥ م[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/insights/AIInsights.tsx[22m
+<-- GET /api/trpc/profile.getSmartProfile,profile.getNextOnboardingQuestion,auth.me,localAuth.me,expense.getMonthlyStats?batch=1&input=%7B%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/profile.getSmartProfile,profile.getNextOnboardingQuestion,auth.me,localAuth.me,expense.getMonthlyStats?batch=1&input=%7B%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 7ms
+[2m٨:١١:٣٦ م[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/components/profile/SmartProfileSettings.tsx[22m
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getSmartProfile,profile.getNextOnboardingQuestion?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+<-- GET /api/trpc/auth.googleUrl,ads.list?batch=1&input=%7B%221%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D
+--> GET /api/trpc/auth.googleUrl,ads.list?batch=1&input=%7B%221%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D [32m200[0m 9ms
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getSmartProfile,profile.getNextOnboardingQuestion?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 14ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getSmartProfile,profile.getNextOnboardingQuestion?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+<-- GET /api/trpc/auth.googleUrl,ads.list?batch=1&input=%7B%221%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D
+--> GET /api/trpc/auth.googleUrl,ads.list?batch=1&input=%7B%221%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D [32m200[0m 11ms
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getSmartProfile,profile.getNextOnboardingQuestion?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 19ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getSmartProfile,profile.getNextOnboardingQuestion?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+<-- GET /api/trpc/auth.googleUrl,ads.list?batch=1&input=%7B%221%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D
+--> GET /api/trpc/auth.googleUrl,ads.list?batch=1&input=%7B%221%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D [32m200[0m 16ms
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getSmartProfile,profile.getNextOnboardingQuestion?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 28ms
+<-- GET /api/trpc/auth.googleUrl,ads.list?batch=1&input=%7B%221%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getSmartProfile,profile.getNextOnboardingQuestion?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/auth.googleUrl,ads.list?batch=1&input=%7B%221%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D [32m200[0m 12ms
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getSmartProfile,profile.getNextOnboardingQuestion?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 18ms
+<-- POST /api/trpc/analytics.trackEvent?batch=1
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getSmartProfile,profile.getNextOnboardingQuestion?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> POST /api/trpc/analytics.trackEvent?batch=1 [32m200[0m 11ms
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getSmartProfile,profile.getNextOnboardingQuestion?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 14ms
+<-- GET /api/trpc/auth.googleUrl,ads.list?batch=1&input=%7B%221%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D
+--> GET /api/trpc/auth.googleUrl,ads.list?batch=1&input=%7B%221%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D [32m200[0m 8ms
+<-- GET /api/trpc/auth.googleUrl,ads.list?batch=1&input=%7B%221%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D
+--> GET /api/trpc/auth.googleUrl,ads.list?batch=1&input=%7B%221%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D [32m200[0m 5ms

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { User, Phone, Save } from "lucide-react";
 import { toast } from "sonner";
+import { SmartProfileSettings } from "@/components/profile/SmartProfileSettings";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -42,7 +43,7 @@ export default function Settings() {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8" dir="rtl">
       <SEOMeta path="/settings" title="الإعدادات - SmartSpend AI" />
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6">
         <div>
           <h1 className="text-3xl font-bold mb-2">الإعدادات</h1>
           <p className="text-muted-foreground">تعديل بيانات حسابك الشخصي.</p>
@@ -97,6 +98,8 @@ export default function Settings() {
             </form>
           </CardContent>
         </Card>
+
+        <SmartProfileSettings />
       </div>
     </div>
   );

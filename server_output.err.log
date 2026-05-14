@@ -569,3 +569,5 @@ E:/smartspend_V1_fixed/api/expense-router.ts:26:12: ERROR: The symbol "userType"
       at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
       at Readable.push (node:internal/streams/readable:392:5)
       at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+[2m٨:٠٨:٤٣ م[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31merror while updating dependencies:
+Error: ENOENT: no such file or directory, rename 'E:\smartspend_V1_fixed\node_modules\.vite\deps' -> 'E:\smartspend_V1_fixed\node_modules\.vite\deps_temp_4daaa79c'[39m
