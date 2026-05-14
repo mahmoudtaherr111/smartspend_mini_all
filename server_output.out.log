@@ -437,3 +437,181 @@
 --> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile,ai.getUserLimits,expense.list?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%2C%224%22%3A%7B%22limit%22%3A5%2C%22offset%22%3A0%7D%7D [32m200[0m 16ms
 <-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
 --> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 8ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 10ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 11ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 14ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 8ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 10ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 7ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 8ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 8ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 5ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 6ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 9ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 11ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 8ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 7ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 9ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 10ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 12ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 8ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 16ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 7ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 8ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 7ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 7ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 10ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 10ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 8ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 5ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 7ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 5ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 6ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 7ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 6ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 10ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 8ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 12ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m200[0m 9ms
+<-- POST /api/trpc/analytics.trackEvent?batch=1
+--> POST /api/trpc/analytics.trackEvent?batch=1 [33m400[0m 9ms
+<-- GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D
+--> GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D [32m200[0m 6ms
+<-- GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 15ms
+<-- POST /api/trpc/analytics.trackEvent?batch=1
+--> POST /api/trpc/analytics.trackEvent?batch=1 [33m400[0m 5ms
+<-- GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D
+--> GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D [32m200[0m 4ms
+<-- GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 9ms
+<-- POST /api/trpc/analytics.trackEvent?batch=1
+--> POST /api/trpc/analytics.trackEvent?batch=1 [33m400[0m 6ms
+<-- GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D
+--> GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D [32m200[0m 5ms
+<-- GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 8ms
+<-- POST /api/trpc/analytics.trackEvent?batch=1
+--> POST /api/trpc/analytics.trackEvent?batch=1 [32m200[0m 11ms
+<-- GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D
+--> GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D [32m200[0m 5ms
+<-- GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 8ms
+<-- POST /api/trpc/analytics.trackEvent?batch=1
+--> POST /api/trpc/analytics.trackEvent?batch=1 [33m400[0m 5ms
+<-- GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D
+--> GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D [32m200[0m 5ms
+<-- GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 9ms
+<-- POST /api/trpc/analytics.trackEvent?batch=1
+--> POST /api/trpc/analytics.trackEvent?batch=1 [33m400[0m 5ms
+<-- GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D
+--> GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D [32m200[0m 4ms
+<-- GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 8ms
+<-- POST /api/trpc/analytics.trackEvent?batch=1
+--> POST /api/trpc/analytics.trackEvent?batch=1 [33m400[0m 4ms
+<-- GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D
+--> GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D [32m200[0m 5ms
+<-- GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 8ms
+<-- POST /api/trpc/analytics.trackEvent?batch=1
+--> POST /api/trpc/analytics.trackEvent?batch=1 [33m400[0m 4ms
+<-- GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D
+--> GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D [32m200[0m 5ms
+<-- GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 9ms
+<-- POST /api/trpc/analytics.trackEvent?batch=1
+--> POST /api/trpc/analytics.trackEvent?batch=1 [33m400[0m 3ms
+<-- GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D
+--> GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D [32m200[0m 5ms
+<-- GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 8ms
+<-- GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D
+--> GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D [32m200[0m 5ms
+<-- GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 8ms
+<-- POST /api/trpc/analytics.trackEvent?batch=1
+--> POST /api/trpc/analytics.trackEvent?batch=1 [33m400[0m 4ms
+<-- GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D
+--> GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D [32m200[0m 4ms
+<-- GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 7ms
+<-- POST /api/trpc/analytics.trackEvent?batch=1
+--> POST /api/trpc/analytics.trackEvent?batch=1 [33m400[0m 5ms
+<-- GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D
+--> GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D [32m200[0m 4ms
+<-- GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 8ms
+<-- POST /api/trpc/analytics.trackEvent?batch=1
+--> POST /api/trpc/analytics.trackEvent?batch=1 [33m400[0m 6ms
+<-- GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D
+--> GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D [32m200[0m 4ms
+<-- GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%224%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 10ms
+<-- GET /api/trpc/auth.googleUrl,auth.me,localAuth.me?batch=1&input=%7B%7D
+--> GET /api/trpc/auth.googleUrl,auth.me,localAuth.me?batch=1&input=%7B%7D [32m200[0m 5ms
+<-- GET /api/trpc/auth.me,localAuth.me,ads.list?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D
+--> GET /api/trpc/auth.me,localAuth.me,ads.list?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D [32m200[0m 4ms
+<-- GET /api/trpc/auth.googleUrl,auth.me,localAuth.me?batch=1&input=%7B%7D
+--> GET /api/trpc/auth.googleUrl,auth.me,localAuth.me?batch=1&input=%7B%7D [32m200[0m 6ms
+<-- GET /api/trpc/auth.me,localAuth.me,ads.list?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D
+--> GET /api/trpc/auth.me,localAuth.me,ads.list?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D [32m200[0m 6ms
+<-- GET /api/trpc/auth.googleUrl,auth.me,localAuth.me?batch=1&input=%7B%7D
+--> GET /api/trpc/auth.googleUrl,auth.me,localAuth.me?batch=1&input=%7B%7D [32m200[0m 5ms
+<-- GET /api/trpc/auth.me,localAuth.me,ads.list?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D
+--> GET /api/trpc/auth.me,localAuth.me,ads.list?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D [32m200[0m 5ms
+<-- GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D
+--> GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D [32m200[0m 5ms
+<-- GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,ai.getUserLimits,expense.list,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%225%22%3A%7B%22limit%22%3A5%2C%22offset%22%3A0%7D%2C%226%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/auth.me,localAuth.me,ads.list,profile.getMyProfile,ai.getUserLimits,expense.list,expense.getMonthlyStats?batch=1&input=%7B%222%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%225%22%3A%7B%22limit%22%3A5%2C%22offset%22%3A0%7D%2C%226%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 19ms
+<-- GET /api/trpc/seo.getPage,auth.me,localAuth.me?batch=1&input=%7B%220%22%3A%7B%22path%22%3A%22%2Fsettings%22%7D%7D
+--> GET /api/trpc/seo.getPage,auth.me,localAuth.me?batch=1&input=%7B%220%22%3A%7B%22path%22%3A%22%2Fsettings%22%7D%7D [32m200[0m 5ms
+<-- POST /api/trpc/profile.updateUserInfo?batch=1
+--> POST /api/trpc/profile.updateUserInfo?batch=1 [32m200[0m 6ms
+<-- GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D
+--> GET /api/trpc/auth.me,localAuth.me?batch=1&input=%7B%7D [32m200[0m 5ms
+<-- GET /api/trpc/profile.getMyProfile,auth.me,localAuth.me,expense.getMonthlyStats?batch=1&input=%7B%223%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/profile.getMyProfile,auth.me,localAuth.me,expense.getMonthlyStats?batch=1&input=%7B%223%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 11ms
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 6ms
+<-- GET /api/trpc/auth.googleUrl,ads.list?batch=1&input=%7B%221%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D
+<-- GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D
+--> GET /api/trpc/auth.googleUrl,ads.list?batch=1&input=%7B%221%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%7D [32m200[0m 6ms
+--> GET /api/trpc/ads.list,expense.getMonthlyStats,profile.getMyProfile?batch=1&input=%7B%220%22%3A%7B%22placement%22%3A%22sidebar%22%2C%22userPlan%22%3A%22free%22%7D%2C%221%22%3A%7B%22month%22%3A%222026-05%22%7D%7D [32m207[0m 11ms

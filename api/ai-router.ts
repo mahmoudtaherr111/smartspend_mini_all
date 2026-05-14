@@ -3,7 +3,7 @@ import { router, authedProcedure, proProcedure } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { db } from "./queries/connection";
-import { expenses, monthlyReports, aiSummaries, systemSettings, users, localUsers, userProfiles, userDictionaries, classificationLogs, voiceUsage } from "../db/schema";
+import { expenses, monthlyReports, aiSummaries, systemSettings, users, localUsers, userProfiles, userDictionaries, classificationLogs, voiceUsage, monthlyBehaviorSnapshots } from "../db/schema";
 import { eq, sql, desc, count, and, gte, lte, sum } from "drizzle-orm";
 import { env } from "./lib/env";
 import { runPipeline, runSTTPipeline } from "./lib/classification-pipeline";
@@ -16,6 +16,17 @@ import {
   STRONG_EXPENSE 
 } from "./lib/egyptian-dictionary";
 import { fuzzyFindCategory } from "./lib/fuzzy-match";
+import {
+  getSmartProfile,
+  recordProfileLearningEvent,
+  saveSmartProfile,
+  summarizeProfileForAI,
+} from "./services/user-profile-service";
+import { buildBehaviorSnapshot } from "./services/lifestyle-inference-engine";
+import {
+  buildBackendPersonalizedInsights,
+  buildReportPersonalizationContext,
+} from "./services/report-personalization-engine";
 
 
 async function trackTokens(userId: number, userType: string, tokens: number) {
@@ -427,6 +438,7 @@ export const aiRouter = router({
         .where(and(eq(expenses.userId, ctx.user.id), eq(expenses.userType, ctx.user.type), gte(expenses.date, startOfMonth)));
       const totalIncome = currentMonthOps.filter(e => e.type === "income").reduce((s, e) => s + Number(e.amount), 0);
       const totalExpense = currentMonthOps.filter(e => e.type === "expense").reduce((s, e) => s + Number(e.amount), 0);
+      const smartProfile = await getSmartProfile(ctx.user.id, ctx.user.type);
 
       // ── Run the new Pipeline ──
       const result = await runPipeline({
@@ -440,6 +452,13 @@ export const aiRouter = router({
         modelName,
         maxTokens: maxPerRequest,
         monthlyContext: { totalIncome, totalExpense },
+        userProfileContext: {
+          promptSummary: summarizeProfileForAI(smartProfile),
+          hasChildren: smartProfile.lifestyleInfo.hasChildren as boolean | null,
+          responsibleForFamily: smartProfile.lifestyleInfo.responsibleForFamily as boolean | null,
+          supportsOthers: smartProfile.lifestyleInfo.supportsOthers,
+          fixedMonthlyCommitments: smartProfile.lifestyleInfo.fixedMonthlyCommitments,
+        },
         skipClarification: input.skipClarification,
       });
 
@@ -733,11 +752,11 @@ export const aiRouter = router({
           lte(expenses.date, prevEnd)
         ));
 
-      // Get user profile for context
-      const profile = await db.select().from(userProfiles)
-        .where(and(eq(userProfiles.userId, ctx.user.id), eq(userProfiles.userType, ctx.user.type)))
-        .limit(1);
-      const userProfile = profile[0] || null;
+      // Get smart user profile for personalization context
+      const userProfile = await getSmartProfile(ctx.user.id, ctx.user.type);
+      const previousAiAttributes = userProfile.aiInferredAttributes;
+      const behaviorSnapshot = buildBehaviorSnapshot(userExpenses, prevExpenses, userProfile);
+      const reportPersonalizationContext = buildReportPersonalizationContext(userProfile, behaviorSnapshot);
 
       // ── 2. Backend Calculations ──
       const totalExpense = userExpenses.filter(e => e.type === "expense").reduce((s, e) => s + Number(e.amount), 0);
@@ -799,7 +818,9 @@ export const aiRouter = router({
       if (monthlyChange > 20 && prevTotal > 0) alerts.push(`📈 مصاريفك زادت ${monthlyChange}% عن الشهر اللي فات`);
       if (monthlyChange < -15 && prevTotal > 0) alerts.push(`✅ أحسنت! مصاريفك قلت ${Math.abs(monthlyChange)}% عن الشهر اللي فات`);
       
-      const comparisonIncome = totalIncome > 0 ? totalIncome : Number(userProfile?.monthlyIncome || 0);
+      const comparisonIncome = totalIncome > 0
+        ? totalIncome
+        : Number(userProfile.financialInfo.averageMonthlyIncome || userProfile.legacy.monthlyIncome || 0);
       const incomeRatio = comparisonIncome > 0 ? Math.round((totalExpense / comparisonIncome) * 100) : null;
       
       if (incomeRatio && incomeRatio > 90) alerts.push(`🚨 صرفت ${incomeRatio}% من دخلك - خطر على الميزانية!`);
@@ -868,6 +889,10 @@ ${prevTotal > 0 ? `تغير إجمالي المصاريف عن الشهر الس
 - التوقع المالي المستقبلي (Forecasting): ${forecast || "غير متاح لعدم كفاية بيانات الدخل/الأيام"}`;
 
       // ── 6. Try AI, fallback to backend ──
+      const personalizedSummaryForAI = `${summaryForAI}
+---
+${reportPersonalizationContext}`;
+
       let aiModel: any;
       let modelName = "backend";
       let aiResponseLength = "medium";
@@ -916,7 +941,7 @@ ${prevTotal > 0 ? `تغير إجمالي المصاريف عن الشهر الس
 المطلوب منك تحليل هذه البيانات المالية للمستخدم، وتقديم تقرير استشاري عالي المستوى باللغة العربية الفصحى المعاصرة (لغة الأعمال والأموال). لا تستخدم العامية المصرية.
 
 البيانات الإحصائية:
-${summaryForAI}
+${personalizedSummaryForAI}
 
 إرشادات التقرير:
 - الطول والعمق: ${lengthInstruction}
@@ -975,6 +1000,7 @@ ${summaryForAI}
           response_text: text,
           alerts,
           personality_flag: personality,
+          personalization: buildBackendPersonalizedInsights(userProfile, behaviorSnapshot),
           data_table: sortedCats.slice(0, 5).map(([cat, amt]) => ({
             category: cat, amount: amt, percent: Math.round((amt / totalExpense) * 100),
             change: prevByCategory[cat] ? `${Math.round(((amt - prevByCategory[cat]) / prevByCategory[cat]) * 100)}%` : "جديد"
@@ -982,10 +1008,52 @@ ${summaryForAI}
         };
       }
 
-      // Update personality in profile
-      await db.insert(userProfiles).values({
-        userId: ctx.user.id, userType: ctx.user.type, financialPersonality: personality,
-      }).onDuplicateKeyUpdate({ set: { financialPersonality: personality } }).catch(() => {});
+      const learnedAttributes = {
+        ...behaviorSnapshot.inferredAttributes,
+        financialPersonality: personality,
+      };
+      await saveSmartProfile(ctx.user.id, ctx.user.type, {
+        ...userProfile,
+        aiInferredAttributes: {
+          ...userProfile.aiInferredAttributes,
+          ...learnedAttributes,
+        },
+        lastAiRefreshAt: new Date(),
+      }).catch(() => {});
+      await db.insert(monthlyBehaviorSnapshots).values({
+        userId: ctx.user.id,
+        userType: ctx.user.type,
+        month: input.month,
+        totalIncome: behaviorSnapshot.totalIncome.toString(),
+        totalExpense: behaviorSnapshot.totalExpense.toString(),
+        netFlow: behaviorSnapshot.netFlow.toString(),
+        topCategories: behaviorSnapshot.topCategories.slice(0, 10),
+        topSubCategories: behaviorSnapshot.topSubCategories.slice(0, 10),
+        spendingByDay: behaviorSnapshot.spendingByDay,
+        spendingByWeekday: behaviorSnapshot.spendingByWeekday,
+        behaviorFlags: behaviorSnapshot.behaviorFlags,
+        inferredAttributes: learnedAttributes,
+      }).onDuplicateKeyUpdate({
+        set: {
+          totalIncome: behaviorSnapshot.totalIncome.toString(),
+          totalExpense: behaviorSnapshot.totalExpense.toString(),
+          netFlow: behaviorSnapshot.netFlow.toString(),
+          topCategories: behaviorSnapshot.topCategories.slice(0, 10),
+          topSubCategories: behaviorSnapshot.topSubCategories.slice(0, 10),
+          spendingByDay: behaviorSnapshot.spendingByDay,
+          spendingByWeekday: behaviorSnapshot.spendingByWeekday,
+          behaviorFlags: behaviorSnapshot.behaviorFlags,
+          inferredAttributes: learnedAttributes,
+        },
+      }).catch(() => {});
+      await recordProfileLearningEvent({
+        userId: ctx.user.id,
+        userType: ctx.user.type,
+        eventType: "report_generation",
+        previousAttributes: previousAiAttributes,
+        newAttributes: learnedAttributes,
+        metadata: { month: input.month, model: modelName, transactionCount: userExpenses.length },
+      });
 
       const insightsStr = JSON.stringify(responseJson);
       await db.insert(aiSummaries).values({

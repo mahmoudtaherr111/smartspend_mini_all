@@ -38,6 +38,13 @@ export interface ParsedTransaction {
   };
 }
 
+export interface ClassificationProfileContext {
+  hasChildren?: boolean | null;
+  responsibleForFamily?: boolean | null;
+  supportsOthers?: unknown;
+  fixedMonthlyCommitments?: unknown;
+}
+
 /** Sub-category mapping from dictionary keywords */
 const SUB_CATEGORY_MAP: Record<string, { category: string; subCategory: string }> = {
   // Food subcategories
@@ -187,7 +194,8 @@ export function isSimpleText(text: string): boolean {
  */
 export function runRuleEngine(
   normalizedText: string,
-  userDict: Array<{ word: string; category: string; subCategory?: string }> = []
+  userDict: Array<{ word: string; category: string; subCategory?: string }> = [],
+  profileContext?: ClassificationProfileContext
 ): RuleEngineResult {
   const amounts = extractAmounts(normalizedText);
 
@@ -357,7 +365,7 @@ export function runRuleEngine(
       description = intentResult.intent === "income" ? "دخل" : category;
     }
 
-    items.push({
+    items.push(applyProfileHints({
       amount,
       category,
       subCategory,
@@ -374,11 +382,57 @@ export function runRuleEngine(
         taxonomy: confidence,
         heuristics: Math.min(100, Math.max(20, Math.round((intentResult.confidence + confidence) / 2))),
       },
-    });
+    }, allContext, profileContext));
   }
 
   // Check if any item has low confidence → needs AI
   const needsAI = items.some(it => it.category === "متنوعات" || it.confidence < 60);
 
   return { items, usedAI: false, needsAI };
+}
+
+function applyProfileHints(
+  item: ParsedTransaction,
+  context: string,
+  profileContext?: ClassificationProfileContext
+): ParsedTransaction {
+  if (!profileContext || item.type !== "expense") return item;
+
+  const next: ParsedTransaction = { ...item };
+  const flags = new Set(next.ambiguityFlags || []);
+
+  if (
+    profileContext.hasChildren === true &&
+    /(مدرس|مدرسة|حضانة|درس|دروس|كتب|يونيفورم)/.test(context)
+  ) {
+    if (next.category === "ظ…طھظ†ظˆط¹ط§طھ" || next.confidence < 92) {
+      next.category = "طھط¹ظ„ظٹظ…";
+      next.subCategory = /درس|دروس/.test(context) ? "ط¯ط±ظˆط³ ط®طµظˆطµظٹط©" : "ظ…ط¯ط±ط³ط©";
+      next.confidence = Math.max(next.confidence, 92);
+      next.needsReview = false;
+      flags.add("profile_children_education_hint");
+    }
+  }
+
+  if (
+    profileContext.responsibleForFamily === true &&
+    /(طلبات البيت|مصروف البيت|سوبر ماركت|بقالة|منظفات)/.test(context)
+  ) {
+    if (next.category === "ظ…طھظ†ظˆط¹ط§طھ" || next.confidence < 88) {
+      next.category = /منظفات/.test(context) ? "ط³ظƒظ†" : "ط£ظƒظ„ ظˆط´ط±ط¨";
+      next.subCategory = /منظفات/.test(context) ? "ظ…ظ†ط¸ظپط§طھ" : "ط¨ظ‚ط§ظ„ط©";
+      next.confidence = Math.max(next.confidence, 88);
+      next.needsReview = next.confidence < 85;
+      flags.add("profile_family_household_hint");
+    }
+  }
+
+  next.ambiguityFlags = Array.from(flags);
+  if (next.confidenceBreakdown) {
+    next.confidenceBreakdown = {
+      ...next.confidenceBreakdown,
+      taxonomy: Math.max(next.confidenceBreakdown.taxonomy, next.confidence),
+    };
+  }
+  return next;
 }

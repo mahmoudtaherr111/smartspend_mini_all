@@ -259,12 +259,59 @@ export const userProfiles = mysqlTable("user_profiles", {
   monthlyIncome: decimal("monthly_income", { precision: 12, scale: 2 }),
   financialGoal: varchar("financial_goal", { length: 100 }), // saving | debt_payoff | investing | budgeting
   financialPersonality: varchar("financial_personality", { length: 50 }), // impulsive | conservative | balanced | stressed
+  basicInfo: json("basic_info"),
+  financialInfo: json("financial_info"),
+  lifestyleInfo: json("lifestyle_info"),
+  onboardingAnswers: json("onboarding_answers"),
+  aiInferredAttributes: json("ai_inferred_attributes"),
+  preferences: json("preferences"),
+  avatarId: varchar("avatar_id", { length: 100 }),
+  profileVersion: int("profile_version").default(2),
+  lastAiRefreshAt: datetime("last_ai_refresh_at"),
   profileCompleted: boolean("profile_completed").default(false),
   lastAskedAt: datetime("last_asked_at"),
   createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
   updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
 }, (t) => [
   uniqueIndex("profile_user_idx").on(t.userId, t.userType),
+]);
+
+// â”€â”€â”€ Profile Learning Events (AI Learning Audit Trail) â”€â”€â”€
+export const profileLearningEvents = mysqlTable("profile_learning_events", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").notNull(),
+  userType: varchar("user_type", { length: 50 }).notNull(),
+  eventType: varchar("event_type", { length: 100 }).notNull(), // monthly_refresh | manual_refresh | report_generation
+  source: varchar("source", { length: 100 }).notNull().default("backend"),
+  previousAttributes: json("previous_attributes"),
+  newAttributes: json("new_attributes"),
+  metadata: json("metadata"),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [
+  index("profile_learning_user_idx").on(t.userId, t.userType),
+  index("profile_learning_event_idx").on(t.eventType),
+]);
+
+// â”€â”€â”€ Monthly Behavior Snapshots â”€â”€â”€
+export const monthlyBehaviorSnapshots = mysqlTable("monthly_behavior_snapshots", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").notNull(),
+  userType: varchar("user_type", { length: 50 }).notNull(),
+  month: varchar("month", { length: 7 }).notNull(),
+  totalIncome: decimal("total_income", { precision: 12, scale: 2 }).default("0.00"),
+  totalExpense: decimal("total_expense", { precision: 12, scale: 2 }).default("0.00"),
+  netFlow: decimal("net_flow", { precision: 12, scale: 2 }).default("0.00"),
+  topCategories: json("top_categories"),
+  topSubCategories: json("top_sub_categories"),
+  spendingByDay: json("spending_by_day"),
+  spendingByWeekday: json("spending_by_weekday"),
+  behaviorFlags: json("behavior_flags"),
+  inferredAttributes: json("inferred_attributes"),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+}, (t) => [
+  uniqueIndex("behavior_snapshot_user_month_idx").on(t.userId, t.userType, t.month),
+  index("behavior_snapshot_month_idx").on(t.month),
 ]);
 
 // ─── Onboarding Questions (Admin-controlled) ───

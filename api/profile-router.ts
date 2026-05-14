@@ -1,8 +1,118 @@
 import { z } from "zod";
 import { router, authedProcedure } from "./middleware";
 import { db } from "./queries/connection";
-import { userProfiles, onboardingQuestions, users, localUsers } from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import {
+  expenses,
+  monthlyBehaviorSnapshots,
+  onboardingQuestions,
+  users,
+  localUsers,
+  userProfiles,
+} from "../db/schema";
+import { eq, and, gte, lte } from "drizzle-orm";
+import {
+  getSmartProfile,
+  recordProfileLearningEvent,
+  saveSmartProfile,
+  updateSmartProfile,
+} from "./services/user-profile-service";
+import {
+  ADAPTIVE_ONBOARDING_QUESTIONS,
+  applyOnboardingAnswer,
+  getNextOnboardingQuestion,
+} from "./services/adaptive-question-engine";
+import { buildBehaviorSnapshot } from "./services/lifestyle-inference-engine";
+
+const smartProfilePatchSchema = z.object({
+  basicInfo: z.record(z.string(), z.any()).optional(),
+  financialInfo: z.record(z.string(), z.any()).optional(),
+  lifestyleInfo: z.record(z.string(), z.any()).optional(),
+  onboardingAnswers: z.record(z.string(), z.any()).optional(),
+  aiInferredAttributes: z.record(z.string(), z.any()).optional(),
+  preferences: z.record(z.string(), z.any()).optional(),
+  avatarId: z.string().nullable().optional(),
+  profileCompleted: z.boolean().optional(),
+});
+
+function monthRange(month: string) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const start = new Date(year, monthNumber - 1, 1);
+  const end = new Date(year, monthNumber, 0, 23, 59, 59, 999);
+  return { start, end };
+}
+
+async function refreshMonthlyInferences(userId: number, userType: string, month: string) {
+  const profile = await getSmartProfile(userId, userType);
+  const currentRange = monthRange(month);
+  const [year, monthNumber] = month.split("-").map(Number);
+  const prevMonth = `${monthNumber === 1 ? year - 1 : year}-${String(monthNumber === 1 ? 12 : monthNumber - 1).padStart(2, "0")}`;
+  const previousRange = monthRange(prevMonth);
+
+  const [items, previousItems] = await Promise.all([
+    db.select().from(expenses).where(and(
+      eq(expenses.userId, userId),
+      eq(expenses.userType, userType),
+      gte(expenses.date, currentRange.start),
+      lte(expenses.date, currentRange.end)
+    )),
+    db.select().from(expenses).where(and(
+      eq(expenses.userId, userId),
+      eq(expenses.userType, userType),
+      gte(expenses.date, previousRange.start),
+      lte(expenses.date, previousRange.end)
+    )),
+  ]);
+
+  const snapshot = buildBehaviorSnapshot(items, previousItems, profile);
+  const previousAttributes = profile.aiInferredAttributes;
+  const nextProfile = {
+    ...profile,
+    aiInferredAttributes: {
+      ...profile.aiInferredAttributes,
+      ...snapshot.inferredAttributes,
+    },
+    lastAiRefreshAt: new Date(),
+  };
+
+  await saveSmartProfile(userId, userType, nextProfile);
+  await db.insert(monthlyBehaviorSnapshots).values({
+    userId,
+    userType,
+    month,
+    totalIncome: snapshot.totalIncome.toString(),
+    totalExpense: snapshot.totalExpense.toString(),
+    netFlow: snapshot.netFlow.toString(),
+    topCategories: snapshot.topCategories.slice(0, 10),
+    topSubCategories: snapshot.topSubCategories.slice(0, 10),
+    spendingByDay: snapshot.spendingByDay,
+    spendingByWeekday: snapshot.spendingByWeekday,
+    behaviorFlags: snapshot.behaviorFlags,
+    inferredAttributes: snapshot.inferredAttributes,
+  }).onDuplicateKeyUpdate({
+    set: {
+      totalIncome: snapshot.totalIncome.toString(),
+      totalExpense: snapshot.totalExpense.toString(),
+      netFlow: snapshot.netFlow.toString(),
+      topCategories: snapshot.topCategories.slice(0, 10),
+      topSubCategories: snapshot.topSubCategories.slice(0, 10),
+      spendingByDay: snapshot.spendingByDay,
+      spendingByWeekday: snapshot.spendingByWeekday,
+      behaviorFlags: snapshot.behaviorFlags,
+      inferredAttributes: snapshot.inferredAttributes,
+    },
+  });
+
+  await recordProfileLearningEvent({
+    userId,
+    userType,
+    eventType: "manual_refresh",
+    previousAttributes,
+    newAttributes: snapshot.inferredAttributes,
+    metadata: { month, transactionCount: items.length },
+  });
+
+  return { profile: nextProfile, snapshot };
+}
 
 export const profileRouter = router({
   getMyProfile: authedProcedure.query(async ({ ctx }) => {
@@ -10,6 +120,10 @@ export const profileRouter = router({
       .where(and(eq(userProfiles.userId, ctx.user.id), eq(userProfiles.userType, ctx.user.type)))
       .limit(1);
     return profile[0] || { profileCompleted: false };
+  }),
+
+  getSmartProfile: authedProcedure.query(async ({ ctx }) => {
+    return await getSmartProfile(ctx.user.id, ctx.user.type);
   }),
 
   updateProfile: authedProcedure
@@ -37,9 +151,56 @@ export const profileRouter = router({
     }),
 
   getQuestions: authedProcedure.query(async () => {
-    return await db.select().from(onboardingQuestions)
+    const dbQuestions = await db.select().from(onboardingQuestions)
       .where(eq(onboardingQuestions.isActive, true))
       .orderBy(onboardingQuestions.sortOrder);
+    return dbQuestions.length > 0 ? dbQuestions : ADAPTIVE_ONBOARDING_QUESTIONS;
+  }),
+
+  updateSmartProfile: authedProcedure
+    .input(smartProfilePatchSchema)
+    .mutation(async ({ ctx, input }) => {
+      const profile = await updateSmartProfile(ctx.user.id, ctx.user.type, input);
+      return { success: true, profile };
+    }),
+
+  getNextOnboardingQuestion: authedProcedure.query(async ({ ctx }) => {
+    const profile = await getSmartProfile(ctx.user.id, ctx.user.type);
+    return {
+      question: getNextOnboardingQuestion(profile.onboardingAnswers),
+      profileCompleted: profile.profileCompleted,
+    };
+  }),
+
+  submitOnboardingAnswer: authedProcedure
+    .input(z.object({
+      key: z.string().min(1),
+      value: z.any().optional(),
+      skipped: z.boolean().default(false),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const profile = await getSmartProfile(ctx.user.id, ctx.user.type);
+      const nextProfile = applyOnboardingAnswer(
+        profile,
+        input.key,
+        input.value,
+        input.skipped
+      );
+      await saveSmartProfile(ctx.user.id, ctx.user.type, nextProfile);
+      return {
+        success: true,
+        profile: nextProfile,
+        nextQuestion: getNextOnboardingQuestion(nextProfile.onboardingAnswers),
+      };
+    }),
+
+  refreshInferences: authedProcedure
+    .input(z.object({ month: z.string().regex(/^\d{4}-\d{2}$/).optional() }).optional())
+    .mutation(async ({ ctx, input }) => {
+      const now = new Date();
+      const month = input?.month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      const result = await refreshMonthlyInferences(ctx.user.id, ctx.user.type, month);
+      return { success: true, ...result };
   }),
 
   updateUserInfo: authedProcedure

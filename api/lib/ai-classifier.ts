@@ -103,7 +103,7 @@ export async function aiClassify(
   apiKey2: string,
   modelName: string,
   maxTokens: number,
-  contextObj: { totalIncome: number; totalExpense: number; currentDate: string },
+  contextObj: { totalIncome: number; totalExpense: number; currentDate: string; userProfileContext?: string },
   skipClarification?: boolean
 ): Promise<AIClassificationResult | null> {
   let userPrompt = `السياق المالي الحالي:
@@ -112,6 +112,10 @@ export async function aiClassify(
 - التاريخ: ${contextObj.currentDate}
 
 النص المطلوب تحليله: "${text}"`;
+
+  if (contextObj.userProfileContext) {
+    userPrompt += `\n\nSmart user profile context:\n${contextObj.userProfileContext}`;
+  }
 
   if (skipClarification) {
     userPrompt += `\n\n**ملاحظة هامة جداً**: المستخدم طلب تخطي التوضيح (Skip). ممنوع طلب توضيح (اجعل needs_clarification = false دائمًا). قم بتخمين الفئات المجهولة بناءً على السياق، وأعد أفضل استنتاج ممكن وضع نسبة الثقة confidence مناسبة لتوقعك.`;

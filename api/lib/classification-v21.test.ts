@@ -3,6 +3,7 @@ import { normalizeText } from "./text-normalizer";
 import { extractEntities } from "./entity-extractor";
 import { detectIntent } from "./intent-detector";
 import { findTaxonomyMatch } from "./taxonomy-adapter";
+import { runRuleEngine } from "./rule-engine";
 
 describe("classification v2.1", () => {
   it("normalizes common Egyptian phrases", () => {
@@ -26,5 +27,10 @@ describe("classification v2.1", () => {
     const match = findTaxonomyMatch("دفعت للسايس");
     expect(match).not.toBeNull();
     expect(match?.subCategory).toBe("ركنة");
+  });
+  it("uses profile hints for children education expenses", () => {
+    const result = runRuleEngine("دفعت 500 مدرسة", [], { hasChildren: true });
+    expect(result.items[0]?.category).toBe("طھط¹ظ„ظٹظ…");
+    expect(result.items[0]?.confidence).toBeGreaterThanOrEqual(90);
   });
 });
