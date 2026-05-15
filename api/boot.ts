@@ -10,10 +10,18 @@ import { env } from "./lib/env";
 const app = new Hono();
 
 app.use("*", logger());
-app.use("*", cors({
-  origin: env.APP_URL,
-  credentials: true,
-}));
+
+// ─── CORS: supports monorepo mode (APP_URL) and separate-deploy mode (FRONTEND_URL) ───
+const allowedOrigins = Array.from(
+  new Set([env.APP_URL, env.FRONTEND_URL].filter(Boolean) as string[])
+);
+app.use(
+  "*",
+  cors({
+    origin: (origin) => (allowedOrigins.includes(origin) ? origin : allowedOrigins[0]),
+    credentials: true,
+  })
+);
 
 // Error handling
 app.onError((err, c) => {

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { router, authedProcedure, moderatorProcedure, adminProcedure } from "./middleware";
 import { db } from "./queries/connection";
-import { supportTickets } from "../db/schema";
+import { supportTickets, users, localUsers } from "../db/schema";
 import { eq, desc, and, sql, count } from "drizzle-orm";
 
 export const supportRouter = router({
@@ -71,8 +71,22 @@ export const supportRouter = router({
         .limit(limit)
         .offset(offset);
 
+      const enriched = await Promise.all(list.map(async (t) => {
+        let name = "مجهول";
+        let avatarUrl = "";
+        if (t.userType === "oauth") {
+          const u = await db.select({ name: users.name, avatar: users.avatar }).from(users).where(eq(users.id, t.userId)).limit(1);
+          if (u[0]) { name = u[0].name; avatarUrl = u[0].avatar || ""; }
+        } else {
+          // localUsers don't have avatar yet, just name. (Actually we'll add it if needed, or fallback)
+          const u = await db.select({ name: localUsers.name }).from(localUsers).where(eq(localUsers.id, t.userId)).limit(1);
+          if (u[0]) name = u[0].name;
+        }
+        return { ...t, userName: name, userAvatar: avatarUrl };
+      }));
+
       const total = await db.select({ count: count() }).from(supportTickets);
-      return { list, total: total[0]?.count ?? 0, page, limit };
+      return { list: enriched, total: total[0]?.count ?? 0, page, limit };
     }),
 
   // ─── Respond to Ticket ───

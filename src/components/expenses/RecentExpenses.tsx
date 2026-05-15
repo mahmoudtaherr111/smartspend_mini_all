@@ -50,6 +50,39 @@ const categoryColors: Record<string, string> = {
   "متنوعات": "bg-slate-100 text-slate-700",
 };
 
+function getTypeMeta(type: string | null | undefined) {
+  if (type === "income") {
+    return {
+      label: "دخل",
+      sign: "+",
+      amountClass: "text-emerald-600",
+      badgeClass: "bg-emerald-100 text-emerald-700",
+    };
+  }
+  if (type === "transfer") {
+    return {
+      label: "تحويل",
+      sign: "",
+      amountClass: "text-sky-600",
+      badgeClass: "bg-sky-100 text-sky-700",
+    };
+  }
+  if (type === "investment") {
+    return {
+      label: "استثمار",
+      sign: "",
+      amountClass: "text-amber-600",
+      badgeClass: "bg-amber-100 text-amber-700",
+    };
+  }
+  return {
+    label: "مصروف",
+    sign: "-",
+    amountClass: "text-rose-600",
+    badgeClass: "bg-rose-100 text-rose-700",
+  };
+}
+
 export function RecentExpenses({ onRefresh, limit = 10 }: RecentExpensesProps) {
   const [page, setPage] = useState(0);
 
@@ -92,8 +125,8 @@ export function RecentExpenses({ onRefresh, limit = 10 }: RecentExpensesProps) {
       <Card>
         <CardContent className="p-8 text-center text-muted-foreground">
           <Receipt className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-          <p>مفيش مصاريف مسجلة لسه.</p>
-          <p className="text-sm">سجل أول مصروفك!</p>
+          <p>مفيش عمليات مسجلة لسه.</p>
+          <p className="text-sm">سجل أول مصروف أو دخل.</p>
         </CardContent>
       </Card>
     );
@@ -105,8 +138,8 @@ export function RecentExpenses({ onRefresh, limit = 10 }: RecentExpensesProps) {
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <Receipt className="w-5 h-5 text-blue-500" />
-            آخر المصاريف
-            <Badge variant="secondary">{Number(data.total)} مصروف</Badge>
+            آخر العمليات
+            <Badge variant="secondary">{Number(data.total)} عملية</Badge>
           </CardTitle>
           <Button variant="ghost" size="sm" onClick={() => refetch()}>
             <RefreshCw className="w-4 h-4" />
@@ -164,6 +197,7 @@ function ExpenseItem({
   expense: {
     id: number;
     amount: string;
+    type: string;
     category: string;
     subCategory: string | null;
     description: string | null;
@@ -175,6 +209,7 @@ function ExpenseItem({
   isDeleting: boolean;
 }) {
   const date = new Date(expense.date);
+  const typeMeta = getTypeMeta(expense.type);
   const dateStr = date.toLocaleDateString("ar-EG", {
     day: "numeric",
     month: "short",
@@ -186,7 +221,9 @@ function ExpenseItem({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <div className="font-bold text-lg">{Number(expense.amount).toFixed(0)} جنيه</div>
+            <div className={cn("font-bold text-lg", typeMeta.amountClass)}>
+              {typeMeta.sign}{Number(expense.amount).toFixed(0)} جنيه
+            </div>
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
               <Calendar className="w-3 h-3" />
               {dateStr}
@@ -195,6 +232,9 @@ function ExpenseItem({
         </div>
         <div className="flex items-center gap-2">
           <div className="flex flex-col items-end gap-1">
+            <Badge className={cn("border-0", typeMeta.badgeClass)}>
+              {typeMeta.label}
+            </Badge>
             <Badge className={cn("border-0", categoryColors[expense.category] || "bg-gray-100")}>
               {expense.category}
             </Badge>
@@ -205,19 +245,24 @@ function ExpenseItem({
             )}
           </div>
           <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <MessageSquare className="w-4 h-4" />
-              </Button>
+            <DialogTrigger
+              aria-label="تفاصيل العملية"
+              className="inline-flex h-8 items-center justify-center rounded-md px-3 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
+              <MessageSquare className="w-4 h-4" />
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>تفاصيل المصروف</DialogTitle>
+                <DialogTitle>تفاصيل العملية</DialogTitle>
               </DialogHeader>
               <div className="space-y-3" dir="rtl">
                 <div className="flex justify-between border-b pb-2">
                   <span className="text-sm text-muted-foreground">المبلغ:</span>
-                  <span className="font-bold">{Number(expense.amount).toFixed(2)} جنيه</span>
+                  <span className={cn("font-bold", typeMeta.amountClass)}>{typeMeta.sign}{Number(expense.amount).toFixed(2)} جنيه</span>
+                </div>
+                <div className="flex justify-between border-b pb-2">
+                  <span className="text-sm text-muted-foreground">النوع:</span>
+                  <Badge className={cn("border-0", typeMeta.badgeClass)}>{typeMeta.label}</Badge>
                 </div>
                 <div className="flex justify-between border-b pb-2">
                   <span className="text-sm text-muted-foreground">الفئة:</span>

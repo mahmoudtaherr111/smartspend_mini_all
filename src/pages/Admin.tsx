@@ -20,7 +20,6 @@ import { toast } from "sonner";
 
 export default function Admin() {
   const { user } = useAuth();
-  const { stats, users, updateRole, updatePlan, deleteUser, revokeSession } = useAdmin();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [planFilter, setPlanFilter] = useState("all");
@@ -29,6 +28,13 @@ export default function Admin() {
   const [showTickets, setShowTickets] = useState(false);
   const [showExports, setShowExports] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const { stats, users, updateRole, updatePlan, deleteUser, revokeSession } = useAdmin({
+    dashboard: activeTab === "dashboard",
+    users: activeTab === "users",
+    activity: false,
+    classification: false,
+    voice: false,
+  });
 
   const sessionsQuery = trpc.admin.getUserSessions.useQuery(
     { userId: selectedUser?.id, userType: selectedUser?.userType },
@@ -301,6 +307,18 @@ export default function Admin() {
                     <div key={t.id} className="border rounded-lg p-4 hover:bg-muted/30 transition">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            {t.userAvatar ? (
+                              <img src={t.userAvatar} alt={t.userName} className="w-6 h-6 rounded-full object-cover border" />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
+                                <UserCheck className="w-3 h-3 text-slate-500" />
+                              </div>
+                            )}
+                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                              {t.userName}
+                            </span>
+                          </div>
                           <div className="flex items-center gap-2 mb-1">
                             <h4 className="font-bold">{t.subject}</h4>
                             <Badge variant={t.status === "open" ? "default" : t.status === "resolved" ? "secondary" : "outline"}>
@@ -432,7 +450,7 @@ function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label:
 }
 
 function ActivityLog() {
-  const { activity } = useAdmin();
+  const { activity } = useAdmin({ activity: true });
   return (
     <Card>
       <CardHeader><CardTitle>سجل الجلسات والنشاط</CardTitle></CardHeader>
@@ -643,6 +661,78 @@ function AdminSettings() {
           </CardContent>
         </Card>
 
+        {/* ─── STT Configuration ─── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">🗣️ إعدادات تحويل الصوت (STT)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4 max-w-xl">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">STT API Key</label>
+                <Input 
+                  type="password"
+                  placeholder="AIzaSy..." 
+                  value={formData.stt_api_key || ""}
+                  onChange={(e) => updateField("stt_api_key", e.target.value)}
+                  dir="ltr"
+                />
+                <p className="text-xs text-muted-foreground">مفتاح خاص لعمليات تحويل الصوت لنص</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">الموديل الأساسي (STT)</label>
+                <Select value={formData.stt_model || ""} onValueChange={(v) => updateField("stt_model", v)}>
+                  <SelectTrigger className="h-9" dir="ltr">
+                    <SelectValue placeholder="اختر الموديل الأساسي" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {models.map((m: any) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        <div className="flex items-center gap-2">
+                          <span>{m.name}</span>
+                          <Badge variant="outline" className="text-[10px] h-4 px-1">{m.tier}</Badge>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">الموديل الاحتياطي (Fallback)</label>
+                <Select value={formData.stt_fallback_model || ""} onValueChange={(v) => updateField("stt_fallback_model", v)}>
+                  <SelectTrigger className="h-9" dir="ltr">
+                    <SelectValue placeholder="اختر الموديل الاحتياطي" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {models.map((m: any) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        <div className="flex items-center gap-2">
+                          <span>{m.name}</span>
+                          <Badge variant="outline" className="text-[10px] h-4 px-1">{m.tier}</Badge>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 pt-2 border-t mt-2">
+                <label className="text-sm font-medium">نظام معالجة الصوت (STT Mode)</label>
+                <Select value={formData.stt_processing_mode || "standard"} onValueChange={(v) => updateField("stt_processing_mode", v)}>
+                  <SelectTrigger className="h-9" dir="ltr">
+                    <SelectValue placeholder="اختر نظام المعالجة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Standard Inline (الوضع الافتراضي)</SelectItem>
+                    <SelectItem value="live_api">Live API Session (للأداء الحي السريع)</SelectItem>
+                    <SelectItem value="native_audio">Native Audio Dialog (مخصص للصوت العالي)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-[10px] text-muted-foreground mt-1 text-right">طريقة دمج الصوت مع الموديل الأب</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* ─── Voice Recording Limits ─── */}
         <Card>
           <CardHeader>
@@ -799,7 +889,7 @@ function AdminSettings() {
 }
 
 function ClassificationDashboard() {
-  const { classificationStats, classificationLogs } = useAdmin();
+  const { classificationStats, classificationLogs } = useAdmin({ classification: true });
   
   return (
     <div className="space-y-6">
@@ -869,7 +959,7 @@ function ClassificationDashboard() {
 }
 
 function VoiceUsageDashboard() {
-  const { voiceUsage } = useAdmin();
+  const { voiceUsage } = useAdmin({ voice: true });
   const usage = voiceUsage.data?.usage || [];
 
   return (

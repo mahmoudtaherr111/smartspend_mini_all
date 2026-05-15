@@ -22,6 +22,9 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production"]).default("development"),
   PORT: z.string().default("3000"),
   APP_URL: z.string().default("http://localhost:5173"),
+  // FRONTEND_URL: when frontend is deployed separately (e.g. https://app.smartspend.app)
+  // If not set, falls back to APP_URL for backward-compat monorepo mode
+  FRONTEND_URL: z.string().optional(),
 
   // Owner
   OWNER_EMAIL: z.string().optional(),

@@ -6,6 +6,15 @@ import { eq, sql, desc, count, and, gte, lte, sum } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { env } from "./lib/env";
 
+function isMissingTableError(err: unknown, table: string): boolean {
+  const message = err instanceof Error ? err.message : String(err ?? "");
+  return message.includes(table) && (
+    message.includes("doesn't exist") ||
+    message.includes("ER_NO_SUCH_TABLE") ||
+    message.includes("Failed query")
+  );
+}
+
 export const adminRouter = router({
   // ─── Dashboard Stats ───
   getDashboardStats: adminProcedure.query(async () => {
@@ -228,7 +237,9 @@ export const adminRouter = router({
       voice_per_req_ultra: "300", // 5 min per request
       confidence_auto_save: "85",
       confidence_review: "60",
-      stt_model: "gemini-2.5-flash",
+      stt_api_key: "AIzaSyCWif4U7uRb1WKG_HTwqNwtNLmvfD5fZj0",
+      stt_model: "gemini-3.0-flash-live",
+      stt_fallback_model: "gemini-3.1-flash-lite",
       // AI Response Settings
       ai_response_length: "medium", // short, medium, detailed
       ai_focus: "balanced", // statistics, tips, patterns, balanced
@@ -283,6 +294,8 @@ export const adminRouter = router({
   getAvailableModels: adminProcedure.query(async () => {
     return {
       models: [
+        { id: "gemini-3.0-flash-live", name: "Gemini 3.0 Flash Live", tier: "pro", description: "معالجة صوتية حية فائقة الدقة" },
+        { id: "gemini-2.5-flash-native-audio", name: "Gemini 2.5 Flash Native Audio", tier: "free", description: "نسخة مخصصة للصوت مباشرة" },
         { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash Lite", tier: "free", description: "خفيف وسريع جداً للطلبات المتكررة" },
         { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", tier: "free", description: "اقتصادي وسريع للمهام البسيطة" },
         { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", tier: "free", description: "سريع واقتصادي" },
@@ -299,16 +312,23 @@ export const adminRouter = router({
 
   // ─── AI Classification Stats ───
   getAIClassificationStats: adminProcedure.query(async () => {
-    const stats = await db.select({
-      parsedBy: classificationLogs.parsedBy,
-      count: count(),
-      avgConfidence: sql`AVG(${classificationLogs.confidence})`,
-      totalTokens: sql`SUM(${classificationLogs.tokensUsed})`,
-    })
-    .from(classificationLogs)
-    .groupBy(classificationLogs.parsedBy);
+    let stats: any[] = [];
+    let totalLogs: Array<{ count: number }> = [{ count: 0 }];
 
-    const totalLogs = await db.select({ count: count() }).from(classificationLogs);
+    try {
+      stats = await db.select({
+        parsedBy: classificationLogs.parsedBy,
+        count: count(),
+        avgConfidence: sql`AVG(${classificationLogs.confidence})`,
+        totalTokens: sql`SUM(${classificationLogs.tokensUsed})`,
+      })
+      .from(classificationLogs)
+      .groupBy(classificationLogs.parsedBy);
+
+      totalLogs = await db.select({ count: count() }).from(classificationLogs);
+    } catch (err) {
+      if (!isMissingTableError(err, "classification_logs")) throw err;
+    }
 
     return {
       stats,
@@ -327,15 +347,22 @@ export const adminRouter = router({
       const { page = 1, limit = 20, parsedBy } = input ?? {};
       const offset = (page - 1) * limit;
 
-      let query = db.select().from(classificationLogs).$dynamic();
-      if (parsedBy) query = query.where(eq(classificationLogs.parsedBy, parsedBy));
-      
-      const logs = await query
-        .orderBy(desc(classificationLogs.createdAt))
-        .limit(limit)
-        .offset(offset);
+      let logs: any[] = [];
+      let total: Array<{ count: number }> = [{ count: 0 }];
 
-      const total = await db.select({ count: count() }).from(classificationLogs);
+      try {
+        let query = db.select().from(classificationLogs).$dynamic();
+        if (parsedBy) query = query.where(eq(classificationLogs.parsedBy, parsedBy));
+        
+        logs = await query
+          .orderBy(desc(classificationLogs.createdAt))
+          .limit(limit)
+          .offset(offset);
+
+        total = await db.select({ count: count() }).from(classificationLogs);
+      } catch (err) {
+        if (!isMissingTableError(err, "classification_logs")) throw err;
+      }
 
       // Enrich with user names
       const enriched = await Promise.all(logs.map(async (l) => {
@@ -362,14 +389,19 @@ export const adminRouter = router({
   getVoiceUsageStats: adminProcedure.query(async () => {
     const currentMonth = new Date().toISOString().slice(0, 7);
     
-    const usage = await db.select({
-      userType: voiceUsage.userType,
-      totalSeconds: sum(voiceUsage.durationSeconds),
-      count: count(),
-    })
-    .from(voiceUsage)
-    .where(eq(voiceUsage.month, currentMonth))
-    .groupBy(voiceUsage.userType);
+    let usage: any[] = [];
+    try {
+      usage = await db.select({
+        userType: voiceUsage.userType,
+        totalSeconds: sum(voiceUsage.durationSeconds),
+        count: count(),
+      })
+      .from(voiceUsage)
+      .where(eq(voiceUsage.month, currentMonth))
+      .groupBy(voiceUsage.userType);
+    } catch (err) {
+      if (!isMissingTableError(err, "voice_usage")) throw err;
+    }
 
     return {
       month: currentMonth,

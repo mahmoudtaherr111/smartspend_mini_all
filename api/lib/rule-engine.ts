@@ -386,7 +386,7 @@ export function runRuleEngine(
   }
 
   // Check if any item has low confidence → needs AI
-  const needsAI = items.some(it => it.category === "متنوعات" || it.confidence < 60);
+  const needsAI = items.some(it => it.category === "متنوعات" || it.confidence < 80);
 
   return { items, usedAI: false, needsAI };
 }

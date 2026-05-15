@@ -58,7 +58,7 @@ async function getVoiceSecondsSince(userId: number, userType: string, cycleStart
       .where(and(
         eq(voiceUsage.userId, userId),
         eq(voiceUsage.userType, userType),
-        gte(voiceUsage.createdAt, cycleStart)
+        eq(voiceUsage.month, new Date().toISOString().slice(0, 7))
       ));
     return Number(usageResult[0]?.total || 0);
   } catch (err) {
@@ -68,6 +68,10 @@ async function getVoiceSecondsSince(userId: number, userType: string, cycleStart
     }
     throw err;
   }
+}
+
+function planValue<T>(values: Record<string, T>, plan: string, fallback: T): T {
+  return Object.prototype.hasOwnProperty.call(values, plan) ? values[plan] : fallback;
 }
 
 async function getAiClient(taskType: "parse" | "report", userPlan: string = "free") {
@@ -404,13 +408,21 @@ export const aiRouter = router({
 
       try {
         const client = await getAiClient("parse", ctx.user.plan);
+        if (!client.canUseParse) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "تحليل الرسائل بالذكاء الاصطناعي غير متاح في خطتك الحالية.",
+          });
+        }
         dailyLimit = client.dailyLimit;
         tokenLimit = client.tokenLimit;
         apiKey = client.apiKey;
         apiKey2 = client.apiKey2;
         modelName = client.modelName;
         maxPerRequest = client.maxPerRequest;
-      } catch {}
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+      }
 
       if ((todayUsage[0]?.count as number ?? 0) >= dailyLimit) {
         const upgradeTo = ctx.user.plan === "free" ? "برو" : "ألترا";
@@ -571,7 +583,7 @@ export const aiRouter = router({
     }
 
     const usedVoiceSeconds = await getVoiceSecondsSince(ctx.user.id, ctx.user.type, cycleStart);
-    const voiceLimit = voiceLimits[ctx.user.plan] || 300;
+    const voiceLimit = planValue(voiceLimits, ctx.user.plan, 300);
     
     return {
       voice: {
@@ -579,7 +591,7 @@ export const aiRouter = router({
         used: usedVoiceSeconds,
         remaining: voiceLimit > 0 ? Math.max(0, voiceLimit - usedVoiceSeconds) : -1,
         resetDate: new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, cycleStart.getDate()).toISOString(),
-        maxPerRequest: voicePerReq[ctx.user.plan] || 60,
+        maxPerRequest: planValue(voicePerReq, ctx.user.plan, 60),
       }
     };
   }),
@@ -630,33 +642,71 @@ export const aiRouter = router({
         ultra: parseInt(cfg.voice_limit_ultra || "0"),    // unlimited
       };
 
-      const limit = voiceLimits[ctx.user.plan] || 300;
+      const voicePerReq: Record<string, number> = {
+        free: parseInt(cfg.voice_per_req_free || "60"),
+        pro: parseInt(cfg.voice_per_req_pro || "180"),
+        ultra: parseInt(cfg.voice_per_req_ultra || "300"),
+      };
+
+      const limit = planValue(voiceLimits, ctx.user.plan, 300);
+      const maxPerRequest = planValue(voicePerReq, ctx.user.plan, 60);
+
+      if (input.durationSeconds > maxPerRequest) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: `مدة التسجيل الواحد لا يمكن أن تتجاوز ${maxPerRequest} ثانية في خطتك الحالية.`,
+        });
+      }
+
       if (limit > 0 && usedSeconds >= limit) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: `وقت التسجيل الصوتي خلص (${Math.floor(limit / 60)} دقيقة/شهر). حدث للبرو للمزيد!`,
+          message: `وقت التسجيل الصوتي المتاح ليك خلص (${limit} ثانية/شهر). يرجى الترقية لـ Pro للحصول على المزيد!`,
+        });
+      }
+
+      if (limit > 0 && usedSeconds + input.durationSeconds > limit) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: `مدة هذا التسجيل تتجاوز الرصيد المتبقي لك هذا الشهر. المتاح الآن ${Math.max(0, limit - usedSeconds)} ثانية فقط.`,
         });
       }
 
       // Get API key
-      let apiKey = cfg.ai_api_key || env.GEMINI_API_KEY;
-      const sttModel = cfg.stt_model || "gemini-2.5-flash";
+      let apiKey = cfg.stt_api_key || "AIzaSyCWif4U7uRb1WKG_HTwqNwtNLmvfD5fZj0";
+      let apiKey2 = cfg.ai_api_key_2 || "";
+      const sttModel = cfg.stt_model || "gemini-3.0-flash-live";
+      const fallbackModel = cfg.stt_fallback_model || "gemini-3.1-flash-lite";
 
       const cleanMimeType = input.mimeType.split(';')[0];
-      const result = await runSTTPipeline(input.audioBase64, cleanMimeType, apiKey, sttModel);
+      const sttMode = cfg.stt_processing_mode || "standard";
+      
+      let result = await runSTTPipeline(input.audioBase64, cleanMimeType, apiKey, sttModel, sttMode);
+      if (!result) {
+        console.warn("STT with primary model failed, falling back to", fallbackModel);
+        result = await runSTTPipeline(input.audioBase64, cleanMimeType, apiKey, fallbackModel, sttMode);
+      }
+      if (!result && apiKey2 && apiKey2 !== "AIzaSyCTbqi-uF65bRYw8T32DbVOciM9CIMjRuo_placeholder") {
+        console.warn("STT with primary key failed, falling back to secondary key with", fallbackModel);
+        result = await runSTTPipeline(input.audioBase64, cleanMimeType, apiKey2, fallbackModel, sttMode);
+      }
       if (!result) {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "فشل تحويل الصوت. جرب تاني." });
       }
 
       const currentMonthStr = new Date().toISOString().slice(0, 7);
       // Track voice usage
-      await db.insert(voiceUsage).values({
-        userId: ctx.user.id,
-        userType: ctx.user.type,
-        durationSeconds: input.durationSeconds,
-        month: currentMonthStr,
-        source: "gemini_stt",
-      }).catch(() => {});
+      try {
+        await db.insert(voiceUsage).values({
+          userId: ctx.user.id,
+          userType: ctx.user.type,
+          durationSeconds: input.durationSeconds,
+          month: currentMonthStr,
+          source: "gemini_stt",
+        });
+      } catch (insertErr) {
+        console.error("Failed to insert voice usage:", insertErr);
+      }
 
       // Track tokens
       if (result.tokensUsed > 0) {
@@ -900,6 +950,12 @@ ${reportPersonalizationContext}`;
       
       try {
         const client = await getAiClient("report", ctx.user.plan);
+        if (!client.canUseAnalysis) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "التحليلات الشهرية بالذكاء الاصطناعي غير متاحة في خطتك الحالية.",
+          });
+        }
         aiModel = client.aiModel;
         modelName = client.modelName;
 
@@ -914,12 +970,14 @@ ${reportPersonalizationContext}`;
           ? await db.select({ t: users.aiTokensUsed }).from(users).where(eq(users.id, ctx.user.id))
           : await db.select({ t: localUsers.aiTokensUsed }).from(localUsers).where(eq(localUsers.id, ctx.user.id));
         const usedTokens = tokenField[0]?.t || 0;
-        const limit = ctx.user.plan === "pro" ? client.proTokenLimit : client.freeTokenLimit;
+        const limit = client.tokenLimit;
         if (usedTokens >= limit) {
           aiModel = null;
           modelName = "backend";
         }
-      } catch (e) {}
+      } catch (e) {
+        if (e instanceof TRPCError) throw e;
+      }
 
       let responseJson: any;
 
@@ -937,29 +995,30 @@ ${reportPersonalizationContext}`;
           if (aiFocus === "tips") focusInstruction = "ركز بشكل كبير على تقديم توصيات استراتيجية وحلول عملية لإعادة هيكلة الميزانية وتحسين كفاءة الإنفاق.";
           if (aiFocus === "patterns") focusInstruction = "ركز على اكتشاف الأنماط السلوكية، وتفسير توجهات الإنفاق (Spending Trends)، وتقييم السلوك المالي على المدى الطويل.";
 
-          const prompt = `أنت "محلل مالي خبير" (Expert Financial Analyst) تعمل في نظام ذكاء أعمال مؤسسي (Enterprise Financial Platform).
-المطلوب منك تحليل هذه البيانات المالية للمستخدم، وتقديم تقرير استشاري عالي المستوى باللغة العربية الفصحى المعاصرة (لغة الأعمال والأموال). لا تستخدم العامية المصرية.
+          const prompt = `أنت "المستشار المالي الذكي الأقدم" (Senior AI Financial Advisor) لـ SmartSpend.
+المطلوب منك هو صياغة تقرير استشاري مالي "عميق جداً وشامل" للمستخدم بناءً على بياناته المالية المرفقة.
 
-البيانات الإحصائية:
+الهدف: تحويل الأرقام الجافة إلى "رؤية استراتيجية" تساعد المستخدم على فهم سلوكه المالي وتطويره.
+
+البيانات الإحصائية والسياقية للمستخدم:
 ${personalizedSummaryForAI}
 
-إرشادات التقرير:
-- الطول والعمق: ${lengthInstruction}
-- التركيز الأساسي: ${focusInstruction}
+إرشادات صياغة التقرير:
+1. اللغة: استخدم لغة عربية فصحى احترافية (لغة المال والأعمال). لا تستخدم العامية.
+2. الطول والعمق: ${lengthInstruction} (نريد تقريراً غنياً بالتفاصيل، لا يكتفي بذكر ما حدث بل يحلل "لماذا" حدث وما هو "الأثر المتوقع").
+3. التركيز: ${focusInstruction}.
+4. الذاكرة الذكية: ادمج معلومات "ذاكرة الأنماط" و"التوقعات المستقبلية" و"الفواتير المتوقعة" في سياق سردي احترافي كأنك تتذكر تاريخ المستخدم المالي.
+5. الهيكل: قسم التقرير إلى فقرات: (نظرة عامة على الأداء - تحليل السلوك الاستهلاكي - نقاط القوة والضعف - استراتيجية التوفير المقترحة - نظرة مستقبلية).
 
-صيغة التقرير المطلوبة (يجب أن ترد بـ JSON فقط بدون أي نصوص خارجية):
+صيغة الرد (JSON فقط):
 {
-  "response_text": "نص التقرير هنا. يجب أن يكون بأسلوب مؤسسي محترف. استخدم مصطلحات مثل: تشير البيانات إلى، تمركز الإنفاق، معدلات النمو، مرونة الميزانية، الهيكلة المالية. قسم النص لفقرات مريحة بصرياً.",
-  "alerts": ["تنبيه مالي محترف 1", "تنبيه مالي محترف 2"],
+  "response_text": "هنا يكتب التقرير الكامل. ابدأ بترحيب مهني. حلل الأرقام بعمق (مثلاً: نلاحظ تمركزاً في بند الرفاهيات مما قد يضغط على السيولة في نهاية الشهر). استخدم مصطلحات مثل: التدفق النقدي، الملاءة المالية، كفاءة الإنفاق، المرونة المالية، إعادة التخصيص الاستراتيجي.",
+  "alerts": ["تنبيه مالي عالي المستوى 1", "تنبيه مالي عالي المستوى 2"],
   "personality_flag": "${personality}",
-  "data_table": [{"category":"الفئة","amount":رقم,"percent":رقم,"change":"نص يشرح التغير"}]
+  "data_table": [] 
 }
 
-قواعد صارمة جداً:
-- أسلوب الكتابة: احترافي جداً، رزين، وموضوعي (Objective & Analytical).
-- يجب دمج "التوقع المالي" و"ذاكرة الأنماط" و"الاشتراكات المتوقعة" في سياق تقريرك بأسلوب احترافي لتبدو كأنها استنتاجات ذكية جداً من طرفك وذاكرة قوية للنظام.
-- تجنب العبارات المبتذلة مثل "لا تصرف كثيراً"، واستخدم بدلاً منها "يوصى بإعادة تقييم حجم الإنفاق في هذا البند لتحسين تدفقات السيولة".
-- يجب أن يكون التنسيق JSON صالحاً بنسبة 100%.`;
+ملاحظة هامة: المستخدم اشتكى سابقاً من قصر الردود، لذا يرجى التوسع في الشرح والتحليل ليكون التقرير ذا قيمة حقيقية ومهنية عالية.`;
 
           const result = await aiModel.generateContent(prompt);
           const raw = result.response.text().replace(/```json?/g, "").replace(/```/g, "").trim();
@@ -1077,9 +1136,17 @@ ${personalizedSummaryForAI}
       let modelName = "demo";
       try {
         const client = await getAiClient("report", ctx.user.plan);
+        if (!client.canUseAnalysis) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "تحليلات المقارنة بالذكاء الاصطناعي غير متاحة في خطتك الحالية.",
+          });
+        }
         aiModel = client.aiModel;
         modelName = client.modelName;
-      } catch (e) {}
+      } catch (e) {
+        if (e instanceof TRPCError) throw e;
+      }
 
       const getMonthData = async (monthStr: string) => {
         const [y, m] = monthStr.split("-");
@@ -1128,9 +1195,17 @@ ${input.month2}: ${d2.total} جنيه (${d2.count} عملية)
       let modelName = "demo";
       try {
         const client = await getAiClient("report", ctx.user.plan);
+        if (!client.canUseAnalysis) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "التحليلات السنوية بالذكاء الاصطناعي غير متاحة في خطتك الحالية.",
+          });
+        }
         aiModel = client.aiModel;
         modelName = client.modelName;
-      } catch (e) {}
+      } catch (e) {
+        if (e instanceof TRPCError) throw e;
+      }
 
       const start = new Date(parseInt(input.year), 0, 1);
       const end = new Date(parseInt(input.year), 11, 31);

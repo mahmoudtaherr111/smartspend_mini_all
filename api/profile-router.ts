@@ -100,7 +100,7 @@ async function refreshMonthlyInferences(userId: number, userType: string, month:
       behaviorFlags: snapshot.behaviorFlags,
       inferredAttributes: snapshot.inferredAttributes,
     },
-  });
+  }).catch(() => {});
 
   await recordProfileLearningEvent({
     userId,
@@ -207,16 +207,21 @@ export const profileRouter = router({
     .input(z.object({
       name: z.string().min(2).optional(),
       phone: z.string().optional(),
+      avatar: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.type === "oauth") {
-        if (input.name) {
-          await db.update(users).set({ name: input.name }).where(eq(users.id, ctx.user.id));
+        const updates: any = {};
+        if (input.name) updates.name = input.name;
+        if (input.avatar !== undefined) updates.avatar = input.avatar;
+        if (Object.keys(updates).length > 0) {
+          await db.update(users).set(updates).where(eq(users.id, ctx.user.id));
         }
       } else {
         const updates: any = {};
         if (input.name) updates.name = input.name;
         if (input.phone) updates.phone = input.phone;
+        if (input.avatar !== undefined) updates.avatar = input.avatar;
         if (Object.keys(updates).length > 0) {
           await db.update(localUsers).set(updates).where(eq(localUsers.id, ctx.user.id));
         }

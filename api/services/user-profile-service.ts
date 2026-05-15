@@ -95,6 +95,24 @@ function deepMerge(
   return next;
 }
 
+function isSmartProfileSchemaError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err ?? "");
+  return (
+    message.includes("user_profiles") &&
+    [
+      "basic_info",
+      "financial_info",
+      "lifestyle_info",
+      "onboarding_answers",
+      "ai_inferred_attributes",
+      "preferences",
+      "avatar_id",
+      "profile_version",
+      "last_ai_refresh_at",
+    ].some((column) => message.includes(column))
+  );
+}
+
 export function buildDefaultSmartProfile(
   identity: UserIdentity,
   legacy?: {
@@ -249,21 +267,33 @@ export async function getSmartProfile(
   userType: string
 ): Promise<SmartUserProfile> {
   const { db } = await import("../queries/connection");
-  const [identity, rows] = await Promise.all([
-    getIdentity(userId, userType),
-    db
+  const identity = await getIdentity(userId, userType);
+
+  let row: any | undefined;
+  try {
+    const rows = await db
       .select()
       .from(userProfiles)
       .where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)))
-      .limit(1),
-  ]);
+      .limit(1);
+    row = rows[0];
+  } catch (err) {
+    if (!isSmartProfileSchemaError(err)) throw err;
 
-  const row = rows[0];
-  const profile = buildDefaultSmartProfile(identity, row);
-
-  if (!row) {
-    await saveSmartProfile(userId, userType, profile);
+    const legacyRows = await db
+      .select({
+        monthlyIncome: userProfiles.monthlyIncome,
+        financialGoal: userProfiles.financialGoal,
+        financialPersonality: userProfiles.financialPersonality,
+        profileCompleted: userProfiles.profileCompleted,
+      })
+      .from(userProfiles)
+      .where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)))
+      .limit(1);
+    row = legacyRows[0];
   }
+
+  const profile = buildDefaultSmartProfile(identity, row);
 
   return profile;
 }
@@ -284,31 +314,21 @@ export async function saveSmartProfile(
       ? profile.aiInferredAttributes.financialPersonality
       : profile.legacy.financialPersonality;
 
-  await db
-    .insert(userProfiles)
-    .values({
-      userId,
-      userType,
-      monthlyIncome: monthlyIncome === null ? undefined : monthlyIncome.toString(),
-      financialGoal,
-      financialPersonality,
-      basicInfo: profile.basicInfo,
-      financialInfo: profile.financialInfo,
-      lifestyleInfo: profile.lifestyleInfo,
-      onboardingAnswers: profile.onboardingAnswers,
-      aiInferredAttributes: profile.aiInferredAttributes,
-      preferences: profile.preferences,
-      avatarId: profile.avatarId,
-      profileVersion: SMART_PROFILE_VERSION,
-      profileCompleted: profile.profileCompleted,
-      lastAiRefreshAt: profile.lastAiRefreshAt ?? undefined,
-      lastAskedAt: new Date(),
-    })
-    .onDuplicateKeyUpdate({
-      set: {
-        monthlyIncome: monthlyIncome === null ? undefined : monthlyIncome.toString(),
-        financialGoal,
-        financialPersonality,
+  const legacyValues = {
+    userId,
+    userType,
+    monthlyIncome: monthlyIncome === null ? undefined : monthlyIncome.toString(),
+    financialGoal,
+    financialPersonality,
+    profileCompleted: profile.profileCompleted,
+    lastAskedAt: new Date(),
+  };
+
+  try {
+    await db
+      .insert(userProfiles)
+      .values({
+        ...legacyValues,
         basicInfo: profile.basicInfo,
         financialInfo: profile.financialInfo,
         lifestyleInfo: profile.lifestyleInfo,
@@ -317,11 +337,38 @@ export async function saveSmartProfile(
         preferences: profile.preferences,
         avatarId: profile.avatarId,
         profileVersion: SMART_PROFILE_VERSION,
-        profileCompleted: profile.profileCompleted,
         lastAiRefreshAt: profile.lastAiRefreshAt ?? undefined,
-        lastAskedAt: new Date(),
-      },
-    });
+      })
+      .onDuplicateKeyUpdate({
+        set: {
+          ...legacyValues,
+          basicInfo: profile.basicInfo,
+          financialInfo: profile.financialInfo,
+          lifestyleInfo: profile.lifestyleInfo,
+          onboardingAnswers: profile.onboardingAnswers,
+          aiInferredAttributes: profile.aiInferredAttributes,
+          preferences: profile.preferences,
+          avatarId: profile.avatarId,
+          profileVersion: SMART_PROFILE_VERSION,
+          lastAiRefreshAt: profile.lastAiRefreshAt ?? undefined,
+        },
+      });
+  } catch (err) {
+    if (!isSmartProfileSchemaError(err)) throw err;
+
+    await db
+      .insert(userProfiles)
+      .values(legacyValues)
+      .onDuplicateKeyUpdate({
+        set: {
+          monthlyIncome: monthlyIncome === null ? undefined : monthlyIncome.toString(),
+          financialGoal,
+          financialPersonality,
+          profileCompleted: profile.profileCompleted,
+          lastAskedAt: new Date(),
+        },
+      });
+  }
 }
 
 export async function updateSmartProfile(

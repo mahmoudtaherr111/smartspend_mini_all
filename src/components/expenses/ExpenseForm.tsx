@@ -45,6 +45,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
     onError: (err) => {
       toast.error(err.message || "فشل تحويل الصوت لنص.");
       setIsProcessingVoice(false);
+      setFlowStage("idle");
     }
   });
 
@@ -71,8 +72,8 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
         toast.info("💡 تنبيه مالي", { description: data.alertMessage, duration: 6000 });
       }
     },
-    onError: () => {
-      toast.error("حدث خطأ أثناء تحليل النص.");
+    onError: (err) => {
+      toast.error(err.message || "حدث خطأ أثناء تحليل النص.");
       setIsProcessingVoice(false);
       setIsSkipping(false);
       setFlowStage("idle");
@@ -96,6 +97,9 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
     onSuccess: () => {
       utilsTrpc.expense.invalidate();
       if (onSuccess) onSuccess();
+    },
+    onError: (err) => {
+      toast.error(err.message || "تعذر حفظ العملية. راجع البيانات وحاول مرة أخرى.");
     },
   });
 
@@ -182,23 +186,47 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
   };
 
   // ─── Save Logic ───
-  const saveItems = (items: any[], isAuto: boolean = false) => {
-    items.forEach((item) => {
-      createMutation.mutate({
-        amount: item.amount,
-        type: item.type,
-        category: item.category,
-        subCategory: item.subCategory,
-        description: item.description,
-        rawText: text || "إدخال صوتي",
-        source: isAuto ? "ai_parsed" : "manual",
-      });
-    });
-    setParsedItems(null);
-    setDecision(null);
-    setText("");
-    setFlowStage("idle");
-    toast.success(isAuto ? `تم الحفظ تلقائياً (${items.length} عملية) ✨` : "تم الحفظ بنجاح!");
+  const normalizeType = (type: unknown) => {
+    const value = String(type || "expense");
+    return ["income", "expense", "transfer", "investment"].includes(value) ? value : "expense";
+  };
+
+  const saveItems = async (items: any[], isAuto: boolean = false) => {
+    const normalizedItems = items
+      .map((item) => ({
+        ...item,
+        amount: Number(item.amount),
+        type: normalizeType(item.type),
+      }))
+      .filter((item) => Number.isFinite(item.amount) && item.amount > 0 && item.category);
+
+    if (normalizedItems.length === 0) {
+      toast.error("لا توجد عملية صالحة للحفظ.");
+      return;
+    }
+
+    try {
+      await Promise.all(
+        normalizedItems.map((item) =>
+          createMutation.mutateAsync({
+            amount: item.amount,
+            type: item.type,
+            category: item.category,
+            subCategory: item.subCategory,
+            description: item.description,
+            rawText: text || "إدخال صوتي",
+            source: "ai_parsed",
+          })
+        )
+      );
+      setParsedItems(null);
+      setDecision(null);
+      setText("");
+      setFlowStage("idle");
+      toast.success(isAuto ? `تم الحفظ تلقائياً (${normalizedItems.length} عملية)` : "تم الحفظ بنجاح.");
+    } catch {
+      setFlowStage("review");
+    }
   };
 
   const handleUpdateParsedItem = (index: number, updates: any) => {
@@ -232,6 +260,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
   const getTypeColor = (type: string) => {
     if (type === "income") return "text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800";
     if (type === "transfer") return "text-sky-600 bg-sky-50 border-sky-200 dark:bg-sky-950/30 dark:border-sky-800";
+    if (type === "investment") return "text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800";
     return "text-rose-600 bg-rose-50 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800";
   };
 
@@ -386,9 +415,10 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
                     </div>
                     <Badge className={cn("capitalize",
                       item.type === "income" ? "bg-emerald-500" :
-                        item.type === "transfer" ? "bg-sky-500" : "bg-rose-500"
+                        item.type === "transfer" ? "bg-sky-500" :
+                          item.type === "investment" ? "bg-amber-500" : "bg-rose-500"
                     )}>
-                      {item.type === "income" ? "دخل" : item.type === "transfer" ? "تحويل" : "مصروف"}
+                      {item.type === "income" ? "دخل" : item.type === "transfer" ? "تحويل" : item.type === "investment" ? "استثمار" : "مصروف"}
                     </Badge>
                   </div>
 
@@ -426,7 +456,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={() => saveItems(parsedItems)} className="flex-1 bg-emerald-600 hover:bg-emerald-700 h-11 rounded-xl shadow-lg gap-2">
+              <Button onClick={() => saveItems(parsedItems)} disabled={createMutation.isPending} className="flex-1 bg-emerald-600 hover:bg-emerald-700 h-11 rounded-xl shadow-lg gap-2">
                 <Save className="w-4 h-4" /> تأكيد وحفظ
               </Button>
               <Button onClick={() => setDecision(null)} variant="outline" className="rounded-xl h-11">

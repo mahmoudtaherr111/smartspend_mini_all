@@ -4,12 +4,14 @@ import { db, getDb } from "./queries/connection";
 import { expenses, expenseCategories } from "../db/schema";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 
+const transactionTypeSchema = z.enum(["income", "expense", "transfer", "investment"]);
+
 export const expenseRouter = router({
   create: authedProcedure
     .input(
       z.object({
         amount: z.number().positive(),
-        type: z.enum(["income", "expense"]).default("expense"),
+        type: transactionTypeSchema.default("expense"),
         category: z.string().min(1),
         subCategory: z.string().optional(),
         description: z.string().optional(),
@@ -47,7 +49,7 @@ export const expenseRouter = router({
         startDate: z.string().optional(),
         endDate: z.string().optional(),
         category: z.string().optional(),
-        type: z.enum(["income", "expense"]).optional(),
+        type: transactionTypeSchema.optional(),
         limit: z.number().min(1).max(100).default(50),
         offset: z.number().min(0).default(0),
       }).optional()
@@ -98,7 +100,7 @@ export const expenseRouter = router({
       z.object({
         id: z.number(),
         amount: z.number().positive().optional(),
-        type: z.enum(["income", "expense"]).optional(),
+        type: transactionTypeSchema.optional(),
         category: z.string().optional(),
         description: z.string().optional(),
         rawText: z.string().optional(),
@@ -130,6 +132,41 @@ export const expenseRouter = router({
       const userType = ctx.user!.type;
       await db.delete(expenses).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType)));
       return { success: true };
+    }),
+
+  getMonthSummary: authedProcedure
+    .input(z.object({ month: z.string().regex(/^\d{4}-\d{2}$/) }))
+    .query(async ({ ctx, input }) => {
+      const db = getDb();
+      const userId = ctx.user!.id;
+      const userType = ctx.user!.type;
+
+      const startDate = new Date(input.month + "-01");
+      const endDate = new Date(startDate);
+      endDate.setMonth(endDate.getMonth() + 1);
+
+      const [summary] = await db
+        .select({
+          totalIncome: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'income' THEN ${expenses.amount} ELSE 0 END), 0)`,
+          totalExpense: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'expense' THEN ${expenses.amount} ELSE 0 END), 0)`,
+          totalTransfers: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'transfer' THEN ${expenses.amount} ELSE 0 END), 0)`,
+          totalInvestments: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'investment' THEN ${expenses.amount} ELSE 0 END), 0)`,
+          count: sql`COUNT(*)`,
+        })
+        .from(expenses)
+        .where(and(eq(expenses.userId, userId), eq(expenses.userType, userType), gte(expenses.date, startDate), lte(expenses.date, endDate)));
+
+      const totalIncome = Number(summary?.totalIncome || 0);
+      const totalExpense = Number(summary?.totalExpense || 0);
+
+      return {
+        totalIncome,
+        totalExpense,
+        totalTransfers: Number(summary?.totalTransfers || 0),
+        totalInvestments: Number(summary?.totalInvestments || 0),
+        netFlow: totalIncome - totalExpense,
+        count: Number(summary?.count || 0),
+      };
     }),
 
   getMonthlyStats: authedProcedure
