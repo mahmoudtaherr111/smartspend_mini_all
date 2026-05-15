@@ -4,7 +4,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { 
   LayoutDashboard, 
-  Receipt, 
   BarChart3, 
   Brain, 
   Calendar, 
@@ -13,6 +12,7 @@ import {
   HelpCircle, 
   LogOut,
   Menu,
+  User,
   X,
   ChevronLeft,
   Crown,
@@ -30,7 +30,6 @@ interface SidebarProps {
 
 const menuItems = [
   { icon: LayoutDashboard, label: "الرئيسية", href: "/" },
-  { icon: Receipt, label: "تسجيل مصروف", href: "/?tab=record" },
   { icon: BarChart3, label: "إحصائيات", href: "/?tab=stats" },
   { icon: Brain, label: "تحليل AI", href: "/?tab=ai" },
   { icon: Calendar, label: "التقويم", href: "/?tab=calendar" },
@@ -38,7 +37,7 @@ const menuItems = [
 
 const bottomItems = [
   { icon: HelpCircle, label: "الدعم", href: "/support" },
-  { icon: Settings, label: "الإعدادات", href: "/settings" },
+  { icon: User, label: "الملف الشخصي", href: "/settings" },
 ];
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
@@ -123,7 +122,9 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
         {/* Main Menu */}
         <nav className="flex-1 px-3 py-4 space-y-1">
           {menuItems.map((item) => {
-            const isActive = location.pathname === item.href || location.search.includes(item.href.split("?")[1] || "");
+            const tab = new URLSearchParams(location.search).get("tab") || "record";
+            const targetTab = new URLSearchParams(item.href.split("?")[1] || "").get("tab") || "record";
+            const isActive = location.pathname === "/" && tab === targetTab;
             const Icon = item.icon;
 
             return (

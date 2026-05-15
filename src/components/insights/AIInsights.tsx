@@ -143,45 +143,52 @@ export function AIInsights({ month }: AIInsightsProps) {
                 )}
 
                 {/* Data Table replaced by Smart Visual Cards */}
-                {parsed.data_table && parsed.data_table.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                    {parsed.data_table.map((row: any, i: number) => (
-                      <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
-                        <div className="flex flex-col gap-1">
-                          <span className="font-bold text-sm">{row.category}</span>
-                          <span className="text-xs text-muted-foreground">{row.change || "-"}</span>
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                          <span className="font-bold text-emerald-600 dark:text-emerald-400">{Number(row.amount).toLocaleString()} ج.م</span>
-                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800">{row.percent}%</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {/* Removing the data_table squares as requested by user to focus on deep analysis */}
 
-                {parsed.personalization && (
+                {parsed.personalization && (() => {
+                  const labelFor = (value: unknown, fallback = "-") => {
+                    if (!value) return fallback;
+                    const map: Record<string, string> = {
+                      stable: "مستقر",
+                      watch: "يحتاج متابعة",
+                      pressure: "ضغط مالي",
+                      planned: "مخطط",
+                      spiky: "صرف فجائي",
+                      emotional: "صرف عاطفي",
+                      concentrated: "متركز",
+                      balanced: "متوازن",
+                      impulsive: "مندفع",
+                      conservative: "محافظ",
+                      stressed: "مضغوط",
+                      trending_up: "في زيادة",
+                      trending_down_or_flat: "مستقر أو في انخفاض",
+                    };
+                    return map[String(value)] || String(value);
+                  };
+
+                  return (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="rounded-lg border bg-white dark:bg-slate-900 p-3">
                       <p className="text-xs text-muted-foreground mb-1">الاستقرار</p>
                       <p className="font-semibold text-sm">
-                        {parsed.personalization.behavioral_summary?.financial_stability || "-"}
+                        {labelFor(parsed.personalization.behavioral_summary?.financial_stability)}
                       </p>
                     </div>
                     <div className="rounded-lg border bg-white dark:bg-slate-900 p-3">
                       <p className="text-xs text-muted-foreground mb-1">السلوك</p>
                       <p className="font-semibold text-sm">
-                        {parsed.personalization.behavioral_summary?.spending_behavior || "-"}
+                        {labelFor(parsed.personalization.behavioral_summary?.spending_behavior)}
                       </p>
                     </div>
                     <div className="rounded-lg border bg-white dark:bg-slate-900 p-3">
                       <p className="text-xs text-muted-foreground mb-1">الاتجاه</p>
                       <p className="font-semibold text-sm">
-                        {parsed.personalization.comparative_analysis?.trend || "-"}
+                        {labelFor(parsed.personalization.comparative_analysis?.trend)}
                       </p>
                     </div>
                   </div>
-                )}
+                  );
+                })()}
 
                 {parsed.personalization?.saving_opportunities?.length > 0 && (
                   <div className="space-y-2">

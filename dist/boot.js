@@ -41550,6 +41550,8 @@ var init_schema2 = __esm({
       phone: varchar("phone", { length: 20 }).notNull().unique(),
       password: varchar("password", { length: 255 }).notNull(),
       email: varchar("email", { length: 255 }),
+      avatar: varchar("avatar", { length: 500 }),
+      // Added for profile pictures
       role: varchar("role", { length: 50 }).notNull().default("user"),
       plan: varchar("plan", { length: 50 }).notNull().default("free"),
       // free | pro | ultra
@@ -41955,6 +41957,9 @@ var init_env = __esm({
       NODE_ENV: external_exports.enum(["development", "production"]).default("development"),
       PORT: external_exports.string().default("3000"),
       APP_URL: external_exports.string().default("http://localhost:5173"),
+      // FRONTEND_URL: when frontend is deployed separately (e.g. https://app.smartspend.app)
+      // If not set, falls back to APP_URL for backward-compat monorepo mode
+      FRONTEND_URL: external_exports.string().optional(),
       // Owner
       OWNER_EMAIL: external_exports.string().optional()
     });
@@ -82761,11 +82766,12 @@ init_zod();
 init_connection();
 init_schema2();
 init_drizzle_orm();
+var transactionTypeSchema = external_exports.enum(["income", "expense", "transfer", "investment"]);
 var expenseRouter = router({
   create: authedProcedure.input(
     external_exports.object({
       amount: external_exports.number().positive(),
-      type: external_exports.enum(["income", "expense"]).default("expense"),
+      type: transactionTypeSchema.default("expense"),
       category: external_exports.string().min(1),
       subCategory: external_exports.string().optional(),
       description: external_exports.string().optional(),
@@ -82797,7 +82803,7 @@ var expenseRouter = router({
       startDate: external_exports.string().optional(),
       endDate: external_exports.string().optional(),
       category: external_exports.string().optional(),
-      type: external_exports.enum(["income", "expense"]).optional(),
+      type: transactionTypeSchema.optional(),
       limit: external_exports.number().min(1).max(100).default(50),
       offset: external_exports.number().min(0).default(0)
     }).optional()
@@ -82825,7 +82831,7 @@ var expenseRouter = router({
     external_exports.object({
       id: external_exports.number(),
       amount: external_exports.number().positive().optional(),
-      type: external_exports.enum(["income", "expense"]).optional(),
+      type: transactionTypeSchema.optional(),
       category: external_exports.string().optional(),
       description: external_exports.string().optional(),
       rawText: external_exports.string().optional(),
@@ -82851,6 +82857,31 @@ var expenseRouter = router({
     const userType = ctx.user.type;
     await db3.delete(expenses).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType)));
     return { success: true };
+  }),
+  getMonthSummary: authedProcedure.input(external_exports.object({ month: external_exports.string().regex(/^\d{4}-\d{2}$/) })).query(async ({ ctx, input }) => {
+    const db3 = getDb();
+    const userId = ctx.user.id;
+    const userType = ctx.user.type;
+    const startDate = /* @__PURE__ */ new Date(input.month + "-01");
+    const endDate = new Date(startDate);
+    endDate.setMonth(endDate.getMonth() + 1);
+    const [summary] = await db3.select({
+      totalIncome: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'income' THEN ${expenses.amount} ELSE 0 END), 0)`,
+      totalExpense: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'expense' THEN ${expenses.amount} ELSE 0 END), 0)`,
+      totalTransfers: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'transfer' THEN ${expenses.amount} ELSE 0 END), 0)`,
+      totalInvestments: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'investment' THEN ${expenses.amount} ELSE 0 END), 0)`,
+      count: sql`COUNT(*)`
+    }).from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType), gte(expenses.date, startDate), lte(expenses.date, endDate)));
+    const totalIncome = Number(summary?.totalIncome || 0);
+    const totalExpense = Number(summary?.totalExpense || 0);
+    return {
+      totalIncome,
+      totalExpense,
+      totalTransfers: Number(summary?.totalTransfers || 0),
+      totalInvestments: Number(summary?.totalInvestments || 0),
+      netFlow: totalIncome - totalExpense,
+      count: Number(summary?.count || 0)
+    };
   }),
   getMonthlyStats: authedProcedure.input(external_exports.object({ month: external_exports.string() })).query(async ({ ctx, input }) => {
     const db3 = getDb();
@@ -86278,6 +86309,20 @@ function deepMerge(base, patch) {
   }
   return next;
 }
+function isSmartProfileSchemaError(err) {
+  const message = err instanceof Error ? err.message : String(err ?? "");
+  return message.includes("user_profiles") && [
+    "basic_info",
+    "financial_info",
+    "lifestyle_info",
+    "onboarding_answers",
+    "ai_inferred_attributes",
+    "preferences",
+    "avatar_id",
+    "profile_version",
+    "last_ai_refresh_at"
+  ].some((column) => message.includes(column));
+}
 function buildDefaultSmartProfile(identity2, legacy) {
   const monthlyIncome = toNumber(legacy?.monthlyIncome);
   const financialGoal = legacy?.financialGoal ?? null;
@@ -86395,15 +86440,22 @@ async function getIdentity(userId, userType) {
 }
 async function getSmartProfile(userId, userType) {
   const { db: db3 } = await Promise.resolve().then(() => (init_connection(), connection_exports));
-  const [identity2, rows] = await Promise.all([
-    getIdentity(userId, userType),
-    db3.select().from(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType))).limit(1)
-  ]);
-  const row = rows[0];
-  const profile = buildDefaultSmartProfile(identity2, row);
-  if (!row) {
-    await saveSmartProfile(userId, userType, profile);
+  const identity2 = await getIdentity(userId, userType);
+  let row;
+  try {
+    const rows = await db3.select().from(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType))).limit(1);
+    row = rows[0];
+  } catch (err) {
+    if (!isSmartProfileSchemaError(err)) throw err;
+    const legacyRows = await db3.select({
+      monthlyIncome: userProfiles.monthlyIncome,
+      financialGoal: userProfiles.financialGoal,
+      financialPersonality: userProfiles.financialPersonality,
+      profileCompleted: userProfiles.profileCompleted
+    }).from(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType))).limit(1);
+    row = legacyRows[0];
   }
+  const profile = buildDefaultSmartProfile(identity2, row);
   return profile;
 }
 async function saveSmartProfile(userId, userType, profile) {
@@ -86411,28 +86463,18 @@ async function saveSmartProfile(userId, userType, profile) {
   const monthlyIncome = toNumber(profile.financialInfo.averageMonthlyIncome);
   const financialGoal = typeof profile.financialInfo.primaryGoal === "string" ? profile.financialInfo.primaryGoal : profile.legacy.financialGoal;
   const financialPersonality = typeof profile.aiInferredAttributes.financialPersonality === "string" ? profile.aiInferredAttributes.financialPersonality : profile.legacy.financialPersonality;
-  await db3.insert(userProfiles).values({
+  const legacyValues = {
     userId,
     userType,
     monthlyIncome: monthlyIncome === null ? void 0 : monthlyIncome.toString(),
     financialGoal,
     financialPersonality,
-    basicInfo: profile.basicInfo,
-    financialInfo: profile.financialInfo,
-    lifestyleInfo: profile.lifestyleInfo,
-    onboardingAnswers: profile.onboardingAnswers,
-    aiInferredAttributes: profile.aiInferredAttributes,
-    preferences: profile.preferences,
-    avatarId: profile.avatarId,
-    profileVersion: SMART_PROFILE_VERSION,
     profileCompleted: profile.profileCompleted,
-    lastAiRefreshAt: profile.lastAiRefreshAt ?? void 0,
     lastAskedAt: /* @__PURE__ */ new Date()
-  }).onDuplicateKeyUpdate({
-    set: {
-      monthlyIncome: monthlyIncome === null ? void 0 : monthlyIncome.toString(),
-      financialGoal,
-      financialPersonality,
+  };
+  try {
+    await db3.insert(userProfiles).values({
+      ...legacyValues,
       basicInfo: profile.basicInfo,
       financialInfo: profile.financialInfo,
       lifestyleInfo: profile.lifestyleInfo,
@@ -86441,11 +86483,33 @@ async function saveSmartProfile(userId, userType, profile) {
       preferences: profile.preferences,
       avatarId: profile.avatarId,
       profileVersion: SMART_PROFILE_VERSION,
-      profileCompleted: profile.profileCompleted,
-      lastAiRefreshAt: profile.lastAiRefreshAt ?? void 0,
-      lastAskedAt: /* @__PURE__ */ new Date()
-    }
-  });
+      lastAiRefreshAt: profile.lastAiRefreshAt ?? void 0
+    }).onDuplicateKeyUpdate({
+      set: {
+        ...legacyValues,
+        basicInfo: profile.basicInfo,
+        financialInfo: profile.financialInfo,
+        lifestyleInfo: profile.lifestyleInfo,
+        onboardingAnswers: profile.onboardingAnswers,
+        aiInferredAttributes: profile.aiInferredAttributes,
+        preferences: profile.preferences,
+        avatarId: profile.avatarId,
+        profileVersion: SMART_PROFILE_VERSION,
+        lastAiRefreshAt: profile.lastAiRefreshAt ?? void 0
+      }
+    });
+  } catch (err) {
+    if (!isSmartProfileSchemaError(err)) throw err;
+    await db3.insert(userProfiles).values(legacyValues).onDuplicateKeyUpdate({
+      set: {
+        monthlyIncome: monthlyIncome === null ? void 0 : monthlyIncome.toString(),
+        financialGoal,
+        financialPersonality,
+        profileCompleted: profile.profileCompleted,
+        lastAskedAt: /* @__PURE__ */ new Date()
+      }
+    });
+  }
 }
 async function updateSmartProfile(userId, userType, patch) {
   const current = await getSmartProfile(userId, userType);
@@ -86611,20 +86675,20 @@ function buildBackendPersonalizedInsights(profile, snapshot) {
   const topCategory = snapshot.topCategories[0];
   const stability = String(snapshot.inferredAttributes.financialStability || "unknown");
   if (topCategory && topCategory.percent > 50) {
-    alerts.push(`High concentration in ${topCategory.name}: ${topCategory.percent}% of monthly spend.`);
+    alerts.push(`\u062A\u0631\u0643\u064A\u0632 \u0639\u0627\u0644\u064A \u062C\u062F\u0627\u064B \u0641\u064A \u0627\u0644\u0635\u0631\u0641 \u0639\u0644\u0649 \u0641\u0626\u0629 (${topCategory.name}) \u0628\u0646\u0633\u0628\u0629 ${topCategory.percent}% \u0645\u0646 \u0625\u062C\u0645\u0627\u0644\u064A \u0645\u0635\u0627\u0631\u064A\u0641\u0643.`);
   }
   if (snapshot.behaviorFlags.hasSpikeSpending) {
-    alerts.push("Spike spending detected this month.");
+    alerts.push("\u0641\u064A \u0637\u0641\u0631\u0627\u062A \u0645\u0641\u0627\u062C\u0626\u0629 \u0641\u064A \u0627\u0644\u0635\u0631\u0641 \u0627\u0644\u0634\u0647\u0631 \u062F\u0647.");
   }
   if (stability === "pressure") {
-    alerts.push("Expense-to-income pressure is high this month.");
+    alerts.push("\u0641\u064A \u0636\u063A\u0637 \u0645\u0627\u0644\u064A \u0648\u0627\u0636\u062D \u0627\u0644\u0634\u0647\u0631 \u062F\u0647 \u0645\u0642\u0627\u0631\u0646\u0629 \u0628\u062F\u062E\u0644\u0643.");
   }
   for (const sub of snapshot.topSubCategories.slice(0, 3)) {
     if (sub.percent >= 10) {
-      savingOpportunities.push(`Review ${sub.name}; it represents ${sub.percent}% of spending.`);
+      savingOpportunities.push(`\u0631\u0627\u062C\u0639 \u0645\u0635\u0627\u0631\u064A\u0641\u0643 \u0641\u064A "${sub.name}" (\u0628\u062A\u0645\u062B\u0644 ${sub.percent}% \u0645\u0646 \u0627\u0644\u0635\u0631\u0641). \u0645\u0645\u0643\u0646 \u062A\u0642\u0644\u0644 \u0645\u0646\u0647\u0627 \u0634\u0648\u064A\u0629.`);
     }
   }
-  const familyContext = profile.lifestyleInfo.hasChildren === true ? "Family/children costs should be separated from discretionary spending." : "Lifestyle spending can be reviewed without family-cost assumptions.";
+  const familyContext = profile.lifestyleInfo.hasChildren === true ? "\u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u0623\u0648\u0644\u0627\u062F \u0648\u0627\u0644\u0623\u0633\u0631\u0629 \u0648\u0627\u062E\u062F\u0629 \u062C\u0632\u0621 \u0645\u0646 \u0627\u0644\u0645\u064A\u0632\u0627\u0646\u064A\u0629\u060C \u062D\u0627\u0648\u0644 \u062A\u0641\u0635\u0644 \u0645\u0635\u0627\u0631\u064A\u0641\u0643 \u0627\u0644\u0634\u062E\u0635\u064A\u0629 \u0639\u0634\u0627\u0646 \u062A\u0642\u062F\u0631 \u062A\u062A\u0627\u0628\u0639\u0647\u0627." : "\u0645\u0635\u0627\u0631\u064A\u0641\u0643 \u0627\u0644\u0634\u062E\u0635\u064A\u0629 \u0647\u064A \u0627\u0644\u0645\u062A\u062D\u0643\u0645 \u0627\u0644\u0623\u0643\u0628\u0631 \u0641\u064A \u0627\u0644\u0645\u064A\u0632\u0627\u0646\u064A\u0629.";
   return {
     behavioral_summary: {
       financial_stability: stability,
@@ -86673,6 +86737,9 @@ async function getVoiceSecondsSince(userId, userType, cycleStart) {
     }
     throw err;
   }
+}
+function planValue(values, plan, fallback) {
+  return Object.prototype.hasOwnProperty.call(values, plan) ? values[plan] : fallback;
 }
 async function getAiClient(taskType, userPlan = "free") {
   const settings = await db.select().from(systemSettings);
@@ -86747,13 +86814,20 @@ var aiRouter = router({
     let maxPerRequest = 512;
     try {
       const client = await getAiClient("parse", ctx.user.plan);
+      if (!client.canUseParse) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "\u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0631\u0633\u0627\u0626\u0644 \u0628\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u0641\u064A \u062E\u0637\u062A\u0643 \u0627\u0644\u062D\u0627\u0644\u064A\u0629."
+        });
+      }
       dailyLimit = client.dailyLimit;
       tokenLimit = client.tokenLimit;
       apiKey = client.apiKey;
       apiKey2 = client.apiKey2;
       modelName = client.modelName;
       maxPerRequest = client.maxPerRequest;
-    } catch {
+    } catch (error48) {
+      if (error48 instanceof TRPCError) throw error48;
     }
     if ((todayUsage[0]?.count ?? 0) >= dailyLimit) {
       const upgradeTo = ctx.user.plan === "free" ? "\u0628\u0631\u0648" : "\u0623\u0644\u062A\u0631\u0627";
@@ -86885,14 +86959,14 @@ var aiRouter = router({
       }
     }
     const usedVoiceSeconds = await getVoiceSecondsSince(ctx.user.id, ctx.user.type, cycleStart);
-    const voiceLimit = voiceLimits[ctx.user.plan] || 300;
+    const voiceLimit = planValue(voiceLimits, ctx.user.plan, 300);
     return {
       voice: {
         limit: voiceLimit,
         used: usedVoiceSeconds,
         remaining: voiceLimit > 0 ? Math.max(0, voiceLimit - usedVoiceSeconds) : -1,
         resetDate: new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, cycleStart.getDate()).toISOString(),
-        maxPerRequest: voicePerReq[ctx.user.plan] || 60
+        maxPerRequest: planValue(voicePerReq, ctx.user.plan, 60)
       }
     };
   }),
@@ -86935,11 +87009,29 @@ var aiRouter = router({
       ultra: parseInt(cfg.voice_limit_ultra || "0")
       // unlimited
     };
-    const limit = voiceLimits[ctx.user.plan] || 300;
+    const voicePerReq = {
+      free: parseInt(cfg.voice_per_req_free || "60"),
+      pro: parseInt(cfg.voice_per_req_pro || "180"),
+      ultra: parseInt(cfg.voice_per_req_ultra || "300")
+    };
+    const limit = planValue(voiceLimits, ctx.user.plan, 300);
+    const maxPerRequest = planValue(voicePerReq, ctx.user.plan, 60);
+    if (input.durationSeconds > maxPerRequest) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: `\u0645\u062F\u0629 \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0648\u0627\u062D\u062F \u0644\u0627 \u064A\u0645\u0643\u0646 \u0623\u0646 \u062A\u062A\u062C\u0627\u0648\u0632 ${maxPerRequest} \u062B\u0627\u0646\u064A\u0629 \u0641\u064A \u062E\u0637\u062A\u0643 \u0627\u0644\u062D\u0627\u0644\u064A\u0629.`
+      });
+    }
     if (limit > 0 && usedSeconds >= limit) {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: `\u0648\u0642\u062A \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0635\u0648\u062A\u064A \u062E\u0644\u0635 (${Math.floor(limit / 60)} \u062F\u0642\u064A\u0642\u0629/\u0634\u0647\u0631). \u062D\u062F\u062B \u0644\u0644\u0628\u0631\u0648 \u0644\u0644\u0645\u0632\u064A\u062F!`
+      });
+    }
+    if (limit > 0 && usedSeconds + input.durationSeconds > limit) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: `\u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u064A\u062A\u062C\u0627\u0648\u0632 \u0627\u0644\u0645\u062A\u0628\u0642\u064A \u0644\u0643 \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631. \u0627\u0644\u0645\u062A\u0627\u062D \u0627\u0644\u0622\u0646 ${Math.max(0, limit - usedSeconds)} \u062B\u0627\u0646\u064A\u0629.`
       });
     }
     let apiKey = cfg.ai_api_key || env.GEMINI_API_KEY;
@@ -87130,6 +87222,12 @@ ${reportPersonalizationContext}`;
     let aiFocus = "balanced";
     try {
       const client = await getAiClient("report", ctx.user.plan);
+      if (!client.canUseAnalysis) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "\u0627\u0644\u062A\u062D\u0644\u064A\u0644\u0627\u062A \u0627\u0644\u0634\u0647\u0631\u064A\u0629 \u0628\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u0641\u064A \u062E\u0637\u062A\u0643 \u0627\u0644\u062D\u0627\u0644\u064A\u0629."
+        });
+      }
       aiModel = client.aiModel;
       modelName = client.modelName;
       const settings = await db.select().from(systemSettings);
@@ -87139,12 +87237,13 @@ ${reportPersonalizationContext}`;
       });
       const tokenField = ctx.user.type === "oauth" ? await db.select({ t: users.aiTokensUsed }).from(users).where(eq(users.id, ctx.user.id)) : await db.select({ t: localUsers.aiTokensUsed }).from(localUsers).where(eq(localUsers.id, ctx.user.id));
       const usedTokens = tokenField[0]?.t || 0;
-      const limit = ctx.user.plan === "pro" ? client.proTokenLimit : client.freeTokenLimit;
+      const limit = client.tokenLimit;
       if (usedTokens >= limit) {
         aiModel = null;
         modelName = "backend";
       }
     } catch (e) {
+      if (e instanceof TRPCError) throw e;
     }
     let responseJson;
     if (aiModel) {
@@ -87157,29 +87256,30 @@ ${reportPersonalizationContext}`;
         if (aiFocus === "statistics") focusInstruction = "\u0631\u0643\u0632 \u0628\u0634\u0643\u0644 \u0643\u0627\u0645\u0644 \u0639\u0644\u0649 \u0627\u0644\u0623\u0631\u0642\u0627\u0645\u060C \u0627\u0644\u0646\u0633\u0628 \u0627\u0644\u0645\u0626\u0648\u064A\u0629\u060C \u0648\u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0627\u062A \u0627\u0644\u0625\u062D\u0635\u0627\u0626\u064A\u0629 \u0627\u0644\u062F\u0642\u064A\u0642\u0629\u060C \u0648\u0627\u0644\u0645\u0624\u0634\u0631\u0627\u062A \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0645\u062B\u0644 \u0645\u0639\u062F\u0644 \u0627\u0644\u062D\u0631\u0642 \u0627\u0644\u0645\u0627\u0644\u064A \u0648\u0627\u0644\u0627\u062F\u062E\u0627\u0631.";
         if (aiFocus === "tips") focusInstruction = "\u0631\u0643\u0632 \u0628\u0634\u0643\u0644 \u0643\u0628\u064A\u0631 \u0639\u0644\u0649 \u062A\u0642\u062F\u064A\u0645 \u062A\u0648\u0635\u064A\u0627\u062A \u0627\u0633\u062A\u0631\u0627\u062A\u064A\u062C\u064A\u0629 \u0648\u062D\u0644\u0648\u0644 \u0639\u0645\u0644\u064A\u0629 \u0644\u0625\u0639\u0627\u062F\u0629 \u0647\u064A\u0643\u0644\u0629 \u0627\u0644\u0645\u064A\u0632\u0627\u0646\u064A\u0629 \u0648\u062A\u062D\u0633\u064A\u0646 \u0643\u0641\u0627\u0621\u0629 \u0627\u0644\u0625\u0646\u0641\u0627\u0642.";
         if (aiFocus === "patterns") focusInstruction = "\u0631\u0643\u0632 \u0639\u0644\u0649 \u0627\u0643\u062A\u0634\u0627\u0641 \u0627\u0644\u0623\u0646\u0645\u0627\u0637 \u0627\u0644\u0633\u0644\u0648\u0643\u064A\u0629\u060C \u0648\u062A\u0641\u0633\u064A\u0631 \u062A\u0648\u062C\u0647\u0627\u062A \u0627\u0644\u0625\u0646\u0641\u0627\u0642 (Spending Trends)\u060C \u0648\u062A\u0642\u064A\u064A\u0645 \u0627\u0644\u0633\u0644\u0648\u0643 \u0627\u0644\u0645\u0627\u0644\u064A \u0639\u0644\u0649 \u0627\u0644\u0645\u062F\u0649 \u0627\u0644\u0637\u0648\u064A\u0644.";
-        const prompt = `\u0623\u0646\u062A "\u0645\u062D\u0644\u0644 \u0645\u0627\u0644\u064A \u062E\u0628\u064A\u0631" (Expert Financial Analyst) \u062A\u0639\u0645\u0644 \u0641\u064A \u0646\u0638\u0627\u0645 \u0630\u0643\u0627\u0621 \u0623\u0639\u0645\u0627\u0644 \u0645\u0624\u0633\u0633\u064A (Enterprise Financial Platform).
-\u0627\u0644\u0645\u0637\u0644\u0648\u0628 \u0645\u0646\u0643 \u062A\u062D\u0644\u064A\u0644 \u0647\u0630\u0647 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0644\u0644\u0645\u0633\u062A\u062E\u062F\u0645\u060C \u0648\u062A\u0642\u062F\u064A\u0645 \u062A\u0642\u0631\u064A\u0631 \u0627\u0633\u062A\u0634\u0627\u0631\u064A \u0639\u0627\u0644\u064A \u0627\u0644\u0645\u0633\u062A\u0648\u0649 \u0628\u0627\u0644\u0644\u063A\u0629 \u0627\u0644\u0639\u0631\u0628\u064A\u0629 \u0627\u0644\u0641\u0635\u062D\u0649 \u0627\u0644\u0645\u0639\u0627\u0635\u0631\u0629 (\u0644\u063A\u0629 \u0627\u0644\u0623\u0639\u0645\u0627\u0644 \u0648\u0627\u0644\u0623\u0645\u0648\u0627\u0644). \u0644\u0627 \u062A\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0639\u0627\u0645\u064A\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629.
+        const prompt = `\u0623\u0646\u062A "\u0627\u0644\u0645\u0633\u062A\u0634\u0627\u0631 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0630\u0643\u064A \u0627\u0644\u0623\u0642\u062F\u0645" (Senior AI Financial Advisor) \u0644\u0640 SmartSpend.
+\u0627\u0644\u0645\u0637\u0644\u0648\u0628 \u0645\u0646\u0643 \u0647\u0648 \u0635\u064A\u0627\u063A\u0629 \u062A\u0642\u0631\u064A\u0631 \u0627\u0633\u062A\u0634\u0627\u0631\u064A \u0645\u0627\u0644\u064A "\u0639\u0645\u064A\u0642 \u062C\u062F\u0627\u064B \u0648\u0634\u0627\u0645\u0644" \u0644\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0646\u0627\u0621\u064B \u0639\u0644\u0649 \u0628\u064A\u0627\u0646\u0627\u062A\u0647 \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0627\u0644\u0645\u0631\u0641\u0642\u0629.
 
-\u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0625\u062D\u0635\u0627\u0626\u064A\u0629:
+\u0627\u0644\u0647\u062F\u0641: \u062A\u062D\u0648\u064A\u0644 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u062C\u0627\u0641\u0629 \u0625\u0644\u0649 "\u0631\u0624\u064A\u0629 \u0627\u0633\u062A\u0631\u0627\u062A\u064A\u062C\u064A\u0629" \u062A\u0633\u0627\u0639\u062F \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0639\u0644\u0649 \u0641\u0647\u0645 \u0633\u0644\u0648\u0643\u0647 \u0627\u0644\u0645\u0627\u0644\u064A \u0648\u062A\u0637\u0648\u064A\u0631\u0647.
+
+\u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0625\u062D\u0635\u0627\u0626\u064A\u0629 \u0648\u0627\u0644\u0633\u064A\u0627\u0642\u064A\u0629 \u0644\u0644\u0645\u0633\u062A\u062E\u062F\u0645:
 ${personalizedSummaryForAI}
 
-\u0625\u0631\u0634\u0627\u062F\u0627\u062A \u0627\u0644\u062A\u0642\u0631\u064A\u0631:
-- \u0627\u0644\u0637\u0648\u0644 \u0648\u0627\u0644\u0639\u0645\u0642: ${lengthInstruction}
-- \u0627\u0644\u062A\u0631\u0643\u064A\u0632 \u0627\u0644\u0623\u0633\u0627\u0633\u064A: ${focusInstruction}
+\u0625\u0631\u0634\u0627\u062F\u0627\u062A \u0635\u064A\u0627\u063A\u0629 \u0627\u0644\u062A\u0642\u0631\u064A\u0631:
+1. \u0627\u0644\u0644\u063A\u0629: \u0627\u0633\u062A\u062E\u062F\u0645 \u0644\u063A\u0629 \u0639\u0631\u0628\u064A\u0629 \u0641\u0635\u062D\u0649 \u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629 (\u0644\u063A\u0629 \u0627\u0644\u0645\u0627\u0644 \u0648\u0627\u0644\u0623\u0639\u0645\u0627\u0644). \u0644\u0627 \u062A\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0639\u0627\u0645\u064A\u0629.
+2. \u0627\u0644\u0637\u0648\u0644 \u0648\u0627\u0644\u0639\u0645\u0642: ${lengthInstruction} (\u0646\u0631\u064A\u062F \u062A\u0642\u0631\u064A\u0631\u0627\u064B \u063A\u0646\u064A\u0627\u064B \u0628\u0627\u0644\u062A\u0641\u0627\u0635\u064A\u0644\u060C \u0644\u0627 \u064A\u0643\u062A\u0641\u064A \u0628\u0630\u0643\u0631 \u0645\u0627 \u062D\u062F\u062B \u0628\u0644 \u064A\u062D\u0644\u0644 "\u0644\u0645\u0627\u0630\u0627" \u062D\u062F\u062B \u0648\u0645\u0627 \u0647\u0648 "\u0627\u0644\u0623\u062B\u0631 \u0627\u0644\u0645\u062A\u0648\u0642\u0639").
+3. \u0627\u0644\u062A\u0631\u0643\u064A\u0632: ${focusInstruction}.
+4. \u0627\u0644\u0630\u0627\u0643\u0631\u0629 \u0627\u0644\u0630\u0643\u064A\u0629: \u0627\u062F\u0645\u062C \u0645\u0639\u0644\u0648\u0645\u0627\u062A "\u0630\u0627\u0643\u0631\u0629 \u0627\u0644\u0623\u0646\u0645\u0627\u0637" \u0648"\u0627\u0644\u062A\u0648\u0642\u0639\u0627\u062A \u0627\u0644\u0645\u0633\u062A\u0642\u0628\u0644\u064A\u0629" \u0648"\u0627\u0644\u0641\u0648\u0627\u062A\u064A\u0631 \u0627\u0644\u0645\u062A\u0648\u0642\u0639\u0629" \u0641\u064A \u0633\u064A\u0627\u0642 \u0633\u0631\u062F\u064A \u0627\u062D\u062A\u0631\u0627\u0641\u064A \u0643\u0623\u0646\u0643 \u062A\u062A\u0630\u0643\u0631 \u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0645\u0627\u0644\u064A.
+5. \u0627\u0644\u0647\u064A\u0643\u0644: \u0642\u0633\u0645 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0625\u0644\u0649 \u0641\u0642\u0631\u0627\u062A: (\u0646\u0638\u0631\u0629 \u0639\u0627\u0645\u0629 \u0639\u0644\u0649 \u0627\u0644\u0623\u062F\u0627\u0621 - \u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0633\u0644\u0648\u0643 \u0627\u0644\u0627\u0633\u062A\u0647\u0644\u0627\u0643\u064A - \u0646\u0642\u0627\u0637 \u0627\u0644\u0642\u0648\u0629 \u0648\u0627\u0644\u0636\u0639\u0641 - \u0627\u0633\u062A\u0631\u0627\u062A\u064A\u062C\u064A\u0629 \u0627\u0644\u062A\u0648\u0641\u064A\u0631 \u0627\u0644\u0645\u0642\u062A\u0631\u062D\u0629 - \u0646\u0638\u0631\u0629 \u0645\u0633\u062A\u0642\u0628\u0644\u064A\u0629).
 
-\u0635\u064A\u063A\u0629 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629 (\u064A\u062C\u0628 \u0623\u0646 \u062A\u0631\u062F \u0628\u0640 JSON \u0641\u0642\u0637 \u0628\u062F\u0648\u0646 \u0623\u064A \u0646\u0635\u0648\u0635 \u062E\u0627\u0631\u062C\u064A\u0629):
+\u0635\u064A\u063A\u0629 \u0627\u0644\u0631\u062F (JSON \u0641\u0642\u0637):
 {
-  "response_text": "\u0646\u0635 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0647\u0646\u0627. \u064A\u062C\u0628 \u0623\u0646 \u064A\u0643\u0648\u0646 \u0628\u0623\u0633\u0644\u0648\u0628 \u0645\u0624\u0633\u0633\u064A \u0645\u062D\u062A\u0631\u0641. \u0627\u0633\u062A\u062E\u062F\u0645 \u0645\u0635\u0637\u0644\u062D\u0627\u062A \u0645\u062B\u0644: \u062A\u0634\u064A\u0631 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0625\u0644\u0649\u060C \u062A\u0645\u0631\u0643\u0632 \u0627\u0644\u0625\u0646\u0641\u0627\u0642\u060C \u0645\u0639\u062F\u0644\u0627\u062A \u0627\u0644\u0646\u0645\u0648\u060C \u0645\u0631\u0648\u0646\u0629 \u0627\u0644\u0645\u064A\u0632\u0627\u0646\u064A\u0629\u060C \u0627\u0644\u0647\u064A\u0643\u0644\u0629 \u0627\u0644\u0645\u0627\u0644\u064A\u0629. \u0642\u0633\u0645 \u0627\u0644\u0646\u0635 \u0644\u0641\u0642\u0631\u0627\u062A \u0645\u0631\u064A\u062D\u0629 \u0628\u0635\u0631\u064A\u0627\u064B.",
-  "alerts": ["\u062A\u0646\u0628\u064A\u0647 \u0645\u0627\u0644\u064A \u0645\u062D\u062A\u0631\u0641 1", "\u062A\u0646\u0628\u064A\u0647 \u0645\u0627\u0644\u064A \u0645\u062D\u062A\u0631\u0641 2"],
+  "response_text": "\u0647\u0646\u0627 \u064A\u0643\u062A\u0628 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0643\u0627\u0645\u0644. \u0627\u0628\u062F\u0623 \u0628\u062A\u0631\u062D\u064A\u0628 \u0645\u0647\u0646\u064A. \u062D\u0644\u0644 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0628\u0639\u0645\u0642 (\u0645\u062B\u0644\u0627\u064B: \u0646\u0644\u0627\u062D\u0638 \u062A\u0645\u0631\u0643\u0632\u0627\u064B \u0641\u064A \u0628\u0646\u062F \u0627\u0644\u0631\u0641\u0627\u0647\u064A\u0627\u062A \u0645\u0645\u0627 \u0642\u062F \u064A\u0636\u063A\u0637 \u0639\u0644\u0649 \u0627\u0644\u0633\u064A\u0648\u0644\u0629 \u0641\u064A \u0646\u0647\u0627\u064A\u0629 \u0627\u0644\u0634\u0647\u0631). \u0627\u0633\u062A\u062E\u062F\u0645 \u0645\u0635\u0637\u0644\u062D\u0627\u062A \u0645\u062B\u0644: \u0627\u0644\u062A\u062F\u0641\u0642 \u0627\u0644\u0646\u0642\u062F\u064A\u060C \u0627\u0644\u0645\u0644\u0627\u0621\u0629 \u0627\u0644\u0645\u0627\u0644\u064A\u0629\u060C \u0643\u0641\u0627\u0621\u0629 \u0627\u0644\u0625\u0646\u0641\u0627\u0642\u060C \u0627\u0644\u0645\u0631\u0648\u0646\u0629 \u0627\u0644\u0645\u0627\u0644\u064A\u0629\u060C \u0625\u0639\u0627\u062F\u0629 \u0627\u0644\u062A\u062E\u0635\u064A\u0635 \u0627\u0644\u0627\u0633\u062A\u0631\u0627\u062A\u064A\u062C\u064A.",
+  "alerts": ["\u062A\u0646\u0628\u064A\u0647 \u0645\u0627\u0644\u064A \u0639\u0627\u0644\u064A \u0627\u0644\u0645\u0633\u062A\u0648\u0649 1", "\u062A\u0646\u0628\u064A\u0647 \u0645\u0627\u0644\u064A \u0639\u0627\u0644\u064A \u0627\u0644\u0645\u0633\u062A\u0648\u0649 2"],
   "personality_flag": "${personality}",
-  "data_table": [{"category":"\u0627\u0644\u0641\u0626\u0629","amount":\u0631\u0642\u0645,"percent":\u0631\u0642\u0645,"change":"\u0646\u0635 \u064A\u0634\u0631\u062D \u0627\u0644\u062A\u063A\u064A\u0631"}]
+  "data_table": [] 
 }
 
-\u0642\u0648\u0627\u0639\u062F \u0635\u0627\u0631\u0645\u0629 \u062C\u062F\u0627\u064B:
-- \u0623\u0633\u0644\u0648\u0628 \u0627\u0644\u0643\u062A\u0627\u0628\u0629: \u0627\u062D\u062A\u0631\u0627\u0641\u064A \u062C\u062F\u0627\u064B\u060C \u0631\u0632\u064A\u0646\u060C \u0648\u0645\u0648\u0636\u0648\u0639\u064A (Objective & Analytical).
-- \u064A\u062C\u0628 \u062F\u0645\u062C "\u0627\u0644\u062A\u0648\u0642\u0639 \u0627\u0644\u0645\u0627\u0644\u064A" \u0648"\u0630\u0627\u0643\u0631\u0629 \u0627\u0644\u0623\u0646\u0645\u0627\u0637" \u0648"\u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A \u0627\u0644\u0645\u062A\u0648\u0642\u0639\u0629" \u0641\u064A \u0633\u064A\u0627\u0642 \u062A\u0642\u0631\u064A\u0631\u0643 \u0628\u0623\u0633\u0644\u0648\u0628 \u0627\u062D\u062A\u0631\u0627\u0641\u064A \u0644\u062A\u0628\u062F\u0648 \u0643\u0623\u0646\u0647\u0627 \u0627\u0633\u062A\u0646\u062A\u0627\u062C\u0627\u062A \u0630\u0643\u064A\u0629 \u062C\u062F\u0627\u064B \u0645\u0646 \u0637\u0631\u0641\u0643 \u0648\u0630\u0627\u0643\u0631\u0629 \u0642\u0648\u064A\u0629 \u0644\u0644\u0646\u0638\u0627\u0645.
-- \u062A\u062C\u0646\u0628 \u0627\u0644\u0639\u0628\u0627\u0631\u0627\u062A \u0627\u0644\u0645\u0628\u062A\u0630\u0644\u0629 \u0645\u062B\u0644 "\u0644\u0627 \u062A\u0635\u0631\u0641 \u0643\u062B\u064A\u0631\u0627\u064B"\u060C \u0648\u0627\u0633\u062A\u062E\u062F\u0645 \u0628\u062F\u0644\u0627\u064B \u0645\u0646\u0647\u0627 "\u064A\u0648\u0635\u0649 \u0628\u0625\u0639\u0627\u062F\u0629 \u062A\u0642\u064A\u064A\u0645 \u062D\u062C\u0645 \u0627\u0644\u0625\u0646\u0641\u0627\u0642 \u0641\u064A \u0647\u0630\u0627 \u0627\u0644\u0628\u0646\u062F \u0644\u062A\u062D\u0633\u064A\u0646 \u062A\u062F\u0641\u0642\u0627\u062A \u0627\u0644\u0633\u064A\u0648\u0644\u0629".
-- \u064A\u062C\u0628 \u0623\u0646 \u064A\u0643\u0648\u0646 \u0627\u0644\u062A\u0646\u0633\u064A\u0642 JSON \u0635\u0627\u0644\u062D\u0627\u064B \u0628\u0646\u0633\u0628\u0629 100%.`;
+\u0645\u0644\u0627\u062D\u0638\u0629 \u0647\u0627\u0645\u0629: \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0627\u0634\u062A\u0643\u0649 \u0633\u0627\u0628\u0642\u0627\u064B \u0645\u0646 \u0642\u0635\u0631 \u0627\u0644\u0631\u062F\u0648\u062F\u060C \u0644\u0630\u0627 \u064A\u0631\u062C\u0649 \u0627\u0644\u062A\u0648\u0633\u0639 \u0641\u064A \u0627\u0644\u0634\u0631\u062D \u0648\u0627\u0644\u062A\u062D\u0644\u064A\u0644 \u0644\u064A\u0643\u0648\u0646 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0630\u0627 \u0642\u064A\u0645\u0629 \u062D\u0642\u064A\u0642\u064A\u0629 \u0648\u0645\u0647\u0646\u064A\u0629 \u0639\u0627\u0644\u064A\u0629.`;
         const result = await aiModel.generateContent(prompt);
         const raw2 = result.response.text().replace(/```json?/g, "").replace(/```/g, "").trim();
         const tokens = result.response.usageMetadata?.totalTokenCount || 0;
@@ -87305,9 +87405,16 @@ ${personalizedSummaryForAI}
     let modelName = "demo";
     try {
       const client = await getAiClient("report", ctx.user.plan);
+      if (!client.canUseAnalysis) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "\u062A\u062D\u0644\u064A\u0644\u0627\u062A \u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0629 \u0628\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u0641\u064A \u062E\u0637\u062A\u0643 \u0627\u0644\u062D\u0627\u0644\u064A\u0629."
+        });
+      }
       aiModel = client.aiModel;
       modelName = client.modelName;
     } catch (e) {
+      if (e instanceof TRPCError) throw e;
     }
     const getMonthData = async (monthStr) => {
       const [y, m] = monthStr.split("-");
@@ -87348,9 +87455,16 @@ ${input.month2}: ${d2.total} \u062C\u0646\u064A\u0647 (${d2.count} \u0639\u0645\
     let modelName = "demo";
     try {
       const client = await getAiClient("report", ctx.user.plan);
+      if (!client.canUseAnalysis) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "\u0627\u0644\u062A\u062D\u0644\u064A\u0644\u0627\u062A \u0627\u0644\u0633\u0646\u0648\u064A\u0629 \u0628\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u0641\u064A \u062E\u0637\u062A\u0643 \u0627\u0644\u062D\u0627\u0644\u064A\u0629."
+        });
+      }
       aiModel = client.aiModel;
       modelName = client.modelName;
     } catch (e) {
+      if (e instanceof TRPCError) throw e;
     }
     const start = new Date(parseInt(input.year), 0, 1);
     const end = new Date(parseInt(input.year), 11, 31);
@@ -87476,6 +87590,10 @@ init_connection();
 init_schema2();
 init_drizzle_orm();
 init_env();
+function isMissingTableError2(err, table) {
+  const message = err instanceof Error ? err.message : String(err ?? "");
+  return message.includes(table) && (message.includes("doesn't exist") || message.includes("ER_NO_SUCH_TABLE") || message.includes("Failed query"));
+}
 var adminRouter = router({
   // ─── Dashboard Stats ───
   getDashboardStats: adminProcedure.query(async () => {
@@ -87716,13 +87834,19 @@ var adminRouter = router({
   }),
   // ─── AI Classification Stats ───
   getAIClassificationStats: adminProcedure.query(async () => {
-    const stats = await db.select({
-      parsedBy: classificationLogs.parsedBy,
-      count: count(),
-      avgConfidence: sql`AVG(${classificationLogs.confidence})`,
-      totalTokens: sql`SUM(${classificationLogs.tokensUsed})`
-    }).from(classificationLogs).groupBy(classificationLogs.parsedBy);
-    const totalLogs = await db.select({ count: count() }).from(classificationLogs);
+    let stats = [];
+    let totalLogs = [{ count: 0 }];
+    try {
+      stats = await db.select({
+        parsedBy: classificationLogs.parsedBy,
+        count: count(),
+        avgConfidence: sql`AVG(${classificationLogs.confidence})`,
+        totalTokens: sql`SUM(${classificationLogs.tokensUsed})`
+      }).from(classificationLogs).groupBy(classificationLogs.parsedBy);
+      totalLogs = await db.select({ count: count() }).from(classificationLogs);
+    } catch (err) {
+      if (!isMissingTableError2(err, "classification_logs")) throw err;
+    }
     return {
       stats,
       totalClassifications: totalLogs[0]?.count ?? 0
@@ -87736,10 +87860,16 @@ var adminRouter = router({
   }).optional()).query(async ({ input }) => {
     const { page = 1, limit = 20, parsedBy } = input ?? {};
     const offset = (page - 1) * limit;
-    let query = db.select().from(classificationLogs).$dynamic();
-    if (parsedBy) query = query.where(eq(classificationLogs.parsedBy, parsedBy));
-    const logs = await query.orderBy(desc(classificationLogs.createdAt)).limit(limit).offset(offset);
-    const total = await db.select({ count: count() }).from(classificationLogs);
+    let logs = [];
+    let total = [{ count: 0 }];
+    try {
+      let query = db.select().from(classificationLogs).$dynamic();
+      if (parsedBy) query = query.where(eq(classificationLogs.parsedBy, parsedBy));
+      logs = await query.orderBy(desc(classificationLogs.createdAt)).limit(limit).offset(offset);
+      total = await db.select({ count: count() }).from(classificationLogs);
+    } catch (err) {
+      if (!isMissingTableError2(err, "classification_logs")) throw err;
+    }
     const enriched = await Promise.all(logs.map(async (l) => {
       let name = "\u0645\u062C\u0647\u0648\u0644";
       if (l.userType === "oauth") {
@@ -87761,11 +87891,16 @@ var adminRouter = router({
   // ─── Get Voice Usage Stats ───
   getVoiceUsageStats: adminProcedure.query(async () => {
     const currentMonth = (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
-    const usage = await db.select({
-      userType: voiceUsage.userType,
-      totalSeconds: sum(voiceUsage.durationSeconds),
-      count: count()
-    }).from(voiceUsage).where(eq(voiceUsage.month, currentMonth)).groupBy(voiceUsage.userType);
+    let usage = [];
+    try {
+      usage = await db.select({
+        userType: voiceUsage.userType,
+        totalSeconds: sum(voiceUsage.durationSeconds),
+        count: count()
+      }).from(voiceUsage).where(eq(voiceUsage.month, currentMonth)).groupBy(voiceUsage.userType);
+    } catch (err) {
+      if (!isMissingTableError2(err, "voice_usage")) throw err;
+    }
     return {
       month: currentMonth,
       usage
@@ -87826,8 +87961,23 @@ var supportRouter = router({
     if (status) filters.push(eq(supportTickets.status, status));
     if (priority) filters.push(eq(supportTickets.priority, priority));
     const list = await db.select().from(supportTickets).where(filters.length > 0 ? and(...filters) : void 0).orderBy(desc(supportTickets.createdAt)).limit(limit).offset(offset);
+    const enriched = await Promise.all(list.map(async (t2) => {
+      let name = "\u0645\u062C\u0647\u0648\u0644";
+      let avatarUrl = "";
+      if (t2.userType === "oauth") {
+        const u = await db.select({ name: users.name, avatar: users.avatar }).from(users).where(eq(users.id, t2.userId)).limit(1);
+        if (u[0]) {
+          name = u[0].name;
+          avatarUrl = u[0].avatar || "";
+        }
+      } else {
+        const u = await db.select({ name: localUsers.name }).from(localUsers).where(eq(localUsers.id, t2.userId)).limit(1);
+        if (u[0]) name = u[0].name;
+      }
+      return { ...t2, userName: name, userAvatar: avatarUrl };
+    }));
     const total = await db.select({ count: count() }).from(supportTickets);
-    return { list, total: total[0]?.count ?? 0, page, limit };
+    return { list: enriched, total: total[0]?.count ?? 0, page, limit };
   }),
   // ─── Respond to Ticket ───
   respond: moderatorProcedure.input(external_exports.object({
@@ -88534,6 +88684,7 @@ async function refreshMonthlyInferences(userId, userType, month) {
       behaviorFlags: snapshot.behaviorFlags,
       inferredAttributes: snapshot.inferredAttributes
     }
+  }).catch(() => {
   });
   await recordProfileLearningEvent({
     userId,
@@ -88616,16 +88767,21 @@ var profileRouter = router({
   }),
   updateUserInfo: authedProcedure.input(external_exports.object({
     name: external_exports.string().min(2).optional(),
-    phone: external_exports.string().optional()
+    phone: external_exports.string().optional(),
+    avatar: external_exports.string().optional()
   })).mutation(async ({ ctx, input }) => {
     if (ctx.user.type === "oauth") {
-      if (input.name) {
-        await db.update(users).set({ name: input.name }).where(eq(users.id, ctx.user.id));
+      const updates = {};
+      if (input.name) updates.name = input.name;
+      if (input.avatar !== void 0) updates.avatar = input.avatar;
+      if (Object.keys(updates).length > 0) {
+        await db.update(users).set(updates).where(eq(users.id, ctx.user.id));
       }
     } else {
       const updates = {};
       if (input.name) updates.name = input.name;
       if (input.phone) updates.phone = input.phone;
+      if (input.avatar !== void 0) updates.avatar = input.avatar;
       if (Object.keys(updates).length > 0) {
         await db.update(localUsers).set(updates).where(eq(localUsers.id, ctx.user.id));
       }
@@ -88742,10 +88898,16 @@ async function createContext(req) {
 init_env();
 var app = new Hono2();
 app.use("*", logger());
-app.use("*", cors({
-  origin: env.APP_URL,
-  credentials: true
-}));
+var allowedOrigins = Array.from(
+  new Set([env.APP_URL, env.FRONTEND_URL].filter(Boolean))
+);
+app.use(
+  "*",
+  cors({
+    origin: (origin) => allowedOrigins.includes(origin) ? origin : allowedOrigins[0],
+    credentials: true
+  })
+);
 app.onError((err, c) => {
   console.error("Hono Error:", err);
   return c.json({ error: err.message || "Internal Server Error" }, 500);

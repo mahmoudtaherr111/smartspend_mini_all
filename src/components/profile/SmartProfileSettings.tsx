@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { BriefcaseBusiness, Check, CircleUserRound, Save, Sparkles, UsersRound } from "lucide-react";
+import { AlertCircle, BriefcaseBusiness, Check, CircleUserRound, Save, Sparkles, UsersRound } from "lucide-react";
 import { toast } from "sonner";
 
 const avatarSet = ["emerald", "sky", "rose", "amber", "violet", "slate"];
@@ -38,6 +38,26 @@ function listValue(value: unknown): string[] {
   return Array.isArray(value) ? value.map(String) : [];
 }
 
+function friendlyProfileError(message?: string) {
+  if (!message) return "تعذر تحديث البروفايل الذكي. حاول مرة أخرى.";
+  if (message.includes("Failed query") || message.includes("Unknown column")) {
+    return "قاعدة البيانات تحتاج تحديثات البروفايل الذكي. تم تفعيل وضع التوافق، أعد المحاولة.";
+  }
+  if (message.toLowerCase().includes("fetch") || message.includes("الخادم")) {
+    return "تعذر الاتصال بالخادم. تأكد أن التطبيق يعمل ثم حاول مرة أخرى.";
+  }
+  if (message.includes("UNAUTHORIZED") || message.includes("تسجيل الدخول")) {
+    return "انتهت الجلسة. سجل الدخول مرة أخرى.";
+  }
+  return message;
+}
+
+function nullableNumber(value: string) {
+  if (!value.trim()) return null;
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : NaN;
+}
+
 function TogglePill({
   active,
   children,
@@ -66,14 +86,23 @@ function TogglePill({
 
 export function SmartProfileSettings() {
   const utils = trpc.useUtils();
-  const { data: profile, isLoading } = trpc.profile.getSmartProfile.useQuery();
+  const { data: profile, isLoading, isError, error, refetch } = trpc.profile.getSmartProfile.useQuery(undefined, {
+    retry: 1,
+    staleTime: 60_000,
+  });
+  const [saveError, setSaveError] = useState<string | null>(null);
   const updateProfile = trpc.profile.updateSmartProfile.useMutation({
+    onMutate: () => setSaveError(null),
     onSuccess: () => {
       toast.success("تم تحديث البروفايل الذكي.");
       utils.profile.getSmartProfile.invalidate();
       utils.profile.getNextOnboardingQuestion.invalidate();
     },
-    onError: (err) => toast.error(err.message || "تعذر تحديث البروفايل"),
+    onError: (err) => {
+      const message = friendlyProfileError(err.message);
+      setSaveError(message);
+      toast.error(message);
+    },
   });
 
   const [profession, setProfession] = useState("");
@@ -130,21 +159,32 @@ export function SmartProfileSettings() {
   };
 
   const save = () => {
+    const income = nullableNumber(monthlyIncome);
+    const children = nullableNumber(childrenCount);
+    const commitments = nullableNumber(fixedCommitments);
+
+    if ([income, children, commitments].some(Number.isNaN)) {
+      const message = "استخدم أرقام صحيحة وموجبة في الدخل، عدد الأطفال، والالتزامات.";
+      setSaveError(message);
+      toast.error(message);
+      return;
+    }
+
     updateProfile.mutate({
       basicInfo: { profession: profession || null },
       financialInfo: {
-        averageMonthlyIncome: monthlyIncome ? Number(monthlyIncome) : null,
+        averageMonthlyIncome: income,
         incomeSources: selectedSources,
         primaryGoal: goal,
         spendingPattern,
       },
       lifestyleInfo: {
         hasChildren,
-        childrenCount: childrenCount ? Number(childrenCount) : null,
+        childrenCount: hasChildren ? children : null,
         responsibleForFamily,
         livesAlone,
         supportsOthers,
-        fixedMonthlyCommitments: fixedCommitments ? Number(fixedCommitments) : null,
+        fixedMonthlyCommitments: commitments,
       },
       preferences: {
         detailLevel,
@@ -159,8 +199,40 @@ export function SmartProfileSettings() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-6 text-sm text-muted-foreground">جاري تحميل البروفايل الذكي...</CardContent>
+      <Card className="border-slate-200">
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="font-semibold">البروفايل الذكي</p>
+              <p className="text-sm text-muted-foreground">جاري تحميل الإعدادات الأساسية...</p>
+            </div>
+            <Sparkles className="w-5 h-5 text-emerald-600 animate-pulse" />
+          </div>
+          <div className="grid sm:grid-cols-3 gap-3">
+            <div className="h-16 rounded-md bg-muted animate-pulse" />
+            <div className="h-16 rounded-md bg-muted animate-pulse" />
+            <div className="h-16 rounded-md bg-muted animate-pulse" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card className="border-rose-200 bg-rose-50/60 dark:border-rose-900 dark:bg-rose-950/20">
+        <CardContent className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-rose-600 mt-0.5" />
+            <div>
+              <p className="font-semibold text-rose-700 dark:text-rose-300">تعذر تحميل البروفايل الذكي</p>
+              <p className="text-sm text-muted-foreground">{friendlyProfileError(error?.message)}</p>
+            </div>
+          </div>
+          <Button variant="outline" onClick={() => refetch()}>
+            إعادة المحاولة
+          </Button>
+        </CardContent>
       </Card>
     );
   }
@@ -308,6 +380,13 @@ export function SmartProfileSettings() {
             </label>
           </div>
         </section>
+
+        {saveError && (
+          <div className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/20 dark:text-rose-300">
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>{saveError}</span>
+          </div>
+        )}
 
         <Button onClick={save} disabled={updateProfile.isPending} className="w-full gap-2">
           <Save className="w-4 h-4" />

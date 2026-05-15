@@ -33,25 +33,25 @@ export function buildBackendPersonalizedInsights(
   const stability = String(snapshot.inferredAttributes.financialStability || "unknown");
 
   if (topCategory && topCategory.percent > 50) {
-    alerts.push(`High concentration in ${topCategory.name}: ${topCategory.percent}% of monthly spend.`);
+    alerts.push(`تركيز عالي جداً في الصرف على فئة (${topCategory.name}) بنسبة ${topCategory.percent}% من إجمالي مصاريفك.`);
   }
   if (snapshot.behaviorFlags.hasSpikeSpending) {
-    alerts.push("Spike spending detected this month.");
+    alerts.push("في طفرات مفاجئة في الصرف الشهر ده.");
   }
   if (stability === "pressure") {
-    alerts.push("Expense-to-income pressure is high this month.");
+    alerts.push("في ضغط مالي واضح الشهر ده مقارنة بدخلك.");
   }
 
   for (const sub of snapshot.topSubCategories.slice(0, 3)) {
     if (sub.percent >= 10) {
-      savingOpportunities.push(`Review ${sub.name}; it represents ${sub.percent}% of spending.`);
+      savingOpportunities.push(`راجع مصاريفك في "${sub.name}" (بتمثل ${sub.percent}% من الصرف). ممكن تقلل منها شوية.`);
     }
   }
 
   const familyContext =
     profile.lifestyleInfo.hasChildren === true
-      ? "Family/children costs should be separated from discretionary spending."
-      : "Lifestyle spending can be reviewed without family-cost assumptions.";
+      ? "مصاريف الأولاد والأسرة واخدة جزء من الميزانية، حاول تفصل مصاريفك الشخصية عشان تقدر تتابعها."
+      : "مصاريفك الشخصية هي المتحكم الأكبر في الميزانية.";
 
   return {
     behavioral_summary: {

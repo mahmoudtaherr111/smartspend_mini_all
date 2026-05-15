@@ -29,6 +29,7 @@ export const localUsers = mysqlTable("local_users", {
   phone: varchar("phone", { length: 20 }).notNull().unique(),
   password: varchar("password", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }),
+  avatar: varchar("avatar", { length: 500 }), // Added for profile pictures
   role: varchar("role", { length: 50 }).notNull().default("user"),
   plan: varchar("plan", { length: 50 }).notNull().default("free"), // free | pro | ultra
   referralCode: varchar("referral_code", { length: 50 }).unique(),

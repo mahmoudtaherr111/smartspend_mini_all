@@ -97,9 +97,19 @@ function generateClarification(items: ParsedTransaction[], originalText: string)
 export function scoreAndDecide(
   items: ParsedTransaction[],
   originalText: string,
-  thresholds = DEFAULT_THRESHOLDS
+  thresholds = DEFAULT_THRESHOLDS,
+  skipClarification = false
 ): ScoredResult {
   if (items.length === 0) {
+    // If user skipped, never ask for clarification – tell them we can't parse it
+    if (skipClarification) {
+      return {
+        items: [],
+        overallConfidence: 0,
+        decision: "review",
+        clarificationQuestion: undefined,
+      };
+    }
     return {
       items: [],
       overallConfidence: 0,
@@ -125,15 +135,17 @@ export function scoreAndDecide(
   );
 
   if (hasCriticalMissingFields || hasIntentTaxonomyConflict) {
-    decision = "clarify";
-    clarificationQuestion = generateClarification(scoredItems, originalText);
+    // If skip is active, downgrade clarify → review
+    decision = skipClarification ? "review" : "clarify";
+    clarificationQuestion = skipClarification ? undefined : generateClarification(scoredItems, originalText);
   } else if (overallConfidence >= thresholds.autoSave && scoredItems.every(i => i.confidence >= thresholds.autoSave)) {
     decision = "auto_save";
   } else if (overallConfidence >= thresholds.review) {
     decision = "review";
   } else {
-    decision = "clarify";
-    clarificationQuestion = generateClarification(scoredItems, originalText);
+    // Low confidence – clarify or review depending on skip flag
+    decision = skipClarification ? "review" : "clarify";
+    clarificationQuestion = skipClarification ? undefined : generateClarification(scoredItems, originalText);
   }
 
   return { items: scoredItems, overallConfidence, decision, clarificationQuestion };

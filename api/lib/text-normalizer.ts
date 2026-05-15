@@ -86,14 +86,18 @@ export function normalizeText(text: string): string {
 
   // 5. Replace colloquial number expressions first (before word numbers)
   for (const [expr, num] of Object.entries(COLLOQUIAL_NUMBERS)) {
-    const regex = new RegExp(expr, "g");
-    result = result.replace(regex, num.toString());
+    const regex = new RegExp(`(?:^|\\s)(ب|بـ|و)?${expr}(?=\\s|$)`, "g");
+    result = result.replace(regex, (_, prefix) => {
+      return (prefix ? ` ${prefix} ` : " ") + num.toString() + " ";
+    });
   }
 
   // 6. Replace word numbers
   for (const [word, num] of Object.entries(WORD_NUMBERS)) {
-    const regex = new RegExp(`\\b${word}\\b`, "g");
-    result = result.replace(regex, num.toString());
+    const regex = new RegExp(`(?:^|\\s)(ب|بـ|و)?${word}(?=\\s|$)`, "g");
+    result = result.replace(regex, (_, prefix) => {
+      return (prefix ? ` ${prefix} ` : " ") + num.toString() + " ";
+    });
   }
 
   // 7. Handle "X ألف" patterns (e.g., "5 ألف" → "5000")

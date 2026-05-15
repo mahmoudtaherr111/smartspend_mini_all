@@ -14,7 +14,12 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "backend:dev": "tsx watch api/server.ts",
+    "backend:build": "esbuild api/server.ts --platform=node --bundle --format=esm --outdir=dist/server --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\"",
+    "backend:start": "NODE_ENV=production node dist/server/server.js",
+    "frontend:dev": "vite --mode frontend",
+    "frontend:build": "vite build --mode frontend"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

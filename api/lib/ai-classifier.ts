@@ -16,6 +16,8 @@ function buildCategoryList(): string {
   }).join("\n");
 }
 
+
+
 /** The master system prompt — customizes Gemini for SmartSpend */
 const SYSTEM_PROMPT = `أنت "SmartSpend AI" — مصنف مالي مصري متخصص بالذكاء الاصطناعي.
 
@@ -185,17 +187,44 @@ export async function geminiSpeechToText(
   audioBase64: string,
   mimeType: string,
   apiKey: string,
-  modelName: string = "gemini-2.5-flash"
+  modelName: string = "gemini-2.5-flash",
+  sttMode: string = "standard"
 ): Promise<{ text: string; tokensUsed: number } | null> {
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
+
+    // Map UI/admin model names to real Gemini API model strings
+    // Priority: use the model as-is if it's a known valid API name,
+    // otherwise map aliases → stable equivalents.
+    const MODEL_MAP: Record<string, string> = {
+      // Legacy / UI aliases
+      "gemini-3.0-flash-live":           "gemini-2.0-flash",
+      "gemini-2.5-flash-native-audio":   "gemini-2.5-flash",
+      "gemini-3.1-flash-lite":           "gemini-2.0-flash-lite",
+      // Shorthand names admins might type
+      "flash":                            "gemini-2.0-flash",
+      "flash-lite":                       "gemini-2.0-flash-lite",
+      "pro":                              "gemini-2.5-pro",
+      "flash-2.5":                        "gemini-2.5-flash",
+    };
+    const actualModelName = MODEL_MAP[modelName] ?? modelName;
+    
+    // Customize configuration based on sttMode
+    const generationConfig: any = {
+      temperature: 0.1,
+      maxOutputTokens: 512,
+    };
+    
+    // Add specific settings for native audio if requested
+    const supportsNativeAudio = actualModelName.includes("gemini-2.0") || actualModelName.includes("gemini-2.5") || actualModelName.includes("gemini-3.0");
+    if (sttMode === "native_audio" && supportsNativeAudio) {
+      generationConfig.responseModalities = ["TEXT"];
+    }
+
     const model = genAI.getGenerativeModel({
-      model: modelName,
+      model: actualModelName,
       systemInstruction: STT_SYSTEM_PROMPT,
-      generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: 512,
-      },
+      generationConfig,
     });
 
     const result = await model.generateContent([
