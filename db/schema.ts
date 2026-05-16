@@ -65,6 +65,7 @@ export const expenses = mysqlTable("expenses", {
   index("expenses_user_idx").on(t.userId, t.userType),
   index("expenses_date_idx").on(t.date),
   index("expenses_type_idx").on(t.type),
+  index("expenses_category_idx").on(t.category),
 ]);
 
 // ─── Expense Categories ───

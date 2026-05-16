@@ -29,10 +29,10 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "الرئيسية", href: "/" },
-  { icon: BarChart3, label: "إحصائيات", href: "/?tab=stats" },
-  { icon: Brain, label: "تحليل AI", href: "/?tab=ai" },
-  { icon: Calendar, label: "التقويم", href: "/?tab=calendar" },
+  { icon: LayoutDashboard, label: "الرئيسية", href: "/dashboard" },
+  { icon: BarChart3, label: "إحصائيات", href: "/dashboard?tab=stats" },
+  { icon: Brain, label: "تحليل AI", href: "/dashboard?tab=ai" },
+  { icon: Calendar, label: "التقويم", href: "/dashboard?tab=calendar" },
 ];
 
 const bottomItems = [
@@ -41,7 +41,7 @@ const bottomItems = [
 ];
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
-  const { user, isAdmin, isModerator, isPro, logout } = useAuth();
+  const { user, isAdmin, isModerator, isPro, hasUltraAccess, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
@@ -113,7 +113,9 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
               </div>
               <div className="transition-all duration-300 overflow-hidden">
                 <p className="text-white font-medium text-sm truncate">{user.name}</p>
-                <p className="text-white/50 text-xs truncate">{user.plan === "pro" ? "PRO" : "Free"}</p>
+                <p className="text-white/50 text-xs truncate">
+                  {user.plan === "ultra" ? "ULTRA" : user.plan === "pro" ? "PRO" : "مجاني"}
+                </p>
               </div>
             </div>
           </div>
@@ -124,7 +126,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
           {menuItems.map((item) => {
             const tab = new URLSearchParams(location.search).get("tab") || "record";
             const targetTab = new URLSearchParams(item.href.split("?")[1] || "").get("tab") || "record";
-            const isActive = location.pathname === "/" && tab === targetTab;
+            const isActive = location.pathname === "/dashboard" && tab === targetTab;
             const Icon = item.icon;
 
             return (
@@ -150,6 +152,36 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
               </Link>
             );
           })}
+
+          <Link
+            to="/pro"
+            className={cn(
+              "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group relative",
+              "hover:bg-white/10 hover:translate-x-1",
+              location.pathname === "/pro"
+                ? "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border-r-2 border-amber-400"
+                : "text-white/70"
+            )}
+          >
+            <Crown className="w-5 h-5 shrink-0 text-amber-400" />
+            <span className="text-sm font-medium whitespace-nowrap">البرو والأسعار</span>
+          </Link>
+
+          {hasUltraAccess && (
+            <Link
+              to="/ultra"
+              className={cn(
+                "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group relative",
+                "hover:bg-white/10 hover:translate-x-1",
+                location.pathname === "/ultra"
+                  ? "bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 text-violet-200 border-r-2 border-violet-400"
+                  : "text-white/70"
+              )}
+            >
+              <Sparkles className="w-5 h-5 shrink-0 text-violet-300" />
+              <span className="text-sm font-medium whitespace-nowrap">مساحة ألترا</span>
+            </Link>
+          )}
 
           {/* Admin/Moderator links */}
           {(isAdmin || isModerator) && (

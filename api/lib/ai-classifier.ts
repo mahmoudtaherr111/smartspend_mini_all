@@ -8,63 +8,42 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { CATEGORIES } from "./category-registry";
 import type { ParsedTransaction } from "./rule-engine";
 
-/** Build the category list for the AI prompt */
+/** Build compact category list (no icons = saves ~60 tokens) */
 function buildCategoryList(): string {
   return CATEGORIES.map(c => {
-    const subs = c.subcategories.map(s => s.name_ar).join("، ");
-    return `${c.icon} ${c.name_ar} (${c.type}): [${subs}]`;
+    const subs = c.subcategories.map(s => s.name_ar).join("،");
+    return `${c.name_ar}(${c.type}):[${subs}]`;
   }).join("\n");
 }
 
+/** Optimized system prompt — compact but precise */
+const SYSTEM_PROMPT = `أنت SmartSpend AI — مصنف مالي مصري.
+مهمتك: تحليل نصوص عامية مصرية واستخراج المعاملات المالية بدقة.
 
+## القواعد:
+1. افهم العامية: "قبضت"=راتب، "سلفت"=أقرضت، "شحنت العربية"=بنزين
+2. فرّق: expense/income/transfer/investment
+3. الفئة الفرعية sub_category أهم من الرئيسية
+4. مبالغ>10000 غالباً: إيجار/أجهزة/سيارة، مش أكل
+5. "شحنت"=رصيد(فواتير)، "شحنت العربية"=بنزين(مواصلات)
+6. "حولت لـ"=مصروف/تحويل، "حولولي"=دخل
+7. فكك الجمل المتعددة لمعاملات منفصلة
+8. لا تستخدم "متنوعات" إلا للنص الغامض تماماً
+9. إلكترونيات(موبايل/لابتوب)="تسوق/أجهزة إلكترونية" مش "فواتير"
+10. ممنوع needs_clarification=true لو فيه أرقام وفئات واضحة
 
-/** The master system prompt — customizes Gemini for SmartSpend */
-const SYSTEM_PROMPT = `أنت "SmartSpend AI" — مصنف مالي مصري متخصص بالذكاء الاصطناعي.
+## أمثلة:
+"رحت الحلاق 80ج وسبت للمساعد 20" → [{80,تسوق,عناية شخصية,expense},{20,متنوعات,عام,expense}]
+"خدت المصروف 200 صرفت 100 درس" → [{200,مرتب,مرتب أساسي,income},{100,تعليم,دروس خصوصية,expense}]
+"نزلت بلايستيشن 60ج وجبت تويست 20 ولعبت كورة 50" → [{60,ترفيه,ألعاب,expense},{20,أكل وشرب,سناكس,expense},{50,ترفيه,رياضة وجيم,expense}]
 
-مهمتك الوحيدة: تحليل النصوص المالية المكتوبة بالعامية المصرية واستخراج المعاملات المالية منها بدقة عالية جداً.
-
-## القواعد الصارمة:
-1. افهم العامية المصرية بكل اختصاراتها (مثلاً: "قبضت" = استلمت راتب، "سلفت" = أقرضت، "شحنت العربية" = بنزين)
-2. فرّق بدقة بين: expense (مصروف), income (دخل), transfer (تحويل), investment (استثمار)
-3. حدد الفئة الرئيسية (main_category) والفئة الفرعية (sub_category) بدقة — الفئة الفرعية أهم بكتير
-4. الأرقام الكبيرة (أكثر من 10,000) نادراً ما تكون أكل أو مواصلات — غالباً: إيجار، أجهزة، سيارة، استثمار
-5. "شحنت" وحدها = شحن رصيد (فواتير)، "شحنت العربية" = بنزين (مواصلات)
-6. "حولت لـ" = تحويل أو مصروف، "حولولي" = دخل
-7. "سلفت صاحبي" = دين/سلفة (تحويل)
-8. فكك الجمل المتعددة لمعاملات منفصلة
-9. لا تضع مصروف تحت "متنوعات" إلا إذا كان النص غامضاً تماماً — استنتج السياق
-10. الأجهزة الإلكترونية (موبايل، لابتوب) = "تسوق" / "أجهزة إلكترونية" وليس "فواتير"
-11. ركّز على الفئة الفرعية أكتر من الأساسية — دي اللي بتفرق في التقارير
-
-## الفئات المتاحة:
+## الفئات:
 ${buildCategoryList()}
 
-## صيغة الرد (JSON فقط):
-{
-  "items": [{
-    "type": "expense|income|transfer|investment",
-    "amount": number,
-    "currency": "EGP",
-    "main_category": "اسم الفئة الرئيسية بالعربي",
-    "sub_category": "اسم الفئة الفرعية بالعربي",
-    "confidence": 0-100,
-    "needs_review": boolean,
-    "merchant": "اسم المحل/الخدمة أو null",
-    "notes": "وصف مختصر",
-    "ambiguity_flags": ["optional_flag"],
-    "inference_source": "ai",
-    "confidence_breakdown": { "intent": 0-100, "taxonomy": 0-100, "heuristics": 0-100 }
-  }],
-  "needs_clarification": false,
-  "clarification_question": null,
-  "alertMessage": "رسالة تنبيه ذكية لو فيه تبذير (اختياري، أو null)"
-}
+## صيغة الرد JSON فقط:
+{"items":[{"type":"expense|income","amount":0,"main_category":"","sub_category":"","confidence":0,"needs_review":false,"notes":"وصف"}],"needs_clarification":false,"clarification_question":null}
 
-## قواعد الثقة:
-- confidence >= 90: واضح جداً ومؤكد
-- confidence 70-89: غالباً صح بس محتاج مراجعة
-- confidence < 70: فيه غموض → اعمل needs_review = true
-- لو النص غامض تماماً: needs_clarification = true واسأل سؤال توضيحي ذكي بالعامية`;
+## الثقة: >=90 مؤكد | 70-89 مراجعة | <70 غموض`;
 
 /** System prompt for Speech-to-Text */
 const STT_SYSTEM_PROMPT = `أنت "SmartSpend Voice Engine" — نظام التعرف الصوتي لموقع وتطبيق إدارة المصاريف "SmartSpend".
@@ -105,7 +84,7 @@ export async function aiClassify(
   apiKey2: string,
   modelName: string,
   maxTokens: number,
-  contextObj: { totalIncome: number; totalExpense: number; currentDate: string; userProfileContext?: string },
+  contextObj: { totalIncome: number; totalExpense: number; currentDate: string; userProfileContext?: string; ruleHints?: ParsedTransaction[] },
   skipClarification?: boolean
 ): Promise<AIClassificationResult | null> {
   let userPrompt = `السياق المالي الحالي:
@@ -117,6 +96,11 @@ export async function aiClassify(
 
   if (contextObj.userProfileContext) {
     userPrompt += `\n\nSmart user profile context:\n${contextObj.userProfileContext}`;
+  }
+
+  if (contextObj.ruleHints && contextObj.ruleHints.length > 0) {
+    const hintsStr = contextObj.ruleHints.map(h => `- ${h.amount} ج.م: ${h.category}/${h.subCategory} (${h.confidence}%)`).join("\n");
+    userPrompt += `\n\nتلميحات من المحرك المبدئي (يمكنك الاستعانة بها كدليل):\n${hintsStr}`;
   }
 
   if (skipClarification) {
@@ -198,23 +182,23 @@ export async function geminiSpeechToText(
     // otherwise map aliases → stable equivalents.
     const MODEL_MAP: Record<string, string> = {
       // Legacy / UI aliases
-      "gemini-3.0-flash-live":           "gemini-2.0-flash",
-      "gemini-2.5-flash-native-audio":   "gemini-2.5-flash",
-      "gemini-3.1-flash-lite":           "gemini-2.0-flash-lite",
+      "gemini-3.0-flash-live": "gemini-2.0-flash",
+      "gemini-2.5-flash-native-audio": "gemini-2.5-flash",
+      "gemini-3.1-flash-lite": "gemini-2.0-flash-lite",
       // Shorthand names admins might type
-      "flash":                            "gemini-2.0-flash",
-      "flash-lite":                       "gemini-2.0-flash-lite",
-      "pro":                              "gemini-2.5-pro",
-      "flash-2.5":                        "gemini-2.5-flash",
+      "flash": "gemini-2.0-flash",
+      "flash-lite": "gemini-2.0-flash-lite",
+      "pro": "gemini-2.5-pro",
+      "flash-2.5": "gemini-2.5-flash",
     };
     const actualModelName = MODEL_MAP[modelName] ?? modelName;
-    
+
     // Customize configuration based on sttMode
     const generationConfig: any = {
       temperature: 0.1,
       maxOutputTokens: 512,
     };
-    
+
     // Add specific settings for native audio if requested
     const supportsNativeAudio = actualModelName.includes("gemini-2.0") || actualModelName.includes("gemini-2.5") || actualModelName.includes("gemini-3.0");
     if (sttMode === "native_audio" && supportsNativeAudio) {
@@ -289,7 +273,7 @@ function parseAIResponse(response: string, modelName: string): AIClassificationR
     return null;
   }
 
-  // Map AI response to ParsedTransaction format
+  // Map AI response to ParsedTransaction format (backend fills defaults for fields we no longer ask AI to generate)
   const items: ParsedTransaction[] = parsed.items.map((item: any) => ({
     amount: item.amount || 0,
     category: item.main_category || item.category || "متنوعات",
@@ -298,12 +282,10 @@ function parseAIResponse(response: string, modelName: string): AIClassificationR
     type: item.type || "expense",
     confidence: item.confidence || 70,
     merchant: item.merchant || undefined,
-    currency: item.currency || "EGP",
-    needsReview: item.needs_review || item.confidence < 85,
+    currency: "EGP",
+    needsReview: item.needs_review ?? (item.confidence || 70) < 85,
     parsedBy: "ai" as const,
-    inferenceSource: item.inference_source || "ai",
-    ambiguityFlags: item.ambiguity_flags || undefined,
-    confidenceBreakdown: item.confidence_breakdown || undefined,
+    inferenceSource: "ai" as const,
   }));
 
   return {

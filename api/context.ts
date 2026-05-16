@@ -4,6 +4,7 @@ import { db } from "./queries/connection";
 import { localUsers, users, sessions } from "../db/schema";
 import { eq, and, gt } from "drizzle-orm";
 import { env } from "./lib/env";
+import { getClientIp } from "./lib/get-client-ip";
 
 export type UnifiedUser = {
   id: number;
@@ -18,7 +19,10 @@ export type UnifiedUser = {
 
 export type Context = {
   user: UnifiedUser | null;
-  req: HonoRequest;
+  /** May be Hono's request or a Fetch `Request` from @hono/trpc-server */
+  req: HonoRequest | Request;
+  /** Client IP (from proxy headers when present) — used for public endpoint rate limits */
+  ip: string;
 };
 
 // Parse cookies from request header manually (works with both HonoRequest and raw Request)
@@ -112,5 +116,5 @@ export async function createContext(req: HonoRequest | Request): Promise<Context
     }
   }
 
-  return { user, req: req as HonoRequest };
+  return { user, req, ip: getClientIp(req) };
 }

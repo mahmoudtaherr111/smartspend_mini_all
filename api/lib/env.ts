@@ -14,9 +14,9 @@ const envSchema = z.object({
 
   // AI
   GEMINI_API_KEY: z.string().min(1),
-  GEMINI_MODEL_FREE: z.string().default("gemini-1.5-flash"),
-  GEMINI_MODEL_PRO: z.string().default("gemini-1.5-pro"),
-  GEMINI_MODEL_REPORTS: z.string().default("gemini-1.5-pro"),
+  GEMINI_MODEL_FREE: z.string().default("gemini-2.0-flash"),
+  GEMINI_MODEL_PRO: z.string().default("gemini-2.5-flash"),
+  GEMINI_MODEL_REPORTS: z.string().default("gemini-2.5-pro"),
 
   // App
   NODE_ENV: z.enum(["development", "production"]).default("development"),
@@ -28,6 +28,14 @@ const envSchema = z.object({
 
   // Owner
   OWNER_EMAIL: z.string().optional(),
+
+  // Billing (Paymob) — optional until production wiring is complete
+  PAYMOB_API_KEY: z.string().optional(),
+  PAYMOB_INTEGRATION_ID: z.string().optional(),
+  PAYMOB_IFRAME_ID: z.string().optional(),
+  PAYMOB_HMAC_SECRET: z.string().optional(),
+  /** When "true", allows demo transaction ids in `pro.upgrade` (never enable in production). */
+  BILLING_SIMULATE: z.enum(["true", "false"]).optional(),
 });
 
 export const env = envSchema.parse(process.env);

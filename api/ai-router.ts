@@ -8,12 +8,12 @@ import { eq, sql, desc, count, and, gte, lte, sum } from "drizzle-orm";
 import { env } from "./lib/env";
 import { runPipeline, runSTTPipeline } from "./lib/classification-pipeline";
 import { CATEGORIES } from "./lib/category-registry";
-import { 
-  CATEGORY_DICTIONARY, 
-  INCOME_KEYWORDS, 
-  EXPENSE_KEYWORDS, 
-  STRONG_INCOME, 
-  STRONG_EXPENSE 
+import {
+  CATEGORY_DICTIONARY,
+  INCOME_KEYWORDS,
+  EXPENSE_KEYWORDS,
+  STRONG_INCOME,
+  STRONG_EXPENSE
 } from "./lib/egyptian-dictionary";
 import { fuzzyFindCategory } from "./lib/fuzzy-match";
 import {
@@ -80,9 +80,12 @@ async function getAiClient(taskType: "parse" | "report", userPlan: string = "fre
   settings.forEach(s => { if (s.value) cfg[s.key] = s.value; });
 
   let apiKey = cfg.ai_api_key || env.GEMINI_API_KEY;
-  let apiKey2 = cfg.ai_api_key_2 || "AIzaSyCTbqi-uF65bRYw8T32DbVOciM9CIMjRuo"; // Fallback key
+  let apiKey2 = cfg.ai_api_key_2 || ""; // Loaded from admin settings only
 
-  
+  if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY") {
+    apiKey = apiKey2;
+  }
+
   // Model selection based on plan
   let modelName: string;
   if (taskType === "parse") {
@@ -92,53 +95,96 @@ async function getAiClient(taskType: "parse" | "report", userPlan: string = "fre
   } else {
     modelName = cfg.ai_model_reports || env.GEMINI_MODEL_REPORTS;
   }
-  
+
+  const parseSafeInt = (val: string | undefined, def: string) => {
+    const cleaned = String(val || def).replace(/[^\d]/g, "");
+    const parsed = parseInt(cleaned, 10);
+    return isNaN(parsed) ? parseInt(def, 10) : parsed;
+  };
+
   // Token limits per plan
   const tokenLimits = {
-    free: parseInt(cfg.free_token_limit || "50000"),
-    pro: parseInt(cfg.pro_token_limit || "500000"),
-    ultra: parseInt(cfg.ultra_token_limit || "2000000"),
+    free: parseSafeInt(cfg.free_token_limit, "50000"),
+    pro: parseSafeInt(cfg.pro_token_limit, "500000"),
+    ultra: parseSafeInt(cfg.ultra_token_limit, "2000000"),
   };
 
   // Per-request max tokens
   const maxPerRequest = {
-    free: parseInt(cfg.free_max_per_request || "256"),
-    pro: parseInt(cfg.pro_max_per_request || "512"),
-    ultra: parseInt(cfg.ultra_max_per_request || "1024"),
+    free: parseSafeInt(cfg.free_max_per_request, "256"),
+    pro: parseSafeInt(cfg.pro_max_per_request, "512"),
+    ultra: parseSafeInt(cfg.ultra_max_per_request, "1024"),
   };
 
   // Daily limits
   const dailyLimits = {
-    free: parseInt(cfg.free_daily_limit || "10"),
-    pro: parseInt(cfg.pro_daily_limit || "100"),
-    ultra: parseInt(cfg.ultra_daily_limit || "500"),
+    free: parseSafeInt(cfg.free_daily_limit, "10"),
+    pro: parseSafeInt(cfg.pro_daily_limit, "100"),
+    ultra: parseSafeInt(cfg.ultra_daily_limit, "500"),
   };
 
   // Feature check
   const canUseAnalysis = cfg[`${userPlan}_ai_analysis`] !== "false";
   const canUseParse = cfg[`${userPlan}_ai_parse`] !== "false";
-  
+
   if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY") {
     throw new Error("Demo Mode");
   }
 
   const plan = userPlan as "free" | "pro" | "ultra";
+
+  // Report-specific settings (per-plan token limits + word targets from admin)
+  const reportMaxTokens = {
+    free: parseSafeInt(cfg.report_max_tokens_free, "1800"),
+    pro: parseSafeInt(cfg.report_max_tokens_pro, "3500"),
+    ultra: parseSafeInt(cfg.report_max_tokens_ultra, "8192"),
+  };
+  const reportWords = {
+    free: parseSafeInt(cfg.report_words_free, "550"),
+    pro: parseSafeInt(cfg.report_words_pro, "850"),
+    ultra: parseSafeInt(cfg.report_words_ultra, "1500"),
+  };
+  const reportSubcats = {
+    free: parseSafeInt(cfg.report_subcats_free, "15"),
+    pro: parseSafeInt(cfg.report_subcats_pro, "20"),
+    ultra: parseSafeInt(cfg.report_subcats_ultra, "20"),
+  };
+  const reportTopItems = {
+    free: 0, // Free plan: no individual item descriptions
+    pro: parseSafeInt(cfg.report_top_items_pro, "10"),
+    ultra: parseSafeInt(cfg.report_top_items_ultra, "10"),
+  };
+
+  // For reports: use per-plan report max tokens from admin dashboard
+  // For parse: use per-plan per-request limits from admin settings
+  let safeMaxTokens: number;
+  if (taskType === "report") {
+    safeMaxTokens = reportMaxTokens[plan] || 3500;
+  } else {
+    safeMaxTokens = maxPerRequest[plan] || 1024;
+    if (safeMaxTokens > 8192) safeMaxTokens = 8192;
+  }
+
   const genAI = new GoogleGenerativeAI(apiKey);
-  const aiModel = genAI.getGenerativeModel({ 
+  const aiModel = genAI.getGenerativeModel({
     model: modelName,
     generationConfig: {
-      temperature: 0.3,
-      maxOutputTokens: taskType === "parse" ? maxPerRequest[plan] || 512 : maxPerRequest[plan] || 1024,
+      temperature: taskType === "report" ? 0.7 : 0.3, // More creative for reports
+      maxOutputTokens: safeMaxTokens,
     },
   });
-  return { 
+  return {
     aiModel, modelName, apiKey, apiKey2,
     tokenLimit: tokenLimits[plan] || 50000,
     dailyLimit: dailyLimits[plan] || 10,
     maxPerRequest: maxPerRequest[plan] || 512,
     canUseAnalysis, canUseParse,
-    freeTokenLimit: tokenLimits.free, 
-    proTokenLimit: tokenLimits.pro 
+    freeTokenLimit: tokenLimits.free,
+    proTokenLimit: tokenLimits.pro,
+    // Report-specific config
+    reportTargetWords: reportWords[plan] || 550,
+    reportSubcatsLimit: reportSubcats[plan] || 15,
+    reportTopItemsLimit: reportTopItems[plan] || 0,
   };
 }
 
@@ -161,7 +207,7 @@ const wordNumbers: Record<string, number> = {
  */
 function hybridParse(text: string, userDict: any[] = []) {
   let normalizedText = arabicToEnglishNumbers(text);
-  
+
   for (const [word, num] of Object.entries(wordNumbers)) {
     const regex = new RegExp(`\\b${word}\\b`, 'g');
     normalizedText = normalizedText.replace(regex, num.toString());
@@ -203,7 +249,7 @@ function hybridParse(text: string, userDict: any[] = []) {
     if (/حولت\s*(ل|لـ)/.test(context)) expenseScore += 40;
     if (/حول(ي|ى|ولي|ولى)/.test(context)) incomeScore += 40;
     if (/اد(ي|ى)ت\s*(ل|لـ)/.test(context)) expenseScore += 40;
-    
+
     if (incomeScore === 0 && expenseScore === 0) {
       if (items.length > 0 && items[items.length - 1].type === "income") incomeScore = 1;
       else expenseScore = 1;
@@ -215,7 +261,7 @@ function hybridParse(text: string, userDict: any[] = []) {
     let category = type === "income" ? "دخل" : "متنوعات";
     let subCategory = "عام";
     let confidence = 30; // default low confidence for fallback
-    
+
     if (type === "expense") {
       const words = allContext.split(/\s+/).filter(w => w.length >= 2);
       let found = false;
@@ -258,17 +304,17 @@ function hybridParse(text: string, userDict: any[] = []) {
           }
         }
       }
-      
+
       // 4. Fuzzy
       if (!found) {
         for (const word of words) {
           const fuzzyResult = fuzzyFindCategory(word, CATEGORY_DICTIONARY, 2);
           if (fuzzyResult && typeof fuzzyResult === "string") {
-             category = fuzzyResult;
-             subCategory = "عام";
-             confidence = 60;
-             found = true;
-             break;
+            category = fuzzyResult;
+            subCategory = "عام";
+            confidence = 60;
+            found = true;
+            break;
           }
         }
       }
@@ -318,13 +364,13 @@ async function aiParse(text: string, client: any, userId: number, userType: stri
   } catch (error: any) {
     console.error("AI API Error (Key 1):", error.message);
     // ── FAILOVER SYSTEM ──
-    if (client.apiKey2 && client.apiKey2 !== "AIzaSyCTbqi-uF65bRYw8T32DbVOciM9CIMjRuo_placeholder") {
+    if (client.apiKey2) {
       try {
         console.log("Switching to Failover API Key...");
         const genAI2 = new GoogleGenerativeAI(client.apiKey2);
-        const fallbackModel = genAI2.getGenerativeModel({ 
-          model: client.modelName, 
-          generationConfig: client.aiModel.generationConfig 
+        const fallbackModel = genAI2.getGenerativeModel({
+          model: client.modelName,
+          generationConfig: client.aiModel.generationConfig
         });
         const result = await fallbackModel.generateContent(prompt);
         response = result.response.text();
@@ -384,7 +430,7 @@ async function aiParse(text: string, client: any, userId: number, userType: stri
   // Log a truncated snapshot for debugging (avoid leaking long secrets)
   try {
     console.error("aiParse: failed to parse AI response as JSON. snippet:", cleaned.slice(0, 1000));
-  } catch {}
+  } catch { }
 
   return { items: [], alertMessage: null };
 }
@@ -395,7 +441,7 @@ export const aiRouter = router({
     .input(z.object({ text: z.string(), model: z.enum(["flash", "pro", "ultra", "gemma"]).default("flash"), skipClarification: z.boolean().optional() }))
     .mutation(async ({ ctx, input }) => {
       // Check daily limits
-      const today = new Date(); today.setHours(0,0,0,0);
+      const today = new Date(); today.setHours(0, 0, 0, 0);
       const todayUsage = await db.select({ count: sql`COUNT(*)` }).from(aiSummaries)
         .where(and(eq(aiSummaries.userId, ctx.user.id), eq(aiSummaries.userType, ctx.user.type), gte(aiSummaries.createdAt, today)));
 
@@ -503,7 +549,7 @@ export const aiRouter = router({
         modelUsed: result.modelUsed,
         tokensUsed: result.tokensUsed,
         processingTimeMs: result.processingTimeMs,
-      }).catch(() => {});
+      }).catch(() => { });
 
       // Cache usage
       await db.insert(aiSummaries).values({
@@ -513,7 +559,7 @@ export const aiRouter = router({
         periodValue: new Date().toISOString().split("T")[0],
         model: result.modelUsed,
         content: JSON.stringify(result.items || []),
-      }).catch(() => {});
+      }).catch(() => { });
 
       return {
         items: result.items,
@@ -548,7 +594,7 @@ export const aiRouter = router({
     // Calculate cycle start and end dates
     const now = new Date();
     let cycleStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    
+
     // Attempt to get subscription for pro users
     if (ctx.user.plan !== "free") {
       const sub = await db.query.proSubscriptions.findFirst({
@@ -567,10 +613,10 @@ export const aiRouter = router({
       }
     } else {
       // Free user: use account creation date
-      const userRec = ctx.user.type === "oauth" 
+      const userRec = ctx.user.type === "oauth"
         ? await db.query.users.findFirst({ where: (table, { eq }) => eq(table.id, ctx.user.id) })
         : await db.query.localUsers.findFirst({ where: (table, { eq }) => eq(table.id, ctx.user.id) });
-      
+
       if (userRec && userRec.createdAt) {
         const day = userRec.createdAt.getDate();
         const currentMonthCycle = new Date(now.getFullYear(), now.getMonth(), day);
@@ -584,7 +630,7 @@ export const aiRouter = router({
 
     const usedVoiceSeconds = await getVoiceSecondsSince(ctx.user.id, ctx.user.type, cycleStart);
     const voiceLimit = planValue(voiceLimits, ctx.user.plan, 300);
-    
+
     return {
       voice: {
         limit: voiceLimit,
@@ -607,7 +653,7 @@ export const aiRouter = router({
       // Get cycle start
       const now = new Date();
       let cycleStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      
+
       if (ctx.user.plan !== "free") {
         const sub = await db.query.proSubscriptions.findFirst({
           where: (table, { and, eq }) => and(eq(table.userId, ctx.user.id), eq(table.userType, ctx.user.type), eq(table.status, "active"))
@@ -618,7 +664,7 @@ export const aiRouter = router({
           cycleStart = now < currentMonthCycle ? new Date(now.getFullYear(), now.getMonth() - 1, day) : currentMonthCycle;
         }
       } else {
-        const userRec = ctx.user.type === "oauth" 
+        const userRec = ctx.user.type === "oauth"
           ? await db.query.users.findFirst({ where: (table, { eq }) => eq(table.id, ctx.user.id) })
           : await db.query.localUsers.findFirst({ where: (table, { eq }) => eq(table.id, ctx.user.id) });
         if (userRec && userRec.createdAt) {
@@ -673,20 +719,20 @@ export const aiRouter = router({
       }
 
       // Get API key
-      let apiKey = cfg.stt_api_key || "AIzaSyCWif4U7uRb1WKG_HTwqNwtNLmvfD5fZj0";
+      let apiKey = cfg.stt_api_key || cfg.ai_api_key || env.GEMINI_API_KEY;
       let apiKey2 = cfg.ai_api_key_2 || "";
       const sttModel = cfg.stt_model || "gemini-3.0-flash-live";
       const fallbackModel = cfg.stt_fallback_model || "gemini-3.1-flash-lite";
 
       const cleanMimeType = input.mimeType.split(';')[0];
       const sttMode = cfg.stt_processing_mode || "standard";
-      
+
       let result = await runSTTPipeline(input.audioBase64, cleanMimeType, apiKey, sttModel, sttMode);
       if (!result) {
         console.warn("STT with primary model failed, falling back to", fallbackModel);
         result = await runSTTPipeline(input.audioBase64, cleanMimeType, apiKey, fallbackModel, sttMode);
       }
-      if (!result && apiKey2 && apiKey2 !== "AIzaSyCTbqi-uF65bRYw8T32DbVOciM9CIMjRuo_placeholder") {
+      if (!result && apiKey2) {
         console.warn("STT with primary key failed, falling back to secondary key with", fallbackModel);
         result = await runSTTPipeline(input.audioBase64, cleanMimeType, apiKey2, fallbackModel, sttMode);
       }
@@ -756,21 +802,31 @@ export const aiRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       // ── 0. Rate Limiting Foundation (Reports Generation Limits) ──
-      /* 
       const lastSummary = await db.select().from(aiSummaries)
         .where(and(eq(aiSummaries.userId, ctx.user.id), eq(aiSummaries.userType, ctx.user.type), eq(aiSummaries.period, "monthly")))
         .orderBy(desc(aiSummaries.createdAt)).limit(1);
-      
+
       if (lastSummary[0]) {
+        const sysSettings = await db.select().from(systemSettings);
+        const limits: Record<string, number> = { free: 30, pro: 14, ultra: 1 };
+        sysSettings.forEach(s => {
+          if (s.key === "report_limit_free" && s.value) limits.free = parseInt(s.value);
+          if (s.key === "report_limit_pro" && s.value) limits.pro = parseInt(s.value);
+          if (s.key === "report_limit_ultra" && s.value) limits.ultra = parseInt(s.value);
+        });
+
+        const plan = ctx.user.plan || "free";
+        const allowedDays = limits[plan] || 30;
         const daysSinceLast = (new Date().getTime() - lastSummary[0].createdAt.getTime()) / (1000 * 3600 * 24);
-        if (ctx.user.plan !== "pro" && daysSinceLast < 30) {
-          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "المستخدم المجاني مسموح له بتقرير ذكي واحد كل شهر." });
-        }
-        if (ctx.user.plan === "pro" && daysSinceLast < 14) {
-          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "مستخدم برو مسموح له بتقرير ذكي كل أسبوعين." });
+
+        if (allowedDays > 0 && daysSinceLast < allowedDays) {
+          const remainingDays = Math.ceil(allowedDays - daysSinceLast);
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: `متبقي ${remainingDays} يوم لطلب التقرير الذكي القادم في خطتك (${plan.toUpperCase()}). للترقية، قم بزيارة صفحة الاشتراك.`
+          });
         }
       }
-      */
 
       // ── 1. Backend Preprocessing (saves 80% tokens) ──
       const [year, month] = input.month.split("-");
@@ -867,12 +923,12 @@ export const aiRouter = router({
       }
       if (monthlyChange > 20 && prevTotal > 0) alerts.push(`📈 مصاريفك زادت ${monthlyChange}% عن الشهر اللي فات`);
       if (monthlyChange < -15 && prevTotal > 0) alerts.push(`✅ أحسنت! مصاريفك قلت ${Math.abs(monthlyChange)}% عن الشهر اللي فات`);
-      
+
       const comparisonIncome = totalIncome > 0
         ? totalIncome
         : Number(userProfile.financialInfo.averageMonthlyIncome || userProfile.legacy.monthlyIncome || 0);
       const incomeRatio = comparisonIncome > 0 ? Math.round((totalExpense / comparisonIncome) * 100) : null;
-      
+
       if (incomeRatio && incomeRatio > 90) alerts.push(`🚨 صرفت ${incomeRatio}% من دخلك - خطر على الميزانية!`);
       if (incomeRatio && incomeRatio < 50 && totalExpense > 0) alerts.push(`💰 مذهل! أنت بتوفر أكتر من نص دخلك.`);
 
@@ -882,7 +938,7 @@ export const aiRouter = router({
       const billCategories = ["فواتير", "اشتراكات", "سكن"];
       const currentBills = userExpenses.filter(e => billCategories.includes(e.category) || (e.subCategory && e.subCategory.includes("اشتراك")));
       const prevBills = prevExpenses.filter(e => billCategories.includes(e.category) || (e.subCategory && e.subCategory.includes("اشتراك")));
-      
+
       prevBills.forEach(pb => {
         // Check if a similar bill was paid this month (by category/description match)
         const isPaid = currentBills.some(cb => cb.category === pb.category && (cb.description === pb.description || Math.abs(Number(cb.amount) - Number(pb.amount)) < 50));
@@ -922,32 +978,17 @@ export const aiRouter = router({
         }
       }
 
-      // ── 5. Build summary for AI (with subcategory focus and Memory) ──
-      const subCatSummary = topSubCategories.slice(0, 8).map(s => `${s.name}: ${s.amount}ج (${s.percent}%)`).join(" | ");
-      const summaryForAI = `الشهر: ${input.month}
-إجمالي المصاريف: ${totalExpense} ج.م | الدخل: ${comparisonIncome} ج.م
-${prevTotal > 0 ? `تغير إجمالي المصاريف عن الشهر السابق: ${monthlyChange > 0 ? "+" : ""}${monthlyChange}%` : "هذا أول شهر يتم تسجيله"}
-أكبر بند إنفاق رئيسي: ${topCategory ? `${topCategory[0]} (${topCategoryPercent}%)` : "لا يوجد"}
-تفاصيل الفئات الفرعية (الأكثر استهلاكاً): ${subCatSummary}
-تغيرات الفئات عن الشهر السابق: ${catChanges.slice(0, 4).map(c => `${c.cat}: ${c.current}ج ${c.prev > 0 ? `(${c.changePercent > 0 ? "+" : ""}${c.changePercent}%)` : ""}`).join(" | ")}
-متوسط الإنفاق اليومي الفعلي: ${dailyAvg} ج.م
-الشخصية المالية التحليلية: ${personality}
----
-الذكاء المالي المتقدم (Perfect Memory & Mimicry):
-- ذاكرة الأنماط: ${patternMemory || "لا يوجد بيانات كافية للمقارنة التاريخية"}
-- فواتير واشتراكات متوقعة قريباً: ${recurringBills.length > 0 ? recurringBills.join(" | ") : "لا يوجد فواتير معلقة مكتشفة بناءً على السجل السابق"}
-- التوقع المالي المستقبلي (Forecasting): ${forecast || "غير متاح لعدم كفاية بيانات الدخل/الأيام"}`;
-
-      // ── 6. Try AI, fallback to backend ──
-      const personalizedSummaryForAI = `${summaryForAI}
----
-${reportPersonalizationContext}`;
-
+      // ── 5. Build summary for AI (DYNAMIC per plan - controlled from dashboard) ──
+      // Get report config from the client (set in getAiClient based on admin dashboard settings)
+      let reportTargetWords = 550;
+      let reportSubcatsLimit = 15;
+      let reportTopItemsLimit = 0;
       let aiModel: any;
       let modelName = "backend";
       let aiResponseLength = "medium";
       let aiFocus = "balanced";
-      
+      let aiSystemPrompt = "[Persona] مستشار مالي مصري ذكي ومتعاطف. لغتك عامية مصرية راقية ومبسطة، وتتحدث وكأنك إنسان حقيقي.\n[Rules]\n1. لا تستخدم العناوين الآلية (مثل التطبيع أو السببية).\n2. واجه المستخدم بالأرقام الحقيقية.\n3. قدم نصائح عملية مصممة خصيصاً للمستخدم بناءً على سلوكه المالي.";
+
       try {
         const client = await getAiClient("report", ctx.user.plan);
         if (!client.canUseAnalysis) {
@@ -958,15 +999,19 @@ ${reportPersonalizationContext}`;
         }
         aiModel = client.aiModel;
         modelName = client.modelName;
+        reportTargetWords = client.reportTargetWords;
+        reportSubcatsLimit = client.reportSubcatsLimit;
+        reportTopItemsLimit = client.reportTopItemsLimit;
 
         const settings = await db.select().from(systemSettings);
         settings.forEach(s => {
           if (s.key === "ai_response_length" && s.value) aiResponseLength = s.value;
           if (s.key === "ai_focus" && s.value) aiFocus = s.value;
+          if (s.key === "ai_system_prompt" && s.value) aiSystemPrompt = s.value;
         });
 
         // Check token limit
-        const tokenField = ctx.user.type === "oauth" 
+        const tokenField = ctx.user.type === "oauth"
           ? await db.select({ t: users.aiTokensUsed }).from(users).where(eq(users.id, ctx.user.id))
           : await db.select({ t: localUsers.aiTokensUsed }).from(localUsers).where(eq(localUsers.id, ctx.user.id));
         const usedTokens = tokenField[0]?.t || 0;
@@ -979,7 +1024,61 @@ ${reportPersonalizationContext}`;
         if (e instanceof TRPCError) throw e;
       }
 
+      // ── Dynamic Data Feed (subcategories depth + item descriptions based on plan) ──
+      const subCatSummary = topSubCategories.slice(0, reportSubcatsLimit).map(s => `${s.name}: ${s.amount}ج (${s.percent}%)`).join(" | ");
+
+      // Build top items list (descriptions of biggest/most recurring expenses) for Pro/Ultra
+      let topItemsContext = "";
+      if (reportTopItemsLimit > 0) {
+        const expenseItems = userExpenses.filter(e => e.type === "expense");
+        // Top items by amount (biggest purchases)
+        const biggestItems = [...expenseItems]
+          .sort((a, b) => Number(b.amount) - Number(a.amount))
+          .slice(0, Math.ceil(reportTopItemsLimit / 2))
+          .map(e => `${e.description || e.category}${e.subCategory && e.subCategory !== "عام" ? ` (${e.subCategory})` : ""}: ${e.amount}ج [${e.category}]`);
+        // Most recurring items (by description frequency)
+        const descFreq: Record<string, { count: number; total: number; cat: string; subCat: string }> = {};
+        expenseItems.forEach(e => {
+          const key = e.description || e.category;
+          if (!descFreq[key]) descFreq[key] = { count: 0, total: 0, cat: e.category, subCat: e.subCategory || "عام" };
+          descFreq[key].count++;
+          descFreq[key].total += Number(e.amount);
+        });
+        const recurringItemsList = Object.entries(descFreq)
+          .filter(([, v]) => v.count >= 2)
+          .sort((a, b) => b[1].count - a[1].count)
+          .slice(0, Math.ceil(reportTopItemsLimit / 2))
+          .map(([name, v]) => `${name} (${v.subCat}): ${v.count} مرات، إجمالي ${v.total}ج [${v.cat}]`);
+
+        if (biggestItems.length > 0 || recurringItemsList.length > 0) {
+          topItemsContext = `\n--- تفاصيل العمليات الفردية ---`;
+          if (biggestItems.length > 0) topItemsContext += `\nأكبر العمليات هذا الشهر: ${biggestItems.join(" | ")}`;
+          if (recurringItemsList.length > 0) topItemsContext += `\nالعمليات المتكررة: ${recurringItemsList.join(" | ")}`;
+        }
+      }
+
+      const summaryForAI = `الشهر: ${input.month}
+إجمالي المصاريف: ${totalExpense} ج.م | الدخل: ${comparisonIncome} ج.م
+${prevTotal > 0 ? `تغير إجمالي المصاريف عن الشهر السابق: ${monthlyChange > 0 ? "+" : ""}${monthlyChange}%` : "هذا أول شهر يتم تسجيله"}
+أكبر بند إنفاق رئيسي: ${topCategory ? `${topCategory[0]} (${topCategoryPercent}%)` : "لا يوجد"}
+تفاصيل الفئات الفرعية (الأكثر استهلاكاً): ${subCatSummary}
+تغيرات الفئات عن الشهر السابق: ${catChanges.slice(0, 6).map(c => `${c.cat}: ${c.current}ج ${c.prev > 0 ? `(${c.changePercent > 0 ? "+" : ""}${c.changePercent}%)` : ""}`).join(" | ")}
+متوسط الإنفاق اليومي الفعلي: ${dailyAvg} ج.م
+الشخصية المالية التحليلية: ${personality}
+عدد المعاملات: ${userExpenses.length}${topItemsContext}
+---
+الذكاء المالي المتقدم (Perfect Memory & Mimicry):
+- ذاكرة الأنماط: ${patternMemory || "لا يوجد بيانات كافية للمقارنة التاريخية"}
+- فواتير واشتراكات متوقعة قريباً: ${recurringBills.length > 0 ? recurringBills.join(" | ") : "لا يوجد فواتير معلقة مكتشفة بناءً على السجل السابق"}
+- التوقع المالي المستقبلي (Forecasting): ${forecast || "غير متاح لعدم كفاية بيانات الدخل/الأيام"}`;
+
+      // ── 6. Try AI, fallback to backend ──
+      const personalizedSummaryForAI = `${summaryForAI}
+---
+${reportPersonalizationContext}`;
+
       let responseJson: any;
+      let aiErrorMsg = "";
 
       if (aiModel) {
         try {
@@ -987,7 +1086,6 @@ ${reportPersonalizationContext}`;
           if (aiResponseLength === "short") lengthInstruction = "اكتب موجزاً تنفيذياً (Executive Summary) مختصراً ومباشراً وضع النقاط الأساسية للقرار المالي.";
           if (aiResponseLength === "detailed") lengthInstruction = "اكتب تقريراً مالياً (Financial Report) متعمقاً جداً ومفصلاً يشرح كل الجوانب، ويحلل المخاطر، والفرص، والأنماط بشكل دقيق واحترافي.";
 
-          // Make length dynamically aware of the transaction count
           lengthInstruction += ` (ملاحظة: النظام يحتوي على تفاصيل ${userExpenses.length} معاملة. يرجى تكييف كثافة وعمق التقرير ليعكس هذا الحجم من البيانات بدقة).`;
 
           let focusInstruction = "ركز على إعطاء مزيج متوازن بين الإحصائيات، ومؤشرات الأداء، والتوصيات.";
@@ -995,42 +1093,84 @@ ${reportPersonalizationContext}`;
           if (aiFocus === "tips") focusInstruction = "ركز بشكل كبير على تقديم توصيات استراتيجية وحلول عملية لإعادة هيكلة الميزانية وتحسين كفاءة الإنفاق.";
           if (aiFocus === "patterns") focusInstruction = "ركز على اكتشاف الأنماط السلوكية، وتفسير توجهات الإنفاق (Spending Trends)، وتقييم السلوك المالي على المدى الطويل.";
 
-          const prompt = `أنت "المستشار المالي الذكي الأقدم" (Senior AI Financial Advisor) لـ SmartSpend.
-المطلوب منك هو صياغة تقرير استشاري مالي "عميق جداً وشامل" للمستخدم بناءً على بياناته المالية المرفقة.
+          // ── Dynamic structure instruction based on target word count from admin dashboard ──
+          let structureInstruction: string;
+          let sectionCount: number;
+          if (reportTargetWords <= 300) {
+            sectionCount = 2;
+            structureInstruction = `اكتب ملخصاً مالياً مركزاً (${reportTargetWords} كلمة تقريباً) مقسم إلى ${sectionCount} قسم: (1) الوضع المالي العام بالأرقام، (2) أهم توصية عملية.`;
+          } else if (reportTargetWords <= 600) {
+            sectionCount = 3;
+            structureInstruction = `اكتب تقريراً مالياً (${reportTargetWords} كلمة تقريباً) مقسم إلى ${sectionCount} أقسام مفصلة:
+القسم 1 - نظرة عامة: اعرض الأرقام الأساسية (الدخل، المصروف، الصافي، المتوسط اليومي) مع تعليق عليها.
+القسم 2 - تحليل الفئات: حلل أعلى 3-5 فئات إنفاق بالتفصيل مع النسب والمقارنة بالشهر السابق.
+القسم 3 - التوصيات: قدم 3-4 نصائح عملية ومحددة بأرقام (مثلاً "قلل بند X من Y إلى Z").`;
+          } else if (reportTargetWords <= 1000) {
+            sectionCount = 4;
+            structureInstruction = `اكتب تقريراً مالياً شاملاً (${reportTargetWords} كلمة تقريباً) مقسم إلى ${sectionCount} أقسام مفصلة:
+القسم 1 - نظرة عامة: الأرقام الأساسية + المقارنة بالشهر السابق + تقييم الوضع المالي العام.
+القسم 2 - تحليل الفئات الفرعية: حلل كل فئة فرعية بالتفصيل (قهوة/مطاعم/أجهزة إلكترونية/مواصلات...) مع ذكر الأوصاف والأماكن إن وُجدت.
+القسم 3 - الأنماط السلوكية: اشرح نمط الإنفاق (اندفاعي؟ محافظ؟) مع نقاط القوة والضعف المالية.
+القسم 4 - خطة التحسين: قدم 5+ توصيات استراتيجية مفصلة بأرقام مقترحة وجدول زمني.`;
+          } else {
+            sectionCount = 5;
+            structureInstruction = `اكتب تقريراً مالياً عميقاً ومشبعاً (لا يقل عن ${reportTargetWords} كلمة) مقسم إجبارياً إلى ${sectionCount} أقسام رئيسية على الأقل:
+القسم 1 - نظرة عامة شاملة: الأرقام الدقيقة + المقارنات + نسبة الاستهلاك من الدخل + تقييم السيولة.
+القسم 2 - تحليل تفصيلي عميق: كل فئة فرعية وكل عملية فردية (ستاربكس، جرير، كارفور...) مع شرح السياق.
+القسم 3 - الأنماط والتوجهات: تحليل سلوكي عميق مع شرح الأسباب المحتملة والمقارنة التاريخية.
+القسم 4 - المخاطر المالية: تحليل السيولة (Burn Rate) + نقاط الضعف + سيناريوهات محتملة.
+القسم 5 - خطة تحسين مفصلة: توصيات استراتيجية مع أرقام مقترحة لكل بند + جدول زمني + أهداف الشهر القادم.`;
+          }
 
-الهدف: تحويل الأرقام الجافة إلى "رؤية استراتيجية" تساعد المستخدم على فهم سلوكه المالي وتطويره.
+          const prompt = `${aiSystemPrompt}
 
-البيانات الإحصائية والسياقية للمستخدم:
+**[تعليمة حاسمة]**: يجب أن يكون طول response_text حوالي ${reportTargetWords} كلمة عربية. هذا شرط غير قابل للتفاوض. إذا كان ردك أقصر من ${Math.round(reportTargetWords * 0.7)} كلمة، فأنت تخالف التعليمات.
+
+[Instructions]
+- ${lengthInstruction}
+- ${focusInstruction}
+- **الهيكل الإلزامي**: ${structureInstruction}
+- تحدث بضمير المخاطب المباشر (أنت) كأنك تجلس مع المستخدم وجهاً لوجه.
+- ادمج الأرقام الحقيقية من البيانات في التحليل بشكل طبيعي.
+- إذا وُجدت تفاصيل عمليات فردية (أسماء أماكن/منتجات)، حللها بعمق واذكرها بالاسم.
+- كل قسم يجب أن يكون فقرة طويلة كاملة (ليس مجرد جملة أو جملتين).
+
+[Context]
+- تاريخ اليوم: ${new Date().toLocaleDateString("ar-EG", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+- الشهر الذي يتم تحليله: ${input.month}
+
+[Data]
 ${personalizedSummaryForAI}
 
-إرشادات صياغة التقرير:
-1. اللغة: استخدم لغة عربية فصحى احترافية (لغة المال والأعمال). لا تستخدم العامية.
-2. الطول والعمق: ${lengthInstruction} (نريد تقريراً غنياً بالتفاصيل، لا يكتفي بذكر ما حدث بل يحلل "لماذا" حدث وما هو "الأثر المتوقع").
-3. التركيز: ${focusInstruction}.
-4. الذاكرة الذكية: ادمج معلومات "ذاكرة الأنماط" و"التوقعات المستقبلية" و"الفواتير المتوقعة" في سياق سردي احترافي كأنك تتذكر تاريخ المستخدم المالي.
-5. الهيكل: قسم التقرير إلى فقرات: (نظرة عامة على الأداء - تحليل السلوك الاستهلاكي - نقاط القوة والضعف - استراتيجية التوفير المقترحة - نظرة مستقبلية).
-
-صيغة الرد (JSON فقط):
+[Output format] رد بصيغة JSON فقط. تذكر: response_text يجب أن يكون نصاً طويلاً ومفصلاً من ${sectionCount} أقسام (حوالي ${reportTargetWords} كلمة):
 {
-  "response_text": "هنا يكتب التقرير الكامل. ابدأ بترحيب مهني. حلل الأرقام بعمق (مثلاً: نلاحظ تمركزاً في بند الرفاهيات مما قد يضغط على السيولة في نهاية الشهر). استخدم مصطلحات مثل: التدفق النقدي، الملاءة المالية، كفاءة الإنفاق، المرونة المالية، إعادة التخصيص الاستراتيجي.",
-  "alerts": ["تنبيه مالي عالي المستوى 1", "تنبيه مالي عالي المستوى 2"],
+  "response_text": "التقرير المالي المفصل هنا — يجب أن يكون ${reportTargetWords} كلمة تقريباً مقسم إلى ${sectionCount} أقسام واضحة",
+  "alerts": ["تنبيه 1", "تنبيه 2"],
   "personality_flag": "${personality}",
-  "data_table": [] 
-}
+  "data_table": []
+}`;
 
-ملاحظة هامة: المستخدم اشتكى سابقاً من قصر الردود، لذا يرجى التوسع في الشرح والتحليل ليكون التقرير ذا قيمة حقيقية ومهنية عالية.`;
 
           const result = await aiModel.generateContent(prompt);
           const raw = result.response.text().replace(/```json?/g, "").replace(/```/g, "").trim();
           const tokens = result.response.usageMetadata?.totalTokenCount || 0;
           await trackTokens(ctx.user.id, ctx.user.type, tokens);
-          
-          try { responseJson = JSON.parse(raw); } catch { 
+
+          try { responseJson = JSON.parse(raw); } catch (e: any) {
             const match = raw.match(/\{[\s\S]*\}/);
-            if (match) try { responseJson = JSON.parse(match[0]); } catch {}
+            if (match) {
+              try { responseJson = JSON.parse(match[0]); } catch (e2: any) {
+                console.error(`Regex Parse Error: ${e2.message}\nRaw:\n${raw}`);
+              }
+            } else {
+              console.error(`No JSON matched.\nParse Error: ${e.message}\nRaw:\n${raw}`);
+            }
           }
-        } catch (err) {
-          console.error("AI Insights Error:", err);
+        } catch (err: any) {
+          console.error(`AI Insights Error: ${err.message}\n${err.stack}`);
+          if (err.message.includes("429") || err.message.includes("Quota")) aiErrorMsg = "تم استهلاك رصيد مفتاح الـ API (Quota Exceeded). يرجى إعداد مفتاح جديد من لوحة الإدارة.";
+          else if (err.message.includes("key not valid")) aiErrorMsg = "مفتاح الذكاء الاصطناعي غير صالح. يرجى التأكد من الإعدادات.";
+          else aiErrorMsg = err.message;
         }
       }
 
@@ -1038,6 +1178,13 @@ ${personalizedSummaryForAI}
       if (!responseJson) {
         modelName = "backend";
         let text = "";
+
+        if (!aiModel) {
+          text += "💡 (ملاحظة: هذا التقرير تم توليده بواسطة النظام الأساسي لأنك استهلكت كل التوكنز المتاحة للذكاء الاصطناعي هذا الشهر. قم بالترقية لزيادة الحدود!)\n\n";
+        } else {
+          text += `💡 (ملاحظة: تم استخدام التحليل الأساسي بدلاً من الذكاء الاصطناعي للسبب التالي: ${aiErrorMsg})\n\n`;
+        }
+
         if (topCategoryPercent > 50) {
           text += `عندك اعتماد عالي جداً على بند "${topCategory![0]}" (${topCategoryPercent}% من صرفك). أي زيادة بسيطة في البند ده ممكن تضغط ميزانيتك بشكل واضح.\n\n`;
         }
@@ -1078,7 +1225,7 @@ ${personalizedSummaryForAI}
           ...learnedAttributes,
         },
         lastAiRefreshAt: new Date(),
-      }).catch(() => {});
+      }).catch(() => { });
       await db.insert(monthlyBehaviorSnapshots).values({
         userId: ctx.user.id,
         userType: ctx.user.type,
@@ -1104,7 +1251,7 @@ ${personalizedSummaryForAI}
           behaviorFlags: behaviorSnapshot.behaviorFlags,
           inferredAttributes: learnedAttributes,
         },
-      }).catch(() => {});
+      }).catch(() => { });
       await recordProfileLearningEvent({
         userId: ctx.user.id,
         userType: ctx.user.type,
@@ -1119,7 +1266,7 @@ ${personalizedSummaryForAI}
         userId: ctx.user.id, userType: ctx.user.type,
         period: "monthly", periodValue: input.month,
         model: modelName, content: insightsStr,
-      }).catch(() => {});
+      }).catch(() => { });
 
       return { insights: insightsStr, cached: false, model: modelName };
     }),

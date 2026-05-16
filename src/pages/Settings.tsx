@@ -8,12 +8,16 @@ import { Input } from "@/components/ui/input";
 import { User, Phone, Save, Link as LinkIcon, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { SmartProfileSettings } from "@/components/profile/SmartProfileSettings";
+import { SmartProfileView } from "@/components/profile/SmartProfileView";
 
 export default function Settings() {
   const { user } = useAuth();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [avatar, setAvatar] = useState("");
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const profileQuery = trpc.profile.getSmartProfile.useQuery();
+  const isProfileComplete = profileQuery.data?.profileCompleted;
 
   const utils = trpc.useUtils();
 
@@ -125,7 +129,20 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        <SmartProfileSettings />
+        {isProfileComplete && !isEditingProfile ? (
+          <SmartProfileView onEdit={() => setIsEditingProfile(true)} />
+        ) : (
+          <div>
+            {isProfileComplete && (
+              <div className="mb-4 flex justify-end">
+                <Button variant="ghost" onClick={() => setIsEditingProfile(false)}>
+                  إلغاء التعديل
+                </Button>
+              </div>
+            )}
+            <SmartProfileSettings />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { AdminSettingsTab } from "@/components/admin/AdminSettingsTab";
 
 export default function Admin() {
   const { user } = useAuth();
@@ -183,14 +184,15 @@ export default function Admin() {
                         <SelectItem value="all">كل الخطط</SelectItem>
                         <SelectItem value="free">مجاني</SelectItem>
                         <SelectItem value="pro">برو</SelectItem>
+                        <SelectItem value="ultra">ألترا</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                <div className="overflow-x-auto hidden lg:block">
+                  <table className="w-full text-sm min-w-[720px]">
                     <thead>
                       <tr className="border-b">
                         <th className="text-right py-3 px-2 min-w-[150px]">المستخدم</th>
@@ -281,6 +283,50 @@ export default function Admin() {
                     </tbody>
                   </table>
                 </div>
+
+                <div className="lg:hidden space-y-3">
+                  {filteredUsers.map((u: any) => (
+                    <Card key={`m-${u.userType}-${u.id}`} className="border-muted">
+                      <CardContent className="p-4 space-y-2 text-sm">
+                        <div className="flex justify-between gap-2">
+                          <div>
+                            <p className="font-semibold">{u.name}</p>
+                            <p className="text-xs text-muted-foreground">{u.email || u.phone}</p>
+                          </div>
+                          <Badge variant={u.userType === "oauth" ? "default" : "secondary"}>
+                            {u.userType === "oauth" ? "OAuth" : "محلي"}
+                          </Badge>
+                        </div>
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          <Badge variant="outline">{u.role || "user"}</Badge>
+                          <Badge variant={u.plan === "pro" ? "default" : u.plan === "ultra" ? "destructive" : "secondary"}>
+                            {u.plan === "pro" ? "برو" : u.plan === "ultra" ? "ألترا" : "مجاني"}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          مصاريف: {Number(u.totalSpent || 0).toLocaleString()} ج.م — {u.expenseCount || 0} عملية
+                        </p>
+                        {user?.role === "admin" && (
+                          <div className="flex gap-2 pt-2">
+                            <Button size="sm" variant="outline" className="flex-1" onClick={() => { setSelectedUser(u); setShowSessions(true); }}>
+                              <Eye className="w-4 h-4 ml-1" /> جلسات
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="flex-1"
+                              onClick={() => {
+                                if (confirm("متأكد من الحذف؟")) deleteUser.mutate({ userId: u.id, userType: u.userType });
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4 ml-1" /> حذف
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -369,7 +415,7 @@ export default function Admin() {
                 <ActivityLog />
               </TabsContent>
               <TabsContent value="settings">
-                <AdminSettings />
+                <AdminSettingsTab />
               </TabsContent>
             </>
           )}
@@ -483,410 +529,7 @@ function ActivityLog() {
   );
 }
 
-function AdminSettings() {
-  const { data: settings, refetch } = trpc.admin.getSettings.useQuery();
-  const { data: modelsData } = trpc.admin.getAvailableModels.useQuery();
-  const updateSettings = trpc.admin.updateSettings.useMutation({
-    onSuccess: () => {
-      toast.success("تم تحديث الإعدادات بنجاح ✅");
-      refetch();
-    },
-    onError: () => toast.error("حدث خطأ أثناء التحديث"),
-  });
 
-  const [formData, setFormData] = useState<Record<string, string>>({});
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    if (settings && !isLoaded) {
-      setFormData({ ...settings });
-      setIsLoaded(true);
-    }
-  }, [settings, isLoaded]);
-
-  const updateField = (key: string, value: string) => {
-    setFormData(prev => ({ ...prev, [key]: value }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateSettings.mutate(formData);
-  };
-
-  const models = modelsData?.models || [];
-
-  return (
-    <div className="space-y-6" dir="rtl">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* ─── API Key ─── */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">🔑 مفتاح API</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 max-w-xl">
-              <label className="text-sm font-medium">Gemini API Key</label>
-              <Input 
-                type="password"
-                placeholder="AIzaSy..." 
-                value={formData.ai_api_key || ""}
-                onChange={(e) => updateField("ai_api_key", e.target.value)}
-                dir="ltr"
-              />
-              <p className="text-xs text-muted-foreground">مفتاح Google AI Studio - يُستخدم لكل طلبات الذكاء الاصطناعي</p>
-            </div>
-            <div className="space-y-2 max-w-xl mt-4">
-              <label className="text-sm font-medium">Gemini API Key 2 (الاحتياطي)</label>
-              <Input 
-                type="password"
-                placeholder="AIzaSy..." 
-                value={formData.ai_api_key_2 || ""}
-                onChange={(e) => updateField("ai_api_key_2", e.target.value)}
-                dir="ltr"
-              />
-              <p className="text-xs text-muted-foreground">مفتاح احتياطي يعمل تلقائياً في حال نفاذ الحد الأقصى للمفتاح الأول.</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* ─── Model Selection ─── */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">🤖 اختيار الموديلات</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                { key: "ai_model_free", label: "موديل المجاني", desc: "للمستخدمين المجانيين" },
-                { key: "ai_model_pro", label: "موديل البرو", desc: "لمشتركين البرو" },
-                { key: "ai_model_ultra", label: "موديل الألترا", desc: "لمشتركين الألترا" },
-                { key: "ai_model_reports", label: "موديل التقارير", desc: "للتحليلات الشهرية" },
-              ].map(({ key, label, desc }) => (
-                <div key={key} className="space-y-2">
-                  <label className="text-sm font-medium">{label}</label>
-                  <Select value={formData[key] || ""} onValueChange={(v) => updateField(key, v)}>
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="اختر موديل" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {models.map((m: any) => (
-                        <SelectItem key={m.id} value={m.id}>
-                          <div className="flex items-center gap-2">
-                            <span>{m.name}</span>
-                            <Badge variant="outline" className="text-[10px] h-4 px-1">{m.tier}</Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">{desc}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* ─── Token Limits ─── */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">🎫 حدود التوكنز (إجمالي)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { key: "free_token_limit", label: "مجاني", color: "text-slate-600" },
-                { key: "pro_token_limit", label: "برو", color: "text-blue-600" },
-                { key: "ultra_token_limit", label: "ألترا", color: "text-purple-600" },
-              ].map(({ key, label, color }) => (
-                <div key={key} className="space-y-2">
-                  <label className={`text-sm font-medium ${color}`}>حد التوكنز - {label}</label>
-                  <Input 
-                    type="number" dir="ltr"
-                    value={formData[key] || ""}
-                    onChange={(e) => updateField(key, e.target.value)}
-                  />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* ─── Daily Limits ─── */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">📊 الحد اليومي (عدد الطلبات)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { key: "free_daily_limit", label: "مجاني" },
-                { key: "pro_daily_limit", label: "برو" },
-                { key: "ultra_daily_limit", label: "ألترا" },
-              ].map(({ key, label }) => (
-                <div key={key} className="space-y-2">
-                  <label className="text-sm font-medium">طلبات يومية - {label}</label>
-                  <Input 
-                    type="number" dir="ltr"
-                    value={formData[key] || ""}
-                    onChange={(e) => updateField(key, e.target.value)}
-                  />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* ─── Per-Request Max Tokens ─── */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">⚡ أقصى توكنز للطلب الواحد</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { key: "free_max_per_request", label: "مجاني" },
-                { key: "pro_max_per_request", label: "برو" },
-                { key: "ultra_max_per_request", label: "ألترا" },
-              ].map(({ key, label }) => (
-                <div key={key} className="space-y-2">
-                  <label className="text-sm font-medium">حد الطلب - {label}</label>
-                  <Input 
-                    type="number" dir="ltr"
-                    value={formData[key] || ""}
-                    onChange={(e) => updateField(key, e.target.value)}
-                  />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* ─── STT Configuration ─── */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">🗣️ إعدادات تحويل الصوت (STT)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4 max-w-xl">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">STT API Key</label>
-                <Input 
-                  type="password"
-                  placeholder="AIzaSy..." 
-                  value={formData.stt_api_key || ""}
-                  onChange={(e) => updateField("stt_api_key", e.target.value)}
-                  dir="ltr"
-                />
-                <p className="text-xs text-muted-foreground">مفتاح خاص لعمليات تحويل الصوت لنص</p>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">الموديل الأساسي (STT)</label>
-                <Select value={formData.stt_model || ""} onValueChange={(v) => updateField("stt_model", v)}>
-                  <SelectTrigger className="h-9" dir="ltr">
-                    <SelectValue placeholder="اختر الموديل الأساسي" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {models.map((m: any) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        <div className="flex items-center gap-2">
-                          <span>{m.name}</span>
-                          <Badge variant="outline" className="text-[10px] h-4 px-1">{m.tier}</Badge>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">الموديل الاحتياطي (Fallback)</label>
-                <Select value={formData.stt_fallback_model || ""} onValueChange={(v) => updateField("stt_fallback_model", v)}>
-                  <SelectTrigger className="h-9" dir="ltr">
-                    <SelectValue placeholder="اختر الموديل الاحتياطي" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {models.map((m: any) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        <div className="flex items-center gap-2">
-                          <span>{m.name}</span>
-                          <Badge variant="outline" className="text-[10px] h-4 px-1">{m.tier}</Badge>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2 pt-2 border-t mt-2">
-                <label className="text-sm font-medium">نظام معالجة الصوت (STT Mode)</label>
-                <Select value={formData.stt_processing_mode || "standard"} onValueChange={(v) => updateField("stt_processing_mode", v)}>
-                  <SelectTrigger className="h-9" dir="ltr">
-                    <SelectValue placeholder="اختر نظام المعالجة" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="standard">Standard Inline (الوضع الافتراضي)</SelectItem>
-                    <SelectItem value="live_api">Live API Session (للأداء الحي السريع)</SelectItem>
-                    <SelectItem value="native_audio">Native Audio Dialog (مخصص للصوت العالي)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-[10px] text-muted-foreground mt-1 text-right">طريقة دمج الصوت مع الموديل الأب</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* ─── Voice Recording Limits ─── */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">🎤 حدود التسجيل الصوتي (بالثواني)</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <h4 className="text-sm font-bold mb-3">الحد الشهري للتسجيل</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  { key: "voice_limit_free", label: "مجاني", desc: "300 = 5 دقائق" },
-                  { key: "voice_limit_pro", label: "برو", desc: "1800 = 30 دقيقة" },
-                  { key: "voice_limit_ultra", label: "ألترا", desc: "0 = غير محدود" },
-                ].map(({ key, label, desc }) => (
-                  <div key={key} className="space-y-2">
-                    <label className="text-sm font-medium">شهري - {label}</label>
-                    <Input 
-                      type="number" dir="ltr"
-                      value={formData[key] || ""}
-                      onChange={(e) => updateField(key, e.target.value)}
-                    />
-                    <p className="text-[10px] text-muted-foreground">{desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="border-t pt-4">
-              <h4 className="text-sm font-bold mb-3">أقصى مدة للتسجيل الواحد (Per Request)</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  { key: "voice_per_req_free", label: "مجاني", desc: "مثال: 60 (دقيقة واحدة)" },
-                  { key: "voice_per_req_pro", label: "برو", desc: "مثال: 180 (3 دقائق)" },
-                  { key: "voice_per_req_ultra", label: "ألترا", desc: "مثال: 300 (5 دقائق)" },
-                ].map(({ key, label, desc }) => (
-                  <div key={key} className="space-y-2">
-                    <label className="text-sm font-medium">للمرة الواحدة - {label}</label>
-                    <Input 
-                      type="number" dir="ltr"
-                      value={formData[key] || ""}
-                      onChange={(e) => updateField(key, e.target.value)}
-                    />
-                    <p className="text-[10px] text-muted-foreground">{desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* ─── Confidence Thresholds ─── */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">🎯 حدود الثقة للتصنيف (0-100)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                { key: "confidence_auto_save", label: "الحفظ التلقائي", desc: "أعلى من القيمة دي هيتحفظ فوراً" },
-                { key: "confidence_review", label: "المراجعة", desc: "أعلى من دي وأقل من الحفظ هيظهر في المراجعة" },
-              ].map(({ key, label, desc }) => (
-                <div key={key} className="space-y-2">
-                  <label className="text-sm font-medium">{label}</label>
-                  <Input 
-                    type="number" dir="ltr"
-                    value={formData[key] || ""}
-                    onChange={(e) => updateField(key, e.target.value)}
-                  />
-                  <p className="text-[10px] text-muted-foreground">{desc}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* ─── AI Response Settings ─── */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">🧠 إعدادات ردود الذكاء الاصطناعي</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">طول الرد التحليلي</label>
-                <Select value={formData.ai_response_length || "medium"} onValueChange={(v) => updateField("ai_response_length", v)}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="اختر طول الرد" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="short">مختصر جداً</SelectItem>
-                    <SelectItem value="medium">متوسط (متوازن)</SelectItem>
-                    <SelectItem value="detailed">تحليلي متعمق ومفصل</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-[10px] text-muted-foreground">يتحكم في طول وكثافة الشرح في تقارير الذكاء الاصطناعي.</p>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">تركيز التحليل</label>
-                <Select value={formData.ai_focus || "balanced"} onValueChange={(v) => updateField("ai_focus", v)}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="اختر التركيز" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="balanced">متوازن (نصائح وإحصائيات)</SelectItem>
-                    <SelectItem value="statistics">الإحصائيات والأرقام فقط</SelectItem>
-                    <SelectItem value="tips">النصائح المالية والتوفير</SelectItem>
-                    <SelectItem value="patterns">الأنماط السلوكية الاستهلاكية</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-[10px] text-muted-foreground">يحدد الجانب الذي يركز عليه الذكاء الاصطناعي أكثر في رده.</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* ─── Feature Toggles ─── */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">🔧 صلاحيات الميزات</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {["free", "pro", "ultra"].map((plan) => (
-                <div key={plan} className="border rounded-lg p-4 space-y-3">
-                  <h4 className="font-bold text-sm capitalize">
-                    {plan === "free" ? "🆓 مجاني" : plan === "pro" ? "⭐ برو" : "💎 ألترا"}
-                  </h4>
-                  {[
-                    { key: `${plan}_ai_parse`, label: "تحليل الرسائل بالـ AI" },
-                    { key: `${plan}_ai_analysis`, label: "التحليل الشهري بالـ AI" },
-                  ].map(({ key, label }) => (
-                    <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={formData[key] !== "false"}
-                        onChange={(e) => updateField(key, e.target.checked ? "true" : "false")}
-                        className="rounded"
-                      />
-                      {label}
-                    </label>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Button type="submit" className="w-full" disabled={updateSettings.isPending}>
-          {updateSettings.isPending ? "جاري الحفظ..." : "💾 حفظ جميع الإعدادات"}
-        </Button>
-      </form>
-    </div>
-  );
-}
 
 function ClassificationDashboard() {
   const { classificationStats, classificationLogs } = useAdmin({ classification: true });

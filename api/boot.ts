@@ -57,6 +57,19 @@ app.use("/api/trpc/*", trpcServer({
   createContext: async ({ req }) => createContext(req),
 }));
 
+app.post("/api/webhooks/paymob", async (c) => {
+  const raw = await c.req.text();
+  let parsed: unknown = {};
+  try {
+    parsed = JSON.parse(raw || "{}");
+  } catch {
+    parsed = { raw };
+  }
+  console.info("[paymob webhook]", JSON.stringify(parsed));
+  // TODO: verify HMAC with env.PAYMOB_HMAC_SECRET, locate pending order, call grantProSubscription / update rows.
+  return c.json({ ok: true });
+});
+
 // Health check
 app.get("/health", (c) => c.json({ status: "ok", timestamp: new Date().toISOString() }));
 

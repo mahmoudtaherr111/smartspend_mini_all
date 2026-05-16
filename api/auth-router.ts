@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, publicProcedure } from "./middleware";
+import { router, publicProcedure, strictPublicProcedure } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
 import { users } from "../db/schema";
@@ -48,7 +48,7 @@ export const authRouter = router({
     return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   }),
 
-  googleCallback: publicProcedure
+  googleCallback: strictPublicProcedure
     .input(z.object({ code: z.string() }))
     .mutation(async ({ input }) => {
       const tokens = await getGoogleTokens(input.code);

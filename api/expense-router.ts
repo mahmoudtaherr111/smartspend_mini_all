@@ -3,19 +3,24 @@ import { router, authedProcedure } from "./middleware";
 import { db, getDb } from "./queries/connection";
 import { expenses, expenseCategories } from "../db/schema";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
+import { ExpenseInputLimits } from "../contracts/constants";
 
 const transactionTypeSchema = z.enum(["income", "expense", "transfer", "investment"]);
+
+const expenseRawText = z.string().min(1).max(ExpenseInputLimits.rawTextMax);
+const expenseCategory = z.string().min(1).max(ExpenseInputLimits.categoryMax);
+const expenseAmount = z.number().positive().max(ExpenseInputLimits.amountMax);
 
 export const expenseRouter = router({
   create: authedProcedure
     .input(
       z.object({
-        amount: z.number().positive(),
+        amount: expenseAmount,
         type: transactionTypeSchema.default("expense"),
-        category: z.string().min(1),
-        subCategory: z.string().optional(),
-        description: z.string().optional(),
-        rawText: z.string().min(1),
+        category: expenseCategory,
+        subCategory: z.string().max(ExpenseInputLimits.subCategoryMax).optional(),
+        description: z.string().max(ExpenseInputLimits.descriptionMax).optional(),
+        rawText: expenseRawText,
         source: z.enum(["voice", "manual", "ai_parsed"]).default("manual"),
         date: z.string().optional(),
       })
@@ -48,7 +53,7 @@ export const expenseRouter = router({
       z.object({
         startDate: z.string().optional(),
         endDate: z.string().optional(),
-        category: z.string().optional(),
+        category: z.string().max(ExpenseInputLimits.categoryMax).optional(),
         type: transactionTypeSchema.optional(),
         limit: z.number().min(1).max(100).default(50),
         offset: z.number().min(0).default(0),
@@ -99,11 +104,11 @@ export const expenseRouter = router({
     .input(
       z.object({
         id: z.number(),
-        amount: z.number().positive().optional(),
+        amount: expenseAmount.optional(),
         type: transactionTypeSchema.optional(),
-        category: z.string().optional(),
-        description: z.string().optional(),
-        rawText: z.string().optional(),
+        category: expenseCategory.optional(),
+        description: z.string().max(ExpenseInputLimits.descriptionMax).optional(),
+        rawText: expenseRawText.optional(),
         date: z.string().optional(),
       })
     )

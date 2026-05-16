@@ -102,6 +102,14 @@
   background: linear-gradient(to bottom, #059669, #2563eb);
 }
 
+.dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #047857, #1d4ed8);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #065f46, #1e40af);
+}
+
 /* Income/Expense badges */
 .badge-income {
   background: linear-gradient(135deg, #10b981, #059669);
@@ -144,4 +152,9 @@
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
+}
+
+.dark .shimmer {
+  background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.35), transparent);
+  background-size: 200% 100%;
 }

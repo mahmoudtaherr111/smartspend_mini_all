@@ -29,8 +29,8 @@ function adjustConfidence(item: ParsedTransaction): ParsedTransaction {
   if (item.category === "متنوعات") conf = Math.min(conf, 40);
 
   // Penalty: subCategory is "عام" when category was found
-  if (item.subCategory === "عام" && item.category !== "متنوعات") {
-    conf = Math.max(conf - 10, 30);
+  if (item.subCategory === "عام" && item.category !== "متنوعات" && item.parsedBy !== "ai") {
+    conf = Math.max(conf - 5, 30);
   }
 
   // Boost: user dictionary match (parsedBy check is implicit via confidence=100)
@@ -119,7 +119,12 @@ export function scoreAndDecide(
   }
 
   // Apply confidence adjustments
-  const scoredItems = items.map(adjustConfidence);
+  let scoredItems = items.map(adjustConfidence);
+
+  // Multi-transaction boost (if 4+ items and all have decent confidence, boost them)
+  if (scoredItems.length >= 4 && scoredItems.every(i => i.confidence >= 60)) {
+    scoredItems = scoredItems.map(i => ({ ...i, confidence: Math.min(i.confidence + 10, 100), needsReview: i.confidence + 10 < 85 }));
+  }
 
   // Calculate overall confidence
   const overallConfidence = Math.round(
