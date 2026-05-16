@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/providers/trpc";
 import { toast } from "sonner";
 import { Mic, MicOff, Plus, Loader2, Sparkles, ChevronDown, ChevronUp, AlertCircle, HelpCircle, Save, CheckCircle2, RefreshCw, Square } from "lucide-react";
+import { ExpenseInputLimits } from "@contracts/constants";
 import { cn } from "@/lib/utils";
 
 interface ExpenseFormProps {
@@ -168,11 +169,13 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
           return newDur;
         });
       }, 1000);
-    } catch (err: any) {
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+    } catch (err: unknown) {
+      const name =
+        err && typeof err === "object" && "name" in err ? String((err as { name?: string }).name) : "";
+      if (name === "NotAllowedError" || name === "PermissionDeniedError") {
         toast.error("لقد قمت برفض صلاحية الميكروفون. يرجى تفعيلها من إعدادات المتصفح.");
       } else {
-        toast.error(`خطأ في الوصول للميكروفون: ${err.message}`);
+        toast.error("مقدرناش نسجّل الصوت، جرّب تاني أو تحقق من إعدادات الميكروفون.");
       }
     }
   };
@@ -216,6 +219,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
             description: item.description,
             rawText: text || "إدخال صوتي",
             source: "ai_parsed",
+            date: item.date,
           })
         )
       );
@@ -239,6 +243,10 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim()) return;
+    if (text.length > ExpenseInputLimits.rawTextMax) {
+      toast.error(`النص طويل أوي — الحد الأقصى ${ExpenseInputLimits.rawTextMax} حرف.`);
+      return;
+    }
     setIsProcessingVoice(true);
     setFlowStage("processing");
     parseMutation.mutate({ text });
@@ -285,6 +293,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
+              maxLength={ExpenseInputLimits.rawTextMax}
               placeholder={isRecording ? "جاري الاستماع... يمكنك التحدث الآن" : "سجل مصاريفك أو دخلك هنا... (مثال: صرفت 150 جنيه مطعم)"}
               className={cn(
                 "w-full min-h-[140px] p-5 text-lg rounded-xl border transition-all resize-none shadow-sm focus:outline-none focus:ring-1",
@@ -295,6 +304,17 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
               dir="rtl"
               disabled={isRecording}
             />
+            {isRecording && (
+              <div className="flex items-end justify-center gap-1 h-8 mt-2" aria-hidden>
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <span
+                    key={i}
+                    className="w-1.5 rounded-full bg-primary recording-pulse"
+                    style={{ height: `${12 + (i % 3) * 8}px`, animationDelay: `${i * 0.12}s` }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-3">

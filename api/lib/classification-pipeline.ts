@@ -195,13 +195,14 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
     if (items.length === 0) {
       log.aiResult.attempted = true;
 
-      // Determine if text needs AI
       const isComplexText = input.text.length > 35 || entities.hasMultipleTransactions;
       const isWeakRuleResult = ruleResult.items.some(
         it => it.category === "متنوعات" || it.confidence < 80
       );
 
-      if (isComplexText || isWeakRuleResult || ruleResult.needsAI || input.skipClarification) {
+      const forceSkipClarification = input.skipClarification || entities.amounts.length >= 2;
+
+      if (isComplexText || isWeakRuleResult || ruleResult.needsAI || forceSkipClarification) {
         try {
           const currentDate = new Date().toLocaleString("ar-EG", { timeZone: "Africa/Cairo" });
           const aiResult = await aiClassify(
@@ -215,8 +216,9 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
               totalExpense: input.monthlyContext.totalExpense,
               currentDate,
               userProfileContext: input.userProfileContext?.promptSummary,
+              ruleHints: ruleResult.items.filter(i => i.confidence >= 60)
             },
-            input.skipClarification
+            forceSkipClarification
           );
 
           if (aiResult) {
@@ -224,11 +226,18 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
             modelUsed = aiResult.modelUsed;
             log.aiResult.modelUsed = aiResult.modelUsed;
 
-            const isSkipped = input.skipClarification;
+            const isSkipped = forceSkipClarification;
 
             if (isSkipped) {
               if (aiResult.items.length > 0) {
-                items = aiResult.items.map(item => ({ ...item, confidence: Math.min(item.confidence, 55), needsReview: true }));
+                // If it was forced because of amounts, we don't necessarily want to cap confidence at 55
+                // Let's cap only if it was an explicit user skip, otherwise trust the AI
+                const capConfidence = input.skipClarification;
+                items = aiResult.items.map(item => ({ 
+                  ...item, 
+                  confidence: capConfidence ? Math.min(item.confidence, 55) : item.confidence, 
+                  needsReview: capConfidence ? true : item.needsReview 
+                }));
                 alertMessage = aiResult.alertMessage || null;
                 parsedBy = ruleResult.items.length > 0 ? "hybrid" : "ai";
                 log.aiResult.succeeded = true;
@@ -306,6 +315,19 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
         items = ruleResult.items;
       }
     }
+  }
+
+  // ── Step 5.5: Apply Date Hints ──
+  if (entities.dateHints && entities.dateHints.length > 0 && items.length > 0) {
+    const hint = entities.dateHints[0];
+    const targetDate = new Date();
+    if (hint === "امبارح") {
+      targetDate.setDate(targetDate.getDate() - 1);
+    } else if (hint === "أول امبارح" || hint === "اول امبارح") {
+      targetDate.setDate(targetDate.getDate() - 2);
+    }
+    const isoDate = targetDate.toISOString();
+    items.forEach(item => { item.date = isoDate; });
   }
 
   // ── Step 6+7: Confidence Scoring + Decision ──

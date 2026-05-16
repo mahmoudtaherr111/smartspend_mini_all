@@ -27,7 +27,7 @@ export default function Login() {
     onSuccess: (data) => {
       localStorage.setItem("local_auth_token", data.token);
       toast.success("تم تسجيل الدخول بنجاح! 🎉");
-      window.location.href = "/";
+      window.location.href = "/dashboard";
     },
     onError: (err) => {
       toast.error(err.message);
@@ -38,7 +38,7 @@ export default function Login() {
     onSuccess: (data) => {
       localStorage.setItem("local_auth_token", data.token);
       toast.success("تم إنشاء الحساب بنجاح! 🎉");
-      window.location.href = "/";
+      window.location.href = "/dashboard";
     },
     onError: (err) => {
       toast.error(err.message);

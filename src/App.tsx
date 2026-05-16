@@ -1,3 +1,4 @@
+import React, { Suspense, lazy, useState } from "react";
 import { ThemeProvider } from "next-themes";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -5,39 +6,66 @@ import { trpc, trpcClient } from "@/providers/trpc";
 import { Toaster } from "@/components/ui/sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Sidebar } from "@/components/Sidebar";
-import { SEOMeta } from "@/components/seo/SEOMeta";
 import { AdBanner } from "@/components/ads/AdBanner";
-import { useState } from "react";
-import { cn } from "@/lib/utils";
 import { useSessionTracker } from "@/hooks/useSessionTracker";
+import { cn } from "@/lib/utils";
+import { PageLoadingSkeleton } from "@/components/PageLoadingSkeleton";
+import { UltraFeatureRoute } from "@/components/routing/PlanGates";
 
-// Pages
-import Login from "@/pages/Login";
-import AuthCallback from "@/pages/AuthCallback";
-import Home from "@/pages/Home";
-import Support from "@/pages/Support";
-import Admin from "@/pages/Admin";
-import Pro from "@/pages/Pro";
-import Settings from "@/pages/Settings";
-
-// CSS
 import "./3d-effects.css";
 import "./print.css";
 
-const queryClient = new QueryClient();
+const Login = lazy(() => import("@/pages/Login"));
+const AuthCallback = lazy(() => import("@/pages/AuthCallback"));
+const Landing = lazy(() => import("@/pages/Landing"));
+const Home = lazy(() => import("@/pages/Home"));
+const Support = lazy(() => import("@/pages/Support"));
+const Admin = lazy(() => import("@/pages/Admin"));
+const Pro = lazy(() => import("@/pages/Pro"));
+const Settings = lazy(() => import("@/pages/Settings"));
+const Privacy = lazy(() => import("@/pages/Privacy"));
+const Terms = lazy(() => import("@/pages/Terms"));
+const UltraLounge = lazy(() => import("@/pages/UltraLounge"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+    },
+  },
+});
+
+function HomeEntry() {
+  const { user, isLoading } = useAuth();
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background" dir="rtl">
+        جاري التحميل...
+      </div>
+    );
+  }
+  if (user) return <Navigate to="/dashboard" replace />;
+  return (
+    <Suspense fallback={<PageLoadingSkeleton />}>
+      <Landing />
+    </Suspense>
+  );
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   useSessionTracker();
-  if (isLoading) return <div className="flex items-center justify-center h-screen">جاري التحميل...</div>;
+  if (isLoading) return <PageLoadingSkeleton />;
   if (!user) return <Navigate to="/login" />;
   return <>{children}</>;
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading, isModerator } = useAuth();
-  if (isLoading) return <div className="flex items-center justify-center h-screen">جاري التحميل...</div>;
-  if (!user || !isModerator) return <Navigate to="/" />;
+  if (isLoading) return <PageLoadingSkeleton />;
+  if (!user || !isModerator) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 
@@ -47,10 +75,8 @@ function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
-      {/* <SEOMeta /> */}
       {user && (
         <>
-          {/* Mobile Header */}
           <div className="lg:hidden flex items-center justify-between p-4 bg-slate-900 text-white border-b border-white/10 sticky top-0 z-40">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-lg">
@@ -59,7 +85,8 @@ function Layout({ children }: { children: React.ReactNode }) {
               <span className="font-bold text-lg tracking-tight">SmartSpend</span>
             </div>
             <div className="flex items-center gap-2">
-              <button 
+              <button
+                type="button"
                 onClick={() => setSidebarOpen(true)}
                 className="p-2 hover:bg-white/10 rounded-lg transition-colors"
               >
@@ -70,10 +97,7 @@ function Layout({ children }: { children: React.ReactNode }) {
           <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
         </>
       )}
-      <main className={cn(
-        "transition-all duration-500",
-        user ? "lg:mr-72" : ""
-      )}>
+      <main className={cn("transition-all duration-500", user ? "lg:mr-72" : "")}>
         {user && <AdBanner />}
         {children}
       </main>
@@ -81,29 +105,46 @@ function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-import React from "react";
-
-class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
-  constructor(props: {children: React.ReactNode}) {
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(error: any) {
+  static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: any, errorInfo: any) {
-    console.error("React Error Boundary Caught:", error, errorInfo);
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("React Error Boundary:", error, errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: '20px', color: 'red', background: 'white' }}>
-          <h1>Something went wrong.</h1>
-          <pre>{this.state.error?.toString()}</pre>
-          <pre>{this.state.error?.stack}</pre>
+        <div
+          className="min-h-screen flex flex-col items-center justify-center p-6 bg-background text-foreground"
+          dir="rtl"
+        >
+          <div className="max-w-lg w-full rounded-xl border border-destructive/30 bg-card p-6 shadow-sm space-y-4">
+            <h1 className="text-xl font-bold text-destructive">حصل مشكلة في العرض</h1>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              حصل خطأ غير متوقع. جرّب تعيد تحميل الصفحة. لو المشكلة مستمرة، سجّل الدخول من جديد أو تواصل مع الدعم.
+            </p>
+            <pre className="text-xs bg-muted p-3 rounded-lg overflow-auto max-h-40 whitespace-pre-wrap">
+              {this.state.error?.message}
+            </pre>
+            <button
+              type="button"
+              className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+              onClick={() => window.location.reload()}
+            >
+              إعادة تحميل
+            </button>
+          </div>
         </div>
       );
     }
@@ -119,16 +160,33 @@ export default function App() {
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <BrowserRouter>
               <Layout>
-                <Routes>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/auth/callback" element={<AuthCallback />} />
-                  <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-                  <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
-                  <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
-                  <Route path="/pro" element={<ProtectedRoute><Pro /></ProtectedRoute>} />
-                  <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                  <Route path="*" element={<Navigate to="/" />} />
-                </Routes>
+                <Suspense fallback={<PageLoadingSkeleton />}>
+                  <Routes>
+                    <Route path="/" element={<HomeEntry />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/auth/callback" element={<AuthCallback />} />
+                    <Route path="/privacy" element={<Privacy />} />
+                    <Route path="/terms" element={<Terms />} />
+
+                    <Route path="/dashboard" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                    <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
+                    <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+                    <Route path="/pro" element={<ProtectedRoute><Pro /></ProtectedRoute>} />
+                    <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                    <Route
+                      path="/ultra"
+                      element={
+                        <ProtectedRoute>
+                          <UltraFeatureRoute>
+                            <UltraLounge />
+                          </UltraFeatureRoute>
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
               </Layout>
               <Toaster position="top-center" richColors />
             </BrowserRouter>

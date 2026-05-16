@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { router, authedProcedure, adminProcedure } from "./middleware";
 import { db } from "./queries/connection";
-import { users, localUsers, referrals, discountCodes } from "../db/schema";
+import { users, localUsers, referrals, discountCodes, systemSettings } from "../db/schema";
 import { eq, and, sql, count, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
@@ -38,7 +38,10 @@ export const referralRouter = router({
         eq(referrals.status, "completed")
       ));
 
-    return { code, totalReferrals: referralCount[0]?.count ?? 0, completed: completedCount[0]?.count ?? 0 };
+    const settings = await db.select().from(systemSettings).where(eq(systemSettings.key, "promo_code_discount")).limit(1);
+    const discount = settings[0]?.value || "20";
+
+    return { code, totalReferrals: referralCount[0]?.count ?? 0, completed: completedCount[0]?.count ?? 0, discount };
   }),
 
   // ─── Apply Referral Code ───

@@ -83,7 +83,12 @@ export function useAuth() {
     isLoading,
     isAdmin: user?.role === "admin",
     isModerator: user?.role === "moderator" || user?.role === "admin",
-    isPro: user?.plan === "pro",
+    /** Pro or Ultra or Admin — matches premium feature access across the app */
+    isPro:
+      user?.plan === "pro" || user?.plan === "ultra" || user?.role === "admin",
+    hasProAccess:
+      !!user && (user.plan === "pro" || user.plan === "ultra" || user.role === "admin"),
+    hasUltraAccess: !!user && (user.plan === "ultra" || user.role === "admin"),
     logout,
   };
 }

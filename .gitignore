@@ -17,3 +17,8 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+
+# Dev artifacts
+scratch/
+.gemini/
+*.prompt.md

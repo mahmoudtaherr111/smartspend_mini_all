@@ -20,7 +20,7 @@ export default function AuthCallback() {
     if (token) {
       // Token is already set in cookie by the server
       toast.success("تم تسجيل الدخول بنجاح!");
-      navigate("/");
+      navigate("/dashboard");
     } else {
       toast.error("مفيش توكن. جرب تاني.");
       navigate("/login");

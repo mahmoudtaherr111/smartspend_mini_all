@@ -1,12 +1,31 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import { Context } from "./context";
+import { createRateLimiter } from "./lib/rate-limit";
 
 const t = initTRPC.context<Context>().create();
 
 export const router = t.router;
-export const publicProcedure = t.procedure;
 
-// Simple in-memory rate limiter
+/** All anonymous tRPC traffic — generous per-IP cap (SEO, ads list, etc.). */
+const publicIpLimiter = createRateLimiter(400, 60_000);
+/** Sensitive auth endpoints — stricter per-IP cap. */
+const strictPublicIpLimiter = createRateLimiter(25, 15 * 60_000);
+
+export const publicProcedure = t.procedure.use(async ({ ctx, next }) => {
+  publicIpLimiter.hit(`pub:${ctx.ip}`, "طلبات كتير جداً من نفس الشبكة. جرب بعد دقيقة.");
+  return next();
+});
+
+/** Use for register / login / OAuth token exchange — anti brute-force per IP. */
+export const strictPublicProcedure = t.procedure.use(async ({ ctx, next }) => {
+  strictPublicIpLimiter.hit(
+    `strict:${ctx.ip}`,
+    "محاولات كتيرة لتسجيل الدخول أو التسجيل من نفس الشبكة. استنى شوية وحاول تاني."
+  );
+  return next();
+});
+
+// Simple in-memory rate limiter (per authenticated user)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const MAX_REQUESTS = 100; // 100 requests per minute
@@ -17,7 +36,6 @@ export const authedProcedure = t.procedure.use(async ({ ctx, next }) => {
     throw new TRPCError({ code: "UNAUTHORIZED", message: "يجب تسجيل الدخول أولاً" });
   }
 
-  // Rate Limiting
   const key = `${ctx.user.type}:${ctx.user.id}`;
   const now = Date.now();
   const limit = rateLimitMap.get(key);

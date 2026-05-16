@@ -31,6 +31,7 @@ export interface ParsedTransaction {
   parsedBy: "rule_engine" | "ai" | "manual";
   inferenceSource?: "synonym" | "rule" | "dictionary" | "ai";
   ambiguityFlags?: string[];
+  date?: string; // Add optional date string for parsed dates like "yesterday"
   confidenceBreakdown?: {
     intent: number;
     taxonomy: number;
@@ -156,6 +157,19 @@ const SUB_CATEGORY_MAP: Record<string, { category: string; subCategory: string }
   "مكافاه": { category: "مرتب", subCategory: "مكافأة/بونص" },
   "عموله": { category: "عمل حر", subCategory: "عمولة" },
   "سبوبه": { category: "عمل حر", subCategory: "سبوبة" },
+  "سجاير": { category: "تسوق", subCategory: "عناية شخصية" },
+  "سجائر": { category: "تسوق", subCategory: "عناية شخصية" },
+  "سجاره": { category: "تسوق", subCategory: "عناية شخصية" },
+  "حلاق": { category: "تسوق", subCategory: "عناية شخصية" },
+  "لبان": { category: "أكل وشرب", subCategory: "سناكس" },
+  "شيبسي": { category: "أكل وشرب", subCategory: "سناكس" },
+  "اوريو": { category: "أكل وشرب", subCategory: "سناكس" },
+  "هوهوز": { category: "أكل وشرب", subCategory: "سناكس" },
+  "دونت": { category: "أكل وشرب", subCategory: "سناكس" },
+  "تويست": { category: "أكل وشرب", subCategory: "سناكس" },
+  "بلايستيشن": { category: "ترفيه", subCategory: "ألعاب" },
+  "كورة": { category: "ترفيه", subCategory: "رياضة وجيم" },
+  "كوره": { category: "ترفيه", subCategory: "رياضة وجيم" },
 };
 
 /**
@@ -166,20 +180,17 @@ export function isSimpleText(text: string): boolean {
   const wordCount = text.split(/\s+/).length;
 
   // Too long = complex
-  if (normalizedLen > 50 || wordCount > 10) return false;
+  if (normalizedLen > 200 || wordCount > 30) return false;
 
   // Multiple "و" connectors with amounts = multi-transaction
   const amounts = extractAmounts(text);
-  if (amounts.length > 2) return false;
+  if (amounts.length > 4) return false;
 
   // Ambiguous phrases
   const ambiguousPatterns = [
     /حولت\s+\S+/, // "حولت لأحمد" - ambiguous
     /حطيت\s+فلوس/, // "حطيت فلوس" - ambiguous
-    /حوالي/, // approximate amount
     /ولا\s+\d/, // "خمسين ولا ستين" - uncertain
-    /كده/, // approximate
-    /تقريبا/, // approximate
   ];
 
   for (const pattern of ambiguousPatterns) {
@@ -208,15 +219,9 @@ export function runRuleEngine(
     };
   }
 
-  // Check if text is too complex for rule engine
-  if (!isSimpleText(normalizedText)) {
-    return {
-      items: [],
-      usedAI: false,
-      needsAI: true,
-      reason: "complex_text",
-    };
-  }
+  // Note: We no longer return early here! We want the backend to try extracting items
+  // even for complex text so it can provide hints to the AI.
+  const isComplex = !isSimpleText(normalizedText);
 
   const items: ParsedTransaction[] = [];
 
@@ -265,7 +270,7 @@ export function runRuleEngine(
       }
     }
 
-    // 2. Subcategory map (enriched matching)
+    // 2. Subcategory map (enriched matching — exact word)
     if (!found) {
       for (const word of words) {
         if (SUB_CATEGORY_MAP[word]) {
@@ -276,6 +281,24 @@ export function runRuleEngine(
           found = true;
           break;
         }
+      }
+    }
+
+    // 2.5. Substring matching in SUB_CATEGORY_MAP (catches "فبلايستيشن" → "بلايستيشن")
+    if (!found) {
+      const subMapKeys = Object.keys(SUB_CATEGORY_MAP);
+      for (const word of words) {
+        for (const key of subMapKeys) {
+          if (key.length >= 3 && (word.includes(key) || key.includes(word)) && word.length >= 3) {
+            category = SUB_CATEGORY_MAP[key].category;
+            subCategory = SUB_CATEGORY_MAP[key].subCategory;
+            confidence = 82;
+            inferenceSource = "rule";
+            found = true;
+            break;
+          }
+        }
+        if (found) break;
       }
     }
 
@@ -294,13 +317,19 @@ export function runRuleEngine(
       }
     }
 
-    // 4. Global dictionary (main category only)
+    // 4. Global dictionary (main category) + auto-fill subcategory from SUB_CATEGORY_MAP
     if (!found) {
       for (const word of words) {
         if (CATEGORY_DICTIONARY[word]) {
           category = CATEGORY_DICTIONARY[word];
-          subCategory = "عام";
-          confidence = 85;
+          // Try to derive a more specific subcategory
+          if (SUB_CATEGORY_MAP[word]) {
+            subCategory = SUB_CATEGORY_MAP[word].subCategory;
+            confidence = 88;
+          } else {
+            subCategory = "عام";
+            confidence = 85;
+          }
           inferenceSource = "dictionary";
           found = true;
           break;
@@ -345,14 +374,10 @@ export function runRuleEngine(
       confidence = intentResult.confidence;
     }
 
-    // If still "متنوعات", mark as needs AI
+    // If still "متنوعات", we let it pass through but with low confidence.
+    // We no longer return early and discard all previous successes.
     if (category === "متنوعات" && confidence < 60) {
-      return {
-        items: [],
-        usedAI: false,
-        needsAI: true,
-        reason: "low_confidence_category",
-      };
+      // Keep going, this item will trigger `needsAI = true` at the end
     }
 
     let description = allContext
@@ -385,8 +410,8 @@ export function runRuleEngine(
     }, allContext, profileContext));
   }
 
-  // Check if any item has low confidence → needs AI
-  const needsAI = items.some(it => it.category === "متنوعات" || it.confidence < 80);
+  // Check if any item has low confidence or if text is complex → needs AI
+  const needsAI = items.some(it => it.category === "متنوعات" || it.confidence < 80) || isComplex;
 
   return { items, usedAI: false, needsAI };
 }
@@ -405,9 +430,9 @@ function applyProfileHints(
     profileContext.hasChildren === true &&
     /(مدرس|مدرسة|حضانة|درس|دروس|كتب|يونيفورم)/.test(context)
   ) {
-    if (next.category === "ظ…طھظ†ظˆط¹ط§طھ" || next.confidence < 92) {
-      next.category = "طھط¹ظ„ظٹظ…";
-      next.subCategory = /درس|دروس/.test(context) ? "ط¯ط±ظˆط³ ط®طµظˆطµظٹط©" : "ظ…ط¯ط±ط³ط©";
+    if (next.category === "متنوعات" || next.confidence < 92) {
+      next.category = "تعليم";
+      next.subCategory = /درس|دروس/.test(context) ? "دروس خصوصية" : "مدرسة";
       next.confidence = Math.max(next.confidence, 92);
       next.needsReview = false;
       flags.add("profile_children_education_hint");
@@ -418,9 +443,9 @@ function applyProfileHints(
     profileContext.responsibleForFamily === true &&
     /(طلبات البيت|مصروف البيت|سوبر ماركت|بقالة|منظفات)/.test(context)
   ) {
-    if (next.category === "ظ…طھظ†ظˆط¹ط§طھ" || next.confidence < 88) {
-      next.category = /منظفات/.test(context) ? "ط³ظƒظ†" : "ط£ظƒظ„ ظˆط´ط±ط¨";
-      next.subCategory = /منظفات/.test(context) ? "ظ…ظ†ط¸ظپط§طھ" : "ط¨ظ‚ط§ظ„ط©";
+    if (next.category === "متنوعات" || next.confidence < 88) {
+      next.category = /منظفات/.test(context) ? "سكن" : "أكل وشرب";
+      next.subCategory = /منظفات/.test(context) ? "منظفات" : "بقالة";
       next.confidence = Math.max(next.confidence, 88);
       next.needsReview = next.confidence < 85;
       flags.add("profile_family_household_hint");

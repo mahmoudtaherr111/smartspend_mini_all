@@ -98,8 +98,15 @@ export function AIInsights({ month }: AIInsightsProps) {
           {insightsMutation.isError && (
             <div className="text-center py-4">
               <AlertTriangle className="w-12 h-12 mx-auto mb-3 text-red-500" />
-              <p className="text-muted-foreground mb-3">
-                فيه مشكلة في التحليل. جرب تاني.
+              <p className="text-sm font-medium text-foreground mb-1">
+                {insightsMutation.error?.message || "فيه مشكلة في التحليل."}
+              </p>
+              <p className="text-muted-foreground text-xs mb-3">
+                {insightsMutation.error?.data?.code === "TOO_MANY_REQUESTS"
+                  ? "يمكنك الترقية لخطة أعلى للحصول على تقارير أكتر."
+                  : insightsMutation.error?.data?.code === "FORBIDDEN"
+                  ? "حدّث خطتك للاستمتاع بالتحليلات الذكية."
+                  : "جرب تاني بعد شوية."}
               </p>
               <Button
                 variant="outline"

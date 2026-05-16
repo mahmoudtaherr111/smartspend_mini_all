@@ -21,11 +21,11 @@ var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
-var __copyProps = (to, from, except2, desc3) => {
+var __copyProps = (to, from, except2, desc2) => {
   if (from && typeof from === "object" || typeof from === "function") {
     for (let key of __getOwnPropNames(from))
       if (!__hasOwnProp.call(to, key) && key !== except2)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc3 = __getOwnPropDesc(from, key)) || desc3.enumerable });
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc2 = __getOwnPropDesc(from, key)) || desc2.enumerable });
   }
   return to;
 };
@@ -3145,8 +3145,8 @@ var init_schemas = __esm({
     });
     $ZodObject = /* @__PURE__ */ $constructor("$ZodObject", (inst, def) => {
       $ZodType.init(inst, def);
-      const desc3 = Object.getOwnPropertyDescriptor(def, "shape");
-      if (!desc3?.get) {
+      const desc2 = Object.getOwnPropertyDescriptor(def, "shape");
+      if (!desc2?.get) {
         const sh = def.shape;
         Object.defineProperty(def, "shape", {
           get: () => {
@@ -14758,41 +14758,41 @@ var require_lib = __commonJS({
     var isRecord = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
     var isWordChar = (code) => code >= 65 && code <= 90 || code >= 97 && code <= 122 || code >= 48 && code <= 57 || code === 95;
     var isWhitespace = (code) => code === charCode.space || code === charCode.tab || code === charCode.newline || code === charCode.carriageReturn;
-    var hasOnlyWhitespaceBetween = (sql7, start, end) => {
+    var hasOnlyWhitespaceBetween = (sql6, start, end) => {
       if (start >= end)
         return true;
       for (let i = start; i < end; i++) {
-        const code = sql7.charCodeAt(i);
+        const code = sql6.charCodeAt(i);
         if (code !== charCode.space && code !== charCode.tab && code !== charCode.newline && code !== charCode.carriageReturn)
           return false;
       }
       return true;
     };
     var toLower = (code) => code | 32;
-    var matchesWord = (sql7, position, word, length) => {
+    var matchesWord = (sql6, position, word, length) => {
       for (let offset = 0; offset < word.length; offset++)
-        if (toLower(sql7.charCodeAt(position + offset)) !== word.charCodeAt(offset))
+        if (toLower(sql6.charCodeAt(position + offset)) !== word.charCodeAt(offset))
           return false;
-      return (position === 0 || !isWordChar(sql7.charCodeAt(position - 1))) && (position + word.length >= length || !isWordChar(sql7.charCodeAt(position + word.length)));
+      return (position === 0 || !isWordChar(sql6.charCodeAt(position - 1))) && (position + word.length >= length || !isWordChar(sql6.charCodeAt(position + word.length)));
     };
-    var skipSqlContext = (sql7, position) => {
-      const currentChar = sql7.charCodeAt(position);
-      const nextChar = sql7.charCodeAt(position + 1);
+    var skipSqlContext = (sql6, position) => {
+      const currentChar = sql6.charCodeAt(position);
+      const nextChar = sql6.charCodeAt(position + 1);
       if (currentChar === charCode.singleQuote) {
-        for (let cursor = position + 1; cursor < sql7.length; cursor++) {
-          if (sql7.charCodeAt(cursor) === charCode.backslash)
+        for (let cursor = position + 1; cursor < sql6.length; cursor++) {
+          if (sql6.charCodeAt(cursor) === charCode.backslash)
             cursor++;
-          else if (sql7.charCodeAt(cursor) === charCode.singleQuote)
+          else if (sql6.charCodeAt(cursor) === charCode.singleQuote)
             return cursor + 1;
         }
-        return sql7.length;
+        return sql6.length;
       }
       if (currentChar === charCode.backtick) {
-        const length = sql7.length;
+        const length = sql6.length;
         for (let cursor = position + 1; cursor < length; cursor++) {
-          if (sql7.charCodeAt(cursor) !== charCode.backtick)
+          if (sql6.charCodeAt(cursor) !== charCode.backtick)
             continue;
-          if (sql7.charCodeAt(cursor + 1) === charCode.backtick) {
+          if (sql6.charCodeAt(cursor + 1) === charCode.backtick) {
             cursor++;
             continue;
           }
@@ -14801,48 +14801,48 @@ var require_lib = __commonJS({
         return length;
       }
       if (currentChar === charCode.dash && nextChar === charCode.dash) {
-        const lineBreak = sql7.indexOf("\n", position + 2);
-        return lineBreak === -1 ? sql7.length : lineBreak + 1;
+        const lineBreak = sql6.indexOf("\n", position + 2);
+        return lineBreak === -1 ? sql6.length : lineBreak + 1;
       }
       if (currentChar === charCode.slash && nextChar === charCode.asterisk) {
-        const commentEnd = sql7.indexOf("*/", position + 2);
-        return commentEnd === -1 ? sql7.length : commentEnd + 2;
+        const commentEnd = sql6.indexOf("*/", position + 2);
+        return commentEnd === -1 ? sql6.length : commentEnd + 2;
       }
       return -1;
     };
-    var findNextPlaceholder = (sql7, start) => {
-      const sqlLength = sql7.length;
+    var findNextPlaceholder = (sql6, start) => {
+      const sqlLength = sql6.length;
       for (let position = start; position < sqlLength; position++) {
-        const code = sql7.charCodeAt(position);
+        const code = sql6.charCodeAt(position);
         if (code === charCode.questionMark)
           return position;
         if (code === charCode.singleQuote || code === charCode.backtick || code === charCode.dash || code === charCode.slash) {
-          const contextEnd = skipSqlContext(sql7, position);
+          const contextEnd = skipSqlContext(sql6, position);
           if (contextEnd !== -1)
             position = contextEnd - 1;
         }
       }
       return -1;
     };
-    var findSetKeyword = (sql7, startFrom = 0) => {
-      const length = sql7.length;
+    var findSetKeyword = (sql6, startFrom = 0) => {
+      const length = sql6.length;
       for (let position = startFrom; position < length; position++) {
-        const code = sql7.charCodeAt(position);
+        const code = sql6.charCodeAt(position);
         const lower = code | 32;
         if (code === charCode.singleQuote || code === charCode.backtick || code === charCode.dash || code === charCode.slash) {
-          const contextEnd = skipSqlContext(sql7, position);
+          const contextEnd = skipSqlContext(sql6, position);
           if (contextEnd !== -1) {
             position = contextEnd - 1;
             continue;
           }
         }
-        if (lower === 115 && matchesWord(sql7, position, "set", length))
+        if (lower === 115 && matchesWord(sql6, position, "set", length))
           return position + 3;
-        if (lower === 107 && matchesWord(sql7, position, "key", length)) {
+        if (lower === 107 && matchesWord(sql6, position, "key", length)) {
           let cursor = position + 3;
-          while (cursor < length && isWhitespace(sql7.charCodeAt(cursor)))
+          while (cursor < length && isWhitespace(sql6.charCodeAt(cursor)))
             cursor++;
-          if (matchesWord(sql7, cursor, "update", length))
+          if (matchesWord(sql6, cursor, "update", length))
             return cursor + 6;
         }
       }
@@ -14937,19 +14937,19 @@ var require_lib = __commonJS({
       const keysLength = keys.length;
       if (keysLength === 0)
         return "";
-      let sql7 = "";
+      let sql6 = "";
       for (let i = 0; i < keysLength; i++) {
         const key = keys[i];
         const value = object2[key];
         if (typeof value === "function")
           continue;
-        if (sql7.length > 0)
-          sql7 += ", ";
-        sql7 += (0, exports.escapeId)(key);
-        sql7 += " = ";
-        sql7 += (0, exports.escape)(value, true, timezone);
+        if (sql6.length > 0)
+          sql6 += ", ";
+        sql6 += (0, exports.escapeId)(key);
+        sql6 += " = ";
+        sql6 += (0, exports.escape)(value, true, timezone);
       }
-      return sql7;
+      return sql6;
     };
     exports.objectToValues = objectToValues;
     var bufferToString = (buffer) => `X${escapeString(buffer.toString("hex"))}`;
@@ -15000,25 +15000,25 @@ var require_lib = __commonJS({
       }
     };
     exports.escape = escape;
-    var format = (sql7, values, stringifyObjects, timezone) => {
+    var format = (sql6, values, stringifyObjects, timezone) => {
       if (values === void 0 || values === null)
-        return sql7;
+        return sql6;
       const valuesArray = Array.isArray(values) ? values : [values];
       const length = valuesArray.length;
       let setIndex = -2;
       let result = "";
       let chunkIndex = 0;
       let valuesIndex = 0;
-      let placeholderPosition = findNextPlaceholder(sql7, 0);
+      let placeholderPosition = findNextPlaceholder(sql6, 0);
       while (valuesIndex < length && placeholderPosition !== -1) {
         let placeholderEnd = placeholderPosition + 1;
         let escapedValue;
-        while (sql7.charCodeAt(placeholderEnd) === 63)
+        while (sql6.charCodeAt(placeholderEnd) === 63)
           placeholderEnd++;
         const placeholderLength = placeholderEnd - placeholderPosition;
         const currentValue = valuesArray[valuesIndex];
         if (placeholderLength > 2) {
-          placeholderPosition = findNextPlaceholder(sql7, placeholderEnd);
+          placeholderPosition = findNextPlaceholder(sql6, placeholderEnd);
           continue;
         }
         if (placeholderLength === 2)
@@ -15027,32 +15027,32 @@ var require_lib = __commonJS({
           escapedValue = `${currentValue}`;
         else if (typeof currentValue === "object" && currentValue !== null && !stringifyObjects) {
           if (setIndex === -2)
-            setIndex = findSetKeyword(sql7);
-          if (setIndex !== -1 && setIndex <= placeholderPosition && hasOnlyWhitespaceBetween(sql7, setIndex, placeholderPosition) && !hasSqlString(currentValue) && !Array.isArray(currentValue) && !node_buffer_1.Buffer.isBuffer(currentValue) && !(currentValue instanceof Uint8Array) && !isDate(currentValue) && isRecord(currentValue)) {
+            setIndex = findSetKeyword(sql6);
+          if (setIndex !== -1 && setIndex <= placeholderPosition && hasOnlyWhitespaceBetween(sql6, setIndex, placeholderPosition) && !hasSqlString(currentValue) && !Array.isArray(currentValue) && !node_buffer_1.Buffer.isBuffer(currentValue) && !(currentValue instanceof Uint8Array) && !isDate(currentValue) && isRecord(currentValue)) {
             escapedValue = (0, exports.objectToValues)(currentValue, timezone);
-            setIndex = findSetKeyword(sql7, placeholderEnd);
+            setIndex = findSetKeyword(sql6, placeholderEnd);
           } else
             escapedValue = (0, exports.escape)(currentValue, true, timezone);
         } else
           escapedValue = (0, exports.escape)(currentValue, stringifyObjects, timezone);
-        result += sql7.slice(chunkIndex, placeholderPosition);
+        result += sql6.slice(chunkIndex, placeholderPosition);
         result += escapedValue;
         chunkIndex = placeholderEnd;
         valuesIndex++;
-        placeholderPosition = findNextPlaceholder(sql7, placeholderEnd);
+        placeholderPosition = findNextPlaceholder(sql6, placeholderEnd);
       }
       if (chunkIndex === 0)
-        return sql7;
-      if (chunkIndex < sql7.length)
-        return result + sql7.slice(chunkIndex);
+        return sql6;
+      if (chunkIndex < sql6.length)
+        return result + sql6.slice(chunkIndex);
       return result;
     };
     exports.format = format;
-    var raw2 = (sql7) => {
-      if (typeof sql7 !== "string")
+    var raw2 = (sql6) => {
+      if (typeof sql6 !== "string")
         throw new TypeError("argument sql must be a string");
       return {
-        toSqlString: () => sql7
+        toSqlString: () => sql6
       };
     };
     exports.raw = raw2;
@@ -27939,8 +27939,8 @@ var require_prepare_statement = __commonJS({
     var StringParser = require_string();
     var CharsetToEncoding = require_charset_encodings();
     var PrepareStatement = class {
-      constructor(sql7, charsetNumber) {
-        this.query = sql7;
+      constructor(sql6, charsetNumber) {
+        this.query = sql6;
         this.charsetNumber = charsetNumber;
         this.encoding = CharsetToEncoding[charsetNumber];
       }
@@ -27989,8 +27989,8 @@ var require_query = __commonJS({
     var Types = require_types();
     var { toParameter } = require_encode_parameter();
     var Query = class {
-      constructor(sql7, charsetNumber, attributes, clientFlags) {
-        this.query = sql7;
+      constructor(sql6, charsetNumber, attributes, clientFlags) {
+        this.query = sql6;
         this.charsetNumber = charsetNumber;
         this.encoding = CharsetToEncoding[charsetNumber];
         this.attributes = attributes;
@@ -32040,17 +32040,17 @@ var require_connection = __commonJS({
         }
         return cmd;
       }
-      format(sql7, values) {
+      format(sql6, values) {
         if (typeof this.config.queryFormat === "function") {
           return this.config.queryFormat.call(
             this,
-            sql7,
+            sql6,
             values,
             this.config.timezone
           );
         }
         const opts = {
-          sql: sql7,
+          sql: sql6,
           values
         };
         this._resolveNamedPlaceholders(opts);
@@ -32067,8 +32067,8 @@ var require_connection = __commonJS({
       escapeId(value) {
         return SqlString.escapeId(value, false);
       }
-      raw(sql7) {
-        return SqlString.raw(sql7);
+      raw(sql6) {
+        return SqlString.raw(sql6);
       }
       _resolveNamedPlaceholders(options) {
         let unnamed;
@@ -32084,12 +32084,12 @@ var require_connection = __commonJS({
           options.values = unnamed[1];
         }
       }
-      query(sql7, values, cb) {
+      query(sql6, values, cb) {
         let cmdQuery;
-        if (sql7.constructor === Commands.Query) {
-          cmdQuery = sql7;
+        if (sql6.constructor === Commands.Query) {
+          cmdQuery = sql6;
         } else {
-          cmdQuery = _BaseConnection.createQuery(sql7, values, cb, this.config);
+          cmdQuery = _BaseConnection.createQuery(sql6, values, cb, this.config);
         }
         this._resolveNamedPlaceholders(cmdQuery);
         const rawSql = this.format(
@@ -32165,12 +32165,12 @@ var require_connection = __commonJS({
         }
         return this.addCommand(new Commands.Prepare(options, cb));
       }
-      unprepare(sql7) {
+      unprepare(sql6) {
         let options = {};
-        if (typeof sql7 === "object") {
-          options = sql7;
+        if (typeof sql6 === "object") {
+          options = sql6;
         } else {
-          options.sql = sql7;
+          options.sql = sql6;
         }
         const key = _BaseConnection.statementKey(options);
         const stmt = this._statements.get(key);
@@ -32180,16 +32180,16 @@ var require_connection = __commonJS({
         }
         return stmt;
       }
-      execute(sql7, values, cb) {
+      execute(sql6, values, cb) {
         let options = {
           infileStreamFactory: this.config.infileStreamFactory
         };
-        if (typeof sql7 === "object") {
+        if (typeof sql6 === "object") {
           options = {
             ...options,
-            ...sql7,
-            sql: sql7.sql,
-            values: sql7.values
+            ...sql6,
+            sql: sql6.sql,
+            values: sql6.values
           };
           if (typeof values === "function") {
             cb = values;
@@ -32198,10 +32198,10 @@ var require_connection = __commonJS({
           }
         } else if (typeof values === "function") {
           cb = values;
-          options.sql = sql7;
+          options.sql = sql6;
           options.values = void 0;
         } else {
-          options.sql = sql7;
+          options.sql = sql6;
           options.values = values;
         }
         this._resolveNamedPlaceholders(options);
@@ -32482,17 +32482,17 @@ var require_connection = __commonJS({
         this.addCommand = this._addCommandClosedState;
         return quitCmd;
       }
-      static createQuery(sql7, values, cb, config2) {
+      static createQuery(sql6, values, cb, config2) {
         let options = {
           rowsAsArray: config2.rowsAsArray,
           infileStreamFactory: config2.infileStreamFactory
         };
-        if (typeof sql7 === "object") {
+        if (typeof sql6 === "object") {
           options = {
             ...options,
-            ...sql7,
-            sql: sql7.sql,
-            values: sql7.values
+            ...sql6,
+            sql: sql6.sql,
+            values: sql6.values
           };
           if (typeof values === "function") {
             cb = values;
@@ -32501,10 +32501,10 @@ var require_connection = __commonJS({
           }
         } else if (typeof values === "function") {
           cb = values;
-          options.sql = sql7;
+          options.sql = sql6;
           options.values = void 0;
         } else {
-          options.sql = sql7;
+          options.sql = sql6;
           options.values = values;
         }
         return new Commands.Query(options, cb);
@@ -33135,9 +33135,9 @@ var require_pool = __commonJS({
           connection._realEnd(endCB);
         }
       }
-      query(sql7, values, cb) {
+      query(sql6, values, cb) {
         const cmdQuery = BaseConnection.createQuery(
-          sql7,
+          sql6,
           values,
           cb,
           this.config.connectionConfig
@@ -33181,7 +33181,7 @@ var require_pool = __commonJS({
         });
         return cmdQuery;
       }
-      execute(sql7, values, cb) {
+      execute(sql6, values, cb) {
         if (typeof values === "function") {
           cb = values;
           values = [];
@@ -33191,7 +33191,7 @@ var require_pool = __commonJS({
             return cb(err);
           }
           try {
-            conn.execute(sql7, values, (err2, rows, fields) => {
+            conn.execute(sql6, values, (err2, rows, fields) => {
               if (isReadOnlyError(err2)) {
                 conn.destroy();
               }
@@ -33228,9 +33228,9 @@ var require_pool = __commonJS({
           }
         }, 1e3);
       }
-      format(sql7, values) {
+      format(sql6, values) {
         return SqlString.format(
-          sql7,
+          sql6,
           values,
           this.config.connectionConfig.stringifyObjects,
           this.config.connectionConfig.timezone
@@ -33286,7 +33286,7 @@ var require_pool2 = __commonJS({
       releaseConnection(connection) {
         if (connection instanceof PromisePoolConnection) connection.release();
       }
-      query(sql7, args) {
+      query(sql6, args) {
         const corePool = this.pool;
         const stackHolder = captureStackHolder(_PromisePool.prototype.query);
         if (typeof args === "function") {
@@ -33297,13 +33297,13 @@ var require_pool2 = __commonJS({
         return new this.Promise((resolve, reject) => {
           const done = makeDoneCb(resolve, reject, stackHolder);
           if (args !== void 0) {
-            corePool.query(sql7, args, done);
+            corePool.query(sql6, args, done);
           } else {
-            corePool.query(sql7, done);
+            corePool.query(sql6, done);
           }
         });
       }
-      execute(sql7, args) {
+      execute(sql6, args) {
         const corePool = this.pool;
         const stackHolder = captureStackHolder(_PromisePool.prototype.execute);
         if (typeof args === "function") {
@@ -33314,9 +33314,9 @@ var require_pool2 = __commonJS({
         return new this.Promise((resolve, reject) => {
           const done = makeDoneCb(resolve, reject, stackHolder);
           if (args) {
-            corePool.execute(sql7, args, done);
+            corePool.execute(sql6, args, done);
           } else {
-            corePool.execute(sql7, done);
+            corePool.execute(sql6, done);
           }
         });
       }
@@ -33472,8 +33472,8 @@ var require_pool_cluster = __commonJS({
        * @param {*} cb
        * @returns query
        */
-      query(sql7, values, cb) {
-        const query = Connection.createQuery(sql7, values, cb, {});
+      query(sql6, values, cb) {
+        const query = Connection.createQuery(sql6, values, cb, {});
         this.getConnection((err, conn) => {
           if (err) {
             if (typeof query.onResult === "function") {
@@ -33500,7 +33500,7 @@ var require_pool_cluster = __commonJS({
        * @param {*} values
        * @param {*} cb
        */
-      execute(sql7, values, cb) {
+      execute(sql6, values, cb) {
         if (typeof values === "function") {
           cb = values;
           values = [];
@@ -33510,7 +33510,7 @@ var require_pool_cluster = __commonJS({
             return cb(err);
           }
           try {
-            conn.execute(sql7, values, cb).once("end", () => {
+            conn.execute(sql6, values, cb).once("end", () => {
               conn.release();
             });
           } catch (e) {
@@ -33806,7 +33806,7 @@ var require_pool_cluster2 = __commonJS({
           });
         });
       }
-      query(sql7, values) {
+      query(sql6, values) {
         const corePoolNamespace = this.poolNamespace;
         const stackHolder = captureStackHolder(
           _PromisePoolNamespace.prototype.query
@@ -33818,10 +33818,10 @@ var require_pool_cluster2 = __commonJS({
         }
         return new this.Promise((resolve, reject) => {
           const done = makeDoneCb(resolve, reject, stackHolder);
-          corePoolNamespace.query(sql7, values, done);
+          corePoolNamespace.query(sql6, values, done);
         });
       }
-      execute(sql7, values) {
+      execute(sql6, values) {
         const corePoolNamespace = this.poolNamespace;
         const stackHolder = captureStackHolder(
           _PromisePoolNamespace.prototype.execute
@@ -33833,7 +33833,7 @@ var require_pool_cluster2 = __commonJS({
         }
         return new this.Promise((resolve, reject) => {
           const done = makeDoneCb(resolve, reject, stackHolder);
-          corePoolNamespace.execute(sql7, values, done);
+          corePoolNamespace.execute(sql6, values, done);
         });
       }
     };
@@ -33914,7 +33914,7 @@ var require_promise = __commonJS({
           );
         });
       }
-      query(sql7, args) {
+      query(sql6, args) {
         const corePoolCluster = this.poolCluster;
         const stackHolder = captureStackHolder(_PromisePoolCluster.prototype.query);
         if (typeof args === "function") {
@@ -33924,10 +33924,10 @@ var require_promise = __commonJS({
         }
         return new this.Promise((resolve, reject) => {
           const done = makeDoneCb(resolve, reject, stackHolder);
-          corePoolCluster.query(sql7, args, done);
+          corePoolCluster.query(sql6, args, done);
         });
       }
-      execute(sql7, args) {
+      execute(sql6, args) {
         const corePoolCluster = this.poolCluster;
         const stackHolder = captureStackHolder(
           _PromisePoolCluster.prototype.execute
@@ -33939,7 +33939,7 @@ var require_promise = __commonJS({
         }
         return new this.Promise((resolve, reject) => {
           const done = makeDoneCb(resolve, reject, stackHolder);
-          corePoolCluster.execute(sql7, args, done);
+          corePoolCluster.execute(sql6, args, done);
         });
       }
       of(pattern, selector) {
@@ -34808,10 +34808,10 @@ var init_subquery = __esm({
     init_entity();
     Subquery = class {
       static [entityKind] = "Subquery";
-      constructor(sql7, fields, alias, isWith = false, usedTables = []) {
+      constructor(sql6, fields, alias, isWith = false, usedTables = []) {
         this._ = {
           brand: "Subquery",
-          sql: sql7,
+          sql: sql6,
           selectedFields: fields,
           alias,
           isWith,
@@ -40748,8 +40748,8 @@ var init_db = __esm({
 });
 
 // node_modules/drizzle-orm/cache/core/cache.js
-async function hashQuery(sql7, params) {
-  const dataToHash = `${sql7}-${JSON.stringify(params)}`;
+async function hashQuery(sql6, params) {
+  const dataToHash = `${sql6}-${JSON.stringify(params)}`;
   const encoder = new TextEncoder();
   const data = encoder.encode(dataToHash);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
@@ -41589,7 +41589,8 @@ var init_schema2 = __esm({
     }, (t2) => [
       index("expenses_user_idx").on(t2.userId, t2.userType),
       index("expenses_date_idx").on(t2.date),
-      index("expenses_type_idx").on(t2.type)
+      index("expenses_type_idx").on(t2.type),
+      index("expenses_category_idx").on(t2.category)
     ]);
     expenseCategories = mysqlTable("expense_categories", {
       id: int2("id").primaryKey().autoincrement(),
@@ -41961,7 +41962,14 @@ var init_env = __esm({
       // If not set, falls back to APP_URL for backward-compat monorepo mode
       FRONTEND_URL: external_exports.string().optional(),
       // Owner
-      OWNER_EMAIL: external_exports.string().optional()
+      OWNER_EMAIL: external_exports.string().optional(),
+      // Billing (Paymob) — optional until production wiring is complete
+      PAYMOB_API_KEY: external_exports.string().optional(),
+      PAYMOB_INTEGRATION_ID: external_exports.string().optional(),
+      PAYMOB_IFRAME_ID: external_exports.string().optional(),
+      PAYMOB_HMAC_SECRET: external_exports.string().optional(),
+      /** When "true", allows demo transaction ids in `pro.upgrade` (never enable in production). */
+      BILLING_SIMULATE: external_exports.enum(["true", "false"]).optional()
     });
     env = envSchema.parse(process.env);
   }
@@ -50023,8 +50031,8 @@ var require_xlsx = __commonJS({
           var out = [], cdirs = [];
           var o = new_buf(1);
           var method = _opts.compression ? 8 : 0, flags = 0;
-          var desc3 = false;
-          if (desc3) flags |= 8;
+          var desc2 = false;
+          if (desc2) flags |= 8;
           var i2 = 0, j = 0;
           var start_cd = 0, fcnt = 0;
           var root = cfb.FullPaths[0], fp = root, fi = cfb.FileIndex[0];
@@ -79277,12 +79285,12 @@ var __hasOwnProp2 = Object.prototype.hasOwnProperty;
 var __commonJS2 = (cb, mod) => function() {
   return mod || (0, cb[__getOwnPropNames2(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
 };
-var __copyProps2 = (to, from, except2, desc3) => {
+var __copyProps2 = (to, from, except2, desc2) => {
   if (from && typeof from === "object" || typeof from === "function") for (var keys = __getOwnPropNames2(from), i = 0, n = keys.length, key; i < n; i++) {
     key = keys[i];
     if (!__hasOwnProp2.call(to, key) && key !== except2) __defProp2(to, key, {
       get: ((k) => from[k]).bind(null, key),
-      enumerable: !(desc3 = __getOwnPropDesc2(from, key)) || desc3.enumerable
+      enumerable: !(desc2 = __getOwnPropDesc2(from, key)) || desc2.enumerable
     });
   }
   return to;
@@ -81854,10 +81862,41 @@ var TRPCBuilder = class TRPCBuilder2 {
 };
 var initTRPC = new TRPCBuilder();
 
+// api/lib/rate-limit.ts
+function createRateLimiter(max, windowMs) {
+  const map2 = /* @__PURE__ */ new Map();
+  return {
+    hit(key, message = "\u0637\u0644\u0628\u0627\u062A \u0643\u062A\u064A\u0631 \u062C\u062F\u0627\u064B \u0645\u0646 \u0646\u0641\u0633 \u0627\u0644\u0645\u0635\u062F\u0631. \u062C\u0631\u0628 \u0628\u0639\u062F \u0634\u0648\u064A\u0629.") {
+      const now = Date.now();
+      const limit = map2.get(key);
+      if (!limit || now > limit.resetAt) {
+        map2.set(key, { count: 1, resetAt: now + windowMs });
+        return;
+      }
+      limit.count++;
+      if (limit.count > max) {
+        throw new TRPCError({ code: "TOO_MANY_REQUESTS", message });
+      }
+    }
+  };
+}
+
 // api/middleware.ts
 var t = initTRPC.context().create();
 var router = t.router;
-var publicProcedure = t.procedure;
+var publicIpLimiter = createRateLimiter(400, 6e4);
+var strictPublicIpLimiter = createRateLimiter(25, 15 * 6e4);
+var publicProcedure = t.procedure.use(async ({ ctx, next }) => {
+  publicIpLimiter.hit(`pub:${ctx.ip}`, "\u0637\u0644\u0628\u0627\u062A \u0643\u062A\u064A\u0631 \u062C\u062F\u0627\u064B \u0645\u0646 \u0646\u0641\u0633 \u0627\u0644\u0634\u0628\u0643\u0629. \u062C\u0631\u0628 \u0628\u0639\u062F \u062F\u0642\u064A\u0642\u0629.");
+  return next();
+});
+var strictPublicProcedure = t.procedure.use(async ({ ctx, next }) => {
+  strictPublicIpLimiter.hit(
+    `strict:${ctx.ip}`,
+    "\u0645\u062D\u0627\u0648\u0644\u0627\u062A \u0643\u062A\u064A\u0631\u0629 \u0644\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648 \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u0645\u0646 \u0646\u0641\u0633 \u0627\u0644\u0634\u0628\u0643\u0629. \u0627\u0633\u062A\u0646\u0649 \u0634\u0648\u064A\u0629 \u0648\u062D\u0627\u0648\u0644 \u062A\u0627\u0646\u064A."
+  );
+  return next();
+});
 var rateLimitMap = /* @__PURE__ */ new Map();
 var RATE_LIMIT_WINDOW = 60 * 1e3;
 var MAX_REQUESTS = 100;
@@ -82512,7 +82551,7 @@ var authRouter = router({
     });
     return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   }),
-  googleCallback: publicProcedure.input(external_exports.object({ code: external_exports.string() })).mutation(async ({ input }) => {
+  googleCallback: strictPublicProcedure.input(external_exports.object({ code: external_exports.string() })).mutation(async ({ input }) => {
     const tokens = await getGoogleTokens(input.code);
     if (!tokens.access_token) {
       throw new TRPCError({ code: "BAD_REQUEST", message: "\u0641\u0634\u0644 \u0641\u064A \u0627\u0644\u0645\u0635\u0627\u062F\u0642\u0629 \u0645\u0639 Google" });
@@ -82618,9 +82657,25 @@ function generateReferralCode() {
   return "SS" + Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
+// api/lib/get-client-ip.ts
+function getIncomingHeader(req, name) {
+  if ("header" in req && typeof req.header === "function") {
+    return req.header(name);
+  }
+  return req.headers.get(name) ?? void 0;
+}
+function getClientIp(req) {
+  const xff = getIncomingHeader(req, "x-forwarded-for");
+  if (xff) {
+    const first = xff.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  return getIncomingHeader(req, "cf-connecting-ip") || getIncomingHeader(req, "x-real-ip") || "unknown";
+}
+
 // api/local-auth-router.ts
 var localAuthRouter = router({
-  register: publicProcedure.input(external_exports.object({
+  register: strictPublicProcedure.input(external_exports.object({
     name: external_exports.string().min(2, "\u0627\u0644\u0627\u0633\u0645 \u0644\u0627\u0632\u0645 \u064A\u0643\u0648\u0646 \u062D\u0631\u0641\u064A\u0646 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644").max(100),
     phone: external_exports.string().min(11, "\u0631\u0642\u0645 \u0627\u0644\u062A\u0644\u064A\u0641\u0648\u0646 \u0644\u0627\u0632\u0645 \u064A\u0643\u0648\u0646 11 \u0631\u0642\u0645").max(11),
     email: external_exports.string().email("\u0627\u0644\u0625\u064A\u0645\u064A\u0644 \u0645\u0634 \u0635\u062D\u064A\u062D").optional().or(external_exports.literal("")),
@@ -82668,7 +82723,7 @@ var localAuthRouter = router({
       }
     };
   }),
-  login: publicProcedure.input(external_exports.object({
+  login: strictPublicProcedure.input(external_exports.object({
     phone: external_exports.string(),
     password: external_exports.string()
   })).mutation(async ({ input }) => {
@@ -82706,7 +82761,7 @@ var localAuthRouter = router({
     return user;
   }),
   logout: publicProcedure.mutation(async ({ ctx }) => {
-    const authHeader = ctx.req.header("Authorization");
+    const authHeader = getIncomingHeader(ctx.req, "Authorization");
     if (authHeader?.startsWith("Bearer ")) {
       const token = authHeader.slice(7);
       await db.delete(sessions).where(eq(sessions.token, token));
@@ -82766,16 +82821,34 @@ init_zod();
 init_connection();
 init_schema2();
 init_drizzle_orm();
+
+// contracts/constants.ts
+var Session = {
+  cookieName: "kimi_sid",
+  maxAgeMs: 365 * 24 * 60 * 60 * 1e3
+};
+var ExpenseInputLimits = {
+  rawTextMax: 5e3,
+  categoryMax: 100,
+  subCategoryMax: 100,
+  descriptionMax: 2e3,
+  amountMax: 999999999
+};
+
+// api/expense-router.ts
 var transactionTypeSchema = external_exports.enum(["income", "expense", "transfer", "investment"]);
+var expenseRawText = external_exports.string().min(1).max(ExpenseInputLimits.rawTextMax);
+var expenseCategory = external_exports.string().min(1).max(ExpenseInputLimits.categoryMax);
+var expenseAmount = external_exports.number().positive().max(ExpenseInputLimits.amountMax);
 var expenseRouter = router({
   create: authedProcedure.input(
     external_exports.object({
-      amount: external_exports.number().positive(),
+      amount: expenseAmount,
       type: transactionTypeSchema.default("expense"),
-      category: external_exports.string().min(1),
-      subCategory: external_exports.string().optional(),
-      description: external_exports.string().optional(),
-      rawText: external_exports.string().min(1),
+      category: expenseCategory,
+      subCategory: external_exports.string().max(ExpenseInputLimits.subCategoryMax).optional(),
+      description: external_exports.string().max(ExpenseInputLimits.descriptionMax).optional(),
+      rawText: expenseRawText,
       source: external_exports.enum(["voice", "manual", "ai_parsed"]).default("manual"),
       date: external_exports.string().optional()
     })
@@ -82802,7 +82875,7 @@ var expenseRouter = router({
     external_exports.object({
       startDate: external_exports.string().optional(),
       endDate: external_exports.string().optional(),
-      category: external_exports.string().optional(),
+      category: external_exports.string().max(ExpenseInputLimits.categoryMax).optional(),
       type: transactionTypeSchema.optional(),
       limit: external_exports.number().min(1).max(100).default(50),
       offset: external_exports.number().min(0).default(0)
@@ -82830,11 +82903,11 @@ var expenseRouter = router({
   update: authedProcedure.input(
     external_exports.object({
       id: external_exports.number(),
-      amount: external_exports.number().positive().optional(),
+      amount: expenseAmount.optional(),
       type: transactionTypeSchema.optional(),
-      category: external_exports.string().optional(),
-      description: external_exports.string().optional(),
-      rawText: external_exports.string().optional(),
+      category: expenseCategory.optional(),
+      description: external_exports.string().max(ExpenseInputLimits.descriptionMax).optional(),
+      rawText: expenseRawText.optional(),
       date: external_exports.string().optional()
     })
   ).mutation(async ({ ctx, input }) => {
@@ -84203,12 +84276,16 @@ function normalizeText(text2) {
   result = result.replace(/[^\u0600-\u06FF\u0750-\u077Fa-zA-Z0-9\s.,،؟?!٪%\-\/]/g, "");
   result = result.replace(/[إأآٱ]/g, "\u0627").replace(/ى$/g, "\u064A").replace(/ة/g, "\u0647").replace(/ؤ/g, "\u0648").replace(/ئ/g, "\u064A");
   for (const [expr, num] of Object.entries(COLLOQUIAL_NUMBERS)) {
-    const regex = new RegExp(expr, "g");
-    result = result.replace(regex, num.toString());
+    const regex = new RegExp(`(?:^|\\s)(\u0628|\u0628\u0640|\u0648)?${expr}(?=\\s|$)`, "g");
+    result = result.replace(regex, (_, prefix) => {
+      return (prefix ? ` ${prefix} ` : " ") + num.toString() + " ";
+    });
   }
   for (const [word, num] of Object.entries(WORD_NUMBERS)) {
-    const regex = new RegExp(`\\b${word}\\b`, "g");
-    result = result.replace(regex, num.toString());
+    const regex = new RegExp(`(?:^|\\s)(\u0628|\u0628\u0640|\u0648)?${word}(?=\\s|$)`, "g");
+    result = result.replace(regex, (_, prefix) => {
+      return (prefix ? ` ${prefix} ` : " ") + num.toString() + " ";
+    });
   }
   result = result.replace(/(\d+)\s*(الف|ألف)/g, (_, num) => {
     return (parseFloat(num) * 1e3).toString();
@@ -84284,6 +84361,8 @@ var PAYMENT_METHOD_PATTERNS = [
 var DATE_HINT_PATTERNS = [
   "\u0627\u0644\u0646\u0647\u0627\u0631\u062F\u0629",
   "\u0627\u0645\u0628\u0627\u0631\u062D",
+  "\u0623\u0648\u0644 \u0627\u0645\u0628\u0627\u0631\u062D",
+  "\u0627\u0648\u0644 \u0627\u0645\u0628\u0627\u0631\u062D",
   "\u0628\u0643\u0631\u0629",
   "\u0622\u062E\u0631 \u0627\u0644\u0634\u0647\u0631",
   "\u0628\u062F\u0627\u064A\u0629 \u0627\u0644\u0634\u0647\u0631",
@@ -84418,6 +84497,8 @@ var CATEGORY_DICTIONARY = {
   "\u0646\u0633\u0643\u0627\u0641\u064A\u0647": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
   "\u0643\u0627\u0643\u0627\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
   "\u0644\u0628\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0642\u0647\u0648\u0647": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0642\u0647\u0648\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
   "\u0628\u064A\u0636": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
   "\u062C\u0628\u0646\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
   "\u0631\u0648\u0645\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
@@ -84828,7 +84909,40 @@ var CATEGORY_DICTIONARY = {
   "\u0627\u0633\u0647\u0645": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
   "\u062B\u0627\u0646\u062F\u0631": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
   "\u0634\u0647\u0627\u062F\u0629": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
-  "\u0648\u062F\u064A\u0639\u0629": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631"
+  "\u0648\u062F\u064A\u0639\u0629": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0633\u062C\u0627\u064A\u0631": "\u062A\u0633\u0648\u0642",
+  "\u0633\u062C\u0627\u0631\u0647": "\u062A\u0633\u0648\u0642",
+  "\u0633\u062C\u0627\u0626\u0631": "\u062A\u0633\u0648\u0642",
+  "\u0645\u0627\u0644\u0628\u0648\u0631\u0648": "\u062A\u0633\u0648\u0642",
+  "\u0643\u0644\u064A\u0648\u0628\u0627\u062A\u0631\u0627": "\u062A\u0633\u0648\u0642",
+  "\u0645\u064A\u0631\u064A\u062A": "\u062A\u0633\u0648\u0642",
+  "\u0644\u0627\u064A\u062A": "\u062A\u0633\u0648\u0642",
+  "\u062A\u0628\u063A": "\u062A\u0633\u0648\u0642",
+  "\u0644\u0628\u0627\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0644\u0628\u0627\u0646\u0647": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0634\u064A\u0628\u0633\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0634\u064A\u0628\u0633": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0644\u064A\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0627\u0648\u0631\u064A\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0647\u0648\u0647\u0648\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062F\u0648\u0646\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0634\u0648\u0643\u0648\u0644\u0627\u062A\u0647": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062A\u0648\u064A\u0633\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u064A\u0644\u0643 \u0634\u064A\u0643": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0627\u062E\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062A\u0628\u0633": "\u0645\u062A\u0646\u0648\u0639\u0627\u062A",
+  "\u0628\u0642\u0634\u064A\u0634": "\u0645\u062A\u0646\u0648\u0639\u0627\u062A",
+  "\u0625\u0643\u0631\u0627\u0645\u064A\u0647": "\u0645\u062A\u0646\u0648\u0639\u0627\u062A",
+  "\u0641\u064A\u0641\u0627": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0645\u0627\u062A\u0634\u064A\u0646": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0645\u0627\u062A\u0634": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0644\u0639\u0628\u0646\u0627": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0643\u0648\u0631\u0629": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0643\u0648\u0631\u0647": "\u062A\u0631\u0641\u064A\u0647",
+  "\u062D\u062C\u0632": "\u062A\u0631\u0641\u064A\u0647",
+  "\u062C\u064A\u0645\u0646\u062C": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0634\u0648\u064A\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0634\u0648\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628"
 };
 
 // api/lib/fuzzy-match.ts
@@ -84891,7 +85005,9 @@ var STRONG_INCOME = [
   "\u0627\u064A\u0631\u0627\u062F\u064A",
   "\u0631\u062C\u0639\u0648\u0644\u064A",
   "\u0631\u062C\u0639\u0644\u064A \u0641\u0644\u0648\u0633",
-  "\u0643\u0627\u0634 \u0628\u0627\u0643"
+  "\u0643\u0627\u0634 \u0628\u0627\u0643",
+  "\u062E\u062F\u062A \u0627\u0644\u0645\u0635\u0631\u0648\u0641",
+  "\u0627\u062E\u062F\u062A \u0645\u0635\u0631\u0648\u0641"
 ];
 var INCOME_KEYWORDS = [
   "\u0645\u0631\u062A\u0628",
@@ -85597,27 +85713,34 @@ var SUB_CATEGORY_MAP = {
   "\u0628\u0648\u0646\u0635": { category: "\u0645\u0631\u062A\u0628", subCategory: "\u0645\u0643\u0627\u0641\u0623\u0629/\u0628\u0648\u0646\u0635" },
   "\u0645\u0643\u0627\u0641\u0627\u0647": { category: "\u0645\u0631\u062A\u0628", subCategory: "\u0645\u0643\u0627\u0641\u0623\u0629/\u0628\u0648\u0646\u0635" },
   "\u0639\u0645\u0648\u0644\u0647": { category: "\u0639\u0645\u0644 \u062D\u0631", subCategory: "\u0639\u0645\u0648\u0644\u0629" },
-  "\u0633\u0628\u0648\u0628\u0647": { category: "\u0639\u0645\u0644 \u062D\u0631", subCategory: "\u0633\u0628\u0648\u0628\u0629" }
+  "\u0633\u0628\u0648\u0628\u0647": { category: "\u0639\u0645\u0644 \u062D\u0631", subCategory: "\u0633\u0628\u0648\u0628\u0629" },
+  "\u0633\u062C\u0627\u064A\u0631": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0639\u0646\u0627\u064A\u0629 \u0634\u062E\u0635\u064A\u0629" },
+  "\u0633\u062C\u0627\u0626\u0631": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0639\u0646\u0627\u064A\u0629 \u0634\u062E\u0635\u064A\u0629" },
+  "\u0633\u062C\u0627\u0631\u0647": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0639\u0646\u0627\u064A\u0629 \u0634\u062E\u0635\u064A\u0629" },
+  "\u062D\u0644\u0627\u0642": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0639\u0646\u0627\u064A\u0629 \u0634\u062E\u0635\u064A\u0629" },
+  "\u0644\u0628\u0627\u0646": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0633\u0646\u0627\u0643\u0633" },
+  "\u0634\u064A\u0628\u0633\u064A": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0633\u0646\u0627\u0643\u0633" },
+  "\u0627\u0648\u0631\u064A\u0648": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0633\u0646\u0627\u0643\u0633" },
+  "\u0647\u0648\u0647\u0648\u0632": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0633\u0646\u0627\u0643\u0633" },
+  "\u062F\u0648\u0646\u062A": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0633\u0646\u0627\u0643\u0633" },
+  "\u062A\u0648\u064A\u0633\u062A": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0633\u0646\u0627\u0643\u0633" },
+  "\u0628\u0644\u0627\u064A\u0633\u062A\u064A\u0634\u0646": { category: "\u062A\u0631\u0641\u064A\u0647", subCategory: "\u0623\u0644\u0639\u0627\u0628" },
+  "\u0643\u0648\u0631\u0629": { category: "\u062A\u0631\u0641\u064A\u0647", subCategory: "\u0631\u064A\u0627\u0636\u0629 \u0648\u062C\u064A\u0645" },
+  "\u0643\u0648\u0631\u0647": { category: "\u062A\u0631\u0641\u064A\u0647", subCategory: "\u0631\u064A\u0627\u0636\u0629 \u0648\u062C\u064A\u0645" }
 };
 function isSimpleText(text2) {
   const normalizedLen = text2.length;
   const wordCount = text2.split(/\s+/).length;
-  if (normalizedLen > 50 || wordCount > 10) return false;
+  if (normalizedLen > 200 || wordCount > 30) return false;
   const amounts = extractAmounts(text2);
-  if (amounts.length > 2) return false;
+  if (amounts.length > 4) return false;
   const ambiguousPatterns = [
     /حولت\s+\S+/,
     // "حولت لأحمد" - ambiguous
     /حطيت\s+فلوس/,
     // "حطيت فلوس" - ambiguous
-    /حوالي/,
-    // approximate amount
-    /ولا\s+\d/,
+    /ولا\s+\d/
     // "خمسين ولا ستين" - uncertain
-    /كده/,
-    // approximate
-    /تقريبا/
-    // approximate
   ];
   for (const pattern of ambiguousPatterns) {
     if (pattern.test(text2)) return false;
@@ -85634,14 +85757,7 @@ function runRuleEngine(normalizedText, userDict = [], profileContext) {
       reason: "no_amounts_found"
     };
   }
-  if (!isSimpleText(normalizedText)) {
-    return {
-      items: [],
-      usedAI: false,
-      needsAI: true,
-      reason: "complex_text"
-    };
-  }
+  const isComplex = !isSimpleText(normalizedText);
   const items = [];
   for (let i = 0; i < amounts.length; i++) {
     const { amount, index: index2, length } = amounts[i];
@@ -85693,6 +85809,22 @@ function runRuleEngine(normalizedText, userDict = [], profileContext) {
       }
     }
     if (!found) {
+      const subMapKeys = Object.keys(SUB_CATEGORY_MAP);
+      for (const word of words) {
+        for (const key of subMapKeys) {
+          if (key.length >= 3 && (word.includes(key) || key.includes(word)) && word.length >= 3) {
+            category = SUB_CATEGORY_MAP[key].category;
+            subCategory = SUB_CATEGORY_MAP[key].subCategory;
+            confidence = 82;
+            inferenceSource = "rule";
+            found = true;
+            break;
+          }
+        }
+        if (found) break;
+      }
+    }
+    if (!found) {
       for (let w = 0; w < words.length - 1; w++) {
         const phrase = words[w] + " " + words[w + 1];
         if (SUB_CATEGORY_MAP[phrase]) {
@@ -85709,8 +85841,13 @@ function runRuleEngine(normalizedText, userDict = [], profileContext) {
       for (const word of words) {
         if (CATEGORY_DICTIONARY[word]) {
           category = CATEGORY_DICTIONARY[word];
-          subCategory = "\u0639\u0627\u0645";
-          confidence = 85;
+          if (SUB_CATEGORY_MAP[word]) {
+            subCategory = SUB_CATEGORY_MAP[word].subCategory;
+            confidence = 88;
+          } else {
+            subCategory = "\u0639\u0627\u0645";
+            confidence = 85;
+          }
           inferenceSource = "dictionary";
           found = true;
           break;
@@ -85749,12 +85886,6 @@ function runRuleEngine(normalizedText, userDict = [], profileContext) {
       confidence = intentResult.confidence;
     }
     if (category === "\u0645\u062A\u0646\u0648\u0639\u0627\u062A" && confidence < 60) {
-      return {
-        items: [],
-        usedAI: false,
-        needsAI: true,
-        reason: "low_confidence_category"
-      };
     }
     let description = allContext.replace(/\d+(\.\d+)?/g, "").replace(/(جنيه|ج\.م|ج|الف|ألف)/g, "").replace(/\s+/g, " ").trim().slice(0, 60);
     if (!description || description.length < 2) {
@@ -85779,7 +85910,7 @@ function runRuleEngine(normalizedText, userDict = [], profileContext) {
       }
     }, allContext, profileContext));
   }
-  const needsAI = items.some((it) => it.category === "\u0645\u062A\u0646\u0648\u0639\u0627\u062A" || it.confidence < 60);
+  const needsAI = items.some((it) => it.category === "\u0645\u062A\u0646\u0648\u0639\u0627\u062A" || it.confidence < 80) || isComplex;
   return { items, usedAI: false, needsAI };
 }
 function applyProfileHints(item, context, profileContext) {
@@ -85817,56 +85948,37 @@ function applyProfileHints(item, context, profileContext) {
 // api/lib/ai-classifier.ts
 function buildCategoryList() {
   return CATEGORIES.map((c) => {
-    const subs = c.subcategories.map((s) => s.name_ar).join("\u060C ");
-    return `${c.icon} ${c.name_ar} (${c.type}): [${subs}]`;
+    const subs = c.subcategories.map((s) => s.name_ar).join("\u060C");
+    return `${c.name_ar}(${c.type}):[${subs}]`;
   }).join("\n");
 }
-var SYSTEM_PROMPT = `\u0623\u0646\u062A "SmartSpend AI" \u2014 \u0645\u0635\u0646\u0641 \u0645\u0627\u0644\u064A \u0645\u0635\u0631\u064A \u0645\u062A\u062E\u0635\u0635 \u0628\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A.
+var SYSTEM_PROMPT = `\u0623\u0646\u062A SmartSpend AI \u2014 \u0645\u0635\u0646\u0641 \u0645\u0627\u0644\u064A \u0645\u0635\u0631\u064A.
+\u0645\u0647\u0645\u062A\u0643: \u062A\u062D\u0644\u064A\u0644 \u0646\u0635\u0648\u0635 \u0639\u0627\u0645\u064A\u0629 \u0645\u0635\u0631\u064A\u0629 \u0648\u0627\u0633\u062A\u062E\u0631\u0627\u062C \u0627\u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0628\u062F\u0642\u0629.
 
-\u0645\u0647\u0645\u062A\u0643 \u0627\u0644\u0648\u062D\u064A\u062F\u0629: \u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0646\u0635\u0648\u0635 \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0627\u0644\u0645\u0643\u062A\u0648\u0628\u0629 \u0628\u0627\u0644\u0639\u0627\u0645\u064A\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629 \u0648\u0627\u0633\u062A\u062E\u0631\u0627\u062C \u0627\u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0645\u0646\u0647\u0627 \u0628\u062F\u0642\u0629 \u0639\u0627\u0644\u064A\u0629 \u062C\u062F\u0627\u064B.
+## \u0627\u0644\u0642\u0648\u0627\u0639\u062F:
+1. \u0627\u0641\u0647\u0645 \u0627\u0644\u0639\u0627\u0645\u064A\u0629: "\u0642\u0628\u0636\u062A"=\u0631\u0627\u062A\u0628\u060C "\u0633\u0644\u0641\u062A"=\u0623\u0642\u0631\u0636\u062A\u060C "\u0634\u062D\u0646\u062A \u0627\u0644\u0639\u0631\u0628\u064A\u0629"=\u0628\u0646\u0632\u064A\u0646
+2. \u0641\u0631\u0651\u0642: expense/income/transfer/investment
+3. \u0627\u0644\u0641\u0626\u0629 \u0627\u0644\u0641\u0631\u0639\u064A\u0629 sub_category \u0623\u0647\u0645 \u0645\u0646 \u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0629
+4. \u0645\u0628\u0627\u0644\u063A>10000 \u063A\u0627\u0644\u0628\u0627\u064B: \u0625\u064A\u062C\u0627\u0631/\u0623\u062C\u0647\u0632\u0629/\u0633\u064A\u0627\u0631\u0629\u060C \u0645\u0634 \u0623\u0643\u0644
+5. "\u0634\u062D\u0646\u062A"=\u0631\u0635\u064A\u062F(\u0641\u0648\u0627\u062A\u064A\u0631)\u060C "\u0634\u062D\u0646\u062A \u0627\u0644\u0639\u0631\u0628\u064A\u0629"=\u0628\u0646\u0632\u064A\u0646(\u0645\u0648\u0627\u0635\u0644\u0627\u062A)
+6. "\u062D\u0648\u0644\u062A \u0644\u0640"=\u0645\u0635\u0631\u0648\u0641/\u062A\u062D\u0648\u064A\u0644\u060C "\u062D\u0648\u0644\u0648\u0644\u064A"=\u062F\u062E\u0644
+7. \u0641\u0643\u0643 \u0627\u0644\u062C\u0645\u0644 \u0627\u0644\u0645\u062A\u0639\u062F\u062F\u0629 \u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A \u0645\u0646\u0641\u0635\u0644\u0629
+8. \u0644\u0627 \u062A\u0633\u062A\u062E\u062F\u0645 "\u0645\u062A\u0646\u0648\u0639\u0627\u062A" \u0625\u0644\u0627 \u0644\u0644\u0646\u0635 \u0627\u0644\u063A\u0627\u0645\u0636 \u062A\u0645\u0627\u0645\u0627\u064B
+9. \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0627\u062A(\u0645\u0648\u0628\u0627\u064A\u0644/\u0644\u0627\u0628\u062A\u0648\u0628)="\u062A\u0633\u0648\u0642/\u0623\u062C\u0647\u0632\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629" \u0645\u0634 "\u0641\u0648\u0627\u062A\u064A\u0631"
+10. \u0645\u0645\u0646\u0648\u0639 needs_clarification=true \u0644\u0648 \u0641\u064A\u0647 \u0623\u0631\u0642\u0627\u0645 \u0648\u0641\u0626\u0627\u062A \u0648\u0627\u0636\u062D\u0629
 
-## \u0627\u0644\u0642\u0648\u0627\u0639\u062F \u0627\u0644\u0635\u0627\u0631\u0645\u0629:
-1. \u0627\u0641\u0647\u0645 \u0627\u0644\u0639\u0627\u0645\u064A\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629 \u0628\u0643\u0644 \u0627\u062E\u062A\u0635\u0627\u0631\u0627\u062A\u0647\u0627 (\u0645\u062B\u0644\u0627\u064B: "\u0642\u0628\u0636\u062A" = \u0627\u0633\u062A\u0644\u0645\u062A \u0631\u0627\u062A\u0628\u060C "\u0633\u0644\u0641\u062A" = \u0623\u0642\u0631\u0636\u062A\u060C "\u0634\u062D\u0646\u062A \u0627\u0644\u0639\u0631\u0628\u064A\u0629" = \u0628\u0646\u0632\u064A\u0646)
-2. \u0641\u0631\u0651\u0642 \u0628\u062F\u0642\u0629 \u0628\u064A\u0646: expense (\u0645\u0635\u0631\u0648\u0641), income (\u062F\u062E\u0644), transfer (\u062A\u062D\u0648\u064A\u0644), investment (\u0627\u0633\u062A\u062B\u0645\u0627\u0631)
-3. \u062D\u062F\u062F \u0627\u0644\u0641\u0626\u0629 \u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0629 (main_category) \u0648\u0627\u0644\u0641\u0626\u0629 \u0627\u0644\u0641\u0631\u0639\u064A\u0629 (sub_category) \u0628\u062F\u0642\u0629 \u2014 \u0627\u0644\u0641\u0626\u0629 \u0627\u0644\u0641\u0631\u0639\u064A\u0629 \u0623\u0647\u0645 \u0628\u0643\u062A\u064A\u0631
-4. \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u0643\u0628\u064A\u0631\u0629 (\u0623\u0643\u062B\u0631 \u0645\u0646 10,000) \u0646\u0627\u062F\u0631\u0627\u064B \u0645\u0627 \u062A\u0643\u0648\u0646 \u0623\u0643\u0644 \u0623\u0648 \u0645\u0648\u0627\u0635\u0644\u0627\u062A \u2014 \u063A\u0627\u0644\u0628\u0627\u064B: \u0625\u064A\u062C\u0627\u0631\u060C \u0623\u062C\u0647\u0632\u0629\u060C \u0633\u064A\u0627\u0631\u0629\u060C \u0627\u0633\u062A\u062B\u0645\u0627\u0631
-5. "\u0634\u062D\u0646\u062A" \u0648\u062D\u062F\u0647\u0627 = \u0634\u062D\u0646 \u0631\u0635\u064A\u062F (\u0641\u0648\u0627\u062A\u064A\u0631)\u060C "\u0634\u062D\u0646\u062A \u0627\u0644\u0639\u0631\u0628\u064A\u0629" = \u0628\u0646\u0632\u064A\u0646 (\u0645\u0648\u0627\u0635\u0644\u0627\u062A)
-6. "\u062D\u0648\u0644\u062A \u0644\u0640" = \u062A\u062D\u0648\u064A\u0644 \u0623\u0648 \u0645\u0635\u0631\u0648\u0641\u060C "\u062D\u0648\u0644\u0648\u0644\u064A" = \u062F\u062E\u0644
-7. "\u0633\u0644\u0641\u062A \u0635\u0627\u062D\u0628\u064A" = \u062F\u064A\u0646/\u0633\u0644\u0641\u0629 (\u062A\u062D\u0648\u064A\u0644)
-8. \u0641\u0643\u0643 \u0627\u0644\u062C\u0645\u0644 \u0627\u0644\u0645\u062A\u0639\u062F\u062F\u0629 \u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A \u0645\u0646\u0641\u0635\u0644\u0629
-9. \u0644\u0627 \u062A\u0636\u0639 \u0645\u0635\u0631\u0648\u0641 \u062A\u062D\u062A "\u0645\u062A\u0646\u0648\u0639\u0627\u062A" \u0625\u0644\u0627 \u0625\u0630\u0627 \u0643\u0627\u0646 \u0627\u0644\u0646\u0635 \u063A\u0627\u0645\u0636\u0627\u064B \u062A\u0645\u0627\u0645\u0627\u064B \u2014 \u0627\u0633\u062A\u0646\u062A\u062C \u0627\u0644\u0633\u064A\u0627\u0642
-10. \u0627\u0644\u0623\u062C\u0647\u0632\u0629 \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629 (\u0645\u0648\u0628\u0627\u064A\u0644\u060C \u0644\u0627\u0628\u062A\u0648\u0628) = "\u062A\u0633\u0648\u0642" / "\u0623\u062C\u0647\u0632\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629" \u0648\u0644\u064A\u0633 "\u0641\u0648\u0627\u062A\u064A\u0631"
-11. \u0631\u0643\u0651\u0632 \u0639\u0644\u0649 \u0627\u0644\u0641\u0626\u0629 \u0627\u0644\u0641\u0631\u0639\u064A\u0629 \u0623\u0643\u062A\u0631 \u0645\u0646 \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629 \u2014 \u062F\u064A \u0627\u0644\u0644\u064A \u0628\u062A\u0641\u0631\u0642 \u0641\u064A \u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631
+## \u0623\u0645\u062B\u0644\u0629:
+"\u0631\u062D\u062A \u0627\u0644\u062D\u0644\u0627\u0642 80\u062C \u0648\u0633\u0628\u062A \u0644\u0644\u0645\u0633\u0627\u0639\u062F 20" \u2192 [{80,\u062A\u0633\u0648\u0642,\u0639\u0646\u0627\u064A\u0629 \u0634\u062E\u0635\u064A\u0629,expense},{20,\u0645\u062A\u0646\u0648\u0639\u0627\u062A,\u0639\u0627\u0645,expense}]
+"\u062E\u062F\u062A \u0627\u0644\u0645\u0635\u0631\u0648\u0641 200 \u0635\u0631\u0641\u062A 100 \u062F\u0631\u0633" \u2192 [{200,\u0645\u0631\u062A\u0628,\u0645\u0631\u062A\u0628 \u0623\u0633\u0627\u0633\u064A,income},{100,\u062A\u0639\u0644\u064A\u0645,\u062F\u0631\u0648\u0633 \u062E\u0635\u0648\u0635\u064A\u0629,expense}]
+"\u0646\u0632\u0644\u062A \u0628\u0644\u0627\u064A\u0633\u062A\u064A\u0634\u0646 60\u062C \u0648\u062C\u0628\u062A \u062A\u0648\u064A\u0633\u062A 20 \u0648\u0644\u0639\u0628\u062A \u0643\u0648\u0631\u0629 50" \u2192 [{60,\u062A\u0631\u0641\u064A\u0647,\u0623\u0644\u0639\u0627\u0628,expense},{20,\u0623\u0643\u0644 \u0648\u0634\u0631\u0628,\u0633\u0646\u0627\u0643\u0633,expense},{50,\u062A\u0631\u0641\u064A\u0647,\u0631\u064A\u0627\u0636\u0629 \u0648\u062C\u064A\u0645,expense}]
 
-## \u0627\u0644\u0641\u0626\u0627\u062A \u0627\u0644\u0645\u062A\u0627\u062D\u0629:
+## \u0627\u0644\u0641\u0626\u0627\u062A:
 ${buildCategoryList()}
 
-## \u0635\u064A\u063A\u0629 \u0627\u0644\u0631\u062F (JSON \u0641\u0642\u0637):
-{
-  "items": [{
-    "type": "expense|income|transfer|investment",
-    "amount": number,
-    "currency": "EGP",
-    "main_category": "\u0627\u0633\u0645 \u0627\u0644\u0641\u0626\u0629 \u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0629 \u0628\u0627\u0644\u0639\u0631\u0628\u064A",
-    "sub_category": "\u0627\u0633\u0645 \u0627\u0644\u0641\u0626\u0629 \u0627\u0644\u0641\u0631\u0639\u064A\u0629 \u0628\u0627\u0644\u0639\u0631\u0628\u064A",
-    "confidence": 0-100,
-    "needs_review": boolean,
-    "merchant": "\u0627\u0633\u0645 \u0627\u0644\u0645\u062D\u0644/\u0627\u0644\u062E\u062F\u0645\u0629 \u0623\u0648 null",
-    "notes": "\u0648\u0635\u0641 \u0645\u062E\u062A\u0635\u0631",
-    "ambiguity_flags": ["optional_flag"],
-    "inference_source": "ai",
-    "confidence_breakdown": { "intent": 0-100, "taxonomy": 0-100, "heuristics": 0-100 }
-  }],
-  "needs_clarification": false,
-  "clarification_question": null,
-  "alertMessage": "\u0631\u0633\u0627\u0644\u0629 \u062A\u0646\u0628\u064A\u0647 \u0630\u0643\u064A\u0629 \u0644\u0648 \u0641\u064A\u0647 \u062A\u0628\u0630\u064A\u0631 (\u0627\u062E\u062A\u064A\u0627\u0631\u064A\u060C \u0623\u0648 null)"
-}
+## \u0635\u064A\u063A\u0629 \u0627\u0644\u0631\u062F JSON \u0641\u0642\u0637:
+{"items":[{"type":"expense|income","amount":0,"main_category":"","sub_category":"","confidence":0,"needs_review":false,"notes":"\u0648\u0635\u0641"}],"needs_clarification":false,"clarification_question":null}
 
-## \u0642\u0648\u0627\u0639\u062F \u0627\u0644\u062B\u0642\u0629:
-- confidence >= 90: \u0648\u0627\u0636\u062D \u062C\u062F\u0627\u064B \u0648\u0645\u0624\u0643\u062F
-- confidence 70-89: \u063A\u0627\u0644\u0628\u0627\u064B \u0635\u062D \u0628\u0633 \u0645\u062D\u062A\u0627\u062C \u0645\u0631\u0627\u062C\u0639\u0629
-- confidence < 70: \u0641\u064A\u0647 \u063A\u0645\u0648\u0636 \u2192 \u0627\u0639\u0645\u0644 needs_review = true
-- \u0644\u0648 \u0627\u0644\u0646\u0635 \u063A\u0627\u0645\u0636 \u062A\u0645\u0627\u0645\u0627\u064B: needs_clarification = true \u0648\u0627\u0633\u0623\u0644 \u0633\u0624\u0627\u0644 \u062A\u0648\u0636\u064A\u062D\u064A \u0630\u0643\u064A \u0628\u0627\u0644\u0639\u0627\u0645\u064A\u0629`;
+## \u0627\u0644\u062B\u0642\u0629: >=90 \u0645\u0624\u0643\u062F | 70-89 \u0645\u0631\u0627\u062C\u0639\u0629 | <70 \u063A\u0645\u0648\u0636`;
 var STT_SYSTEM_PROMPT = `\u0623\u0646\u062A "SmartSpend Voice Engine" \u2014 \u0646\u0638\u0627\u0645 \u0627\u0644\u062A\u0639\u0631\u0641 \u0627\u0644\u0635\u0648\u062A\u064A \u0644\u0645\u0648\u0642\u0639 \u0648\u062A\u0637\u0628\u064A\u0642 \u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641 "SmartSpend".
 
 \u0645\u0647\u0645\u062A\u0643 \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629: \u062A\u062D\u0648\u064A\u0644 \u0643\u0644\u0627\u0645 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 (\u0627\u0644\u0630\u064A \u064A\u062A\u062D\u062F\u062B \u0628\u0627\u0644\u0639\u0627\u0645\u064A\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629) \u0644\u062A\u0633\u062C\u064A\u0644 \u0645\u0635\u0627\u0631\u064A\u0641\u0647 \u0627\u0644\u064A\u0648\u0645\u064A\u0629 \u0625\u0644\u0649 \u0646\u0635 \u062F\u0642\u064A\u0642 \u0648\u0645\u0641\u0647\u0648\u0645 \u062C\u062F\u0627\u064B.
@@ -85897,6 +86009,13 @@ async function aiClassify(text2, apiKey, apiKey2, modelName, maxTokens, contextO
 
 Smart user profile context:
 ${contextObj.userProfileContext}`;
+  }
+  if (contextObj.ruleHints && contextObj.ruleHints.length > 0) {
+    const hintsStr = contextObj.ruleHints.map((h) => `- ${h.amount} \u062C.\u0645: ${h.category}/${h.subCategory} (${h.confidence}%)`).join("\n");
+    userPrompt += `
+
+\u062A\u0644\u0645\u064A\u062D\u0627\u062A \u0645\u0646 \u0627\u0644\u0645\u062D\u0631\u0643 \u0627\u0644\u0645\u0628\u062F\u0626\u064A (\u064A\u0645\u0643\u0646\u0643 \u0627\u0644\u0627\u0633\u062A\u0639\u0627\u0646\u0629 \u0628\u0647\u0627 \u0643\u062F\u0644\u064A\u0644):
+${hintsStr}`;
   }
   if (skipClarification) {
     userPrompt += `
@@ -85953,16 +86072,33 @@ ${CLARIFICATION_POLICY_PROMPT}`,
   }
   return parsed;
 }
-async function geminiSpeechToText(audioBase64, mimeType, apiKey, modelName = "gemini-2.5-flash") {
+async function geminiSpeechToText(audioBase64, mimeType, apiKey, modelName = "gemini-2.5-flash", sttMode = "standard") {
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
+    const MODEL_MAP = {
+      // Legacy / UI aliases
+      "gemini-3.0-flash-live": "gemini-2.0-flash",
+      "gemini-2.5-flash-native-audio": "gemini-2.5-flash",
+      "gemini-3.1-flash-lite": "gemini-2.0-flash-lite",
+      // Shorthand names admins might type
+      "flash": "gemini-2.0-flash",
+      "flash-lite": "gemini-2.0-flash-lite",
+      "pro": "gemini-2.5-pro",
+      "flash-2.5": "gemini-2.5-flash"
+    };
+    const actualModelName = MODEL_MAP[modelName] ?? modelName;
+    const generationConfig = {
+      temperature: 0.1,
+      maxOutputTokens: 512
+    };
+    const supportsNativeAudio = actualModelName.includes("gemini-2.0") || actualModelName.includes("gemini-2.5") || actualModelName.includes("gemini-3.0");
+    if (sttMode === "native_audio" && supportsNativeAudio) {
+      generationConfig.responseModalities = ["TEXT"];
+    }
     const model = genAI.getGenerativeModel({
-      model: modelName,
+      model: actualModelName,
       systemInstruction: STT_SYSTEM_PROMPT,
-      generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: 512
-      }
+      generationConfig
     });
     const result = await model.generateContent([
       { text: "\u062D\u0648\u0651\u0644 \u0627\u0644\u0635\u0648\u062A \u062F\u0647 \u0644\u0646\u0635 \u0645\u0643\u062A\u0648\u0628 \u0628\u0627\u0644\u0639\u0627\u0645\u064A\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629. \u0627\u0643\u062A\u0628 \u0627\u0644\u0646\u0635 \u0641\u0642\u0637 \u0628\u062F\u0648\u0646 \u0623\u064A \u0634\u0631\u062D:" },
@@ -86021,12 +86157,10 @@ function parseAIResponse(response, modelName) {
     type: item.type || "expense",
     confidence: item.confidence || 70,
     merchant: item.merchant || void 0,
-    currency: item.currency || "EGP",
-    needsReview: item.needs_review || item.confidence < 85,
+    currency: "EGP",
+    needsReview: item.needs_review ?? (item.confidence || 70) < 85,
     parsedBy: "ai",
-    inferenceSource: item.inference_source || "ai",
-    ambiguityFlags: item.ambiguity_flags || void 0,
-    confidenceBreakdown: item.confidence_breakdown || void 0
+    inferenceSource: "ai"
   }));
   return {
     items,
@@ -86036,6 +86170,288 @@ function parseAIResponse(response, modelName) {
     tokensUsed: 0,
     modelUsed: modelName
   };
+}
+
+// api/lib/embedding-engine.ts
+var EMBEDDING_MODEL = "text-embedding-004";
+var CATEGORY_DESCRIPTORS = [
+  // ── Expense Categories ──
+  {
+    category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+    subCategory: "\u0639\u0627\u0645",
+    descriptors: ["\u0623\u0643\u0644", "\u0634\u0631\u0628", "\u0637\u0639\u0627\u0645", "\u0648\u062C\u0628\u0629", "\u0623\u0643\u0644\u062A", "\u0641\u0637\u0627\u0631", "\u063A\u062F\u0627", "\u0639\u0634\u0627", "\u0628\u064A\u062A\u0632\u0627", "\u0628\u0631\u062C\u0631", "\u0634\u0627\u0648\u0631\u0645\u0627", "\u0633\u0646\u062F\u0648\u062A\u0634", "\u0645\u0637\u0639\u0645", "\u062F\u0644\u064A\u0641\u0631\u064A", "\u0623\u0643\u0644 \u0628\u064A\u062A"]
+  },
+  {
+    category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+    subCategory: "\u0642\u0647\u0648\u0629 \u0648\u0643\u0627\u0641\u064A\u0647",
+    descriptors: ["\u0642\u0647\u0648\u0629", "\u0646\u0633\u0643\u0627\u0641\u064A\u0647", "\u0643\u0627\u0641\u064A\u0647", "\u0634\u0627\u064A", "\u0645\u0634\u0631\u0648\u0628 \u0633\u0627\u062E\u0646", "\u0644\u0627\u062A\u064A\u0647", "\u0643\u0627\u0628\u062A\u0634\u064A\u0646\u0648"]
+  },
+  {
+    category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+    subCategory: "\u0628\u0642\u0627\u0644\u0629",
+    descriptors: ["\u0628\u0642\u0627\u0644\u0629", "\u0633\u0648\u0628\u0631 \u0645\u0627\u0631\u0643\u062A", "\u062E\u0636\u0627\u0631", "\u0641\u0627\u0643\u0647\u0629", "\u0644\u0628\u0646", "\u0632\u0628\u0627\u062F\u064A", "\u062C\u0628\u0646\u0629", "\u0628\u064A\u0636", "\u0623\u0643\u0644 \u0628\u064A\u062A", "\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0628\u064A\u062A"]
+  },
+  {
+    category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+    subCategory: "\u0639\u0627\u0645",
+    descriptors: ["\u0645\u0648\u0627\u0635\u0644\u0627\u062A", "\u062A\u0648\u0635\u064A\u0644\u0629", "\u0631\u0643\u0628\u062A", "\u0645\u0634\u0648\u0627\u0631", "\u0637\u0631\u064A\u0642", "\u0623\u0648\u0628\u0631", "\u0643\u0631\u064A\u0645", "\u062A\u0627\u0643\u0633\u064A", "\u0645\u062A\u0631\u0648", "\u0623\u062A\u0648\u0628\u064A\u0633", "\u0628\u0627\u0635", "\u062A\u0648\u0643\u062A\u0648\u0643", "\u0628\u0646\u0632\u064A\u0646"]
+  },
+  {
+    category: "\u0641\u0648\u0627\u062A\u064A\u0631",
+    subCategory: "\u0639\u0627\u0645",
+    descriptors: ["\u0641\u0627\u062A\u0648\u0631\u0629", "\u0643\u0647\u0631\u0628\u0627\u0621", "\u0645\u064A\u0627\u0647", "\u063A\u0627\u0632", "\u0646\u062A", "\u0625\u0646\u062A\u0631\u0646\u062A", "\u0634\u062D\u0646", "\u0631\u0635\u064A\u062F", "\u0645\u0648\u0628\u0627\u064A\u0644", "\u062A\u0644\u064A\u0641\u0648\u0646", "\u0642\u0633\u0637", "\u0623\u0642\u0633\u0627\u0637", "\u062A\u0623\u0645\u064A\u0646"]
+  },
+  {
+    category: "\u0633\u0643\u0646",
+    subCategory: "\u0639\u0627\u0645",
+    descriptors: ["\u0625\u064A\u062C\u0627\u0631", "\u0623\u062B\u0627\u062B", "\u0635\u064A\u0627\u0646\u0629", "\u0633\u0628\u0627\u0643", "\u0643\u0647\u0631\u0628\u0627\u0626\u064A", "\u0646\u0642\u0627\u0634", "\u0646\u062C\u0627\u0631", "\u0634\u063A\u0627\u0644\u0629", "\u0645\u0646\u0638\u0641\u0627\u062A", "\u063A\u0633\u0627\u0644\u0629", "\u062A\u0644\u0627\u062C\u0629", "\u0628\u064A\u062A"]
+  },
+  {
+    category: "\u062A\u0633\u0648\u0642",
+    subCategory: "\u0639\u0627\u0645",
+    descriptors: ["\u062A\u0633\u0648\u0642", "\u0634\u0648\u0628\u064A\u0646\u062C", "\u0647\u062F\u0648\u0645", "\u0644\u0628\u0633", "\u0645\u0648\u0628\u0627\u064A\u0644", "\u0644\u0627\u0628 \u062A\u0648\u0628", "\u062C\u0632\u0645\u0629", "\u0643\u0648\u062A\u0634\u064A", "\u0634\u0646\u0637\u0629", "\u0633\u0627\u0639\u0629", "\u0625\u0643\u0633\u0633\u0648\u0627\u0631"]
+  },
+  {
+    category: "\u0635\u062D\u0629",
+    subCategory: "\u0639\u0627\u0645",
+    descriptors: ["\u0635\u062D\u0629", "\u062F\u0643\u062A\u0648\u0631", "\u0635\u064A\u062F\u0644\u064A\u0629", "\u062F\u0648\u0627", "\u062A\u062D\u0627\u0644\u064A\u0644", "\u0645\u0633\u062A\u0634\u0641\u0649", "\u0623\u0633\u0646\u0627\u0646", "\u0639\u0645\u0644\u064A\u0629", "\u0643\u0634\u0641", "\u0631\u0648\u0634\u062A\u0629", "\u0639\u0644\u0627\u062C"]
+  },
+  {
+    category: "\u062A\u0639\u0644\u064A\u0645",
+    subCategory: "\u0639\u0627\u0645",
+    descriptors: ["\u062A\u0639\u0644\u064A\u0645", "\u0645\u062F\u0631\u0633\u0629", "\u062C\u0627\u0645\u0639\u0629", "\u0643\u0648\u0631\u0633", "\u062F\u0631\u0633", "\u062F\u0631\u0648\u0633", "\u0643\u062A\u0628", "\u0645\u0635\u0627\u0631\u064A\u0641 \u062F\u0631\u0627\u0633\u0629", "\u064A\u0648\u0646\u064A\u0641\u0648\u0631\u0645"]
+  },
+  {
+    category: "\u062A\u0631\u0641\u064A\u0647",
+    subCategory: "\u0639\u0627\u0645",
+    descriptors: ["\u062A\u0631\u0641\u064A\u0647", "\u0633\u064A\u0646\u0645\u0627", "\u062C\u064A\u0645", "\u0646\u0627\u062F\u064A", "\u0633\u0641\u0631", "\u0645\u0635\u064A\u0641", "\u062E\u0631\u0648\u062C\u0629", "\u0634\u064A\u0634\u0629", "\u0628\u0644\u0627\u064A \u0633\u062A\u064A\u0634\u0646", "\u0623\u0644\u0639\u0627\u0628"]
+  },
+  {
+    category: "\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A",
+    subCategory: "\u0639\u0627\u0645",
+    descriptors: ["\u0627\u0634\u062A\u0631\u0627\u0643", "\u0646\u062A\u0641\u0644\u0643\u0633", "\u0633\u0628\u0648\u062A\u064A\u0641\u0627\u064A", "\u064A\u0648\u062A\u064A\u0648\u0628 \u0628\u0631\u064A\u0645\u064A\u0648\u0645", "\u0634\u0627\u0647\u062F", "VPN"]
+  },
+  {
+    category: "\u0647\u062F\u0627\u064A\u0627 \u0648\u0635\u062F\u0642\u0627\u062A",
+    subCategory: "\u0639\u0627\u0645",
+    descriptors: ["\u0647\u062F\u064A\u0629", "\u0635\u062F\u0642\u0629", "\u0632\u0643\u0627\u0629", "\u062A\u0628\u0631\u0639", "\u0639\u064A\u062F\u064A\u0629", "\u0641\u0631\u062D", "\u062E\u0637\u0648\u0628\u0629"]
+  },
+  {
+    category: "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+    subCategory: "\u0639\u0627\u0645",
+    descriptors: ["\u0627\u0633\u062A\u062B\u0645\u0627\u0631", "\u0630\u0647\u0628", "\u062F\u0647\u0628", "\u0623\u0633\u0647\u0645", "\u0634\u0647\u0627\u062F\u0627\u062A", "\u0639\u0642\u0627\u0631\u0627\u062A", "\u0639\u0645\u0644\u0627\u062A \u0631\u0642\u0645\u064A\u0629", "\u0628\u064A\u062A\u0643\u0648\u064A\u0646"]
+  },
+  {
+    category: "\u062E\u062F\u0645\u0627\u062A \u0633\u064A\u0627\u0631\u0627\u062A",
+    subCategory: "\u0639\u0627\u0645",
+    descriptors: ["\u0639\u0631\u0628\u064A\u0629", "\u0635\u064A\u0627\u0646\u0629 \u0639\u0631\u0628\u064A\u0629", "\u0643\u0627\u0648\u062A\u0634", "\u0628\u0637\u0627\u0631\u064A\u0629", "\u0632\u064A\u062A", "\u062A\u063A\u064A\u064A\u0631 \u0632\u064A\u062A", "\u0643\u0627\u0631\u062A\u0629", "\u0645\u062E\u0627\u0644\u0641\u0629", "\u0631\u0643\u0646\u0629", "\u062C\u0631\u0627\u062C"]
+  },
+  {
+    category: "\u062E\u0631\u0648\u062C\u0627\u062A",
+    subCategory: "\u0639\u0627\u0645",
+    descriptors: ["\u062E\u0631\u0648\u062C\u0629", "\u0641\u0633\u062D\u0629", "\u0643\u0648\u0631\u0646\u064A\u0634", "\u0635\u062D\u0627\u0628", "\u0642\u0639\u062F\u0629", "\u0646\u0632\u0644\u0629"]
+  },
+  // ── Income Categories ──
+  {
+    category: "\u0645\u0631\u062A\u0628",
+    subCategory: "\u0639\u0627\u0645",
+    descriptors: ["\u0645\u0631\u062A\u0628", "\u0631\u0627\u062A\u0628", "\u0628\u0648\u0646\u0635", "\u0645\u0643\u0627\u0641\u0623\u0629", "\u0623\u0648\u0641\u0631 \u062A\u0627\u064A\u0645", "\u0628\u062F\u0644", "\u062D\u0648\u0627\u0641\u0632"]
+  },
+  {
+    category: "\u0639\u0645\u0644 \u062D\u0631",
+    subCategory: "\u0639\u0627\u0645",
+    descriptors: ["\u0641\u0631\u064A\u0644\u0627\u0646\u0633", "\u0639\u0645\u0644 \u062D\u0631", "\u0645\u0634\u0631\u0648\u0639", "\u0639\u0645\u0648\u0644\u0629", "\u0633\u0628\u0648\u0628\u0629", "\u0634\u063A\u0644 \u062C\u0627\u0646\u0628\u064A", "\u0643\u0644\u0627\u064A\u0646\u062A"]
+  },
+  {
+    category: "\u0639\u0648\u0627\u0626\u062F \u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+    subCategory: "\u0639\u0627\u0645",
+    descriptors: ["\u0623\u0631\u0628\u0627\u062D", "\u0641\u0648\u0627\u0626\u062F", "\u0643\u0627\u0634 \u0628\u0627\u0643", "\u0627\u0633\u062A\u0631\u062C\u0627\u0639", "\u0639\u0627\u0626\u062F", "\u0631\u0628\u062D"]
+  },
+  {
+    category: "\u062A\u062D\u0648\u064A\u0644",
+    subCategory: "\u0639\u0627\u0645",
+    descriptors: ["\u062A\u062D\u0648\u064A\u0644", "\u062D\u0648\u0627\u0644\u0629", "\u0633\u062D\u0628", "\u0625\u064A\u062F\u0627\u0639", "\u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0643\u0627\u0634", "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A", "\u062F\u064A\u0646", "\u0633\u0644\u0641\u0629"]
+  }
+];
+var LRUCache = class {
+  constructor(maxSize) {
+    this.maxSize = maxSize;
+  }
+  map = /* @__PURE__ */ new Map();
+  get(key) {
+    const val = this.map.get(key);
+    if (val !== void 0) {
+      this.map.delete(key);
+      this.map.set(key, val);
+    }
+    return val;
+  }
+  set(key, value) {
+    if (this.map.has(key)) this.map.delete(key);
+    this.map.set(key, value);
+    if (this.map.size > this.maxSize) {
+      const first = this.map.keys().next().value;
+      if (first !== void 0) this.map.delete(first);
+    }
+  }
+  has(key) {
+    return this.map.has(key);
+  }
+  get size() {
+    return this.map.size;
+  }
+};
+var inputEmbeddingCache = new LRUCache(500);
+var categoryEmbeddings = null;
+var categoryEmbeddingsPromise = null;
+async function getEmbedding(text2, apiKey) {
+  const cached2 = inputEmbeddingCache.get(text2);
+  if (cached2) return cached2;
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
+  const result = await model.embedContent(text2);
+  const vector = result.embedding.values;
+  inputEmbeddingCache.set(text2, vector);
+  return vector;
+}
+async function ensureCategoryEmbeddings(apiKey) {
+  if (categoryEmbeddings) return;
+  if (categoryEmbeddingsPromise) return categoryEmbeddingsPromise;
+  categoryEmbeddingsPromise = (async () => {
+    const results = [];
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
+    for (const cat of CATEGORY_DESCRIPTORS) {
+      for (const desc2 of cat.descriptors) {
+        try {
+          const result = await model.embedContent(desc2);
+          results.push({
+            category: cat.category,
+            subCategory: cat.subCategory,
+            descriptor: desc2,
+            vector: result.embedding.values
+          });
+        } catch (err) {
+          console.warn(`Embedding failed for "${desc2}":`, err);
+        }
+      }
+    }
+    categoryEmbeddings = results;
+    console.log(`\u2705 Loaded ${results.length} category embeddings`);
+  })();
+  return categoryEmbeddingsPromise;
+}
+function cosineSimilarity(a, b) {
+  let dot = 0, normA = 0, normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  const denom = Math.sqrt(normA) * Math.sqrt(normB);
+  return denom === 0 ? 0 : dot / denom;
+}
+function calibrateScore(rawSim, margin) {
+  const MIN_SIM = 0.5;
+  const MAX_SIM = 0.92;
+  const scaled = Math.max(0, Math.min(
+    100,
+    (rawSim - MIN_SIM) / (MAX_SIM - MIN_SIM) * 100
+  ));
+  const marginBonus = Math.min(10, margin * 50);
+  return Math.min(100, Math.round(scaled + marginBonus));
+}
+async function matchSegment(text2, apiKey) {
+  if (!categoryEmbeddings || categoryEmbeddings.length === 0) return null;
+  const inputVector = await getEmbedding(text2, apiKey);
+  const scores = [];
+  for (const ce of categoryEmbeddings) {
+    const sim = cosineSimilarity(inputVector, ce.vector);
+    scores.push({ category: ce.category, subCategory: ce.subCategory, sim });
+  }
+  const catBest = /* @__PURE__ */ new Map();
+  for (const s of scores) {
+    const prev = catBest.get(s.category);
+    if (!prev || s.sim > prev.bestSim) {
+      catBest.set(s.category, { subCategory: s.subCategory, bestSim: s.sim });
+    }
+  }
+  const ranked = Array.from(catBest.entries()).map(([cat, v]) => ({ category: cat, subCategory: v.subCategory, sim: v.bestSim })).sort((a, b) => b.sim - a.sim);
+  if (ranked.length === 0) return null;
+  const best = ranked[0];
+  const secondBest = ranked.length > 1 ? ranked[1].sim : 0;
+  const margin = best.sim - secondBest;
+  return {
+    category: best.category,
+    subCategory: best.subCategory,
+    score: calibrateScore(best.sim, margin),
+    margin: Math.round(margin * 100),
+    rawSimilarity: Math.round(best.sim * 1e3) / 1e3
+  };
+}
+var CONJUNCTION_PATTERNS = /(?:^|\s)(وكمان|وبعدين|بعدها|ومنهم|وبعد|بعد كده|ثم)(?:\s|$)|(?:^|\s)و(?:\s)|(?:^|\s)و(?=[أ-ي])/g;
+var AMBIGUITY_PATTERNS = /حوالي|تقريبا|كده|ولا\s+\d|مش متأكد|يمكن/;
+var AMOUNT_PATTERN = /\d+(\.\d+)?/g;
+function splitSegments(text2) {
+  const splitTokens = /\s+(?:و|وكمان|وبعدين|بعدها|ثم|وبعد)\s+/;
+  const raw2 = text2.split(splitTokens).map((s) => s.trim()).filter((s) => s.length > 0);
+  if (raw2.length <= 1) return [text2];
+  const withAmounts = raw2.filter((s) => AMOUNT_PATTERN.test(s));
+  return withAmounts.length >= raw2.length * 0.5 ? raw2 : [text2];
+}
+function computeComplexity(text2) {
+  const words = text2.split(/\s+/).filter((w) => w.length >= 1);
+  const amounts = text2.match(AMOUNT_PATTERN) || [];
+  const conjunctions = text2.match(CONJUNCTION_PATTERNS) || [];
+  const segments = splitSegments(text2);
+  const features = {
+    textLength: text2.length,
+    wordCount: words.length,
+    amountCount: amounts.length,
+    entityCount: conjunctions.length,
+    hasConjunctions: conjunctions.length > 0,
+    hasAmbiguity: AMBIGUITY_PATTERNS.test(text2),
+    segmentCount: segments.length
+  };
+  let score = 0;
+  score += Math.min(25, features.textLength / 100 * 25);
+  score += Math.min(20, features.wordCount / 15 * 20);
+  score += Math.min(20, (features.amountCount - 1) * 10);
+  score += features.hasConjunctions ? 20 : 0;
+  score += features.hasAmbiguity ? 20 : 0;
+  return { score: Math.min(100, Math.round(score)), features };
+}
+var EMBEDDING_CONFIDENCE_THRESHOLD = 80;
+var COMPLEXITY_THRESHOLD = 35;
+async function runEmbeddingClassifier(text2, apiKey) {
+  try {
+    await ensureCategoryEmbeddings(apiKey);
+    const { score: complexityScore } = computeComplexity(text2);
+    const segments = splitSegments(text2);
+    const matches = [];
+    let cacheHit = false;
+    for (const seg of segments) {
+      const trimmed = seg.replace(/\d+(\.\d+)?/g, "").replace(/(جنيه|ج\.م|ج|الف|ألف)/g, "").trim();
+      if (trimmed.length < 2) continue;
+      if (inputEmbeddingCache.has(trimmed)) cacheHit = true;
+      const match2 = await matchSegment(trimmed, apiKey);
+      if (match2) matches.push(match2);
+    }
+    if (matches.length === 0) return null;
+    const allHighConfidence = matches.every((m) => m.score >= EMBEDDING_CONFIDENCE_THRESHOLD);
+    const allGoodMargin = matches.every((m) => m.margin >= 8);
+    const isSimple = complexityScore < COMPLEXITY_THRESHOLD && allHighConfidence && allGoodMargin;
+    return {
+      matches,
+      isSimple,
+      complexityScore,
+      segments,
+      cacheHit
+    };
+  } catch (err) {
+    console.error("Embedding engine error:", err);
+    return null;
+  }
 }
 
 // api/lib/confidence-scorer.ts
@@ -86050,8 +86466,8 @@ var DEFAULT_THRESHOLDS = {
 function adjustConfidence(item) {
   let conf = item.confidence;
   if (item.category === "\u0645\u062A\u0646\u0648\u0639\u0627\u062A") conf = Math.min(conf, 40);
-  if (item.subCategory === "\u0639\u0627\u0645" && item.category !== "\u0645\u062A\u0646\u0648\u0639\u0627\u062A") {
-    conf = Math.max(conf - 10, 30);
+  if (item.subCategory === "\u0639\u0627\u0645" && item.category !== "\u0645\u062A\u0646\u0648\u0639\u0627\u062A" && item.parsedBy !== "ai") {
+    conf = Math.max(conf - 5, 30);
   }
   if (item.confidence === 100) conf = 100;
   if (item.amount > 1e4 && ["\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", "\u0645\u0648\u0627\u0635\u0644\u0627\u062A"].includes(item.category)) {
@@ -86087,8 +86503,16 @@ function generateClarification(items, originalText) {
   }
   return void 0;
 }
-function scoreAndDecide(items, originalText, thresholds = DEFAULT_THRESHOLDS) {
+function scoreAndDecide(items, originalText, thresholds = DEFAULT_THRESHOLDS, skipClarification = false) {
   if (items.length === 0) {
+    if (skipClarification) {
+      return {
+        items: [],
+        overallConfidence: 0,
+        decision: "review",
+        clarificationQuestion: void 0
+      };
+    }
     return {
       items: [],
       overallConfidence: 0,
@@ -86096,7 +86520,10 @@ function scoreAndDecide(items, originalText, thresholds = DEFAULT_THRESHOLDS) {
       clarificationQuestion: "\u0645\u0634 \u0642\u0627\u062F\u0631 \u0623\u0641\u0647\u0645. \u0645\u0645\u0643\u0646 \u062A\u0643\u062A\u0628 \u0627\u0644\u0645\u0635\u0631\u0648\u0641 \u0623\u0648 \u0627\u0644\u062F\u062E\u0644 \u0628\u0637\u0631\u064A\u0642\u0629 \u0623\u0648\u0636\u062D\u061F"
     };
   }
-  const scoredItems = items.map(adjustConfidence);
+  let scoredItems = items.map(adjustConfidence);
+  if (scoredItems.length >= 4 && scoredItems.every((i) => i.confidence >= 60)) {
+    scoredItems = scoredItems.map((i) => ({ ...i, confidence: Math.min(i.confidence + 10, 100), needsReview: i.confidence + 10 < 85 }));
+  }
   const overallConfidence = Math.round(
     scoredItems.reduce((sum3, item) => sum3 + item.confidence, 0) / scoredItems.length
   );
@@ -86107,15 +86534,15 @@ function scoreAndDecide(items, originalText, thresholds = DEFAULT_THRESHOLDS) {
     (i) => i.type === "income" && ["\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", "\u062E\u0631\u0648\u062C\u0627\u062A", "\u062E\u062F\u0645\u0627\u062A \u0633\u064A\u0627\u0631\u0627\u062A", "\u0627\u0644\u062A\u0632\u0627\u0645\u0627\u062A \u064A\u0648\u0645\u064A\u0629"].includes(i.category)
   );
   if (hasCriticalMissingFields || hasIntentTaxonomyConflict) {
-    decision = "clarify";
-    clarificationQuestion = generateClarification(scoredItems, originalText);
+    decision = skipClarification ? "review" : "clarify";
+    clarificationQuestion = skipClarification ? void 0 : generateClarification(scoredItems, originalText);
   } else if (overallConfidence >= thresholds.autoSave && scoredItems.every((i) => i.confidence >= thresholds.autoSave)) {
     decision = "auto_save";
   } else if (overallConfidence >= thresholds.review) {
     decision = "review";
   } else {
-    decision = "clarify";
-    clarificationQuestion = generateClarification(scoredItems, originalText);
+    decision = skipClarification ? "review" : "clarify";
+    clarificationQuestion = skipClarification ? void 0 : generateClarification(scoredItems, originalText);
   }
   return { items: scoredItems, overallConfidence, decision, clarificationQuestion };
 }
@@ -86173,6 +86600,7 @@ async function runPipeline(input) {
       merchants: entities.merchants
     },
     ruleEngineResult: { attempted: false, succeeded: false },
+    embeddingResult: { attempted: false, succeeded: false },
     aiResult: { attempted: false, succeeded: false },
     finalConfidence: 0,
     finalDecision: ""
@@ -86192,75 +86620,172 @@ async function runPipeline(input) {
   } else {
     log2.ruleEngineResult.succeeded = false;
     log2.ruleEngineResult.reason = ruleResult.reason;
-    log2.aiResult.attempted = true;
-    const isComplexText = input.text.length > 35 || entities.hasMultipleTransactions;
-    const isWeakRuleResult = ruleResult.items.some(
-      (it) => it.category === "\u0645\u062A\u0646\u0648\u0639\u0627\u062A" || it.confidence < 60
-    );
-    if (isComplexText || isWeakRuleResult || ruleResult.needsAI) {
-      try {
-        const currentDate = (/* @__PURE__ */ new Date()).toLocaleString("ar-EG", { timeZone: "Africa/Cairo" });
-        const aiResult = await aiClassify(
-          input.text,
-          input.apiKey,
-          input.apiKey2,
-          input.modelName,
-          input.maxTokens,
-          {
-            totalIncome: input.monthlyContext.totalIncome,
-            totalExpense: input.monthlyContext.totalExpense,
-            currentDate,
-            userProfileContext: input.userProfileContext?.promptSummary
-          },
-          input.skipClarification
-        );
-        if (aiResult && aiResult.items.length > 0) {
-          items = aiResult.items;
-          alertMessage = aiResult.alertMessage || null;
-          tokensUsed = aiResult.tokensUsed;
-          modelUsed = aiResult.modelUsed;
-          parsedBy = ruleResult.items.length > 0 ? "hybrid" : "ai";
-          log2.aiResult.succeeded = true;
-          log2.aiResult.modelUsed = aiResult.modelUsed;
-          if (aiResult.needsClarification) {
-            const scored2 = scoreAndDecide([], input.text, thresholds);
-            scored2.clarificationQuestion = aiResult.clarificationQuestion || scored2.clarificationQuestion;
-            log2.finalConfidence = 0;
-            log2.finalDecision = "clarify";
-            return {
-              items: [],
-              parsedBy,
-              modelUsed,
-              overallConfidence: 0,
-              decision: "clarify",
-              clarificationQuestion: aiResult.clarificationQuestion || "\u0645\u0634 \u0642\u0627\u062F\u0631 \u0623\u0641\u0647\u0645. \u0645\u0645\u0643\u0646 \u062A\u0648\u0636\u062D \u0623\u0643\u062A\u0631\u061F",
-              alertMessage,
-              tokensUsed,
-              processingTimeMs: Date.now() - startTime,
-              log: log2
-            };
+    log2.embeddingResult.attempted = true;
+    try {
+      const embResult = await runEmbeddingClassifier(normalizedText, input.apiKey);
+      if (embResult) {
+        log2.embeddingResult.complexityScore = embResult.complexityScore;
+        log2.embeddingResult.isSimple = embResult.isSimple;
+        if (embResult.isSimple && embResult.matches.length > 0) {
+          log2.embeddingResult.succeeded = true;
+          parsedBy = "embedding";
+          modelUsed = "text-embedding-004";
+          for (let i = 0; i < embResult.matches.length; i++) {
+            const match2 = embResult.matches[i];
+            const segAmounts = entities.amounts;
+            const amount = segAmounts[i]?.amount || segAmounts[0]?.amount || 0;
+            items.push({
+              amount,
+              category: match2.category,
+              subCategory: match2.subCategory,
+              description: embResult.segments[i] || normalizedText,
+              type: ["\u0645\u0631\u062A\u0628", "\u0639\u0645\u0644 \u062D\u0631", "\u0639\u0648\u0627\u0626\u062F \u0627\u0633\u062A\u062B\u0645\u0627\u0631"].includes(match2.category) ? "income" : "expense",
+              confidence: match2.score,
+              currency: "EGP",
+              needsReview: match2.score < 85,
+              parsedBy: "rule_engine",
+              // compatible type
+              inferenceSource: "synonym",
+              ambiguityFlags: match2.margin < 10 ? ["low_embedding_margin"] : void 0,
+              confidenceBreakdown: {
+                intent: match2.score,
+                taxonomy: match2.score,
+                heuristics: match2.margin
+              }
+            });
           }
-        } else {
+        }
+      }
+    } catch (embErr) {
+      console.warn("Embedding classifier error (non-fatal):", embErr);
+      log2.embeddingResult.succeeded = false;
+    }
+    if (items.length === 0) {
+      log2.aiResult.attempted = true;
+      const isComplexText = input.text.length > 35 || entities.hasMultipleTransactions;
+      const isWeakRuleResult = ruleResult.items.some(
+        (it) => it.category === "\u0645\u062A\u0646\u0648\u0639\u0627\u062A" || it.confidence < 80
+      );
+      const forceSkipClarification = input.skipClarification || entities.amounts.length >= 2;
+      if (isComplexText || isWeakRuleResult || ruleResult.needsAI || forceSkipClarification) {
+        try {
+          const currentDate = (/* @__PURE__ */ new Date()).toLocaleString("ar-EG", { timeZone: "Africa/Cairo" });
+          const aiResult = await aiClassify(
+            input.text,
+            input.apiKey,
+            input.apiKey2,
+            input.modelName,
+            input.maxTokens,
+            {
+              totalIncome: input.monthlyContext.totalIncome,
+              totalExpense: input.monthlyContext.totalExpense,
+              currentDate,
+              userProfileContext: input.userProfileContext?.promptSummary,
+              ruleHints: ruleResult.items.filter((i) => i.confidence >= 60)
+            },
+            forceSkipClarification
+          );
+          if (aiResult) {
+            tokensUsed = aiResult.tokensUsed;
+            modelUsed = aiResult.modelUsed;
+            log2.aiResult.modelUsed = aiResult.modelUsed;
+            const isSkipped = forceSkipClarification;
+            if (isSkipped) {
+              if (aiResult.items.length > 0) {
+                const capConfidence = input.skipClarification;
+                items = aiResult.items.map((item) => ({
+                  ...item,
+                  confidence: capConfidence ? Math.min(item.confidence, 55) : item.confidence,
+                  needsReview: capConfidence ? true : item.needsReview
+                }));
+                alertMessage = aiResult.alertMessage || null;
+                parsedBy = ruleResult.items.length > 0 ? "hybrid" : "ai";
+                log2.aiResult.succeeded = true;
+              } else {
+                const fallbackAmount = entities.amounts[0]?.amount || 0;
+                if (fallbackAmount > 0) {
+                  items = [{
+                    amount: fallbackAmount,
+                    category: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A",
+                    subCategory: "\u0623\u062E\u0631\u0649",
+                    description: input.text.slice(0, 60),
+                    type: "expense",
+                    confidence: 30,
+                    currency: "EGP",
+                    needsReview: true,
+                    parsedBy: "rule_engine",
+                    inferenceSource: "ai",
+                    ambiguityFlags: ["skip_low_confidence"]
+                  }];
+                  log2.aiResult.succeeded = false;
+                  parsedBy = "rule_engine";
+                } else if (ruleResult.items.length > 0) {
+                  items = ruleResult.items;
+                  parsedBy = "rule_engine";
+                }
+              }
+            } else if (!aiResult.needsClarification && aiResult.items.length > 0) {
+              items = aiResult.items;
+              alertMessage = aiResult.alertMessage || null;
+              parsedBy = ruleResult.items.length > 0 ? "hybrid" : "ai";
+              log2.aiResult.succeeded = true;
+            } else if (aiResult.needsClarification) {
+              log2.finalConfidence = 0;
+              log2.finalDecision = "clarify";
+              return {
+                items: [],
+                parsedBy,
+                modelUsed,
+                overallConfidence: 0,
+                decision: "clarify",
+                clarificationQuestion: aiResult.clarificationQuestion || "\u0645\u0634 \u0642\u0627\u062F\u0631 \u0623\u0641\u0647\u0645. \u0645\u0645\u0643\u0646 \u062A\u0648\u0636\u062D \u0623\u0643\u062A\u0631\u061F",
+                alertMessage,
+                tokensUsed,
+                processingTimeMs: Date.now() - startTime,
+                log: log2
+              };
+            } else {
+              log2.aiResult.succeeded = false;
+              if (ruleResult.items.length > 0) {
+                items = ruleResult.items;
+                parsedBy = "rule_engine";
+              }
+            }
+          } else {
+            log2.aiResult.succeeded = false;
+            if (ruleResult.items.length > 0) {
+              items = ruleResult.items;
+              parsedBy = "rule_engine";
+            }
+          }
+        } catch (err) {
+          console.error("Pipeline AI Error:", err);
           log2.aiResult.succeeded = false;
           if (ruleResult.items.length > 0) {
             items = ruleResult.items;
             parsedBy = "rule_engine";
           }
         }
-      } catch (err) {
-        console.error("Pipeline AI Error:", err);
-        log2.aiResult.succeeded = false;
-        if (ruleResult.items.length > 0) {
-          items = ruleResult.items;
-          parsedBy = "rule_engine";
-        }
+      } else if (ruleResult.items.length > 0) {
+        items = ruleResult.items;
       }
-    } else if (ruleResult.items.length > 0) {
-      items = ruleResult.items;
     }
   }
+  if (entities.dateHints && entities.dateHints.length > 0 && items.length > 0) {
+    const hint = entities.dateHints[0];
+    const targetDate = /* @__PURE__ */ new Date();
+    if (hint === "\u0627\u0645\u0628\u0627\u0631\u062D") {
+      targetDate.setDate(targetDate.getDate() - 1);
+    } else if (hint === "\u0623\u0648\u0644 \u0627\u0645\u0628\u0627\u0631\u062D" || hint === "\u0627\u0648\u0644 \u0627\u0645\u0628\u0627\u0631\u062D") {
+      targetDate.setDate(targetDate.getDate() - 2);
+    }
+    const isoDate = targetDate.toISOString();
+    items.forEach((item) => {
+      item.date = isoDate;
+    });
+  }
   const postProcessed = postProcessItems(items);
-  const scored = scoreAndDecide(postProcessed, input.text, thresholds);
+  const scored = scoreAndDecide(postProcessed, input.text, thresholds, input.skipClarification ?? false);
   log2.finalConfidence = scored.overallConfidence;
   log2.finalDecision = scored.decision;
   return {
@@ -86276,8 +86801,8 @@ async function runPipeline(input) {
     log: log2
   };
 }
-async function runSTTPipeline(audioBase64, mimeType, apiKey, modelName = "gemini-2.5-flash") {
-  return geminiSpeechToText(audioBase64, mimeType, apiKey, modelName);
+async function runSTTPipeline(audioBase64, mimeType, apiKey, modelName = "gemini-2.5-flash", sttMode = "standard") {
+  return geminiSpeechToText(audioBase64, mimeType, apiKey, modelName, sttMode);
 }
 
 // api/services/user-profile-service.ts
@@ -86654,19 +87179,39 @@ function buildBehaviorSnapshot(items, previousItems = [], profile) {
 // api/services/report-personalization-engine.ts
 function buildReportPersonalizationContext(profile, snapshot) {
   const lifestyle = profile.lifestyleInfo;
+  const financial = profile.financialInfo;
   const inferred = profile.aiInferredAttributes;
   const preferences = profile.preferences;
+  const basic = profile.basicInfo;
+  const goalMap = {
+    organize_expenses: "\u062A\u0646\u0638\u064A\u0645 \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641",
+    reduce_spending: "\u062A\u0642\u0644\u064A\u0644 \u0627\u0644\u0635\u0631\u0641",
+    track_income: "\u062A\u062A\u0628\u0639 \u0627\u0644\u062F\u062E\u0644",
+    manage_business: "\u0625\u062F\u0627\u0631\u0629 \u0645\u0634\u0631\u0648\u0639"
+  };
+  const patternMap = {
+    stable: "\u062B\u0627\u0628\u062A",
+    variable: "\u0645\u062A\u063A\u064A\u0631",
+    unclear: "\u063A\u064A\u0631 \u0648\u0627\u0636\u062D"
+  };
   return [
-    "User intelligence context:",
-    `- Has children: ${lifestyle.hasChildren ?? "unknown"}`,
-    `- Family responsibility: ${lifestyle.responsibleForFamily ?? "unknown"}`,
-    `- Supports others: ${Array.isArray(lifestyle.supportsOthers) ? lifestyle.supportsOthers.join(", ") : "unknown"}`,
-    `- Fixed commitments: ${lifestyle.fixedMonthlyCommitments ?? "unknown"}`,
-    `- Preferred detail level: ${preferences.detailLevel ?? "summary"}`,
-    `- Financial stability: ${snapshot.inferredAttributes.financialStability ?? inferred.financialStability ?? "unknown"}`,
-    `- Spending behavior: ${snapshot.inferredAttributes.spendingBehavior ?? inferred.spendingBehavior ?? "unknown"}`,
-    `- Top category: ${snapshot.topCategories[0]?.name ?? "unknown"}`,
-    `- Spike spending: ${snapshot.behaviorFlags.hasSpikeSpending ? "yes" : "no"}`
+    "\u0645\u0639\u0644\u0648\u0645\u0627\u062A \u0630\u0643\u064A\u0629 \u0639\u0646 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 (\u0627\u0633\u062A\u062E\u062F\u0645\u0647\u0627 \u0644\u062A\u062E\u0635\u064A\u0635 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0648\u0643\u0623\u0646\u0643 \u0645\u0633\u062A\u0634\u0627\u0631\u0647 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0634\u062E\u0635\u064A):",
+    `- \u0627\u0644\u0645\u0647\u0646\u0629: ${basic.profession ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F\u0629"}`,
+    `- \u0645\u062A\u0648\u0633\u0637 \u0627\u0644\u062F\u062E\u0644 \u0627\u0644\u0634\u0647\u0631\u064A \u0627\u0644\u0645\u0639\u0644\u0646: ${financial.averageMonthlyIncome ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"} \u062C.\u0645`,
+    `- \u0645\u0635\u0627\u062F\u0631 \u0627\u0644\u062F\u062E\u0644: ${Array.isArray(financial.incomeSources) && financial.incomeSources.length > 0 ? financial.incomeSources.join("\u060C ") : "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`,
+    `- \u0647\u062F\u0641\u0647 \u0627\u0644\u0623\u0633\u0627\u0633\u064A: ${goalMap[String(financial.primaryGoal)] ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`,
+    `- \u0646\u0645\u0637 \u0627\u0644\u0635\u0631\u0641 \u0627\u0644\u0645\u0639\u062A\u0627\u062F: ${patternMap[String(financial.spendingPattern)] ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`,
+    `- \u0644\u062F\u064A\u0647 \u0623\u0637\u0641\u0627\u0644: ${lifestyle.hasChildren === true ? "\u0646\u0639\u0645" : lifestyle.hasChildren === false ? "\u0644\u0627" : "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`,
+    `- \u0645\u0633\u0624\u0648\u0644 \u0639\u0646 \u0623\u0633\u0631\u0629: ${lifestyle.responsibleForFamily === true ? "\u0646\u0639\u0645" : lifestyle.responsibleForFamily === false ? "\u0644\u0627" : "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`,
+    `- \u064A\u062F\u0639\u0645 \u0645\u0627\u0644\u064A\u0627\u064B: ${Array.isArray(lifestyle.supportsOthers) && lifestyle.supportsOthers.length > 0 ? lifestyle.supportsOthers.join("\u060C ") : "\u0644\u0627 \u0623\u062D\u062F"}`,
+    `- \u0627\u0644\u062A\u0632\u0627\u0645\u0627\u062A \u0634\u0647\u0631\u064A\u0629 \u062B\u0627\u0628\u062A\u0629: ${lifestyle.fixedMonthlyCommitments ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`,
+    `- \u0645\u0633\u062A\u0648\u0649 \u0627\u0644\u062A\u0641\u0627\u0635\u064A\u0644 \u0627\u0644\u0645\u0641\u0636\u0644: ${preferences.detailLevel === "detailed" ? "\u062A\u0641\u0635\u064A\u0644\u064A" : preferences.detailLevel === "summary" ? "\u0645\u062E\u062A\u0635\u0631" : "\u0645\u062A\u0648\u0627\u0632\u0646"}`,
+    `- \u0627\u0644\u0627\u0633\u062A\u0642\u0631\u0627\u0631 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0633\u062A\u0646\u062A\u062C: ${snapshot.inferredAttributes.financialStability ?? inferred.financialStability ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`,
+    `- \u0627\u0644\u0633\u0644\u0648\u0643 \u0627\u0644\u0627\u0633\u062A\u0647\u0644\u0627\u0643\u064A: ${snapshot.inferredAttributes.spendingBehavior ?? inferred.spendingBehavior ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`,
+    `- \u0623\u0639\u0644\u0649 \u0641\u0626\u0629 \u0625\u0646\u0641\u0627\u0642: ${snapshot.topCategories[0]?.name ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`,
+    `- \u0637\u0641\u0631\u0627\u062A \u0635\u0631\u0641 \u0641\u062C\u0627\u0626\u064A\u0629: ${snapshot.behaviorFlags.hasSpikeSpending ? "\u0646\u0639\u0645" : "\u0644\u0627"}`,
+    "",
+    "\u062A\u0639\u0644\u064A\u0645\u0627\u062A \u0627\u0644\u062A\u062E\u0635\u064A\u0635: \u062E\u0627\u0637\u0628 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0634\u0643\u0644 \u0634\u062E\u0635\u064A \u062D\u0633\u0628 \u0628\u064A\u0627\u0646\u0627\u062A\u0647 \u0623\u0639\u0644\u0627\u0647. \u0627\u0630\u0643\u0631 \u0645\u0647\u0646\u062A\u0647 \u0648\u0647\u062F\u0641\u0647 \u0625\u0646 \u0648\u062C\u062F\u0627. \u0625\u0630\u0627 \u0643\u0627\u0646 \u0644\u062F\u064A\u0647 \u0623\u0637\u0641\u0627\u0644\u060C \u0627\u0630\u0643\u0631 \u0630\u0644\u0643 \u0641\u064A \u0633\u064A\u0627\u0642 \u0627\u0644\u062A\u062D\u0644\u064A\u0644. \u0627\u062C\u0639\u0644 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u064A\u0628\u062F\u0648 \u0648\u0643\u0623\u0646\u0647 \u0645\u064F\u0639\u062F \u062E\u0635\u064A\u0635\u0627\u064B \u0644\u0647."
   ].join("\n");
 }
 function buildBackendPersonalizedInsights(profile, snapshot) {
@@ -86727,7 +87272,7 @@ async function getVoiceSecondsSince(userId, userType, cycleStart) {
     const usageResult = await db.select({ total: sql`COALESCE(SUM(duration_seconds), 0)` }).from(voiceUsage).where(and(
       eq(voiceUsage.userId, userId),
       eq(voiceUsage.userType, userType),
-      gte(voiceUsage.createdAt, cycleStart)
+      eq(voiceUsage.month, (/* @__PURE__ */ new Date()).toISOString().slice(0, 7))
     ));
     return Number(usageResult[0]?.total || 0);
   } catch (err) {
@@ -86749,6 +87294,9 @@ async function getAiClient(taskType, userPlan = "free") {
   });
   let apiKey = cfg.ai_api_key || env.GEMINI_API_KEY;
   let apiKey2 = cfg.ai_api_key_2 || "AIzaSyCTbqi-uF65bRYw8T32DbVOciM9CIMjRuo";
+  if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY") {
+    apiKey = apiKey2;
+  }
   let modelName;
   if (taskType === "parse") {
     if (userPlan === "ultra") modelName = cfg.ai_model_ultra || "gemini-2.5-pro";
@@ -86757,20 +87305,25 @@ async function getAiClient(taskType, userPlan = "free") {
   } else {
     modelName = cfg.ai_model_reports || env.GEMINI_MODEL_REPORTS;
   }
+  const parseSafeInt = (val, def) => {
+    const cleaned = String(val || def).replace(/[^\d]/g, "");
+    const parsed = parseInt(cleaned, 10);
+    return isNaN(parsed) ? parseInt(def, 10) : parsed;
+  };
   const tokenLimits = {
-    free: parseInt(cfg.free_token_limit || "50000"),
-    pro: parseInt(cfg.pro_token_limit || "500000"),
-    ultra: parseInt(cfg.ultra_token_limit || "2000000")
+    free: parseSafeInt(cfg.free_token_limit, "50000"),
+    pro: parseSafeInt(cfg.pro_token_limit, "500000"),
+    ultra: parseSafeInt(cfg.ultra_token_limit, "2000000")
   };
   const maxPerRequest = {
-    free: parseInt(cfg.free_max_per_request || "256"),
-    pro: parseInt(cfg.pro_max_per_request || "512"),
-    ultra: parseInt(cfg.ultra_max_per_request || "1024")
+    free: parseSafeInt(cfg.free_max_per_request, "256"),
+    pro: parseSafeInt(cfg.pro_max_per_request, "512"),
+    ultra: parseSafeInt(cfg.ultra_max_per_request, "1024")
   };
   const dailyLimits = {
-    free: parseInt(cfg.free_daily_limit || "10"),
-    pro: parseInt(cfg.pro_daily_limit || "100"),
-    ultra: parseInt(cfg.ultra_daily_limit || "500")
+    free: parseSafeInt(cfg.free_daily_limit, "10"),
+    pro: parseSafeInt(cfg.pro_daily_limit, "100"),
+    ultra: parseSafeInt(cfg.ultra_daily_limit, "500")
   };
   const canUseAnalysis = cfg[`${userPlan}_ai_analysis`] !== "false";
   const canUseParse = cfg[`${userPlan}_ai_parse`] !== "false";
@@ -86778,12 +87331,14 @@ async function getAiClient(taskType, userPlan = "free") {
     throw new Error("Demo Mode");
   }
   const plan = userPlan;
+  let safeMaxTokens = taskType === "parse" ? maxPerRequest[plan] || 512 : 8192;
+  if (safeMaxTokens > 8192) safeMaxTokens = 8192;
   const genAI = new GoogleGenerativeAI(apiKey);
   const aiModel = genAI.getGenerativeModel({
     model: modelName,
     generationConfig: {
       temperature: 0.3,
-      maxOutputTokens: taskType === "parse" ? maxPerRequest[plan] || 512 : maxPerRequest[plan] || 1024
+      maxOutputTokens: safeMaxTokens
     }
   });
   return {
@@ -87025,31 +87580,45 @@ var aiRouter = router({
     if (limit > 0 && usedSeconds >= limit) {
       throw new TRPCError({
         code: "FORBIDDEN",
-        message: `\u0648\u0642\u062A \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0635\u0648\u062A\u064A \u062E\u0644\u0635 (${Math.floor(limit / 60)} \u062F\u0642\u064A\u0642\u0629/\u0634\u0647\u0631). \u062D\u062F\u062B \u0644\u0644\u0628\u0631\u0648 \u0644\u0644\u0645\u0632\u064A\u062F!`
+        message: `\u0648\u0642\u062A \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0635\u0648\u062A\u064A \u0627\u0644\u0645\u062A\u0627\u062D \u0644\u064A\u0643 \u062E\u0644\u0635 (${limit} \u062B\u0627\u0646\u064A\u0629/\u0634\u0647\u0631). \u064A\u0631\u062C\u0649 \u0627\u0644\u062A\u0631\u0642\u064A\u0629 \u0644\u0640 Pro \u0644\u0644\u062D\u0635\u0648\u0644 \u0639\u0644\u0649 \u0627\u0644\u0645\u0632\u064A\u062F!`
       });
     }
     if (limit > 0 && usedSeconds + input.durationSeconds > limit) {
       throw new TRPCError({
         code: "FORBIDDEN",
-        message: `\u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u064A\u062A\u062C\u0627\u0648\u0632 \u0627\u0644\u0645\u062A\u0628\u0642\u064A \u0644\u0643 \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631. \u0627\u0644\u0645\u062A\u0627\u062D \u0627\u0644\u0622\u0646 ${Math.max(0, limit - usedSeconds)} \u062B\u0627\u0646\u064A\u0629.`
+        message: `\u0645\u062F\u0629 \u0647\u0630\u0627 \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u062A\u062A\u062C\u0627\u0648\u0632 \u0627\u0644\u0631\u0635\u064A\u062F \u0627\u0644\u0645\u062A\u0628\u0642\u064A \u0644\u0643 \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631. \u0627\u0644\u0645\u062A\u0627\u062D \u0627\u0644\u0622\u0646 ${Math.max(0, limit - usedSeconds)} \u062B\u0627\u0646\u064A\u0629 \u0641\u0642\u0637.`
       });
     }
-    let apiKey = cfg.ai_api_key || env.GEMINI_API_KEY;
-    const sttModel = cfg.stt_model || "gemini-2.5-flash";
+    let apiKey = cfg.stt_api_key || "AIzaSyCWif4U7uRb1WKG_HTwqNwtNLmvfD5fZj0";
+    let apiKey2 = cfg.ai_api_key_2 || "";
+    const sttModel = cfg.stt_model || "gemini-3.0-flash-live";
+    const fallbackModel = cfg.stt_fallback_model || "gemini-3.1-flash-lite";
     const cleanMimeType = input.mimeType.split(";")[0];
-    const result = await runSTTPipeline(input.audioBase64, cleanMimeType, apiKey, sttModel);
+    const sttMode = cfg.stt_processing_mode || "standard";
+    let result = await runSTTPipeline(input.audioBase64, cleanMimeType, apiKey, sttModel, sttMode);
+    if (!result) {
+      console.warn("STT with primary model failed, falling back to", fallbackModel);
+      result = await runSTTPipeline(input.audioBase64, cleanMimeType, apiKey, fallbackModel, sttMode);
+    }
+    if (!result && apiKey2 && apiKey2 !== "AIzaSyCTbqi-uF65bRYw8T32DbVOciM9CIMjRuo_placeholder") {
+      console.warn("STT with primary key failed, falling back to secondary key with", fallbackModel);
+      result = await runSTTPipeline(input.audioBase64, cleanMimeType, apiKey2, fallbackModel, sttMode);
+    }
     if (!result) {
       throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "\u0641\u0634\u0644 \u062A\u062D\u0648\u064A\u0644 \u0627\u0644\u0635\u0648\u062A. \u062C\u0631\u0628 \u062A\u0627\u0646\u064A." });
     }
     const currentMonthStr = (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
-    await db.insert(voiceUsage).values({
-      userId: ctx.user.id,
-      userType: ctx.user.type,
-      durationSeconds: input.durationSeconds,
-      month: currentMonthStr,
-      source: "gemini_stt"
-    }).catch(() => {
-    });
+    try {
+      await db.insert(voiceUsage).values({
+        userId: ctx.user.id,
+        userType: ctx.user.type,
+        durationSeconds: input.durationSeconds,
+        month: currentMonthStr,
+        source: "gemini_stt"
+      });
+    } catch (insertErr) {
+      console.error("Failed to insert voice usage:", insertErr);
+    }
     if (result.tokensUsed > 0) {
       await trackTokens(ctx.user.id, ctx.user.type, result.tokensUsed);
     }
@@ -87086,6 +87655,26 @@ var aiRouter = router({
     month: external_exports.string(),
     model: external_exports.enum(["flash", "pro", "ultra", "gemma"]).default("flash")
   })).mutation(async ({ ctx, input }) => {
+    const lastSummary = await db.select().from(aiSummaries).where(and(eq(aiSummaries.userId, ctx.user.id), eq(aiSummaries.userType, ctx.user.type), eq(aiSummaries.period, "monthly"))).orderBy(desc(aiSummaries.createdAt)).limit(1);
+    if (lastSummary[0]) {
+      const sysSettings = await db.select().from(systemSettings);
+      const limits = { free: 30, pro: 14, ultra: 1 };
+      sysSettings.forEach((s) => {
+        if (s.key === "report_limit_free" && s.value) limits.free = parseInt(s.value);
+        if (s.key === "report_limit_pro" && s.value) limits.pro = parseInt(s.value);
+        if (s.key === "report_limit_ultra" && s.value) limits.ultra = parseInt(s.value);
+      });
+      const plan = ctx.user.plan || "free";
+      const allowedDays = limits[plan] || 30;
+      const daysSinceLast = ((/* @__PURE__ */ new Date()).getTime() - lastSummary[0].createdAt.getTime()) / (1e3 * 3600 * 24);
+      if (daysSinceLast < allowedDays) {
+        const remainingDays = Math.ceil(allowedDays - daysSinceLast);
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: `\u0645\u062A\u0628\u0642\u064A ${remainingDays} \u064A\u0648\u0645 \u0644\u0637\u0644\u0628 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0630\u0643\u064A \u0627\u0644\u0642\u0627\u062F\u0645 \u0641\u064A \u062E\u0637\u062A\u0643 (${plan.toUpperCase()}). \u0644\u0644\u062A\u0631\u0642\u064A\u0629\u060C \u0642\u0645 \u0628\u0632\u064A\u0627\u0631\u0629 \u0635\u0641\u062D\u0629 \u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643.`
+        });
+      }
+    }
     const [year2, month] = input.month.split("-");
     const startDate = new Date(parseInt(year2), parseInt(month) - 1, 1);
     const endDate = new Date(parseInt(year2), parseInt(month), 0);
@@ -87256,50 +87845,69 @@ ${reportPersonalizationContext}`;
         if (aiFocus === "statistics") focusInstruction = "\u0631\u0643\u0632 \u0628\u0634\u0643\u0644 \u0643\u0627\u0645\u0644 \u0639\u0644\u0649 \u0627\u0644\u0623\u0631\u0642\u0627\u0645\u060C \u0627\u0644\u0646\u0633\u0628 \u0627\u0644\u0645\u0626\u0648\u064A\u0629\u060C \u0648\u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0627\u062A \u0627\u0644\u0625\u062D\u0635\u0627\u0626\u064A\u0629 \u0627\u0644\u062F\u0642\u064A\u0642\u0629\u060C \u0648\u0627\u0644\u0645\u0624\u0634\u0631\u0627\u062A \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0645\u062B\u0644 \u0645\u0639\u062F\u0644 \u0627\u0644\u062D\u0631\u0642 \u0627\u0644\u0645\u0627\u0644\u064A \u0648\u0627\u0644\u0627\u062F\u062E\u0627\u0631.";
         if (aiFocus === "tips") focusInstruction = "\u0631\u0643\u0632 \u0628\u0634\u0643\u0644 \u0643\u0628\u064A\u0631 \u0639\u0644\u0649 \u062A\u0642\u062F\u064A\u0645 \u062A\u0648\u0635\u064A\u0627\u062A \u0627\u0633\u062A\u0631\u0627\u062A\u064A\u062C\u064A\u0629 \u0648\u062D\u0644\u0648\u0644 \u0639\u0645\u0644\u064A\u0629 \u0644\u0625\u0639\u0627\u062F\u0629 \u0647\u064A\u0643\u0644\u0629 \u0627\u0644\u0645\u064A\u0632\u0627\u0646\u064A\u0629 \u0648\u062A\u062D\u0633\u064A\u0646 \u0643\u0641\u0627\u0621\u0629 \u0627\u0644\u0625\u0646\u0641\u0627\u0642.";
         if (aiFocus === "patterns") focusInstruction = "\u0631\u0643\u0632 \u0639\u0644\u0649 \u0627\u0643\u062A\u0634\u0627\u0641 \u0627\u0644\u0623\u0646\u0645\u0627\u0637 \u0627\u0644\u0633\u0644\u0648\u0643\u064A\u0629\u060C \u0648\u062A\u0641\u0633\u064A\u0631 \u062A\u0648\u062C\u0647\u0627\u062A \u0627\u0644\u0625\u0646\u0641\u0627\u0642 (Spending Trends)\u060C \u0648\u062A\u0642\u064A\u064A\u0645 \u0627\u0644\u0633\u0644\u0648\u0643 \u0627\u0644\u0645\u0627\u0644\u064A \u0639\u0644\u0649 \u0627\u0644\u0645\u062F\u0649 \u0627\u0644\u0637\u0648\u064A\u0644.";
-        const prompt = `\u0623\u0646\u062A "\u0627\u0644\u0645\u0633\u062A\u0634\u0627\u0631 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0630\u0643\u064A \u0627\u0644\u0623\u0642\u062F\u0645" (Senior AI Financial Advisor) \u0644\u0640 SmartSpend.
-\u0627\u0644\u0645\u0637\u0644\u0648\u0628 \u0645\u0646\u0643 \u0647\u0648 \u0635\u064A\u0627\u063A\u0629 \u062A\u0642\u0631\u064A\u0631 \u0627\u0633\u062A\u0634\u0627\u0631\u064A \u0645\u0627\u0644\u064A "\u0639\u0645\u064A\u0642 \u062C\u062F\u0627\u064B \u0648\u0634\u0627\u0645\u0644" \u0644\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0646\u0627\u0621\u064B \u0639\u0644\u0649 \u0628\u064A\u0627\u0646\u0627\u062A\u0647 \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0627\u0644\u0645\u0631\u0641\u0642\u0629.
+        const prompt = `[Persona] \u0645\u0633\u062A\u0634\u0627\u0631 \u0645\u0627\u0644\u064A \u0648\u0633\u0644\u0648\u0643\u064A \u0645\u0635\u0631\u064A \u0630\u0643\u064A \u0648\u0645\u062A\u0639\u0627\u0637\u0641 (Behavioral Finance). \u0644\u0627 \u062A\u0633\u062A\u062E\u062F\u0645 \u0623\u0633\u0644\u0648\u0628 \u062A\u0648\u0628\u064A\u062E \u0623\u0648 \u0644\u063A\u0629 \u0628\u0646\u0648\u0643 \u0645\u0639\u0642\u062F\u0629\u060C \u0628\u0644 "\u0645\u0631\u0622\u0629 \u0630\u0643\u064A\u0629" \u0625\u0646\u0633\u0627\u0646\u064A\u0629\u060C \u062F\u0627\u0639\u0645\u0629. \u0627\u0644\u0644\u063A\u0629: \u0639\u0627\u0645\u064A\u0629 \u0645\u0635\u0631\u064A\u0629 \u0631\u0627\u0642\u064A\u0629 \u0648\u0645\u0628\u0633\u0637\u0629.
 
-\u0627\u0644\u0647\u062F\u0641: \u062A\u062D\u0648\u064A\u0644 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u062C\u0627\u0641\u0629 \u0625\u0644\u0649 "\u0631\u0624\u064A\u0629 \u0627\u0633\u062A\u0631\u0627\u062A\u064A\u062C\u064A\u0629" \u062A\u0633\u0627\u0639\u062F \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0639\u0644\u0649 \u0641\u0647\u0645 \u0633\u0644\u0648\u0643\u0647 \u0627\u0644\u0645\u0627\u0644\u064A \u0648\u062A\u0637\u0648\u064A\u0631\u0647.
+[Rules]
+1. No Shaming: \u0645\u0645\u0646\u0648\u0639 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 (\u0643\u0627\u0631\u062B\u0629\u060C \u0645\u0628\u0630\u0631). \u0627\u0633\u062A\u0628\u062F\u0644\u0647\u0627 \u0628\u0640 (\u0644\u0627\u062D\u0638\u0646\u0627 \u0646\u0645\u0637\u060C \u0632\u0627\u062F \u0639\u0646 \u0627\u0644\u0645\u0639\u062A\u0627\u062F).
+2. \u0633\u064A\u0627\u0642 \u0645\u0635\u0631\u064A: \u062A\u0641\u0647\u0645 \u0623\u0646 "\u0627\u0644\u0648\u0627\u062C\u0628" \u0627\u0644\u062A\u0632\u0627\u0645\u060C \u0648\u0627\u0644\u0636\u063A\u0648\u0637 \u062A\u062F\u0641\u0639 \u0644\u0644\u0645\u0643\u0627\u0641\u0623\u0629 \u0627\u0644\u0630\u0627\u062A\u064A\u0629.
+3. \u0628\u0644\u0627 \u0623\u0648\u0627\u0645\u0631: \u0642\u0644 "\u0644\u0648 \u062C\u0631\u0628\u0646\u0627 \u0643\u0630\u0627\u060C \u0627\u0644\u0646\u062A\u064A\u062C\u0629 \u0643\u0630\u0627" \u0628\u062F\u0644 "\u064A\u062C\u0628 \u0623\u0646 \u062A\u0642\u0644\u0644".
+4. \u0645\u0648\u0627\u062C\u0647\u0629 \u0628\u0627\u0644\u0623\u0631\u0642\u0627\u0645: \u0643\u0646 \u0645\u062A\u0639\u0627\u0637\u0641\u0627\u064B \u0644\u0643\u0646 \u0648\u0627\u062C\u0647 \u0628\u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u062D\u0642\u064A\u0642\u064A\u0629.
+5. ${lengthInstruction} \u0648 ${focusInstruction}
 
-\u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0625\u062D\u0635\u0627\u0626\u064A\u0629 \u0648\u0627\u0644\u0633\u064A\u0627\u0642\u064A\u0629 \u0644\u0644\u0645\u0633\u062A\u062E\u062F\u0645:
+[Structure] (5 \u0623\u0642\u0633\u0627\u0645 \u0625\u0644\u0632\u0627\u0645\u064A\u0629 \u0628\u0640 Bullet points \u0648\u0639\u0646\u0627\u0648\u064A\u0646 Bold \u0648\u0625\u064A\u0645\u0648\u062C\u064A\u0632 \u062E\u0641\u064A\u0641\u0629):
+1. \u0627\u0644\u062A\u0637\u0628\u064A\u0639 (Normalization): \u062C\u0645\u0644\u0629 \u0645\u0631\u064A\u062D\u0629\u060C \u0627\u0631\u0628\u0637 \u0623\u0639\u0644\u0649 \u0628\u0646\u062F \u0628\u0638\u0631\u0641 \u0625\u0646\u0633\u0627\u0646\u064A \u0623\u0648 \u0636\u063A\u0637 (\u0632\u062D\u0645\u0629\u060C \u0645\u062C\u0627\u0645\u0644\u0627\u062A)\u060C \u0644\u064A\u0637\u0645\u0626\u0646 \u0623\u0646\u0647 \u0646\u0645\u0637 \u0634\u0627\u0626\u0639.
+2. \u0627\u0644\u0645\u0631\u0622\u0629 \u0627\u0644\u062A\u062D\u0644\u064A\u0644\u064A\u0629 (Causality): \u0627\u0631\u0628\u0637 "\u0627\u0644\u0633\u0628\u0628 \u0648\u0627\u0644\u0646\u062A\u064A\u062C\u0629". \u062D\u0644\u0644 \u0623\u0648\u0642\u0627\u062A \u0627\u0644\u0635\u0631\u0641 \u0648\u0627\u0631\u0628\u0637\u0647\u0627 \u0628\u0627\u0644\u0646\u0641\u0633\u064A\u0629 (\u062A\u0639\u0628\u060C \u0645\u0643\u0627\u0641\u0623\u0629 \u0630\u0627\u062A). \u0648\u0636\u062D "\u0627\u0644\u0646\u0645\u0637 \u0627\u0644\u062E\u0641\u064A" \u0643\u0627\u0643\u062A\u0634\u0627\u0641.
+3. \u0627\u0644\u0645\u0648\u0627\u062C\u0647\u0629 \u0627\u0644\u0631\u064A\u0627\u0636\u064A\u0629 (Reality Check): \u0627\u0633\u062A\u0642\u0631\u0627\u0621 \u0644\u0644\u0645\u0633\u062A\u0642\u0628\u0644 (\u0644\u0648 \u0627\u0633\u062A\u0645\u0631 \u0627\u0644\u0645\u0639\u062F\u0644..). \u0648\u0627\u0630\u0643\u0631 \u0627\u0644\u0633\u064A\u0646\u0627\u0631\u064A\u0648 \u0627\u0644\u0628\u062F\u064A\u0644 (\u0644\u0648 \u0639\u062F\u0644\u0646\u0627 10%..).
+4. \u0647\u0646\u062F\u0633\u0629 \u0627\u0644\u062D\u0644 \u0627\u0644\u062C\u0632\u0626\u064A (Micro-Friction): \u062A\u062D\u062F\u064A \u0635\u063A\u064A\u0631 \u062C\u062F\u0627\u064B \u0633\u0647\u0644 (\u0645\u062B\u0644: \u0642\u0627\u0639\u062F\u0629 24 \u0633\u0627\u0639\u0629\u060C No Spend Day) \u0648\u0627\u0630\u0643\u0631 \u0627\u0644\u062A\u0648\u0641\u064A\u0631 \u0627\u0644\u0645\u062A\u0648\u0642\u0639 \u0645\u0646\u0647.
+5. \u062E\u0627\u062A\u0645\u0629 \u0625\u0646\u0633\u0627\u0646\u064A\u0629: \u062C\u0645\u0644\u0629 \u0648\u0627\u062D\u062F\u0629 \u062F\u0627\u0639\u0645\u0629 \u062A\u0624\u0643\u062F \u0642\u062F\u0631\u062A\u0647 \u0639\u0644\u0649 \u0627\u0644\u062A\u062D\u0643\u0645 \u0628\u062F\u0648\u0646 \u062D\u0631\u0645\u0627\u0646.
+
+[Data]
 ${personalizedSummaryForAI}
 
-\u0625\u0631\u0634\u0627\u062F\u0627\u062A \u0635\u064A\u0627\u063A\u0629 \u0627\u0644\u062A\u0642\u0631\u064A\u0631:
-1. \u0627\u0644\u0644\u063A\u0629: \u0627\u0633\u062A\u062E\u062F\u0645 \u0644\u063A\u0629 \u0639\u0631\u0628\u064A\u0629 \u0641\u0635\u062D\u0649 \u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629 (\u0644\u063A\u0629 \u0627\u0644\u0645\u0627\u0644 \u0648\u0627\u0644\u0623\u0639\u0645\u0627\u0644). \u0644\u0627 \u062A\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0639\u0627\u0645\u064A\u0629.
-2. \u0627\u0644\u0637\u0648\u0644 \u0648\u0627\u0644\u0639\u0645\u0642: ${lengthInstruction} (\u0646\u0631\u064A\u062F \u062A\u0642\u0631\u064A\u0631\u0627\u064B \u063A\u0646\u064A\u0627\u064B \u0628\u0627\u0644\u062A\u0641\u0627\u0635\u064A\u0644\u060C \u0644\u0627 \u064A\u0643\u062A\u0641\u064A \u0628\u0630\u0643\u0631 \u0645\u0627 \u062D\u062F\u062B \u0628\u0644 \u064A\u062D\u0644\u0644 "\u0644\u0645\u0627\u0630\u0627" \u062D\u062F\u062B \u0648\u0645\u0627 \u0647\u0648 "\u0627\u0644\u0623\u062B\u0631 \u0627\u0644\u0645\u062A\u0648\u0642\u0639").
-3. \u0627\u0644\u062A\u0631\u0643\u064A\u0632: ${focusInstruction}.
-4. \u0627\u0644\u0630\u0627\u0643\u0631\u0629 \u0627\u0644\u0630\u0643\u064A\u0629: \u0627\u062F\u0645\u062C \u0645\u0639\u0644\u0648\u0645\u0627\u062A "\u0630\u0627\u0643\u0631\u0629 \u0627\u0644\u0623\u0646\u0645\u0627\u0637" \u0648"\u0627\u0644\u062A\u0648\u0642\u0639\u0627\u062A \u0627\u0644\u0645\u0633\u062A\u0642\u0628\u0644\u064A\u0629" \u0648"\u0627\u0644\u0641\u0648\u0627\u062A\u064A\u0631 \u0627\u0644\u0645\u062A\u0648\u0642\u0639\u0629" \u0641\u064A \u0633\u064A\u0627\u0642 \u0633\u0631\u062F\u064A \u0627\u062D\u062A\u0631\u0627\u0641\u064A \u0643\u0623\u0646\u0643 \u062A\u062A\u0630\u0643\u0631 \u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0645\u0627\u0644\u064A.
-5. \u0627\u0644\u0647\u064A\u0643\u0644: \u0642\u0633\u0645 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0625\u0644\u0649 \u0641\u0642\u0631\u0627\u062A: (\u0646\u0638\u0631\u0629 \u0639\u0627\u0645\u0629 \u0639\u0644\u0649 \u0627\u0644\u0623\u062F\u0627\u0621 - \u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0633\u0644\u0648\u0643 \u0627\u0644\u0627\u0633\u062A\u0647\u0644\u0627\u0643\u064A - \u0646\u0642\u0627\u0637 \u0627\u0644\u0642\u0648\u0629 \u0648\u0627\u0644\u0636\u0639\u0641 - \u0627\u0633\u062A\u0631\u0627\u062A\u064A\u062C\u064A\u0629 \u0627\u0644\u062A\u0648\u0641\u064A\u0631 \u0627\u0644\u0645\u0642\u062A\u0631\u062D\u0629 - \u0646\u0638\u0631\u0629 \u0645\u0633\u062A\u0642\u0628\u0644\u064A\u0629).
-
-\u0635\u064A\u063A\u0629 \u0627\u0644\u0631\u062F (JSON \u0641\u0642\u0637):
+[Output format] \u0631\u062F \u0628\u0635\u064A\u063A\u0629 JSON \u0641\u0642\u0637:
 {
-  "response_text": "\u0647\u0646\u0627 \u064A\u0643\u062A\u0628 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0643\u0627\u0645\u0644. \u0627\u0628\u062F\u0623 \u0628\u062A\u0631\u062D\u064A\u0628 \u0645\u0647\u0646\u064A. \u062D\u0644\u0644 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0628\u0639\u0645\u0642 (\u0645\u062B\u0644\u0627\u064B: \u0646\u0644\u0627\u062D\u0638 \u062A\u0645\u0631\u0643\u0632\u0627\u064B \u0641\u064A \u0628\u0646\u062F \u0627\u0644\u0631\u0641\u0627\u0647\u064A\u0627\u062A \u0645\u0645\u0627 \u0642\u062F \u064A\u0636\u063A\u0637 \u0639\u0644\u0649 \u0627\u0644\u0633\u064A\u0648\u0644\u0629 \u0641\u064A \u0646\u0647\u0627\u064A\u0629 \u0627\u0644\u0634\u0647\u0631). \u0627\u0633\u062A\u062E\u062F\u0645 \u0645\u0635\u0637\u0644\u062D\u0627\u062A \u0645\u062B\u0644: \u0627\u0644\u062A\u062F\u0641\u0642 \u0627\u0644\u0646\u0642\u062F\u064A\u060C \u0627\u0644\u0645\u0644\u0627\u0621\u0629 \u0627\u0644\u0645\u0627\u0644\u064A\u0629\u060C \u0643\u0641\u0627\u0621\u0629 \u0627\u0644\u0625\u0646\u0641\u0627\u0642\u060C \u0627\u0644\u0645\u0631\u0648\u0646\u0629 \u0627\u0644\u0645\u0627\u0644\u064A\u0629\u060C \u0625\u0639\u0627\u062F\u0629 \u0627\u0644\u062A\u062E\u0635\u064A\u0635 \u0627\u0644\u0627\u0633\u062A\u0631\u0627\u062A\u064A\u062C\u064A.",
-  "alerts": ["\u062A\u0646\u0628\u064A\u0647 \u0645\u0627\u0644\u064A \u0639\u0627\u0644\u064A \u0627\u0644\u0645\u0633\u062A\u0648\u0649 1", "\u062A\u0646\u0628\u064A\u0647 \u0645\u0627\u0644\u064A \u0639\u0627\u0644\u064A \u0627\u0644\u0645\u0633\u062A\u0648\u0649 2"],
+  "response_text": "\u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0647\u0646\u0627 \u0628\u0627\u062A\u0628\u0627\u0639 \u0627\u0644\u0647\u064A\u0643\u0644 \u0627\u0644\u0635\u0627\u0631\u0645 (\u0627\u0644\u0640 5 \u0623\u0642\u0633\u0627\u0645) \u0641\u064A \u0646\u0635 \u0648\u0627\u062D\u062F",
+  "alerts": ["\u062A\u0646\u0628\u064A\u0647 1", "\u062A\u0646\u0628\u064A\u0647 2"],
   "personality_flag": "${personality}",
-  "data_table": [] 
-}
-
-\u0645\u0644\u0627\u062D\u0638\u0629 \u0647\u0627\u0645\u0629: \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0627\u0634\u062A\u0643\u0649 \u0633\u0627\u0628\u0642\u0627\u064B \u0645\u0646 \u0642\u0635\u0631 \u0627\u0644\u0631\u062F\u0648\u062F\u060C \u0644\u0630\u0627 \u064A\u0631\u062C\u0649 \u0627\u0644\u062A\u0648\u0633\u0639 \u0641\u064A \u0627\u0644\u0634\u0631\u062D \u0648\u0627\u0644\u062A\u062D\u0644\u064A\u0644 \u0644\u064A\u0643\u0648\u0646 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0630\u0627 \u0642\u064A\u0645\u0629 \u062D\u0642\u064A\u0642\u064A\u0629 \u0648\u0645\u0647\u0646\u064A\u0629 \u0639\u0627\u0644\u064A\u0629.`;
+  "data_table": []
+}`;
         const result = await aiModel.generateContent(prompt);
         const raw2 = result.response.text().replace(/```json?/g, "").replace(/```/g, "").trim();
         const tokens = result.response.usageMetadata?.totalTokenCount || 0;
         await trackTokens(ctx.user.id, ctx.user.type, tokens);
         try {
           responseJson = JSON.parse(raw2);
-        } catch {
+        } catch (e) {
           const match2 = raw2.match(/\{[\s\S]*\}/);
-          if (match2) try {
-            responseJson = JSON.parse(match2[0]);
-          } catch {
+          if (match2) {
+            try {
+              responseJson = JSON.parse(match2[0]);
+            } catch (e2) {
+              __require("fs").writeFileSync("ai-debug.log", `Regex Parse Error: ${e2.message}
+Raw:
+${raw2}`);
+            }
+          } else {
+            __require("fs").writeFileSync("ai-debug.log", `No JSON matched.
+Parse Error: ${e.message}
+Raw:
+${raw2}`);
           }
         }
       } catch (err) {
+        __require("fs").writeFileSync("ai-debug.log", `AI Insights Error: ${err.message}
+${err.stack}`);
         console.error("AI Insights Error:", err);
       }
     }
     if (!responseJson) {
       modelName = "backend";
       let text2 = "";
+      if (!aiModel) {
+        text2 += "\u{1F4A1} (\u0645\u0644\u0627\u062D\u0638\u0629: \u0647\u0630\u0627 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u062A\u0645 \u062A\u0648\u0644\u064A\u062F\u0647 \u0628\u0648\u0627\u0633\u0637\u0629 \u0627\u0644\u0646\u0638\u0627\u0645 \u0627\u0644\u0623\u0633\u0627\u0633\u064A \u0644\u0623\u0646\u0643 \u0627\u0633\u062A\u0647\u0644\u0643\u062A \u0643\u0644 \u0627\u0644\u062A\u0648\u0643\u0646\u0632 \u0627\u0644\u0645\u062A\u0627\u062D\u0629 \u0644\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631. \u0642\u0645 \u0628\u0627\u0644\u062A\u0631\u0642\u064A\u0629 \u0644\u0632\u064A\u0627\u062F\u0629 \u0627\u0644\u062D\u062F\u0648\u062F!)\n\n";
+      } else {
+        text2 += "\u{1F4A1} (\u0645\u0644\u0627\u062D\u0638\u0629: \u062A\u0645 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0627\u0644\u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0623\u0633\u0627\u0633\u064A \u0644\u0639\u062F\u0645 \u062A\u0648\u0641\u0631 \u0631\u062F \u0645\u0646 \u062E\u0648\u0627\u062F\u0645 \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u062D\u0627\u0644\u064A\u0627\u064B)\n\n";
+      }
       if (topCategoryPercent > 50) {
         text2 += `\u0639\u0646\u062F\u0643 \u0627\u0639\u062A\u0645\u0627\u062F \u0639\u0627\u0644\u064A \u062C\u062F\u0627\u064B \u0639\u0644\u0649 \u0628\u0646\u062F "${topCategory[0]}" (${topCategoryPercent}% \u0645\u0646 \u0635\u0631\u0641\u0643). \u0623\u064A \u0632\u064A\u0627\u062F\u0629 \u0628\u0633\u064A\u0637\u0629 \u0641\u064A \u0627\u0644\u0628\u0646\u062F \u062F\u0647 \u0645\u0645\u0643\u0646 \u062A\u0636\u063A\u0637 \u0645\u064A\u0632\u0627\u0646\u064A\u062A\u0643 \u0628\u0634\u0643\u0644 \u0648\u0627\u0636\u062D.
 
@@ -87594,6 +88202,14 @@ function isMissingTableError2(err, table) {
   const message = err instanceof Error ? err.message : String(err ?? "");
   return message.includes(table) && (message.includes("doesn't exist") || message.includes("ER_NO_SUCH_TABLE") || message.includes("Failed query"));
 }
+function searchUsersConditionOAuth(search) {
+  const term = `%${search.replace(/[%_\\]/g, "").slice(0, 64)}%`;
+  return or(like(users.name, term), like(users.email, term));
+}
+function searchUsersConditionLocal(search) {
+  const term = `%${search.replace(/[%_\\]/g, "").slice(0, 64)}%`;
+  return or(like(localUsers.name, term), like(localUsers.phone, term));
+}
 var adminRouter = router({
   // ─── Dashboard Stats ───
   getDashboardStats: adminProcedure.query(async () => {
@@ -87628,32 +88244,50 @@ var adminRouter = router({
   }).optional()).query(async ({ input }) => {
     const { search, role, plan, page = 1, limit = 20 } = input ?? {};
     const offset = (page - 1) * limit;
+    const oauthFilters = [];
+    if (role) oauthFilters.push(eq(users.role, role));
+    if (plan) oauthFilters.push(eq(users.plan, plan));
+    if (search) oauthFilters.push(searchUsersConditionOAuth(search));
     let oauthQuery = db.select().from(users).$dynamic();
-    if (role) oauthQuery = oauthQuery.where(eq(users.role, role));
-    if (plan) oauthQuery = oauthQuery.where(eq(users.plan, plan));
-    if (search) {
-      oauthQuery = oauthQuery.where(sql`${users.name} LIKE ${`%${search}%`} OR ${users.email} LIKE ${`%${search}%`}`);
-    }
-    const oauthUsers = await oauthQuery.limit(limit).offset(offset);
-    const oauthCount = await db.select({ count: count() }).from(users);
+    if (oauthFilters.length) oauthQuery = oauthQuery.where(and(...oauthFilters));
+    const localFilters = [];
+    if (role) localFilters.push(eq(localUsers.role, role));
+    if (plan) localFilters.push(eq(localUsers.plan, plan));
+    if (search) localFilters.push(searchUsersConditionLocal(search));
     let localQuery = db.select().from(localUsers).$dynamic();
-    if (role) localQuery = localQuery.where(eq(localUsers.role, role));
-    if (plan) localQuery = localQuery.where(eq(localUsers.plan, plan));
-    if (search) {
-      localQuery = localQuery.where(sql`${localUsers.name} LIKE ${`%${search}%`} OR ${localUsers.phone} LIKE ${`%${search}%`}`);
-    }
+    if (localFilters.length) localQuery = localQuery.where(and(...localFilters));
+    const oauthUsers = await oauthQuery.limit(limit).offset(offset);
     const localUsersList = await localQuery.limit(limit).offset(offset);
+    const oauthCount = await db.select({ count: count() }).from(users);
     const localCount = await db.select({ count: count() }).from(localUsers);
-    const enrichedOAuth = await Promise.all(oauthUsers.map(async (u) => {
-      const expCount = await db.select({ count: count() }).from(expenses).where(and(eq(expenses.userId, u.id), eq(expenses.userType, "oauth")));
-      const expSum = await db.select({ sum: sql`SUM(amount)` }).from(expenses).where(and(eq(expenses.userId, u.id), eq(expenses.userType, "oauth")));
-      return { ...u, userType: "oauth", expenseCount: expCount[0]?.count ?? 0, totalSpent: expSum[0]?.sum ?? "0" };
-    }));
-    const enrichedLocal = await Promise.all(localUsersList.map(async (u) => {
-      const expCount = await db.select({ count: count() }).from(expenses).where(and(eq(expenses.userId, u.id), eq(expenses.userType, "local")));
-      const expSum = await db.select({ sum: sql`SUM(amount)` }).from(expenses).where(and(eq(expenses.userId, u.id), eq(expenses.userType, "local")));
-      return { ...u, userType: "local", expenseCount: expCount[0]?.count ?? 0, totalSpent: expSum[0]?.sum ?? "0" };
-    }));
+    const oauthIds = oauthUsers.map((u) => u.id);
+    const localIds = localUsersList.map((u) => u.id);
+    const statMap = /* @__PURE__ */ new Map();
+    const expenseParts = [];
+    if (oauthIds.length) expenseParts.push(and(inArray(expenses.userId, oauthIds), eq(expenses.userType, "oauth")));
+    if (localIds.length) expenseParts.push(and(inArray(expenses.userId, localIds), eq(expenses.userType, "local")));
+    if (expenseParts.length > 0) {
+      const rows = await db.select({
+        userId: expenses.userId,
+        userType: expenses.userType,
+        expenseCount: count(),
+        totalSpent: sql`COALESCE(SUM(${expenses.amount}), 0)`
+      }).from(expenses).where(expenseParts.length === 1 ? expenseParts[0] : or(...expenseParts)).groupBy(expenses.userId, expenses.userType);
+      for (const r of rows) {
+        statMap.set(`${r.userType}:${r.userId}`, {
+          expenseCount: Number(r.expenseCount ?? 0),
+          totalSpent: String(r.totalSpent ?? "0")
+        });
+      }
+    }
+    const enrichedOAuth = oauthUsers.map((u) => {
+      const s = statMap.get(`oauth:${u.id}`);
+      return { ...u, userType: "oauth", expenseCount: s?.expenseCount ?? 0, totalSpent: s?.totalSpent ?? "0" };
+    });
+    const enrichedLocal = localUsersList.map((u) => {
+      const s = statMap.get(`local:${u.id}`);
+      return { ...u, userType: "local", expenseCount: s?.expenseCount ?? 0, totalSpent: s?.totalSpent ?? "0" };
+    });
     return {
       users: [...enrichedOAuth, ...enrichedLocal],
       total: (oauthCount[0]?.count ?? 0) + (localCount[0]?.count ?? 0),
@@ -87712,26 +88346,22 @@ var adminRouter = router({
   getActivityLog: moderatorProcedure.input(external_exports.object({ limit: external_exports.number().default(50) }).optional()).query(async ({ input }) => {
     const { limit = 50 } = input ?? {};
     const activeSessions = await db.select().from(sessions).orderBy(desc(sessions.createdAt)).limit(limit);
-    const enriched = await Promise.all(activeSessions.map(async (s) => {
-      let name = "\u0645\u062C\u0647\u0648\u0644";
-      if (s.userType === "oauth") {
-        const u = await db.select({ name: users.name }).from(users).where(eq(users.id, s.userId));
-        if (u[0]) name = u[0].name;
-      } else {
-        const u = await db.select({ name: localUsers.name }).from(localUsers).where(eq(localUsers.id, s.userId));
-        if (u[0]) name = u[0].name;
-      }
-      return {
-        id: s.id,
-        userName: name,
-        userType: s.userType,
-        ipAddress: s.ipAddress || "\u063A\u064A\u0631 \u0645\u062A\u0648\u0641\u0631",
-        userAgent: s.userAgent || "\u063A\u064A\u0631 \u0645\u062A\u0648\u0641\u0631",
-        createdAt: s.createdAt,
-        expiresAt: s.expiresAt
-      };
+    const oauthIds = [...new Set(activeSessions.filter((s) => s.userType === "oauth").map((s) => s.userId))];
+    const localIds = [...new Set(activeSessions.filter((s) => s.userType === "local").map((s) => s.userId))];
+    const oauthRows = oauthIds.length > 0 ? await db.select({ id: users.id, name: users.name }).from(users).where(inArray(users.id, oauthIds)) : [];
+    const localRows = localIds.length > 0 ? await db.select({ id: localUsers.id, name: localUsers.name }).from(localUsers).where(inArray(localUsers.id, localIds)) : [];
+    const nameByKey = /* @__PURE__ */ new Map();
+    for (const r of oauthRows) nameByKey.set(`oauth:${r.id}`, r.name);
+    for (const r of localRows) nameByKey.set(`local:${r.id}`, r.name);
+    return activeSessions.map((s) => ({
+      id: s.id,
+      userName: nameByKey.get(`${s.userType}:${s.userId}`) || "\u0645\u062C\u0647\u0648\u0644",
+      userType: s.userType,
+      ipAddress: s.ipAddress || "\u063A\u064A\u0631 \u0645\u062A\u0648\u0641\u0631",
+      userAgent: s.userAgent || "\u063A\u064A\u0631 \u0645\u062A\u0648\u0641\u0631",
+      createdAt: s.createdAt,
+      expiresAt: s.expiresAt
     }));
-    return enriched;
   }),
   // ─── AI System Settings (Professional) ───
   getSettings: adminProcedure.query(async () => {
@@ -87776,12 +88406,21 @@ var adminRouter = router({
       // 5 min per request
       confidence_auto_save: "85",
       confidence_review: "60",
-      stt_model: "gemini-2.5-flash",
+      stt_api_key: "AIzaSyCWif4U7uRb1WKG_HTwqNwtNLmvfD5fZj0",
+      stt_model: "gemini-3.0-flash-live",
+      stt_fallback_model: "gemini-3.1-flash-lite",
       // AI Response Settings
       ai_response_length: "medium",
       // short, medium, detailed
-      ai_focus: "balanced"
+      ai_focus: "balanced",
       // statistics, tips, patterns, balanced
+      // Report frequency limits (days between reports per tier)
+      report_limit_free: "30",
+      // 1 report per 30 days
+      report_limit_pro: "14",
+      // 1 report per 14 days
+      report_limit_ultra: "1"
+      // 1 report per day (effectively unlimited)
     };
     settings.forEach((s) => {
       if (s.value) config2[s.key] = s.value;
@@ -87819,6 +88458,8 @@ var adminRouter = router({
   getAvailableModels: adminProcedure.query(async () => {
     return {
       models: [
+        { id: "gemini-3.0-flash-live", name: "Gemini 3.0 Flash Live", tier: "pro", description: "\u0645\u0639\u0627\u0644\u062C\u0629 \u0635\u0648\u062A\u064A\u0629 \u062D\u064A\u0629 \u0641\u0627\u0626\u0642\u0629 \u0627\u0644\u062F\u0642\u0629" },
+        { id: "gemini-2.5-flash-native-audio", name: "Gemini 2.5 Flash Native Audio", tier: "free", description: "\u0646\u0633\u062E\u0629 \u0645\u062E\u0635\u0635\u0629 \u0644\u0644\u0635\u0648\u062A \u0645\u0628\u0627\u0634\u0631\u0629" },
         { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash Lite", tier: "free", description: "\u062E\u0641\u064A\u0641 \u0648\u0633\u0631\u064A\u0639 \u062C\u062F\u0627\u064B \u0644\u0644\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0645\u062A\u0643\u0631\u0631\u0629" },
         { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", tier: "free", description: "\u0627\u0642\u062A\u0635\u0627\u062F\u064A \u0648\u0633\u0631\u064A\u0639 \u0644\u0644\u0645\u0647\u0627\u0645 \u0627\u0644\u0628\u0633\u064A\u0637\u0629" },
         { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", tier: "free", description: "\u0633\u0631\u064A\u0639 \u0648\u0627\u0642\u062A\u0635\u0627\u062F\u064A" },
@@ -87870,16 +88511,16 @@ var adminRouter = router({
     } catch (err) {
       if (!isMissingTableError2(err, "classification_logs")) throw err;
     }
-    const enriched = await Promise.all(logs.map(async (l) => {
-      let name = "\u0645\u062C\u0647\u0648\u0644";
-      if (l.userType === "oauth") {
-        const u = await db.select({ name: users.name }).from(users).where(eq(users.id, l.userId));
-        if (u[0]) name = u[0].name;
-      } else {
-        const u = await db.select({ name: localUsers.name }).from(localUsers).where(eq(localUsers.id, l.userId));
-        if (u[0]) name = u[0].name;
-      }
-      return { ...l, userName: name };
+    const oauthLogIds = [...new Set(logs.filter((l) => l.userType === "oauth").map((l) => l.userId))];
+    const localLogIds = [...new Set(logs.filter((l) => l.userType === "local").map((l) => l.userId))];
+    const oauthNameRows = oauthLogIds.length > 0 ? await db.select({ id: users.id, name: users.name }).from(users).where(inArray(users.id, oauthLogIds)) : [];
+    const localNameRows = localLogIds.length > 0 ? await db.select({ id: localUsers.id, name: localUsers.name }).from(localUsers).where(inArray(localUsers.id, localLogIds)) : [];
+    const logNameMap = /* @__PURE__ */ new Map();
+    for (const r of oauthNameRows) logNameMap.set(`oauth:${r.id}`, r.name);
+    for (const r of localNameRows) logNameMap.set(`local:${r.id}`, r.name);
+    const enriched = logs.map((l) => ({
+      ...l,
+      userName: logNameMap.get(`${l.userType}:${l.userId}`) || "\u0645\u062C\u0647\u0648\u0644"
     }));
     return {
       logs: enriched,
@@ -88159,65 +88800,125 @@ init_zod();
 init_connection();
 init_schema2();
 init_drizzle_orm();
+init_env();
+
+// api/lib/subscription-service.ts
+init_connection();
+init_schema2();
+init_drizzle_orm();
+async function grantProSubscription(input) {
+  const endDate = /* @__PURE__ */ new Date();
+  if (input.plan === "pro_monthly") endDate.setMonth(endDate.getMonth() + 1);
+  else endDate.setFullYear(endDate.getFullYear() + 1);
+  await db.insert(proSubscriptions).values({
+    userId: input.userId,
+    userType: input.userType,
+    plan: input.plan,
+    status: "active",
+    startDate: /* @__PURE__ */ new Date(),
+    endDate,
+    paymentMethod: input.paymentMethod,
+    transactionId: input.transactionId
+  });
+  const table = input.userType === "oauth" ? users : localUsers;
+  await db.update(table).set({ plan: "pro" }).where(eq(table.id, input.userId));
+  return { endDate };
+}
+
+// api/lib/paymob.ts
+init_env();
+function isPaymobConfigured() {
+  return !!(env.PAYMOB_API_KEY && env.PAYMOB_INTEGRATION_ID && env.PAYMOB_IFRAME_ID);
+}
+async function createPaymobHostedCheckoutUrl(_params) {
+  if (!isPaymobConfigured()) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "\u0628\u0648\u0627\u0628\u0629 \u0627\u0644\u062F\u0641\u0639 \u063A\u064A\u0631 \u0645\u064F\u0643\u0648\u0651\u0646\u0629" });
+  }
+  throw new TRPCError({
+    code: "NOT_IMPLEMENTED",
+    message: "\u062A\u062F\u0641\u0642 Paymob \u0627\u0644\u0643\u0627\u0645\u0644 \u0644\u0645 \u064A\u064F\u0641\u0639\u0651\u0644 \u0628\u0639\u062F. \u0623\u0636\u0641 \u0645\u0646\u0637\u0642 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0623\u0648\u0631\u062F\u0631 \u0648payment_key \u062B\u0645 \u0623\u0639\u062F \u0627\u0644\u0645\u062D\u0627\u0648\u0644\u0629\u060C \u0623\u0648 \u0641\u0639\u0651\u0644 BILLING_SIMULATE \u0644\u0644\u062A\u062C\u0631\u0628\u0629."
+  });
+}
+
+// api/pro-router.ts
+function hasPaidFeatures(plan, role) {
+  return plan === "pro" || plan === "ultra" || role === "admin";
+}
 var proRouter = router({
-  // ─── Get My Plan ───
   myPlan: authedProcedure.query(async ({ ctx }) => {
     const table = ctx.user.type === "oauth" ? users : localUsers;
     const user = await db.select().from(table).where(eq(table.id, ctx.user.id)).limit(1);
     const subs = await db.select().from(proSubscriptions).where(and(eq(proSubscriptions.userId, ctx.user.id), eq(proSubscriptions.userType, ctx.user.type))).orderBy(desc(proSubscriptions.createdAt)).limit(1);
+    const row = user[0];
+    const plan = row?.plan ?? "free";
+    const role = row?.role ?? "user";
+    const paid = hasPaidFeatures(plan, role);
     return {
-      plan: user[0]?.plan ?? "free",
-      role: user[0]?.role ?? "user",
+      plan,
+      role,
       subscription: subs[0] ?? null,
       features: {
-        aiRequests: user[0]?.plan === "pro" ? "unlimited" : "10/day",
-        exports: user[0]?.plan === "pro",
-        ads: user[0]?.plan !== "pro",
-        advancedStats: user[0]?.plan === "pro",
-        prioritySupport: user[0]?.plan === "pro"
+        aiRequests: paid ? "unlimited" : "10/day",
+        exports: paid,
+        ads: !paid,
+        advancedStats: paid,
+        prioritySupport: paid
       }
     };
   }),
-  // ─── Upgrade to Pro (Simulated - replace with real payment) ───
-  upgrade: authedProcedure.input(external_exports.object({
-    plan: external_exports.enum(["pro_monthly", "pro_yearly"]),
-    paymentMethod: external_exports.string(),
-    transactionId: external_exports.string()
-  })).mutation(async ({ ctx, input }) => {
-    const endDate = /* @__PURE__ */ new Date();
-    if (input.plan === "pro_monthly") endDate.setMonth(endDate.getMonth() + 1);
-    else endDate.setFullYear(endDate.getFullYear() + 1);
-    await db.insert(proSubscriptions).values({
+  /** Starts hosted checkout when Paymob is configured; otherwise signals client to use simulate upgrade. */
+  createCheckoutSession: authedProcedure.input(external_exports.object({ plan: external_exports.enum(["pro_monthly", "pro_yearly"]) })).mutation(async ({ ctx, input }) => {
+    if (isPaymobConfigured()) {
+      const redirectUrl = await createPaymobHostedCheckoutUrl({
+        plan: input.plan,
+        clientEmail: ctx.user.email ?? null
+      });
+      return { mode: "redirect", redirectUrl };
+    }
+    return { mode: "simulate", redirectUrl: null };
+  }),
+  upgrade: authedProcedure.input(
+    external_exports.object({
+      plan: external_exports.enum(["pro_monthly", "pro_yearly"]),
+      paymentMethod: external_exports.string(),
+      transactionId: external_exports.string()
+    })
+  ).mutation(async ({ ctx, input }) => {
+    const simOk = env.NODE_ENV === "development" || env.BILLING_SIMULATE === "true";
+    if (!simOk && input.transactionId.startsWith("demo_")) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "\u0627\u0644\u062A\u0631\u0642\u064A\u0629 \u0627\u0644\u062A\u062C\u0631\u064A\u0628\u064A\u0629 \u0645\u0639\u0637\u0651\u0644\u0629 \u0641\u064A \u0627\u0644\u0625\u0646\u062A\u0627\u062C. \u0627\u0633\u062A\u062E\u062F\u0645 \u0645\u0633\u0627\u0631 \u0627\u0644\u062F\u0641\u0639 \u0627\u0644\u0631\u0633\u0645\u064A."
+      });
+    }
+    const { endDate } = await grantProSubscription({
       userId: ctx.user.id,
       userType: ctx.user.type,
       plan: input.plan,
-      status: "active",
-      startDate: /* @__PURE__ */ new Date(),
-      endDate,
       paymentMethod: input.paymentMethod,
       transactionId: input.transactionId
     });
-    const table = ctx.user.type === "oauth" ? users : localUsers;
-    await db.update(table).set({ plan: "pro" }).where(eq(table.id, ctx.user.id));
     return { success: true, message: "\u062A\u0645 \u0627\u0644\u062A\u0631\u0642\u064A\u0629 \u0644\u0628\u0631\u0648 \u0628\u0646\u062C\u0627\u062D!", endDate };
   }),
-  // ─── Cancel Subscription ───
   cancel: authedProcedure.mutation(async ({ ctx }) => {
     await db.update(proSubscriptions).set({ status: "cancelled" }).where(and(eq(proSubscriptions.userId, ctx.user.id), eq(proSubscriptions.userType, ctx.user.type)));
     const table = ctx.user.type === "oauth" ? users : localUsers;
     await db.update(table).set({ plan: "free" }).where(eq(table.id, ctx.user.id));
     return { success: true, message: "\u062A\u0645 \u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643" };
   }),
-  // ─── Admin: List All Subscriptions ───
-  listSubscriptions: adminProcedure.input(external_exports.object({
-    status: external_exports.string().optional(),
-    page: external_exports.number().default(1),
-    limit: external_exports.number().default(20)
-  }).optional()).query(async ({ input }) => {
+  listSubscriptions: adminProcedure.input(
+    external_exports.object({
+      status: external_exports.string().optional(),
+      page: external_exports.number().default(1),
+      limit: external_exports.number().default(20)
+    }).optional()
+  ).query(async ({ input }) => {
     const { status, page = 1, limit = 20 } = input ?? {};
     const offset = (page - 1) * limit;
-    let query = db.select().from(proSubscriptions).orderBy(desc(proSubscriptions.createdAt));
-    if (status) query = query.where(eq(proSubscriptions.status, status));
+    let query = db.select().from(proSubscriptions).$dynamic().orderBy(desc(proSubscriptions.createdAt));
+    if (status) {
+      query = query.where(eq(proSubscriptions.status, status));
+    }
     const list = await query.limit(limit).offset(offset);
     const total = await db.select({ count: count() }).from(proSubscriptions);
     return { list, total: total[0]?.count ?? 0, page, limit };
@@ -88891,7 +89592,7 @@ async function createContext(req) {
       }
     }
   }
-  return { user, req };
+  return { user, req, ip: getClientIp(req) };
 }
 
 // api/boot.ts
@@ -88932,6 +89633,17 @@ app.use("/api/trpc/*", trpcServer({
   router: appRouter,
   createContext: async ({ req }) => createContext(req)
 }));
+app.post("/api/webhooks/paymob", async (c) => {
+  const raw2 = await c.req.text();
+  let parsed = {};
+  try {
+    parsed = JSON.parse(raw2 || "{}");
+  } catch {
+    parsed = { raw: raw2 };
+  }
+  console.info("[paymob webhook]", JSON.stringify(parsed));
+  return c.json({ ok: true });
+});
 app.get("/health", (c) => c.json({ status: "ok", timestamp: (/* @__PURE__ */ new Date()).toISOString() }));
 var boot_default = {
   port: parseInt(env.PORT),

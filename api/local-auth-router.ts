@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { router, publicProcedure, adminProcedure } from "./middleware";
+import { router, publicProcedure, strictPublicProcedure, adminProcedure } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
 import { localUsers, expenses, sessions } from "../db/schema";
 import { eq, count, sum, sql, like, desc } from "drizzle-orm";
-import { 
+import {
   hashPassword, 
   comparePassword, 
   generateToken, 
@@ -12,9 +12,10 @@ import {
   validatePhone,
   generateReferralCode 
 } from "./local-auth-utils";
+import { getIncomingHeader } from "./lib/get-client-ip";
 
 export const localAuthRouter = router({
-  register: publicProcedure
+  register: strictPublicProcedure
     .input(z.object({
       name: z.string().min(2, "الاسم لازم يكون حرفين على الأقل").max(100),
       phone: z.string().min(11, "رقم التليفون لازم يكون 11 رقم").max(11),
@@ -73,7 +74,7 @@ export const localAuthRouter = router({
       };
     }),
 
-  login: publicProcedure
+  login: strictPublicProcedure
     .input(z.object({
       phone: z.string(),
       password: z.string(),
@@ -125,7 +126,7 @@ export const localAuthRouter = router({
   }),
 
   logout: publicProcedure.mutation(async ({ ctx }) => {
-    const authHeader = ctx.req.header("Authorization");
+    const authHeader = getIncomingHeader(ctx.req, "Authorization");
     if (authHeader?.startsWith("Bearer ")) {
       const token = authHeader.slice(7);
       await db.delete(sessions).where(eq(sessions.token, token));

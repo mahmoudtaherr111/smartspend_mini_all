@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { router, adminProcedure, moderatorProcedure } from "./middleware";
 import { db } from "./queries/connection";
-import { users, localUsers, expenses, sessions, supportTickets, userAnalytics, systemSettings, classificationLogs, voiceUsage } from "../db/schema";
-import { eq, sql, desc, count, and, gte, lte, sum } from "drizzle-orm";
+import { users, localUsers, expenses, sessions, supportTickets, userAnalytics, systemSettings, classificationLogs, voiceUsage, discountCodes } from "../db/schema";
+import { eq, sql, desc, count, and, gte, lte, sum, inArray, or, like } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { env } from "./lib/env";
 
@@ -13,6 +13,16 @@ function isMissingTableError(err: unknown, table: string): boolean {
     message.includes("ER_NO_SUCH_TABLE") ||
     message.includes("Failed query")
   );
+}
+
+function searchUsersConditionOAuth(search: string) {
+  const term = `%${search.replace(/[%_\\]/g, "").slice(0, 64)}%`;
+  return or(like(users.name, term), like(users.email, term));
+}
+
+function searchUsersConditionLocal(search: string) {
+  const term = `%${search.replace(/[%_\\]/g, "").slice(0, 64)}%`;
+  return or(like(localUsers.name, term), like(localUsers.phone, term));
 }
 
 export const adminRouter = router({
@@ -57,43 +67,66 @@ export const adminRouter = router({
       const { search, role, plan, page = 1, limit = 20 } = input ?? {};
       const offset = (page - 1) * limit;
 
-      // OAuth users
-      let oauthQuery = db.select().from(users).$dynamic();
-      if (role) oauthQuery = oauthQuery.where(eq(users.role, role));
-      if (plan) oauthQuery = oauthQuery.where(eq(users.plan, plan));
-      if (search) {
-        oauthQuery = oauthQuery.where(sql`${users.name} LIKE ${`%${search}%`} OR ${users.email} LIKE ${`%${search}%`}`);
-      }
+      const oauthFilters = [];
+      if (role) oauthFilters.push(eq(users.role, role));
+      if (plan) oauthFilters.push(eq(users.plan, plan));
+      if (search) oauthFilters.push(searchUsersConditionOAuth(search));
 
-      const oauthUsers = await oauthQuery.limit(limit).offset(offset);
-      const oauthCount = await db.select({ count: count() }).from(users);
+      let oauthQuery = db.select().from(users).$dynamic();
+      if (oauthFilters.length) oauthQuery = oauthQuery.where(and(...oauthFilters));
+
+      const localFilters = [];
+      if (role) localFilters.push(eq(localUsers.role, role));
+      if (plan) localFilters.push(eq(localUsers.plan, plan));
+      if (search) localFilters.push(searchUsersConditionLocal(search));
 
       let localQuery = db.select().from(localUsers).$dynamic();
-      if (role) localQuery = localQuery.where(eq(localUsers.role, role));
-      if (plan) localQuery = localQuery.where(eq(localUsers.plan, plan));
-      if (search) {
-        localQuery = localQuery.where(sql`${localUsers.name} LIKE ${`%${search}%`} OR ${localUsers.phone} LIKE ${`%${search}%`}`);
-      }
+      if (localFilters.length) localQuery = localQuery.where(and(...localFilters));
 
+      const oauthUsers = await oauthQuery.limit(limit).offset(offset);
       const localUsersList = await localQuery.limit(limit).offset(offset);
+
+      const oauthCount = await db.select({ count: count() }).from(users);
       const localCount = await db.select({ count: count() }).from(localUsers);
 
-      // Get expense counts
-      const enrichedOAuth = await Promise.all(oauthUsers.map(async (u) => {
-        const expCount = await db.select({ count: count() }).from(expenses)
-          .where(and(eq(expenses.userId, u.id), eq(expenses.userType, "oauth")));
-        const expSum = await db.select({ sum: sql`SUM(amount)` }).from(expenses)
-          .where(and(eq(expenses.userId, u.id), eq(expenses.userType, "oauth")));
-        return { ...u, userType: "oauth", expenseCount: expCount[0]?.count ?? 0, totalSpent: expSum[0]?.sum ?? "0" };
-      }));
+      const oauthIds = oauthUsers.map((u) => u.id);
+      const localIds = localUsersList.map((u) => u.id);
 
-      const enrichedLocal = await Promise.all(localUsersList.map(async (u) => {
-        const expCount = await db.select({ count: count() }).from(expenses)
-          .where(and(eq(expenses.userId, u.id), eq(expenses.userType, "local")));
-        const expSum = await db.select({ sum: sql`SUM(amount)` }).from(expenses)
-          .where(and(eq(expenses.userId, u.id), eq(expenses.userType, "local")));
-        return { ...u, userType: "local", expenseCount: expCount[0]?.count ?? 0, totalSpent: expSum[0]?.sum ?? "0" };
-      }));
+      const statMap = new Map<string, { expenseCount: number; totalSpent: string }>();
+
+      const expenseParts = [];
+      if (oauthIds.length) expenseParts.push(and(inArray(expenses.userId, oauthIds), eq(expenses.userType, "oauth")));
+      if (localIds.length) expenseParts.push(and(inArray(expenses.userId, localIds), eq(expenses.userType, "local")));
+
+      if (expenseParts.length > 0) {
+        const rows = await db
+          .select({
+            userId: expenses.userId,
+            userType: expenses.userType,
+            expenseCount: count(),
+            totalSpent: sql<string>`COALESCE(SUM(${expenses.amount}), 0)`,
+          })
+          .from(expenses)
+          .where(expenseParts.length === 1 ? expenseParts[0]! : or(...expenseParts))
+          .groupBy(expenses.userId, expenses.userType);
+
+        for (const r of rows) {
+          statMap.set(`${r.userType}:${r.userId}`, {
+            expenseCount: Number(r.expenseCount ?? 0),
+            totalSpent: String(r.totalSpent ?? "0"),
+          });
+        }
+      }
+
+      const enrichedOAuth = oauthUsers.map((u) => {
+        const s = statMap.get(`oauth:${u.id}`);
+        return { ...u, userType: "oauth" as const, expenseCount: s?.expenseCount ?? 0, totalSpent: s?.totalSpent ?? "0" };
+      });
+
+      const enrichedLocal = localUsersList.map((u) => {
+        const s = statMap.get(`local:${u.id}`);
+        return { ...u, userType: "local" as const, expenseCount: s?.expenseCount ?? 0, totalSpent: s?.totalSpent ?? "0" };
+      });
 
       return {
         users: [...enrichedOAuth, ...enrichedLocal],
@@ -127,6 +160,16 @@ export const adminRouter = router({
       const table = input.userType === "oauth" ? users : localUsers;
       await db.update(table).set({ plan: input.plan }).where(eq(table.id, input.userId));
       return { success: true, message: "تم تحديث الخطة بنجاح" };
+    }),
+
+  // ─── Get User Smart Profile ───
+  getUserSmartProfile: adminProcedure
+    .input(z.object({
+      userId: z.number(),
+      userType: z.enum(["oauth", "local"]),
+    }))
+    .query(async ({ input }) => {
+      return await getSmartProfile(input.userId, input.userType);
     }),
 
   // ─── Delete User ───
@@ -178,26 +221,31 @@ export const adminRouter = router({
         .orderBy(desc(sessions.createdAt))
         .limit(limit);
 
-      const enriched = await Promise.all(activeSessions.map(async (s) => {
-        let name = "مجهول";
-        if (s.userType === "oauth") {
-          const u = await db.select({ name: users.name }).from(users).where(eq(users.id, s.userId));
-          if (u[0]) name = u[0].name;
-        } else {
-          const u = await db.select({ name: localUsers.name }).from(localUsers).where(eq(localUsers.id, s.userId));
-          if (u[0]) name = u[0].name;
-        }
-        return {
-          id: s.id,
-          userName: name,
-          userType: s.userType,
-          ipAddress: s.ipAddress || "غير متوفر",
-          userAgent: s.userAgent || "غير متوفر",
-          createdAt: s.createdAt,
-          expiresAt: s.expiresAt
-        };
+      const oauthIds = [...new Set(activeSessions.filter((s) => s.userType === "oauth").map((s) => s.userId))];
+      const localIds = [...new Set(activeSessions.filter((s) => s.userType === "local").map((s) => s.userId))];
+
+      const oauthRows =
+        oauthIds.length > 0
+          ? await db.select({ id: users.id, name: users.name }).from(users).where(inArray(users.id, oauthIds))
+          : [];
+      const localRows =
+        localIds.length > 0
+          ? await db.select({ id: localUsers.id, name: localUsers.name }).from(localUsers).where(inArray(localUsers.id, localIds))
+          : [];
+
+      const nameByKey = new Map<string, string>();
+      for (const r of oauthRows) nameByKey.set(`oauth:${r.id}`, r.name);
+      for (const r of localRows) nameByKey.set(`local:${r.id}`, r.name);
+
+      return activeSessions.map((s) => ({
+        id: s.id,
+        userName: nameByKey.get(`${s.userType}:${s.userId}`) || "مجهول",
+        userType: s.userType,
+        ipAddress: s.ipAddress || "غير متوفر",
+        userAgent: s.userAgent || "غير متوفر",
+        createdAt: s.createdAt,
+        expiresAt: s.expiresAt,
       }));
-      return enriched;
     }),
 
   // ─── AI System Settings (Professional) ───
@@ -243,6 +291,27 @@ export const adminRouter = router({
       // AI Response Settings
       ai_response_length: "medium", // short, medium, detailed
       ai_focus: "balanced", // statistics, tips, patterns, balanced
+      ai_system_prompt: "[Persona] مستشار مالي مصري ذكي ومتعاطف. لغتك عامية مصرية راقية ومبسطة، وتتحدث وكأنك إنسان حقيقي.\n[Rules]\n1. لا تستخدم العناوين الآلية (مثل التطبيع أو السببية).\n2. واجه المستخدم بالأرقام الحقيقية.\n3. قدم نصائح عملية مصممة خصيصاً للمستخدم بناءً على سلوكه المالي.",
+      // Report frequency limits (days between reports per tier)
+      report_limit_free: "30",    // 1 report per 30 days
+      report_limit_pro: "14",     // 1 report per 14 days
+      report_limit_ultra: "1",    // 1 report per day (effectively unlimited)
+      // Report Word Counts (approximate control via prompt + token safety net)
+      report_words_free: "550",       // target ~400-700 words for free plan
+      report_words_pro: "850",        // target ~700-1000 words for pro plan
+      report_words_ultra: "1500",     // target 1000++ words for ultra plan
+      // Report Max Output Tokens (hard safety net per plan)
+      report_max_tokens_free: "1800",   // ~700 words max safety net
+      report_max_tokens_pro: "3500",    // ~1400 words max safety net
+      report_max_tokens_ultra: "8192",  // unlimited depth
+      // How many subcategories + top items to feed the AI per plan
+      report_subcats_free: "15",        // top 15 subcategories for free
+      report_subcats_pro: "20",         // top 20 subcategories for pro (same as ultra)
+      report_subcats_ultra: "20",       // top 20 subcategories for ultra
+      report_top_items_pro: "10",       // send top 10 item descriptions for pro
+      report_top_items_ultra: "10",     // send top 10 item descriptions for ultra
+      // Referrals
+      promo_code_discount: "20",
     };
     
     settings.forEach(s => {
@@ -364,17 +433,25 @@ export const adminRouter = router({
         if (!isMissingTableError(err, "classification_logs")) throw err;
       }
 
-      // Enrich with user names
-      const enriched = await Promise.all(logs.map(async (l) => {
-        let name = "مجهول";
-        if (l.userType === "oauth") {
-          const u = await db.select({ name: users.name }).from(users).where(eq(users.id, l.userId));
-          if (u[0]) name = u[0].name;
-        } else {
-          const u = await db.select({ name: localUsers.name }).from(localUsers).where(eq(localUsers.id, l.userId));
-          if (u[0]) name = u[0].name;
-        }
-        return { ...l, userName: name };
+      const oauthLogIds = [...new Set(logs.filter((l) => l.userType === "oauth").map((l) => l.userId))];
+      const localLogIds = [...new Set(logs.filter((l) => l.userType === "local").map((l) => l.userId))];
+
+      const oauthNameRows =
+        oauthLogIds.length > 0
+          ? await db.select({ id: users.id, name: users.name }).from(users).where(inArray(users.id, oauthLogIds))
+          : [];
+      const localNameRows =
+        localLogIds.length > 0
+          ? await db.select({ id: localUsers.id, name: localUsers.name }).from(localUsers).where(inArray(localUsers.id, localLogIds))
+          : [];
+
+      const logNameMap = new Map<string, string>();
+      for (const r of oauthNameRows) logNameMap.set(`oauth:${r.id}`, r.name);
+      for (const r of localNameRows) logNameMap.set(`local:${r.id}`, r.name);
+
+      const enriched = logs.map((l) => ({
+        ...l,
+        userName: logNameMap.get(`${l.userType}:${l.userId}`) || "مجهول",
       }));
 
       return {
@@ -408,4 +485,40 @@ export const adminRouter = router({
       usage,
     };
   }),
+
+  // ─── Discount Codes CRUD ───
+  getDiscountCodes: adminProcedure.query(async () => {
+    return await db.select().from(discountCodes).orderBy(desc(discountCodes.createdAt));
+  }),
+
+  createDiscountCode: adminProcedure
+    .input(z.object({
+      code: z.string().min(3).max(50),
+      type: z.enum(["referral", "promo"]).default("promo"),
+      discountPercent: z.number().min(1).max(100),
+      maxUses: z.number().min(0).optional(),
+      expiresAt: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const existing = await db.select().from(discountCodes).where(eq(discountCodes.code, input.code.toUpperCase())).limit(1);
+      if (existing.length > 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "الكود موجود بالفعل" });
+      }
+      await db.insert(discountCodes).values({
+        code: input.code.toUpperCase(),
+        type: input.type,
+        discountPercent: input.discountPercent,
+        maxUses: input.maxUses || null,
+        usedCount: 0,
+        expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
+      });
+      return { success: true, message: "تم إنشاء الكود بنجاح" };
+    }),
+
+  deleteDiscountCode: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      await db.delete(discountCodes).where(eq(discountCodes.id, input.id));
+      return { success: true, message: "تم حذف الكود" };
+    }),
 });

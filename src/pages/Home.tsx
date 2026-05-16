@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, lazy, Suspense, type ReactNode } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,11 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   BarChart3,
-  Brain,
   CalendarDays,
   ReceiptText,
   RefreshCw,
-  Sparkles,
   TrendingDown,
   TrendingUp,
   WalletCards,
@@ -20,10 +18,12 @@ import { trpc } from "@/providers/trpc";
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { RecentExpenses } from "@/components/expenses/RecentExpenses";
 import { MonthlyStats } from "@/components/dashboard/MonthlyStats";
-import { ExpenseChart } from "@/components/dashboard/ExpenseChart";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const ExpenseChart = lazy(() =>
+  import("@/components/dashboard/ExpenseChart").then((m) => ({ default: m.ExpenseChart }))
+);
 import { AIInsights } from "@/components/insights/AIInsights";
-import { OnboardingCard } from "@/components/OnboardingCard";
-import { UserIntelligencePanel } from "@/components/dashboard/UserIntelligencePanel";
 import { BehaviorInsights } from "@/components/dashboard/BehaviorInsights";
 import { MonthlyCalendar } from "@/components/dashboard/MonthlyCalendar";
 
@@ -259,31 +259,75 @@ function StatsView({
   refreshInferences: () => void;
   refreshingInferences: boolean;
 }) {
-  const previousExpense = stats?.comparativeAnalysis?.previousMonth?.totalExpense || 0;
   const topCategory = stats?.topCategories?.[0];
+  const changePercent = stats?.behavioralInsights?.expenseChangePercent;
+  const isUp = changePercent > 0;
+  const dailyAvg = stats?.dailyAverage || 0;
+  const topCategories = stats?.topCategories?.slice(0, 5) || [];
+  const totalExpense = topCategories.reduce((s: number, c: any) => s + (c.value || 0), 0);
 
   if (loading && !stats) {
     return (
-      <Card>
-        <CardContent className="py-10 text-center text-sm text-muted-foreground">جاري تحميل الإحصائيات...</CardContent>
-      </Card>
+      <section className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <Card key={i}><CardContent className="py-8"><Skeleton className="h-8 w-full" /></CardContent></Card>
+        ))}
+      </section>
     );
   }
 
   return (
     <section className="space-y-5">
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-5 items-start">
-        <div className="space-y-5">
-          <MonthlyStats
-            total={stats?.totalExpense || 0}
-            totalIncome={stats?.totalIncome || 0}
-            netFlow={stats?.netFlow || 0}
-            count={stats?.count || 0}
-            dailyAverage={stats?.dailyAverage || 0}
-            previousMonthTotal={previousExpense}
-            expenseChangePercent={stats?.behavioralInsights?.expenseChangePercent}
-          />
+      {/* KPI Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {/* Daily Average */}
+        <div className="rounded-xl border bg-white dark:bg-slate-900 p-4 flex flex-col gap-1 shadow-sm">
+          <p className="text-[11px] text-muted-foreground">متوسط يومي</p>
+          <p className="text-xl font-bold">{money(dailyAvg)}</p>
+          <p className="text-[10px] text-muted-foreground">ج.م / يوم</p>
+        </div>
 
+        {/* Month change */}
+        <div className={`rounded-xl border p-4 flex flex-col gap-1 shadow-sm ${
+          isUp
+            ? "bg-rose-50 border-rose-100 dark:bg-rose-950/20 dark:border-rose-900"
+            : "bg-emerald-50 border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900"
+        }`}>
+          <p className={`text-[11px] ${isUp ? "text-rose-600" : "text-emerald-600"}`}>مقارنة بالشهر السابق</p>
+          <p className={`text-xl font-bold ${isUp ? "text-rose-700 dark:text-rose-400" : "text-emerald-700 dark:text-emerald-400"}`} dir="ltr">
+            {changePercent != null ? `${isUp ? "+" : ""}${changePercent.toFixed(1)}%` : "—"}
+          </p>
+          <div className={`flex items-center gap-1 text-[10px] ${isUp ? "text-rose-500" : "text-emerald-500"}`}>
+            {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+            {isUp ? "زيادة في الصرف" : "انخفاض في الصرف"}
+          </div>
+        </div>
+
+        {/* Top category */}
+        <div className="rounded-xl border bg-white dark:bg-slate-900 p-4 flex flex-col gap-1 shadow-sm">
+          <p className="text-[11px] text-muted-foreground">أعلى فئة</p>
+          <p className="text-base font-bold truncate">{topCategory?.name || "—"}</p>
+          <p className="text-[10px] text-muted-foreground">{topCategory ? `${money(topCategory.value)} ج.م` : ""}</p>
+        </div>
+
+        {/* Behavior tag */}
+        <div className="rounded-xl border bg-violet-50 dark:bg-violet-950/20 border-violet-100 dark:border-violet-900 p-4 flex flex-col gap-1 shadow-sm">
+          <p className="text-[11px] text-violet-600 dark:text-violet-400">الشخصية المالية</p>
+          <p className="text-base font-bold text-violet-700 dark:text-violet-300">
+            {stats?.behavioralInsights?.spendingBehavior === "emotional" ? "صرف عاطفي"
+              : stats?.behavioralInsights?.spendingBehavior === "impulsive" ? "مندفع"
+              : stats?.behavioralInsights?.spendingBehavior === "planned" ? "مخطط"
+              : stats?.behavioralInsights?.spendingBehavior === "conservative" ? "محافظ"
+              : "متوازن"}
+          </p>
+          <p className="text-[10px] text-violet-500">بناءً على السلوك الشهري</p>
+        </div>
+      </div>
+
+      {/* Main content: charts + sidebar */}
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-5 items-start">
+        {/* Left: Charts */}
+        <div className="space-y-5">
           <BehaviorInsights stats={stats} />
 
           <Card>
@@ -294,44 +338,70 @@ function StatsView({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ExpenseChart
-                categoryData={stats?.categoryBreakdown || []}
-                subCategoryData={stats?.subCategoryBreakdown || []}
-                hourTrend={stats?.hourTrend || []}
-                dayOfWeekTrend={stats?.dayOfWeekTrend || []}
-                dayTrend={stats?.dayTrend || []}
-                items={stats?.items || []}
-              />
+              <Suspense fallback={<Skeleton className="h-[320px] w-full rounded-lg" />}>
+                <ExpenseChart
+                  categoryData={stats?.categoryBreakdown || []}
+                  subCategoryData={stats?.subCategoryBreakdown || []}
+                  hourTrend={stats?.hourTrend || []}
+                  dayOfWeekTrend={stats?.dayOfWeekTrend || []}
+                  dayTrend={stats?.dayTrend || []}
+                  items={stats?.items || []}
+                />
+              </Suspense>
             </CardContent>
           </Card>
         </div>
 
+        {/* Right: Sidebar */}
         <aside className="space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Brain className="w-5 h-5 text-violet-600" />
-                ملخص ذكي
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">أعلى فئة</span>
-                <span className="font-semibold truncate max-w-44">{topCategory?.name || "لا يوجد"}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">قيمة أعلى فئة</span>
-                <span className="font-semibold">{money(topCategory?.value)} ج.م</span>
-              </div>
-              <Button variant="outline" className="w-full gap-2" onClick={refreshInferences} disabled={refreshingInferences}>
-                <Sparkles className={refreshingInferences ? "w-4 h-4 animate-spin" : "w-4 h-4"} />
-                تحديث ذكاء المستخدم
-              </Button>
-            </CardContent>
-          </Card>
+          {/* Top Categories */}
+          {topCategories.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <WalletCards className="w-4 h-4 text-sky-600" />
+                  أعلى 5 فئات إنفاق
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {topCategories.map((cat: any, i: number) => {
+                  const pct = totalExpense > 0 ? Math.round((cat.value / totalExpense) * 100) : 0;
+                  const CHART_COLORS = [
+                    "#10b981", // emerald-500
+                    "#3b82f6", // blue-500
+                    "#f43f5e", // rose-500
+                    "#f59e0b", // amber-500
+                    "#8b5cf6", // violet-500
+                    "#06b6d4", // cyan-500
+                    "#ec4899", // pink-500
+                    "#84cc16", // lime-500
+                    "#6366f1", // indigo-500
+                  ];
+                  return (
+                    <div key={cat.name} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground w-4 text-center font-bold">{i + 1}</span>
+                          <span className="font-medium truncate max-w-32">{cat.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs text-muted-foreground">{pct}%</span>
+                          <span className="text-xs font-semibold">{money(cat.value)} ج</span>
+                        </div>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
 
-          <UserIntelligencePanel month={month} />
-          <OnboardingCard />
         </aside>
       </div>
     </section>

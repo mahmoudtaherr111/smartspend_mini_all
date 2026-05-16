@@ -10,7 +10,7 @@ export default function NotFound() {
         <h2 className="text-2xl font-semibold">الصفحة مش موجودة</h2>
         <p className="text-muted-foreground">الصفحة اللي بتدور عليها مش موجودة أو اتنقلت لمكان تاني.</p>
         <Button asChild>
-          <Link to="/">
+          <Link to="/dashboard">
             <Home className="w-4 h-4 ml-2" />
             الرجوع للرئيسية
           </Link>
