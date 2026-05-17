@@ -6,7 +6,7 @@ function money(value: unknown) {
   return Number(value || 0).toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
-export function MonthlyCalendar({ month, dayTrend = [] }: { month: string; dayTrend?: any[] }) {
+export function MonthlyCalendar({ month, dayTrend = [], salaryDay }: { month: string; dayTrend?: any[], salaryDay?: number }) {
   const [year, monthNumber] = month.split("-").map(Number);
   const firstDay = new Date(year, monthNumber - 1, 1);
   const daysInMonth = new Date(year, monthNumber, 0).getDate();
@@ -28,6 +28,12 @@ export function MonthlyCalendar({ month, dayTrend = [] }: { month: string; dayTr
           <CalendarDays className="w-5 h-5 text-sky-600" />
           التقويم المالي
         </CardTitle>
+        {salaryDay && salaryDay > 0 && (
+          <div className="text-xs text-muted-foreground bg-muted/50 border rounded-md p-2 mt-2">
+            💡 <strong>ملاحظة:</strong> مرتبك ينزل يوم {salaryDay} من كل شهر. 
+            إحصائيات هذا الشهر تُحسب بناءً على هذا اليوم (من {salaryDay} الشهر الحالي إلى {salaryDay - 1} الشهر القادم).
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-7 gap-2 text-center text-xs text-muted-foreground mb-2">

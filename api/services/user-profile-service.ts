@@ -56,6 +56,10 @@ export interface SmartProfilePatch {
 }
 
 function asObject(value: unknown): Record<string, unknown> {
+  // Handle string JSON (columns are longtext, MySQL2 returns raw strings)
+  if (typeof value === "string") {
+    try { return JSON.parse(value); } catch { return {}; }
+  }
   return value && typeof value === "object" && !Array.isArray(value)
     ? { ...(value as Record<string, unknown>) }
     : {};
@@ -165,11 +169,22 @@ export function buildDefaultSmartProfile(
       {
         hasChildren: null,
         childrenCount: null,
+        childrenNames: [],
         childrenAges: [],
         responsibleForFamily: null,
         livesAlone: null,
         supportsOthers: [],
         fixedMonthlyCommitments: null,
+        partnerName: null,
+        carOwnership: null,
+        carType: null,
+        monthlyCarCost: null,
+        hasPets: null,
+        petNames: [],
+        smoking: null,
+        subscriptions: [],
+        regularContacts: [],
+        favoriteSpendingPlaces: [],
       },
       asObject(legacy?.lifestyleInfo)
     ),
@@ -280,22 +295,36 @@ export async function getSmartProfile(
   } catch (err) {
     if (!isSmartProfileSchemaError(err)) throw err;
 
-    const legacyRows = await db
-      .select({
-        monthlyIncome: userProfiles.monthlyIncome,
-        financialGoal: userProfiles.financialGoal,
-        financialPersonality: userProfiles.financialPersonality,
-        profileCompleted: userProfiles.profileCompleted,
-      })
-      .from(userProfiles)
-      .where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)))
-      .limit(1);
-    row = legacyRows[0];
+    console.warn("[getSmartProfile] Full read failed, attempting auto-repair...");
+    try {
+      await autoRepairProfileSchema();
+      // Retry full read after repair
+      const rows = await db
+        .select()
+        .from(userProfiles)
+        .where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)))
+        .limit(1);
+      row = rows[0];
+      console.log("[getSmartProfile] Auto-repair + retry succeeded!");
+    } catch (retryErr) {
+      console.error("[getSmartProfile] Retry failed, using legacy read:", retryErr instanceof Error ? retryErr.message : retryErr);
+      const legacyRows = await db
+        .select({
+          monthlyIncome: userProfiles.monthlyIncome,
+          financialGoal: userProfiles.financialGoal,
+          financialPersonality: userProfiles.financialPersonality,
+          profileCompleted: userProfiles.profileCompleted,
+        })
+        .from(userProfiles)
+        .where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)))
+        .limit(1);
+      row = legacyRows[0];
+    }
   }
 
-  const profile = buildDefaultSmartProfile(identity, row);
-
-  return profile;
+  const result = buildDefaultSmartProfile(identity, row);
+  console.log(`[getSmartProfile] user=${userId}, hasRow=${!!row}, hasOnboardingAnswers=${row?.onboardingAnswers ? Object.keys(row.onboardingAnswers).length : 0}, resultAnswers=${Object.keys(result.onboardingAnswers).length}`);
+  return result;
 }
 
 export async function saveSmartProfile(
@@ -304,6 +333,8 @@ export async function saveSmartProfile(
   profile: SmartUserProfile
 ): Promise<void> {
   const { db } = await import("../queries/connection");
+  const { sql: sqlTag } = await import("drizzle-orm");
+
   const monthlyIncome = toNumber(profile.financialInfo.averageMonthlyIncome);
   const financialGoal =
     typeof profile.financialInfo.primaryGoal === "string"
@@ -314,60 +345,104 @@ export async function saveSmartProfile(
       ? profile.aiInferredAttributes.financialPersonality
       : profile.legacy.financialPersonality;
 
-  const legacyValues = {
-    userId,
-    userType,
-    monthlyIncome: monthlyIncome === null ? undefined : monthlyIncome.toString(),
-    financialGoal,
-    financialPersonality,
-    profileCompleted: profile.profileCompleted,
-    lastAskedAt: new Date(),
-  };
+  // Explicitly serialize ALL JSON fields — columns are longtext, not json type
+  const onboardingJson = JSON.stringify(profile.onboardingAnswers || {});
+  const basicJson = JSON.stringify(profile.basicInfo || {});
+  const financialJson = JSON.stringify(profile.financialInfo || {});
+  const lifestyleJson = JSON.stringify(profile.lifestyleInfo || {});
+  const inferredJson = JSON.stringify(profile.aiInferredAttributes || {});
+  const prefsJson = JSON.stringify(profile.preferences || {});
+  const completed = profile.profileCompleted ? 1 : 0;
 
   try {
-    await db
-      .insert(userProfiles)
-      .values({
-        ...legacyValues,
-        basicInfo: profile.basicInfo,
-        financialInfo: profile.financialInfo,
-        lifestyleInfo: profile.lifestyleInfo,
-        onboardingAnswers: profile.onboardingAnswers,
-        aiInferredAttributes: profile.aiInferredAttributes,
-        preferences: profile.preferences,
-        avatarId: profile.avatarId,
-        profileVersion: SMART_PROFILE_VERSION,
-        lastAiRefreshAt: profile.lastAiRefreshAt ?? undefined,
-      })
-      .onDuplicateKeyUpdate({
-        set: {
-          ...legacyValues,
-          basicInfo: profile.basicInfo,
-          financialInfo: profile.financialInfo,
-          lifestyleInfo: profile.lifestyleInfo,
-          onboardingAnswers: profile.onboardingAnswers,
-          aiInferredAttributes: profile.aiInferredAttributes,
-          preferences: profile.preferences,
-          avatarId: profile.avatarId,
-          profileVersion: SMART_PROFILE_VERSION,
-          lastAiRefreshAt: profile.lastAiRefreshAt ?? undefined,
-        },
-      });
+    // Use raw SQL with parameterized values — 100% reliable regardless of column types
+    await db.execute(
+      sqlTag`INSERT INTO user_profiles
+        (user_id, user_type, monthly_income, financial_goal, financial_personality,
+         profile_completed, onboarding_answers, basic_info, financial_info,
+         lifestyle_info, ai_inferred_attributes, preferences, avatar_id,
+         profile_version)
+        VALUES
+        (${userId}, ${userType}, ${monthlyIncome}, ${financialGoal}, ${financialPersonality},
+         ${completed}, ${onboardingJson}, ${basicJson}, ${financialJson},
+         ${lifestyleJson}, ${inferredJson}, ${prefsJson}, ${profile.avatarId},
+         ${SMART_PROFILE_VERSION})
+        ON DUPLICATE KEY UPDATE
+          monthly_income = VALUES(monthly_income),
+          financial_goal = VALUES(financial_goal),
+          financial_personality = VALUES(financial_personality),
+          profile_completed = VALUES(profile_completed),
+          onboarding_answers = VALUES(onboarding_answers),
+          basic_info = VALUES(basic_info),
+          financial_info = VALUES(financial_info),
+          lifestyle_info = VALUES(lifestyle_info),
+          ai_inferred_attributes = VALUES(ai_inferred_attributes),
+          preferences = VALUES(preferences),
+          avatar_id = VALUES(avatar_id),
+          profile_version = VALUES(profile_version)`
+    );
+    console.log(`[saveSmartProfile] ✅ Saved. answers=${Object.keys(profile.onboardingAnswers).length}, completed=${profile.profileCompleted}`);
   } catch (err) {
-    if (!isSmartProfileSchemaError(err)) throw err;
+    console.error("[saveSmartProfile] Save failed:", err instanceof Error ? err.message : err);
 
-    await db
-      .insert(userProfiles)
-      .values(legacyValues)
-      .onDuplicateKeyUpdate({
-        set: {
+    // Fallback: try saving just the legacy columns
+    try {
+      await db
+        .insert(userProfiles)
+        .values({
+          userId,
+          userType,
           monthlyIncome: monthlyIncome === null ? undefined : monthlyIncome.toString(),
           financialGoal,
           financialPersonality,
           profileCompleted: profile.profileCompleted,
-          lastAskedAt: new Date(),
-        },
-      });
+        })
+        .onDuplicateKeyUpdate({
+          set: {
+            monthlyIncome: monthlyIncome === null ? undefined : monthlyIncome.toString(),
+            financialGoal,
+            financialPersonality,
+            profileCompleted: profile.profileCompleted,
+          },
+        });
+      console.warn("[saveSmartProfile] ⚠️ Legacy fallback used — JSON data NOT saved!");
+    } catch (legacyErr) {
+      console.error("[saveSmartProfile] Even legacy save failed:", legacyErr);
+      throw err;
+    }
+  }
+}
+
+/**
+ * Auto-repair: add missing JSON columns to user_profiles if they don't exist.
+ */
+async function autoRepairProfileSchema(): Promise<void> {
+  const { db } = await import("../queries/connection");
+  const requiredColumns = [
+    { name: "basic_info", type: "JSON DEFAULT NULL" },
+    { name: "financial_info", type: "JSON DEFAULT NULL" },
+    { name: "lifestyle_info", type: "JSON DEFAULT NULL" },
+    { name: "onboarding_answers", type: "JSON DEFAULT NULL" },
+    { name: "ai_inferred_attributes", type: "JSON DEFAULT NULL" },
+    { name: "preferences", type: "JSON DEFAULT NULL" },
+    { name: "avatar_id", type: "VARCHAR(100) DEFAULT NULL" },
+    { name: "profile_version", type: "INT DEFAULT 2" },
+    { name: "last_ai_refresh_at", type: "DATETIME DEFAULT NULL" },
+    { name: "last_asked_at", type: "DATETIME DEFAULT NULL" },
+  ];
+
+  for (const col of requiredColumns) {
+    try {
+      await db.execute(
+        `ALTER TABLE user_profiles ADD COLUMN \`${col.name}\` ${col.type}`
+      );
+      console.log(`  [auto-repair] Added column: ${col.name}`);
+    } catch (e: any) {
+      // Column already exists — ignore
+      if (!e.message?.includes("Duplicate column")) {
+        console.warn(`  [auto-repair] Could not add ${col.name}:`, e.message);
+      }
+    }
   }
 }
 
@@ -378,8 +453,69 @@ export async function updateSmartProfile(
 ): Promise<SmartUserProfile> {
   const current = await getSmartProfile(userId, userType);
   const next = mergeSmartProfilePatch(current, patch);
+
+  // Sync: when profile is edited directly, mark corresponding onboarding questions as answered
+  if (patch.financialInfo || patch.lifestyleInfo || patch.basicInfo) {
+    next.onboardingAnswers = syncOnboardingAnswersFromProfile(next);
+  }
+
   await saveSmartProfile(userId, userType, next);
   return next;
+}
+
+/**
+ * Derive onboarding answer state from the structured profile fields.
+ * Ensures if a user edits their profile directly, the onboarding engine
+ * knows those questions are already answered and won't re-ask them.
+ */
+function syncOnboardingAnswersFromProfile(
+  profile: SmartUserProfile
+): Record<string, OnboardingAnswer> {
+  const answers = { ...profile.onboardingAnswers };
+  const now = new Date().toISOString();
+  const fi = profile.financialInfo as Record<string, any>;
+  const li = profile.lifestyleInfo as Record<string, any>;
+  const bi = profile.basicInfo as Record<string, any>;
+
+  function markAnswered(key: string, value: unknown) {
+    if (value !== null && value !== undefined && value !== "" && value !== false) {
+      if (!answers[key]) {
+        answers[key] = { value, skipped: false, answeredAt: now, updatedAt: now };
+      } else {
+        answers[key] = { ...answers[key], value, updatedAt: now };
+      }
+    }
+  }
+
+  // Financial
+  if (fi.averageMonthlyIncome) markAnswered("income_level", fi.averageMonthlyIncome);
+  if (Array.isArray(fi.incomeSources) && fi.incomeSources.length > 0) markAnswered("income_sources", fi.incomeSources);
+  if (fi.primaryGoal) markAnswered("app_goal", fi.primaryGoal);
+  if (fi.hasDebt !== null && fi.hasDebt !== undefined) markAnswered("has_debt", fi.hasDebt);
+  if (fi.monthlyDebtPayment) markAnswered("debt_monthly", fi.monthlyDebtPayment);
+
+  // Lifestyle
+  if (li.hasChildren !== null && li.hasChildren !== undefined) markAnswered("children", li.hasChildren);
+  if (li.childrenCount) markAnswered("children_count", li.childrenCount);
+  if (Array.isArray(li.childrenNames) && li.childrenNames.length > 0) markAnswered("children_names", li.childrenNames);
+  if (li.livingSituation) markAnswered("living_situation", li.livingSituation);
+  if (li.partnerName) markAnswered("partner_name", li.partnerName);
+  if (li.housingType) markAnswered("housing_type", li.housingType);
+  if (li.monthlyRent) markAnswered("monthly_rent", li.monthlyRent);
+  if (Array.isArray(li.supportsOthers) && li.supportsOthers.length > 0) markAnswered("supports_others", li.supportsOthers);
+  if (li.carOwnership !== null && li.carOwnership !== undefined) markAnswered("car_ownership", li.carOwnership);
+  if (li.carType) markAnswered("car_type", li.carType);
+  if (li.monthlyCarCost) markAnswered("monthly_car_cost", li.monthlyCarCost);
+  if (li.hasPets !== null && li.hasPets !== undefined) markAnswered("has_pets", li.hasPets);
+  if (Array.isArray(li.petNames) && li.petNames.length > 0) markAnswered("pet_names", li.petNames);
+  if (li.smoking !== null && li.smoking !== undefined) markAnswered("smoking", li.smoking);
+  if (Array.isArray(li.subscriptions) && li.subscriptions.length > 0) markAnswered("subscription_services", li.subscriptions);
+  if (Array.isArray(li.regularContacts) && li.regularContacts.length > 0) markAnswered("regular_contacts", li.regularContacts);
+
+  // Basic
+  if (bi.profession) markAnswered("profession", bi.profession);
+
+  return answers;
 }
 
 export function summarizeProfileForAI(profile: SmartUserProfile): string {
@@ -393,9 +529,14 @@ export function summarizeProfileForAI(profile: SmartUserProfile): string {
     `Income sources: ${Array.isArray(financialInfo.incomeSources) ? financialInfo.incomeSources.join(", ") : "unknown"}`,
     `Goal: ${financialInfo.primaryGoal ?? "unknown"}`,
     `Has children: ${lifestyleInfo.hasChildren ?? "unknown"}`,
+    `Children names: ${Array.isArray(lifestyleInfo.childrenNames) && lifestyleInfo.childrenNames.length > 0 ? lifestyleInfo.childrenNames.join(", ") : "unknown"}`,
+    `Partner name: ${lifestyleInfo.partnerName ?? "unknown"}`,
     `Responsible for family: ${lifestyleInfo.responsibleForFamily ?? "unknown"}`,
     `Supports others: ${Array.isArray(lifestyleInfo.supportsOthers) ? lifestyleInfo.supportsOthers.join(", ") : "unknown"}`,
+    `Regular contacts: ${Array.isArray(lifestyleInfo.regularContacts) && lifestyleInfo.regularContacts.length > 0 ? lifestyleInfo.regularContacts.join(", ") : "none"}`,
     `Fixed commitments: ${lifestyleInfo.fixedMonthlyCommitments ?? "unknown"}`,
+    `Has car: ${lifestyleInfo.carOwnership ?? "unknown"}${lifestyleInfo.carType ? ` (${lifestyleInfo.carType})` : ""}`,
+    `Smoker: ${lifestyleInfo.smoking ?? "unknown"}`,
     `Financial stability: ${inferred.financialStability ?? "unknown"}`,
     `Spending behavior: ${inferred.spendingBehavior ?? "unknown"}`,
     `Report preference: ${preferences.detailLevel ?? "summary"}`,

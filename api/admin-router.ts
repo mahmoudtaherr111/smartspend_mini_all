@@ -5,6 +5,7 @@ import { users, localUsers, expenses, sessions, supportTickets, userAnalytics, s
 import { eq, sql, desc, count, and, gte, lte, sum, inArray, or, like } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { env } from "./lib/env";
+import { getSmartProfile } from "./services/user-profile-service";
 
 function isMissingTableError(err: unknown, table: string): boolean {
   const message = err instanceof Error ? err.message : String(err ?? "");
@@ -134,6 +135,17 @@ export const adminRouter = router({
         page,
         limit,
       };
+    }),
+
+  // ─── View User SmartProfile (Admin) ───
+  getUserSmartProfile: adminProcedure
+    .input(z.object({
+      userId: z.number(),
+      userType: z.enum(["oauth", "local"]),
+    }))
+    .query(async ({ input }) => {
+      const profile = await getSmartProfile(input.userId, input.userType);
+      return profile;
     }),
 
   // ─── Update User Role ───
@@ -292,6 +304,8 @@ export const adminRouter = router({
       ai_response_length: "medium", // short, medium, detailed
       ai_focus: "balanced", // statistics, tips, patterns, balanced
       ai_system_prompt: "[Persona] مستشار مالي مصري ذكي ومتعاطف. لغتك عامية مصرية راقية ومبسطة، وتتحدث وكأنك إنسان حقيقي.\n[Rules]\n1. لا تستخدم العناوين الآلية (مثل التطبيع أو السببية).\n2. واجه المستخدم بالأرقام الحقيقية.\n3. قدم نصائح عملية مصممة خصيصاً للمستخدم بناءً على سلوكه المالي.",
+      ai_advanced_instructions: "",
+      ai_report_structure_override: "",
       // Report frequency limits (days between reports per tier)
       report_limit_free: "30",    // 1 report per 30 days
       report_limit_pro: "14",     // 1 report per 14 days

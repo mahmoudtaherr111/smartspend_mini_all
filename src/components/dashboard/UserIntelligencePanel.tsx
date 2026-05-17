@@ -74,11 +74,15 @@ export function UserIntelligencePanel({ month }: { month: string }) {
                 أكثر فئات الصرف
               </div>
               <div className="flex flex-wrap gap-2">
-                {topCategories.length > 0 ? topCategories.map((category: any) => (
-                  <Badge key={category.name} variant="outline">
-                    {category.name} {category.percent ? `${category.percent}%` : ""}
-                  </Badge>
-                )) : (
+                {topCategories.length > 0 ? topCategories.map((category: any, i: number) => {
+                  const name = typeof category === "string" ? category : category.name || "غير محدد";
+                  const percent = typeof category === "object" && category.percent ? `${category.percent}%` : "";
+                  return (
+                    <Badge key={`${name}-${i}`} variant="outline">
+                      {name} {percent}
+                    </Badge>
+                  );
+                }) : (
                   <span className="text-xs text-muted-foreground">تظهر بعد تسجيل مصاريف كافية.</span>
                 )}
               </div>

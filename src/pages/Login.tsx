@@ -8,9 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Chrome, LogIn, UserPlus, Phone, Lock, User, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { useTheme } from "next-themes";
+import darkModeLogo from "../../photos/dark_mode_logo-removebg-preview.png";
+import whiteModeLogo from "../../photos/white_mode_logo-removebg-preview.png";
 
 export default function Login() {
   const [activeTab, setActiveTab] = useState("login");
+  const { theme } = useTheme();
 
   // Login state
   const [loginPhone, setLoginPhone] = useState("");
@@ -80,8 +84,17 @@ export default function Login() {
 
       <Card className="w-full max-w-md relative z-10 shadow-2xl border-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
         <CardHeader className="text-center space-y-3 pb-6">
-          <div className="mx-auto w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-all duration-300 hover:rotate-3">
-            <span className="text-white text-3xl font-bold">SS</span>
+          <div className="mx-auto h-20 flex items-center justify-center transform hover:scale-105 transition-all duration-300">
+            <img 
+              src={whiteModeLogo} 
+              alt="SmartSpend" 
+              className="h-full w-auto object-contain block dark:hidden"
+            />
+            <img 
+              src={darkModeLogo} 
+              alt="SmartSpend" 
+              className="h-full w-auto object-contain hidden dark:block"
+            />
           </div>
           <div>
             <CardTitle className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">

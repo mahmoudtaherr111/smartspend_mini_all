@@ -166,31 +166,77 @@ export const profileRouter = router({
 
   getNextOnboardingQuestion: authedProcedure.query(async ({ ctx }) => {
     const profile = await getSmartProfile(ctx.user.id, ctx.user.type);
+    const nextQ = getNextOnboardingQuestion(profile.onboardingAnswers);
+    
+    console.log(`[getNextOnboardingQuestion] user=${ctx.user.id}, answered=${Object.keys(profile.onboardingAnswers).length}, profileCompleted=${profile.profileCompleted}, nextQ=${nextQ?.key || 'DONE'}`);
+    
+    // Get lastAskedAt from DB for cooldown check on frontend
+    let lastAskedAt: string | null = null;
+    try {
+      const rows = await db.select({ lastAskedAt: userProfiles.lastAskedAt })
+        .from(userProfiles)
+        .where(and(eq(userProfiles.userId, ctx.user.id), eq(userProfiles.userType, ctx.user.type)))
+        .limit(1);
+      lastAskedAt = rows[0]?.lastAskedAt?.toISOString() || null;
+    } catch {
+      // Ignore lastAskedAt fetch errors
+    }
+
     return {
-      question: getNextOnboardingQuestion(profile.onboardingAnswers),
-      profileCompleted: profile.profileCompleted,
+      question: nextQ,
+      profileCompleted: profile.profileCompleted && !nextQ,
+      lastAskedAt,
     };
   }),
+
+  // Dismiss onboarding card — updates lastAskedAt for 24h cooldown
+  dismissOnboarding: authedProcedure.mutation(async ({ ctx }) => {
+    await db.update(userProfiles)
+      .set({ lastAskedAt: new Date() })
+      .where(and(eq(userProfiles.userId, ctx.user.id), eq(userProfiles.userType, ctx.user.type)));
+    return { success: true };
+  }),
+
 
   submitOnboardingAnswer: authedProcedure
     .input(z.object({
       key: z.string().min(1),
       value: z.any().optional(),
       skipped: z.boolean().default(false),
+      // Frontend sends ALL accumulated answers so far — this is the resilience layer.
+      // Even if the DB failed to persist previous answers, these are the source of truth.
+      accumulatedAnswers: z.record(z.string(), z.any()).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const profile = await getSmartProfile(ctx.user.id, ctx.user.type);
+
+      // CRITICAL FIX: Merge frontend-accumulated answers into the profile BEFORE applying the new one.
+      // This ensures that even if previous DB saves lost the onboardingAnswers,
+      // we reconstruct the full state from the frontend's local copy.
+      if (input.accumulatedAnswers && Object.keys(input.accumulatedAnswers).length > 0) {
+        for (const [aKey, aVal] of Object.entries(input.accumulatedAnswers)) {
+          if (aKey !== input.key && aVal && !profile.onboardingAnswers[aKey]) {
+            profile.onboardingAnswers[aKey] = aVal as any;
+          }
+        }
+      }
+
       const nextProfile = applyOnboardingAnswer(
         profile,
         input.key,
         input.value,
         input.skipped
       );
+
+      console.log(`[submitOnboardingAnswer] key=${input.key}, total answers=${Object.keys(nextProfile.onboardingAnswers).length}, keys=[${Object.keys(nextProfile.onboardingAnswers).join(',')}]`);
+
       await saveSmartProfile(ctx.user.id, ctx.user.type, nextProfile);
       return {
         success: true,
         profile: nextProfile,
         nextQuestion: getNextOnboardingQuestion(nextProfile.onboardingAnswers),
+        // Send back all answers so frontend can accumulate them
+        allAnswers: nextProfile.onboardingAnswers,
       };
     }),
 

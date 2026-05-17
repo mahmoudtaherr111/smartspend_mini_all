@@ -4,16 +4,28 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SEOMeta } from "@/components/seo/SEOMeta";
 import { Brain, Mic, LineChart, ShieldCheck, Sparkles } from "lucide-react";
+import { useTheme } from "next-themes";
+import darkModeLogo from "../../photos/dark_mode_logo-removebg-preview.png";
+import whiteModeLogo from "../../photos/white_mode_logo-removebg-preview.png";
 
 export default function Landing() {
+  const { theme } = useTheme();
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-emerald-50/40 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950/30" dir="rtl">
       <SEOMeta path="/" title="SmartSpend AI — إدارة مصاريفك بالعامية" />
       <header className="border-b border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md sticky top-0 z-20">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 font-bold text-lg">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-sm">SS</span>
-            SmartSpend AI
+            <img 
+              src={whiteModeLogo} 
+              alt="SmartSpend" 
+              className="h-10 w-auto object-contain block dark:hidden"
+            />
+            <img 
+              src={darkModeLogo} 
+              alt="SmartSpend" 
+              className="h-10 w-auto object-contain hidden dark:block"
+            />
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" asChild className="hidden sm:inline-flex">
