@@ -19,6 +19,7 @@ import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { RecentExpenses } from "@/components/expenses/RecentExpenses";
 import { MonthlyStats } from "@/components/dashboard/MonthlyStats";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OnboardingCard } from "@/components/OnboardingCard";
 
 const ExpenseChart = lazy(() =>
   import("@/components/dashboard/ExpenseChart").then((m) => ({ default: m.ExpenseChart }))
@@ -74,14 +75,14 @@ function SummaryChip({
 
   return (
     <div className={`rounded-lg border px-3 py-2 ${toneClass}`}>
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[11px] text-muted-foreground">{label}</p>
-          <p className="text-lg font-bold truncate">{value}</p>
+      <div className="flex items-center gap-2">
+        <div className="shrink-0 p-1.5 rounded-md bg-background/50">{icon}</div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] text-muted-foreground">{label}</p>
+          <p className="text-sm font-bold truncate">{value}</p>
         </div>
-        <div className="shrink-0">{icon}</div>
       </div>
-      {helper && <p className="mt-1 text-[11px] text-muted-foreground">{helper}</p>}
+      {helper && <p className="mt-1 text-[10px] text-muted-foreground">{helper}</p>}
     </div>
   );
 }
@@ -99,12 +100,18 @@ export default function Home() {
   }, [searchParams]);
 
   const shouldLoadStats = activeTab === "stats" || activeTab === "calendar";
+  
+  const { data: profile } = trpc.profile.getSmartProfile.useQuery();
+  const salaryDay = profile?.financialInfo?.hasFixedSalary && profile?.financialInfo?.salaryDay 
+    ? Number(profile.financialInfo.salaryDay) 
+    : undefined;
+
   const { data: summary, isFetching: summaryFetching } = trpc.expense.getMonthSummary.useQuery(
-    { month },
+    { month, salaryDay },
     { staleTime: 30_000 }
   );
   const { data: stats, isFetching: statsFetching } = trpc.expense.getMonthlyStats.useQuery(
-    { month },
+    { month, salaryDay },
     { enabled: shouldLoadStats, staleTime: 30_000 }
   );
   const refreshInferences = trpc.profile.refreshInferences.useMutation({
@@ -141,7 +148,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950/40">
       <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-5">
-        <header className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <OnboardingCard />
+        <header className="flex flex-col gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl md:text-3xl font-bold">{pageTitle}</h1>
@@ -151,64 +159,42 @@ export default function Home() {
               أهلاً {user?.name || "صديقي"}، ابدأ بتسجيل العملية بسرعة واترك التحليلات لقسم الإحصائيات.
             </p>
           </div>
-
-          <div className="flex flex-col sm:flex-row gap-2">
-            <input
-              type="month"
-              value={month}
-              onChange={(event) => handleMonthChange(event.target.value)}
-              className="h-10 rounded-md border bg-background px-3 text-sm"
-            />
-            <Button variant="outline" className="gap-2" onClick={handleRefresh} disabled={summaryFetching || statsFetching}>
-              <RefreshCw className={summaryFetching || statsFetching ? "w-4 h-4 animate-spin" : "w-4 h-4"} />
-              تحديث
-            </Button>
-            {activeTab !== "record" ? (
-              <Button variant="outline" className="gap-2" onClick={() => updateView("record")}>
-                <ReceiptText className="w-4 h-4" />
-                التسجيل
-              </Button>
-            ) : (
-              <Button variant="outline" className="gap-2" onClick={() => updateView("stats")}>
-                <BarChart3 className="w-4 h-4" />
-                الإحصائيات
-              </Button>
-            )}
-          </div>
         </header>
 
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <section className="grid grid-cols-2 gap-3">
           <SummaryChip
             label="دخل الشهر"
             value={`${money(summary?.totalIncome)} ج.م`}
             tone="income"
-            icon={<WalletCards className="w-5 h-5" />}
+            icon={<WalletCards className="w-4 h-4" />}
           />
           <SummaryChip
             label="مصروف الشهر"
             value={`${money(summary?.totalExpense)} ج.م`}
             tone="expense"
-            icon={<TrendingDown className="w-5 h-5" />}
-          />
-          <SummaryChip
-            label="الصافي"
-            value={`${money(netFlow)} ج.م`}
-            tone="neutral"
-            helper={`${summary?.count || 0} عملية هذا الشهر`}
-            icon={netFlow >= 0 ? <TrendingUp className="w-5 h-5 text-emerald-600" /> : <TrendingDown className="w-5 h-5 text-rose-600" />}
+            icon={<TrendingDown className="w-4 h-4" />}
           />
         </section>
 
         {activeTab === "record" && (
-          <section className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)] gap-5 items-start">
-            <ExpenseForm
-              onSuccess={() => {
-                utils.expense.getMonthSummary.invalidate({ month });
-                utils.expense.getMonthlyStats.invalidate({ month });
-                utils.profile.getSmartProfile.invalidate();
-              }}
-            />
-            <RecentExpenses limit={7} onRefresh={() => utils.expense.getMonthSummary.invalidate({ month })} />
+          <section className="space-y-5">
+            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)] gap-5 items-start">
+              <ExpenseForm
+                onSuccess={() => {
+                  utils.expense.getMonthSummary.invalidate({ month });
+                  utils.expense.getMonthlyStats.invalidate({ month });
+                  utils.profile.getSmartProfile.invalidate();
+                }}
+              />
+              <RecentExpenses limit={7} onRefresh={() => utils.expense.getMonthSummary.invalidate({ month })} />
+            </div>
+            
+            <div className="pt-6 pb-2 border-t flex justify-center">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2" onClick={() => updateView("stats")}>
+                <BarChart3 className="w-5 h-5" />
+                عرض الإحصائيات الكاملة
+              </Button>
+            </div>
           </section>
         )}
 
@@ -236,7 +222,7 @@ export default function Home() {
               {statsFetching && !stats ? (
                 <div className="py-10 text-center text-sm text-muted-foreground">جاري تحميل التقويم...</div>
               ) : (
-                <MonthlyCalendar month={month} dayTrend={stats?.dayTrend || []} />
+                <MonthlyCalendar month={month} dayTrend={stats?.dayTrend || []} salaryDay={salaryDay} />
               )}
             </CardContent>
           </Card>
@@ -327,10 +313,8 @@ function StatsView({
       {/* Main content: charts + sidebar */}
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-5 items-start">
         {/* Left: Charts */}
-        <div className="space-y-5">
-          <BehaviorInsights stats={stats} />
-
-          <Card>
+        <div className="space-y-5 flex flex-col">
+          <Card className="order-1">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <BarChart3 className="w-5 h-5 text-sky-600" />
@@ -350,6 +334,10 @@ function StatsView({
               </Suspense>
             </CardContent>
           </Card>
+          
+          <div className="order-2">
+            <BehaviorInsights stats={stats} />
+          </div>
         </div>
 
         {/* Right: Sidebar */}

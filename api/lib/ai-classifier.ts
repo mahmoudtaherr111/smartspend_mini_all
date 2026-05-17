@@ -31,11 +31,16 @@ const SYSTEM_PROMPT = `أنت SmartSpend AI — مصنف مالي مصري.
 8. لا تستخدم "متنوعات" إلا للنص الغامض تماماً
 9. إلكترونيات(موبايل/لابتوب)="تسوق/أجهزة إلكترونية" مش "فواتير"
 10. ممنوع needs_clarification=true لو فيه أرقام وفئات واضحة
+11. **السياق الشخصي**: لو مذكور اسم شخص في "السياق الشخصي للمستخدم"، استخدم العلاقة والفئة المقترحة
+12. **الأسماء المعروفة**: لو المستخدم قال "أديت محمد 500" ومحمد ابنه حسب السياق، صنف كـ "مصاريف أولاد" مش "تحويلات شخصية"
+13. اكتب في notes وصف شخصي مفيد يذكر الاسم والعلاقة لو معروفة
 
 ## أمثلة:
 "رحت الحلاق 80ج وسبت للمساعد 20" → [{80,تسوق,عناية شخصية,expense},{20,متنوعات,عام,expense}]
 "خدت المصروف 200 صرفت 100 درس" → [{200,مرتب,مرتب أساسي,income},{100,تعليم,دروس خصوصية,expense}]
 "نزلت بلايستيشن 60ج وجبت تويست 20 ولعبت كورة 50" → [{60,ترفيه,ألعاب,expense},{20,أكل وشرب,سناكس,expense},{50,ترفيه,رياضة وجيم,expense}]
+"أديت محمد 500" (محمد=ابن) → [{500,تحويلات,مصاريف الأولاد,expense,notes:"تحويل لابنك محمد"}]
+"بعتت لأمي 1000" → [{1000,تحويلات,دعم الأهل,expense,notes:"تحويل لوالدتك"}]
 
 ## الفئات:
 ${buildCategoryList()}
@@ -84,7 +89,7 @@ export async function aiClassify(
   apiKey2: string,
   modelName: string,
   maxTokens: number,
-  contextObj: { totalIncome: number; totalExpense: number; currentDate: string; userProfileContext?: string; ruleHints?: ParsedTransaction[] },
+  contextObj: { totalIncome: number; totalExpense: number; currentDate: string; userProfileContext?: string; personalContext?: string; ruleHints?: ParsedTransaction[] },
   skipClarification?: boolean
 ): Promise<AIClassificationResult | null> {
   let userPrompt = `السياق المالي الحالي:
@@ -96,6 +101,10 @@ export async function aiClassify(
 
   if (contextObj.userProfileContext) {
     userPrompt += `\n\nSmart user profile context:\n${contextObj.userProfileContext}`;
+  }
+
+  if (contextObj.personalContext) {
+    userPrompt += `\n\n${contextObj.personalContext}`;
   }
 
   if (contextObj.ruleHints && contextObj.ruleHints.length > 0) {

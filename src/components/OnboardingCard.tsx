@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/providers/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,26 +13,31 @@ import { toast } from "sonner";
 const questionMeta: Record<string, { text: string; emoji: string; hint?: string }> = {
   income_level:            { text: "كام تقريباً دخلك الشهري؟", emoji: "💰", hint: "بالجنيه المصري - اكتب رقم تقريبي" },
   income_sources:          { text: "إيه مصادر دخلك الأساسية؟", emoji: "🏦", hint: "ممكن تختار أكثر من واحد" },
-  family_responsibility:   { text: "هل أنت مسؤول مادياً عن أسرتك أو حد تاني؟", emoji: "👨‍👩‍👧" },
+  has_fixed_salary:        { text: "مرتبك بينزل في وقت ثابت كل شهر؟", emoji: "📅", hint: "عشان نحسب شهرك المالي صح" },
+  salary_day:              { text: "مرتبك بينزل يوم كام من الشهر؟", emoji: "💵", hint: "رقم من 1 لـ 31" },
+  app_goal:                { text: "إيه أهم حاجة عايز SmartSpend يساعدك فيها؟", emoji: "🎯" },
   children:                { text: "عندك أطفال؟", emoji: "👶" },
   children_count:          { text: "كام طفل عندك؟", emoji: "👧" },
+  children_names:          { text: "إيه أسماء أطفالك؟", emoji: "👧", hint: "اكتب اسم كل طفل" },
   living_situation:        { text: "إيه وضع سكنك الحالي؟", emoji: "🏠" },
+  partner_name:            { text: "إيه اسم شريك/شريكة حياتك؟", emoji: "💑", hint: "عشان نعرفه لما تقول بعتت فلوس لـ..." },
   housing_type:            { text: "سكنك إيجار ولا ملك؟", emoji: "🏡" },
   monthly_rent:            { text: "الإيجار بيبلغ كام شهرياً؟", emoji: "🔑", hint: "بالجنيه المصري" },
-  spending_pattern:        { text: "إزاي بتوصف طريقة صرفك؟", emoji: "💳" },
   supports_others:         { text: "بتصرف على مين بشكل منتظم؟", emoji: "🤝", hint: "ممكن تختار أكثر من واحد" },
-  fixed_commitments:       { text: "كام التزام ثابت شهري عندك؟", emoji: "📋", hint: "إيجار + أقساط + اشتراكات..." },
-  fixed_commitments_total: { text: "إجمالي التزاماتك الثابتة شهرياً كام؟", emoji: "📊", hint: "بالجنيه المصري تقريباً" },
   has_debt:                { text: "عندك أي ديون أو أقساط؟", emoji: "📉" },
   debt_monthly:            { text: "بتدفع كام على الديون شهرياً؟", emoji: "💸", hint: "بالجنيه المصري تقريباً" },
-  has_savings:             { text: "عندك ادخار أو صندوق طوارئ؟", emoji: "🏦" },
-  biggest_expense_category:{ text: "إيه أكبر بند بيستهلك فلوسك شهرياً؟", emoji: "🛒" },
-  app_goal:                { text: "إيه أهم حاجة عايز SmartSpend يساعدك فيها؟", emoji: "🎯" },
   profession:              { text: "إيه وظيفتك أو مجال شغلك؟", emoji: "💼", hint: "اكتب بحرية - مثال: مصمم، موظف، طبيب" },
-  age_range:               { text: "إيه فئتك العمرية؟", emoji: "🎂" },
+  car_ownership:           { text: "عندك عربية خاصة؟", emoji: "🚗" },
+  car_type:                { text: "نوع العربية إيه؟", emoji: "🚘", hint: "مثال: كيا سيراتو" },
+  monthly_car_cost:        { text: "بتصرف كام على العربية شهرياً تقريباً؟", emoji: "⛽", hint: "بنزين + صيانة بالجنيه" },
+  has_pets:                { text: "عندك حيوانات أليفة؟", emoji: "🐾" },
+  pet_names:               { text: "إيه أسماءهم؟", emoji: "🐱" },
+  smoking:                 { text: "بتدخن؟", emoji: "🚬" },
+  subscription_services:   { text: "إيه الاشتراكات الثابتة عندك؟", emoji: "📺", hint: "ممكن تختار أكثر من واحد" },
+  regular_contacts:        { text: "مين الأشخاص اللي بتحولهم فلوس بانتظام؟", emoji: "📇", hint: "غير العيلة - اكتب اسم كل شخص" },
 };
 
-const TOTAL_QUESTIONS = 12; // approximate for progress
+const TOTAL_QUESTIONS = 21; // including conditional salary_day questions
 
 function normalizeOptions(question: any) {
   const options = Array.isArray(question?.options) ? question.options : [];
@@ -43,64 +48,142 @@ function normalizeOptions(question: any) {
   });
 }
 
+function initValue(type: string | undefined) {
+  if (type === "multi_select") return [];
+  if (type === "text_list") return [""];
+  return "";
+}
+
 export function OnboardingCard() {
   const utils = trpc.useUtils();
   const [show, setShow] = useState(false);
   const [value, setValue] = useState<any>("");
-  const [localNextQuestion, setLocalNextQuestion] = useState<any>(null);
+  // Track the current question locally to avoid race conditions with query invalidation
+  const [localQuestion, setLocalQuestion] = useState<any>(null);
+  const isUsingLocal = useRef(false);
+  // CRITICAL: Accumulate ALL answers locally so we never lose them even if DB save fails
+  const accumulatedAnswers = useRef<Record<string, any>>({});
 
   const profile = trpc.profile.getSmartProfile.useQuery(undefined, { retry: false });
   const nextQuestion = trpc.profile.getNextOnboardingQuestion.useQuery(undefined, { retry: false });
+  const dismissMutation = trpc.profile.dismissOnboarding.useMutation();
   const submitAnswer = trpc.profile.submitOnboardingAnswer.useMutation({
-    onSuccess: async (data) => {
+    onSuccess: (data) => {
+      // Merge server-returned answers into our local accumulator
+      if (data.allAnswers) {
+        accumulatedAnswers.current = { ...accumulatedAnswers.current, ...data.allAnswers };
+      }
+
       if (!data.nextQuestion) {
         toast.success("تم تجهيز البروفايل الذكي! 🎉 التقارير ستكون أدق وأكثر تخصيصاً.");
         setShow(false);
-        setLocalNextQuestion(null);
+        setLocalQuestion(null);
+        isUsingLocal.current = false;
+        accumulatedAnswers.current = {};
       } else {
-        setLocalNextQuestion(data.nextQuestion);
+        // Use local question state to avoid race condition with server refetch
+        setLocalQuestion(data.nextQuestion);
+        isUsingLocal.current = true;
       }
-      const nextType = data.nextQuestion?.type;
-      setValue(nextType === "multi_select" ? [] : nextType === "boolean" ? "" : "");
+      // Reset value for the NEXT question type
+      setValue(initValue(data.nextQuestion?.type));
+      // Only invalidate the profile (for progress count), NOT the question query
       utils.profile.getSmartProfile.invalidate();
-      utils.profile.getNextOnboardingQuestion.invalidate();
     },
     onError: (err) => toast.error(err.message || "تعذر حفظ الإجابة. جرب تاني."),
   });
 
-  const question = (localNextQuestion || nextQuestion.data?.question) as any;
-  const options = useMemo(() => normalizeOptions(question), [question]);
-  const isComplete = Boolean(profile.data?.profileCompleted || nextQuestion.data?.profileCompleted);
+  // Initialize accumulated answers from server profile on first load
+  useEffect(() => {
+    if (profile.data?.onboardingAnswers && Object.keys(accumulatedAnswers.current).length === 0) {
+      accumulatedAnswers.current = { ...profile.data.onboardingAnswers };
+    }
+  }, [profile.data?.onboardingAnswers]);
 
-  const answeredCount = Object.keys(profile.data?.onboardingAnswers || {}).length;
+  // Determine which question to show: local (after submit) or server (initial load)
+  const question = isUsingLocal.current && localQuestion ? localQuestion : nextQuestion.data?.question;
+  const options = useMemo(() => normalizeOptions(question), [question]);
+  // Only consider complete if profileCompleted=true AND there are no more questions from the engine
+  const isComplete = Boolean(
+    (profile.data?.profileCompleted || nextQuestion.data?.profileCompleted) && !question
+  );
+
+  const answeredCount = Math.max(
+    Object.keys(profile.data?.onboardingAnswers || {}).length,
+    Object.keys(accumulatedAnswers.current).length
+  );
   const progress = Math.min(95, Math.round((answeredCount / TOTAL_QUESTIONS) * 100));
 
+  // Smart reminder: show after delay + 24h cooldown
   useEffect(() => {
     if (profile.data && !isComplete && question) {
-      const timer = setTimeout(() => setShow(true), 800);
-      return () => clearTimeout(timer);
+      const lastAsked = nextQuestion.data?.lastAskedAt;
+      let inCooldown = false;
+      if (lastAsked) {
+        const hoursSince = (Date.now() - new Date(lastAsked).getTime()) / (1000 * 3600);
+        if (hoursSince < 24) inCooldown = true;
+      }
+      if (!inCooldown) {
+        const delay = answeredCount === 0 ? 0 : 180000; // immediate for new users, 3min otherwise
+        const timer = setTimeout(() => setShow(true), delay);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [profile.data, isComplete, question]);
+  }, [profile.data, isComplete, question, nextQuestion.data?.lastAskedAt, answeredCount]);
 
+  // Initialize value when server question loads (only if we're not using local state)
   useEffect(() => {
-    if (!localNextQuestion) {
-      setValue(question?.type === "multi_select" ? [] : "");
+    if (!isUsingLocal.current && question) {
+      setValue(initValue(question.type));
     }
-  }, [question?.key, question?.type, localNextQuestion]);
+  }, [question?.key]);
 
-  if (!show || isComplete || !question) return null;
+  // If queries are still loading, don't render anything yet
+  if (profile.isLoading || nextQuestion.isLoading) return null;
+  
+  // If profile is truly complete and no more questions, hide the card
+  if (isComplete) return null;
+  
+  // If there's no question (query error or all answered), check if we should show based on error
+  if (!question) {
+    // If the query errored, show a retry button so user isn't stuck
+    if (nextQuestion.isError || profile.isError) {
+      return null; // silently hide on error
+    }
+    return null;
+  }
+
+  if (!show) {
+    return (
+      <Button 
+        onClick={() => setShow(true)} 
+        className="w-full sm:w-auto mb-4 bg-emerald-600 hover:bg-emerald-700 text-white gap-2 shadow-md animate-in fade-in zoom-in"
+      >
+        <Sparkles className="w-4 h-4" />
+        كمل بياناتك عشان نعرفك أكتر
+      </Button>
+    );
+  }
 
   const meta = questionMeta[question.key] || { text: question.text, emoji: "❓" };
   const selectedList = Array.isArray(value) ? value : [];
 
   const submit = (skipped = false) => {
     if (submitAnswer.isPending) return;
-    submitAnswer.mutate({ key: question.key, value, skipped });
+    submitAnswer.mutate({
+      key: question.key,
+      value,
+      skipped,
+      // Send ALL accumulated answers so backend can reconstruct state even if DB lost them
+      accumulatedAnswers: accumulatedAnswers.current,
+    });
   };
 
   const canSubmit =
     question.type === "boolean"
       ? typeof value === "boolean"
+      : question.type === "text_list"
+      ? Array.isArray(value) && value.some((v: string) => v.trim() !== "")
       : Array.isArray(value)
       ? value.length > 0
       : value !== "";
@@ -179,6 +262,41 @@ export function OnboardingCard() {
       );
     }
 
+    // text_list: multiple text inputs (e.g. children names)
+    if (question.type === "text_list") {
+      const listItems = Array.isArray(value) ? value : [""];
+      const listCount = question.listCount || 3;
+      return (
+        <div className="space-y-2">
+          {listItems.map((item: string, idx: number) => (
+            <Input
+              key={idx}
+              value={item}
+              onChange={(e) => {
+                const next = [...listItems];
+                next[idx] = e.target.value;
+                setValue(next);
+              }}
+              placeholder={`الاسم ${idx + 1}...`}
+              className="h-11 text-base"
+              dir="rtl"
+              autoFocus={idx === 0}
+            />
+          ))}
+          {listItems.length < Math.max(listCount, 10) && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full text-sm text-muted-foreground h-9"
+              onClick={() => setValue([...listItems, ""])}
+            >
+              + إضافة اسم تاني
+            </Button>
+          )}
+        </div>
+      );
+    }
+
     return (
       <Input
         type={question.type === "number" ? "number" : "text"}
@@ -222,7 +340,7 @@ export function OnboardingCard() {
                 </p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" className="shrink-0 -mt-1" onClick={() => setShow(false)}>
+            <Button variant="ghost" size="icon" className="shrink-0 -mt-1" onClick={() => { setShow(false); dismissMutation.mutate(); }}>
               <X className="w-4 h-4" />
             </Button>
           </div>
@@ -265,7 +383,7 @@ export function OnboardingCard() {
             </Button>
             <Button
               variant="ghost"
-              onClick={() => setShow(false)}
+              onClick={() => { setShow(false); dismissMutation.mutate(); }}
               className="sm:w-24 h-11 text-sm text-muted-foreground"
             >
               لاحقاً

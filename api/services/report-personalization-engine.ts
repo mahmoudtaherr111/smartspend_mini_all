@@ -32,25 +32,19 @@ export function buildReportPersonalizationContext(
   const lines: string[] = [
     "═══ بروفايل المستخدم الذكي (خصص التقرير بناءً عليه) ═══",
     `المهنة: ${basic.profession ?? "غير محددة"}`,
-    `الفئة العمرية: ${(lifestyle as any).ageRange ?? "غير محدد"}`,
     `الدخل الشهري: ${financial.averageMonthlyIncome ?? "غير محدد"} ج.م`,
     `مصادر الدخل: ${Array.isArray(financial.incomeSources) && financial.incomeSources.length > 0 ? financial.incomeSources.join("، ") : "غير محدد"}`,
     `الهدف الأساسي: ${goalMap[String(financial.primaryGoal)] ?? "غير محدد"}`,
-    `نمط الصرف: ${patternMap[String(financial.spendingPattern)] ?? "غير محدد"}`,
-    `أكبر بند صرف (حسب المستخدم): ${(financial as any).biggestExpenseCategory ?? "غير محدد"}`,
   ];
 
   // Family & housing
-  lines.push(`السكن: ${housingMap[String((lifestyle as any).housingType)] ?? "غير محدد"}`);
+  lines.push(`وضع السكن: ${housingMap[String((lifestyle as any).housingType)] ?? lifestyle.livingSituation ?? "غير محدد"}`);
   if ((lifestyle as any).monthlyRent) lines.push(`الإيجار الشهري: ${(lifestyle as any).monthlyRent} ج.م`);
   lines.push(`لديه أطفال: ${lifestyle.hasChildren === true ? `نعم (${lifestyle.childrenCount || ""})` : lifestyle.hasChildren === false ? "لا" : "غير محدد"}`);
-  lines.push(`مسؤول عن أسرة: ${lifestyle.responsibleForFamily === true ? "نعم" : lifestyle.responsibleForFamily === false ? "لا" : "غير محدد"}`);
   lines.push(`يدعم مالياً: ${Array.isArray(lifestyle.supportsOthers) && lifestyle.supportsOthers.length > 0 ? lifestyle.supportsOthers.join("، ") : "لا أحد"}`);
 
-  // Debt & savings
+  // Debt
   lines.push(`عليه ديون/أقساط: ${(financial as any).hasDebt === true ? `نعم (شهرياً ${(financial as any).monthlyDebtPayment ?? "؟"} ج.م)` : (financial as any).hasDebt === false ? "لا" : "غير محدد"}`);
-  lines.push(`حالة الادخار: ${savingsMap[String((financial as any).savingsStatus)] ?? "غير محدد"}`);
-  lines.push(`إجمالي الالتزامات الثابتة: ${(financial as any).fixedCommitmentsTotal ?? lifestyle.fixedMonthlyCommitments ?? "غير محدد"} ج.م`);
 
   // AI inferred
   lines.push(`الاستقرار المالي المستنتج: ${snapshot.inferredAttributes.financialStability ?? inferred.financialStability ?? "غير محدد"}`);
@@ -59,8 +53,39 @@ export function buildReportPersonalizationContext(
   lines.push(`طفرات صرف فجائية: ${snapshot.behaviorFlags.hasSpikeSpending ? "نعم" : "لا"}`);
   lines.push(`التفاصيل المفضلة: ${preferences.detailLevel === "detailed" ? "تفصيلي" : preferences.detailLevel === "summary" ? "مختصر" : "متوازن"}`);
 
+  // Deep personal data (Phase 7)
+  const childrenNames = Array.isArray(lifestyle.childrenNames) ? lifestyle.childrenNames.filter(Boolean) : [];
+  if (childrenNames.length > 0) {
+    lines.push(`أسماء الأطفال: ${childrenNames.join("، ")}`);
+  }
+  if ((lifestyle as any).partnerName) {
+    lines.push(`شريك الحياة: ${(lifestyle as any).partnerName}`);
+  }
+  const regularContacts = Array.isArray((lifestyle as any).regularContacts) ? (lifestyle as any).regularContacts.filter(Boolean) : [];
+  if (regularContacts.length > 0) {
+    lines.push(`أشخاص يحول لهم بانتظام: ${regularContacts.join("، ")}`);
+  }
+  if ((lifestyle as any).carOwnership) {
+    lines.push(`لديه سيارة${(lifestyle as any).carType ? ` (${(lifestyle as any).carType})` : ""}`);
+  }
+  if ((lifestyle as any).smoking) {
+    lines.push(`مدخن: نعم`);
+  }
+  const subs = Array.isArray((lifestyle as any).subscriptions) ? (lifestyle as any).subscriptions : [];
+  if (subs.length > 0) {
+    const subMap: Record<string, string> = {
+      netflix: "Netflix", shahid: "شاهد", spotify: "Spotify",
+      youtube_premium: "YouTube Premium", gym: "جيم/نادي",
+      internet: "إنترنت", phone_plan: "باقة موبايل", insurance: "تأمين",
+    };
+    lines.push(`اشتراكات ثابتة: ${subs.map((s: string) => subMap[s] || s).join("، ")}`);
+  }
+
   lines.push("");
   lines.push("تعليمات التخصيص: خاطب المستخدم بشكل شخصي كمستشاره المالي الخاص. اذكر مهنته وهدفه وظروفه (أطفال/ديون/سكن). قارن صرفه الفعلي بدخله المعلن والتزاماته. اجعل التقرير مُعد خصيصاً له وليس عاماً.");
+  if (childrenNames.length > 0 || (lifestyle as any).partnerName || regularContacts.length > 0) {
+    lines.push("تعليمة إضافية: عند تحليل التحويلات، اذكر أسماء الأشخاص المعروفين بدلاً من 'تحويلات' فقط.");
+  }
 
   return lines.join("\n");
 }

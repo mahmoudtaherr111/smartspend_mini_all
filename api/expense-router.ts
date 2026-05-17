@@ -140,15 +140,17 @@ export const expenseRouter = router({
     }),
 
   getMonthSummary: authedProcedure
-    .input(z.object({ month: z.string().regex(/^\d{4}-\d{2}$/) }))
+    .input(z.object({ 
+      month: z.string().regex(/^\d{4}-\d{2}$/),
+      salaryDay: z.number().min(1).max(31).optional().nullable()
+    }))
     .query(async ({ ctx, input }) => {
       const db = getDb();
       const userId = ctx.user!.id;
       const userType = ctx.user!.type;
 
-      const startDate = new Date(input.month + "-01");
-      const endDate = new Date(startDate);
-      endDate.setMonth(endDate.getMonth() + 1);
+      const { getFinancialMonthDates } = await import("./services/financial-month");
+      const { startDate, endDate } = getFinancialMonthDates(input.month, input.salaryDay);
 
       const [summary] = await db
         .select({
@@ -175,15 +177,17 @@ export const expenseRouter = router({
     }),
 
   getMonthlyStats: authedProcedure
-    .input(z.object({ month: z.string() }))
+    .input(z.object({ 
+      month: z.string(),
+      salaryDay: z.number().min(1).max(31).optional().nullable()
+    }))
     .query(async ({ ctx, input }) => {
       const db = getDb();
       const userId = ctx.user!.id;
       const userType = ctx.user!.type;
 
-      const startDate = new Date(input.month + "-01");
-      const endDate = new Date(startDate);
-      endDate.setMonth(endDate.getMonth() + 1);
+      const { getFinancialMonthDates } = await import("./services/financial-month");
+      const { startDate, endDate } = getFinancialMonthDates(input.month, input.salaryDay);
 
       // Get user's first expense ever for date-aware analytics
       const firstExpense = await db
@@ -200,9 +204,14 @@ export const expenseRouter = router({
         .from(expenses)
         .where(and(eq(expenses.userId, userId), eq(expenses.userType, userType), gte(expenses.date, startDate), lte(expenses.date, endDate)));
 
-      const prevStartDate = new Date(startDate);
-      prevStartDate.setMonth(prevStartDate.getMonth() - 1);
-      const prevEndDate = new Date(startDate);
+      // Calculate previous month's dates based on financial month logic
+      const prevMonthDate = new Date(input.month + "-01");
+      prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
+      const prevMonthStr = prevMonthDate.toISOString().slice(0, 7);
+      const prevMonthDates = getFinancialMonthDates(prevMonthStr, input.salaryDay);
+      const prevStartDate = prevMonthDates.startDate;
+      const prevEndDate = prevMonthDates.endDate;
+
       const previousItems = await db
         .select()
         .from(expenses)

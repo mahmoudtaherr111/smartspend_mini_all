@@ -27,6 +27,11 @@ import {
   buildBackendPersonalizedInsights,
   buildReportPersonalizationContext,
 } from "./services/report-personalization-engine";
+import {
+  buildPersonalContext,
+  buildPersonalContextPrompt,
+  buildFamilyReportContext,
+} from "./services/personal-context-builder";
 
 
 async function trackTokens(userId: number, userType: string, tokens: number) {
@@ -512,6 +517,7 @@ export const aiRouter = router({
         monthlyContext: { totalIncome, totalExpense },
         userProfileContext: {
           promptSummary: summarizeProfileForAI(smartProfile),
+          personalContextPrompt: buildPersonalContextPrompt(buildPersonalContext(smartProfile)),
           hasChildren: smartProfile.lifestyleInfo.hasChildren as boolean | null,
           responsibleForFamily: smartProfile.lifestyleInfo.responsibleForFamily as boolean | null,
           supportsOthers: smartProfile.lifestyleInfo.supportsOthers,
@@ -863,6 +869,17 @@ export const aiRouter = router({
       const previousAiAttributes = userProfile.aiInferredAttributes;
       const behaviorSnapshot = buildBehaviorSnapshot(userExpenses, prevExpenses, userProfile);
       const reportPersonalizationContext = buildReportPersonalizationContext(userProfile, behaviorSnapshot);
+      const personalCtx = buildPersonalContext(userProfile);
+      const familyReportContext = buildFamilyReportContext(personalCtx);
+      const personalContextForClassification = buildPersonalContextPrompt(personalCtx);
+
+      // Financial month context — salary day awareness for AI reports
+      let financialMonthContext = "";
+      const salaryDay = Number((userProfile.financialInfo as any).salaryDay) || 0;
+      if (salaryDay > 0) {
+        const { buildFinancialMonthPrompt } = await import("./services/financial-month");
+        financialMonthContext = buildFinancialMonthPrompt(salaryDay, input.month);
+      }
 
       // ── 2. Backend Calculations ──
       const totalExpense = userExpenses.filter(e => e.type === "expense").reduce((s, e) => s + Number(e.amount), 0);
@@ -887,7 +904,7 @@ export const aiRouter = router({
         bySubCategory[subKey].amount += Number(e.amount);
       });
       const sortedSubs = Object.entries(bySubCategory).sort((a, b) => b[1].amount - a[1].amount);
-      const topSubCategories = sortedSubs.slice(0, 10).map(([name, data]) => ({
+      const topSubCategories = sortedSubs.map(([name, data]) => ({
         name, amount: data.amount, mainCat: data.mainCat,
         percent: totalExpense > 0 ? Math.round((data.amount / totalExpense) * 100) : 0,
       }));
@@ -988,6 +1005,8 @@ export const aiRouter = router({
       let aiResponseLength = "medium";
       let aiFocus = "balanced";
       let aiSystemPrompt = "[Persona] مستشار مالي مصري ذكي ومتعاطف. لغتك عامية مصرية راقية ومبسطة، وتتحدث وكأنك إنسان حقيقي.\n[Rules]\n1. لا تستخدم العناوين الآلية (مثل التطبيع أو السببية).\n2. واجه المستخدم بالأرقام الحقيقية.\n3. قدم نصائح عملية مصممة خصيصاً للمستخدم بناءً على سلوكه المالي.";
+      let aiAdvancedInstructions = "";
+      let aiReportStructureOverride = "";
 
       try {
         const client = await getAiClient("report", ctx.user.plan);
@@ -1008,6 +1027,8 @@ export const aiRouter = router({
           if (s.key === "ai_response_length" && s.value) aiResponseLength = s.value;
           if (s.key === "ai_focus" && s.value) aiFocus = s.value;
           if (s.key === "ai_system_prompt" && s.value) aiSystemPrompt = s.value;
+          if (s.key === "ai_advanced_instructions" && s.value) aiAdvancedInstructions = s.value;
+          if (s.key === "ai_report_structure_override" && s.value) aiReportStructureOverride = s.value;
         });
 
         // Check token limit
@@ -1075,7 +1096,10 @@ ${prevTotal > 0 ? `تغير إجمالي المصاريف عن الشهر الس
       // ── 6. Try AI, fallback to backend ──
       const personalizedSummaryForAI = `${summaryForAI}
 ---
-${reportPersonalizationContext}`;
+${reportPersonalizationContext}
+${familyReportContext}
+${personalContextForClassification}
+${financialMonthContext}`;
 
       let responseJson: any;
       let aiErrorMsg = "";
@@ -1095,32 +1119,43 @@ ${reportPersonalizationContext}`;
 
           // ── Dynamic structure instruction based on target word count from admin dashboard ──
           let structureInstruction: string;
-          let sectionCount: number;
-          if (reportTargetWords <= 300) {
-            sectionCount = 2;
-            structureInstruction = `اكتب ملخصاً مالياً مركزاً (${reportTargetWords} كلمة تقريباً) مقسم إلى ${sectionCount} قسم: (1) الوضع المالي العام بالأرقام، (2) أهم توصية عملية.`;
-          } else if (reportTargetWords <= 600) {
-            sectionCount = 3;
-            structureInstruction = `اكتب تقريراً مالياً (${reportTargetWords} كلمة تقريباً) مقسم إلى ${sectionCount} أقسام مفصلة:
+          let sectionCount: number = 4;
+          
+          if (aiReportStructureOverride && aiReportStructureOverride.trim() !== "") {
+            structureInstruction = aiReportStructureOverride;
+            sectionCount = 0; // Not explicitly defined when overridden
+          } else {
+            if (reportTargetWords <= 300) {
+              sectionCount = 2;
+              structureInstruction = `اكتب ملخصاً مالياً مركزاً (${reportTargetWords} كلمة تقريباً) مقسم إلى ${sectionCount} قسم: (1) الوضع المالي العام بالأرقام، (2) أهم توصية عملية.`;
+            } else if (reportTargetWords <= 600) {
+              sectionCount = 3;
+              structureInstruction = `اكتب تقريراً مالياً (${reportTargetWords} كلمة تقريباً) مقسم إلى ${sectionCount} أقسام مفصلة:
 القسم 1 - نظرة عامة: اعرض الأرقام الأساسية (الدخل، المصروف، الصافي، المتوسط اليومي) مع تعليق عليها.
 القسم 2 - تحليل الفئات: حلل أعلى 3-5 فئات إنفاق بالتفصيل مع النسب والمقارنة بالشهر السابق.
 القسم 3 - التوصيات: قدم 3-4 نصائح عملية ومحددة بأرقام (مثلاً "قلل بند X من Y إلى Z").`;
-          } else if (reportTargetWords <= 1000) {
-            sectionCount = 4;
-            structureInstruction = `اكتب تقريراً مالياً شاملاً (${reportTargetWords} كلمة تقريباً) مقسم إلى ${sectionCount} أقسام مفصلة:
+            } else if (reportTargetWords <= 1000) {
+              sectionCount = 4;
+              structureInstruction = `اكتب تقريراً مالياً شاملاً (${reportTargetWords} كلمة تقريباً) مقسم إلى ${sectionCount} أقسام مفصلة:
 القسم 1 - نظرة عامة: الأرقام الأساسية + المقارنة بالشهر السابق + تقييم الوضع المالي العام.
 القسم 2 - تحليل الفئات الفرعية: حلل كل فئة فرعية بالتفصيل (قهوة/مطاعم/أجهزة إلكترونية/مواصلات...) مع ذكر الأوصاف والأماكن إن وُجدت.
 القسم 3 - الأنماط السلوكية: اشرح نمط الإنفاق (اندفاعي؟ محافظ؟) مع نقاط القوة والضعف المالية.
 القسم 4 - خطة التحسين: قدم 5+ توصيات استراتيجية مفصلة بأرقام مقترحة وجدول زمني.`;
-          } else {
-            sectionCount = 5;
-            structureInstruction = `اكتب تقريراً مالياً عميقاً ومشبعاً (لا يقل عن ${reportTargetWords} كلمة) مقسم إجبارياً إلى ${sectionCount} أقسام رئيسية على الأقل:
+            } else {
+              sectionCount = 5;
+              structureInstruction = `اكتب تقريراً مالياً عميقاً ومشبعاً (لا يقل عن ${reportTargetWords} كلمة) مقسم إجبارياً إلى ${sectionCount} أقسام رئيسية على الأقل:
 القسم 1 - نظرة عامة شاملة: الأرقام الدقيقة + المقارنات + نسبة الاستهلاك من الدخل + تقييم السيولة.
 القسم 2 - تحليل تفصيلي عميق: كل فئة فرعية وكل عملية فردية (ستاربكس، جرير، كارفور...) مع شرح السياق.
 القسم 3 - الأنماط والتوجهات: تحليل سلوكي عميق مع شرح الأسباب المحتملة والمقارنة التاريخية.
 القسم 4 - المخاطر المالية: تحليل السيولة (Burn Rate) + نقاط الضعف + سيناريوهات محتملة.
 القسم 5 - خطة تحسين مفصلة: توصيات استراتيجية مع أرقام مقترحة لكل بند + جدول زمني + أهداف الشهر القادم.`;
+            }
           }
+
+          const advancedInstructionsStr = aiAdvancedInstructions.trim() !== "" ? aiAdvancedInstructions : `- تحدث بضمير المخاطب المباشر (أنت) كأنك تجلس مع المستخدم وجهاً لوجه.
+- ادمج الأرقام الحقيقية من البيانات في التحليل بشكل طبيعي.
+- إذا وُجدت تفاصيل عمليات فردية (أسماء أماكن/منتجات)، حللها بعمق واذكرها بالاسم.
+- كل قسم يجب أن يكون فقرة طويلة كاملة (ليس مجرد جملة أو جملتين).`;
 
           const prompt = `${aiSystemPrompt}
 
@@ -1130,10 +1165,7 @@ ${reportPersonalizationContext}`;
 - ${lengthInstruction}
 - ${focusInstruction}
 - **الهيكل الإلزامي**: ${structureInstruction}
-- تحدث بضمير المخاطب المباشر (أنت) كأنك تجلس مع المستخدم وجهاً لوجه.
-- ادمج الأرقام الحقيقية من البيانات في التحليل بشكل طبيعي.
-- إذا وُجدت تفاصيل عمليات فردية (أسماء أماكن/منتجات)، حللها بعمق واذكرها بالاسم.
-- كل قسم يجب أن يكون فقرة طويلة كاملة (ليس مجرد جملة أو جملتين).
+${advancedInstructionsStr}
 
 [Context]
 - تاريخ اليوم: ${new Date().toLocaleDateString("ar-EG", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -1142,9 +1174,9 @@ ${reportPersonalizationContext}`;
 [Data]
 ${personalizedSummaryForAI}
 
-[Output format] رد بصيغة JSON فقط. تذكر: response_text يجب أن يكون نصاً طويلاً ومفصلاً من ${sectionCount} أقسام (حوالي ${reportTargetWords} كلمة):
+[Output format] رد بصيغة JSON فقط. تذكر: response_text يجب أن يكون نصاً طويلاً ومفصلاً (حوالي ${reportTargetWords} كلمة):
 {
-  "response_text": "التقرير المالي المفصل هنا — يجب أن يكون ${reportTargetWords} كلمة تقريباً مقسم إلى ${sectionCount} أقسام واضحة",
+  "response_text": "التقرير المالي المفصل هنا — يجب أن يكون ${reportTargetWords} كلمة تقريباً",
   "alerts": ["تنبيه 1", "تنبيه 2"],
   "personality_flag": "${personality}",
   "data_table": []

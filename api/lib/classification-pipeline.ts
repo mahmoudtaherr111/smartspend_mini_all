@@ -20,6 +20,7 @@ export interface PipelineInput {
   monthlyContext: { totalIncome: number; totalExpense: number };
   userProfileContext?: {
     promptSummary?: string;
+    personalContextPrompt?: string;
     hasChildren?: boolean | null;
     responsibleForFamily?: boolean | null;
     supportsOthers?: unknown;
@@ -133,8 +134,12 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
   log.ruleEngineResult.attempted = true;
   const ruleResult = runRuleEngine(normalizedText, input.userDict, input.userProfileContext);
 
-  if (!ruleResult.needsAI && ruleResult.items.length > 0) {
-    // Rule engine succeeded!
+  // Check if the text contains known personal names → force AI for better context understanding
+  const personalContextPrompt = input.userProfileContext?.personalContextPrompt || "";
+  const knownNameMentioned = personalContextPrompt.length > 0 && entities.people.length > 0;
+
+  if (!ruleResult.needsAI && ruleResult.items.length > 0 && !knownNameMentioned) {
+    // Rule engine succeeded and no known names detected
     items = ruleResult.items;
     log.ruleEngineResult.succeeded = true;
     parsedBy = "rule_engine";
@@ -216,6 +221,7 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
               totalExpense: input.monthlyContext.totalExpense,
               currentDate,
               userProfileContext: input.userProfileContext?.promptSummary,
+              personalContext: input.userProfileContext?.personalContextPrompt,
               ruleHints: ruleResult.items.filter(i => i.confidence >= 60)
             },
             forceSkipClarification

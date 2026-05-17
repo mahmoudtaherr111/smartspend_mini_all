@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { AlertCircle, BriefcaseBusiness, Check, CircleUserRound, Save, Sparkles, UsersRound } from "lucide-react";
+import { AlertCircle, BriefcaseBusiness, Car, Check, CircleUserRound, Heart, Save, Sparkles, UsersRound, Phone, Link as LinkIcon, User, PawPrint, Cigarette, CreditCard, Users } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 const avatarSet = ["emerald", "sky", "rose", "amber", "violet", "slate"];
 const avatarClasses: Record<string, string> = {
@@ -30,8 +31,30 @@ const incomeSources = [
 const supportOptions = [
   { value: "parents", label: "والدين" },
   { value: "siblings", label: "إخوة" },
-  { value: "partner", label: "شريك/زوج" },
+  { value: "extended", label: "أقارب" },
+  { value: "none", label: "ما حدش" },
+];
+
+const subscriptionOptions = [
+  { value: "netflix", label: "Netflix / Shahid" },
+  { value: "gym", label: "جيم / نادي" },
+  { value: "internet", label: "إنترنت منزلي" },
+  { value: "phone_plan", label: "باقة موبايل" },
+  { value: "insurance", label: "تأمين" },
   { value: "other", label: "أخرى" },
+];
+
+const livingSituationOptions = [
+  { value: "alone", label: "ساكن لوحدي" },
+  { value: "family", label: "مع العيلة" },
+  { value: "shared", label: "سكن مشترك" },
+  { value: "married", label: "مع زوج/زوجة" },
+];
+
+const housingTypeOptions = [
+  { value: "rent", label: "إيجار" },
+  { value: "owned", label: "ملك" },
+  { value: "family_owned", label: "بيت العيلة" },
 ];
 
 function listValue(value: unknown): string[] {
@@ -90,7 +113,15 @@ export function SmartProfileSettings() {
     retry: 1,
     staleTime: 60_000,
   });
+  const { user } = useAuth();
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  const updateUserInfo = trpc.profile.updateUserInfo.useMutation({
+    onSuccess: () => {
+      utils.auth.me.invalidate();
+      utils.localAuth.me.invalidate();
+    }
+  });
   const updateProfile = trpc.profile.updateSmartProfile.useMutation({
     onMutate: () => setSaveError(null),
     onSuccess: () => {
@@ -107,6 +138,8 @@ export function SmartProfileSettings() {
 
   const [profession, setProfession] = useState("");
   const [monthlyIncome, setMonthlyIncome] = useState("");
+  const [hasFixedSalary, setHasFixedSalary] = useState(false);
+  const [salaryDay, setSalaryDay] = useState("");
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [goal, setGoal] = useState("organize_expenses");
   const [spendingPattern, setSpendingPattern] = useState("variable");
@@ -119,12 +152,46 @@ export function SmartProfileSettings() {
   const [detailLevel, setDetailLevel] = useState("summary");
   const [questionFriction, setQuestionFriction] = useState("medium");
   const [alertsEnabled, setAlertsEnabled] = useState(true);
+
+  // Deep personal data state
+  const [partnerName, setPartnerName] = useState("");
+  const [childrenNames, setChildrenNames] = useState<string[]>([]);
+  const [livingSituation, setLivingSituation] = useState("");
+  const [housingType, setHousingType] = useState("");
+  const [monthlyRent, setMonthlyRent] = useState("");
+  const [hasDebt, setHasDebt] = useState(false);
+  const [debtMonthly, setDebtMonthly] = useState("");
+  const [carOwnership, setCarOwnership] = useState(false);
+  const [carType, setCarType] = useState("");
+  const [monthlyCarCost, setMonthlyCarCost] = useState("");
+  const [hasPets, setHasPets] = useState(false);
+  const [petNames, setPetNames] = useState<string[]>([]);
+  const [smoking, setSmoking] = useState(false);
+  const [subscriptions, setSubscriptions] = useState<string[]>([]);
+  const [regularContacts, setRegularContacts] = useState<string[]>([]);
+  
+  // Basic info state
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [avatarInput, setAvatarInput] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name || "");
+      setPhone(user.phone || "");
+      setAvatarInput(user.avatar || "");
+    }
+  }, [user]);
+
+  // We are keeping avatarId as a preset fallback for backward compatibility
   const [avatarId, setAvatarId] = useState<string>("emerald");
 
   useEffect(() => {
     if (!profile) return;
     setProfession(String(profile.basicInfo?.profession || ""));
     setMonthlyIncome(String(profile.financialInfo?.averageMonthlyIncome || ""));
+    setHasFixedSalary(Boolean(profile.financialInfo?.hasFixedSalary));
+    setSalaryDay(String(profile.financialInfo?.salaryDay || ""));
     setSelectedSources(listValue(profile.financialInfo?.incomeSources));
     setGoal(String(profile.financialInfo?.primaryGoal || "organize_expenses"));
     setSpendingPattern(String(profile.financialInfo?.spendingPattern || "variable"));
@@ -138,6 +205,23 @@ export function SmartProfileSettings() {
     setQuestionFriction(String(profile.preferences?.questionFriction || "medium"));
     setAlertsEnabled(profile.preferences?.alertsEnabled !== false);
     setAvatarId(profile.avatarId || "emerald");
+
+    // Deep personal data
+    setPartnerName(String(profile.lifestyleInfo?.partnerName || ""));
+    setChildrenNames(listValue(profile.lifestyleInfo?.childrenNames));
+    setLivingSituation(String(profile.lifestyleInfo?.livingSituation || ""));
+    setHousingType(String(profile.lifestyleInfo?.housingType || ""));
+    setMonthlyRent(String(profile.lifestyleInfo?.monthlyRent || ""));
+    setHasDebt(Boolean(profile.financialInfo?.hasDebt));
+    setDebtMonthly(String(profile.financialInfo?.monthlyDebtPayment || ""));
+    setCarOwnership(Boolean(profile.lifestyleInfo?.carOwnership));
+    setCarType(String(profile.lifestyleInfo?.carType || ""));
+    setMonthlyCarCost(String(profile.lifestyleInfo?.monthlyCarCost || ""));
+    setHasPets(Boolean(profile.lifestyleInfo?.hasPets));
+    setPetNames(listValue(profile.lifestyleInfo?.petNames));
+    setSmoking(Boolean(profile.lifestyleInfo?.smoking));
+    setSubscriptions(listValue(profile.lifestyleInfo?.subscriptions));
+    setRegularContacts(listValue(profile.lifestyleInfo?.regularContacts));
   }, [profile]);
 
   const completionScore = useMemo(() => {
@@ -149,7 +233,7 @@ export function SmartProfileSettings() {
       typeof hasChildren === "boolean",
       typeof responsibleForFamily === "boolean",
       fixedCommitments,
-      avatarId,
+      name,
     ];
     return Math.round((checks.filter(Boolean).length / checks.length) * 100);
   }, [avatarId, fixedCommitments, goal, hasChildren, monthlyIncome, responsibleForFamily, selectedSources.length, spendingPattern]);
@@ -174,17 +258,34 @@ export function SmartProfileSettings() {
       basicInfo: { profession: profession || null },
       financialInfo: {
         averageMonthlyIncome: income,
+        hasFixedSalary,
+        salaryDay: nullableNumber(salaryDay),
         incomeSources: selectedSources,
         primaryGoal: goal,
         spendingPattern,
+        hasDebt,
+        monthlyDebtPayment: hasDebt ? nullableNumber(debtMonthly) : null,
       },
       lifestyleInfo: {
         hasChildren,
         childrenCount: hasChildren ? children : null,
+        childrenNames: hasChildren ? childrenNames.filter(n => n.trim()) : [],
+        partnerName: partnerName.trim() || null,
+        livingSituation: livingSituation || null,
+        housingType: housingType || null,
+        monthlyRent: housingType === "rent" ? nullableNumber(monthlyRent) : null,
         responsibleForFamily,
         livesAlone,
         supportsOthers,
         fixedMonthlyCommitments: commitments,
+        carOwnership,
+        carType: carOwnership ? carType.trim() || null : null,
+        monthlyCarCost: carOwnership ? nullableNumber(monthlyCarCost) : null,
+        hasPets,
+        petNames: hasPets ? petNames.filter(n => n.trim()) : [],
+        smoking,
+        subscriptions,
+        regularContacts: regularContacts.filter(n => n.trim()),
       },
       preferences: {
         detailLevel,
@@ -195,6 +296,10 @@ export function SmartProfileSettings() {
       avatarId,
       profileCompleted: completionScore >= 70,
     });
+
+    if (name.trim()) {
+      updateUserInfo.mutate({ name, phone, avatar: avatarInput });
+    }
   };
 
   if (isLoading) {
@@ -257,7 +362,7 @@ export function SmartProfileSettings() {
             <CircleUserRound className="w-4 h-4" />
             الهوية
           </div>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 hidden">
             {avatarSet.map((id) => (
               <button
                 key={id}
@@ -272,9 +377,38 @@ export function SmartProfileSettings() {
               </button>
             ))}
           </div>
-          <div className="space-y-2">
-            <Label>المهنة</Label>
-            <Input value={profession} onChange={(event) => setProfession(event.target.value)} placeholder="مثال: مصمم، موظف، صاحب مشروع" />
+          
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>الاسم</Label>
+              <div className="relative">
+                <User className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="اسمك" className="pr-9" />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>رابط الصورة الشخصية (اختياري)</Label>
+              <div className="relative">
+                <LinkIcon className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input value={avatarInput} onChange={(e) => setAvatarInput(e.target.value)} placeholder="https://..." className="pr-9 text-left" dir="ltr" />
+              </div>
+            </div>
+            
+            {user?.type !== "oauth" && (
+              <div className="space-y-2">
+                <Label>رقم التليفون</Label>
+                <div className="relative">
+                  <Phone className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="رقم التليفون" className="pr-9 text-right" dir="ltr" />
+                </div>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label>المهنة</Label>
+              <Input value={profession} onChange={(event) => setProfession(event.target.value)} placeholder="مثال: مصمم، موظف، صاحب مشروع" />
+            </div>
           </div>
         </section>
 
@@ -298,7 +432,42 @@ export function SmartProfileSettings() {
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          
+          {selectedSources.includes("salary") && (
+            <div className="grid sm:grid-cols-2 gap-3 mt-3 bg-muted/50 p-3 rounded-lg border">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5 text-right">
+                  <Label>هل مرتبك ينزل في تاريخ ثابت؟</Label>
+                  <p className="text-[11px] text-muted-foreground">هنحسب شهرك المالي منه</p>
+                </div>
+                <Button 
+                  variant={hasFixedSalary ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setHasFixedSalary(!hasFixedSalary)}
+                  className="h-8"
+                >
+                  {hasFixedSalary ? "نعم ثابت" : "لا"}
+                </Button>
+              </div>
+              
+              {hasFixedSalary && (
+                <div className="space-y-2">
+                  <Label>بينزل يوم كام في الشهر؟ (1-31)</Label>
+                  <Input 
+                    type="number" 
+                    dir="ltr" 
+                    min="1" 
+                    max="31"
+                    value={salaryDay} 
+                    onChange={(event) => setSalaryDay(event.target.value)} 
+                    placeholder="مثال: 5"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+          
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
             {incomeSources.map((source) => (
               <TogglePill key={source.value} active={selectedSources.includes(source.value)} onClick={() => toggleList(selectedSources, source.value, setSelectedSources)}>
                 {source.label}
@@ -347,12 +516,155 @@ export function SmartProfileSettings() {
               <Input type="number" dir="ltr" value={fixedCommitments} onChange={(event) => setFixedCommitments(event.target.value)} />
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {supportOptions.map((option) => (
-              <TogglePill key={option.value} active={supportsOthers.includes(option.value)} onClick={() => toggleList(supportsOthers, option.value, setSupportsOthers)}>
-                {option.label}
-              </TogglePill>
+
+          {/* Children Names */}
+          {hasChildren && (
+            <div className="space-y-2">
+              <Label>أسماء الأطفال</Label>
+              {childrenNames.map((n, i) => (
+                <div key={i} className="flex gap-2">
+                  <Input value={n} onChange={e => { const next = [...childrenNames]; next[i] = e.target.value; setChildrenNames(next); }} placeholder={`طفل ${i + 1}`} />
+                  <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => setChildrenNames(childrenNames.filter((_, j) => j !== i))}>✕</Button>
+                </div>
+              ))}
+              <Button type="button" variant="outline" size="sm" onClick={() => setChildrenNames([...childrenNames, ""])}>+ إضافة اسم</Button>
+            </div>
+          )}
+
+          {/* Living Situation */}
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>وضع السكن</Label>
+              <select value={livingSituation} onChange={e => setLivingSituation(e.target.value)} className="h-10 w-full rounded-md border bg-background px-3 text-sm">
+                <option value="">اختر...</option>
+                {livingSituationOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>اسم شريك/شريكة الحياة</Label>
+              <Input value={partnerName} onChange={e => setPartnerName(e.target.value)} placeholder="اسم الشريك (اختياري)" />
+            </div>
+          </div>
+
+          {/* Housing */}
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>نوع السكن</Label>
+              <select value={housingType} onChange={e => setHousingType(e.target.value)} className="h-10 w-full rounded-md border bg-background px-3 text-sm">
+                <option value="">اختر...</option>
+                {housingTypeOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            {housingType === "rent" && (
+              <div className="space-y-2">
+                <Label>الإيجار الشهري</Label>
+                <Input type="number" dir="ltr" value={monthlyRent} onChange={e => setMonthlyRent(e.target.value)} placeholder="بالجنيه" />
+              </div>
+            )}
+          </div>
+
+          {/* Debt */}
+          <div className="grid sm:grid-cols-2 gap-3">
+            <label className="flex items-center justify-between rounded-md border p-3 text-sm">
+              عندك ديون / أقساط
+              <Switch checked={hasDebt} onCheckedChange={setHasDebt} />
+            </label>
+            {hasDebt && (
+              <div className="space-y-2">
+                <Label>المبلغ الشهري للديون</Label>
+                <Input type="number" dir="ltr" value={debtMonthly} onChange={e => setDebtMonthly(e.target.value)} placeholder="بالجنيه" />
+              </div>
+            )}
+          </div>
+
+          {/* Support Others */}
+          <div className="space-y-2">
+            <Label>بتصرف على مين بشكل منتظم؟</Label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {supportOptions.map((option) => (
+                <TogglePill key={option.value} active={supportsOthers.includes(option.value)} onClick={() => toggleList(supportsOthers, option.value, setSupportsOthers)}>
+                  {option.label}
+                </TogglePill>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Deep Personal Data Section */}
+        <section className="space-y-3">
+          <div className="flex items-center gap-2 font-semibold text-sm">
+            <Heart className="w-4 h-4" />
+            بيانات شخصية (اختيارية - تحسّن دقة AI)
+          </div>
+
+          {/* Car */}
+          <div className="grid sm:grid-cols-3 gap-3">
+            <label className="flex items-center justify-between rounded-md border p-3 text-sm">
+              <span className="flex items-center gap-2"><Car className="w-4 h-4" /> عندك عربية</span>
+              <Switch checked={carOwnership} onCheckedChange={setCarOwnership} />
+            </label>
+            {carOwnership && (
+              <>
+                <div className="space-y-2">
+                  <Label>نوع العربية</Label>
+                  <Input value={carType} onChange={e => setCarType(e.target.value)} placeholder="مثال: كيا سيراتو" />
+                </div>
+                <div className="space-y-2">
+                  <Label>تكلفة شهرية</Label>
+                  <Input type="number" dir="ltr" value={monthlyCarCost} onChange={e => setMonthlyCarCost(e.target.value)} placeholder="بنزين + صيانة" />
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Pets */}
+          <div className="space-y-2">
+            <label className="flex items-center justify-between rounded-md border p-3 text-sm">
+              <span className="flex items-center gap-2"><PawPrint className="w-4 h-4" /> عندك حيوانات أليفة</span>
+              <Switch checked={hasPets} onCheckedChange={setHasPets} />
+            </label>
+            {hasPets && (
+              <div className="space-y-2">
+                <Label>أسماءهم</Label>
+                {petNames.map((n, i) => (
+                  <div key={i} className="flex gap-2">
+                    <Input value={n} onChange={e => { const next = [...petNames]; next[i] = e.target.value; setPetNames(next); }} placeholder={`حيوان ${i + 1}`} />
+                    <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => setPetNames(petNames.filter((_, j) => j !== i))}>✕</Button>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" size="sm" onClick={() => setPetNames([...petNames, ""])}>+ إضافة</Button>
+              </div>
+            )}
+          </div>
+
+          {/* Smoking */}
+          <label className="flex items-center justify-between rounded-md border p-3 text-sm">
+            <span className="flex items-center gap-2"><Cigarette className="w-4 h-4" /> بتدخن</span>
+            <Switch checked={smoking} onCheckedChange={setSmoking} />
+          </label>
+
+          {/* Subscriptions */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2"><CreditCard className="w-4 h-4" /> الاشتراكات الثابتة</Label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {subscriptionOptions.map(o => (
+                <TogglePill key={o.value} active={subscriptions.includes(o.value)} onClick={() => toggleList(subscriptions, o.value, setSubscriptions)}>
+                  {o.label}
+                </TogglePill>
+              ))}
+            </div>
+          </div>
+
+          {/* Regular Contacts */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2"><Users className="w-4 h-4" /> أشخاص بتحولهم فلوس بانتظام</Label>
+            {regularContacts.map((n, i) => (
+              <div key={i} className="flex gap-2">
+                <Input value={n} onChange={e => { const next = [...regularContacts]; next[i] = e.target.value; setRegularContacts(next); }} placeholder={`شخص ${i + 1}`} />
+                <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => setRegularContacts(regularContacts.filter((_, j) => j !== i))}>✕</Button>
+              </div>
             ))}
+            <Button type="button" variant="outline" size="sm" onClick={() => setRegularContacts([...regularContacts, ""])}>+ إضافة شخص</Button>
           </div>
         </section>
 

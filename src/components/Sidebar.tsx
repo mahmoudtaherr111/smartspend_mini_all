@@ -22,6 +22,9 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
+import darkModeLogo from "../../photos/dark_mode_logo-removebg-preview.png";
+import whiteModeLogo from "../../photos/white_mode_logo-removebg-preview.png";
+import defaultProfile from "../../photos/profile.png";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -68,17 +71,21 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-white/10">
           <div className="flex items-center gap-3 transition-all duration-300">
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-lg">SS</span>
-            </div>
-            <div>
-              <h1 className="text-white font-bold text-lg">SmartSpend</h1>
-              {isPro && (
-                <span className="text-xs text-amber-400 flex items-center gap-1">
-                  <Crown className="w-3 h-3" /> PRO
-                </span>
-              )}
-            </div>
+            <img 
+              src={whiteModeLogo} 
+              alt="SmartSpend" 
+              className="h-10 w-auto object-contain block dark:hidden"
+            />
+            <img 
+              src={darkModeLogo} 
+              alt="SmartSpend" 
+              className="h-10 w-auto object-contain hidden dark:block"
+            />
+            {isPro && (
+              <span className="text-xs text-amber-400 flex items-center gap-1">
+                <Crown className="w-3 h-3" /> PRO
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1">
             <Button 
@@ -103,20 +110,11 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
         {/* User info */}
         {user && (
           <div className="px-5 py-4 border-b border-white/10 transition-all duration-300">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold shrink-0">
-                {user.avatar ? (
-                  <img src={user.avatar} alt="" className="w-full h-full rounded-full object-cover" />
-                ) : (
-                  user.name?.charAt(0) || "U"
-                )}
-              </div>
-              <div className="transition-all duration-300 overflow-hidden">
-                <p className="text-white font-medium text-sm truncate">{user.name}</p>
-                <p className="text-white/50 text-xs truncate">
-                  {user.plan === "ultra" ? "ULTRA" : user.plan === "pro" ? "PRO" : "مجاني"}
-                </p>
-              </div>
+            <div className="flex flex-col">
+              <p className="text-white font-medium text-sm truncate">{user.name}</p>
+              <p className="text-white/50 text-xs truncate">
+                {user.plan === "ultra" ? "ULTRA" : user.plan === "pro" ? "PRO" : "مجاني"}
+              </p>
             </div>
           </div>
         )}

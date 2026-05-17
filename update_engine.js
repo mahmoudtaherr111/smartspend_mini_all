@@ -1,18 +1,8 @@
-import type { OnboardingAnswer, SmartUserProfile } from "./user-profile-service";
+const fs = require('fs');
+const file = 'e:/smartspend_V1_fixed/api/services/adaptive-question-engine.ts';
+let code = fs.readFileSync(file, 'utf8');
 
-export type AdaptiveQuestionType = "number" | "select" | "multi_select" | "boolean" | "text" | "text_list";
-
-export interface AdaptiveQuestion {
-  key: string;
-  text: string;
-  type: AdaptiveQuestionType;
-  options?: Array<{ value: string; label: string }>;
-  required?: boolean;
-  /** For text_list: how many items to ask for (can be dynamic from answers) */
-  listCount?: number;
-}
-
-export const ADAPTIVE_ONBOARDING_QUESTIONS: AdaptiveQuestion[] = [
+const newQuestions = `export const ADAPTIVE_ONBOARDING_QUESTIONS: AdaptiveQuestion[] = [
   {
     key: "income_level",
     text: "كام تقريباً دخلك الشهري؟",
@@ -31,17 +21,6 @@ export const ADAPTIVE_ONBOARDING_QUESTIONS: AdaptiveQuestion[] = [
       { value: "rental", label: "إيجارات" },
       { value: "other", label: "أخرى" },
     ],
-  },
-  {
-    key: "has_fixed_salary",
-    text: "مرتبك بينزل في وقت ثابت كل شهر؟",
-    type: "boolean",
-  },
-  {
-    key: "salary_day",
-    text: "مرتبك بينزل يوم كام من الشهر تقريباً؟",
-    type: "number",
-    required: false,
   },
   {
     key: "app_goal",
@@ -185,39 +164,14 @@ export const ADAPTIVE_ONBOARDING_QUESTIONS: AdaptiveQuestion[] = [
     type: "text_list",
     required: false,
   },
-];
+];`;
 
-const QUESTION_BY_KEY = Object.fromEntries(
-  ADAPTIVE_ONBOARDING_QUESTIONS.map((question) => [question.key, question])
-);
-
-function answerValue(answers: Record<string, OnboardingAnswer>, key: string): unknown {
-  const answer = answers[key];
-  if (!answer || answer.skipped) return undefined;
-  return answer.value;
-}
-
-function hasAnswered(answers: Record<string, OnboardingAnswer>, key: string): boolean {
-  return Boolean(answers[key]);
-}
-
-export function getNextOnboardingQuestion(
+const newLogic = `export function getNextOnboardingQuestion(
   answers: Record<string, OnboardingAnswer>
 ): AdaptiveQuestion | null {
   // Phase 1: Core financial data
   if (!hasAnswered(answers, "income_level")) return QUESTION_BY_KEY.income_level;
   if (!hasAnswered(answers, "income_sources")) return QUESTION_BY_KEY.income_sources;
-
-  // Salary day questions — only if income includes salary
-  const incomeSources = answerValue(answers, "income_sources") as string[] | undefined;
-  const hasSalarySource = Array.isArray(incomeSources) && incomeSources.includes("salary");
-  if (hasSalarySource) {
-    if (!hasAnswered(answers, "has_fixed_salary")) return QUESTION_BY_KEY.has_fixed_salary;
-    if (answerValue(answers, "has_fixed_salary") === true && !hasAnswered(answers, "salary_day")) {
-      return QUESTION_BY_KEY.salary_day;
-    }
-  }
-
   if (!hasAnswered(answers, "app_goal")) return QUESTION_BY_KEY.app_goal;
 
   // Phase 2: Family & responsibilities
@@ -266,67 +220,12 @@ export function getNextOnboardingQuestion(
   if (!hasAnswered(answers, "regular_contacts")) return QUESTION_BY_KEY.regular_contacts;
 
   return null;
-}
+}`;
 
-export function applyOnboardingAnswer(
-  profile: SmartUserProfile,
-  key: string,
-  value: unknown,
-  skipped = false,
-  now = new Date()
-): SmartUserProfile {
-  const answer: OnboardingAnswer = {
-    value: skipped ? null : value,
-    skipped,
-    answeredAt: profile.onboardingAnswers[key]?.answeredAt || now.toISOString(),
-    updatedAt: now.toISOString(),
-  };
-  const onboardingAnswers = { ...profile.onboardingAnswers, [key]: answer };
-  const financialInfo = { ...profile.financialInfo };
-  const lifestyleInfo = { ...profile.lifestyleInfo };
-  const basicInfo = { ...profile.basicInfo };
+const re1 = /export const ADAPTIVE_ONBOARDING_QUESTIONS: AdaptiveQuestion\[\] = \[([\s\S]*?)\];/m;
+code = code.replace(re1, newQuestions);
 
-  if (!skipped) {
-    // Financial info mapping
-    if (key === "income_level") financialInfo.averageMonthlyIncome = value;
-    if (key === "income_sources") financialInfo.incomeSources = value;
-    if (key === "app_goal") financialInfo.primaryGoal = value;
-    if (key === "has_debt") financialInfo.hasDebt = value;
-    if (key === "has_fixed_salary") financialInfo.hasFixedSalary = value;
-    if (key === "salary_day") financialInfo.salaryDay = value;
-    if (key === "debt_monthly") financialInfo.monthlyDebtPayment = value;
+const re2 = /export function getNextOnboardingQuestion\([\s\S]*?return null;\n\}/m;
+code = code.replace(re2, newLogic);
 
-    // Lifestyle info mapping
-    if (key === "children") lifestyleInfo.hasChildren = value;
-    if (key === "children_count") lifestyleInfo.childrenCount = value;
-    if (key === "living_situation") lifestyleInfo.livingSituation = value;
-    if (key === "housing_type") lifestyleInfo.housingType = value;
-    if (key === "monthly_rent") lifestyleInfo.monthlyRent = value;
-    if (key === "supports_others") lifestyleInfo.supportsOthers = value;
-
-    // Basic info mapping
-    if (key === "profession") basicInfo.profession = value;
-
-    // Deep personal data mapping
-    if (key === "children_names") lifestyleInfo.childrenNames = value; // string[]
-    if (key === "partner_name") lifestyleInfo.partnerName = value;
-    if (key === "car_ownership") lifestyleInfo.carOwnership = value;
-    if (key === "car_type") lifestyleInfo.carType = value;
-    if (key === "monthly_car_cost") lifestyleInfo.monthlyCarCost = value;
-    if (key === "has_pets") lifestyleInfo.hasPets = value;
-    if (key === "pet_names") lifestyleInfo.petNames = value; // string[]
-    if (key === "smoking") lifestyleInfo.smoking = value;
-    if (key === "subscription_services") lifestyleInfo.subscriptions = value;
-    if (key === "regular_contacts") lifestyleInfo.regularContacts = value; // string[]
-  }
-
-  const complete = getNextOnboardingQuestion(onboardingAnswers) === null;
-  return {
-    ...profile,
-    onboardingAnswers,
-    financialInfo,
-    lifestyleInfo,
-    basicInfo,
-    profileCompleted: complete || profile.profileCompleted,
-  };
-}
+fs.writeFileSync(file, code);
