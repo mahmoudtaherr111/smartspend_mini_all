@@ -6,6 +6,7 @@ import { trpcServer } from "@hono/trpc-server";
 import { appRouter } from "./router";
 import { createContext } from "./context";
 import { env } from "./lib/env";
+import { smsApp } from "./sms-router";
 
 const app = new Hono();
 
@@ -29,7 +30,17 @@ app.onError((err, c) => {
   return c.json({ error: err.message || "Internal Server Error" }, 500);
 });
 
-app.notFound((c) => {
+app.notFound(async (c) => {
+  if (env.NODE_ENV === "production" && !c.req.path.startsWith("/api/")) {
+    try {
+      const fs = await import("fs");
+      const path = await import("path");
+      const html = fs.readFileSync(path.resolve("./dist/public/index.html"), "utf-8");
+      return c.html(html);
+    } catch (e) {
+      console.error("Failed to serve index.html fallback", e);
+    }
+  }
   console.warn("404 Not Found:", c.req.url);
   return c.json({ error: "Not Found" }, 404);
 });
@@ -57,6 +68,9 @@ app.use("/api/trpc/*", trpcServer({
   createContext: async ({ req }) => createContext(req),
 }));
 
+// SMS Ingestion endpoints
+app.route("/api/sms", smsApp);
+
 app.post("/api/webhooks/paymob", async (c) => {
   const raw = await c.req.text();
   let parsed: unknown = {};
@@ -72,6 +86,18 @@ app.post("/api/webhooks/paymob", async (c) => {
 
 // Health check
 app.get("/health", (c) => c.json({ status: "ok", timestamp: new Date().toISOString() }));
+
+// Serve frontend static assets & run server in production mode
+if (env.NODE_ENV === "production") {
+  const { serve } = await import("@hono/node-server");
+  const { serveStatic } = await import("@hono/node-server/serve-static");
+  
+  app.use("/*", serveStatic({ root: "./dist/public" }));
+  
+  const port = parseInt(env.PORT) || 3000;
+  console.log(`🚀 SmartSpend Monorepo Server running on http://localhost:${port}`);
+  serve({ fetch: app.fetch, port, hostname: "0.0.0.0" });
+}
 
 export default {
   port: parseInt(env.PORT),

@@ -74,12 +74,12 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
             <img 
               src={whiteModeLogo} 
               alt="SmartSpend" 
-              className="h-10 w-auto object-contain block dark:hidden"
+              className="h-20 w-auto object-contain block dark:hidden"
             />
             <img 
               src={darkModeLogo} 
               alt="SmartSpend" 
-              className="h-10 w-auto object-contain hidden dark:block"
+              className="h-20 w-auto object-contain hidden dark:block"
             />
             {isPro && (
               <span className="text-xs text-amber-400 flex items-center gap-1">
@@ -112,9 +112,16 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
           <div className="px-5 py-4 border-b border-white/10 transition-all duration-300">
             <div className="flex flex-col">
               <p className="text-white font-medium text-sm truncate">{user.name}</p>
-              <p className="text-white/50 text-xs truncate">
-                {user.plan === "ultra" ? "ULTRA" : user.plan === "pro" ? "PRO" : "مجاني"}
-              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <p className="text-white/80 font-semibold text-[10px] truncate bg-white/20 px-2 py-0.5 rounded shadow-sm">
+                  {user.plan === "ultra" ? "ULTRA" : user.plan === "pro" ? "PRO" : "مجاني"}
+                </p>
+                {(user as any).currentStreak > 0 && (
+                  <p className="text-orange-400 font-bold text-[10px] truncate flex items-center gap-1 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/30 shadow-sm animate-pulse">
+                    🔥 {(user as any).currentStreak} أيام
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         )}

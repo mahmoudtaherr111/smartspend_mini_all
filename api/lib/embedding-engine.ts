@@ -22,6 +22,7 @@ export interface EmbeddingMatch {
   score: number;          // calibrated 0-100
   margin: number;         // gap to second-best category
   rawSimilarity: number;  // raw cosine 0-1
+  topCategories?: string[]; // Phase 4 Fix: Top 3 candidate categories to give AI breathing room
 }
 
 export interface EmbeddingResult {
@@ -59,45 +60,101 @@ const CATEGORY_DESCRIPTORS: Array<{
   descriptors: string[];
 }> = [
   // ── Expense Categories ──
-  { category: "أكل وشرب", subCategory: "عام",
-    descriptors: ["أكل", "شرب", "طعام", "وجبة", "أكلت", "فطار", "غدا", "عشا", "بيتزا", "برجر", "شاورما", "سندوتش", "مطعم", "دليفري", "أكل بيت"] },
+  { category: "أكل وشرب", subCategory: "مطاعم ووجبات",
+    descriptors: ["أكل", "شرب", "طعام", "وجبة", "أكلت", "فطار", "غدا", "عشا", "بيتزا", "برجر", "شاورما", "سندوتش", "مطعم", "دليفري", "أكل بيت", "ماكدونالدز", "كنتاكي", "هارديز", "كشري", "الشبراوي", "ابو طارق", "بافلو", "كريب", "مشويات", "فول وطعمية", "سوشي", "شاورما سوري", "كباب"] },
   { category: "أكل وشرب", subCategory: "قهوة وكافيه",
-    descriptors: ["قهوة", "نسكافيه", "كافيه", "شاي", "مشروب ساخن", "لاتيه", "كابتشينو"] },
-  { category: "أكل وشرب", subCategory: "بقالة",
-    descriptors: ["بقالة", "سوبر ماركت", "خضار", "فاكهة", "لبن", "زبادي", "جبنة", "بيض", "أكل بيت", "طلبات البيت"] },
-  { category: "مواصلات", subCategory: "عام",
-    descriptors: ["مواصلات", "توصيلة", "ركبت", "مشوار", "طريق", "أوبر", "كريم", "تاكسي", "مترو", "أتوبيس", "باص", "توكتوك", "بنزين"] },
-  { category: "فواتير", subCategory: "عام",
-    descriptors: ["فاتورة", "كهرباء", "مياه", "غاز", "نت", "إنترنت", "شحن", "رصيد", "موبايل", "تليفون", "قسط", "أقساط", "تأمين"] },
-  { category: "سكن", subCategory: "عام",
-    descriptors: ["إيجار", "أثاث", "صيانة", "سباك", "كهربائي", "نقاش", "نجار", "شغالة", "منظفات", "غسالة", "تلاجة", "بيت"] },
-  { category: "تسوق", subCategory: "عام",
-    descriptors: ["تسوق", "شوبينج", "هدوم", "لبس", "موبايل", "لاب توب", "جزمة", "كوتشي", "شنطة", "ساعة", "إكسسوار"] },
-  { category: "صحة", subCategory: "عام",
-    descriptors: ["صحة", "دكتور", "صيدلية", "دوا", "تحاليل", "مستشفى", "أسنان", "عملية", "كشف", "روشتة", "علاج"] },
-  { category: "تعليم", subCategory: "عام",
-    descriptors: ["تعليم", "مدرسة", "جامعة", "كورس", "درس", "دروس", "كتب", "مصاريف دراسة", "يونيفورم"] },
-  { category: "ترفيه", subCategory: "عام",
-    descriptors: ["ترفيه", "سينما", "جيم", "نادي", "سفر", "مصيف", "خروجة", "شيشة", "بلاي ستيشن", "ألعاب"] },
-  { category: "اشتراكات", subCategory: "عام",
-    descriptors: ["اشتراك", "نتفلكس", "سبوتيفاي", "يوتيوب بريميوم", "شاهد", "VPN"] },
-  { category: "هدايا وصدقات", subCategory: "عام",
-    descriptors: ["هدية", "صدقة", "زكاة", "تبرع", "عيدية", "فرح", "خطوبة"] },
-  { category: "استثمار", subCategory: "عام",
-    descriptors: ["استثمار", "ذهب", "دهب", "أسهم", "شهادات", "عقارات", "عملات رقمية", "بيتكوين"] },
-  { category: "خدمات سيارات", subCategory: "عام",
-    descriptors: ["عربية", "صيانة عربية", "كاوتش", "بطارية", "زيت", "تغيير زيت", "كارتة", "مخالفة", "ركنة", "جراج"] },
-  { category: "خروجات", subCategory: "عام",
-    descriptors: ["خروجة", "فسحة", "كورنيش", "صحاب", "قعدة", "نزلة"] },
+    descriptors: ["قهوة", "نسكافيه", "كافيه", "شاي", "مشروب ساخن", "لاتيه", "كابتشينو", "ستاربكس", "اسبريسو", "سيلانترو", "كوستا", "فرابيتشينو", "قهوة تركي", "ميكاتو", "موهيتو", "عصير"] },
+  { category: "أكل وشرب", subCategory: "بقالة ولحوم",
+    descriptors: ["بقالة", "سوبر ماركت", "خضار", "فاكهة", "لبن", "زبادي", "جبنة", "بيض", "طلبات البيت", "كارفور", "سبينيس", "مترو ماركت", "كازيون", "بيم", "لحمة", "فراخ", "بانيه", "مفروم", "سمك", "رز", "زيت", "مكرونة", "سمنة", "عطارة", "توابل", "عيش", "مخبز"] },
+  { category: "أكل وشرب", subCategory: "تسالي وحلويات",
+    descriptors: ["شوكولاتة", "شيبسي", "بيبسي", "كولا", "عصير", "تسالي", "لب", "سوداني", "ايس كريم", "حلويات", "تورتة", "جاتوه", "بسبوسة"] },
+
+  { category: "مواصلات", subCategory: "أوبر وكريم",
+    descriptors: ["أوبر", "كريم", "توصيلة", "اندرايفر", "ديدي"] },
+  { category: "مواصلات", subCategory: "مواصلات عامة",
+    descriptors: ["مواصلات", "مشوار", "تاكسي", "مترو", "أتوبيس", "باص", "توكتوك", "سويفل", "ميكروباص", "مواصلة", "ميكروباس", "قطر", "تذكرة"] },
+  { category: "مواصلات", subCategory: "بنزين",
+    descriptors: ["بنزين", "تفويلة", "محطة بنزين", "بنزينة"] },
+
+  { category: "فواتير", subCategory: "كهرباء وغاز ومياه",
+    descriptors: ["فاتورة", "كهرباء", "مياه", "غاز", "وصل مياه", "وصل نور"] },
+  { category: "فواتير", subCategory: "إنترنت وموبايل",
+    descriptors: ["نت", "إنترنت", "شحن", "رصيد", "موبايل", "تليفون", "فودافون", "اورنج", "اتصالات", "وي", "فوري", "باقة نت", "باقة مكالمات", "كارت شحن"] },
+  { category: "فواتير", subCategory: "أقساط وديون",
+    descriptors: ["قسط", "أقساط", "سداد دين", "فاليو", "أمان", "سهولة"] },
+
+  { category: "سكن", subCategory: "إيجار",
+    descriptors: ["إيجار", "تأمين شقة", "ايجار الشقة", "قسط الشقة"] },
+  { category: "سكن", subCategory: "صيانة وتصليح",
+    descriptors: ["صيانة", "سباك", "كهربائي", "نقاش", "نجار", "تصليح", "سباكة", "عامل", "بواب", "حارس"] },
+  { category: "سكن", subCategory: "مستلزمات منزلية",
+    descriptors: ["أثاث", "شغالة", "منظفات", "غسالة", "تلاجة", "بيت", "شقة", "مكواة", "ديكور", "سجاد", "ستائر", "مواعين", "صابون", "بريل", "اريال"] },
+
+  { category: "تسوق", subCategory: "ملابس وأحذية",
+    descriptors: ["تسوق", "شوبينج", "هدوم", "لبس", "جزمة", "كوتشي", "شنطة", "ساعة", "إكسسوار", "زارا", "اديداس", "نايكي", "ديفاكتو", "جاكيت", "بنطلون", "قميص", "تيشرت"] },
+  { category: "تسوق", subCategory: "أجهزة إلكترونية",
+    descriptors: ["موبايل", "لاب توب", "لابتوب", "كمبيوتر", "هاردوير", "كيبورد", "ماوس", "شاشة", "سماعة", "سماعات", "ايربودز", "ايفون", "معجون حراري", "رامات", "كارت شاشة", "باور بانك", "شاحن", "وصلة"] },
+  { category: "تسوق", subCategory: "عناية شخصية",
+    descriptors: ["تجميل", "مكياج", "حلاق", "كوافير", "برفان", "عطر", "كريم", "شامبو", "سكين كير", "ميك اب", "نضارة", "مزيل عرق"] },
+
+  { category: "صحة", subCategory: "كشف ودكتور",
+    descriptors: ["دكتور", "مستشفى", "أسنان", "عملية", "كشف", "فيزيتا", "عيادة", "دكتور اسنان", "استشارة"] },
+  { category: "صحة", subCategory: "أدوية وصيدلية",
+    descriptors: ["صحة", "صيدلية", "دوا", "تحاليل", "روشتة", "علاج", "فيتامين", "بانادول", "حقنة", "اشعة"] },
+
+  { category: "تعليم", subCategory: "مدارس وجامعات",
+    descriptors: ["تعليم", "مدرسة", "جامعة", "مصاريف دراسة", "ترم", "كلية"] },
+  { category: "تعليم", subCategory: "كورسات ودروس",
+    descriptors: ["كورس", "درس", "دروس", "سنتر", "مدرس", "مذكرات", "ملزمة", "كتب", "ادوات مدرسية", "كشكول"] },
+
+  { category: "ترفيه", subCategory: "خروجات وسينما",
+    descriptors: ["ترفيه", "سينما", "نادي", "سفر", "مصيف", "خروجة", "شيشة", "ماتش", "كورة", "حجز ملعب", "فسحة", "تمشية", "تذاكر", "ملاهي", "بلايستيشن", "بلاي ستيشن"] },
+  { category: "ترفيه", subCategory: "جيم ورياضة",
+    descriptors: ["جيم", "اشتراك الجيم", "بروتين", "كملات غذائية", "فورمة"] },
+
+  { category: "تدخين", subCategory: "سجائر",
+    descriptors: ["سجاير", "سجائر", "علبة سجاير", "كليوباترا", "مارلبورو", "ميريت"] },
+  { category: "تدخين", subCategory: "فيب",
+    descriptors: ["فيب", "ليكود", "بود", "كويل", "سيجارة إلكترونية"] },
+  { category: "تدخين", subCategory: "شيشة",
+    descriptors: ["دخان", "معسل", "شيشة", "ارجيلة", "فحم"] },
+
+  { category: "اشتراكات", subCategory: "باقات رقمية",
+    descriptors: ["اشتراك", "نتفلكس", "سبوتيفاي", "يوتيوب بريميوم", "شاهد", "VPN", "اي كلاود", "جيم باس", "أنغامي", "بلايستيشن بلس", "كلاود"] },
+
+  { category: "هدايا وصدقات", subCategory: "هدايا",
+    descriptors: ["هدية", "عيدية", "فرح", "خطوبة", "نقطة", "بوكيه ورد", "شوكولاتة هدية"] },
+  { category: "هدايا وصدقات", subCategory: "صدقات وتبرعات",
+    descriptors: ["صدقة", "زكاة", "تبرع", "مستشفى 57357", "جمعية رسالة", "صندوق تحيا مصر", "تبرعات", "للجامع"] },
+
+  { category: "استثمار", subCategory: "ذهب",
+    descriptors: ["استثمار", "ذهب", "دهب", "سبيكة", "جنيه دهب", "غويشة", "خاتم دهب"] },
+  { category: "استثمار", subCategory: "أسهم وشهادات",
+    descriptors: ["أسهم", "شهادات", "عقارات", "عملات رقمية", "بيتكوين", "وديعة", "بورصة", "ثاندر", "صندوق استثمار", "كريبتو"] },
+
+  { category: "خدمات سيارات", subCategory: "صيانة",
+    descriptors: ["عربية", "صيانة عربية", "كاوتش", "بطارية", "زيت", "تغيير زيت", "ميكانيكي", "عفشجي", "كهربائي سيارات", "قطع غيار"] },
+  { category: "خدمات سيارات", subCategory: "أخرى",
+    descriptors: ["كارتة", "مخالفة", "ركنة", "جراج", "سايس", "غسيل عربية", "تلميع"] },
+
   // ── Income Categories ──
-  { category: "مرتب", subCategory: "عام",
-    descriptors: ["مرتب", "راتب", "بونص", "مكافأة", "أوفر تايم", "بدل", "حوافز"] },
-  { category: "عمل حر", subCategory: "عام",
-    descriptors: ["فريلانس", "عمل حر", "مشروع", "عمولة", "سبوبة", "شغل جانبي", "كلاينت"] },
-  { category: "عوائد استثمار", subCategory: "عام",
-    descriptors: ["أرباح", "فوائد", "كاش باك", "استرجاع", "عائد", "ربح"] },
-  { category: "تحويل", subCategory: "عام",
-    descriptors: ["تحويل", "حوالة", "سحب", "إيداع", "فودافون كاش", "انستاباي", "دين", "سلفة"] },
+  { category: "مرتب", subCategory: "راتب أساسي",
+    descriptors: ["مرتب", "راتب", "قبضت", "القبض", "شيك", "معاش"] },
+  { category: "مرتب", subCategory: "حوافز ومكافآت",
+    descriptors: ["بونص", "مكافأة", "أوفر تايم", "بدل", "حوافز", "زيادة"] },
+
+  { category: "عمل حر", subCategory: "مشاريع",
+    descriptors: ["فريلانس", "عمل حر", "مشروع", "عمولة", "سبوبة", "شغل جانبي", "كلاينت", "أب وورك", "مستقل", "شغلانة"] },
+
+  { category: "عوائد استثمار", subCategory: "أرباح",
+    descriptors: ["أرباح", "فوائد", "كاش باك", "استرجاع", "عائد", "ربح", "كوبونات", "توزيعات"] },
+
+  { category: "تحويل", subCategory: "إيداع واستلام",
+    descriptors: ["حوالة", "إيداع", "فودافون كاش", "انستاباي", "استلمت تحويل"] },
+  { category: "تحويل", subCategory: "سلف وديون",
+    descriptors: ["دين", "سلفة", "استلفت", "سلفت", "قرض", "سداد"] },
+  { category: "تحويل", subCategory: "جمعيات",
+    descriptors: ["جمعية", "قسط جمعية", "قبض الجمعية", "دفعت الجمعية"] },
 ];
 
 // ─────────────────────────────────────────────────
@@ -230,15 +287,16 @@ function cosineSimilarity(a: number[], b: number[]): number {
  * We map: 0.5 → 0, 0.9 → 100, with margin bonus.
  */
 function calibrateScore(rawSim: number, margin: number): number {
-  // Min-max scaling: [0.5, 0.92] → [0, 100]
-  const MIN_SIM = 0.50;
-  const MAX_SIM = 0.92;
+  // Phase 3 Adjustment: slightly more lenient scaling [0.45, 0.90] → [0, 100]
+  const MIN_SIM = 0.45;
+  const MAX_SIM = 0.90;
   const scaled = Math.max(0, Math.min(100,
     ((rawSim - MIN_SIM) / (MAX_SIM - MIN_SIM)) * 100
   ));
 
-  // Margin bonus: if the gap to second-best is large, boost confidence
-  const marginBonus = Math.min(10, margin * 50);
+  // Margin bonus: if the gap to second-best is large, boost confidence heavily
+  // Margin of 0.1 (10% difference) adds +15 to score
+  const marginBonus = Math.min(15, margin * 150);
 
   return Math.min(100, Math.round(scaled + marginBonus));
 }
@@ -287,6 +345,7 @@ async function matchSegment(
     score: calibrateScore(best.sim, margin),
     margin: Math.round(margin * 100),
     rawSimilarity: Math.round(best.sim * 1000) / 1000,
+    topCategories: ranked.slice(0, 4).map(r => r.category), // Return top 4 choices
   };
 }
 
@@ -417,6 +476,16 @@ export async function runEmbeddingClassifier(
     console.error("Embedding engine error:", err);
     return null;
   }
+}
+
+/**
+ * Warmup: explicitly trigger category embeddings to load in background.
+ * Call this when the server starts.
+ */
+export function warmupEmbeddingEngine(apiKey: string): void {
+  ensureCategoryEmbeddings(apiKey).catch(err => {
+    console.error("Embedding engine warmup failed:", err);
+  });
 }
 
 /**

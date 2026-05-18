@@ -1,0 +1,19 @@
+{
+  "name": "SmartSpend AI",
+  "short_name": "SmartSpend",
+  "description": "المساعد المالي الذكي وتتبع المصاريف",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#10b981",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

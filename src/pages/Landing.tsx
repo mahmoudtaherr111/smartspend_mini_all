@@ -19,12 +19,12 @@ export default function Landing() {
             <img 
               src={whiteModeLogo} 
               alt="SmartSpend" 
-              className="h-10 w-auto object-contain block dark:hidden"
+              className="h-16 sm:h-24 w-auto object-contain block dark:hidden transition-all duration-300 scale-110 origin-right"
             />
             <img 
               src={darkModeLogo} 
               alt="SmartSpend" 
-              className="h-10 w-auto object-contain hidden dark:block"
+              className="h-16 sm:h-24 w-auto object-contain hidden dark:block transition-all duration-300 scale-110 origin-right"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -54,11 +54,11 @@ export default function Landing() {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             اكتب زي ما بتتكلم، سجّل بالصوت، وشوف إحصائيات وتنبيهات مفيدة لميزانيتك — مصمم للاستخدام اليومي على الموبايل.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button size="lg" className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700" asChild>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12">
+            <Button size="lg" className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 shadow-xl shadow-emerald-600/20 hover:shadow-emerald-600/40 hover:-translate-y-1 transition-all duration-300 font-bold text-base px-10 h-14 rounded-xl" asChild>
               <Link to="/login">ابدأ مجاناً</Link>
             </Button>
-            <Button size="lg" variant="outline" className="w-full sm:w-auto" asChild>
+            <Button size="lg" variant="outline" className="w-full sm:w-auto hover:-translate-y-1 transition-all duration-300 font-bold text-base px-10 h-14 rounded-xl border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800" asChild>
               <Link to="/login">عندي حساب</Link>
             </Button>
           </div>
@@ -71,25 +71,32 @@ export default function Landing() {
           <Feature icon={<ShieldCheck className="w-6 h-6" />} title="حسابك محمي" desc="تسجيل دخول آمن وخطط اشتراك واضحة." />
         </section>
 
-        <section className="grid md:grid-cols-3 gap-4">
-          <Card className="border-emerald-100 dark:border-emerald-900/40">
+        <section className="grid md:grid-cols-3 gap-6 relative">
+          {/* Subtle background glow for the pricing section */}
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/5 via-amber-500/5 to-violet-500/5 blur-3xl -z-10" />
+          
+          <Card className="border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-900/40 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
             <CardContent className="pt-6 space-y-2">
-              <h3 className="font-semibold">مجاني</h3>
-              <p className="text-sm text-muted-foreground">ابدأ بسرعة، سجّل العمليات، وشوف ملخص الشهر.</p>
+              <h3 className="font-semibold text-lg text-slate-800 dark:text-slate-200">مجاني</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">ابدأ بسرعة، سجّل العمليات، وشوف ملخص الشهر.</p>
             </CardContent>
           </Card>
-          <Card className="border-amber-200/80 dark:border-amber-900/40 shadow-md">
+          
+          <Card className="border-amber-200/60 dark:border-amber-700/50 bg-amber-50/40 dark:bg-amber-950/20 backdrop-blur-sm shadow-md hover:shadow-lg transition-all duration-300 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
             <CardContent className="pt-6 space-y-2">
-              <h3 className="font-semibold flex items-center gap-2">
-                برو <span className="text-xs font-normal text-muted-foreground">(قريباً: دفع حقيقي)</span>
+              <h3 className="font-semibold text-lg flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                برو <span className="text-xs font-normal text-amber-600/70 dark:text-amber-500/70 bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 rounded-full">(قريباً)</span>
               </h3>
-              <p className="text-sm text-muted-foreground">ميزات أعمق، حدود أعلى للـ AI، وتجربة أنظف.</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300">ميزات أعمق، حدود أعلى للـ AI، وتجربة أنظف.</p>
             </CardContent>
           </Card>
-          <Card className="border-violet-200/80 dark:border-violet-900/40">
+          
+          <Card className="border-violet-200/60 dark:border-violet-700/50 bg-violet-50/40 dark:bg-violet-950/20 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-violet-400 to-fuchsia-500" />
             <CardContent className="pt-6 space-y-2">
-              <h3 className="font-semibold">ألترا</h3>
-              <p className="text-sm text-muted-foreground">لمستخدمين محترفين محتاجين أقصى قدرات التحليل.</p>
+              <h3 className="font-semibold text-lg text-violet-700 dark:text-violet-400">ألترا</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300">لمستخدمين محترفين محتاجين أقصى قدرات التحليل.</p>
             </CardContent>
           </Card>
         </section>

@@ -52,6 +52,28 @@ export const authedProcedure = t.procedure.use(async ({ ctx, next }) => {
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
 
+// AI Rate Limiter (Stricter for expensive operations)
+const aiRateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const AI_RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const AI_MAX_REQUESTS = 10; // 10 requests per minute
+
+export const aiProcedure = authedProcedure.use(async ({ ctx, next }) => {
+  const key = `${ctx.user.type}:${ctx.user.id}`;
+  const now = Date.now();
+  const limit = aiRateLimitMap.get(key);
+
+  if (!limit || now > limit.resetAt) {
+    aiRateLimitMap.set(key, { count: 1, resetAt: now + AI_RATE_LIMIT_WINDOW });
+  } else {
+    limit.count++;
+    if (limit.count > AI_MAX_REQUESTS) {
+      throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "طلبات الذكاء الاصطناعي كتير جداً! استنى دقيقة وحاول تاني." });
+    }
+  }
+
+  return next({ ctx: { ...ctx, user: ctx.user } });
+});
+
 // Moderator: can view everything except delete users/remove admin
 export const moderatorProcedure = t.procedure.use(async ({ ctx, next }) => {
   if (!ctx.user) {

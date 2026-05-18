@@ -75,7 +75,11 @@ export const trpcClient = trpc.createClient({
       },
       headers() {
         const token = localStorage.getItem("local_auth_token");
-        return token ? { Authorization: `Bearer ${token}` } : {};
+        return {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          "bypass-tunnel-reminder": "true",
+          "ngrok-skip-browser-warning": "true",
+        };
       },
     }),
   ],

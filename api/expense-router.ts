@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { router, authedProcedure } from "./middleware";
 import { db, getDb } from "./queries/connection";
-import { expenses, expenseCategories } from "../db/schema";
+import { expenses, expenseCategories, userDictionaries, users, localUsers } from "../db/schema";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 import { ExpenseInputLimits } from "../contracts/constants";
+import { invalidateUserMemory } from "./lib/muscle-memory";
 
 const transactionTypeSchema = z.enum(["income", "expense", "transfer", "investment"]);
 
@@ -44,6 +45,50 @@ export const expenseRouter = router({
         source: input.source,
         date: expenseDate,
       });
+
+      // Phase 2: Invalidate muscle memory cache so it learns this new confirmed pattern
+      invalidateUserMemory(userId, userType);
+
+      // ─── Gamification: Update Streaks ───
+      try {
+        const now = new Date();
+        const todayStr = now.toISOString().split("T")[0];
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+        if (userType === "oauth") {
+          const [u] = await db.select().from(users).where(eq(users.id, userId as string));
+          if (u) {
+            const lastDate = u.lastStreakAt ? new Date(u.lastStreakAt) : null;
+            const lastStr = lastDate ? lastDate.toISOString().split("T")[0] : null;
+
+            if (lastStr !== todayStr) {
+              let newStreak = lastStr === yesterdayStr ? (u.currentStreak || 0) + 1 : 1;
+              let highestStreak = Math.max(u.highestStreak || 0, newStreak);
+              await db.update(users)
+                .set({ currentStreak: newStreak, highestStreak, lastStreakAt: now })
+                .where(eq(users.id, userId as string));
+            }
+          }
+        } else {
+          const [u] = await db.select().from(localUsers).where(eq(localUsers.id, userId as number));
+          if (u) {
+            const lastDate = u.lastStreakAt ? new Date(u.lastStreakAt) : null;
+            const lastStr = lastDate ? lastDate.toISOString().split("T")[0] : null;
+
+            if (lastStr !== todayStr) {
+              let newStreak = lastStr === yesterdayStr ? (u.currentStreak || 0) + 1 : 1;
+              let highestStreak = Math.max(u.highestStreak || 0, newStreak);
+              await db.update(localUsers)
+                .set({ currentStreak: newStreak, highestStreak, lastStreakAt: now })
+                .where(eq(localUsers.id, userId as number));
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Streak logic error:", err);
+      }
 
       return { success: true };
     }),
@@ -107,6 +152,7 @@ export const expenseRouter = router({
         amount: expenseAmount.optional(),
         type: transactionTypeSchema.optional(),
         category: expenseCategory.optional(),
+        subCategory: z.string().max(ExpenseInputLimits.subCategoryMax || 100).optional(),
         description: z.string().max(ExpenseInputLimits.descriptionMax).optional(),
         rawText: expenseRawText.optional(),
         date: z.string().optional(),
@@ -117,15 +163,74 @@ export const expenseRouter = router({
       const userId = ctx.user!.id;
       const userType = ctx.user!.type;
 
+      // Fetch the original expense BEFORE updating (needed for auto-learning)
+      const [originalExpense] = await db.select().from(expenses)
+        .where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType)));
+
       const updateData: Record<string, any> = {};
       if (input.amount !== undefined) updateData.amount = input.amount.toString();
       if (input.type !== undefined) updateData.type = input.type;
       if (input.category !== undefined) updateData.category = input.category;
+      if (input.subCategory !== undefined) updateData.subCategory = input.subCategory;
       if (input.description !== undefined) updateData.description = input.description;
       if (input.rawText !== undefined) updateData.rawText = input.rawText;
       if (input.date !== undefined) updateData.date = new Date(input.date);
 
       await db.update(expenses).set(updateData).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType)));
+      
+      // Phase 2: Invalidate muscle memory cache so it learns this correction
+      invalidateUserMemory(userId, userType);
+
+      // ── Strategy 6: Auto-Learning Muscle Memory ──
+      // When user corrects a category, extract keywords from rawText
+      // and auto-save them to user_dictionaries for instant future matching.
+      const categoryChanged = input.category && originalExpense && originalExpense.category !== input.category;
+      if (categoryChanged && originalExpense?.rawText) {
+        try {
+          const newCategory = input.category!;
+          const newSubCategory = input.subCategory || originalExpense.subCategory || "عام";
+          const rawText = originalExpense.rawText;
+
+          // Arabic stop words and noise to exclude
+          const STOP_WORDS = new Set([
+            "في", "من", "على", "الى", "عن", "مع", "هو", "هي", "ده", "دي",
+            "كان", "بتاع", "بتاعت", "اللي", "يعني", "كده", "بس", "خلاص",
+            "دفعت", "صرفت", "اشتريت", "جبت", "خدت", "اديت", "حطيت",
+            "جنيه", "جنية", "الف", "ألف", "ج.م",
+          ]);
+
+          // Extract meaningful keywords (>= 3 chars, not numbers, not stop words)
+          const keywords = rawText
+            .replace(/\d+(\.\d+)?/g, "")     // Remove numbers
+            .replace(/[^\u0600-\u06FFa-zA-Z\s]/g, "") // Keep Arabic + English only
+            .split(/\s+/)
+            .map((w: string) => w.trim().toLowerCase())
+            .filter((w: string) => w.length >= 3 && !STOP_WORDS.has(w));
+
+          // Deduplicate and save top 3 most meaningful keywords
+          const uniqueKeywords = [...new Set(keywords)].slice(0, 3);
+
+          for (const word of uniqueKeywords) {
+            await db.insert(userDictionaries).values({
+              userId,
+              userType,
+              word,
+              category: newCategory,
+              subCategory: newSubCategory,
+            }).onDuplicateKeyUpdate({
+              set: {
+                category: newCategory,
+                subCategory: newSubCategory,
+              }
+            }).catch(() => { /* ignore duplicate/constraint errors */ });
+          }
+
+          console.log(`🧠 Auto-learned ${uniqueKeywords.length} keywords for user ${userId}: [${uniqueKeywords.join(", ")}] → ${newCategory}/${newSubCategory}`);
+        } catch (learnErr) {
+          console.warn("Auto-learning failed (non-fatal):", learnErr);
+        }
+      }
+      
       return { success: true };
     }),
 

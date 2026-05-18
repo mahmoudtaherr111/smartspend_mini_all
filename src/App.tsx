@@ -11,9 +11,13 @@ import { useSessionTracker } from "@/hooks/useSessionTracker";
 import { cn } from "@/lib/utils";
 import { PageLoadingSkeleton } from "@/components/PageLoadingSkeleton";
 import { UltraFeatureRoute } from "@/components/routing/PlanGates";
+import { FeedbackButton } from "@/components/FeedbackButton";
 
 import "./3d-effects.css";
 import "./print.css";
+
+import darkModeLogo from "../photos/dark_mode_logo-removebg-preview.png";
+import whiteModeLogo from "../photos/white_mode_logo-removebg-preview.png";
 
 const Login = lazy(() => import("@/pages/Login"));
 const AuthCallback = lazy(() => import("@/pages/AuthCallback"));
@@ -73,16 +77,59 @@ function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useAuth();
 
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    // RTL layout: Sidebar is on the right.
+    // Swipe left (pulling from right edge) opens it.
+    if (isLeftSwipe && !sidebarOpen) {
+      setSidebarOpen(true);
+    }
+    // Swipe right (pushing back to right edge) closes it.
+    if (isRightSwipe && sidebarOpen) {
+      setSidebarOpen(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div 
+      className="min-h-screen bg-background" 
+      dir="rtl"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       {user && (
         <>
-          <div className="lg:hidden flex items-center justify-between p-4 bg-slate-900 text-white border-b border-white/10 sticky top-0 z-40">
+          <div className="lg:hidden flex items-center justify-between p-4 bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-b border-slate-200 dark:border-white/10 sticky top-0 z-40">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-sm">SS</span>
-              </div>
-              <span className="font-bold text-lg tracking-tight">SmartSpend</span>
+              <img 
+                src={whiteModeLogo} 
+                alt="SmartSpend" 
+                className="h-16 w-auto object-contain block dark:hidden scale-110 origin-right"
+              />
+              <img 
+                src={darkModeLogo} 
+                alt="SmartSpend" 
+                className="h-16 w-auto object-contain hidden dark:block scale-110 origin-right"
+              />
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -100,6 +147,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       <main className={cn("transition-all duration-500", user ? "lg:mr-72" : "")}>
         {user && <AdBanner />}
         {children}
+        {user && <FeedbackButton />}
       </main>
     </div>
   );

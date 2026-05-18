@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { getCategoryColor } from "@/lib/utils";
 
 interface ExpenseChartProps {
   categoryData: any[];
@@ -17,18 +18,8 @@ interface ExpenseChartProps {
   items?: any[];
 }
 
-const COLORS = [
-  "#10b981", // emerald-500
-  "#3b82f6", // blue-500
-  "#f43f5e", // rose-500
-  "#f59e0b", // amber-500
-  "#8b5cf6", // violet-500
-  "#06b6d4", // cyan-500
-  "#ec4899", // pink-500
-  "#84cc16", // lime-500
-  "#6366f1", // indigo-500
-  "#94a3b8", // slate-400 (for others)
-];
+// Colors are now handled by getCategoryColor in utils.ts
+
 
 export function ExpenseChart({ categoryData, subCategoryData = [], hourTrend = [], dayOfWeekTrend = [], dayTrend = [], items = [] }: ExpenseChartProps) {
   const [activeTab, setActiveTab] = useState("categories");
@@ -94,11 +85,13 @@ export function ExpenseChart({ categoryData, subCategoryData = [], hourTrend = [
                   paddingAngle={2}
                   dataKey="value"
                   stroke="transparent"
+                  animationDuration={1500}
+                  animationBegin={0}
                 >
                   {processedCategoryData.map((entry, index: number) => (
                     <Cell 
                       key={`cell-${index}`} 
-                      fill={entry.name === "أخرى" ? COLORS[9] : COLORS[index % (COLORS.length - 1)]} 
+                      fill={getCategoryColor(entry.name, index)} 
                       className="cursor-pointer hover:opacity-80 transition-opacity"
                       onClick={() => {
                         if (entry.name !== "أخرى") {
@@ -124,7 +117,12 @@ export function ExpenseChart({ categoryData, subCategoryData = [], hourTrend = [
                   }} 
                   contentStyle={{ direction: "rtl", borderRadius: "12px", border: "none", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)" }} 
                 />
-                <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                <Legend 
+                  verticalAlign="bottom" 
+                  height={36} 
+                  iconType="circle"
+                  wrapperStyle={{ animation: 'fade-in 1.5s ease-out both', animationDelay: '0.5s' }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </TabsContent>
@@ -156,7 +154,7 @@ export function ExpenseChart({ categoryData, subCategoryData = [], hourTrend = [
                       {processedSubCategoryData.slice(0, 10).map((entry, index) => (
                         <Cell 
                           key={`cell-${index}`} 
-                          fill={COLORS[index % (COLORS.length - 1)]} 
+                          fill={getCategoryColor(entry.name, index)} 
                           className="cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => {
                             setSelectedSubCategory(entry.name);

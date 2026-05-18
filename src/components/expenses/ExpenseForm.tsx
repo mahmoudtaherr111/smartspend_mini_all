@@ -95,12 +95,48 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
   }, [recordingDuration, isRecording, userLimits]);
 
   const createMutation = trpc.expense.create.useMutation({
-    onSuccess: () => {
-      utilsTrpc.expense.invalidate();
-      if (onSuccess) onSuccess();
+    onMutate: async (newExpense) => {
+      await utilsTrpc.expense.list.cancel();
+      const previousExpenses = utilsTrpc.expense.list.getData({ limit: 10, offset: 0 });
+
+      utilsTrpc.expense.list.setData({ limit: 10, offset: 0 }, (old) => {
+        if (!old) return old;
+        const tempId = Date.now();
+        const newItem = {
+          id: tempId,
+          userId: 0,
+          userType: "oauth",
+          amount: String(newExpense.amount),
+          type: newExpense.type || "expense",
+          category: newExpense.category,
+          subCategory: newExpense.subCategory || "عام",
+          description: newExpense.description || "",
+          rawText: newExpense.rawText,
+          source: newExpense.source || "manual",
+          date: newExpense.date || new Date().toISOString(),
+        };
+        return {
+          ...old,
+          items: [newItem, ...old.items].slice(0, 10),
+          total: old.total + 1,
+        };
+      });
+
+      return { previousExpenses };
     },
-    onError: (err) => {
+    onError: (err, newExpense, context) => {
+      if (context?.previousExpenses) {
+        utilsTrpc.expense.list.setData({ limit: 10, offset: 0 }, context.previousExpenses);
+      }
       toast.error(err.message || "تعذر حفظ العملية. راجع البيانات وحاول مرة أخرى.");
+    },
+    onSettled: () => {
+      utilsTrpc.expense.list.invalidate();
+      utilsTrpc.expense.getMonthlyStats.invalidate();
+      utilsTrpc.expense.getMonthSummary.invalidate();
+    },
+    onSuccess: () => {
+      if (onSuccess) onSuccess();
     },
   });
 
@@ -145,7 +181,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
           sttMutation.mutate({
             audioBase64: base64Audio,
             mimeType: mimeType,
-            durationSeconds: recordingDuration,
+            durationSeconds: recordingDuration, 
           });
         };
         stream.getTracks().forEach(track => track.stop());
@@ -160,7 +196,6 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
         setRecordingDuration(prev => {
           const newDur = prev + 1;
           const maxPerReq = userLimits?.voice?.maxPerRequest || 60;
-          // Auto-stop if exceeding the max per request limit
           if (newDur >= maxPerReq) {
             toast.info(`تم الوصول للحد الأقصى للتسجيل (${maxPerReq} ثانية). جاري المعالجة...`);
             stopRecording();
@@ -170,8 +205,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
         });
       }, 1000);
     } catch (err: unknown) {
-      const name =
-        err && typeof err === "object" && "name" in err ? String((err as { name?: string }).name) : "";
+      const name = err && typeof err === "object" && "name" in err ? String((err as { name?: string }).name) : "";
       if (name === "NotAllowedError" || name === "PermissionDeniedError") {
         toast.error("لقد قمت برفض صلاحية الميكروفون. يرجى تفعيلها من إعدادات المتصفح.");
       } else {
@@ -187,6 +221,15 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
       if (timerRef.current) clearInterval(timerRef.current);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+        mediaRecorderRef.current.stop();
+      }
+    };
+  }, []);
 
   // ─── Save Logic ───
   const normalizeType = (type: unknown) => {
@@ -247,10 +290,45 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
       toast.error(`النص طويل أوي — الحد الأقصى ${ExpenseInputLimits.rawTextMax} حرف.`);
       return;
     }
+    
+    // Offline Fallback for text
+    if (!navigator.onLine) {
+      toast.info("أنت غير متصل بالإنترنت. تم حفظ العملية مؤقتاً وسيتم تحليلها عند الاتصال.");
+      const offline = JSON.parse(localStorage.getItem("smartspend_offline_texts") || "[]");
+      offline.push({ text, timestamp: Date.now() });
+      localStorage.setItem("smartspend_offline_texts", JSON.stringify(offline));
+      setText("");
+      return;
+    }
+
     setIsProcessingVoice(true);
     setFlowStage("processing");
     parseMutation.mutate({ text });
   };
+
+  // Sync offline texts when coming back online
+  useEffect(() => {
+    const handleOnline = () => {
+      const offline = JSON.parse(localStorage.getItem("smartspend_offline_texts") || "[]");
+      if (offline.length > 0) {
+        toast.info(`جاري معالجة ${offline.length} عملية تم تسجيلها أثناء انقطاع الإنترنت...`);
+        // Just process the first one for now to avoid rate limits
+        const first = offline.shift();
+        localStorage.setItem("smartspend_offline_texts", JSON.stringify(offline));
+        setText(first.text);
+        setIsProcessingVoice(true);
+        setFlowStage("processing");
+        parseMutation.mutate({ text: first.text });
+      }
+    };
+
+    window.addEventListener("online", handleOnline);
+    // Also check on mount
+    if (navigator.onLine) {
+      handleOnline();
+    }
+    return () => window.removeEventListener("online", handleOnline);
+  }, []);
 
   const handleSkip = () => {
     setIsSkipping(true);
@@ -515,15 +593,27 @@ function ManualForm({ onSuccess, categories, createMutation }: any) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || !category) return;
-    createMutation.mutate({
+
+    const payload = {
       amount: parseFloat(amount),
       type,
       category,
-      subCategory,
+      subCategory: subCategory || "عام",
       description,
       rawText: `${amount} جنيه - ${category}`,
       source: "manual",
-    }, {
+    };
+
+    if (!navigator.onLine) {
+      toast.info("تم حفظ العملية محلياً (أوفلاين). سيتم مزامنتها لاحقاً.");
+      const offlineManual = JSON.parse(localStorage.getItem("smartspend_offline_manual") || "[]");
+      offlineManual.push({ ...payload, timestamp: Date.now() });
+      localStorage.setItem("smartspend_offline_manual", JSON.stringify(offlineManual));
+      setAmount(""); setCategory(""); setSubCategory(""); setDescription("");
+      return;
+    }
+
+    createMutation.mutate(payload, {
       onSuccess: () => {
         setAmount("");
         setCategory("");
@@ -533,6 +623,26 @@ function ManualForm({ onSuccess, categories, createMutation }: any) {
       }
     });
   };
+
+  useEffect(() => {
+    const handleOnline = () => {
+      const offlineManual = JSON.parse(localStorage.getItem("smartspend_offline_manual") || "[]");
+      if (offlineManual.length > 0) {
+        toast.info(`جاري مزامنة ${offlineManual.length} عمليات يدوية مسجلة أوفلاين...`);
+        Promise.all(offlineManual.map((item: any) => createMutation.mutateAsync(item)))
+          .then(() => {
+            localStorage.removeItem("smartspend_offline_manual");
+            toast.success("تم مزامنة كل العمليات بنجاح!");
+          })
+          .catch(() => {
+            toast.error("حدث خطأ أثناء مزامنة بعض العمليات.");
+          });
+      }
+    };
+    window.addEventListener("online", handleOnline);
+    if (navigator.onLine) handleOnline();
+    return () => window.removeEventListener("online", handleOnline);
+  }, []);
 
   return (
     <form onSubmit={handleSubmit} className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 space-y-4 animate-in slide-in-from-top-4">

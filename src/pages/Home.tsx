@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, lazy, Suspense, type ReactNode } from "react";
+import { useEffect, useMemo, useState, lazy, Suspense, memo, useCallback, type ReactNode } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +20,8 @@ import { RecentExpenses } from "@/components/expenses/RecentExpenses";
 import { MonthlyStats } from "@/components/dashboard/MonthlyStats";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OnboardingCard } from "@/components/OnboardingCard";
+import { ProductTour } from "@/components/ProductTour";
+import { getCategoryColor } from "@/lib/utils";
 
 const ExpenseChart = lazy(() =>
   import("@/components/dashboard/ExpenseChart").then((m) => ({ default: m.ExpenseChart }))
@@ -45,15 +47,15 @@ function normalizeTab(value: string | null): HomeTab {
   return "record";
 }
 
-function HealthBadge({ summary }: { summary: any }) {
+const HealthBadge = memo(function HealthBadge({ summary }: { summary: any }) {
   const ratio = summary?.totalIncome > 0 ? Math.round((summary.totalExpense / summary.totalIncome) * 100) : null;
   if (ratio === null) return <Badge variant="secondary">أضف الدخل لقراءة أدق</Badge>;
   if (ratio <= 60) return <Badge className="bg-emerald-600">مستقر</Badge>;
   if (ratio <= 90) return <Badge className="bg-amber-600">تحت المتابعة</Badge>;
   return <Badge variant="destructive">ضغط مالي</Badge>;
-}
+});
 
-function SummaryChip({
+const SummaryChip = memo(function SummaryChip({
   label,
   value,
   icon,
@@ -85,7 +87,7 @@ function SummaryChip({
       {helper && <p className="mt-1 text-[10px] text-muted-foreground">{helper}</p>}
     </div>
   );
-}
+});
 
 export default function Home() {
   const { user } = useAuth();
@@ -121,6 +123,10 @@ export default function Home() {
     },
   });
 
+  const handleRefreshInferences = useCallback(() => {
+    refreshInferences.mutate({ month });
+  }, [month, refreshInferences.mutate]);
+
   const pageTitle = useMemo(() => {
     if (activeTab === "stats") return "الإحصائيات المالية";
     if (activeTab === "ai") return "تحليل الذكاء الاصطناعي";
@@ -147,6 +153,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950/40">
+      <ProductTour />
       <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-5">
         <OnboardingCard />
         <header className="flex flex-col gap-4">
@@ -203,7 +210,7 @@ export default function Home() {
             month={month}
             stats={stats}
             loading={statsFetching}
-            refreshInferences={() => refreshInferences.mutate({ month })}
+            refreshInferences={handleRefreshInferences}
             refreshingInferences={refreshInferences.isPending}
           />
         )}
@@ -232,7 +239,7 @@ export default function Home() {
   );
 }
 
-function StatsView({
+const StatsView = memo(function StatsView({
   month,
   stats,
   loading,
@@ -354,17 +361,7 @@ function StatsView({
               <CardContent className="space-y-3">
                 {topCategories.map((cat: any, i: number) => {
                   const pct = totalExpense > 0 ? Math.round((cat.value / totalExpense) * 100) : 0;
-                  const CHART_COLORS = [
-                    "#10b981", // emerald-500
-                    "#3b82f6", // blue-500
-                    "#f43f5e", // rose-500
-                    "#f59e0b", // amber-500
-                    "#8b5cf6", // violet-500
-                    "#06b6d4", // cyan-500
-                    "#ec4899", // pink-500
-                    "#84cc16", // lime-500
-                    "#6366f1", // indigo-500
-                  ];
+                  const catColor = getCategoryColor(cat.name, i);
                   return (
                     <div key={cat.name} className="space-y-1">
                       <div className="flex items-center justify-between text-sm">
@@ -380,7 +377,7 @@ function StatsView({
                       <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all"
-                          style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
+                          style={{ width: `${pct}%`, backgroundColor: catColor }}
                         />
                       </div>
                     </div>
@@ -394,4 +391,4 @@ function StatsView({
       </div>
     </section>
   );
-}
+});

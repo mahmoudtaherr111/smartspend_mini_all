@@ -4,6 +4,7 @@ import { runRuleEngine, type ParsedTransaction } from "./rule-engine";
 import { aiClassify, geminiSpeechToText } from "./ai-classifier";
 import { runEmbeddingClassifier } from "./embedding-engine";
 import { scoreAndDecide, DEFAULT_THRESHOLDS, type ScoredResult } from "./confidence-scorer";
+import { muscleMemoryLookup } from "./muscle-memory";
 import { db } from "../queries/connection";
 import { systemSettings } from "../../db/schema";
 
@@ -25,6 +26,7 @@ export interface PipelineInput {
     responsibleForFamily?: boolean | null;
     supportsOthers?: unknown;
     fixedMonthlyCommitments?: unknown;
+    isSmoker?: boolean | null;
   };
   skipClarification?: boolean;
 }
@@ -125,10 +127,45 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
   };
 
   let items: ParsedTransaction[] = [];
-  let parsedBy: "rule_engine" | "ai" | "hybrid" | "embedding" = "rule_engine";
+  let parsedBy: "rule_engine" | "ai" | "hybrid" | "embedding" | "muscle_memory" = "rule_engine" as any;
   let modelUsed = "rule_engine";
   let alertMessage: string | null = null;
   let tokensUsed = 0;
+
+  // ── Step 2.5: Muscle Memory (Phase 2) ──
+  // Instantly match recurring transactions with 0 tokens
+  const memoryMatch = await muscleMemoryLookup(input.text, input.userId, input.userType);
+  if (memoryMatch) {
+    items = [{
+      amount: memoryMatch.amount || entities.amounts[0]?.amount || 0,
+      category: memoryMatch.pattern.category,
+      subCategory: memoryMatch.pattern.subCategory,
+      description: input.text,
+      type: memoryMatch.pattern.type,
+      confidence: 100, // Trusted from history
+      currency: "EGP",
+      needsReview: false,
+      parsedBy: "rule_engine" as any, // Compatible type
+      inferenceSource: "dictionary" as any,
+      ambiguityFlags: ["muscle_memory_hit"],
+    }];
+    parsedBy = "muscle_memory" as any;
+    modelUsed = "cache";
+    log.finalConfidence = 100;
+    log.finalDecision = "auto_save";
+
+    return {
+      items,
+      parsedBy: parsedBy as any,
+      modelUsed,
+      overallConfidence: 100,
+      decision: "auto_save",
+      alertMessage: null,
+      tokensUsed: 0,
+      processingTimeMs: Date.now() - startTime,
+      log,
+    };
+  }
 
   // ── Step 3+4: Intent Detection + Rule Engine ──
   log.ruleEngineResult.attempted = true;
@@ -151,6 +188,8 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
 
     // Try embedding classifier before falling back to full LLM
     log.embeddingResult.attempted = true;
+    let candidateCategories: string[] | undefined = undefined;
+
     try {
       const embResult = await runEmbeddingClassifier(normalizedText, input.apiKey);
 
@@ -222,7 +261,9 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
               currentDate,
               userProfileContext: input.userProfileContext?.promptSummary,
               personalContext: input.userProfileContext?.personalContextPrompt,
-              ruleHints: ruleResult.items.filter(i => i.confidence >= 60)
+              ruleHints: ruleResult.items.filter(i => i.confidence >= 60),
+              amountCount: entities.amounts.length,
+              isSmoker: input.userProfileContext?.isSmoker,
             },
             forceSkipClarification
           );
@@ -233,6 +274,25 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
             log.aiResult.modelUsed = aiResult.modelUsed;
 
             const isSkipped = forceSkipClarification;
+
+            // ── The Local Taxonomy Engine (Zero Token Categorization) ──
+            // AI extracted amounts and item names. We use local embeddings to map them to categories!
+            if (aiResult.items.length > 0 && !aiResult.needsClarification) {
+              for (const item of aiResult.items) {
+                if (item.category === "متنوعات") {
+                  try {
+                    const embMatch = await runEmbeddingClassifier(item.description, input.apiKey);
+                    if (embMatch && embMatch.matches.length > 0) {
+                      item.category = embMatch.matches[0].category;
+                      item.subCategory = embMatch.matches[0].subCategory;
+                      item.confidence = Math.round((item.confidence + embMatch.matches[0].score) / 2);
+                    }
+                  } catch (e) {
+                    console.warn("Local taxonomy mapping failed for:", item.description);
+                  }
+                }
+              }
+            }
 
             if (isSkipped) {
               if (aiResult.items.length > 0) {
@@ -319,6 +379,45 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
         }
       } else if (ruleResult.items.length > 0) {
         items = ruleResult.items;
+      }
+    }
+  }
+
+  // ── Step 5.3: Hybrid Dispute Resolution (Strategy 8) ──
+  // When Gemini has low confidence, cross-check against the local Embedding Engine.
+  // If they disagree completely → flag for user review. Once confirmed, Strategy 6
+  // auto-learns the correction into user_dictionaries permanently.
+  if (items.length > 0 && parsedBy !== "rule_engine" && parsedBy !== ("muscle_memory" as any)) {
+    for (const item of items) {
+      if (item.confidence < 75 && item.description && item.description.length >= 3) {
+        try {
+          const disputeCheck = await runEmbeddingClassifier(item.description, input.apiKey);
+          if (disputeCheck && disputeCheck.matches.length > 0) {
+            const embeddingCategory = disputeCheck.matches[0].category;
+            const embeddingScore = disputeCheck.matches[0].score;
+
+            // Dispute detected: embedding and AI disagree on category entirely
+            if (embeddingCategory !== item.category && embeddingScore >= 60) {
+              item.needsReview = true;
+              item.ambiguityFlags = [
+                ...(item.ambiguityFlags || []),
+                "gemini_embedding_dispute",
+                `emb_says:${embeddingCategory}`,
+              ];
+
+              // If embedding has significantly higher confidence, prefer its answer
+              // but still flag for review to let the user confirm
+              if (embeddingScore > item.confidence + 15) {
+                item.category = embeddingCategory;
+                item.subCategory = disputeCheck.matches[0].subCategory;
+                item.confidence = Math.round((item.confidence + embeddingScore) / 2);
+                item.ambiguityFlags.push("emb_override");
+              }
+            }
+          }
+        } catch (disputeErr) {
+          console.warn("Dispute resolution error (non-fatal):", disputeErr);
+        }
       }
     }
   }

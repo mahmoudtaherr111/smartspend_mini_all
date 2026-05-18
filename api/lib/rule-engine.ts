@@ -157,9 +157,9 @@ const SUB_CATEGORY_MAP: Record<string, { category: string; subCategory: string }
   "مكافاه": { category: "مرتب", subCategory: "مكافأة/بونص" },
   "عموله": { category: "عمل حر", subCategory: "عمولة" },
   "سبوبه": { category: "عمل حر", subCategory: "سبوبة" },
-  "سجاير": { category: "تسوق", subCategory: "عناية شخصية" },
-  "سجائر": { category: "تسوق", subCategory: "عناية شخصية" },
-  "سجاره": { category: "تسوق", subCategory: "عناية شخصية" },
+  "سجاير": { category: "متنوعات", subCategory: "مصاريف شخصية" },
+  "سجائر": { category: "متنوعات", subCategory: "مصاريف شخصية" },
+  "سجاره": { category: "متنوعات", subCategory: "مصاريف شخصية" },
   "حلاق": { category: "تسوق", subCategory: "عناية شخصية" },
   "لبان": { category: "أكل وشرب", subCategory: "سناكس" },
   "شيبسي": { category: "أكل وشرب", subCategory: "سناكس" },
@@ -171,6 +171,172 @@ const SUB_CATEGORY_MAP: Record<string, { category: string; subCategory: string }
   "كورة": { category: "ترفيه", subCategory: "رياضة وجيم" },
   "كوره": { category: "ترفيه", subCategory: "رياضة وجيم" },
 };
+
+/**
+ * Strategy 2: Merchant & Brand Registry (0 tokens, 100% confidence)
+ * ─────────────────────────────────────────────────────────────────
+ * Maps well-known Egyptian and global brand names to exact categories.
+ * When a merchant name is detected, the category is determined instantly
+ * with absolute certainty, completely bypassing the AI.
+ */
+const MERCHANT_REGISTRY: Record<string, { category: string; subCategory: string }> = {
+  // ── Pharmacies & Health ──
+  "العزبي": { category: "صحة", subCategory: "صيدلية" },
+  "صيدلية العزبي": { category: "صحة", subCategory: "صيدلية" },
+  "صيدليات العزبي": { category: "صحة", subCategory: "صيدلية" },
+  "رشدي": { category: "صحة", subCategory: "صيدلية" },
+  "صيدلية رشدي": { category: "صحة", subCategory: "صيدلية" },
+  "سيف": { category: "صحة", subCategory: "صيدلية" },
+  "صيدلية سيف": { category: "صحة", subCategory: "صيدلية" },
+  // ── Gas Stations & Fuel ──
+  "وطنية": { category: "مواصلات", subCategory: "بنزين" },
+  "بنزينة وطنية": { category: "مواصلات", subCategory: "بنزين" },
+  "توتال": { category: "مواصلات", subCategory: "بنزين" },
+  "موبيل": { category: "مواصلات", subCategory: "بنزين" },
+  "شيل": { category: "مواصلات", subCategory: "بنزين" },
+  "بنزينه": { category: "مواصلات", subCategory: "بنزين" },
+  "المحطه": { category: "مواصلات", subCategory: "بنزين" },
+  "امارات مصر": { category: "مواصلات", subCategory: "بنزين" },
+  "كووبرتف": { category: "مواصلات", subCategory: "بنزين" },
+  // ── Supermarkets & Grocery ──
+  "كارفور": { category: "أكل وشرب", subCategory: "بقالة" },
+  "سبينيس": { category: "أكل وشرب", subCategory: "بقالة" },
+  "مترو ماركت": { category: "أكل وشرب", subCategory: "بقالة" },
+  "فتح الله": { category: "أكل وشرب", subCategory: "بقالة" },
+  "كازيون": { category: "أكل وشرب", subCategory: "بقالة" },
+  "هايبر وان": { category: "أكل وشرب", subCategory: "بقالة" },
+  "اولاد رجب": { category: "أكل وشرب", subCategory: "بقالة" },
+  "بيم": { category: "أكل وشرب", subCategory: "بقالة" },
+  "خير زمان": { category: "أكل وشرب", subCategory: "بقالة" },
+  // ── Fast Food & Restaurants ──
+  "ماك": { category: "أكل وشرب", subCategory: "وجبات سريعة" },
+  "ماكدونالدز": { category: "أكل وشرب", subCategory: "وجبات سريعة" },
+  "كنتاكي": { category: "أكل وشرب", subCategory: "وجبات سريعة" },
+  "هارديز": { category: "أكل وشرب", subCategory: "وجبات سريعة" },
+  "برجر كينج": { category: "أكل وشرب", subCategory: "وجبات سريعة" },
+  "بيتزا هت": { category: "أكل وشرب", subCategory: "وجبات سريعة" },
+  "بافلو": { category: "أكل وشرب", subCategory: "وجبات سريعة" },
+  "الشبراوي": { category: "أكل وشرب", subCategory: "مطعم" },
+  "ابو طارق": { category: "أكل وشرب", subCategory: "مطعم" },
+  "كشري التحرير": { category: "أكل وشرب", subCategory: "مطعم" },
+  "بيتزا كينج": { category: "أكل وشرب", subCategory: "وجبات سريعة" },
+  "صبحي كابر": { category: "أكل وشرب", subCategory: "مطعم" },
+  // ── E-Commerce & Shopping ──
+  "امازون": { category: "تسوق", subCategory: "عام" },
+  "أمازون": { category: "تسوق", subCategory: "عام" },
+  "نون": { category: "تسوق", subCategory: "عام" },
+  "جوميا": { category: "تسوق", subCategory: "عام" },
+  "شي ان": { category: "تسوق", subCategory: "ملابس" },
+  "شي إن": { category: "تسوق", subCategory: "ملابس" },
+  "زارا": { category: "تسوق", subCategory: "ملابس" },
+  "اتش اند ام": { category: "تسوق", subCategory: "ملابس" },
+  "ديفاكتو": { category: "تسوق", subCategory: "ملابس" },
+  "اديداس": { category: "تسوق", subCategory: "ملابس" },
+  "نايكي": { category: "تسوق", subCategory: "ملابس" },
+  // ── Telecom ──
+  "فودافون": { category: "فواتير", subCategory: "شحن رصيد" },
+  "اورنج": { category: "فواتير", subCategory: "شحن رصيد" },
+  "اتصالات": { category: "فواتير", subCategory: "شحن رصيد" },
+  "وي": { category: "فواتير", subCategory: "إنترنت" },
+  // ── Subscriptions ──
+  "نتفلكس": { category: "اشتراكات", subCategory: "نتفلكس" },
+  "سبوتيفاي": { category: "اشتراكات", subCategory: "سبوتيفاي" },
+  "شاهد": { category: "اشتراكات", subCategory: "شاهد" },
+  "يوتيوب بريميوم": { category: "اشتراكات", subCategory: "يوتيوب" },
+  // ── Transport Apps ──
+  "اوبر": { category: "مواصلات", subCategory: "أوبر/كريم" },
+  "كريم": { category: "مواصلات", subCategory: "أوبر/كريم" },
+  "سويفل": { category: "مواصلات", subCategory: "أتوبيس" },
+  "اندرايفر": { category: "مواصلات", subCategory: "أوبر/كريم" },
+  "ديدي": { category: "مواصلات", subCategory: "أوبر/كريم" },
+  // ── BNPL / Fintech ──
+  "فاليو": { category: "فواتير", subCategory: "أقساط" },
+  "سهوله": { category: "فواتير", subCategory: "أقساط" },
+  "خزنه": { category: "فواتير", subCategory: "أقساط" },
+  "فوري": { category: "فواتير", subCategory: "خدمات" },
+  "انستاباي": { category: "تحويل", subCategory: "تحويل" },
+  // ── Cafes ──
+  "ستاربكس": { category: "أكل وشرب", subCategory: "قهوة وكافيه" },
+  "سيلانترو": { category: "أكل وشرب", subCategory: "قهوة وكافيه" },
+  "كوستا": { category: "أكل وشرب", subCategory: "قهوة وكافيه" },
+  "ميكاتو": { category: "أكل وشرب", subCategory: "قهوة وكافيه" },
+  // ── Education ──
+  "المنصوره": { category: "تعليم", subCategory: "جامعة" },
+  "يوديمي": { category: "تعليم", subCategory: "كورسات" },
+  "كورسيرا": { category: "تعليم", subCategory: "كورسات" },
+};
+
+/**
+ * Strategy 5: Hierarchical Subcategory Cascade
+ * ─────────────────────────────────────────────
+ * After determining main category, refine the subcategory
+ * using deterministic keyword patterns for higher precision.
+ */
+function refineSubCategory(category: string, subCategory: string, context: string): string {
+  // Only refine if subcategory is generic ("عام")
+  if (subCategory !== "عام") return subCategory;
+
+  switch (category) {
+    case "تعليم":
+      if (/(مدرس|درس|دروس|سنتر)/.test(context)) return "دروس خصوصية";
+      if (/(كورس|كورسات|دوره|دورة|يوديمي|كورسيرا)/.test(context)) return "كورسات";
+      if (/(جامعه|كليه|ترم|سنه اولى)/.test(context)) return "جامعة";
+      if (/(مدرسه|يونيفورم|مصاريف المدرسه)/.test(context)) return "مدرسة";
+      if (/(كتب|ملزمه|مذكره|ادوات)/.test(context)) return "كتب وأدوات";
+      return "عام";
+    case "صحة":
+      if (/(دكتور|عياده|كشف|طبيب|فيزيتا|استشاره)/.test(context)) return "كشف ودكتور";
+      if (/(صيدليه|دوا|علاج|روشته|بانادول|فيتامين)/.test(context)) return "صيدلية";
+      if (/(تحاليل|اشعه|سونار|رنين)/.test(context)) return "تحاليل";
+      if (/(اسنان|ضرس|حشو|خلع)/.test(context)) return "أسنان";
+      if (/(مستشفى|عمليه|جراحه)/.test(context)) return "مستشفى";
+      return "عام";
+    case "مواصلات":
+      if (/(اوبر|كريم|اندرايفر|ديدي)/.test(context)) return "أوبر/كريم";
+      if (/(بنزين|تفويله|محطه|بنزينه)/.test(context)) return "بنزين";
+      if (/(مترو|تذكره مترو)/.test(context)) return "مترو";
+      if (/(تاكسي|تكسي)/.test(context)) return "تاكسي";
+      if (/(توكتوك)/.test(context)) return "توكتوك";
+      if (/(صيانه|عربيه|كاوتش|زيت|ميكانيكي)/.test(context)) return "صيانة عربية";
+      return "عام";
+    case "سكن":
+      if (/(ايجار|اجار)/.test(context)) return "إيجار";
+      if (/(سباك|كهربائي|نقاش|نجار|صيانه)/.test(context)) return "صيانة";
+      if (/(عفش|اثاث)/.test(context)) return "أثاث";
+      if (/(منظفات|بريل|اريال|صابون)/.test(context)) return "منظفات";
+      return "عام";
+    case "فواتير":
+      if (/(كهربا|نور)/.test(context)) return "كهرباء";
+      if (/(ميه|مياه)/.test(context)) return "مياه";
+      if (/(غاز)/.test(context)) return "غاز";
+      if (/(نت|انترنت|راوتر|وي)/.test(context)) return "إنترنت";
+      if (/(شحن|رصيد|كارت)/.test(context)) return "شحن رصيد";
+      if (/(قسط|اقساط|فاليو|سهوله)/.test(context)) return "أقساط";
+      return "عام";
+    case "ترفيه":
+      if (/(سينما|فيلم)/.test(context)) return "سينما";
+      if (/(جيم|رياضه|بروتين)/.test(context)) return "رياضة وجيم";
+      if (/(سفر|مصيف|رحله)/.test(context)) return "سفر";
+      if (/(خروجه|فسحه|تمشيه)/.test(context)) return "خروجة";
+      if (/(شيشه|كافيه)/.test(context)) return "كافيه وشيشة";
+      if (/(بلايستيشن|اكس بوكس|العاب)/.test(context)) return "ألعاب";
+      return "عام";
+    case "أكل وشرب":
+      if (/(قهوه|نسكافيه|لاتيه|كابتشينو|ستاربكس)/.test(context)) return "قهوة وكافيه";
+      if (/(دليفري|تيك اواي|طلبات)/.test(context)) return "دليفري";
+      if (/(بقاله|سوبر|خضار|فاكهه|بيض|لبن)/.test(context)) return "بقالة";
+      if (/(شيبسي|شوكولاته|حلويات|ايس كريم|بسبوسه)/.test(context)) return "سناكس";
+      if (/(لحمه|فراخ|سمك|جمبري)/.test(context)) return "لحوم ودواجن";
+      if (/(عيش|مخبز|فرن)/.test(context)) return "مخبوزات";
+      return "مطعم";
+    case "هدايا وصدقات":
+      if (/(صدقه|زكاه|تبرع|جامع|رساله)/.test(context)) return "صدقة/تبرع";
+      if (/(عيديه)/.test(context)) return "عيدية";
+      return "عام";
+    default:
+      return subCategory;
+  }
+}
 
 /**
  * Determine if text is simple enough for rule engine (no AI needed)
@@ -255,6 +421,23 @@ export function runRuleEngine(
         inferenceSource = "dictionary";
         found = true;
         break;
+      }
+    }
+
+    // 1.5 Merchant Registry (Strategy 2: instant brand recognition, 0 tokens)
+    if (!found) {
+      // Check multi-word merchant names first (longer = more specific)
+      const merchantKeys = Object.keys(MERCHANT_REGISTRY).sort((a, b) => b.length - a.length);
+      for (const merchant of merchantKeys) {
+        if (allContext.includes(merchant)) {
+          category = MERCHANT_REGISTRY[merchant].category;
+          subCategory = MERCHANT_REGISTRY[merchant].subCategory;
+          confidence = 100;
+          inferenceSource = "dictionary";
+          ambiguityFlags = ["merchant_registry_hit"];
+          found = true;
+          break;
+        }
       }
     }
 
@@ -390,10 +573,13 @@ export function runRuleEngine(
       description = intentResult.intent === "income" ? "دخل" : category;
     }
 
+    // Strategy 5: Hierarchical Subcategory Cascade — refine generic subcategories
+    const refinedSubCategory = refineSubCategory(category, subCategory, allContext);
+
     items.push(applyProfileHints({
       amount,
       category,
-      subCategory,
+      subCategory: refinedSubCategory,
       description,
       type: intentResult.intent,
       confidence,

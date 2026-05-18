@@ -1,7 +1,10 @@
 /**
  * SmartSpend Text Normalizer (Step 1)
  * Normalizes Arabic/Egyptian text for financial parsing
+ * Enhanced with STT error correction (Phase 1 of Intelligence Plan)
  */
+
+import { applySttCorrections } from "./stt-corrections";
 
 /** Convert Arabic-Indic numerals (٠١٢...) to Western Arabic (012...) */
 export function arabicToEnglishNumbers(str: string): string {
@@ -45,6 +48,34 @@ const COLLOQUIAL_NUMBERS: Record<string, number> = {
   "تلاتلاف": 3000, "اربعتلاف": 4000,
 };
 
+/**
+ * Metaphorical slang normalizer (Strategy 4: Negative Keywords Engine)
+ * ────────────────────────────────────────────────────────────────────
+ * Egyptian colloquial idioms that contain words which mislead the AI:
+ * - "طلعت عيني" contains "طلعت" → AI thinks "outing/travel"
+ * - "خربت بيتي" contains "خربت بيت" → AI thinks "home maintenance"
+ * - "طيرت" / "نسفت" → AI may interpret as entertainment
+ * We replace these with literal, neutral financial verbs.
+ */
+const METAPHOR_NORMALIZATIONS: Array<{ pattern: RegExp; replacement: string }> = [
+  // "طلعت عيني / روحي في X" → removes misleading "طلعت" (which triggers خروجة/ترفيه)
+  { pattern: /طلعت\s+(?:عيني|روحي|عينيا|روحيا)\s+(?:في|ف)\s*/g, replacement: "تعبت في " },
+  // "خربت بيتي / الدنيا في X" → removes misleading "خربت بيت" (triggers سكن/صيانة)
+  { pattern: /خربت\s+(?:بيتي|الدنيا|الدنيه)\s+(?:في|ف|على)\s*/g, replacement: "صرفت كتير على " },
+  // "طيرت فلوس على X" → "صرفت على X"
+  { pattern: /طيرت\s+(?:فلوس|مصاري|فلوسي)\s+(?:على|في|ف)\s*/g, replacement: "صرفت على " },
+  // Standalone verbs: "بعزقت / فرتكت / نسفت" → "صرفت"
+  { pattern: /(?:^|\s)(بعزقت|فرتكت|نسفت|بددت)(?=\s|$)/g, replacement: " صرفت" },
+  // "شطبت X" → "خلصت X" (avoids confusion with construction)
+  { pattern: /(?:^|\s)شطبت(?=\s)/g, replacement: " خلصت" },
+  // "راحت عليا في X" → "دفعت في X" (removes misleading "راحت")
+  { pattern: /راحت\s+(?:عليا|عليه|علي)\s+(?:في|ف)\s*/g, replacement: "دفعت في " },
+  // "ضربت X بـ" → "اشتريت X بـ" (removes violence connotation)
+  { pattern: /ضربت\s+(\S+)\s+(?:بـ|ب)\s*/g, replacement: "اشتريت $1 بـ " },
+  // "اتنصبت في X" → "دفعت في X" (removes misleading negative connotation)
+  { pattern: /اتنصبت\s+(?:في|ف)\s*/g, replacement: "دفعت في " },
+];
+
 const COMMON_PHRASE_NORMALIZATIONS: Record<string, string> = {
   "فكيت بنزين": "دفعت بنزين",
   "حطيت للسايس": "دفعت سايس",
@@ -53,6 +84,24 @@ const COMMON_PHRASE_NORMALIZATIONS: Record<string, string> = {
   "شحنت رصيد": "دفعت شحن رصيد",
   "دفعت عربون": "دفعت عربون",
   "حطيت فلوس في الكارت": "حولت فلوس كارت",
+  "حاسبت على المشاريب": "دفعت قهوة ومشاريب",
+  "خلصت قسط": "دفعت قسط",
+  "قطعت تذكرة": "دفعت تذكرة",
+  "لمينا من بعض": "جمعيه",
+  "قبضت الجمعية": "قبضت جمعيه",
+  "دفعت الجمعية": "دفعت جمعيه",
+  "كلنا بره": "اكلت في مطعم",
+  "خرجنا ناكل": "اكلت في مطعم",
+  "جبت طلبات البيت": "اشتريت سوبر ماركت",
+  "نزلت السوق": "اشتريت خضار وفاكهة",
+  "قفلت الحساب": "دفعت الحساب",
+  "سوقت العربيه": "بنزين",
+  "جبت هدوم": "اشتريت ملابس",
+  "صرفت على المكنه": "صيانة سيارة",
+  "عمرت المكنه": "صيانة سيارة",
+  "شحنت كارت الكهربا": "دفعت فاتورة الكهرباء",
+  "شحنت كارت الميه": "دفعت فاتورة المياه",
+  "شحنت كارت الغاز": "دفعت فاتورة الغاز",
 };
 
 /**
@@ -60,6 +109,15 @@ const COMMON_PHRASE_NORMALIZATIONS: Record<string, string> = {
  */
 export function normalizeText(text: string): string {
   let result = text.trim();
+
+  // 0. Apply STT corrections FIRST (fix speech-to-text errors before anything)
+  result = applySttCorrections(result);
+
+  // 0.5 Apply metaphorical slang normalizer (Strategy 4: Negative Keywords Engine)
+  // Must run BEFORE phrase normalization to catch idioms like "طلعت عيني في تصليح العربية"
+  for (const { pattern, replacement } of METAPHOR_NORMALIZATIONS) {
+    result = result.replace(pattern, replacement);
+  }
 
   // 1. Convert Arabic-Indic numerals
   result = arabicToEnglishNumbers(result);

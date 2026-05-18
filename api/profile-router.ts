@@ -8,8 +8,11 @@ import {
   users,
   localUsers,
   userProfiles,
+  webhookTokens,
+  rawSmsEvents,
 } from "../db/schema";
-import { eq, and, gte, lte } from "drizzle-orm";
+import { eq, and, gte, lte, desc } from "drizzle-orm";
+import { randomBytes } from "crypto";
 import {
   getSmartProfile,
   recordProfileLearningEvent,
@@ -274,4 +277,50 @@ export const profileRouter = router({
       }
       return { success: true };
     }),
+
+  // ─── Webhook Token Management (for SMS Ingestion via iOS Shortcuts) ───
+  getWebhookToken: authedProcedure.query(async ({ ctx }) => {
+    const [record] = await db
+      .select()
+      .from(webhookTokens)
+      .where(and(
+        eq(webhookTokens.userId, ctx.user.id as number),
+        eq(webhookTokens.userType, ctx.user.type)
+      ))
+      .limit(1);
+    return { token: record?.token || null, hasToken: !!record, createdAt: record?.createdAt || null };
+  }),
+
+  generateWebhookToken: authedProcedure.mutation(async ({ ctx }) => {
+    // Revoke any existing tokens first
+    await db.delete(webhookTokens).where(
+      and(
+        eq(webhookTokens.userId, ctx.user.id as number),
+        eq(webhookTokens.userType, ctx.user.type)
+      )
+    );
+    const newToken = `sms_${randomBytes(32).toString("hex")}`;
+    await db.insert(webhookTokens).values({
+      userId: ctx.user.id as number,
+      userType: ctx.user.type,
+      token: newToken,
+      name: "iOS Shortcut Token",
+    });
+    return { success: true, token: newToken };
+  }),
+
+  // ─── Get recent SMS logs ───
+  getSmsLogs: authedProcedure.query(async ({ ctx }) => {
+    return await db
+      .select()
+      .from(rawSmsEvents)
+      .where(
+        and(
+          eq(rawSmsEvents.userId, ctx.user.id as number),
+          eq(rawSmsEvents.userType, ctx.user.type)
+        )
+      )
+      .orderBy(desc(rawSmsEvents.createdAt))
+      .limit(10);
+  }),
 });

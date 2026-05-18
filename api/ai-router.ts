@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, authedProcedure, proProcedure } from "./middleware";
+import { router, authedProcedure, proProcedure, aiProcedure } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { db } from "./queries/connection";
@@ -442,7 +442,7 @@ async function aiParse(text: string, client: any, userId: number, userType: stri
 
 export const aiRouter = router({
   // ─── Parse Expense (New Pipeline) ───
-  parseExpense: authedProcedure
+  parseExpense: aiProcedure
     .input(z.object({ text: z.string(), model: z.enum(["flash", "pro", "ultra", "gemma"]).default("flash"), skipClarification: z.boolean().optional() }))
     .mutation(async ({ ctx, input }) => {
       // Check daily limits
@@ -522,6 +522,7 @@ export const aiRouter = router({
           responsibleForFamily: smartProfile.lifestyleInfo.responsibleForFamily as boolean | null,
           supportsOthers: smartProfile.lifestyleInfo.supportsOthers,
           fixedMonthlyCommitments: smartProfile.lifestyleInfo.fixedMonthlyCommitments,
+          isSmoker: smartProfile?.onboardingAnswers?.smoke === 'yes' || /مدخن|سجاير|فيب/.test(smartProfile?.lifestyleInfo?.habits || ""),
         },
         skipClarification: input.skipClarification,
       });
@@ -649,7 +650,7 @@ export const aiRouter = router({
   }),
 
   // ─── Speech-to-Text via Gemini ───
-  speechToText: authedProcedure
+  speechToText: aiProcedure
     .input(z.object({
       audioBase64: z.string(),
       mimeType: z.string().default("audio/webm"),
@@ -725,25 +726,56 @@ export const aiRouter = router({
       }
 
       // Get API key
-      let apiKey = cfg.stt_api_key || cfg.ai_api_key || env.GEMINI_API_KEY;
+      let apiKey = cfg.stt_api_key && cfg.stt_api_key !== "AIzaSyCWif4U7uRb1WKG_HTwqNwtNLmvfD5fZj0" ? cfg.stt_api_key : (cfg.ai_api_key || env.GEMINI_API_KEY);
       let apiKey2 = cfg.ai_api_key_2 || "";
-      const sttModel = cfg.stt_model || "gemini-3.0-flash-live";
-      const fallbackModel = cfg.stt_fallback_model || "gemini-3.1-flash-lite";
+      const sttModel = cfg.stt_model || "gemini-1.5-flash";
+      const fallbackModel = cfg.stt_fallback_model || "gemini-2.0-flash";
 
       const cleanMimeType = input.mimeType.split(';')[0];
       const sttMode = cfg.stt_processing_mode || "standard";
+      
+      // Remove base64 data URI prefix if present (Gemini expects raw base64 string)
+      const pureBase64 = input.audioBase64.includes(',') ? input.audioBase64.split(',')[1] : input.audioBase64;
 
-      let result = await runSTTPipeline(input.audioBase64, cleanMimeType, apiKey, sttModel, sttMode);
-      if (!result) {
-        console.warn("STT with primary model failed, falling back to", fallbackModel);
-        result = await runSTTPipeline(input.audioBase64, cleanMimeType, apiKey, fallbackModel, sttMode);
+      let result = null;
+      let lastError = "Unknown error";
+      
+      try {
+        result = await runSTTPipeline(pureBase64, cleanMimeType, apiKey, sttModel, sttMode);
+      } catch (e: any) {
+        lastError = e.message;
+        console.warn("STT with primary model failed:", e.message);
       }
+
+      if (!result) {
+        try {
+          result = await runSTTPipeline(pureBase64, cleanMimeType, apiKey, fallbackModel, sttMode);
+        } catch (e: any) {
+          lastError = e.message;
+          console.warn("STT with fallback model failed:", e.message);
+        }
+      }
+
       if (!result && apiKey2) {
-        console.warn("STT with primary key failed, falling back to secondary key with", fallbackModel);
-        result = await runSTTPipeline(input.audioBase64, cleanMimeType, apiKey2, fallbackModel, sttMode);
+        try {
+          result = await runSTTPipeline(pureBase64, cleanMimeType, apiKey2, fallbackModel, sttMode);
+        } catch (e: any) {
+          lastError = e.message;
+          console.warn("STT with secondary key failed:", e.message);
+        }
       }
+
       if (!result) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "فشل تحويل الصوت. جرب تاني." });
+        try {
+          result = await runSTTPipeline(pureBase64, cleanMimeType, apiKey, "gemini-2.0-flash", sttMode);
+        } catch (e: any) {
+          lastError = e.message;
+          console.warn("STT ultimate fallback failed:", e.message);
+        }
+      }
+
+      if (!result) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "فشل تحويل الصوت: " + lastError });
       }
 
       const currentMonthStr = new Date().toISOString().slice(0, 7);

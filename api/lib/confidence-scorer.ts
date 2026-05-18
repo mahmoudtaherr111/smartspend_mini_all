@@ -1,9 +1,11 @@
 /**
  * SmartSpend Confidence Scorer (Step 6)
  * Evaluates and adjusts confidence scores for parsed transactions
+ * Enhanced with Anomaly Detection + Amount Heuristics (Phase 5)
  */
 
 import type { ParsedTransaction } from "./rule-engine";
+import { detectAnomalies, getAmountCategoryBoost, getTimeContext } from "./anomaly-detector";
 
 export interface ScoredResult {
   items: ParsedTransaction[];
@@ -24,6 +26,7 @@ export const DEFAULT_THRESHOLDS = {
  */
 function adjustConfidence(item: ParsedTransaction): ParsedTransaction {
   let conf = item.confidence;
+  const flags = new Set(item.ambiguityFlags || []);
 
   // Penalty: "متنوعات" category = low quality classification
   if (item.category === "متنوعات") conf = Math.min(conf, 40);
@@ -36,14 +39,24 @@ function adjustConfidence(item: ParsedTransaction): ParsedTransaction {
   // Boost: user dictionary match (parsedBy check is implicit via confidence=100)
   if (item.confidence === 100) conf = 100;
 
-  // Penalty: very large amounts in food/transport (likely misclassified)
-  if (item.amount > 10000 && ["أكل وشرب", "مواصلات"].includes(item.category)) {
-    conf = Math.min(conf, 60);
+  // ── Phase 5: Anomaly Detection ──
+  const anomaly = detectAnomalies(item);
+  if (anomaly.hasAnomaly) {
+    conf = Math.max(conf - anomaly.confidencePenalty, 20);
+    if (anomaly.anomalyType) flags.add(`anomaly_${anomaly.anomalyType}`);
   }
 
-  // Boost: amount makes sense for category
-  if (item.amount <= 500 && ["أكل وشرب", "مواصلات"].includes(item.category)) {
-    conf = Math.min(conf + 5, 100);
+  // ── Bonus: Amount-Category Heuristic Boost ──
+  const amountBoost = getAmountCategoryBoost(item.amount, item.category);
+  if (amountBoost > 0) {
+    conf = Math.min(conf + amountBoost, 100);
+  }
+
+  // ── Bonus: Time-Context SubCategory Hint ──
+  const timeHint = getTimeContext();
+  if (timeHint && item.category === timeHint.category && item.subCategory === "عام" && timeHint.subCategoryHint) {
+    item = { ...item, subCategory: timeHint.subCategoryHint };
+    conf = Math.min(conf + 3, 100);
   }
 
   // Penalty: income with very small amount
@@ -51,7 +64,7 @@ function adjustConfidence(item: ParsedTransaction): ParsedTransaction {
     conf = Math.min(conf, 70);
   }
 
-  return { ...item, confidence: conf, needsReview: conf < 85 };
+  return { ...item, confidence: conf, needsReview: conf < 85, ambiguityFlags: Array.from(flags) };
 }
 
 /**
