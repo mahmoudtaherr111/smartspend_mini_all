@@ -124,7 +124,7 @@ export const CATEGORIES: MainCategory[] = [
     icon: "🎮", color: "#f59e0b", type: "expense",
     subcategories: [
       { id: "cinema", name: "Cinema", name_ar: "سينما" },
-      { id: "cafe", name: "Cafe & Shisha", name_ar: "كافيه وشيشة" },
+      { id: "cafe", name: "Cafe", name_ar: "كافيه" },
       { id: "travel", name: "Travel", name_ar: "سفر" },
       { id: "sports", name: "Sports & Gym", name_ar: "رياضة وجيم" },
       { id: "gaming", name: "Gaming", name_ar: "ألعاب" },
@@ -143,6 +143,16 @@ export const CATEGORIES: MainCategory[] = [
       { id: "google_ai", name: "Google AI", name_ar: "جوجل AI" },
       { id: "saas", name: "SaaS", name_ar: "برمجيات" },
       { id: "general_subs", name: "General", name_ar: "عام" },
+    ],
+  },
+  {
+    id: "smoking", name: "Smoking", name_ar: "تدخين",
+    icon: "🚬", color: "#6b7280", type: "expense",
+    subcategories: [
+      { id: "cigarettes", name: "Cigarettes", name_ar: "سجائر" },
+      { id: "vape", name: "Vape", name_ar: "فيب/ليكود" },
+      { id: "shisha", name: "Shisha", name_ar: "شيشة/معسل" },
+      { id: "smoking_general", name: "General", name_ar: "عام" },
     ],
   },
   {

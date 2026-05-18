@@ -84,16 +84,16 @@ export default function Login() {
 
       <Card className="w-full max-w-md relative z-10 shadow-2xl border-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
         <CardHeader className="text-center space-y-3 pb-6">
-          <div className="mx-auto h-20 flex items-center justify-center transform hover:scale-105 transition-all duration-300">
-            <img 
-              src={whiteModeLogo} 
-              alt="SmartSpend" 
-              className="h-full w-auto object-contain block dark:hidden"
+          <div className="mx-auto h-[160px] flex items-center justify-center transform hover:scale-110 transition-all duration-300 mb-2">
+            <img
+              src={whiteModeLogo}
+              alt="SmartSpend"
+              className="h-full w-auto object-contain block dark:hidden drop-shadow-sm scale-125"
             />
-            <img 
-              src={darkModeLogo} 
-              alt="SmartSpend" 
-              className="h-full w-auto object-contain hidden dark:block"
+            <img
+              src={darkModeLogo}
+              alt="SmartSpend"
+              className="h-full w-auto object-contain hidden dark:block drop-shadow-sm scale-125"
             />
           </div>
           <div>
@@ -164,8 +164,8 @@ export default function Login() {
                     className="h-11"
                   />
                 </div>
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg hover:shadow-xl transition-all duration-300"
                   disabled={loginMutation.isPending}
                 >
@@ -243,8 +243,8 @@ export default function Login() {
                     className="h-11 text-left"
                   />
                 </div>
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg hover:shadow-xl transition-all duration-300"
                   disabled={registerMutation.isPending}
                 >

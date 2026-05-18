@@ -46,7 +46,17 @@ app.onError((err, c) => {
   return c.json({ error: err.message || "Internal Server Error" }, 500);
 });
 
-app.notFound((c) => {
+app.notFound(async (c) => {
+  if (env.NODE_ENV === "production" && !c.req.path.startsWith("/api/")) {
+    try {
+      const fs = await import("fs");
+      const path = await import("path");
+      const html = fs.readFileSync(path.resolve("./dist/public/index.html"), "utf-8");
+      return c.html(html);
+    } catch (e) {
+      console.error("Failed to serve index.html fallback", e);
+    }
+  }
   return c.json({ error: "Not Found" }, 404);
 });
 
@@ -93,4 +103,4 @@ const port = parseInt(env.PORT);
 console.log(`🚀 SmartSpend Backend running on http://localhost:${port}`);
 console.log(`   Allowed origins: ${allowedOrigins.join(", ")}`);
 
-serve({ fetch: app.fetch, port });
+serve({ fetch: app.fetch, port, hostname: "0.0.0.0" });

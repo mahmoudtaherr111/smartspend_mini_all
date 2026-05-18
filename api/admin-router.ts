@@ -266,9 +266,9 @@ export const adminRouter = router({
     const config: Record<string, string> = {
       ai_api_key: env.GEMINI_API_KEY || "",
       ai_model_free: env.GEMINI_MODEL_FREE || "gemini-2.0-flash",
-      ai_model_pro: env.GEMINI_MODEL_PRO || "gemini-2.5-flash",
-      ai_model_ultra: "gemini-2.5-pro",
-      ai_model_reports: env.GEMINI_MODEL_REPORTS || "gemini-2.5-flash",
+      ai_model_pro: env.GEMINI_MODEL_PRO || "gemini-1.5-flash",
+      ai_model_ultra: "gemini-1.5-pro",
+      ai_model_reports: env.GEMINI_MODEL_REPORTS || "gemini-1.5-flash",
       // Token limits
       free_token_limit: "50000",
       pro_token_limit: "500000",
@@ -297,9 +297,9 @@ export const adminRouter = router({
       voice_per_req_ultra: "300", // 5 min per request
       confidence_auto_save: "85",
       confidence_review: "60",
-      stt_api_key: "AIzaSyCWif4U7uRb1WKG_HTwqNwtNLmvfD5fZj0",
-      stt_model: "gemini-3.0-flash-live",
-      stt_fallback_model: "gemini-3.1-flash-lite",
+      stt_api_key: "",
+      stt_model: "gemini-1.5-flash",
+      stt_fallback_model: "gemini-2.0-flash",
       // AI Response Settings
       ai_response_length: "medium", // short, medium, detailed
       ai_focus: "balanced", // statistics, tips, patterns, balanced
@@ -377,15 +377,13 @@ export const adminRouter = router({
   getAvailableModels: adminProcedure.query(async () => {
     return {
       models: [
-        { id: "gemini-3.0-flash-live", name: "Gemini 3.0 Flash Live", tier: "pro", description: "معالجة صوتية حية فائقة الدقة" },
-        { id: "gemini-2.5-flash-native-audio", name: "Gemini 2.5 Flash Native Audio", tier: "free", description: "نسخة مخصصة للصوت مباشرة" },
-        { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash Lite", tier: "free", description: "خفيف وسريع جداً للطلبات المتكررة" },
-        { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", tier: "free", description: "اقتصادي وسريع للمهام البسيطة" },
-        { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", tier: "free", description: "سريع واقتصادي" },
-        { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", tier: "pro", description: "دقيق ومتقدم" },
-        { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", tier: "free", description: "الجيل السابق - سريع" },
-        { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash", tier: "free", description: "كلاسيكي - اقتصادي" },
-        { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro", tier: "pro", description: "كلاسيكي - متقدم" },
+        { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", tier: "pro", description: "أحدث موديل لتحويل الصوت لنص" },
+        { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash-Lite", tier: "free", description: "اقتصادي وسريع جداً للصوت" },
+        { id: "gemini-3.1-flash-tts", name: "Gemini 3.1 Flash TTS", tier: "free", description: "موديل صوتي مخصص (للاستخدام الاحتياطي المحدود)" },
+        { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash", tier: "free", description: "أداء سريع واقتصادي (مدعوم للصوت)" },
+        { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro", tier: "pro", description: "عالي الدقة للمهام المعقدة (مدعوم للصوت)" },
+        { id: "gemini-1.5-flash-8b", name: "Gemini 1.5 Flash-8B", tier: "free", description: "سريع جداً للمهام البسيطة" },
+        { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", tier: "free", description: "الجيل الأحدث - سريع وقوي (مدعوم للصوت)" },
         { id: "gemma-3-27b-it", name: "Gemma 3 27B", tier: "free", description: "مفتوح المصدر" },
         { id: "gemma-4-12b-it", name: "Gemma 4 12B", tier: "free", description: "مفتوح المصدر - خفيف" },
         { id: "gemma-4-27b-it", name: "Gemma 4 27B", tier: "pro", description: "مفتوح المصدر - قوي" },

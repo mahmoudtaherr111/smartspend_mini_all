@@ -158,3 +158,9 @@
   background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.35), transparent);
   background-size: 200% 100%;
 }
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+

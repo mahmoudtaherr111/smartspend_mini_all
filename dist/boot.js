@@ -18,8 +18,8 @@ var __commonJS = (cb, mod) => function __require2() {
   return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
 };
 var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
+  for (var name2 in all)
+    __defProp(target, name2, { get: all[name2], enumerable: true });
 };
 var __copyProps = (to, from, except2, desc2) => {
   if (from && typeof from === "object" || typeof from === "function") {
@@ -44,7 +44,7 @@ var require_main = __commonJS({
     var fs = __require("fs");
     var path = __require("path");
     var os = __require("os");
-    var crypto2 = __require("crypto");
+    var crypto3 = __require("crypto");
     var TIPS = [
       "\u25C8 encrypted .env [www.dotenvx.com]",
       "\u25C8 secrets for agents [www.dotenvx.com]",
@@ -288,7 +288,7 @@ var require_main = __commonJS({
       const authTag = ciphertext.subarray(-16);
       ciphertext = ciphertext.subarray(12, -16);
       try {
-        const aesgcm = crypto2.createDecipheriv("aes-256-gcm", key, nonce);
+        const aesgcm = crypto3.createDecipheriv("aes-256-gcm", key, nonce);
         aesgcm.setAuthTag(authTag);
         return `${aesgcm.update(ciphertext)}${aesgcm.final()}`;
       } catch (error48) {
@@ -405,7 +405,7 @@ var require_cli_options = __commonJS({
 
 // node_modules/zod/v4/core/core.js
 // @__NO_SIDE_EFFECTS__
-function $constructor(name, initializer3, params) {
+function $constructor(name2, initializer3, params) {
   function init(inst, def) {
     if (!inst._zod) {
       Object.defineProperty(inst, "_zod", {
@@ -417,10 +417,10 @@ function $constructor(name, initializer3, params) {
         enumerable: false
       });
     }
-    if (inst._zod.traits.has(name)) {
+    if (inst._zod.traits.has(name2)) {
       return;
     }
-    inst._zod.traits.add(name);
+    inst._zod.traits.add(name2);
     initializer3(inst, def);
     const proto = _.prototype;
     const keys = Object.keys(proto);
@@ -434,7 +434,7 @@ function $constructor(name, initializer3, params) {
   const Parent = params?.Parent ?? Object;
   class Definition extends Parent {
   }
-  Object.defineProperty(Definition, "name", { value: name });
+  Object.defineProperty(Definition, "name", { value: name2 });
   function _(def) {
     var _a2;
     const inst = params?.Parent ? new Definition() : this;
@@ -450,10 +450,10 @@ function $constructor(name, initializer3, params) {
     value: (inst) => {
       if (params?.Parent && inst instanceof params.Parent)
         return true;
-      return inst?._zod?.traits?.has(name);
+      return inst?._zod?.traits?.has(name2);
     }
   });
-  Object.defineProperty(_, "name", { value: name });
+  Object.defineProperty(_, "name", { value: name2 });
   return _;
 }
 function config(newConfig) {
@@ -474,8 +474,8 @@ var init_core = __esm({
       }
     };
     $ZodEncodeError = class extends Error {
-      constructor(name) {
-        super(`Encountered unidirectional transform during encode: ${name}`);
+      constructor(name2) {
+        super(`Encountered unidirectional transform during encode: ${name2}`);
         this.name = "ZodEncodeError";
       }
     };
@@ -15905,13 +15905,13 @@ var require_connection_config = __commonJS({
         }
         return num;
       }
-      static getSSLProfile(name) {
+      static getSSLProfile(name2) {
         if (!SSLProfiles) {
           SSLProfiles = require_ssl_profiles();
         }
-        const ssl = SSLProfiles[name];
+        const ssl = SSLProfiles[name2];
         if (ssl === void 0) {
-          throw new TypeError(`Unknown SSL profile '${name}'`);
+          throw new TypeError(`Unknown SSL profile '${name2}'`);
         }
         return ssl;
       }
@@ -15948,8 +15948,8 @@ var require_lib3 = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.createLRU = void 0;
     var createLRU = (options) => {
-      let { max } = options;
-      if (!(Number.isInteger(max) && max > 0))
+      let { max: max2 } = options;
+      if (!(Number.isInteger(max2) && max2 > 0))
         throw new TypeError("`max` must be a positive integer");
       let size = 0;
       let head = 0;
@@ -15957,10 +15957,10 @@ var require_lib3 = __commonJS({
       let free = [];
       const { onEviction } = options;
       const keyMap = /* @__PURE__ */ new Map();
-      const keyList = new Array(max).fill(void 0);
-      const valList = new Array(max).fill(void 0);
-      const next = new Array(max).fill(0);
-      const prev = new Array(max).fill(0);
+      const keyList = new Array(max2).fill(void 0);
+      const valList = new Array(max2).fill(void 0);
+      const next = new Array(max2).fill(0);
+      const prev = new Array(max2).fill(0);
       const linkTail = (index2) => {
         next[tail] = index2;
         prev[index2] = tail;
@@ -16019,10 +16019,10 @@ var require_lib3 = __commonJS({
         valList.length = newMax;
         next.length = newMax;
         prev.length = newMax;
-        keyList.fill(void 0, max);
-        valList.fill(void 0, max);
-        next.fill(0, max);
-        prev.fill(0, max);
+        keyList.fill(void 0, max2);
+        valList.fill(void 0, max2);
+        next.fill(0, max2);
+        prev.fill(0, max2);
       };
       return {
         /** Adds a key-value pair to the cache. Updates the value if the key already exists. */
@@ -16031,7 +16031,7 @@ var require_lib3 = __commonJS({
             return;
           let index2 = keyMap.get(key);
           if (index2 === void 0) {
-            if (size === max) {
+            if (size === max2) {
               index2 = head;
               const evictKey = keyList[index2];
               onEviction === null || onEviction === void 0 ? void 0 : onEviction(evictKey, valList[index2]);
@@ -16167,17 +16167,17 @@ var require_lib3 = __commonJS({
         resize: (newMax) => {
           if (!(Number.isInteger(newMax) && newMax > 0))
             throw new TypeError("`max` must be a positive integer");
-          if (newMax === max)
+          if (newMax === max2)
             return;
-          if (newMax < max)
+          if (newMax < max2)
             _shrink(newMax);
           else
             _grow(newMax);
-          max = newMax;
+          max2 = newMax;
         },
         /** Returns the maximum number of items that can be stored in the cache. */
         get max() {
-          return max;
+          return max2;
         },
         /** Returns the number of items currently stored in the cache. */
         get size() {
@@ -16185,7 +16185,7 @@ var require_lib3 = __commonJS({
         },
         /** Returns the number of currently available slots in the cache before reaching the maximum size. */
         get available() {
-          return max - size;
+          return max2 - size;
         }
       };
     };
@@ -16238,8 +16238,8 @@ var require_parser_cache = __commonJS({
       parserCache.set(key, parser);
       return parser;
     }
-    function setMaxCache(max) {
-      parserCache.resize(max);
+    function setMaxCache(max2) {
+      parserCache.resize(max2);
     }
     function clearCache() {
       parserCache.clear();
@@ -20520,7 +20520,7 @@ var require_errors = __commonJS({
 // node_modules/long/umd/index.js
 var require_umd = __commonJS({
   "node_modules/long/umd/index.js"(exports, module) {
-    (function(global, factory) {
+    (function(global2, factory) {
       function preferDefault(exports2) {
         return exports2.default || exports2;
       }
@@ -20537,7 +20537,7 @@ var require_umd = __commonJS({
         (function() {
           var exports2 = {};
           factory(exports2);
-          global.Long = preferDefault(exports2);
+          global2.Long = preferDefault(exports2);
         })();
       }
     })(
@@ -26433,10 +26433,10 @@ var require_auth_next_factor = __commonJS({
       }
       static fromPacket(packet, encoding) {
         packet.readInt8();
-        const name = packet.readNullTerminatedString(encoding);
+        const name2 = packet.readNullTerminatedString(encoding);
         const data = packet.readBuffer();
         return new _AuthNextFactor({
-          pluginName: name,
+          pluginName: name2,
           pluginData: data
         });
       }
@@ -26467,10 +26467,10 @@ var require_auth_switch_request = __commonJS({
       }
       static fromPacket(packet) {
         packet.readInt8();
-        const name = packet.readNullTerminatedString("cesu8");
+        const name2 = packet.readNullTerminatedString("cesu8");
         const data = packet.readBuffer();
         return new _AuthSwitchRequest({
-          pluginName: name,
+          pluginName: name2,
           pluginData: data
         });
       }
@@ -26709,9 +26709,9 @@ var require_binlog_dump = __commonJS({
 var require_auth_41 = __commonJS({
   "node_modules/mysql2/lib/auth_41.js"(exports) {
     "use strict";
-    var crypto2 = __require("crypto");
+    var crypto3 = __require("crypto");
     function sha1(msg, msg1, msg2) {
-      const hash3 = crypto2.createHash("sha1");
+      const hash3 = crypto3.createHash("sha1");
       hash3.update(msg);
       if (msg1) {
         hash3.update(msg1);
@@ -27413,9 +27413,9 @@ var require_column_definition = __commonJS({
         });
         const buffer = Buffer.allocUnsafe(length);
         const packet = new Packet(sequenceId, buffer, 0, length);
-        function writeField(name) {
+        function writeField(name2) {
           packet.writeLengthCodedString(
-            column[name],
+            column[name2],
             CharsetToEncoding[column.characterSet]
           );
         }
@@ -27435,18 +27435,18 @@ var require_column_definition = __commonJS({
         return this.schema;
       }
     };
-    var addString = function(name) {
-      Object.defineProperty(ColumnDefinition.prototype, name, {
+    var addString = function(name2) {
+      Object.defineProperty(ColumnDefinition.prototype, name2, {
         get: function() {
-          const start = this[`_${name}Start`];
-          const end = start + this[`_${name}Length`];
+          const start = this[`_${name2}Start`];
+          const end = start + this[`_${name2}Length`];
           const val = StringParser.decode(
             this._buf,
             this.encoding === "binary" ? this._clientEncoding : this.encoding,
             start,
             end
           );
-          Object.defineProperty(this, name, {
+          Object.defineProperty(this, name2, {
             value: val,
             writable: false,
             configurable: false,
@@ -27624,7 +27624,7 @@ var require_execute = __commonJS({
             (v) => toParameter(v, this.encoding, this.timezone)
           ) : [];
           const attrParams = attrNames.map(
-            (name) => toParameter(this.attributes[name], this.encoding, this.timezone)
+            (name2) => toParameter(this.attributes[name2], this.encoding, this.timezone)
           );
           const allParams = bindParams.concat(attrParams);
           let bitmap = 0;
@@ -27648,8 +27648,8 @@ var require_execute = __commonJS({
             packet.writeInt8(allParams[i].type);
             packet.writeInt8(0);
             if (useQueryAttributes) {
-              const name = i < numParams ? "" : attrNames[i - numParams];
-              packet.writeLengthCodedString(name, this.encoding);
+              const name2 = i < numParams ? "" : attrNames[i - numParams];
+              packet.writeLengthCodedString(name2, this.encoding);
             }
           }
           allParams.forEach((parameter) => {
@@ -28010,7 +28010,7 @@ var require_query = __commonJS({
           packet.writeLengthCodedNumber(1);
           if (paramCount > 0) {
             const parameters = names.map(
-              (name) => toParameter(attrs[name], this.encoding, "local")
+              (name2) => toParameter(attrs[name2], this.encoding, "local")
             );
             let bitmap = 0;
             let bitValue = 1;
@@ -28443,14 +28443,14 @@ var require_packets = __commonJS({
       SSLRequest,
       TextRow
     };
-    Object.entries(ctorMap).forEach(([name, ctor]) => {
-      module.exports[name] = ctor;
+    Object.entries(ctorMap).forEach(([name2, ctor]) => {
+      module.exports[name2] = ctor;
       if (process3.env.NODE_DEBUG) {
         if (ctor.prototype.toPacket) {
           const old = ctor.prototype.toPacket;
           ctor.prototype.toPacket = function() {
             const p = old.call(this);
-            p._name = name;
+            p._name = name2;
             return p;
           };
         }
@@ -28587,7 +28587,7 @@ var require_sha256_password = __commonJS({
   "node_modules/mysql2/lib/auth_plugins/sha256_password.js"(exports, module) {
     "use strict";
     var PLUGIN_NAME = "sha256_password";
-    var crypto2 = __require("crypto");
+    var crypto3 = __require("crypto");
     var { xorRotating } = require_auth_41();
     var Tls = __require("tls");
     var REQUEST_SERVER_KEY_PACKET = Buffer.from([1]);
@@ -28596,7 +28596,7 @@ var require_sha256_password = __commonJS({
     var STATE_FINAL = -1;
     function encrypt(password, scramble, key) {
       const stage1 = xorRotating(Buffer.from(`${password}\0`, "utf8"), scramble);
-      return crypto2.publicEncrypt(
+      return crypto3.publicEncrypt(
         {
           key,
           oaepHash: "sha1"
@@ -28648,7 +28648,7 @@ var require_caching_sha2_password = __commonJS({
   "node_modules/mysql2/lib/auth_plugins/caching_sha2_password.js"(exports, module) {
     "use strict";
     var PLUGIN_NAME = "caching_sha2_password";
-    var crypto2 = __require("crypto");
+    var crypto3 = __require("crypto");
     var { xor: xor2, xorRotating } = require_auth_41();
     var REQUEST_SERVER_KEY_PACKET = Buffer.from([2]);
     var FAST_AUTH_SUCCESS_PACKET = Buffer.from([3]);
@@ -28658,7 +28658,7 @@ var require_caching_sha2_password = __commonJS({
     var STATE_WAIT_SERVER_KEY = 2;
     var STATE_FINAL = -1;
     function sha256(msg) {
-      const hash3 = crypto2.createHash("sha256");
+      const hash3 = crypto3.createHash("sha256");
       hash3.update(msg);
       return hash3.digest();
     }
@@ -28673,11 +28673,11 @@ var require_caching_sha2_password = __commonJS({
     }
     function encrypt(password, scramble, key) {
       const stage1 = xorRotating(Buffer.from(`${password}\0`, "utf8"), scramble);
-      return crypto2.publicEncrypt(
+      return crypto3.publicEncrypt(
         {
           key,
           oaepHash: "sha1",
-          padding: crypto2.constants.RSA_PKCS1_OAEP_PADDING
+          padding: crypto3.constants.RSA_PKCS1_OAEP_PADDING
         },
         stage1
       );
@@ -29349,9 +29349,9 @@ var require_server_handshake = __commonJS({
         }
         return _ServerHandshake.prototype.dispatchCommands;
       }
-      _isStatement(query, name) {
+      _isStatement(query, name2) {
         const firstWord = query.split(" ")[0].toUpperCase();
-        return firstWord === name;
+        return firstWord === name2;
       }
       dispatchCommands(packet, connection) {
         let knownCommand = true;
@@ -29585,8 +29585,8 @@ var require_generate_function = __commonJS({
       RESERVED_MAP[RESERVED[i]] = true;
     }
     var i;
-    var isVariable = function(name) {
-      return isProperty(name) && !RESERVED_MAP.hasOwnProperty(name);
+    var isVariable = function(name2) {
+      return isProperty(name2) && !RESERVED_MAP.hasOwnProperty(name2);
     };
     var formats = {
       s: function(s) {
@@ -29641,19 +29641,19 @@ var require_generate_function = __commonJS({
       };
       line.scope = {};
       line.formats = formats;
-      line.sym = function(name) {
-        if (!name || !isVariable(name)) name = "tmp";
-        if (!vars[name]) vars[name] = 0;
-        return name + (vars[name]++ || "");
+      line.sym = function(name2) {
+        if (!name2 || !isVariable(name2)) name2 = "tmp";
+        if (!vars[name2]) vars[name2] = 0;
+        return name2 + (vars[name2]++ || "");
       };
-      line.property = function(obj, name) {
+      line.property = function(obj, name2) {
         if (arguments.length === 1) {
-          name = obj;
+          name2 = obj;
           obj = "";
         }
-        name = name + "";
-        if (isProperty(name)) return obj ? obj + "." + name : name;
-        return obj ? obj + "[" + JSON.stringify(name) + "]" : JSON.stringify(name);
+        name2 = name2 + "";
+        if (isProperty(name2)) return obj ? obj + "." + name2 : name2;
+        return obj ? obj + "[" + JSON.stringify(name2) + "]" : JSON.stringify(name2);
       };
       line.toString = function() {
         return lines.join("\n");
@@ -30005,7 +30005,7 @@ var require_query2 = __commonJS({
     "use strict";
     var process3 = __require("process");
     var Timers = __require("timers");
-    var Readable = __require("stream").Readable;
+    var Readable3 = __require("stream").Readable;
     var Command = require_command();
     var Packets = require_packets();
     var getTextParser = require_text_parser();
@@ -30247,7 +30247,7 @@ var require_query2 = __commonJS({
       stream(options) {
         options = options || /* @__PURE__ */ Object.create(null);
         options.objectMode = true;
-        const stream = new Readable({
+        const stream = new Readable3({
           ...options,
           emitClose: true,
           autoDestroy: true,
@@ -31509,7 +31509,7 @@ var require_named_placeholders = __commonJS({
         }
         return s;
       }
-      function join(tree) {
+      function join2(tree) {
         if (tree.length === 1) {
           return tree;
         }
@@ -31535,7 +31535,7 @@ var require_named_placeholders = __commonJS({
         if (cache && (tree = cache.get(query))) {
           return toArrayParams(tree, paramsObj);
         }
-        tree = join(parse4(query));
+        tree = join2(parse4(query));
         if (cache) {
           cache.set(query, tree);
         }
@@ -31583,7 +31583,7 @@ var require_connection = __commonJS({
     var Tls = __require("tls");
     var Timers = __require("timers");
     var EventEmitter = __require("events").EventEmitter;
-    var Readable = __require("stream").Readable;
+    var Readable3 = __require("stream").Readable;
     var Queue = require_denque();
     var SqlString = require_lib();
     var { createLRU } = require_lib3();
@@ -31694,9 +31694,9 @@ var require_connection = __commonJS({
               connectChannel,
               () => new Promise((resolve, reject) => {
                 let onConnect, onError;
-                onConnect = (param) => {
+                onConnect = (param2) => {
                   this.removeListener("error", onError);
-                  resolve(param);
+                  resolve(param2);
                 };
                 onError = (err) => {
                   this.removeListener("connect", onConnect);
@@ -32366,7 +32366,7 @@ var require_connection = __commonJS({
       }
       createBinlogStream(opts) {
         let test = 1;
-        const stream = new Readable({ objectMode: true });
+        const stream = new Readable3({ objectMode: true });
         stream._read = function() {
           return {
             data: test++
@@ -32397,13 +32397,13 @@ var require_connection = __commonJS({
           return cb(null, this);
         }
         let onError, onConnect;
-        onError = (param) => {
+        onError = (param2) => {
           this.removeListener("connect", onConnect);
-          cb(param);
+          cb(param2);
         };
-        onConnect = (param) => {
+        onConnect = (param2) => {
           this.removeListener("error", onError);
-          cb(null, param);
+          cb(null, param2);
         };
         this.once("error", onError);
         this.once("connect", onConnect);
@@ -32753,12 +32753,12 @@ var require_connection2 = __commonJS({
         const c = this.connection;
         const stackHolder = captureStackHolder(_PromiseConnection.prototype.connect);
         return new this.Promise((resolve, reject) => {
-          c.connect((err, param) => {
+          c.connect((err, param2) => {
             if (err) {
               applyCapturedStack(err, stackHolder);
               reject(err);
             } else {
-              resolve(param);
+              resolve(param2);
             }
           });
         });
@@ -34014,8 +34014,8 @@ var require_promise = __commonJS({
       "CharsetToEncoding",
       () => require_charset_encodings()
     );
-    exports.setMaxParserCache = function(max) {
-      parserCache.setMaxCache(max);
+    exports.setMaxParserCache = function(max2) {
+      parserCache.setMaxCache(max2);
     };
     exports.clearParserCache = function() {
       parserCache.clearCache();
@@ -34079,8 +34079,8 @@ var require_mysql2 = __commonJS({
       "CharsetToEncoding",
       () => require_charset_encodings()
     );
-    exports.setMaxParserCache = function(max) {
-      parserCache.setMaxCache(max);
+    exports.setMaxParserCache = function(max2) {
+      parserCache.setMaxCache(max2);
     };
     exports.clearParserCache = function() {
       parserCache.clearCache();
@@ -34112,10 +34112,11 @@ function is(value, type) {
   }
   return false;
 }
-var entityKind;
+var entityKind, hasOwnEntityKind;
 var init_entity = __esm({
   "node_modules/drizzle-orm/entity.js"() {
     entityKind = /* @__PURE__ */ Symbol.for("drizzle:entityKind");
+    hasOwnEntityKind = /* @__PURE__ */ Symbol.for("drizzle:hasOwnEntityKind");
   }
 });
 
@@ -34221,10 +34222,10 @@ var init_column_builder = __esm({
     ColumnBuilder = class {
       static [entityKind] = "ColumnBuilder";
       config;
-      constructor(name, dataType, columnType) {
+      constructor(name2, dataType, columnType) {
         this.config = {
-          name,
-          keyAsName: name === "",
+          name: name2,
+          keyAsName: name2 === "",
           notNull: false,
           default: void 0,
           hasDefault: false,
@@ -34314,9 +34315,9 @@ var init_column_builder = __esm({
         return this;
       }
       /** @internal Sets the name of the column to the key within the table definition if a name was not given. */
-      setName(name) {
+      setName(name2) {
         if (this.config.name !== "") return;
-        this.config.name = name;
+        this.config.name = name2;
       }
     };
   }
@@ -34346,8 +34347,8 @@ var init_foreign_keys = __esm({
       _onDelete = "no action";
       constructor(config2, actions) {
         this.reference = () => {
-          const { name, columns, foreignColumns } = config2();
-          return { name, columns, foreignTable: foreignColumns[0].table, foreignColumns };
+          const { name: name2, columns, foreignColumns } = config2();
+          return { name: name2, columns, foreignTable: foreignColumns[0].table, foreignColumns };
         };
         if (actions) {
           this._onUpdate = actions.onUpdate;
@@ -34379,7 +34380,7 @@ var init_foreign_keys = __esm({
       onUpdate;
       onDelete;
       getName() {
-        const { name, columns, foreignColumns } = this.reference();
+        const { name: name2, columns, foreignColumns } = this.reference();
         const columnNames = columns.map((column) => column.name);
         const foreignColumnNames = foreignColumns.map((column) => column.name);
         const chunks = [
@@ -34388,7 +34389,7 @@ var init_foreign_keys = __esm({
           foreignColumns[0].table[TableName],
           ...foreignColumnNames
         ];
-        return name ?? `${chunks.join("_")}_fk`;
+        return name2 ?? `${chunks.join("_")}_fk`;
       }
     };
   }
@@ -34413,8 +34414,8 @@ var init_unique_constraint = __esm({
     init_entity();
     init_table_utils();
     UniqueConstraintBuilder = class {
-      constructor(columns, name) {
-        this.name = name;
+      constructor(columns, name2) {
+        this.name = name2;
         this.columns = columns;
       }
       static [entityKind] = "PgUniqueConstraintBuilder";
@@ -34435,18 +34436,18 @@ var init_unique_constraint = __esm({
       static [entityKind] = "PgUniqueOnConstraintBuilder";
       /** @internal */
       name;
-      constructor(name) {
-        this.name = name;
+      constructor(name2) {
+        this.name = name2;
       }
       on(...columns) {
         return new UniqueConstraintBuilder(columns, this.name);
       }
     };
     UniqueConstraint = class {
-      constructor(table, columns, nullsNotDistinct, name) {
+      constructor(table, columns, nullsNotDistinct, name2) {
         this.table = table;
         this.columns = columns;
-        this.name = name ?? uniqueKeyName(this.table, this.columns.map((column) => column.name));
+        this.name = name2 ?? uniqueKeyName(this.table, this.columns.map((column) => column.name));
         this.nullsNotDistinct = nullsNotDistinct;
       }
       static [entityKind] = "PgUniqueConstraint";
@@ -34561,9 +34562,9 @@ var init_common = __esm({
         this.foreignKeyConfigs.push({ ref, actions });
         return this;
       }
-      unique(name, config2) {
+      unique(name2, config2) {
         this.config.isUnique = true;
-        this.config.uniqueName = name;
+        this.config.uniqueName = name2;
         this.config.uniqueType = config2?.nulls;
         return this;
       }
@@ -34679,8 +34680,8 @@ var init_common = __esm({
     };
     IndexedColumn = class {
       static [entityKind] = "IndexedColumn";
-      constructor(name, keyAsName, type, indexConfig) {
-        this.name = name;
+      constructor(name2, keyAsName, type, indexConfig) {
+        this.name = name2;
         this.keyAsName = keyAsName;
         this.type = type;
         this.indexConfig = indexConfig;
@@ -34692,8 +34693,8 @@ var init_common = __esm({
     };
     PgArrayBuilder = class extends PgColumnBuilder {
       static [entityKind] = "PgArrayBuilder";
-      constructor(name, baseBuilder, size) {
-        super(name, "array", "PgArray");
+      constructor(name2, baseBuilder, size) {
+        super(name2, "array", "PgArray");
         this.config.baseBuilder = baseBuilder;
         this.config.size = size;
       }
@@ -34747,8 +34748,8 @@ var init_enum = __esm({
     init_common();
     PgEnumObjectColumnBuilder = class extends PgColumnBuilder {
       static [entityKind] = "PgEnumObjectColumnBuilder";
-      constructor(name, enumInstance) {
-        super(name, "string", "PgEnumObjectColumn");
+      constructor(name2, enumInstance) {
+        super(name2, "string", "PgEnumObjectColumn");
         this.config.enum = enumInstance;
       }
       /** @internal */
@@ -34774,8 +34775,8 @@ var init_enum = __esm({
     isPgEnumSym = /* @__PURE__ */ Symbol.for("drizzle:isPgEnum");
     PgEnumColumnBuilder = class extends PgColumnBuilder {
       static [entityKind] = "PgEnumColumnBuilder";
-      constructor(name, enumInstance) {
-        super(name, "string", "PgEnumColumn");
+      constructor(name2, enumInstance) {
+        super(name2, "string", "PgEnumColumn");
         this.config.enum = enumInstance;
       }
       /** @internal */
@@ -34843,7 +34844,7 @@ var init_tracing = __esm({
     init_tracing_utils();
     init_version();
     tracer = {
-      startActiveSpan(name, fn) {
+      startActiveSpan(name2, fn) {
         if (!otel) {
           return fn();
         }
@@ -34852,7 +34853,7 @@ var init_tracing = __esm({
         }
         return iife(
           (otel2, rawTracer2) => rawTracer2.startActiveSpan(
-            name,
+            name2,
             (span) => {
               try {
                 return fn(span);
@@ -34885,6 +34886,9 @@ var init_view_common = __esm({
 });
 
 // node_modules/drizzle-orm/table.js
+function isTable(table) {
+  return typeof table === "object" && table !== null && IsDrizzleTable in table;
+}
 function getTableName(table) {
   return table[TableName];
 }
@@ -34944,8 +34948,8 @@ var init_table = __esm({
       [IsDrizzleTable] = true;
       /** @internal */
       [ExtraConfigBuilder] = void 0;
-      constructor(name, schema, baseName) {
-        this[TableName] = this[OriginalName] = name;
+      constructor(name2, schema, baseName) {
+        this[TableName] = this[OriginalName] = name2;
         this[Schema] = schema;
         this[BaseName] = baseName;
       }
@@ -34971,8 +34975,14 @@ function mergeQueries(queries) {
   }
   return result;
 }
+function name(value) {
+  return new Name(value);
+}
 function isDriverValueEncoder(value) {
   return typeof value === "object" && value !== null && "mapToDriverValue" in value && typeof value.mapToDriverValue === "function";
+}
+function param(value, encoder) {
+  return new Param(value, encoder);
 }
 function sql(strings, ...params) {
   const queryChunks = [];
@@ -34983,6 +34993,9 @@ function sql(strings, ...params) {
     queryChunks.push(param2, new StringChunk(strings[paramIndex + 1]));
   }
   return new SQL(queryChunks);
+}
+function placeholder(name2) {
+  return new Placeholder(name2);
 }
 function fillPlaceholders(params, values) {
   return params.map((p) => {
@@ -35000,6 +35013,12 @@ function fillPlaceholders(params, values) {
     }
     return p;
   });
+}
+function isView(view) {
+  return typeof view === "object" && view !== null && IsDrizzleView in view;
+}
+function getViewName(view) {
+  return view[ViewBaseConfig].name;
 }
 var FakePrimitiveParam, StringChunk, SQL, Name, noopDecoder, noopEncoder, noopMapper, Param, Placeholder, IsDrizzleView, View;
 var init_sql = __esm({
@@ -35273,7 +35292,7 @@ var init_sql = __esm({
         return new SQL([new StringChunk(str)]);
       }
       sql22.raw = raw2;
-      function join(chunks, separator) {
+      function join2(chunks, separator) {
         const result = [];
         for (const [i, chunk] of chunks.entries()) {
           if (i > 0 && separator !== void 0) {
@@ -35283,7 +35302,7 @@ var init_sql = __esm({
         }
         return new SQL(result);
       }
-      sql22.join = join;
+      sql22.join = join2;
       function identifier(value) {
         return new Name(value);
       }
@@ -35362,6 +35381,9 @@ var init_sql = __esm({
 // node_modules/drizzle-orm/alias.js
 function aliasedTable(table, tableAlias) {
   return new Proxy(table, new TableAliasProxyHandler(tableAlias, false));
+}
+function aliasedRelation(relation, tableAlias) {
+  return new Proxy(relation, new RelationTableAliasProxyHandler(tableAlias));
 }
 function aliasedTableColumn(column, tableAlias) {
   return new Proxy(
@@ -35714,11 +35736,11 @@ function mapResultRow(columns, row, joinsNotNullableMap) {
   return result;
 }
 function orderSelectedFields(fields, pathPrefix) {
-  return Object.entries(fields).reduce((result, [name, field]) => {
-    if (typeof name !== "string") {
+  return Object.entries(fields).reduce((result, [name2, field]) => {
+    if (typeof name2 !== "string") {
       return result;
     }
-    const newPath = pathPrefix ? [...pathPrefix, name] : [name];
+    const newPath = pathPrefix ? [...pathPrefix, name2] : [name2];
     if (is(field, Column) || is(field, SQL) || is(field, SQL.Aliased) || is(field, Subquery)) {
       result.push({ path: newPath, field });
     } else if (is(field, Table)) {
@@ -35757,18 +35779,21 @@ function mapUpdateSet(table, values) {
 }
 function applyMixins(baseClass, extendedClasses) {
   for (const extendedClass of extendedClasses) {
-    for (const name of Object.getOwnPropertyNames(extendedClass.prototype)) {
-      if (name === "constructor") continue;
+    for (const name2 of Object.getOwnPropertyNames(extendedClass.prototype)) {
+      if (name2 === "constructor") continue;
       Object.defineProperty(
         baseClass.prototype,
-        name,
-        Object.getOwnPropertyDescriptor(extendedClass.prototype, name) || /* @__PURE__ */ Object.create(null)
+        name2,
+        Object.getOwnPropertyDescriptor(extendedClass.prototype, name2) || /* @__PURE__ */ Object.create(null)
       );
     }
   }
 }
 function getTableColumns(table) {
   return table[Table.Symbol.Columns];
+}
+function getViewSelectedFields(view) {
+  return view[ViewBaseConfig].selectedFields;
 }
 function getTableLikeName(table) {
   return is(table, Subquery) ? table._.alias : is(table, View) ? table[ViewBaseConfig].name : is(table, SQL) ? void 0 : table[Table.Symbol.IsAlias] ? table[Table.Symbol.Name] : table[Table.Symbol.BaseName];
@@ -35866,9 +35891,9 @@ var init_primary_keys = __esm({
       columns;
       /** @internal */
       name;
-      constructor(columns, name) {
+      constructor(columns, name2) {
         this.columns = columns;
-        this.name = name;
+        this.name = name2;
       }
       /** @internal */
       build(table) {
@@ -35876,10 +35901,10 @@ var init_primary_keys = __esm({
       }
     };
     PrimaryKey = class {
-      constructor(table, columns, name) {
+      constructor(table, columns, name2) {
         this.table = table;
         this.columns = columns;
-        this.name = name;
+        this.name = name2;
       }
       static [entityKind] = "PgPrimaryKey";
       columns;
@@ -35963,17 +35988,17 @@ function exists(subquery) {
 function notExists(subquery) {
   return sql`not exists ${subquery}`;
 }
-function between(column, min, max) {
-  return sql`${column} between ${bindIfParam(min, column)} and ${bindIfParam(
-    max,
+function between(column, min2, max2) {
+  return sql`${column} between ${bindIfParam(min2, column)} and ${bindIfParam(
+    max2,
     column
   )}`;
 }
-function notBetween(column, min, max) {
+function notBetween(column, min2, max2) {
   return sql`${column} not between ${bindIfParam(
-    min,
+    min2,
     column
-  )} and ${bindIfParam(max, column)}`;
+  )} and ${bindIfParam(max2, column)}`;
 }
 function like(column, value) {
   return sql`${column} like ${value}`;
@@ -35986,6 +36011,36 @@ function ilike(column, value) {
 }
 function notIlike(column, value) {
   return sql`${column} not ilike ${value}`;
+}
+function arrayContains(column, values) {
+  if (Array.isArray(values)) {
+    if (values.length === 0) {
+      throw new Error("arrayContains requires at least one value");
+    }
+    const array2 = sql`${bindIfParam(values, column)}`;
+    return sql`${column} @> ${array2}`;
+  }
+  return sql`${column} @> ${bindIfParam(values, column)}`;
+}
+function arrayContained(column, values) {
+  if (Array.isArray(values)) {
+    if (values.length === 0) {
+      throw new Error("arrayContained requires at least one value");
+    }
+    const array2 = sql`${bindIfParam(values, column)}`;
+    return sql`${column} <@ ${array2}`;
+  }
+  return sql`${column} <@ ${bindIfParam(values, column)}`;
+}
+function arrayOverlaps(column, values) {
+  if (Array.isArray(values)) {
+    if (values.length === 0) {
+      throw new Error("arrayOverlaps requires at least one value");
+    }
+    const array2 = sql`${bindIfParam(values, column)}`;
+    return sql`${column} && ${array2}`;
+  }
+  return sql`${column} && ${bindIfParam(values, column)}`;
 }
 var eq, ne, gt, gte, lt, lte;
 var init_conditions = __esm({
@@ -36323,18 +36378,78 @@ var init_relations = __esm({
 function count(expression) {
   return sql`count(${expression || sql.raw("*")})`.mapWith(Number);
 }
+function countDistinct(expression) {
+  return sql`count(distinct ${expression})`.mapWith(Number);
+}
+function avg(expression) {
+  return sql`avg(${expression})`.mapWith(String);
+}
+function avgDistinct(expression) {
+  return sql`avg(distinct ${expression})`.mapWith(String);
+}
 function sum(expression) {
   return sql`sum(${expression})`.mapWith(String);
 }
+function sumDistinct(expression) {
+  return sql`sum(distinct ${expression})`.mapWith(String);
+}
+function max(expression) {
+  return sql`max(${expression})`.mapWith(is(expression, Column) ? expression : String);
+}
+function min(expression) {
+  return sql`min(${expression})`.mapWith(is(expression, Column) ? expression : String);
+}
 var init_aggregate = __esm({
   "node_modules/drizzle-orm/sql/functions/aggregate.js"() {
+    init_column();
+    init_entity();
     init_sql();
   }
 });
 
 // node_modules/drizzle-orm/sql/functions/vector.js
+function toSql(value) {
+  return JSON.stringify(value);
+}
+function l2Distance(column, value) {
+  if (Array.isArray(value)) {
+    return sql`${column} <-> ${toSql(value)}`;
+  }
+  return sql`${column} <-> ${value}`;
+}
+function l1Distance(column, value) {
+  if (Array.isArray(value)) {
+    return sql`${column} <+> ${toSql(value)}`;
+  }
+  return sql`${column} <+> ${value}`;
+}
+function innerProduct(column, value) {
+  if (Array.isArray(value)) {
+    return sql`${column} <#> ${toSql(value)}`;
+  }
+  return sql`${column} <#> ${value}`;
+}
+function cosineDistance(column, value) {
+  if (Array.isArray(value)) {
+    return sql`${column} <=> ${toSql(value)}`;
+  }
+  return sql`${column} <=> ${value}`;
+}
+function hammingDistance(column, value) {
+  if (Array.isArray(value)) {
+    return sql`${column} <~> ${toSql(value)}`;
+  }
+  return sql`${column} <~> ${value}`;
+}
+function jaccardDistance(column, value) {
+  if (Array.isArray(value)) {
+    return sql`${column} <%> ${toSql(value)}`;
+  }
+  return sql`${column} <%> ${value}`;
+}
 var init_vector = __esm({
   "node_modules/drizzle-orm/sql/functions/vector.js"() {
+    init_sql();
   }
 });
 
@@ -36356,6 +36471,127 @@ var init_sql2 = __esm({
 });
 
 // node_modules/drizzle-orm/index.js
+var drizzle_orm_exports = {};
+__export(drizzle_orm_exports, {
+  BaseName: () => BaseName,
+  Column: () => Column,
+  ColumnAliasProxyHandler: () => ColumnAliasProxyHandler,
+  ColumnBuilder: () => ColumnBuilder,
+  Columns: () => Columns,
+  ConsoleLogWriter: () => ConsoleLogWriter,
+  DefaultLogger: () => DefaultLogger,
+  DrizzleError: () => DrizzleError,
+  DrizzleQueryError: () => DrizzleQueryError,
+  ExtraConfigBuilder: () => ExtraConfigBuilder,
+  ExtraConfigColumns: () => ExtraConfigColumns,
+  FakePrimitiveParam: () => FakePrimitiveParam,
+  IsAlias: () => IsAlias,
+  Many: () => Many,
+  Name: () => Name,
+  NoopLogger: () => NoopLogger,
+  One: () => One,
+  OriginalName: () => OriginalName,
+  Param: () => Param,
+  Placeholder: () => Placeholder,
+  QueryPromise: () => QueryPromise,
+  Relation: () => Relation,
+  RelationTableAliasProxyHandler: () => RelationTableAliasProxyHandler,
+  Relations: () => Relations,
+  SQL: () => SQL,
+  Schema: () => Schema,
+  StringChunk: () => StringChunk,
+  Subquery: () => Subquery,
+  Table: () => Table,
+  TableAliasProxyHandler: () => TableAliasProxyHandler,
+  TransactionRollbackError: () => TransactionRollbackError,
+  View: () => View,
+  ViewBaseConfig: () => ViewBaseConfig,
+  WithSubquery: () => WithSubquery,
+  aliasedRelation: () => aliasedRelation,
+  aliasedTable: () => aliasedTable,
+  aliasedTableColumn: () => aliasedTableColumn,
+  and: () => and,
+  applyMixins: () => applyMixins,
+  arrayContained: () => arrayContained,
+  arrayContains: () => arrayContains,
+  arrayOverlaps: () => arrayOverlaps,
+  asc: () => asc,
+  avg: () => avg,
+  avgDistinct: () => avgDistinct,
+  between: () => between,
+  bindIfParam: () => bindIfParam,
+  cosineDistance: () => cosineDistance,
+  count: () => count,
+  countDistinct: () => countDistinct,
+  createMany: () => createMany,
+  createOne: () => createOne,
+  createTableRelationsHelpers: () => createTableRelationsHelpers,
+  desc: () => desc,
+  entityKind: () => entityKind,
+  eq: () => eq,
+  exists: () => exists,
+  extractTablesRelationalConfig: () => extractTablesRelationalConfig,
+  fillPlaceholders: () => fillPlaceholders,
+  getColumnNameAndConfig: () => getColumnNameAndConfig,
+  getOperators: () => getOperators,
+  getOrderByOperators: () => getOrderByOperators,
+  getTableColumns: () => getTableColumns,
+  getTableLikeName: () => getTableLikeName,
+  getTableName: () => getTableName,
+  getTableUniqueName: () => getTableUniqueName,
+  getViewName: () => getViewName,
+  getViewSelectedFields: () => getViewSelectedFields,
+  gt: () => gt,
+  gte: () => gte,
+  hammingDistance: () => hammingDistance,
+  hasOwnEntityKind: () => hasOwnEntityKind,
+  haveSameKeys: () => haveSameKeys,
+  ilike: () => ilike,
+  inArray: () => inArray,
+  innerProduct: () => innerProduct,
+  is: () => is,
+  isConfig: () => isConfig,
+  isDriverValueEncoder: () => isDriverValueEncoder,
+  isNotNull: () => isNotNull,
+  isNull: () => isNull,
+  isSQLWrapper: () => isSQLWrapper,
+  isTable: () => isTable,
+  isView: () => isView,
+  jaccardDistance: () => jaccardDistance,
+  l1Distance: () => l1Distance,
+  l2Distance: () => l2Distance,
+  like: () => like,
+  lt: () => lt,
+  lte: () => lte,
+  mapColumnsInAliasedSQLToAlias: () => mapColumnsInAliasedSQLToAlias,
+  mapColumnsInSQLToAlias: () => mapColumnsInSQLToAlias,
+  mapRelationalRow: () => mapRelationalRow,
+  mapResultRow: () => mapResultRow,
+  mapUpdateSet: () => mapUpdateSet,
+  max: () => max,
+  min: () => min,
+  name: () => name,
+  ne: () => ne,
+  noopDecoder: () => noopDecoder,
+  noopEncoder: () => noopEncoder,
+  noopMapper: () => noopMapper,
+  normalizeRelation: () => normalizeRelation,
+  not: () => not,
+  notBetween: () => notBetween,
+  notExists: () => notExists,
+  notIlike: () => notIlike,
+  notInArray: () => notInArray,
+  notLike: () => notLike,
+  or: () => or,
+  orderSelectedFields: () => orderSelectedFields,
+  param: () => param,
+  placeholder: () => placeholder,
+  relations: () => relations,
+  sql: () => sql,
+  sum: () => sum,
+  sumDistinct: () => sumDistinct,
+  textDecoder: () => textDecoder
+});
 var init_drizzle_orm = __esm({
   "node_modules/drizzle-orm/index.js"() {
     init_alias();
@@ -36381,8 +36617,8 @@ var init_checks3 = __esm({
   "node_modules/drizzle-orm/mysql-core/checks.js"() {
     init_entity();
     CheckBuilder = class {
-      constructor(name, value) {
-        this.name = name;
+      constructor(name2, value) {
+        this.name = name2;
         this.value = value;
       }
       static [entityKind] = "MySqlCheckBuilder";
@@ -36421,8 +36657,8 @@ var init_foreign_keys2 = __esm({
       _onDelete;
       constructor(config2, actions) {
         this.reference = () => {
-          const { name, columns, foreignColumns } = config2();
-          return { name, columns, foreignTable: foreignColumns[0].table, foreignColumns };
+          const { name: name2, columns, foreignColumns } = config2();
+          return { name: name2, columns, foreignTable: foreignColumns[0].table, foreignColumns };
         };
         if (actions) {
           this._onUpdate = actions.onUpdate;
@@ -36454,7 +36690,7 @@ var init_foreign_keys2 = __esm({
       onUpdate;
       onDelete;
       getName() {
-        const { name, columns, foreignColumns } = this.reference();
+        const { name: name2, columns, foreignColumns } = this.reference();
         const columnNames = columns.map((column) => column.name);
         const foreignColumnNames = foreignColumns.map((column) => column.name);
         const chunks = [
@@ -36463,26 +36699,26 @@ var init_foreign_keys2 = __esm({
           foreignColumns[0].table[TableName],
           ...foreignColumnNames
         ];
-        return name ?? `${chunks.join("_")}_fk`;
+        return name2 ?? `${chunks.join("_")}_fk`;
       }
     };
   }
 });
 
 // node_modules/drizzle-orm/mysql-core/indexes.js
-function index(name) {
-  return new IndexBuilderOn(name, false);
+function index(name2) {
+  return new IndexBuilderOn(name2, false);
 }
-function uniqueIndex(name) {
-  return new IndexBuilderOn(name, true);
+function uniqueIndex(name2) {
+  return new IndexBuilderOn(name2, true);
 }
 var IndexBuilderOn, IndexBuilder, Index;
 var init_indexes = __esm({
   "node_modules/drizzle-orm/mysql-core/indexes.js"() {
     init_entity();
     IndexBuilderOn = class {
-      constructor(name, unique) {
-        this.name = name;
+      constructor(name2, unique) {
+        this.name = name2;
         this.unique = unique;
       }
       static [entityKind] = "MySqlIndexBuilderOn";
@@ -36494,9 +36730,9 @@ var init_indexes = __esm({
       static [entityKind] = "MySqlIndexBuilder";
       /** @internal */
       config;
-      constructor(name, columns, unique) {
+      constructor(name2, columns, unique) {
         this.config = {
-          name,
+          name: name2,
           columns,
           unique
         };
@@ -36538,8 +36774,8 @@ var init_unique_constraint2 = __esm({
     init_entity();
     init_table_utils();
     UniqueConstraintBuilder2 = class {
-      constructor(columns, name) {
-        this.name = name;
+      constructor(columns, name2) {
+        this.name = name2;
         this.columns = columns;
       }
       static [entityKind] = "MySqlUniqueConstraintBuilder";
@@ -36554,18 +36790,18 @@ var init_unique_constraint2 = __esm({
       static [entityKind] = "MySqlUniqueOnConstraintBuilder";
       /** @internal */
       name;
-      constructor(name) {
-        this.name = name;
+      constructor(name2) {
+        this.name = name2;
       }
       on(...columns) {
         return new UniqueConstraintBuilder2(columns, this.name);
       }
     };
     UniqueConstraint2 = class {
-      constructor(table, columns, name) {
+      constructor(table, columns, name2) {
         this.table = table;
         this.columns = columns;
-        this.name = name ?? uniqueKeyName2(this.table, this.columns.map((column) => column.name));
+        this.name = name2 ?? uniqueKeyName2(this.table, this.columns.map((column) => column.name));
       }
       static [entityKind] = "MySqlUniqueConstraint";
       columns;
@@ -36594,9 +36830,9 @@ var init_common2 = __esm({
         this.foreignKeyConfigs.push({ ref, actions });
         return this;
       }
-      unique(name) {
+      unique(name2) {
         this.config.isUnique = true;
-        this.config.uniqueName = name;
+        this.config.uniqueName = name2;
         return this;
       }
       generatedAlwaysAs(as, config2) {
@@ -36638,8 +36874,8 @@ var init_common2 = __esm({
     };
     MySqlColumnBuilderWithAutoIncrement = class extends MySqlColumnBuilder {
       static [entityKind] = "MySqlColumnBuilderWithAutoIncrement";
-      constructor(name, dataType, columnType) {
-        super(name, dataType, columnType);
+      constructor(name2, dataType, columnType) {
+        super(name2, dataType, columnType);
         this.config.autoIncrement = false;
       }
       autoincrement() {
@@ -36657,11 +36893,11 @@ var init_common2 = __esm({
 
 // node_modules/drizzle-orm/mysql-core/columns/bigint.js
 function bigint4(a, b) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
   if (config2.mode === "number") {
-    return new MySqlBigInt53Builder(name, config2.unsigned);
+    return new MySqlBigInt53Builder(name2, config2.unsigned);
   }
-  return new MySqlBigInt64Builder(name, config2.unsigned);
+  return new MySqlBigInt64Builder(name2, config2.unsigned);
 }
 var MySqlBigInt53Builder, MySqlBigInt53, MySqlBigInt64Builder, MySqlBigInt64;
 var init_bigint = __esm({
@@ -36671,8 +36907,8 @@ var init_bigint = __esm({
     init_common2();
     MySqlBigInt53Builder = class extends MySqlColumnBuilderWithAutoIncrement {
       static [entityKind] = "MySqlBigInt53Builder";
-      constructor(name, unsigned = false) {
-        super(name, "number", "MySqlBigInt53");
+      constructor(name2, unsigned = false) {
+        super(name2, "number", "MySqlBigInt53");
         this.config.unsigned = unsigned;
       }
       /** @internal */
@@ -36697,8 +36933,8 @@ var init_bigint = __esm({
     };
     MySqlBigInt64Builder = class extends MySqlColumnBuilderWithAutoIncrement {
       static [entityKind] = "MySqlBigInt64Builder";
-      constructor(name, unsigned = false) {
-        super(name, "bigint", "MySqlBigInt64");
+      constructor(name2, unsigned = false) {
+        super(name2, "bigint", "MySqlBigInt64");
         this.config.unsigned = unsigned;
       }
       /** @internal */
@@ -36724,8 +36960,8 @@ var init_bigint = __esm({
 
 // node_modules/drizzle-orm/mysql-core/columns/binary.js
 function binary(a, b = {}) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
-  return new MySqlBinaryBuilder(name, config2.length);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
+  return new MySqlBinaryBuilder(name2, config2.length);
 }
 var MySqlBinaryBuilder, MySqlBinary;
 var init_binary = __esm({
@@ -36735,8 +36971,8 @@ var init_binary = __esm({
     init_common2();
     MySqlBinaryBuilder = class extends MySqlColumnBuilder {
       static [entityKind] = "MySqlBinaryBuilder";
-      constructor(name, length) {
-        super(name, "string", "MySqlBinary");
+      constructor(name2, length) {
+        super(name2, "string", "MySqlBinary");
         this.config.length = length;
       }
       /** @internal */
@@ -36764,8 +37000,8 @@ var init_binary = __esm({
 });
 
 // node_modules/drizzle-orm/mysql-core/columns/boolean.js
-function boolean4(name) {
-  return new MySqlBooleanBuilder(name ?? "");
+function boolean4(name2) {
+  return new MySqlBooleanBuilder(name2 ?? "");
 }
 var MySqlBooleanBuilder, MySqlBoolean;
 var init_boolean = __esm({
@@ -36774,8 +37010,8 @@ var init_boolean = __esm({
     init_common2();
     MySqlBooleanBuilder = class extends MySqlColumnBuilder {
       static [entityKind] = "MySqlBooleanBuilder";
-      constructor(name) {
-        super(name, "boolean", "MySqlBoolean");
+      constructor(name2) {
+        super(name2, "boolean", "MySqlBoolean");
       }
       /** @internal */
       build(table) {
@@ -36802,8 +37038,8 @@ var init_boolean = __esm({
 
 // node_modules/drizzle-orm/mysql-core/columns/char.js
 function char(a, b = {}) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
-  return new MySqlCharBuilder(name, config2);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
+  return new MySqlCharBuilder(name2, config2);
 }
 var MySqlCharBuilder, MySqlChar;
 var init_char = __esm({
@@ -36813,8 +37049,8 @@ var init_char = __esm({
     init_common2();
     MySqlCharBuilder = class extends MySqlColumnBuilder {
       static [entityKind] = "MySqlCharBuilder";
-      constructor(name, config2) {
-        super(name, "string", "MySqlChar");
+      constructor(name2, config2) {
+        super(name2, "string", "MySqlChar");
         this.config.length = config2.length;
         this.config.enum = config2.enum;
       }
@@ -36840,8 +37076,8 @@ var init_char = __esm({
 // node_modules/drizzle-orm/mysql-core/columns/custom.js
 function customType(customTypeParams) {
   return (a, b) => {
-    const { name, config: config2 } = getColumnNameAndConfig(a, b);
-    return new MySqlCustomColumnBuilder(name, config2, customTypeParams);
+    const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
+    return new MySqlCustomColumnBuilder(name2, config2, customTypeParams);
   };
 }
 var MySqlCustomColumnBuilder, MySqlCustomColumn;
@@ -36852,8 +37088,8 @@ var init_custom = __esm({
     init_common2();
     MySqlCustomColumnBuilder = class extends MySqlColumnBuilder {
       static [entityKind] = "MySqlCustomColumnBuilder";
-      constructor(name, fieldConfig, customTypeParams) {
-        super(name, "custom", "MySqlCustomColumn");
+      constructor(name2, fieldConfig, customTypeParams) {
+        super(name2, "custom", "MySqlCustomColumn");
         this.config.fieldConfig = fieldConfig;
         this.config.customTypeParams = customTypeParams;
       }
@@ -36891,11 +37127,11 @@ var init_custom = __esm({
 
 // node_modules/drizzle-orm/mysql-core/columns/date.js
 function date5(a, b) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
   if (config2?.mode === "string") {
-    return new MySqlDateStringBuilder(name);
+    return new MySqlDateStringBuilder(name2);
   }
-  return new MySqlDateBuilder(name);
+  return new MySqlDateBuilder(name2);
 }
 var MySqlDateBuilder, MySqlDate, MySqlDateStringBuilder, MySqlDateString;
 var init_date = __esm({
@@ -36905,8 +37141,8 @@ var init_date = __esm({
     init_common2();
     MySqlDateBuilder = class extends MySqlColumnBuilder {
       static [entityKind] = "MySqlDateBuilder";
-      constructor(name) {
-        super(name, "date", "MySqlDate");
+      constructor(name2) {
+        super(name2, "date", "MySqlDate");
       }
       /** @internal */
       build(table) {
@@ -36927,8 +37163,8 @@ var init_date = __esm({
     };
     MySqlDateStringBuilder = class extends MySqlColumnBuilder {
       static [entityKind] = "MySqlDateStringBuilder";
-      constructor(name) {
-        super(name, "string", "MySqlDateString");
+      constructor(name2) {
+        super(name2, "string", "MySqlDateString");
       }
       /** @internal */
       build(table) {
@@ -36952,11 +37188,11 @@ var init_date = __esm({
 
 // node_modules/drizzle-orm/mysql-core/columns/datetime.js
 function datetime3(a, b) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
   if (config2?.mode === "string") {
-    return new MySqlDateTimeStringBuilder(name, config2);
+    return new MySqlDateTimeStringBuilder(name2, config2);
   }
-  return new MySqlDateTimeBuilder(name, config2);
+  return new MySqlDateTimeBuilder(name2, config2);
 }
 var MySqlDateTimeBuilder, MySqlDateTime, MySqlDateTimeStringBuilder, MySqlDateTimeString;
 var init_datetime = __esm({
@@ -36966,8 +37202,8 @@ var init_datetime = __esm({
     init_common2();
     MySqlDateTimeBuilder = class extends MySqlColumnBuilder {
       static [entityKind] = "MySqlDateTimeBuilder";
-      constructor(name, config2) {
-        super(name, "date", "MySqlDateTime");
+      constructor(name2, config2) {
+        super(name2, "date", "MySqlDateTime");
         this.config.fsp = config2?.fsp;
       }
       /** @internal */
@@ -36998,8 +37234,8 @@ var init_datetime = __esm({
     };
     MySqlDateTimeStringBuilder = class extends MySqlColumnBuilder {
       static [entityKind] = "MySqlDateTimeStringBuilder";
-      constructor(name, config2) {
-        super(name, "string", "MySqlDateTimeString");
+      constructor(name2, config2) {
+        super(name2, "string", "MySqlDateTimeString");
         this.config.fsp = config2?.fsp;
       }
       /** @internal */
@@ -37027,9 +37263,9 @@ var init_datetime = __esm({
 
 // node_modules/drizzle-orm/mysql-core/columns/decimal.js
 function decimal(a, b = {}) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
   const mode = config2?.mode;
-  return mode === "number" ? new MySqlDecimalNumberBuilder(name, config2) : mode === "bigint" ? new MySqlDecimalBigIntBuilder(name, config2) : new MySqlDecimalBuilder(name, config2);
+  return mode === "number" ? new MySqlDecimalNumberBuilder(name2, config2) : mode === "bigint" ? new MySqlDecimalBigIntBuilder(name2, config2) : new MySqlDecimalBuilder(name2, config2);
 }
 var MySqlDecimalBuilder, MySqlDecimal, MySqlDecimalNumberBuilder, MySqlDecimalNumber, MySqlDecimalBigIntBuilder, MySqlDecimalBigInt;
 var init_decimal = __esm({
@@ -37039,8 +37275,8 @@ var init_decimal = __esm({
     init_common2();
     MySqlDecimalBuilder = class extends MySqlColumnBuilderWithAutoIncrement {
       static [entityKind] = "MySqlDecimalBuilder";
-      constructor(name, config2) {
-        super(name, "string", "MySqlDecimal");
+      constructor(name2, config2) {
+        super(name2, "string", "MySqlDecimal");
         this.config.precision = config2?.precision;
         this.config.scale = config2?.scale;
         this.config.unsigned = config2?.unsigned;
@@ -37077,8 +37313,8 @@ var init_decimal = __esm({
     };
     MySqlDecimalNumberBuilder = class extends MySqlColumnBuilderWithAutoIncrement {
       static [entityKind] = "MySqlDecimalNumberBuilder";
-      constructor(name, config2) {
-        super(name, "number", "MySqlDecimalNumber");
+      constructor(name2, config2) {
+        super(name2, "number", "MySqlDecimalNumber");
         this.config.precision = config2?.precision;
         this.config.scale = config2?.scale;
         this.config.unsigned = config2?.unsigned;
@@ -37116,8 +37352,8 @@ var init_decimal = __esm({
     };
     MySqlDecimalBigIntBuilder = class extends MySqlColumnBuilderWithAutoIncrement {
       static [entityKind] = "MySqlDecimalBigIntBuilder";
-      constructor(name, config2) {
-        super(name, "bigint", "MySqlDecimalBigInt");
+      constructor(name2, config2) {
+        super(name2, "bigint", "MySqlDecimalBigInt");
         this.config.precision = config2?.precision;
         this.config.scale = config2?.scale;
         this.config.unsigned = config2?.unsigned;
@@ -37155,8 +37391,8 @@ var init_decimal = __esm({
 
 // node_modules/drizzle-orm/mysql-core/columns/double.js
 function double(a, b) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
-  return new MySqlDoubleBuilder(name, config2);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
+  return new MySqlDoubleBuilder(name2, config2);
 }
 var MySqlDoubleBuilder, MySqlDouble;
 var init_double = __esm({
@@ -37166,8 +37402,8 @@ var init_double = __esm({
     init_common2();
     MySqlDoubleBuilder = class extends MySqlColumnBuilderWithAutoIncrement {
       static [entityKind] = "MySqlDoubleBuilder";
-      constructor(name, config2) {
-        super(name, "number", "MySqlDouble");
+      constructor(name2, config2) {
+        super(name2, "number", "MySqlDouble");
         this.config.precision = config2?.precision;
         this.config.scale = config2?.scale;
         this.config.unsigned = config2?.unsigned;
@@ -37200,20 +37436,20 @@ var init_double = __esm({
 // node_modules/drizzle-orm/mysql-core/columns/enum.js
 function mysqlEnum(a, b) {
   if (typeof a === "string" && Array.isArray(b) || Array.isArray(a)) {
-    const name = typeof a === "string" && a.length > 0 ? a : "";
+    const name2 = typeof a === "string" && a.length > 0 ? a : "";
     const values = (typeof a === "string" ? b : a) ?? [];
     if (values.length === 0) {
-      throw new Error(`You have an empty array for "${name}" enum values`);
+      throw new Error(`You have an empty array for "${name2}" enum values`);
     }
-    return new MySqlEnumColumnBuilder(name, values);
+    return new MySqlEnumColumnBuilder(name2, values);
   }
   if (typeof a === "string" && typeof b === "object" || typeof a === "object") {
-    const name = typeof a === "object" ? "" : a;
+    const name2 = typeof a === "object" ? "" : a;
     const values = typeof a === "object" ? Object.values(a) : typeof b === "object" ? Object.values(b) : [];
     if (values.length === 0) {
-      throw new Error(`You have an empty array for "${name}" enum values`);
+      throw new Error(`You have an empty array for "${name2}" enum values`);
     }
-    return new MySqlEnumObjectColumnBuilder(name, values);
+    return new MySqlEnumObjectColumnBuilder(name2, values);
   }
 }
 var MySqlEnumColumnBuilder, MySqlEnumColumn, MySqlEnumObjectColumnBuilder, MySqlEnumObjectColumn;
@@ -37223,8 +37459,8 @@ var init_enum2 = __esm({
     init_common2();
     MySqlEnumColumnBuilder = class extends MySqlColumnBuilder {
       static [entityKind] = "MySqlEnumColumnBuilder";
-      constructor(name, values) {
-        super(name, "string", "MySqlEnumColumn");
+      constructor(name2, values) {
+        super(name2, "string", "MySqlEnumColumn");
         this.config.enumValues = values;
       }
       /** @internal */
@@ -37244,8 +37480,8 @@ var init_enum2 = __esm({
     };
     MySqlEnumObjectColumnBuilder = class extends MySqlColumnBuilder {
       static [entityKind] = "MySqlEnumObjectColumnBuilder";
-      constructor(name, values) {
-        super(name, "string", "MySqlEnumObjectColumn");
+      constructor(name2, values) {
+        super(name2, "string", "MySqlEnumObjectColumn");
         this.config.enumValues = values;
       }
       /** @internal */
@@ -37268,8 +37504,8 @@ var init_enum2 = __esm({
 
 // node_modules/drizzle-orm/mysql-core/columns/float.js
 function float(a, b) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
-  return new MySqlFloatBuilder(name, config2);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
+  return new MySqlFloatBuilder(name2, config2);
 }
 var MySqlFloatBuilder, MySqlFloat;
 var init_float = __esm({
@@ -37279,8 +37515,8 @@ var init_float = __esm({
     init_common2();
     MySqlFloatBuilder = class extends MySqlColumnBuilderWithAutoIncrement {
       static [entityKind] = "MySqlFloatBuilder";
-      constructor(name, config2) {
-        super(name, "number", "MySqlFloat");
+      constructor(name2, config2) {
+        super(name2, "number", "MySqlFloat");
         this.config.precision = config2?.precision;
         this.config.scale = config2?.scale;
         this.config.unsigned = config2?.unsigned;
@@ -37312,8 +37548,8 @@ var init_float = __esm({
 
 // node_modules/drizzle-orm/mysql-core/columns/int.js
 function int2(a, b) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
-  return new MySqlIntBuilder(name, config2);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
+  return new MySqlIntBuilder(name2, config2);
 }
 var MySqlIntBuilder, MySqlInt;
 var init_int = __esm({
@@ -37323,8 +37559,8 @@ var init_int = __esm({
     init_common2();
     MySqlIntBuilder = class extends MySqlColumnBuilderWithAutoIncrement {
       static [entityKind] = "MySqlIntBuilder";
-      constructor(name, config2) {
-        super(name, "number", "MySqlInt");
+      constructor(name2, config2) {
+        super(name2, "number", "MySqlInt");
         this.config.unsigned = config2 ? config2.unsigned : false;
       }
       /** @internal */
@@ -37348,8 +37584,8 @@ var init_int = __esm({
 });
 
 // node_modules/drizzle-orm/mysql-core/columns/json.js
-function json2(name) {
-  return new MySqlJsonBuilder(name ?? "");
+function json2(name2) {
+  return new MySqlJsonBuilder(name2 ?? "");
 }
 var MySqlJsonBuilder, MySqlJson;
 var init_json = __esm({
@@ -37358,8 +37594,8 @@ var init_json = __esm({
     init_common2();
     MySqlJsonBuilder = class extends MySqlColumnBuilder {
       static [entityKind] = "MySqlJsonBuilder";
-      constructor(name) {
-        super(name, "json", "MySqlJson");
+      constructor(name2) {
+        super(name2, "json", "MySqlJson");
       }
       /** @internal */
       build(table) {
@@ -37380,8 +37616,8 @@ var init_json = __esm({
 
 // node_modules/drizzle-orm/mysql-core/columns/mediumint.js
 function mediumint(a, b) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
-  return new MySqlMediumIntBuilder(name, config2);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
+  return new MySqlMediumIntBuilder(name2, config2);
 }
 var MySqlMediumIntBuilder, MySqlMediumInt;
 var init_mediumint = __esm({
@@ -37391,8 +37627,8 @@ var init_mediumint = __esm({
     init_common2();
     MySqlMediumIntBuilder = class extends MySqlColumnBuilderWithAutoIncrement {
       static [entityKind] = "MySqlMediumIntBuilder";
-      constructor(name, config2) {
-        super(name, "number", "MySqlMediumInt");
+      constructor(name2, config2) {
+        super(name2, "number", "MySqlMediumInt");
         this.config.unsigned = config2 ? config2.unsigned : false;
       }
       /** @internal */
@@ -37420,8 +37656,8 @@ var init_mediumint = __esm({
 
 // node_modules/drizzle-orm/mysql-core/columns/real.js
 function real(a, b = {}) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
-  return new MySqlRealBuilder(name, config2);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
+  return new MySqlRealBuilder(name2, config2);
 }
 var MySqlRealBuilder, MySqlReal;
 var init_real = __esm({
@@ -37431,8 +37667,8 @@ var init_real = __esm({
     init_common2();
     MySqlRealBuilder = class extends MySqlColumnBuilderWithAutoIncrement {
       static [entityKind] = "MySqlRealBuilder";
-      constructor(name, config2) {
-        super(name, "number", "MySqlReal");
+      constructor(name2, config2) {
+        super(name2, "number", "MySqlReal");
         this.config.precision = config2?.precision;
         this.config.scale = config2?.scale;
       }
@@ -37459,8 +37695,8 @@ var init_real = __esm({
 });
 
 // node_modules/drizzle-orm/mysql-core/columns/serial.js
-function serial(name) {
-  return new MySqlSerialBuilder(name ?? "");
+function serial(name2) {
+  return new MySqlSerialBuilder(name2 ?? "");
 }
 var MySqlSerialBuilder, MySqlSerial;
 var init_serial = __esm({
@@ -37469,8 +37705,8 @@ var init_serial = __esm({
     init_common2();
     MySqlSerialBuilder = class extends MySqlColumnBuilderWithAutoIncrement {
       static [entityKind] = "MySqlSerialBuilder";
-      constructor(name) {
-        super(name, "number", "MySqlSerial");
+      constructor(name2) {
+        super(name2, "number", "MySqlSerial");
         this.config.hasDefault = true;
         this.config.autoIncrement = true;
       }
@@ -37496,8 +37732,8 @@ var init_serial = __esm({
 
 // node_modules/drizzle-orm/mysql-core/columns/smallint.js
 function smallint(a, b) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
-  return new MySqlSmallIntBuilder(name, config2);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
+  return new MySqlSmallIntBuilder(name2, config2);
 }
 var MySqlSmallIntBuilder, MySqlSmallInt;
 var init_smallint = __esm({
@@ -37507,8 +37743,8 @@ var init_smallint = __esm({
     init_common2();
     MySqlSmallIntBuilder = class extends MySqlColumnBuilderWithAutoIncrement {
       static [entityKind] = "MySqlSmallIntBuilder";
-      constructor(name, config2) {
-        super(name, "number", "MySqlSmallInt");
+      constructor(name2, config2) {
+        super(name2, "number", "MySqlSmallInt");
         this.config.unsigned = config2 ? config2.unsigned : false;
       }
       /** @internal */
@@ -37536,20 +37772,20 @@ var init_smallint = __esm({
 
 // node_modules/drizzle-orm/mysql-core/columns/text.js
 function text(a, b = {}) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
-  return new MySqlTextBuilder(name, "text", config2);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
+  return new MySqlTextBuilder(name2, "text", config2);
 }
 function tinytext(a, b = {}) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
-  return new MySqlTextBuilder(name, "tinytext", config2);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
+  return new MySqlTextBuilder(name2, "tinytext", config2);
 }
 function mediumtext(a, b = {}) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
-  return new MySqlTextBuilder(name, "mediumtext", config2);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
+  return new MySqlTextBuilder(name2, "mediumtext", config2);
 }
 function longtext(a, b = {}) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
-  return new MySqlTextBuilder(name, "longtext", config2);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
+  return new MySqlTextBuilder(name2, "longtext", config2);
 }
 var MySqlTextBuilder, MySqlText;
 var init_text = __esm({
@@ -37559,8 +37795,8 @@ var init_text = __esm({
     init_common2();
     MySqlTextBuilder = class extends MySqlColumnBuilder {
       static [entityKind] = "MySqlTextBuilder";
-      constructor(name, textType, config2) {
-        super(name, "string", "MySqlText");
+      constructor(name2, textType, config2) {
+        super(name2, "string", "MySqlText");
         this.config.textType = textType;
         this.config.enumValues = config2.enum;
       }
@@ -37582,8 +37818,8 @@ var init_text = __esm({
 
 // node_modules/drizzle-orm/mysql-core/columns/time.js
 function time4(a, b) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
-  return new MySqlTimeBuilder(name, config2);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
+  return new MySqlTimeBuilder(name2, config2);
 }
 var MySqlTimeBuilder, MySqlTime;
 var init_time = __esm({
@@ -37593,8 +37829,8 @@ var init_time = __esm({
     init_common2();
     MySqlTimeBuilder = class extends MySqlColumnBuilder {
       static [entityKind] = "MySqlTimeBuilder";
-      constructor(name, config2) {
-        super(name, "string", "MySqlTime");
+      constructor(name2, config2) {
+        super(name2, "string", "MySqlTime");
         this.config.fsp = config2?.fsp;
       }
       /** @internal */
@@ -37641,11 +37877,11 @@ var init_date_common = __esm({
 
 // node_modules/drizzle-orm/mysql-core/columns/timestamp.js
 function timestamp(a, b = {}) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
   if (config2?.mode === "string") {
-    return new MySqlTimestampStringBuilder(name, config2);
+    return new MySqlTimestampStringBuilder(name2, config2);
   }
-  return new MySqlTimestampBuilder(name, config2);
+  return new MySqlTimestampBuilder(name2, config2);
 }
 var MySqlTimestampBuilder, MySqlTimestamp, MySqlTimestampStringBuilder, MySqlTimestampString;
 var init_timestamp = __esm({
@@ -37655,8 +37891,8 @@ var init_timestamp = __esm({
     init_date_common();
     MySqlTimestampBuilder = class extends MySqlDateColumnBaseBuilder {
       static [entityKind] = "MySqlTimestampBuilder";
-      constructor(name, config2) {
-        super(name, "date", "MySqlTimestamp");
+      constructor(name2, config2) {
+        super(name2, "date", "MySqlTimestamp");
         this.config.fsp = config2?.fsp;
       }
       /** @internal */
@@ -37683,8 +37919,8 @@ var init_timestamp = __esm({
     };
     MySqlTimestampStringBuilder = class extends MySqlDateColumnBaseBuilder {
       static [entityKind] = "MySqlTimestampStringBuilder";
-      constructor(name, config2) {
-        super(name, "string", "MySqlTimestampString");
+      constructor(name2, config2) {
+        super(name2, "string", "MySqlTimestampString");
         this.config.fsp = config2?.fsp;
       }
       /** @internal */
@@ -37708,8 +37944,8 @@ var init_timestamp = __esm({
 
 // node_modules/drizzle-orm/mysql-core/columns/tinyint.js
 function tinyint(a, b) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
-  return new MySqlTinyIntBuilder(name, config2);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
+  return new MySqlTinyIntBuilder(name2, config2);
 }
 var MySqlTinyIntBuilder, MySqlTinyInt;
 var init_tinyint = __esm({
@@ -37719,8 +37955,8 @@ var init_tinyint = __esm({
     init_common2();
     MySqlTinyIntBuilder = class extends MySqlColumnBuilderWithAutoIncrement {
       static [entityKind] = "MySqlTinyIntBuilder";
-      constructor(name, config2) {
-        super(name, "number", "MySqlTinyInt");
+      constructor(name2, config2) {
+        super(name2, "number", "MySqlTinyInt");
         this.config.unsigned = config2 ? config2.unsigned : false;
       }
       /** @internal */
@@ -37748,8 +37984,8 @@ var init_tinyint = __esm({
 
 // node_modules/drizzle-orm/mysql-core/columns/varbinary.js
 function varbinary(a, b) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
-  return new MySqlVarBinaryBuilder(name, config2);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
+  return new MySqlVarBinaryBuilder(name2, config2);
 }
 var MySqlVarBinaryBuilder, MySqlVarBinary;
 var init_varbinary = __esm({
@@ -37760,8 +37996,8 @@ var init_varbinary = __esm({
     MySqlVarBinaryBuilder = class extends MySqlColumnBuilder {
       static [entityKind] = "MySqlVarBinaryBuilder";
       /** @internal */
-      constructor(name, config2) {
-        super(name, "string", "MySqlVarBinary");
+      constructor(name2, config2) {
+        super(name2, "string", "MySqlVarBinary");
         this.config.length = config2?.length;
       }
       /** @internal */
@@ -37793,8 +38029,8 @@ var init_varbinary = __esm({
 
 // node_modules/drizzle-orm/mysql-core/columns/varchar.js
 function varchar(a, b) {
-  const { name, config: config2 } = getColumnNameAndConfig(a, b);
-  return new MySqlVarCharBuilder(name, config2);
+  const { name: name2, config: config2 } = getColumnNameAndConfig(a, b);
+  return new MySqlVarCharBuilder(name2, config2);
 }
 var MySqlVarCharBuilder, MySqlVarChar;
 var init_varchar = __esm({
@@ -37805,8 +38041,8 @@ var init_varchar = __esm({
     MySqlVarCharBuilder = class extends MySqlColumnBuilder {
       static [entityKind] = "MySqlVarCharBuilder";
       /** @internal */
-      constructor(name, config2) {
-        super(name, "string", "MySqlVarChar");
+      constructor(name2, config2) {
+        super(name2, "string", "MySqlVarChar");
         this.config.length = config2.length;
         this.config.enum = config2.enum;
       }
@@ -37830,8 +38066,8 @@ var init_varchar = __esm({
 });
 
 // node_modules/drizzle-orm/mysql-core/columns/year.js
-function year(name) {
-  return new MySqlYearBuilder(name ?? "");
+function year(name2) {
+  return new MySqlYearBuilder(name2 ?? "");
 }
 var MySqlYearBuilder, MySqlYear;
 var init_year = __esm({
@@ -37840,8 +38076,8 @@ var init_year = __esm({
     init_common2();
     MySqlYearBuilder = class extends MySqlColumnBuilder {
       static [entityKind] = "MySqlYearBuilder";
-      constructor(name) {
-        super(name, "number", "MySqlYear");
+      constructor(name2) {
+        super(name2, "number", "MySqlYear");
       }
       /** @internal */
       build(table) {
@@ -37919,16 +38155,16 @@ var init_all = __esm({
 });
 
 // node_modules/drizzle-orm/mysql-core/table.js
-function mysqlTableWithSchema(name, columns, extraConfig, schema, baseName = name) {
-  const rawTable = new MySqlTable(name, schema, baseName);
+function mysqlTableWithSchema(name2, columns, extraConfig, schema, baseName = name2) {
+  const rawTable = new MySqlTable(name2, schema, baseName);
   const parsedColumns = typeof columns === "function" ? columns(getMySqlColumnBuilders()) : columns;
   const builtColumns = Object.fromEntries(
-    Object.entries(parsedColumns).map(([name2, colBuilderBase]) => {
+    Object.entries(parsedColumns).map(([name22, colBuilderBase]) => {
       const colBuilder = colBuilderBase;
-      colBuilder.setName(name2);
+      colBuilder.setName(name22);
       const column = colBuilder.build(rawTable);
       rawTable[InlineForeignKeys2].push(...colBuilder.buildForeignKeys(column, rawTable));
-      return [name2, column];
+      return [name22, column];
     })
   );
   const table = Object.assign(rawTable, builtColumns);
@@ -37959,8 +38195,8 @@ var init_table3 = __esm({
       /** @internal */
       [Table.Symbol.ExtraConfigBuilder] = void 0;
     };
-    mysqlTable = (name, columns, extraConfig) => {
-      return mysqlTableWithSchema(name, columns, extraConfig, void 0, name);
+    mysqlTable = (name2, columns, extraConfig) => {
+      return mysqlTableWithSchema(name2, columns, extraConfig, void 0, name2);
     };
   }
 });
@@ -37977,9 +38213,9 @@ var init_primary_keys2 = __esm({
       columns;
       /** @internal */
       name;
-      constructor(columns, name) {
+      constructor(columns, name2) {
         this.columns = columns;
-        this.name = name;
+        this.name = name2;
       }
       /** @internal */
       build(table) {
@@ -37987,10 +38223,10 @@ var init_primary_keys2 = __esm({
       }
     };
     PrimaryKey2 = class {
-      constructor(table, columns, name) {
+      constructor(table, columns, name2) {
         this.table = table;
         this.columns = columns;
-        this.name = name;
+        this.name = name2;
       }
       static [entityKind] = "MySqlPrimaryKey";
       columns;
@@ -38277,8 +38513,8 @@ var init_dialect = __esm({
           }
         });
       }
-      escapeName(name) {
-        return `\`${name.replace(/`/g, "``")}\``;
+      escapeName(name2) {
+        return `\`${name2.replace(/`/g, "``")}\``;
       }
       escapeParam(_num) {
         return `?`;
@@ -39322,7 +39558,7 @@ var init_select2 = __esm({
           const baseTableName = this.tableName;
           const tableName = getTableLikeName(table);
           for (const item of extractUsedTable(table)) this.usedTables.add(item);
-          if (typeof tableName === "string" && this.config.joins?.some((join) => join.alias === tableName)) {
+          if (typeof tableName === "string" && this.config.joins?.some((join2) => join2.alias === tableName)) {
             throw new Error(`Alias "${tableName}" is already used in this query`);
           }
           if (!this.isPartialSelect) {
@@ -41320,11 +41556,11 @@ var init_columns = __esm({
 });
 
 // node_modules/drizzle-orm/mysql-core/view.js
-function mysqlViewWithSchema(name, selection, schema) {
+function mysqlViewWithSchema(name2, selection, schema) {
   if (selection) {
-    return new ManualViewBuilder(name, selection, schema);
+    return new ManualViewBuilder(name2, selection, schema);
   }
-  return new ViewBuilder(name, schema);
+  return new ViewBuilder(name2, schema);
 }
 var ViewBuilderCore, ViewBuilder, ManualViewBuilder, MySqlView;
 var init_view = __esm({
@@ -41337,8 +41573,8 @@ var init_view = __esm({
     init_view_base();
     init_view_common2();
     ViewBuilderCore = class {
-      constructor(name, schema) {
-        this.name = name;
+      constructor(name2, schema) {
+        this.name = name2;
         this.schema = schema;
       }
       static [entityKind] = "MySqlViewBuilder";
@@ -41386,9 +41622,9 @@ var init_view = __esm({
     ManualViewBuilder = class extends ViewBuilderCore {
       static [entityKind] = "MySqlManualViewBuilder";
       columns;
-      constructor(name, columns, schema) {
-        super(name, schema);
-        this.columns = getTableColumns(mysqlTable(name, columns));
+      constructor(name2, columns, schema) {
+        super(name2, schema);
+        this.columns = getTableColumns(mysqlTable(name2, columns));
       }
       existing() {
         return new Proxy(
@@ -41452,11 +41688,11 @@ var init_schema = __esm({
         this.schemaName = schemaName;
       }
       static [entityKind] = "MySqlSchema";
-      table = (name, columns, extraConfig) => {
-        return mysqlTableWithSchema(name, columns, extraConfig, this.schemaName);
+      table = (name2, columns, extraConfig) => {
+        return mysqlTableWithSchema(name2, columns, extraConfig, this.schemaName);
       };
-      view = (name, columns) => {
-        return mysqlViewWithSchema(name, columns, this.schemaName);
+      view = (name2, columns) => {
+        return mysqlViewWithSchema(name2, columns, this.schemaName);
       };
     };
   }
@@ -41507,6 +41743,7 @@ __export(schema_exports, {
   onboardingQuestions: () => onboardingQuestions,
   proSubscriptions: () => proSubscriptions,
   profileLearningEvents: () => profileLearningEvents,
+  rawSmsEvents: () => rawSmsEvents,
   referrals: () => referrals,
   seoPages: () => seoPages,
   sessions: () => sessions,
@@ -41516,9 +41753,10 @@ __export(schema_exports, {
   userDictionaries: () => userDictionaries,
   userProfiles: () => userProfiles,
   users: () => users,
-  voiceUsage: () => voiceUsage
+  voiceUsage: () => voiceUsage,
+  webhookTokens: () => webhookTokens
 });
-var users, localUsers, expenses, expenseCategories, monthlyReports, sessions, userAnalytics, supportTickets, discountCodes, aiSummaries, ads, adClicks, referrals, proSubscriptions, seoPages, systemSettings, userProfiles, profileLearningEvents, monthlyBehaviorSnapshots, onboardingQuestions, userDictionaries, classificationLogs, voiceUsage;
+var users, localUsers, expenses, expenseCategories, monthlyReports, sessions, userAnalytics, supportTickets, discountCodes, aiSummaries, ads, adClicks, referrals, proSubscriptions, seoPages, systemSettings, userProfiles, profileLearningEvents, monthlyBehaviorSnapshots, onboardingQuestions, userDictionaries, classificationLogs, voiceUsage, webhookTokens, rawSmsEvents;
 var init_schema2 = __esm({
   "db/schema.ts"() {
     init_mysql_core();
@@ -41538,7 +41776,10 @@ var init_schema2 = __esm({
       createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
       updatedAt: datetime3("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
       lastSignInAt: datetime3("last_sign_in_at"),
-      aiTokensUsed: int2("ai_tokens_used").default(0)
+      aiTokensUsed: int2("ai_tokens_used").default(0),
+      currentStreak: int2("current_streak").default(0),
+      highestStreak: int2("highest_streak").default(0),
+      lastStreakAt: datetime3("last_streak_at")
     }, (t2) => [
       index("users_role_idx").on(t2.role),
       index("users_plan_idx").on(t2.plan),
@@ -41560,7 +41801,10 @@ var init_schema2 = __esm({
       createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
       updatedAt: datetime3("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
       lastSignInAt: datetime3("last_sign_in_at"),
-      aiTokensUsed: int2("ai_tokens_used").default(0)
+      aiTokensUsed: int2("ai_tokens_used").default(0),
+      currentStreak: int2("current_streak").default(0),
+      highestStreak: int2("highest_streak").default(0),
+      lastStreakAt: datetime3("last_streak_at")
     }, (t2) => [
       index("local_users_role_idx").on(t2.role),
       index("local_users_plan_idx").on(t2.plan)
@@ -41589,6 +41833,7 @@ var init_schema2 = __esm({
     }, (t2) => [
       index("expenses_user_idx").on(t2.userId, t2.userType),
       index("expenses_date_idx").on(t2.date),
+      index("expenses_user_date_idx").on(t2.userId, t2.userType, t2.date),
       index("expenses_type_idx").on(t2.type),
       index("expenses_category_idx").on(t2.category)
     ]);
@@ -41891,6 +42136,32 @@ var init_schema2 = __esm({
     }, (t2) => [
       index("voice_user_month_idx").on(t2.userId, t2.userType, t2.month)
     ]);
+    webhookTokens = mysqlTable("webhook_tokens", {
+      id: int2("id").primaryKey().autoincrement(),
+      userId: int2("user_id").notNull(),
+      userType: varchar("user_type", { length: 50 }).notNull(),
+      token: varchar("token", { length: 255 }).notNull().unique(),
+      name: varchar("name", { length: 100 }).default("Default Token"),
+      createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+    }, (t2) => [
+      index("webhook_tokens_user_idx").on(t2.userId, t2.userType),
+      index("webhook_tokens_token_idx").on(t2.token)
+    ]);
+    rawSmsEvents = mysqlTable("raw_sms_events", {
+      id: int2("id").primaryKey().autoincrement(),
+      userId: int2("user_id").notNull(),
+      userType: varchar("user_type", { length: 50 }).notNull(),
+      message: text("message").notNull(),
+      sender: varchar("sender", { length: 100 }),
+      smsTimestamp: varchar("sms_timestamp", { length: 100 }),
+      status: varchar("status", { length: 50 }).default("pending"),
+      // pending | processed | ignored | error
+      metadata: json2("metadata"),
+      createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+    }, (t2) => [
+      index("raw_sms_user_idx").on(t2.userId, t2.userType),
+      index("raw_sms_status_idx").on(t2.status)
+    ]);
   }
 });
 
@@ -41951,9 +42222,9 @@ var init_env = __esm({
       JWT_SECRET: external_exports.string().min(1),
       // AI
       GEMINI_API_KEY: external_exports.string().min(1),
-      GEMINI_MODEL_FREE: external_exports.string().default("gemini-1.5-flash"),
-      GEMINI_MODEL_PRO: external_exports.string().default("gemini-1.5-pro"),
-      GEMINI_MODEL_REPORTS: external_exports.string().default("gemini-1.5-pro"),
+      GEMINI_MODEL_FREE: external_exports.string().default("gemini-2.0-flash"),
+      GEMINI_MODEL_PRO: external_exports.string().default("gemini-2.5-flash"),
+      GEMINI_MODEL_REPORTS: external_exports.string().default("gemini-2.5-pro"),
       // App
       NODE_ENV: external_exports.enum(["development", "production"]).default("development"),
       PORT: external_exports.string().default("3000"),
@@ -43744,6 +44015,126 @@ var init_bcryptjs = __esm({
       encodeBase64: encodeBase642,
       decodeBase64: decodeBase642
     };
+  }
+});
+
+// api/services/financial-month.ts
+var financial_month_exports = {};
+__export(financial_month_exports, {
+  buildFinancialMonthPrompt: () => buildFinancialMonthPrompt,
+  getFinancialMonthDates: () => getFinancialMonthDates,
+  getFinancialMonthRange: () => getFinancialMonthRange
+});
+function clampDay(year2, month, salaryDay) {
+  const daysInMonth = new Date(year2, month + 1, 0).getDate();
+  return Math.min(salaryDay, daysInMonth);
+}
+function getFinancialMonthRange(calendarMonth, salaryDay, referenceDate = /* @__PURE__ */ new Date()) {
+  const [year2, monthIdx] = calendarMonth.split("-").map(Number);
+  const month0 = monthIdx - 1;
+  const clampedStart = clampDay(year2, month0, salaryDay);
+  const start = new Date(year2, month0, clampedStart, 0, 0, 0, 0);
+  const nextMonth0 = month0 + 1;
+  const nextYear = nextMonth0 > 11 ? year2 + 1 : year2;
+  const nextMonth0Clamped = nextMonth0 > 11 ? 0 : nextMonth0;
+  const clampedEnd = clampDay(nextYear, nextMonth0Clamped, salaryDay);
+  const end = new Date(nextYear, nextMonth0Clamped, clampedEnd - 1, 23, 59, 59, 999);
+  if (salaryDay <= 1) {
+    const lastDay = new Date(year2, month0 + 1, 0).getDate();
+    end.setFullYear(year2);
+    end.setMonth(month0);
+    end.setDate(lastDay);
+  }
+  const daysTotal = Math.round((end.getTime() - start.getTime()) / (1e3 * 60 * 60 * 24)) + 1;
+  const daysElapsed = Math.max(0, Math.min(
+    daysTotal,
+    Math.round((referenceDate.getTime() - start.getTime()) / (1e3 * 60 * 60 * 24))
+  ));
+  const progressPercent = Math.round(daysElapsed / daysTotal * 100);
+  const daysUntilNextSalary = Math.max(0, daysTotal - daysElapsed);
+  const startLabel = `${clampedStart} ${MONTH_NAMES_AR[month0]}`;
+  const endLabel = salaryDay <= 1 ? `${end.getDate()} ${MONTH_NAMES_AR[month0]}` : `${end.getDate()} ${MONTH_NAMES_AR[end.getMonth()]}`;
+  return {
+    start,
+    end,
+    salaryDay,
+    label: `${startLabel} \u2192 ${endLabel}`,
+    daysElapsed,
+    daysTotal,
+    progressPercent,
+    isEarlyMonth: progressPercent < 30,
+    isLateMonth: progressPercent > 80,
+    daysUntilNextSalary
+  };
+}
+function buildFinancialMonthPrompt(salaryDay, calendarMonth, referenceDate = /* @__PURE__ */ new Date()) {
+  const range = getFinancialMonthRange(calendarMonth, salaryDay, referenceDate);
+  const lines = [
+    `\u2550\u2550\u2550 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0645\u0627\u0644\u064A \u0644\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u2550\u2550\u2550`,
+    `\u0645\u0631\u062A\u0628 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u064A\u0646\u0632\u0644 \u064A\u0648\u0645 ${salaryDay} \u0645\u0646 \u0643\u0644 \u0634\u0647\u0631.`,
+    `\u0627\u0644\u0641\u062A\u0631\u0629 \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0627\u0644\u062D\u0627\u0644\u064A\u0629: ${range.label}`,
+    `\u0645\u0636\u0649 \u0639\u0644\u0649 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0645\u0627\u0644\u064A: ${range.daysElapsed} \u064A\u0648\u0645 \u0645\u0646 ${range.daysTotal} \u064A\u0648\u0645 (${range.progressPercent}%)`,
+    `\u0628\u0627\u0642\u064A \u0639\u0644\u0649 \u0627\u0644\u0645\u0631\u062A\u0628 \u0627\u0644\u062C\u0627\u064A: ${range.daysUntilNextSalary} \u064A\u0648\u0645`
+  ];
+  if (range.isEarlyMonth) {
+    lines.push(
+      `\u26A0\uFE0F \u062A\u0646\u0628\u064A\u0647 \u0645\u0647\u0645: \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0644\u0633\u0647 \u0641\u064A \u0623\u0648\u0644 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0645\u0627\u0644\u064A (${range.progressPercent}% \u0628\u0633).`,
+      `- \u0644\u0627 \u062A\u062D\u0643\u0645 \u0639\u0644\u0649 \u0627\u0644\u0623\u062F\u0627\u0621 \u0627\u0644\u0634\u0647\u0631\u064A \u0628\u0634\u0643\u0644 \u0646\u0647\u0627\u0626\u064A`,
+      `- \u0644\u0627 \u062A\u0642\u0648\u0644 "\u0627\u0644\u0634\u0647\u0631 \u062E\u0644\u0635" \u0623\u0648 "\u062E\u062A\u0627\u0645 \u0627\u0644\u0634\u0647\u0631" \u0644\u0623\u0646 \u0627\u0644\u0634\u0647\u0631 \u0644\u0633\u0647 \u0641\u064A \u0623\u0648\u0644\u0647`,
+      `- \u0631\u0643\u0632 \u0639\u0644\u0649 \u0627\u0644\u0628\u062F\u0627\u064A\u0629 \u0648\u0627\u0644\u062A\u0648\u0642\u0639\u0627\u062A \u0628\u0646\u0627\u0621\u064B \u0639\u0644\u0649 \u0623\u0648\u0644 \u0623\u064A\u0627\u0645 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0645\u0627\u0644\u064A`
+    );
+  } else if (range.isLateMonth) {
+    lines.push(
+      `\u2705 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0641\u064A \u0622\u062E\u0631 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0645\u0627\u0644\u064A (${range.progressPercent}%).`,
+      `- \u0645\u0645\u0643\u0646 \u062A\u0642\u062F\u0645 \u0645\u0644\u062E\u0635 \u0634\u0627\u0645\u0644 \u0648\u062A\u0642\u064A\u064A\u0645 \u0644\u0644\u0623\u062F\u0627\u0621 \u0627\u0644\u0634\u0647\u0631\u064A`,
+      `- \u0642\u0627\u0631\u0646 \u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062A \u0628\u0627\u0644\u062F\u062E\u0644 \u0627\u0644\u0645\u0639\u0644\u0646`,
+      `- \u0642\u062F\u0645 \u0646\u0635\u0627\u0626\u062D \u0644\u0644\u0634\u0647\u0631 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u062C\u0627\u064A`
+    );
+  } else {
+    lines.push(
+      `\u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0641\u064A \u0645\u0646\u062A\u0635\u0641 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0645\u0627\u0644\u064A \u062A\u0642\u0631\u064A\u0628\u0627\u064B.`,
+      `- \u0645\u0645\u0643\u0646 \u062A\u0642\u062F\u0645 \u062A\u062D\u0644\u064A\u0644 \u0645\u0628\u062F\u0626\u064A \u0644\u0644\u0627\u062A\u062C\u0627\u0647\u0627\u062A`,
+      `- \u0642\u0627\u0631\u0646 \u0628\u0645\u0639\u062F\u0644 \u0627\u0644\u0635\u0631\u0641 \u0627\u0644\u064A\u0648\u0645\u064A \u0627\u0644\u0645\u062A\u0648\u0642\u0639`
+    );
+  }
+  lines.push(
+    ``,
+    `\u062A\u0639\u0644\u064A\u0645\u0629: \u062D\u0644\u0644 \u0623\u062F\u0627\u0621 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0646\u0627\u0621\u064B \u0639\u0644\u0649 \u0646\u0633\u0628\u0629 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0644\u064A \u0645\u0636\u062A\u060C \u0645\u0634 \u0627\u0644\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u064A\u0644\u0627\u062F\u064A.`,
+    `\u0644\u0648 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0635\u0631\u0641 50% \u0645\u0646 \u062F\u062E\u0644\u0647 \u0648\u0639\u062F\u0649 50% \u0645\u0646 \u0634\u0647\u0631\u0647 \u0627\u0644\u0645\u0627\u0644\u064A = \u0623\u062F\u0627\u0621 \u0639\u0627\u062F\u064A.`,
+    `\u0644\u0648 \u0635\u0631\u0641 50% \u0645\u0646 \u062F\u062E\u0644\u0647 \u0648\u0639\u062F\u0649 20% \u0628\u0633 = \u0625\u0646\u0630\u0627\u0631 \u0645\u0628\u0643\u0631.`
+  );
+  return lines.join("\n");
+}
+function getFinancialMonthDates(calendarMonth, salaryDay) {
+  if (!salaryDay || salaryDay <= 1) {
+    const start = /* @__PURE__ */ new Date(calendarMonth + "-01");
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + 1);
+    return { startDate: start, endDate: end };
+  }
+  const range = getFinancialMonthRange(calendarMonth, salaryDay);
+  const endDate = new Date(range.end);
+  endDate.setDate(endDate.getDate() + 1);
+  endDate.setHours(0, 0, 0, 0);
+  return { startDate: range.start, endDate };
+}
+var MONTH_NAMES_AR;
+var init_financial_month = __esm({
+  "api/services/financial-month.ts"() {
+    MONTH_NAMES_AR = [
+      "\u064A\u0646\u0627\u064A\u0631",
+      "\u0641\u0628\u0631\u0627\u064A\u0631",
+      "\u0645\u0627\u0631\u0633",
+      "\u0625\u0628\u0631\u064A\u0644",
+      "\u0645\u0627\u064A\u0648",
+      "\u064A\u0648\u0646\u064A\u0648",
+      "\u064A\u0648\u0644\u064A\u0648",
+      "\u0623\u063A\u0633\u0637\u0633",
+      "\u0633\u0628\u062A\u0645\u0628\u0631",
+      "\u0623\u0643\u062A\u0648\u0628\u0631",
+      "\u0646\u0648\u0641\u0645\u0628\u0631",
+      "\u062F\u064A\u0633\u0645\u0628\u0631"
+    ];
   }
 });
 
@@ -49100,15 +49491,15 @@ var require_xlsx = __commonJS({
         function read_directory(dir_start, sector_list, sectors, Paths, nmfs, files, FileIndex, mini) {
           var minifat_store = 0, pl = Paths.length ? 2 : 0;
           var sector = sector_list[dir_start].data;
-          var i2 = 0, namelen = 0, name;
+          var i2 = 0, namelen = 0, name2;
           for (; i2 < sector.length; i2 += 128) {
             var blob = sector.slice(i2, i2 + 128);
             prep_blob(blob, 64);
             namelen = blob.read_shift(2);
-            name = __utf16le(blob, 0, namelen - pl);
-            Paths.push(name);
+            name2 = __utf16le(blob, 0, namelen - pl);
+            Paths.push(name2);
             var o = {
-              name,
+              name: name2,
               type: blob.read_shift(1),
               color: blob.read_shift(1),
               L: blob.read_shift(4, "i"),
@@ -49146,7 +49537,7 @@ var require_xlsx = __commonJS({
               }
             }
             if (o.content) prep_blob(o.content, 0);
-            files[name] = o;
+            files[name2] = o;
             FileIndex.push(o);
           }
         }
@@ -49993,8 +50384,8 @@ var require_xlsx = __commonJS({
           var _usz = blob.read_shift(4);
           var namelen = blob.read_shift(2);
           var efsz = blob.read_shift(2);
-          var name = "";
-          for (var i2 = 0; i2 < namelen; ++i2) name += String.fromCharCode(blob[blob.l++]);
+          var name2 = "";
+          for (var i2 = 0; i2 < namelen; ++i2) name2 += String.fromCharCode(blob[blob.l++]);
           if (efsz) {
             var ef = parse_extra_field(blob.slice(blob.l, blob.l + efsz));
             if ((ef[21589] || {}).mt) date6 = ef[21589].mt;
@@ -50024,7 +50415,7 @@ var require_xlsx = __commonJS({
           }
           if (_csz != csz) warn_or_throw(wrn, "Bad compressed size: " + csz + " != " + _csz);
           if (_usz != usz) warn_or_throw(wrn, "Bad uncompressed size: " + usz + " != " + _usz);
-          cfb_add(o, name, data, { unsafe: true, mt: date6 });
+          cfb_add(o, name2, data, { unsafe: true, mt: date6 });
         }
         function write_zip2(cfb, options) {
           var _opts = options || {};
@@ -50285,18 +50676,18 @@ var require_xlsx = __commonJS({
           init_cfb(o, opts);
           return o;
         }
-        function cfb_add(cfb, name, content, opts) {
+        function cfb_add(cfb, name2, content, opts) {
           var unsafe = opts && opts.unsafe;
           if (!unsafe) init_cfb(cfb);
-          var file2 = !unsafe && CFB.find(cfb, name);
+          var file2 = !unsafe && CFB.find(cfb, name2);
           if (!file2) {
             var fpath = cfb.FullPaths[0];
-            if (name.slice(0, fpath.length) == fpath) fpath = name;
+            if (name2.slice(0, fpath.length) == fpath) fpath = name2;
             else {
               if (fpath.slice(-1) != "/") fpath += "/";
-              fpath = (fpath + name).replace("//", "/");
+              fpath = (fpath + name2).replace("//", "/");
             }
-            file2 = { name: filename(name), type: 2 };
+            file2 = { name: filename(name2), type: 2 };
             cfb.FileIndex.push(file2);
             cfb.FullPaths.push(fpath);
             if (!unsafe) CFB.utils.cfb_gc(cfb);
@@ -50310,9 +50701,9 @@ var require_xlsx = __commonJS({
           }
           return file2;
         }
-        function cfb_del(cfb, name) {
+        function cfb_del(cfb, name2) {
           init_cfb(cfb);
-          var file2 = CFB.find(cfb, name);
+          var file2 = CFB.find(cfb, name2);
           if (file2) {
             for (var j = 0; j < cfb.FileIndex.length; ++j) if (cfb.FileIndex[j] == file2) {
               cfb.FileIndex.splice(j, 1);
@@ -53087,7 +53478,7 @@ var require_xlsx = __commonJS({
       }
       var custregex = /<[^>]+>[^<]*/g;
       function parse_cust_props(data, opts) {
-        var p = {}, name = "";
+        var p = {}, name2 = "";
         var m = data.match(custregex);
         if (m) for (var i = 0; i != m.length; ++i) {
           var x = m[i], y = parsexmltag(x);
@@ -53097,10 +53488,10 @@ var require_xlsx = __commonJS({
             case "<Properties":
               break;
             case "<property":
-              name = unescapexml(y.name);
+              name2 = unescapexml(y.name);
               break;
             case "</property>":
-              name = null;
+              name2 = null;
               break;
             default:
               if (x.indexOf("<vt:") === 0) {
@@ -53110,10 +53501,10 @@ var require_xlsx = __commonJS({
                   case "lpstr":
                   case "bstr":
                   case "lpwstr":
-                    p[name] = unescapexml(text2);
+                    p[name2] = unescapexml(text2);
                     break;
                   case "bool":
-                    p[name] = parsexmlbool(text2);
+                    p[name2] = parsexmlbool(text2);
                     break;
                   case "i1":
                   case "i2":
@@ -53121,20 +53512,20 @@ var require_xlsx = __commonJS({
                   case "i8":
                   case "int":
                   case "uint":
-                    p[name] = parseInt(text2, 10);
+                    p[name2] = parseInt(text2, 10);
                     break;
                   case "r4":
                   case "r8":
                   case "decimal":
-                    p[name] = parseFloat(text2);
+                    p[name2] = parseFloat(text2);
                     break;
                   case "filetime":
                   case "date":
-                    p[name] = parseDate(text2);
+                    p[name2] = parseDate(text2);
                     break;
                   case "cy":
                   case "error":
-                    p[name] = unescapexml(text2);
+                    p[name2] = unescapexml(text2);
                     break;
                   default:
                     if (type.slice(-1) == "/") break;
@@ -53536,7 +53927,7 @@ var require_xlsx = __commonJS({
               }
               DictObj = parse_dictionary(blob, CodePage);
             } else {
-              var name = DictObj[Props[i][0]];
+              var name2 = DictObj[Props[i][0]];
               var val;
               switch (blob[blob.l]) {
                 case 65:
@@ -53574,7 +53965,7 @@ var require_xlsx = __commonJS({
                 default:
                   throw new Error("unparsed value: " + blob[blob.l]);
               }
-              PropH[name] = val;
+              PropH[name2] = val;
             }
           }
         }
@@ -54249,9 +54640,9 @@ var require_xlsx = __commonJS({
             dt = "VBAModule";
             break;
         }
-        var name = parse_ShortXLUnicodeString(blob, 0, opts);
-        if (name.length === 0) name = "Sheet1";
-        return { pos, hs: hidden, dt, name };
+        var name2 = parse_ShortXLUnicodeString(blob, 0, opts);
+        if (name2.length === 0) name2 = "Sheet1";
+        return { pos, hs: hidden, dt, name: name2 };
       }
       function write_BoundSheet8(data, opts) {
         var w = !opts || opts.biff >= 8 ? 2 : 1;
@@ -54397,17 +54788,17 @@ var require_xlsx = __commonJS({
         return o;
       }
       function write_Font(data, opts) {
-        var name = data.name || "Arial";
-        var b5 = opts && opts.biff == 5, w = b5 ? 15 + name.length : 16 + 2 * name.length;
+        var name2 = data.name || "Arial";
+        var b5 = opts && opts.biff == 5, w = b5 ? 15 + name2.length : 16 + 2 * name2.length;
         var o = new_buf(w);
         o.write_shift(2, (data.sz || 12) * 20);
         o.write_shift(4, 0);
         o.write_shift(2, 400);
         o.write_shift(4, 0);
         o.write_shift(2, 0);
-        o.write_shift(1, name.length);
+        o.write_shift(1, name2.length);
         if (!b5) o.write_shift(1, 1);
-        o.write_shift((b5 ? 1 : 2) * name.length, name, b5 ? "sbcs" : "utf16le");
+        o.write_shift((b5 ? 1 : 2) * name2.length, name2, b5 ? "sbcs" : "utf16le");
         return o;
       }
       function parse_LabelSst(blob) {
@@ -54665,14 +55056,14 @@ var require_xlsx = __commonJS({
           if (opts.biff == 5) blob.l += 2;
           blob.l += 4;
         }
-        var name = parse_XLUnicodeStringNoCch(blob, cch, opts);
-        if (flags & 32) name = XLSLblBuiltIn[name.charCodeAt(0)];
+        var name2 = parse_XLUnicodeStringNoCch(blob, cch, opts);
+        if (flags & 32) name2 = XLSLblBuiltIn[name2.charCodeAt(0)];
         var npflen = target - blob.l;
         if (opts && opts.biff == 2) --npflen;
         var rgce = target == blob.l || cce === 0 || !(npflen > 0) ? [] : parse_NameParsedFormula(blob, npflen, opts, cce);
         return {
           chKey,
-          Name: name,
+          Name: name2,
           itab,
           rgce
         };
@@ -54696,9 +55087,9 @@ var require_xlsx = __commonJS({
         }
         var cchName = blob.read_shift(2);
         var cchComment = blob.read_shift(2);
-        var name = parse_XLUnicodeStringNoCch(blob, cchName, opts);
+        var name2 = parse_XLUnicodeStringNoCch(blob, cchName, opts);
         var comment = parse_XLUnicodeStringNoCch(blob, cchComment, opts);
-        return [name, comment];
+        return [name2, comment];
       }
       function parse_ShrFmla(blob, length, opts) {
         var ref = parse_RefU(blob, 6);
@@ -56621,8 +57012,8 @@ var require_xlsx = __commonJS({
           out.write_shift(4, 0);
           var rows = 0, cols = 0, wscnt = 0;
           for (var i = 0; i < wb.SheetNames.length; ++i) {
-            var name = wb.SheetNames[i];
-            var ws = wb.Sheets[name];
+            var name2 = wb.SheetNames[i];
+            var ws = wb.Sheets[name2];
             if (!ws || !ws["!ref"]) continue;
             ++wscnt;
             var range = decode_range(ws["!ref"]);
@@ -57062,12 +57453,12 @@ var require_xlsx = __commonJS({
           }
           return o;
         }
-        function write_XFORMAT_SHEETNAME(name, wsidx) {
-          var out = new_buf(5 + name.length);
+        function write_XFORMAT_SHEETNAME(name2, wsidx) {
+          var out = new_buf(5 + name2.length);
           out.write_shift(2, 14e3);
           out.write_shift(2, wsidx);
-          for (var i = 0; i < name.length; ++i) {
-            var cc = name.charCodeAt(i);
+          for (var i = 0; i < name2.length; ++i) {
+            var cc = name2.charCodeAt(i);
             out[out.l++] = cc > 127 ? 95 : cc;
           }
           out[out.l++] = 0;
@@ -59514,10 +59905,10 @@ var require_xlsx = __commonJS({
         }
         return o;
       }
-      function write_BrtBeginEsfmd(cnt, name) {
-        var o = new_buf(8 + 2 * name.length);
+      function write_BrtBeginEsfmd(cnt, name2) {
+        var o = new_buf(8 + 2 * name2.length);
         o.write_shift(4, cnt);
-        write_XLWideString(name, o);
+        write_XLWideString(name2, o);
         return o.slice(0, o.l);
       }
       function parse_BrtBeginEsmdb(data) {
@@ -59530,7 +59921,7 @@ var require_xlsx = __commonJS({
         o.write_shift(4, cm ? 1 : 0);
         return o;
       }
-      function parse_xlmeta_bin(data, name, _opts) {
+      function parse_xlmeta_bin(data, name2, _opts) {
         var out = { Types: [], Cell: [], Value: [] };
         var opts = _opts || {};
         var state = [];
@@ -59595,7 +59986,7 @@ var require_xlsx = __commonJS({
         write_record(ba, 333);
         return ba.end();
       }
-      function parse_xlmeta_xml(data, name, opts) {
+      function parse_xlmeta_xml(data, name2, opts) {
         var out = { Types: [], Cell: [], Value: [] };
         if (!data)
           return out;
@@ -59717,7 +60108,7 @@ var require_xlsx = __commonJS({
         if (flags & 8) out.a = "1";
         return out;
       }
-      function parse_cc_bin(data, name, opts) {
+      function parse_cc_bin(data, name2, opts) {
         var out = [];
         var pass = false;
         recordhopper(data, function hopper_cc(val, R, RT) {
@@ -59734,7 +60125,7 @@ var require_xlsx = __commonJS({
       }
       function parse_xlink_xml() {
       }
-      function parse_xlink_bin(data, rel, name, _opts) {
+      function parse_xlink_bin(data, rel, name2, _opts) {
         if (!data) return data;
         var opts = _opts || {};
         var pass = false, end = false;
@@ -61002,8 +61393,8 @@ var require_xlsx = __commonJS({
             o = XTI[1] == -1 ? "#REF" : supbooks.SheetNames[XTI[1]] || "SH33TJSERR3";
             return XTI[1] == XTI[2] ? o : o + ":" + supbooks.SheetNames[XTI[2]];
           case 14849:
-            return supbooks[XTI[0]].slice(1).map(function(name) {
-              return name.Name;
+            return supbooks[XTI[0]].slice(1).map(function(name2) {
+              return name2.Name;
             }).join(";;");
           //return "SH33TJSERR8";
           default:
@@ -61167,9 +61558,9 @@ var require_xlsx = __commonJS({
             case "PtgName":
               nameidx = f[1][2];
               var lbl = (supbooks.names || [])[nameidx - 1] || (supbooks[0] || [])[nameidx];
-              var name = lbl ? lbl.Name : "SH33TJSNAME" + String(nameidx);
-              if (name && name.slice(0, 6) == "_xlfn." && !opts.xlfn) name = name.slice(6);
-              stack.push(name);
+              var name2 = lbl ? lbl.Name : "SH33TJSNAME" + String(nameidx);
+              if (name2 && name2.slice(0, 6) == "_xlfn." && !opts.xlfn) name2 = name2.slice(6);
+              stack.push(name2);
               break;
             case "PtgNameX":
               var bookidx = f[1][1];
@@ -62952,10 +63343,10 @@ var require_xlsx = __commonJS({
           ref = encode_range(range);
         }
         for (var i = 0; i < names.length; ++i) {
-          var name = names[i];
-          if (name.Name != "_xlnm._FilterDatabase") continue;
-          if (name.Sheet != idx) continue;
-          name.Ref = "'" + wb.SheetNames[idx] + "'!" + ref;
+          var name2 = names[i];
+          if (name2.Name != "_xlnm._FilterDatabase") continue;
+          if (name2.Sheet != idx) continue;
+          name2.Ref = "'" + wb.SheetNames[idx] + "'!" + ref;
           break;
         }
         if (i == names.length) names.push({ Name: "_xlnm._FilterDatabase", Sheet: idx, Ref: "'" + wb.SheetNames[idx] + "'!" + ref });
@@ -64403,10 +64794,10 @@ var require_xlsx = __commonJS({
           ref = encode_range(range);
         }
         for (var i = 0; i < names.length; ++i) {
-          var name = names[i];
-          if (name.Name != "_xlnm._FilterDatabase") continue;
-          if (name.Sheet != idx) continue;
-          name.Ref = "'" + wb.SheetNames[idx] + "'!" + ref;
+          var name2 = names[i];
+          if (name2.Name != "_xlnm._FilterDatabase") continue;
+          if (name2.Sheet != idx) continue;
+          name2.Ref = "'" + wb.SheetNames[idx] + "'!" + ref;
           break;
         }
         if (i == names.length) names.push({ Name: "_xlnm._FilterDatabase", Sheet: idx, Ref: "'" + wb.SheetNames[idx] + "'!" + ref });
@@ -64499,7 +64890,7 @@ var require_xlsx = __commonJS({
         });
         return [col, nf, f];
       }
-      function parse_chart(data, name, opts, rels, wb, csheet) {
+      function parse_chart(data, name2, opts, rels, wb, csheet) {
         var cs = csheet || { "!type": "chart" };
         if (!data) return csheet;
         var C = 0, R = 0, col = "A";
@@ -64545,8 +64936,8 @@ var require_xlsx = __commonJS({
       }
       function parse_BrtCsProp(data, length) {
         data.l += 10;
-        var name = parse_XLWideString(data, length - 10);
-        return { name };
+        var name2 = parse_XLWideString(data, length - 10);
+        return { name: name2 };
       }
       function parse_cs_bin(data, opts, idx, rels, wb) {
         if (!data) return data;
@@ -65098,11 +65489,11 @@ var require_xlsx = __commonJS({
         data.l += 4;
         data.l += 1;
         var itab = data.read_shift(4);
-        var name = parse_XLNameWideString(data);
+        var name2 = parse_XLNameWideString(data);
         var formula = parse_XLSBNameParsedFormula(data, 0, opts);
         var comment = parse_XLNullableWideString(data);
         data.l = end;
-        var out = { Name: name, Ptg: formula };
+        var out = { Name: name2, Ptg: formula };
         if (itab < 268435455) out.Sheet = itab;
         if (comment) out.Comment = comment;
         return out;
@@ -65324,73 +65715,73 @@ var require_xlsx = __commonJS({
         );
         return ba.end();
       }
-      function parse_wb(data, name, opts) {
-        if (name.slice(-4) === ".bin") return parse_wb_bin(data, opts);
+      function parse_wb(data, name2, opts) {
+        if (name2.slice(-4) === ".bin") return parse_wb_bin(data, opts);
         return parse_wb_xml(data, opts);
       }
-      function parse_ws(data, name, idx, opts, rels, wb, themes, styles) {
-        if (name.slice(-4) === ".bin") return parse_ws_bin(data, opts, idx, rels, wb, themes, styles);
+      function parse_ws(data, name2, idx, opts, rels, wb, themes, styles) {
+        if (name2.slice(-4) === ".bin") return parse_ws_bin(data, opts, idx, rels, wb, themes, styles);
         return parse_ws_xml(data, opts, idx, rels, wb, themes, styles);
       }
-      function parse_cs(data, name, idx, opts, rels, wb, themes, styles) {
-        if (name.slice(-4) === ".bin") return parse_cs_bin(data, opts, idx, rels, wb, themes, styles);
+      function parse_cs(data, name2, idx, opts, rels, wb, themes, styles) {
+        if (name2.slice(-4) === ".bin") return parse_cs_bin(data, opts, idx, rels, wb, themes, styles);
         return parse_cs_xml(data, opts, idx, rels, wb, themes, styles);
       }
-      function parse_ms(data, name, idx, opts, rels, wb, themes, styles) {
-        if (name.slice(-4) === ".bin") return parse_ms_bin(data, opts, idx, rels, wb, themes, styles);
+      function parse_ms(data, name2, idx, opts, rels, wb, themes, styles) {
+        if (name2.slice(-4) === ".bin") return parse_ms_bin(data, opts, idx, rels, wb, themes, styles);
         return parse_ms_xml(data, opts, idx, rels, wb, themes, styles);
       }
-      function parse_ds(data, name, idx, opts, rels, wb, themes, styles) {
-        if (name.slice(-4) === ".bin") return parse_ds_bin(data, opts, idx, rels, wb, themes, styles);
+      function parse_ds(data, name2, idx, opts, rels, wb, themes, styles) {
+        if (name2.slice(-4) === ".bin") return parse_ds_bin(data, opts, idx, rels, wb, themes, styles);
         return parse_ds_xml(data, opts, idx, rels, wb, themes, styles);
       }
-      function parse_sty(data, name, themes, opts) {
-        if (name.slice(-4) === ".bin") return parse_sty_bin(data, themes, opts);
+      function parse_sty(data, name2, themes, opts) {
+        if (name2.slice(-4) === ".bin") return parse_sty_bin(data, themes, opts);
         return parse_sty_xml(data, themes, opts);
       }
-      function parse_theme(data, name, opts) {
+      function parse_theme(data, name2, opts) {
         return parse_theme_xml(data, opts);
       }
-      function parse_sst(data, name, opts) {
-        if (name.slice(-4) === ".bin") return parse_sst_bin(data, opts);
+      function parse_sst(data, name2, opts) {
+        if (name2.slice(-4) === ".bin") return parse_sst_bin(data, opts);
         return parse_sst_xml(data, opts);
       }
-      function parse_cmnt(data, name, opts) {
-        if (name.slice(-4) === ".bin") return parse_comments_bin(data, opts);
+      function parse_cmnt(data, name2, opts) {
+        if (name2.slice(-4) === ".bin") return parse_comments_bin(data, opts);
         return parse_comments_xml(data, opts);
       }
-      function parse_cc(data, name, opts) {
-        if (name.slice(-4) === ".bin") return parse_cc_bin(data, name, opts);
-        return parse_cc_xml(data, name, opts);
+      function parse_cc(data, name2, opts) {
+        if (name2.slice(-4) === ".bin") return parse_cc_bin(data, name2, opts);
+        return parse_cc_xml(data, name2, opts);
       }
-      function parse_xlink(data, rel, name, opts) {
-        if (name.slice(-4) === ".bin") return parse_xlink_bin(data, rel, name, opts);
-        return parse_xlink_xml(data, rel, name, opts);
+      function parse_xlink(data, rel, name2, opts) {
+        if (name2.slice(-4) === ".bin") return parse_xlink_bin(data, rel, name2, opts);
+        return parse_xlink_xml(data, rel, name2, opts);
       }
-      function parse_xlmeta(data, name, opts) {
-        if (name.slice(-4) === ".bin") return parse_xlmeta_bin(data, name, opts);
-        return parse_xlmeta_xml(data, name, opts);
+      function parse_xlmeta(data, name2, opts) {
+        if (name2.slice(-4) === ".bin") return parse_xlmeta_bin(data, name2, opts);
+        return parse_xlmeta_xml(data, name2, opts);
       }
-      function write_wb(wb, name, opts) {
-        return (name.slice(-4) === ".bin" ? write_wb_bin : write_wb_xml)(wb, opts);
+      function write_wb(wb, name2, opts) {
+        return (name2.slice(-4) === ".bin" ? write_wb_bin : write_wb_xml)(wb, opts);
       }
-      function write_ws(data, name, opts, wb, rels) {
-        return (name.slice(-4) === ".bin" ? write_ws_bin : write_ws_xml)(data, opts, wb, rels);
+      function write_ws(data, name2, opts, wb, rels) {
+        return (name2.slice(-4) === ".bin" ? write_ws_bin : write_ws_xml)(data, opts, wb, rels);
       }
-      function write_cs(data, name, opts, wb, rels) {
-        return (name.slice(-4) === ".bin" ? write_cs_bin : write_cs_xml)(data, opts, wb, rels);
+      function write_cs(data, name2, opts, wb, rels) {
+        return (name2.slice(-4) === ".bin" ? write_cs_bin : write_cs_xml)(data, opts, wb, rels);
       }
-      function write_sty(data, name, opts) {
-        return (name.slice(-4) === ".bin" ? write_sty_bin : write_sty_xml)(data, opts);
+      function write_sty(data, name2, opts) {
+        return (name2.slice(-4) === ".bin" ? write_sty_bin : write_sty_xml)(data, opts);
       }
-      function write_sst(data, name, opts) {
-        return (name.slice(-4) === ".bin" ? write_sst_bin : write_sst_xml)(data, opts);
+      function write_sst(data, name2, opts) {
+        return (name2.slice(-4) === ".bin" ? write_sst_bin : write_sst_xml)(data, opts);
       }
-      function write_cmnt(data, name, opts) {
-        return (name.slice(-4) === ".bin" ? write_comments_bin : write_comments_xml)(data, opts);
+      function write_cmnt(data, name2, opts) {
+        return (name2.slice(-4) === ".bin" ? write_comments_bin : write_comments_xml)(data, opts);
       }
-      function write_xlmeta(name) {
-        return (name.slice(-4) === ".bin" ? write_xlmeta_bin : write_xlmeta_xml)();
+      function write_xlmeta(name2) {
+        return (name2.slice(-4) === ".bin" ? write_xlmeta_bin : write_xlmeta_xml)();
       }
       var attregexg2 = /([\w:]+)=((?:")([^"]*)(?:")|(?:')([^']*)(?:'))/g;
       var attregex2 = /([\w:]+)=((?:")(?:[^"]*)(?:")|(?:')(?:[^']*)(?:'))/;
@@ -76677,23 +77068,23 @@ var require_xlsx = __commonJS({
       function book_new() {
         return { SheetNames: [], Sheets: {} };
       }
-      function book_append_sheet(wb, ws, name, roll) {
+      function book_append_sheet(wb, ws, name2, roll) {
         var i = 1;
-        if (!name) {
-          for (; i <= 65535; ++i, name = void 0) if (wb.SheetNames.indexOf(name = "Sheet" + i) == -1) break;
+        if (!name2) {
+          for (; i <= 65535; ++i, name2 = void 0) if (wb.SheetNames.indexOf(name2 = "Sheet" + i) == -1) break;
         }
-        if (!name || wb.SheetNames.length >= 65535) throw new Error("Too many worksheets");
-        if (roll && wb.SheetNames.indexOf(name) >= 0) {
-          var m = name.match(/(^.*?)(\d+)$/);
+        if (!name2 || wb.SheetNames.length >= 65535) throw new Error("Too many worksheets");
+        if (roll && wb.SheetNames.indexOf(name2) >= 0) {
+          var m = name2.match(/(^.*?)(\d+)$/);
           i = m && +m[2] || 0;
-          var root = m && m[1] || name;
-          for (++i; i <= 65535; ++i) if (wb.SheetNames.indexOf(name = root + i) == -1) break;
+          var root = m && m[1] || name2;
+          for (++i; i <= 65535; ++i) if (wb.SheetNames.indexOf(name2 = root + i) == -1) break;
         }
-        check_ws_name(name);
-        if (wb.SheetNames.indexOf(name) >= 0) throw new Error("Worksheet with name |" + name + "| already exists!");
-        wb.SheetNames.push(name);
-        wb.Sheets[name] = ws;
-        return name;
+        check_ws_name(name2);
+        if (wb.SheetNames.indexOf(name2) >= 0) throw new Error("Worksheet with name |" + name2 + "| already exists!");
+        wb.SheetNames.push(name2);
+        wb.Sheets[name2] = ws;
+        return name2;
       }
       function book_set_sheet_visibility(wb, sh, vis) {
         if (!wb.Workbook) wb.Workbook = {};
@@ -76969,6 +77360,896 @@ var require_xlsx = __commonJS({
   }
 });
 
+// node_modules/@hono/node-server/dist/index.mjs
+var dist_exports = {};
+__export(dist_exports, {
+  RequestError: () => RequestError,
+  createAdaptorServer: () => createAdaptorServer,
+  getRequestListener: () => getRequestListener,
+  serve: () => serve
+});
+import { createServer as createServerHTTP } from "http";
+import { Http2ServerRequest as Http2ServerRequest2, constants as h2constants } from "http2";
+import { Http2ServerRequest } from "http2";
+import { Readable } from "stream";
+import crypto2 from "crypto";
+async function readWithoutBlocking(readPromise) {
+  return Promise.race([readPromise, Promise.resolve().then(() => Promise.resolve(void 0))]);
+}
+function writeFromReadableStreamDefaultReader(reader, writable, currentReadPromise) {
+  const cancel = (error48) => {
+    reader.cancel(error48).catch(() => {
+    });
+  };
+  writable.on("close", cancel);
+  writable.on("error", cancel);
+  (currentReadPromise ?? reader.read()).then(flow, handleStreamError);
+  return reader.closed.finally(() => {
+    writable.off("close", cancel);
+    writable.off("error", cancel);
+  });
+  function handleStreamError(error48) {
+    if (error48) {
+      writable.destroy(error48);
+    }
+  }
+  function onDrain() {
+    reader.read().then(flow, handleStreamError);
+  }
+  function flow({ done, value }) {
+    try {
+      if (done) {
+        writable.end();
+      } else if (!writable.write(value)) {
+        writable.once("drain", onDrain);
+      } else {
+        return reader.read().then(flow, handleStreamError);
+      }
+    } catch (e) {
+      handleStreamError(e);
+    }
+  }
+}
+function writeFromReadableStream(stream, writable) {
+  if (stream.locked) {
+    throw new TypeError("ReadableStream is locked.");
+  } else if (writable.destroyed) {
+    return;
+  }
+  return writeFromReadableStreamDefaultReader(stream.getReader(), writable);
+}
+var RequestError, toRequestError, GlobalRequest, Request2, newHeadersFromIncoming, wrapBodyStream, newRequestFromIncoming, getRequestCache, requestCache, incomingKey, urlKey, headersKey, abortControllerKey, getAbortController, requestPrototype, newRequest, responseCache, getResponseCache, cacheKey, GlobalResponse, Response2, buildOutgoingHttpHeaders, X_ALREADY_SENT, outgoingEnded, incomingDraining, DRAIN_TIMEOUT_MS, MAX_DRAIN_BYTES, drainIncoming, handleRequestError, handleFetchError, handleResponseError2, flushHeaders, responseViaCache, isPromise2, responseViaResponseObject, getRequestListener, createAdaptorServer, serve;
+var init_dist = __esm({
+  "node_modules/@hono/node-server/dist/index.mjs"() {
+    RequestError = class extends Error {
+      constructor(message, options) {
+        super(message, options);
+        this.name = "RequestError";
+      }
+    };
+    toRequestError = (e) => {
+      if (e instanceof RequestError) {
+        return e;
+      }
+      return new RequestError(e.message, { cause: e });
+    };
+    GlobalRequest = global.Request;
+    Request2 = class extends GlobalRequest {
+      constructor(input, options) {
+        if (typeof input === "object" && getRequestCache in input) {
+          input = input[getRequestCache]();
+        }
+        if (typeof options?.body?.getReader !== "undefined") {
+          ;
+          options.duplex ??= "half";
+        }
+        super(input, options);
+      }
+    };
+    newHeadersFromIncoming = (incoming) => {
+      const headerRecord = [];
+      const rawHeaders = incoming.rawHeaders;
+      for (let i = 0; i < rawHeaders.length; i += 2) {
+        const { [i]: key, [i + 1]: value } = rawHeaders;
+        if (key.charCodeAt(0) !== /*:*/
+        58) {
+          headerRecord.push([key, value]);
+        }
+      }
+      return new Headers(headerRecord);
+    };
+    wrapBodyStream = /* @__PURE__ */ Symbol("wrapBodyStream");
+    newRequestFromIncoming = (method, url2, headers, incoming, abortController) => {
+      const init = {
+        method,
+        headers,
+        signal: abortController.signal
+      };
+      if (method === "TRACE") {
+        init.method = "GET";
+        const req = new Request2(url2, init);
+        Object.defineProperty(req, "method", {
+          get() {
+            return "TRACE";
+          }
+        });
+        return req;
+      }
+      if (!(method === "GET" || method === "HEAD")) {
+        if ("rawBody" in incoming && incoming.rawBody instanceof Buffer) {
+          init.body = new ReadableStream({
+            start(controller) {
+              controller.enqueue(incoming.rawBody);
+              controller.close();
+            }
+          });
+        } else if (incoming[wrapBodyStream]) {
+          let reader;
+          init.body = new ReadableStream({
+            async pull(controller) {
+              try {
+                reader ||= Readable.toWeb(incoming).getReader();
+                const { done, value } = await reader.read();
+                if (done) {
+                  controller.close();
+                } else {
+                  controller.enqueue(value);
+                }
+              } catch (error48) {
+                controller.error(error48);
+              }
+            }
+          });
+        } else {
+          init.body = Readable.toWeb(incoming);
+        }
+      }
+      return new Request2(url2, init);
+    };
+    getRequestCache = /* @__PURE__ */ Symbol("getRequestCache");
+    requestCache = /* @__PURE__ */ Symbol("requestCache");
+    incomingKey = /* @__PURE__ */ Symbol("incomingKey");
+    urlKey = /* @__PURE__ */ Symbol("urlKey");
+    headersKey = /* @__PURE__ */ Symbol("headersKey");
+    abortControllerKey = /* @__PURE__ */ Symbol("abortControllerKey");
+    getAbortController = /* @__PURE__ */ Symbol("getAbortController");
+    requestPrototype = {
+      get method() {
+        return this[incomingKey].method || "GET";
+      },
+      get url() {
+        return this[urlKey];
+      },
+      get headers() {
+        return this[headersKey] ||= newHeadersFromIncoming(this[incomingKey]);
+      },
+      [getAbortController]() {
+        this[getRequestCache]();
+        return this[abortControllerKey];
+      },
+      [getRequestCache]() {
+        this[abortControllerKey] ||= new AbortController();
+        return this[requestCache] ||= newRequestFromIncoming(
+          this.method,
+          this[urlKey],
+          this.headers,
+          this[incomingKey],
+          this[abortControllerKey]
+        );
+      }
+    };
+    [
+      "body",
+      "bodyUsed",
+      "cache",
+      "credentials",
+      "destination",
+      "integrity",
+      "mode",
+      "redirect",
+      "referrer",
+      "referrerPolicy",
+      "signal",
+      "keepalive"
+    ].forEach((k) => {
+      Object.defineProperty(requestPrototype, k, {
+        get() {
+          return this[getRequestCache]()[k];
+        }
+      });
+    });
+    ["arrayBuffer", "blob", "clone", "formData", "json", "text"].forEach((k) => {
+      Object.defineProperty(requestPrototype, k, {
+        value: function() {
+          return this[getRequestCache]()[k]();
+        }
+      });
+    });
+    Object.defineProperty(requestPrototype, /* @__PURE__ */ Symbol.for("nodejs.util.inspect.custom"), {
+      value: function(depth, options, inspectFn) {
+        const props = {
+          method: this.method,
+          url: this.url,
+          headers: this.headers,
+          nativeRequest: this[requestCache]
+        };
+        return `Request (lightweight) ${inspectFn(props, { ...options, depth: depth == null ? null : depth - 1 })}`;
+      }
+    });
+    Object.setPrototypeOf(requestPrototype, Request2.prototype);
+    newRequest = (incoming, defaultHostname) => {
+      const req = Object.create(requestPrototype);
+      req[incomingKey] = incoming;
+      const incomingUrl = incoming.url || "";
+      if (incomingUrl[0] !== "/" && // short-circuit for performance. most requests are relative URL.
+      (incomingUrl.startsWith("http://") || incomingUrl.startsWith("https://"))) {
+        if (incoming instanceof Http2ServerRequest) {
+          throw new RequestError("Absolute URL for :path is not allowed in HTTP/2");
+        }
+        try {
+          const url22 = new URL(incomingUrl);
+          req[urlKey] = url22.href;
+        } catch (e) {
+          throw new RequestError("Invalid absolute URL", { cause: e });
+        }
+        return req;
+      }
+      const host = (incoming instanceof Http2ServerRequest ? incoming.authority : incoming.headers.host) || defaultHostname;
+      if (!host) {
+        throw new RequestError("Missing host header");
+      }
+      let scheme;
+      if (incoming instanceof Http2ServerRequest) {
+        scheme = incoming.scheme;
+        if (!(scheme === "http" || scheme === "https")) {
+          throw new RequestError("Unsupported scheme");
+        }
+      } else {
+        scheme = incoming.socket && incoming.socket.encrypted ? "https" : "http";
+      }
+      const url2 = new URL(`${scheme}://${host}${incomingUrl}`);
+      if (url2.hostname.length !== host.length && url2.hostname !== host.replace(/:\d+$/, "")) {
+        throw new RequestError("Invalid host header");
+      }
+      req[urlKey] = url2.href;
+      return req;
+    };
+    responseCache = /* @__PURE__ */ Symbol("responseCache");
+    getResponseCache = /* @__PURE__ */ Symbol("getResponseCache");
+    cacheKey = /* @__PURE__ */ Symbol("cache");
+    GlobalResponse = global.Response;
+    Response2 = class _Response {
+      #body;
+      #init;
+      [getResponseCache]() {
+        delete this[cacheKey];
+        return this[responseCache] ||= new GlobalResponse(this.#body, this.#init);
+      }
+      constructor(body, init) {
+        let headers;
+        this.#body = body;
+        if (init instanceof _Response) {
+          const cachedGlobalResponse = init[responseCache];
+          if (cachedGlobalResponse) {
+            this.#init = cachedGlobalResponse;
+            this[getResponseCache]();
+            return;
+          } else {
+            this.#init = init.#init;
+            headers = new Headers(init.#init.headers);
+          }
+        } else {
+          this.#init = init;
+        }
+        if (typeof body === "string" || typeof body?.getReader !== "undefined" || body instanceof Blob || body instanceof Uint8Array) {
+          ;
+          this[cacheKey] = [init?.status || 200, body, headers || init?.headers];
+        }
+      }
+      get headers() {
+        const cache = this[cacheKey];
+        if (cache) {
+          if (!(cache[2] instanceof Headers)) {
+            cache[2] = new Headers(
+              cache[2] || { "content-type": "text/plain; charset=UTF-8" }
+            );
+          }
+          return cache[2];
+        }
+        return this[getResponseCache]().headers;
+      }
+      get status() {
+        return this[cacheKey]?.[0] ?? this[getResponseCache]().status;
+      }
+      get ok() {
+        const status = this.status;
+        return status >= 200 && status < 300;
+      }
+    };
+    ["body", "bodyUsed", "redirected", "statusText", "trailers", "type", "url"].forEach((k) => {
+      Object.defineProperty(Response2.prototype, k, {
+        get() {
+          return this[getResponseCache]()[k];
+        }
+      });
+    });
+    ["arrayBuffer", "blob", "clone", "formData", "json", "text"].forEach((k) => {
+      Object.defineProperty(Response2.prototype, k, {
+        value: function() {
+          return this[getResponseCache]()[k]();
+        }
+      });
+    });
+    Object.defineProperty(Response2.prototype, /* @__PURE__ */ Symbol.for("nodejs.util.inspect.custom"), {
+      value: function(depth, options, inspectFn) {
+        const props = {
+          status: this.status,
+          headers: this.headers,
+          ok: this.ok,
+          nativeResponse: this[responseCache]
+        };
+        return `Response (lightweight) ${inspectFn(props, { ...options, depth: depth == null ? null : depth - 1 })}`;
+      }
+    });
+    Object.setPrototypeOf(Response2, GlobalResponse);
+    Object.setPrototypeOf(Response2.prototype, GlobalResponse.prototype);
+    buildOutgoingHttpHeaders = (headers) => {
+      const res = {};
+      if (!(headers instanceof Headers)) {
+        headers = new Headers(headers ?? void 0);
+      }
+      const cookies = [];
+      for (const [k, v] of headers) {
+        if (k === "set-cookie") {
+          cookies.push(v);
+        } else {
+          res[k] = v;
+        }
+      }
+      if (cookies.length > 0) {
+        res["set-cookie"] = cookies;
+      }
+      res["content-type"] ??= "text/plain; charset=UTF-8";
+      return res;
+    };
+    X_ALREADY_SENT = "x-hono-already-sent";
+    if (typeof global.crypto === "undefined") {
+      global.crypto = crypto2;
+    }
+    outgoingEnded = /* @__PURE__ */ Symbol("outgoingEnded");
+    incomingDraining = /* @__PURE__ */ Symbol("incomingDraining");
+    DRAIN_TIMEOUT_MS = 500;
+    MAX_DRAIN_BYTES = 64 * 1024 * 1024;
+    drainIncoming = (incoming) => {
+      const incomingWithDrainState = incoming;
+      if (incoming.destroyed || incomingWithDrainState[incomingDraining]) {
+        return;
+      }
+      incomingWithDrainState[incomingDraining] = true;
+      if (incoming instanceof Http2ServerRequest2) {
+        try {
+          ;
+          incoming.stream?.close?.(h2constants.NGHTTP2_NO_ERROR);
+        } catch {
+        }
+        return;
+      }
+      let bytesRead = 0;
+      const cleanup = () => {
+        clearTimeout(timer);
+        incoming.off("data", onData);
+        incoming.off("end", cleanup);
+        incoming.off("error", cleanup);
+      };
+      const forceClose = () => {
+        cleanup();
+        const socket = incoming.socket;
+        if (socket && !socket.destroyed) {
+          socket.destroySoon();
+        }
+      };
+      const timer = setTimeout(forceClose, DRAIN_TIMEOUT_MS);
+      timer.unref?.();
+      const onData = (chunk) => {
+        bytesRead += chunk.length;
+        if (bytesRead > MAX_DRAIN_BYTES) {
+          forceClose();
+        }
+      };
+      incoming.on("data", onData);
+      incoming.on("end", cleanup);
+      incoming.on("error", cleanup);
+      incoming.resume();
+    };
+    handleRequestError = () => new Response(null, {
+      status: 400
+    });
+    handleFetchError = (e) => new Response(null, {
+      status: e instanceof Error && (e.name === "TimeoutError" || e.constructor.name === "TimeoutError") ? 504 : 500
+    });
+    handleResponseError2 = (e, outgoing) => {
+      const err = e instanceof Error ? e : new Error("unknown error", { cause: e });
+      if (err.code === "ERR_STREAM_PREMATURE_CLOSE") {
+        console.info("The user aborted a request.");
+      } else {
+        console.error(e);
+        if (!outgoing.headersSent) {
+          outgoing.writeHead(500, { "Content-Type": "text/plain" });
+        }
+        outgoing.end(`Error: ${err.message}`);
+        outgoing.destroy(err);
+      }
+    };
+    flushHeaders = (outgoing) => {
+      if ("flushHeaders" in outgoing && outgoing.writable) {
+        outgoing.flushHeaders();
+      }
+    };
+    responseViaCache = async (res, outgoing) => {
+      let [status, body, header] = res[cacheKey];
+      let hasContentLength = false;
+      if (!header) {
+        header = { "content-type": "text/plain; charset=UTF-8" };
+      } else if (header instanceof Headers) {
+        hasContentLength = header.has("content-length");
+        header = buildOutgoingHttpHeaders(header);
+      } else if (Array.isArray(header)) {
+        const headerObj = new Headers(header);
+        hasContentLength = headerObj.has("content-length");
+        header = buildOutgoingHttpHeaders(headerObj);
+      } else {
+        for (const key in header) {
+          if (key.length === 14 && key.toLowerCase() === "content-length") {
+            hasContentLength = true;
+            break;
+          }
+        }
+      }
+      if (!hasContentLength) {
+        if (typeof body === "string") {
+          header["Content-Length"] = Buffer.byteLength(body);
+        } else if (body instanceof Uint8Array) {
+          header["Content-Length"] = body.byteLength;
+        } else if (body instanceof Blob) {
+          header["Content-Length"] = body.size;
+        }
+      }
+      outgoing.writeHead(status, header);
+      if (typeof body === "string" || body instanceof Uint8Array) {
+        outgoing.end(body);
+      } else if (body instanceof Blob) {
+        outgoing.end(new Uint8Array(await body.arrayBuffer()));
+      } else {
+        flushHeaders(outgoing);
+        await writeFromReadableStream(body, outgoing)?.catch(
+          (e) => handleResponseError2(e, outgoing)
+        );
+      }
+      ;
+      outgoing[outgoingEnded]?.();
+    };
+    isPromise2 = (res) => typeof res.then === "function";
+    responseViaResponseObject = async (res, outgoing, options = {}) => {
+      if (isPromise2(res)) {
+        if (options.errorHandler) {
+          try {
+            res = await res;
+          } catch (err) {
+            const errRes = await options.errorHandler(err);
+            if (!errRes) {
+              return;
+            }
+            res = errRes;
+          }
+        } else {
+          res = await res.catch(handleFetchError);
+        }
+      }
+      if (cacheKey in res) {
+        return responseViaCache(res, outgoing);
+      }
+      const resHeaderRecord = buildOutgoingHttpHeaders(res.headers);
+      if (res.body) {
+        const reader = res.body.getReader();
+        const values = [];
+        let done = false;
+        let currentReadPromise = void 0;
+        if (resHeaderRecord["transfer-encoding"] !== "chunked") {
+          let maxReadCount = 2;
+          for (let i = 0; i < maxReadCount; i++) {
+            currentReadPromise ||= reader.read();
+            const chunk = await readWithoutBlocking(currentReadPromise).catch((e) => {
+              console.error(e);
+              done = true;
+            });
+            if (!chunk) {
+              if (i === 1) {
+                await new Promise((resolve) => setTimeout(resolve));
+                maxReadCount = 3;
+                continue;
+              }
+              break;
+            }
+            currentReadPromise = void 0;
+            if (chunk.value) {
+              values.push(chunk.value);
+            }
+            if (chunk.done) {
+              done = true;
+              break;
+            }
+          }
+          if (done && !("content-length" in resHeaderRecord)) {
+            resHeaderRecord["content-length"] = values.reduce((acc, value) => acc + value.length, 0);
+          }
+        }
+        outgoing.writeHead(res.status, resHeaderRecord);
+        values.forEach((value) => {
+          ;
+          outgoing.write(value);
+        });
+        if (done) {
+          outgoing.end();
+        } else {
+          if (values.length === 0) {
+            flushHeaders(outgoing);
+          }
+          await writeFromReadableStreamDefaultReader(reader, outgoing, currentReadPromise);
+        }
+      } else if (resHeaderRecord[X_ALREADY_SENT]) {
+      } else {
+        outgoing.writeHead(res.status, resHeaderRecord);
+        outgoing.end();
+      }
+      ;
+      outgoing[outgoingEnded]?.();
+    };
+    getRequestListener = (fetchCallback, options = {}) => {
+      const autoCleanupIncoming = options.autoCleanupIncoming ?? true;
+      if (options.overrideGlobalObjects !== false && global.Request !== Request2) {
+        Object.defineProperty(global, "Request", {
+          value: Request2
+        });
+        Object.defineProperty(global, "Response", {
+          value: Response2
+        });
+      }
+      return async (incoming, outgoing) => {
+        let res, req;
+        try {
+          req = newRequest(incoming, options.hostname);
+          let incomingEnded = !autoCleanupIncoming || incoming.method === "GET" || incoming.method === "HEAD";
+          if (!incomingEnded) {
+            ;
+            incoming[wrapBodyStream] = true;
+            incoming.on("end", () => {
+              incomingEnded = true;
+            });
+            if (incoming instanceof Http2ServerRequest2) {
+              ;
+              outgoing[outgoingEnded] = () => {
+                if (!incomingEnded) {
+                  setTimeout(() => {
+                    if (!incomingEnded) {
+                      setTimeout(() => {
+                        drainIncoming(incoming);
+                      });
+                    }
+                  });
+                }
+              };
+            }
+            outgoing.on("finish", () => {
+              if (!incomingEnded) {
+                drainIncoming(incoming);
+              }
+            });
+          }
+          outgoing.on("close", () => {
+            const abortController = req[abortControllerKey];
+            if (abortController) {
+              if (incoming.errored) {
+                req[abortControllerKey].abort(incoming.errored.toString());
+              } else if (!outgoing.writableFinished) {
+                req[abortControllerKey].abort("Client connection prematurely closed.");
+              }
+            }
+            if (!incomingEnded) {
+              setTimeout(() => {
+                if (!incomingEnded) {
+                  setTimeout(() => {
+                    drainIncoming(incoming);
+                  });
+                }
+              });
+            }
+          });
+          res = fetchCallback(req, { incoming, outgoing });
+          if (cacheKey in res) {
+            return responseViaCache(res, outgoing);
+          }
+        } catch (e) {
+          if (!res) {
+            if (options.errorHandler) {
+              res = await options.errorHandler(req ? e : toRequestError(e));
+              if (!res) {
+                return;
+              }
+            } else if (!req) {
+              res = handleRequestError();
+            } else {
+              res = handleFetchError(e);
+            }
+          } else {
+            return handleResponseError2(e, outgoing);
+          }
+        }
+        try {
+          return await responseViaResponseObject(res, outgoing, options);
+        } catch (e) {
+          return handleResponseError2(e, outgoing);
+        }
+      };
+    };
+    createAdaptorServer = (options) => {
+      const fetchCallback = options.fetch;
+      const requestListener = getRequestListener(fetchCallback, {
+        hostname: options.hostname,
+        overrideGlobalObjects: options.overrideGlobalObjects,
+        autoCleanupIncoming: options.autoCleanupIncoming
+      });
+      const createServer = options.createServer || createServerHTTP;
+      const server = createServer(options.serverOptions || {}, requestListener);
+      return server;
+    };
+    serve = (options, listeningListener) => {
+      const server = createAdaptorServer(options);
+      server.listen(options?.port ?? 3e3, options.hostname, () => {
+        const serverInfo = server.address();
+        listeningListener && listeningListener(serverInfo);
+      });
+      return server;
+    };
+  }
+});
+
+// node_modules/hono/dist/utils/mime.js
+var getMimeType, _baseMimes, baseMimes;
+var init_mime = __esm({
+  "node_modules/hono/dist/utils/mime.js"() {
+    getMimeType = (filename, mimes = baseMimes) => {
+      const regexp = /\.([a-zA-Z0-9]+?)$/;
+      const match2 = filename.match(regexp);
+      if (!match2) {
+        return;
+      }
+      let mimeType = mimes[match2[1].toLowerCase()];
+      if (mimeType && mimeType.startsWith("text")) {
+        mimeType += "; charset=utf-8";
+      }
+      return mimeType;
+    };
+    _baseMimes = {
+      aac: "audio/aac",
+      avi: "video/x-msvideo",
+      avif: "image/avif",
+      av1: "video/av1",
+      bin: "application/octet-stream",
+      bmp: "image/bmp",
+      css: "text/css",
+      csv: "text/csv",
+      eot: "application/vnd.ms-fontobject",
+      epub: "application/epub+zip",
+      gif: "image/gif",
+      gz: "application/gzip",
+      htm: "text/html",
+      html: "text/html",
+      ico: "image/x-icon",
+      ics: "text/calendar",
+      jpeg: "image/jpeg",
+      jpg: "image/jpeg",
+      js: "text/javascript",
+      json: "application/json",
+      jsonld: "application/ld+json",
+      map: "application/json",
+      mid: "audio/x-midi",
+      midi: "audio/x-midi",
+      mjs: "text/javascript",
+      mp3: "audio/mpeg",
+      mp4: "video/mp4",
+      mpeg: "video/mpeg",
+      oga: "audio/ogg",
+      ogv: "video/ogg",
+      ogx: "application/ogg",
+      opus: "audio/opus",
+      otf: "font/otf",
+      pdf: "application/pdf",
+      png: "image/png",
+      rtf: "application/rtf",
+      svg: "image/svg+xml",
+      tif: "image/tiff",
+      tiff: "image/tiff",
+      ts: "video/mp2t",
+      ttf: "font/ttf",
+      txt: "text/plain",
+      wasm: "application/wasm",
+      webm: "video/webm",
+      weba: "audio/webm",
+      webmanifest: "application/manifest+json",
+      webp: "image/webp",
+      woff: "font/woff",
+      woff2: "font/woff2",
+      xhtml: "application/xhtml+xml",
+      xml: "application/xml",
+      zip: "application/zip",
+      "3gp": "video/3gpp",
+      "3g2": "video/3gpp2",
+      gltf: "model/gltf+json",
+      glb: "model/gltf-binary"
+    };
+    baseMimes = _baseMimes;
+  }
+});
+
+// node_modules/@hono/node-server/dist/serve-static.mjs
+var serve_static_exports = {};
+__export(serve_static_exports, {
+  serveStatic: () => serveStatic
+});
+import { createReadStream, statSync, existsSync } from "fs";
+import { join } from "path";
+import { versions } from "process";
+import { Readable as Readable2 } from "stream";
+var COMPRESSIBLE_CONTENT_TYPE_REGEX, ENCODINGS, ENCODINGS_ORDERED_KEYS, pr54206Applied, useReadableToWeb, createStreamBody, getStats, tryDecode2, tryDecodeURI2, serveStatic;
+var init_serve_static = __esm({
+  "node_modules/@hono/node-server/dist/serve-static.mjs"() {
+    init_mime();
+    COMPRESSIBLE_CONTENT_TYPE_REGEX = /^\s*(?:text\/[^;\s]+|application\/(?:javascript|json|xml|xml-dtd|ecmascript|dart|postscript|rtf|tar|toml|vnd\.dart|vnd\.ms-fontobject|vnd\.ms-opentype|wasm|x-httpd-php|x-javascript|x-ns-proxy-autoconfig|x-sh|x-tar|x-virtualbox-hdd|x-virtualbox-ova|x-virtualbox-ovf|x-virtualbox-vbox|x-virtualbox-vdi|x-virtualbox-vhd|x-virtualbox-vmdk|x-www-form-urlencoded)|font\/(?:otf|ttf)|image\/(?:bmp|vnd\.adobe\.photoshop|vnd\.microsoft\.icon|vnd\.ms-dds|x-icon|x-ms-bmp)|message\/rfc822|model\/gltf-binary|x-shader\/x-fragment|x-shader\/x-vertex|[^;\s]+?\+(?:json|text|xml|yaml))(?:[;\s]|$)/i;
+    ENCODINGS = {
+      br: ".br",
+      zstd: ".zst",
+      gzip: ".gz"
+    };
+    ENCODINGS_ORDERED_KEYS = Object.keys(ENCODINGS);
+    pr54206Applied = () => {
+      const [major, minor] = versions.node.split(".").map((component) => parseInt(component));
+      return major >= 23 || major === 22 && minor >= 7 || major === 20 && minor >= 18;
+    };
+    useReadableToWeb = pr54206Applied();
+    createStreamBody = (stream) => {
+      if (useReadableToWeb) {
+        return Readable2.toWeb(stream);
+      }
+      const body = new ReadableStream({
+        start(controller) {
+          stream.on("data", (chunk) => {
+            controller.enqueue(chunk);
+          });
+          stream.on("error", (err) => {
+            controller.error(err);
+          });
+          stream.on("end", () => {
+            controller.close();
+          });
+        },
+        cancel() {
+          stream.destroy();
+        }
+      });
+      return body;
+    };
+    getStats = (path) => {
+      let stats;
+      try {
+        stats = statSync(path);
+      } catch {
+      }
+      return stats;
+    };
+    tryDecode2 = (str, decoder) => {
+      try {
+        return decoder(str);
+      } catch {
+        return str.replace(/(?:%[0-9A-Fa-f]{2})+/g, (match2) => {
+          try {
+            return decoder(match2);
+          } catch {
+            return match2;
+          }
+        });
+      }
+    };
+    tryDecodeURI2 = (str) => tryDecode2(str, decodeURI);
+    serveStatic = (options = { root: "" }) => {
+      const root = options.root || "";
+      const optionPath = options.path;
+      if (root !== "" && !existsSync(root)) {
+        console.error(`serveStatic: root path '${root}' is not found, are you sure it's correct?`);
+      }
+      return async (c, next) => {
+        if (c.finalized) {
+          return next();
+        }
+        let filename;
+        if (optionPath) {
+          filename = optionPath;
+        } else {
+          try {
+            filename = tryDecodeURI2(c.req.path);
+            if (/(?:^|[\/\\])\.{1,2}(?:$|[\/\\])|[\/\\]{2,}/.test(filename)) {
+              throw new Error();
+            }
+          } catch {
+            await options.onNotFound?.(c.req.path, c);
+            return next();
+          }
+        }
+        let path = join(
+          root,
+          !optionPath && options.rewriteRequestPath ? options.rewriteRequestPath(filename, c) : filename
+        );
+        let stats = getStats(path);
+        if (stats && stats.isDirectory()) {
+          const indexFile = options.index ?? "index.html";
+          path = join(path, indexFile);
+          stats = getStats(path);
+        }
+        if (!stats) {
+          await options.onNotFound?.(path, c);
+          return next();
+        }
+        const mimeType = getMimeType(path);
+        c.header("Content-Type", mimeType || "application/octet-stream");
+        if (options.precompressed && (!mimeType || COMPRESSIBLE_CONTENT_TYPE_REGEX.test(mimeType))) {
+          const acceptEncodingSet = new Set(
+            c.req.header("Accept-Encoding")?.split(",").map((encoding) => encoding.trim())
+          );
+          for (const encoding of ENCODINGS_ORDERED_KEYS) {
+            if (!acceptEncodingSet.has(encoding)) {
+              continue;
+            }
+            const precompressedStats = getStats(path + ENCODINGS[encoding]);
+            if (precompressedStats) {
+              c.header("Content-Encoding", encoding);
+              c.header("Vary", "Accept-Encoding", { append: true });
+              stats = precompressedStats;
+              path = path + ENCODINGS[encoding];
+              break;
+            }
+          }
+        }
+        let result;
+        const size = stats.size;
+        const range = c.req.header("range") || "";
+        if (c.req.method == "HEAD" || c.req.method == "OPTIONS") {
+          c.header("Content-Length", size.toString());
+          c.status(200);
+          result = c.body(null);
+        } else if (!range) {
+          c.header("Content-Length", size.toString());
+          result = c.body(createStreamBody(createReadStream(path)), 200);
+        } else {
+          c.header("Accept-Ranges", "bytes");
+          c.header("Date", stats.birthtime.toUTCString());
+          const parts = range.replace(/bytes=/, "").split("-", 2);
+          const start = parseInt(parts[0], 10) || 0;
+          let end = parseInt(parts[1], 10) || size - 1;
+          if (size < end - start + 1) {
+            end = size - 1;
+          }
+          const chunksize = end - start + 1;
+          const stream = createReadStream(path, { start, end });
+          c.header("Content-Length", chunksize.toString());
+          c.header("Content-Range", `bytes ${start}-${end}/${stats.size}`);
+          result = c.body(createStreamBody(stream), 206);
+        }
+        await options.onFound?.(path, c);
+        return result;
+      };
+    };
+  }
+});
+
 // node_modules/dotenv/config.js
 (function() {
   require_main().config(
@@ -77140,15 +78421,15 @@ var getPattern = (label, next) => {
   }
   const match2 = label.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/);
   if (match2) {
-    const cacheKey = `${label}#${next}`;
-    if (!patternCache[cacheKey]) {
+    const cacheKey2 = `${label}#${next}`;
+    if (!patternCache[cacheKey2]) {
       if (match2[2]) {
-        patternCache[cacheKey] = next && next[0] !== ":" && next[0] !== "*" ? [cacheKey, match2[1], new RegExp(`^${match2[2]}(?=/${next})`)] : [label, match2[1], new RegExp(`^${match2[2]}$`)];
+        patternCache[cacheKey2] = next && next[0] !== ":" && next[0] !== "*" ? [cacheKey2, match2[1], new RegExp(`^${match2[2]}(?=/${next})`)] : [label, match2[1], new RegExp(`^${match2[2]}$`)];
       } else {
-        patternCache[cacheKey] = [label, match2[1], true];
+        patternCache[cacheKey2] = [label, match2[1], true];
       }
     }
-    return patternCache[cacheKey];
+    return patternCache[cacheKey2];
   }
   return null;
 };
@@ -77265,15 +78546,15 @@ var _getQueryParam = (url2, key, multiple) => {
     if (valueIndex > nextKeyIndex && nextKeyIndex !== -1) {
       valueIndex = -1;
     }
-    let name = url2.slice(
+    let name2 = url2.slice(
       keyIndex + 1,
       valueIndex === -1 ? nextKeyIndex === -1 ? void 0 : nextKeyIndex : valueIndex
     );
     if (encoded) {
-      name = _decodeURI(name);
+      name2 = _decodeURI(name2);
     }
     keyIndex = nextKeyIndex;
-    if (name === "") {
+    if (name2 === "") {
       continue;
     }
     let value;
@@ -77286,13 +78567,13 @@ var _getQueryParam = (url2, key, multiple) => {
       }
     }
     if (multiple) {
-      if (!(results[name] && Array.isArray(results[name]))) {
-        results[name] = [];
+      if (!(results[name2] && Array.isArray(results[name2]))) {
+        results[name2] = [];
       }
       ;
-      results[name].push(value);
+      results[name2].push(value);
     } else {
-      results[name] ??= value;
+      results[name2] ??= value;
     }
   }
   return key ? results[key] : results;
@@ -77350,8 +78631,8 @@ var HonoRequest = class {
   }
   #getDecodedParam(key) {
     const paramKey = this.#matchResult[0][this.routeIndex][1][key];
-    const param = this.#getParamValue(paramKey);
-    return param && /\%/.test(param) ? tryDecodeURIComponent(param) : param;
+    const param2 = this.#getParamValue(paramKey);
+    return param2 && /\%/.test(param2) ? tryDecodeURIComponent(param2) : param2;
   }
   #getAllDecodedParams() {
     const decoded = {};
@@ -77373,9 +78654,9 @@ var HonoRequest = class {
   queries(key) {
     return getQueryParams(this.url, key);
   }
-  header(name) {
-    if (name) {
-      return this.raw.headers.get(name) ?? void 0;
+  header(name2) {
+    if (name2) {
+      return this.raw.headers.get(name2) ?? void 0;
     }
     const headerData = {};
     this.raw.headers.forEach((value, key) => {
@@ -77819,17 +79100,17 @@ var Context = class {
    * })
    * ```
    */
-  header = (name, value, options) => {
+  header = (name2, value, options) => {
     if (this.finalized) {
       this.#res = createResponseInstance(this.#res.body, this.#res);
     }
     const headers = this.#res ? this.#res.headers : this.#preparedHeaders ??= new Headers();
     if (value === void 0) {
-      headers.delete(name);
+      headers.delete(name2);
     } else if (options?.append) {
-      headers.append(name, value);
+      headers.append(name2, value);
     } else {
-      headers.set(name, value);
+      headers.set(name2, value);
     }
   };
   status = (status) => {
@@ -78467,9 +79748,9 @@ var Node = class _Node {
     const pattern = token === "*" ? restTokens.length === 0 ? ["", "", ONLY_WILDCARD_REG_EXP_STR] : ["", "", LABEL_REG_EXP_STR] : token === "/*" ? ["", "", TAIL_WILDCARD_REG_EXP_STR] : token.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/);
     let node;
     if (pattern) {
-      const name = pattern[1];
+      const name2 = pattern[1];
       let regexpStr = pattern[2] || LABEL_REG_EXP_STR;
-      if (name && pattern[2]) {
+      if (name2 && pattern[2]) {
         if (regexpStr === ".*") {
           throw PATH_ERROR;
         }
@@ -78489,12 +79770,12 @@ var Node = class _Node {
           return;
         }
         node = this.#children[regexpStr] = new _Node();
-        if (name !== "") {
+        if (name2 !== "") {
           node.#varIndex = context.varIndex++;
         }
       }
-      if (!pathErrorCheckOnly && name !== "") {
-        paramMap.push([name, node.#varIndex]);
+      if (!pathErrorCheckOnly && name2 !== "") {
+        paramMap.push([name2, node.#varIndex]);
       }
     } else {
       node = this.#children[token];
@@ -78936,7 +80217,7 @@ var Node2 = class _Node2 {
             }
             continue;
           }
-          const [key, name, matcher] = pattern;
+          const [key, name2, matcher] = pattern;
           if (!part && !(matcher instanceof RegExp)) {
             continue;
           }
@@ -78953,7 +80234,7 @@ var Node2 = class _Node2 {
             const restPathString = path.substring(partOffsets[i]);
             const m = matcher.exec(restPathString);
             if (m) {
-              params[name] = m[0];
+              params[name2] = m[0];
               this.#pushHandlerSets(handlerSets, child, method, node.#params, params);
               if (hasChildren(child.#children)) {
                 child.#params = params;
@@ -78965,7 +80246,7 @@ var Node2 = class _Node2 {
             }
           }
           if (matcher === true || matcher.test(part)) {
-            params[name] = part;
+            params[name2] = part;
             if (isLast) {
               this.#pushHandlerSets(handlerSets, child, method, params, node.#params);
               if (child.#children["*"]) {
@@ -79306,8 +80587,8 @@ var freezeIfAvailable = (obj) => {
 };
 function createInnerProxy(callback, path, memo2) {
   var _memo$cacheKey;
-  const cacheKey = path.join(".");
-  (_memo$cacheKey = memo2[cacheKey]) !== null && _memo$cacheKey !== void 0 || (memo2[cacheKey] = new Proxy(noop, {
+  const cacheKey2 = path.join(".");
+  (_memo$cacheKey = memo2[cacheKey2]) !== null && _memo$cacheKey !== void 0 || (memo2[cacheKey2] = new Proxy(noop, {
     get(_obj, key) {
       if (typeof key !== "string" || key === "then") return void 0;
       return createInnerProxy(callback, [...path, key], memo2);
@@ -79335,7 +80616,7 @@ function createInnerProxy(callback, path, memo2) {
       return callback(opts);
     }
   }));
-  return memo2[cacheKey];
+  return memo2[cacheKey2];
 }
 var createRecursiveProxy = (callback) => createInnerProxy(callback, [], emptyObject());
 var JSONRPC2_TO_HTTP_CODE = {
@@ -80720,7 +82001,7 @@ function _createBatchStreamProducer() {
   _createBatchStreamProducer = (0, import_wrapAsyncGenerator$2.default)(function* (opts) {
     const { data } = opts;
     let counter = 0;
-    const placeholder = 0;
+    const placeholder2 = 0;
     const mergedIterables = mergeAsyncIterables();
     function registerAsync(callback) {
       const idx = counter++;
@@ -80836,7 +82117,7 @@ function _createBatchStreamProducer() {
     function encode3(value, path) {
       if (value === void 0) return [[]];
       const reg = encodeAsync3(value, path);
-      if (reg) return [[placeholder], [null, ...reg]];
+      if (reg) return [[placeholder2], [null, ...reg]];
       if (!isPlainObject(value)) return [[value]];
       const newObj = emptyObject();
       const asyncValues = [];
@@ -80846,7 +82127,7 @@ function _createBatchStreamProducer() {
           newObj[key] = item;
           continue;
         }
-        newObj[key] = placeholder;
+        newObj[key] = placeholder2;
         asyncValues.push([key, ...transformed]);
       }
       return [[newObj], ...asyncValues];
@@ -81863,7 +83144,7 @@ var TRPCBuilder = class TRPCBuilder2 {
 var initTRPC = new TRPCBuilder();
 
 // api/lib/rate-limit.ts
-function createRateLimiter(max, windowMs) {
+function createRateLimiter(max2, windowMs) {
   const map2 = /* @__PURE__ */ new Map();
   return {
     hit(key, message = "\u0637\u0644\u0628\u0627\u062A \u0643\u062A\u064A\u0631 \u062C\u062F\u0627\u064B \u0645\u0646 \u0646\u0641\u0633 \u0627\u0644\u0645\u0635\u062F\u0631. \u062C\u0631\u0628 \u0628\u0639\u062F \u0634\u0648\u064A\u0629.") {
@@ -81874,7 +83155,7 @@ function createRateLimiter(max, windowMs) {
         return;
       }
       limit.count++;
-      if (limit.count > max) {
+      if (limit.count > max2) {
         throw new TRPCError({ code: "TOO_MANY_REQUESTS", message });
       }
     }
@@ -81913,6 +83194,23 @@ var authedProcedure = t.procedure.use(async ({ ctx, next }) => {
     limit.count++;
     if (limit.count > MAX_REQUESTS) {
       throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "\u0637\u0644\u0628\u0627\u062A \u0643\u062A\u064A\u0631 \u062C\u062F\u0627\u064B! \u0627\u0647\u062F\u0649 \u0634\u0648\u064A\u0629." });
+    }
+  }
+  return next({ ctx: { ...ctx, user: ctx.user } });
+});
+var aiRateLimitMap = /* @__PURE__ */ new Map();
+var AI_RATE_LIMIT_WINDOW = 60 * 1e3;
+var AI_MAX_REQUESTS = 10;
+var aiProcedure = authedProcedure.use(async ({ ctx, next }) => {
+  const key = `${ctx.user.type}:${ctx.user.id}`;
+  const now = Date.now();
+  const limit = aiRateLimitMap.get(key);
+  if (!limit || now > limit.resetAt) {
+    aiRateLimitMap.set(key, { count: 1, resetAt: now + AI_RATE_LIMIT_WINDOW });
+  } else {
+    limit.count++;
+    if (limit.count > AI_MAX_REQUESTS) {
+      throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u0643\u062A\u064A\u0631 \u062C\u062F\u0627\u064B! \u0627\u0633\u062A\u0646\u0649 \u062F\u0642\u064A\u0642\u0629 \u0648\u062D\u0627\u0648\u0644 \u062A\u0627\u0646\u064A." });
     }
   }
   return next({ ctx: { ...ctx, user: ctx.user } });
@@ -82010,7 +83308,7 @@ var knownUserAgents = {
   node: "Node.js"
 };
 var getRuntimeKey = () => {
-  const global = globalThis;
+  const global2 = globalThis;
   const userAgentSupported = typeof navigator !== "undefined" && typeof navigator.userAgent === "string";
   if (userAgentSupported) {
     for (const [runtimeKey, userAgent] of Object.entries(knownUserAgents)) {
@@ -82019,13 +83317,13 @@ var getRuntimeKey = () => {
       }
     }
   }
-  if (typeof global?.EdgeRuntime === "string") {
+  if (typeof global2?.EdgeRuntime === "string") {
     return "edge-light";
   }
-  if (global?.fastly !== void 0) {
+  if (global2?.fastly !== void 0) {
     return "fastly";
   }
-  if (global?.process?.release?.name === "node") {
+  if (global2?.process?.release?.name === "node") {
     return "node";
   }
   return "other";
@@ -82219,8 +83517,8 @@ async function exportPublicJwkFrom(privateKey) {
   const { crv, x, y } = jwk;
   return { kty, alg, e, n, crv, x, y, key_ops: [CryptoKeyUsage.Verify] };
 }
-function getKeyAlgorithm(name) {
-  switch (name) {
+function getKeyAlgorithm(name2) {
+  switch (name2) {
     case "HS256":
       return {
         name: "HMAC",
@@ -82320,7 +83618,7 @@ function getKeyAlgorithm(name) {
         namedCurve: "Ed25519"
       };
     default:
-      throw new JwtAlgorithmNotImplemented(name);
+      throw new JwtAlgorithmNotImplemented(name2);
   }
 }
 function isCryptoKey(key) {
@@ -82658,11 +83956,11 @@ function generateReferralCode() {
 }
 
 // api/lib/get-client-ip.ts
-function getIncomingHeader(req, name) {
+function getIncomingHeader(req, name2) {
   if ("header" in req && typeof req.header === "function") {
-    return req.header(name);
+    return req.header(name2);
   }
-  return req.headers.get(name) ?? void 0;
+  return req.headers.get(name2) ?? void 0;
 }
 function getClientIp(req) {
   const xff = getIncomingHeader(req, "x-forwarded-for");
@@ -82835,6 +84133,172 @@ var ExpenseInputLimits = {
   amountMax: 999999999
 };
 
+// api/lib/muscle-memory.ts
+init_connection();
+init_schema2();
+init_drizzle_orm();
+var UserMemoryCache = class {
+  cache = /* @__PURE__ */ new Map();
+  // key = "userId:userType"
+  loadedAt = /* @__PURE__ */ new Map();
+  maxPatternsPerUser = 200;
+  ttlMs = 30 * 60 * 1e3;
+  // 30 minutes before re-fetching
+  userKey(userId, userType) {
+    return `${userId}:${userType}`;
+  }
+  isStale(userId, userType) {
+    const key = this.userKey(userId, userType);
+    const loaded = this.loadedAt.get(key);
+    if (!loaded) return true;
+    return Date.now() - loaded > this.ttlMs;
+  }
+  get(userId, userType) {
+    const key = this.userKey(userId, userType);
+    if (this.isStale(userId, userType)) return void 0;
+    return this.cache.get(key);
+  }
+  set(userId, userType, patterns) {
+    const key = this.userKey(userId, userType);
+    const sorted = patterns.sort((a, b) => b.usageCount - a.usageCount).slice(0, this.maxPatternsPerUser);
+    this.cache.set(key, sorted);
+    this.loadedAt.set(key, Date.now());
+    if (this.cache.size > 500) {
+      const oldest = [...this.loadedAt.entries()].sort((a, b) => a[1] - b[1]).slice(0, 100);
+      for (const [k] of oldest) {
+        this.cache.delete(k);
+        this.loadedAt.delete(k);
+      }
+    }
+  }
+  invalidate(userId, userType) {
+    const key = this.userKey(userId, userType);
+    this.cache.delete(key);
+    this.loadedAt.delete(key);
+  }
+};
+var memoryCache = new UserMemoryCache();
+function textToTemplate(text2) {
+  return text2.replace(/\d+(\.\d+)?/g, "{X}").replace(/\s+/g, " ").trim();
+}
+function extractAmountFromText(text2) {
+  const match2 = text2.match(/(\d+(?:\.\d+)?)/);
+  return match2 ? parseFloat(match2[1]) : 0;
+}
+function templateSimilarity(a, b) {
+  if (a === b) return 100;
+  const na = a.replace(/\{X\}/g, "").replace(/\s+/g, " ").trim();
+  const nb = b.replace(/\{X\}/g, "").replace(/\s+/g, " ").trim();
+  if (na === nb) return 98;
+  const wordsA = new Set(na.split(" ").filter((w) => w.length >= 2));
+  const wordsB = new Set(nb.split(" ").filter((w) => w.length >= 2));
+  if (wordsA.size === 0 || wordsB.size === 0) return 0;
+  let intersection2 = 0;
+  for (const w of wordsA) {
+    if (wordsB.has(w)) intersection2++;
+  }
+  const union3 = (/* @__PURE__ */ new Set([...wordsA, ...wordsB])).size;
+  const jaccard = intersection2 / union3;
+  const arrA = [...wordsA];
+  const arrB = [...wordsB];
+  let orderScore = 0;
+  for (let i = 0; i < Math.min(arrA.length, arrB.length); i++) {
+    if (arrA[i] === arrB[i]) orderScore++;
+  }
+  const orderRatio = arrA.length > 0 ? orderScore / Math.max(arrA.length, arrB.length) : 0;
+  return Math.round(jaccard * 70 + orderRatio * 30);
+}
+async function loadUserPatterns(userId, userType) {
+  try {
+    const ninetyDaysAgo = /* @__PURE__ */ new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    const logs = await db.select().from(classificationLogs).where(
+      and(
+        eq(classificationLogs.userId, userId),
+        eq(classificationLogs.userType, userType),
+        gte(classificationLogs.createdAt, ninetyDaysAgo)
+      )
+    ).orderBy(desc(classificationLogs.createdAt)).limit(500);
+    const templateMap = /* @__PURE__ */ new Map();
+    for (const log2 of logs) {
+      const text2 = log2.originalText || "";
+      const template = textToTemplate(text2);
+      if (template.length < 3) continue;
+      const finalResult = log2.finalResult;
+      if (!finalResult || !Array.isArray(finalResult) || finalResult.length === 0)
+        continue;
+      const first = finalResult[0];
+      const confidence = log2.confidence || 0;
+      if (confidence < 80) continue;
+      if (log2.wasCorrected) continue;
+      const existing = templateMap.get(template);
+      if (existing) {
+        existing.count++;
+        existing.confidence = Math.max(existing.confidence, confidence);
+        if (log2.createdAt && log2.createdAt > existing.lastUsed) {
+          existing.lastUsed = log2.createdAt;
+        }
+      } else {
+        templateMap.set(template, {
+          category: first.category || "\u0645\u062A\u0646\u0648\u0639\u0627\u062A",
+          subCategory: first.subCategory || "\u0639\u0627\u0645",
+          type: first.type || "expense",
+          confidence,
+          count: 1,
+          lastUsed: log2.createdAt || /* @__PURE__ */ new Date(),
+          wasCorrected: log2.wasCorrected || false
+        });
+      }
+    }
+    const patterns = [];
+    for (const [template, data] of templateMap) {
+      if (data.count >= 2) {
+        patterns.push({
+          template,
+          category: data.category,
+          subCategory: data.subCategory,
+          type: data.type,
+          confidence: Math.min(100, data.confidence + data.count * 2),
+          // Boost by repeat usage
+          usageCount: data.count,
+          lastUsed: data.lastUsed
+        });
+      }
+    }
+    return patterns;
+  } catch (err) {
+    console.warn("Failed to load muscle memory patterns:", err);
+    return [];
+  }
+}
+async function muscleMemoryLookup(text2, userId, userType) {
+  let patterns = memoryCache.get(userId, userType);
+  if (!patterns) {
+    patterns = await loadUserPatterns(userId, userType);
+    memoryCache.set(userId, userType, patterns);
+  }
+  if (patterns.length === 0) return null;
+  const inputTemplate = textToTemplate(text2);
+  if (inputTemplate.length < 3) return null;
+  let bestMatch = null;
+  let bestScore = 0;
+  for (const pattern of patterns) {
+    const score = templateSimilarity(inputTemplate, pattern.template);
+    if (score > bestScore && score >= 85) {
+      bestScore = score;
+      bestMatch = {
+        pattern,
+        amount: extractAmountFromText(text2),
+        matchScore: score
+      };
+    }
+  }
+  return bestMatch;
+}
+function invalidateUserMemory(userId, userType) {
+  memoryCache.invalidate(userId, userType);
+}
+
 // api/expense-router.ts
 var transactionTypeSchema = external_exports.enum(["income", "expense", "transfer", "investment"]);
 var expenseRawText = external_exports.string().min(1).max(ExpenseInputLimits.rawTextMax);
@@ -82869,6 +84333,39 @@ var expenseRouter = router({
       source: input.source,
       date: expenseDate
     });
+    invalidateUserMemory(userId, userType);
+    try {
+      const now = /* @__PURE__ */ new Date();
+      const todayStr = now.toISOString().split("T")[0];
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split("T")[0];
+      if (userType === "oauth") {
+        const [u] = await db3.select().from(users).where(eq(users.id, userId));
+        if (u) {
+          const lastDate = u.lastStreakAt ? new Date(u.lastStreakAt) : null;
+          const lastStr = lastDate ? lastDate.toISOString().split("T")[0] : null;
+          if (lastStr !== todayStr) {
+            let newStreak = lastStr === yesterdayStr ? (u.currentStreak || 0) + 1 : 1;
+            let highestStreak = Math.max(u.highestStreak || 0, newStreak);
+            await db3.update(users).set({ currentStreak: newStreak, highestStreak, lastStreakAt: now }).where(eq(users.id, userId));
+          }
+        }
+      } else {
+        const [u] = await db3.select().from(localUsers).where(eq(localUsers.id, userId));
+        if (u) {
+          const lastDate = u.lastStreakAt ? new Date(u.lastStreakAt) : null;
+          const lastStr = lastDate ? lastDate.toISOString().split("T")[0] : null;
+          if (lastStr !== todayStr) {
+            let newStreak = lastStr === yesterdayStr ? (u.currentStreak || 0) + 1 : 1;
+            let highestStreak = Math.max(u.highestStreak || 0, newStreak);
+            await db3.update(localUsers).set({ currentStreak: newStreak, highestStreak, lastStreakAt: now }).where(eq(localUsers.id, userId));
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Streak logic error:", err);
+    }
     return { success: true };
   }),
   list: authedProcedure.input(
@@ -82906,6 +84403,7 @@ var expenseRouter = router({
       amount: expenseAmount.optional(),
       type: transactionTypeSchema.optional(),
       category: expenseCategory.optional(),
+      subCategory: external_exports.string().max(ExpenseInputLimits.subCategoryMax || 100).optional(),
       description: external_exports.string().max(ExpenseInputLimits.descriptionMax).optional(),
       rawText: expenseRawText.optional(),
       date: external_exports.string().optional()
@@ -82914,14 +84412,77 @@ var expenseRouter = router({
     const db3 = getDb();
     const userId = ctx.user.id;
     const userType = ctx.user.type;
+    const [originalExpense] = await db3.select().from(expenses).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType)));
     const updateData = {};
     if (input.amount !== void 0) updateData.amount = input.amount.toString();
     if (input.type !== void 0) updateData.type = input.type;
     if (input.category !== void 0) updateData.category = input.category;
+    if (input.subCategory !== void 0) updateData.subCategory = input.subCategory;
     if (input.description !== void 0) updateData.description = input.description;
     if (input.rawText !== void 0) updateData.rawText = input.rawText;
     if (input.date !== void 0) updateData.date = new Date(input.date);
     await db3.update(expenses).set(updateData).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType)));
+    invalidateUserMemory(userId, userType);
+    const categoryChanged = input.category && originalExpense && originalExpense.category !== input.category;
+    if (categoryChanged && originalExpense?.rawText) {
+      try {
+        const newCategory = input.category;
+        const newSubCategory = input.subCategory || originalExpense.subCategory || "\u0639\u0627\u0645";
+        const rawText = originalExpense.rawText;
+        const STOP_WORDS = /* @__PURE__ */ new Set([
+          "\u0641\u064A",
+          "\u0645\u0646",
+          "\u0639\u0644\u0649",
+          "\u0627\u0644\u0649",
+          "\u0639\u0646",
+          "\u0645\u0639",
+          "\u0647\u0648",
+          "\u0647\u064A",
+          "\u062F\u0647",
+          "\u062F\u064A",
+          "\u0643\u0627\u0646",
+          "\u0628\u062A\u0627\u0639",
+          "\u0628\u062A\u0627\u0639\u062A",
+          "\u0627\u0644\u0644\u064A",
+          "\u064A\u0639\u0646\u064A",
+          "\u0643\u062F\u0647",
+          "\u0628\u0633",
+          "\u062E\u0644\u0627\u0635",
+          "\u062F\u0641\u0639\u062A",
+          "\u0635\u0631\u0641\u062A",
+          "\u0627\u0634\u062A\u0631\u064A\u062A",
+          "\u062C\u0628\u062A",
+          "\u062E\u062F\u062A",
+          "\u0627\u062F\u064A\u062A",
+          "\u062D\u0637\u064A\u062A",
+          "\u062C\u0646\u064A\u0647",
+          "\u062C\u0646\u064A\u0629",
+          "\u0627\u0644\u0641",
+          "\u0623\u0644\u0641",
+          "\u062C.\u0645"
+        ]);
+        const keywords = rawText.replace(/\d+(\.\d+)?/g, "").replace(/[^\u0600-\u06FFa-zA-Z\s]/g, "").split(/\s+/).map((w) => w.trim().toLowerCase()).filter((w) => w.length >= 3 && !STOP_WORDS.has(w));
+        const uniqueKeywords = [...new Set(keywords)].slice(0, 3);
+        for (const word of uniqueKeywords) {
+          await db3.insert(userDictionaries).values({
+            userId,
+            userType,
+            word,
+            category: newCategory,
+            subCategory: newSubCategory
+          }).onDuplicateKeyUpdate({
+            set: {
+              category: newCategory,
+              subCategory: newSubCategory
+            }
+          }).catch(() => {
+          });
+        }
+        console.log(`\u{1F9E0} Auto-learned ${uniqueKeywords.length} keywords for user ${userId}: [${uniqueKeywords.join(", ")}] \u2192 ${newCategory}/${newSubCategory}`);
+      } catch (learnErr) {
+        console.warn("Auto-learning failed (non-fatal):", learnErr);
+      }
+    }
     return { success: true };
   }),
   delete: authedProcedure.input(external_exports.object({ id: external_exports.number() })).mutation(async ({ ctx, input }) => {
@@ -82931,13 +84492,15 @@ var expenseRouter = router({
     await db3.delete(expenses).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType)));
     return { success: true };
   }),
-  getMonthSummary: authedProcedure.input(external_exports.object({ month: external_exports.string().regex(/^\d{4}-\d{2}$/) })).query(async ({ ctx, input }) => {
+  getMonthSummary: authedProcedure.input(external_exports.object({
+    month: external_exports.string().regex(/^\d{4}-\d{2}$/),
+    salaryDay: external_exports.number().min(1).max(31).optional().nullable()
+  })).query(async ({ ctx, input }) => {
     const db3 = getDb();
     const userId = ctx.user.id;
     const userType = ctx.user.type;
-    const startDate = /* @__PURE__ */ new Date(input.month + "-01");
-    const endDate = new Date(startDate);
-    endDate.setMonth(endDate.getMonth() + 1);
+    const { getFinancialMonthDates: getFinancialMonthDates2 } = await Promise.resolve().then(() => (init_financial_month(), financial_month_exports));
+    const { startDate, endDate } = getFinancialMonthDates2(input.month, input.salaryDay);
     const [summary] = await db3.select({
       totalIncome: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'income' THEN ${expenses.amount} ELSE 0 END), 0)`,
       totalExpense: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'expense' THEN ${expenses.amount} ELSE 0 END), 0)`,
@@ -82956,19 +84519,24 @@ var expenseRouter = router({
       count: Number(summary?.count || 0)
     };
   }),
-  getMonthlyStats: authedProcedure.input(external_exports.object({ month: external_exports.string() })).query(async ({ ctx, input }) => {
+  getMonthlyStats: authedProcedure.input(external_exports.object({
+    month: external_exports.string(),
+    salaryDay: external_exports.number().min(1).max(31).optional().nullable()
+  })).query(async ({ ctx, input }) => {
     const db3 = getDb();
     const userId = ctx.user.id;
     const userType = ctx.user.type;
-    const startDate = /* @__PURE__ */ new Date(input.month + "-01");
-    const endDate = new Date(startDate);
-    endDate.setMonth(endDate.getMonth() + 1);
+    const { getFinancialMonthDates: getFinancialMonthDates2 } = await Promise.resolve().then(() => (init_financial_month(), financial_month_exports));
+    const { startDate, endDate } = getFinancialMonthDates2(input.month, input.salaryDay);
     const firstExpense = await db3.select({ date: expenses.date }).from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType))).orderBy(expenses.date).limit(1);
     const userStartDate = firstExpense[0]?.date ? new Date(firstExpense[0].date) : startDate;
     const items = await db3.select().from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType), gte(expenses.date, startDate), lte(expenses.date, endDate)));
-    const prevStartDate = new Date(startDate);
-    prevStartDate.setMonth(prevStartDate.getMonth() - 1);
-    const prevEndDate = new Date(startDate);
+    const prevMonthDate = /* @__PURE__ */ new Date(input.month + "-01");
+    prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
+    const prevMonthStr = prevMonthDate.toISOString().slice(0, 7);
+    const prevMonthDates = getFinancialMonthDates2(prevMonthStr, input.salaryDay);
+    const prevStartDate = prevMonthDates.startDate;
+    const prevEndDate = prevMonthDates.endDate;
     const previousItems = await db3.select().from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType), gte(expenses.date, prevStartDate), lte(expenses.date, prevEndDate)));
     const totalExpense = items.filter((i) => i.type === "expense").reduce((sum3, item) => sum3 + Number(item.amount), 0);
     const totalIncome = items.filter((i) => i.type === "income").reduce((sum3, item) => sum3 + Number(item.amount), 0);
@@ -83005,15 +84573,15 @@ var expenseRouter = router({
         subCategoryMap[item.subCategory].count += 1;
       }
     });
-    const categoryBreakdown = Object.entries(categoryMap).map(([name, data]) => ({
-      name,
+    const categoryBreakdown = Object.entries(categoryMap).map(([name2, data]) => ({
+      name: name2,
       value: data.value,
       count: data.count,
       avg: data.count > 0 ? Math.round(data.value / data.count) : 0,
       percentage: totalExpense > 0 ? Math.round(data.value / totalExpense * 100) : 0
     }));
-    const subCategoryBreakdown = Object.entries(subCategoryMap).map(([name, data]) => ({
-      name,
+    const subCategoryBreakdown = Object.entries(subCategoryMap).map(([name2, data]) => ({
+      name: name2,
       value: data.value,
       count: data.count,
       avg: data.count > 0 ? Math.round(data.value / data.count) : 0,
@@ -83085,10 +84653,10 @@ var expenseRouter = router({
       subCategoryBreakdown,
       topCategories: sortedCategories.slice(0, 5),
       highestDay: highestDay ? { date: highestDay[0], amount: highestDay[1] } : null,
-      weekBreakdown: Object.entries(weekMap).map(([name, amount]) => ({ name, amount })),
+      weekBreakdown: Object.entries(weekMap).map(([name2, amount]) => ({ name: name2, amount })),
       dayTrend,
       hourTrend: Object.entries(hourMap).map(([hour, amount]) => ({ hour: parseInt(hour), amount })).sort((a, b) => a.hour - b.hour),
-      dayOfWeekTrend: Object.entries(dayOfWeekMap).map(([name, amount]) => ({ name, amount })),
+      dayOfWeekTrend: Object.entries(dayOfWeekMap).map(([name2, amount]) => ({ name: name2, amount })),
       hierarchicalBreakdown,
       recurringBreakdown: recurringHints,
       behavioralInsights: {
@@ -84175,6 +85743,290 @@ init_schema2();
 init_drizzle_orm();
 init_env();
 
+// api/lib/stt-corrections.ts
+var STT_CORRECTION_MAP = {
+  // ── مواصلات ──
+  "\u0627\u0648\u0628\u0627\u0631": "\u0627\u0648\u0628\u0631",
+  "\u0627\u0628\u0648\u0631": "\u0627\u0648\u0628\u0631",
+  "\u0627\u0648\u0628\u064A\u0631": "\u0627\u0648\u0628\u0631",
+  "\u0627\u0648\u0628\u0631\u0631": "\u0627\u0648\u0628\u0631",
+  "\u0643\u0631\u064A\u064A\u0645": "\u0643\u0631\u064A\u0645",
+  "\u0643\u0631\u064A\u0645\u0645": "\u0643\u0631\u064A\u0645",
+  "\u0643\u0627\u0631\u064A\u064A\u0645": "\u0643\u0631\u064A\u0645",
+  "\u0627\u0646\u062F\u0631\u0627\u064A\u0641\u0631": "\u0627\u0646 \u062F\u0631\u0627\u064A\u0641\u0631",
+  "\u0627\u0646 \u062F\u0631\u064A\u0641\u0631": "\u0627\u0646 \u062F\u0631\u0627\u064A\u0641\u0631",
+  "\u062F\u064A\u062F\u0649": "\u062F\u064A\u062F\u064A",
+  "\u0633\u0648\u064A\u0641\u0644": "\u0633\u0648\u064A\u0641\u0644",
+  "\u0633\u0648\u064A\u0641\u0627\u0644": "\u0633\u0648\u064A\u0641\u0644",
+  "\u0645\u0648\u0627\u0633\u0644\u0627\u062A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u0648\u0635\u0644\u0627\u062A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u0648\u0627\u0635\u0644\u0627": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u0648\u0627\u0635\u0644\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u062A\u0631\u062F\u0648": "\u0645\u062A\u0631\u0648",
+  "\u0645\u062A\u0631\u0631\u0648": "\u0645\u062A\u0631\u0648",
+  "\u0645\u0637\u0631\u0648": "\u0645\u062A\u0631\u0648",
+  "\u0628\u0646\u0632\u0646": "\u0628\u0646\u0632\u064A\u0646",
+  "\u0628\u0646\u0630\u064A\u0646": "\u0628\u0646\u0632\u064A\u0646",
+  "\u0628\u0646\u0630\u0646": "\u0628\u0646\u0632\u064A\u0646",
+  "\u062A\u0641\u0648\u064A\u0644\u0647": "\u062A\u0641\u0648\u064A\u0644\u0629",
+  "\u062A\u0641\u0648\u064A\u0644": "\u062A\u0641\u0648\u064A\u0644\u0629",
+  "\u062A\u0643\u0633\u0649": "\u062A\u0627\u0643\u0633\u064A",
+  "\u062A\u0643\u0627\u0633\u064A": "\u062A\u0627\u0643\u0633\u064A",
+  "\u062A\u0627\u0643\u0633\u0649": "\u062A\u0627\u0643\u0633\u064A",
+  "\u062A\u0643\u0633\u064A": "\u062A\u0627\u0643\u0633\u064A",
+  "\u062A\u0648\u0643\u062A\u0643": "\u062A\u0648\u0643\u062A\u0648\u0643",
+  "\u062A\u0643\u062A\u0648\u0643": "\u062A\u0648\u0643\u062A\u0648\u0643",
+  "\u062A\u0643\u062A\u0643": "\u062A\u0648\u0643\u062A\u0648\u0643",
+  "\u0643\u0627\u0648\u062A\u0634\u0647": "\u0643\u0627\u0648\u062A\u0634",
+  "\u0643\u0648\u0627\u062A\u0634": "\u0643\u0627\u0648\u062A\u0634",
+  "\u0643\u0648\u062A\u0634": "\u0643\u0627\u0648\u062A\u0634",
+  "\u0641\u0631\u062F\u0629 \u0643\u0648\u062A\u0634": "\u0643\u0627\u0648\u062A\u0634",
+  // ── أكل وشرب ──
+  "\u0643\u0634\u0631\u0649": "\u0643\u0634\u0631\u064A",
+  "\u0643\u0634\u0631\u0631\u064A": "\u0643\u0634\u0631\u064A",
+  "\u0643\u0634\u0627\u0631\u064A": "\u0643\u0634\u0631\u064A",
+  "\u062F\u0644\u064A\u0641\u0631\u0649": "\u062F\u0644\u064A\u0641\u0631\u064A",
+  "\u062F\u0644\u0641\u0631\u064A": "\u062F\u0644\u064A\u0641\u0631\u064A",
+  "\u062F\u0644\u0641\u0631\u0649": "\u062F\u0644\u064A\u0641\u0631\u064A",
+  "\u0637\u064A\u0627\u0631": "\u062F\u0644\u064A\u0641\u0631\u064A",
+  "\u0645\u0637\u0639\u0627\u0645": "\u0645\u0637\u0639\u0645",
+  "\u0645\u0627\u0637\u0639\u0645": "\u0645\u0637\u0639\u0645",
+  "\u0628\u064A\u062A\u0633\u0627": "\u0628\u064A\u062A\u0632\u0627",
+  "\u0628\u064A\u0632\u0627": "\u0628\u064A\u062A\u0632\u0627",
+  "\u0628\u064A\u062A\u0632\u0647": "\u0628\u064A\u062A\u0632\u0627",
+  "\u0634\u0648\u0631\u0645\u0627": "\u0634\u0627\u0648\u0631\u0645\u0627",
+  "\u0634\u0627\u0648\u0631\u0645\u0647": "\u0634\u0627\u0648\u0631\u0645\u0627",
+  "\u0634\u0648\u0631\u0645\u0647": "\u0634\u0627\u0648\u0631\u0645\u0627",
+  "\u0628\u0631\u063A\u0631": "\u0628\u0631\u062C\u0631",
+  "\u0628\u064A\u0631\u062C\u0631": "\u0628\u0631\u062C\u0631",
+  "\u0628\u0631\u0642\u0631": "\u0628\u0631\u062C\u0631",
+  "\u0633\u0646\u062F\u0648\u062A\u0634": "\u0633\u0646\u062F\u0648\u062A\u0634\u0627\u062A",
+  "\u0633\u0646\u062F\u0648\u062A\u0634\u0627\u062A": "\u0633\u0646\u062F\u0648\u062A\u0634\u0627\u062A",
+  "\u0633\u0627\u0646\u062F\u0648\u062A\u0634": "\u0633\u0646\u062F\u0648\u062A\u0634\u0627\u062A",
+  "\u0641\u0644\u0641\u0627\u0644": "\u0641\u0644\u0627\u0641\u0644",
+  "\u0641\u0644\u0627\u0641\u064A\u0644": "\u0641\u0644\u0627\u0641\u0644",
+  "\u0637\u0639\u0645\u064A\u0629": "\u0641\u0644\u0627\u0641\u0644",
+  "\u0637\u0639\u0645\u064A\u0647": "\u0641\u0644\u0627\u0641\u0644",
+  "\u0641\u0627\u0643\u0647\u0627": "\u0641\u0627\u0643\u0647\u0629",
+  "\u0641\u0627\u0643\u0647\u0647": "\u0641\u0627\u0643\u0647\u0629",
+  "\u062E\u062F\u0627\u0631": "\u062E\u0636\u0627\u0631",
+  "\u062E\u0636\u0631": "\u062E\u0636\u0627\u0631",
+  "\u0633\u0648\u0628\u0631\u0645\u0627\u0631\u0643\u062A": "\u0633\u0648\u0628\u0631 \u0645\u0627\u0631\u0643\u062A",
+  "\u0627\u0644\u0633\u0648\u0628\u0631\u0645\u0627\u0631\u0643\u062A": "\u0633\u0648\u0628\u0631 \u0645\u0627\u0631\u0643\u062A",
+  "\u0628\u0642\u0627\u0644\u0647": "\u0628\u0642\u0627\u0644\u0629",
+  "\u0628\u0642\u0627\u0627\u0644": "\u0628\u0642\u0627\u0644\u0629",
+  "\u0646\u0633\u0643\u0627\u0641\u0629": "\u0646\u0633\u0643\u0627\u0641\u064A\u0647",
+  "\u0646\u0633\u0643\u0627\u0641\u0649": "\u0646\u0633\u0643\u0627\u0641\u064A\u0647",
+  "\u0643\u0627\u0628\u062A\u0634\u064A\u0646\u0648": "\u0643\u0627\u0628\u062A\u0634\u064A\u0646\u0648",
+  "\u0643\u0628\u062A\u0634\u064A\u0646\u0648": "\u0643\u0627\u0628\u062A\u0634\u064A\u0646\u0648",
+  "\u0643\u0648\u0641\u0649": "\u0642\u0647\u0648\u0629",
+  "\u0642\u0647\u0648\u0647": "\u0642\u0647\u0648\u0629",
+  "\u0634\u064A\u0628\u0633\u0649": "\u0634\u064A\u0628\u0633\u064A",
+  "\u0634\u064A\u0633\u0628\u064A": "\u0634\u064A\u0628\u0633\u064A",
+  // ── فواتير واشتراكات وأقساط ──
+  "\u0643\u0631\u0628\u0627\u0621": "\u0643\u0647\u0631\u0628\u0627\u0621",
+  "\u0643\u0631\u0628\u0627\u0627": "\u0643\u0647\u0631\u0628\u0627\u0621",
+  "\u0643\u0647\u0631\u0628\u0627": "\u0643\u0647\u0631\u0628\u0627\u0621",
+  "\u0643\u0647\u0631\u0628\u0647": "\u0643\u0647\u0631\u0628\u0627\u0621",
+  "\u0643\u0647\u0631\u0628\u0623": "\u0643\u0647\u0631\u0628\u0627\u0621",
+  "\u0641\u0627\u062A\u0648\u0631\u0647": "\u0641\u0627\u062A\u0648\u0631\u0629",
+  "\u0641\u0627\u062A\u0648\u0648\u0631\u0629": "\u0641\u0627\u062A\u0648\u0631\u0629",
+  "\u0641\u062A\u0648\u0631\u0647": "\u0641\u0627\u062A\u0648\u0631\u0629",
+  "\u0627\u0646\u062A\u0631\u0646\u064A\u062A": "\u0627\u0646\u062A\u0631\u0646\u062A",
+  "\u0627\u0646\u062A\u0631\u0646\u0627\u062A": "\u0627\u0646\u062A\u0631\u0646\u062A",
+  "\u0646\u062A\u0631\u0646\u062A": "\u0627\u0646\u062A\u0631\u0646\u062A",
+  "\u0631\u0627\u0648\u062A\u0631": "\u0627\u0646\u062A\u0631\u0646\u062A",
+  "\u0631\u0648\u062A\u0631": "\u0627\u0646\u062A\u0631\u0646\u062A",
+  "\u0641\u0648\u062F\u0627\u0641\u0648\u0648\u0646": "\u0641\u0648\u062F\u0627\u0641\u0648\u0646",
+  "\u0641\u062F\u0627\u0641\u0648\u0646": "\u0641\u0648\u062F\u0627\u0641\u0648\u0646",
+  "\u0641\u0648\u062F\u0641\u0648\u0646": "\u0641\u0648\u062F\u0627\u0641\u0648\u0646",
+  "\u0627\u0648\u0631\u0646\u062C": "\u0627\u0648\u0631\u0646\u062C",
+  "\u0627\u0648\u0631\u0627\u0646\u062C": "\u0627\u0648\u0631\u0646\u062C",
+  "\u0627\u062A\u0633\u0627\u0644\u0627\u062A": "\u0627\u062A\u0635\u0627\u0644\u0627\u062A",
+  "\u0627\u062A\u0635\u0644\u0627\u062A": "\u0627\u062A\u0635\u0627\u0644\u0627\u062A",
+  "\u0625\u062A\u0635\u0627\u0644\u0627\u062A": "\u0627\u062A\u0635\u0627\u0644\u0627\u062A",
+  "\u0631\u0633\u064A\u062F": "\u0631\u0635\u064A\u062F",
+  "\u0631\u064A\u0635\u062F": "\u0631\u0635\u064A\u062F",
+  "\u0631\u0633\u062F": "\u0631\u0635\u064A\u062F",
+  "\u0634\u062D\u0646\u062A\u062A": "\u0634\u062D\u0646\u062A",
+  "\u0627\u0646\u0633\u062A\u0628\u0627\u064A": "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A",
+  "\u0627\u0646\u0633\u062A\u0627\u0628\u064A": "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A",
+  "\u0627\u0646\u0633\u062A\u0628\u0627\u0649": "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A",
+  "\u0627\u0646\u0633\u062A\u0627 \u0628\u0627\u064A": "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A",
+  "\u0642\u0635\u0637": "\u0642\u0633\u0637",
+  "\u0627\u0642\u0635\u0627\u0637": "\u0627\u0642\u0633\u0627\u0637",
+  "\u0627\u0643\u0633\u0627\u0637": "\u0627\u0642\u0633\u0627\u0637",
+  "\u0641\u0627\u0644\u064A\u0648": "\u0641\u0627\u0644\u064A\u0648",
+  "\u0641\u0627\u0644\u0648\u0627": "\u0641\u0627\u0644\u064A\u0648",
+  "\u0641\u0644\u064A\u0648": "\u0641\u0627\u0644\u064A\u0648",
+  "\u0641\u0627\u0644\u064A\u0648\u0627": "\u0641\u0627\u0644\u064A\u0648",
+  "\u0646\u062A\u0641\u0644\u064A\u0643\u0633": "\u0646\u062A\u0641\u0644\u0643\u0633",
+  "\u0646\u062A\u0641\u0644\u064A\u0643\u0633": "\u0646\u062A\u0641\u0644\u0643\u0633",
+  "\u0646\u0637\u0641\u0644\u0643\u0633": "\u0646\u062A\u0641\u0644\u0643\u0633",
+  "\u0633\u0628\u0648\u062A\u0641\u0627\u064A": "\u0633\u0628\u0648\u062A\u064A\u0641\u0627\u064A",
+  "\u0627\u0633\u0628\u0648\u062A\u064A\u0641\u0627\u064A": "\u0633\u0628\u0648\u062A\u064A\u0641\u0627\u064A",
+  "\u0634\u0627\u0647\u062F": "\u0634\u0627\u0647\u062F",
+  // ── سكن ──
+  "\u0627\u064A\u062C\u0631": "\u0627\u064A\u062C\u0627\u0631",
+  "\u0627\u064A\u062C\u0627\u0627\u0631": "\u0627\u064A\u062C\u0627\u0631",
+  "\u0627\u062C\u0627\u0631": "\u0627\u064A\u062C\u0627\u0631",
+  "\u0633\u0628\u0627\u0643\u0647": "\u0633\u0628\u0627\u0643",
+  "\u0635\u0628\u0627\u0643": "\u0633\u0628\u0627\u0643",
+  "\u0643\u0647\u0631\u0628\u0627\u0626\u0649": "\u0643\u0647\u0631\u0628\u0627\u0626\u064A",
+  "\u0646\u0642\u0627\u0634\u0647": "\u0646\u0642\u0627\u0634",
+  "\u0646\u062C\u0627\u0631\u0647": "\u0646\u062C\u0627\u0631",
+  "\u0634\u063A\u0627\u0644\u0647": "\u0634\u063A\u0627\u0644\u0629",
+  "\u0634\u063A\u0627\u0644\u0627": "\u0634\u063A\u0627\u0644\u0629",
+  "\u0645\u0646\u0632\u0641\u0627\u062A": "\u0645\u0646\u0638\u0641\u0627\u062A",
+  "\u0645\u0646\u0636\u0641\u0627\u062A": "\u0645\u0646\u0638\u0641\u0627\u062A",
+  "\u0645\u0633\u062D\u0648\u0642": "\u0645\u0646\u0638\u0641\u0627\u062A",
+  "\u062A\u0644\u0627\u062C\u0647": "\u062A\u0644\u0627\u062C\u0629",
+  "\u063A\u0633\u0627\u0644\u0627": "\u063A\u0633\u0627\u0644\u0629",
+  "\u063A\u0633\u0644\u0647": "\u063A\u0633\u0627\u0644\u0629",
+  // ── تسوق ──
+  "\u0647\u062F\u0648\u0648\u0645": "\u0647\u062F\u0648\u0645",
+  "\u0647\u062F\u0645\u0648": "\u0647\u062F\u0648\u0645",
+  "\u0644\u0628\u0633": "\u0647\u062F\u0648\u0645",
+  "\u0644\u0628\u064A\u0633": "\u0647\u062F\u0648\u0645",
+  "\u0644\u0627\u0628\u062A\u0648\u0628": "\u0644\u0627\u0628 \u062A\u0648\u0628",
+  "\u0644\u0627\u0628 \u062A\u0628": "\u0644\u0627\u0628 \u062A\u0648\u0628",
+  "\u0644\u0628\u062A\u0648\u0628": "\u0644\u0627\u0628 \u062A\u0648\u0628",
+  "\u0645\u0648\u0628\u064A\u0644": "\u0645\u0648\u0628\u0627\u064A\u0644",
+  "\u0645\u0628\u0627\u064A\u0644": "\u0645\u0648\u0628\u0627\u064A\u0644",
+  "\u0645\u0648\u0628\u0627\u064A\u0644\u0647": "\u0645\u0648\u0628\u0627\u064A\u0644",
+  "\u0643\u0648\u062A\u0634\u0649": "\u0643\u0648\u062A\u0634\u064A",
+  "\u0643\u062A\u0634\u064A": "\u0643\u0648\u062A\u0634\u064A",
+  "\u0643\u0648\u062A\u0634\u064A\u0627\u062A": "\u0643\u0648\u062A\u0634\u064A",
+  "\u062C\u0632\u0645\u0647": "\u062C\u0632\u0645\u0629",
+  "\u062C\u0630\u0645\u0647": "\u062C\u0632\u0645\u0629",
+  "\u0634\u0648\u0632": "\u062C\u0632\u0645\u0629",
+  "\u0645\u0643\u064A\u0627\u0686": "\u0645\u0643\u064A\u0627\u062C",
+  "\u0645\u064A\u0643\u0627\u0628": "\u0645\u0643\u064A\u0627\u062C",
+  "\u0645\u064A\u0643 \u0627\u0628": "\u0645\u0643\u064A\u0627\u062C",
+  // ── صحة ──
+  "\u062F\u0643\u062A\u0648\u0648\u0631": "\u062F\u0643\u062A\u0648\u0631",
+  "\u062F\u0643\u0637\u0648\u0631": "\u062F\u0643\u062A\u0648\u0631",
+  "\u062F\u062E\u062A\u0648\u0631": "\u062F\u0643\u062A\u0648\u0631",
+  "\u0627\u0644\u062F\u0643\u062A\u0648\u0631\u0629": "\u062F\u0643\u062A\u0648\u0631",
+  "\u0641\u064A\u0632\u064A\u062A\u0627": "\u0643\u0634\u0641",
+  "\u0641\u0632\u064A\u062A\u0627": "\u0643\u0634\u0641",
+  "\u0627\u0633\u062A\u0634\u0627\u0631\u0647": "\u0627\u0633\u062A\u0634\u0627\u0631\u0629",
+  "\u0635\u064A\u062F\u0644\u064A\u0647": "\u0635\u064A\u062F\u0644\u064A\u0629",
+  "\u0635\u064A\u062F\u0627\u0644\u064A\u0647": "\u0635\u064A\u062F\u0644\u064A\u0629",
+  "\u062F\u0648\u0627": "\u0623\u062F\u0648\u064A\u0629",
+  "\u0639\u0644\u0627\u062C": "\u0623\u062F\u0648\u064A\u0629",
+  "\u0645\u0633\u062A\u0634\u0641\u0627": "\u0645\u0633\u062A\u0634\u0641\u0649",
+  "\u0645\u0635\u062A\u0634\u0641\u0649": "\u0645\u0633\u062A\u0634\u0641\u0649",
+  "\u062A\u062D\u0627\u0644\u064A\u064A\u0644": "\u062A\u062D\u0627\u0644\u064A\u0644",
+  "\u062A\u062D\u0627\u0644\u064A\u0644\u0644": "\u062A\u062D\u0627\u0644\u064A\u0644",
+  "\u0627\u0634\u0639\u0647": "\u0623\u0634\u0639\u0629",
+  // ── تعليم ──
+  "\u0645\u062F\u0631\u0633\u0647": "\u0645\u062F\u0631\u0633\u0629",
+  "\u0645\u062F\u0631\u0635\u0629": "\u0645\u062F\u0631\u0633\u0629",
+  "\u062C\u0627\u0645\u0639\u0647": "\u062C\u0627\u0645\u0639\u0629",
+  "\u062C\u0645\u0639\u0647": "\u062C\u0627\u0645\u0639\u0629",
+  "\u0643\u0648\u0631\u0635": "\u0643\u0648\u0631\u0633",
+  "\u0643\u0648\u0648\u0631\u0633": "\u0643\u0648\u0631\u0633",
+  "\u0643\u0631\u0633\u0627\u062A": "\u0643\u0648\u0631\u0633\u0627\u062A",
+  "\u062F\u0631\u0648\u0633": "\u062F\u0631\u0648\u0633",
+  "\u062F\u0631\u0633": "\u062F\u0631\u0633",
+  "\u0633\u0646\u062A\u0631": "\u0633\u0646\u062A\u0631",
+  "\u0645\u0630\u0643\u0631\u0647": "\u0645\u0630\u0643\u0631\u0629",
+  "\u0645\u0644\u0632\u0645\u0647": "\u0645\u0644\u0632\u0645\u0629",
+  // ── ترفيه ──
+  "\u0633\u064A\u0646\u0645\u0647": "\u0633\u064A\u0646\u0645\u0627",
+  "\u0633\u064A\u0645\u0646\u0627": "\u0633\u064A\u0646\u0645\u0627",
+  "\u0628\u0644\u0627\u064A\u0633\u062A\u064A\u0634\u0627\u0646": "\u0628\u0644\u0627\u064A\u0633\u062A\u064A\u0634\u0646",
+  "\u0628\u0644\u064A\u0633\u062A\u064A\u0634\u0646": "\u0628\u0644\u0627\u064A\u0633\u062A\u064A\u0634\u0646",
+  "\u0628\u0644\u0627\u0633\u062A\u064A\u0634\u0646": "\u0628\u0644\u0627\u064A\u0633\u062A\u064A\u0634\u0646",
+  "\u062E\u0631\u0648\u062C\u0647": "\u062E\u0631\u0648\u062C\u0629",
+  "\u062E\u0631\u0648\u0648\u0648\u062C\u0629": "\u062E\u0631\u0648\u062C\u0629",
+  "\u0641\u0633\u062D\u0647": "\u0641\u0633\u062D\u0629",
+  "\u0645\u0635\u064A\u0641": "\u0645\u0635\u064A\u0641",
+  "\u0633\u0641\u0631\u064A\u0647": "\u0633\u0641\u0631",
+  "\u0634\u064A\u0634\u0647": "\u0634\u064A\u0634\u0629",
+  "\u0645\u0639\u0633\u0644": "\u0634\u064A\u0634\u0629",
+  "\u0633\u062C\u0627\u064A\u0631": "\u0633\u062C\u0627\u0626\u0631",
+  "\u0633\u063A\u0627\u064A\u0631": "\u0633\u062C\u0627\u0626\u0631",
+  "\u0641\u064A\u0628": "\u0641\u064A\u0628",
+  // ── دخل ──
+  "\u0645\u0631\u062A\u064A\u0628": "\u0645\u0631\u062A\u0628",
+  "\u0645\u0631\u0637\u0628": "\u0645\u0631\u062A\u0628",
+  "\u0645\u0631\u062A\u062A\u0628": "\u0645\u0631\u062A\u0628",
+  "\u0645\u0631\u062A\u0628\u064A": "\u0645\u0631\u062A\u0628",
+  "\u0642\u0628\u0637": "\u0642\u0628\u0636\u062A",
+  "\u0628\u0648\u0646\u0633": "\u0628\u0648\u0646\u0635",
+  "\u0628\u0648\u0646\u0648\u0635": "\u0628\u0648\u0646\u0635",
+  "\u0627\u0648\u0641\u0631 \u062A\u0627\u064A\u0645": "\u0625\u0636\u0627\u0641\u064A",
+  "\u0645\u0643\u0641\u0623\u0629": "\u0645\u0643\u0627\u0641\u0623\u0629",
+  "\u0645\u0643\u0641\u0627\u0629": "\u0645\u0643\u0627\u0641\u0623\u0629",
+  "\u0641\u0631\u064A\u0644\u0646\u0633": "\u0641\u0631\u064A\u0644\u0627\u0646\u0633",
+  "\u0641\u0631\u0644\u0627\u0646\u0633": "\u0641\u0631\u064A\u0644\u0627\u0646\u0633",
+  "\u0641\u0631\u064A\u0644\u0646\u0635": "\u0641\u0631\u064A\u0644\u0627\u0646\u0633",
+  "\u0633\u0628\u0648\u0628\u0647": "\u0633\u0628\u0648\u0628\u0629",
+  // ── استثمار ──
+  "\u062F\u0647\u064A\u0628": "\u062F\u0647\u0628",
+  "\u0632\u0647\u0628": "\u0630\u0647\u0628",
+  "\u0633\u0628\u064A\u0643\u0647": "\u0633\u0628\u064A\u0643\u0629",
+  "\u0627\u0634\u0647\u0645": "\u0627\u0633\u0647\u0645",
+  "\u0634\u0647\u0627\u062F\u0647": "\u0634\u0647\u0627\u062F\u0629",
+  "\u0634\u0647\u0627\u0627\u062F\u0629": "\u0634\u0647\u0627\u062F\u0629",
+  "\u0648\u062F\u064A\u0639\u0647": "\u0648\u062F\u064A\u0639\u0629",
+  // ── تحويلات ──
+  "\u062D\u0648\u0644\u062A\u062A": "\u062D\u0648\u0644\u062A",
+  "\u062D\u0648\u0644\u0637": "\u062D\u0648\u0644\u062A",
+  "\u062D\u0648\u0644\u0629": "\u062D\u0648\u0644\u062A",
+  "\u0627\u062F\u064A\u064A\u062A": "\u0627\u062F\u064A\u062A",
+  "\u0633\u0644\u0627\u0641\u062A": "\u0633\u0644\u0641\u062A",
+  "\u0633\u0644\u0627\u0641\u0629": "\u0633\u0644\u0641\u0629",
+  "\u062F\u064A\u0646": "\u0633\u0644\u0641\u0629",
+  // ── هدايا وصدقات ──
+  "\u0647\u062F\u064A\u0647": "\u0647\u062F\u064A\u0629",
+  "\u0635\u062F\u0642\u0647": "\u0635\u062F\u0642\u0629",
+  "\u0632\u0643\u0647": "\u0632\u0643\u0627\u0629",
+  "\u0632\u0643\u0627\u062A": "\u0632\u0643\u0627\u0629",
+  "\u0639\u064A\u062F\u064A\u0647": "\u0639\u064A\u062F\u064A\u0629",
+  "\u0646\u0642\u0637\u0647": "\u0646\u0642\u0637\u0629",
+  "\u062A\u0628\u0631\u0639\u0639": "\u062A\u0628\u0631\u0639",
+  // ── أفعال شائعة وتعبيرات عامية ──
+  "\u062F\u0641\u0639\u0629": "\u062F\u0641\u0639\u062A",
+  "\u062F\u0641\u0639\u0637": "\u062F\u0641\u0639\u062A",
+  "\u0627\u0634\u062A\u0631\u064A\u0637": "\u0627\u0634\u062A\u0631\u064A\u062A",
+  "\u0627\u0634\u062A\u0631\u064A\u0629": "\u0627\u0634\u062A\u0631\u064A\u062A",
+  "\u0634\u0631\u064A\u062A": "\u0627\u0634\u062A\u0631\u064A\u062A",
+  "\u062C\u0628\u0637": "\u062C\u0628\u062A",
+  "\u062C\u064A\u0628\u0629": "\u062C\u0628\u062A",
+  "\u0631\u0643\u0628\u0629": "\u0631\u0643\u0628\u062A",
+  "\u0631\u0643\u0628\u0637": "\u0631\u0643\u0628\u062A",
+  "\u0627\u0643\u0644\u0629": "\u0627\u0643\u0644\u062A",
+  "\u0627\u0643\u0644\u0637": "\u0627\u0643\u0644\u062A",
+  "\u0643\u0644\u062A": "\u0627\u0643\u0644\u062A",
+  "\u0635\u0631\u0641\u0629": "\u0635\u0631\u0641\u062A",
+  "\u0635\u0631\u0641\u0637": "\u0635\u0631\u0641\u062A",
+  "\u062E\u062F\u0629": "\u062E\u062F\u062A",
+  "\u062E\u062F\u0637": "\u062E\u062F\u062A",
+  "\u0642\u0628\u062F\u062A": "\u0642\u0628\u0636\u062A",
+  "\u0642\u0628\u0638\u062A": "\u0642\u0628\u0636\u062A",
+  "\u062D\u0637\u064A\u0629": "\u062D\u0637\u064A\u062A",
+  "\u062D\u0637\u064A\u0637": "\u062D\u0637\u064A\u062A",
+  "\u0639\u0627\u0645\u0644\u062A": "\u0639\u0645\u0644\u062A",
+  "\u0639\u0634\u0627\u0646": "\u0639\u0644\u0634\u0627\u0646",
+  "\u0628\u062A\u0627\u0639": "\u0628\u062A\u0627\u0639",
+  "\u0628\u062A\u0627\u0639\u0647": "\u0628\u062A\u0627\u0639\u0629"
+};
+function applySttCorrections(text2) {
+  let result = text2;
+  const sortedKeys = Object.keys(STT_CORRECTION_MAP).sort(
+    (a, b) => b.length - a.length
+  );
+  for (const wrong of sortedKeys) {
+    const escaped = wrong.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(?:^|(?<=\\s))${escaped}(?=\\s|$)`, "g");
+    result = result.replace(regex, STT_CORRECTION_MAP[wrong]);
+  }
+  return result;
+}
+
 // api/lib/text-normalizer.ts
 function arabicToEnglishNumbers(str) {
   return str.replace(/[٠-٩]/g, (d) => "\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669".indexOf(d).toString());
@@ -84256,6 +86108,24 @@ var COLLOQUIAL_NUMBERS = {
   "\u062A\u0644\u0627\u062A\u0644\u0627\u0641": 3e3,
   "\u0627\u0631\u0628\u0639\u062A\u0644\u0627\u0641": 4e3
 };
+var METAPHOR_NORMALIZATIONS = [
+  // "طلعت عيني / روحي في X" → removes misleading "طلعت" (which triggers خروجة/ترفيه)
+  { pattern: /طلعت\s+(?:عيني|روحي|عينيا|روحيا)\s+(?:في|ف)\s*/g, replacement: "\u062A\u0639\u0628\u062A \u0641\u064A " },
+  // "خربت بيتي / الدنيا في X" → removes misleading "خربت بيت" (triggers سكن/صيانة)
+  { pattern: /خربت\s+(?:بيتي|الدنيا|الدنيه)\s+(?:في|ف|على)\s*/g, replacement: "\u0635\u0631\u0641\u062A \u0643\u062A\u064A\u0631 \u0639\u0644\u0649 " },
+  // "طيرت فلوس على X" → "صرفت على X"
+  { pattern: /طيرت\s+(?:فلوس|مصاري|فلوسي)\s+(?:على|في|ف)\s*/g, replacement: "\u0635\u0631\u0641\u062A \u0639\u0644\u0649 " },
+  // Standalone verbs: "بعزقت / فرتكت / نسفت" → "صرفت"
+  { pattern: /(?:^|\s)(بعزقت|فرتكت|نسفت|بددت)(?=\s|$)/g, replacement: " \u0635\u0631\u0641\u062A" },
+  // "شطبت X" → "خلصت X" (avoids confusion with construction)
+  { pattern: /(?:^|\s)شطبت(?=\s)/g, replacement: " \u062E\u0644\u0635\u062A" },
+  // "راحت عليا في X" → "دفعت في X" (removes misleading "راحت")
+  { pattern: /راحت\s+(?:عليا|عليه|علي)\s+(?:في|ف)\s*/g, replacement: "\u062F\u0641\u0639\u062A \u0641\u064A " },
+  // "ضربت X بـ" → "اشتريت X بـ" (removes violence connotation)
+  { pattern: /ضربت\s+(\S+)\s+(?:بـ|ب)\s*/g, replacement: "\u0627\u0634\u062A\u0631\u064A\u062A $1 \u0628\u0640 " },
+  // "اتنصبت في X" → "دفعت في X" (removes misleading negative connotation)
+  { pattern: /اتنصبت\s+(?:في|ف)\s*/g, replacement: "\u062F\u0641\u0639\u062A \u0641\u064A " }
+];
 var COMMON_PHRASE_NORMALIZATIONS = {
   "\u0641\u0643\u064A\u062A \u0628\u0646\u0632\u064A\u0646": "\u062F\u0641\u0639\u062A \u0628\u0646\u0632\u064A\u0646",
   "\u062D\u0637\u064A\u062A \u0644\u0644\u0633\u0627\u064A\u0633": "\u062F\u0641\u0639\u062A \u0633\u0627\u064A\u0633",
@@ -84263,10 +86133,32 @@ var COMMON_PHRASE_NORMALIZATIONS = {
   "\u062C\u062F\u062F\u062A \u0627\u0644\u0628\u0627\u0642\u0629": "\u062F\u0641\u0639\u062A \u0628\u0627\u0642\u0629 \u0627\u0646\u062A\u0631\u0646\u062A",
   "\u0634\u062D\u0646\u062A \u0631\u0635\u064A\u062F": "\u062F\u0641\u0639\u062A \u0634\u062D\u0646 \u0631\u0635\u064A\u062F",
   "\u062F\u0641\u0639\u062A \u0639\u0631\u0628\u0648\u0646": "\u062F\u0641\u0639\u062A \u0639\u0631\u0628\u0648\u0646",
-  "\u062D\u0637\u064A\u062A \u0641\u0644\u0648\u0633 \u0641\u064A \u0627\u0644\u0643\u0627\u0631\u062A": "\u062D\u0648\u0644\u062A \u0641\u0644\u0648\u0633 \u0643\u0627\u0631\u062A"
+  "\u062D\u0637\u064A\u062A \u0641\u0644\u0648\u0633 \u0641\u064A \u0627\u0644\u0643\u0627\u0631\u062A": "\u062D\u0648\u0644\u062A \u0641\u0644\u0648\u0633 \u0643\u0627\u0631\u062A",
+  "\u062D\u0627\u0633\u0628\u062A \u0639\u0644\u0649 \u0627\u0644\u0645\u0634\u0627\u0631\u064A\u0628": "\u062F\u0641\u0639\u062A \u0642\u0647\u0648\u0629 \u0648\u0645\u0634\u0627\u0631\u064A\u0628",
+  "\u062E\u0644\u0635\u062A \u0642\u0633\u0637": "\u062F\u0641\u0639\u062A \u0642\u0633\u0637",
+  "\u0642\u0637\u0639\u062A \u062A\u0630\u0643\u0631\u0629": "\u062F\u0641\u0639\u062A \u062A\u0630\u0643\u0631\u0629",
+  "\u0644\u0645\u064A\u0646\u0627 \u0645\u0646 \u0628\u0639\u0636": "\u062C\u0645\u0639\u064A\u0647",
+  "\u0642\u0628\u0636\u062A \u0627\u0644\u062C\u0645\u0639\u064A\u0629": "\u0642\u0628\u0636\u062A \u062C\u0645\u0639\u064A\u0647",
+  "\u062F\u0641\u0639\u062A \u0627\u0644\u062C\u0645\u0639\u064A\u0629": "\u062F\u0641\u0639\u062A \u062C\u0645\u0639\u064A\u0647",
+  "\u0643\u0644\u0646\u0627 \u0628\u0631\u0647": "\u0627\u0643\u0644\u062A \u0641\u064A \u0645\u0637\u0639\u0645",
+  "\u062E\u0631\u062C\u0646\u0627 \u0646\u0627\u0643\u0644": "\u0627\u0643\u0644\u062A \u0641\u064A \u0645\u0637\u0639\u0645",
+  "\u062C\u0628\u062A \u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0628\u064A\u062A": "\u0627\u0634\u062A\u0631\u064A\u062A \u0633\u0648\u0628\u0631 \u0645\u0627\u0631\u0643\u062A",
+  "\u0646\u0632\u0644\u062A \u0627\u0644\u0633\u0648\u0642": "\u0627\u0634\u062A\u0631\u064A\u062A \u062E\u0636\u0627\u0631 \u0648\u0641\u0627\u0643\u0647\u0629",
+  "\u0642\u0641\u0644\u062A \u0627\u0644\u062D\u0633\u0627\u0628": "\u062F\u0641\u0639\u062A \u0627\u0644\u062D\u0633\u0627\u0628",
+  "\u0633\u0648\u0642\u062A \u0627\u0644\u0639\u0631\u0628\u064A\u0647": "\u0628\u0646\u0632\u064A\u0646",
+  "\u062C\u0628\u062A \u0647\u062F\u0648\u0645": "\u0627\u0634\u062A\u0631\u064A\u062A \u0645\u0644\u0627\u0628\u0633",
+  "\u0635\u0631\u0641\u062A \u0639\u0644\u0649 \u0627\u0644\u0645\u0643\u0646\u0647": "\u0635\u064A\u0627\u0646\u0629 \u0633\u064A\u0627\u0631\u0629",
+  "\u0639\u0645\u0631\u062A \u0627\u0644\u0645\u0643\u0646\u0647": "\u0635\u064A\u0627\u0646\u0629 \u0633\u064A\u0627\u0631\u0629",
+  "\u0634\u062D\u0646\u062A \u0643\u0627\u0631\u062A \u0627\u0644\u0643\u0647\u0631\u0628\u0627": "\u062F\u0641\u0639\u062A \u0641\u0627\u062A\u0648\u0631\u0629 \u0627\u0644\u0643\u0647\u0631\u0628\u0627\u0621",
+  "\u0634\u062D\u0646\u062A \u0643\u0627\u0631\u062A \u0627\u0644\u0645\u064A\u0647": "\u062F\u0641\u0639\u062A \u0641\u0627\u062A\u0648\u0631\u0629 \u0627\u0644\u0645\u064A\u0627\u0647",
+  "\u0634\u062D\u0646\u062A \u0643\u0627\u0631\u062A \u0627\u0644\u063A\u0627\u0632": "\u062F\u0641\u0639\u062A \u0641\u0627\u062A\u0648\u0631\u0629 \u0627\u0644\u063A\u0627\u0632"
 };
 function normalizeText(text2) {
   let result = text2.trim();
+  result = applySttCorrections(result);
+  for (const { pattern, replacement } of METAPHOR_NORMALIZATIONS) {
+    result = result.replace(pattern, replacement);
+  }
   result = arabicToEnglishNumbers(result);
   result = result.replace(/\s+/g, " ");
   for (const [source, target] of Object.entries(COMMON_PHRASE_NORMALIZATIONS)) {
@@ -84393,9 +86285,9 @@ function extractPeople(text2) {
     const regex = new RegExp(pattern.source, pattern.flags);
     let match2;
     while ((match2 = regex.exec(text2)) !== null) {
-      const name = match2[1]?.trim();
-      if (name && name.length >= 2 && !/^\d+$/.test(name)) {
-        people.push(name);
+      const name2 = match2[1]?.trim();
+      if (name2 && name2.length >= 2 && !/^\d+$/.test(name2)) {
+        people.push(name2);
       }
     }
   }
@@ -84434,6 +86326,9 @@ function extractEntities(normalizedText) {
 
 // api/lib/egyptian-dictionary.ts
 var CATEGORY_DICTIONARY = {
+  // ============================================
+  // أكل وشرب (Original 142 + 150 new = 292)
+  // ============================================
   "\u0639\u0643\u0627\u0648\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
   "\u0637\u062D\u0627\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
   "\u0641\u0631\u0627\u062E": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
@@ -84497,8 +86392,6 @@ var CATEGORY_DICTIONARY = {
   "\u0646\u0633\u0643\u0627\u0641\u064A\u0647": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
   "\u0643\u0627\u0643\u0627\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
   "\u0644\u0628\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-  "\u0642\u0647\u0648\u0647": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-  "\u0642\u0647\u0648\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
   "\u0628\u064A\u0636": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
   "\u062C\u0628\u0646\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
   "\u0631\u0648\u0645\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
@@ -84578,6 +86471,265 @@ var CATEGORY_DICTIONARY = {
   "\u0648\u0627\u0641\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
   "\u0633\u0646\u062F\u0648\u062A\u0634\u0627\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
   "\u0648\u062C\u0628\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  // NEW: خضار وفاكهة
+  "\u062E\u0636\u0627\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u0627\u0643\u0647\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0627\u0646\u062C\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u0648\u0627\u0641\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062A\u0641\u0627\u062D": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0648\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0631\u062A\u0642\u0627\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0637\u064A\u062E": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u0631\u0627\u0648\u0644\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0646\u0628": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062E\u0648\u062E": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0634\u0645\u0634": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062A\u064A\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0631\u0645\u0627\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0644\u064A\u0645\u0648\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062E\u064A\u0627\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0637\u0645\u0627\u0637\u0645": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0635\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062B\u0648\u0645": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u0644\u0641\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0627\u0630\u0646\u062C\u0627\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0648\u0633\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0644\u0648\u0628\u064A\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0633\u0644\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u0632\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0637\u0627\u0637\u0633": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u0627\u0635\u0648\u0644\u064A\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u062F\u0633": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  // NEW: لحوم
+  "\u0644\u062D\u0645\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0628\u062F\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u062C\u0642": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0641\u062A\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0631\u064A\u0634": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0636\u0627\u0646\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u0645\u0644\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u062A\u0644\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0648\u0631\u062F\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0642\u0637\u0639\u0627\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0641\u0631\u0648\u0645": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u062A\u064A\u0643": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0628\u0627\u0628": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0637\u0631\u0628": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062D\u0645\u0627\u0645": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0623\u0631\u0627\u0646\u0628": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0637": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0648\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062F\u064A\u0643 \u0631\u0648\u0645\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062E\u0631\u0648\u0641": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u062C\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u0627\u0645\u0648\u0633\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  // NEW: جبن وألبان
+  "\u062C\u0628\u0646\u0629 \u0642\u0631\u064A\u0634": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u0628\u0646\u0629 \u0631\u0648\u0645\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u0628\u0646\u0629 \u0634\u064A\u062F\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u0628\u0646\u0629 \u0645\u0648\u0632\u0627\u0631\u064A\u0644\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u0628\u0646\u0629 \u0641\u064A\u062A\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u0628\u0646\u0629 \u0643\u0631\u064A\u0645\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0632\u0628\u0627\u062F\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0631\u0627\u064A\u0628": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0631\u064A\u0645\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u0628\u0646\u0629 \u0633\u0627\u064A\u0644\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0644\u0628\u0646 \u0631\u0627\u064A\u0628": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0631\u064A\u0645\u0629 \u0637\u0628\u062E": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062D\u0644\u064A\u0628": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062D\u0644\u064A\u0628 \u0628\u0648\u062F\u0631\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062D\u0644\u064A\u0628 \u0645\u0631\u0643\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062D\u0644\u064A\u0628 \u0645\u062D\u0644\u0649": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  // NEW: مكسرات وياميش
+  "\u0645\u0643\u0633\u0631\u0627\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0644\u0648\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u0633\u062A\u0642": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0648\u062F\u0627\u0646\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0627\u062C\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0646\u062F\u0642": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u064A\u0646 \u062C\u0645\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0632\u0628\u064A\u0628": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u064A\u0627\u0645\u064A\u0634": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062A\u0645\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0644\u062D": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  // NEW: حلويات
+  "\u0643\u062D\u0643": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u063A\u0631\u064A\u0628\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u064A\u062A\u064A \u0641\u0648\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0633\u0628\u0648\u0633\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0646\u0627\u0641\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0642\u0637\u0627\u064A\u0641": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0644\u062D \u0627\u0644\u0634\u0627\u0645": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0632\u0644\u0627\u0628\u064A\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0644\u0642\u0645\u0629 \u0627\u0644\u0642\u0627\u0636\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u064A\u0634 \u0627\u0644\u0633\u0631\u0627\u064A\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0623\u0645 \u0639\u0644\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0647\u0644\u0628\u064A\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0631\u0632 \u0628\u0644\u0628\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0634\u0648\u0643\u0648\u0644\u0627\u062A\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0648\u0646\u062A\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0627\u0631\u0633": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0646\u0627\u064A\u0643\u0631\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062A\u0648\u064A\u0643\u0633": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u064A\u062A \u0643\u0627\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0623\u0648\u0631\u064A\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0634\u064A\u0628\u0633\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0633\u0643\u0648\u064A\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  // NEW: مخبوزات
+  "\u0645\u0648\u0644\u062A\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u064A\u0643": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0627\u0646 \u0643\u064A\u0643": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0648\u0627\u0641\u0644\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0631\u064A\u0628": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u0637\u064A\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u0637\u064A\u0631 \u0645\u0634\u0644\u062A\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u0637\u064A\u0631 \u062D\u0644\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u0637\u064A\u0631 \u0645\u0627\u0644\u062D": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u064A\u0634 \u0634\u0627\u0645\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u064A\u0634 \u062A\u0648\u0633\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u064A\u0634 \u0628\u0648\u0631\u062C\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  // NEW: أكل شعبي
+  "\u0641\u062A\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0643\u0631\u0648\u0646\u0629 \u0628\u0634\u0627\u0645\u064A\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0643\u0631\u0648\u0646\u0629 \u0628\u0627\u0644\u0635\u0644\u0635\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0631\u0632 \u0628\u062E\u0627\u0631\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0631\u0632 \u0628\u0627\u0644\u062E\u0644\u0637\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u0648\u0644 \u0645\u062F\u0645\u0633": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u064A\u0636 \u0645\u0633\u0644\u0648\u0642": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u064A\u0636 \u0645\u0642\u0644\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0634\u0643\u0634\u0648\u0643\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u064A\u0636 \u0628\u0627\u0644\u0628\u0633\u0637\u0631\u0645\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u064A\u0636 \u0628\u0627\u0644\u0633\u062C\u0642": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0644\u0648\u062E\u064A\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0627\u0645\u064A\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0628\u0627\u0646\u062E": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0648\u0631\u0642 \u0639\u0646\u0628": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u062D\u0634\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0648\u0633\u0629 \u0645\u062D\u0634\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0627\u0630\u0646\u062C\u0627\u0646 \u0645\u062D\u0634\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0641\u0644\u0641\u0644 \u0645\u062D\u0634\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0637\u0645\u0627\u0637\u0645 \u0645\u062D\u0634\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0635\u0644 \u0645\u062D\u0634\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  // NEW: سمك
+  "\u0633\u0645\u0643 \u0645\u0634\u0648\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0645\u0643 \u0645\u0642\u0644\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0645\u0643 \u0645\u062D\u0634\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u0645\u0628\u0631\u064A \u0645\u0634\u0648\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u0645\u0628\u0631\u064A \u0645\u0642\u0644\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0627\u0644\u064A\u0645\u0627\u0631\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0645\u0643 \u0645\u0648\u0633\u0649": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0645\u0643 \u0641\u064A\u0644\u064A\u0647": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062A\u0648\u0646\u0629 \u0645\u0639\u0644\u0628\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0631\u062F\u064A\u0646 \u0645\u0639\u0644\u0628": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  // NEW: معلبات
+  "\u0644\u0627\u0646\u0634\u0648\u0646 \u0628\u0642\u0631\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0644\u0627\u0646\u0634\u0648\u0646 \u062F\u062C\u0627\u062C": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0633\u0637\u0631\u0645\u0629 \u062D\u0627\u0631\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0633\u0637\u0631\u0645\u0629 \u0628\u0644\u062F\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  // NEW: عصائر
+  "\u0639\u0635\u064A\u0631 \u0628\u0631\u062A\u0642\u0627\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0635\u064A\u0631 \u0645\u0627\u0646\u062C\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0635\u064A\u0631 \u062A\u0641\u0627\u062D": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0635\u064A\u0631 \u0639\u0646\u0628": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0635\u064A\u0631 \u062E\u0648\u062E": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0635\u064A\u0631 \u0643\u0648\u0643\u062A\u064A\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0635\u064A\u0631 \u0644\u064A\u0645\u0648\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0635\u064A\u0631 \u062C\u0632\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0635\u064A\u0631 \u0637\u0645\u0627\u0637\u0645": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  // NEW: مشروبات ساخنة
+  "\u0634\u0627\u064A \u0623\u062E\u0636\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0634\u0627\u064A \u0628\u0644\u062F\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0634\u0627\u064A \u0628\u0627\u0644\u0646\u0639\u0646\u0627\u0639": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0634\u0627\u064A \u0628\u0627\u0644\u062D\u0644\u064A\u0628": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0642\u0647\u0648\u0629 \u062A\u0631\u0643\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0642\u0647\u0648\u0629 \u0641\u0631\u0646\u0633\u0627\u0648\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0642\u0647\u0648\u0629 \u0623\u0645\u0631\u064A\u0643\u0627\u0646\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0642\u0647\u0648\u0629 \u0643\u0627\u0628\u062A\u0634\u064A\u0646\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0642\u0647\u0648\u0629 \u0644\u0627\u062A\u064A\u0647": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0642\u0647\u0648\u0629 \u0627\u0633\u0628\u0631\u064A\u0633\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0642\u0647\u0648\u0629 \u0645\u064A\u0643\u0627\u062A\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0646\u0633\u0643\u0627\u0641\u064A\u0647 \u062C\u0648\u0644\u062F": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0646\u0633\u0643\u0627\u0641\u064A\u0647 \u0643\u0644\u0627\u0633\u064A\u0643": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0646\u0633\u0643\u0627\u0641\u064A\u0647 3 \u0641\u064A 1": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0628\u0648\u0646\u062C\u0648\u0631\u0646\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0648\u0641\u064A \u0645\u064A\u0643\u0633": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0647\u0648\u062A \u0634\u0648\u0643\u0644\u064A\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u062D\u0644\u0628": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u062D\u0644\u0628 \u0628\u0627\u0644\u0645\u0643\u0633\u0631\u0627\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0631\u0642\u0633\u0648\u0633": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062E\u0631\u0648\u0628": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062A\u0645\u0631 \u0647\u0646\u062F\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0644\u064A\u0645\u0648\u0646 \u0646\u0639\u0646\u0627\u0639": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0631\u0643\u062F\u064A\u0647": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u064A\u0646\u0633\u0648\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0627\u0645\u0648\u0645\u064A\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0632\u0647\u0648\u0631\u0627\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  // NEW: مياه
+  "\u0628\u064A\u0628\u0633\u064A \u062F\u0627\u064A\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0648\u0643\u0627\u0643\u0648\u0644\u0627 \u0632\u064A\u0631\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u064A\u0627\u0647 \u0635\u0627\u0641\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u064A\u0627\u0647 \u0646\u0628\u0639": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062C\u0627\u0644\u0648\u0646 \u0645\u064A\u0627\u0647": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u064A\u0627\u0647 \u0661\u0662 \u0644\u062A\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u064A\u0627\u0647 \u0661\u0669 \u0644\u062A\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  // NEW: سندوتشات
+  "\u0633\u0646\u062F\u0648\u062A\u0634 \u0641\u0648\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0646\u062F\u0648\u062A\u0634 \u0637\u0639\u0645\u064A\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0646\u062F\u0648\u062A\u0634 \u0628\u0633\u0637\u0631\u0645\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0646\u062F\u0648\u062A\u0634 \u0644\u0627\u0646\u0634\u0648\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0646\u062F\u0648\u062A\u0634 \u062C\u0628\u0646\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0646\u062F\u0648\u062A\u0634 \u0634\u0627\u0648\u0631\u0645\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0646\u062F\u0648\u062A\u0634 \u0643\u0628\u062F\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0646\u062F\u0648\u062A\u0634 \u0633\u062C\u0642": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0646\u062F\u0648\u062A\u0634 \u062D\u0648\u0627\u0648\u0634\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0633\u0646\u062F\u0648\u062A\u0634 \u0643\u0634\u0631\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0644\u0628\u0629 \u0643\u0634\u0631\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  // NEW: وجبات
+  "\u0648\u062C\u0628\u0629 \u0641\u0631\u0627\u062E": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0648\u062C\u0628\u0629 \u0644\u062D\u0645\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0648\u062C\u0628\u0629 \u0633\u0645\u0643": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0648\u062C\u0628\u0629 \u062C\u0645\u0628\u0631\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0648\u062C\u0628\u0629 \u062F\u062C\u0627\u062C": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0648\u062C\u0628\u0629 \u0645\u0634\u0643\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0648\u062C\u0628\u0629 \u0639\u0627\u0626\u0644\u064A\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0648\u062C\u0628\u0629 \u0627\u0642\u062A\u0635\u0627\u062F\u064A\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  // NEW: صلصات
+  "\u0635\u0644\u0635\u0629 \u0637\u0645\u0627\u0637\u0645": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0635\u0644\u0635\u0629 \u0628\u0627\u0633\u062A\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0635\u0644\u0635\u0629 \u0628\u064A\u062A\u0632\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0635\u0644\u0635\u0629 \u0628\u0627\u0631\u0628\u064A\u0643\u064A\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0635\u0644\u0635\u0629 \u0633\u0648\u064A\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0635\u0644\u0635\u0629 \u062A\u0631\u064A\u0627\u0643\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0635\u0644\u0635\u0629 \u062D\u0627\u0631\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0635\u0644\u0635\u0629 \u062D\u0644\u0648\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0635\u0644\u0635\u0629 \u062E\u0631\u062F\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0635\u0644\u0635\u0629 \u0643\u0627\u062A\u0634\u0628": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0635\u0644\u0635\u0629 \u0645\u0633\u062A\u0631\u062F\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  // NEW: زيوت
+  "\u0632\u064A\u062A \u0632\u064A\u062A\u0648\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0632\u064A\u062A \u062F\u0648\u0627\u0631 \u0627\u0644\u0634\u0645\u0633": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0632\u064A\u062A \u0630\u0631\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0632\u064A\u062A \u0646\u062E\u064A\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0632\u064A\u062A \u0633\u0645\u0633\u0645": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  // NEW: أصناف عامة
+  "\u0633\u0644\u0637\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0634\u0648\u0631\u0628\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062D\u0633\u0627\u0621": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0642\u0628\u0644\u0627\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u062D\u0644\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0645\u0634\u0631\u0648\u0628": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  // NEW: أكل شارع
+  "\u0645\u0637\u0639\u0645 \u0634\u0639\u0628\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0643\u0634\u0643": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0631\u0628\u064A\u0629 \u0641\u0648\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0631\u0628\u064A\u0629 \u0637\u0639\u0645\u064A\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0631\u0628\u064A\u0629 \u0643\u0628\u062F\u0629": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0631\u0628\u064A\u0629 \u0633\u062C\u0642": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0631\u0628\u064A\u0629 \u0634\u0627\u0648\u0631\u0645\u0627": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  "\u0639\u0631\u0628\u064A\u0629 \u0641\u0644\u0627\u0641\u0644": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  // ============================================
+  // مواصلات (Original 86 + 80 new = 166)
+  // ============================================
   "\u0645\u0648\u0627\u0635\u0644\u0627\u062A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
   "\u062A\u0643\u0633\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
   "\u062A\u0627\u0643\u0633\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
@@ -84664,6 +86816,71 @@ var CATEGORY_DICTIONARY = {
   "\u0645\u062E\u0627\u0644\u0641\u0627\u062A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
   "\u0645\u0631\u0648\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
   "\u0637\u0641\u0627\u064A\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  // NEW: طيران
+  "\u062A\u0630\u0643\u0631\u0629 \u0637\u064A\u0631\u0627\u0646": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0631\u062D\u0644\u0629 \u0637\u064A\u0631\u0627\u0646": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u0637\u0627\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u0631\u0627\u0646\u0632\u064A\u062A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0641\u064A\u0632\u0627 \u0633\u0641\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u0623\u0634\u064A\u0631\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062C\u0648\u0627\u0632 \u0633\u0641\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0625\u062C\u0631\u0627\u0621\u0627\u062A \u0633\u0641\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  // NEW: تأجير وتوصيل
+  "\u062A\u0623\u062C\u064A\u0631 \u0639\u0631\u0628\u064A\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0623\u062C\u0631\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0633\u0627\u0626\u0642": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0643\u0627\u0628\u062A\u0646 \u0623\u0648\u0628\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0643\u0627\u0628\u062A\u0646 \u0643\u0631\u064A\u0645": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062F\u0644\u064A\u0641\u0631\u064A \u0639\u0631\u0628\u064A\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  // NEW: مواقف ومحطات
+  "\u0645\u0648\u0642\u0641": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u062D\u0637\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u0631\u0627\u0645": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u0648\u0646\u0648\u0631\u064A\u0644": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0644\u064A\u0645\u0648\u0632\u064A\u0646": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0646\u0642\u0644": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0634\u062D\u0646": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  // NEW: تصليح وصيانة
+  "\u062A\u0635\u0644\u064A\u062D": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0635\u064A\u0627\u0646\u0629 \u062F\u0648\u0631\u064A\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0641\u062D\u0635 \u062F\u0648\u0631\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u0623\u0645\u064A\u0646 \u0639\u0631\u0628\u064A\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u0623\u0645\u064A\u0646 \u0625\u0644\u0632\u0627\u0645\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u0623\u0645\u064A\u0646 \u0634\u0627\u0645\u0644": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0631\u062E\u0635\u0629 \u0642\u064A\u0627\u062F\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0628\u0637\u0627\u0642\u0629 \u0645\u0631\u0648\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0627\u0633\u062A\u0645\u0627\u0631\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0643\u0627\u0631\u062A \u0628\u0646\u0632\u064A\u0646": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0643\u0627\u0631\u062A \u062A\u0645\u0648\u064A\u0644": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u062D\u0637\u0629 \u0628\u0646\u0632\u064A\u0646": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u062D\u0637\u0629 \u0648\u0642\u0648\u062F": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0637\u0644\u0645\u0628\u0629 \u0628\u0646\u0632\u064A\u0646": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0637\u0644\u0645\u0628\u0629 \u063A\u0627\u0632": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u063A\u0627\u0632 \u0637\u0628\u064A\u0639\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u063A\u0627\u0632 \u0645\u0633\u0627\u0644": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u063A\u0627\u0632 \u0633\u0627\u0626\u0644": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  // NEW: قطع غيار
+  "\u062C\u0646\u0637": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0643\u0627\u0648\u062A\u0634 \u0623\u0645\u0627\u0645\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0643\u0627\u0648\u062A\u0634 \u062E\u0644\u0641\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0643\u0627\u0648\u062A\u0634 \u0633\u0628\u064A\u0631": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0631\u0641\u0639 \u0639\u0631\u0628\u064A\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0639\u0641\u0634\u0629": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u0633\u0627\u0639\u062F \u0623\u0645\u0627\u0645\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u0633\u0627\u0639\u062F \u062E\u0644\u0641\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u0642\u0635 \u0623\u0645\u0627\u0645\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0645\u0642\u0635 \u062E\u0644\u0641\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0643\u0648\u0628\u0644\u0646 \u0623\u0645\u0627\u0645\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0643\u0648\u0628\u0644\u0646 \u062E\u0644\u0641\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0639\u0644\u0628\u0629 \u062F\u0631\u0643\u0633\u064A\u0648\u0646": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u064A\u0644 \u0641\u0631\u0627\u0645\u0644 \u0623\u0645\u0627\u0645\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062A\u064A\u0644 \u0641\u0631\u0627\u0645\u0644 \u062E\u0644\u0641\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0637\u0646\u0628\u0648\u0631 \u0623\u0645\u0627\u0645\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u0637\u0646\u0628\u0648\u0631 \u062E\u0644\u0641\u064A": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  "\u062F\u064A\u0633\u0643 \u0641\u0631\u0627\u0645\u0644": "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  // ============================================
+  // فواتير (Original 51 + 70 new = 121)
+  // ============================================
   "\u0641\u0627\u062A\u0648\u0631\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
   "\u0648\u0635\u0644": "\u0641\u0648\u0627\u062A\u064A\u0631",
   "\u0641\u0648\u0627\u062A\u064A\u0631": "\u0641\u0648\u0627\u062A\u064A\u0631",
@@ -84715,6 +86932,126 @@ var CATEGORY_DICTIONARY = {
   "\u0646\u0642\u0627\u0628\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
   "\u0627\u0634\u062A\u0631\u0627\u0643 \u0646\u0627\u062F\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
   "\u062A\u0623\u0645\u064A\u0646": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  // NEW: فواتير أساسية
+  "\u0641\u0627\u062A\u0648\u0631\u0629 \u0643\u0647\u0631\u0628\u0627": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0641\u0627\u062A\u0648\u0631\u0629 \u0645\u064A\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0641\u0627\u062A\u0648\u0631\u0629 \u063A\u0627\u0632": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0641\u0627\u062A\u0648\u0631\u0629 \u0646\u0648\u0631": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0641\u0627\u062A\u0648\u0631\u0629 \u0632\u0628\u0627\u0644\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0641\u0627\u062A\u0648\u0631\u0629 \u062A\u0644\u064A\u0641\u0648\u0646": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0641\u0627\u062A\u0648\u0631\u0629 \u0623\u0631\u0636\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0641\u0627\u062A\u0648\u0631\u0629 \u0646\u062A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0641\u0627\u062A\u0648\u0631\u0629 \u0631\u0627\u0648\u062A\u0631": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  // NEW: باقات
+  "\u0628\u0627\u0642\u0629 \u0646\u062A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0628\u0627\u0642\u0629 \u0645\u0643\u0627\u0644\u0645\u0627\u062A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0628\u0627\u0642\u0629 \u0631\u0633\u0627\u0626\u0644": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0628\u0627\u0642\u0629 \u0625\u0646\u062A\u0631\u0646\u062A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0628\u0627\u0642\u0629 \u0645\u0648\u0628\u0627\u064A\u0644": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0628\u0627\u0642\u0629 \u062E\u0637": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0628\u0627\u0642\u0629 WE": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0628\u0627\u0642\u0629 \u0641\u0648\u062F\u0627\u0641\u0648\u0646": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0628\u0627\u0642\u0629 \u0623\u0648\u0631\u0646\u062C": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0628\u0627\u0642\u0629 \u0627\u062A\u0635\u0627\u0644\u0627\u062A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  // NEW: رصيد وشحن
+  "\u0631\u0635\u064A\u062F \u0645\u0648\u0628\u0627\u064A\u0644": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0634\u062D\u0646 \u0631\u0635\u064A\u062F": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0634\u062D\u0646 \u0641\u0648\u062F\u0627\u0641\u0648\u0646": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0634\u062D\u0646 \u0623\u0648\u0631\u0646\u062C": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0634\u062D\u0646 \u0627\u062A\u0635\u0627\u0644\u0627\u062A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0634\u062D\u0646 WE": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0643\u0627\u0631\u062A \u0634\u062D\u0646": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  // NEW: تحويلات
+  "\u062A\u062D\u0648\u064A\u0644 \u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0643\u0627\u0634": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u062D\u0648\u064A\u0644 \u0625\u0646\u0633\u062A\u0627\u0628\u0627\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u062D\u0648\u064A\u0644 \u0641\u0648\u0631\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u062D\u0648\u064A\u0644 \u0645\u0635\u0627\u0631\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u062D\u0648\u064A\u0644 \u0628\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u062D\u0648\u064A\u0644 \u062E\u0627\u0644\u0635": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u062D\u0648\u064A\u0644 \u0623\u0645\u0627\u0646": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  // NEW: أقساط
+  "\u0642\u0633\u0637 \u0628\u0646\u0643": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0642\u0633\u0637 \u0639\u0631\u0628\u064A\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0642\u0633\u0637 \u0634\u0642\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0642\u0633\u0637 \u062C\u0647\u0627\u0632": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0642\u0633\u0637 \u0645\u0648\u0628\u0627\u064A\u0644": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0642\u0633\u0637 \u0644\u0627\u0628 \u062A\u0648\u0628": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0642\u0633\u0637 \u062A\u0644\u064A\u0641\u0632\u064A\u0648\u0646": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0642\u0633\u0637 \u062A\u0644\u0627\u062C\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0642\u0633\u0637 \u063A\u0633\u0627\u0644\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0642\u0633\u0637 \u0628\u0648\u062A\u0627\u062C\u0627\u0632": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  // NEW: تمويل
+  "\u0633\u0647\u0648\u0644\u062A\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u0633\u0647\u064A\u0644\u0627\u062A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u0645\u0648\u064A\u0644": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u0645\u0648\u064A\u0644 \u0634\u062E\u0635\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u0645\u0648\u064A\u0644 \u0639\u0642\u0627\u0631\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u0645\u0648\u064A\u0644 \u0633\u064A\u0627\u0631\u0627\u062A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u0645\u0648\u064A\u0644 \u0627\u0633\u062A\u0647\u0644\u0627\u0643\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  // NEW: بطاقات
+  "\u0641\u064A\u0632\u0627 \u0643\u0631\u064A\u062F\u064A\u062A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0641\u064A\u0632\u0627 \u062F\u064A\u0628\u062A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0645\u0627\u0633\u062A\u0631 \u0643\u0627\u0631\u062F": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0645\u062F\u064A\u0648\u0646\u064A\u0629 \u0628\u0646\u0643": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0645\u062F\u064A\u0648\u0646\u064A\u0629 \u0641\u064A\u0632\u0627": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062F\u064A\u0646 \u0628\u0646\u0643": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0633\u0644\u0641\u0629 \u0628\u0646\u0643": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0633\u0644\u0641\u0629 \u0634\u0631\u0643\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0633\u0644\u0641\u0629 \u0635\u0627\u062D\u0628": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0633\u0644\u0641\u0629 \u0632\u0645\u064A\u0644": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0633\u062F\u0627\u062F \u062F\u064A\u0646": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0633\u062F\u0627\u062F \u0642\u0631\u0636": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0633\u062F\u0627\u062F \u0642\u0633\u0637": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  // NEW: ضرائب
+  "\u0636\u0631\u064A\u0628\u0629 \u0639\u0642\u0627\u0631\u064A\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0636\u0631\u064A\u0628\u0629 \u062F\u062E\u0644": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0636\u0631\u064A\u0628\u0629 \u0645\u0628\u064A\u0639\u0627\u062A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0636\u0631\u064A\u0628\u0629 \u062C\u0645\u0627\u0631\u0643": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0636\u0631\u064A\u0628\u0629 \u062A\u0631\u0627\u062E\u064A\u0635": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0631\u0633\u0648\u0645 \u062D\u0643\u0648\u0645\u064A\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0631\u0633\u0648\u0645 \u0645\u0631\u0648\u0631": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0631\u0633\u0648\u0645 \u062C\u0648\u0627\u0632\u0627\u062A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0631\u0633\u0648\u0645 \u062A\u0648\u062B\u064A\u0642": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0631\u0633\u0648\u0645 \u062A\u0648\u0643\u064A\u0644": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0631\u0633\u0648\u0645 \u0625\u062B\u0628\u0627\u062A \u062A\u0648\u0642\u064A\u0639": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  // NEW: نقابات
+  "\u0646\u0642\u0627\u0628\u0629 \u0645\u0647\u0646\u062F\u0633\u064A\u0646": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0646\u0642\u0627\u0628\u0629 \u0623\u0637\u0628\u0627\u0621": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0646\u0642\u0627\u0628\u0629 \u0635\u064A\u0627\u062F\u0644\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0646\u0642\u0627\u0628\u0629 \u0645\u062D\u0627\u0645\u064A\u0646": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0646\u0642\u0627\u0628\u0629 \u062A\u062C\u0627\u0631\u064A\u064A\u0646": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0646\u0642\u0627\u0628\u0629 \u0632\u0631\u0627\u0639\u064A\u064A\u0646": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0646\u0642\u0627\u0628\u0629 \u0645\u0639\u0644\u0645\u064A\u0646": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  // NEW: اشتراكات
+  "\u0627\u0634\u062A\u0631\u0627\u0643 \u0646\u0627\u062F\u064A \u0631\u064A\u0627\u0636\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0627\u0634\u062A\u0631\u0627\u0643 \u0646\u0627\u062F\u064A \u0627\u062C\u062A\u0645\u0627\u0639\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0627\u0634\u062A\u0631\u0627\u0643 \u0646\u0627\u062F\u064A \u062B\u0642\u0627\u0641\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0627\u0634\u062A\u0631\u0627\u0643 \u062C\u064A\u0645": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0627\u0634\u062A\u0631\u0627\u0643 \u0633\u0628\u0627": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0627\u0634\u062A\u0631\u0627\u0643 \u0645\u0633\u0627\u0628\u062D": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  // NEW: تأمين
+  "\u062A\u0623\u0645\u064A\u0646 \u0635\u062D\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u0623\u0645\u064A\u0646 \u062D\u064A\u0627\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u0623\u0645\u064A\u0646 \u0639\u0631\u0628\u064A\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u0623\u0645\u064A\u0646 \u0645\u0646\u0632\u0644": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u0623\u0645\u064A\u0646 \u0633\u0641\u0631": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u0623\u0645\u064A\u0646 \u0645\u0633\u0624\u0648\u0644\u064A\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062A\u0623\u0645\u064A\u0646 \u0645\u0647\u0646\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  // NEW: خدمات
+  "\u0643\u0647\u0631\u0628\u0627\u0621": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0645\u064A\u0627\u0647": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u063A\u0627\u0632 \u0637\u0628\u064A\u0639\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u063A\u0627\u0632 \u0645\u0633\u0627\u0644": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u063A\u0627\u0632 \u0633\u0627\u0626\u0644": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0625\u0646\u0627\u0631\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0642\u0645\u0627\u0645\u0629": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0647\u0627\u062A\u0641": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u062E\u0637 \u0623\u0631\u0636\u064A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0625\u0646\u062A\u0631\u0646\u062A": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  "\u0645\u0648\u062F\u0645": "\u0641\u0648\u0627\u062A\u064A\u0631",
+  // ============================================
+  // سكن (Original 54 + 70 new = 124)
+  // ============================================
   "\u0627\u064A\u062C\u0627\u0631": "\u0633\u0643\u0646",
   "\u0625\u064A\u062C\u0627\u0631": "\u0633\u0643\u0646",
   "\u0633\u0643\u0646": "\u0633\u0643\u0646",
@@ -84769,6 +87106,90 @@ var CATEGORY_DICTIONARY = {
   "\u0645\u0643\u0646\u0633\u0629": "\u0633\u0643\u0646",
   "\u0645\u0631\u0648\u062D\u0629": "\u0633\u0643\u0646",
   "\u0634\u0641\u0627\u0637": "\u0633\u0643\u0646",
+  // NEW: إيجار
+  "\u0625\u064A\u062C\u0627\u0631 \u0634\u0642\u0629": "\u0633\u0643\u0646",
+  "\u0625\u064A\u062C\u0627\u0631 \u0628\u064A\u062A": "\u0633\u0643\u0646",
+  "\u0625\u064A\u062C\u0627\u0631 \u0645\u062D\u0644": "\u0633\u0643\u0646",
+  "\u0625\u064A\u062C\u0627\u0631 \u0645\u0643\u062A\u0628": "\u0633\u0643\u0646",
+  "\u0625\u064A\u062C\u0627\u0631 \u0645\u062E\u0632\u0646": "\u0633\u0643\u0646",
+  "\u0625\u064A\u062C\u0627\u0631 \u062C\u0631\u0627\u062C": "\u0633\u0643\u0646",
+  "\u0625\u064A\u062C\u0627\u0631 \u0645\u0648\u0642\u0641": "\u0633\u0643\u0646",
+  "\u0633\u0643\u0646 \u0637\u0644\u0627\u0628": "\u0633\u0643\u0646",
+  "\u0633\u0643\u0646 \u0639\u0645\u0627\u0644": "\u0633\u0643\u0646",
+  "\u0633\u0643\u0646 \u0645\u0648\u0638\u0641\u064A\u0646": "\u0633\u0643\u0646",
+  "\u0633\u0643\u0646 \u0639\u0627\u0626\u0644\u064A": "\u0633\u0643\u0646",
+  // NEW: عقارات
+  "\u0641\u064A\u0644\u0627": "\u0633\u0643\u0646",
+  "\u062F\u0648\u0628\u0644\u0643\u0633": "\u0633\u0643\u0646",
+  "\u0628\u0646\u0647\u0627\u0648\u0633": "\u0633\u0643\u0646",
+  "\u0633\u062A\u0648\u062F\u064A\u0648": "\u0633\u0643\u0646",
+  "\u063A\u0631\u0641\u0629": "\u0633\u0643\u0646",
+  "\u0635\u0627\u0644\u0629": "\u0633\u0643\u0646",
+  "\u0645\u0637\u0628\u062E": "\u0633\u0643\u0646",
+  "\u062D\u0645\u0627\u0645": "\u0633\u0643\u0646",
+  "\u0628\u0644\u0643\u0648\u0646\u0629": "\u0633\u0643\u0646",
+  "\u062A\u0631\u0627\u0633": "\u0633\u0643\u0646",
+  "\u062D\u062F\u064A\u0642\u0629": "\u0633\u0643\u0646",
+  "\u0645\u062E\u0632\u0646": "\u0633\u0643\u0646",
+  // NEW: صيانة
+  "\u062D\u0627\u0631\u0633": "\u0633\u0643\u0646",
+  "\u0623\u0645\u0646": "\u0633\u0643\u0646",
+  "\u062C\u0646\u0627\u064A\u0646\u064A": "\u0633\u0643\u0646",
+  "\u0641\u0646\u064A \u062A\u0644\u0627\u062C\u0629": "\u0633\u0643\u0646",
+  "\u0641\u0646\u064A \u063A\u0633\u0627\u0644\u0629": "\u0633\u0643\u0646",
+  "\u0641\u0646\u064A \u0628\u0648\u062A\u0627\u062C\u0627\u0632": "\u0633\u0643\u0646",
+  "\u0641\u0646\u064A \u0633\u062E\u0627\u0646": "\u0633\u0643\u0646",
+  "\u0641\u0646\u064A \u0634\u0641\u0627\u0637": "\u0633\u0643\u0646",
+  "\u0641\u0646\u064A \u062E\u0644\u0627\u0637": "\u0633\u0643\u0646",
+  // NEW: مياه وسخانات
+  "\u0641\u0644\u062A\u0631 \u0645\u064A\u0627\u0647": "\u0633\u0643\u0646",
+  "\u062C\u0647\u0627\u0632 \u062A\u0646\u0642\u064A\u0629": "\u0633\u0643\u0646",
+  "\u062C\u0647\u0627\u0632 \u062A\u0644\u064A\u064A\u0646": "\u0633\u0643\u0646",
+  "\u062C\u0647\u0627\u0632 \u062A\u0633\u062E\u064A\u0646": "\u0633\u0643\u0646",
+  "\u0633\u062E\u0627\u0646 \u0643\u0647\u0631\u0628\u0627\u0621": "\u0633\u0643\u0646",
+  "\u0633\u062E\u0627\u0646 \u063A\u0627\u0632": "\u0633\u0643\u0646",
+  "\u0633\u062E\u0627\u0646 \u0645\u0631\u0643\u0632\u064A": "\u0633\u0643\u0646",
+  "\u0633\u062E\u0627\u0646 \u0641\u0648\u0631\u064A": "\u0633\u0643\u0646",
+  // NEW: خدمات
+  "\u062E\u0627\u062F\u0645\u0629": "\u0633\u0643\u0646",
+  "\u0645\u0631\u0628\u064A\u0629": "\u0633\u0643\u0646",
+  "\u062A\u0646\u0638\u064A\u0641 \u062C\u0627\u0641": "\u0633\u0643\u0646",
+  "\u062A\u0646\u0638\u064A\u0641 \u0628\u0627\u0644\u0628\u062E\u0627\u0631": "\u0633\u0643\u0646",
+  // NEW: أثاث
+  "\u0641\u064A\u0634 \u0643\u0647\u0631\u0628\u0627\u0621": "\u0633\u0643\u0646",
+  "\u0641\u064A\u0634 \u062A\u0644\u064A\u0641\u0648\u0646": "\u0633\u0643\u0646",
+  "\u0641\u064A\u0634 \u0646\u062A": "\u0633\u0643\u0646",
+  "\u0641\u064A\u0634 \u062A\u0644\u0641\u0632\u064A\u0648\u0646": "\u0633\u0643\u0646",
+  // NEW: منظفات
+  "\u0641\u0648\u0637 \u0635\u062D\u064A\u0629": "\u0633\u0643\u0646",
+  "\u0634\u0627\u0645\u0628\u0648 \u0623\u0631\u0636\u064A\u0627\u062A": "\u0633\u0643\u0646",
+  "\u0634\u0627\u0645\u0628\u0648 \u0633\u062C\u0627\u062F": "\u0633\u0643\u0646",
+  "\u0634\u0627\u0645\u0628\u0648 \u0623\u062B\u0627\u062B": "\u0633\u0643\u0646",
+  "\u0645\u0644\u0645\u0639 \u0623\u062B\u0627\u062B": "\u0633\u0643\u0646",
+  "\u0645\u0644\u0645\u0639 \u0632\u062C\u0627\u062C": "\u0633\u0643\u0646",
+  "\u0645\u0644\u0645\u0639 \u0623\u0631\u0636\u064A\u0627\u062A": "\u0633\u0643\u0646",
+  "\u0645\u0632\u064A\u0644 \u0628\u0642\u0639": "\u0633\u0643\u0646",
+  // NEW: أجهزة
+  "\u062A\u0643\u064A\u064A\u0641": "\u0633\u0643\u0646",
+  "\u062F\u0641\u0627\u064A\u0629": "\u0633\u0643\u0646",
+  "\u0645\u062F\u0641\u0623\u0629": "\u0633\u0643\u0646",
+  "\u0633\u062E\u0627\u0646 \u0645\u064A\u0627\u0647": "\u0633\u0643\u0646",
+  "\u063A\u0633\u0627\u0644\u0629 \u0623\u0637\u0628\u0627\u0642": "\u0633\u0643\u0646",
+  "\u0645\u064A\u0643\u0631\u0648\u0648\u064A\u0641": "\u0633\u0643\u0646",
+  "\u062A\u0648\u0633\u062A\u0631": "\u0633\u0643\u0646",
+  "\u063A\u0644\u0627\u064A\u0629": "\u0633\u0643\u0646",
+  "\u0642\u0647\u0648\u0629": "\u0633\u0643\u0646",
+  "\u0645\u062D\u0645\u0635\u0629": "\u0633\u0643\u0646",
+  "\u0639\u0635\u0627\u0631\u0629": "\u0633\u0643\u0646",
+  "\u0645\u0641\u0631\u0645\u0629": "\u0633\u0643\u0646",
+  "\u0645\u0636\u0631\u0628 \u0628\u064A\u0636": "\u0633\u0643\u0646",
+  "\u0645\u0636\u0631\u0628 \u0643\u0647\u0631\u0628\u0627\u0621": "\u0633\u0643\u0646",
+  "\u062E\u0644\u0627\u0637 \u064A\u062F\u0648\u064A": "\u0633\u0643\u0646",
+  "\u0645\u062D\u0636\u0631\u0629 \u0637\u0639\u0627\u0645": "\u0633\u0643\u0646",
+  "\u0645\u0627\u0643\u064A\u0646\u0629 \u0642\u0647\u0648\u0629": "\u0633\u0643\u0646",
+  // ============================================
+  // تسوق (Original 52 + 60 new = 112)
+  // ============================================
   "\u0647\u062F\u0648\u0645": "\u062A\u0633\u0648\u0642",
   "\u0644\u0628\u0633": "\u062A\u0633\u0648\u0642",
   "\u0645\u0644\u0627\u0628\u0633": "\u062A\u0633\u0648\u0642",
@@ -84821,6 +87242,67 @@ var CATEGORY_DICTIONARY = {
   "H&M": "\u062A\u0633\u0648\u0642",
   "\u0646\u0627\u064A\u0643\u064A": "\u062A\u0633\u0648\u0642",
   "\u0627\u062F\u064A\u062F\u0627\u0633": "\u062A\u0633\u0648\u0642",
+  // NEW: ملابس
+  "\u0646\u0638\u0627\u0631\u0629 \u0634\u0645\u0633": "\u062A\u0633\u0648\u0642",
+  "\u0646\u0638\u0627\u0631\u0629 \u0637\u0628\u064A\u0629": "\u062A\u0633\u0648\u0642",
+  // NEW: تجميل
+  "\u0639\u0637\u0631": "\u062A\u0633\u0648\u0642",
+  "\u0633\u0628\u0627": "\u062A\u0633\u0648\u0642",
+  "\u0645\u0633\u0627\u062C": "\u062A\u0633\u0648\u0642",
+  "\u062D\u0645\u0627\u0645 \u0645\u063A\u0631\u0628\u064A": "\u062A\u0633\u0648\u0642",
+  "\u062D\u0645\u0627\u0645 \u062A\u0631\u0643\u064A": "\u062A\u0633\u0648\u0642",
+  "\u0633\u0627\u0648\u0646\u0627": "\u062A\u0633\u0648\u0642",
+  "\u062C\u0627\u0643\u0648\u0632\u064A": "\u062A\u0633\u0648\u0642",
+  // NEW: إلكترونيات
+  "\u0634\u0627\u0648\u0645\u064A": "\u062A\u0633\u0648\u0642",
+  "\u0623\u0648\u0628\u0648": "\u062A\u0633\u0648\u0642",
+  "\u0631\u064A\u0644\u0645\u064A": "\u062A\u0633\u0648\u0642",
+  "\u0647\u0648\u0627\u0648\u064A": "\u062A\u0633\u0648\u0642",
+  "\u0646\u0648\u0643\u064A\u0627": "\u062A\u0633\u0648\u0642",
+  "\u0633\u0645\u0627\u0639\u0629 \u0628\u0644\u0648\u062A\u0648\u062B": "\u062A\u0633\u0648\u0642",
+  "\u0628\u0627\u0648\u0631 \u0628\u0627\u0646\u0643": "\u062A\u0633\u0648\u0642",
+  "\u0643\u0627\u0628\u0644": "\u062A\u0633\u0648\u0642",
+  "\u0634\u0627\u062D\u0646 \u0633\u064A\u0627\u0631\u0629": "\u062A\u0633\u0648\u0642",
+  "\u0634\u0627\u062D\u0646 \u0644\u0627\u0633\u0644\u0643\u064A": "\u062A\u0633\u0648\u0642",
+  // NEW: ماركات
+  "\u0628\u0648\u0645\u0627": "\u062A\u0633\u0648\u0642",
+  "\u0631\u064A\u0628\u0648\u0643": "\u062A\u0633\u0648\u0642",
+  "\u0643\u0627\u0644\u0641\u0646 \u0643\u0644\u0627\u064A\u0646": "\u062A\u0633\u0648\u0642",
+  "\u062A\u0648\u0645\u064A \u0647\u064A\u0644\u0641\u064A\u063A\u0631": "\u062A\u0633\u0648\u0642",
+  "\u0644\u0627\u0643\u0648\u0633\u062A": "\u062A\u0633\u0648\u0642",
+  "\u0628\u0648\u0644\u0648": "\u062A\u0633\u0648\u0642",
+  "\u0631\u0627\u0644\u0641 \u0644\u0648\u0631\u064A\u0646": "\u062A\u0633\u0648\u0642",
+  "\u0645\u0627\u064A\u0643\u0644 \u0643\u0648\u0631\u0633": "\u062A\u0633\u0648\u0642",
+  "\u0643\u0648\u062A\u0634": "\u062A\u0633\u0648\u0642",
+  "\u0641\u064A\u0631\u0632\u0627\u062A\u0634\u064A": "\u062A\u0633\u0648\u0642",
+  "\u062C\u0648\u062A\u0634\u064A": "\u062A\u0633\u0648\u0642",
+  "\u0628\u0631\u0627\u062F\u0627": "\u062A\u0633\u0648\u0642",
+  "\u0634\u0627\u0646\u064A\u0644": "\u062A\u0633\u0648\u0642",
+  "\u062F\u064A\u0648\u0631": "\u062A\u0633\u0648\u0642",
+  "\u0644\u0648\u064A\u0633 \u0641\u064A\u062A\u0648\u0646": "\u062A\u0633\u0648\u0642",
+  "\u0647\u064A\u0631\u0645\u0633": "\u062A\u0633\u0648\u0642",
+  "\u0628\u0631\u0628\u0631\u064A": "\u062A\u0633\u0648\u0642",
+  "\u062F\u064A\u0632\u0644": "\u062A\u0633\u0648\u0642",
+  "\u0644\u064A\u0641\u0627\u064A\u0632": "\u062A\u0633\u0648\u0642",
+  "\u062F\u0643\u0646\u064A": "\u062A\u0633\u0648\u0642",
+  "\u0623\u0631\u0645\u0627\u0646\u064A": "\u062A\u0633\u0648\u0642",
+  "\u0645\u0627\u0646\u062C\u0648": "\u062A\u0633\u0648\u0642",
+  "\u0633\u062A\u0631\u0627\u062F\u064A\u0641\u0627\u0631\u064A\u0648\u0633": "\u062A\u0633\u0648\u0642",
+  "\u0628\u064A\u0631\u0634\u0643\u0627": "\u062A\u0633\u0648\u0642",
+  "\u0628\u0648\u0644 \u0623\u0646\u062F \u0628\u064A\u0631": "\u062A\u0633\u0648\u0642",
+  "\u0627\u062A\u0634 \u0627\u0646\u062F \u0627\u0645": "\u062A\u0633\u0648\u0642",
+  "\u0646\u0627\u064A\u0643": "\u062A\u0633\u0648\u0642",
+  "\u0623\u062F\u064A\u062F\u0627\u0633": "\u062A\u0633\u0648\u0642",
+  "\u0646\u064A\u0648 \u0628\u0627\u0644\u0627\u0646\u0633": "\u062A\u0633\u0648\u0642",
+  "\u0633\u0643\u064A\u062A\u0634\u0631\u0632": "\u062A\u0633\u0648\u0642",
+  "\u0643\u0648\u0644\u0648\u0645\u0628\u064A\u0627": "\u062A\u0633\u0648\u0642",
+  "\u0646\u0648\u0631\u062B \u0641\u064A\u0633": "\u062A\u0633\u0648\u0642",
+  "\u062A\u064A\u0645\u0628\u0631\u0644\u0627\u0646\u062F": "\u062A\u0633\u0648\u0642",
+  "\u0643\u0627\u062A\u0631\u0628\u064A\u0644\u0627\u0631": "\u062A\u0633\u0648\u0642",
+  "\u0643\u0644\u0627\u0631\u0643\u0633": "\u062A\u0633\u0648\u0642",
+  // ============================================
+  // صحة (Original 22 + 50 new = 72)
+  // ============================================
   "\u062F\u0643\u062A\u0648\u0631": "\u0635\u062D\u0629",
   "\u0639\u064A\u0627\u062F\u0629": "\u0635\u062D\u0629",
   "\u0643\u0634\u0641": "\u0635\u062D\u0629",
@@ -84843,6 +87325,64 @@ var CATEGORY_DICTIONARY = {
   "\u0646\u0638\u0627\u0631\u0629": "\u0635\u062D\u0629",
   "\u0639\u062F\u0633\u0627\u062A": "\u0635\u062D\u0629",
   "\u0641\u064A\u062A\u0627\u0645\u064A\u0646\u0627\u062A": "\u0635\u062D\u0629",
+  // NEW: تخصصات
+  "\u062F\u0643\u062A\u0648\u0631 \u062C\u0644\u062F\u064A\u0629": "\u0635\u062D\u0629",
+  "\u062F\u0643\u062A\u0648\u0631 \u0639\u0638\u0627\u0645": "\u0635\u062D\u0629",
+  "\u062F\u0643\u062A\u0648\u0631 \u0642\u0644\u0628": "\u0635\u062D\u0629",
+  "\u062F\u0643\u062A\u0648\u0631 \u0628\u0627\u0637\u0646\u0629": "\u0635\u062D\u0629",
+  "\u062F\u0643\u062A\u0648\u0631 \u0646\u0633\u0627\u0621": "\u0635\u062D\u0629",
+  "\u062F\u0643\u062A\u0648\u0631 \u0623\u0637\u0641\u0627\u0644": "\u0635\u062D\u0629",
+  "\u062F\u0643\u062A\u0648\u0631 \u0623\u0646\u0641 \u0648\u0623\u0630\u0646": "\u0635\u062D\u0629",
+  "\u062F\u0643\u062A\u0648\u0631 \u0639\u064A\u0648\u0646": "\u0635\u062D\u0629",
+  "\u062F\u0643\u062A\u0648\u0631 \u0623\u0633\u0646\u0627\u0646": "\u0635\u062D\u0629",
+  "\u062F\u0643\u062A\u0648\u0631 \u0645\u062E \u0648\u0623\u0639\u0635\u0627\u0628": "\u0635\u062D\u0629",
+  "\u062F\u0643\u062A\u0648\u0631 \u0643\u0644\u0649": "\u0635\u062D\u0629",
+  "\u062F\u0643\u062A\u0648\u0631 \u0645\u0633\u0627\u0644\u0643": "\u0635\u062D\u0629",
+  "\u062F\u0643\u062A\u0648\u0631 \u062C\u0647\u0627\u0632 \u0647\u0636\u0645\u064A": "\u0635\u062D\u0629",
+  "\u062F\u0643\u062A\u0648\u0631 \u063A\u062F\u062F": "\u0635\u062D\u0629",
+  "\u062F\u0643\u062A\u0648\u0631 \u0645\u0646\u0627\u0639\u0629": "\u0635\u062D\u0629",
+  "\u062F\u0643\u062A\u0648\u0631 \u0623\u0648\u0631\u0627\u0645": "\u0635\u062D\u0629",
+  "\u062F\u0643\u062A\u0648\u0631 \u0635\u062F\u0631": "\u0635\u062D\u0629",
+  "\u062F\u0643\u062A\u0648\u0631 \u0631\u0648\u0645\u0627\u062A\u064A\u0632\u0645": "\u0635\u062D\u0629",
+  "\u062F\u0643\u062A\u0648\u0631 \u062A\u062E\u0633\u064A\u0633": "\u0635\u062D\u0629",
+  "\u062F\u0643\u062A\u0648\u0631 \u062A\u063A\u0630\u064A\u0629": "\u0635\u062D\u0629",
+  // NEW: علاج
+  "\u0639\u0644\u0627\u062C \u0637\u0628\u064A\u0639\u064A": "\u0635\u062D\u0629",
+  "\u062C\u0644\u0633\u0627\u062A \u0639\u0644\u0627\u062C \u0637\u0628\u064A\u0639\u064A": "\u0635\u062D\u0629",
+  "\u062C\u0644\u0633\u0627\u062A \u062A\u062E\u0633\u064A\u0633": "\u0635\u062D\u0629",
+  "\u062C\u0644\u0633\u0627\u062A \u0644\u064A\u0632\u0631": "\u0635\u062D\u0629",
+  "\u062C\u0644\u0633\u0627\u062A \u062A\u0646\u0638\u064A\u0641 \u0628\u0634\u0631\u0629": "\u0635\u062D\u0629",
+  "\u062C\u0644\u0633\u0627\u062A \u062D\u0642\u0646": "\u0635\u062D\u0629",
+  "\u062C\u0644\u0633\u0627\u062A \u062A\u062C\u0645\u064A\u0644": "\u0635\u062D\u0629",
+  // NEW: أدوية ومكملات
+  "\u0645\u0633\u0643\u0646": "\u0635\u062D\u0629",
+  "\u0645\u0636\u0627\u062F \u062D\u064A\u0648\u064A": "\u0635\u062D\u0629",
+  "\u0645\u0636\u0627\u062F \u0641\u064A\u0631\u0648\u0633\u0627\u062A": "\u0635\u062D\u0629",
+  "\u0645\u0636\u0627\u062F \u0641\u0637\u0631\u064A\u0627\u062A": "\u0635\u062D\u0629",
+  "\u0645\u0636\u0627\u062F \u0637\u0641\u064A\u0644\u064A\u0627\u062A": "\u0635\u062D\u0629",
+  "\u0645\u0636\u0627\u062F \u0627\u0644\u062A\u0647\u0627\u0628": "\u0635\u062D\u0629",
+  "\u0645\u0636\u0627\u062F \u0623\u0643\u0633\u062F\u0629": "\u0635\u062D\u0629",
+  "\u0645\u0643\u0645\u0644 \u063A\u0630\u0627\u0626\u064A": "\u0635\u062D\u0629",
+  "\u0641\u064A\u062A\u0627\u0645\u064A\u0646 \u0633\u064A": "\u0635\u062D\u0629",
+  "\u0641\u064A\u062A\u0627\u0645\u064A\u0646 \u062F": "\u0635\u062D\u0629",
+  "\u0641\u064A\u062A\u0627\u0645\u064A\u0646 \u062812": "\u0635\u062D\u0629",
+  "\u062D\u062F\u064A\u062F": "\u0635\u062D\u0629",
+  "\u0632\u0646\u0643": "\u0635\u062D\u0629",
+  "\u0645\u063A\u0646\u064A\u0633\u064A\u0648\u0645": "\u0635\u062D\u0629",
+  "\u0643\u0627\u0644\u0633\u064A\u0648\u0645": "\u0635\u062D\u0629",
+  "\u0623\u0648\u0645\u064A\u062C\u0627 3": "\u0635\u062D\u0629",
+  "\u0628\u0631\u0648\u0628\u0627\u064A\u0648\u062A\u064A\u0643": "\u0635\u062D\u0629",
+  "\u0628\u0631\u064A\u0628\u0627\u064A\u0648\u062A\u064A\u0643": "\u0635\u062D\u0629",
+  "\u0625\u0646\u0632\u064A\u0645\u0627\u062A \u0647\u0636\u0645\u064A\u0629": "\u0635\u062D\u0629",
+  "\u0623\u0644\u064A\u0627\u0641": "\u0635\u062D\u0629",
+  "\u0628\u0631\u0648\u062A\u064A\u0646": "\u0635\u062D\u0629",
+  "\u0643\u0648\u0644\u0627\u062C\u064A\u0646": "\u0635\u062D\u0629",
+  "\u062C\u0644\u0648\u062A\u0627\u062B\u064A\u0648\u0646": "\u0635\u062D\u0629",
+  "\u062D\u0645\u0636 \u0641\u0648\u0644\u064A\u0643": "\u0635\u062D\u0629",
+  "\u0628\u064A\u0648\u062A\u064A\u0646": "\u0635\u062D\u0629",
+  // ============================================
+  // تعليم (Original 18 + 50 new = 68)
+  // ============================================
   "\u0645\u062F\u0631\u0633\u0629": "\u062A\u0639\u0644\u064A\u0645",
   "\u062D\u0636\u0627\u0646\u0629": "\u062A\u0639\u0644\u064A\u0645",
   "\u062C\u0627\u0645\u0639\u0629": "\u062A\u0639\u0644\u064A\u0645",
@@ -84861,6 +87401,64 @@ var CATEGORY_DICTIONARY = {
   "\u062F\u0628\u0644\u0648\u0645\u0629": "\u062A\u0639\u0644\u064A\u0645",
   "\u0645\u0627\u062C\u0633\u062A\u064A\u0631": "\u062A\u0639\u0644\u064A\u0645",
   "\u0627\u0645\u062A\u062D\u0627\u0646\u0627\u062A": "\u062A\u0639\u0644\u064A\u0645",
+  // NEW: تعليم عن بعد
+  "\u062A\u0639\u0644\u064A\u0645 \u0623\u0648\u0646\u0644\u0627\u064A\u0646": "\u062A\u0639\u0644\u064A\u0645",
+  "\u062A\u0639\u0644\u064A\u0645 \u0639\u0646 \u0628\u0639\u062F": "\u062A\u0639\u0644\u064A\u0645",
+  "\u062F\u0631\u0648\u0633 \u0623\u0648\u0646\u0644\u0627\u064A\u0646": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0643\u0648\u0631\u0633 \u0623\u0648\u0646\u0644\u0627\u064A\u0646": "\u062A\u0639\u0644\u064A\u0645",
+  // NEW: مدرسين
+  "\u0645\u062F\u0631\u0633 \u062E\u0635\u0648\u0635\u064A": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u062F\u0631\u0633 \u0644\u063A\u0629 \u0639\u0631\u0628\u064A\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u062F\u0631\u0633 \u0644\u063A\u0629 \u0625\u0646\u062C\u0644\u064A\u0632\u064A\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u062F\u0631\u0633 \u0631\u064A\u0627\u0636\u064A\u0627\u062A": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u062F\u0631\u0633 \u0641\u064A\u0632\u064A\u0627\u0621": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u062F\u0631\u0633 \u0643\u064A\u0645\u064A\u0627\u0621": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u062F\u0631\u0633 \u0623\u062D\u064A\u0627\u0621": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u062F\u0631\u0633 \u062A\u0627\u0631\u064A\u062E": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u062F\u0631\u0633 \u062C\u063A\u0631\u0627\u0641\u064A\u0627": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u062F\u0631\u0633 \u0641\u0631\u0646\u0633\u0627\u0648\u064A": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u062F\u0631\u0633 \u0623\u0644\u0645\u0627\u0646\u064A": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u062F\u0631\u0633 \u0625\u064A\u0637\u0627\u0644\u064A": "\u062A\u0639\u0644\u064A\u0645",
+  // NEW: معاهد
+  "\u0645\u0639\u0647\u062F \u0644\u063A\u0627\u062A": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u0639\u0647\u062F \u0643\u0645\u0628\u064A\u0648\u062A\u0631": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u0639\u0647\u062F \u0641\u0646\u0648\u0646": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u0639\u0647\u062F \u0645\u0648\u0633\u064A\u0642\u0649": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u0639\u0647\u062F \u0631\u064A\u0627\u0636\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u0639\u0647\u062F \u0637\u064A\u0631\u0627\u0646": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u0639\u0647\u062F \u0633\u064A\u0627\u062D\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u0639\u0647\u062F \u0641\u0646\u0627\u062F\u0642": "\u062A\u0639\u0644\u064A\u0645",
+  // NEW: كتب
+  "\u0643\u062A\u0628 \u062C\u0627\u0645\u0639\u064A\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0643\u062A\u0628 \u0645\u062F\u0631\u0633\u064A\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0643\u062A\u0628 \u062E\u0627\u0631\u062C\u064A\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0643\u062A\u0628 \u0645\u0631\u062C\u0639\u064A\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0643\u062A\u0628 \u0639\u0644\u0645\u064A\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0643\u062A\u0628 \u062F\u064A\u0646\u064A\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0643\u062A\u0628 \u0623\u062F\u0628\u064A\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0643\u062A\u0628 \u062A\u0627\u0631\u064A\u062E\u064A\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0643\u062A\u0628 \u062C\u063A\u0631\u0627\u0641\u064A\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  // NEW: مكتبات
+  "\u0645\u0643\u062A\u0628\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u0643\u062A\u0628\u0629 \u062C\u0627\u0645\u0639\u064A\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u0643\u062A\u0628\u0629 \u0639\u0627\u0645\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0645\u0643\u062A\u0628\u0629 \u062E\u0627\u0635\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0627\u0634\u062A\u0631\u0627\u0643 \u0645\u0643\u062A\u0628\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u062A\u0623\u062C\u064A\u0631 \u0643\u062A\u0628": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0634\u0631\u0627\u0621 \u0643\u062A\u0628": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0628\u064A\u0639 \u0643\u062A\u0628": "\u062A\u0639\u0644\u064A\u0645",
+  // NEW: تدريب
+  "\u0645\u0624\u062A\u0645\u0631": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0646\u062F\u0648\u0629": "\u062A\u0639\u0644\u064A\u0645",
+  "\u0648\u0631\u0634\u0629 \u0639\u0645\u0644": "\u062A\u0639\u0644\u064A\u0645",
+  "\u062A\u062F\u0631\u064A\u0628": "\u062A\u0639\u0644\u064A\u0645",
+  "\u062A\u062F\u0631\u064A\u0628 \u0645\u0647\u0646\u064A": "\u062A\u0639\u0644\u064A\u0645",
+  "\u062A\u062F\u0631\u064A\u0628 \u062A\u0642\u0646\u064A": "\u062A\u0639\u0644\u064A\u0645",
+  "\u062A\u062F\u0631\u064A\u0628 \u0625\u062F\u0627\u0631\u064A": "\u062A\u0639\u0644\u064A\u0645",
+  "\u062A\u062F\u0631\u064A\u0628 \u0644\u063A\u0648\u064A": "\u062A\u0639\u0644\u064A\u0645",
+  // ============================================
+  // ترفيه (Original 23 + 60 new = 83)
+  // ============================================
   "\u062E\u0631\u0648\u062C\u0629": "\u062A\u0631\u0641\u064A\u0647",
   "\u0641\u0633\u062D\u0629": "\u062A\u0631\u0641\u064A\u0647",
   "\u0633\u0647\u0631\u0629": "\u062A\u0631\u0641\u064A\u0647",
@@ -84884,6 +87482,83 @@ var CATEGORY_DICTIONARY = {
   "\u0645\u0644\u0627\u0647\u064A": "\u062A\u0631\u0641\u064A\u0647",
   "\u0646\u062A\u0641\u0644\u0643\u0633": "\u062A\u0631\u0641\u064A\u0647",
   "\u0634\u0627\u0647\u062F": "\u062A\u0631\u0641\u064A\u0647",
+  // NEW: بث
+  "\u0648\u0627\u062A\u0634 \u0625\u062A": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0623\u0648\u0633\u0646": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0633\u062A\u0627\u0631\u0632 \u0628\u0644\u0627\u064A": "\u062A\u0631\u0641\u064A\u0647",
+  "\u062F\u064A\u0632\u0646\u064A \u0628\u0644\u0633": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0623\u0645\u0627\u0632\u0648\u0646 \u0628\u0631\u0627\u064A\u0645": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0623\u0628\u0644 \u062A\u064A\u0641\u064A": "\u062A\u0631\u0641\u064A\u0647",
+  "\u064A\u0648\u062A\u064A\u0648\u0628 \u0628\u0631\u064A\u0645\u064A\u0648\u0645": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0633\u0628\u0648\u062A\u064A\u0641\u0627\u064A": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0623\u0646\u063A\u0627\u0645\u064A": "\u062A\u0631\u0641\u064A\u0647",
+  "\u062F\u064A\u0632\u0631": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0633\u0627\u0648\u0646\u062F \u0643\u0644\u0627\u0648\u062F": "\u062A\u0631\u0641\u064A\u0647",
+  // NEW: كافيهات
+  "\u0645\u0642\u0647\u0649": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0642\u0647\u0648\u0629": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0634\u0627\u064A": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0639\u0635\u064A\u0631": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0643\u0648\u0643\u062A\u064A\u0644": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0645\u0648\u0643\u062A\u064A\u0644": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0633\u0645\u0648\u0630\u064A": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0641\u0631\u0627\u0628\u062A\u0634\u064A\u0646\u0648": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0644\u0627\u062A\u064A\u0647": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0643\u0627\u0628\u062A\u0634\u064A\u0646\u0648": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0627\u0633\u0628\u0631\u064A\u0633\u0648": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0623\u0645\u0631\u064A\u0643\u0627\u0646\u0648": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0645\u064A\u0643\u0627\u062A\u0648": "\u062A\u0631\u0641\u064A\u0647",
+  "\u062A\u0631\u0643\u064A": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0641\u0631\u0646\u0633\u0627\u0648\u064A": "\u062A\u0631\u0641\u064A\u0647",
+  // NEW: حفلات
+  "\u062D\u0641\u0644\u0629 \u0632\u0641\u0627\u0641": "\u062A\u0631\u0641\u064A\u0647",
+  "\u062D\u0641\u0644\u0629 \u062E\u0637\u0648\u0628\u0629": "\u062A\u0631\u0641\u064A\u0647",
+  "\u062D\u0641\u0644\u0629 \u0639\u064A\u062F \u0645\u064A\u0644\u0627\u062F": "\u062A\u0631\u0641\u064A\u0647",
+  "\u062D\u0641\u0644\u0629 \u062A\u062E\u0631\u062C": "\u062A\u0631\u0641\u064A\u0647",
+  "\u062D\u0641\u0644\u0629 \u0633\u0628\u0648\u0639": "\u062A\u0631\u0641\u064A\u0647",
+  "\u062D\u0641\u0644\u0629 \u0642\u0631\u0642\u064A\u0639\u0627\u0646": "\u062A\u0631\u0641\u064A\u0647",
+  "\u062D\u0641\u0644\u0629 \u0631\u0623\u0633 \u0627\u0644\u0633\u0646\u0629": "\u062A\u0631\u0641\u064A\u0647",
+  "\u062D\u0641\u0644\u0629 \u0639\u064A\u062F": "\u062A\u0631\u0641\u064A\u0647",
+  "\u062D\u0641\u0644\u0629 \u0631\u0645\u0636\u0627\u0646": "\u062A\u0631\u0641\u064A\u0647",
+  "\u062D\u0641\u0644\u0629 \u0639\u064A\u062F \u0627\u0644\u0623\u0636\u062D\u0649": "\u062A\u0631\u0641\u064A\u0647",
+  "\u062D\u0641\u0644\u0629 \u0639\u064A\u062F \u0627\u0644\u0641\u0637\u0631": "\u062A\u0631\u0641\u064A\u0647",
+  // NEW: رحلات
+  "\u0631\u062D\u0644\u0629 \u0628\u0631": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0631\u062D\u0644\u0629 \u0628\u062D\u0631": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0631\u062D\u0644\u0629 \u062C\u0628\u0644": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0631\u062D\u0644\u0629 \u0635\u062D\u0631\u0627\u0621": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0631\u062D\u0644\u0629 \u0633\u0641\u0627\u0631\u064A": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0631\u062D\u0644\u0629 \u063A\u0648\u0635": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0631\u062D\u0644\u0629 \u0635\u064A\u062F": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0631\u062D\u0644\u0629 \u062A\u062E\u064A\u064A\u0645": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0631\u062D\u0644\u0629 \u0634\u0648\u0627\u0637\u0626": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0631\u062D\u0644\u0629 \u062C\u0632\u0631": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0631\u062D\u0644\u0629 \u0646\u064A\u0644": "\u062A\u0631\u0641\u064A\u0647",
+  // NEW: مصايف وشاليهات
+  "\u0645\u0635\u064A\u0641 \u0633\u0627\u062D\u0644\u064A": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0645\u0635\u064A\u0641 \u062C\u0628\u0644\u064A": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0645\u0635\u064A\u0641 \u0635\u062D\u0631\u0627\u0648\u064A": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0645\u0635\u064A\u0641 \u0646\u064A\u0644\u064A": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0634\u0627\u0644\u064A\u0647 \u0628\u062D\u0631": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0634\u0627\u0644\u064A\u0647 \u062C\u0628\u0644": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0634\u0627\u0644\u064A\u0647 \u0646\u064A\u0644": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0634\u0627\u0644\u064A\u0647 \u0635\u062D\u0631\u0627\u0648\u064A": "\u062A\u0631\u0641\u064A\u0647",
+  // NEW: فنادق
+  "\u0641\u0646\u062F\u0642 \u062E\u0645\u0633 \u0646\u062C\u0648\u0645": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0641\u0646\u062F\u0642 \u0623\u0631\u0628\u0639 \u0646\u062C\u0648\u0645": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0641\u0646\u062F\u0642 \u062B\u0644\u0627\u062B \u0646\u062C\u0648\u0645": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0641\u0646\u062F\u0642 \u0646\u062C\u0645\u062A\u064A\u0646": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0641\u0646\u062F\u0642 \u0646\u062C\u0645\u0629": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0641\u0646\u062F\u0642 \u0628\u0648\u062A\u064A\u0643": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0641\u0646\u062F\u0642 \u0634\u0628\u0627\u0628": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0641\u0646\u062F\u0642 \u0641\u0627\u062E\u0631": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0641\u0646\u062F\u0642 \u0627\u0642\u062A\u0635\u0627\u062F\u064A": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0641\u0646\u062F\u0642 \u0634\u0642\u0642 \u0641\u0646\u062F\u0642\u064A\u0629": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0641\u0646\u062F\u0642 \u0645\u0646\u062A\u062C\u0639": "\u062A\u0631\u0641\u064A\u0647",
+  "\u0641\u0646\u062F\u0642 \u0633\u0628\u0627": "\u062A\u0631\u0641\u064A\u0647",
+  // ============================================
+  // هدايا (Original 16 + 40 new = 56)
+  // ============================================
   "\u0647\u062F\u064A\u0629": "\u0647\u062F\u0627\u064A\u0627",
   "\u0639\u064A\u062F \u0645\u064A\u0644\u0627\u062F": "\u0647\u062F\u0627\u064A\u0627",
   "\u062E\u0637\u0648\u0628\u0629": "\u0647\u062F\u0627\u064A\u0627",
@@ -84900,6 +87575,66 @@ var CATEGORY_DICTIONARY = {
   "\u0627\u0644\u0627\u0648\u0631\u0645\u0627\u0646": "\u0647\u062F\u0627\u064A\u0627",
   "\u0645\u0633\u062A\u0634\u0641\u0649 \u0665\u0667": "\u0647\u062F\u0627\u064A\u0627",
   "\u0634\u0646\u0637\u0629 \u0631\u0645\u0636\u0627\u0646": "\u0647\u062F\u0627\u064A\u0627",
+  // NEW: هدايا مناسبات
+  "\u0647\u062F\u064A\u0629 \u0639\u064A\u062F \u0645\u064A\u0644\u0627\u062F": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0647\u062F\u064A\u0629 \u062E\u0637\u0648\u0628\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0647\u062F\u064A\u0629 \u0641\u0631\u062D": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0647\u062F\u064A\u0629 \u062A\u062E\u0631\u062C": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0647\u062F\u064A\u0629 \u0633\u0628\u0648\u0639": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0647\u062F\u064A\u0629 \u0642\u0631\u0642\u064A\u0639\u0627\u0646": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0647\u062F\u064A\u0629 \u0631\u0623\u0633 \u0627\u0644\u0633\u0646\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0647\u062F\u064A\u0629 \u0639\u064A\u062F": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0647\u062F\u064A\u0629 \u0631\u0645\u0636\u0627\u0646": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0647\u062F\u064A\u0629 \u0639\u064A\u062F \u0627\u0644\u0623\u0636\u062D\u0649": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0647\u062F\u064A\u0629 \u0639\u064A\u062F \u0627\u0644\u0641\u0637\u0631": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0647\u062F\u064A\u0629 \u0639\u064A\u062F \u0627\u0644\u0623\u0645": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0647\u062F\u064A\u0629 \u0639\u064A\u062F \u0627\u0644\u0623\u0628": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0647\u062F\u064A\u0629 \u0639\u064A\u062F \u0627\u0644\u062D\u0628": "\u0647\u062F\u0627\u064A\u0627",
+  // NEW: فلوس وهدايا مالية
+  "\u0641\u0644\u0648\u0633": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0645\u0628\u0644\u063A": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0645\u0628\u0644\u063A \u0645\u0627\u0644\u064A": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0645\u0628\u0644\u063A \u0646\u0642\u062F\u064A": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0634\u064A\u0643": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0634\u064A\u0643 \u0628\u0646\u0643\u064A": "\u0647\u062F\u0627\u064A\u0627",
+  "\u062A\u062D\u0648\u064A\u0644 \u0628\u0646\u0643\u064A": "\u0647\u062F\u0627\u064A\u0627",
+  "\u062A\u062D\u0648\u064A\u0644 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A": "\u0647\u062F\u0627\u064A\u0627",
+  // NEW: مجوهرات
+  "\u0630\u0647\u0628": "\u0647\u062F\u0627\u064A\u0627",
+  "\u062F\u0647\u0628": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0641\u0636\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0623\u0644\u0645\u0627\u0633": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0644\u0624\u0644\u0624": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0632\u0645\u0631\u062F": "\u0647\u062F\u0627\u064A\u0627",
+  "\u064A\u0627\u0642\u0648\u062A": "\u0647\u062F\u0627\u064A\u0627",
+  // NEW: هدايا عامة
+  "\u0639\u0637\u0631": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0633\u0627\u0639\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0634\u0646\u0637\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0645\u062D\u0641\u0638\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0646\u0638\u0627\u0631\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  "\u062D\u0630\u0627\u0621": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0645\u0644\u0627\u0628\u0633": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0625\u0643\u0633\u0633\u0648\u0627\u0631\u0627\u062A": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0645\u062C\u0648\u0647\u0631\u0627\u062A": "\u0647\u062F\u0627\u064A\u0627",
+  // NEW: ورد وهدايا طبيعية
+  "\u0648\u0631\u062F": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0628\u0627\u0642\u0629 \u0648\u0631\u062F": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0628\u0627\u0642\u0629 \u0632\u0647\u0648\u0631": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0628\u0627\u0642\u0629 \u0634\u0648\u0643\u0648\u0644\u0627\u062A\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0628\u0627\u0642\u0629 \u062D\u0644\u0648\u064A\u0627\u062A": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0628\u0627\u0642\u0629 \u0641\u0648\u0627\u0643\u0647": "\u0647\u062F\u0627\u064A\u0627",
+  // NEW: كتب
+  "\u0643\u062A\u0627\u0628": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0631\u0648\u0627\u064A\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0642\u0635\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0634\u0639\u0631": "\u0647\u062F\u0627\u064A\u0627",
+  "\u062F\u064A\u0648\u0627\u0646": "\u0647\u062F\u0627\u064A\u0627",
+  "\u0645\u062C\u0644\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  "\u062C\u0631\u064A\u062F\u0629": "\u0647\u062F\u0627\u064A\u0627",
+  // ============================================
+  // استثمار (Original 10 + 40 new = 50)
+  // ============================================
   "\u0630\u0647\u0628": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
   "\u062F\u0647\u0628": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
   "\u0633\u0628\u064A\u0643\u0629": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
@@ -84910,39 +87645,314 @@ var CATEGORY_DICTIONARY = {
   "\u062B\u0627\u0646\u062F\u0631": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
   "\u0634\u0647\u0627\u062F\u0629": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
   "\u0648\u062F\u064A\u0639\u0629": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
-  "\u0633\u062C\u0627\u064A\u0631": "\u062A\u0633\u0648\u0642",
-  "\u0633\u062C\u0627\u0631\u0647": "\u062A\u0633\u0648\u0642",
-  "\u0633\u062C\u0627\u0626\u0631": "\u062A\u0633\u0648\u0642",
-  "\u0645\u0627\u0644\u0628\u0648\u0631\u0648": "\u062A\u0633\u0648\u0642",
-  "\u0643\u0644\u064A\u0648\u0628\u0627\u062A\u0631\u0627": "\u062A\u0633\u0648\u0642",
-  "\u0645\u064A\u0631\u064A\u062A": "\u062A\u0633\u0648\u0642",
-  "\u0644\u0627\u064A\u062A": "\u062A\u0633\u0648\u0642",
-  "\u062A\u0628\u063A": "\u062A\u0633\u0648\u0642",
-  "\u0644\u0628\u0627\u0646": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-  "\u0644\u0628\u0627\u0646\u0647": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-  "\u0634\u064A\u0628\u0633\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-  "\u0634\u064A\u0628\u0633": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-  "\u0644\u064A\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-  "\u0627\u0648\u0631\u064A\u0648": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-  "\u0647\u0648\u0647\u0648\u0632": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-  "\u062F\u0648\u0646\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-  "\u0634\u0648\u0643\u0648\u0644\u0627\u062A\u0647": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-  "\u062A\u0648\u064A\u0633\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-  "\u0645\u064A\u0644\u0643 \u0634\u064A\u0643": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-  "\u0628\u0627\u062E\u0631": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-  "\u062A\u0628\u0633": "\u0645\u062A\u0646\u0648\u0639\u0627\u062A",
-  "\u0628\u0642\u0634\u064A\u0634": "\u0645\u062A\u0646\u0648\u0639\u0627\u062A",
-  "\u0625\u0643\u0631\u0627\u0645\u064A\u0647": "\u0645\u062A\u0646\u0648\u0639\u0627\u062A",
-  "\u0641\u064A\u0641\u0627": "\u062A\u0631\u0641\u064A\u0647",
-  "\u0645\u0627\u062A\u0634\u064A\u0646": "\u062A\u0631\u0641\u064A\u0647",
-  "\u0645\u0627\u062A\u0634": "\u062A\u0631\u0641\u064A\u0647",
-  "\u0644\u0639\u0628\u0646\u0627": "\u062A\u0631\u0641\u064A\u0647",
-  "\u0643\u0648\u0631\u0629": "\u062A\u0631\u0641\u064A\u0647",
-  "\u0643\u0648\u0631\u0647": "\u062A\u0631\u0641\u064A\u0647",
-  "\u062D\u062C\u0632": "\u062A\u0631\u0641\u064A\u0647",
-  "\u062C\u064A\u0645\u0646\u062C": "\u062A\u0631\u0641\u064A\u0647",
-  "\u0634\u0648\u064A\u062A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-  "\u0634\u0648\u064A": "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628"
+  // NEW: ذهب
+  "\u062C\u0646\u064A\u0647 \u0630\u0647\u0628": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0623\u0648\u0642\u064A\u0629 \u0630\u0647\u0628": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0643\u064A\u0644\u0648 \u0630\u0647\u0628": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u062C\u0631\u0627\u0645 \u0630\u0647\u0628": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0630\u0647\u0628 \u0639\u064A\u0627\u0631 24": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0630\u0647\u0628 \u0639\u064A\u0627\u0631 22": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0630\u0647\u0628 \u0639\u064A\u0627\u0631 21": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0630\u0647\u0628 \u0639\u064A\u0627\u0631 18": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0630\u0647\u0628 \u0623\u0635\u0641\u0631": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0630\u0647\u0628 \u0623\u0628\u064A\u0636": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0630\u0647\u0628 \u0623\u062D\u0645\u0631": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  // NEW: عملات
+  "\u062F\u0648\u0644\u0627\u0631 \u0623\u0645\u0631\u064A\u0643\u064A": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u064A\u0648\u0631\u0648": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u062C\u0646\u064A\u0647 \u0625\u0633\u062A\u0631\u0644\u064A\u0646\u064A": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0641\u0631\u0646\u0643 \u0633\u0648\u064A\u0633\u0631\u064A": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u064A\u0646 \u064A\u0627\u0628\u0627\u0646\u064A": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u064A\u0648\u0627\u0646 \u0635\u064A\u0646\u064A": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0631\u064A\u0627\u0644 \u0633\u0639\u0648\u062F\u064A": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u062F\u0631\u0647\u0645 \u0625\u0645\u0627\u0631\u0627\u062A\u064A": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u062F\u064A\u0646\u0627\u0631 \u0643\u0648\u064A\u062A\u064A": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  // NEW: بورصة
+  "\u0628\u0648\u0631\u0635\u0629 \u0645\u0635\u0631": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0628\u0648\u0631\u0635\u0629 \u0646\u064A\u0648\u064A\u0648\u0631\u0643": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0628\u0648\u0631\u0635\u0629 \u0644\u0646\u062F\u0646": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0628\u0648\u0631\u0635\u0629 \u0637\u0648\u0643\u064A\u0648": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0628\u0648\u0631\u0635\u0629 \u0647\u0648\u0646\u062C \u0643\u0648\u0646\u062C": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  // NEW: أسهم وصناديق
+  "\u0633\u0646\u062F\u0627\u062A": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0635\u0646\u0627\u062F\u064A\u0642 \u0627\u0633\u062A\u062B\u0645\u0627\u0631": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0635\u0646\u0627\u062F\u064A\u0642 \u0627\u0633\u062A\u062B\u0645\u0627\u0631 \u0639\u0642\u0627\u0631\u064A": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0635\u0646\u0627\u062F\u064A\u0642 \u0627\u0633\u062A\u062B\u0645\u0627\u0631 \u0646\u0642\u062F\u064A": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0635\u0646\u0627\u062F\u064A\u0642 \u0627\u0633\u062A\u062B\u0645\u0627\u0631 \u0645\u062E\u062A\u0644\u0637": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0635\u0646\u0627\u062F\u064A\u0642 \u0627\u0633\u062A\u062B\u0645\u0627\u0631 \u0625\u0633\u0644\u0627\u0645\u064A": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  // NEW: شهادات
+  "\u0634\u0647\u0627\u062F\u0629 \u0627\u062F\u062E\u0627\u0631": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0634\u0647\u0627\u062F\u0629 \u0627\u0633\u062A\u062B\u0645\u0627\u0631": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0634\u0647\u0627\u062F\u0629 \u0623\u0645\u0627\u0646": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0634\u0647\u0627\u062F\u0629 \u0628\u0644\u0627\u062A\u064A\u0646\u064A\u0629": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0634\u0647\u0627\u062F\u0629 \u0630\u0647\u0628\u064A\u0629": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0634\u0647\u0627\u062F\u0629 \u0641\u0636\u064A\u0629": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0634\u0647\u0627\u062F\u0629 \u0628\u0631\u0648\u0646\u0632\u064A\u0629": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  // NEW: ودائع
+  "\u0648\u062F\u064A\u0639\u0629 \u0628\u0646\u0643": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0648\u062F\u064A\u0639\u0629 \u0627\u0633\u062A\u062B\u0645\u0627\u0631": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0648\u062F\u064A\u0639\u0629 \u0627\u062F\u062E\u0627\u0631": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0648\u062F\u064A\u0639\u0629 \u0623\u062C\u0644": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0648\u062F\u064A\u0639\u0629 \u0644\u0623\u062C\u0644": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  // NEW: عقار
+  "\u0639\u0642\u0627\u0631": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0623\u0631\u0636": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0645\u062D\u0644": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0645\u0643\u062A\u0628": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0645\u0635\u0646\u0639": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u062C\u0631\u0627\u062C": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0623\u0631\u0636 \u0632\u0631\u0627\u0639\u064A\u0629": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0623\u0631\u0636 \u0635\u0646\u0627\u0639\u064A\u0629": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0623\u0631\u0636 \u062A\u062C\u0627\u0631\u064A\u0629": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  "\u0623\u0631\u0636 \u0633\u0643\u0646\u064A\u0629": "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+  // ============================================
+  // طوارئ (NEW CATEGORY - 50 entries)
+  // ============================================
+  "\u062F\u0643\u062A\u0648\u0631 \u0637\u0648\u0627\u0631\u0626": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0645\u0633\u062A\u0634\u0641\u0649 \u0637\u0648\u0627\u0631\u0626": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0635\u064A\u062F\u0644\u064A\u0629 \u0644\u064A\u0644\u064A\u0629": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0637\u0648\u0627\u0631\u0626 24 \u0633\u0627\u0639\u0629": "\u0637\u0648\u0627\u0631\u0626",
+  "\u062D\u0627\u062F\u062B": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0643\u0633\u0631": "\u0637\u0648\u0627\u0631\u0626",
+  "\u062C\u0631\u062D": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0646\u0632\u064A\u0641": "\u0637\u0648\u0627\u0631\u0626",
+  "\u063A\u0631\u0642": "\u0637\u0648\u0627\u0631\u0626",
+  "\u062D\u0631\u064A\u0642": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0633\u0631\u0642\u0629": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0646\u0635\u0628": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0627\u062D\u062A\u064A\u0627\u0644": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0641\u0642\u062F\u0627\u0646 \u0645\u062D\u0641\u0638\u0629": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0641\u0642\u062F\u0627\u0646 \u062A\u0644\u064A\u0641\u0648\u0646": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0643\u0627\u0631\u062B\u0629": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0632\u0644\u0632\u0627\u0644": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0641\u064A\u0636\u0627\u0646": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0639\u0627\u0635\u0641\u0629": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0645\u0637\u0631 \u0634\u062F\u064A\u062F": "\u0637\u0648\u0627\u0631\u0626",
+  "\u062D\u0631 \u0634\u062F\u064A\u062F": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0628\u0631\u062F \u0634\u062F\u064A\u062F": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0643\u0647\u0631\u0628\u0627\u0621 \u0642\u0637\u0639\u062A": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0645\u064A\u0629 \u0642\u0637\u0639\u062A": "\u0637\u0648\u0627\u0631\u0626",
+  "\u063A\u0627\u0632 \u0633\u0631\u0628": "\u0637\u0648\u0627\u0631\u0626",
+  "\u062A\u0633\u0631\u0628 \u063A\u0627\u0632": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0627\u0646\u0641\u062C\u0627\u0631": "\u0637\u0648\u0627\u0631\u0626",
+  "\u062D\u0627\u062F\u062B \u0639\u0631\u0628\u064A\u0629": "\u0637\u0648\u0627\u0631\u0626",
+  "\u062D\u0627\u062F\u062B \u0645\u0648\u062A\u0648\u0633\u064A\u0643\u0644": "\u0637\u0648\u0627\u0631\u0626",
+  "\u062D\u0627\u062F\u062B \u062A\u0648\u0643\u062A\u0648\u0643": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0625\u0633\u0639\u0627\u0641": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0625\u0633\u0639\u0627\u0641 \u062E\u0627\u0635": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0625\u0633\u0639\u0627\u0641 \u0646\u062C\u062F\u0629": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0634\u0631\u0637\u0629": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0642\u0633\u0645": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0628\u0644\u0627\u063A": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0645\u062D\u0636\u0631": "\u0637\u0648\u0627\u0631\u0626",
+  "\u062E\u0633\u0627\u0631\u0629": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0627\u0628\u062A\u0632\u0627\u0632": "\u0637\u0648\u0627\u0631\u0626",
+  "\u062A\u0647\u062F\u064A\u062F": "\u0637\u0648\u0627\u0631\u0626",
+  "\u062E\u0637\u0641": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0627\u0639\u062A\u062F\u0627\u0621": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0645\u0634\u0627\u062C\u0631\u0629": "\u0637\u0648\u0627\u0631\u0626",
+  "\u062E\u0646\u0627\u0642\u0629": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0645\u0635\u064A\u0628\u0629": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0641\u0627\u062C\u0639\u0629": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0645\u0635\u064A\u0628\u0629 \u0643\u0628\u064A\u0631\u0629": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0637\u0648\u0627\u0631\u0626 \u0635\u062D\u064A\u0629": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0637\u0648\u0627\u0631\u0626 \u0645\u0646\u0632\u0644\u064A\u0629": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0637\u0648\u0627\u0631\u0626 \u0645\u0627\u0644\u064A\u0629": "\u0637\u0648\u0627\u0631\u0626",
+  "\u0637\u0648\u0627\u0631\u0626 \u0642\u0627\u0646\u0648\u0646\u064A\u0629": "\u0637\u0648\u0627\u0631\u0626",
+  // ============================================
+  // عمل (NEW CATEGORY - 50 entries)
+  // ============================================
+  "\u0645\u0635\u0627\u0631\u064A\u0641 \u0639\u0645\u0644": "\u0639\u0645\u0644",
+  "\u0645\u0648\u0627\u0635\u0644\u0627\u062A \u0639\u0645\u0644": "\u0639\u0645\u0644",
+  "\u063A\u062F\u0627\u0621 \u0639\u0645\u0644": "\u0639\u0645\u0644",
+  "\u0639\u0634\u0627\u0621 \u0639\u0645\u0644": "\u0639\u0645\u0644",
+  "\u0644\u0628\u0633 \u0639\u0645\u0644": "\u0639\u0645\u0644",
+  "\u0628\u062F\u0644\u0629 \u0639\u0645\u0644": "\u0639\u0645\u0644",
+  "\u0642\u0645\u064A\u0635 \u0639\u0645\u0644": "\u0639\u0645\u0644",
+  "\u0628\u0646\u0637\u0644\u0648\u0646 \u0639\u0645\u0644": "\u0639\u0645\u0644",
+  "\u062D\u0630\u0627\u0621 \u0639\u0645\u0644": "\u0639\u0645\u0644",
+  "\u0634\u0646\u0637\u0629 \u0644\u0627\u0628 \u062A\u0648\u0628": "\u0639\u0645\u0644",
+  "\u0644\u0627\u0628 \u062A\u0648\u0628 \u0639\u0645\u0644": "\u0639\u0645\u0644",
+  "\u0637\u0627\u0628\u0639\u0629": "\u0639\u0645\u0644",
+  "\u062D\u0628\u0631": "\u0639\u0645\u0644",
+  "\u0648\u0631\u0642": "\u0639\u0645\u0644",
+  "\u062F\u0628\u0627\u0633\u0629": "\u0639\u0645\u0644",
+  "\u0645\u0642\u0635": "\u0639\u0645\u0644",
+  "\u0634\u0631\u064A\u0637 \u0644\u0627\u0635\u0642": "\u0639\u0645\u0644",
+  "\u0623\u0642\u0644\u0627\u0645": "\u0639\u0645\u0644",
+  "\u0623\u0642\u0644\u0627\u0645 \u0631\u0635\u0627\u0635": "\u0639\u0645\u0644",
+  "\u0623\u0642\u0644\u0627\u0645 \u062D\u0628\u0631": "\u0639\u0645\u0644",
+  "\u0623\u0642\u0644\u0627\u0645 \u062C\u0627\u0641": "\u0639\u0645\u0644",
+  "\u0645\u0627\u0631\u0643\u0631": "\u0639\u0645\u0644",
+  "\u0641\u0644\u064A\u0628 \u0634\u0627\u0631\u062A": "\u0639\u0645\u0644",
+  "\u0628\u0631\u0648\u062C\u0643\u062A\u0648\u0631": "\u0639\u0645\u0644",
+  "\u0634\u0627\u0634\u0629": "\u0639\u0645\u0644",
+  "\u0643\u0627\u0628\u0644 HDMI": "\u0639\u0645\u0644",
+  "\u0643\u0627\u0628\u0644 USB": "\u0639\u0645\u0644",
+  "\u0634\u0627\u062D\u0646 \u0645\u0648\u0628\u0627\u064A\u0644": "\u0639\u0645\u0644",
+  "\u0628\u0627\u0648\u0631 \u0628\u0627\u0646\u0643": "\u0639\u0645\u0644",
+  "\u0633\u0645\u0627\u0639\u0629 \u0627\u062C\u062A\u0645\u0627\u0639\u0627\u062A": "\u0639\u0645\u0644",
+  "\u0645\u0627\u064A\u0643": "\u0639\u0645\u0644",
+  "\u0643\u0627\u0645\u064A\u0631\u0627": "\u0639\u0645\u0644",
+  "\u0625\u0636\u0627\u0621\u0629": "\u0639\u0645\u0644",
+  "\u0633\u062A\u0627\u0646\u062F": "\u0639\u0645\u0644",
+  "\u062A\u0631\u0627\u064A\u0628\u0648\u062F": "\u0639\u0645\u0644",
+  "\u062E\u0644\u0641\u064A\u0629": "\u0639\u0645\u0644",
+  "\u062E\u0644\u0641\u064A\u0629 \u062E\u0636\u0631\u0627\u0621": "\u0639\u0645\u0644",
+  "\u0643\u0631\u0627\u0633\u064A \u0645\u0643\u062A\u0628": "\u0639\u0645\u0644",
+  "\u0645\u0643\u062A\u0628": "\u0639\u0645\u0644",
+  "\u062F\u0631\u062C": "\u0639\u0645\u0644",
+  "\u062E\u0632\u0627\u0646\u0629 \u0645\u0644\u0641\u0627\u062A": "\u0639\u0645\u0644",
+  "\u0645\u0644\u0641\u0627\u062A": "\u0639\u0645\u0644",
+  "\u0645\u062C\u0644\u062F\u0627\u062A": "\u0639\u0645\u0644",
+  "\u0623\u0638\u0631\u0641": "\u0639\u0645\u0644",
+  "\u0637\u0648\u0627\u0628\u0639 \u0628\u0631\u064A\u062F": "\u0639\u0645\u0644",
+  "\u0628\u0637\u0627\u0642\u0627\u062A \u0639\u0645\u0644": "\u0639\u0645\u0644",
+  "\u0628\u0631\u0648\u0634\u0648\u0631": "\u0639\u0645\u0644",
+  "\u0641\u0644\u0627\u064A\u0631": "\u0639\u0645\u0644",
+  "\u0643\u062A\u0627\u0644\u0648\u062C": "\u0639\u0645\u0644",
+  "\u0646\u062A \u0639\u0645\u0644": "\u0639\u0645\u0644",
+  "\u0631\u0627\u0648\u062A\u0631 \u0639\u0645\u0644": "\u0639\u0645\u0644",
+  "\u062E\u0637 \u0623\u0631\u0636\u064A": "\u0639\u0645\u0644",
+  "\u062A\u0644\u064A\u0641\u0648\u0646 \u0639\u0645\u0644": "\u0639\u0645\u0644",
+  "\u0645\u0648\u0628\u0627\u064A\u0644 \u0639\u0645\u0644": "\u0639\u0645\u0644",
+  "\u0631\u0635\u064A\u062F \u0639\u0645\u0644": "\u0639\u0645\u0644",
+  "\u0628\u0627\u0642\u0629 \u0646\u062A \u0639\u0645\u0644": "\u0639\u0645\u0644",
+  "\u0628\u0631\u0646\u0627\u0645\u062C": "\u0639\u0645\u0644",
+  "\u062A\u0637\u0628\u064A\u0642": "\u0639\u0645\u0644",
+  "\u0627\u0634\u062A\u0631\u0627\u0643 \u0628\u0631\u0646\u0627\u0645\u062C": "\u0639\u0645\u0644",
+  "\u0627\u0634\u062A\u0631\u0627\u0643 \u062A\u0637\u0628\u064A\u0642": "\u0639\u0645\u0644",
+  "\u062F\u0648\u0645\u064A\u0646": "\u0639\u0645\u0644",
+  "\u0627\u0633\u062A\u0636\u0627\u0641\u0629": "\u0639\u0645\u0644",
+  "\u0633\u064A\u0631\u0641\u0631": "\u0639\u0645\u0644",
+  "\u0643\u0644\u0627\u0648\u062F": "\u0639\u0645\u0644",
+  "\u062A\u062E\u0632\u064A\u0646 \u0633\u062D\u0627\u0628\u064A": "\u0639\u0645\u0644",
+  "\u0628\u0627\u0643 \u0623\u0628": "\u0639\u0645\u0644",
+  "\u0646\u0633\u062E \u0627\u062D\u062A\u064A\u0627\u0637\u064A": "\u0639\u0645\u0644",
+  "\u0623\u0645\u0646 \u0633\u064A\u0628\u0631\u0627\u0646\u064A": "\u0639\u0645\u0644",
+  "antivirus": "\u0639\u0645\u0644",
+  "firewall": "\u0639\u0645\u0644",
+  "VPN": "\u0639\u0645\u0644",
+  "\u0628\u0631\u0646\u0627\u0645\u062C \u0645\u062D\u0627\u0633\u0628\u0629": "\u0639\u0645\u0644",
+  "\u0628\u0631\u0646\u0627\u0645\u062C \u0625\u062F\u0627\u0631\u0629": "\u0639\u0645\u0644",
+  "\u0628\u0631\u0646\u0627\u0645\u062C CRM": "\u0639\u0645\u0644",
+  "\u0628\u0631\u0646\u0627\u0645\u062C ERP": "\u0639\u0645\u0644",
+  "\u0628\u0631\u0646\u0627\u0645\u062C HR": "\u0639\u0645\u0644",
+  // ============================================
+  // دخل (NEW CATEGORY for dictionary - 40 entries)
+  // ============================================
+  "\u0645\u0631\u062A\u0628": "\u062F\u062E\u0644",
+  "\u0645\u0631\u062A\u0628\u064A": "\u062F\u062E\u0644",
+  "\u0642\u0628\u0636\u062A": "\u062F\u062E\u0644",
+  "\u0627\u0644\u0642\u0628\u0636": "\u062F\u062E\u0644",
+  "\u0627\u0633\u062A\u0644\u0645\u062A": "\u062F\u062E\u0644",
+  "\u0627\u0644\u0645\u0627\u0647\u064A\u0629": "\u062F\u062E\u0644",
+  "\u0627\u0644\u0645\u0639\u0627\u0634": "\u062F\u062E\u0644",
+  "\u0631\u0627\u062A\u0628": "\u062F\u062E\u0644",
+  "\u062C\u0627\u0644\u064A": "\u062F\u062E\u0644",
+  "\u0648\u0635\u0644\u0646\u064A": "\u062F\u062E\u0644",
+  "\u0631\u0632\u0642": "\u062F\u062E\u0644",
+  "\u0645\u0643\u0633\u0628": "\u062F\u062E\u0644",
+  "\u0643\u0633\u0628\u062A": "\u062F\u062E\u0644",
+  "\u0627\u0631\u0628\u0627\u062D": "\u062F\u062E\u0644",
+  "\u0641\u0648\u0627\u064A\u062F": "\u062F\u062E\u0644",
+  "\u0639\u0627\u0626\u062F": "\u062F\u062E\u0644",
+  "\u0645\u0643\u0627\u0641\u0623\u0629": "\u062F\u062E\u0644",
+  "\u0628\u0648\u0646\u0635": "\u062F\u062E\u0644",
+  "\u0627\u0648\u0641\u0631 \u062A\u0627\u064A\u0645": "\u062F\u062E\u0644",
+  "\u0627\u0636\u0627\u0641\u064A": "\u062F\u062E\u0644",
+  "\u0628\u062F\u0644": "\u062F\u062E\u0644",
+  "\u062D\u0648\u0627\u0641\u0632": "\u062F\u062E\u0644",
+  "\u062D\u0648\u0644\u064A": "\u062F\u062E\u0644",
+  "\u062D\u0648\u0644\u0648\u0644\u064A": "\u062F\u062E\u0644",
+  "\u0627\u062A\u062D\u0648\u0644\u062A\u0644\u064A": "\u062F\u062E\u0644",
+  "\u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0643\u0627\u0634": "\u062F\u062E\u0644",
+  "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A": "\u062F\u062E\u0644",
+  "\u062C\u0645\u0639\u064A\u0629": "\u062F\u062E\u0644",
+  "\u0642\u0628\u0636\u062A \u0627\u0644\u062C\u0645\u0639\u064A\u0629": "\u062F\u062E\u0644",
+  "\u0633\u0647\u0645\u064A": "\u062F\u062E\u0644",
+  "\u0627\u064A\u062F\u0627\u0639": "\u062F\u062E\u0644",
+  "ATM": "\u062F\u062E\u0644",
+  "\u062F\u062E\u0644": "\u062F\u062E\u0644",
+  "\u0627\u064A\u0631\u0627\u062F": "\u062F\u062E\u0644",
+  "\u0645\u0628\u064A\u0639\u0627\u062A": "\u062F\u062E\u0644",
+  "\u0628\u064A\u0639\u0629": "\u062F\u062E\u0644",
+  "\u0639\u0645\u0648\u0644\u0629": "\u062F\u062E\u0644",
+  "\u0633\u0628\u0648\u0628\u0629": "\u062F\u062E\u0644",
+  "\u0628\u0631\u0627\u0646\u064A": "\u062F\u062E\u0644",
+  "\u0634\u063A\u0644\u0627\u0646\u0629": "\u062F\u062E\u0644",
+  "\u0647\u062F\u064A\u0629": "\u062F\u062E\u0644",
+  "\u0639\u064A\u062F\u064A\u0629": "\u062F\u062E\u0644",
+  "\u0646\u0642\u0637\u0629": "\u062F\u062E\u0644",
+  "\u0646\u0641\u0642\u0629": "\u062F\u062E\u0644",
+  // NEW: بدلات
+  "\u0628\u062F\u0644 \u0633\u0643\u0646": "\u062F\u062E\u0644",
+  "\u0628\u062F\u0644 \u0645\u0648\u0627\u0635\u0644\u0627\u062A": "\u062F\u062E\u0644",
+  "\u0628\u062F\u0644 \u063A\u0630\u0627\u0621": "\u062F\u062E\u0644",
+  "\u0628\u062F\u0644 \u062A\u0644\u064A\u0641\u0648\u0646": "\u062F\u062E\u0644",
+  "\u0628\u062F\u0644 \u0625\u0646\u062A\u0631\u0646\u062A": "\u062F\u062E\u0644",
+  "\u0628\u062F\u0644 \u0639\u0644\u0627\u062C": "\u062F\u062E\u0644",
+  "\u0628\u062F\u0644 \u062A\u0639\u0644\u064A\u0645": "\u062F\u062E\u0644",
+  "\u0628\u062F\u0644 \u0645\u0644\u0627\u0628\u0633": "\u062F\u062E\u0644",
+  "\u0628\u062F\u0644 \u0633\u0641\u0631": "\u062F\u062E\u0644",
+  "\u0628\u062F\u0644 \u062A\u062F\u0631\u064A\u0628": "\u062F\u062E\u0644",
+  "\u0628\u062F\u0644 \u062E\u0637\u0631": "\u062F\u062E\u0644",
+  "\u0628\u062F\u0644 \u0637\u0628\u064A\u0639\u0629 \u0639\u0645\u0644": "\u062F\u062E\u0644",
+  "\u0628\u062F\u0644 \u0625\u0634\u0631\u0627\u0641": "\u062F\u062E\u0644",
+  "\u0628\u062F\u0644 \u0625\u062F\u0627\u0631\u0629": "\u062F\u062E\u0644",
+  // NEW: حوافز
+  "\u062D\u0627\u0641\u0632": "\u062F\u062E\u0644",
+  "\u062D\u0627\u0641\u0632 \u0625\u0646\u062A\u0627\u062C": "\u062F\u062E\u0644",
+  "\u062D\u0627\u0641\u0632 \u0645\u0628\u064A\u0639\u0627\u062A": "\u062F\u062E\u0644",
+  "\u062D\u0627\u0641\u0632 \u062C\u0648\u062F\u0629": "\u062F\u062E\u0644",
+  "\u062D\u0627\u0641\u0632 \u0623\u062F\u0627\u0621": "\u062F\u062E\u0644",
+  // NEW: جمعيات
+  "\u062C\u0645\u0639\u064A\u0629 \u0627\u0633\u062A\u062B\u0645\u0627\u0631": "\u062F\u062E\u0644",
+  "\u062C\u0645\u0639\u064A\u0629 \u0627\u062F\u062E\u0627\u0631": "\u062F\u062E\u0644",
+  "\u062C\u0645\u0639\u064A\u0629 \u0642\u0631\u0636": "\u062F\u062E\u0644",
+  "\u062C\u0645\u0639\u064A\u0629 \u0639\u0642\u0627\u0631": "\u062F\u062E\u0644",
+  "\u0633\u0647\u0645\u064A \u0641\u064A \u0627\u0644\u062C\u0645\u0639\u064A\u0629": "\u062F\u062E\u0644",
+  // NEW: إيداع
+  "\u0625\u064A\u062F\u0627\u0639 \u0628\u0646\u0643\u064A": "\u062F\u062E\u0644",
+  "\u0625\u064A\u062F\u0627\u0639 ATM": "\u062F\u062E\u0644",
+  "\u0633\u062D\u0628": "\u062F\u062E\u0644",
+  "\u0633\u062D\u0628 ATM": "\u062F\u062E\u0644",
+  // NEW: أعمال
+  "\u0634\u063A\u0644": "\u062F\u062E\u0644",
+  "\u0648\u0638\u064A\u0641\u0629": "\u062F\u062E\u0644",
+  "\u0639\u0645\u0644": "\u062F\u062E\u0644",
+  "\u0645\u0634\u0631\u0648\u0639": "\u062F\u062E\u0644",
+  "\u062A\u062C\u0627\u0631\u0629": "\u062F\u062E\u0644",
+  "\u0628\u064A\u0632\u0646\u0633": "\u062F\u062E\u0644",
+  // NEW: نفقات
+  "\u0646\u0641\u0642\u0629 \u0623\u0637\u0641\u0627\u0644": "\u062F\u062E\u0644",
+  "\u0646\u0641\u0642\u0629 \u0632\u0648\u062C\u0629": "\u062F\u062E\u0644",
+  "\u0646\u0641\u0642\u0629 \u0639\u0627\u0626\u0644\u0629": "\u062F\u062E\u0644",
+  "\u0645\u0635\u0631\u0648\u0641 \u062C\u064A\u0628": "\u062F\u062E\u0644",
+  // NEW: إيجارات
+  "\u0625\u064A\u062C\u0627\u0631": "\u062F\u062E\u0644",
+  "\u0625\u064A\u062C\u0627\u0631 \u0645\u062D\u0644": "\u062F\u062E\u0644",
+  "\u0625\u064A\u062C\u0627\u0631 \u0645\u0643\u062A\u0628": "\u062F\u062E\u0644",
+  "\u0625\u064A\u062C\u0627\u0631 \u0645\u062E\u0632\u0646": "\u062F\u062E\u0644",
+  "\u0625\u064A\u062C\u0627\u0631 \u062C\u0631\u0627\u062C": "\u062F\u062E\u0644",
+  "\u0625\u064A\u062C\u0627\u0631 \u0623\u0631\u0636": "\u062F\u062E\u0644",
+  "\u0625\u064A\u062C\u0627\u0631 \u0641\u064A\u0644\u0627": "\u062F\u062E\u0644",
+  // NEW: أرباح
+  "\u0623\u0631\u0628\u0627\u062D \u0628\u0646\u0643": "\u062F\u062E\u0644",
+  "\u0623\u0631\u0628\u0627\u062D \u0634\u0647\u0627\u062F\u0629": "\u062F\u062E\u0644",
+  "\u0623\u0631\u0628\u0627\u062D \u0648\u062F\u064A\u0639\u0629": "\u062F\u062E\u0644",
+  "\u0623\u0631\u0628\u0627\u062D \u0623\u0633\u0647\u0645": "\u062F\u062E\u0644",
+  "\u0623\u0631\u0628\u0627\u062D \u0635\u0646\u0627\u062F\u064A\u0642": "\u062F\u062E\u0644",
+  "\u0623\u0631\u0628\u0627\u062D \u0639\u0642\u0627\u0631": "\u062F\u062E\u0644",
+  "\u0623\u0631\u0628\u0627\u062D \u0623\u0631\u0636": "\u062F\u062E\u0644",
+  "\u0623\u0631\u0628\u0627\u062D \u0645\u062D\u0644": "\u062F\u062E\u0644",
+  // NEW: عمولات
+  "\u0639\u0645\u0648\u0644\u0629 \u0628\u0646\u0643": "\u062F\u062E\u0644",
+  "\u0639\u0645\u0648\u0644\u0629 \u0648\u0633\u0627\u0637\u0629": "\u062F\u062E\u0644",
+  "\u0639\u0645\u0648\u0644\u0629 \u062A\u0633\u0648\u064A\u0642": "\u062F\u062E\u0644",
+  "\u0639\u0645\u0648\u0644\u0629 \u0645\u0628\u064A\u0639\u0627\u062A": "\u062F\u062E\u0644",
+  "\u0639\u0645\u0648\u0644\u0629 \u0634\u0631\u0627\u0621": "\u062F\u062E\u0644",
+  "\u0639\u0645\u0648\u0644\u0629 \u0628\u064A\u0639": "\u062F\u062E\u0644"
 };
 
 // api/lib/fuzzy-match.ts
@@ -85328,7 +88338,7 @@ var CATEGORIES = [
     type: "expense",
     subcategories: [
       { id: "cinema", name: "Cinema", name_ar: "\u0633\u064A\u0646\u0645\u0627" },
-      { id: "cafe", name: "Cafe & Shisha", name_ar: "\u0643\u0627\u0641\u064A\u0647 \u0648\u0634\u064A\u0634\u0629" },
+      { id: "cafe", name: "Cafe", name_ar: "\u0643\u0627\u0641\u064A\u0647" },
       { id: "travel", name: "Travel", name_ar: "\u0633\u0641\u0631" },
       { id: "sports", name: "Sports & Gym", name_ar: "\u0631\u064A\u0627\u0636\u0629 \u0648\u062C\u064A\u0645" },
       { id: "gaming", name: "Gaming", name_ar: "\u0623\u0644\u0639\u0627\u0628" },
@@ -85351,6 +88361,20 @@ var CATEGORIES = [
       { id: "google_ai", name: "Google AI", name_ar: "\u062C\u0648\u062C\u0644 AI" },
       { id: "saas", name: "SaaS", name_ar: "\u0628\u0631\u0645\u062C\u064A\u0627\u062A" },
       { id: "general_subs", name: "General", name_ar: "\u0639\u0627\u0645" }
+    ]
+  },
+  {
+    id: "smoking",
+    name: "Smoking",
+    name_ar: "\u062A\u062F\u062E\u064A\u0646",
+    icon: "\u{1F6AC}",
+    color: "#6b7280",
+    type: "expense",
+    subcategories: [
+      { id: "cigarettes", name: "Cigarettes", name_ar: "\u0633\u062C\u0627\u0626\u0631" },
+      { id: "vape", name: "Vape", name_ar: "\u0641\u064A\u0628/\u0644\u064A\u0643\u0648\u062F" },
+      { id: "shisha", name: "Shisha", name_ar: "\u0634\u064A\u0634\u0629/\u0645\u0639\u0633\u0644" },
+      { id: "smoking_general", name: "General", name_ar: "\u0639\u0627\u0645" }
     ]
   },
   {
@@ -85714,9 +88738,9 @@ var SUB_CATEGORY_MAP = {
   "\u0645\u0643\u0627\u0641\u0627\u0647": { category: "\u0645\u0631\u062A\u0628", subCategory: "\u0645\u0643\u0627\u0641\u0623\u0629/\u0628\u0648\u0646\u0635" },
   "\u0639\u0645\u0648\u0644\u0647": { category: "\u0639\u0645\u0644 \u062D\u0631", subCategory: "\u0639\u0645\u0648\u0644\u0629" },
   "\u0633\u0628\u0648\u0628\u0647": { category: "\u0639\u0645\u0644 \u062D\u0631", subCategory: "\u0633\u0628\u0648\u0628\u0629" },
-  "\u0633\u062C\u0627\u064A\u0631": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0639\u0646\u0627\u064A\u0629 \u0634\u062E\u0635\u064A\u0629" },
-  "\u0633\u062C\u0627\u0626\u0631": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0639\u0646\u0627\u064A\u0629 \u0634\u062E\u0635\u064A\u0629" },
-  "\u0633\u062C\u0627\u0631\u0647": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0639\u0646\u0627\u064A\u0629 \u0634\u062E\u0635\u064A\u0629" },
+  "\u0633\u062C\u0627\u064A\u0631": { category: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A", subCategory: "\u0645\u0635\u0627\u0631\u064A\u0641 \u0634\u062E\u0635\u064A\u0629" },
+  "\u0633\u062C\u0627\u0626\u0631": { category: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A", subCategory: "\u0645\u0635\u0627\u0631\u064A\u0641 \u0634\u062E\u0635\u064A\u0629" },
+  "\u0633\u062C\u0627\u0631\u0647": { category: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A", subCategory: "\u0645\u0635\u0627\u0631\u064A\u0641 \u0634\u062E\u0635\u064A\u0629" },
   "\u062D\u0644\u0627\u0642": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0639\u0646\u0627\u064A\u0629 \u0634\u062E\u0635\u064A\u0629" },
   "\u0644\u0628\u0627\u0646": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0633\u0646\u0627\u0643\u0633" },
   "\u0634\u064A\u0628\u0633\u064A": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0633\u0646\u0627\u0643\u0633" },
@@ -85728,6 +88752,155 @@ var SUB_CATEGORY_MAP = {
   "\u0643\u0648\u0631\u0629": { category: "\u062A\u0631\u0641\u064A\u0647", subCategory: "\u0631\u064A\u0627\u0636\u0629 \u0648\u062C\u064A\u0645" },
   "\u0643\u0648\u0631\u0647": { category: "\u062A\u0631\u0641\u064A\u0647", subCategory: "\u0631\u064A\u0627\u0636\u0629 \u0648\u062C\u064A\u0645" }
 };
+var MERCHANT_REGISTRY = {
+  // ── Pharmacies & Health ──
+  "\u0627\u0644\u0639\u0632\u0628\u064A": { category: "\u0635\u062D\u0629", subCategory: "\u0635\u064A\u062F\u0644\u064A\u0629" },
+  "\u0635\u064A\u062F\u0644\u064A\u0629 \u0627\u0644\u0639\u0632\u0628\u064A": { category: "\u0635\u062D\u0629", subCategory: "\u0635\u064A\u062F\u0644\u064A\u0629" },
+  "\u0635\u064A\u062F\u0644\u064A\u0627\u062A \u0627\u0644\u0639\u0632\u0628\u064A": { category: "\u0635\u062D\u0629", subCategory: "\u0635\u064A\u062F\u0644\u064A\u0629" },
+  "\u0631\u0634\u062F\u064A": { category: "\u0635\u062D\u0629", subCategory: "\u0635\u064A\u062F\u0644\u064A\u0629" },
+  "\u0635\u064A\u062F\u0644\u064A\u0629 \u0631\u0634\u062F\u064A": { category: "\u0635\u062D\u0629", subCategory: "\u0635\u064A\u062F\u0644\u064A\u0629" },
+  "\u0633\u064A\u0641": { category: "\u0635\u062D\u0629", subCategory: "\u0635\u064A\u062F\u0644\u064A\u0629" },
+  "\u0635\u064A\u062F\u0644\u064A\u0629 \u0633\u064A\u0641": { category: "\u0635\u062D\u0629", subCategory: "\u0635\u064A\u062F\u0644\u064A\u0629" },
+  // ── Gas Stations & Fuel ──
+  "\u0648\u0637\u0646\u064A\u0629": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0628\u0646\u0632\u064A\u0646" },
+  "\u0628\u0646\u0632\u064A\u0646\u0629 \u0648\u0637\u0646\u064A\u0629": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0628\u0646\u0632\u064A\u0646" },
+  "\u062A\u0648\u062A\u0627\u0644": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0628\u0646\u0632\u064A\u0646" },
+  "\u0645\u0648\u0628\u064A\u0644": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0628\u0646\u0632\u064A\u0646" },
+  "\u0634\u064A\u0644": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0628\u0646\u0632\u064A\u0646" },
+  "\u0628\u0646\u0632\u064A\u0646\u0647": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0628\u0646\u0632\u064A\u0646" },
+  "\u0627\u0644\u0645\u062D\u0637\u0647": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0628\u0646\u0632\u064A\u0646" },
+  "\u0627\u0645\u0627\u0631\u0627\u062A \u0645\u0635\u0631": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0628\u0646\u0632\u064A\u0646" },
+  "\u0643\u0648\u0648\u0628\u0631\u062A\u0641": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0628\u0646\u0632\u064A\u0646" },
+  // ── Supermarkets & Grocery ──
+  "\u0643\u0627\u0631\u0641\u0648\u0631": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0628\u0642\u0627\u0644\u0629" },
+  "\u0633\u0628\u064A\u0646\u064A\u0633": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0628\u0642\u0627\u0644\u0629" },
+  "\u0645\u062A\u0631\u0648 \u0645\u0627\u0631\u0643\u062A": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0628\u0642\u0627\u0644\u0629" },
+  "\u0641\u062A\u062D \u0627\u0644\u0644\u0647": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0628\u0642\u0627\u0644\u0629" },
+  "\u0643\u0627\u0632\u064A\u0648\u0646": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0628\u0642\u0627\u0644\u0629" },
+  "\u0647\u0627\u064A\u0628\u0631 \u0648\u0627\u0646": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0628\u0642\u0627\u0644\u0629" },
+  "\u0627\u0648\u0644\u0627\u062F \u0631\u062C\u0628": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0628\u0642\u0627\u0644\u0629" },
+  "\u0628\u064A\u0645": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0628\u0642\u0627\u0644\u0629" },
+  "\u062E\u064A\u0631 \u0632\u0645\u0627\u0646": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0628\u0642\u0627\u0644\u0629" },
+  // ── Fast Food & Restaurants ──
+  "\u0645\u0627\u0643": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0648\u062C\u0628\u0627\u062A \u0633\u0631\u064A\u0639\u0629" },
+  "\u0645\u0627\u0643\u062F\u0648\u0646\u0627\u0644\u062F\u0632": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0648\u062C\u0628\u0627\u062A \u0633\u0631\u064A\u0639\u0629" },
+  "\u0643\u0646\u062A\u0627\u0643\u064A": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0648\u062C\u0628\u0627\u062A \u0633\u0631\u064A\u0639\u0629" },
+  "\u0647\u0627\u0631\u062F\u064A\u0632": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0648\u062C\u0628\u0627\u062A \u0633\u0631\u064A\u0639\u0629" },
+  "\u0628\u0631\u062C\u0631 \u0643\u064A\u0646\u062C": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0648\u062C\u0628\u0627\u062A \u0633\u0631\u064A\u0639\u0629" },
+  "\u0628\u064A\u062A\u0632\u0627 \u0647\u062A": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0648\u062C\u0628\u0627\u062A \u0633\u0631\u064A\u0639\u0629" },
+  "\u0628\u0627\u0641\u0644\u0648": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0648\u062C\u0628\u0627\u062A \u0633\u0631\u064A\u0639\u0629" },
+  "\u0627\u0644\u0634\u0628\u0631\u0627\u0648\u064A": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0645\u0637\u0639\u0645" },
+  "\u0627\u0628\u0648 \u0637\u0627\u0631\u0642": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0645\u0637\u0639\u0645" },
+  "\u0643\u0634\u0631\u064A \u0627\u0644\u062A\u062D\u0631\u064A\u0631": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0645\u0637\u0639\u0645" },
+  "\u0628\u064A\u062A\u0632\u0627 \u0643\u064A\u0646\u062C": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0648\u062C\u0628\u0627\u062A \u0633\u0631\u064A\u0639\u0629" },
+  "\u0635\u0628\u062D\u064A \u0643\u0627\u0628\u0631": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0645\u0637\u0639\u0645" },
+  // ── E-Commerce & Shopping ──
+  "\u0627\u0645\u0627\u0632\u0648\u0646": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0639\u0627\u0645" },
+  "\u0623\u0645\u0627\u0632\u0648\u0646": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0639\u0627\u0645" },
+  "\u0646\u0648\u0646": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0639\u0627\u0645" },
+  "\u062C\u0648\u0645\u064A\u0627": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0639\u0627\u0645" },
+  "\u0634\u064A \u0627\u0646": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0645\u0644\u0627\u0628\u0633" },
+  "\u0634\u064A \u0625\u0646": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0645\u0644\u0627\u0628\u0633" },
+  "\u0632\u0627\u0631\u0627": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0645\u0644\u0627\u0628\u0633" },
+  "\u0627\u062A\u0634 \u0627\u0646\u062F \u0627\u0645": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0645\u0644\u0627\u0628\u0633" },
+  "\u062F\u064A\u0641\u0627\u0643\u062A\u0648": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0645\u0644\u0627\u0628\u0633" },
+  "\u0627\u062F\u064A\u062F\u0627\u0633": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0645\u0644\u0627\u0628\u0633" },
+  "\u0646\u0627\u064A\u0643\u064A": { category: "\u062A\u0633\u0648\u0642", subCategory: "\u0645\u0644\u0627\u0628\u0633" },
+  // ── Telecom ──
+  "\u0641\u0648\u062F\u0627\u0641\u0648\u0646": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0634\u062D\u0646 \u0631\u0635\u064A\u062F" },
+  "\u0627\u0648\u0631\u0646\u062C": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0634\u062D\u0646 \u0631\u0635\u064A\u062F" },
+  "\u0627\u062A\u0635\u0627\u0644\u0627\u062A": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0634\u062D\u0646 \u0631\u0635\u064A\u062F" },
+  "\u0648\u064A": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0625\u0646\u062A\u0631\u0646\u062A" },
+  // ── Subscriptions ──
+  "\u0646\u062A\u0641\u0644\u0643\u0633": { category: "\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A", subCategory: "\u0646\u062A\u0641\u0644\u0643\u0633" },
+  "\u0633\u0628\u0648\u062A\u064A\u0641\u0627\u064A": { category: "\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A", subCategory: "\u0633\u0628\u0648\u062A\u064A\u0641\u0627\u064A" },
+  "\u0634\u0627\u0647\u062F": { category: "\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A", subCategory: "\u0634\u0627\u0647\u062F" },
+  "\u064A\u0648\u062A\u064A\u0648\u0628 \u0628\u0631\u064A\u0645\u064A\u0648\u0645": { category: "\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A", subCategory: "\u064A\u0648\u062A\u064A\u0648\u0628" },
+  // ── Transport Apps ──
+  "\u0627\u0648\u0628\u0631": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0623\u0648\u0628\u0631/\u0643\u0631\u064A\u0645" },
+  "\u0643\u0631\u064A\u0645": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0623\u0648\u0628\u0631/\u0643\u0631\u064A\u0645" },
+  "\u0633\u0648\u064A\u0641\u0644": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0623\u062A\u0648\u0628\u064A\u0633" },
+  "\u0627\u0646\u062F\u0631\u0627\u064A\u0641\u0631": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0623\u0648\u0628\u0631/\u0643\u0631\u064A\u0645" },
+  "\u062F\u064A\u062F\u064A": { category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", subCategory: "\u0623\u0648\u0628\u0631/\u0643\u0631\u064A\u0645" },
+  // ── BNPL / Fintech ──
+  "\u0641\u0627\u0644\u064A\u0648": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0623\u0642\u0633\u0627\u0637" },
+  "\u0633\u0647\u0648\u0644\u0647": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0623\u0642\u0633\u0627\u0637" },
+  "\u062E\u0632\u0646\u0647": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0623\u0642\u0633\u0627\u0637" },
+  "\u0641\u0648\u0631\u064A": { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u062E\u062F\u0645\u0627\u062A" },
+  "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A": { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u062A\u062D\u0648\u064A\u0644" },
+  // ── Cafes ──
+  "\u0633\u062A\u0627\u0631\u0628\u0643\u0633": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0642\u0647\u0648\u0629 \u0648\u0643\u0627\u0641\u064A\u0647" },
+  "\u0633\u064A\u0644\u0627\u0646\u062A\u0631\u0648": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0642\u0647\u0648\u0629 \u0648\u0643\u0627\u0641\u064A\u0647" },
+  "\u0643\u0648\u0633\u062A\u0627": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0642\u0647\u0648\u0629 \u0648\u0643\u0627\u0641\u064A\u0647" },
+  "\u0645\u064A\u0643\u0627\u062A\u0648": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0642\u0647\u0648\u0629 \u0648\u0643\u0627\u0641\u064A\u0647" },
+  // ── Education ──
+  "\u0627\u0644\u0645\u0646\u0635\u0648\u0631\u0647": { category: "\u062A\u0639\u0644\u064A\u0645", subCategory: "\u062C\u0627\u0645\u0639\u0629" },
+  "\u064A\u0648\u062F\u064A\u0645\u064A": { category: "\u062A\u0639\u0644\u064A\u0645", subCategory: "\u0643\u0648\u0631\u0633\u0627\u062A" },
+  "\u0643\u0648\u0631\u0633\u064A\u0631\u0627": { category: "\u062A\u0639\u0644\u064A\u0645", subCategory: "\u0643\u0648\u0631\u0633\u0627\u062A" }
+};
+function refineSubCategory(category, subCategory, context) {
+  if (subCategory !== "\u0639\u0627\u0645") return subCategory;
+  switch (category) {
+    case "\u062A\u0639\u0644\u064A\u0645":
+      if (/(مدرس|درس|دروس|سنتر)/.test(context)) return "\u062F\u0631\u0648\u0633 \u062E\u0635\u0648\u0635\u064A\u0629";
+      if (/(كورس|كورسات|دوره|دورة|يوديمي|كورسيرا)/.test(context)) return "\u0643\u0648\u0631\u0633\u0627\u062A";
+      if (/(جامعه|كليه|ترم|سنه اولى)/.test(context)) return "\u062C\u0627\u0645\u0639\u0629";
+      if (/(مدرسه|يونيفورم|مصاريف المدرسه)/.test(context)) return "\u0645\u062F\u0631\u0633\u0629";
+      if (/(كتب|ملزمه|مذكره|ادوات)/.test(context)) return "\u0643\u062A\u0628 \u0648\u0623\u062F\u0648\u0627\u062A";
+      return "\u0639\u0627\u0645";
+    case "\u0635\u062D\u0629":
+      if (/(دكتور|عياده|كشف|طبيب|فيزيتا|استشاره)/.test(context)) return "\u0643\u0634\u0641 \u0648\u062F\u0643\u062A\u0648\u0631";
+      if (/(صيدليه|دوا|علاج|روشته|بانادول|فيتامين)/.test(context)) return "\u0635\u064A\u062F\u0644\u064A\u0629";
+      if (/(تحاليل|اشعه|سونار|رنين)/.test(context)) return "\u062A\u062D\u0627\u0644\u064A\u0644";
+      if (/(اسنان|ضرس|حشو|خلع)/.test(context)) return "\u0623\u0633\u0646\u0627\u0646";
+      if (/(مستشفى|عمليه|جراحه)/.test(context)) return "\u0645\u0633\u062A\u0634\u0641\u0649";
+      return "\u0639\u0627\u0645";
+    case "\u0645\u0648\u0627\u0635\u0644\u0627\u062A":
+      if (/(اوبر|كريم|اندرايفر|ديدي)/.test(context)) return "\u0623\u0648\u0628\u0631/\u0643\u0631\u064A\u0645";
+      if (/(بنزين|تفويله|محطه|بنزينه)/.test(context)) return "\u0628\u0646\u0632\u064A\u0646";
+      if (/(مترو|تذكره مترو)/.test(context)) return "\u0645\u062A\u0631\u0648";
+      if (/(تاكسي|تكسي)/.test(context)) return "\u062A\u0627\u0643\u0633\u064A";
+      if (/(توكتوك)/.test(context)) return "\u062A\u0648\u0643\u062A\u0648\u0643";
+      if (/(صيانه|عربيه|كاوتش|زيت|ميكانيكي)/.test(context)) return "\u0635\u064A\u0627\u0646\u0629 \u0639\u0631\u0628\u064A\u0629";
+      return "\u0639\u0627\u0645";
+    case "\u0633\u0643\u0646":
+      if (/(ايجار|اجار)/.test(context)) return "\u0625\u064A\u062C\u0627\u0631";
+      if (/(سباك|كهربائي|نقاش|نجار|صيانه)/.test(context)) return "\u0635\u064A\u0627\u0646\u0629";
+      if (/(عفش|اثاث)/.test(context)) return "\u0623\u062B\u0627\u062B";
+      if (/(منظفات|بريل|اريال|صابون)/.test(context)) return "\u0645\u0646\u0638\u0641\u0627\u062A";
+      return "\u0639\u0627\u0645";
+    case "\u0641\u0648\u0627\u062A\u064A\u0631":
+      if (/(كهربا|نور)/.test(context)) return "\u0643\u0647\u0631\u0628\u0627\u0621";
+      if (/(ميه|مياه)/.test(context)) return "\u0645\u064A\u0627\u0647";
+      if (/(غاز)/.test(context)) return "\u063A\u0627\u0632";
+      if (/(نت|انترنت|راوتر|وي)/.test(context)) return "\u0625\u0646\u062A\u0631\u0646\u062A";
+      if (/(شحن|رصيد|كارت)/.test(context)) return "\u0634\u062D\u0646 \u0631\u0635\u064A\u062F";
+      if (/(قسط|اقساط|فاليو|سهوله)/.test(context)) return "\u0623\u0642\u0633\u0627\u0637";
+      return "\u0639\u0627\u0645";
+    case "\u062A\u0631\u0641\u064A\u0647":
+      if (/(سينما|فيلم)/.test(context)) return "\u0633\u064A\u0646\u0645\u0627";
+      if (/(جيم|رياضه|بروتين)/.test(context)) return "\u0631\u064A\u0627\u0636\u0629 \u0648\u062C\u064A\u0645";
+      if (/(سفر|مصيف|رحله)/.test(context)) return "\u0633\u0641\u0631";
+      if (/(خروجه|فسحه|تمشيه)/.test(context)) return "\u062E\u0631\u0648\u062C\u0629";
+      if (/(شيشه|كافيه)/.test(context)) return "\u0643\u0627\u0641\u064A\u0647 \u0648\u0634\u064A\u0634\u0629";
+      if (/(بلايستيشن|اكس بوكس|العاب)/.test(context)) return "\u0623\u0644\u0639\u0627\u0628";
+      return "\u0639\u0627\u0645";
+    case "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628":
+      if (/(قهوه|نسكافيه|لاتيه|كابتشينو|ستاربكس)/.test(context)) return "\u0642\u0647\u0648\u0629 \u0648\u0643\u0627\u0641\u064A\u0647";
+      if (/(دليفري|تيك اواي|طلبات)/.test(context)) return "\u062F\u0644\u064A\u0641\u0631\u064A";
+      if (/(بقاله|سوبر|خضار|فاكهه|بيض|لبن)/.test(context)) return "\u0628\u0642\u0627\u0644\u0629";
+      if (/(شيبسي|شوكولاته|حلويات|ايس كريم|بسبوسه)/.test(context)) return "\u0633\u0646\u0627\u0643\u0633";
+      if (/(لحمه|فراخ|سمك|جمبري)/.test(context)) return "\u0644\u062D\u0648\u0645 \u0648\u062F\u0648\u0627\u062C\u0646";
+      if (/(عيش|مخبز|فرن)/.test(context)) return "\u0645\u062E\u0628\u0648\u0632\u0627\u062A";
+      return "\u0645\u0637\u0639\u0645";
+    case "\u0647\u062F\u0627\u064A\u0627 \u0648\u0635\u062F\u0642\u0627\u062A":
+      if (/(صدقه|زكاه|تبرع|جامع|رساله)/.test(context)) return "\u0635\u062F\u0642\u0629/\u062A\u0628\u0631\u0639";
+      if (/(عيديه)/.test(context)) return "\u0639\u064A\u062F\u064A\u0629";
+      return "\u0639\u0627\u0645";
+    default:
+      return subCategory;
+  }
+}
 function isSimpleText(text2) {
   const normalizedLen = text2.length;
   const wordCount = text2.split(/\s+/).length;
@@ -85783,6 +88956,20 @@ function runRuleEngine(normalizedText, userDict = [], profileContext) {
         inferenceSource = "dictionary";
         found = true;
         break;
+      }
+    }
+    if (!found) {
+      const merchantKeys = Object.keys(MERCHANT_REGISTRY).sort((a, b) => b.length - a.length);
+      for (const merchant of merchantKeys) {
+        if (allContext.includes(merchant)) {
+          category = MERCHANT_REGISTRY[merchant].category;
+          subCategory = MERCHANT_REGISTRY[merchant].subCategory;
+          confidence = 100;
+          inferenceSource = "dictionary";
+          ambiguityFlags = ["merchant_registry_hit"];
+          found = true;
+          break;
+        }
       }
     }
     if (!found) {
@@ -85891,10 +89078,11 @@ function runRuleEngine(normalizedText, userDict = [], profileContext) {
     if (!description || description.length < 2) {
       description = intentResult.intent === "income" ? "\u062F\u062E\u0644" : category;
     }
+    const refinedSubCategory = refineSubCategory(category, subCategory, allContext);
     items.push(applyProfileHints({
       amount,
       category,
-      subCategory,
+      subCategory: refinedSubCategory,
       description,
       type: intentResult.intent,
       confidence,
@@ -85918,18 +89106,18 @@ function applyProfileHints(item, context, profileContext) {
   const next = { ...item };
   const flags = new Set(next.ambiguityFlags || []);
   if (profileContext.hasChildren === true && /(مدرس|مدرسة|حضانة|درس|دروس|كتب|يونيفورم)/.test(context)) {
-    if (next.category === "\u0638\u2026\u0637\u06BE\u0638\u2020\u0638\u02C6\u0637\xB9\u0637\xA7\u0637\u06BE" || next.confidence < 92) {
-      next.category = "\u0637\u06BE\u0637\xB9\u0638\u201E\u0638\u0679\u0638\u2026";
-      next.subCategory = /درس|دروس/.test(context) ? "\u0637\xAF\u0637\xB1\u0638\u02C6\u0637\xB3 \u0637\xAE\u0637\xB5\u0638\u02C6\u0637\xB5\u0638\u0679\u0637\xA9" : "\u0638\u2026\u0637\xAF\u0637\xB1\u0637\xB3\u0637\xA9";
+    if (next.category === "\u0645\u062A\u0646\u0648\u0639\u0627\u062A" || next.confidence < 92) {
+      next.category = "\u062A\u0639\u0644\u064A\u0645";
+      next.subCategory = /درس|دروس/.test(context) ? "\u062F\u0631\u0648\u0633 \u062E\u0635\u0648\u0635\u064A\u0629" : "\u0645\u062F\u0631\u0633\u0629";
       next.confidence = Math.max(next.confidence, 92);
       next.needsReview = false;
       flags.add("profile_children_education_hint");
     }
   }
   if (profileContext.responsibleForFamily === true && /(طلبات البيت|مصروف البيت|سوبر ماركت|بقالة|منظفات)/.test(context)) {
-    if (next.category === "\u0638\u2026\u0637\u06BE\u0638\u2020\u0638\u02C6\u0637\xB9\u0637\xA7\u0637\u06BE" || next.confidence < 88) {
-      next.category = /منظفات/.test(context) ? "\u0637\xB3\u0638\u0192\u0638\u2020" : "\u0637\xA3\u0638\u0192\u0638\u201E \u0638\u02C6\u0637\xB4\u0637\xB1\u0637\xA8";
-      next.subCategory = /منظفات/.test(context) ? "\u0638\u2026\u0638\u2020\u0637\xB8\u0638\u067E\u0637\xA7\u0637\u06BE" : "\u0637\xA8\u0638\u201A\u0637\xA7\u0638\u201E\u0637\xA9";
+    if (next.category === "\u0645\u062A\u0646\u0648\u0639\u0627\u062A" || next.confidence < 88) {
+      next.category = /منظفات/.test(context) ? "\u0633\u0643\u0646" : "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628";
+      next.subCategory = /منظفات/.test(context) ? "\u0645\u0646\u0638\u0641\u0627\u062A" : "\u0628\u0642\u0627\u0644\u0629";
       next.confidence = Math.max(next.confidence, 88);
       next.needsReview = next.confidence < 85;
       flags.add("profile_family_household_hint");
@@ -85946,50 +89134,67 @@ function applyProfileHints(item, context, profileContext) {
 }
 
 // api/lib/ai-classifier.ts
-function buildCategoryList() {
-  return CATEGORIES.map((c) => {
-    const subs = c.subcategories.map((s) => s.name_ar).join("\u060C");
-    return `${c.name_ar}(${c.type}):[${subs}]`;
-  }).join("\n");
+var classificationResponseSchema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    items: {
+      type: SchemaType.ARRAY,
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          type: { type: SchemaType.STRING },
+          amount: { type: SchemaType.NUMBER },
+          item_name: { type: SchemaType.STRING },
+          main_category: { type: SchemaType.STRING },
+          sub_category: { type: SchemaType.STRING },
+          confidence: { type: SchemaType.NUMBER },
+          needs_review: { type: SchemaType.BOOLEAN }
+        },
+        required: ["type", "amount", "item_name", "main_category", "sub_category", "confidence"]
+      }
+    },
+    needs_clarification: { type: SchemaType.BOOLEAN },
+    clarification_question: { type: SchemaType.STRING, nullable: true },
+    alertMessage: { type: SchemaType.STRING, nullable: true }
+  },
+  required: ["items", "needs_clarification"]
+};
+function buildCompressedCategories() {
+  return CATEGORIES.map((c) => `${c.name_ar}:[${c.subcategories.map((s) => s.name_ar).join(",")}]`).join("|");
 }
-var SYSTEM_PROMPT = `\u0623\u0646\u062A SmartSpend AI \u2014 \u0645\u0635\u0646\u0641 \u0645\u0627\u0644\u064A \u0645\u0635\u0631\u064A.
-\u0645\u0647\u0645\u062A\u0643: \u062A\u062D\u0644\u064A\u0644 \u0646\u0635\u0648\u0635 \u0639\u0627\u0645\u064A\u0629 \u0645\u0635\u0631\u064A\u0629 \u0648\u0627\u0633\u062A\u062E\u0631\u0627\u062C \u0627\u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0628\u062F\u0642\u0629.
-
-## \u0627\u0644\u0642\u0648\u0627\u0639\u062F:
-1. \u0627\u0641\u0647\u0645 \u0627\u0644\u0639\u0627\u0645\u064A\u0629: "\u0642\u0628\u0636\u062A"=\u0631\u0627\u062A\u0628\u060C "\u0633\u0644\u0641\u062A"=\u0623\u0642\u0631\u0636\u062A\u060C "\u0634\u062D\u0646\u062A \u0627\u0644\u0639\u0631\u0628\u064A\u0629"=\u0628\u0646\u0632\u064A\u0646
-2. \u0641\u0631\u0651\u0642: expense/income/transfer/investment
-3. \u0627\u0644\u0641\u0626\u0629 \u0627\u0644\u0641\u0631\u0639\u064A\u0629 sub_category \u0623\u0647\u0645 \u0645\u0646 \u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0629
-4. \u0645\u0628\u0627\u0644\u063A>10000 \u063A\u0627\u0644\u0628\u0627\u064B: \u0625\u064A\u062C\u0627\u0631/\u0623\u062C\u0647\u0632\u0629/\u0633\u064A\u0627\u0631\u0629\u060C \u0645\u0634 \u0623\u0643\u0644
-5. "\u0634\u062D\u0646\u062A"=\u0631\u0635\u064A\u062F(\u0641\u0648\u0627\u062A\u064A\u0631)\u060C "\u0634\u062D\u0646\u062A \u0627\u0644\u0639\u0631\u0628\u064A\u0629"=\u0628\u0646\u0632\u064A\u0646(\u0645\u0648\u0627\u0635\u0644\u0627\u062A)
-6. "\u062D\u0648\u0644\u062A \u0644\u0640"=\u0645\u0635\u0631\u0648\u0641/\u062A\u062D\u0648\u064A\u0644\u060C "\u062D\u0648\u0644\u0648\u0644\u064A"=\u062F\u062E\u0644
-7. \u0641\u0643\u0643 \u0627\u0644\u062C\u0645\u0644 \u0627\u0644\u0645\u062A\u0639\u062F\u062F\u0629 \u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A \u0645\u0646\u0641\u0635\u0644\u0629
-8. \u0644\u0627 \u062A\u0633\u062A\u062E\u062F\u0645 "\u0645\u062A\u0646\u0648\u0639\u0627\u062A" \u0625\u0644\u0627 \u0644\u0644\u0646\u0635 \u0627\u0644\u063A\u0627\u0645\u0636 \u062A\u0645\u0627\u0645\u0627\u064B
-9. \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0627\u062A(\u0645\u0648\u0628\u0627\u064A\u0644/\u0644\u0627\u0628\u062A\u0648\u0628)="\u062A\u0633\u0648\u0642/\u0623\u062C\u0647\u0632\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629" \u0645\u0634 "\u0641\u0648\u0627\u062A\u064A\u0631"
-10. \u0645\u0645\u0646\u0648\u0639 needs_clarification=true \u0644\u0648 \u0641\u064A\u0647 \u0623\u0631\u0642\u0627\u0645 \u0648\u0641\u0626\u0627\u062A \u0648\u0627\u0636\u062D\u0629
-
-## \u0623\u0645\u062B\u0644\u0629:
-"\u0631\u062D\u062A \u0627\u0644\u062D\u0644\u0627\u0642 80\u062C \u0648\u0633\u0628\u062A \u0644\u0644\u0645\u0633\u0627\u0639\u062F 20" \u2192 [{80,\u062A\u0633\u0648\u0642,\u0639\u0646\u0627\u064A\u0629 \u0634\u062E\u0635\u064A\u0629,expense},{20,\u0645\u062A\u0646\u0648\u0639\u0627\u062A,\u0639\u0627\u0645,expense}]
-"\u062E\u062F\u062A \u0627\u0644\u0645\u0635\u0631\u0648\u0641 200 \u0635\u0631\u0641\u062A 100 \u062F\u0631\u0633" \u2192 [{200,\u0645\u0631\u062A\u0628,\u0645\u0631\u062A\u0628 \u0623\u0633\u0627\u0633\u064A,income},{100,\u062A\u0639\u0644\u064A\u0645,\u062F\u0631\u0648\u0633 \u062E\u0635\u0648\u0635\u064A\u0629,expense}]
-"\u0646\u0632\u0644\u062A \u0628\u0644\u0627\u064A\u0633\u062A\u064A\u0634\u0646 60\u062C \u0648\u062C\u0628\u062A \u062A\u0648\u064A\u0633\u062A 20 \u0648\u0644\u0639\u0628\u062A \u0643\u0648\u0631\u0629 50" \u2192 [{60,\u062A\u0631\u0641\u064A\u0647,\u0623\u0644\u0639\u0627\u0628,expense},{20,\u0623\u0643\u0644 \u0648\u0634\u0631\u0628,\u0633\u0646\u0627\u0643\u0633,expense},{50,\u062A\u0631\u0641\u064A\u0647,\u0631\u064A\u0627\u0636\u0629 \u0648\u062C\u064A\u0645,expense}]
-
-## \u0627\u0644\u0641\u0626\u0627\u062A:
-${buildCategoryList()}
-
-## \u0635\u064A\u063A\u0629 \u0627\u0644\u0631\u062F JSON \u0641\u0642\u0637:
-{"items":[{"type":"expense|income","amount":0,"main_category":"","sub_category":"","confidence":0,"needs_review":false,"notes":"\u0648\u0635\u0641"}],"needs_clarification":false,"clarification_question":null}
-
-## \u0627\u0644\u062B\u0642\u0629: >=90 \u0645\u0624\u0643\u062F | 70-89 \u0645\u0631\u0627\u062C\u0639\u0629 | <70 \u063A\u0645\u0648\u0636`;
-var STT_SYSTEM_PROMPT = `\u0623\u0646\u062A "SmartSpend Voice Engine" \u2014 \u0646\u0638\u0627\u0645 \u0627\u0644\u062A\u0639\u0631\u0641 \u0627\u0644\u0635\u0648\u062A\u064A \u0644\u0645\u0648\u0642\u0639 \u0648\u062A\u0637\u0628\u064A\u0642 \u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641 "SmartSpend".
-
-\u0645\u0647\u0645\u062A\u0643 \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629: \u062A\u062D\u0648\u064A\u0644 \u0643\u0644\u0627\u0645 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 (\u0627\u0644\u0630\u064A \u064A\u062A\u062D\u062F\u062B \u0628\u0627\u0644\u0639\u0627\u0645\u064A\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629) \u0644\u062A\u0633\u062C\u064A\u0644 \u0645\u0635\u0627\u0631\u064A\u0641\u0647 \u0627\u0644\u064A\u0648\u0645\u064A\u0629 \u0625\u0644\u0649 \u0646\u0635 \u062F\u0642\u064A\u0642 \u0648\u0645\u0641\u0647\u0648\u0645 \u062C\u062F\u0627\u064B.
-\u0627\u0644\u0647\u062F\u0641: \u0623\u062E\u0630 \u0647\u0630\u0627 \u0627\u0644\u0646\u0635 \u0628\u0639\u062F \u0630\u0644\u0643 \u0644\u062A\u062D\u0644\u064A\u0644\u0647 \u0648\u062A\u0635\u0646\u064A\u0641\u0647 \u0645\u0627\u0644\u064A\u0627\u064B.
-
-\u0627\u0644\u0642\u0648\u0627\u0639\u062F \u0627\u0644\u0635\u0627\u0631\u0645\u0629 \u0644\u0644\u062A\u0641\u0631\u064A\u063A \u0627\u0644\u0635\u0648\u062A\u064A (STT):
-1. **\u062A\u0631\u062C\u0645\u0629 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u0645\u0646\u0637\u0648\u0642\u0629:** \u062D\u0648\u0644 \u0623\u064A \u0631\u0642\u0645 \u0645\u0633\u0645\u0648\u0639 \u0625\u0644\u0649 \u0623\u0631\u0642\u0627\u0645 \u0631\u064A\u0627\u0636\u064A\u0629 \u0641\u0648\u0631\u0627\u064B (\u0645\u062B\u0627\u0644: "\u0635\u0631\u0641\u062A \u062A\u0644\u0627\u062A\u064A\u0646 \u062C\u0646\u064A\u0647" \u2192 "\u0635\u0631\u0641\u062A 30 \u062C\u0646\u064A\u0647"\u060C "\u062E\u0645\u0633\u0645\u064A\u0629" \u2192 "500").
-2. **\u0627\u0644\u062D\u0641\u0627\u0638 \u0639\u0644\u0649 \u0627\u0644\u0633\u064A\u0627\u0642 \u0627\u0644\u0645\u0627\u0644\u064A:** \u062D\u0627\u0641\u0638 \u0628\u062F\u0642\u0629 \u0639\u0644\u0649 \u0643\u0644\u0645\u0627\u062A \u0645\u062B\u0644 (\u0645\u0631\u062A\u0628\u060C \u0633\u0644\u0641\u0629\u060C \u0642\u0628\u0636\u062A\u060C \u062F\u0641\u0639\u062A\u060C \u0625\u064A\u062C\u0627\u0631\u060C \u0645\u0648\u0627\u0635\u0644\u0627\u062A\u060C \u0623\u0648\u0628\u0631\u060C \u0643\u0631\u064A\u0645\u060C \u0641\u0648\u0627\u062A\u064A\u0631).
-3. **\u0644\u0627 \u062A\u0636\u0641 \u0623\u064A \u0646\u0635 \u0623\u0648 \u062A\u0641\u0633\u064A\u0631 \u0645\u0646 \u0639\u0646\u062F\u0643:** \u0641\u0642\u0637 \u062D\u0648\u0644 \u0645\u0627 \u0642\u0627\u0644\u0647 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0646\u0635\u0627\u064B.
-4. **\u062A\u062C\u0627\u0647\u0644 \u0627\u0644\u062A\u0623\u062A\u0623\u0629 (Ums and Ahs):** \u0631\u0643\u0632 \u0639\u0644\u0649 \u0627\u0644\u0645\u0639\u0644\u0648\u0645\u0627\u062A \u0627\u0644\u0645\u0627\u0644\u064A\u0629.
-5. **\u0627\u0644\u0646\u0627\u062A\u062C \u0647\u0648 \u0646\u0635 \u0641\u0648\u0631\u064A \u062C\u0627\u0647\u0632 \u0644\u0645\u0633\u0627\u0639\u062F \u0645\u0627\u0644\u064A \u0644\u0645\u0639\u0627\u0644\u062C\u062A\u0647.**`;
+function selectDynamicExample(text2) {
+  if (/(?:حولت|اديت|سلفت|بعتت)\s/.test(text2)) {
+    return '{"items":[{"amount":500,"item_name":"\u062A\u062D\u0648\u064A\u0644 \u0644\u0623\u062D\u0645\u062F","main_category":"\u062A\u062D\u0648\u064A\u0644","sub_category":"\u0633\u0644\u0641 \u0648\u062F\u064A\u0648\u0646","type":"expense","confidence":95}]}';
+  }
+  if (/قبضت|مرتب|استلمت|خدت.*مصروف/.test(text2)) {
+    return '{"items":[{"amount":5000,"item_name":"\u0631\u0627\u062A\u0628","main_category":"\u0645\u0631\u062A\u0628","sub_category":"\u0631\u0627\u062A\u0628 \u0623\u0633\u0627\u0633\u064A","type":"income","confidence":95}]}';
+  }
+  return '{"items":[{"amount":80,"item_name":"\u0634\u0627\u0648\u0631\u0645\u0627","main_category":"\u0623\u0643\u0644 \u0648\u0634\u0631\u0628","sub_category":"\u0645\u0637\u0639\u0645","type":"expense","confidence":90}]}';
+}
+function buildMicroSystemPrompt(text2, isSmoker) {
+  const example = selectDynamicExample(text2);
+  const compressedCats = buildCompressedCategories();
+  const smokingRule = isSmoker ? "\n4. \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0645\u062F\u062E\u0646\u060C \u0635\u0646\u0641 \u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u0633\u062C\u0627\u0626\u0631 \u0648\u0627\u0644\u0641\u064A\u0628 \u0648\u0627\u0644\u0634\u064A\u0634\u0629 \u062A\u062D\u062A \u0641\u0626\u0629 '\u062A\u062F\u062E\u064A\u0646'." : "\n4. \u0641\u0643\u0643 \u0627\u0644\u062C\u0645\u0644 \u0627\u0644\u0645\u0639\u0642\u062F\u0629 \u0644\u0639\u062F\u0629 \u0639\u0645\u0644\u064A\u0627\u062A \u0645\u0646\u0641\u0635\u0644\u0629.";
+  return `\u0623\u0646\u062A \u0645\u062D\u0644\u0644 \u0645\u0627\u0644\u064A \u062F\u0642\u064A\u0642.
+\u0627\u0633\u062A\u062E\u0631\u062C \u0627\u0644\u0645\u0634\u062A\u0631\u064A\u0627\u062A \u0648\u0635\u0646\u0641\u0647\u0627 \u0628\u0623\u062F\u0642 \u0641\u0626\u0629 \u0641\u0631\u0639\u064A\u0629.
+\u0627\u0644\u0642\u0648\u0627\u0639\u062F:
+1. \u0635\u0646\u0641 \u0628\u062F\u0642\u0629 \u0645\u0646 \u0627\u0644\u0641\u0626\u0627\u062A \u0627\u0644\u0645\u062A\u0627\u062D\u0629 \u0641\u0642\u0637. (\u0645\u062B\u0627\u0644: \u0634\u0627\u0648\u0631\u0645\u0627->\u0645\u0637\u0639\u0645\u060C \u0643\u0648\u0631\u0629->\u062A\u0631\u0641\u064A\u0647/\u062E\u0631\u0648\u062C\u0629 \u0635\u062D\u0627\u0628\u060C \u0645\u064A\u0627\u0647->\u0628\u0642\u0627\u0644\u0629).
+2. \u0627\u0633\u062A\u062E\u0631\u062C \u0627\u0633\u0645 \u0627\u0644\u0633\u0644\u0639\u0629 \u0627\u0644\u0641\u0639\u0644\u064A \u0641\u064A item_name.
+3. \u0627\u0644\u0645\u0628\u0627\u0644\u063A>10000=\u0625\u064A\u062C\u0627\u0631/\u0623\u062C\u0647\u0632\u0629. \u0634\u062D\u0646\u062A=\u0634\u062D\u0646 \u0631\u0635\u064A\u062F/\u0628\u0646\u0632\u064A\u0646.${smokingRule}
+\u0627\u0644\u0641\u0626\u0627\u062A:
+${compressedCats}
+\u0645\u062B\u0627\u0644: ${example}
+JSON \u0641\u0642\u0637.`;
+}
+var STT_SYSTEM_PROMPT = `\u0623\u0646\u062A "SmartSpend Voice Engine" \u2014 \u0646\u0638\u0627\u0645 \u062A\u062D\u0648\u064A\u0644 \u0627\u0644\u0635\u0648\u062A \u0644\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641.
+\u0645\u0647\u0645\u062A\u0643: \u062A\u062D\u0648\u064A\u0644 \u0643\u0644\u0627\u0645 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0627\u0644\u0639\u0627\u0645\u064A\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629 \u0644\u0646\u0635 \u0645\u0643\u062A\u0648\u0628 \u0628\u062F\u0642\u0629.
+\u0627\u0644\u0642\u0648\u0627\u0639\u062F \u0627\u0644\u0635\u0627\u0631\u0645\u0629:
+1. \u062D\u0648\u0651\u0644 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u0645\u0646\u0637\u0648\u0642\u0629 \u0644\u0623\u0631\u0642\u0627\u0645 (\u0645\u062B\u0627\u0644: "\u062A\u0644\u0627\u062A\u064A\u0646 \u062C\u0646\u064A\u0647" \u2192 "30 \u062C\u0646\u064A\u0647"\u060C "\u0627\u0644\u0641" \u2192 "1000").
+2. \u0627\u0643\u062A\u0628 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u0639\u0631\u0628\u064A\u0629 \u0623\u0631\u0642\u0627\u0645 ("\u062E\u0645\u0633\u0645\u064A\u0629" \u2192 "500"\u060C "\u0627\u0644\u0641\u064A\u0646" \u2192 "2000").
+3. \u062D\u0627\u0641\u0638 \u0639\u0644\u0649 \u0627\u0644\u0633\u064A\u0627\u0642 \u0627\u0644\u0645\u0627\u0644\u064A \u0643\u0645\u0627 \u0647\u0648 \u0628\u0627\u0644\u0639\u0627\u0645\u064A\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629 \u0628\u062F\u0648\u0646 \u062A\u0631\u062C\u0645\u0629.
+4. \u0644\u0627 \u062A\u0636\u0641 \u0623\u064A \u0643\u0644\u0627\u0645 \u0645\u0646 \u0639\u0646\u062F\u0643 \u0648\u0644\u0627 \u062A\u0641\u0633\u0631 \u0648\u0644\u0627 \u062A\u0639\u0644\u0642.
+5. \u062A\u062C\u0627\u0647\u0644 \u0627\u0644\u062A\u0623\u062A\u0623\u0629 \u0648\u0627\u0644\u062A\u0643\u0631\u0627\u0631 \u063A\u064A\u0631 \u0627\u0644\u0645\u0642\u0635\u0648\u062F.
+6. \u0645\u0635\u0637\u0644\u062D\u0627\u062A \u0645\u0627\u0644\u064A\u0629 \u0634\u0627\u0626\u0639\u0629: \u062F\u0641\u0639\u062A\u060C \u0635\u0631\u0641\u062A\u060C \u0627\u0634\u062A\u0631\u064A\u062A\u060C \u062C\u0628\u062A\u060C \u0642\u0628\u0636\u062A\u060C \u062D\u0648\u0644\u062A\u060C \u0627\u062F\u0641\u0639\u060C \u062E\u062F\u060C \u062D\u0637.`;
 var CLARIFICATION_POLICY_PROMPT = `
 Additional policy:
 - Prefer precise subcategory mapping and avoid generic fallback categories when context exists.
@@ -85998,42 +89203,54 @@ Additional policy:
 - For multi-transaction text, split and classify each operation independently.
 `;
 async function aiClassify(text2, apiKey, apiKey2, modelName, maxTokens, contextObj, skipClarification) {
-  let userPrompt = `\u0627\u0644\u0633\u064A\u0627\u0642 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u062D\u0627\u0644\u064A:
-- \u0625\u062C\u0645\u0627\u0644\u064A \u062F\u062E\u0644 \u0627\u0644\u0634\u0647\u0631: ${contextObj.totalIncome} \u062C.\u0645
-- \u0625\u062C\u0645\u0627\u0644\u064A \u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u0634\u0647\u0631: ${contextObj.totalExpense} \u062C.\u0645  
-- \u0627\u0644\u062A\u0627\u0631\u064A\u062E: ${contextObj.currentDate}
-
-\u0627\u0644\u0646\u0635 \u0627\u0644\u0645\u0637\u0644\u0648\u0628 \u062A\u062D\u0644\u064A\u0644\u0647: "${text2}"`;
+  let userPrompt = `\u0627\u0644\u0646\u0635: "${text2}"`;
+  if (contextObj.currentDate) {
+    try {
+      const now = new Date(contextObj.currentDate);
+      const dayOfMonth = now.getDate();
+      const hour = now.getHours();
+      const temporalHints = [];
+      if (dayOfMonth >= 1 && dayOfMonth <= 5) {
+        temporalHints.push("\u0628\u062F\u0627\u064A\u0629 \u0627\u0644\u0634\u0647\u0631: \u0627\u0644\u0645\u0628\u0627\u0644\u063A \u0627\u0644\u0643\u0628\u064A\u0631\u0629 \u063A\u0627\u0644\u0628\u0627\u064B \u0625\u064A\u062C\u0627\u0631 \u0623\u0648 \u0623\u0642\u0633\u0627\u0637");
+      }
+      if (dayOfMonth >= 25) {
+        temporalHints.push("\u0646\u0647\u0627\u064A\u0629 \u0627\u0644\u0634\u0647\u0631: \u0627\u062D\u062A\u0645\u0627\u0644 \u0631\u0627\u062A\u0628 \u0623\u0648 \u062A\u062C\u062F\u064A\u062F \u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A");
+      }
+      if (hour >= 0 && hour < 5) {
+        temporalHints.push("\u0648\u0642\u062A \u0645\u062A\u0623\u062E\u0631: \u063A\u0627\u0644\u0628\u0627\u064B \u062F\u0644\u064A\u0641\u0631\u064A \u0623\u0648 \u062A\u0631\u0641\u064A\u0647 \u0623\u0648 \u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A \u0623\u0648\u0646\u0644\u0627\u064A\u0646");
+      }
+      if (hour >= 6 && hour <= 9) {
+        temporalHints.push("\u0635\u0628\u0627\u062D: \u063A\u0627\u0644\u0628\u0627\u064B \u0645\u0648\u0627\u0635\u0644\u0627\u062A \u0623\u0648 \u0641\u0637\u0627\u0631");
+      }
+      if (temporalHints.length > 0) {
+        userPrompt += `
+\u062A\u0644\u0645\u064A\u062D \u0632\u0645\u0646\u064A:${temporalHints.join(".")}`;
+      }
+    } catch {
+    }
+  }
   if (contextObj.userProfileContext) {
     userPrompt += `
-
-Smart user profile context:
-${contextObj.userProfileContext}`;
-  }
-  if (contextObj.ruleHints && contextObj.ruleHints.length > 0) {
-    const hintsStr = contextObj.ruleHints.map((h) => `- ${h.amount} \u062C.\u0645: ${h.category}/${h.subCategory} (${h.confidence}%)`).join("\n");
-    userPrompt += `
-
-\u062A\u0644\u0645\u064A\u062D\u0627\u062A \u0645\u0646 \u0627\u0644\u0645\u062D\u0631\u0643 \u0627\u0644\u0645\u0628\u062F\u0626\u064A (\u064A\u0645\u0643\u0646\u0643 \u0627\u0644\u0627\u0633\u062A\u0639\u0627\u0646\u0629 \u0628\u0647\u0627 \u0643\u062F\u0644\u064A\u0644):
-${hintsStr}`;
+\u0633\u064A\u0627\u0642 \u0634\u062E\u0635\u064A:${contextObj.userProfileContext.slice(0, 150)}`;
   }
   if (skipClarification) {
     userPrompt += `
-
-**\u0645\u0644\u0627\u062D\u0638\u0629 \u0647\u0627\u0645\u0629 \u062C\u062F\u0627\u064B**: \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0637\u0644\u0628 \u062A\u062E\u0637\u064A \u0627\u0644\u062A\u0648\u0636\u064A\u062D (Skip). \u0645\u0645\u0646\u0648\u0639 \u0637\u0644\u0628 \u062A\u0648\u0636\u064A\u062D (\u0627\u062C\u0639\u0644 needs_clarification = false \u062F\u0627\u0626\u0645\u064B\u0627). \u0642\u0645 \u0628\u062A\u062E\u0645\u064A\u0646 \u0627\u0644\u0641\u0626\u0627\u062A \u0627\u0644\u0645\u062C\u0647\u0648\u0644\u0629 \u0628\u0646\u0627\u0621\u064B \u0639\u0644\u0649 \u0627\u0644\u0633\u064A\u0627\u0642\u060C \u0648\u0623\u0639\u062F \u0623\u0641\u0636\u0644 \u0627\u0633\u062A\u0646\u062A\u0627\u062C \u0645\u0645\u0643\u0646 \u0648\u0636\u0639 \u0646\u0633\u0628\u0629 \u0627\u0644\u062B\u0642\u0629 confidence \u0645\u0646\u0627\u0633\u0628\u0629 \u0644\u062A\u0648\u0642\u0639\u0643.`;
+Skip=true:\u0644\u0627 \u062A\u0637\u0644\u0628 \u062A\u0648\u0636\u064A\u062D.`;
   }
   let response = "";
   let tokensUsed = 0;
+  const systemPrompt = `${buildMicroSystemPrompt(text2, contextObj.isSmoker ?? false)}
+${CLARIFICATION_POLICY_PROMPT}`;
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: modelName,
-      systemInstruction: `${SYSTEM_PROMPT}
-${CLARIFICATION_POLICY_PROMPT}`,
+      systemInstruction: systemPrompt,
       generationConfig: {
         temperature: 0.2,
         maxOutputTokens: maxTokens,
-        responseMimeType: "application/json"
+        responseMimeType: "application/json",
+        responseSchema: classificationResponseSchema
       }
     });
     const result = await model.generateContent(userPrompt);
@@ -86047,12 +89264,12 @@ ${CLARIFICATION_POLICY_PROMPT}`,
         const genAI2 = new GoogleGenerativeAI(apiKey2);
         const model2 = genAI2.getGenerativeModel({
           model: modelName,
-          systemInstruction: `${SYSTEM_PROMPT}
-${CLARIFICATION_POLICY_PROMPT}`,
+          systemInstruction: systemPrompt,
           generationConfig: {
             temperature: 0.2,
             maxOutputTokens: maxTokens,
-            responseMimeType: "application/json"
+            responseMimeType: "application/json",
+            responseSchema: classificationResponseSchema
           }
         });
         const result = await model2.generateContent(userPrompt);
@@ -86076,22 +89293,32 @@ async function geminiSpeechToText(audioBase64, mimeType, apiKey, modelName = "ge
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const MODEL_MAP = {
-      // Legacy / UI aliases
+      // ── Explicit Custom Models ──
+      "gemini-2.5-flash": "gemini-2.5-flash",
+      "gemini-3.1-flash-lite": "gemini-3.1-flash-lite",
+      // ── Gemini API stable model names ──
+      "gemini-2.5-pro": "gemini-1.5-pro",
+      "gemini-2.0-flash": "gemini-2.0-flash",
+      "gemini-1.5-flash": "gemini-2.0-flash",
+      // ── Legacy / admin UI aliases → map to supported models ──
       "gemini-3.0-flash-live": "gemini-2.0-flash",
+      "gemini-3.1-flash": "gemini-2.0-flash",
+      "gemini-3.1-pro": "gemini-1.5-pro",
       "gemini-2.5-flash-native-audio": "gemini-2.5-flash",
-      "gemini-3.1-flash-lite": "gemini-2.0-flash-lite",
-      // Shorthand names admins might type
+      // ── Admin shorthand names ──
       "flash": "gemini-2.0-flash",
-      "flash-lite": "gemini-2.0-flash-lite",
-      "pro": "gemini-2.5-pro",
-      "flash-2.5": "gemini-2.5-flash"
+      "flash-lite": "gemini-3.1-flash-lite",
+      "pro": "gemini-1.5-pro",
+      "flash-2.5": "gemini-2.5-flash",
+      "flash-2.0": "gemini-2.0-flash"
     };
-    const actualModelName = MODEL_MAP[modelName] ?? modelName;
+    let actualModelName = MODEL_MAP[modelName] ?? modelName;
+    actualModelName = actualModelName.trim();
     const generationConfig = {
       temperature: 0.1,
       maxOutputTokens: 512
     };
-    const supportsNativeAudio = actualModelName.includes("gemini-2.0") || actualModelName.includes("gemini-2.5") || actualModelName.includes("gemini-3.0");
+    const supportsNativeAudio = actualModelName.includes("gemini-2.0") || actualModelName.includes("gemini-2.5") || actualModelName.includes("gemini-3.0") || actualModelName.includes("gemini-3.1");
     if (sttMode === "native_audio" && supportsNativeAudio) {
       generationConfig.responseModalities = ["TEXT"];
     }
@@ -86113,8 +89340,9 @@ async function geminiSpeechToText(audioBase64, mimeType, apiKey, modelName = "ge
     const tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
     return { text: text2, tokensUsed };
   } catch (error48) {
-    console.error("Gemini STT Error:", error48);
-    return null;
+    const errorMsg = error48?.message || String(error48);
+    console.error(`Gemini STT Error (Model: ${modelName}):`, errorMsg);
+    throw new Error(`Gemini Error (${modelName}): ${errorMsg}`);
   }
 }
 function parseAIResponse(response, modelName) {
@@ -86151,9 +89379,9 @@ function parseAIResponse(response, modelName) {
   }
   const items = parsed.items.map((item) => ({
     amount: item.amount || 0,
-    category: item.main_category || item.category || "\u0645\u062A\u0646\u0648\u0639\u0627\u062A",
-    subCategory: item.sub_category || item.subCategory || "\u0639\u0627\u0645",
-    description: item.notes || item.description || "",
+    category: item.main_category || "\u0645\u062A\u0646\u0648\u0639\u0627\u062A",
+    subCategory: item.sub_category || "\u0639\u0627\u0645",
+    description: item.item_name || item.notes || "",
     type: item.type || "expense",
     confidence: item.confidence || 70,
     merchant: item.merchant || void 0,
@@ -86178,99 +89406,199 @@ var CATEGORY_DESCRIPTORS = [
   // ── Expense Categories ──
   {
     category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-    subCategory: "\u0639\u0627\u0645",
-    descriptors: ["\u0623\u0643\u0644", "\u0634\u0631\u0628", "\u0637\u0639\u0627\u0645", "\u0648\u062C\u0628\u0629", "\u0623\u0643\u0644\u062A", "\u0641\u0637\u0627\u0631", "\u063A\u062F\u0627", "\u0639\u0634\u0627", "\u0628\u064A\u062A\u0632\u0627", "\u0628\u0631\u062C\u0631", "\u0634\u0627\u0648\u0631\u0645\u0627", "\u0633\u0646\u062F\u0648\u062A\u0634", "\u0645\u0637\u0639\u0645", "\u062F\u0644\u064A\u0641\u0631\u064A", "\u0623\u0643\u0644 \u0628\u064A\u062A"]
+    subCategory: "\u0645\u0637\u0627\u0639\u0645 \u0648\u0648\u062C\u0628\u0627\u062A",
+    descriptors: ["\u0623\u0643\u0644", "\u0634\u0631\u0628", "\u0637\u0639\u0627\u0645", "\u0648\u062C\u0628\u0629", "\u0623\u0643\u0644\u062A", "\u0641\u0637\u0627\u0631", "\u063A\u062F\u0627", "\u0639\u0634\u0627", "\u0628\u064A\u062A\u0632\u0627", "\u0628\u0631\u062C\u0631", "\u0634\u0627\u0648\u0631\u0645\u0627", "\u0633\u0646\u062F\u0648\u062A\u0634", "\u0645\u0637\u0639\u0645", "\u062F\u0644\u064A\u0641\u0631\u064A", "\u0623\u0643\u0644 \u0628\u064A\u062A", "\u0645\u0627\u0643\u062F\u0648\u0646\u0627\u0644\u062F\u0632", "\u0643\u0646\u062A\u0627\u0643\u064A", "\u0647\u0627\u0631\u062F\u064A\u0632", "\u0643\u0634\u0631\u064A", "\u0627\u0644\u0634\u0628\u0631\u0627\u0648\u064A", "\u0627\u0628\u0648 \u0637\u0627\u0631\u0642", "\u0628\u0627\u0641\u0644\u0648", "\u0643\u0631\u064A\u0628", "\u0645\u0634\u0648\u064A\u0627\u062A", "\u0641\u0648\u0644 \u0648\u0637\u0639\u0645\u064A\u0629", "\u0633\u0648\u0634\u064A", "\u0634\u0627\u0648\u0631\u0645\u0627 \u0633\u0648\u0631\u064A", "\u0643\u0628\u0627\u0628"]
   },
   {
     category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
     subCategory: "\u0642\u0647\u0648\u0629 \u0648\u0643\u0627\u0641\u064A\u0647",
-    descriptors: ["\u0642\u0647\u0648\u0629", "\u0646\u0633\u0643\u0627\u0641\u064A\u0647", "\u0643\u0627\u0641\u064A\u0647", "\u0634\u0627\u064A", "\u0645\u0634\u0631\u0648\u0628 \u0633\u0627\u062E\u0646", "\u0644\u0627\u062A\u064A\u0647", "\u0643\u0627\u0628\u062A\u0634\u064A\u0646\u0648"]
+    descriptors: ["\u0642\u0647\u0648\u0629", "\u0646\u0633\u0643\u0627\u0641\u064A\u0647", "\u0643\u0627\u0641\u064A\u0647", "\u0634\u0627\u064A", "\u0645\u0634\u0631\u0648\u0628 \u0633\u0627\u062E\u0646", "\u0644\u0627\u062A\u064A\u0647", "\u0643\u0627\u0628\u062A\u0634\u064A\u0646\u0648", "\u0633\u062A\u0627\u0631\u0628\u0643\u0633", "\u0627\u0633\u0628\u0631\u064A\u0633\u0648", "\u0633\u064A\u0644\u0627\u0646\u062A\u0631\u0648", "\u0643\u0648\u0633\u062A\u0627", "\u0641\u0631\u0627\u0628\u064A\u062A\u0634\u064A\u0646\u0648", "\u0642\u0647\u0648\u0629 \u062A\u0631\u0643\u064A", "\u0645\u064A\u0643\u0627\u062A\u0648", "\u0645\u0648\u0647\u064A\u062A\u0648", "\u0639\u0635\u064A\u0631"]
   },
   {
     category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-    subCategory: "\u0628\u0642\u0627\u0644\u0629",
-    descriptors: ["\u0628\u0642\u0627\u0644\u0629", "\u0633\u0648\u0628\u0631 \u0645\u0627\u0631\u0643\u062A", "\u062E\u0636\u0627\u0631", "\u0641\u0627\u0643\u0647\u0629", "\u0644\u0628\u0646", "\u0632\u0628\u0627\u062F\u064A", "\u062C\u0628\u0646\u0629", "\u0628\u064A\u0636", "\u0623\u0643\u0644 \u0628\u064A\u062A", "\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0628\u064A\u062A"]
+    subCategory: "\u0628\u0642\u0627\u0644\u0629 \u0648\u0644\u062D\u0648\u0645",
+    descriptors: ["\u0628\u0642\u0627\u0644\u0629", "\u0633\u0648\u0628\u0631 \u0645\u0627\u0631\u0643\u062A", "\u062E\u0636\u0627\u0631", "\u0641\u0627\u0643\u0647\u0629", "\u0644\u0628\u0646", "\u0632\u0628\u0627\u062F\u064A", "\u062C\u0628\u0646\u0629", "\u0628\u064A\u0636", "\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0628\u064A\u062A", "\u0643\u0627\u0631\u0641\u0648\u0631", "\u0633\u0628\u064A\u0646\u064A\u0633", "\u0645\u062A\u0631\u0648 \u0645\u0627\u0631\u0643\u062A", "\u0643\u0627\u0632\u064A\u0648\u0646", "\u0628\u064A\u0645", "\u0644\u062D\u0645\u0629", "\u0641\u0631\u0627\u062E", "\u0628\u0627\u0646\u064A\u0647", "\u0645\u0641\u0631\u0648\u0645", "\u0633\u0645\u0643", "\u0631\u0632", "\u0632\u064A\u062A", "\u0645\u0643\u0631\u0648\u0646\u0629", "\u0633\u0645\u0646\u0629", "\u0639\u0637\u0627\u0631\u0629", "\u062A\u0648\u0627\u0628\u0644", "\u0639\u064A\u0634", "\u0645\u062E\u0628\u0632"]
+  },
+  {
+    category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+    subCategory: "\u062A\u0633\u0627\u0644\u064A \u0648\u062D\u0644\u0648\u064A\u0627\u062A",
+    descriptors: ["\u0634\u0648\u0643\u0648\u0644\u0627\u062A\u0629", "\u0634\u064A\u0628\u0633\u064A", "\u0628\u064A\u0628\u0633\u064A", "\u0643\u0648\u0644\u0627", "\u0639\u0635\u064A\u0631", "\u062A\u0633\u0627\u0644\u064A", "\u0644\u0628", "\u0633\u0648\u062F\u0627\u0646\u064A", "\u0627\u064A\u0633 \u0643\u0631\u064A\u0645", "\u062D\u0644\u0648\u064A\u0627\u062A", "\u062A\u0648\u0631\u062A\u0629", "\u062C\u0627\u062A\u0648\u0647", "\u0628\u0633\u0628\u0648\u0633\u0629"]
   },
   {
     category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
-    subCategory: "\u0639\u0627\u0645",
-    descriptors: ["\u0645\u0648\u0627\u0635\u0644\u0627\u062A", "\u062A\u0648\u0635\u064A\u0644\u0629", "\u0631\u0643\u0628\u062A", "\u0645\u0634\u0648\u0627\u0631", "\u0637\u0631\u064A\u0642", "\u0623\u0648\u0628\u0631", "\u0643\u0631\u064A\u0645", "\u062A\u0627\u0643\u0633\u064A", "\u0645\u062A\u0631\u0648", "\u0623\u062A\u0648\u0628\u064A\u0633", "\u0628\u0627\u0635", "\u062A\u0648\u0643\u062A\u0648\u0643", "\u0628\u0646\u0632\u064A\u0646"]
+    subCategory: "\u0623\u0648\u0628\u0631 \u0648\u0643\u0631\u064A\u0645",
+    descriptors: ["\u0623\u0648\u0628\u0631", "\u0643\u0631\u064A\u0645", "\u062A\u0648\u0635\u064A\u0644\u0629", "\u0627\u0646\u062F\u0631\u0627\u064A\u0641\u0631", "\u062F\u064A\u062F\u064A"]
+  },
+  {
+    category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+    subCategory: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A \u0639\u0627\u0645\u0629",
+    descriptors: ["\u0645\u0648\u0627\u0635\u0644\u0627\u062A", "\u0645\u0634\u0648\u0627\u0631", "\u062A\u0627\u0643\u0633\u064A", "\u0645\u062A\u0631\u0648", "\u0623\u062A\u0648\u0628\u064A\u0633", "\u0628\u0627\u0635", "\u062A\u0648\u0643\u062A\u0648\u0643", "\u0633\u0648\u064A\u0641\u0644", "\u0645\u064A\u0643\u0631\u0648\u0628\u0627\u0635", "\u0645\u0648\u0627\u0635\u0644\u0629", "\u0645\u064A\u0643\u0631\u0648\u0628\u0627\u0633", "\u0642\u0637\u0631", "\u062A\u0630\u0643\u0631\u0629"]
+  },
+  {
+    category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+    subCategory: "\u0628\u0646\u0632\u064A\u0646",
+    descriptors: ["\u0628\u0646\u0632\u064A\u0646", "\u062A\u0641\u0648\u064A\u0644\u0629", "\u0645\u062D\u0637\u0629 \u0628\u0646\u0632\u064A\u0646", "\u0628\u0646\u0632\u064A\u0646\u0629"]
   },
   {
     category: "\u0641\u0648\u0627\u062A\u064A\u0631",
-    subCategory: "\u0639\u0627\u0645",
-    descriptors: ["\u0641\u0627\u062A\u0648\u0631\u0629", "\u0643\u0647\u0631\u0628\u0627\u0621", "\u0645\u064A\u0627\u0647", "\u063A\u0627\u0632", "\u0646\u062A", "\u0625\u0646\u062A\u0631\u0646\u062A", "\u0634\u062D\u0646", "\u0631\u0635\u064A\u062F", "\u0645\u0648\u0628\u0627\u064A\u0644", "\u062A\u0644\u064A\u0641\u0648\u0646", "\u0642\u0633\u0637", "\u0623\u0642\u0633\u0627\u0637", "\u062A\u0623\u0645\u064A\u0646"]
+    subCategory: "\u0643\u0647\u0631\u0628\u0627\u0621 \u0648\u063A\u0627\u0632 \u0648\u0645\u064A\u0627\u0647",
+    descriptors: ["\u0641\u0627\u062A\u0648\u0631\u0629", "\u0643\u0647\u0631\u0628\u0627\u0621", "\u0645\u064A\u0627\u0647", "\u063A\u0627\u0632", "\u0648\u0635\u0644 \u0645\u064A\u0627\u0647", "\u0648\u0635\u0644 \u0646\u0648\u0631"]
+  },
+  {
+    category: "\u0641\u0648\u0627\u062A\u064A\u0631",
+    subCategory: "\u0625\u0646\u062A\u0631\u0646\u062A \u0648\u0645\u0648\u0628\u0627\u064A\u0644",
+    descriptors: ["\u0646\u062A", "\u0625\u0646\u062A\u0631\u0646\u062A", "\u0634\u062D\u0646", "\u0631\u0635\u064A\u062F", "\u0645\u0648\u0628\u0627\u064A\u0644", "\u062A\u0644\u064A\u0641\u0648\u0646", "\u0641\u0648\u062F\u0627\u0641\u0648\u0646", "\u0627\u0648\u0631\u0646\u062C", "\u0627\u062A\u0635\u0627\u0644\u0627\u062A", "\u0648\u064A", "\u0641\u0648\u0631\u064A", "\u0628\u0627\u0642\u0629 \u0646\u062A", "\u0628\u0627\u0642\u0629 \u0645\u0643\u0627\u0644\u0645\u0627\u062A", "\u0643\u0627\u0631\u062A \u0634\u062D\u0646"]
+  },
+  {
+    category: "\u0641\u0648\u0627\u062A\u064A\u0631",
+    subCategory: "\u0623\u0642\u0633\u0627\u0637 \u0648\u062F\u064A\u0648\u0646",
+    descriptors: ["\u0642\u0633\u0637", "\u0623\u0642\u0633\u0627\u0637", "\u0633\u062F\u0627\u062F \u062F\u064A\u0646", "\u0641\u0627\u0644\u064A\u0648", "\u0623\u0645\u0627\u0646", "\u0633\u0647\u0648\u0644\u0629"]
   },
   {
     category: "\u0633\u0643\u0646",
-    subCategory: "\u0639\u0627\u0645",
-    descriptors: ["\u0625\u064A\u062C\u0627\u0631", "\u0623\u062B\u0627\u062B", "\u0635\u064A\u0627\u0646\u0629", "\u0633\u0628\u0627\u0643", "\u0643\u0647\u0631\u0628\u0627\u0626\u064A", "\u0646\u0642\u0627\u0634", "\u0646\u062C\u0627\u0631", "\u0634\u063A\u0627\u0644\u0629", "\u0645\u0646\u0638\u0641\u0627\u062A", "\u063A\u0633\u0627\u0644\u0629", "\u062A\u0644\u0627\u062C\u0629", "\u0628\u064A\u062A"]
+    subCategory: "\u0625\u064A\u062C\u0627\u0631",
+    descriptors: ["\u0625\u064A\u062C\u0627\u0631", "\u062A\u0623\u0645\u064A\u0646 \u0634\u0642\u0629", "\u0627\u064A\u062C\u0627\u0631 \u0627\u0644\u0634\u0642\u0629", "\u0642\u0633\u0637 \u0627\u0644\u0634\u0642\u0629"]
+  },
+  {
+    category: "\u0633\u0643\u0646",
+    subCategory: "\u0635\u064A\u0627\u0646\u0629 \u0648\u062A\u0635\u0644\u064A\u062D",
+    descriptors: ["\u0635\u064A\u0627\u0646\u0629", "\u0633\u0628\u0627\u0643", "\u0643\u0647\u0631\u0628\u0627\u0626\u064A", "\u0646\u0642\u0627\u0634", "\u0646\u062C\u0627\u0631", "\u062A\u0635\u0644\u064A\u062D", "\u0633\u0628\u0627\u0643\u0629", "\u0639\u0627\u0645\u0644", "\u0628\u0648\u0627\u0628", "\u062D\u0627\u0631\u0633"]
+  },
+  {
+    category: "\u0633\u0643\u0646",
+    subCategory: "\u0645\u0633\u062A\u0644\u0632\u0645\u0627\u062A \u0645\u0646\u0632\u0644\u064A\u0629",
+    descriptors: ["\u0623\u062B\u0627\u062B", "\u0634\u063A\u0627\u0644\u0629", "\u0645\u0646\u0638\u0641\u0627\u062A", "\u063A\u0633\u0627\u0644\u0629", "\u062A\u0644\u0627\u062C\u0629", "\u0628\u064A\u062A", "\u0634\u0642\u0629", "\u0645\u0643\u0648\u0627\u0629", "\u062F\u064A\u0643\u0648\u0631", "\u0633\u062C\u0627\u062F", "\u0633\u062A\u0627\u0626\u0631", "\u0645\u0648\u0627\u0639\u064A\u0646", "\u0635\u0627\u0628\u0648\u0646", "\u0628\u0631\u064A\u0644", "\u0627\u0631\u064A\u0627\u0644"]
   },
   {
     category: "\u062A\u0633\u0648\u0642",
-    subCategory: "\u0639\u0627\u0645",
-    descriptors: ["\u062A\u0633\u0648\u0642", "\u0634\u0648\u0628\u064A\u0646\u062C", "\u0647\u062F\u0648\u0645", "\u0644\u0628\u0633", "\u0645\u0648\u0628\u0627\u064A\u0644", "\u0644\u0627\u0628 \u062A\u0648\u0628", "\u062C\u0632\u0645\u0629", "\u0643\u0648\u062A\u0634\u064A", "\u0634\u0646\u0637\u0629", "\u0633\u0627\u0639\u0629", "\u0625\u0643\u0633\u0633\u0648\u0627\u0631"]
+    subCategory: "\u0645\u0644\u0627\u0628\u0633 \u0648\u0623\u062D\u0630\u064A\u0629",
+    descriptors: ["\u062A\u0633\u0648\u0642", "\u0634\u0648\u0628\u064A\u0646\u062C", "\u0647\u062F\u0648\u0645", "\u0644\u0628\u0633", "\u062C\u0632\u0645\u0629", "\u0643\u0648\u062A\u0634\u064A", "\u0634\u0646\u0637\u0629", "\u0633\u0627\u0639\u0629", "\u0625\u0643\u0633\u0633\u0648\u0627\u0631", "\u0632\u0627\u0631\u0627", "\u0627\u062F\u064A\u062F\u0627\u0633", "\u0646\u0627\u064A\u0643\u064A", "\u062F\u064A\u0641\u0627\u0643\u062A\u0648", "\u062C\u0627\u0643\u064A\u062A", "\u0628\u0646\u0637\u0644\u0648\u0646", "\u0642\u0645\u064A\u0635", "\u062A\u064A\u0634\u0631\u062A"]
+  },
+  {
+    category: "\u062A\u0633\u0648\u0642",
+    subCategory: "\u0623\u062C\u0647\u0632\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629",
+    descriptors: ["\u0645\u0648\u0628\u0627\u064A\u0644", "\u0644\u0627\u0628 \u062A\u0648\u0628", "\u0644\u0627\u0628\u062A\u0648\u0628", "\u0643\u0645\u0628\u064A\u0648\u062A\u0631", "\u0647\u0627\u0631\u062F\u0648\u064A\u0631", "\u0643\u064A\u0628\u0648\u0631\u062F", "\u0645\u0627\u0648\u0633", "\u0634\u0627\u0634\u0629", "\u0633\u0645\u0627\u0639\u0629", "\u0633\u0645\u0627\u0639\u0627\u062A", "\u0627\u064A\u0631\u0628\u0648\u062F\u0632", "\u0627\u064A\u0641\u0648\u0646", "\u0645\u0639\u062C\u0648\u0646 \u062D\u0631\u0627\u0631\u064A", "\u0631\u0627\u0645\u0627\u062A", "\u0643\u0627\u0631\u062A \u0634\u0627\u0634\u0629", "\u0628\u0627\u0648\u0631 \u0628\u0627\u0646\u0643", "\u0634\u0627\u062D\u0646", "\u0648\u0635\u0644\u0629"]
+  },
+  {
+    category: "\u062A\u0633\u0648\u0642",
+    subCategory: "\u0639\u0646\u0627\u064A\u0629 \u0634\u062E\u0635\u064A\u0629",
+    descriptors: ["\u062A\u062C\u0645\u064A\u0644", "\u0645\u0643\u064A\u0627\u062C", "\u062D\u0644\u0627\u0642", "\u0643\u0648\u0627\u0641\u064A\u0631", "\u0628\u0631\u0641\u0627\u0646", "\u0639\u0637\u0631", "\u0643\u0631\u064A\u0645", "\u0634\u0627\u0645\u0628\u0648", "\u0633\u0643\u064A\u0646 \u0643\u064A\u0631", "\u0645\u064A\u0643 \u0627\u0628", "\u0646\u0636\u0627\u0631\u0629", "\u0645\u0632\u064A\u0644 \u0639\u0631\u0642"]
   },
   {
     category: "\u0635\u062D\u0629",
-    subCategory: "\u0639\u0627\u0645",
-    descriptors: ["\u0635\u062D\u0629", "\u062F\u0643\u062A\u0648\u0631", "\u0635\u064A\u062F\u0644\u064A\u0629", "\u062F\u0648\u0627", "\u062A\u062D\u0627\u0644\u064A\u0644", "\u0645\u0633\u062A\u0634\u0641\u0649", "\u0623\u0633\u0646\u0627\u0646", "\u0639\u0645\u0644\u064A\u0629", "\u0643\u0634\u0641", "\u0631\u0648\u0634\u062A\u0629", "\u0639\u0644\u0627\u062C"]
+    subCategory: "\u0643\u0634\u0641 \u0648\u062F\u0643\u062A\u0648\u0631",
+    descriptors: ["\u062F\u0643\u062A\u0648\u0631", "\u0645\u0633\u062A\u0634\u0641\u0649", "\u0623\u0633\u0646\u0627\u0646", "\u0639\u0645\u0644\u064A\u0629", "\u0643\u0634\u0641", "\u0641\u064A\u0632\u064A\u062A\u0627", "\u0639\u064A\u0627\u062F\u0629", "\u062F\u0643\u062A\u0648\u0631 \u0627\u0633\u0646\u0627\u0646", "\u0627\u0633\u062A\u0634\u0627\u0631\u0629"]
+  },
+  {
+    category: "\u0635\u062D\u0629",
+    subCategory: "\u0623\u062F\u0648\u064A\u0629 \u0648\u0635\u064A\u062F\u0644\u064A\u0629",
+    descriptors: ["\u0635\u062D\u0629", "\u0635\u064A\u062F\u0644\u064A\u0629", "\u062F\u0648\u0627", "\u062A\u062D\u0627\u0644\u064A\u0644", "\u0631\u0648\u0634\u062A\u0629", "\u0639\u0644\u0627\u062C", "\u0641\u064A\u062A\u0627\u0645\u064A\u0646", "\u0628\u0627\u0646\u0627\u062F\u0648\u0644", "\u062D\u0642\u0646\u0629", "\u0627\u0634\u0639\u0629"]
   },
   {
     category: "\u062A\u0639\u0644\u064A\u0645",
-    subCategory: "\u0639\u0627\u0645",
-    descriptors: ["\u062A\u0639\u0644\u064A\u0645", "\u0645\u062F\u0631\u0633\u0629", "\u062C\u0627\u0645\u0639\u0629", "\u0643\u0648\u0631\u0633", "\u062F\u0631\u0633", "\u062F\u0631\u0648\u0633", "\u0643\u062A\u0628", "\u0645\u0635\u0627\u0631\u064A\u0641 \u062F\u0631\u0627\u0633\u0629", "\u064A\u0648\u0646\u064A\u0641\u0648\u0631\u0645"]
+    subCategory: "\u0645\u062F\u0627\u0631\u0633 \u0648\u062C\u0627\u0645\u0639\u0627\u062A",
+    descriptors: ["\u062A\u0639\u0644\u064A\u0645", "\u0645\u062F\u0631\u0633\u0629", "\u062C\u0627\u0645\u0639\u0629", "\u0645\u0635\u0627\u0631\u064A\u0641 \u062F\u0631\u0627\u0633\u0629", "\u062A\u0631\u0645", "\u0643\u0644\u064A\u0629"]
+  },
+  {
+    category: "\u062A\u0639\u0644\u064A\u0645",
+    subCategory: "\u0643\u0648\u0631\u0633\u0627\u062A \u0648\u062F\u0631\u0648\u0633",
+    descriptors: ["\u0643\u0648\u0631\u0633", "\u062F\u0631\u0633", "\u062F\u0631\u0648\u0633", "\u0633\u0646\u062A\u0631", "\u0645\u062F\u0631\u0633", "\u0645\u0630\u0643\u0631\u0627\u062A", "\u0645\u0644\u0632\u0645\u0629", "\u0643\u062A\u0628", "\u0627\u062F\u0648\u0627\u062A \u0645\u062F\u0631\u0633\u064A\u0629", "\u0643\u0634\u0643\u0648\u0644"]
   },
   {
     category: "\u062A\u0631\u0641\u064A\u0647",
-    subCategory: "\u0639\u0627\u0645",
-    descriptors: ["\u062A\u0631\u0641\u064A\u0647", "\u0633\u064A\u0646\u0645\u0627", "\u062C\u064A\u0645", "\u0646\u0627\u062F\u064A", "\u0633\u0641\u0631", "\u0645\u0635\u064A\u0641", "\u062E\u0631\u0648\u062C\u0629", "\u0634\u064A\u0634\u0629", "\u0628\u0644\u0627\u064A \u0633\u062A\u064A\u0634\u0646", "\u0623\u0644\u0639\u0627\u0628"]
+    subCategory: "\u062E\u0631\u0648\u062C\u0627\u062A \u0648\u0633\u064A\u0646\u0645\u0627",
+    descriptors: ["\u062A\u0631\u0641\u064A\u0647", "\u0633\u064A\u0646\u0645\u0627", "\u0646\u0627\u062F\u064A", "\u0633\u0641\u0631", "\u0645\u0635\u064A\u0641", "\u062E\u0631\u0648\u062C\u0629", "\u0634\u064A\u0634\u0629", "\u0645\u0627\u062A\u0634", "\u0643\u0648\u0631\u0629", "\u062D\u062C\u0632 \u0645\u0644\u0639\u0628", "\u0641\u0633\u062D\u0629", "\u062A\u0645\u0634\u064A\u0629", "\u062A\u0630\u0627\u0643\u0631", "\u0645\u0644\u0627\u0647\u064A", "\u0628\u0644\u0627\u064A\u0633\u062A\u064A\u0634\u0646", "\u0628\u0644\u0627\u064A \u0633\u062A\u064A\u0634\u0646"]
+  },
+  {
+    category: "\u062A\u0631\u0641\u064A\u0647",
+    subCategory: "\u062C\u064A\u0645 \u0648\u0631\u064A\u0627\u0636\u0629",
+    descriptors: ["\u062C\u064A\u0645", "\u0627\u0634\u062A\u0631\u0627\u0643 \u0627\u0644\u062C\u064A\u0645", "\u0628\u0631\u0648\u062A\u064A\u0646", "\u0643\u0645\u0644\u0627\u062A \u063A\u0630\u0627\u0626\u064A\u0629", "\u0641\u0648\u0631\u0645\u0629"]
+  },
+  {
+    category: "\u062A\u062F\u062E\u064A\u0646",
+    subCategory: "\u0633\u062C\u0627\u0626\u0631",
+    descriptors: ["\u0633\u062C\u0627\u064A\u0631", "\u0633\u062C\u0627\u0626\u0631", "\u0639\u0644\u0628\u0629 \u0633\u062C\u0627\u064A\u0631", "\u0643\u0644\u064A\u0648\u0628\u0627\u062A\u0631\u0627", "\u0645\u0627\u0631\u0644\u0628\u0648\u0631\u0648", "\u0645\u064A\u0631\u064A\u062A"]
+  },
+  {
+    category: "\u062A\u062F\u062E\u064A\u0646",
+    subCategory: "\u0641\u064A\u0628",
+    descriptors: ["\u0641\u064A\u0628", "\u0644\u064A\u0643\u0648\u062F", "\u0628\u0648\u062F", "\u0643\u0648\u064A\u0644", "\u0633\u064A\u062C\u0627\u0631\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629"]
+  },
+  {
+    category: "\u062A\u062F\u062E\u064A\u0646",
+    subCategory: "\u0634\u064A\u0634\u0629",
+    descriptors: ["\u062F\u062E\u0627\u0646", "\u0645\u0639\u0633\u0644", "\u0634\u064A\u0634\u0629", "\u0627\u0631\u062C\u064A\u0644\u0629", "\u0641\u062D\u0645"]
   },
   {
     category: "\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A",
-    subCategory: "\u0639\u0627\u0645",
-    descriptors: ["\u0627\u0634\u062A\u0631\u0627\u0643", "\u0646\u062A\u0641\u0644\u0643\u0633", "\u0633\u0628\u0648\u062A\u064A\u0641\u0627\u064A", "\u064A\u0648\u062A\u064A\u0648\u0628 \u0628\u0631\u064A\u0645\u064A\u0648\u0645", "\u0634\u0627\u0647\u062F", "VPN"]
+    subCategory: "\u0628\u0627\u0642\u0627\u062A \u0631\u0642\u0645\u064A\u0629",
+    descriptors: ["\u0627\u0634\u062A\u0631\u0627\u0643", "\u0646\u062A\u0641\u0644\u0643\u0633", "\u0633\u0628\u0648\u062A\u064A\u0641\u0627\u064A", "\u064A\u0648\u062A\u064A\u0648\u0628 \u0628\u0631\u064A\u0645\u064A\u0648\u0645", "\u0634\u0627\u0647\u062F", "VPN", "\u0627\u064A \u0643\u0644\u0627\u0648\u062F", "\u062C\u064A\u0645 \u0628\u0627\u0633", "\u0623\u0646\u063A\u0627\u0645\u064A", "\u0628\u0644\u0627\u064A\u0633\u062A\u064A\u0634\u0646 \u0628\u0644\u0633", "\u0643\u0644\u0627\u0648\u062F"]
   },
   {
     category: "\u0647\u062F\u0627\u064A\u0627 \u0648\u0635\u062F\u0642\u0627\u062A",
-    subCategory: "\u0639\u0627\u0645",
-    descriptors: ["\u0647\u062F\u064A\u0629", "\u0635\u062F\u0642\u0629", "\u0632\u0643\u0627\u0629", "\u062A\u0628\u0631\u0639", "\u0639\u064A\u062F\u064A\u0629", "\u0641\u0631\u062D", "\u062E\u0637\u0648\u0628\u0629"]
+    subCategory: "\u0647\u062F\u0627\u064A\u0627",
+    descriptors: ["\u0647\u062F\u064A\u0629", "\u0639\u064A\u062F\u064A\u0629", "\u0641\u0631\u062D", "\u062E\u0637\u0648\u0628\u0629", "\u0646\u0642\u0637\u0629", "\u0628\u0648\u0643\u064A\u0647 \u0648\u0631\u062F", "\u0634\u0648\u0643\u0648\u0644\u0627\u062A\u0629 \u0647\u062F\u064A\u0629"]
+  },
+  {
+    category: "\u0647\u062F\u0627\u064A\u0627 \u0648\u0635\u062F\u0642\u0627\u062A",
+    subCategory: "\u0635\u062F\u0642\u0627\u062A \u0648\u062A\u0628\u0631\u0639\u0627\u062A",
+    descriptors: ["\u0635\u062F\u0642\u0629", "\u0632\u0643\u0627\u0629", "\u062A\u0628\u0631\u0639", "\u0645\u0633\u062A\u0634\u0641\u0649 57357", "\u062C\u0645\u0639\u064A\u0629 \u0631\u0633\u0627\u0644\u0629", "\u0635\u0646\u062F\u0648\u0642 \u062A\u062D\u064A\u0627 \u0645\u0635\u0631", "\u062A\u0628\u0631\u0639\u0627\u062A", "\u0644\u0644\u062C\u0627\u0645\u0639"]
   },
   {
     category: "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
-    subCategory: "\u0639\u0627\u0645",
-    descriptors: ["\u0627\u0633\u062A\u062B\u0645\u0627\u0631", "\u0630\u0647\u0628", "\u062F\u0647\u0628", "\u0623\u0633\u0647\u0645", "\u0634\u0647\u0627\u062F\u0627\u062A", "\u0639\u0642\u0627\u0631\u0627\u062A", "\u0639\u0645\u0644\u0627\u062A \u0631\u0642\u0645\u064A\u0629", "\u0628\u064A\u062A\u0643\u0648\u064A\u0646"]
+    subCategory: "\u0630\u0647\u0628",
+    descriptors: ["\u0627\u0633\u062A\u062B\u0645\u0627\u0631", "\u0630\u0647\u0628", "\u062F\u0647\u0628", "\u0633\u0628\u064A\u0643\u0629", "\u062C\u0646\u064A\u0647 \u062F\u0647\u0628", "\u063A\u0648\u064A\u0634\u0629", "\u062E\u0627\u062A\u0645 \u062F\u0647\u0628"]
+  },
+  {
+    category: "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+    subCategory: "\u0623\u0633\u0647\u0645 \u0648\u0634\u0647\u0627\u062F\u0627\u062A",
+    descriptors: ["\u0623\u0633\u0647\u0645", "\u0634\u0647\u0627\u062F\u0627\u062A", "\u0639\u0642\u0627\u0631\u0627\u062A", "\u0639\u0645\u0644\u0627\u062A \u0631\u0642\u0645\u064A\u0629", "\u0628\u064A\u062A\u0643\u0648\u064A\u0646", "\u0648\u062F\u064A\u0639\u0629", "\u0628\u0648\u0631\u0635\u0629", "\u062B\u0627\u0646\u062F\u0631", "\u0635\u0646\u062F\u0648\u0642 \u0627\u0633\u062A\u062B\u0645\u0627\u0631", "\u0643\u0631\u064A\u0628\u062A\u0648"]
   },
   {
     category: "\u062E\u062F\u0645\u0627\u062A \u0633\u064A\u0627\u0631\u0627\u062A",
-    subCategory: "\u0639\u0627\u0645",
-    descriptors: ["\u0639\u0631\u0628\u064A\u0629", "\u0635\u064A\u0627\u0646\u0629 \u0639\u0631\u0628\u064A\u0629", "\u0643\u0627\u0648\u062A\u0634", "\u0628\u0637\u0627\u0631\u064A\u0629", "\u0632\u064A\u062A", "\u062A\u063A\u064A\u064A\u0631 \u0632\u064A\u062A", "\u0643\u0627\u0631\u062A\u0629", "\u0645\u062E\u0627\u0644\u0641\u0629", "\u0631\u0643\u0646\u0629", "\u062C\u0631\u0627\u062C"]
+    subCategory: "\u0635\u064A\u0627\u0646\u0629",
+    descriptors: ["\u0639\u0631\u0628\u064A\u0629", "\u0635\u064A\u0627\u0646\u0629 \u0639\u0631\u0628\u064A\u0629", "\u0643\u0627\u0648\u062A\u0634", "\u0628\u0637\u0627\u0631\u064A\u0629", "\u0632\u064A\u062A", "\u062A\u063A\u064A\u064A\u0631 \u0632\u064A\u062A", "\u0645\u064A\u0643\u0627\u0646\u064A\u0643\u064A", "\u0639\u0641\u0634\u062C\u064A", "\u0643\u0647\u0631\u0628\u0627\u0626\u064A \u0633\u064A\u0627\u0631\u0627\u062A", "\u0642\u0637\u0639 \u063A\u064A\u0627\u0631"]
   },
   {
-    category: "\u062E\u0631\u0648\u062C\u0627\u062A",
-    subCategory: "\u0639\u0627\u0645",
-    descriptors: ["\u062E\u0631\u0648\u062C\u0629", "\u0641\u0633\u062D\u0629", "\u0643\u0648\u0631\u0646\u064A\u0634", "\u0635\u062D\u0627\u0628", "\u0642\u0639\u062F\u0629", "\u0646\u0632\u0644\u0629"]
+    category: "\u062E\u062F\u0645\u0627\u062A \u0633\u064A\u0627\u0631\u0627\u062A",
+    subCategory: "\u0623\u062E\u0631\u0649",
+    descriptors: ["\u0643\u0627\u0631\u062A\u0629", "\u0645\u062E\u0627\u0644\u0641\u0629", "\u0631\u0643\u0646\u0629", "\u062C\u0631\u0627\u062C", "\u0633\u0627\u064A\u0633", "\u063A\u0633\u064A\u0644 \u0639\u0631\u0628\u064A\u0629", "\u062A\u0644\u0645\u064A\u0639"]
   },
   // ── Income Categories ──
   {
     category: "\u0645\u0631\u062A\u0628",
-    subCategory: "\u0639\u0627\u0645",
-    descriptors: ["\u0645\u0631\u062A\u0628", "\u0631\u0627\u062A\u0628", "\u0628\u0648\u0646\u0635", "\u0645\u0643\u0627\u0641\u0623\u0629", "\u0623\u0648\u0641\u0631 \u062A\u0627\u064A\u0645", "\u0628\u062F\u0644", "\u062D\u0648\u0627\u0641\u0632"]
+    subCategory: "\u0631\u0627\u062A\u0628 \u0623\u0633\u0627\u0633\u064A",
+    descriptors: ["\u0645\u0631\u062A\u0628", "\u0631\u0627\u062A\u0628", "\u0642\u0628\u0636\u062A", "\u0627\u0644\u0642\u0628\u0636", "\u0634\u064A\u0643", "\u0645\u0639\u0627\u0634"]
+  },
+  {
+    category: "\u0645\u0631\u062A\u0628",
+    subCategory: "\u062D\u0648\u0627\u0641\u0632 \u0648\u0645\u0643\u0627\u0641\u0622\u062A",
+    descriptors: ["\u0628\u0648\u0646\u0635", "\u0645\u0643\u0627\u0641\u0623\u0629", "\u0623\u0648\u0641\u0631 \u062A\u0627\u064A\u0645", "\u0628\u062F\u0644", "\u062D\u0648\u0627\u0641\u0632", "\u0632\u064A\u0627\u062F\u0629"]
   },
   {
     category: "\u0639\u0645\u0644 \u062D\u0631",
-    subCategory: "\u0639\u0627\u0645",
-    descriptors: ["\u0641\u0631\u064A\u0644\u0627\u0646\u0633", "\u0639\u0645\u0644 \u062D\u0631", "\u0645\u0634\u0631\u0648\u0639", "\u0639\u0645\u0648\u0644\u0629", "\u0633\u0628\u0648\u0628\u0629", "\u0634\u063A\u0644 \u062C\u0627\u0646\u0628\u064A", "\u0643\u0644\u0627\u064A\u0646\u062A"]
+    subCategory: "\u0645\u0634\u0627\u0631\u064A\u0639",
+    descriptors: ["\u0641\u0631\u064A\u0644\u0627\u0646\u0633", "\u0639\u0645\u0644 \u062D\u0631", "\u0645\u0634\u0631\u0648\u0639", "\u0639\u0645\u0648\u0644\u0629", "\u0633\u0628\u0648\u0628\u0629", "\u0634\u063A\u0644 \u062C\u0627\u0646\u0628\u064A", "\u0643\u0644\u0627\u064A\u0646\u062A", "\u0623\u0628 \u0648\u0648\u0631\u0643", "\u0645\u0633\u062A\u0642\u0644", "\u0634\u063A\u0644\u0627\u0646\u0629"]
   },
   {
     category: "\u0639\u0648\u0627\u0626\u062F \u0627\u0633\u062A\u062B\u0645\u0627\u0631",
-    subCategory: "\u0639\u0627\u0645",
-    descriptors: ["\u0623\u0631\u0628\u0627\u062D", "\u0641\u0648\u0627\u0626\u062F", "\u0643\u0627\u0634 \u0628\u0627\u0643", "\u0627\u0633\u062A\u0631\u062C\u0627\u0639", "\u0639\u0627\u0626\u062F", "\u0631\u0628\u062D"]
+    subCategory: "\u0623\u0631\u0628\u0627\u062D",
+    descriptors: ["\u0623\u0631\u0628\u0627\u062D", "\u0641\u0648\u0627\u0626\u062F", "\u0643\u0627\u0634 \u0628\u0627\u0643", "\u0627\u0633\u062A\u0631\u062C\u0627\u0639", "\u0639\u0627\u0626\u062F", "\u0631\u0628\u062D", "\u0643\u0648\u0628\u0648\u0646\u0627\u062A", "\u062A\u0648\u0632\u064A\u0639\u0627\u062A"]
   },
   {
     category: "\u062A\u062D\u0648\u064A\u0644",
-    subCategory: "\u0639\u0627\u0645",
-    descriptors: ["\u062A\u062D\u0648\u064A\u0644", "\u062D\u0648\u0627\u0644\u0629", "\u0633\u062D\u0628", "\u0625\u064A\u062F\u0627\u0639", "\u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0643\u0627\u0634", "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A", "\u062F\u064A\u0646", "\u0633\u0644\u0641\u0629"]
+    subCategory: "\u0625\u064A\u062F\u0627\u0639 \u0648\u0627\u0633\u062A\u0644\u0627\u0645",
+    descriptors: ["\u062D\u0648\u0627\u0644\u0629", "\u0625\u064A\u062F\u0627\u0639", "\u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0643\u0627\u0634", "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A", "\u0627\u0633\u062A\u0644\u0645\u062A \u062A\u062D\u0648\u064A\u0644"]
+  },
+  {
+    category: "\u062A\u062D\u0648\u064A\u0644",
+    subCategory: "\u0633\u0644\u0641 \u0648\u062F\u064A\u0648\u0646",
+    descriptors: ["\u062F\u064A\u0646", "\u0633\u0644\u0641\u0629", "\u0627\u0633\u062A\u0644\u0641\u062A", "\u0633\u0644\u0641\u062A", "\u0642\u0631\u0636", "\u0633\u062F\u0627\u062F"]
+  },
+  {
+    category: "\u062A\u062D\u0648\u064A\u0644",
+    subCategory: "\u062C\u0645\u0639\u064A\u0627\u062A",
+    descriptors: ["\u062C\u0645\u0639\u064A\u0629", "\u0642\u0633\u0637 \u062C\u0645\u0639\u064A\u0629", "\u0642\u0628\u0636 \u0627\u0644\u062C\u0645\u0639\u064A\u0629", "\u062F\u0641\u0639\u062A \u0627\u0644\u062C\u0645\u0639\u064A\u0629"]
   }
 ];
 var LRUCache = class {
@@ -86352,13 +89680,13 @@ function cosineSimilarity(a, b) {
   return denom === 0 ? 0 : dot / denom;
 }
 function calibrateScore(rawSim, margin) {
-  const MIN_SIM = 0.5;
-  const MAX_SIM = 0.92;
+  const MIN_SIM = 0.45;
+  const MAX_SIM = 0.9;
   const scaled = Math.max(0, Math.min(
     100,
     (rawSim - MIN_SIM) / (MAX_SIM - MIN_SIM) * 100
   ));
-  const marginBonus = Math.min(10, margin * 50);
+  const marginBonus = Math.min(15, margin * 150);
   return Math.min(100, Math.round(scaled + marginBonus));
 }
 async function matchSegment(text2, apiKey) {
@@ -86386,7 +89714,9 @@ async function matchSegment(text2, apiKey) {
     subCategory: best.subCategory,
     score: calibrateScore(best.sim, margin),
     margin: Math.round(margin * 100),
-    rawSimilarity: Math.round(best.sim * 1e3) / 1e3
+    rawSimilarity: Math.round(best.sim * 1e3) / 1e3,
+    topCategories: ranked.slice(0, 4).map((r) => r.category)
+    // Return top 4 choices
   };
 }
 var CONJUNCTION_PATTERNS = /(?:^|\s)(وكمان|وبعدين|بعدها|ومنهم|وبعد|بعد كده|ثم)(?:\s|$)|(?:^|\s)و(?:\s)|(?:^|\s)و(?=[أ-ي])/g;
@@ -86454,6 +89784,203 @@ async function runEmbeddingClassifier(text2, apiKey) {
   }
 }
 
+// api/lib/anomaly-detector.ts
+var AMOUNT_RULES = [
+  {
+    category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+    minAmount: 1,
+    maxAmount: 5e3,
+    alertHigh: "\u0627\u0644\u0645\u0628\u0644\u063A \u062F\u0647 \u0643\u0628\u064A\u0631 \u0623\u0648\u064A \u0639\u0644\u0649 \u0627\u0644\u0623\u0643\u0644 \u{1F914} \u0645\u062A\u0623\u0643\u062F \u0645\u0634 \u062D\u0627\u062C\u0629 \u062A\u0627\u0646\u064A\u0629\u061F",
+    alertLow: ""
+  },
+  {
+    category: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+    minAmount: 1,
+    maxAmount: 3e3,
+    alertHigh: "\u0627\u0644\u0645\u0628\u0644\u063A \u062F\u0647 \u0643\u0628\u064A\u0631 \u0639\u0644\u0649 \u0627\u0644\u0645\u0648\u0627\u0635\u0644\u0627\u062A. \u0645\u0645\u0643\u0646 \u064A\u0643\u0648\u0646 \u0635\u064A\u0627\u0646\u0629 \u0639\u0631\u0628\u064A\u0629\u061F",
+    alertLow: ""
+  },
+  {
+    category: "\u062E\u062F\u0645\u0627\u062A \u0633\u064A\u0627\u0631\u0627\u062A",
+    minAmount: 5,
+    maxAmount: 5e4,
+    alertHigh: "\u0627\u0644\u0645\u0628\u0644\u063A \u062F\u0647 \u0643\u0628\u064A\u0631 \u0623\u0648\u064A \u0639\u0644\u0649 \u062E\u062F\u0645\u0627\u062A \u0627\u0644\u0633\u064A\u0627\u0631\u0627\u062A. \u0645\u062A\u0623\u0643\u062F\u061F",
+    alertLow: ""
+  },
+  {
+    category: "\u0645\u0631\u062A\u0628",
+    minAmount: 500,
+    maxAmount: 5e5,
+    alertHigh: "",
+    alertLow: "\u0627\u0644\u0645\u0628\u0644\u063A \u062F\u0647 \u0635\u063A\u064A\u0631 \u0639\u0644\u0649 \u0645\u0631\u062A\u0628. \u0642\u0635\u062F\u0643 \u062F\u062E\u0644 \u062C\u0627\u0646\u0628\u064A\u061F"
+  },
+  {
+    category: "\u0639\u0645\u0644 \u062D\u0631",
+    minAmount: 50,
+    maxAmount: 5e5,
+    alertHigh: "",
+    alertLow: ""
+  },
+  {
+    category: "\u062A\u0631\u0641\u064A\u0647",
+    minAmount: 1,
+    maxAmount: 5e3,
+    alertHigh: "\u0627\u0644\u0645\u0628\u0644\u063A \u062F\u0647 \u0643\u0628\u064A\u0631 \u0639\u0644\u0649 \u0627\u0644\u062A\u0631\u0641\u064A\u0647. \u0645\u062A\u0623\u0643\u062F \u0645\u0646 \u0627\u0644\u0641\u0626\u0629\u061F",
+    alertLow: ""
+  },
+  {
+    category: "\u062E\u0631\u0648\u062C\u0627\u062A",
+    minAmount: 1,
+    maxAmount: 5e3,
+    alertHigh: "\u0627\u0644\u0645\u0628\u0644\u063A \u062F\u0647 \u0643\u0628\u064A\u0631 \u0639\u0644\u0649 \u0627\u0644\u062E\u0631\u0648\u062C\u0627\u062A. \u0645\u062A\u0623\u0643\u062F\u061F",
+    alertLow: ""
+  },
+  {
+    category: "\u0635\u062D\u0629",
+    minAmount: 5,
+    maxAmount: 1e5,
+    alertHigh: "",
+    alertLow: ""
+  },
+  {
+    category: "\u062A\u0639\u0644\u064A\u0645",
+    minAmount: 10,
+    maxAmount: 2e5,
+    alertHigh: "",
+    alertLow: ""
+  },
+  {
+    category: "\u0633\u0643\u0646",
+    minAmount: 50,
+    maxAmount: 2e5,
+    alertHigh: "",
+    alertLow: ""
+  },
+  {
+    category: "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+    minAmount: 100,
+    maxAmount: 5e6,
+    alertHigh: "",
+    alertLow: ""
+  },
+  {
+    category: "\u062A\u0633\u0648\u0642",
+    minAmount: 5,
+    maxAmount: 2e5,
+    alertHigh: "",
+    alertLow: ""
+  },
+  {
+    category: "\u0647\u062F\u0627\u064A\u0627 \u0648\u0635\u062F\u0642\u0627\u062A",
+    minAmount: 5,
+    maxAmount: 5e4,
+    alertHigh: "\u0627\u0644\u0645\u0628\u0644\u063A \u062F\u0647 \u0643\u0628\u064A\u0631 \u0639\u0644\u0649 \u0647\u062F\u0627\u064A\u0627/\u0635\u062F\u0642\u0627\u062A. \u0645\u062A\u0623\u0643\u062F\u061F",
+    alertLow: ""
+  },
+  {
+    category: "\u0645\u062C\u0627\u0645\u0644\u0627\u062A",
+    minAmount: 5,
+    maxAmount: 5e4,
+    alertHigh: "\u0627\u0644\u0645\u0628\u0644\u063A \u062F\u0647 \u0643\u0628\u064A\u0631 \u0639\u0644\u0649 \u0627\u0644\u0645\u062C\u0627\u0645\u0644\u0627\u062A. \u0645\u062A\u0623\u0643\u062F\u061F",
+    alertLow: ""
+  }
+];
+var AMOUNT_HINTS = [
+  { minAmount: 1, maxAmount: 15, likelyCategories: ["\u0645\u0648\u0627\u0635\u0644\u0627\u062A", "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628"], boostScore: 5 },
+  { minAmount: 15, maxAmount: 100, likelyCategories: ["\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628"], boostScore: 3 },
+  { minAmount: 100, maxAmount: 500, likelyCategories: ["\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", "\u0645\u0648\u0627\u0635\u0644\u0627\u062A", "\u062A\u0633\u0648\u0642", "\u0641\u0648\u0627\u062A\u064A\u0631"], boostScore: 2 },
+  { minAmount: 500, maxAmount: 2e3, likelyCategories: ["\u0641\u0648\u0627\u062A\u064A\u0631", "\u062A\u0633\u0648\u0642", "\u0635\u062D\u0629", "\u062A\u0639\u0644\u064A\u0645"], boostScore: 2 },
+  { minAmount: 2e3, maxAmount: 1e4, likelyCategories: ["\u0633\u0643\u0646", "\u0641\u0648\u0627\u062A\u064A\u0631", "\u062A\u0633\u0648\u0642", "\u0635\u062D\u0629", "\u0627\u0633\u062A\u062B\u0645\u0627\u0631"], boostScore: 3 },
+  { minAmount: 1e4, maxAmount: 1e5, likelyCategories: ["\u0633\u0643\u0646", "\u0627\u0633\u062A\u062B\u0645\u0627\u0631", "\u062A\u0633\u0648\u0642", "\u0635\u062D\u0629"], boostScore: 5 }
+];
+function getTimeContext() {
+  const hour = (/* @__PURE__ */ new Date()).getHours();
+  const day = (/* @__PURE__ */ new Date()).getDay();
+  if (hour >= 6 && hour <= 10) {
+    return { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategoryHint: "\u0641\u0637\u0627\u0631" };
+  }
+  if (hour >= 12 && hour <= 15) {
+    return { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategoryHint: "\u063A\u062F\u0627" };
+  }
+  if (hour >= 19 && hour <= 23) {
+    return { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategoryHint: "\u0639\u0634\u0627" };
+  }
+  if (day === 5 && hour >= 10 && hour <= 22) {
+    return { category: "\u062E\u0631\u0648\u062C\u0627\u062A" };
+  }
+  return null;
+}
+function checkAmountAnomaly(item) {
+  const rule = AMOUNT_RULES.find((r) => r.category === item.category);
+  if (!rule) return { hasAnomaly: false, confidencePenalty: 0 };
+  if (item.amount > rule.maxAmount && rule.alertHigh) {
+    return {
+      hasAnomaly: true,
+      alertMessage: rule.alertHigh,
+      confidencePenalty: 30,
+      anomalyType: "amount_range"
+    };
+  }
+  if (item.amount < rule.minAmount && rule.alertLow) {
+    return {
+      hasAnomaly: true,
+      alertMessage: rule.alertLow,
+      confidencePenalty: 15,
+      anomalyType: "amount_range"
+    };
+  }
+  return { hasAnomaly: false, confidencePenalty: 0 };
+}
+function checkIntentConflict(item) {
+  const expenseOnlyCategories = [
+    "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+    "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+    "\u0641\u0648\u0627\u062A\u064A\u0631",
+    "\u0633\u0643\u0646",
+    "\u062A\u0633\u0648\u0642",
+    "\u0635\u062D\u0629",
+    "\u062A\u0639\u0644\u064A\u0645",
+    "\u062A\u0631\u0641\u064A\u0647",
+    "\u062E\u0631\u0648\u062C\u0627\u062A",
+    "\u062E\u062F\u0645\u0627\u062A \u0633\u064A\u0627\u0631\u0627\u062A"
+  ];
+  const incomeOnlyCategories = ["\u0645\u0631\u062A\u0628", "\u0639\u0645\u0644 \u062D\u0631", "\u0639\u0648\u0627\u0626\u062F \u0627\u0633\u062A\u062B\u0645\u0627\u0631"];
+  if (item.type === "income" && expenseOnlyCategories.includes(item.category)) {
+    return {
+      hasAnomaly: true,
+      alertMessage: `\u0641\u0626\u0629 "${item.category}" \u0639\u0627\u062F\u0629 \u0628\u062A\u0643\u0648\u0646 \u0645\u0635\u0631\u0648\u0641 \u0645\u0634 \u062F\u062E\u0644. \u0645\u062A\u0623\u0643\u062F\u061F`,
+      confidencePenalty: 25,
+      anomalyType: "intent_conflict"
+    };
+  }
+  if (item.type === "expense" && incomeOnlyCategories.includes(item.category)) {
+    return {
+      hasAnomaly: true,
+      alertMessage: `\u0641\u0626\u0629 "${item.category}" \u0639\u0627\u062F\u0629 \u0628\u062A\u0643\u0648\u0646 \u062F\u062E\u0644 \u0645\u0634 \u0645\u0635\u0631\u0648\u0641. \u0645\u062A\u0623\u0643\u062F\u061F`,
+      confidencePenalty: 25,
+      anomalyType: "intent_conflict"
+    };
+  }
+  return { hasAnomaly: false, confidencePenalty: 0 };
+}
+function getAmountCategoryBoost(amount, category) {
+  for (const hint of AMOUNT_HINTS) {
+    if (amount >= hint.minAmount && amount <= hint.maxAmount) {
+      if (hint.likelyCategories.includes(category)) {
+        return hint.boostScore;
+      }
+    }
+  }
+  return 0;
+}
+function detectAnomalies(item) {
+  const amountCheck = checkAmountAnomaly(item);
+  if (amountCheck.hasAnomaly) return amountCheck;
+  const intentCheck = checkIntentConflict(item);
+  if (intentCheck.hasAnomaly) return intentCheck;
+  return { hasAnomaly: false, confidencePenalty: 0 };
+}
+
 // api/lib/confidence-scorer.ts
 var DEFAULT_THRESHOLDS = {
   autoSave: 85,
@@ -86465,21 +89992,30 @@ var DEFAULT_THRESHOLDS = {
 };
 function adjustConfidence(item) {
   let conf = item.confidence;
+  const flags = new Set(item.ambiguityFlags || []);
   if (item.category === "\u0645\u062A\u0646\u0648\u0639\u0627\u062A") conf = Math.min(conf, 40);
   if (item.subCategory === "\u0639\u0627\u0645" && item.category !== "\u0645\u062A\u0646\u0648\u0639\u0627\u062A" && item.parsedBy !== "ai") {
     conf = Math.max(conf - 5, 30);
   }
   if (item.confidence === 100) conf = 100;
-  if (item.amount > 1e4 && ["\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", "\u0645\u0648\u0627\u0635\u0644\u0627\u062A"].includes(item.category)) {
-    conf = Math.min(conf, 60);
+  const anomaly = detectAnomalies(item);
+  if (anomaly.hasAnomaly) {
+    conf = Math.max(conf - anomaly.confidencePenalty, 20);
+    if (anomaly.anomalyType) flags.add(`anomaly_${anomaly.anomalyType}`);
   }
-  if (item.amount <= 500 && ["\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", "\u0645\u0648\u0627\u0635\u0644\u0627\u062A"].includes(item.category)) {
-    conf = Math.min(conf + 5, 100);
+  const amountBoost = getAmountCategoryBoost(item.amount, item.category);
+  if (amountBoost > 0) {
+    conf = Math.min(conf + amountBoost, 100);
+  }
+  const timeHint = getTimeContext();
+  if (timeHint && item.category === timeHint.category && item.subCategory === "\u0639\u0627\u0645" && timeHint.subCategoryHint) {
+    item = { ...item, subCategory: timeHint.subCategoryHint };
+    conf = Math.min(conf + 3, 100);
   }
   if (item.type === "income" && item.amount < 100) {
     conf = Math.min(conf, 70);
   }
-  return { ...item, confidence: conf, needsReview: conf < 85 };
+  return { ...item, confidence: conf, needsReview: conf < 85, ambiguityFlags: Array.from(flags) };
 }
 function generateClarification(items, originalText) {
   const hasAmbiguityFlags = items.some((i) => (i.ambiguityFlags?.length || 0) > 0);
@@ -86610,9 +90146,44 @@ async function runPipeline(input) {
   let modelUsed = "rule_engine";
   let alertMessage = null;
   let tokensUsed = 0;
+  const memoryMatch = await muscleMemoryLookup(input.text, input.userId, input.userType);
+  if (memoryMatch) {
+    items = [{
+      amount: memoryMatch.amount || entities.amounts[0]?.amount || 0,
+      category: memoryMatch.pattern.category,
+      subCategory: memoryMatch.pattern.subCategory,
+      description: input.text,
+      type: memoryMatch.pattern.type,
+      confidence: 100,
+      // Trusted from history
+      currency: "EGP",
+      needsReview: false,
+      parsedBy: "rule_engine",
+      // Compatible type
+      inferenceSource: "dictionary",
+      ambiguityFlags: ["muscle_memory_hit"]
+    }];
+    parsedBy = "muscle_memory";
+    modelUsed = "cache";
+    log2.finalConfidence = 100;
+    log2.finalDecision = "auto_save";
+    return {
+      items,
+      parsedBy,
+      modelUsed,
+      overallConfidence: 100,
+      decision: "auto_save",
+      alertMessage: null,
+      tokensUsed: 0,
+      processingTimeMs: Date.now() - startTime,
+      log: log2
+    };
+  }
   log2.ruleEngineResult.attempted = true;
   const ruleResult = runRuleEngine(normalizedText, input.userDict, input.userProfileContext);
-  if (!ruleResult.needsAI && ruleResult.items.length > 0) {
+  const personalContextPrompt = input.userProfileContext?.personalContextPrompt || "";
+  const knownNameMentioned = personalContextPrompt.length > 0 && entities.people.length > 0;
+  if (!ruleResult.needsAI && ruleResult.items.length > 0 && !knownNameMentioned) {
     items = ruleResult.items;
     log2.ruleEngineResult.succeeded = true;
     parsedBy = "rule_engine";
@@ -86621,6 +90192,7 @@ async function runPipeline(input) {
     log2.ruleEngineResult.succeeded = false;
     log2.ruleEngineResult.reason = ruleResult.reason;
     log2.embeddingResult.attempted = true;
+    let candidateCategories = void 0;
     try {
       const embResult = await runEmbeddingClassifier(normalizedText, input.apiKey);
       if (embResult) {
@@ -86681,7 +90253,10 @@ async function runPipeline(input) {
               totalExpense: input.monthlyContext.totalExpense,
               currentDate,
               userProfileContext: input.userProfileContext?.promptSummary,
-              ruleHints: ruleResult.items.filter((i) => i.confidence >= 60)
+              personalContext: input.userProfileContext?.personalContextPrompt,
+              ruleHints: ruleResult.items.filter((i) => i.confidence >= 60),
+              amountCount: entities.amounts.length,
+              isSmoker: input.userProfileContext?.isSmoker
             },
             forceSkipClarification
           );
@@ -86690,6 +90265,22 @@ async function runPipeline(input) {
             modelUsed = aiResult.modelUsed;
             log2.aiResult.modelUsed = aiResult.modelUsed;
             const isSkipped = forceSkipClarification;
+            if (aiResult.items.length > 0 && !aiResult.needsClarification) {
+              for (const item of aiResult.items) {
+                if (item.category === "\u0645\u062A\u0646\u0648\u0639\u0627\u062A") {
+                  try {
+                    const embMatch = await runEmbeddingClassifier(item.description, input.apiKey);
+                    if (embMatch && embMatch.matches.length > 0) {
+                      item.category = embMatch.matches[0].category;
+                      item.subCategory = embMatch.matches[0].subCategory;
+                      item.confidence = Math.round((item.confidence + embMatch.matches[0].score) / 2);
+                    }
+                  } catch (e) {
+                    console.warn("Local taxonomy mapping failed for:", item.description);
+                  }
+                }
+              }
+            }
             if (isSkipped) {
               if (aiResult.items.length > 0) {
                 const capConfidence = input.skipClarification;
@@ -86771,6 +90362,35 @@ async function runPipeline(input) {
       }
     }
   }
+  if (items.length > 0 && parsedBy !== "rule_engine" && parsedBy !== "muscle_memory") {
+    for (const item of items) {
+      if (item.confidence < 75 && item.description && item.description.length >= 3) {
+        try {
+          const disputeCheck = await runEmbeddingClassifier(item.description, input.apiKey);
+          if (disputeCheck && disputeCheck.matches.length > 0) {
+            const embeddingCategory = disputeCheck.matches[0].category;
+            const embeddingScore = disputeCheck.matches[0].score;
+            if (embeddingCategory !== item.category && embeddingScore >= 60) {
+              item.needsReview = true;
+              item.ambiguityFlags = [
+                ...item.ambiguityFlags || [],
+                "gemini_embedding_dispute",
+                `emb_says:${embeddingCategory}`
+              ];
+              if (embeddingScore > item.confidence + 15) {
+                item.category = embeddingCategory;
+                item.subCategory = disputeCheck.matches[0].subCategory;
+                item.confidence = Math.round((item.confidence + embeddingScore) / 2);
+                item.ambiguityFlags.push("emb_override");
+              }
+            }
+          }
+        } catch (disputeErr) {
+          console.warn("Dispute resolution error (non-fatal):", disputeErr);
+        }
+      }
+    }
+  }
   if (entities.dateHints && entities.dateHints.length > 0 && items.length > 0) {
     const hint = entities.dateHints[0];
     const targetDate = /* @__PURE__ */ new Date();
@@ -86810,6 +90430,13 @@ init_drizzle_orm();
 init_schema2();
 var SMART_PROFILE_VERSION = 2;
 function asObject(value) {
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return {};
+    }
+  }
   return value && typeof value === "object" && !Array.isArray(value) ? { ...value } : {};
 }
 function toNumber(value) {
@@ -86879,11 +90506,22 @@ function buildDefaultSmartProfile(identity2, legacy) {
       {
         hasChildren: null,
         childrenCount: null,
+        childrenNames: [],
         childrenAges: [],
         responsibleForFamily: null,
         livesAlone: null,
         supportsOthers: [],
-        fixedMonthlyCommitments: null
+        fixedMonthlyCommitments: null,
+        partnerName: null,
+        carOwnership: null,
+        carType: null,
+        monthlyCarCost: null,
+        hasPets: null,
+        petNames: [],
+        smoking: null,
+        subscriptions: [],
+        regularContacts: [],
+        favoriteSpendingPlaces: []
       },
       asObject(legacy?.lifestyleInfo)
     ),
@@ -86972,75 +90610,166 @@ async function getSmartProfile(userId, userType) {
     row = rows[0];
   } catch (err) {
     if (!isSmartProfileSchemaError(err)) throw err;
-    const legacyRows = await db3.select({
-      monthlyIncome: userProfiles.monthlyIncome,
-      financialGoal: userProfiles.financialGoal,
-      financialPersonality: userProfiles.financialPersonality,
-      profileCompleted: userProfiles.profileCompleted
-    }).from(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType))).limit(1);
-    row = legacyRows[0];
+    console.warn("[getSmartProfile] Full read failed, attempting auto-repair...");
+    try {
+      await autoRepairProfileSchema();
+      const rows = await db3.select().from(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType))).limit(1);
+      row = rows[0];
+      console.log("[getSmartProfile] Auto-repair + retry succeeded!");
+    } catch (retryErr) {
+      console.error("[getSmartProfile] Retry failed, using legacy read:", retryErr instanceof Error ? retryErr.message : retryErr);
+      const legacyRows = await db3.select({
+        monthlyIncome: userProfiles.monthlyIncome,
+        financialGoal: userProfiles.financialGoal,
+        financialPersonality: userProfiles.financialPersonality,
+        profileCompleted: userProfiles.profileCompleted
+      }).from(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType))).limit(1);
+      row = legacyRows[0];
+    }
   }
-  const profile = buildDefaultSmartProfile(identity2, row);
-  return profile;
+  const result = buildDefaultSmartProfile(identity2, row);
+  console.log(`[getSmartProfile] user=${userId}, hasRow=${!!row}, hasOnboardingAnswers=${row?.onboardingAnswers ? Object.keys(row.onboardingAnswers).length : 0}, resultAnswers=${Object.keys(result.onboardingAnswers).length}`);
+  return result;
 }
 async function saveSmartProfile(userId, userType, profile) {
   const { db: db3 } = await Promise.resolve().then(() => (init_connection(), connection_exports));
+  const { sql: sqlTag } = await Promise.resolve().then(() => (init_drizzle_orm(), drizzle_orm_exports));
   const monthlyIncome = toNumber(profile.financialInfo.averageMonthlyIncome);
   const financialGoal = typeof profile.financialInfo.primaryGoal === "string" ? profile.financialInfo.primaryGoal : profile.legacy.financialGoal;
   const financialPersonality = typeof profile.aiInferredAttributes.financialPersonality === "string" ? profile.aiInferredAttributes.financialPersonality : profile.legacy.financialPersonality;
-  const legacyValues = {
-    userId,
-    userType,
-    monthlyIncome: monthlyIncome === null ? void 0 : monthlyIncome.toString(),
-    financialGoal,
-    financialPersonality,
-    profileCompleted: profile.profileCompleted,
-    lastAskedAt: /* @__PURE__ */ new Date()
-  };
+  const onboardingJson = JSON.stringify(profile.onboardingAnswers || {});
+  const basicJson = JSON.stringify(profile.basicInfo || {});
+  const financialJson = JSON.stringify(profile.financialInfo || {});
+  const lifestyleJson = JSON.stringify(profile.lifestyleInfo || {});
+  const inferredJson = JSON.stringify(profile.aiInferredAttributes || {});
+  const prefsJson = JSON.stringify(profile.preferences || {});
+  const completed = profile.profileCompleted ? 1 : 0;
   try {
-    await db3.insert(userProfiles).values({
-      ...legacyValues,
-      basicInfo: profile.basicInfo,
-      financialInfo: profile.financialInfo,
-      lifestyleInfo: profile.lifestyleInfo,
-      onboardingAnswers: profile.onboardingAnswers,
-      aiInferredAttributes: profile.aiInferredAttributes,
-      preferences: profile.preferences,
-      avatarId: profile.avatarId,
-      profileVersion: SMART_PROFILE_VERSION,
-      lastAiRefreshAt: profile.lastAiRefreshAt ?? void 0
-    }).onDuplicateKeyUpdate({
-      set: {
-        ...legacyValues,
-        basicInfo: profile.basicInfo,
-        financialInfo: profile.financialInfo,
-        lifestyleInfo: profile.lifestyleInfo,
-        onboardingAnswers: profile.onboardingAnswers,
-        aiInferredAttributes: profile.aiInferredAttributes,
-        preferences: profile.preferences,
-        avatarId: profile.avatarId,
-        profileVersion: SMART_PROFILE_VERSION,
-        lastAiRefreshAt: profile.lastAiRefreshAt ?? void 0
-      }
-    });
+    await db3.execute(
+      sqlTag`INSERT INTO user_profiles
+        (user_id, user_type, monthly_income, financial_goal, financial_personality,
+         profile_completed, onboarding_answers, basic_info, financial_info,
+         lifestyle_info, ai_inferred_attributes, preferences, avatar_id,
+         profile_version)
+        VALUES
+        (${userId}, ${userType}, ${monthlyIncome}, ${financialGoal}, ${financialPersonality},
+         ${completed}, ${onboardingJson}, ${basicJson}, ${financialJson},
+         ${lifestyleJson}, ${inferredJson}, ${prefsJson}, ${profile.avatarId},
+         ${SMART_PROFILE_VERSION})
+        ON DUPLICATE KEY UPDATE
+          monthly_income = VALUES(monthly_income),
+          financial_goal = VALUES(financial_goal),
+          financial_personality = VALUES(financial_personality),
+          profile_completed = VALUES(profile_completed),
+          onboarding_answers = VALUES(onboarding_answers),
+          basic_info = VALUES(basic_info),
+          financial_info = VALUES(financial_info),
+          lifestyle_info = VALUES(lifestyle_info),
+          ai_inferred_attributes = VALUES(ai_inferred_attributes),
+          preferences = VALUES(preferences),
+          avatar_id = VALUES(avatar_id),
+          profile_version = VALUES(profile_version)`
+    );
+    console.log(`[saveSmartProfile] \u2705 Saved. answers=${Object.keys(profile.onboardingAnswers).length}, completed=${profile.profileCompleted}`);
   } catch (err) {
-    if (!isSmartProfileSchemaError(err)) throw err;
-    await db3.insert(userProfiles).values(legacyValues).onDuplicateKeyUpdate({
-      set: {
+    console.error("[saveSmartProfile] Save failed:", err instanceof Error ? err.message : err);
+    try {
+      await db3.insert(userProfiles).values({
+        userId,
+        userType,
         monthlyIncome: monthlyIncome === null ? void 0 : monthlyIncome.toString(),
         financialGoal,
         financialPersonality,
-        profileCompleted: profile.profileCompleted,
-        lastAskedAt: /* @__PURE__ */ new Date()
+        profileCompleted: profile.profileCompleted
+      }).onDuplicateKeyUpdate({
+        set: {
+          monthlyIncome: monthlyIncome === null ? void 0 : monthlyIncome.toString(),
+          financialGoal,
+          financialPersonality,
+          profileCompleted: profile.profileCompleted
+        }
+      });
+      console.warn("[saveSmartProfile] \u26A0\uFE0F Legacy fallback used \u2014 JSON data NOT saved!");
+    } catch (legacyErr) {
+      console.error("[saveSmartProfile] Even legacy save failed:", legacyErr);
+      throw err;
+    }
+  }
+}
+async function autoRepairProfileSchema() {
+  const { db: db3 } = await Promise.resolve().then(() => (init_connection(), connection_exports));
+  const requiredColumns = [
+    { name: "basic_info", type: "JSON DEFAULT NULL" },
+    { name: "financial_info", type: "JSON DEFAULT NULL" },
+    { name: "lifestyle_info", type: "JSON DEFAULT NULL" },
+    { name: "onboarding_answers", type: "JSON DEFAULT NULL" },
+    { name: "ai_inferred_attributes", type: "JSON DEFAULT NULL" },
+    { name: "preferences", type: "JSON DEFAULT NULL" },
+    { name: "avatar_id", type: "VARCHAR(100) DEFAULT NULL" },
+    { name: "profile_version", type: "INT DEFAULT 2" },
+    { name: "last_ai_refresh_at", type: "DATETIME DEFAULT NULL" },
+    { name: "last_asked_at", type: "DATETIME DEFAULT NULL" }
+  ];
+  for (const col of requiredColumns) {
+    try {
+      await db3.execute(
+        `ALTER TABLE user_profiles ADD COLUMN \`${col.name}\` ${col.type}`
+      );
+      console.log(`  [auto-repair] Added column: ${col.name}`);
+    } catch (e) {
+      if (!e.message?.includes("Duplicate column")) {
+        console.warn(`  [auto-repair] Could not add ${col.name}:`, e.message);
       }
-    });
+    }
   }
 }
 async function updateSmartProfile(userId, userType, patch) {
   const current = await getSmartProfile(userId, userType);
   const next = mergeSmartProfilePatch(current, patch);
+  if (patch.financialInfo || patch.lifestyleInfo || patch.basicInfo) {
+    next.onboardingAnswers = syncOnboardingAnswersFromProfile(next);
+  }
   await saveSmartProfile(userId, userType, next);
   return next;
+}
+function syncOnboardingAnswersFromProfile(profile) {
+  const answers = { ...profile.onboardingAnswers };
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const fi = profile.financialInfo;
+  const li = profile.lifestyleInfo;
+  const bi = profile.basicInfo;
+  function markAnswered(key, value) {
+    if (value !== null && value !== void 0 && value !== "" && value !== false) {
+      if (!answers[key]) {
+        answers[key] = { value, skipped: false, answeredAt: now, updatedAt: now };
+      } else {
+        answers[key] = { ...answers[key], value, updatedAt: now };
+      }
+    }
+  }
+  if (fi.averageMonthlyIncome) markAnswered("income_level", fi.averageMonthlyIncome);
+  if (Array.isArray(fi.incomeSources) && fi.incomeSources.length > 0) markAnswered("income_sources", fi.incomeSources);
+  if (fi.primaryGoal) markAnswered("app_goal", fi.primaryGoal);
+  if (fi.hasDebt !== null && fi.hasDebt !== void 0) markAnswered("has_debt", fi.hasDebt);
+  if (fi.monthlyDebtPayment) markAnswered("debt_monthly", fi.monthlyDebtPayment);
+  if (li.hasChildren !== null && li.hasChildren !== void 0) markAnswered("children", li.hasChildren);
+  if (li.childrenCount) markAnswered("children_count", li.childrenCount);
+  if (Array.isArray(li.childrenNames) && li.childrenNames.length > 0) markAnswered("children_names", li.childrenNames);
+  if (li.livingSituation) markAnswered("living_situation", li.livingSituation);
+  if (li.partnerName) markAnswered("partner_name", li.partnerName);
+  if (li.housingType) markAnswered("housing_type", li.housingType);
+  if (li.monthlyRent) markAnswered("monthly_rent", li.monthlyRent);
+  if (Array.isArray(li.supportsOthers) && li.supportsOthers.length > 0) markAnswered("supports_others", li.supportsOthers);
+  if (li.carOwnership !== null && li.carOwnership !== void 0) markAnswered("car_ownership", li.carOwnership);
+  if (li.carType) markAnswered("car_type", li.carType);
+  if (li.monthlyCarCost) markAnswered("monthly_car_cost", li.monthlyCarCost);
+  if (li.hasPets !== null && li.hasPets !== void 0) markAnswered("has_pets", li.hasPets);
+  if (Array.isArray(li.petNames) && li.petNames.length > 0) markAnswered("pet_names", li.petNames);
+  if (li.smoking !== null && li.smoking !== void 0) markAnswered("smoking", li.smoking);
+  if (Array.isArray(li.subscriptions) && li.subscriptions.length > 0) markAnswered("subscription_services", li.subscriptions);
+  if (Array.isArray(li.regularContacts) && li.regularContacts.length > 0) markAnswered("regular_contacts", li.regularContacts);
+  if (bi.profession) markAnswered("profession", bi.profession);
+  return answers;
 }
 function summarizeProfileForAI(profile) {
   const financialInfo = profile.financialInfo;
@@ -87052,9 +90781,14 @@ function summarizeProfileForAI(profile) {
     `Income sources: ${Array.isArray(financialInfo.incomeSources) ? financialInfo.incomeSources.join(", ") : "unknown"}`,
     `Goal: ${financialInfo.primaryGoal ?? "unknown"}`,
     `Has children: ${lifestyleInfo.hasChildren ?? "unknown"}`,
+    `Children names: ${Array.isArray(lifestyleInfo.childrenNames) && lifestyleInfo.childrenNames.length > 0 ? lifestyleInfo.childrenNames.join(", ") : "unknown"}`,
+    `Partner name: ${lifestyleInfo.partnerName ?? "unknown"}`,
     `Responsible for family: ${lifestyleInfo.responsibleForFamily ?? "unknown"}`,
     `Supports others: ${Array.isArray(lifestyleInfo.supportsOthers) ? lifestyleInfo.supportsOthers.join(", ") : "unknown"}`,
+    `Regular contacts: ${Array.isArray(lifestyleInfo.regularContacts) && lifestyleInfo.regularContacts.length > 0 ? lifestyleInfo.regularContacts.join(", ") : "none"}`,
     `Fixed commitments: ${lifestyleInfo.fixedMonthlyCommitments ?? "unknown"}`,
+    `Has car: ${lifestyleInfo.carOwnership ?? "unknown"}${lifestyleInfo.carType ? ` (${lifestyleInfo.carType})` : ""}`,
+    `Smoker: ${lifestyleInfo.smoking ?? "unknown"}`,
     `Financial stability: ${inferred.financialStability ?? "unknown"}`,
     `Spending behavior: ${inferred.spendingBehavior ?? "unknown"}`,
     `Report preference: ${preferences.detailLevel ?? "summary"}`
@@ -87107,14 +90841,14 @@ function buildBehaviorSnapshot(items, previousItems = [], profile) {
     const weekday = String(date6.getDay());
     weekdayMap[weekday] = (weekdayMap[weekday] || 0) + amount;
   }
-  const topCategories = Object.entries(categoryMap).map(([name, data]) => ({
-    name,
+  const topCategories = Object.entries(categoryMap).map(([name2, data]) => ({
+    name: name2,
     amount: data.amount,
     count: data.count,
     percent: percentage(data.amount, totalExpense)
   })).sort((a, b) => b.amount - a.amount);
-  const topSubCategories = Object.entries(subCategoryMap).map(([name, data]) => ({
-    name,
+  const topSubCategories = Object.entries(subCategoryMap).map(([name2, data]) => ({
+    name: name2,
     category: data.category,
     amount: data.amount,
     count: data.count,
@@ -87187,32 +90921,73 @@ function buildReportPersonalizationContext(profile, snapshot) {
     organize_expenses: "\u062A\u0646\u0638\u064A\u0645 \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641",
     reduce_spending: "\u062A\u0642\u0644\u064A\u0644 \u0627\u0644\u0635\u0631\u0641",
     track_income: "\u062A\u062A\u0628\u0639 \u0627\u0644\u062F\u062E\u0644",
-    manage_business: "\u0625\u062F\u0627\u0631\u0629 \u0645\u0634\u0631\u0648\u0639"
+    save_money: "\u0627\u062F\u062E\u0627\u0631 \u0627\u0644\u0645\u0627\u0644",
+    manage_business: "\u0625\u062F\u0627\u0631\u0629 \u0645\u0634\u0631\u0648\u0639",
+    pay_debt: "\u0633\u062F\u0627\u062F \u0627\u0644\u062F\u064A\u0648\u0646"
   };
   const patternMap = {
-    stable: "\u062B\u0627\u0628\u062A",
-    variable: "\u0645\u062A\u063A\u064A\u0631",
+    stable: "\u062B\u0627\u0628\u062A \u0648\u0645\u0646\u062A\u0638\u0645",
+    variable: "\u0645\u062A\u063A\u064A\u0631 \u062D\u0633\u0628 \u0627\u0644\u0638\u0631\u0648\u0641",
+    impulsive: "\u0645\u0646\u062F\u0641\u0639 \u0628\u062F\u0648\u0646 \u062A\u062E\u0637\u064A\u0637",
+    saver: "\u064A\u062D\u0627\u0648\u0644 \u064A\u0648\u0641\u0631",
     unclear: "\u063A\u064A\u0631 \u0648\u0627\u0636\u062D"
   };
-  return [
-    "\u0645\u0639\u0644\u0648\u0645\u0627\u062A \u0630\u0643\u064A\u0629 \u0639\u0646 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 (\u0627\u0633\u062A\u062E\u062F\u0645\u0647\u0627 \u0644\u062A\u062E\u0635\u064A\u0635 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0648\u0643\u0623\u0646\u0643 \u0645\u0633\u062A\u0634\u0627\u0631\u0647 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0634\u062E\u0635\u064A):",
-    `- \u0627\u0644\u0645\u0647\u0646\u0629: ${basic.profession ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F\u0629"}`,
-    `- \u0645\u062A\u0648\u0633\u0637 \u0627\u0644\u062F\u062E\u0644 \u0627\u0644\u0634\u0647\u0631\u064A \u0627\u0644\u0645\u0639\u0644\u0646: ${financial.averageMonthlyIncome ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"} \u062C.\u0645`,
-    `- \u0645\u0635\u0627\u062F\u0631 \u0627\u0644\u062F\u062E\u0644: ${Array.isArray(financial.incomeSources) && financial.incomeSources.length > 0 ? financial.incomeSources.join("\u060C ") : "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`,
-    `- \u0647\u062F\u0641\u0647 \u0627\u0644\u0623\u0633\u0627\u0633\u064A: ${goalMap[String(financial.primaryGoal)] ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`,
-    `- \u0646\u0645\u0637 \u0627\u0644\u0635\u0631\u0641 \u0627\u0644\u0645\u0639\u062A\u0627\u062F: ${patternMap[String(financial.spendingPattern)] ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`,
-    `- \u0644\u062F\u064A\u0647 \u0623\u0637\u0641\u0627\u0644: ${lifestyle.hasChildren === true ? "\u0646\u0639\u0645" : lifestyle.hasChildren === false ? "\u0644\u0627" : "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`,
-    `- \u0645\u0633\u0624\u0648\u0644 \u0639\u0646 \u0623\u0633\u0631\u0629: ${lifestyle.responsibleForFamily === true ? "\u0646\u0639\u0645" : lifestyle.responsibleForFamily === false ? "\u0644\u0627" : "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`,
-    `- \u064A\u062F\u0639\u0645 \u0645\u0627\u0644\u064A\u0627\u064B: ${Array.isArray(lifestyle.supportsOthers) && lifestyle.supportsOthers.length > 0 ? lifestyle.supportsOthers.join("\u060C ") : "\u0644\u0627 \u0623\u062D\u062F"}`,
-    `- \u0627\u0644\u062A\u0632\u0627\u0645\u0627\u062A \u0634\u0647\u0631\u064A\u0629 \u062B\u0627\u0628\u062A\u0629: ${lifestyle.fixedMonthlyCommitments ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`,
-    `- \u0645\u0633\u062A\u0648\u0649 \u0627\u0644\u062A\u0641\u0627\u0635\u064A\u0644 \u0627\u0644\u0645\u0641\u0636\u0644: ${preferences.detailLevel === "detailed" ? "\u062A\u0641\u0635\u064A\u0644\u064A" : preferences.detailLevel === "summary" ? "\u0645\u062E\u062A\u0635\u0631" : "\u0645\u062A\u0648\u0627\u0632\u0646"}`,
-    `- \u0627\u0644\u0627\u0633\u062A\u0642\u0631\u0627\u0631 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0633\u062A\u0646\u062A\u062C: ${snapshot.inferredAttributes.financialStability ?? inferred.financialStability ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`,
-    `- \u0627\u0644\u0633\u0644\u0648\u0643 \u0627\u0644\u0627\u0633\u062A\u0647\u0644\u0627\u0643\u064A: ${snapshot.inferredAttributes.spendingBehavior ?? inferred.spendingBehavior ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`,
-    `- \u0623\u0639\u0644\u0649 \u0641\u0626\u0629 \u0625\u0646\u0641\u0627\u0642: ${snapshot.topCategories[0]?.name ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`,
-    `- \u0637\u0641\u0631\u0627\u062A \u0635\u0631\u0641 \u0641\u062C\u0627\u0626\u064A\u0629: ${snapshot.behaviorFlags.hasSpikeSpending ? "\u0646\u0639\u0645" : "\u0644\u0627"}`,
-    "",
-    "\u062A\u0639\u0644\u064A\u0645\u0627\u062A \u0627\u0644\u062A\u062E\u0635\u064A\u0635: \u062E\u0627\u0637\u0628 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0634\u0643\u0644 \u0634\u062E\u0635\u064A \u062D\u0633\u0628 \u0628\u064A\u0627\u0646\u0627\u062A\u0647 \u0623\u0639\u0644\u0627\u0647. \u0627\u0630\u0643\u0631 \u0645\u0647\u0646\u062A\u0647 \u0648\u0647\u062F\u0641\u0647 \u0625\u0646 \u0648\u062C\u062F\u0627. \u0625\u0630\u0627 \u0643\u0627\u0646 \u0644\u062F\u064A\u0647 \u0623\u0637\u0641\u0627\u0644\u060C \u0627\u0630\u0643\u0631 \u0630\u0644\u0643 \u0641\u064A \u0633\u064A\u0627\u0642 \u0627\u0644\u062A\u062D\u0644\u064A\u0644. \u0627\u062C\u0639\u0644 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u064A\u0628\u062F\u0648 \u0648\u0643\u0623\u0646\u0647 \u0645\u064F\u0639\u062F \u062E\u0635\u064A\u0635\u0627\u064B \u0644\u0647."
-  ].join("\n");
+  const housingMap = { rent: "\u0625\u064A\u062C\u0627\u0631", owned: "\u0645\u0644\u0643", family_owned: "\u0628\u064A\u062A \u0627\u0644\u0639\u064A\u0644\u0629" };
+  const savingsMap = { yes_regular: "\u064A\u062F\u062E\u0631 \u0628\u0627\u0646\u062A\u0638\u0627\u0645", yes_irregular: "\u064A\u062F\u062E\u0631 \u0623\u062D\u064A\u0627\u0646\u0627\u064B", no: "\u0644\u0627 \u064A\u062F\u062E\u0631", trying: "\u064A\u062D\u0627\u0648\u0644 \u064A\u0628\u062F\u0623" };
+  const lines = [
+    "\u2550\u2550\u2550 \u0628\u0631\u0648\u0641\u0627\u064A\u0644 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0630\u0643\u064A (\u062E\u0635\u0635 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0628\u0646\u0627\u0621\u064B \u0639\u0644\u064A\u0647) \u2550\u2550\u2550",
+    `\u0627\u0644\u0645\u0647\u0646\u0629: ${basic.profession ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F\u0629"}`,
+    `\u0627\u0644\u062F\u062E\u0644 \u0627\u0644\u0634\u0647\u0631\u064A: ${financial.averageMonthlyIncome ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"} \u062C.\u0645`,
+    `\u0645\u0635\u0627\u062F\u0631 \u0627\u0644\u062F\u062E\u0644: ${Array.isArray(financial.incomeSources) && financial.incomeSources.length > 0 ? financial.incomeSources.join("\u060C ") : "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`,
+    `\u0627\u0644\u0647\u062F\u0641 \u0627\u0644\u0623\u0633\u0627\u0633\u064A: ${goalMap[String(financial.primaryGoal)] ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`
+  ];
+  lines.push(`\u0648\u0636\u0639 \u0627\u0644\u0633\u0643\u0646: ${housingMap[String(lifestyle.housingType)] ?? lifestyle.livingSituation ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`);
+  if (lifestyle.monthlyRent) lines.push(`\u0627\u0644\u0625\u064A\u062C\u0627\u0631 \u0627\u0644\u0634\u0647\u0631\u064A: ${lifestyle.monthlyRent} \u062C.\u0645`);
+  lines.push(`\u0644\u062F\u064A\u0647 \u0623\u0637\u0641\u0627\u0644: ${lifestyle.hasChildren === true ? `\u0646\u0639\u0645 (${lifestyle.childrenCount || ""})` : lifestyle.hasChildren === false ? "\u0644\u0627" : "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`);
+  lines.push(`\u064A\u062F\u0639\u0645 \u0645\u0627\u0644\u064A\u0627\u064B: ${Array.isArray(lifestyle.supportsOthers) && lifestyle.supportsOthers.length > 0 ? lifestyle.supportsOthers.join("\u060C ") : "\u0644\u0627 \u0623\u062D\u062F"}`);
+  lines.push(`\u0639\u0644\u064A\u0647 \u062F\u064A\u0648\u0646/\u0623\u0642\u0633\u0627\u0637: ${financial.hasDebt === true ? `\u0646\u0639\u0645 (\u0634\u0647\u0631\u064A\u0627\u064B ${financial.monthlyDebtPayment ?? "\u061F"} \u062C.\u0645)` : financial.hasDebt === false ? "\u0644\u0627" : "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`);
+  lines.push(`\u0627\u0644\u0627\u0633\u062A\u0642\u0631\u0627\u0631 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0633\u062A\u0646\u062A\u062C: ${snapshot.inferredAttributes.financialStability ?? inferred.financialStability ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`);
+  lines.push(`\u0627\u0644\u0633\u0644\u0648\u0643 \u0627\u0644\u0627\u0633\u062A\u0647\u0644\u0627\u0643\u064A: ${snapshot.inferredAttributes.spendingBehavior ?? inferred.spendingBehavior ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`);
+  lines.push(`\u0623\u0639\u0644\u0649 \u0641\u0626\u0629 \u0625\u0646\u0641\u0627\u0642 \u0641\u0639\u0644\u064A\u0629: ${snapshot.topCategories[0]?.name ?? "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}`);
+  lines.push(`\u0637\u0641\u0631\u0627\u062A \u0635\u0631\u0641 \u0641\u062C\u0627\u0626\u064A\u0629: ${snapshot.behaviorFlags.hasSpikeSpending ? "\u0646\u0639\u0645" : "\u0644\u0627"}`);
+  lines.push(`\u0627\u0644\u062A\u0641\u0627\u0635\u064A\u0644 \u0627\u0644\u0645\u0641\u0636\u0644\u0629: ${preferences.detailLevel === "detailed" ? "\u062A\u0641\u0635\u064A\u0644\u064A" : preferences.detailLevel === "summary" ? "\u0645\u062E\u062A\u0635\u0631" : "\u0645\u062A\u0648\u0627\u0632\u0646"}`);
+  const childrenNames = Array.isArray(lifestyle.childrenNames) ? lifestyle.childrenNames.filter(Boolean) : [];
+  if (childrenNames.length > 0) {
+    lines.push(`\u0623\u0633\u0645\u0627\u0621 \u0627\u0644\u0623\u0637\u0641\u0627\u0644: ${childrenNames.join("\u060C ")}`);
+  }
+  if (lifestyle.partnerName) {
+    lines.push(`\u0634\u0631\u064A\u0643 \u0627\u0644\u062D\u064A\u0627\u0629: ${lifestyle.partnerName}`);
+  }
+  const regularContacts = Array.isArray(lifestyle.regularContacts) ? lifestyle.regularContacts.filter(Boolean) : [];
+  if (regularContacts.length > 0) {
+    lines.push(`\u0623\u0634\u062E\u0627\u0635 \u064A\u062D\u0648\u0644 \u0644\u0647\u0645 \u0628\u0627\u0646\u062A\u0638\u0627\u0645: ${regularContacts.join("\u060C ")}`);
+  }
+  if (lifestyle.carOwnership) {
+    lines.push(`\u0644\u062F\u064A\u0647 \u0633\u064A\u0627\u0631\u0629${lifestyle.carType ? ` (${lifestyle.carType})` : ""}`);
+  }
+  if (lifestyle.smoking) {
+    lines.push(`\u0645\u062F\u062E\u0646: \u0646\u0639\u0645`);
+  }
+  const subs = Array.isArray(lifestyle.subscriptions) ? lifestyle.subscriptions : [];
+  if (subs.length > 0) {
+    const subMap = {
+      netflix: "Netflix",
+      shahid: "\u0634\u0627\u0647\u062F",
+      spotify: "Spotify",
+      youtube_premium: "YouTube Premium",
+      gym: "\u062C\u064A\u0645/\u0646\u0627\u062F\u064A",
+      internet: "\u0625\u0646\u062A\u0631\u0646\u062A",
+      phone_plan: "\u0628\u0627\u0642\u0629 \u0645\u0648\u0628\u0627\u064A\u0644",
+      insurance: "\u062A\u0623\u0645\u064A\u0646"
+    };
+    lines.push(`\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A \u062B\u0627\u0628\u062A\u0629: ${subs.map((s) => subMap[s] || s).join("\u060C ")}`);
+  }
+  lines.push("");
+  lines.push("\u062A\u0639\u0644\u064A\u0645\u0627\u062A \u0627\u0644\u062A\u062E\u0635\u064A\u0635: \u062E\u0627\u0637\u0628 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0634\u0643\u0644 \u0634\u062E\u0635\u064A \u0643\u0645\u0633\u062A\u0634\u0627\u0631\u0647 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u062E\u0627\u0635. \u0627\u0630\u0643\u0631 \u0645\u0647\u0646\u062A\u0647 \u0648\u0647\u062F\u0641\u0647 \u0648\u0638\u0631\u0648\u0641\u0647 (\u0623\u0637\u0641\u0627\u0644/\u062F\u064A\u0648\u0646/\u0633\u0643\u0646). \u0642\u0627\u0631\u0646 \u0635\u0631\u0641\u0647 \u0627\u0644\u0641\u0639\u0644\u064A \u0628\u062F\u062E\u0644\u0647 \u0627\u0644\u0645\u0639\u0644\u0646 \u0648\u0627\u0644\u062A\u0632\u0627\u0645\u0627\u062A\u0647. \u0627\u062C\u0639\u0644 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0645\u064F\u0639\u062F \u062E\u0635\u064A\u0635\u0627\u064B \u0644\u0647 \u0648\u0644\u064A\u0633 \u0639\u0627\u0645\u0627\u064B.");
+  if (childrenNames.length > 0 || lifestyle.partnerName || regularContacts.length > 0) {
+    lines.push("\u062A\u0639\u0644\u064A\u0645\u0629 \u0625\u0636\u0627\u0641\u064A\u0629: \u0639\u0646\u062F \u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u062A\u062D\u0648\u064A\u0644\u0627\u062A\u060C \u0627\u0630\u0643\u0631 \u0623\u0633\u0645\u0627\u0621 \u0627\u0644\u0623\u0634\u062E\u0627\u0635 \u0627\u0644\u0645\u0639\u0631\u0648\u0641\u064A\u0646 \u0628\u062F\u0644\u0627\u064B \u0645\u0646 '\u062A\u062D\u0648\u064A\u0644\u0627\u062A' \u0641\u0642\u0637.");
+  }
+  return lines.join("\n");
 }
 function buildBackendPersonalizedInsights(profile, snapshot) {
   const alerts = [];
@@ -87248,6 +91023,139 @@ function buildBackendPersonalizedInsights(profile, snapshot) {
       trend: Number(snapshot.inferredAttributes.monthOverMonthChange || 0) > 0 ? "trending_up" : "trending_down_or_flat"
     }
   };
+}
+
+// api/services/personal-context-builder.ts
+function buildPersonalContext(profile) {
+  const lifestyle = profile.lifestyleInfo;
+  const knownPeople = [];
+  const childrenNames = Array.isArray(lifestyle.childrenNames) ? lifestyle.childrenNames : [];
+  for (const name2 of childrenNames) {
+    if (name2 && typeof name2 === "string" && name2.trim()) {
+      knownPeople.push({
+        name: name2.trim(),
+        relationship: "\u0627\u0628\u0646/\u0627\u0628\u0646\u0629",
+        category: "\u062A\u062D\u0648\u064A\u0644\u0627\u062A",
+        subCategory: "\u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u0623\u0648\u0644\u0627\u062F"
+      });
+    }
+  }
+  const partnerName = lifestyle.partnerName;
+  if (partnerName && typeof partnerName === "string" && partnerName.trim()) {
+    knownPeople.push({
+      name: partnerName.trim(),
+      relationship: "\u0632\u0648\u062C/\u0632\u0648\u062C\u0629",
+      category: "\u062A\u062D\u0648\u064A\u0644\u0627\u062A",
+      subCategory: "\u0634\u0631\u064A\u0643 \u0627\u0644\u062D\u064A\u0627\u0629"
+    });
+  }
+  const contacts = Array.isArray(lifestyle.regularContacts) ? lifestyle.regularContacts : [];
+  for (const name2 of contacts) {
+    if (name2 && typeof name2 === "string" && name2.trim()) {
+      knownPeople.push({
+        name: name2.trim(),
+        relationship: "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641",
+        category: "\u062A\u062D\u0648\u064A\u0644\u0627\u062A",
+        subCategory: "\u062A\u062D\u0648\u064A\u0644\u0627\u062A \u0634\u062E\u0635\u064A\u0629"
+      });
+    }
+  }
+  const supportsOthers = Array.isArray(lifestyle.supportsOthers) ? lifestyle.supportsOthers : [];
+  const supportsMap = {
+    parents: { rel: "\u0648\u0627\u0644\u062F/\u0648\u0627\u0644\u062F\u0629", sub: "\u062F\u0639\u0645 \u0627\u0644\u0623\u0647\u0644" },
+    siblings: { rel: "\u0623\u062E/\u0623\u062E\u062A", sub: "\u062F\u0639\u0645 \u0627\u0644\u0625\u062E\u0648\u0629" },
+    partner: { rel: "\u0634\u0631\u064A\u0643/\u0634\u0631\u064A\u0643\u0629", sub: "\u0634\u0631\u064A\u0643 \u0627\u0644\u062D\u064A\u0627\u0629" },
+    extended: { rel: "\u0623\u0642\u0627\u0631\u0628", sub: "\u062F\u0639\u0645 \u0627\u0644\u0623\u0642\u0627\u0631\u0628" }
+  };
+  for (const key of supportsOthers) {
+    if (supportsMap[key] && key !== "none") {
+    }
+  }
+  const petNames = Array.isArray(lifestyle.petNames) ? lifestyle.petNames : [];
+  for (const name2 of petNames) {
+    if (name2 && typeof name2 === "string" && name2.trim()) {
+      knownPeople.push({
+        name: name2.trim(),
+        relationship: "\u062D\u064A\u0648\u0627\u0646 \u0623\u0644\u064A\u0641",
+        category: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A",
+        subCategory: "\u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u062D\u064A\u0648\u0627\u0646\u0627\u062A"
+      });
+    }
+  }
+  const subscriptions = Array.isArray(lifestyle.subscriptions) ? lifestyle.subscriptions : [];
+  const places = Array.isArray(lifestyle.favoriteSpendingPlaces) ? lifestyle.favoriteSpendingPlaces : [];
+  return {
+    knownPeople,
+    knownSubscriptions: subscriptions,
+    favoriteSpendingPlaces: places,
+    hasCar: Boolean(lifestyle.carOwnership),
+    carType: lifestyle.carType || null,
+    smokes: Boolean(lifestyle.smoking),
+    salaryDay: Number(profile.financialInfo.salaryDay) || null
+  };
+}
+function buildPersonalContextPrompt(ctx) {
+  if (ctx.knownPeople.length === 0 && ctx.knownSubscriptions.length === 0) {
+    return "";
+  }
+  const lines = [
+    "\u2550\u2550\u2550 \u0627\u0644\u0633\u064A\u0627\u0642 \u0627\u0644\u0634\u062E\u0635\u064A \u0644\u0644\u0645\u0633\u062A\u062E\u062F\u0645 (\u0627\u0633\u062A\u062E\u062F\u0645\u0647 \u0644\u0641\u0647\u0645 \u0627\u0644\u062C\u0645\u0644 \u0628\u0634\u0643\u0644 \u0623\u062F\u0642) \u2550\u2550\u2550"
+  ];
+  if (ctx.knownPeople.length > 0) {
+    lines.push("\u0623\u0634\u062E\u0627\u0635 \u064A\u0639\u0631\u0641\u0647\u0645 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645:");
+    for (const person of ctx.knownPeople) {
+      lines.push(`  - ${person.name} (${person.relationship}) \u2192 \u0625\u0630\u0627 \u0630\u064F\u0643\u0631 \u0627\u0633\u0645\u0647\u060C \u0635\u0646\u0651\u0641 \u0643\u0640 "${person.category} > ${person.subCategory}"`);
+    }
+    lines.push(`\u062A\u0639\u0644\u064A\u0645\u0629: \u0625\u0630\u0627 \u0642\u0627\u0644 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 "\u0628\u0639\u062A\u062A \u0641\u0644\u0648\u0633 \u0644\u0640[\u0627\u0633\u0645]" \u0623\u0648 "\u0623\u062F\u064A\u062A [\u0627\u0633\u0645]" \u0648\u0627\u0633\u0645 \u0627\u0644\u0634\u062E\u0635 \u0645\u0646 \u0627\u0644\u0642\u0627\u0626\u0645\u0629 \u0623\u0639\u0644\u0627\u0647\u060C \u0627\u0630\u0643\u0631 \u0627\u0644\u0639\u0644\u0627\u0642\u0629 \u0641\u064A \u0627\u0644\u0648\u0635\u0641. \u0645\u062B\u0644\u0627\u064B: "\u062A\u062D\u0648\u064A\u0644 \u0644\u0627\u0628\u0646\u0643 \u0645\u062D\u0645\u062F" \u0628\u062F\u0644\u0627\u064B \u0645\u0646 "\u062A\u062D\u0648\u064A\u0644".`);
+  }
+  if (ctx.knownSubscriptions.length > 0) {
+    const subMap = {
+      netflix: "Netflix",
+      shahid: "\u0634\u0627\u0647\u062F VIP",
+      spotify: "Spotify",
+      youtube_premium: "YouTube Premium",
+      gym: "\u062C\u064A\u0645/\u0646\u0627\u062F\u064A",
+      internet: "\u0625\u0646\u062A\u0631\u0646\u062A \u0645\u0646\u0632\u0644\u064A",
+      phone_plan: "\u0628\u0627\u0642\u0629 \u0645\u0648\u0628\u0627\u064A\u0644",
+      insurance: "\u062A\u0623\u0645\u064A\u0646"
+    };
+    const named = ctx.knownSubscriptions.map((s) => subMap[s] || s).join("\u060C ");
+    lines.push(`\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A \u062B\u0627\u0628\u062A\u0629 \u0645\u0639\u0631\u0648\u0641\u0629: ${named}`);
+  }
+  if (ctx.hasCar) {
+    lines.push(`\u0644\u062F\u064A\u0647 \u0633\u064A\u0627\u0631\u0629${ctx.carType ? ` (${ctx.carType})` : ""} \u2014 \u0623\u064A \u0630\u0643\u0631 \u0644\u0628\u0646\u0632\u064A\u0646/\u0635\u064A\u0627\u0646\u0629/\u063A\u0633\u064A\u0644 \u0639\u0631\u0628\u064A\u0629 \u064A\u0635\u0646\u0641 \u062A\u0644\u0642\u0627\u0626\u064A\u0627\u064B \u0643\u0640 "\u0645\u0648\u0627\u0635\u0644\u0627\u062A > \u0633\u064A\u0627\u0631\u0629 \u062E\u0627\u0635\u0629"`);
+  }
+  if (ctx.smokes) {
+    lines.push(`\u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0645\u062F\u062E\u0646 \u2014 \u0623\u064A \u0630\u0643\u0631 \u0644\u0633\u062C\u0627\u064A\u0631/\u062F\u062E\u0627\u0646/\u062A\u0628\u063A \u064A\u0635\u0646\u0641 \u0643\u0640 "\u0635\u062D\u0629 > \u062A\u062F\u062E\u064A\u0646"`);
+  }
+  if (ctx.salaryDay && ctx.salaryDay > 0) {
+    lines.push(`\u0645\u0631\u062A\u0628 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u064A\u0646\u0632\u0644 \u064A\u0648\u0645 ${ctx.salaryDay} \u0645\u0646 \u0643\u0644 \u0634\u0647\u0631.`);
+    lines.push(`\u062A\u0639\u0644\u064A\u0645\u0629: \u0644\u0648 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0630\u0643\u0631 "\u0627\u0644\u0645\u0631\u062A\u0628" \u0623\u0648 "\u0627\u0644\u0642\u0628\u0636" \u0623\u0648 "\u0627\u0644\u0631\u0627\u062A\u0628"\u060C \u0635\u0646\u0651\u0641\u0647 \u0643\u0640 "\u062F\u062E\u0644" \u0648\u062A\u0627\u0631\u064A\u062E\u0647 \u064A\u0648\u0645 ${ctx.salaryDay} \u0645\u0646 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062D\u0627\u0644\u064A.`);
+  }
+  return lines.join("\n");
+}
+function buildFamilyReportContext(ctx) {
+  const children = ctx.knownPeople.filter((p) => p.relationship === "\u0627\u0628\u0646/\u0627\u0628\u0646\u0629");
+  const partner = ctx.knownPeople.find((p) => p.relationship === "\u0632\u0648\u062C/\u0632\u0648\u062C\u0629");
+  const contacts = ctx.knownPeople.filter((p) => p.relationship === "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641");
+  const lines = [];
+  if (children.length > 0) {
+    lines.push(`\u0623\u0633\u0645\u0627\u0621 \u0627\u0644\u0623\u0637\u0641\u0627\u0644: ${children.map((c) => c.name).join("\u060C ")}`);
+  }
+  if (partner) {
+    lines.push(`\u0634\u0631\u064A\u0643 \u0627\u0644\u062D\u064A\u0627\u0629: ${partner.name}`);
+  }
+  if (contacts.length > 0) {
+    lines.push(`\u0623\u0634\u062E\u0627\u0635 \u064A\u062D\u0648\u0644 \u0644\u0647\u0645 \u0628\u0627\u0646\u062A\u0638\u0627\u0645: ${contacts.map((c) => c.name).join("\u060C ")}`);
+  }
+  if (lines.length === 0) return "";
+  return [
+    "\u2550\u2550\u2550 \u0627\u0644\u0639\u0644\u0627\u0642\u0627\u062A \u0627\u0644\u0634\u062E\u0635\u064A\u0629 \u2550\u2550\u2550",
+    ...lines,
+    "",
+    "\u062A\u0639\u0644\u064A\u0645\u0627\u062A \u0627\u0644\u062A\u062E\u0635\u064A\u0635 \u0627\u0644\u0634\u062E\u0635\u064A: \u0639\u0646\u062F \u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u062A\u062D\u0648\u064A\u0644\u0627\u062A\u060C \u0627\u0630\u0643\u0631 \u0623\u0633\u0645\u0627\u0621 \u0627\u0644\u0623\u0634\u062E\u0627\u0635 \u0627\u0644\u0645\u0639\u0631\u0648\u0641\u064A\u0646.",
+    '\u0645\u062B\u0644\u0627\u064B: "\u0623\u062F\u064A\u062A \u0648\u0644\u0627\u062F\u0643 (\u0645\u062D\u0645\u062F \u0648\u0632\u064A\u0627\u062F) 2000 \u062C.\u0645 \u0627\u0644\u0634\u0647\u0631 \u062F\u0647" \u0628\u062F\u0644\u0627\u064B \u0645\u0646 "\u0635\u0631\u0641\u062A 2000 \u062C.\u0645 \u0639\u0644\u0649 \u062A\u062D\u0648\u064A\u0644\u0627\u062A".'
+  ].join("\n");
 }
 
 // api/ai-router.ts
@@ -87293,7 +91201,7 @@ async function getAiClient(taskType, userPlan = "free") {
     if (s.value) cfg[s.key] = s.value;
   });
   let apiKey = cfg.ai_api_key || env.GEMINI_API_KEY;
-  let apiKey2 = cfg.ai_api_key_2 || "AIzaSyCTbqi-uF65bRYw8T32DbVOciM9CIMjRuo";
+  let apiKey2 = cfg.ai_api_key_2 || "";
   if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY") {
     apiKey = apiKey2;
   }
@@ -87331,13 +91239,40 @@ async function getAiClient(taskType, userPlan = "free") {
     throw new Error("Demo Mode");
   }
   const plan = userPlan;
-  let safeMaxTokens = taskType === "parse" ? maxPerRequest[plan] || 512 : 8192;
-  if (safeMaxTokens > 8192) safeMaxTokens = 8192;
+  const reportMaxTokens = {
+    free: parseSafeInt(cfg.report_max_tokens_free, "1800"),
+    pro: parseSafeInt(cfg.report_max_tokens_pro, "3500"),
+    ultra: parseSafeInt(cfg.report_max_tokens_ultra, "8192")
+  };
+  const reportWords = {
+    free: parseSafeInt(cfg.report_words_free, "550"),
+    pro: parseSafeInt(cfg.report_words_pro, "850"),
+    ultra: parseSafeInt(cfg.report_words_ultra, "1500")
+  };
+  const reportSubcats = {
+    free: parseSafeInt(cfg.report_subcats_free, "15"),
+    pro: parseSafeInt(cfg.report_subcats_pro, "20"),
+    ultra: parseSafeInt(cfg.report_subcats_ultra, "20")
+  };
+  const reportTopItems = {
+    free: 0,
+    // Free plan: no individual item descriptions
+    pro: parseSafeInt(cfg.report_top_items_pro, "10"),
+    ultra: parseSafeInt(cfg.report_top_items_ultra, "10")
+  };
+  let safeMaxTokens;
+  if (taskType === "report") {
+    safeMaxTokens = reportMaxTokens[plan] || 3500;
+  } else {
+    safeMaxTokens = maxPerRequest[plan] || 1024;
+    if (safeMaxTokens > 8192) safeMaxTokens = 8192;
+  }
   const genAI = new GoogleGenerativeAI(apiKey);
   const aiModel = genAI.getGenerativeModel({
     model: modelName,
     generationConfig: {
-      temperature: 0.3,
+      temperature: taskType === "report" ? 0.7 : 0.3,
+      // More creative for reports
       maxOutputTokens: safeMaxTokens
     }
   });
@@ -87352,12 +91287,16 @@ async function getAiClient(taskType, userPlan = "free") {
     canUseAnalysis,
     canUseParse,
     freeTokenLimit: tokenLimits.free,
-    proTokenLimit: tokenLimits.pro
+    proTokenLimit: tokenLimits.pro,
+    // Report-specific config
+    reportTargetWords: reportWords[plan] || 550,
+    reportSubcatsLimit: reportSubcats[plan] || 15,
+    reportTopItemsLimit: reportTopItems[plan] || 0
   };
 }
 var aiRouter = router({
   // ─── Parse Expense (New Pipeline) ───
-  parseExpense: authedProcedure.input(external_exports.object({ text: external_exports.string(), model: external_exports.enum(["flash", "pro", "ultra", "gemma"]).default("flash"), skipClarification: external_exports.boolean().optional() })).mutation(async ({ ctx, input }) => {
+  parseExpense: aiProcedure.input(external_exports.object({ text: external_exports.string(), model: external_exports.enum(["flash", "pro", "ultra", "gemma"]).default("flash"), skipClarification: external_exports.boolean().optional() })).mutation(async ({ ctx, input }) => {
     const today = /* @__PURE__ */ new Date();
     today.setHours(0, 0, 0, 0);
     const todayUsage = await db.select({ count: sql`COUNT(*)` }).from(aiSummaries).where(and(eq(aiSummaries.userId, ctx.user.id), eq(aiSummaries.userType, ctx.user.type), gte(aiSummaries.createdAt, today)));
@@ -87413,10 +91352,12 @@ var aiRouter = router({
       monthlyContext: { totalIncome, totalExpense },
       userProfileContext: {
         promptSummary: summarizeProfileForAI(smartProfile),
+        personalContextPrompt: buildPersonalContextPrompt(buildPersonalContext(smartProfile)),
         hasChildren: smartProfile.lifestyleInfo.hasChildren,
         responsibleForFamily: smartProfile.lifestyleInfo.responsibleForFamily,
         supportsOthers: smartProfile.lifestyleInfo.supportsOthers,
-        fixedMonthlyCommitments: smartProfile.lifestyleInfo.fixedMonthlyCommitments
+        fixedMonthlyCommitments: smartProfile.lifestyleInfo.fixedMonthlyCommitments,
+        isSmoker: smartProfile?.onboardingAnswers?.smoke === "yes" || /مدخن|سجاير|فيب/.test(smartProfile?.lifestyleInfo?.habits || "")
       },
       skipClarification: input.skipClarification
     });
@@ -87526,7 +91467,7 @@ var aiRouter = router({
     };
   }),
   // ─── Speech-to-Text via Gemini ───
-  speechToText: authedProcedure.input(external_exports.object({
+  speechToText: aiProcedure.input(external_exports.object({
     audioBase64: external_exports.string(),
     mimeType: external_exports.string().default("audio/webm"),
     durationSeconds: external_exports.number().default(0)
@@ -87589,23 +91530,47 @@ var aiRouter = router({
         message: `\u0645\u062F\u0629 \u0647\u0630\u0627 \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u062A\u062A\u062C\u0627\u0648\u0632 \u0627\u0644\u0631\u0635\u064A\u062F \u0627\u0644\u0645\u062A\u0628\u0642\u064A \u0644\u0643 \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631. \u0627\u0644\u0645\u062A\u0627\u062D \u0627\u0644\u0622\u0646 ${Math.max(0, limit - usedSeconds)} \u062B\u0627\u0646\u064A\u0629 \u0641\u0642\u0637.`
       });
     }
-    let apiKey = cfg.stt_api_key || "AIzaSyCWif4U7uRb1WKG_HTwqNwtNLmvfD5fZj0";
+    let apiKey = cfg.stt_api_key && cfg.stt_api_key !== "AIzaSyCWif4U7uRb1WKG_HTwqNwtNLmvfD5fZj0" ? cfg.stt_api_key : cfg.ai_api_key || env.GEMINI_API_KEY;
     let apiKey2 = cfg.ai_api_key_2 || "";
-    const sttModel = cfg.stt_model || "gemini-3.0-flash-live";
-    const fallbackModel = cfg.stt_fallback_model || "gemini-3.1-flash-lite";
+    const sttModel = cfg.stt_model || "gemini-1.5-flash";
+    const fallbackModel = cfg.stt_fallback_model || "gemini-2.0-flash";
     const cleanMimeType = input.mimeType.split(";")[0];
     const sttMode = cfg.stt_processing_mode || "standard";
-    let result = await runSTTPipeline(input.audioBase64, cleanMimeType, apiKey, sttModel, sttMode);
-    if (!result) {
-      console.warn("STT with primary model failed, falling back to", fallbackModel);
-      result = await runSTTPipeline(input.audioBase64, cleanMimeType, apiKey, fallbackModel, sttMode);
+    const pureBase64 = input.audioBase64.includes(",") ? input.audioBase64.split(",")[1] : input.audioBase64;
+    let result = null;
+    let lastError = "Unknown error";
+    try {
+      result = await runSTTPipeline(pureBase64, cleanMimeType, apiKey, sttModel, sttMode);
+    } catch (e) {
+      lastError = e.message;
+      console.warn("STT with primary model failed:", e.message);
     }
-    if (!result && apiKey2 && apiKey2 !== "AIzaSyCTbqi-uF65bRYw8T32DbVOciM9CIMjRuo_placeholder") {
-      console.warn("STT with primary key failed, falling back to secondary key with", fallbackModel);
-      result = await runSTTPipeline(input.audioBase64, cleanMimeType, apiKey2, fallbackModel, sttMode);
+    if (!result) {
+      try {
+        result = await runSTTPipeline(pureBase64, cleanMimeType, apiKey, fallbackModel, sttMode);
+      } catch (e) {
+        lastError = e.message;
+        console.warn("STT with fallback model failed:", e.message);
+      }
+    }
+    if (!result && apiKey2) {
+      try {
+        result = await runSTTPipeline(pureBase64, cleanMimeType, apiKey2, fallbackModel, sttMode);
+      } catch (e) {
+        lastError = e.message;
+        console.warn("STT with secondary key failed:", e.message);
+      }
     }
     if (!result) {
-      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "\u0641\u0634\u0644 \u062A\u062D\u0648\u064A\u0644 \u0627\u0644\u0635\u0648\u062A. \u062C\u0631\u0628 \u062A\u0627\u0646\u064A." });
+      try {
+        result = await runSTTPipeline(pureBase64, cleanMimeType, apiKey, "gemini-2.0-flash", sttMode);
+      } catch (e) {
+        lastError = e.message;
+        console.warn("STT ultimate fallback failed:", e.message);
+      }
+    }
+    if (!result) {
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "\u0641\u0634\u0644 \u062A\u062D\u0648\u064A\u0644 \u0627\u0644\u0635\u0648\u062A: " + lastError });
     }
     const currentMonthStr = (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
     try {
@@ -87667,7 +91632,7 @@ var aiRouter = router({
       const plan = ctx.user.plan || "free";
       const allowedDays = limits[plan] || 30;
       const daysSinceLast = ((/* @__PURE__ */ new Date()).getTime() - lastSummary[0].createdAt.getTime()) / (1e3 * 3600 * 24);
-      if (daysSinceLast < allowedDays) {
+      if (allowedDays > 0 && daysSinceLast < allowedDays) {
         const remainingDays = Math.ceil(allowedDays - daysSinceLast);
         throw new TRPCError({
           code: "TOO_MANY_REQUESTS",
@@ -87700,6 +91665,15 @@ var aiRouter = router({
     const previousAiAttributes = userProfile.aiInferredAttributes;
     const behaviorSnapshot = buildBehaviorSnapshot(userExpenses, prevExpenses, userProfile);
     const reportPersonalizationContext = buildReportPersonalizationContext(userProfile, behaviorSnapshot);
+    const personalCtx = buildPersonalContext(userProfile);
+    const familyReportContext = buildFamilyReportContext(personalCtx);
+    const personalContextForClassification = buildPersonalContextPrompt(personalCtx);
+    let financialMonthContext = "";
+    const salaryDay = Number(userProfile.financialInfo.salaryDay) || 0;
+    if (salaryDay > 0) {
+      const { buildFinancialMonthPrompt: buildFinancialMonthPrompt2 } = await Promise.resolve().then(() => (init_financial_month(), financial_month_exports));
+      financialMonthContext = buildFinancialMonthPrompt2(salaryDay, input.month);
+    }
     const totalExpense = userExpenses.filter((e) => e.type === "expense").reduce((s, e) => s + Number(e.amount), 0);
     const totalIncome = userExpenses.filter((e) => e.type === "income").reduce((s, e) => s + Number(e.amount), 0);
     const prevTotal = prevExpenses.filter((e) => e.type === "expense").reduce((s, e) => s + Number(e.amount), 0);
@@ -87718,8 +91692,8 @@ var aiRouter = router({
       bySubCategory[subKey].amount += Number(e.amount);
     });
     const sortedSubs = Object.entries(bySubCategory).sort((a, b) => b[1].amount - a[1].amount);
-    const topSubCategories = sortedSubs.slice(0, 10).map(([name, data]) => ({
-      name,
+    const topSubCategories = sortedSubs.map(([name2, data]) => ({
+      name: name2,
       amount: data.amount,
       mainCat: data.mainCat,
       percent: totalExpense > 0 ? Math.round(data.amount / totalExpense * 100) : 0
@@ -87788,27 +91762,16 @@ var aiRouter = router({
         }
       }
     }
-    const subCatSummary = topSubCategories.slice(0, 8).map((s) => `${s.name}: ${s.amount}\u062C (${s.percent}%)`).join(" | ");
-    const summaryForAI = `\u0627\u0644\u0634\u0647\u0631: ${input.month}
-\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641: ${totalExpense} \u062C.\u0645 | \u0627\u0644\u062F\u062E\u0644: ${comparisonIncome} \u062C.\u0645
-${prevTotal > 0 ? `\u062A\u063A\u064A\u0631 \u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641 \u0639\u0646 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0633\u0627\u0628\u0642: ${monthlyChange > 0 ? "+" : ""}${monthlyChange}%` : "\u0647\u0630\u0627 \u0623\u0648\u0644 \u0634\u0647\u0631 \u064A\u062A\u0645 \u062A\u0633\u062C\u064A\u0644\u0647"}
-\u0623\u0643\u0628\u0631 \u0628\u0646\u062F \u0625\u0646\u0641\u0627\u0642 \u0631\u0626\u064A\u0633\u064A: ${topCategory ? `${topCategory[0]} (${topCategoryPercent}%)` : "\u0644\u0627 \u064A\u0648\u062C\u062F"}
-\u062A\u0641\u0627\u0635\u064A\u0644 \u0627\u0644\u0641\u0626\u0627\u062A \u0627\u0644\u0641\u0631\u0639\u064A\u0629 (\u0627\u0644\u0623\u0643\u062B\u0631 \u0627\u0633\u062A\u0647\u0644\u0627\u0643\u0627\u064B): ${subCatSummary}
-\u062A\u063A\u064A\u0631\u0627\u062A \u0627\u0644\u0641\u0626\u0627\u062A \u0639\u0646 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0633\u0627\u0628\u0642: ${catChanges.slice(0, 4).map((c) => `${c.cat}: ${c.current}\u062C ${c.prev > 0 ? `(${c.changePercent > 0 ? "+" : ""}${c.changePercent}%)` : ""}`).join(" | ")}
-\u0645\u062A\u0648\u0633\u0637 \u0627\u0644\u0625\u0646\u0641\u0627\u0642 \u0627\u0644\u064A\u0648\u0645\u064A \u0627\u0644\u0641\u0639\u0644\u064A: ${dailyAvg} \u062C.\u0645
-\u0627\u0644\u0634\u062E\u0635\u064A\u0629 \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0627\u0644\u062A\u062D\u0644\u064A\u0644\u064A\u0629: ${personality}
----
-\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u062A\u0642\u062F\u0645 (Perfect Memory & Mimicry):
-- \u0630\u0627\u0643\u0631\u0629 \u0627\u0644\u0623\u0646\u0645\u0627\u0637: ${patternMemory || "\u0644\u0627 \u064A\u0648\u062C\u062F \u0628\u064A\u0627\u0646\u0627\u062A \u0643\u0627\u0641\u064A\u0629 \u0644\u0644\u0645\u0642\u0627\u0631\u0646\u0629 \u0627\u0644\u062A\u0627\u0631\u064A\u062E\u064A\u0629"}
-- \u0641\u0648\u0627\u062A\u064A\u0631 \u0648\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A \u0645\u062A\u0648\u0642\u0639\u0629 \u0642\u0631\u064A\u0628\u0627\u064B: ${recurringBills.length > 0 ? recurringBills.join(" | ") : "\u0644\u0627 \u064A\u0648\u062C\u062F \u0641\u0648\u0627\u062A\u064A\u0631 \u0645\u0639\u0644\u0642\u0629 \u0645\u0643\u062A\u0634\u0641\u0629 \u0628\u0646\u0627\u0621\u064B \u0639\u0644\u0649 \u0627\u0644\u0633\u062C\u0644 \u0627\u0644\u0633\u0627\u0628\u0642"}
-- \u0627\u0644\u062A\u0648\u0642\u0639 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0633\u062A\u0642\u0628\u0644\u064A (Forecasting): ${forecast || "\u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u0644\u0639\u062F\u0645 \u0643\u0641\u0627\u064A\u0629 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u062F\u062E\u0644/\u0627\u0644\u0623\u064A\u0627\u0645"}`;
-    const personalizedSummaryForAI = `${summaryForAI}
----
-${reportPersonalizationContext}`;
+    let reportTargetWords = 550;
+    let reportSubcatsLimit = 15;
+    let reportTopItemsLimit = 0;
     let aiModel;
     let modelName = "backend";
     let aiResponseLength = "medium";
     let aiFocus = "balanced";
+    let aiSystemPrompt = "[Persona] \u0645\u0633\u062A\u0634\u0627\u0631 \u0645\u0627\u0644\u064A \u0645\u0635\u0631\u064A \u0630\u0643\u064A \u0648\u0645\u062A\u0639\u0627\u0637\u0641. \u0644\u063A\u062A\u0643 \u0639\u0627\u0645\u064A\u0629 \u0645\u0635\u0631\u064A\u0629 \u0631\u0627\u0642\u064A\u0629 \u0648\u0645\u0628\u0633\u0637\u0629\u060C \u0648\u062A\u062A\u062D\u062F\u062B \u0648\u0643\u0623\u0646\u0643 \u0625\u0646\u0633\u0627\u0646 \u062D\u0642\u064A\u0642\u064A.\n[Rules]\n1. \u0644\u0627 \u062A\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0639\u0646\u0627\u0648\u064A\u0646 \u0627\u0644\u0622\u0644\u064A\u0629 (\u0645\u062B\u0644 \u0627\u0644\u062A\u0637\u0628\u064A\u0639 \u0623\u0648 \u0627\u0644\u0633\u0628\u0628\u064A\u0629).\n2. \u0648\u0627\u062C\u0647 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u062D\u0642\u064A\u0642\u064A\u0629.\n3. \u0642\u062F\u0645 \u0646\u0635\u0627\u0626\u062D \u0639\u0645\u0644\u064A\u0629 \u0645\u0635\u0645\u0645\u0629 \u062E\u0635\u064A\u0635\u0627\u064B \u0644\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0646\u0627\u0621\u064B \u0639\u0644\u0649 \u0633\u0644\u0648\u0643\u0647 \u0627\u0644\u0645\u0627\u0644\u064A.";
+    let aiAdvancedInstructions = "";
+    let aiReportStructureOverride = "";
     try {
       const client = await getAiClient("report", ctx.user.plan);
       if (!client.canUseAnalysis) {
@@ -87819,10 +91782,16 @@ ${reportPersonalizationContext}`;
       }
       aiModel = client.aiModel;
       modelName = client.modelName;
+      reportTargetWords = client.reportTargetWords;
+      reportSubcatsLimit = client.reportSubcatsLimit;
+      reportTopItemsLimit = client.reportTopItemsLimit;
       const settings = await db.select().from(systemSettings);
       settings.forEach((s) => {
         if (s.key === "ai_response_length" && s.value) aiResponseLength = s.value;
         if (s.key === "ai_focus" && s.value) aiFocus = s.value;
+        if (s.key === "ai_system_prompt" && s.value) aiSystemPrompt = s.value;
+        if (s.key === "ai_advanced_instructions" && s.value) aiAdvancedInstructions = s.value;
+        if (s.key === "ai_report_structure_override" && s.value) aiReportStructureOverride = s.value;
       });
       const tokenField = ctx.user.type === "oauth" ? await db.select({ t: users.aiTokensUsed }).from(users).where(eq(users.id, ctx.user.id)) : await db.select({ t: localUsers.aiTokensUsed }).from(localUsers).where(eq(localUsers.id, ctx.user.id));
       const usedTokens = tokenField[0]?.t || 0;
@@ -87834,7 +91803,50 @@ ${reportPersonalizationContext}`;
     } catch (e) {
       if (e instanceof TRPCError) throw e;
     }
+    const subCatSummary = topSubCategories.slice(0, reportSubcatsLimit).map((s) => `${s.name}: ${s.amount}\u062C (${s.percent}%)`).join(" | ");
+    let topItemsContext = "";
+    if (reportTopItemsLimit > 0) {
+      const expenseItems = userExpenses.filter((e) => e.type === "expense");
+      const biggestItems = [...expenseItems].sort((a, b) => Number(b.amount) - Number(a.amount)).slice(0, Math.ceil(reportTopItemsLimit / 2)).map((e) => `${e.description || e.category}${e.subCategory && e.subCategory !== "\u0639\u0627\u0645" ? ` (${e.subCategory})` : ""}: ${e.amount}\u062C [${e.category}]`);
+      const descFreq = {};
+      expenseItems.forEach((e) => {
+        const key = e.description || e.category;
+        if (!descFreq[key]) descFreq[key] = { count: 0, total: 0, cat: e.category, subCat: e.subCategory || "\u0639\u0627\u0645" };
+        descFreq[key].count++;
+        descFreq[key].total += Number(e.amount);
+      });
+      const recurringItemsList = Object.entries(descFreq).filter(([, v]) => v.count >= 2).sort((a, b) => b[1].count - a[1].count).slice(0, Math.ceil(reportTopItemsLimit / 2)).map(([name2, v]) => `${name2} (${v.subCat}): ${v.count} \u0645\u0631\u0627\u062A\u060C \u0625\u062C\u0645\u0627\u0644\u064A ${v.total}\u062C [${v.cat}]`);
+      if (biggestItems.length > 0 || recurringItemsList.length > 0) {
+        topItemsContext = `
+--- \u062A\u0641\u0627\u0635\u064A\u0644 \u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A \u0627\u0644\u0641\u0631\u062F\u064A\u0629 ---`;
+        if (biggestItems.length > 0) topItemsContext += `
+\u0623\u0643\u0628\u0631 \u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631: ${biggestItems.join(" | ")}`;
+        if (recurringItemsList.length > 0) topItemsContext += `
+\u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A \u0627\u0644\u0645\u062A\u0643\u0631\u0631\u0629: ${recurringItemsList.join(" | ")}`;
+      }
+    }
+    const summaryForAI = `\u0627\u0644\u0634\u0647\u0631: ${input.month}
+\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641: ${totalExpense} \u062C.\u0645 | \u0627\u0644\u062F\u062E\u0644: ${comparisonIncome} \u062C.\u0645
+${prevTotal > 0 ? `\u062A\u063A\u064A\u0631 \u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641 \u0639\u0646 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0633\u0627\u0628\u0642: ${monthlyChange > 0 ? "+" : ""}${monthlyChange}%` : "\u0647\u0630\u0627 \u0623\u0648\u0644 \u0634\u0647\u0631 \u064A\u062A\u0645 \u062A\u0633\u062C\u064A\u0644\u0647"}
+\u0623\u0643\u0628\u0631 \u0628\u0646\u062F \u0625\u0646\u0641\u0627\u0642 \u0631\u0626\u064A\u0633\u064A: ${topCategory ? `${topCategory[0]} (${topCategoryPercent}%)` : "\u0644\u0627 \u064A\u0648\u062C\u062F"}
+\u062A\u0641\u0627\u0635\u064A\u0644 \u0627\u0644\u0641\u0626\u0627\u062A \u0627\u0644\u0641\u0631\u0639\u064A\u0629 (\u0627\u0644\u0623\u0643\u062B\u0631 \u0627\u0633\u062A\u0647\u0644\u0627\u0643\u0627\u064B): ${subCatSummary}
+\u062A\u063A\u064A\u0631\u0627\u062A \u0627\u0644\u0641\u0626\u0627\u062A \u0639\u0646 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0633\u0627\u0628\u0642: ${catChanges.slice(0, 6).map((c) => `${c.cat}: ${c.current}\u062C ${c.prev > 0 ? `(${c.changePercent > 0 ? "+" : ""}${c.changePercent}%)` : ""}`).join(" | ")}
+\u0645\u062A\u0648\u0633\u0637 \u0627\u0644\u0625\u0646\u0641\u0627\u0642 \u0627\u0644\u064A\u0648\u0645\u064A \u0627\u0644\u0641\u0639\u0644\u064A: ${dailyAvg} \u062C.\u0645
+\u0627\u0644\u0634\u062E\u0635\u064A\u0629 \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0627\u0644\u062A\u062D\u0644\u064A\u0644\u064A\u0629: ${personality}
+\u0639\u062F\u062F \u0627\u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A: ${userExpenses.length}${topItemsContext}
+---
+\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u062A\u0642\u062F\u0645 (Perfect Memory & Mimicry):
+- \u0630\u0627\u0643\u0631\u0629 \u0627\u0644\u0623\u0646\u0645\u0627\u0637: ${patternMemory || "\u0644\u0627 \u064A\u0648\u062C\u062F \u0628\u064A\u0627\u0646\u0627\u062A \u0643\u0627\u0641\u064A\u0629 \u0644\u0644\u0645\u0642\u0627\u0631\u0646\u0629 \u0627\u0644\u062A\u0627\u0631\u064A\u062E\u064A\u0629"}
+- \u0641\u0648\u0627\u062A\u064A\u0631 \u0648\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A \u0645\u062A\u0648\u0642\u0639\u0629 \u0642\u0631\u064A\u0628\u0627\u064B: ${recurringBills.length > 0 ? recurringBills.join(" | ") : "\u0644\u0627 \u064A\u0648\u062C\u062F \u0641\u0648\u0627\u062A\u064A\u0631 \u0645\u0639\u0644\u0642\u0629 \u0645\u0643\u062A\u0634\u0641\u0629 \u0628\u0646\u0627\u0621\u064B \u0639\u0644\u0649 \u0627\u0644\u0633\u062C\u0644 \u0627\u0644\u0633\u0627\u0628\u0642"}
+- \u0627\u0644\u062A\u0648\u0642\u0639 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0633\u062A\u0642\u0628\u0644\u064A (Forecasting): ${forecast || "\u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u0644\u0639\u062F\u0645 \u0643\u0641\u0627\u064A\u0629 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u062F\u062E\u0644/\u0627\u0644\u0623\u064A\u0627\u0645"}`;
+    const personalizedSummaryForAI = `${summaryForAI}
+---
+${reportPersonalizationContext}
+${familyReportContext}
+${personalContextForClassification}
+${financialMonthContext}`;
     let responseJson;
+    let aiErrorMsg = "";
     if (aiModel) {
       try {
         let lengthInstruction = "\u0627\u0643\u062A\u0628 \u062A\u062D\u0644\u064A\u0644\u0627\u064B \u0645\u062A\u0648\u0627\u0632\u0646\u0627\u064B \u0648\u0645\u0646\u0627\u0633\u0628\u0627\u064B \u0644\u0644\u0634\u0631\u062D \u0628\u0623\u0633\u0644\u0648\u0628 \u0645\u0647\u0646\u064A.";
@@ -87845,28 +91857,62 @@ ${reportPersonalizationContext}`;
         if (aiFocus === "statistics") focusInstruction = "\u0631\u0643\u0632 \u0628\u0634\u0643\u0644 \u0643\u0627\u0645\u0644 \u0639\u0644\u0649 \u0627\u0644\u0623\u0631\u0642\u0627\u0645\u060C \u0627\u0644\u0646\u0633\u0628 \u0627\u0644\u0645\u0626\u0648\u064A\u0629\u060C \u0648\u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0627\u062A \u0627\u0644\u0625\u062D\u0635\u0627\u0626\u064A\u0629 \u0627\u0644\u062F\u0642\u064A\u0642\u0629\u060C \u0648\u0627\u0644\u0645\u0624\u0634\u0631\u0627\u062A \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0645\u062B\u0644 \u0645\u0639\u062F\u0644 \u0627\u0644\u062D\u0631\u0642 \u0627\u0644\u0645\u0627\u0644\u064A \u0648\u0627\u0644\u0627\u062F\u062E\u0627\u0631.";
         if (aiFocus === "tips") focusInstruction = "\u0631\u0643\u0632 \u0628\u0634\u0643\u0644 \u0643\u0628\u064A\u0631 \u0639\u0644\u0649 \u062A\u0642\u062F\u064A\u0645 \u062A\u0648\u0635\u064A\u0627\u062A \u0627\u0633\u062A\u0631\u0627\u062A\u064A\u062C\u064A\u0629 \u0648\u062D\u0644\u0648\u0644 \u0639\u0645\u0644\u064A\u0629 \u0644\u0625\u0639\u0627\u062F\u0629 \u0647\u064A\u0643\u0644\u0629 \u0627\u0644\u0645\u064A\u0632\u0627\u0646\u064A\u0629 \u0648\u062A\u062D\u0633\u064A\u0646 \u0643\u0641\u0627\u0621\u0629 \u0627\u0644\u0625\u0646\u0641\u0627\u0642.";
         if (aiFocus === "patterns") focusInstruction = "\u0631\u0643\u0632 \u0639\u0644\u0649 \u0627\u0643\u062A\u0634\u0627\u0641 \u0627\u0644\u0623\u0646\u0645\u0627\u0637 \u0627\u0644\u0633\u0644\u0648\u0643\u064A\u0629\u060C \u0648\u062A\u0641\u0633\u064A\u0631 \u062A\u0648\u062C\u0647\u0627\u062A \u0627\u0644\u0625\u0646\u0641\u0627\u0642 (Spending Trends)\u060C \u0648\u062A\u0642\u064A\u064A\u0645 \u0627\u0644\u0633\u0644\u0648\u0643 \u0627\u0644\u0645\u0627\u0644\u064A \u0639\u0644\u0649 \u0627\u0644\u0645\u062F\u0649 \u0627\u0644\u0637\u0648\u064A\u0644.";
-        const prompt = `[Persona] \u0645\u0633\u062A\u0634\u0627\u0631 \u0645\u0627\u0644\u064A \u0648\u0633\u0644\u0648\u0643\u064A \u0645\u0635\u0631\u064A \u0630\u0643\u064A \u0648\u0645\u062A\u0639\u0627\u0637\u0641 (Behavioral Finance). \u0644\u0627 \u062A\u0633\u062A\u062E\u062F\u0645 \u0623\u0633\u0644\u0648\u0628 \u062A\u0648\u0628\u064A\u062E \u0623\u0648 \u0644\u063A\u0629 \u0628\u0646\u0648\u0643 \u0645\u0639\u0642\u062F\u0629\u060C \u0628\u0644 "\u0645\u0631\u0622\u0629 \u0630\u0643\u064A\u0629" \u0625\u0646\u0633\u0627\u0646\u064A\u0629\u060C \u062F\u0627\u0639\u0645\u0629. \u0627\u0644\u0644\u063A\u0629: \u0639\u0627\u0645\u064A\u0629 \u0645\u0635\u0631\u064A\u0629 \u0631\u0627\u0642\u064A\u0629 \u0648\u0645\u0628\u0633\u0637\u0629.
+        let structureInstruction;
+        let sectionCount = 4;
+        if (aiReportStructureOverride && aiReportStructureOverride.trim() !== "") {
+          structureInstruction = aiReportStructureOverride;
+          sectionCount = 0;
+        } else {
+          if (reportTargetWords <= 300) {
+            sectionCount = 2;
+            structureInstruction = `\u0627\u0643\u062A\u0628 \u0645\u0644\u062E\u0635\u0627\u064B \u0645\u0627\u0644\u064A\u0627\u064B \u0645\u0631\u0643\u0632\u0627\u064B (${reportTargetWords} \u0643\u0644\u0645\u0629 \u062A\u0642\u0631\u064A\u0628\u0627\u064B) \u0645\u0642\u0633\u0645 \u0625\u0644\u0649 ${sectionCount} \u0642\u0633\u0645: (1) \u0627\u0644\u0648\u0636\u0639 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0639\u0627\u0645 \u0628\u0627\u0644\u0623\u0631\u0642\u0627\u0645\u060C (2) \u0623\u0647\u0645 \u062A\u0648\u0635\u064A\u0629 \u0639\u0645\u0644\u064A\u0629.`;
+          } else if (reportTargetWords <= 600) {
+            sectionCount = 3;
+            structureInstruction = `\u0627\u0643\u062A\u0628 \u062A\u0642\u0631\u064A\u0631\u0627\u064B \u0645\u0627\u0644\u064A\u0627\u064B (${reportTargetWords} \u0643\u0644\u0645\u0629 \u062A\u0642\u0631\u064A\u0628\u0627\u064B) \u0645\u0642\u0633\u0645 \u0625\u0644\u0649 ${sectionCount} \u0623\u0642\u0633\u0627\u0645 \u0645\u0641\u0635\u0644\u0629:
+\u0627\u0644\u0642\u0633\u0645 1 - \u0646\u0638\u0631\u0629 \u0639\u0627\u0645\u0629: \u0627\u0639\u0631\u0636 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629 (\u0627\u0644\u062F\u062E\u0644\u060C \u0627\u0644\u0645\u0635\u0631\u0648\u0641\u060C \u0627\u0644\u0635\u0627\u0641\u064A\u060C \u0627\u0644\u0645\u062A\u0648\u0633\u0637 \u0627\u0644\u064A\u0648\u0645\u064A) \u0645\u0639 \u062A\u0639\u0644\u064A\u0642 \u0639\u0644\u064A\u0647\u0627.
+\u0627\u0644\u0642\u0633\u0645 2 - \u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0641\u0626\u0627\u062A: \u062D\u0644\u0644 \u0623\u0639\u0644\u0649 3-5 \u0641\u0626\u0627\u062A \u0625\u0646\u0641\u0627\u0642 \u0628\u0627\u0644\u062A\u0641\u0635\u064A\u0644 \u0645\u0639 \u0627\u0644\u0646\u0633\u0628 \u0648\u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0629 \u0628\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0633\u0627\u0628\u0642.
+\u0627\u0644\u0642\u0633\u0645 3 - \u0627\u0644\u062A\u0648\u0635\u064A\u0627\u062A: \u0642\u062F\u0645 3-4 \u0646\u0635\u0627\u0626\u062D \u0639\u0645\u0644\u064A\u0629 \u0648\u0645\u062D\u062F\u062F\u0629 \u0628\u0623\u0631\u0642\u0627\u0645 (\u0645\u062B\u0644\u0627\u064B "\u0642\u0644\u0644 \u0628\u0646\u062F X \u0645\u0646 Y \u0625\u0644\u0649 Z").`;
+          } else if (reportTargetWords <= 1e3) {
+            sectionCount = 4;
+            structureInstruction = `\u0627\u0643\u062A\u0628 \u062A\u0642\u0631\u064A\u0631\u0627\u064B \u0645\u0627\u0644\u064A\u0627\u064B \u0634\u0627\u0645\u0644\u0627\u064B (${reportTargetWords} \u0643\u0644\u0645\u0629 \u062A\u0642\u0631\u064A\u0628\u0627\u064B) \u0645\u0642\u0633\u0645 \u0625\u0644\u0649 ${sectionCount} \u0623\u0642\u0633\u0627\u0645 \u0645\u0641\u0635\u0644\u0629:
+\u0627\u0644\u0642\u0633\u0645 1 - \u0646\u0638\u0631\u0629 \u0639\u0627\u0645\u0629: \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629 + \u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0629 \u0628\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0633\u0627\u0628\u0642 + \u062A\u0642\u064A\u064A\u0645 \u0627\u0644\u0648\u0636\u0639 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0639\u0627\u0645.
+\u0627\u0644\u0642\u0633\u0645 2 - \u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0641\u0626\u0627\u062A \u0627\u0644\u0641\u0631\u0639\u064A\u0629: \u062D\u0644\u0644 \u0643\u0644 \u0641\u0626\u0629 \u0641\u0631\u0639\u064A\u0629 \u0628\u0627\u0644\u062A\u0641\u0635\u064A\u0644 (\u0642\u0647\u0648\u0629/\u0645\u0637\u0627\u0639\u0645/\u0623\u062C\u0647\u0632\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629/\u0645\u0648\u0627\u0635\u0644\u0627\u062A...) \u0645\u0639 \u0630\u0643\u0631 \u0627\u0644\u0623\u0648\u0635\u0627\u0641 \u0648\u0627\u0644\u0623\u0645\u0627\u0643\u0646 \u0625\u0646 \u0648\u064F\u062C\u062F\u062A.
+\u0627\u0644\u0642\u0633\u0645 3 - \u0627\u0644\u0623\u0646\u0645\u0627\u0637 \u0627\u0644\u0633\u0644\u0648\u0643\u064A\u0629: \u0627\u0634\u0631\u062D \u0646\u0645\u0637 \u0627\u0644\u0625\u0646\u0641\u0627\u0642 (\u0627\u0646\u062F\u0641\u0627\u0639\u064A\u061F \u0645\u062D\u0627\u0641\u0638\u061F) \u0645\u0639 \u0646\u0642\u0627\u0637 \u0627\u0644\u0642\u0648\u0629 \u0648\u0627\u0644\u0636\u0639\u0641 \u0627\u0644\u0645\u0627\u0644\u064A\u0629.
+\u0627\u0644\u0642\u0633\u0645 4 - \u062E\u0637\u0629 \u0627\u0644\u062A\u062D\u0633\u064A\u0646: \u0642\u062F\u0645 5+ \u062A\u0648\u0635\u064A\u0627\u062A \u0627\u0633\u062A\u0631\u0627\u062A\u064A\u062C\u064A\u0629 \u0645\u0641\u0635\u0644\u0629 \u0628\u0623\u0631\u0642\u0627\u0645 \u0645\u0642\u062A\u0631\u062D\u0629 \u0648\u062C\u062F\u0648\u0644 \u0632\u0645\u0646\u064A.`;
+          } else {
+            sectionCount = 5;
+            structureInstruction = `\u0627\u0643\u062A\u0628 \u062A\u0642\u0631\u064A\u0631\u0627\u064B \u0645\u0627\u0644\u064A\u0627\u064B \u0639\u0645\u064A\u0642\u0627\u064B \u0648\u0645\u0634\u0628\u0639\u0627\u064B (\u0644\u0627 \u064A\u0642\u0644 \u0639\u0646 ${reportTargetWords} \u0643\u0644\u0645\u0629) \u0645\u0642\u0633\u0645 \u0625\u062C\u0628\u0627\u0631\u064A\u0627\u064B \u0625\u0644\u0649 ${sectionCount} \u0623\u0642\u0633\u0627\u0645 \u0631\u0626\u064A\u0633\u064A\u0629 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644:
+\u0627\u0644\u0642\u0633\u0645 1 - \u0646\u0638\u0631\u0629 \u0639\u0627\u0645\u0629 \u0634\u0627\u0645\u0644\u0629: \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u062F\u0642\u064A\u0642\u0629 + \u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0627\u062A + \u0646\u0633\u0628\u0629 \u0627\u0644\u0627\u0633\u062A\u0647\u0644\u0627\u0643 \u0645\u0646 \u0627\u0644\u062F\u062E\u0644 + \u062A\u0642\u064A\u064A\u0645 \u0627\u0644\u0633\u064A\u0648\u0644\u0629.
+\u0627\u0644\u0642\u0633\u0645 2 - \u062A\u062D\u0644\u064A\u0644 \u062A\u0641\u0635\u064A\u0644\u064A \u0639\u0645\u064A\u0642: \u0643\u0644 \u0641\u0626\u0629 \u0641\u0631\u0639\u064A\u0629 \u0648\u0643\u0644 \u0639\u0645\u0644\u064A\u0629 \u0641\u0631\u062F\u064A\u0629 (\u0633\u062A\u0627\u0631\u0628\u0643\u0633\u060C \u062C\u0631\u064A\u0631\u060C \u0643\u0627\u0631\u0641\u0648\u0631...) \u0645\u0639 \u0634\u0631\u062D \u0627\u0644\u0633\u064A\u0627\u0642.
+\u0627\u0644\u0642\u0633\u0645 3 - \u0627\u0644\u0623\u0646\u0645\u0627\u0637 \u0648\u0627\u0644\u062A\u0648\u062C\u0647\u0627\u062A: \u062A\u062D\u0644\u064A\u0644 \u0633\u0644\u0648\u0643\u064A \u0639\u0645\u064A\u0642 \u0645\u0639 \u0634\u0631\u062D \u0627\u0644\u0623\u0633\u0628\u0627\u0628 \u0627\u0644\u0645\u062D\u062A\u0645\u0644\u0629 \u0648\u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0629 \u0627\u0644\u062A\u0627\u0631\u064A\u062E\u064A\u0629.
+\u0627\u0644\u0642\u0633\u0645 4 - \u0627\u0644\u0645\u062E\u0627\u0637\u0631 \u0627\u0644\u0645\u0627\u0644\u064A\u0629: \u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0633\u064A\u0648\u0644\u0629 (Burn Rate) + \u0646\u0642\u0627\u0637 \u0627\u0644\u0636\u0639\u0641 + \u0633\u064A\u0646\u0627\u0631\u064A\u0648\u0647\u0627\u062A \u0645\u062D\u062A\u0645\u0644\u0629.
+\u0627\u0644\u0642\u0633\u0645 5 - \u062E\u0637\u0629 \u062A\u062D\u0633\u064A\u0646 \u0645\u0641\u0635\u0644\u0629: \u062A\u0648\u0635\u064A\u0627\u062A \u0627\u0633\u062A\u0631\u0627\u062A\u064A\u062C\u064A\u0629 \u0645\u0639 \u0623\u0631\u0642\u0627\u0645 \u0645\u0642\u062A\u0631\u062D\u0629 \u0644\u0643\u0644 \u0628\u0646\u062F + \u062C\u062F\u0648\u0644 \u0632\u0645\u0646\u064A + \u0623\u0647\u062F\u0627\u0641 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0642\u0627\u062F\u0645.`;
+          }
+        }
+        const advancedInstructionsStr = aiAdvancedInstructions.trim() !== "" ? aiAdvancedInstructions : `- \u062A\u062D\u062F\u062B \u0628\u0636\u0645\u064A\u0631 \u0627\u0644\u0645\u062E\u0627\u0637\u0628 \u0627\u0644\u0645\u0628\u0627\u0634\u0631 (\u0623\u0646\u062A) \u0643\u0623\u0646\u0643 \u062A\u062C\u0644\u0633 \u0645\u0639 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0648\u062C\u0647\u0627\u064B \u0644\u0648\u062C\u0647.
+- \u0627\u062F\u0645\u062C \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u062D\u0642\u064A\u0642\u064A\u0629 \u0645\u0646 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0641\u064A \u0627\u0644\u062A\u062D\u0644\u064A\u0644 \u0628\u0634\u0643\u0644 \u0637\u0628\u064A\u0639\u064A.
+- \u0625\u0630\u0627 \u0648\u064F\u062C\u062F\u062A \u062A\u0641\u0627\u0635\u064A\u0644 \u0639\u0645\u0644\u064A\u0627\u062A \u0641\u0631\u062F\u064A\u0629 (\u0623\u0633\u0645\u0627\u0621 \u0623\u0645\u0627\u0643\u0646/\u0645\u0646\u062A\u062C\u0627\u062A)\u060C \u062D\u0644\u0644\u0647\u0627 \u0628\u0639\u0645\u0642 \u0648\u0627\u0630\u0643\u0631\u0647\u0627 \u0628\u0627\u0644\u0627\u0633\u0645.
+- \u0643\u0644 \u0642\u0633\u0645 \u064A\u062C\u0628 \u0623\u0646 \u064A\u0643\u0648\u0646 \u0641\u0642\u0631\u0629 \u0637\u0648\u064A\u0644\u0629 \u0643\u0627\u0645\u0644\u0629 (\u0644\u064A\u0633 \u0645\u062C\u0631\u062F \u062C\u0645\u0644\u0629 \u0623\u0648 \u062C\u0645\u0644\u062A\u064A\u0646).`;
+        const prompt = `${aiSystemPrompt}
 
-[Rules]
-1. No Shaming: \u0645\u0645\u0646\u0648\u0639 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 (\u0643\u0627\u0631\u062B\u0629\u060C \u0645\u0628\u0630\u0631). \u0627\u0633\u062A\u0628\u062F\u0644\u0647\u0627 \u0628\u0640 (\u0644\u0627\u062D\u0638\u0646\u0627 \u0646\u0645\u0637\u060C \u0632\u0627\u062F \u0639\u0646 \u0627\u0644\u0645\u0639\u062A\u0627\u062F).
-2. \u0633\u064A\u0627\u0642 \u0645\u0635\u0631\u064A: \u062A\u0641\u0647\u0645 \u0623\u0646 "\u0627\u0644\u0648\u0627\u062C\u0628" \u0627\u0644\u062A\u0632\u0627\u0645\u060C \u0648\u0627\u0644\u0636\u063A\u0648\u0637 \u062A\u062F\u0641\u0639 \u0644\u0644\u0645\u0643\u0627\u0641\u0623\u0629 \u0627\u0644\u0630\u0627\u062A\u064A\u0629.
-3. \u0628\u0644\u0627 \u0623\u0648\u0627\u0645\u0631: \u0642\u0644 "\u0644\u0648 \u062C\u0631\u0628\u0646\u0627 \u0643\u0630\u0627\u060C \u0627\u0644\u0646\u062A\u064A\u062C\u0629 \u0643\u0630\u0627" \u0628\u062F\u0644 "\u064A\u062C\u0628 \u0623\u0646 \u062A\u0642\u0644\u0644".
-4. \u0645\u0648\u0627\u062C\u0647\u0629 \u0628\u0627\u0644\u0623\u0631\u0642\u0627\u0645: \u0643\u0646 \u0645\u062A\u0639\u0627\u0637\u0641\u0627\u064B \u0644\u0643\u0646 \u0648\u0627\u062C\u0647 \u0628\u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u062D\u0642\u064A\u0642\u064A\u0629.
-5. ${lengthInstruction} \u0648 ${focusInstruction}
+**[\u062A\u0639\u0644\u064A\u0645\u0629 \u062D\u0627\u0633\u0645\u0629]**: \u064A\u062C\u0628 \u0623\u0646 \u064A\u0643\u0648\u0646 \u0637\u0648\u0644 response_text \u062D\u0648\u0627\u0644\u064A ${reportTargetWords} \u0643\u0644\u0645\u0629 \u0639\u0631\u0628\u064A\u0629. \u0647\u0630\u0627 \u0634\u0631\u0637 \u063A\u064A\u0631 \u0642\u0627\u0628\u0644 \u0644\u0644\u062A\u0641\u0627\u0648\u0636. \u0625\u0630\u0627 \u0643\u0627\u0646 \u0631\u062F\u0643 \u0623\u0642\u0635\u0631 \u0645\u0646 ${Math.round(reportTargetWords * 0.7)} \u0643\u0644\u0645\u0629\u060C \u0641\u0623\u0646\u062A \u062A\u062E\u0627\u0644\u0641 \u0627\u0644\u062A\u0639\u0644\u064A\u0645\u0627\u062A.
 
-[Structure] (5 \u0623\u0642\u0633\u0627\u0645 \u0625\u0644\u0632\u0627\u0645\u064A\u0629 \u0628\u0640 Bullet points \u0648\u0639\u0646\u0627\u0648\u064A\u0646 Bold \u0648\u0625\u064A\u0645\u0648\u062C\u064A\u0632 \u062E\u0641\u064A\u0641\u0629):
-1. \u0627\u0644\u062A\u0637\u0628\u064A\u0639 (Normalization): \u062C\u0645\u0644\u0629 \u0645\u0631\u064A\u062D\u0629\u060C \u0627\u0631\u0628\u0637 \u0623\u0639\u0644\u0649 \u0628\u0646\u062F \u0628\u0638\u0631\u0641 \u0625\u0646\u0633\u0627\u0646\u064A \u0623\u0648 \u0636\u063A\u0637 (\u0632\u062D\u0645\u0629\u060C \u0645\u062C\u0627\u0645\u0644\u0627\u062A)\u060C \u0644\u064A\u0637\u0645\u0626\u0646 \u0623\u0646\u0647 \u0646\u0645\u0637 \u0634\u0627\u0626\u0639.
-2. \u0627\u0644\u0645\u0631\u0622\u0629 \u0627\u0644\u062A\u062D\u0644\u064A\u0644\u064A\u0629 (Causality): \u0627\u0631\u0628\u0637 "\u0627\u0644\u0633\u0628\u0628 \u0648\u0627\u0644\u0646\u062A\u064A\u062C\u0629". \u062D\u0644\u0644 \u0623\u0648\u0642\u0627\u062A \u0627\u0644\u0635\u0631\u0641 \u0648\u0627\u0631\u0628\u0637\u0647\u0627 \u0628\u0627\u0644\u0646\u0641\u0633\u064A\u0629 (\u062A\u0639\u0628\u060C \u0645\u0643\u0627\u0641\u0623\u0629 \u0630\u0627\u062A). \u0648\u0636\u062D "\u0627\u0644\u0646\u0645\u0637 \u0627\u0644\u062E\u0641\u064A" \u0643\u0627\u0643\u062A\u0634\u0627\u0641.
-3. \u0627\u0644\u0645\u0648\u0627\u062C\u0647\u0629 \u0627\u0644\u0631\u064A\u0627\u0636\u064A\u0629 (Reality Check): \u0627\u0633\u062A\u0642\u0631\u0627\u0621 \u0644\u0644\u0645\u0633\u062A\u0642\u0628\u0644 (\u0644\u0648 \u0627\u0633\u062A\u0645\u0631 \u0627\u0644\u0645\u0639\u062F\u0644..). \u0648\u0627\u0630\u0643\u0631 \u0627\u0644\u0633\u064A\u0646\u0627\u0631\u064A\u0648 \u0627\u0644\u0628\u062F\u064A\u0644 (\u0644\u0648 \u0639\u062F\u0644\u0646\u0627 10%..).
-4. \u0647\u0646\u062F\u0633\u0629 \u0627\u0644\u062D\u0644 \u0627\u0644\u062C\u0632\u0626\u064A (Micro-Friction): \u062A\u062D\u062F\u064A \u0635\u063A\u064A\u0631 \u062C\u062F\u0627\u064B \u0633\u0647\u0644 (\u0645\u062B\u0644: \u0642\u0627\u0639\u062F\u0629 24 \u0633\u0627\u0639\u0629\u060C No Spend Day) \u0648\u0627\u0630\u0643\u0631 \u0627\u0644\u062A\u0648\u0641\u064A\u0631 \u0627\u0644\u0645\u062A\u0648\u0642\u0639 \u0645\u0646\u0647.
-5. \u062E\u0627\u062A\u0645\u0629 \u0625\u0646\u0633\u0627\u0646\u064A\u0629: \u062C\u0645\u0644\u0629 \u0648\u0627\u062D\u062F\u0629 \u062F\u0627\u0639\u0645\u0629 \u062A\u0624\u0643\u062F \u0642\u062F\u0631\u062A\u0647 \u0639\u0644\u0649 \u0627\u0644\u062A\u062D\u0643\u0645 \u0628\u062F\u0648\u0646 \u062D\u0631\u0645\u0627\u0646.
+[Instructions]
+- ${lengthInstruction}
+- ${focusInstruction}
+- **\u0627\u0644\u0647\u064A\u0643\u0644 \u0627\u0644\u0625\u0644\u0632\u0627\u0645\u064A**: ${structureInstruction}
+${advancedInstructionsStr}
+
+[Context]
+- \u062A\u0627\u0631\u064A\u062E \u0627\u0644\u064A\u0648\u0645: ${(/* @__PURE__ */ new Date()).toLocaleDateString("ar-EG", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+- \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0630\u064A \u064A\u062A\u0645 \u062A\u062D\u0644\u064A\u0644\u0647: ${input.month}
 
 [Data]
 ${personalizedSummaryForAI}
 
-[Output format] \u0631\u062F \u0628\u0635\u064A\u063A\u0629 JSON \u0641\u0642\u0637:
+[Output format] \u0631\u062F \u0628\u0635\u064A\u063A\u0629 JSON \u0641\u0642\u0637. \u062A\u0630\u0643\u0631: response_text \u064A\u062C\u0628 \u0623\u0646 \u064A\u0643\u0648\u0646 \u0646\u0635\u0627\u064B \u0637\u0648\u064A\u0644\u0627\u064B \u0648\u0645\u0641\u0635\u0644\u0627\u064B (\u062D\u0648\u0627\u0644\u064A ${reportTargetWords} \u0643\u0644\u0645\u0629):
 {
-  "response_text": "\u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0647\u0646\u0627 \u0628\u0627\u062A\u0628\u0627\u0639 \u0627\u0644\u0647\u064A\u0643\u0644 \u0627\u0644\u0635\u0627\u0631\u0645 (\u0627\u0644\u0640 5 \u0623\u0642\u0633\u0627\u0645) \u0641\u064A \u0646\u0635 \u0648\u0627\u062D\u062F",
+  "response_text": "\u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0641\u0635\u0644 \u0647\u0646\u0627 \u2014 \u064A\u062C\u0628 \u0623\u0646 \u064A\u0643\u0648\u0646 ${reportTargetWords} \u0643\u0644\u0645\u0629 \u062A\u0642\u0631\u064A\u0628\u0627\u064B",
   "alerts": ["\u062A\u0646\u0628\u064A\u0647 1", "\u062A\u0646\u0628\u064A\u0647 2"],
   "personality_flag": "${personality}",
   "data_table": []
@@ -87883,21 +91929,23 @@ ${personalizedSummaryForAI}
             try {
               responseJson = JSON.parse(match2[0]);
             } catch (e2) {
-              __require("fs").writeFileSync("ai-debug.log", `Regex Parse Error: ${e2.message}
+              console.error(`Regex Parse Error: ${e2.message}
 Raw:
 ${raw2}`);
             }
           } else {
-            __require("fs").writeFileSync("ai-debug.log", `No JSON matched.
+            console.error(`No JSON matched.
 Parse Error: ${e.message}
 Raw:
 ${raw2}`);
           }
         }
       } catch (err) {
-        __require("fs").writeFileSync("ai-debug.log", `AI Insights Error: ${err.message}
+        console.error(`AI Insights Error: ${err.message}
 ${err.stack}`);
-        console.error("AI Insights Error:", err);
+        if (err.message.includes("429") || err.message.includes("Quota")) aiErrorMsg = "\u062A\u0645 \u0627\u0633\u062A\u0647\u0644\u0627\u0643 \u0631\u0635\u064A\u062F \u0645\u0641\u062A\u0627\u062D \u0627\u0644\u0640 API (Quota Exceeded). \u064A\u0631\u062C\u0649 \u0625\u0639\u062F\u0627\u062F \u0645\u0641\u062A\u0627\u062D \u062C\u062F\u064A\u062F \u0645\u0646 \u0644\u0648\u062D\u0629 \u0627\u0644\u0625\u062F\u0627\u0631\u0629.";
+        else if (err.message.includes("key not valid")) aiErrorMsg = "\u0645\u0641\u062A\u0627\u062D \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u063A\u064A\u0631 \u0635\u0627\u0644\u062D. \u064A\u0631\u062C\u0649 \u0627\u0644\u062A\u0623\u0643\u062F \u0645\u0646 \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A.";
+        else aiErrorMsg = err.message;
       }
     }
     if (!responseJson) {
@@ -87906,7 +91954,9 @@ ${err.stack}`);
       if (!aiModel) {
         text2 += "\u{1F4A1} (\u0645\u0644\u0627\u062D\u0638\u0629: \u0647\u0630\u0627 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u062A\u0645 \u062A\u0648\u0644\u064A\u062F\u0647 \u0628\u0648\u0627\u0633\u0637\u0629 \u0627\u0644\u0646\u0638\u0627\u0645 \u0627\u0644\u0623\u0633\u0627\u0633\u064A \u0644\u0623\u0646\u0643 \u0627\u0633\u062A\u0647\u0644\u0643\u062A \u0643\u0644 \u0627\u0644\u062A\u0648\u0643\u0646\u0632 \u0627\u0644\u0645\u062A\u0627\u062D\u0629 \u0644\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631. \u0642\u0645 \u0628\u0627\u0644\u062A\u0631\u0642\u064A\u0629 \u0644\u0632\u064A\u0627\u062F\u0629 \u0627\u0644\u062D\u062F\u0648\u062F!)\n\n";
       } else {
-        text2 += "\u{1F4A1} (\u0645\u0644\u0627\u062D\u0638\u0629: \u062A\u0645 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0627\u0644\u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0623\u0633\u0627\u0633\u064A \u0644\u0639\u062F\u0645 \u062A\u0648\u0641\u0631 \u0631\u062F \u0645\u0646 \u062E\u0648\u0627\u062F\u0645 \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u062D\u0627\u0644\u064A\u0627\u064B)\n\n";
+        text2 += `\u{1F4A1} (\u0645\u0644\u0627\u062D\u0638\u0629: \u062A\u0645 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0627\u0644\u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0623\u0633\u0627\u0633\u064A \u0628\u062F\u0644\u0627\u064B \u0645\u0646 \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u0644\u0644\u0633\u0628\u0628 \u0627\u0644\u062A\u0627\u0644\u064A: ${aiErrorMsg})
+
+`;
       }
       if (topCategoryPercent > 50) {
         text2 += `\u0639\u0646\u062F\u0643 \u0627\u0639\u062A\u0645\u0627\u062F \u0639\u0627\u0644\u064A \u062C\u062F\u0627\u064B \u0639\u0644\u0649 \u0628\u0646\u062F "${topCategory[0]}" (${topCategoryPercent}% \u0645\u0646 \u0635\u0631\u0641\u0643). \u0623\u064A \u0632\u064A\u0627\u062F\u0629 \u0628\u0633\u064A\u0637\u0629 \u0641\u064A \u0627\u0644\u0628\u0646\u062F \u062F\u0647 \u0645\u0645\u0643\u0646 \u062A\u0636\u063A\u0637 \u0645\u064A\u0632\u0627\u0646\u064A\u062A\u0643 \u0628\u0634\u0643\u0644 \u0648\u0627\u0636\u062D.
@@ -88295,6 +92345,14 @@ var adminRouter = router({
       limit
     };
   }),
+  // ─── View User SmartProfile (Admin) ───
+  getUserSmartProfile: adminProcedure.input(external_exports.object({
+    userId: external_exports.number(),
+    userType: external_exports.enum(["oauth", "local"])
+  })).query(async ({ input }) => {
+    const profile = await getSmartProfile(input.userId, input.userType);
+    return profile;
+  }),
   // ─── Update User Role ───
   updateUserRole: adminProcedure.input(external_exports.object({
     userId: external_exports.number(),
@@ -88314,6 +92372,13 @@ var adminRouter = router({
     const table = input.userType === "oauth" ? users : localUsers;
     await db.update(table).set({ plan: input.plan }).where(eq(table.id, input.userId));
     return { success: true, message: "\u062A\u0645 \u062A\u062D\u062F\u064A\u062B \u0627\u0644\u062E\u0637\u0629 \u0628\u0646\u062C\u0627\u062D" };
+  }),
+  // ─── Get User Smart Profile ───
+  getUserSmartProfile: adminProcedure.input(external_exports.object({
+    userId: external_exports.number(),
+    userType: external_exports.enum(["oauth", "local"])
+  })).query(async ({ input }) => {
+    return await getSmartProfile(input.userId, input.userType);
   }),
   // ─── Delete User ───
   deleteUser: adminProcedure.input(external_exports.object({
@@ -88369,9 +92434,9 @@ var adminRouter = router({
     const config2 = {
       ai_api_key: env.GEMINI_API_KEY || "",
       ai_model_free: env.GEMINI_MODEL_FREE || "gemini-2.0-flash",
-      ai_model_pro: env.GEMINI_MODEL_PRO || "gemini-2.5-flash",
-      ai_model_ultra: "gemini-2.5-pro",
-      ai_model_reports: env.GEMINI_MODEL_REPORTS || "gemini-2.5-flash",
+      ai_model_pro: env.GEMINI_MODEL_PRO || "gemini-1.5-flash",
+      ai_model_ultra: "gemini-1.5-pro",
+      ai_model_reports: env.GEMINI_MODEL_REPORTS || "gemini-1.5-flash",
       // Token limits
       free_token_limit: "50000",
       pro_token_limit: "500000",
@@ -88406,21 +92471,51 @@ var adminRouter = router({
       // 5 min per request
       confidence_auto_save: "85",
       confidence_review: "60",
-      stt_api_key: "AIzaSyCWif4U7uRb1WKG_HTwqNwtNLmvfD5fZj0",
-      stt_model: "gemini-3.0-flash-live",
-      stt_fallback_model: "gemini-3.1-flash-lite",
+      stt_api_key: "",
+      stt_model: "gemini-1.5-flash",
+      stt_fallback_model: "gemini-2.0-flash",
       // AI Response Settings
       ai_response_length: "medium",
       // short, medium, detailed
       ai_focus: "balanced",
       // statistics, tips, patterns, balanced
+      ai_system_prompt: "[Persona] \u0645\u0633\u062A\u0634\u0627\u0631 \u0645\u0627\u0644\u064A \u0645\u0635\u0631\u064A \u0630\u0643\u064A \u0648\u0645\u062A\u0639\u0627\u0637\u0641. \u0644\u063A\u062A\u0643 \u0639\u0627\u0645\u064A\u0629 \u0645\u0635\u0631\u064A\u0629 \u0631\u0627\u0642\u064A\u0629 \u0648\u0645\u0628\u0633\u0637\u0629\u060C \u0648\u062A\u062A\u062D\u062F\u062B \u0648\u0643\u0623\u0646\u0643 \u0625\u0646\u0633\u0627\u0646 \u062D\u0642\u064A\u0642\u064A.\n[Rules]\n1. \u0644\u0627 \u062A\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0639\u0646\u0627\u0648\u064A\u0646 \u0627\u0644\u0622\u0644\u064A\u0629 (\u0645\u062B\u0644 \u0627\u0644\u062A\u0637\u0628\u064A\u0639 \u0623\u0648 \u0627\u0644\u0633\u0628\u0628\u064A\u0629).\n2. \u0648\u0627\u062C\u0647 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u062D\u0642\u064A\u0642\u064A\u0629.\n3. \u0642\u062F\u0645 \u0646\u0635\u0627\u0626\u062D \u0639\u0645\u0644\u064A\u0629 \u0645\u0635\u0645\u0645\u0629 \u062E\u0635\u064A\u0635\u0627\u064B \u0644\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0646\u0627\u0621\u064B \u0639\u0644\u0649 \u0633\u0644\u0648\u0643\u0647 \u0627\u0644\u0645\u0627\u0644\u064A.",
+      ai_advanced_instructions: "",
+      ai_report_structure_override: "",
       // Report frequency limits (days between reports per tier)
       report_limit_free: "30",
       // 1 report per 30 days
       report_limit_pro: "14",
       // 1 report per 14 days
-      report_limit_ultra: "1"
+      report_limit_ultra: "1",
       // 1 report per day (effectively unlimited)
+      // Report Word Counts (approximate control via prompt + token safety net)
+      report_words_free: "550",
+      // target ~400-700 words for free plan
+      report_words_pro: "850",
+      // target ~700-1000 words for pro plan
+      report_words_ultra: "1500",
+      // target 1000++ words for ultra plan
+      // Report Max Output Tokens (hard safety net per plan)
+      report_max_tokens_free: "1800",
+      // ~700 words max safety net
+      report_max_tokens_pro: "3500",
+      // ~1400 words max safety net
+      report_max_tokens_ultra: "8192",
+      // unlimited depth
+      // How many subcategories + top items to feed the AI per plan
+      report_subcats_free: "15",
+      // top 15 subcategories for free
+      report_subcats_pro: "20",
+      // top 20 subcategories for pro (same as ultra)
+      report_subcats_ultra: "20",
+      // top 20 subcategories for ultra
+      report_top_items_pro: "10",
+      // send top 10 item descriptions for pro
+      report_top_items_ultra: "10",
+      // send top 10 item descriptions for ultra
+      // Referrals
+      promo_code_discount: "20"
     };
     settings.forEach((s) => {
       if (s.value) config2[s.key] = s.value;
@@ -88458,15 +92553,13 @@ var adminRouter = router({
   getAvailableModels: adminProcedure.query(async () => {
     return {
       models: [
-        { id: "gemini-3.0-flash-live", name: "Gemini 3.0 Flash Live", tier: "pro", description: "\u0645\u0639\u0627\u0644\u062C\u0629 \u0635\u0648\u062A\u064A\u0629 \u062D\u064A\u0629 \u0641\u0627\u0626\u0642\u0629 \u0627\u0644\u062F\u0642\u0629" },
-        { id: "gemini-2.5-flash-native-audio", name: "Gemini 2.5 Flash Native Audio", tier: "free", description: "\u0646\u0633\u062E\u0629 \u0645\u062E\u0635\u0635\u0629 \u0644\u0644\u0635\u0648\u062A \u0645\u0628\u0627\u0634\u0631\u0629" },
-        { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash Lite", tier: "free", description: "\u062E\u0641\u064A\u0641 \u0648\u0633\u0631\u064A\u0639 \u062C\u062F\u0627\u064B \u0644\u0644\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0645\u062A\u0643\u0631\u0631\u0629" },
-        { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", tier: "free", description: "\u0627\u0642\u062A\u0635\u0627\u062F\u064A \u0648\u0633\u0631\u064A\u0639 \u0644\u0644\u0645\u0647\u0627\u0645 \u0627\u0644\u0628\u0633\u064A\u0637\u0629" },
-        { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", tier: "free", description: "\u0633\u0631\u064A\u0639 \u0648\u0627\u0642\u062A\u0635\u0627\u062F\u064A" },
-        { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", tier: "pro", description: "\u062F\u0642\u064A\u0642 \u0648\u0645\u062A\u0642\u062F\u0645" },
-        { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", tier: "free", description: "\u0627\u0644\u062C\u064A\u0644 \u0627\u0644\u0633\u0627\u0628\u0642 - \u0633\u0631\u064A\u0639" },
-        { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash", tier: "free", description: "\u0643\u0644\u0627\u0633\u064A\u0643\u064A - \u0627\u0642\u062A\u0635\u0627\u062F\u064A" },
-        { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro", tier: "pro", description: "\u0643\u0644\u0627\u0633\u064A\u0643\u064A - \u0645\u062A\u0642\u062F\u0645" },
+        { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", tier: "pro", description: "\u0623\u062D\u062F\u062B \u0645\u0648\u062F\u064A\u0644 \u0644\u062A\u062D\u0648\u064A\u0644 \u0627\u0644\u0635\u0648\u062A \u0644\u0646\u0635" },
+        { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash-Lite", tier: "free", description: "\u0627\u0642\u062A\u0635\u0627\u062F\u064A \u0648\u0633\u0631\u064A\u0639 \u062C\u062F\u0627\u064B \u0644\u0644\u0635\u0648\u062A" },
+        { id: "gemini-3.1-flash-tts", name: "Gemini 3.1 Flash TTS", tier: "free", description: "\u0645\u0648\u062F\u064A\u0644 \u0635\u0648\u062A\u064A \u0645\u062E\u0635\u0635 (\u0644\u0644\u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0627\u0644\u0627\u062D\u062A\u064A\u0627\u0637\u064A \u0627\u0644\u0645\u062D\u062F\u0648\u062F)" },
+        { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash", tier: "free", description: "\u0623\u062F\u0627\u0621 \u0633\u0631\u064A\u0639 \u0648\u0627\u0642\u062A\u0635\u0627\u062F\u064A (\u0645\u062F\u0639\u0648\u0645 \u0644\u0644\u0635\u0648\u062A)" },
+        { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro", tier: "pro", description: "\u0639\u0627\u0644\u064A \u0627\u0644\u062F\u0642\u0629 \u0644\u0644\u0645\u0647\u0627\u0645 \u0627\u0644\u0645\u0639\u0642\u062F\u0629 (\u0645\u062F\u0639\u0648\u0645 \u0644\u0644\u0635\u0648\u062A)" },
+        { id: "gemini-1.5-flash-8b", name: "Gemini 1.5 Flash-8B", tier: "free", description: "\u0633\u0631\u064A\u0639 \u062C\u062F\u0627\u064B \u0644\u0644\u0645\u0647\u0627\u0645 \u0627\u0644\u0628\u0633\u064A\u0637\u0629" },
+        { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", tier: "free", description: "\u0627\u0644\u062C\u064A\u0644 \u0627\u0644\u0623\u062D\u062F\u062B - \u0633\u0631\u064A\u0639 \u0648\u0642\u0648\u064A (\u0645\u062F\u0639\u0648\u0645 \u0644\u0644\u0635\u0648\u062A)" },
         { id: "gemma-3-27b-it", name: "Gemma 3 27B", tier: "free", description: "\u0645\u0641\u062A\u0648\u062D \u0627\u0644\u0645\u0635\u062F\u0631" },
         { id: "gemma-4-12b-it", name: "Gemma 4 12B", tier: "free", description: "\u0645\u0641\u062A\u0648\u062D \u0627\u0644\u0645\u0635\u062F\u0631 - \u062E\u0641\u064A\u0641" },
         { id: "gemma-4-27b-it", name: "Gemma 4 27B", tier: "pro", description: "\u0645\u0641\u062A\u0648\u062D \u0627\u0644\u0645\u0635\u062F\u0631 - \u0642\u0648\u064A" }
@@ -88546,6 +92639,35 @@ var adminRouter = router({
       month: currentMonth,
       usage
     };
+  }),
+  // ─── Discount Codes CRUD ───
+  getDiscountCodes: adminProcedure.query(async () => {
+    return await db.select().from(discountCodes).orderBy(desc(discountCodes.createdAt));
+  }),
+  createDiscountCode: adminProcedure.input(external_exports.object({
+    code: external_exports.string().min(3).max(50),
+    type: external_exports.enum(["referral", "promo"]).default("promo"),
+    discountPercent: external_exports.number().min(1).max(100),
+    maxUses: external_exports.number().min(0).optional(),
+    expiresAt: external_exports.string().optional()
+  })).mutation(async ({ input }) => {
+    const existing = await db.select().from(discountCodes).where(eq(discountCodes.code, input.code.toUpperCase())).limit(1);
+    if (existing.length > 0) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "\u0627\u0644\u0643\u0648\u062F \u0645\u0648\u062C\u0648\u062F \u0628\u0627\u0644\u0641\u0639\u0644" });
+    }
+    await db.insert(discountCodes).values({
+      code: input.code.toUpperCase(),
+      type: input.type,
+      discountPercent: input.discountPercent,
+      maxUses: input.maxUses || null,
+      usedCount: 0,
+      expiresAt: input.expiresAt ? new Date(input.expiresAt) : null
+    });
+    return { success: true, message: "\u062A\u0645 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0643\u0648\u062F \u0628\u0646\u062C\u0627\u062D" };
+  }),
+  deleteDiscountCode: adminProcedure.input(external_exports.object({ id: external_exports.number() })).mutation(async ({ input }) => {
+    await db.delete(discountCodes).where(eq(discountCodes.id, input.id));
+    return { success: true, message: "\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0643\u0648\u062F" };
   })
 });
 
@@ -88603,19 +92725,19 @@ var supportRouter = router({
     if (priority) filters.push(eq(supportTickets.priority, priority));
     const list = await db.select().from(supportTickets).where(filters.length > 0 ? and(...filters) : void 0).orderBy(desc(supportTickets.createdAt)).limit(limit).offset(offset);
     const enriched = await Promise.all(list.map(async (t2) => {
-      let name = "\u0645\u062C\u0647\u0648\u0644";
+      let name2 = "\u0645\u062C\u0647\u0648\u0644";
       let avatarUrl = "";
       if (t2.userType === "oauth") {
         const u = await db.select({ name: users.name, avatar: users.avatar }).from(users).where(eq(users.id, t2.userId)).limit(1);
         if (u[0]) {
-          name = u[0].name;
+          name2 = u[0].name;
           avatarUrl = u[0].avatar || "";
         }
       } else {
         const u = await db.select({ name: localUsers.name }).from(localUsers).where(eq(localUsers.id, t2.userId)).limit(1);
-        if (u[0]) name = u[0].name;
+        if (u[0]) name2 = u[0].name;
       }
-      return { ...t2, userName: name, userAvatar: avatarUrl };
+      return { ...t2, userName: name2, userAvatar: avatarUrl };
     }));
     const total = await db.select({ count: count() }).from(supportTickets);
     return { list: enriched, total: total[0]?.count ?? 0, page, limit };
@@ -89040,7 +93162,9 @@ var referralRouter = router({
       eq(referrals.referrerType, ctx.user.type),
       eq(referrals.status, "completed")
     ));
-    return { code, totalReferrals: referralCount[0]?.count ?? 0, completed: completedCount[0]?.count ?? 0 };
+    const settings = await db.select().from(systemSettings).where(eq(systemSettings.key, "promo_code_discount")).limit(1);
+    const discount = settings[0]?.value || "20";
+    return { code, totalReferrals: referralCount[0]?.count ?? 0, completed: completedCount[0]?.count ?? 0, discount };
   }),
   // ─── Apply Referral Code ───
   applyCode: authedProcedure.input(external_exports.object({ code: external_exports.string() })).mutation(async ({ ctx, input }) => {
@@ -89167,87 +93291,181 @@ init_zod();
 init_connection();
 init_schema2();
 init_drizzle_orm();
+import { randomBytes as randomBytes2 } from "crypto";
 
 // api/services/adaptive-question-engine.ts
 var ADAPTIVE_ONBOARDING_QUESTIONS = [
   {
     key: "income_level",
-    text: "Approximate monthly income",
+    text: "\u0643\u0627\u0645 \u062A\u0642\u0631\u064A\u0628\u0627\u064B \u062F\u062E\u0644\u0643 \u0627\u0644\u0634\u0647\u0631\u064A\u061F",
     type: "number",
     required: false
   },
   {
     key: "income_sources",
-    text: "Primary income sources",
+    text: "\u0625\u064A\u0647 \u0645\u0635\u0627\u062F\u0631 \u062F\u062E\u0644\u0643 \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629\u061F",
     type: "multi_select",
     options: [
-      { value: "salary", label: "Salary" },
-      { value: "freelance", label: "Freelance" },
-      { value: "business", label: "Business" },
-      { value: "other", label: "Other" }
+      { value: "salary", label: "\u0648\u0638\u064A\u0641\u0629 / \u0645\u0631\u062A\u0628" },
+      { value: "freelance", label: "\u0641\u0631\u064A\u0644\u0627\u0646\u0633 / \u0639\u0645\u0644 \u062D\u0631" },
+      { value: "business", label: "\u0645\u0634\u0631\u0648\u0639 \u062E\u0627\u0635" },
+      { value: "investments", label: "\u0627\u0633\u062A\u062B\u0645\u0627\u0631\u0627\u062A / \u0623\u0631\u0628\u0627\u062D" },
+      { value: "rental", label: "\u0625\u064A\u062C\u0627\u0631\u0627\u062A" },
+      { value: "other", label: "\u0623\u062E\u0631\u0649" }
     ]
   },
   {
-    key: "family_responsibility",
-    text: "Are you financially responsible for family members?",
+    key: "has_fixed_salary",
+    text: "\u0645\u0631\u062A\u0628\u0643 \u0628\u064A\u0646\u0632\u0644 \u0641\u064A \u0648\u0642\u062A \u062B\u0627\u0628\u062A \u0643\u0644 \u0634\u0647\u0631\u061F",
     type: "boolean"
   },
   {
-    key: "children",
-    text: "Do you have children?",
-    type: "boolean"
-  },
-  {
-    key: "children_details",
-    text: "Children count and approximate ages",
-    type: "text"
-  },
-  {
-    key: "living_situation",
-    text: "Living situation",
-    type: "select",
-    options: [
-      { value: "alone", label: "Living alone" },
-      { value: "family", label: "With family" },
-      { value: "shared", label: "Shared housing" }
-    ]
-  },
-  {
-    key: "spending_pattern",
-    text: "Spending pattern",
-    type: "select",
-    options: [
-      { value: "stable", label: "Stable" },
-      { value: "variable", label: "Variable" },
-      { value: "unclear", label: "Not sure" }
-    ]
-  },
-  {
-    key: "supports_others",
-    text: "People you support financially",
-    type: "multi_select",
-    options: [
-      { value: "parents", label: "Parents" },
-      { value: "siblings", label: "Siblings" },
-      { value: "partner", label: "Partner" },
-      { value: "other", label: "Other" }
-    ]
-  },
-  {
-    key: "fixed_commitments",
-    text: "Approximate number of fixed monthly commitments",
-    type: "number"
+    key: "salary_day",
+    text: "\u0645\u0631\u062A\u0628\u0643 \u0628\u064A\u0646\u0632\u0644 \u064A\u0648\u0645 \u0643\u0627\u0645 \u0645\u0646 \u0627\u0644\u0634\u0647\u0631 \u062A\u0642\u0631\u064A\u0628\u0627\u064B\u061F",
+    type: "number",
+    required: false
   },
   {
     key: "app_goal",
-    text: "Main goal from SmartSpend",
+    text: "\u0625\u064A\u0647 \u0623\u0647\u0645 \u062D\u0627\u062C\u0629 \u0639\u0627\u064A\u0632 SmartSpend \u064A\u0633\u0627\u0639\u062F\u0643 \u0641\u064A\u0647\u0627\u061F",
     type: "select",
     options: [
-      { value: "organize_expenses", label: "Organize expenses" },
-      { value: "reduce_spending", label: "Reduce spending" },
-      { value: "track_income", label: "Track income" },
-      { value: "manage_business", label: "Manage business" }
+      { value: "organize_expenses", label: "\u0623\u0646\u0638\u0645 \u0645\u0635\u0627\u0631\u064A\u0641\u064A" },
+      { value: "reduce_spending", label: "\u0623\u0642\u0644\u0644 \u0635\u0631\u0641\u064A" },
+      { value: "track_income", label: "\u0623\u062A\u062A\u0628\u0639 \u062F\u062E\u0644\u064A" },
+      { value: "save_money", label: "\u0623\u0628\u062F\u0623 \u0623\u062F\u062E\u0631" },
+      { value: "manage_business", label: "\u0623\u062F\u064A\u0631 \u0645\u0634\u0631\u0648\u0639\u064A" },
+      { value: "pay_debt", label: "\u0623\u0633\u062F\u062F \u062F\u064A\u0648\u0646\u064A" }
     ]
+  },
+  {
+    key: "children",
+    text: "\u0639\u0646\u062F\u0643 \u0623\u0637\u0641\u0627\u0644\u061F",
+    type: "boolean"
+  },
+  {
+    key: "children_count",
+    text: "\u0643\u0627\u0645 \u0637\u0641\u0644 \u0639\u0646\u062F\u0643\u061F",
+    type: "number"
+  },
+  {
+    key: "children_names",
+    text: "\u0625\u064A\u0647 \u0623\u0633\u0645\u0627\u0621 \u0623\u0637\u0641\u0627\u0644\u0643\u061F",
+    type: "text_list",
+    required: false
+  },
+  {
+    key: "living_situation",
+    text: "\u0625\u064A\u0647 \u0648\u0636\u0639 \u0633\u0643\u0646\u0643 \u0627\u0644\u062D\u0627\u0644\u064A\u061F",
+    type: "select",
+    options: [
+      { value: "alone", label: "\u0633\u0627\u0643\u0646 \u0644\u0648\u062D\u062F\u064A" },
+      { value: "family", label: "\u0645\u0639 \u0627\u0644\u0639\u064A\u0644\u0629" },
+      { value: "shared", label: "\u0633\u0643\u0646 \u0645\u0634\u062A\u0631\u0643" },
+      { value: "married", label: "\u0645\u0639 \u0632\u0648\u062C/\u0632\u0648\u062C\u0629" }
+    ]
+  },
+  {
+    key: "partner_name",
+    text: "\u0625\u064A\u0647 \u0627\u0633\u0645 \u0634\u0631\u064A\u0643/\u0634\u0631\u064A\u0643\u0629 \u062D\u064A\u0627\u062A\u0643\u061F",
+    type: "text",
+    required: false
+  },
+  {
+    key: "housing_type",
+    text: "\u0633\u0643\u0646\u0643 \u0625\u064A\u062C\u0627\u0631 \u0648\u0644\u0627 \u0645\u0644\u0643\u061F",
+    type: "select",
+    options: [
+      { value: "rent", label: "\u0625\u064A\u062C\u0627\u0631" },
+      { value: "owned", label: "\u0645\u0644\u0643" },
+      { value: "family_owned", label: "\u0628\u064A\u062A \u0627\u0644\u0639\u064A\u0644\u0629" }
+    ]
+  },
+  {
+    key: "monthly_rent",
+    text: "\u0644\u0648 \u0625\u064A\u062C\u0627\u0631\u060C \u0643\u0627\u0645 \u0628\u064A\u0628\u0644\u063A \u0634\u0647\u0631\u064A\u0627\u064B \u062A\u0642\u0631\u064A\u0628\u0627\u064B\u061F",
+    type: "number",
+    required: false
+  },
+  {
+    key: "supports_others",
+    text: "\u0628\u062A\u0635\u0631\u0641 \u0639\u0644\u0649 \u0645\u064A\u0646 \u0628\u0634\u0643\u0644 \u0645\u0646\u062A\u0638\u0645\u061F (\u063A\u064A\u0631 \u0632\u0648\u062C\u062A\u0643/\u0623\u0637\u0641\u0627\u0644\u0643)",
+    type: "multi_select",
+    options: [
+      { value: "parents", label: "\u0627\u0644\u0648\u0627\u0644\u062F\u064A\u0646" },
+      { value: "siblings", label: "\u0625\u062E\u0648\u0629" },
+      { value: "extended", label: "\u0623\u0642\u0627\u0631\u0628" },
+      { value: "none", label: "\u0645\u0627 \u062D\u062F\u0634" }
+    ]
+  },
+  {
+    key: "has_debt",
+    text: "\u0639\u0646\u062F\u0643 \u0623\u064A \u062F\u064A\u0648\u0646 \u0623\u0648 \u0623\u0642\u0633\u0627\u0637\u061F",
+    type: "boolean"
+  },
+  {
+    key: "debt_monthly",
+    text: "\u0644\u0648 \u0639\u0646\u062F\u0643 \u062F\u064A\u0648\u0646\u060C \u0628\u062A\u062F\u0641\u0639 \u0643\u0627\u0645 \u0634\u0647\u0631\u064A\u0627\u064B \u062A\u0642\u0631\u064A\u0628\u0627\u064B\u061F",
+    type: "number",
+    required: false
+  },
+  {
+    key: "profession",
+    text: "\u0625\u064A\u0647 \u0648\u0638\u064A\u0641\u062A\u0643 \u0623\u0648 \u0645\u062C\u0627\u0644 \u0634\u063A\u0644\u0643\u061F",
+    type: "text",
+    required: false
+  },
+  {
+    key: "car_ownership",
+    text: "\u0639\u0646\u062F\u0643 \u0639\u0631\u0628\u064A\u0629 \u062E\u0627\u0635\u0629\u061F",
+    type: "boolean"
+  },
+  {
+    key: "car_type",
+    text: "\u0646\u0648\u0639 \u0627\u0644\u0639\u0631\u0628\u064A\u0629 \u0625\u064A\u0647\u061F",
+    type: "text",
+    required: false
+  },
+  {
+    key: "monthly_car_cost",
+    text: "\u0628\u062A\u0635\u0631\u0641 \u0643\u0627\u0645 \u0639\u0644\u0649 \u0627\u0644\u0639\u0631\u0628\u064A\u0629 \u0634\u0647\u0631\u064A\u0627\u064B \u062A\u0642\u0631\u064A\u0628\u0627\u064B\u061F (\u0628\u0646\u0632\u064A\u0646 \u0648\u0635\u064A\u0627\u0646\u0629)",
+    type: "number",
+    required: false
+  },
+  {
+    key: "has_pets",
+    text: "\u0639\u0646\u062F\u0643 \u062D\u064A\u0648\u0627\u0646\u0627\u062A \u0623\u0644\u064A\u0641\u0629\u061F",
+    type: "boolean"
+  },
+  {
+    key: "pet_names",
+    text: "\u0625\u064A\u0647 \u0623\u0633\u0645\u0627\u0621\u0647\u0645\u061F",
+    type: "text_list",
+    required: false
+  },
+  {
+    key: "smoking",
+    text: "\u0628\u062A\u062F\u062E\u0646\u061F",
+    type: "boolean"
+  },
+  {
+    key: "subscription_services",
+    text: "\u0625\u064A\u0647 \u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A \u0627\u0644\u0644\u064A \u0628\u062A\u062F\u0641\u0639\u0647\u0627 \u0634\u0647\u0631\u064A\u0627\u064B\u061F",
+    type: "multi_select",
+    options: [
+      { value: "netflix", label: "Netflix / Shahid" },
+      { value: "gym", label: "\u062C\u064A\u0645 / \u0646\u0627\u062F\u064A" },
+      { value: "internet", label: "\u0625\u0646\u062A\u0631\u0646\u062A \u0645\u0646\u0632\u0644\u064A" },
+      { value: "phone_plan", label: "\u0628\u0627\u0642\u0629 \u0645\u0648\u0628\u0627\u064A\u0644" },
+      { value: "insurance", label: "\u062A\u0623\u0645\u064A\u0646" },
+      { value: "other", label: "\u0623\u062E\u0631\u0649" }
+    ]
+  },
+  {
+    key: "regular_contacts",
+    text: "\u0645\u064A\u0646 \u0627\u0644\u0623\u0634\u062E\u0627\u0635 \u0627\u0644\u0644\u064A \u0628\u062A\u0639\u0627\u0645\u0644\u0647\u0645 \u0645\u0627\u0644\u064A\u064B\u0627 \u0628\u0627\u0646\u062A\u0638\u0627\u0645\u061F (\u0627\u0643\u062A\u0628 \u0623\u0633\u0645\u0627\u0626\u0647\u0645)",
+    type: "text_list",
+    required: false
   }
 ];
 var QUESTION_BY_KEY = Object.fromEntries(
@@ -89264,20 +93482,50 @@ function hasAnswered(answers, key) {
 function getNextOnboardingQuestion(answers) {
   if (!hasAnswered(answers, "income_level")) return QUESTION_BY_KEY.income_level;
   if (!hasAnswered(answers, "income_sources")) return QUESTION_BY_KEY.income_sources;
-  if (!hasAnswered(answers, "family_responsibility")) return QUESTION_BY_KEY.family_responsibility;
-  const familyResponsibility = answerValue(answers, "family_responsibility");
-  if (familyResponsibility === true) {
-    if (!hasAnswered(answers, "children")) return QUESTION_BY_KEY.children;
-    if (answerValue(answers, "children") === true && !hasAnswered(answers, "children_details")) {
-      return QUESTION_BY_KEY.children_details;
+  const incomeSources = answerValue(answers, "income_sources");
+  const hasSalarySource = Array.isArray(incomeSources) && incomeSources.includes("salary");
+  if (hasSalarySource) {
+    if (!hasAnswered(answers, "has_fixed_salary")) return QUESTION_BY_KEY.has_fixed_salary;
+    if (answerValue(answers, "has_fixed_salary") === true && !hasAnswered(answers, "salary_day")) {
+      return QUESTION_BY_KEY.salary_day;
     }
-    if (!hasAnswered(answers, "supports_others")) return QUESTION_BY_KEY.supports_others;
-  } else if (!hasAnswered(answers, "living_situation")) {
-    return QUESTION_BY_KEY.living_situation;
   }
-  if (!hasAnswered(answers, "spending_pattern")) return QUESTION_BY_KEY.spending_pattern;
-  if (!hasAnswered(answers, "fixed_commitments")) return QUESTION_BY_KEY.fixed_commitments;
   if (!hasAnswered(answers, "app_goal")) return QUESTION_BY_KEY.app_goal;
+  if (!hasAnswered(answers, "children")) return QUESTION_BY_KEY.children;
+  if (answerValue(answers, "children") === true) {
+    if (!hasAnswered(answers, "children_count")) return QUESTION_BY_KEY.children_count;
+    if (!hasAnswered(answers, "children_names")) {
+      const count4 = Number(answerValue(answers, "children_count")) || 1;
+      return { ...QUESTION_BY_KEY.children_names, listCount: count4 };
+    }
+  }
+  if (!hasAnswered(answers, "living_situation")) return QUESTION_BY_KEY.living_situation;
+  const livingSituation = answerValue(answers, "living_situation");
+  if ((livingSituation === "married" || livingSituation === "family") && !hasAnswered(answers, "partner_name")) {
+    return QUESTION_BY_KEY.partner_name;
+  }
+  if (!hasAnswered(answers, "housing_type")) return QUESTION_BY_KEY.housing_type;
+  if (answerValue(answers, "housing_type") === "rent" && !hasAnswered(answers, "monthly_rent")) {
+    return QUESTION_BY_KEY.monthly_rent;
+  }
+  if (!hasAnswered(answers, "supports_others")) return QUESTION_BY_KEY.supports_others;
+  if (!hasAnswered(answers, "has_debt")) return QUESTION_BY_KEY.has_debt;
+  if (answerValue(answers, "has_debt") === true && !hasAnswered(answers, "debt_monthly")) {
+    return QUESTION_BY_KEY.debt_monthly;
+  }
+  if (!hasAnswered(answers, "profession")) return QUESTION_BY_KEY.profession;
+  if (!hasAnswered(answers, "car_ownership")) return QUESTION_BY_KEY.car_ownership;
+  if (answerValue(answers, "car_ownership") === true) {
+    if (!hasAnswered(answers, "car_type")) return QUESTION_BY_KEY.car_type;
+    if (!hasAnswered(answers, "monthly_car_cost")) return QUESTION_BY_KEY.monthly_car_cost;
+  }
+  if (!hasAnswered(answers, "has_pets")) return QUESTION_BY_KEY.has_pets;
+  if (answerValue(answers, "has_pets") === true && !hasAnswered(answers, "pet_names")) {
+    return QUESTION_BY_KEY.pet_names;
+  }
+  if (!hasAnswered(answers, "smoking")) return QUESTION_BY_KEY.smoking;
+  if (!hasAnswered(answers, "subscription_services")) return QUESTION_BY_KEY.subscription_services;
+  if (!hasAnswered(answers, "regular_contacts")) return QUESTION_BY_KEY.regular_contacts;
   return null;
 }
 function applyOnboardingAnswer(profile, key, value, skipped = false, now = /* @__PURE__ */ new Date()) {
@@ -89290,17 +93538,32 @@ function applyOnboardingAnswer(profile, key, value, skipped = false, now = /* @_
   const onboardingAnswers = { ...profile.onboardingAnswers, [key]: answer };
   const financialInfo = { ...profile.financialInfo };
   const lifestyleInfo = { ...profile.lifestyleInfo };
+  const basicInfo = { ...profile.basicInfo };
   if (!skipped) {
     if (key === "income_level") financialInfo.averageMonthlyIncome = value;
     if (key === "income_sources") financialInfo.incomeSources = value;
-    if (key === "spending_pattern") financialInfo.spendingPattern = value;
     if (key === "app_goal") financialInfo.primaryGoal = value;
-    if (key === "family_responsibility") lifestyleInfo.responsibleForFamily = value;
+    if (key === "has_debt") financialInfo.hasDebt = value;
+    if (key === "has_fixed_salary") financialInfo.hasFixedSalary = value;
+    if (key === "salary_day") financialInfo.salaryDay = value;
+    if (key === "debt_monthly") financialInfo.monthlyDebtPayment = value;
     if (key === "children") lifestyleInfo.hasChildren = value;
-    if (key === "children_details") lifestyleInfo.childrenDetails = value;
+    if (key === "children_count") lifestyleInfo.childrenCount = value;
     if (key === "living_situation") lifestyleInfo.livingSituation = value;
+    if (key === "housing_type") lifestyleInfo.housingType = value;
+    if (key === "monthly_rent") lifestyleInfo.monthlyRent = value;
     if (key === "supports_others") lifestyleInfo.supportsOthers = value;
-    if (key === "fixed_commitments") lifestyleInfo.fixedMonthlyCommitments = value;
+    if (key === "profession") basicInfo.profession = value;
+    if (key === "children_names") lifestyleInfo.childrenNames = value;
+    if (key === "partner_name") lifestyleInfo.partnerName = value;
+    if (key === "car_ownership") lifestyleInfo.carOwnership = value;
+    if (key === "car_type") lifestyleInfo.carType = value;
+    if (key === "monthly_car_cost") lifestyleInfo.monthlyCarCost = value;
+    if (key === "has_pets") lifestyleInfo.hasPets = value;
+    if (key === "pet_names") lifestyleInfo.petNames = value;
+    if (key === "smoking") lifestyleInfo.smoking = value;
+    if (key === "subscription_services") lifestyleInfo.subscriptions = value;
+    if (key === "regular_contacts") lifestyleInfo.regularContacts = value;
   }
   const complete = getNextOnboardingQuestion(onboardingAnswers) === null;
   return {
@@ -89308,6 +93571,7 @@ function applyOnboardingAnswer(profile, key, value, skipped = false, now = /* @_
     onboardingAnswers,
     financialInfo,
     lifestyleInfo,
+    basicInfo,
     profileCompleted: complete || profile.profileCompleted
   };
 }
@@ -89436,28 +93700,55 @@ var profileRouter = router({
   }),
   getNextOnboardingQuestion: authedProcedure.query(async ({ ctx }) => {
     const profile = await getSmartProfile(ctx.user.id, ctx.user.type);
+    const nextQ = getNextOnboardingQuestion(profile.onboardingAnswers);
+    console.log(`[getNextOnboardingQuestion] user=${ctx.user.id}, answered=${Object.keys(profile.onboardingAnswers).length}, profileCompleted=${profile.profileCompleted}, nextQ=${nextQ?.key || "DONE"}`);
+    let lastAskedAt = null;
+    try {
+      const rows = await db.select({ lastAskedAt: userProfiles.lastAskedAt }).from(userProfiles).where(and(eq(userProfiles.userId, ctx.user.id), eq(userProfiles.userType, ctx.user.type))).limit(1);
+      lastAskedAt = rows[0]?.lastAskedAt?.toISOString() || null;
+    } catch {
+    }
     return {
-      question: getNextOnboardingQuestion(profile.onboardingAnswers),
-      profileCompleted: profile.profileCompleted
+      question: nextQ,
+      profileCompleted: profile.profileCompleted && !nextQ,
+      lastAskedAt
     };
+  }),
+  // Dismiss onboarding card — updates lastAskedAt for 24h cooldown
+  dismissOnboarding: authedProcedure.mutation(async ({ ctx }) => {
+    await db.update(userProfiles).set({ lastAskedAt: /* @__PURE__ */ new Date() }).where(and(eq(userProfiles.userId, ctx.user.id), eq(userProfiles.userType, ctx.user.type)));
+    return { success: true };
   }),
   submitOnboardingAnswer: authedProcedure.input(external_exports.object({
     key: external_exports.string().min(1),
     value: external_exports.any().optional(),
-    skipped: external_exports.boolean().default(false)
+    skipped: external_exports.boolean().default(false),
+    // Frontend sends ALL accumulated answers so far — this is the resilience layer.
+    // Even if the DB failed to persist previous answers, these are the source of truth.
+    accumulatedAnswers: external_exports.record(external_exports.string(), external_exports.any()).optional()
   })).mutation(async ({ ctx, input }) => {
     const profile = await getSmartProfile(ctx.user.id, ctx.user.type);
+    if (input.accumulatedAnswers && Object.keys(input.accumulatedAnswers).length > 0) {
+      for (const [aKey, aVal] of Object.entries(input.accumulatedAnswers)) {
+        if (aKey !== input.key && aVal && !profile.onboardingAnswers[aKey]) {
+          profile.onboardingAnswers[aKey] = aVal;
+        }
+      }
+    }
     const nextProfile = applyOnboardingAnswer(
       profile,
       input.key,
       input.value,
       input.skipped
     );
+    console.log(`[submitOnboardingAnswer] key=${input.key}, total answers=${Object.keys(nextProfile.onboardingAnswers).length}, keys=[${Object.keys(nextProfile.onboardingAnswers).join(",")}]`);
     await saveSmartProfile(ctx.user.id, ctx.user.type, nextProfile);
     return {
       success: true,
       profile: nextProfile,
-      nextQuestion: getNextOnboardingQuestion(nextProfile.onboardingAnswers)
+      nextQuestion: getNextOnboardingQuestion(nextProfile.onboardingAnswers),
+      // Send back all answers so frontend can accumulate them
+      allAnswers: nextProfile.onboardingAnswers
     };
   }),
   refreshInferences: authedProcedure.input(external_exports.object({ month: external_exports.string().regex(/^\d{4}-\d{2}$/).optional() }).optional()).mutation(async ({ ctx, input }) => {
@@ -89488,6 +93779,39 @@ var profileRouter = router({
       }
     }
     return { success: true };
+  }),
+  // ─── Webhook Token Management (for SMS Ingestion via iOS Shortcuts) ───
+  getWebhookToken: authedProcedure.query(async ({ ctx }) => {
+    const [record2] = await db.select().from(webhookTokens).where(and(
+      eq(webhookTokens.userId, ctx.user.id),
+      eq(webhookTokens.userType, ctx.user.type)
+    )).limit(1);
+    return { token: record2?.token || null, hasToken: !!record2, createdAt: record2?.createdAt || null };
+  }),
+  generateWebhookToken: authedProcedure.mutation(async ({ ctx }) => {
+    await db.delete(webhookTokens).where(
+      and(
+        eq(webhookTokens.userId, ctx.user.id),
+        eq(webhookTokens.userType, ctx.user.type)
+      )
+    );
+    const newToken = `sms_${randomBytes2(32).toString("hex")}`;
+    await db.insert(webhookTokens).values({
+      userId: ctx.user.id,
+      userType: ctx.user.type,
+      token: newToken,
+      name: "iOS Shortcut Token"
+    });
+    return { success: true, token: newToken };
+  }),
+  // ─── Get recent SMS logs ───
+  getSmsLogs: authedProcedure.query(async ({ ctx }) => {
+    return await db.select().from(rawSmsEvents).where(
+      and(
+        eq(rawSmsEvents.userId, ctx.user.id),
+        eq(rawSmsEvents.userType, ctx.user.type)
+      )
+    ).orderBy(desc(rawSmsEvents.createdAt)).limit(10);
   })
 });
 
@@ -89514,7 +93838,7 @@ init_connection();
 init_schema2();
 init_drizzle_orm();
 init_env();
-function parseCookie(req, name) {
+function parseCookie(req, name2) {
   let cookieHeader;
   if ("header" in req && typeof req.header === "function") {
     cookieHeader = req.header("cookie");
@@ -89522,7 +93846,7 @@ function parseCookie(req, name) {
     cookieHeader = req.headers.get("cookie");
   }
   if (!cookieHeader) return void 0;
-  const match2 = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  const match2 = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name2}=([^;]*)`));
   return match2 ? match2[1] : void 0;
 }
 function getAuthHeader(req) {
@@ -89597,6 +93921,642 @@ async function createContext(req) {
 
 // api/boot.ts
 init_env();
+
+// api/sms-router.ts
+init_connection();
+init_schema2();
+init_drizzle_orm();
+
+// api/lib/sms-ai-parser.ts
+init_env();
+var SMS_RESPONSE_SCHEMA = {
+  type: SchemaType.OBJECT,
+  properties: {
+    transaction_detected: { type: SchemaType.BOOLEAN },
+    amount: { type: SchemaType.NUMBER, nullable: true },
+    currency: { type: SchemaType.STRING },
+    direction: { type: SchemaType.STRING, nullable: true },
+    provider: { type: SchemaType.STRING },
+    category: { type: SchemaType.STRING },
+    fee: { type: SchemaType.NUMBER, nullable: true },
+    merchant: { type: SchemaType.STRING, nullable: true },
+    balance_after: { type: SchemaType.NUMBER, nullable: true },
+    confidence: { type: SchemaType.NUMBER }
+  },
+  required: ["transaction_detected", "currency", "provider", "category", "confidence"]
+};
+var SMS_SYSTEM_PROMPT = `\u0623\u0646\u062A \u0646\u0638\u0627\u0645 \u0627\u0633\u062A\u062E\u0631\u0627\u062C \u0628\u064A\u0627\u0646\u0627\u062A \u0645\u0627\u0644\u064A\u0629 \u0645\u0646 \u0631\u0633\u0627\u0626\u0644 SMS \u0628\u0627\u0644\u0639\u0631\u0628\u064A \u0648\u0627\u0644\u0625\u0646\u062C\u0644\u064A\u0632\u064A.
+\u0645\u0647\u0645\u062A\u0643 \u0627\u0644\u0648\u062D\u064A\u062F\u0629: \u0627\u0633\u062A\u062E\u0631\u0627\u062C \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0628\u062F\u0642\u0629 \u0648\u0625\u0631\u062C\u0627\u0639\u0647\u0627 \u0643\u0640 JSON \u0645\u0646\u0638\u0645.
+
+\u0642\u0648\u0627\u0639\u062F \u0635\u0627\u0631\u0645\u0629:
+1. \u0644\u0627 \u062A\u0631\u062F \u0639\u0644\u0649 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645. \u0644\u0627 \u062A\u0639\u0644\u0642. \u0644\u0627 \u062A\u0636\u0641 \u0623\u064A \u0643\u0644\u0627\u0645.
+2. \u0641\u0642\u0637 \u0623\u0631\u062C\u0639 JSON.
+3. \u0625\u0630\u0627 \u0643\u0627\u0646\u062A \u0627\u0644\u0631\u0633\u0627\u0644\u0629 \u063A\u064A\u0631 \u0645\u0627\u0644\u064A\u0629 (\u0625\u0639\u0644\u0627\u0646\u060C OTP\u060C \u0643\u0648\u062F \u062A\u0641\u0639\u064A\u0644) \u2192 transaction_detected: false.
+4. \u0625\u0630\u0627 \u0643\u0627\u0646\u062A \u0645\u0627\u0644\u064A\u0629 \u2192 \u0627\u0633\u062A\u062E\u0631\u062C \u0643\u0644 \u0627\u0644\u062A\u0641\u0627\u0635\u064A\u0644.
+
+\u062A\u062D\u062F\u064A\u062F \u0627\u0644\u0640 provider:
+- \u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0643\u0627\u0634 / Vodafone Cash \u2192 "VodafoneCash"
+- \u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A / InstaPay \u2192 "InstaPay"
+- \u0623\u0628\u0644 \u0628\u0627\u064A / Apple Pay \u2192 "ApplePay"
+- \u0623\u064A \u0628\u0646\u0643 (CIB, NBE, Banque Misr, QNB, AAIB, Alex Bank) \u2192 "Bank"
+- \u063A\u064A\u0631 \u0645\u062D\u062F\u062F \u2192 "Unknown"
+
+\u062A\u062D\u062F\u064A\u062F \u0627\u0644\u0640 direction:
+- \u0627\u0633\u062A\u0644\u0645\u062A / \u062A\u0645 \u0625\u0636\u0627\u0641\u0629 / \u0631\u0635\u064A\u062F \u0648\u0627\u0631\u062F / received \u2192 "incoming"
+- \u0635\u0631\u0641\u062A / \u062A\u0645 \u062E\u0635\u0645 / \u062F\u0641\u0639\u062A / sent / paid \u2192 "outgoing"
+
+\u062A\u062D\u062F\u064A\u062F \u0627\u0644\u0640 category:
+- \u062A\u062D\u0648\u064A\u0644 \u0628\u064A\u0646 \u0623\u0634\u062E\u0627\u0635 \u2192 "transfer"
+- \u062F\u0641\u0639 \u0641\u0648\u0627\u062A\u064A\u0631 / \u0645\u062F\u0641\u0648\u0639\u0627\u062A \u2192 "payment"
+- \u0627\u0633\u062A\u0644\u0627\u0645 \u0631\u0627\u062A\u0628 / \u0645\u0643\u0627\u0641\u0623\u0629 / \u062F\u062E\u0644 \u2192 "income"
+- \u0641\u0648\u0627\u062A\u064A\u0631 (\u0643\u0647\u0631\u0628\u0627\u0621, \u0645\u0627\u064A, \u063A\u0627\u0632, \u0627\u0646\u062A\u0631\u0646\u062A) \u2192 "bills"
+- \u0633\u062D\u0628 \u0623\u0648 \u0635\u0631\u0641 \u0646\u0642\u062F\u064A \u2192 "withdrawal"
+- \u063A\u064A\u0631 \u0645\u062D\u062F\u062F \u2192 "unknown"
+
+\u0623\u0645\u062B\u0644\u0629 \u0639\u0644\u0649 \u0631\u0633\u0627\u0626\u0644 \u0645\u0627\u0644\u064A\u0629:
+- "\u062A\u0645 \u0625\u0636\u0627\u0641\u0629 500 \u062C \u0625\u0644\u0649 \u062D\u0633\u0627\u0628\u0643 \u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0643\u0627\u0634" \u2192 incoming, 500, VodafoneCash, transfer
+- "\u062A\u0645 \u062E\u0635\u0645 200 \u062C\u0646\u064A\u0647 \u0631\u0633\u0648\u0645 \u0641\u0627\u062A\u0648\u0631\u0629 \u0627\u0644\u0643\u0647\u0631\u0628\u0627\u0621" \u2192 outgoing, 200, Bank, bills
+- "Your account has been credited with EGP 10,000" \u2192 incoming, 10000, Bank, income`;
+async function parseSmsFinancialData(message) {
+  const apiKey = env.GEMINI_API_KEY;
+  const modelName = "gemini-2.0-flash";
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: modelName,
+      systemInstruction: SMS_SYSTEM_PROMPT,
+      generationConfig: {
+        temperature: 0.05,
+        // Very low — we want deterministic extraction, not creativity
+        maxOutputTokens: 512,
+        responseMimeType: "application/json",
+        responseSchema: SMS_RESPONSE_SCHEMA
+      }
+    });
+    const result = await model.generateContent(`\u0631\u0633\u0627\u0644\u0629 SMS:
+"${message}"`);
+    const responseText = result.response.text().trim();
+    const parsed = JSON.parse(responseText);
+    return {
+      transaction_detected: parsed.transaction_detected ?? false,
+      amount: parsed.amount ?? null,
+      currency: parsed.currency ?? "EGP",
+      direction: parsed.direction ?? null,
+      provider: parsed.provider ?? "Unknown",
+      category: parsed.category ?? "unknown",
+      fee: parsed.fee ?? null,
+      merchant: parsed.merchant ?? null,
+      balance_after: parsed.balance_after ?? null,
+      confidence: parsed.confidence ?? 0,
+      raw_extracted: parsed
+    };
+  } catch (error48) {
+    console.error("[SMS AI Parser] Error:", error48?.message ?? error48);
+    return null;
+  }
+}
+function mapSmsToExpenseCategory(result) {
+  const dir = result.direction;
+  const cat = result.category || "unknown";
+  const provider = result.provider || "Unknown";
+  const type = dir === "incoming" ? "income" : "expense";
+  if (dir === "incoming") {
+    if (cat === "income") return { category: "\u0645\u0631\u062A\u0628", subCategory: "\u0631\u0627\u062A\u0628 \u0623\u0633\u0627\u0633\u064A", type: "income" };
+    if (cat === "deposit") {
+      if (/InstaPay/i.test(provider)) return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A \u0648\u0627\u0631\u062F", type: "income" };
+      if (/Vodafone|Etisalat|Orange|WE/i.test(provider)) return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u0645\u062D\u0641\u0638\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629 \u0648\u0627\u0631\u062F", type: "income" };
+      return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u0625\u064A\u062F\u0627\u0639 \u0628\u0646\u0643\u064A", type: "income" };
+    }
+    return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u062F\u062E\u0644 \u0648\u0627\u0631\u062F", type: "income" };
+  }
+  switch (cat) {
+    case "transfer":
+      if (/InstaPay/i.test(provider)) return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A \u0635\u0627\u062F\u0631", type };
+      if (/Vodafone|Etisalat|Orange|WE/i.test(provider)) return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u0645\u062D\u0641\u0638\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629 \u0635\u0627\u062F\u0631", type };
+      return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u062A\u062D\u0648\u064A\u0644 \u0628\u0646\u0643\u064A", type };
+    case "payment":
+      if (/ApplePay/i.test(provider)) return { category: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A", subCategory: "Apple Pay", type };
+      if (result.merchant) return { category: "\u062A\u0633\u0648\u0642", subCategory: result.merchant.slice(0, 50), type };
+      return { category: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A", subCategory: "\u0645\u062F\u0641\u0648\u0639\u0627\u062A", type };
+    case "bills":
+      return { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0641\u0648\u0627\u062A\u064A\u0631 \u0648\u0645\u0631\u0627\u0641\u0642", type };
+    case "withdrawal":
+      return { category: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A", subCategory: "\u0633\u062D\u0628 \u0646\u0642\u062F\u064A / ATM", type };
+    default:
+      return { category: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A", subCategory: "\u0639\u0627\u0645", type };
+  }
+}
+
+// api/lib/sms-rule-parser.ts
+function extractAmount(text2) {
+  const normalized = text2.replace(/[٠١٢٣٤٥٦٧٨٩]/g, (d) => String("\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669".indexOf(d))).replace(/,/g, "");
+  const patterns = [
+    // "مبلغ 1500.00 جنيه" / "مبلغ وقدره 1500 ج.م"
+    /(?:مبلغ|قيمة|بمبلغ|بقيمة|لمبلغ|وقدره)\s*([\d]+(?:\.\d{1,2})?)\s*(?:جنيه|ج\.?م\.?|EGP|جنيهاً?)/i,
+    // "EGP 1,500.00" / "EGP1500"
+    /EGP\s*([\d]+(?:\.\d{1,2})?)/i,
+    // "Amount: 1500" / "Amount EGP 1500"
+    /Amount[\s:]+(?:EGP\s*)?([\d]+(?:\.\d{1,2})?)/i,
+    // "1500 EGP" / "1500 جنيه" / "1500 ج.م"
+    /([\d]+(?:\.\d{1,2})?)\s*(?:جنيه|ج\.?م\.?|EGP|L\.?E\.?)/i,
+    // "by EGP 1500" / "with EGP 1500" / "of EGP 1500"
+    /(?:by|with|of)\s+EGP\s*([\d]+(?:\.\d{1,2})?)/i,
+    // Contextual fallback: "تم ... 1500"
+    /(?:تم|وصل|استلم|حول|خصم|صرف|سحب|ايداع|إيداع)\s+(?:مبلغ\s+)?([\d]+(?:\.\d{1,2})?)/i
+  ];
+  for (const pattern of patterns) {
+    const match2 = normalized.match(pattern);
+    if (match2) {
+      const num = parseFloat(match2[1]);
+      if (!isNaN(num) && num > 0) return num;
+    }
+  }
+  return null;
+}
+function extractBalanceAfter(text2) {
+  const n = text2.replace(/[٠١٢٣٤٥٦٧٨٩]/g, (d) => String("\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669".indexOf(d))).replace(/,/g, "");
+  const patterns = [
+    /(?:رصيدك|الرصيد|رصيد حسابك|رصيد|الرصيد المتاح|رصيدك الحالي)[\s:]*(?:الكلي|الحالي|الجديد|المتاح)?\s*(?:هو)?\s*([\d]+(?:\.\d{1,2})?)\s*(?:جنيه|ج\.?م\.?|EGP)?/i,
+    /(?:بعد العملية|بعد السحب|بعد التحويل|بعد الخصم)\s*:?\s*([\d]+(?:\.\d{1,2})?)/i,
+    /Avail(?:able)?\s*(?:Bal(?:ance)?)?[\s.:]*(?:EGP)?\s*([\d]+(?:\.\d{1,2})?)/i,
+    /(?:New|Current|Updated)\s*(?:Bal(?:ance)?|bal)[\s.:]*(?:EGP)?\s*([\d]+(?:\.\d{1,2})?)/i,
+    /(?:Bal|A\/C Bal)[\s.:]*(?:EGP)?\s*([\d]+(?:\.\d{1,2})?)/i
+  ];
+  for (const p of patterns) {
+    const m = n.match(p);
+    if (m) {
+      const v = parseFloat(m[1]);
+      if (!isNaN(v) && v >= 0) return v;
+    }
+  }
+  return null;
+}
+function extractFee(text2) {
+  const n = text2.replace(/[٠١٢٣٤٥٦٧٨٩]/g, (d) => String("\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669".indexOf(d)));
+  const m = n.match(/(?:رسوم|عمولة|مصاريف|Fee|Fees|charges?)[\s:]+(?:EGP\s*)?([\d.]+)/i);
+  return m ? parseFloat(m[1]) : null;
+}
+function extractDate(text2) {
+  const patterns = [
+    /(\d{1,2})\/(\d{1,2})\/(\d{4})/,
+    // DD/MM/YYYY
+    /(\d{4})-(\d{2})-(\d{2})/,
+    // YYYY-MM-DD
+    /(\d{1,2})-(\d{1,2})-(\d{4})/,
+    // DD-MM-YYYY
+    /on\s+(\d{1,2})\/(\d{1,2})\/(\d{2,4})/i
+    // "on 15/05/26"
+  ];
+  for (const p of patterns) {
+    const m = text2.match(p);
+    if (m) {
+      try {
+        if (m[1].length === 4) return (/* @__PURE__ */ new Date(`${m[1]}-${m[2]}-${m[3]}`)).toISOString();
+        const y = m[3].length === 2 ? `20${m[3]}` : m[3];
+        return (/* @__PURE__ */ new Date(`${y}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`)).toISOString();
+      } catch {
+      }
+    }
+  }
+  return null;
+}
+function extractReference(text2) {
+  const patterns = [
+    /(?:Ref(?:erence)?|رقم (?:العملية|المرجع|الحوالة)|كود|TRN|مرجع|Trx|Trans(?:action)?\s*(?:ID|No|#))[\s:#]*([A-Z0-9]{4,25})/i,
+    /(?:رقم مرجعي)\s*:?\s*([A-Z0-9]{4,25})/i
+  ];
+  for (const p of patterns) {
+    const m = text2.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+function extractMerchant(text2) {
+  const patterns = [
+    /(?:at|عند|في|لدى|من)\s+([A-Za-z\u0600-\u06FF][A-Za-z\u0600-\u06FF\s&'.]{2,30})(?:\s+on|\s+بتاريخ|\.\s|$)/i,
+    /(?:POS|Merchant|merchant)[\s:]+([A-Za-z\s&'.]{3,30})/i
+  ];
+  for (const p of patterns) {
+    const m = text2.match(p);
+    if (m) return m[1].trim();
+  }
+  return null;
+}
+function detectProvider(text2) {
+  const t2 = text2.toLowerCase();
+  if (/vodafone\s*cash|vf\s*cash|فودافون\s*كاش|v\.?cash/.test(t2)) return "VodafoneCash";
+  if (/instapay|انستاباي|انستا\s*باي/.test(t2)) return "InstaPay";
+  if (/etisalat\s*cash|اتصالات\s*كاش|e-cash/.test(t2)) return "EtisalatCash";
+  if (/orange\s*(?:money|cash)|أورانج\s*(?:موني|كاش)/.test(t2)) return "OrangeMoney";
+  if (/we\s*pay|وي\s*باي/.test(t2)) return "WEPay";
+  if (/\bcib\b|commercial international/i.test(t2)) return "CIB";
+  if (/\bnbe\b|national bank of egypt|البنك\s*الأهلي\s*المصري|ahly/i.test(t2)) return "NBE";
+  if (/banque\s*misr|بنك\s*مصر|\bbm\b/i.test(t2)) return "BanqueMisr";
+  if (/\bqnb\b|qatar national/i.test(t2)) return "QNB";
+  if (/\baaib\b|عربي?\s*أفريقي|arab african/i.test(t2)) return "AAIB";
+  if (/alex\s*bank|بنك\s*(?:الإسكندرية|اسكندرية)/i.test(t2)) return "AlexBank";
+  if (/faisal|فيصل/i.test(t2)) return "FaisalBank";
+  if (/crédit\s*agricole|ca\s*egypt|كريدي/i.test(t2)) return "CreditAgricole";
+  if (/hsbc/i.test(t2)) return "HSBC";
+  if (/attijariwafa|التجاري وفا/i.test(t2)) return "Attijariwafa";
+  if (/mashreq|مشرق/i.test(t2)) return "MashreqBank";
+  if (/\bscb\b|standard\s*chartered/i.test(t2)) return "SCB";
+  if (/\baudi\b|عودة/i.test(t2)) return "BankAudi";
+  if (/egbank|البنك\s*المصري\s*الخليجي/i.test(t2)) return "EGBank";
+  if (/abc\b|arab\s*banking/i.test(t2)) return "ABC";
+  if (/saib|الاستثمار\s*العربي/i.test(t2)) return "SAIB";
+  if (/apple\s*pay|أبل\s*باي/i.test(t2)) return "ApplePay";
+  if (/valu|ڤاليو/i.test(t2)) return "ValU";
+  if (/souhoola|سهولة/i.test(t2)) return "Souhoola";
+  if (/contact|كونتكت/i.test(t2)) return "Contact";
+  if (/فوري|fawry/i.test(t2)) return "Fawry";
+  if (/meeza|ميزة/i.test(t2)) return "Meeza";
+  if (/أمان|aman/i.test(t2)) return "Aman";
+  return "Unknown";
+}
+function detectDirection(text2) {
+  const incoming = [
+    // Arabic: deposits / credits
+    [/تم\s+(?:إيداع|ايداع|اضافة|إضافة)\s+(?:مبلغ\s+)?[\d]/i, "deposit", "AR: deposit amount"],
+    [/تم\s+(?:استلام|استقبال)\s+(?:مبلغ|تحويل|حوالة)/i, "transfer", "AR: receive transfer"],
+    [/وصل(?:ك|لك|لحسابك)?\s+(?:مبلغ|تحويل|حوالة)/i, "transfer", "AR: received"],
+    [/(?:قبضت|استلمت)\s+(?:مبلغ\s+)?[\d]/i, "income", "AR: received amount"],
+    [/تم\s+قيد\s+(?:مبلغ|قيمة)/i, "deposit", "AR: credit entry"],
+    [/تم\s+تحويل.*(?:إلى|الى|ل)\s*حسابك/i, "transfer", "AR: transfer to your account"],
+    [/إيراد|مرتب|راتب|مكافأة/i, "income", "AR: salary/income keyword"],
+    [/تم\s+إضافة\s+(?:مبلغ|قيمة)?/i, "deposit", "AR: addition"],
+    [/حسابك.*(?:أُضيف|اضيف|تمت الإضافة)/i, "deposit", "AR: account credited"],
+    // English: credits / deposits / IB transfers IN
+    [/(?:has been|was)\s+credited/i, "deposit", "EN: has been credited"],
+    [/(?:credited|credit)\s+(?:with|by|of)\s+(?:EGP)?\s*[\d]/i, "deposit", "EN: credited with amount"],
+    [/(?:received|incoming)\s+(?:transfer|payment|EGP)/i, "transfer", "EN: received transfer"],
+    [/(?:deposit|deposited)\s+(?:of|amount)?\s*(?:EGP)?\s*[\d]/i, "deposit", "EN: deposit"],
+    [/(?:IBIN|IB)\s*(?:Transfer|Trx|transaction).*credited/i, "transfer", "EN: IB Transfer credited"],
+    [/(?:IBIN|IB)\s*transferred\s*received/i, "transfer", "EN: IBIN transferred received"],
+    [/(?:Salary|salary|Payroll|payroll)\s+(?:credited|received|deposited)/i, "income", "EN: salary credited"],
+    [/credited\s+to\s+(?:your)?\s*(?:account|a\/c)/i, "deposit", "EN: credited to account"],
+    [/incoming\s+(?:IB|transfer|fund)/i, "transfer", "EN: incoming IB"]
+  ];
+  const outgoing = [
+    // Arabic: debits / withdrawals / payments
+    [/تم\s+(?:خصم|سحب|صرف)\s+(?:مبلغ\s+)?[\d]/i, "withdrawal", "AR: debit amount"],
+    [/تم\s+تحويل\s+(?:مبلغ\s+)?[\d]/i, "transfer", "AR: sent transfer"],
+    [/تم\s+(?:الدفع|دفع)\s+(?:مبلغ\s+)?/i, "payment", "AR: payment"],
+    [/تم\s+(?:شراء|شرا|استخدام البطاقة)/i, "payment", "AR: purchase"],
+    [/تم\s+إجراء\s+عملية\s+(?:شراء|سحب|دفع)/i, "payment", "AR: transaction made"],
+    [/سحب\s+(?:نقدي|ATM|من ماكينة)/i, "withdrawal", "AR: ATM withdrawal"],
+    [/عملية\s+(?:شراء|سحب|خصم)\s+بقيمة/i, "payment", "AR: purchase by value"],
+    [/تم\s+خصم.*(?:من حسابك|من رصيدك)/i, "withdrawal", "AR: deducted from account"],
+    [/تم\s+سداد|سداد\s+(?:قيمة|فاتورة)/i, "bills", "AR: bill payment"],
+    [/فاتورة|فواتير|كهرباء|غاز|مياه|انترنت|تليفون|موبايل|شحن/i, "bills", "AR: utility bill"],
+    [/قسط\s+(?:شهري)?|أقساط/i, "payment", "AR: installment"],
+    [/تم\s+تحويل.*(?:من حسابك|من رصيدك)/i, "transfer", "AR: transfer from your account"],
+    // English: debits / purchases / IB transfers OUT
+    [/(?:has been|was)\s+(?:debited|deducted)/i, "withdrawal", "EN: has been debited"],
+    [/(?:debited|debit)\s+(?:with|by|of|for)\s+(?:EGP)?\s*[\d]/i, "withdrawal", "EN: debited amount"],
+    [/(?:purchase|POS)\s+(?:at|of|for|transaction)/i, "payment", "EN: POS purchase"],
+    [/(?:paid|payment)\s+(?:of|for|to)\s+(?:EGP)?\s*[\d]/i, "payment", "EN: payment"],
+    [/ATM\s+(?:withdrawal|cash|w\/d)/i, "withdrawal", "EN: ATM withdrawal"],
+    [/(?:withdrawn|charged|deducted)\s+(?:EGP)?\s*[\d]/i, "withdrawal", "EN: withdrawn amount"],
+    [/(?:IBIN|IB)\s*(?:Transfer|Trx|transaction).*(?:debited|from)/i, "transfer", "EN: IB Transfer debited"],
+    [/(?:IBIN|IB)\s*transferred\s*sent/i, "transfer", "EN: IBIN transferred sent"],
+    [/(?:transfer|sent)\s+(?:to|of)\s+(?:EGP)?\s*[\d]/i, "transfer", "EN: transfer to"],
+    [/outgoing\s+(?:IB|transfer|fund)/i, "transfer", "EN: outgoing IB"],
+    [/bill\s+payment|utility|subscription/i, "bills", "EN: bill/subscription"],
+    [/(?:e-?commerce|online)\s+(?:purchase|transaction|payment)/i, "payment", "EN: online purchase"],
+    [/contactless\s+(?:payment|purchase|transaction)/i, "payment", "EN: contactless payment"],
+    [/apple\s*pay/i, "payment", "EN: Apple Pay payment"]
+  ];
+  for (const [p, cat, rule] of incoming) {
+    if (p.test(text2)) return { direction: "incoming", category: cat, confidence: 0.92, matched_rule: rule };
+  }
+  for (const [p, cat, rule] of outgoing) {
+    if (p.test(text2)) return { direction: "outgoing", category: cat, confidence: 0.9, matched_rule: rule };
+  }
+  return { direction: null, category: "unknown", confidence: 0, matched_rule: "none" };
+}
+var NON_FINANCIAL_PATTERNS = [
+  /(?:OTP|كود التحقق|رمز التحقق|verification code|كود تفعيل|كود التأكيد)\s*[\d:]/i,
+  /كلمة\s+(?:السر|المرور)\s+(?:لمرة واحدة|المؤقتة)/i,
+  /(?:password|PIN|One.?Time)\s+(?:is|:)\s*[\d]/i,
+  /لا\s+تشارك\s+هذا\s+(?:الرمز|الكود)/i,
+  /Do not share this/i,
+  /Never share this/i,
+  /(?:عرض|offer|حملة|promotion)\s+(?:خاص|حصري|special|exclusive)/i,
+  /(?:خدمة|service)\s+(?:جديدة|new|متاح|available)/i,
+  /الاشتراك\s+في\s+خدمة/i,
+  /تسجيل\s+(?:الدخول|دخولك)\s+(?:تم|بنجاح)/i,
+  /(?:تم\s+)?تغيير\s+(?:كلمة|رقم)\s+(?:السر|المرور|الـ PIN)/i,
+  /(?:مرحباً?\s+بك|Welcome)\s+(?:في|to)\s+/i,
+  /تفعيل\s+(?:الخدمة|حسابك|البطاقة)/i,
+  /(?:حجب|إيقاف|block)\s+(?:البطاقة|الحساب|card|account)/i
+];
+function isNonFinancial(text2) {
+  return NON_FINANCIAL_PATTERNS.some((p) => p.test(text2));
+}
+function parseSmsByRules(message) {
+  const empty = {
+    transaction_detected: false,
+    amount: null,
+    currency: "EGP",
+    direction: null,
+    provider: "Unknown",
+    category: "unknown",
+    fee: null,
+    balance_after: null,
+    date: null,
+    reference: null,
+    merchant: null,
+    confidence: 0,
+    matched_rule: "none"
+  };
+  if (!message || message.trim().length < 10) return empty;
+  if (isNonFinancial(message)) return { ...empty, matched_rule: "non_financial_filter" };
+  const provider = detectProvider(message);
+  const { direction, category, confidence, matched_rule } = detectDirection(message);
+  const amount = extractAmount(message);
+  if (!amount) return { ...empty, provider, matched_rule: "no_amount_found" };
+  const fee = extractFee(message);
+  const balance_after = extractBalanceAfter(message);
+  const date6 = extractDate(message);
+  const reference = extractReference(message);
+  const merchant = extractMerchant(message);
+  let finalConfidence = confidence;
+  if (provider !== "Unknown") finalConfidence += 0.05;
+  if (balance_after !== null) finalConfidence += 0.03;
+  if (reference) finalConfidence += 0.02;
+  finalConfidence = Math.min(finalConfidence, 1);
+  const isTransaction = direction !== null || amount !== null && provider !== "Unknown";
+  return {
+    transaction_detected: isTransaction,
+    amount,
+    currency: "EGP",
+    direction,
+    provider,
+    category,
+    fee,
+    balance_after,
+    date: date6,
+    reference,
+    merchant,
+    confidence: isTransaction ? finalConfidence : 0,
+    matched_rule
+  };
+}
+
+// api/sms-router.ts
+import { randomBytes as randomBytes3 } from "crypto";
+init_env();
+var smsApp = new Hono2();
+var rateLimitMap2 = /* @__PURE__ */ new Map();
+var RATE_LIMIT = 30;
+function checkRateLimit(token) {
+  const now = Date.now();
+  const entry = rateLimitMap2.get(token);
+  if (!entry || entry.resetAt < now) {
+    rateLimitMap2.set(token, { count: 1, resetAt: now + 60 * 60 * 1e3 });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+async function getUserFromSession(authHeader) {
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  const token = authHeader.slice(7);
+  try {
+    const payload = await verify2(token, env.JWT_SECRET);
+    if (!payload?.userId || !payload?.userType) return null;
+    return { id: payload.userId, type: payload.userType };
+  } catch {
+    return null;
+  }
+}
+smsApp.post("/ingest", async (c) => {
+  const db3 = getDb();
+  const authHeader = c.req.header("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return c.json({ error: "Missing or invalid Authorization header" }, 401);
+  }
+  const token = authHeader.slice(7).trim();
+  const [tokenRecord] = await db3.select().from(webhookTokens).where(eq(webhookTokens.token, token)).limit(1);
+  if (!tokenRecord) {
+    return c.json({ error: "Invalid webhook token" }, 403);
+  }
+  if (!checkRateLimit(token)) {
+    return c.json({ error: "Rate limit exceeded. Max 30 SMS per hour." }, 429);
+  }
+  let body;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
+  const { message, sender, timestamp: timestamp3 } = body;
+  if (!message || typeof message !== "string" || message.trim().length < 5) {
+    return c.json({ error: "Missing or too short 'message' field" }, 400);
+  }
+  const userId = tokenRecord.userId;
+  const userType = tokenRecord.userType;
+  const userTable = userType === "oauth" ? users : localUsers;
+  const [userRecord] = await db3.select().from(userTable).where(eq(userTable.id, userId)).limit(1);
+  const userPlan = userRecord?.plan || "free";
+  let smsMonthlyLimit = userPlan === "free" ? 5 : 999999;
+  try {
+    const { systemSettings: systemSettings2 } = await Promise.resolve().then(() => (init_schema2(), schema_exports));
+    const [setting] = await db3.select().from(systemSettings2).where(eq(systemSettings2.key, `sms_limit_${userPlan}`)).limit(1);
+    if (setting?.value) smsMonthlyLimit = parseInt(setting.value) || smsMonthlyLimit;
+  } catch {
+  }
+  const now = /* @__PURE__ */ new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const { sql: sqlFn } = await Promise.resolve().then(() => (init_drizzle_orm(), drizzle_orm_exports));
+  const [countResult] = await db3.select({ count: sqlFn`COUNT(*)` }).from(rawSmsEvents).where(and(
+    eq(rawSmsEvents.userId, userId),
+    eq(rawSmsEvents.userType, userType),
+    eq(rawSmsEvents.status, "processed")
+  ));
+  const usedThisMonth = Number(countResult?.count || 0);
+  if (usedThisMonth >= smsMonthlyLimit) {
+    return c.json({
+      error: `\u0627\u0644\u062D\u062F \u0627\u0644\u0634\u0647\u0631\u064A \u0644\u0644\u0631\u0633\u0627\u0626\u0644 (${smsMonthlyLimit}) \u0627\u0646\u062A\u0647\u0649. \u0642\u0645 \u0628\u062A\u0631\u0642\u064A\u0629 \u062E\u0637\u062A\u0643 \u0644\u0632\u064A\u0627\u062F\u0629 \u0627\u0644\u062D\u062F.`,
+      limit: smsMonthlyLimit,
+      used: usedThisMonth,
+      plan: userPlan
+    }, 403);
+  }
+  const [insertedSms] = await db3.insert(rawSmsEvents).values({
+    userId,
+    userType,
+    message: message.trim(),
+    sender: sender || null,
+    smsTimestamp: timestamp3 || (/* @__PURE__ */ new Date()).toISOString(),
+    status: "pending"
+  }).$returningId();
+  const smsId = insertedSms?.id;
+  let parseResult = null;
+  let parsedBy = "rules";
+  const ruleResult = parseSmsByRules(message.trim());
+  console.log(`[SMS Ingest] Rule parser: detected=${ruleResult.transaction_detected}, amount=${ruleResult.amount}, conf=${ruleResult.confidence.toFixed(2)}, rule=${ruleResult.matched_rule}`);
+  if (ruleResult.transaction_detected && ruleResult.confidence >= 0.75 && ruleResult.amount) {
+    parseResult = {
+      transaction_detected: true,
+      amount: ruleResult.amount,
+      currency: ruleResult.currency,
+      direction: ruleResult.direction,
+      provider: ruleResult.provider,
+      category: ruleResult.category,
+      fee: ruleResult.fee,
+      balance_after: ruleResult.balance_after,
+      confidence: ruleResult.confidence
+    };
+    parsedBy = "rules";
+  } else {
+    console.log(`[SMS Ingest] Rule confidence low (${ruleResult.confidence.toFixed(2)}), falling back to AI...`);
+    try {
+      const aiResult = await parseSmsFinancialData(message.trim());
+      if (aiResult) {
+        parseResult = aiResult;
+        parsedBy = "ai";
+      }
+    } catch (aiErr) {
+      console.error("[SMS Ingest] AI parsing error:", aiErr);
+    }
+  }
+  if (!parseResult) {
+    if (smsId) {
+      await db3.update(rawSmsEvents).set({ status: "ignored", metadata: { reason: "AI returned null" } }).where(eq(rawSmsEvents.id, smsId));
+    }
+    return c.json({ success: true, transaction_detected: false, reason: "Could not parse SMS" }, 200);
+  }
+  if (!parseResult.transaction_detected || parseResult.confidence < 0.6) {
+    if (smsId) {
+      await db3.update(rawSmsEvents).set({
+        status: "ignored",
+        metadata: {
+          reason: !parseResult.transaction_detected ? "not_financial" : "low_confidence",
+          confidence: parseResult.confidence
+        }
+      }).where(eq(rawSmsEvents.id, smsId));
+    }
+    return c.json({
+      success: true,
+      transaction_detected: false,
+      reason: !parseResult.transaction_detected ? "not_financial" : "low_confidence",
+      confidence: parseResult.confidence
+    }, 200);
+  }
+  const { category, subCategory, type } = mapSmsToExpenseCategory(parseResult);
+  const descriptionParts = [
+    parseResult.provider !== "Unknown" ? parseResult.provider : null,
+    parseResult.merchant || null,
+    sender ? `\u0645\u0646: ${sender}` : null
+  ].filter(Boolean);
+  const description = descriptionParts.join(" \u2014 ") || "SMS \u062A\u0644\u0642\u0627\u0626\u064A";
+  const transactionDate = timestamp3 ? new Date(timestamp3) : /* @__PURE__ */ new Date();
+  await db3.insert(expenses).values({
+    userId,
+    userType,
+    type,
+    amount: parseResult.amount.toString(),
+    category,
+    subCategory,
+    description,
+    rawText: message.trim(),
+    source: "sms",
+    date: transactionDate,
+    parsedMetadata: {
+      sms_id: smsId,
+      provider: parseResult.provider,
+      direction: parseResult.direction,
+      sms_category: parseResult.category,
+      confidence: parseResult.confidence,
+      fee: parseResult.fee,
+      balance_after: parseResult.balance_after,
+      parsed_by: parsedBy
+    }
+  });
+  if (smsId) {
+    await db3.update(rawSmsEvents).set({
+      status: "processed",
+      metadata: {
+        transaction_saved: true,
+        amount: parseResult.amount,
+        category,
+        type,
+        confidence: parseResult.confidence
+      }
+    }).where(eq(rawSmsEvents.id, smsId));
+  }
+  console.log(`\u2705 [SMS Ingest] User ${userId} | ${type} | ${parseResult.amount} EGP | ${category} | ${parseResult.provider}`);
+  return c.json({
+    success: true,
+    transaction_detected: true,
+    saved: true,
+    amount: parseResult.amount,
+    currency: parseResult.currency,
+    direction: parseResult.direction,
+    provider: parseResult.provider,
+    category,
+    subCategory,
+    type,
+    confidence: parseResult.confidence
+  }, 200);
+});
+smsApp.post("/token/generate", async (c) => {
+  const db3 = getDb();
+  const user = await getUserFromSession(c.req.header("Authorization"));
+  if (!user) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  await db3.delete(webhookTokens).where(
+    and(
+      eq(webhookTokens.userId, user.id),
+      eq(webhookTokens.userType, user.type)
+    )
+  );
+  const newToken = `sms_${randomBytes3(32).toString("hex")}`;
+  await db3.insert(webhookTokens).values({
+    userId: user.id,
+    userType: user.type,
+    token: newToken,
+    name: "iOS Shortcut Token"
+  });
+  return c.json({ success: true, token: newToken }, 200);
+});
+smsApp.get("/token", async (c) => {
+  const db3 = getDb();
+  const user = await getUserFromSession(c.req.header("Authorization"));
+  if (!user) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const [record2] = await db3.select().from(webhookTokens).where(
+    and(
+      eq(webhookTokens.userId, user.id),
+      eq(webhookTokens.userType, user.type)
+    )
+  ).limit(1);
+  if (!record2) {
+    return c.json({ token: null, hasToken: false }, 200);
+  }
+  return c.json({ token: record2.token, hasToken: true, createdAt: record2.createdAt }, 200);
+});
+smsApp.get("/logs", async (c) => {
+  const db3 = getDb();
+  const user = await getUserFromSession(c.req.header("Authorization"));
+  if (!user) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const logs = await db3.select().from(rawSmsEvents).where(
+    and(
+      eq(rawSmsEvents.userId, user.id),
+      eq(rawSmsEvents.userType, user.type)
+    )
+  ).orderBy(desc(rawSmsEvents.createdAt)).limit(50);
+  return c.json({ logs }, 200);
+});
+
+// api/boot.ts
 var app = new Hono2();
 app.use("*", logger());
 var allowedOrigins = Array.from(
@@ -89613,7 +94573,17 @@ app.onError((err, c) => {
   console.error("Hono Error:", err);
   return c.json({ error: err.message || "Internal Server Error" }, 500);
 });
-app.notFound((c) => {
+app.notFound(async (c) => {
+  if (env.NODE_ENV === "production" && !c.req.path.startsWith("/api/")) {
+    try {
+      const fs = await import("fs");
+      const path = await import("path");
+      const html = fs.readFileSync(path.resolve("./dist/public/index.html"), "utf-8");
+      return c.html(html);
+    } catch (e) {
+      console.error("Failed to serve index.html fallback", e);
+    }
+  }
   console.warn("404 Not Found:", c.req.url);
   return c.json({ error: "Not Found" }, 404);
 });
@@ -89633,6 +94603,7 @@ app.use("/api/trpc/*", trpcServer({
   router: appRouter,
   createContext: async ({ req }) => createContext(req)
 }));
+app.route("/api/sms", smsApp);
 app.post("/api/webhooks/paymob", async (c) => {
   const raw2 = await c.req.text();
   let parsed = {};
@@ -89645,6 +94616,14 @@ app.post("/api/webhooks/paymob", async (c) => {
   return c.json({ ok: true });
 });
 app.get("/health", (c) => c.json({ status: "ok", timestamp: (/* @__PURE__ */ new Date()).toISOString() }));
+if (env.NODE_ENV === "production") {
+  const { serve: serve2 } = await Promise.resolve().then(() => (init_dist(), dist_exports));
+  const { serveStatic: serveStatic2 } = await Promise.resolve().then(() => (init_serve_static(), serve_static_exports));
+  app.use("/*", serveStatic2({ root: "./dist/public" }));
+  const port = parseInt(env.PORT) || 3e3;
+  console.log(`\u{1F680} SmartSpend Monorepo Server running on http://localhost:${port}`);
+  serve2({ fetch: app.fetch, port, hostname: "0.0.0.0" });
+}
 var boot_default = {
   port: parseInt(env.PORT),
   fetch: app.fetch

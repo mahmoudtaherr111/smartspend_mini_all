@@ -16,6 +16,9 @@ export const users = mysqlTable("users", {
   updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
   lastSignInAt: datetime("last_sign_in_at"),
   aiTokensUsed: int("ai_tokens_used").default(0),
+  currentStreak: int("current_streak").default(0),
+  highestStreak: int("highest_streak").default(0),
+  lastStreakAt: datetime("last_streak_at"),
 }, (t) => [
   index("users_role_idx").on(t.role),
   index("users_plan_idx").on(t.plan),
@@ -38,6 +41,9 @@ export const localUsers = mysqlTable("local_users", {
   updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
   lastSignInAt: datetime("last_sign_in_at"),
   aiTokensUsed: int("ai_tokens_used").default(0),
+  currentStreak: int("current_streak").default(0),
+  highestStreak: int("highest_streak").default(0),
+  lastStreakAt: datetime("last_streak_at"),
 }, (t) => [
   index("local_users_role_idx").on(t.role),
   index("local_users_plan_idx").on(t.plan),
@@ -64,6 +70,7 @@ export const expenses = mysqlTable("expenses", {
 }, (t) => [
   index("expenses_user_idx").on(t.userId, t.userType),
   index("expenses_date_idx").on(t.date),
+  index("expenses_user_date_idx").on(t.userId, t.userType, t.date),
   index("expenses_type_idx").on(t.type),
   index("expenses_category_idx").on(t.category),
 ]);
@@ -383,4 +390,33 @@ export const voiceUsage = mysqlTable("voice_usage", {
   createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
 }, (t) => [
   index("voice_user_month_idx").on(t.userId, t.userType, t.month),
+]);
+
+// ─── Webhook Tokens (For External Automations like Shortcuts) ───
+export const webhookTokens = mysqlTable("webhook_tokens", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").notNull(),
+  userType: varchar("user_type", { length: 50 }).notNull(),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  name: varchar("name", { length: 100 }).default("Default Token"),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [
+  index("webhook_tokens_user_idx").on(t.userId, t.userType),
+  index("webhook_tokens_token_idx").on(t.token),
+]);
+
+// ─── Raw SMS Events (For Audit & Parsing Logs) ───
+export const rawSmsEvents = mysqlTable("raw_sms_events", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").notNull(),
+  userType: varchar("user_type", { length: 50 }).notNull(),
+  message: text("message").notNull(),
+  sender: varchar("sender", { length: 100 }),
+  smsTimestamp: varchar("sms_timestamp", { length: 100 }),
+  status: varchar("status", { length: 50 }).default("pending"), // pending | processed | ignored | error
+  metadata: json("metadata"),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [
+  index("raw_sms_user_idx").on(t.userId, t.userType),
+  index("raw_sms_status_idx").on(t.status),
 ]);

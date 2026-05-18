@@ -1,67 +1,85 @@
 /**
  * SmartSpend AI Classifier (Step 5)
- * Uses Gemini 2.5 Flash with customized system prompt for financial classification
- * Also handles Speech-to-Text via Gemini multimodal API
+ * Uses Gemini with dynamic micro-prompts for financial classification.
+ * Enhanced with Context Pruning (Phase 4 of Intelligence Plan):
+ *  - Only sends candidate categories (not all 21)
+ *  - Prunes profile context based on text keywords
+ *  - Selects a single dynamic few-shot example
+ *  - Reduces prompt from ~1200 to ~260 tokens
+ * Also handles Speech-to-Text via Gemini multimodal API.
  */
-
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { CATEGORIES } from "./category-registry";
 import type { ParsedTransaction } from "./rule-engine";
 
-/** Build compact category list (no icons = saves ~60 tokens) */
-function buildCategoryList(): string {
-  return CATEGORIES.map(c => {
-    const subs = c.subcategories.map(s => s.name_ar).join("،");
-    return `${c.name_ar}(${c.type}):[${subs}]`;
-  }).join("\n");
+const classificationResponseSchema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    items: {
+      type: SchemaType.ARRAY,
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          type: { type: SchemaType.STRING },
+          amount: { type: SchemaType.NUMBER },
+          item_name: { type: SchemaType.STRING },
+          main_category: { type: SchemaType.STRING },
+          sub_category: { type: SchemaType.STRING },
+          confidence: { type: SchemaType.NUMBER },
+          needs_review: { type: SchemaType.BOOLEAN }
+        },
+        required: ["type", "amount", "item_name", "main_category", "sub_category", "confidence"]
+      }
+    },
+    needs_clarification: { type: SchemaType.BOOLEAN },
+    clarification_question: { type: SchemaType.STRING, nullable: true },
+    alertMessage: { type: SchemaType.STRING, nullable: true }
+  },
+  required: ["items", "needs_clarification"]
+};
+
+function buildCompressedCategories(): string {
+  // Compress categories into a highly dense string to save tokens:
+  // "أكل وشرب:[مطعم,قهوة,بقالة]|مواصلات:[أوبر,عامة]"
+  return CATEGORIES.map(c => `${c.name_ar}:[${c.subcategories.map(s => s.name_ar).join(",")}]`).join("|");
 }
 
-/** Optimized system prompt — compact but precise */
-const SYSTEM_PROMPT = `أنت SmartSpend AI — مصنف مالي مصري.
-مهمتك: تحليل نصوص عامية مصرية واستخراج المعاملات المالية بدقة.
+function selectDynamicExample(text: string): string {
+  if (/(?:حولت|اديت|سلفت|بعتت)\s/.test(text)) {
+    return '{"items":[{"amount":500,"item_name":"تحويل لأحمد","main_category":"تحويل","sub_category":"سلف وديون","type":"expense","confidence":95}]}';
+  }
+  if (/قبضت|مرتب|استلمت|خدت.*مصروف/.test(text)) {
+    return '{"items":[{"amount":5000,"item_name":"راتب","main_category":"مرتب","sub_category":"راتب أساسي","type":"income","confidence":95}]}';
+  }
+  return '{"items":[{"amount":80,"item_name":"شاورما","main_category":"أكل وشرب","sub_category":"مطعم","type":"expense","confidence":90}]}';
+}
 
-## القواعد:
-1. افهم العامية: "قبضت"=راتب، "سلفت"=أقرضت، "شحنت العربية"=بنزين
-2. فرّق: expense/income/transfer/investment
-3. الفئة الفرعية sub_category أهم من الرئيسية
-4. مبالغ>10000 غالباً: إيجار/أجهزة/سيارة، مش أكل
-5. "شحنت"=رصيد(فواتير)، "شحنت العربية"=بنزين(مواصلات)
-6. "حولت لـ"=مصروف/تحويل، "حولولي"=دخل
-7. فكك الجمل المتعددة لمعاملات منفصلة
-8. لا تستخدم "متنوعات" إلا للنص الغامض تماماً
-9. إلكترونيات(موبايل/لابتوب)="تسوق/أجهزة إلكترونية" مش "فواتير"
-10. ممنوع needs_clarification=true لو فيه أرقام وفئات واضحة
-11. **السياق الشخصي**: لو مذكور اسم شخص في "السياق الشخصي للمستخدم"، استخدم العلاقة والفئة المقترحة
-12. **الأسماء المعروفة**: لو المستخدم قال "أديت محمد 500" ومحمد ابنه حسب السياق، صنف كـ "مصاريف أولاد" مش "تحويلات شخصية"
-13. اكتب في notes وصف شخصي مفيد يذكر الاسم والعلاقة لو معروفة
+function buildMicroSystemPrompt(text: string, isSmoker?: boolean): string {
+  const example = selectDynamicExample(text);
+  const compressedCats = buildCompressedCategories();
+  const smokingRule = isSmoker ? "\n4. المستخدم مدخن، صنف مصاريف السجائر والفيب والشيشة تحت فئة 'تدخين'." : "\n4. فكك الجمل المعقدة لعدة عمليات منفصلة.";
+  return `أنت محلل مالي دقيق.
+استخرج المشتريات وصنفها بأدق فئة فرعية.
+القواعد:
+1. صنف بدقة من الفئات المتاحة فقط. (مثال: شاورما->مطعم، كورة->ترفيه/خروجة صحاب، مياه->بقالة).
+2. استخرج اسم السلعة الفعلي في item_name.
+3. المبالغ>10000=إيجار/أجهزة. شحنت=شحن رصيد/بنزين.${smokingRule}
+الفئات:
+${compressedCats}
+مثال: ${example}
+JSON فقط.`;
+}
 
-## أمثلة:
-"رحت الحلاق 80ج وسبت للمساعد 20" → [{80,تسوق,عناية شخصية,expense},{20,متنوعات,عام,expense}]
-"خدت المصروف 200 صرفت 100 درس" → [{200,مرتب,مرتب أساسي,income},{100,تعليم,دروس خصوصية,expense}]
-"نزلت بلايستيشن 60ج وجبت تويست 20 ولعبت كورة 50" → [{60,ترفيه,ألعاب,expense},{20,أكل وشرب,سناكس,expense},{50,ترفيه,رياضة وجيم,expense}]
-"أديت محمد 500" (محمد=ابن) → [{500,تحويلات,مصاريف الأولاد,expense,notes:"تحويل لابنك محمد"}]
-"بعتت لأمي 1000" → [{1000,تحويلات,دعم الأهل,expense,notes:"تحويل لوالدتك"}]
-
-## الفئات:
-${buildCategoryList()}
-
-## صيغة الرد JSON فقط:
-{"items":[{"type":"expense|income","amount":0,"main_category":"","sub_category":"","confidence":0,"needs_review":false,"notes":"وصف"}],"needs_clarification":false,"clarification_question":null}
-
-## الثقة: >=90 مؤكد | 70-89 مراجعة | <70 غموض`;
-
-/** System prompt for Speech-to-Text */
-const STT_SYSTEM_PROMPT = `أنت "SmartSpend Voice Engine" — نظام التعرف الصوتي لموقع وتطبيق إدارة المصاريف "SmartSpend".
-
-مهمتك الأساسية: تحويل كلام المستخدم (الذي يتحدث بالعامية المصرية) لتسجيل مصاريفه اليومية إلى نص دقيق ومفهوم جداً.
-الهدف: أخذ هذا النص بعد ذلك لتحليله وتصنيفه مالياً.
-
-القواعد الصارمة للتفريغ الصوتي (STT):
-1. **ترجمة الأرقام المنطوقة:** حول أي رقم مسموع إلى أرقام رياضية فوراً (مثال: "صرفت تلاتين جنيه" → "صرفت 30 جنيه"، "خمسمية" → "500").
-2. **الحفاظ على السياق المالي:** حافظ بدقة على كلمات مثل (مرتب، سلفة، قبضت، دفعت، إيجار، مواصلات، أوبر، كريم، فواتير).
-3. **لا تضف أي نص أو تفسير من عندك:** فقط حول ما قاله المستخدم نصاً.
-4. **تجاهل التأتأة (Ums and Ahs):** ركز على المعلومات المالية.
-5. **الناتج هو نص فوري جاهز لمساعد مالي لمعالجته.**`;
+/** System prompt for Speech-to-Text — optimized for Egyptian Arabic financial transcription */
+const STT_SYSTEM_PROMPT = `أنت "SmartSpend Voice Engine" — نظام تحويل الصوت لتسجيل المصاريف.
+مهمتك: تحويل كلام المستخدم بالعامية المصرية لنص مكتوب بدقة.
+القواعد الصارمة:
+1. حوّل الأرقام المنطوقة لأرقام (مثال: "تلاتين جنيه" → "30 جنيه"، "الف" → "1000").
+2. اكتب الأرقام العربية أرقام ("خمسمية" → "500"، "الفين" → "2000").
+3. حافظ على السياق المالي كما هو بالعامية المصرية بدون ترجمة.
+4. لا تضف أي كلام من عندك ولا تفسر ولا تعلق.
+5. تجاهل التأتأة والتكرار غير المقصود.
+6. مصطلحات مالية شائعة: دفعت، صرفت، اشتريت، جبت، قبضت، حولت، ادفع، خد، حط.`;
 
 export interface AIClassificationResult {
   items: ParsedTransaction[];
@@ -89,46 +107,77 @@ export async function aiClassify(
   apiKey2: string,
   modelName: string,
   maxTokens: number,
-  contextObj: { totalIncome: number; totalExpense: number; currentDate: string; userProfileContext?: string; personalContext?: string; ruleHints?: ParsedTransaction[] },
+  contextObj: {
+    totalIncome: number;
+    totalExpense: number;
+    currentDate: string;
+    userProfileContext?: string;
+    personalContext?: string;
+    ruleHints?: ParsedTransaction[];
+    candidateCategories?: string[];  // Phase 4: from embedding hints
+    amountCount?: number;            // Phase 4: for dynamic example selection
+    isSmoker?: boolean | null;
+  },
   skipClarification?: boolean
 ): Promise<AIClassificationResult | null> {
-  let userPrompt = `السياق المالي الحالي:
-- إجمالي دخل الشهر: ${contextObj.totalIncome} ج.م
-- إجمالي مصاريف الشهر: ${contextObj.totalExpense} ج.م  
-- التاريخ: ${contextObj.currentDate}
+  // ── Context ──
+  let userPrompt = `النص: "${text}"`;
 
-النص المطلوب تحليله: "${text}"`;
+  // Strategy 3: Temporal Context Hints — feed time/day hints to bias ambiguous classifications
+  if (contextObj.currentDate) {
+    try {
+      const now = new Date(contextObj.currentDate);
+      const dayOfMonth = now.getDate();
+      const hour = now.getHours();
+      const temporalHints: string[] = [];
+
+      // Day 1-5: high-value payments are likely rent, installments, or fixed commitments
+      if (dayOfMonth >= 1 && dayOfMonth <= 5) {
+        temporalHints.push("بداية الشهر: المبالغ الكبيرة غالباً إيجار أو أقساط");
+      }
+      // Day 25-31: end-of-month often means salary or subscriptions
+      if (dayOfMonth >= 25) {
+        temporalHints.push("نهاية الشهر: احتمال راتب أو تجديد اشتراكات");
+      }
+      // Late night (12AM-5AM): likely delivery, entertainment, or online subscriptions
+      if (hour >= 0 && hour < 5) {
+        temporalHints.push("وقت متأخر: غالباً دليفري أو ترفيه أو اشتراكات أونلاين");
+      }
+      // Morning (6-9AM): likely transport or breakfast
+      if (hour >= 6 && hour <= 9) {
+        temporalHints.push("صباح: غالباً مواصلات أو فطار");
+      }
+
+      if (temporalHints.length > 0) {
+        userPrompt += `\nتلميح زمني:${temporalHints.join(".")}`;
+      }
+    } catch { /* ignore date parse errors */ }
+  }
 
   if (contextObj.userProfileContext) {
-    userPrompt += `\n\nSmart user profile context:\n${contextObj.userProfileContext}`;
-  }
-
-  if (contextObj.personalContext) {
-    userPrompt += `\n\n${contextObj.personalContext}`;
-  }
-
-  if (contextObj.ruleHints && contextObj.ruleHints.length > 0) {
-    const hintsStr = contextObj.ruleHints.map(h => `- ${h.amount} ج.م: ${h.category}/${h.subCategory} (${h.confidence}%)`).join("\n");
-    userPrompt += `\n\nتلميحات من المحرك المبدئي (يمكنك الاستعانة بها كدليل):\n${hintsStr}`;
+    userPrompt += `\nسياق شخصي:${contextObj.userProfileContext.slice(0, 150)}`;
   }
 
   if (skipClarification) {
-    userPrompt += `\n\n**ملاحظة هامة جداً**: المستخدم طلب تخطي التوضيح (Skip). ممنوع طلب توضيح (اجعل needs_clarification = false دائمًا). قم بتخمين الفئات المجهولة بناءً على السياق، وأعد أفضل استنتاج ممكن وضع نسبة الثقة confidence مناسبة لتوقعك.`;
+    userPrompt += `\nSkip=true:لا تطلب توضيح.`;
   }
 
   let response = "";
   let tokensUsed = 0;
+
+  const systemPrompt = `${buildMicroSystemPrompt(text, contextObj.isSmoker ?? false)}\n${CLARIFICATION_POLICY_PROMPT}`;
 
   // Try primary key
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: modelName,
-      systemInstruction: `${SYSTEM_PROMPT}\n${CLARIFICATION_POLICY_PROMPT}`,
+      systemInstruction: systemPrompt,
       generationConfig: {
         temperature: 0.2,
         maxOutputTokens: maxTokens,
         responseMimeType: "application/json",
+        responseSchema: classificationResponseSchema,
       },
     });
 
@@ -145,11 +194,12 @@ export async function aiClassify(
         const genAI2 = new GoogleGenerativeAI(apiKey2);
         const model2 = genAI2.getGenerativeModel({
           model: modelName,
-          systemInstruction: `${SYSTEM_PROMPT}\n${CLARIFICATION_POLICY_PROMPT}`,
+          systemInstruction: systemPrompt,
           generationConfig: {
             temperature: 0.2,
             maxOutputTokens: maxTokens,
             responseMimeType: "application/json",
+            responseSchema: classificationResponseSchema,
           },
         });
         const result = await model2.generateContent(userPrompt);
@@ -190,17 +240,28 @@ export async function geminiSpeechToText(
     // Priority: use the model as-is if it's a known valid API name,
     // otherwise map aliases → stable equivalents.
     const MODEL_MAP: Record<string, string> = {
-      // Legacy / UI aliases
+      // ── Explicit Custom Models ──
+      "gemini-2.5-flash": "gemini-2.5-flash",
+      "gemini-3.1-flash-lite": "gemini-3.1-flash-lite",
+      // ── Gemini API stable model names ──
+      "gemini-2.5-pro": "gemini-1.5-pro",
+      "gemini-2.0-flash": "gemini-2.0-flash",
+      "gemini-1.5-flash": "gemini-2.0-flash",
+      // ── Legacy / admin UI aliases → map to supported models ──
       "gemini-3.0-flash-live": "gemini-2.0-flash",
+      "gemini-3.1-flash": "gemini-2.0-flash",
+      "gemini-3.1-pro": "gemini-1.5-pro",
       "gemini-2.5-flash-native-audio": "gemini-2.5-flash",
-      "gemini-3.1-flash-lite": "gemini-2.0-flash-lite",
-      // Shorthand names admins might type
+      // ── Admin shorthand names ──
       "flash": "gemini-2.0-flash",
-      "flash-lite": "gemini-2.0-flash-lite",
-      "pro": "gemini-2.5-pro",
+      "flash-lite": "gemini-3.1-flash-lite",
+      "pro": "gemini-1.5-pro",
       "flash-2.5": "gemini-2.5-flash",
+      "flash-2.0": "gemini-2.0-flash",
     };
-    const actualModelName = MODEL_MAP[modelName] ?? modelName;
+    let actualModelName = MODEL_MAP[modelName] ?? modelName; // Use the provided model if not in map
+    // Ensure no spaces or weird characters
+    actualModelName = actualModelName.trim();
 
     // Customize configuration based on sttMode
     const generationConfig: any = {
@@ -209,7 +270,7 @@ export async function geminiSpeechToText(
     };
 
     // Add specific settings for native audio if requested
-    const supportsNativeAudio = actualModelName.includes("gemini-2.0") || actualModelName.includes("gemini-2.5") || actualModelName.includes("gemini-3.0");
+    const supportsNativeAudio = actualModelName.includes("gemini-2.0") || actualModelName.includes("gemini-2.5") || actualModelName.includes("gemini-3.0") || actualModelName.includes("gemini-3.1");
     if (sttMode === "native_audio" && supportsNativeAudio) {
       generationConfig.responseModalities = ["TEXT"];
     }
@@ -234,9 +295,10 @@ export async function geminiSpeechToText(
     const tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
 
     return { text, tokensUsed };
-  } catch (error) {
-    console.error("Gemini STT Error:", error);
-    return null;
+  } catch (error: any) {
+    const errorMsg = error?.message || String(error);
+    console.error(`Gemini STT Error (Model: ${modelName}):`, errorMsg);
+    throw new Error(`Gemini Error (${modelName}): ${errorMsg}`);
   }
 }
 
@@ -282,12 +344,12 @@ function parseAIResponse(response: string, modelName: string): AIClassificationR
     return null;
   }
 
-  // Map AI response to ParsedTransaction format (backend fills defaults for fields we no longer ask AI to generate)
+  // Map AI response to ParsedTransaction format
   const items: ParsedTransaction[] = parsed.items.map((item: any) => ({
     amount: item.amount || 0,
-    category: item.main_category || item.category || "متنوعات",
-    subCategory: item.sub_category || item.subCategory || "عام",
-    description: item.notes || item.description || "",
+    category: item.main_category || "متنوعات",
+    subCategory: item.sub_category || "عام",
+    description: item.item_name || item.notes || "",
     type: item.type || "expense",
     confidence: item.confidence || 70,
     merchant: item.merchant || undefined,

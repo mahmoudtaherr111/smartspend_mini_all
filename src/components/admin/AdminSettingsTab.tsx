@@ -285,6 +285,30 @@ export function AdminSettingsTab() {
               </CardContent>
             </Card>
 
+            {/* SMS Processing Limits */}
+            <Card className="border-slate-200 shadow-sm overflow-hidden border-t-4 border-t-blue-500">
+              <div className="bg-blue-50/30 dark:bg-blue-900/20 border-b px-6 py-4">
+                <CardTitle className="text-lg flex items-center gap-2">📱 رسائل الـ SMS الآلية</CardTitle>
+                <CardDescription className="mt-1">عدد عمليات القراءة الآلية للرسائل البنكية شهرياً لكل باقة.</CardDescription>
+              </div>
+              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[
+                  { key: "sms_limit_free", label: "الباقة المجانية", desc: "ينصح بـ 5 رسائل للتجربة" },
+                  { key: "sms_limit_pro", label: "باقة البرو", desc: "ينصح بعدد كبير أو 999999" },
+                  { key: "sms_limit_ultra", label: "باقة الألترا", desc: "غير محدود (999999)" },
+                ].map(({ key, label, desc }) => (
+                  <div key={key} className="space-y-3 p-4 border dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                    <Label className="font-bold text-slate-800 dark:text-slate-200">{label}</Label>
+                    <div className="relative">
+                      <Input type="number" dir="ltr" min="0" value={formData[key] || ""} onChange={(e) => updateField(key, e.target.value)} className="font-mono text-center pr-10 dark:bg-slate-950 text-lg" />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">رسالة</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">{desc}</p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Daily Requests Limits */}
               <Card className="border-slate-200 shadow-sm overflow-hidden">

@@ -6,6 +6,7 @@ import { User } from "lucide-react";
 import { SmartProfileSettings } from "@/components/profile/SmartProfileSettings";
 import { SmartProfileView } from "@/components/profile/SmartProfileView";
 import { Button } from "@/components/ui/button";
+import { SmsWebhookSettings } from "@/components/settings/SmsWebhookSettings";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -47,6 +48,9 @@ export default function Settings() {
             <SmartProfileSettings />
           </div>
         )}
+
+        {/* SMS Webhook Section */}
+        <SmsWebhookSettings />
       </div>
     </div>
   );

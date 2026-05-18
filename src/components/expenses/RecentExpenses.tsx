@@ -127,14 +127,19 @@ export function RecentExpenses({ onRefresh, limit = 10 }: RecentExpensesProps) {
 
   if (!data || data.items.length === 0) {
     return (
-      <Card>
-        <CardContent className="p-8 text-center text-muted-foreground space-y-4">
-          <div className="mx-auto w-20 h-20 rounded-full bg-muted flex items-center justify-center">
-            <Wallet className="w-10 h-10 text-muted-foreground/70" />
+      <Card className="border-dashed border-2 bg-slate-50/50 dark:bg-slate-900/50">
+        <CardContent className="p-10 text-center text-muted-foreground space-y-6">
+          <div className="relative mx-auto w-32 h-32 rounded-full bg-emerald-100 dark:bg-emerald-900/20 flex items-center justify-center animate-in zoom-in duration-500">
+            <Wallet className="w-16 h-16 text-emerald-500 animate-bounce" style={{ animationDuration: "3s" }} />
+            <div className="absolute top-0 right-0 w-8 h-8 rounded-full bg-amber-200 dark:bg-amber-700/50 flex items-center justify-center -translate-y-2 translate-x-2 animate-pulse">
+              <span className="text-amber-700 dark:text-amber-200 text-lg">💡</span>
+            </div>
           </div>
-          <div>
-            <p className="font-medium text-foreground">ليس لديك مصاريف مسجّلة في هذه الصفحة</p>
-            <p className="text-sm">سجّل أول مصروف أو دخل من تبويب «تسجيل العمليات».</p>
+          <div className="space-y-2">
+            <h3 className="text-xl font-bold text-foreground">يلا نبدأ الرحلة! 🚀</h3>
+            <p className="text-sm max-w-sm mx-auto">
+              مفيش مصاريف متسجلة هنا لسه. دوس على أيقونة المايك وسجل أول مصروف بصوتك في ثواني!
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -271,9 +276,9 @@ function ExpenseItem({
           <Dialog>
             <DialogTrigger
               aria-label="تفاصيل العملية"
-              className="inline-flex h-8 items-center justify-center rounded-md px-3 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground border shadow-sm bg-white dark:bg-slate-800"
             >
-              <MessageSquare className="w-4 h-4" />
+              <MessageSquare className="w-5 h-5 text-slate-600 dark:text-slate-300" />
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -322,8 +327,8 @@ function ExpenseItem({
               </div>
             </DialogContent>
           </Dialog>
-          <Button variant="ghost" size="sm" onClick={() => onRequestDelete(expense.id)} disabled={isDeleting}>
-            <Trash2 className="w-4 h-4 text-red-500" />
+          <Button variant="ghost" className="h-11 w-11 p-0 hover:bg-red-50 dark:hover:bg-red-950/30" onClick={() => onRequestDelete(expense.id)} disabled={isDeleting}>
+            <Trash2 className="w-5 h-5 text-red-500" />
           </Button>
         </div>
       </div>

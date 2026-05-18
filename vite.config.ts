@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => {
       react(),
     ],
     server: {
+      allowedHosts: true,
       port: isFrontendOnly ? 5173 : 3000,
       // When frontend is standalone, proxy /api/* to the backend server
       ...(isFrontendOnly && env.VITE_API_URL

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CalendarDays, Repeat, TrendingDown, TrendingUp } from "lucide-react";
@@ -6,7 +7,7 @@ function money(value: unknown) {
   return Number(value || 0).toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
-export function BehaviorInsights({ stats }: { stats: any }) {
+export const BehaviorInsights = memo(function BehaviorInsights({ stats }: { stats: any }) {
   const behavioral = stats?.behavioralInsights || {};
   const comparative = stats?.comparativeAnalysis || {};
   const trend = comparative.trend;
@@ -69,4 +70,4 @@ export function BehaviorInsights({ stats }: { stats: any }) {
       </Card>
     </div>
   );
-}
+});
