@@ -43,6 +43,65 @@ function checkRateLimit(token: string): boolean {
   return true;
 }
 
+// ─── Magic Code Store (for zero-config iOS Shortcut setup) ───
+const magicCodes = new Map<string, {
+  webhookToken: string;
+  userId: number;
+  userType: string;
+  expiresAt: number;
+}>();
+
+// Auto-cleanup expired codes every 2 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [code, entry] of magicCodes) {
+    if (entry.expiresAt < now) magicCodes.delete(code);
+  }
+}, 2 * 60 * 1000);
+
+/** Generate a short, human-friendly 6-char code (no confusing chars like 0/O, 1/I/L) */
+function generateShortCode(): string {
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  let code = "";
+  const bytes = randomBytes(6);
+  for (let i = 0; i < 6; i++) {
+    code += chars[bytes[i] % chars.length];
+  }
+  return code;
+}
+
+/** Store a magic code tied to a user's webhook token. Returns the 6-char code. */
+export function storeMagicCode(webhookToken: string, userId: number, userType: string): string {
+  // Revoke any existing codes for this user first
+  for (const [code, entry] of magicCodes) {
+    if (entry.userId === userId && entry.userType === userType) {
+      magicCodes.delete(code);
+    }
+  }
+  const code = generateShortCode();
+  magicCodes.set(code, {
+    webhookToken,
+    userId,
+    userType,
+    expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes
+  });
+  return code;
+}
+
+/** Exchange a magic code for the real webhook token. One-time use. */
+function exchangeMagicCode(code: string): { token: string } | null {
+  const normalized = code.toUpperCase().trim();
+  const entry = magicCodes.get(normalized);
+  if (!entry) return null;
+  if (entry.expiresAt < Date.now()) {
+    magicCodes.delete(normalized);
+    return null;
+  }
+  // One-time use: delete after successful exchange
+  magicCodes.delete(normalized);
+  return { token: entry.webhookToken };
+}
+
 // ─── Helper: resolve user from session JWT (for protected endpoints) ───
 async function getUserFromSession(authHeader: string | undefined): Promise<{
   id: number | string;
@@ -61,17 +120,23 @@ async function getUserFromSession(authHeader: string | undefined): Promise<{
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/sms/ingest
-// Called by iOS Shortcut. Authenticates via Bearer token in Authorization header.
+// Called by iOS Shortcut. Authenticates via Bearer token in Authorization header
+// or via ?token=... query parameter.
 // ─────────────────────────────────────────────────────────────────────────────
 smsApp.post("/ingest", async (c) => {
   const db = getDb();
-  const authHeader = c.req.header("Authorization");
+  let token = "";
 
-  if (!authHeader?.startsWith("Bearer ")) {
-    return c.json({ error: "Missing or invalid Authorization header" }, 401);
+  const authHeader = c.req.header("Authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    token = authHeader.slice(7).trim();
+  } else {
+    token = c.req.query("token")?.trim() || "";
   }
 
-  const token = authHeader.slice(7).trim();
+  if (!token) {
+    return c.json({ error: "Missing webhook token (Header or Query)" }, 401);
+  }
 
   // Validate token against DB
   const [tokenRecord] = await db
@@ -162,10 +227,10 @@ smsApp.post("/ingest", async (c) => {
   let parsedBy = "rules";
 
   const ruleResult = parseSmsByRules(message.trim());
-  console.log(`[SMS Ingest] Rule parser: detected=${ruleResult.transaction_detected}, amount=${ruleResult.amount}, conf=${ruleResult.confidence.toFixed(2)}, rule=${ruleResult.matched_rule}`);
+  console.log(`[SMS Ingest] Rule parser: detected=${ruleResult.transaction_detected}, amount=${ruleResult.amount}, dir=${ruleResult.direction}, conf=${ruleResult.confidence.toFixed(2)}, rule=${ruleResult.matched_rule}`);
 
-  if (ruleResult.transaction_detected && ruleResult.confidence >= 0.75 && ruleResult.amount) {
-    // High confidence rule match — no AI needed (saves cost)
+  if (ruleResult.transaction_detected && ruleResult.confidence >= 0.85 && ruleResult.amount && ruleResult.direction) {
+    // High confidence rule match (Amount & Direction detected by specific rule) — no AI needed
     parseResult = {
       transaction_detected: true,
       amount: ruleResult.amount,
@@ -179,16 +244,24 @@ smsApp.post("/ingest", async (c) => {
     };
     parsedBy = "rules";
   } else {
-    // Fallback to AI for edge cases
-    console.log(`[SMS Ingest] Rule confidence low (${ruleResult.confidence.toFixed(2)}), falling back to AI...`);
+    // Fallback to AI for edge cases or if direction is missing
+    console.log(`[SMS Ingest] Rule confidence low or missing data (${ruleResult.confidence.toFixed(2)}, rule=${ruleResult.matched_rule}), falling back to AI...`);
     try {
       const aiResult = await parseSmsFinancialData(message.trim());
-      if (aiResult) {
+      if (aiResult && aiResult.transaction_detected) {
         parseResult = aiResult;
         parsedBy = "ai";
+      } else if (ruleResult.transaction_detected) {
+         // If AI says no transaction but rules said yes (rare), trust AI but log it
+         parseResult = aiResult;
       }
     } catch (aiErr) {
       console.error("[SMS Ingest] AI parsing error:", aiErr);
+      // Absolute fallback if AI fails but rules had *something*
+      if (ruleResult.transaction_detected && ruleResult.amount) {
+         parseResult = ruleResult;
+         parsedBy = "rules_fallback";
+      }
     }
   }
 
@@ -357,6 +430,70 @@ smsApp.get("/token", async (c) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// POST /api/sms/exchange
+// Public endpoint — iOS Shortcut sends its magic code here to get the real
+// webhook token + ingest URL. No session auth required.
+// ─────────────────────────────────────────────────────────────────────────────
+smsApp.post("/exchange", async (c) => {
+  let body: { code?: string };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const code = body?.code?.toString().trim();
+  if (!code) {
+    return c.json({ error: "Missing 'code' field" }, 400);
+  }
+
+  const result = exchangeMagicCode(code);
+  if (!result) {
+    return c.json({ error: "Invalid or expired code. Generate a new one from the website." }, 401);
+  }
+
+  // Build the ingest URL from the request origin (works with any tunnel)
+  const origin = new URL(c.req.url).origin;
+  return c.json({
+    success: true,
+    token: result.token,
+    ingestUrl: `${origin}/api/sms/ingest`,
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/sms/shortcut-download?code=XXXXXX
+// Public endpoint — generates a personalized .shortcut file with the user's
+// token embedded. Uses magic code for auth so no session header is needed.
+// ─────────────────────────────────────────────────────────────────────────────
+smsApp.get("/shortcut-download", async (c) => {
+  const code = c.req.query("code")?.trim();
+  if (!code) {
+    return c.json({ error: "Missing 'code' parameter" }, 400);
+  }
+
+  const result = exchangeMagicCode(code);
+  if (!result) {
+    return c.json({ error: "Invalid or expired code. Go back to SmartSpend and click Connect iPhone again." }, 401);
+  }
+
+  // Build ingest URL from the request origin (works with any tunnel)
+  const origin = new URL(c.req.url).origin;
+  const ingestUrl = `${origin}/api/sms/ingest`;
+
+  const { generateShortcutFile } = await import("./lib/shortcut-generator");
+  const fileBuffer = generateShortcutFile(result.token, ingestUrl);
+
+  return new Response(fileBuffer, {
+    headers: {
+      "Content-Type": "application/x-apple-shortcut",
+      "Content-Disposition": 'attachment; filename="SmartSpend SMS.shortcut"',
+      "Cache-Control": "no-store",
+    },
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // GET /api/sms/logs
 // Returns last 50 SMS processing logs for the authenticated user.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -381,4 +518,88 @@ smsApp.get("/logs", async (c) => {
     .limit(50);
 
   return c.json({ logs }, 200);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/sms/android-connect
+// Called from the web when user taps "Connect Android".
+// Generates/fetches token, then returns a deep-link URL the browser opens.
+// The deep link opens SmartSpend Sync APK with token pre-filled (no copy/paste).
+// ─────────────────────────────────────────────────────────────────────────────
+smsApp.get("/android-connect", async (c) => {
+  const db = getDb();
+  const user = await getUserFromSession(c.req.header("Authorization"));
+
+  if (!user) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  // Fetch existing token or create one
+  let [record] = await db
+    .select()
+    .from(webhookTokens)
+    .where(and(eq(webhookTokens.userId, user.id as number), eq(webhookTokens.userType, user.type)))
+    .limit(1);
+
+  if (!record) {
+    const newToken = `sms_${randomBytes(32).toString("hex")}`;
+    await db.insert(webhookTokens).values({
+      userId: user.id as number,
+      userType: user.type,
+      token: newToken,
+      name: "Android Sync Token",
+    });
+    [record] = await db
+      .select()
+      .from(webhookTokens)
+      .where(and(eq(webhookTokens.userId, user.id as number), eq(webhookTokens.userType, user.type)))
+      .limit(1);
+  }
+
+  const origin = new URL(c.req.url).origin;
+  const ingestUrl = `${origin}/api/sms/ingest`;
+
+  // Deep link format: smartspend://connect?token=TOKEN&url=INGEST_URL
+  const deepLink = `smartspend://connect?token=${encodeURIComponent(record.token)}&url=${encodeURIComponent(ingestUrl)}`;
+
+  return c.json({
+    success: true,
+    deepLink,
+    token: record.token,
+    ingestUrl,
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/sms/android-status
+// Called by the Android APK on startup to confirm it's alive.
+// Authenticated via Bearer token (same webhook token).
+// ─────────────────────────────────────────────────────────────────────────────
+smsApp.post("/android-status", async (c) => {
+  const db = getDb();
+  let token = "";
+  const authHeader = c.req.header("Authorization");
+  if (authHeader?.startsWith("Bearer ")) token = authHeader.slice(7).trim();
+  else token = c.req.query("token")?.trim() || "";
+
+  if (!token) return c.json({ error: "Missing token" }, 401);
+
+  const [tokenRecord] = await db
+    .select()
+    .from(webhookTokens)
+    .where(eq(webhookTokens.token, token))
+    .limit(1);
+
+  if (!tokenRecord) return c.json({ error: "Invalid token" }, 403);
+
+  let body: { appVersion?: string; androidVersion?: string; deviceModel?: string } = {};
+  try { body = await c.req.json(); } catch { /* optional body */ }
+
+  console.log(`[Android Status] User ${tokenRecord.userId} | App v${body.appVersion || "?"} | Android ${body.androidVersion || "?"} | ${body.deviceModel || "?"}`);
+
+  return c.json({
+    success: true,
+    status: "connected",
+    message: "SmartSpend Sync is active ✅",
+  });
 });

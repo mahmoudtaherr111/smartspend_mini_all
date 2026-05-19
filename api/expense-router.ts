@@ -324,6 +324,10 @@ export const expenseRouter = router({
 
       const totalExpense = items.filter(i => i.type === "expense").reduce((sum, item) => sum + Number(item.amount), 0);
       const totalIncome = items.filter(i => i.type === "income").reduce((sum, item) => sum + Number(item.amount), 0);
+      
+      const automatedExpense = items.filter(i => i.type === "expense" && i.source === "sms").reduce((sum, item) => sum + Number(item.amount), 0);
+      const automatedIncome = items.filter(i => i.type === "income" && i.source === "sms").reduce((sum, item) => sum + Number(item.amount), 0);
+
       const previousTotalExpense = previousItems.filter(i => i.type === "expense").reduce((sum, item) => sum + Number(item.amount), 0);
       const previousTotalIncome = previousItems.filter(i => i.type === "income").reduce((sum, item) => sum + Number(item.amount), 0);
 
@@ -466,6 +470,8 @@ export const expenseRouter = router({
         },
         totalExpense,
         totalIncome,
+        automatedExpense,
+        automatedIncome,
         netFlow: totalIncome - totalExpense,
         count: items.length,
         dailyAverage,

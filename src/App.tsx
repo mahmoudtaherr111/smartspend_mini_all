@@ -29,7 +29,7 @@ const Pro = lazy(() => import("@/pages/Pro"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
-const UltraLounge = lazy(() => import("@/pages/UltraLounge"));
+const BankSyncPage = lazy(() => import("@/pages/BankSyncPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -222,12 +222,10 @@ export default function App() {
                     <Route path="/pro" element={<ProtectedRoute><Pro /></ProtectedRoute>} />
                     <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                     <Route
-                      path="/ultra"
+                      path="/bank-sync"
                       element={
                         <ProtectedRoute>
-                          <UltraFeatureRoute>
-                            <UltraLounge />
-                          </UltraFeatureRoute>
+                          <BankSyncPage />
                         </ProtectedRoute>
                       }
                     />

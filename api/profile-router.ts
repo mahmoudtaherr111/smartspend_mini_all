@@ -309,6 +309,26 @@ export const profileRouter = router({
     return { success: true, token: newToken };
   }),
 
+  // ─── Magic Code for zero-config iOS Shortcut setup ───
+  generateMagicCode: authedProcedure.mutation(async ({ ctx }) => {
+    const [record] = await db
+      .select()
+      .from(webhookTokens)
+      .where(and(
+        eq(webhookTokens.userId, ctx.user.id as number),
+        eq(webhookTokens.userType, ctx.user.type)
+      ))
+      .limit(1);
+
+    if (!record) {
+      throw new Error("لازم تعمل Token الأول قبل ما تستخدم Magic Link.");
+    }
+
+    const { storeMagicCode } = await import("./sms-router");
+    const code = storeMagicCode(record.token, ctx.user.id as number, ctx.user.type);
+    return { code, expiresInSeconds: 300 };
+  }),
+
   // ─── Get recent SMS logs ───
   getSmsLogs: authedProcedure.query(async ({ ctx }) => {
     return await db

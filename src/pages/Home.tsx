@@ -349,6 +349,37 @@ const StatsView = memo(function StatsView({
 
         {/* Right: Sidebar */}
         <aside className="space-y-4">
+          {/* Automated Bank Tracking */}
+          {(stats?.automatedExpense > 0 || stats?.automatedIncome > 0) && (
+            <Card className="bg-slate-900 text-slate-50 border-slate-800">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2 font-medium">
+                  <RefreshCw className="w-4 h-4 text-emerald-400" />
+                  التتبع الآلي للبنوك
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-xs text-slate-400">
+                  المعاملات التي تم تسجيلها تلقائياً عبر SmartSpend Sync من إشعارات ورسائل البنك.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-slate-500">مصروفات آلية</p>
+                    <p className="text-lg font-bold text-rose-400">
+                      {money(stats.automatedExpense)} <span className="text-xs font-normal">ج</span>
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-slate-500">مقبوضات آلية</p>
+                    <p className="text-lg font-bold text-emerald-400">
+                      {money(stats.automatedIncome)} <span className="text-xs font-normal">ج</span>
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Top Categories */}
           {topCategories.length > 0 && (
             <Card>

@@ -3,12 +3,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Smartphone, Copy, RefreshCw, Eye, EyeOff, CheckCircle, Info, Download, Zap, Link as LinkIcon, Save, MessageSquareText, Check, AlertCircle } from "lucide-react";
+import {
+  Smartphone, Copy, RefreshCw, Eye, EyeOff, CheckCircle,
+  Zap, Save, MessageSquareText, Check, AlertCircle,
+  ChevronDown, ChevronUp, KeyRound, ArrowRight
+} from "lucide-react";
 import { trpc } from "@/providers/trpc";
 import { format } from "date-fns";
 import { arEG } from "date-fns/locale";
 
+// ⚠️ يتم تغيير هذا الرابط برابط الـ iCloud الحقيقي الخاص بالاختصار
+const SHORTCUT_ICLOUD_LINK = "https://www.icloud.com/shortcuts/c3fbc31dbd6e41cc94fa25b0a9480675"; 
+
 export function SmsWebhookSettings() {
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [tokenVisible, setTokenVisible] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -27,7 +36,7 @@ export function SmsWebhookSettings() {
 
   const logsQuery = trpc.profile.getSmsLogs.useQuery(undefined, {
     enabled: !!token,
-    refetchInterval: 10000, // Poll every 10 seconds
+    refetchInterval: 10000,
   });
 
   const updateProfileMutation = trpc.profile.updateSmartProfile.useMutation({
@@ -35,9 +44,12 @@ export function SmsWebhookSettings() {
       toast.success("تم حفظ الكلمة المميزة بنجاح!");
       profileQuery.refetch();
     },
-    onError: () => {
-      toast.error("حدث خطأ أثناء الحفظ.");
-    }
+    onError: () => toast.error("حدث خطأ أثناء الحفظ."),
+  });
+
+  const generateTokenMutation = trpc.profile.generateWebhookToken.useMutation({
+    onSuccess: () => tokenQuery.refetch(),
+    onError: () => toast.error("فيه مشكلة في إنشاء الـ Token، جرب تاني."),
   });
 
   // Sync keyword from profile
@@ -53,32 +65,61 @@ export function SmsWebhookSettings() {
     await updateProfileMutation.mutateAsync({
       preferences: {
         ...(profileQuery.data?.preferences || {}),
-        smsTriggerKeyword: keyword.trim()
-      }
+        smsTriggerKeyword: keyword.trim(),
+      },
     });
     setIsSavingKeyword(false);
   };
 
-  const generateMutation = trpc.profile.generateWebhookToken.useMutation({
-    onSuccess: () => {
-      tokenQuery.refetch();
-      toast.success("تم إنشاء Token جديد بنجاح!");
-    },
-    onError: () => toast.error("فيه مشكلة في إنشاء الـ Token، جرب تاني."),
-  });
+  // ─── iCloud Config: Copy Data & Open iCloud Link ───
+  const handleConnectIphone = async () => {
+    setIsConnecting(true);
+    try {
+      // 1. Auto-generate token if user doesn't have one
+      let currentToken = token;
+      if (!currentToken) {
+        const res = await generateTokenMutation.mutateAsync();
+        currentToken = res.token;
+        await tokenQuery.refetch();
+      }
 
-  const handleGenerate = async () => {
-    setIsGenerating(true);
-    await generateMutation.mutateAsync();
-    setIsGenerating(false);
+      // 2. Prepare the config string: just the full URL!
+      // This solves both the token problem AND the dynamic Cloudflare URL problem!
+      const configString = `${window.location.origin}/api/sms/ingest?token=${currentToken}`;
+
+      // 3. Copy to clipboard
+      await navigator.clipboard.writeText(configString);
+
+      toast.success("✅ تم نسخ الرابط بنجاح!", {
+        description: "الرابط متسجل فيه الـ Token بتاعك. الصقه في الـ Shortcut.",
+        duration: 8000,
+      });
+
+      // 4. Open iCloud link
+      setTimeout(() => {
+        window.location.href = SHORTCUT_ICLOUD_LINK;
+      }, 800);
+
+    } catch (err: any) {
+      toast.error("يرجى إعطاء صلاحية النسخ (Clipboard) للمتصفح");
+    } finally {
+      setIsConnecting(false);
+    }
   };
 
-  const handleCopy = () => {
+  const handleCopyToken = () => {
     if (!token) return;
     navigator.clipboard.writeText(token);
     setCopied(true);
     toast.success("تم نسخ الـ Token!");
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleGenerateToken = async () => {
+    setIsGenerating(true);
+    await generateTokenMutation.mutateAsync();
+    toast.success("تم إنشاء Token جديد بنجاح!");
+    setIsGenerating(false);
   };
 
   const maskedToken = token
@@ -93,103 +134,51 @@ export function SmsWebhookSettings() {
           ربط الآيفون التلقائي (iOS Shortcut)
         </CardTitle>
         <CardDescription>
-          بضغطة واحدة، اربط حسابك عشان أي رسالة من البنك تتسجل كمصروف أو دخل تلقائياً.
+          اربط حسابك بخطوتين عشان أي رسالة من البنك تتسجل كمصروف أو دخل تلقائياً.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
 
-        {/* 1. Token Section */}
+        {/* ── Step 1: Install Shortcut ── */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <div className="flex items-center justify-center w-6 h-6 rounded-full bg-sky-100 dark:bg-sky-900 text-sky-600 dark:text-sky-300 font-bold text-xs">1</div>
-            <h3 className="text-sm font-semibold">انسخ الـ Token الخاص بيك</h3>
+            <h3 className="text-sm font-semibold">تثبيت الـ Shortcut</h3>
           </div>
 
-          {!hasLoaded ? (
-            <div className="h-10 bg-muted animate-pulse rounded-lg ml-8" />
-          ) : (
-            <div className="ml-8 space-y-3">
-              {token ? (
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 font-mono text-xs bg-muted rounded-lg px-3 py-2.5 truncate select-all border shadow-sm">
-                    {tokenVisible ? token : maskedToken}
-                  </div>
-                  <Button size="icon" variant="outline" onClick={() => setTokenVisible(!tokenVisible)} className="shrink-0">
-                    {tokenVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant={copied ? "default" : "outline"}
-                    onClick={handleCopy}
-                    className={`shrink-0 ${copied ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}`}
-                  >
-                    {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900">
-                  <Info className="w-5 h-5 text-amber-600 shrink-0" />
-                  <p className="text-xs text-amber-800 dark:text-amber-200 flex-1">
-                    لازم تعمل Token الأول عشان تقدر تربط الآيفون بتاعك.
-                  </p>
-                  <Button
-                    onClick={handleGenerate}
-                    disabled={isGenerating}
-                    size="sm"
-                    className="shrink-0 bg-amber-600 hover:bg-amber-700 text-white"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ml-2 ${isGenerating ? "animate-spin" : ""}`} />
-                    إنشاء Token
-                  </Button>
-                </div>
-              )}
+          <div className="ml-8 p-4 rounded-xl border border-sky-200 dark:border-sky-800 bg-white dark:bg-slate-900 shadow-sm space-y-3">
+            {!hasLoaded ? (
+              <div className="h-10 bg-muted animate-pulse rounded-lg" />
+            ) : (
+              <>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  اضغط الزرار اللي تحت، هننسخ الإعدادات تلقائياً ونفتحلك الـ Shortcut. 
+                  لما يفتح، اضغط <strong className="text-foreground">Set Up Shortcut</strong> واعمل <strong className="text-foreground">Paste</strong> للإعدادات المنسوخة.
+                </p>
 
-              {token && (
                 <Button
-                  onClick={handleGenerate}
-                  disabled={isGenerating}
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs text-muted-foreground h-8"
+                  onClick={handleConnectIphone}
+                  disabled={isConnecting}
+                  className="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white shadow-md shadow-sky-600/20"
                 >
-                  <RefreshCw className={`w-3 h-3 ml-1.5 ${isGenerating ? "animate-spin" : ""}`} />
-                  إنشاء Token جديد (سيلغي القديم)
+                  {isConnecting ? (
+                    <RefreshCw className="w-4 h-4 ml-2 animate-spin" />
+                  ) : (
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  )}
+                  نسخ الإعدادات وتثبيت الاختصار
                 </Button>
-              )}
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </div>
 
-        {/* 2. Download Shortcut Section */}
-        {token && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-sky-100 dark:bg-sky-900 text-sky-600 dark:text-sky-300 font-bold text-xs">2</div>
-              <h3 className="text-sm font-semibold">ثبّت الـ Shortcut الجاهز</h3>
-            </div>
-            <div className="ml-8 p-4 rounded-xl border border-sky-200 dark:border-sky-800 bg-white dark:bg-slate-900 shadow-sm space-y-3 text-sm">
-              <p className="text-muted-foreground text-xs leading-relaxed">
-                اضغط على الزرار اللي تحت عشان تفتح رابط الـ Shortcut الجاهز.
-                أول ما يفتح في تطبيق Shortcuts، اضغط <strong className="text-foreground">Set Up Shortcut</strong>،
-                وبعدين <strong>اعمل Paste للـ Token</strong> اللي نسخته في الخطوة الأولى.
-              </p>
-              <Button
-                onClick={() => window.open("https://www.icloud.com/shortcuts/c3fbc31dbd6e41cc94fa25b0a9480675", "_blank")}
-                className="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white shadow-md shadow-sky-600/20"
-              >
-                <Download className="w-4 h-4 ml-2" />
-                Connect iPhone
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* 3. Automation Setup Section */}
+        {/* ── Step 2: Automation Setup ── */}
         {token && (
           <div className="space-y-3 pb-2">
             <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-sky-100 dark:bg-sky-900 text-sky-600 dark:text-sky-300 font-bold text-xs">3</div>
-              <h3 className="text-sm font-semibold">شغّل الأتمتة التلقائية (Automation)</h3>
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-sky-100 dark:bg-sky-900 text-sky-600 dark:text-sky-300 font-bold text-xs">2</div>
+              <h3 className="text-sm font-semibold">تشغيل الأتمتة التلقائية (Automation)</h3>
             </div>
 
             <div className="ml-8 space-y-4">
@@ -221,9 +210,9 @@ export function SmsWebhookSettings() {
                 <ol className="space-y-3 text-muted-foreground list-decimal list-inside leading-relaxed text-xs sm:text-sm">
                   <li>افتح تطبيق <strong>Shortcuts</strong> واختار تاب <strong>Automation</strong> من تحت.</li>
                   <li>اضغط <strong>+</strong> واختار <strong>Message</strong>.</li>
-                  <li>في خانة <strong>Message Contains</strong>، اكتب الكلمة اللي حفظتها: <span className="inline-flex px-1.5 py-0.5 rounded-md bg-sky-100 dark:bg-sky-900 text-sky-800 dark:text-sky-200 font-bold ml-1">{keyword || "EGP"}</span></li>
+                  <li>في خانة <strong>Message Contains</strong>، اكتب: <span className="inline-flex px-1.5 py-0.5 rounded-md bg-sky-100 dark:bg-sky-900 text-sky-800 dark:text-sky-200 font-bold ml-1">{keyword || "EGP"}</span></li>
                   <li>اختار <strong>Run Immediately</strong> (عشان يشتغل بدون ما يسألك).</li>
-                  <li>اضغط <strong>Next</strong>، واختار الـ Shortcut الجاهز اللي نزلته (مثلاً: SmartSpend SMS).</li>
+                  <li>اضغط <strong>Next</strong>، واختار الـ Shortcut الجاهز.</li>
                 </ol>
                 <div className="mt-4 flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 p-2 rounded-lg border border-emerald-100 dark:border-emerald-900">
                   <Zap className="w-4 h-4" />
@@ -234,7 +223,52 @@ export function SmsWebhookSettings() {
           </div>
         )}
 
-        {/* 4. SMS Logs Section */}
+        {/* ── Advanced: Token Management (collapsible) ── */}
+        {token && (
+          <div className="border-t border-dashed border-slate-200 dark:border-slate-800 pt-4">
+            <button
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
+            >
+              <KeyRound className="w-3.5 h-3.5" />
+              <span>إعدادات متقدمة (Webhook Token)</span>
+              {showAdvanced ? <ChevronUp className="w-3.5 h-3.5 mr-auto" /> : <ChevronDown className="w-3.5 h-3.5 mr-auto" />}
+            </button>
+
+            {showAdvanced && (
+              <div className="mt-3 ml-5 space-y-3 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 font-mono text-xs bg-muted rounded-lg px-3 py-2.5 truncate select-all border shadow-sm">
+                    {tokenVisible ? token : maskedToken}
+                  </div>
+                  <Button size="icon" variant="outline" onClick={() => setTokenVisible(!tokenVisible)} className="shrink-0">
+                    {tokenVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant={copied ? "default" : "outline"}
+                    onClick={handleCopyToken}
+                    className={`shrink-0 ${copied ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}`}
+                  >
+                    {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+                <Button
+                  onClick={handleGenerateToken}
+                  disabled={isGenerating}
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-muted-foreground h-8"
+                >
+                  <RefreshCw className={`w-3 h-3 ml-1.5 ${isGenerating ? "animate-spin" : ""}`} />
+                  إنشاء Token جديد (سيلغي القديم)
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── SMS Logs Section ── */}
         {token && (
           <div className="space-y-3 pt-4 border-t border-dashed border-sky-200 dark:border-sky-800">
             <div className="flex items-center justify-between">
