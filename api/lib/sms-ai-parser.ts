@@ -37,38 +37,43 @@ const SMS_RESPONSE_SCHEMA = {
   required: ["transaction_detected", "currency", "provider", "category", "confidence"],
 };
 
-const SMS_SYSTEM_PROMPT = `أنت نظام استخراج بيانات مالية من رسائل SMS بالعربي والإنجليزي.
-مهمتك الوحيدة: استخراج البيانات المالية بدقة وإرجاعها كـ JSON منظم.
+const SMS_SYSTEM_PROMPT = `أنت نظام خبير في استخراج البيانات المالية من رسائل SMS و الإشعارات البنكية والمحافظ الإلكترونية في مصر. 
+تأتي الرسائل إما باللغة العربية الفصحى أو باللغة الإنجليزية.
+مهمتك الوحيدة: استخراج البيانات بدقة متناهية وإرجاعها كـ JSON فقط بدون أي تعليق.
 
-قواعد صارمة:
-1. لا ترد على المستخدم. لا تعلق. لا تضف أي كلام.
-2. فقط أرجع JSON.
-3. إذا كانت الرسالة غير مالية (إعلان، OTP، كود تفعيل) → transaction_detected: false.
-4. إذا كانت مالية → استخرج كل التفاصيل.
+قواعد صارمة جداً:
+1. لا ترد على المستخدم، فقط أرجع JSON.
+2. إذا كانت الرسالة ليست معاملة مالية فعلية (مثل OTP، كود تفعيل، إعلان، استعلام عن رصيد بدون حركة) → transaction_detected: false
+3. إذا كانت حركة مالية (خصم، إيداع، تحويل، دفع) → استخرج التفاصيل.
+
+كيف تحدد الـ direction (الدخل والمصروف):
+- [incoming / دخل]: "تم إيداع", "تم إضافة", "تم قيد", "استلمت", "وصلك", "تم تحويل...لك", "credited to", "received"
+- [outgoing / مصروف]: "تم خصم", "تم سحب", "تم الدفع", "قمت بتحويل", "تم تحويل...لـ", "سحبت", "دفعت", "عملية شراء", "debited from", "purchase", "paid", "withdrawal"
+
+أمثلة حاسمة:
+- "تم إيداع مبلغ 500 جنيه في حسابك..." -> incoming
+- "تم خصم مبلغ 200 جنيه من حسابك..." -> outgoing
+- "استلمت 1000 جنيه من..." -> incoming
+- "قمت بتحويل 1000 جنيه لـ..." -> outgoing
+- "CIB: Your account has been credited with EGP 1000" -> incoming
+- "CIB: Your account has been debited by EGP 1000" -> outgoing
+
+تحديد الـ category:
+- transfer (تحويل بين أشخاص)
+- payment (دفع/مشتريات/POS)
+- income (راتب/مكافأة)
+- bills (فواتير كهرباء، غاز، انترنت، شحن)
+- withdrawal (سحب نقدي من ATM)
+- deposit (إيداع نقدي أو بنكي)
+- unknown (غير معروف)
 
 تحديد الـ provider:
 - فودافون كاش / Vodafone Cash → "VodafoneCash"
 - انستاباي / InstaPay → "InstaPay"
 - أبل باي / Apple Pay → "ApplePay"
-- أي بنك (CIB, NBE, Banque Misr, QNB, AAIB, Alex Bank) → "Bank"
-- غير محدد → "Unknown"
-
-تحديد الـ direction:
-- استلمت / تم إضافة / رصيد وارد / received → "incoming"
-- صرفت / تم خصم / دفعت / sent / paid → "outgoing"
-
-تحديد الـ category:
-- تحويل بين أشخاص → "transfer"
-- دفع فواتير / مدفوعات → "payment"
-- استلام راتب / مكافأة / دخل → "income"
-- فواتير (كهرباء, ماي, غاز, انترنت) → "bills"
-- سحب أو صرف نقدي → "withdrawal"
-- غير محدد → "unknown"
-
-أمثلة على رسائل مالية:
-- "تم إضافة 500 ج إلى حسابك فودافون كاش" → incoming, 500, VodafoneCash, transfer
-- "تم خصم 200 جنيه رسوم فاتورة الكهرباء" → outgoing, 200, Bank, bills
-- "Your account has been credited with EGP 10,000" → incoming, 10000, Bank, income`;
+- اسم البنك (CIB, NBE, QNB, Banque Misr, Alex Bank) → "Bank"
+- أخرى (اتصالات كاش, اورانج كاش, وي باي) → "Wallet"
+- غير محدد → "Unknown"`;
 
 export async function parseSmsFinancialData(message: string): Promise<SmsParseResult | null> {
   const apiKey = env.GEMINI_API_KEY;

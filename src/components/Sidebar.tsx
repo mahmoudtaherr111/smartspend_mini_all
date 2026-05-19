@@ -18,7 +18,8 @@ import {
   Crown,
   Sparkles,
   Sun,
-  Moon
+  Moon,
+  Smartphone
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
@@ -172,21 +173,19 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
             <span className="text-sm font-medium whitespace-nowrap">البرو والأسعار</span>
           </Link>
 
-          {hasUltraAccess && (
-            <Link
-              to="/ultra"
-              className={cn(
-                "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group relative",
-                "hover:bg-white/10 hover:translate-x-1",
-                location.pathname === "/ultra"
-                  ? "bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 text-violet-200 border-r-2 border-violet-400"
-                  : "text-white/70"
-              )}
-            >
-              <Sparkles className="w-5 h-5 shrink-0 text-violet-300" />
-              <span className="text-sm font-medium whitespace-nowrap">مساحة ألترا</span>
-            </Link>
-          )}
+          <Link
+            to="/bank-sync"
+            className={cn(
+              "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group relative",
+              "hover:bg-white/10 hover:translate-x-1",
+              location.pathname === "/bank-sync"
+                ? "bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-300 border-r-2 border-emerald-400"
+                : "text-white/70"
+            )}
+          >
+            <Smartphone className="w-5 h-5 shrink-0 text-emerald-400" />
+            <span className="text-sm font-medium whitespace-nowrap">الربط البنكي</span>
+          </Link>
 
           {/* Admin/Moderator links */}
           {(isAdmin || isModerator) && (

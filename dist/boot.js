@@ -403,6 +403,2221 @@ var require_cli_options = __commonJS({
   }
 });
 
+// node_modules/hono/dist/compose.js
+var compose;
+var init_compose = __esm({
+  "node_modules/hono/dist/compose.js"() {
+    compose = (middleware, onError, onNotFound) => {
+      return (context, next) => {
+        let index2 = -1;
+        return dispatch(0);
+        async function dispatch(i) {
+          if (i <= index2) {
+            throw new Error("next() called multiple times");
+          }
+          index2 = i;
+          let res;
+          let isError = false;
+          let handler;
+          if (middleware[i]) {
+            handler = middleware[i][0][0];
+            context.req.routeIndex = i;
+          } else {
+            handler = i === middleware.length && next || void 0;
+          }
+          if (handler) {
+            try {
+              res = await handler(context, () => dispatch(i + 1));
+            } catch (err) {
+              if (err instanceof Error && onError) {
+                context.error = err;
+                res = await onError(err, context);
+                isError = true;
+              } else {
+                throw err;
+              }
+            }
+          } else {
+            if (context.finalized === false && onNotFound) {
+              res = await onNotFound(context);
+            }
+          }
+          if (res && (context.finalized === false || isError)) {
+            context.res = res;
+          }
+          return context;
+        }
+      };
+    };
+  }
+});
+
+// node_modules/hono/dist/http-exception.js
+var init_http_exception = __esm({
+  "node_modules/hono/dist/http-exception.js"() {
+  }
+});
+
+// node_modules/hono/dist/request/constants.js
+var GET_MATCH_RESULT;
+var init_constants = __esm({
+  "node_modules/hono/dist/request/constants.js"() {
+    GET_MATCH_RESULT = /* @__PURE__ */ Symbol();
+  }
+});
+
+// node_modules/hono/dist/utils/body.js
+async function parseFormData(request, options) {
+  const formData = await request.formData();
+  if (formData) {
+    return convertFormDataToBodyData(formData, options);
+  }
+  return {};
+}
+function convertFormDataToBodyData(formData, options) {
+  const form = /* @__PURE__ */ Object.create(null);
+  formData.forEach((value, key) => {
+    const shouldParseAllValues = options.all || key.endsWith("[]");
+    if (!shouldParseAllValues) {
+      form[key] = value;
+    } else {
+      handleParsingAllValues(form, key, value);
+    }
+  });
+  if (options.dot) {
+    Object.entries(form).forEach(([key, value]) => {
+      const shouldParseDotValues = key.includes(".");
+      if (shouldParseDotValues) {
+        handleParsingNestedValues(form, key, value);
+        delete form[key];
+      }
+    });
+  }
+  return form;
+}
+var parseBody, handleParsingAllValues, handleParsingNestedValues;
+var init_body = __esm({
+  "node_modules/hono/dist/utils/body.js"() {
+    init_request();
+    parseBody = async (request, options = /* @__PURE__ */ Object.create(null)) => {
+      const { all = false, dot = false } = options;
+      const headers = request instanceof HonoRequest ? request.raw.headers : request.headers;
+      const contentType = headers.get("Content-Type");
+      if (contentType?.startsWith("multipart/form-data") || contentType?.startsWith("application/x-www-form-urlencoded")) {
+        return parseFormData(request, { all, dot });
+      }
+      return {};
+    };
+    handleParsingAllValues = (form, key, value) => {
+      if (form[key] !== void 0) {
+        if (Array.isArray(form[key])) {
+          ;
+          form[key].push(value);
+        } else {
+          form[key] = [form[key], value];
+        }
+      } else {
+        if (!key.endsWith("[]")) {
+          form[key] = value;
+        } else {
+          form[key] = [value];
+        }
+      }
+    };
+    handleParsingNestedValues = (form, key, value) => {
+      if (/(?:^|\.)__proto__\./.test(key)) {
+        return;
+      }
+      let nestedForm = form;
+      const keys = key.split(".");
+      keys.forEach((key2, index2) => {
+        if (index2 === keys.length - 1) {
+          nestedForm[key2] = value;
+        } else {
+          if (!nestedForm[key2] || typeof nestedForm[key2] !== "object" || Array.isArray(nestedForm[key2]) || nestedForm[key2] instanceof File) {
+            nestedForm[key2] = /* @__PURE__ */ Object.create(null);
+          }
+          nestedForm = nestedForm[key2];
+        }
+      });
+    };
+  }
+});
+
+// node_modules/hono/dist/utils/url.js
+var splitPath, splitRoutingPath, extractGroupsFromPath, replaceGroupMarks, patternCache, getPattern, tryDecode, tryDecodeURI, getPath, getPathNoStrict, mergePath, checkOptionalParameter, _decodeURI, _getQueryParam, getQueryParam, getQueryParams, decodeURIComponent_;
+var init_url = __esm({
+  "node_modules/hono/dist/utils/url.js"() {
+    splitPath = (path) => {
+      const paths = path.split("/");
+      if (paths[0] === "") {
+        paths.shift();
+      }
+      return paths;
+    };
+    splitRoutingPath = (routePath2) => {
+      const { groups, path } = extractGroupsFromPath(routePath2);
+      const paths = splitPath(path);
+      return replaceGroupMarks(paths, groups);
+    };
+    extractGroupsFromPath = (path) => {
+      const groups = [];
+      path = path.replace(/\{[^}]+\}/g, (match2, index2) => {
+        const mark = `@${index2}`;
+        groups.push([mark, match2]);
+        return mark;
+      });
+      return { groups, path };
+    };
+    replaceGroupMarks = (paths, groups) => {
+      for (let i = groups.length - 1; i >= 0; i--) {
+        const [mark] = groups[i];
+        for (let j = paths.length - 1; j >= 0; j--) {
+          if (paths[j].includes(mark)) {
+            paths[j] = paths[j].replace(mark, groups[i][1]);
+            break;
+          }
+        }
+      }
+      return paths;
+    };
+    patternCache = {};
+    getPattern = (label, next) => {
+      if (label === "*") {
+        return "*";
+      }
+      const match2 = label.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/);
+      if (match2) {
+        const cacheKey2 = `${label}#${next}`;
+        if (!patternCache[cacheKey2]) {
+          if (match2[2]) {
+            patternCache[cacheKey2] = next && next[0] !== ":" && next[0] !== "*" ? [cacheKey2, match2[1], new RegExp(`^${match2[2]}(?=/${next})`)] : [label, match2[1], new RegExp(`^${match2[2]}$`)];
+          } else {
+            patternCache[cacheKey2] = [label, match2[1], true];
+          }
+        }
+        return patternCache[cacheKey2];
+      }
+      return null;
+    };
+    tryDecode = (str, decoder) => {
+      try {
+        return decoder(str);
+      } catch {
+        return str.replace(/(?:%[0-9A-Fa-f]{2})+/g, (match2) => {
+          try {
+            return decoder(match2);
+          } catch {
+            return match2;
+          }
+        });
+      }
+    };
+    tryDecodeURI = (str) => tryDecode(str, decodeURI);
+    getPath = (request) => {
+      const url2 = request.url;
+      const start = url2.indexOf("/", url2.indexOf(":") + 4);
+      let i = start;
+      for (; i < url2.length; i++) {
+        const charCode = url2.charCodeAt(i);
+        if (charCode === 37) {
+          const queryIndex = url2.indexOf("?", i);
+          const hashIndex = url2.indexOf("#", i);
+          const end = queryIndex === -1 ? hashIndex === -1 ? void 0 : hashIndex : hashIndex === -1 ? queryIndex : Math.min(queryIndex, hashIndex);
+          const path = url2.slice(start, end);
+          return tryDecodeURI(path.includes("%25") ? path.replace(/%25/g, "%2525") : path);
+        } else if (charCode === 63 || charCode === 35) {
+          break;
+        }
+      }
+      return url2.slice(start, i);
+    };
+    getPathNoStrict = (request) => {
+      const result = getPath(request);
+      return result.length > 1 && result.at(-1) === "/" ? result.slice(0, -1) : result;
+    };
+    mergePath = (base, sub, ...rest) => {
+      if (rest.length) {
+        sub = mergePath(sub, ...rest);
+      }
+      return `${base?.[0] === "/" ? "" : "/"}${base}${sub === "/" ? "" : `${base?.at(-1) === "/" ? "" : "/"}${sub?.[0] === "/" ? sub.slice(1) : sub}`}`;
+    };
+    checkOptionalParameter = (path) => {
+      if (path.charCodeAt(path.length - 1) !== 63 || !path.includes(":")) {
+        return null;
+      }
+      const segments = path.split("/");
+      const results = [];
+      let basePath = "";
+      segments.forEach((segment) => {
+        if (segment !== "" && !/\:/.test(segment)) {
+          basePath += "/" + segment;
+        } else if (/\:/.test(segment)) {
+          if (/\?/.test(segment)) {
+            if (results.length === 0 && basePath === "") {
+              results.push("/");
+            } else {
+              results.push(basePath);
+            }
+            const optionalSegment = segment.replace("?", "");
+            basePath += "/" + optionalSegment;
+            results.push(basePath);
+          } else {
+            basePath += "/" + segment;
+          }
+        }
+      });
+      return results.filter((v, i, a) => a.indexOf(v) === i);
+    };
+    _decodeURI = (value) => {
+      if (!/[%+]/.test(value)) {
+        return value;
+      }
+      if (value.indexOf("+") !== -1) {
+        value = value.replace(/\+/g, " ");
+      }
+      return value.indexOf("%") !== -1 ? tryDecode(value, decodeURIComponent_) : value;
+    };
+    _getQueryParam = (url2, key, multiple) => {
+      let encoded;
+      if (!multiple && key && !/[%+]/.test(key)) {
+        let keyIndex2 = url2.indexOf("?", 8);
+        if (keyIndex2 === -1) {
+          return void 0;
+        }
+        if (!url2.startsWith(key, keyIndex2 + 1)) {
+          keyIndex2 = url2.indexOf(`&${key}`, keyIndex2 + 1);
+        }
+        while (keyIndex2 !== -1) {
+          const trailingKeyCode = url2.charCodeAt(keyIndex2 + key.length + 1);
+          if (trailingKeyCode === 61) {
+            const valueIndex = keyIndex2 + key.length + 2;
+            const endIndex = url2.indexOf("&", valueIndex);
+            return _decodeURI(url2.slice(valueIndex, endIndex === -1 ? void 0 : endIndex));
+          } else if (trailingKeyCode == 38 || isNaN(trailingKeyCode)) {
+            return "";
+          }
+          keyIndex2 = url2.indexOf(`&${key}`, keyIndex2 + 1);
+        }
+        encoded = /[%+]/.test(url2);
+        if (!encoded) {
+          return void 0;
+        }
+      }
+      const results = {};
+      encoded ??= /[%+]/.test(url2);
+      let keyIndex = url2.indexOf("?", 8);
+      while (keyIndex !== -1) {
+        const nextKeyIndex = url2.indexOf("&", keyIndex + 1);
+        let valueIndex = url2.indexOf("=", keyIndex);
+        if (valueIndex > nextKeyIndex && nextKeyIndex !== -1) {
+          valueIndex = -1;
+        }
+        let name2 = url2.slice(
+          keyIndex + 1,
+          valueIndex === -1 ? nextKeyIndex === -1 ? void 0 : nextKeyIndex : valueIndex
+        );
+        if (encoded) {
+          name2 = _decodeURI(name2);
+        }
+        keyIndex = nextKeyIndex;
+        if (name2 === "") {
+          continue;
+        }
+        let value;
+        if (valueIndex === -1) {
+          value = "";
+        } else {
+          value = url2.slice(valueIndex + 1, nextKeyIndex === -1 ? void 0 : nextKeyIndex);
+          if (encoded) {
+            value = _decodeURI(value);
+          }
+        }
+        if (multiple) {
+          if (!(results[name2] && Array.isArray(results[name2]))) {
+            results[name2] = [];
+          }
+          ;
+          results[name2].push(value);
+        } else {
+          results[name2] ??= value;
+        }
+      }
+      return key ? results[key] : results;
+    };
+    getQueryParam = _getQueryParam;
+    getQueryParams = (url2, key) => {
+      return _getQueryParam(url2, key, true);
+    };
+    decodeURIComponent_ = decodeURIComponent;
+  }
+});
+
+// node_modules/hono/dist/request.js
+var tryDecodeURIComponent, HonoRequest;
+var init_request = __esm({
+  "node_modules/hono/dist/request.js"() {
+    init_http_exception();
+    init_constants();
+    init_body();
+    init_url();
+    tryDecodeURIComponent = (str) => tryDecode(str, decodeURIComponent_);
+    HonoRequest = class {
+      /**
+       * `.raw` can get the raw Request object.
+       *
+       * @see {@link https://hono.dev/docs/api/request#raw}
+       *
+       * @example
+       * ```ts
+       * // For Cloudflare Workers
+       * app.post('/', async (c) => {
+       *   const metadata = c.req.raw.cf?.hostMetadata?
+       *   ...
+       * })
+       * ```
+       */
+      raw;
+      #validatedData;
+      // Short name of validatedData
+      #matchResult;
+      routeIndex = 0;
+      /**
+       * `.path` can get the pathname of the request.
+       *
+       * @see {@link https://hono.dev/docs/api/request#path}
+       *
+       * @example
+       * ```ts
+       * app.get('/about/me', (c) => {
+       *   const pathname = c.req.path // `/about/me`
+       * })
+       * ```
+       */
+      path;
+      bodyCache = {};
+      constructor(request, path = "/", matchResult = [[]]) {
+        this.raw = request;
+        this.path = path;
+        this.#matchResult = matchResult;
+        this.#validatedData = {};
+      }
+      param(key) {
+        return key ? this.#getDecodedParam(key) : this.#getAllDecodedParams();
+      }
+      #getDecodedParam(key) {
+        const paramKey = this.#matchResult[0][this.routeIndex][1][key];
+        const param2 = this.#getParamValue(paramKey);
+        return param2 && /\%/.test(param2) ? tryDecodeURIComponent(param2) : param2;
+      }
+      #getAllDecodedParams() {
+        const decoded = {};
+        const keys = Object.keys(this.#matchResult[0][this.routeIndex][1]);
+        for (const key of keys) {
+          const value = this.#getParamValue(this.#matchResult[0][this.routeIndex][1][key]);
+          if (value !== void 0) {
+            decoded[key] = /\%/.test(value) ? tryDecodeURIComponent(value) : value;
+          }
+        }
+        return decoded;
+      }
+      #getParamValue(paramKey) {
+        return this.#matchResult[1] ? this.#matchResult[1][paramKey] : paramKey;
+      }
+      query(key) {
+        return getQueryParam(this.url, key);
+      }
+      queries(key) {
+        return getQueryParams(this.url, key);
+      }
+      header(name2) {
+        if (name2) {
+          return this.raw.headers.get(name2) ?? void 0;
+        }
+        const headerData = {};
+        this.raw.headers.forEach((value, key) => {
+          headerData[key] = value;
+        });
+        return headerData;
+      }
+      async parseBody(options) {
+        return parseBody(this, options);
+      }
+      #cachedBody = (key) => {
+        const { bodyCache, raw: raw2 } = this;
+        const cachedBody = bodyCache[key];
+        if (cachedBody) {
+          return cachedBody;
+        }
+        const anyCachedKey = Object.keys(bodyCache)[0];
+        if (anyCachedKey) {
+          return bodyCache[anyCachedKey].then((body) => {
+            if (anyCachedKey === "json") {
+              body = JSON.stringify(body);
+            }
+            return new Response(body)[key]();
+          });
+        }
+        return bodyCache[key] = raw2[key]();
+      };
+      /**
+       * `.json()` can parse Request body of type `application/json`
+       *
+       * @see {@link https://hono.dev/docs/api/request#json}
+       *
+       * @example
+       * ```ts
+       * app.post('/entry', async (c) => {
+       *   const body = await c.req.json()
+       * })
+       * ```
+       */
+      json() {
+        return this.#cachedBody("text").then((text2) => JSON.parse(text2));
+      }
+      /**
+       * `.text()` can parse Request body of type `text/plain`
+       *
+       * @see {@link https://hono.dev/docs/api/request#text}
+       *
+       * @example
+       * ```ts
+       * app.post('/entry', async (c) => {
+       *   const body = await c.req.text()
+       * })
+       * ```
+       */
+      text() {
+        return this.#cachedBody("text");
+      }
+      /**
+       * `.arrayBuffer()` parse Request body as an `ArrayBuffer`
+       *
+       * @see {@link https://hono.dev/docs/api/request#arraybuffer}
+       *
+       * @example
+       * ```ts
+       * app.post('/entry', async (c) => {
+       *   const body = await c.req.arrayBuffer()
+       * })
+       * ```
+       */
+      arrayBuffer() {
+        return this.#cachedBody("arrayBuffer");
+      }
+      /**
+       * Parses the request body as a `Blob`.
+       * @example
+       * ```ts
+       * app.post('/entry', async (c) => {
+       *   const body = await c.req.blob();
+       * });
+       * ```
+       * @see https://hono.dev/docs/api/request#blob
+       */
+      blob() {
+        return this.#cachedBody("blob");
+      }
+      /**
+       * Parses the request body as `FormData`.
+       * @example
+       * ```ts
+       * app.post('/entry', async (c) => {
+       *   const body = await c.req.formData();
+       * });
+       * ```
+       * @see https://hono.dev/docs/api/request#formdata
+       */
+      formData() {
+        return this.#cachedBody("formData");
+      }
+      /**
+       * Adds validated data to the request.
+       *
+       * @param target - The target of the validation.
+       * @param data - The validated data to add.
+       */
+      addValidatedData(target, data) {
+        this.#validatedData[target] = data;
+      }
+      valid(target) {
+        return this.#validatedData[target];
+      }
+      /**
+       * `.url()` can get the request url strings.
+       *
+       * @see {@link https://hono.dev/docs/api/request#url}
+       *
+       * @example
+       * ```ts
+       * app.get('/about/me', (c) => {
+       *   const url = c.req.url // `http://localhost:8787/about/me`
+       *   ...
+       * })
+       * ```
+       */
+      get url() {
+        return this.raw.url;
+      }
+      /**
+       * `.method()` can get the method name of the request.
+       *
+       * @see {@link https://hono.dev/docs/api/request#method}
+       *
+       * @example
+       * ```ts
+       * app.get('/about/me', (c) => {
+       *   const method = c.req.method // `GET`
+       * })
+       * ```
+       */
+      get method() {
+        return this.raw.method;
+      }
+      get [GET_MATCH_RESULT]() {
+        return this.#matchResult;
+      }
+      /**
+       * `.matchedRoutes()` can return a matched route in the handler
+       *
+       * @deprecated
+       *
+       * Use matchedRoutes helper defined in "hono/route" instead.
+       *
+       * @see {@link https://hono.dev/docs/api/request#matchedroutes}
+       *
+       * @example
+       * ```ts
+       * app.use('*', async function logger(c, next) {
+       *   await next()
+       *   c.req.matchedRoutes.forEach(({ handler, method, path }, i) => {
+       *     const name = handler.name || (handler.length < 2 ? '[handler]' : '[middleware]')
+       *     console.log(
+       *       method,
+       *       ' ',
+       *       path,
+       *       ' '.repeat(Math.max(10 - path.length, 0)),
+       *       name,
+       *       i === c.req.routeIndex ? '<- respond from here' : ''
+       *     )
+       *   })
+       * })
+       * ```
+       */
+      get matchedRoutes() {
+        return this.#matchResult[0].map(([[, route]]) => route);
+      }
+      /**
+       * `routePath()` can retrieve the path registered within the handler
+       *
+       * @deprecated
+       *
+       * Use routePath helper defined in "hono/route" instead.
+       *
+       * @see {@link https://hono.dev/docs/api/request#routepath}
+       *
+       * @example
+       * ```ts
+       * app.get('/posts/:id', (c) => {
+       *   return c.json({ path: c.req.routePath })
+       * })
+       * ```
+       */
+      get routePath() {
+        return this.#matchResult[0].map(([[, route]]) => route)[this.routeIndex].path;
+      }
+    };
+  }
+});
+
+// node_modules/hono/dist/utils/html.js
+var HtmlEscapedCallbackPhase, raw, resolveCallback;
+var init_html = __esm({
+  "node_modules/hono/dist/utils/html.js"() {
+    HtmlEscapedCallbackPhase = {
+      Stringify: 1,
+      BeforeStream: 2,
+      Stream: 3
+    };
+    raw = (value, callbacks) => {
+      const escapedString = new String(value);
+      escapedString.isEscaped = true;
+      escapedString.callbacks = callbacks;
+      return escapedString;
+    };
+    resolveCallback = async (str, phase, preserveCallbacks, context, buffer) => {
+      if (typeof str === "object" && !(str instanceof String)) {
+        if (!(str instanceof Promise)) {
+          str = str.toString();
+        }
+        if (str instanceof Promise) {
+          str = await str;
+        }
+      }
+      const callbacks = str.callbacks;
+      if (!callbacks?.length) {
+        return Promise.resolve(str);
+      }
+      if (buffer) {
+        buffer[0] += str;
+      } else {
+        buffer = [str];
+      }
+      const resStr = Promise.all(callbacks.map((c) => c({ phase, buffer, context }))).then(
+        (res) => Promise.all(
+          res.filter(Boolean).map((str2) => resolveCallback(str2, phase, false, context, buffer))
+        ).then(() => buffer[0])
+      );
+      if (preserveCallbacks) {
+        return raw(await resStr, callbacks);
+      } else {
+        return resStr;
+      }
+    };
+  }
+});
+
+// node_modules/hono/dist/context.js
+var TEXT_PLAIN, setDefaultContentType, createResponseInstance, Context;
+var init_context = __esm({
+  "node_modules/hono/dist/context.js"() {
+    init_request();
+    init_html();
+    TEXT_PLAIN = "text/plain; charset=UTF-8";
+    setDefaultContentType = (contentType, headers) => {
+      return {
+        "Content-Type": contentType,
+        ...headers
+      };
+    };
+    createResponseInstance = (body, init) => new Response(body, init);
+    Context = class {
+      #rawRequest;
+      #req;
+      /**
+       * `.env` can get bindings (environment variables, secrets, KV namespaces, D1 database, R2 bucket etc.) in Cloudflare Workers.
+       *
+       * @see {@link https://hono.dev/docs/api/context#env}
+       *
+       * @example
+       * ```ts
+       * // Environment object for Cloudflare Workers
+       * app.get('*', async c => {
+       *   const counter = c.env.COUNTER
+       * })
+       * ```
+       */
+      env = {};
+      #var;
+      finalized = false;
+      /**
+       * `.error` can get the error object from the middleware if the Handler throws an error.
+       *
+       * @see {@link https://hono.dev/docs/api/context#error}
+       *
+       * @example
+       * ```ts
+       * app.use('*', async (c, next) => {
+       *   await next()
+       *   if (c.error) {
+       *     // do something...
+       *   }
+       * })
+       * ```
+       */
+      error;
+      #status;
+      #executionCtx;
+      #res;
+      #layout;
+      #renderer;
+      #notFoundHandler;
+      #preparedHeaders;
+      #matchResult;
+      #path;
+      /**
+       * Creates an instance of the Context class.
+       *
+       * @param req - The Request object.
+       * @param options - Optional configuration options for the context.
+       */
+      constructor(req, options) {
+        this.#rawRequest = req;
+        if (options) {
+          this.#executionCtx = options.executionCtx;
+          this.env = options.env;
+          this.#notFoundHandler = options.notFoundHandler;
+          this.#path = options.path;
+          this.#matchResult = options.matchResult;
+        }
+      }
+      /**
+       * `.req` is the instance of {@link HonoRequest}.
+       */
+      get req() {
+        this.#req ??= new HonoRequest(this.#rawRequest, this.#path, this.#matchResult);
+        return this.#req;
+      }
+      /**
+       * @see {@link https://hono.dev/docs/api/context#event}
+       * The FetchEvent associated with the current request.
+       *
+       * @throws Will throw an error if the context does not have a FetchEvent.
+       */
+      get event() {
+        if (this.#executionCtx && "respondWith" in this.#executionCtx) {
+          return this.#executionCtx;
+        } else {
+          throw Error("This context has no FetchEvent");
+        }
+      }
+      /**
+       * @see {@link https://hono.dev/docs/api/context#executionctx}
+       * The ExecutionContext associated with the current request.
+       *
+       * @throws Will throw an error if the context does not have an ExecutionContext.
+       */
+      get executionCtx() {
+        if (this.#executionCtx) {
+          return this.#executionCtx;
+        } else {
+          throw Error("This context has no ExecutionContext");
+        }
+      }
+      /**
+       * @see {@link https://hono.dev/docs/api/context#res}
+       * The Response object for the current request.
+       */
+      get res() {
+        return this.#res ||= createResponseInstance(null, {
+          headers: this.#preparedHeaders ??= new Headers()
+        });
+      }
+      /**
+       * Sets the Response object for the current request.
+       *
+       * @param _res - The Response object to set.
+       */
+      set res(_res) {
+        if (this.#res && _res) {
+          _res = createResponseInstance(_res.body, _res);
+          for (const [k, v] of this.#res.headers.entries()) {
+            if (k === "content-type") {
+              continue;
+            }
+            if (k === "set-cookie") {
+              const cookies = this.#res.headers.getSetCookie();
+              _res.headers.delete("set-cookie");
+              for (const cookie of cookies) {
+                _res.headers.append("set-cookie", cookie);
+              }
+            } else {
+              _res.headers.set(k, v);
+            }
+          }
+        }
+        this.#res = _res;
+        this.finalized = true;
+      }
+      /**
+       * `.render()` can create a response within a layout.
+       *
+       * @see {@link https://hono.dev/docs/api/context#render-setrenderer}
+       *
+       * @example
+       * ```ts
+       * app.get('/', (c) => {
+       *   return c.render('Hello!')
+       * })
+       * ```
+       */
+      render = (...args) => {
+        this.#renderer ??= (content) => this.html(content);
+        return this.#renderer(...args);
+      };
+      /**
+       * Sets the layout for the response.
+       *
+       * @param layout - The layout to set.
+       * @returns The layout function.
+       */
+      setLayout = (layout) => this.#layout = layout;
+      /**
+       * Gets the current layout for the response.
+       *
+       * @returns The current layout function.
+       */
+      getLayout = () => this.#layout;
+      /**
+       * `.setRenderer()` can set the layout in the custom middleware.
+       *
+       * @see {@link https://hono.dev/docs/api/context#render-setrenderer}
+       *
+       * @example
+       * ```tsx
+       * app.use('*', async (c, next) => {
+       *   c.setRenderer((content) => {
+       *     return c.html(
+       *       <html>
+       *         <body>
+       *           <p>{content}</p>
+       *         </body>
+       *       </html>
+       *     )
+       *   })
+       *   await next()
+       * })
+       * ```
+       */
+      setRenderer = (renderer) => {
+        this.#renderer = renderer;
+      };
+      /**
+       * `.header()` can set headers.
+       *
+       * @see {@link https://hono.dev/docs/api/context#header}
+       *
+       * @example
+       * ```ts
+       * app.get('/welcome', (c) => {
+       *   // Set headers
+       *   c.header('X-Message', 'Hello!')
+       *   c.header('Content-Type', 'text/plain')
+       *
+       *   return c.body('Thank you for coming')
+       * })
+       * ```
+       */
+      header = (name2, value, options) => {
+        if (this.finalized) {
+          this.#res = createResponseInstance(this.#res.body, this.#res);
+        }
+        const headers = this.#res ? this.#res.headers : this.#preparedHeaders ??= new Headers();
+        if (value === void 0) {
+          headers.delete(name2);
+        } else if (options?.append) {
+          headers.append(name2, value);
+        } else {
+          headers.set(name2, value);
+        }
+      };
+      status = (status) => {
+        this.#status = status;
+      };
+      /**
+       * `.set()` can set the value specified by the key.
+       *
+       * @see {@link https://hono.dev/docs/api/context#set-get}
+       *
+       * @example
+       * ```ts
+       * app.use('*', async (c, next) => {
+       *   c.set('message', 'Hono is hot!!')
+       *   await next()
+       * })
+       * ```
+       */
+      set = (key, value) => {
+        this.#var ??= /* @__PURE__ */ new Map();
+        this.#var.set(key, value);
+      };
+      /**
+       * `.get()` can use the value specified by the key.
+       *
+       * @see {@link https://hono.dev/docs/api/context#set-get}
+       *
+       * @example
+       * ```ts
+       * app.get('/', (c) => {
+       *   const message = c.get('message')
+       *   return c.text(`The message is "${message}"`)
+       * })
+       * ```
+       */
+      get = (key) => {
+        return this.#var ? this.#var.get(key) : void 0;
+      };
+      /**
+       * `.var` can access the value of a variable.
+       *
+       * @see {@link https://hono.dev/docs/api/context#var}
+       *
+       * @example
+       * ```ts
+       * const result = c.var.client.oneMethod()
+       * ```
+       */
+      // c.var.propName is a read-only
+      get var() {
+        if (!this.#var) {
+          return {};
+        }
+        return Object.fromEntries(this.#var);
+      }
+      #newResponse(data, arg, headers) {
+        const responseHeaders = this.#res ? new Headers(this.#res.headers) : this.#preparedHeaders ?? new Headers();
+        if (typeof arg === "object" && "headers" in arg) {
+          const argHeaders = arg.headers instanceof Headers ? arg.headers : new Headers(arg.headers);
+          for (const [key, value] of argHeaders) {
+            if (key.toLowerCase() === "set-cookie") {
+              responseHeaders.append(key, value);
+            } else {
+              responseHeaders.set(key, value);
+            }
+          }
+        }
+        if (headers) {
+          for (const [k, v] of Object.entries(headers)) {
+            if (typeof v === "string") {
+              responseHeaders.set(k, v);
+            } else {
+              responseHeaders.delete(k);
+              for (const v2 of v) {
+                responseHeaders.append(k, v2);
+              }
+            }
+          }
+        }
+        const status = typeof arg === "number" ? arg : arg?.status ?? this.#status;
+        return createResponseInstance(data, { status, headers: responseHeaders });
+      }
+      newResponse = (...args) => this.#newResponse(...args);
+      /**
+       * `.body()` can return the HTTP response.
+       * You can set headers with `.header()` and set HTTP status code with `.status`.
+       * This can also be set in `.text()`, `.json()` and so on.
+       *
+       * @see {@link https://hono.dev/docs/api/context#body}
+       *
+       * @example
+       * ```ts
+       * app.get('/welcome', (c) => {
+       *   // Set headers
+       *   c.header('X-Message', 'Hello!')
+       *   c.header('Content-Type', 'text/plain')
+       *   // Set HTTP status code
+       *   c.status(201)
+       *
+       *   // Return the response body
+       *   return c.body('Thank you for coming')
+       * })
+       * ```
+       */
+      body = (data, arg, headers) => this.#newResponse(data, arg, headers);
+      /**
+       * `.text()` can render text as `Content-Type:text/plain`.
+       *
+       * @see {@link https://hono.dev/docs/api/context#text}
+       *
+       * @example
+       * ```ts
+       * app.get('/say', (c) => {
+       *   return c.text('Hello!')
+       * })
+       * ```
+       */
+      text = (text2, arg, headers) => {
+        return !this.#preparedHeaders && !this.#status && !arg && !headers && !this.finalized ? new Response(text2) : this.#newResponse(
+          text2,
+          arg,
+          setDefaultContentType(TEXT_PLAIN, headers)
+        );
+      };
+      /**
+       * `.json()` can render JSON as `Content-Type:application/json`.
+       *
+       * @see {@link https://hono.dev/docs/api/context#json}
+       *
+       * @example
+       * ```ts
+       * app.get('/api', (c) => {
+       *   return c.json({ message: 'Hello!' })
+       * })
+       * ```
+       */
+      json = (object2, arg, headers) => {
+        return this.#newResponse(
+          JSON.stringify(object2),
+          arg,
+          setDefaultContentType("application/json", headers)
+        );
+      };
+      html = (html, arg, headers) => {
+        const res = (html2) => this.#newResponse(html2, arg, setDefaultContentType("text/html; charset=UTF-8", headers));
+        return typeof html === "object" ? resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then(res) : res(html);
+      };
+      /**
+       * `.redirect()` can Redirect, default status code is 302.
+       *
+       * @see {@link https://hono.dev/docs/api/context#redirect}
+       *
+       * @example
+       * ```ts
+       * app.get('/redirect', (c) => {
+       *   return c.redirect('/')
+       * })
+       * app.get('/redirect-permanently', (c) => {
+       *   return c.redirect('/', 301)
+       * })
+       * ```
+       */
+      redirect = (location, status) => {
+        const locationString = String(location);
+        this.header(
+          "Location",
+          // Multibyes should be encoded
+          // eslint-disable-next-line no-control-regex
+          !/[^\x00-\xFF]/.test(locationString) ? locationString : encodeURI(locationString)
+        );
+        return this.newResponse(null, status ?? 302);
+      };
+      /**
+       * `.notFound()` can return the Not Found Response.
+       *
+       * @see {@link https://hono.dev/docs/api/context#notfound}
+       *
+       * @example
+       * ```ts
+       * app.get('/notfound', (c) => {
+       *   return c.notFound()
+       * })
+       * ```
+       */
+      notFound = () => {
+        this.#notFoundHandler ??= () => createResponseInstance();
+        return this.#notFoundHandler(this);
+      };
+    };
+  }
+});
+
+// node_modules/hono/dist/router.js
+var METHOD_NAME_ALL, METHOD_NAME_ALL_LOWERCASE, METHODS, MESSAGE_MATCHER_IS_ALREADY_BUILT, UnsupportedPathError;
+var init_router = __esm({
+  "node_modules/hono/dist/router.js"() {
+    METHOD_NAME_ALL = "ALL";
+    METHOD_NAME_ALL_LOWERCASE = "all";
+    METHODS = ["get", "post", "put", "delete", "options", "patch"];
+    MESSAGE_MATCHER_IS_ALREADY_BUILT = "Can not add a route since the matcher is already built.";
+    UnsupportedPathError = class extends Error {
+    };
+  }
+});
+
+// node_modules/hono/dist/utils/constants.js
+var COMPOSED_HANDLER;
+var init_constants2 = __esm({
+  "node_modules/hono/dist/utils/constants.js"() {
+    COMPOSED_HANDLER = "__COMPOSED_HANDLER";
+  }
+});
+
+// node_modules/hono/dist/hono-base.js
+var notFoundHandler, errorHandler, Hono;
+var init_hono_base = __esm({
+  "node_modules/hono/dist/hono-base.js"() {
+    init_compose();
+    init_context();
+    init_router();
+    init_constants2();
+    init_url();
+    notFoundHandler = (c) => {
+      return c.text("404 Not Found", 404);
+    };
+    errorHandler = (err, c) => {
+      if ("getResponse" in err) {
+        const res = err.getResponse();
+        return c.newResponse(res.body, res);
+      }
+      console.error(err);
+      return c.text("Internal Server Error", 500);
+    };
+    Hono = class _Hono {
+      get;
+      post;
+      put;
+      delete;
+      options;
+      patch;
+      all;
+      on;
+      use;
+      /*
+        This class is like an abstract class and does not have a router.
+        To use it, inherit the class and implement router in the constructor.
+      */
+      router;
+      getPath;
+      // Cannot use `#` because it requires visibility at JavaScript runtime.
+      _basePath = "/";
+      #path = "/";
+      routes = [];
+      constructor(options = {}) {
+        const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE];
+        allMethods.forEach((method) => {
+          this[method] = (args1, ...args) => {
+            if (typeof args1 === "string") {
+              this.#path = args1;
+            } else {
+              this.#addRoute(method, this.#path, args1);
+            }
+            args.forEach((handler) => {
+              this.#addRoute(method, this.#path, handler);
+            });
+            return this;
+          };
+        });
+        this.on = (method, path, ...handlers2) => {
+          for (const p of [path].flat()) {
+            this.#path = p;
+            for (const m of [method].flat()) {
+              handlers2.map((handler) => {
+                this.#addRoute(m.toUpperCase(), this.#path, handler);
+              });
+            }
+          }
+          return this;
+        };
+        this.use = (arg1, ...handlers2) => {
+          if (typeof arg1 === "string") {
+            this.#path = arg1;
+          } else {
+            this.#path = "*";
+            handlers2.unshift(arg1);
+          }
+          handlers2.forEach((handler) => {
+            this.#addRoute(METHOD_NAME_ALL, this.#path, handler);
+          });
+          return this;
+        };
+        const { strict, ...optionsWithoutStrict } = options;
+        Object.assign(this, optionsWithoutStrict);
+        this.getPath = strict ?? true ? options.getPath ?? getPath : getPathNoStrict;
+      }
+      #clone() {
+        const clone2 = new _Hono({
+          router: this.router,
+          getPath: this.getPath
+        });
+        clone2.errorHandler = this.errorHandler;
+        clone2.#notFoundHandler = this.#notFoundHandler;
+        clone2.routes = this.routes;
+        return clone2;
+      }
+      #notFoundHandler = notFoundHandler;
+      // Cannot use `#` because it requires visibility at JavaScript runtime.
+      errorHandler = errorHandler;
+      /**
+       * `.route()` allows grouping other Hono instance in routes.
+       *
+       * @see {@link https://hono.dev/docs/api/routing#grouping}
+       *
+       * @param {string} path - base Path
+       * @param {Hono} app - other Hono instance
+       * @returns {Hono} routed Hono instance
+       *
+       * @example
+       * ```ts
+       * const app = new Hono()
+       * const app2 = new Hono()
+       *
+       * app2.get("/user", (c) => c.text("user"))
+       * app.route("/api", app2) // GET /api/user
+       * ```
+       */
+      route(path, app2) {
+        const subApp = this.basePath(path);
+        app2.routes.map((r) => {
+          let handler;
+          if (app2.errorHandler === errorHandler) {
+            handler = r.handler;
+          } else {
+            handler = async (c, next) => (await compose([], app2.errorHandler)(c, () => r.handler(c, next))).res;
+            handler[COMPOSED_HANDLER] = r.handler;
+          }
+          subApp.#addRoute(r.method, r.path, handler);
+        });
+        return this;
+      }
+      /**
+       * `.basePath()` allows base paths to be specified.
+       *
+       * @see {@link https://hono.dev/docs/api/routing#base-path}
+       *
+       * @param {string} path - base Path
+       * @returns {Hono} changed Hono instance
+       *
+       * @example
+       * ```ts
+       * const api = new Hono().basePath('/api')
+       * ```
+       */
+      basePath(path) {
+        const subApp = this.#clone();
+        subApp._basePath = mergePath(this._basePath, path);
+        return subApp;
+      }
+      /**
+       * `.onError()` handles an error and returns a customized Response.
+       *
+       * @see {@link https://hono.dev/docs/api/hono#error-handling}
+       *
+       * @param {ErrorHandler} handler - request Handler for error
+       * @returns {Hono} changed Hono instance
+       *
+       * @example
+       * ```ts
+       * app.onError((err, c) => {
+       *   console.error(`${err}`)
+       *   return c.text('Custom Error Message', 500)
+       * })
+       * ```
+       */
+      onError = (handler) => {
+        this.errorHandler = handler;
+        return this;
+      };
+      /**
+       * `.notFound()` allows you to customize a Not Found Response.
+       *
+       * @see {@link https://hono.dev/docs/api/hono#not-found}
+       *
+       * @param {NotFoundHandler} handler - request handler for not-found
+       * @returns {Hono} changed Hono instance
+       *
+       * @example
+       * ```ts
+       * app.notFound((c) => {
+       *   return c.text('Custom 404 Message', 404)
+       * })
+       * ```
+       */
+      notFound = (handler) => {
+        this.#notFoundHandler = handler;
+        return this;
+      };
+      /**
+       * `.mount()` allows you to mount applications built with other frameworks into your Hono application.
+       *
+       * @see {@link https://hono.dev/docs/api/hono#mount}
+       *
+       * @param {string} path - base Path
+       * @param {Function} applicationHandler - other Request Handler
+       * @param {MountOptions} [options] - options of `.mount()`
+       * @returns {Hono} mounted Hono instance
+       *
+       * @example
+       * ```ts
+       * import { Router as IttyRouter } from 'itty-router'
+       * import { Hono } from 'hono'
+       * // Create itty-router application
+       * const ittyRouter = IttyRouter()
+       * // GET /itty-router/hello
+       * ittyRouter.get('/hello', () => new Response('Hello from itty-router'))
+       *
+       * const app = new Hono()
+       * app.mount('/itty-router', ittyRouter.handle)
+       * ```
+       *
+       * @example
+       * ```ts
+       * const app = new Hono()
+       * // Send the request to another application without modification.
+       * app.mount('/app', anotherApp, {
+       *   replaceRequest: (req) => req,
+       * })
+       * ```
+       */
+      mount(path, applicationHandler, options) {
+        let replaceRequest;
+        let optionHandler;
+        if (options) {
+          if (typeof options === "function") {
+            optionHandler = options;
+          } else {
+            optionHandler = options.optionHandler;
+            if (options.replaceRequest === false) {
+              replaceRequest = (request) => request;
+            } else {
+              replaceRequest = options.replaceRequest;
+            }
+          }
+        }
+        const getOptions = optionHandler ? (c) => {
+          const options2 = optionHandler(c);
+          return Array.isArray(options2) ? options2 : [options2];
+        } : (c) => {
+          let executionContext = void 0;
+          try {
+            executionContext = c.executionCtx;
+          } catch {
+          }
+          return [c.env, executionContext];
+        };
+        replaceRequest ||= (() => {
+          const mergedPath = mergePath(this._basePath, path);
+          const pathPrefixLength = mergedPath === "/" ? 0 : mergedPath.length;
+          return (request) => {
+            const url2 = new URL(request.url);
+            url2.pathname = url2.pathname.slice(pathPrefixLength) || "/";
+            return new Request(url2, request);
+          };
+        })();
+        const handler = async (c, next) => {
+          const res = await applicationHandler(replaceRequest(c.req.raw), ...getOptions(c));
+          if (res) {
+            return res;
+          }
+          await next();
+        };
+        this.#addRoute(METHOD_NAME_ALL, mergePath(path, "*"), handler);
+        return this;
+      }
+      #addRoute(method, path, handler) {
+        method = method.toUpperCase();
+        path = mergePath(this._basePath, path);
+        const r = { basePath: this._basePath, path, method, handler };
+        this.router.add(method, path, [handler, r]);
+        this.routes.push(r);
+      }
+      #handleError(err, c) {
+        if (err instanceof Error) {
+          return this.errorHandler(err, c);
+        }
+        throw err;
+      }
+      #dispatch(request, executionCtx, env2, method) {
+        if (method === "HEAD") {
+          return (async () => new Response(null, await this.#dispatch(request, executionCtx, env2, "GET")))();
+        }
+        const path = this.getPath(request, { env: env2 });
+        const matchResult = this.router.match(method, path);
+        const c = new Context(request, {
+          path,
+          matchResult,
+          env: env2,
+          executionCtx,
+          notFoundHandler: this.#notFoundHandler
+        });
+        if (matchResult[0].length === 1) {
+          let res;
+          try {
+            res = matchResult[0][0][0][0](c, async () => {
+              c.res = await this.#notFoundHandler(c);
+            });
+          } catch (err) {
+            return this.#handleError(err, c);
+          }
+          return res instanceof Promise ? res.then(
+            (resolved) => resolved || (c.finalized ? c.res : this.#notFoundHandler(c))
+          ).catch((err) => this.#handleError(err, c)) : res ?? this.#notFoundHandler(c);
+        }
+        const composed = compose(matchResult[0], this.errorHandler, this.#notFoundHandler);
+        return (async () => {
+          try {
+            const context = await composed(c);
+            if (!context.finalized) {
+              throw new Error(
+                "Context is not finalized. Did you forget to return a Response object or `await next()`?"
+              );
+            }
+            return context.res;
+          } catch (err) {
+            return this.#handleError(err, c);
+          }
+        })();
+      }
+      /**
+       * `.fetch()` will be entry point of your app.
+       *
+       * @see {@link https://hono.dev/docs/api/hono#fetch}
+       *
+       * @param {Request} request - request Object of request
+       * @param {Env} Env - env Object
+       * @param {ExecutionContext} - context of execution
+       * @returns {Response | Promise<Response>} response of request
+       *
+       */
+      fetch = (request, ...rest) => {
+        return this.#dispatch(request, rest[1], rest[0], request.method);
+      };
+      /**
+       * `.request()` is a useful method for testing.
+       * You can pass a URL or pathname to send a GET request.
+       * app will return a Response object.
+       * ```ts
+       * test('GET /hello is ok', async () => {
+       *   const res = await app.request('/hello')
+       *   expect(res.status).toBe(200)
+       * })
+       * ```
+       * @see https://hono.dev/docs/api/hono#request
+       */
+      request = (input, requestInit, Env, executionCtx) => {
+        if (input instanceof Request) {
+          return this.fetch(requestInit ? new Request(input, requestInit) : input, Env, executionCtx);
+        }
+        input = input.toString();
+        return this.fetch(
+          new Request(
+            /^https?:\/\//.test(input) ? input : `http://localhost${mergePath("/", input)}`,
+            requestInit
+          ),
+          Env,
+          executionCtx
+        );
+      };
+      /**
+       * `.fire()` automatically adds a global fetch event listener.
+       * This can be useful for environments that adhere to the Service Worker API, such as non-ES module Cloudflare Workers.
+       * @deprecated
+       * Use `fire` from `hono/service-worker` instead.
+       * ```ts
+       * import { Hono } from 'hono'
+       * import { fire } from 'hono/service-worker'
+       *
+       * const app = new Hono()
+       * // ...
+       * fire(app)
+       * ```
+       * @see https://hono.dev/docs/api/hono#fire
+       * @see https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API
+       * @see https://developers.cloudflare.com/workers/reference/migrate-to-module-workers/
+       */
+      fire = () => {
+        addEventListener("fetch", (event) => {
+          event.respondWith(this.#dispatch(event.request, event, void 0, event.request.method));
+        });
+      };
+    };
+  }
+});
+
+// node_modules/hono/dist/router/reg-exp-router/matcher.js
+function match(method, path) {
+  const matchers = this.buildAllMatchers();
+  const match2 = ((method2, path2) => {
+    const matcher = matchers[method2] || matchers[METHOD_NAME_ALL];
+    const staticMatch = matcher[2][path2];
+    if (staticMatch) {
+      return staticMatch;
+    }
+    const match3 = path2.match(matcher[0]);
+    if (!match3) {
+      return [[], emptyParam];
+    }
+    const index2 = match3.indexOf("", 1);
+    return [matcher[1][index2], match3];
+  });
+  this.match = match2;
+  return match2(method, path);
+}
+var emptyParam;
+var init_matcher = __esm({
+  "node_modules/hono/dist/router/reg-exp-router/matcher.js"() {
+    init_router();
+    emptyParam = [];
+  }
+});
+
+// node_modules/hono/dist/router/reg-exp-router/node.js
+function compareKey(a, b) {
+  if (a.length === 1) {
+    return b.length === 1 ? a < b ? -1 : 1 : -1;
+  }
+  if (b.length === 1) {
+    return 1;
+  }
+  if (a === ONLY_WILDCARD_REG_EXP_STR || a === TAIL_WILDCARD_REG_EXP_STR) {
+    return 1;
+  } else if (b === ONLY_WILDCARD_REG_EXP_STR || b === TAIL_WILDCARD_REG_EXP_STR) {
+    return -1;
+  }
+  if (a === LABEL_REG_EXP_STR) {
+    return 1;
+  } else if (b === LABEL_REG_EXP_STR) {
+    return -1;
+  }
+  return a.length === b.length ? a < b ? -1 : 1 : b.length - a.length;
+}
+var LABEL_REG_EXP_STR, ONLY_WILDCARD_REG_EXP_STR, TAIL_WILDCARD_REG_EXP_STR, PATH_ERROR, regExpMetaChars, Node;
+var init_node = __esm({
+  "node_modules/hono/dist/router/reg-exp-router/node.js"() {
+    LABEL_REG_EXP_STR = "[^/]+";
+    ONLY_WILDCARD_REG_EXP_STR = ".*";
+    TAIL_WILDCARD_REG_EXP_STR = "(?:|/.*)";
+    PATH_ERROR = /* @__PURE__ */ Symbol();
+    regExpMetaChars = new Set(".\\+*[^]$()");
+    Node = class _Node {
+      #index;
+      #varIndex;
+      #children = /* @__PURE__ */ Object.create(null);
+      insert(tokens, index2, paramMap, context, pathErrorCheckOnly) {
+        if (tokens.length === 0) {
+          if (this.#index !== void 0) {
+            throw PATH_ERROR;
+          }
+          if (pathErrorCheckOnly) {
+            return;
+          }
+          this.#index = index2;
+          return;
+        }
+        const [token, ...restTokens] = tokens;
+        const pattern = token === "*" ? restTokens.length === 0 ? ["", "", ONLY_WILDCARD_REG_EXP_STR] : ["", "", LABEL_REG_EXP_STR] : token === "/*" ? ["", "", TAIL_WILDCARD_REG_EXP_STR] : token.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/);
+        let node;
+        if (pattern) {
+          const name2 = pattern[1];
+          let regexpStr = pattern[2] || LABEL_REG_EXP_STR;
+          if (name2 && pattern[2]) {
+            if (regexpStr === ".*") {
+              throw PATH_ERROR;
+            }
+            regexpStr = regexpStr.replace(/^\((?!\?:)(?=[^)]+\)$)/, "(?:");
+            if (/\((?!\?:)/.test(regexpStr)) {
+              throw PATH_ERROR;
+            }
+          }
+          node = this.#children[regexpStr];
+          if (!node) {
+            if (Object.keys(this.#children).some(
+              (k) => k !== ONLY_WILDCARD_REG_EXP_STR && k !== TAIL_WILDCARD_REG_EXP_STR
+            )) {
+              throw PATH_ERROR;
+            }
+            if (pathErrorCheckOnly) {
+              return;
+            }
+            node = this.#children[regexpStr] = new _Node();
+            if (name2 !== "") {
+              node.#varIndex = context.varIndex++;
+            }
+          }
+          if (!pathErrorCheckOnly && name2 !== "") {
+            paramMap.push([name2, node.#varIndex]);
+          }
+        } else {
+          node = this.#children[token];
+          if (!node) {
+            if (Object.keys(this.#children).some(
+              (k) => k.length > 1 && k !== ONLY_WILDCARD_REG_EXP_STR && k !== TAIL_WILDCARD_REG_EXP_STR
+            )) {
+              throw PATH_ERROR;
+            }
+            if (pathErrorCheckOnly) {
+              return;
+            }
+            node = this.#children[token] = new _Node();
+          }
+        }
+        node.insert(restTokens, index2, paramMap, context, pathErrorCheckOnly);
+      }
+      buildRegExpStr() {
+        const childKeys = Object.keys(this.#children).sort(compareKey);
+        const strList = childKeys.map((k) => {
+          const c = this.#children[k];
+          return (typeof c.#varIndex === "number" ? `(${k})@${c.#varIndex}` : regExpMetaChars.has(k) ? `\\${k}` : k) + c.buildRegExpStr();
+        });
+        if (typeof this.#index === "number") {
+          strList.unshift(`#${this.#index}`);
+        }
+        if (strList.length === 0) {
+          return "";
+        }
+        if (strList.length === 1) {
+          return strList[0];
+        }
+        return "(?:" + strList.join("|") + ")";
+      }
+    };
+  }
+});
+
+// node_modules/hono/dist/router/reg-exp-router/trie.js
+var Trie;
+var init_trie = __esm({
+  "node_modules/hono/dist/router/reg-exp-router/trie.js"() {
+    init_node();
+    Trie = class {
+      #context = { varIndex: 0 };
+      #root = new Node();
+      insert(path, index2, pathErrorCheckOnly) {
+        const paramAssoc = [];
+        const groups = [];
+        for (let i = 0; ; ) {
+          let replaced = false;
+          path = path.replace(/\{[^}]+\}/g, (m) => {
+            const mark = `@\\${i}`;
+            groups[i] = [mark, m];
+            i++;
+            replaced = true;
+            return mark;
+          });
+          if (!replaced) {
+            break;
+          }
+        }
+        const tokens = path.match(/(?::[^\/]+)|(?:\/\*$)|./g) || [];
+        for (let i = groups.length - 1; i >= 0; i--) {
+          const [mark] = groups[i];
+          for (let j = tokens.length - 1; j >= 0; j--) {
+            if (tokens[j].indexOf(mark) !== -1) {
+              tokens[j] = tokens[j].replace(mark, groups[i][1]);
+              break;
+            }
+          }
+        }
+        this.#root.insert(tokens, index2, paramAssoc, this.#context, pathErrorCheckOnly);
+        return paramAssoc;
+      }
+      buildRegExp() {
+        let regexp = this.#root.buildRegExpStr();
+        if (regexp === "") {
+          return [/^$/, [], []];
+        }
+        let captureIndex = 0;
+        const indexReplacementMap = [];
+        const paramReplacementMap = [];
+        regexp = regexp.replace(/#(\d+)|@(\d+)|\.\*\$/g, (_, handlerIndex, paramIndex) => {
+          if (handlerIndex !== void 0) {
+            indexReplacementMap[++captureIndex] = Number(handlerIndex);
+            return "$()";
+          }
+          if (paramIndex !== void 0) {
+            paramReplacementMap[Number(paramIndex)] = ++captureIndex;
+            return "";
+          }
+          return "";
+        });
+        return [new RegExp(`^${regexp}`), indexReplacementMap, paramReplacementMap];
+      }
+    };
+  }
+});
+
+// node_modules/hono/dist/router/reg-exp-router/router.js
+function buildWildcardRegExp(path) {
+  return wildcardRegExpCache[path] ??= new RegExp(
+    path === "*" ? "" : `^${path.replace(
+      /\/\*$|([.\\+*[^\]$()])/g,
+      (_, metaChar) => metaChar ? `\\${metaChar}` : "(?:|/.*)"
+    )}$`
+  );
+}
+function clearWildcardRegExpCache() {
+  wildcardRegExpCache = /* @__PURE__ */ Object.create(null);
+}
+function buildMatcherFromPreprocessedRoutes(routes) {
+  const trie = new Trie();
+  const handlerData = [];
+  if (routes.length === 0) {
+    return nullMatcher;
+  }
+  const routesWithStaticPathFlag = routes.map(
+    (route) => [!/\*|\/:/.test(route[0]), ...route]
+  ).sort(
+    ([isStaticA, pathA], [isStaticB, pathB]) => isStaticA ? 1 : isStaticB ? -1 : pathA.length - pathB.length
+  );
+  const staticMap = /* @__PURE__ */ Object.create(null);
+  for (let i = 0, j = -1, len = routesWithStaticPathFlag.length; i < len; i++) {
+    const [pathErrorCheckOnly, path, handlers2] = routesWithStaticPathFlag[i];
+    if (pathErrorCheckOnly) {
+      staticMap[path] = [handlers2.map(([h]) => [h, /* @__PURE__ */ Object.create(null)]), emptyParam];
+    } else {
+      j++;
+    }
+    let paramAssoc;
+    try {
+      paramAssoc = trie.insert(path, j, pathErrorCheckOnly);
+    } catch (e) {
+      throw e === PATH_ERROR ? new UnsupportedPathError(path) : e;
+    }
+    if (pathErrorCheckOnly) {
+      continue;
+    }
+    handlerData[j] = handlers2.map(([h, paramCount]) => {
+      const paramIndexMap = /* @__PURE__ */ Object.create(null);
+      paramCount -= 1;
+      for (; paramCount >= 0; paramCount--) {
+        const [key, value] = paramAssoc[paramCount];
+        paramIndexMap[key] = value;
+      }
+      return [h, paramIndexMap];
+    });
+  }
+  const [regexp, indexReplacementMap, paramReplacementMap] = trie.buildRegExp();
+  for (let i = 0, len = handlerData.length; i < len; i++) {
+    for (let j = 0, len2 = handlerData[i].length; j < len2; j++) {
+      const map2 = handlerData[i][j]?.[1];
+      if (!map2) {
+        continue;
+      }
+      const keys = Object.keys(map2);
+      for (let k = 0, len3 = keys.length; k < len3; k++) {
+        map2[keys[k]] = paramReplacementMap[map2[keys[k]]];
+      }
+    }
+  }
+  const handlerMap = [];
+  for (const i in indexReplacementMap) {
+    handlerMap[i] = handlerData[indexReplacementMap[i]];
+  }
+  return [regexp, handlerMap, staticMap];
+}
+function findMiddleware(middleware, path) {
+  if (!middleware) {
+    return void 0;
+  }
+  for (const k of Object.keys(middleware).sort((a, b) => b.length - a.length)) {
+    if (buildWildcardRegExp(k).test(path)) {
+      return [...middleware[k]];
+    }
+  }
+  return void 0;
+}
+var nullMatcher, wildcardRegExpCache, RegExpRouter;
+var init_router2 = __esm({
+  "node_modules/hono/dist/router/reg-exp-router/router.js"() {
+    init_router();
+    init_url();
+    init_matcher();
+    init_node();
+    init_trie();
+    nullMatcher = [/^$/, [], /* @__PURE__ */ Object.create(null)];
+    wildcardRegExpCache = /* @__PURE__ */ Object.create(null);
+    RegExpRouter = class {
+      name = "RegExpRouter";
+      #middleware;
+      #routes;
+      constructor() {
+        this.#middleware = { [METHOD_NAME_ALL]: /* @__PURE__ */ Object.create(null) };
+        this.#routes = { [METHOD_NAME_ALL]: /* @__PURE__ */ Object.create(null) };
+      }
+      add(method, path, handler) {
+        const middleware = this.#middleware;
+        const routes = this.#routes;
+        if (!middleware || !routes) {
+          throw new Error(MESSAGE_MATCHER_IS_ALREADY_BUILT);
+        }
+        if (!middleware[method]) {
+          ;
+          [middleware, routes].forEach((handlerMap) => {
+            handlerMap[method] = /* @__PURE__ */ Object.create(null);
+            Object.keys(handlerMap[METHOD_NAME_ALL]).forEach((p) => {
+              handlerMap[method][p] = [...handlerMap[METHOD_NAME_ALL][p]];
+            });
+          });
+        }
+        if (path === "/*") {
+          path = "*";
+        }
+        const paramCount = (path.match(/\/:/g) || []).length;
+        if (/\*$/.test(path)) {
+          const re = buildWildcardRegExp(path);
+          if (method === METHOD_NAME_ALL) {
+            Object.keys(middleware).forEach((m) => {
+              middleware[m][path] ||= findMiddleware(middleware[m], path) || findMiddleware(middleware[METHOD_NAME_ALL], path) || [];
+            });
+          } else {
+            middleware[method][path] ||= findMiddleware(middleware[method], path) || findMiddleware(middleware[METHOD_NAME_ALL], path) || [];
+          }
+          Object.keys(middleware).forEach((m) => {
+            if (method === METHOD_NAME_ALL || method === m) {
+              Object.keys(middleware[m]).forEach((p) => {
+                re.test(p) && middleware[m][p].push([handler, paramCount]);
+              });
+            }
+          });
+          Object.keys(routes).forEach((m) => {
+            if (method === METHOD_NAME_ALL || method === m) {
+              Object.keys(routes[m]).forEach(
+                (p) => re.test(p) && routes[m][p].push([handler, paramCount])
+              );
+            }
+          });
+          return;
+        }
+        const paths = checkOptionalParameter(path) || [path];
+        for (let i = 0, len = paths.length; i < len; i++) {
+          const path2 = paths[i];
+          Object.keys(routes).forEach((m) => {
+            if (method === METHOD_NAME_ALL || method === m) {
+              routes[m][path2] ||= [
+                ...findMiddleware(middleware[m], path2) || findMiddleware(middleware[METHOD_NAME_ALL], path2) || []
+              ];
+              routes[m][path2].push([handler, paramCount - len + i + 1]);
+            }
+          });
+        }
+      }
+      match = match;
+      buildAllMatchers() {
+        const matchers = /* @__PURE__ */ Object.create(null);
+        Object.keys(this.#routes).concat(Object.keys(this.#middleware)).forEach((method) => {
+          matchers[method] ||= this.#buildMatcher(method);
+        });
+        this.#middleware = this.#routes = void 0;
+        clearWildcardRegExpCache();
+        return matchers;
+      }
+      #buildMatcher(method) {
+        const routes = [];
+        let hasOwnRoute = method === METHOD_NAME_ALL;
+        [this.#middleware, this.#routes].forEach((r) => {
+          const ownRoute = r[method] ? Object.keys(r[method]).map((path) => [path, r[method][path]]) : [];
+          if (ownRoute.length !== 0) {
+            hasOwnRoute ||= true;
+            routes.push(...ownRoute);
+          } else if (method !== METHOD_NAME_ALL) {
+            routes.push(
+              ...Object.keys(r[METHOD_NAME_ALL]).map((path) => [path, r[METHOD_NAME_ALL][path]])
+            );
+          }
+        });
+        if (!hasOwnRoute) {
+          return null;
+        } else {
+          return buildMatcherFromPreprocessedRoutes(routes);
+        }
+      }
+    };
+  }
+});
+
+// node_modules/hono/dist/router/reg-exp-router/prepared-router.js
+var init_prepared_router = __esm({
+  "node_modules/hono/dist/router/reg-exp-router/prepared-router.js"() {
+    init_router();
+    init_matcher();
+    init_router2();
+  }
+});
+
+// node_modules/hono/dist/router/reg-exp-router/index.js
+var init_reg_exp_router = __esm({
+  "node_modules/hono/dist/router/reg-exp-router/index.js"() {
+    init_router2();
+    init_prepared_router();
+  }
+});
+
+// node_modules/hono/dist/router/smart-router/router.js
+var SmartRouter;
+var init_router3 = __esm({
+  "node_modules/hono/dist/router/smart-router/router.js"() {
+    init_router();
+    SmartRouter = class {
+      name = "SmartRouter";
+      #routers = [];
+      #routes = [];
+      constructor(init) {
+        this.#routers = init.routers;
+      }
+      add(method, path, handler) {
+        if (!this.#routes) {
+          throw new Error(MESSAGE_MATCHER_IS_ALREADY_BUILT);
+        }
+        this.#routes.push([method, path, handler]);
+      }
+      match(method, path) {
+        if (!this.#routes) {
+          throw new Error("Fatal error");
+        }
+        const routers = this.#routers;
+        const routes = this.#routes;
+        const len = routers.length;
+        let i = 0;
+        let res;
+        for (; i < len; i++) {
+          const router2 = routers[i];
+          try {
+            for (let i2 = 0, len2 = routes.length; i2 < len2; i2++) {
+              router2.add(...routes[i2]);
+            }
+            res = router2.match(method, path);
+          } catch (e) {
+            if (e instanceof UnsupportedPathError) {
+              continue;
+            }
+            throw e;
+          }
+          this.match = router2.match.bind(router2);
+          this.#routers = [router2];
+          this.#routes = void 0;
+          break;
+        }
+        if (i === len) {
+          throw new Error("Fatal error");
+        }
+        this.name = `SmartRouter + ${this.activeRouter.name}`;
+        return res;
+      }
+      get activeRouter() {
+        if (this.#routes || this.#routers.length !== 1) {
+          throw new Error("No active router has been determined yet.");
+        }
+        return this.#routers[0];
+      }
+    };
+  }
+});
+
+// node_modules/hono/dist/router/smart-router/index.js
+var init_smart_router = __esm({
+  "node_modules/hono/dist/router/smart-router/index.js"() {
+    init_router3();
+  }
+});
+
+// node_modules/hono/dist/router/trie-router/node.js
+var emptyParams, hasChildren, Node2;
+var init_node2 = __esm({
+  "node_modules/hono/dist/router/trie-router/node.js"() {
+    init_router();
+    init_url();
+    emptyParams = /* @__PURE__ */ Object.create(null);
+    hasChildren = (children) => {
+      for (const _ in children) {
+        return true;
+      }
+      return false;
+    };
+    Node2 = class _Node2 {
+      #methods;
+      #children;
+      #patterns;
+      #order = 0;
+      #params = emptyParams;
+      constructor(method, handler, children) {
+        this.#children = children || /* @__PURE__ */ Object.create(null);
+        this.#methods = [];
+        if (method && handler) {
+          const m = /* @__PURE__ */ Object.create(null);
+          m[method] = { handler, possibleKeys: [], score: 0 };
+          this.#methods = [m];
+        }
+        this.#patterns = [];
+      }
+      insert(method, path, handler) {
+        this.#order = ++this.#order;
+        let curNode = this;
+        const parts = splitRoutingPath(path);
+        const possibleKeys = [];
+        for (let i = 0, len = parts.length; i < len; i++) {
+          const p = parts[i];
+          const nextP = parts[i + 1];
+          const pattern = getPattern(p, nextP);
+          const key = Array.isArray(pattern) ? pattern[0] : p;
+          if (key in curNode.#children) {
+            curNode = curNode.#children[key];
+            if (pattern) {
+              possibleKeys.push(pattern[1]);
+            }
+            continue;
+          }
+          curNode.#children[key] = new _Node2();
+          if (pattern) {
+            curNode.#patterns.push(pattern);
+            possibleKeys.push(pattern[1]);
+          }
+          curNode = curNode.#children[key];
+        }
+        curNode.#methods.push({
+          [method]: {
+            handler,
+            possibleKeys: possibleKeys.filter((v, i, a) => a.indexOf(v) === i),
+            score: this.#order
+          }
+        });
+        return curNode;
+      }
+      #pushHandlerSets(handlerSets, node, method, nodeParams, params) {
+        for (let i = 0, len = node.#methods.length; i < len; i++) {
+          const m = node.#methods[i];
+          const handlerSet = m[method] || m[METHOD_NAME_ALL];
+          const processedSet = {};
+          if (handlerSet !== void 0) {
+            handlerSet.params = /* @__PURE__ */ Object.create(null);
+            handlerSets.push(handlerSet);
+            if (nodeParams !== emptyParams || params && params !== emptyParams) {
+              for (let i2 = 0, len2 = handlerSet.possibleKeys.length; i2 < len2; i2++) {
+                const key = handlerSet.possibleKeys[i2];
+                const processed = processedSet[handlerSet.score];
+                handlerSet.params[key] = params?.[key] && !processed ? params[key] : nodeParams[key] ?? params?.[key];
+                processedSet[handlerSet.score] = true;
+              }
+            }
+          }
+        }
+      }
+      search(method, path) {
+        const handlerSets = [];
+        this.#params = emptyParams;
+        const curNode = this;
+        let curNodes = [curNode];
+        const parts = splitPath(path);
+        const curNodesQueue = [];
+        const len = parts.length;
+        let partOffsets = null;
+        for (let i = 0; i < len; i++) {
+          const part = parts[i];
+          const isLast = i === len - 1;
+          const tempNodes = [];
+          for (let j = 0, len2 = curNodes.length; j < len2; j++) {
+            const node = curNodes[j];
+            const nextNode = node.#children[part];
+            if (nextNode) {
+              nextNode.#params = node.#params;
+              if (isLast) {
+                if (nextNode.#children["*"]) {
+                  this.#pushHandlerSets(handlerSets, nextNode.#children["*"], method, node.#params);
+                }
+                this.#pushHandlerSets(handlerSets, nextNode, method, node.#params);
+              } else {
+                tempNodes.push(nextNode);
+              }
+            }
+            for (let k = 0, len3 = node.#patterns.length; k < len3; k++) {
+              const pattern = node.#patterns[k];
+              const params = node.#params === emptyParams ? {} : { ...node.#params };
+              if (pattern === "*") {
+                const astNode = node.#children["*"];
+                if (astNode) {
+                  this.#pushHandlerSets(handlerSets, astNode, method, node.#params);
+                  astNode.#params = params;
+                  tempNodes.push(astNode);
+                }
+                continue;
+              }
+              const [key, name2, matcher] = pattern;
+              if (!part && !(matcher instanceof RegExp)) {
+                continue;
+              }
+              const child = node.#children[key];
+              if (matcher instanceof RegExp) {
+                if (partOffsets === null) {
+                  partOffsets = new Array(len);
+                  let offset = path[0] === "/" ? 1 : 0;
+                  for (let p = 0; p < len; p++) {
+                    partOffsets[p] = offset;
+                    offset += parts[p].length + 1;
+                  }
+                }
+                const restPathString = path.substring(partOffsets[i]);
+                const m = matcher.exec(restPathString);
+                if (m) {
+                  params[name2] = m[0];
+                  this.#pushHandlerSets(handlerSets, child, method, node.#params, params);
+                  if (hasChildren(child.#children)) {
+                    child.#params = params;
+                    const componentCount = m[0].match(/\//)?.length ?? 0;
+                    const targetCurNodes = curNodesQueue[componentCount] ||= [];
+                    targetCurNodes.push(child);
+                  }
+                  continue;
+                }
+              }
+              if (matcher === true || matcher.test(part)) {
+                params[name2] = part;
+                if (isLast) {
+                  this.#pushHandlerSets(handlerSets, child, method, params, node.#params);
+                  if (child.#children["*"]) {
+                    this.#pushHandlerSets(
+                      handlerSets,
+                      child.#children["*"],
+                      method,
+                      params,
+                      node.#params
+                    );
+                  }
+                } else {
+                  child.#params = params;
+                  tempNodes.push(child);
+                }
+              }
+            }
+          }
+          const shifted = curNodesQueue.shift();
+          curNodes = shifted ? tempNodes.concat(shifted) : tempNodes;
+        }
+        if (handlerSets.length > 1) {
+          handlerSets.sort((a, b) => {
+            return a.score - b.score;
+          });
+        }
+        return [handlerSets.map(({ handler, params }) => [handler, params])];
+      }
+    };
+  }
+});
+
+// node_modules/hono/dist/router/trie-router/router.js
+var TrieRouter;
+var init_router4 = __esm({
+  "node_modules/hono/dist/router/trie-router/router.js"() {
+    init_url();
+    init_node2();
+    TrieRouter = class {
+      name = "TrieRouter";
+      #node;
+      constructor() {
+        this.#node = new Node2();
+      }
+      add(method, path, handler) {
+        const results = checkOptionalParameter(path);
+        if (results) {
+          for (let i = 0, len = results.length; i < len; i++) {
+            this.#node.insert(method, results[i], handler);
+          }
+          return;
+        }
+        this.#node.insert(method, path, handler);
+      }
+      match(method, path) {
+        return this.#node.search(method, path);
+      }
+    };
+  }
+});
+
+// node_modules/hono/dist/router/trie-router/index.js
+var init_trie_router = __esm({
+  "node_modules/hono/dist/router/trie-router/index.js"() {
+    init_router4();
+  }
+});
+
+// node_modules/hono/dist/hono.js
+var Hono2;
+var init_hono = __esm({
+  "node_modules/hono/dist/hono.js"() {
+    init_hono_base();
+    init_reg_exp_router();
+    init_smart_router();
+    init_trie_router();
+    Hono2 = class extends Hono {
+      /**
+       * Creates an instance of the Hono class.
+       *
+       * @param options - Optional configuration options for the Hono instance.
+       */
+      constructor(options = {}) {
+        super(options);
+        this.router = options.router ?? new SmartRouter({
+          routers: [new RegExpRouter(), new TrieRouter()]
+        });
+      }
+    };
+  }
+});
+
+// node_modules/hono/dist/index.js
+var init_dist = __esm({
+  "node_modules/hono/dist/index.js"() {
+    init_hono();
+  }
+});
+
 // node_modules/zod/v4/core/core.js
 // @__NO_SIDE_EFFECTS__
 function $constructor(name2, initializer3, params) {
@@ -42274,6 +44489,640 @@ var init_connection = __esm({
   }
 });
 
+// node_modules/hono/dist/utils/cookie.js
+var init_cookie = __esm({
+  "node_modules/hono/dist/utils/cookie.js"() {
+    init_url();
+  }
+});
+
+// node_modules/hono/dist/helper/cookie/index.js
+var init_cookie2 = __esm({
+  "node_modules/hono/dist/helper/cookie/index.js"() {
+    init_cookie();
+  }
+});
+
+// node_modules/hono/dist/utils/encode.js
+var decodeBase64Url, encodeBase64Url, encodeBase64, decodeBase64;
+var init_encode = __esm({
+  "node_modules/hono/dist/utils/encode.js"() {
+    decodeBase64Url = (str) => {
+      return decodeBase64(str.replace(/_|-/g, (m) => ({ _: "/", "-": "+" })[m] ?? m));
+    };
+    encodeBase64Url = (buf) => encodeBase64(buf).replace(/\/|\+/g, (m) => ({ "/": "_", "+": "-" })[m] ?? m);
+    encodeBase64 = (buf) => {
+      let binary2 = "";
+      const bytes = new Uint8Array(buf);
+      for (let i = 0, len = bytes.length; i < len; i++) {
+        binary2 += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary2);
+    };
+    decodeBase64 = (str) => {
+      const binary2 = atob(str);
+      const bytes = new Uint8Array(new ArrayBuffer(binary2.length));
+      const half = binary2.length / 2;
+      for (let i = 0, j = binary2.length - 1; i <= half; i++, j--) {
+        bytes[i] = binary2.charCodeAt(i);
+        bytes[j] = binary2.charCodeAt(j);
+      }
+      return bytes;
+    };
+  }
+});
+
+// node_modules/hono/dist/utils/jwt/jwa.js
+var AlgorithmTypes;
+var init_jwa = __esm({
+  "node_modules/hono/dist/utils/jwt/jwa.js"() {
+    AlgorithmTypes = /* @__PURE__ */ ((AlgorithmTypes2) => {
+      AlgorithmTypes2["HS256"] = "HS256";
+      AlgorithmTypes2["HS384"] = "HS384";
+      AlgorithmTypes2["HS512"] = "HS512";
+      AlgorithmTypes2["RS256"] = "RS256";
+      AlgorithmTypes2["RS384"] = "RS384";
+      AlgorithmTypes2["RS512"] = "RS512";
+      AlgorithmTypes2["PS256"] = "PS256";
+      AlgorithmTypes2["PS384"] = "PS384";
+      AlgorithmTypes2["PS512"] = "PS512";
+      AlgorithmTypes2["ES256"] = "ES256";
+      AlgorithmTypes2["ES384"] = "ES384";
+      AlgorithmTypes2["ES512"] = "ES512";
+      AlgorithmTypes2["EdDSA"] = "EdDSA";
+      return AlgorithmTypes2;
+    })(AlgorithmTypes || {});
+  }
+});
+
+// node_modules/hono/dist/helper/adapter/index.js
+var knownUserAgents, getRuntimeKey, checkUserAgentEquals;
+var init_adapter = __esm({
+  "node_modules/hono/dist/helper/adapter/index.js"() {
+    knownUserAgents = {
+      deno: "Deno",
+      bun: "Bun",
+      workerd: "Cloudflare-Workers",
+      node: "Node.js"
+    };
+    getRuntimeKey = () => {
+      const global2 = globalThis;
+      const userAgentSupported = typeof navigator !== "undefined" && typeof navigator.userAgent === "string";
+      if (userAgentSupported) {
+        for (const [runtimeKey, userAgent] of Object.entries(knownUserAgents)) {
+          if (checkUserAgentEquals(userAgent)) {
+            return runtimeKey;
+          }
+        }
+      }
+      if (typeof global2?.EdgeRuntime === "string") {
+        return "edge-light";
+      }
+      if (global2?.fastly !== void 0) {
+        return "fastly";
+      }
+      if (global2?.process?.release?.name === "node") {
+        return "node";
+      }
+      return "other";
+    };
+    checkUserAgentEquals = (platform) => {
+      const userAgent = navigator.userAgent;
+      return userAgent.startsWith(platform);
+    };
+  }
+});
+
+// node_modules/hono/dist/utils/jwt/types.js
+var JwtAlgorithmNotImplemented, JwtAlgorithmRequired, JwtAlgorithmMismatch, JwtTokenInvalid, JwtTokenNotBefore, JwtTokenExpired, JwtTokenIssuedAt, JwtTokenIssuer, JwtHeaderInvalid, JwtHeaderRequiresKid, JwtSymmetricAlgorithmNotAllowed, JwtAlgorithmNotAllowed, JwtTokenSignatureMismatched, JwtPayloadRequiresAud, JwtTokenAudience, CryptoKeyUsage;
+var init_types = __esm({
+  "node_modules/hono/dist/utils/jwt/types.js"() {
+    JwtAlgorithmNotImplemented = class extends Error {
+      constructor(alg) {
+        super(`${alg} is not an implemented algorithm`);
+        this.name = "JwtAlgorithmNotImplemented";
+      }
+    };
+    JwtAlgorithmRequired = class extends Error {
+      constructor() {
+        super('JWT verification requires "alg" option to be specified');
+        this.name = "JwtAlgorithmRequired";
+      }
+    };
+    JwtAlgorithmMismatch = class extends Error {
+      constructor(expected, actual) {
+        super(`JWT algorithm mismatch: expected "${expected}", got "${actual}"`);
+        this.name = "JwtAlgorithmMismatch";
+      }
+    };
+    JwtTokenInvalid = class extends Error {
+      constructor(token) {
+        super(`invalid JWT token: ${token}`);
+        this.name = "JwtTokenInvalid";
+      }
+    };
+    JwtTokenNotBefore = class extends Error {
+      constructor(token) {
+        super(`token (${token}) is being used before it's valid`);
+        this.name = "JwtTokenNotBefore";
+      }
+    };
+    JwtTokenExpired = class extends Error {
+      constructor(token) {
+        super(`token (${token}) expired`);
+        this.name = "JwtTokenExpired";
+      }
+    };
+    JwtTokenIssuedAt = class extends Error {
+      constructor(currentTimestamp, iat) {
+        super(
+          `Invalid "iat" claim, must be a valid number lower than "${currentTimestamp}" (iat: "${iat}")`
+        );
+        this.name = "JwtTokenIssuedAt";
+      }
+    };
+    JwtTokenIssuer = class extends Error {
+      constructor(expected, iss) {
+        super(`expected issuer "${expected}", got ${iss ? `"${iss}"` : "none"} `);
+        this.name = "JwtTokenIssuer";
+      }
+    };
+    JwtHeaderInvalid = class extends Error {
+      constructor(header) {
+        super(`jwt header is invalid: ${JSON.stringify(header)}`);
+        this.name = "JwtHeaderInvalid";
+      }
+    };
+    JwtHeaderRequiresKid = class extends Error {
+      constructor(header) {
+        super(`required "kid" in jwt header: ${JSON.stringify(header)}`);
+        this.name = "JwtHeaderRequiresKid";
+      }
+    };
+    JwtSymmetricAlgorithmNotAllowed = class extends Error {
+      constructor(alg) {
+        super(`symmetric algorithm "${alg}" is not allowed for JWK verification`);
+        this.name = "JwtSymmetricAlgorithmNotAllowed";
+      }
+    };
+    JwtAlgorithmNotAllowed = class extends Error {
+      constructor(alg, allowedAlgorithms) {
+        super(`algorithm "${alg}" is not in the allowed list: [${allowedAlgorithms.join(", ")}]`);
+        this.name = "JwtAlgorithmNotAllowed";
+      }
+    };
+    JwtTokenSignatureMismatched = class extends Error {
+      constructor(token) {
+        super(`token(${token}) signature mismatched`);
+        this.name = "JwtTokenSignatureMismatched";
+      }
+    };
+    JwtPayloadRequiresAud = class extends Error {
+      constructor(payload) {
+        super(`required "aud" in jwt payload: ${JSON.stringify(payload)}`);
+        this.name = "JwtPayloadRequiresAud";
+      }
+    };
+    JwtTokenAudience = class extends Error {
+      constructor(expected, aud) {
+        super(
+          `expected audience "${Array.isArray(expected) ? expected.join(", ") : expected}", got "${aud}"`
+        );
+        this.name = "JwtTokenAudience";
+      }
+    };
+    CryptoKeyUsage = /* @__PURE__ */ ((CryptoKeyUsage2) => {
+      CryptoKeyUsage2["Encrypt"] = "encrypt";
+      CryptoKeyUsage2["Decrypt"] = "decrypt";
+      CryptoKeyUsage2["Sign"] = "sign";
+      CryptoKeyUsage2["Verify"] = "verify";
+      CryptoKeyUsage2["DeriveKey"] = "deriveKey";
+      CryptoKeyUsage2["DeriveBits"] = "deriveBits";
+      CryptoKeyUsage2["WrapKey"] = "wrapKey";
+      CryptoKeyUsage2["UnwrapKey"] = "unwrapKey";
+      return CryptoKeyUsage2;
+    })(CryptoKeyUsage || {});
+  }
+});
+
+// node_modules/hono/dist/utils/jwt/utf8.js
+var utf8Encoder, utf8Decoder;
+var init_utf8 = __esm({
+  "node_modules/hono/dist/utils/jwt/utf8.js"() {
+    utf8Encoder = new TextEncoder();
+    utf8Decoder = new TextDecoder();
+  }
+});
+
+// node_modules/hono/dist/utils/jwt/jws.js
+async function signing(privateKey, alg, data) {
+  const algorithm = getKeyAlgorithm(alg);
+  const cryptoKey = await importPrivateKey(privateKey, algorithm);
+  return await crypto.subtle.sign(algorithm, cryptoKey, data);
+}
+async function verifying(publicKey, alg, signature, data) {
+  const algorithm = getKeyAlgorithm(alg);
+  const cryptoKey = await importPublicKey(publicKey, algorithm);
+  return await crypto.subtle.verify(algorithm, cryptoKey, signature, data);
+}
+function pemToBinary(pem) {
+  return decodeBase64(pem.replace(/-+(BEGIN|END).*?-+/g, "").replace(/\s/g, ""));
+}
+async function importPrivateKey(key, alg) {
+  if (!crypto.subtle || !crypto.subtle.importKey) {
+    throw new Error("`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.");
+  }
+  if (isCryptoKey(key)) {
+    if (key.type !== "private" && key.type !== "secret") {
+      throw new Error(
+        `unexpected key type: CryptoKey.type is ${key.type}, expected private or secret`
+      );
+    }
+    return key;
+  }
+  const usages = [CryptoKeyUsage.Sign];
+  if (typeof key === "object") {
+    return await crypto.subtle.importKey("jwk", key, alg, false, usages);
+  }
+  if (key.includes("PRIVATE")) {
+    return await crypto.subtle.importKey("pkcs8", pemToBinary(key), alg, false, usages);
+  }
+  return await crypto.subtle.importKey("raw", utf8Encoder.encode(key), alg, false, usages);
+}
+async function importPublicKey(key, alg) {
+  if (!crypto.subtle || !crypto.subtle.importKey) {
+    throw new Error("`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.");
+  }
+  if (isCryptoKey(key)) {
+    if (key.type === "public" || key.type === "secret") {
+      return key;
+    }
+    key = await exportPublicJwkFrom(key);
+  }
+  if (typeof key === "string" && key.includes("PRIVATE")) {
+    const privateKey = await crypto.subtle.importKey("pkcs8", pemToBinary(key), alg, true, [
+      CryptoKeyUsage.Sign
+    ]);
+    key = await exportPublicJwkFrom(privateKey);
+  }
+  const usages = [CryptoKeyUsage.Verify];
+  if (typeof key === "object") {
+    return await crypto.subtle.importKey("jwk", key, alg, false, usages);
+  }
+  if (key.includes("PUBLIC")) {
+    return await crypto.subtle.importKey("spki", pemToBinary(key), alg, false, usages);
+  }
+  return await crypto.subtle.importKey("raw", utf8Encoder.encode(key), alg, false, usages);
+}
+async function exportPublicJwkFrom(privateKey) {
+  if (privateKey.type !== "private") {
+    throw new Error(`unexpected key type: ${privateKey.type}`);
+  }
+  if (!privateKey.extractable) {
+    throw new Error("unexpected private key is unextractable");
+  }
+  const jwk = await crypto.subtle.exportKey("jwk", privateKey);
+  const { kty } = jwk;
+  const { alg, e, n } = jwk;
+  const { crv, x, y } = jwk;
+  return { kty, alg, e, n, crv, x, y, key_ops: [CryptoKeyUsage.Verify] };
+}
+function getKeyAlgorithm(name2) {
+  switch (name2) {
+    case "HS256":
+      return {
+        name: "HMAC",
+        hash: {
+          name: "SHA-256"
+        }
+      };
+    case "HS384":
+      return {
+        name: "HMAC",
+        hash: {
+          name: "SHA-384"
+        }
+      };
+    case "HS512":
+      return {
+        name: "HMAC",
+        hash: {
+          name: "SHA-512"
+        }
+      };
+    case "RS256":
+      return {
+        name: "RSASSA-PKCS1-v1_5",
+        hash: {
+          name: "SHA-256"
+        }
+      };
+    case "RS384":
+      return {
+        name: "RSASSA-PKCS1-v1_5",
+        hash: {
+          name: "SHA-384"
+        }
+      };
+    case "RS512":
+      return {
+        name: "RSASSA-PKCS1-v1_5",
+        hash: {
+          name: "SHA-512"
+        }
+      };
+    case "PS256":
+      return {
+        name: "RSA-PSS",
+        hash: {
+          name: "SHA-256"
+        },
+        saltLength: 32
+        // 256 >> 3
+      };
+    case "PS384":
+      return {
+        name: "RSA-PSS",
+        hash: {
+          name: "SHA-384"
+        },
+        saltLength: 48
+        // 384 >> 3
+      };
+    case "PS512":
+      return {
+        name: "RSA-PSS",
+        hash: {
+          name: "SHA-512"
+        },
+        saltLength: 64
+        // 512 >> 3,
+      };
+    case "ES256":
+      return {
+        name: "ECDSA",
+        hash: {
+          name: "SHA-256"
+        },
+        namedCurve: "P-256"
+      };
+    case "ES384":
+      return {
+        name: "ECDSA",
+        hash: {
+          name: "SHA-384"
+        },
+        namedCurve: "P-384"
+      };
+    case "ES512":
+      return {
+        name: "ECDSA",
+        hash: {
+          name: "SHA-512"
+        },
+        namedCurve: "P-521"
+      };
+    case "EdDSA":
+      return {
+        name: "Ed25519",
+        namedCurve: "Ed25519"
+      };
+    default:
+      throw new JwtAlgorithmNotImplemented(name2);
+  }
+}
+function isCryptoKey(key) {
+  const runtime = getRuntimeKey();
+  if (runtime === "node" && !!crypto.webcrypto) {
+    return key instanceof crypto.webcrypto.CryptoKey;
+  }
+  return key instanceof CryptoKey;
+}
+var init_jws = __esm({
+  "node_modules/hono/dist/utils/jwt/jws.js"() {
+    init_adapter();
+    init_encode();
+    init_types();
+    init_utf8();
+  }
+});
+
+// node_modules/hono/dist/utils/jwt/jwt.js
+function isTokenHeader(obj) {
+  if (typeof obj === "object" && obj !== null) {
+    const objWithAlg = obj;
+    return "alg" in objWithAlg && Object.values(AlgorithmTypes).includes(objWithAlg.alg) && (!("typ" in objWithAlg) || objWithAlg.typ === "JWT");
+  }
+  return false;
+}
+var encodeJwtPart, encodeSignaturePart, decodeJwtPart, sign, verify, symmetricAlgorithms, verifyWithJwks, decode3, decodeHeader;
+var init_jwt = __esm({
+  "node_modules/hono/dist/utils/jwt/jwt.js"() {
+    init_encode();
+    init_jwa();
+    init_jws();
+    init_types();
+    init_utf8();
+    encodeJwtPart = (part) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(part)).buffer).replace(/=/g, "");
+    encodeSignaturePart = (buf) => encodeBase64Url(buf).replace(/=/g, "");
+    decodeJwtPart = (part) => JSON.parse(utf8Decoder.decode(decodeBase64Url(part)));
+    sign = async (payload, privateKey, alg = "HS256") => {
+      const encodedPayload = encodeJwtPart(payload);
+      let encodedHeader;
+      if (typeof privateKey === "object" && "alg" in privateKey) {
+        alg = privateKey.alg;
+        encodedHeader = encodeJwtPart({ alg, typ: "JWT", kid: privateKey.kid });
+      } else {
+        encodedHeader = encodeJwtPart({ alg, typ: "JWT" });
+      }
+      const partialToken = `${encodedHeader}.${encodedPayload}`;
+      const signaturePart = await signing(privateKey, alg, utf8Encoder.encode(partialToken));
+      const signature = encodeSignaturePart(signaturePart);
+      return `${partialToken}.${signature}`;
+    };
+    verify = async (token, publicKey, algOrOptions) => {
+      if (!algOrOptions) {
+        throw new JwtAlgorithmRequired();
+      }
+      const {
+        alg,
+        iss,
+        nbf = true,
+        exp = true,
+        iat = true,
+        aud
+      } = typeof algOrOptions === "string" ? { alg: algOrOptions } : algOrOptions;
+      if (!alg) {
+        throw new JwtAlgorithmRequired();
+      }
+      const tokenParts = token.split(".");
+      if (tokenParts.length !== 3) {
+        throw new JwtTokenInvalid(token);
+      }
+      const { header, payload } = decode3(token);
+      if (!isTokenHeader(header)) {
+        throw new JwtHeaderInvalid(header);
+      }
+      if (header.alg !== alg) {
+        throw new JwtAlgorithmMismatch(alg, header.alg);
+      }
+      const now = Math.floor(Date.now() / 1e3);
+      if (nbf && payload.nbf && payload.nbf > now) {
+        throw new JwtTokenNotBefore(token);
+      }
+      if (exp && payload.exp && payload.exp <= now) {
+        throw new JwtTokenExpired(token);
+      }
+      if (iat && payload.iat && now < payload.iat) {
+        throw new JwtTokenIssuedAt(now, payload.iat);
+      }
+      if (iss) {
+        if (!payload.iss) {
+          throw new JwtTokenIssuer(iss, null);
+        }
+        if (typeof iss === "string" && payload.iss !== iss) {
+          throw new JwtTokenIssuer(iss, payload.iss);
+        }
+        if (iss instanceof RegExp && !iss.test(payload.iss)) {
+          throw new JwtTokenIssuer(iss, payload.iss);
+        }
+      }
+      if (aud) {
+        if (!payload.aud) {
+          throw new JwtPayloadRequiresAud(payload);
+        }
+        const audiences = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
+        const matched = audiences.some(
+          (payloadAud) => aud instanceof RegExp ? aud.test(payloadAud) : typeof aud === "string" ? payloadAud === aud : Array.isArray(aud) && aud.includes(payloadAud)
+        );
+        if (!matched) {
+          throw new JwtTokenAudience(aud, payload.aud);
+        }
+      }
+      const headerPayload = token.substring(0, token.lastIndexOf("."));
+      const verified = await verifying(
+        publicKey,
+        alg,
+        decodeBase64Url(tokenParts[2]),
+        utf8Encoder.encode(headerPayload)
+      );
+      if (!verified) {
+        throw new JwtTokenSignatureMismatched(token);
+      }
+      return payload;
+    };
+    symmetricAlgorithms = [
+      AlgorithmTypes.HS256,
+      AlgorithmTypes.HS384,
+      AlgorithmTypes.HS512
+    ];
+    verifyWithJwks = async (token, options, init) => {
+      const verifyOpts = options.verification || {};
+      const header = decodeHeader(token);
+      if (!isTokenHeader(header)) {
+        throw new JwtHeaderInvalid(header);
+      }
+      if (!header.kid) {
+        throw new JwtHeaderRequiresKid(header);
+      }
+      if (symmetricAlgorithms.includes(header.alg)) {
+        throw new JwtSymmetricAlgorithmNotAllowed(header.alg);
+      }
+      if (!options.allowedAlgorithms.includes(header.alg)) {
+        throw new JwtAlgorithmNotAllowed(header.alg, options.allowedAlgorithms);
+      }
+      let verifyKeys = options.keys ? [...options.keys] : void 0;
+      if (options.jwks_uri) {
+        const response = await fetch(options.jwks_uri, init);
+        if (!response.ok) {
+          throw new Error(`failed to fetch JWKS from ${options.jwks_uri}`);
+        }
+        const data = await response.json();
+        if (!data.keys) {
+          throw new Error('invalid JWKS response. "keys" field is missing');
+        }
+        if (!Array.isArray(data.keys)) {
+          throw new Error('invalid JWKS response. "keys" field is not an array');
+        }
+        verifyKeys ??= [];
+        verifyKeys.push(...data.keys);
+      } else if (!verifyKeys) {
+        throw new Error('verifyWithJwks requires options for either "keys" or "jwks_uri" or both');
+      }
+      const matchingKey = verifyKeys.find((key) => key.kid === header.kid);
+      if (!matchingKey) {
+        throw new JwtTokenInvalid(token);
+      }
+      if (matchingKey.alg && matchingKey.alg !== header.alg) {
+        throw new JwtAlgorithmMismatch(matchingKey.alg, header.alg);
+      }
+      return await verify(token, matchingKey, {
+        alg: header.alg,
+        ...verifyOpts
+      });
+    };
+    decode3 = (token) => {
+      const parts = token.split(".");
+      if (parts.length !== 3) {
+        throw new JwtTokenInvalid(token);
+      }
+      try {
+        const header = decodeJwtPart(parts[0]);
+        const payload = decodeJwtPart(parts[1]);
+        return {
+          header,
+          payload
+        };
+      } catch {
+        throw new JwtTokenInvalid(token);
+      }
+    };
+    decodeHeader = (token) => {
+      const parts = token.split(".");
+      if (parts.length !== 3) {
+        throw new JwtTokenInvalid(token);
+      }
+      try {
+        return decodeJwtPart(parts[0]);
+      } catch {
+        throw new JwtTokenInvalid(token);
+      }
+    };
+  }
+});
+
+// node_modules/hono/dist/utils/jwt/index.js
+var Jwt;
+var init_jwt2 = __esm({
+  "node_modules/hono/dist/utils/jwt/index.js"() {
+    init_jwt();
+    Jwt = { sign, verify, decode: decode3, verifyWithJwks };
+  }
+});
+
+// node_modules/hono/dist/middleware/jwt/jwt.js
+var verifyWithJwks2, verify2, decode4, sign2;
+var init_jwt3 = __esm({
+  "node_modules/hono/dist/middleware/jwt/jwt.js"() {
+    init_cookie2();
+    init_http_exception();
+    init_jwt2();
+    init_context();
+    verifyWithJwks2 = Jwt.verifyWithJwks;
+    verify2 = Jwt.verify;
+    decode4 = Jwt.decode;
+    sign2 = Jwt.sign;
+  }
+});
+
+// node_modules/hono/dist/middleware/jwt/index.js
+var init_jwt4 = __esm({
+  "node_modules/hono/dist/middleware/jwt/index.js"() {
+    init_jwt3();
+    init_jwa();
+  }
+});
+
 // node_modules/bcryptjs/index.js
 var bcryptjs_exports = {};
 __export(bcryptjs_exports, {
@@ -44135,6 +46984,1006 @@ var init_financial_month = __esm({
       "\u0646\u0648\u0641\u0645\u0628\u0631",
       "\u062F\u064A\u0633\u0645\u0628\u0631"
     ];
+  }
+});
+
+// node_modules/@google/generative-ai/dist/index.mjs
+function getClientHeaders(requestOptions) {
+  const clientHeaders = [];
+  if (requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.apiClient) {
+    clientHeaders.push(requestOptions.apiClient);
+  }
+  clientHeaders.push(`${PACKAGE_LOG_HEADER}/${PACKAGE_VERSION}`);
+  return clientHeaders.join(" ");
+}
+async function getHeaders(url2) {
+  var _a2;
+  const headers = new Headers();
+  headers.append("Content-Type", "application/json");
+  headers.append("x-goog-api-client", getClientHeaders(url2.requestOptions));
+  headers.append("x-goog-api-key", url2.apiKey);
+  let customHeaders = (_a2 = url2.requestOptions) === null || _a2 === void 0 ? void 0 : _a2.customHeaders;
+  if (customHeaders) {
+    if (!(customHeaders instanceof Headers)) {
+      try {
+        customHeaders = new Headers(customHeaders);
+      } catch (e) {
+        throw new GoogleGenerativeAIRequestInputError(`unable to convert customHeaders value ${JSON.stringify(customHeaders)} to Headers: ${e.message}`);
+      }
+    }
+    for (const [headerName, headerValue] of customHeaders.entries()) {
+      if (headerName === "x-goog-api-key") {
+        throw new GoogleGenerativeAIRequestInputError(`Cannot set reserved header name ${headerName}`);
+      } else if (headerName === "x-goog-api-client") {
+        throw new GoogleGenerativeAIRequestInputError(`Header name ${headerName} can only be set using the apiClient field`);
+      }
+      headers.append(headerName, headerValue);
+    }
+  }
+  return headers;
+}
+async function constructModelRequest(model, task, apiKey, stream, body, requestOptions) {
+  const url2 = new RequestUrl(model, task, apiKey, stream, requestOptions);
+  return {
+    url: url2.toString(),
+    fetchOptions: Object.assign(Object.assign({}, buildFetchOptions(requestOptions)), { method: "POST", headers: await getHeaders(url2), body })
+  };
+}
+async function makeModelRequest(model, task, apiKey, stream, body, requestOptions = {}, fetchFn = fetch) {
+  const { url: url2, fetchOptions } = await constructModelRequest(model, task, apiKey, stream, body, requestOptions);
+  return makeRequest(url2, fetchOptions, fetchFn);
+}
+async function makeRequest(url2, fetchOptions, fetchFn = fetch) {
+  let response;
+  try {
+    response = await fetchFn(url2, fetchOptions);
+  } catch (e) {
+    handleResponseError(e, url2);
+  }
+  if (!response.ok) {
+    await handleResponseNotOk(response, url2);
+  }
+  return response;
+}
+function handleResponseError(e, url2) {
+  let err = e;
+  if (err.name === "AbortError") {
+    err = new GoogleGenerativeAIAbortError(`Request aborted when fetching ${url2.toString()}: ${e.message}`);
+    err.stack = e.stack;
+  } else if (!(e instanceof GoogleGenerativeAIFetchError || e instanceof GoogleGenerativeAIRequestInputError)) {
+    err = new GoogleGenerativeAIError(`Error fetching from ${url2.toString()}: ${e.message}`);
+    err.stack = e.stack;
+  }
+  throw err;
+}
+async function handleResponseNotOk(response, url2) {
+  let message = "";
+  let errorDetails;
+  try {
+    const json3 = await response.json();
+    message = json3.error.message;
+    if (json3.error.details) {
+      message += ` ${JSON.stringify(json3.error.details)}`;
+      errorDetails = json3.error.details;
+    }
+  } catch (e) {
+  }
+  throw new GoogleGenerativeAIFetchError(`Error fetching from ${url2.toString()}: [${response.status} ${response.statusText}] ${message}`, response.status, response.statusText, errorDetails);
+}
+function buildFetchOptions(requestOptions) {
+  const fetchOptions = {};
+  if ((requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.signal) !== void 0 || (requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.timeout) >= 0) {
+    const controller = new AbortController();
+    if ((requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.timeout) >= 0) {
+      setTimeout(() => controller.abort(), requestOptions.timeout);
+    }
+    if (requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.signal) {
+      requestOptions.signal.addEventListener("abort", () => {
+        controller.abort();
+      });
+    }
+    fetchOptions.signal = controller.signal;
+  }
+  return fetchOptions;
+}
+function addHelpers(response) {
+  response.text = () => {
+    if (response.candidates && response.candidates.length > 0) {
+      if (response.candidates.length > 1) {
+        console.warn(`This response had ${response.candidates.length} candidates. Returning text from the first candidate only. Access response.candidates directly to use the other candidates.`);
+      }
+      if (hadBadFinishReason(response.candidates[0])) {
+        throw new GoogleGenerativeAIResponseError(`${formatBlockErrorMessage(response)}`, response);
+      }
+      return getText(response);
+    } else if (response.promptFeedback) {
+      throw new GoogleGenerativeAIResponseError(`Text not available. ${formatBlockErrorMessage(response)}`, response);
+    }
+    return "";
+  };
+  response.functionCall = () => {
+    if (response.candidates && response.candidates.length > 0) {
+      if (response.candidates.length > 1) {
+        console.warn(`This response had ${response.candidates.length} candidates. Returning function calls from the first candidate only. Access response.candidates directly to use the other candidates.`);
+      }
+      if (hadBadFinishReason(response.candidates[0])) {
+        throw new GoogleGenerativeAIResponseError(`${formatBlockErrorMessage(response)}`, response);
+      }
+      console.warn(`response.functionCall() is deprecated. Use response.functionCalls() instead.`);
+      return getFunctionCalls(response)[0];
+    } else if (response.promptFeedback) {
+      throw new GoogleGenerativeAIResponseError(`Function call not available. ${formatBlockErrorMessage(response)}`, response);
+    }
+    return void 0;
+  };
+  response.functionCalls = () => {
+    if (response.candidates && response.candidates.length > 0) {
+      if (response.candidates.length > 1) {
+        console.warn(`This response had ${response.candidates.length} candidates. Returning function calls from the first candidate only. Access response.candidates directly to use the other candidates.`);
+      }
+      if (hadBadFinishReason(response.candidates[0])) {
+        throw new GoogleGenerativeAIResponseError(`${formatBlockErrorMessage(response)}`, response);
+      }
+      return getFunctionCalls(response);
+    } else if (response.promptFeedback) {
+      throw new GoogleGenerativeAIResponseError(`Function call not available. ${formatBlockErrorMessage(response)}`, response);
+    }
+    return void 0;
+  };
+  return response;
+}
+function getText(response) {
+  var _a2, _b, _c, _d;
+  const textStrings = [];
+  if ((_b = (_a2 = response.candidates) === null || _a2 === void 0 ? void 0 : _a2[0].content) === null || _b === void 0 ? void 0 : _b.parts) {
+    for (const part of (_d = (_c = response.candidates) === null || _c === void 0 ? void 0 : _c[0].content) === null || _d === void 0 ? void 0 : _d.parts) {
+      if (part.text) {
+        textStrings.push(part.text);
+      }
+      if (part.executableCode) {
+        textStrings.push("\n```" + part.executableCode.language + "\n" + part.executableCode.code + "\n```\n");
+      }
+      if (part.codeExecutionResult) {
+        textStrings.push("\n```\n" + part.codeExecutionResult.output + "\n```\n");
+      }
+    }
+  }
+  if (textStrings.length > 0) {
+    return textStrings.join("");
+  } else {
+    return "";
+  }
+}
+function getFunctionCalls(response) {
+  var _a2, _b, _c, _d;
+  const functionCalls = [];
+  if ((_b = (_a2 = response.candidates) === null || _a2 === void 0 ? void 0 : _a2[0].content) === null || _b === void 0 ? void 0 : _b.parts) {
+    for (const part of (_d = (_c = response.candidates) === null || _c === void 0 ? void 0 : _c[0].content) === null || _d === void 0 ? void 0 : _d.parts) {
+      if (part.functionCall) {
+        functionCalls.push(part.functionCall);
+      }
+    }
+  }
+  if (functionCalls.length > 0) {
+    return functionCalls;
+  } else {
+    return void 0;
+  }
+}
+function hadBadFinishReason(candidate) {
+  return !!candidate.finishReason && badFinishReasons.includes(candidate.finishReason);
+}
+function formatBlockErrorMessage(response) {
+  var _a2, _b, _c;
+  let message = "";
+  if ((!response.candidates || response.candidates.length === 0) && response.promptFeedback) {
+    message += "Response was blocked";
+    if ((_a2 = response.promptFeedback) === null || _a2 === void 0 ? void 0 : _a2.blockReason) {
+      message += ` due to ${response.promptFeedback.blockReason}`;
+    }
+    if ((_b = response.promptFeedback) === null || _b === void 0 ? void 0 : _b.blockReasonMessage) {
+      message += `: ${response.promptFeedback.blockReasonMessage}`;
+    }
+  } else if ((_c = response.candidates) === null || _c === void 0 ? void 0 : _c[0]) {
+    const firstCandidate = response.candidates[0];
+    if (hadBadFinishReason(firstCandidate)) {
+      message += `Candidate was blocked due to ${firstCandidate.finishReason}`;
+      if (firstCandidate.finishMessage) {
+        message += `: ${firstCandidate.finishMessage}`;
+      }
+    }
+  }
+  return message;
+}
+function __await(v) {
+  return this instanceof __await ? (this.v = v, this) : new __await(v);
+}
+function __asyncGenerator(thisArg, _arguments, generator) {
+  if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+  var g = generator.apply(thisArg, _arguments || []), i, q = [];
+  return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function() {
+    return this;
+  }, i;
+  function verb(n) {
+    if (g[n]) i[n] = function(v) {
+      return new Promise(function(a, b) {
+        q.push([n, v, a, b]) > 1 || resume(n, v);
+      });
+    };
+  }
+  function resume(n, v) {
+    try {
+      step(g[n](v));
+    } catch (e) {
+      settle(q[0][3], e);
+    }
+  }
+  function step(r) {
+    r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r);
+  }
+  function fulfill(value) {
+    resume("next", value);
+  }
+  function reject(value) {
+    resume("throw", value);
+  }
+  function settle(f, v) {
+    if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]);
+  }
+}
+function processStream(response) {
+  const inputStream = response.body.pipeThrough(new TextDecoderStream("utf8", { fatal: true }));
+  const responseStream = getResponseStream(inputStream);
+  const [stream1, stream2] = responseStream.tee();
+  return {
+    stream: generateResponseSequence(stream1),
+    response: getResponsePromise(stream2)
+  };
+}
+async function getResponsePromise(stream) {
+  const allResponses = [];
+  const reader = stream.getReader();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      return addHelpers(aggregateResponses(allResponses));
+    }
+    allResponses.push(value);
+  }
+}
+function generateResponseSequence(stream) {
+  return __asyncGenerator(this, arguments, function* generateResponseSequence_1() {
+    const reader = stream.getReader();
+    while (true) {
+      const { value, done } = yield __await(reader.read());
+      if (done) {
+        break;
+      }
+      yield yield __await(addHelpers(value));
+    }
+  });
+}
+function getResponseStream(inputStream) {
+  const reader = inputStream.getReader();
+  const stream = new ReadableStream({
+    start(controller) {
+      let currentText = "";
+      return pump();
+      function pump() {
+        return reader.read().then(({ value, done }) => {
+          if (done) {
+            if (currentText.trim()) {
+              controller.error(new GoogleGenerativeAIError("Failed to parse stream"));
+              return;
+            }
+            controller.close();
+            return;
+          }
+          currentText += value;
+          let match2 = currentText.match(responseLineRE);
+          let parsedResponse;
+          while (match2) {
+            try {
+              parsedResponse = JSON.parse(match2[1]);
+            } catch (e) {
+              controller.error(new GoogleGenerativeAIError(`Error parsing JSON response: "${match2[1]}"`));
+              return;
+            }
+            controller.enqueue(parsedResponse);
+            currentText = currentText.substring(match2[0].length);
+            match2 = currentText.match(responseLineRE);
+          }
+          return pump();
+        }).catch((e) => {
+          let err = e;
+          err.stack = e.stack;
+          if (err.name === "AbortError") {
+            err = new GoogleGenerativeAIAbortError("Request aborted when reading from the stream");
+          } else {
+            err = new GoogleGenerativeAIError("Error reading from the stream");
+          }
+          throw err;
+        });
+      }
+    }
+  });
+  return stream;
+}
+function aggregateResponses(responses) {
+  const lastResponse = responses[responses.length - 1];
+  const aggregatedResponse = {
+    promptFeedback: lastResponse === null || lastResponse === void 0 ? void 0 : lastResponse.promptFeedback
+  };
+  for (const response of responses) {
+    if (response.candidates) {
+      let candidateIndex = 0;
+      for (const candidate of response.candidates) {
+        if (!aggregatedResponse.candidates) {
+          aggregatedResponse.candidates = [];
+        }
+        if (!aggregatedResponse.candidates[candidateIndex]) {
+          aggregatedResponse.candidates[candidateIndex] = {
+            index: candidateIndex
+          };
+        }
+        aggregatedResponse.candidates[candidateIndex].citationMetadata = candidate.citationMetadata;
+        aggregatedResponse.candidates[candidateIndex].groundingMetadata = candidate.groundingMetadata;
+        aggregatedResponse.candidates[candidateIndex].finishReason = candidate.finishReason;
+        aggregatedResponse.candidates[candidateIndex].finishMessage = candidate.finishMessage;
+        aggregatedResponse.candidates[candidateIndex].safetyRatings = candidate.safetyRatings;
+        if (candidate.content && candidate.content.parts) {
+          if (!aggregatedResponse.candidates[candidateIndex].content) {
+            aggregatedResponse.candidates[candidateIndex].content = {
+              role: candidate.content.role || "user",
+              parts: []
+            };
+          }
+          const newPart = {};
+          for (const part of candidate.content.parts) {
+            if (part.text) {
+              newPart.text = part.text;
+            }
+            if (part.functionCall) {
+              newPart.functionCall = part.functionCall;
+            }
+            if (part.executableCode) {
+              newPart.executableCode = part.executableCode;
+            }
+            if (part.codeExecutionResult) {
+              newPart.codeExecutionResult = part.codeExecutionResult;
+            }
+            if (Object.keys(newPart).length === 0) {
+              newPart.text = "";
+            }
+            aggregatedResponse.candidates[candidateIndex].content.parts.push(newPart);
+          }
+        }
+      }
+      candidateIndex++;
+    }
+    if (response.usageMetadata) {
+      aggregatedResponse.usageMetadata = response.usageMetadata;
+    }
+  }
+  return aggregatedResponse;
+}
+async function generateContentStream(apiKey, model, params, requestOptions) {
+  const response = await makeModelRequest(
+    model,
+    Task.STREAM_GENERATE_CONTENT,
+    apiKey,
+    /* stream */
+    true,
+    JSON.stringify(params),
+    requestOptions
+  );
+  return processStream(response);
+}
+async function generateContent(apiKey, model, params, requestOptions) {
+  const response = await makeModelRequest(
+    model,
+    Task.GENERATE_CONTENT,
+    apiKey,
+    /* stream */
+    false,
+    JSON.stringify(params),
+    requestOptions
+  );
+  const responseJson = await response.json();
+  const enhancedResponse = addHelpers(responseJson);
+  return {
+    response: enhancedResponse
+  };
+}
+function formatSystemInstruction(input) {
+  if (input == null) {
+    return void 0;
+  } else if (typeof input === "string") {
+    return { role: "system", parts: [{ text: input }] };
+  } else if (input.text) {
+    return { role: "system", parts: [input] };
+  } else if (input.parts) {
+    if (!input.role) {
+      return { role: "system", parts: input.parts };
+    } else {
+      return input;
+    }
+  }
+}
+function formatNewContent(request) {
+  let newParts = [];
+  if (typeof request === "string") {
+    newParts = [{ text: request }];
+  } else {
+    for (const partOrString of request) {
+      if (typeof partOrString === "string") {
+        newParts.push({ text: partOrString });
+      } else {
+        newParts.push(partOrString);
+      }
+    }
+  }
+  return assignRoleToPartsAndValidateSendMessageRequest(newParts);
+}
+function assignRoleToPartsAndValidateSendMessageRequest(parts) {
+  const userContent = { role: "user", parts: [] };
+  const functionContent = { role: "function", parts: [] };
+  let hasUserContent = false;
+  let hasFunctionContent = false;
+  for (const part of parts) {
+    if ("functionResponse" in part) {
+      functionContent.parts.push(part);
+      hasFunctionContent = true;
+    } else {
+      userContent.parts.push(part);
+      hasUserContent = true;
+    }
+  }
+  if (hasUserContent && hasFunctionContent) {
+    throw new GoogleGenerativeAIError("Within a single message, FunctionResponse cannot be mixed with other type of part in the request for sending chat message.");
+  }
+  if (!hasUserContent && !hasFunctionContent) {
+    throw new GoogleGenerativeAIError("No content is provided for sending chat message.");
+  }
+  if (hasUserContent) {
+    return userContent;
+  }
+  return functionContent;
+}
+function formatCountTokensInput(params, modelParams) {
+  var _a2;
+  let formattedGenerateContentRequest = {
+    model: modelParams === null || modelParams === void 0 ? void 0 : modelParams.model,
+    generationConfig: modelParams === null || modelParams === void 0 ? void 0 : modelParams.generationConfig,
+    safetySettings: modelParams === null || modelParams === void 0 ? void 0 : modelParams.safetySettings,
+    tools: modelParams === null || modelParams === void 0 ? void 0 : modelParams.tools,
+    toolConfig: modelParams === null || modelParams === void 0 ? void 0 : modelParams.toolConfig,
+    systemInstruction: modelParams === null || modelParams === void 0 ? void 0 : modelParams.systemInstruction,
+    cachedContent: (_a2 = modelParams === null || modelParams === void 0 ? void 0 : modelParams.cachedContent) === null || _a2 === void 0 ? void 0 : _a2.name,
+    contents: []
+  };
+  const containsGenerateContentRequest = params.generateContentRequest != null;
+  if (params.contents) {
+    if (containsGenerateContentRequest) {
+      throw new GoogleGenerativeAIRequestInputError("CountTokensRequest must have one of contents or generateContentRequest, not both.");
+    }
+    formattedGenerateContentRequest.contents = params.contents;
+  } else if (containsGenerateContentRequest) {
+    formattedGenerateContentRequest = Object.assign(Object.assign({}, formattedGenerateContentRequest), params.generateContentRequest);
+  } else {
+    const content = formatNewContent(params);
+    formattedGenerateContentRequest.contents = [content];
+  }
+  return { generateContentRequest: formattedGenerateContentRequest };
+}
+function formatGenerateContentInput(params) {
+  let formattedRequest;
+  if (params.contents) {
+    formattedRequest = params;
+  } else {
+    const content = formatNewContent(params);
+    formattedRequest = { contents: [content] };
+  }
+  if (params.systemInstruction) {
+    formattedRequest.systemInstruction = formatSystemInstruction(params.systemInstruction);
+  }
+  return formattedRequest;
+}
+function formatEmbedContentInput(params) {
+  if (typeof params === "string" || Array.isArray(params)) {
+    const content = formatNewContent(params);
+    return { content };
+  }
+  return params;
+}
+function validateChatHistory(history) {
+  let prevContent = false;
+  for (const currContent of history) {
+    const { role, parts } = currContent;
+    if (!prevContent && role !== "user") {
+      throw new GoogleGenerativeAIError(`First content should be with role 'user', got ${role}`);
+    }
+    if (!POSSIBLE_ROLES.includes(role)) {
+      throw new GoogleGenerativeAIError(`Each item should include role field. Got ${role} but valid roles are: ${JSON.stringify(POSSIBLE_ROLES)}`);
+    }
+    if (!Array.isArray(parts)) {
+      throw new GoogleGenerativeAIError("Content should have 'parts' property with an array of Parts");
+    }
+    if (parts.length === 0) {
+      throw new GoogleGenerativeAIError("Each Content should have at least one part");
+    }
+    const countFields = {
+      text: 0,
+      inlineData: 0,
+      functionCall: 0,
+      functionResponse: 0,
+      fileData: 0,
+      executableCode: 0,
+      codeExecutionResult: 0
+    };
+    for (const part of parts) {
+      for (const key of VALID_PART_FIELDS) {
+        if (key in part) {
+          countFields[key] += 1;
+        }
+      }
+    }
+    const validParts = VALID_PARTS_PER_ROLE[role];
+    for (const key of VALID_PART_FIELDS) {
+      if (!validParts.includes(key) && countFields[key] > 0) {
+        throw new GoogleGenerativeAIError(`Content with role '${role}' can't contain '${key}' part`);
+      }
+    }
+    prevContent = true;
+  }
+}
+function isValidResponse(response) {
+  var _a2;
+  if (response.candidates === void 0 || response.candidates.length === 0) {
+    return false;
+  }
+  const content = (_a2 = response.candidates[0]) === null || _a2 === void 0 ? void 0 : _a2.content;
+  if (content === void 0) {
+    return false;
+  }
+  if (content.parts === void 0 || content.parts.length === 0) {
+    return false;
+  }
+  for (const part of content.parts) {
+    if (part === void 0 || Object.keys(part).length === 0) {
+      return false;
+    }
+    if (part.text !== void 0 && part.text === "") {
+      return false;
+    }
+  }
+  return true;
+}
+async function countTokens(apiKey, model, params, singleRequestOptions) {
+  const response = await makeModelRequest(model, Task.COUNT_TOKENS, apiKey, false, JSON.stringify(params), singleRequestOptions);
+  return response.json();
+}
+async function embedContent(apiKey, model, params, requestOptions) {
+  const response = await makeModelRequest(model, Task.EMBED_CONTENT, apiKey, false, JSON.stringify(params), requestOptions);
+  return response.json();
+}
+async function batchEmbedContents(apiKey, model, params, requestOptions) {
+  const requestsWithModel = params.requests.map((request) => {
+    return Object.assign(Object.assign({}, request), { model });
+  });
+  const response = await makeModelRequest(model, Task.BATCH_EMBED_CONTENTS, apiKey, false, JSON.stringify({ requests: requestsWithModel }), requestOptions);
+  return response.json();
+}
+var SchemaType, ExecutableCodeLanguage, Outcome, POSSIBLE_ROLES, HarmCategory, HarmBlockThreshold, HarmProbability, BlockReason, FinishReason, TaskType, FunctionCallingMode, DynamicRetrievalMode, GoogleGenerativeAIError, GoogleGenerativeAIResponseError, GoogleGenerativeAIFetchError, GoogleGenerativeAIRequestInputError, GoogleGenerativeAIAbortError, DEFAULT_BASE_URL, DEFAULT_API_VERSION, PACKAGE_VERSION, PACKAGE_LOG_HEADER, Task, RequestUrl, badFinishReasons, responseLineRE, VALID_PART_FIELDS, VALID_PARTS_PER_ROLE, SILENT_ERROR, ChatSession, GenerativeModel, GoogleGenerativeAI;
+var init_dist2 = __esm({
+  "node_modules/@google/generative-ai/dist/index.mjs"() {
+    (function(SchemaType2) {
+      SchemaType2["STRING"] = "string";
+      SchemaType2["NUMBER"] = "number";
+      SchemaType2["INTEGER"] = "integer";
+      SchemaType2["BOOLEAN"] = "boolean";
+      SchemaType2["ARRAY"] = "array";
+      SchemaType2["OBJECT"] = "object";
+    })(SchemaType || (SchemaType = {}));
+    (function(ExecutableCodeLanguage2) {
+      ExecutableCodeLanguage2["LANGUAGE_UNSPECIFIED"] = "language_unspecified";
+      ExecutableCodeLanguage2["PYTHON"] = "python";
+    })(ExecutableCodeLanguage || (ExecutableCodeLanguage = {}));
+    (function(Outcome2) {
+      Outcome2["OUTCOME_UNSPECIFIED"] = "outcome_unspecified";
+      Outcome2["OUTCOME_OK"] = "outcome_ok";
+      Outcome2["OUTCOME_FAILED"] = "outcome_failed";
+      Outcome2["OUTCOME_DEADLINE_EXCEEDED"] = "outcome_deadline_exceeded";
+    })(Outcome || (Outcome = {}));
+    POSSIBLE_ROLES = ["user", "model", "function", "system"];
+    (function(HarmCategory2) {
+      HarmCategory2["HARM_CATEGORY_UNSPECIFIED"] = "HARM_CATEGORY_UNSPECIFIED";
+      HarmCategory2["HARM_CATEGORY_HATE_SPEECH"] = "HARM_CATEGORY_HATE_SPEECH";
+      HarmCategory2["HARM_CATEGORY_SEXUALLY_EXPLICIT"] = "HARM_CATEGORY_SEXUALLY_EXPLICIT";
+      HarmCategory2["HARM_CATEGORY_HARASSMENT"] = "HARM_CATEGORY_HARASSMENT";
+      HarmCategory2["HARM_CATEGORY_DANGEROUS_CONTENT"] = "HARM_CATEGORY_DANGEROUS_CONTENT";
+      HarmCategory2["HARM_CATEGORY_CIVIC_INTEGRITY"] = "HARM_CATEGORY_CIVIC_INTEGRITY";
+    })(HarmCategory || (HarmCategory = {}));
+    (function(HarmBlockThreshold2) {
+      HarmBlockThreshold2["HARM_BLOCK_THRESHOLD_UNSPECIFIED"] = "HARM_BLOCK_THRESHOLD_UNSPECIFIED";
+      HarmBlockThreshold2["BLOCK_LOW_AND_ABOVE"] = "BLOCK_LOW_AND_ABOVE";
+      HarmBlockThreshold2["BLOCK_MEDIUM_AND_ABOVE"] = "BLOCK_MEDIUM_AND_ABOVE";
+      HarmBlockThreshold2["BLOCK_ONLY_HIGH"] = "BLOCK_ONLY_HIGH";
+      HarmBlockThreshold2["BLOCK_NONE"] = "BLOCK_NONE";
+    })(HarmBlockThreshold || (HarmBlockThreshold = {}));
+    (function(HarmProbability2) {
+      HarmProbability2["HARM_PROBABILITY_UNSPECIFIED"] = "HARM_PROBABILITY_UNSPECIFIED";
+      HarmProbability2["NEGLIGIBLE"] = "NEGLIGIBLE";
+      HarmProbability2["LOW"] = "LOW";
+      HarmProbability2["MEDIUM"] = "MEDIUM";
+      HarmProbability2["HIGH"] = "HIGH";
+    })(HarmProbability || (HarmProbability = {}));
+    (function(BlockReason2) {
+      BlockReason2["BLOCKED_REASON_UNSPECIFIED"] = "BLOCKED_REASON_UNSPECIFIED";
+      BlockReason2["SAFETY"] = "SAFETY";
+      BlockReason2["OTHER"] = "OTHER";
+    })(BlockReason || (BlockReason = {}));
+    (function(FinishReason2) {
+      FinishReason2["FINISH_REASON_UNSPECIFIED"] = "FINISH_REASON_UNSPECIFIED";
+      FinishReason2["STOP"] = "STOP";
+      FinishReason2["MAX_TOKENS"] = "MAX_TOKENS";
+      FinishReason2["SAFETY"] = "SAFETY";
+      FinishReason2["RECITATION"] = "RECITATION";
+      FinishReason2["LANGUAGE"] = "LANGUAGE";
+      FinishReason2["BLOCKLIST"] = "BLOCKLIST";
+      FinishReason2["PROHIBITED_CONTENT"] = "PROHIBITED_CONTENT";
+      FinishReason2["SPII"] = "SPII";
+      FinishReason2["MALFORMED_FUNCTION_CALL"] = "MALFORMED_FUNCTION_CALL";
+      FinishReason2["OTHER"] = "OTHER";
+    })(FinishReason || (FinishReason = {}));
+    (function(TaskType2) {
+      TaskType2["TASK_TYPE_UNSPECIFIED"] = "TASK_TYPE_UNSPECIFIED";
+      TaskType2["RETRIEVAL_QUERY"] = "RETRIEVAL_QUERY";
+      TaskType2["RETRIEVAL_DOCUMENT"] = "RETRIEVAL_DOCUMENT";
+      TaskType2["SEMANTIC_SIMILARITY"] = "SEMANTIC_SIMILARITY";
+      TaskType2["CLASSIFICATION"] = "CLASSIFICATION";
+      TaskType2["CLUSTERING"] = "CLUSTERING";
+    })(TaskType || (TaskType = {}));
+    (function(FunctionCallingMode2) {
+      FunctionCallingMode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
+      FunctionCallingMode2["AUTO"] = "AUTO";
+      FunctionCallingMode2["ANY"] = "ANY";
+      FunctionCallingMode2["NONE"] = "NONE";
+    })(FunctionCallingMode || (FunctionCallingMode = {}));
+    (function(DynamicRetrievalMode2) {
+      DynamicRetrievalMode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
+      DynamicRetrievalMode2["MODE_DYNAMIC"] = "MODE_DYNAMIC";
+    })(DynamicRetrievalMode || (DynamicRetrievalMode = {}));
+    GoogleGenerativeAIError = class extends Error {
+      constructor(message) {
+        super(`[GoogleGenerativeAI Error]: ${message}`);
+      }
+    };
+    GoogleGenerativeAIResponseError = class extends GoogleGenerativeAIError {
+      constructor(message, response) {
+        super(message);
+        this.response = response;
+      }
+    };
+    GoogleGenerativeAIFetchError = class extends GoogleGenerativeAIError {
+      constructor(message, status, statusText, errorDetails) {
+        super(message);
+        this.status = status;
+        this.statusText = statusText;
+        this.errorDetails = errorDetails;
+      }
+    };
+    GoogleGenerativeAIRequestInputError = class extends GoogleGenerativeAIError {
+    };
+    GoogleGenerativeAIAbortError = class extends GoogleGenerativeAIError {
+    };
+    DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com";
+    DEFAULT_API_VERSION = "v1beta";
+    PACKAGE_VERSION = "0.24.1";
+    PACKAGE_LOG_HEADER = "genai-js";
+    (function(Task2) {
+      Task2["GENERATE_CONTENT"] = "generateContent";
+      Task2["STREAM_GENERATE_CONTENT"] = "streamGenerateContent";
+      Task2["COUNT_TOKENS"] = "countTokens";
+      Task2["EMBED_CONTENT"] = "embedContent";
+      Task2["BATCH_EMBED_CONTENTS"] = "batchEmbedContents";
+    })(Task || (Task = {}));
+    RequestUrl = class {
+      constructor(model, task, apiKey, stream, requestOptions) {
+        this.model = model;
+        this.task = task;
+        this.apiKey = apiKey;
+        this.stream = stream;
+        this.requestOptions = requestOptions;
+      }
+      toString() {
+        var _a2, _b;
+        const apiVersion = ((_a2 = this.requestOptions) === null || _a2 === void 0 ? void 0 : _a2.apiVersion) || DEFAULT_API_VERSION;
+        const baseUrl = ((_b = this.requestOptions) === null || _b === void 0 ? void 0 : _b.baseUrl) || DEFAULT_BASE_URL;
+        let url2 = `${baseUrl}/${apiVersion}/${this.model}:${this.task}`;
+        if (this.stream) {
+          url2 += "?alt=sse";
+        }
+        return url2;
+      }
+    };
+    badFinishReasons = [
+      FinishReason.RECITATION,
+      FinishReason.SAFETY,
+      FinishReason.LANGUAGE
+    ];
+    responseLineRE = /^data\: (.*)(?:\n\n|\r\r|\r\n\r\n)/;
+    VALID_PART_FIELDS = [
+      "text",
+      "inlineData",
+      "functionCall",
+      "functionResponse",
+      "executableCode",
+      "codeExecutionResult"
+    ];
+    VALID_PARTS_PER_ROLE = {
+      user: ["text", "inlineData"],
+      function: ["functionResponse"],
+      model: ["text", "functionCall", "executableCode", "codeExecutionResult"],
+      // System instructions shouldn't be in history anyway.
+      system: ["text"]
+    };
+    SILENT_ERROR = "SILENT_ERROR";
+    ChatSession = class {
+      constructor(apiKey, model, params, _requestOptions = {}) {
+        this.model = model;
+        this.params = params;
+        this._requestOptions = _requestOptions;
+        this._history = [];
+        this._sendPromise = Promise.resolve();
+        this._apiKey = apiKey;
+        if (params === null || params === void 0 ? void 0 : params.history) {
+          validateChatHistory(params.history);
+          this._history = params.history;
+        }
+      }
+      /**
+       * Gets the chat history so far. Blocked prompts are not added to history.
+       * Blocked candidates are not added to history, nor are the prompts that
+       * generated them.
+       */
+      async getHistory() {
+        await this._sendPromise;
+        return this._history;
+      }
+      /**
+       * Sends a chat message and receives a non-streaming
+       * {@link GenerateContentResult}.
+       *
+       * Fields set in the optional {@link SingleRequestOptions} parameter will
+       * take precedence over the {@link RequestOptions} values provided to
+       * {@link GoogleGenerativeAI.getGenerativeModel }.
+       */
+      async sendMessage(request, requestOptions = {}) {
+        var _a2, _b, _c, _d, _e, _f;
+        await this._sendPromise;
+        const newContent = formatNewContent(request);
+        const generateContentRequest = {
+          safetySettings: (_a2 = this.params) === null || _a2 === void 0 ? void 0 : _a2.safetySettings,
+          generationConfig: (_b = this.params) === null || _b === void 0 ? void 0 : _b.generationConfig,
+          tools: (_c = this.params) === null || _c === void 0 ? void 0 : _c.tools,
+          toolConfig: (_d = this.params) === null || _d === void 0 ? void 0 : _d.toolConfig,
+          systemInstruction: (_e = this.params) === null || _e === void 0 ? void 0 : _e.systemInstruction,
+          cachedContent: (_f = this.params) === null || _f === void 0 ? void 0 : _f.cachedContent,
+          contents: [...this._history, newContent]
+        };
+        const chatSessionRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
+        let finalResult;
+        this._sendPromise = this._sendPromise.then(() => generateContent(this._apiKey, this.model, generateContentRequest, chatSessionRequestOptions)).then((result) => {
+          var _a3;
+          if (isValidResponse(result.response)) {
+            this._history.push(newContent);
+            const responseContent = Object.assign({
+              parts: [],
+              // Response seems to come back without a role set.
+              role: "model"
+            }, (_a3 = result.response.candidates) === null || _a3 === void 0 ? void 0 : _a3[0].content);
+            this._history.push(responseContent);
+          } else {
+            const blockErrorMessage = formatBlockErrorMessage(result.response);
+            if (blockErrorMessage) {
+              console.warn(`sendMessage() was unsuccessful. ${blockErrorMessage}. Inspect response object for details.`);
+            }
+          }
+          finalResult = result;
+        }).catch((e) => {
+          this._sendPromise = Promise.resolve();
+          throw e;
+        });
+        await this._sendPromise;
+        return finalResult;
+      }
+      /**
+       * Sends a chat message and receives the response as a
+       * {@link GenerateContentStreamResult} containing an iterable stream
+       * and a response promise.
+       *
+       * Fields set in the optional {@link SingleRequestOptions} parameter will
+       * take precedence over the {@link RequestOptions} values provided to
+       * {@link GoogleGenerativeAI.getGenerativeModel }.
+       */
+      async sendMessageStream(request, requestOptions = {}) {
+        var _a2, _b, _c, _d, _e, _f;
+        await this._sendPromise;
+        const newContent = formatNewContent(request);
+        const generateContentRequest = {
+          safetySettings: (_a2 = this.params) === null || _a2 === void 0 ? void 0 : _a2.safetySettings,
+          generationConfig: (_b = this.params) === null || _b === void 0 ? void 0 : _b.generationConfig,
+          tools: (_c = this.params) === null || _c === void 0 ? void 0 : _c.tools,
+          toolConfig: (_d = this.params) === null || _d === void 0 ? void 0 : _d.toolConfig,
+          systemInstruction: (_e = this.params) === null || _e === void 0 ? void 0 : _e.systemInstruction,
+          cachedContent: (_f = this.params) === null || _f === void 0 ? void 0 : _f.cachedContent,
+          contents: [...this._history, newContent]
+        };
+        const chatSessionRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
+        const streamPromise = generateContentStream(this._apiKey, this.model, generateContentRequest, chatSessionRequestOptions);
+        this._sendPromise = this._sendPromise.then(() => streamPromise).catch((_ignored) => {
+          throw new Error(SILENT_ERROR);
+        }).then((streamResult) => streamResult.response).then((response) => {
+          if (isValidResponse(response)) {
+            this._history.push(newContent);
+            const responseContent = Object.assign({}, response.candidates[0].content);
+            if (!responseContent.role) {
+              responseContent.role = "model";
+            }
+            this._history.push(responseContent);
+          } else {
+            const blockErrorMessage = formatBlockErrorMessage(response);
+            if (blockErrorMessage) {
+              console.warn(`sendMessageStream() was unsuccessful. ${blockErrorMessage}. Inspect response object for details.`);
+            }
+          }
+        }).catch((e) => {
+          if (e.message !== SILENT_ERROR) {
+            console.error(e);
+          }
+        });
+        return streamPromise;
+      }
+    };
+    GenerativeModel = class {
+      constructor(apiKey, modelParams, _requestOptions = {}) {
+        this.apiKey = apiKey;
+        this._requestOptions = _requestOptions;
+        if (modelParams.model.includes("/")) {
+          this.model = modelParams.model;
+        } else {
+          this.model = `models/${modelParams.model}`;
+        }
+        this.generationConfig = modelParams.generationConfig || {};
+        this.safetySettings = modelParams.safetySettings || [];
+        this.tools = modelParams.tools;
+        this.toolConfig = modelParams.toolConfig;
+        this.systemInstruction = formatSystemInstruction(modelParams.systemInstruction);
+        this.cachedContent = modelParams.cachedContent;
+      }
+      /**
+       * Makes a single non-streaming call to the model
+       * and returns an object containing a single {@link GenerateContentResponse}.
+       *
+       * Fields set in the optional {@link SingleRequestOptions} parameter will
+       * take precedence over the {@link RequestOptions} values provided to
+       * {@link GoogleGenerativeAI.getGenerativeModel }.
+       */
+      async generateContent(request, requestOptions = {}) {
+        var _a2;
+        const formattedParams = formatGenerateContentInput(request);
+        const generativeModelRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
+        return generateContent(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction, cachedContent: (_a2 = this.cachedContent) === null || _a2 === void 0 ? void 0 : _a2.name }, formattedParams), generativeModelRequestOptions);
+      }
+      /**
+       * Makes a single streaming call to the model and returns an object
+       * containing an iterable stream that iterates over all chunks in the
+       * streaming response as well as a promise that returns the final
+       * aggregated response.
+       *
+       * Fields set in the optional {@link SingleRequestOptions} parameter will
+       * take precedence over the {@link RequestOptions} values provided to
+       * {@link GoogleGenerativeAI.getGenerativeModel }.
+       */
+      async generateContentStream(request, requestOptions = {}) {
+        var _a2;
+        const formattedParams = formatGenerateContentInput(request);
+        const generativeModelRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
+        return generateContentStream(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction, cachedContent: (_a2 = this.cachedContent) === null || _a2 === void 0 ? void 0 : _a2.name }, formattedParams), generativeModelRequestOptions);
+      }
+      /**
+       * Gets a new {@link ChatSession} instance which can be used for
+       * multi-turn chats.
+       */
+      startChat(startChatParams) {
+        var _a2;
+        return new ChatSession(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction, cachedContent: (_a2 = this.cachedContent) === null || _a2 === void 0 ? void 0 : _a2.name }, startChatParams), this._requestOptions);
+      }
+      /**
+       * Counts the tokens in the provided request.
+       *
+       * Fields set in the optional {@link SingleRequestOptions} parameter will
+       * take precedence over the {@link RequestOptions} values provided to
+       * {@link GoogleGenerativeAI.getGenerativeModel }.
+       */
+      async countTokens(request, requestOptions = {}) {
+        const formattedParams = formatCountTokensInput(request, {
+          model: this.model,
+          generationConfig: this.generationConfig,
+          safetySettings: this.safetySettings,
+          tools: this.tools,
+          toolConfig: this.toolConfig,
+          systemInstruction: this.systemInstruction,
+          cachedContent: this.cachedContent
+        });
+        const generativeModelRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
+        return countTokens(this.apiKey, this.model, formattedParams, generativeModelRequestOptions);
+      }
+      /**
+       * Embeds the provided content.
+       *
+       * Fields set in the optional {@link SingleRequestOptions} parameter will
+       * take precedence over the {@link RequestOptions} values provided to
+       * {@link GoogleGenerativeAI.getGenerativeModel }.
+       */
+      async embedContent(request, requestOptions = {}) {
+        const formattedParams = formatEmbedContentInput(request);
+        const generativeModelRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
+        return embedContent(this.apiKey, this.model, formattedParams, generativeModelRequestOptions);
+      }
+      /**
+       * Embeds an array of {@link EmbedContentRequest}s.
+       *
+       * Fields set in the optional {@link SingleRequestOptions} parameter will
+       * take precedence over the {@link RequestOptions} values provided to
+       * {@link GoogleGenerativeAI.getGenerativeModel }.
+       */
+      async batchEmbedContents(batchEmbedContentRequest, requestOptions = {}) {
+        const generativeModelRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
+        return batchEmbedContents(this.apiKey, this.model, batchEmbedContentRequest, generativeModelRequestOptions);
+      }
+    };
+    GoogleGenerativeAI = class {
+      constructor(apiKey) {
+        this.apiKey = apiKey;
+      }
+      /**
+       * Gets a {@link GenerativeModel} instance for the provided model name.
+       */
+      getGenerativeModel(modelParams, requestOptions) {
+        if (!modelParams.model) {
+          throw new GoogleGenerativeAIError(`Must provide a model name. Example: genai.getGenerativeModel({ model: 'my-model-name' })`);
+        }
+        return new GenerativeModel(this.apiKey, modelParams, requestOptions);
+      }
+      /**
+       * Creates a {@link GenerativeModel} instance from provided content cache.
+       */
+      getGenerativeModelFromCachedContent(cachedContent, modelParams, requestOptions) {
+        if (!cachedContent.name) {
+          throw new GoogleGenerativeAIRequestInputError("Cached content must contain a `name` field.");
+        }
+        if (!cachedContent.model) {
+          throw new GoogleGenerativeAIRequestInputError("Cached content must contain a `model` field.");
+        }
+        const disallowedDuplicates = ["model", "systemInstruction"];
+        for (const key of disallowedDuplicates) {
+          if ((modelParams === null || modelParams === void 0 ? void 0 : modelParams[key]) && cachedContent[key] && (modelParams === null || modelParams === void 0 ? void 0 : modelParams[key]) !== cachedContent[key]) {
+            if (key === "model") {
+              const modelParamsComp = modelParams.model.startsWith("models/") ? modelParams.model.replace("models/", "") : modelParams.model;
+              const cachedContentComp = cachedContent.model.startsWith("models/") ? cachedContent.model.replace("models/", "") : cachedContent.model;
+              if (modelParamsComp === cachedContentComp) {
+                continue;
+              }
+            }
+            throw new GoogleGenerativeAIRequestInputError(`Different value for "${key}" specified in modelParams (${modelParams[key]}) and cachedContent (${cachedContent[key]})`);
+          }
+        }
+        const modelParamsFromCache = Object.assign(Object.assign({}, modelParams), { model: cachedContent.model, tools: cachedContent.tools, toolConfig: cachedContent.toolConfig, systemInstruction: cachedContent.systemInstruction, cachedContent });
+        return new GenerativeModel(this.apiKey, modelParamsFromCache, requestOptions);
+      }
+    };
   }
 });
 
@@ -77360,6 +81209,933 @@ var require_xlsx = __commonJS({
   }
 });
 
+// api/lib/sms-ai-parser.ts
+async function parseSmsFinancialData(message) {
+  const apiKey = env.GEMINI_API_KEY;
+  const modelName = "gemini-2.0-flash";
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: modelName,
+      systemInstruction: SMS_SYSTEM_PROMPT,
+      generationConfig: {
+        temperature: 0.05,
+        // Very low — we want deterministic extraction, not creativity
+        maxOutputTokens: 512,
+        responseMimeType: "application/json",
+        responseSchema: SMS_RESPONSE_SCHEMA
+      }
+    });
+    const result = await model.generateContent(`\u0631\u0633\u0627\u0644\u0629 SMS:
+"${message}"`);
+    const responseText = result.response.text().trim();
+    const parsed = JSON.parse(responseText);
+    return {
+      transaction_detected: parsed.transaction_detected ?? false,
+      amount: parsed.amount ?? null,
+      currency: parsed.currency ?? "EGP",
+      direction: parsed.direction ?? null,
+      provider: parsed.provider ?? "Unknown",
+      category: parsed.category ?? "unknown",
+      fee: parsed.fee ?? null,
+      merchant: parsed.merchant ?? null,
+      balance_after: parsed.balance_after ?? null,
+      confidence: parsed.confidence ?? 0,
+      raw_extracted: parsed
+    };
+  } catch (error48) {
+    console.error("[SMS AI Parser] Error:", error48?.message ?? error48);
+    return null;
+  }
+}
+function mapSmsToExpenseCategory(result) {
+  const dir = result.direction;
+  const cat = result.category || "unknown";
+  const provider = result.provider || "Unknown";
+  const type = dir === "incoming" ? "income" : "expense";
+  if (dir === "incoming") {
+    if (cat === "income") return { category: "\u0645\u0631\u062A\u0628", subCategory: "\u0631\u0627\u062A\u0628 \u0623\u0633\u0627\u0633\u064A", type: "income" };
+    if (cat === "deposit") {
+      if (/InstaPay/i.test(provider)) return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A \u0648\u0627\u0631\u062F", type: "income" };
+      if (/Vodafone|Etisalat|Orange|WE/i.test(provider)) return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u0645\u062D\u0641\u0638\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629 \u0648\u0627\u0631\u062F", type: "income" };
+      return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u0625\u064A\u062F\u0627\u0639 \u0628\u0646\u0643\u064A", type: "income" };
+    }
+    return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u062F\u062E\u0644 \u0648\u0627\u0631\u062F", type: "income" };
+  }
+  switch (cat) {
+    case "transfer":
+      if (/InstaPay/i.test(provider)) return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A \u0635\u0627\u062F\u0631", type };
+      if (/Vodafone|Etisalat|Orange|WE/i.test(provider)) return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u0645\u062D\u0641\u0638\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629 \u0635\u0627\u062F\u0631", type };
+      return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u062A\u062D\u0648\u064A\u0644 \u0628\u0646\u0643\u064A", type };
+    case "payment":
+      if (/ApplePay/i.test(provider)) return { category: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A", subCategory: "Apple Pay", type };
+      if (result.merchant) return { category: "\u062A\u0633\u0648\u0642", subCategory: result.merchant.slice(0, 50), type };
+      return { category: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A", subCategory: "\u0645\u062F\u0641\u0648\u0639\u0627\u062A", type };
+    case "bills":
+      return { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0641\u0648\u0627\u062A\u064A\u0631 \u0648\u0645\u0631\u0627\u0641\u0642", type };
+    case "withdrawal":
+      return { category: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A", subCategory: "\u0633\u062D\u0628 \u0646\u0642\u062F\u064A / ATM", type };
+    default:
+      return { category: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A", subCategory: "\u0639\u0627\u0645", type };
+  }
+}
+var SMS_RESPONSE_SCHEMA, SMS_SYSTEM_PROMPT;
+var init_sms_ai_parser = __esm({
+  "api/lib/sms-ai-parser.ts"() {
+    init_dist2();
+    init_env();
+    SMS_RESPONSE_SCHEMA = {
+      type: SchemaType.OBJECT,
+      properties: {
+        transaction_detected: { type: SchemaType.BOOLEAN },
+        amount: { type: SchemaType.NUMBER, nullable: true },
+        currency: { type: SchemaType.STRING },
+        direction: { type: SchemaType.STRING, nullable: true },
+        provider: { type: SchemaType.STRING },
+        category: { type: SchemaType.STRING },
+        fee: { type: SchemaType.NUMBER, nullable: true },
+        merchant: { type: SchemaType.STRING, nullable: true },
+        balance_after: { type: SchemaType.NUMBER, nullable: true },
+        confidence: { type: SchemaType.NUMBER }
+      },
+      required: ["transaction_detected", "currency", "provider", "category", "confidence"]
+    };
+    SMS_SYSTEM_PROMPT = `\u0623\u0646\u062A \u0646\u0638\u0627\u0645 \u0627\u0633\u062A\u062E\u0631\u0627\u062C \u0628\u064A\u0627\u0646\u0627\u062A \u0645\u0627\u0644\u064A\u0629 \u0645\u0646 \u0631\u0633\u0627\u0626\u0644 SMS \u0628\u0627\u0644\u0639\u0631\u0628\u064A \u0648\u0627\u0644\u0625\u0646\u062C\u0644\u064A\u0632\u064A.
+\u0645\u0647\u0645\u062A\u0643 \u0627\u0644\u0648\u062D\u064A\u062F\u0629: \u0627\u0633\u062A\u062E\u0631\u0627\u062C \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0628\u062F\u0642\u0629 \u0648\u0625\u0631\u062C\u0627\u0639\u0647\u0627 \u0643\u0640 JSON \u0645\u0646\u0638\u0645.
+
+\u0642\u0648\u0627\u0639\u062F \u0635\u0627\u0631\u0645\u0629:
+1. \u0644\u0627 \u062A\u0631\u062F \u0639\u0644\u0649 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645. \u0644\u0627 \u062A\u0639\u0644\u0642. \u0644\u0627 \u062A\u0636\u0641 \u0623\u064A \u0643\u0644\u0627\u0645.
+2. \u0641\u0642\u0637 \u0623\u0631\u062C\u0639 JSON.
+3. \u0625\u0630\u0627 \u0643\u0627\u0646\u062A \u0627\u0644\u0631\u0633\u0627\u0644\u0629 \u063A\u064A\u0631 \u0645\u0627\u0644\u064A\u0629 (\u0625\u0639\u0644\u0627\u0646\u060C OTP\u060C \u0643\u0648\u062F \u062A\u0641\u0639\u064A\u0644) \u2192 transaction_detected: false.
+4. \u0625\u0630\u0627 \u0643\u0627\u0646\u062A \u0645\u0627\u0644\u064A\u0629 \u2192 \u0627\u0633\u062A\u062E\u0631\u062C \u0643\u0644 \u0627\u0644\u062A\u0641\u0627\u0635\u064A\u0644.
+
+\u062A\u062D\u062F\u064A\u062F \u0627\u0644\u0640 provider:
+- \u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0643\u0627\u0634 / Vodafone Cash \u2192 "VodafoneCash"
+- \u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A / InstaPay \u2192 "InstaPay"
+- \u0623\u0628\u0644 \u0628\u0627\u064A / Apple Pay \u2192 "ApplePay"
+- \u0623\u064A \u0628\u0646\u0643 (CIB, NBE, Banque Misr, QNB, AAIB, Alex Bank) \u2192 "Bank"
+- \u063A\u064A\u0631 \u0645\u062D\u062F\u062F \u2192 "Unknown"
+
+\u062A\u062D\u062F\u064A\u062F \u0627\u0644\u0640 direction:
+- \u0627\u0633\u062A\u0644\u0645\u062A / \u062A\u0645 \u0625\u0636\u0627\u0641\u0629 / \u0631\u0635\u064A\u062F \u0648\u0627\u0631\u062F / received \u2192 "incoming"
+- \u0635\u0631\u0641\u062A / \u062A\u0645 \u062E\u0635\u0645 / \u062F\u0641\u0639\u062A / sent / paid \u2192 "outgoing"
+
+\u062A\u062D\u062F\u064A\u062F \u0627\u0644\u0640 category:
+- \u062A\u062D\u0648\u064A\u0644 \u0628\u064A\u0646 \u0623\u0634\u062E\u0627\u0635 \u2192 "transfer"
+- \u062F\u0641\u0639 \u0641\u0648\u0627\u062A\u064A\u0631 / \u0645\u062F\u0641\u0648\u0639\u0627\u062A \u2192 "payment"
+- \u0627\u0633\u062A\u0644\u0627\u0645 \u0631\u0627\u062A\u0628 / \u0645\u0643\u0627\u0641\u0623\u0629 / \u062F\u062E\u0644 \u2192 "income"
+- \u0641\u0648\u0627\u062A\u064A\u0631 (\u0643\u0647\u0631\u0628\u0627\u0621, \u0645\u0627\u064A, \u063A\u0627\u0632, \u0627\u0646\u062A\u0631\u0646\u062A) \u2192 "bills"
+- \u0633\u062D\u0628 \u0623\u0648 \u0635\u0631\u0641 \u0646\u0642\u062F\u064A \u2192 "withdrawal"
+- \u063A\u064A\u0631 \u0645\u062D\u062F\u062F \u2192 "unknown"
+
+\u0623\u0645\u062B\u0644\u0629 \u0639\u0644\u0649 \u0631\u0633\u0627\u0626\u0644 \u0645\u0627\u0644\u064A\u0629:
+- "\u062A\u0645 \u0625\u0636\u0627\u0641\u0629 500 \u062C \u0625\u0644\u0649 \u062D\u0633\u0627\u0628\u0643 \u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0643\u0627\u0634" \u2192 incoming, 500, VodafoneCash, transfer
+- "\u062A\u0645 \u062E\u0635\u0645 200 \u062C\u0646\u064A\u0647 \u0631\u0633\u0648\u0645 \u0641\u0627\u062A\u0648\u0631\u0629 \u0627\u0644\u0643\u0647\u0631\u0628\u0627\u0621" \u2192 outgoing, 200, Bank, bills
+- "Your account has been credited with EGP 10,000" \u2192 incoming, 10000, Bank, income`;
+  }
+});
+
+// api/lib/sms-rule-parser.ts
+function extractAmount(text2) {
+  const normalized = text2.replace(/[٠١٢٣٤٥٦٧٨٩]/g, (d) => String("\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669".indexOf(d))).replace(/,/g, "");
+  const patterns = [
+    // "مبلغ 1500.00 جنيه" / "مبلغ وقدره 1500 ج.م"
+    /(?:مبلغ|قيمة|بمبلغ|بقيمة|لمبلغ|وقدره)\s*([\d]+(?:\.\d{1,2})?)\s*(?:جنيه|ج\.?م\.?|EGP|جنيهاً?)/i,
+    // "EGP 1,500.00" / "EGP1500"
+    /EGP\s*([\d]+(?:\.\d{1,2})?)/i,
+    // "Amount: 1500" / "Amount EGP 1500"
+    /Amount[\s:]+(?:EGP\s*)?([\d]+(?:\.\d{1,2})?)/i,
+    // "1500 EGP" / "1500 جنيه" / "1500 ج.م"
+    /([\d]+(?:\.\d{1,2})?)\s*(?:جنيه|ج\.?م\.?|EGP|L\.?E\.?)/i,
+    // "by EGP 1500" / "with EGP 1500" / "of EGP 1500"
+    /(?:by|with|of)\s+EGP\s*([\d]+(?:\.\d{1,2})?)/i,
+    // Contextual fallback: "تم ... 1500"
+    /(?:تم|وصل|استلم|حول|خصم|صرف|سحب|ايداع|إيداع)\s+(?:مبلغ\s+)?([\d]+(?:\.\d{1,2})?)/i
+  ];
+  for (const pattern of patterns) {
+    const match2 = normalized.match(pattern);
+    if (match2) {
+      const num = parseFloat(match2[1]);
+      if (!isNaN(num) && num > 0) return num;
+    }
+  }
+  return null;
+}
+function extractBalanceAfter(text2) {
+  const n = text2.replace(/[٠١٢٣٤٥٦٧٨٩]/g, (d) => String("\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669".indexOf(d))).replace(/,/g, "");
+  const patterns = [
+    /(?:رصيدك|الرصيد|رصيد حسابك|رصيد|الرصيد المتاح|رصيدك الحالي)[\s:]*(?:الكلي|الحالي|الجديد|المتاح)?\s*(?:هو)?\s*([\d]+(?:\.\d{1,2})?)\s*(?:جنيه|ج\.?م\.?|EGP)?/i,
+    /(?:بعد العملية|بعد السحب|بعد التحويل|بعد الخصم)\s*:?\s*([\d]+(?:\.\d{1,2})?)/i,
+    /Avail(?:able)?\s*(?:Bal(?:ance)?)?[\s.:]*(?:EGP)?\s*([\d]+(?:\.\d{1,2})?)/i,
+    /(?:New|Current|Updated)\s*(?:Bal(?:ance)?|bal)[\s.:]*(?:EGP)?\s*([\d]+(?:\.\d{1,2})?)/i,
+    /(?:Bal|A\/C Bal)[\s.:]*(?:EGP)?\s*([\d]+(?:\.\d{1,2})?)/i
+  ];
+  for (const p of patterns) {
+    const m = n.match(p);
+    if (m) {
+      const v = parseFloat(m[1]);
+      if (!isNaN(v) && v >= 0) return v;
+    }
+  }
+  return null;
+}
+function extractFee(text2) {
+  const n = text2.replace(/[٠١٢٣٤٥٦٧٨٩]/g, (d) => String("\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669".indexOf(d)));
+  const m = n.match(/(?:رسوم|عمولة|مصاريف|Fee|Fees|charges?)[\s:]+(?:EGP\s*)?([\d.]+)/i);
+  return m ? parseFloat(m[1]) : null;
+}
+function extractDate(text2) {
+  const patterns = [
+    /(\d{1,2})\/(\d{1,2})\/(\d{4})/,
+    // DD/MM/YYYY
+    /(\d{4})-(\d{2})-(\d{2})/,
+    // YYYY-MM-DD
+    /(\d{1,2})-(\d{1,2})-(\d{4})/,
+    // DD-MM-YYYY
+    /on\s+(\d{1,2})\/(\d{1,2})\/(\d{2,4})/i
+    // "on 15/05/26"
+  ];
+  for (const p of patterns) {
+    const m = text2.match(p);
+    if (m) {
+      try {
+        if (m[1].length === 4) return (/* @__PURE__ */ new Date(`${m[1]}-${m[2]}-${m[3]}`)).toISOString();
+        const y = m[3].length === 2 ? `20${m[3]}` : m[3];
+        return (/* @__PURE__ */ new Date(`${y}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`)).toISOString();
+      } catch {
+      }
+    }
+  }
+  return null;
+}
+function extractReference(text2) {
+  const patterns = [
+    /(?:Ref(?:erence)?|رقم (?:العملية|المرجع|الحوالة)|كود|TRN|مرجع|Trx|Trans(?:action)?\s*(?:ID|No|#))[\s:#]*([A-Z0-9]{4,25})/i,
+    /(?:رقم مرجعي)\s*:?\s*([A-Z0-9]{4,25})/i
+  ];
+  for (const p of patterns) {
+    const m = text2.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+function extractMerchant(text2) {
+  const patterns = [
+    /(?:at|عند|في|لدى|من)\s+([A-Za-z\u0600-\u06FF][A-Za-z\u0600-\u06FF\s&'.]{2,30})(?:\s+on|\s+بتاريخ|\.\s|$)/i,
+    /(?:POS|Merchant|merchant)[\s:]+([A-Za-z\s&'.]{3,30})/i
+  ];
+  for (const p of patterns) {
+    const m = text2.match(p);
+    if (m) return m[1].trim();
+  }
+  return null;
+}
+function detectProvider(text2) {
+  const t2 = text2.toLowerCase();
+  if (/vodafone\s*cash|vf\s*cash|فودافون\s*كاش|v\.?cash/.test(t2)) return "VodafoneCash";
+  if (/instapay|انستاباي|انستا\s*باي/.test(t2)) return "InstaPay";
+  if (/etisalat\s*cash|اتصالات\s*كاش|e-cash/.test(t2)) return "EtisalatCash";
+  if (/orange\s*(?:money|cash)|أورانج\s*(?:موني|كاش)/.test(t2)) return "OrangeMoney";
+  if (/we\s*pay|وي\s*باي/.test(t2)) return "WEPay";
+  if (/\bcib\b|commercial international/i.test(t2)) return "CIB";
+  if (/\bnbe\b|national bank of egypt|البنك\s*الأهلي\s*المصري|ahly/i.test(t2)) return "NBE";
+  if (/banque\s*misr|بنك\s*مصر|\bbm\b/i.test(t2)) return "BanqueMisr";
+  if (/\bqnb\b|qatar national/i.test(t2)) return "QNB";
+  if (/\baaib\b|عربي?\s*أفريقي|arab african/i.test(t2)) return "AAIB";
+  if (/alex\s*bank|بنك\s*(?:الإسكندرية|اسكندرية)/i.test(t2)) return "AlexBank";
+  if (/faisal|فيصل/i.test(t2)) return "FaisalBank";
+  if (/crédit\s*agricole|ca\s*egypt|كريدي/i.test(t2)) return "CreditAgricole";
+  if (/hsbc/i.test(t2)) return "HSBC";
+  if (/attijariwafa|التجاري وفا/i.test(t2)) return "Attijariwafa";
+  if (/mashreq|مشرق/i.test(t2)) return "MashreqBank";
+  if (/\bscb\b|standard\s*chartered/i.test(t2)) return "SCB";
+  if (/\baudi\b|عودة/i.test(t2)) return "BankAudi";
+  if (/egbank|البنك\s*المصري\s*الخليجي/i.test(t2)) return "EGBank";
+  if (/abc\b|arab\s*banking/i.test(t2)) return "ABC";
+  if (/saib|الاستثمار\s*العربي/i.test(t2)) return "SAIB";
+  if (/apple\s*pay|أبل\s*باي/i.test(t2)) return "ApplePay";
+  if (/valu|ڤاليو/i.test(t2)) return "ValU";
+  if (/souhoola|سهولة/i.test(t2)) return "Souhoola";
+  if (/contact|كونتكت/i.test(t2)) return "Contact";
+  if (/فوري|fawry/i.test(t2)) return "Fawry";
+  if (/meeza|ميزة/i.test(t2)) return "Meeza";
+  if (/أمان|aman/i.test(t2)) return "Aman";
+  return "Unknown";
+}
+function detectDirection(text2) {
+  const incoming = [
+    // Arabic: deposits / credits
+    [/تم\s+(?:إيداع|ايداع|اضافة|إضافة)\s+(?:مبلغ\s+)?[\d]/i, "deposit", "AR: deposit amount"],
+    [/تم\s+(?:استلام|استقبال)\s+(?:مبلغ|تحويل|حوالة)/i, "transfer", "AR: receive transfer"],
+    [/وصل(?:ك|لك|لحسابك)?\s+(?:مبلغ|تحويل|حوالة)/i, "transfer", "AR: received"],
+    [/(?:قبضت|استلمت)\s+(?:مبلغ\s+)?[\d]/i, "income", "AR: received amount"],
+    [/تم\s+قيد\s+(?:مبلغ|قيمة)/i, "deposit", "AR: credit entry"],
+    [/تم\s+تحويل.*(?:إلى|الى|ل)\s*حسابك/i, "transfer", "AR: transfer to your account"],
+    [/إيراد|مرتب|راتب|مكافأة/i, "income", "AR: salary/income keyword"],
+    [/تم\s+إضافة\s+(?:مبلغ|قيمة)?/i, "deposit", "AR: addition"],
+    [/حسابك.*(?:أُضيف|اضيف|تمت الإضافة)/i, "deposit", "AR: account credited"],
+    // English: credits / deposits / IB transfers IN
+    [/(?:has been|was)\s+credited/i, "deposit", "EN: has been credited"],
+    [/(?:credited|credit)\s+(?:with|by|of)\s+(?:EGP)?\s*[\d]/i, "deposit", "EN: credited with amount"],
+    [/(?:received|incoming)\s+(?:transfer|payment|EGP)/i, "transfer", "EN: received transfer"],
+    [/(?:deposit|deposited)\s+(?:of|amount)?\s*(?:EGP)?\s*[\d]/i, "deposit", "EN: deposit"],
+    [/(?:IBIN|IB)\s*(?:Transfer|Trx|transaction).*credited/i, "transfer", "EN: IB Transfer credited"],
+    [/(?:IBIN|IB)\s*transferred\s*received/i, "transfer", "EN: IBIN transferred received"],
+    [/(?:Salary|salary|Payroll|payroll)\s+(?:credited|received|deposited)/i, "income", "EN: salary credited"],
+    [/credited\s+to\s+(?:your)?\s*(?:account|a\/c)/i, "deposit", "EN: credited to account"],
+    [/incoming\s+(?:IB|transfer|fund)/i, "transfer", "EN: incoming IB"]
+  ];
+  const outgoing = [
+    // Arabic: debits / withdrawals / payments
+    [/تم\s+(?:خصم|سحب|صرف)\s+(?:مبلغ\s+)?[\d]/i, "withdrawal", "AR: debit amount"],
+    [/تم\s+تحويل\s+(?:مبلغ\s+)?[\d]/i, "transfer", "AR: sent transfer"],
+    [/تم\s+(?:الدفع|دفع)\s+(?:مبلغ\s+)?/i, "payment", "AR: payment"],
+    [/تم\s+(?:شراء|شرا|استخدام البطاقة)/i, "payment", "AR: purchase"],
+    [/تم\s+إجراء\s+عملية\s+(?:شراء|سحب|دفع)/i, "payment", "AR: transaction made"],
+    [/سحب\s+(?:نقدي|ATM|من ماكينة)/i, "withdrawal", "AR: ATM withdrawal"],
+    [/عملية\s+(?:شراء|سحب|خصم)\s+بقيمة/i, "payment", "AR: purchase by value"],
+    [/تم\s+خصم.*(?:من حسابك|من رصيدك)/i, "withdrawal", "AR: deducted from account"],
+    [/تم\s+سداد|سداد\s+(?:قيمة|فاتورة)/i, "bills", "AR: bill payment"],
+    [/فاتورة|فواتير|كهرباء|غاز|مياه|انترنت|تليفون|موبايل|شحن/i, "bills", "AR: utility bill"],
+    [/قسط\s+(?:شهري)?|أقساط/i, "payment", "AR: installment"],
+    [/تم\s+تحويل.*(?:من حسابك|من رصيدك)/i, "transfer", "AR: transfer from your account"],
+    // English: debits / purchases / IB transfers OUT
+    [/(?:has been|was)\s+(?:debited|deducted)/i, "withdrawal", "EN: has been debited"],
+    [/(?:debited|debit)\s+(?:with|by|of|for)\s+(?:EGP)?\s*[\d]/i, "withdrawal", "EN: debited amount"],
+    [/(?:purchase|POS)\s+(?:at|of|for|transaction)/i, "payment", "EN: POS purchase"],
+    [/(?:paid|payment)\s+(?:of|for|to)\s+(?:EGP)?\s*[\d]/i, "payment", "EN: payment"],
+    [/ATM\s+(?:withdrawal|cash|w\/d)/i, "withdrawal", "EN: ATM withdrawal"],
+    [/(?:withdrawn|charged|deducted)\s+(?:EGP)?\s*[\d]/i, "withdrawal", "EN: withdrawn amount"],
+    [/(?:IBIN|IB)\s*(?:Transfer|Trx|transaction).*(?:debited|from)/i, "transfer", "EN: IB Transfer debited"],
+    [/(?:IBIN|IB)\s*transferred\s*sent/i, "transfer", "EN: IBIN transferred sent"],
+    [/(?:transfer|sent)\s+(?:to|of)\s+(?:EGP)?\s*[\d]/i, "transfer", "EN: transfer to"],
+    [/outgoing\s+(?:IB|transfer|fund)/i, "transfer", "EN: outgoing IB"],
+    [/bill\s+payment|utility|subscription/i, "bills", "EN: bill/subscription"],
+    [/(?:e-?commerce|online)\s+(?:purchase|transaction|payment)/i, "payment", "EN: online purchase"],
+    [/contactless\s+(?:payment|purchase|transaction)/i, "payment", "EN: contactless payment"],
+    [/apple\s*pay/i, "payment", "EN: Apple Pay payment"]
+  ];
+  for (const [p, cat, rule] of incoming) {
+    if (p.test(text2)) return { direction: "incoming", category: cat, confidence: 0.92, matched_rule: rule };
+  }
+  for (const [p, cat, rule] of outgoing) {
+    if (p.test(text2)) return { direction: "outgoing", category: cat, confidence: 0.9, matched_rule: rule };
+  }
+  return { direction: null, category: "unknown", confidence: 0, matched_rule: "none" };
+}
+function isNonFinancial(text2) {
+  return NON_FINANCIAL_PATTERNS.some((p) => p.test(text2));
+}
+function parseSmsByRules(message) {
+  const empty = {
+    transaction_detected: false,
+    amount: null,
+    currency: "EGP",
+    direction: null,
+    provider: "Unknown",
+    category: "unknown",
+    fee: null,
+    balance_after: null,
+    date: null,
+    reference: null,
+    merchant: null,
+    confidence: 0,
+    matched_rule: "none"
+  };
+  if (!message || message.trim().length < 10) return empty;
+  if (isNonFinancial(message)) return { ...empty, matched_rule: "non_financial_filter" };
+  const provider = detectProvider(message);
+  const { direction, category, confidence, matched_rule } = detectDirection(message);
+  const amount = extractAmount(message);
+  if (!amount) return { ...empty, provider, matched_rule: "no_amount_found" };
+  const fee = extractFee(message);
+  const balance_after = extractBalanceAfter(message);
+  const date6 = extractDate(message);
+  const reference = extractReference(message);
+  const merchant = extractMerchant(message);
+  let finalConfidence = confidence;
+  if (provider !== "Unknown") finalConfidence += 0.05;
+  if (balance_after !== null) finalConfidence += 0.03;
+  if (reference) finalConfidence += 0.02;
+  finalConfidence = Math.min(finalConfidence, 1);
+  const isTransaction = direction !== null || amount !== null && provider !== "Unknown";
+  return {
+    transaction_detected: isTransaction,
+    amount,
+    currency: "EGP",
+    direction,
+    provider,
+    category,
+    fee,
+    balance_after,
+    date: date6,
+    reference,
+    merchant,
+    confidence: isTransaction ? finalConfidence : 0,
+    matched_rule
+  };
+}
+var NON_FINANCIAL_PATTERNS;
+var init_sms_rule_parser = __esm({
+  "api/lib/sms-rule-parser.ts"() {
+    NON_FINANCIAL_PATTERNS = [
+      /(?:OTP|كود التحقق|رمز التحقق|verification code|كود تفعيل|كود التأكيد)\s*[\d:]/i,
+      /كلمة\s+(?:السر|المرور)\s+(?:لمرة واحدة|المؤقتة)/i,
+      /(?:password|PIN|One.?Time)\s+(?:is|:)\s*[\d]/i,
+      /لا\s+تشارك\s+هذا\s+(?:الرمز|الكود)/i,
+      /Do not share this/i,
+      /Never share this/i,
+      /(?:عرض|offer|حملة|promotion)\s+(?:خاص|حصري|special|exclusive)/i,
+      /(?:خدمة|service)\s+(?:جديدة|new|متاح|available)/i,
+      /الاشتراك\s+في\s+خدمة/i,
+      /تسجيل\s+(?:الدخول|دخولك)\s+(?:تم|بنجاح)/i,
+      /(?:تم\s+)?تغيير\s+(?:كلمة|رقم)\s+(?:السر|المرور|الـ PIN)/i,
+      /(?:مرحباً?\s+بك|Welcome)\s+(?:في|to)\s+/i,
+      /تفعيل\s+(?:الخدمة|حسابك|البطاقة)/i,
+      /(?:حجب|إيقاف|block)\s+(?:البطاقة|الحساب|card|account)/i
+    ];
+  }
+});
+
+// api/lib/shortcut-generator.ts
+var shortcut_generator_exports = {};
+__export(shortcut_generator_exports, {
+  generateShortcutFile: () => generateShortcutFile
+});
+function esc2(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function generateShortcutFile(token, ingestUrl) {
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>WFWorkflowMinimumClientVersionString</key>
+	<string>900</string>
+	<key>WFWorkflowMinimumClientVersion</key>
+	<integer>900</integer>
+	<key>WFWorkflowIcon</key>
+	<dict>
+		<key>WFWorkflowIconStartColor</key>
+		<integer>463140863</integer>
+		<key>WFWorkflowIconGlyphNumber</key>
+		<integer>59761</integer>
+	</dict>
+	<key>WFWorkflowClientVersion</key>
+	<string>2302.0.4</string>
+	<key>WFWorkflowOutputContentItemClasses</key>
+	<array/>
+	<key>WFWorkflowHasOutputFallback</key>
+	<false/>
+	<key>WFWorkflowTypes</key>
+	<array>
+		<string>NCWidget</string>
+		<string>WatchKit</string>
+	</array>
+	<key>WFWorkflowInputContentItemClasses</key>
+	<array>
+		<string>WFStringContentItem</string>
+	</array>
+	<key>WFWorkflowImportQuestions</key>
+	<array/>
+	<key>WFWorkflowActions</key>
+	<array>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.url</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFURLActionURL</key>
+				<string>${esc2(ingestUrl)}</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>WFWorkflowActionIdentifier</key>
+			<string>is.workflow.actions.downloadurl</string>
+			<key>WFWorkflowActionParameters</key>
+			<dict>
+				<key>WFHTTPMethod</key>
+				<string>POST</string>
+				<key>WFHTTPBodyType</key>
+				<string>Json</string>
+				<key>ShowHeaders</key>
+				<true/>
+				<key>WFHTTPHeaders</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>WFDictionaryFieldValueItems</key>
+						<array>
+							<dict>
+								<key>WFItemType</key>
+								<integer>0</integer>
+								<key>WFKey</key>
+								<dict>
+									<key>Value</key>
+									<dict>
+										<key>string</key>
+										<string>Authorization</string>
+									</dict>
+									<key>WFSerializationType</key>
+									<string>WFTextTokenString</string>
+								</dict>
+								<key>WFValue</key>
+								<dict>
+									<key>Value</key>
+									<dict>
+										<key>string</key>
+										<string>Bearer ${esc2(token)}</string>
+									</dict>
+									<key>WFSerializationType</key>
+									<string>WFTextTokenString</string>
+								</dict>
+							</dict>
+						</array>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFDictionaryFieldValue</string>
+				</dict>
+				<key>WFJSONValues</key>
+				<dict>
+					<key>Value</key>
+					<dict>
+						<key>WFDictionaryFieldValueItems</key>
+						<array>
+							<dict>
+								<key>WFItemType</key>
+								<integer>0</integer>
+								<key>WFKey</key>
+								<dict>
+									<key>Value</key>
+									<dict>
+										<key>string</key>
+										<string>message</string>
+									</dict>
+									<key>WFSerializationType</key>
+									<string>WFTextTokenString</string>
+								</dict>
+								<key>WFValue</key>
+								<dict>
+									<key>Value</key>
+									<dict>
+										<key>attachmentsByRange</key>
+										<dict>
+											<key>{0, 1}</key>
+											<dict>
+												<key>Type</key>
+												<string>ExtensionInput</string>
+											</dict>
+										</dict>
+										<key>string</key>
+										<string>${ORC}</string>
+									</dict>
+									<key>WFSerializationType</key>
+									<string>WFTextTokenString</string>
+								</dict>
+							</dict>
+							<dict>
+								<key>WFItemType</key>
+								<integer>0</integer>
+								<key>WFKey</key>
+								<dict>
+									<key>Value</key>
+									<dict>
+										<key>string</key>
+										<string>sender</string>
+									</dict>
+									<key>WFSerializationType</key>
+									<string>WFTextTokenString</string>
+								</dict>
+								<key>WFValue</key>
+								<dict>
+									<key>Value</key>
+									<dict>
+										<key>string</key>
+										<string>iOS Automation</string>
+									</dict>
+									<key>WFSerializationType</key>
+									<string>WFTextTokenString</string>
+								</dict>
+							</dict>
+						</array>
+					</dict>
+					<key>WFSerializationType</key>
+					<string>WFDictionaryFieldValue</string>
+				</dict>
+			</dict>
+		</dict>
+	</array>
+</dict>
+</plist>`;
+  return Buffer.from(xml, "utf-8");
+}
+var ORC;
+var init_shortcut_generator = __esm({
+  "api/lib/shortcut-generator.ts"() {
+    ORC = "\uFFFC";
+  }
+});
+
+// api/sms-router.ts
+var sms_router_exports = {};
+__export(sms_router_exports, {
+  smsApp: () => smsApp,
+  storeMagicCode: () => storeMagicCode
+});
+import { randomBytes as randomBytes2 } from "crypto";
+function checkRateLimit(token) {
+  const now = Date.now();
+  const entry = rateLimitMap2.get(token);
+  if (!entry || entry.resetAt < now) {
+    rateLimitMap2.set(token, { count: 1, resetAt: now + 60 * 60 * 1e3 });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT) return false;
+  entry.count++;
+  return true;
+}
+function generateShortCode() {
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  let code = "";
+  const bytes = randomBytes2(6);
+  for (let i = 0; i < 6; i++) {
+    code += chars[bytes[i] % chars.length];
+  }
+  return code;
+}
+function storeMagicCode(webhookToken, userId, userType) {
+  for (const [code2, entry] of magicCodes) {
+    if (entry.userId === userId && entry.userType === userType) {
+      magicCodes.delete(code2);
+    }
+  }
+  const code = generateShortCode();
+  magicCodes.set(code, {
+    webhookToken,
+    userId,
+    userType,
+    expiresAt: Date.now() + 5 * 60 * 1e3
+    // 5 minutes
+  });
+  return code;
+}
+function exchangeMagicCode(code) {
+  const normalized = code.toUpperCase().trim();
+  const entry = magicCodes.get(normalized);
+  if (!entry) return null;
+  if (entry.expiresAt < Date.now()) {
+    magicCodes.delete(normalized);
+    return null;
+  }
+  magicCodes.delete(normalized);
+  return { token: entry.webhookToken };
+}
+async function getUserFromSession(authHeader) {
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  const token = authHeader.slice(7);
+  try {
+    const payload = await verify2(token, env.JWT_SECRET);
+    if (!payload?.userId || !payload?.userType) return null;
+    return { id: payload.userId, type: payload.userType };
+  } catch {
+    return null;
+  }
+}
+var smsApp, rateLimitMap2, RATE_LIMIT, magicCodes;
+var init_sms_router = __esm({
+  "api/sms-router.ts"() {
+    init_dist();
+    init_connection();
+    init_schema2();
+    init_drizzle_orm();
+    init_sms_ai_parser();
+    init_sms_rule_parser();
+    init_jwt4();
+    init_env();
+    smsApp = new Hono2();
+    rateLimitMap2 = /* @__PURE__ */ new Map();
+    RATE_LIMIT = 30;
+    magicCodes = /* @__PURE__ */ new Map();
+    setInterval(() => {
+      const now = Date.now();
+      for (const [code, entry] of magicCodes) {
+        if (entry.expiresAt < now) magicCodes.delete(code);
+      }
+    }, 2 * 60 * 1e3);
+    smsApp.post("/ingest", async (c) => {
+      const db3 = getDb();
+      let token = "";
+      const authHeader = c.req.header("Authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        token = authHeader.slice(7).trim();
+      } else {
+        token = c.req.query("token")?.trim() || "";
+      }
+      if (!token) {
+        return c.json({ error: "Missing webhook token (Header or Query)" }, 401);
+      }
+      const [tokenRecord] = await db3.select().from(webhookTokens).where(eq(webhookTokens.token, token)).limit(1);
+      if (!tokenRecord) {
+        return c.json({ error: "Invalid webhook token" }, 403);
+      }
+      if (!checkRateLimit(token)) {
+        return c.json({ error: "Rate limit exceeded. Max 30 SMS per hour." }, 429);
+      }
+      let body;
+      try {
+        body = await c.req.json();
+      } catch {
+        return c.json({ error: "Invalid JSON body" }, 400);
+      }
+      const { message, sender, timestamp: timestamp3 } = body;
+      if (!message || typeof message !== "string" || message.trim().length < 5) {
+        return c.json({ error: "Missing or too short 'message' field" }, 400);
+      }
+      const userId = tokenRecord.userId;
+      const userType = tokenRecord.userType;
+      const userTable = userType === "oauth" ? users : localUsers;
+      const [userRecord] = await db3.select().from(userTable).where(eq(userTable.id, userId)).limit(1);
+      const userPlan = userRecord?.plan || "free";
+      let smsMonthlyLimit = userPlan === "free" ? 5 : 999999;
+      try {
+        const { systemSettings: systemSettings2 } = await Promise.resolve().then(() => (init_schema2(), schema_exports));
+        const [setting] = await db3.select().from(systemSettings2).where(eq(systemSettings2.key, `sms_limit_${userPlan}`)).limit(1);
+        if (setting?.value) smsMonthlyLimit = parseInt(setting.value) || smsMonthlyLimit;
+      } catch {
+      }
+      const now = /* @__PURE__ */ new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const { sql: sqlFn } = await Promise.resolve().then(() => (init_drizzle_orm(), drizzle_orm_exports));
+      const [countResult] = await db3.select({ count: sqlFn`COUNT(*)` }).from(rawSmsEvents).where(and(
+        eq(rawSmsEvents.userId, userId),
+        eq(rawSmsEvents.userType, userType),
+        eq(rawSmsEvents.status, "processed")
+      ));
+      const usedThisMonth = Number(countResult?.count || 0);
+      if (usedThisMonth >= smsMonthlyLimit) {
+        return c.json({
+          error: `\u0627\u0644\u062D\u062F \u0627\u0644\u0634\u0647\u0631\u064A \u0644\u0644\u0631\u0633\u0627\u0626\u0644 (${smsMonthlyLimit}) \u0627\u0646\u062A\u0647\u0649. \u0642\u0645 \u0628\u062A\u0631\u0642\u064A\u0629 \u062E\u0637\u062A\u0643 \u0644\u0632\u064A\u0627\u062F\u0629 \u0627\u0644\u062D\u062F.`,
+          limit: smsMonthlyLimit,
+          used: usedThisMonth,
+          plan: userPlan
+        }, 403);
+      }
+      const [insertedSms] = await db3.insert(rawSmsEvents).values({
+        userId,
+        userType,
+        message: message.trim(),
+        sender: sender || null,
+        smsTimestamp: timestamp3 || (/* @__PURE__ */ new Date()).toISOString(),
+        status: "pending"
+      }).$returningId();
+      const smsId = insertedSms?.id;
+      let parseResult = null;
+      let parsedBy = "rules";
+      const ruleResult = parseSmsByRules(message.trim());
+      console.log(`[SMS Ingest] Rule parser: detected=${ruleResult.transaction_detected}, amount=${ruleResult.amount}, conf=${ruleResult.confidence.toFixed(2)}, rule=${ruleResult.matched_rule}`);
+      if (ruleResult.transaction_detected && ruleResult.confidence >= 0.75 && ruleResult.amount) {
+        parseResult = {
+          transaction_detected: true,
+          amount: ruleResult.amount,
+          currency: ruleResult.currency,
+          direction: ruleResult.direction,
+          provider: ruleResult.provider,
+          category: ruleResult.category,
+          fee: ruleResult.fee,
+          balance_after: ruleResult.balance_after,
+          confidence: ruleResult.confidence
+        };
+        parsedBy = "rules";
+      } else {
+        console.log(`[SMS Ingest] Rule confidence low (${ruleResult.confidence.toFixed(2)}), falling back to AI...`);
+        try {
+          const aiResult = await parseSmsFinancialData(message.trim());
+          if (aiResult) {
+            parseResult = aiResult;
+            parsedBy = "ai";
+          }
+        } catch (aiErr) {
+          console.error("[SMS Ingest] AI parsing error:", aiErr);
+        }
+      }
+      if (!parseResult) {
+        if (smsId) {
+          await db3.update(rawSmsEvents).set({ status: "ignored", metadata: { reason: "AI returned null" } }).where(eq(rawSmsEvents.id, smsId));
+        }
+        return c.json({ success: true, transaction_detected: false, reason: "Could not parse SMS" }, 200);
+      }
+      if (!parseResult.transaction_detected || parseResult.confidence < 0.6) {
+        if (smsId) {
+          await db3.update(rawSmsEvents).set({
+            status: "ignored",
+            metadata: {
+              reason: !parseResult.transaction_detected ? "not_financial" : "low_confidence",
+              confidence: parseResult.confidence
+            }
+          }).where(eq(rawSmsEvents.id, smsId));
+        }
+        return c.json({
+          success: true,
+          transaction_detected: false,
+          reason: !parseResult.transaction_detected ? "not_financial" : "low_confidence",
+          confidence: parseResult.confidence
+        }, 200);
+      }
+      const { category, subCategory, type } = mapSmsToExpenseCategory(parseResult);
+      const descriptionParts = [
+        parseResult.provider !== "Unknown" ? parseResult.provider : null,
+        parseResult.merchant || null,
+        sender ? `\u0645\u0646: ${sender}` : null
+      ].filter(Boolean);
+      const description = descriptionParts.join(" \u2014 ") || "SMS \u062A\u0644\u0642\u0627\u0626\u064A";
+      const transactionDate = timestamp3 ? new Date(timestamp3) : /* @__PURE__ */ new Date();
+      await db3.insert(expenses).values({
+        userId,
+        userType,
+        type,
+        amount: parseResult.amount.toString(),
+        category,
+        subCategory,
+        description,
+        rawText: message.trim(),
+        source: "sms",
+        date: transactionDate,
+        parsedMetadata: {
+          sms_id: smsId,
+          provider: parseResult.provider,
+          direction: parseResult.direction,
+          sms_category: parseResult.category,
+          confidence: parseResult.confidence,
+          fee: parseResult.fee,
+          balance_after: parseResult.balance_after,
+          parsed_by: parsedBy
+        }
+      });
+      if (smsId) {
+        await db3.update(rawSmsEvents).set({
+          status: "processed",
+          metadata: {
+            transaction_saved: true,
+            amount: parseResult.amount,
+            category,
+            type,
+            confidence: parseResult.confidence
+          }
+        }).where(eq(rawSmsEvents.id, smsId));
+      }
+      console.log(`\u2705 [SMS Ingest] User ${userId} | ${type} | ${parseResult.amount} EGP | ${category} | ${parseResult.provider}`);
+      return c.json({
+        success: true,
+        transaction_detected: true,
+        saved: true,
+        amount: parseResult.amount,
+        currency: parseResult.currency,
+        direction: parseResult.direction,
+        provider: parseResult.provider,
+        category,
+        subCategory,
+        type,
+        confidence: parseResult.confidence
+      }, 200);
+    });
+    smsApp.post("/token/generate", async (c) => {
+      const db3 = getDb();
+      const user = await getUserFromSession(c.req.header("Authorization"));
+      if (!user) {
+        return c.json({ error: "Unauthorized" }, 401);
+      }
+      await db3.delete(webhookTokens).where(
+        and(
+          eq(webhookTokens.userId, user.id),
+          eq(webhookTokens.userType, user.type)
+        )
+      );
+      const newToken = `sms_${randomBytes2(32).toString("hex")}`;
+      await db3.insert(webhookTokens).values({
+        userId: user.id,
+        userType: user.type,
+        token: newToken,
+        name: "iOS Shortcut Token"
+      });
+      return c.json({ success: true, token: newToken }, 200);
+    });
+    smsApp.get("/token", async (c) => {
+      const db3 = getDb();
+      const user = await getUserFromSession(c.req.header("Authorization"));
+      if (!user) {
+        return c.json({ error: "Unauthorized" }, 401);
+      }
+      const [record2] = await db3.select().from(webhookTokens).where(
+        and(
+          eq(webhookTokens.userId, user.id),
+          eq(webhookTokens.userType, user.type)
+        )
+      ).limit(1);
+      if (!record2) {
+        return c.json({ token: null, hasToken: false }, 200);
+      }
+      return c.json({ token: record2.token, hasToken: true, createdAt: record2.createdAt }, 200);
+    });
+    smsApp.post("/exchange", async (c) => {
+      let body;
+      try {
+        body = await c.req.json();
+      } catch {
+        return c.json({ error: "Invalid JSON body" }, 400);
+      }
+      const code = body?.code?.toString().trim();
+      if (!code) {
+        return c.json({ error: "Missing 'code' field" }, 400);
+      }
+      const result = exchangeMagicCode(code);
+      if (!result) {
+        return c.json({ error: "Invalid or expired code. Generate a new one from the website." }, 401);
+      }
+      const origin = new URL(c.req.url).origin;
+      return c.json({
+        success: true,
+        token: result.token,
+        ingestUrl: `${origin}/api/sms/ingest`
+      });
+    });
+    smsApp.get("/shortcut-download", async (c) => {
+      const code = c.req.query("code")?.trim();
+      if (!code) {
+        return c.json({ error: "Missing 'code' parameter" }, 400);
+      }
+      const result = exchangeMagicCode(code);
+      if (!result) {
+        return c.json({ error: "Invalid or expired code. Go back to SmartSpend and click Connect iPhone again." }, 401);
+      }
+      const origin = new URL(c.req.url).origin;
+      const ingestUrl = `${origin}/api/sms/ingest`;
+      const { generateShortcutFile: generateShortcutFile2 } = await Promise.resolve().then(() => (init_shortcut_generator(), shortcut_generator_exports));
+      const fileBuffer = generateShortcutFile2(result.token, ingestUrl);
+      return new Response(fileBuffer, {
+        headers: {
+          "Content-Type": "application/x-apple-shortcut",
+          "Content-Disposition": 'attachment; filename="SmartSpend SMS.shortcut"',
+          "Cache-Control": "no-store"
+        }
+      });
+    });
+    smsApp.get("/logs", async (c) => {
+      const db3 = getDb();
+      const user = await getUserFromSession(c.req.header("Authorization"));
+      if (!user) {
+        return c.json({ error: "Unauthorized" }, 401);
+      }
+      const logs = await db3.select().from(rawSmsEvents).where(
+        and(
+          eq(rawSmsEvents.userId, user.id),
+          eq(rawSmsEvents.userType, user.type)
+        )
+      ).orderBy(desc(rawSmsEvents.createdAt)).limit(50);
+      return c.json({ logs }, 200);
+    });
+  }
+});
+
 // node_modules/@hono/node-server/dist/index.mjs
 var dist_exports = {};
 __export(dist_exports, {
@@ -77419,7 +82195,7 @@ function writeFromReadableStream(stream, writable) {
   return writeFromReadableStreamDefaultReader(stream.getReader(), writable);
 }
 var RequestError, toRequestError, GlobalRequest, Request2, newHeadersFromIncoming, wrapBodyStream, newRequestFromIncoming, getRequestCache, requestCache, incomingKey, urlKey, headersKey, abortControllerKey, getAbortController, requestPrototype, newRequest, responseCache, getResponseCache, cacheKey, GlobalResponse, Response2, buildOutgoingHttpHeaders, X_ALREADY_SENT, outgoingEnded, incomingDraining, DRAIN_TIMEOUT_MS, MAX_DRAIN_BYTES, drainIncoming, handleRequestError, handleFetchError, handleResponseError2, flushHeaders, responseViaCache, isPromise2, responseViaResponseObject, getRequestListener, createAdaptorServer, serve;
-var init_dist = __esm({
+var init_dist3 = __esm({
   "node_modules/@hono/node-server/dist/index.mjs"() {
     RequestError = class extends Error {
       constructor(message, options) {
@@ -78261,2058 +83037,8 @@ var init_serve_static = __esm({
   );
 })();
 
-// node_modules/hono/dist/compose.js
-var compose = (middleware, onError, onNotFound) => {
-  return (context, next) => {
-    let index2 = -1;
-    return dispatch(0);
-    async function dispatch(i) {
-      if (i <= index2) {
-        throw new Error("next() called multiple times");
-      }
-      index2 = i;
-      let res;
-      let isError = false;
-      let handler;
-      if (middleware[i]) {
-        handler = middleware[i][0][0];
-        context.req.routeIndex = i;
-      } else {
-        handler = i === middleware.length && next || void 0;
-      }
-      if (handler) {
-        try {
-          res = await handler(context, () => dispatch(i + 1));
-        } catch (err) {
-          if (err instanceof Error && onError) {
-            context.error = err;
-            res = await onError(err, context);
-            isError = true;
-          } else {
-            throw err;
-          }
-        }
-      } else {
-        if (context.finalized === false && onNotFound) {
-          res = await onNotFound(context);
-        }
-      }
-      if (res && (context.finalized === false || isError)) {
-        context.res = res;
-      }
-      return context;
-    }
-  };
-};
-
-// node_modules/hono/dist/request/constants.js
-var GET_MATCH_RESULT = /* @__PURE__ */ Symbol();
-
-// node_modules/hono/dist/utils/body.js
-var parseBody = async (request, options = /* @__PURE__ */ Object.create(null)) => {
-  const { all = false, dot = false } = options;
-  const headers = request instanceof HonoRequest ? request.raw.headers : request.headers;
-  const contentType = headers.get("Content-Type");
-  if (contentType?.startsWith("multipart/form-data") || contentType?.startsWith("application/x-www-form-urlencoded")) {
-    return parseFormData(request, { all, dot });
-  }
-  return {};
-};
-async function parseFormData(request, options) {
-  const formData = await request.formData();
-  if (formData) {
-    return convertFormDataToBodyData(formData, options);
-  }
-  return {};
-}
-function convertFormDataToBodyData(formData, options) {
-  const form = /* @__PURE__ */ Object.create(null);
-  formData.forEach((value, key) => {
-    const shouldParseAllValues = options.all || key.endsWith("[]");
-    if (!shouldParseAllValues) {
-      form[key] = value;
-    } else {
-      handleParsingAllValues(form, key, value);
-    }
-  });
-  if (options.dot) {
-    Object.entries(form).forEach(([key, value]) => {
-      const shouldParseDotValues = key.includes(".");
-      if (shouldParseDotValues) {
-        handleParsingNestedValues(form, key, value);
-        delete form[key];
-      }
-    });
-  }
-  return form;
-}
-var handleParsingAllValues = (form, key, value) => {
-  if (form[key] !== void 0) {
-    if (Array.isArray(form[key])) {
-      ;
-      form[key].push(value);
-    } else {
-      form[key] = [form[key], value];
-    }
-  } else {
-    if (!key.endsWith("[]")) {
-      form[key] = value;
-    } else {
-      form[key] = [value];
-    }
-  }
-};
-var handleParsingNestedValues = (form, key, value) => {
-  if (/(?:^|\.)__proto__\./.test(key)) {
-    return;
-  }
-  let nestedForm = form;
-  const keys = key.split(".");
-  keys.forEach((key2, index2) => {
-    if (index2 === keys.length - 1) {
-      nestedForm[key2] = value;
-    } else {
-      if (!nestedForm[key2] || typeof nestedForm[key2] !== "object" || Array.isArray(nestedForm[key2]) || nestedForm[key2] instanceof File) {
-        nestedForm[key2] = /* @__PURE__ */ Object.create(null);
-      }
-      nestedForm = nestedForm[key2];
-    }
-  });
-};
-
-// node_modules/hono/dist/utils/url.js
-var splitPath = (path) => {
-  const paths = path.split("/");
-  if (paths[0] === "") {
-    paths.shift();
-  }
-  return paths;
-};
-var splitRoutingPath = (routePath2) => {
-  const { groups, path } = extractGroupsFromPath(routePath2);
-  const paths = splitPath(path);
-  return replaceGroupMarks(paths, groups);
-};
-var extractGroupsFromPath = (path) => {
-  const groups = [];
-  path = path.replace(/\{[^}]+\}/g, (match2, index2) => {
-    const mark = `@${index2}`;
-    groups.push([mark, match2]);
-    return mark;
-  });
-  return { groups, path };
-};
-var replaceGroupMarks = (paths, groups) => {
-  for (let i = groups.length - 1; i >= 0; i--) {
-    const [mark] = groups[i];
-    for (let j = paths.length - 1; j >= 0; j--) {
-      if (paths[j].includes(mark)) {
-        paths[j] = paths[j].replace(mark, groups[i][1]);
-        break;
-      }
-    }
-  }
-  return paths;
-};
-var patternCache = {};
-var getPattern = (label, next) => {
-  if (label === "*") {
-    return "*";
-  }
-  const match2 = label.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/);
-  if (match2) {
-    const cacheKey2 = `${label}#${next}`;
-    if (!patternCache[cacheKey2]) {
-      if (match2[2]) {
-        patternCache[cacheKey2] = next && next[0] !== ":" && next[0] !== "*" ? [cacheKey2, match2[1], new RegExp(`^${match2[2]}(?=/${next})`)] : [label, match2[1], new RegExp(`^${match2[2]}$`)];
-      } else {
-        patternCache[cacheKey2] = [label, match2[1], true];
-      }
-    }
-    return patternCache[cacheKey2];
-  }
-  return null;
-};
-var tryDecode = (str, decoder) => {
-  try {
-    return decoder(str);
-  } catch {
-    return str.replace(/(?:%[0-9A-Fa-f]{2})+/g, (match2) => {
-      try {
-        return decoder(match2);
-      } catch {
-        return match2;
-      }
-    });
-  }
-};
-var tryDecodeURI = (str) => tryDecode(str, decodeURI);
-var getPath = (request) => {
-  const url2 = request.url;
-  const start = url2.indexOf("/", url2.indexOf(":") + 4);
-  let i = start;
-  for (; i < url2.length; i++) {
-    const charCode = url2.charCodeAt(i);
-    if (charCode === 37) {
-      const queryIndex = url2.indexOf("?", i);
-      const hashIndex = url2.indexOf("#", i);
-      const end = queryIndex === -1 ? hashIndex === -1 ? void 0 : hashIndex : hashIndex === -1 ? queryIndex : Math.min(queryIndex, hashIndex);
-      const path = url2.slice(start, end);
-      return tryDecodeURI(path.includes("%25") ? path.replace(/%25/g, "%2525") : path);
-    } else if (charCode === 63 || charCode === 35) {
-      break;
-    }
-  }
-  return url2.slice(start, i);
-};
-var getPathNoStrict = (request) => {
-  const result = getPath(request);
-  return result.length > 1 && result.at(-1) === "/" ? result.slice(0, -1) : result;
-};
-var mergePath = (base, sub, ...rest) => {
-  if (rest.length) {
-    sub = mergePath(sub, ...rest);
-  }
-  return `${base?.[0] === "/" ? "" : "/"}${base}${sub === "/" ? "" : `${base?.at(-1) === "/" ? "" : "/"}${sub?.[0] === "/" ? sub.slice(1) : sub}`}`;
-};
-var checkOptionalParameter = (path) => {
-  if (path.charCodeAt(path.length - 1) !== 63 || !path.includes(":")) {
-    return null;
-  }
-  const segments = path.split("/");
-  const results = [];
-  let basePath = "";
-  segments.forEach((segment) => {
-    if (segment !== "" && !/\:/.test(segment)) {
-      basePath += "/" + segment;
-    } else if (/\:/.test(segment)) {
-      if (/\?/.test(segment)) {
-        if (results.length === 0 && basePath === "") {
-          results.push("/");
-        } else {
-          results.push(basePath);
-        }
-        const optionalSegment = segment.replace("?", "");
-        basePath += "/" + optionalSegment;
-        results.push(basePath);
-      } else {
-        basePath += "/" + segment;
-      }
-    }
-  });
-  return results.filter((v, i, a) => a.indexOf(v) === i);
-};
-var _decodeURI = (value) => {
-  if (!/[%+]/.test(value)) {
-    return value;
-  }
-  if (value.indexOf("+") !== -1) {
-    value = value.replace(/\+/g, " ");
-  }
-  return value.indexOf("%") !== -1 ? tryDecode(value, decodeURIComponent_) : value;
-};
-var _getQueryParam = (url2, key, multiple) => {
-  let encoded;
-  if (!multiple && key && !/[%+]/.test(key)) {
-    let keyIndex2 = url2.indexOf("?", 8);
-    if (keyIndex2 === -1) {
-      return void 0;
-    }
-    if (!url2.startsWith(key, keyIndex2 + 1)) {
-      keyIndex2 = url2.indexOf(`&${key}`, keyIndex2 + 1);
-    }
-    while (keyIndex2 !== -1) {
-      const trailingKeyCode = url2.charCodeAt(keyIndex2 + key.length + 1);
-      if (trailingKeyCode === 61) {
-        const valueIndex = keyIndex2 + key.length + 2;
-        const endIndex = url2.indexOf("&", valueIndex);
-        return _decodeURI(url2.slice(valueIndex, endIndex === -1 ? void 0 : endIndex));
-      } else if (trailingKeyCode == 38 || isNaN(trailingKeyCode)) {
-        return "";
-      }
-      keyIndex2 = url2.indexOf(`&${key}`, keyIndex2 + 1);
-    }
-    encoded = /[%+]/.test(url2);
-    if (!encoded) {
-      return void 0;
-    }
-  }
-  const results = {};
-  encoded ??= /[%+]/.test(url2);
-  let keyIndex = url2.indexOf("?", 8);
-  while (keyIndex !== -1) {
-    const nextKeyIndex = url2.indexOf("&", keyIndex + 1);
-    let valueIndex = url2.indexOf("=", keyIndex);
-    if (valueIndex > nextKeyIndex && nextKeyIndex !== -1) {
-      valueIndex = -1;
-    }
-    let name2 = url2.slice(
-      keyIndex + 1,
-      valueIndex === -1 ? nextKeyIndex === -1 ? void 0 : nextKeyIndex : valueIndex
-    );
-    if (encoded) {
-      name2 = _decodeURI(name2);
-    }
-    keyIndex = nextKeyIndex;
-    if (name2 === "") {
-      continue;
-    }
-    let value;
-    if (valueIndex === -1) {
-      value = "";
-    } else {
-      value = url2.slice(valueIndex + 1, nextKeyIndex === -1 ? void 0 : nextKeyIndex);
-      if (encoded) {
-        value = _decodeURI(value);
-      }
-    }
-    if (multiple) {
-      if (!(results[name2] && Array.isArray(results[name2]))) {
-        results[name2] = [];
-      }
-      ;
-      results[name2].push(value);
-    } else {
-      results[name2] ??= value;
-    }
-  }
-  return key ? results[key] : results;
-};
-var getQueryParam = _getQueryParam;
-var getQueryParams = (url2, key) => {
-  return _getQueryParam(url2, key, true);
-};
-var decodeURIComponent_ = decodeURIComponent;
-
-// node_modules/hono/dist/request.js
-var tryDecodeURIComponent = (str) => tryDecode(str, decodeURIComponent_);
-var HonoRequest = class {
-  /**
-   * `.raw` can get the raw Request object.
-   *
-   * @see {@link https://hono.dev/docs/api/request#raw}
-   *
-   * @example
-   * ```ts
-   * // For Cloudflare Workers
-   * app.post('/', async (c) => {
-   *   const metadata = c.req.raw.cf?.hostMetadata?
-   *   ...
-   * })
-   * ```
-   */
-  raw;
-  #validatedData;
-  // Short name of validatedData
-  #matchResult;
-  routeIndex = 0;
-  /**
-   * `.path` can get the pathname of the request.
-   *
-   * @see {@link https://hono.dev/docs/api/request#path}
-   *
-   * @example
-   * ```ts
-   * app.get('/about/me', (c) => {
-   *   const pathname = c.req.path // `/about/me`
-   * })
-   * ```
-   */
-  path;
-  bodyCache = {};
-  constructor(request, path = "/", matchResult = [[]]) {
-    this.raw = request;
-    this.path = path;
-    this.#matchResult = matchResult;
-    this.#validatedData = {};
-  }
-  param(key) {
-    return key ? this.#getDecodedParam(key) : this.#getAllDecodedParams();
-  }
-  #getDecodedParam(key) {
-    const paramKey = this.#matchResult[0][this.routeIndex][1][key];
-    const param2 = this.#getParamValue(paramKey);
-    return param2 && /\%/.test(param2) ? tryDecodeURIComponent(param2) : param2;
-  }
-  #getAllDecodedParams() {
-    const decoded = {};
-    const keys = Object.keys(this.#matchResult[0][this.routeIndex][1]);
-    for (const key of keys) {
-      const value = this.#getParamValue(this.#matchResult[0][this.routeIndex][1][key]);
-      if (value !== void 0) {
-        decoded[key] = /\%/.test(value) ? tryDecodeURIComponent(value) : value;
-      }
-    }
-    return decoded;
-  }
-  #getParamValue(paramKey) {
-    return this.#matchResult[1] ? this.#matchResult[1][paramKey] : paramKey;
-  }
-  query(key) {
-    return getQueryParam(this.url, key);
-  }
-  queries(key) {
-    return getQueryParams(this.url, key);
-  }
-  header(name2) {
-    if (name2) {
-      return this.raw.headers.get(name2) ?? void 0;
-    }
-    const headerData = {};
-    this.raw.headers.forEach((value, key) => {
-      headerData[key] = value;
-    });
-    return headerData;
-  }
-  async parseBody(options) {
-    return parseBody(this, options);
-  }
-  #cachedBody = (key) => {
-    const { bodyCache, raw: raw2 } = this;
-    const cachedBody = bodyCache[key];
-    if (cachedBody) {
-      return cachedBody;
-    }
-    const anyCachedKey = Object.keys(bodyCache)[0];
-    if (anyCachedKey) {
-      return bodyCache[anyCachedKey].then((body) => {
-        if (anyCachedKey === "json") {
-          body = JSON.stringify(body);
-        }
-        return new Response(body)[key]();
-      });
-    }
-    return bodyCache[key] = raw2[key]();
-  };
-  /**
-   * `.json()` can parse Request body of type `application/json`
-   *
-   * @see {@link https://hono.dev/docs/api/request#json}
-   *
-   * @example
-   * ```ts
-   * app.post('/entry', async (c) => {
-   *   const body = await c.req.json()
-   * })
-   * ```
-   */
-  json() {
-    return this.#cachedBody("text").then((text2) => JSON.parse(text2));
-  }
-  /**
-   * `.text()` can parse Request body of type `text/plain`
-   *
-   * @see {@link https://hono.dev/docs/api/request#text}
-   *
-   * @example
-   * ```ts
-   * app.post('/entry', async (c) => {
-   *   const body = await c.req.text()
-   * })
-   * ```
-   */
-  text() {
-    return this.#cachedBody("text");
-  }
-  /**
-   * `.arrayBuffer()` parse Request body as an `ArrayBuffer`
-   *
-   * @see {@link https://hono.dev/docs/api/request#arraybuffer}
-   *
-   * @example
-   * ```ts
-   * app.post('/entry', async (c) => {
-   *   const body = await c.req.arrayBuffer()
-   * })
-   * ```
-   */
-  arrayBuffer() {
-    return this.#cachedBody("arrayBuffer");
-  }
-  /**
-   * Parses the request body as a `Blob`.
-   * @example
-   * ```ts
-   * app.post('/entry', async (c) => {
-   *   const body = await c.req.blob();
-   * });
-   * ```
-   * @see https://hono.dev/docs/api/request#blob
-   */
-  blob() {
-    return this.#cachedBody("blob");
-  }
-  /**
-   * Parses the request body as `FormData`.
-   * @example
-   * ```ts
-   * app.post('/entry', async (c) => {
-   *   const body = await c.req.formData();
-   * });
-   * ```
-   * @see https://hono.dev/docs/api/request#formdata
-   */
-  formData() {
-    return this.#cachedBody("formData");
-  }
-  /**
-   * Adds validated data to the request.
-   *
-   * @param target - The target of the validation.
-   * @param data - The validated data to add.
-   */
-  addValidatedData(target, data) {
-    this.#validatedData[target] = data;
-  }
-  valid(target) {
-    return this.#validatedData[target];
-  }
-  /**
-   * `.url()` can get the request url strings.
-   *
-   * @see {@link https://hono.dev/docs/api/request#url}
-   *
-   * @example
-   * ```ts
-   * app.get('/about/me', (c) => {
-   *   const url = c.req.url // `http://localhost:8787/about/me`
-   *   ...
-   * })
-   * ```
-   */
-  get url() {
-    return this.raw.url;
-  }
-  /**
-   * `.method()` can get the method name of the request.
-   *
-   * @see {@link https://hono.dev/docs/api/request#method}
-   *
-   * @example
-   * ```ts
-   * app.get('/about/me', (c) => {
-   *   const method = c.req.method // `GET`
-   * })
-   * ```
-   */
-  get method() {
-    return this.raw.method;
-  }
-  get [GET_MATCH_RESULT]() {
-    return this.#matchResult;
-  }
-  /**
-   * `.matchedRoutes()` can return a matched route in the handler
-   *
-   * @deprecated
-   *
-   * Use matchedRoutes helper defined in "hono/route" instead.
-   *
-   * @see {@link https://hono.dev/docs/api/request#matchedroutes}
-   *
-   * @example
-   * ```ts
-   * app.use('*', async function logger(c, next) {
-   *   await next()
-   *   c.req.matchedRoutes.forEach(({ handler, method, path }, i) => {
-   *     const name = handler.name || (handler.length < 2 ? '[handler]' : '[middleware]')
-   *     console.log(
-   *       method,
-   *       ' ',
-   *       path,
-   *       ' '.repeat(Math.max(10 - path.length, 0)),
-   *       name,
-   *       i === c.req.routeIndex ? '<- respond from here' : ''
-   *     )
-   *   })
-   * })
-   * ```
-   */
-  get matchedRoutes() {
-    return this.#matchResult[0].map(([[, route]]) => route);
-  }
-  /**
-   * `routePath()` can retrieve the path registered within the handler
-   *
-   * @deprecated
-   *
-   * Use routePath helper defined in "hono/route" instead.
-   *
-   * @see {@link https://hono.dev/docs/api/request#routepath}
-   *
-   * @example
-   * ```ts
-   * app.get('/posts/:id', (c) => {
-   *   return c.json({ path: c.req.routePath })
-   * })
-   * ```
-   */
-  get routePath() {
-    return this.#matchResult[0].map(([[, route]]) => route)[this.routeIndex].path;
-  }
-};
-
-// node_modules/hono/dist/utils/html.js
-var HtmlEscapedCallbackPhase = {
-  Stringify: 1,
-  BeforeStream: 2,
-  Stream: 3
-};
-var raw = (value, callbacks) => {
-  const escapedString = new String(value);
-  escapedString.isEscaped = true;
-  escapedString.callbacks = callbacks;
-  return escapedString;
-};
-var resolveCallback = async (str, phase, preserveCallbacks, context, buffer) => {
-  if (typeof str === "object" && !(str instanceof String)) {
-    if (!(str instanceof Promise)) {
-      str = str.toString();
-    }
-    if (str instanceof Promise) {
-      str = await str;
-    }
-  }
-  const callbacks = str.callbacks;
-  if (!callbacks?.length) {
-    return Promise.resolve(str);
-  }
-  if (buffer) {
-    buffer[0] += str;
-  } else {
-    buffer = [str];
-  }
-  const resStr = Promise.all(callbacks.map((c) => c({ phase, buffer, context }))).then(
-    (res) => Promise.all(
-      res.filter(Boolean).map((str2) => resolveCallback(str2, phase, false, context, buffer))
-    ).then(() => buffer[0])
-  );
-  if (preserveCallbacks) {
-    return raw(await resStr, callbacks);
-  } else {
-    return resStr;
-  }
-};
-
-// node_modules/hono/dist/context.js
-var TEXT_PLAIN = "text/plain; charset=UTF-8";
-var setDefaultContentType = (contentType, headers) => {
-  return {
-    "Content-Type": contentType,
-    ...headers
-  };
-};
-var createResponseInstance = (body, init) => new Response(body, init);
-var Context = class {
-  #rawRequest;
-  #req;
-  /**
-   * `.env` can get bindings (environment variables, secrets, KV namespaces, D1 database, R2 bucket etc.) in Cloudflare Workers.
-   *
-   * @see {@link https://hono.dev/docs/api/context#env}
-   *
-   * @example
-   * ```ts
-   * // Environment object for Cloudflare Workers
-   * app.get('*', async c => {
-   *   const counter = c.env.COUNTER
-   * })
-   * ```
-   */
-  env = {};
-  #var;
-  finalized = false;
-  /**
-   * `.error` can get the error object from the middleware if the Handler throws an error.
-   *
-   * @see {@link https://hono.dev/docs/api/context#error}
-   *
-   * @example
-   * ```ts
-   * app.use('*', async (c, next) => {
-   *   await next()
-   *   if (c.error) {
-   *     // do something...
-   *   }
-   * })
-   * ```
-   */
-  error;
-  #status;
-  #executionCtx;
-  #res;
-  #layout;
-  #renderer;
-  #notFoundHandler;
-  #preparedHeaders;
-  #matchResult;
-  #path;
-  /**
-   * Creates an instance of the Context class.
-   *
-   * @param req - The Request object.
-   * @param options - Optional configuration options for the context.
-   */
-  constructor(req, options) {
-    this.#rawRequest = req;
-    if (options) {
-      this.#executionCtx = options.executionCtx;
-      this.env = options.env;
-      this.#notFoundHandler = options.notFoundHandler;
-      this.#path = options.path;
-      this.#matchResult = options.matchResult;
-    }
-  }
-  /**
-   * `.req` is the instance of {@link HonoRequest}.
-   */
-  get req() {
-    this.#req ??= new HonoRequest(this.#rawRequest, this.#path, this.#matchResult);
-    return this.#req;
-  }
-  /**
-   * @see {@link https://hono.dev/docs/api/context#event}
-   * The FetchEvent associated with the current request.
-   *
-   * @throws Will throw an error if the context does not have a FetchEvent.
-   */
-  get event() {
-    if (this.#executionCtx && "respondWith" in this.#executionCtx) {
-      return this.#executionCtx;
-    } else {
-      throw Error("This context has no FetchEvent");
-    }
-  }
-  /**
-   * @see {@link https://hono.dev/docs/api/context#executionctx}
-   * The ExecutionContext associated with the current request.
-   *
-   * @throws Will throw an error if the context does not have an ExecutionContext.
-   */
-  get executionCtx() {
-    if (this.#executionCtx) {
-      return this.#executionCtx;
-    } else {
-      throw Error("This context has no ExecutionContext");
-    }
-  }
-  /**
-   * @see {@link https://hono.dev/docs/api/context#res}
-   * The Response object for the current request.
-   */
-  get res() {
-    return this.#res ||= createResponseInstance(null, {
-      headers: this.#preparedHeaders ??= new Headers()
-    });
-  }
-  /**
-   * Sets the Response object for the current request.
-   *
-   * @param _res - The Response object to set.
-   */
-  set res(_res) {
-    if (this.#res && _res) {
-      _res = createResponseInstance(_res.body, _res);
-      for (const [k, v] of this.#res.headers.entries()) {
-        if (k === "content-type") {
-          continue;
-        }
-        if (k === "set-cookie") {
-          const cookies = this.#res.headers.getSetCookie();
-          _res.headers.delete("set-cookie");
-          for (const cookie of cookies) {
-            _res.headers.append("set-cookie", cookie);
-          }
-        } else {
-          _res.headers.set(k, v);
-        }
-      }
-    }
-    this.#res = _res;
-    this.finalized = true;
-  }
-  /**
-   * `.render()` can create a response within a layout.
-   *
-   * @see {@link https://hono.dev/docs/api/context#render-setrenderer}
-   *
-   * @example
-   * ```ts
-   * app.get('/', (c) => {
-   *   return c.render('Hello!')
-   * })
-   * ```
-   */
-  render = (...args) => {
-    this.#renderer ??= (content) => this.html(content);
-    return this.#renderer(...args);
-  };
-  /**
-   * Sets the layout for the response.
-   *
-   * @param layout - The layout to set.
-   * @returns The layout function.
-   */
-  setLayout = (layout) => this.#layout = layout;
-  /**
-   * Gets the current layout for the response.
-   *
-   * @returns The current layout function.
-   */
-  getLayout = () => this.#layout;
-  /**
-   * `.setRenderer()` can set the layout in the custom middleware.
-   *
-   * @see {@link https://hono.dev/docs/api/context#render-setrenderer}
-   *
-   * @example
-   * ```tsx
-   * app.use('*', async (c, next) => {
-   *   c.setRenderer((content) => {
-   *     return c.html(
-   *       <html>
-   *         <body>
-   *           <p>{content}</p>
-   *         </body>
-   *       </html>
-   *     )
-   *   })
-   *   await next()
-   * })
-   * ```
-   */
-  setRenderer = (renderer) => {
-    this.#renderer = renderer;
-  };
-  /**
-   * `.header()` can set headers.
-   *
-   * @see {@link https://hono.dev/docs/api/context#header}
-   *
-   * @example
-   * ```ts
-   * app.get('/welcome', (c) => {
-   *   // Set headers
-   *   c.header('X-Message', 'Hello!')
-   *   c.header('Content-Type', 'text/plain')
-   *
-   *   return c.body('Thank you for coming')
-   * })
-   * ```
-   */
-  header = (name2, value, options) => {
-    if (this.finalized) {
-      this.#res = createResponseInstance(this.#res.body, this.#res);
-    }
-    const headers = this.#res ? this.#res.headers : this.#preparedHeaders ??= new Headers();
-    if (value === void 0) {
-      headers.delete(name2);
-    } else if (options?.append) {
-      headers.append(name2, value);
-    } else {
-      headers.set(name2, value);
-    }
-  };
-  status = (status) => {
-    this.#status = status;
-  };
-  /**
-   * `.set()` can set the value specified by the key.
-   *
-   * @see {@link https://hono.dev/docs/api/context#set-get}
-   *
-   * @example
-   * ```ts
-   * app.use('*', async (c, next) => {
-   *   c.set('message', 'Hono is hot!!')
-   *   await next()
-   * })
-   * ```
-   */
-  set = (key, value) => {
-    this.#var ??= /* @__PURE__ */ new Map();
-    this.#var.set(key, value);
-  };
-  /**
-   * `.get()` can use the value specified by the key.
-   *
-   * @see {@link https://hono.dev/docs/api/context#set-get}
-   *
-   * @example
-   * ```ts
-   * app.get('/', (c) => {
-   *   const message = c.get('message')
-   *   return c.text(`The message is "${message}"`)
-   * })
-   * ```
-   */
-  get = (key) => {
-    return this.#var ? this.#var.get(key) : void 0;
-  };
-  /**
-   * `.var` can access the value of a variable.
-   *
-   * @see {@link https://hono.dev/docs/api/context#var}
-   *
-   * @example
-   * ```ts
-   * const result = c.var.client.oneMethod()
-   * ```
-   */
-  // c.var.propName is a read-only
-  get var() {
-    if (!this.#var) {
-      return {};
-    }
-    return Object.fromEntries(this.#var);
-  }
-  #newResponse(data, arg, headers) {
-    const responseHeaders = this.#res ? new Headers(this.#res.headers) : this.#preparedHeaders ?? new Headers();
-    if (typeof arg === "object" && "headers" in arg) {
-      const argHeaders = arg.headers instanceof Headers ? arg.headers : new Headers(arg.headers);
-      for (const [key, value] of argHeaders) {
-        if (key.toLowerCase() === "set-cookie") {
-          responseHeaders.append(key, value);
-        } else {
-          responseHeaders.set(key, value);
-        }
-      }
-    }
-    if (headers) {
-      for (const [k, v] of Object.entries(headers)) {
-        if (typeof v === "string") {
-          responseHeaders.set(k, v);
-        } else {
-          responseHeaders.delete(k);
-          for (const v2 of v) {
-            responseHeaders.append(k, v2);
-          }
-        }
-      }
-    }
-    const status = typeof arg === "number" ? arg : arg?.status ?? this.#status;
-    return createResponseInstance(data, { status, headers: responseHeaders });
-  }
-  newResponse = (...args) => this.#newResponse(...args);
-  /**
-   * `.body()` can return the HTTP response.
-   * You can set headers with `.header()` and set HTTP status code with `.status`.
-   * This can also be set in `.text()`, `.json()` and so on.
-   *
-   * @see {@link https://hono.dev/docs/api/context#body}
-   *
-   * @example
-   * ```ts
-   * app.get('/welcome', (c) => {
-   *   // Set headers
-   *   c.header('X-Message', 'Hello!')
-   *   c.header('Content-Type', 'text/plain')
-   *   // Set HTTP status code
-   *   c.status(201)
-   *
-   *   // Return the response body
-   *   return c.body('Thank you for coming')
-   * })
-   * ```
-   */
-  body = (data, arg, headers) => this.#newResponse(data, arg, headers);
-  /**
-   * `.text()` can render text as `Content-Type:text/plain`.
-   *
-   * @see {@link https://hono.dev/docs/api/context#text}
-   *
-   * @example
-   * ```ts
-   * app.get('/say', (c) => {
-   *   return c.text('Hello!')
-   * })
-   * ```
-   */
-  text = (text2, arg, headers) => {
-    return !this.#preparedHeaders && !this.#status && !arg && !headers && !this.finalized ? new Response(text2) : this.#newResponse(
-      text2,
-      arg,
-      setDefaultContentType(TEXT_PLAIN, headers)
-    );
-  };
-  /**
-   * `.json()` can render JSON as `Content-Type:application/json`.
-   *
-   * @see {@link https://hono.dev/docs/api/context#json}
-   *
-   * @example
-   * ```ts
-   * app.get('/api', (c) => {
-   *   return c.json({ message: 'Hello!' })
-   * })
-   * ```
-   */
-  json = (object2, arg, headers) => {
-    return this.#newResponse(
-      JSON.stringify(object2),
-      arg,
-      setDefaultContentType("application/json", headers)
-    );
-  };
-  html = (html, arg, headers) => {
-    const res = (html2) => this.#newResponse(html2, arg, setDefaultContentType("text/html; charset=UTF-8", headers));
-    return typeof html === "object" ? resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then(res) : res(html);
-  };
-  /**
-   * `.redirect()` can Redirect, default status code is 302.
-   *
-   * @see {@link https://hono.dev/docs/api/context#redirect}
-   *
-   * @example
-   * ```ts
-   * app.get('/redirect', (c) => {
-   *   return c.redirect('/')
-   * })
-   * app.get('/redirect-permanently', (c) => {
-   *   return c.redirect('/', 301)
-   * })
-   * ```
-   */
-  redirect = (location, status) => {
-    const locationString = String(location);
-    this.header(
-      "Location",
-      // Multibyes should be encoded
-      // eslint-disable-next-line no-control-regex
-      !/[^\x00-\xFF]/.test(locationString) ? locationString : encodeURI(locationString)
-    );
-    return this.newResponse(null, status ?? 302);
-  };
-  /**
-   * `.notFound()` can return the Not Found Response.
-   *
-   * @see {@link https://hono.dev/docs/api/context#notfound}
-   *
-   * @example
-   * ```ts
-   * app.get('/notfound', (c) => {
-   *   return c.notFound()
-   * })
-   * ```
-   */
-  notFound = () => {
-    this.#notFoundHandler ??= () => createResponseInstance();
-    return this.#notFoundHandler(this);
-  };
-};
-
-// node_modules/hono/dist/router.js
-var METHOD_NAME_ALL = "ALL";
-var METHOD_NAME_ALL_LOWERCASE = "all";
-var METHODS = ["get", "post", "put", "delete", "options", "patch"];
-var MESSAGE_MATCHER_IS_ALREADY_BUILT = "Can not add a route since the matcher is already built.";
-var UnsupportedPathError = class extends Error {
-};
-
-// node_modules/hono/dist/utils/constants.js
-var COMPOSED_HANDLER = "__COMPOSED_HANDLER";
-
-// node_modules/hono/dist/hono-base.js
-var notFoundHandler = (c) => {
-  return c.text("404 Not Found", 404);
-};
-var errorHandler = (err, c) => {
-  if ("getResponse" in err) {
-    const res = err.getResponse();
-    return c.newResponse(res.body, res);
-  }
-  console.error(err);
-  return c.text("Internal Server Error", 500);
-};
-var Hono = class _Hono {
-  get;
-  post;
-  put;
-  delete;
-  options;
-  patch;
-  all;
-  on;
-  use;
-  /*
-    This class is like an abstract class and does not have a router.
-    To use it, inherit the class and implement router in the constructor.
-  */
-  router;
-  getPath;
-  // Cannot use `#` because it requires visibility at JavaScript runtime.
-  _basePath = "/";
-  #path = "/";
-  routes = [];
-  constructor(options = {}) {
-    const allMethods = [...METHODS, METHOD_NAME_ALL_LOWERCASE];
-    allMethods.forEach((method) => {
-      this[method] = (args1, ...args) => {
-        if (typeof args1 === "string") {
-          this.#path = args1;
-        } else {
-          this.#addRoute(method, this.#path, args1);
-        }
-        args.forEach((handler) => {
-          this.#addRoute(method, this.#path, handler);
-        });
-        return this;
-      };
-    });
-    this.on = (method, path, ...handlers2) => {
-      for (const p of [path].flat()) {
-        this.#path = p;
-        for (const m of [method].flat()) {
-          handlers2.map((handler) => {
-            this.#addRoute(m.toUpperCase(), this.#path, handler);
-          });
-        }
-      }
-      return this;
-    };
-    this.use = (arg1, ...handlers2) => {
-      if (typeof arg1 === "string") {
-        this.#path = arg1;
-      } else {
-        this.#path = "*";
-        handlers2.unshift(arg1);
-      }
-      handlers2.forEach((handler) => {
-        this.#addRoute(METHOD_NAME_ALL, this.#path, handler);
-      });
-      return this;
-    };
-    const { strict, ...optionsWithoutStrict } = options;
-    Object.assign(this, optionsWithoutStrict);
-    this.getPath = strict ?? true ? options.getPath ?? getPath : getPathNoStrict;
-  }
-  #clone() {
-    const clone2 = new _Hono({
-      router: this.router,
-      getPath: this.getPath
-    });
-    clone2.errorHandler = this.errorHandler;
-    clone2.#notFoundHandler = this.#notFoundHandler;
-    clone2.routes = this.routes;
-    return clone2;
-  }
-  #notFoundHandler = notFoundHandler;
-  // Cannot use `#` because it requires visibility at JavaScript runtime.
-  errorHandler = errorHandler;
-  /**
-   * `.route()` allows grouping other Hono instance in routes.
-   *
-   * @see {@link https://hono.dev/docs/api/routing#grouping}
-   *
-   * @param {string} path - base Path
-   * @param {Hono} app - other Hono instance
-   * @returns {Hono} routed Hono instance
-   *
-   * @example
-   * ```ts
-   * const app = new Hono()
-   * const app2 = new Hono()
-   *
-   * app2.get("/user", (c) => c.text("user"))
-   * app.route("/api", app2) // GET /api/user
-   * ```
-   */
-  route(path, app2) {
-    const subApp = this.basePath(path);
-    app2.routes.map((r) => {
-      let handler;
-      if (app2.errorHandler === errorHandler) {
-        handler = r.handler;
-      } else {
-        handler = async (c, next) => (await compose([], app2.errorHandler)(c, () => r.handler(c, next))).res;
-        handler[COMPOSED_HANDLER] = r.handler;
-      }
-      subApp.#addRoute(r.method, r.path, handler);
-    });
-    return this;
-  }
-  /**
-   * `.basePath()` allows base paths to be specified.
-   *
-   * @see {@link https://hono.dev/docs/api/routing#base-path}
-   *
-   * @param {string} path - base Path
-   * @returns {Hono} changed Hono instance
-   *
-   * @example
-   * ```ts
-   * const api = new Hono().basePath('/api')
-   * ```
-   */
-  basePath(path) {
-    const subApp = this.#clone();
-    subApp._basePath = mergePath(this._basePath, path);
-    return subApp;
-  }
-  /**
-   * `.onError()` handles an error and returns a customized Response.
-   *
-   * @see {@link https://hono.dev/docs/api/hono#error-handling}
-   *
-   * @param {ErrorHandler} handler - request Handler for error
-   * @returns {Hono} changed Hono instance
-   *
-   * @example
-   * ```ts
-   * app.onError((err, c) => {
-   *   console.error(`${err}`)
-   *   return c.text('Custom Error Message', 500)
-   * })
-   * ```
-   */
-  onError = (handler) => {
-    this.errorHandler = handler;
-    return this;
-  };
-  /**
-   * `.notFound()` allows you to customize a Not Found Response.
-   *
-   * @see {@link https://hono.dev/docs/api/hono#not-found}
-   *
-   * @param {NotFoundHandler} handler - request handler for not-found
-   * @returns {Hono} changed Hono instance
-   *
-   * @example
-   * ```ts
-   * app.notFound((c) => {
-   *   return c.text('Custom 404 Message', 404)
-   * })
-   * ```
-   */
-  notFound = (handler) => {
-    this.#notFoundHandler = handler;
-    return this;
-  };
-  /**
-   * `.mount()` allows you to mount applications built with other frameworks into your Hono application.
-   *
-   * @see {@link https://hono.dev/docs/api/hono#mount}
-   *
-   * @param {string} path - base Path
-   * @param {Function} applicationHandler - other Request Handler
-   * @param {MountOptions} [options] - options of `.mount()`
-   * @returns {Hono} mounted Hono instance
-   *
-   * @example
-   * ```ts
-   * import { Router as IttyRouter } from 'itty-router'
-   * import { Hono } from 'hono'
-   * // Create itty-router application
-   * const ittyRouter = IttyRouter()
-   * // GET /itty-router/hello
-   * ittyRouter.get('/hello', () => new Response('Hello from itty-router'))
-   *
-   * const app = new Hono()
-   * app.mount('/itty-router', ittyRouter.handle)
-   * ```
-   *
-   * @example
-   * ```ts
-   * const app = new Hono()
-   * // Send the request to another application without modification.
-   * app.mount('/app', anotherApp, {
-   *   replaceRequest: (req) => req,
-   * })
-   * ```
-   */
-  mount(path, applicationHandler, options) {
-    let replaceRequest;
-    let optionHandler;
-    if (options) {
-      if (typeof options === "function") {
-        optionHandler = options;
-      } else {
-        optionHandler = options.optionHandler;
-        if (options.replaceRequest === false) {
-          replaceRequest = (request) => request;
-        } else {
-          replaceRequest = options.replaceRequest;
-        }
-      }
-    }
-    const getOptions = optionHandler ? (c) => {
-      const options2 = optionHandler(c);
-      return Array.isArray(options2) ? options2 : [options2];
-    } : (c) => {
-      let executionContext = void 0;
-      try {
-        executionContext = c.executionCtx;
-      } catch {
-      }
-      return [c.env, executionContext];
-    };
-    replaceRequest ||= (() => {
-      const mergedPath = mergePath(this._basePath, path);
-      const pathPrefixLength = mergedPath === "/" ? 0 : mergedPath.length;
-      return (request) => {
-        const url2 = new URL(request.url);
-        url2.pathname = url2.pathname.slice(pathPrefixLength) || "/";
-        return new Request(url2, request);
-      };
-    })();
-    const handler = async (c, next) => {
-      const res = await applicationHandler(replaceRequest(c.req.raw), ...getOptions(c));
-      if (res) {
-        return res;
-      }
-      await next();
-    };
-    this.#addRoute(METHOD_NAME_ALL, mergePath(path, "*"), handler);
-    return this;
-  }
-  #addRoute(method, path, handler) {
-    method = method.toUpperCase();
-    path = mergePath(this._basePath, path);
-    const r = { basePath: this._basePath, path, method, handler };
-    this.router.add(method, path, [handler, r]);
-    this.routes.push(r);
-  }
-  #handleError(err, c) {
-    if (err instanceof Error) {
-      return this.errorHandler(err, c);
-    }
-    throw err;
-  }
-  #dispatch(request, executionCtx, env2, method) {
-    if (method === "HEAD") {
-      return (async () => new Response(null, await this.#dispatch(request, executionCtx, env2, "GET")))();
-    }
-    const path = this.getPath(request, { env: env2 });
-    const matchResult = this.router.match(method, path);
-    const c = new Context(request, {
-      path,
-      matchResult,
-      env: env2,
-      executionCtx,
-      notFoundHandler: this.#notFoundHandler
-    });
-    if (matchResult[0].length === 1) {
-      let res;
-      try {
-        res = matchResult[0][0][0][0](c, async () => {
-          c.res = await this.#notFoundHandler(c);
-        });
-      } catch (err) {
-        return this.#handleError(err, c);
-      }
-      return res instanceof Promise ? res.then(
-        (resolved) => resolved || (c.finalized ? c.res : this.#notFoundHandler(c))
-      ).catch((err) => this.#handleError(err, c)) : res ?? this.#notFoundHandler(c);
-    }
-    const composed = compose(matchResult[0], this.errorHandler, this.#notFoundHandler);
-    return (async () => {
-      try {
-        const context = await composed(c);
-        if (!context.finalized) {
-          throw new Error(
-            "Context is not finalized. Did you forget to return a Response object or `await next()`?"
-          );
-        }
-        return context.res;
-      } catch (err) {
-        return this.#handleError(err, c);
-      }
-    })();
-  }
-  /**
-   * `.fetch()` will be entry point of your app.
-   *
-   * @see {@link https://hono.dev/docs/api/hono#fetch}
-   *
-   * @param {Request} request - request Object of request
-   * @param {Env} Env - env Object
-   * @param {ExecutionContext} - context of execution
-   * @returns {Response | Promise<Response>} response of request
-   *
-   */
-  fetch = (request, ...rest) => {
-    return this.#dispatch(request, rest[1], rest[0], request.method);
-  };
-  /**
-   * `.request()` is a useful method for testing.
-   * You can pass a URL or pathname to send a GET request.
-   * app will return a Response object.
-   * ```ts
-   * test('GET /hello is ok', async () => {
-   *   const res = await app.request('/hello')
-   *   expect(res.status).toBe(200)
-   * })
-   * ```
-   * @see https://hono.dev/docs/api/hono#request
-   */
-  request = (input, requestInit, Env, executionCtx) => {
-    if (input instanceof Request) {
-      return this.fetch(requestInit ? new Request(input, requestInit) : input, Env, executionCtx);
-    }
-    input = input.toString();
-    return this.fetch(
-      new Request(
-        /^https?:\/\//.test(input) ? input : `http://localhost${mergePath("/", input)}`,
-        requestInit
-      ),
-      Env,
-      executionCtx
-    );
-  };
-  /**
-   * `.fire()` automatically adds a global fetch event listener.
-   * This can be useful for environments that adhere to the Service Worker API, such as non-ES module Cloudflare Workers.
-   * @deprecated
-   * Use `fire` from `hono/service-worker` instead.
-   * ```ts
-   * import { Hono } from 'hono'
-   * import { fire } from 'hono/service-worker'
-   *
-   * const app = new Hono()
-   * // ...
-   * fire(app)
-   * ```
-   * @see https://hono.dev/docs/api/hono#fire
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API
-   * @see https://developers.cloudflare.com/workers/reference/migrate-to-module-workers/
-   */
-  fire = () => {
-    addEventListener("fetch", (event) => {
-      event.respondWith(this.#dispatch(event.request, event, void 0, event.request.method));
-    });
-  };
-};
-
-// node_modules/hono/dist/router/reg-exp-router/matcher.js
-var emptyParam = [];
-function match(method, path) {
-  const matchers = this.buildAllMatchers();
-  const match2 = ((method2, path2) => {
-    const matcher = matchers[method2] || matchers[METHOD_NAME_ALL];
-    const staticMatch = matcher[2][path2];
-    if (staticMatch) {
-      return staticMatch;
-    }
-    const match3 = path2.match(matcher[0]);
-    if (!match3) {
-      return [[], emptyParam];
-    }
-    const index2 = match3.indexOf("", 1);
-    return [matcher[1][index2], match3];
-  });
-  this.match = match2;
-  return match2(method, path);
-}
-
-// node_modules/hono/dist/router/reg-exp-router/node.js
-var LABEL_REG_EXP_STR = "[^/]+";
-var ONLY_WILDCARD_REG_EXP_STR = ".*";
-var TAIL_WILDCARD_REG_EXP_STR = "(?:|/.*)";
-var PATH_ERROR = /* @__PURE__ */ Symbol();
-var regExpMetaChars = new Set(".\\+*[^]$()");
-function compareKey(a, b) {
-  if (a.length === 1) {
-    return b.length === 1 ? a < b ? -1 : 1 : -1;
-  }
-  if (b.length === 1) {
-    return 1;
-  }
-  if (a === ONLY_WILDCARD_REG_EXP_STR || a === TAIL_WILDCARD_REG_EXP_STR) {
-    return 1;
-  } else if (b === ONLY_WILDCARD_REG_EXP_STR || b === TAIL_WILDCARD_REG_EXP_STR) {
-    return -1;
-  }
-  if (a === LABEL_REG_EXP_STR) {
-    return 1;
-  } else if (b === LABEL_REG_EXP_STR) {
-    return -1;
-  }
-  return a.length === b.length ? a < b ? -1 : 1 : b.length - a.length;
-}
-var Node = class _Node {
-  #index;
-  #varIndex;
-  #children = /* @__PURE__ */ Object.create(null);
-  insert(tokens, index2, paramMap, context, pathErrorCheckOnly) {
-    if (tokens.length === 0) {
-      if (this.#index !== void 0) {
-        throw PATH_ERROR;
-      }
-      if (pathErrorCheckOnly) {
-        return;
-      }
-      this.#index = index2;
-      return;
-    }
-    const [token, ...restTokens] = tokens;
-    const pattern = token === "*" ? restTokens.length === 0 ? ["", "", ONLY_WILDCARD_REG_EXP_STR] : ["", "", LABEL_REG_EXP_STR] : token === "/*" ? ["", "", TAIL_WILDCARD_REG_EXP_STR] : token.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/);
-    let node;
-    if (pattern) {
-      const name2 = pattern[1];
-      let regexpStr = pattern[2] || LABEL_REG_EXP_STR;
-      if (name2 && pattern[2]) {
-        if (regexpStr === ".*") {
-          throw PATH_ERROR;
-        }
-        regexpStr = regexpStr.replace(/^\((?!\?:)(?=[^)]+\)$)/, "(?:");
-        if (/\((?!\?:)/.test(regexpStr)) {
-          throw PATH_ERROR;
-        }
-      }
-      node = this.#children[regexpStr];
-      if (!node) {
-        if (Object.keys(this.#children).some(
-          (k) => k !== ONLY_WILDCARD_REG_EXP_STR && k !== TAIL_WILDCARD_REG_EXP_STR
-        )) {
-          throw PATH_ERROR;
-        }
-        if (pathErrorCheckOnly) {
-          return;
-        }
-        node = this.#children[regexpStr] = new _Node();
-        if (name2 !== "") {
-          node.#varIndex = context.varIndex++;
-        }
-      }
-      if (!pathErrorCheckOnly && name2 !== "") {
-        paramMap.push([name2, node.#varIndex]);
-      }
-    } else {
-      node = this.#children[token];
-      if (!node) {
-        if (Object.keys(this.#children).some(
-          (k) => k.length > 1 && k !== ONLY_WILDCARD_REG_EXP_STR && k !== TAIL_WILDCARD_REG_EXP_STR
-        )) {
-          throw PATH_ERROR;
-        }
-        if (pathErrorCheckOnly) {
-          return;
-        }
-        node = this.#children[token] = new _Node();
-      }
-    }
-    node.insert(restTokens, index2, paramMap, context, pathErrorCheckOnly);
-  }
-  buildRegExpStr() {
-    const childKeys = Object.keys(this.#children).sort(compareKey);
-    const strList = childKeys.map((k) => {
-      const c = this.#children[k];
-      return (typeof c.#varIndex === "number" ? `(${k})@${c.#varIndex}` : regExpMetaChars.has(k) ? `\\${k}` : k) + c.buildRegExpStr();
-    });
-    if (typeof this.#index === "number") {
-      strList.unshift(`#${this.#index}`);
-    }
-    if (strList.length === 0) {
-      return "";
-    }
-    if (strList.length === 1) {
-      return strList[0];
-    }
-    return "(?:" + strList.join("|") + ")";
-  }
-};
-
-// node_modules/hono/dist/router/reg-exp-router/trie.js
-var Trie = class {
-  #context = { varIndex: 0 };
-  #root = new Node();
-  insert(path, index2, pathErrorCheckOnly) {
-    const paramAssoc = [];
-    const groups = [];
-    for (let i = 0; ; ) {
-      let replaced = false;
-      path = path.replace(/\{[^}]+\}/g, (m) => {
-        const mark = `@\\${i}`;
-        groups[i] = [mark, m];
-        i++;
-        replaced = true;
-        return mark;
-      });
-      if (!replaced) {
-        break;
-      }
-    }
-    const tokens = path.match(/(?::[^\/]+)|(?:\/\*$)|./g) || [];
-    for (let i = groups.length - 1; i >= 0; i--) {
-      const [mark] = groups[i];
-      for (let j = tokens.length - 1; j >= 0; j--) {
-        if (tokens[j].indexOf(mark) !== -1) {
-          tokens[j] = tokens[j].replace(mark, groups[i][1]);
-          break;
-        }
-      }
-    }
-    this.#root.insert(tokens, index2, paramAssoc, this.#context, pathErrorCheckOnly);
-    return paramAssoc;
-  }
-  buildRegExp() {
-    let regexp = this.#root.buildRegExpStr();
-    if (regexp === "") {
-      return [/^$/, [], []];
-    }
-    let captureIndex = 0;
-    const indexReplacementMap = [];
-    const paramReplacementMap = [];
-    regexp = regexp.replace(/#(\d+)|@(\d+)|\.\*\$/g, (_, handlerIndex, paramIndex) => {
-      if (handlerIndex !== void 0) {
-        indexReplacementMap[++captureIndex] = Number(handlerIndex);
-        return "$()";
-      }
-      if (paramIndex !== void 0) {
-        paramReplacementMap[Number(paramIndex)] = ++captureIndex;
-        return "";
-      }
-      return "";
-    });
-    return [new RegExp(`^${regexp}`), indexReplacementMap, paramReplacementMap];
-  }
-};
-
-// node_modules/hono/dist/router/reg-exp-router/router.js
-var nullMatcher = [/^$/, [], /* @__PURE__ */ Object.create(null)];
-var wildcardRegExpCache = /* @__PURE__ */ Object.create(null);
-function buildWildcardRegExp(path) {
-  return wildcardRegExpCache[path] ??= new RegExp(
-    path === "*" ? "" : `^${path.replace(
-      /\/\*$|([.\\+*[^\]$()])/g,
-      (_, metaChar) => metaChar ? `\\${metaChar}` : "(?:|/.*)"
-    )}$`
-  );
-}
-function clearWildcardRegExpCache() {
-  wildcardRegExpCache = /* @__PURE__ */ Object.create(null);
-}
-function buildMatcherFromPreprocessedRoutes(routes) {
-  const trie = new Trie();
-  const handlerData = [];
-  if (routes.length === 0) {
-    return nullMatcher;
-  }
-  const routesWithStaticPathFlag = routes.map(
-    (route) => [!/\*|\/:/.test(route[0]), ...route]
-  ).sort(
-    ([isStaticA, pathA], [isStaticB, pathB]) => isStaticA ? 1 : isStaticB ? -1 : pathA.length - pathB.length
-  );
-  const staticMap = /* @__PURE__ */ Object.create(null);
-  for (let i = 0, j = -1, len = routesWithStaticPathFlag.length; i < len; i++) {
-    const [pathErrorCheckOnly, path, handlers2] = routesWithStaticPathFlag[i];
-    if (pathErrorCheckOnly) {
-      staticMap[path] = [handlers2.map(([h]) => [h, /* @__PURE__ */ Object.create(null)]), emptyParam];
-    } else {
-      j++;
-    }
-    let paramAssoc;
-    try {
-      paramAssoc = trie.insert(path, j, pathErrorCheckOnly);
-    } catch (e) {
-      throw e === PATH_ERROR ? new UnsupportedPathError(path) : e;
-    }
-    if (pathErrorCheckOnly) {
-      continue;
-    }
-    handlerData[j] = handlers2.map(([h, paramCount]) => {
-      const paramIndexMap = /* @__PURE__ */ Object.create(null);
-      paramCount -= 1;
-      for (; paramCount >= 0; paramCount--) {
-        const [key, value] = paramAssoc[paramCount];
-        paramIndexMap[key] = value;
-      }
-      return [h, paramIndexMap];
-    });
-  }
-  const [regexp, indexReplacementMap, paramReplacementMap] = trie.buildRegExp();
-  for (let i = 0, len = handlerData.length; i < len; i++) {
-    for (let j = 0, len2 = handlerData[i].length; j < len2; j++) {
-      const map2 = handlerData[i][j]?.[1];
-      if (!map2) {
-        continue;
-      }
-      const keys = Object.keys(map2);
-      for (let k = 0, len3 = keys.length; k < len3; k++) {
-        map2[keys[k]] = paramReplacementMap[map2[keys[k]]];
-      }
-    }
-  }
-  const handlerMap = [];
-  for (const i in indexReplacementMap) {
-    handlerMap[i] = handlerData[indexReplacementMap[i]];
-  }
-  return [regexp, handlerMap, staticMap];
-}
-function findMiddleware(middleware, path) {
-  if (!middleware) {
-    return void 0;
-  }
-  for (const k of Object.keys(middleware).sort((a, b) => b.length - a.length)) {
-    if (buildWildcardRegExp(k).test(path)) {
-      return [...middleware[k]];
-    }
-  }
-  return void 0;
-}
-var RegExpRouter = class {
-  name = "RegExpRouter";
-  #middleware;
-  #routes;
-  constructor() {
-    this.#middleware = { [METHOD_NAME_ALL]: /* @__PURE__ */ Object.create(null) };
-    this.#routes = { [METHOD_NAME_ALL]: /* @__PURE__ */ Object.create(null) };
-  }
-  add(method, path, handler) {
-    const middleware = this.#middleware;
-    const routes = this.#routes;
-    if (!middleware || !routes) {
-      throw new Error(MESSAGE_MATCHER_IS_ALREADY_BUILT);
-    }
-    if (!middleware[method]) {
-      ;
-      [middleware, routes].forEach((handlerMap) => {
-        handlerMap[method] = /* @__PURE__ */ Object.create(null);
-        Object.keys(handlerMap[METHOD_NAME_ALL]).forEach((p) => {
-          handlerMap[method][p] = [...handlerMap[METHOD_NAME_ALL][p]];
-        });
-      });
-    }
-    if (path === "/*") {
-      path = "*";
-    }
-    const paramCount = (path.match(/\/:/g) || []).length;
-    if (/\*$/.test(path)) {
-      const re = buildWildcardRegExp(path);
-      if (method === METHOD_NAME_ALL) {
-        Object.keys(middleware).forEach((m) => {
-          middleware[m][path] ||= findMiddleware(middleware[m], path) || findMiddleware(middleware[METHOD_NAME_ALL], path) || [];
-        });
-      } else {
-        middleware[method][path] ||= findMiddleware(middleware[method], path) || findMiddleware(middleware[METHOD_NAME_ALL], path) || [];
-      }
-      Object.keys(middleware).forEach((m) => {
-        if (method === METHOD_NAME_ALL || method === m) {
-          Object.keys(middleware[m]).forEach((p) => {
-            re.test(p) && middleware[m][p].push([handler, paramCount]);
-          });
-        }
-      });
-      Object.keys(routes).forEach((m) => {
-        if (method === METHOD_NAME_ALL || method === m) {
-          Object.keys(routes[m]).forEach(
-            (p) => re.test(p) && routes[m][p].push([handler, paramCount])
-          );
-        }
-      });
-      return;
-    }
-    const paths = checkOptionalParameter(path) || [path];
-    for (let i = 0, len = paths.length; i < len; i++) {
-      const path2 = paths[i];
-      Object.keys(routes).forEach((m) => {
-        if (method === METHOD_NAME_ALL || method === m) {
-          routes[m][path2] ||= [
-            ...findMiddleware(middleware[m], path2) || findMiddleware(middleware[METHOD_NAME_ALL], path2) || []
-          ];
-          routes[m][path2].push([handler, paramCount - len + i + 1]);
-        }
-      });
-    }
-  }
-  match = match;
-  buildAllMatchers() {
-    const matchers = /* @__PURE__ */ Object.create(null);
-    Object.keys(this.#routes).concat(Object.keys(this.#middleware)).forEach((method) => {
-      matchers[method] ||= this.#buildMatcher(method);
-    });
-    this.#middleware = this.#routes = void 0;
-    clearWildcardRegExpCache();
-    return matchers;
-  }
-  #buildMatcher(method) {
-    const routes = [];
-    let hasOwnRoute = method === METHOD_NAME_ALL;
-    [this.#middleware, this.#routes].forEach((r) => {
-      const ownRoute = r[method] ? Object.keys(r[method]).map((path) => [path, r[method][path]]) : [];
-      if (ownRoute.length !== 0) {
-        hasOwnRoute ||= true;
-        routes.push(...ownRoute);
-      } else if (method !== METHOD_NAME_ALL) {
-        routes.push(
-          ...Object.keys(r[METHOD_NAME_ALL]).map((path) => [path, r[METHOD_NAME_ALL][path]])
-        );
-      }
-    });
-    if (!hasOwnRoute) {
-      return null;
-    } else {
-      return buildMatcherFromPreprocessedRoutes(routes);
-    }
-  }
-};
-
-// node_modules/hono/dist/router/smart-router/router.js
-var SmartRouter = class {
-  name = "SmartRouter";
-  #routers = [];
-  #routes = [];
-  constructor(init) {
-    this.#routers = init.routers;
-  }
-  add(method, path, handler) {
-    if (!this.#routes) {
-      throw new Error(MESSAGE_MATCHER_IS_ALREADY_BUILT);
-    }
-    this.#routes.push([method, path, handler]);
-  }
-  match(method, path) {
-    if (!this.#routes) {
-      throw new Error("Fatal error");
-    }
-    const routers = this.#routers;
-    const routes = this.#routes;
-    const len = routers.length;
-    let i = 0;
-    let res;
-    for (; i < len; i++) {
-      const router2 = routers[i];
-      try {
-        for (let i2 = 0, len2 = routes.length; i2 < len2; i2++) {
-          router2.add(...routes[i2]);
-        }
-        res = router2.match(method, path);
-      } catch (e) {
-        if (e instanceof UnsupportedPathError) {
-          continue;
-        }
-        throw e;
-      }
-      this.match = router2.match.bind(router2);
-      this.#routers = [router2];
-      this.#routes = void 0;
-      break;
-    }
-    if (i === len) {
-      throw new Error("Fatal error");
-    }
-    this.name = `SmartRouter + ${this.activeRouter.name}`;
-    return res;
-  }
-  get activeRouter() {
-    if (this.#routes || this.#routers.length !== 1) {
-      throw new Error("No active router has been determined yet.");
-    }
-    return this.#routers[0];
-  }
-};
-
-// node_modules/hono/dist/router/trie-router/node.js
-var emptyParams = /* @__PURE__ */ Object.create(null);
-var hasChildren = (children) => {
-  for (const _ in children) {
-    return true;
-  }
-  return false;
-};
-var Node2 = class _Node2 {
-  #methods;
-  #children;
-  #patterns;
-  #order = 0;
-  #params = emptyParams;
-  constructor(method, handler, children) {
-    this.#children = children || /* @__PURE__ */ Object.create(null);
-    this.#methods = [];
-    if (method && handler) {
-      const m = /* @__PURE__ */ Object.create(null);
-      m[method] = { handler, possibleKeys: [], score: 0 };
-      this.#methods = [m];
-    }
-    this.#patterns = [];
-  }
-  insert(method, path, handler) {
-    this.#order = ++this.#order;
-    let curNode = this;
-    const parts = splitRoutingPath(path);
-    const possibleKeys = [];
-    for (let i = 0, len = parts.length; i < len; i++) {
-      const p = parts[i];
-      const nextP = parts[i + 1];
-      const pattern = getPattern(p, nextP);
-      const key = Array.isArray(pattern) ? pattern[0] : p;
-      if (key in curNode.#children) {
-        curNode = curNode.#children[key];
-        if (pattern) {
-          possibleKeys.push(pattern[1]);
-        }
-        continue;
-      }
-      curNode.#children[key] = new _Node2();
-      if (pattern) {
-        curNode.#patterns.push(pattern);
-        possibleKeys.push(pattern[1]);
-      }
-      curNode = curNode.#children[key];
-    }
-    curNode.#methods.push({
-      [method]: {
-        handler,
-        possibleKeys: possibleKeys.filter((v, i, a) => a.indexOf(v) === i),
-        score: this.#order
-      }
-    });
-    return curNode;
-  }
-  #pushHandlerSets(handlerSets, node, method, nodeParams, params) {
-    for (let i = 0, len = node.#methods.length; i < len; i++) {
-      const m = node.#methods[i];
-      const handlerSet = m[method] || m[METHOD_NAME_ALL];
-      const processedSet = {};
-      if (handlerSet !== void 0) {
-        handlerSet.params = /* @__PURE__ */ Object.create(null);
-        handlerSets.push(handlerSet);
-        if (nodeParams !== emptyParams || params && params !== emptyParams) {
-          for (let i2 = 0, len2 = handlerSet.possibleKeys.length; i2 < len2; i2++) {
-            const key = handlerSet.possibleKeys[i2];
-            const processed = processedSet[handlerSet.score];
-            handlerSet.params[key] = params?.[key] && !processed ? params[key] : nodeParams[key] ?? params?.[key];
-            processedSet[handlerSet.score] = true;
-          }
-        }
-      }
-    }
-  }
-  search(method, path) {
-    const handlerSets = [];
-    this.#params = emptyParams;
-    const curNode = this;
-    let curNodes = [curNode];
-    const parts = splitPath(path);
-    const curNodesQueue = [];
-    const len = parts.length;
-    let partOffsets = null;
-    for (let i = 0; i < len; i++) {
-      const part = parts[i];
-      const isLast = i === len - 1;
-      const tempNodes = [];
-      for (let j = 0, len2 = curNodes.length; j < len2; j++) {
-        const node = curNodes[j];
-        const nextNode = node.#children[part];
-        if (nextNode) {
-          nextNode.#params = node.#params;
-          if (isLast) {
-            if (nextNode.#children["*"]) {
-              this.#pushHandlerSets(handlerSets, nextNode.#children["*"], method, node.#params);
-            }
-            this.#pushHandlerSets(handlerSets, nextNode, method, node.#params);
-          } else {
-            tempNodes.push(nextNode);
-          }
-        }
-        for (let k = 0, len3 = node.#patterns.length; k < len3; k++) {
-          const pattern = node.#patterns[k];
-          const params = node.#params === emptyParams ? {} : { ...node.#params };
-          if (pattern === "*") {
-            const astNode = node.#children["*"];
-            if (astNode) {
-              this.#pushHandlerSets(handlerSets, astNode, method, node.#params);
-              astNode.#params = params;
-              tempNodes.push(astNode);
-            }
-            continue;
-          }
-          const [key, name2, matcher] = pattern;
-          if (!part && !(matcher instanceof RegExp)) {
-            continue;
-          }
-          const child = node.#children[key];
-          if (matcher instanceof RegExp) {
-            if (partOffsets === null) {
-              partOffsets = new Array(len);
-              let offset = path[0] === "/" ? 1 : 0;
-              for (let p = 0; p < len; p++) {
-                partOffsets[p] = offset;
-                offset += parts[p].length + 1;
-              }
-            }
-            const restPathString = path.substring(partOffsets[i]);
-            const m = matcher.exec(restPathString);
-            if (m) {
-              params[name2] = m[0];
-              this.#pushHandlerSets(handlerSets, child, method, node.#params, params);
-              if (hasChildren(child.#children)) {
-                child.#params = params;
-                const componentCount = m[0].match(/\//)?.length ?? 0;
-                const targetCurNodes = curNodesQueue[componentCount] ||= [];
-                targetCurNodes.push(child);
-              }
-              continue;
-            }
-          }
-          if (matcher === true || matcher.test(part)) {
-            params[name2] = part;
-            if (isLast) {
-              this.#pushHandlerSets(handlerSets, child, method, params, node.#params);
-              if (child.#children["*"]) {
-                this.#pushHandlerSets(
-                  handlerSets,
-                  child.#children["*"],
-                  method,
-                  params,
-                  node.#params
-                );
-              }
-            } else {
-              child.#params = params;
-              tempNodes.push(child);
-            }
-          }
-        }
-      }
-      const shifted = curNodesQueue.shift();
-      curNodes = shifted ? tempNodes.concat(shifted) : tempNodes;
-    }
-    if (handlerSets.length > 1) {
-      handlerSets.sort((a, b) => {
-        return a.score - b.score;
-      });
-    }
-    return [handlerSets.map(({ handler, params }) => [handler, params])];
-  }
-};
-
-// node_modules/hono/dist/router/trie-router/router.js
-var TrieRouter = class {
-  name = "TrieRouter";
-  #node;
-  constructor() {
-    this.#node = new Node2();
-  }
-  add(method, path, handler) {
-    const results = checkOptionalParameter(path);
-    if (results) {
-      for (let i = 0, len = results.length; i < len; i++) {
-        this.#node.insert(method, results[i], handler);
-      }
-      return;
-    }
-    this.#node.insert(method, path, handler);
-  }
-  match(method, path) {
-    return this.#node.search(method, path);
-  }
-};
-
-// node_modules/hono/dist/hono.js
-var Hono2 = class extends Hono {
-  /**
-   * Creates an instance of the Hono class.
-   *
-   * @param options - Optional configuration options for the Hono instance.
-   */
-  constructor(options = {}) {
-    super(options);
-    this.router = options.router ?? new SmartRouter({
-      routers: [new RegExpRouter(), new TrieRouter()]
-    });
-  }
-};
+// api/boot.ts
+init_dist();
 
 // node_modules/hono/dist/middleware/cors/index.js
 var cors = (options) => {
@@ -82798,6 +85524,8 @@ async function fetchRequestHandler(opts) {
 }
 
 // node_modules/hono/dist/helper/route/index.js
+init_constants();
+init_url();
 var matchedRoutes = (c) => (
   // @ts-expect-error c.req[GET_MATCH_RESULT] is not typed
   c.req[GET_MATCH_RESULT][0].map(([[, route]]) => route)
@@ -83257,562 +85985,7 @@ init_zod();
 init_connection();
 init_schema2();
 init_drizzle_orm();
-
-// node_modules/hono/dist/utils/encode.js
-var decodeBase64Url = (str) => {
-  return decodeBase64(str.replace(/_|-/g, (m) => ({ _: "/", "-": "+" })[m] ?? m));
-};
-var encodeBase64Url = (buf) => encodeBase64(buf).replace(/\/|\+/g, (m) => ({ "/": "_", "+": "-" })[m] ?? m);
-var encodeBase64 = (buf) => {
-  let binary2 = "";
-  const bytes = new Uint8Array(buf);
-  for (let i = 0, len = bytes.length; i < len; i++) {
-    binary2 += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary2);
-};
-var decodeBase64 = (str) => {
-  const binary2 = atob(str);
-  const bytes = new Uint8Array(new ArrayBuffer(binary2.length));
-  const half = binary2.length / 2;
-  for (let i = 0, j = binary2.length - 1; i <= half; i++, j--) {
-    bytes[i] = binary2.charCodeAt(i);
-    bytes[j] = binary2.charCodeAt(j);
-  }
-  return bytes;
-};
-
-// node_modules/hono/dist/utils/jwt/jwa.js
-var AlgorithmTypes = /* @__PURE__ */ ((AlgorithmTypes2) => {
-  AlgorithmTypes2["HS256"] = "HS256";
-  AlgorithmTypes2["HS384"] = "HS384";
-  AlgorithmTypes2["HS512"] = "HS512";
-  AlgorithmTypes2["RS256"] = "RS256";
-  AlgorithmTypes2["RS384"] = "RS384";
-  AlgorithmTypes2["RS512"] = "RS512";
-  AlgorithmTypes2["PS256"] = "PS256";
-  AlgorithmTypes2["PS384"] = "PS384";
-  AlgorithmTypes2["PS512"] = "PS512";
-  AlgorithmTypes2["ES256"] = "ES256";
-  AlgorithmTypes2["ES384"] = "ES384";
-  AlgorithmTypes2["ES512"] = "ES512";
-  AlgorithmTypes2["EdDSA"] = "EdDSA";
-  return AlgorithmTypes2;
-})(AlgorithmTypes || {});
-
-// node_modules/hono/dist/helper/adapter/index.js
-var knownUserAgents = {
-  deno: "Deno",
-  bun: "Bun",
-  workerd: "Cloudflare-Workers",
-  node: "Node.js"
-};
-var getRuntimeKey = () => {
-  const global2 = globalThis;
-  const userAgentSupported = typeof navigator !== "undefined" && typeof navigator.userAgent === "string";
-  if (userAgentSupported) {
-    for (const [runtimeKey, userAgent] of Object.entries(knownUserAgents)) {
-      if (checkUserAgentEquals(userAgent)) {
-        return runtimeKey;
-      }
-    }
-  }
-  if (typeof global2?.EdgeRuntime === "string") {
-    return "edge-light";
-  }
-  if (global2?.fastly !== void 0) {
-    return "fastly";
-  }
-  if (global2?.process?.release?.name === "node") {
-    return "node";
-  }
-  return "other";
-};
-var checkUserAgentEquals = (platform) => {
-  const userAgent = navigator.userAgent;
-  return userAgent.startsWith(platform);
-};
-
-// node_modules/hono/dist/utils/jwt/types.js
-var JwtAlgorithmNotImplemented = class extends Error {
-  constructor(alg) {
-    super(`${alg} is not an implemented algorithm`);
-    this.name = "JwtAlgorithmNotImplemented";
-  }
-};
-var JwtAlgorithmRequired = class extends Error {
-  constructor() {
-    super('JWT verification requires "alg" option to be specified');
-    this.name = "JwtAlgorithmRequired";
-  }
-};
-var JwtAlgorithmMismatch = class extends Error {
-  constructor(expected, actual) {
-    super(`JWT algorithm mismatch: expected "${expected}", got "${actual}"`);
-    this.name = "JwtAlgorithmMismatch";
-  }
-};
-var JwtTokenInvalid = class extends Error {
-  constructor(token) {
-    super(`invalid JWT token: ${token}`);
-    this.name = "JwtTokenInvalid";
-  }
-};
-var JwtTokenNotBefore = class extends Error {
-  constructor(token) {
-    super(`token (${token}) is being used before it's valid`);
-    this.name = "JwtTokenNotBefore";
-  }
-};
-var JwtTokenExpired = class extends Error {
-  constructor(token) {
-    super(`token (${token}) expired`);
-    this.name = "JwtTokenExpired";
-  }
-};
-var JwtTokenIssuedAt = class extends Error {
-  constructor(currentTimestamp, iat) {
-    super(
-      `Invalid "iat" claim, must be a valid number lower than "${currentTimestamp}" (iat: "${iat}")`
-    );
-    this.name = "JwtTokenIssuedAt";
-  }
-};
-var JwtTokenIssuer = class extends Error {
-  constructor(expected, iss) {
-    super(`expected issuer "${expected}", got ${iss ? `"${iss}"` : "none"} `);
-    this.name = "JwtTokenIssuer";
-  }
-};
-var JwtHeaderInvalid = class extends Error {
-  constructor(header) {
-    super(`jwt header is invalid: ${JSON.stringify(header)}`);
-    this.name = "JwtHeaderInvalid";
-  }
-};
-var JwtHeaderRequiresKid = class extends Error {
-  constructor(header) {
-    super(`required "kid" in jwt header: ${JSON.stringify(header)}`);
-    this.name = "JwtHeaderRequiresKid";
-  }
-};
-var JwtSymmetricAlgorithmNotAllowed = class extends Error {
-  constructor(alg) {
-    super(`symmetric algorithm "${alg}" is not allowed for JWK verification`);
-    this.name = "JwtSymmetricAlgorithmNotAllowed";
-  }
-};
-var JwtAlgorithmNotAllowed = class extends Error {
-  constructor(alg, allowedAlgorithms) {
-    super(`algorithm "${alg}" is not in the allowed list: [${allowedAlgorithms.join(", ")}]`);
-    this.name = "JwtAlgorithmNotAllowed";
-  }
-};
-var JwtTokenSignatureMismatched = class extends Error {
-  constructor(token) {
-    super(`token(${token}) signature mismatched`);
-    this.name = "JwtTokenSignatureMismatched";
-  }
-};
-var JwtPayloadRequiresAud = class extends Error {
-  constructor(payload) {
-    super(`required "aud" in jwt payload: ${JSON.stringify(payload)}`);
-    this.name = "JwtPayloadRequiresAud";
-  }
-};
-var JwtTokenAudience = class extends Error {
-  constructor(expected, aud) {
-    super(
-      `expected audience "${Array.isArray(expected) ? expected.join(", ") : expected}", got "${aud}"`
-    );
-    this.name = "JwtTokenAudience";
-  }
-};
-var CryptoKeyUsage = /* @__PURE__ */ ((CryptoKeyUsage2) => {
-  CryptoKeyUsage2["Encrypt"] = "encrypt";
-  CryptoKeyUsage2["Decrypt"] = "decrypt";
-  CryptoKeyUsage2["Sign"] = "sign";
-  CryptoKeyUsage2["Verify"] = "verify";
-  CryptoKeyUsage2["DeriveKey"] = "deriveKey";
-  CryptoKeyUsage2["DeriveBits"] = "deriveBits";
-  CryptoKeyUsage2["WrapKey"] = "wrapKey";
-  CryptoKeyUsage2["UnwrapKey"] = "unwrapKey";
-  return CryptoKeyUsage2;
-})(CryptoKeyUsage || {});
-
-// node_modules/hono/dist/utils/jwt/utf8.js
-var utf8Encoder = new TextEncoder();
-var utf8Decoder = new TextDecoder();
-
-// node_modules/hono/dist/utils/jwt/jws.js
-async function signing(privateKey, alg, data) {
-  const algorithm = getKeyAlgorithm(alg);
-  const cryptoKey = await importPrivateKey(privateKey, algorithm);
-  return await crypto.subtle.sign(algorithm, cryptoKey, data);
-}
-async function verifying(publicKey, alg, signature, data) {
-  const algorithm = getKeyAlgorithm(alg);
-  const cryptoKey = await importPublicKey(publicKey, algorithm);
-  return await crypto.subtle.verify(algorithm, cryptoKey, signature, data);
-}
-function pemToBinary(pem) {
-  return decodeBase64(pem.replace(/-+(BEGIN|END).*?-+/g, "").replace(/\s/g, ""));
-}
-async function importPrivateKey(key, alg) {
-  if (!crypto.subtle || !crypto.subtle.importKey) {
-    throw new Error("`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.");
-  }
-  if (isCryptoKey(key)) {
-    if (key.type !== "private" && key.type !== "secret") {
-      throw new Error(
-        `unexpected key type: CryptoKey.type is ${key.type}, expected private or secret`
-      );
-    }
-    return key;
-  }
-  const usages = [CryptoKeyUsage.Sign];
-  if (typeof key === "object") {
-    return await crypto.subtle.importKey("jwk", key, alg, false, usages);
-  }
-  if (key.includes("PRIVATE")) {
-    return await crypto.subtle.importKey("pkcs8", pemToBinary(key), alg, false, usages);
-  }
-  return await crypto.subtle.importKey("raw", utf8Encoder.encode(key), alg, false, usages);
-}
-async function importPublicKey(key, alg) {
-  if (!crypto.subtle || !crypto.subtle.importKey) {
-    throw new Error("`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.");
-  }
-  if (isCryptoKey(key)) {
-    if (key.type === "public" || key.type === "secret") {
-      return key;
-    }
-    key = await exportPublicJwkFrom(key);
-  }
-  if (typeof key === "string" && key.includes("PRIVATE")) {
-    const privateKey = await crypto.subtle.importKey("pkcs8", pemToBinary(key), alg, true, [
-      CryptoKeyUsage.Sign
-    ]);
-    key = await exportPublicJwkFrom(privateKey);
-  }
-  const usages = [CryptoKeyUsage.Verify];
-  if (typeof key === "object") {
-    return await crypto.subtle.importKey("jwk", key, alg, false, usages);
-  }
-  if (key.includes("PUBLIC")) {
-    return await crypto.subtle.importKey("spki", pemToBinary(key), alg, false, usages);
-  }
-  return await crypto.subtle.importKey("raw", utf8Encoder.encode(key), alg, false, usages);
-}
-async function exportPublicJwkFrom(privateKey) {
-  if (privateKey.type !== "private") {
-    throw new Error(`unexpected key type: ${privateKey.type}`);
-  }
-  if (!privateKey.extractable) {
-    throw new Error("unexpected private key is unextractable");
-  }
-  const jwk = await crypto.subtle.exportKey("jwk", privateKey);
-  const { kty } = jwk;
-  const { alg, e, n } = jwk;
-  const { crv, x, y } = jwk;
-  return { kty, alg, e, n, crv, x, y, key_ops: [CryptoKeyUsage.Verify] };
-}
-function getKeyAlgorithm(name2) {
-  switch (name2) {
-    case "HS256":
-      return {
-        name: "HMAC",
-        hash: {
-          name: "SHA-256"
-        }
-      };
-    case "HS384":
-      return {
-        name: "HMAC",
-        hash: {
-          name: "SHA-384"
-        }
-      };
-    case "HS512":
-      return {
-        name: "HMAC",
-        hash: {
-          name: "SHA-512"
-        }
-      };
-    case "RS256":
-      return {
-        name: "RSASSA-PKCS1-v1_5",
-        hash: {
-          name: "SHA-256"
-        }
-      };
-    case "RS384":
-      return {
-        name: "RSASSA-PKCS1-v1_5",
-        hash: {
-          name: "SHA-384"
-        }
-      };
-    case "RS512":
-      return {
-        name: "RSASSA-PKCS1-v1_5",
-        hash: {
-          name: "SHA-512"
-        }
-      };
-    case "PS256":
-      return {
-        name: "RSA-PSS",
-        hash: {
-          name: "SHA-256"
-        },
-        saltLength: 32
-        // 256 >> 3
-      };
-    case "PS384":
-      return {
-        name: "RSA-PSS",
-        hash: {
-          name: "SHA-384"
-        },
-        saltLength: 48
-        // 384 >> 3
-      };
-    case "PS512":
-      return {
-        name: "RSA-PSS",
-        hash: {
-          name: "SHA-512"
-        },
-        saltLength: 64
-        // 512 >> 3,
-      };
-    case "ES256":
-      return {
-        name: "ECDSA",
-        hash: {
-          name: "SHA-256"
-        },
-        namedCurve: "P-256"
-      };
-    case "ES384":
-      return {
-        name: "ECDSA",
-        hash: {
-          name: "SHA-384"
-        },
-        namedCurve: "P-384"
-      };
-    case "ES512":
-      return {
-        name: "ECDSA",
-        hash: {
-          name: "SHA-512"
-        },
-        namedCurve: "P-521"
-      };
-    case "EdDSA":
-      return {
-        name: "Ed25519",
-        namedCurve: "Ed25519"
-      };
-    default:
-      throw new JwtAlgorithmNotImplemented(name2);
-  }
-}
-function isCryptoKey(key) {
-  const runtime = getRuntimeKey();
-  if (runtime === "node" && !!crypto.webcrypto) {
-    return key instanceof crypto.webcrypto.CryptoKey;
-  }
-  return key instanceof CryptoKey;
-}
-
-// node_modules/hono/dist/utils/jwt/jwt.js
-var encodeJwtPart = (part) => encodeBase64Url(utf8Encoder.encode(JSON.stringify(part)).buffer).replace(/=/g, "");
-var encodeSignaturePart = (buf) => encodeBase64Url(buf).replace(/=/g, "");
-var decodeJwtPart = (part) => JSON.parse(utf8Decoder.decode(decodeBase64Url(part)));
-function isTokenHeader(obj) {
-  if (typeof obj === "object" && obj !== null) {
-    const objWithAlg = obj;
-    return "alg" in objWithAlg && Object.values(AlgorithmTypes).includes(objWithAlg.alg) && (!("typ" in objWithAlg) || objWithAlg.typ === "JWT");
-  }
-  return false;
-}
-var sign = async (payload, privateKey, alg = "HS256") => {
-  const encodedPayload = encodeJwtPart(payload);
-  let encodedHeader;
-  if (typeof privateKey === "object" && "alg" in privateKey) {
-    alg = privateKey.alg;
-    encodedHeader = encodeJwtPart({ alg, typ: "JWT", kid: privateKey.kid });
-  } else {
-    encodedHeader = encodeJwtPart({ alg, typ: "JWT" });
-  }
-  const partialToken = `${encodedHeader}.${encodedPayload}`;
-  const signaturePart = await signing(privateKey, alg, utf8Encoder.encode(partialToken));
-  const signature = encodeSignaturePart(signaturePart);
-  return `${partialToken}.${signature}`;
-};
-var verify = async (token, publicKey, algOrOptions) => {
-  if (!algOrOptions) {
-    throw new JwtAlgorithmRequired();
-  }
-  const {
-    alg,
-    iss,
-    nbf = true,
-    exp = true,
-    iat = true,
-    aud
-  } = typeof algOrOptions === "string" ? { alg: algOrOptions } : algOrOptions;
-  if (!alg) {
-    throw new JwtAlgorithmRequired();
-  }
-  const tokenParts = token.split(".");
-  if (tokenParts.length !== 3) {
-    throw new JwtTokenInvalid(token);
-  }
-  const { header, payload } = decode3(token);
-  if (!isTokenHeader(header)) {
-    throw new JwtHeaderInvalid(header);
-  }
-  if (header.alg !== alg) {
-    throw new JwtAlgorithmMismatch(alg, header.alg);
-  }
-  const now = Math.floor(Date.now() / 1e3);
-  if (nbf && payload.nbf && payload.nbf > now) {
-    throw new JwtTokenNotBefore(token);
-  }
-  if (exp && payload.exp && payload.exp <= now) {
-    throw new JwtTokenExpired(token);
-  }
-  if (iat && payload.iat && now < payload.iat) {
-    throw new JwtTokenIssuedAt(now, payload.iat);
-  }
-  if (iss) {
-    if (!payload.iss) {
-      throw new JwtTokenIssuer(iss, null);
-    }
-    if (typeof iss === "string" && payload.iss !== iss) {
-      throw new JwtTokenIssuer(iss, payload.iss);
-    }
-    if (iss instanceof RegExp && !iss.test(payload.iss)) {
-      throw new JwtTokenIssuer(iss, payload.iss);
-    }
-  }
-  if (aud) {
-    if (!payload.aud) {
-      throw new JwtPayloadRequiresAud(payload);
-    }
-    const audiences = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
-    const matched = audiences.some(
-      (payloadAud) => aud instanceof RegExp ? aud.test(payloadAud) : typeof aud === "string" ? payloadAud === aud : Array.isArray(aud) && aud.includes(payloadAud)
-    );
-    if (!matched) {
-      throw new JwtTokenAudience(aud, payload.aud);
-    }
-  }
-  const headerPayload = token.substring(0, token.lastIndexOf("."));
-  const verified = await verifying(
-    publicKey,
-    alg,
-    decodeBase64Url(tokenParts[2]),
-    utf8Encoder.encode(headerPayload)
-  );
-  if (!verified) {
-    throw new JwtTokenSignatureMismatched(token);
-  }
-  return payload;
-};
-var symmetricAlgorithms = [
-  AlgorithmTypes.HS256,
-  AlgorithmTypes.HS384,
-  AlgorithmTypes.HS512
-];
-var verifyWithJwks = async (token, options, init) => {
-  const verifyOpts = options.verification || {};
-  const header = decodeHeader(token);
-  if (!isTokenHeader(header)) {
-    throw new JwtHeaderInvalid(header);
-  }
-  if (!header.kid) {
-    throw new JwtHeaderRequiresKid(header);
-  }
-  if (symmetricAlgorithms.includes(header.alg)) {
-    throw new JwtSymmetricAlgorithmNotAllowed(header.alg);
-  }
-  if (!options.allowedAlgorithms.includes(header.alg)) {
-    throw new JwtAlgorithmNotAllowed(header.alg, options.allowedAlgorithms);
-  }
-  let verifyKeys = options.keys ? [...options.keys] : void 0;
-  if (options.jwks_uri) {
-    const response = await fetch(options.jwks_uri, init);
-    if (!response.ok) {
-      throw new Error(`failed to fetch JWKS from ${options.jwks_uri}`);
-    }
-    const data = await response.json();
-    if (!data.keys) {
-      throw new Error('invalid JWKS response. "keys" field is missing');
-    }
-    if (!Array.isArray(data.keys)) {
-      throw new Error('invalid JWKS response. "keys" field is not an array');
-    }
-    verifyKeys ??= [];
-    verifyKeys.push(...data.keys);
-  } else if (!verifyKeys) {
-    throw new Error('verifyWithJwks requires options for either "keys" or "jwks_uri" or both');
-  }
-  const matchingKey = verifyKeys.find((key) => key.kid === header.kid);
-  if (!matchingKey) {
-    throw new JwtTokenInvalid(token);
-  }
-  if (matchingKey.alg && matchingKey.alg !== header.alg) {
-    throw new JwtAlgorithmMismatch(matchingKey.alg, header.alg);
-  }
-  return await verify(token, matchingKey, {
-    alg: header.alg,
-    ...verifyOpts
-  });
-};
-var decode3 = (token) => {
-  const parts = token.split(".");
-  if (parts.length !== 3) {
-    throw new JwtTokenInvalid(token);
-  }
-  try {
-    const header = decodeJwtPart(parts[0]);
-    const payload = decodeJwtPart(parts[1]);
-    return {
-      header,
-      payload
-    };
-  } catch {
-    throw new JwtTokenInvalid(token);
-  }
-};
-var decodeHeader = (token) => {
-  const parts = token.split(".");
-  if (parts.length !== 3) {
-    throw new JwtTokenInvalid(token);
-  }
-  try {
-    return decodeJwtPart(parts[0]);
-  } catch {
-    throw new JwtTokenInvalid(token);
-  }
-};
-
-// node_modules/hono/dist/utils/jwt/index.js
-var Jwt = { sign, verify, decode: decode3, verifyWithJwks };
-
-// node_modules/hono/dist/middleware/jwt/jwt.js
-var verifyWithJwks2 = Jwt.verifyWithJwks;
-var verify2 = Jwt.verify;
-var decode4 = Jwt.decode;
-var sign2 = Jwt.sign;
-
-// api/auth-router.ts
+init_jwt4();
 init_env();
 async function getGoogleTokens(code) {
   const response = await fetch("https://oauth2.googleapis.com/token", {
@@ -83915,6 +86088,7 @@ init_schema2();
 init_drizzle_orm();
 
 // api/local-auth-utils.ts
+init_jwt4();
 init_connection();
 init_schema2();
 init_env();
@@ -84729,1015 +86903,7 @@ var expenseRouter = router({
 
 // api/ai-router.ts
 init_zod();
-
-// node_modules/@google/generative-ai/dist/index.mjs
-var SchemaType;
-(function(SchemaType2) {
-  SchemaType2["STRING"] = "string";
-  SchemaType2["NUMBER"] = "number";
-  SchemaType2["INTEGER"] = "integer";
-  SchemaType2["BOOLEAN"] = "boolean";
-  SchemaType2["ARRAY"] = "array";
-  SchemaType2["OBJECT"] = "object";
-})(SchemaType || (SchemaType = {}));
-var ExecutableCodeLanguage;
-(function(ExecutableCodeLanguage2) {
-  ExecutableCodeLanguage2["LANGUAGE_UNSPECIFIED"] = "language_unspecified";
-  ExecutableCodeLanguage2["PYTHON"] = "python";
-})(ExecutableCodeLanguage || (ExecutableCodeLanguage = {}));
-var Outcome;
-(function(Outcome2) {
-  Outcome2["OUTCOME_UNSPECIFIED"] = "outcome_unspecified";
-  Outcome2["OUTCOME_OK"] = "outcome_ok";
-  Outcome2["OUTCOME_FAILED"] = "outcome_failed";
-  Outcome2["OUTCOME_DEADLINE_EXCEEDED"] = "outcome_deadline_exceeded";
-})(Outcome || (Outcome = {}));
-var POSSIBLE_ROLES = ["user", "model", "function", "system"];
-var HarmCategory;
-(function(HarmCategory2) {
-  HarmCategory2["HARM_CATEGORY_UNSPECIFIED"] = "HARM_CATEGORY_UNSPECIFIED";
-  HarmCategory2["HARM_CATEGORY_HATE_SPEECH"] = "HARM_CATEGORY_HATE_SPEECH";
-  HarmCategory2["HARM_CATEGORY_SEXUALLY_EXPLICIT"] = "HARM_CATEGORY_SEXUALLY_EXPLICIT";
-  HarmCategory2["HARM_CATEGORY_HARASSMENT"] = "HARM_CATEGORY_HARASSMENT";
-  HarmCategory2["HARM_CATEGORY_DANGEROUS_CONTENT"] = "HARM_CATEGORY_DANGEROUS_CONTENT";
-  HarmCategory2["HARM_CATEGORY_CIVIC_INTEGRITY"] = "HARM_CATEGORY_CIVIC_INTEGRITY";
-})(HarmCategory || (HarmCategory = {}));
-var HarmBlockThreshold;
-(function(HarmBlockThreshold2) {
-  HarmBlockThreshold2["HARM_BLOCK_THRESHOLD_UNSPECIFIED"] = "HARM_BLOCK_THRESHOLD_UNSPECIFIED";
-  HarmBlockThreshold2["BLOCK_LOW_AND_ABOVE"] = "BLOCK_LOW_AND_ABOVE";
-  HarmBlockThreshold2["BLOCK_MEDIUM_AND_ABOVE"] = "BLOCK_MEDIUM_AND_ABOVE";
-  HarmBlockThreshold2["BLOCK_ONLY_HIGH"] = "BLOCK_ONLY_HIGH";
-  HarmBlockThreshold2["BLOCK_NONE"] = "BLOCK_NONE";
-})(HarmBlockThreshold || (HarmBlockThreshold = {}));
-var HarmProbability;
-(function(HarmProbability2) {
-  HarmProbability2["HARM_PROBABILITY_UNSPECIFIED"] = "HARM_PROBABILITY_UNSPECIFIED";
-  HarmProbability2["NEGLIGIBLE"] = "NEGLIGIBLE";
-  HarmProbability2["LOW"] = "LOW";
-  HarmProbability2["MEDIUM"] = "MEDIUM";
-  HarmProbability2["HIGH"] = "HIGH";
-})(HarmProbability || (HarmProbability = {}));
-var BlockReason;
-(function(BlockReason2) {
-  BlockReason2["BLOCKED_REASON_UNSPECIFIED"] = "BLOCKED_REASON_UNSPECIFIED";
-  BlockReason2["SAFETY"] = "SAFETY";
-  BlockReason2["OTHER"] = "OTHER";
-})(BlockReason || (BlockReason = {}));
-var FinishReason;
-(function(FinishReason2) {
-  FinishReason2["FINISH_REASON_UNSPECIFIED"] = "FINISH_REASON_UNSPECIFIED";
-  FinishReason2["STOP"] = "STOP";
-  FinishReason2["MAX_TOKENS"] = "MAX_TOKENS";
-  FinishReason2["SAFETY"] = "SAFETY";
-  FinishReason2["RECITATION"] = "RECITATION";
-  FinishReason2["LANGUAGE"] = "LANGUAGE";
-  FinishReason2["BLOCKLIST"] = "BLOCKLIST";
-  FinishReason2["PROHIBITED_CONTENT"] = "PROHIBITED_CONTENT";
-  FinishReason2["SPII"] = "SPII";
-  FinishReason2["MALFORMED_FUNCTION_CALL"] = "MALFORMED_FUNCTION_CALL";
-  FinishReason2["OTHER"] = "OTHER";
-})(FinishReason || (FinishReason = {}));
-var TaskType;
-(function(TaskType2) {
-  TaskType2["TASK_TYPE_UNSPECIFIED"] = "TASK_TYPE_UNSPECIFIED";
-  TaskType2["RETRIEVAL_QUERY"] = "RETRIEVAL_QUERY";
-  TaskType2["RETRIEVAL_DOCUMENT"] = "RETRIEVAL_DOCUMENT";
-  TaskType2["SEMANTIC_SIMILARITY"] = "SEMANTIC_SIMILARITY";
-  TaskType2["CLASSIFICATION"] = "CLASSIFICATION";
-  TaskType2["CLUSTERING"] = "CLUSTERING";
-})(TaskType || (TaskType = {}));
-var FunctionCallingMode;
-(function(FunctionCallingMode2) {
-  FunctionCallingMode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
-  FunctionCallingMode2["AUTO"] = "AUTO";
-  FunctionCallingMode2["ANY"] = "ANY";
-  FunctionCallingMode2["NONE"] = "NONE";
-})(FunctionCallingMode || (FunctionCallingMode = {}));
-var DynamicRetrievalMode;
-(function(DynamicRetrievalMode2) {
-  DynamicRetrievalMode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
-  DynamicRetrievalMode2["MODE_DYNAMIC"] = "MODE_DYNAMIC";
-})(DynamicRetrievalMode || (DynamicRetrievalMode = {}));
-var GoogleGenerativeAIError = class extends Error {
-  constructor(message) {
-    super(`[GoogleGenerativeAI Error]: ${message}`);
-  }
-};
-var GoogleGenerativeAIResponseError = class extends GoogleGenerativeAIError {
-  constructor(message, response) {
-    super(message);
-    this.response = response;
-  }
-};
-var GoogleGenerativeAIFetchError = class extends GoogleGenerativeAIError {
-  constructor(message, status, statusText, errorDetails) {
-    super(message);
-    this.status = status;
-    this.statusText = statusText;
-    this.errorDetails = errorDetails;
-  }
-};
-var GoogleGenerativeAIRequestInputError = class extends GoogleGenerativeAIError {
-};
-var GoogleGenerativeAIAbortError = class extends GoogleGenerativeAIError {
-};
-var DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com";
-var DEFAULT_API_VERSION = "v1beta";
-var PACKAGE_VERSION = "0.24.1";
-var PACKAGE_LOG_HEADER = "genai-js";
-var Task;
-(function(Task2) {
-  Task2["GENERATE_CONTENT"] = "generateContent";
-  Task2["STREAM_GENERATE_CONTENT"] = "streamGenerateContent";
-  Task2["COUNT_TOKENS"] = "countTokens";
-  Task2["EMBED_CONTENT"] = "embedContent";
-  Task2["BATCH_EMBED_CONTENTS"] = "batchEmbedContents";
-})(Task || (Task = {}));
-var RequestUrl = class {
-  constructor(model, task, apiKey, stream, requestOptions) {
-    this.model = model;
-    this.task = task;
-    this.apiKey = apiKey;
-    this.stream = stream;
-    this.requestOptions = requestOptions;
-  }
-  toString() {
-    var _a2, _b;
-    const apiVersion = ((_a2 = this.requestOptions) === null || _a2 === void 0 ? void 0 : _a2.apiVersion) || DEFAULT_API_VERSION;
-    const baseUrl = ((_b = this.requestOptions) === null || _b === void 0 ? void 0 : _b.baseUrl) || DEFAULT_BASE_URL;
-    let url2 = `${baseUrl}/${apiVersion}/${this.model}:${this.task}`;
-    if (this.stream) {
-      url2 += "?alt=sse";
-    }
-    return url2;
-  }
-};
-function getClientHeaders(requestOptions) {
-  const clientHeaders = [];
-  if (requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.apiClient) {
-    clientHeaders.push(requestOptions.apiClient);
-  }
-  clientHeaders.push(`${PACKAGE_LOG_HEADER}/${PACKAGE_VERSION}`);
-  return clientHeaders.join(" ");
-}
-async function getHeaders(url2) {
-  var _a2;
-  const headers = new Headers();
-  headers.append("Content-Type", "application/json");
-  headers.append("x-goog-api-client", getClientHeaders(url2.requestOptions));
-  headers.append("x-goog-api-key", url2.apiKey);
-  let customHeaders = (_a2 = url2.requestOptions) === null || _a2 === void 0 ? void 0 : _a2.customHeaders;
-  if (customHeaders) {
-    if (!(customHeaders instanceof Headers)) {
-      try {
-        customHeaders = new Headers(customHeaders);
-      } catch (e) {
-        throw new GoogleGenerativeAIRequestInputError(`unable to convert customHeaders value ${JSON.stringify(customHeaders)} to Headers: ${e.message}`);
-      }
-    }
-    for (const [headerName, headerValue] of customHeaders.entries()) {
-      if (headerName === "x-goog-api-key") {
-        throw new GoogleGenerativeAIRequestInputError(`Cannot set reserved header name ${headerName}`);
-      } else if (headerName === "x-goog-api-client") {
-        throw new GoogleGenerativeAIRequestInputError(`Header name ${headerName} can only be set using the apiClient field`);
-      }
-      headers.append(headerName, headerValue);
-    }
-  }
-  return headers;
-}
-async function constructModelRequest(model, task, apiKey, stream, body, requestOptions) {
-  const url2 = new RequestUrl(model, task, apiKey, stream, requestOptions);
-  return {
-    url: url2.toString(),
-    fetchOptions: Object.assign(Object.assign({}, buildFetchOptions(requestOptions)), { method: "POST", headers: await getHeaders(url2), body })
-  };
-}
-async function makeModelRequest(model, task, apiKey, stream, body, requestOptions = {}, fetchFn = fetch) {
-  const { url: url2, fetchOptions } = await constructModelRequest(model, task, apiKey, stream, body, requestOptions);
-  return makeRequest(url2, fetchOptions, fetchFn);
-}
-async function makeRequest(url2, fetchOptions, fetchFn = fetch) {
-  let response;
-  try {
-    response = await fetchFn(url2, fetchOptions);
-  } catch (e) {
-    handleResponseError(e, url2);
-  }
-  if (!response.ok) {
-    await handleResponseNotOk(response, url2);
-  }
-  return response;
-}
-function handleResponseError(e, url2) {
-  let err = e;
-  if (err.name === "AbortError") {
-    err = new GoogleGenerativeAIAbortError(`Request aborted when fetching ${url2.toString()}: ${e.message}`);
-    err.stack = e.stack;
-  } else if (!(e instanceof GoogleGenerativeAIFetchError || e instanceof GoogleGenerativeAIRequestInputError)) {
-    err = new GoogleGenerativeAIError(`Error fetching from ${url2.toString()}: ${e.message}`);
-    err.stack = e.stack;
-  }
-  throw err;
-}
-async function handleResponseNotOk(response, url2) {
-  let message = "";
-  let errorDetails;
-  try {
-    const json3 = await response.json();
-    message = json3.error.message;
-    if (json3.error.details) {
-      message += ` ${JSON.stringify(json3.error.details)}`;
-      errorDetails = json3.error.details;
-    }
-  } catch (e) {
-  }
-  throw new GoogleGenerativeAIFetchError(`Error fetching from ${url2.toString()}: [${response.status} ${response.statusText}] ${message}`, response.status, response.statusText, errorDetails);
-}
-function buildFetchOptions(requestOptions) {
-  const fetchOptions = {};
-  if ((requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.signal) !== void 0 || (requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.timeout) >= 0) {
-    const controller = new AbortController();
-    if ((requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.timeout) >= 0) {
-      setTimeout(() => controller.abort(), requestOptions.timeout);
-    }
-    if (requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.signal) {
-      requestOptions.signal.addEventListener("abort", () => {
-        controller.abort();
-      });
-    }
-    fetchOptions.signal = controller.signal;
-  }
-  return fetchOptions;
-}
-function addHelpers(response) {
-  response.text = () => {
-    if (response.candidates && response.candidates.length > 0) {
-      if (response.candidates.length > 1) {
-        console.warn(`This response had ${response.candidates.length} candidates. Returning text from the first candidate only. Access response.candidates directly to use the other candidates.`);
-      }
-      if (hadBadFinishReason(response.candidates[0])) {
-        throw new GoogleGenerativeAIResponseError(`${formatBlockErrorMessage(response)}`, response);
-      }
-      return getText(response);
-    } else if (response.promptFeedback) {
-      throw new GoogleGenerativeAIResponseError(`Text not available. ${formatBlockErrorMessage(response)}`, response);
-    }
-    return "";
-  };
-  response.functionCall = () => {
-    if (response.candidates && response.candidates.length > 0) {
-      if (response.candidates.length > 1) {
-        console.warn(`This response had ${response.candidates.length} candidates. Returning function calls from the first candidate only. Access response.candidates directly to use the other candidates.`);
-      }
-      if (hadBadFinishReason(response.candidates[0])) {
-        throw new GoogleGenerativeAIResponseError(`${formatBlockErrorMessage(response)}`, response);
-      }
-      console.warn(`response.functionCall() is deprecated. Use response.functionCalls() instead.`);
-      return getFunctionCalls(response)[0];
-    } else if (response.promptFeedback) {
-      throw new GoogleGenerativeAIResponseError(`Function call not available. ${formatBlockErrorMessage(response)}`, response);
-    }
-    return void 0;
-  };
-  response.functionCalls = () => {
-    if (response.candidates && response.candidates.length > 0) {
-      if (response.candidates.length > 1) {
-        console.warn(`This response had ${response.candidates.length} candidates. Returning function calls from the first candidate only. Access response.candidates directly to use the other candidates.`);
-      }
-      if (hadBadFinishReason(response.candidates[0])) {
-        throw new GoogleGenerativeAIResponseError(`${formatBlockErrorMessage(response)}`, response);
-      }
-      return getFunctionCalls(response);
-    } else if (response.promptFeedback) {
-      throw new GoogleGenerativeAIResponseError(`Function call not available. ${formatBlockErrorMessage(response)}`, response);
-    }
-    return void 0;
-  };
-  return response;
-}
-function getText(response) {
-  var _a2, _b, _c, _d;
-  const textStrings = [];
-  if ((_b = (_a2 = response.candidates) === null || _a2 === void 0 ? void 0 : _a2[0].content) === null || _b === void 0 ? void 0 : _b.parts) {
-    for (const part of (_d = (_c = response.candidates) === null || _c === void 0 ? void 0 : _c[0].content) === null || _d === void 0 ? void 0 : _d.parts) {
-      if (part.text) {
-        textStrings.push(part.text);
-      }
-      if (part.executableCode) {
-        textStrings.push("\n```" + part.executableCode.language + "\n" + part.executableCode.code + "\n```\n");
-      }
-      if (part.codeExecutionResult) {
-        textStrings.push("\n```\n" + part.codeExecutionResult.output + "\n```\n");
-      }
-    }
-  }
-  if (textStrings.length > 0) {
-    return textStrings.join("");
-  } else {
-    return "";
-  }
-}
-function getFunctionCalls(response) {
-  var _a2, _b, _c, _d;
-  const functionCalls = [];
-  if ((_b = (_a2 = response.candidates) === null || _a2 === void 0 ? void 0 : _a2[0].content) === null || _b === void 0 ? void 0 : _b.parts) {
-    for (const part of (_d = (_c = response.candidates) === null || _c === void 0 ? void 0 : _c[0].content) === null || _d === void 0 ? void 0 : _d.parts) {
-      if (part.functionCall) {
-        functionCalls.push(part.functionCall);
-      }
-    }
-  }
-  if (functionCalls.length > 0) {
-    return functionCalls;
-  } else {
-    return void 0;
-  }
-}
-var badFinishReasons = [
-  FinishReason.RECITATION,
-  FinishReason.SAFETY,
-  FinishReason.LANGUAGE
-];
-function hadBadFinishReason(candidate) {
-  return !!candidate.finishReason && badFinishReasons.includes(candidate.finishReason);
-}
-function formatBlockErrorMessage(response) {
-  var _a2, _b, _c;
-  let message = "";
-  if ((!response.candidates || response.candidates.length === 0) && response.promptFeedback) {
-    message += "Response was blocked";
-    if ((_a2 = response.promptFeedback) === null || _a2 === void 0 ? void 0 : _a2.blockReason) {
-      message += ` due to ${response.promptFeedback.blockReason}`;
-    }
-    if ((_b = response.promptFeedback) === null || _b === void 0 ? void 0 : _b.blockReasonMessage) {
-      message += `: ${response.promptFeedback.blockReasonMessage}`;
-    }
-  } else if ((_c = response.candidates) === null || _c === void 0 ? void 0 : _c[0]) {
-    const firstCandidate = response.candidates[0];
-    if (hadBadFinishReason(firstCandidate)) {
-      message += `Candidate was blocked due to ${firstCandidate.finishReason}`;
-      if (firstCandidate.finishMessage) {
-        message += `: ${firstCandidate.finishMessage}`;
-      }
-    }
-  }
-  return message;
-}
-function __await(v) {
-  return this instanceof __await ? (this.v = v, this) : new __await(v);
-}
-function __asyncGenerator(thisArg, _arguments, generator) {
-  if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-  var g = generator.apply(thisArg, _arguments || []), i, q = [];
-  return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function() {
-    return this;
-  }, i;
-  function verb(n) {
-    if (g[n]) i[n] = function(v) {
-      return new Promise(function(a, b) {
-        q.push([n, v, a, b]) > 1 || resume(n, v);
-      });
-    };
-  }
-  function resume(n, v) {
-    try {
-      step(g[n](v));
-    } catch (e) {
-      settle(q[0][3], e);
-    }
-  }
-  function step(r) {
-    r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r);
-  }
-  function fulfill(value) {
-    resume("next", value);
-  }
-  function reject(value) {
-    resume("throw", value);
-  }
-  function settle(f, v) {
-    if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]);
-  }
-}
-var responseLineRE = /^data\: (.*)(?:\n\n|\r\r|\r\n\r\n)/;
-function processStream(response) {
-  const inputStream = response.body.pipeThrough(new TextDecoderStream("utf8", { fatal: true }));
-  const responseStream = getResponseStream(inputStream);
-  const [stream1, stream2] = responseStream.tee();
-  return {
-    stream: generateResponseSequence(stream1),
-    response: getResponsePromise(stream2)
-  };
-}
-async function getResponsePromise(stream) {
-  const allResponses = [];
-  const reader = stream.getReader();
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      return addHelpers(aggregateResponses(allResponses));
-    }
-    allResponses.push(value);
-  }
-}
-function generateResponseSequence(stream) {
-  return __asyncGenerator(this, arguments, function* generateResponseSequence_1() {
-    const reader = stream.getReader();
-    while (true) {
-      const { value, done } = yield __await(reader.read());
-      if (done) {
-        break;
-      }
-      yield yield __await(addHelpers(value));
-    }
-  });
-}
-function getResponseStream(inputStream) {
-  const reader = inputStream.getReader();
-  const stream = new ReadableStream({
-    start(controller) {
-      let currentText = "";
-      return pump();
-      function pump() {
-        return reader.read().then(({ value, done }) => {
-          if (done) {
-            if (currentText.trim()) {
-              controller.error(new GoogleGenerativeAIError("Failed to parse stream"));
-              return;
-            }
-            controller.close();
-            return;
-          }
-          currentText += value;
-          let match2 = currentText.match(responseLineRE);
-          let parsedResponse;
-          while (match2) {
-            try {
-              parsedResponse = JSON.parse(match2[1]);
-            } catch (e) {
-              controller.error(new GoogleGenerativeAIError(`Error parsing JSON response: "${match2[1]}"`));
-              return;
-            }
-            controller.enqueue(parsedResponse);
-            currentText = currentText.substring(match2[0].length);
-            match2 = currentText.match(responseLineRE);
-          }
-          return pump();
-        }).catch((e) => {
-          let err = e;
-          err.stack = e.stack;
-          if (err.name === "AbortError") {
-            err = new GoogleGenerativeAIAbortError("Request aborted when reading from the stream");
-          } else {
-            err = new GoogleGenerativeAIError("Error reading from the stream");
-          }
-          throw err;
-        });
-      }
-    }
-  });
-  return stream;
-}
-function aggregateResponses(responses) {
-  const lastResponse = responses[responses.length - 1];
-  const aggregatedResponse = {
-    promptFeedback: lastResponse === null || lastResponse === void 0 ? void 0 : lastResponse.promptFeedback
-  };
-  for (const response of responses) {
-    if (response.candidates) {
-      let candidateIndex = 0;
-      for (const candidate of response.candidates) {
-        if (!aggregatedResponse.candidates) {
-          aggregatedResponse.candidates = [];
-        }
-        if (!aggregatedResponse.candidates[candidateIndex]) {
-          aggregatedResponse.candidates[candidateIndex] = {
-            index: candidateIndex
-          };
-        }
-        aggregatedResponse.candidates[candidateIndex].citationMetadata = candidate.citationMetadata;
-        aggregatedResponse.candidates[candidateIndex].groundingMetadata = candidate.groundingMetadata;
-        aggregatedResponse.candidates[candidateIndex].finishReason = candidate.finishReason;
-        aggregatedResponse.candidates[candidateIndex].finishMessage = candidate.finishMessage;
-        aggregatedResponse.candidates[candidateIndex].safetyRatings = candidate.safetyRatings;
-        if (candidate.content && candidate.content.parts) {
-          if (!aggregatedResponse.candidates[candidateIndex].content) {
-            aggregatedResponse.candidates[candidateIndex].content = {
-              role: candidate.content.role || "user",
-              parts: []
-            };
-          }
-          const newPart = {};
-          for (const part of candidate.content.parts) {
-            if (part.text) {
-              newPart.text = part.text;
-            }
-            if (part.functionCall) {
-              newPart.functionCall = part.functionCall;
-            }
-            if (part.executableCode) {
-              newPart.executableCode = part.executableCode;
-            }
-            if (part.codeExecutionResult) {
-              newPart.codeExecutionResult = part.codeExecutionResult;
-            }
-            if (Object.keys(newPart).length === 0) {
-              newPart.text = "";
-            }
-            aggregatedResponse.candidates[candidateIndex].content.parts.push(newPart);
-          }
-        }
-      }
-      candidateIndex++;
-    }
-    if (response.usageMetadata) {
-      aggregatedResponse.usageMetadata = response.usageMetadata;
-    }
-  }
-  return aggregatedResponse;
-}
-async function generateContentStream(apiKey, model, params, requestOptions) {
-  const response = await makeModelRequest(
-    model,
-    Task.STREAM_GENERATE_CONTENT,
-    apiKey,
-    /* stream */
-    true,
-    JSON.stringify(params),
-    requestOptions
-  );
-  return processStream(response);
-}
-async function generateContent(apiKey, model, params, requestOptions) {
-  const response = await makeModelRequest(
-    model,
-    Task.GENERATE_CONTENT,
-    apiKey,
-    /* stream */
-    false,
-    JSON.stringify(params),
-    requestOptions
-  );
-  const responseJson = await response.json();
-  const enhancedResponse = addHelpers(responseJson);
-  return {
-    response: enhancedResponse
-  };
-}
-function formatSystemInstruction(input) {
-  if (input == null) {
-    return void 0;
-  } else if (typeof input === "string") {
-    return { role: "system", parts: [{ text: input }] };
-  } else if (input.text) {
-    return { role: "system", parts: [input] };
-  } else if (input.parts) {
-    if (!input.role) {
-      return { role: "system", parts: input.parts };
-    } else {
-      return input;
-    }
-  }
-}
-function formatNewContent(request) {
-  let newParts = [];
-  if (typeof request === "string") {
-    newParts = [{ text: request }];
-  } else {
-    for (const partOrString of request) {
-      if (typeof partOrString === "string") {
-        newParts.push({ text: partOrString });
-      } else {
-        newParts.push(partOrString);
-      }
-    }
-  }
-  return assignRoleToPartsAndValidateSendMessageRequest(newParts);
-}
-function assignRoleToPartsAndValidateSendMessageRequest(parts) {
-  const userContent = { role: "user", parts: [] };
-  const functionContent = { role: "function", parts: [] };
-  let hasUserContent = false;
-  let hasFunctionContent = false;
-  for (const part of parts) {
-    if ("functionResponse" in part) {
-      functionContent.parts.push(part);
-      hasFunctionContent = true;
-    } else {
-      userContent.parts.push(part);
-      hasUserContent = true;
-    }
-  }
-  if (hasUserContent && hasFunctionContent) {
-    throw new GoogleGenerativeAIError("Within a single message, FunctionResponse cannot be mixed with other type of part in the request for sending chat message.");
-  }
-  if (!hasUserContent && !hasFunctionContent) {
-    throw new GoogleGenerativeAIError("No content is provided for sending chat message.");
-  }
-  if (hasUserContent) {
-    return userContent;
-  }
-  return functionContent;
-}
-function formatCountTokensInput(params, modelParams) {
-  var _a2;
-  let formattedGenerateContentRequest = {
-    model: modelParams === null || modelParams === void 0 ? void 0 : modelParams.model,
-    generationConfig: modelParams === null || modelParams === void 0 ? void 0 : modelParams.generationConfig,
-    safetySettings: modelParams === null || modelParams === void 0 ? void 0 : modelParams.safetySettings,
-    tools: modelParams === null || modelParams === void 0 ? void 0 : modelParams.tools,
-    toolConfig: modelParams === null || modelParams === void 0 ? void 0 : modelParams.toolConfig,
-    systemInstruction: modelParams === null || modelParams === void 0 ? void 0 : modelParams.systemInstruction,
-    cachedContent: (_a2 = modelParams === null || modelParams === void 0 ? void 0 : modelParams.cachedContent) === null || _a2 === void 0 ? void 0 : _a2.name,
-    contents: []
-  };
-  const containsGenerateContentRequest = params.generateContentRequest != null;
-  if (params.contents) {
-    if (containsGenerateContentRequest) {
-      throw new GoogleGenerativeAIRequestInputError("CountTokensRequest must have one of contents or generateContentRequest, not both.");
-    }
-    formattedGenerateContentRequest.contents = params.contents;
-  } else if (containsGenerateContentRequest) {
-    formattedGenerateContentRequest = Object.assign(Object.assign({}, formattedGenerateContentRequest), params.generateContentRequest);
-  } else {
-    const content = formatNewContent(params);
-    formattedGenerateContentRequest.contents = [content];
-  }
-  return { generateContentRequest: formattedGenerateContentRequest };
-}
-function formatGenerateContentInput(params) {
-  let formattedRequest;
-  if (params.contents) {
-    formattedRequest = params;
-  } else {
-    const content = formatNewContent(params);
-    formattedRequest = { contents: [content] };
-  }
-  if (params.systemInstruction) {
-    formattedRequest.systemInstruction = formatSystemInstruction(params.systemInstruction);
-  }
-  return formattedRequest;
-}
-function formatEmbedContentInput(params) {
-  if (typeof params === "string" || Array.isArray(params)) {
-    const content = formatNewContent(params);
-    return { content };
-  }
-  return params;
-}
-var VALID_PART_FIELDS = [
-  "text",
-  "inlineData",
-  "functionCall",
-  "functionResponse",
-  "executableCode",
-  "codeExecutionResult"
-];
-var VALID_PARTS_PER_ROLE = {
-  user: ["text", "inlineData"],
-  function: ["functionResponse"],
-  model: ["text", "functionCall", "executableCode", "codeExecutionResult"],
-  // System instructions shouldn't be in history anyway.
-  system: ["text"]
-};
-function validateChatHistory(history) {
-  let prevContent = false;
-  for (const currContent of history) {
-    const { role, parts } = currContent;
-    if (!prevContent && role !== "user") {
-      throw new GoogleGenerativeAIError(`First content should be with role 'user', got ${role}`);
-    }
-    if (!POSSIBLE_ROLES.includes(role)) {
-      throw new GoogleGenerativeAIError(`Each item should include role field. Got ${role} but valid roles are: ${JSON.stringify(POSSIBLE_ROLES)}`);
-    }
-    if (!Array.isArray(parts)) {
-      throw new GoogleGenerativeAIError("Content should have 'parts' property with an array of Parts");
-    }
-    if (parts.length === 0) {
-      throw new GoogleGenerativeAIError("Each Content should have at least one part");
-    }
-    const countFields = {
-      text: 0,
-      inlineData: 0,
-      functionCall: 0,
-      functionResponse: 0,
-      fileData: 0,
-      executableCode: 0,
-      codeExecutionResult: 0
-    };
-    for (const part of parts) {
-      for (const key of VALID_PART_FIELDS) {
-        if (key in part) {
-          countFields[key] += 1;
-        }
-      }
-    }
-    const validParts = VALID_PARTS_PER_ROLE[role];
-    for (const key of VALID_PART_FIELDS) {
-      if (!validParts.includes(key) && countFields[key] > 0) {
-        throw new GoogleGenerativeAIError(`Content with role '${role}' can't contain '${key}' part`);
-      }
-    }
-    prevContent = true;
-  }
-}
-function isValidResponse(response) {
-  var _a2;
-  if (response.candidates === void 0 || response.candidates.length === 0) {
-    return false;
-  }
-  const content = (_a2 = response.candidates[0]) === null || _a2 === void 0 ? void 0 : _a2.content;
-  if (content === void 0) {
-    return false;
-  }
-  if (content.parts === void 0 || content.parts.length === 0) {
-    return false;
-  }
-  for (const part of content.parts) {
-    if (part === void 0 || Object.keys(part).length === 0) {
-      return false;
-    }
-    if (part.text !== void 0 && part.text === "") {
-      return false;
-    }
-  }
-  return true;
-}
-var SILENT_ERROR = "SILENT_ERROR";
-var ChatSession = class {
-  constructor(apiKey, model, params, _requestOptions = {}) {
-    this.model = model;
-    this.params = params;
-    this._requestOptions = _requestOptions;
-    this._history = [];
-    this._sendPromise = Promise.resolve();
-    this._apiKey = apiKey;
-    if (params === null || params === void 0 ? void 0 : params.history) {
-      validateChatHistory(params.history);
-      this._history = params.history;
-    }
-  }
-  /**
-   * Gets the chat history so far. Blocked prompts are not added to history.
-   * Blocked candidates are not added to history, nor are the prompts that
-   * generated them.
-   */
-  async getHistory() {
-    await this._sendPromise;
-    return this._history;
-  }
-  /**
-   * Sends a chat message and receives a non-streaming
-   * {@link GenerateContentResult}.
-   *
-   * Fields set in the optional {@link SingleRequestOptions} parameter will
-   * take precedence over the {@link RequestOptions} values provided to
-   * {@link GoogleGenerativeAI.getGenerativeModel }.
-   */
-  async sendMessage(request, requestOptions = {}) {
-    var _a2, _b, _c, _d, _e, _f;
-    await this._sendPromise;
-    const newContent = formatNewContent(request);
-    const generateContentRequest = {
-      safetySettings: (_a2 = this.params) === null || _a2 === void 0 ? void 0 : _a2.safetySettings,
-      generationConfig: (_b = this.params) === null || _b === void 0 ? void 0 : _b.generationConfig,
-      tools: (_c = this.params) === null || _c === void 0 ? void 0 : _c.tools,
-      toolConfig: (_d = this.params) === null || _d === void 0 ? void 0 : _d.toolConfig,
-      systemInstruction: (_e = this.params) === null || _e === void 0 ? void 0 : _e.systemInstruction,
-      cachedContent: (_f = this.params) === null || _f === void 0 ? void 0 : _f.cachedContent,
-      contents: [...this._history, newContent]
-    };
-    const chatSessionRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
-    let finalResult;
-    this._sendPromise = this._sendPromise.then(() => generateContent(this._apiKey, this.model, generateContentRequest, chatSessionRequestOptions)).then((result) => {
-      var _a3;
-      if (isValidResponse(result.response)) {
-        this._history.push(newContent);
-        const responseContent = Object.assign({
-          parts: [],
-          // Response seems to come back without a role set.
-          role: "model"
-        }, (_a3 = result.response.candidates) === null || _a3 === void 0 ? void 0 : _a3[0].content);
-        this._history.push(responseContent);
-      } else {
-        const blockErrorMessage = formatBlockErrorMessage(result.response);
-        if (blockErrorMessage) {
-          console.warn(`sendMessage() was unsuccessful. ${blockErrorMessage}. Inspect response object for details.`);
-        }
-      }
-      finalResult = result;
-    }).catch((e) => {
-      this._sendPromise = Promise.resolve();
-      throw e;
-    });
-    await this._sendPromise;
-    return finalResult;
-  }
-  /**
-   * Sends a chat message and receives the response as a
-   * {@link GenerateContentStreamResult} containing an iterable stream
-   * and a response promise.
-   *
-   * Fields set in the optional {@link SingleRequestOptions} parameter will
-   * take precedence over the {@link RequestOptions} values provided to
-   * {@link GoogleGenerativeAI.getGenerativeModel }.
-   */
-  async sendMessageStream(request, requestOptions = {}) {
-    var _a2, _b, _c, _d, _e, _f;
-    await this._sendPromise;
-    const newContent = formatNewContent(request);
-    const generateContentRequest = {
-      safetySettings: (_a2 = this.params) === null || _a2 === void 0 ? void 0 : _a2.safetySettings,
-      generationConfig: (_b = this.params) === null || _b === void 0 ? void 0 : _b.generationConfig,
-      tools: (_c = this.params) === null || _c === void 0 ? void 0 : _c.tools,
-      toolConfig: (_d = this.params) === null || _d === void 0 ? void 0 : _d.toolConfig,
-      systemInstruction: (_e = this.params) === null || _e === void 0 ? void 0 : _e.systemInstruction,
-      cachedContent: (_f = this.params) === null || _f === void 0 ? void 0 : _f.cachedContent,
-      contents: [...this._history, newContent]
-    };
-    const chatSessionRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
-    const streamPromise = generateContentStream(this._apiKey, this.model, generateContentRequest, chatSessionRequestOptions);
-    this._sendPromise = this._sendPromise.then(() => streamPromise).catch((_ignored) => {
-      throw new Error(SILENT_ERROR);
-    }).then((streamResult) => streamResult.response).then((response) => {
-      if (isValidResponse(response)) {
-        this._history.push(newContent);
-        const responseContent = Object.assign({}, response.candidates[0].content);
-        if (!responseContent.role) {
-          responseContent.role = "model";
-        }
-        this._history.push(responseContent);
-      } else {
-        const blockErrorMessage = formatBlockErrorMessage(response);
-        if (blockErrorMessage) {
-          console.warn(`sendMessageStream() was unsuccessful. ${blockErrorMessage}. Inspect response object for details.`);
-        }
-      }
-    }).catch((e) => {
-      if (e.message !== SILENT_ERROR) {
-        console.error(e);
-      }
-    });
-    return streamPromise;
-  }
-};
-async function countTokens(apiKey, model, params, singleRequestOptions) {
-  const response = await makeModelRequest(model, Task.COUNT_TOKENS, apiKey, false, JSON.stringify(params), singleRequestOptions);
-  return response.json();
-}
-async function embedContent(apiKey, model, params, requestOptions) {
-  const response = await makeModelRequest(model, Task.EMBED_CONTENT, apiKey, false, JSON.stringify(params), requestOptions);
-  return response.json();
-}
-async function batchEmbedContents(apiKey, model, params, requestOptions) {
-  const requestsWithModel = params.requests.map((request) => {
-    return Object.assign(Object.assign({}, request), { model });
-  });
-  const response = await makeModelRequest(model, Task.BATCH_EMBED_CONTENTS, apiKey, false, JSON.stringify({ requests: requestsWithModel }), requestOptions);
-  return response.json();
-}
-var GenerativeModel = class {
-  constructor(apiKey, modelParams, _requestOptions = {}) {
-    this.apiKey = apiKey;
-    this._requestOptions = _requestOptions;
-    if (modelParams.model.includes("/")) {
-      this.model = modelParams.model;
-    } else {
-      this.model = `models/${modelParams.model}`;
-    }
-    this.generationConfig = modelParams.generationConfig || {};
-    this.safetySettings = modelParams.safetySettings || [];
-    this.tools = modelParams.tools;
-    this.toolConfig = modelParams.toolConfig;
-    this.systemInstruction = formatSystemInstruction(modelParams.systemInstruction);
-    this.cachedContent = modelParams.cachedContent;
-  }
-  /**
-   * Makes a single non-streaming call to the model
-   * and returns an object containing a single {@link GenerateContentResponse}.
-   *
-   * Fields set in the optional {@link SingleRequestOptions} parameter will
-   * take precedence over the {@link RequestOptions} values provided to
-   * {@link GoogleGenerativeAI.getGenerativeModel }.
-   */
-  async generateContent(request, requestOptions = {}) {
-    var _a2;
-    const formattedParams = formatGenerateContentInput(request);
-    const generativeModelRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
-    return generateContent(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction, cachedContent: (_a2 = this.cachedContent) === null || _a2 === void 0 ? void 0 : _a2.name }, formattedParams), generativeModelRequestOptions);
-  }
-  /**
-   * Makes a single streaming call to the model and returns an object
-   * containing an iterable stream that iterates over all chunks in the
-   * streaming response as well as a promise that returns the final
-   * aggregated response.
-   *
-   * Fields set in the optional {@link SingleRequestOptions} parameter will
-   * take precedence over the {@link RequestOptions} values provided to
-   * {@link GoogleGenerativeAI.getGenerativeModel }.
-   */
-  async generateContentStream(request, requestOptions = {}) {
-    var _a2;
-    const formattedParams = formatGenerateContentInput(request);
-    const generativeModelRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
-    return generateContentStream(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction, cachedContent: (_a2 = this.cachedContent) === null || _a2 === void 0 ? void 0 : _a2.name }, formattedParams), generativeModelRequestOptions);
-  }
-  /**
-   * Gets a new {@link ChatSession} instance which can be used for
-   * multi-turn chats.
-   */
-  startChat(startChatParams) {
-    var _a2;
-    return new ChatSession(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction, cachedContent: (_a2 = this.cachedContent) === null || _a2 === void 0 ? void 0 : _a2.name }, startChatParams), this._requestOptions);
-  }
-  /**
-   * Counts the tokens in the provided request.
-   *
-   * Fields set in the optional {@link SingleRequestOptions} parameter will
-   * take precedence over the {@link RequestOptions} values provided to
-   * {@link GoogleGenerativeAI.getGenerativeModel }.
-   */
-  async countTokens(request, requestOptions = {}) {
-    const formattedParams = formatCountTokensInput(request, {
-      model: this.model,
-      generationConfig: this.generationConfig,
-      safetySettings: this.safetySettings,
-      tools: this.tools,
-      toolConfig: this.toolConfig,
-      systemInstruction: this.systemInstruction,
-      cachedContent: this.cachedContent
-    });
-    const generativeModelRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
-    return countTokens(this.apiKey, this.model, formattedParams, generativeModelRequestOptions);
-  }
-  /**
-   * Embeds the provided content.
-   *
-   * Fields set in the optional {@link SingleRequestOptions} parameter will
-   * take precedence over the {@link RequestOptions} values provided to
-   * {@link GoogleGenerativeAI.getGenerativeModel }.
-   */
-  async embedContent(request, requestOptions = {}) {
-    const formattedParams = formatEmbedContentInput(request);
-    const generativeModelRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
-    return embedContent(this.apiKey, this.model, formattedParams, generativeModelRequestOptions);
-  }
-  /**
-   * Embeds an array of {@link EmbedContentRequest}s.
-   *
-   * Fields set in the optional {@link SingleRequestOptions} parameter will
-   * take precedence over the {@link RequestOptions} values provided to
-   * {@link GoogleGenerativeAI.getGenerativeModel }.
-   */
-  async batchEmbedContents(batchEmbedContentRequest, requestOptions = {}) {
-    const generativeModelRequestOptions = Object.assign(Object.assign({}, this._requestOptions), requestOptions);
-    return batchEmbedContents(this.apiKey, this.model, batchEmbedContentRequest, generativeModelRequestOptions);
-  }
-};
-var GoogleGenerativeAI = class {
-  constructor(apiKey) {
-    this.apiKey = apiKey;
-  }
-  /**
-   * Gets a {@link GenerativeModel} instance for the provided model name.
-   */
-  getGenerativeModel(modelParams, requestOptions) {
-    if (!modelParams.model) {
-      throw new GoogleGenerativeAIError(`Must provide a model name. Example: genai.getGenerativeModel({ model: 'my-model-name' })`);
-    }
-    return new GenerativeModel(this.apiKey, modelParams, requestOptions);
-  }
-  /**
-   * Creates a {@link GenerativeModel} instance from provided content cache.
-   */
-  getGenerativeModelFromCachedContent(cachedContent, modelParams, requestOptions) {
-    if (!cachedContent.name) {
-      throw new GoogleGenerativeAIRequestInputError("Cached content must contain a `name` field.");
-    }
-    if (!cachedContent.model) {
-      throw new GoogleGenerativeAIRequestInputError("Cached content must contain a `model` field.");
-    }
-    const disallowedDuplicates = ["model", "systemInstruction"];
-    for (const key of disallowedDuplicates) {
-      if ((modelParams === null || modelParams === void 0 ? void 0 : modelParams[key]) && cachedContent[key] && (modelParams === null || modelParams === void 0 ? void 0 : modelParams[key]) !== cachedContent[key]) {
-        if (key === "model") {
-          const modelParamsComp = modelParams.model.startsWith("models/") ? modelParams.model.replace("models/", "") : modelParams.model;
-          const cachedContentComp = cachedContent.model.startsWith("models/") ? cachedContent.model.replace("models/", "") : cachedContent.model;
-          if (modelParamsComp === cachedContentComp) {
-            continue;
-          }
-        }
-        throw new GoogleGenerativeAIRequestInputError(`Different value for "${key}" specified in modelParams (${modelParams[key]}) and cachedContent (${cachedContent[key]})`);
-      }
-    }
-    const modelParamsFromCache = Object.assign(Object.assign({}, modelParams), { model: cachedContent.model, tools: cachedContent.tools, toolConfig: cachedContent.toolConfig, systemInstruction: cachedContent.systemInstruction, cachedContent });
-    return new GenerativeModel(this.apiKey, modelParamsFromCache, requestOptions);
-  }
-};
-
-// api/ai-router.ts
+init_dist2();
 init_connection();
 init_schema2();
 init_drizzle_orm();
@@ -89134,6 +90300,7 @@ function applyProfileHints(item, context, profileContext) {
 }
 
 // api/lib/ai-classifier.ts
+init_dist2();
 var classificationResponseSchema = {
   type: SchemaType.OBJECT,
   properties: {
@@ -89401,6 +90568,7 @@ function parseAIResponse(response, modelName) {
 }
 
 // api/lib/embedding-engine.ts
+init_dist2();
 var EMBEDDING_MODEL = "text-embedding-004";
 var CATEGORY_DESCRIPTORS = [
   // ── Expense Categories ──
@@ -93291,7 +94459,7 @@ init_zod();
 init_connection();
 init_schema2();
 init_drizzle_orm();
-import { randomBytes as randomBytes2 } from "crypto";
+import { randomBytes as randomBytes3 } from "crypto";
 
 // api/services/adaptive-question-engine.ts
 var ADAPTIVE_ONBOARDING_QUESTIONS = [
@@ -93795,7 +94963,7 @@ var profileRouter = router({
         eq(webhookTokens.userType, ctx.user.type)
       )
     );
-    const newToken = `sms_${randomBytes2(32).toString("hex")}`;
+    const newToken = `sms_${randomBytes3(32).toString("hex")}`;
     await db.insert(webhookTokens).values({
       userId: ctx.user.id,
       userType: ctx.user.type,
@@ -93803,6 +94971,19 @@ var profileRouter = router({
       name: "iOS Shortcut Token"
     });
     return { success: true, token: newToken };
+  }),
+  // ─── Magic Code for zero-config iOS Shortcut setup ───
+  generateMagicCode: authedProcedure.mutation(async ({ ctx }) => {
+    const [record2] = await db.select().from(webhookTokens).where(and(
+      eq(webhookTokens.userId, ctx.user.id),
+      eq(webhookTokens.userType, ctx.user.type)
+    )).limit(1);
+    if (!record2) {
+      throw new Error("\u0644\u0627\u0632\u0645 \u062A\u0639\u0645\u0644 Token \u0627\u0644\u0623\u0648\u0644 \u0642\u0628\u0644 \u0645\u0627 \u062A\u0633\u062A\u062E\u062F\u0645 Magic Link.");
+    }
+    const { storeMagicCode: storeMagicCode2 } = await Promise.resolve().then(() => (init_sms_router(), sms_router_exports));
+    const code = storeMagicCode2(record2.token, ctx.user.id, ctx.user.type);
+    return { code, expiresInSeconds: 300 };
   }),
   // ─── Get recent SMS logs ───
   getSmsLogs: authedProcedure.query(async ({ ctx }) => {
@@ -93834,6 +95015,7 @@ var appRouter = router({
 });
 
 // api/context.ts
+init_jwt4();
 init_connection();
 init_schema2();
 init_drizzle_orm();
@@ -93921,642 +95103,7 @@ async function createContext(req) {
 
 // api/boot.ts
 init_env();
-
-// api/sms-router.ts
-init_connection();
-init_schema2();
-init_drizzle_orm();
-
-// api/lib/sms-ai-parser.ts
-init_env();
-var SMS_RESPONSE_SCHEMA = {
-  type: SchemaType.OBJECT,
-  properties: {
-    transaction_detected: { type: SchemaType.BOOLEAN },
-    amount: { type: SchemaType.NUMBER, nullable: true },
-    currency: { type: SchemaType.STRING },
-    direction: { type: SchemaType.STRING, nullable: true },
-    provider: { type: SchemaType.STRING },
-    category: { type: SchemaType.STRING },
-    fee: { type: SchemaType.NUMBER, nullable: true },
-    merchant: { type: SchemaType.STRING, nullable: true },
-    balance_after: { type: SchemaType.NUMBER, nullable: true },
-    confidence: { type: SchemaType.NUMBER }
-  },
-  required: ["transaction_detected", "currency", "provider", "category", "confidence"]
-};
-var SMS_SYSTEM_PROMPT = `\u0623\u0646\u062A \u0646\u0638\u0627\u0645 \u0627\u0633\u062A\u062E\u0631\u0627\u062C \u0628\u064A\u0627\u0646\u0627\u062A \u0645\u0627\u0644\u064A\u0629 \u0645\u0646 \u0631\u0633\u0627\u0626\u0644 SMS \u0628\u0627\u0644\u0639\u0631\u0628\u064A \u0648\u0627\u0644\u0625\u0646\u062C\u0644\u064A\u0632\u064A.
-\u0645\u0647\u0645\u062A\u0643 \u0627\u0644\u0648\u062D\u064A\u062F\u0629: \u0627\u0633\u062A\u062E\u0631\u0627\u062C \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0628\u062F\u0642\u0629 \u0648\u0625\u0631\u062C\u0627\u0639\u0647\u0627 \u0643\u0640 JSON \u0645\u0646\u0638\u0645.
-
-\u0642\u0648\u0627\u0639\u062F \u0635\u0627\u0631\u0645\u0629:
-1. \u0644\u0627 \u062A\u0631\u062F \u0639\u0644\u0649 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645. \u0644\u0627 \u062A\u0639\u0644\u0642. \u0644\u0627 \u062A\u0636\u0641 \u0623\u064A \u0643\u0644\u0627\u0645.
-2. \u0641\u0642\u0637 \u0623\u0631\u062C\u0639 JSON.
-3. \u0625\u0630\u0627 \u0643\u0627\u0646\u062A \u0627\u0644\u0631\u0633\u0627\u0644\u0629 \u063A\u064A\u0631 \u0645\u0627\u0644\u064A\u0629 (\u0625\u0639\u0644\u0627\u0646\u060C OTP\u060C \u0643\u0648\u062F \u062A\u0641\u0639\u064A\u0644) \u2192 transaction_detected: false.
-4. \u0625\u0630\u0627 \u0643\u0627\u0646\u062A \u0645\u0627\u0644\u064A\u0629 \u2192 \u0627\u0633\u062A\u062E\u0631\u062C \u0643\u0644 \u0627\u0644\u062A\u0641\u0627\u0635\u064A\u0644.
-
-\u062A\u062D\u062F\u064A\u062F \u0627\u0644\u0640 provider:
-- \u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0643\u0627\u0634 / Vodafone Cash \u2192 "VodafoneCash"
-- \u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A / InstaPay \u2192 "InstaPay"
-- \u0623\u0628\u0644 \u0628\u0627\u064A / Apple Pay \u2192 "ApplePay"
-- \u0623\u064A \u0628\u0646\u0643 (CIB, NBE, Banque Misr, QNB, AAIB, Alex Bank) \u2192 "Bank"
-- \u063A\u064A\u0631 \u0645\u062D\u062F\u062F \u2192 "Unknown"
-
-\u062A\u062D\u062F\u064A\u062F \u0627\u0644\u0640 direction:
-- \u0627\u0633\u062A\u0644\u0645\u062A / \u062A\u0645 \u0625\u0636\u0627\u0641\u0629 / \u0631\u0635\u064A\u062F \u0648\u0627\u0631\u062F / received \u2192 "incoming"
-- \u0635\u0631\u0641\u062A / \u062A\u0645 \u062E\u0635\u0645 / \u062F\u0641\u0639\u062A / sent / paid \u2192 "outgoing"
-
-\u062A\u062D\u062F\u064A\u062F \u0627\u0644\u0640 category:
-- \u062A\u062D\u0648\u064A\u0644 \u0628\u064A\u0646 \u0623\u0634\u062E\u0627\u0635 \u2192 "transfer"
-- \u062F\u0641\u0639 \u0641\u0648\u0627\u062A\u064A\u0631 / \u0645\u062F\u0641\u0648\u0639\u0627\u062A \u2192 "payment"
-- \u0627\u0633\u062A\u0644\u0627\u0645 \u0631\u0627\u062A\u0628 / \u0645\u0643\u0627\u0641\u0623\u0629 / \u062F\u062E\u0644 \u2192 "income"
-- \u0641\u0648\u0627\u062A\u064A\u0631 (\u0643\u0647\u0631\u0628\u0627\u0621, \u0645\u0627\u064A, \u063A\u0627\u0632, \u0627\u0646\u062A\u0631\u0646\u062A) \u2192 "bills"
-- \u0633\u062D\u0628 \u0623\u0648 \u0635\u0631\u0641 \u0646\u0642\u062F\u064A \u2192 "withdrawal"
-- \u063A\u064A\u0631 \u0645\u062D\u062F\u062F \u2192 "unknown"
-
-\u0623\u0645\u062B\u0644\u0629 \u0639\u0644\u0649 \u0631\u0633\u0627\u0626\u0644 \u0645\u0627\u0644\u064A\u0629:
-- "\u062A\u0645 \u0625\u0636\u0627\u0641\u0629 500 \u062C \u0625\u0644\u0649 \u062D\u0633\u0627\u0628\u0643 \u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0643\u0627\u0634" \u2192 incoming, 500, VodafoneCash, transfer
-- "\u062A\u0645 \u062E\u0635\u0645 200 \u062C\u0646\u064A\u0647 \u0631\u0633\u0648\u0645 \u0641\u0627\u062A\u0648\u0631\u0629 \u0627\u0644\u0643\u0647\u0631\u0628\u0627\u0621" \u2192 outgoing, 200, Bank, bills
-- "Your account has been credited with EGP 10,000" \u2192 incoming, 10000, Bank, income`;
-async function parseSmsFinancialData(message) {
-  const apiKey = env.GEMINI_API_KEY;
-  const modelName = "gemini-2.0-flash";
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: modelName,
-      systemInstruction: SMS_SYSTEM_PROMPT,
-      generationConfig: {
-        temperature: 0.05,
-        // Very low — we want deterministic extraction, not creativity
-        maxOutputTokens: 512,
-        responseMimeType: "application/json",
-        responseSchema: SMS_RESPONSE_SCHEMA
-      }
-    });
-    const result = await model.generateContent(`\u0631\u0633\u0627\u0644\u0629 SMS:
-"${message}"`);
-    const responseText = result.response.text().trim();
-    const parsed = JSON.parse(responseText);
-    return {
-      transaction_detected: parsed.transaction_detected ?? false,
-      amount: parsed.amount ?? null,
-      currency: parsed.currency ?? "EGP",
-      direction: parsed.direction ?? null,
-      provider: parsed.provider ?? "Unknown",
-      category: parsed.category ?? "unknown",
-      fee: parsed.fee ?? null,
-      merchant: parsed.merchant ?? null,
-      balance_after: parsed.balance_after ?? null,
-      confidence: parsed.confidence ?? 0,
-      raw_extracted: parsed
-    };
-  } catch (error48) {
-    console.error("[SMS AI Parser] Error:", error48?.message ?? error48);
-    return null;
-  }
-}
-function mapSmsToExpenseCategory(result) {
-  const dir = result.direction;
-  const cat = result.category || "unknown";
-  const provider = result.provider || "Unknown";
-  const type = dir === "incoming" ? "income" : "expense";
-  if (dir === "incoming") {
-    if (cat === "income") return { category: "\u0645\u0631\u062A\u0628", subCategory: "\u0631\u0627\u062A\u0628 \u0623\u0633\u0627\u0633\u064A", type: "income" };
-    if (cat === "deposit") {
-      if (/InstaPay/i.test(provider)) return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A \u0648\u0627\u0631\u062F", type: "income" };
-      if (/Vodafone|Etisalat|Orange|WE/i.test(provider)) return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u0645\u062D\u0641\u0638\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629 \u0648\u0627\u0631\u062F", type: "income" };
-      return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u0625\u064A\u062F\u0627\u0639 \u0628\u0646\u0643\u064A", type: "income" };
-    }
-    return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u062F\u062E\u0644 \u0648\u0627\u0631\u062F", type: "income" };
-  }
-  switch (cat) {
-    case "transfer":
-      if (/InstaPay/i.test(provider)) return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A \u0635\u0627\u062F\u0631", type };
-      if (/Vodafone|Etisalat|Orange|WE/i.test(provider)) return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u0645\u062D\u0641\u0638\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629 \u0635\u0627\u062F\u0631", type };
-      return { category: "\u062A\u062D\u0648\u064A\u0644", subCategory: "\u062A\u062D\u0648\u064A\u0644 \u0628\u0646\u0643\u064A", type };
-    case "payment":
-      if (/ApplePay/i.test(provider)) return { category: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A", subCategory: "Apple Pay", type };
-      if (result.merchant) return { category: "\u062A\u0633\u0648\u0642", subCategory: result.merchant.slice(0, 50), type };
-      return { category: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A", subCategory: "\u0645\u062F\u0641\u0648\u0639\u0627\u062A", type };
-    case "bills":
-      return { category: "\u0641\u0648\u0627\u062A\u064A\u0631", subCategory: "\u0641\u0648\u0627\u062A\u064A\u0631 \u0648\u0645\u0631\u0627\u0641\u0642", type };
-    case "withdrawal":
-      return { category: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A", subCategory: "\u0633\u062D\u0628 \u0646\u0642\u062F\u064A / ATM", type };
-    default:
-      return { category: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A", subCategory: "\u0639\u0627\u0645", type };
-  }
-}
-
-// api/lib/sms-rule-parser.ts
-function extractAmount(text2) {
-  const normalized = text2.replace(/[٠١٢٣٤٥٦٧٨٩]/g, (d) => String("\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669".indexOf(d))).replace(/,/g, "");
-  const patterns = [
-    // "مبلغ 1500.00 جنيه" / "مبلغ وقدره 1500 ج.م"
-    /(?:مبلغ|قيمة|بمبلغ|بقيمة|لمبلغ|وقدره)\s*([\d]+(?:\.\d{1,2})?)\s*(?:جنيه|ج\.?م\.?|EGP|جنيهاً?)/i,
-    // "EGP 1,500.00" / "EGP1500"
-    /EGP\s*([\d]+(?:\.\d{1,2})?)/i,
-    // "Amount: 1500" / "Amount EGP 1500"
-    /Amount[\s:]+(?:EGP\s*)?([\d]+(?:\.\d{1,2})?)/i,
-    // "1500 EGP" / "1500 جنيه" / "1500 ج.م"
-    /([\d]+(?:\.\d{1,2})?)\s*(?:جنيه|ج\.?م\.?|EGP|L\.?E\.?)/i,
-    // "by EGP 1500" / "with EGP 1500" / "of EGP 1500"
-    /(?:by|with|of)\s+EGP\s*([\d]+(?:\.\d{1,2})?)/i,
-    // Contextual fallback: "تم ... 1500"
-    /(?:تم|وصل|استلم|حول|خصم|صرف|سحب|ايداع|إيداع)\s+(?:مبلغ\s+)?([\d]+(?:\.\d{1,2})?)/i
-  ];
-  for (const pattern of patterns) {
-    const match2 = normalized.match(pattern);
-    if (match2) {
-      const num = parseFloat(match2[1]);
-      if (!isNaN(num) && num > 0) return num;
-    }
-  }
-  return null;
-}
-function extractBalanceAfter(text2) {
-  const n = text2.replace(/[٠١٢٣٤٥٦٧٨٩]/g, (d) => String("\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669".indexOf(d))).replace(/,/g, "");
-  const patterns = [
-    /(?:رصيدك|الرصيد|رصيد حسابك|رصيد|الرصيد المتاح|رصيدك الحالي)[\s:]*(?:الكلي|الحالي|الجديد|المتاح)?\s*(?:هو)?\s*([\d]+(?:\.\d{1,2})?)\s*(?:جنيه|ج\.?م\.?|EGP)?/i,
-    /(?:بعد العملية|بعد السحب|بعد التحويل|بعد الخصم)\s*:?\s*([\d]+(?:\.\d{1,2})?)/i,
-    /Avail(?:able)?\s*(?:Bal(?:ance)?)?[\s.:]*(?:EGP)?\s*([\d]+(?:\.\d{1,2})?)/i,
-    /(?:New|Current|Updated)\s*(?:Bal(?:ance)?|bal)[\s.:]*(?:EGP)?\s*([\d]+(?:\.\d{1,2})?)/i,
-    /(?:Bal|A\/C Bal)[\s.:]*(?:EGP)?\s*([\d]+(?:\.\d{1,2})?)/i
-  ];
-  for (const p of patterns) {
-    const m = n.match(p);
-    if (m) {
-      const v = parseFloat(m[1]);
-      if (!isNaN(v) && v >= 0) return v;
-    }
-  }
-  return null;
-}
-function extractFee(text2) {
-  const n = text2.replace(/[٠١٢٣٤٥٦٧٨٩]/g, (d) => String("\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669".indexOf(d)));
-  const m = n.match(/(?:رسوم|عمولة|مصاريف|Fee|Fees|charges?)[\s:]+(?:EGP\s*)?([\d.]+)/i);
-  return m ? parseFloat(m[1]) : null;
-}
-function extractDate(text2) {
-  const patterns = [
-    /(\d{1,2})\/(\d{1,2})\/(\d{4})/,
-    // DD/MM/YYYY
-    /(\d{4})-(\d{2})-(\d{2})/,
-    // YYYY-MM-DD
-    /(\d{1,2})-(\d{1,2})-(\d{4})/,
-    // DD-MM-YYYY
-    /on\s+(\d{1,2})\/(\d{1,2})\/(\d{2,4})/i
-    // "on 15/05/26"
-  ];
-  for (const p of patterns) {
-    const m = text2.match(p);
-    if (m) {
-      try {
-        if (m[1].length === 4) return (/* @__PURE__ */ new Date(`${m[1]}-${m[2]}-${m[3]}`)).toISOString();
-        const y = m[3].length === 2 ? `20${m[3]}` : m[3];
-        return (/* @__PURE__ */ new Date(`${y}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`)).toISOString();
-      } catch {
-      }
-    }
-  }
-  return null;
-}
-function extractReference(text2) {
-  const patterns = [
-    /(?:Ref(?:erence)?|رقم (?:العملية|المرجع|الحوالة)|كود|TRN|مرجع|Trx|Trans(?:action)?\s*(?:ID|No|#))[\s:#]*([A-Z0-9]{4,25})/i,
-    /(?:رقم مرجعي)\s*:?\s*([A-Z0-9]{4,25})/i
-  ];
-  for (const p of patterns) {
-    const m = text2.match(p);
-    if (m) return m[1];
-  }
-  return null;
-}
-function extractMerchant(text2) {
-  const patterns = [
-    /(?:at|عند|في|لدى|من)\s+([A-Za-z\u0600-\u06FF][A-Za-z\u0600-\u06FF\s&'.]{2,30})(?:\s+on|\s+بتاريخ|\.\s|$)/i,
-    /(?:POS|Merchant|merchant)[\s:]+([A-Za-z\s&'.]{3,30})/i
-  ];
-  for (const p of patterns) {
-    const m = text2.match(p);
-    if (m) return m[1].trim();
-  }
-  return null;
-}
-function detectProvider(text2) {
-  const t2 = text2.toLowerCase();
-  if (/vodafone\s*cash|vf\s*cash|فودافون\s*كاش|v\.?cash/.test(t2)) return "VodafoneCash";
-  if (/instapay|انستاباي|انستا\s*باي/.test(t2)) return "InstaPay";
-  if (/etisalat\s*cash|اتصالات\s*كاش|e-cash/.test(t2)) return "EtisalatCash";
-  if (/orange\s*(?:money|cash)|أورانج\s*(?:موني|كاش)/.test(t2)) return "OrangeMoney";
-  if (/we\s*pay|وي\s*باي/.test(t2)) return "WEPay";
-  if (/\bcib\b|commercial international/i.test(t2)) return "CIB";
-  if (/\bnbe\b|national bank of egypt|البنك\s*الأهلي\s*المصري|ahly/i.test(t2)) return "NBE";
-  if (/banque\s*misr|بنك\s*مصر|\bbm\b/i.test(t2)) return "BanqueMisr";
-  if (/\bqnb\b|qatar national/i.test(t2)) return "QNB";
-  if (/\baaib\b|عربي?\s*أفريقي|arab african/i.test(t2)) return "AAIB";
-  if (/alex\s*bank|بنك\s*(?:الإسكندرية|اسكندرية)/i.test(t2)) return "AlexBank";
-  if (/faisal|فيصل/i.test(t2)) return "FaisalBank";
-  if (/crédit\s*agricole|ca\s*egypt|كريدي/i.test(t2)) return "CreditAgricole";
-  if (/hsbc/i.test(t2)) return "HSBC";
-  if (/attijariwafa|التجاري وفا/i.test(t2)) return "Attijariwafa";
-  if (/mashreq|مشرق/i.test(t2)) return "MashreqBank";
-  if (/\bscb\b|standard\s*chartered/i.test(t2)) return "SCB";
-  if (/\baudi\b|عودة/i.test(t2)) return "BankAudi";
-  if (/egbank|البنك\s*المصري\s*الخليجي/i.test(t2)) return "EGBank";
-  if (/abc\b|arab\s*banking/i.test(t2)) return "ABC";
-  if (/saib|الاستثمار\s*العربي/i.test(t2)) return "SAIB";
-  if (/apple\s*pay|أبل\s*باي/i.test(t2)) return "ApplePay";
-  if (/valu|ڤاليو/i.test(t2)) return "ValU";
-  if (/souhoola|سهولة/i.test(t2)) return "Souhoola";
-  if (/contact|كونتكت/i.test(t2)) return "Contact";
-  if (/فوري|fawry/i.test(t2)) return "Fawry";
-  if (/meeza|ميزة/i.test(t2)) return "Meeza";
-  if (/أمان|aman/i.test(t2)) return "Aman";
-  return "Unknown";
-}
-function detectDirection(text2) {
-  const incoming = [
-    // Arabic: deposits / credits
-    [/تم\s+(?:إيداع|ايداع|اضافة|إضافة)\s+(?:مبلغ\s+)?[\d]/i, "deposit", "AR: deposit amount"],
-    [/تم\s+(?:استلام|استقبال)\s+(?:مبلغ|تحويل|حوالة)/i, "transfer", "AR: receive transfer"],
-    [/وصل(?:ك|لك|لحسابك)?\s+(?:مبلغ|تحويل|حوالة)/i, "transfer", "AR: received"],
-    [/(?:قبضت|استلمت)\s+(?:مبلغ\s+)?[\d]/i, "income", "AR: received amount"],
-    [/تم\s+قيد\s+(?:مبلغ|قيمة)/i, "deposit", "AR: credit entry"],
-    [/تم\s+تحويل.*(?:إلى|الى|ل)\s*حسابك/i, "transfer", "AR: transfer to your account"],
-    [/إيراد|مرتب|راتب|مكافأة/i, "income", "AR: salary/income keyword"],
-    [/تم\s+إضافة\s+(?:مبلغ|قيمة)?/i, "deposit", "AR: addition"],
-    [/حسابك.*(?:أُضيف|اضيف|تمت الإضافة)/i, "deposit", "AR: account credited"],
-    // English: credits / deposits / IB transfers IN
-    [/(?:has been|was)\s+credited/i, "deposit", "EN: has been credited"],
-    [/(?:credited|credit)\s+(?:with|by|of)\s+(?:EGP)?\s*[\d]/i, "deposit", "EN: credited with amount"],
-    [/(?:received|incoming)\s+(?:transfer|payment|EGP)/i, "transfer", "EN: received transfer"],
-    [/(?:deposit|deposited)\s+(?:of|amount)?\s*(?:EGP)?\s*[\d]/i, "deposit", "EN: deposit"],
-    [/(?:IBIN|IB)\s*(?:Transfer|Trx|transaction).*credited/i, "transfer", "EN: IB Transfer credited"],
-    [/(?:IBIN|IB)\s*transferred\s*received/i, "transfer", "EN: IBIN transferred received"],
-    [/(?:Salary|salary|Payroll|payroll)\s+(?:credited|received|deposited)/i, "income", "EN: salary credited"],
-    [/credited\s+to\s+(?:your)?\s*(?:account|a\/c)/i, "deposit", "EN: credited to account"],
-    [/incoming\s+(?:IB|transfer|fund)/i, "transfer", "EN: incoming IB"]
-  ];
-  const outgoing = [
-    // Arabic: debits / withdrawals / payments
-    [/تم\s+(?:خصم|سحب|صرف)\s+(?:مبلغ\s+)?[\d]/i, "withdrawal", "AR: debit amount"],
-    [/تم\s+تحويل\s+(?:مبلغ\s+)?[\d]/i, "transfer", "AR: sent transfer"],
-    [/تم\s+(?:الدفع|دفع)\s+(?:مبلغ\s+)?/i, "payment", "AR: payment"],
-    [/تم\s+(?:شراء|شرا|استخدام البطاقة)/i, "payment", "AR: purchase"],
-    [/تم\s+إجراء\s+عملية\s+(?:شراء|سحب|دفع)/i, "payment", "AR: transaction made"],
-    [/سحب\s+(?:نقدي|ATM|من ماكينة)/i, "withdrawal", "AR: ATM withdrawal"],
-    [/عملية\s+(?:شراء|سحب|خصم)\s+بقيمة/i, "payment", "AR: purchase by value"],
-    [/تم\s+خصم.*(?:من حسابك|من رصيدك)/i, "withdrawal", "AR: deducted from account"],
-    [/تم\s+سداد|سداد\s+(?:قيمة|فاتورة)/i, "bills", "AR: bill payment"],
-    [/فاتورة|فواتير|كهرباء|غاز|مياه|انترنت|تليفون|موبايل|شحن/i, "bills", "AR: utility bill"],
-    [/قسط\s+(?:شهري)?|أقساط/i, "payment", "AR: installment"],
-    [/تم\s+تحويل.*(?:من حسابك|من رصيدك)/i, "transfer", "AR: transfer from your account"],
-    // English: debits / purchases / IB transfers OUT
-    [/(?:has been|was)\s+(?:debited|deducted)/i, "withdrawal", "EN: has been debited"],
-    [/(?:debited|debit)\s+(?:with|by|of|for)\s+(?:EGP)?\s*[\d]/i, "withdrawal", "EN: debited amount"],
-    [/(?:purchase|POS)\s+(?:at|of|for|transaction)/i, "payment", "EN: POS purchase"],
-    [/(?:paid|payment)\s+(?:of|for|to)\s+(?:EGP)?\s*[\d]/i, "payment", "EN: payment"],
-    [/ATM\s+(?:withdrawal|cash|w\/d)/i, "withdrawal", "EN: ATM withdrawal"],
-    [/(?:withdrawn|charged|deducted)\s+(?:EGP)?\s*[\d]/i, "withdrawal", "EN: withdrawn amount"],
-    [/(?:IBIN|IB)\s*(?:Transfer|Trx|transaction).*(?:debited|from)/i, "transfer", "EN: IB Transfer debited"],
-    [/(?:IBIN|IB)\s*transferred\s*sent/i, "transfer", "EN: IBIN transferred sent"],
-    [/(?:transfer|sent)\s+(?:to|of)\s+(?:EGP)?\s*[\d]/i, "transfer", "EN: transfer to"],
-    [/outgoing\s+(?:IB|transfer|fund)/i, "transfer", "EN: outgoing IB"],
-    [/bill\s+payment|utility|subscription/i, "bills", "EN: bill/subscription"],
-    [/(?:e-?commerce|online)\s+(?:purchase|transaction|payment)/i, "payment", "EN: online purchase"],
-    [/contactless\s+(?:payment|purchase|transaction)/i, "payment", "EN: contactless payment"],
-    [/apple\s*pay/i, "payment", "EN: Apple Pay payment"]
-  ];
-  for (const [p, cat, rule] of incoming) {
-    if (p.test(text2)) return { direction: "incoming", category: cat, confidence: 0.92, matched_rule: rule };
-  }
-  for (const [p, cat, rule] of outgoing) {
-    if (p.test(text2)) return { direction: "outgoing", category: cat, confidence: 0.9, matched_rule: rule };
-  }
-  return { direction: null, category: "unknown", confidence: 0, matched_rule: "none" };
-}
-var NON_FINANCIAL_PATTERNS = [
-  /(?:OTP|كود التحقق|رمز التحقق|verification code|كود تفعيل|كود التأكيد)\s*[\d:]/i,
-  /كلمة\s+(?:السر|المرور)\s+(?:لمرة واحدة|المؤقتة)/i,
-  /(?:password|PIN|One.?Time)\s+(?:is|:)\s*[\d]/i,
-  /لا\s+تشارك\s+هذا\s+(?:الرمز|الكود)/i,
-  /Do not share this/i,
-  /Never share this/i,
-  /(?:عرض|offer|حملة|promotion)\s+(?:خاص|حصري|special|exclusive)/i,
-  /(?:خدمة|service)\s+(?:جديدة|new|متاح|available)/i,
-  /الاشتراك\s+في\s+خدمة/i,
-  /تسجيل\s+(?:الدخول|دخولك)\s+(?:تم|بنجاح)/i,
-  /(?:تم\s+)?تغيير\s+(?:كلمة|رقم)\s+(?:السر|المرور|الـ PIN)/i,
-  /(?:مرحباً?\s+بك|Welcome)\s+(?:في|to)\s+/i,
-  /تفعيل\s+(?:الخدمة|حسابك|البطاقة)/i,
-  /(?:حجب|إيقاف|block)\s+(?:البطاقة|الحساب|card|account)/i
-];
-function isNonFinancial(text2) {
-  return NON_FINANCIAL_PATTERNS.some((p) => p.test(text2));
-}
-function parseSmsByRules(message) {
-  const empty = {
-    transaction_detected: false,
-    amount: null,
-    currency: "EGP",
-    direction: null,
-    provider: "Unknown",
-    category: "unknown",
-    fee: null,
-    balance_after: null,
-    date: null,
-    reference: null,
-    merchant: null,
-    confidence: 0,
-    matched_rule: "none"
-  };
-  if (!message || message.trim().length < 10) return empty;
-  if (isNonFinancial(message)) return { ...empty, matched_rule: "non_financial_filter" };
-  const provider = detectProvider(message);
-  const { direction, category, confidence, matched_rule } = detectDirection(message);
-  const amount = extractAmount(message);
-  if (!amount) return { ...empty, provider, matched_rule: "no_amount_found" };
-  const fee = extractFee(message);
-  const balance_after = extractBalanceAfter(message);
-  const date6 = extractDate(message);
-  const reference = extractReference(message);
-  const merchant = extractMerchant(message);
-  let finalConfidence = confidence;
-  if (provider !== "Unknown") finalConfidence += 0.05;
-  if (balance_after !== null) finalConfidence += 0.03;
-  if (reference) finalConfidence += 0.02;
-  finalConfidence = Math.min(finalConfidence, 1);
-  const isTransaction = direction !== null || amount !== null && provider !== "Unknown";
-  return {
-    transaction_detected: isTransaction,
-    amount,
-    currency: "EGP",
-    direction,
-    provider,
-    category,
-    fee,
-    balance_after,
-    date: date6,
-    reference,
-    merchant,
-    confidence: isTransaction ? finalConfidence : 0,
-    matched_rule
-  };
-}
-
-// api/sms-router.ts
-import { randomBytes as randomBytes3 } from "crypto";
-init_env();
-var smsApp = new Hono2();
-var rateLimitMap2 = /* @__PURE__ */ new Map();
-var RATE_LIMIT = 30;
-function checkRateLimit(token) {
-  const now = Date.now();
-  const entry = rateLimitMap2.get(token);
-  if (!entry || entry.resetAt < now) {
-    rateLimitMap2.set(token, { count: 1, resetAt: now + 60 * 60 * 1e3 });
-    return true;
-  }
-  if (entry.count >= RATE_LIMIT) return false;
-  entry.count++;
-  return true;
-}
-async function getUserFromSession(authHeader) {
-  if (!authHeader?.startsWith("Bearer ")) return null;
-  const token = authHeader.slice(7);
-  try {
-    const payload = await verify2(token, env.JWT_SECRET);
-    if (!payload?.userId || !payload?.userType) return null;
-    return { id: payload.userId, type: payload.userType };
-  } catch {
-    return null;
-  }
-}
-smsApp.post("/ingest", async (c) => {
-  const db3 = getDb();
-  const authHeader = c.req.header("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return c.json({ error: "Missing or invalid Authorization header" }, 401);
-  }
-  const token = authHeader.slice(7).trim();
-  const [tokenRecord] = await db3.select().from(webhookTokens).where(eq(webhookTokens.token, token)).limit(1);
-  if (!tokenRecord) {
-    return c.json({ error: "Invalid webhook token" }, 403);
-  }
-  if (!checkRateLimit(token)) {
-    return c.json({ error: "Rate limit exceeded. Max 30 SMS per hour." }, 429);
-  }
-  let body;
-  try {
-    body = await c.req.json();
-  } catch {
-    return c.json({ error: "Invalid JSON body" }, 400);
-  }
-  const { message, sender, timestamp: timestamp3 } = body;
-  if (!message || typeof message !== "string" || message.trim().length < 5) {
-    return c.json({ error: "Missing or too short 'message' field" }, 400);
-  }
-  const userId = tokenRecord.userId;
-  const userType = tokenRecord.userType;
-  const userTable = userType === "oauth" ? users : localUsers;
-  const [userRecord] = await db3.select().from(userTable).where(eq(userTable.id, userId)).limit(1);
-  const userPlan = userRecord?.plan || "free";
-  let smsMonthlyLimit = userPlan === "free" ? 5 : 999999;
-  try {
-    const { systemSettings: systemSettings2 } = await Promise.resolve().then(() => (init_schema2(), schema_exports));
-    const [setting] = await db3.select().from(systemSettings2).where(eq(systemSettings2.key, `sms_limit_${userPlan}`)).limit(1);
-    if (setting?.value) smsMonthlyLimit = parseInt(setting.value) || smsMonthlyLimit;
-  } catch {
-  }
-  const now = /* @__PURE__ */ new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const { sql: sqlFn } = await Promise.resolve().then(() => (init_drizzle_orm(), drizzle_orm_exports));
-  const [countResult] = await db3.select({ count: sqlFn`COUNT(*)` }).from(rawSmsEvents).where(and(
-    eq(rawSmsEvents.userId, userId),
-    eq(rawSmsEvents.userType, userType),
-    eq(rawSmsEvents.status, "processed")
-  ));
-  const usedThisMonth = Number(countResult?.count || 0);
-  if (usedThisMonth >= smsMonthlyLimit) {
-    return c.json({
-      error: `\u0627\u0644\u062D\u062F \u0627\u0644\u0634\u0647\u0631\u064A \u0644\u0644\u0631\u0633\u0627\u0626\u0644 (${smsMonthlyLimit}) \u0627\u0646\u062A\u0647\u0649. \u0642\u0645 \u0628\u062A\u0631\u0642\u064A\u0629 \u062E\u0637\u062A\u0643 \u0644\u0632\u064A\u0627\u062F\u0629 \u0627\u0644\u062D\u062F.`,
-      limit: smsMonthlyLimit,
-      used: usedThisMonth,
-      plan: userPlan
-    }, 403);
-  }
-  const [insertedSms] = await db3.insert(rawSmsEvents).values({
-    userId,
-    userType,
-    message: message.trim(),
-    sender: sender || null,
-    smsTimestamp: timestamp3 || (/* @__PURE__ */ new Date()).toISOString(),
-    status: "pending"
-  }).$returningId();
-  const smsId = insertedSms?.id;
-  let parseResult = null;
-  let parsedBy = "rules";
-  const ruleResult = parseSmsByRules(message.trim());
-  console.log(`[SMS Ingest] Rule parser: detected=${ruleResult.transaction_detected}, amount=${ruleResult.amount}, conf=${ruleResult.confidence.toFixed(2)}, rule=${ruleResult.matched_rule}`);
-  if (ruleResult.transaction_detected && ruleResult.confidence >= 0.75 && ruleResult.amount) {
-    parseResult = {
-      transaction_detected: true,
-      amount: ruleResult.amount,
-      currency: ruleResult.currency,
-      direction: ruleResult.direction,
-      provider: ruleResult.provider,
-      category: ruleResult.category,
-      fee: ruleResult.fee,
-      balance_after: ruleResult.balance_after,
-      confidence: ruleResult.confidence
-    };
-    parsedBy = "rules";
-  } else {
-    console.log(`[SMS Ingest] Rule confidence low (${ruleResult.confidence.toFixed(2)}), falling back to AI...`);
-    try {
-      const aiResult = await parseSmsFinancialData(message.trim());
-      if (aiResult) {
-        parseResult = aiResult;
-        parsedBy = "ai";
-      }
-    } catch (aiErr) {
-      console.error("[SMS Ingest] AI parsing error:", aiErr);
-    }
-  }
-  if (!parseResult) {
-    if (smsId) {
-      await db3.update(rawSmsEvents).set({ status: "ignored", metadata: { reason: "AI returned null" } }).where(eq(rawSmsEvents.id, smsId));
-    }
-    return c.json({ success: true, transaction_detected: false, reason: "Could not parse SMS" }, 200);
-  }
-  if (!parseResult.transaction_detected || parseResult.confidence < 0.6) {
-    if (smsId) {
-      await db3.update(rawSmsEvents).set({
-        status: "ignored",
-        metadata: {
-          reason: !parseResult.transaction_detected ? "not_financial" : "low_confidence",
-          confidence: parseResult.confidence
-        }
-      }).where(eq(rawSmsEvents.id, smsId));
-    }
-    return c.json({
-      success: true,
-      transaction_detected: false,
-      reason: !parseResult.transaction_detected ? "not_financial" : "low_confidence",
-      confidence: parseResult.confidence
-    }, 200);
-  }
-  const { category, subCategory, type } = mapSmsToExpenseCategory(parseResult);
-  const descriptionParts = [
-    parseResult.provider !== "Unknown" ? parseResult.provider : null,
-    parseResult.merchant || null,
-    sender ? `\u0645\u0646: ${sender}` : null
-  ].filter(Boolean);
-  const description = descriptionParts.join(" \u2014 ") || "SMS \u062A\u0644\u0642\u0627\u0626\u064A";
-  const transactionDate = timestamp3 ? new Date(timestamp3) : /* @__PURE__ */ new Date();
-  await db3.insert(expenses).values({
-    userId,
-    userType,
-    type,
-    amount: parseResult.amount.toString(),
-    category,
-    subCategory,
-    description,
-    rawText: message.trim(),
-    source: "sms",
-    date: transactionDate,
-    parsedMetadata: {
-      sms_id: smsId,
-      provider: parseResult.provider,
-      direction: parseResult.direction,
-      sms_category: parseResult.category,
-      confidence: parseResult.confidence,
-      fee: parseResult.fee,
-      balance_after: parseResult.balance_after,
-      parsed_by: parsedBy
-    }
-  });
-  if (smsId) {
-    await db3.update(rawSmsEvents).set({
-      status: "processed",
-      metadata: {
-        transaction_saved: true,
-        amount: parseResult.amount,
-        category,
-        type,
-        confidence: parseResult.confidence
-      }
-    }).where(eq(rawSmsEvents.id, smsId));
-  }
-  console.log(`\u2705 [SMS Ingest] User ${userId} | ${type} | ${parseResult.amount} EGP | ${category} | ${parseResult.provider}`);
-  return c.json({
-    success: true,
-    transaction_detected: true,
-    saved: true,
-    amount: parseResult.amount,
-    currency: parseResult.currency,
-    direction: parseResult.direction,
-    provider: parseResult.provider,
-    category,
-    subCategory,
-    type,
-    confidence: parseResult.confidence
-  }, 200);
-});
-smsApp.post("/token/generate", async (c) => {
-  const db3 = getDb();
-  const user = await getUserFromSession(c.req.header("Authorization"));
-  if (!user) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
-  await db3.delete(webhookTokens).where(
-    and(
-      eq(webhookTokens.userId, user.id),
-      eq(webhookTokens.userType, user.type)
-    )
-  );
-  const newToken = `sms_${randomBytes3(32).toString("hex")}`;
-  await db3.insert(webhookTokens).values({
-    userId: user.id,
-    userType: user.type,
-    token: newToken,
-    name: "iOS Shortcut Token"
-  });
-  return c.json({ success: true, token: newToken }, 200);
-});
-smsApp.get("/token", async (c) => {
-  const db3 = getDb();
-  const user = await getUserFromSession(c.req.header("Authorization"));
-  if (!user) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
-  const [record2] = await db3.select().from(webhookTokens).where(
-    and(
-      eq(webhookTokens.userId, user.id),
-      eq(webhookTokens.userType, user.type)
-    )
-  ).limit(1);
-  if (!record2) {
-    return c.json({ token: null, hasToken: false }, 200);
-  }
-  return c.json({ token: record2.token, hasToken: true, createdAt: record2.createdAt }, 200);
-});
-smsApp.get("/logs", async (c) => {
-  const db3 = getDb();
-  const user = await getUserFromSession(c.req.header("Authorization"));
-  if (!user) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
-  const logs = await db3.select().from(rawSmsEvents).where(
-    and(
-      eq(rawSmsEvents.userId, user.id),
-      eq(rawSmsEvents.userType, user.type)
-    )
-  ).orderBy(desc(rawSmsEvents.createdAt)).limit(50);
-  return c.json({ logs }, 200);
-});
-
-// api/boot.ts
+init_sms_router();
 var app = new Hono2();
 app.use("*", logger());
 var allowedOrigins = Array.from(
@@ -94617,7 +95164,7 @@ app.post("/api/webhooks/paymob", async (c) => {
 });
 app.get("/health", (c) => c.json({ status: "ok", timestamp: (/* @__PURE__ */ new Date()).toISOString() }));
 if (env.NODE_ENV === "production") {
-  const { serve: serve2 } = await Promise.resolve().then(() => (init_dist(), dist_exports));
+  const { serve: serve2 } = await Promise.resolve().then(() => (init_dist3(), dist_exports));
   const { serveStatic: serveStatic2 } = await Promise.resolve().then(() => (init_serve_static(), serve_static_exports));
   app.use("/*", serveStatic2({ root: "./dist/public" }));
   const port = parseInt(env.PORT) || 3e3;
@@ -94654,6 +95201,24 @@ long/umd/index.js:
    * SPDX-License-Identifier: Apache-2.0
    *)
 
+@google/generative-ai/dist/index.mjs:
+  (**
+   * @license
+   * Copyright 2024 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
 xlsx/dist/cpexcel.js:
   (*! cpexcel.js (C) 2013-present SheetJS -- http://sheetjs.com *)
   (*! cputils.js (C) 2013-present SheetJS -- http://sheetjs.com *)
@@ -94673,23 +95238,4 @@ xlsx/xlsx.js:
 
 @trpc/server/dist/resolveResponse-CdASWfAV.mjs:
   (* istanbul ignore if -- @preserve *)
-
-@google/generative-ai/dist/index.mjs:
-@google/generative-ai/dist/index.mjs:
-  (**
-   * @license
-   * Copyright 2024 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
 */
