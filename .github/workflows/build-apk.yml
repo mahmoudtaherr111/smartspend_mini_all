@@ -7,6 +7,9 @@ on:
       - master
   workflow_dispatch: # يسمح بتشغيل البناء يدوياً من موقع GitHub
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -44,3 +47,16 @@ jobs:
         with:
           name: smartspend-sync-debug
           path: android-app/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Copy APK to public/downloads
+        run: |
+          mkdir -p public/downloads
+          cp android-app/app/build/outputs/apk/debug/app-debug.apk public/downloads/smartspend-sync.apk
+
+      - name: Commit and Push APK
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/downloads/smartspend-sync.apk
+          git commit -m "chore: update compiled android apk [skip ci]" || echo "No changes to commit"
+          git push origin main

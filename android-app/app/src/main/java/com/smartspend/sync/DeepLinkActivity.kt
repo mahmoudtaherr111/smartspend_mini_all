@@ -24,19 +24,45 @@ import androidx.core.text.HtmlCompat
  */
 class DeepLinkActivity : AppCompatActivity() {
 
+    private lateinit var statusIcon: ImageView
+    private lateinit var statusTitle: TextView
+    private lateinit var statusBody: TextView
+    private lateinit var btnAction: Button
+    private lateinit var stepIndicator: TextView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val prefs = getSharedPreferences("smartspend", MODE_PRIVATE)
+        statusIcon  = findViewById(R.id.statusIcon)
+        statusTitle = findViewById(R.id.statusTitle)
+        statusBody  = findViewById(R.id.statusBody)
+        btnAction   = findViewById(R.id.btnAction)
+        stepIndicator = findViewById(R.id.stepIndicator)
 
-        // ── Handle deep link ──────────────────────────────────────────────────
+        handleIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh UI state when resuming without recreations
+        refreshUI()
+    }
+
+    private fun handleIntent(intent: Intent?) {
         val uri: Uri? = intent?.data
         if (uri != null && uri.scheme == "smartspend" && uri.host == "connect") {
             val token = uri.getQueryParameter("token")
             val url   = uri.getQueryParameter("url")
 
             if (!token.isNullOrBlank() && !url.isNullOrBlank()) {
+                val prefs = getSharedPreferences("smartspend", MODE_PRIVATE)
                 prefs.edit()
                     .putString("webhook_token", token)
                     .putString("ingest_url", url)
@@ -44,18 +70,14 @@ class DeepLinkActivity : AppCompatActivity() {
                     .apply()
             }
         }
+    }
 
-        // ── Render UI state ───────────────────────────────────────────────────
+    private fun refreshUI() {
+        val prefs = getSharedPreferences("smartspend", MODE_PRIVATE)
         val token    = prefs.getString("webhook_token", null)
         val ingestUrl= prefs.getString("ingest_url", null)
         val isLinked = !token.isNullOrBlank() && !ingestUrl.isNullOrBlank()
         val hasNotifPerm = isNotificationListenerEnabled()
-
-        val statusIcon  = findViewById<ImageView>(R.id.statusIcon)
-        val statusTitle = findViewById<TextView>(R.id.statusTitle)
-        val statusBody  = findViewById<TextView>(R.id.statusBody)
-        val btnAction   = findViewById<Button>(R.id.btnAction)
-        val stepIndicator = findViewById<TextView>(R.id.stepIndicator)
 
         when {
             // Fully connected ✅
@@ -95,12 +117,6 @@ class DeepLinkActivity : AppCompatActivity() {
                 }
             }
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // Refresh UI in case user just granted notification permission
-        recreate()
     }
 
     private fun isNotificationListenerEnabled(): Boolean {
