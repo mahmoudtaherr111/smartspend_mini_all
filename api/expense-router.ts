@@ -58,7 +58,7 @@ export const expenseRouter = router({
         const yesterdayStr = yesterday.toISOString().split("T")[0];
 
         if (userType === "oauth") {
-          const [u] = await db.select().from(users).where(eq(users.id, userId as string));
+          const [u] = await db.select().from(users).where(eq(users.id, Number(userId)));
           if (u) {
             const lastDate = u.lastStreakAt ? new Date(u.lastStreakAt) : null;
             const lastStr = lastDate ? lastDate.toISOString().split("T")[0] : null;
@@ -68,7 +68,7 @@ export const expenseRouter = router({
               let highestStreak = Math.max(u.highestStreak || 0, newStreak);
               await db.update(users)
                 .set({ currentStreak: newStreak, highestStreak, lastStreakAt: now })
-                .where(eq(users.id, userId as string));
+                .where(eq(users.id, Number(userId)));
             }
           }
         } else {

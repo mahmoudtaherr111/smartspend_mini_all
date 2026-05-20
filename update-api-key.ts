@@ -3,7 +3,7 @@ import { systemSettings } from "./db/schema";
 
 async function main() {
   const settingsToUpdate = [
-    { key: "ai_api_key", value: "AIzaSyCvbc5SsfjqPb44LA9d6lVtPRoGSDRe128" },
+    { key: "ai_api_key", value: "AIzaSyCyAXPtXvckDIEvWlXUJnoXFwD49piYw8M" },
     { key: "ai_model_free", value: "gemini-2.5-flash" },
     { key: "ai_model_pro", value: "gemini-2.5-flash" },
     { key: "ai_model_ultra", value: "gemini-2.5-pro" },

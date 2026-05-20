@@ -36,6 +36,7 @@ const envSchema = z.object({
   PAYMOB_HMAC_SECRET: z.string().optional(),
   /** When "true", allows demo transaction ids in `pro.upgrade` (never enable in production). */
   BILLING_SIMULATE: z.enum(["true", "false"]).optional(),
+  TRUST_PROXY: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

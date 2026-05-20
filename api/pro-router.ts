@@ -24,14 +24,24 @@ export const proRouter = router({
       .limit(1);
 
     const row = user[0];
-    const plan = row?.plan ?? "free";
+    let plan = row?.plan ?? "free";
     const role = row?.role ?? "user";
+
+    // Subscription expiration check
+    const sub = subs[0];
+    if (sub && plan !== "free" && sub.status === "active" && sub.endDate < new Date()) {
+      await db.update(proSubscriptions).set({ status: "expired" }).where(eq(proSubscriptions.id, sub.id));
+      await db.update(table).set({ plan: "free" }).where(eq(table.id, ctx.user.id));
+      plan = "free";
+      sub.status = "expired";
+    }
+
     const paid = hasPaidFeatures(plan, role);
 
     return {
       plan,
       role,
-      subscription: subs[0] ?? null,
+      subscription: sub ?? null,
       features: {
         aiRequests: paid ? "unlimited" : "10/day",
         exports: paid,
@@ -66,10 +76,10 @@ export const proRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const simOk = env.NODE_ENV === "development" || env.BILLING_SIMULATE === "true";
-      if (!simOk && input.transactionId.startsWith("demo_")) {
+      if (!simOk) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "الترقية التجريبية معطّلة في الإنتاج. استخدم مسار الدفع الرسمي.",
+          message: "الترقية المباشرة غير مسموح بها في البيئة الإنتاجية. يجب إتمام عملية الدفع عبر بوابة الدفع الرسمية.",
         });
       }
 

@@ -55,7 +55,7 @@ export function SmsWebhookSettings() {
   // Sync keyword from profile
   useEffect(() => {
     if (profileQuery.data?.preferences?.smsTriggerKeyword) {
-      setKeyword(profileQuery.data.preferences.smsTriggerKeyword);
+      setKeyword(String(profileQuery.data.preferences.smsTriggerKeyword));
     }
   }, [profileQuery.data]);
 
@@ -324,7 +324,7 @@ export function SmsWebhookSettings() {
                             {log.sender || "مرسل غير معروف"}
                           </p>
                           <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                            {format(new Date(log.smsTimestamp || log.createdAt), "dd MMM, hh:mm a", { locale: arEG })}
+                            {format(new Date((log.smsTimestamp || log.createdAt) as string | number), "dd MMM, hh:mm a", { locale: arEG })}
                           </span>
                         </div>
                         <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed" dir="auto">

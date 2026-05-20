@@ -30,6 +30,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const durationRef = useRef<number>(0);
 
   const utilsTrpc = trpc.useUtils();
   const learnMutation = trpc.ai.learnWord.useMutation();
@@ -114,11 +115,11 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
           rawText: newExpense.rawText,
           source: newExpense.source || "manual",
           date: newExpense.date || new Date().toISOString(),
-        };
+        } as any;
         return {
           ...old,
           items: [newItem, ...old.items].slice(0, 10),
-          total: old.total + 1,
+          total: typeof old.total === "number" ? old.total + 1 : Number(old.total || 0) + 1,
         };
       });
 
@@ -181,7 +182,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
           sttMutation.mutate({
             audioBase64: base64Audio,
             mimeType: mimeType,
-            durationSeconds: recordingDuration, 
+            durationSeconds: durationRef.current, 
           });
         };
         stream.getTracks().forEach(track => track.stop());
@@ -190,19 +191,17 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
       mediaRecorder.start();
       setIsRecording(true);
       setFlowStage("recording");
+      durationRef.current = 0;
       setRecordingDuration(0);
 
       timerRef.current = setInterval(() => {
-        setRecordingDuration(prev => {
-          const newDur = prev + 1;
-          const maxPerReq = userLimits?.voice?.maxPerRequest || 60;
-          if (newDur >= maxPerReq) {
-            toast.info(`تم الوصول للحد الأقصى للتسجيل (${maxPerReq} ثانية). جاري المعالجة...`);
-            stopRecording();
-            return prev;
-          }
-          return newDur;
-        });
+        durationRef.current += 1;
+        setRecordingDuration(durationRef.current);
+        const maxPerReq = userLimits?.voice?.maxPerRequest || 60;
+        if (durationRef.current >= maxPerReq) {
+          toast.info(`تم الوصول للحد الأقصى للتسجيل (${maxPerReq} ثانية). جاري المعالجة...`);
+          stopRecording();
+        }
       }, 1000);
     } catch (err: unknown) {
       const name = err && typeof err === "object" && "name" in err ? String((err as { name?: string }).name) : "";

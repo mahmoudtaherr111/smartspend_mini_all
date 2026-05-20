@@ -43,8 +43,8 @@ describe("getClientIp", () => {
     expect(getClientIp(realReq)).toBe("192.0.2.1");
   });
 
-  it("returns unknown when no proxy headers exist", () => {
+  it("returns 127.0.0.1 when no proxy headers exist", () => {
     const req = new Request("http://localhost");
-    expect(getClientIp(req)).toBe("unknown");
+    expect(getClientIp(req)).toBe("127.0.0.1");
   });
 });

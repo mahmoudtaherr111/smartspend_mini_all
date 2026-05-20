@@ -32,6 +32,8 @@ import {
   buildPersonalContextPrompt,
   buildFamilyReportContext,
 } from "./services/personal-context-builder";
+import { redactSensitiveData } from "./lib/anonymizer";
+
 
 
 async function trackTokens(userId: number, userType: string, tokens: number) {
@@ -522,7 +524,7 @@ export const aiRouter = router({
           responsibleForFamily: smartProfile.lifestyleInfo.responsibleForFamily as boolean | null,
           supportsOthers: smartProfile.lifestyleInfo.supportsOthers,
           fixedMonthlyCommitments: smartProfile.lifestyleInfo.fixedMonthlyCommitments,
-          isSmoker: smartProfile?.onboardingAnswers?.smoke === 'yes' || /مدخن|سجاير|فيب/.test(smartProfile?.lifestyleInfo?.habits || ""),
+          isSmoker: (smartProfile?.onboardingAnswers as any)?.smoke === 'yes' || /مدخن|سجاير|فيب/.test(String((smartProfile?.lifestyleInfo as any)?.habits || "")),
         },
         skipClarification: input.skipClarification,
       });
@@ -657,6 +659,13 @@ export const aiRouter = router({
       durationSeconds: z.number().default(0),
     }))
     .mutation(async ({ ctx, input }) => {
+      if (input.audioBase64.length > 13333333) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "حجم الملف الصوتي كبير جداً. يرجى إرسال تسجيل أصغر من 10 ميجابايت.",
+        });
+      }
+
       // Get cycle start
       const now = new Date();
       let cycleStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -855,7 +864,7 @@ export const aiRouter = router({
 
         const plan = ctx.user.plan || "free";
         const allowedDays = limits[plan] || 30;
-        const daysSinceLast = (new Date().getTime() - lastSummary[0].createdAt.getTime()) / (1000 * 3600 * 24);
+        const daysSinceLast = (new Date().getTime() - (lastSummary[0]?.createdAt?.getTime() || 0)) / (1000 * 3600 * 24);
 
         if (allowedDays > 0 && daysSinceLast < allowedDays) {
           const remainingDays = Math.ceil(allowedDays - daysSinceLast);
@@ -1084,12 +1093,12 @@ export const aiRouter = router({
       let topItemsContext = "";
       if (reportTopItemsLimit > 0) {
         const expenseItems = userExpenses.filter(e => e.type === "expense");
-        // Top items by amount (biggest purchases)
+        // Top items by amount (biggest purchases) - locally anonymized
         const biggestItems = [...expenseItems]
           .sort((a, b) => Number(b.amount) - Number(a.amount))
           .slice(0, Math.ceil(reportTopItemsLimit / 2))
-          .map(e => `${e.description || e.category}${e.subCategory && e.subCategory !== "عام" ? ` (${e.subCategory})` : ""}: ${e.amount}ج [${e.category}]`);
-        // Most recurring items (by description frequency)
+          .map(e => redactSensitiveData(`${e.description || e.category}${e.subCategory && e.subCategory !== "عام" ? ` (${e.subCategory})` : ""}: ${e.amount}ج [${e.category}]`));
+        // Most recurring items (by description frequency) - locally anonymized
         const descFreq: Record<string, { count: number; total: number; cat: string; subCat: string }> = {};
         expenseItems.forEach(e => {
           const key = e.description || e.category;
@@ -1101,7 +1110,7 @@ export const aiRouter = router({
           .filter(([, v]) => v.count >= 2)
           .sort((a, b) => b[1].count - a[1].count)
           .slice(0, Math.ceil(reportTopItemsLimit / 2))
-          .map(([name, v]) => `${name} (${v.subCat}): ${v.count} مرات، إجمالي ${v.total}ج [${v.cat}]`);
+          .map(([name, v]) => redactSensitiveData(`${name} (${v.subCat}): ${v.count} مرات، إجمالي ${v.total}ج [${v.cat}]`));
 
         if (biggestItems.length > 0 || recurringItemsList.length > 0) {
           topItemsContext = `\n--- تفاصيل العمليات الفردية ---`;

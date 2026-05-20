@@ -30,6 +30,26 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const MAX_REQUESTS = 100; // 100 requests per minute
 
+// AI Rate Limiter (Stricter for expensive operations)
+const aiRateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const AI_RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const AI_MAX_REQUESTS = 10; // 10 requests per minute
+
+// Auto-cleanup expired rate limiter and AI rate limiter entries every 5 minutes to prevent memory leaks
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitMap) {
+    if (entry.resetAt < now) {
+      rateLimitMap.delete(key);
+    }
+  }
+  for (const [key, entry] of aiRateLimitMap) {
+    if (entry.resetAt < now) {
+      aiRateLimitMap.delete(key);
+    }
+  }
+}, 5 * 60 * 1000);
+
 // Authed: any logged in user
 export const authedProcedure = t.procedure.use(async ({ ctx, next }) => {
   if (!ctx.user) {
@@ -51,11 +71,6 @@ export const authedProcedure = t.procedure.use(async ({ ctx, next }) => {
 
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
-
-// AI Rate Limiter (Stricter for expensive operations)
-const aiRateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const AI_RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const AI_MAX_REQUESTS = 10; // 10 requests per minute
 
 export const aiProcedure = authedProcedure.use(async ({ ctx, next }) => {
   const key = `${ctx.user.type}:${ctx.user.id}`;

@@ -13,18 +13,26 @@ describe("adaptive question engine", () => {
 
     current = applyOnboardingAnswer(current, "income_level", 12000);
     current = applyOnboardingAnswer(current, "income_sources", ["salary"]);
-    current = applyOnboardingAnswer(current, "family_responsibility", true);
+    expect(getNextOnboardingQuestion(current.onboardingAnswers)?.key).toBe("has_fixed_salary");
+
+    current = applyOnboardingAnswer(current, "has_fixed_salary", true);
+    current = applyOnboardingAnswer(current, "salary_day", 1);
+    current = applyOnboardingAnswer(current, "app_goal", "organize_expenses");
     expect(getNextOnboardingQuestion(current.onboardingAnswers)?.key).toBe("children");
 
     current = applyOnboardingAnswer(current, "children", true);
-    expect(getNextOnboardingQuestion(current.onboardingAnswers)?.key).toBe("children_details");
+    expect(getNextOnboardingQuestion(current.onboardingAnswers)?.key).toBe("children_count");
   });
 
   it("uses lifestyle path when there is no family responsibility", () => {
     let current = profile();
     current = applyOnboardingAnswer(current, "income_level", 8000);
     current = applyOnboardingAnswer(current, "income_sources", ["freelance"]);
-    current = applyOnboardingAnswer(current, "family_responsibility", false);
+    
+    expect(getNextOnboardingQuestion(current.onboardingAnswers)?.key).toBe("app_goal");
+
+    current = applyOnboardingAnswer(current, "app_goal", "organize_expenses");
+    current = applyOnboardingAnswer(current, "children", false);
 
     expect(getNextOnboardingQuestion(current.onboardingAnswers)?.key).toBe("living_situation");
   });

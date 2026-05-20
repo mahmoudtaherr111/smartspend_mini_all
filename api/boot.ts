@@ -7,6 +7,9 @@ import { appRouter } from "./router";
 import { createContext } from "./context";
 import { env } from "./lib/env";
 import { smsApp } from "./sms-router";
+import { createHmac } from "crypto";
+import { grantProSubscription } from "./lib/subscription-service";
+
 
 const app = new Hono();
 
@@ -72,15 +75,92 @@ app.use("/api/trpc/*", trpcServer({
 app.route("/api/sms", smsApp);
 
 app.post("/api/webhooks/paymob", async (c) => {
+  const hmacParam = c.req.query("hmac");
   const raw = await c.req.text();
-  let parsed: unknown = {};
+  let parsed: any = {};
   try {
     parsed = JSON.parse(raw || "{}");
   } catch {
     parsed = { raw };
   }
   console.info("[paymob webhook]", JSON.stringify(parsed));
-  // TODO: verify HMAC with env.PAYMOB_HMAC_SECRET, locate pending order, call grantProSubscription / update rows.
+
+  const secret = env.PAYMOB_HMAC_SECRET;
+  if (secret) {
+    if (!hmacParam) {
+      console.warn("Paymob webhook verification failed: Missing hmac query parameter");
+      return c.json({ error: "Missing signature" }, 401);
+    }
+    const obj = parsed.obj;
+    if (!obj) {
+      return c.json({ error: "Invalid payload: obj missing" }, 400);
+    }
+
+    // Concatenate standard Paymob HMAC fields in exact order
+    const fields = [
+      obj.amount_cents,
+      obj.created_at,
+      obj.currency,
+      obj.error_occured,
+      obj.has_parent_transaction,
+      obj.id,
+      obj.integration_id,
+      obj.is_3d_secure,
+      obj.is_auth,
+      obj.is_capture,
+      obj.is_voided,
+      obj.is_refunded,
+      obj.owner,
+      obj.pending,
+      obj.source_data?.pan,
+      obj.source_data?.sub_type,
+      obj.source_data?.type,
+      obj.success,
+    ];
+    
+    // Convert values to strings matching Paymob's serialization
+    const hmacSource = fields
+      .map((val) => {
+        if (val === undefined || val === null) return "";
+        if (typeof val === "boolean") return val ? "true" : "false";
+        return String(val);
+      })
+      .join("");
+
+    const calculatedHmac = createHmac("sha512", secret).update(hmacSource).digest("hex");
+    if (calculatedHmac !== hmacParam) {
+      console.warn("Paymob webhook verification failed: signature mismatch");
+      return c.json({ error: "Invalid signature" }, 401);
+    }
+  }
+
+  // Handle successful transaction
+  const obj = parsed.obj;
+  if (obj && obj.success === true && !obj.pending) {
+    const extraData = obj.extra_data || obj.order?.extra_data || {};
+    const userId = Number(extraData.userId);
+    const userType = extraData.userType;
+    const plan = (extraData.plan || "pro_monthly") as "pro_monthly" | "pro_yearly";
+
+    if (userId && (userType === "oauth" || userType === "local")) {
+      console.info(`Granting Pro subscription to user ${userId} (${userType}) via Paymob webhook`);
+      try {
+        await grantProSubscription({
+          userId,
+          userType,
+          plan,
+          paymentMethod: obj.payment_key_claims?.extra?.payment_method || "paymob",
+          transactionId: String(obj.id),
+        });
+      } catch (err) {
+        console.error("Failed to grant subscription in Paymob webhook:", err);
+        return c.json({ error: "Failed to update subscription" }, 500);
+      }
+    } else {
+      console.warn("Paymob webhook: missing or invalid user metadata in extra_data", extraData);
+    }
+  }
+
   return c.json({ ok: true });
 });
 
