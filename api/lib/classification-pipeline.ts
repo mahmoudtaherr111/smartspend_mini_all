@@ -343,7 +343,7 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
 
               return {
                 items: [],
-                parsedBy,
+                parsedBy: parsedBy as any,
                 modelUsed,
                 overallConfidence: 0,
                 decision: "clarify",
@@ -444,7 +444,7 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
 
   return {
     items: scored.items,
-    parsedBy,
+    parsedBy: parsedBy as any,
     modelUsed,
     overallConfidence: scored.overallConfidence,
     decision: scored.decision,

@@ -87,6 +87,20 @@ export const expenseCategories = mysqlTable("expense_categories", {
   createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
+// ─── User Wallets (3D Cards) ───
+export const userWallets = mysqlTable("user_wallets", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").notNull(),
+  userType: varchar("user_type", { length: 50 }).notNull(),
+  name: varchar("name", { length: 100 }).notNull(), // e.g. "CIB Visa"
+  provider: varchar("provider", { length: 50 }).notNull(), // Visa | VodafoneCash | InstaPay | BankTransfer
+  lastFourDigits: varchar("last_four_digits", { length: 4 }), // For visual realism
+  balance: decimal("balance", { precision: 12, scale: 2 }).default("0.00"),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [
+  index("wallets_user_idx").on(t.userId, t.userType),
+]);
+
 // ─── Monthly Reports ───
 export const monthlyReports = mysqlTable("monthly_reports", {
   id: int("id").primaryKey().autoincrement(),

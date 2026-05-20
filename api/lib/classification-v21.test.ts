@@ -30,7 +30,7 @@ describe("classification v2.1", () => {
   });
   it("uses profile hints for children education expenses", () => {
     const result = runRuleEngine("دفعت 500 مدرسة", [], { hasChildren: true });
-    expect(result.items[0]?.category).toBe("طھط¹ظ„ظٹظ…");
+    expect(result.items[0]?.category).toBe("تعليم");
     expect(result.items[0]?.confidence).toBeGreaterThanOrEqual(90);
   });
 });

@@ -36,7 +36,7 @@ const classificationResponseSchema = {
     alertMessage: { type: SchemaType.STRING, nullable: true }
   },
   required: ["items", "needs_clarification"]
-};
+} as any;
 
 function buildCompressedCategories(): string {
   // Compress categories into a highly dense string to save tokens:

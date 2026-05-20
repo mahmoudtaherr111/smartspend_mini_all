@@ -15,5 +15,14 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["api/**/*.test.ts", "api/**/*.spec.ts"],
+    env: {
+      DATABASE_URL: "mysql://test:test@localhost:3306/test",
+      GOOGLE_CLIENT_ID: "test",
+      GOOGLE_CLIENT_SECRET: "test",
+      JWT_SECRET: "test",
+      GEMINI_API_KEY: "test",
+      NODE_ENV: "development",
+      TRUST_PROXY: "true"
+    }
   },
 });

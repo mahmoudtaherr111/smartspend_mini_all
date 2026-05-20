@@ -2,8 +2,27 @@ import { z } from "zod";
 import { router, publicProcedure, strictPublicProcedure, adminProcedure } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
-import { localUsers, expenses, sessions } from "../db/schema";
-import { eq, count, sum, sql, like, desc } from "drizzle-orm";
+import {
+  localUsers,
+  expenses,
+  sessions,
+  userAnalytics,
+  supportTickets,
+  userWallets,
+  proSubscriptions,
+  monthlyReports,
+  aiSummaries,
+  userProfiles,
+  profileLearningEvents,
+  monthlyBehaviorSnapshots,
+  userDictionaries,
+  classificationLogs,
+  voiceUsage,
+  webhookTokens,
+  rawSmsEvents,
+  expenseCategories
+} from "../db/schema";
+import { eq, count, sum, sql, like, desc, and } from "drizzle-orm";
 import {
   hashPassword, 
   comparePassword, 
@@ -185,9 +204,28 @@ export const localAuthRouter = router({
   deleteUser: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      await db.delete(expenses).where(eq(expenses.userId, input.id));
-      await db.delete(sessions).where(eq(sessions.userId, input.id));
-      await db.delete(localUsers).where(eq(localUsers.id, input.id));
+      const userId = input.id;
+      const userType = "local" as const;
+
+      await db.delete(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType)));
+      await db.delete(sessions).where(and(eq(sessions.userId, userId), eq(sessions.userType, userType)));
+      await db.delete(userAnalytics).where(and(eq(userAnalytics.userId, userId), eq(userAnalytics.userType, userType)));
+      await db.delete(supportTickets).where(and(eq(supportTickets.userId, userId), eq(supportTickets.userType, userType)));
+      await db.delete(userWallets).where(and(eq(userWallets.userId, userId), eq(userWallets.userType, userType)));
+      await db.delete(proSubscriptions).where(and(eq(proSubscriptions.userId, userId), eq(proSubscriptions.userType, userType)));
+      await db.delete(monthlyReports).where(and(eq(monthlyReports.userId, userId), eq(monthlyReports.userType, userType)));
+      await db.delete(aiSummaries).where(and(eq(aiSummaries.userId, userId), eq(aiSummaries.userType, userType)));
+      await db.delete(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)));
+      await db.delete(profileLearningEvents).where(and(eq(profileLearningEvents.userId, userId), eq(profileLearningEvents.userType, userType)));
+      await db.delete(monthlyBehaviorSnapshots).where(and(eq(monthlyBehaviorSnapshots.userId, userId), eq(monthlyBehaviorSnapshots.userType, userType)));
+      await db.delete(userDictionaries).where(and(eq(userDictionaries.userId, userId), eq(userDictionaries.userType, userType)));
+      await db.delete(classificationLogs).where(and(eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType)));
+      await db.delete(voiceUsage).where(and(eq(voiceUsage.userId, userId), eq(voiceUsage.userType, userType)));
+      await db.delete(webhookTokens).where(and(eq(webhookTokens.userId, userId), eq(webhookTokens.userType, userType)));
+      await db.delete(rawSmsEvents).where(and(eq(rawSmsEvents.userId, userId), eq(rawSmsEvents.userType, userType)));
+      await db.delete(expenseCategories).where(and(eq(expenseCategories.userId, userId), eq(expenseCategories.userType, userType)));
+
+      await db.delete(localUsers).where(eq(localUsers.id, userId));
       return { success: true };
     }),
 

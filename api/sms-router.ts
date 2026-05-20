@@ -18,7 +18,7 @@ import {
   users,
   localUsers,
 } from "../db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, gte } from "drizzle-orm";
 import { parseSmsFinancialData, mapSmsToExpenseCategory } from "./lib/sms-ai-parser";
 import { parseSmsByRules } from "./lib/sms-rule-parser";
 import { randomBytes } from "crypto";
@@ -30,6 +30,16 @@ export const smsApp = new Hono();
 // ─── Rate limit: simple in-memory per-token tracker ───
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 30; // max 30 SMS per hour per token
+
+// Auto-cleanup expired rate limiter entries every 5 minutes to prevent memory leak
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, entry] of rateLimitMap) {
+    if (entry.resetAt < now) {
+      rateLimitMap.delete(token);
+    }
+  }
+}, 5 * 60 * 1000);
 
 function checkRateLimit(token: string): boolean {
   const now = Date.now();
@@ -110,7 +120,7 @@ async function getUserFromSession(authHeader: string | undefined): Promise<{
   if (!authHeader?.startsWith("Bearer ")) return null;
   const token = authHeader.slice(7);
   try {
-    const payload = await verify(token, env.JWT_SECRET) as any;
+    const payload = await verify(token, env.JWT_SECRET, "HS256") as any;
     if (!payload?.userId || !payload?.userType) return null;
     return { id: payload.userId, type: payload.userType as "local" | "oauth" };
   } catch {
@@ -198,6 +208,7 @@ smsApp.post("/ingest", async (c) => {
       eq(rawSmsEvents.userId, userId),
       eq(rawSmsEvents.userType, userType),
       eq(rawSmsEvents.status, "processed"),
+      gte(rawSmsEvents.createdAt, monthStart),
     ));
   const usedThisMonth = Number((countResult as any)?.count || 0);
 
@@ -210,7 +221,7 @@ smsApp.post("/ingest", async (c) => {
     }, 403);
   }
 
-  // ── Step 1: Store raw SMS event ──
+  // ── Step 1: Store raw SMS event (Original raw text stored for admin visibility) ──
   const [insertedSms] = await db.insert(rawSmsEvents).values({
     userId,
     userType,
@@ -226,7 +237,7 @@ smsApp.post("/ingest", async (c) => {
   let parseResult: any = null;
   let parsedBy = "rules";
 
-  const ruleResult = parseSmsByRules(message.trim());
+  const ruleResult = parseSmsByRules(message.trim(), sender?.trim());
   console.log(`[SMS Ingest] Rule parser: detected=${ruleResult.transaction_detected}, amount=${ruleResult.amount}, dir=${ruleResult.direction}, conf=${ruleResult.confidence.toFixed(2)}, rule=${ruleResult.matched_rule}`);
 
   if (ruleResult.transaction_detected && ruleResult.confidence >= 0.85 && ruleResult.amount && ruleResult.direction) {
@@ -268,7 +279,20 @@ smsApp.post("/ingest", async (c) => {
   if (!parseResult) {
     if (smsId) {
       await db.update(rawSmsEvents)
-        .set({ status: "ignored", metadata: { reason: "AI returned null" } })
+        .set({ 
+          status: "ignored", 
+          metadata: { 
+            reason: "AI returned null",
+            rule_result: {
+              transaction_detected: ruleResult.transaction_detected,
+              amount: ruleResult.amount,
+              direction: ruleResult.direction,
+              confidence: ruleResult.confidence,
+              matched_rule: ruleResult.matched_rule,
+              provider: ruleResult.provider,
+            }
+          } 
+        })
         .where(eq(rawSmsEvents.id, smsId));
     }
     return c.json({ success: true, transaction_detected: false, reason: "Could not parse SMS" }, 200);
@@ -284,6 +308,15 @@ smsApp.post("/ingest", async (c) => {
           metadata: {
             reason: !parseResult.transaction_detected ? "not_financial" : "low_confidence",
             confidence: parseResult.confidence,
+            parsed_by: parsedBy,
+            rule_result: {
+              transaction_detected: ruleResult.transaction_detected,
+              amount: ruleResult.amount,
+              direction: ruleResult.direction,
+              confidence: ruleResult.confidence,
+              matched_rule: ruleResult.matched_rule,
+              provider: ruleResult.provider,
+            }
           },
         })
         .where(eq(rawSmsEvents.id, smsId));
@@ -293,6 +326,14 @@ smsApp.post("/ingest", async (c) => {
       transaction_detected: false,
       reason: !parseResult.transaction_detected ? "not_financial" : "low_confidence",
       confidence: parseResult.confidence,
+      rule_result: {
+        transaction_detected: ruleResult.transaction_detected,
+        amount: ruleResult.amount,
+        direction: ruleResult.direction,
+        confidence: ruleResult.confidence,
+        matched_rule: ruleResult.matched_rule,
+        provider: ruleResult.provider,
+      }
     }, 200);
   }
 
@@ -343,6 +384,7 @@ smsApp.post("/ingest", async (c) => {
           category,
           type,
           confidence: parseResult.confidence,
+          parsed_by: parsedBy,
         },
       })
       .where(eq(rawSmsEvents.id, smsId));
@@ -484,7 +526,7 @@ smsApp.get("/shortcut-download", async (c) => {
   const { generateShortcutFile } = await import("./lib/shortcut-generator");
   const fileBuffer = generateShortcutFile(result.token, ingestUrl);
 
-  return new Response(fileBuffer, {
+  return new Response(new Uint8Array(fileBuffer), {
     headers: {
       "Content-Type": "application/x-apple-shortcut",
       "Content-Disposition": 'attachment; filename="SmartSpend SMS.shortcut"',
@@ -603,3 +645,120 @@ smsApp.post("/android-status", async (c) => {
     message: "SmartSpend Sync is active ✅",
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/sms/metrics
+// Returns transaction parsing statistics, success rates, and provider metrics
+// ─────────────────────────────────────────────────────────────────────────────
+smsApp.get("/metrics", async (c) => {
+  const db = getDb();
+  const user = await getUserFromSession(c.req.header("Authorization"));
+
+  if (!user) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const events = await db
+    .select()
+    .from(rawSmsEvents)
+    .where(
+      and(
+        eq(rawSmsEvents.userId, user.id as number),
+        eq(rawSmsEvents.userType, user.type)
+      )
+    )
+    .orderBy(desc(rawSmsEvents.createdAt))
+    .limit(1000);
+
+  const total = events.length;
+  let processed = 0;
+  let ignored = 0;
+  let error = 0;
+  
+  let rulesCount = 0;
+  let aiCount = 0;
+  let fallbackCount = 0;
+
+  const providerStats: Record<string, { total: number; failed: number }> = {};
+
+  for (const e of events) {
+    if (e.status === "processed") processed++;
+    else if (e.status === "ignored") ignored++;
+    else if (e.status === "error") error++;
+
+    const meta = e.metadata as any;
+    const parsedBy = meta?.parsed_by || "unknown";
+    if (parsedBy === "rules") rulesCount++;
+    else if (parsedBy === "ai") aiCount++;
+    else if (parsedBy === "rules_fallback") fallbackCount++;
+
+    const provider = meta?.provider || meta?.rule_result?.provider || "Unknown";
+    if (!providerStats[provider]) {
+      providerStats[provider] = { total: 0, failed: 0 };
+    }
+    providerStats[provider].total++;
+    if (e.status === "ignored" && meta?.reason === "low_confidence") {
+      providerStats[provider].failed++;
+    }
+  }
+
+  const failCount = error + events.filter(e => (e.metadata as any)?.reason === "low_confidence").length;
+  const accuracyRate = processed + failCount > 0 ? (processed / (processed + failCount)) : 1.0;
+
+  return c.json({
+    success: true,
+    metrics: {
+      totalReceived: total,
+      statusBreakdown: { processed, ignored, error },
+      parserBreakdown: { rules: rulesCount, ai: aiCount, fallback: fallbackCount },
+      accuracyRate: Math.round(accuracyRate * 100) / 100,
+      providerBreakdown: providerStats
+    }
+  }, 200);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/sms/unparsed
+// Returns the 50 most recent failed/ignored bank transactions for review/audit
+// ─────────────────────────────────────────────────────────────────────────────
+smsApp.get("/unparsed", async (c) => {
+  const db = getDb();
+  const user = await getUserFromSession(c.req.header("Authorization"));
+
+  if (!user) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const unparsedEvents = await db
+    .select()
+    .from(rawSmsEvents)
+    .where(
+      and(
+        eq(rawSmsEvents.userId, user.id as number),
+        eq(rawSmsEvents.userType, user.type),
+        eq(rawSmsEvents.status, "ignored")
+      )
+    )
+    .orderBy(desc(rawSmsEvents.createdAt))
+    .limit(100);
+
+  const filtered = unparsedEvents.filter(e => {
+    const meta = e.metadata as any;
+    return meta?.reason === "low_confidence" || meta?.reason === "AI returned null";
+  }).slice(0, 50);
+
+  return c.json({
+    success: true,
+    unparsed: filtered.map(e => ({
+      id: e.id,
+      sender: e.sender,
+      message: e.message,
+      redactedMessage: e.message, // raw text since database is unredacted
+      timestamp: e.smsTimestamp,
+      reason: (e.metadata as any)?.reason,
+      ruleResult: (e.metadata as any)?.rule_result,
+      createdAt: e.createdAt
+    }))
+  }, 200);
+});
+

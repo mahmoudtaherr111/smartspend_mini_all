@@ -203,7 +203,12 @@ export function SmartProfileView({ onEdit }: { onEdit: () => void }) {
               </div>
               <span className="text-2xl font-black text-violet-600 dark:text-violet-400">{completionScore}%</span>
             </div>
-            <Progress value={completionScore} className="h-2.5 bg-slate-200 dark:bg-slate-800" indicatorClassName="bg-gradient-to-r from-violet-500 to-indigo-500" />
+            <div className="h-2.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all duration-500 ease-out"
+                style={{ width: `${completionScore}%` }}
+              />
+            </div>
           </div>
 
           {/* 💎 Floating Glass Stats */}

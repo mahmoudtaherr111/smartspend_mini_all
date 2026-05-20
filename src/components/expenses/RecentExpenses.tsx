@@ -61,6 +61,106 @@ const categoryColors: Record<string, string> = {
   "متنوعات": "bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-200",
 };
 
+const providerMeta: Record<string, { nameAr: string; classes: string; icon: string; brandColor: string }> = {
+  VodafoneCash: {
+    nameAr: "فودافون كاش",
+    classes: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-300 dark:border-red-900/50",
+    icon: "🔴",
+    brandColor: "#e60000"
+  },
+  InstaPay: {
+    nameAr: "انستا باي",
+    classes: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/30 dark:text-purple-300 dark:border-purple-900/50",
+    icon: "⚡",
+    brandColor: "#6c5ce7"
+  },
+  CIB: {
+    nameAr: "بنك CIB",
+    classes: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-900/50",
+    icon: "🔷",
+    brandColor: "#004b87"
+  },
+  NBE: {
+    nameAr: "البنك الأهلي",
+    classes: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900/50",
+    icon: "🟢",
+    brandColor: "#006c35"
+  },
+  BanqueMisr: {
+    nameAr: "بنك مصر",
+    classes: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-900/50",
+    icon: "🔶",
+    brandColor: "#d4af37"
+  },
+  QNB: {
+    nameAr: "بنك QNB",
+    classes: "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-300 dark:border-indigo-900/50",
+    icon: "🟪",
+    brandColor: "#4b0082"
+  },
+  EtisalatCash: {
+    nameAr: "اتصالات كاش",
+    classes: "bg-lime-50 text-lime-700 border-lime-200 dark:bg-lime-950/30 dark:text-lime-300 dark:border-lime-900/50",
+    icon: "🟢",
+    brandColor: "#74b9ff"
+  },
+  OrangeMoney: {
+    nameAr: "أورنج كاش",
+    classes: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/30 dark:text-orange-300 dark:border-orange-900/50",
+    icon: "🟠",
+    brandColor: "#ff793f"
+  },
+  WEPay: {
+    nameAr: "وي باي",
+    classes: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200 dark:bg-fuchsia-950/30 dark:text-fuchsia-300 dark:border-fuchsia-900/50",
+    icon: "🟣",
+    brandColor: "#800080"
+  },
+  ApplePay: {
+    nameAr: "أبل باي",
+    classes: "bg-zinc-100 text-zinc-800 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700",
+    icon: "🍎",
+    brandColor: "#2d3436"
+  },
+  ValU: {
+    nameAr: "ڤاليو",
+    classes: "bg-yellow-50 text-yellow-800 border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-200 dark:border-yellow-900/50",
+    icon: "✨",
+    brandColor: "#ffeaa7"
+  },
+  Fawry: {
+    nameAr: "فوري",
+    classes: "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/30 dark:text-cyan-300 dark:border-cyan-900/50",
+    icon: "🔵",
+    brandColor: "#0984e3"
+  },
+  Meeza: {
+    nameAr: "ميزة",
+    classes: "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/30 dark:text-teal-300 dark:border-teal-900/50",
+    icon: "💳",
+    brandColor: "#00cec9"
+  },
+};
+
+export function getProviderMeta(provider: string | null | undefined) {
+  if (!provider) {
+    return {
+      nameAr: "حساب إلكتروني",
+      classes: "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/50 dark:text-slate-300 dark:border-slate-800",
+      icon: "📱",
+      brandColor: "#7f8c8d"
+    };
+  }
+  const meta = providerMeta[provider];
+  if (meta) return meta;
+  return {
+    nameAr: provider,
+    classes: "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/50 dark:text-slate-300 dark:border-slate-800",
+    icon: "📱",
+    brandColor: "#7f8c8d"
+  };
+}
+
 function getTypeMeta(type: string | null | undefined) {
   if (type === "income") {
     return {
@@ -234,6 +334,16 @@ function ExpenseItem({
     rawText: string | null;
     source: string;
     date: string | Date;
+    parsedMetadata?: {
+      sms_id?: string | null;
+      provider?: string | null;
+      direction?: "incoming" | "outgoing" | null;
+      sms_category?: string | null;
+      confidence?: number | null;
+      fee?: number | null;
+      balance_after?: number | null;
+      parsed_by?: string | null;
+    } | any;
   };
   onRequestDelete: (id: number) => void;
   isDeleting: boolean;
@@ -245,6 +355,8 @@ function ExpenseItem({
     month: "short",
     year: "numeric",
   });
+
+  const isSms = expense.source === "sms";
 
   return (
     <div className="border rounded-lg p-3 hover:bg-muted/50 transition-colors shadow-sm bg-white dark:bg-slate-900/40">
@@ -263,7 +375,19 @@ function ExpenseItem({
         </div>
         <div className="flex items-center gap-2">
           <div className="flex flex-col items-end gap-1">
-            <Badge className={cn("border-0", typeMeta.badgeClass)}>{typeMeta.label}</Badge>
+            {isSms ? (
+              <div className="flex flex-col items-end gap-1">
+                <Badge variant="outline" className={cn("border text-[10px] py-0 px-2 rounded flex items-center gap-1 shadow-sm font-medium", getProviderMeta(expense.parsedMetadata?.provider).classes)}>
+                  <span>{getProviderMeta(expense.parsedMetadata?.provider).icon}</span>
+                  <span>{getProviderMeta(expense.parsedMetadata?.provider).nameAr}</span>
+                </Badge>
+                <Badge variant="outline" className="text-[9px] py-0 px-1 bg-indigo-50/50 text-indigo-600 dark:bg-indigo-950/20 dark:text-indigo-300 border-indigo-100 dark:border-indigo-900/40 rounded font-normal">
+                  مزامنة تلقائية 📱
+                </Badge>
+              </div>
+            ) : (
+              <Badge className={cn("border-0", typeMeta.badgeClass)}>{typeMeta.label}</Badge>
+            )}
             <Badge className={cn("border-0", categoryColors[expense.category] || "bg-gray-100 dark:bg-gray-800")}>
               {expense.category}
             </Badge>
@@ -287,11 +411,32 @@ function ExpenseItem({
               <div className="space-y-3" dir="rtl">
                 <div className="flex justify-between border-b pb-2">
                   <span className="text-sm text-muted-foreground">المبلغ:</span>
-                  <span className={cn("font-bold", typeMeta.amountClass)}>
+                  <span className={cn("font-bold text-base", typeMeta.amountClass)}>
                     {typeMeta.sign}
                     {Number(expense.amount).toFixed(2)} جنيه
                   </span>
                 </div>
+                {isSms && expense.parsedMetadata?.provider && (
+                  <div className="flex justify-between border-b pb-2 items-center">
+                    <span className="text-sm text-muted-foreground">مقدم الخدمة:</span>
+                    <Badge variant="outline" className={cn("border text-xs py-0.5 px-2 rounded-full flex items-center gap-1 font-medium", getProviderMeta(expense.parsedMetadata.provider).classes)}>
+                      <span>{getProviderMeta(expense.parsedMetadata.provider).icon}</span>
+                      <span>{getProviderMeta(expense.parsedMetadata.provider).nameAr}</span>
+                    </Badge>
+                  </div>
+                )}
+                {isSms && typeof expense.parsedMetadata?.fee === "number" && expense.parsedMetadata.fee > 0 && (
+                  <div className="flex justify-between border-b pb-2">
+                    <span className="text-sm text-muted-foreground">رسوم الخدمة:</span>
+                    <span className="text-sm font-semibold text-rose-500">{expense.parsedMetadata.fee.toFixed(2)} جنيه 💸</span>
+                  </div>
+                )}
+                {isSms && typeof expense.parsedMetadata?.balance_after === "number" && (
+                  <div className="flex justify-between border-b pb-2">
+                    <span className="text-sm text-muted-foreground">الرصيد بعد العملية:</span>
+                    <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">{expense.parsedMetadata.balance_after.toLocaleString("ar-EG")} جنيه 💰</span>
+                  </div>
+                )}
                 <div className="flex justify-between border-b pb-2">
                   <span className="text-sm text-muted-foreground">النوع:</span>
                   <Badge className={cn("border-0", typeMeta.badgeClass)}>{typeMeta.label}</Badge>
@@ -316,12 +461,12 @@ function ExpenseItem({
                 )}
                 {expense.rawText && expense.rawText !== "?" && (
                   <div className="border-b pb-2">
-                    <span className="text-sm text-muted-foreground block mb-1">النص الأصلي:</span>
-                    <p className="text-xs bg-muted p-2 rounded">{expense.rawText}</p>
+                    <span className="text-sm text-muted-foreground block mb-1">النص الأصلي للرسالة:</span>
+                    <p className="text-xs bg-muted p-2 rounded break-words leading-relaxed select-all border font-mono whitespace-pre-wrap">{expense.rawText}</p>
                   </div>
                 )}
                 <div className="flex justify-between text-xs text-muted-foreground pt-2">
-                  <span>المصدر: {expense.source === "voice" ? "صوتي" : expense.source === "ai_parsed" ? "نصي (AI)" : "يدوي"}</span>
+                  <span>المصدر: {expense.source === "sms" ? "مزامنة بنكية (SMS) 📱" : expense.source === "voice" ? "صوتي 🎤" : expense.source === "ai_parsed" ? "نصي (AI) 🤖" : "يدوي ✍️"}</span>
                   <span>{date.toLocaleString("ar-EG")}</span>
                 </div>
               </div>

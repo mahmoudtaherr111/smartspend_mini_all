@@ -2,19 +2,97 @@ import { useState } from "react";
 import { SEOMeta } from "@/components/seo/SEOMeta";
 import { IosSetupFlow } from "@/components/bank-sync/IosSetupFlow";
 import { AndroidSetupFlow } from "@/components/bank-sync/AndroidSetupFlow";
-import { Smartphone, Apple, ArrowRight } from "lucide-react";
+import { DigitalBankingSuite } from "@/components/bank-sync/DigitalBankingSuite";
+import { trpc } from "@/providers/trpc";
+import { Smartphone, Apple, ArrowRight, RefreshCw, ChevronLeft } from "lucide-react";
 
 type Device = "ios" | "android" | null;
 
 export default function BankSyncPage() {
   const [device, setDevice] = useState<Device>(null);
+  const [forceShowInstructions, setForceShowInstructions] = useState(false);
 
-  if (device === "ios") return <IosSetupFlow onBack={() => setDevice(null)} />;
-  if (device === "android") return <AndroidSetupFlow onBack={() => setDevice(null)} />;
+  // Check connection status (whether user has a webhook token)
+  const tokenQuery = trpc.profile.getWebhookToken.useQuery();
+  const hasToken = tokenQuery.data?.hasToken || false;
+
+  // Loading State
+  if (tokenQuery.isLoading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 text-center p-6" dir="rtl">
+        <RefreshCw className="w-10 h-10 text-emerald-500 animate-spin" />
+        <p className="text-sm font-bold text-slate-500">جاري تحميل بيانات المحفظة الرقمية...</p>
+      </div>
+    );
+  }
+
+  // If already connected and not forcing instructions, show the premium Digital Banking Suite
+  if (hasToken && !forceShowInstructions) {
+    return (
+      <div className="w-full max-w-6xl mx-auto space-y-6 pb-20 px-4">
+        <SEOMeta title="المحفظة الرقمية الذكية - SmartSpend" />
+        <DigitalBankingSuite onShowSetupInstructions={() => setForceShowInstructions(true)} />
+      </div>
+    );
+  }
+
+  // Sub-views for iOS and Android Setup Flows
+  if (device === "ios") {
+    return (
+      <div className="space-y-4">
+        {hasToken && (
+          <div className="max-w-3xl mx-auto px-4 pt-4">
+            <button
+              onClick={() => {
+                setForceShowInstructions(false);
+                setDevice(null);
+              }}
+              className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs px-4 py-2 rounded-2xl flex items-center gap-2 transition-colors border border-emerald-500/20"
+            >
+              « العودة للمحفظة الرقمية 💳
+            </button>
+          </div>
+        )}
+        <IosSetupFlow onBack={() => setDevice(null)} />
+      </div>
+    );
+  }
+
+  if (device === "android") {
+    return (
+      <div className="space-y-4">
+        {hasToken && (
+          <div className="max-w-3xl mx-auto px-4 pt-4">
+            <button
+              onClick={() => {
+                setForceShowInstructions(false);
+                setDevice(null);
+              }}
+              className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs px-4 py-2 rounded-2xl flex items-center gap-2 transition-colors border border-emerald-500/20"
+            >
+              « العودة للمحفظة الرقمية 💳
+            </button>
+          </div>
+        )}
+        <AndroidSetupFlow onBack={() => setDevice(null)} />
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full max-w-3xl mx-auto space-y-6 pb-20 px-4">
+    <div className="w-full max-w-3xl mx-auto space-y-6 pb-20 px-4" dir="rtl">
       <SEOMeta title="ربط حسابك البنكي - SmartSpend" />
+
+      {/* Back button if user is already connected but wanted to see instructions */}
+      {hasToken && (
+        <button
+          onClick={() => setForceShowInstructions(false)}
+          className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-4 py-2.5 rounded-2xl flex items-center gap-2 transition-all shadow-md btn-press"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          العودة إلى المحفظة الرقمية 💳
+        </button>
+      )}
 
       {/* Hero */}
       <div className="bg-gradient-to-br from-emerald-600 to-teal-900 rounded-3xl p-6 sm:p-10 text-white shadow-xl relative overflow-hidden text-center">
@@ -36,8 +114,8 @@ export default function BankSyncPage() {
 
       {/* Device Selector */}
       <div className="space-y-4">
-        <p className="text-center text-sm font-bold text-muted-foreground uppercase tracking-widest">
-          اختر نوع هاتفك
+        <p className="text-center text-sm font-bold text-slate-500 uppercase tracking-widest">
+          اختر نوع هاتفك للبدء بالربط
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -45,7 +123,7 @@ export default function BankSyncPage() {
           <button
             id="select-ios"
             onClick={() => setDevice("ios")}
-            className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl p-8 flex flex-col items-center gap-4 shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-500 transition-all duration-300 hover:-translate-y-1 text-center"
+            className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 flex flex-col items-center gap-4 shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-500 transition-all duration-300 hover:-translate-y-1 text-center"
           >
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-inner">
               <Apple className="w-10 h-10 text-slate-700 dark:text-slate-200" />
@@ -65,7 +143,7 @@ export default function BankSyncPage() {
           <button
             id="select-android"
             onClick={() => setDevice("android")}
-            className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl p-8 flex flex-col items-center gap-4 shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-500 transition-all duration-300 hover:-translate-y-1 text-center"
+            className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 flex flex-col items-center gap-4 shadow-sm hover:shadow-xl hover:border-emerald-400 dark:hover:border-emerald-500 transition-all duration-300 hover:-translate-y-1 text-center"
           >
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/40 dark:to-emerald-900/40 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-inner">
               <Smartphone className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
