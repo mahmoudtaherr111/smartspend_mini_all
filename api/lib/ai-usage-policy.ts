@@ -1,0 +1,183 @@
+import { TRPCError } from "@trpc/server";
+import { and, eq, gte, sql } from "drizzle-orm";
+import { db } from "../queries/connection";
+import { classificationLogs, localUsers, systemSettings, userAnalytics, users } from "../../db/schema";
+
+export type PlanId = "free" | "pro" | "ultra";
+export type UserType = "oauth" | "local";
+export type AiUsageChannel = "parse" | "speech" | "report" | "image" | "sms" | "goal";
+
+export interface AiUsageUser {
+  id: number;
+  type: UserType;
+  plan?: string;
+}
+
+export interface AiBudget {
+  limit: number;
+  used: number;
+  remaining: number;
+  plan: PlanId;
+  perRequestMax: number;
+}
+
+export function asPlan(plan: string | undefined): PlanId {
+  return plan === "pro" || plan === "ultra" ? plan : "free";
+}
+
+export function parseSafeInt(value: string | undefined, fallback: number): number {
+  const parsed = Number.parseInt(String(value ?? ""), 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
+export async function loadSystemConfig(): Promise<Record<string, string>> {
+  const settings = await db.select().from(systemSettings);
+  const cfg: Record<string, string> = {};
+  for (const setting of settings) {
+    if (setting.value !== undefined && setting.value !== null) cfg[setting.key] = setting.value;
+  }
+  return cfg;
+}
+
+export function estimateTokensFromText(text: string): number {
+  const compact = String(text || "").trim();
+  if (!compact) return 0;
+  return Math.ceil(compact.length / 3) + Math.ceil(compact.split(/\s+/).length * 0.35);
+}
+
+function userLimitKey(user: AiUsageUser): string {
+  return `user_token_limit_${user.type}_${user.id}`;
+}
+
+async function getStoredTokenUsage(user: AiUsageUser): Promise<number> {
+  if (user.type === "oauth") {
+    const [row] = await db.select({ tokens: users.aiTokensUsed }).from(users).where(eq(users.id, user.id)).limit(1);
+    return Number(row?.tokens || 0);
+  }
+  const [row] = await db.select({ tokens: localUsers.aiTokensUsed }).from(localUsers).where(eq(localUsers.id, user.id)).limit(1);
+  return Number(row?.tokens || 0);
+}
+
+export function resolvePlanTokenLimit(cfg: Record<string, string>, plan: PlanId): number {
+  const defaults: Record<PlanId, number> = {
+    free: 50_000,
+    pro: 500_000,
+    ultra: 2_000_000,
+  };
+  return parseSafeInt(cfg[`${plan}_token_limit`], defaults[plan]);
+}
+
+export function resolvePlanMaxPerRequest(cfg: Record<string, string>, plan: PlanId, channel: AiUsageChannel): number {
+  if (channel === "report") {
+    const defaults: Record<PlanId, number> = { free: 1_200, pro: 3_500, ultra: 8_192 };
+    return parseSafeInt(cfg[`report_max_tokens_${plan}`], defaults[plan]);
+  }
+  if (channel === "image") {
+    const defaults: Record<PlanId, number> = { free: 0, pro: 1_500, ultra: 2_500 };
+    return parseSafeInt(cfg[`image_max_tokens_${plan}`], defaults[plan]);
+  }
+  if (channel === "goal") {
+    const defaults: Record<PlanId, number> = { free: 300, pro: 1_800, ultra: 3_500 };
+    return parseSafeInt(cfg[`goal_max_tokens_${plan}`], defaults[plan]);
+  }
+  const defaults: Record<PlanId, number> = { free: 384, pro: 1_024, ultra: 1_536 };
+  return parseSafeInt(cfg[`${plan}_max_per_request`], defaults[plan]);
+}
+
+export async function getAiBudget(
+  user: AiUsageUser,
+  channel: AiUsageChannel,
+  cfg?: Record<string, string>
+): Promise<AiBudget> {
+  const plan = asPlan(user.plan);
+  const config = cfg ?? await loadSystemConfig();
+  const overrideLimit = parseSafeInt(config[userLimitKey(user)], -1);
+  const limit = overrideLimit >= 0 ? overrideLimit : resolvePlanTokenLimit(config, plan);
+  const used = await getStoredTokenUsage(user);
+  const remaining = limit > 0 ? Math.max(0, limit - used) : Number.MAX_SAFE_INTEGER;
+  return {
+    limit,
+    used,
+    remaining,
+    plan,
+    perRequestMax: resolvePlanMaxPerRequest(config, plan, channel),
+  };
+}
+
+export function clampOutputTokens(perRequestMax: number, remaining: number, estimatedInputTokens = 0): number {
+  if (remaining === Number.MAX_SAFE_INTEGER) return perRequestMax;
+  const safeRemaining = Math.max(64, remaining - estimatedInputTokens - 64);
+  return Math.max(64, Math.min(perRequestMax, safeRemaining));
+}
+
+export async function assertAiBudget(
+  user: AiUsageUser,
+  channel: AiUsageChannel,
+  estimatedInputTokens = 0,
+  cfg?: Record<string, string>
+): Promise<AiBudget> {
+  const budget = await getAiBudget(user, channel, cfg);
+  if (budget.limit === 0) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "هذه الميزة غير مفعلة في خطتك الحالية.",
+    });
+  }
+  if (budget.remaining <= 0 || estimatedInputTokens > budget.remaining) {
+    const upgradeTo = budget.plan === "free" ? "Pro" : "Ultra";
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: `استهلكت حد الذكاء الاصطناعي المتاح (${budget.limit.toLocaleString()} توكن). الترقية إلى ${upgradeTo} تفتح حدًا أعلى.`,
+    });
+  }
+  return budget;
+}
+
+export async function countDailyAiRequests(user: AiUsageUser, channel?: AiUsageChannel): Promise<number> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (!channel || channel === "parse") {
+    const [row] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(classificationLogs)
+      .where(and(
+        eq(classificationLogs.userId, user.id),
+        eq(classificationLogs.userType, user.type),
+        gte(classificationLogs.createdAt, today)
+      ));
+    return Number(row?.count || 0);
+  }
+
+  const [row] = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(userAnalytics)
+    .where(and(
+      eq(userAnalytics.userId, user.id),
+      eq(userAnalytics.userType, user.type),
+      eq(userAnalytics.event, `ai_${channel}`),
+      gte(userAnalytics.createdAt, today)
+    ));
+  return Number(row?.count || 0);
+}
+
+export async function recordAiUsageEvent(input: {
+  userId: number;
+  userType: UserType;
+  channel: AiUsageChannel;
+  model?: string;
+  tokens: number;
+  metadata?: Record<string, unknown>;
+}): Promise<void> {
+  if (!input.tokens || input.tokens <= 0) return;
+  await db.insert(userAnalytics).values({
+    userId: input.userId,
+    userType: input.userType,
+    event: `ai_${input.channel}`,
+    metadata: {
+      tokens: input.tokens,
+      model: input.model || null,
+      ...(input.metadata || {}),
+    },
+  }).catch(() => {});
+}

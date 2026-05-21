@@ -12,6 +12,26 @@ const expenseRawText = z.string().min(1).max(ExpenseInputLimits.rawTextMax);
 const expenseCategory = z.string().min(1).max(ExpenseInputLimits.categoryMax);
 const expenseAmount = z.number().positive().max(ExpenseInputLimits.amountMax);
 
+function isValidDate(value: unknown): value is Date {
+  return value instanceof Date && !isNaN(value.getTime());
+}
+
+function safeDate(value: unknown, fallback: Date): Date {
+  const date = value instanceof Date ? new Date(value) : new Date(value as any);
+  return isValidDate(date) ? date : new Date(fallback);
+}
+
+function safeDateString(value: unknown, fallback = ""): string {
+  const date = value instanceof Date ? value : new Date(value as any);
+  return isValidDate(date) ? date.toISOString().split("T")[0] : fallback;
+}
+
+function safeDayDiff(start: Date, end: Date): number {
+  if (!isValidDate(start) || !isValidDate(end)) return 1;
+  const diff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  return Number.isFinite(diff) && diff > 0 ? diff : 1;
+}
+
 export const expenseRouter = router({
   create: authedProcedure
     .input(
@@ -302,7 +322,7 @@ export const expenseRouter = router({
         .orderBy(expenses.date)
         .limit(1);
 
-      const userStartDate = firstExpense[0]?.date ? new Date(firstExpense[0].date) : startDate;
+      const userStartDate = safeDate(firstExpense[0]?.date, startDate);
 
       const items = await db
         .select()
@@ -310,9 +330,9 @@ export const expenseRouter = router({
         .where(and(eq(expenses.userId, userId), eq(expenses.userType, userType), gte(expenses.date, startDate), lte(expenses.date, endDate)));
 
       // Calculate previous month's dates based on financial month logic
-      const prevMonthDate = new Date(input.month + "-01");
+      const prevMonthDate = safeDate(`${input.month}-01`, startDate);
       prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
-      const prevMonthStr = prevMonthDate.toISOString().slice(0, 7);
+      const prevMonthStr = safeDateString(prevMonthDate, input.month);
       const prevMonthDates = getFinancialMonthDates(prevMonthStr, input.salaryDay);
       const prevStartDate = prevMonthDates.startDate;
       const prevEndDate = prevMonthDates.endDate;
@@ -341,10 +361,12 @@ export const expenseRouter = router({
       const dayNames = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 
       items.filter(i => i.type === "expense").forEach((item) => {
-        const date = new Date(item.date);
+        const date = safeDate(item.date, startDate);
+        if (!isValidDate(date)) return;
         
         // Day Map
-        const dayStr = date.toISOString().split("T")[0];
+        const dayStr = safeDateString(date);
+        if (!dayStr) return;
         dayMap[dayStr] = (dayMap[dayStr] || 0) + Number(item.amount);
         
         // Week Map
@@ -411,7 +433,8 @@ export const expenseRouter = router({
       // Day trend (Income vs Expense)
       const cashFlowMap: Record<string, { expense: number; income: number }> = {};
       items.forEach((item) => {
-        const dateStr = new Date(item.date).toISOString().split("T")[0];
+        const dateStr = safeDateString(item.date);
+        if (!dateStr) return;
         if (!cashFlowMap[dateStr]) cashFlowMap[dateStr] = { expense: 0, income: 0 };
         if (item.type === "expense") cashFlowMap[dateStr].expense += Number(item.amount);
         if (item.type === "income") cashFlowMap[dateStr].income += Number(item.amount);
@@ -423,8 +446,8 @@ export const expenseRouter = router({
 
       // Date-aware daily average: from user's first expense date to today (or month end)
       const today = new Date();
-      const endOfMonth = endDate > today ? today : endDate;
-      const activeDays = Math.max(1, Math.ceil((endOfMonth.getTime() - userStartDate.getTime()) / (1000 * 60 * 60 * 24)));
+      const endOfMonth = isValidDate(endDate) && endDate > today ? today : endDate;
+      const activeDays = safeDayDiff(userStartDate, endOfMonth);
       const dailyAverage = totalExpense / Math.min(activeDays, 30);
       const previousNetFlow = previousTotalIncome - previousTotalExpense;
       const expenseChangePercent = previousTotalExpense > 0
@@ -529,7 +552,8 @@ export const expenseRouter = router({
         monthMap[`${input.year}-${String(i).padStart(2, "0")}`] = 0;
       }
       items.filter(i => i.type === "expense").forEach((item) => {
-        const month = new Date(item.date).toISOString().slice(0, 7);
+        const month = safeDateString(item.date, input.year ? `${input.year}-01` : "");
+        if (!month) return;
         monthMap[month] = (monthMap[month] || 0) + Number(item.amount);
       });
 

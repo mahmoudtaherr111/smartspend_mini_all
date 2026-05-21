@@ -33,10 +33,20 @@ import {
   buildFamilyReportContext,
 } from "./services/personal-context-builder";
 import { redactSensitiveData } from "./lib/anonymizer";
+import { mapModelName } from "./lib/model-mapper";
+import {
+  assertAiBudget,
+  clampOutputTokens,
+  countDailyAiRequests,
+  estimateTokensFromText,
+  getAiBudget,
+  recordAiUsageEvent,
+  type AiUsageChannel,
+} from "./lib/ai-usage-policy";
 
 
 
-async function trackTokens(userId: number, userType: string, tokens: number) {
+async function trackTokens(userId: number, userType: string, tokens: number, channel: AiUsageChannel = "parse", model?: string) {
   if (!tokens || tokens <= 0) return;
   try {
     if (userType === "oauth") {
@@ -44,6 +54,13 @@ async function trackTokens(userId: number, userType: string, tokens: number) {
     } else {
       await db.update(localUsers).set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` }).where(eq(localUsers.id, userId));
     }
+    await recordAiUsageEvent({
+      userId,
+      userType: userType as "oauth" | "local",
+      channel,
+      model,
+      tokens,
+    });
   } catch (err) {
     console.error("Failed to track tokens:", err);
   }
@@ -102,6 +119,7 @@ async function getAiClient(taskType: "parse" | "report", userPlan: string = "fre
   } else {
     modelName = cfg.ai_model_reports || env.GEMINI_MODEL_REPORTS;
   }
+  modelName = mapModelName(modelName);
 
   const parseSafeInt = (val: string | undefined, def: string) => {
     const cleaned = String(val || def).replace(/[^\d]/g, "");
@@ -367,7 +385,7 @@ async function aiParse(text: string, client: any, userId: number, userType: stri
     const result = await client.aiModel.generateContent(prompt);
     response = result.response.text();
     const tokens = result.response.usageMetadata?.totalTokenCount || 0;
-    await trackTokens(userId, userType, tokens);
+    await trackTokens(userId, userType, tokens, "parse");
   } catch (error: any) {
     console.error("AI API Error (Key 1):", error.message);
     // ── FAILOVER SYSTEM ──
@@ -382,7 +400,7 @@ async function aiParse(text: string, client: any, userId: number, userType: stri
         const result = await fallbackModel.generateContent(prompt);
         response = result.response.text();
         const tokens = result.response.usageMetadata?.totalTokenCount || 0;
-        await trackTokens(userId, userType, tokens);
+        await trackTokens(userId, userType, tokens, "parse");
       } catch (fallbackError) {
         console.error("Failover API Error (Key 2):", fallbackError);
         return null;
@@ -449,9 +467,6 @@ export const aiRouter = router({
     .mutation(async ({ ctx, input }) => {
       // Check daily limits
       const today = new Date(); today.setHours(0, 0, 0, 0);
-      const todayUsage = await db.select({ count: sql`COUNT(*)` }).from(aiSummaries)
-        .where(and(eq(aiSummaries.userId, ctx.user.id), eq(aiSummaries.userType, ctx.user.type), gte(aiSummaries.createdAt, today)));
-
       let dailyLimit = 10;
       let tokenLimit = 50000;
       let apiKey = env.GEMINI_API_KEY;
@@ -477,7 +492,8 @@ export const aiRouter = router({
         if (error instanceof TRPCError) throw error;
       }
 
-      if ((todayUsage[0]?.count as number ?? 0) >= dailyLimit) {
+      const todayUsage = await countDailyAiRequests(ctx.user, "parse");
+      if (todayUsage >= dailyLimit) {
         const upgradeTo = ctx.user.plan === "free" ? "برو" : "ألترا";
         throw new TRPCError({ code: "FORBIDDEN", message: `وصلت للحد اليومي (${dailyLimit} طلب). حدث لـ${upgradeTo}!` });
       }
@@ -488,10 +504,15 @@ export const aiRouter = router({
         : await db.query.localUsers.findFirst({ where: eq(localUsers.id, ctx.user.id) });
 
       const usedTokens = userRecord?.aiTokensUsed || 0;
-      if (usedTokens >= tokenLimit) {
+      if (false && usedTokens >= tokenLimit) {
         const upgradeTo = ctx.user.plan === "free" ? "برو" : "ألترا";
         throw new TRPCError({ code: "FORBIDDEN", message: `استهلكت رصيدك الشهري (${tokenLimit} كلمة). حدث لـ${upgradeTo}!` });
       }
+
+      const estimatedInputTokens = estimateTokensFromText(input.text) + 420;
+      const budget = await assertAiBudget(ctx.user, "parse", estimatedInputTokens);
+      tokenLimit = budget.limit;
+      maxPerRequest = clampOutputTokens(maxPerRequest, budget.remaining, estimatedInputTokens);
 
       // Get user dictionary
       const userDict = await db.select().from(userDictionaries)
@@ -531,7 +552,7 @@ export const aiRouter = router({
 
       // Track tokens
       if (result.tokensUsed > 0) {
-        await trackTokens(ctx.user.id, ctx.user.type, result.tokensUsed);
+        await trackTokens(ctx.user.id, ctx.user.type, result.tokensUsed, "parse", result.modelUsed);
       }
 
       // ── Log classification ──
@@ -639,8 +660,15 @@ export const aiRouter = router({
 
     const usedVoiceSeconds = await getVoiceSecondsSince(ctx.user.id, ctx.user.type, cycleStart);
     const voiceLimit = planValue(voiceLimits, ctx.user.plan, 300);
+    const aiBudget = await getAiBudget(ctx.user, "parse", cfg);
 
     return {
+      ai: {
+        limit: aiBudget.limit,
+        used: aiBudget.used,
+        remaining: aiBudget.limit > 0 ? aiBudget.remaining : -1,
+        maxPerRequest: aiBudget.perRequestMax,
+      },
       voice: {
         limit: voiceLimit,
         used: usedVoiceSeconds,
@@ -665,6 +693,9 @@ export const aiRouter = router({
           message: "حجم الملف الصوتي كبير جداً. يرجى إرسال تسجيل أصغر من 10 ميجابايت.",
         });
       }
+
+      const estimatedAudioTokens = Math.max(80, Math.ceil(input.durationSeconds * 14) + Math.ceil(input.audioBase64.length / 18_000));
+      await assertAiBudget(ctx.user, "speech", estimatedAudioTokens);
 
       // Get cycle start
       const now = new Date();
@@ -803,7 +834,7 @@ export const aiRouter = router({
 
       // Track tokens
       if (result.tokensUsed > 0) {
-        await trackTokens(ctx.user.id, ctx.user.type, result.tokensUsed);
+        await trackTokens(ctx.user.id, ctx.user.type, result.tokensUsed, "speech");
       }
 
       const remaining = limit > 0 ? Math.max(0, limit - usedSeconds - input.durationSeconds) : -1;
@@ -1227,7 +1258,7 @@ ${personalizedSummaryForAI}
           const result = await aiModel.generateContent(prompt);
           const raw = result.response.text().replace(/```json?/g, "").replace(/```/g, "").trim();
           const tokens = result.response.usageMetadata?.totalTokenCount || 0;
-          await trackTokens(ctx.user.id, ctx.user.type, tokens);
+          await trackTokens(ctx.user.id, ctx.user.type, tokens, "report", modelName);
 
           try { responseJson = JSON.parse(raw); } catch (e: any) {
             const match = raw.match(/\{[\s\S]*\}/);
@@ -1391,7 +1422,7 @@ ${input.month2}: ${d2.total} جنيه (${d2.count} عملية)
         const result = await aiModel.generateContent(prompt);
         comparison = result.response.text();
         const tokens = result.response.usageMetadata?.totalTokenCount || 0;
-        await trackTokens(ctx.user.id, ctx.user.type, tokens);
+        await trackTokens(ctx.user.id, ctx.user.type, tokens, "report", modelName);
       } catch (err) {
         console.error("AI Compare Error:", err);
         comparison = `(Fallback Mode) مقارنة بين الشهور:
@@ -1450,7 +1481,7 @@ ${input.month2}: ${d2.total} جنيه (${d2.count} عملية)
         const result = await aiModel.generateContent(prompt);
         insights = result.response.text();
         const tokens = result.response.usageMetadata?.totalTokenCount || 0;
-        await trackTokens(ctx.user.id, ctx.user.type, tokens);
+        await trackTokens(ctx.user.id, ctx.user.type, tokens, "report", modelName);
       } catch (err) {
         console.error("AI Yearly Error:", err);
         insights = `(Fallback Mode) ملخص سنة ${input.year}:
