@@ -245,24 +245,24 @@ export async function geminiSpeechToText(
     const MODEL_MAP: Record<string, string> = {
       // ── Explicit Custom Models ──
       "gemini-2.5-flash": "gemini-2.5-flash",
-      "gemini-3.1-flash-lite": "gemini-3.1-flash-lite",
+      "gemini-3.1-flash-lite": "gemini-2.5-flash",
       // ── Gemini API stable model names ──
-      "gemini-2.5-pro": "gemini-1.5-pro",
+      "gemini-2.5-pro": "gemini-2.5-pro",
       "gemini-2.0-flash": "gemini-2.0-flash",
       "gemini-1.5-flash": "gemini-2.0-flash",
       // ── Legacy / admin UI aliases → map to supported models ──
       "gemini-3.0-flash-live": "gemini-2.0-flash",
       "gemini-3.1-flash": "gemini-2.0-flash",
-      "gemini-3.1-pro": "gemini-1.5-pro",
+      "gemini-3.1-pro": "gemini-2.5-pro",
       "gemini-2.5-flash-native-audio": "gemini-2.5-flash",
       // ── Admin shorthand names ──
       "flash": "gemini-2.0-flash",
-      "flash-lite": "gemini-3.1-flash-lite",
-      "pro": "gemini-1.5-pro",
+      "flash-lite": "gemini-2.5-flash",
+      "pro": "gemini-2.5-pro",
       "flash-2.5": "gemini-2.5-flash",
       "flash-2.0": "gemini-2.0-flash",
     };
-    let actualModelName = MODEL_MAP[modelName] ?? modelName; // Use the provided model if not in map
+    let actualModelName = mapModelName(MODEL_MAP[modelName] ?? modelName); // Normalize twice for safety
     // Ensure no spaces or weird characters
     actualModelName = actualModelName.trim();
 
