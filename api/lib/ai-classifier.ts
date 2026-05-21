@@ -11,6 +11,7 @@
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { CATEGORIES } from "./category-registry";
 import type { ParsedTransaction } from "./rule-engine";
+import { mapModelName } from "./model-mapper";
 
 const classificationResponseSchema = {
   type: SchemaType.OBJECT,
@@ -167,11 +168,13 @@ export async function aiClassify(
 
   const systemPrompt = `${buildMicroSystemPrompt(text, contextObj.isSmoker ?? false)}\n${CLARIFICATION_POLICY_PROMPT}`;
 
+  const actualModelName = mapModelName(modelName);
+
   // Try primary key
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: modelName,
+      model: actualModelName,
       systemInstruction: systemPrompt,
       generationConfig: {
         temperature: 0.2,
@@ -193,7 +196,7 @@ export async function aiClassify(
         console.log("AI Classifier: switching to failover key...");
         const genAI2 = new GoogleGenerativeAI(apiKey2);
         const model2 = genAI2.getGenerativeModel({
-          model: modelName,
+          model: actualModelName,
           systemInstruction: systemPrompt,
           generationConfig: {
             temperature: 0.2,
@@ -215,7 +218,7 @@ export async function aiClassify(
   }
 
   // Parse response
-  const parsed = parseAIResponse(response, modelName);
+  const parsed = parseAIResponse(response, actualModelName);
   if (parsed) {
     parsed.tokensUsed = tokensUsed;
   }
