@@ -140,8 +140,8 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                 key={item.href}
                 to={item.href}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group relative",
-                  "hover:bg-white/10 hover:translate-x-1",
+                  "tap-target flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-xl transition-all duration-300 group relative",
+                  "hover:bg-white/10 hover:translate-x-1 active:bg-white/15",
                   isActive ? "bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-400 border-r-2 border-emerald-500" : "text-white/70"
                 )}
                 onMouseEnter={() => setHoveredItem(item.label)}
@@ -162,8 +162,8 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
           <Link
             to="/pro"
             className={cn(
-              "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group relative",
-              "hover:bg-white/10 hover:translate-x-1",
+              "tap-target flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-xl transition-all duration-300 group relative",
+              "hover:bg-white/10 hover:translate-x-1 active:bg-white/15",
               location.pathname === "/pro"
                 ? "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border-r-2 border-amber-400"
                 : "text-white/70"
@@ -176,8 +176,8 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
           <Link
             to="/bank-sync"
             className={cn(
-              "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group relative",
-              "hover:bg-white/10 hover:translate-x-1",
+              "tap-target flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-xl transition-all duration-300 group relative",
+              "hover:bg-white/10 hover:translate-x-1 active:bg-white/15",
               location.pathname === "/bank-sync"
                 ? "bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-300 border-r-2 border-emerald-400"
                 : "text-white/70"

@@ -36,6 +36,8 @@ import { redactSensitiveData } from "./lib/anonymizer";
 import { mapModelName } from "./lib/model-mapper";
 import {
   assertAiBudget,
+  asPlan,
+  capRequestOutputTokens,
   clampOutputTokens,
   countDailyAiRequests,
   estimateTokensFromText,
@@ -43,6 +45,11 @@ import {
   recordAiUsageEvent,
   type AiUsageChannel,
 } from "./lib/ai-usage-policy";
+import {
+  buildProReportDataBlock,
+  buildProReportPrompt,
+  type ProReportBackendSummary,
+} from "./services/pro-report-engine";
 
 
 
@@ -180,14 +187,13 @@ async function getAiClient(taskType: "parse" | "report", userPlan: string = "fre
     ultra: parseSafeInt(cfg.report_top_items_ultra, "10"),
   };
 
-  // For reports: use per-plan report max tokens from admin dashboard
-  // For parse: use per-plan per-request limits from admin settings
+  const channel: AiUsageChannel = taskType === "report" ? "report" : "parse";
   let safeMaxTokens: number;
   if (taskType === "report") {
-    safeMaxTokens = reportMaxTokens[plan] || 3500;
+    safeMaxTokens = capRequestOutputTokens(plan, "report", reportMaxTokens[plan] || 3500);
   } else {
-    safeMaxTokens = maxPerRequest[plan] || 1024;
-    if (safeMaxTokens > 8192) safeMaxTokens = 8192;
+    const raw = maxPerRequest[plan] || 1024;
+    safeMaxTokens = capRequestOutputTokens(plan, "parse", raw);
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
@@ -498,21 +504,14 @@ export const aiRouter = router({
         throw new TRPCError({ code: "FORBIDDEN", message: `وصلت للحد اليومي (${dailyLimit} طلب). حدث لـ${upgradeTo}!` });
       }
 
-      // Check token limits
-      const userRecord = ctx.user.type === "oauth"
-        ? await db.query.users.findFirst({ where: eq(users.id, ctx.user.id) })
-        : await db.query.localUsers.findFirst({ where: eq(localUsers.id, ctx.user.id) });
-
-      const usedTokens = userRecord?.aiTokensUsed || 0;
-      if (false && usedTokens >= tokenLimit) {
-        const upgradeTo = ctx.user.plan === "free" ? "برو" : "ألترا";
-        throw new TRPCError({ code: "FORBIDDEN", message: `استهلكت رصيدك الشهري (${tokenLimit} كلمة). حدث لـ${upgradeTo}!` });
-      }
-
       const estimatedInputTokens = estimateTokensFromText(input.text) + 420;
       const budget = await assertAiBudget(ctx.user, "parse", estimatedInputTokens);
       tokenLimit = budget.limit;
-      maxPerRequest = clampOutputTokens(maxPerRequest, budget.remaining, estimatedInputTokens);
+      maxPerRequest = clampOutputTokens(
+        budget.perRequestMax,
+        budget.remaining,
+        estimatedInputTokens
+      );
 
       // Get user dictionary
       const userDict = await db.select().from(userDictionaries)
@@ -541,6 +540,10 @@ export const aiRouter = router({
         userProfileContext: {
           promptSummary: summarizeProfileForAI(smartProfile),
           personalContextPrompt: buildPersonalContextPrompt(buildPersonalContext(smartProfile)),
+          spendingBehavior:
+            typeof smartProfile.aiInferredAttributes?.spendingBehavior === "string"
+              ? smartProfile.aiInferredAttributes.spendingBehavior
+              : undefined,
           hasChildren: smartProfile.lifestyleInfo.hasChildren as boolean | null,
           responsibleForFamily: smartProfile.lifestyleInfo.responsibleForFamily as boolean | null,
           supportsOthers: smartProfile.lifestyleInfo.supportsOthers,
@@ -572,6 +575,7 @@ export const aiRouter = router({
           entities: result.log.entitiesFound,
           ruleEngine: result.log.ruleEngineResult,
           ai: result.log.aiResult,
+          routing: result.log.routing,
         },
         ambiguityFlags: result.items.flatMap((item: any) => item.ambiguityFlags || []),
         inputChannel: "text",
@@ -1073,6 +1077,7 @@ export const aiRouter = router({
       let reportSubcatsLimit = 15;
       let reportTopItemsLimit = 0;
       let aiModel: any;
+      let reportApiKey = env.GEMINI_API_KEY;
       let modelName = "backend";
       let aiResponseLength = "medium";
       let aiFocus = "balanced";
@@ -1178,6 +1183,57 @@ ${financialMonthContext}`;
 
       if (aiModel) {
         try {
+          const planId = asPlan(ctx.user.plan);
+          const useProReportEngine = planId === "pro" || planId === "ultra";
+
+          if (useProReportEngine) {
+            const proSummary: ProReportBackendSummary = {
+              month: input.month,
+              totalExpense,
+              totalIncome: comparisonIncome,
+              netFlow: totalIncome - totalExpense,
+              dailyAvg,
+              monthlyChangePercent: monthlyChange,
+              topSubCategories: topSubCategories.map((s) => ({
+                name: s.name,
+                amount: s.amount,
+                percent: s.percent,
+              })),
+              alerts,
+              personality,
+              forecast: forecast || undefined,
+              patternMemory: patternMemory || undefined,
+              recurringBills: recurringBills.length ? recurringBills : undefined,
+              transactionCount: userExpenses.length,
+            };
+            const { systemInstruction, userPrompt } = buildProReportPrompt({
+              profile: userProfile,
+              snapshot: behaviorSnapshot,
+              summary: proSummary,
+              targetWords: reportTargetWords,
+              topItemsContext,
+            });
+            const genAI = new GoogleGenerativeAI(reportApiKey);
+            const proReportModel = genAI.getGenerativeModel({
+              model: modelName,
+              systemInstruction,
+              generationConfig: {
+                temperature: 0.65,
+                maxOutputTokens: capRequestOutputTokens(planId, "report", reportTargetWords * 4),
+                responseMimeType: "application/json",
+              },
+            });
+            const result = await proReportModel.generateContent(userPrompt);
+            const raw = result.response.text().replace(/```json?/g, "").replace(/```/g, "").trim();
+            const tokens = result.response.usageMetadata?.totalTokenCount || 0;
+            await trackTokens(ctx.user.id, ctx.user.type, tokens, "report", `pro_report:${modelName}`);
+            try {
+              responseJson = JSON.parse(raw);
+            } catch {
+              const match = raw.match(/\{[\s\S]*\}/);
+              if (match) responseJson = JSON.parse(match[0]);
+            }
+          } else {
           let lengthInstruction = "اكتب تحليلاً متوازناً ومناسباً للشرح بأسلوب مهني.";
           if (aiResponseLength === "short") lengthInstruction = "اكتب موجزاً تنفيذياً (Executive Summary) مختصراً ومباشراً وضع النقاط الأساسية للقرار المالي.";
           if (aiResponseLength === "detailed") lengthInstruction = "اكتب تقريراً مالياً (Financial Report) متعمقاً جداً ومفصلاً يشرح كل الجوانب، ويحلل المخاطر، والفرص، والأنماط بشكل دقيق واحترافي.";
@@ -1269,6 +1325,7 @@ ${personalizedSummaryForAI}
             } else {
               console.error(`No JSON matched.\nParse Error: ${e.message}\nRaw:\n${raw}`);
             }
+          }
           }
         } catch (err: any) {
           console.error(`AI Insights Error: ${err.message}\n${err.stack}`);

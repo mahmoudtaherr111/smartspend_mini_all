@@ -12,8 +12,10 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { CATEGORIES } from "./category-registry";
 import type { ParsedTransaction } from "./rule-engine";
 import { mapModelName } from "./model-mapper";
+import type { PlanId } from "./ai-usage-policy";
+import { estimateClassificationPromptTokens } from "./ai-routing";
 
-const classificationResponseSchema = {
+export const classificationResponseSchema = {
   type: SchemaType.OBJECT,
   properties: {
     items: {
@@ -39,10 +41,17 @@ const classificationResponseSchema = {
   required: ["items", "needs_clarification"]
 } as any;
 
-function buildCompressedCategories(): string {
-  // Compress categories into a highly dense string to save tokens:
-  // "أكل وشرب:[مطعم,قهوة,بقالة]|مواصلات:[أوبر,عامة]"
-  return CATEGORIES.map(c => `${c.name_ar}:[${c.subcategories.map(s => s.name_ar).join(",")}]`).join("|");
+function buildCompressedCategories(candidateMainCategories?: string[]): string {
+  const allowed = candidateMainCategories?.length
+    ? new Set(candidateMainCategories)
+    : null;
+  const list = allowed
+    ? CATEGORIES.filter((c) => allowed.has(c.name_ar))
+    : CATEGORIES;
+  if (list.length === 0) {
+    return CATEGORIES.map((c) => `${c.name_ar}:[${c.subcategories.map((s) => s.name_ar).join(",")}]`).join("|");
+  }
+  return list.map((c) => `${c.name_ar}:[${c.subcategories.map((s) => s.name_ar).join(",")}]`).join("|");
 }
 
 function selectDynamicExample(text: string): string {
@@ -55,21 +64,35 @@ function selectDynamicExample(text: string): string {
   return '{"items":[{"amount":80,"item_name":"شاورما","main_category":"أكل وشرب","sub_category":"مطعم","type":"expense","confidence":90}]}';
 }
 
-function buildMicroSystemPrompt(text: string, isSmoker?: boolean): string {
+function buildMicroSystemPrompt(
+  text: string,
+  options: {
+    isSmoker?: boolean;
+    plan?: PlanId;
+    candidateCategories?: string[];
+    richContext?: boolean;
+  } = {}
+): string {
   const example = selectDynamicExample(text);
-  const compressedCats = buildCompressedCategories();
-  const smokingRule = isSmoker ? "\n4. المستخدم مدخن، صنف مصاريف السجائر والفيب والشيشة تحت فئة 'تدخين'." : "\n4. فكك الجمل المعقدة لعدة عمليات منفصلة.";
-  return `أنت محلل مالي دقيق.
-استخرج المشتريات وصنفها بأدق فئة فرعية.
-القواعد:
-1. صنف بدقة من الفئات المتاحة فقط. (مثال: شاورما->مطعم، كورة->ترفيه/خروجة صحاب، مياه->بقالة).
-2. استخرج اسم السلعة الفعلي في item_name.
-3. المبالغ>10000=إيجار/أجهزة. شحنت=شحن رصيد/بنزين.${smokingRule}
-الفئات:
-${compressedCats}
-مثال: ${example}
+  const compressedCats = buildCompressedCategories(options.candidateCategories);
+  const isPro = options.plan === "pro" || options.plan === "ultra";
+  const smokingRule = options.isSmoker
+    ? "4.مدخن:سجائر/فيب/شيشة→تدخين."
+    : isPro
+      ? "4.جمل مركبة→عمليات منفصلة."
+      : "4.جملة واحدة→عملية واحدة إلا مع و/كمان.";
+  const qualityLine = isPro
+    ? "أولوية أعلى دقة للفئة الفرعية؛ لا تستخدم متنوعات إلا للغموض الشديد."
+    : "صنّف بدقة من القائمة؛ تجنب متنوعات/عام.";
+  return `محلل مالي مصري.${qualityLine}
+قواعد:1)فئات القائمة فقط.2)item_name=السلعة/الخدمة.3)مبالغ كبيرة→سكن/أجهزة؛شحنت→رصيد/بنزين.${smokingRule}
+فئات:${compressedCats}
+مثال:${example}
 JSON فقط.`;
 }
+
+const CLARIFICATION_POLICY_FREE = "لا توضيح إلا للغموض الشديد؛عملية واحدة افتراضياً.";
+const CLARIFICATION_POLICY_PRO = `سياسة:فئة فرعية دقيقة؛سؤال توضيح واحد فقط عند الضرورة؛تعدد العمليات→items منفصلة؛skip=true→بدون أسئلة.`;
 
 /** System prompt for Speech-to-Text — optimized for Egyptian Arabic financial transcription */
 const STT_SYSTEM_PROMPT = `أنت "SmartSpend Voice Engine" — نظام تحويل الصوت لتسجيل المصاريف.
@@ -91,14 +114,6 @@ export interface AIClassificationResult {
   modelUsed: string;
 }
 
-const CLARIFICATION_POLICY_PROMPT = `
-Additional policy:
-- Prefer precise subcategory mapping and avoid generic fallback categories when context exists.
-- If clarification is needed, ask ONE critical clarification question only.
-- If user selected skip clarification, never ask a question and proceed with best-effort classification.
-- For multi-transaction text, split and classify each operation independently.
-`;
-
 /**
  * Classify text using Gemini AI
  */
@@ -115,58 +130,60 @@ export async function aiClassify(
     userProfileContext?: string;
     personalContext?: string;
     ruleHints?: ParsedTransaction[];
-    candidateCategories?: string[];  // Phase 4: from embedding hints
-    amountCount?: number;            // Phase 4: for dynamic example selection
+    candidateCategories?: string[];
+    amountCount?: number;
     isSmoker?: boolean | null;
+    plan?: PlanId;
+    richContext?: boolean;
+    ruleHintsCompact?: string;
   },
   skipClarification?: boolean
 ): Promise<AIClassificationResult | null> {
-  // ── Context ──
-  let userPrompt = `النص: "${text}"`;
+  const plan: PlanId = contextObj.plan ?? "free";
+  const rich = contextObj.richContext ?? plan !== "free";
 
-  // Strategy 3: Temporal Context Hints — feed time/day hints to bias ambiguous classifications
-  if (contextObj.currentDate) {
+  let userPrompt = `نص:"${text}"`;
+
+  if (rich && contextObj.currentDate) {
     try {
       const now = new Date(contextObj.currentDate);
-      const dayOfMonth = now.getDate();
+      const hints: string[] = [];
+      const day = now.getDate();
       const hour = now.getHours();
-      const temporalHints: string[] = [];
-
-      // Day 1-5: high-value payments are likely rent, installments, or fixed commitments
-      if (dayOfMonth >= 1 && dayOfMonth <= 5) {
-        temporalHints.push("بداية الشهر: المبالغ الكبيرة غالباً إيجار أو أقساط");
-      }
-      // Day 25-31: end-of-month often means salary or subscriptions
-      if (dayOfMonth >= 25) {
-        temporalHints.push("نهاية الشهر: احتمال راتب أو تجديد اشتراكات");
-      }
-      // Late night (12AM-5AM): likely delivery, entertainment, or online subscriptions
-      if (hour >= 0 && hour < 5) {
-        temporalHints.push("وقت متأخر: غالباً دليفري أو ترفيه أو اشتراكات أونلاين");
-      }
-      // Morning (6-9AM): likely transport or breakfast
-      if (hour >= 6 && hour <= 9) {
-        temporalHints.push("صباح: غالباً مواصلات أو فطار");
-      }
-
-      if (temporalHints.length > 0) {
-        userPrompt += `\nتلميح زمني:${temporalHints.join(".")}`;
-      }
-    } catch { /* ignore date parse errors */ }
+      if (day <= 5) hints.push("بداية شهر:إيجار/أقساط");
+      if (day >= 25) hints.push("نهاية شهر:راتب/اشتراكات");
+      if (hour < 5) hints.push("ليل:دليفري/ترفيه");
+      if (hour >= 6 && hour <= 9) hints.push("صباح:مواصلات/فطار");
+      if (hints.length) userPrompt += `\nزمن:${hints.join(".")}`;
+    } catch { /* ignore */ }
   }
 
-  if (contextObj.userProfileContext) {
-    userPrompt += `\nسياق شخصي:${contextObj.userProfileContext.slice(0, 150)}`;
+  if (rich && contextObj.userProfileContext) {
+    userPrompt += `\nملف:${contextObj.userProfileContext.slice(0, plan === "ultra" ? 200 : 120)}`;
+  }
+
+  if (contextObj.ruleHintsCompact) {
+    userPrompt += `\nتلميح:${contextObj.ruleHintsCompact.slice(0, 80)}`;
   }
 
   if (skipClarification) {
-    userPrompt += `\nSkip=true:لا تطلب توضيح.`;
+    userPrompt += `\nSkip=1`;
   }
 
   let response = "";
   let tokensUsed = 0;
 
-  const systemPrompt = `${buildMicroSystemPrompt(text, contextObj.isSmoker ?? false)}\n${CLARIFICATION_POLICY_PROMPT}`;
+  const systemPrompt = `${buildMicroSystemPrompt(text, {
+    isSmoker: contextObj.isSmoker ?? false,
+    plan,
+    candidateCategories: contextObj.candidateCategories,
+    richContext: rich,
+  })}\n${plan === "free" ? CLARIFICATION_POLICY_FREE : CLARIFICATION_POLICY_PRO}`;
+
+  const estimatedPromptTokens = estimateClassificationPromptTokens(
+    systemPrompt.length,
+    userPrompt.length
+  );
 
   const actualModelName = mapModelName(modelName);
 
@@ -221,8 +238,19 @@ export async function aiClassify(
   const parsed = parseAIResponse(response, actualModelName);
   if (parsed) {
     parsed.tokensUsed = tokensUsed;
+    if (tokensUsed <= 0) {
+      parsed.tokensUsed = estimatedPromptTokens + Math.ceil((response?.length || 0) / 3.5);
+    }
   }
   return parsed;
+}
+
+export function compactRuleHints(items: ParsedTransaction[]): string {
+  if (!items.length) return "";
+  return items
+    .slice(0, 2)
+    .map((it) => `${it.amount}:${it.category}/${it.subCategory}`)
+    .join("|");
 }
 
 /**
@@ -308,7 +336,7 @@ export async function geminiSpeechToText(
 /**
  * Parse AI JSON response with fallback strategies
  */
-function parseAIResponse(response: string, modelName: string): AIClassificationResult | null {
+export function parseAIResponse(response: string, modelName: string): AIClassificationResult | null {
   const stripCodeFences = (s: string) => s.replace(/```json?/g, "").replace(/```/g, "").trim();
   const cleaned = stripCodeFences(response);
 

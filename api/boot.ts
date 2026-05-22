@@ -137,7 +137,12 @@ app.post("/api/webhooks/paymob", async (c) => {
   // Handle successful transaction
   const obj = parsed.obj;
   if (obj && obj.success === true && !obj.pending) {
-    const extraData = obj.extra_data || obj.order?.extra_data || {};
+    const extraData =
+      obj.payment_key_claims?.extra?.extras ||
+      obj.payment_key_claims?.extra ||
+      obj.extra_data ||
+      obj.order?.extra_data ||
+      {};
     const userId = Number(extraData.userId);
     const userType = extraData.userType;
     const plan = (extraData.plan || "pro_monthly") as "pro_monthly" | "pro_yearly";

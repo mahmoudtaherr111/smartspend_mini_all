@@ -42,7 +42,7 @@ export const expenseRouter = router({
         subCategory: z.string().max(ExpenseInputLimits.subCategoryMax).optional(),
         description: z.string().max(ExpenseInputLimits.descriptionMax).optional(),
         rawText: expenseRawText,
-        source: z.enum(["voice", "manual", "ai_parsed"]).default("manual"),
+        source: z.enum(["voice", "manual", "ai_parsed", "image", "sms"]).default("manual"),
         date: z.string().optional(),
       })
     )

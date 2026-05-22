@@ -28,14 +28,14 @@ export default function Admin() {
   const [showSessions, setShowSessions] = useState(false);
   const [showExports, setShowExports] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("overview");
 
-  const { stats, users, updateRole, updatePlan, deleteUser, revokeSession } = useAdmin({
-    dashboard: activeTab === "dashboard",
+  const { stats, users, updateRole, updatePlan, deleteUser, revokeSession, voiceUsage } = useAdmin({
+    dashboard: activeTab === "overview",
     users: activeTab === "users",
     activity: false,
-    classification: false,
-    voice: false,
+    classification: activeTab === "ai",
+    voice: activeTab === "ai",
   });
 
   const sessionsQuery = trpc.admin.getUserSessions.useQuery(
@@ -52,6 +52,18 @@ export default function Admin() {
     { page: 1, limit: 50 },
     { enabled: activeTab === "tickets" }
   );
+
+  const founderQuery = trpc.admin.getFounderMetrics.useQuery(undefined, {
+    enabled: activeTab === "overview" && user?.role === "admin",
+    retry: 1,
+  });
+
+  const subsQuery = trpc.admin.listSubscriptionsAdmin.useQuery(
+    { page: 1, limit: 20 },
+    { enabled: activeTab === "billing" && user?.role === "admin" }
+  );
+
+  const closeTicket = trpc.support.close.useMutation({ onSuccess: () => ticketsQuery.refetch() });
 
   const exportMutation = trpc.export.allUsers.useMutation({
     onSuccess: (data) => {
@@ -131,31 +143,41 @@ export default function Admin() {
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="no-print">
 
-          <TabsList className="mb-8 bg-white dark:bg-slate-900 p-1 rounded-xl shadow-sm border flex-wrap h-auto justify-start w-fit">
-            <TabsTrigger value="dashboard" className="gap-2 py-2.5 px-4 rounded-lg data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:data-[state=active]:bg-indigo-900/30">
-              <LayoutDashboard className="w-4 h-4" /> الإحصائيات
+          <TabsList className="mb-8 bg-white dark:bg-slate-900 p-1 rounded-xl shadow-sm border flex-wrap h-auto justify-start gap-1 w-full max-w-full">
+            <TabsTrigger value="overview" className="gap-2 py-2.5 px-3 sm:px-4 rounded-lg data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:data-[state=active]:bg-indigo-900/30">
+              <LayoutDashboard className="w-4 h-4 shrink-0" /> نظرة عامة
             </TabsTrigger>
-            <TabsTrigger value="users" className="gap-2 py-2.5 px-4 rounded-lg data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/30">
-              <Users className="w-4 h-4" /> المستخدمين
+            <TabsTrigger value="users" className="gap-2 py-2.5 px-3 sm:px-4 rounded-lg data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/30">
+              <Users className="w-4 h-4 shrink-0" /> المستخدمين
             </TabsTrigger>
-            <TabsTrigger value="tickets" className="gap-2 py-2.5 px-4 rounded-lg data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 dark:data-[state=active]:bg-amber-900/30">
-              <Ticket className="w-4 h-4" /> الدعم الفني
+            <TabsTrigger value="tickets" className="gap-2 py-2.5 px-3 sm:px-4 rounded-lg data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 dark:data-[state=active]:bg-amber-900/30">
+              <Ticket className="w-4 h-4 shrink-0" /> الدعم
             </TabsTrigger>
             {user?.role === "admin" && (
               <>
-                <TabsTrigger value="classification" className="gap-2 py-2.5 px-4 rounded-lg data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 dark:data-[state=active]:bg-purple-900/30">
-                  <Brain className="w-4 h-4" /> محرك التصنيف
+                <TabsTrigger value="ai" className="gap-2 py-2.5 px-3 sm:px-4 rounded-lg data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 dark:data-[state=active]:bg-purple-900/30">
+                  <Brain className="w-4 h-4 shrink-0" /> الذكاء الاصطناعي
                 </TabsTrigger>
-                <TabsTrigger value="settings" className="gap-2 py-2.5 px-4 rounded-lg data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 dark:data-[state=active]:bg-slate-800">
-                  <Settings2 className="w-4 h-4" /> إعدادات النظام
+                <TabsTrigger value="billing" className="gap-2 py-2.5 px-3 sm:px-4 rounded-lg data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-900/30">
+                  <Crown className="w-4 h-4 shrink-0" /> الاشتراكات
+                </TabsTrigger>
+                <TabsTrigger value="settings" className="gap-2 py-2.5 px-3 sm:px-4 rounded-lg data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 dark:data-[state=active]:bg-slate-800">
+                  <Settings2 className="w-4 h-4 shrink-0" /> الحدود والإعدادات
                 </TabsTrigger>
               </>
             )}
           </TabsList>
 
           <div className="animate-in fade-in-50 duration-500 slide-in-from-bottom-4">
-            {/* 1. Dashboard Tab */}
-            <TabsContent value="dashboard">
+            {/* 1. Overview */}
+            <TabsContent value="overview">
+              {stats.isError && (
+                <Card className="mb-6 border-destructive/30">
+                  <CardContent className="py-4 text-sm text-destructive">
+                    تعذّر تحميل إحصائيات اللوحة: {stats.error?.message}
+                  </CardContent>
+                </Card>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard icon={<Users className="w-6 h-6" />} label="إجمالي المسجلين" value={stats.data?.totalUsers ?? 0} color="blue" />
                 <StatCard icon={<Crown className="w-6 h-6" />} label="مشتركين البرو والألترا" value={stats.data?.proUsers ?? 0} color="yellow" />
@@ -168,6 +190,17 @@ export default function Admin() {
                 <StatCard icon={<Users className="w-6 h-6" />} label="تسجيل عبر جوجل" value={stats.data?.totalOAuthUsers ?? 0} color="indigo" />
                 <StatCard icon={<UserCheck className="w-6 h-6" />} label="تسجيل محلي" value={stats.data?.totalLocalUsers ?? 0} color="teal" />
               </div>
+
+              {user?.role === "admin" && founderQuery.data && (
+                <div className="mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  <StatCard icon={<Activity className="w-5 h-5" />} label="DAU" value={founderQuery.data.dau} color="green" />
+                  <StatCard icon={<Users className="w-5 h-5" />} label="WAU" value={founderQuery.data.wau} color="blue" />
+                  <StatCard icon={<Crown className="w-5 h-5" />} label="Pro جديد (7 أيام)" value={founderQuery.data.newProSubs7d} color="yellow" />
+                  <StatCard icon={<Crown className="w-5 h-5" />} label="Pro نشط" value={founderQuery.data.activeProSubs} color="yellow" />
+                  <StatCard icon={<Brain className="w-5 h-5" />} label="توكنز AI (تقريبي)" value={founderQuery.data.estimatedTokensUsed.toLocaleString()} color="purple" />
+                  <StatCard icon={<BarChart3 className="w-5 h-5" />} label="ترقيات Pro" value={founderQuery.data.upgradeEvents} color="indigo" />
+                </div>
+              )}
             </TabsContent>
 
             {/* 2. Users Tab */}
@@ -340,10 +373,10 @@ export default function Admin() {
                         </div>
                       </div>
                       {(user?.role === "admin" || user?.role === "moderator") && t.status !== "closed" && (
-                        <div className="mt-4 pt-4 border-t flex gap-3">
+                        <div className="mt-4 pt-4 border-t flex flex-col sm:flex-row gap-3">
                           <Input
                             placeholder="اكتب ردك هنا ثم اضغط Enter للإرسال..."
-                            className="flex-1 bg-slate-50 dark:bg-slate-900"
+                            className="flex-1 bg-slate-50 dark:bg-slate-900 min-h-[44px]"
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
                                 const target = e.target as HTMLInputElement;
@@ -354,6 +387,15 @@ export default function Admin() {
                               }
                             }}
                           />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="min-h-[44px]"
+                            disabled={closeTicket.isPending}
+                            onClick={() => closeTicket.mutate({ id: t.id })}
+                          >
+                            إغلاق التذكرة
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -363,12 +405,74 @@ export default function Admin() {
               </Card>
             </TabsContent>
 
-            {/* 4. Classification & Voice (Admin Only) */}
             {user?.role === "admin" && (
               <>
-                <TabsContent value="classification">
-                  <ClassificationDashboard />
+                <TabsContent value="ai" className="space-y-8">
+                  <section>
+                    <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+                      <Brain className="w-5 h-5 text-purple-600" />
+                      تصنيف المصروفات (Free / Pro)
+                    </h2>
+                    <ClassificationDashboard />
+                  </section>
+                  <section>
+                    <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+                      <Mic className="w-5 h-5 text-emerald-600" />
+                      استخدام الصوت
+                    </h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {voiceUsage.data?.usage?.map((row: any) => (
+                        <StatCard
+                          key={row.userType}
+                          icon={<Mic className="w-5 h-5" />}
+                          label={row.userType === "oauth" ? "OAuth" : "محلي"}
+                          value={`${Math.round(Number(row.totalSeconds || 0) / 60)} دقيقة`}
+                          color="teal"
+                        />
+                      )) ?? (
+                        <p className="text-sm text-muted-foreground col-span-2">لا توجد بيانات صوت لهذا الشهر.</p>
+                      )}
+                    </div>
+                  </section>
                 </TabsContent>
+
+                <TabsContent value="billing">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Crown className="w-5 h-5 text-amber-500" />
+                        اشتراكات Pro
+                      </CardTitle>
+                      <CardDescription>آخر {subsQuery.data?.list?.length ?? 0} اشتراك</CardDescription>
+                    </CardHeader>
+                    <CardContent className="overflow-x-auto">
+                      <table className="w-full text-sm text-right">
+                        <thead className="text-muted-foreground border-b">
+                          <tr>
+                            <th className="py-2 px-3">المستخدم</th>
+                            <th className="py-2 px-3">الخطة</th>
+                            <th className="py-2 px-3">الحالة</th>
+                            <th className="py-2 px-3">الدفع</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {subsQuery.data?.list?.map((s: any) => (
+                            <tr key={s.id} className="border-b last:border-0">
+                              <td className="py-2 px-3 font-mono">{s.userType}:{s.userId}</td>
+                              <td className="py-2 px-3">{s.plan}</td>
+                              <td className="py-2 px-3">{s.status}</td>
+                              <td className="py-2 px-3">{s.paymentMethod || "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {subsQuery.isError && (
+                        <p className="text-sm text-destructive mt-4">{subsQuery.error?.message}</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
                 <TabsContent value="settings">
                   <AdminSettingsTab />
                 </TabsContent>
@@ -561,7 +665,7 @@ function ClassificationDashboard() {
               <p className="text-4xl font-black text-slate-800">{s.count}</p>
               <p className="text-sm font-bold text-slate-500 mt-1">عملية معالجة</p>
               <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between text-xs font-mono text-slate-500">
-                <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3 text-green-500" /> دقة: {Math.round(s.avgConfidence)}%</span>
+                <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3 text-green-500" /> دقة: {Math.round(Number(s.avgConfidence) || 0)}%</span>
                 <span className="flex items-center gap-1"><Brain className="w-3 h-3 text-indigo-400" /> {Number(s.totalTokens).toLocaleString()} Token</span>
               </div>
             </CardContent>

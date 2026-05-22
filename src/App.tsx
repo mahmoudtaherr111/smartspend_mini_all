@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
 import { PageLoadingSkeleton } from "@/components/PageLoadingSkeleton";
 import { UltraFeatureRoute } from "@/components/routing/PlanGates";
 import { FeedbackButton } from "@/components/FeedbackButton";
+import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { PwaEnhancements } from "@/components/pwa/PwaEnhancements";
 
 import "./3d-effects.css";
 import "./print.css";
@@ -110,7 +112,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div 
-      className="min-h-screen bg-background" 
+      className="min-h-dvh min-h-screen bg-background overflow-x-hidden" 
       dir="rtl"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
@@ -118,33 +120,41 @@ function Layout({ children }: { children: React.ReactNode }) {
     >
       {user && (
         <>
-          <div className="lg:hidden flex items-center justify-between p-4 bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-b border-slate-200 dark:border-white/10 sticky top-0 z-40">
-            <div className="flex items-center gap-3">
+          <div className="lg:hidden flex items-center justify-between px-4 py-3 pt-safe bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-b border-slate-200 dark:border-white/10 sticky top-0 z-40">
+            <div className="flex items-center gap-2 min-w-0">
               <img 
                 src={whiteModeLogo} 
                 alt="SmartSpend" 
-                className="h-16 w-auto object-contain block dark:hidden scale-110 origin-right"
+                className="h-12 sm:h-14 w-auto object-contain block dark:hidden origin-right"
               />
               <img 
                 src={darkModeLogo} 
                 alt="SmartSpend" 
-                className="h-16 w-auto object-contain hidden dark:block scale-110 origin-right"
+                className="h-12 sm:h-14 w-auto object-contain hidden dark:block origin-right"
               />
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setSidebarOpen(true)}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                className="tap-target p-2.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-colors active-press"
+                aria-label="فتح القائمة"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
               </button>
             </div>
           </div>
           <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
+          <MobileBottomNav onOpenMenu={() => setSidebarOpen(true)} />
+          <PwaEnhancements />
         </>
       )}
-      <main className={cn("transition-all duration-500", user ? "lg:mr-72" : "")}>
+      <main
+        className={cn(
+          "transition-all duration-500",
+          user ? "lg:mr-72 pb-nav-safe lg:pb-0" : ""
+        )}
+      >
         {user && <AdBanner />}
         {children}
         {user && <FeedbackButton />}
@@ -234,7 +244,7 @@ export default function App() {
                   </Routes>
                 </Suspense>
               </Layout>
-              <Toaster position="top-center" richColors />
+              <Toaster position="top-center" richColors className="pt-safe" />
             </BrowserRouter>
           </ThemeProvider>
         </QueryClientProvider>

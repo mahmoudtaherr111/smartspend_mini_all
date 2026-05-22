@@ -33,4 +33,14 @@ describe("classification v2.1", () => {
     expect(result.items[0]?.category).toBe("تعليم");
     expect(result.items[0]?.confidence).toBeGreaterThanOrEqual(90);
   });
+
+  it("classifies colloquial coffee voice phrase without AI", () => {
+    const normalized = normalizeText("أنا شربت قهوة بعشرين جنيه");
+    const result = runRuleEngine(normalized);
+    expect(result.items[0]?.amount).toBe(20);
+    expect(result.items[0]?.category).toBe("أكل وشرب");
+    expect(result.items[0]?.subCategory).toBe("قهوة وكافيه");
+    expect(result.items[0]?.confidence).toBeGreaterThanOrEqual(90);
+    expect(result.needsAI).toBe(false);
+  });
 });

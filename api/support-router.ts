@@ -11,13 +11,30 @@ export const supportRouter = router({
       subject: z.string().min(3).max(255),
       message: z.string().min(10),
       priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
+      contactPhone: z.string().min(10).max(20).optional(),
+      contactEmail: z.union([z.string().email(), z.literal("")]).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
+      const phone = input.contactPhone?.trim();
+      const email = input.contactEmail?.trim();
+      const messageBody =
+        phone || email
+          ? [
+              "[بيانات التواصل]",
+              phone ? `هاتف: ${phone}` : null,
+              email ? `إيميل: ${email}` : null,
+              "",
+              input.message.trim(),
+            ]
+              .filter(Boolean)
+              .join("\n")
+          : input.message.trim();
+
       const result = await db.insert(supportTickets).values({
         userId: ctx.user.id,
         userType: ctx.user.type,
         subject: input.subject,
-        message: input.message,
+        message: messageBody,
         priority: input.priority,
         status: "open",
       });

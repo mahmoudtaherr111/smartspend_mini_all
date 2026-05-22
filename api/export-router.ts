@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { router, authedProcedure, moderatorProcedure } from "./middleware";
+import { router, authedProcedure, moderatorProcedure, proProcedure } from "./middleware";
+import { wrapReportAsPrintableHtml } from "./services/pro-report-engine";
 import { db } from "./queries/connection";
 import { expenses, users, localUsers } from "../db/schema";
 import { eq, and, gte, lte, sql } from "drizzle-orm";
@@ -49,6 +50,28 @@ export const exportRouter = router({
 
       const buf = XLSX.write(wb, { bookType: "xlsx", type: "buffer" });
       return { format: "xlsx", data: buf.toString("base64"), filename: `expenses_${ctx.user.id}.xlsx` };
+    }),
+
+  monthlyReportHtml: proProcedure
+    .input(
+      z.object({
+        month: z.string().regex(/^\d{4}-\d{2}$/),
+        insightsJson: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      let report: Record<string, unknown> = {};
+      try {
+        report = JSON.parse(input.insightsJson);
+      } catch {
+        report = { response_text: input.insightsJson };
+      }
+      const html = wrapReportAsPrintableHtml(report, input.month, ctx.user.name);
+      return {
+        format: "html",
+        filename: `smartspend-report-${input.month}.html`,
+        data: html,
+      };
     }),
 
   // ─── Export All Users (Moderator+) ───

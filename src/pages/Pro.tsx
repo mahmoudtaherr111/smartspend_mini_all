@@ -66,6 +66,10 @@ export default function Pro() {
             window.location.href = d.redirectUrl;
             return;
           }
+          if (d.mode === "unavailable") {
+            toast.error("الدفع الإلكتروني غير مفعّل على السيرفر. تواصل مع الدعم أو انتظر تفعيل Paymob.");
+            return;
+          }
           upgrade.mutate(
             {
               plan: "pro_monthly",
@@ -73,7 +77,10 @@ export default function Pro() {
               transactionId: "demo_" + Date.now(),
             },
             {
-              onSuccess: () => toast.success("تم تفعيل البرو بنجاح ✅"),
+              onSuccess: () => {
+                toast.success("تم تفعيل البرو بنجاح ✅");
+                void myPlan.refetch();
+              },
               onError: (e) => toast.error(e.message || "حصلت مشكلة في الترقية ❌"),
             }
           );
@@ -83,15 +90,32 @@ export default function Pro() {
     );
   };
 
+  const sub = plan?.subscription;
+  const subEnd = sub?.endDate ? new Date(sub.endDate as string | Date).toLocaleDateString("ar-EG") : null;
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8" dir="rtl">
       <SEOMeta path="/pro" title="الخطط - SmartSpend AI" />
 
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">اختار خطتك</h1>
-          <p className="text-muted-foreground text-lg">حول تجربتك المالية للمستوى اللي بعده</p>
+        <div className="text-center mb-8">
+          <h1 className="text-2xl sm:text-4xl font-bold mb-4">اختار خطتك</h1>
+          <p className="text-muted-foreground text-sm sm:text-lg">حول تجربتك المالية للمستوى اللي بعده</p>
         </div>
+
+        {isProTier && sub && (
+          <Card className="mb-8 border-emerald-200 bg-emerald-50/80 dark:bg-emerald-950/30">
+            <CardContent className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <p className="font-semibold text-emerald-800 dark:text-emerald-200">اشتراك Pro نشط</p>
+                <p className="text-sm text-muted-foreground">
+                  الحالة: {sub.status === "active" ? "فعّال" : sub.status} — ينتهي: {subEnd || "—"}
+                </p>
+              </div>
+              <Badge className="w-fit bg-emerald-600">PRO</Badge>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           <Card className={`relative ${!isPaid ? "border-primary ring-2 ring-primary/20" : ""}`}>

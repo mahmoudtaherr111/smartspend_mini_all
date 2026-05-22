@@ -1,24 +1,101 @@
 import { TRPCError } from "@trpc/server";
 import { env } from "./env";
 
+const PAYMOB_API = "https://accept.paymob.com/api";
+
+const PLAN_AMOUNT_CENTS: Record<"pro_monthly" | "pro_yearly", number> = {
+  pro_monthly: 99_00,
+  pro_yearly: 990_00,
+};
+
 export function isPaymobConfigured(): boolean {
   return !!(env.PAYMOB_API_KEY && env.PAYMOB_INTEGRATION_ID && env.PAYMOB_IFRAME_ID);
 }
 
+async function paymobPost<T>(path: string, body: Record<string, unknown>): Promise<T> {
+  const res = await fetch(`${PAYMOB_API}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = (await res.json().catch(() => ({}))) as T & { detail?: string; message?: string };
+  if (!res.ok) {
+    const msg = (data as { detail?: string }).detail || (data as { message?: string }).message || res.statusText;
+    throw new TRPCError({ code: "BAD_REQUEST", message: `Paymob: ${msg}` });
+  }
+  return data;
+}
+
+async function getAuthToken(): Promise<string> {
+  const data = await paymobPost<{ token: string }>("/auth/tokens", {
+    api_key: env.PAYMOB_API_KEY,
+  });
+  if (!data.token) throw new TRPCError({ code: "BAD_REQUEST", message: "Paymob auth failed" });
+  return data.token;
+}
+
 /**
- * Placeholder for the full Paymob unified-checkout flow (auth token → order → payment_key → iframe URL).
- * Wire this once production API keys are available.
+ * Hosted iframe checkout — extra metadata flows to webhook via payment_key `extras`.
  */
-export async function createPaymobHostedCheckoutUrl(_params: {
+export async function createPaymobHostedCheckoutUrl(params: {
   plan: "pro_monthly" | "pro_yearly";
   clientEmail?: string | null;
+  userId: number;
+  userType: "oauth" | "local";
 }): Promise<string> {
   if (!isPaymobConfigured()) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "بوابة الدفع غير مُكوّنة" });
   }
-  throw new TRPCError({
-    code: "NOT_IMPLEMENTED",
-    message:
-      "تدفق Paymob الكامل لم يُفعّل بعد. أضف منطق تسجيل الأوردر وpayment_key ثم أعد المحاولة، أو فعّل BILLING_SIMULATE للتجربة.",
+
+  const authToken = await getAuthToken();
+  const amountCents = PLAN_AMOUNT_CENTS[params.plan];
+
+  const order = await paymobPost<{ id: number }>("/ecommerce/orders", {
+    auth_token: authToken,
+    delivery_needed: false,
+    amount_cents: amountCents,
+    currency: "EGP",
+    items: [{ name: params.plan === "pro_yearly" ? "SmartSpend Pro Yearly" : "SmartSpend Pro Monthly", amount_cents: amountCents, quantity: 1 }],
+    merchant_order_id: `ss_${params.userType}_${params.userId}_${Date.now()}`,
   });
+
+  const billingData = {
+    apartment: "NA",
+    email: params.clientEmail || "customer@smartspend.app",
+    floor: "NA",
+    first_name: "SmartSpend",
+    street: "NA",
+    building: "NA",
+    phone_number: "+201000000000",
+    shipping_method: "NA",
+    postal_code: "NA",
+    city: "Cairo",
+    country: "EG",
+    last_name: "Customer",
+    state: "NA",
+  };
+
+  const extras = {
+    userId: params.userId,
+    userType: params.userType,
+    plan: params.plan,
+  };
+
+  const paymentKey = await paymobPost<{ token: string }>("/acceptance/payment_keys", {
+    auth_token: authToken,
+    amount_cents: amountCents,
+    expiration: 3600,
+    order_id: order.id,
+    billing_data: billingData,
+    currency: "EGP",
+    integration_id: Number(env.PAYMOB_INTEGRATION_ID),
+    lock_order_when_paid: true,
+    extras,
+  });
+
+  if (!paymentKey.token) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "تعذر إنشاء جلسة الدفع" });
+  }
+
+  return `https://accept.paymob.com/api/acceptance/iframes/${env.PAYMOB_IFRAME_ID}?payment_token=${paymentKey.token}`;
 }
