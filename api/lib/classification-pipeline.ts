@@ -1,12 +1,17 @@
 import { normalizeText } from "./text-normalizer";
 import { extractEntities } from "./entity-extractor";
 import { runRuleEngine, type ParsedTransaction } from "./rule-engine";
-import { aiClassify, geminiSpeechToText } from "./ai-classifier";
+import { aiClassify, compactRuleHints, geminiSpeechToText } from "./ai-classifier";
+import { aiClassifyPro } from "./ai-classifier-pro";
 import { runEmbeddingClassifier } from "./embedding-engine";
 import { scoreAndDecide, DEFAULT_THRESHOLDS, type ScoredResult } from "./confidence-scorer";
 import { muscleMemoryLookup } from "./muscle-memory";
 import { db } from "../queries/connection";
 import { systemSettings } from "../../db/schema";
+import { asPlan } from "./ai-usage-policy";
+import { decideClassificationRoute, ruleEngineIsStrongEnough } from "./ai-routing";
+import type { PlanId } from "./ai-usage-policy";
+import { keywordCategoryPriors } from "./keyword-category-priors";
 
 export interface PipelineInput {
   text: string;
@@ -22,6 +27,7 @@ export interface PipelineInput {
   userProfileContext?: {
     promptSummary?: string;
     personalContextPrompt?: string;
+    spendingBehavior?: string;
     hasChildren?: boolean | null;
     responsibleForFamily?: boolean | null;
     supportsOthers?: unknown;
@@ -49,8 +55,9 @@ export interface PipelineLog {
   normalizedText: string;
   entitiesFound: { amountCount: number; people: string[]; merchants: string[] };
   ruleEngineResult: { attempted: boolean; succeeded: boolean; reason?: string };
-  embeddingResult: { attempted: boolean; succeeded: boolean; isSimple?: boolean; complexityScore?: number };
-  aiResult: { attempted: boolean; succeeded: boolean; modelUsed?: string };
+  embeddingResult: { attempted: boolean; succeeded: boolean; isSimple?: boolean; complexityScore?: number; reason?: string };
+  aiResult: { attempted: boolean; succeeded: boolean; modelUsed?: string; routeReason?: string };
+  routing?: { route: string; reason: string };
   finalConfidence: number;
   finalDecision: string;
 }
@@ -103,6 +110,7 @@ async function getThresholds(): Promise<typeof DEFAULT_THRESHOLDS> {
 export async function runPipeline(input: PipelineInput): Promise<PipelineResult> {
   const startTime = Date.now();
   const thresholds = await getThresholds();
+  const plan = asPlan(input.userPlan);
 
   // ── Step 1: Normalize Text ──
   const normalizedText = normalizeText(input.text);
@@ -171,102 +179,168 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
   log.ruleEngineResult.attempted = true;
   const ruleResult = runRuleEngine(normalizedText, input.userDict, input.userProfileContext);
 
-  // Check if the text contains known personal names → force AI for better context understanding
   const personalContextPrompt = input.userProfileContext?.personalContextPrompt || "";
   const knownNameMentioned = personalContextPrompt.length > 0 && entities.people.length > 0;
 
-  if (!ruleResult.needsAI && ruleResult.items.length > 0 && !knownNameMentioned) {
-    // Rule engine succeeded and no known names detected
+  const ruleFloor: Record<PlanId, number> = { free: 88, pro: 95, ultra: 95 };
+  const ruleAlreadyStrong =
+    ruleResult.items.length > 0 &&
+    !knownNameMentioned &&
+    ruleEngineIsStrongEnough(ruleResult.items, ruleFloor[plan]);
+
+  let embResult: Awaited<ReturnType<typeof runEmbeddingClassifier>> = null;
+  let candidateCategories: string[] | undefined = keywordCategoryPriors(normalizedText);
+
+  const skipEmbedForPaidPrimary = plan === "pro" || plan === "ultra";
+
+  if (ruleAlreadyStrong) {
+    log.embeddingResult.attempted = false;
+    log.embeddingResult.reason = "skipped_strong_rule_precheck";
+  } else if (skipEmbedForPaidPrimary) {
+    log.embeddingResult.attempted = false;
+    log.embeddingResult.reason = "skipped_pro_ai_primary";
+  } else {
+    log.embeddingResult.attempted = true;
+    try {
+      embResult = await runEmbeddingClassifier(normalizedText, input.apiKey, plan);
+      if (embResult) {
+        log.embeddingResult.complexityScore = embResult.complexityScore;
+        log.embeddingResult.isSimple = embResult.isSimple;
+        candidateCategories = [
+          ...new Set([
+            ...(candidateCategories || []),
+            ...embResult.matches.flatMap((m) => m.topCategories || [m.category]),
+          ]),
+        ];
+      }
+    } catch (embErr) {
+      console.warn("Embedding classifier error (non-fatal):", embErr);
+    }
+  }
+
+  const routing = decideClassificationRoute(ruleResult, embResult, {
+    plan,
+    textLength: input.text.length,
+    amountCount: entities.amounts.length,
+    hasMultipleTransactions: entities.hasMultipleTransactions,
+    knownNameMentioned,
+  });
+  log.routing = { route: routing.route, reason: routing.reason };
+
+  if (routing.acceptRuleEngine) {
     items = ruleResult.items;
     log.ruleEngineResult.succeeded = true;
     parsedBy = "rule_engine";
     modelUsed = "rule_engine";
+  } else if (routing.route === "embedding" && embResult?.matches.length) {
+    log.embeddingResult.succeeded = true;
+    parsedBy = "embedding";
+    modelUsed = "text-embedding-004";
+    for (let i = 0; i < embResult.matches.length; i++) {
+      const match = embResult.matches[i];
+      const amount = entities.amounts[i]?.amount || entities.amounts[0]?.amount || 0;
+      items.push({
+        amount,
+        category: match.category,
+        subCategory: match.subCategory,
+        description: embResult.segments[i] || normalizedText,
+        type: ["مرتب", "عمل حر", "عوائد استثمار"].includes(match.category) ? "income" : "expense",
+        confidence: match.score,
+        currency: "EGP",
+        needsReview: match.score < 85,
+        parsedBy: "rule_engine",
+        inferenceSource: "synonym",
+        ambiguityFlags: match.margin < 10 ? ["low_embedding_margin"] : undefined,
+        confidenceBreakdown: {
+          intent: match.score,
+          taxonomy: match.score,
+          heuristics: match.margin,
+        },
+      });
+    }
   } else {
-    // ── Step 4.5: Hybrid Embedding Layer (NEW) ──
     log.ruleEngineResult.succeeded = false;
-    log.ruleEngineResult.reason = ruleResult.reason;
+    log.ruleEngineResult.reason = ruleResult.reason ?? routing.reason;
 
-    // Try embedding classifier before falling back to full LLM
-    log.embeddingResult.attempted = true;
-    let candidateCategories: string[] | undefined = undefined;
-
-    try {
-      const embResult = await runEmbeddingClassifier(normalizedText, input.apiKey);
-
-      if (embResult) {
-        log.embeddingResult.complexityScore = embResult.complexityScore;
-        log.embeddingResult.isSimple = embResult.isSimple;
-
-        if (embResult.isSimple && embResult.matches.length > 0) {
-          // Embedding is confident enough → skip LLM entirely
-          log.embeddingResult.succeeded = true;
-          parsedBy = "embedding";
-          modelUsed = "text-embedding-004";
-
-          // Build ParsedTransaction items from embedding matches
-          for (let i = 0; i < embResult.matches.length; i++) {
-            const match = embResult.matches[i];
-            const segAmounts = entities.amounts;
-            const amount = segAmounts[i]?.amount || segAmounts[0]?.amount || 0;
-
-            items.push({
-              amount,
-              category: match.category,
-              subCategory: match.subCategory,
-              description: embResult.segments[i] || normalizedText,
-              type: ["مرتب", "عمل حر", "عوائد استثمار"].includes(match.category) ? "income" : "expense",
-              confidence: match.score,
-              currency: "EGP",
-              needsReview: match.score < 85,
-              parsedBy: "rule_engine",  // compatible type
-              inferenceSource: "synonym",
-              ambiguityFlags: match.margin < 10 ? ["low_embedding_margin"] : undefined,
-              confidenceBreakdown: {
-                intent: match.score,
-                taxonomy: match.score,
-                heuristics: match.margin,
-              },
-            });
-          }
-        }
+    if (routing.useEmbedding && embResult?.matches.length && items.length === 0) {
+      log.embeddingResult.succeeded = true;
+      parsedBy = "embedding";
+      modelUsed = "text-embedding-004";
+      for (let i = 0; i < embResult.matches.length; i++) {
+        const match = embResult.matches[i];
+        const amount = entities.amounts[i]?.amount || entities.amounts[0]?.amount || 0;
+        items.push({
+          amount,
+          category: match.category,
+          subCategory: match.subCategory,
+          description: embResult.segments[i] || normalizedText,
+          type: ["مرتب", "عمل حر", "عوائد استثمار"].includes(match.category) ? "income" : "expense",
+          confidence: match.score,
+          currency: "EGP",
+          needsReview: true,
+          parsedBy: "rule_engine",
+          inferenceSource: "synonym",
+        });
       }
-    } catch (embErr) {
-      console.warn("Embedding classifier error (non-fatal):", embErr);
-      log.embeddingResult.succeeded = false;
     }
 
-    // ── Step 5: AI Classification (only if embedding didn't handle it) ──
-    if (items.length === 0) {
+    if (routing.useAi && items.length === 0) {
       log.aiResult.attempted = true;
-
-      const isComplexText = input.text.length > 35 || entities.hasMultipleTransactions;
-      const isWeakRuleResult = ruleResult.items.some(
-        it => it.category === "متنوعات" || it.confidence < 80
-      );
+      log.aiResult.routeReason = routing.reason;
 
       const forceSkipClarification = input.skipClarification || entities.amounts.length >= 2;
+      const aiMaxTokens = Math.min(
+        input.maxTokens,
+        routing.maxAiOutputTokens
+      );
 
-      if (isComplexText || isWeakRuleResult || ruleResult.needsAI || forceSkipClarification) {
-        try {
-          const currentDate = new Date().toLocaleString("ar-EG", { timeZone: "Africa/Cairo" });
-          const aiResult = await aiClassify(
-            input.text,
-            input.apiKey,
-            input.apiKey2,
-            input.modelName,
-            input.maxTokens,
-            {
-              totalIncome: input.monthlyContext.totalIncome,
-              totalExpense: input.monthlyContext.totalExpense,
-              currentDate,
-              userProfileContext: input.userProfileContext?.promptSummary,
-              personalContext: input.userProfileContext?.personalContextPrompt,
-              ruleHints: ruleResult.items.filter(i => i.confidence >= 60),
-              amountCount: entities.amounts.length,
-              isSmoker: input.userProfileContext?.isSmoker,
-            },
-            forceSkipClarification
-          );
+      try {
+        const currentDate = new Date().toLocaleString("ar-EG", { timeZone: "Africa/Cairo" });
+        const ruleHints = ruleResult.items.filter((i) => i.confidence >= 60);
+        const aiResult =
+          plan === "pro" || plan === "ultra"
+            ? await aiClassifyPro(
+                input.text,
+                input.apiKey,
+                input.apiKey2,
+                input.modelName,
+                aiMaxTokens,
+                {
+                  totalIncome: input.monthlyContext.totalIncome,
+                  totalExpense: input.monthlyContext.totalExpense,
+                  currentDate,
+                  profileSummary: input.userProfileContext?.promptSummary,
+                  personalContext: input.userProfileContext?.personalContextPrompt,
+                  spendingBehavior: input.userProfileContext?.spendingBehavior,
+                  ruleHints,
+                  candidateCategories,
+                  isSmoker: input.userProfileContext?.isSmoker,
+                  plan,
+                },
+                forceSkipClarification
+              )
+            : await aiClassify(
+                input.text,
+                input.apiKey,
+                input.apiKey2,
+                input.modelName,
+                aiMaxTokens,
+                {
+                  totalIncome: input.monthlyContext.totalIncome,
+                  totalExpense: input.monthlyContext.totalExpense,
+                  currentDate,
+                  userProfileContext: routing.includeRichAiContext
+                    ? input.userProfileContext?.promptSummary
+                    : undefined,
+                  candidateCategories,
+                  amountCount: entities.amounts.length,
+                  isSmoker: input.userProfileContext?.isSmoker,
+                  plan,
+                  richContext: routing.includeRichAiContext,
+                  ruleHintsCompact: compactRuleHints(ruleHints),
+                },
+                forceSkipClarification
+              );
 
           if (aiResult) {
             tokensUsed = aiResult.tokensUsed;
@@ -275,14 +349,13 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
 
             const isSkipped = forceSkipClarification;
 
-            // ── The Local Taxonomy Engine (Zero Token Categorization) ──
-            // AI extracted amounts and item names. We use local embeddings to map them to categories!
             if (aiResult.items.length > 0 && !aiResult.needsClarification) {
+              const allowPostAiEmbedRemap = plan === "free";
               for (const item of aiResult.items) {
-                if (item.category === "متنوعات") {
+                if (allowPostAiEmbedRemap && item.category === "متنوعات") {
                   try {
-                    const embMatch = await runEmbeddingClassifier(item.description, input.apiKey);
-                    if (embMatch && embMatch.matches.length > 0) {
+                    const embMatch = await runEmbeddingClassifier(item.description, input.apiKey, plan);
+                    if (embMatch?.matches.length) {
                       item.category = embMatch.matches[0].category;
                       item.subCategory = embMatch.matches[0].subCategory;
                       item.confidence = Math.round((item.confidence + embMatch.matches[0].score) / 2);
@@ -377,21 +450,26 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
             parsedBy = "rule_engine";
           }
         }
-      } else if (ruleResult.items.length > 0) {
-        items = ruleResult.items;
-      }
+    } else if (ruleResult.items.length > 0 && items.length === 0) {
+      items = ruleResult.items;
+      parsedBy = "rule_engine";
     }
   }
 
-  // ── Step 5.3: Hybrid Dispute Resolution (Strategy 8) ──
-  // When Gemini has low confidence, cross-check against the local Embedding Engine.
-  // If they disagree completely → flag for user review. Once confirmed, Strategy 6
-  // auto-learns the correction into user_dictionaries permanently.
-  if (items.length > 0 && parsedBy !== "rule_engine" && parsedBy !== ("muscle_memory" as any)) {
-    for (const item of items) {
+  if (
+    routing.runDisputeResolution &&
+    items.length > 0 &&
+    parsedBy !== "rule_engine" &&
+    parsedBy !== ("muscle_memory" as any)
+  ) {
+    const disputeCandidates = items
+      .filter((item) => item.confidence < 75 && item.description && item.description.length >= 3)
+      .sort((a, b) => a.confidence - b.confidence)
+      .slice(0, 1);
+    for (const item of disputeCandidates) {
       if (item.confidence < 75 && item.description && item.description.length >= 3) {
         try {
-          const disputeCheck = await runEmbeddingClassifier(item.description, input.apiKey);
+          const disputeCheck = await runEmbeddingClassifier(item.description, input.apiKey, plan);
           if (disputeCheck && disputeCheck.matches.length > 0) {
             const embeddingCategory = disputeCheck.matches[0].category;
             const embeddingScore = disputeCheck.matches[0].score;

@@ -60,10 +60,17 @@ export const proRouter = router({
         const redirectUrl = await createPaymobHostedCheckoutUrl({
           plan: input.plan,
           clientEmail: ctx.user.email ?? null,
+          userId: ctx.user.id,
+          userType: ctx.user.type as "oauth" | "local",
         });
-        return { mode: "redirect" as const, redirectUrl };
+        return { mode: "redirect" as const, redirectUrl, paymobReady: true };
       }
-      return { mode: "simulate" as const, redirectUrl: null as string | null };
+      const allowSimulate = env.NODE_ENV === "development" || env.BILLING_SIMULATE === "true";
+      return {
+        mode: allowSimulate ? ("simulate" as const) : ("unavailable" as const),
+        redirectUrl: null as string | null,
+        paymobReady: false,
+      };
     }),
 
   upgrade: authedProcedure

@@ -61,8 +61,10 @@ export const adminRouter = router({
       .where(gte(sessions.expiresAt, new Date()));
     const openTickets = await db.select({ count: count() }).from(supportTickets)
       .where(eq(supportTickets.status, "open"));
-    const proUsers = await db.select({ count: count() }).from(users).where(eq(users.plan, "pro"));
-    const proLocalUsers = await db.select({ count: count() }).from(localUsers).where(eq(localUsers.plan, "pro"));
+    const paidPlans = inArray(users.plan, ["pro", "ultra"]);
+    const paidPlansLocal = inArray(localUsers.plan, ["pro", "ultra"]);
+    const proUsers = await db.select({ count: count() }).from(users).where(paidPlans);
+    const proLocalUsers = await db.select({ count: count() }).from(localUsers).where(paidPlansLocal);
 
     return {
       totalOAuthUsers: totalUsers[0]?.count ?? 0,
@@ -557,5 +559,106 @@ export const adminRouter = router({
     .mutation(async ({ input }) => {
       await db.delete(discountCodes).where(eq(discountCodes.id, input.id));
       return { success: true, message: "تم حذف الكود" };
+    }),
+
+  /** Founder / ops: DAU, Pro subs, token burn estimate */
+  getFounderMetrics: adminProcedure.query(async () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    const safeCount = async (run: () => Promise<{ count?: number | null }[]>, fallback = 0) => {
+      try {
+        const rows = await run();
+        return Number(rows[0]?.count ?? 0);
+      } catch (err) {
+        console.warn("getFounderMetrics partial failure:", err);
+        return fallback;
+      }
+    };
+
+    const dau = await safeCount(() =>
+      db
+        .select({ count: sql<number>`COUNT(DISTINCT CONCAT(${sessions.userType}, ':', ${sessions.userId}))` })
+        .from(sessions)
+        .where(gte(sessions.createdAt, today))
+    );
+
+    const wau = await safeCount(() =>
+      db
+        .select({ count: sql<number>`COUNT(DISTINCT CONCAT(${sessions.userType}, ':', ${sessions.userId}))` })
+        .from(sessions)
+        .where(gte(sessions.createdAt, weekAgo))
+    );
+
+    const newProSubs7d = await safeCount(() =>
+      db
+        .select({ count: count() })
+        .from(proSubscriptions)
+        .where(and(eq(proSubscriptions.status, "active"), gte(proSubscriptions.createdAt, weekAgo)))
+    );
+
+    const activeProSubs = await safeCount(() =>
+      db.select({ count: count() }).from(proSubscriptions).where(eq(proSubscriptions.status, "active"))
+    );
+
+    let tokenTotal = 0;
+    try {
+      const oauthTok = await db.select({ sum: sql<number>`COALESCE(SUM(${users.aiTokensUsed}), 0)` }).from(users);
+      const localTok = await db.select({ sum: sql<number>`COALESCE(SUM(${localUsers.aiTokensUsed}), 0)` }).from(localUsers);
+      tokenTotal = Number(oauthTok[0]?.sum ?? 0) + Number(localTok[0]?.sum ?? 0);
+    } catch (err) {
+      console.warn("getFounderMetrics token sum failed:", err);
+    }
+
+    const upgradeEvents = await safeCount(() =>
+      db.select({ count: count() }).from(userAnalytics).where(eq(userAnalytics.event, "upgrade_to_pro"))
+    );
+
+    const openTickets = await safeCount(() =>
+      db.select({ count: count() }).from(supportTickets).where(eq(supportTickets.status, "open"))
+    );
+
+    return {
+      dau,
+      wau,
+      newProSubs7d,
+      activeProSubs,
+      estimatedTokensUsed: tokenTotal,
+      upgradeEvents,
+      openTickets,
+    };
+  }),
+
+  setUserTokenLimit: adminProcedure
+    .input(
+      z.object({
+        userId: z.number(),
+        userType: z.enum(["oauth", "local"]),
+        monthlyTokenLimit: z.number().min(0).max(10_000_000),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const key = `user_token_limit_${input.userType}_${input.userId}`;
+      const existing = await db.select().from(systemSettings).where(eq(systemSettings.key, key)).limit(1);
+      if (existing[0]) {
+        await db.update(systemSettings).set({ value: String(input.monthlyTokenLimit) }).where(eq(systemSettings.key, key));
+      } else {
+        await db.insert(systemSettings).values({ key, value: String(input.monthlyTokenLimit) });
+      }
+      return { success: true, key, limit: input.monthlyTokenLimit };
+    }),
+
+  listSubscriptionsAdmin: adminProcedure
+    .input(z.object({ status: z.string().optional(), page: z.number().default(1), limit: z.number().default(30) }).optional())
+    .query(async ({ input }) => {
+      const { status, page = 1, limit = 30 } = input ?? {};
+      const offset = (page - 1) * limit;
+      let q = db.select().from(proSubscriptions).$dynamic().orderBy(desc(proSubscriptions.createdAt));
+      if (status) q = q.where(eq(proSubscriptions.status, status));
+      const list = await q.limit(limit).offset(offset);
+      const total = await db.select({ count: count() }).from(proSubscriptions);
+      return { list, total: total[0]?.count ?? 0, page, limit };
     }),
 });

@@ -42,7 +42,7 @@ export function FeedbackButton() {
       <DialogTrigger asChild>
         <Button
           size="icon"
-          className="fixed bottom-6 left-6 h-14 w-14 rounded-full shadow-2xl bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 hover:scale-110 transition-transform z-50 text-white"
+          className="fixed left-4 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] lg:bottom-6 lg:left-6 h-14 w-14 min-h-[56px] min-w-[56px] rounded-full shadow-2xl bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 active:scale-95 transition-transform z-40 text-white"
         >
           <MessageCircleHeart className="w-6 h-6" />
         </Button>

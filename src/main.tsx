@@ -1,7 +1,14 @@
-import { StrictMode } from "react";
+import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App";
+import { dismissAppLoader, isStandalonePwa, registerAppServiceWorker } from "./pwa/register-sw";
+
+registerAppServiceWorker();
+
+if (isStandalonePwa()) {
+  document.documentElement.classList.add("pwa-standalone");
+}
 
 window.onerror = function (msg, url, line, col, error) {
   const div = document.createElement("div");
@@ -40,8 +47,15 @@ window.onerror = function (msg, url, line, col, error) {
   document.body.appendChild(div);
 };
 
+function Root() {
+  useEffect(() => {
+    dismissAppLoader();
+  }, []);
+  return <App />;
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    <Root />
   </StrictMode>
 );

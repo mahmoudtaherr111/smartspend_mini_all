@@ -1,5 +1,5 @@
 import { db } from "../queries/connection";
-import { users, localUsers, proSubscriptions } from "../../db/schema";
+import { users, localUsers, proSubscriptions, userAnalytics } from "../../db/schema";
 import { eq } from "drizzle-orm";
 
 export type BillingPlan = "pro_monthly" | "pro_yearly";
@@ -29,6 +29,16 @@ export async function grantProSubscription(input: {
 
   const table = input.userType === "oauth" ? users : localUsers;
   await db.update(table).set({ plan: "pro" }).where(eq(table.id, input.userId));
+
+  await db
+    .insert(userAnalytics)
+    .values({
+      userId: input.userId,
+      userType: input.userType,
+      event: "upgrade_to_pro",
+      metadata: { plan: input.plan, transactionId: input.transactionId },
+    })
+    .catch(() => {});
 
   return { endDate };
 }

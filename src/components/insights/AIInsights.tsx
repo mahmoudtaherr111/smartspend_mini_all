@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/providers/trpc";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +10,7 @@ import {
   TrendingDown,
   AlertTriangle,
   BarChart3,
+  FileDown,
 } from "lucide-react";
 
 interface AIInsightsProps {
@@ -16,6 +18,9 @@ interface AIInsightsProps {
 }
 
 export function AIInsights({ month }: AIInsightsProps) {
+  const { hasProAccess } = useAuth();
+  const isPro = hasProAccess;
+  const exportHtml = trpc.export.monthlyReportHtml.useMutation();
   const [showComparison, setShowComparison] = useState(false);
   const [compareMonth, setCompareMonth] = useState(() => {
     const d = new Date(month + "-01");
@@ -223,20 +228,61 @@ export function AIInsights({ month }: AIInsightsProps) {
                   </div>
                 )}
 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleGenerateInsights}
-                  disabled={insightsMutation.isPending}
-                  className="text-xs"
-                >
-                  {insightsMutation.isPending ? (
-                    <Loader2 className="w-3 h-3 animate-spin mr-1" />
-                  ) : (
-                    <Sparkles className="w-3 h-3 mr-1" />
+                <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleGenerateInsights}
+                    disabled={insightsMutation.isPending}
+                    className="text-xs min-h-[44px] w-full sm:w-auto active-press"
+                  >
+                    {insightsMutation.isPending ? (
+                      <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                    ) : (
+                      <Sparkles className="w-3 h-3 mr-1" />
+                    )}
+                    تحديث التحليل
+                  </Button>
+                  {isPro && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs gap-1 min-h-[44px] w-full sm:w-auto active-press"
+                      disabled={exportHtml.isPending}
+                      onClick={() =>
+                        exportHtml.mutate(
+                          {
+                            month,
+                            insightsJson:
+                              typeof insightsData === "string"
+                                ? insightsData
+                                : JSON.stringify(insightsData),
+                          },
+                          {
+                            onSuccess: (res) => {
+                              const blob = new Blob([res.data], {
+                                type: "text/html;charset=utf-8",
+                              });
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement("a");
+                              a.href = url;
+                              a.download = res.filename;
+                              a.click();
+                              URL.revokeObjectURL(url);
+                            },
+                          }
+                        )
+                      }
+                    >
+                      {exportHtml.isPending ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <FileDown className="w-3 h-3" />
+                      )}
+                      تصدير تقرير Pro
+                    </Button>
                   )}
-                  تحديث التحليل
-                </Button>
+                </div>
               </div>
             );
           })()}

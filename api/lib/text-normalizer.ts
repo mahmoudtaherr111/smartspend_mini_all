@@ -150,8 +150,10 @@ export function normalizeText(text: string): string {
     });
   }
 
-  // 6. Replace word numbers
+  // 6. Replace word numbers (spaced and attached colloquial forms like "بعشرين")
   for (const [word, num] of Object.entries(WORD_NUMBERS)) {
+    const attached = new RegExp(`ب${word}(?=\\s|جنيه|ج\\.م|ج|$)`, "g");
+    result = result.replace(attached, ` ${num} `);
     const regex = new RegExp(`(?:^|\\s)(ب|بـ|و)?${word}(?=\\s|$)`, "g");
     result = result.replace(regex, (_, prefix) => {
       return (prefix ? ` ${prefix} ` : " ") + num.toString() + " ";

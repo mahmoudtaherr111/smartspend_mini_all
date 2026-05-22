@@ -11,6 +11,7 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { CATEGORIES, type MainCategory } from "./category-registry";
+import type { PlanId } from "./ai-usage-policy";
 
 // ─────────────────────────────────────────────────
 //  Types
@@ -421,11 +422,15 @@ export function computeComplexity(text: string): { score: number; features: Comp
 //  Public API
 // ─────────────────────────────────────────────────
 
-/** Confidence threshold: above this → skip LLM */
-const EMBEDDING_CONFIDENCE_THRESHOLD = 80;
-
-/** Complexity threshold: below this → eligible for embedding-only */
-const COMPLEXITY_THRESHOLD = 35;
+function thresholdsForPlan(plan: PlanId = "free") {
+  if (plan === "free") {
+    return { confidence: 75, complexity: 48, margin: 6 };
+  }
+  if (plan === "pro") {
+    return { confidence: 80, complexity: 35, margin: 8 };
+  }
+  return { confidence: 78, complexity: 40, margin: 7 };
+}
 
 /**
  * Main entry: run the embedding-based hybrid classifier.
@@ -434,8 +439,11 @@ const COMPLEXITY_THRESHOLD = 35;
  */
 export async function runEmbeddingClassifier(
   text: string,
-  apiKey: string
+  apiKey: string,
+  plan: PlanId = "free"
 ): Promise<EmbeddingResult | null> {
+  const { confidence: EMBEDDING_CONFIDENCE_THRESHOLD, complexity: COMPLEXITY_THRESHOLD, margin: MARGIN_MIN } =
+    thresholdsForPlan(plan);
   try {
     // 1. Ensure category embeddings are loaded
     await ensureCategoryEmbeddings(apiKey);
@@ -462,7 +470,7 @@ export async function runEmbeddingClassifier(
 
     // 4. Determine if simple enough to trust embeddings alone
     const allHighConfidence = matches.every(m => m.score >= EMBEDDING_CONFIDENCE_THRESHOLD);
-    const allGoodMargin = matches.every(m => m.margin >= 8);
+    const allGoodMargin = matches.every(m => m.margin >= MARGIN_MIN);
     const isSimple = complexityScore < COMPLEXITY_THRESHOLD && allHighConfidence && allGoodMargin;
 
     return {

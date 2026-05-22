@@ -60,6 +60,8 @@ const SUB_CATEGORY_MAP: Record<string, { category: string; subCategory: string }
   "دليفري": { category: "أكل وشرب", subCategory: "دليفري" },
   "تيك اواي": { category: "أكل وشرب", subCategory: "دليفري" },
   "قهوه": { category: "أكل وشرب", subCategory: "قهوة وكافيه" },
+  "قهوة": { category: "أكل وشرب", subCategory: "قهوة وكافيه" },
+  "قهو": { category: "أكل وشرب", subCategory: "قهوة وكافيه" },
   "نسكافيه": { category: "أكل وشرب", subCategory: "قهوة وكافيه" },
   "كافيه": { category: "ترفيه", subCategory: "كافيه وشيشة" },
   "بقاله": { category: "أكل وشرب", subCategory: "بقالة" },
@@ -399,10 +401,8 @@ export function runRuleEngine(
     const afterAmount = normalizedText.slice(index + length, contextEnd).trim();
     const allContext = (beforeAmount + " " + afterAmount).trim();
 
-    // Detect intent
     const intentResult = detectIntent(allContext);
 
-    // Find category + subcategory
     let category = intentResult.intent === "income" ? "مرتب" : "متنوعات";
     let subCategory = "عام";
     let confidence = 30;
@@ -410,8 +410,38 @@ export function runRuleEngine(
     let ambiguityFlags: string[] | undefined;
     const words = allContext.split(/\s+/).filter(w => w.length >= 2);
 
-    // 1. User dictionary (highest priority)
     let found = false;
+
+    if (intentResult.intent === "expense") {
+      if (/(?:شربت|اشربت|شربنا|شرب)\s*(?:قهو|قهوه|قهوة|كوفي|كابتشينو|لاتيه|نسكافيه|كافيه)/.test(allContext)) {
+        category = "أكل وشرب";
+        subCategory = "قهوة وكافيه";
+        confidence = 93;
+        inferenceSource = "rule";
+        ambiguityFlags = ["voice_colloquial_drink"];
+        found = true;
+      } else if (/(?:اشتريت|جبت|دفعت|صرفت|اخدت)\s*(?:شاورما|برجر|بيتزا|وجبه|وجبة|سندوتش)/.test(allContext)) {
+        category = "أكل وشرب";
+        subCategory = /بيتزا|برجر/.test(allContext) ? "وجبات سريعة" : "مطعم";
+        confidence = 91;
+        inferenceSource = "rule";
+        found = true;
+      } else if (/(?:شحنت|شحنة)\s*(?:رصيد|موبايل|نت)/.test(allContext)) {
+        category = "فواتير";
+        subCategory = /نت/.test(allContext) ? "إنترنت" : "شحن رصيد";
+        confidence = 92;
+        inferenceSource = "rule";
+        found = true;
+      } else if (/(?:ركبت|اخدت|مشيت)\s*(?:اوبر|كريم|تاكسي|مترو)/.test(allContext)) {
+        category = "مواصلات";
+        subCategory = /اوبر|كريم/.test(allContext) ? "أوبر/كريم" : /مترو/.test(allContext) ? "مترو" : "تاكسي";
+        confidence = 91;
+        inferenceSource = "rule";
+        found = true;
+      }
+    }
+
+    // 1. User dictionary (highest priority)
     for (const word of words) {
       const userMatch = userDict.find(ud => ud.word === word);
       if (userMatch) {

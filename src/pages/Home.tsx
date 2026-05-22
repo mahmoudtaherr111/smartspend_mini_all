@@ -17,8 +17,9 @@ import { trpc } from "@/providers/trpc";
 
 import { ExpenseForm } from "@/components/expenses/ExpenseForm";
 import { RecentExpenses } from "@/components/expenses/RecentExpenses";
-import { MonthlyStats } from "@/components/dashboard/MonthlyStats";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Brain } from "lucide-react";
 import { OnboardingCard } from "@/components/OnboardingCard";
 import { ProductTour } from "@/components/ProductTour";
 import { getCategoryColor } from "@/lib/utils";
@@ -28,7 +29,13 @@ const ExpenseChart = lazy(() =>
 );
 import { AIInsights } from "@/components/insights/AIInsights";
 import { BehaviorInsights } from "@/components/dashboard/BehaviorInsights";
+import { ReceiptCapture } from "@/components/expenses/ReceiptCapture";
+
+const FinancialGoalsPanel = lazy(() =>
+  import("@/components/goals/FinancialGoalsPanel").then((m) => ({ default: m.FinancialGoalsPanel }))
+);
 import { MonthlyCalendar } from "@/components/dashboard/MonthlyCalendar";
+import { PlanUsageStrip } from "@/components/layout/PlanUsageStrip";
 
 type HomeTab = "record" | "stats" | "ai" | "calendar";
 
@@ -112,9 +119,15 @@ export default function Home() {
     { month, salaryDay },
     { staleTime: 30_000 }
   );
-  const { data: stats, isFetching: statsFetching } = trpc.expense.getMonthlyStats.useQuery(
+  const {
+    data: stats,
+    isFetching: statsFetching,
+    isError: statsError,
+    error: statsQueryError,
+    refetch: refetchStats,
+  } = trpc.expense.getMonthlyStats.useQuery(
     { month, salaryDay },
-    { enabled: shouldLoadStats, staleTime: 30_000 }
+    { enabled: shouldLoadStats, staleTime: 30_000, retry: 1 }
   );
   const refreshInferences = trpc.profile.refreshInferences.useMutation({
     onSuccess: () => {
@@ -152,20 +165,32 @@ export default function Home() {
   const netFlow = summary?.netFlow || 0;
 
   return (
-    <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950/40">
+    <div className="min-h-dvh min-h-screen bg-slate-50/70 dark:bg-slate-950/40">
       <ProductTour />
-      <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-5">
+      <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-5">
         <OnboardingCard />
-        <header className="flex flex-col gap-4">
+        <PlanUsageStrip />
+        <header className="flex flex-col gap-3 sticky top-[calc(3.5rem+env(safe-area-inset-top))] lg:static z-30 -mx-1 px-1 py-2 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-sm lg:bg-transparent lg:backdrop-blur-none">
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl md:text-3xl font-bold">{pageTitle}</h1>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">{pageTitle}</h1>
               <HealthBadge summary={summary} />
             </div>
             <p className="text-muted-foreground text-sm">
               أهلاً {user?.name || "صديقي"}، ابدأ بتسجيل العملية بسرعة واترك التحليلات لقسم الإحصائيات.
             </p>
           </div>
+          <Tabs value={activeTab} onValueChange={(v) => updateView(v as HomeTab)} className="hidden sm:block w-full">
+            <TabsList className="w-full grid grid-cols-4 h-auto p-1">
+              <TabsTrigger value="record" className="text-xs sm:text-sm">تسجيل</TabsTrigger>
+              <TabsTrigger value="stats" className="text-xs sm:text-sm">إحصائيات</TabsTrigger>
+              <TabsTrigger value="ai" className="text-xs sm:text-sm gap-1">
+                <Brain className="w-3.5 h-3.5" />
+                ذكاء اصطناعي
+              </TabsTrigger>
+              <TabsTrigger value="calendar" className="text-xs sm:text-sm">تقويم</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </header>
 
         <section className="grid grid-cols-2 gap-3">
@@ -193,11 +218,28 @@ export default function Home() {
                   utils.profile.getSmartProfile.invalidate();
                 }}
               />
-              <RecentExpenses limit={7} onRefresh={() => utils.expense.getMonthSummary.invalidate({ month })} />
+              <div className="space-y-4">
+                <ReceiptCapture
+                  onSaved={() => {
+                    utils.expense.getMonthSummary.invalidate({ month });
+                    utils.expense.getMonthlyStats.invalidate({ month });
+                  }}
+                />
+                <RecentExpenses limit={7} onRefresh={() => utils.expense.getMonthSummary.invalidate({ month })} />
+              </div>
             </div>
-            
+
+            <Suspense fallback={<Card><CardContent className="py-8"><Skeleton className="h-24 w-full" /></CardContent></Card>}>
+              <FinancialGoalsPanel />
+            </Suspense>
+
             <div className="pt-6 pb-2 border-t flex justify-center">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2" onClick={() => updateView("stats")}>
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto gap-2 min-h-[48px] active-press"
+                onClick={() => updateView("stats")}
+              >
                 <BarChart3 className="w-5 h-5" />
                 عرض الإحصائيات الكاملة
               </Button>
@@ -206,13 +248,23 @@ export default function Home() {
         )}
 
         {activeTab === "stats" && (
-          <StatsView
-            month={month}
-            stats={stats}
-            loading={statsFetching}
-            refreshInferences={handleRefreshInferences}
-            refreshingInferences={refreshInferences.isPending}
-          />
+          statsError ? (
+            <Card className="border-destructive/30">
+              <CardContent className="py-8 text-center space-y-3">
+                <p className="text-sm font-medium text-destructive">تعذّر تحميل الإحصائيات</p>
+                <p className="text-xs text-muted-foreground">{statsQueryError?.message || "تحقق من الاتصال بقاعدة البيانات ثم أعد المحاولة."}</p>
+                <Button variant="outline" size="sm" onClick={() => refetchStats()}>إعادة المحاولة</Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <StatsView
+              month={month}
+              stats={stats}
+              loading={statsFetching}
+              refreshInferences={handleRefreshInferences}
+              refreshingInferences={refreshInferences.isPending}
+            />
+          )
         )}
 
         {activeTab === "ai" && <AIInsights month={month} />}
@@ -254,7 +306,7 @@ const StatsView = memo(function StatsView({
 }) {
   const topCategory = stats?.topCategories?.[0];
   const changePercent = stats?.behavioralInsights?.expenseChangePercent;
-  const isUp = changePercent > 0;
+  const isUp = typeof changePercent === "number" && changePercent > 0;
   const dailyAvg = stats?.dailyAverage || 0;
   const topCategories = stats?.topCategories?.slice(0, 5) || [];
   const totalExpense = topCategories.reduce((s: number, c: any) => s + (c.value || 0), 0);
@@ -317,8 +369,8 @@ const StatsView = memo(function StatsView({
         </div>
       </div>
 
-      {/* Main content: charts + sidebar */}
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-5 items-start">
+      {/* Main content: charts + sidebar — stack on mobile */}
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-4 sm:gap-5 items-start">
         {/* Left: Charts */}
         <div className="space-y-5 flex flex-col">
           <Card className="order-1">

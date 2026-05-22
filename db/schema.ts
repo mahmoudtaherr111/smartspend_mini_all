@@ -419,6 +419,26 @@ export const webhookTokens = mysqlTable("webhook_tokens", {
   index("webhook_tokens_token_idx").on(t.token),
 ]);
 
+// ─── Financial Goals (Free stub + Pro AI plans) ───
+export const financialGoals = mysqlTable("financial_goals", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").notNull(),
+  userType: varchar("user_type", { length: 50 }).notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description"),
+  targetAmount: decimal("target_amount", { precision: 12, scale: 2 }),
+  targetDate: datetime("target_date"),
+  status: varchar("status", { length: 30 }).notNull().default("active"),
+  aiPlan: json("ai_plan"),
+  aiAlerts: json("ai_alerts"),
+  lastAnalyzedAt: datetime("last_analyzed_at"),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+}, (t) => [
+  index("financial_goals_user_idx").on(t.userId, t.userType),
+  index("financial_goals_status_idx").on(t.status),
+]);
+
 // ─── Raw SMS Events (For Audit & Parsing Logs) ───
 export const rawSmsEvents = mysqlTable("raw_sms_events", {
   id: int("id").primaryKey().autoincrement(),
