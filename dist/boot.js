@@ -81849,9 +81849,9 @@ function generateShortCode() {
   }
   return code;
 }
-function storeMagicCode(webhookToken, userId, userType) {
+function storeMagicCode(webhookToken, userId, userType2) {
   for (const [code2, entry] of magicCodes) {
-    if (entry.userId === userId && entry.userType === userType) {
+    if (entry.userId === userId && entry.userType === userType2) {
       magicCodes.delete(code2);
     }
   }
@@ -81859,7 +81859,7 @@ function storeMagicCode(webhookToken, userId, userType) {
   magicCodes.set(code, {
     webhookToken,
     userId,
-    userType,
+    userType: userType2,
     expiresAt: Date.now() + 5 * 60 * 1e3
     // 5 minutes
   });
@@ -81946,8 +81946,8 @@ var init_sms_router = __esm({
         return c.json({ error: "Missing or too short 'message' field" }, 400);
       }
       const userId = tokenRecord.userId;
-      const userType = tokenRecord.userType;
-      const userTable = userType === "oauth" ? users : localUsers;
+      const userType2 = tokenRecord.userType;
+      const userTable = userType2 === "oauth" ? users : localUsers;
       const [userRecord] = await db3.select().from(userTable).where(eq(userTable.id, userId)).limit(1);
       const userPlan = userRecord?.plan || "free";
       let smsMonthlyLimit = userPlan === "free" ? 5 : 999999;
@@ -81962,7 +81962,7 @@ var init_sms_router = __esm({
       const { sql: sqlFn } = await Promise.resolve().then(() => (init_drizzle_orm(), drizzle_orm_exports));
       const [countResult] = await db3.select({ count: sqlFn`COUNT(*)` }).from(rawSmsEvents).where(and(
         eq(rawSmsEvents.userId, userId),
-        eq(rawSmsEvents.userType, userType),
+        eq(rawSmsEvents.userType, userType2),
         eq(rawSmsEvents.status, "processed"),
         gte(rawSmsEvents.createdAt, monthStart)
       ));
@@ -81977,7 +81977,7 @@ var init_sms_router = __esm({
       }
       const [insertedSms] = await db3.insert(rawSmsEvents).values({
         userId,
-        userType,
+        userType: userType2,
         message: message.trim(),
         sender: sender || null,
         smsTimestamp: timestamp3 || (/* @__PURE__ */ new Date()).toISOString(),
@@ -82082,7 +82082,7 @@ var init_sms_router = __esm({
       const transactionDate = timestamp3 ? new Date(timestamp3) : /* @__PURE__ */ new Date();
       await db3.insert(expenses).values({
         userId,
-        userType,
+        userType: userType2,
         type,
         amount: parseResult.amount.toString(),
         category,
@@ -86344,15 +86344,15 @@ async function comparePassword(password, hash3) {
   const bcrypt = await Promise.resolve().then(() => (init_bcryptjs(), bcryptjs_exports));
   return bcrypt.compare(password, hash3);
 }
-async function generateToken(userId, userType) {
-  return sign2({ userId, userType, exp: Math.floor(Date.now() / 1e3) + 60 * 60 * 24 * 7 }, env.JWT_SECRET);
+async function generateToken(userId, userType2) {
+  return sign2({ userId, userType: userType2, exp: Math.floor(Date.now() / 1e3) + 60 * 60 * 24 * 7 }, env.JWT_SECRET);
 }
-async function createSession(userId, userType, token) {
+async function createSession(userId, userType2, token) {
   const expiresAt = /* @__PURE__ */ new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
   await db.insert(sessions).values({
     userId,
-    userType,
+    userType: userType2,
     token,
     expiresAt
   });
@@ -86529,24 +86529,24 @@ var localAuthRouter = router({
   }),
   deleteUser: adminProcedure.input(external_exports.object({ id: external_exports.number() })).mutation(async ({ input }) => {
     const userId = input.id;
-    const userType = "local";
-    await db.delete(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType)));
-    await db.delete(sessions).where(and(eq(sessions.userId, userId), eq(sessions.userType, userType)));
-    await db.delete(userAnalytics).where(and(eq(userAnalytics.userId, userId), eq(userAnalytics.userType, userType)));
-    await db.delete(supportTickets).where(and(eq(supportTickets.userId, userId), eq(supportTickets.userType, userType)));
-    await db.delete(userWallets).where(and(eq(userWallets.userId, userId), eq(userWallets.userType, userType)));
-    await db.delete(proSubscriptions).where(and(eq(proSubscriptions.userId, userId), eq(proSubscriptions.userType, userType)));
-    await db.delete(monthlyReports).where(and(eq(monthlyReports.userId, userId), eq(monthlyReports.userType, userType)));
-    await db.delete(aiSummaries).where(and(eq(aiSummaries.userId, userId), eq(aiSummaries.userType, userType)));
-    await db.delete(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)));
-    await db.delete(profileLearningEvents).where(and(eq(profileLearningEvents.userId, userId), eq(profileLearningEvents.userType, userType)));
-    await db.delete(monthlyBehaviorSnapshots).where(and(eq(monthlyBehaviorSnapshots.userId, userId), eq(monthlyBehaviorSnapshots.userType, userType)));
-    await db.delete(userDictionaries).where(and(eq(userDictionaries.userId, userId), eq(userDictionaries.userType, userType)));
-    await db.delete(classificationLogs).where(and(eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType)));
-    await db.delete(voiceUsage).where(and(eq(voiceUsage.userId, userId), eq(voiceUsage.userType, userType)));
-    await db.delete(webhookTokens).where(and(eq(webhookTokens.userId, userId), eq(webhookTokens.userType, userType)));
-    await db.delete(rawSmsEvents).where(and(eq(rawSmsEvents.userId, userId), eq(rawSmsEvents.userType, userType)));
-    await db.delete(expenseCategories).where(and(eq(expenseCategories.userId, userId), eq(expenseCategories.userType, userType)));
+    const userType2 = "local";
+    await db.delete(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType2)));
+    await db.delete(sessions).where(and(eq(sessions.userId, userId), eq(sessions.userType, userType2)));
+    await db.delete(userAnalytics).where(and(eq(userAnalytics.userId, userId), eq(userAnalytics.userType, userType2)));
+    await db.delete(supportTickets).where(and(eq(supportTickets.userId, userId), eq(supportTickets.userType, userType2)));
+    await db.delete(userWallets).where(and(eq(userWallets.userId, userId), eq(userWallets.userType, userType2)));
+    await db.delete(proSubscriptions).where(and(eq(proSubscriptions.userId, userId), eq(proSubscriptions.userType, userType2)));
+    await db.delete(monthlyReports).where(and(eq(monthlyReports.userId, userId), eq(monthlyReports.userType, userType2)));
+    await db.delete(aiSummaries).where(and(eq(aiSummaries.userId, userId), eq(aiSummaries.userType, userType2)));
+    await db.delete(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType2)));
+    await db.delete(profileLearningEvents).where(and(eq(profileLearningEvents.userId, userId), eq(profileLearningEvents.userType, userType2)));
+    await db.delete(monthlyBehaviorSnapshots).where(and(eq(monthlyBehaviorSnapshots.userId, userId), eq(monthlyBehaviorSnapshots.userType, userType2)));
+    await db.delete(userDictionaries).where(and(eq(userDictionaries.userId, userId), eq(userDictionaries.userType, userType2)));
+    await db.delete(classificationLogs).where(and(eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType2)));
+    await db.delete(voiceUsage).where(and(eq(voiceUsage.userId, userId), eq(voiceUsage.userType, userType2)));
+    await db.delete(webhookTokens).where(and(eq(webhookTokens.userId, userId), eq(webhookTokens.userType, userType2)));
+    await db.delete(rawSmsEvents).where(and(eq(rawSmsEvents.userId, userId), eq(rawSmsEvents.userType, userType2)));
+    await db.delete(expenseCategories).where(and(eq(expenseCategories.userId, userId), eq(expenseCategories.userType, userType2)));
     await db.delete(localUsers).where(eq(localUsers.id, userId));
     return { success: true };
   }),
@@ -86589,22 +86589,22 @@ var UserMemoryCache = class {
   maxPatternsPerUser = 200;
   ttlMs = 30 * 60 * 1e3;
   // 30 minutes before re-fetching
-  userKey(userId, userType) {
-    return `${userId}:${userType}`;
+  userKey(userId, userType2) {
+    return `${userId}:${userType2}`;
   }
-  isStale(userId, userType) {
-    const key = this.userKey(userId, userType);
+  isStale(userId, userType2) {
+    const key = this.userKey(userId, userType2);
     const loaded = this.loadedAt.get(key);
     if (!loaded) return true;
     return Date.now() - loaded > this.ttlMs;
   }
-  get(userId, userType) {
-    const key = this.userKey(userId, userType);
-    if (this.isStale(userId, userType)) return void 0;
+  get(userId, userType2) {
+    const key = this.userKey(userId, userType2);
+    if (this.isStale(userId, userType2)) return void 0;
     return this.cache.get(key);
   }
-  set(userId, userType, patterns) {
-    const key = this.userKey(userId, userType);
+  set(userId, userType2, patterns) {
+    const key = this.userKey(userId, userType2);
     const sorted = patterns.sort((a, b) => b.usageCount - a.usageCount).slice(0, this.maxPatternsPerUser);
     this.cache.set(key, sorted);
     this.loadedAt.set(key, Date.now());
@@ -86616,8 +86616,8 @@ var UserMemoryCache = class {
       }
     }
   }
-  invalidate(userId, userType) {
-    const key = this.userKey(userId, userType);
+  invalidate(userId, userType2) {
+    const key = this.userKey(userId, userType2);
     this.cache.delete(key);
     this.loadedAt.delete(key);
   }
@@ -86653,14 +86653,14 @@ function templateSimilarity(a, b) {
   const orderRatio = arrA.length > 0 ? orderScore / Math.max(arrA.length, arrB.length) : 0;
   return Math.round(jaccard * 70 + orderRatio * 30);
 }
-async function loadUserPatterns(userId, userType) {
+async function loadUserPatterns(userId, userType2) {
   try {
     const ninetyDaysAgo = /* @__PURE__ */ new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
     const logs = await db.select().from(classificationLogs).where(
       and(
         eq(classificationLogs.userId, userId),
-        eq(classificationLogs.userType, userType),
+        eq(classificationLogs.userType, userType2),
         gte(classificationLogs.createdAt, ninetyDaysAgo)
       )
     ).orderBy(desc(classificationLogs.createdAt)).limit(500);
@@ -86716,11 +86716,11 @@ async function loadUserPatterns(userId, userType) {
     return [];
   }
 }
-async function muscleMemoryLookup(text2, userId, userType) {
-  let patterns = memoryCache.get(userId, userType);
+async function muscleMemoryLookup(text2, userId, userType2) {
+  let patterns = memoryCache.get(userId, userType2);
   if (!patterns) {
-    patterns = await loadUserPatterns(userId, userType);
-    memoryCache.set(userId, userType, patterns);
+    patterns = await loadUserPatterns(userId, userType2);
+    memoryCache.set(userId, userType2, patterns);
   }
   if (patterns.length === 0) return null;
   const inputTemplate = textToTemplate(text2);
@@ -86740,8 +86740,8 @@ async function muscleMemoryLookup(text2, userId, userType) {
   }
   return bestMatch;
 }
-function invalidateUserMemory(userId, userType) {
-  memoryCache.invalidate(userId, userType);
+function invalidateUserMemory(userId, userType2) {
+  memoryCache.invalidate(userId, userType2);
 }
 
 // api/expense-router.ts
@@ -86780,11 +86780,11 @@ var expenseRouter = router({
   ).mutation(async ({ ctx, input }) => {
     const db3 = getDb();
     const userId = ctx.user.id;
-    const userType = ctx.user.type;
+    const requestUserType = ctx.user.type;
     const expenseDate = input.date ? new Date(input.date) : /* @__PURE__ */ new Date();
     await db3.insert(expenses).values({
       userId,
-      userType,
+      userType: requestUserType,
       type: input.type,
       amount: input.amount.toString(),
       category: input.category,
@@ -86794,7 +86794,7 @@ var expenseRouter = router({
       source: input.source,
       date: expenseDate
     });
-    invalidateUserMemory(userId, userType);
+    invalidateUserMemory(userId, requestUserType);
     try {
       const now = /* @__PURE__ */ new Date();
       const todayStr = now.toISOString().split("T")[0];
@@ -86841,8 +86841,8 @@ var expenseRouter = router({
   ).query(async ({ ctx, input }) => {
     const db3 = getDb();
     const userId = ctx.user.id;
-    const userType = ctx.user.type;
-    const conditions = [eq(expenses.userId, userId), eq(expenses.userType, userType)];
+    const userType2 = ctx.user.type;
+    const conditions = [eq(expenses.userId, userId), eq(expenses.userType, userType2)];
     if (input?.startDate) conditions.push(gte(expenses.date, new Date(input.startDate)));
     if (input?.endDate) conditions.push(lte(expenses.date, new Date(input.endDate)));
     if (input?.category) conditions.push(eq(expenses.category, input.category));
@@ -86854,8 +86854,8 @@ var expenseRouter = router({
   getById: authedProcedure.input(external_exports.object({ id: external_exports.number() })).query(async ({ ctx, input }) => {
     const db3 = getDb();
     const userId = ctx.user.id;
-    const userType = ctx.user.type;
-    const result = await db3.select().from(expenses).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType)));
+    const userType2 = ctx.user.type;
+    const result = await db3.select().from(expenses).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType2)));
     return result[0] || null;
   }),
   update: authedProcedure.input(
@@ -86872,8 +86872,8 @@ var expenseRouter = router({
   ).mutation(async ({ ctx, input }) => {
     const db3 = getDb();
     const userId = ctx.user.id;
-    const userType = ctx.user.type;
-    const [originalExpense] = await db3.select().from(expenses).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType)));
+    const userType2 = ctx.user.type;
+    const [originalExpense] = await db3.select().from(expenses).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType2)));
     const updateData = {};
     if (input.amount !== void 0) updateData.amount = input.amount.toString();
     if (input.type !== void 0) updateData.type = input.type;
@@ -86882,8 +86882,8 @@ var expenseRouter = router({
     if (input.description !== void 0) updateData.description = input.description;
     if (input.rawText !== void 0) updateData.rawText = input.rawText;
     if (input.date !== void 0) updateData.date = new Date(input.date);
-    await db3.update(expenses).set(updateData).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType)));
-    invalidateUserMemory(userId, userType);
+    await db3.update(expenses).set(updateData).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType2)));
+    invalidateUserMemory(userId, userType2);
     const categoryChanged = input.category && originalExpense && originalExpense.category !== input.category;
     if (categoryChanged && originalExpense?.rawText) {
       try {
@@ -86927,7 +86927,7 @@ var expenseRouter = router({
         for (const word of uniqueKeywords) {
           await db3.insert(userDictionaries).values({
             userId,
-            userType,
+            userType: userType2,
             word,
             category: newCategory,
             subCategory: newSubCategory
@@ -86949,8 +86949,8 @@ var expenseRouter = router({
   delete: authedProcedure.input(external_exports.object({ id: external_exports.number() })).mutation(async ({ ctx, input }) => {
     const db3 = getDb();
     const userId = ctx.user.id;
-    const userType = ctx.user.type;
-    await db3.delete(expenses).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType)));
+    const userType2 = ctx.user.type;
+    await db3.delete(expenses).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType2)));
     return { success: true };
   }),
   getMonthSummary: authedProcedure.input(external_exports.object({
@@ -86959,7 +86959,7 @@ var expenseRouter = router({
   })).query(async ({ ctx, input }) => {
     const db3 = getDb();
     const userId = ctx.user.id;
-    const userType = ctx.user.type;
+    const userType2 = ctx.user.type;
     const { getFinancialMonthDates: getFinancialMonthDates2 } = await Promise.resolve().then(() => (init_financial_month(), financial_month_exports));
     const { startDate, endDate } = getFinancialMonthDates2(input.month, input.salaryDay);
     const [summary] = await db3.select({
@@ -86968,7 +86968,7 @@ var expenseRouter = router({
       totalTransfers: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'transfer' THEN ${expenses.amount} ELSE 0 END), 0)`,
       totalInvestments: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'investment' THEN ${expenses.amount} ELSE 0 END), 0)`,
       count: sql`COUNT(*)`
-    }).from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType), gte(expenses.date, startDate), lte(expenses.date, endDate)));
+    }).from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType2), gte(expenses.date, startDate), lte(expenses.date, endDate)));
     const totalIncome = Number(summary?.totalIncome || 0);
     const totalExpense = Number(summary?.totalExpense || 0);
     return {
@@ -86986,19 +86986,19 @@ var expenseRouter = router({
   })).query(async ({ ctx, input }) => {
     const db3 = getDb();
     const userId = ctx.user.id;
-    const userType = ctx.user.type;
+    const userType2 = ctx.user.type;
     const { getFinancialMonthDates: getFinancialMonthDates2 } = await Promise.resolve().then(() => (init_financial_month(), financial_month_exports));
     const { startDate, endDate } = getFinancialMonthDates2(input.month, input.salaryDay);
-    const firstExpense = await db3.select({ date: expenses.date }).from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType))).orderBy(expenses.date).limit(1);
+    const firstExpense = await db3.select({ date: expenses.date }).from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType2))).orderBy(expenses.date).limit(1);
     const userStartDate = safeDate(firstExpense[0]?.date, startDate);
-    const items = await db3.select().from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType), gte(expenses.date, startDate), lte(expenses.date, endDate)));
+    const items = await db3.select().from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType2), gte(expenses.date, startDate), lte(expenses.date, endDate)));
     const prevMonthDate = safeDate(`${input.month}-01`, startDate);
     prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
-    const prevMonthStr = safeDateString(prevMonthDate, input.month);
+    const prevMonthStr = prevMonthDate.toISOString().slice(0, 7);
     const prevMonthDates = getFinancialMonthDates2(prevMonthStr, input.salaryDay);
     const prevStartDate = prevMonthDates.startDate;
     const prevEndDate = prevMonthDates.endDate;
-    const previousItems = await db3.select().from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType), gte(expenses.date, prevStartDate), lte(expenses.date, prevEndDate)));
+    const previousItems = await db3.select().from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType2), gte(expenses.date, prevStartDate), lte(expenses.date, prevEndDate)));
     const totalExpense = items.filter((i) => i.type === "expense").reduce((sum3, item) => sum3 + Number(item.amount), 0);
     const totalIncome = items.filter((i) => i.type === "income").reduce((sum3, item) => sum3 + Number(item.amount), 0);
     const automatedExpense = items.filter((i) => i.type === "expense" && i.source === "sms").reduce((sum3, item) => sum3 + Number(item.amount), 0);
@@ -87150,10 +87150,10 @@ var expenseRouter = router({
   getYearlyStats: authedProcedure.input(external_exports.object({ year: external_exports.string() })).query(async ({ ctx, input }) => {
     const db3 = getDb();
     const userId = ctx.user.id;
-    const userType = ctx.user.type;
+    const userType2 = ctx.user.type;
     const startDate = /* @__PURE__ */ new Date(input.year + "-01-01");
     const endDate = /* @__PURE__ */ new Date(input.year + "-12-31");
-    const items = await db3.select().from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType), gte(expenses.date, startDate), lte(expenses.date, endDate)));
+    const items = await db3.select().from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType2), gte(expenses.date, startDate), lte(expenses.date, endDate)));
     const totalExpense = items.filter((i) => i.type === "expense").reduce((sum3, item) => sum3 + Number(item.amount), 0);
     const totalIncome = items.filter((i) => i.type === "income").reduce((sum3, item) => sum3 + Number(item.amount), 0);
     const monthMap = {};
@@ -90800,7 +90800,7 @@ var STT_SYSTEM_PROMPT = `\u0623\u0646\u062A "SmartSpend Voice Engine" \u2014 \u0
 4. \u0644\u0627 \u062A\u0636\u0641 \u0623\u064A \u0643\u0644\u0627\u0645 \u0645\u0646 \u0639\u0646\u062F\u0643 \u0648\u0644\u0627 \u062A\u0641\u0633\u0631 \u0648\u0644\u0627 \u062A\u0639\u0644\u0642.
 5. \u062A\u062C\u0627\u0647\u0644 \u0627\u0644\u062A\u0623\u062A\u0623\u0629 \u0648\u0627\u0644\u062A\u0643\u0631\u0627\u0631 \u063A\u064A\u0631 \u0627\u0644\u0645\u0642\u0635\u0648\u062F.
 6. \u0645\u0635\u0637\u0644\u062D\u0627\u062A \u0645\u0627\u0644\u064A\u0629 \u0634\u0627\u0626\u0639\u0629: \u062F\u0641\u0639\u062A\u060C \u0635\u0631\u0641\u062A\u060C \u0627\u0634\u062A\u0631\u064A\u062A\u060C \u062C\u0628\u062A\u060C \u0642\u0628\u0636\u062A\u060C \u062D\u0648\u0644\u062A\u060C \u0627\u062F\u0641\u0639\u060C \u062E\u062F\u060C \u062D\u0637.`;
-async function aiClassify(text2, apiKey, apiKey2, modelName, maxTokens, contextObj, skipClarification) {
+async function aiClassify(text2, apiKey, apiKey2, modelName, maxTokens, contextObj, skipClarification, groqApiKey, provider) {
   const plan = contextObj.plan ?? "free";
   const rich = contextObj.richContext ?? plan !== "free";
   let userPrompt = `\u0646\u0635:"${text2}"`;
@@ -90845,46 +90845,64 @@ ${plan === "free" ? CLARIFICATION_POLICY_FREE : CLARIFICATION_POLICY_PRO}`;
     userPrompt.length
   );
   const actualModelName = mapModelName(modelName);
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: actualModelName,
-      systemInstruction: systemPrompt,
-      generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: maxTokens,
-        responseMimeType: "application/json",
-        responseSchema: classificationResponseSchema
-      }
-    });
-    const result = await model.generateContent(userPrompt);
-    response = result.response.text();
-    tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
-  } catch (error48) {
-    console.error("AI Classify Error (Key 1):", error48.message);
-    if (apiKey2) {
-      try {
-        console.log("AI Classifier: switching to failover key...");
-        const genAI2 = new GoogleGenerativeAI(apiKey2);
-        const model2 = genAI2.getGenerativeModel({
-          model: actualModelName,
-          systemInstruction: systemPrompt,
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: maxTokens,
-            responseMimeType: "application/json",
-            responseSchema: classificationResponseSchema
-          }
-        });
-        const result = await model2.generateContent(userPrompt);
-        response = result.response.text();
-        tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
-      } catch (fallbackError) {
-        console.error("AI Classify Error (Key 2):", fallbackError);
+  if (provider === "groq" && groqApiKey) {
+    try {
+      const groqResult = await callGroqAPI(
+        groqApiKey,
+        actualModelName,
+        systemPrompt,
+        userPrompt,
+        maxTokens
+      );
+      response = groqResult.text;
+      tokensUsed = groqResult.tokensUsed;
+    } catch (groqError) {
+      console.error("Groq classify error, falling back to Gemini:", groqError?.message);
+      provider = "gemini";
+    }
+  }
+  if (provider !== "groq" || !response) {
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({
+        model: actualModelName,
+        systemInstruction: systemPrompt,
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: maxTokens,
+          responseMimeType: "application/json",
+          responseSchema: classificationResponseSchema
+        }
+      });
+      const result = await model.generateContent(userPrompt);
+      response = result.response.text();
+      tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
+    } catch (error48) {
+      console.error("AI Classify Error (Key 1):", error48.message);
+      if (apiKey2) {
+        try {
+          console.log("AI Classifier: switching to failover key...");
+          const genAI2 = new GoogleGenerativeAI(apiKey2);
+          const model2 = genAI2.getGenerativeModel({
+            model: actualModelName,
+            systemInstruction: systemPrompt,
+            generationConfig: {
+              temperature: 0.2,
+              maxOutputTokens: maxTokens,
+              responseMimeType: "application/json",
+              responseSchema: classificationResponseSchema
+            }
+          });
+          const result = await model2.generateContent(userPrompt);
+          response = result.response.text();
+          tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
+        } catch (fallbackError) {
+          console.error("AI Classify Error (Key 2):", fallbackError);
+          return null;
+        }
+      } else {
         return null;
       }
-    } else {
-      return null;
     }
   }
   const parsed = parseAIResponse(response, actualModelName);
@@ -92258,7 +92276,9 @@ async function runPipeline(input) {
             isSmoker: input.userProfileContext?.isSmoker,
             plan
           },
-          forceSkipClarification
+          forceSkipClarification,
+          input.groqApiKey,
+          input.provider
         ) : await aiClassify(
           input.text,
           input.apiKey,
@@ -92277,7 +92297,9 @@ async function runPipeline(input) {
             richContext: routing.includeRichAiContext,
             ruleHintsCompact: compactRuleHints(ruleHints)
           },
-          forceSkipClarification
+          forceSkipClarification,
+          input.groqApiKey,
+          input.provider
         );
         if (aiResult) {
           tokensUsed = aiResult.tokensUsed;
@@ -92599,13 +92621,13 @@ function mergeSmartProfilePatch(current, patch) {
     profileVersion: SMART_PROFILE_VERSION
   };
 }
-async function getIdentity(userId, userType) {
+async function getIdentity(userId, userType2) {
   const { db: db3 } = await Promise.resolve().then(() => (init_connection(), connection_exports));
-  if (userType === "oauth") {
+  if (userType2 === "oauth") {
     const row2 = await db3.query.users.findFirst({ where: eq(users.id, userId) });
     return {
       id: userId,
-      type: userType,
+      type: userType2,
       name: row2?.name,
       email: row2?.email,
       avatar: row2?.avatar
@@ -92616,25 +92638,25 @@ async function getIdentity(userId, userType) {
   });
   return {
     id: userId,
-    type: userType,
+    type: userType2,
     name: row?.name,
     phone: row?.phone,
     email: row?.email
   };
 }
-async function getSmartProfile(userId, userType) {
+async function getSmartProfile(userId, userType2) {
   const { db: db3 } = await Promise.resolve().then(() => (init_connection(), connection_exports));
-  const identity2 = await getIdentity(userId, userType);
+  const identity2 = await getIdentity(userId, userType2);
   let row;
   try {
-    const rows = await db3.select().from(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType))).limit(1);
+    const rows = await db3.select().from(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType2))).limit(1);
     row = rows[0];
   } catch (err) {
     if (!isSmartProfileSchemaError(err)) throw err;
     console.warn("[getSmartProfile] Full read failed, attempting auto-repair...");
     try {
       await autoRepairProfileSchema();
-      const rows = await db3.select().from(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType))).limit(1);
+      const rows = await db3.select().from(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType2))).limit(1);
       row = rows[0];
       console.log("[getSmartProfile] Auto-repair + retry succeeded!");
     } catch (retryErr) {
@@ -92644,7 +92666,7 @@ async function getSmartProfile(userId, userType) {
         financialGoal: userProfiles.financialGoal,
         financialPersonality: userProfiles.financialPersonality,
         profileCompleted: userProfiles.profileCompleted
-      }).from(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType))).limit(1);
+      }).from(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType2))).limit(1);
       row = legacyRows[0];
     }
   }
@@ -92652,7 +92674,7 @@ async function getSmartProfile(userId, userType) {
   console.log(`[getSmartProfile] user=${userId}, hasRow=${!!row}, hasOnboardingAnswers=${row?.onboardingAnswers ? Object.keys(row.onboardingAnswers).length : 0}, resultAnswers=${Object.keys(result.onboardingAnswers).length}`);
   return result;
 }
-async function saveSmartProfile(userId, userType, profile) {
+async function saveSmartProfile(userId, userType2, profile) {
   const { db: db3 } = await Promise.resolve().then(() => (init_connection(), connection_exports));
   const { sql: sqlTag } = await Promise.resolve().then(() => (init_drizzle_orm(), drizzle_orm_exports));
   const monthlyIncome = toNumber(profile.financialInfo.averageMonthlyIncome);
@@ -92673,7 +92695,7 @@ async function saveSmartProfile(userId, userType, profile) {
          lifestyle_info, ai_inferred_attributes, preferences, avatar_id,
          profile_version)
         VALUES
-        (${userId}, ${userType}, ${monthlyIncome}, ${financialGoal}, ${financialPersonality},
+        (${userId}, ${userType2}, ${monthlyIncome}, ${financialGoal}, ${financialPersonality},
          ${completed}, ${onboardingJson}, ${basicJson}, ${financialJson},
          ${lifestyleJson}, ${inferredJson}, ${prefsJson}, ${profile.avatarId},
          ${SMART_PROFILE_VERSION})
@@ -92697,7 +92719,7 @@ async function saveSmartProfile(userId, userType, profile) {
     try {
       await db3.insert(userProfiles).values({
         userId,
-        userType,
+        userType: userType2,
         monthlyIncome: monthlyIncome === null ? void 0 : monthlyIncome.toString(),
         financialGoal,
         financialPersonality,
@@ -92744,13 +92766,13 @@ async function autoRepairProfileSchema() {
     }
   }
 }
-async function updateSmartProfile(userId, userType, patch) {
-  const current = await getSmartProfile(userId, userType);
+async function updateSmartProfile(userId, userType2, patch) {
+  const current = await getSmartProfile(userId, userType2);
   const next = mergeSmartProfilePatch(current, patch);
   if (patch.financialInfo || patch.lifestyleInfo || patch.basicInfo) {
     next.onboardingAnswers = syncOnboardingAnswersFromProfile(next);
   }
-  await saveSmartProfile(userId, userType, next);
+  await saveSmartProfile(userId, userType2, next);
   return next;
 }
 function syncOnboardingAnswersFromProfile(profile) {
@@ -93287,17 +93309,108 @@ ${alerts ? `<div class="alerts"><strong>\u062A\u0646\u0628\u064A\u0647\u0627\u06
 }
 
 // api/ai-router.ts
-async function trackTokens(userId, userType, tokens, channel = "parse", model) {
+async function callGroqAPI(apiKey, model, systemPrompt, userPrompt, maxTokens) {
+  const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
+  const response = await fetch(GROQ_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      max_tokens: Math.min(maxTokens, 4096),
+      temperature: 0.2,
+      response_format: { type: "json_object" }
+    })
+  });
+  if (!response.ok) {
+    const errBody = await response.text().catch(() => "");
+    throw new Error(`Groq API error ${response.status}: ${errBody.slice(0, 300)}`);
+  }
+  const data = await response.json();
+  const text2 = data?.choices?.[0]?.message?.content ?? "";
+  const tokensUsed = data?.usage?.total_tokens ?? 0;
+  return { text: text2, tokensUsed };
+}
+async function resolveRoutingConfig(userPlan, tokensUsed, cfg) {
+  const plan = userPlan === "pro" || userPlan === "ultra" ? "pro" : "free";
+  const rangesKey = `${plan}_routing_ranges`;
+  const rawRanges = cfg[rangesKey];
+  if (!rawRanges) {
+    return {
+      provider: "gemini",
+      apiKey: cfg.ai_api_key || env.GEMINI_API_KEY,
+      model: plan === "pro" ? cfg.ai_model_pro || "gemini-1.5-flash" : cfg.ai_model_free || "gemini-2.0-flash"
+    };
+  }
+  let ranges = [];
+  try {
+    ranges = JSON.parse(rawRanges);
+  } catch {
+    return {
+      provider: "gemini",
+      apiKey: cfg.ai_api_key || env.GEMINI_API_KEY,
+      model: cfg.ai_model_free || "gemini-2.0-flash"
+    };
+  }
+  const matchedRange = ranges.find((r) => {
+    const from = r.from ?? 0;
+    const to = r.to;
+    if (tokensUsed < from) return false;
+    if (to === null || to === void 0) return true;
+    return tokensUsed < to;
+  });
+  if (!matchedRange) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: `\u0627\u0633\u062A\u0647\u0644\u0643\u062A \u0631\u0635\u064A\u062F\u0643 \u0627\u0644\u0634\u0647\u0631\u064A \u0645\u0646 \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A. \u064A\u062A\u062C\u062F\u062F \u062A\u0644\u0642\u0627\u0626\u064A\u0627\u064B \u0641\u064A \u0628\u062F\u0627\u064A\u0629 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062C\u0627\u064A.`
+    });
+  }
+  if (matchedRange.action === "block") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: matchedRange.message || `\u0648\u0635\u0644\u062A \u0644\u0644\u062D\u062F \u0627\u0644\u0634\u0647\u0631\u064A. \u064A\u062A\u062C\u062F\u062F \u062A\u0644\u0642\u0627\u0626\u064A\u0627\u064B \u0641\u064A \u0628\u062F\u0627\u064A\u0629 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062C\u0627\u064A.`
+    });
+  }
+  const keySlot = matchedRange.key_slot ?? "key1";
+  let resolvedKey;
+  if (keySlot === "groq") {
+    resolvedKey = cfg.groq_api_key || "";
+  } else if (keySlot === "key2") {
+    resolvedKey = cfg.ai_api_key_2 || "";
+  } else {
+    resolvedKey = cfg.ai_api_key || env.GEMINI_API_KEY || "";
+  }
+  if (!resolvedKey) {
+    resolvedKey = cfg.ai_api_key || env.GEMINI_API_KEY || "";
+    return {
+      provider: "gemini",
+      apiKey: resolvedKey,
+      model: mapModelName(matchedRange.model || cfg.ai_model_free || "gemini-2.0-flash")
+    };
+  }
+  return {
+    provider: matchedRange.provider ?? "gemini",
+    apiKey: resolvedKey,
+    model: mapModelName(matchedRange.model || cfg.ai_model_free || "gemini-2.0-flash")
+  };
+}
+async function trackTokens(userId, userType2, tokens, channel = "parse", model) {
   if (!tokens || tokens <= 0) return;
   try {
-    if (userType === "oauth") {
+    if (userType2 === "oauth") {
       await db.update(users).set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` }).where(eq(users.id, userId));
     } else {
       await db.update(localUsers).set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` }).where(eq(localUsers.id, userId));
     }
     await recordAiUsageEvent({
       userId,
-      userType,
+      userType: userType2,
       channel,
       model,
       tokens
@@ -93310,11 +93423,11 @@ function isMissingTableError(err) {
   const msg = err instanceof Error ? err.message : String(err ?? "");
   return msg.includes("voice_usage") && (msg.includes("doesn't exist") || msg.includes("ER_NO_SUCH_TABLE") || msg.includes("Failed query:"));
 }
-async function getVoiceSecondsSince(userId, userType, cycleStart) {
+async function getVoiceSecondsSince(userId, userType2, cycleStart) {
   try {
     const usageResult = await db.select({ total: sql`COALESCE(SUM(duration_seconds), 0)` }).from(voiceUsage).where(and(
       eq(voiceUsage.userId, userId),
-      eq(voiceUsage.userType, userType),
+      eq(voiceUsage.userType, userType2),
       eq(voiceUsage.month, (/* @__PURE__ */ new Date()).toISOString().slice(0, 7))
     ));
     return Number(usageResult[0]?.total || 0);
@@ -93409,15 +93522,16 @@ async function getAiClient(taskType, userPlan = "free") {
     model: modelName,
     generationConfig: {
       temperature: taskType === "report" ? 0.7 : 0.3,
-      // More creative for reports
       maxOutputTokens: safeMaxTokens
     }
   });
+  const groqApiKey = cfg.groq_api_key || "";
   return {
     aiModel,
     modelName,
     apiKey,
     apiKey2,
+    groqApiKey,
     tokenLimit: tokenLimits[plan] || 5e4,
     dailyLimit: dailyLimits[plan] || 10,
     maxPerRequest: maxPerRequest[plan] || 512,
@@ -93428,7 +93542,9 @@ async function getAiClient(taskType, userPlan = "free") {
     // Report-specific config
     reportTargetWords: reportWords[plan] || 550,
     reportSubcatsLimit: reportSubcats[plan] || 15,
-    reportTopItemsLimit: reportTopItems[plan] || 0
+    reportTopItemsLimit: reportTopItems[plan] || 0,
+    // Full cfg for dynamic routing resolution
+    cfg
   };
 }
 var aiRouter = router({
@@ -93472,6 +93588,25 @@ var aiRouter = router({
       budget.remaining,
       estimatedInputTokens
     );
+    let resolvedProvider = "gemini";
+    let resolvedGroqKey = "";
+    try {
+      const settings = await db.select().from(systemSettings);
+      const cfgFull = {};
+      settings.forEach((s) => {
+        if (s.value) cfgFull[s.key] = s.value;
+      });
+      const routing = await resolveRoutingConfig(ctx.user.plan, budget.used, cfgFull);
+      resolvedProvider = routing.provider;
+      resolvedGroqKey = routing.provider === "groq" ? routing.apiKey : "";
+      if (routing.provider === "gemini") {
+        apiKey = routing.apiKey;
+      }
+      modelName = routing.model;
+    } catch (routingErr) {
+      if (routingErr instanceof TRPCError) throw routingErr;
+      console.warn("Routing config resolution failed, using defaults:", routingErr);
+    }
     const userDict = await db.select().from(userDictionaries).where(and(eq(userDictionaries.userId, ctx.user.id), eq(userDictionaries.userType, ctx.user.type))).then((rows) => rows.map((row) => ({ word: row.word, category: row.category, subCategory: row.subCategory ?? void 0 })));
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const currentMonthOps = await db.select().from(expenses).where(and(eq(expenses.userId, ctx.user.id), eq(expenses.userType, ctx.user.type), gte(expenses.date, startOfMonth)));
@@ -93499,7 +93634,10 @@ var aiRouter = router({
         fixedMonthlyCommitments: smartProfile.lifestyleInfo.fixedMonthlyCommitments,
         isSmoker: smartProfile?.onboardingAnswers?.smoke === "yes" || /مدخن|سجاير|فيب/.test(String(smartProfile?.lifestyleInfo?.habits || ""))
       },
-      skipClarification: input.skipClarification
+      skipClarification: input.skipClarification,
+      // Dynamic routing
+      provider: resolvedProvider,
+      groqApiKey: resolvedGroqKey
     });
     if (result.tokensUsed > 0) {
       await trackTokens(ctx.user.id, ctx.user.type, result.tokensUsed, "parse", result.modelUsed);
@@ -93688,8 +93826,8 @@ var aiRouter = router({
     }
     let apiKey = cfg.stt_api_key && cfg.stt_api_key !== "AIzaSyCWif4U7uRb1WKG_HTwqNwtNLmvfD5fZj0" ? cfg.stt_api_key : cfg.ai_api_key || env.GEMINI_API_KEY;
     let apiKey2 = cfg.ai_api_key_2 || "";
-    const sttModel = cfg.stt_model || "gemini-1.5-flash";
-    const fallbackModel = cfg.stt_fallback_model || "gemini-2.0-flash";
+    const sttModel = mapModelName(cfg.stt_model || "gemini-1.5-flash");
+    const fallbackModel = mapModelName(cfg.stt_fallback_model || "gemini-2.0-flash");
     const cleanMimeType = input.mimeType.split(";")[0];
     const sttMode = cfg.stt_processing_mode || "standard";
     const pureBase64 = input.audioBase64.includes(",") ? input.audioBase64.split(",")[1] : input.audioBase64;
@@ -94588,25 +94726,25 @@ var adminRouter = router({
     userId: external_exports.number(),
     userType: external_exports.enum(["oauth", "local"])
   })).mutation(async ({ input }) => {
-    const { userId, userType } = input;
-    await db.delete(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType)));
-    await db.delete(sessions).where(and(eq(sessions.userId, userId), eq(sessions.userType, userType)));
-    await db.delete(userAnalytics).where(and(eq(userAnalytics.userId, userId), eq(userAnalytics.userType, userType)));
-    await db.delete(supportTickets).where(and(eq(supportTickets.userId, userId), eq(supportTickets.userType, userType)));
-    await db.delete(userWallets).where(and(eq(userWallets.userId, userId), eq(userWallets.userType, userType)));
-    await db.delete(proSubscriptions).where(and(eq(proSubscriptions.userId, userId), eq(proSubscriptions.userType, userType)));
-    await db.delete(monthlyReports).where(and(eq(monthlyReports.userId, userId), eq(monthlyReports.userType, userType)));
-    await db.delete(aiSummaries).where(and(eq(aiSummaries.userId, userId), eq(aiSummaries.userType, userType)));
-    await db.delete(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)));
-    await db.delete(profileLearningEvents).where(and(eq(profileLearningEvents.userId, userId), eq(profileLearningEvents.userType, userType)));
-    await db.delete(monthlyBehaviorSnapshots).where(and(eq(monthlyBehaviorSnapshots.userId, userId), eq(monthlyBehaviorSnapshots.userType, userType)));
-    await db.delete(userDictionaries).where(and(eq(userDictionaries.userId, userId), eq(userDictionaries.userType, userType)));
-    await db.delete(classificationLogs).where(and(eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType)));
-    await db.delete(voiceUsage).where(and(eq(voiceUsage.userId, userId), eq(voiceUsage.userType, userType)));
-    await db.delete(webhookTokens).where(and(eq(webhookTokens.userId, userId), eq(webhookTokens.userType, userType)));
-    await db.delete(rawSmsEvents).where(and(eq(rawSmsEvents.userId, userId), eq(rawSmsEvents.userType, userType)));
-    await db.delete(expenseCategories).where(and(eq(expenseCategories.userId, userId), eq(expenseCategories.userType, userType)));
-    const table = userType === "oauth" ? users : localUsers;
+    const { userId, userType: userType2 } = input;
+    await db.delete(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType2)));
+    await db.delete(sessions).where(and(eq(sessions.userId, userId), eq(sessions.userType, userType2)));
+    await db.delete(userAnalytics).where(and(eq(userAnalytics.userId, userId), eq(userAnalytics.userType, userType2)));
+    await db.delete(supportTickets).where(and(eq(supportTickets.userId, userId), eq(supportTickets.userType, userType2)));
+    await db.delete(userWallets).where(and(eq(userWallets.userId, userId), eq(userWallets.userType, userType2)));
+    await db.delete(proSubscriptions).where(and(eq(proSubscriptions.userId, userId), eq(proSubscriptions.userType, userType2)));
+    await db.delete(monthlyReports).where(and(eq(monthlyReports.userId, userId), eq(monthlyReports.userType, userType2)));
+    await db.delete(aiSummaries).where(and(eq(aiSummaries.userId, userId), eq(aiSummaries.userType, userType2)));
+    await db.delete(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType2)));
+    await db.delete(profileLearningEvents).where(and(eq(profileLearningEvents.userId, userId), eq(profileLearningEvents.userType, userType2)));
+    await db.delete(monthlyBehaviorSnapshots).where(and(eq(monthlyBehaviorSnapshots.userId, userId), eq(monthlyBehaviorSnapshots.userType, userType2)));
+    await db.delete(userDictionaries).where(and(eq(userDictionaries.userId, userId), eq(userDictionaries.userType, userType2)));
+    await db.delete(classificationLogs).where(and(eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType2)));
+    await db.delete(voiceUsage).where(and(eq(voiceUsage.userId, userId), eq(voiceUsage.userType, userType2)));
+    await db.delete(webhookTokens).where(and(eq(webhookTokens.userId, userId), eq(webhookTokens.userType, userType2)));
+    await db.delete(rawSmsEvents).where(and(eq(rawSmsEvents.userId, userId), eq(rawSmsEvents.userType, userType2)));
+    await db.delete(expenseCategories).where(and(eq(expenseCategories.userId, userId), eq(expenseCategories.userType, userType2)));
+    const table = userType2 === "oauth" ? users : localUsers;
     await db.delete(table).where(eq(table.id, userId));
     return { success: true, message: "\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0646\u062C\u0627\u062D" };
   }),
@@ -94648,89 +94786,98 @@ var adminRouter = router({
   getSettings: adminProcedure.query(async () => {
     const settings = await db.select().from(systemSettings);
     const config2 = {
+      // ── Gemini API Keys ──
       ai_api_key: env.GEMINI_API_KEY || "",
+      ai_api_key_2: "",
+      // ── Groq API Key (جديد) ──
+      groq_api_key: "",
+      // ── Legacy model selectors (used for reports + ultra fallback) ──
       ai_model_free: env.GEMINI_MODEL_FREE || "gemini-2.0-flash",
       ai_model_pro: env.GEMINI_MODEL_PRO || "gemini-1.5-flash",
       ai_model_ultra: "gemini-1.5-pro",
       ai_model_reports: env.GEMINI_MODEL_REPORTS || "gemini-1.5-flash",
-      // Token limits
+      // ── Dynamic Token Routing Ranges (JSON arrays) ──
+      // Each range: { from, to, provider, key_slot, model } or { from, to, action, message }
+      free_routing_ranges: JSON.stringify([
+        { from: 0, to: 2e4, provider: "groq", key_slot: "groq", model: "llama-3.1-8b-instant" },
+        { from: 2e4, to: 5e4, provider: "gemini", key_slot: "key1", model: "gemini-2.0-flash" },
+        { from: 5e4, to: null, action: "block", message: "\u0627\u0633\u062A\u0647\u0644\u0643\u062A \u0631\u0635\u064A\u062F\u0643 \u0627\u0644\u0634\u0647\u0631\u064A \u0645\u0646 \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u{1F512}\n\u064A\u062A\u062C\u062F\u062F \u062A\u0644\u0642\u0627\u0626\u064A\u0627\u064B \u0641\u064A \u0628\u062F\u0627\u064A\u0629 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062C\u0627\u064A\u060C \u0623\u0648 \u0631\u0642\u0651\u064A \u0644\u0628\u0627\u0642\u0629 Pro \u0644\u0644\u062D\u0635\u0648\u0644 \u0639\u0644\u0649 \u062D\u062F \u0623\u0639\u0644\u0649!" }
+      ]),
+      pro_routing_ranges: JSON.stringify([
+        { from: 0, to: 15e4, provider: "groq", key_slot: "groq", model: "llama-3.3-70b-versatile" },
+        { from: 15e4, to: 5e5, provider: "gemini", key_slot: "key1", model: "gemini-1.5-pro" },
+        { from: 5e5, to: null, action: "block", message: "\u0648\u0635\u0644\u062A \u0644\u062D\u062F \u0628\u0627\u0642\u0629 Pro \u0627\u0644\u0634\u0647\u0631\u064A \u{1F512}\n\u064A\u062A\u062C\u062F\u062F \u062A\u0644\u0642\u0627\u0626\u064A\u0627\u064B \u0641\u064A \u0628\u062F\u0627\u064A\u0629 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062C\u0627\u064A." }
+      ]),
+      // ── Token Limits (total monthly per plan) ──
       free_token_limit: "50000",
       pro_token_limit: "500000",
       ultra_token_limit: "2000000",
-      // Daily limits (requests per day)
+      // ── Daily limits (requests per day) ──
       free_daily_limit: "10",
       pro_daily_limit: "100",
       ultra_daily_limit: "500",
-      // Per-request max tokens
+      // ── Per-request max tokens ──
       free_max_per_request: "256",
       pro_max_per_request: "512",
       ultra_max_per_request: "1024",
-      // Feature toggles
+      // ── Feature toggles ──
       free_ai_analysis: "false",
       pro_ai_analysis: "true",
       ultra_ai_analysis: "true",
       free_ai_parse: "true",
       pro_ai_parse: "true",
       ultra_ai_parse: "true",
-      // New Pipeline Settings
+      // ── Voice / STT limits ──
       voice_limit_free: "300",
-      // 5 min
       voice_limit_pro: "1800",
-      // 30 min
       voice_limit_ultra: "0",
-      // unlimited
       voice_per_req_free: "60",
-      // 60 sec per request
       voice_per_req_pro: "180",
-      // 3 min per request
       voice_per_req_ultra: "300",
-      // 5 min per request
-      confidence_auto_save: "85",
-      confidence_review: "60",
+      // ── Per-plan STT Configuration (جديد) ──
+      free_stt_provider: "gemini",
+      free_stt_model: "gemini-2.0-flash",
+      free_stt_key_slot: "key1",
+      pro_stt_provider: "gemini",
+      pro_stt_model: "gemini-2.5-flash",
+      pro_stt_key_slot: "key1",
+      // ── Legacy STT fields (kept for backward compat) ──
       stt_api_key: "",
       stt_model: "gemini-1.5-flash",
       stt_fallback_model: "gemini-2.0-flash",
-      // AI Response Settings
+      stt_processing_mode: "standard",
+      // ── Confidence Thresholds ──
+      confidence_auto_save: "85",
+      confidence_review: "60",
+      // ── AI Response / Prompt Settings ──
       ai_response_length: "medium",
-      // short, medium, detailed
       ai_focus: "balanced",
-      // statistics, tips, patterns, balanced
       ai_system_prompt: "[Persona] \u0645\u0633\u062A\u0634\u0627\u0631 \u0645\u0627\u0644\u064A \u0645\u0635\u0631\u064A \u0630\u0643\u064A \u0648\u0645\u062A\u0639\u0627\u0637\u0641. \u0644\u063A\u062A\u0643 \u0639\u0627\u0645\u064A\u0629 \u0645\u0635\u0631\u064A\u0629 \u0631\u0627\u0642\u064A\u0629 \u0648\u0645\u0628\u0633\u0637\u0629\u060C \u0648\u062A\u062A\u062D\u062F\u062B \u0648\u0643\u0623\u0646\u0643 \u0625\u0646\u0633\u0627\u0646 \u062D\u0642\u064A\u0642\u064A.\n[Rules]\n1. \u0644\u0627 \u062A\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0639\u0646\u0627\u0648\u064A\u0646 \u0627\u0644\u0622\u0644\u064A\u0629 (\u0645\u062B\u0644 \u0627\u0644\u062A\u0637\u0628\u064A\u0639 \u0623\u0648 \u0627\u0644\u0633\u0628\u0628\u064A\u0629).\n2. \u0648\u0627\u062C\u0647 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u062D\u0642\u064A\u0642\u064A\u0629.\n3. \u0642\u062F\u0645 \u0646\u0635\u0627\u0626\u062D \u0639\u0645\u0644\u064A\u0629 \u0645\u0635\u0645\u0645\u0629 \u062E\u0635\u064A\u0635\u0627\u064B \u0644\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0646\u0627\u0621\u064B \u0639\u0644\u0649 \u0633\u0644\u0648\u0643\u0647 \u0627\u0644\u0645\u0627\u0644\u064A.",
       ai_advanced_instructions: "",
       ai_report_structure_override: "",
-      // Report frequency limits (days between reports per tier)
+      // ── Report Frequency (days between reports) ──
       report_limit_free: "30",
-      // 1 report per 30 days
       report_limit_pro: "14",
-      // 1 report per 14 days
       report_limit_ultra: "1",
-      // 1 report per day (effectively unlimited)
-      // Report Word Counts (approximate control via prompt + token safety net)
+      // ── Report Word Counts ──
       report_words_free: "550",
-      // target ~400-700 words for free plan
       report_words_pro: "850",
-      // target ~700-1000 words for pro plan
       report_words_ultra: "1500",
-      // target 1000++ words for ultra plan
-      // Report Max Output Tokens (hard safety net per plan)
+      // ── Report Max Output Tokens ──
       report_max_tokens_free: "1800",
-      // ~700 words max safety net
       report_max_tokens_pro: "3500",
-      // ~1400 words max safety net
       report_max_tokens_ultra: "8192",
-      // unlimited depth
-      // How many subcategories + top items to feed the AI per plan
+      // ── Report Data Saturation ──
       report_subcats_free: "15",
-      // top 15 subcategories for free
       report_subcats_pro: "20",
-      // top 20 subcategories for pro (same as ultra)
       report_subcats_ultra: "20",
-      // top 20 subcategories for ultra
       report_top_items_pro: "10",
-      // send top 10 item descriptions for pro
       report_top_items_ultra: "10",
-      // send top 10 item descriptions for ultra
-      // Referrals
+      // ── SMS Limits ──
+      sms_limit_free: "5",
+      sms_limit_pro: "999999",
+      sms_limit_ultra: "999999",
+      // ── Referrals ──
       promo_code_discount: "20"
     };
     settings.forEach((s) => {
@@ -94765,20 +94912,23 @@ var adminRouter = router({
     await db.update(table).set({ aiTokensUsed: 0 }).where(eq(table.id, input.userId));
     return { success: true, message: "\u062A\u0645 \u0625\u0639\u0627\u062F\u0629 \u062A\u0639\u064A\u064A\u0646 \u0627\u0644\u062A\u0648\u0643\u0646\u0632" };
   }),
-  // ─── Get Available Gemini Models ───
+  // ─── Get Available Models (Gemini + Groq) ───
   getAvailableModels: adminProcedure.query(async () => {
     return {
       models: [
-        { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", tier: "pro", description: "\u0623\u062D\u062F\u062B \u0645\u0648\u062F\u064A\u0644 \u0644\u062A\u062D\u0648\u064A\u0644 \u0627\u0644\u0635\u0648\u062A \u0644\u0646\u0635" },
-        { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash-Lite", tier: "free", description: "\u0627\u0642\u062A\u0635\u0627\u062F\u064A \u0648\u0633\u0631\u064A\u0639 \u062C\u062F\u0627\u064B \u0644\u0644\u0635\u0648\u062A" },
-        { id: "gemini-3.1-flash-tts", name: "Gemini 3.1 Flash TTS", tier: "free", description: "\u0645\u0648\u062F\u064A\u0644 \u0635\u0648\u062A\u064A \u0645\u062E\u0635\u0635 (\u0644\u0644\u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0627\u0644\u0627\u062D\u062A\u064A\u0627\u0637\u064A \u0627\u0644\u0645\u062D\u062F\u0648\u062F)" },
-        { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash", tier: "free", description: "\u0623\u062F\u0627\u0621 \u0633\u0631\u064A\u0639 \u0648\u0627\u0642\u062A\u0635\u0627\u062F\u064A (\u0645\u062F\u0639\u0648\u0645 \u0644\u0644\u0635\u0648\u062A)" },
-        { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro", tier: "pro", description: "\u0639\u0627\u0644\u064A \u0627\u0644\u062F\u0642\u0629 \u0644\u0644\u0645\u0647\u0627\u0645 \u0627\u0644\u0645\u0639\u0642\u062F\u0629 (\u0645\u062F\u0639\u0648\u0645 \u0644\u0644\u0635\u0648\u062A)" },
-        { id: "gemini-1.5-flash-8b", name: "Gemini 1.5 Flash-8B", tier: "free", description: "\u0633\u0631\u064A\u0639 \u062C\u062F\u0627\u064B \u0644\u0644\u0645\u0647\u0627\u0645 \u0627\u0644\u0628\u0633\u064A\u0637\u0629" },
-        { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", tier: "free", description: "\u0627\u0644\u062C\u064A\u0644 \u0627\u0644\u0623\u062D\u062F\u062B - \u0633\u0631\u064A\u0639 \u0648\u0642\u0648\u064A (\u0645\u062F\u0639\u0648\u0645 \u0644\u0644\u0635\u0648\u062A)" },
-        { id: "gemma-3-27b-it", name: "Gemma 3 27B", tier: "free", description: "\u0645\u0641\u062A\u0648\u062D \u0627\u0644\u0645\u0635\u062F\u0631" },
-        { id: "gemma-4-12b-it", name: "Gemma 4 12B", tier: "free", description: "\u0645\u0641\u062A\u0648\u062D \u0627\u0644\u0645\u0635\u062F\u0631 - \u062E\u0641\u064A\u0641" },
-        { id: "gemma-4-27b-it", name: "Gemma 4 27B", tier: "pro", description: "\u0645\u0641\u062A\u0648\u062D \u0627\u0644\u0645\u0635\u062F\u0631 - \u0642\u0648\u064A" }
+        // ── Gemini Models ──
+        { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", provider: "gemini", tier: "pro", pricing: "$0.075/$0.30 /1M", description: "\u0623\u062D\u062F\u062B \u0648\u0623\u0642\u0648\u0649 Gemini - \u064A\u0646\u0635\u062D \u0644\u0644\u0628\u0631\u0648" },
+        { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", provider: "gemini", tier: "free", pricing: "$0.10/$0.40 /1M", description: "\u0633\u0631\u064A\u0639 \u0648\u0642\u0648\u064A - \u0645\u062B\u0627\u0644\u064A \u0644\u0644\u0628\u0627\u0642\u0629 \u0627\u0644\u0645\u062C\u0627\u0646\u064A\u0629" },
+        { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro", provider: "gemini", tier: "pro", pricing: "$1.25/$5.00 /1M", description: "\u0639\u0627\u0644\u064A \u0627\u0644\u062F\u0642\u0629 \u0644\u0644\u0645\u0647\u0627\u0645 \u0627\u0644\u0645\u0639\u0642\u062F\u0629" },
+        { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash", provider: "gemini", tier: "free", pricing: "$0.075/$0.30 /1M", description: "\u0623\u062F\u0627\u0621 \u0633\u0631\u064A\u0639 \u0648\u0627\u0642\u062A\u0635\u0627\u062F\u064A" },
+        { id: "gemini-1.5-flash-8b", name: "Gemini 1.5 Flash-8B", provider: "gemini", tier: "free", pricing: "$0.0375/$0.15 /1M", description: "\u0627\u0644\u0623\u0631\u062E\u0635 \u0645\u0646 Gemini - \u0644\u0644\u0645\u0647\u0627\u0645 \u0627\u0644\u0628\u0633\u064A\u0637\u0629" },
+        // ── Groq Models ──
+        { id: "llama-3.1-8b-instant", name: "Llama 3.1 8B Instant", provider: "groq", tier: "free", pricing: "$0.05/$0.08 /1M", description: "\u0627\u0644\u0623\u0633\u0631\u0639 \u0648\u0627\u0644\u0623\u0631\u062E\u0635 - \u064A\u0646\u0635\u062D \u0644\u0623\u0648\u0644 \u0646\u0637\u0627\u0642 Free" },
+        { id: "llama-3.3-70b-versatile", name: "Llama 3.3 70B Versatile", provider: "groq", tier: "pro", pricing: "$0.59/$0.79 /1M", description: "\u0645\u062A\u0648\u0627\u0632\u0646 \u0648\u0642\u0648\u064A - \u064A\u0646\u0635\u062D \u0644\u0628\u0627\u0642\u0629 Pro" },
+        { id: "llama-3.1-70b-versatile", name: "Llama 3.1 70B Versatile", provider: "groq", tier: "pro", pricing: "$0.59/$0.79 /1M", description: "\u062F\u0642\u064A\u0642 \u062C\u062F\u0627\u064B \u0644\u0644\u062A\u0635\u0646\u064A\u0641" },
+        { id: "qwen/qwen3-32b", name: "Qwen3 32B (Groq)", provider: "groq", tier: "pro", pricing: "$0.29/$0.59 /1M", description: "\u0642\u0648\u064A \u0648\u0623\u0631\u062E\u0635 \u0645\u0646 70B" },
+        { id: "gemma2-9b-it", name: "Gemma2 9B (Groq)", provider: "groq", tier: "free", pricing: "$0.20/$0.20 /1M", description: "\u0645\u0641\u062A\u0648\u062D \u0627\u0644\u0645\u0635\u062F\u0631 \u0639\u0644\u0649 Groq" },
+        { id: "openai/gpt-oss-120b", name: "GPT-OSS 120B (Groq)", provider: "groq", tier: "ultra", pricing: "\u0645\u062E\u0635\u0635", description: "\u0627\u0644\u0623\u0642\u0648\u0649 \u0639\u0644\u0649 Groq - \u0644\u0644\u062D\u0627\u0644\u0627\u062A \u0627\u0644\u0635\u0639\u0628\u0629" }
       ]
     };
   }),
@@ -96002,8 +96152,8 @@ function monthRange(month) {
   const end = new Date(year2, monthNumber, 0, 23, 59, 59, 999);
   return { start, end };
 }
-async function refreshMonthlyInferences(userId, userType, month) {
-  const profile = await getSmartProfile(userId, userType);
+async function refreshMonthlyInferences(userId, userType2, month) {
+  const profile = await getSmartProfile(userId, userType2);
   const currentRange = monthRange(month);
   const [year2, monthNumber] = month.split("-").map(Number);
   const prevMonth = `${monthNumber === 1 ? year2 - 1 : year2}-${String(monthNumber === 1 ? 12 : monthNumber - 1).padStart(2, "0")}`;
@@ -96011,13 +96161,13 @@ async function refreshMonthlyInferences(userId, userType, month) {
   const [items, previousItems] = await Promise.all([
     db.select().from(expenses).where(and(
       eq(expenses.userId, userId),
-      eq(expenses.userType, userType),
+      eq(expenses.userType, userType2),
       gte(expenses.date, currentRange.start),
       lte(expenses.date, currentRange.end)
     )),
     db.select().from(expenses).where(and(
       eq(expenses.userId, userId),
-      eq(expenses.userType, userType),
+      eq(expenses.userType, userType2),
       gte(expenses.date, previousRange.start),
       lte(expenses.date, previousRange.end)
     ))
@@ -96032,10 +96182,10 @@ async function refreshMonthlyInferences(userId, userType, month) {
     },
     lastAiRefreshAt: /* @__PURE__ */ new Date()
   };
-  await saveSmartProfile(userId, userType, nextProfile);
+  await saveSmartProfile(userId, userType2, nextProfile);
   await db.insert(monthlyBehaviorSnapshots).values({
     userId,
-    userType,
+    userType: userType2,
     month,
     totalIncome: snapshot.totalIncome.toString(),
     totalExpense: snapshot.totalExpense.toString(),
@@ -96062,7 +96212,7 @@ async function refreshMonthlyInferences(userId, userType, month) {
   });
   await recordProfileLearningEvent({
     userId,
-    userType,
+    userType: userType2,
     eventType: "manual_refresh",
     previousAttributes,
     newAttributes: snapshot.inferredAttributes,
@@ -96521,14 +96671,14 @@ async function parseReceiptImage(input) {
 }
 
 // api/image-router.ts
-async function trackImageTokens(userId, userType, tokens, model) {
+async function trackImageTokens(userId, userType2, tokens, model) {
   if (!tokens) return;
-  if (userType === "oauth") {
+  if (userType2 === "oauth") {
     await db.update(users).set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` }).where(eq(users.id, userId));
   } else {
     await db.update(localUsers).set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` }).where(eq(localUsers.id, userId));
   }
-  await recordAiUsageEvent({ userId, userType, channel: "image", model, tokens });
+  await recordAiUsageEvent({ userId, userType: userType2, channel: "image", model, tokens });
 }
 var imageRouter = router({
   parseReceipt: proProcedure.input(
@@ -96658,14 +96808,14 @@ var PRO_UPSELL = {
   ],
   cta: "\u0631\u0642\u0651\u064A \u0644\u0640 Pro \u0644\u0641\u062A\u062D \u0627\u0644\u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0643\u0627\u0645\u0644"
 };
-async function trackGoalTokens(userId, userType, tokens, model) {
+async function trackGoalTokens(userId, userType2, tokens, model) {
   if (!tokens) return;
-  if (userType === "oauth") {
+  if (userType2 === "oauth") {
     await db.update(users).set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` }).where(eq(users.id, userId));
   } else {
     await db.update(localUsers).set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` }).where(eq(localUsers.id, userId));
   }
-  await recordAiUsageEvent({ userId, userType, channel: "goal", model, tokens });
+  await recordAiUsageEvent({ userId, userType: userType2, channel: "goal", model, tokens });
 }
 var goalsRouter = router({
   list: authedProcedure.query(async ({ ctx }) => {
@@ -97013,14 +97163,14 @@ app.post("/api/webhooks/paymob", async (c) => {
   if (obj && obj.success === true && !obj.pending) {
     const extraData = obj.payment_key_claims?.extra?.extras || obj.payment_key_claims?.extra || obj.extra_data || obj.order?.extra_data || {};
     const userId = Number(extraData.userId);
-    const userType = extraData.userType;
+    const userType2 = extraData.userType;
     const plan = extraData.plan || "pro_monthly";
-    if (userId && (userType === "oauth" || userType === "local")) {
-      console.info(`Granting Pro subscription to user ${userId} (${userType}) via Paymob webhook`);
+    if (userId && (userType2 === "oauth" || userType2 === "local")) {
+      console.info(`Granting Pro subscription to user ${userId} (${userType2}) via Paymob webhook`);
       try {
         await grantProSubscription({
           userId,
-          userType,
+          userType: userType2,
           plan,
           paymentMethod: obj.payment_key_claims?.extra?.payment_method || "paymob",
           transactionId: String(obj.id)

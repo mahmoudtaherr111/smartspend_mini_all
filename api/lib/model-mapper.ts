@@ -7,15 +7,14 @@
 export function mapModelName(modelName: string): string {
   const normalized = String(modelName || "").trim().toLowerCase();
 
+  if (!normalized) return "gemini-2.5-flash";
+
   // 1) Explicit custom models / settings mappings
   if (normalized.includes("3.1-flash-lite") || normalized === "flash-lite") {
     return "gemini-2.5-flash"; // Stable, fast, highly capable
   }
   if (normalized.includes("3.1-flash-tts")) {
     return "gemini-2.5-flash";
-  }
-  if (normalized.includes("gemma-4-26b-a4b-it") || normalized.includes("gemma-4-31b-it") || normalized.includes("gemma")) {
-    return "gemini-2.5-pro"; // Map heavy or speculative models to stable Pro
   }
   if (normalized.includes("3.0-flash-live") || normalized.includes("3.1-flash")) {
     return "gemini-2.0-flash";
@@ -28,26 +27,11 @@ export function mapModelName(modelName: string): string {
   if (normalized === "flash") {
     return "gemini-2.5-flash";
   }
-  if (normalized === "pro") {
-    return "gemini-2.5-pro";
-  }
-  if (normalized === "ultra") {
+  if (normalized === "pro" || normalized === "ultra") {
     return "gemini-2.5-pro";
   }
 
-  // 3) Fallback if it's already a valid SDK name
-  const validModels = [
-    "gemini-2.5-flash",
-    "gemini-2.5-pro",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro",
-  ];
-
-  if (validModels.includes(normalized)) {
-    return normalized;
-  }
-
-  // If it's something unsupported or completely customized, use stable flash
-  return "gemini-2.5-flash";
+  // 3) Just return the model name! This allows Groq models (llama3-8b-8192, mixtral-8x7b-32768, etc.) 
+  // and new Gemini models to pass through to the provider successfully.
+  return normalized;
 }

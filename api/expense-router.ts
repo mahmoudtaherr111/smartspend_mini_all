@@ -49,13 +49,13 @@ export const expenseRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = getDb();
       const userId = ctx.user!.id;
-      const userType = ctx.user!.type;
+      const requestUserType = ctx.user!.type;
 
       const expenseDate = input.date ? new Date(input.date) : new Date();
 
       await db.insert(expenses).values({
         userId,
-        userType,
+        userType: requestUserType,
         type: input.type,
         amount: input.amount.toString(),
         category: input.category,
@@ -67,7 +67,7 @@ export const expenseRouter = router({
       });
 
       // Phase 2: Invalidate muscle memory cache so it learns this new confirmed pattern
-      invalidateUserMemory(userId, userType);
+      invalidateUserMemory(userId, requestUserType);
 
       // ─── Gamification: Update Streaks ───
       try {
@@ -77,7 +77,7 @@ export const expenseRouter = router({
         yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayStr = yesterday.toISOString().split("T")[0];
 
-        if (userType === "oauth") {
+        if (requestUserType === "oauth") {
           const [u] = await db.select().from(users).where(eq(users.id, Number(userId)));
           if (u) {
             const lastDate = u.lastStreakAt ? new Date(u.lastStreakAt) : null;
@@ -332,7 +332,7 @@ export const expenseRouter = router({
       // Calculate previous month's dates based on financial month logic
       const prevMonthDate = safeDate(`${input.month}-01`, startDate);
       prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
-      const prevMonthStr = safeDateString(prevMonthDate, input.month);
+      const prevMonthStr = prevMonthDate.toISOString().slice(0, 7);
       const prevMonthDates = getFinancialMonthDates(prevMonthStr, input.salaryDay);
       const prevStartDate = prevMonthDates.startDate;
       const prevEndDate = prevMonthDates.endDate;
