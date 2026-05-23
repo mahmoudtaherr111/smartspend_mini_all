@@ -108,7 +108,7 @@ export default function Home() {
     setMonth(searchParams.get("month") || currentMonthValue());
   }, [searchParams]);
 
-  const shouldLoadStats = activeTab === "stats" || activeTab === "calendar";
+  const shouldLoadStats = activeTab === "stats";
   
   const { data: profile } = trpc.profile.getSmartProfile.useQuery();
   const salaryDay = profile?.financialInfo?.hasFixedSalary && profile?.financialInfo?.salaryDay 
@@ -128,6 +128,13 @@ export default function Home() {
   } = trpc.expense.getMonthlyStats.useQuery(
     { month, salaryDay },
     { enabled: shouldLoadStats, staleTime: 30_000, retry: 1 }
+  );
+  const {
+    data: calendarStats,
+    isFetching: calendarFetching,
+  } = trpc.expense.getMonthlyStats.useQuery(
+    { month, salaryDay: null },
+    { enabled: activeTab === "calendar", staleTime: 30_000, retry: 1 }
   );
   const refreshInferences = trpc.profile.refreshInferences.useMutation({
     onSuccess: () => {
@@ -159,7 +166,11 @@ export default function Home() {
 
   const handleRefresh = () => {
     utils.expense.getMonthSummary.invalidate({ month });
-    if (shouldLoadStats) utils.expense.getMonthlyStats.invalidate({ month });
+    if (activeTab === "stats") {
+      utils.expense.getMonthlyStats.invalidate({ month, salaryDay });
+    } else if (activeTab === "calendar") {
+      utils.expense.getMonthlyStats.invalidate({ month, salaryDay: null });
+    }
   };
 
   const netFlow = summary?.netFlow || 0;
@@ -278,10 +289,10 @@ export default function Home() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {statsFetching && !stats ? (
+              {calendarFetching && !calendarStats ? (
                 <div className="py-10 text-center text-sm text-muted-foreground">جاري تحميل التقويم...</div>
               ) : (
-                <MonthlyCalendar month={month} dayTrend={stats?.dayTrend || []} salaryDay={salaryDay} />
+                <MonthlyCalendar month={month} dayTrend={calendarStats?.dayTrend || []} salaryDay={salaryDay} />
               )}
             </CardContent>
           </Card>
@@ -309,7 +320,7 @@ const StatsView = memo(function StatsView({
   const isUp = typeof changePercent === "number" && changePercent > 0;
   const dailyAvg = stats?.dailyAverage || 0;
   const topCategories = stats?.topCategories?.slice(0, 5) || [];
-  const totalExpense = topCategories.reduce((s: number, c: any) => s + (c.value || 0), 0);
+  const totalExpense = stats?.totalExpense || 0;
 
   if (loading && !stats) {
     return (

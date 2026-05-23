@@ -35,6 +35,9 @@ export interface PipelineInput {
     isSmoker?: boolean | null;
   };
   skipClarification?: boolean;
+  // Dynamic routing: provider selected by resolveRoutingConfig
+  provider?: "gemini" | "groq";
+  groqApiKey?: string;
 }
 
 export interface PipelineResult {
@@ -339,7 +342,9 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
                   richContext: routing.includeRichAiContext,
                   ruleHintsCompact: compactRuleHints(ruleHints),
                 },
-                forceSkipClarification
+                forceSkipClarification,
+                input.groqApiKey,
+                input.provider
               );
 
           if (aiResult) {

@@ -38,6 +38,9 @@ export function ExpenseChart({ categoryData, subCategoryData = [], hourTrend = [
 
   // 1. Filter electronic transactions
   const electronicItems = items.filter((item) => {
+    if (typeof item.parsedMetadata === 'string') {
+      try { item.parsedMetadata = JSON.parse(item.parsedMetadata); } catch(e) { item.parsedMetadata = {}; }
+    }
     if (item.source === "sms" || (item.parsedMetadata && item.parsedMetadata.provider)) return true;
     const eKeywords = ["فيزا", "انستاباي", "انستا باي", "فودافون كاش", "تحويل", "بنك", "كريدت", "بطاقة"];
     const txt = `${item.category || ""} ${item.subCategory || ""} ${item.description || ""} ${item.rawText || ""}`.toLowerCase();

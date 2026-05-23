@@ -51,7 +51,152 @@ import {
   type ProReportBackendSummary,
 } from "./services/pro-report-engine";
 
+// ────────────────────────────────────────────────────────
+// Groq API Helper
+// ────────────────────────────────────────────────────────
+export async function callGroqAPI(
+  apiKey: string,
+  model: string,
+  systemPrompt: string,
+  userPrompt: string,
+  maxTokens: number
+): Promise<{ text: string; tokensUsed: number }> {
+  const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
+  const response = await fetch(GROQ_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user",   content: userPrompt },
+      ],
+      max_tokens: Math.min(maxTokens, 4096),
+      temperature: 0.2,
+      response_format: { type: "json_object" },
+    }),
+  });
 
+  if (!response.ok) {
+    const errBody = await response.text().catch(() => "");
+    throw new Error(`Groq API error ${response.status}: ${errBody.slice(0, 300)}`);
+  }
+
+  const data = await response.json() as any;
+  const text = data?.choices?.[0]?.message?.content ?? "";
+  const tokensUsed = data?.usage?.total_tokens ?? 0;
+  return { text, tokensUsed };
+}
+
+// ────────────────────────────────────────────────────────
+// Dynamic Routing Config Resolver
+// ────────────────────────────────────────────────────────
+export interface RoutingRange {
+  from: number;
+  to: number | null;
+  action?: "block";
+  message?: string;
+  provider?: "gemini" | "groq";
+  key_slot?: "key1" | "key2" | "groq";
+  model?: string;
+}
+
+export interface ResolvedRouting {
+  provider: "gemini" | "groq";
+  apiKey: string;
+  model: string;
+}
+
+/**
+ * Reads the dynamic routing ranges from admin settings and resolves
+ * the correct API provider + key + model for the user's current token usage.
+ * Throws a TRPCError with FORBIDDEN code if the user is in a "block" range.
+ */
+export async function resolveRoutingConfig(
+  userPlan: string,
+  tokensUsed: number,
+  cfg: Record<string, string>
+): Promise<ResolvedRouting> {
+  const plan = userPlan === "pro" || userPlan === "ultra" ? "pro" : "free";
+  const rangesKey = `${plan}_routing_ranges`;
+  const rawRanges = cfg[rangesKey];
+
+  // If no routing ranges configured, fall back to simple legacy key/model
+  if (!rawRanges) {
+    return {
+      provider: "gemini",
+      apiKey: cfg.ai_api_key || env.GEMINI_API_KEY,
+      model: plan === "pro" ? (cfg.ai_model_pro || "gemini-1.5-flash") : (cfg.ai_model_free || "gemini-2.0-flash"),
+    };
+  }
+
+  let ranges: RoutingRange[] = [];
+  try {
+    ranges = JSON.parse(rawRanges);
+  } catch {
+    // JSON parse failed — fallback gracefully
+    return {
+      provider: "gemini",
+      apiKey: cfg.ai_api_key || env.GEMINI_API_KEY,
+      model: cfg.ai_model_free || "gemini-2.0-flash",
+    };
+  }
+
+  // Find the matching range for current token usage
+  const matchedRange = ranges.find((r) => {
+    const from = r.from ?? 0;
+    const to   = r.to;
+    if (tokensUsed < from) return false;
+    if (to === null || to === undefined) return true; // open-ended upper bound
+    return tokensUsed < to;
+  });
+
+  if (!matchedRange) {
+    // No range matched (shouldn’t happen with a well-formed config that ends in null)
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: `استهلكت رصيدك الشهري من الذكاء الاصطناعي. يتجدد تلقائياً في بداية الشهر الجاي.`,
+    });
+  }
+
+  // Block range
+  if (matchedRange.action === "block") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: matchedRange.message || `وصلت للحد الشهري. يتجدد تلقائياً في بداية الشهر الجاي.`,
+    });
+  }
+
+  // Resolve API key from slot
+  const keySlot = matchedRange.key_slot ?? "key1";
+  let resolvedKey: string;
+  if (keySlot === "groq") {
+    resolvedKey = cfg.groq_api_key || "";
+  } else if (keySlot === "key2") {
+    resolvedKey = cfg.ai_api_key_2 || "";
+  } else {
+    resolvedKey = cfg.ai_api_key || env.GEMINI_API_KEY || "";
+  }
+
+  if (!resolvedKey) {
+    // Key slot configured but key is empty — fall back to primary Gemini key
+    resolvedKey = cfg.ai_api_key || env.GEMINI_API_KEY || "";
+    return {
+      provider: "gemini",
+      apiKey: resolvedKey,
+      model: mapModelName(matchedRange.model || cfg.ai_model_free || "gemini-2.0-flash"),
+    };
+  }
+
+  return {
+    provider: (matchedRange.provider ?? "gemini") as "gemini" | "groq",
+    apiKey: resolvedKey,
+    model: mapModelName(matchedRange.model || cfg.ai_model_free || "gemini-2.0-flash"),
+  };
+}
 
 async function trackTokens(userId: number, userType: string, tokens: number, channel: AiUsageChannel = "parse", model?: string) {
   if (!tokens || tokens <= 0) return;
@@ -119,12 +264,19 @@ async function getAiClient(taskType: "parse" | "report", userPlan: string = "fre
 
   // Model selection based on plan
   let modelName: string;
+  let reportProvider = "gemini";
+  let reportKeySlot = "key1";
+  
   if (taskType === "parse") {
     if (userPlan === "ultra") modelName = cfg.ai_model_ultra || "gemini-2.5-pro";
     else if (userPlan === "pro") modelName = cfg.ai_model_pro || env.GEMINI_MODEL_PRO;
     else modelName = cfg.ai_model_free || env.GEMINI_MODEL_FREE;
   } else {
-    modelName = cfg.ai_model_reports || env.GEMINI_MODEL_REPORTS;
+    // Analytics/Reports configuration
+    const plan = userPlan === "ultra" ? "pro" : (userPlan || "free");
+    reportProvider = cfg[`report_provider_${plan}`] || "gemini";
+    modelName = cfg[`report_model_${plan}`] || cfg.ai_model_reports || env.GEMINI_MODEL_REPORTS;
+    reportKeySlot = cfg[`report_key_slot_${plan}`] || "key1";
   }
   modelName = mapModelName(modelName);
 
@@ -187,6 +339,7 @@ async function getAiClient(taskType: "parse" | "report", userPlan: string = "fre
     ultra: parseSafeInt(cfg.report_top_items_ultra, "10"),
   };
 
+
   const channel: AiUsageChannel = taskType === "report" ? "report" : "parse";
   let safeMaxTokens: number;
   if (taskType === "report") {
@@ -200,12 +353,16 @@ async function getAiClient(taskType: "parse" | "report", userPlan: string = "fre
   const aiModel = genAI.getGenerativeModel({
     model: modelName,
     generationConfig: {
-      temperature: taskType === "report" ? 0.7 : 0.3, // More creative for reports
+      temperature: taskType === "report" ? 0.7 : 0.3,
       maxOutputTokens: safeMaxTokens,
     },
   });
+
+  const groqApiKey = cfg.groq_api_key || "";
+
   return {
-    aiModel, modelName, apiKey, apiKey2,
+    aiModel, modelName, apiKey, apiKey2, groqApiKey,
+    reportProvider, reportKeySlot,
     tokenLimit: tokenLimits[plan] || 50000,
     dailyLimit: dailyLimits[plan] || 10,
     maxPerRequest: maxPerRequest[plan] || 512,
@@ -216,8 +373,11 @@ async function getAiClient(taskType: "parse" | "report", userPlan: string = "fre
     reportTargetWords: reportWords[plan] || 550,
     reportSubcatsLimit: reportSubcats[plan] || 15,
     reportTopItemsLimit: reportTopItems[plan] || 0,
+    // Full cfg for dynamic routing resolution
+    cfg,
   };
 }
+
 
 // ─── Number Normalizer ───
 const arabicToEnglishNumbers = (str: string) => {
@@ -513,6 +673,26 @@ export const aiRouter = router({
         estimatedInputTokens
       );
 
+      // ── Dynamic Routing: resolve correct provider/key/model based on tokens used ──
+      let resolvedProvider: "gemini" | "groq" = "gemini";
+      let resolvedGroqKey = "";
+      try {
+        const settings = await db.select().from(systemSettings);
+        const cfgFull: Record<string, string> = {};
+        settings.forEach(s => { if (s.value) cfgFull[s.key] = s.value; });
+        const routing = await resolveRoutingConfig(ctx.user.plan, budget.used, cfgFull);
+        resolvedProvider = routing.provider;
+        resolvedGroqKey  = routing.provider === "groq" ? routing.apiKey : "";
+        if (routing.provider === "gemini") {
+          apiKey = routing.apiKey;
+        }
+        modelName = routing.model;
+      } catch (routingErr) {
+        if (routingErr instanceof TRPCError) throw routingErr;
+        // If routing resolution fails for any other reason, keep current defaults
+        console.warn("Routing config resolution failed, using defaults:", routingErr);
+      }
+
       // Get user dictionary
       const userDict = await db.select().from(userDictionaries)
         .where(and(eq(userDictionaries.userId, ctx.user.id), eq(userDictionaries.userType, ctx.user.type)))
@@ -551,6 +731,9 @@ export const aiRouter = router({
           isSmoker: (smartProfile?.onboardingAnswers as any)?.smoke === 'yes' || /مدخن|سجاير|فيب/.test(String((smartProfile?.lifestyleInfo as any)?.habits || "")),
         },
         skipClarification: input.skipClarification,
+        // Dynamic routing
+        provider: resolvedProvider,
+        groqApiKey: resolvedGroqKey,
       });
 
       // Track tokens
@@ -769,11 +952,24 @@ export const aiRouter = router({
         });
       }
 
-      // Get API key
-      let apiKey = cfg.stt_api_key && cfg.stt_api_key !== "AIzaSyCWif4U7uRb1WKG_HTwqNwtNLmvfD5fZj0" ? cfg.stt_api_key : (cfg.ai_api_key || env.GEMINI_API_KEY);
+      // STT Plan Configuration
+      const plan = ctx.user.plan === "ultra" ? "pro" : (ctx.user.plan || "free");
+      
+      const sttProvider = cfg[`${plan}_stt_provider`] || "gemini";
+      const sttModelSetting = cfg[`${plan}_stt_model`] || cfg.stt_model || "gemini-1.5-flash";
+      const sttKeySlot = cfg[`${plan}_stt_key_slot`] || "key1";
+      
+      const sttModel = mapModelName(sttModelSetting);
+      const fallbackModel = mapModelName(cfg.stt_fallback_model || "gemini-2.0-flash");
+
+      // Resolve API key based on the selected slot
+      let apiKey = env.GEMINI_API_KEY;
+      if (sttKeySlot === "key2" && cfg.ai_api_key_2) apiKey = cfg.ai_api_key_2;
+      else if (sttKeySlot === "groq" && cfg.groq_api_key) apiKey = cfg.groq_api_key;
+      else if (cfg.stt_api_key && cfg.stt_api_key !== "AIzaSyCWif4U7uRb1WKG_HTwqNwtNLmvfD5fZj0") apiKey = cfg.stt_api_key;
+      else if (cfg.ai_api_key) apiKey = cfg.ai_api_key;
+      
       let apiKey2 = cfg.ai_api_key_2 || "";
-      const sttModel = cfg.stt_model || "gemini-1.5-flash";
-      const fallbackModel = cfg.stt_fallback_model || "gemini-2.0-flash";
 
       const cleanMimeType = input.mimeType.split(';')[0];
       const sttMode = cfg.stt_processing_mode || "standard";
@@ -1077,7 +1273,9 @@ export const aiRouter = router({
       let reportSubcatsLimit = 15;
       let reportTopItemsLimit = 0;
       let aiModel: any;
+      let reportProvider = "gemini";
       let reportApiKey = env.GEMINI_API_KEY;
+      let groqApiKey = "";
       let modelName = "backend";
       let aiResponseLength = "medium";
       let aiFocus = "balanced";
@@ -1095,6 +1293,9 @@ export const aiRouter = router({
         }
         aiModel = client.aiModel;
         modelName = client.modelName;
+        reportProvider = client.reportProvider || "gemini";
+        reportApiKey = client.apiKey;
+        groqApiKey = client.groqApiKey;
         reportTargetWords = client.reportTargetWords;
         reportSubcatsLimit = client.reportSubcatsLimit;
         reportTopItemsLimit = client.reportTopItemsLimit;

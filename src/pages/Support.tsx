@@ -196,7 +196,7 @@ export default function Support() {
                       <p>مفيش تذاكر لسه. ابعت تذكرة لو محتاج مساعدة!</p>
                     </div>
                   )}
-                  {myTickets.data?.map((t: { id: number; subject: string; message: string; status: string; response?: string | null; createdAt: string | Date }) => (
+                  {myTickets.data?.map((t) => (
                     <div key={t.id} className="border rounded-xl p-4 space-y-2">
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <h4 className="font-bold text-sm sm:text-base break-words">{t.subject}</h4>
@@ -226,7 +226,7 @@ export default function Support() {
                         </div>
                       )}
                       <p className="text-xs text-muted-foreground">
-                        {new Date(t.createdAt).toLocaleString("ar-EG")}
+                        {t.createdAt ? new Date(t.createdAt).toLocaleString("ar-EG") : ""}
                       </p>
                     </div>
                   ))}

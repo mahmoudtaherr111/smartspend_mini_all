@@ -259,9 +259,9 @@ export default function Admin() {
                               <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 font-bold text-xs uppercase">
                                 {u.name?.[0] || "?"}
                               </div>
-                              <div>
-                                <p className="font-bold text-slate-900 dark:text-slate-100">{u.name}</p>
-                                <p className="text-xs text-slate-500">{u.email || u.phone}</p>
+                              <div className="max-w-[200px]">
+                                <p className="font-bold text-slate-900 dark:text-slate-100 truncate" title={u.name}>{u.name}</p>
+                                <p className="text-xs text-slate-500 truncate" title={u.email || u.phone}>{u.email || u.phone}</p>
                               </div>
                             </div>
                           </td>
@@ -650,6 +650,13 @@ function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label:
 
 function ClassificationDashboard() {
   const { classificationStats, classificationLogs } = useAdmin({ classification: true });
+  const [logTab, setLogTab] = useState("all");
+
+  const filteredLogs = classificationLogs.data?.logs?.filter((l: any) => {
+    if (logTab === "all") return true;
+    if (logTab === "free") return l.userPlan === "free";
+    return l.userPlan === "pro" || l.userPlan === "ultra";
+  }) || [];
 
   return (
     <div className="space-y-8">
@@ -674,9 +681,18 @@ function ClassificationDashboard() {
       </div>
 
       <Card className="border-slate-200 shadow-sm overflow-hidden">
-        <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-4">
-          <CardTitle>مراقب التصنيف المباشر (Classification Live Feed)</CardTitle>
-          <CardDescription>أحدث عمليات المعالجة التي مرت عبر المحرك الذكي</CardDescription>
+        <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <CardTitle>مراقب التصنيف المباشر (Classification Live Feed)</CardTitle>
+            <CardDescription>أحدث عمليات المعالجة التي مرت عبر المحرك الذكي</CardDescription>
+          </div>
+          <Tabs value={logTab} onValueChange={setLogTab} className="w-full sm:w-[300px]">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="all">الكل</TabsTrigger>
+              <TabsTrigger value="pro">البرو</TabsTrigger>
+              <TabsTrigger value="free">المجاني</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -684,20 +700,45 @@ function ClassificationDashboard() {
               <thead className="bg-slate-50 text-slate-500 border-b font-medium text-right">
                 <tr>
                   <th className="py-3 px-6">المستخدم</th>
-                  <th className="py-3 px-4">النص الأصلي (الإدخال)</th>
+                  <th className="py-3 px-4">النص الأصلي</th>
                   <th className="py-3 px-4">المحرك</th>
+                  <th className="py-3 px-4">الموديل (Model)</th>
+                  <th className="py-3 px-4">استهلاك (Tokens)</th>
                   <th className="py-3 px-4">درجة الثقة</th>
                   <th className="py-3 px-4">القرار المتخذ</th>
                   <th className="py-3 px-6">الوقت</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {classificationLogs.data?.logs.map((l: any) => (
+                {filteredLogs.map((l: any) => (
                   <tr key={l.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-3 px-6 font-bold text-slate-700 dark:text-slate-300">{l.userName}</td>
-                    <td className="py-3 px-4 text-slate-600 dark:text-slate-400 font-medium max-w-[250px] truncate" title={l.originalText}>"{l.originalText}"</td>
+                    <td className="py-3 px-6 font-bold text-slate-700 dark:text-slate-300">
+                      <div className="flex items-center gap-2 max-w-[150px]">
+                        <span className="truncate" title={l.userName}>{l.userName}</span>
+                        {l.userPlan && (
+                          <Badge variant="outline" className="text-[10px] uppercase shrink-0">
+                            {l.userPlan}
+                          </Badge>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-slate-600 dark:text-slate-400 font-medium max-w-[200px] truncate" title={l.originalText}>"{l.originalText}"</td>
                     <td className="py-3 px-4">
                       <Badge variant="outline" className="bg-white dark:bg-slate-950">{l.parsedBy}</Badge>
+                    </td>
+                    <td className="py-3 px-4 max-w-[150px]">
+                      {l.modelUsed ? (
+                        <div className="font-mono text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-600 dark:text-slate-300 truncate" title={l.modelUsed}>
+                          {l.modelUsed}
+                        </div>
+                      ) : "—"}
+                    </td>
+                    <td className="py-3 px-4">
+                      {l.tokensUsed ? (
+                        <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                          {Number(l.tokensUsed).toLocaleString()}
+                        </span>
+                      ) : "—"}
                     </td>
                     <td className="py-3 px-4">
                       <span className={`font-mono font-bold px-2 py-1 rounded-md text-xs ${l.confidence >= 85 ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400" : l.confidence >= 60 ? "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" : "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400"}`}>
@@ -714,6 +755,11 @@ function ClassificationDashboard() {
                     </td>
                   </tr>
                 ))}
+                {filteredLogs.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="py-8 text-center text-slate-500">لا توجد عمليات تصنيف مطابقة للبحث.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

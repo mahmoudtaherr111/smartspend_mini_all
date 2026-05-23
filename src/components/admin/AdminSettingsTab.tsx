@@ -9,18 +9,211 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Brain, Save, Sliders, Mic, ShieldCheck, Calendar, Trash2, Plus, Sparkles, AlertCircle, Terminal, Key } from "lucide-react";
+import { Save, Terminal, Key, Route, Settings2, ShieldCheck, Sparkles, AlertCircle, Database, Lock, Calendar, Plus, Trash2, Mic, BrainCircuit } from "lucide-react";
 import { toast } from "sonner";
+
+// ── Helper Components ──
+function RoutingRangesEditor({ planName, rawValue, onChange, models }: { planName: string, rawValue: string, onChange: (val: string) => void, models: any[] }) {
+  let initialRanges: any[] = [];
+  try { initialRanges = JSON.parse(rawValue || "[]"); } catch (e) {}
+  const [ranges, setRanges] = useState<any[]>(initialRanges);
+  useEffect(() => { try { setRanges(JSON.parse(rawValue || "[]")); } catch (e) {} }, [rawValue]);
+
+  const updateRange = (index: number, key: string, value: any) => {
+    const newRanges = [...ranges];
+    newRanges[index][key] = value;
+    setRanges(newRanges);
+    onChange(JSON.stringify(newRanges));
+  };
+  const addRange = () => {
+    const newRanges = [...ranges, { from: 0, to: null, provider: "gemini", key_slot: "key1", model: "gemini-2.0-flash" }];
+    setRanges(newRanges);
+    onChange(JSON.stringify(newRanges));
+  };
+  const removeRange = (index: number) => {
+    const newRanges = ranges.filter((_, i) => i !== index);
+    setRanges(newRanges);
+    onChange(JSON.stringify(newRanges));
+  };
+
+  return (
+    <div className="space-y-4">
+      {ranges.map((r, i) => (
+        <div key={i} className="flex flex-wrap items-center gap-3 bg-white dark:bg-slate-950 p-4 rounded-xl border dark:border-slate-800 shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-900 text-sm font-bold text-slate-600">{i+1}</span>
+            <div className="space-y-1">
+              <Label className="text-[10px] text-slate-500">من (Tokens)</Label>
+              <Input type="number" dir="ltr" className="w-24 h-9 font-mono bg-slate-50 dark:bg-slate-900" value={r.from || 0} onChange={e => updateRange(i, "from", Number(e.target.value))} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-[10px] text-slate-500">إلى (Tokens)</Label>
+              <Input type="number" dir="ltr" className="w-24 h-9 font-mono bg-slate-50 dark:bg-slate-900" value={r.to || ""} placeholder="لانهائي" onChange={e => updateRange(i, "to", e.target.value ? Number(e.target.value) : null)} />
+            </div>
+          </div>
+          
+          <div className="flex-1 min-w-[200px] flex items-center gap-3 border-r pr-3 dark:border-slate-800">
+            <div className="space-y-1 w-28">
+              <Label className="text-[10px] text-slate-500">الإجراء (Action)</Label>
+              <Select value={r.action || "route"} onValueChange={v => updateRange(i, "action", v === "route" ? undefined : v)}>
+                <SelectTrigger className="h-9 bg-slate-50 dark:bg-slate-900"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="route">استخدام موديل الذكاء</SelectItem>
+                  <SelectItem value="block">حظر فوري (Block)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {r.action === "block" ? (
+              <div className="space-y-1 flex-1">
+                <Label className="text-[10px] text-slate-500">رسالة الحظر للعميل</Label>
+                <Input className="h-9 bg-rose-50/50 dark:bg-rose-950/20 text-rose-600 border-rose-200" placeholder="عفواً، لقد استنفدت رصيدك..." value={r.message || ""} onChange={e => updateRange(i, "message", e.target.value)} />
+              </div>
+            ) : (
+              <>
+                <div className="space-y-1 w-24">
+                  <Label className="text-[10px] text-slate-500">الخادم</Label>
+                  <Select value={r.provider || "gemini"} onValueChange={v => updateRange(i, "provider", v)}>
+                    <SelectTrigger className="h-9 bg-slate-50 dark:bg-slate-900"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="gemini">Google</SelectItem>
+                      <SelectItem value="groq">Groq</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1 flex-1">
+                  <Label className="text-[10px] text-slate-500">الموديل الفعلي</Label>
+                  <Select value={r.model || ""} onValueChange={v => updateRange(i, "model", v)}>
+                    <SelectTrigger className="h-9 bg-slate-50 dark:bg-slate-900 font-mono text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {models.filter(m => r.provider === "groq" ? m.provider === "groq" : m.provider === "gemini").map(m => (
+                        <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1 w-32">
+                  <Label className="text-[10px] text-slate-500">مفتاح API</Label>
+                  <Select value={r.key_slot || "key1"} onValueChange={v => updateRange(i, "key_slot", v)}>
+                    <SelectTrigger className="h-9 bg-slate-50 dark:bg-slate-900"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="key1">🔑 Gemini Primary</SelectItem>
+                      <SelectItem value="key2">🔑 Gemini Backup</SelectItem>
+                      <SelectItem value="groq">🔑 Groq Key</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+          </div>
+          <Button variant="ghost" size="icon" className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 self-end mb-0.5" onClick={(e) => { e.preventDefault(); removeRange(i); }}>
+            <Trash2 className="w-5 h-5" />
+          </Button>
+        </div>
+      ))}
+      <Button variant="outline" size="sm" className="gap-2 border-dashed border-2 hover:bg-slate-50 w-full justify-center h-14 text-slate-500 font-bold bg-white" onClick={(e) => { e.preventDefault(); addRange(); }}>
+        <Plus className="w-5 h-5" /> إضافة شريحة استهلاك توكنز جديدة
+      </Button>
+    </div>
+  );
+}
+
+function SttPlanConfig({ plan, formData, updateField, models }: { plan: string, formData: any, updateField: any, models: any[] }) {
+  const providerKey = `${plan}_stt_provider`;
+  const modelKey = `${plan}_stt_model`;
+  const slotKey = `${plan}_stt_key_slot`;
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="space-y-2">
+        <Label className="text-xs font-bold text-slate-500">الخادم السحابي</Label>
+        <Select value={formData[providerKey] || "gemini"} onValueChange={v => updateField(providerKey, v)}>
+          <SelectTrigger className="bg-slate-50 dark:bg-slate-900"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="gemini">Google Cloud</SelectItem>
+            <SelectItem value="groq">Groq Audio</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label className="text-xs font-bold text-slate-500">الموديل الدقيق</Label>
+        <Select value={formData[modelKey] || ""} onValueChange={v => updateField(modelKey, v)}>
+          <SelectTrigger className="bg-slate-50 dark:bg-slate-900 font-mono text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {models.map(m => (
+              <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label className="text-xs font-bold text-slate-500">المفتاح المستخدم</Label>
+        <Select value={formData[slotKey] || "key1"} onValueChange={v => updateField(slotKey, v)}>
+          <SelectTrigger className="bg-slate-50 dark:bg-slate-900"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="key1">🔑 Gemini Primary</SelectItem>
+            <SelectItem value="key2">🔑 Gemini Backup</SelectItem>
+            <SelectItem value="groq">🔑 Groq Key</SelectItem>
+            <SelectItem value="stt">🔑 STT Custom Key</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+}
+
+function ReportPlanConfig({ plan, formData, updateField, models }: { plan: string, formData: any, updateField: any, models: any[] }) {
+  const providerKey = `report_provider_${plan}`;
+  const modelKey = `report_model_${plan}`;
+  const slotKey = `report_key_slot_${plan}`;
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="space-y-2">
+        <Label className="text-xs font-bold text-slate-500">الخادم السحابي للتحليل</Label>
+        <Select value={formData[providerKey] || "gemini"} onValueChange={v => updateField(providerKey, v)}>
+          <SelectTrigger className="bg-slate-50 dark:bg-slate-900"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="gemini">Google Cloud</SelectItem>
+            <SelectItem value="groq">Groq (للسرعة الفائقة)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label className="text-xs font-bold text-slate-500">موديل التحليل المنطقي</Label>
+        <Select value={formData[modelKey] || ""} onValueChange={v => updateField(modelKey, v)}>
+          <SelectTrigger className="bg-slate-50 dark:bg-slate-900 font-mono text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {models.map(m => (
+              <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label className="text-xs font-bold text-slate-500">المفتاح المستخدم</Label>
+        <Select value={formData[slotKey] || "key1"} onValueChange={v => updateField(slotKey, v)}>
+          <SelectTrigger className="bg-slate-50 dark:bg-slate-900"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="key1">🔑 Gemini Primary</SelectItem>
+            <SelectItem value="key2">🔑 Gemini Backup</SelectItem>
+            <SelectItem value="groq">🔑 Groq Key</SelectItem>
+            <SelectItem value="stt">🎤 Custom STT Primary</SelectItem>
+            <SelectItem value="stt2">🎤 Custom STT Backup</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+}
 
 export function AdminSettingsTab() {
   const { data: settings, refetch } = trpc.admin.getSettings.useQuery();
   const { data: modelsData } = trpc.admin.getAvailableModels.useQuery();
   const updateSettings = trpc.admin.updateSettings.useMutation({
     onSuccess: () => {
-      toast.success("تم تحديث إعدادات النظام بنجاح");
+      toast.success("تم عمل Override للإعدادات بنجاح. النظام يعمل بالقواعد الجديدة الآن!");
       refetch();
     },
-    onError: () => toast.error("حدث خطأ أثناء التحديث"),
+    onError: () => toast.error("حدث خطأ أثناء حفظ الإعدادات"),
   });
 
   const [formData, setFormData] = useState<Record<string, string>>({});
@@ -46,390 +239,261 @@ export function AdminSettingsTab() {
 
   return (
     <div className="space-y-8 animate-in fade-in-50 duration-500 pb-20" dir="rtl">
-      {/* Header section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b">
+      {/* ── HEADER ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-slate-200 dark:border-slate-800">
         <div className="space-y-1">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">إدارة النظام المركزية</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            <BrainCircuit className="w-8 h-8 text-indigo-600" /> لوحة التحكم العبقرية (Smart Core)
+          </h2>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            تحكم شامل في جميع خصائص الذكاء الاصطناعي، الصلاحيات، والباقات.
+            هنا يتم دمج المفاتيح، تحديد مسارات الذكاء الاصطناعي، ووضع قوانين النظام التي تُطبق كلياً وبشكل لحظي.
           </p>
         </div>
-        <Button onClick={handleSubmit} disabled={updateSettings.isPending} size="lg" className="gap-2 shadow-md">
+        <Button onClick={handleSubmit} disabled={updateSettings.isPending} size="lg" className="gap-2 shadow-lg bg-indigo-600 hover:bg-indigo-700 text-white px-8">
           <Save className="w-5 h-5" />
-          {updateSettings.isPending ? "جاري الحفظ..." : "حفظ التغييرات"}
+          {updateSettings.isPending ? "جاري الحفظ والتطبيق..." : "حفظ وتنفيذ الإعدادات"}
         </Button>
       </div>
 
-      <Tabs defaultValue="ai" className="w-full">
-        <TabsList className="mb-8 p-1 bg-slate-100/80 dark:bg-slate-800/80 rounded-xl flex-wrap h-auto gap-1 border shadow-sm w-fit">
-          <TabsTrigger value="ai" className="gap-2 py-2.5 px-5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"><Brain className="w-4 h-4 text-indigo-500"/> محرك الذكاء</TabsTrigger>
-          <TabsTrigger value="limits" className="gap-2 py-2.5 px-5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"><Sliders className="w-4 h-4 text-emerald-500"/> الحدود والباقات</TabsTrigger>
-          <TabsTrigger value="voice" className="gap-2 py-2.5 px-5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"><Mic className="w-4 h-4 text-rose-500"/> المحرك الصوتي</TabsTrigger>
-          <TabsTrigger value="permissions" className="gap-2 py-2.5 px-5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"><ShieldCheck className="w-4 h-4 text-blue-500"/> الصلاحيات</TabsTrigger>
-          <TabsTrigger value="codes" className="gap-2 py-2.5 px-5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"><Calendar className="w-4 h-4 text-amber-500"/> العروض والخصومات</TabsTrigger>
+      <Tabs defaultValue="plans" className="w-full space-y-8">
+        <TabsList className="p-1.5 bg-slate-100/80 dark:bg-slate-800/80 rounded-2xl flex-wrap h-auto gap-2 border shadow-inner w-full sm:w-fit">
+          <TabsTrigger value="plans" className="gap-2 py-3 px-6 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-700 font-bold"><Database className="w-5 h-5"/> مركز إدارة الباقات</TabsTrigger>
+          <TabsTrigger value="keys" className="gap-2 py-3 px-6 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-amber-600 font-bold"><Lock className="w-5 h-5"/> خزنة المفاتيح</TabsTrigger>
+          <TabsTrigger value="prompts" className="gap-2 py-3 px-6 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-rose-600 font-bold"><Terminal className="w-5 h-5"/> هندسة الأوامر</TabsTrigger>
+          <TabsTrigger value="codes" className="gap-2 py-3 px-6 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-emerald-600 font-bold"><Calendar className="w-5 h-5"/> الخصومات والدعوات</TabsTrigger>
         </TabsList>
 
         <form onSubmit={handleSubmit}>
+          
           {/* ────────────────────────────────────────────────────────────
-              TAB 1: AI Engine Configuration 
+              1. PLANS CENTER (Merged Limits & AI Routing)
              ──────────────────────────────────────────────────────────── */}
-          <TabsContent value="ai" className="space-y-8">
-            
-            {/* API Keys */}
-            <Card className="border-slate-200 shadow-sm overflow-hidden">
-              <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-4">
-                <CardTitle className="text-lg flex items-center gap-2"><Key className="w-5 h-5 text-slate-500" /> مفاتيح الوصول (API Keys)</CardTitle>
-                <CardDescription className="mt-1">المفاتيح المطلوبة لربط النظام بخوادم Google Gemini</CardDescription>
-              </div>
-              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold">Gemini API Key (المفتاح الأساسي)</Label>
-                  <Input type="password" placeholder="AIzaSy..." value={formData.ai_api_key || ""} onChange={(e) => updateField("ai_api_key", e.target.value)} dir="ltr" className="font-mono" />
-                  <p className="text-xs text-muted-foreground flex items-center gap-1"><AlertCircle className="w-3 h-3"/> يُستخدم لجميع طلبات الذكاء الاصطناعي الافتراضية</p>
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold">Gemini API Key 2 (الاحتياطي / Failover)</Label>
-                  <Input type="password" placeholder="AIzaSy..." value={formData.ai_api_key_2 || ""} onChange={(e) => updateField("ai_api_key_2", e.target.value)} dir="ltr" className="font-mono" />
-                  <p className="text-xs text-muted-foreground">يعمل بشكل تلقائي لتجنب توقف الخدمة حال انتهاء رصيد المفتاح الأول</p>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="plans" className="space-y-6 animate-in fade-in-50">
+            <Tabs defaultValue="free" className="w-full">
+              <TabsList className="mb-6 p-1 bg-transparent border-b w-full justify-start rounded-none h-auto gap-4">
+                <TabsTrigger value="free" className="text-lg pb-3 data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 rounded-none bg-transparent data-[state=active]:shadow-none data-[state=active]:bg-transparent">
+                  الباقة المجانية (Free Plan)
+                </TabsTrigger>
+                <TabsTrigger value="pro" className="text-lg pb-3 data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 rounded-none bg-transparent data-[state=active]:shadow-none data-[state=active]:bg-transparent">
+                  الباقة المدفوعة (Pro / Ultra)
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Model Selection */}
-            <Card className="border-slate-200 shadow-sm overflow-hidden">
-              <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-4">
-                <CardTitle className="text-lg flex items-center gap-2"><Brain className="w-5 h-5 text-indigo-500" /> توجيه النماذج (Model Routing)</CardTitle>
-                <CardDescription className="mt-1">حدد النماذج المستخدمة لكل شريحة من المستخدمين</CardDescription>
-              </div>
-              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                  { key: "ai_model_free", label: "الباقة المجانية", desc: "ينصح بنموذج Flash الاقتصادي" },
-                  { key: "ai_model_pro", label: "باقة البرو", desc: "ينصح بنموذج متوازن" },
-                  { key: "ai_model_ultra", label: "باقة الألترا", desc: "النموذج الأقوى (Pro)" },
-                  { key: "ai_model_reports", label: "محرك التقارير", desc: "لتحليل البيانات الضخمة (تقارير شهرية)" },
-                ].map(({ key, label, desc }) => (
-                  <div key={key} className="space-y-3 bg-slate-50/50 dark:bg-slate-800/30 p-4 rounded-lg border border-slate-100 dark:border-slate-800">
-                    <Label className="text-sm font-bold text-slate-700 dark:text-slate-300">{label}</Label>
-                    <Select value={formData[key] || ""} onValueChange={(v) => updateField(key, v)}>
-                      <SelectTrigger className="bg-white dark:bg-slate-950">
-                        <SelectValue placeholder="اختر الموديل" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {models.map((m: any) => (
-                          <SelectItem key={m.id} value={m.id}>
-                            <div className="flex items-center gap-2">
-                              <span>{m.name}</span>
-                              <Badge variant="secondary" className="text-[10px] py-0">{m.tier}</Badge>
+              {["free", "pro"].map(plan => (
+                <TabsContent key={plan} value={plan} className="space-y-8 animate-in slide-in-from-right-4">
+                  {/* --- Routing Ranges --- */}
+                  <Card className="border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden border-t-4 border-t-indigo-500">
+                    <div className="bg-slate-50 dark:bg-slate-900 border-b dark:border-slate-800 px-6 py-5">
+                      <CardTitle className="text-xl flex items-center gap-2"><Route className="w-6 h-6 text-indigo-600" /> التوجيه الديناميكي للمصاريف (Parse Routing)</CardTitle>
+                      <CardDescription className="mt-2 text-sm leading-relaxed">
+                        هنا تصنع الذكاء! حدد ماذا يحدث عندما يرسل المستخدم فاتورة أو رسالة صوتية. يمكنك توجيه أول 10,000 توكن لخادم رخيص وسريع مثل Groq، ثم توجيه الباقي لـ Gemini، أو وضع حظر تلقائي لحماية ميزانيتك.
+                      </CardDescription>
+                    </div>
+                    <CardContent className="p-6 bg-slate-50/30 dark:bg-slate-900/10">
+                      <RoutingRangesEditor 
+                        planName={plan} 
+                        rawValue={formData[`${plan}_routing_ranges`] || ""} 
+                        onChange={(v) => updateField(`${plan}_routing_ranges`, v)} 
+                        models={models} 
+                      />
+                    </CardContent>
+                  </Card>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* --- Dedicated Models (Reports & Voice) --- */}
+                    <Card className="border-slate-200 shadow-sm overflow-hidden flex-1">
+                      <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-4">
+                        <CardTitle className="text-lg flex items-center gap-2"><Settings2 className="w-5 h-5 text-slate-600" /> محركات المعالجة المخصصة</CardTitle>
+                      </div>
+                      <CardContent className="p-6 space-y-8">
+                        <div className="space-y-4">
+                          <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200 border-b pb-2 flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-amber-500" /> محرك التحليلات والتقارير الشهرية
+                          </h4>
+                          <ReportPlanConfig plan={plan} formData={formData} updateField={updateField} models={models} />
+                        </div>
+                        <div className="space-y-4">
+                          <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200 border-b pb-2 flex items-center gap-2">
+                            <Mic className="w-4 h-4 text-rose-500" /> المحرك الصوتي (Voice STT Engine)
+                          </h4>
+                          <SttPlanConfig plan={plan} formData={formData} updateField={updateField} models={models} />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* --- Hard Limits --- */}
+                    <Card className="border-slate-200 shadow-sm overflow-hidden flex-1">
+                      <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-4">
+                        <CardTitle className="text-lg flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-slate-600" /> القواعد الاستهلاكية والصلاحيات</CardTitle>
+                      </div>
+                      <CardContent className="p-6 space-y-6">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-xs font-bold text-slate-500">سقف التوكنز الشهري</Label>
+                            <Input type="number" dir="ltr" className="font-mono" value={formData[`${plan}_token_limit`] || ""} onChange={(e) => updateField(`${plan}_token_limit`, e.target.value)} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs font-bold text-slate-500">سقف دقائق الصوت (بالثواني)</Label>
+                            <Input type="number" dir="ltr" className="font-mono" value={formData[`voice_limit_${plan}`] || ""} onChange={(e) => updateField(`voice_limit_${plan}`, e.target.value)} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs font-bold text-slate-500">حجم التقرير (طول بالكلمات)</Label>
+                            <Input type="number" dir="ltr" className="font-mono" value={formData[`report_words_${plan}`] || ""} onChange={(e) => updateField(`report_words_${plan}`, e.target.value)} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs font-bold text-slate-500">أيام بين التقرير والآخر</Label>
+                            <Input type="number" dir="ltr" className="font-mono" value={formData[`report_limit_${plan}`] || ""} onChange={(e) => updateField(`report_limit_${plan}`, e.target.value)} />
+                          </div>
+                        </div>
+
+                        <div className="pt-4 border-t space-y-4">
+                          <Label className="font-bold text-sm text-slate-800">مفاتيح تفعيل الصلاحيات (Feature Flags)</Label>
+                          <div className="flex flex-col gap-3 bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border">
+                            <div className="flex items-center justify-between">
+                              <Label className="cursor-pointer">تفعيل الإدخال الذكي (AI Parse)</Label>
+                              <Switch checked={formData[`${plan}_ai_parse`] !== "false"} onCheckedChange={(c) => updateField(`${plan}_ai_parse`, c ? "true" : "false")} />
                             </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">{desc}</p>
+                            <div className="flex items-center justify-between">
+                              <Label className="cursor-pointer">تفعيل التقارير الشهرية الذكية (AI Analysis)</Label>
+                              <Switch checked={formData[`${plan}_ai_analysis`] !== "false"} onCheckedChange={(c) => updateField(`${plan}_ai_analysis`, c ? "true" : "false")} />
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                ))}
+                </TabsContent>
+              ))}
+            </Tabs>
+          </TabsContent>
+
+          {/* ────────────────────────────────────────────────────────────
+              2. API KEYS VAULT
+             ──────────────────────────────────────────────────────────── */}
+          <TabsContent value="keys" className="space-y-6">
+            <Card className="border-slate-200 shadow-sm overflow-hidden border-t-4 border-t-amber-500">
+              <div className="bg-amber-50/30 dark:bg-amber-950/20 border-b px-6 py-5">
+                <CardTitle className="text-xl flex items-center gap-2"><Key className="w-6 h-6 text-amber-600" /> خزنة المفاتيح المركزية (API Vault)</CardTitle>
+                <CardDescription className="mt-2 text-sm">
+                  قم بحفظ المفاتيح الخاصة بك هنا مرة واحدة. في مركز الباقات تستطيع اختيار المفتاح بالاسم (مثلاً: Gemini Key 1) وسيتم حقنه في الكود تلقائياً. هذه الطريقة تحمي المفاتيح وتسهل تغييرها دون تعديل كل باقة على حدة.
+                </CardDescription>
+              </div>
+              <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3 bg-white dark:bg-slate-950 p-5 rounded-2xl border dark:border-slate-800 shadow-sm">
+                  <div className="flex items-center justify-between border-b pb-3 mb-2">
+                    <Label className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2"><span className="text-xl">🔑</span> Gemini Primary Key</Label>
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">الأساسي</Badge>
+                  </div>
+                  <Input type="password" placeholder="AIzaSy..." value={formData.ai_api_key || ""} onChange={(e) => updateField("ai_api_key", e.target.value)} dir="ltr" className="font-mono h-12 text-lg tracking-wider" />
+                  <p className="text-xs text-muted-foreground pt-1">المعرف: <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">key1</code></p>
+                </div>
+
+                <div className="space-y-3 bg-white dark:bg-slate-950 p-5 rounded-2xl border dark:border-slate-800 shadow-sm">
+                  <div className="flex items-center justify-between border-b pb-3 mb-2">
+                    <Label className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2"><span className="text-xl">🔑</span> Gemini Backup Key</Label>
+                    <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-200">الاحتياطي</Badge>
+                  </div>
+                  <Input type="password" placeholder="AIzaSy..." value={formData.ai_api_key_2 || ""} onChange={(e) => updateField("ai_api_key_2", e.target.value)} dir="ltr" className="font-mono h-12 text-lg tracking-wider" />
+                  <p className="text-xs text-muted-foreground pt-1">المعرف: <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">key2</code></p>
+                </div>
+
+                <div className="space-y-3 bg-white dark:bg-slate-950 p-5 rounded-2xl border dark:border-slate-800 shadow-sm">
+                  <div className="flex items-center justify-between border-b pb-3 mb-2">
+                    <Label className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2"><span className="text-xl">🔑</span> Groq Ultra Fast Key</Label>
+                    <Badge variant="outline" className="bg-orange-50 text-orange-600 border-orange-200">للسرعة العالية</Badge>
+                  </div>
+                  <Input type="password" placeholder="gsk_..." value={formData.groq_api_key || ""} onChange={(e) => updateField("groq_api_key", e.target.value)} dir="ltr" className="font-mono h-12 text-lg tracking-wider" />
+                  <p className="text-xs text-muted-foreground pt-1">المعرف: <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">groq</code></p>
+                </div>
+
+                <div className="space-y-3 bg-white dark:bg-slate-950 p-5 rounded-2xl border dark:border-slate-800 shadow-sm">
+                  <div className="flex items-center justify-between border-b pb-3 mb-2">
+                    <Label className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2"><span className="text-xl">🎤</span> Custom STT Primary Key</Label>
+                    <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200">الأساسي للصوت</Badge>
+                  </div>
+                  <Input type="password" placeholder="AIzaSy..." value={formData.stt_api_key || ""} onChange={(e) => updateField("stt_api_key", e.target.value)} dir="ltr" className="font-mono h-12 text-lg tracking-wider" />
+                  <p className="text-xs text-muted-foreground pt-1">المعرف: <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">stt</code></p>
+                </div>
+
+                <div className="space-y-3 bg-white dark:bg-slate-950 p-5 rounded-2xl border dark:border-slate-800 shadow-sm">
+                  <div className="flex items-center justify-between border-b pb-3 mb-2">
+                    <Label className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2"><span className="text-xl">🎤</span> Custom STT Backup Key</Label>
+                    <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-200">الاحتياطي للصوت</Badge>
+                  </div>
+                  <Input type="password" placeholder="AIzaSy..." value={formData.stt_api_key_2 || ""} onChange={(e) => updateField("stt_api_key_2", e.target.value)} dir="ltr" className="font-mono h-12 text-lg tracking-wider" />
+                  <p className="text-xs text-muted-foreground pt-1">المعرف: <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">stt2</code></p>
+                </div>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Advanced Prompt Engineering */}
-            <Card className="border-slate-200 shadow-sm overflow-hidden border-l-4 border-l-indigo-500">
-              <div className="bg-indigo-50/30 dark:bg-indigo-950/20 border-b px-6 py-4">
-                <CardTitle className="text-lg flex items-center gap-2"><Terminal className="w-5 h-5 text-indigo-600" /> هندسة الأوامر (Prompt Engineering)</CardTitle>
-                <CardDescription className="mt-1">تحكم مطلق في تفاصيل، مخرجات، وشخصية التقارير الذكية.</CardDescription>
+          {/* ────────────────────────────────────────────────────────────
+              3. PROMPT ENGINEERING
+             ──────────────────────────────────────────────────────────── */}
+          <TabsContent value="prompts" className="space-y-8">
+            <Card className="border-slate-200 shadow-sm overflow-hidden border-t-4 border-t-rose-500">
+              <div className="bg-rose-50/30 dark:bg-rose-950/20 border-b px-6 py-5">
+                <CardTitle className="text-xl flex items-center gap-2"><Terminal className="w-6 h-6 text-rose-600" /> هندسة الأوامر المتقدمة (Prompt Engineering)</CardTitle>
+                <CardDescription className="mt-2 text-sm text-slate-600 font-medium">أنت من يصنع شخصية التطبيق ويتحكم في جودة ودقة التحليلات. <br/><span className="text-rose-600 font-bold">ملاحظة هامة:</span> هذه الأوامر تنطبق حصرياً على <strong>"التقارير الشهرية الذكية (Monthly Reports)"</strong> ولا تؤثر على مصنف المصروفات المباشر (Expense Classification) لحماية استقرار البنية الهيكلية للبيانات.</CardDescription>
               </div>
               <CardContent className="p-6 space-y-8">
-                {/* Tone & Focus */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 bg-slate-50 dark:bg-slate-900 rounded-xl border">
                   <div className="space-y-3">
-                    <Label className="text-sm font-bold">نمط الإخراج (طول التقرير)</Label>
+                    <Label className="text-sm font-bold">نمط الإخراج الافتراضي</Label>
                     <Select value={formData.ai_response_length || "medium"} onValueChange={(v) => updateField("ai_response_length", v)}>
                       <SelectTrigger className="bg-white dark:bg-slate-950"><SelectValue placeholder="اختر الإخراج" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="short">موجز تنفيذي (Executive Summary) - مباشر ومختصر</SelectItem>
-                        <SelectItem value="medium">متوازن - الأفضل للاستخدام العادي</SelectItem>
-                        <SelectItem value="detailed">تحليل مفصل وعميق - يغطي كافة الجوانب</SelectItem>
+                        <SelectItem value="short">موجز تنفيذي سريع</SelectItem>
+                        <SelectItem value="medium">متوازن (الافتراضي)</SelectItem>
+                        <SelectItem value="detailed">تفصيلي أكاديمي</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-3">
-                    <Label className="text-sm font-bold">بؤرة التحليل (التركيز الرئيسي)</Label>
+                    <Label className="text-sm font-bold">بؤرة التركيز (Focus)</Label>
                     <Select value={formData.ai_focus || "balanced"} onValueChange={(v) => updateField("ai_focus", v)}>
                       <SelectTrigger className="bg-white dark:bg-slate-950"><SelectValue placeholder="اختر التركيز" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="balanced">متوازن (إحصائيات ونصائح معاً)</SelectItem>
-                        <SelectItem value="statistics">تحليلات إحصائية وأرقام بحتة</SelectItem>
-                        <SelectItem value="tips">توصيات عملية وخطط توفير استراتيجية</SelectItem>
-                        <SelectItem value="patterns">اكتشاف الأنماط السلوكية الاستهلاكية</SelectItem>
+                        <SelectItem value="balanced">نصائح وأرقام</SelectItem>
+                        <SelectItem value="statistics">أرقام فقط (للمحاسبين)</SelectItem>
+                        <SelectItem value="tips">نصائح حصرية</SelectItem>
+                        <SelectItem value="patterns">استخراج الأنماط النفسية</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
-                
-                <div className="space-y-6">
-                  {/* Persona */}
+
+                <div className="space-y-8">
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-bold">الشخصية والقواعد الأساسية (System Prompt)</Label>
-                      <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">الأساسيات</Badge>
-                    </div>
+                    <Label className="text-sm font-bold flex items-center gap-2"><BrainCircuit className="w-4 h-4 text-slate-500" /> الشخصية الأساسية (System Prompt)</Label>
                     <Textarea 
-                      className="font-mono text-sm min-h-[120px] bg-slate-50 dark:bg-slate-900 leading-relaxed"
+                      className="font-mono text-sm min-h-[120px] bg-slate-50 dark:bg-slate-900 border-2 focus:border-rose-500"
                       value={formData.ai_system_prompt || ""}
                       onChange={(e) => updateField("ai_system_prompt", e.target.value)}
                       dir="rtl"
-                      placeholder="أدخل نص التعليمات الأساسية لشخصية المساعد..."
                     />
-                    <p className="text-xs text-muted-foreground">يُحدد أسلوب التحدث، اللهجة، والمبادئ الأساسية التي لا يتخطاها الذكاء الاصطناعي.</p>
+                    <p className="text-xs text-muted-foreground">يعمل كمخ الـ AI الأساسي في التعامل مع جميع المدخلات.</p>
                   </div>
 
-                  {/* Advanced Custom Instructions */}
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-bold">تعليمات صياغة إضافية (Advanced Instructions)</Label>
-                      <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">متقدم</Badge>
-                    </div>
+                    <Label className="text-sm font-bold flex items-center gap-2"><Sparkles className="w-4 h-4 text-purple-500" /> توجيهات متقدمة (Advanced Guidelines)</Label>
                     <Textarea 
-                      className="font-mono text-sm min-h-[120px] bg-slate-50 dark:bg-slate-900 leading-relaxed"
+                      className="font-mono text-sm min-h-[120px] bg-slate-50 dark:bg-slate-900 border-2"
                       value={formData.ai_advanced_instructions || ""}
                       onChange={(e) => updateField("ai_advanced_instructions", e.target.value)}
                       dir="rtl"
-                      placeholder="أضف أوامر دقيقة حول كيفية تحليل البيانات وصياغتها. اتركها فارغة لاستخدام التعليمات الافتراضية."
                     />
-                    <p className="text-xs text-muted-foreground">أوامر حاسمة تُطبق على مخرجات التقرير (مثلاً: ركز على بند كذا، استخدم تنسيق كذا). تدمج مباشرة في الـ Prompt.</p>
                   </div>
 
-                  {/* Structure Override */}
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-bold">الهيكل الإلزامي المخصص (Structure Override)</Label>
-                      <Badge variant="outline" className="bg-rose-50 text-rose-600 border-rose-200">إلغاء وتجاوز الافتراضي</Badge>
-                    </div>
+                    <Label className="text-sm font-bold flex items-center gap-2 text-rose-600"><Lock className="w-4 h-4" /> تجاوز الهيكل الإلزامي (Structure Override)</Label>
                     <Textarea 
-                      className="font-mono text-sm min-h-[120px] bg-slate-50 dark:bg-slate-900 leading-relaxed"
+                      className="font-mono text-sm min-h-[120px] bg-rose-50/50 dark:bg-rose-950/20 border-2 border-rose-200 dark:border-rose-900"
                       value={formData.ai_report_structure_override || ""}
                       onChange={(e) => updateField("ai_report_structure_override", e.target.value)}
                       dir="rtl"
-                      placeholder="مثال: القسم الأول: نظرة عامة. القسم الثاني: فئات محددة... (يترك فارغاً لاستخدام الهيكل الديناميكي التلقائي بناءً على الباقة)"
+                      placeholder="اتركه فارغاً للاعتماد على برمجة الـ Backend. الكتابة هنا تجبر الموديل على بناء التقرير كما تريد أنت حرفياً."
                     />
-                    <p className="text-xs text-muted-foreground font-medium text-rose-600/80">تنبيه: ملء هذا الحقل سيُلغي هيكل التقارير المبرمج مسبقاً في النظام تماماً، ويُجبر الموديل على اتباع هذا الهيكل.</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Thresholds */}
-            <Card className="border-slate-200 shadow-sm overflow-hidden">
-              <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-4">
-                <CardTitle className="text-lg flex items-center gap-2"><Sparkles className="w-5 h-5 text-amber-500" /> دقة التصنيف الآلي (Confidence Engine)</CardTitle>
-              </div>
-              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-3 bg-green-50/50 dark:bg-green-900/10 p-4 rounded-xl border border-green-100 dark:border-green-900">
-                  <Label className="text-sm font-bold text-green-700 dark:text-green-400">عتبة الحفظ التلقائي (Auto Save)</Label>
-                  <Input type="number" dir="ltr" value={formData.confidence_auto_save || ""} onChange={(e) => updateField("confidence_auto_save", e.target.value)} className="bg-white dark:bg-slate-950 font-mono text-lg" />
-                  <p className="text-xs text-muted-foreground">إذا كانت دقة النظام أعلى من هذا الرقم (0-100)، تُحفظ العملية دون الرجوع للمستخدم.</p>
-                </div>
-                <div className="space-y-3 bg-orange-50/50 dark:bg-orange-900/10 p-4 rounded-xl border border-orange-100 dark:border-orange-900">
-                  <Label className="text-sm font-bold text-orange-700 dark:text-orange-400">عتبة المراجعة (Review Queue)</Label>
-                  <Input type="number" dir="ltr" value={formData.confidence_review || ""} onChange={(e) => updateField("confidence_review", e.target.value)} className="bg-white dark:bg-slate-950 font-mono text-lg" />
-                  <p className="text-xs text-muted-foreground">ما بين هذا الرقم وعتبة الحفظ التلقائي يتم وضعه في قائمة المراجعة.</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ────────────────────────────────────────────────────────────
-              TAB 2: Limits & Quotas 
-             ──────────────────────────────────────────────────────────── */}
-          <TabsContent value="limits" className="space-y-8">
-            {/* Report Frequency Limits */}
-            <Card className="border-slate-200 shadow-sm overflow-hidden border-t-4 border-t-indigo-500">
-              <div className="bg-indigo-50/30 dark:bg-indigo-900/20 border-b px-6 py-4">
-                <CardTitle className="text-lg flex items-center gap-2">📅 التحكم في عدد التقارير الشهرية</CardTitle>
-                <CardDescription className="mt-1">أدخل فترة الانتظار بالأيام بين التقرير والآخر. لجعله غير محدود (Unlimited)، أدخل 0.</CardDescription>
-              </div>
-              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[
-                  { key: "report_limit_free", label: "الباقة المجانية", desc: "مثال: 30 (تقرير كل شهر) أو 0 (بلا قيود)" },
-                  { key: "report_limit_pro", label: "باقة البرو", desc: "مثال: 14 (تقرير كل أسبوعين)" },
-                  { key: "report_limit_ultra", label: "باقة الألترا", desc: "مثال: 0 (مفتوح بلا قيود)" },
-                ].map(({ key, label, desc }) => (
-                  <div key={key} className="space-y-3 p-4 border dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                    <Label className="font-bold text-slate-800 dark:text-slate-200">{label}</Label>
-                    <div className="relative">
-                      <Input type="number" dir="ltr" min="0" value={formData[key] || ""} onChange={(e) => updateField(key, e.target.value)} className="font-mono text-center pr-10 dark:bg-slate-950 text-lg" />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">يوم</span>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">{desc}</p>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            {/* Tokens Limits */}
-            <Card className="border-slate-200 shadow-sm overflow-hidden">
-              <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-4">
-                <CardTitle className="text-lg flex items-center gap-2">⛽ الرصيد الشهري (الرموز / Tokens)</CardTitle>
-                <CardDescription className="mt-1">الحد الأقصى التراكمي لاستهلاك الموارد الذكية لكل مستخدم شهرياً.</CardDescription>
-              </div>
-              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[
-                  { key: "free_token_limit", label: "الباقة المجانية", badge: "Free" },
-                  { key: "pro_token_limit", label: "باقة البرو", badge: "Pro" },
-                  { key: "ultra_token_limit", label: "باقة الألترا", badge: "Ultra" },
-                ].map(({ key, label, badge }) => (
-                  <div key={key} className="space-y-3 p-4 border dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/50">
-                    <div className="flex justify-between items-center"><Label className="font-bold">{label}</Label><Badge variant="secondary">{badge}</Badge></div>
-                    <Input type="number" dir="ltr" value={formData[key] || ""} onChange={(e) => updateField(key, e.target.value)} className="font-mono text-center" />
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            {/* SMS Processing Limits */}
-            <Card className="border-slate-200 shadow-sm overflow-hidden border-t-4 border-t-blue-500">
-              <div className="bg-blue-50/30 dark:bg-blue-900/20 border-b px-6 py-4">
-                <CardTitle className="text-lg flex items-center gap-2">📱 رسائل الـ SMS الآلية</CardTitle>
-                <CardDescription className="mt-1">عدد عمليات القراءة الآلية للرسائل البنكية شهرياً لكل باقة.</CardDescription>
-              </div>
-              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[
-                  { key: "sms_limit_free", label: "الباقة المجانية", desc: "ينصح بـ 5 رسائل للتجربة" },
-                  { key: "sms_limit_pro", label: "باقة البرو", desc: "ينصح بعدد كبير أو 999999" },
-                  { key: "sms_limit_ultra", label: "باقة الألترا", desc: "غير محدود (999999)" },
-                ].map(({ key, label, desc }) => (
-                  <div key={key} className="space-y-3 p-4 border dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                    <Label className="font-bold text-slate-800 dark:text-slate-200">{label}</Label>
-                    <div className="relative">
-                      <Input type="number" dir="ltr" min="0" value={formData[key] || ""} onChange={(e) => updateField(key, e.target.value)} className="font-mono text-center pr-10 dark:bg-slate-950 text-lg" />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">رسالة</span>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">{desc}</p>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Daily Requests Limits */}
-              <Card className="border-slate-200 shadow-sm overflow-hidden">
-                <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-4">
-                  <CardTitle className="text-lg">سقف الطلبات اليومي</CardTitle>
-                  <CardDescription>عدد عمليات التحليل المسموح بها يومياً.</CardDescription>
-                </div>
-                <CardContent className="p-6 space-y-5">
-                  {[
-                    { key: "free_daily_limit", label: "المجانية" },
-                    { key: "pro_daily_limit", label: "البرو" },
-                    { key: "ultra_daily_limit", label: "الألترا" },
-                  ].map(({ key, label }) => (
-                    <div key={key} className="flex justify-between items-center pb-4 border-b last:border-0 last:pb-0">
-                      <Label className="font-medium text-slate-700 dark:text-slate-300">طلبات {label}</Label>
-                      <Input className="w-32 font-mono text-center" type="number" dir="ltr" value={formData[key] || ""} onChange={(e) => updateField(key, e.target.value)} />
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              {/* Tokens per Request */}
-              <Card className="border-slate-200 shadow-sm overflow-hidden">
-                <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-4">
-                  <CardTitle className="text-lg">سعة المعالجة للطلب الواحد</CardTitle>
-                  <CardDescription>أقصى حجم للردود لكل طلب تحليل عادي.</CardDescription>
-                </div>
-                <CardContent className="p-6 space-y-5">
-                  {[
-                    { key: "free_max_per_request", label: "المجانية" },
-                    { key: "pro_max_per_request", label: "البرو" },
-                    { key: "ultra_max_per_request", label: "الألترا" },
-                  ].map(({ key, label }) => (
-                    <div key={key} className="flex justify-between items-center pb-4 border-b last:border-0 last:pb-0">
-                      <Label className="font-medium text-slate-700 dark:text-slate-300">حد إخراج {label}</Label>
-                      <Input className="w-32 font-mono text-center" type="number" dir="ltr" value={formData[key] || ""} onChange={(e) => updateField(key, e.target.value)} />
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Smart Reports Dimensions */}
-            <Card className="border-slate-200 shadow-sm overflow-hidden border-t-4 border-t-emerald-500">
-              <div className="bg-emerald-50/30 dark:bg-emerald-950/20 border-b px-6 py-5">
-                <CardTitle className="text-xl flex items-center gap-2 text-emerald-800 dark:text-emerald-400">📊 هندسة التقارير والتحليل العميق</CardTitle>
-                <CardDescription className="mt-1">أبعاد وعمق البيانات التي يتم ضخها في محرك التقارير الدورية لإنتاج "تقارير مشبعة".</CardDescription>
-              </div>
-              
-              <CardContent className="p-0">
-                {/* Section A: Content Generation Limits */}
-                <div className="p-6 border-b bg-white dark:bg-slate-950">
-                  <h4 className="text-lg font-bold mb-4 text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    <span className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center text-sm">1</span> 
-                    أبعاد توليد المحتوى
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-4">
-                      <Label className="text-sm text-muted-foreground border-b pb-2 w-full block">الكلمات المستهدفة (Target Length)</Label>
-                      {[
-                        { key: "report_words_free", label: "المجاني", desc: "≈ 500 كلمة" },
-                        { key: "report_words_pro", label: "البرو", desc: "≈ 800 كلمة" },
-                        { key: "report_words_ultra", label: "الألترا", desc: "1000+ كلمة" },
-                      ].map(({ key, label, desc }) => (
-                        <div key={key} className="flex items-center gap-4">
-                          <Label className="w-20 font-bold">{label}</Label>
-                          <Input type="number" dir="ltr" className="w-24 font-mono text-center" value={formData[key] || ""} onChange={(e) => updateField(key, e.target.value)} />
-                          <span className="text-xs text-muted-foreground">{desc}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="space-y-4">
-                      <Label className="text-sm text-muted-foreground border-b pb-2 w-full block">الحد الأقصى الفعلي (Safety Net Tokens)</Label>
-                      {[
-                        { key: "report_max_tokens_free", label: "المجاني", desc: "لحماية رصيد الموارد" },
-                        { key: "report_max_tokens_pro", label: "البرو", desc: "متوسط 3500 توكن" },
-                        { key: "report_max_tokens_ultra", label: "الألترا", desc: "أقصى عمق (8192)" },
-                      ].map(({ key, label, desc }) => (
-                        <div key={key} className="flex items-center gap-4">
-                          <Label className="w-20 font-bold">{label}</Label>
-                          <Input type="number" dir="ltr" className="w-24 font-mono text-center" value={formData[key] || ""} onChange={(e) => updateField(key, e.target.value)} />
-                          <span className="text-xs text-muted-foreground">{desc}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section B: Data Saturation (Context Feed) */}
-                <div className="p-6 bg-slate-50/50 dark:bg-slate-900/30">
-                  <h4 className="text-lg font-bold mb-4 text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    <span className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center text-sm">2</span> 
-                    إشباع البيانات (Data Saturation)
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-4">
-                      <Label className="text-sm text-muted-foreground border-b pb-2 w-full block">عدد الفئات الفرعية المرسلة للمحرك</Label>
-                      {[
-                        { key: "report_subcats_free", label: "المجاني" },
-                        { key: "report_subcats_pro", label: "البرو" },
-                        { key: "report_subcats_ultra", label: "الألترا" },
-                      ].map(({ key, label }) => (
-                        <div key={key} className="flex items-center gap-4">
-                          <Label className="w-20 font-bold">{label}</Label>
-                          <Input type="number" dir="ltr" className="w-24 font-mono text-center" value={formData[key] || ""} onChange={(e) => updateField(key, e.target.value)} />
-                        </div>
-                      ))}
-                    </div>
-                    <div className="space-y-4">
-                      <Label className="text-sm text-muted-foreground border-b pb-2 w-full block">أوصاف وعمليات فردية مفصلة (Top Items)</Label>
-                      {[
-                        { key: "report_top_items_pro", label: "البرو", desc: "مثال: أوبر، جرير.." },
-                        { key: "report_top_items_ultra", label: "الألترا", desc: "أقصى عمق تحليلي" },
-                      ].map(({ key, label, desc }) => (
-                        <div key={key} className="flex items-center gap-4">
-                          <Label className="w-20 font-bold">{label}</Label>
-                          <Input type="number" dir="ltr" className="w-24 font-mono text-center" value={formData[key] || ""} onChange={(e) => updateField(key, e.target.value)} />
-                          <span className="text-xs text-muted-foreground">{desc}</span>
-                        </div>
-                      ))}
-                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -437,127 +501,7 @@ export function AdminSettingsTab() {
           </TabsContent>
 
           {/* ────────────────────────────────────────────────────────────
-              TAB 3: Voice Engine Settings
-             ──────────────────────────────────────────────────────────── */}
-          <TabsContent value="voice" className="space-y-8">
-            <Card className="border-slate-200 shadow-sm overflow-hidden">
-              <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-4">
-                <CardTitle className="text-lg flex items-center gap-2">مفاتيح ونماذج الصوت (STT Setup)</CardTitle>
-              </div>
-              <CardContent className="p-6 space-y-6">
-                <div className="space-y-3 max-w-2xl">
-                  <Label className="text-sm font-bold">STT API Key (مفتاح خاص لخدمات الصوت)</Label>
-                  <Input type="password" placeholder="AIzaSy..." value={formData.stt_api_key || ""} onChange={(e) => updateField("stt_api_key", e.target.value)} dir="ltr" className="font-mono" />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 bg-slate-50/50 dark:bg-slate-900/50 rounded-xl border dark:border-slate-800">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-bold">الموديل الأساسي للتحويل الصوتي</Label>
-                    <Select value={formData.stt_model || ""} onValueChange={(v) => updateField("stt_model", v)}>
-                      <SelectTrigger className="h-10 bg-white dark:bg-slate-950" dir="ltr"><SelectValue placeholder="اختر الموديل الأساسي" /></SelectTrigger>
-                      <SelectContent>
-                        {models.map((m: any) => (<SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-sm font-bold">الموديل الاحتياطي (Fallback STT)</Label>
-                    <Select value={formData.stt_fallback_model || ""} onValueChange={(v) => updateField("stt_fallback_model", v)}>
-                      <SelectTrigger className="h-10 bg-white dark:bg-slate-950" dir="ltr"><SelectValue placeholder="اختر الموديل الاحتياطي" /></SelectTrigger>
-                      <SelectContent>
-                        {models.map((m: any) => (<SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-3 max-w-md">
-                  <Label className="text-sm font-bold">نظام معالجة تدفق الصوت (Processing Mode)</Label>
-                  <Select value={formData.stt_processing_mode || "standard"} onValueChange={(v) => updateField("stt_processing_mode", v)}>
-                    <SelectTrigger className="h-10" dir="ltr"><SelectValue placeholder="اختر النظام" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="standard">Standard Inline (قياسي ومستقر)</SelectItem>
-                      <SelectItem value="live_api">Live API Session (أداء حي وسريع جداً)</SelectItem>
-                      <SelectItem value="native_audio">Native Audio Dialog (جودة نقية عالية)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-slate-200 shadow-sm overflow-hidden">
-              <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-4">
-                <CardTitle className="text-lg">حصص الاستهلاك الصوتي (بالثواني)</CardTitle>
-              </div>
-              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-12">
-                <div className="space-y-5">
-                  <Label className="text-sm font-bold text-slate-800 border-b pb-2 w-full block">الحد الأقصى للشهر الكامل (التراكمي)</Label>
-                  {[
-                    { key: "voice_limit_free", label: "الباقة المجانية", desc: "300 = 5 دقائق" },
-                    { key: "voice_limit_pro", label: "باقة البرو", desc: "1800 = 30 دقيقة" },
-                    { key: "voice_limit_ultra", label: "باقة الألترا", desc: "0 = غير محدود" },
-                  ].map(({ key, label, desc }) => (
-                    <div key={key} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-800">
-                      <div><p className="font-bold text-sm">{label}</p><p className="text-[10px] text-muted-foreground">{desc}</p></div>
-                      <Input type="number" dir="ltr" className="w-24 font-mono text-center dark:bg-slate-950" value={formData[key] || ""} onChange={(e) => updateField(key, e.target.value)} />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="space-y-5">
-                  <Label className="text-sm font-bold text-slate-800 border-b pb-2 w-full block">أقصى مدة للتسجيل الواحد المستمر</Label>
-                  {[
-                    { key: "voice_per_req_free", label: "الباقة المجانية", desc: "60 = دقيقة" },
-                    { key: "voice_per_req_pro", label: "باقة البرو", desc: "180 = 3 دقائق" },
-                    { key: "voice_per_req_ultra", label: "باقة الألترا", desc: "300 = 5 دقائق" },
-                  ].map(({ key, label, desc }) => (
-                    <div key={key} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border dark:border-slate-800">
-                      <div><p className="font-bold text-sm">{label}</p><p className="text-[10px] text-muted-foreground">{desc}</p></div>
-                      <Input type="number" dir="ltr" className="w-24 font-mono text-center dark:bg-slate-950" value={formData[key] || ""} onChange={(e) => updateField(key, e.target.value)} />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ────────────────────────────────────────────────────────────
-              TAB 4: Permissions & Features Toggles 
-             ──────────────────────────────────────────────────────────── */}
-          <TabsContent value="permissions" className="space-y-8">
-            <Card className="border-slate-200 shadow-sm overflow-hidden border-t-4 border-t-blue-500">
-              <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-4">
-                <CardTitle className="text-lg">إدارة صلاحيات الميزات (Feature Flags)</CardTitle>
-                <CardDescription>تفعيل أو تعطيل الخدمات الذكية لكل مستوى اشتراك</CardDescription>
-              </div>
-              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-                {["free", "pro", "ultra"].map((plan) => (
-                  <div key={plan} className="border rounded-xl p-5 space-y-5 bg-white dark:bg-slate-950 shadow-sm">
-                    <h4 className="font-black text-lg capitalize flex items-center gap-2 pb-3 border-b">
-                      {plan === "free" ? "🆓 المجانية" : plan === "pro" ? "⭐ باقة برو" : "💎 باقة ألترا"}
-                    </h4>
-                    <div className="space-y-4">
-                      {[
-                        { key: `${plan}_ai_parse`, label: "التحليل السريع للمصاريف (AI Parse)" },
-                        { key: `${plan}_ai_analysis`, label: "محرك التقارير الدورية (AI Analysis)" },
-                      ].map(({ key, label }) => (
-                        <div key={key} className="flex items-center justify-between gap-4">
-                          <Label className="text-sm leading-snug cursor-pointer">{label}</Label>
-                          <Switch 
-                            checked={formData[key] !== "false"} 
-                            onCheckedChange={(checked) => updateField(key, checked ? "true" : "false")}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ────────────────────────────────────────────────────────────
-              TAB 5: Discount Codes
+              4. PROMO CODES (Legacy Tab Kept Exactly)
              ──────────────────────────────────────────────────────────── */}
           <TabsContent value="codes" className="space-y-8">
              <Card className="border-slate-200 shadow-sm overflow-hidden">
@@ -568,10 +512,9 @@ export function AdminSettingsTab() {
                  <div className="max-w-md space-y-3">
                    <Label className="text-sm font-bold">نسبة الخصم لرمز الإحالة الأساسي (%)</Label>
                    <div className="relative">
-                     <Input type="number" dir="ltr" className="font-mono text-lg py-6" value={formData.promo_code_discount || ""} onChange={(e) => updateField("promo_code_discount", e.target.value)} />
+                     <Input type="number" dir="ltr" className="font-mono text-lg py-6 bg-slate-50 dark:bg-slate-900" value={formData.promo_code_discount || ""} onChange={(e) => updateField("promo_code_discount", e.target.value)} />
                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">%</span>
                    </div>
-                   <p className="text-xs text-muted-foreground">النسبة التي تُمنح عند إنشاء المستخدمين لرموز دعوة لأصدقائهم.</p>
                  </div>
                </CardContent>
              </Card>
@@ -607,8 +550,7 @@ function DiscountCodesManager() {
       <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-4 flex items-center justify-between">
         <CardTitle className="text-lg">حملات العروض الترويجية</CardTitle>
         <Button size="sm" onClick={() => setShowForm(!showForm)} className="gap-2 bg-slate-900 text-white hover:bg-slate-800">
-          <Plus className="w-4 h-4" />
-          إصدار كود جديد
+          <Plus className="w-4 h-4" /> إصدار كود جديد
         </Button>
       </div>
 

@@ -454,3 +454,23 @@ export const rawSmsEvents = mysqlTable("raw_sms_events", {
   index("raw_sms_user_idx").on(t.userId, t.userType),
   index("raw_sms_status_idx").on(t.status),
 ]);
+
+// ─── API Key Error Logs (Admin Monitoring) ───
+export const apiKeyErrors = mysqlTable("api_key_errors", {
+  id: int("id").primaryKey().autoincrement(),
+  provider: varchar("provider", { length: 50 }).notNull(), // gemini | groq | stt
+  keyLabel: varchar("key_label", { length: 100 }).notNull(), // e.g. "gemini_api_key", "groq_api_key", "stt_api_key"
+  errorType: varchar("error_type", { length: 100 }).notNull(), // invalid_key | quota_exceeded | insufficient_credit | network_error | rate_limited | unknown
+  message: text("message").notNull(),
+  httpStatus: int("http_status"), // e.g. 401, 429, 500
+  userId: int("user_id"), // nullable: which user triggered it (null = system-level check)
+  resolved: boolean("resolved").default(false),
+  resolvedAt: datetime("resolved_at"),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+}, (t) => [
+  index("api_key_errors_provider_idx").on(t.provider),
+  index("api_key_errors_type_idx").on(t.errorType),
+  index("api_key_errors_resolved_idx").on(t.resolved),
+  index("api_key_errors_date_idx").on(t.createdAt),
+]);
+

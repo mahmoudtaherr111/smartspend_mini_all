@@ -14,6 +14,7 @@ import type { ParsedTransaction } from "./rule-engine";
 import { mapModelName } from "./model-mapper";
 import type { PlanId } from "./ai-usage-policy";
 import { estimateClassificationPromptTokens } from "./ai-routing";
+import { callGroqAPI } from "../ai-router";
 
 export const classificationResponseSchema = {
   type: SchemaType.OBJECT,
@@ -137,7 +138,9 @@ export async function aiClassify(
     richContext?: boolean;
     ruleHintsCompact?: string;
   },
-  skipClarification?: boolean
+  skipClarification?: boolean,
+  groqApiKey?: string,
+  provider?: "gemini" | "groq"
 ): Promise<AIClassificationResult | null> {
   const plan: PlanId = contextObj.plan ?? "free";
   const rich = contextObj.richContext ?? plan !== "free";
@@ -187,50 +190,72 @@ export async function aiClassify(
 
   const actualModelName = mapModelName(modelName);
 
-  // Try primary key
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: actualModelName,
-      systemInstruction: systemPrompt,
-      generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: maxTokens,
-        responseMimeType: "application/json",
-        responseSchema: classificationResponseSchema,
-      },
-    });
+  // ── Groq Branch ──
+  if (provider === "groq" && groqApiKey) {
+    try {
+      const groqResult = await callGroqAPI(
+        groqApiKey,
+        actualModelName,
+        systemPrompt,
+        userPrompt,
+        maxTokens
+      );
+      response = groqResult.text;
+      tokensUsed = groqResult.tokensUsed;
+    } catch (groqError: any) {
+      console.error("Groq classify error, falling back to Gemini:", groqError?.message);
+      // Fall through to Gemini below
+      provider = "gemini";
+    }
+  }
 
-    const result = await model.generateContent(userPrompt);
-    response = result.response.text();
-    tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
-  } catch (error: any) {
-    console.error("AI Classify Error (Key 1):", error.message);
+  // ── Gemini Branch ──
+  if (provider !== "groq" || !response) {
+    // Try primary key
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({
+        model: actualModelName,
+        systemInstruction: systemPrompt,
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: maxTokens,
+          responseMimeType: "application/json",
+          responseSchema: classificationResponseSchema,
+        },
+      });
 
-    // Failover to key 2
-    if (apiKey2) {
-      try {
-        console.log("AI Classifier: switching to failover key...");
-        const genAI2 = new GoogleGenerativeAI(apiKey2);
-        const model2 = genAI2.getGenerativeModel({
-          model: actualModelName,
-          systemInstruction: systemPrompt,
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: maxTokens,
-            responseMimeType: "application/json",
-            responseSchema: classificationResponseSchema,
-          },
-        });
-        const result = await model2.generateContent(userPrompt);
-        response = result.response.text();
-        tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
-      } catch (fallbackError) {
-        console.error("AI Classify Error (Key 2):", fallbackError);
+      const result = await model.generateContent(userPrompt);
+      response = result.response.text();
+      tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
+    } catch (error: any) {
+      console.error("AI Classify Error (Key 1):", error.message);
+
+      // Failover to key 2
+      if (apiKey2) {
+        try {
+          console.log("AI Classifier: switching to failover key...");
+          const genAI2 = new GoogleGenerativeAI(apiKey2);
+          const model2 = genAI2.getGenerativeModel({
+            model: actualModelName,
+            systemInstruction: systemPrompt,
+            generationConfig: {
+              temperature: 0.2,
+              maxOutputTokens: maxTokens,
+              responseMimeType: "application/json",
+              responseSchema: classificationResponseSchema,
+            },
+          });
+          const result = await model2.generateContent(userPrompt);
+          response = result.response.text();
+          tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
+        } catch (fallbackError) {
+          console.error("AI Classify Error (Key 2):", fallbackError);
+          return null;
+        }
+      } else {
         return null;
       }
-    } else {
-      return null;
     }
   }
 
