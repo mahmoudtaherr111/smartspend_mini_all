@@ -110,10 +110,12 @@ describe("ai-routing", () => {
         subCategory: "قهوة وكافيه",
         description: "قهوة",
         type: "expense",
-        confidence: 96,
+        confidence: 100,
         currency: "EGP",
         needsReview: false,
         parsedBy: "rule_engine",
+        inferenceSource: "dictionary",
+        ambiguityFlags: ["merchant_registry_hit"],
       }],
       usedAI: false,
       needsAI: false,
@@ -128,6 +130,35 @@ describe("ai-routing", () => {
     expect(decision.acceptRuleEngine).toBe(true);
     expect(decision.useAi).toBe(false);
     expect(decision.reason).toBe("pro_trivial_rule_95");
+  });
+
+  it("keeps Pro AI-primary for high-confidence but non-authoritative rules", () => {
+    const rule: RuleEngineResult = {
+      items: [{
+        amount: 200,
+        category: "فواتير",
+        subCategory: "إنترنت",
+        description: "الباقة",
+        type: "expense",
+        confidence: 96,
+        currency: "EGP",
+        needsReview: false,
+        parsedBy: "rule_engine",
+        inferenceSource: "synonym",
+      }],
+      usedAI: false,
+      needsAI: false,
+    };
+    const decision = decideClassificationRoute(rule, null, {
+      plan: "pro",
+      textLength: 26,
+      amountCount: 1,
+      hasMultipleTransactions: false,
+      knownNameMentioned: false,
+    });
+    expect(decision.useAi).toBe(true);
+    expect(decision.acceptRuleEngine).toBe(false);
+    expect(decision.reason).toBe("pro_ai_primary");
   });
 
   it("ruleEngineIsStrongEnough rejects متنوعات", () => {

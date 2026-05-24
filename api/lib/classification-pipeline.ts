@@ -12,6 +12,7 @@ import { asPlan } from "./ai-usage-policy";
 import { decideClassificationRoute, ruleEngineIsStrongEnough } from "./ai-routing";
 import type { PlanId } from "./ai-usage-policy";
 import { keywordCategoryPriors } from "./keyword-category-priors";
+import { normalizeTransactionTaxonomy, normalizeTransactionTaxonomyList } from "./category-registry";
 
 export interface PipelineInput {
   text: string;
@@ -146,8 +147,12 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
   // ── Step 2.5: Muscle Memory (Phase 2) ──
   // Instantly match recurring transactions with 0 tokens
   const memoryMatch = await muscleMemoryLookup(input.text, input.userId, input.userType);
-  if (memoryMatch) {
-    items = [{
+  const allowMemoryShortcut =
+    !!memoryMatch &&
+    (plan === "free" ||
+      (memoryMatch.matchScore >= 98 && memoryMatch.pattern.confidence >= 98));
+  if (memoryMatch && allowMemoryShortcut) {
+    items = [normalizeTransactionTaxonomy({
       amount: memoryMatch.amount || entities.amounts[0]?.amount || 0,
       category: memoryMatch.pattern.category,
       subCategory: memoryMatch.pattern.subCategory,
@@ -159,7 +164,7 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
       parsedBy: "rule_engine" as any, // Compatible type
       inferenceSource: "dictionary" as any,
       ambiguityFlags: ["muscle_memory_hit"],
-    }];
+    }, input.text)];
     parsedBy = "muscle_memory" as any;
     modelUsed = "cache";
     log.finalConfidence = 100;
@@ -320,7 +325,9 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
                   isSmoker: input.userProfileContext?.isSmoker,
                   plan,
                 },
-                forceSkipClarification
+                forceSkipClarification,
+                input.groqApiKey,
+                input.provider
               )
             : await aiClassify(
                 input.text,
@@ -519,7 +526,8 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
   }
 
   // ── Step 6+7: Confidence Scoring + Decision ──
-  const postProcessed = postProcessItems(items);
+  const canonicalItems = normalizeTransactionTaxonomyList(items, input.text);
+  const postProcessed = postProcessItems(canonicalItems);
   const scored = scoreAndDecide(postProcessed, input.text, thresholds, input.skipClarification ?? false);
 
   log.finalConfidence = scored.overallConfidence;

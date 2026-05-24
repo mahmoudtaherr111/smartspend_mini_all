@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { router, authedProcedure } from "./middleware";
 import { db, getDb } from "./queries/connection";
-import { expenses, expenseCategories, userDictionaries, users, localUsers } from "../db/schema";
+import { expenses, expenseCategories, userDictionaries, users, localUsers, classificationLogs } from "../db/schema";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 import { ExpenseInputLimits } from "../contracts/constants";
 import { invalidateUserMemory } from "./lib/muscle-memory";
@@ -210,6 +210,32 @@ export const expenseRouter = router({
           const newCategory = input.category!;
           const newSubCategory = input.subCategory || originalExpense.subCategory || "عام";
           const rawText = originalExpense.rawText;
+
+          const [latestClassificationLog] = await db.select({ id: classificationLogs.id })
+            .from(classificationLogs)
+            .where(and(
+              eq(classificationLogs.userId, userId),
+              eq(classificationLogs.userType, userType),
+              eq(classificationLogs.originalText, rawText)
+            ))
+            .orderBy(desc(classificationLogs.createdAt))
+            .limit(1);
+
+          if (latestClassificationLog) {
+            await db.update(classificationLogs)
+              .set({
+                wasCorrected: true,
+                correction: {
+                  expenseId: input.id,
+                  previousCategory: originalExpense.category,
+                  previousSubCategory: originalExpense.subCategory,
+                  correctedCategory: newCategory,
+                  correctedSubCategory: newSubCategory,
+                  correctedAt: new Date().toISOString(),
+                },
+              })
+              .where(eq(classificationLogs.id, latestClassificationLog.id));
+          }
 
           // Arabic stop words and noise to exclude
           const STOP_WORDS = new Set([
