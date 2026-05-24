@@ -7,7 +7,7 @@ import {
   Users, Shield, Trash2, Search, Download, Printer, Eye,
   XCircle, CheckCircle, Clock, Ticket, BarChart3, Activity,
   ChevronLeft, ChevronRight, Crown, UserCheck, FileSpreadsheet, FileJson,
-  Brain, Mic, Settings2, Info, LayoutDashboard, Server, ShieldAlert
+  Brain, Mic, Settings2, Info, LayoutDashboard, Server, ShieldAlert, AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -408,6 +408,7 @@ export default function Admin() {
             {user?.role === "admin" && (
               <>
                 <TabsContent value="ai" className="space-y-8">
+                  <ApiKeyErrorsPanel />
                   <section>
                     <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
                       <Brain className="w-5 h-5 text-purple-600" />
@@ -643,6 +644,130 @@ function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label:
         </div>
         <p className="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">{value}</p>
         <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">{label}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ApiKeyErrorsPanel() {
+  const utils = trpc.useUtils();
+  const [unresolvedOnly, setUnresolvedOnly] = useState(true);
+  const errorsQuery = trpc.admin.getApiKeyErrors.useQuery(
+    { unresolvedOnly, limit: 50 },
+    { refetchInterval: 60_000 }
+  );
+  const resolveOne = trpc.admin.resolveApiKeyError.useMutation({
+    onSuccess: () => {
+      toast.success("تم تعليم الخطأ كمحلول");
+      utils.admin.getApiKeyErrors.invalidate();
+    },
+  });
+  const clearAll = trpc.admin.clearAllApiKeyErrors.useMutation({
+    onSuccess: () => {
+      toast.success("تم حل كل أخطاء المفاتيح المفتوحة");
+      utils.admin.getApiKeyErrors.invalidate();
+    },
+  });
+
+  const errors = errorsQuery.data || [];
+  const unresolvedCount = errors.filter((err: any) => !err.resolved).length;
+  const badgeVariant = (type: string) => {
+    if (["invalid_key", "model_not_found", "permission_denied"].includes(type)) return "destructive";
+    if (["quota_exceeded", "rate_limited", "insufficient_credit"].includes(type)) return "secondary";
+    return "outline";
+  };
+
+  return (
+    <Card className="border-slate-200 shadow-sm overflow-hidden border-t-4 border-t-rose-500">
+      <div className="bg-slate-50 dark:bg-slate-900 border-b px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-rose-600" />
+            مراقبة أخطاء مفاتيح الذكاء الاصطناعي
+          </CardTitle>
+          <CardDescription>
+            يعرض أخطاء Gemini و Groq التي كانت سابقا تظهر في السيرفر فقط وتسبب fallback صامت.
+          </CardDescription>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Badge variant={unresolvedCount > 0 ? "destructive" : "secondary"} className="self-center">
+            {unresolvedCount} مفتوح
+          </Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setUnresolvedOnly((v) => !v)}
+          >
+            {unresolvedOnly ? "عرض الكل" : "المفتوحة فقط"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={clearAll.isPending || unresolvedCount === 0}
+            onClick={() => clearAll.mutate()}
+          >
+            حل الكل
+          </Button>
+        </div>
+      </div>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-right">
+            <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 border-b">
+              <tr>
+                <th className="py-3 px-6">المصدر</th>
+                <th className="py-3 px-4">النوع</th>
+                <th className="py-3 px-4">المفتاح</th>
+                <th className="py-3 px-4">الرسالة</th>
+                <th className="py-3 px-4">الحالة</th>
+                <th className="py-3 px-6">إجراء</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {errorsQuery.isLoading && (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-slate-500">جاري تحميل الأخطاء...</td>
+                </tr>
+              )}
+              {!errorsQuery.isLoading && errors.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-slate-500">لا توجد أخطاء مفاتيح مطابقة.</td>
+                </tr>
+              )}
+              {errors.map((err: any) => (
+                <tr key={err.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-900/40">
+                  <td className="py-3 px-6 font-mono text-xs font-bold uppercase">{err.provider}</td>
+                  <td className="py-3 px-4">
+                    <Badge variant={badgeVariant(err.errorType) as any}>{err.errorType}</Badge>
+                  </td>
+                  <td className="py-3 px-4 font-mono text-xs">{err.keyLabel}</td>
+                  <td className="py-3 px-4 max-w-[420px]">
+                    <p className="truncate text-slate-600 dark:text-slate-300" title={err.message}>{err.message}</p>
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      {err.httpStatus ? `HTTP ${err.httpStatus} - ` : ""}
+                      {new Date(err.createdAt).toLocaleString("ar-EG")}
+                    </p>
+                  </td>
+                  <td className="py-3 px-4">
+                    <Badge variant={err.resolved ? "secondary" : "destructive"}>
+                      {err.resolved ? "محلول" : "مفتوح"}
+                    </Badge>
+                  </td>
+                  <td className="py-3 px-6">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={err.resolved || resolveOne.isPending}
+                      onClick={() => resolveOne.mutate({ errorId: err.id })}
+                    >
+                      تم الحل
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </CardContent>
     </Card>
   );

@@ -67,7 +67,17 @@ export function ruleEngineIsStrongEnough(
 }
 
 export function isProTrivialRuleResult(items: ParsedTransaction[]): boolean {
-  return ruleEngineIsStrongEnough(items, PRO_RULE_TRIVIAL_THRESHOLD);
+  return (
+    ruleEngineIsStrongEnough(items, PRO_RULE_TRIVIAL_THRESHOLD) &&
+    items.every((item) => {
+      const flags = item.ambiguityFlags || [];
+      const trustedUserOrMerchant =
+        item.inferenceSource === "dictionary" &&
+        (item.confidence >= 100 || flags.includes("merchant_registry_hit"));
+      const deterministicRule = item.inferenceSource === "rule" && item.confidence >= 98 && flags.length === 0;
+      return trustedUserOrMerchant || deterministicRule;
+    })
+  );
 }
 
 export function shouldForceAi(
@@ -98,7 +108,9 @@ export function decideClassificationRoute(
   const acceptRule =
     ruleResult.items.length > 0 &&
     !ctx.knownNameMentioned &&
-    ruleEngineIsStrongEnough(ruleResult.items, floor);
+    (isPaid
+      ? isProTrivialRuleResult(ruleResult.items)
+      : ruleEngineIsStrongEnough(ruleResult.items, floor));
 
   if (acceptRule) {
     return {

@@ -9,12 +9,13 @@
  * Also handles Speech-to-Text via Gemini multimodal API.
  */
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
-import { CATEGORIES } from "./category-registry";
+import { CATEGORIES, normalizeTransactionTaxonomy } from "./category-registry";
 import type { ParsedTransaction } from "./rule-engine";
-import { mapModelName } from "./model-mapper";
+import { coerceModelForProvider, mapModelName, type AiProviderName } from "./model-mapper";
 import type { PlanId } from "./ai-usage-policy";
 import { estimateClassificationPromptTokens } from "./ai-routing";
-import { callGroqAPI } from "../ai-router";
+import { callGroqAPI } from "./groq-client";
+import { logApiKeyError } from "./error-logger";
 
 export const classificationResponseSchema = {
   type: SchemaType.OBJECT,
@@ -87,6 +88,7 @@ function buildMicroSystemPrompt(
     : "صنّف بدقة من القائمة؛ تجنب متنوعات/عام.";
   return `محلل مالي مصري.${qualityLine}
 قواعد:1)فئات القائمة فقط.2)item_name=السلعة/الخدمة.3)مبالغ كبيرة→سكن/أجهزة؛شحنت→رصيد/بنزين.${smokingRule}
+تصحيح مصري: نت/إنترنت/راوتر/باقة→فواتير/إنترنت. شحن رصيد→فواتير/شحن رصيد. شراء موبايل/لاب/سماعة→تسوق/أجهزة إلكترونية وليس فواتير. قبضت/استلمت/جالي مرتب→دخل/مرتب.
 فئات:${compressedCats}
 مثال:${example}
 JSON فقط.`;
@@ -188,22 +190,27 @@ export async function aiClassify(
     userPrompt.length
   );
 
-  const actualModelName = mapModelName(modelName);
+  const requestedProvider: AiProviderName = provider === "groq" ? "groq" : "gemini";
+  const providerModelName = coerceModelForProvider(modelName, requestedProvider, plan);
+  const geminiFallbackModelName = coerceModelForProvider(modelName, "gemini", plan);
+  let modelUsed = providerModelName;
 
   // ── Groq Branch ──
   if (provider === "groq" && groqApiKey) {
     try {
       const groqResult = await callGroqAPI(
         groqApiKey,
-        actualModelName,
+        providerModelName,
         systemPrompt,
         userPrompt,
         maxTokens
       );
       response = groqResult.text;
       tokensUsed = groqResult.tokensUsed;
+      modelUsed = `groq:${providerModelName}`;
     } catch (groqError: any) {
       console.error("Groq classify error, falling back to Gemini:", groqError?.message);
+      await logApiKeyError("groq", "groq_api_key", groqError);
       // Fall through to Gemini below
       provider = "gemini";
     }
@@ -215,7 +222,7 @@ export async function aiClassify(
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({
-        model: actualModelName,
+        model: geminiFallbackModelName,
         systemInstruction: systemPrompt,
         generationConfig: {
           temperature: 0.2,
@@ -228,8 +235,10 @@ export async function aiClassify(
       const result = await model.generateContent(userPrompt);
       response = result.response.text();
       tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
+      modelUsed = `gemini:${geminiFallbackModelName}`;
     } catch (error: any) {
       console.error("AI Classify Error (Key 1):", error.message);
+      await logApiKeyError("gemini", "ai_api_key", error);
 
       // Failover to key 2
       if (apiKey2) {
@@ -237,7 +246,7 @@ export async function aiClassify(
           console.log("AI Classifier: switching to failover key...");
           const genAI2 = new GoogleGenerativeAI(apiKey2);
           const model2 = genAI2.getGenerativeModel({
-            model: actualModelName,
+            model: geminiFallbackModelName,
             systemInstruction: systemPrompt,
             generationConfig: {
               temperature: 0.2,
@@ -249,8 +258,10 @@ export async function aiClassify(
           const result = await model2.generateContent(userPrompt);
           response = result.response.text();
           tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
+          modelUsed = `gemini:${geminiFallbackModelName}:key2`;
         } catch (fallbackError) {
           console.error("AI Classify Error (Key 2):", fallbackError);
+          await logApiKeyError("gemini", "ai_api_key_2", fallbackError);
           return null;
         }
       } else {
@@ -260,7 +271,7 @@ export async function aiClassify(
   }
 
   // Parse response
-  const parsed = parseAIResponse(response, actualModelName);
+  const parsed = parseAIResponse(response, modelUsed);
   if (parsed) {
     parsed.tokensUsed = tokensUsed;
     if (tokensUsed <= 0) {
@@ -400,20 +411,30 @@ export function parseAIResponse(response: string, modelName: string): AIClassifi
     return null;
   }
 
-  // Map AI response to ParsedTransaction format
-  const items: ParsedTransaction[] = parsed.items.map((item: any) => ({
-    amount: item.amount || 0,
-    category: item.main_category || "متنوعات",
-    subCategory: item.sub_category || "عام",
-    description: item.item_name || item.notes || "",
-    type: item.type || "expense",
-    confidence: item.confidence || 70,
-    merchant: item.merchant || undefined,
-    currency: "EGP",
-    needsReview: item.needs_review ?? (item.confidence || 70) < 85,
-    parsedBy: "ai" as const,
-    inferenceSource: "ai" as const,
-  }));
+  // Map AI response to ParsedTransaction format and force it back onto our canonical taxonomy.
+  const items: ParsedTransaction[] = parsed.items.map((item: any) => {
+    const rawCategory = item.main_category || item.category || item.category_ar || "متنوعات";
+    const rawSubCategory = item.sub_category || item.subCategory || item.subcategory || "عام";
+    const description = item.item_name || item.description || item.notes || "";
+    const normalized = normalizeTransactionTaxonomy({
+      amount: item.amount || 0,
+      category: rawCategory,
+      subCategory: rawSubCategory,
+      description,
+      type: item.type || "expense",
+      confidence: item.confidence || 70,
+      merchant: item.merchant || undefined,
+      currency: "EGP",
+      needsReview: item.needs_review ?? (item.confidence || 70) < 85,
+      parsedBy: "ai" as const,
+      inferenceSource: "ai" as const,
+    }, `${rawCategory} ${rawSubCategory} ${description}`);
+
+    return {
+      ...normalized,
+      needsReview: normalized.needsReview ?? normalized.confidence < 85,
+    };
+  });
 
   return {
     items,

@@ -4,7 +4,7 @@
  */
 
 import { CATEGORY_DICTIONARY } from "./egyptian-dictionary";
-import { fuzzyFindCategory } from "./fuzzy-match";
+import { fuzzyFindCategory, normalizeArabic } from "./fuzzy-match";
 import { detectIntent, type TransactionIntent } from "./intent-detector";
 import { extractAmounts, type ExtractedAmount } from "./entity-extractor";
 import { normalizeText } from "./text-normalizer";
@@ -63,7 +63,7 @@ const SUB_CATEGORY_MAP: Record<string, { category: string; subCategory: string }
   "قهوة": { category: "أكل وشرب", subCategory: "قهوة وكافيه" },
   "قهو": { category: "أكل وشرب", subCategory: "قهوة وكافيه" },
   "نسكافيه": { category: "أكل وشرب", subCategory: "قهوة وكافيه" },
-  "كافيه": { category: "ترفيه", subCategory: "كافيه وشيشة" },
+  "كافيه": { category: "ترفيه", subCategory: "كافيه" },
   "بقاله": { category: "أكل وشرب", subCategory: "بقالة" },
   "بقال": { category: "أكل وشرب", subCategory: "بقالة" },
   "سمك": { category: "أكل وشرب", subCategory: "سي فود" },
@@ -115,6 +115,9 @@ const SUB_CATEGORY_MAP: Record<string, { category: string; subCategory: string }
   "هدوم": { category: "تسوق", subCategory: "ملابس" },
   "لبس": { category: "تسوق", subCategory: "ملابس" },
   "موبايل": { category: "تسوق", subCategory: "أجهزة إلكترونية" },
+  "تليفون جديد": { category: "تسوق", subCategory: "أجهزة إلكترونية" },
+  "موبايل جديد": { category: "تسوق", subCategory: "أجهزة إلكترونية" },
+  "موبايل مستعمل": { category: "تسوق", subCategory: "أجهزة إلكترونية" },
   "لاب توب": { category: "تسوق", subCategory: "أجهزة إلكترونية" },
   "ايفون": { category: "تسوق", subCategory: "أجهزة إلكترونية" },
   "كوتشي": { category: "تسوق", subCategory: "أحذية" },
@@ -139,7 +142,6 @@ const SUB_CATEGORY_MAP: Record<string, { category: string; subCategory: string }
   "سفر": { category: "ترفيه", subCategory: "سفر" },
   "مصيف": { category: "ترفيه", subCategory: "سفر" },
   "خروجه": { category: "ترفيه", subCategory: "خروجة" },
-  "شيشه": { category: "ترفيه", subCategory: "كافيه وشيشة" },
   // Subscriptions
   "نتفلكس": { category: "اشتراكات", subCategory: "نتفلكس" },
   "سبوتيفاي": { category: "اشتراكات", subCategory: "سبوتيفاي" },
@@ -159,9 +161,16 @@ const SUB_CATEGORY_MAP: Record<string, { category: string; subCategory: string }
   "مكافاه": { category: "مرتب", subCategory: "مكافأة/بونص" },
   "عموله": { category: "عمل حر", subCategory: "عمولة" },
   "سبوبه": { category: "عمل حر", subCategory: "سبوبة" },
-  "سجاير": { category: "متنوعات", subCategory: "مصاريف شخصية" },
-  "سجائر": { category: "متنوعات", subCategory: "مصاريف شخصية" },
-  "سجاره": { category: "متنوعات", subCategory: "مصاريف شخصية" },
+  "سجاير": { category: "تدخين", subCategory: "سجائر" },
+  "سجائر": { category: "تدخين", subCategory: "سجائر" },
+  "سجاره": { category: "تدخين", subCategory: "سجائر" },
+  "فيب": { category: "تدخين", subCategory: "فيب/ليكود" },
+  "vape": { category: "تدخين", subCategory: "فيب/ليكود" },
+  "ليكود": { category: "تدخين", subCategory: "فيب/ليكود" },
+  "liquid": { category: "تدخين", subCategory: "فيب/ليكود" },
+  "شيشه": { category: "تدخين", subCategory: "شيشة/معسل" },
+  "شيشة": { category: "تدخين", subCategory: "شيشة/معسل" },
+  "معسل": { category: "تدخين", subCategory: "شيشة/معسل" },
   "حلاق": { category: "تسوق", subCategory: "عناية شخصية" },
   "لبان": { category: "أكل وشرب", subCategory: "سناكس" },
   "شيبسي": { category: "أكل وشرب", subCategory: "سناكس" },
@@ -284,10 +293,10 @@ function refineSubCategory(category: string, subCategory: string, context: strin
       if (/(كورس|كورسات|دوره|دورة|يوديمي|كورسيرا)/.test(context)) return "كورسات";
       if (/(جامعه|كليه|ترم|سنه اولى)/.test(context)) return "جامعة";
       if (/(مدرسه|يونيفورم|مصاريف المدرسه)/.test(context)) return "مدرسة";
-      if (/(كتب|ملزمه|مذكره|ادوات)/.test(context)) return "كتب وأدوات";
+      if (/(كتب|ملزمه|مذكره|ادوات)/.test(context)) return "كتب";
       return "عام";
     case "صحة":
-      if (/(دكتور|عياده|كشف|طبيب|فيزيتا|استشاره)/.test(context)) return "كشف ودكتور";
+      if (/(دكتور|عياده|كشف|طبيب|فيزيتا|استشاره)/.test(context)) return "دكتور";
       if (/(صيدليه|دوا|علاج|روشته|بانادول|فيتامين)/.test(context)) return "صيدلية";
       if (/(تحاليل|اشعه|سونار|رنين)/.test(context)) return "تحاليل";
       if (/(اسنان|ضرس|حشو|خلع)/.test(context)) return "أسنان";
@@ -311,16 +320,32 @@ function refineSubCategory(category: string, subCategory: string, context: strin
       if (/(كهربا|نور)/.test(context)) return "كهرباء";
       if (/(ميه|مياه)/.test(context)) return "مياه";
       if (/(غاز)/.test(context)) return "غاز";
-      if (/(نت|انترنت|راوتر|وي)/.test(context)) return "إنترنت";
+      // Guard against matching common words like "انت/كنت" which contain "نت"
+      if (/(?:^|\s)(?:نت|النت|انترنت|الانترنت|راوتر|واي\s*فاي|wifi|وي|we)(?=\s|$|[.,،؟?!؛:])/.test(context)) return "إنترنت";
       if (/(شحن|رصيد|كارت)/.test(context)) return "شحن رصيد";
       if (/(قسط|اقساط|فاليو|سهوله)/.test(context)) return "أقساط";
       return "عام";
+    case "تحويل":
+      if (/(atm|سحب|سحبت)/i.test(context)) return "سحب ATM";
+      if (/(انستاباي|instapay)/i.test(context)) return "انستاباي";
+      if (/(فودافون\s*كاش|vodafone\s*cash)/i.test(context)) return "فودافون كاش";
+      if (/(تحويل\s*بنكي|حواله|حوالة|bank\s*transfer)/i.test(context)) return "تحويل بنكي";
+      if (/(ادخار|وفر|توفير|حوش|تحويش)/.test(context)) return "ادخار";
+      if (/(سلف|سلفه|سلفة|دين|قرض)/.test(context)) return "دين/سلفة";
+      return "تحويل بنكي";
+    case "استثمار":
+      if (/(ذهب|دهب|سبيكه|سبيكة|جنيه\s*ذهب|جرام\s*ذهب)/.test(context)) return "ذهب";
+      if (/(اسهم|أسهم|بورصه|بورصة|ثاندر|thndr)/i.test(context)) return "أسهم";
+      if (/(شهاده|شهادة|وديعه|وديعة|اذون|أذون)/.test(context)) return "شهادات";
+      if (/(عقار|عقارات|ارض|أرض|شقه\s*تمليك|شقة\s*تمليك|تمليك)/.test(context)) return "عقارات";
+      if (/(بتكوين|بيتكوين|bitcoin|btc|usdt|كريبتو|عملات\s*رقميه|عملات\s*رقمية)/i.test(context)) return "عملات رقمية";
+      return "ذهب";
     case "ترفيه":
       if (/(سينما|فيلم)/.test(context)) return "سينما";
       if (/(جيم|رياضه|بروتين)/.test(context)) return "رياضة وجيم";
       if (/(سفر|مصيف|رحله)/.test(context)) return "سفر";
       if (/(خروجه|فسحه|تمشيه)/.test(context)) return "خروجة";
-      if (/(شيشه|كافيه)/.test(context)) return "كافيه وشيشة";
+      if (/(شيشه|كافيه)/.test(context)) return "كافيه";
       if (/(بلايستيشن|اكس بوكس|العاب)/.test(context)) return "ألعاب";
       return "عام";
     case "أكل وشرب":
@@ -393,6 +418,15 @@ export function runRuleEngine(
 
   const items: ParsedTransaction[] = [];
 
+  // Normalize user dictionary keys once to avoid mismatches caused by Arabic variants
+  // (أ/إ/آ, ى/ي, ة/ه, etc.) since normalizedText already goes through a normalizer.
+  const userDictByWord = new Map<string, { category: string; subCategory?: string }>();
+  for (const row of userDict) {
+    const key = normalizeArabic(String(row.word || "")).replace(/\s+/g, " ").trim().toLowerCase();
+    if (!key) continue;
+    userDictByWord.set(key, { category: row.category, subCategory: row.subCategory ?? undefined });
+  }
+
   for (let i = 0; i < amounts.length; i++) {
     const { amount, index, length } = amounts[i];
     const contextStart = i > 0 ? amounts[i - 1].index + amounts[i - 1].length : 0;
@@ -400,15 +434,26 @@ export function runRuleEngine(
     const beforeAmount = normalizedText.slice(contextStart, index).trim();
     const afterAmount = normalizedText.slice(index + length, contextEnd).trim();
     const allContext = (beforeAmount + " " + afterAmount).trim();
+    const allContextNorm = normalizeArabic(allContext).toLowerCase();
 
     const intentResult = detectIntent(allContext);
 
-    let category = intentResult.intent === "income" ? "مرتب" : "متنوعات";
+    let category =
+      intentResult.intent === "income"
+        ? "مرتب"
+        : intentResult.intent === "transfer"
+          ? "تحويل"
+          : intentResult.intent === "investment"
+            ? "استثمار"
+            : "متنوعات";
     let subCategory = "عام";
     let confidence = 30;
     let inferenceSource: ParsedTransaction["inferenceSource"] = "rule";
     let ambiguityFlags: string[] | undefined;
     const words = allContext.split(/\s+/).filter(w => w.length >= 2);
+    const normWords = words
+      .map((w) => normalizeArabic(w).replace(/\s+/g, " ").trim().toLowerCase())
+      .filter(Boolean);
 
     let found = false;
 
@@ -428,7 +473,9 @@ export function runRuleEngine(
         found = true;
       } else if (/(?:شحنت|شحنة)\s*(?:رصيد|موبايل|نت)/.test(allContext)) {
         category = "فواتير";
-        subCategory = /نت/.test(allContext) ? "إنترنت" : "شحن رصيد";
+        // Guard against matching "انت/كنت" which contain "نت" as a substring.
+        const hasInternetWord = /(?:^|\s)(?:نت|النت|انترنت|الانترنت)(?=\s|$|[.,،؟?!؛:])/.test(allContext);
+        subCategory = hasInternetWord ? "إنترنت" : "شحن رصيد";
         confidence = 92;
         inferenceSource = "rule";
         found = true;
@@ -442,8 +489,8 @@ export function runRuleEngine(
     }
 
     // 1. User dictionary (highest priority)
-    for (const word of words) {
-      const userMatch = userDict.find(ud => ud.word === word);
+    for (const word of normWords) {
+      const userMatch = userDictByWord.get(word);
       if (userMatch) {
         category = userMatch.category;
         subCategory = userMatch.subCategory || "عام";
@@ -459,7 +506,8 @@ export function runRuleEngine(
       // Check multi-word merchant names first (longer = more specific)
       const merchantKeys = Object.keys(MERCHANT_REGISTRY).sort((a, b) => b.length - a.length);
       for (const merchant of merchantKeys) {
-        if (allContext.includes(merchant)) {
+        const merchantNorm = normalizeArabic(merchant).toLowerCase();
+        if (allContext.includes(merchant) || (merchantNorm && allContextNorm.includes(merchantNorm))) {
           category = MERCHANT_REGISTRY[merchant].category;
           subCategory = MERCHANT_REGISTRY[merchant].subCategory;
           confidence = 100;
@@ -486,9 +534,11 @@ export function runRuleEngine(
     // 2. Subcategory map (enriched matching — exact word)
     if (!found) {
       for (const word of words) {
-        if (SUB_CATEGORY_MAP[word]) {
-          category = SUB_CATEGORY_MAP[word].category;
-          subCategory = SUB_CATEGORY_MAP[word].subCategory;
+        const normalizedWord = normalizeArabic(word).toLowerCase();
+        const hit = SUB_CATEGORY_MAP[word] || SUB_CATEGORY_MAP[normalizedWord];
+        if (hit) {
+          category = hit.category;
+          subCategory = hit.subCategory;
           confidence = 90;
           inferenceSource = "rule";
           found = true;
@@ -519,9 +569,11 @@ export function runRuleEngine(
     if (!found) {
       for (let w = 0; w < words.length - 1; w++) {
         const phrase = words[w] + " " + words[w + 1];
-        if (SUB_CATEGORY_MAP[phrase]) {
-          category = SUB_CATEGORY_MAP[phrase].category;
-          subCategory = SUB_CATEGORY_MAP[phrase].subCategory;
+        const phraseNorm = normalizeArabic(phrase).toLowerCase();
+        const hit = SUB_CATEGORY_MAP[phrase] || SUB_CATEGORY_MAP[phraseNorm];
+        if (hit) {
+          category = hit.category;
+          subCategory = hit.subCategory;
           confidence = 88;
           inferenceSource = "rule";
           found = true;
@@ -530,18 +582,22 @@ export function runRuleEngine(
       }
     }
 
-    // 4. Global dictionary (main category) + auto-fill subcategory from SUB_CATEGORY_MAP
+    // 4. Multi-word global dictionary (prefer more specific phrases first)
     if (!found) {
-      for (const word of words) {
-        if (CATEGORY_DICTIONARY[word]) {
-          category = CATEGORY_DICTIONARY[word];
-          // Try to derive a more specific subcategory
-          if (SUB_CATEGORY_MAP[word]) {
-            subCategory = SUB_CATEGORY_MAP[word].subCategory;
-            confidence = 88;
+      for (let w = 0; w < words.length - 1; w++) {
+        const phrase = words[w] + " " + words[w + 1];
+        const phraseNorm = normalizeArabic(phrase).toLowerCase();
+        const dictHit = CATEGORY_DICTIONARY[phrase] || CATEGORY_DICTIONARY[phraseNorm];
+        if (dictHit) {
+          category = dictHit;
+          // Try to derive a more specific subcategory (from the phrase or its parts)
+          const phraseSubHit = SUB_CATEGORY_MAP[phrase] || SUB_CATEGORY_MAP[phraseNorm];
+          if (phraseSubHit) {
+            subCategory = phraseSubHit.subCategory;
+            confidence = 86;
           } else {
             subCategory = "عام";
-            confidence = 85;
+            confidence = 84;
           }
           inferenceSource = "dictionary";
           found = true;
@@ -550,14 +606,22 @@ export function runRuleEngine(
       }
     }
 
-    // 5. Multi-word global dictionary
+    // 5. Global dictionary (single-token)
     if (!found) {
-      for (let w = 0; w < words.length - 1; w++) {
-        const phrase = words[w] + " " + words[w + 1];
-        if (CATEGORY_DICTIONARY[phrase]) {
-          category = CATEGORY_DICTIONARY[phrase];
-          subCategory = "عام";
-          confidence = 80;
+      for (const word of words) {
+        const normalizedWord = normalizeArabic(word).toLowerCase();
+        const dictHit = CATEGORY_DICTIONARY[word] || CATEGORY_DICTIONARY[normalizedWord];
+        if (dictHit) {
+          category = dictHit;
+          // Try to derive a more specific subcategory
+          const subHit = SUB_CATEGORY_MAP[word] || SUB_CATEGORY_MAP[normalizedWord];
+          if (subHit) {
+            subCategory = subHit.subCategory;
+            confidence = 88;
+          } else {
+            subCategory = "عام";
+            confidence = 85;
+          }
           inferenceSource = "dictionary";
           found = true;
           break;

@@ -1,4 +1,4 @@
-import { CATEGORIES } from "./category-registry";
+import { CATEGORIES, normalizeCategoryName, normalizeSubCategoryName } from "./category-registry";
 
 export interface TaxonomyMatch {
   category: string;
@@ -52,8 +52,8 @@ export function mapLegacyCategory(category: string): string {
 }
 
 export function toBackwardCompatibleCategory(category: string): string {
-  if (KNOWN_CATEGORIES.has(category)) return category;
-  return mapLegacyCategory(category);
+  if (KNOWN_CATEGORIES.has(category)) return normalizeCategoryName(category);
+  return normalizeCategoryName(mapLegacyCategory(category));
 }
 
 export function findTaxonomyMatch(text: string): TaxonomyMatch | null {
@@ -65,13 +65,13 @@ export function findTaxonomyMatch(text: string): TaxonomyMatch | null {
     if (!normalized.includes(phrase.toLowerCase())) continue;
     const candidate: TaxonomyMatch = {
       category: toBackwardCompatibleCategory(entry.category),
-      subCategory: entry.subCategory,
+      subCategory: "",
       confidence: entry.confidence ?? 80,
       inferenceSource: "synonym",
       ambiguityFlags: entry.ambiguityFlags,
     };
+    candidate.subCategory = normalizeSubCategoryName(candidate.category, entry.subCategory, normalized);
     if (!best || candidate.confidence > best.confidence) best = candidate;
   }
   return best;
 }
-

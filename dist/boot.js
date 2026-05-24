@@ -43948,6 +43948,7 @@ __export(schema_exports, {
   adClicks: () => adClicks,
   ads: () => ads,
   aiSummaries: () => aiSummaries,
+  apiKeyErrors: () => apiKeyErrors,
   classificationLogs: () => classificationLogs,
   discountCodes: () => discountCodes,
   expenseCategories: () => expenseCategories,
@@ -43973,7 +43974,7 @@ __export(schema_exports, {
   voiceUsage: () => voiceUsage,
   webhookTokens: () => webhookTokens
 });
-var users, localUsers, expenses, expenseCategories, userWallets, monthlyReports, sessions, userAnalytics, supportTickets, discountCodes, aiSummaries, ads, adClicks, referrals, proSubscriptions, seoPages, systemSettings, userProfiles, profileLearningEvents, monthlyBehaviorSnapshots, onboardingQuestions, userDictionaries, classificationLogs, voiceUsage, webhookTokens, financialGoals, rawSmsEvents;
+var users, localUsers, expenses, expenseCategories, userWallets, monthlyReports, sessions, userAnalytics, supportTickets, discountCodes, aiSummaries, ads, adClicks, referrals, proSubscriptions, seoPages, systemSettings, userProfiles, profileLearningEvents, monthlyBehaviorSnapshots, onboardingQuestions, userDictionaries, classificationLogs, voiceUsage, webhookTokens, financialGoals, rawSmsEvents, apiKeyErrors;
 var init_schema2 = __esm({
   "db/schema.ts"() {
     init_mysql_core();
@@ -44411,6 +44412,28 @@ var init_schema2 = __esm({
     }, (t2) => [
       index("raw_sms_user_idx").on(t2.userId, t2.userType),
       index("raw_sms_status_idx").on(t2.status)
+    ]);
+    apiKeyErrors = mysqlTable("api_key_errors", {
+      id: int2("id").primaryKey().autoincrement(),
+      provider: varchar("provider", { length: 50 }).notNull(),
+      // gemini | groq | stt
+      keyLabel: varchar("key_label", { length: 100 }).notNull(),
+      // e.g. "gemini_api_key", "groq_api_key", "stt_api_key"
+      errorType: varchar("error_type", { length: 100 }).notNull(),
+      // invalid_key | quota_exceeded | insufficient_credit | network_error | rate_limited | unknown
+      message: text("message").notNull(),
+      httpStatus: int2("http_status"),
+      // e.g. 401, 429, 500
+      userId: int2("user_id"),
+      // nullable: which user triggered it (null = system-level check)
+      resolved: boolean4("resolved").default(false),
+      resolvedAt: datetime3("resolved_at"),
+      createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+    }, (t2) => [
+      index("api_key_errors_provider_idx").on(t2.provider),
+      index("api_key_errors_type_idx").on(t2.errorType),
+      index("api_key_errors_resolved_idx").on(t2.resolved),
+      index("api_key_errors_date_idx").on(t2.createdAt)
     ]);
   }
 });
@@ -81849,9 +81872,9 @@ function generateShortCode() {
   }
   return code;
 }
-function storeMagicCode(webhookToken, userId, userType2) {
+function storeMagicCode(webhookToken, userId, userType) {
   for (const [code2, entry] of magicCodes) {
-    if (entry.userId === userId && entry.userType === userType2) {
+    if (entry.userId === userId && entry.userType === userType) {
       magicCodes.delete(code2);
     }
   }
@@ -81859,7 +81882,7 @@ function storeMagicCode(webhookToken, userId, userType2) {
   magicCodes.set(code, {
     webhookToken,
     userId,
-    userType: userType2,
+    userType,
     expiresAt: Date.now() + 5 * 60 * 1e3
     // 5 minutes
   });
@@ -81946,8 +81969,8 @@ var init_sms_router = __esm({
         return c.json({ error: "Missing or too short 'message' field" }, 400);
       }
       const userId = tokenRecord.userId;
-      const userType2 = tokenRecord.userType;
-      const userTable = userType2 === "oauth" ? users : localUsers;
+      const userType = tokenRecord.userType;
+      const userTable = userType === "oauth" ? users : localUsers;
       const [userRecord] = await db3.select().from(userTable).where(eq(userTable.id, userId)).limit(1);
       const userPlan = userRecord?.plan || "free";
       let smsMonthlyLimit = userPlan === "free" ? 5 : 999999;
@@ -81962,7 +81985,7 @@ var init_sms_router = __esm({
       const { sql: sqlFn } = await Promise.resolve().then(() => (init_drizzle_orm(), drizzle_orm_exports));
       const [countResult] = await db3.select({ count: sqlFn`COUNT(*)` }).from(rawSmsEvents).where(and(
         eq(rawSmsEvents.userId, userId),
-        eq(rawSmsEvents.userType, userType2),
+        eq(rawSmsEvents.userType, userType),
         eq(rawSmsEvents.status, "processed"),
         gte(rawSmsEvents.createdAt, monthStart)
       ));
@@ -81977,7 +82000,7 @@ var init_sms_router = __esm({
       }
       const [insertedSms] = await db3.insert(rawSmsEvents).values({
         userId,
-        userType: userType2,
+        userType,
         message: message.trim(),
         sender: sender || null,
         smsTimestamp: timestamp3 || (/* @__PURE__ */ new Date()).toISOString(),
@@ -82082,7 +82105,7 @@ var init_sms_router = __esm({
       const transactionDate = timestamp3 ? new Date(timestamp3) : /* @__PURE__ */ new Date();
       await db3.insert(expenses).values({
         userId,
-        userType: userType2,
+        userType,
         type,
         amount: parseResult.amount.toString(),
         category,
@@ -86344,15 +86367,15 @@ async function comparePassword(password, hash3) {
   const bcrypt = await Promise.resolve().then(() => (init_bcryptjs(), bcryptjs_exports));
   return bcrypt.compare(password, hash3);
 }
-async function generateToken(userId, userType2) {
-  return sign2({ userId, userType: userType2, exp: Math.floor(Date.now() / 1e3) + 60 * 60 * 24 * 7 }, env.JWT_SECRET);
+async function generateToken(userId, userType) {
+  return sign2({ userId, userType, exp: Math.floor(Date.now() / 1e3) + 60 * 60 * 24 * 7 }, env.JWT_SECRET);
 }
-async function createSession(userId, userType2, token) {
+async function createSession(userId, userType, token) {
   const expiresAt = /* @__PURE__ */ new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
   await db.insert(sessions).values({
     userId,
-    userType: userType2,
+    userType,
     token,
     expiresAt
   });
@@ -86529,24 +86552,24 @@ var localAuthRouter = router({
   }),
   deleteUser: adminProcedure.input(external_exports.object({ id: external_exports.number() })).mutation(async ({ input }) => {
     const userId = input.id;
-    const userType2 = "local";
-    await db.delete(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType2)));
-    await db.delete(sessions).where(and(eq(sessions.userId, userId), eq(sessions.userType, userType2)));
-    await db.delete(userAnalytics).where(and(eq(userAnalytics.userId, userId), eq(userAnalytics.userType, userType2)));
-    await db.delete(supportTickets).where(and(eq(supportTickets.userId, userId), eq(supportTickets.userType, userType2)));
-    await db.delete(userWallets).where(and(eq(userWallets.userId, userId), eq(userWallets.userType, userType2)));
-    await db.delete(proSubscriptions).where(and(eq(proSubscriptions.userId, userId), eq(proSubscriptions.userType, userType2)));
-    await db.delete(monthlyReports).where(and(eq(monthlyReports.userId, userId), eq(monthlyReports.userType, userType2)));
-    await db.delete(aiSummaries).where(and(eq(aiSummaries.userId, userId), eq(aiSummaries.userType, userType2)));
-    await db.delete(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType2)));
-    await db.delete(profileLearningEvents).where(and(eq(profileLearningEvents.userId, userId), eq(profileLearningEvents.userType, userType2)));
-    await db.delete(monthlyBehaviorSnapshots).where(and(eq(monthlyBehaviorSnapshots.userId, userId), eq(monthlyBehaviorSnapshots.userType, userType2)));
-    await db.delete(userDictionaries).where(and(eq(userDictionaries.userId, userId), eq(userDictionaries.userType, userType2)));
-    await db.delete(classificationLogs).where(and(eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType2)));
-    await db.delete(voiceUsage).where(and(eq(voiceUsage.userId, userId), eq(voiceUsage.userType, userType2)));
-    await db.delete(webhookTokens).where(and(eq(webhookTokens.userId, userId), eq(webhookTokens.userType, userType2)));
-    await db.delete(rawSmsEvents).where(and(eq(rawSmsEvents.userId, userId), eq(rawSmsEvents.userType, userType2)));
-    await db.delete(expenseCategories).where(and(eq(expenseCategories.userId, userId), eq(expenseCategories.userType, userType2)));
+    const userType = "local";
+    await db.delete(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType)));
+    await db.delete(sessions).where(and(eq(sessions.userId, userId), eq(sessions.userType, userType)));
+    await db.delete(userAnalytics).where(and(eq(userAnalytics.userId, userId), eq(userAnalytics.userType, userType)));
+    await db.delete(supportTickets).where(and(eq(supportTickets.userId, userId), eq(supportTickets.userType, userType)));
+    await db.delete(userWallets).where(and(eq(userWallets.userId, userId), eq(userWallets.userType, userType)));
+    await db.delete(proSubscriptions).where(and(eq(proSubscriptions.userId, userId), eq(proSubscriptions.userType, userType)));
+    await db.delete(monthlyReports).where(and(eq(monthlyReports.userId, userId), eq(monthlyReports.userType, userType)));
+    await db.delete(aiSummaries).where(and(eq(aiSummaries.userId, userId), eq(aiSummaries.userType, userType)));
+    await db.delete(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)));
+    await db.delete(profileLearningEvents).where(and(eq(profileLearningEvents.userId, userId), eq(profileLearningEvents.userType, userType)));
+    await db.delete(monthlyBehaviorSnapshots).where(and(eq(monthlyBehaviorSnapshots.userId, userId), eq(monthlyBehaviorSnapshots.userType, userType)));
+    await db.delete(userDictionaries).where(and(eq(userDictionaries.userId, userId), eq(userDictionaries.userType, userType)));
+    await db.delete(classificationLogs).where(and(eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType)));
+    await db.delete(voiceUsage).where(and(eq(voiceUsage.userId, userId), eq(voiceUsage.userType, userType)));
+    await db.delete(webhookTokens).where(and(eq(webhookTokens.userId, userId), eq(webhookTokens.userType, userType)));
+    await db.delete(rawSmsEvents).where(and(eq(rawSmsEvents.userId, userId), eq(rawSmsEvents.userType, userType)));
+    await db.delete(expenseCategories).where(and(eq(expenseCategories.userId, userId), eq(expenseCategories.userType, userType)));
     await db.delete(localUsers).where(eq(localUsers.id, userId));
     return { success: true };
   }),
@@ -86589,22 +86612,22 @@ var UserMemoryCache = class {
   maxPatternsPerUser = 200;
   ttlMs = 30 * 60 * 1e3;
   // 30 minutes before re-fetching
-  userKey(userId, userType2) {
-    return `${userId}:${userType2}`;
+  userKey(userId, userType) {
+    return `${userId}:${userType}`;
   }
-  isStale(userId, userType2) {
-    const key = this.userKey(userId, userType2);
+  isStale(userId, userType) {
+    const key = this.userKey(userId, userType);
     const loaded = this.loadedAt.get(key);
     if (!loaded) return true;
     return Date.now() - loaded > this.ttlMs;
   }
-  get(userId, userType2) {
-    const key = this.userKey(userId, userType2);
-    if (this.isStale(userId, userType2)) return void 0;
+  get(userId, userType) {
+    const key = this.userKey(userId, userType);
+    if (this.isStale(userId, userType)) return void 0;
     return this.cache.get(key);
   }
-  set(userId, userType2, patterns) {
-    const key = this.userKey(userId, userType2);
+  set(userId, userType, patterns) {
+    const key = this.userKey(userId, userType);
     const sorted = patterns.sort((a, b) => b.usageCount - a.usageCount).slice(0, this.maxPatternsPerUser);
     this.cache.set(key, sorted);
     this.loadedAt.set(key, Date.now());
@@ -86616,8 +86639,8 @@ var UserMemoryCache = class {
       }
     }
   }
-  invalidate(userId, userType2) {
-    const key = this.userKey(userId, userType2);
+  invalidate(userId, userType) {
+    const key = this.userKey(userId, userType);
     this.cache.delete(key);
     this.loadedAt.delete(key);
   }
@@ -86653,14 +86676,14 @@ function templateSimilarity(a, b) {
   const orderRatio = arrA.length > 0 ? orderScore / Math.max(arrA.length, arrB.length) : 0;
   return Math.round(jaccard * 70 + orderRatio * 30);
 }
-async function loadUserPatterns(userId, userType2) {
+async function loadUserPatterns(userId, userType) {
   try {
     const ninetyDaysAgo = /* @__PURE__ */ new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
     const logs = await db.select().from(classificationLogs).where(
       and(
         eq(classificationLogs.userId, userId),
-        eq(classificationLogs.userType, userType2),
+        eq(classificationLogs.userType, userType),
         gte(classificationLogs.createdAt, ninetyDaysAgo)
       )
     ).orderBy(desc(classificationLogs.createdAt)).limit(500);
@@ -86716,11 +86739,11 @@ async function loadUserPatterns(userId, userType2) {
     return [];
   }
 }
-async function muscleMemoryLookup(text2, userId, userType2) {
-  let patterns = memoryCache.get(userId, userType2);
+async function muscleMemoryLookup(text2, userId, userType) {
+  let patterns = memoryCache.get(userId, userType);
   if (!patterns) {
-    patterns = await loadUserPatterns(userId, userType2);
-    memoryCache.set(userId, userType2, patterns);
+    patterns = await loadUserPatterns(userId, userType);
+    memoryCache.set(userId, userType, patterns);
   }
   if (patterns.length === 0) return null;
   const inputTemplate = textToTemplate(text2);
@@ -86740,8 +86763,8 @@ async function muscleMemoryLookup(text2, userId, userType2) {
   }
   return bestMatch;
 }
-function invalidateUserMemory(userId, userType2) {
-  memoryCache.invalidate(userId, userType2);
+function invalidateUserMemory(userId, userType) {
+  memoryCache.invalidate(userId, userType);
 }
 
 // api/expense-router.ts
@@ -86801,7 +86824,7 @@ var expenseRouter = router({
       const yesterday = new Date(now);
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toISOString().split("T")[0];
-      if (userType === "oauth") {
+      if (requestUserType === "oauth") {
         const [u] = await db3.select().from(users).where(eq(users.id, Number(userId)));
         if (u) {
           const lastDate = u.lastStreakAt ? new Date(u.lastStreakAt) : null;
@@ -86841,8 +86864,8 @@ var expenseRouter = router({
   ).query(async ({ ctx, input }) => {
     const db3 = getDb();
     const userId = ctx.user.id;
-    const userType2 = ctx.user.type;
-    const conditions = [eq(expenses.userId, userId), eq(expenses.userType, userType2)];
+    const userType = ctx.user.type;
+    const conditions = [eq(expenses.userId, userId), eq(expenses.userType, userType)];
     if (input?.startDate) conditions.push(gte(expenses.date, new Date(input.startDate)));
     if (input?.endDate) conditions.push(lte(expenses.date, new Date(input.endDate)));
     if (input?.category) conditions.push(eq(expenses.category, input.category));
@@ -86854,8 +86877,8 @@ var expenseRouter = router({
   getById: authedProcedure.input(external_exports.object({ id: external_exports.number() })).query(async ({ ctx, input }) => {
     const db3 = getDb();
     const userId = ctx.user.id;
-    const userType2 = ctx.user.type;
-    const result = await db3.select().from(expenses).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType2)));
+    const userType = ctx.user.type;
+    const result = await db3.select().from(expenses).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType)));
     return result[0] || null;
   }),
   update: authedProcedure.input(
@@ -86872,8 +86895,8 @@ var expenseRouter = router({
   ).mutation(async ({ ctx, input }) => {
     const db3 = getDb();
     const userId = ctx.user.id;
-    const userType2 = ctx.user.type;
-    const [originalExpense] = await db3.select().from(expenses).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType2)));
+    const userType = ctx.user.type;
+    const [originalExpense] = await db3.select().from(expenses).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType)));
     const updateData = {};
     if (input.amount !== void 0) updateData.amount = input.amount.toString();
     if (input.type !== void 0) updateData.type = input.type;
@@ -86882,14 +86905,32 @@ var expenseRouter = router({
     if (input.description !== void 0) updateData.description = input.description;
     if (input.rawText !== void 0) updateData.rawText = input.rawText;
     if (input.date !== void 0) updateData.date = new Date(input.date);
-    await db3.update(expenses).set(updateData).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType2)));
-    invalidateUserMemory(userId, userType2);
+    await db3.update(expenses).set(updateData).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType)));
+    invalidateUserMemory(userId, userType);
     const categoryChanged = input.category && originalExpense && originalExpense.category !== input.category;
     if (categoryChanged && originalExpense?.rawText) {
       try {
         const newCategory = input.category;
         const newSubCategory = input.subCategory || originalExpense.subCategory || "\u0639\u0627\u0645";
         const rawText = originalExpense.rawText;
+        const [latestClassificationLog] = await db3.select({ id: classificationLogs.id }).from(classificationLogs).where(and(
+          eq(classificationLogs.userId, userId),
+          eq(classificationLogs.userType, userType),
+          eq(classificationLogs.originalText, rawText)
+        )).orderBy(desc(classificationLogs.createdAt)).limit(1);
+        if (latestClassificationLog) {
+          await db3.update(classificationLogs).set({
+            wasCorrected: true,
+            correction: {
+              expenseId: input.id,
+              previousCategory: originalExpense.category,
+              previousSubCategory: originalExpense.subCategory,
+              correctedCategory: newCategory,
+              correctedSubCategory: newSubCategory,
+              correctedAt: (/* @__PURE__ */ new Date()).toISOString()
+            }
+          }).where(eq(classificationLogs.id, latestClassificationLog.id));
+        }
         const STOP_WORDS = /* @__PURE__ */ new Set([
           "\u0641\u064A",
           "\u0645\u0646",
@@ -86927,7 +86968,7 @@ var expenseRouter = router({
         for (const word of uniqueKeywords) {
           await db3.insert(userDictionaries).values({
             userId,
-            userType: userType2,
+            userType,
             word,
             category: newCategory,
             subCategory: newSubCategory
@@ -86949,8 +86990,8 @@ var expenseRouter = router({
   delete: authedProcedure.input(external_exports.object({ id: external_exports.number() })).mutation(async ({ ctx, input }) => {
     const db3 = getDb();
     const userId = ctx.user.id;
-    const userType2 = ctx.user.type;
-    await db3.delete(expenses).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType2)));
+    const userType = ctx.user.type;
+    await db3.delete(expenses).where(and(eq(expenses.id, input.id), eq(expenses.userId, userId), eq(expenses.userType, userType)));
     return { success: true };
   }),
   getMonthSummary: authedProcedure.input(external_exports.object({
@@ -86959,7 +87000,7 @@ var expenseRouter = router({
   })).query(async ({ ctx, input }) => {
     const db3 = getDb();
     const userId = ctx.user.id;
-    const userType2 = ctx.user.type;
+    const userType = ctx.user.type;
     const { getFinancialMonthDates: getFinancialMonthDates2 } = await Promise.resolve().then(() => (init_financial_month(), financial_month_exports));
     const { startDate, endDate } = getFinancialMonthDates2(input.month, input.salaryDay);
     const [summary] = await db3.select({
@@ -86968,7 +87009,7 @@ var expenseRouter = router({
       totalTransfers: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'transfer' THEN ${expenses.amount} ELSE 0 END), 0)`,
       totalInvestments: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'investment' THEN ${expenses.amount} ELSE 0 END), 0)`,
       count: sql`COUNT(*)`
-    }).from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType2), gte(expenses.date, startDate), lte(expenses.date, endDate)));
+    }).from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType), gte(expenses.date, startDate), lte(expenses.date, endDate)));
     const totalIncome = Number(summary?.totalIncome || 0);
     const totalExpense = Number(summary?.totalExpense || 0);
     return {
@@ -86986,19 +87027,19 @@ var expenseRouter = router({
   })).query(async ({ ctx, input }) => {
     const db3 = getDb();
     const userId = ctx.user.id;
-    const userType2 = ctx.user.type;
+    const userType = ctx.user.type;
     const { getFinancialMonthDates: getFinancialMonthDates2 } = await Promise.resolve().then(() => (init_financial_month(), financial_month_exports));
     const { startDate, endDate } = getFinancialMonthDates2(input.month, input.salaryDay);
-    const firstExpense = await db3.select({ date: expenses.date }).from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType2))).orderBy(expenses.date).limit(1);
+    const firstExpense = await db3.select({ date: expenses.date }).from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType))).orderBy(expenses.date).limit(1);
     const userStartDate = safeDate(firstExpense[0]?.date, startDate);
-    const items = await db3.select().from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType2), gte(expenses.date, startDate), lte(expenses.date, endDate)));
+    const items = await db3.select().from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType), gte(expenses.date, startDate), lte(expenses.date, endDate)));
     const prevMonthDate = safeDate(`${input.month}-01`, startDate);
     prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
     const prevMonthStr = prevMonthDate.toISOString().slice(0, 7);
     const prevMonthDates = getFinancialMonthDates2(prevMonthStr, input.salaryDay);
     const prevStartDate = prevMonthDates.startDate;
     const prevEndDate = prevMonthDates.endDate;
-    const previousItems = await db3.select().from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType2), gte(expenses.date, prevStartDate), lte(expenses.date, prevEndDate)));
+    const previousItems = await db3.select().from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType), gte(expenses.date, prevStartDate), lte(expenses.date, prevEndDate)));
     const totalExpense = items.filter((i) => i.type === "expense").reduce((sum3, item) => sum3 + Number(item.amount), 0);
     const totalIncome = items.filter((i) => i.type === "income").reduce((sum3, item) => sum3 + Number(item.amount), 0);
     const automatedExpense = items.filter((i) => i.type === "expense" && i.source === "sms").reduce((sum3, item) => sum3 + Number(item.amount), 0);
@@ -87150,10 +87191,10 @@ var expenseRouter = router({
   getYearlyStats: authedProcedure.input(external_exports.object({ year: external_exports.string() })).query(async ({ ctx, input }) => {
     const db3 = getDb();
     const userId = ctx.user.id;
-    const userType2 = ctx.user.type;
+    const userType = ctx.user.type;
     const startDate = /* @__PURE__ */ new Date(input.year + "-01-01");
     const endDate = /* @__PURE__ */ new Date(input.year + "-12-31");
-    const items = await db3.select().from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType2), gte(expenses.date, startDate), lte(expenses.date, endDate)));
+    const items = await db3.select().from(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType), gte(expenses.date, startDate), lte(expenses.date, endDate)));
     const totalExpense = items.filter((i) => i.type === "expense").reduce((sum3, item) => sum3 + Number(item.amount), 0);
     const totalIncome = items.filter((i) => i.type === "income").reduce((sum3, item) => sum3 + Number(item.amount), 0);
     const monthMap = {};
@@ -89997,6 +90038,264 @@ var CATEGORIES = [
     ]
   }
 ];
+function getCategoryByArabicName(name_ar) {
+  return CATEGORIES.find((c) => c.name_ar === name_ar);
+}
+function getCategoryType(categoryNameAr) {
+  return CATEGORIES.find((c) => c.name_ar === categoryNameAr)?.type || "expense";
+}
+var CATEGORY_ALIASES = [
+  ["\u0623\u062E\u0631\u0649", "\u0645\u062A\u0646\u0648\u0639\u0627\u062A"],
+  ["\u0645\u0635\u0631\u0648\u0641 \u0634\u062E\u0635\u064A", "\u0645\u062A\u0646\u0648\u0639\u0627\u062A"],
+  ["\u0645\u062F\u0641\u0648\u0639\u0627\u062A \u0637\u0648\u0627\u0631\u0626", "\u0645\u062A\u0646\u0648\u0639\u0627\u062A"],
+  ["\u062F\u062E\u0644", "\u0645\u0631\u062A\u0628"],
+  ["\u0631\u0627\u062A\u0628", "\u0645\u0631\u062A\u0628"],
+  ["\u0633\u0643\u0646 \u0648\u0641\u0648\u0627\u062A\u064A\u0631", "\u0641\u0648\u0627\u062A\u064A\u0631"],
+  ["\u0627\u0644\u062A\u0632\u0627\u0645\u0627\u062A \u064A\u0648\u0645\u064A\u0629", "\u0641\u0648\u0627\u062A\u064A\u0631"],
+  ["\u0645\u0644\u0627\u0628\u0633", "\u062A\u0633\u0648\u0642"],
+  ["\u0633\u064A\u0627\u0631\u0627\u062A", "\u062E\u062F\u0645\u0627\u062A \u0633\u064A\u0627\u0631\u0627\u062A"],
+  ["\u062A\u0643\u0646\u0648\u0644\u0648\u062C\u064A\u0627", "\u062E\u062F\u0645\u0627\u062A \u0631\u0642\u0645\u064A\u0629"],
+  ["\u0623\u0647\u0644 \u0648\u0628\u064A\u062A", "\u0633\u0643\u0646"],
+  ["\u0647\u062F\u0627\u064A\u0627", "\u0647\u062F\u0627\u064A\u0627 \u0648\u0635\u062F\u0642\u0627\u062A"],
+  ["\u0645\u062C\u0627\u0645\u0644\u0627\u062A", "\u0647\u062F\u0627\u064A\u0627 \u0648\u0635\u062F\u0642\u0627\u062A"],
+  ["\u0635\u064A\u0627\u0646\u0629", "\u0633\u0643\u0646"],
+  ["\u0623\u062F\u0648\u0627\u062A \u0634\u063A\u0644", "\u0639\u0645\u0644"],
+  ["\u0623\u0642\u0633\u0627\u0637", "\u0641\u0648\u0627\u062A\u064A\u0631"],
+  ["\u062A\u062D\u0648\u064A\u0644\u0627\u062A", "\u062A\u062D\u0648\u064A\u0644"],
+  ["Bills", "\u0641\u0648\u0627\u062A\u064A\u0631"],
+  ["Home & Bills", "\u0641\u0648\u0627\u062A\u064A\u0631"],
+  ["Daily Commitments", "\u0641\u0648\u0627\u062A\u064A\u0631"],
+  ["Income", "\u0645\u0631\u062A\u0628"],
+  ["Salary", "\u0645\u0631\u062A\u0628"],
+  ["Freelance", "\u0639\u0645\u0644 \u062D\u0631"],
+  ["Transfer", "\u062A\u062D\u0648\u064A\u0644"],
+  ["Shopping", "\u062A\u0633\u0648\u0642"],
+  ["Transport", "\u0645\u0648\u0627\u0635\u0644\u0627\u062A"],
+  ["Car Services", "\u062E\u062F\u0645\u0627\u062A \u0633\u064A\u0627\u0631\u0627\u062A"],
+  ["Digital Services", "\u062E\u062F\u0645\u0627\u062A \u0631\u0642\u0645\u064A\u0629"],
+  ["Miscellaneous", "\u0645\u062A\u0646\u0648\u0639\u0627\u062A"]
+];
+var DEFAULT_SUBCATEGORY_BY_CATEGORY = new Map(
+  CATEGORIES.map((category) => [
+    category.name_ar,
+    category.subcategories.find((sub) => sub.name_ar === "\u0639\u0627\u0645")?.name_ar || category.subcategories[0]?.name_ar || "\u0639\u0627\u0645"
+  ])
+);
+function comparableArabic(value) {
+  return String(value || "").trim().replace(/\s+/g, " ").replace(/[إأآٱ]/g, "\u0627").replace(/ى/g, "\u064A").replace(/ة/g, "\u0647").replace(/ؤ/g, "\u0648").replace(/ئ/g, "\u064A").toLowerCase();
+}
+function hasAny(text2, terms) {
+  const normalized = comparableArabic(text2);
+  return terms.some((term) => normalized.includes(comparableArabic(term)));
+}
+function findCategoryByAnyName(value) {
+  const normalized = comparableArabic(value);
+  return CATEGORIES.find(
+    (category) => comparableArabic(category.name_ar) === normalized || comparableArabic(category.name) === normalized || comparableArabic(category.id) === normalized
+  );
+}
+function findSubCategoryByAnyName(category, value) {
+  const normalized = comparableArabic(value);
+  return category.subcategories.find(
+    (subCategory) => comparableArabic(subCategory.name_ar) === normalized || comparableArabic(subCategory.name) === normalized || comparableArabic(subCategory.id) === normalized
+  );
+}
+function inferCategoryFromEvidence(rawCategory, evidence) {
+  const categoryText = `${rawCategory} ${evidence}`;
+  if (hasAny(rawCategory, ["\u0627\u0644\u062A\u0632\u0627\u0645\u0627\u062A \u064A\u0648\u0645\u064A\u0629", "Daily Commitments"])) {
+    return "\u0641\u0648\u0627\u062A\u064A\u0631";
+  }
+  if (hasAny(rawCategory, ["\u062E\u062F\u0645\u0627\u062A \u0631\u0642\u0645\u064A\u0629", "Digital Services"]) && hasAny(categoryText, ["\u0646\u062A", "\u0627\u0646\u062A\u0631\u0646\u062A", "\u0625\u0646\u062A\u0631\u0646\u062A", "\u0631\u0627\u0648\u062A\u0631", "\u0628\u0627\u0642\u0629", "\u0634\u062D\u0646", "\u0631\u0635\u064A\u062F", "\u0641\u0648\u062F\u0627\u0641\u0648\u0646", "\u0627\u062A\u0635\u0627\u0644\u0627\u062A", "\u0627\u0648\u0631\u0646\u062C", "\u0623\u0648\u0631\u0646\u062C", "\u0648\u064A"])) {
+    return "\u0641\u0648\u0627\u062A\u064A\u0631";
+  }
+  if (hasAny(categoryText, ["\u0645\u0631\u062A\u0628", "\u0631\u0627\u062A\u0628", "\u0642\u0628\u0636\u062A", "\u0627\u0633\u062A\u0644\u0645\u062A", "\u062C\u0627\u0644\u064A \u0645\u0631\u062A\u0628", "\u0627\u0644\u0645\u0639\u0627\u0634", "\u0628\u0648\u0646\u0635", "\u0645\u0643\u0627\u0641\u0623\u0629"]) && !hasAny(categoryText, ["\u062F\u0641\u0639\u062A", "\u0635\u0631\u0641\u062A", "\u0627\u0634\u062A\u0631\u064A\u062A", "\u0642\u0633\u0637"])) {
+    return "\u0645\u0631\u062A\u0628";
+  }
+  if (hasAny(categoryText, ["\u0641\u0631\u064A\u0644\u0627\u0646\u0633", "\u0639\u0645\u0644 \u062D\u0631", "\u0633\u0628\u0648\u0628\u0629", "\u0639\u0645\u0648\u0644\u0629", "\u0645\u0634\u0631\u0648\u0639", "\u0643\u0644\u0627\u064A\u0646\u062A"])) {
+    return "\u0639\u0645\u0644 \u062D\u0631";
+  }
+  if (hasAny(categoryText, ["\u0623\u0631\u0628\u0627\u062D", "\u0641\u0648\u0627\u0626\u062F", "\u0643\u0627\u0634 \u0628\u0627\u0643", "\u0627\u0633\u062A\u0631\u062C\u0627\u0639", "\u0639\u0627\u0626\u062F"])) {
+    return "\u0639\u0648\u0627\u0626\u062F \u0627\u0633\u062A\u062B\u0645\u0627\u0631";
+  }
+  return void 0;
+}
+function inferSubCategory(category, evidence) {
+  switch (category) {
+    case "\u0641\u0648\u0627\u062A\u064A\u0631":
+      if (hasAny(evidence, ["\u0643\u0647\u0631\u0628", "\u0646\u0648\u0631"])) return "\u0643\u0647\u0631\u0628\u0627\u0621";
+      if (hasAny(evidence, ["\u0645\u064A\u0629", "\u0645\u064A\u0627\u0647", "\u0645\u0627\u064A\u0647"])) return "\u0645\u064A\u0627\u0647";
+      if (hasAny(evidence, ["\u063A\u0627\u0632"])) return "\u063A\u0627\u0632";
+      if (hasAny(evidence, ["\u0646\u062A", "\u0627\u0646\u062A\u0631\u0646\u062A", "\u0625\u0646\u062A\u0631\u0646\u062A", "\u0631\u0627\u0648\u062A\u0631", "\u0648\u0627\u064A \u0641\u0627\u064A", "wifi", "\u0628\u0627\u0642\u0629"])) return "\u0625\u0646\u062A\u0631\u0646\u062A";
+      if (hasAny(evidence, ["\u0634\u062D\u0646", "\u0631\u0635\u064A\u062F", "\u0643\u0627\u0631\u062A \u0641\u0643\u0629", "\u0643\u0627\u0631\u062A \u0634\u062D\u0646"])) return "\u0634\u062D\u0646 \u0631\u0635\u064A\u062F";
+      if (hasAny(evidence, ["\u062A\u0644\u064A\u0641\u0648\u0646", "\u0647\u0627\u062A\u0641", "\u0627\u0631\u0636\u064A", "\u0623\u0631\u0636\u064A"])) return "\u062A\u0644\u064A\u0641\u0648\u0646";
+      if (hasAny(evidence, ["\u0642\u0633\u0637", "\u0623\u0642\u0633\u0627\u0637", "\u0627\u0642\u0633\u0627\u0637", "\u0641\u0627\u0644\u064A\u0648", "\u0633\u0647\u0648\u0644\u0629", "\u062F\u064A\u0646", "\u0633\u0644\u0641\u0629", "\u0642\u0631\u0636", "\u062A\u0645\u0648\u064A\u0644"])) return "\u0623\u0642\u0633\u0627\u0637";
+      if (hasAny(evidence, ["\u062A\u0623\u0645\u064A\u0646", "\u062A\u0627\u0645\u064A\u0646"])) return "\u062A\u0623\u0645\u064A\u0646";
+      if (hasAny(evidence, ["\u0636\u0631\u064A\u0628\u0629", "\u0636\u0631\u0627\u0626\u0628", "\u0636\u0631\u0627\u064A\u0628"])) return "\u0636\u0631\u0627\u0626\u0628";
+      return void 0;
+    case "\u062A\u0633\u0648\u0642":
+      if (hasAny(evidence, ["\u0647\u062F\u0648\u0645", "\u0644\u0628\u0633", "\u0645\u0644\u0627\u0628\u0633", "\u062A\u064A\u0634\u064A\u0631\u062A", "\u0628\u0646\u0637\u0644\u0648\u0646", "\u062C\u0627\u0643\u064A\u062A"])) return "\u0645\u0644\u0627\u0628\u0633";
+      if (hasAny(evidence, ["\u062C\u0632\u0645\u0629", "\u0643\u0648\u062A\u0634\u064A", "\u0634\u0648\u0632", "\u062D\u0630\u0627\u0621"])) return "\u0623\u062D\u0630\u064A\u0629";
+      if (hasAny(evidence, ["\u0645\u0648\u0628\u0627\u064A\u0644", "\u0644\u0627\u0628", "\u0644\u0627\u0628\u062A\u0648\u0628", "\u0643\u0645\u0628\u064A\u0648\u062A\u0631", "\u0633\u0645\u0627\u0639\u0629", "\u0634\u0627\u062D\u0646", "\u0627\u064A\u0641\u0648\u0646", "\u062A\u0644\u064A\u0641\u0648\u0646"])) return "\u0623\u062C\u0647\u0632\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629";
+      if (hasAny(evidence, ["\u062D\u0644\u0627\u0642", "\u0639\u0646\u0627\u064A\u0629", "\u0645\u064A\u0643\u0627\u0628", "\u0628\u0631\u0641\u0627\u0646", "\u0639\u0637\u0631", "\u0634\u0627\u0645\u0628\u0648"])) return "\u0639\u0646\u0627\u064A\u0629 \u0634\u062E\u0635\u064A\u0629";
+      return void 0;
+    case "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628":
+      if (hasAny(evidence, ["\u0642\u0647\u0648\u0629", "\u0646\u0633\u0643\u0627\u0641\u064A\u0647", "\u0643\u0627\u0641\u064A\u0647", "\u0644\u0627\u062A\u064A\u0647", "\u0633\u062A\u0627\u0631\u0628\u0643\u0633", "\u0634\u0627\u064A"])) return "\u0642\u0647\u0648\u0629 \u0648\u0643\u0627\u0641\u064A\u0647";
+      if (hasAny(evidence, ["\u062F\u0644\u064A\u0641\u0631\u064A", "\u062A\u064A\u0643 \u0627\u0648\u0627\u064A", "\u0637\u0644\u0628\u0627\u062A"])) return "\u062F\u0644\u064A\u0641\u0631\u064A";
+      if (hasAny(evidence, ["\u0633\u0648\u0628\u0631", "\u0628\u0642\u0627\u0644", "\u062E\u0636\u0627\u0631", "\u0641\u0627\u0643\u0647\u0629", "\u0628\u064A\u0636", "\u0644\u0628\u0646"])) return "\u0628\u0642\u0627\u0644\u0629";
+      if (hasAny(evidence, ["\u0644\u062D\u0645\u0629", "\u0641\u0631\u0627\u062E", "\u0633\u0645\u0643", "\u062C\u0645\u0628\u0631\u064A"])) return "\u0644\u062D\u0648\u0645 \u0648\u062F\u0648\u0627\u062C\u0646";
+      if (hasAny(evidence, ["\u0639\u064A\u0634", "\u0645\u062E\u0628\u0632", "\u0641\u0631\u0646"])) return "\u0645\u062E\u0628\u0648\u0632\u0627\u062A";
+      if (hasAny(evidence, ["\u0634\u064A\u0628\u0633\u064A", "\u0634\u0648\u0643\u0648\u0644\u0627\u062A\u0629", "\u062D\u0644\u0648\u064A\u0627\u062A", "\u0627\u064A\u0633 \u0643\u0631\u064A\u0645"])) return "\u0633\u0646\u0627\u0643\u0633";
+      return void 0;
+    case "\u0645\u0648\u0627\u0635\u0644\u0627\u062A":
+      if (hasAny(evidence, ["\u0627\u0648\u0628\u0631", "\u0623\u0648\u0628\u0631", "\u0643\u0631\u064A\u0645"])) return "\u0623\u0648\u0628\u0631/\u0643\u0631\u064A\u0645";
+      if (hasAny(evidence, ["\u0645\u062A\u0631\u0648"])) return "\u0645\u062A\u0631\u0648";
+      if (hasAny(evidence, ["\u0627\u062A\u0648\u0628\u064A\u0633", "\u0628\u0627\u0635", "\u0645\u064A\u0643\u0631\u0648\u0628\u0627\u0635"])) return "\u0623\u062A\u0648\u0628\u064A\u0633";
+      if (hasAny(evidence, ["\u062A\u0627\u0643\u0633\u064A", "\u062A\u0643\u0633\u064A"])) return "\u062A\u0627\u0643\u0633\u064A";
+      if (hasAny(evidence, ["\u0628\u0646\u0632\u064A\u0646", "\u062A\u0641\u0648\u064A\u0644\u0629"])) return "\u0628\u0646\u0632\u064A\u0646";
+      if (hasAny(evidence, ["\u0631\u0643\u0646\u0629", "\u062C\u0631\u0627\u062C"])) return "\u0631\u0643\u0646\u0629";
+      return void 0;
+    case "\u062E\u062F\u0645\u0627\u062A \u0633\u064A\u0627\u0631\u0627\u062A":
+      if (hasAny(evidence, ["\u0643\u0627\u0631\u062A\u0629"])) return "\u0643\u0627\u0631\u062A\u0629";
+      if (hasAny(evidence, ["\u0631\u0643\u0646\u0629", "\u0633\u0627\u064A\u0633", "\u062C\u0631\u0627\u062C"])) return "\u0631\u0643\u0646\u0629";
+      if (hasAny(evidence, ["\u0632\u064A\u062A", "\u062A\u063A\u064A\u064A\u0631 \u0632\u064A\u062A"])) return "\u062A\u063A\u064A\u064A\u0631 \u0632\u064A\u062A";
+      if (hasAny(evidence, ["\u0645\u062E\u0627\u0644\u0641\u0629"])) return "\u0645\u062E\u0627\u0644\u0641\u0629";
+      if (hasAny(evidence, ["\u0628\u0637\u0627\u0631\u064A\u0629"])) return "\u0628\u0637\u0627\u0631\u064A\u0629";
+      if (hasAny(evidence, ["\u0643\u0627\u0648\u062A\u0634", "\u0625\u0637\u0627\u0631\u0627\u062A", "\u0627\u0637\u0627\u0631\u0627\u062A"])) return "\u0625\u0637\u0627\u0631\u0627\u062A";
+      return void 0;
+    case "\u0633\u0643\u0646":
+      if (hasAny(evidence, ["\u0627\u064A\u062C\u0627\u0631", "\u0625\u064A\u062C\u0627\u0631", "\u0627\u062C\u0627\u0631"])) return "\u0625\u064A\u062C\u0627\u0631";
+      if (hasAny(evidence, ["\u0639\u0641\u0634", "\u0623\u062B\u0627\u062B", "\u0627\u062B\u0627\u062B"])) return "\u0623\u062B\u0627\u062B";
+      if (hasAny(evidence, ["\u0633\u0628\u0627\u0643", "\u0643\u0647\u0631\u0628\u0627\u0626\u064A", "\u0646\u0642\u0627\u0634", "\u0646\u062C\u0627\u0631", "\u0635\u064A\u0627\u0646\u0629"])) return "\u0635\u064A\u0627\u0646\u0629";
+      if (hasAny(evidence, ["\u0645\u0646\u0638\u0641\u0627\u062A", "\u0645\u0633\u062D\u0648\u0642", "\u0635\u0627\u0628\u0648\u0646"])) return "\u0645\u0646\u0638\u0641\u0627\u062A";
+      if (hasAny(evidence, ["\u062A\u0644\u0627\u062C\u0629", "\u063A\u0633\u0627\u0644\u0629", "\u0628\u0648\u062A\u0627\u062C\u0627\u0632"])) return "\u0623\u062C\u0647\u0632\u0629 \u0645\u0646\u0632\u0644\u064A\u0629";
+      return void 0;
+    case "\u0635\u062D\u0629":
+      if (hasAny(evidence, ["\u062F\u0643\u062A\u0648\u0631", "\u0643\u0634\u0641", "\u0639\u064A\u0627\u062F\u0629", "\u0637\u0628\u064A\u0628"])) return "\u062F\u0643\u062A\u0648\u0631";
+      if (hasAny(evidence, ["\u0635\u064A\u062F\u0644\u064A\u0629", "\u062F\u0648\u0627", "\u0639\u0644\u0627\u062C", "\u0631\u0648\u0634\u062A\u0629"])) return "\u0635\u064A\u062F\u0644\u064A\u0629";
+      if (hasAny(evidence, ["\u062A\u062D\u0627\u0644\u064A\u0644", "\u0627\u0634\u0639\u0629", "\u0633\u0648\u0646\u0627\u0631"])) return "\u062A\u062D\u0627\u0644\u064A\u0644";
+      if (hasAny(evidence, ["\u0623\u0633\u0646\u0627\u0646", "\u0627\u0633\u0646\u0627\u0646", "\u0636\u0631\u0633"])) return "\u0623\u0633\u0646\u0627\u0646";
+      if (hasAny(evidence, ["\u0645\u0633\u062A\u0634\u0641\u0649"])) return "\u0645\u0633\u062A\u0634\u0641\u0649";
+      return void 0;
+    case "\u062A\u0639\u0644\u064A\u0645":
+      if (hasAny(evidence, ["\u0645\u062F\u0631\u0633\u0629", "\u0645\u062F\u0631\u0633\u0647", "\u064A\u0648\u0646\u064A\u0641\u0648\u0631\u0645"])) return "\u0645\u062F\u0631\u0633\u0629";
+      if (hasAny(evidence, ["\u062C\u0627\u0645\u0639\u0629", "\u062C\u0627\u0645\u0639\u0647", "\u0643\u0644\u064A\u0629"])) return "\u062C\u0627\u0645\u0639\u0629";
+      if (hasAny(evidence, ["\u0643\u0648\u0631\u0633", "\u062F\u0648\u0631\u0629", "\u0643\u0648\u0631\u0633\u064A\u0631\u0627", "\u064A\u0648\u062F\u064A\u0645\u064A"])) return "\u0643\u0648\u0631\u0633";
+      if (hasAny(evidence, ["\u062F\u0631\u0633", "\u062F\u0631\u0648\u0633", "\u0633\u0646\u062A\u0631"])) return "\u062F\u0631\u0648\u0633 \u062E\u0635\u0648\u0635\u064A\u0629";
+      if (hasAny(evidence, ["\u0643\u062A\u0627\u0628", "\u0643\u062A\u0628", "\u0645\u0630\u0643\u0631\u0629", "\u0623\u062F\u0648\u0627\u062A"])) return "\u0643\u062A\u0628";
+      return void 0;
+    case "\u062A\u0631\u0641\u064A\u0647":
+      if (hasAny(evidence, ["\u0633\u064A\u0646\u0645\u0627", "\u0641\u064A\u0644\u0645"])) return "\u0633\u064A\u0646\u0645\u0627";
+      if (hasAny(evidence, ["\u0643\u0627\u0641\u064A\u0647", "\u0642\u0647\u0648\u0629"])) return "\u0643\u0627\u0641\u064A\u0647";
+      if (hasAny(evidence, ["\u0633\u0641\u0631", "\u0645\u0635\u064A\u0641", "\u0631\u062D\u0644\u0629"])) return "\u0633\u0641\u0631";
+      if (hasAny(evidence, ["\u062C\u064A\u0645", "\u0631\u064A\u0627\u0636\u0629", "\u0628\u0631\u0648\u062A\u064A\u0646"])) return "\u0631\u064A\u0627\u0636\u0629 \u0648\u062C\u064A\u0645";
+      if (hasAny(evidence, ["\u0628\u0644\u0627\u064A\u0633\u062A\u064A\u0634\u0646", "\u0627\u0644\u0639\u0627\u0628", "\u0623\u0644\u0639\u0627\u0628", "gaming"])) return "\u0623\u0644\u0639\u0627\u0628";
+      if (hasAny(evidence, ["\u062E\u0631\u0648\u062C\u0629", "\u0641\u0633\u062D\u0629", "\u062A\u0645\u0634\u064A\u0629"])) return "\u062E\u0631\u0648\u062C\u0629";
+      return void 0;
+    case "\u0647\u062F\u0627\u064A\u0627 \u0648\u0635\u062F\u0642\u0627\u062A":
+      if (hasAny(evidence, ["\u0635\u062F\u0642\u0629", "\u062A\u0628\u0631\u0639", "\u0632\u0643\u0627\u0629", "\u0631\u0633\u0627\u0644\u0629", "\u062C\u0627\u0645\u0639"])) return "\u0635\u062F\u0642\u0629/\u062A\u0628\u0631\u0639";
+      if (hasAny(evidence, ["\u0639\u064A\u062F\u064A\u0629"])) return "\u0639\u064A\u062F\u064A\u0629";
+      if (hasAny(evidence, ["\u0641\u0631\u062D", "\u062E\u0637\u0648\u0628\u0629"])) return "\u0641\u0631\u062D/\u062E\u0637\u0648\u0628\u0629";
+      if (hasAny(evidence, ["\u0639\u064A\u062F \u0645\u064A\u0644\u0627\u062F"])) return "\u0639\u064A\u062F \u0645\u064A\u0644\u0627\u062F";
+      return void 0;
+    case "\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A":
+      if (hasAny(evidence, ["\u0646\u062A\u0641\u0644\u0643\u0633", "netflix"])) return "\u0646\u062A\u0641\u0644\u0643\u0633";
+      if (hasAny(evidence, ["\u0633\u0628\u0648\u062A\u064A\u0641\u0627\u064A", "spotify"])) return "\u0633\u0628\u0648\u062A\u064A\u0641\u0627\u064A";
+      if (hasAny(evidence, ["\u0634\u0627\u062A \u062C\u064A \u0628\u064A \u062A\u064A", "chatgpt", "gpt"])) return "\u0634\u0627\u062A \u062C\u064A \u0628\u064A \u062A\u064A";
+      if (hasAny(evidence, ["\u062C\u0648\u062C\u0644 ai", "google ai", "gemini"])) return "\u062C\u0648\u062C\u0644 AI";
+      if (hasAny(evidence, ["saas", "\u0628\u0631\u0646\u0627\u0645\u062C", "\u0628\u0631\u0645\u062C\u064A\u0627\u062A"])) return "\u0628\u0631\u0645\u062C\u064A\u0627\u062A";
+      return void 0;
+    case "\u062A\u062F\u062E\u064A\u0646":
+      if (hasAny(evidence, ["\u0633\u062C\u0627\u064A\u0631", "\u0633\u062C\u0627\u0626\u0631", "\u0639\u0644\u0628\u0629"])) return "\u0633\u062C\u0627\u0626\u0631";
+      if (hasAny(evidence, ["\u0641\u064A\u0628", "\u0628\u0648\u062F", "\u0644\u064A\u0643\u0648\u062F"])) return "\u0641\u064A\u0628/\u0644\u064A\u0643\u0648\u062F";
+      if (hasAny(evidence, ["\u0634\u064A\u0634\u0629", "\u0645\u0639\u0633\u0644"])) return "\u0634\u064A\u0634\u0629/\u0645\u0639\u0633\u0644";
+      return void 0;
+    case "\u0639\u0645\u0644":
+      if (hasAny(evidence, ["\u0627\u0633\u062A\u0636\u0627\u0641\u0629", "hosting"])) return "\u0627\u0633\u062A\u0636\u0627\u0641\u0629";
+      if (hasAny(evidence, ["api", "\u0648\u0627\u062C\u0647\u0629", "\u0648\u0627\u062C\u0647\u0627\u062A"])) return "\u0648\u0627\u062C\u0647\u0627\u062A \u0628\u0631\u0645\u062C\u064A\u0629";
+      if (hasAny(evidence, ["\u0645\u0643\u062A\u0628", "\u0623\u062F\u0648\u0627\u062A", "\u0627\u062F\u0648\u0627\u062A"])) return "\u0645\u0633\u062A\u0644\u0632\u0645\u0627\u062A \u0645\u0643\u062A\u0628";
+      if (hasAny(evidence, ["\u0645\u0633\u0627\u062D\u0629 \u0639\u0645\u0644", "coworking"])) return "\u0645\u0633\u0627\u062D\u0629 \u0639\u0645\u0644";
+      return void 0;
+    case "\u062E\u062F\u0645\u0627\u062A \u0631\u0642\u0645\u064A\u0629":
+      if (hasAny(evidence, ["vpn"])) return "\u0627\u0634\u062A\u0631\u0627\u0643 VPN";
+      if (hasAny(evidence, ["cloud", "\u0643\u0644\u0627\u0648\u062F"])) return "\u0627\u0634\u062A\u0631\u0627\u0643 Cloud";
+      if (hasAny(evidence, ["ai", "\u0630\u0643\u0627\u0621", "chatgpt", "\u062C\u064A\u0645\u064A\u0646\u0627\u064A"])) return "\u0623\u062F\u0648\u0627\u062A AI";
+      if (hasAny(evidence, ["\u062F\u0648\u0645\u064A\u0646", "domain"])) return "\u062F\u0648\u0645\u064A\u0646\u0627\u062A";
+      if (hasAny(evidence, ["\u0627\u0633\u062A\u0636\u0627\u0641\u0629", "hosting"])) return "\u0627\u0633\u062A\u0636\u0627\u0641\u0629";
+      return void 0;
+    case "\u0645\u0631\u062A\u0628":
+      if (hasAny(evidence, ["\u0628\u0648\u0646\u0635", "\u0645\u0643\u0627\u0641\u0623\u0629", "\u0645\u0643\u0627\u0641\u0627\u0647"])) return "\u0645\u0643\u0627\u0641\u0623\u0629/\u0628\u0648\u0646\u0635";
+      if (hasAny(evidence, ["\u0627\u0648\u0641\u0631", "\u0623\u0648\u0641\u0631", "\u0627\u0636\u0627\u0641\u064A", "\u0625\u0636\u0627\u0641\u064A"])) return "\u0623\u0648\u0641\u0631 \u062A\u0627\u064A\u0645";
+      if (hasAny(evidence, ["\u0628\u062F\u0644"])) return "\u0628\u062F\u0644\u0627\u062A";
+      return "\u0645\u0631\u062A\u0628 \u0623\u0633\u0627\u0633\u064A";
+    case "\u0639\u0645\u0644 \u062D\u0631":
+      if (hasAny(evidence, ["\u0639\u0645\u0648\u0644\u0629"])) return "\u0639\u0645\u0648\u0644\u0629";
+      if (hasAny(evidence, ["\u0633\u0628\u0648\u0628\u0629"])) return "\u0633\u0628\u0648\u0628\u0629";
+      return "\u0645\u0634\u0631\u0648\u0639";
+    case "\u0639\u0648\u0627\u0626\u062F \u0627\u0633\u062A\u062B\u0645\u0627\u0631":
+      if (hasAny(evidence, ["\u0641\u0648\u0627\u0626\u062F", "\u0641\u0627\u064A\u062F\u0629"])) return "\u0641\u0648\u0627\u0626\u062F";
+      if (hasAny(evidence, ["\u0643\u0627\u0634 \u0628\u0627\u0643", "cashback"])) return "\u0643\u0627\u0634 \u0628\u0627\u0643";
+      if (hasAny(evidence, ["\u0627\u0633\u062A\u0631\u062C\u0627\u0639", "refund"])) return "\u0627\u0633\u062A\u0631\u062C\u0627\u0639";
+      return "\u0623\u0631\u0628\u0627\u062D";
+    case "\u062A\u062D\u0648\u064A\u0644":
+      if (hasAny(evidence, ["atm", "\u0633\u062D\u0628"])) return "\u0633\u062D\u0628 ATM";
+      if (hasAny(evidence, ["\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A", "instapay"])) return "\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A";
+      if (hasAny(evidence, ["\u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0643\u0627\u0634"])) return "\u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0643\u0627\u0634";
+      if (hasAny(evidence, ["\u0627\u062F\u062E\u0627\u0631", "\u062A\u062D\u0648\u064A\u0634"])) return "\u0627\u062F\u062E\u0627\u0631";
+      if (hasAny(evidence, ["\u062F\u064A\u0646", "\u0633\u0644\u0641", "\u0633\u0644\u0641\u0629", "\u0642\u0631\u0636", "loan"])) return "\u062F\u064A\u0646/\u0633\u0644\u0641\u0629";
+      return "\u062A\u062D\u0648\u064A\u0644 \u0628\u0646\u0643\u064A";
+    case "\u0627\u0633\u062A\u062B\u0645\u0627\u0631":
+      if (hasAny(evidence, ["\u062F\u0647\u0628", "\u0630\u0647\u0628", "\u0633\u0628\u064A\u0643\u0629"])) return "\u0630\u0647\u0628";
+      if (hasAny(evidence, ["\u0633\u0647\u0645", "\u0623\u0633\u0647\u0645", "\u0627\u0633\u0647\u0645", "\u0628\u0648\u0631\u0635\u0629"])) return "\u0623\u0633\u0647\u0645";
+      if (hasAny(evidence, ["\u0634\u0647\u0627\u062F\u0629", "\u0634\u0647\u0627\u062F\u0627\u062A"])) return "\u0634\u0647\u0627\u062F\u0627\u062A";
+      if (hasAny(evidence, ["\u0639\u0642\u0627\u0631", "\u0634\u0642\u0629", "\u0627\u0631\u0636", "\u0623\u0631\u0636"])) return "\u0639\u0642\u0627\u0631\u0627\u062A";
+      if (hasAny(evidence, ["\u0643\u0631\u064A\u0628\u062A\u0648", "\u0628\u064A\u062A\u0643\u0648\u064A\u0646", "crypto"])) return "\u0639\u0645\u0644\u0627\u062A \u0631\u0642\u0645\u064A\u0629";
+      return void 0;
+    default:
+      return void 0;
+  }
+}
+function normalizeCategoryName(rawCategory, evidence = "", fallback = "\u0645\u062A\u0646\u0648\u0639\u0627\u062A") {
+  const raw2 = String(rawCategory || "").trim();
+  const inferred = inferCategoryFromEvidence(raw2, evidence);
+  if (inferred && findCategoryByAnyName(inferred)) return inferred;
+  const direct = findCategoryByAnyName(raw2);
+  if (direct) return direct.name_ar;
+  const normalized = comparableArabic(raw2);
+  const alias = CATEGORY_ALIASES.find(([from]) => comparableArabic(from) === normalized);
+  if (alias && findCategoryByAnyName(alias[1])) return alias[1];
+  return fallback;
+}
+function normalizeSubCategoryName(categoryName, rawSubCategory, evidence = "") {
+  const category = getCategoryByArabicName(categoryName);
+  if (!category) return "\u0639\u0627\u0645";
+  const raw2 = String(rawSubCategory || "").trim();
+  const exact = raw2 ? findSubCategoryByAnyName(category, raw2) : void 0;
+  if (exact) return exact.name_ar;
+  const inferred = inferSubCategory(category.name_ar, `${raw2} ${evidence}`);
+  if (inferred) {
+    const inferredMatch = findSubCategoryByAnyName(category, inferred);
+    if (inferredMatch) return inferredMatch.name_ar;
+  }
+  if (raw2 && comparableArabic(raw2) === comparableArabic("\u0623\u062E\u0631\u0649")) {
+    return DEFAULT_SUBCATEGORY_BY_CATEGORY.get(category.name_ar) || "\u0639\u0627\u0645";
+  }
+  return DEFAULT_SUBCATEGORY_BY_CATEGORY.get(category.name_ar) || "\u0639\u0627\u0645";
+}
+function normalizeTransactionTaxonomy(item, evidence = "") {
+  const combinedEvidence = `${item.description || ""} ${item.subCategory || ""} ${evidence}`;
+  const category = normalizeCategoryName(item.category, combinedEvidence);
+  const subCategory = normalizeSubCategoryName(category, item.subCategory, combinedEvidence);
+  const categoryType = getCategoryType(category);
+  return {
+    ...item,
+    category,
+    subCategory,
+    type: categoryType
+  };
+}
+function normalizeTransactionTaxonomyList(items, evidence = "") {
+  return items.map((item) => normalizeTransactionTaxonomy(item, evidence));
+}
 
 // api/lib/taxonomy-adapter.ts
 var SYNONYM_GRAPH = {
@@ -90032,8 +90331,8 @@ function mapLegacyCategory(category) {
   return LEGACY_CATEGORY_ALIASES[category] || category;
 }
 function toBackwardCompatibleCategory(category) {
-  if (KNOWN_CATEGORIES.has(category)) return category;
-  return mapLegacyCategory(category);
+  if (KNOWN_CATEGORIES.has(category)) return normalizeCategoryName(category);
+  return normalizeCategoryName(mapLegacyCategory(category));
 }
 function findTaxonomyMatch(text2) {
   const normalized = text2.trim().toLowerCase();
@@ -90043,11 +90342,12 @@ function findTaxonomyMatch(text2) {
     if (!normalized.includes(phrase.toLowerCase())) continue;
     const candidate = {
       category: toBackwardCompatibleCategory(entry.category),
-      subCategory: entry.subCategory,
+      subCategory: "",
       confidence: entry.confidence ?? 80,
       inferenceSource: "synonym",
       ambiguityFlags: entry.ambiguityFlags
     };
+    candidate.subCategory = normalizeSubCategoryName(candidate.category, entry.subCategory, normalized);
     if (!best || candidate.confidence > best.confidence) best = candidate;
   }
   return best;
@@ -90595,14 +90895,12 @@ init_dist2();
 // api/lib/model-mapper.ts
 function mapModelName(modelName) {
   const normalized = String(modelName || "").trim().toLowerCase();
+  if (!normalized) return "gemini-2.5-flash";
   if (normalized.includes("3.1-flash-lite") || normalized === "flash-lite") {
     return "gemini-2.5-flash";
   }
   if (normalized.includes("3.1-flash-tts")) {
     return "gemini-2.5-flash";
-  }
-  if (normalized.includes("gemma-4-26b-a4b-it") || normalized.includes("gemma-4-31b-it") || normalized.includes("gemma")) {
-    return "gemini-2.5-pro";
   }
   if (normalized.includes("3.0-flash-live") || normalized.includes("3.1-flash")) {
     return "gemini-2.0-flash";
@@ -90613,23 +90911,39 @@ function mapModelName(modelName) {
   if (normalized === "flash") {
     return "gemini-2.5-flash";
   }
-  if (normalized === "pro") {
+  if (normalized === "pro" || normalized === "ultra") {
     return "gemini-2.5-pro";
   }
-  if (normalized === "ultra") {
-    return "gemini-2.5-pro";
+  return normalized;
+}
+function isGroqModel(modelName) {
+  const normalized = mapModelName(modelName);
+  return normalized.startsWith("llama-") || normalized.startsWith("llama3-") || normalized.startsWith("qwen/") || normalized.startsWith("openai/") || normalized.includes("mixtral") || normalized.includes("gemma");
+}
+function isGeminiModel(modelName) {
+  return mapModelName(modelName).startsWith("gemini-");
+}
+function defaultGeminiModelForPlan(plan) {
+  if (plan === "ultra") return "gemini-2.5-pro";
+  if (plan === "pro") return "gemini-2.5-flash";
+  return "gemini-2.0-flash";
+}
+function defaultGroqModelForPlan(plan) {
+  if (plan === "free") return "llama-3.1-8b-instant";
+  return "llama-3.3-70b-versatile";
+}
+function defaultModelForProvider(provider, plan) {
+  return provider === "groq" ? defaultGroqModelForPlan(plan) : defaultGeminiModelForPlan(plan);
+}
+function coerceModelForProvider(modelName, provider, plan) {
+  const mapped = mapModelName(modelName || defaultModelForProvider(provider, plan));
+  if (provider === "groq" && isGeminiModel(mapped)) {
+    return defaultGroqModelForPlan(plan);
   }
-  const validModels = [
-    "gemini-2.5-flash",
-    "gemini-2.5-pro",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro"
-  ];
-  if (validModels.includes(normalized)) {
-    return normalized;
+  if (provider === "gemini" && isGroqModel(mapped)) {
+    return defaultGeminiModelForPlan(plan);
   }
-  return "gemini-2.5-flash";
+  return mapped;
 }
 
 // api/lib/ai-routing.ts
@@ -90661,7 +90975,12 @@ function ruleEngineIsStrongEnough(items, floor) {
   );
 }
 function isProTrivialRuleResult(items) {
-  return ruleEngineIsStrongEnough(items, PRO_RULE_TRIVIAL_THRESHOLD);
+  return ruleEngineIsStrongEnough(items, PRO_RULE_TRIVIAL_THRESHOLD) && items.every((item) => {
+    const flags = item.ambiguityFlags || [];
+    const trustedUserOrMerchant = item.inferenceSource === "dictionary" && (item.confidence >= 100 || flags.includes("merchant_registry_hit"));
+    const deterministicRule = item.inferenceSource === "rule" && item.confidence >= 98 && flags.length === 0;
+    return trustedUserOrMerchant || deterministicRule;
+  });
 }
 function shouldForceAi(ruleResult, ctx, floor) {
   if (ctx.knownNameMentioned) return true;
@@ -90676,7 +90995,7 @@ function decideClassificationRoute(ruleResult, embeddingResult, ctx) {
   const defaults = PLAN_DEFAULTS[ctx.plan];
   const floor = defaults.ruleConfidenceFloor;
   const isPaid = ctx.plan === "pro" || ctx.plan === "ultra";
-  const acceptRule = ruleResult.items.length > 0 && !ctx.knownNameMentioned && ruleEngineIsStrongEnough(ruleResult.items, floor);
+  const acceptRule = ruleResult.items.length > 0 && !ctx.knownNameMentioned && (isPaid ? isProTrivialRuleResult(ruleResult.items) : ruleEngineIsStrongEnough(ruleResult.items, floor));
   if (acceptRule) {
     return {
       route: "rule_engine",
@@ -90734,6 +91053,113 @@ function estimateClassificationPromptTokens(systemChars, userChars) {
   return Math.ceil((systemChars + userChars) / 3.2) + 48;
 }
 
+// api/lib/groq-client.ts
+async function callGroqAPI(apiKey, model, systemPrompt, userPrompt, maxTokens) {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      max_tokens: Math.min(maxTokens, 4096),
+      temperature: 0.2,
+      response_format: { type: "json_object" }
+    })
+  });
+  if (!response.ok) {
+    const errBody = await response.text().catch(() => "");
+    throw new Error(`Groq API error ${response.status}: ${errBody.slice(0, 300)}`);
+  }
+  const data = await response.json();
+  return {
+    text: data?.choices?.[0]?.message?.content ?? "",
+    tokensUsed: data?.usage?.total_tokens ?? 0
+  };
+}
+
+// api/lib/error-logger.ts
+init_connection();
+init_schema2();
+init_drizzle_orm();
+var API_ERROR_TYPES = {
+  INVALID_KEY: "invalid_key",
+  QUOTA_EXCEEDED: "quota_exceeded",
+  INSUFFICIENT_CREDIT: "insufficient_credit",
+  RATE_LIMITED: "rate_limited",
+  NETWORK_ERROR: "network_error",
+  MODEL_NOT_FOUND: "model_not_found",
+  PERMISSION_DENIED: "permission_denied",
+  TIMEOUT: "timeout",
+  UNKNOWN: "unknown"
+};
+function classifyApiError(statusCode, message) {
+  const msg = message.toLowerCase();
+  if (statusCode === 401 || msg.includes("invalid api key") || msg.includes("api key not valid") || msg.includes("unauthorized")) {
+    return API_ERROR_TYPES.INVALID_KEY;
+  }
+  if (statusCode === 429 || msg.includes("rate limit") || msg.includes("too many requests")) {
+    return API_ERROR_TYPES.RATE_LIMITED;
+  }
+  if (statusCode === 403 || msg.includes("permission denied") || msg.includes("forbidden")) {
+    return API_ERROR_TYPES.PERMISSION_DENIED;
+  }
+  if (msg.includes("quota") || msg.includes("exceeded") || msg.includes("billing")) {
+    return API_ERROR_TYPES.QUOTA_EXCEEDED;
+  }
+  if (msg.includes("insufficient") || msg.includes("no credit") || msg.includes("payment required") || statusCode === 402) {
+    return API_ERROR_TYPES.INSUFFICIENT_CREDIT;
+  }
+  if (msg.includes("model not found") || msg.includes("not_found") || statusCode === 404) {
+    return API_ERROR_TYPES.MODEL_NOT_FOUND;
+  }
+  if (msg.includes("timeout") || msg.includes("timed out") || msg.includes("econnaborted")) {
+    return API_ERROR_TYPES.TIMEOUT;
+  }
+  if (msg.includes("econnrefused") || msg.includes("network") || msg.includes("fetch failed") || msg.includes("enotfound")) {
+    return API_ERROR_TYPES.NETWORK_ERROR;
+  }
+  return API_ERROR_TYPES.UNKNOWN;
+}
+async function logApiKeyError(provider, keyLabel, error48, userId) {
+  try {
+    const err = error48;
+    const message = err?.message || err?.toString?.() || "Unknown error";
+    const httpStatus = err?.status || err?.statusCode || err?.response?.status || null;
+    const errorType = classifyApiError(httpStatus, message);
+    await db.insert(apiKeyErrors).values({
+      provider,
+      keyLabel,
+      errorType,
+      message: message.substring(0, 2e3),
+      // cap message length
+      httpStatus,
+      userId: userId ?? null,
+      resolved: false
+    });
+    console.warn(`[API Key Error Logged] provider=${provider}, key=${keyLabel}, type=${errorType}, msg=${message.substring(0, 200)}`);
+  } catch (logErr) {
+    console.error("[Error Logger] Failed to log API key error:", logErr);
+  }
+}
+async function getApiKeyErrors(opts) {
+  const limit = opts?.limit ?? 100;
+  const conditions = opts?.unresolvedOnly ? [eq(apiKeyErrors.resolved, false)] : [];
+  const rows = await db.select().from(apiKeyErrors).where(conditions.length > 0 ? and(...conditions) : void 0).orderBy(desc(apiKeyErrors.createdAt)).limit(limit);
+  return rows;
+}
+async function resolveApiKeyError(errorId) {
+  await db.update(apiKeyErrors).set({ resolved: true, resolvedAt: /* @__PURE__ */ new Date() }).where(eq(apiKeyErrors.id, errorId));
+}
+async function resolveAllApiKeyErrors() {
+  await db.update(apiKeyErrors).set({ resolved: true, resolvedAt: /* @__PURE__ */ new Date() }).where(eq(apiKeyErrors.resolved, false));
+}
+
 // api/lib/ai-classifier.ts
 var classificationResponseSchema = {
   type: SchemaType.OBJECT,
@@ -90785,6 +91211,7 @@ function buildMicroSystemPrompt(text2, options = {}) {
   const qualityLine = isPro ? "\u0623\u0648\u0644\u0648\u064A\u0629 \u0623\u0639\u0644\u0649 \u062F\u0642\u0629 \u0644\u0644\u0641\u0626\u0629 \u0627\u0644\u0641\u0631\u0639\u064A\u0629\u061B \u0644\u0627 \u062A\u0633\u062A\u062E\u062F\u0645 \u0645\u062A\u0646\u0648\u0639\u0627\u062A \u0625\u0644\u0627 \u0644\u0644\u063A\u0645\u0648\u0636 \u0627\u0644\u0634\u062F\u064A\u062F." : "\u0635\u0646\u0651\u0641 \u0628\u062F\u0642\u0629 \u0645\u0646 \u0627\u0644\u0642\u0627\u0626\u0645\u0629\u061B \u062A\u062C\u0646\u0628 \u0645\u062A\u0646\u0648\u0639\u0627\u062A/\u0639\u0627\u0645.";
   return `\u0645\u062D\u0644\u0644 \u0645\u0627\u0644\u064A \u0645\u0635\u0631\u064A.${qualityLine}
 \u0642\u0648\u0627\u0639\u062F:1)\u0641\u0626\u0627\u062A \u0627\u0644\u0642\u0627\u0626\u0645\u0629 \u0641\u0642\u0637.2)item_name=\u0627\u0644\u0633\u0644\u0639\u0629/\u0627\u0644\u062E\u062F\u0645\u0629.3)\u0645\u0628\u0627\u0644\u063A \u0643\u0628\u064A\u0631\u0629\u2192\u0633\u0643\u0646/\u0623\u062C\u0647\u0632\u0629\u061B\u0634\u062D\u0646\u062A\u2192\u0631\u0635\u064A\u062F/\u0628\u0646\u0632\u064A\u0646.${smokingRule}
+\u062A\u0635\u062D\u064A\u062D \u0645\u0635\u0631\u064A: \u0646\u062A/\u0625\u0646\u062A\u0631\u0646\u062A/\u0631\u0627\u0648\u062A\u0631/\u0628\u0627\u0642\u0629\u2192\u0641\u0648\u0627\u062A\u064A\u0631/\u0625\u0646\u062A\u0631\u0646\u062A. \u0634\u062D\u0646 \u0631\u0635\u064A\u062F\u2192\u0641\u0648\u0627\u062A\u064A\u0631/\u0634\u062D\u0646 \u0631\u0635\u064A\u062F. \u0634\u0631\u0627\u0621 \u0645\u0648\u0628\u0627\u064A\u0644/\u0644\u0627\u0628/\u0633\u0645\u0627\u0639\u0629\u2192\u062A\u0633\u0648\u0642/\u0623\u062C\u0647\u0632\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629 \u0648\u0644\u064A\u0633 \u0641\u0648\u0627\u062A\u064A\u0631. \u0642\u0628\u0636\u062A/\u0627\u0633\u062A\u0644\u0645\u062A/\u062C\u0627\u0644\u064A \u0645\u0631\u062A\u0628\u2192\u062F\u062E\u0644/\u0645\u0631\u062A\u0628.
 \u0641\u0626\u0627\u062A:${compressedCats}
 \u0645\u062B\u0627\u0644:${example}
 JSON \u0641\u0642\u0637.`;
@@ -90844,20 +91271,25 @@ ${plan === "free" ? CLARIFICATION_POLICY_FREE : CLARIFICATION_POLICY_PRO}`;
     systemPrompt.length,
     userPrompt.length
   );
-  const actualModelName = mapModelName(modelName);
+  const requestedProvider = provider === "groq" ? "groq" : "gemini";
+  const providerModelName = coerceModelForProvider(modelName, requestedProvider, plan);
+  const geminiFallbackModelName = coerceModelForProvider(modelName, "gemini", plan);
+  let modelUsed = providerModelName;
   if (provider === "groq" && groqApiKey) {
     try {
       const groqResult = await callGroqAPI(
         groqApiKey,
-        actualModelName,
+        providerModelName,
         systemPrompt,
         userPrompt,
         maxTokens
       );
       response = groqResult.text;
       tokensUsed = groqResult.tokensUsed;
+      modelUsed = `groq:${providerModelName}`;
     } catch (groqError) {
       console.error("Groq classify error, falling back to Gemini:", groqError?.message);
+      await logApiKeyError("groq", "groq_api_key", groqError);
       provider = "gemini";
     }
   }
@@ -90865,7 +91297,7 @@ ${plan === "free" ? CLARIFICATION_POLICY_FREE : CLARIFICATION_POLICY_PRO}`;
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({
-        model: actualModelName,
+        model: geminiFallbackModelName,
         systemInstruction: systemPrompt,
         generationConfig: {
           temperature: 0.2,
@@ -90877,14 +91309,16 @@ ${plan === "free" ? CLARIFICATION_POLICY_FREE : CLARIFICATION_POLICY_PRO}`;
       const result = await model.generateContent(userPrompt);
       response = result.response.text();
       tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
+      modelUsed = `gemini:${geminiFallbackModelName}`;
     } catch (error48) {
       console.error("AI Classify Error (Key 1):", error48.message);
+      await logApiKeyError("gemini", "ai_api_key", error48);
       if (apiKey2) {
         try {
           console.log("AI Classifier: switching to failover key...");
           const genAI2 = new GoogleGenerativeAI(apiKey2);
           const model2 = genAI2.getGenerativeModel({
-            model: actualModelName,
+            model: geminiFallbackModelName,
             systemInstruction: systemPrompt,
             generationConfig: {
               temperature: 0.2,
@@ -90896,8 +91330,10 @@ ${plan === "free" ? CLARIFICATION_POLICY_FREE : CLARIFICATION_POLICY_PRO}`;
           const result = await model2.generateContent(userPrompt);
           response = result.response.text();
           tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
+          modelUsed = `gemini:${geminiFallbackModelName}:key2`;
         } catch (fallbackError) {
           console.error("AI Classify Error (Key 2):", fallbackError);
+          await logApiKeyError("gemini", "ai_api_key_2", fallbackError);
           return null;
         }
       } else {
@@ -90905,7 +91341,7 @@ ${plan === "free" ? CLARIFICATION_POLICY_FREE : CLARIFICATION_POLICY_PRO}`;
       }
     }
   }
-  const parsed = parseAIResponse(response, actualModelName);
+  const parsed = parseAIResponse(response, modelUsed);
   if (parsed) {
     parsed.tokensUsed = tokensUsed;
     if (tokensUsed <= 0) {
@@ -91006,19 +91442,28 @@ function parseAIResponse(response, modelName) {
     console.error("AI response parse failed. Snippet:", cleaned.slice(0, 500));
     return null;
   }
-  const items = parsed.items.map((item) => ({
-    amount: item.amount || 0,
-    category: item.main_category || "\u0645\u062A\u0646\u0648\u0639\u0627\u062A",
-    subCategory: item.sub_category || "\u0639\u0627\u0645",
-    description: item.item_name || item.notes || "",
-    type: item.type || "expense",
-    confidence: item.confidence || 70,
-    merchant: item.merchant || void 0,
-    currency: "EGP",
-    needsReview: item.needs_review ?? (item.confidence || 70) < 85,
-    parsedBy: "ai",
-    inferenceSource: "ai"
-  }));
+  const items = parsed.items.map((item) => {
+    const rawCategory = item.main_category || item.category || item.category_ar || "\u0645\u062A\u0646\u0648\u0639\u0627\u062A";
+    const rawSubCategory = item.sub_category || item.subCategory || item.subcategory || "\u0639\u0627\u0645";
+    const description = item.item_name || item.description || item.notes || "";
+    const normalized = normalizeTransactionTaxonomy({
+      amount: item.amount || 0,
+      category: rawCategory,
+      subCategory: rawSubCategory,
+      description,
+      type: item.type || "expense",
+      confidence: item.confidence || 70,
+      merchant: item.merchant || void 0,
+      currency: "EGP",
+      needsReview: item.needs_review ?? (item.confidence || 70) < 85,
+      parsedBy: "ai",
+      inferenceSource: "ai"
+    }, `${rawCategory} ${rawSubCategory} ${description}`);
+    return {
+      ...normalized,
+      needsReview: normalized.needsReview ?? normalized.confidence < 85
+    };
+  });
   return {
     items,
     alertMessage: parsed.alertMessage || null,
@@ -91049,6 +91494,7 @@ ${smoker}
 3) \u0627\u0641\u0635\u0644 \u0643\u0644 \u0639\u0645\u0644\u064A\u0629 \u0645\u0627\u0644\u064A\u0629 \u0641\u064A item \u0645\u0633\u062A\u0642\u0644 \u0639\u0646\u062F \u0648\u062C\u0648\u062F \u0639\u062F\u0629 \u0645\u0628\u0627\u0644\u063A.
 4) confidence 0-100 \u064A\u0639\u0643\u0633 \u064A\u0642\u064A\u0646\u0643 \u0627\u0644\u062D\u0642\u064A\u0642\u064A.
 5) alertMessage \u0627\u062E\u062A\u064A\u0627\u0631\u064A: \u062C\u0645\u0644\u0629 \u0645\u0647\u0646\u064A\u0629 \u0648\u0627\u062D\u062F\u0629 \u0639\u0646 \u0645\u062E\u0627\u0637\u0631 \u0623\u0648 \u0641\u0631\u0635\u0629 \u0627\u062F\u062E\u0627\u0631 (\u0644\u064A\u0633 \u062F\u0627\u0626\u0645\u0627\u064B).
+6) \u0642\u0648\u0627\u0639\u062F \u0645\u0635\u0631\u064A\u0629 \u0645\u0647\u0645\u0629: \u0646\u062A/\u0625\u0646\u062A\u0631\u0646\u062A/\u0631\u0627\u0648\u062A\u0631/\u0628\u0627\u0642\u0629 = \u0641\u0648\u0627\u062A\u064A\u0631 \u2190 \u0625\u0646\u062A\u0631\u0646\u062A. \u0634\u062D\u0646 \u0631\u0635\u064A\u062F = \u0641\u0648\u0627\u062A\u064A\u0631 \u2190 \u0634\u062D\u0646 \u0631\u0635\u064A\u062F. \u0634\u0631\u0627\u0621 \u0645\u0648\u0628\u0627\u064A\u0644/\u0644\u0627\u0628/\u0633\u0645\u0627\u0639\u0629 = \u062A\u0633\u0648\u0642 \u2190 \u0623\u062C\u0647\u0632\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629 \u0648\u0644\u064A\u0633 \u0641\u0648\u0627\u062A\u064A\u0631. \u0642\u0628\u0636\u062A/\u0627\u0633\u062A\u0644\u0645\u062A/\u062C\u0627\u0644\u064A \u0645\u0631\u062A\u0628 = type income \u0648\u0641\u0626\u0629 \u0645\u0631\u062A\u0628.
 
 \u0627\u0644\u0641\u0626\u0627\u062A:
 ${cats}
@@ -91061,7 +91507,7 @@ function needsRichProContext(text2, context) {
   if (/(أهل|عيلة|أولاد|زوج|زوجة|مدخن|سجاير|هدف|ادخار)/i.test(text2)) return true;
   return false;
 }
-async function aiClassifyPro(text2, apiKey, apiKey2, modelName, maxTokens, context, skipClarification) {
+async function aiClassifyPro(text2, apiKey, apiKey2, modelName, maxTokens, context, skipClarification, groqApiKey, provider) {
   const rich = needsRichProContext(text2, context);
   const parts = [`\u0627\u0644\u0646\u0635 \u0627\u0644\u0645\u0637\u0644\u0648\u0628 \u062A\u0635\u0646\u064A\u0641\u0647:
 "${text2}"`];
@@ -91098,13 +91544,22 @@ async function aiClassifyPro(text2, apiKey, apiKey2, modelName, maxTokens, conte
     systemPrompt.length,
     userPrompt.length
   );
-  const actualModelName = mapModelName(
-    context.plan === "ultra" ? modelName : modelName || "gemini-2.5-pro"
+  const plan = context.plan ?? "pro";
+  const requestedProvider = provider === "groq" ? "groq" : "gemini";
+  const providerModelName = coerceModelForProvider(
+    context.plan === "ultra" ? modelName : modelName || "gemini-2.5-pro",
+    requestedProvider,
+    plan
   );
-  const runModel = async (key) => {
+  const geminiFallbackModelName = coerceModelForProvider(
+    context.plan === "ultra" ? modelName : modelName || "gemini-2.5-pro",
+    "gemini",
+    plan
+  );
+  const runModel = async (key, modelNameForProvider) => {
     const genAI = new GoogleGenerativeAI(key);
     const model = genAI.getGenerativeModel({
-      model: actualModelName,
+      model: modelNameForProvider,
       systemInstruction: systemPrompt,
       generationConfig: {
         temperature: 0.15,
@@ -91117,26 +91572,44 @@ async function aiClassifyPro(text2, apiKey, apiKey2, modelName, maxTokens, conte
   };
   let response = "";
   let tokensUsed = 0;
-  try {
-    const result = await runModel(apiKey);
-    response = result.response.text();
-    tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
-  } catch (e1) {
-    console.error("Pro AI Classify (Key 1):", e1.message);
-    if (!apiKey2) return null;
+  let modelUsed = providerModelName;
+  if (requestedProvider === "groq" && groqApiKey) {
     try {
-      const result = await runModel(apiKey2);
-      response = result.response.text();
-      tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
-    } catch (e2) {
-      console.error("Pro AI Classify (Key 2):", e2);
-      return null;
+      const groqResult = await callGroqAPI(groqApiKey, providerModelName, systemPrompt, userPrompt, maxTokens);
+      response = groqResult.text;
+      tokensUsed = groqResult.tokensUsed;
+      modelUsed = `groq:${providerModelName}`;
+    } catch (groqError) {
+      console.error("Pro Groq classify error, falling back to Gemini:", groqError?.message);
+      await logApiKeyError("groq", "groq_api_key", groqError);
     }
   }
-  const parsed = parseAIResponse(response, actualModelName);
+  if (!response) {
+    try {
+      const result = await runModel(apiKey, geminiFallbackModelName);
+      response = result.response.text();
+      tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
+      modelUsed = `gemini:${geminiFallbackModelName}`;
+    } catch (e1) {
+      console.error("Pro AI Classify (Key 1):", e1.message);
+      await logApiKeyError("gemini", "ai_api_key", e1);
+      if (!apiKey2) return null;
+      try {
+        const result = await runModel(apiKey2, geminiFallbackModelName);
+        response = result.response.text();
+        tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
+        modelUsed = `gemini:${geminiFallbackModelName}:key2`;
+      } catch (e2) {
+        console.error("Pro AI Classify (Key 2):", e2);
+        await logApiKeyError("gemini", "ai_api_key_2", e2);
+        return null;
+      }
+    }
+  }
+  const parsed = parseAIResponse(response, modelUsed);
   if (parsed) {
     parsed.tokensUsed = tokensUsed > 0 ? tokensUsed : estimatedPromptTokens + Math.ceil((response?.length || 0) / 3.5);
-    parsed.modelUsed = `pro:${actualModelName}`;
+    parsed.modelUsed = `pro:${modelUsed}`;
   }
   return parsed;
 }
@@ -92040,7 +92513,7 @@ var KEYWORD_PRIORS = [
   { pattern: /شحن|رصيد|فودافون|اتصالات|اورانج|نت|انترنت|فاتورة|كهرب|مياه/i, categories: ["\u0641\u0648\u0627\u062A\u064A\u0631", "\u0633\u0643\u0646"] },
   { pattern: /سوبر|بقال|كارفور|سبينس|خضار|عيش/i, categories: ["\u0623\u0643\u0644 \u0648\u0634\u0631\u0628"] },
   { pattern: /صيدل|دوا|دكتور|مستشفى|كشف/i, categories: ["\u0635\u062D\u0629"] },
-  { pattern: /مرتب|راتب|قبض|استلمت|دخل/i, categories: ["\u0645\u0631\u062A\u0628", "\u0639\u0645\u0644"] },
+  { pattern: /مرتب|راتب|قبض|استلمت|دخل|بونص|مكافأة|فريلانس|سبوبة|عمولة/i, categories: ["\u0645\u0631\u062A\u0628", "\u0639\u0645\u0644 \u062D\u0631", "\u0639\u0648\u0627\u0626\u062F \u0627\u0633\u062A\u062B\u0645\u0627\u0631"] },
   { pattern: /سجاير|فيب|شيشة|تدخين/i, categories: ["\u062A\u062F\u062E\u064A\u0646"] },
   { pattern: /جيم|اشتراك|نتفلكس|يوتيوب|سبوتيفاي/i, categories: ["\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A", "\u062A\u0631\u0641\u064A\u0647"] }
 ];
@@ -92119,8 +92592,9 @@ async function runPipeline(input) {
   let alertMessage = null;
   let tokensUsed = 0;
   const memoryMatch = await muscleMemoryLookup(input.text, input.userId, input.userType);
-  if (memoryMatch) {
-    items = [{
+  const allowMemoryShortcut = !!memoryMatch && (plan === "free" || memoryMatch.matchScore >= 98 && memoryMatch.pattern.confidence >= 98);
+  if (memoryMatch && allowMemoryShortcut) {
+    items = [normalizeTransactionTaxonomy({
       amount: memoryMatch.amount || entities.amounts[0]?.amount || 0,
       category: memoryMatch.pattern.category,
       subCategory: memoryMatch.pattern.subCategory,
@@ -92134,7 +92608,7 @@ async function runPipeline(input) {
       // Compatible type
       inferenceSource: "dictionary",
       ambiguityFlags: ["muscle_memory_hit"]
-    }];
+    }, input.text)];
     parsedBy = "muscle_memory";
     modelUsed = "cache";
     log2.finalConfidence = 100;
@@ -92447,7 +92921,8 @@ async function runPipeline(input) {
       item.date = isoDate;
     });
   }
-  const postProcessed = postProcessItems(items);
+  const canonicalItems = normalizeTransactionTaxonomyList(items, input.text);
+  const postProcessed = postProcessItems(canonicalItems);
   const scored = scoreAndDecide(postProcessed, input.text, thresholds, input.skipClarification ?? false);
   log2.finalConfidence = scored.overallConfidence;
   log2.finalDecision = scored.decision;
@@ -92621,13 +93096,13 @@ function mergeSmartProfilePatch(current, patch) {
     profileVersion: SMART_PROFILE_VERSION
   };
 }
-async function getIdentity(userId, userType2) {
+async function getIdentity(userId, userType) {
   const { db: db3 } = await Promise.resolve().then(() => (init_connection(), connection_exports));
-  if (userType2 === "oauth") {
+  if (userType === "oauth") {
     const row2 = await db3.query.users.findFirst({ where: eq(users.id, userId) });
     return {
       id: userId,
-      type: userType2,
+      type: userType,
       name: row2?.name,
       email: row2?.email,
       avatar: row2?.avatar
@@ -92638,25 +93113,25 @@ async function getIdentity(userId, userType2) {
   });
   return {
     id: userId,
-    type: userType2,
+    type: userType,
     name: row?.name,
     phone: row?.phone,
     email: row?.email
   };
 }
-async function getSmartProfile(userId, userType2) {
+async function getSmartProfile(userId, userType) {
   const { db: db3 } = await Promise.resolve().then(() => (init_connection(), connection_exports));
-  const identity2 = await getIdentity(userId, userType2);
+  const identity2 = await getIdentity(userId, userType);
   let row;
   try {
-    const rows = await db3.select().from(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType2))).limit(1);
+    const rows = await db3.select().from(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType))).limit(1);
     row = rows[0];
   } catch (err) {
     if (!isSmartProfileSchemaError(err)) throw err;
     console.warn("[getSmartProfile] Full read failed, attempting auto-repair...");
     try {
       await autoRepairProfileSchema();
-      const rows = await db3.select().from(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType2))).limit(1);
+      const rows = await db3.select().from(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType))).limit(1);
       row = rows[0];
       console.log("[getSmartProfile] Auto-repair + retry succeeded!");
     } catch (retryErr) {
@@ -92666,7 +93141,7 @@ async function getSmartProfile(userId, userType2) {
         financialGoal: userProfiles.financialGoal,
         financialPersonality: userProfiles.financialPersonality,
         profileCompleted: userProfiles.profileCompleted
-      }).from(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType2))).limit(1);
+      }).from(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType))).limit(1);
       row = legacyRows[0];
     }
   }
@@ -92674,7 +93149,7 @@ async function getSmartProfile(userId, userType2) {
   console.log(`[getSmartProfile] user=${userId}, hasRow=${!!row}, hasOnboardingAnswers=${row?.onboardingAnswers ? Object.keys(row.onboardingAnswers).length : 0}, resultAnswers=${Object.keys(result.onboardingAnswers).length}`);
   return result;
 }
-async function saveSmartProfile(userId, userType2, profile) {
+async function saveSmartProfile(userId, userType, profile) {
   const { db: db3 } = await Promise.resolve().then(() => (init_connection(), connection_exports));
   const { sql: sqlTag } = await Promise.resolve().then(() => (init_drizzle_orm(), drizzle_orm_exports));
   const monthlyIncome = toNumber(profile.financialInfo.averageMonthlyIncome);
@@ -92695,7 +93170,7 @@ async function saveSmartProfile(userId, userType2, profile) {
          lifestyle_info, ai_inferred_attributes, preferences, avatar_id,
          profile_version)
         VALUES
-        (${userId}, ${userType2}, ${monthlyIncome}, ${financialGoal}, ${financialPersonality},
+        (${userId}, ${userType}, ${monthlyIncome}, ${financialGoal}, ${financialPersonality},
          ${completed}, ${onboardingJson}, ${basicJson}, ${financialJson},
          ${lifestyleJson}, ${inferredJson}, ${prefsJson}, ${profile.avatarId},
          ${SMART_PROFILE_VERSION})
@@ -92719,7 +93194,7 @@ async function saveSmartProfile(userId, userType2, profile) {
     try {
       await db3.insert(userProfiles).values({
         userId,
-        userType: userType2,
+        userType,
         monthlyIncome: monthlyIncome === null ? void 0 : monthlyIncome.toString(),
         financialGoal,
         financialPersonality,
@@ -92766,13 +93241,13 @@ async function autoRepairProfileSchema() {
     }
   }
 }
-async function updateSmartProfile(userId, userType2, patch) {
-  const current = await getSmartProfile(userId, userType2);
+async function updateSmartProfile(userId, userType, patch) {
+  const current = await getSmartProfile(userId, userType);
   const next = mergeSmartProfilePatch(current, patch);
   if (patch.financialInfo || patch.lifestyleInfo || patch.basicInfo) {
     next.onboardingAnswers = syncOnboardingAnswersFromProfile(next);
   }
-  await saveSmartProfile(userId, userType2, next);
+  await saveSmartProfile(userId, userType, next);
   return next;
 }
 function syncOnboardingAnswersFromProfile(profile) {
@@ -93309,54 +93784,32 @@ ${alerts ? `<div class="alerts"><strong>\u062A\u0646\u0628\u064A\u0647\u0627\u06
 }
 
 // api/ai-router.ts
-async function callGroqAPI(apiKey, model, systemPrompt, userPrompt, maxTokens) {
-  const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
-  const response = await fetch(GROQ_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      max_tokens: Math.min(maxTokens, 4096),
-      temperature: 0.2,
-      response_format: { type: "json_object" }
-    })
-  });
-  if (!response.ok) {
-    const errBody = await response.text().catch(() => "");
-    throw new Error(`Groq API error ${response.status}: ${errBody.slice(0, 300)}`);
-  }
-  const data = await response.json();
-  const text2 = data?.choices?.[0]?.message?.content ?? "";
-  const tokensUsed = data?.usage?.total_tokens ?? 0;
-  return { text: text2, tokensUsed };
-}
 async function resolveRoutingConfig(userPlan, tokensUsed, cfg) {
-  const plan = userPlan === "pro" || userPlan === "ultra" ? "pro" : "free";
-  const rangesKey = `${plan}_routing_ranges`;
+  const plan = userPlan === "ultra" ? "ultra" : userPlan === "pro" ? "pro" : "free";
+  const rangesPlan = plan === "free" ? "free" : "pro";
+  const rangesKey = `${rangesPlan}_routing_ranges`;
   const rawRanges = cfg[rangesKey];
+  const legacyGeminiModel = plan === "ultra" ? cfg.ai_model_ultra || defaultGeminiModelForPlan(plan) : plan === "pro" ? cfg.ai_model_pro || defaultGeminiModelForPlan(plan) : cfg.ai_model_free || defaultGeminiModelForPlan(plan);
+  const resolveKey = (provider2, keySlot2) => {
+    if (provider2 === "groq") return cfg.groq_api_key || "";
+    if (keySlot2 === "key2") {
+      return cfg.ai_api_key_2 || cfg.ai_api_key || env.GEMINI_API_KEY || "";
+    }
+    return cfg.ai_api_key || env.GEMINI_API_KEY || cfg.ai_api_key_2 || "";
+  };
+  const geminiFallback = (modelSetting) => ({
+    provider: "gemini",
+    apiKey: resolveKey("gemini", "key1"),
+    model: coerceModelForProvider(modelSetting || legacyGeminiModel, "gemini", plan)
+  });
   if (!rawRanges) {
-    return {
-      provider: "gemini",
-      apiKey: cfg.ai_api_key || env.GEMINI_API_KEY,
-      model: plan === "pro" ? cfg.ai_model_pro || "gemini-1.5-flash" : cfg.ai_model_free || "gemini-2.0-flash"
-    };
+    return geminiFallback();
   }
   let ranges = [];
   try {
     ranges = JSON.parse(rawRanges);
   } catch {
-    return {
-      provider: "gemini",
-      apiKey: cfg.ai_api_key || env.GEMINI_API_KEY,
-      model: cfg.ai_model_free || "gemini-2.0-flash"
-    };
+    return geminiFallback();
   }
   const matchedRange = ranges.find((r) => {
     const from = r.from ?? 0;
@@ -93377,40 +93830,33 @@ async function resolveRoutingConfig(userPlan, tokensUsed, cfg) {
       message: matchedRange.message || `\u0648\u0635\u0644\u062A \u0644\u0644\u062D\u062F \u0627\u0644\u0634\u0647\u0631\u064A. \u064A\u062A\u062C\u062F\u062F \u062A\u0644\u0642\u0627\u0626\u064A\u0627\u064B \u0641\u064A \u0628\u062F\u0627\u064A\u0629 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062C\u0627\u064A.`
     });
   }
-  const keySlot = matchedRange.key_slot ?? "key1";
-  let resolvedKey;
-  if (keySlot === "groq") {
-    resolvedKey = cfg.groq_api_key || "";
-  } else if (keySlot === "key2") {
-    resolvedKey = cfg.ai_api_key_2 || "";
-  } else {
-    resolvedKey = cfg.ai_api_key || env.GEMINI_API_KEY || "";
-  }
+  const provider = matchedRange.provider ?? (matchedRange.key_slot === "groq" ? "groq" : "gemini");
+  const keySlot = matchedRange.key_slot ?? (provider === "groq" ? "groq" : "key1");
+  const resolvedKey = resolveKey(provider, keySlot);
   if (!resolvedKey) {
-    resolvedKey = cfg.ai_api_key || env.GEMINI_API_KEY || "";
-    return {
-      provider: "gemini",
-      apiKey: resolvedKey,
-      model: mapModelName(matchedRange.model || cfg.ai_model_free || "gemini-2.0-flash")
-    };
+    return geminiFallback();
   }
   return {
-    provider: matchedRange.provider ?? "gemini",
+    provider,
     apiKey: resolvedKey,
-    model: mapModelName(matchedRange.model || cfg.ai_model_free || "gemini-2.0-flash")
+    model: coerceModelForProvider(
+      matchedRange.model || defaultModelForProvider(provider, plan),
+      provider,
+      plan
+    )
   };
 }
-async function trackTokens(userId, userType2, tokens, channel = "parse", model) {
+async function trackTokens(userId, userType, tokens, channel = "parse", model) {
   if (!tokens || tokens <= 0) return;
   try {
-    if (userType2 === "oauth") {
+    if (userType === "oauth") {
       await db.update(users).set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` }).where(eq(users.id, userId));
     } else {
       await db.update(localUsers).set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` }).where(eq(localUsers.id, userId));
     }
     await recordAiUsageEvent({
       userId,
-      userType: userType2,
+      userType,
       channel,
       model,
       tokens
@@ -93423,11 +93869,11 @@ function isMissingTableError(err) {
   const msg = err instanceof Error ? err.message : String(err ?? "");
   return msg.includes("voice_usage") && (msg.includes("doesn't exist") || msg.includes("ER_NO_SUCH_TABLE") || msg.includes("Failed query:"));
 }
-async function getVoiceSecondsSince(userId, userType2, cycleStart) {
+async function getVoiceSecondsSince(userId, userType, cycleStart) {
   try {
     const usageResult = await db.select({ total: sql`COALESCE(SUM(duration_seconds), 0)` }).from(voiceUsage).where(and(
       eq(voiceUsage.userId, userId),
-      eq(voiceUsage.userType, userType2),
+      eq(voiceUsage.userType, userType),
       eq(voiceUsage.month, (/* @__PURE__ */ new Date()).toISOString().slice(0, 7))
     ));
     return Number(usageResult[0]?.total || 0);
@@ -93454,12 +93900,17 @@ async function getAiClient(taskType, userPlan = "free") {
     apiKey = apiKey2;
   }
   let modelName;
+  let reportProvider = "gemini";
+  let reportKeySlot = "key1";
   if (taskType === "parse") {
     if (userPlan === "ultra") modelName = cfg.ai_model_ultra || "gemini-2.5-pro";
     else if (userPlan === "pro") modelName = cfg.ai_model_pro || env.GEMINI_MODEL_PRO;
     else modelName = cfg.ai_model_free || env.GEMINI_MODEL_FREE;
   } else {
-    modelName = cfg.ai_model_reports || env.GEMINI_MODEL_REPORTS;
+    const plan2 = userPlan === "ultra" ? "pro" : userPlan || "free";
+    reportProvider = cfg[`report_provider_${plan2}`] || "gemini";
+    modelName = cfg[`report_model_${plan2}`] || cfg.ai_model_reports || env.GEMINI_MODEL_REPORTS;
+    reportKeySlot = cfg[`report_key_slot_${plan2}`] || "key1";
   }
   modelName = mapModelName(modelName);
   const parseSafeInt2 = (val, def) => {
@@ -93532,6 +93983,8 @@ async function getAiClient(taskType, userPlan = "free") {
     apiKey,
     apiKey2,
     groqApiKey,
+    reportProvider,
+    reportKeySlot,
     tokenLimit: tokenLimits[plan] || 5e4,
     dailyLimit: dailyLimits[plan] || 10,
     maxPerRequest: maxPerRequest[plan] || 512,
@@ -93549,7 +94002,12 @@ async function getAiClient(taskType, userPlan = "free") {
 }
 var aiRouter = router({
   // ─── Parse Expense (New Pipeline) ───
-  parseExpense: aiProcedure.input(external_exports.object({ text: external_exports.string(), model: external_exports.enum(["flash", "pro", "ultra", "gemma"]).default("flash"), skipClarification: external_exports.boolean().optional() })).mutation(async ({ ctx, input }) => {
+  parseExpense: aiProcedure.input(external_exports.object({
+    text: external_exports.string(),
+    model: external_exports.enum(["flash", "pro", "ultra", "gemma"]).default("flash"),
+    skipClarification: external_exports.boolean().optional(),
+    inputChannel: external_exports.enum(["text", "voice"]).default("text")
+  })).mutation(async ({ ctx, input }) => {
     const today = /* @__PURE__ */ new Date();
     today.setHours(0, 0, 0, 0);
     let dailyLimit = 10;
@@ -93661,7 +94119,7 @@ var aiRouter = router({
         routing: result.log.routing
       },
       ambiguityFlags: result.items.flatMap((item) => item.ambiguityFlags || []),
-      inputChannel: "text",
+      inputChannel: input.inputChannel,
       needsFollowup: result.decision === "clarify" || result.overallConfidence < 60,
       modelUsed: result.modelUsed,
       tokensUsed: result.tokensUsed,
@@ -93824,10 +94282,18 @@ var aiRouter = router({
         message: `\u0645\u062F\u0629 \u0647\u0630\u0627 \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u062A\u062A\u062C\u0627\u0648\u0632 \u0627\u0644\u0631\u0635\u064A\u062F \u0627\u0644\u0645\u062A\u0628\u0642\u064A \u0644\u0643 \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631. \u0627\u0644\u0645\u062A\u0627\u062D \u0627\u0644\u0622\u0646 ${Math.max(0, limit - usedSeconds)} \u062B\u0627\u0646\u064A\u0629 \u0641\u0642\u0637.`
       });
     }
-    let apiKey = cfg.stt_api_key && cfg.stt_api_key !== "AIzaSyCWif4U7uRb1WKG_HTwqNwtNLmvfD5fZj0" ? cfg.stt_api_key : cfg.ai_api_key || env.GEMINI_API_KEY;
-    let apiKey2 = cfg.ai_api_key_2 || "";
-    const sttModel = mapModelName(cfg.stt_model || "gemini-1.5-flash");
+    const plan = ctx.user.plan === "ultra" ? "pro" : ctx.user.plan || "free";
+    const sttProvider = cfg[`${plan}_stt_provider`] || "gemini";
+    const sttModelSetting = cfg[`${plan}_stt_model`] || cfg.stt_model || "gemini-1.5-flash";
+    const sttKeySlot = cfg[`${plan}_stt_key_slot`] || "key1";
+    const sttModel = mapModelName(sttModelSetting);
     const fallbackModel = mapModelName(cfg.stt_fallback_model || "gemini-2.0-flash");
+    let apiKey = env.GEMINI_API_KEY;
+    if (sttKeySlot === "key2" && cfg.ai_api_key_2) apiKey = cfg.ai_api_key_2;
+    else if (sttKeySlot === "groq" && cfg.groq_api_key) apiKey = cfg.groq_api_key;
+    else if (cfg.stt_api_key && cfg.stt_api_key !== "AIzaSyCWif4U7uRb1WKG_HTwqNwtNLmvfD5fZj0") apiKey = cfg.stt_api_key;
+    else if (cfg.ai_api_key) apiKey = cfg.ai_api_key;
+    let apiKey2 = cfg.ai_api_key_2 || "";
     const cleanMimeType = input.mimeType.split(";")[0];
     const sttMode = cfg.stt_processing_mode || "standard";
     const pureBase64 = input.audioBase64.includes(",") ? input.audioBase64.split(",")[1] : input.audioBase64;
@@ -94060,7 +94526,9 @@ var aiRouter = router({
     let reportSubcatsLimit = 15;
     let reportTopItemsLimit = 0;
     let aiModel;
+    let reportProvider = "gemini";
     let reportApiKey = env.GEMINI_API_KEY;
+    let groqApiKey = "";
     let modelName = "backend";
     let aiResponseLength = "medium";
     let aiFocus = "balanced";
@@ -94077,6 +94545,9 @@ var aiRouter = router({
       }
       aiModel = client.aiModel;
       modelName = client.modelName;
+      reportProvider = client.reportProvider || "gemini";
+      reportApiKey = client.apiKey;
+      groqApiKey = client.groqApiKey;
       reportTargetWords = client.reportTargetWords;
       reportSubcatsLimit = client.reportSubcatsLimit;
       reportTopItemsLimit = client.reportTopItemsLimit;
@@ -94726,25 +95197,25 @@ var adminRouter = router({
     userId: external_exports.number(),
     userType: external_exports.enum(["oauth", "local"])
   })).mutation(async ({ input }) => {
-    const { userId, userType: userType2 } = input;
-    await db.delete(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType2)));
-    await db.delete(sessions).where(and(eq(sessions.userId, userId), eq(sessions.userType, userType2)));
-    await db.delete(userAnalytics).where(and(eq(userAnalytics.userId, userId), eq(userAnalytics.userType, userType2)));
-    await db.delete(supportTickets).where(and(eq(supportTickets.userId, userId), eq(supportTickets.userType, userType2)));
-    await db.delete(userWallets).where(and(eq(userWallets.userId, userId), eq(userWallets.userType, userType2)));
-    await db.delete(proSubscriptions).where(and(eq(proSubscriptions.userId, userId), eq(proSubscriptions.userType, userType2)));
-    await db.delete(monthlyReports).where(and(eq(monthlyReports.userId, userId), eq(monthlyReports.userType, userType2)));
-    await db.delete(aiSummaries).where(and(eq(aiSummaries.userId, userId), eq(aiSummaries.userType, userType2)));
-    await db.delete(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType2)));
-    await db.delete(profileLearningEvents).where(and(eq(profileLearningEvents.userId, userId), eq(profileLearningEvents.userType, userType2)));
-    await db.delete(monthlyBehaviorSnapshots).where(and(eq(monthlyBehaviorSnapshots.userId, userId), eq(monthlyBehaviorSnapshots.userType, userType2)));
-    await db.delete(userDictionaries).where(and(eq(userDictionaries.userId, userId), eq(userDictionaries.userType, userType2)));
-    await db.delete(classificationLogs).where(and(eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType2)));
-    await db.delete(voiceUsage).where(and(eq(voiceUsage.userId, userId), eq(voiceUsage.userType, userType2)));
-    await db.delete(webhookTokens).where(and(eq(webhookTokens.userId, userId), eq(webhookTokens.userType, userType2)));
-    await db.delete(rawSmsEvents).where(and(eq(rawSmsEvents.userId, userId), eq(rawSmsEvents.userType, userType2)));
-    await db.delete(expenseCategories).where(and(eq(expenseCategories.userId, userId), eq(expenseCategories.userType, userType2)));
-    const table = userType2 === "oauth" ? users : localUsers;
+    const { userId, userType } = input;
+    await db.delete(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType)));
+    await db.delete(sessions).where(and(eq(sessions.userId, userId), eq(sessions.userType, userType)));
+    await db.delete(userAnalytics).where(and(eq(userAnalytics.userId, userId), eq(userAnalytics.userType, userType)));
+    await db.delete(supportTickets).where(and(eq(supportTickets.userId, userId), eq(supportTickets.userType, userType)));
+    await db.delete(userWallets).where(and(eq(userWallets.userId, userId), eq(userWallets.userType, userType)));
+    await db.delete(proSubscriptions).where(and(eq(proSubscriptions.userId, userId), eq(proSubscriptions.userType, userType)));
+    await db.delete(monthlyReports).where(and(eq(monthlyReports.userId, userId), eq(monthlyReports.userType, userType)));
+    await db.delete(aiSummaries).where(and(eq(aiSummaries.userId, userId), eq(aiSummaries.userType, userType)));
+    await db.delete(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)));
+    await db.delete(profileLearningEvents).where(and(eq(profileLearningEvents.userId, userId), eq(profileLearningEvents.userType, userType)));
+    await db.delete(monthlyBehaviorSnapshots).where(and(eq(monthlyBehaviorSnapshots.userId, userId), eq(monthlyBehaviorSnapshots.userType, userType)));
+    await db.delete(userDictionaries).where(and(eq(userDictionaries.userId, userId), eq(userDictionaries.userType, userType)));
+    await db.delete(classificationLogs).where(and(eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType)));
+    await db.delete(voiceUsage).where(and(eq(voiceUsage.userId, userId), eq(voiceUsage.userType, userType)));
+    await db.delete(webhookTokens).where(and(eq(webhookTokens.userId, userId), eq(webhookTokens.userType, userType)));
+    await db.delete(rawSmsEvents).where(and(eq(rawSmsEvents.userId, userId), eq(rawSmsEvents.userType, userType)));
+    await db.delete(expenseCategories).where(and(eq(expenseCategories.userId, userId), eq(expenseCategories.userType, userType)));
+    const table = userType === "oauth" ? users : localUsers;
     await db.delete(table).where(eq(table.id, userId));
     return { success: true, message: "\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0646\u062C\u0627\u062D" };
   }),
@@ -94843,9 +95314,17 @@ var adminRouter = router({
       pro_stt_key_slot: "key1",
       // ── Legacy STT fields (kept for backward compat) ──
       stt_api_key: "",
+      stt_api_key_2: "",
       stt_model: "gemini-1.5-flash",
       stt_fallback_model: "gemini-2.0-flash",
       stt_processing_mode: "standard",
+      // ── Per-plan Report Configuration ──
+      report_provider_free: "gemini",
+      report_model_free: "gemini-1.5-flash",
+      report_key_slot_free: "key1",
+      report_provider_pro: "gemini",
+      report_model_pro: "gemini-1.5-pro",
+      report_key_slot_pro: "key1",
       // ── Confidence Thresholds ──
       confidence_auto_save: "85",
       confidence_review: "60",
@@ -94972,15 +95451,19 @@ var adminRouter = router({
     }
     const oauthLogIds = [...new Set(logs.filter((l) => l.userType === "oauth").map((l) => l.userId))];
     const localLogIds = [...new Set(logs.filter((l) => l.userType === "local").map((l) => l.userId))];
-    const oauthNameRows = oauthLogIds.length > 0 ? await db.select({ id: users.id, name: users.name }).from(users).where(inArray(users.id, oauthLogIds)) : [];
-    const localNameRows = localLogIds.length > 0 ? await db.select({ id: localUsers.id, name: localUsers.name }).from(localUsers).where(inArray(localUsers.id, localLogIds)) : [];
-    const logNameMap = /* @__PURE__ */ new Map();
-    for (const r of oauthNameRows) logNameMap.set(`oauth:${r.id}`, r.name);
-    for (const r of localNameRows) logNameMap.set(`local:${r.id}`, r.name);
-    const enriched = logs.map((l) => ({
-      ...l,
-      userName: logNameMap.get(`${l.userType}:${l.userId}`) || "\u0645\u062C\u0647\u0648\u0644"
-    }));
+    const oauthNameRows = oauthLogIds.length > 0 ? await db.select({ id: users.id, name: users.name, plan: users.plan }).from(users).where(inArray(users.id, oauthLogIds)) : [];
+    const localNameRows = localLogIds.length > 0 ? await db.select({ id: localUsers.id, name: localUsers.name, plan: localUsers.plan }).from(localUsers).where(inArray(localUsers.id, localLogIds)) : [];
+    const logUserMap = /* @__PURE__ */ new Map();
+    for (const r of oauthNameRows) logUserMap.set(`oauth:${r.id}`, { name: r.name, plan: r.plan ?? "free" });
+    for (const r of localNameRows) logUserMap.set(`local:${r.id}`, { name: r.name, plan: r.plan ?? "free" });
+    const enriched = logs.map((l) => {
+      const userInfo = logUserMap.get(`${l.userType}:${l.userId}`) || { name: "\u0645\u062C\u0647\u0648\u0644", plan: "free" };
+      return {
+        ...l,
+        userName: userInfo.name,
+        userPlan: userInfo.plan
+      };
+    });
     return {
       logs: enriched,
       total: total[0]?.count ?? 0,
@@ -95110,6 +95593,64 @@ var adminRouter = router({
     const list = await q.limit(limit).offset(offset);
     const total = await db.select({ count: count() }).from(proSubscriptions);
     return { list, total: total[0]?.count ?? 0, page, limit };
+  }),
+  // ─── API Key Error Monitoring ───
+  getApiKeyErrors: moderatorProcedure.input(external_exports.object({
+    unresolvedOnly: external_exports.boolean().default(false),
+    limit: external_exports.number().default(100)
+  }).optional()).query(async ({ input }) => {
+    const { unresolvedOnly = false, limit = 100 } = input ?? {};
+    try {
+      return await getApiKeyErrors({ unresolvedOnly, limit });
+    } catch (err) {
+      if (err?.message?.includes("doesn't exist") || err?.message?.includes("no such table")) {
+        return [];
+      }
+      throw err;
+    }
+  }),
+  resolveApiKeyError: adminProcedure.input(external_exports.object({ errorId: external_exports.number() })).mutation(async ({ input }) => {
+    await resolveApiKeyError(input.errorId);
+    return { success: true };
+  }),
+  clearAllApiKeyErrors: adminProcedure.mutation(async () => {
+    await resolveAllApiKeyErrors();
+    return { success: true, message: "\u062A\u0645 \u062D\u0644 \u062C\u0645\u064A\u0639 \u0627\u0644\u0623\u062E\u0637\u0627\u0621 \u0628\u0646\u062C\u0627\u062D" };
+  }),
+  // ─── Test/Validate API Key ───
+  validateApiKey: adminProcedure.input(external_exports.object({
+    provider: external_exports.enum(["gemini", "groq"]),
+    apiKey: external_exports.string().min(1)
+  })).mutation(async ({ input }) => {
+    try {
+      if (input.provider === "gemini") {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models?key=${input.apiKey}`,
+          { method: "GET", signal: AbortSignal.timeout(1e4) }
+        );
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          const errorType = classifyApiError(res.status, body);
+          return { valid: false, status: res.status, errorType, message: body.substring(0, 300) };
+        }
+        return { valid: true, status: 200, errorType: null, message: "\u0627\u0644\u0645\u0641\u062A\u0627\u062D \u064A\u0639\u0645\u0644 \u0628\u0634\u0643\u0644 \u0633\u0644\u064A\u0645 \u2705" };
+      } else {
+        const res = await fetch("https://api.groq.com/openai/v1/models", {
+          method: "GET",
+          headers: { Authorization: `Bearer ${input.apiKey}` },
+          signal: AbortSignal.timeout(1e4)
+        });
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          const errorType = classifyApiError(res.status, body);
+          return { valid: false, status: res.status, errorType, message: body.substring(0, 300) };
+        }
+        return { valid: true, status: 200, errorType: null, message: "\u0627\u0644\u0645\u0641\u062A\u0627\u062D \u064A\u0639\u0645\u0644 \u0628\u0634\u0643\u0644 \u0633\u0644\u064A\u0645 \u2705" };
+      }
+    } catch (err) {
+      const errorType = classifyApiError(void 0, err?.message || "");
+      return { valid: false, status: 0, errorType, message: err?.message?.substring(0, 300) || "\u062E\u0637\u0623 \u063A\u064A\u0631 \u0645\u062A\u0648\u0642\u0639" };
+    }
   })
 });
 
@@ -96152,8 +96693,8 @@ function monthRange(month) {
   const end = new Date(year2, monthNumber, 0, 23, 59, 59, 999);
   return { start, end };
 }
-async function refreshMonthlyInferences(userId, userType2, month) {
-  const profile = await getSmartProfile(userId, userType2);
+async function refreshMonthlyInferences(userId, userType, month) {
+  const profile = await getSmartProfile(userId, userType);
   const currentRange = monthRange(month);
   const [year2, monthNumber] = month.split("-").map(Number);
   const prevMonth = `${monthNumber === 1 ? year2 - 1 : year2}-${String(monthNumber === 1 ? 12 : monthNumber - 1).padStart(2, "0")}`;
@@ -96161,13 +96702,13 @@ async function refreshMonthlyInferences(userId, userType2, month) {
   const [items, previousItems] = await Promise.all([
     db.select().from(expenses).where(and(
       eq(expenses.userId, userId),
-      eq(expenses.userType, userType2),
+      eq(expenses.userType, userType),
       gte(expenses.date, currentRange.start),
       lte(expenses.date, currentRange.end)
     )),
     db.select().from(expenses).where(and(
       eq(expenses.userId, userId),
-      eq(expenses.userType, userType2),
+      eq(expenses.userType, userType),
       gte(expenses.date, previousRange.start),
       lte(expenses.date, previousRange.end)
     ))
@@ -96182,10 +96723,10 @@ async function refreshMonthlyInferences(userId, userType2, month) {
     },
     lastAiRefreshAt: /* @__PURE__ */ new Date()
   };
-  await saveSmartProfile(userId, userType2, nextProfile);
+  await saveSmartProfile(userId, userType, nextProfile);
   await db.insert(monthlyBehaviorSnapshots).values({
     userId,
-    userType: userType2,
+    userType,
     month,
     totalIncome: snapshot.totalIncome.toString(),
     totalExpense: snapshot.totalExpense.toString(),
@@ -96212,7 +96753,7 @@ async function refreshMonthlyInferences(userId, userType2, month) {
   });
   await recordProfileLearningEvent({
     userId,
-    userType: userType2,
+    userType,
     eventType: "manual_refresh",
     previousAttributes,
     newAttributes: snapshot.inferredAttributes,
@@ -96671,14 +97212,14 @@ async function parseReceiptImage(input) {
 }
 
 // api/image-router.ts
-async function trackImageTokens(userId, userType2, tokens, model) {
+async function trackImageTokens(userId, userType, tokens, model) {
   if (!tokens) return;
-  if (userType2 === "oauth") {
+  if (userType === "oauth") {
     await db.update(users).set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` }).where(eq(users.id, userId));
   } else {
     await db.update(localUsers).set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` }).where(eq(localUsers.id, userId));
   }
-  await recordAiUsageEvent({ userId, userType: userType2, channel: "image", model, tokens });
+  await recordAiUsageEvent({ userId, userType, channel: "image", model, tokens });
 }
 var imageRouter = router({
   parseReceipt: proProcedure.input(
@@ -96808,14 +97349,14 @@ var PRO_UPSELL = {
   ],
   cta: "\u0631\u0642\u0651\u064A \u0644\u0640 Pro \u0644\u0641\u062A\u062D \u0627\u0644\u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0643\u0627\u0645\u0644"
 };
-async function trackGoalTokens(userId, userType2, tokens, model) {
+async function trackGoalTokens(userId, userType, tokens, model) {
   if (!tokens) return;
-  if (userType2 === "oauth") {
+  if (userType === "oauth") {
     await db.update(users).set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` }).where(eq(users.id, userId));
   } else {
     await db.update(localUsers).set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` }).where(eq(localUsers.id, userId));
   }
-  await recordAiUsageEvent({ userId, userType: userType2, channel: "goal", model, tokens });
+  await recordAiUsageEvent({ userId, userType, channel: "goal", model, tokens });
 }
 var goalsRouter = router({
   list: authedProcedure.query(async ({ ctx }) => {
@@ -97163,14 +97704,14 @@ app.post("/api/webhooks/paymob", async (c) => {
   if (obj && obj.success === true && !obj.pending) {
     const extraData = obj.payment_key_claims?.extra?.extras || obj.payment_key_claims?.extra || obj.extra_data || obj.order?.extra_data || {};
     const userId = Number(extraData.userId);
-    const userType2 = extraData.userType;
+    const userType = extraData.userType;
     const plan = extraData.plan || "pro_monthly";
-    if (userId && (userType2 === "oauth" || userType2 === "local")) {
-      console.info(`Granting Pro subscription to user ${userId} (${userType2}) via Paymob webhook`);
+    if (userId && (userType === "oauth" || userType === "local")) {
+      console.info(`Granting Pro subscription to user ${userId} (${userType}) via Paymob webhook`);
       try {
         await grantProSubscription({
           userId,
-          userType: userType2,
+          userType,
           plan,
           paymentMethod: obj.payment_key_claims?.extra?.payment_method || "paymob",
           transactionId: String(obj.id)

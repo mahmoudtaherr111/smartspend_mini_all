@@ -4,7 +4,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { CATEGORIES } from "./category-registry";
 import type { ParsedTransaction } from "./rule-engine";
-import { mapModelName } from "./model-mapper";
+import { coerceModelForProvider, type AiProviderName } from "./model-mapper";
 import type { PlanId } from "./ai-usage-policy";
 import {
   classificationResponseSchema,
@@ -12,6 +12,8 @@ import {
   type AIClassificationResult,
 } from "./ai-classifier";
 import { estimateClassificationPromptTokens } from "./ai-routing";
+import { callGroqAPI } from "./groq-client";
+import { logApiKeyError } from "./error-logger";
 
 export interface ProClassificationContext {
   totalIncome: number;
@@ -56,6 +58,7 @@ ${smoker}
 3) افصل كل عملية مالية في item مستقل عند وجود عدة مبالغ.
 4) confidence 0-100 يعكس يقينك الحقيقي.
 5) alertMessage اختياري: جملة مهنية واحدة عن مخاطر أو فرصة ادخار (ليس دائماً).
+6) قواعد مصرية مهمة: نت/إنترنت/راوتر/باقة = فواتير ← إنترنت. شحن رصيد = فواتير ← شحن رصيد. شراء موبايل/لاب/سماعة = تسوق ← أجهزة إلكترونية وليس فواتير. قبضت/استلمت/جالي مرتب = type income وفئة مرتب.
 
 الفئات:
 ${cats}
@@ -77,7 +80,9 @@ export async function aiClassifyPro(
   modelName: string,
   maxTokens: number,
   context: ProClassificationContext,
-  skipClarification?: boolean
+  skipClarification?: boolean,
+  groqApiKey?: string,
+  provider?: AiProviderName
 ): Promise<AIClassificationResult | null> {
   const rich = needsRichProContext(text, context);
   const parts: string[] = [`النص المطلوب تصنيفه:\n"${text}"`];
@@ -119,14 +124,23 @@ export async function aiClassifyPro(
     systemPrompt.length,
     userPrompt.length
   );
-  const actualModelName = mapModelName(
-    context.plan === "ultra" ? modelName : modelName || "gemini-2.5-pro"
+  const plan = context.plan ?? "pro";
+  const requestedProvider: AiProviderName = provider === "groq" ? "groq" : "gemini";
+  const providerModelName = coerceModelForProvider(
+    context.plan === "ultra" ? modelName : modelName || "gemini-2.5-pro",
+    requestedProvider,
+    plan
+  );
+  const geminiFallbackModelName = coerceModelForProvider(
+    context.plan === "ultra" ? modelName : modelName || "gemini-2.5-pro",
+    "gemini",
+    plan
   );
 
-  const runModel = async (key: string) => {
+  const runModel = async (key: string, modelNameForProvider: string) => {
     const genAI = new GoogleGenerativeAI(key);
     const model = genAI.getGenerativeModel({
-      model: actualModelName,
+      model: modelNameForProvider,
       systemInstruction: systemPrompt,
       generationConfig: {
         temperature: 0.15,
@@ -140,30 +154,50 @@ export async function aiClassifyPro(
 
   let response = "";
   let tokensUsed = 0;
-  try {
-    const result = await runModel(apiKey);
-    response = result.response.text();
-    tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
-  } catch (e1: any) {
-    console.error("Pro AI Classify (Key 1):", e1.message);
-    if (!apiKey2) return null;
+  let modelUsed = providerModelName;
+
+  if (requestedProvider === "groq" && groqApiKey) {
     try {
-      const result = await runModel(apiKey2);
-      response = result.response.text();
-      tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
-    } catch (e2) {
-      console.error("Pro AI Classify (Key 2):", e2);
-      return null;
+      const groqResult = await callGroqAPI(groqApiKey, providerModelName, systemPrompt, userPrompt, maxTokens);
+      response = groqResult.text;
+      tokensUsed = groqResult.tokensUsed;
+      modelUsed = `groq:${providerModelName}`;
+    } catch (groqError: any) {
+      console.error("Pro Groq classify error, falling back to Gemini:", groqError?.message);
+      await logApiKeyError("groq", "groq_api_key", groqError);
     }
   }
 
-  const parsed = parseAIResponse(response, actualModelName);
+  if (!response) {
+    try {
+      const result = await runModel(apiKey, geminiFallbackModelName);
+      response = result.response.text();
+      tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
+      modelUsed = `gemini:${geminiFallbackModelName}`;
+    } catch (e1: any) {
+      console.error("Pro AI Classify (Key 1):", e1.message);
+      await logApiKeyError("gemini", "ai_api_key", e1);
+      if (!apiKey2) return null;
+      try {
+        const result = await runModel(apiKey2, geminiFallbackModelName);
+        response = result.response.text();
+        tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
+        modelUsed = `gemini:${geminiFallbackModelName}:key2`;
+      } catch (e2) {
+        console.error("Pro AI Classify (Key 2):", e2);
+        await logApiKeyError("gemini", "ai_api_key_2", e2);
+        return null;
+      }
+    }
+  }
+
+  const parsed = parseAIResponse(response, modelUsed);
   if (parsed) {
     parsed.tokensUsed =
       tokensUsed > 0
         ? tokensUsed
         : estimatedPromptTokens + Math.ceil((response?.length || 0) / 3.5);
-    parsed.modelUsed = `pro:${actualModelName}`;
+    parsed.modelUsed = `pro:${modelUsed}`;
   }
   return parsed;
 }

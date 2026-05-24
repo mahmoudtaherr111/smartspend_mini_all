@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Mic, MicOff, Plus, Loader2, Sparkles, ChevronDown, ChevronUp, AlertCircle, HelpCircle, Save, CheckCircle2, RefreshCw, Square } from "lucide-react";
 import { ExpenseInputLimits } from "@contracts/constants";
 import { cn } from "@/lib/utils";
+import { CATEGORY_OPTIONS, getSubCategoryOptions } from "@/lib/financial-taxonomy";
 
 interface ExpenseFormProps {
   onSuccess?: () => void;
@@ -24,6 +25,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
   const [isSkipping, setIsSkipping] = useState(false);
   const [flowStage, setFlowStage] = useState<"idle" | "recording" | "processing" | "parsed" | "clarify" | "review">("idle");
+  const [inputSource, setInputSource] = useState<"text" | "voice">("text");
 
   const { data: userLimits } = trpc.ai.getUserLimits.useQuery();
 
@@ -39,10 +41,11 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
   const sttMutation = trpc.ai.speechToText.useMutation({
     onSuccess: (data) => {
       setText(data.text);
+      setInputSource("voice");
       setFlowStage("parsed");
       toast.success("تم فهم التسجيل!");
       // Automatically trigger parsing after STT
-      parseMutation.mutate({ text: data.text });
+      parseMutation.mutate({ text: data.text, inputChannel: "voice" });
     },
     onError: (err) => {
       toast.error(err.message || "فشل تحويل الصوت لنص.");
@@ -260,7 +263,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
             subCategory: item.subCategory,
             description: item.description,
             rawText: text || "إدخال صوتي",
-            source: "ai_parsed",
+            source: inputSource === "voice" ? "voice" : "ai_parsed",
             date: item.date,
           })
         )
@@ -268,6 +271,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
       setParsedItems(null);
       setDecision(null);
       setText("");
+      setInputSource("text");
       setFlowStage("idle");
       toast.success(isAuto ? `تم الحفظ تلقائياً (${normalizedItems.length} عملية)` : "تم الحفظ بنجاح.");
     } catch {
@@ -302,7 +306,8 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
 
     setIsProcessingVoice(true);
     setFlowStage("processing");
-    parseMutation.mutate({ text });
+    setInputSource("text");
+    parseMutation.mutate({ text, inputChannel: "text" });
   };
 
   // Sync offline texts when coming back online
@@ -317,7 +322,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
         setText(first.text);
         setIsProcessingVoice(true);
         setFlowStage("processing");
-        parseMutation.mutate({ text: first.text });
+        parseMutation.mutate({ text: first.text, inputChannel: "text" });
       }
     };
 
@@ -332,15 +337,12 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
   const handleSkip = () => {
     setIsSkipping(true);
     setFlowStage("processing");
-    parseMutation.mutate({ text, skipClarification: true });
+    parseMutation.mutate({ text, skipClarification: true, inputChannel: inputSource });
   };
 
   const isSubmitting = parseMutation.isPending || createMutation.isPending || isProcessingVoice;
 
-  const categories = [
-    "أكل وشرب", "مواصلات", "تسوق", "سكن وفواتير", "صحة", "ترفيه", "تعليم",
-    "ملابس", "سيارات", "تكنولوجيا", "أهل وبيت", "هدايا", "صيانة", "اشتراكات", "عمل", "استثمار", "أخرى"
-  ];
+  const categories = CATEGORY_OPTIONS;
 
   const getTypeColor = (type: string) => {
     if (type === "income") return "text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800";
@@ -470,7 +472,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
                     const newText = `${text} (${(e.target as HTMLInputElement).value})`;
                     setText(newText);
                     setDecision(null);
-                    parseMutation.mutate({ text: newText });
+                    parseMutation.mutate({ text: newText, inputChannel: inputSource });
                   }
                 }}
               />
@@ -524,7 +526,11 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
                       <Label className="text-[10px] opacity-70">الفئة الرئيسة</Label>
                       <select
                         value={item.category}
-                        onChange={(e) => handleUpdateParsedItem(idx, { category: e.target.value })}
+                        onChange={(e) => {
+                          const category = e.target.value;
+                          const subCategory = getSubCategoryOptions(category)[0] || "عام";
+                          handleUpdateParsedItem(idx, { category, subCategory });
+                        }}
                         className="w-full text-xs h-9 rounded-lg border bg-white/50 dark:bg-black/20 px-2 outline-none focus:ring-1 ring-emerald-500"
                       >
                         {categories.map(c => <option key={c} value={c}>{c}</option>)}
@@ -532,12 +538,15 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
                     </div>
                     <div className="space-y-1">
                       <Label className="text-[10px] opacity-70">الفئة الفرعية</Label>
-                      <Input
+                      <select
                         value={item.subCategory || ""}
                         onChange={(e) => handleUpdateParsedItem(idx, { subCategory: e.target.value })}
-                        className="h-9 text-xs bg-white/50 dark:bg-black/20 border-0"
-                        placeholder="أدخل فئة فرعية"
-                      />
+                        className="w-full h-9 text-xs rounded-lg bg-white/50 dark:bg-black/20 border-0 px-2 outline-none focus:ring-1 ring-emerald-500"
+                      >
+                        {getSubCategoryOptions(item.category).map((sub) => (
+                          <option key={sub} value={sub}>{sub}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
@@ -585,7 +594,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
 function ManualForm({ onSuccess, categories, createMutation }: any) {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
-  const [subCategory, setSubCategory] = useState("");
+  const [subCategory, setSubCategory] = useState("عام");
   const [description, setDescription] = useState("");
   const [type, setType] = useState("expense");
 
@@ -608,7 +617,7 @@ function ManualForm({ onSuccess, categories, createMutation }: any) {
       const offlineManual = JSON.parse(localStorage.getItem("smartspend_offline_manual") || "[]");
       offlineManual.push({ ...payload, timestamp: Date.now() });
       localStorage.setItem("smartspend_offline_manual", JSON.stringify(offlineManual));
-      setAmount(""); setCategory(""); setSubCategory(""); setDescription("");
+      setAmount(""); setCategory(""); setSubCategory("عام"); setDescription("");
       return;
     }
 
@@ -616,7 +625,7 @@ function ManualForm({ onSuccess, categories, createMutation }: any) {
       onSuccess: () => {
         setAmount("");
         setCategory("");
-        setSubCategory("");
+        setSubCategory("عام");
         setDescription("");
         toast.success("تم التسجيل يدوياً!");
       }
@@ -671,7 +680,15 @@ function ManualForm({ onSuccess, categories, createMutation }: any) {
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">الفئة *</Label>
-          <select value={category} onChange={e => setCategory(e.target.value)} className="w-full h-9 rounded-md border text-xs px-2 bg-white dark:bg-slate-900">
+          <select
+            value={category}
+            onChange={e => {
+              const nextCategory = e.target.value;
+              setCategory(nextCategory);
+              setSubCategory(getSubCategoryOptions(nextCategory)[0] || "عام");
+            }}
+            className="w-full h-9 rounded-md border text-xs px-2 bg-white dark:bg-slate-900"
+          >
             <option value="">اختر...</option>
             {categories.map((c: string) => <option key={c} value={c}>{c}</option>)}
           </select>
@@ -679,7 +696,16 @@ function ManualForm({ onSuccess, categories, createMutation }: any) {
       </div>
       <div className="space-y-1.5">
         <Label className="text-xs">الفئة الفرعية</Label>
-        <Input value={subCategory} onChange={e => setSubCategory(e.target.value)} placeholder="مثلاً: فاتورة النت" className="h-9" />
+        <select
+          value={subCategory}
+          onChange={e => setSubCategory(e.target.value)}
+          className="w-full h-9 rounded-md border text-xs px-2 bg-white dark:bg-slate-900"
+          disabled={!category}
+        >
+          {getSubCategoryOptions(category).map((sub) => (
+            <option key={sub} value={sub}>{sub}</option>
+          ))}
+        </select>
       </div>
       <div className="space-y-1.5">
         <Label className="text-xs">الوصف</Label>

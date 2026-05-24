@@ -33,7 +33,14 @@ import {
   buildFamilyReportContext,
 } from "./services/personal-context-builder";
 import { redactSensitiveData } from "./lib/anonymizer";
-import { mapModelName } from "./lib/model-mapper";
+import {
+  coerceModelForProvider,
+  defaultGeminiModelForPlan,
+  defaultModelForProvider,
+  mapModelName,
+  type AiPlanName,
+  type AiProviderName,
+} from "./lib/model-mapper";
 import {
   assertAiBudget,
   asPlan,
@@ -120,17 +127,34 @@ export async function resolveRoutingConfig(
   tokensUsed: number,
   cfg: Record<string, string>
 ): Promise<ResolvedRouting> {
-  const plan = userPlan === "pro" || userPlan === "ultra" ? "pro" : "free";
-  const rangesKey = `${plan}_routing_ranges`;
+  const plan: AiPlanName = userPlan === "ultra" ? "ultra" : userPlan === "pro" ? "pro" : "free";
+  const rangesPlan = plan === "free" ? "free" : "pro";
+  const rangesKey = `${rangesPlan}_routing_ranges`;
   const rawRanges = cfg[rangesKey];
+  const legacyGeminiModel =
+    plan === "ultra"
+      ? (cfg.ai_model_ultra || defaultGeminiModelForPlan(plan))
+      : plan === "pro"
+        ? (cfg.ai_model_pro || defaultGeminiModelForPlan(plan))
+        : (cfg.ai_model_free || defaultGeminiModelForPlan(plan));
+
+  const resolveKey = (provider: AiProviderName, keySlot?: RoutingRange["key_slot"]) => {
+    if (provider === "groq") return cfg.groq_api_key || "";
+    if (keySlot === "key2") {
+      return cfg.ai_api_key_2 || cfg.ai_api_key || env.GEMINI_API_KEY || "";
+    }
+    return cfg.ai_api_key || env.GEMINI_API_KEY || cfg.ai_api_key_2 || "";
+  };
+
+  const geminiFallback = (modelSetting?: string): ResolvedRouting => ({
+    provider: "gemini",
+    apiKey: resolveKey("gemini", "key1"),
+    model: coerceModelForProvider(modelSetting || legacyGeminiModel, "gemini", plan),
+  });
 
   // If no routing ranges configured, fall back to simple legacy key/model
   if (!rawRanges) {
-    return {
-      provider: "gemini",
-      apiKey: cfg.ai_api_key || env.GEMINI_API_KEY,
-      model: plan === "pro" ? (cfg.ai_model_pro || "gemini-1.5-flash") : (cfg.ai_model_free || "gemini-2.0-flash"),
-    };
+    return geminiFallback();
   }
 
   let ranges: RoutingRange[] = [];
@@ -138,11 +162,7 @@ export async function resolveRoutingConfig(
     ranges = JSON.parse(rawRanges);
   } catch {
     // JSON parse failed — fallback gracefully
-    return {
-      provider: "gemini",
-      apiKey: cfg.ai_api_key || env.GEMINI_API_KEY,
-      model: cfg.ai_model_free || "gemini-2.0-flash",
-    };
+    return geminiFallback();
   }
 
   // Find the matching range for current token usage
@@ -170,31 +190,24 @@ export async function resolveRoutingConfig(
     });
   }
 
-  // Resolve API key from slot
-  const keySlot = matchedRange.key_slot ?? "key1";
-  let resolvedKey: string;
-  if (keySlot === "groq") {
-    resolvedKey = cfg.groq_api_key || "";
-  } else if (keySlot === "key2") {
-    resolvedKey = cfg.ai_api_key_2 || "";
-  } else {
-    resolvedKey = cfg.ai_api_key || env.GEMINI_API_KEY || "";
-  }
+  // Resolve API key from the selected provider. Provider wins over a mismatched slot.
+  const provider: AiProviderName = matchedRange.provider ?? (matchedRange.key_slot === "groq" ? "groq" : "gemini");
+  const keySlot = matchedRange.key_slot ?? (provider === "groq" ? "groq" : "key1");
+  const resolvedKey = resolveKey(provider, keySlot);
 
   if (!resolvedKey) {
-    // Key slot configured but key is empty — fall back to primary Gemini key
-    resolvedKey = cfg.ai_api_key || env.GEMINI_API_KEY || "";
-    return {
-      provider: "gemini",
-      apiKey: resolvedKey,
-      model: mapModelName(matchedRange.model || cfg.ai_model_free || "gemini-2.0-flash"),
-    };
+    // Key slot configured but key is empty — fall back to Gemini-safe routing.
+    return geminiFallback();
   }
 
   return {
-    provider: (matchedRange.provider ?? "gemini") as "gemini" | "groq",
+    provider,
     apiKey: resolvedKey,
-    model: mapModelName(matchedRange.model || cfg.ai_model_free || "gemini-2.0-flash"),
+    model: coerceModelForProvider(
+      matchedRange.model || defaultModelForProvider(provider, plan),
+      provider,
+      plan
+    ),
   };
 }
 
@@ -629,7 +642,12 @@ async function aiParse(text: string, client: any, userId: number, userType: stri
 export const aiRouter = router({
   // ─── Parse Expense (New Pipeline) ───
   parseExpense: aiProcedure
-    .input(z.object({ text: z.string(), model: z.enum(["flash", "pro", "ultra", "gemma"]).default("flash"), skipClarification: z.boolean().optional() }))
+    .input(z.object({
+      text: z.string(),
+      model: z.enum(["flash", "pro", "ultra", "gemma"]).default("flash"),
+      skipClarification: z.boolean().optional(),
+      inputChannel: z.enum(["text", "voice"]).default("text"),
+    }))
     .mutation(async ({ ctx, input }) => {
       // Check daily limits
       const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -761,7 +779,7 @@ export const aiRouter = router({
           routing: result.log.routing,
         },
         ambiguityFlags: result.items.flatMap((item: any) => item.ambiguityFlags || []),
-        inputChannel: "text",
+        inputChannel: input.inputChannel,
         needsFollowup: result.decision === "clarify" || result.overallConfidence < 60,
         modelUsed: result.modelUsed,
         tokensUsed: result.tokensUsed,

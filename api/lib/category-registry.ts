@@ -329,3 +329,317 @@ export function getExpenseCategories(): string[] {
 export function getIncomeCategories(): string[] {
   return CATEGORIES.filter(c => c.type === "income").map(c => c.name_ar);
 }
+
+type TransactionType = MainCategory["type"];
+
+const CATEGORY_ALIASES: Array<[string, string]> = [
+  ["أخرى", "متنوعات"],
+  ["مصروف شخصي", "متنوعات"],
+  ["مدفوعات طوارئ", "متنوعات"],
+  ["دخل", "مرتب"],
+  ["راتب", "مرتب"],
+  ["سكن وفواتير", "فواتير"],
+  ["التزامات يومية", "فواتير"],
+  ["ملابس", "تسوق"],
+  ["سيارات", "خدمات سيارات"],
+  ["تكنولوجيا", "خدمات رقمية"],
+  ["أهل وبيت", "سكن"],
+  ["هدايا", "هدايا وصدقات"],
+  ["مجاملات", "هدايا وصدقات"],
+  ["صيانة", "سكن"],
+  ["أدوات شغل", "عمل"],
+  ["أقساط", "فواتير"],
+  ["تحويلات", "تحويل"],
+  ["Bills", "فواتير"],
+  ["Home & Bills", "فواتير"],
+  ["Daily Commitments", "فواتير"],
+  ["Income", "مرتب"],
+  ["Salary", "مرتب"],
+  ["Freelance", "عمل حر"],
+  ["Transfer", "تحويل"],
+  ["Shopping", "تسوق"],
+  ["Transport", "مواصلات"],
+  ["Car Services", "خدمات سيارات"],
+  ["Digital Services", "خدمات رقمية"],
+  ["Miscellaneous", "متنوعات"],
+];
+
+const DEFAULT_SUBCATEGORY_BY_CATEGORY = new Map(
+  CATEGORIES.map((category) => [
+    category.name_ar,
+    category.subcategories.find((sub) => sub.name_ar === "عام")?.name_ar ||
+      category.subcategories[0]?.name_ar ||
+      "عام",
+  ])
+);
+
+function comparableArabic(value: string): string {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/[إأآٱ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/ؤ/g, "و")
+    .replace(/ئ/g, "ي")
+    .toLowerCase();
+}
+
+function hasAny(text: string, terms: string[]): boolean {
+  const normalized = comparableArabic(text);
+  return terms.some((term) => normalized.includes(comparableArabic(term)));
+}
+
+function findCategoryByAnyName(value: string): MainCategory | undefined {
+  const normalized = comparableArabic(value);
+  return CATEGORIES.find(
+    (category) =>
+      comparableArabic(category.name_ar) === normalized ||
+      comparableArabic(category.name) === normalized ||
+      comparableArabic(category.id) === normalized
+  );
+}
+
+function findSubCategoryByAnyName(category: MainCategory, value: string): SubCategory | undefined {
+  const normalized = comparableArabic(value);
+  return category.subcategories.find(
+    (subCategory) =>
+      comparableArabic(subCategory.name_ar) === normalized ||
+      comparableArabic(subCategory.name) === normalized ||
+      comparableArabic(subCategory.id) === normalized
+  );
+}
+
+function inferCategoryFromEvidence(rawCategory: string, evidence: string): string | undefined {
+  const categoryText = `${rawCategory} ${evidence}`;
+
+  if (hasAny(rawCategory, ["التزامات يومية", "Daily Commitments"])) {
+    return "فواتير";
+  }
+
+  if (
+    hasAny(rawCategory, ["خدمات رقمية", "Digital Services"]) &&
+    hasAny(categoryText, ["نت", "انترنت", "إنترنت", "راوتر", "باقة", "شحن", "رصيد", "فودافون", "اتصالات", "اورنج", "أورنج", "وي"])
+  ) {
+    return "فواتير";
+  }
+
+  if (
+    hasAny(categoryText, ["مرتب", "راتب", "قبضت", "استلمت", "جالي مرتب", "المعاش", "بونص", "مكافأة"]) &&
+    !hasAny(categoryText, ["دفعت", "صرفت", "اشتريت", "قسط"])
+  ) {
+    return "مرتب";
+  }
+
+  if (hasAny(categoryText, ["فريلانس", "عمل حر", "سبوبة", "عمولة", "مشروع", "كلاينت"])) {
+    return "عمل حر";
+  }
+
+  if (hasAny(categoryText, ["أرباح", "فوائد", "كاش باك", "استرجاع", "عائد"])) {
+    return "عوائد استثمار";
+  }
+
+  return undefined;
+}
+
+function inferSubCategory(category: string, evidence: string): string | undefined {
+  switch (category) {
+    case "فواتير":
+      if (hasAny(evidence, ["كهرب", "نور"])) return "كهرباء";
+      if (hasAny(evidence, ["مية", "مياه", "مايه"])) return "مياه";
+      if (hasAny(evidence, ["غاز"])) return "غاز";
+      if (hasAny(evidence, ["نت", "انترنت", "إنترنت", "راوتر", "واي فاي", "wifi", "باقة"])) return "إنترنت";
+      if (hasAny(evidence, ["شحن", "رصيد", "كارت فكة", "كارت شحن"])) return "شحن رصيد";
+      if (hasAny(evidence, ["تليفون", "هاتف", "ارضي", "أرضي"])) return "تليفون";
+      if (hasAny(evidence, ["قسط", "أقساط", "اقساط", "فاليو", "سهولة", "دين", "سلفة", "قرض", "تمويل"])) return "أقساط";
+      if (hasAny(evidence, ["تأمين", "تامين"])) return "تأمين";
+      if (hasAny(evidence, ["ضريبة", "ضرائب", "ضرايب"])) return "ضرائب";
+      return undefined;
+    case "تسوق":
+      if (hasAny(evidence, ["هدوم", "لبس", "ملابس", "تيشيرت", "بنطلون", "جاكيت"])) return "ملابس";
+      if (hasAny(evidence, ["جزمة", "كوتشي", "شوز", "حذاء"])) return "أحذية";
+      if (hasAny(evidence, ["موبايل", "لاب", "لابتوب", "كمبيوتر", "سماعة", "شاحن", "ايفون", "تليفون"])) return "أجهزة إلكترونية";
+      if (hasAny(evidence, ["حلاق", "عناية", "ميكاب", "برفان", "عطر", "شامبو"])) return "عناية شخصية";
+      return undefined;
+    case "أكل وشرب":
+      if (hasAny(evidence, ["قهوة", "نسكافيه", "كافيه", "لاتيه", "ستاربكس", "شاي"])) return "قهوة وكافيه";
+      if (hasAny(evidence, ["دليفري", "تيك اواي", "طلبات"])) return "دليفري";
+      if (hasAny(evidence, ["سوبر", "بقال", "خضار", "فاكهة", "بيض", "لبن"])) return "بقالة";
+      if (hasAny(evidence, ["لحمة", "فراخ", "سمك", "جمبري"])) return "لحوم ودواجن";
+      if (hasAny(evidence, ["عيش", "مخبز", "فرن"])) return "مخبوزات";
+      if (hasAny(evidence, ["شيبسي", "شوكولاتة", "حلويات", "ايس كريم"])) return "سناكس";
+      return undefined;
+    case "مواصلات":
+      if (hasAny(evidence, ["اوبر", "أوبر", "كريم"])) return "أوبر/كريم";
+      if (hasAny(evidence, ["مترو"])) return "مترو";
+      if (hasAny(evidence, ["اتوبيس", "باص", "ميكروباص"])) return "أتوبيس";
+      if (hasAny(evidence, ["تاكسي", "تكسي"])) return "تاكسي";
+      if (hasAny(evidence, ["بنزين", "تفويلة"])) return "بنزين";
+      if (hasAny(evidence, ["ركنة", "جراج"])) return "ركنة";
+      return undefined;
+    case "خدمات سيارات":
+      if (hasAny(evidence, ["كارتة"])) return "كارتة";
+      if (hasAny(evidence, ["ركنة", "سايس", "جراج"])) return "ركنة";
+      if (hasAny(evidence, ["زيت", "تغيير زيت"])) return "تغيير زيت";
+      if (hasAny(evidence, ["مخالفة"])) return "مخالفة";
+      if (hasAny(evidence, ["بطارية"])) return "بطارية";
+      if (hasAny(evidence, ["كاوتش", "إطارات", "اطارات"])) return "إطارات";
+      return undefined;
+    case "سكن":
+      if (hasAny(evidence, ["ايجار", "إيجار", "اجار"])) return "إيجار";
+      if (hasAny(evidence, ["عفش", "أثاث", "اثاث"])) return "أثاث";
+      if (hasAny(evidence, ["سباك", "كهربائي", "نقاش", "نجار", "صيانة"])) return "صيانة";
+      if (hasAny(evidence, ["منظفات", "مسحوق", "صابون"])) return "منظفات";
+      if (hasAny(evidence, ["تلاجة", "غسالة", "بوتاجاز"])) return "أجهزة منزلية";
+      return undefined;
+    case "صحة":
+      if (hasAny(evidence, ["دكتور", "كشف", "عيادة", "طبيب"])) return "دكتور";
+      if (hasAny(evidence, ["صيدلية", "دوا", "علاج", "روشتة"])) return "صيدلية";
+      if (hasAny(evidence, ["تحاليل", "اشعة", "سونار"])) return "تحاليل";
+      if (hasAny(evidence, ["أسنان", "اسنان", "ضرس"])) return "أسنان";
+      if (hasAny(evidence, ["مستشفى"])) return "مستشفى";
+      return undefined;
+    case "تعليم":
+      if (hasAny(evidence, ["مدرسة", "مدرسه", "يونيفورم"])) return "مدرسة";
+      if (hasAny(evidence, ["جامعة", "جامعه", "كلية"])) return "جامعة";
+      if (hasAny(evidence, ["كورس", "دورة", "كورسيرا", "يوديمي"])) return "كورس";
+      if (hasAny(evidence, ["درس", "دروس", "سنتر"])) return "دروس خصوصية";
+      if (hasAny(evidence, ["كتاب", "كتب", "مذكرة", "أدوات"])) return "كتب";
+      return undefined;
+    case "ترفيه":
+      if (hasAny(evidence, ["سينما", "فيلم"])) return "سينما";
+      if (hasAny(evidence, ["كافيه", "قهوة"])) return "كافيه";
+      if (hasAny(evidence, ["سفر", "مصيف", "رحلة"])) return "سفر";
+      if (hasAny(evidence, ["جيم", "رياضة", "بروتين"])) return "رياضة وجيم";
+      if (hasAny(evidence, ["بلايستيشن", "العاب", "ألعاب", "gaming"])) return "ألعاب";
+      if (hasAny(evidence, ["خروجة", "فسحة", "تمشية"])) return "خروجة";
+      return undefined;
+    case "هدايا وصدقات":
+      if (hasAny(evidence, ["صدقة", "تبرع", "زكاة", "رسالة", "جامع"])) return "صدقة/تبرع";
+      if (hasAny(evidence, ["عيدية"])) return "عيدية";
+      if (hasAny(evidence, ["فرح", "خطوبة"])) return "فرح/خطوبة";
+      if (hasAny(evidence, ["عيد ميلاد"])) return "عيد ميلاد";
+      return undefined;
+    case "اشتراكات":
+      if (hasAny(evidence, ["نتفلكس", "netflix"])) return "نتفلكس";
+      if (hasAny(evidence, ["سبوتيفاي", "spotify"])) return "سبوتيفاي";
+      if (hasAny(evidence, ["شات جي بي تي", "chatgpt", "gpt"])) return "شات جي بي تي";
+      if (hasAny(evidence, ["جوجل ai", "google ai", "gemini"])) return "جوجل AI";
+      if (hasAny(evidence, ["saas", "برنامج", "برمجيات"])) return "برمجيات";
+      return undefined;
+    case "تدخين":
+      if (hasAny(evidence, ["سجاير", "سجائر", "علبة"])) return "سجائر";
+      if (hasAny(evidence, ["فيب", "بود", "ليكود"])) return "فيب/ليكود";
+      if (hasAny(evidence, ["شيشة", "معسل"])) return "شيشة/معسل";
+      return undefined;
+    case "عمل":
+      if (hasAny(evidence, ["استضافة", "hosting"])) return "استضافة";
+      if (hasAny(evidence, ["api", "واجهة", "واجهات"])) return "واجهات برمجية";
+      if (hasAny(evidence, ["مكتب", "أدوات", "ادوات"])) return "مستلزمات مكتب";
+      if (hasAny(evidence, ["مساحة عمل", "coworking"])) return "مساحة عمل";
+      return undefined;
+    case "خدمات رقمية":
+      if (hasAny(evidence, ["vpn"])) return "اشتراك VPN";
+      if (hasAny(evidence, ["cloud", "كلاود"])) return "اشتراك Cloud";
+      if (hasAny(evidence, ["ai", "ذكاء", "chatgpt", "جيميناي"])) return "أدوات AI";
+      if (hasAny(evidence, ["دومين", "domain"])) return "دومينات";
+      if (hasAny(evidence, ["استضافة", "hosting"])) return "استضافة";
+      return undefined;
+    case "مرتب":
+      if (hasAny(evidence, ["بونص", "مكافأة", "مكافاه"])) return "مكافأة/بونص";
+      if (hasAny(evidence, ["اوفر", "أوفر", "اضافي", "إضافي"])) return "أوفر تايم";
+      if (hasAny(evidence, ["بدل"])) return "بدلات";
+      return "مرتب أساسي";
+    case "عمل حر":
+      if (hasAny(evidence, ["عمولة"])) return "عمولة";
+      if (hasAny(evidence, ["سبوبة"])) return "سبوبة";
+      return "مشروع";
+    case "عوائد استثمار":
+      if (hasAny(evidence, ["فوائد", "فايدة"])) return "فوائد";
+      if (hasAny(evidence, ["كاش باك", "cashback"])) return "كاش باك";
+      if (hasAny(evidence, ["استرجاع", "refund"])) return "استرجاع";
+      return "أرباح";
+    case "تحويل":
+      if (hasAny(evidence, ["atm", "سحب"])) return "سحب ATM";
+      if (hasAny(evidence, ["انستاباي", "instapay"])) return "انستاباي";
+      if (hasAny(evidence, ["فودافون كاش"])) return "فودافون كاش";
+      if (hasAny(evidence, ["ادخار", "تحويش"])) return "ادخار";
+      if (hasAny(evidence, ["دين", "سلف", "سلفة", "قرض", "loan"])) return "دين/سلفة";
+      return "تحويل بنكي";
+    case "استثمار":
+      if (hasAny(evidence, ["دهب", "ذهب", "سبيكة"])) return "ذهب";
+      if (hasAny(evidence, ["سهم", "أسهم", "اسهم", "بورصة"])) return "أسهم";
+      if (hasAny(evidence, ["شهادة", "شهادات"])) return "شهادات";
+      if (hasAny(evidence, ["عقار", "شقة", "ارض", "أرض"])) return "عقارات";
+      if (hasAny(evidence, ["كريبتو", "بيتكوين", "crypto"])) return "عملات رقمية";
+      return undefined;
+    default:
+      return undefined;
+  }
+}
+
+export function normalizeCategoryName(
+  rawCategory?: string | null,
+  evidence = "",
+  fallback = "متنوعات"
+): string {
+  const raw = String(rawCategory || "").trim();
+  const inferred = inferCategoryFromEvidence(raw, evidence);
+  if (inferred && findCategoryByAnyName(inferred)) return inferred;
+
+  const direct = findCategoryByAnyName(raw);
+  if (direct) return direct.name_ar;
+
+  const normalized = comparableArabic(raw);
+  const alias = CATEGORY_ALIASES.find(([from]) => comparableArabic(from) === normalized);
+  if (alias && findCategoryByAnyName(alias[1])) return alias[1];
+
+  return fallback;
+}
+
+export function normalizeSubCategoryName(
+  categoryName: string,
+  rawSubCategory?: string | null,
+  evidence = ""
+): string {
+  const category = getCategoryByArabicName(categoryName);
+  if (!category) return "عام";
+
+  const raw = String(rawSubCategory || "").trim();
+  const exact = raw ? findSubCategoryByAnyName(category, raw) : undefined;
+  if (exact) return exact.name_ar;
+
+  const inferred = inferSubCategory(category.name_ar, `${raw} ${evidence}`);
+  if (inferred) {
+    const inferredMatch = findSubCategoryByAnyName(category, inferred);
+    if (inferredMatch) return inferredMatch.name_ar;
+  }
+
+  if (raw && comparableArabic(raw) === comparableArabic("أخرى")) {
+    return DEFAULT_SUBCATEGORY_BY_CATEGORY.get(category.name_ar) || "عام";
+  }
+
+  return DEFAULT_SUBCATEGORY_BY_CATEGORY.get(category.name_ar) || "عام";
+}
+
+export function normalizeTransactionTaxonomy<
+  T extends { category?: string; subCategory?: string | null; type?: string; description?: string | null }
+>(item: T, evidence = ""): T & { category: string; subCategory: string; type: TransactionType } {
+  const combinedEvidence = `${item.description || ""} ${item.subCategory || ""} ${evidence}`;
+  const category = normalizeCategoryName(item.category, combinedEvidence);
+  const subCategory = normalizeSubCategoryName(category, item.subCategory, combinedEvidence);
+  const categoryType = getCategoryType(category) as TransactionType;
+
+  return {
+    ...item,
+    category,
+    subCategory,
+    type: categoryType,
+  };
+}
+
+export function normalizeTransactionTaxonomyList<
+  T extends { category?: string; subCategory?: string | null; type?: string; description?: string | null }
+>(items: T[], evidence = ""): Array<T & { category: string; subCategory: string; type: TransactionType }> {
+  return items.map((item) => normalizeTransactionTaxonomy(item, evidence));
+}
