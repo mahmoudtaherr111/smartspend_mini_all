@@ -18,7 +18,7 @@ import { eq, and, gte, desc } from "drizzle-orm";
 // ─── Types ───
 
 export interface MemoryPattern {
-  template: string;        // e.g. "دفعت {X} للمدرس"
+  template: string; // e.g. "دفعت {X} للمدرس"
   category: string;
   subCategory: string;
   type: "income" | "expense";
@@ -30,7 +30,7 @@ export interface MemoryPattern {
 export interface MemoryMatch {
   pattern: MemoryPattern;
   amount: number;
-  matchScore: number;      // 0-100, how well it matched
+  matchScore: number; // 0-100, how well it matched
 }
 
 // ─── LRU Per-User Cache ───
@@ -125,8 +125,8 @@ function templateSimilarity(a: string, b: string): number {
   if (na === nb) return 98;
 
   // Word-level Jaccard similarity
-  const wordsA = new Set(na.split(" ").filter(w => w.length >= 2));
-  const wordsB = new Set(nb.split(" ").filter(w => w.length >= 2));
+  const wordsA = new Set(na.split(" ").filter((w) => w.length >= 2));
+  const wordsB = new Set(nb.split(" ").filter((w) => w.length >= 2));
 
   if (wordsA.size === 0 || wordsB.size === 0) return 0;
 
@@ -145,10 +145,11 @@ function templateSimilarity(a: string, b: string): number {
   for (let i = 0; i < Math.min(arrA.length, arrB.length); i++) {
     if (arrA[i] === arrB[i]) orderScore++;
   }
-  const orderRatio = arrA.length > 0 ? orderScore / Math.max(arrA.length, arrB.length) : 0;
+  const orderRatio =
+    arrA.length > 0 ? orderScore / Math.max(arrA.length, arrB.length) : 0;
 
   // Combined score: 70% content + 30% order
-  return Math.round((jaccard * 70 + orderRatio * 30));
+  return Math.round(jaccard * 70 + orderRatio * 30);
 }
 
 // ─── Pattern Loading ───
@@ -159,7 +160,7 @@ function templateSimilarity(a: string, b: string): number {
  */
 async function loadUserPatterns(
   userId: number,
-  userType: string
+  userType: string,
 ): Promise<MemoryPattern[]> {
   try {
     // Get successful classifications from the last 90 days
@@ -173,8 +174,8 @@ async function loadUserPatterns(
         and(
           eq(classificationLogs.userId, userId),
           eq(classificationLogs.userType, userType),
-          gte(classificationLogs.createdAt, ninetyDaysAgo)
-        )
+          gte(classificationLogs.createdAt, ninetyDaysAgo),
+        ),
       )
       .orderBy(desc(classificationLogs.createdAt))
       .limit(500);
@@ -200,15 +201,20 @@ async function loadUserPatterns(
 
       // Parse final result
       const finalResult = log.finalResult as any;
-      if (!finalResult || !Array.isArray(finalResult) || finalResult.length === 0)
+      if (
+        !finalResult ||
+        !Array.isArray(finalResult) ||
+        finalResult.length === 0
+      )
         continue;
 
       const first = finalResult[0];
       const confidence = log.confidence || 0;
 
-      // Skip low-confidence or corrected entries
-      if (confidence < 80) continue;
+      // Skip low-confidence or corrected entries, and only allow logs parsed by AI
+      if (confidence < 98) continue;
       if (log.wasCorrected) continue;
+      if (log.parsedBy !== "ai") continue;
 
       const existing = templateMap.get(template);
       if (existing) {
@@ -239,7 +245,7 @@ async function loadUserPatterns(
           category: data.category,
           subCategory: data.subCategory,
           type: data.type as "income" | "expense",
-          confidence: Math.min(100, data.confidence + (data.count * 2)), // Boost by repeat usage
+          confidence: Math.min(100, data.confidence + data.count * 2), // Boost by repeat usage
           usageCount: data.count,
           lastUsed: data.lastUsed,
         });
@@ -262,7 +268,7 @@ async function loadUserPatterns(
 export async function muscleMemoryLookup(
   text: string,
   userId: number,
-  userType: string
+  userType: string,
 ): Promise<MemoryMatch | null> {
   // 1. Get or load patterns
   let patterns = memoryCache.get(userId, userType);
@@ -284,7 +290,8 @@ export async function muscleMemoryLookup(
   for (const pattern of patterns) {
     const score = templateSimilarity(inputTemplate, pattern.template);
 
-    if (score > bestScore && score >= 85) {
+    // Require 98% similarity threshold to avoid false positive matches
+    if (score > bestScore && score >= 98) {
       bestScore = score;
       bestMatch = {
         pattern,
@@ -301,9 +308,6 @@ export async function muscleMemoryLookup(
  * Record a successful classification for future muscle memory.
  * Called after user confirms/saves a transaction.
  */
-export function invalidateUserMemory(
-  userId: number,
-  userType: string
-): void {
+export function invalidateUserMemory(userId: number, userType: string): void {
   memoryCache.invalidate(userId, userType);
 }

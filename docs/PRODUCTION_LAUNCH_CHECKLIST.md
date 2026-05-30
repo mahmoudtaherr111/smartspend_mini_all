@@ -2,19 +2,19 @@
 
 ## Environment (required)
 
-| Variable | Required | Notes |
-|----------|----------|-------|
-| `DATABASE_URL` | Yes | MySQL 8+ |
-| `JWT_SECRET` | Yes | Strong random |
-| `GEMINI_API_KEY` | Yes | Classification + reports |
-| `GOOGLE_CLIENT_ID/SECRET` | Yes | OAuth |
-| `GOOGLE_REDIRECT_URI` | Yes | Must match Google console |
-| `APP_URL` | Yes | Public HTTPS origin |
-| `NODE_ENV` | Yes | `production` |
-| `PAYMOB_*` | Yes for revenue | See below |
-| `BILLING_SIMULATE` | **Must be unset or false** | Never `true` in prod |
-| `PAYMOB_HMAC_SECRET` | Yes | Webhook verification |
-| `TRUST_PROXY` | Yes if behind nginx | `true` |
+| Variable                  | Required                   | Notes                     |
+| ------------------------- | -------------------------- | ------------------------- |
+| `DATABASE_URL`            | Yes                        | MySQL 8+                  |
+| `JWT_SECRET`              | Yes                        | Strong random             |
+| `GEMINI_API_KEY`          | Yes                        | Classification + reports  |
+| `GOOGLE_CLIENT_ID/SECRET` | Yes                        | OAuth                     |
+| `GOOGLE_REDIRECT_URI`     | Yes                        | Must match Google console |
+| `APP_URL`                 | Yes                        | Public HTTPS origin       |
+| `NODE_ENV`                | Yes                        | `production`              |
+| `PAYMOB_*`                | Yes for revenue            | See below                 |
+| `BILLING_SIMULATE`        | **Must be unset or false** | Never `true` in prod      |
+| `PAYMOB_HMAC_SECRET`      | Yes                        | Webhook verification      |
+| `TRUST_PROXY`             | Yes if behind nginx        | `true`                    |
 
 Copy from [`.env.example`](../.env.example).
 
@@ -59,17 +59,17 @@ Monorepo serves `dist/public` + API on `PORT` (default 3000).
 
 ## Manual smoke (pre-launch)
 
-| # | Flow | Pass |
-|---|------|------|
-| 1 | Register / login | |
-| 2 | Add expense voice + text | |
-| 3 | Free user hits daily AI limit → upgrade CTA | |
-| 4 | Pro checkout Paymob (sandbox) | |
-| 5 | Pro features: report export, goals | |
-| 6 | Support ticket + admin respond + close | |
-| 7 | PWA install (Android Chrome) | |
-| 8 | Mobile: Home, Pro, Support | |
-| 9 | Offline → offline.html shell | |
+| #   | Flow                                        | Pass |
+| --- | ------------------------------------------- | ---- |
+| 1   | Register / login                            |      |
+| 2   | Add expense voice + text                    |      |
+| 3   | Free user hits daily AI limit → upgrade CTA |      |
+| 4   | Pro checkout Paymob (sandbox)               |      |
+| 5   | Pro features: report export, goals          |      |
+| 6   | Support ticket + admin respond + close      |      |
+| 7   | PWA install (Android Chrome)                |      |
+| 8   | Mobile: Home, Pro, Support                  |      |
+| 9   | Offline → offline.html shell                |      |
 
 ## Automated tests
 

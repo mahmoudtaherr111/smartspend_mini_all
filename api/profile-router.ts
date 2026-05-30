@@ -12,6 +12,8 @@ import {
   rawSmsEvents,
 } from "../db/schema";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
+import { pushSubscriptions } from "../db/schema";
+
 import { randomBytes } from "crypto";
 import {
   getSmartProfile,
@@ -44,7 +46,11 @@ function monthRange(month: string) {
   return { start, end };
 }
 
-async function refreshMonthlyInferences(userId: number, userType: string, month: string) {
+async function refreshMonthlyInferences(
+  userId: number,
+  userType: string,
+  month: string,
+) {
   const profile = await getSmartProfile(userId, userType);
   const currentRange = monthRange(month);
   const [year, monthNumber] = month.split("-").map(Number);
@@ -52,18 +58,28 @@ async function refreshMonthlyInferences(userId: number, userType: string, month:
   const previousRange = monthRange(prevMonth);
 
   const [items, previousItems] = await Promise.all([
-    db.select().from(expenses).where(and(
-      eq(expenses.userId, userId),
-      eq(expenses.userType, userType),
-      gte(expenses.date, currentRange.start),
-      lte(expenses.date, currentRange.end)
-    )),
-    db.select().from(expenses).where(and(
-      eq(expenses.userId, userId),
-      eq(expenses.userType, userType),
-      gte(expenses.date, previousRange.start),
-      lte(expenses.date, previousRange.end)
-    )),
+    db
+      .select()
+      .from(expenses)
+      .where(
+        and(
+          eq(expenses.userId, userId),
+          eq(expenses.userType, userType),
+          gte(expenses.date, currentRange.start),
+          lte(expenses.date, currentRange.end),
+        ),
+      ),
+    db
+      .select()
+      .from(expenses)
+      .where(
+        and(
+          eq(expenses.userId, userId),
+          eq(expenses.userType, userType),
+          gte(expenses.date, previousRange.start),
+          lte(expenses.date, previousRange.end),
+        ),
+      ),
   ]);
 
   const snapshot = buildBehaviorSnapshot(items, previousItems, profile);
@@ -78,21 +94,12 @@ async function refreshMonthlyInferences(userId: number, userType: string, month:
   };
 
   await saveSmartProfile(userId, userType, nextProfile);
-  await db.insert(monthlyBehaviorSnapshots).values({
-    userId,
-    userType,
-    month,
-    totalIncome: snapshot.totalIncome.toString(),
-    totalExpense: snapshot.totalExpense.toString(),
-    netFlow: snapshot.netFlow.toString(),
-    topCategories: snapshot.topCategories.slice(0, 10),
-    topSubCategories: snapshot.topSubCategories.slice(0, 10),
-    spendingByDay: snapshot.spendingByDay,
-    spendingByWeekday: snapshot.spendingByWeekday,
-    behaviorFlags: snapshot.behaviorFlags,
-    inferredAttributes: snapshot.inferredAttributes,
-  }).onDuplicateKeyUpdate({
-    set: {
+  await db
+    .insert(monthlyBehaviorSnapshots)
+    .values({
+      userId,
+      userType,
+      month,
       totalIncome: snapshot.totalIncome.toString(),
       totalExpense: snapshot.totalExpense.toString(),
       netFlow: snapshot.netFlow.toString(),
@@ -102,8 +109,21 @@ async function refreshMonthlyInferences(userId: number, userType: string, month:
       spendingByWeekday: snapshot.spendingByWeekday,
       behaviorFlags: snapshot.behaviorFlags,
       inferredAttributes: snapshot.inferredAttributes,
-    },
-  }).catch(() => {});
+    })
+    .onDuplicateKeyUpdate({
+      set: {
+        totalIncome: snapshot.totalIncome.toString(),
+        totalExpense: snapshot.totalExpense.toString(),
+        netFlow: snapshot.netFlow.toString(),
+        topCategories: snapshot.topCategories.slice(0, 10),
+        topSubCategories: snapshot.topSubCategories.slice(0, 10),
+        spendingByDay: snapshot.spendingByDay,
+        spendingByWeekday: snapshot.spendingByWeekday,
+        behaviorFlags: snapshot.behaviorFlags,
+        inferredAttributes: snapshot.inferredAttributes,
+      },
+    })
+    .catch(() => {});
 
   await recordProfileLearningEvent({
     userId,
@@ -119,8 +139,15 @@ async function refreshMonthlyInferences(userId: number, userType: string, month:
 
 export const profileRouter = router({
   getMyProfile: authedProcedure.query(async ({ ctx }) => {
-    const profile = await db.select().from(userProfiles)
-      .where(and(eq(userProfiles.userId, ctx.user.id), eq(userProfiles.userType, ctx.user.type)))
+    const profile = await db
+      .select()
+      .from(userProfiles)
+      .where(
+        and(
+          eq(userProfiles.userId, ctx.user.id),
+          eq(userProfiles.userType, ctx.user.type),
+        ),
+      )
       .limit(1);
     return profile[0] || { profileCompleted: false };
   }),
@@ -130,31 +157,38 @@ export const profileRouter = router({
   }),
 
   updateProfile: authedProcedure
-    .input(z.object({
-      monthlyIncome: z.number().optional(),
-      financialGoal: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        monthlyIncome: z.number().optional(),
+        financialGoal: z.string().optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
-      await db.insert(userProfiles).values({
-        userId: ctx.user.id,
-        userType: ctx.user.type,
-        monthlyIncome: input.monthlyIncome?.toString(),
-        financialGoal: input.financialGoal,
-        profileCompleted: true,
-        lastAskedAt: new Date(),
-      }).onDuplicateKeyUpdate({
-        set: {
+      await db
+        .insert(userProfiles)
+        .values({
+          userId: ctx.user.id,
+          userType: ctx.user.type,
           monthlyIncome: input.monthlyIncome?.toString(),
           financialGoal: input.financialGoal,
           profileCompleted: true,
           lastAskedAt: new Date(),
-        },
-      });
+        })
+        .onDuplicateKeyUpdate({
+          set: {
+            monthlyIncome: input.monthlyIncome?.toString(),
+            financialGoal: input.financialGoal,
+            profileCompleted: true,
+            lastAskedAt: new Date(),
+          },
+        });
       return { success: true };
     }),
 
   getQuestions: authedProcedure.query(async () => {
-    const dbQuestions = await db.select().from(onboardingQuestions)
+    const dbQuestions = await db
+      .select()
+      .from(onboardingQuestions)
       .where(eq(onboardingQuestions.isActive, true))
       .orderBy(onboardingQuestions.sortOrder);
     return dbQuestions.length > 0 ? dbQuestions : ADAPTIVE_ONBOARDING_QUESTIONS;
@@ -163,22 +197,34 @@ export const profileRouter = router({
   updateSmartProfile: authedProcedure
     .input(smartProfilePatchSchema)
     .mutation(async ({ ctx, input }) => {
-      const profile = await updateSmartProfile(ctx.user.id, ctx.user.type, input);
+      const profile = await updateSmartProfile(
+        ctx.user.id,
+        ctx.user.type,
+        input,
+      );
       return { success: true, profile };
     }),
 
   getNextOnboardingQuestion: authedProcedure.query(async ({ ctx }) => {
     const profile = await getSmartProfile(ctx.user.id, ctx.user.type);
     const nextQ = getNextOnboardingQuestion(profile.onboardingAnswers);
-    
-    console.log(`[getNextOnboardingQuestion] user=${ctx.user.id}, answered=${Object.keys(profile.onboardingAnswers).length}, profileCompleted=${profile.profileCompleted}, nextQ=${nextQ?.key || 'DONE'}`);
-    
+
+    console.log(
+      `[getNextOnboardingQuestion] user=${ctx.user.id}, answered=${Object.keys(profile.onboardingAnswers).length}, profileCompleted=${profile.profileCompleted}, nextQ=${nextQ?.key || "DONE"}`,
+    );
+
     // Get lastAskedAt from DB for cooldown check on frontend
     let lastAskedAt: string | null = null;
     try {
-      const rows = await db.select({ lastAskedAt: userProfiles.lastAskedAt })
+      const rows = await db
+        .select({ lastAskedAt: userProfiles.lastAskedAt })
         .from(userProfiles)
-        .where(and(eq(userProfiles.userId, ctx.user.id), eq(userProfiles.userType, ctx.user.type)))
+        .where(
+          and(
+            eq(userProfiles.userId, ctx.user.id),
+            eq(userProfiles.userType, ctx.user.type),
+          ),
+        )
         .limit(1);
       lastAskedAt = rows[0]?.lastAskedAt?.toISOString() || null;
     } catch {
@@ -194,29 +240,39 @@ export const profileRouter = router({
 
   // Dismiss onboarding card — updates lastAskedAt for 24h cooldown
   dismissOnboarding: authedProcedure.mutation(async ({ ctx }) => {
-    await db.update(userProfiles)
+    await db
+      .update(userProfiles)
       .set({ lastAskedAt: new Date() })
-      .where(and(eq(userProfiles.userId, ctx.user.id), eq(userProfiles.userType, ctx.user.type)));
+      .where(
+        and(
+          eq(userProfiles.userId, ctx.user.id),
+          eq(userProfiles.userType, ctx.user.type),
+        ),
+      );
     return { success: true };
   }),
 
-
   submitOnboardingAnswer: authedProcedure
-    .input(z.object({
-      key: z.string().min(1),
-      value: z.any().optional(),
-      skipped: z.boolean().default(false),
-      // Frontend sends ALL accumulated answers so far — this is the resilience layer.
-      // Even if the DB failed to persist previous answers, these are the source of truth.
-      accumulatedAnswers: z.record(z.string(), z.any()).optional(),
-    }))
+    .input(
+      z.object({
+        key: z.string().min(1),
+        value: z.any().optional(),
+        skipped: z.boolean().default(false),
+        // Frontend sends ALL accumulated answers so far — this is the resilience layer.
+        // Even if the DB failed to persist previous answers, these are the source of truth.
+        accumulatedAnswers: z.record(z.string(), z.any()).optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const profile = await getSmartProfile(ctx.user.id, ctx.user.type);
 
       // CRITICAL FIX: Merge frontend-accumulated answers into the profile BEFORE applying the new one.
       // This ensures that even if previous DB saves lost the onboardingAnswers,
       // we reconstruct the full state from the frontend's local copy.
-      if (input.accumulatedAnswers && Object.keys(input.accumulatedAnswers).length > 0) {
+      if (
+        input.accumulatedAnswers &&
+        Object.keys(input.accumulatedAnswers).length > 0
+      ) {
         for (const [aKey, aVal] of Object.entries(input.accumulatedAnswers)) {
           if (aKey !== input.key && aVal && !profile.onboardingAnswers[aKey]) {
             profile.onboardingAnswers[aKey] = aVal as any;
@@ -228,10 +284,12 @@ export const profileRouter = router({
         profile,
         input.key,
         input.value,
-        input.skipped
+        input.skipped,
       );
 
-      console.log(`[submitOnboardingAnswer] key=${input.key}, total answers=${Object.keys(nextProfile.onboardingAnswers).length}, keys=[${Object.keys(nextProfile.onboardingAnswers).join(',')}]`);
+      console.log(
+        `[submitOnboardingAnswer] key=${input.key}, total answers=${Object.keys(nextProfile.onboardingAnswers).length}, keys=[${Object.keys(nextProfile.onboardingAnswers).join(",")}]`,
+      );
 
       await saveSmartProfile(ctx.user.id, ctx.user.type, nextProfile);
       return {
@@ -244,20 +302,37 @@ export const profileRouter = router({
     }),
 
   refreshInferences: authedProcedure
-    .input(z.object({ month: z.string().regex(/^\d{4}-\d{2}$/).optional() }).optional())
+    .input(
+      z
+        .object({
+          month: z
+            .string()
+            .regex(/^\d{4}-\d{2}$/)
+            .optional(),
+        })
+        .optional(),
+    )
     .mutation(async ({ ctx, input }) => {
       const now = new Date();
-      const month = input?.month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-      const result = await refreshMonthlyInferences(ctx.user.id, ctx.user.type, month);
+      const month =
+        input?.month ||
+        `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      const result = await refreshMonthlyInferences(
+        ctx.user.id,
+        ctx.user.type,
+        month,
+      );
       return { success: true, ...result };
-  }),
+    }),
 
   updateUserInfo: authedProcedure
-    .input(z.object({
-      name: z.string().min(2).optional(),
-      phone: z.string().optional(),
-      avatar: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        name: z.string().min(2).optional(),
+        phone: z.string().optional(),
+        avatar: z.string().optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.type === "oauth") {
         const updates: any = {};
@@ -272,7 +347,10 @@ export const profileRouter = router({
         if (input.phone) updates.phone = input.phone;
         if (input.avatar !== undefined) updates.avatar = input.avatar;
         if (Object.keys(updates).length > 0) {
-          await db.update(localUsers).set(updates).where(eq(localUsers.id, ctx.user.id));
+          await db
+            .update(localUsers)
+            .set(updates)
+            .where(eq(localUsers.id, ctx.user.id));
         }
       }
       return { success: true };
@@ -283,22 +361,30 @@ export const profileRouter = router({
     const [record] = await db
       .select()
       .from(webhookTokens)
-      .where(and(
-        eq(webhookTokens.userId, ctx.user.id as number),
-        eq(webhookTokens.userType, ctx.user.type)
-      ))
+      .where(
+        and(
+          eq(webhookTokens.userId, ctx.user.id as number),
+          eq(webhookTokens.userType, ctx.user.type),
+        ),
+      )
       .limit(1);
-    return { token: record?.token || null, hasToken: !!record, createdAt: record?.createdAt || null };
+    return {
+      token: record?.token || null,
+      hasToken: !!record,
+      createdAt: record?.createdAt || null,
+    };
   }),
 
   generateWebhookToken: authedProcedure.mutation(async ({ ctx }) => {
     // Revoke any existing tokens first
-    await db.delete(webhookTokens).where(
-      and(
-        eq(webhookTokens.userId, ctx.user.id as number),
-        eq(webhookTokens.userType, ctx.user.type)
-      )
-    );
+    await db
+      .delete(webhookTokens)
+      .where(
+        and(
+          eq(webhookTokens.userId, ctx.user.id as number),
+          eq(webhookTokens.userType, ctx.user.type),
+        ),
+      );
     const newToken = `sms_${randomBytes(32).toString("hex")}`;
     await db.insert(webhookTokens).values({
       userId: ctx.user.id as number,
@@ -314,10 +400,12 @@ export const profileRouter = router({
     const [record] = await db
       .select()
       .from(webhookTokens)
-      .where(and(
-        eq(webhookTokens.userId, ctx.user.id as number),
-        eq(webhookTokens.userType, ctx.user.type)
-      ))
+      .where(
+        and(
+          eq(webhookTokens.userId, ctx.user.id as number),
+          eq(webhookTokens.userType, ctx.user.type),
+        ),
+      )
       .limit(1);
 
     if (!record) {
@@ -325,7 +413,11 @@ export const profileRouter = router({
     }
 
     const { storeMagicCode } = await import("./sms-router");
-    const code = storeMagicCode(record.token, ctx.user.id as number, ctx.user.type);
+    const code = storeMagicCode(
+      record.token,
+      ctx.user.id as number,
+      ctx.user.type,
+    );
     return { code, expiresInSeconds: 300 };
   }),
 
@@ -337,10 +429,39 @@ export const profileRouter = router({
       .where(
         and(
           eq(rawSmsEvents.userId, ctx.user.id as number),
-          eq(rawSmsEvents.userType, ctx.user.type)
-        )
+          eq(rawSmsEvents.userType, ctx.user.type),
+        ),
       )
       .orderBy(desc(rawSmsEvents.createdAt))
       .limit(10);
   }),
+
+  // ─── Save Push Subscription ───
+  savePushSubscription: authedProcedure
+    .input(
+      z.object({
+        endpoint: z.string(),
+        p256dh: z.string(),
+        auth: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if it already exists
+      const existing = await db
+        .select()
+        .from(pushSubscriptions)
+        .where(eq(pushSubscriptions.endpoint, input.endpoint))
+        .limit(1);
+
+      if (existing.length === 0) {
+        await db.insert(pushSubscriptions).values({
+          userId: ctx.user.id as number,
+          userType: ctx.user.type,
+          endpoint: input.endpoint,
+          p256dh: input.p256dh,
+          auth: input.auth,
+        });
+      }
+      return { success: true };
+    }),
 });

@@ -15,35 +15,74 @@ export const API_ERROR_TYPES = {
   UNKNOWN: "unknown",
 } as const;
 
-export type ApiErrorType = typeof API_ERROR_TYPES[keyof typeof API_ERROR_TYPES];
+export type ApiErrorType =
+  (typeof API_ERROR_TYPES)[keyof typeof API_ERROR_TYPES];
 
 /**
  * Classify an HTTP status code + error message into a user-friendly error type.
  */
-export function classifyApiError(statusCode: number | undefined, message: string): ApiErrorType {
+export function classifyApiError(
+  statusCode: number | undefined,
+  message: string,
+): ApiErrorType {
   const msg = message.toLowerCase();
-  if (statusCode === 401 || msg.includes("invalid api key") || msg.includes("api key not valid") || msg.includes("unauthorized")) {
+  if (
+    statusCode === 401 ||
+    msg.includes("invalid api key") ||
+    msg.includes("api key not valid") ||
+    msg.includes("unauthorized")
+  ) {
     return API_ERROR_TYPES.INVALID_KEY;
   }
-  if (statusCode === 429 || msg.includes("rate limit") || msg.includes("too many requests")) {
+  if (
+    statusCode === 429 ||
+    msg.includes("rate limit") ||
+    msg.includes("too many requests")
+  ) {
     return API_ERROR_TYPES.RATE_LIMITED;
   }
-  if (statusCode === 403 || msg.includes("permission denied") || msg.includes("forbidden")) {
+  if (
+    statusCode === 403 ||
+    msg.includes("permission denied") ||
+    msg.includes("forbidden")
+  ) {
     return API_ERROR_TYPES.PERMISSION_DENIED;
   }
-  if (msg.includes("quota") || msg.includes("exceeded") || msg.includes("billing")) {
+  if (
+    msg.includes("quota") ||
+    msg.includes("exceeded") ||
+    msg.includes("billing")
+  ) {
     return API_ERROR_TYPES.QUOTA_EXCEEDED;
   }
-  if (msg.includes("insufficient") || msg.includes("no credit") || msg.includes("payment required") || statusCode === 402) {
+  if (
+    msg.includes("insufficient") ||
+    msg.includes("no credit") ||
+    msg.includes("payment required") ||
+    statusCode === 402
+  ) {
     return API_ERROR_TYPES.INSUFFICIENT_CREDIT;
   }
-  if (msg.includes("model not found") || msg.includes("not_found") || statusCode === 404) {
+  if (
+    msg.includes("model not found") ||
+    msg.includes("not_found") ||
+    statusCode === 404
+  ) {
     return API_ERROR_TYPES.MODEL_NOT_FOUND;
   }
-  if (msg.includes("timeout") || msg.includes("timed out") || msg.includes("econnaborted")) {
+  if (
+    msg.includes("timeout") ||
+    msg.includes("timed out") ||
+    msg.includes("econnaborted")
+  ) {
     return API_ERROR_TYPES.TIMEOUT;
   }
-  if (msg.includes("econnrefused") || msg.includes("network") || msg.includes("fetch failed") || msg.includes("enotfound")) {
+  if (
+    msg.includes("econnrefused") ||
+    msg.includes("network") ||
+    msg.includes("fetch failed") ||
+    msg.includes("enotfound")
+  ) {
     return API_ERROR_TYPES.NETWORK_ERROR;
   }
   return API_ERROR_TYPES.UNKNOWN;
@@ -60,12 +99,13 @@ export async function logApiKeyError(
   provider: string,
   keyLabel: string,
   error: unknown,
-  userId?: number
+  userId?: number,
 ) {
   try {
     const err = error as any;
     const message = err?.message || err?.toString?.() || "Unknown error";
-    const httpStatus = err?.status || err?.statusCode || err?.response?.status || null;
+    const httpStatus =
+      err?.status || err?.statusCode || err?.response?.status || null;
     const errorType = classifyApiError(httpStatus, message);
 
     await db.insert(apiKeyErrors).values({
@@ -78,7 +118,9 @@ export async function logApiKeyError(
       resolved: false,
     });
 
-    console.warn(`[API Key Error Logged] provider=${provider}, key=${keyLabel}, type=${errorType}, msg=${message.substring(0, 200)}`);
+    console.warn(
+      `[API Key Error Logged] provider=${provider}, key=${keyLabel}, type=${errorType}, msg=${message.substring(0, 200)}`,
+    );
   } catch (logErr) {
     // If even the logging itself fails, don't crash the pipeline
     console.error("[Error Logger] Failed to log API key error:", logErr);
@@ -88,11 +130,18 @@ export async function logApiKeyError(
 /**
  * Get all API key errors, optionally filtered.
  */
-export async function getApiKeyErrors(opts?: { unresolvedOnly?: boolean; limit?: number }) {
+export async function getApiKeyErrors(opts?: {
+  unresolvedOnly?: boolean;
+  limit?: number;
+}) {
   const limit = opts?.limit ?? 100;
-  const conditions = opts?.unresolvedOnly ? [eq(apiKeyErrors.resolved, false)] : [];
-  
-  const rows = await db.select().from(apiKeyErrors)
+  const conditions = opts?.unresolvedOnly
+    ? [eq(apiKeyErrors.resolved, false)]
+    : [];
+
+  const rows = await db
+    .select()
+    .from(apiKeyErrors)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(apiKeyErrors.createdAt))
     .limit(limit);
@@ -104,7 +153,8 @@ export async function getApiKeyErrors(opts?: { unresolvedOnly?: boolean; limit?:
  * Mark an error as resolved.
  */
 export async function resolveApiKeyError(errorId: number) {
-  await db.update(apiKeyErrors)
+  await db
+    .update(apiKeyErrors)
     .set({ resolved: true, resolvedAt: new Date() })
     .where(eq(apiKeyErrors.id, errorId));
 }
@@ -113,7 +163,8 @@ export async function resolveApiKeyError(errorId: number) {
  * Mark ALL unresolved errors as resolved (clear all).
  */
 export async function resolveAllApiKeyErrors() {
-  await db.update(apiKeyErrors)
+  await db
+    .update(apiKeyErrors)
     .set({ resolved: true, resolvedAt: new Date() })
     .where(eq(apiKeyErrors.resolved, false));
 }

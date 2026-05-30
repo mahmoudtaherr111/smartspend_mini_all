@@ -1,6 +1,8 @@
 // @ts-check
-require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
-const mysql = require('mysql2/promise');
+require("dotenv").config({
+  path: require("path").join(__dirname, "..", ".env"),
+});
+const mysql = require("mysql2/promise");
 
 async function run() {
   const conn = await mysql.createConnection(process.env.DATABASE_URL);
@@ -17,9 +19,9 @@ async function run() {
         INDEX voice_user_month_idx (user_id, user_type, month)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     `);
-    console.log('✅ voice_usage table created (or already exists)');
+    console.log("✅ voice_usage table created (or already exists)");
   } catch (e) {
-    console.error('❌ Error:', e.message);
+    console.error("❌ Error:", e.message);
   } finally {
     await conn.end();
   }

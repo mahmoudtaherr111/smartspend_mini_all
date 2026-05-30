@@ -27,7 +27,9 @@ const GOAL_REPORT_FOCUS: Record<string, string> = {
   manage_business: "ركّز على تكاليف المشروع والتدفق النقدي.",
 };
 
-export function buildProReportDataBlock(summary: ProReportBackendSummary): string {
+export function buildProReportDataBlock(
+  summary: ProReportBackendSummary,
+): string {
   const subs = summary.topSubCategories
     .slice(0, 12)
     .map((s) => `${s.name}: ${s.amount}ج (${s.percent}%)`)
@@ -58,9 +60,15 @@ export function buildProReportPrompt(input: {
   targetWords: number;
   topItemsContext?: string;
 }): { systemInstruction: string; userPrompt: string } {
-  const goalKey = String(input.profile.financialInfo?.primaryGoal || "organize_expenses");
-  const goalFocus = GOAL_REPORT_FOCUS[goalKey] || GOAL_REPORT_FOCUS.organize_expenses;
-  const personalization = buildReportPersonalizationContext(input.profile, input.snapshot);
+  const goalKey = String(
+    input.profile.financialInfo?.primaryGoal || "organize_expenses",
+  );
+  const goalFocus =
+    GOAL_REPORT_FOCUS[goalKey] || GOAL_REPORT_FOCUS.organize_expenses;
+  const personalization = buildReportPersonalizationContext(
+    input.profile,
+    input.snapshot,
+  );
 
   const sectionGuide =
     input.targetWords >= 900
@@ -98,11 +106,15 @@ ${personalization}
 export function wrapReportAsPrintableHtml(
   reportJson: Record<string, unknown>,
   month: string,
-  userName?: string
+  userName?: string,
 ): string {
   const text = String(reportJson.response_text || "").replace(/\n/g, "<br/>");
-  const header = String(reportJson.invoice_header || `تقرير SpinSmart Pro — ${month}`);
-  const footer = String(reportJson.invoice_footer || "تم إنشاؤه بواسطة SpinSmart");
+  const header = String(
+    reportJson.invoice_header || `تقرير SpinSmart Pro — ${month}`,
+  );
+  const footer = String(
+    reportJson.invoice_footer || "تم إنشاؤه بواسطة SpinSmart",
+  );
   const alerts = Array.isArray(reportJson.alerts)
     ? (reportJson.alerts as string[]).map((a) => `<li>${a}</li>`).join("")
     : "";

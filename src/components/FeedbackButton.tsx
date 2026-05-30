@@ -15,7 +15,7 @@ import { toast } from "sonner";
 export function FeedbackButton() {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
-  
+
   const createTicket = trpc.support.create.useMutation({
     onSuccess: () => {
       toast.success("شكراً لرسالتك! رأيك بيهمنا جداً.");
@@ -24,7 +24,7 @@ export function FeedbackButton() {
     },
     onError: (err) => {
       toast.error(err.message || "حدث خطأ أثناء الإرسال");
-    }
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -33,7 +33,7 @@ export function FeedbackButton() {
     createTicket.mutate({
       subject: "اقتراح / ملاحظة (Feedback)",
       message: message,
-      priority: "low"
+      priority: "low",
     });
   };
 
@@ -63,8 +63,14 @@ export function FeedbackButton() {
             required
             minLength={10}
           />
-          <Button type="submit" className="w-full bg-slate-900 dark:bg-emerald-600 hover:bg-slate-800 dark:hover:bg-emerald-700 text-white" disabled={createTicket.isPending || message.length < 10}>
-            {createTicket.isPending ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : null}
+          <Button
+            type="submit"
+            className="w-full bg-slate-900 dark:bg-emerald-600 hover:bg-slate-800 dark:hover:bg-emerald-700 text-white"
+            disabled={createTicket.isPending || message.length < 10}
+          >
+            {createTicket.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin ml-2" />
+            ) : null}
             إرسال الملاحظة
           </Button>
         </form>

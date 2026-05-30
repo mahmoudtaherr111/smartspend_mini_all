@@ -10,7 +10,10 @@ export default function UltraLounge() {
         <div className="text-center space-y-2">
           <Gem className="w-14 h-14 mx-auto text-violet-500" />
           <h1 className="text-3xl font-bold">مرحباً بمشتركي ألترا</h1>
-          <p className="text-muted-foreground">هنا هنضيف مميزات حصرية للألترا قريباً (نماذج أقوى، حدود أعلى، تقارير متقدمة).</p>
+          <p className="text-muted-foreground">
+            هنا هنضيف مميزات حصرية للألترا قريباً (نماذج أقوى، حدود أعلى، تقارير
+            متقدمة).
+          </p>
         </div>
         <Card className="border-violet-200/60 dark:border-violet-900/40 bg-gradient-to-br from-violet-50/80 to-background dark:from-violet-950/20">
           <CardHeader>
@@ -20,7 +23,17 @@ export default function UltraLounge() {
             </CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-2">
-            <p>مسار محمي بـ <code className="text-xs bg-muted px-1 rounded">UltraFeatureRoute</code> عشان نقدر نضيف ميزات ألترا الحقيقية على الـ API بـ <code className="text-xs bg-muted px-1 rounded">ultraProcedure</code> من غير ما المستخدمين المجانيين يشوفوا واجهات فاضية.</p>
+            <p>
+              مسار محمي بـ{" "}
+              <code className="text-xs bg-muted px-1 rounded">
+                UltraFeatureRoute
+              </code>{" "}
+              عشان نقدر نضيف ميزات ألترا الحقيقية على الـ API بـ{" "}
+              <code className="text-xs bg-muted px-1 rounded">
+                ultraProcedure
+              </code>{" "}
+              من غير ما المستخدمين المجانيين يشوفوا واجهات فاضية.
+            </p>
           </CardContent>
         </Card>
       </div>

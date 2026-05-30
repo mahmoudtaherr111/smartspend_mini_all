@@ -1,7 +1,7 @@
 /** Client-side resize/compress before upload — saves bandwidth and vision tokens. */
 export async function compressImageFile(
   file: File,
-  opts?: { maxEdge?: number; quality?: number; maxBytes?: number }
+  opts?: { maxEdge?: number; quality?: number; maxBytes?: number },
 ): Promise<{ base64: string; mimeType: string; previewUrl: string }> {
   const maxEdge = opts?.maxEdge ?? 1280;
   const quality = opts?.quality ?? 0.82;

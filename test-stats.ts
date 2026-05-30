@@ -7,7 +7,7 @@ async function main() {
   try {
     const allExpenses = await db.select().from(expenses).limit(100);
     console.log(`Fetched ${allExpenses.length} expenses.`);
-    
+
     // Let's test the exact stats parsing logic on all fetched expenses
     allExpenses.forEach((item, index) => {
       try {
@@ -15,7 +15,12 @@ async function main() {
         const iso = d.toISOString();
         const split = iso.split("T")[0];
       } catch (err: any) {
-        console.error(`Expense ID ${item.id} has invalid date:`, item.date, "Error:", err.message);
+        console.error(
+          `Expense ID ${item.id} has invalid date:`,
+          item.date,
+          "Error:",
+          err.message,
+        );
       }
     });
 

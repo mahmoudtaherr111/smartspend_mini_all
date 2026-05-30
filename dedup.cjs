@@ -2,9 +2,9 @@ const fs = require("fs");
 const file = "api/lib/egyptian-dictionary.ts";
 let content = fs.readFileSync(file, "utf8");
 let seen = new Set();
-let lines = content.split('\n');
+let lines = content.split("\n");
 let out = [];
-for(let line of lines) {
+for (let line of lines) {
   let m = line.match(/^\s*"([^"]+)"\s*:\s*"[^"]+",/);
   if (m) {
     let key = m[1];
@@ -15,5 +15,5 @@ for(let line of lines) {
   }
   out.push(line);
 }
-fs.writeFileSync(file, out.join('\n'));
+fs.writeFileSync(file, out.join("\n"));
 console.log("deduplicated!");

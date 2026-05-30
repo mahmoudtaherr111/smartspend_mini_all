@@ -40,12 +40,42 @@ export default function Pro() {
   const isUltraTier = tier === "ultra";
 
   const features = [
-    { icon: <Infinity className="w-5 h-5" />, title: "طلبات AI غير محدودة", free: "10/يوم", pro: true },
-    { icon: <Download className="w-5 h-5" />, title: "تصدير Excel & CSV", free: false, pro: true },
-    { icon: <Sparkles className="w-5 h-5" />, title: "تحليلات متقدمة", free: false, pro: true },
-    { icon: <Headphones className="w-5 h-5" />, title: "دعم أولوي", free: false, pro: true },
-    { icon: <Zap className="w-5 h-5" />, title: "بدون إعلانات", free: false, pro: true },
-    { icon: <Crown className="w-5 h-5" />, title: "تبديل نماذج AI", free: false, pro: true },
+    {
+      icon: <Infinity className="w-5 h-5" />,
+      title: "طلبات AI غير محدودة",
+      free: "10/يوم",
+      pro: true,
+    },
+    {
+      icon: <Download className="w-5 h-5" />,
+      title: "تصدير Excel & CSV",
+      free: false,
+      pro: true,
+    },
+    {
+      icon: <Sparkles className="w-5 h-5" />,
+      title: "تحليلات متقدمة",
+      free: false,
+      pro: true,
+    },
+    {
+      icon: <Headphones className="w-5 h-5" />,
+      title: "دعم أولوي",
+      free: false,
+      pro: true,
+    },
+    {
+      icon: <Zap className="w-5 h-5" />,
+      title: "بدون إعلانات",
+      free: false,
+      pro: true,
+    },
+    {
+      icon: <Crown className="w-5 h-5" />,
+      title: "تبديل نماذج AI",
+      free: false,
+      pro: true,
+    },
   ];
 
   const handleCopy = () => {
@@ -67,7 +97,9 @@ export default function Pro() {
             return;
           }
           if (d.mode === "unavailable") {
-            toast.error("الدفع الإلكتروني غير مفعّل على السيرفر. تواصل مع الدعم أو انتظر تفعيل Paymob.");
+            toast.error(
+              "الدفع الإلكتروني غير مفعّل على السيرفر. تواصل مع الدعم أو انتظر تفعيل Paymob.",
+            );
             return;
           }
           upgrade.mutate(
@@ -81,17 +113,20 @@ export default function Pro() {
                 toast.success("تم تفعيل البرو بنجاح ✅");
                 void myPlan.refetch();
               },
-              onError: (e) => toast.error(e.message || "حصلت مشكلة في الترقية ❌"),
-            }
+              onError: (e) =>
+                toast.error(e.message || "حصلت مشكلة في الترقية ❌"),
+            },
           );
         },
         onError: (e) => toast.error(e.message || "مش قادرين نبدأ الدفع ❌"),
-      }
+      },
     );
   };
 
   const sub = plan?.subscription;
-  const subEnd = sub?.endDate ? new Date(sub.endDate as string | Date).toLocaleDateString("ar-EG") : null;
+  const subEnd = sub?.endDate
+    ? new Date(sub.endDate as string | Date).toLocaleDateString("ar-EG")
+    : null;
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8" dir="rtl">
@@ -100,16 +135,21 @@ export default function Pro() {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-2xl sm:text-4xl font-bold mb-4">اختار خطتك</h1>
-          <p className="text-muted-foreground text-sm sm:text-lg">حول تجربتك المالية للمستوى اللي بعده</p>
+          <p className="text-muted-foreground text-sm sm:text-lg">
+            حول تجربتك المالية للمستوى اللي بعده
+          </p>
         </div>
 
         {isProTier && sub && (
           <Card className="mb-8 border-emerald-200 bg-emerald-50/80 dark:bg-emerald-950/30">
             <CardContent className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <p className="font-semibold text-emerald-800 dark:text-emerald-200">اشتراك Pro نشط</p>
+                <p className="font-semibold text-emerald-800 dark:text-emerald-200">
+                  اشتراك Pro نشط
+                </p>
                 <p className="text-sm text-muted-foreground">
-                  الحالة: {sub.status === "active" ? "فعّال" : sub.status} — ينتهي: {subEnd || "—"}
+                  الحالة: {sub.status === "active" ? "فعّال" : sub.status} —
+                  ينتهي: {subEnd || "—"}
                 </p>
               </div>
               <Badge className="w-fit bg-emerald-600">PRO</Badge>
@@ -118,7 +158,9 @@ export default function Pro() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          <Card className={`relative ${!isPaid ? "border-primary ring-2 ring-primary/20" : ""}`}>
+          <Card
+            className={`relative ${!isPaid ? "border-primary ring-2 ring-primary/20" : ""}`}
+          >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Zap className="w-6 h-6 text-yellow-500" /> مجاني
@@ -126,12 +168,19 @@ export default function Pro() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold mb-6">
-                0 ج.م<span className="text-sm text-muted-foreground font-normal">/شهر</span>
+                0 ج.م
+                <span className="text-sm text-muted-foreground font-normal">
+                  /شهر
+                </span>
               </p>
               <ul className="space-y-3 mb-6">
                 {features.map((f, i) => (
                   <li key={i} className="flex items-center gap-3 text-sm">
-                    {f.free ? <Check className="w-4 h-4 text-green-500" /> : <X className="w-4 h-4 text-red-400" />}
+                    {f.free ? (
+                      <Check className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <X className="w-4 h-4 text-red-400" />
+                    )}
                     <span className="text-muted-foreground">{f.title}</span>
                     {typeof f.free === "string" && (
                       <Badge variant="secondary" className="mr-auto">
@@ -150,7 +199,11 @@ export default function Pro() {
                   مدمج ضمن ألترا
                 </Button>
               ) : (
-                <Button className="w-full" variant="outline" onClick={() => cancel.mutate()}>
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => cancel.mutate()}
+                >
                   إلغاء البرو
                 </Button>
               )}
@@ -172,7 +225,10 @@ export default function Pro() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold mb-6">
-                99 ج.م<span className="text-sm text-muted-foreground font-normal">/شهر</span>
+                99 ج.م
+                <span className="text-sm text-muted-foreground font-normal">
+                  /شهر
+                </span>
               </p>
               <ul className="space-y-3 mb-6">
                 {features.map((f, i) => (
@@ -197,7 +253,9 @@ export default function Pro() {
                   onClick={startCheckout}
                 >
                   <Crown className="w-4 h-4 ml-2" />{" "}
-                  {checkout.isPending || upgrade.isPending ? "جاري المعالجة..." : "اشترك دلوقتي"}
+                  {checkout.isPending || upgrade.isPending
+                    ? "جاري المعالجة..."
+                    : "اشترك دلوقتي"}
                 </Button>
               )}
             </CardContent>
@@ -219,7 +277,8 @@ export default function Pro() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold mb-6">
-                250 ج.م<span className="text-sm text-slate-400 font-normal">/شهر</span>
+                250 ج.م
+                <span className="text-sm text-slate-400 font-normal">/شهر</span>
               </p>
               <ul className="space-y-3 mb-6">
                 {features.map((f, i) => (
@@ -234,7 +293,10 @@ export default function Pro() {
                 </li>
               </ul>
               {isUltraTier ? (
-                <Button className="w-full bg-slate-800 text-white hover:bg-slate-700" disabled>
+                <Button
+                  className="w-full bg-slate-800 text-white hover:bg-slate-700"
+                  disabled
+                >
                   <CheckCircle className="w-4 h-4 ml-2" /> مشترك حالياً
                 </Button>
               ) : (
@@ -267,7 +329,11 @@ export default function Pro() {
                     {referral.data?.code || "..."}
                   </code>
                   <Button size="icon" variant="outline" onClick={handleCopy}>
-                    {copied ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                    {copied ? (
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
                   </Button>
                   <Button
                     size="icon"
@@ -285,12 +351,17 @@ export default function Pro() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  دعوة {referral.data?.completed ?? 0} من {referral.data?.totalReferrals ?? 0} صديق
-                  <span className="block mt-1 text-emerald-500 font-medium">كودك يمنح خصم {referral.data?.discount}% لأصدقائك!</span>
+                  دعوة {referral.data?.completed ?? 0} من{" "}
+                  {referral.data?.totalReferrals ?? 0} صديق
+                  <span className="block mt-1 text-emerald-500 font-medium">
+                    كودك يمنح خصم {referral.data?.discount}% لأصدقائك!
+                  </span>
                 </p>
               </div>
               <div className="flex-1 w-full">
-                <p className="text-sm text-muted-foreground mb-2">عندك كود إحالة؟ (احصل على خصم {referral.data?.discount}%)</p>
+                <p className="text-sm text-muted-foreground mb-2">
+                  عندك كود إحالة؟ (احصل على خصم {referral.data?.discount}%)
+                </p>
                 <div className="flex gap-2">
                   <input
                     className="flex-1 px-3 py-2 border rounded-lg text-sm bg-background"
@@ -298,7 +369,10 @@ export default function Pro() {
                     value={inputCode}
                     onChange={(e) => setInputCode(e.target.value)}
                   />
-                  <Button onClick={() => applyCode.mutate({ code: inputCode })} disabled={!inputCode}>
+                  <Button
+                    onClick={() => applyCode.mutate({ code: inputCode })}
+                    disabled={!inputCode}
+                  >
                     تطبيق
                   </Button>
                 </div>

@@ -36,7 +36,7 @@ const AI_RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const AI_MAX_REQUESTS = 10; // 10 requests per minute
 
 // Auto-cleanup expired rate limiter and AI rate limiter entries every 5 minutes to prevent memory leaks
-setInterval(() => {
+const cleanupInterval = setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of rateLimitMap) {
     if (entry.resetAt < now) {
@@ -49,6 +49,10 @@ setInterval(() => {
     }
   }
 }, 5 * 60 * 1000);
+
+if (cleanupInterval.unref) {
+  cleanupInterval.unref();
+}
 
 // Authed: any logged in user
 export const authedProcedure = t.procedure.use(async ({ ctx, next }) => {

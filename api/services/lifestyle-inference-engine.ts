@@ -1,4 +1,8 @@
 import type { SmartUserProfile } from "./user-profile-service";
+import { recordProfileLearningEvent } from "./user-profile-service";
+import { getDb } from "../queries/connection";
+import { expenses, monthlyBehaviorSnapshots } from "../../db/schema";
+import { and, eq, gte, lte } from "drizzle-orm";
 
 export interface TransactionLike {
   amount: string | number;
@@ -13,8 +17,19 @@ export interface BehaviorSnapshotResult {
   totalIncome: number;
   totalExpense: number;
   netFlow: number;
-  topCategories: Array<{ name: string; amount: number; count: number; percent: number }>;
-  topSubCategories: Array<{ name: string; category: string; amount: number; count: number; percent: number }>;
+  topCategories: Array<{
+    name: string;
+    amount: number;
+    count: number;
+    percent: number;
+  }>;
+  topSubCategories: Array<{
+    name: string;
+    category: string;
+    amount: number;
+    count: number;
+    percent: number;
+  }>;
   spendingByDay: Array<{ date: string; amount: number }>;
   spendingByWeekday: Array<{ weekday: string; amount: number }>;
   behaviorFlags: Record<string, unknown>;
@@ -33,7 +48,7 @@ function percentage(amount: number, total: number): number {
 export function buildBehaviorSnapshot(
   items: TransactionLike[],
   previousItems: TransactionLike[] = [],
-  profile?: SmartUserProfile
+  profile?: SmartUserProfile,
 ): BehaviorSnapshotResult {
   const expenses = items.filter((item) => item.type === "expense");
   const income = items.filter((item) => item.type === "income");
@@ -41,7 +56,10 @@ export function buildBehaviorSnapshot(
   const totalIncome = income.reduce((sum, item) => sum + amountOf(item), 0);
 
   const categoryMap: Record<string, { amount: number; count: number }> = {};
-  const subCategoryMap: Record<string, { category: string; amount: number; count: number }> = {};
+  const subCategoryMap: Record<
+    string,
+    { category: string; amount: number; count: number }
+  > = {};
   const dayMap: Record<string, number> = {};
   const weekdayMap: Record<string, number> = {};
 
@@ -86,14 +104,17 @@ export function buildBehaviorSnapshot(
   const spendingByDay = Object.entries(dayMap)
     .map(([date, amount]) => ({ date, amount }))
     .sort((a, b) => a.date.localeCompare(b.date));
-  const spendingByWeekday = Object.entries(weekdayMap).map(([weekday, amount]) => ({
-    weekday,
-    amount,
-  }));
+  const spendingByWeekday = Object.entries(weekdayMap).map(
+    ([weekday, amount]) => ({
+      weekday,
+      amount,
+    }),
+  );
 
-  const dailyAverage = spendingByDay.length > 0 ? totalExpense / spendingByDay.length : 0;
+  const dailyAverage =
+    spendingByDay.length > 0 ? totalExpense / spendingByDay.length : 0;
   const spikeDays = spendingByDay.filter(
-    (day) => day.amount > Math.max(500, dailyAverage * 2.5)
+    (day) => day.amount > Math.max(500, dailyAverage * 2.5),
   );
   const flexCategories = new Set(["ترفيه", "تسوق", "أكل وشرب", "خروجات"]);
   const flexSpend = topCategories
@@ -106,21 +127,32 @@ export function buildBehaviorSnapshot(
     .reduce((sum, item) => sum + amountOf(item), 0);
   const monthOverMonthChange =
     previousTotalExpense > 0
-      ? Math.round(((totalExpense - previousTotalExpense) / previousTotalExpense) * 100)
+      ? Math.round(
+          ((totalExpense - previousTotalExpense) / previousTotalExpense) * 100,
+        )
       : null;
   const incomeBaseline =
     totalIncome ||
-    Number(profile?.financialInfo.averageMonthlyIncome || profile?.legacy.monthlyIncome || 0);
-  const expenseIncomeRatio = incomeBaseline > 0 ? Math.round((totalExpense / incomeBaseline) * 100) : null;
+    Number(
+      profile?.financialInfo.averageMonthlyIncome ||
+        profile?.legacy.monthlyIncome ||
+        0,
+    );
+  const expenseIncomeRatio =
+    incomeBaseline > 0
+      ? Math.round((totalExpense / incomeBaseline) * 100)
+      : null;
 
   let spendingBehavior = "planned";
   if (spikeDays.length > 0 || flexPercent > 45) spendingBehavior = "spiky";
   if (flexPercent > 55) spendingBehavior = "emotional";
-  if (topCategories.length <= 2 && totalExpense > 0) spendingBehavior = "concentrated";
+  if (topCategories.length <= 2 && totalExpense > 0)
+    spendingBehavior = "concentrated";
 
   let financialStability = "unknown";
   if (expenseIncomeRatio !== null) {
-    if (expenseIncomeRatio < 65 && spikeDays.length === 0) financialStability = "stable";
+    if (expenseIncomeRatio < 65 && spikeDays.length === 0)
+      financialStability = "stable";
     else if (expenseIncomeRatio <= 90) financialStability = "watch";
     else financialStability = "pressure";
   }
@@ -136,8 +168,11 @@ export function buildBehaviorSnapshot(
   const inferredAttributes = {
     financialStability,
     topSpendingCategories: topCategories.slice(0, 5),
-    topSpendingDays: spendingByDay.sort((a, b) => b.amount - a.amount).slice(0, 3),
-    weeklySpendingPattern: spendingByWeekday.sort((a, b) => b.amount - a.amount)[0]?.weekday ?? null,
+    topSpendingDays: spendingByDay
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 3),
+    weeklySpendingPattern:
+      spendingByWeekday.sort((a, b) => b.amount - a.amount)[0]?.weekday ?? null,
     spendingBehavior,
     hasSpikeSpending: spikeDays.length > 0,
     monthOverMonthChange,
@@ -157,4 +192,71 @@ export function buildBehaviorSnapshot(
     behaviorFlags,
     inferredAttributes,
   };
+}
+
+export async function analyzeAndLogBehavior(
+  userId: number,
+  userType: string,
+  profile: SmartUserProfile,
+  month?: string
+): Promise<BehaviorSnapshotResult> {
+  const db = getDb();
+  const now = new Date();
+  const targetMonth = month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const [year, monthNum] = targetMonth.split("-").map(Number);
+  
+  const currentStart = new Date(year, monthNum - 1, 1);
+  const currentEnd = new Date(year, monthNum, 0, 23, 59, 59, 999);
+  
+  const prevMonthNum = monthNum === 1 ? 12 : monthNum - 1;
+  const prevYear = monthNum === 1 ? year - 1 : year;
+  const prevStart = new Date(prevYear, prevMonthNum - 1, 1);
+  const prevEnd = new Date(prevYear, prevMonthNum, 0, 23, 59, 59, 999);
+
+  const [items, previousItems] = await Promise.all([
+    db.select().from(expenses).where(
+      and(
+        eq(expenses.userId, userId),
+        eq(expenses.userType, userType),
+        gte(expenses.date, currentStart),
+        lte(expenses.date, currentEnd)
+      )
+    ),
+    db.select().from(expenses).where(
+      and(
+        eq(expenses.userId, userId),
+        eq(expenses.userType, userType),
+        gte(expenses.date, prevStart),
+        lte(expenses.date, prevEnd)
+      )
+    )
+  ]);
+
+  const snapshot = buildBehaviorSnapshot(items, previousItems, profile);
+
+  // Check if anything fundamentally changed to log an event
+  const previousAttributes = profile.aiInferredAttributes || {};
+  const newAttributes = snapshot.inferredAttributes;
+  let hasMeaningfulChange = false;
+
+  for (const key of Object.keys(newAttributes)) {
+    if (JSON.stringify(previousAttributes[key]) !== JSON.stringify(newAttributes[key])) {
+      hasMeaningfulChange = true;
+      break;
+    }
+  }
+
+  if (hasMeaningfulChange || snapshot.behaviorFlags.hasSpikeSpending) {
+    await recordProfileLearningEvent({
+      userId,
+      userType,
+      eventType: snapshot.behaviorFlags.hasSpikeSpending ? "spike_detected" : "behavior_shift",
+      source: "inference_engine",
+      previousAttributes,
+      newAttributes,
+      metadata: { month: targetMonth, flags: snapshot.behaviorFlags }
+    });
+  }
+
+  return snapshot;
 }

@@ -1,7 +1,7 @@
 /**
  * Migration: Ensure all SmartProfile JSON columns exist in user_profiles table.
  * This fixes the root cause of onboarding answers being silently lost.
- * 
+ *
  * Run: node scripts/migrate-profile-columns.cjs
  */
 const mysql = require("mysql2/promise");
@@ -35,14 +35,17 @@ async function migrate() {
   // Get existing columns
   const [columns] = await connection.query(
     `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'user_profiles'`,
-    [process.env.DB_NAME || "smartspend"]
+    [process.env.DB_NAME || "smartspend"],
   );
   const existingColumns = new Set(columns.map((c) => c.COLUMN_NAME));
 
   let addedCount = 0;
   for (const col of requiredColumns) {
     if (!existingColumns.has(col.name)) {
-      const defaultClause = col.defaultVal === "NULL" ? "DEFAULT NULL" : `DEFAULT ${col.defaultVal}`;
+      const defaultClause =
+        col.defaultVal === "NULL"
+          ? "DEFAULT NULL"
+          : `DEFAULT ${col.defaultVal}`;
       const sql = `ALTER TABLE user_profiles ADD COLUMN \`${col.name}\` ${col.type} ${defaultClause}`;
       console.log(`  ➕ Adding column: ${col.name} (${col.type})`);
       await connection.query(sql);
@@ -55,12 +58,14 @@ async function migrate() {
   // Ensure unique index exists
   try {
     const [indexes] = await connection.query(
-      `SHOW INDEX FROM user_profiles WHERE Key_name = 'profile_user_idx'`
+      `SHOW INDEX FROM user_profiles WHERE Key_name = 'profile_user_idx'`,
     );
     if (indexes.length === 0) {
-      console.log("\n  ➕ Adding unique index: profile_user_idx (user_id, user_type)");
+      console.log(
+        "\n  ➕ Adding unique index: profile_user_idx (user_id, user_type)",
+      );
       await connection.query(
-        `ALTER TABLE user_profiles ADD UNIQUE INDEX profile_user_idx (user_id, user_type)`
+        `ALTER TABLE user_profiles ADD UNIQUE INDEX profile_user_idx (user_id, user_type)`,
       );
     } else {
       console.log("\n  ✅ Unique index exists: profile_user_idx");
@@ -71,8 +76,12 @@ async function migrate() {
 
   console.log(`\n✅ Migration complete. ${addedCount} columns added.`);
   if (addedCount > 0) {
-    console.log("⚠️  This was the ROOT CAUSE of onboarding answers being lost!");
-    console.log("   The saveSmartProfile() was failing silently and falling back to legacy save.");
+    console.log(
+      "⚠️  This was the ROOT CAUSE of onboarding answers being lost!",
+    );
+    console.log(
+      "   The saveSmartProfile() was failing silently and falling back to legacy save.",
+    );
   }
 
   await connection.end();

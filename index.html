@@ -4,61 +4,211 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5, interactive-widget=resizes-visual"
     />
     <title>SmartSpend AI | مصاريفك بالذكاء الاصطناعي</title>
-    <meta name="description" content="تتبع مصاريفك بصوتك عبر الذكاء الاصطناعي" />
-    <meta name="theme-color" content="#10b981" />
+    <meta
+      name="description"
+      content="تتبع مصاريفك بصوتك عبر الذكاء الاصطناعي"
+    />
+    <meta
+      name="theme-color"
+      content="#f8fafc"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#0f172a"
+      media="(prefers-color-scheme: dark)"
+    />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
     <meta name="apple-mobile-web-app-title" content="SmartSpend" />
     <link rel="manifest" href="/manifest.json" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Readex+Pro:wght@200;300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="icon" href="/icon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/icon.png" />
   </head>
   <body>
     <div id="root">
       <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; }
+        body,
+        html {
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+        }
         .app-loader {
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          min-height: 100dvh;
-          min-height: 100vh;
-          background: #0f172a;
-          color: white;
-          font-family: system-ui, -apple-system, sans-serif;
+          position: fixed;
+          inset: 0;
+          z-index: 99999;
+          background: #090d16;
+          font-family:
+            system-ui,
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            Roboto,
+            sans-serif;
+          transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
         @media (prefers-color-scheme: light) {
-          .app-loader { background: #f8fafc; }
+          .app-loader {
+            background: #f8fafc;
+          }
         }
-        .app-loader-spinner {
-          width: 48px;
-          height: 48px;
-          border: 4px solid rgba(16, 185, 129, 0.2);
-          border-top-color: #10b981;
+        .loader-card {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 2.25rem;
+          border-radius: 28px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+          transform: scale(0.95);
+          animation: loader-fade-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)
+            forwards;
+        }
+        @media (prefers-color-scheme: light) {
+          .loader-card {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(0, 0, 0, 0.03);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04);
+          }
+        }
+        @keyframes loader-fade-in {
+          to {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+        .loader-glow-ring {
+          position: relative;
+          width: 84px;
+          height: 84px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 1.25rem;
+        }
+        .loader-glow-ring::before {
+          content: "";
+          position: absolute;
+          inset: 0;
           border-radius: 50%;
-          animation: app-spin 1s linear infinite;
-          margin-bottom: 16px;
+          padding: 3px;
+          background: linear-gradient(135deg, #10b981, #06b6d4);
+          -webkit-mask:
+            linear-gradient(#fff 0 0) content-box,
+            linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          animation: spin-glow 2.5s linear infinite;
         }
-        @keyframes app-spin { to { transform: rotate(360deg); } }
+        .loader-glow-ring::after {
+          content: "";
+          position: absolute;
+          inset: -8px;
+          border-radius: 50%;
+          background: radial-gradient(
+            circle,
+            rgba(16, 185, 129, 0.15) 0%,
+            rgba(6, 186, 212, 0) 70%
+          );
+          animation: pulse-glow 2s ease-in-out infinite;
+        }
+        @keyframes spin-glow {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+        @keyframes pulse-glow {
+          0%,
+          100% {
+            transform: scale(1);
+            opacity: 0.4;
+          }
+          50% {
+            transform: scale(1.2);
+            opacity: 0.85;
+          }
+        }
+        .loader-logo-svg {
+          width: 38px;
+          height: 38px;
+          fill: none;
+          stroke: #10b981;
+          stroke-width: 2.2;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          filter: drop-shadow(0 2px 8px rgba(16, 185, 129, 0.4));
+          animation: float-logo 2.5s ease-in-out infinite;
+        }
+        @keyframes float-logo {
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-4px);
+          }
+        }
         .app-loader-text {
-          font-size: 1.2rem;
-          font-weight: 700;
-          color: #10b981;
-          animation: app-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+          font-size: 1.4rem;
+          font-weight: 800;
+          letter-spacing: -0.02em;
+          background: linear-gradient(135deg, #10b981 20%, #059669 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          margin: 0;
         }
-        @keyframes app-pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
+        .app-loader-subtext {
+          font-size: 0.7rem;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.35);
+          margin-top: 0.3rem;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+        @media (prefers-color-scheme: light) {
+          .app-loader-subtext {
+            color: rgba(0, 0, 0, 0.4);
+          }
         }
       </style>
       <div class="app-loader" aria-hidden="true">
-        <div class="app-loader-spinner"></div>
-        <div class="app-loader-text">SmartSpend</div>
+        <div class="loader-card">
+          <div class="loader-glow-ring">
+            <svg class="loader-logo-svg" viewBox="0 0 24 24">
+              <path
+                d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
+              />
+            </svg>
+          </div>
+          <div class="app-loader-text">SmartSpend</div>
+          <div class="app-loader-subtext">AI Assistant</div>
+        </div>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>

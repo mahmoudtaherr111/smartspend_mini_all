@@ -7,7 +7,11 @@
 const ORC = "\uFFFC"; // Object Replacement Character — variable placeholder
 
 function esc(str: string): string {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 export function generateShortcutFile(token: string, ingestUrl: string): Buffer {

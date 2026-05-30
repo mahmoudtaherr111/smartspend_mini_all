@@ -1,19 +1,38 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
-  Smartphone, Copy, RefreshCw, Eye, EyeOff, CheckCircle,
-  Zap, Save, MessageSquareText, Check, AlertCircle,
-  ChevronDown, ChevronUp, KeyRound, ArrowRight
+  Smartphone,
+  Copy,
+  RefreshCw,
+  Eye,
+  EyeOff,
+  CheckCircle,
+  Zap,
+  Save,
+  MessageSquareText,
+  Check,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  KeyRound,
+  ArrowRight,
 } from "lucide-react";
 import { trpc } from "@/providers/trpc";
 import { format } from "date-fns";
 import { arEG } from "date-fns/locale";
 
 // ⚠️ يتم تغيير هذا الرابط برابط الـ iCloud الحقيقي الخاص بالاختصار
-const SHORTCUT_ICLOUD_LINK = "https://www.icloud.com/shortcuts/c3fbc31dbd6e41cc94fa25b0a9480675"; 
+const SHORTCUT_ICLOUD_LINK =
+  "https://www.icloud.com/shortcuts/c3fbc31dbd6e41cc94fa25b0a9480675";
 
 export function SmsWebhookSettings() {
   const [isConnecting, setIsConnecting] = useState(false);
@@ -99,7 +118,6 @@ export function SmsWebhookSettings() {
       setTimeout(() => {
         window.location.href = SHORTCUT_ICLOUD_LINK;
       }, 800);
-
     } catch (err: any) {
       toast.error("يرجى إعطاء صلاحية النسخ (Clipboard) للمتصفح");
     } finally {
@@ -123,7 +141,9 @@ export function SmsWebhookSettings() {
   };
 
   const maskedToken = token
-    ? token.slice(0, 12) + "•".repeat(Math.max(0, token.length - 16)) + token.slice(-4)
+    ? token.slice(0, 12) +
+      "•".repeat(Math.max(0, token.length - 16)) +
+      token.slice(-4)
     : null;
 
   return (
@@ -134,15 +154,17 @@ export function SmsWebhookSettings() {
           ربط الآيفون التلقائي (iOS Shortcut)
         </CardTitle>
         <CardDescription>
-          اربط حسابك بخطوتين عشان أي رسالة من البنك تتسجل كمصروف أو دخل تلقائياً.
+          اربط حسابك بخطوتين عشان أي رسالة من البنك تتسجل كمصروف أو دخل
+          تلقائياً.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-
         {/* ── Step 1: Install Shortcut ── */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-sky-100 dark:bg-sky-900 text-sky-600 dark:text-sky-300 font-bold text-xs">1</div>
+            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-sky-100 dark:bg-sky-900 text-sky-600 dark:text-sky-300 font-bold text-xs">
+              1
+            </div>
             <h3 className="text-sm font-semibold">تثبيت الـ Shortcut</h3>
           </div>
 
@@ -152,8 +174,11 @@ export function SmsWebhookSettings() {
             ) : (
               <>
                 <p className="text-muted-foreground text-xs leading-relaxed">
-                  اضغط الزرار اللي تحت، هننسخ الإعدادات تلقائياً ونفتحلك الـ Shortcut. 
-                  لما يفتح، اضغط <strong className="text-foreground">Set Up Shortcut</strong> واعمل <strong className="text-foreground">Paste</strong> للإعدادات المنسوخة.
+                  اضغط الزرار اللي تحت، هننسخ الإعدادات تلقائياً ونفتحلك الـ
+                  Shortcut. لما يفتح، اضغط{" "}
+                  <strong className="text-foreground">Set Up Shortcut</strong>{" "}
+                  واعمل <strong className="text-foreground">Paste</strong>{" "}
+                  للإعدادات المنسوخة.
                 </p>
 
                 <Button
@@ -177,8 +202,12 @@ export function SmsWebhookSettings() {
         {token && (
           <div className="space-y-3 pb-2">
             <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-sky-100 dark:bg-sky-900 text-sky-600 dark:text-sky-300 font-bold text-xs">2</div>
-              <h3 className="text-sm font-semibold">تشغيل الأتمتة التلقائية (Automation)</h3>
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-sky-100 dark:bg-sky-900 text-sky-600 dark:text-sky-300 font-bold text-xs">
+                2
+              </div>
+              <h3 className="text-sm font-semibold">
+                تشغيل الأتمتة التلقائية (Automation)
+              </h3>
             </div>
 
             <div className="ml-8 space-y-4">
@@ -196,23 +225,47 @@ export function SmsWebhookSettings() {
                 </div>
                 <Button
                   onClick={handleSaveKeyword}
-                  disabled={isSavingKeyword || !keyword.trim() || keyword.trim() === profileQuery.data?.preferences?.smsTriggerKeyword}
+                  disabled={
+                    isSavingKeyword ||
+                    !keyword.trim() ||
+                    keyword.trim() ===
+                      profileQuery.data?.preferences?.smsTriggerKeyword
+                  }
                   variant="secondary"
                   size="sm"
                   className="h-9 w-full sm:w-auto"
                 >
-                  {isSavingKeyword ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 ml-2" />}
+                  {isSavingKeyword ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 ml-2" />
+                  )}
                   حفظ
                 </Button>
               </div>
 
               <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-sm">
                 <ol className="space-y-3 text-muted-foreground list-decimal list-inside leading-relaxed text-xs sm:text-sm">
-                  <li>افتح تطبيق <strong>Shortcuts</strong> واختار تاب <strong>Automation</strong> من تحت.</li>
-                  <li>اضغط <strong>+</strong> واختار <strong>Message</strong>.</li>
-                  <li>في خانة <strong>Message Contains</strong>، اكتب: <span className="inline-flex px-1.5 py-0.5 rounded-md bg-sky-100 dark:bg-sky-900 text-sky-800 dark:text-sky-200 font-bold ml-1">{keyword || "EGP"}</span></li>
-                  <li>اختار <strong>Run Immediately</strong> (عشان يشتغل بدون ما يسألك).</li>
-                  <li>اضغط <strong>Next</strong>، واختار الـ Shortcut الجاهز.</li>
+                  <li>
+                    افتح تطبيق <strong>Shortcuts</strong> واختار تاب{" "}
+                    <strong>Automation</strong> من تحت.
+                  </li>
+                  <li>
+                    اضغط <strong>+</strong> واختار <strong>Message</strong>.
+                  </li>
+                  <li>
+                    في خانة <strong>Message Contains</strong>، اكتب:{" "}
+                    <span className="inline-flex px-1.5 py-0.5 rounded-md bg-sky-100 dark:bg-sky-900 text-sky-800 dark:text-sky-200 font-bold ml-1">
+                      {keyword || "EGP"}
+                    </span>
+                  </li>
+                  <li>
+                    اختار <strong>Run Immediately</strong> (عشان يشتغل بدون ما
+                    يسألك).
+                  </li>
+                  <li>
+                    اضغط <strong>Next</strong>، واختار الـ Shortcut الجاهز.
+                  </li>
                 </ol>
                 <div className="mt-4 flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 p-2 rounded-lg border border-emerald-100 dark:border-emerald-900">
                   <Zap className="w-4 h-4" />
@@ -232,7 +285,11 @@ export function SmsWebhookSettings() {
             >
               <KeyRound className="w-3.5 h-3.5" />
               <span>إعدادات متقدمة (Webhook Token)</span>
-              {showAdvanced ? <ChevronUp className="w-3.5 h-3.5 mr-auto" /> : <ChevronDown className="w-3.5 h-3.5 mr-auto" />}
+              {showAdvanced ? (
+                <ChevronUp className="w-3.5 h-3.5 mr-auto" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5 mr-auto" />
+              )}
             </button>
 
             {showAdvanced && (
@@ -241,8 +298,17 @@ export function SmsWebhookSettings() {
                   <div className="flex-1 font-mono text-xs bg-muted rounded-lg px-3 py-2.5 truncate select-all border shadow-sm">
                     {tokenVisible ? token : maskedToken}
                   </div>
-                  <Button size="icon" variant="outline" onClick={() => setTokenVisible(!tokenVisible)} className="shrink-0">
-                    {tokenVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={() => setTokenVisible(!tokenVisible)}
+                    className="shrink-0"
+                  >
+                    {tokenVisible ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </Button>
                   <Button
                     size="icon"
@@ -250,7 +316,11 @@ export function SmsWebhookSettings() {
                     onClick={handleCopyToken}
                     className={`shrink-0 ${copied ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}`}
                   >
-                    {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {copied ? (
+                      <CheckCircle className="w-4 h-4" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
                 <Button
@@ -260,7 +330,9 @@ export function SmsWebhookSettings() {
                   size="sm"
                   className="text-xs text-muted-foreground h-8"
                 >
-                  <RefreshCw className={`w-3 h-3 ml-1.5 ${isGenerating ? "animate-spin" : ""}`} />
+                  <RefreshCw
+                    className={`w-3 h-3 ml-1.5 ${isGenerating ? "animate-spin" : ""}`}
+                  />
                   إنشاء Token جديد (سيلغي القديم)
                 </Button>
               </div>
@@ -283,7 +355,9 @@ export function SmsWebhookSettings() {
                 onClick={() => logsQuery.refetch()}
                 disabled={logsQuery.isFetching}
               >
-                <RefreshCw className={`w-3.5 h-3.5 mr-1 ${logsQuery.isFetching ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={`w-3.5 h-3.5 mr-1 ${logsQuery.isFetching ? "animate-spin" : ""}`}
+                />
                 تحديث
               </Button>
             </div>
@@ -297,12 +371,17 @@ export function SmsWebhookSettings() {
                 <div className="p-6 text-center flex flex-col items-center gap-2 text-muted-foreground">
                   <MessageSquareText className="w-8 h-8 opacity-20" />
                   <p className="text-sm">لم يتم استلام أي رسائل حتى الآن.</p>
-                  <p className="text-xs opacity-70">عندما يعمل الـ Shortcut، ستظهر الرسائل هنا تلقائياً.</p>
+                  <p className="text-xs opacity-70">
+                    عندما يعمل الـ Shortcut، ستظهر الرسائل هنا تلقائياً.
+                  </p>
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[300px] overflow-auto">
                   {logsQuery.data?.map((log) => (
-                    <div key={log.id} className="p-3 text-sm flex gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <div
+                      key={log.id}
+                      className="p-3 text-sm flex gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                    >
                       <div className="mt-0.5 shrink-0">
                         {log.status === "processed" ? (
                           <div className="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 rounded-full p-1">
@@ -324,21 +403,39 @@ export function SmsWebhookSettings() {
                             {log.sender || "مرسل غير معروف"}
                           </p>
                           <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                            {format(new Date((log.smsTimestamp || log.createdAt) as string | number), "dd MMM, hh:mm a", { locale: arEG })}
+                            {format(
+                              new Date(
+                                (log.smsTimestamp || log.createdAt) as
+                                  | string
+                                  | number,
+                              ),
+                              "dd MMM, hh:mm a",
+                              { locale: arEG },
+                            )}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed" dir="auto">
+                        <p
+                          className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed"
+                          dir="auto"
+                        >
                           {log.message}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
                           {log.status === "processed" && (
                             <span className="inline-flex items-center rounded-md bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400 ring-1 ring-inset ring-emerald-600/20">
-                              تم التسجيل {(log.metadata as any)?.amount ? `(${(log.metadata as any).amount})` : ''}
+                              تم التسجيل{" "}
+                              {(log.metadata as any)?.amount
+                                ? `(${(log.metadata as any).amount})`
+                                : ""}
                             </span>
                           )}
                           {log.status === "ignored" && (
                             <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-400 ring-1 ring-inset ring-slate-500/20">
-                              تم التجاهل ({(log.metadata as any)?.reason === 'not_financial' ? 'ليست مالية' : 'غير مفهومة'})
+                              تم التجاهل (
+                              {(log.metadata as any)?.reason === "not_financial"
+                                ? "ليست مالية"
+                                : "غير مفهومة"}
+                              )
                             </span>
                           )}
                         </div>
@@ -350,7 +447,6 @@ export function SmsWebhookSettings() {
             </div>
           </div>
         )}
-
       </CardContent>
     </Card>
   );

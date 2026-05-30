@@ -16,6 +16,7 @@ import { profileRouter } from "./profile-router";
 import { walletRouter } from "./wallet-router";
 import { imageRouter } from "./image-router";
 import { goalsRouter } from "./goals-router";
+import { webauthnRouter } from "./webauthn-router";
 
 export const appRouter = router({
   auth: authRouter,
@@ -35,6 +36,7 @@ export const appRouter = router({
   wallet: walletRouter,
   image: imageRouter,
   goals: goalsRouter,
+  webauthn: webauthnRouter,
 });
 
 export type AppRouter = typeof appRouter;

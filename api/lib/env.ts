@@ -7,7 +7,9 @@ const envSchema = z.object({
   // Google OAuth
   GOOGLE_CLIENT_ID: z.string().min(1),
   GOOGLE_CLIENT_SECRET: z.string().min(1),
-  GOOGLE_REDIRECT_URI: z.string().default("http://localhost:3000/api/auth/google/callback"),
+  GOOGLE_REDIRECT_URI: z
+    .string()
+    .default("http://localhost:3000/api/auth/google/callback"),
 
   // JWT
   JWT_SECRET: z.string().min(1),

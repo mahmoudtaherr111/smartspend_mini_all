@@ -7,7 +7,11 @@ interface SEOMetaProps {
   description?: string;
 }
 
-export function SEOMeta({ path = window.location.pathname, title, description }: SEOMetaProps) {
+export function SEOMeta({
+  path = window.location.pathname,
+  title,
+  description,
+}: SEOMetaProps) {
   const { data } = trpc.seo.getPage.useQuery({ path });
 
   useEffect(() => {
@@ -17,14 +21,26 @@ export function SEOMeta({ path = window.location.pathname, title, description }:
     document.title = title || seo.title || "SmartSpend AI";
 
     const setMeta = (name: string, content: string) => {
-      let meta = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement;
-      if (!meta) { meta = document.createElement("meta"); meta.name = name; document.head.appendChild(meta); }
+      let meta = document.querySelector(
+        `meta[name="${name}"]`,
+      ) as HTMLMetaElement;
+      if (!meta) {
+        meta = document.createElement("meta");
+        meta.name = name;
+        document.head.appendChild(meta);
+      }
       meta.content = content;
     };
 
     const setProperty = (prop: string, content: string) => {
-      let meta = document.querySelector(`meta[property="${prop}"]`) as HTMLMetaElement;
-      if (!meta) { meta = document.createElement("meta"); meta.setAttribute("property", prop); document.head.appendChild(meta); }
+      let meta = document.querySelector(
+        `meta[property="${prop}"]`,
+      ) as HTMLMetaElement;
+      if (!meta) {
+        meta = document.createElement("meta");
+        meta.setAttribute("property", prop);
+        document.head.appendChild(meta);
+      }
       meta.content = content;
     };
 
@@ -34,10 +50,15 @@ export function SEOMeta({ path = window.location.pathname, title, description }:
     setProperty("og:description", description || seo.description || "");
     setProperty("og:image", seo.ogImage || "/og-image.png");
 
-    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
-    if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
+    let canonical = document.querySelector(
+      'link[rel="canonical"]',
+    ) as HTMLLinkElement;
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.rel = "canonical";
+      document.head.appendChild(canonical);
+    }
     canonical.href = seo.canonicalUrl || `https://smartspend.app${path}`;
-
   }, [data, title, description, path]);
 
   return null;

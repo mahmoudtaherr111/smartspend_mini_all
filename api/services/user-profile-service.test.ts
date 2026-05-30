@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildDefaultSmartProfile, mergeSmartProfilePatch } from "./user-profile-service";
+import {
+  buildDefaultSmartProfile,
+  mergeSmartProfilePatch,
+} from "./user-profile-service";
 
 describe("user profile service helpers", () => {
   it("creates a smart profile from legacy fields", () => {
@@ -10,7 +13,7 @@ describe("user profile service helpers", () => {
         financialGoal: "budgeting",
         financialPersonality: "balanced",
         profileCompleted: true,
-      }
+      },
     );
 
     expect(profile.basicInfo.name).toBe("Mona");
@@ -22,7 +25,11 @@ describe("user profile service helpers", () => {
   });
 
   it("merges structured patches without deleting existing sections", () => {
-    const profile = buildDefaultSmartProfile({ id: 1, type: "oauth", name: "Ali" });
+    const profile = buildDefaultSmartProfile({
+      id: 1,
+      type: "oauth",
+      name: "Ali",
+    });
     const next = mergeSmartProfilePatch(profile, {
       lifestyleInfo: { hasChildren: true, childrenCount: 2 },
       preferences: { detailLevel: "detailed" },

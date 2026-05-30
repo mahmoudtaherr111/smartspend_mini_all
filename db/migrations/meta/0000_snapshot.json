@@ -56,9 +56,7 @@
       "compositePrimaryKeys": {
         "ad_clicks_id": {
           "name": "ad_clicks_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -177,9 +175,7 @@
       "compositePrimaryKeys": {
         "ads_id": {
           "name": "ads_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -250,20 +246,12 @@
       "indexes": {
         "ai_summary_user_idx": {
           "name": "ai_summary_user_idx",
-          "columns": [
-            "user_id",
-            "user_type"
-          ],
+          "columns": ["user_id", "user_type"],
           "isUnique": false
         },
         "ai_summary_period_idx": {
           "name": "ai_summary_period_idx",
-          "columns": [
-            "user_id",
-            "user_type",
-            "period",
-            "period_value"
-          ],
+          "columns": ["user_id", "user_type", "period", "period_value"],
           "isUnique": true
         }
       },
@@ -271,9 +259,7 @@
       "compositePrimaryKeys": {
         "ai_summaries_id": {
           "name": "ai_summaries_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -355,17 +341,13 @@
       "compositePrimaryKeys": {
         "discount_codes_id": {
           "name": "discount_codes_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "discount_codes_code_unique": {
           "name": "discount_codes_code_unique",
-          "columns": [
-            "code"
-          ]
+          "columns": ["code"]
         }
       },
       "checkConstraint": {}
@@ -437,9 +419,7 @@
       "compositePrimaryKeys": {
         "expense_categories_id": {
           "name": "expense_categories_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -540,24 +520,17 @@
       "indexes": {
         "expenses_user_idx": {
           "name": "expenses_user_idx",
-          "columns": [
-            "user_id",
-            "user_type"
-          ],
+          "columns": ["user_id", "user_type"],
           "isUnique": false
         },
         "expenses_date_idx": {
           "name": "expenses_date_idx",
-          "columns": [
-            "date"
-          ],
+          "columns": ["date"],
           "isUnique": false
         },
         "expenses_type_idx": {
           "name": "expenses_type_idx",
-          "columns": [
-            "type"
-          ],
+          "columns": ["type"],
           "isUnique": false
         }
       },
@@ -565,9 +538,7 @@
       "compositePrimaryKeys": {
         "expenses_id": {
           "name": "expenses_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -668,16 +639,12 @@
       "indexes": {
         "local_users_role_idx": {
           "name": "local_users_role_idx",
-          "columns": [
-            "role"
-          ],
+          "columns": ["role"],
           "isUnique": false
         },
         "local_users_plan_idx": {
           "name": "local_users_plan_idx",
-          "columns": [
-            "plan"
-          ],
+          "columns": ["plan"],
           "isUnique": false
         }
       },
@@ -685,23 +652,17 @@
       "compositePrimaryKeys": {
         "local_users_id": {
           "name": "local_users_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "local_users_phone_unique": {
           "name": "local_users_phone_unique",
-          "columns": [
-            "phone"
-          ]
+          "columns": ["phone"]
         },
         "local_users_referral_code_unique": {
           "name": "local_users_referral_code_unique",
-          "columns": [
-            "referral_code"
-          ]
+          "columns": ["referral_code"]
         }
       },
       "checkConstraint": {}
@@ -816,9 +777,7 @@
       "compositePrimaryKeys": {
         "monthly_reports_id": {
           "name": "monthly_reports_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -912,10 +871,7 @@
       "indexes": {
         "pro_sub_user_idx": {
           "name": "pro_sub_user_idx",
-          "columns": [
-            "user_id",
-            "user_type"
-          ],
+          "columns": ["user_id", "user_type"],
           "isUnique": false
         }
       },
@@ -923,9 +879,7 @@
       "compositePrimaryKeys": {
         "pro_subscriptions_id": {
           "name": "pro_subscriptions_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1017,9 +971,7 @@
       "compositePrimaryKeys": {
         "referrals_id": {
           "name": "referrals_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1091,17 +1043,13 @@
       "compositePrimaryKeys": {
         "seo_pages_id": {
           "name": "seo_pages_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "seo_pages_path_unique": {
           "name": "seo_pages_path_unique",
-          "columns": [
-            "path"
-          ]
+          "columns": ["path"]
         }
       },
       "checkConstraint": {}
@@ -1170,17 +1118,12 @@
       "indexes": {
         "sessions_user_idx": {
           "name": "sessions_user_idx",
-          "columns": [
-            "user_id",
-            "user_type"
-          ],
+          "columns": ["user_id", "user_type"],
           "isUnique": false
         },
         "sessions_token_idx": {
           "name": "sessions_token_idx",
-          "columns": [
-            "token"
-          ],
+          "columns": ["token"],
           "isUnique": false
         }
       },
@@ -1188,9 +1131,7 @@
       "compositePrimaryKeys": {
         "sessions_id": {
           "name": "sessions_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1291,24 +1232,17 @@
       "indexes": {
         "tickets_user_idx": {
           "name": "tickets_user_idx",
-          "columns": [
-            "user_id",
-            "user_type"
-          ],
+          "columns": ["user_id", "user_type"],
           "isUnique": false
         },
         "tickets_status_idx": {
           "name": "tickets_status_idx",
-          "columns": [
-            "status"
-          ],
+          "columns": ["status"],
           "isUnique": false
         },
         "tickets_assigned_idx": {
           "name": "tickets_assigned_idx",
-          "columns": [
-            "assigned_to"
-          ],
+          "columns": ["assigned_to"],
           "isUnique": false
         }
       },
@@ -1316,9 +1250,7 @@
       "compositePrimaryKeys": {
         "support_tickets_id": {
           "name": "support_tickets_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1374,17 +1306,12 @@
       "indexes": {
         "analytics_user_idx": {
           "name": "analytics_user_idx",
-          "columns": [
-            "user_id",
-            "user_type"
-          ],
+          "columns": ["user_id", "user_type"],
           "isUnique": false
         },
         "analytics_event_idx": {
           "name": "analytics_event_idx",
-          "columns": [
-            "event"
-          ],
+          "columns": ["event"],
           "isUnique": false
         }
       },
@@ -1392,9 +1319,7 @@
       "compositePrimaryKeys": {
         "user_analytics_id": {
           "name": "user_analytics_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -1495,23 +1420,17 @@
       "indexes": {
         "users_role_idx": {
           "name": "users_role_idx",
-          "columns": [
-            "role"
-          ],
+          "columns": ["role"],
           "isUnique": false
         },
         "users_plan_idx": {
           "name": "users_plan_idx",
-          "columns": [
-            "plan"
-          ],
+          "columns": ["plan"],
           "isUnique": false
         },
         "users_referral_idx": {
           "name": "users_referral_idx",
-          "columns": [
-            "referral_code"
-          ],
+          "columns": ["referral_code"],
           "isUnique": false
         }
       },
@@ -1519,23 +1438,17 @@
       "compositePrimaryKeys": {
         "users_id": {
           "name": "users_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {
         "users_union_id_unique": {
           "name": "users_union_id_unique",
-          "columns": [
-            "union_id"
-          ]
+          "columns": ["union_id"]
         },
         "users_referral_code_unique": {
           "name": "users_referral_code_unique",
-          "columns": [
-            "referral_code"
-          ]
+          "columns": ["referral_code"]
         }
       },
       "checkConstraint": {}

@@ -15,22 +15,37 @@ import {
 } from "./lib/ai-usage-policy";
 import { parseReceiptImage } from "./lib/receipt-image-parser";
 import { mapModelName } from "./lib/model-mapper";
-import { getSmartProfile, summarizeProfileForAI } from "./services/user-profile-service";
+import {
+  getSmartProfile,
+  summarizeProfileForAI,
+} from "./services/user-profile-service";
 import { invalidateUserMemory } from "./lib/muscle-memory";
 
 async function trackImageTokens(
   userId: number,
   userType: "oauth" | "local",
   tokens: number,
-  model?: string
+  model?: string,
 ) {
   if (!tokens) return;
   if (userType === "oauth") {
-    await db.update(users).set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` }).where(eq(users.id, userId));
+    await db
+      .update(users)
+      .set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` })
+      .where(eq(users.id, userId));
   } else {
-    await db.update(localUsers).set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` }).where(eq(localUsers.id, userId));
+    await db
+      .update(localUsers)
+      .set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` })
+      .where(eq(localUsers.id, userId));
   }
-  await recordAiUsageEvent({ userId, userType, channel: "image", model, tokens });
+  await recordAiUsageEvent({
+    userId,
+    userType,
+    channel: "image",
+    model,
+    tokens,
+  });
 }
 
 export const imageRouter = router({
@@ -41,13 +56,14 @@ export const imageRouter = router({
         mimeType: z.string().default("image/jpeg"),
         ocrTextHint: z.string().max(2000).optional(),
         saveExpense: z.boolean().default(true),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       if (input.imageBase64.length > 5_500_000) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "حجم الصورة كبير جداً. استخدم ضغط الصورة من الكاميرا وحاول مرة أخرى.",
+          message:
+            "حجم الصورة كبير جداً. استخدم ضغط الصورة من الكاميرا وحاول مرة أخرى.",
         });
       }
 
@@ -56,8 +72,14 @@ export const imageRouter = router({
       const cfg = await loadSystemConfig();
       const apiKey = cfg.ai_api_key || env.GEMINI_API_KEY;
       const apiKey2 = cfg.ai_api_key_2 || "";
-      const modelName = mapModelName(cfg.ai_model_pro || env.GEMINI_MODEL_PRO || "gemini-2.5-pro");
-      const maxTokens = clampOutputTokens(budget.perRequestMax, budget.remaining, estimated);
+      const modelName = mapModelName(
+        cfg.ai_model_pro || env.GEMINI_MODEL_PRO || "gemini-2.5-pro",
+      );
+      const maxTokens = clampOutputTokens(
+        budget.perRequestMax,
+        budget.remaining,
+        estimated,
+      );
 
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
@@ -69,8 +91,8 @@ export const imageRouter = router({
           and(
             eq(expenses.userId, ctx.user.id),
             eq(expenses.userType, ctx.user.type),
-            gte(expenses.date, startOfMonth)
-          )
+            gte(expenses.date, startOfMonth),
+          ),
         );
       const totalIncome = monthRows
         .filter((r) => r.type === "income")
@@ -85,15 +107,15 @@ export const imageRouter = router({
         .where(
           and(
             eq(userDictionaries.userId, ctx.user.id),
-            eq(userDictionaries.userType, ctx.user.type)
-          )
+            eq(userDictionaries.userType, ctx.user.type),
+          ),
         )
         .then((rows) =>
           rows.map((r) => ({
             word: r.word,
             category: r.category,
             subCategory: r.subCategory ?? undefined,
-          }))
+          })),
         );
 
       const profile = await getSmartProfile(ctx.user.id, ctx.user.type);
@@ -117,11 +139,17 @@ export const imageRouter = router({
       if (!parsed) {
         throw new TRPCError({
           code: "UNPROCESSABLE_CONTENT",
-          message: "لم نتمكن من استخراج مبلغ أو فئة من الصورة. جرّب صورة أوضح أو أدخل العملية يدوياً.",
+          message:
+            "لم نتمكن من استخراج مبلغ أو فئة من الصورة. جرّب صورة أوضح أو أدخل العملية يدوياً.",
         });
       }
 
-      await trackImageTokens(ctx.user.id, ctx.user.type, parsed.tokensUsed, modelName);
+      await trackImageTokens(
+        ctx.user.id,
+        ctx.user.type,
+        parsed.tokensUsed,
+        modelName,
+      );
 
       let expenseId: number | null = null;
       if (input.saveExpense) {

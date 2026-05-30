@@ -19,33 +19,33 @@ The codebase is **launch-capable** as a monolithic Hono + Vite/React deploy with
 
 ## ما تم إنجازه (DONE)
 
-| Area | Status |
-|------|--------|
-| Part 1 Free AI routing | Done (prior + maintained) |
-| Part 2 Pro classifier, goals, image, reports | Done (prior sessions) |
-| Classification Phase 1 lazy embed + keyword priors + Pro L1 prompt | **Done this session** |
-| Paymob checkout API + webhook grant | **Done this session** |
-| Block simulate upgrade in production | Done |
-| Pro page subscription status + no silent simulate | **Done this session** |
-| Admin founder metrics (DAU, Pro subs, tokens) | **Done this session** |
-| Support close ticket (admin) | **Done this session** |
-| Per-user token cap (`admin.setUserTokenLimit`) | **Done this session** |
-| PWA sw.js v3 + install banner + offline.html | Done (prior + maintained) |
-| Mobile bottom nav, safe-area, Pro responsive | Done |
-| `.env.example`, `PRODUCTION_LAUNCH_CHECKLIST.md` | **Done this session** |
+| Area                                                               | Status                    |
+| ------------------------------------------------------------------ | ------------------------- |
+| Part 1 Free AI routing                                             | Done (prior + maintained) |
+| Part 2 Pro classifier, goals, image, reports                       | Done (prior sessions)     |
+| Classification Phase 1 lazy embed + keyword priors + Pro L1 prompt | **Done this session**     |
+| Paymob checkout API + webhook grant                                | **Done this session**     |
+| Block simulate upgrade in production                               | Done                      |
+| Pro page subscription status + no silent simulate                  | **Done this session**     |
+| Admin founder metrics (DAU, Pro subs, tokens)                      | **Done this session**     |
+| Support close ticket (admin)                                       | **Done this session**     |
+| Per-user token cap (`admin.setUserTokenLimit`)                     | **Done this session**     |
+| PWA sw.js v3 + install banner + offline.html                       | Done (prior + maintained) |
+| Mobile bottom nav, safe-area, Pro responsive                       | Done                      |
+| `.env.example`, `PRODUCTION_LAUNCH_CHECKLIST.md`                   | **Done this session**     |
 
 ---
 
 ## جزئي / يحتاج إعداد (PARTIAL)
 
-| Item | Workaround |
-|------|------------|
-| Paymob live keys | Use Paymob sandbox until keys on server; test one payment |
-| Part 3 full dashboard redesign | Use Admin tabs (dashboard, users, tickets, settings) |
-| `financial_goals` DB table | Run `npm run db:push` |
-| Ultra tier billing | Link only; manual admin plan if needed |
-| Golden-set classification benchmarks | Manual utterance tests in checklist |
-| vite-plugin-pwa installed but **not wired** | Existing `public/sw.js` remains single PWA stack |
+| Item                                        | Workaround                                                |
+| ------------------------------------------- | --------------------------------------------------------- |
+| Paymob live keys                            | Use Paymob sandbox until keys on server; test one payment |
+| Part 3 full dashboard redesign              | Use Admin tabs (dashboard, users, tickets, settings)      |
+| `financial_goals` DB table                  | Run `npm run db:push`                                     |
+| Ultra tier billing                          | Link only; manual admin plan if needed                    |
+| Golden-set classification benchmarks        | Manual utterance tests in checklist                       |
+| vite-plugin-pwa installed but **not wired** | Existing `public/sw.js` remains single PWA stack          |
 
 ---
 

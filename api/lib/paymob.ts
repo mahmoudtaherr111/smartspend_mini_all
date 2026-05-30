@@ -9,18 +9,31 @@ const PLAN_AMOUNT_CENTS: Record<"pro_monthly" | "pro_yearly", number> = {
 };
 
 export function isPaymobConfigured(): boolean {
-  return !!(env.PAYMOB_API_KEY && env.PAYMOB_INTEGRATION_ID && env.PAYMOB_IFRAME_ID);
+  return !!(
+    env.PAYMOB_API_KEY &&
+    env.PAYMOB_INTEGRATION_ID &&
+    env.PAYMOB_IFRAME_ID
+  );
 }
 
-async function paymobPost<T>(path: string, body: Record<string, unknown>): Promise<T> {
+async function paymobPost<T>(
+  path: string,
+  body: Record<string, unknown>,
+): Promise<T> {
   const res = await fetch(`${PAYMOB_API}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = (await res.json().catch(() => ({}))) as T & { detail?: string; message?: string };
+  const data = (await res.json().catch(() => ({}))) as T & {
+    detail?: string;
+    message?: string;
+  };
   if (!res.ok) {
-    const msg = (data as { detail?: string }).detail || (data as { message?: string }).message || res.statusText;
+    const msg =
+      (data as { detail?: string }).detail ||
+      (data as { message?: string }).message ||
+      res.statusText;
     throw new TRPCError({ code: "BAD_REQUEST", message: `Paymob: ${msg}` });
   }
   return data;
@@ -30,7 +43,8 @@ async function getAuthToken(): Promise<string> {
   const data = await paymobPost<{ token: string }>("/auth/tokens", {
     api_key: env.PAYMOB_API_KEY,
   });
-  if (!data.token) throw new TRPCError({ code: "BAD_REQUEST", message: "Paymob auth failed" });
+  if (!data.token)
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Paymob auth failed" });
   return data.token;
 }
 
@@ -44,7 +58,10 @@ export async function createPaymobHostedCheckoutUrl(params: {
   userType: "oauth" | "local";
 }): Promise<string> {
   if (!isPaymobConfigured()) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: "بوابة الدفع غير مُكوّنة" });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "بوابة الدفع غير مُكوّنة",
+    });
   }
 
   const authToken = await getAuthToken();
@@ -55,7 +72,16 @@ export async function createPaymobHostedCheckoutUrl(params: {
     delivery_needed: false,
     amount_cents: amountCents,
     currency: "EGP",
-    items: [{ name: params.plan === "pro_yearly" ? "SmartSpend Pro Yearly" : "SmartSpend Pro Monthly", amount_cents: amountCents, quantity: 1 }],
+    items: [
+      {
+        name:
+          params.plan === "pro_yearly"
+            ? "SmartSpend Pro Yearly"
+            : "SmartSpend Pro Monthly",
+        amount_cents: amountCents,
+        quantity: 1,
+      },
+    ],
     merchant_order_id: `ss_${params.userType}_${params.userId}_${Date.now()}`,
   });
 
@@ -81,20 +107,26 @@ export async function createPaymobHostedCheckoutUrl(params: {
     plan: params.plan,
   };
 
-  const paymentKey = await paymobPost<{ token: string }>("/acceptance/payment_keys", {
-    auth_token: authToken,
-    amount_cents: amountCents,
-    expiration: 3600,
-    order_id: order.id,
-    billing_data: billingData,
-    currency: "EGP",
-    integration_id: Number(env.PAYMOB_INTEGRATION_ID),
-    lock_order_when_paid: true,
-    extras,
-  });
+  const paymentKey = await paymobPost<{ token: string }>(
+    "/acceptance/payment_keys",
+    {
+      auth_token: authToken,
+      amount_cents: amountCents,
+      expiration: 3600,
+      order_id: order.id,
+      billing_data: billingData,
+      currency: "EGP",
+      integration_id: Number(env.PAYMOB_INTEGRATION_ID),
+      lock_order_when_paid: true,
+      extras,
+    },
+  );
 
   if (!paymentKey.token) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: "تعذر إنشاء جلسة الدفع" });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "تعذر إنشاء جلسة الدفع",
+    });
   }
 
   return `https://accept.paymob.com/api/acceptance/iframes/${env.PAYMOB_IFRAME_ID}?payment_token=${paymentKey.token}`;

@@ -6,7 +6,10 @@ import { eq, and, desc, count } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { env } from "./lib/env";
 import { grantProSubscription } from "./lib/subscription-service";
-import { isPaymobConfigured, createPaymobHostedCheckoutUrl } from "./lib/paymob";
+import {
+  isPaymobConfigured,
+  createPaymobHostedCheckoutUrl,
+} from "./lib/paymob";
 
 function hasPaidFeatures(plan: string, role: string) {
   return plan === "pro" || plan === "ultra" || role === "admin";
@@ -15,11 +18,20 @@ function hasPaidFeatures(plan: string, role: string) {
 export const proRouter = router({
   myPlan: authedProcedure.query(async ({ ctx }) => {
     const table = ctx.user.type === "oauth" ? users : localUsers;
-    const user = await db.select().from(table).where(eq(table.id, ctx.user.id)).limit(1);
+    const user = await db
+      .select()
+      .from(table)
+      .where(eq(table.id, ctx.user.id))
+      .limit(1);
     const subs = await db
       .select()
       .from(proSubscriptions)
-      .where(and(eq(proSubscriptions.userId, ctx.user.id), eq(proSubscriptions.userType, ctx.user.type)))
+      .where(
+        and(
+          eq(proSubscriptions.userId, ctx.user.id),
+          eq(proSubscriptions.userType, ctx.user.type),
+        ),
+      )
       .orderBy(desc(proSubscriptions.createdAt))
       .limit(1);
 
@@ -29,9 +41,20 @@ export const proRouter = router({
 
     // Subscription expiration check
     const sub = subs[0];
-    if (sub && plan !== "free" && sub.status === "active" && sub.endDate < new Date()) {
-      await db.update(proSubscriptions).set({ status: "expired" }).where(eq(proSubscriptions.id, sub.id));
-      await db.update(table).set({ plan: "free" }).where(eq(table.id, ctx.user.id));
+    if (
+      sub &&
+      plan !== "free" &&
+      sub.status === "active" &&
+      sub.endDate < new Date()
+    ) {
+      await db
+        .update(proSubscriptions)
+        .set({ status: "expired" })
+        .where(eq(proSubscriptions.id, sub.id));
+      await db
+        .update(table)
+        .set({ plan: "free" })
+        .where(eq(table.id, ctx.user.id));
       plan = "free";
       sub.status = "expired";
     }
@@ -65,7 +88,8 @@ export const proRouter = router({
         });
         return { mode: "redirect" as const, redirectUrl, paymobReady: true };
       }
-      const allowSimulate = env.NODE_ENV === "development" || env.BILLING_SIMULATE === "true";
+      const allowSimulate =
+        env.NODE_ENV === "development" || env.BILLING_SIMULATE === "true";
       return {
         mode: allowSimulate ? ("simulate" as const) : ("unavailable" as const),
         redirectUrl: null as string | null,
@@ -79,14 +103,16 @@ export const proRouter = router({
         plan: z.enum(["pro_monthly", "pro_yearly"]),
         paymentMethod: z.string(),
         transactionId: z.string(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
-      const simOk = env.NODE_ENV === "development" || env.BILLING_SIMULATE === "true";
+      const simOk =
+        env.NODE_ENV === "development" || env.BILLING_SIMULATE === "true";
       if (!simOk) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "الترقية المباشرة غير مسموح بها في البيئة الإنتاجية. يجب إتمام عملية الدفع عبر بوابة الدفع الرسمية.",
+          message:
+            "الترقية المباشرة غير مسموح بها في البيئة الإنتاجية. يجب إتمام عملية الدفع عبر بوابة الدفع الرسمية.",
         });
       }
 
@@ -105,10 +131,18 @@ export const proRouter = router({
     await db
       .update(proSubscriptions)
       .set({ status: "cancelled" })
-      .where(and(eq(proSubscriptions.userId, ctx.user.id), eq(proSubscriptions.userType, ctx.user.type)));
+      .where(
+        and(
+          eq(proSubscriptions.userId, ctx.user.id),
+          eq(proSubscriptions.userType, ctx.user.type),
+        ),
+      );
 
     const table = ctx.user.type === "oauth" ? users : localUsers;
-    await db.update(table).set({ plan: "free" }).where(eq(table.id, ctx.user.id));
+    await db
+      .update(table)
+      .set({ plan: "free" })
+      .where(eq(table.id, ctx.user.id));
 
     return { success: true, message: "تم إلغاء الاشتراك" };
   }),
@@ -121,12 +155,16 @@ export const proRouter = router({
           page: z.number().default(1),
           limit: z.number().default(20),
         })
-        .optional()
+        .optional(),
     )
     .query(async ({ input }) => {
       const { status, page = 1, limit = 20 } = input ?? {};
       const offset = (page - 1) * limit;
-      let query = db.select().from(proSubscriptions).$dynamic().orderBy(desc(proSubscriptions.createdAt));
+      let query = db
+        .select()
+        .from(proSubscriptions)
+        .$dynamic()
+        .orderBy(desc(proSubscriptions.createdAt));
       if (status) {
         query = query.where(eq(proSubscriptions.status, status));
       }

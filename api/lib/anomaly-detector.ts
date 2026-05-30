@@ -20,7 +20,11 @@ export interface AnomalyResult {
   hasAnomaly: boolean;
   alertMessage?: string;
   confidencePenalty: number; // How much to reduce confidence (0-50)
-  anomalyType?: "amount_range" | "statistical" | "intent_conflict" | "time_context";
+  anomalyType?:
+    | "amount_range"
+    | "statistical"
+    | "intent_conflict"
+    | "time_context";
 }
 
 // ─── Amount Range Rules ───
@@ -146,12 +150,42 @@ export interface AmountHint {
 }
 
 export const AMOUNT_HINTS: AmountHint[] = [
-  { minAmount: 1, maxAmount: 15, likelyCategories: ["مواصلات", "أكل وشرب"], boostScore: 5 },
-  { minAmount: 15, maxAmount: 100, likelyCategories: ["أكل وشرب", "مواصلات", "أكل وشرب"], boostScore: 3 },
-  { minAmount: 100, maxAmount: 500, likelyCategories: ["أكل وشرب", "مواصلات", "تسوق", "فواتير"], boostScore: 2 },
-  { minAmount: 500, maxAmount: 2000, likelyCategories: ["فواتير", "تسوق", "صحة", "تعليم"], boostScore: 2 },
-  { minAmount: 2000, maxAmount: 10000, likelyCategories: ["سكن", "فواتير", "تسوق", "صحة", "استثمار"], boostScore: 3 },
-  { minAmount: 10000, maxAmount: 100000, likelyCategories: ["سكن", "استثمار", "تسوق", "صحة"], boostScore: 5 },
+  {
+    minAmount: 1,
+    maxAmount: 15,
+    likelyCategories: ["مواصلات", "أكل وشرب"],
+    boostScore: 5,
+  },
+  {
+    minAmount: 15,
+    maxAmount: 100,
+    likelyCategories: ["أكل وشرب", "مواصلات", "أكل وشرب"],
+    boostScore: 3,
+  },
+  {
+    minAmount: 100,
+    maxAmount: 500,
+    likelyCategories: ["أكل وشرب", "مواصلات", "تسوق", "فواتير"],
+    boostScore: 2,
+  },
+  {
+    minAmount: 500,
+    maxAmount: 2000,
+    likelyCategories: ["فواتير", "تسوق", "صحة", "تعليم"],
+    boostScore: 2,
+  },
+  {
+    minAmount: 2000,
+    maxAmount: 10000,
+    likelyCategories: ["سكن", "فواتير", "تسوق", "صحة", "استثمار"],
+    boostScore: 3,
+  },
+  {
+    minAmount: 10000,
+    maxAmount: 100000,
+    likelyCategories: ["سكن", "استثمار", "تسوق", "صحة"],
+    boostScore: 5,
+  },
 ];
 
 // ─── Time Context ───
@@ -194,7 +228,7 @@ export function getTimeContext(): TimeHint | null {
  * Check if a transaction amount makes sense for its category.
  */
 export function checkAmountAnomaly(item: ParsedTransaction): AnomalyResult {
-  const rule = AMOUNT_RULES.find(r => r.category === item.category);
+  const rule = AMOUNT_RULES.find((r) => r.category === item.category);
   if (!rule) return { hasAnomaly: false, confidencePenalty: 0 };
 
   if (item.amount > rule.maxAmount && rule.alertHigh) {
@@ -224,8 +258,16 @@ export function checkAmountAnomaly(item: ParsedTransaction): AnomalyResult {
  */
 export function checkIntentConflict(item: ParsedTransaction): AnomalyResult {
   const expenseOnlyCategories = [
-    "أكل وشرب", "مواصلات", "فواتير", "سكن", "تسوق",
-    "صحة", "تعليم", "ترفيه", "خروجات", "خدمات سيارات",
+    "أكل وشرب",
+    "مواصلات",
+    "فواتير",
+    "سكن",
+    "تسوق",
+    "صحة",
+    "تعليم",
+    "ترفيه",
+    "خروجات",
+    "خدمات سيارات",
   ];
   const incomeOnlyCategories = ["مرتب", "عمل حر", "عوائد استثمار"];
 
@@ -256,7 +298,7 @@ export function checkIntentConflict(item: ParsedTransaction): AnomalyResult {
  */
 export function getAmountCategoryBoost(
   amount: number,
-  category: string
+  category: string,
 ): number {
   for (const hint of AMOUNT_HINTS) {
     if (amount >= hint.minAmount && amount <= hint.maxAmount) {

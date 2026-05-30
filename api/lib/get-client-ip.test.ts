@@ -11,12 +11,15 @@ describe("getIncomingHeader", () => {
     });
 
     expect(getIncomingHeader(req, "Authorization")).toBe("Bearer test-token");
-    expect(getIncomingHeader(req, "x-forwarded-for")).toBe("203.0.113.1, 10.0.0.1");
+    expect(getIncomingHeader(req, "x-forwarded-for")).toBe(
+      "203.0.113.1, 10.0.0.1",
+    );
   });
 
   it("reads headers from a Hono-style request object", () => {
     const req = {
-      header: (name: string) => (name === "x-real-ip" ? "198.51.100.2" : undefined),
+      header: (name: string) =>
+        name === "x-real-ip" ? "198.51.100.2" : undefined,
     };
 
     expect(getIncomingHeader(req as never, "x-real-ip")).toBe("198.51.100.2");

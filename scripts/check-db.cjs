@@ -10,12 +10,14 @@ async function check() {
     database: "test",
   });
 
-  const [rows] = await connection.query(`SELECT id, onboarding_answers FROM user_profiles LIMIT 1`);
+  const [rows] = await connection.query(
+    `SELECT id, onboarding_answers FROM user_profiles LIMIT 1`,
+  );
   console.log("Profiles in DB:", JSON.stringify(rows, null, 2));
 
   const [columns] = await connection.query(`SHOW COLUMNS FROM user_profiles`);
-  console.log("\nColumns:", columns.map(c => c.Field).join(", "));
-  
+  console.log("\nColumns:", columns.map((c) => c.Field).join(", "));
+
   await connection.end();
 }
 

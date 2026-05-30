@@ -4,7 +4,13 @@ import { IosSetupFlow } from "@/components/bank-sync/IosSetupFlow";
 import { AndroidSetupFlow } from "@/components/bank-sync/AndroidSetupFlow";
 import { DigitalBankingSuite } from "@/components/bank-sync/DigitalBankingSuite";
 import { trpc } from "@/providers/trpc";
-import { Smartphone, Apple, ArrowRight, RefreshCw, ChevronLeft } from "lucide-react";
+import {
+  Smartphone,
+  Apple,
+  ArrowRight,
+  RefreshCw,
+  ChevronLeft,
+} from "lucide-react";
 
 type Device = "ios" | "android" | null;
 
@@ -19,9 +25,14 @@ export default function BankSyncPage() {
   // Loading State
   if (tokenQuery.isLoading) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 text-center p-6" dir="rtl">
+      <div
+        className="min-h-[60vh] flex flex-col items-center justify-center gap-4 text-center p-6"
+        dir="rtl"
+      >
         <RefreshCw className="w-10 h-10 text-emerald-500 animate-spin" />
-        <p className="text-sm font-bold text-slate-500">جاري تحميل بيانات المحفظة الرقمية...</p>
+        <p className="text-sm font-bold text-slate-500">
+          جاري تحميل بيانات المحفظة الرقمية...
+        </p>
       </div>
     );
   }
@@ -31,7 +42,9 @@ export default function BankSyncPage() {
     return (
       <div className="w-full max-w-6xl mx-auto space-y-6 pb-20 px-4">
         <SEOMeta title="المحفظة الرقمية الذكية - SmartSpend" />
-        <DigitalBankingSuite onShowSetupInstructions={() => setForceShowInstructions(true)} />
+        <DigitalBankingSuite
+          onShowSetupInstructions={() => setForceShowInstructions(true)}
+        />
       </div>
     );
   }
@@ -106,8 +119,8 @@ export default function BankSyncPage() {
             اربط حسابك البنكي آلياً ⚡
           </h1>
           <p className="text-emerald-50 text-sm sm:text-base leading-relaxed opacity-90 max-w-lg mx-auto">
-            أي رسالة من البنك أو InstaPay أو Vodafone Cash ستُسجَّل تلقائياً في حسابك — بدون أي تدخل منك.
-            آمن 100% ولا نطلب أي بيانات بنكية.
+            أي رسالة من البنك أو InstaPay أو Vodafone Cash ستُسجَّل تلقائياً في
+            حسابك — بدون أي تدخل منك. آمن 100% ولا نطلب أي بيانات بنكية.
           </p>
         </div>
       </div>
@@ -129,12 +142,16 @@ export default function BankSyncPage() {
               <Apple className="w-10 h-10 text-slate-700 dark:text-slate-200" />
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-slate-800 dark:text-white">iPhone</h2>
-              <p className="text-xs text-muted-foreground mt-1">iOS 16+ • بدون أي تطبيق إضافي</p>
+              <h2 className="text-xl font-extrabold text-slate-800 dark:text-white">
+                iPhone
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                iOS 16+ • بدون أي تطبيق إضافي
+              </p>
             </div>
             <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              3 خطوات فقط
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />3
+              خطوات فقط
             </div>
             <ArrowRight className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all opacity-0 group-hover:opacity-100" />
           </button>
@@ -149,12 +166,16 @@ export default function BankSyncPage() {
               <Smartphone className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-slate-800 dark:text-white">Android</h2>
-              <p className="text-xs text-muted-foreground mt-1">Android 8+ • تطبيق صغير 5MB فقط</p>
+              <h2 className="text-xl font-extrabold text-slate-800 dark:text-white">
+                Android
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                Android 8+ • تطبيق صغير 5MB فقط
+              </p>
             </div>
             <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              3 خطوات فقط
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />3
+              خطوات فقط
             </div>
             <ArrowRight className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all opacity-0 group-hover:opacity-100" />
           </button>
@@ -162,10 +183,28 @@ export default function BankSyncPage() {
 
         {/* Supported providers */}
         <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-5 border border-slate-100 dark:border-slate-800">
-          <p className="text-xs font-bold text-slate-500 dark:text-slate-400 text-center mb-3 uppercase tracking-widest">يدعم جميع البنوك والمحافظ المصرية</p>
+          <p className="text-xs font-bold text-slate-500 dark:text-slate-400 text-center mb-3 uppercase tracking-widest">
+            يدعم جميع البنوك والمحافظ المصرية
+          </p>
           <div className="flex flex-wrap justify-center gap-2 text-xs font-semibold">
-            {["CIB","NBE","Banque Misr","QNB","HSBC","Alex Bank","InstaPay","Vodafone Cash","Orange Money","Fawry","Etisalat Cash","وأكثر..."].map((p) => (
-              <span key={p} className="px-2.5 py-1 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 shadow-sm">
+            {[
+              "CIB",
+              "NBE",
+              "Banque Misr",
+              "QNB",
+              "HSBC",
+              "Alex Bank",
+              "InstaPay",
+              "Vodafone Cash",
+              "Orange Money",
+              "Fawry",
+              "Etisalat Cash",
+              "وأكثر...",
+            ].map((p) => (
+              <span
+                key={p}
+                className="px-2.5 py-1 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 shadow-sm"
+              >
                 {p}
               </span>
             ))}

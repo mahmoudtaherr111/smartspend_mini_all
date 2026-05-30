@@ -6,11 +6,11 @@
 
 ## Progress status (Parts 1–3)
 
-| Part | Status | Notes |
-|------|--------|-------|
-| **Part 1 — Free AI** | **Implemented (this session)** | Routing, prompts, rule/embedding priority, token foundations |
-| **Part 2 — Pro** | **Not started** | Pro separation, image/camera, goals, premium reports |
-| **Part 3 — Dashboard** | **Not started** | Analytics, tickets, per-user caps, limits panel |
+| Part                   | Status                         | Notes                                                        |
+| ---------------------- | ------------------------------ | ------------------------------------------------------------ |
+| **Part 1 — Free AI**   | **Implemented (this session)** | Routing, prompts, rule/embedding priority, token foundations |
+| **Part 2 — Pro**       | **Not started**                | Pro separation, image/camera, goals, premium reports         |
+| **Part 3 — Dashboard** | **Not started**                | Analytics, tickets, per-user caps, limits panel              |
 
 ## What was already in the codebase (pre-session)
 
@@ -75,13 +75,13 @@
 
 ## Token benchmarks (estimated)
 
-| Scenario | Before (typical) | After (target) |
-|----------|------------------|----------------|
-| Simple coffee voice (~6 words) | 0 (if rules miss) or 2000+ AI | **0** (rule engine) |
-| ~100-word classify (Free, needs AI) | ~1800–2500 | **~800–1400** (pruned cats + short prompts + 384 out cap) |
-| Embedding-only Free simple | N/A | **~1 embed call** (~50–150 effective tokens) vs full LLM |
+| Scenario                            | Before (typical)              | After (target)                                            |
+| ----------------------------------- | ----------------------------- | --------------------------------------------------------- |
+| Simple coffee voice (~6 words)      | 0 (if rules miss) or 2000+ AI | **0** (rule engine)                                       |
+| ~100-word classify (Free, needs AI) | ~1800–2500                    | **~800–1400** (pruned cats + short prompts + 384 out cap) |
+| Embedding-only Free simple          | N/A                           | **~1 embed call** (~50–150 effective tokens) vs full LLM  |
 
-*Live Gemini benchmarks require API key in `.env` — not run in CI here.*
+_Live Gemini benchmarks require API key in `.env` — not run in CI here._
 
 ## Test results
 

@@ -43,6 +43,13 @@
       "when": 1779073315777,
       "tag": "0005_flippant_eternity",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1780019135477,
+      "tag": "0006_mighty_agent_zero",
+      "breakpoints": true
     }
   ]
 }

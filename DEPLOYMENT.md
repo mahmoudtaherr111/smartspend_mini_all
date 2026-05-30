@@ -43,6 +43,7 @@ npm run dev
 ```
 
 **Required `.env` variables:**
+
 ```env
 DATABASE_URL=mysql://root:@localhost:3306/smartspend
 GEMINI_API_KEY=your_key
@@ -75,6 +76,7 @@ npm run backend:start
 ```
 
 **Backend `.env` variables:**
+
 ```env
 DATABASE_URL=mysql://user:pass@db-host:3306/smartspend
 GEMINI_API_KEY=your_key
@@ -108,6 +110,7 @@ npm run frontend:build
 ```
 
 **Frontend `.env.local` variables:**
+
 ```env
 VITE_API_URL=https://api.yoursite.com
 ```
@@ -133,11 +136,11 @@ npm run db:migrate
 
 All API calls go through tRPC at `/api/trpc/*`.
 
-| Endpoint | Description |
-|----------|-------------|
-| `GET /health` | Health check + allowed origins |
-| `GET /api/auth/google/callback` | Google OAuth callback |
-| `POST /api/trpc/*` | tRPC batch endpoint |
+| Endpoint                        | Description                    |
+| ------------------------------- | ------------------------------ |
+| `GET /health`                   | Health check + allowed origins |
+| `GET /api/auth/google/callback` | Google OAuth callback          |
+| `POST /api/trpc/*`              | tRPC batch endpoint            |
 
 ---
 
@@ -158,15 +161,18 @@ npm run start
 ## 🔧 Deployment Platforms
 
 ### Backend (API Server)
+
 - **Railway** / **Render** / **Fly.io**: Deploy with `npm run backend:start`
 - **VPS**: Build with `npm run backend:build`, then run `node dist/server/server.js`
 - **Docker**: Use the existing `Dockerfile`
 
 ### Frontend (Static)
+
 - **Vercel**: Set `VITE_API_URL` in project settings, build command: `npm run frontend:build`
 - **Netlify**: Same as Vercel
 - **S3 + CloudFront**: Upload `dist/public/` folder
 
 ### Monorepo (Both Together)
+
 - **Railway** / **Render**: Use `npm run build && npm run start`
 - **Docker**: Existing `Dockerfile` works as-is

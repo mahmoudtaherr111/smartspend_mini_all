@@ -32,5 +32,21 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/dashboard.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "الرئيسية والمساعد المالي بالذكاء الاصطناعي"
+    },
+    {
+      "src": "/screenshots/stats.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "إحصائيات وتحليلات مالية متقدمة"
+    }
   ]
 }

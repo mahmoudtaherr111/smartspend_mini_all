@@ -19,11 +19,15 @@ import {
   localUsers,
 } from "../db/schema";
 import { eq, and, desc, gte } from "drizzle-orm";
-import { parseSmsFinancialData, mapSmsToExpenseCategory } from "./lib/sms-ai-parser";
+import {
+  parseSmsFinancialData,
+  mapSmsToExpenseCategory,
+} from "./lib/sms-ai-parser";
 import { parseSmsByRules } from "./lib/sms-rule-parser";
 import { randomBytes } from "crypto";
 import { verify } from "hono/jwt";
 import { env } from "./lib/env";
+import { getCookie } from "hono/cookie";
 
 export const smsApp = new Hono();
 
@@ -32,14 +36,17 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 30; // max 30 SMS per hour per token
 
 // Auto-cleanup expired rate limiter entries every 5 minutes to prevent memory leak
-setInterval(() => {
-  const now = Date.now();
-  for (const [token, entry] of rateLimitMap) {
-    if (entry.resetAt < now) {
-      rateLimitMap.delete(token);
+setInterval(
+  () => {
+    const now = Date.now();
+    for (const [token, entry] of rateLimitMap) {
+      if (entry.resetAt < now) {
+        rateLimitMap.delete(token);
+      }
     }
-  }
-}, 5 * 60 * 1000);
+  },
+  5 * 60 * 1000,
+);
 
 function checkRateLimit(token: string): boolean {
   const now = Date.now();
@@ -54,20 +61,26 @@ function checkRateLimit(token: string): boolean {
 }
 
 // ─── Magic Code Store (for zero-config iOS Shortcut setup) ───
-const magicCodes = new Map<string, {
-  webhookToken: string;
-  userId: number;
-  userType: string;
-  expiresAt: number;
-}>();
+const magicCodes = new Map<
+  string,
+  {
+    webhookToken: string;
+    userId: number;
+    userType: string;
+    expiresAt: number;
+  }
+>();
 
 // Auto-cleanup expired codes every 2 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [code, entry] of magicCodes) {
-    if (entry.expiresAt < now) magicCodes.delete(code);
-  }
-}, 2 * 60 * 1000);
+setInterval(
+  () => {
+    const now = Date.now();
+    for (const [code, entry] of magicCodes) {
+      if (entry.expiresAt < now) magicCodes.delete(code);
+    }
+  },
+  2 * 60 * 1000,
+);
 
 /** Generate a short, human-friendly 6-char code (no confusing chars like 0/O, 1/I/L) */
 function generateShortCode(): string {
@@ -81,7 +94,11 @@ function generateShortCode(): string {
 }
 
 /** Store a magic code tied to a user's webhook token. Returns the 6-char code. */
-export function storeMagicCode(webhookToken: string, userId: number, userType: string): string {
+export function storeMagicCode(
+  webhookToken: string,
+  userId: number,
+  userType: string,
+): string {
   // Revoke any existing codes for this user first
   for (const [code, entry] of magicCodes) {
     if (entry.userId === userId && entry.userType === userType) {
@@ -113,19 +130,39 @@ function exchangeMagicCode(code: string): { token: string } | null {
 }
 
 // ─── Helper: resolve user from session JWT (for protected endpoints) ───
-async function getUserFromSession(authHeader: string | undefined): Promise<{
-  id: number | string;
+async function getUserFromSession(c: any): Promise<{
+  id: number;
   type: "local" | "oauth";
 } | null> {
-  if (!authHeader?.startsWith("Bearer ")) return null;
-  const token = authHeader.slice(7);
-  try {
-    const payload = await verify(token, env.JWT_SECRET, "HS256") as any;
-    if (!payload?.userId || !payload?.userType) return null;
-    return { id: payload.userId, type: payload.userType as "local" | "oauth" };
-  } catch {
-    return null;
+  // 1. Try Google OAuth cookie first
+  const googleToken = getCookie(c, "google_session");
+  if (googleToken) {
+    try {
+      const payload = (await verify(googleToken, env.JWT_SECRET, "HS256")) as any;
+      if (payload?.userId) {
+        return { id: Number(payload.userId), type: "oauth" };
+      }
+    } catch {
+      // ignore and try header
+    }
   }
+
+  // 2. Try Bearer token in Authorization header
+  const authHeader = c.req.header("Authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7).trim();
+    if (token) {
+      try {
+        const payload = (await verify(token, env.JWT_SECRET, "HS256")) as any;
+        if (payload?.userId && payload?.userType) {
+          return { id: Number(payload.userId), type: payload.userType as "local" | "oauth" };
+        }
+      } catch {
+        return null;
+      }
+    }
+  }
+  return null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -187,49 +224,69 @@ smsApp.post("/ingest", async (c) => {
 
   // ── Plan-based limits ──
   const userTable = userType === "oauth" ? users : localUsers;
-  const [userRecord] = await db.select().from(userTable).where(eq(userTable.id, userId as any)).limit(1);
+  const [userRecord] = await db
+    .select()
+    .from(userTable)
+    .where(eq(userTable.id, userId as any))
+    .limit(1);
   const userPlan = (userRecord as any)?.plan || "free";
 
   // Get configurable limit from system_settings (admin dashboard), default: free=5, pro/ultra=unlimited
   let smsMonthlyLimit = userPlan === "free" ? 5 : 999999;
   try {
     const { systemSettings } = await import("../db/schema");
-    const [setting] = await db.select().from(systemSettings).where(eq(systemSettings.key, `sms_limit_${userPlan}`)).limit(1);
-    if (setting?.value) smsMonthlyLimit = parseInt(setting.value) || smsMonthlyLimit;
-  } catch { /* use default */ }
+    const [setting] = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, `sms_limit_${userPlan}`))
+      .limit(1);
+    if (setting?.value)
+      smsMonthlyLimit = parseInt(setting.value) || smsMonthlyLimit;
+  } catch {
+    /* use default */
+  }
 
   // Count processed SMS this month
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const { sql: sqlFn } = await import("drizzle-orm");
-  const [countResult] = await db.select({ count: sqlFn`COUNT(*)` })
+  const [countResult] = await db
+    .select({ count: sqlFn`COUNT(*)` })
     .from(rawSmsEvents)
-    .where(and(
-      eq(rawSmsEvents.userId, userId),
-      eq(rawSmsEvents.userType, userType),
-      eq(rawSmsEvents.status, "processed"),
-      gte(rawSmsEvents.createdAt, monthStart),
-    ));
+    .where(
+      and(
+        eq(rawSmsEvents.userId, userId),
+        eq(rawSmsEvents.userType, userType),
+        eq(rawSmsEvents.status, "processed"),
+        gte(rawSmsEvents.createdAt, monthStart),
+      ),
+    );
   const usedThisMonth = Number((countResult as any)?.count || 0);
 
   if (usedThisMonth >= smsMonthlyLimit) {
-    return c.json({
-      error: `الحد الشهري للرسائل (${smsMonthlyLimit}) انتهى. قم بترقية خطتك لزيادة الحد.`,
-      limit: smsMonthlyLimit,
-      used: usedThisMonth,
-      plan: userPlan,
-    }, 403);
+    return c.json(
+      {
+        error: `الحد الشهري للرسائل (${smsMonthlyLimit}) انتهى. قم بترقية خطتك لزيادة الحد.`,
+        limit: smsMonthlyLimit,
+        used: usedThisMonth,
+        plan: userPlan,
+      },
+      403,
+    );
   }
 
   // ── Step 1: Store raw SMS event (Original raw text stored for admin visibility) ──
-  const [insertedSms] = await db.insert(rawSmsEvents).values({
-    userId,
-    userType,
-    message: message.trim(),
-    sender: sender || null,
-    smsTimestamp: timestamp || new Date().toISOString(),
-    status: "pending",
-  }).$returningId();
+  const [insertedSms] = await db
+    .insert(rawSmsEvents)
+    .values({
+      userId,
+      userType,
+      message: message.trim(),
+      sender: sender || null,
+      smsTimestamp: timestamp || new Date().toISOString(),
+      status: "pending",
+    })
+    .$returningId();
 
   const smsId = insertedSms?.id;
 
@@ -238,9 +295,16 @@ smsApp.post("/ingest", async (c) => {
   let parsedBy = "rules";
 
   const ruleResult = parseSmsByRules(message.trim(), sender?.trim());
-  console.log(`[SMS Ingest] Rule parser: detected=${ruleResult.transaction_detected}, amount=${ruleResult.amount}, dir=${ruleResult.direction}, conf=${ruleResult.confidence.toFixed(2)}, rule=${ruleResult.matched_rule}`);
+  console.log(
+    `[SMS Ingest] Rule parser: detected=${ruleResult.transaction_detected}, amount=${ruleResult.amount}, dir=${ruleResult.direction}, conf=${ruleResult.confidence.toFixed(2)}, rule=${ruleResult.matched_rule}`,
+  );
 
-  if (ruleResult.transaction_detected && ruleResult.confidence >= 0.85 && ruleResult.amount && ruleResult.direction) {
+  if (
+    ruleResult.transaction_detected &&
+    ruleResult.confidence >= 0.85 &&
+    ruleResult.amount &&
+    ruleResult.direction
+  ) {
     // High confidence rule match (Amount & Direction detected by specific rule) — no AI needed
     parseResult = {
       transaction_detected: true,
@@ -256,32 +320,35 @@ smsApp.post("/ingest", async (c) => {
     parsedBy = "rules";
   } else {
     // Fallback to AI for edge cases or if direction is missing
-    console.log(`[SMS Ingest] Rule confidence low or missing data (${ruleResult.confidence.toFixed(2)}, rule=${ruleResult.matched_rule}), falling back to AI...`);
+    console.log(
+      `[SMS Ingest] Rule confidence low or missing data (${ruleResult.confidence.toFixed(2)}, rule=${ruleResult.matched_rule}), falling back to AI...`,
+    );
     try {
       const aiResult = await parseSmsFinancialData(message.trim());
       if (aiResult && aiResult.transaction_detected) {
         parseResult = aiResult;
         parsedBy = "ai";
       } else if (ruleResult.transaction_detected) {
-         // If AI says no transaction but rules said yes (rare), trust AI but log it
-         parseResult = aiResult;
+        // If AI says no transaction but rules said yes (rare), trust AI but log it
+        parseResult = aiResult;
       }
     } catch (aiErr) {
       console.error("[SMS Ingest] AI parsing error:", aiErr);
       // Absolute fallback if AI fails but rules had *something*
       if (ruleResult.transaction_detected && ruleResult.amount) {
-         parseResult = ruleResult;
-         parsedBy = "rules_fallback";
+        parseResult = ruleResult;
+        parsedBy = "rules_fallback";
       }
     }
   }
 
   if (!parseResult) {
     if (smsId) {
-      await db.update(rawSmsEvents)
-        .set({ 
-          status: "ignored", 
-          metadata: { 
+      await db
+        .update(rawSmsEvents)
+        .set({
+          status: "ignored",
+          metadata: {
             reason: "AI returned null",
             rule_result: {
               transaction_detected: ruleResult.transaction_detected,
@@ -290,23 +357,33 @@ smsApp.post("/ingest", async (c) => {
               confidence: ruleResult.confidence,
               matched_rule: ruleResult.matched_rule,
               provider: ruleResult.provider,
-            }
-          } 
+            },
+          },
         })
         .where(eq(rawSmsEvents.id, smsId));
     }
-    return c.json({ success: true, transaction_detected: false, reason: "Could not parse SMS" }, 200);
+    return c.json(
+      {
+        success: true,
+        transaction_detected: false,
+        reason: "Could not parse SMS",
+      },
+      200,
+    );
   }
 
   // ── Step 3: Business Logic ──
   if (!parseResult.transaction_detected || parseResult.confidence < 0.6) {
     // Not financial or low confidence → ignore
     if (smsId) {
-      await db.update(rawSmsEvents)
+      await db
+        .update(rawSmsEvents)
         .set({
           status: "ignored",
           metadata: {
-            reason: !parseResult.transaction_detected ? "not_financial" : "low_confidence",
+            reason: !parseResult.transaction_detected
+              ? "not_financial"
+              : "low_confidence",
             confidence: parseResult.confidence,
             parsed_by: parsedBy,
             rule_result: {
@@ -316,25 +393,30 @@ smsApp.post("/ingest", async (c) => {
               confidence: ruleResult.confidence,
               matched_rule: ruleResult.matched_rule,
               provider: ruleResult.provider,
-            }
+            },
           },
         })
         .where(eq(rawSmsEvents.id, smsId));
     }
-    return c.json({
-      success: true,
-      transaction_detected: false,
-      reason: !parseResult.transaction_detected ? "not_financial" : "low_confidence",
-      confidence: parseResult.confidence,
-      rule_result: {
-        transaction_detected: ruleResult.transaction_detected,
-        amount: ruleResult.amount,
-        direction: ruleResult.direction,
-        confidence: ruleResult.confidence,
-        matched_rule: ruleResult.matched_rule,
-        provider: ruleResult.provider,
-      }
-    }, 200);
+    return c.json(
+      {
+        success: true,
+        transaction_detected: false,
+        reason: !parseResult.transaction_detected
+          ? "not_financial"
+          : "low_confidence",
+        confidence: parseResult.confidence,
+        rule_result: {
+          transaction_detected: ruleResult.transaction_detected,
+          amount: ruleResult.amount,
+          direction: ruleResult.direction,
+          confidence: ruleResult.confidence,
+          matched_rule: ruleResult.matched_rule,
+          provider: ruleResult.provider,
+        },
+      },
+      200,
+    );
   }
 
   // ── Step 4: Save as Transaction ──
@@ -375,7 +457,8 @@ smsApp.post("/ingest", async (c) => {
 
   // ── Step 5: Update SMS status ──
   if (smsId) {
-    await db.update(rawSmsEvents)
+    await db
+      .update(rawSmsEvents)
       .set({
         status: "processed",
         metadata: {
@@ -390,21 +473,26 @@ smsApp.post("/ingest", async (c) => {
       .where(eq(rawSmsEvents.id, smsId));
   }
 
-  console.log(`✅ [SMS Ingest] User ${userId} | ${type} | ${parseResult.amount} EGP | ${category} | ${parseResult.provider}`);
+  console.log(
+    `✅ [SMS Ingest] User ${userId} | ${type} | ${parseResult.amount} EGP | ${category} | ${parseResult.provider}`,
+  );
 
-  return c.json({
-    success: true,
-    transaction_detected: true,
-    saved: true,
-    amount: parseResult.amount,
-    currency: parseResult.currency,
-    direction: parseResult.direction,
-    provider: parseResult.provider,
-    category,
-    subCategory,
-    type,
-    confidence: parseResult.confidence,
-  }, 200);
+  return c.json(
+    {
+      success: true,
+      transaction_detected: true,
+      saved: true,
+      amount: parseResult.amount,
+      currency: parseResult.currency,
+      direction: parseResult.direction,
+      provider: parseResult.provider,
+      category,
+      subCategory,
+      type,
+      confidence: parseResult.confidence,
+    },
+    200,
+  );
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -414,19 +502,21 @@ smsApp.post("/ingest", async (c) => {
 // ─────────────────────────────────────────────────────────────────────────────
 smsApp.post("/token/generate", async (c) => {
   const db = getDb();
-  const user = await getUserFromSession(c.req.header("Authorization"));
+  const user = await getUserFromSession(c);
 
   if (!user) {
     return c.json({ error: "Unauthorized" }, 401);
   }
 
   // Delete old token if any
-  await db.delete(webhookTokens).where(
-    and(
-      eq(webhookTokens.userId, user.id as number),
-      eq(webhookTokens.userType, user.type)
-    )
-  );
+  await db
+    .delete(webhookTokens)
+    .where(
+      and(
+        eq(webhookTokens.userId, user.id as number),
+        eq(webhookTokens.userType, user.type),
+      ),
+    );
 
   // Generate new secure token
   const newToken = `sms_${randomBytes(32).toString("hex")}`;
@@ -447,7 +537,7 @@ smsApp.post("/token/generate", async (c) => {
 // ─────────────────────────────────────────────────────────────────────────────
 smsApp.get("/token", async (c) => {
   const db = getDb();
-  const user = await getUserFromSession(c.req.header("Authorization"));
+  const user = await getUserFromSession(c);
 
   if (!user) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -459,8 +549,8 @@ smsApp.get("/token", async (c) => {
     .where(
       and(
         eq(webhookTokens.userId, user.id as number),
-        eq(webhookTokens.userType, user.type)
-      )
+        eq(webhookTokens.userType, user.type),
+      ),
     )
     .limit(1);
 
@@ -468,7 +558,10 @@ smsApp.get("/token", async (c) => {
     return c.json({ token: null, hasToken: false }, 200);
   }
 
-  return c.json({ token: record.token, hasToken: true, createdAt: record.createdAt }, 200);
+  return c.json(
+    { token: record.token, hasToken: true, createdAt: record.createdAt },
+    200,
+  );
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -491,7 +584,12 @@ smsApp.post("/exchange", async (c) => {
 
   const result = exchangeMagicCode(code);
   if (!result) {
-    return c.json({ error: "Invalid or expired code. Generate a new one from the website." }, 401);
+    return c.json(
+      {
+        error: "Invalid or expired code. Generate a new one from the website.",
+      },
+      401,
+    );
   }
 
   // Build the ingest URL from the request origin (works with any tunnel)
@@ -516,7 +614,13 @@ smsApp.get("/shortcut-download", async (c) => {
 
   const result = exchangeMagicCode(code);
   if (!result) {
-    return c.json({ error: "Invalid or expired code. Go back to SmartSpend and click Connect iPhone again." }, 401);
+    return c.json(
+      {
+        error:
+          "Invalid or expired code. Go back to SmartSpend and click Connect iPhone again.",
+      },
+      401,
+    );
   }
 
   // Build ingest URL from the request origin (works with any tunnel)
@@ -541,7 +645,7 @@ smsApp.get("/shortcut-download", async (c) => {
 // ─────────────────────────────────────────────────────────────────────────────
 smsApp.get("/logs", async (c) => {
   const db = getDb();
-  const user = await getUserFromSession(c.req.header("Authorization"));
+  const user = await getUserFromSession(c);
 
   if (!user) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -553,8 +657,8 @@ smsApp.get("/logs", async (c) => {
     .where(
       and(
         eq(rawSmsEvents.userId, user.id as number),
-        eq(rawSmsEvents.userType, user.type)
-      )
+        eq(rawSmsEvents.userType, user.type),
+      ),
     )
     .orderBy(desc(rawSmsEvents.createdAt))
     .limit(50);
@@ -570,7 +674,7 @@ smsApp.get("/logs", async (c) => {
 // ─────────────────────────────────────────────────────────────────────────────
 smsApp.get("/android-connect", async (c) => {
   const db = getDb();
-  const user = await getUserFromSession(c.req.header("Authorization"));
+  const user = await getUserFromSession(c);
 
   if (!user) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -580,7 +684,12 @@ smsApp.get("/android-connect", async (c) => {
   let [record] = await db
     .select()
     .from(webhookTokens)
-    .where(and(eq(webhookTokens.userId, user.id as number), eq(webhookTokens.userType, user.type)))
+    .where(
+      and(
+        eq(webhookTokens.userId, user.id as number),
+        eq(webhookTokens.userType, user.type),
+      ),
+    )
     .limit(1);
 
   if (!record) {
@@ -594,7 +703,12 @@ smsApp.get("/android-connect", async (c) => {
     [record] = await db
       .select()
       .from(webhookTokens)
-      .where(and(eq(webhookTokens.userId, user.id as number), eq(webhookTokens.userType, user.type)))
+      .where(
+        and(
+          eq(webhookTokens.userId, user.id as number),
+          eq(webhookTokens.userType, user.type),
+        ),
+      )
       .limit(1);
   }
 
@@ -634,10 +748,20 @@ smsApp.post("/android-status", async (c) => {
 
   if (!tokenRecord) return c.json({ error: "Invalid token" }, 403);
 
-  let body: { appVersion?: string; androidVersion?: string; deviceModel?: string } = {};
-  try { body = await c.req.json(); } catch { /* optional body */ }
+  let body: {
+    appVersion?: string;
+    androidVersion?: string;
+    deviceModel?: string;
+  } = {};
+  try {
+    body = await c.req.json();
+  } catch {
+    /* optional body */
+  }
 
-  console.log(`[Android Status] User ${tokenRecord.userId} | App v${body.appVersion || "?"} | Android ${body.androidVersion || "?"} | ${body.deviceModel || "?"}`);
+  console.log(
+    `[Android Status] User ${tokenRecord.userId} | App v${body.appVersion || "?"} | Android ${body.androidVersion || "?"} | ${body.deviceModel || "?"}`,
+  );
 
   return c.json({
     success: true,
@@ -652,7 +776,7 @@ smsApp.post("/android-status", async (c) => {
 // ─────────────────────────────────────────────────────────────────────────────
 smsApp.get("/metrics", async (c) => {
   const db = getDb();
-  const user = await getUserFromSession(c.req.header("Authorization"));
+  const user = await getUserFromSession(c);
 
   if (!user) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -664,8 +788,8 @@ smsApp.get("/metrics", async (c) => {
     .where(
       and(
         eq(rawSmsEvents.userId, user.id as number),
-        eq(rawSmsEvents.userType, user.type)
-      )
+        eq(rawSmsEvents.userType, user.type),
+      ),
     )
     .orderBy(desc(rawSmsEvents.createdAt))
     .limit(1000);
@@ -674,7 +798,7 @@ smsApp.get("/metrics", async (c) => {
   let processed = 0;
   let ignored = 0;
   let error = 0;
-  
+
   let rulesCount = 0;
   let aiCount = 0;
   let fallbackCount = 0;
@@ -702,19 +826,30 @@ smsApp.get("/metrics", async (c) => {
     }
   }
 
-  const failCount = error + events.filter(e => (e.metadata as any)?.reason === "low_confidence").length;
-  const accuracyRate = processed + failCount > 0 ? (processed / (processed + failCount)) : 1.0;
+  const failCount =
+    error +
+    events.filter((e) => (e.metadata as any)?.reason === "low_confidence")
+      .length;
+  const accuracyRate =
+    processed + failCount > 0 ? processed / (processed + failCount) : 1.0;
 
-  return c.json({
-    success: true,
-    metrics: {
-      totalReceived: total,
-      statusBreakdown: { processed, ignored, error },
-      parserBreakdown: { rules: rulesCount, ai: aiCount, fallback: fallbackCount },
-      accuracyRate: Math.round(accuracyRate * 100) / 100,
-      providerBreakdown: providerStats
-    }
-  }, 200);
+  return c.json(
+    {
+      success: true,
+      metrics: {
+        totalReceived: total,
+        statusBreakdown: { processed, ignored, error },
+        parserBreakdown: {
+          rules: rulesCount,
+          ai: aiCount,
+          fallback: fallbackCount,
+        },
+        accuracyRate: Math.round(accuracyRate * 100) / 100,
+        providerBreakdown: providerStats,
+      },
+    },
+    200,
+  );
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -723,7 +858,7 @@ smsApp.get("/metrics", async (c) => {
 // ─────────────────────────────────────────────────────────────────────────────
 smsApp.get("/unparsed", async (c) => {
   const db = getDb();
-  const user = await getUserFromSession(c.req.header("Authorization"));
+  const user = await getUserFromSession(c);
 
   if (!user) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -736,29 +871,35 @@ smsApp.get("/unparsed", async (c) => {
       and(
         eq(rawSmsEvents.userId, user.id as number),
         eq(rawSmsEvents.userType, user.type),
-        eq(rawSmsEvents.status, "ignored")
-      )
+        eq(rawSmsEvents.status, "ignored"),
+      ),
     )
     .orderBy(desc(rawSmsEvents.createdAt))
     .limit(100);
 
-  const filtered = unparsedEvents.filter(e => {
-    const meta = e.metadata as any;
-    return meta?.reason === "low_confidence" || meta?.reason === "AI returned null";
-  }).slice(0, 50);
+  const filtered = unparsedEvents
+    .filter((e) => {
+      const meta = e.metadata as any;
+      return (
+        meta?.reason === "low_confidence" || meta?.reason === "AI returned null"
+      );
+    })
+    .slice(0, 50);
 
-  return c.json({
-    success: true,
-    unparsed: filtered.map(e => ({
-      id: e.id,
-      sender: e.sender,
-      message: e.message,
-      redactedMessage: e.message, // raw text since database is unredacted
-      timestamp: e.smsTimestamp,
-      reason: (e.metadata as any)?.reason,
-      ruleResult: (e.metadata as any)?.rule_result,
-      createdAt: e.createdAt
-    }))
-  }, 200);
+  return c.json(
+    {
+      success: true,
+      unparsed: filtered.map((e) => ({
+        id: e.id,
+        sender: e.sender,
+        message: e.message,
+        redactedMessage: e.message, // raw text since database is unredacted
+        timestamp: e.smsTimestamp,
+        reason: (e.metadata as any)?.reason,
+        ruleResult: (e.metadata as any)?.rule_result,
+        createdAt: e.createdAt,
+      })),
+    },
+    200,
+  );
 });
-

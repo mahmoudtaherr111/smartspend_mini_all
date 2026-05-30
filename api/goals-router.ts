@@ -16,7 +16,10 @@ import {
   capRequestOutputTokens,
 } from "./lib/ai-usage-policy";
 import { mapModelName } from "./lib/model-mapper";
-import { getSmartProfile, summarizeProfileForAI } from "./services/user-profile-service";
+import {
+  getSmartProfile,
+  summarizeProfileForAI,
+} from "./services/user-profile-service";
 
 const FREE_DESCRIPTION_MAX = 120;
 const FREE_GOALS_LIMIT = 3;
@@ -25,7 +28,9 @@ function isMissingGoalsTable(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err ?? "");
   return (
     msg.includes("financial_goals") &&
-    (msg.includes("doesn't exist") || msg.includes("ER_NO_SUCH_TABLE") || msg.includes("Failed query"))
+    (msg.includes("doesn't exist") ||
+      msg.includes("ER_NO_SUCH_TABLE") ||
+      msg.includes("Failed query"))
   );
 }
 
@@ -39,30 +44,65 @@ const PRO_UPSELL = {
   cta: "رقّي لـ Pro لفتح التحليل الكامل",
 };
 
-async function trackGoalTokens(userId: number, userType: "oauth" | "local", tokens: number, model?: string) {
+async function trackGoalTokens(
+  userId: number,
+  userType: "oauth" | "local",
+  tokens: number,
+  model?: string,
+) {
   if (!tokens) return;
   if (userType === "oauth") {
-    await db.update(users).set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` }).where(eq(users.id, userId));
+    await db
+      .update(users)
+      .set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` })
+      .where(eq(users.id, userId));
   } else {
-    await db.update(localUsers).set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` }).where(eq(localUsers.id, userId));
+    await db
+      .update(localUsers)
+      .set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` })
+      .where(eq(localUsers.id, userId));
   }
-  await recordAiUsageEvent({ userId, userType, channel: "goal", model, tokens });
+  await recordAiUsageEvent({
+    userId,
+    userType,
+    channel: "goal",
+    model,
+    tokens,
+  });
 }
 
 export const goalsRouter = router({
   list: authedProcedure.query(async ({ ctx }) => {
-    const isPro = ctx.user.plan === "pro" || ctx.user.plan === "ultra" || ctx.user.role === "admin";
+    const isPro =
+      ctx.user.plan === "pro" ||
+      ctx.user.plan === "ultra" ||
+      ctx.user.role === "admin";
     try {
       const rows = await db
         .select()
         .from(financialGoals)
-        .where(and(eq(financialGoals.userId, ctx.user.id), eq(financialGoals.userType, ctx.user.type)))
+        .where(
+          and(
+            eq(financialGoals.userId, ctx.user.id),
+            eq(financialGoals.userType, ctx.user.type),
+          ),
+        )
         .orderBy(desc(financialGoals.createdAt))
         .limit(20);
-      return { goals: rows, isPro, proUpsell: isPro ? null : PRO_UPSELL, dbReady: true as const };
+      return {
+        goals: rows,
+        isPro,
+        proUpsell: isPro ? null : PRO_UPSELL,
+        dbReady: true as const,
+      };
     } catch (err) {
       if (isMissingGoalsTable(err)) {
-        return { goals: [], isPro, proUpsell: isPro ? null : PRO_UPSELL, dbReady: false as const };
+        return {
+          goals: [],
+          isPro,
+          proUpsell: isPro ? null : PRO_UPSELL,
+          dbReady: false as const,
+        };
       }
       throw err;
     }
@@ -75,10 +115,13 @@ export const goalsRouter = router({
         description: z.string().max(2000).optional(),
         targetAmount: z.number().positive().optional(),
         targetDate: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
-      const isPro = ctx.user.plan === "pro" || ctx.user.plan === "ultra" || ctx.user.role === "admin";
+      const isPro =
+        ctx.user.plan === "pro" ||
+        ctx.user.plan === "ultra" ||
+        ctx.user.role === "admin";
 
       const existing = await db
         .select({ count: sql<number>`COUNT(*)` })
@@ -87,8 +130,8 @@ export const goalsRouter = router({
           and(
             eq(financialGoals.userId, ctx.user.id),
             eq(financialGoals.userType, ctx.user.type),
-            eq(financialGoals.status, "active")
-          )
+            eq(financialGoals.status, "active"),
+          ),
         );
       const count = Number(existing[0]?.count || 0);
       if (!isPro && count >= FREE_GOALS_LIMIT) {
@@ -116,7 +159,8 @@ export const goalsRouter = router({
       return {
         success: true,
         proUpsell: isPro ? null : PRO_UPSELL,
-        descriptionTruncated: !isPro && (input.description?.length || 0) > FREE_DESCRIPTION_MAX,
+        descriptionTruncated:
+          !isPro && (input.description?.length || 0) > FREE_DESCRIPTION_MAX,
       };
     }),
 
@@ -130,8 +174,8 @@ export const goalsRouter = router({
           and(
             eq(financialGoals.id, input.goalId),
             eq(financialGoals.userId, ctx.user.id),
-            eq(financialGoals.userType, ctx.user.type)
-          )
+            eq(financialGoals.userType, ctx.user.type),
+          ),
         )
         .limit(1);
 
@@ -150,8 +194,8 @@ export const goalsRouter = router({
             eq(expenses.userId, ctx.user.id),
             eq(expenses.userType, ctx.user.type),
             eq(expenses.type, "expense"),
-            gte(expenses.date, startOfMonth)
-          )
+            gte(expenses.date, startOfMonth),
+          ),
         );
 
       const promptText = `هدف: ${goal.title}
@@ -167,9 +211,13 @@ export const goalsRouter = router({
       const apiKey = cfg.ai_api_key || env.GEMINI_API_KEY;
       const modelName = mapModelName(cfg.ai_model_pro || env.GEMINI_MODEL_PRO);
       const maxOut = clampOutputTokens(
-        capRequestOutputTokens(asPlan(ctx.user.plan), "goal", budget.perRequestMax),
+        capRequestOutputTokens(
+          asPlan(ctx.user.plan),
+          "goal",
+          budget.perRequestMax,
+        ),
         budget.remaining,
-        estimated
+        estimated,
       );
 
       const genAI = new GoogleGenerativeAI(apiKey);
@@ -191,7 +239,12 @@ export const goalsRouter = router({
 
       let aiPlan: Record<string, unknown> = {};
       try {
-        aiPlan = JSON.parse(raw.replace(/```json?/g, "").replace(/```/g, "").trim());
+        aiPlan = JSON.parse(
+          raw
+            .replace(/```json?/g, "")
+            .replace(/```/g, "")
+            .trim(),
+        );
       } catch {
         aiPlan = { insight: raw.slice(0, 800), plan: [] };
       }
@@ -208,7 +261,12 @@ export const goalsRouter = router({
     }),
 
   setStatus: authedProcedure
-    .input(z.object({ goalId: z.number(), status: z.enum(["active", "completed", "paused"]) }))
+    .input(
+      z.object({
+        goalId: z.number(),
+        status: z.enum(["active", "completed", "paused"]),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       await db
         .update(financialGoals)
@@ -217,8 +275,8 @@ export const goalsRouter = router({
           and(
             eq(financialGoals.id, input.goalId),
             eq(financialGoals.userId, ctx.user.id),
-            eq(financialGoals.userType, ctx.user.type)
-          )
+            eq(financialGoals.userType, ctx.user.type),
+          ),
         );
       return { success: true };
     }),

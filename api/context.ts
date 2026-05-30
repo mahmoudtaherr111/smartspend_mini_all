@@ -26,9 +26,12 @@ export type Context = {
 };
 
 // Parse cookies from request header manually (works with both HonoRequest and raw Request)
-function parseCookie(req: HonoRequest | Request, name: string): string | undefined {
+function parseCookie(
+  req: HonoRequest | Request,
+  name: string,
+): string | undefined {
   let cookieHeader: string | null | undefined;
-  if ('header' in req && typeof req.header === 'function') {
+  if ("header" in req && typeof req.header === "function") {
     cookieHeader = (req as HonoRequest).header("cookie");
   } else {
     cookieHeader = (req as Request).headers.get("cookie");
@@ -40,13 +43,15 @@ function parseCookie(req: HonoRequest | Request, name: string): string | undefin
 
 // Get authorization header from either request type
 function getAuthHeader(req: HonoRequest | Request): string | undefined {
-  if ('header' in req && typeof req.header === 'function') {
+  if ("header" in req && typeof req.header === "function") {
     return (req as HonoRequest).header("Authorization");
   }
   return (req as Request).headers.get("Authorization") ?? undefined;
 }
 
-export async function createContext(req: HonoRequest | Request): Promise<Context> {
+export async function createContext(
+  req: HonoRequest | Request,
+): Promise<Context> {
   let user: UnifiedUser | null = null;
 
   // 1. Try Google OAuth (cookie)
@@ -89,7 +94,7 @@ export async function createContext(req: HonoRequest | Request): Promise<Context
               eq(sessions.token, token),
               eq(sessions.userId, Number(payload.userId)),
               eq(sessions.userType, "local"),
-              gt(sessions.expiresAt, new Date())
+              gt(sessions.expiresAt, new Date()),
             ),
           });
 

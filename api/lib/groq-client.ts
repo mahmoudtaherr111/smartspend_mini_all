@@ -1,17 +1,16 @@
+import Groq from "groq-sdk";
+
 export async function callGroqAPI(
   apiKey: string,
   model: string,
   systemPrompt: string,
   userPrompt: string,
-  maxTokens: number
+  maxTokens: number,
 ): Promise<{ text: string; tokensUsed: number }> {
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+  try {
+    const groq = new Groq({ apiKey });
+    
+    const response = await groq.chat.completions.create({
       model,
       messages: [
         { role: "system", content: systemPrompt },
@@ -20,17 +19,13 @@ export async function callGroqAPI(
       max_tokens: Math.min(maxTokens, 4096),
       temperature: 0.2,
       response_format: { type: "json_object" },
-    }),
-  });
+    });
 
-  if (!response.ok) {
-    const errBody = await response.text().catch(() => "");
-    throw new Error(`Groq API error ${response.status}: ${errBody.slice(0, 300)}`);
+    return {
+      text: response.choices[0]?.message?.content || "",
+      tokensUsed: response.usage?.total_tokens || 0,
+    };
+  } catch (error: any) {
+    throw new Error(`Groq SDK error: ${error.message || String(error)}`);
   }
-
-  const data = await response.json() as any;
-  return {
-    text: data?.choices?.[0]?.message?.content ?? "",
-    tokensUsed: data?.usage?.total_tokens ?? 0,
-  };
 }

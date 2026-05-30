@@ -3,7 +3,7 @@ require("dotenv").config();
 
 async function main() {
   const connection = await mysql.createConnection(process.env.DATABASE_URL);
-  
+
   const columns = [
     "ADD COLUMN basic_info JSON NULL",
     "ADD COLUMN financial_info JSON NULL",
@@ -13,7 +13,7 @@ async function main() {
     "ADD COLUMN preferences JSON NULL",
     "ADD COLUMN avatar_id VARCHAR(100) NULL",
     "ADD COLUMN profile_version INT DEFAULT 2",
-    "ADD COLUMN last_ai_refresh_at DATETIME NULL"
+    "ADD COLUMN last_ai_refresh_at DATETIME NULL",
   ];
 
   for (const col of columns) {

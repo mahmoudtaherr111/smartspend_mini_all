@@ -2,38 +2,44 @@
 
 ## Automated checks
 
-| Check | Result |
-|-------|--------|
-| `npm run build` | Pass |
+| Check            | Result                    |
+| ---------------- | ------------------------- |
+| `npm run build`  | Pass                      |
 | `npx vitest run` | **40/40** pass (10 files) |
 
 ## Logic fixes applied this session
 
 ### 1. Admin `proUsers` undercounted Ultra subscribers
+
 **File:** `api/admin-router.ts`  
 **Issue:** Dashboard counted only `plan = "pro"`, missing `ultra`.  
 **Fix:** Count both `pro` and `ultra` for OAuth and local users.
 
 ### 2. Dead token limit branch in `parseExpense`
+
 **File:** `api/ai-router.ts`  
 **Issue:** `if (false && usedTokens >= tokenLimit)` never ran — monthly cap relied only on partial paths.  
 **Fix:** Removed dead code; enforcement is solely via `assertAiBudget()` (hard cap + per-user override + burst guard).
 
 ### 3. `maxPerRequest` ignored unified policy caps
+
 **File:** `api/ai-router.ts`  
 **Issue:** Clamping used `getAiClient().maxPerRequest` instead of `budget.perRequestMax` from `ai-usage-policy` (admin + hard ceiling).  
 **Fix:** `clampOutputTokens(budget.perRequestMax, ...)`.
 
 ### 4. Pro/Ultra wasted embedding API calls
+
 **File:** `api/lib/classification-pipeline.ts`  
 **Issue:** Every non-trivial Pro request called `runEmbeddingClassifier` before routing, but `decideClassificationRoute` sets `useEmbedding: false` for paid AI-primary.  
 **Fix:** Skip embed when `plan === "pro" | "ultra"` and rules not already strong; log `skipped_pro_ai_primary`. Keyword priors still feed AI.
 
 ### 5. Redundant condition in `shouldForceAi`
+
 **File:** `api/lib/ai-routing.ts`  
 **Fix:** Simplified Free branch after strong-enough check.
 
 ### 6. Tests
+
 **File:** `api/lib/ai-routing.test.ts` — added Pro trivial 95% rule acceptance test.
 
 ---
