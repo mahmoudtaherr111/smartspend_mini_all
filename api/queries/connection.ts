@@ -12,7 +12,10 @@ const pool = mysql.createPool({
   queueLimit: 0,
 });
 
-export const db = drizzle(pool, { schema: { ...schema, ...relations }, mode: "default" });
+export const db = drizzle(pool, {
+  schema: { ...schema, ...relations },
+  mode: "default",
+});
 
 // Backward-compatible helper for routers that use getDb()
 export function getDb() {

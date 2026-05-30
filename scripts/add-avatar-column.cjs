@@ -3,7 +3,7 @@ require("dotenv").config();
 
 async function main() {
   const connection = await mysql.createConnection(process.env.DATABASE_URL);
-  
+
   try {
     await connection.execute(`
       ALTER TABLE local_users ADD COLUMN avatar VARCHAR(500) NULL

@@ -16,7 +16,16 @@ export function isStandalonePwa(): boolean {
 
 export function isIosSafari(): boolean {
   const ua = navigator.userAgent;
-  return /iPad|iPhone|iPod/.test(ua) && !(window as Window & { MSStream?: unknown }).MSStream;
+  const isIos =
+    /iPad|iPhone|iPod/.test(ua) &&
+    !(window as Window & { MSStream?: unknown }).MSStream;
+  // Modern iPadOS Safari poses as macOS Safari, but features maxTouchPoints > 2 and "Macintosh" user agent
+  const isMaciPad =
+    typeof navigator !== "undefined" &&
+    navigator.maxTouchPoints &&
+    navigator.maxTouchPoints > 2 &&
+    /Macintosh/.test(ua);
+  return isIos || !!isMaciPad;
 }
 
 export function getDeferredInstallPrompt(): BeforeInstallPromptEvent | null {
@@ -57,7 +66,10 @@ export function registerAppServiceWorker(): void {
           const worker = registration.installing;
           if (!worker) return;
           worker.addEventListener("statechange", () => {
-            if (worker.state === "installed" && navigator.serviceWorker.controller) {
+            if (
+              worker.state === "installed" &&
+              navigator.serviceWorker.controller
+            ) {
               toast("تحديث جديد متاح", {
                 description: "اضغط لتحديث التطبيق دون فقدان بياناتك.",
                 duration: 12000,

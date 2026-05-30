@@ -1,6 +1,15 @@
-import type { OnboardingAnswer, SmartUserProfile } from "./user-profile-service";
+import type {
+  OnboardingAnswer,
+  SmartUserProfile,
+} from "./user-profile-service";
 
-export type AdaptiveQuestionType = "number" | "select" | "multi_select" | "boolean" | "text" | "text_list";
+export type AdaptiveQuestionType =
+  | "number"
+  | "select"
+  | "multi_select"
+  | "boolean"
+  | "text"
+  | "text_list";
 
 export interface AdaptiveQuestion {
   key: string;
@@ -31,11 +40,6 @@ export const ADAPTIVE_ONBOARDING_QUESTIONS: AdaptiveQuestion[] = [
       { value: "rental", label: "إيجارات" },
       { value: "other", label: "أخرى" },
     ],
-  },
-  {
-    key: "has_fixed_salary",
-    text: "مرتبك بينزل في وقت ثابت كل شهر؟",
-    type: "boolean",
   },
   {
     key: "salary_day",
@@ -100,12 +104,6 @@ export const ADAPTIVE_ONBOARDING_QUESTIONS: AdaptiveQuestion[] = [
     ],
   },
   {
-    key: "monthly_rent",
-    text: "لو إيجار، كام بيبلغ شهرياً تقريباً؟",
-    type: "number",
-    required: false,
-  },
-  {
     key: "supports_others",
     text: "بتصرف على مين بشكل منتظم؟ (غير زوجتك/أطفالك)",
     type: "multi_select",
@@ -115,6 +113,18 @@ export const ADAPTIVE_ONBOARDING_QUESTIONS: AdaptiveQuestion[] = [
       { value: "extended", label: "أقارب" },
       { value: "none", label: "ما حدش" },
     ],
+  },
+  {
+    key: "siblings_names",
+    text: "إيه أسماء إخواتك/أخواتك؟",
+    type: "text_list",
+    required: false,
+  },
+  {
+    key: "parents_names",
+    text: "إيه أسماء أبوك وأمك؟",
+    type: "text_list",
+    required: false,
   },
   {
     key: "has_debt",
@@ -142,12 +152,6 @@ export const ADAPTIVE_ONBOARDING_QUESTIONS: AdaptiveQuestion[] = [
     key: "car_type",
     text: "نوع العربية إيه؟",
     type: "text",
-    required: false,
-  },
-  {
-    key: "monthly_car_cost",
-    text: "بتصرف كام على العربية شهرياً تقريباً؟ (بنزين وصيانة)",
-    type: "number",
     required: false,
   },
   {
@@ -188,34 +192,42 @@ export const ADAPTIVE_ONBOARDING_QUESTIONS: AdaptiveQuestion[] = [
 ];
 
 const QUESTION_BY_KEY = Object.fromEntries(
-  ADAPTIVE_ONBOARDING_QUESTIONS.map((question) => [question.key, question])
+  ADAPTIVE_ONBOARDING_QUESTIONS.map((question) => [question.key, question]),
 );
 
-function answerValue(answers: Record<string, OnboardingAnswer>, key: string): unknown {
+function answerValue(
+  answers: Record<string, OnboardingAnswer>,
+  key: string,
+): unknown {
   const answer = answers[key];
   if (!answer || answer.skipped) return undefined;
   return answer.value;
 }
 
-function hasAnswered(answers: Record<string, OnboardingAnswer>, key: string): boolean {
+function hasAnswered(
+  answers: Record<string, OnboardingAnswer>,
+  key: string,
+): boolean {
   return Boolean(answers[key]);
 }
 
 export function getNextOnboardingQuestion(
-  answers: Record<string, OnboardingAnswer>
+  answers: Record<string, OnboardingAnswer>,
 ): AdaptiveQuestion | null {
   // Phase 1: Core financial data
-  if (!hasAnswered(answers, "income_level")) return QUESTION_BY_KEY.income_level;
-  if (!hasAnswered(answers, "income_sources")) return QUESTION_BY_KEY.income_sources;
+  if (!hasAnswered(answers, "income_level"))
+    return QUESTION_BY_KEY.income_level;
+  if (!hasAnswered(answers, "income_sources"))
+    return QUESTION_BY_KEY.income_sources;
 
-  // Salary day questions — only if income includes salary
-  const incomeSources = answerValue(answers, "income_sources") as string[] | undefined;
-  const hasSalarySource = Array.isArray(incomeSources) && incomeSources.includes("salary");
-  if (hasSalarySource) {
-    if (!hasAnswered(answers, "has_fixed_salary")) return QUESTION_BY_KEY.has_fixed_salary;
-    if (answerValue(answers, "has_fixed_salary") === true && !hasAnswered(answers, "salary_day")) {
-      return QUESTION_BY_KEY.salary_day;
-    }
+  // Salary day question — only if income includes salary
+  const incomeSources = answerValue(answers, "income_sources") as
+    | string[]
+    | undefined;
+  const hasSalarySource =
+    Array.isArray(incomeSources) && incomeSources.includes("salary");
+  if (hasSalarySource && !hasAnswered(answers, "salary_day")) {
+    return QUESTION_BY_KEY.salary_day;
   }
 
   if (!hasAnswered(answers, "app_goal")) return QUESTION_BY_KEY.app_goal;
@@ -223,7 +235,8 @@ export function getNextOnboardingQuestion(
   // Phase 2: Family & responsibilities
   if (!hasAnswered(answers, "children")) return QUESTION_BY_KEY.children;
   if (answerValue(answers, "children") === true) {
-    if (!hasAnswered(answers, "children_count")) return QUESTION_BY_KEY.children_count;
+    if (!hasAnswered(answers, "children_count"))
+      return QUESTION_BY_KEY.children_count;
     if (!hasAnswered(answers, "children_names")) {
       const count = Number(answerValue(answers, "children_count")) || 1;
       return { ...QUESTION_BY_KEY.children_names, listCount: count };
@@ -231,39 +244,69 @@ export function getNextOnboardingQuestion(
   }
 
   // Phase 3: Living situation
-  if (!hasAnswered(answers, "living_situation")) return QUESTION_BY_KEY.living_situation;
+  if (!hasAnswered(answers, "living_situation"))
+    return QUESTION_BY_KEY.living_situation;
   const livingSituation = answerValue(answers, "living_situation");
-  if ((livingSituation === "married" || livingSituation === "family") && !hasAnswered(answers, "partner_name")) {
+  if (
+    (livingSituation === "married" || livingSituation === "family") &&
+    !hasAnswered(answers, "partner_name")
+  ) {
     return QUESTION_BY_KEY.partner_name;
   }
-  if (!hasAnswered(answers, "housing_type")) return QUESTION_BY_KEY.housing_type;
-  if (answerValue(answers, "housing_type") === "rent" && !hasAnswered(answers, "monthly_rent")) {
-    return QUESTION_BY_KEY.monthly_rent;
+  if (!hasAnswered(answers, "housing_type"))
+    return QUESTION_BY_KEY.housing_type;
+  if (!hasAnswered(answers, "supports_others"))
+    return QUESTION_BY_KEY.supports_others;
+
+  // Siblings & parents names — conditional on supports_others
+  const supportsOthers = answerValue(answers, "supports_others") as
+    | string[]
+    | undefined;
+  if (
+    Array.isArray(supportsOthers) &&
+    supportsOthers.includes("siblings") &&
+    !hasAnswered(answers, "siblings_names")
+  ) {
+    return QUESTION_BY_KEY.siblings_names;
   }
-  if (!hasAnswered(answers, "supports_others")) return QUESTION_BY_KEY.supports_others;
+  if (
+    Array.isArray(supportsOthers) &&
+    supportsOthers.includes("parents") &&
+    !hasAnswered(answers, "parents_names")
+  ) {
+    return QUESTION_BY_KEY.parents_names;
+  }
 
   // Phase 4: Debt
   if (!hasAnswered(answers, "has_debt")) return QUESTION_BY_KEY.has_debt;
-  if (answerValue(answers, "has_debt") === true && !hasAnswered(answers, "debt_monthly")) {
+  if (
+    answerValue(answers, "has_debt") === true &&
+    !hasAnswered(answers, "debt_monthly")
+  ) {
     return QUESTION_BY_KEY.debt_monthly;
   }
 
   // Phase 5: Personal & Car
   if (!hasAnswered(answers, "profession")) return QUESTION_BY_KEY.profession;
-  if (!hasAnswered(answers, "car_ownership")) return QUESTION_BY_KEY.car_ownership;
+  if (!hasAnswered(answers, "car_ownership"))
+    return QUESTION_BY_KEY.car_ownership;
   if (answerValue(answers, "car_ownership") === true) {
     if (!hasAnswered(answers, "car_type")) return QUESTION_BY_KEY.car_type;
-    if (!hasAnswered(answers, "monthly_car_cost")) return QUESTION_BY_KEY.monthly_car_cost;
   }
 
   // Phase 6: Pets, Smoking, Subscriptions, Contacts
   if (!hasAnswered(answers, "has_pets")) return QUESTION_BY_KEY.has_pets;
-  if (answerValue(answers, "has_pets") === true && !hasAnswered(answers, "pet_names")) {
+  if (
+    answerValue(answers, "has_pets") === true &&
+    !hasAnswered(answers, "pet_names")
+  ) {
     return QUESTION_BY_KEY.pet_names;
   }
   if (!hasAnswered(answers, "smoking")) return QUESTION_BY_KEY.smoking;
-  if (!hasAnswered(answers, "subscription_services")) return QUESTION_BY_KEY.subscription_services;
-  if (!hasAnswered(answers, "regular_contacts")) return QUESTION_BY_KEY.regular_contacts;
+  if (!hasAnswered(answers, "subscription_services"))
+    return QUESTION_BY_KEY.subscription_services;
+  if (!hasAnswered(answers, "regular_contacts"))
+    return QUESTION_BY_KEY.regular_contacts;
 
   return null;
 }
@@ -273,7 +316,7 @@ export function applyOnboardingAnswer(
   key: string,
   value: unknown,
   skipped = false,
-  now = new Date()
+  now = new Date(),
 ): SmartUserProfile {
   const answer: OnboardingAnswer = {
     value: skipped ? null : value,
@@ -292,7 +335,6 @@ export function applyOnboardingAnswer(
     if (key === "income_sources") financialInfo.incomeSources = value;
     if (key === "app_goal") financialInfo.primaryGoal = value;
     if (key === "has_debt") financialInfo.hasDebt = value;
-    if (key === "has_fixed_salary") financialInfo.hasFixedSalary = value;
     if (key === "salary_day") financialInfo.salaryDay = value;
     if (key === "debt_monthly") financialInfo.monthlyDebtPayment = value;
 
@@ -301,8 +343,9 @@ export function applyOnboardingAnswer(
     if (key === "children_count") lifestyleInfo.childrenCount = value;
     if (key === "living_situation") lifestyleInfo.livingSituation = value;
     if (key === "housing_type") lifestyleInfo.housingType = value;
-    if (key === "monthly_rent") lifestyleInfo.monthlyRent = value;
     if (key === "supports_others") lifestyleInfo.supportsOthers = value;
+    if (key === "siblings_names") lifestyleInfo.siblingsNames = value; // string[]
+    if (key === "parents_names") lifestyleInfo.parentsNames = value; // string[]
 
     // Basic info mapping
     if (key === "profession") basicInfo.profession = value;
@@ -312,7 +355,6 @@ export function applyOnboardingAnswer(
     if (key === "partner_name") lifestyleInfo.partnerName = value;
     if (key === "car_ownership") lifestyleInfo.carOwnership = value;
     if (key === "car_type") lifestyleInfo.carType = value;
-    if (key === "monthly_car_cost") lifestyleInfo.monthlyCarCost = value;
     if (key === "has_pets") lifestyleInfo.hasPets = value;
     if (key === "pet_names") lifestyleInfo.petNames = value; // string[]
     if (key === "smoking") lifestyleInfo.smoking = value;

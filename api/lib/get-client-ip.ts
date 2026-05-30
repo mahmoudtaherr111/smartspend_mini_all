@@ -2,7 +2,10 @@ import type { HonoRequest } from "hono";
 import { env } from "./env";
 
 /** tRPC passes a Fetch API `Request`; Hono routes pass `HonoRequest` — unify header reads. */
-export function getIncomingHeader(req: HonoRequest | Request, name: string): string | undefined {
+export function getIncomingHeader(
+  req: HonoRequest | Request,
+  name: string,
+): string | undefined {
   if ("header" in req && typeof (req as HonoRequest).header === "function") {
     return (req as HonoRequest).header(name);
   }
@@ -22,13 +25,16 @@ export function getClientIp(req: HonoRequest | Request): string {
     }
     const realIp = getIncomingHeader(req, "x-real-ip");
     if (realIp) return realIp.trim();
-    
+
     const cfConnecting = getIncomingHeader(req, "cf-connecting-ip");
     if (cfConnecting) return cfConnecting.trim();
   }
 
   // Fallback: try to get IP from the raw request connection socket if available
   const rawReq = (req as any).raw || req;
-  const ip = rawReq.socket?.remoteAddress || rawReq.connection?.remoteAddress || "127.0.0.1";
+  const ip =
+    rawReq.socket?.remoteAddress ||
+    rawReq.connection?.remoteAddress ||
+    "127.0.0.1";
   return ip;
 }

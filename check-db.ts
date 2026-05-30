@@ -1,17 +1,11 @@
-import { drizzle } from "drizzle-orm/mysql2";
-import mysql from "mysql2/promise";
-import * as schema from "./db/schema";
-import "dotenv/config";
+import { config } from "dotenv";
+config();
+import { getDb } from "./api/queries/connection";
+import { systemSettings } from "./db/schema";
 
-async function main() {
-  const connection = await mysql.createConnection(process.env.DATABASE_URL!);
-  const [rows] = await connection.query("SHOW TABLES;");
-  console.log("Tables:", JSON.stringify(rows, null, 2));
-  
-  const [columns] = await connection.query("SHOW COLUMNS FROM expenses;");
-  console.log("Expenses Columns:", JSON.stringify(columns, null, 2));
-  
-  await connection.end();
+async function run() {
+  const db = getDb();
+  const settings = await db.select().from(systemSettings);
+  console.log(settings.map((s) => `${s.key}: ${s.value}`));
 }
-
-main().catch(console.error);
+run().catch(console.error);

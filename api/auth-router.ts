@@ -9,25 +9,35 @@ import { env } from "./lib/env";
 
 // Google OAuth helpers
 async function getGoogleTokens(code: string) {
-  const response = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      code,
-      client_id: env.GOOGLE_CLIENT_ID,
-      client_secret: env.GOOGLE_CLIENT_SECRET,
-      redirect_uri: env.GOOGLE_REDIRECT_URI,
-      grant_type: "authorization_code",
-    }),
-  });
-  return response.json();
+  try {
+    const response = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code,
+        client_id: env.GOOGLE_CLIENT_ID,
+        client_secret: env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: env.GOOGLE_REDIRECT_URI,
+        grant_type: "authorization_code",
+      }),
+    });
+    if (!response.ok) throw new Error("Google token response not ok");
+    return await response.json();
+  } catch (error) {
+    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Network error during Google OAuth token exchange" });
+  }
 }
 
 async function getGoogleUserInfo(accessToken: string) {
-  const response = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  return response.json();
+  try {
+    const response = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.ok) throw new Error("Google userinfo response not ok");
+    return await response.json();
+  } catch (error) {
+    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Network error during Google OAuth user info retrieval" });
+  }
 }
 
 export const authRouter = router({
@@ -116,6 +126,7 @@ export const authRouter = router({
 
     const user = await db.query.users.findFirst({
       where: eq(users.id, ctx.user.id),
+      columns: { id: true, name: true, email: true, avatar: true, role: true, plan: true, createdAt: true, unionId: true },
     });
 
     return user;

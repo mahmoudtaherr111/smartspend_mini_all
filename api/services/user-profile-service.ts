@@ -5,6 +5,7 @@ import {
   userProfiles,
   users,
 } from "../../db/schema";
+import { normalizeRelationship } from "../lib/relationship-normalizer";
 
 export const SMART_PROFILE_VERSION = 2;
 
@@ -35,6 +36,10 @@ export interface SmartUserProfile {
     financialGoal: string | null;
     financialPersonality: string | null;
   };
+  gamification: {
+    currentStreak: number;
+    highestStreak: number;
+  };
 }
 
 export interface OnboardingAnswer {
@@ -58,7 +63,11 @@ export interface SmartProfilePatch {
 function asObject(value: unknown): Record<string, unknown> {
   // Handle string JSON (columns are longtext, MySQL2 returns raw strings)
   if (typeof value === "string") {
-    try { return JSON.parse(value); } catch { return {}; }
+    try {
+      return JSON.parse(value);
+    } catch {
+      return {};
+    }
   }
   return value && typeof value === "object" && !Array.isArray(value)
     ? { ...(value as Record<string, unknown>) }
@@ -73,7 +82,7 @@ function toNumber(value: unknown): number | null {
 
 function deepMerge(
   base: Record<string, unknown>,
-  patch?: Record<string, unknown>
+  patch?: Record<string, unknown>,
 ): Record<string, unknown> {
   if (!patch) return base;
   const next = { ...base };
@@ -90,7 +99,7 @@ function deepMerge(
     ) {
       next[key] = deepMerge(
         current as Record<string, unknown>,
-        value as Record<string, unknown>
+        value as Record<string, unknown>,
       );
     } else {
       next[key] = value;
@@ -133,7 +142,9 @@ export function buildDefaultSmartProfile(
     avatarId?: string | null;
     profileVersion?: number | null;
     lastAiRefreshAt?: Date | null;
-  } | null
+    currentStreak?: number | null;
+    highestStreak?: number | null;
+  } | null,
 ): SmartUserProfile {
   const monthlyIncome = toNumber(legacy?.monthlyIncome);
   const financialGoal = legacy?.financialGoal ?? null;
@@ -146,7 +157,7 @@ export function buildDefaultSmartProfile(
       email: identity.email ?? null,
       profession: null,
     },
-    asObject(legacy?.basicInfo)
+    asObject(legacy?.basicInfo),
   );
 
   const financialInfo = deepMerge(
@@ -155,7 +166,7 @@ export function buildDefaultSmartProfile(
       incomeSources: [],
       spendingPattern: null,
     },
-    asObject(legacy?.financialInfo)
+    asObject(legacy?.financialInfo),
   );
 
   if (financialGoal && !financialInfo.primaryGoal) {
@@ -185,8 +196,9 @@ export function buildDefaultSmartProfile(
         subscriptions: [],
         regularContacts: [],
         favoriteSpendingPlaces: [],
+        dynamicContacts: [],
       },
-      asObject(legacy?.lifestyleInfo)
+      asObject(legacy?.lifestyleInfo),
     ),
     onboardingAnswers: asObject(legacy?.onboardingAnswers) as Record<
       string,
@@ -202,7 +214,7 @@ export function buildDefaultSmartProfile(
         hasSpikeSpending: false,
         financialPersonality,
       },
-      asObject(legacy?.aiInferredAttributes)
+      asObject(legacy?.aiInferredAttributes),
     ),
     preferences: deepMerge(
       {
@@ -211,7 +223,7 @@ export function buildDefaultSmartProfile(
         alertsEnabled: true,
         questionFriction: "medium",
       },
-      asObject(legacy?.preferences)
+      asObject(legacy?.preferences),
     ),
     avatarId: legacy?.avatarId ?? null,
     profileVersion: legacy?.profileVersion ?? SMART_PROFILE_VERSION,
@@ -222,12 +234,16 @@ export function buildDefaultSmartProfile(
       financialGoal,
       financialPersonality,
     },
+    gamification: {
+      currentStreak: legacy?.currentStreak ?? 0,
+      highestStreak: legacy?.highestStreak ?? 0,
+    },
   };
 }
 
 export function mergeSmartProfilePatch(
   current: SmartUserProfile,
-  patch: SmartProfilePatch
+  patch: SmartProfilePatch,
 ): SmartUserProfile {
   return {
     ...current,
@@ -240,11 +256,10 @@ export function mergeSmartProfilePatch(
     },
     aiInferredAttributes: deepMerge(
       current.aiInferredAttributes,
-      patch.aiInferredAttributes
+      patch.aiInferredAttributes,
     ),
     preferences: deepMerge(current.preferences, patch.preferences),
-    avatarId:
-      patch.avatarId === undefined ? current.avatarId : patch.avatarId,
+    avatarId: patch.avatarId === undefined ? current.avatarId : patch.avatarId,
     profileCompleted:
       patch.profileCompleted === undefined
         ? current.profileCompleted
@@ -253,7 +268,10 @@ export function mergeSmartProfilePatch(
   };
 }
 
-async function getIdentity(userId: number, userType: string): Promise<UserIdentity> {
+async function getIdentity(
+  userId: number,
+  userType: string,
+): Promise<UserIdentity> {
   const { db } = await import("../queries/connection");
   if (userType === "oauth") {
     const row = await db.query.users.findFirst({ where: eq(users.id, userId) });
@@ -279,7 +297,7 @@ async function getIdentity(userId: number, userType: string): Promise<UserIdenti
 
 export async function getSmartProfile(
   userId: number,
-  userType: string
+  userType: string,
 ): Promise<SmartUserProfile> {
   const { db } = await import("../queries/connection");
   const identity = await getIdentity(userId, userType);
@@ -289,25 +307,40 @@ export async function getSmartProfile(
     const rows = await db
       .select()
       .from(userProfiles)
-      .where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)))
+      .where(
+        and(
+          eq(userProfiles.userId, userId),
+          eq(userProfiles.userType, userType),
+        ),
+      )
       .limit(1);
     row = rows[0];
   } catch (err) {
     if (!isSmartProfileSchemaError(err)) throw err;
 
-    console.warn("[getSmartProfile] Full read failed, attempting auto-repair...");
+    console.warn(
+      "[getSmartProfile] Full read failed, attempting auto-repair...",
+    );
     try {
       await autoRepairProfileSchema();
       // Retry full read after repair
       const rows = await db
         .select()
         .from(userProfiles)
-        .where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)))
+        .where(
+          and(
+            eq(userProfiles.userId, userId),
+            eq(userProfiles.userType, userType),
+          ),
+        )
         .limit(1);
       row = rows[0];
       console.log("[getSmartProfile] Auto-repair + retry succeeded!");
     } catch (retryErr) {
-      console.error("[getSmartProfile] Retry failed, using legacy read:", retryErr instanceof Error ? retryErr.message : retryErr);
+      console.error(
+        "[getSmartProfile] Retry failed, using legacy read:",
+        retryErr instanceof Error ? retryErr.message : retryErr,
+      );
       const legacyRows = await db
         .select({
           monthlyIncome: userProfiles.monthlyIncome,
@@ -316,21 +349,95 @@ export async function getSmartProfile(
           profileCompleted: userProfiles.profileCompleted,
         })
         .from(userProfiles)
-        .where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)))
+        .where(
+          and(
+            eq(userProfiles.userId, userId),
+            eq(userProfiles.userType, userType),
+          ),
+        )
         .limit(1);
+
       row = legacyRows[0];
     }
   }
 
+  // Fetch streak from the user identity table (users or localUsers)
+  let currentStreak = 0;
+  let highestStreak = 0;
+  if (userType === "oauth") {
+    const u = await db.query.users.findFirst({ where: eq(users.id, userId) });
+    if (u) {
+      currentStreak = u.currentStreak || 0;
+      highestStreak = u.highestStreak || 0;
+    }
+  } else {
+    const u = await db.query.localUsers.findFirst({
+      where: eq(localUsers.id, userId),
+    });
+    if (u) {
+      currentStreak = u.currentStreak || 0;
+      highestStreak = u.highestStreak || 0;
+    }
+  }
+
+  if (row) {
+    row.currentStreak = currentStreak;
+    row.highestStreak = highestStreak;
+  } else {
+    row = { currentStreak, highestStreak };
+  }
+
   const result = buildDefaultSmartProfile(identity, row);
-  console.log(`[getSmartProfile] user=${userId}, hasRow=${!!row}, hasOnboardingAnswers=${row?.onboardingAnswers ? Object.keys(row.onboardingAnswers).length : 0}, resultAnswers=${Object.keys(result.onboardingAnswers).length}`);
+  
+  // Phase 3: Smart Data Stitching
+  try {
+    const { userContacts, profileLearningEvents } = await import("../../db/schema");
+    const { desc } = await import("drizzle-orm");
+    
+    // Fetch user contacts
+    const contacts = await db
+      .select({
+        name: userContacts.name,
+        relationship: userContacts.relation
+      })
+      .from(userContacts)
+      .where(and(eq(userContacts.userId, userId), eq(userContacts.userType, userType)))
+      .limit(50);
+      
+    if (contacts.length > 0) {
+      result.aiInferredAttributes.knownPeople = contacts as any;
+    }
+    
+    // Fetch latest learning events for context injection
+    const events = await db
+      .select({
+        summary: profileLearningEvents.summary,
+      })
+      .from(profileLearningEvents)
+      .where(and(eq(profileLearningEvents.userId, userId), eq(profileLearningEvents.userType, userType)))
+      .orderBy(desc(profileLearningEvents.createdAt))
+      .limit(5);
+      
+    if (events.length > 0) {
+      result.aiInferredAttributes.spendingBehavior = 
+        (result.aiInferredAttributes.spendingBehavior ? result.aiInferredAttributes.spendingBehavior + "\\n" : "") +
+        "أحدث الاستنتاجات والسلوكيات:\\n" + 
+        events.map(e => "- " + e.summary).join("\\n");
+    }
+  } catch(err) {
+    console.error("[getSmartProfile] Failed to load extra smart context:", err);
+  }
+
+  console.log(
+    `[getSmartProfile] user=${userId}, hasRow=${!!row}, hasOnboardingAnswers=${row?.onboardingAnswers ? Object.keys(row.onboardingAnswers).length : 0}, resultAnswers=${Object.keys(result.onboardingAnswers).length}`,
+  );
   return result;
 }
 
 export async function saveSmartProfile(
   userId: number,
   userType: string,
-  profile: SmartUserProfile
+  profile: SmartUserProfile,
 ): Promise<void> {
   const { db } = await import("../queries/connection");
   const { sql: sqlTag } = await import("drizzle-orm");
@@ -379,11 +486,16 @@ export async function saveSmartProfile(
           ai_inferred_attributes = VALUES(ai_inferred_attributes),
           preferences = VALUES(preferences),
           avatar_id = VALUES(avatar_id),
-          profile_version = VALUES(profile_version)`
+          profile_version = VALUES(profile_version)`,
     );
-    console.log(`[saveSmartProfile] ✅ Saved. answers=${Object.keys(profile.onboardingAnswers).length}, completed=${profile.profileCompleted}`);
+    console.log(
+      `[saveSmartProfile] ✅ Saved. answers=${Object.keys(profile.onboardingAnswers).length}, completed=${profile.profileCompleted}`,
+    );
   } catch (err) {
-    console.error("[saveSmartProfile] Save failed:", err instanceof Error ? err.message : err);
+    console.error(
+      "[saveSmartProfile] Save failed:",
+      err instanceof Error ? err.message : err,
+    );
 
     // Fallback: try saving just the legacy columns
     try {
@@ -392,20 +504,26 @@ export async function saveSmartProfile(
         .values({
           userId,
           userType,
-          monthlyIncome: monthlyIncome === null ? undefined : monthlyIncome.toString(),
+          monthlyIncome:
+            monthlyIncome === null ? undefined : monthlyIncome.toString(),
           financialGoal,
           financialPersonality,
           profileCompleted: profile.profileCompleted,
+          onboardingAnswers: profile.onboardingAnswers,
         })
         .onDuplicateKeyUpdate({
           set: {
-            monthlyIncome: monthlyIncome === null ? undefined : monthlyIncome.toString(),
+            monthlyIncome:
+              monthlyIncome === null ? undefined : monthlyIncome.toString(),
             financialGoal,
             financialPersonality,
             profileCompleted: profile.profileCompleted,
+            onboardingAnswers: profile.onboardingAnswers,
           },
         });
-      console.warn("[saveSmartProfile] ⚠️ Legacy fallback used — JSON data NOT saved!");
+      console.warn(
+        "[saveSmartProfile] ⚠️ Legacy fallback used — JSON data NOT saved!",
+      );
     } catch (legacyErr) {
       console.error("[saveSmartProfile] Even legacy save failed:", legacyErr);
       throw err;
@@ -434,7 +552,7 @@ async function autoRepairProfileSchema(): Promise<void> {
   for (const col of requiredColumns) {
     try {
       await db.execute(
-        `ALTER TABLE user_profiles ADD COLUMN \`${col.name}\` ${col.type}`
+        `ALTER TABLE user_profiles ADD COLUMN \`${col.name}\` ${col.type}`,
       );
       console.log(`  [auto-repair] Added column: ${col.name}`);
     } catch (e: any) {
@@ -449,7 +567,7 @@ async function autoRepairProfileSchema(): Promise<void> {
 export async function updateSmartProfile(
   userId: number,
   userType: string,
-  patch: SmartProfilePatch
+  patch: SmartProfilePatch,
 ): Promise<SmartUserProfile> {
   const current = await getSmartProfile(userId, userType);
   const next = mergeSmartProfilePatch(current, patch);
@@ -469,7 +587,7 @@ export async function updateSmartProfile(
  * knows those questions are already answered and won't re-ask them.
  */
 function syncOnboardingAnswersFromProfile(
-  profile: SmartUserProfile
+  profile: SmartUserProfile,
 ): Record<string, OnboardingAnswer> {
   const answers = { ...profile.onboardingAnswers };
   const now = new Date().toISOString();
@@ -478,9 +596,19 @@ function syncOnboardingAnswersFromProfile(
   const bi = profile.basicInfo as Record<string, any>;
 
   function markAnswered(key: string, value: unknown) {
-    if (value !== null && value !== undefined && value !== "" && value !== false) {
+    if (
+      value !== null &&
+      value !== undefined &&
+      value !== "" &&
+      value !== false
+    ) {
       if (!answers[key]) {
-        answers[key] = { value, skipped: false, answeredAt: now, updatedAt: now };
+        answers[key] = {
+          value,
+          skipped: false,
+          answeredAt: now,
+          updatedAt: now,
+        };
       } else {
         answers[key] = { ...answers[key], value, updatedAt: now };
       }
@@ -488,29 +616,42 @@ function syncOnboardingAnswersFromProfile(
   }
 
   // Financial
-  if (fi.averageMonthlyIncome) markAnswered("income_level", fi.averageMonthlyIncome);
-  if (Array.isArray(fi.incomeSources) && fi.incomeSources.length > 0) markAnswered("income_sources", fi.incomeSources);
+  if (fi.averageMonthlyIncome)
+    markAnswered("income_level", fi.averageMonthlyIncome);
+  if (Array.isArray(fi.incomeSources) && fi.incomeSources.length > 0)
+    markAnswered("income_sources", fi.incomeSources);
   if (fi.primaryGoal) markAnswered("app_goal", fi.primaryGoal);
-  if (fi.hasDebt !== null && fi.hasDebt !== undefined) markAnswered("has_debt", fi.hasDebt);
-  if (fi.monthlyDebtPayment) markAnswered("debt_monthly", fi.monthlyDebtPayment);
+  if (fi.hasDebt !== null && fi.hasDebt !== undefined)
+    markAnswered("has_debt", fi.hasDebt);
+  if (fi.monthlyDebtPayment)
+    markAnswered("debt_monthly", fi.monthlyDebtPayment);
 
   // Lifestyle
-  if (li.hasChildren !== null && li.hasChildren !== undefined) markAnswered("children", li.hasChildren);
+  if (li.hasChildren !== null && li.hasChildren !== undefined)
+    markAnswered("children", li.hasChildren);
   if (li.childrenCount) markAnswered("children_count", li.childrenCount);
-  if (Array.isArray(li.childrenNames) && li.childrenNames.length > 0) markAnswered("children_names", li.childrenNames);
+  if (Array.isArray(li.childrenNames) && li.childrenNames.length > 0)
+    markAnswered("children_names", li.childrenNames);
   if (li.livingSituation) markAnswered("living_situation", li.livingSituation);
   if (li.partnerName) markAnswered("partner_name", li.partnerName);
   if (li.housingType) markAnswered("housing_type", li.housingType);
   if (li.monthlyRent) markAnswered("monthly_rent", li.monthlyRent);
-  if (Array.isArray(li.supportsOthers) && li.supportsOthers.length > 0) markAnswered("supports_others", li.supportsOthers);
-  if (li.carOwnership !== null && li.carOwnership !== undefined) markAnswered("car_ownership", li.carOwnership);
+  if (Array.isArray(li.supportsOthers) && li.supportsOthers.length > 0)
+    markAnswered("supports_others", li.supportsOthers);
+  if (li.carOwnership !== null && li.carOwnership !== undefined)
+    markAnswered("car_ownership", li.carOwnership);
   if (li.carType) markAnswered("car_type", li.carType);
   if (li.monthlyCarCost) markAnswered("monthly_car_cost", li.monthlyCarCost);
-  if (li.hasPets !== null && li.hasPets !== undefined) markAnswered("has_pets", li.hasPets);
-  if (Array.isArray(li.petNames) && li.petNames.length > 0) markAnswered("pet_names", li.petNames);
-  if (li.smoking !== null && li.smoking !== undefined) markAnswered("smoking", li.smoking);
-  if (Array.isArray(li.subscriptions) && li.subscriptions.length > 0) markAnswered("subscription_services", li.subscriptions);
-  if (Array.isArray(li.regularContacts) && li.regularContacts.length > 0) markAnswered("regular_contacts", li.regularContacts);
+  if (li.hasPets !== null && li.hasPets !== undefined)
+    markAnswered("has_pets", li.hasPets);
+  if (Array.isArray(li.petNames) && li.petNames.length > 0)
+    markAnswered("pet_names", li.petNames);
+  if (li.smoking !== null && li.smoking !== undefined)
+    markAnswered("smoking", li.smoking);
+  if (Array.isArray(li.subscriptions) && li.subscriptions.length > 0)
+    markAnswered("subscription_services", li.subscriptions);
+  if (Array.isArray(li.regularContacts) && li.regularContacts.length > 0)
+    markAnswered("regular_contacts", li.regularContacts);
 
   // Basic
   if (bi.profession) markAnswered("profession", bi.profession);
@@ -565,4 +706,64 @@ export async function recordProfileLearningEvent(input: {
       metadata: input.metadata || {},
     })
     .catch(() => {});
+}
+
+/**
+ * Add a dynamic contact to the user's profile based on chat clarifications.
+ */
+export async function addDynamicContact(
+  userId: number,
+  userType: string,
+  name: string,
+  relationship: string,
+): Promise<void> {
+  const profile = await getSmartProfile(userId, userType);
+  const lifestyleInfo = profile.lifestyleInfo as Record<string, any>;
+
+  const dynamicContacts = Array.isArray(lifestyleInfo.dynamicContacts)
+    ? [...lifestyleInfo.dynamicContacts]
+    : [];
+
+  const { normalized } = normalizeRelationship(relationship);
+
+  // Avoid duplicates or update existing
+  const existingIndex = dynamicContacts.findIndex((c: any) => c.name === name);
+  if (existingIndex >= 0) {
+    const existing = dynamicContacts[existingIndex];
+    // Safeguard: Do not overwrite a specific relationship (like 'أم') with a generic fallback (like 'قريب')
+    const genericTerms = [
+      "قريب",
+      "صديق",
+      "موظف",
+      "شخص معروف",
+      "شخص",
+      "قريبتك",
+      "صاحبك",
+      "زميل",
+    ];
+    const hasSpecific =
+      existing.relationship &&
+      !genericTerms.includes(existing.relationship) &&
+      !genericTerms.includes(existing.rawRelationship);
+    const isNewGeneric =
+      genericTerms.includes(relationship) || genericTerms.includes(normalized);
+
+    if (!hasSpecific || !isNewGeneric) {
+      dynamicContacts[existingIndex].relationship = normalized;
+      dynamicContacts[existingIndex].rawRelationship = relationship;
+    }
+  } else {
+    dynamicContacts.push({
+      name,
+      relationship: normalized,
+      rawRelationship: relationship,
+    });
+  }
+
+  await updateSmartProfile(userId, userType, {
+    lifestyleInfo: {
+      ...lifestyleInfo,
+      dynamicContacts,
+    },
+  });
 }

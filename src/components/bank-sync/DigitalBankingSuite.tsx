@@ -16,7 +16,7 @@ import {
   AlertCircle,
   PiggyBank,
   CheckCircle,
-  HelpCircle
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -38,11 +38,13 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Queries
-  const { data: wallets = [], isLoading: isLoadingWallets } = trpc.wallet.getWallets.useQuery();
-  const { data: transactions = [], isLoading: isLoadingTx } = trpc.wallet.getWalletTransactions.useQuery(
-    { walletId: selectedWalletId || 0 },
-    { enabled: !!selectedWalletId }
-  );
+  const { data: wallets = [], isLoading: isLoadingWallets } =
+    trpc.wallet.getWallets.useQuery();
+  const { data: transactions = [], isLoading: isLoadingTx } =
+    trpc.wallet.getWalletTransactions.useQuery(
+      { walletId: selectedWalletId || 0 },
+      { enabled: !!selectedWalletId },
+    );
 
   // Mutations
   const createWalletMutation = trpc.wallet.createWallet.useMutation({
@@ -54,7 +56,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
     },
     onError: (err: any) => {
       toast.error(err.message || "حدث خطأ أثناء إضافة البطاقة");
-    }
+    },
   });
 
   const deleteWalletMutation = trpc.wallet.deleteWallet.useMutation({
@@ -69,7 +71,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
     onError: (err: any) => {
       toast.error(err.message || "حدث خطأ أثناء حذف البطاقة");
       setIsDeletingId(null);
-    }
+    },
   });
 
   const resetForm = () => {
@@ -89,7 +91,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
           logoColor: "text-white",
           logoBg: "bg-red-600",
           displayName: "فودافون كاش",
-          glow: "shadow-red-600/40"
+          glow: "shadow-red-600/40",
         };
       case "InstaPay":
         return {
@@ -98,7 +100,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
           logoColor: "text-pink-300 font-extrabold italic",
           logoBg: "bg-purple-600",
           displayName: "إنستا باي",
-          glow: "shadow-purple-600/40"
+          glow: "shadow-purple-600/40",
         };
       case "CIB":
         return {
@@ -107,7 +109,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
           logoColor: "text-amber-400 font-extrabold",
           logoBg: "bg-blue-900",
           displayName: "البنك التجاري الدولي CIB",
-          glow: "shadow-blue-900/40"
+          glow: "shadow-blue-900/40",
         };
       case "NBE":
         return {
@@ -116,7 +118,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
           logoColor: "text-amber-300 font-bold",
           logoBg: "bg-emerald-700",
           displayName: "البنك الأهلي المصري",
-          glow: "shadow-emerald-700/40"
+          glow: "shadow-emerald-700/40",
         };
       case "BanqueMisr":
         return {
@@ -125,7 +127,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
           logoColor: "text-yellow-400 font-serif font-extrabold",
           logoBg: "bg-amber-700",
           displayName: "بنك مصر",
-          glow: "shadow-amber-700/40"
+          glow: "shadow-amber-700/40",
         };
       case "QNB":
         return {
@@ -134,7 +136,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
           logoColor: "text-white font-black",
           logoBg: "bg-teal-900",
           displayName: "QNB الأهلي",
-          glow: "shadow-teal-800/40"
+          glow: "shadow-teal-800/40",
         };
       case "Fawry":
         return {
@@ -143,7 +145,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
           logoColor: "text-blue-950 font-bold",
           logoBg: "bg-yellow-400",
           displayName: "فوري",
-          glow: "shadow-yellow-500/40"
+          glow: "shadow-yellow-500/40",
         };
       case "OrangeMoney":
         return {
@@ -152,7 +154,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
           logoColor: "text-white font-extrabold",
           logoBg: "bg-orange-500",
           displayName: "أورنج كاش",
-          glow: "shadow-orange-500/40"
+          glow: "shadow-orange-500/40",
         };
       case "EtisalatCash":
         return {
@@ -161,7 +163,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
           logoColor: "text-white font-black",
           logoBg: "bg-lime-500",
           displayName: "اتصالات كاش",
-          glow: "shadow-lime-600/40"
+          glow: "shadow-lime-600/40",
         };
       default:
         return {
@@ -170,7 +172,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
           logoColor: "text-white tracking-widest font-black italic",
           logoBg: "bg-slate-700",
           displayName: "فيزا / كارت بنكي",
-          glow: "shadow-slate-700/40"
+          glow: "shadow-slate-700/40",
         };
     }
   };
@@ -193,7 +195,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
         name: newName,
         provider: newProvider,
         lastFourDigits: newLastDigits || undefined,
-        balance: newBalance || "0.00"
+        balance: newBalance || "0.00",
       });
     } catch {
       // Handled by onError
@@ -227,7 +229,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
     const rY = (x / (box.width / 2)) * 12;
     const rX = -(y / (box.height / 2)) * 12;
     card.style.transform = `perspective(1000px) rotateY(${rY}deg) rotateX(${rX}deg) scale3d(1.02, 1.02, 1.02)`;
-    
+
     // Shiny overlay position
     const reflection = card.querySelector(".card-shine") as HTMLDivElement;
     if (reflection) {
@@ -239,7 +241,8 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
 
   const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
     const card = e.currentTarget;
-    card.style.transform = "perspective(1000px) rotateY(0deg) rotateX(0deg) scale3d(1, 1, 1)";
+    card.style.transform =
+      "perspective(1000px) rotateY(0deg) rotateX(0deg) scale3d(1, 1, 1)";
     const reflection = card.querySelector(".card-shine") as HTMLDivElement;
     if (reflection) {
       reflection.style.background = "transparent";
@@ -266,12 +269,11 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      
       {/* Head Panel */}
       <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 rounded-3xl p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden border border-white/10">
         <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500 opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-blue-500 opacity-5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4 pointer-events-none" />
-        
+
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 bg-emerald-500/20 backdrop-blur-sm px-4 py-1.5 rounded-full text-emerald-300 text-xs font-bold border border-emerald-500/30">
@@ -282,7 +284,9 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
               محفظتك الرقمية الذكية 💳
             </h1>
             <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-xl">
-              تظهر هنا جميع الكروت والمحافظ التي تم تفعيلها. أي إشعار بنكي أو رسالة سحب/إيداع سيتم ربطها تلقائياً بالبطاقة المناسبة لتحديث الرصيد فورياً.
+              تظهر هنا جميع الكروت والمحافظ التي تم تفعيلها. أي إشعار بنكي أو
+              رسالة سحب/إيداع سيتم ربطها تلقائياً بالبطاقة المناسبة لتحديث
+              الرصيد فورياً.
             </p>
           </div>
 
@@ -294,7 +298,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
               <Smartphone className="w-4 h-4 text-emerald-400" />
               تعديل إعدادات الربط / الجهاز
             </button>
-            
+
             <button
               onClick={() => setIsAddModalOpen(true)}
               className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs px-5 py-2.5 rounded-2xl shadow-lg shadow-emerald-500/20 flex items-center gap-2 btn-press"
@@ -311,13 +315,18 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
         <h2 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2 px-1">
           <CreditCard className="w-5 h-5 text-emerald-500" />
           البطاقات والمحافظ النشطة
-          <span className="text-xs font-normal text-muted-foreground">({wallets.length} كروت)</span>
+          <span className="text-xs font-normal text-muted-foreground">
+            ({wallets.length} كروت)
+          </span>
         </h2>
 
         {isLoadingWallets ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2].map((i) => (
-              <div key={i} className="h-52 rounded-3xl bg-slate-100 dark:bg-slate-800/50 animate-pulse relative overflow-hidden">
+              <div
+                key={i}
+                className="h-52 rounded-3xl bg-slate-100 dark:bg-slate-800/50 animate-pulse relative overflow-hidden"
+              >
                 <div className="absolute inset-0 shimmer" />
               </div>
             ))}
@@ -328,9 +337,12 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
               <CreditCard className="w-8 h-8" />
             </div>
             <div className="max-w-sm mx-auto space-y-1">
-              <h3 className="font-extrabold text-slate-800 dark:text-white">لا توجد بطاقات بنكية بعد</h3>
+              <h3 className="font-extrabold text-slate-800 dark:text-white">
+                لا توجد بطاقات بنكية بعد
+              </h3>
               <p className="text-xs text-muted-foreground">
-                قم بإضافة كارت بنكي (مثل فيزا CIB أو محفظة فودافون كاش) لعرضها بشكل ثلاثي أبعاد ومتابعة إحصائياتها.
+                قم بإضافة كارت بنكي (مثل فيزا CIB أو محفظة فودافون كاش) لعرضها
+                بشكل ثلاثي أبعاد ومتابعة إحصائياتها.
               </p>
             </div>
             <button
@@ -357,20 +369,28 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
                   }`}
                   style={{
                     transformStyle: "preserve-3d",
-                    transition: "transform 0.1s ease, box-shadow 0.3s ease, ring 0.2s"
+                    transition:
+                      "transform 0.1s ease, box-shadow 0.3s ease, ring 0.2s",
                   }}
                 >
                   {/* Glass Card Shine Overlay */}
                   <div className="card-shine absolute inset-0 pointer-events-none transition-all duration-150" />
-                  
+
                   {/* Subtle Grid Lines for Card realism */}
                   <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none opacity-40" />
 
                   {/* Top Row: Provider & Chip */}
-                  <div className="flex justify-between items-start z-10" style={{ transform: "translateZ(30px)" }}>
+                  <div
+                    className="flex justify-between items-start z-10"
+                    style={{ transform: "translateZ(30px)" }}
+                  >
                     <div className="flex flex-col">
-                      <span className="text-[10px] text-white/60 tracking-wider uppercase">الحساب الرقمي</span>
-                      <span className="font-extrabold text-sm tracking-wide">{wallet.name}</span>
+                      <span className="text-[10px] text-white/60 tracking-wider uppercase">
+                        الحساب الرقمي
+                      </span>
+                      <span className="font-extrabold text-sm tracking-wide">
+                        {wallet.name}
+                      </span>
                     </div>
 
                     {/* Chip Design */}
@@ -382,28 +402,45 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
                   </div>
 
                   {/* Mid Row: Card digits */}
-                  <div className="z-10 text-center my-3" style={{ transform: "translateZ(40px)" }}>
+                  <div
+                    className="z-10 text-center my-3"
+                    style={{ transform: "translateZ(40px)" }}
+                  >
                     <p className="font-mono text-base tracking-widest text-white/90 drop-shadow-md">
-                      ••••  ••••  ••••  {wallet.lastFourDigits || "••••"}
+                      •••• •••• •••• {wallet.lastFourDigits || "••••"}
                     </p>
                   </div>
 
                   {/* Bottom Row: Balance & Brand Logo */}
-                  <div className="flex justify-between items-end z-10" style={{ transform: "translateZ(30px)" }}>
+                  <div
+                    className="flex justify-between items-end z-10"
+                    style={{ transform: "translateZ(30px)" }}
+                  >
                     <div className="flex flex-col">
-                      <span className="text-[9px] text-white/50 tracking-wider uppercase">الرصيد الحالي</span>
+                      <span className="text-[9px] text-white/50 tracking-wider uppercase">
+                        الرصيد الحالي
+                      </span>
                       <span className="text-lg font-black tracking-tight text-white drop-shadow-md">
-                        {parseFloat(wallet.balance || "0").toLocaleString("ar-EG", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2
-                        })}{" "}
-                        <span className="text-xs font-semibold text-white/80">ج.م</span>
+                        {parseFloat(wallet.balance || "0").toLocaleString(
+                          "ar-EG",
+                          {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          },
+                        )}{" "}
+                        <span className="text-xs font-semibold text-white/80">
+                          ج.م
+                        </span>
                       </span>
                     </div>
 
                     {/* Styled Brand Logo */}
-                    <div className={`px-3 py-1 rounded-lg ${config.logoBg} shadow-md border border-white/10 shrink-0`}>
-                      <span className={`text-[10px] tracking-wider ${config.logoColor}`}>
+                    <div
+                      className={`px-3 py-1 rounded-lg ${config.logoBg} shadow-md border border-white/10 shrink-0`}
+                    >
+                      <span
+                        className={`text-[10px] tracking-wider ${config.logoColor}`}
+                      >
                         {config.logoText}
                       </span>
                     </div>
@@ -425,10 +462,8 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
       {/* Selected Card Details: Transactions & Insights */}
       {selectedWalletId && selectedWallet ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
-          
           {/* Card stats / Actions */}
           <div className="lg:col-span-1 space-y-6">
-            
             {/* Quick Card Stats */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-md space-y-4">
               <h3 className="font-extrabold text-sm text-slate-800 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
@@ -441,7 +476,9 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
                   <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto text-emerald-500 mb-2">
                     <ArrowDownLeft className="w-4 h-4" />
                   </div>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">إجمالي الإيداعات</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">
+                    إجمالي الإيداعات
+                  </p>
                   <p className="text-sm font-black text-emerald-600 dark:text-emerald-400 mt-1">
                     {totalIn.toLocaleString("ar-EG")} ج.م
                   </p>
@@ -451,7 +488,9 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
                   <div className="w-8 h-8 rounded-full bg-rose-500/20 flex items-center justify-center mx-auto text-rose-500 mb-2">
                     <ArrowUpRight className="w-4 h-4" />
                   </div>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">إجمالي السحوبات</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">
+                    إجمالي السحوبات
+                  </p>
                   <p className="text-sm font-black text-rose-600 dark:text-rose-400 mt-1">
                     {totalOut.toLocaleString("ar-EG")} ج.م
                   </p>
@@ -482,8 +521,13 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
               <div className="space-y-2">
                 {isDeletingId === selectedWallet.id ? (
                   <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 p-3 rounded-2xl text-center space-y-2">
-                    <p className="text-xs text-red-800 dark:text-red-300 font-extrabold">هل أنت متأكد من حذف هذا الكارت؟</p>
-                    <p className="text-[10px] text-red-500">الحذف سيلغي ربط المعاملات الخاصة بهذا الكارت لكن لن يمسح المصاريف نفسها.</p>
+                    <p className="text-xs text-red-800 dark:text-red-300 font-extrabold">
+                      هل أنت متأكد من حذف هذا الكارت؟
+                    </p>
+                    <p className="text-[10px] text-red-500">
+                      الحذف سيلغي ربط المعاملات الخاصة بهذا الكارت لكن لن يمسح
+                      المصاريف نفسها.
+                    </p>
                     <div className="flex justify-center gap-2">
                       <Button
                         size="sm"
@@ -514,7 +558,6 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
                 )}
               </div>
             </div>
-
           </div>
 
           {/* Transactions List of selected Wallet */}
@@ -524,7 +567,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
                 <History className="w-5 h-5 text-emerald-500 animate-pulse" />
                 سجل سحب وإيداع: {selectedWallet.name}
               </h3>
-              
+
               <span className="text-xs bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-full font-bold">
                 {transactions.length} معاملة
               </span>
@@ -533,7 +576,10 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
             {isLoadingTx ? (
               <div className="space-y-3 py-6">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 animate-pulse relative overflow-hidden">
+                  <div
+                    key={i}
+                    className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800 animate-pulse relative overflow-hidden"
+                  >
                     <div className="absolute inset-0 shimmer" />
                   </div>
                 ))}
@@ -544,9 +590,12 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
                   <History className="w-6 h-6" />
                 </div>
                 <div className="max-w-xs mx-auto space-y-1">
-                  <p className="font-bold text-xs text-slate-700 dark:text-slate-300">لا توجد عمليات مسجلة لهذا الكارت بعد</p>
+                  <p className="font-bold text-xs text-slate-700 dark:text-slate-300">
+                    لا توجد عمليات مسجلة لهذا الكارت بعد
+                  </p>
                   <p className="text-[10px] text-muted-foreground">
-                    سيتم عرض المعاملات فور ورودها عبر الرسائل التلقائية للهاتف، أو يمكنك تسجيل مصاريف يدوية وتحديد هذا الكارت.
+                    سيتم عرض المعاملات فور ورودها عبر الرسائل التلقائية للهاتف،
+                    أو يمكنك تسجيل مصاريف يدوية وتحديد هذا الكارت.
                   </p>
                 </div>
               </div>
@@ -554,22 +603,34 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
               <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-[450px] overflow-y-auto pr-1">
                 {transactions.map((tx: any) => {
                   const isIncome = tx.type === "income";
-                  const dateStr = new Date(tx.date).toLocaleDateString("ar-EG", {
-                    month: "long",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "numeric"
-                  });
+                  const dateStr = new Date(tx.date).toLocaleDateString(
+                    "ar-EG",
+                    {
+                      month: "long",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "numeric",
+                    },
+                  );
 
                   return (
-                    <div key={tx.id} className="py-3 flex items-center justify-between gap-4 group hover:bg-slate-50 dark:hover:bg-slate-800/20 px-2 rounded-xl transition-colors">
+                    <div
+                      key={tx.id}
+                      className="py-3 flex items-center justify-between gap-4 group hover:bg-slate-50 dark:hover:bg-slate-800/20 px-2 rounded-xl transition-colors"
+                    >
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-inner ${
-                          isIncome 
-                            ? "bg-emerald-500/10 text-emerald-500" 
-                            : "bg-rose-500/10 text-rose-500"
-                        }`}>
-                          {isIncome ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
+                        <div
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-inner ${
+                            isIncome
+                              ? "bg-emerald-500/10 text-emerald-500"
+                              : "bg-rose-500/10 text-rose-500"
+                          }`}
+                        >
+                          {isIncome ? (
+                            <ArrowDownLeft className="w-5 h-5" />
+                          ) : (
+                            <ArrowUpRight className="w-5 h-5" />
+                          )}
                         </div>
 
                         <div className="space-y-0.5">
@@ -577,22 +638,29 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
                             {tx.description || tx.category}
                           </p>
                           <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
-                            {dateStr} • {tx.category} {tx.subCategory ? `» ${tx.subCategory}` : ""}
+                            {dateStr} • {tx.category}{" "}
+                            {tx.subCategory ? `» ${tx.subCategory}` : ""}
                           </p>
                         </div>
                       </div>
 
                       <div className="text-left shrink-0">
-                        <p className={`text-sm font-black tracking-tight ${
-                          isIncome ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
-                        }`}>
+                        <p
+                          className={`text-sm font-black tracking-tight ${
+                            isIncome
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-rose-600 dark:text-rose-400"
+                          }`}
+                        >
                           {isIncome ? "+" : "-"}
                           {parseFloat(tx.amount).toLocaleString("ar-EG", {
                             minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
+                            maximumFractionDigits: 2,
                           })}
                         </p>
-                        <p className="text-[9px] text-slate-400 uppercase tracking-widest">ج.م</p>
+                        <p className="text-[9px] text-slate-400 uppercase tracking-widest">
+                          ج.م
+                        </p>
                       </div>
                     </div>
                   );
@@ -600,15 +668,16 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
               </div>
             )}
           </div>
-
         </div>
       ) : null}
 
       {/* Add Card Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in" dir="rtl">
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
+          dir="rtl"
+        >
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl space-y-4 scale-up-animation">
-            
             {/* Modal Head */}
             <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-950 p-6 text-white flex justify-between items-center border-b border-white/10">
               <div className="flex items-center gap-3">
@@ -616,8 +685,12 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
                   <CreditCard className="w-5 h-5 text-emerald-400" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-base">إضافة بطاقة بنكية / محفظة جديدة</h3>
-                  <p className="text-white/60 text-[10px] mt-0.5">ستظهر بشكل تفاعلي 3D بمجرد حفظها</p>
+                  <h3 className="font-extrabold text-base">
+                    إضافة بطاقة بنكية / محفظة جديدة
+                  </h3>
+                  <p className="text-white/60 text-[10px] mt-0.5">
+                    ستظهر بشكل تفاعلي 3D بمجرد حفظها
+                  </p>
                 </div>
               </div>
 
@@ -631,10 +704,11 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
 
             {/* Modal Body / Form */}
             <form onSubmit={handleAddWallet} className="p-6 space-y-4">
-              
               {/* Wallet Provider */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400">نوع البنك أو المحفظة</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                  نوع البنك أو المحفظة
+                </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { val: "Visa", name: "كارت فيزا / بنك" },
@@ -646,7 +720,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
                     { val: "QNB", name: "QNB الأهلي" },
                     { val: "Fawry", name: "فوري" },
                     { val: "OrangeMoney", name: "أورنج كاش" },
-                    { val: "EtisalatCash", name: "اتصالات كاش" }
+                    { val: "EtisalatCash", name: "اتصالات كاش" },
                   ].map((prov) => (
                     <button
                       key={prov.val}
@@ -666,7 +740,9 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
 
               {/* Wallet Name */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400">اسم الكارت / المحفظة</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                  اسم الكارت / المحفظة
+                </label>
                 <input
                   type="text"
                   required
@@ -682,21 +758,27 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
                     آخر 4 أرقام من الكارت
-                    <span className="text-[10px] font-normal text-slate-400">(اختياري)</span>
+                    <span className="text-[10px] font-normal text-slate-400">
+                      (اختياري)
+                    </span>
                   </label>
                   <input
                     type="text"
                     maxLength={4}
                     placeholder="مثال: 5824"
                     value={newLastDigits}
-                    onChange={(e) => setNewLastDigits(e.target.value.replace(/\D/g, ""))}
+                    onChange={(e) =>
+                      setNewLastDigits(e.target.value.replace(/\D/g, ""))
+                    }
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs text-center font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
 
                 {/* Initial Balance */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">الرصيد الافتتاحي الحالي</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                    الرصيد الافتتاحي الحالي
+                  </label>
                   <div className="relative">
                     <input
                       type="number"
@@ -706,7 +788,9 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
                       onChange={(e) => setNewBalance(e.target.value)}
                       className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pr-4 pl-10 py-2.5 text-xs text-left font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">ج.م</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">
+                      ج.م
+                    </span>
                   </div>
                 </div>
               </div>
@@ -715,7 +799,9 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
               <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-2xl border border-blue-200/50 dark:border-blue-900/30 flex gap-2.5">
                 <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
                 <p className="text-[10px] text-blue-800 dark:text-blue-300 leading-relaxed">
-                  تحديد اسم أو نوع البطاقة بشكل دقيق سيساعد الذكاء الاصطناعي على تصنيف رسائل الـ SMS الواردة تلقائياً وربطها بهذا الحساب فوراً لتعديل الرصيد وتتبع الإحصائيات.
+                  تحديد اسم أو نوع البطاقة بشكل دقيق سيساعد الذكاء الاصطناعي على
+                  تصنيف رسائل الـ SMS الواردة تلقائياً وربطها بهذا الحساب فوراً
+                  لتعديل الرصيد وتتبع الإحصائيات.
                 </p>
               </div>
 
@@ -737,7 +823,6 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
                   {isSubmitting ? "جاري الحفظ..." : "حفظ وإضافة"}
                 </Button>
               </div>
-
             </form>
           </div>
         </div>

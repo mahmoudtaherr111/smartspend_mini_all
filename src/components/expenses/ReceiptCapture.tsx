@@ -22,6 +22,7 @@ export function ReceiptCapture({ onSaved }: ReceiptCaptureProps) {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
 
   const isPro =
     planQuery.data?.plan === "pro" ||
@@ -38,26 +39,33 @@ export function ReceiptCapture({ onSaved }: ReceiptCaptureProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          التقط صورة للفاتورة أو سكرين شوت البنك — متاح في باقة Pro مع تصنيف تلقائي.
+          التقط صورة للفاتورة أو سكرين شوت البنك — متاح في باقة Pro مع تصنيف
+          تلقائي.
         </CardContent>
       </Card>
     );
   }
 
-  const handleFile = (file: File | undefined) => {
+  const handleFile = async (file: File | undefined) => {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      setPreview(result);
-      const base64 = result.includes(",") ? result.split(",")[1]! : result;
+    setIsCompressing(true);
+    try {
+      // Compress the image file to a maximum of 1280px edge before upload
+      const { base64, previewUrl } = await compressImageFile(file, {
+        maxEdge: 1280,
+        quality: 0.82,
+      });
+      setPreview(previewUrl);
       parseMutation.mutate({
         imageBase64: base64,
-        mimeType: file.type || "image/jpeg",
+        mimeType: "image/jpeg",
         saveExpense: true,
       });
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      toast.error(err.message || "حدث خطأ أثناء معالجة وتصغير الصورة");
+    } finally {
+      setIsCompressing(false);
+    }
   };
 
   return (
@@ -83,24 +91,29 @@ export function ReceiptCapture({ onSaved }: ReceiptCaptureProps) {
             variant="outline"
             className="gap-2 flex-1 min-h-[48px] active-press"
             onClick={() => inputRef.current?.click()}
-            disabled={parseMutation.isPending}
+            disabled={parseMutation.isPending || isCompressing}
           >
-            {parseMutation.isPending ? (
+            {parseMutation.isPending || isCompressing ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <Camera className="w-4 h-4" />
             )}
-            كاميرا / معرض
+            {isCompressing ? "جاري معالجة وضغط الصورة..." : "كاميرا / معرض"}
           </Button>
         </div>
         {preview && (
           <div className="relative rounded-lg overflow-hidden border max-h-40">
-            <img src={preview} alt="معاينة" className="w-full object-cover max-h-40" />
+            <img
+              src={preview}
+              alt="معاينة"
+              className="w-full object-cover max-h-40"
+            />
             <ImageIcon className="absolute top-2 left-2 w-4 h-4 text-white drop-shadow" />
           </div>
         )}
         <p className="text-xs text-muted-foreground">
-          يعمل مع فواتير، سكرين شوتات البنك، وإنستاباي. يُفضّل OCR على الجهاز ثم الإرسال لتوفير التوكنز.
+          يعمل مع فواتير، سكرين شوتات البنك، وإنستاباي. يُفضّل OCR على الجهاز ثم
+          الإرسال لتوفير التوكنز.
         </p>
       </CardContent>
     </Card>

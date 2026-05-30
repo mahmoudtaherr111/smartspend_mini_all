@@ -19,14 +19,24 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { secureHeaders } from "hono/secure-headers";
 import { trpcServer } from "@hono/trpc-server";
 import { appRouter } from "./router";
 import { createContext } from "./context";
 import { env } from "./lib/env";
 
+// Prevent DoS from unhandled promise rejections / uncaught exceptions crashing the process
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+});
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
+});
+
 const app = new Hono();
 
 app.use("*", logger());
+app.use("*", secureHeaders());
 
 // CORS: accept both APP_URL and FRONTEND_URL (separate-deploy scenario)
 const allowedOrigins = Array.from(
@@ -35,7 +45,7 @@ const allowedOrigins = Array.from(
 app.use(
   "*",
   cors({
-    origin: (origin) => (allowedOrigins.includes(origin) ? origin : allowedOrigins[0]),
+    origin: (origin) => (allowedOrigins.includes(origin) ? origin : null),
     credentials: true,
   })
 );

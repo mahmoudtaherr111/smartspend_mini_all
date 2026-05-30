@@ -10,21 +10,26 @@ export interface AuthUser {
   plan: "free" | "pro" | "ultra";
   type: "oauth" | "local";
   phone?: string | null;
+  createdAt?: string | Date | null;
 }
 
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const { data: oauthUser, isLoading: oauthLoading } = trpc.auth.me.useQuery(undefined, {
-    retry: false,
-    refetchOnWindowFocus: false,
-  });
+  const { data: oauthUser, isLoading: oauthLoading } = trpc.auth.me.useQuery(
+    undefined,
+    {
+      retry: false,
+      refetchOnWindowFocus: false,
+    },
+  );
 
-  const { data: localUser, isLoading: localLoading } = trpc.localAuth.me.useQuery(undefined, {
-    retry: false,
-    refetchOnWindowFocus: false,
-  });
+  const { data: localUser, isLoading: localLoading } =
+    trpc.localAuth.me.useQuery(undefined, {
+      retry: false,
+      refetchOnWindowFocus: false,
+    });
 
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
@@ -52,6 +57,7 @@ export function useAuth() {
           role: oauthUser.role as "user" | "moderator" | "admin",
           plan: oauthUser.plan as "free" | "pro" | "ultra",
           type: "oauth",
+          createdAt: oauthUser.createdAt,
         });
       } else if (localUser) {
         setUser({
@@ -62,6 +68,7 @@ export function useAuth() {
           plan: localUser.plan as "free" | "pro" | "ultra",
           type: "local",
           phone: localUser.phone,
+          createdAt: localUser.createdAt,
         });
       } else {
         setUser(null);
@@ -72,7 +79,8 @@ export function useAuth() {
 
   const logout = useCallback(() => {
     localStorage.removeItem("local_auth_token");
-    document.cookie = "google_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "google_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     logoutMutation.mutate();
     localLogoutMutation.mutate();
     window.location.href = "/login";
@@ -87,7 +95,8 @@ export function useAuth() {
     isPro:
       user?.plan === "pro" || user?.plan === "ultra" || user?.role === "admin",
     hasProAccess:
-      !!user && (user.plan === "pro" || user.plan === "ultra" || user.role === "admin"),
+      !!user &&
+      (user.plan === "pro" || user.plan === "ultra" || user.role === "admin"),
     hasUltraAccess: !!user && (user.plan === "ultra" || user.role === "admin"),
     logout,
   };

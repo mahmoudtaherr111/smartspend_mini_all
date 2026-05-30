@@ -1,13 +1,13 @@
 /**
  * Financial Month Calculator
- * 
+ *
  * If a user has a fixed salary that drops on day X, their "financial month"
  * runs from day X of the current month to day X-1 of the next month.
- * 
+ *
  * Example: salary_day = 5
  *   Financial May = May 5 → June 4
  *   Financial June = June 5 → July 4
- * 
+ *
  * The calendar itself stays normal (1-30/31), but the AI and reports
  * understand that the budget cycle resets on salary day.
  */
@@ -36,8 +36,18 @@ export interface FinancialMonthRange {
 }
 
 const MONTH_NAMES_AR = [
-  "يناير", "فبراير", "مارس", "إبريل", "مايو", "يونيو",
-  "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر",
+  "يناير",
+  "فبراير",
+  "مارس",
+  "إبريل",
+  "مايو",
+  "يونيو",
+  "يوليو",
+  "أغسطس",
+  "سبتمبر",
+  "أكتوبر",
+  "نوفمبر",
+  "ديسمبر",
 ];
 
 /**
@@ -51,7 +61,7 @@ function clampDay(year: number, month: number, salaryDay: number): number {
 
 /**
  * Calculate the financial month range for a given calendar month + salary day.
- * 
+ *
  * @param calendarMonth - "YYYY-MM" format (e.g. "2025-05")
  * @param salaryDay - The day of month when salary drops (1-31)
  * @param referenceDate - Current date for progress calculations (defaults to now)
@@ -59,7 +69,7 @@ function clampDay(year: number, month: number, salaryDay: number): number {
 export function getFinancialMonthRange(
   calendarMonth: string,
   salaryDay: number,
-  referenceDate: Date = new Date()
+  referenceDate: Date = new Date(),
 ): FinancialMonthRange {
   const [year, monthIdx] = calendarMonth.split("-").map(Number);
   // monthIdx is 1-based from the string, JS Date uses 0-based
@@ -74,7 +84,15 @@ export function getFinancialMonthRange(
   const nextYear = nextMonth0 > 11 ? year + 1 : year;
   const nextMonth0Clamped = nextMonth0 > 11 ? 0 : nextMonth0;
   const clampedEnd = clampDay(nextYear, nextMonth0Clamped, salaryDay);
-  const end = new Date(nextYear, nextMonth0Clamped, clampedEnd - 1, 23, 59, 59, 999);
+  const end = new Date(
+    nextYear,
+    nextMonth0Clamped,
+    clampedEnd - 1,
+    23,
+    59,
+    59,
+    999,
+  );
 
   // If salary day is 1, the financial month IS the calendar month
   // end would be day 0 of next month = last day of current month
@@ -85,17 +103,25 @@ export function getFinancialMonthRange(
     end.setDate(lastDay);
   }
 
-  const daysTotal = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  const daysElapsed = Math.max(0, Math.min(daysTotal,
-    Math.round((referenceDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
-  ));
+  const daysTotal =
+    Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const daysElapsed = Math.max(
+    0,
+    Math.min(
+      daysTotal,
+      Math.round(
+        (referenceDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
+      ),
+    ),
+  );
   const progressPercent = Math.round((daysElapsed / daysTotal) * 100);
   const daysUntilNextSalary = Math.max(0, daysTotal - daysElapsed);
 
   const startLabel = `${clampedStart} ${MONTH_NAMES_AR[month0]}`;
-  const endLabel = salaryDay <= 1
-    ? `${end.getDate()} ${MONTH_NAMES_AR[month0]}`
-    : `${end.getDate()} ${MONTH_NAMES_AR[end.getMonth()]}`;
+  const endLabel =
+    salaryDay <= 1
+      ? `${end.getDate()} ${MONTH_NAMES_AR[month0]}`
+      : `${end.getDate()} ${MONTH_NAMES_AR[end.getMonth()]}`;
 
   return {
     start,
@@ -118,7 +144,7 @@ export function getFinancialMonthRange(
 export function buildFinancialMonthPrompt(
   salaryDay: number,
   calendarMonth: string,
-  referenceDate: Date = new Date()
+  referenceDate: Date = new Date(),
 ): string {
   const range = getFinancialMonthRange(calendarMonth, salaryDay, referenceDate);
 
@@ -168,7 +194,7 @@ export function buildFinancialMonthPrompt(
  */
 export function getFinancialMonthDates(
   calendarMonth: string,
-  salaryDay: number | null | undefined
+  salaryDay: number | null | undefined,
 ): { startDate: Date; endDate: Date } {
   if (!salaryDay || salaryDay <= 1) {
     // No salary day or day 1 = normal calendar month

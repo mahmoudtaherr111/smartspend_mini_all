@@ -1,7 +1,13 @@
 import { z } from "zod";
 import { router, authedProcedure, adminProcedure } from "./middleware";
 import { db } from "./queries/connection";
-import { users, localUsers, referrals, discountCodes, systemSettings } from "../db/schema";
+import {
+  users,
+  localUsers,
+  referrals,
+  discountCodes,
+  systemSettings,
+} from "../db/schema";
 import { eq, and, sql, count, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
@@ -13,7 +19,11 @@ export const referralRouter = router({
   // ─── Get My Referral Code ───
   myCode: authedProcedure.query(async ({ ctx }) => {
     const table = ctx.user.type === "oauth" ? users : localUsers;
-    const user = await db.select().from(table).where(eq(table.id, ctx.user.id)).limit(1);
+    const user = await db
+      .select()
+      .from(table)
+      .where(eq(table.id, ctx.user.id))
+      .limit(1);
     let code = user[0]?.referralCode;
 
     if (!code) {
@@ -21,27 +31,58 @@ export const referralRouter = router({
       // Ensure unique
       let exists = true;
       while (exists) {
-        const check = await db.select().from(table).where(eq(table.referralCode, code!)).limit(1);
-        const check2 = await db.select().from(discountCodes).where(eq(discountCodes.code, code!)).limit(1);
+        const check = await db
+          .select()
+          .from(table)
+          .where(eq(table.referralCode, code!))
+          .limit(1);
+        const check2 = await db
+          .select()
+          .from(discountCodes)
+          .where(eq(discountCodes.code, code!))
+          .limit(1);
         if (check.length === 0 && check2.length === 0) exists = false;
         else code = generateCode();
       }
-      await db.update(table).set({ referralCode: code }).where(eq(table.id, ctx.user.id));
+      await db
+        .update(table)
+        .set({ referralCode: code })
+        .where(eq(table.id, ctx.user.id));
     }
 
-    const referralCount = await db.select({ count: count() }).from(referrals)
-      .where(and(eq(referrals.referrerId, ctx.user.id), eq(referrals.referrerType, ctx.user.type)));
-    const completedCount = await db.select({ count: count() }).from(referrals)
-      .where(and(
-        eq(referrals.referrerId, ctx.user.id),
-        eq(referrals.referrerType, ctx.user.type),
-        eq(referrals.status, "completed")
-      ));
+    const referralCount = await db
+      .select({ count: count() })
+      .from(referrals)
+      .where(
+        and(
+          eq(referrals.referrerId, ctx.user.id),
+          eq(referrals.referrerType, ctx.user.type),
+        ),
+      );
+    const completedCount = await db
+      .select({ count: count() })
+      .from(referrals)
+      .where(
+        and(
+          eq(referrals.referrerId, ctx.user.id),
+          eq(referrals.referrerType, ctx.user.type),
+          eq(referrals.status, "completed"),
+        ),
+      );
 
-    const settings = await db.select().from(systemSettings).where(eq(systemSettings.key, "promo_code_discount")).limit(1);
+    const settings = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, "promo_code_discount"))
+      .limit(1);
     const discount = settings[0]?.value || "20";
 
-    return { code, totalReferrals: referralCount[0]?.count ?? 0, completed: completedCount[0]?.count ?? 0, discount };
+    return {
+      code,
+      totalReferrals: referralCount[0]?.count ?? 0,
+      completed: completedCount[0]?.count ?? 0,
+      discount,
+    };
   }),
 
   // ─── Apply Referral Code ───
@@ -50,13 +91,24 @@ export const referralRouter = router({
     .mutation(async ({ ctx, input }) => {
       // Can't refer yourself
       const myTable = ctx.user.type === "oauth" ? users : localUsers;
-      const me = await db.select().from(myTable).where(eq(myTable.id, ctx.user.id)).limit(1);
+      const me = await db
+        .select()
+        .from(myTable)
+        .where(eq(myTable.id, ctx.user.id))
+        .limit(1);
       if (me[0]?.referralCode === input.code) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "مش ممكن تستخدم كودك" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "مش ممكن تستخدم كودك",
+        });
       }
 
       // Find referrer
-      const oauthReferrer = await db.select().from(users).where(eq(users.referralCode, input.code)).limit(1);
+      const oauthReferrer = await db
+        .select()
+        .from(users)
+        .where(eq(users.referralCode, input.code))
+        .limit(1);
       let referrerType: "oauth" | "local" = "oauth";
       let referrerId: number | null = null;
 
@@ -64,7 +116,11 @@ export const referralRouter = router({
         referrerId = oauthReferrer[0].id;
         referrerType = "oauth";
       } else {
-        const localReferrer = await db.select().from(localUsers).where(eq(localUsers.referralCode, input.code)).limit(1);
+        const localReferrer = await db
+          .select()
+          .from(localUsers)
+          .where(eq(localUsers.referralCode, input.code))
+          .limit(1);
         if (localReferrer.length > 0) {
           referrerId = localReferrer[0].id;
           referrerType = "local";
@@ -76,11 +132,21 @@ export const referralRouter = router({
       }
 
       // Check if already referred
-      const existing = await db.select().from(referrals).where(
-        and(eq(referrals.referredId, ctx.user.id), eq(referrals.referredType, ctx.user.type))
-      ).limit(1);
+      const existing = await db
+        .select()
+        .from(referrals)
+        .where(
+          and(
+            eq(referrals.referredId, ctx.user.id),
+            eq(referrals.referredType, ctx.user.type),
+          ),
+        )
+        .limit(1);
       if (existing.length > 0) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "أنت مسجل بالفعل بكود إحالة" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "أنت مسجل بالفعل بكود إحالة",
+        });
       }
 
       await db.insert(referrals).values({
@@ -93,28 +159,47 @@ export const referralRouter = router({
       });
 
       // Update referredBy
-      await db.update(myTable).set({ referredBy: referrerId }).where(eq(myTable.id, ctx.user.id));
+      await db
+        .update(myTable)
+        .set({ referredBy: referrerId })
+        .where(eq(myTable.id, ctx.user.id));
 
       return { success: true, message: "تم تطبيق الكود بنجاح!" };
     }),
 
   // ─── My Referrals ───
   myReferrals: authedProcedure.query(async ({ ctx }) => {
-    return await db.select().from(referrals)
-      .where(and(eq(referrals.referrerId, ctx.user.id), eq(referrals.referrerType, ctx.user.type)))
+    return await db
+      .select()
+      .from(referrals)
+      .where(
+        and(
+          eq(referrals.referrerId, ctx.user.id),
+          eq(referrals.referrerType, ctx.user.type),
+        ),
+      )
       .orderBy(desc(referrals.createdAt));
   }),
 
   // ─── Admin: List All Referrals ───
   listAll: adminProcedure
-    .input(z.object({
-      page: z.number().default(1),
-      limit: z.number().default(50),
-    }).optional())
+    .input(
+      z
+        .object({
+          page: z.number().default(1),
+          limit: z.number().default(50),
+        })
+        .optional(),
+    )
     .query(async ({ input }) => {
       const { page = 1, limit = 50 } = input ?? {};
       const offset = (page - 1) * limit;
-      const list = await db.select().from(referrals).orderBy(desc(referrals.createdAt)).limit(limit).offset(offset);
+      const list = await db
+        .select()
+        .from(referrals)
+        .orderBy(desc(referrals.createdAt))
+        .limit(limit)
+        .offset(offset);
       const total = await db.select({ count: count() }).from(referrals);
       return { list, total: total[0]?.count ?? 0, page, limit };
     }),

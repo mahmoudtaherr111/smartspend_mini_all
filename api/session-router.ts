@@ -7,8 +7,15 @@ import { eq, desc, and, sql, count, gte } from "drizzle-orm";
 export const sessionRouter = router({
   // ─── My Sessions ───
   listMine: authedProcedure.query(async ({ ctx }) => {
-    return await db.select().from(sessions)
-      .where(and(eq(sessions.userId, ctx.user.id), eq(sessions.userType, ctx.user.type)))
+    return await db
+      .select()
+      .from(sessions)
+      .where(
+        and(
+          eq(sessions.userId, ctx.user.id),
+          eq(sessions.userType, ctx.user.type),
+        ),
+      )
       .orderBy(desc(sessions.createdAt));
   }),
 
@@ -16,44 +23,66 @@ export const sessionRouter = router({
   revokeMine: authedProcedure
     .input(z.object({ sessionId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await db.delete(sessions).where(
-        and(
-          eq(sessions.id, input.sessionId),
-          eq(sessions.userId, ctx.user.id),
-          eq(sessions.userType, ctx.user.type)
-        )
-      );
+      await db
+        .delete(sessions)
+        .where(
+          and(
+            eq(sessions.id, input.sessionId),
+            eq(sessions.userId, ctx.user.id),
+            eq(sessions.userType, ctx.user.type),
+          ),
+        );
       return { success: true };
     }),
 
   // ─── Session Stats (Moderator+) ───
   stats: moderatorProcedure.query(async () => {
     const total = await db.select({ count: count() }).from(sessions);
-    const active = await db.select({ count: count() }).from(sessions).where(gte(sessions.expiresAt, new Date()));
-    const today = await db.select({ count: count() }).from(sessions)
+    const active = await db
+      .select({ count: count() })
+      .from(sessions)
+      .where(gte(sessions.expiresAt, new Date()));
+    const today = await db
+      .select({ count: count() })
+      .from(sessions)
       .where(sql`DATE(created_at) = CURDATE()`);
-    const byDay = await db.select({
-      day: sql`DATE(created_at)`,
-      count: count(),
-    }).from(sessions).groupBy(sql`DATE(created_at)`).orderBy(desc(sql`DATE(created_at)`)).limit(7);
+    const byDay = await db
+      .select({
+        day: sql`DATE(created_at)`,
+        count: count(),
+      })
+      .from(sessions)
+      .groupBy(sql`DATE(created_at)`)
+      .orderBy(desc(sql`DATE(created_at)`))
+      .limit(7);
 
-    return { total: total[0]?.count ?? 0, active: active[0]?.count ?? 0, today: today[0]?.count ?? 0, byDay };
+    return {
+      total: total[0]?.count ?? 0,
+      active: active[0]?.count ?? 0,
+      today: today[0]?.count ?? 0,
+      byDay,
+    };
   }),
 
   // ─── All Sessions (Moderator+) ───
   listAll: moderatorProcedure
-    .input(z.object({
-      userId: z.number().optional(),
-      activeOnly: z.boolean().default(false),
-      page: z.number().default(1),
-      limit: z.number().default(50),
-    }).optional())
+    .input(
+      z
+        .object({
+          userId: z.number().optional(),
+          activeOnly: z.boolean().default(false),
+          page: z.number().default(1),
+          limit: z.number().default(50),
+        })
+        .optional(),
+    )
     .query(async ({ input }) => {
       const { userId, activeOnly, page = 1, limit = 50 } = input ?? {};
       const offset = (page - 1) * limit;
       let query = db.select().from(sessions).orderBy(desc(sessions.createdAt));
       if (userId) query = query.where(eq(sessions.userId, userId)) as any;
-      if (activeOnly) query = query.where(gte(sessions.expiresAt, new Date())) as any;
+      if (activeOnly)
+        query = query.where(gte(sessions.expiresAt, new Date())) as any;
       const list = await query.limit(limit).offset(offset);
       const total = await db.select({ count: count() }).from(sessions);
       return { list, total: total[0]?.count ?? 0, page, limit };
@@ -61,10 +90,12 @@ export const sessionRouter = router({
 
   // ─── Track Event ───
   trackEvent: authedProcedure
-    .input(z.object({
-      event: z.string(),
-      metadata: z.record(z.string(), z.any()).optional(),
-    }))
+    .input(
+      z.object({
+        event: z.string(),
+        metadata: z.record(z.string(), z.any()).optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       await db.insert(userAnalytics).values({
         userId: ctx.user.id,

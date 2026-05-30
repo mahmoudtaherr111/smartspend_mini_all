@@ -12,7 +12,13 @@ export interface SmsParseResult {
   currency: string;
   direction: "incoming" | "outgoing" | null;
   provider: "VodafoneCash" | "InstaPay" | "ApplePay" | "Bank" | "Unknown";
-  category: "transfer" | "payment" | "income" | "bills" | "withdrawal" | "unknown";
+  category:
+    | "transfer"
+    | "payment"
+    | "income"
+    | "bills"
+    | "withdrawal"
+    | "unknown";
   fee: number | null;
   merchant: string | null;
   balance_after: number | null;
@@ -21,7 +27,10 @@ export interface SmsParseResult {
 }
 
 // Simple in-memory cache to store parsed results and avoid duplicate external AI calls for identical notifications
-const aiParseCache = new Map<string, { result: SmsParseResult; expiresAt: number }>();
+const aiParseCache = new Map<
+  string,
+  { result: SmsParseResult; expiresAt: number }
+>();
 const CACHE_TTL = 15 * 60 * 1000; // 15 minutes TTL
 
 const SMS_RESPONSE_SCHEMA = {
@@ -38,7 +47,13 @@ const SMS_RESPONSE_SCHEMA = {
     balance_after: { type: SchemaType.NUMBER, nullable: true },
     confidence: { type: SchemaType.NUMBER },
   },
-  required: ["transaction_detected", "currency", "provider", "category", "confidence"],
+  required: [
+    "transaction_detected",
+    "currency",
+    "provider",
+    "category",
+    "confidence",
+  ],
 };
 
 const SMS_SYSTEM_PROMPT = `أنت نظام خبير في استخراج البيانات المالية من رسائل SMS و الإشعارات البنكية والمحافظ الإلكترونية في مصر. 
@@ -79,7 +94,9 @@ const SMS_SYSTEM_PROMPT = `أنت نظام خبير في استخراج البي
 - أخرى (اتصالات كاش, اورانج كاش, وي باي) → "Wallet"
 - غير محدد → "Unknown"`;
 
-export async function parseSmsFinancialData(message: string): Promise<SmsParseResult | null> {
+export async function parseSmsFinancialData(
+  message: string,
+): Promise<SmsParseResult | null> {
   const apiKey = env.GEMINI_API_KEY;
   const modelName = "gemini-2.0-flash"; // Fast & cheap for simple extraction
 
@@ -89,7 +106,9 @@ export async function parseSmsFinancialData(message: string): Promise<SmsParseRe
   const now = Date.now();
   const cached = aiParseCache.get(trimmedMessage);
   if (cached && cached.expiresAt > now) {
-    console.log(`[SMS AI Parser] Cache HIT for message: "${trimmedMessage.slice(0, 50)}..."`);
+    console.log(
+      `[SMS AI Parser] Cache HIT for message: "${trimmedMessage.slice(0, 50)}..."`,
+    );
     return cached.result;
   }
 
@@ -106,7 +125,9 @@ export async function parseSmsFinancialData(message: string): Promise<SmsParseRe
       },
     });
 
-    const result = await model.generateContent(`رسالة SMS:\n"${trimmedMessage}"`);
+    const result = await model.generateContent(
+      `رسالة SMS:\n"${trimmedMessage}"`,
+    );
     const responseText = result.response.text().trim();
 
     const parsed = JSON.parse(responseText) as SmsParseResult;
@@ -131,7 +152,9 @@ export async function parseSmsFinancialData(message: string): Promise<SmsParseRe
         result: finalResult,
         expiresAt: Date.now() + CACHE_TTL,
       });
-      console.log(`[SMS AI Parser] Cache SET for message: "${trimmedMessage.slice(0, 50)}..."`);
+      console.log(
+        `[SMS AI Parser] Cache SET for message: "${trimmedMessage.slice(0, 50)}..."`,
+      );
     }
 
     return finalResult;
@@ -162,10 +185,21 @@ export function mapSmsToExpenseCategory(result: {
 
   // ── INCOMING (money in) ──
   if (dir === "incoming") {
-    if (cat === "income") return { category: "مرتب", subCategory: "راتب أساسي", type: "income" };
+    if (cat === "income")
+      return { category: "مرتب", subCategory: "راتب أساسي", type: "income" };
     if (cat === "deposit") {
-      if (/InstaPay/i.test(provider)) return { category: "تحويل", subCategory: "انستاباي وارد", type: "income" };
-      if (/Vodafone|Etisalat|Orange|WE/i.test(provider)) return { category: "تحويل", subCategory: "محفظة إلكترونية وارد", type: "income" };
+      if (/InstaPay/i.test(provider))
+        return {
+          category: "تحويل",
+          subCategory: "انستاباي وارد",
+          type: "income",
+        };
+      if (/Vodafone|Etisalat|Orange|WE/i.test(provider))
+        return {
+          category: "تحويل",
+          subCategory: "محفظة إلكترونية وارد",
+          type: "income",
+        };
       return { category: "تحويل", subCategory: "إيداع بنكي", type: "income" };
     }
     return { category: "تحويل", subCategory: "دخل وارد", type: "income" };
@@ -174,12 +208,20 @@ export function mapSmsToExpenseCategory(result: {
   // ── OUTGOING (money out) ──
   switch (cat) {
     case "transfer":
-      if (/InstaPay/i.test(provider)) return { category: "تحويل", subCategory: "انستاباي صادر", type };
-      if (/Vodafone|Etisalat|Orange|WE/i.test(provider)) return { category: "تحويل", subCategory: "محفظة إلكترونية صادر", type };
+      if (/InstaPay/i.test(provider))
+        return { category: "تحويل", subCategory: "انستاباي صادر", type };
+      if (/Vodafone|Etisalat|Orange|WE/i.test(provider))
+        return { category: "تحويل", subCategory: "محفظة إلكترونية صادر", type };
       return { category: "تحويل", subCategory: "تحويل بنكي", type };
     case "payment":
-      if (/ApplePay/i.test(provider)) return { category: "متنوعات", subCategory: "Apple Pay", type };
-      if (result.merchant) return { category: "تسوق", subCategory: result.merchant.slice(0, 50), type };
+      if (/ApplePay/i.test(provider))
+        return { category: "متنوعات", subCategory: "Apple Pay", type };
+      if (result.merchant)
+        return {
+          category: "تسوق",
+          subCategory: result.merchant.slice(0, 50),
+          type,
+        };
       return { category: "متنوعات", subCategory: "مدفوعات", type };
     case "bills":
       return { category: "فواتير", subCategory: "فواتير ومرافق", type };

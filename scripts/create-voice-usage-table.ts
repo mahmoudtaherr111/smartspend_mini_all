@@ -6,7 +6,8 @@ import { createConnection } from "mysql2/promise";
 import * as dotenv from "dotenv";
 dotenv.config();
 
-const DATABASE_URL = process.env.DATABASE_URL || "mysql://root:@localhost:3306/test";
+const DATABASE_URL =
+  process.env.DATABASE_URL || "mysql://root:@localhost:3306/test";
 
 function parseDatabaseUrl(url: string) {
   const match = url.match(/mysql:\/\/([^:]+):([^@]*)@([^:]+):(\d+)\/(.+)/);
@@ -77,7 +78,7 @@ async function main() {
   console.log("✅ Done! All tables are ready.");
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error("❌ Error:", err.message);
   process.exit(1);
 });

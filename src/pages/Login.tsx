@@ -4,9 +4,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Chrome, LogIn, UserPlus, Phone, Lock, User, Mail } from "lucide-react";
+import {
+  Chrome,
+  LogIn,
+  UserPlus,
+  Phone,
+  Lock,
+  User,
+  Mail,
+  Fingerprint,
+  Loader2,
+} from "lucide-react";
+import { startAuthentication } from "@simplewebauthn/browser";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
 import darkModeLogo from "../../photos/dark_mode_logo-removebg-preview.png";
@@ -49,7 +66,46 @@ export default function Login() {
     },
   });
 
+  const authOptionsMutation =
+    trpc.webauthn.generateAuthenticationOptions.useMutation();
+  const verifyAuthMutation = trpc.webauthn.verifyAuthentication.useMutation({
+    onSuccess: (data) => {
+      localStorage.setItem("local_auth_token", data.token);
+      toast.success("تم تسجيل الدخول بنجاح! 🎉");
+      window.location.href = "/dashboard";
+    },
+    onError: (err) => {
+      toast.error(err.message);
+    },
+  });
+
   const { data: googleUrl } = trpc.auth.googleUrl.useQuery();
+
+  const [isPasskeyLoading, setIsPasskeyLoading] = useState(false);
+
+  const handlePasskeyLogin = async () => {
+    try {
+      setIsPasskeyLoading(true);
+      // 1. Get options
+      const { options, sessionId } = await authOptionsMutation.mutateAsync({});
+
+      // 2. Start browser biometric prompt
+      let asseResp;
+      try {
+        asseResp = await startAuthentication({ optionsJSON: options });
+      } catch (err: any) {
+        toast.error("تم إلغاء الدخول بالبصمة");
+        return;
+      }
+
+      // 3. Verify on server
+      await verifyAuthMutation.mutateAsync({ response: asseResp, sessionId });
+    } catch (err: any) {
+      toast.error(err.message || "فشل الدخول بالبصمة");
+    } finally {
+      setIsPasskeyLoading(false);
+    }
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,11 +163,25 @@ export default function Login() {
         </CardHeader>
 
         <CardContent className="space-y-5">
-          {/* Google OAuth (hidden when not configured) */}
+          {/* Passkey Login */}
+          <Button
+            onClick={handlePasskeyLogin}
+            disabled={isPasskeyLoading}
+            variant="outline"
+            className="w-full h-12 bg-indigo-50/50 hover:bg-indigo-100 dark:bg-indigo-950/30 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 transition-all duration-300"
+          >
+            {isPasskeyLoading ? (
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            ) : (
+              <Fingerprint className="w-5 h-5 mr-2" />
+            )}
+            <span>الدخول السريع (بالبصمة / Passkey)</span>
+          </Button>
+
           {googleUrl ? (
             <Button
               onClick={() => googleUrl && (window.location.href = googleUrl)}
-              className="w-full h-12 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 group"
+              className="w-full h-12 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 group mt-3"
             >
               <Chrome className="w-5 h-5 mr-2 text-red-500 group-hover:scale-110 transition-transform" />
               <span>تسجيل الدخول بـ Google</span>
@@ -125,12 +195,22 @@ export default function Login() {
             </span>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
             <TabsList className="grid w-full grid-cols-2 h-11">
-              <TabsTrigger value="login" className="flex items-center gap-2 text-sm">
+              <TabsTrigger
+                value="login"
+                className="flex items-center gap-2 text-sm"
+              >
                 <LogIn className="w-4 h-4" /> دخول
               </TabsTrigger>
-              <TabsTrigger value="register" className="flex items-center gap-2 text-sm">
+              <TabsTrigger
+                value="register"
+                className="flex items-center gap-2 text-sm"
+              >
                 <UserPlus className="w-4 h-4" /> حساب جديد
               </TabsTrigger>
             </TabsList>
@@ -203,7 +283,9 @@ export default function Login() {
                     maxLength={11}
                     required
                   />
-                  <p className="text-xs text-muted-foreground">لازم يبدأ بـ 010 أو 011 أو 012 أو 015</p>
+                  <p className="text-xs text-muted-foreground">
+                    لازم يبدأ بـ 010 أو 011 أو 012 أو 015
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2 text-sm">
@@ -248,7 +330,9 @@ export default function Login() {
                   className="w-full h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg hover:shadow-xl transition-all duration-300"
                   disabled={registerMutation.isPending}
                 >
-                  {registerMutation.isPending ? "جاري الإنشاء..." : "إنشاء حساب"}
+                  {registerMutation.isPending
+                    ? "جاري الإنشاء..."
+                    : "إنشاء حساب"}
                 </Button>
               </form>
             </TabsContent>

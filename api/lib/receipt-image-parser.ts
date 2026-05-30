@@ -5,7 +5,7 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { mapModelName } from "./model-mapper";
 import { normalizeText } from "./text-normalizer";
 import { extractAmounts } from "./entity-extractor";
-import { runPipeline, type PipelineResult } from "./classification-pipeline";
+import { runSmartPipeline, type PipelineResult } from "./smart-pipeline";
 import type { PlanId } from "./ai-usage-policy";
 
 const receiptSchema = {
@@ -20,7 +20,14 @@ const receiptSchema = {
     confidence: { type: SchemaType.NUMBER },
     ocr_text: { type: SchemaType.STRING, nullable: true },
   },
-  required: ["amount", "description", "main_category", "sub_category", "transaction_type", "confidence"],
+  required: [
+    "amount",
+    "description",
+    "main_category",
+    "sub_category",
+    "transaction_type",
+    "confidence",
+  ],
 } as any;
 
 export interface ReceiptParseResult {
@@ -51,7 +58,9 @@ export function guardImagePayloadSize(base64: string): string {
 }
 
 /** Regex OCR for Egyptian bank SMS / receipt screenshots */
-export function extractFromImageText(raw: string): Partial<ReceiptParseResult> | null {
+export function extractFromImageText(
+  raw: string,
+): Partial<ReceiptParseResult> | null {
   const text = normalizeText(raw);
   const amounts = extractAmounts(text);
   if (!amounts.length) return null;
@@ -62,7 +71,9 @@ export function extractFromImageText(raw: string): Partial<ReceiptParseResult> |
   if (/تم خصم|خصم|سحب|debit|paid/i.test(text)) type = "expense";
 
   let description = "عملية من صورة";
-  const merchantMatch = text.match(/(?:من|at|@)\s*([A-Za-z\u0600-\u06FF0-9\s]{3,40})/);
+  const merchantMatch = text.match(
+    /(?:من|at|@)\s*([A-Za-z\u0600-\u06FF0-9\s]{3,40})/,
+  );
   if (merchantMatch) description = merchantMatch[1].trim().slice(0, 80);
 
   return {
@@ -79,7 +90,7 @@ export async function parseReceiptWithVision(
   mimeType: string,
   apiKey: string,
   modelName: string,
-  maxTokens: number
+  maxTokens: number,
 ): Promise<{ parsed: ReceiptParseResult | null; tokensUsed: number }> {
   const pure = guardImagePayloadSize(imageBase64);
   const genAI = new GoogleGenerativeAI(apiKey);
@@ -105,7 +116,12 @@ export async function parseReceiptWithVision(
   const tokensUsed = result.response.usageMetadata?.totalTokenCount || 0;
   let data: any;
   try {
-    data = JSON.parse(raw.replace(/```json?/g, "").replace(/```/g, "").trim());
+    data = JSON.parse(
+      raw
+        .replace(/```json?/g, "")
+        .replace(/```/g, "")
+        .trim(),
+    );
   } catch {
     const m = raw.match(/\{[\s\S]*\}/);
     if (!m) return { parsed: null, tokensUsed };
@@ -149,7 +165,7 @@ export async function parseReceiptImage(input: {
   if (input.ocrTextHint && input.ocrTextHint.length >= 8) {
     const heuristic = extractFromImageText(input.ocrTextHint);
     if (heuristic?.amount && heuristic.amount > 0) {
-      const pipeline = await runPipeline({
+      const pipeline = await runSmartPipeline({
         text: `${heuristic.description} ${heuristic.amount} جنيه`,
         userId: input.userId,
         userType: input.userType,
@@ -186,15 +202,16 @@ export async function parseReceiptImage(input: {
     input.mimeType,
     input.apiKey,
     input.modelName,
-    input.maxTokens
+    input.maxTokens,
   );
   tokensUsed += vision.tokensUsed;
   if (!vision.parsed || vision.parsed.amount <= 0) return null;
 
-  const textForPipeline = vision.parsed.ocrText
-    || `${vision.parsed.description} ${vision.parsed.amount} جنيه`;
+  const textForPipeline =
+    vision.parsed.ocrText ||
+    `${vision.parsed.description} ${vision.parsed.amount} جنيه`;
 
-  const pipeline = await runPipeline({
+  const pipeline = await runSmartPipeline({
     text: textForPipeline,
     userId: input.userId,
     userType: input.userType,

@@ -2,7 +2,11 @@ import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App";
-import { dismissAppLoader, isStandalonePwa, registerAppServiceWorker } from "./pwa/register-sw";
+import {
+  dismissAppLoader,
+  isStandalonePwa,
+  registerAppServiceWorker,
+} from "./pwa/register-sw";
 
 registerAppServiceWorker();
 
@@ -57,5 +61,5 @@ function Root() {
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Root />
-  </StrictMode>
+  </StrictMode>,
 );

@@ -6,7 +6,13 @@ describe("resolveRoutingConfig", () => {
     const resolved = await resolveRoutingConfig("free", 0, {
       ai_api_key: "gemini-key",
       free_routing_ranges: JSON.stringify([
-        { from: 0, to: 1000, provider: "groq", key_slot: "groq", model: "llama-3.1-8b-instant" },
+        {
+          from: 0,
+          to: 1000,
+          provider: "groq",
+          key_slot: "groq",
+          model: "llama-3.1-8b-instant",
+        },
       ]),
     });
 
@@ -21,7 +27,13 @@ describe("resolveRoutingConfig", () => {
       ai_api_key: "gemini-key",
       groq_api_key: "groq-key",
       pro_routing_ranges: JSON.stringify([
-        { from: 0, to: null, provider: "groq", key_slot: "groq", model: "llama-3.3-70b-versatile" },
+        {
+          from: 0,
+          to: null,
+          provider: "groq",
+          key_slot: "groq",
+          model: "llama-3.3-70b-versatile",
+        },
       ]),
     });
 
@@ -34,7 +46,13 @@ describe("resolveRoutingConfig", () => {
     const resolved = await resolveRoutingConfig("free", 0, {
       ai_api_key: "gemini-key",
       free_routing_ranges: JSON.stringify([
-        { from: 0, to: null, provider: "gemini", key_slot: "key1", model: "llama-3.1-8b-instant" },
+        {
+          from: 0,
+          to: null,
+          provider: "gemini",
+          key_slot: "key1",
+          model: "llama-3.1-8b-instant",
+        },
       ]),
     });
 

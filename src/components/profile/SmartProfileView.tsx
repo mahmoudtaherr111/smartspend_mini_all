@@ -2,47 +2,116 @@ import { trpc } from "@/providers/trpc";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { PlanUsageStrip } from "@/components/layout/PlanUsageStrip";
 import {
-  Edit, Sparkles, Home, Users, Wallet, CreditCard, PiggyBank,
-  CheckCircle2, AlertCircle, Briefcase, Car, Cigarette, PhoneCall,
-  Tv, Heart, ShieldCheck
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { FinancialGoalsPanel } from "@/components/goals/FinancialGoalsPanel";
+import { PasskeySettings } from "@/components/auth/PasskeySettings";
+import { cn } from "@/lib/utils";
+import {
+  Edit,
+  Sparkles,
+  Home,
+  Users,
+  Wallet,
+  CreditCard,
+  PiggyBank,
+  CheckCircle2,
+  AlertCircle,
+  Briefcase,
+  Car,
+  Cigarette,
+  PhoneCall,
+  Tv,
+  Heart,
+  ShieldCheck,
+  Target,
+  Plus,
 } from "lucide-react";
 
-const avatarColors: Record<string, { bg: string; ring: string; text: string; glow: string }> = {
-  emerald: { bg: "from-emerald-400 to-teal-600", ring: "ring-emerald-300", text: "text-emerald-50", glow: "shadow-emerald-500/30" },
-  sky:     { bg: "from-sky-400 to-blue-600",     ring: "ring-sky-300",     text: "text-sky-50",     glow: "shadow-sky-500/30" },
-  rose:    { bg: "from-rose-400 to-pink-600",    ring: "ring-rose-300",    text: "text-rose-50",    glow: "shadow-rose-500/30" },
-  amber:   { bg: "from-amber-400 to-orange-600", ring: "ring-amber-300",   text: "text-amber-50",   glow: "shadow-amber-500/30" },
-  violet:  { bg: "from-violet-400 to-purple-600",ring: "ring-violet-300",  text: "text-violet-50",  glow: "shadow-violet-500/30" },
-  slate:   { bg: "from-slate-600 to-slate-800",  ring: "ring-slate-400",   text: "text-slate-50",   glow: "shadow-slate-500/30" },
+const avatarColors: Record<
+  string,
+  { bg: string; ring: string; text: string; glow: string }
+> = {
+  emerald: {
+    bg: "from-emerald-400 to-teal-600",
+    ring: "ring-emerald-300",
+    text: "text-emerald-50",
+    glow: "shadow-emerald-500/30",
+  },
+  sky: {
+    bg: "from-sky-400 to-blue-600",
+    ring: "ring-sky-300",
+    text: "text-sky-50",
+    glow: "shadow-sky-500/30",
+  },
+  rose: {
+    bg: "from-rose-400 to-pink-600",
+    ring: "ring-rose-300",
+    text: "text-rose-50",
+    glow: "shadow-rose-500/30",
+  },
+  amber: {
+    bg: "from-amber-400 to-orange-600",
+    ring: "ring-amber-300",
+    text: "text-amber-50",
+    glow: "shadow-amber-500/30",
+  },
+  violet: {
+    bg: "from-violet-400 to-purple-600",
+    ring: "ring-violet-300",
+    text: "text-violet-50",
+    glow: "shadow-violet-500/30",
+  },
+  slate: {
+    bg: "from-slate-600 to-slate-800",
+    ring: "ring-slate-400",
+    text: "text-slate-50",
+    glow: "shadow-slate-500/30",
+  },
 };
 
 const goalLabels: Record<string, string> = {
   organize_expenses: "تنظيم المصاريف",
-  reduce_spending:   "تقليل الصرف",
-  track_income:      "تتبع الدخل",
-  save_money:        "الادخار وبناء الثروة",
-  manage_business:   "إدارة مشروع",
-  pay_debt:          "التحرر من الديون",
+  reduce_spending: "تقليل الصرف",
+  track_income: "تتبع الدخل",
+  save_money: "الادخار وبناء الثروة",
+  manage_business: "إدارة مشروع",
+  pay_debt: "التحرر من الديون",
 };
 
 const patternLabels: Record<string, string> = {
-  stable:    "صرف مستقر",
-  variable:  "صرف مرن",
+  stable: "صرف مستقر",
+  variable: "صرف مرن",
   impulsive: "محتاج تحكم",
-  saver:     "عقلية مدخّر",
-  unclear:   "قيد التحليل",
+  saver: "عقلية مدخّر",
+  unclear: "قيد التحليل",
 };
 
 const housingLabels: Record<string, string> = {
-  rent:         "إيجار",
-  owned:        "ملك",
+  rent: "إيجار",
+  owned: "ملك",
   family_owned: "سكن عائلي",
 };
 
-function PremiumStatCard({ label, value, icon, delay }: { label: string; value: string; icon: React.ReactNode; delay: number }) {
+function PremiumStatCard({
+  label,
+  value,
+  icon,
+  delay,
+}: {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+  delay: number;
+}) {
   return (
-    <div 
+    <div
       className="relative overflow-hidden group rounded-2xl bg-white/40 dark:bg-slate-900/40 border border-white/40 dark:border-white/10 backdrop-blur-xl p-4 transition-all duration-300 hover:shadow-xl hover:bg-white/60 dark:hover:bg-slate-800/60 hover:-translate-y-1 animate-in fade-in slide-in-from-bottom-4"
       style={{ animationDelay: `${delay}ms`, animationFillMode: "backwards" }}
     >
@@ -54,37 +123,70 @@ function PremiumStatCard({ label, value, icon, delay }: { label: string; value: 
           {icon}
         </div>
         <div>
-          <p className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">{value}</p>
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
+          <p className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
+            {value}
+          </p>
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+            {label}
+          </p>
         </div>
       </div>
     </div>
   );
 }
 
-function PremiumInfoRow({ icon, label, value, highlight }: { icon: React.ReactNode; label: string; value: React.ReactNode; highlight?: boolean }) {
+function PremiumInfoRow({
+  icon,
+  label,
+  value,
+  highlight,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+  highlight?: boolean;
+}) {
   return (
-    <div className={`flex items-center justify-between p-3 rounded-xl transition-colors ${highlight ? 'bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-100/50 dark:border-indigo-800/30' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
+    <div
+      className={`flex items-center justify-between p-3 rounded-xl transition-colors ${highlight ? "bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-100/50 dark:border-indigo-800/30" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}
+    >
       <div className="flex items-center gap-3">
-        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${highlight ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
+        <div
+          className={`flex items-center justify-center w-8 h-8 rounded-full ${highlight ? "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"}`}
+        >
           {icon}
         </div>
-        <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{label}</span>
+        <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+          {label}
+        </span>
       </div>
-      <span className={`text-sm font-bold ${highlight ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-800 dark:text-slate-100'}`}>{value}</span>
+      <span
+        className={`text-sm font-bold ${highlight ? "text-indigo-700 dark:text-indigo-300" : "text-slate-800 dark:text-slate-100"}`}
+      >
+        {value}
+      </span>
     </div>
   );
 }
 
 export function SmartProfileView({ onEdit }: { onEdit: () => void }) {
   const { data: profile, isLoading } = trpc.profile.getSmartProfile.useQuery();
+  const { data: goalsData, refetch: refetchGoals } = trpc.goals.list.useQuery(
+    undefined,
+    { retry: 1 },
+  );
+  const updateStatusMutation = trpc.goals.setStatus.useMutation({
+    onSuccess: () => refetchGoals(),
+  });
 
   if (isLoading) {
     return (
       <div className="w-full h-96 rounded-3xl bg-slate-100/50 dark:bg-slate-800/50 animate-pulse flex items-center justify-center border border-slate-200 dark:border-slate-800">
         <div className="flex flex-col items-center gap-4">
           <div className="w-16 h-16 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin" />
-          <p className="text-sm font-medium text-slate-500">جاري تجهيز البروفايل الذكي...</p>
+          <p className="text-sm font-medium text-slate-500">
+            جاري تجهيز البروفايل الذكي...
+          </p>
         </div>
       </div>
     );
@@ -115,20 +217,31 @@ export function SmartProfileView({ onEdit }: { onEdit: () => void }) {
   const commitments = Number(lifestyle?.fixedMonthlyCommitments || 0);
   const debtMonthly = Number(financial?.monthlyDebtPayment || 0);
   const carCost = Number(lifestyle?.monthlyCarCost || 0);
-  const fixedTotal = Number(financial?.fixedCommitmentsTotal || (rent + debtMonthly + commitments + carCost));
-  const savingsRate = income > 0 ? Math.max(0, Math.round(((income - fixedTotal) / income) * 100)) : null;
+  const fixedTotal = Number(
+    financial?.fixedCommitmentsTotal ||
+      rent + debtMonthly + commitments + carCost,
+  );
+  const savingsRate =
+    income > 0
+      ? Math.max(0, Math.round(((income - fixedTotal) / income) * 100))
+      : null;
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-10">
       {/* 🌟 Premium Hero Header */}
       <div className="relative rounded-[2.5rem] overflow-hidden bg-white dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800 shadow-2xl shadow-slate-200/50 dark:shadow-black/50">
-        
         {/* Dynamic Gradient Background */}
-        <div className={`h-40 sm:h-48 w-full bg-gradient-to-br ${colors.bg} relative overflow-hidden`}>
+        <div
+          className={`h-40 sm:h-48 w-full bg-gradient-to-br ${colors.bg} relative overflow-hidden`}
+        >
           {/* Glass pattern overlay */}
-          <div className="absolute inset-0 opacity-30 mix-blend-overlay" style={{
-            backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E\")"
-          }} />
+          <div
+            className="absolute inset-0 opacity-30 mix-blend-overlay"
+            style={{
+              backgroundImage:
+                "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E\")",
+            }}
+          />
           {/* Glowing orbs */}
           <div className="absolute -top-20 -left-20 w-64 h-64 bg-white/20 blur-3xl rounded-full" />
           <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-black/10 blur-3xl rounded-full" />
@@ -136,19 +249,25 @@ export function SmartProfileView({ onEdit }: { onEdit: () => void }) {
 
         {/* Profile Content Container */}
         <div className="px-6 sm:px-10 pb-10 relative">
-          
           {/* Avatar & Edit Button Row */}
           <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end -mt-16 sm:-mt-20 gap-4 mb-8">
             <div className="relative group">
-              <div className={`absolute inset-0 bg-gradient-to-br ${colors.bg} blur-xl opacity-50 rounded-full group-hover:opacity-75 transition-opacity duration-500`} />
-              <div className={`relative w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-gradient-to-br ${colors.bg} ${colors.ring} ring-8 ring-white dark:ring-slate-950 flex items-center justify-center shadow-2xl ${colors.glow} transform transition-transform duration-500 group-hover:scale-105`}>
-                <Sparkles className={`w-14 h-14 sm:w-16 sm:h-16 ${colors.text} drop-shadow-md animate-pulse`} style={{ animationDuration: '3s' }} />
+              <div
+                className={`absolute inset-0 bg-gradient-to-br ${colors.bg} blur-xl opacity-50 rounded-full group-hover:opacity-75 transition-opacity duration-500`}
+              />
+              <div
+                className={`relative w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-gradient-to-br ${colors.bg} ${colors.ring} ring-8 ring-white dark:ring-slate-950 flex items-center justify-center shadow-2xl ${colors.glow} transform transition-transform duration-500 group-hover:scale-105`}
+              >
+                <Sparkles
+                  className={`w-14 h-14 sm:w-16 sm:h-16 ${colors.text} drop-shadow-md animate-pulse`}
+                  style={{ animationDuration: "3s" }}
+                />
               </div>
             </div>
 
             <div className="flex gap-3 w-full sm:w-auto">
-              <Button 
-                onClick={onEdit} 
+              <Button
+                onClick={onEdit}
                 className="w-full sm:w-auto rounded-full px-6 h-12 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 transition-all hover:shadow-indigo-300 dark:hover:shadow-indigo-800/40 gap-2 text-sm font-bold"
               >
                 <Edit className="w-4 h-4" />
@@ -166,17 +285,21 @@ export function SmartProfileView({ onEdit }: { onEdit: () => void }) {
               <Briefcase className="w-5 h-5" />
               {basic?.profession || "لم يتم تحديد المهنة"}
             </p>
-            
+
             {/* Elegant Badges */}
             <div className="flex flex-wrap justify-center sm:justify-start gap-2 pt-2">
               {financial?.primaryGoal && (
                 <Badge className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-300 border-0 px-3 py-1 text-sm font-medium">
-                  🎯 {goalLabels[String(financial.primaryGoal)] || financial.primaryGoal}
+                  🎯{" "}
+                  {goalLabels[String(financial.primaryGoal)] ||
+                    financial.primaryGoal}
                 </Badge>
               )}
               {financial?.spendingPattern && (
                 <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 border-0 px-3 py-1 text-sm font-medium">
-                  💡 {patternLabels[String(financial.spendingPattern)] || financial.spendingPattern}
+                  💡{" "}
+                  {patternLabels[String(financial.spendingPattern)] ||
+                    financial.spendingPattern}
                 </Badge>
               )}
               {lifestyle?.smoking && (
@@ -195,33 +318,75 @@ export function SmartProfileView({ onEdit }: { onEdit: () => void }) {
                   <ShieldCheck className="w-4 h-4 text-violet-600 dark:text-violet-400" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-800 dark:text-slate-200">قوة البروفايل الذكي</h3>
+                  <h3 className="font-bold text-slate-800 dark:text-slate-200">
+                    قوة البروفايل الذكي
+                  </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {completionScore === 100 ? "ممتاز! تقارير الذكاء الاصطناعي الآن بأعلى دقة." : "أكمل بياناتك للحصول على تقارير مالية مخصصة وعميقة."}
+                    {completionScore === 100
+                      ? "ممتاز! تقارير الذكاء الاصطناعي الآن بأعلى دقة."
+                      : "أكمل بياناتك للحصول على تقارير مالية مخصصة وعميقة."}
                   </p>
                 </div>
               </div>
-              <span className="text-2xl font-black text-violet-600 dark:text-violet-400">{completionScore}%</span>
+              <span className="text-2xl font-black text-violet-600 dark:text-violet-400">
+                {completionScore}%
+              </span>
             </div>
             <div className="h-2.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all duration-500 ease-out"
                 style={{ width: `${completionScore}%` }}
               />
             </div>
           </div>
 
+          {/* Premium Plan & AI/Voice Usage Limits */}
+          <PlanUsageStrip className="mb-8 border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30" />
+
+          {/* WebAuthn / Passkeys Section */}
+          <div className="mb-10">
+            <PasskeySettings />
+          </div>
+
           {/* 💎 Floating Glass Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-            <PremiumStatCard delay={100} label="الدخل الشهري" value={income > 0 ? `${income.toLocaleString()} ج` : "—"} icon={<Wallet className="w-5 h-5" />} />
-            <PremiumStatCard delay={200} label="التزامات ثابتة" value={fixedTotal > 0 ? `${fixedTotal.toLocaleString()} ج` : "—"} icon={<CreditCard className="w-5 h-5" />} />
-            <PremiumStatCard delay={300} label="معدل الادخار" value={savingsRate !== null ? `${savingsRate}%` : "—"} icon={<PiggyBank className="w-5 h-5" />} />
-            <PremiumStatCard delay={400} label="حجم الأسرة" value={lifestyle?.childrenCount ? String(Number(lifestyle.childrenCount) + (lifestyle.partnerName ? 2 : 1)) : (lifestyle?.partnerName ? "2" : "1")} icon={<Users className="w-5 h-5" />} />
+            <PremiumStatCard
+              delay={100}
+              label="الدخل الشهري"
+              value={income > 0 ? `${income.toLocaleString()} ج` : "—"}
+              icon={<Wallet className="w-5 h-5" />}
+            />
+            <PremiumStatCard
+              delay={200}
+              label="التزامات ثابتة"
+              value={fixedTotal > 0 ? `${fixedTotal.toLocaleString()} ج` : "—"}
+              icon={<CreditCard className="w-5 h-5" />}
+            />
+            <PremiumStatCard
+              delay={300}
+              label="معدل الادخار"
+              value={savingsRate !== null ? `${savingsRate}%` : "—"}
+              icon={<PiggyBank className="w-5 h-5" />}
+            />
+            <PremiumStatCard
+              delay={400}
+              label="حجم الأسرة"
+              value={
+                lifestyle?.childrenCount
+                  ? String(
+                      Number(lifestyle.childrenCount) +
+                        (lifestyle.partnerName ? 2 : 1),
+                    )
+                  : lifestyle?.partnerName
+                    ? "2"
+                    : "1"
+              }
+              icon={<Users className="w-5 h-5" />}
+            />
           </div>
 
           {/* 🧩 Deep Info Grids */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-            
             {/* Financial Deep Dive */}
             <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
               <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-5 flex items-center gap-2">
@@ -231,12 +396,41 @@ export function SmartProfileView({ onEdit }: { onEdit: () => void }) {
                 البصمة المالية
               </h3>
               <div className="space-y-1">
-                <PremiumInfoRow icon={<Home className="w-4 h-4" />} label="نظام السكن" value={housingLabels[String(lifestyle?.housingType)] || "غير محدد"} />
-                {rent > 0 && <PremiumInfoRow icon={<Wallet className="w-4 h-4" />} label="الإيجار الشهري" value={`${rent.toLocaleString()} ج.م`} highlight />}
-                <PremiumInfoRow icon={<AlertCircle className="w-4 h-4" />} label="ديون أو أقساط" value={financial?.hasDebt === true ? `نعم (${debtMonthly > 0 ? `${debtMonthly.toLocaleString()} ج/شهر` : ""})` : financial?.hasDebt === false ? "لا يوجد" : "—"} highlight={financial?.hasDebt} />
-                {Array.isArray(financial?.incomeSources) && financial.incomeSources.length > 0 && (
-                  <PremiumInfoRow icon={<Briefcase className="w-4 h-4" />} label="مصادر الدخل" value={financial.incomeSources.join(" + ")} />
+                <PremiumInfoRow
+                  icon={<Home className="w-4 h-4" />}
+                  label="نظام السكن"
+                  value={
+                    housingLabels[String(lifestyle?.housingType)] || "غير محدد"
+                  }
+                />
+                {rent > 0 && (
+                  <PremiumInfoRow
+                    icon={<Wallet className="w-4 h-4" />}
+                    label="الإيجار الشهري"
+                    value={`${rent.toLocaleString()} ج.م`}
+                    highlight
+                  />
                 )}
+                <PremiumInfoRow
+                  icon={<AlertCircle className="w-4 h-4" />}
+                  label="ديون أو أقساط"
+                  value={
+                    financial?.hasDebt === true
+                      ? `نعم (${debtMonthly > 0 ? `${debtMonthly.toLocaleString()} ج/شهر` : ""})`
+                      : financial?.hasDebt === false
+                        ? "لا يوجد"
+                        : "—"
+                  }
+                  highlight={financial?.hasDebt}
+                />
+                {Array.isArray(financial?.incomeSources) &&
+                  financial.incomeSources.length > 0 && (
+                    <PremiumInfoRow
+                      icon={<Briefcase className="w-4 h-4" />}
+                      label="مصادر الدخل"
+                      value={financial.incomeSources.join(" + ")}
+                    />
+                  )}
               </div>
             </div>
 
@@ -249,50 +443,179 @@ export function SmartProfileView({ onEdit }: { onEdit: () => void }) {
                 نمط الحياة والعائلة
               </h3>
               <div className="space-y-1">
-                {lifestyle?.partnerName && <PremiumInfoRow icon={<Users className="w-4 h-4" />} label="شريك الحياة" value={String(lifestyle.partnerName)} />}
-                {Array.isArray(lifestyle?.childrenNames) && lifestyle.childrenNames.length > 0 && (
-                  <PremiumInfoRow icon={<Users className="w-4 h-4" />} label="الأبناء" value={lifestyle.childrenNames.join("، ")} highlight />
+                {lifestyle?.partnerName && (
+                  <PremiumInfoRow
+                    icon={<Users className="w-4 h-4" />}
+                    label="شريك الحياة"
+                    value={String(lifestyle.partnerName)}
+                  />
                 )}
+                {Array.isArray(lifestyle?.childrenNames) &&
+                  lifestyle.childrenNames.length > 0 && (
+                    <PremiumInfoRow
+                      icon={<Users className="w-4 h-4" />}
+                      label="الأبناء"
+                      value={lifestyle.childrenNames.join("، ")}
+                      highlight
+                    />
+                  )}
                 {lifestyle?.carOwnership && (
-                  <PremiumInfoRow icon={<Car className="w-4 h-4" />} label="السيارة" value={`${lifestyle?.carType || "نعم"}${carCost > 0 ? ` (${carCost.toLocaleString()} ج/شهر)` : ""}`} highlight />
+                  <PremiumInfoRow
+                    icon={<Car className="w-4 h-4" />}
+                    label="السيارة"
+                    value={`${lifestyle?.carType || "نعم"}${carCost > 0 ? ` (${carCost.toLocaleString()} ج/شهر)` : ""}`}
+                    highlight
+                  />
                 )}
-                {Array.isArray(lifestyle?.subscriptions) && lifestyle.subscriptions.length > 0 && (
-                  <PremiumInfoRow icon={<Tv className="w-4 h-4" />} label="الاشتراكات" value={lifestyle.subscriptions.length} />
-                )}
-                {Array.isArray(lifestyle?.regularContacts) && lifestyle.regularContacts.length > 0 && (
-                  <PremiumInfoRow icon={<PhoneCall className="w-4 h-4" />} label="أشخاص تحول لهم" value={lifestyle.regularContacts.join("، ")} />
-                )}
+                {Array.isArray(lifestyle?.subscriptions) &&
+                  lifestyle.subscriptions.length > 0 && (
+                    <PremiumInfoRow
+                      icon={<Tv className="w-4 h-4" />}
+                      label="الاشتراكات"
+                      value={lifestyle.subscriptions.length}
+                    />
+                  )}
+                {Array.isArray(lifestyle?.regularContacts) &&
+                  lifestyle.regularContacts.length > 0 && (
+                    <PremiumInfoRow
+                      icon={<PhoneCall className="w-4 h-4" />}
+                      label="أشخاص تحول لهم"
+                      value={lifestyle.regularContacts.join("، ")}
+                    />
+                  )}
               </div>
             </div>
-
           </div>
 
-          {/* ✨ AI Brain Insights */}
-          {inferred && Object.keys(inferred).length > 0 && (
-            <div className="bg-gradient-to-br from-violet-600 to-indigo-700 rounded-3xl p-8 relative overflow-hidden shadow-xl shadow-violet-900/20">
-              {/* Decorative elements */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-              <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3" />
-              
-              <div className="relative z-10">
-                <h3 className="text-xl font-black text-white mb-6 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-white animate-pulse" />
-                  </div>
-                  تحليل الذكاء الاصطناعي (AI Brain)
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {Object.entries(inferred).slice(0, 6).map(([key, val]) => (
-                    <div key={key} className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 hover:bg-white/20 transition-colors">
-                      <p className="text-violet-200 text-xs font-medium mb-1 truncate">{key}</p>
-                      <p className="text-white font-bold text-sm">{String(val)}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+          {/* 🎯 الأهداف المالية والأحلام الجارية */}
+          <div
+            className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm mb-10 text-right"
+            dir="rtl"
+          >
+            <div className="flex items-center justify-between mb-5 border-b pb-3">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                <span className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                  <Target className="w-4 h-4 animate-pulse" />
+                </span>
+                إدارة الأهداف المالية والأحلام 🎯
+              </h3>
 
+              {/* Premium [+] Button to trigger Goal Creation Modal */}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full px-3.5 h-9 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/50 font-bold gap-1 text-xs transition-all"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    إضافة هدف جديد
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-lg" dir="rtl">
+                  <DialogHeader className="text-right pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <DialogTitle className="text-base sm:text-lg font-extrabold flex items-center gap-2">
+                      <Target className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                      <span>إضافة هدف مالي جديد 🚀</span>
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="py-2">
+                    <FinancialGoalsPanel
+                      mode="dialog"
+                      onSuccess={() => refetchGoals()}
+                    />
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {goalsData?.goals && goalsData.goals.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {goalsData.goals.map((g) => {
+                  const targetAmt = Number(g.targetAmount) || 0;
+                  return (
+                    <div
+                      key={g.id}
+                      className="rounded-2xl border border-slate-100 dark:border-slate-800/80 p-4 bg-slate-50/50 dark:bg-slate-950/30 flex flex-col justify-between gap-3"
+                    >
+                      <div>
+                        <div className="flex justify-between items-start mb-2">
+                          <span
+                            className={cn(
+                              "px-2.5 py-0.5 rounded-full text-[10px] font-bold",
+                              g.status === "active"
+                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                                : g.status === "completed"
+                                  ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400"
+                                  : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
+                            )}
+                          >
+                            {g.status === "active"
+                              ? "نشط"
+                              : g.status === "completed"
+                                ? "مكتمل"
+                                : "متوقف مؤقتاً"}
+                          </span>
+                          <span className="font-extrabold text-sm text-foreground">
+                            {targetAmt.toLocaleString()} ج.م
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+                          {g.title}
+                        </h4>
+                        {g.description && (
+                          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                            {g.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Interactive Edit Actions */}
+                      <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/50 mt-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            updateStatusMutation.mutate({
+                              goalId: g.id,
+                              status:
+                                g.status === "active" ? "paused" : "active",
+                            })
+                          }
+                          disabled={updateStatusMutation.isPending}
+                          className="flex-1 text-[11px] h-8 font-semibold rounded-lg"
+                        >
+                          {g.status === "active" ? "إيقاف مؤقت" : "تفعيل"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            updateStatusMutation.mutate({
+                              goalId: g.id,
+                              status: "completed",
+                            })
+                          }
+                          disabled={
+                            updateStatusMutation.isPending ||
+                            g.status === "completed"
+                          }
+                          className="flex-1 text-[11px] h-8 font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg"
+                        >
+                          تم التحقيق 🎉
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-6">
+                لم يتم تسجيل أي أهداف مالية بعد. أضف حلماً جديداً من لوحة
+                التحكم!
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>

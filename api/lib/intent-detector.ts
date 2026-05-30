@@ -5,61 +5,220 @@
 
 /** Strong income indicators (high weight = 50) */
 const STRONG_INCOME = [
-  "مرتب", "مرتبي", "قبضت", "القبض", "استلمت", "الماهيه",
-  "جالي من", "حولي من", "حولولي", "اتحولتلي",
-  "ارباحي", "قبضت الجمعيه", "سهمي في الجمعيه",
-  "سبوبه", "شغلانه براني", "دخلي", "ايرادي",
-  "رجعولي", "رجعلي فلوس", "كاش باك", "خدت المصروف", "اخدت مصروف",
+  "مرتب",
+  "مرتبي",
+  "قبضت",
+  "القبض",
+  "استلمت",
+  "الماهيه",
+  "جالي من",
+  "جاليه من",
+  "حولي من",
+  "حولولي",
+  "اتحولتلي",
+  "ارباحي",
+  "قبضت الجمعيه",
+  "سهمي في الجمعيه",
+  "سبوبه",
+  "شغلانه براني",
+  "دخلي",
+  "ايرادي",
+  "رجعولي",
+  "رجعلي فلوس",
+  "كاش باك",
+  "خدت المصروف",
+  "اخدت مصروف",
+  // New narrative patterns
+  "إداني",
+  "بعتلي",
+  "وصلني",
+  "وصلتلي",
+  "حولوليه",
+  "صح جالي",
+  "جالي منه",
+  "أبويا إداني",
+  "أبوه إداه",
+  "مما إداني",
+  "خدت من أبويا",
+  "خدت من أمي",
+  "قبضت الجمعية",
+  "نزل المرتب",
+  "اتكلم مرتب",
 ];
 
 /** Normal income indicators (weight = 15) */
 const INCOME_KEYWORDS = [
-  "مرتب", "مرتبي", "قبضت", "القبض", "استلمت", "الماهيه", "المعاش", "راتب",
-  "جالي", "وصلني", "رزق", "مكسب", "كسبت", "ارباح", "فوايد", "عائد",
-  "مكافاه", "بونص", "اوفر تايم", "اضافي", "بدل", "حوافز",
-  "حولي", "حولولي", "اتحولتلي", "فودافون كاش",
-  "جمعيه", "قبضت الجمعيه", "سهمي",
-  "ايداع", "دخل", "ايراد", "مبيعات", "بيعه", "عموله",
-  "سبوبه", "براني", "شغلانه", "هديه", "عيديه", "نقطه", "نفقه",
+  "المعاش",
+  "راتب",
+  "جالي",
+  "رزق",
+  "مكسب",
+  "كسبت",
+  "ارباح",
+  "فوايد",
+  "عائد",
+  "مكافاه",
+  "بونص",
+  "اوفر تايم",
+  "اضافي",
+  "بدل",
+  "حوافز",
+  "حولي",
+  "فودافون كاش",
+  "جمعيه",
+  "سهمي",
+  "ايداع",
+  "دخل",
+  "ايراد",
+  "مبيعات",
+  "بيعه",
+  "عموله",
+  "براني",
+  "شغلانه",
+  "هديه",
+  "عيديه",
+  "نقطه",
+  "نفقه",
 ];
 
 /** Strong expense indicators (weight = 50) */
 const STRONG_EXPENSE = [
-  "دفعت", "صرفت", "اشتريت", "سددت", "حاسبت",
-  "حولت ل", "اديت ل", "طلعت ل", "خرجت ل",
-  "ركبت", "طلبت", "حجزت", "شحنت رصيد", "دفعت قسط", "دفعنا",
-  "اكلت", "شربت", "عزمت",
+  "دفعت",
+  "صرفت",
+  "اشتريت",
+  "سددت",
+  "حاسبت",
+  "حولت ل",
+  "اديت ل",
+  "طلعت ل",
+  "خرجت ل",
+  "ركبت",
+  "طلبت",
+  "حجزت",
+  "شحنت رصيد",
+  "دفعت قسط",
+  "دفعنا",
+  "اكلت",
+  "شربت",
+  "عزمت",
+  // New narrative patterns
+  "طلعت للبواب",
+  "طلعت لـ",
+  "طيرت فكة",
+  "سلكت",
+  "سددت لـ",
+  "دفعت لل",
+  "مشيت بـ",
+  "صرفت على",
+  "خلصت ال",
+  "دفع خدمة",
+  "ادى لـ",
+  "أديت لـ",
+  "جبت",
+  "جبتي",
+  "جبنا",
 ];
 
 /** Normal expense indicators (weight = 15) */
 const EXPENSE_KEYWORDS = [
-  "صرفت", "صرف", "مصروف", "مصاريف", "خرجي", "تبذير",
-  "دفعت", "سددت", "خلصت", "حاسبت",
-  "اشتريت", "جبت", "نزلت", "طلبت", "دليفري",
-  "ركبت", "توصيله", "روحت", "سافرت",
-  "اكلت", "شربت", "عزمت",
-  "فاتوره", "شحنت", "رصيد",
-  "حولت", "اديت", "طلعت", "وزعت",
-  "اشتراك", "جددت", "حجزت",
-  "كلفني", "واقف عليا", "خسرت",
-  "عليا", "دين", "قسط", "اقساط", "مديونيه",
+  "صرف",
+  "مصروف",
+  "مصاريف",
+  "خرجي",
+  "تبذير",
+  "خلصت",
+  "نزلت",
+  "دليفري",
+  "توصيله",
+  "روحت",
+  "سافرت",
+  "فاتوره",
+  "شحنت",
+  "رصيد",
+  "حولت",
+  "اديت",
+  "طلعت",
+  "وزعت",
+  "اشتراك",
+  "جددت",
+  "كلفني",
+  "واقف عليا",
+  "خسرت",
+  "عليا",
+  "دين",
+  "قسط",
+  "اقساط",
+  "مديونيه",
 ];
 
 /** Transfer indicators */
 const TRANSFER_KEYWORDS = [
-  "حولت ل", "حولت لـ", "تحويل", "انستاباي", "فودافون كاش",
-  "سحبت من", "سحب ATM", "ايداع", "حطيت في",
-  "سلفت", "سلفه", "اديت سلفه",
+  "حولت ل",
+  "حولت لـ",
+  "تحويل",
+  "انستاباي",
+  "فودافون كاش",
+  "سحبت من",
+  "سحب ATM",
+  "ايداع",
+  "حطيت في",
+  "سلفت",
+  "سلفه",
+  "اديت سلفه",
 ];
 
 /** Investment indicators */
 const INVESTMENT_KEYWORDS = [
-  "ذهب", "دهب", "سبيكه", "جنيه دهب", "دولار",
-  "بورصه", "اسهم", "شهاده", "وديعه", "استثمار",
-  "عقار", "ارض", "شقه تمليك",
+  "ذهب",
+  "دهب",
+  "سبيكه",
+  "جنيه دهب",
+  "دولار",
+  "بورصه",
+  "اسهم",
+  "شهاده",
+  "وديعه",
+  "استثمار",
+  "عقار",
+  "ارض",
+  "شقه تمليك",
 ];
 
-export type TransactionIntent = "income" | "expense" | "transfer" | "investment";
+function normalizeArabic(text: string): string {
+  return text
+    .replace(/[\u064B-\u065F\u0670]/g, "") // remove tashkeel
+    .replace(/[إأآٱ]/g, "ا") // normalize alef
+    .replace(/ى/g, "ي") // ya
+    .replace(/ة/g, "ه") // ta marbuta → ha
+    .replace(/ؤ/g, "و") // waw hamza
+    .replace(/ئ/g, "ي") // ya hamza
+    .trim();
+}
+
+const NORM_STRONG_INCOME = STRONG_INCOME.map((k) =>
+  normalizeArabic(k).toLowerCase(),
+);
+const NORM_INCOME_KEYWORDS = INCOME_KEYWORDS.map((k) =>
+  normalizeArabic(k).toLowerCase(),
+);
+const NORM_STRONG_EXPENSE = STRONG_EXPENSE.map((k) =>
+  normalizeArabic(k).toLowerCase(),
+);
+const NORM_EXPENSE_KEYWORDS = EXPENSE_KEYWORDS.map((k) =>
+  normalizeArabic(k).toLowerCase(),
+);
+const NORM_TRANSFER_KEYWORDS = TRANSFER_KEYWORDS.map((k) =>
+  normalizeArabic(k).toLowerCase(),
+);
+const NORM_INVESTMENT_KEYWORDS = INVESTMENT_KEYWORDS.map((k) =>
+  normalizeArabic(k).toLowerCase(),
+);
+
+export type TransactionIntent =
+  | "income"
+  | "expense"
+  | "transfer"
+  | "investment";
 
 export interface IntentResult {
   intent: TransactionIntent;
@@ -74,35 +233,73 @@ export interface IntentResult {
  * Detect intent for a given context string
  */
 export function detectIntent(context: string): IntentResult {
+  const normContext = normalizeArabic(context).toLowerCase();
+
   let incomeScore = 0;
   let expenseScore = 0;
   let transferScore = 0;
   let investmentScore = 0;
 
   // Strong indicators (weight 50)
-  for (const kw of STRONG_INCOME) if (context.includes(kw)) incomeScore += 50;
-  for (const kw of STRONG_EXPENSE) if (context.includes(kw)) expenseScore += 50;
+  for (const kw of NORM_STRONG_INCOME)
+    if (normContext.includes(kw)) incomeScore += 50;
+  for (const kw of NORM_STRONG_EXPENSE)
+    if (normContext.includes(kw)) expenseScore += 50;
 
   // Normal indicators (weight 15)
-  for (const kw of INCOME_KEYWORDS) if (context.includes(kw)) incomeScore += 15;
-  for (const kw of EXPENSE_KEYWORDS) if (context.includes(kw)) expenseScore += 15;
+  for (const kw of NORM_INCOME_KEYWORDS)
+    if (normContext.includes(kw)) incomeScore += 15;
+  for (const kw of NORM_EXPENSE_KEYWORDS)
+    if (normContext.includes(kw)) expenseScore += 15;
 
   // Transfer indicators (weight 40)
-  for (const kw of TRANSFER_KEYWORDS) if (context.includes(kw)) transferScore += 40;
+  for (const kw of NORM_TRANSFER_KEYWORDS)
+    if (normContext.includes(kw)) transferScore += 40;
 
   // Investment indicators (weight 40)
-  for (const kw of INVESTMENT_KEYWORDS) if (context.includes(kw)) investmentScore += 40;
+  for (const kw of NORM_INVESTMENT_KEYWORDS)
+    if (normContext.includes(kw)) investmentScore += 40;
 
   // Contextual patterns
-  if (/حولت\s*(ل|لـ)/.test(context)) { transferScore += 30; expenseScore -= 20; }
-  if (/حول(ي|ى|ولي|ولى)/.test(context)) { incomeScore += 40; }
-  if (/اد(ي|ى)ت\s*(ل|لـ)/.test(context)) { expenseScore += 30; }
-  if (/سلفت/.test(context)) { transferScore += 30; }
-  if (/رجع(و|)لي/.test(context)) { incomeScore += 40; }
+  if (
+    /(?:حولت|بعت|بعتت|[اإ]?ديت|اعطيت|عطيت)\s+.*?\s*لـ?(?:\s+|[ا-ي]+)/.test(
+      normContext,
+    ) ||
+    /حولت\s*(ل|لـ)?/.test(normContext)
+  ) {
+    transferScore += 40;
+    expenseScore -= 20;
+  }
+  if (/حول(ي|ى|ولي|ولى)/.test(normContext)) {
+    incomeScore += 40;
+  }
+  if (/[اإ]?د(ي|ى)ت\s*(ل|لـ)/.test(normContext)) {
+    expenseScore += 30;
+  }
+  if (/سلفت/.test(normContext)) {
+    transferScore += 30;
+  }
+  if (/رجع(و|)لي/.test(normContext)) {
+    incomeScore += 40;
+  }
+  if (/(?:^|\s)(?:خدت|اخدت|استلمت|جالي|قبضت)\s+من\s+/.test(normContext)) {
+    incomeScore += 60;
+    expenseScore -= 40;
+  }
 
   // Determine winner
-  const scores = { income: incomeScore, expense: expenseScore, transfer: transferScore, investment: investmentScore };
-  const maxScore = Math.max(incomeScore, expenseScore, transferScore, investmentScore);
+  const scores = {
+    income: incomeScore,
+    expense: expenseScore,
+    transfer: transferScore,
+    investment: investmentScore,
+  };
+  const maxScore = Math.max(
+    incomeScore,
+    expenseScore,
+    transferScore,
+    investmentScore,
+  );
 
   let intent: TransactionIntent = "expense"; // default
   if (maxScore === 0) {
@@ -118,10 +315,19 @@ export function detectIntent(context: string): IntentResult {
   }
 
   // Calculate confidence (how decisive the winner is)
-  const totalScore = incomeScore + expenseScore + transferScore + investmentScore;
-  const confidence = totalScore > 0 ? Math.round((maxScore / totalScore) * 100) : 30;
+  const totalScore =
+    incomeScore + expenseScore + transferScore + investmentScore;
+  const confidence =
+    totalScore > 0 ? Math.round((maxScore / totalScore) * 100) : 30;
 
-  return { intent, incomeScore, expenseScore, transferScore, investmentScore, confidence };
+  return {
+    intent,
+    incomeScore,
+    expenseScore,
+    transferScore,
+    investmentScore,
+    confidence,
+  };
 }
 
 export { INCOME_KEYWORDS, EXPENSE_KEYWORDS, STRONG_INCOME, STRONG_EXPENSE };

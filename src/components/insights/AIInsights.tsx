@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,9 @@ import {
   AlertTriangle,
   BarChart3,
   FileDown,
+  Share2,
 } from "lucide-react";
+import { useHaptics } from "@/hooks/useHaptics";
 
 interface AIInsightsProps {
   month: string;
@@ -21,6 +23,7 @@ export function AIInsights({ month }: AIInsightsProps) {
   const { hasProAccess } = useAuth();
   const isPro = hasProAccess;
   const exportHtml = trpc.export.monthlyReportHtml.useMutation();
+  const { success: hapticSuccess, error: hapticError } = useHaptics();
   const [showComparison, setShowComparison] = useState(false);
   const [compareMonth, setCompareMonth] = useState(() => {
     const d = new Date(month + "-01");
@@ -35,18 +38,73 @@ export function AIInsights({ month }: AIInsightsProps) {
   const [insightsData, setInsightsData] = useState<string | null>(null);
   const [compareData, setCompareData] = useState<string | null>(null);
 
+  // Automatically fetch cached insights on load to prevent token waste and rate limit errors
+  const cachedQuery = trpc.ai.getCachedMonthlyInsights.useQuery({ month });
+
+  useEffect(() => {
+    if (cachedQuery.data?.exists && cachedQuery.data.insights) {
+      setInsightsData(cachedQuery.data.insights);
+    } else {
+      setInsightsData(null);
+    }
+  }, [cachedQuery.data, month]);
+
   const handleGenerateInsights = () => {
     insightsMutation.mutate(
       { month },
       {
         onSuccess: (data) => {
           setInsightsData(data.insights);
+          hapticSuccess();
         },
         onError: () => {
           setInsightsData(null);
+          hapticError();
         },
-      }
+      },
     );
+  };
+
+  const canShare = typeof navigator !== "undefined" && "share" in navigator;
+
+  const handleShare = () => {
+    if (!canShare || !insightsData) return;
+    try {
+      let text = "🧠 تحليل مصاريفي من SmartSpend AI:\n\n";
+      try {
+        const parsed =
+          typeof insightsData === "string"
+            ? JSON.parse(insightsData)
+            : insightsData;
+        text += parsed.response_text || "";
+
+        if (parsed.alerts && parsed.alerts.length > 0) {
+          text +=
+            "\n\n⚠️ التنبيهات المالية:\n" +
+            parsed.alerts.map((a: string) => `• ${a}`).join("\n");
+        }
+        if (parsed.personalization?.saving_opportunities?.length > 0) {
+          text +=
+            "\n\n💡 فرص التوفير المتاحة:\n" +
+            parsed.personalization.saving_opportunities
+              .map((o: string) => `• ${o}`)
+              .join("\n");
+        }
+      } catch {
+        text += String(insightsData);
+      }
+      text += "\n\nتتبع مصاريفك بالذكاء الاصطناعي مع SmartSpend AI!";
+
+      navigator
+        .share({
+          title: "تحليل المصاريف الذكي",
+          text: text,
+          url: window.location.origin,
+        })
+        .catch(() => {});
+    } catch (err) {
+      console.error("Error sharing:", err);
+    }
   };
 
   const handleCompare = () => {
@@ -57,7 +115,7 @@ export function AIInsights({ month }: AIInsightsProps) {
         onSuccess: (data) => {
           setCompareData(data.comparison);
         },
-      }
+      },
     );
   };
 
@@ -72,7 +130,14 @@ export function AIInsights({ month }: AIInsightsProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {!insightsData && !insightsMutation.isPending && (
+          {cachedQuery.isLoading && (
+            <div className="text-center py-6">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-amber-500" />
+              <p className="text-muted-foreground">جاري تحميل التحليل المالي الذكي...</p>
+            </div>
+          )}
+
+          {!cachedQuery.isLoading && !insightsData && !insightsMutation.isPending && (
             <div className="text-center py-4">
               <Lightbulb className="w-12 h-12 mx-auto mb-3 text-amber-400" />
               <p className="text-muted-foreground mb-3">
@@ -110,8 +175,8 @@ export function AIInsights({ month }: AIInsightsProps) {
                 {insightsMutation.error?.data?.code === "TOO_MANY_REQUESTS"
                   ? "يمكنك الترقية لخطة أعلى للحصول على تقارير أكتر."
                   : insightsMutation.error?.data?.code === "FORBIDDEN"
-                  ? "حدّث خطتك للاستمتاع بالتحليلات الذكية."
-                  : "جرب تاني بعد شوية."}
+                    ? "حدّث خطتك للاستمتاع بالتحليلات الذكية."
+                    : "جرب تاني بعد شوية."}
               </p>
               <Button
                 variant="outline"
@@ -123,169 +188,213 @@ export function AIInsights({ month }: AIInsightsProps) {
             </div>
           )}
 
-          {insightsData && (() => {
-            // Parse the JSON insights properly
-            let parsed: any = null;
-            try {
-              parsed = typeof insightsData === "string" ? JSON.parse(insightsData) : insightsData;
-            } catch {
-              // If not valid JSON, show as text
-              parsed = { response_text: insightsData };
-            }
-            
-            return (
-              <div className="p-4 rounded-xl bg-white/60 dark:bg-slate-800/60 space-y-4">
-                {/* Main Analysis Text */}
-                {parsed.response_text && (
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                    {parsed.response_text}
-                  </p>
-                )}
+          {insightsData &&
+            (() => {
+              // Parse the JSON insights properly
+              let parsed: any = null;
+              try {
+                parsed =
+                  typeof insightsData === "string"
+                    ? JSON.parse(insightsData)
+                    : insightsData;
+              } catch {
+                // If not valid JSON, show as text
+                parsed = { response_text: insightsData };
+              }
 
-                {/* Alerts */}
-                {parsed.alerts && parsed.alerts.length > 0 && (
-                  <div className="space-y-2">
-                    {parsed.alerts.map((alert: string, i: number) => (
-                      <div key={i} className="flex items-start gap-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-sm">
-                        <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-                        <span>{alert}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Data Table replaced by Smart Visual Cards */}
-                {/* Removing the data_table squares as requested by user to focus on deep analysis */}
-
-                {parsed.personalization && (() => {
-                  const labelFor = (value: unknown, fallback = "-") => {
-                    if (!value) return fallback;
-                    const map: Record<string, string> = {
-                      stable: "مستقر",
-                      watch: "يحتاج متابعة",
-                      pressure: "ضغط مالي",
-                      planned: "مخطط",
-                      spiky: "صرف فجائي",
-                      emotional: "صرف عاطفي",
-                      concentrated: "متركز",
-                      balanced: "متوازن",
-                      impulsive: "مندفع",
-                      conservative: "محافظ",
-                      stressed: "مضغوط",
-                      trending_up: "في زيادة",
-                      trending_down_or_flat: "مستقر أو في انخفاض",
-                    };
-                    return map[String(value)] || String(value);
-                  };
-
-                  return (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div className="rounded-lg border bg-white dark:bg-slate-900 p-3">
-                      <p className="text-xs text-muted-foreground mb-1">الاستقرار</p>
-                      <p className="font-semibold text-sm">
-                        {labelFor(parsed.personalization.behavioral_summary?.financial_stability)}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border bg-white dark:bg-slate-900 p-3">
-                      <p className="text-xs text-muted-foreground mb-1">السلوك</p>
-                      <p className="font-semibold text-sm">
-                        {labelFor(parsed.personalization.behavioral_summary?.spending_behavior)}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border bg-white dark:bg-slate-900 p-3">
-                      <p className="text-xs text-muted-foreground mb-1">الاتجاه</p>
-                      <p className="font-semibold text-sm">
-                        {labelFor(parsed.personalization.comparative_analysis?.trend)}
-                      </p>
-                    </div>
-                  </div>
-                  );
-                })()}
-
-                {parsed.personalization?.saving_opportunities?.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-sm font-semibold">فرص توفير</p>
-                    {parsed.personalization.saving_opportunities.map((item: string, i: number) => (
-                      <div key={i} className="rounded-lg border bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900 p-2 text-sm">
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Personality Badge */}
-                {parsed.personality_flag && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>🧠 الشخصية المالية:</span>
-                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                      {parsed.personality_flag === "impulsive" ? "مندفع" : 
-                       parsed.personality_flag === "conservative" ? "محافظ" : 
-                       parsed.personality_flag === "stressed" ? "متوتر" : 
-                       parsed.personality_flag === "balanced" ? "متوازن" : 
-                       parsed.personality_flag === "new_user" ? "مستخدم جديد" : 
-                       parsed.personality_flag}
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleGenerateInsights}
-                    disabled={insightsMutation.isPending}
-                    className="text-xs min-h-[44px] w-full sm:w-auto active-press"
-                  >
-                    {insightsMutation.isPending ? (
-                      <Loader2 className="w-3 h-3 animate-spin mr-1" />
-                    ) : (
-                      <Sparkles className="w-3 h-3 mr-1" />
-                    )}
-                    تحديث التحليل
-                  </Button>
-                  {isPro && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs gap-1 min-h-[44px] w-full sm:w-auto active-press"
-                      disabled={exportHtml.isPending}
-                      onClick={() =>
-                        exportHtml.mutate(
-                          {
-                            month,
-                            insightsJson:
-                              typeof insightsData === "string"
-                                ? insightsData
-                                : JSON.stringify(insightsData),
-                          },
-                          {
-                            onSuccess: (res) => {
-                              const blob = new Blob([res.data], {
-                                type: "text/html;charset=utf-8",
-                              });
-                              const url = URL.createObjectURL(blob);
-                              const a = document.createElement("a");
-                              a.href = url;
-                              a.download = res.filename;
-                              a.click();
-                              URL.revokeObjectURL(url);
-                            },
-                          }
-                        )
-                      }
-                    >
-                      {exportHtml.isPending ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                      ) : (
-                        <FileDown className="w-3 h-3" />
-                      )}
-                      تصدير تقرير Pro
-                    </Button>
+              return (
+                <div className="p-4 rounded-xl bg-white/60 dark:bg-slate-800/60 space-y-4">
+                  {/* Main Analysis Text */}
+                  {parsed.response_text && (
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                      {parsed.response_text}
+                    </p>
                   )}
+
+                  {/* Alerts */}
+                  {parsed.alerts && parsed.alerts.length > 0 && (
+                    <div className="space-y-2">
+                      {parsed.alerts.map((alert: string, i: number) => (
+                        <div
+                          key={i}
+                          className="flex items-start gap-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-sm"
+                        >
+                          <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                          <span>{alert}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Data Table replaced by Smart Visual Cards */}
+                  {/* Removing the data_table squares as requested by user to focus on deep analysis */}
+
+                  {parsed.personalization &&
+                    (() => {
+                      const labelFor = (value: unknown, fallback = "-") => {
+                        if (!value) return fallback;
+                        const map: Record<string, string> = {
+                          stable: "مستقر",
+                          watch: "يحتاج متابعة",
+                          pressure: "ضغط مالي",
+                          planned: "مخطط",
+                          spiky: "صرف فجائي",
+                          emotional: "صرف عاطفي",
+                          concentrated: "متركز",
+                          balanced: "متوازن",
+                          impulsive: "مندفع",
+                          conservative: "محافظ",
+                          stressed: "مضغوط",
+                          trending_up: "في زيادة",
+                          trending_down_or_flat: "مستقر أو في انخفاض",
+                        };
+                        return map[String(value)] || String(value);
+                      };
+
+                      return (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div className="rounded-lg border bg-white dark:bg-slate-900 p-3">
+                            <p className="text-xs text-muted-foreground mb-1">
+                              الاستقرار
+                            </p>
+                            <p className="font-semibold text-sm">
+                              {labelFor(
+                                parsed.personalization.behavioral_summary
+                                  ?.financial_stability,
+                              )}
+                            </p>
+                          </div>
+                          <div className="rounded-lg border bg-white dark:bg-slate-900 p-3">
+                            <p className="text-xs text-muted-foreground mb-1">
+                              السلوك
+                            </p>
+                            <p className="font-semibold text-sm">
+                              {labelFor(
+                                parsed.personalization.behavioral_summary
+                                  ?.spending_behavior,
+                              )}
+                            </p>
+                          </div>
+                          <div className="rounded-lg border bg-white dark:bg-slate-900 p-3">
+                            <p className="text-xs text-muted-foreground mb-1">
+                              الاتجاه
+                            </p>
+                            <p className="font-semibold text-sm">
+                              {labelFor(
+                                parsed.personalization.comparative_analysis
+                                  ?.trend,
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                  {parsed.personalization?.saving_opportunities?.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold">فرص توفير</p>
+                      {parsed.personalization.saving_opportunities.map(
+                        (item: string, i: number) => (
+                          <div
+                            key={i}
+                            className="rounded-lg border bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100 dark:border-emerald-900 p-2 text-sm"
+                          >
+                            {item}
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  )}
+
+                  {/* Personality Badge */}
+                  {parsed.personality_flag && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>🧠 الشخصية المالية:</span>
+                      <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                        {parsed.personality_flag === "impulsive"
+                          ? "مندفع"
+                          : parsed.personality_flag === "conservative"
+                            ? "محافظ"
+                            : parsed.personality_flag === "stressed"
+                              ? "متوتر"
+                              : parsed.personality_flag === "balanced"
+                                ? "متوازن"
+                                : parsed.personality_flag === "new_user"
+                                  ? "مستخدم جديد"
+                                  : parsed.personality_flag}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full">
+                    {canShare && insightsData && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleShare}
+                        className="text-xs gap-1.5 min-h-[44px] w-full sm:w-auto active-press text-emerald-600 dark:text-emerald-400 border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 hover:text-emerald-700"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                        مشاركة التحليل
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleGenerateInsights}
+                      disabled={insightsMutation.isPending}
+                      className="text-xs min-h-[44px] w-full sm:w-auto active-press"
+                    >
+                      {insightsMutation.isPending ? (
+                        <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                      ) : (
+                        <Sparkles className="w-3 h-3 mr-1" />
+                      )}
+                      تحديث التحليل
+                    </Button>
+                    {isPro && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs gap-1 min-h-[44px] w-full sm:w-auto active-press"
+                        disabled={exportHtml.isPending}
+                        onClick={() =>
+                          exportHtml.mutate(
+                            {
+                              month,
+                              insightsJson:
+                                typeof insightsData === "string"
+                                  ? insightsData
+                                  : JSON.stringify(insightsData),
+                            },
+                            {
+                              onSuccess: (res) => {
+                                const blob = new Blob([res.data], {
+                                  type: "text/html;charset=utf-8",
+                                });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = res.filename;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                              },
+                            },
+                          )
+                        }
+                      >
+                        {exportHtml.isPending ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <FileDown className="w-3 h-3" />
+                        )}
+                        تصدير تقرير Pro
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })()}
+              );
+            })()}
         </CardContent>
       </Card>
 
@@ -309,9 +418,7 @@ export function AIInsights({ month }: AIInsightsProps) {
             <Button
               size="sm"
               onClick={handleCompare}
-              disabled={
-                compareMonth === month || compareMutation.isPending
-              }
+              disabled={compareMonth === month || compareMutation.isPending}
             >
               {compareMutation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

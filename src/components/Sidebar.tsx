@@ -2,14 +2,14 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { 
-  LayoutDashboard, 
-  BarChart3, 
-  Brain, 
-  Calendar, 
-  Settings, 
-  Shield, 
-  HelpCircle, 
+import {
+  LayoutDashboard,
+  BarChart3,
+  Brain,
+  Calendar,
+  Settings,
+  Shield,
+  HelpCircle,
   LogOut,
   Menu,
   User,
@@ -19,7 +19,7 @@ import {
   Sparkles,
   Sun,
   Moon,
-  Smartphone
+  Smartphone,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
@@ -45,7 +45,8 @@ const bottomItems = [
 ];
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
-  const { user, isAdmin, isModerator, isPro, hasUltraAccess, logout } = useAuth();
+  const { user, isAdmin, isModerator, isPro, hasUltraAccess, logout } =
+    useAuth();
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
@@ -54,33 +55,35 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
     <>
       {/* Mobile overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
           onClick={onToggle}
         />
       )}
 
       {/* Sidebar */}
-      <aside 
+      <aside
         className={cn(
           "fixed right-0 top-0 h-full z-50 transition-all duration-500 ease-out",
           "bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950",
           "border-l border-white/10 shadow-2xl",
-          isOpen ? "w-72 translate-x-0" : "w-72 translate-x-full lg:translate-x-0"
+          isOpen
+            ? "w-72 translate-x-0"
+            : "w-72 translate-x-full lg:translate-x-0",
         )}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-white/10">
           <div className="flex items-center gap-3 transition-all duration-300">
-            <img 
-              src={whiteModeLogo} 
-              alt="SmartSpend" 
-              className="h-20 w-auto object-contain block dark:hidden"
+            <img
+              src={whiteModeLogo}
+              alt="SmartSpend"
+              className="h-20 w-auto object-contain block dark:hidden no-drag pointer-events-none select-none"
             />
-            <img 
-              src={darkModeLogo} 
-              alt="SmartSpend" 
-              className="h-20 w-auto object-contain hidden dark:block"
+            <img
+              src={darkModeLogo}
+              alt="SmartSpend"
+              className="h-20 w-auto object-contain hidden dark:block no-drag pointer-events-none select-none"
             />
             {isPro && (
               <span className="text-xs text-amber-400 flex items-center gap-1">
@@ -89,21 +92,29 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
             )}
           </div>
           <div className="flex items-center gap-1">
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className="text-white/70 hover:text-white hover:bg-white/10"
             >
-              {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              {theme === "dark" ? (
+                <Sun className="w-5 h-5" />
+              ) : (
+                <Moon className="w-5 h-5" />
+              )}
             </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={onToggle}
               className="text-white/70 hover:text-white hover:bg-white/10 lg:hidden"
             >
-              {isOpen ? <ChevronLeft className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {isOpen ? (
+                <ChevronLeft className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
             </Button>
           </div>
         </div>
@@ -112,10 +123,16 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
         {user && (
           <div className="px-5 py-4 border-b border-white/10 transition-all duration-300">
             <div className="flex flex-col">
-              <p className="text-white font-medium text-sm truncate">{user.name}</p>
+              <p className="text-white font-medium text-sm truncate">
+                {user.name}
+              </p>
               <div className="flex items-center gap-2 mt-2">
                 <p className="text-white/80 font-semibold text-[10px] truncate bg-white/20 px-2 py-0.5 rounded shadow-sm">
-                  {user.plan === "ultra" ? "ULTRA" : user.plan === "pro" ? "PRO" : "مجاني"}
+                  {user.plan === "ultra"
+                    ? "ULTRA"
+                    : user.plan === "pro"
+                      ? "PRO"
+                      : "مجاني"}
                 </p>
                 {(user as any).currentStreak > 0 && (
                   <p className="text-orange-400 font-bold text-[10px] truncate flex items-center gap-1 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/30 shadow-sm animate-pulse">
@@ -130,9 +147,13 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
         {/* Main Menu */}
         <nav className="flex-1 px-3 py-4 space-y-1">
           {menuItems.map((item) => {
-            const tab = new URLSearchParams(location.search).get("tab") || "record";
-            const targetTab = new URLSearchParams(item.href.split("?")[1] || "").get("tab") || "record";
-            const isActive = location.pathname === "/dashboard" && tab === targetTab;
+            const tab =
+              new URLSearchParams(location.search).get("tab") || "record";
+            const targetTab =
+              new URLSearchParams(item.href.split("?")[1] || "").get("tab") ||
+              "record";
+            const isActive =
+              location.pathname === "/dashboard" && tab === targetTab;
             const Icon = item.icon;
 
             return (
@@ -142,19 +163,22 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                 className={cn(
                   "tap-target flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-xl transition-all duration-300 group relative",
                   "hover:bg-white/10 hover:translate-x-1 active:bg-white/15",
-                  isActive ? "bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-400 border-r-2 border-emerald-500" : "text-white/70"
+                  isActive
+                    ? "bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-400 border-r-2 border-emerald-500"
+                    : "text-white/70",
                 )}
                 onMouseEnter={() => setHoveredItem(item.label)}
                 onMouseLeave={() => setHoveredItem(null)}
               >
-                <Icon className={cn(
-                  "w-5 h-5 shrink-0 transition-transform duration-300",
-                  hoveredItem === item.label && "scale-110"
-                )} />
+                <Icon
+                  className={cn(
+                    "w-5 h-5 shrink-0 transition-transform duration-300",
+                    hoveredItem === item.label && "scale-110",
+                  )}
+                />
                 <span className="text-sm font-medium transition-all duration-300 whitespace-nowrap">
                   {item.label}
                 </span>
-
               </Link>
             );
           })}
@@ -166,11 +190,13 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
               "hover:bg-white/10 hover:translate-x-1 active:bg-white/15",
               location.pathname === "/pro"
                 ? "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border-r-2 border-amber-400"
-                : "text-white/70"
+                : "text-white/70",
             )}
           >
             <Crown className="w-5 h-5 shrink-0 text-amber-400" />
-            <span className="text-sm font-medium whitespace-nowrap">البرو والأسعار</span>
+            <span className="text-sm font-medium whitespace-nowrap">
+              البرو والأسعار
+            </span>
           </Link>
 
           <Link
@@ -180,25 +206,31 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
               "hover:bg-white/10 hover:translate-x-1 active:bg-white/15",
               location.pathname === "/bank-sync"
                 ? "bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-300 border-r-2 border-emerald-400"
-                : "text-white/70"
+                : "text-white/70",
             )}
           >
             <Smartphone className="w-5 h-5 shrink-0 text-emerald-400" />
-            <span className="text-sm font-medium whitespace-nowrap">الربط البنكي</span>
+            <span className="text-sm font-medium whitespace-nowrap">
+              الربط البنكي
+            </span>
           </Link>
 
           {/* Admin/Moderator links */}
           {(isAdmin || isModerator) && (
             <>
               <div className="pt-4 pb-2 transition-all duration-300">
-                <p className="text-xs text-white/40 px-3 uppercase tracking-wider">لوحة التحكم</p>
+                <p className="text-xs text-white/40 px-3 uppercase tracking-wider">
+                  لوحة التحكم
+                </p>
               </div>
               <Link
                 to="/admin"
                 className={cn(
                   "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group relative",
                   "hover:bg-white/10 hover:translate-x-1",
-                  location.pathname === "/admin" ? "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border-r-2 border-amber-500" : "text-white/70"
+                  location.pathname === "/admin"
+                    ? "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border-r-2 border-amber-500"
+                    : "text-white/70",
                 )}
               >
                 <Shield className="w-5 h-5 shrink-0" />

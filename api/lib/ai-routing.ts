@@ -14,10 +14,12 @@ export const PRO_RULE_TRIVIAL_THRESHOLD = 95;
 
 export interface RoutingContext {
   plan: PlanId;
+
   textLength: number;
   amountCount: number;
   hasMultipleTransactions: boolean;
   knownNameMentioned: boolean;
+  personMentioned: boolean;
 }
 
 export interface RoutingDecision {
@@ -34,35 +36,38 @@ export interface RoutingDecision {
 
 const PLAN_DEFAULTS: Record<
   PlanId,
-  Omit<RoutingDecision, "route" | "useAi" | "useEmbedding" | "acceptRuleEngine" | "reason">
+  Omit<
+    RoutingDecision,
+    "route" | "useAi" | "useEmbedding" | "acceptRuleEngine" | "reason"
+  >
 > = {
   free: {
     ruleConfidenceFloor: 88,
     runDisputeResolution: false,
     includeRichAiContext: false,
-    maxAiOutputTokens: 384,
+    maxAiOutputTokens: 300,
   },
   pro: {
     ruleConfidenceFloor: PRO_RULE_TRIVIAL_THRESHOLD,
     runDisputeResolution: true,
     includeRichAiContext: true,
-    maxAiOutputTokens: 1536,
+    maxAiOutputTokens: 1000,
   },
   ultra: {
     ruleConfidenceFloor: PRO_RULE_TRIVIAL_THRESHOLD,
     runDisputeResolution: true,
     includeRichAiContext: true,
-    maxAiOutputTokens: 3072,
+    maxAiOutputTokens: 1500,
   },
 };
 
 export function ruleEngineIsStrongEnough(
   items: ParsedTransaction[],
-  floor: number
+  floor: number,
 ): boolean {
   if (items.length === 0) return false;
   return items.every(
-    (it) => it.category !== "متنوعات" && it.confidence >= floor
+    (it) => it.category !== "متنوعات" && it.confidence >= floor,
   );
 }
 
@@ -73,8 +78,13 @@ export function isProTrivialRuleResult(items: ParsedTransaction[]): boolean {
       const flags = item.ambiguityFlags || [];
       const trustedUserOrMerchant =
         item.inferenceSource === "dictionary" &&
-        (item.confidence >= 100 || flags.includes("merchant_registry_hit"));
-      const deterministicRule = item.inferenceSource === "rule" && item.confidence >= 98 && flags.length === 0;
+        (item.confidence >= 100 ||
+          flags.includes("merchant_registry_hit") ||
+          item.category === "العائلة");
+      const deterministicRule =
+        item.inferenceSource === "rule" &&
+        item.confidence >= 98 &&
+        flags.length === 0;
       return trustedUserOrMerchant || deterministicRule;
     })
   );
@@ -83,9 +93,17 @@ export function isProTrivialRuleResult(items: ParsedTransaction[]): boolean {
 export function shouldForceAi(
   ruleResult: RuleEngineResult,
   ctx: RoutingContext,
-  floor: number
+  floor: number,
 ): boolean {
-  if (ctx.knownNameMentioned) return true;
+  const isFamilyTransaction =
+    ruleResult.items.length > 0 &&
+    ruleResult.items.every(
+      (item) => item.category === "العائلة" && item.confidence >= floor,
+    );
+
+  // If ANY person is mentioned (known or unknown), force AI so it can ask for clarification if needed
+  if (!isFamilyTransaction && ctx.personMentioned) return true;
+  if (!isFamilyTransaction && ctx.knownNameMentioned) return true;
   if (ruleResult.items.length === 0) return true;
 
   if (ctx.plan === "pro" || ctx.plan === "ultra") {
@@ -99,7 +117,7 @@ export function shouldForceAi(
 export function decideClassificationRoute(
   ruleResult: RuleEngineResult,
   embeddingResult: EmbeddingResult | null,
-  ctx: RoutingContext
+  ctx: RoutingContext,
 ): RoutingDecision {
   const defaults = PLAN_DEFAULTS[ctx.plan];
   const floor = defaults.ruleConfidenceFloor;
@@ -107,7 +125,8 @@ export function decideClassificationRoute(
 
   const acceptRule =
     ruleResult.items.length > 0 &&
-    !ctx.knownNameMentioned &&
+    (!ctx.knownNameMentioned ||
+      ruleResult.items.every((i) => i.category === "العائلة")) &&
     (isPaid
       ? isProTrivialRuleResult(ruleResult.items)
       : ruleEngineIsStrongEnough(ruleResult.items, floor));
@@ -177,7 +196,7 @@ export function decideClassificationRoute(
 
 export function estimateClassificationPromptTokens(
   systemChars: number,
-  userChars: number
+  userChars: number,
 ): number {
   return Math.ceil((systemChars + userChars) / 3.2) + 48;
 }

@@ -5,25 +5,17 @@
  */
 
 export function mapModelName(modelName: string): string {
-  const normalized = String(modelName || "").trim().toLowerCase();
+  let normalized = String(modelName || "")
+    .trim()
+    .toLowerCase();
+
+  if (normalized.startsWith("models/")) {
+    normalized = normalized.replace("models/", "");
+  }
 
   if (!normalized) return "gemini-2.5-flash";
 
-  // 1) Explicit custom models / settings mappings
-  if (normalized.includes("3.1-flash-lite") || normalized === "flash-lite") {
-    return "gemini-2.5-flash"; // Stable, fast, highly capable
-  }
-  if (normalized.includes("3.1-flash-tts")) {
-    return "gemini-2.5-flash";
-  }
-  if (normalized.includes("3.0-flash-live") || normalized.includes("3.1-flash")) {
-    return "gemini-2.0-flash";
-  }
-  if (normalized.includes("3.1-pro")) {
-    return "gemini-2.5-pro";
-  }
-
-  // 2) Standard admin shorthand mapping
+  // Standard admin shorthand mapping
   if (normalized === "flash") {
     return "gemini-2.5-flash";
   }
@@ -31,8 +23,7 @@ export function mapModelName(modelName: string): string {
     return "gemini-2.5-pro";
   }
 
-  // 3) Just return the model name! This allows Groq models (llama3-8b-8192, mixtral-8x7b-32768, etc.) 
-  // and new Gemini models to pass through to the provider successfully.
+  // Pure passthrough: Let the requested model string pass to the API exactly as is.
   return normalized;
 }
 
@@ -44,10 +35,12 @@ export function isGroqModel(modelName: string): boolean {
   return (
     normalized.startsWith("llama-") ||
     normalized.startsWith("llama3-") ||
+    normalized.startsWith("deepseek-") ||
     normalized.startsWith("qwen/") ||
     normalized.startsWith("openai/") ||
     normalized.includes("mixtral") ||
-    normalized.includes("gemma")
+    normalized.includes("gemma") ||
+    normalized.startsWith("whisper-")
   );
 }
 
@@ -62,11 +55,14 @@ export function defaultGeminiModelForPlan(plan: AiPlanName): string {
 }
 
 export function defaultGroqModelForPlan(plan: AiPlanName): string {
-  if (plan === "free") return "llama-3.1-8b-instant";
+  if (plan === "free") return "deepseek-r1-distill-llama-70b";
   return "llama-3.3-70b-versatile";
 }
 
-export function defaultModelForProvider(provider: AiProviderName, plan: AiPlanName): string {
+export function defaultModelForProvider(
+  provider: AiProviderName,
+  plan: AiPlanName,
+): string {
   return provider === "groq"
     ? defaultGroqModelForPlan(plan)
     : defaultGeminiModelForPlan(plan);
@@ -75,9 +71,11 @@ export function defaultModelForProvider(provider: AiProviderName, plan: AiPlanNa
 export function coerceModelForProvider(
   modelName: string | undefined,
   provider: AiProviderName,
-  plan: AiPlanName
+  plan: AiPlanName,
 ): string {
-  const mapped = mapModelName(modelName || defaultModelForProvider(provider, plan));
+  const mapped = mapModelName(
+    modelName || defaultModelForProvider(provider, plan),
+  );
   if (provider === "groq" && isGeminiModel(mapped)) {
     return defaultGroqModelForPlan(plan);
   }

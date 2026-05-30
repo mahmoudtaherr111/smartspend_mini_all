@@ -8,7 +8,8 @@ function friendlyHttpError(status: number) {
   if (status === 401) return "انتهت الجلسة. سجل الدخول مرة أخرى.";
   if (status === 403) return "ليس لديك صلاحية لتنفيذ هذه العملية.";
   if (status === 404) return "المسار المطلوب غير موجود في الخادم.";
-  if (status === 429) return "طلبات كثيرة خلال وقت قصير. انتظر لحظة وحاول مرة أخرى.";
+  if (status === 429)
+    return "طلبات كثيرة خلال وقت قصير. انتظر لحظة وحاول مرة أخرى.";
   if (status >= 500) return "حدث خطأ في الخادم. حاول مرة أخرى بعد قليل.";
   return "تعذر إكمال الطلب. راجع البيانات وحاول مرة أخرى.";
 }
@@ -16,10 +17,11 @@ function friendlyHttpError(status: number) {
 // VITE_API_URL → backend deployed separately (e.g. https://api.smartspend.app)
 // Falls back to relative /api/trpc for monorepo dev mode (Vite dev server proxies to Hono)
 // Using `as any` cast to stay compatible with both tsconfig.app (vite/client) and tsconfig.server (node)
-const _viteMeta = (import.meta as any)?.env as Record<string, string> | undefined;
+const _viteMeta = (import.meta as any)?.env as
+  | Record<string, string>
+  | undefined;
 const _viteApiUrl = _viteMeta?.["VITE_API_URL"];
 const API_BASE_URL = _viteApiUrl ? `${_viteApiUrl}/api/trpc` : "/api/trpc";
-
 
 export const trpcClient = trpc.createClient({
   links: [
@@ -49,7 +51,9 @@ export const trpcClient = trpc.createClient({
           });
         } catch (error) {
           console.error("tRPC fetch: network failure", error);
-          throw new Error("تعذر الاتصال بالخادم. تأكد أن التطبيق يعمل ثم حاول مرة أخرى.");
+          throw new Error(
+            "تعذر الاتصال بالخادم. تأكد أن التطبيق يعمل ثم حاول مرة أخرى.",
+          );
         }
 
         const text = await response.text();
@@ -64,7 +68,7 @@ export const trpcClient = trpc.createClient({
           try {
             console.error(
               "tRPC fetch: non-JSON response (truncated):",
-              text.slice(0, 1000)
+              text.slice(0, 1000),
             );
           } catch {}
           if (!response.ok) {

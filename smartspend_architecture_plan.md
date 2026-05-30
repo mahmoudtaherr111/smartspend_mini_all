@@ -80,23 +80,23 @@ flowchart LR
 
 ### الفئات الرئيسية والفرعية
 
-| الفئة الرئيسية | النوع | الفئات الفرعية |
-|---|---|---|
-| 🍔 أكل وشرب | expense | Fast Food, Restaurant, Coffee, Snacks, Groceries, Bakery, Drinks |
-| 🚗 مواصلات | expense | Uber, Metro, Bus, Taxi, Fuel, Parking, Maintenance |
-| 📄 فواتير | expense | Electricity, Water, Gas, Internet, Phone, Installments |
-| 🏠 سكن | expense | Rent, Furniture, Maintenance, Cleaning, Appliances |
-| 🛍️ تسوق | expense | Clothes, Electronics, Personal Care, Accessories |
-| 🏥 صحة | expense | Doctor, Pharmacy, Lab, Hospital, Dental, Optical |
-| 📚 تعليم | expense | School, University, Courses, Books, Tutoring |
-| 🎮 ترفيه | expense | Cinema, Cafe, Travel, Sports, Gaming, Streaming |
-| 📱 اشتراكات | expense | Netflix, Spotify, ChatGPT, Google AI, SaaS |
-| 🎁 هدايا | expense | Birthday, Wedding, Charity, Zakat |
-| 🐾 حيوانات أليفة | expense | Food, Vet, Accessories |
-| 💼 عمل | expense | Office Supplies, Hosting, APIs, SaaS, Coworking |
-| 💵 دخل | income | Salary, Freelance, Investments, Cashback, Refund, Bonus, Side Hustle |
-| 🏧 مالية | transfer | ATM Withdrawal, Transfer, Savings, Debt, Loan |
-| 📈 استثمار | investment | Gold, Stocks, Certificates, Real Estate |
+| الفئة الرئيسية   | النوع      | الفئات الفرعية                                                       |
+| ---------------- | ---------- | -------------------------------------------------------------------- |
+| 🍔 أكل وشرب      | expense    | Fast Food, Restaurant, Coffee, Snacks, Groceries, Bakery, Drinks     |
+| 🚗 مواصلات       | expense    | Uber, Metro, Bus, Taxi, Fuel, Parking, Maintenance                   |
+| 📄 فواتير        | expense    | Electricity, Water, Gas, Internet, Phone, Installments               |
+| 🏠 سكن           | expense    | Rent, Furniture, Maintenance, Cleaning, Appliances                   |
+| 🛍️ تسوق          | expense    | Clothes, Electronics, Personal Care, Accessories                     |
+| 🏥 صحة           | expense    | Doctor, Pharmacy, Lab, Hospital, Dental, Optical                     |
+| 📚 تعليم         | expense    | School, University, Courses, Books, Tutoring                         |
+| 🎮 ترفيه         | expense    | Cinema, Cafe, Travel, Sports, Gaming, Streaming                      |
+| 📱 اشتراكات      | expense    | Netflix, Spotify, ChatGPT, Google AI, SaaS                           |
+| 🎁 هدايا         | expense    | Birthday, Wedding, Charity, Zakat                                    |
+| 🐾 حيوانات أليفة | expense    | Food, Vet, Accessories                                               |
+| 💼 عمل           | expense    | Office Supplies, Hosting, APIs, SaaS, Coworking                      |
+| 💵 دخل           | income     | Salary, Freelance, Investments, Cashback, Refund, Bonus, Side Hustle |
+| 🏧 مالية         | transfer   | ATM Withdrawal, Transfer, Savings, Debt, Loan                        |
+| 📈 استثمار       | investment | Gold, Stocks, Certificates, Real Estate                              |
 
 ---
 
@@ -116,8 +116,9 @@ flowchart LR
 ```
 
 **أمثلة تُعالج بدون AI:**
+
 - `"أكلت بـ 500"` → أكل وشرب / Restaurant / 500 EGP
-- `"المواصلات 20"` → مواصلات / عام / 20 EGP  
+- `"المواصلات 20"` → مواصلات / عام / 20 EGP
 - `"مرتب 10000"` → دخل / Salary / 10,000 EGP
 - `"بنزين 300"` → مواصلات / Fuel / 300 EGP
 
@@ -166,7 +167,7 @@ flowchart LR
     "amount": number,
     "currency": "EGP",
     "main_category": "string",
-    "sub_category": "string", 
+    "sub_category": "string",
     "confidence": 0-100,
     "needs_review": boolean,
     "merchant": "string|null",
@@ -187,7 +188,7 @@ flowchart TD
     CONF -->|"≥ 85%"| AUTO["✅ Auto Save<br/>حفظ تلقائي فوري"]
     CONF -->|"60-84%"| REVIEW["📋 Review Screen<br/>شاشة مراجعة المستخدم"]
     CONF -->|"< 60%"| CLARIFY["❓ Smart Clarification<br/>سؤال توضيحي ذكي"]
-    
+
     REVIEW -->|"User Confirms"| SAVE["💾 Save + Learn"]
     REVIEW -->|"User Edits"| LEARN["📖 Save + Train Dictionary"]
     CLARIFY -->|"User Answers"| REPARSE["🔄 Re-parse with context"]
@@ -195,12 +196,12 @@ flowchart TD
 
 ### أمثلة التوضيح الذكي
 
-| المستخدم يكتب | النظام يسأل |
-|---|---|
-| `"دفعت لأحمد"` | "هل دي: تحويل؟ دين/سلفة؟ مصروف شخصي؟" |
-| `"حطيت فلوس"` | "هل تقصد: دخل؟ إيداع بنكي؟ تحويل؟" |
-| `"خمسين ولا ستين"` | "المبلغ غير واضح. كم بالظبط؟" |
-| `"حوالي ألف كده"` | "هل المبلغ 1000 جنيه؟" |
+| المستخدم يكتب      | النظام يسأل                           |
+| ------------------ | ------------------------------------- |
+| `"دفعت لأحمد"`     | "هل دي: تحويل؟ دين/سلفة؟ مصروف شخصي؟" |
+| `"حطيت فلوس"`      | "هل تقصد: دخل؟ إيداع بنكي؟ تحويل؟"    |
+| `"خمسين ولا ستين"` | "المبلغ غير واضح. كم بالظبط؟"         |
+| `"حوالي ألف كده"`  | "هل المبلغ 1000 جنيه؟"                |
 
 ---
 
@@ -208,11 +209,11 @@ flowchart TD
 
 ### التحكم من الداشبورد
 
-| الإعداد | Free | Pro | Ultra |
-|---|---|---|---|
+| الإعداد                | Free                   | Pro      | Ultra     |
+| ---------------------- | ---------------------- | -------- | --------- |
 | وقت التسجيل الصوتي/شهر | 5 دقائق (قابل للتعديل) | 30 دقيقة | غير محدود |
-| عدد الطلبات اليومية | 10 | 100 | 500 |
-| حد التوكنز الشهري | 50,000 | 500,000 | 2,000,000 |
+| عدد الطلبات اليومية    | 10                     | 100      | 500       |
+| حد التوكنز الشهري      | 50,000                 | 500,000  | 2,000,000 |
 
 ### Flow عند انتهاء الحد
 
@@ -229,7 +230,7 @@ flowchart LR
 
 ```
 voice_limit_free      = 300     (ثواني = 5 دقائق)
-voice_limit_pro       = 1800    (ثواني = 30 دقيقة)  
+voice_limit_pro       = 1800    (ثواني = 30 دقيقة)
 voice_limit_ultra     = 0       (0 = غير محدود)
 voice_limit_enabled   = true
 ```
@@ -336,40 +337,42 @@ CREATE TABLE voice_usage (
 
 ### ملفات جديدة
 
-| الملف | الوصف |
-|---|---|
-| `api/lib/text-normalizer.ts` | Step 1: تنظيف وتوحيد النص |
-| `api/lib/entity-extractor.ts` | Step 2: استخراج المبلغ والعملة والأشخاص |
-| `api/lib/intent-detector.ts` | Step 3: تحديد نوع المعاملة |
-| `api/lib/rule-engine.ts` | Step 4: محرك القواعد السريع |
-| `api/lib/ai-classifier.ts` | Step 5: طبقة الذكاء الاصطناعي المخصصة |
-| `api/lib/confidence-scorer.ts` | Step 6: نظام تقييم الثقة |
-| `api/lib/classification-pipeline.ts` | الـ Pipeline الكامل (يربط كل الخطوات) |
-| `api/lib/category-registry.ts` | إدارة الفئات والفئات الفرعية |
-| `db/migrations/xxx_classification_system.sql` | Migration للجداول الجديدة |
+| الملف                                         | الوصف                                   |
+| --------------------------------------------- | --------------------------------------- |
+| `api/lib/text-normalizer.ts`                  | Step 1: تنظيف وتوحيد النص               |
+| `api/lib/entity-extractor.ts`                 | Step 2: استخراج المبلغ والعملة والأشخاص |
+| `api/lib/intent-detector.ts`                  | Step 3: تحديد نوع المعاملة              |
+| `api/lib/rule-engine.ts`                      | Step 4: محرك القواعد السريع             |
+| `api/lib/ai-classifier.ts`                    | Step 5: طبقة الذكاء الاصطناعي المخصصة   |
+| `api/lib/confidence-scorer.ts`                | Step 6: نظام تقييم الثقة                |
+| `api/lib/classification-pipeline.ts`          | الـ Pipeline الكامل (يربط كل الخطوات)   |
+| `api/lib/category-registry.ts`                | إدارة الفئات والفئات الفرعية            |
+| `db/migrations/xxx_classification_system.sql` | Migration للجداول الجديدة               |
 
 ### ملفات تُعدّل
 
-| الملف | التعديل |
-|---|---|
-| `api/ai-router.ts` | استبدال `hybridParse` و `aiParse` بالـ Pipeline الجديد |
-| `api/admin-router.ts` | إضافة endpoints للفئات وحدود الصوت وإحصائيات التصنيف |
-| `api/lib/egyptian-dictionary.ts` | تحويل لنظام الفئات الفرعية الجديد |
-| `db/schema.ts` | إضافة الجداول الجديدة |
-| `src/pages/Admin.tsx` | إضافة تاب إعدادات التصنيف وحدود الصوت |
-| `src/components/expenses/ExpenseForm.tsx` | دعم ألوان الدخل/المصروف + التوضيح الذكي |
+| الملف                                     | التعديل                                                |
+| ----------------------------------------- | ------------------------------------------------------ |
+| `api/ai-router.ts`                        | استبدال `hybridParse` و `aiParse` بالـ Pipeline الجديد |
+| `api/admin-router.ts`                     | إضافة endpoints للفئات وحدود الصوت وإحصائيات التصنيف   |
+| `api/lib/egyptian-dictionary.ts`          | تحويل لنظام الفئات الفرعية الجديد                      |
+| `db/schema.ts`                            | إضافة الجداول الجديدة                                  |
+| `src/pages/Admin.tsx`                     | إضافة تاب إعدادات التصنيف وحدود الصوت                  |
+| `src/components/expenses/ExpenseForm.tsx` | دعم ألوان الدخل/المصروف + التوضيح الذكي                |
 
 ---
 
 ## 9️⃣ ترتيب التنفيذ (Implementation Order)
 
 ### المرحلة 1: البنية التحتية 🏗️
+
 1. تحديث `db/schema.ts` بالجداول الجديدة
 2. إنشاء Migration
 3. إنشاء `category-registry.ts` مع كل الفئات والفئات الفرعية
 4. تحديث `egyptian-dictionary.ts` ليدعم الفئات الفرعية
 
 ### المرحلة 2: الـ Pipeline 🔄
+
 5. إنشاء `text-normalizer.ts`
 6. إنشاء `entity-extractor.ts`
 7. إنشاء `intent-detector.ts`
@@ -379,18 +382,21 @@ CREATE TABLE voice_usage (
 11. إنشاء `classification-pipeline.ts` (يربط كل شيء)
 
 ### المرحلة 3: الـ API 🔌
+
 12. تحديث `ai-router.ts` ليستخدم Pipeline الجديد
 13. إضافة endpoints للتوضيح الذكي
 14. إضافة logging لكل عملية تصنيف
 15. إضافة voice usage tracking
 
 ### المرحلة 4: الداشبورد 🎛️
+
 16. إضافة إعدادات حدود الصوت في `admin-router.ts`
 17. إضافة إدارة الفئات في الداشبورد
 18. إضافة إحصائيات التصنيف
 19. تحديث `Admin.tsx` بالأقسام الجديدة
 
 ### المرحلة 5: الفرونت إند 🎨
+
 20. تحديث `ExpenseForm.tsx` بألوان الدخل/المصروف/التحويل
 21. إضافة شاشة التوضيح الذكي
 22. إضافة مؤشر الثقة في شاشة المراجعة

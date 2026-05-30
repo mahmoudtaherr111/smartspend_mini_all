@@ -2,7 +2,7 @@ import { z } from "zod";
 import { router, authedProcedure } from "./middleware";
 import { db } from "./queries/connection";
 import { userWallets, expenses } from "../db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, or, like, sql } from "drizzle-orm";
 
 export const walletRouter = router({
   getWallets: authedProcedure.query(async ({ ctx }) => {
@@ -12,8 +12,8 @@ export const walletRouter = router({
       .where(
         and(
           eq(userWallets.userId, ctx.user.id as number),
-          eq(userWallets.userType, ctx.user.type)
-        )
+          eq(userWallets.userType, ctx.user.type),
+        ),
       )
       .orderBy(userWallets.createdAt);
   }),
@@ -29,8 +29,8 @@ export const walletRouter = router({
           and(
             eq(userWallets.id, input.walletId),
             eq(userWallets.userId, ctx.user.id as number),
-            eq(userWallets.userType, ctx.user.type)
-          )
+            eq(userWallets.userType, ctx.user.type),
+          ),
         )
         .limit(1);
 
@@ -38,48 +38,31 @@ export const walletRouter = router({
         return [];
       }
 
-      // 2. Fetch all expenses for the user (recent 200)
-      const userExpenses = await db
+      const qProvider = `%${wallet.provider}%`;
+      const qName = `%${wallet.name}%`;
+
+      const conditions = or(
+        eq(expenses.paymentMethod, wallet.name),
+        eq(expenses.paymentMethod, wallet.provider),
+        like(sql`LOWER(${expenses.parsedMetadata})`, qProvider.toLowerCase()),
+        like(sql`LOWER(${expenses.description})`, qProvider.toLowerCase()),
+        like(sql`LOWER(${expenses.description})`, qName.toLowerCase()),
+        like(sql`LOWER(${expenses.rawText})`, qProvider.toLowerCase()),
+        like(sql`LOWER(${expenses.rawText})`, qName.toLowerCase())
+      );
+
+      const filtered = await db
         .select()
         .from(expenses)
         .where(
           and(
             eq(expenses.userId, ctx.user.id as number),
-            eq(expenses.userType, ctx.user.type)
+            eq(expenses.userType, ctx.user.type),
+            conditions
           )
         )
         .orderBy(desc(expenses.date))
-        .limit(200);
-
-      // 3. Filter expenses in JS to find matching ones
-      const filtered = userExpenses.filter((exp) => {
-        // Match by exact payment method if set
-        if (exp.paymentMethod === wallet.name || exp.paymentMethod === wallet.provider) {
-          return true;
-        }
-        // Match by SMS provider metadata
-        if (exp.parsedMetadata && typeof exp.parsedMetadata === "object") {
-          const meta = exp.parsedMetadata as any;
-          if (meta.provider === wallet.provider) {
-            return true;
-          }
-        }
-        // Fallback: search in description or rawText for provider/name (case-insensitive)
-        const provLower = wallet.provider.toLowerCase();
-        const nameLower = wallet.name.toLowerCase();
-        const descLower = (exp.description || "").toLowerCase();
-        const rawLower = (exp.rawText || "").toLowerCase();
-        if (
-          descLower.includes(provLower) ||
-          descLower.includes(nameLower) ||
-          rawLower.includes(provLower) ||
-          rawLower.includes(nameLower)
-        ) {
-          return true;
-        }
-
-        return false;
-      });
+        .limit(100);
 
       return filtered;
     }),
@@ -91,7 +74,7 @@ export const walletRouter = router({
         provider: z.string().min(1).max(50),
         lastFourDigits: z.string().max(4).optional(),
         balance: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const [insertResult] = await db.insert(userWallets).values({
@@ -112,12 +95,13 @@ export const walletRouter = router({
         name: z.string().min(1).max(100).optional(),
         lastFourDigits: z.string().max(4).optional(),
         balance: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const updateData: any = {};
       if (input.name !== undefined) updateData.name = input.name;
-      if (input.lastFourDigits !== undefined) updateData.lastFourDigits = input.lastFourDigits || null;
+      if (input.lastFourDigits !== undefined)
+        updateData.lastFourDigits = input.lastFourDigits || null;
       if (input.balance !== undefined) updateData.balance = input.balance;
 
       await db
@@ -127,8 +111,8 @@ export const walletRouter = router({
           and(
             eq(userWallets.id, input.id),
             eq(userWallets.userId, ctx.user.id as number),
-            eq(userWallets.userType, ctx.user.type)
-          )
+            eq(userWallets.userType, ctx.user.type),
+          ),
         );
       return { success: true };
     }),
@@ -142,8 +126,8 @@ export const walletRouter = router({
           and(
             eq(userWallets.id, input.id),
             eq(userWallets.userId, ctx.user.id as number),
-            eq(userWallets.userType, ctx.user.type)
-          )
+            eq(userWallets.userType, ctx.user.type),
+          ),
         );
       return { success: true };
     }),

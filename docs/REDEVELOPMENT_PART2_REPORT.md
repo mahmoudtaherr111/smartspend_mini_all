@@ -6,28 +6,28 @@
 
 ## Status
 
-| Area | Status |
-|------|--------|
-| Pro AI routing (95% trivial rule only) | Done |
-| `ai-classifier-pro.ts` | Done |
-| Token spike caps + burst guard | Done |
-| Pro monthly report engine | Done |
-| Goals Free vs Pro | Done |
-| Image / receipt (Pro) | Done |
-| Frontend (Goals, Receipt, Export) | Done |
-| Part 3 Dashboard | Not started |
+| Area                                   | Status      |
+| -------------------------------------- | ----------- |
+| Pro AI routing (95% trivial rule only) | Done        |
+| `ai-classifier-pro.ts`                 | Done        |
+| Token spike caps + burst guard         | Done        |
+| Pro monthly report engine              | Done        |
+| Goals Free vs Pro                      | Done        |
+| Image / receipt (Pro)                  | Done        |
+| Frontend (Goals, Receipt, Export)      | Done        |
+| Part 3 Dashboard                       | Not started |
 
 ## Architecture
 
 ### Pro vs Free separation
 
-| Layer | Free | Pro / Ultra |
-|-------|------|-------------|
-| Routing | Rule → embedding → AI last | **AI-primary**; rule only if all items ≥ **95%** confidence |
-| Classifier | `aiClassify()` compact | `aiClassifyPro()` full taxonomy + profile |
-| Embedding shortcut | Yes (cost save) | **Disabled** |
-| Dispute resolution | Off | On |
-| Max output (parse) | 384 | 2048 (Pro), 3072 (Ultra) |
+| Layer              | Free                       | Pro / Ultra                                                 |
+| ------------------ | -------------------------- | ----------------------------------------------------------- |
+| Routing            | Rule → embedding → AI last | **AI-primary**; rule only if all items ≥ **95%** confidence |
+| Classifier         | `aiClassify()` compact     | `aiClassifyPro()` full taxonomy + profile                   |
+| Embedding shortcut | Yes (cost save)            | **Disabled**                                                |
+| Dispute resolution | Off                        | On                                                          |
+| Max output (parse) | 384                        | 2048 (Pro), 3072 (Ultra)                                    |
 
 ### Token protection (`ai-usage-policy.ts`)
 
@@ -55,19 +55,19 @@
 
 ## Key files
 
-| Path | Purpose |
-|------|---------|
-| `api/lib/ai-classifier-pro.ts` | Pro classification |
-| `api/lib/ai-routing.ts` | Pro AI-primary routing |
-| `api/lib/ai-usage-policy.ts` | Spike + burst limits |
-| `api/services/pro-report-engine.ts` | Pro report prompts + HTML export |
-| `api/goals-router.ts` | Goals API |
-| `api/image-router.ts` | Receipt image API |
-| `api/lib/receipt-image-parser.ts` | OCR heuristics + vision |
-| `db/schema.ts` | `financial_goals` table |
-| `src/components/goals/FinancialGoalsPanel.tsx` | Goals UI |
-| `src/components/expenses/ReceiptCapture.tsx` | Camera UI (Pro) |
-| `src/components/insights/AIInsights.tsx` | Pro HTML export button |
+| Path                                           | Purpose                          |
+| ---------------------------------------------- | -------------------------------- |
+| `api/lib/ai-classifier-pro.ts`                 | Pro classification               |
+| `api/lib/ai-routing.ts`                        | Pro AI-primary routing           |
+| `api/lib/ai-usage-policy.ts`                   | Spike + burst limits             |
+| `api/services/pro-report-engine.ts`            | Pro report prompts + HTML export |
+| `api/goals-router.ts`                          | Goals API                        |
+| `api/image-router.ts`                          | Receipt image API                |
+| `api/lib/receipt-image-parser.ts`              | OCR heuristics + vision          |
+| `db/schema.ts`                                 | `financial_goals` table          |
+| `src/components/goals/FinancialGoalsPanel.tsx` | Goals UI                         |
+| `src/components/expenses/ReceiptCapture.tsx`   | Camera UI (Pro)                  |
+| `src/components/insights/AIInsights.tsx`       | Pro HTML export button           |
 
 ## Tests
 
@@ -87,12 +87,12 @@ Prior session: **38 passed**; expect **40+** after Part 2 tests.
 
 ## Token benchmarks (estimated)
 
-| Channel | Free | Pro |
-|---------|------|-----|
-| Parse (~100 words) | 800–1500 | 2500–4500 (richer context) |
-| Monthly report | 1200–2000 | 3500–6000 |
-| Receipt image | N/A | 800–2000 (vision + pipeline) |
-| Goal analyze | N/A | 1200–2500 |
+| Channel            | Free      | Pro                          |
+| ------------------ | --------- | ---------------------------- |
+| Parse (~100 words) | 800–1500  | 2500–4500 (richer context)   |
+| Monthly report     | 1200–2000 | 3500–6000                    |
+| Receipt image      | N/A       | 800–2000 (vision + pipeline) |
+| Goal analyze       | N/A       | 1200–2500                    |
 
 ## Manual verification
 

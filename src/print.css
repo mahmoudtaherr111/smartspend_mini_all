@@ -1,5 +1,6 @@
 @media print {
-  .no-print, .no-print * {
+  .no-print,
+  .no-print * {
     display: none !important;
   }
   body {
@@ -18,7 +19,8 @@
   table {
     font-size: 12px;
   }
-  th, td {
+  th,
+  td {
     border: 1px solid #ddd;
     padding: 8px;
   }

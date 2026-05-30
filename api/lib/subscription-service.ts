@@ -1,5 +1,10 @@
 import { db } from "../queries/connection";
-import { users, localUsers, proSubscriptions, userAnalytics } from "../../db/schema";
+import {
+  users,
+  localUsers,
+  proSubscriptions,
+  userAnalytics,
+} from "../../db/schema";
 import { eq } from "drizzle-orm";
 
 export type BillingPlan = "pro_monthly" | "pro_yearly";

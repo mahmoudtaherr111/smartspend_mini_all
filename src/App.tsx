@@ -1,11 +1,20 @@
 import React, { Suspense, lazy, useState } from "react";
 import { ThemeProvider } from "next-themes";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { trpc, trpcClient } from "@/providers/trpc";
 import { Toaster } from "@/components/ui/sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { PageTransition } from "@/components/layout/PageTransition";
 import { Sidebar } from "@/components/Sidebar";
+import { useHaptics } from "@/hooks/useHaptics";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { useSessionTracker } from "@/hooks/useSessionTracker";
 import { cn } from "@/lib/utils";
@@ -14,6 +23,7 @@ import { UltraFeatureRoute } from "@/components/routing/PlanGates";
 import { FeedbackButton } from "@/components/FeedbackButton";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { PwaEnhancements } from "@/components/pwa/PwaEnhancements";
+import { PullToRefreshWrapper } from "@/components/pwa/PullToRefreshWrapper";
 
 import "./3d-effects.css";
 import "./print.css";
@@ -47,7 +57,10 @@ function HomeEntry() {
   const { user, isLoading } = useAuth();
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background" dir="rtl">
+      <div
+        className="flex items-center justify-center min-h-screen bg-background"
+        dir="rtl"
+      >
         جاري التحميل...
       </div>
     );
@@ -75,89 +88,127 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth();
+  if (isLoading) return <PageLoadingSkeleton />;
+  if (user) return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
+}
+
 function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useAuth();
+  const { lightTap, mediumTap } = useHaptics();
+  const scrollRef = React.useRef<HTMLDivElement>(null);
 
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const touchStart = React.useRef<number | null>(null);
+  const touchEnd = React.useRef<number | null>(null);
 
   const minSwipeDistance = 50;
 
   const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
+    touchEnd.current = null;
+    touchStart.current = e.targetTouches[0].clientX;
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    touchEnd.current = e.targetTouches[0].clientX;
   };
 
   const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
+    if (!touchStart.current || !touchEnd.current) return;
+    const distance = touchStart.current - touchEnd.current;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
-    
+
     // RTL layout: Sidebar is on the right.
     // Swipe left (pulling from right edge) opens it.
     if (isLeftSwipe && !sidebarOpen) {
+      mediumTap();
       setSidebarOpen(true);
     }
     // Swipe right (pushing back to right edge) closes it.
     if (isRightSwipe && sidebarOpen) {
+      lightTap();
       setSidebarOpen(false);
     }
   };
 
   return (
-    <div 
-      className="min-h-dvh min-h-screen bg-background overflow-x-hidden" 
+    <div
+      className="app-shell bg-background relative overflow-hidden"
       dir="rtl"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={handleTouchEnd}
     >
+      {/* Premium Ambient Background Glows */}
+      <div className="absolute top-[-5%] right-[-10%] ambient-glow glow-emerald pointer-events-none" />
+      <div className="absolute bottom-[15%] left-[-15%] ambient-glow glow-indigo pointer-events-none" />
+
       {user && (
         <>
-          <div className="lg:hidden flex items-center justify-between px-4 py-3 pt-safe bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-b border-slate-200 dark:border-white/10 sticky top-0 z-40">
+          <div className="lg:hidden flex items-center justify-between px-4 py-3 pt-safe bg-white/70 dark:bg-slate-950/60 backdrop-blur-xl text-slate-900 dark:text-white border-b border-slate-200/50 dark:border-white/5 shrink-0 z-40">
             <div className="flex items-center gap-2 min-w-0">
-              <img 
-                src={whiteModeLogo} 
-                alt="SmartSpend" 
-                className="h-12 sm:h-14 w-auto object-contain block dark:hidden origin-right"
+              <img
+                src={whiteModeLogo}
+                alt="SmartSpend"
+                className="h-12 sm:h-14 w-auto object-contain block dark:hidden origin-right no-drag pointer-events-none select-none"
               />
-              <img 
-                src={darkModeLogo} 
-                alt="SmartSpend" 
-                className="h-12 sm:h-14 w-auto object-contain hidden dark:block origin-right"
+              <img
+                src={darkModeLogo}
+                alt="SmartSpend"
+                className="h-12 sm:h-14 w-auto object-contain hidden dark:block origin-right no-drag pointer-events-none select-none"
               />
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setSidebarOpen(true)}
+                onClick={() => {
+                  mediumTap();
+                  setSidebarOpen(true);
+                }}
                 className="tap-target p-2.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-colors active-press"
                 aria-label="فتح القائمة"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="4" x2="20" y1="12" y2="12" />
+                  <line x1="4" x2="20" y1="6" y2="6" />
+                  <line x1="4" x2="20" y1="18" y2="18" />
+                </svg>
               </button>
             </div>
           </div>
-          <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
+          <Sidebar
+            isOpen={sidebarOpen}
+            onToggle={() => setSidebarOpen(!sidebarOpen)}
+          />
           <MobileBottomNav onOpenMenu={() => setSidebarOpen(true)} />
           <PwaEnhancements />
         </>
       )}
       <main
+        ref={scrollRef}
         className={cn(
-          "transition-all duration-500",
-          user ? "lg:mr-72 pb-nav-safe lg:pb-0" : ""
+          "app-content hide-scrollbar transition-all duration-500",
+          user ? "lg:mr-72 pb-nav-safe lg:pb-0" : "",
         )}
       >
-        {user && <AdBanner />}
-        {children}
-        {user && <FeedbackButton />}
+        <PullToRefreshWrapper scrollRef={scrollRef}>
+          {user && <AdBanner />}
+          {children}
+          {user && <FeedbackButton />}
+        </PullToRefreshWrapper>
       </main>
     </div>
   );
@@ -188,9 +239,12 @@ class ErrorBoundary extends React.Component<
           dir="rtl"
         >
           <div className="max-w-lg w-full rounded-xl border border-destructive/30 bg-card p-6 shadow-sm space-y-4">
-            <h1 className="text-xl font-bold text-destructive">حصل مشكلة في العرض</h1>
+            <h1 className="text-xl font-bold text-destructive">
+              حصل مشكلة في العرض
+            </h1>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              حصل خطأ غير متوقع. جرّب تعيد تحميل الصفحة. لو المشكلة مستمرة، سجّل الدخول من جديد أو تواصل مع الدعم.
+              حصل خطأ غير متوقع. جرّب تعيد تحميل الصفحة. لو المشكلة مستمرة، سجّل
+              الدخول من جديد أو تواصل مع الدعم.
             </p>
             <pre className="text-xs bg-muted p-3 rounded-lg overflow-auto max-h-40 whitespace-pre-wrap">
               {this.state.error?.message}
@@ -210,6 +264,129 @@ class ErrorBoundary extends React.Component<
   }
 }
 
+function AnimatedRoutes() {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <Routes location={location} key={location.pathname}>
+        <Route
+          path="/"
+          element={
+            <PageTransition>
+              <HomeEntry />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <PublicOnlyRoute>
+              <PageTransition>
+                <Login />
+              </PageTransition>
+            </PublicOnlyRoute>
+          }
+        />
+        <Route
+          path="/auth/callback"
+          element={
+            <PageTransition>
+              <AuthCallback />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/privacy"
+          element={
+            <PageTransition>
+              <Privacy />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/terms"
+          element={
+            <PageTransition>
+              <Terms />
+            </PageTransition>
+          }
+        />
+
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <Home />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/support"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <Support />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <PageTransition>
+                <Admin />
+              </PageTransition>
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/pro"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <Pro />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <Settings />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bank-sync"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <BankSyncPage />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="*"
+          element={
+            <PageTransition>
+              <NotFound />
+            </PageTransition>
+          }
+        />
+      </Routes>
+    </AnimatePresence>
+  );
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
@@ -219,29 +396,7 @@ export default function App() {
             <BrowserRouter>
               <Layout>
                 <Suspense fallback={<PageLoadingSkeleton />}>
-                  <Routes>
-                    <Route path="/" element={<HomeEntry />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/auth/callback" element={<AuthCallback />} />
-                    <Route path="/privacy" element={<Privacy />} />
-                    <Route path="/terms" element={<Terms />} />
-
-                    <Route path="/dashboard" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-                    <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
-                    <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
-                    <Route path="/pro" element={<ProtectedRoute><Pro /></ProtectedRoute>} />
-                    <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                    <Route
-                      path="/bank-sync"
-                      element={
-                        <ProtectedRoute>
-                          <BankSyncPage />
-                        </ProtectedRoute>
-                      }
-                    />
-
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
+                  <AnimatedRoutes />
                 </Suspense>
               </Layout>
               <Toaster position="top-center" richColors className="pt-safe" />

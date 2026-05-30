@@ -28,7 +28,10 @@ export default function AuthCallback() {
   }, [searchParams, navigate]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen" dir="rtl">
+    <div
+      className="flex flex-col items-center justify-center h-screen"
+      dir="rtl"
+    >
       <Loader2 className="w-10 h-10 animate-spin text-emerald-500 mb-4" />
       <p className="text-muted-foreground">جاري تسجيل الدخول...</p>
     </div>

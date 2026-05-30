@@ -16,7 +16,9 @@ describe("Embedding Engine – Complexity Scoring", () => {
   });
 
   it("compound sentence with 'و' should have high complexity", () => {
-    const { score, features } = computeComplexity("أكلت بيتزا بـ 100 وركبت أوبر بـ 50");
+    const { score, features } = computeComplexity(
+      "أكلت بيتزا بـ 100 وركبت أوبر بـ 50",
+    );
     expect(score).toBeGreaterThanOrEqual(35);
     expect(features.hasConjunctions).toBe(true);
     expect(features.amountCount).toBe(2);
@@ -29,7 +31,8 @@ describe("Embedding Engine – Complexity Scoring", () => {
   });
 
   it("very long text should be complex", () => {
-    const longText = "أنا النهاردة صرفت كتير أوي الصبح ركبت أوبر بـ 50 وبعدين أكلت فطار بـ 30 وكمان اشتريت موبايل بـ 5000";
+    const longText =
+      "أنا النهاردة صرفت كتير أوي الصبح ركبت أوبر بـ 50 وبعدين أكلت فطار بـ 30 وكمان اشتريت موبايل بـ 5000";
     const { score } = computeComplexity(longText);
     expect(score).toBeGreaterThanOrEqual(50);
   });

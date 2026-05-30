@@ -7,9 +7,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageCircle, Phone, Mail, Clock, CheckCircle, Send, Headphones } from "lucide-react";
+import {
+  MessageCircle,
+  Phone,
+  Mail,
+  Clock,
+  CheckCircle,
+  Send,
+  Headphones,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export default function Support() {
@@ -51,30 +65,55 @@ export default function Support() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 pb-nav-safe md:p-8 md:pb-8" dir="rtl">
+    <div
+      className="min-h-screen bg-background p-4 pb-nav-safe md:p-8 md:pb-8"
+      dir="rtl"
+    >
       <SEOMeta path="/support" title="مركز الدعم - SmartSpend AI" />
 
       <div className="max-w-4xl mx-auto space-y-6">
         <header className="space-y-2">
           <h1 className="text-2xl sm:text-3xl font-bold">مركز الدعم</h1>
           <p className="text-muted-foreground text-sm sm:text-base">
-            فريقنا يرد خلال <strong>24 ساعة</strong> في أيام العمل. اترك رقم موبايلك للمتابعة السريعة.
+            فريقنا يرد خلال <strong>24 ساعة</strong> في أيام العمل. اترك رقم
+            موبايلك للمتابعة السريعة.
           </p>
         </header>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <ContactCard icon={<Phone className="w-6 h-6" />} title="تليفون" value="0100-123-4567" color="green" />
-          <ContactCard icon={<Mail className="w-6 h-6" />} title="إيميل" value="support@smartspend.app" color="blue" />
-          <ContactCard icon={<Clock className="w-6 h-6" />} title="الرد المتوقع" value="خلال 24 ساعة" color="purple" />
+          <ContactCard
+            icon={<Phone className="w-6 h-6" />}
+            title="تليفون"
+            value="0100-123-4567"
+            color="green"
+          />
+          <ContactCard
+            icon={<Mail className="w-6 h-6" />}
+            title="إيميل"
+            value="support@smartspend.app"
+            color="blue"
+          />
+          <ContactCard
+            icon={<Clock className="w-6 h-6" />}
+            title="الرد المتوقع"
+            value="خلال 24 ساعة"
+            color="purple"
+          />
         </div>
 
         <Tabs defaultValue="new" className="w-full">
           <TabsList className="w-full grid grid-cols-2 h-auto min-h-[44px] p-1">
-            <TabsTrigger value="new" className="tap-target gap-1 text-xs sm:text-sm">
+            <TabsTrigger
+              value="new"
+              className="tap-target gap-1 text-xs sm:text-sm"
+            >
               <Send className="w-4 h-4 shrink-0" />
               تذكرة جديدة
             </TabsTrigger>
-            <TabsTrigger value="history" className="tap-target gap-1 text-xs sm:text-sm">
+            <TabsTrigger
+              value="history"
+              className="tap-target gap-1 text-xs sm:text-sm"
+            >
               <MessageCircle className="w-4 h-4 shrink-0" />
               تذاكري
             </TabsTrigger>
@@ -91,11 +130,15 @@ export default function Support() {
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="rounded-lg border border-emerald-200 bg-emerald-50/80 dark:bg-emerald-950/20 dark:border-emerald-900 px-3 py-2.5 text-sm text-emerald-900 dark:text-emerald-100">
-                    سنرد على تذكرتك خلال <strong>24 ساعة</strong> عبر الموبايل أو الإيميل إن وُجد.
+                    سنرد على تذكرتك خلال <strong>24 ساعة</strong> عبر الموبايل
+                    أو الإيميل إن وُجد.
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium mb-2 block" htmlFor="support-phone">
+                    <label
+                      className="text-sm font-medium mb-2 block"
+                      htmlFor="support-phone"
+                    >
                       رقم الموبايل <span className="text-destructive">*</span>
                     </label>
                     <Input
@@ -112,7 +155,10 @@ export default function Support() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium mb-2 block" htmlFor="support-email">
+                    <label
+                      className="text-sm font-medium mb-2 block"
+                      htmlFor="support-email"
+                    >
                       البريد الإلكتروني (اختياري)
                     </label>
                     <Input
@@ -128,7 +174,10 @@ export default function Support() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium mb-2 block" htmlFor="support-subject">
+                    <label
+                      className="text-sm font-medium mb-2 block"
+                      htmlFor="support-subject"
+                    >
                       الموضوع
                     </label>
                     <Input
@@ -142,7 +191,9 @@ export default function Support() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium mb-2 block">الأولوية</label>
+                    <label className="text-sm font-medium mb-2 block">
+                      الأولوية
+                    </label>
                     <Select value={priority} onValueChange={setPriority}>
                       <SelectTrigger className="min-h-[44px]">
                         <SelectValue />
@@ -157,7 +208,10 @@ export default function Support() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium mb-2 block" htmlFor="support-message">
+                    <label
+                      className="text-sm font-medium mb-2 block"
+                      htmlFor="support-message"
+                    >
                       الرسالة
                     </label>
                     <Textarea
@@ -176,7 +230,9 @@ export default function Support() {
                     className="w-full min-h-[48px] text-base active-press"
                     disabled={createTicket.isPending}
                   >
-                    {createTicket.isPending ? "جاري الإرسال..." : "إرسال التذكرة"}
+                    {createTicket.isPending
+                      ? "جاري الإرسال..."
+                      : "إرسال التذكرة"}
                   </Button>
                 </form>
               </CardContent>
@@ -186,7 +242,9 @@ export default function Support() {
           <TabsContent value="history" className="mt-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base sm:text-lg">تذاكري السابقة</CardTitle>
+                <CardTitle className="text-base sm:text-lg">
+                  تذاكري السابقة
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -199,10 +257,16 @@ export default function Support() {
                   {myTickets.data?.map((t) => (
                     <div key={t.id} className="border rounded-xl p-4 space-y-2">
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <h4 className="font-bold text-sm sm:text-base break-words">{t.subject}</h4>
+                        <h4 className="font-bold text-sm sm:text-base break-words">
+                          {t.subject}
+                        </h4>
                         <Badge
                           variant={
-                            t.status === "open" ? "default" : t.status === "resolved" ? "secondary" : "outline"
+                            t.status === "open"
+                              ? "default"
+                              : t.status === "resolved"
+                                ? "secondary"
+                                : "outline"
                           }
                           className="w-fit"
                         >
@@ -215,18 +279,24 @@ export default function Support() {
                                 : "قيد التنفيذ"}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{t.message}</p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
+                        {t.message}
+                      </p>
                       {t.response && (
                         <div className="bg-primary/5 rounded-lg p-3">
                           <div className="flex items-center gap-2 mb-1">
                             <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                            <span className="text-xs font-bold text-primary">رد الدعم</span>
+                            <span className="text-xs font-bold text-primary">
+                              رد الدعم
+                            </span>
                           </div>
                           <p className="text-sm break-words">{t.response}</p>
                         </div>
                       )}
                       <p className="text-xs text-muted-foreground">
-                        {t.createdAt ? new Date(t.createdAt).toLocaleString("ar-EG") : ""}
+                        {t.createdAt
+                          ? new Date(t.createdAt).toLocaleString("ar-EG")
+                          : ""}
                       </p>
                     </div>
                   ))}
@@ -265,7 +335,9 @@ function ContactCard({
           {icon}
         </div>
         <h3 className="font-bold mb-1 text-sm sm:text-base">{title}</h3>
-        <p className="text-xs sm:text-sm text-muted-foreground break-all">{value}</p>
+        <p className="text-xs sm:text-sm text-muted-foreground break-all">
+          {value}
+        </p>
       </CardContent>
     </Card>
   );

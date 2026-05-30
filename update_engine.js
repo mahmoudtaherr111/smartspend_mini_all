@@ -1,6 +1,6 @@
-const fs = require('fs');
-const file = 'e:/smartspend_V1_fixed/api/services/adaptive-question-engine.ts';
-let code = fs.readFileSync(file, 'utf8');
+const fs = require("fs");
+const file = "e:/smartspend_V1_fixed/api/services/adaptive-question-engine.ts";
+let code = fs.readFileSync(file, "utf8");
 
 const newQuestions = `export const ADAPTIVE_ONBOARDING_QUESTIONS: AdaptiveQuestion[] = [
   {
@@ -222,10 +222,12 @@ const newLogic = `export function getNextOnboardingQuestion(
   return null;
 }`;
 
-const re1 = /export const ADAPTIVE_ONBOARDING_QUESTIONS: AdaptiveQuestion\[\] = \[([\s\S]*?)\];/m;
+const re1 =
+  /export const ADAPTIVE_ONBOARDING_QUESTIONS: AdaptiveQuestion\[\] = \[([\s\S]*?)\];/m;
 code = code.replace(re1, newQuestions);
 
-const re2 = /export function getNextOnboardingQuestion\([\s\S]*?return null;\n\}/m;
+const re2 =
+  /export function getNextOnboardingQuestion\([\s\S]*?return null;\n\}/m;
 code = code.replace(re2, newLogic);
 
 fs.writeFileSync(file, code);

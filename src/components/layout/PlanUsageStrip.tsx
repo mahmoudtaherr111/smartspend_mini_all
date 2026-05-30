@@ -11,9 +11,12 @@ function pct(used: number, limit: number) {
 
 export function PlanUsageStrip({ className }: { className?: string }) {
   const { user } = useAuth();
-  const { data: limits, isLoading } = trpc.ai.getUserLimits.useQuery(undefined, {
-    staleTime: 60_000,
-  });
+  const { data: limits, isLoading } = trpc.ai.getUserLimits.useQuery(
+    undefined,
+    {
+      staleTime: 60_000,
+    },
+  );
 
   if (!user || isLoading || !limits) return null;
 
@@ -34,7 +37,7 @@ export function PlanUsageStrip({ className }: { className?: string }) {
     <div
       className={cn(
         "rounded-xl border bg-white/90 dark:bg-slate-900/90 px-3 py-2.5 shadow-sm flex flex-wrap items-center gap-2 sm:gap-3 text-xs",
-        className
+        className,
       )}
     >
       <span
@@ -42,7 +45,7 @@ export function PlanUsageStrip({ className }: { className?: string }) {
           "inline-flex items-center gap-1 rounded-full px-2 py-1 font-semibold shrink-0 min-h-[28px]",
           user.plan === "free"
             ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
-            : "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+            : "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300",
         )}
       >
         {user.plan !== "free" && <Crown className="w-3.5 h-3.5" />}
@@ -51,14 +54,25 @@ export function PlanUsageStrip({ className }: { className?: string }) {
 
       <div className="flex items-center gap-1.5 min-w-0 flex-1">
         <Sparkles className="w-3.5 h-3.5 shrink-0 text-violet-500" />
-        <span className={cn("truncate", warnAi && "text-amber-700 dark:text-amber-400 font-medium")}>
-          AI اليوم: {limits.ai.used}/{limits.ai.limit === -1 ? "∞" : limits.ai.limit}
+        <span
+          className={cn(
+            "truncate",
+            warnAi && "text-amber-700 dark:text-amber-400 font-medium",
+          )}
+        >
+          AI اليوم: {limits.ai.used}/
+          {limits.ai.limit === -1 ? "∞" : limits.ai.limit}
         </span>
       </div>
 
       <div className="flex items-center gap-1.5 min-w-0">
         <Mic className="w-3.5 h-3.5 shrink-0 text-emerald-500" />
-        <span className={cn("truncate", warnVoice && "text-amber-700 dark:text-amber-400 font-medium")}>
+        <span
+          className={cn(
+            "truncate",
+            warnVoice && "text-amber-700 dark:text-amber-400 font-medium",
+          )}
+        >
           صوت:{" "}
           {limits.voice.remaining === -1
             ? "غير محدود"
