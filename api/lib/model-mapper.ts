@@ -23,6 +23,13 @@ export function mapModelName(modelName: string): string {
     return "gemini-2.5-pro";
   }
 
+  if (/^gemini-3(?:\.\d+)?-flash/.test(normalized)) {
+    return "gemini-2.5-flash";
+  }
+  if (/^gemini-3(?:\.\d+)?-pro/.test(normalized)) {
+    return "gemini-2.5-pro";
+  }
+
   // Pure passthrough: Let the requested model string pass to the API exactly as is.
   return normalized;
 }

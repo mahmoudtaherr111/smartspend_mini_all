@@ -788,6 +788,9 @@ export function runRuleEngine(
       subCategory,
       allContext,
     );
+    const registeredType = CATEGORIES.find(
+      (registeredCategory) => registeredCategory.name_ar === category,
+    )?.type;
 
     items.push(
       applyProfileHints(
@@ -796,7 +799,7 @@ export function runRuleEngine(
           category,
           subCategory: refinedSubCategory,
           description,
-          type: intentResult.intent,
+          type: registeredType || intentResult.intent,
           confidence,
           currency: "EGP",
           needsReview: confidence < 85,

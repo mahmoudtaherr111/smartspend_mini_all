@@ -268,11 +268,17 @@ export default function Home() {
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
                   {pageTitle}
                 </h1>
-                <HealthBadge ratio={
-                  summary?.totalIncome > 0
-                    ? Math.round((summary.totalExpense / summary.totalIncome) * 100)
-                    : null
-                } />
+                <HealthBadge
+                  ratio={
+                    (summary?.totalIncome ?? 0) > 0
+                      ? Math.round(
+                          ((summary?.totalExpense ?? 0) /
+                            (summary?.totalIncome ?? 1)) *
+                            100,
+                        )
+                      : null
+                  }
+                />
               </div>
               <div className="flex items-center gap-3">
                 <StreakCounter

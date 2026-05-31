@@ -3,20 +3,34 @@ import { expenseRouter } from "./expense-router";
 import { db } from "./queries/connection";
 import { expenses } from "../db/schema";
 
-vi.mock("./queries/connection", () => ({
-  db: {
-    select: vi.fn().mockReturnThis(),
-    from: vi.fn().mockReturnThis(),
-    where: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockReturnThis(),
-    offset: vi.fn().mockReturnThis(),
-    orderBy: vi.fn().mockResolvedValue([{ id: 1, amount: "100" }]),
+const { dbMock } = vi.hoisted(() => {
+  const rows = [{ id: 1, amount: "100" }];
+  const countRows = [{ count: 1 }];
+  const mock: any = {
+    select: vi.fn((fields?: Record<string, unknown>) => {
+      const isCountQuery = Boolean(fields?.count);
+      const chain: any = {
+        from: vi.fn(() => chain),
+        where: vi.fn(() => (isCountQuery ? Promise.resolve(countRows) : chain)),
+        orderBy: vi.fn(() => chain),
+        limit: vi.fn(() => chain),
+        offset: vi.fn(() => Promise.resolve(rows)),
+      };
+      return chain;
+    }),
     insert: vi.fn().mockReturnThis(),
     values: vi.fn().mockReturnThis(),
     update: vi.fn().mockReturnThis(),
     set: vi.fn().mockReturnThis(),
     delete: vi.fn().mockReturnThis(),
-  },
+  };
+
+  return { dbMock: mock };
+});
+
+vi.mock("./queries/connection", () => ({
+  db: dbMock,
+  getDb: () => dbMock,
 }));
 
 describe("Expense Router", () => {

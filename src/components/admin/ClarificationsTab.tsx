@@ -59,7 +59,9 @@ export function ClarificationsTab() {
                     <div>
                       <span className="font-bold text-lg">{item.originalText}</span>
                       <p className="text-sm text-slate-500">
-                        {new Date(item.createdAt).toLocaleString("ar-EG")}
+                        {item.createdAt
+                          ? new Date(item.createdAt).toLocaleString("ar-EG")
+                          : "بدون تاريخ"}
                       </p>
                     </div>
                     <Badge variant="outline" className="bg-amber-50 text-amber-700">
@@ -69,14 +71,8 @@ export function ClarificationsTab() {
                   <div className="mb-4">
                     <p className="text-sm">
                       <span className="font-bold">سؤال النظام:</span>{" "}
-                      {item.clarificationQuestion}
+                      {item.question}
                     </p>
-                    {item.userAnswer && (
-                      <p className="text-sm text-indigo-700 dark:text-indigo-400 mt-1">
-                        <span className="font-bold">إجابة المستخدم:</span>{" "}
-                        {item.userAnswer}
-                      </p>
-                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -130,9 +126,7 @@ export function ClarificationsTab() {
                         {item.originalText}
                       </span>
                       <p className="text-xs text-slate-500">
-                        {item.userAnswer
-                          ? `إجابة: ${item.userAnswer}`
-                          : "بدون إجابة"}
+                        {item.question}
                       </p>
                     </div>
                     <Badge

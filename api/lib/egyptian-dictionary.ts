@@ -43,6 +43,8 @@ type CategoryName =
   | "خدمات سيارات"
   | "خروجات"
   | "العائلة"
+  | "أصدقاء"
+  | "موظفين"
   | "متنوعات";
 
 function normKey(input: string): string {

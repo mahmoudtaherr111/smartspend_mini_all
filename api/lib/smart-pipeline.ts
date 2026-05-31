@@ -8,7 +8,9 @@ import { mapModelName } from "./model-mapper";
 import type { ParsedTransaction } from "./rule-engine";
 import { matchArabicPhrase } from "./fuzzy-match";
 import { extractPeople, extractAmounts } from "./entity-extractor";
-import { normalizeRelationship } from "./relationship-normalizer";
+import { decomposeHeuristic, type DecompositionResult } from "./narrative-decomposer";
+import { verifyClassifiedItems } from "./post-classifier-verifier";
+import { cleanPersonName, resolvePersonForTransaction } from "./person-resolver";
 
 export interface PipelineInput {
   text: string;
@@ -25,15 +27,19 @@ export interface PipelineInput {
   skipClarification?: boolean;
   provider?: string;
   groqApiKey?: string;
+  pipelineSettings?: Record<string, string>;
 }
 
 export interface PipelineLog {
-  model: string;
-  promptTokens: number;
-  completionTokens: number;
-  totalTokens: number;
-  latencyMs: number;
-  timestamp: string;
+  originalText?: string;
+  normalizedText?: string;
+  entitiesFound?: Record<string, unknown>;
+  ruleEngineResult?: Record<string, unknown>;
+  embeddingResult?: Record<string, unknown>;
+  aiResult?: Record<string, unknown>;
+  routing?: Record<string, unknown>;
+  finalConfidence?: number;
+  finalDecision?: string;
 }
 
 export interface PipelineResult {
@@ -43,8 +49,19 @@ export interface PipelineResult {
   overallConfidence: number;
   tokensUsed: number;
   parsedBy: string;
-  logs: PipelineLog[];
+  modelUsed: string;
+  processingTimeMs: number;
+  alertMessage?: string;
+  log: PipelineLog;
+  logs?: PipelineLog[];
 }
+
+type KnownPersonContext = {
+  name: string;
+  relationship?: string;
+  category?: string;
+  subCategory?: string;
+};
 
 const SMART_CLASSIFIER_SCHEMA = {
   type: SchemaType.OBJECT,
@@ -142,6 +159,151 @@ function robustJsonParse(text: string): any {
   }
 }
 
+function hasLoanIntent(text: string): boolean {
+  return /(?:سلف|سلفة|سلفه|دين|قرض|استلف|استلفت)/.test(text);
+}
+
+function isDirectedPersonPayment(text: string, candidateName?: string | null): boolean {
+  const compactText = normalizeArabicString(text);
+  const compactName = candidateName ? normalizeArabicString(candidateName) : "";
+  const hasDirectedVerb = /(?:اديت|أديت|عطيت|حولت|بعت|سلفت|دفعتل|دفعتلل)/.test(
+    compactText,
+  );
+  const hasLamName =
+    compactName.length >= 2 &&
+    (compactText.includes(`ل${compactName}`) ||
+      compactText.includes(`لل${compactName}`));
+
+  return hasDirectedVerb || hasLamName;
+}
+
+function shouldResolvePerson(
+  transactionText: string,
+  candidateName: string | null | undefined,
+  category?: string | null,
+): boolean {
+  if (!candidateName) return false;
+  if (["العائلة", "أصدقاء", "موظفين"].includes(String(category || ""))) {
+    return true;
+  }
+  return isDirectedPersonPayment(transactionText, candidateName);
+}
+
+function pickPersonCandidate(
+  preferred: string | null | undefined,
+  transactionText: string,
+  knownNames: string[],
+): string | null {
+  const cleanedPreferred = cleanPersonName(preferred);
+  if (cleanedPreferred) return cleanedPreferred;
+
+  const extracted = extractPeople(transactionText, knownNames)
+    .map((name) => cleanPersonName(name))
+    .find(Boolean);
+  if (extracted) return extracted;
+
+  const directedMatch = transactionText.match(
+    /(?:^|\s)(?:اديت|أديت|عطيت|حولت|بعت|سلفت|دفعتل|دفعت\s+ل)\s+(?:ل|لـ|لل)?\s*([\u0600-\u06FF]{2,})/u,
+  );
+  return cleanPersonName(directedMatch?.[1]);
+}
+
+function applyPersonResolution(
+  item: ParsedTransaction,
+  candidateName: string | null | undefined,
+  transactionText: string,
+  originalText: string,
+  knownPeople: KnownPersonContext[],
+): {
+  item: ParsedTransaction;
+  needsClarification: boolean;
+  clarificationQuestion?: string;
+} {
+  if (!shouldResolvePerson(transactionText, candidateName, item.category)) {
+    return { item, needsClarification: false };
+  }
+
+  const resolution = resolvePersonForTransaction({
+    candidateName,
+    transactionText,
+    originalText,
+    knownPeople,
+  });
+
+  if (!resolution.name) {
+    return { item, needsClarification: false };
+  }
+
+  const next: ParsedTransaction = {
+    ...item,
+    person_mentioned: resolution.name,
+    person_relationship: resolution.relationship || item.person_relationship,
+  };
+
+  if (resolution.needsClarification) {
+    return {
+      item: {
+        ...next,
+        category: "متنوعات",
+        subCategory: "أشخاص",
+        confidence: Math.min(next.confidence, 60),
+        needsReview: true,
+      },
+      needsClarification: true,
+      clarificationQuestion: resolution.clarificationQuestion,
+    };
+  }
+
+  if (resolution.category && resolution.subCategory) {
+    next.category = resolution.category;
+    next.subCategory = resolution.subCategory;
+    if (!hasLoanIntent(transactionText) && ["العائلة", "أصدقاء", "موظفين"].includes(next.category)) {
+      next.type = "expense";
+    }
+    next.confidence = Math.max(next.confidence, resolution.isKnown ? 96 : 90);
+    next.needsReview = false;
+  }
+
+  return { item: next, needsClarification: false };
+}
+
+function buildGlobalVerifierPrompt(
+  originalText: string,
+  decomposition: DecompositionResult | undefined,
+): string {
+  if (!decomposition || decomposition.segments.length <= 1) {
+    return `النص:\n${originalText}`;
+  }
+
+  const segmentLines = decomposition.segments
+    .map(
+      (seg) =>
+        `- [${seg.segmentIndex + 1}] text="${seg.text}" amount=${seg.amount ?? "unknown"} direction=${seg.direction}`,
+    )
+    .join("\n");
+
+  return `النص الأصلي:\n${originalText}\n\nخريطة مبدئية للعمليات والمبالغ، استخدمها لمنع نسيان أي مبلغ أو خلط السياقات:\n${segmentLines}`;
+}
+
+function settingBoolean(
+  settings: Record<string, string>,
+  key: string,
+  fallback: boolean,
+): boolean {
+  const raw = settings[key];
+  if (raw === undefined) return fallback;
+  return ["true", "1", "yes", "on"].includes(String(raw).toLowerCase());
+}
+
+function settingNumber(
+  settings: Record<string, string>,
+  key: string,
+  fallback: number,
+): number {
+  const parsed = Number(settings[key]);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 /**
  * Smart Pipeline (v3) - Hybrid Intelligence
  */
@@ -163,13 +325,67 @@ export async function runSmartPipeline(
   let decision: "auto_save" | "review" | "clarify" | "unknown" = "unknown";
   let firstAlertMessage: string | undefined = undefined;
   let overallConfidence = 100;
-  const knownPeople = input.userProfileContext?.knownPeople || [];
+  const knownPeople: KnownPersonContext[] = Array.isArray(
+    input.userProfileContext?.knownPeople,
+  )
+    ? input.userProfileContext.knownPeople
+    : [];
+  const pipelineSettings = input.pipelineSettings || {};
+  const decompositionEnabled = settingBoolean(
+    pipelineSettings,
+    "parser_fast_decomposition_enabled",
+    true,
+  );
+  const personMemoryEnabled = settingBoolean(
+    pipelineSettings,
+    "parser_person_memory_enabled",
+    true,
+  );
+  const verifierEnabled = settingBoolean(
+    pipelineSettings,
+    "parser_local_verifier_enabled",
+    true,
+  );
+  const autoSaveThreshold = settingNumber(
+    pipelineSettings,
+    "parser_auto_save_threshold",
+    settingNumber(pipelineSettings, "confidence_auto_save", 85),
+  );
+  const reviewThreshold = settingNumber(
+    pipelineSettings,
+    "parser_review_threshold",
+    settingNumber(pipelineSettings, "confidence_review", 60),
+  );
 
   // Helper to count amounts
   const countAmounts = (text: string): number => {
     const digitMatches = text.match(/\d+(?:[.,]\d+)?/g);
-    const textualMatches = text.match(/(?:عشرين|تلاتين|ثلاثين|اربعين|أربعين|خمسين|ستين|سبعين|تمانين|ثمانين|تسعين|ميه|مية|ميتين|ألف|الف|آلاف|تلاف|مليون|جنيه)/g);
-    return (digitMatches ? digitMatches.length : 0) + (textualMatches ? textualMatches.length : 0);
+    const textualAmountWords = new Set([
+      "عشرين",
+      "تلاتين",
+      "ثلاثين",
+      "اربعين",
+      "أربعين",
+      "خمسين",
+      "ستين",
+      "سبعين",
+      "تمانين",
+      "ثمانين",
+      "تسعين",
+      "ميه",
+      "مية",
+      "ميتين",
+      "ألف",
+      "الف",
+      "آلاف",
+      "تلاف",
+      "مليون",
+    ]);
+    const textualMatches = text
+      .split(/\s+/)
+      .map((word) => word.replace(/[^\u0600-\u06FF]/g, ""))
+      .filter((word) => textualAmountWords.has(word));
+    return (digitMatches ? digitMatches.length : 0) + textualMatches.length;
   };
   
   const countWords = (text: string): number => {
@@ -188,13 +404,20 @@ export async function runSmartPipeline(
     if (!hasFinancialKeyword && numWords > 2) {
        return {
           items: [],
-          requiresAI: false,
           overallConfidence: 0,
           clarificationQuestion: "عذراً، لم أتمكن من العثور على معاملة مالية واضحة (مبلغ أو عملية) في كلامك.",
           decision: "clarify",
           tokensUsed: 0,
           parsedBy: "system",
-          logs: [],
+          modelUsed,
+          processingTimeMs: Date.now() - startTime,
+          log: {
+            originalText: input.text,
+            normalizedText,
+            finalConfidence: 0,
+            finalDecision: "clarify",
+            routing: { route: "system_prefilter", reason: "no_amounts_found" },
+          },
        };
     }
   }
@@ -202,21 +425,117 @@ export async function runSmartPipeline(
   // 2. Try Rule Engine for simple cases (1 amount, short sentence)
   let ruleResult: ReturnType<typeof runRuleEngine> | null = null;
   let ruleSucceeded = false;
+  const decomposition: DecompositionResult = decompositionEnabled
+    ? decomposeHeuristic(input.text)
+    : { segments: [], method: "simple", isComplex: false };
+
+  // Fast path for long/multi-transaction narratives: classify each segment locally.
+  // This keeps the common case under a second and reserves the LLM for ambiguity.
+  if (decomposition.segments.length > 1) {
+    const segmentItems: ParsedTransaction[] = [];
+    let canResolveLocally = true;
+    let localClarification: string | undefined;
+    const knownNames = knownPeople.map((p) => p.name).filter(Boolean);
+
+    for (const segment of decomposition.segments) {
+      const segmentText = segment.text.trim();
+      const segmentNormalized = normalizeV2(segmentText).forRules;
+      const segmentRule = runRuleEngine(
+        segmentNormalized,
+        input.userDict,
+        input.userProfileContext,
+      );
+      let bestItem = segmentRule.items[0];
+
+      if (!bestItem) {
+        canResolveLocally = false;
+        break;
+      }
+
+      const candidateName = pickPersonCandidate(
+        bestItem.person_mentioned || segment.personMentioned,
+        segmentText,
+        knownNames,
+      );
+      const personApplied = personMemoryEnabled
+        ? applyPersonResolution(
+            bestItem,
+            candidateName,
+            segmentText,
+            input.text,
+            knownPeople,
+          )
+        : { item: bestItem, needsClarification: false, clarificationQuestion: undefined };
+      bestItem = personApplied.item;
+
+      segmentItems.push(bestItem);
+
+      if (personApplied.needsClarification) {
+        localClarification = personApplied.clarificationQuestion;
+        canResolveLocally = false;
+        break;
+      }
+
+      if (bestItem.confidence < 78 || bestItem.category === "متنوعات") {
+        canResolveLocally = false;
+        break;
+      }
+    }
+
+    if (segmentItems.length > 0 && (canResolveLocally || localClarification)) {
+      finalItems.push(...segmentItems);
+      ruleSucceeded = true;
+      decision = localClarification ? "clarify" : "auto_save";
+      clarificationQuestion = localClarification;
+      overallConfidence = localClarification
+        ? 0
+        : Math.round(
+            segmentItems.reduce((sum, item) => sum + item.confidence, 0) /
+              segmentItems.length,
+          );
+    }
+  }
   
   // Only trust Rule Engine for short phrases (<= 8 words) with max 1 amount
-  if (numAmounts <= 1 && numWords <= 8) {
+  if (!ruleSucceeded && numAmounts <= 1 && numWords <= 8) {
     ruleResult = runRuleEngine(normalizedText, input.userDict, input.userProfileContext);
     
     if (ruleResult.items.length > 0) {
-      const bestItem = ruleResult.items.reduce((prev, current) => 
+      let bestItem = ruleResult.items.reduce((prev, current) => 
         (prev.confidence > current.confidence) ? prev : current
       );
+      const knownNames = knownPeople.map((p) => p.name).filter(Boolean);
+      const candidateName = pickPersonCandidate(
+        bestItem.person_mentioned,
+        input.text,
+        knownNames,
+      );
+      const personApplied = personMemoryEnabled
+        ? applyPersonResolution(
+            bestItem,
+            candidateName,
+            input.text,
+            input.text,
+            knownPeople,
+          )
+        : { item: bestItem, needsClarification: false, clarificationQuestion: undefined };
+      bestItem = personApplied.item;
+
+      if (personApplied.needsClarification) {
+        finalItems.push(bestItem);
+        ruleSucceeded = true;
+        decision = "clarify";
+        clarificationQuestion = personApplied.clarificationQuestion;
+        overallConfidence = 0;
+      }
       
       const isPro = input.userPlan === "pro" || input.userPlan === "ultra";
 
-      if (isPro) {
+      if (ruleSucceeded) {
+        // Person clarification already decided the response.
+      } else if (isPro) {
         // Pro: Must be >= 90 to trust Rule Engine. Otherwise fallback to AI immediately.
-        if (bestItem.confidence >= 90 && bestItem.category !== "متنوعات") {
+        if (bestItem.confidence >= Math.max(autoSaveThreshold, 90) && bestItem.category !== "متنوعات") {
            finalItems.push(bestItem);
            ruleSucceeded = true;
            decision = "auto_save";
@@ -225,12 +544,12 @@ export async function runSmartPipeline(
       } else {
         // Free: >= 83 triggers auto_save. 
         // >= 75 and < 83 triggers a clarification/review prompt instead of AI.
-        if (bestItem.confidence >= 83 && bestItem.category !== "متنوعات") {
+        if (bestItem.confidence >= autoSaveThreshold && bestItem.category !== "متنوعات") {
            finalItems.push(bestItem);
            ruleSucceeded = true;
            decision = "auto_save";
            overallConfidence = bestItem.confidence;
-        } else if (bestItem.confidence >= 75 && bestItem.confidence < 83 && bestItem.category !== "متنوعات") {
+        } else if (bestItem.confidence >= reviewThreshold && bestItem.confidence < autoSaveThreshold && bestItem.category !== "متنوعات") {
            finalItems.push(bestItem);
            ruleSucceeded = true;
            decision = "clarify"; // Force review by user
@@ -246,8 +565,20 @@ export async function runSmartPipeline(
     requiresAI = true;
     
     // Pass the raw text directly to the AI
-    const systemPrompt = buildSmartSystemPrompt(input.text, knownPeople);
+    const systemPrompt = buildSmartSystemPrompt(
+      input.text,
+      knownPeople.map((p) => ({
+        name: p.name,
+        relationship: p.relationship || "شخص معروف",
+        category: p.category || "تحويل",
+        subCategory: p.subCategory || "تحويلات شخصية",
+      })),
+    );
     
+    const classifierUserPrompt = buildGlobalVerifierPrompt(
+      input.text,
+      decomposition,
+    );
     let classItems: any[] = [];
     try {
       if (provider === "groq") {
@@ -255,7 +586,7 @@ export async function runSmartPipeline(
           input.groqApiKey || input.apiKey,
           modelUsed,
           systemPrompt,
-          `النص:\\n${input.text}`,
+          classifierUserPrompt,
           input.maxTokens || 4096
         );
         totalTokens += result.tokensUsed;
@@ -273,7 +604,7 @@ export async function runSmartPipeline(
           },
         });
 
-        const dRes = await geminiModel.generateContent(`النص:\\n${input.text}`);
+        const dRes = await geminiModel.generateContent(classifierUserPrompt);
         totalTokens += dRes.response.usageMetadata?.totalTokenCount || 0;
         const cleanedText = dRes.response.text().replace(/```(?:json)?\s*([\s\S]*?)```/g, "$1").trim();
         classItems = safeExtractItems(JSON.parse(cleanedText));
@@ -299,7 +630,7 @@ export async function runSmartPipeline(
 
         // Process AI results
         for (const item of classItems) {
-            let itemClarify = item.needsClarification;
+            let itemClarify = Boolean(item.needsClarification);
             let itemClarifyQ = item.clarificationQuestion || "ممكن توضح أكتر؟";
             
             // Safety Switch (is_valid_transaction) & Confidence Trap
@@ -328,92 +659,20 @@ export async function runSmartPipeline(
                   }
                }
             }
+            detectedPersonName = pickPersonCandidate(
+              detectedPersonName,
+              item.item_name || item.description || item.name || input.text,
+              allKnownNames,
+            );
 
-            if (detectedPersonName && detectedPersonName !== "") {
-               const pName = detectedPersonName;
-               const hasRel = item.person_relationship && typeof item.person_relationship === "string" && item.person_relationship.trim() !== "";
-               
-               let isKnown = false;
-               for (const knownPerson of knownPeople) {
-                  if (matchArabicPhrase(pName, knownPerson.name) || matchArabicPhrase(knownPerson.name, pName)) {
-                      isKnown = true;
-                      // Fallback: If AI missed the relationship but we know the person, fill it in!
-                      if (!hasRel && knownPerson.subCategory) {
-                          item.person_relationship = knownPerson.subCategory;
-                      }
-                      break;
-                  }
-               }
-               
-               let verifiedRel = hasRel;
-               if (!isKnown && hasRel) {
-                  // Verify if the AI hallucinated the relationship
-                  const relStr = String(item.person_relationship);
-                  const familyKw = ["اخ", "اخت", "اب", "ام", "عم", "خال", "مرات", "زوج", "ابن", "بنت", "عائله", "قريب"];
-                  const friendKw = ["صاحب", "صديق", "زميل", "معرف", "شله"];
-                  const workerKw = ["شغال", "موظف", "صنايعي", "بواب", "عامل", "سواق"];
-                  
-                  let hasEvidence = false;
-                  const textToCheck = normalizeArabicString(input.text);
-                  const normalizedRelStr = normalizeArabicString(relStr);
-                  
-                  if (normalizedRelStr.includes("صديق") || normalizedRelStr.includes("صاحب") || normalizedRelStr.includes("اصدقاء")) {
-                     hasEvidence = friendKw.some(kw => textToCheck.includes(kw));
-                  } else if (normalizedRelStr.includes("عائل") || normalizedRelStr.includes("اخ") || normalizedRelStr.includes("قريب")) {
-                     hasEvidence = familyKw.some(kw => textToCheck.includes(kw));
-                  } else if (normalizedRelStr.includes("موظف") || normalizedRelStr.includes("عامل")) {
-                     hasEvidence = workerKw.some(kw => textToCheck.includes(kw));
-                  } else {
-                     // If it's a generic or unknown relationship, we don't trust it without evidence
-                     hasEvidence = false;
-                  }
-                  
-                  if (!hasEvidence) {
-                     // AI Hallucinated! Neutralize it.
-                     verifiedRel = false;
-                     item.person_relationship = null;
-                     item.main_category = "متنوعات";
-                     item.sub_category = "أشخاص";
-                  }
-               }
-
-               if (!isKnown && !verifiedRel) {
-                 itemClarify = true;
-                 itemClarifyQ = `مين ${pName}؟ (أخوك، صديقك، موظف عندك...)`;
-               }
-            }
-
-            if (itemClarify && !input.skipClarification) {
-                decision = "clarify";
-                clarificationQuestion = itemClarifyQ;
-                overallConfidence = 0;
-            }
-            
             if (item.alertMessage && item.alertMessage.toLowerCase() !== "ok" && !firstAlertMessage) {
                 firstAlertMessage = item.alertMessage;
             }
 
-            // --- DEEP FIX: Force Taxonomy for Human Relationships ---
-            let forcedCategory = item.main_category || item.category || item.mainCategory;
-            let forcedSubCategory = item.sub_category || item.subCategory || item.sub_category;
-
-            const finalRel = item.person_relationship;
-            if (finalRel && typeof finalRel === "string" && finalRel.trim() !== "") {
-                const normRel = normalizeRelationship(finalRel);
-                if (["العائلة", "أصدقاء", "موظفين"].includes(normRel.category)) {
-                    forcedCategory = normRel.category;
-                    forcedSubCategory = normRel.subCategory;
-                    // Reset confidence to a high number if it was low, because we are certain of the person
-                    if ((item.confidence || 0) < 85 && !itemClarify) {
-                        item.confidence = 90;
-                    }
-                }
-            }
-            
-            finalItems.push({
+            let parsedItem: ParsedTransaction = {
                 amount: Number(item.amount) || Number(item.price) || Number(item.value) || 0,
-                category: forcedCategory,
-                subCategory: forcedSubCategory,
+                category: item.main_category || item.category || item.mainCategory || "متنوعات",
+                subCategory: item.sub_category || item.subCategory || "عام",
                 description: item.item_name || item.description || item.name || "عملية",
                 type: item.type === "income" ? "income" : item.type === "transfer" ? "transfer" : item.type === "investment" ? "investment" : "expense",
                 confidence: item.confidence || 0,
@@ -423,7 +682,36 @@ export async function runSmartPipeline(
                 currency: "EGP",
                 person_mentioned: item.person_mentioned,
                 person_relationship: item.person_relationship,
-            });
+            };
+
+            const itemContext = item.item_name || item.description || item.name || input.text;
+            const personApplied = personMemoryEnabled
+              ? applyPersonResolution(
+                  parsedItem,
+                  detectedPersonName || parsedItem.person_mentioned || null,
+                  itemContext,
+                  input.text,
+                  knownPeople,
+                )
+              : {
+                  item: parsedItem,
+                  needsClarification: false,
+                  clarificationQuestion: undefined,
+                };
+            parsedItem = personApplied.item;
+
+            if (personApplied.needsClarification) {
+              itemClarify = true;
+              itemClarifyQ = personApplied.clarificationQuestion || itemClarifyQ;
+            }
+
+            if (itemClarify && !input.skipClarification) {
+                decision = "clarify";
+                clarificationQuestion = itemClarifyQ;
+                overallConfidence = 0;
+            }
+
+            finalItems.push(parsedItem);
         }
       }
     } catch (err) {
@@ -472,20 +760,56 @@ export async function runSmartPipeline(
       }
   }
 
-  // Normalize Taxonomy
+  // Normalize taxonomy, then run the local verifier as the final gate before saving/review.
   const normalizedFinalItems = normalizeTransactionTaxonomyList(finalItems, input.text);
+  const verification = verifierEnabled
+    ? verifyClassifiedItems(
+        normalizedFinalItems,
+        input.text,
+        input.monthlyContext
+          ? {
+              totalIncome: Number(input.monthlyContext.totalIncome || 0),
+              totalExpense: Number(input.monthlyContext.totalExpense || 0),
+            }
+          : undefined,
+      )
+    : {
+        items: normalizedFinalItems,
+        flags: [],
+        overallConfidence:
+          normalizedFinalItems.length > 0
+            ? Math.round(
+                normalizedFinalItems.reduce(
+                  (sum, item) => sum + item.confidence,
+                  0,
+                ) / normalizedFinalItems.length,
+              )
+            : 0,
+      };
+  const verifiedFinalItems = verification.items;
+  const hasVerifierErrors = verification.flags.some(
+    (flag) => flag.severity === "error",
+  );
+  const hasVerifierWarnings = verification.flags.some(
+    (flag) => flag.severity === "warning",
+  );
 
   if (decision === "unknown") {
-      if (normalizedFinalItems.length > 0) {
-          overallConfidence = Math.round(
-            normalizedFinalItems.reduce((acc, curr) => acc + curr.confidence, 0) /
-              normalizedFinalItems.length
-          );
-          decision = overallConfidence >= 85 ? "auto_save" : "review";
+      if (verifiedFinalItems.length > 0) {
+          overallConfidence = verification.overallConfidence;
+          decision =
+            overallConfidence >= autoSaveThreshold && !hasVerifierErrors && !hasVerifierWarnings
+              ? "auto_save"
+              : "review";
       } else {
           decision = "clarify";
           clarificationQuestion = "عذراً، لم أتمكن من استخراج عملية مالية واضحة. ممكن توضح؟";
           overallConfidence = 0;
+      }
+  } else if (decision === "auto_save") {
+      overallConfidence = verification.overallConfidence || overallConfidence;
+      if (hasVerifierErrors || hasVerifierWarnings || overallConfidence < autoSaveThreshold) {
+          decision = "review";
       }
   }
 
@@ -493,8 +817,10 @@ export async function runSmartPipeline(
     originalText: input.text,
     normalizedText: normalizedText,
     entitiesFound: {
-      amountCount: normalizedFinalItems.length,
-      people: [],
+      amountCount: verifiedFinalItems.length,
+      people: verifiedFinalItems
+        .map((item) => item.person_mentioned)
+        .filter(Boolean),
       merchants: [],
     },
     ruleEngineResult: {
@@ -509,17 +835,29 @@ export async function runSmartPipeline(
     },
     aiResult: {
       attempted: requiresAI,
-      succeeded: normalizedFinalItems.length > 0,
+      succeeded: verifiedFinalItems.length > 0,
       modelUsed,
       routeReason: "smart_pipeline_fallback",
     },
-    routing: { route: "smart_hybrid", reason: "v3_architecture" },
+    routing: {
+      route: "smart_hybrid",
+      reason: "v3_architecture",
+      segmentCount: decomposition.segments.length,
+      verifierFlags: verification.flags,
+      settings: {
+        decompositionEnabled,
+        personMemoryEnabled,
+        verifierEnabled,
+        autoSaveThreshold,
+        reviewThreshold,
+      },
+    },
     finalConfidence: overallConfidence,
     finalDecision: decision,
   };
 
   return {
-    items: normalizedFinalItems,
+    items: verifiedFinalItems,
     parsedBy: requiresAI ? "hybrid" : "rule_engine",
     modelUsed,
     overallConfidence,

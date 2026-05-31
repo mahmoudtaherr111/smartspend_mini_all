@@ -286,6 +286,14 @@ export function detectIntent(context: string): IntentResult {
     incomeScore += 60;
     expenseScore -= 40;
   }
+  if (/(?:دخلت|دخلنا)\s+(?:سينما|فيلم|ملاهي|حفله|حفلة|متحف)/.test(normContext)) {
+    expenseScore += 80;
+    incomeScore -= 50;
+  }
+  if (/(?:هديه|هدية)\s+(?:عيد|ميلاد|فرح|خطوبه|خطوبة)/.test(normContext)) {
+    expenseScore += 70;
+    incomeScore -= 50;
+  }
 
   // Determine winner
   const scores = {

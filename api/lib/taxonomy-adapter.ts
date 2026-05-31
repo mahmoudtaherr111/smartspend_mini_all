@@ -1,5 +1,6 @@
 import {
   CATEGORIES,
+  comparableArabic,
   normalizeCategoryName,
   normalizeSubCategoryName,
 } from "./category-registry";
@@ -258,6 +259,11 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
     subCategory: "صيدلية",
     confidence: 98,
   },
+  "ادويه من الصيدليه": {
+    category: "صحة",
+    subCategory: "صيدلية",
+    confidence: 98,
+  },
   "تحليل دم": { category: "صحة", subCategory: "تحاليل", confidence: 98 },
   "كشف سنان": { category: "صحة", subCategory: "أسنان", confidence: 98 },
 
@@ -412,11 +418,12 @@ export function toBackwardCompatibleCategory(category: string): string {
 
 export function findTaxonomyMatch(text: string): TaxonomyMatch | null {
   const normalized = text.trim().toLowerCase();
+  const comparable = comparableArabic(normalized);
   if (!normalized) return null;
 
   let best: TaxonomyMatch | null = null;
   for (const [phrase, entry] of Object.entries(SYNONYM_GRAPH)) {
-    if (!normalized.includes(phrase.toLowerCase())) continue;
+    if (!comparable.includes(comparableArabic(phrase))) continue;
     const candidate: TaxonomyMatch = {
       category: toBackwardCompatibleCategory(entry.category),
       subCategory: "",
