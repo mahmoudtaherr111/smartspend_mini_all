@@ -19,9 +19,10 @@ const envSchema = z.object({
   GEMINI_MODEL_FREE: z.string().default("gemini-2.0-flash"),
   GEMINI_MODEL_PRO: z.string().default("gemini-2.5-flash"),
   GEMINI_MODEL_REPORTS: z.string().default("gemini-2.5-pro"),
+  GROQ_API_KEY: z.string().optional(),
 
   // App
-  NODE_ENV: z.enum(["development", "production"]).default("development"),
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.string().default("3000"),
   APP_URL: z.string().default("http://localhost:5173"),
   // FRONTEND_URL: when frontend is deployed separately (e.g. https://app.smartspend.app)
@@ -39,6 +40,8 @@ const envSchema = z.object({
   /** When "true", allows demo transaction ids in `pro.upgrade` (never enable in production). */
   BILLING_SIMULATE: z.enum(["true", "false"]).optional(),
   TRUST_PROXY: z.string().optional(),
+  REDIS_URL: z.string().optional(),
+  SENTRY_DSN: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

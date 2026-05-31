@@ -639,6 +639,12 @@ export const adminRouter = router({
       // ── Confidence Thresholds ──
       confidence_auto_save: "85",
       confidence_review: "60",
+      // ── Parser Accuracy Engine ──
+      parser_fast_decomposition_enabled: "true",
+      parser_person_memory_enabled: "true",
+      parser_local_verifier_enabled: "true",
+      parser_auto_save_threshold: "85",
+      parser_review_threshold: "60",
       // ── AI Response / Prompt Settings ──
       ai_response_length: "medium",
       ai_focus: "balanced",
@@ -1349,7 +1355,7 @@ export const adminRouter = router({
   resolveClarification: adminProcedure
     .input(z.object({ id: z.number(), status: z.enum(["resolved", "ignored"]) }))
     .mutation(async ({ input }) => {
-      await db.update(pendingClarifications).set({ status: input.status, updatedAt: new Date() }).where(eq(pendingClarifications.id, input.id));
+      await db.update(pendingClarifications).set({ status: input.status }).where(eq(pendingClarifications.id, input.id));
       return { success: true };
     }),
 

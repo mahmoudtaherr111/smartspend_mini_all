@@ -9,6 +9,7 @@ import {
   localUsers,
   classificationLogs,
   pendingClarifications,
+  systemSettings,
 } from "../db/schema";
 import { parseNameAndRelationship } from "./lib/relationship-normalizer";
 import { eq, and, gte, lte, desc, sql, lt } from "drizzle-orm";
@@ -1126,26 +1127,26 @@ export const expenseRouter = router({
         throw new Error("Clarification not found");
       }
 
-      // Mark as resolved
-      await db
-        .update(pendingClarifications)
-        .set({ status: "resolved" })
-        .where(eq(pendingClarifications.id, input.clarificationId));
-
       // Re-run the classification pipeline with the full context (Original Text + User Answer)
+      let savedCount = 0;
       try {
         const { runSmartPipeline } = await import("./lib/smart-pipeline");
-        const { env } = await import("./env");
+        const { env } = await import("./lib/env");
         const { getSmartProfile, summarizeProfileForAI } = await import("./services/user-profile-service");
         const { buildPersonalContext, buildPersonalContextPrompt } = await import("./services/personal-context-builder");
 
         const enrichedText = clarification.originalText + " التوضيح: " + input.answer;
         
-        const [userDictRows, smartProfile] = await Promise.all([
+        const [userDictRows, smartProfile, settingRows] = await Promise.all([
           db.select().from(userDictionaries)
             .where(and(eq(userDictionaries.userId, userId), eq(userDictionaries.userType, userType))),
-          getSmartProfile(userId as number, userType as string)
+          getSmartProfile(userId as number, userType as string),
+          db.select().from(systemSettings),
         ]);
+        const cfg: Record<string, string> = {};
+        settingRows.forEach((s) => {
+          if (s.value) cfg[s.key] = s.value;
+        });
 
         const userDict = userDictRows.map((row) => ({ word: row.word, category: row.category, subCategory: row.subCategory ?? undefined }));
         const personalContextRaw = buildPersonalContext(smartProfile);
@@ -1180,10 +1181,22 @@ export const expenseRouter = router({
             hasDebt: Boolean((smartProfile.financialInfo as any)?.hasDebt),
             knownPeople: personalContextRaw.knownPeople,
           },
+          pipelineSettings: cfg,
         });
         
+        if (
+          !pipeline.items ||
+          pipeline.items.length === 0 ||
+          pipeline.decision === "clarify" ||
+          pipeline.overallConfidence < 70
+        ) {
+          throw new Error(
+            pipeline.clarificationQuestion ||
+              "التوضيح لسه مش كافي لتسجيل العملية بدقة.",
+          );
+        }
+
         if (pipeline.items && pipeline.items.length > 0) {
-          const dateStr = new Date().toISOString().split("T")[0];
           for (const item of pipeline.items) {
              await db.insert(expenses).values({
                userId: userId as number,
@@ -1193,7 +1206,7 @@ export const expenseRouter = router({
                category: item.category,
                subCategory: item.subCategory,
                type: item.type,
-               date: dateStr,
+               date: new Date(),
                source: "manual",
                rawText: enrichedText,
              });
@@ -1212,13 +1225,24 @@ export const expenseRouter = router({
                  );
                }
              }
+             savedCount += 1;
           }
           await invalidateExpenseCache(userId as number, userType as string);
         }
+
+        await db
+          .update(pendingClarifications)
+          .set({ status: "resolved" })
+          .where(eq(pendingClarifications.id, input.clarificationId));
       } catch (err) {
         console.error("Failed to re-run pipeline on clarification answer:", err);
+        throw new Error(
+          err instanceof Error
+            ? err.message
+            : "تعذر حفظ التوضيح. جرّب توضيح العلاقة بشكل أبسط.",
+        );
       }
 
-      return { success: true };
+      return { success: true, savedCount };
     }),
 });

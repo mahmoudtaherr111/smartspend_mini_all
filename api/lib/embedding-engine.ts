@@ -13,7 +13,6 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { CATEGORIES, type MainCategory } from "./category-registry";
 import type { PlanId } from "./ai-usage-policy";
 import { getRedisClient } from "./redis-client";
-import { SchemaFieldTypes, VectorAlgorithms } from "redis";
 
 // ─────────────────────────────────────────────────
 //  Types

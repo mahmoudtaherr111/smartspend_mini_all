@@ -66,6 +66,15 @@ const EXPENSE_VERBS = [
   "عزمت",
   "اديت",
   "أديت",
+  "دخلت",
+  "كشف",
+  "فاتورة",
+  "مصاريف",
+  "هدية",
+  "هديه",
+  "صدقة",
+  "علبة",
+  "علبه",
   "وزعت",
   "جددت",
   "دفعنا",
@@ -141,7 +150,7 @@ const PERSON_PATTERNS = [
   // Service people
   /(?:البواب|الشغال(?:ه|ة)|السواق|السائق|الفراش|الحارس)/,
   // Named people (generic Arabic name pattern after financial verb)
-  /(?:ل|لـ)\s*([\u0600-\u06FF]{2,})/,
+  /(?:^|\s)(?:ل|لـ)\s*([\u0600-\u06FF]{2,})/,
 ];
 
 // ─── Narrative Connectors ──────────────────────────────────────────
@@ -230,7 +239,7 @@ function detectSegmentDirection(
 function detectPerson(text: string): string | null {
   for (const pattern of PERSON_PATTERNS) {
     const match = text.match(pattern);
-    if (match) return match[0];
+    if (match) return match[1] || match[0].trim();
   }
   return null;
 }

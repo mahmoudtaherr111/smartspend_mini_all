@@ -629,11 +629,12 @@ export const aiRouter = router({
         getSmartProfile(ctx.user.id, ctx.user.type)
       ]);
 
+      const cfgFull: Record<string, string> = {};
+      settings.forEach((s) => {
+        if (s.value) cfgFull[s.key] = s.value;
+      });
+
       try {
-        const cfgFull: Record<string, string> = {};
-        settings.forEach((s) => {
-          if (s.value) cfgFull[s.key] = s.value;
-        });
         const routing = await resolveRoutingConfig(
           ctx.user.plan,
           budget.used,
@@ -701,6 +702,7 @@ export const aiRouter = router({
         // Dynamic routing
         provider: resolvedProvider,
         groqApiKey: resolvedGroqKey,
+        pipelineSettings: cfgFull,
       });
 
       // Track tokens
@@ -785,17 +787,42 @@ export const aiRouter = router({
         })
         .catch(() => {});
 
+      let clarificationId: number | undefined;
       if (result.decision === "clarify") {
-        await db.insert(pendingClarifications).values({
-          userId: ctx.user.id,
-          userType: ctx.user.type,
-          question: result.clarificationQuestion || "ممكن توضح أكتر؟",
-          originalText: input.text,
-          status: "pending"
-        }).catch(() => {});
+        try {
+          await db.insert(pendingClarifications).values({
+            userId: ctx.user.id,
+            userType: ctx.user.type,
+            question: result.clarificationQuestion || "ممكن توضح أكتر؟",
+            originalText: input.text,
+            status: "pending",
+            contextData: {
+              items: result.items,
+              decision: result.decision,
+              confidence: result.overallConfidence,
+              log: result.log,
+            },
+          });
+          const [pending] = await db
+            .select({ id: pendingClarifications.id })
+            .from(pendingClarifications)
+            .where(
+              and(
+                eq(pendingClarifications.userId, ctx.user.id),
+                eq(pendingClarifications.userType, ctx.user.type),
+                eq(pendingClarifications.status, "pending"),
+              ),
+            )
+            .orderBy(desc(pendingClarifications.id))
+            .limit(1);
+          clarificationId = pending?.id;
+        } catch {
+          clarificationId = undefined;
+        }
       }
 
       return {
+        text: input.text,
         items: result.items,
         model: result.modelUsed,
         parsedBy: result.parsedBy,
@@ -803,6 +830,7 @@ export const aiRouter = router({
         decision: result.decision,
         overallConfidence: result.overallConfidence,
         clarificationQuestion: result.clarificationQuestion,
+        clarificationId,
         processingTimeMs: result.processingTimeMs,
       };
     }),
@@ -1337,6 +1365,7 @@ export const aiRouter = router({
         skipClarification: false,
         provider: resolvedProvider,
         groqApiKey: resolvedGroqKey,
+        pipelineSettings: cfg,
       });
 
       if (parseResult.tokensUsed > 0) {
@@ -1370,14 +1399,38 @@ export const aiRouter = router({
           processingTimeMs: Date.now() - startTime,
         }).catch(() => {});
 
+      let clarificationId: number | undefined;
       if (parseResult.decision === "clarify") {
-        await db.insert(pendingClarifications).values({
-          userId: ctx.user.id,
-          userType: ctx.user.type,
-          question: parseResult.clarificationQuestion || "ممكن توضح أكتر؟",
-          originalText: transcribedText,
-          status: "pending"
-        }).catch(() => {});
+        try {
+          await db.insert(pendingClarifications).values({
+            userId: ctx.user.id,
+            userType: ctx.user.type,
+            question: parseResult.clarificationQuestion || "ممكن توضح أكتر؟",
+            originalText: transcribedText,
+            status: "pending",
+            contextData: {
+              items: parseResult.items,
+              decision: parseResult.decision,
+              confidence: parseResult.overallConfidence,
+              log: parseResult.log,
+            },
+          });
+          const [pending] = await db
+            .select({ id: pendingClarifications.id })
+            .from(pendingClarifications)
+            .where(
+              and(
+                eq(pendingClarifications.userId, ctx.user.id),
+                eq(pendingClarifications.userType, ctx.user.type),
+                eq(pendingClarifications.status, "pending"),
+              ),
+            )
+            .orderBy(desc(pendingClarifications.id))
+            .limit(1);
+          clarificationId = pending?.id;
+        } catch {
+          clarificationId = undefined;
+        }
       }
 
       return {
@@ -1389,6 +1442,7 @@ export const aiRouter = router({
         decision: parseResult.decision,
         overallConfidence: parseResult.overallConfidence,
         clarificationQuestion: parseResult.clarificationQuestion,
+        clarificationId,
         processingTimeMs: Date.now() - startTime,
       };
     }),

@@ -22,5 +22,6 @@
       "@db/*": ["./db/*"]
     }
   },
-  "include": ["src", "api", "contracts", "db"]
+  "include": ["src", "api", "contracts", "db"],
+  "exclude": ["api/test-*.ts", "api/**/*.test.ts"]
 }

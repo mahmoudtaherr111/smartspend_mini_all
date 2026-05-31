@@ -870,6 +870,91 @@ export function AdminSettingsTab() {
             value="plans"
             className="space-y-6 animate-in fade-in-50"
           >
+            <Card className="border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm overflow-hidden border-t-4 border-t-emerald-500">
+              <SectionHeader
+                icon={<BrainCircuit className="w-5 h-5 text-emerald-600" />}
+                title="محرك دقة التصنيف المصري"
+                description="تحكم مباشر في طبقات التفكيك المحلي، ذاكرة الأشخاص، والمراجعة النهائية قبل الحفظ."
+              />
+              <CardContent className="p-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  {[
+                    {
+                      key: "parser_fast_decomposition_enabled",
+                      title: "تفكيك الجمل الطويلة",
+                      hint: "يفصل الرسائل التي تحتوي على أكثر من عملية قبل التصنيف لتقليل نسيان المبالغ.",
+                    },
+                    {
+                      key: "parser_person_memory_enabled",
+                      title: "ذاكرة الأشخاص",
+                      hint: "يسأل مين الشخص عند أول ذكر، ثم يستخدم العلاقة المحفوظة في التصنيفات القادمة.",
+                    },
+                    {
+                      key: "parser_local_verifier_enabled",
+                      title: "المراجع المحلي النهائي",
+                      hint: "يراجع الأرقام والتصنيفات والتكرارات محلياً قبل الحفظ، بدون توكنز إضافية.",
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.key}
+                      className="flex items-center justify-between gap-4 rounded-xl border bg-white dark:bg-slate-950 p-4"
+                    >
+                      <div className="space-y-1">
+                        <Label className="text-sm font-bold flex items-center gap-1">
+                          {item.title}
+                          <Hint text={item.hint} />
+                        </Label>
+                        <p className="text-xs text-slate-500">
+                          {formData[item.key] === "false" ? "متوقف" : "مفعل"}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={(formData[item.key] || "true") === "true"}
+                        onCheckedChange={(checked) =>
+                          updateField(item.key, String(checked))
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-2xl">
+                  <div className="space-y-2">
+                    <FieldLabel hint="أقل ثقة مطلوبة للحفظ التلقائي بعد كل طبقات المراجعة. القيمة الأعلى أدق لكنها تزود المراجعة اليدوية.">
+                      حد الحفظ التلقائي
+                    </FieldLabel>
+                    <Input
+                      type="number"
+                      min="50"
+                      max="100"
+                      dir="ltr"
+                      value={formData.parser_auto_save_threshold || "85"}
+                      onChange={(e) =>
+                        updateField("parser_auto_save_threshold", e.target.value)
+                      }
+                      className="font-mono bg-slate-50 dark:bg-slate-900"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <FieldLabel hint="أقل ثقة لقبول نتيجة قابلة للمراجعة بدل سؤال المستخدم مباشرة.">
+                      حد المراجعة
+                    </FieldLabel>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      dir="ltr"
+                      value={formData.parser_review_threshold || "60"}
+                      onChange={(e) =>
+                        updateField("parser_review_threshold", e.target.value)
+                      }
+                      className="font-mono bg-slate-50 dark:bg-slate-900"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <Tabs defaultValue="free" className="w-full">
               <TabsList className="mb-6 p-1 bg-transparent border-b w-full justify-start rounded-none h-auto gap-4">
                 <TabsTrigger

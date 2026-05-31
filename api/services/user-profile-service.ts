@@ -408,21 +408,30 @@ export async function getSmartProfile(
       result.aiInferredAttributes.knownPeople = contacts as any;
     }
     
-    // Fetch latest learning events for context injection
+    // Fetch latest learning events for context injection.
     const events = await db
       .select({
-        summary: profileLearningEvents.summary,
+        eventType: profileLearningEvents.eventType,
+        metadata: profileLearningEvents.metadata,
       })
       .from(profileLearningEvents)
       .where(and(eq(profileLearningEvents.userId, userId), eq(profileLearningEvents.userType, userType)))
       .orderBy(desc(profileLearningEvents.createdAt))
       .limit(5);
-      
+
     if (events.length > 0) {
-      result.aiInferredAttributes.spendingBehavior = 
+      result.aiInferredAttributes.spendingBehavior =
         (result.aiInferredAttributes.spendingBehavior ? result.aiInferredAttributes.spendingBehavior + "\\n" : "") +
-        "أحدث الاستنتاجات والسلوكيات:\\n" + 
-        events.map(e => "- " + e.summary).join("\\n");
+        "أحدث أحداث التعلم:\\n" +
+        events
+          .map((e) => {
+            const meta =
+              e.metadata && typeof e.metadata === "object"
+                ? JSON.stringify(e.metadata).slice(0, 160)
+                : "";
+            return `- ${e.eventType}${meta ? `: ${meta}` : ""}`;
+          })
+          .join("\\n");
     }
   } catch(err) {
     console.error("[getSmartProfile] Failed to load extra smart context:", err);

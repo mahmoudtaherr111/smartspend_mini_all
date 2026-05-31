@@ -20,6 +20,7 @@ import {
   RefreshCw,
   Square,
   Camera,
+  X,
 } from "lucide-react";
 import { ExpenseInputLimits } from "@contracts/constants";
 import { cn } from "@/lib/utils";
@@ -53,6 +54,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
   const [clarificationQuestion, setClarificationQuestion] = useState<
     string | null
   >(null);
+  const [clarificationId, setClarificationId] = useState<number | null>(null);
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
   const [isSkipping, setIsSkipping] = useState(false);
   const [flowStage, setFlowStage] = useState<
@@ -76,6 +78,31 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
 
   const utilsTrpc = trpc.useUtils();
   const learnMutation = trpc.ai.learnWord.useMutation();
+  const answerClarificationMutation = trpc.expense.answerClarification.useMutation({
+    onSuccess: () => {
+      hapticSuccess();
+      utilsTrpc.expense.list.invalidate();
+      utilsTrpc.expense.getMonthlyStats.invalidate();
+      utilsTrpc.expense.getMonthSummary.invalidate();
+      utilsTrpc.expense.getPendingClarifications.invalidate();
+      setParsedItems(null);
+      setDecision(null);
+      setClarificationQuestion(null);
+      setClarificationId(null);
+      setText("");
+      setInputSource("text");
+      setFlowStage("idle");
+      setShowSuccessAnim(true);
+      setTimeout(() => setShowSuccessAnim(false), 2000);
+      toast.success("تم حفظ التوضيح وتسجيل العملية.");
+      if (onSuccess) onSuccess();
+    },
+    onError: (err) => {
+      hapticError();
+      toast.error(err.message || "تعذر حفظ التوضيح.");
+      setFlowStage("clarify");
+    },
+  });
 
   // Camera & Image processing states
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -153,6 +180,8 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
     onSuccess: (data) => {
       setIsProcessingVoice(false);
       setDecision(data.decision as any);
+      setClarificationQuestion(null);
+      setClarificationId(null);
       setText(data.text);
       setInputSource("voice");
       setFlowStage("parsed");
@@ -167,6 +196,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
       } else if (data.decision === "clarify") {
         mediumTap();
         setClarificationQuestion(data.clarificationQuestion || "ممكن توضح أكتر؟");
+        setClarificationId(data.clarificationId ?? null);
         setFlowStage("clarify");
         setParsedItems(data.items && data.items.length > 0 ? data.items : null);
       }
@@ -193,6 +223,8 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
     onSuccess: (data) => {
       setIsProcessingVoice(false);
       setDecision(data.decision as any);
+      setClarificationQuestion(null);
+      setClarificationId(null);
 
       if (
         data.decision === "auto_save" &&
@@ -209,6 +241,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
         setClarificationQuestion(
           data.clarificationQuestion || "ممكن توضح أكتر؟",
         );
+        setClarificationId(data.clarificationId ?? null);
         setFlowStage("clarify");
         setParsedItems(data.items && data.items.length > 0 ? data.items : null);
       }
@@ -236,17 +269,17 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
     let interval: any;
     if (isProcessingVoice || parseVoiceMutation.isPending || parseMutation.isPending) {
       const messages = [
-        "بحلل صوتك وبفهم قصدك...",
+        "جاري استيعاب التفاصيل...",
         "بنستخرج الأرقام والمصروفات...",
-        "بنظبطلك الميزانية...",
-        "لحظات وتكون جاهزة..."
+        "بنظبط تصنيف الميزانية...",
+        "لحظات وبتكون جاهزة..."
       ];
       let i = 0;
       setLoadingMessage(messages[0]);
       interval = setInterval(() => {
         i = (i + 1) % messages.length;
         setLoadingMessage(messages[i]);
-      }, 600);
+      }, 400); // Faster perceived speed
     } else {
       setLoadingMessage("المعالجة الذكية...");
     }
@@ -482,6 +515,8 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
       );
       setParsedItems(null);
       setDecision(null);
+      setClarificationQuestion(null);
+      setClarificationId(null);
       setText("");
       setInputSource("text");
       setFlowStage("idle");
@@ -568,6 +603,7 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
   const handleSkip = () => {
     setIsSkipping(true);
     setFlowStage("processing");
+    setClarificationId(null);
     parseMutation.mutate({
       text,
       skipClarification: true,
@@ -575,8 +611,36 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
     });
   };
 
+  const submitClarificationAnswer = (answer: string) => {
+    const trimmed = answer.trim();
+    if (!trimmed) return;
+
+    setFlowStage("processing");
+    if (clarificationId) {
+      answerClarificationMutation.mutate({
+        clarificationId,
+        answer: trimmed,
+      });
+      return;
+    }
+
+    const nameMatch = clarificationQuestion?.match(/مين\s+(.*?)\؟/);
+    const personName = nameMatch ? nameMatch[1].trim() : "شخص";
+    const newText = `${text} (${personName} ${trimmed})`;
+    setText(newText);
+    setDecision(null);
+    parseMutation.mutate({
+      text: newText,
+      inputChannel: inputSource,
+    });
+  };
+
   const isSubmitting =
-    parseMutation.isPending || parseVoiceMutation.isPending || createMutation.isPending || isProcessingVoice;
+    parseMutation.isPending ||
+    parseVoiceMutation.isPending ||
+    createMutation.isPending ||
+    answerClarificationMutation.isPending ||
+    isProcessingVoice;
 
   const categories = CATEGORY_OPTIONS;
 
@@ -772,6 +836,31 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
           </div>
         </form>
 
+        {/* ─── Processing View (Skeleton Loader) ─── */}
+        {flowStage === "processing" && (
+          <div className="p-4 rounded-2xl bg-white dark:bg-[#0c0e12] border border-slate-200 dark:border-slate-800 space-y-4 animate-pulse relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+            <div className="flex justify-between items-center mb-2">
+               <div className="h-6 w-1/3 bg-slate-200 dark:bg-slate-800 rounded"></div>
+               <div className="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+            </div>
+            <div className="flex items-center gap-3">
+               <div className="h-12 w-12 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+               <div className="space-y-2 flex-1">
+                 <div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                 <div className="h-3 w-1/2 bg-slate-200 dark:bg-slate-800 rounded"></div>
+               </div>
+            </div>
+            <div className="flex items-center gap-3 mt-4">
+               <div className="h-12 w-12 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+               <div className="space-y-2 flex-1">
+                 <div className="h-4 w-2/3 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                 <div className="h-3 w-1/3 bg-slate-200 dark:bg-slate-800 rounded"></div>
+               </div>
+            </div>
+          </div>
+        )}
+
         {/* ─── Clarification View ─── */}
         {decision === "clarify" && (
           <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border-2 border-indigo-100 dark:border-indigo-900 shadow-xl shadow-indigo-100/50 dark:shadow-none space-y-5 animate-in fade-in slide-in-from-top-2 relative overflow-hidden">
@@ -826,24 +915,11 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
                   placeholder="اكتب التوضيح هنا ودوس Enter..."
                   className="bg-slate-50 dark:bg-slate-950 border-indigo-100 dark:border-indigo-900 focus-visible:ring-indigo-500 h-12 rounded-xl text-base"
                   autoFocus
+                  disabled={answerClarificationMutation.isPending}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       const ans = (e.target as HTMLInputElement).value.trim();
-                      const relationWords = [
-                        "اخويا", "صاحبي", "اختي", "صاحبتي", "صديقي", "صديقتي",
-                        "زميلي", "زميلتي", "امي", "ابويا", "بابا", "ماما",
-                        "مراتي", "جوزي", "بنتي", "ابني", "أخويا", "أختي",
-                        "أمي", "أبويا", "موظف عندي", "موظف",
-                      ];
-                        const nameMatch = clarificationQuestion?.match(/مين\s+(.*?)\؟/);
-                        const personName = nameMatch ? nameMatch[1].trim() : "شخص";
-                        const newText = `${text} (${personName} ${ans})`;
-                        setText(newText);
-                        setDecision(null);
-                        parseMutation.mutate({
-                          text: newText,
-                          inputChannel: inputSource,
-                        });
+                      submitClarificationAnswer(ans);
                     }
                   }}
                 />
@@ -851,9 +927,9 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
                   variant="outline"
                   className="border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all h-12 rounded-xl px-6 font-bold"
                   onClick={handleSkip}
-                  disabled={isSkipping}
+                  disabled={isSkipping || answerClarificationMutation.isPending}
                 >
-                  {isSkipping ? (
+                  {isSkipping || answerClarificationMutation.isPending ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
                     "تخطي"
@@ -872,17 +948,8 @@ export function ExpenseForm({ onSuccess }: ExpenseFormProps) {
                       variant="secondary"
                       size="sm"
                       className="text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border-0 h-8 rounded-lg"
-                      onClick={() => {
-                        const nameMatch = clarificationQuestion?.match(/مين\s+(.*?)\؟/);
-                        const personName = nameMatch ? nameMatch[1].trim() : "شخص";
-                        const newText = `${text} (${personName} ${rel})`;
-                        setText(newText);
-                        setDecision(null);
-                        parseMutation.mutate({
-                          text: newText,
-                          inputChannel: inputSource,
-                        });
-                      }}
+                      disabled={answerClarificationMutation.isPending}
+                      onClick={() => submitClarificationAnswer(rel)}
                     >
                       {rel}
                     </Button>
