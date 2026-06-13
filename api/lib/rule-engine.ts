@@ -304,6 +304,8 @@ export const SUB_CATEGORY_MAP: Record<
   اوريو: { category: "أكل وشرب", subCategory: "سناكس" },
   هوهوز: { category: "أكل وشرب", subCategory: "سناكس" },
   دونت: { category: "أكل وشرب", subCategory: "سناكس" },
+  بسكوت: { category: "أكل وشرب", subCategory: "سناكس" },
+  بسكويت: { category: "أكل وشرب", subCategory: "سناكس" },
   
   // Contextual Patterns (Smart Brain)
   // Vendor / Action Modifiers
@@ -361,6 +363,7 @@ export const SUB_CATEGORY_MAP: Record<
   فكيت: { category: "تحويل", subCategory: "أخرى" },
   فك: { category: "تحويل", subCategory: "أخرى" },
   فكه: { category: "تحويل", subCategory: "أخرى" },
+  كاش: { category: "تحويل", subCategory: "عام" },
 };
 
 /**
@@ -449,6 +452,10 @@ const MERCHANT_REGISTRY: Record<
   خزنه: { category: "فواتير", subCategory: "أقساط" },
   فوري: { category: "فواتير", subCategory: "خدمات" },
   انستاباي: { category: "تحويل", subCategory: "تحويل" },
+  "فودافون كاش": { category: "تحويل", subCategory: "فودافون كاش" },
+  "اورنج كاش": { category: "تحويل", subCategory: "فودافون كاش" },
+  "أورنج كاش": { category: "تحويل", subCategory: "فودافون كاش" },
+  "اتصالات كاش": { category: "تحويل", subCategory: "فودافون كاش" },
   // ── Cafes ──
   ستاربكس: { category: "أكل وشرب", subCategory: "قهوة وكافيه" },
   سيلانترو: { category: "أكل وشرب", subCategory: "قهوة وكافيه" },
@@ -1090,10 +1097,16 @@ export async function runRuleEngine(
         }
 
         const strippedWord = stripArabicPrefix(normalizedWord);
-        const dictHit =
+        let dictHit =
           CATEGORY_DICTIONARY[word] ||
           CATEGORY_DICTIONARY[normalizedWord] ||
           (strippedWord !== normalizedWord ? CATEGORY_DICTIONARY[strippedWord] : undefined);
+        
+        // Ground detection override: "في الأرض" or "على الأرض" is not real estate investment
+        if (dictHit === "استثمار" && (strippedWord === "ارض" || normalizedWord === "ارض") && /(?:في|على)\s+الارض/.test(allContextNorm)) {
+          dictHit = undefined;
+        }
+
         if (dictHit) {
           category = dictHit;
           const subHit =
@@ -1233,7 +1246,10 @@ export async function runRuleEngine(
     }
 
     const isNeutralCategory = ["متنوعات", "العائلة", "أصدقاء", "موظفين"].includes(finalCategory);
-    const finalType = isNeutralCategory ? intentResult.intent : (registeredType || intentResult.intent);
+    let finalType = isNeutralCategory ? intentResult.intent : (registeredType || intentResult.intent);
+    if (intentResult.intent === "income") {
+      finalType = "income";
+    }
 
     items.push(
       applyProfileHints(

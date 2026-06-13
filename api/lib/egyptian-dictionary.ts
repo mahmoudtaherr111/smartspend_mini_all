@@ -185,6 +185,8 @@ function buildDictionary(): Record<string, CategoryName> {
       "دونات",
       "تورتة",
       "جاتوه",
+      "بسكوت",
+      "بسكويت",
       "حلو",
       "ايسكريم",
       "ايس كريم",
@@ -982,6 +984,7 @@ function buildDictionary(): Record<string, CategoryName> {
       "فك",
       "فكه",
       "فكة",
+      "كاش",
     ],
     "تحويل",
   );
