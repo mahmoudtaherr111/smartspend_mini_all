@@ -818,7 +818,23 @@ export async function runSmartPipeline(
           },
         });
 
-        const dRes = await geminiModel.generateContent(classifierUserPrompt);
+        let dRes;
+        let retries = 3;
+        while (retries > 0) {
+          try {
+            dRes = await geminiModel.generateContent(classifierUserPrompt);
+            break;
+          } catch (e: any) {
+            const isRateLimit = e.status === 429 || (e.message && e.message.includes("429")) || (e.message && e.message.includes("quota"));
+            if (isRateLimit && retries > 1) {
+              console.warn(`[Gemini API] 429 Rate Limit hit. Retrying in 2500ms... (${retries - 1} retries left)`);
+              await new Promise(resolve => setTimeout(resolve, 2500));
+              retries--;
+            } else {
+              throw e;
+            }
+          }
+        }
         totalTokens += dRes.response.usageMetadata?.totalTokenCount || 0;
         const cleanedText = dRes.response.text().replace(/```(?:json)?\s*([\s\S]*?)```/g, "$1").trim();
         classItems = safeExtractItems(JSON.parse(cleanedText));

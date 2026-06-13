@@ -20,6 +20,7 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { isLikelyPersonName } from "./egyptian-names-dictionary";
 import { extractAmounts } from "./entity-extractor";
 import { SUB_CATEGORY_MAP } from "./rule-engine";
+import { CATEGORY_DICTIONARY } from "./egyptian-dictionary";
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -483,7 +484,10 @@ function decomposeAmountAnchored(
           const isRightLeaning = 
             ["ب", "في", "من", "ل", "علشان", "عشان"].includes(w) || 
             ["بـ", "لـ"].includes(w) ||
-            SUB_CATEGORY_MAP[cleanW] !== undefined;
+            SUB_CATEGORY_MAP[w] !== undefined ||
+            SUB_CATEGORY_MAP[cleanW] !== undefined ||
+            CATEGORY_DICTIONARY[w] !== undefined ||
+            CATEGORY_DICTIONARY[cleanW] !== undefined;
             
           const isLeftLeaning = isLikelyPersonName(w) || knownNames.includes(w);
           
@@ -554,7 +558,10 @@ function decomposeAmountAnchored(
           const isRightLeaning = 
             ["ب", "في", "من", "ل", "علشان", "عشان"].includes(w) || 
             ["بـ", "لـ"].includes(w) ||
-            SUB_CATEGORY_MAP[cleanW] !== undefined;
+            SUB_CATEGORY_MAP[w] !== undefined ||
+            SUB_CATEGORY_MAP[cleanW] !== undefined ||
+            CATEGORY_DICTIONARY[w] !== undefined ||
+            CATEGORY_DICTIONARY[cleanW] !== undefined;
             
           const isLeftLeaning = isLikelyPersonName(w) || knownNames.includes(w);
           
