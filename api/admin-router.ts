@@ -26,6 +26,10 @@ import {
   apiKeyErrors,
   pushSubscriptions,
   pendingClarifications,
+  onboardingQuestions,
+  ads,
+  notificationTemplates,
+  notificationLogs
 } from "../db/schema";
 import {
   eq,
@@ -51,6 +55,7 @@ import { TRPCError } from "@trpc/server";
 import { env } from "./lib/env";
 import { getSmartProfile } from "./services/user-profile-service";
 import webpush from "web-push";
+import { sendPush, checkAndTriggerSmartActivityNotifications } from "./notification-engine";
 
 // Setup Web Push
 // In a real app these should be in env vars, but we'll use the ones generated earlier
@@ -60,11 +65,15 @@ const vapidPublicKey =
 const vapidPrivateKey =
   process.env.VAPID_PRIVATE_KEY ||
   "-31rwR0LxanvleE02FotUVGGx3mVno1YJtR7hTaNHrA";
-webpush.setVapidDetails(
-  "mailto:admin@smartspend.ai",
-  vapidPublicKey,
-  vapidPrivateKey,
-);
+try {
+  webpush.setVapidDetails(
+    "mailto:admin@smartspend.ai",
+    vapidPublicKey,
+    vapidPrivateKey,
+  );
+} catch (error) {
+  console.warn("⚠️ Failed to set VAPID details in admin-router.ts:", error);
+}
 
 function isMissingTableError(err: unknown, table: string): boolean {
   const message = err instanceof Error ? err.message : String(err ?? "");
@@ -676,6 +685,9 @@ export const adminRouter = router({
       sms_limit_ultra: "999999",
       // ── Referrals ──
       promo_code_discount: "20",
+      // ── Offline Limits ──
+      offline_limit_free: "3",
+      offline_limit_pro: "30",
       // ── Pipeline Version (v1 or v2) ──
       pipeline_version: "v1",
     };
@@ -737,132 +749,200 @@ export const adminRouter = router({
     }),
 
   getAvailableModels: adminProcedure.query(async () => {
+    // 1. Fetch configured API key from database or env
+    let apiKey = env.GEMINI_API_KEY || "";
+    try {
+      const settings = await db.select().from(systemSettings);
+      const cfg: Record<string, string> = {};
+      settings.forEach((s) => {
+        if (s.value) cfg[s.key] = s.value;
+      });
+      if (cfg.ai_api_key && cfg.ai_api_key !== "YOUR_GEMINI_API_KEY") {
+        apiKey = cfg.ai_api_key;
+      } else if (cfg.ai_api_key_2) {
+        apiKey = cfg.ai_api_key_2;
+      }
+    } catch (err) {
+      console.warn("Failed to load api key from DB, using env fallback:", err);
+    }
+
+    const fallbackGeminiModels = [
+      {
+        id: "gemini-3.5-flash",
+        name: "Gemini 3.5 Flash",
+        provider: "gemini",
+        tier: "free",
+        pricing: "مجاني / Free Tier",
+        description: "أحدث الموديلات السريعة الفائقة لتحويل الصوت والتصنيف والتحليل السريع",
+      },
+      {
+        id: "gemini-3.1-flash-lite",
+        name: "Gemini 3.1 Flash-Lite",
+        provider: "gemini",
+        tier: "free",
+        pricing: "مجاني / Free Tier",
+        description: "سريع واقتصادي للغاية - مثالي للمهام السريعة وتحويل الصوت",
+      },
+      {
+        id: "gemini-3.5-pro",
+        name: "Gemini 3.5 Pro",
+        provider: "gemini",
+        tier: "pro",
+        pricing: "ذكي للغاية ودقيق جداً",
+        description: "النموذج الاحترافي الأحدث عالي الذكاء والدقة للمهام المركبة والتقارير",
+      },
+      {
+        id: "gemini-2.0-flash-lite",
+        name: "Gemini 2.0 Flash-Lite",
+        provider: "gemini",
+        tier: "free",
+        pricing: "خفيف وسريع",
+        description: "موديل خفيف وسريع جداً",
+      },
+      {
+        id: "gemini-2.0-flash",
+        name: "Gemini 2.0 Flash",
+        provider: "gemini",
+        tier: "free",
+        pricing: "$0.10/$0.40 /1M",
+        description: "سريع وقوي",
+      },
+    ];
+
+    const fallbackGroqModels = [
+      {
+        id: "whisper-large-v3",
+        name: "Whisper Large V3 (Groq)",
+        provider: "groq",
+        tier: "free",
+        pricing: "مجاني / Free",
+        description: "المحرك الصوتي الفائق لتحويل الصوت لنص",
+      },
+      {
+        id: "whisper-large-v3-turbo",
+        name: "Whisper V3 Turbo (Groq)",
+        provider: "groq",
+        tier: "free",
+        pricing: "مجاني / Free",
+        description: "المحرك الصوتي الأسرع لتحويل الصوت لنص",
+      },
+      {
+        id: "llama-3.1-8b-instant",
+        name: "Llama 3.1 8B Instant",
+        provider: "groq",
+        tier: "free",
+        pricing: "$0.05/$0.08 /1M",
+        description: "الأسرع والأرخص - ينصح لأول نطاق Free",
+      },
+      {
+        id: "llama-3.3-70b-versatile",
+        name: "Llama 3.3 70B Versatile",
+        provider: "groq",
+        tier: "pro",
+        pricing: "$0.59/$0.79 /1M",
+        description: "متوازن وقوي - ينصح لباقة Pro",
+      },
+      {
+        id: "deepseek-r1-distill-llama-70b",
+        name: "DeepSeek R1 Distill (Groq)",
+        provider: "groq",
+        tier: "free",
+        pricing: "مجاني / Free",
+        description: "موديل تفكير قوي وسريع للتحليل المعقد",
+      },
+      {
+        id: "qwen/qwen3-32b",
+        name: "Qwen3 32B (Groq)",
+        provider: "groq",
+        tier: "pro",
+        pricing: "$0.29/$0.59 /1M",
+        description: "قوي وأرخص من 70B",
+      },
+      {
+        id: "gemma2-9b-it",
+        name: "Gemma2 9B (Groq)",
+        provider: "groq",
+        tier: "free",
+        pricing: "$0.20/$0.20 /1M",
+        description: "مفتوح المصدر على Groq",
+      },
+      {
+        id: "openai/gpt-oss-120b",
+        name: "GPT-OSS 120B (Groq)",
+        provider: "groq",
+        tier: "ultra",
+        pricing: "مخصص",
+        description: "الأقوى على Groq - للحالات الصعبة",
+      },
+      {
+        id: "openai/gpt-oss-20b",
+        name: "GPT-OSS 20B (Groq)",
+        provider: "groq",
+        tier: "pro",
+        pricing: "$0.40/$0.60 /1M",
+        description: "موديل ممتاز للتصنيف مفتوح المصدر",
+      },
+    ];
+
+    let geminiModels = [...fallbackGeminiModels];
+
+    if (apiKey && apiKey !== "YOUR_GEMINI_API_KEY" && apiKey !== "your_api_key_here") {
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        if (response.ok) {
+          const data = await response.json();
+          const apiModels = data.models || [];
+          const dynamicModels = apiModels
+            .filter((m: any) => {
+              const name = m.name || "";
+              const supportsGen = m.supportedGenerationMethods?.includes("generateContent") || false;
+              return supportsGen && 
+                     !name.includes("embedding") && 
+                     !name.includes("aqa") &&
+                     !name.includes("imagen") &&
+                     !name.includes("veo") &&
+                     !name.includes("1.5-preview") &&
+                     !name.includes("1.6-preview") &&
+                     !name.includes("robotics");
+            })
+            .map((m: any) => {
+              const id = m.name.replace("models/", "");
+              const isPro = id.includes("pro") || id.includes("ultra");
+              return {
+                id,
+                name: m.displayName || id,
+                provider: "gemini",
+                tier: isPro ? "pro" : "free",
+                pricing: isPro ? "Professional Tier" : "مجاني / Free Tier",
+                description: m.description || "نموذج مستخرج ديناميكياً من الـ API key الخاص بك",
+              };
+            });
+            
+          if (dynamicModels.length > 0) {
+            const seen = new Set<string>();
+            const merged: typeof fallbackGeminiModels = [];
+            dynamicModels.forEach((m: any) => {
+              if (!seen.has(m.id)) {
+                seen.add(m.id);
+                merged.push(m);
+              }
+            });
+            fallbackGeminiModels.forEach((m) => {
+              if (!seen.has(m.id)) {
+                seen.add(m.id);
+                merged.push(m);
+              }
+            });
+            geminiModels = merged;
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch dynamic models list from Google API:", err);
+      }
+    }
+
     return {
-      models: [
-        // ── Gemini Models ──
-        {
-          id: "gemini-3.5-flash",
-          name: "Gemini 3.5 Flash",
-          provider: "gemini",
-          tier: "free",
-          pricing: "مجاني / Free Tier",
-          description:
-            "أحدث الموديلات السريعة الفائقة لتحويل الصوت والتصنيف",
-        },
-        {
-          id: "gemini-3.1-flash-lite",
-          name: "Gemini 3.1 Flash-Lite",
-          provider: "gemini",
-          tier: "free",
-          pricing: "مجاني / Free Tier",
-          description: "سريع واقتصادي للغاية - مثالي للمهام السريعة",
-        },
-        {
-          id: "gemini-2.5-flash",
-          name: "Gemini 2.5 Flash",
-          provider: "gemini",
-          tier: "free",
-          pricing: "$0.075/$0.30 /1M",
-          description: "أداء سريع واقتصادي - للمهام البسيطة",
-        },
-        {
-          id: "gemini-2.5-pro",
-          name: "Gemini 2.5 Pro",
-          provider: "gemini",
-          tier: "pro",
-          pricing: "ذكي للغاية ودقيق",
-          description: "نموذج احترافي عالي الدقة للمهام الحسابية والتقارير",
-        },
-        {
-          id: "gemini-2.0-flash-lite",
-          name: "Gemini 2.0 Flash-Lite",
-          provider: "gemini",
-          tier: "free",
-          pricing: "خفيف وسريع",
-          description: "موديل خفيف وسريع جداً",
-        },
-        {
-          id: "gemini-2.0-flash",
-          name: "Gemini 2.0 Flash",
-          provider: "gemini",
-          tier: "free",
-          pricing: "$0.10/$0.40 /1M",
-          description: "سريع وقوي",
-        },
-        // ── Groq Models ──
-        {
-          id: "whisper-large-v3",
-          name: "Whisper Large V3 (Groq)",
-          provider: "groq",
-          tier: "free",
-          pricing: "مجاني / Free",
-          description: "المحرك الصوتي الفائق لتحويل الصوت لنص",
-        },
-        {
-          id: "whisper-large-v3-turbo",
-          name: "Whisper V3 Turbo (Groq)",
-          provider: "groq",
-          tier: "free",
-          pricing: "مجاني / Free",
-          description: "المحرك الصوتي الأسرع لتحويل الصوت لنص",
-        },
-        {
-          id: "llama-3.1-8b-instant",
-          name: "Llama 3.1 8B Instant",
-          provider: "groq",
-          tier: "free",
-          pricing: "$0.05/$0.08 /1M",
-          description: "الأسرع والأرخص - ينصح لأول نطاق Free",
-        },
-        {
-          id: "llama-3.3-70b-versatile",
-          name: "Llama 3.3 70B Versatile",
-          provider: "groq",
-          tier: "pro",
-          pricing: "$0.59/$0.79 /1M",
-          description: "متوازن وقوي - ينصح لباقة Pro",
-        },
-        {
-          id: "deepseek-r1-distill-llama-70b",
-          name: "DeepSeek R1 Distill (Groq)",
-          provider: "groq",
-          tier: "free",
-          pricing: "مجاني / Free",
-          description: "מודيل تفكير قوي وسريع للتحليل المعقد",
-        },
-        {
-          id: "qwen/qwen3-32b",
-          name: "Qwen3 32B (Groq)",
-          provider: "groq",
-          tier: "pro",
-          pricing: "$0.29/$0.59 /1M",
-          description: "قوي وأرخص من 70B",
-        },
-        {
-          id: "gemma2-9b-it",
-          name: "Gemma2 9B (Groq)",
-          provider: "groq",
-          tier: "free",
-          pricing: "$0.20/$0.20 /1M",
-          description: "مفتوح المصدر على Groq",
-        },
-        {
-          id: "openai/gpt-oss-120b",
-          name: "GPT-OSS 120B (Groq)",
-          provider: "groq",
-          tier: "ultra",
-          pricing: "مخصص",
-          description: "الأقوى على Groq - للحالات الصعبة",
-        },
-        {
-          id: "openai/gpt-oss-20b",
-          name: "GPT-OSS 20B (Groq)",
-          provider: "groq",
-          tier: "pro",
-          pricing: "$0.40/$0.60 /1M",
-          description: "موديل ممتاز للتصنيف مفتوح المصدر",
-        },
-      ],
+      models: [...geminiModels, ...fallbackGroqModels],
     };
   }),
 
@@ -1564,36 +1644,16 @@ export const adminRouter = router({
         });
       }
 
-      const payload = JSON.stringify({
-        title: input.title,
-        body: input.body,
-        icon: "/icons/icon-192x192.png", // Assume PWA icon exists here
-        badge: "/icons/icon-192x192.png",
-      });
-
       let successCount = 0;
       let failureCount = 0;
 
       await Promise.all(
         subsToNotify.map(async (sub) => {
-          try {
-            await webpush.sendNotification(
-              {
-                endpoint: sub.endpoint,
-                keys: { p256dh: sub.p256dh, auth: sub.auth },
-              },
-              payload,
-            );
+          const success = await sendPush(sub, input.title, input.body, "/");
+          if (success) {
             successCount++;
-          } catch (err: any) {
-            console.error("Push Error", err);
+          } else {
             failureCount++;
-            // If the subscription is invalid, we could delete it here
-            if (err.statusCode === 410 || err.statusCode === 404) {
-              await db
-                .delete(pushSubscriptions)
-                .where(eq(pushSubscriptions.id, sub.id));
-            }
           }
         }),
       );
@@ -1603,4 +1663,181 @@ export const adminRouter = router({
         message: `تم الإرسال لـ ${successCount} جهاز، وفشل الإرسال لـ ${failureCount} جهاز.`,
       };
     }),
+
+  // ─── Notification Templates CRUD ───
+  getNotificationTemplates: adminProcedure.query(async () => {
+    return await db.select().from(notificationTemplates).orderBy(desc(notificationTemplates.createdAt));
+  }),
+
+  createNotificationTemplate: adminProcedure
+    .input(z.object({
+      name: z.string().min(1),
+      eventType: z.string().min(1),
+      titleTemplate: z.string().optional(),
+      bodyTemplate: z.string().optional(),
+      titleTemplateAr: z.string().optional(),
+      bodyTemplateAr: z.string().optional(),
+      titleTemplateEn: z.string().optional(),
+      bodyTemplateEn: z.string().optional(),
+      targetSegment: z.any().optional(),
+      sendAt: z.string().optional()
+    }))
+    .mutation(async ({ input, ctx }) => {
+      await db.insert(notificationTemplates).values({
+        name: input.name,
+        eventType: input.eventType,
+        titleTemplate: input.titleTemplate || input.titleTemplateAr || "",
+        bodyTemplate: input.bodyTemplate || input.bodyTemplateAr || "",
+        titleTemplateAr: input.titleTemplateAr || input.titleTemplate || "",
+        bodyTemplateAr: input.bodyTemplateAr || input.bodyTemplate || "",
+        titleTemplateEn: input.titleTemplateEn || "",
+        bodyTemplateEn: input.bodyTemplateEn || "",
+        targetSegment: input.targetSegment ? JSON.stringify(input.targetSegment) : null,
+        sendAt: input.sendAt ? new Date(input.sendAt) : null,
+        createdBy: ctx.user.id
+      });
+      return { success: true };
+    }),
+
+  updateNotificationTemplate: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      name: z.string().min(1),
+      titleTemplateAr: z.string().min(1),
+      bodyTemplateAr: z.string().min(1),
+      titleTemplateEn: z.string().optional(),
+      bodyTemplateEn: z.string().optional(),
+      targetSegment: z.any().optional(),
+      sendAt: z.string().optional()
+    }))
+    .mutation(async ({ input }) => {
+      await db.update(notificationTemplates)
+        .set({
+          name: input.name,
+          titleTemplate: input.titleTemplateAr,
+          bodyTemplate: input.bodyTemplateAr,
+          titleTemplateAr: input.titleTemplateAr,
+          bodyTemplateAr: input.bodyTemplateAr,
+          titleTemplateEn: input.titleTemplateEn || "",
+          bodyTemplateEn: input.bodyTemplateEn || "",
+          targetSegment: input.targetSegment ? JSON.stringify(input.targetSegment) : null,
+          sendAt: input.sendAt ? new Date(input.sendAt) : null,
+        })
+        .where(eq(notificationTemplates.id, input.id));
+      return { success: true };
+    }),
+
+  toggleNotificationTemplate: adminProcedure
+    .input(z.object({ id: z.number(), isActive: z.boolean() }))
+    .mutation(async ({ input }) => {
+      await db.update(notificationTemplates).set({ isActive: input.isActive }).where(eq(notificationTemplates.id, input.id));
+      return { success: true };
+    }),
+
+  deleteNotificationTemplate: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      await db.delete(notificationTemplates).where(eq(notificationTemplates.id, input.id));
+      return { success: true, message: "تم حذف الحملة بنجاح" };
+    }),
+
+  triggerActivityCheck: adminProcedure
+    .mutation(async () => {
+      await checkAndTriggerSmartActivityNotifications();
+      return { success: true, message: "تم تشغيل فحص نشاط المستخدمين وإرسال التنبيهات بنجاح!" };
+    }),
+
+  getNotificationLogs: adminProcedure.query(async () => {
+    return await db.select().from(notificationLogs).orderBy(desc(notificationLogs.sentAt)).limit(100);
+  }),
+
+  getNotificationStats: adminProcedure.query(async () => {
+    const allSubs = await db.select().from(pushSubscriptions);
+    const stats = {
+      total: allSubs.length,
+      web: allSubs.filter(s => s.deviceType === "web" || !s.deviceType).length,
+      ios: allSubs.filter(s => s.deviceType === "ios").length,
+      android: allSubs.filter(s => s.deviceType === "android").length,
+      fcm: allSubs.filter(s => !!s.fcmToken).length,
+      legacy: allSubs.filter(s => !s.fcmToken && !!s.endpoint).length,
+    };
+    return stats;
+  }),
+
+  // ─── Get Raw SMS Logs ───
+  getRawSmsLogs: adminProcedure
+    .input(
+      z.object({
+        page: z.number().default(1),
+        limit: z.number().default(50),
+        status: z.string().optional(),
+      }).optional()
+    )
+    .query(async ({ input }) => {
+      const { page = 1, limit = 50, status } = input ?? {};
+      const offset = (page - 1) * limit;
+
+      let q = db.select().from(rawSmsEvents).$dynamic();
+      if (status) {
+        q = q.where(eq(rawSmsEvents.status, status));
+      }
+
+      const list = await q.orderBy(desc(rawSmsEvents.createdAt)).limit(limit).offset(offset);
+      const total = await db.select({ count: count() }).from(rawSmsEvents);
+
+      // Map users
+      const oauthIds = [...new Set(list.filter((s) => s.userType === "oauth").map((s) => s.userId))];
+      const localIds = [...new Set(list.filter((s) => s.userType === "local").map((s) => s.userId))];
+
+      const oauthRows = oauthIds.length > 0 ? await db.select({ id: users.id, name: users.name }).from(users).where(inArray(users.id, oauthIds)) : [];
+      const localRows = localIds.length > 0 ? await db.select({ id: localUsers.id, name: localUsers.name }).from(localUsers).where(inArray(localUsers.id, localIds)) : [];
+
+      const nameByKey = new Map<string, string>();
+      for (const r of oauthRows) nameByKey.set(`oauth:${r.id}`, r.name);
+      for (const r of localRows) nameByKey.set(`local:${r.id}`, r.name);
+
+      const enriched = list.map((item) => ({
+        ...item,
+        userName: nameByKey.get(`${item.userType}:${item.userId}`) || "مجهول",
+      }));
+
+      return {
+        list: enriched,
+        total: total[0]?.count ?? 0,
+        page,
+        limit,
+      };
+    }),
+
+  // ─── Trigger Database Backup Demo ───
+  triggerBackupDemo: adminProcedure.mutation(async () => {
+    const settings = await db.select().from(systemSettings);
+    const codes = await db.select().from(discountCodes);
+    const questions = await db.select().from(onboardingQuestions);
+    const activeAds = await db.select().from(ads);
+
+    const backupData = {
+      metadata: {
+        timestamp: new Date().toISOString(),
+        tablesBackedUp: ["system_settings", "discount_codes", "onboarding_questions", "ads"],
+        version: "2.0.0",
+        stats: {
+          settingsCount: settings.length,
+          discountCodesCount: codes.length,
+          onboardingQuestionsCount: questions.length,
+          adsCount: activeAds.length,
+        }
+      },
+      systemSettings: settings,
+      discountCodes: codes,
+      onboardingQuestions: questions,
+      ads: activeAds,
+    };
+
+    return {
+      success: true,
+      message: "تم أخذ نسخة احتياطية من إعدادات النظام بنجاح!",
+      backupData,
+    };
+  }),
 });

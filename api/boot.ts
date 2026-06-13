@@ -13,9 +13,15 @@ import * as Sentry from "@sentry/node";
 import { nodeProfilingIntegration } from "@sentry/profiling-node";
 import cron from "node-cron";
 import { csrf } from "hono/csrf";
+import { streamSSE } from "hono/streaming";
+import { otpEvents } from "./services/whatsapp-service";
 import { db } from "./queries/connection";
 import { sessions } from "../db/schema";
 import { lt } from "drizzle-orm";
+import fs from "fs";
+import path from "path";
+import { whatsappService } from "./services/whatsapp-service";
+import { processScheduledNotifications, seedDefaultTemplates, checkAndTriggerSmartActivityNotifications } from "./notification-engine";
 
 if (env.SENTRY_DSN) {
   Sentry.init({
@@ -36,6 +42,30 @@ cron.schedule("0 0 * * *", async () => {
   }
 });
 
+// Seed default templates on server boot
+seedDefaultTemplates().catch((err) => {
+  console.error("[Boot] Failed to seed default notification templates:", err);
+});
+
+// Cron job for processing scheduled and event-based notifications
+cron.schedule("* * * * *", async () => {
+  try {
+    await processScheduledNotifications();
+  } catch (error) {
+    console.error("[Cron] Failed to process scheduled notifications:", error);
+  }
+});
+
+// Daily smart inactivity and conversion notifications cron at 8:00 PM (20:00)
+cron.schedule("0 20 * * *", async () => {
+  try {
+    console.log("[Cron] Running daily smart activity notifications check...");
+    await checkAndTriggerSmartActivityNotifications();
+  } catch (error) {
+    console.error("[Cron] Failed to process smart activity notifications:", error);
+  }
+});
+
 const app = new Hono();
 
 app.use("*", logger());
@@ -47,14 +77,44 @@ const allowedOrigins = Array.from(
 app.use(
   "*",
   cors({
-    origin: (origin) =>
-      allowedOrigins.includes(origin) ? origin : allowedOrigins[0],
+    origin: (origin) => {
+      if (!origin) return allowedOrigins[0];
+      if (
+        env.NODE_ENV === "development" ||
+        origin.endsWith(".loca.lt") ||
+        origin.endsWith(".serveousercontent.com") ||
+        origin.endsWith(".lhr.life") ||
+        origin.includes("localhost") ||
+        origin.includes("127.0.0.1")
+      ) {
+        return origin;
+      }
+      return allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+    },
     credentials: true,
   }),
 );
 
 // CSRF Protection
-app.use("*", csrf({ origin: allowedOrigins }));
+app.use(
+  "*",
+  csrf({
+    origin: (origin) => {
+      if (!origin) return false;
+      if (
+        env.NODE_ENV === "development" ||
+        origin.endsWith(".loca.lt") ||
+        origin.endsWith(".serveousercontent.com") ||
+        origin.endsWith(".lhr.life") ||
+        origin.includes("localhost") ||
+        origin.includes("127.0.0.1")
+      ) {
+        return true;
+      }
+      return allowedOrigins.includes(origin);
+    },
+  }),
+);
 
 // Error handling
 app.onError((err, c) => {
@@ -108,6 +168,32 @@ app.use(
     createContext: async ({ req }) => createContext(req),
   }),
 );
+
+// ─── SSE Endpoint for Zero-Polling OTP Verification ───
+app.get("/api/sse/otp", (c) => {
+  const phone = c.req.query("phone");
+  if (!phone) return c.text("Phone required", 400);
+
+  return streamSSE(c, async (stream) => {
+    const listener = async (data: any) => {
+      await stream.writeSSE({ data: JSON.stringify(data) });
+    };
+    
+    otpEvents.on(`otp:${phone}`, listener);
+
+    c.req.raw.signal.addEventListener("abort", () => {
+      otpEvents.off(`otp:${phone}`, listener);
+    });
+
+    // Keep alive to prevent connection closure
+    while (!c.req.raw.signal.aborted) {
+      await stream.sleep(15000);
+      if (!c.req.raw.signal.aborted) {
+        await stream.writeSSE({ event: "ping", data: "ping" });
+      }
+    }
+  });
+});
 
 // SMS Ingestion endpoints
 app.route("/api/sms", smsApp);
@@ -236,6 +322,15 @@ if (env.NODE_ENV === "production") {
     `🚀 SmartSpend Monorepo Server running on http://localhost:${port}`,
   );
   serve({ fetch: app.fetch, port, hostname: "0.0.0.0" });
+}
+
+// Auto-start WhatsApp service if credentials exist
+const sessionDir = path.join(process.cwd(), "whatsapp_auth_info");
+if (fs.existsSync(path.join(sessionDir, "creds.json"))) {
+  console.log("[WhatsApp] Found existing credentials, auto-starting service...");
+  whatsappService.start().catch((err) => {
+    console.error("[WhatsApp] Failed to auto-start WhatsApp service:", err);
+  });
 }
 
 export default {

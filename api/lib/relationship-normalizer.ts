@@ -5,6 +5,7 @@
  */
 
 import { comparableArabic } from "./category-registry";
+import { EGYPTIAN_MALE_NAMES, EGYPTIAN_FEMALE_NAMES } from "./egyptian-names-dictionary";
 
 export interface NormalizedRelationship {
   normalized: string;
@@ -68,6 +69,8 @@ const RELATIONSHIP_MAP: Record<string, string> = {
   صديقي: "صديق",
   صاحبه: "صديقة",
   صاحبتي: "صديقة",
+  صحبتي: "صديقة",
+  صحبه: "صديقة",
   صديقه: "صديقة",
   صديقتي: "صديقة",
   زميل: "زميل",
@@ -124,8 +127,8 @@ export function normalizeRelationship(
   if (!rawRelation) {
     return {
       normalized: "شخص معروف",
-      category: "العائلة",
-      subCategory: "شخص معروف",
+      category: "تحويلات",   // FIX: neutral fallback — not "العائلة" to avoid wrong classification
+      subCategory: "تحويلات شخصية",
     };
   }
 
@@ -143,32 +146,77 @@ export function normalizeRelationship(
     normalized = RELATIONSHIP_MAP[comparableArabic(rawRelation.trim())];
   }
 
+  // Fallback: If it's a multi-word phrase (e.g., "مساعد صاحبي"), try to find any known relationship word inside it
+  if (!normalized) {
+    const words = rawRelation.trim().split(/\s+/);
+    for (const w of words) {
+      const wClean = w.replace(/^[بلكف]/, "");
+      let match = RELATIONSHIP_MAP[comparableArabic(wClean)] || RELATIONSHIP_MAP[comparableArabic(w)];
+      if (match) {
+        normalized = match;
+        break;
+      }
+    }
+  }
+
   // If still not found, return the raw relation
   if (!normalized) {
     normalized = rawRelation.trim();
   }
 
-  let category = "العائلة";
-  if (["صديق", "صديقة", "زميل", "زميلة", "جار", "جارة"].includes(normalized)) {
+  // FIX: Determine category safely — default to "تحويلات" (neutral) not "العائلة"
+  // Only assign "العائلة" for explicitly known family relationships
+  const FAMILY_RELATIONS = new Set([
+    "أخ", "أخت", "أب", "أم", "ابن", "ابنة",
+    "عم", "عمة", "خال", "خالة", "جد", "جدة",
+    "زوج", "زوجة", "خطيب", "خطيبة", "قريب",
+  ]);
+  const FRIEND_RELATIONS = new Set(["صديق", "صديقة", "زميل", "زميلة", "جار", "جارة"]);
+  const WORK_RELATIONS = new Set(["مدير", "عامل", "حارس", "سائق", "موظف"]);
+
+  let category = "تحويلات"; // FIX: safe neutral default
+  if (FAMILY_RELATIONS.has(normalized)) {
+    category = "العائلة";
+  } else if (FRIEND_RELATIONS.has(normalized)) {
     category = "أصدقاء";
-  } else if (["مدير", "عامل", "حارس", "سائق", "موظف"].includes(normalized)) {
+  } else if (WORK_RELATIONS.has(normalized)) {
     category = "موظفين";
-  } else if (normalized === "شخص معروف") {
-    category = "تحويلات";
   }
 
   return {
     normalized,
     category,
-    subCategory: normalized === "شخص معروف" ? "تحويلات شخصية" : normalized,
+    subCategory: (normalized === "شخص معروف" || category === "تحويلات") ? "تحويلات شخصية" : normalized,
   };
 }
 
 /**
  * Gets the proper suffix for displaying a relationship (e.g., "صديق" -> "صاحبك")
  */
-export function getRelationshipSuffix(normalizedRelation: string): string {
-  return SUFFIX_MAP[normalizedRelation] || normalizedRelation;
+export function getRelationshipSuffix(normalizedRelation: string, personName?: string): string {
+  let relation = normalizedRelation;
+  
+  if (personName) {
+    const cleanName = comparableArabic(personName.trim());
+    const isMale = EGYPTIAN_MALE_NAMES.has(cleanName);
+    const isFemale = EGYPTIAN_FEMALE_NAMES.has(cleanName);
+    
+    if (isMale && !isFemale) {
+      if (relation === "صديقة") relation = "صديق";
+      if (relation === "زميلة") relation = "زميل";
+      if (relation === "أخت") relation = "أخ";
+      if (relation === "عمة") relation = "عم";
+      if (relation === "خالة") relation = "خال";
+    } else if (isFemale && !isMale) {
+      if (relation === "صديق") relation = "صديقة";
+      if (relation === "زميل") relation = "زميلة";
+      if (relation === "أخ") relation = "أخت";
+      if (relation === "عم") relation = "عمة";
+      if (relation === "خال") relation = "خالة";
+    }
+  }
+
+  return SUFFIX_MAP[relation] || relation;
 }
 
 /**

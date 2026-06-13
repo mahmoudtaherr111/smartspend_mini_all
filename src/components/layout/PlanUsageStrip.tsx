@@ -83,7 +83,7 @@ export function PlanUsageStrip({ className }: { className?: string }) {
       {user.plan === "free" && (warnAi || warnVoice) && (
         <Link
           to="/pro"
-          className="ms-auto shrink-0 rounded-lg bg-emerald-600 text-white px-2.5 py-1.5 min-h-[36px] inline-flex items-center font-medium active:scale-[0.98]"
+          className="ms-auto shrink-0 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 min-h-[44px] inline-flex items-center justify-center font-bold text-sm shadow-sm transition-transform active:scale-[0.97]"
         >
           ترقية
         </Link>

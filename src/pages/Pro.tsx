@@ -183,7 +183,7 @@ export default function Pro() {
                     )}
                     <span className="text-muted-foreground">{f.title}</span>
                     {typeof f.free === "string" && (
-                      <Badge variant="secondary" className="mr-auto">
+                      <Badge variant="secondary" className="me-auto">
                         {f.free}
                       </Badge>
                     )}
@@ -213,9 +213,9 @@ export default function Pro() {
           <Card
             className={`relative ${isProTier ? "border-primary ring-2 ring-primary/20" : "border-yellow-500/50"}`}
           >
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+            <div className="absolute -top-3 start-1/2 -translate-x-1/2">
               <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold">
-                <Crown className="w-3 h-3 ml-1" /> الأفضل قيمة
+                <Crown className="w-3 h-3 ms-1" /> الأفضل قيمة
               </Badge>
             </div>
             <CardHeader>
@@ -244,7 +244,7 @@ export default function Pro() {
                 </Button>
               ) : isProTier ? (
                 <Button className="w-full" variant="outline" disabled>
-                  <CheckCircle className="w-4 h-4 ml-2" /> مشترك حالياً
+                  <CheckCircle className="w-4 h-4 ms-2" /> مشترك حالياً
                 </Button>
               ) : (
                 <Button
@@ -252,7 +252,7 @@ export default function Pro() {
                   disabled={checkout.isPending || upgrade.isPending}
                   onClick={startCheckout}
                 >
-                  <Crown className="w-4 h-4 ml-2" />{" "}
+                  <Crown className="w-4 h-4 ms-2" />{" "}
                   {checkout.isPending || upgrade.isPending
                     ? "جاري المعالجة..."
                     : "اشترك دلوقتي"}
@@ -265,9 +265,9 @@ export default function Pro() {
           <Card
             className={`relative ${isUltraTier ? "border-primary ring-2 ring-primary/20 bg-slate-950 text-white" : "border-slate-800 bg-slate-900 text-white"}`}
           >
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+            <div className="absolute -top-3 start-1/2 -translate-x-1/2">
               <Badge className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-bold">
-                <Sparkles className="w-3 h-3 ml-1" /> أقصى أداء
+                <Sparkles className="w-3 h-3 ms-1" /> أقصى أداء
               </Badge>
             </div>
             <CardHeader>
@@ -297,7 +297,7 @@ export default function Pro() {
                   className="w-full bg-slate-800 text-white hover:bg-slate-700"
                   disabled
                 >
-                  <CheckCircle className="w-4 h-4 ml-2" /> مشترك حالياً
+                  <CheckCircle className="w-4 h-4 ms-2" /> مشترك حالياً
                 </Button>
               ) : (
                 <Button
@@ -305,7 +305,7 @@ export default function Pro() {
                   asChild
                 >
                   <Link to="/ultra">
-                    <Sparkles className="w-4 h-4 ml-2" />
+                    <Sparkles className="w-4 h-4 ms-2" />
                     ترقية إلى Ultra
                   </Link>
                 </Button>

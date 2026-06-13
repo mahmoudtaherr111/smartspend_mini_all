@@ -11,10 +11,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { FinancialGoalsPanel } from "@/components/goals/FinancialGoalsPanel";
-import { PasskeySettings } from "@/components/auth/PasskeySettings";
 import { cn } from "@/lib/utils";
 import {
   Edit,
+  ChevronRight,
   Sparkles,
   Home,
   Users,
@@ -112,21 +112,21 @@ function PremiumStatCard({
 }) {
   return (
     <div
-      className="relative overflow-hidden group rounded-2xl bg-white/40 dark:bg-slate-900/40 border border-white/40 dark:border-white/10 backdrop-blur-xl p-4 transition-all duration-300 hover:shadow-xl hover:bg-white/60 dark:hover:bg-slate-800/60 hover:-translate-y-1 animate-in fade-in slide-in-from-bottom-4"
+      className="relative overflow-hidden group rounded-2xl bg-white/40 dark:bg-slate-900/40 border border-white/40 dark:border-white/10 backdrop-blur-xl p-3 xs:p-4 transition-all duration-300 hover:shadow-xl hover:bg-white/60 dark:hover:bg-slate-800/60 hover:-translate-y-1 animate-in fade-in slide-in-from-bottom-4"
       style={{ animationDelay: `${delay}ms`, animationFillMode: "backwards" }}
     >
-      <div className="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity duration-500 rotate-12 scale-150">
+      <div className="absolute -end-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity duration-500 rotate-12 scale-150">
         {icon}
       </div>
-      <div className="flex flex-col gap-2 relative z-10">
-        <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-1">
+      <div className="flex flex-col gap-1.5 xs:gap-2 relative z-10">
+        <div className="w-7 h-7 xs:w-8 xs:h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-0.5 xs:mb-1">
           {icon}
         </div>
         <div>
-          <p className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
+          <p className="text-base xs:text-lg sm:text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight break-words">
             {value}
           </p>
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          <p className="text-[10px] xs:text-xs font-medium text-slate-500 dark:text-slate-400">
             {label}
           </p>
         </div>
@@ -169,7 +169,7 @@ function PremiumInfoRow({
   );
 }
 
-export function SmartProfileView({ onEdit }: { onEdit: () => void }) {
+export function SmartProfileView({ onEdit, onBack }: { onEdit: () => void; onBack?: () => void }) {
   const { data: profile, isLoading } = trpc.profile.getSmartProfile.useQuery();
   const { data: goalsData, refetch: refetchGoals } = trpc.goals.list.useQuery(
     undefined,
@@ -234,6 +234,15 @@ export function SmartProfileView({ onEdit }: { onEdit: () => void }) {
         <div
           className={`h-40 sm:h-48 w-full bg-gradient-to-br ${colors.bg} relative overflow-hidden`}
         >
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="absolute top-4 end-4 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white border border-white/25 transition-all shadow-md active:scale-90 hover:scale-105"
+              aria-label="رجوع"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          )}
           {/* Glass pattern overlay */}
           <div
             className="absolute inset-0 opacity-30 mix-blend-overlay"
@@ -243,8 +252,8 @@ export function SmartProfileView({ onEdit }: { onEdit: () => void }) {
             }}
           />
           {/* Glowing orbs */}
-          <div className="absolute -top-20 -left-20 w-64 h-64 bg-white/20 blur-3xl rounded-full" />
-          <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-black/10 blur-3xl rounded-full" />
+          <div className="absolute -top-20 -start-20 w-64 h-64 bg-white/20 blur-3xl rounded-full" />
+          <div className="absolute -bottom-20 -end-20 w-64 h-64 bg-black/10 blur-3xl rounded-full" />
         </div>
 
         {/* Profile Content Container */}
@@ -277,7 +286,7 @@ export function SmartProfileView({ onEdit }: { onEdit: () => void }) {
           </div>
 
           {/* User Info Header */}
-          <div className="text-center sm:text-right space-y-3 mb-8">
+          <div className="text-center sm:text-end space-y-3 mb-8">
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
               {basic?.name || "مستخدم SmartSpend"}
             </h1>
@@ -343,10 +352,7 @@ export function SmartProfileView({ onEdit }: { onEdit: () => void }) {
           {/* Premium Plan & AI/Voice Usage Limits */}
           <PlanUsageStrip className="mb-8 border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30" />
 
-          {/* WebAuthn / Passkeys Section */}
-          <div className="mb-10">
-            <PasskeySettings />
-          </div>
+
 
           {/* 💎 Floating Glass Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
@@ -489,7 +495,7 @@ export function SmartProfileView({ onEdit }: { onEdit: () => void }) {
 
           {/* 🎯 الأهداف المالية والأحلام الجارية */}
           <div
-            className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm mb-10 text-right"
+            className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm mb-10 text-end"
             dir="rtl"
           >
             <div className="flex items-center justify-between mb-5 border-b pb-3">
@@ -513,7 +519,7 @@ export function SmartProfileView({ onEdit }: { onEdit: () => void }) {
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-lg" dir="rtl">
-                  <DialogHeader className="text-right pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <DialogHeader className="text-end pb-3 border-b border-slate-100 dark:border-slate-800">
                     <DialogTitle className="text-base sm:text-lg font-extrabold flex items-center gap-2">
                       <Target className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                       <span>إضافة هدف مالي جديد 🚀</span>

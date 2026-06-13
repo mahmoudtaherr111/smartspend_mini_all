@@ -59,9 +59,9 @@ export function MonthlyStats({
               className={`flex items-center text-xs ${change > 0 ? "text-red-500" : "text-green-600"}`}
             >
               {change > 0 ? (
-                <TrendingUp className="w-3 h-3 ml-1" />
+                <TrendingUp className="w-3 h-3 ms-1" />
               ) : (
-                <TrendingDown className="w-3 h-3 ml-1" />
+                <TrendingDown className="w-3 h-3 ms-1" />
               )}
               {Math.abs(change).toFixed(1)}% عن الشهر السابق
             </div>

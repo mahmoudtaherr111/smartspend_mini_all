@@ -10,9 +10,10 @@ import {
   userProfiles,
   webhookTokens,
   rawSmsEvents,
+  inAppNotifications,
+  pushSubscriptions,
 } from "../db/schema";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
-import { pushSubscriptions } from "../db/schema";
 
 import { randomBytes } from "crypto";
 import {
@@ -440,28 +441,78 @@ export const profileRouter = router({
   savePushSubscription: authedProcedure
     .input(
       z.object({
-        endpoint: z.string(),
-        p256dh: z.string(),
-        auth: z.string(),
+        endpoint: z.string().optional(),
+        p256dh: z.string().optional(),
+        auth: z.string().optional(),
+        fcmToken: z.string().optional(),
+        deviceType: z.string().optional().default("web"),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Check if it already exists
-      const existing = await db
-        .select()
-        .from(pushSubscriptions)
-        .where(eq(pushSubscriptions.endpoint, input.endpoint))
-        .limit(1);
+      let existing: any[] = [];
+      
+      if (input.fcmToken) {
+        existing = await db
+          .select()
+          .from(pushSubscriptions)
+          .where(eq(pushSubscriptions.fcmToken, input.fcmToken))
+          .limit(1);
+      } else if (input.endpoint) {
+        existing = await db
+          .select()
+          .from(pushSubscriptions)
+          .where(eq(pushSubscriptions.endpoint, input.endpoint))
+          .limit(1);
+      }
 
       if (existing.length === 0) {
         await db.insert(pushSubscriptions).values({
           userId: ctx.user.id as number,
           userType: ctx.user.type,
-          endpoint: input.endpoint,
-          p256dh: input.p256dh,
-          auth: input.auth,
+          endpoint: input.endpoint || null,
+          p256dh: input.p256dh || null,
+          auth: input.auth || null,
+          fcmToken: input.fcmToken || null,
+          deviceType: input.deviceType || "web",
         });
+      } else {
+        const currentSub = existing[0];
+        if (currentSub.userId !== ctx.user.id || currentSub.userType !== ctx.user.type) {
+          await db
+            .update(pushSubscriptions)
+            .set({
+              userId: ctx.user.id as number,
+              userType: ctx.user.type,
+              deviceType: input.deviceType || currentSub.deviceType,
+            })
+            .where(eq(pushSubscriptions.id, currentSub.id));
+        }
       }
+      return { success: true };
+    }),
+
+  // ─── Get In-App Notifications (The Bell) ───
+  getInAppNotifications: authedProcedure.query(async ({ ctx }) => {
+    return await db.select()
+      .from(inAppNotifications)
+      .where(and(
+        eq(inAppNotifications.userId, ctx.user.id as number),
+        eq(inAppNotifications.userType, ctx.user.type)
+      ))
+      .orderBy(desc(inAppNotifications.createdAt))
+      .limit(50);
+  }),
+
+  markInAppNotificationRead: authedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      await db.update(inAppNotifications)
+        .set({ isRead: true })
+        .where(and(
+          eq(inAppNotifications.id, input.id),
+          eq(inAppNotifications.userId, ctx.user.id as number),
+          eq(inAppNotifications.userType, ctx.user.type)
+        ));
       return { success: true };
     }),
 });

@@ -7,7 +7,9 @@ import { toast } from "sonner";
 
 export function PasskeySettings() {
   const [isRegistering, setIsRegistering] = useState(false);
-  const [hasPasskey, setHasPasskey] = useState(false); // Should ideally fetch from API to see if they already have one registered
+  const utils = trpc.useUtils();
+  const { data: passkeyInfo, isLoading } = trpc.webauthn.checkHasPasskey.useQuery();
+  const hasPasskey = !!passkeyInfo?.hasPasskey;
 
   const generateOptionsMutation =
     trpc.webauthn.generateRegistrationOptions.useMutation();
@@ -37,7 +39,12 @@ export function PasskeySettings() {
       // 3. Send response to server for verification
       await verifyRegistrationMutation.mutateAsync({ response: attResp });
 
-      setHasPasskey(true);
+      try {
+        localStorage.setItem("smartspend_has_passkey", "1");
+      } catch (e) {
+        console.error("Failed to write has_passkey to localStorage", e);
+      }
+      utils.webauthn.checkHasPasskey.invalidate();
       toast.success("تم تفعيل الدخول بالبصمة بنجاح! 🎉");
     } catch (error: any) {
       console.error(error);
@@ -50,7 +57,7 @@ export function PasskeySettings() {
   return (
     <div className="bg-white dark:bg-slate-900/50 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group">
       {/* Background Decor */}
-      <div className="absolute top-0 right-0 p-8 -mt-8 -mr-8 opacity-5">
+      <div className="absolute top-0 end-0 p-8 -mt-8 -me-8 opacity-5">
         <Fingerprint className="w-48 h-48 text-indigo-600" />
       </div>
 

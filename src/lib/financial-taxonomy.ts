@@ -137,7 +137,7 @@ export const SUB_CATEGORY_OPTIONS: Record<string, string[]> = {
     "كورنيش",
     "فسحة",
   ],
-  متنوعات: ["عام"],
+  متنوعات: ["عام", "أشخاص"],
 };
 
 export function getSubCategoryOptions(category: string): string[] {

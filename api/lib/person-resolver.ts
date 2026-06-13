@@ -1,5 +1,6 @@
 import { normalizeRelationship, getRelationshipSuffix } from "./relationship-normalizer";
-import { matchArabicPhrase, normalizeArabic } from "./fuzzy-match";
+import { matchArabicPhrase, normalizeArabic, levenshtein } from "./fuzzy-match";
+import { extractPeople } from "./entity-extractor";
 
 export interface KnownPersonForResolver {
   name: string;
@@ -21,51 +22,39 @@ export interface PersonResolution {
 
 const PERSON_CATEGORIES = new Set(["العائلة", "أصدقاء", "موظفين"]);
 
-const NON_PERSON_TERMS = new Set([
-  "السباك",
-  "سباك",
-  "السايس",
-  "سايس",
-  "السواق",
-  "سواق",
-  "السائق",
-  "البواب",
-  "بواب",
-  "الكهربائي",
-  "كهربائي",
-  "النقاش",
-  "نقاش",
-  "النجار",
-  "نجار",
-  "الدكتور",
-  "دكتور",
-  "الصيدلية",
-  "صيدلية",
-  "المطعم",
-  "مطعم",
-  "السوبر",
-  "ماركت",
-  "فلوس",
-  "جنيه",
-  "الف",
-  "ألف",
-  "نت",
-  "النت",
-  "كهربا",
-  "الكهربا",
-  "كهرباء",
-  "الكهرباء",
-  "مياه",
-  "المياه",
-  "ميه",
-  "المية",
-  "غاز",
-  "الغاز",
-  "به",
-  "بي",
-  "في",
-  "على",
-  "علي",
+export const NON_PERSON_TERMS = new Set([
+  // وظائف ومقدمي خدمات
+  "السباك", "سباك", "السايس", "سايس", "السواق", "سواق", "السائق", "سائق", "البواب", "بواب",
+  "الكهربائي", "كهربائي", "النقاش", "نقاش", "النجار", "نجار", "الدكتور", "دكتور", "شغال", "شغالة", "شغاله", "الشغالة", "الشغاله",
+  // أماكن ومحلات
+  "الصيدلية", "صيدلية", "المطعم", "مطعم", "السوبر", "ماركت", "سوبرماركت", "المحل", "الشغل", "البيت", "القهوة", "القهوه", "قهوة", "قهوه", "كافيه", "الكافيه", "المكتب", "الفرن", "فرن", "مخبز", "المخبز",
+  // سلع وخدمات وأشياء مادية
+  "فلوس", "جنيه", "الف", "ألف", "نت", "النت", "كهربا", "الكهربا", "كهرباء", "الكهرباء",
+  "مياه", "المياه", "ميه", "المية", "غاز", "الغاز", "بنزين", "البنزين", "بنزينة", "البنزينة",
+  "علاج", "العلاج", "دوا", "الدوا", "دواء", "الدواء", "هدية", "هديه", "الهدية", "الهديه",
+  "عيد", "العيد", "ميلاد", "الميلاد", "سبوبة", "سبوبه", "فريلانس", "تذكرة", "التذكرة",
+  "فواتير", "الفاتورة", "فاتورة", "شحن", "رصيد", "مصاريف", "المصاريف", "رسوم", "خضار", "خضرة", "خضار", "فاكهة", "فاكهه", "دليفري",
+  "ميكروباص", "أتوبيس", "اتوبيس", "مترو", "تاكسي", "تكسي", "مواصلات", "المواصلات",
+  // أطعمة وأشربة
+  "لحمة", "لحم", "لبن", "لوز", "لفلف", "لقمة", "لبنة", "شاورما", "شورما", "حمص", "فلافل", "كبدة", "مشروب", "مشاريب",
+  // أفعال رياضية وهوايات
+  "كورة", "كوره", "تنس", "سباحة", "جيم",
+  // حروف وجمل زمنية وعلاقات
+  "لحظة", "لاحقاً", "لما", "به", "بي", "في", "على", "علي", "علاقة", "التوضيح",
+  // ضمائر
+  "انا", "انت", "هو", "هي", "احنا", "هما", "هم", "هن", "نفسي",
+  "منه", "منها", "منهم", "معاه", "معاها", "معاهم", "ليها", "ليهم", "لينا", "فيها", "فيهم", "بيها", "بيهم",
+  // كلمات عامة وأفعال شائعة
+  "اديت", "أديت", "خدت", "اخدت", "أخدت", "استلمت", "قبضت", "بعت", "بعتت", "حولت", "صرفت", "جبت", "دفعت", "عطيت", "أعطيت", "عطي", "أعطي",
+  "لعبت", "لبست", "عشان", "عشانك", "علشان", "بتاع", "بتاعتي", "بتاعتك", "بتاعته", "بتاعتنا",
+  "جالي", "جاني", "رجعلي", "رجعولي", "وصلني", "وصلتلي",
+  // كلمات خدمية وبنكية
+  "تحويل", "فوري", "انستاباي", "انستا", "باي", "شحن", "كاش", "فيزا", "محفظة", "محفظه",
+  // مصطلحات مالية
+  "سلف", "سلفة", "سلفه", "دين", "ديون", "قرض", "جمعية", "جمعيه", "قسط", "اقساط", "أقساط", "ايجار", "إيجار", "الايجار", "الإيجار",
+  "مرتب", "المرتب", "راتب", "الراتب", "معاش", "المعاش", "بونص", "البونص", "مكافأة", "مكافاه", "المكافأة", "كاشباك", "الكاشباك",
+  // مصطلحات خيرية ودينية لا تعتبر أشخاص
+  "صدقة", "صدقه", "زكاة", "زكاه", "تبرع", "لله", "مسجد", "جامع", "فقير", "فقراء", "الفقراء", "محتاجين", "المحتاجين"
 ]);
 
 const RELATION_ALIASES: Array<{ canonical: string; aliases: string[] }> = [
@@ -96,25 +85,76 @@ function compactArabic(value: string): string {
     .toLowerCase();
 }
 
-export function cleanPersonName(value: string | null | undefined): string | null {
+export function cleanPersonName(value: string | null | undefined, text?: string): string | null {
   const cleaned = compactArabic(String(value || ""))
+    .replace(/^[وفب]\s+/, "")  // Strip conjunction/preposition prefix "و X" or "ف X"
+    .replace(/^[وف](?=[\u0600-\u06FF]{2,}$)/, "") // Strip "و" directly attached to name like "وكريم"
     .replace(/^(?:ل|لل|الى|إلى)\s*/u, "")
     .replace(/^ل(?=[\u0600-\u06FF]{2,}$)/u, "")
     .trim();
 
   if (!cleaned || cleaned.length < 2) return null;
-  if (/^\d+$/.test(cleaned)) return null;
-  if (NON_PERSON_TERMS.has(cleaned)) return null;
+  if (/^[\d\u0660-\u0669\u06F0-\u06F9]+$/.test(cleaned.replace(/[\s.,]/g, ""))) return null;
+  
+  if (NON_PERSON_TERMS.has(cleaned)) {
+    // Exception: Allow "علي" and "على" if they were originally prefixed with a preposition (e.g., "لعلي", "من علي")
+    const original = String(value || "").trim();
+    const hasPrepositionPrefix = 
+      original.startsWith("ل") || 
+      original.startsWith("من") || 
+      original.startsWith("مع") ||
+      original.startsWith("ب");
+    if ((cleaned === "علي" || cleaned === "على") && hasPrepositionPrefix) {
+      return cleaned;
+    }
+    if (text && (cleaned === "علي" || cleaned === "على")) {
+      const reg = new RegExp(`(?:^|\\s)(?:ل|لل|من|مع|ب)${cleaned}(?:\\s|$)`);
+      if (reg.test(text)) {
+        return cleaned;
+      }
+    }
+    return null;
+  }
   return cleaned;
 }
 
 function contextAroundName(text: string, name: string): string {
-  const normalizedText = compactArabic(text);
+  // Exclude explicit clarification blocks that do not mention the target name
+  // This prevents generic clarifications from being applied to all unknown people
+  // by inferRelationshipFromText.
+  let safeText = text;
+  const parenRegex = /\([^)]+\)/g;
+  let match;
+  while ((match = parenRegex.exec(text)) !== null) {
+    if (!match[0].includes(name)) {
+      safeText = safeText.replace(match[0], " ");
+    }
+  }
+
+  const normalizedText = compactArabic(safeText);
   const normalizedName = compactArabic(name);
-  const index = normalizedText.indexOf(normalizedName);
   const clarificationIndex = normalizedText.indexOf("التوضيح");
   const clarificationTail =
     clarificationIndex >= 0 ? normalizedText.slice(clarificationIndex) : "";
+
+  if (clarificationTail) {
+    const clarificationNameIndex = clarificationTail.indexOf(normalizedName);
+    if (clarificationNameIndex >= 0) {
+      const separators = [" و", "،", ",", ";"];
+      const segmentStart = separators.reduce((start, sep) => {
+        const idx = clarificationTail.lastIndexOf(sep, clarificationNameIndex);
+        return idx >= 0 ? Math.max(start, idx + sep.length) : start;
+      }, 0);
+      return clarificationTail
+        .slice(
+          Math.max(segmentStart, clarificationNameIndex - 10),
+          clarificationNameIndex + normalizedName.length + 34,
+        )
+        .trim();
+    }
+  }
+
+  const index = normalizedText.indexOf(normalizedName);
   if (index < 0) return `${normalizedText} ${clarificationTail}`.trim();
   return `${normalizedText.slice(Math.max(0, index - 45), index + normalizedName.length + 45)} ${clarificationTail}`.trim();
 }
@@ -124,7 +164,7 @@ export function inferRelationshipFromText(text: string, name?: string | null): s
 
   for (const entry of RELATION_ALIASES) {
     for (const alias of entry.aliases) {
-      if (target.includes(compactArabic(alias))) {
+      if (matchArabicPhrase(target, alias)) {
         return entry.canonical;
       }
     }
@@ -137,6 +177,7 @@ function findKnownPerson(
   name: string,
   knownPeople: KnownPersonForResolver[],
 ): KnownPersonForResolver | null {
+  // First pass: exact phrase match
   for (const person of knownPeople) {
     if (!person?.name) continue;
     if (matchArabicPhrase(name, person.name) || matchArabicPhrase(person.name, name)) {
@@ -149,13 +190,111 @@ function findKnownPerson(
     }
   }
 
+  // Second pass: fuzzy match (Levenshtein distance <= 1 for typos like "مسعد" and "مساعد")
+  const normTarget = normalizeArabic(name).toLowerCase();
+  for (const person of knownPeople) {
+    if (!person?.name) continue;
+    const normPersonName = normalizeArabic(person.name).toLowerCase();
+    
+    // Check full name distance
+    const dist = levenshtein(normTarget, normPersonName);
+    const maxAllowedDist = normPersonName.length >= 6 ? 2 : 1;
+    if (dist <= maxAllowedDist) {
+      return person;
+    }
+
+    // Check first name distance
+    const first = person.name.split(/\s+/)[0];
+    if (first && first.length >= 3) {
+      const normFirst = normalizeArabic(first).toLowerCase();
+      const firstDist = levenshtein(normTarget, normFirst);
+      if (firstDist <= 1) {
+        return person;
+      }
+    }
+  }
+
   return null;
 }
 
 export function buildPersonSubCategory(name: string, relationship: string): string {
   const normalized = normalizeRelationship(relationship);
-  const suffix = getRelationshipSuffix(normalized.normalized) || relationship;
+  const suffix = getRelationshipSuffix(normalized.normalized, name) || relationship;
   return `${name} ${suffix}`.trim();
+}
+
+export function isGenericPersonDescription(name: string): boolean {
+  const norm = normalizeArabic(name)
+    .replace(/[^\u0600-\u06FF\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+
+  const genericWords = new Set([
+    "واحد", "واحده", "واحدة", "حد", "شخص", "راجل", "ست", "ناس", "الناس", "حدين", "شخصين", "شخصان",
+    "صاحب", "صاحبي", "صاحبتي", "صحبتي", "صديق", "صديقي", "صديقة", "صديقتي", "صحاب", "اصدقاء", "أصدقاء",
+    "اخ", "أخ", "اخويا", "أخويا", "اخت", "أخت", "اختي", "أختي", "اخوات", "إخوة", "اخوه", "أخوة",
+    "اب", "أب", "ابويا", "أبويا", "بابا", "ام", "أم", "امي", "أمي", "ماما", "اهل", "أهل", "عيلة", "عائلة",
+    "ابن", "بنت", "بنتي", "ابني", "اولاد", "أولاد", "ابناء", "أبناء", "بنات", "زوج", "زوجة", "جوزي", "مراتي",
+    "سواق", "السواق", "بواب", "البواب", "شغال", "شغالة", "شغاله", "دكتور", "الدكتور", "صنايعي",
+    "موظف", "موظفين", "عامل", "عمال", "مدير", "مديري", "زميل", "زميلي", "زميلتي", "زملاء",
+    "عندي", "عنده", "عن", "بتاع", "بتاعتي", "بتاعته"
+  ]);
+
+  const words = norm.split(/\s+/);
+  return words.every(w => genericWords.has(w));
+}
+
+export function pickPersonCandidate(
+  aiExtractedPerson: string | null | undefined,
+  transactionText: string,
+  knownNames: string[],
+): string | null {
+  const all = pickAllPersonCandidates(aiExtractedPerson, transactionText, knownNames);
+  return all.length > 0 ? all[0] : null;
+}
+
+export function pickAllPersonCandidates(
+  aiExtractedPerson: string | null | undefined,
+  transactionText: string,
+  knownNames: string[],
+): string[] {
+  const candidates: string[] = [];
+  // If AI provided a specific person, prioritize it
+  if (aiExtractedPerson && typeof aiExtractedPerson === "string") {
+    const cleanAi = cleanPersonName(aiExtractedPerson, transactionText);
+    // Even if it's not in knownNames, trust the AI if it extracted *something*
+    // but maybe validate it looks like a name
+    if (cleanAi && cleanAi.length >= 2 && !/^[\d\u0660-\u0669\u06F0-\u06F9]+$/.test(cleanAi.replace(/[\s.,]/g, ""))) {
+      candidates.push(cleanAi);
+    }
+  }
+
+  // Fallback to extraction from text
+  const extracted = extractPeople(transactionText, knownNames).map((name) =>
+    cleanPersonName(name, transactionText),
+  );
+  
+  for (const e of extracted) {
+     if (e && !candidates.includes(e)) {
+        candidates.push(e);
+     }
+  }
+
+  // Final fallback: Directed verb regex
+  if (candidates.length === 0) {
+    const directedMatch = transactionText.match(
+      /(?:^|\s)[وف]?(?:اديت|أديت|إديت|عطيت|أعطيت|اعطيت|حولت|بعت|سلفت|دفعتل|دفعت\s+ل|خدت|اخدت|أخدت|أخذت|اخذت|استلمت|قبضت|استلفت|جالي|جاني|رجعلي|رجعولي|إداني|اداني|بعتلي|وصلني)\s+(?:ل|لـ|لل|من)?\s*([\u0600-\u06FF]{2,})/u,
+    );
+    if (directedMatch?.[1]) {
+      const cleanedMatch = cleanPersonName(directedMatch[1], transactionText);
+      if (cleanedMatch && !candidates.includes(cleanedMatch)) {
+         candidates.push(cleanedMatch);
+      }
+    }
+  }
+
+  return candidates;
 }
 
 export function resolvePersonForTransaction(input: {
@@ -163,8 +302,9 @@ export function resolvePersonForTransaction(input: {
   transactionText: string;
   originalText: string;
   knownPeople: KnownPersonForResolver[];
+  aiRelationship?: string | null;
 }): PersonResolution {
-  const name = cleanPersonName(input.candidateName);
+  const name = cleanPersonName(input.candidateName, input.transactionText);
   if (!name) {
     return {
       name: null,
@@ -177,18 +317,123 @@ export function resolvePersonForTransaction(input: {
     };
   }
 
+  // Context-aware brand resolution for "كريم" (Careem vs. Karim the person)
+  if (name === "كريم" || name === "كرييم") {
+    const isTransportContext = /(?:ركبت|طلبت|اوبر|أوبر|تاكسي|تاكسى|تكسي|تكسى|مواصلات|بنزين|بنزينه|بنزينة|عربيه|عربية|مشوار)/.test(input.transactionText);
+    const isTransferContext = /(?:حولت|سلفت|اديت|أديت|إديت|بعت|بعتت|سلّفت)/.test(input.transactionText);
+    if (isTransportContext && !isTransferContext) {
+      return {
+        name: null,
+        relationship: null,
+        category: null,
+        subCategory: null,
+        isKnown: false,
+        shouldLearn: false,
+        needsClarification: false,
+      };
+    }
+  }
+
+  // Bypass clarification for generic relationship descriptions (e.g. "واحد صاحبي")
+  if (isGenericPersonDescription(name)) {
+    const explicitRelationship =
+      inferRelationshipFromText(input.transactionText, name) ||
+      inferRelationshipFromText(input.originalText, name) ||
+      name;
+
+    const normalized = normalizeRelationship(explicitRelationship);
+    
+    const matchingContacts = input.knownPeople.filter(p => 
+      p.relationship && normalizeRelationship(p.relationship).normalized === normalized.normalized
+    );
+
+    if (matchingContacts.length === 1) {
+      const known = matchingContacts[0];
+      return {
+        name: known.name,
+        relationship: known.relationship || normalized.normalized,
+        category: known.category || normalized.category,
+        subCategory: known.subCategory || buildPersonSubCategory(known.name, known.relationship || normalized.normalized),
+        isKnown: true,
+        shouldLearn: false,
+        needsClarification: false,
+      };
+    } else if (matchingContacts.length > 1) {
+      const names = matchingContacts.map(p => p.name).join(" ولا ");
+      return {
+        name: null,
+        relationship: null,
+        category: null,
+        subCategory: null,
+        isKnown: false,
+        shouldLearn: false,
+        needsClarification: true,
+        clarificationQuestion: `تقصد مين؟ ${names}؟`,
+      };
+    }
+
+    return {
+      name: null, // Generic description, do not save a proper name contact
+      relationship: normalized.normalized,
+      category: normalized.category,
+      subCategory: normalized.normalized === "شخص معروف" ? "تحويلات شخصية" : normalized.normalized,
+      isKnown: false,
+      shouldLearn: false,
+      needsClarification: false,
+    };
+  }
+
   const known = findKnownPerson(name, input.knownPeople);
-  const explicitRelationship =
-    inferRelationshipFromText(input.transactionText, name) ||
+  
+  // Look for inline relationship next to the name, e.g. "محمود (صاحبي)"
+  const looseName = name.replace(/[اأإآ]/g, "[اأإآ]").replace(/[يى]/g, "[يى]").replace(/[هة]/g, "[هة]");
+  const inlineRegex = new RegExp(`(?:^|\\s)(?:و|ف|ب|ل|لل|من|مع)?\\s*(${looseName})\\s*\\(([^)]+)\\)`);
+  const inlineMatch = input.originalText.match(inlineRegex);
+  
+  if (inlineMatch && inlineMatch[2]) {
+    const inlineRel = inlineMatch[2].trim();
+    const normalized = normalizeRelationship(inlineRel);
+    return {
+      name: name,
+      relationship: normalized.normalized,
+      category: normalized.category,
+      subCategory: buildPersonSubCategory(name, normalized.normalized),
+      isKnown: false,
+      shouldLearn: true,
+      needsClarification: false,
+    };
+  }
+
+  // Look for explicit relationship in parentheses at the end of the text
+  const explicitContexts = extractExplicitPeopleContext(input.originalText);
+  let explicitMatch = explicitContexts.find(p => p.name === name || matchArabicPhrase(p.name, name));
+
+  let explicitRelationship: string | null | undefined = explicitMatch?.relationship;
+
+  // Fallback to inference if no explicit relationship was found
+  if (!explicitRelationship) {
+    explicitRelationship = inferRelationshipFromText(input.transactionText, name) ||
     inferRelationshipFromText(input.originalText, name);
+  }
+  
+  if (!explicitRelationship && input.aiRelationship) {
+    // Rely on AI's understanding of the full sentence as a last resort before asking
+    explicitRelationship = input.aiRelationship;
+  }
 
   if (known) {
     const relationship =
-      known.relationship || explicitRelationship || known.subCategory || "شخص معروف";
+      explicitRelationship || known.relationship || known.subCategory || "شخص معروف";
     const normalized = normalizeRelationship(relationship);
-    const category = PERSON_CATEGORIES.has(known.category || "")
-      ? known.category!
-      : normalized.category;
+    
+    // EVOLUTION: Known person's stored category ALWAYS wins.
+    // Previously, we'd fall back to normalized.category if known.category
+    // wasn't in PERSON_CATEGORIES — causing "عماد" to go to "عائلة"
+    // when his stored category was "أصدقاء".
+    const category = known.category && PERSON_CATEGORIES.has(known.category)
+      ? known.category
+      : (PERSON_CATEGORIES.has(normalized.category) ? normalized.category : "أصدقاء");
+    
     const subCategory =
       known.subCategory && known.subCategory.includes(known.name)
         ? known.subCategory
@@ -218,6 +463,20 @@ export function resolvePersonForTransaction(input: {
     };
   }
 
+  // If the name ITSELF is a recognized relationship (e.g. "عمي")
+  const selfNormalized = normalizeRelationship(name);
+  if (["العائلة", "أصدقاء", "موظفين"].includes(selfNormalized.category)) {
+    return {
+      name,
+      relationship: selfNormalized.normalized,
+      category: selfNormalized.category,
+      subCategory: buildPersonSubCategory(name, selfNormalized.normalized),
+      isKnown: false,
+      shouldLearn: true, // we implicitly learned they have this relation
+      needsClarification: false,
+    };
+  }
+
   return {
     name,
     relationship: null,
@@ -228,4 +487,104 @@ export function resolvePersonForTransaction(input: {
     needsClarification: true,
     clarificationQuestion: `مين ${name}؟ (أخوك، صديقك، موظف عندك...)`,
   };
+}
+
+export function extractExplicitPeopleContext(text: string): KnownPersonForResolver[] {
+  const matches = Array.from(text.matchAll(/\(([^)]+)\)/g));
+  if (matches.length === 0) return [];
+
+  const results: KnownPersonForResolver[] = [];
+
+  const relationRootWords = new Set([
+    "اخ", "اخو", "اخويا", "أخويا", "أخ", "اخت", "أخت", "اختي", "أختي",
+    "صاحب", "صاحبه", "صاحبة", "صاحبتي", "صحبتي", "صاحبك", "صحاب", "صاحبي",
+    "صديق", "صديقه", "صديقة", "صديقتي", "صديقي",
+    "زميل", "زميله", "زميلة", "زميلتي", "زميلي",
+    "ام", "أم", "امي", "أمي", "ماما", "والده", "والدة", "والدتي", "والدته",
+    "اب", "أب", "ابو", "أبو", "ابويا", "أبويا", "والد", "والدي", "والده", "بابا",
+    "ابن", "ابني", "بنت", "بنتي", "ولد", "ولدي",
+    "زوج", "زوجي", "جوز", "جوزي", "زوجة", "زوجتي", "مرات", "مراتي",
+    "عم", "عمي", "عمه", "عمة", "عمتي", "خال", "خالي", "خاله", "خالة", "خالتي", "جد", "جدي", "جده", "جدة", "جدتي",
+    "مدير", "مديري", "موظف", "موظفي", "عامل", "عامله", "عاملة",
+    "حارس", "بواب", "البواب", "سواق", "السواق", "قريب", "قريبي", "قرايب", "قريبتي"
+  ]);
+
+  const relationModifiers = new Set([
+    "عندي", "عنده", "عن", "من", "في", "مع", "بتاع", "بتاعتي", "صاحبي", "صاحبتي", "صاحبه", "صاحبة", "صاحبه", "صاحبتك"
+  ]);
+
+  for (const match of matches) {
+    const insideParen = match[1].trim();
+    const words = insideParen.split(/\s+/).filter(Boolean);
+    let i = 0;
+    let currentNameWords: string[] = [];
+    
+    while (i < words.length) {
+      const rawWord = words[i];
+      const word = rawWord.replace(/[،,؛;]/g, "").trim();
+      const isConnector = ["و", "،", ",", "؛", ";"].includes(rawWord) || rawWord === "و";
+      
+      if (!word || isConnector) {
+        i++;
+        continue;
+      }
+      
+      const cleanWord = normalizeArabic(word).toLowerCase();
+      const isRelationRoot = relationRootWords.has(cleanWord) || relationRootWords.has(word);
+      
+      if (isRelationRoot) {
+        let name = currentNameWords.join(" ").trim();
+        name = name.replace(/^[و،,؛;]\s*/, "").replace(/[و،,؛;]\s*$/, "").trim();
+        
+        if (name) {
+          let relationshipWords: string[] = [word];
+          i++;
+          while (i < words.length) {
+            const rawNextWord = words[i];
+            const nextWord = rawNextWord.replace(/[،,؛;]/g, "").trim();
+            const isNextConnector = ["و", "،", ",", "؛", ";"].includes(rawNextWord) || rawNextWord === "و";
+            
+            if (!nextWord || isNextConnector) {
+              break;
+            }
+            
+            const nextClean = normalizeArabic(nextWord).toLowerCase();
+            const isNextRelation = relationRootWords.has(nextClean) || relationRootWords.has(nextWord);
+            const isNextModifier = relationModifiers.has(nextClean) || relationModifiers.has(nextWord);
+            
+            if (isNextRelation || isNextModifier) {
+              relationshipWords.push(nextWord);
+              i++;
+            } else {
+              break;
+            }
+          }
+          
+          const relationship = relationshipWords.join(" ").trim();
+          const normalized = normalizeRelationship(relationship);
+          
+          results.push({
+            name: name,
+            relationship: normalized.normalized,
+            category: normalized.category,
+            subCategory: buildPersonSubCategory(name, normalized.normalized)
+          });
+          
+          currentNameWords = [];
+        } else {
+          i++;
+        }
+      } else {
+        currentNameWords.push(word);
+        i++;
+      }
+    }
+  }
+
+  return results;
+}
+
+export function extractExplicitPersonContext(text: string): KnownPersonForResolver | null {
+  const people = extractExplicitPeopleContext(text);
+  return people.length > 0 ? people[0] : null;
 }

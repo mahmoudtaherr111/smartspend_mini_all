@@ -5,7 +5,7 @@ describe("model provider coercion", () => {
   it("does not allow Groq model names on Gemini", () => {
     expect(
       coerceModelForProvider("llama-3.1-8b-instant", "gemini", "free"),
-    ).toBe("gemini-2.0-flash");
+    ).toBe("gemini-3.1-flash-lite");
   });
 
   it("does not allow Gemini model names on Groq", () => {
@@ -14,9 +14,9 @@ describe("model provider coercion", () => {
     );
   });
 
-  it("maps gemini-3.5-flash to gemini-2.5-flash", () => {
+  it("keeps gemini-3.5-flash as passthrough", () => {
     expect(coerceModelForProvider("gemini-3.5-flash", "gemini", "free")).toBe(
-      "gemini-2.5-flash",
+      "gemini-3.5-flash",
     );
   });
 

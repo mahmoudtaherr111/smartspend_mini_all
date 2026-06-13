@@ -250,6 +250,19 @@ const goldenCases: GoldenCase[] = [
     expectedItems: [{ amount: 1200, category: "موظفين", subCategory: "عماد موظفك" }],
   },
   {
+    name: "mixed known and unknown batch people",
+    text: "حولت لمروان 500 ولسارة 300 ولخالد 200 ولمحمود 100",
+    knownPeople,
+    expectedDecision: "clarify",
+    expectedQuestionIncludes: "خالد و محمود",
+    expectedItems: [
+      { amount: 500, category: "العائلة", subCategory: "مروان أخوك" },
+      { amount: 300, category: "أصدقاء", subCategory: "سارة صاحبتك" },
+      { amount: 200, category: "تحويل", subCategory: "أشخاص" },
+      { amount: 100, category: "تحويل", subCategory: "أشخاص" },
+    ],
+  },
+  {
     name: "unknown person should clarify",
     text: "اديت باسم 400",
     expectedDecision: "clarify",
@@ -300,7 +313,8 @@ const goldenCases: GoldenCase[] = [
     expectedItems: [
       { amount: 35, category: "أكل وشرب", subCategory: "قهوة وكافيه" },
       { amount: 90, category: "مواصلات", subCategory: "أوبر/كريم" },
-      { amount: 500, category: "متنوعات" },
+      { amount: 500, category: "متنوعات", subCategory: "أشخاص" },
+      { amount: 450, category: "فواتير", subCategory: "كهرباء" },
     ],
   },
 ];

@@ -118,7 +118,7 @@ export default function Landing() {
           </Card>
 
           <Card className="border-amber-200/60 dark:border-amber-700/50 bg-amber-50/40 dark:bg-amber-950/20 backdrop-blur-sm shadow-md hover:shadow-lg transition-all duration-300 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
+            <div className="absolute top-0 end-0 w-full h-1 bg-gradient-to-r from-amber-400 to-orange-500" />
             <CardContent className="pt-6 space-y-2">
               <h3 className="font-semibold text-lg flex items-center gap-2 text-amber-700 dark:text-amber-400">
                 برو{" "}
@@ -133,7 +133,7 @@ export default function Landing() {
           </Card>
 
           <Card className="border-violet-200/60 dark:border-violet-700/50 bg-violet-50/40 dark:bg-violet-950/20 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-violet-400 to-fuchsia-500" />
+            <div className="absolute top-0 end-0 w-full h-1 bg-gradient-to-r from-violet-400 to-fuchsia-500" />
             <CardContent className="pt-6 space-y-2">
               <h3 className="font-semibold text-lg text-violet-700 dark:text-violet-400">
                 ألترا

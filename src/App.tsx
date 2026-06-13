@@ -9,18 +9,22 @@ import {
 } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { idbPersister } from "@/lib/queryPersister";
 import { trpc, trpcClient } from "@/providers/trpc";
 import { Toaster } from "@/components/ui/sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { Sidebar } from "@/components/Sidebar";
 import { useHaptics } from "@/hooks/useHaptics";
+import { useHistoryBound } from "@/hooks/useHistoryBound";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { useSessionTracker } from "@/hooks/useSessionTracker";
 import { cn } from "@/lib/utils";
 import { PageLoadingSkeleton } from "@/components/PageLoadingSkeleton";
 import { UltraFeatureRoute } from "@/components/routing/PlanGates";
 import { FeedbackButton } from "@/components/FeedbackButton";
+import { NotificationBell } from "@/components/NotificationBell";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { PwaEnhancements } from "@/components/pwa/PwaEnhancements";
 import { PullToRefreshWrapper } from "@/components/pwa/PullToRefreshWrapper";
@@ -31,24 +35,25 @@ import "./print.css";
 import darkModeLogo from "../photos/dark_mode_logo-removebg-preview.png";
 import whiteModeLogo from "../photos/white_mode_logo-removebg-preview.png";
 
-const Login = lazy(() => import("@/pages/Login"));
-const AuthCallback = lazy(() => import("@/pages/AuthCallback"));
+import Login from "@/pages/Login";
+import Home from "@/pages/Home";
+import Settings from "@/pages/Settings";
+import BankSyncPage from "@/pages/BankSyncPage";
+import AuthCallback from "@/pages/AuthCallback";
+
 const Landing = lazy(() => import("@/pages/Landing"));
-const Home = lazy(() => import("@/pages/Home"));
 const Support = lazy(() => import("@/pages/Support"));
 const Admin = lazy(() => import("@/pages/Admin"));
 const Pro = lazy(() => import("@/pages/Pro"));
-const Settings = lazy(() => import("@/pages/Settings"));
 const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
-const BankSyncPage = lazy(() => import("@/pages/BankSyncPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60_000,
-      gcTime: 5 * 60_000,
+      staleTime: 10_000,
+      gcTime: 24 * 60 * 60_000,
     },
   },
 });
@@ -98,13 +103,42 @@ function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
 function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useAuth();
+  useHistoryBound(sidebarOpen, () => setSidebarOpen(false));
   const { lightTap, mediumTap } = useHaptics();
   const scrollRef = React.useRef<HTMLDivElement>(null);
+  const location = useLocation();
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   const touchStart = React.useRef<number | null>(null);
   const touchEnd = React.useRef<number | null>(null);
 
   const minSwipeDistance = 50;
+
+  React.useEffect(() => {
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      ) {
+        setIsKeyboardOpen(true);
+      }
+    };
+
+    const handleFocusOut = () => {
+      setIsKeyboardOpen(false);
+    };
+
+    document.addEventListener("focusin", handleFocusIn);
+    document.addEventListener("focusout", handleFocusOut);
+
+    return () => {
+      document.removeEventListener("focusin", handleFocusIn);
+      document.removeEventListener("focusout", handleFocusOut);
+    };
+  }, []);
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchEnd.current = null;
@@ -123,7 +157,8 @@ function Layout({ children }: { children: React.ReactNode }) {
 
     // RTL layout: Sidebar is on the right.
     // Swipe left (pulling from right edge) opens it.
-    if (isLeftSwipe && !sidebarOpen) {
+    // Only open if touch starts from the right edge area (within 44px of screen width)
+    if (isLeftSwipe && !sidebarOpen && touchStart.current > window.innerWidth - 44) {
       mediumTap();
       setSidebarOpen(true);
     }
@@ -133,6 +168,8 @@ function Layout({ children }: { children: React.ReactNode }) {
       setSidebarOpen(false);
     }
   };
+
+  const isDashboard = location.pathname === "/dashboard";
 
   return (
     <div
@@ -162,6 +199,7 @@ function Layout({ children }: { children: React.ReactNode }) {
               />
             </div>
             <div className="flex items-center gap-2">
+              <NotificationBell />
               <button
                 type="button"
                 onClick={() => {
@@ -201,7 +239,8 @@ function Layout({ children }: { children: React.ReactNode }) {
         ref={scrollRef}
         className={cn(
           "app-content hide-scrollbar transition-all duration-500",
-          user ? "lg:mr-72 pb-nav-safe lg:pb-0" : "",
+          user ? "lg:ms-72 lg:pb-0" : "",
+          user ? (isDashboard && !isKeyboardOpen ? "pb-nav-safe" : "pb-safe") : "",
         )}
       >
         <PullToRefreshWrapper scrollRef={scrollRef}>
@@ -229,6 +268,20 @@ class ErrorBoundary extends React.Component<
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("React Error Boundary:", error, errorInfo);
+
+    // Auto-reload on chunk load error
+    const isChunkError =
+      error.message?.includes("Failed to fetch dynamically imported module") ||
+      error.message?.includes("ChunkLoadError") ||
+      error.name === "ChunkLoadError";
+
+    if (isChunkError) {
+      const hasReloaded = sessionStorage.getItem("chunk_error_reloaded");
+      if (!hasReloaded) {
+        sessionStorage.setItem("chunk_error_reloaded", "true");
+        window.location.reload();
+      }
+    }
   }
 
   render() {
@@ -388,10 +441,18 @@ function AnimatedRoutes() {
 }
 
 export default function App() {
+  React.useEffect(() => {
+    // Clear chunk error reload flag if application successfully loaded
+    sessionStorage.removeItem("chunk_error_reloaded");
+  }, []);
+
   return (
     <ErrorBoundary>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <QueryClientProvider client={queryClient}>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{ persister: idbPersister, maxAge: 24 * 60 * 60 * 1000 }}
+        >
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <BrowserRouter>
               <Layout>
@@ -402,7 +463,7 @@ export default function App() {
               <Toaster position="top-center" richColors className="pt-safe" />
             </BrowserRouter>
           </ThemeProvider>
-        </QueryClientProvider>
+        </PersistQueryClientProvider>
       </trpc.Provider>
     </ErrorBoundary>
   );

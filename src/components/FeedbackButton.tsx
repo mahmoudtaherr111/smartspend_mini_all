@@ -42,7 +42,7 @@ export function FeedbackButton() {
       <DialogTrigger asChild>
         <Button
           size="icon"
-          className="fixed left-4 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] lg:bottom-6 lg:left-6 h-14 w-14 min-h-[56px] min-w-[56px] rounded-full shadow-2xl bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 active:scale-95 transition-transform z-40 text-white"
+          className="fixed start-4 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] lg:bottom-6 lg:start-6 h-14 w-14 min-h-[56px] min-w-[56px] rounded-full shadow-2xl bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 active:scale-95 transition-transform z-40 text-white"
         >
           <MessageCircleHeart className="w-6 h-6" />
         </Button>
@@ -69,7 +69,7 @@ export function FeedbackButton() {
             disabled={createTicket.isPending || message.length < 10}
           >
             {createTicket.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin ml-2" />
+              <Loader2 className="w-4 h-4 animate-spin ms-2" />
             ) : null}
             إرسال الملاحظة
           </Button>

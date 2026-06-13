@@ -17,6 +17,9 @@
  */
 
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { isLikelyPersonName } from "./egyptian-names-dictionary";
+import { extractAmounts } from "./entity-extractor";
+import { SUB_CATEGORY_MAP } from "./rule-engine";
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -93,16 +96,42 @@ const EXPENSE_VERBS = [
   "اتعشيت",
   "اتغديت",
   "فطرت",
+  "فرتكت",
+  "ضيعت",
+  "طيرت",
+  "خرشت",
+  "حاسبت",
+  "خربت",
+  "بوظت",
   "قعدت",
   "قعدنا",
   "ضربت",
   "روحت",
+  "لعبت",
+  "لعبنا",
+  "حجزنا",
+  "شحنا",
+  "حاسبنا",
+  "صلحنا",
+  "خرجنا",
+  "اتعشينا",
+  "اتغدينا",
+  "فطرنا",
+  "سافرنا",
+  "سافرت",
+  "اتفسحت",
+  "اتفسحنا",
+  "ضربنا",
 ];
 
 const INCOME_VERBS = [
   "جالي",
   "إداني",
   "اداني",
+  "اديتني",
+  "أديتني",
+  "أبويا إداني",
+  "جاني",
   "بعتلي",
   "وصلني",
   "وصلتلي",
@@ -120,7 +149,7 @@ const INCOME_VERBS = [
   "دخللي",
 ];
 
-const TRANSFER_VERBS = ["حولت", "سحبت", "حطيت", "سلفت", "ودعت"];
+const TRANSFER_VERBS = ["حولت", "سحبت", "شلت", "سلت", "حطيت", "سلفت", "ودعت", "بعت", "بعتت", "رجعت", "فكيت"];
 
 const INVESTMENT_VERBS = [
   "اشتريت ذهب",
@@ -140,17 +169,15 @@ const ALL_FINANCIAL_VERBS = [
 
 const PERSON_PATTERNS = [
   // Family
-  /(?:أبو(?:يا|ه|ي)|ابو(?:يا|ه|ي)|والد(?:ي|ه|تي|ته)|بابا|الوالد)/,
-  /(?:أم(?:ي|ه|ا)|ام(?:ي|ه|ا)|والدت(?:ي|ه)|ماما|الوالده)/,
-  /(?:أخو(?:يا|ه|ي)|اخو(?:يا|ه|ي)|أخت(?:ي|ه)|اخت(?:ي|ه))/,
-  /(?:جوز(?:ي|ها)|زوج(?:ي|تي|ها|ته))/,
-  /(?:خال(?:ي|ه|تي|ته)|عم(?:ي|ه|تي|ته))/,
-  /(?:ابن(?:ي|ه|ها)|بنت(?:ي|ه|ها))/,
-  /(?:جد(?:ي|ه|و|تي|ته)|تيت(?:ه|ا))/,
+  /(?:^|\s)(?:[وبفل]|ال)?(أبو(?:يا|ه|ي)|ابو(?:يا|ه|ي)|والد(?:ي|ه|تي|ته)|بابا|الوالد)(?=\s|$|[.,!?])/i,
+  /(?:^|\s)(?:[وبفل]|ال)?(أم(?:ي|ه|ا)|ام(?:ي|ه|ا)|والدت(?:ي|ه)|ماما|الوالده)(?=\s|$|[.,!?])/i,
+  /(?:^|\s)(?:[وبفل]|ال)?(أخو(?:يا|ه|ي)|اخو(?:يا|ه|ي)|أخت(?:ي|ه)|اخت(?:ي|ه))(?=\s|$|[.,!?])/i,
+  /(?:^|\s)(?:[وبفل]|ال)?(جوز(?:ي|ها)|زوج(?:ي|تي|ها|ته))(?=\s|$|[.,!?])/i,
+  /(?:^|\s)(?:[وبفل]|ال)?(خال(?:ي|ه|تي|ته)|عم(?:ي|ه|تي|ته))(?=\s|$|[.,!?])/i,
+  /(?:^|\s)(?:[وبفل]|ال)?(ابن(?:ي|ه|ها)|بنت(?:ي|ه|ها))(?=\s|$|[.,!?])/i,
+  /(?:^|\s)(?:[وبفل]|ال)?(جد(?:ي|ه|و|تي|ته)|تيت(?:ه|ا))(?=\s|$|[.,!?])/i,
   // Service people
-  /(?:البواب|الشغال(?:ه|ة)|السواق|السائق|الفراش|الحارس)/,
-  // Named people (generic Arabic name pattern after financial verb)
-  /(?:^|\s)(?:ل|لـ)\s*([\u0600-\u06FF]{2,})/,
+  /(?:^|\s)(?:[وبفل]|ال)?(البواب|الشغال(?:ه|ة)?|السواق|السائق|الفراش|الحارس|السايس|السايق|الميكانيكي)(?=\s|$|[.,!?])/i,
 ];
 
 // ─── Narrative Connectors ──────────────────────────────────────────
@@ -254,6 +281,67 @@ function detectLinkedVerb(text: string): string | null {
   return null;
 }
 
+// ─── Financial Nouns List ──────────────────────────────────────────
+const FINANCIAL_NOUNS = [
+  "بنزين",
+  "إيجار",
+  "ايجار",
+  "كهرباء",
+  "كهربا",
+  "ميه",
+  "مياه",
+  "غاز",
+  "نت",
+  "انترنت",
+  "إنترنت",
+  "قسط",
+  "شحن",
+  "رصيد",
+  "مرتب",
+  "راتب",
+  "أوبر",
+  "اوبر",
+  "كريم",
+  "مترو",
+  "تاكسي",
+  "بقالة",
+  "بقاله",
+  "سوبر ماركت",
+  "دكتور",
+  "صيدلية",
+  "أكل",
+  "شرب",
+  "قهوة",
+  "قهوه",
+  "سجائر",
+  "سجاير",
+  "جمعية",
+  "جمعيه",
+  "سلفة",
+  "سلفه",
+  "ميكروباص",
+  "مشوار",
+  "خروجة",
+  "غدا",
+  "عشا",
+  "فطار",
+  "كشري",
+  "عيدية",
+];
+
+// Helper to normalize Arabic string inside narrative-decomposer (to prevent circular imports)
+function normalizeArabicString(str: string): string {
+  return String(str || "")
+    .trim()
+    .replace(/[إأآٱ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/ؤ/g, "و")
+    .replace(/ئ/g, "ي")
+    .replace(/\s+/g, "")
+    .toLowerCase();
+}
+
 // ─── Is Financial Segment? ─────────────────────────────────────────
 
 function isFinancialSegment(text: string): boolean {
@@ -267,52 +355,6 @@ function isFinancialSegment(text: string): boolean {
   if (detectLinkedVerb(t)) return true;
 
   // Has a known category keyword? (lightweight check)
-  const FINANCIAL_NOUNS = [
-    "بنزين",
-    "إيجار",
-    "ايجار",
-    "كهرباء",
-    "كهربا",
-    "ميه",
-    "مياه",
-    "غاز",
-    "نت",
-    "انترنت",
-    "إنترنت",
-    "قسط",
-    "شحن",
-    "رصيد",
-    "مرتب",
-    "راتب",
-    "أوبر",
-    "اوبر",
-    "كريم",
-    "مترو",
-    "تاكسي",
-    "بقالة",
-    "بقاله",
-    "سوبر ماركت",
-    "دكتور",
-    "صيدلية",
-    "أكل",
-    "شرب",
-    "قهوة",
-    "قهوه",
-    "سجائر",
-    "سجاير",
-    "جمعية",
-    "جمعيه",
-    "سلفة",
-    "سلفه",
-    "ميكروباص",
-    "مشوار",
-    "خروجة",
-    "غدا",
-    "عشا",
-    "فطار",
-    "كشري",
-    "عيدية",
-  ];
   for (const noun of FINANCIAL_NOUNS) {
     if (t.includes(noun)) return true;
   }
@@ -320,112 +362,373 @@ function isFinancialSegment(text: string): boolean {
   return false;
 }
 
+// ─── Amount-Anchored Decomposer ───────────────────────────────────
+
+/**
+ * Amount-anchored decomposition strategy.
+ * This is the absolute default and only way to decompose sentences.
+ */
+function decomposeAmountAnchored(
+  text: string,
+  knownNames: string[] = [],
+): DecomposedSegment[] | null {
+  // Preprocess text to add spaces around punctuation (except within decimal/thousands numbers)
+  const preprocessed = text
+    .replace(/([،!؟?؛;])/g, " $1 ")
+    .replace(/(?<!\d)[.,]|[.,](?!\d)/g, " $& ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const words = preprocessed.split(/\s+/);
+
+  // Track start and end indices of each word in preprocessed text
+  const wordsWithOffsets: { word: string; start: number; end: number }[] = [];
+  let currentPos = 0;
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    const start = preprocessed.indexOf(word, currentPos);
+    const end = start + word.length;
+    wordsWithOffsets.push({ word, start, end });
+    currentPos = end;
+  }
+
+  // Find all valid amount-anchor indices using extractAmounts on preprocessed text
+  const extractedAmounts = extractAmounts(preprocessed);
+  const anchorIndices: number[] = [];
+
+  for (const a of extractedAmounts) {
+    let bestWordIdx = -1;
+    // Look for exact start index overlap first
+    for (let i = 0; i < wordsWithOffsets.length; i++) {
+      const w = wordsWithOffsets[i];
+      if (w.start <= a.index && w.end > a.index) {
+        bestWordIdx = i;
+        break;
+      }
+    }
+    // Fallback: any overlap
+    if (bestWordIdx === -1) {
+      for (let i = 0; i < wordsWithOffsets.length; i++) {
+        const w = wordsWithOffsets[i];
+        if (w.start < a.index + a.length && w.end > a.index) {
+          bestWordIdx = i;
+          break;
+        }
+      }
+    }
+    if (bestWordIdx !== -1 && !anchorIndices.includes(bestWordIdx)) {
+      anchorIndices.push(bestWordIdx);
+    }
+  }
+
+  // Sort anchor indices to ensure logical sequence
+  anchorIndices.sort((a, b) => a - b);
+
+  if (anchorIndices.length === 0) return null;
+
+  const rawSegments: { startIdx: number; endIdx: number; anchorIdx: number }[] = [];
+
+  for (let a = 0; a < anchorIndices.length; a++) {
+    const anchorIdx = anchorIndices[a];
+    
+    // Default start is 0
+    let startIdx = 0;
+    if (a > 0) {
+      const prevAnchorIdx = anchorIndices[a - 1];
+      // Find the best boundary between prevAnchorIdx and anchorIdx
+      let splitIdx = -1;
+      
+      // 1. Look for connectors in the gap from right to left
+      for (let i = anchorIdx - 1; i > prevAnchorIdx; i--) {
+        const w = words[i];
+        const isConnector = w === "و" || w === "ف" || w === "،" || w === "," || w === "ثم" || w === "بعدين" || STRONG_CONNECTORS.includes(w);
+        const startsWithConnector = (w.startsWith("و") && w.length > 1 && !isLikelyPersonName(w) && !knownNames.includes(w));
+        
+        if (isConnector) {
+          splitIdx = i + 1; // Split after the connector
+          break;
+        } else if (startsWithConnector) {
+          splitIdx = i; // Split before the word starting with "و"
+          break;
+        }
+      }
+      
+      // 2. Look for verbs in the gap from left to right
+      if (splitIdx === -1) {
+        for (let i = prevAnchorIdx + 1; i < anchorIdx; i++) {
+          const w = words[i];
+          const isVerb = ALL_FINANCIAL_VERBS.includes(w) || ALL_FINANCIAL_VERBS.includes(w.replace(/^[وف]/, ""));
+          if (isVerb) {
+            splitIdx = i; // Split before the verb
+            break;
+          }
+        }
+      }
+      
+      // 3. Scan nouns/names transition
+      if (splitIdx === -1) {
+        // Skip currency suffix of the previous anchor
+        let firstWordIdx = prevAnchorIdx + 1;
+        if (firstWordIdx < anchorIdx) {
+          const fw = words[firstWordIdx];
+          if (fw.includes("جني") || fw === "ج") {
+            firstWordIdx++;
+          }
+        }
+        
+        // Scan from firstWordIdx to anchorIdx - 1
+        for (let i = firstWordIdx; i < anchorIdx; i++) {
+          const w = words[i];
+          const cleanW = w.replace(/[^\u0600-\u06FFa-zA-Z]/g, "").replace(/^[وفبل]/, "").replace(/^ال/, "");
+          const isRightLeaning = 
+            ["ب", "في", "من", "ل", "علشان", "عشان"].includes(w) || 
+            ["بـ", "لـ"].includes(w) ||
+            SUB_CATEGORY_MAP[cleanW] !== undefined;
+            
+          const isLeftLeaning = isLikelyPersonName(w) || knownNames.includes(w);
+          
+          if (isRightLeaning) {
+            splitIdx = i; // Split before the right-leaning word
+            break;
+          } else if (isLeftLeaning) {
+            splitIdx = i + 1; // Split after the left-leaning name
+          }
+        }
+      }
+      
+      // Default fallback
+      if (splitIdx !== -1) {
+        startIdx = splitIdx;
+      } else {
+        startIdx = prevAnchorIdx + 1;
+      }
+    }
+
+    let endIdx = anchorIdx;
+
+    // For the LAST anchor, extend to end-of-text to capture trailing words
+    if (a === anchorIndices.length - 1) {
+      endIdx = words.length - 1;
+    } else {
+      const nextAnchorIdx = anchorIndices[a + 1];
+      let splitIdx = -1;
+      
+      // Look for split point between anchorIdx and nextAnchorIdx
+      for (let i = nextAnchorIdx - 1; i > anchorIdx; i--) {
+        const w = words[i];
+        const isConnector = w === "و" || w === "ف" || w === "،" || w === "," || w === "ثم" || w === "بعدين" || STRONG_CONNECTORS.includes(w);
+        const startsWithConnector = (w.startsWith("و") && w.length > 1 && !isLikelyPersonName(w) && !knownNames.includes(w));
+        
+        if (isConnector) {
+          splitIdx = i + 1;
+          break;
+        } else if (startsWithConnector) {
+          splitIdx = i;
+          break;
+        }
+      }
+      
+      if (splitIdx === -1) {
+        for (let i = anchorIdx + 1; i < nextAnchorIdx; i++) {
+          const w = words[i];
+          const isVerb = ALL_FINANCIAL_VERBS.includes(w) || ALL_FINANCIAL_VERBS.includes(w.replace(/^[وف]/, ""));
+          if (isVerb) {
+            splitIdx = i;
+            break;
+          }
+        }
+      }
+      
+      if (splitIdx === -1) {
+        let firstWordIdx = anchorIdx + 1;
+        if (firstWordIdx < nextAnchorIdx) {
+          const fw = words[firstWordIdx];
+          if (fw.includes("جني") || fw === "ج") {
+            firstWordIdx++;
+          }
+        }
+        
+        for (let i = firstWordIdx; i < nextAnchorIdx; i++) {
+          const w = words[i];
+          const cleanW = w.replace(/[^\u0600-\u06FFa-zA-Z]/g, "").replace(/^[وفبل]/, "").replace(/^ال/, "");
+          const isRightLeaning = 
+            ["ب", "في", "من", "ل", "علشان", "عشان"].includes(w) || 
+            ["بـ", "لـ"].includes(w) ||
+            SUB_CATEGORY_MAP[cleanW] !== undefined;
+            
+          const isLeftLeaning = isLikelyPersonName(w) || knownNames.includes(w);
+          
+          if (isRightLeaning) {
+            splitIdx = i;
+            break;
+          } else if (isLeftLeaning) {
+            splitIdx = i + 1;
+          }
+        }
+      }
+      
+      if (splitIdx !== -1) {
+        endIdx = splitIdx - 1;
+      } else {
+        endIdx = nextAnchorIdx - 1;
+      }
+    }
+
+    rawSegments.push({ startIdx, endIdx, anchorIdx });
+  }
+
+  const segments: DecomposedSegment[] = [];
+  let previousVerb: string | null = null;
+
+  for (let s = 0; s < rawSegments.length; s++) {
+    const { startIdx, endIdx, anchorIdx } = rawSegments[s];
+    
+    let actualStartIdx = startIdx;
+    if (s > 0) {
+      const prevEnd = rawSegments[s - 1].endIdx;
+      actualStartIdx = prevEnd + 1;
+      if (words[actualStartIdx] === "و" || words[actualStartIdx] === "ف" || words[actualStartIdx] === "،" || words[actualStartIdx] === ",") {
+        actualStartIdx++;
+      }
+    }
+    
+    const segmentWords = words.slice(actualStartIdx, endIdx + 1);
+    const segmentText = segmentWords.join(" ");
+
+    if (!segmentText.trim()) continue;
+
+    const seg = buildSegment(segmentText, segments.length);
+
+    const textUpToAmount = words.slice(0, anchorIdx + 1).join(" ");
+    let nearestPrecedingVerb: string | null = null;
+    let maxVerbIndex = -1;
+
+    for (const verb of ALL_FINANCIAL_VERBS) {
+      const idx = textUpToAmount.lastIndexOf(verb);
+      if (idx > maxVerbIndex) {
+        maxVerbIndex = idx;
+        nearestPrecedingVerb = verb;
+      }
+    }
+
+    if (nearestPrecedingVerb) {
+      seg.linkedVerb = nearestPrecedingVerb;
+    } else if (previousVerb) {
+      seg.linkedVerb = previousVerb;
+    }
+
+    if (seg.linkedVerb) {
+      previousVerb = seg.linkedVerb;
+      if (seg.direction === "unknown") {
+        seg.direction = detectSegmentDirection(seg.linkedVerb + " " + segmentText);
+      }
+    }
+
+    segments.push(seg);
+  }
+
+  return segments.length > 0 ? segments : null;
+}
+
+// ─── Verb-Anchored Decomposer ──────────────────────────────────────
+
+function decomposeVerbAnchored(
+  text: string,
+  knownNames: string[] = [],
+): DecomposedSegment[] | null {
+  const preprocessed = text
+    .replace(/([،!؟?؛;])/g, " $1 ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const words = preprocessed.split(/\s+/);
+  const verbIndices: number[] = [];
+  
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i].replace(/^[وف]/, "");
+    if (ALL_FINANCIAL_VERBS.includes(w) || ALL_FINANCIAL_VERBS.includes(words[i])) {
+      verbIndices.push(i);
+    }
+  }
+
+  if (verbIndices.length <= 1) return null; // Needs at least 2 verbs to split
+
+  const segments: DecomposedSegment[] = [];
+  let startIndex = 0;
+
+  for (let a = 0; a < verbIndices.length; a++) {
+    const verbIdx = verbIndices[a];
+    
+    let endIdx = words.length - 1;
+    if (a < verbIndices.length - 1) {
+      const nextVerbIdx = verbIndices[a + 1];
+      let splitIdx = nextVerbIdx;
+      // Look backwards from next verb to find a connector
+      for (let j = nextVerbIdx - 1; j > verbIdx; j--) {
+        const w = words[j];
+        if (w === "و" || w === "ف" || STRONG_CONNECTORS.includes(w) || w === "،" || w === ",") {
+          splitIdx = j;
+          break;
+        }
+      }
+      endIdx = splitIdx - 1;
+    }
+
+    let actualStart = startIndex;
+    if (words[actualStart] === "و" || words[actualStart] === "ف" || words[actualStart] === "،" || words[actualStart] === ",") {
+       actualStart++;
+    }
+
+    const segmentText = words.slice(actualStart, endIdx + 1).join(" ");
+    if (segmentText.trim()) {
+       const seg = buildSegment(segmentText, segments.length);
+       seg.linkedVerb = ALL_FINANCIAL_VERBS.find(v => segmentText.includes(v)) || null;
+       segments.push(seg);
+    }
+    
+    startIndex = endIdx + 1;
+  }
+
+  return segments.length > 1 ? segments : null;
+}
+
 // ─── Heuristic Decomposer (0 tokens) ──────────────────────────────
 
 /**
  * Decomposes text using local heuristics only. No AI calls.
  * Accuracy: ~80% for multi-transaction narratives.
+ *
+ * Uses ONLY the Amount-Anchored strategy as requested.
  */
-export function decomposeHeuristic(text: string): DecompositionResult {
-  const trimmed = text.trim();
+export function decomposeHeuristic(
+  text: string,
+  knownNames: string[] = [],
+): DecompositionResult {
+  let segments = decomposeAmountAnchored(text, knownNames);
+  
+  if (!segments || segments.length === 0) {
+    segments = decomposeVerbAnchored(text, knownNames);
+  }
 
-  // === Simple text check ===
-  const wordCount = trimmed.split(/\s+/).length;
-  const amountCount = countAmounts(trimmed);
-  const hasConnector = STRONG_CONNECTORS.some((c) => trimmed.includes(c));
-  const hasWaw =
-    /و\s*(?:دفعت|صرفت|اشتريت|جبت|ركبت|اكلت|شربت|طلبت|حجزت|شحنت|حاسبت|جالي|إداني|اداني|بعتلي|وصلني|قبضت|استلمت|خدت|اخدت|حولت|سلفت|نزلت|سحبت|\d)/.test(
-      trimmed,
-    );
-
-  if (wordCount <= 5 && amountCount <= 1 && !hasConnector && !hasWaw) {
+  if (segments && segments.length > 0) {
+    // 3. Optional: Fix broken splits (e.g., segments that start with a verb but no subject/amount context)
+    // For now, heuristic assumes user speaks decently
     return {
-      segments: [buildSegment(trimmed, 0)],
-      method: "simple",
-      isComplex: false,
+      segments,
+      method: "heuristic",
+      isComplex: segments.length > 1,
     };
   }
 
-  // === Multi-step decomposition ===
-  let rawParts: string[] = [];
-
-  // Step 1: Split on sentence boundaries first
-  const sentences = trimmed
-    .split(SENTENCE_BOUNDARIES)
-    .filter((s) => s.trim().length > 0);
-
-  for (const sentence of sentences) {
-    // Step 2: Split on strong connectors
-    let subParts = [sentence];
-    for (const connector of STRONG_CONNECTORS) {
-      const newParts: string[] = [];
-      for (const part of subParts) {
-        const splits = part.split(connector);
-        newParts.push(...splits);
-      }
-      subParts = newParts;
-    }
-
-    // Step 3: Split on 'و' + financial verb/number (conditional)
-    const finalParts: string[] = [];
-    for (const part of subParts) {
-      const wawSplits = splitOnFinancialWaw(part);
-      finalParts.push(...wawSplits);
-    }
-
-    rawParts.push(...finalParts);
-  }
-
-  // Step 4: Clean and filter
-  let segments = rawParts
-    .map((p) => p.trim())
-    .filter((p) => p.length >= 2)
-    .filter(isFinancialSegment)
-    .map((text, idx) => buildSegment(text, idx));
-
-  // Step 5: If filtering removed everything but original has amounts, return full text
-  if (segments.length === 0 && amountCount > 0) {
-    segments = [buildSegment(trimmed, 0)];
-  }
-
-  // Step 6: Handle orphan amounts — segments that have context but amounts
-  // might be in an adjacent segment. Try to redistribute.
-  segments = redistributeOrphanAmounts(segments, trimmed);
-
+  // Fallback to single segment if no amounts or verbs found
   return {
-    segments,
-    method: segments.length <= 1 ? "simple" : "heuristic",
-    isComplex: segments.length > 1 || amountCount > 1 || hasConnector,
+    segments: [buildSegment(text, 0)],
+    method: "simple",
+    isComplex: false,
   };
 }
 
-/**
- * Split a text on 'و' but ONLY when followed by a financial verb or digit.
- */
-function splitOnFinancialWaw(text: string): string[] {
-  // Build the financial verb alternation for the regex
-  const verbPattern = ALL_FINANCIAL_VERBS.sort((a, b) => b.length - a.length)
-    .map((v) => v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-    .join("|");
 
-  // Match 'و' followed by (optional space) then (financial verb | digit)
-  const regex = new RegExp(`\\s+و\\s*(?=${verbPattern}|\\d)`, "g");
-
-  const parts: string[] = [];
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = regex.exec(text)) !== null) {
-    const before = text.slice(lastIndex, match.index).trim();
-    if (before) parts.push(before);
-    lastIndex = match.index + match[0].length;
-  }
-
-  const remaining = text.slice(lastIndex).trim();
-  if (remaining) parts.push(remaining);
-
-  return parts.length > 0 ? parts : [text];
-}
 
 /**
  * Build a DecomposedSegment from raw text.
@@ -441,22 +744,7 @@ function buildSegment(text: string, index: number): DecomposedSegment {
   };
 }
 
-/**
- * Handle segments that have a verb but no amount, while an adjacent
- * segment has an orphan amount with no clear verb. Try to merge or link.
- */
-function redistributeOrphanAmounts(
-  segments: DecomposedSegment[],
-  originalText: string,
-): DecomposedSegment[] {
-  if (segments.length <= 1) return segments;
 
-  // Re-index segments
-  return segments.map((seg, idx) => ({
-    ...seg,
-    segmentIndex: idx,
-  }));
-}
 
 // ─── AI-Powered Decomposer (Pro, ~150 tokens) ─────────────────────
 

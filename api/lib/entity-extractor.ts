@@ -7,6 +7,7 @@ import { extractCurrency } from "./text-normalizer";
 import { isLikelyPersonName } from "./egyptian-names-dictionary";
 import { matchArabicPhrase } from "./fuzzy-match";
 import { parseArabicNumbers } from "./arabic-number-parser";
+import { NON_PERSON_TERMS } from "./person-resolver";
 
 export interface ExtractedAmount {
   amount: number;
@@ -27,7 +28,7 @@ export interface ExtractedEntities {
 }
 
 /** Known merchant patterns */
-const MERCHANT_PATTERNS: Record<string, string> = {
+export const MERCHANT_PATTERNS: Record<string, string> = {
   ماكدونالدز: "McDonald's",
   كنتاكي: "KFC",
   هارديز: "Hardee's",
@@ -57,13 +58,20 @@ const MERCHANT_PATTERNS: Record<string, string> = {
   سبينيس: "Spinneys",
 };
 
-const PERSON_PATTERNS = [
-  /(?:^|\s)(?:حولت|اديت|سلفت|بعتت|عطيت|عطي)\s+(?:ل|لـ|الى|إلى)\s*([ا-ي]{2,})/g,
-  /(?:^|\s)(?:حولت|اديت|سلفت|بعتت|عطيت|عطي)\s+([ا-ي]{3,})/g,
-  /(?:^|\s)(?:من|عند)\s+([ا-ي]{3,})/g,
-  /(?:^|\s)(?:حولي|حولولي|بعتلي|اداني|جابلي)\s+([ا-ي]{2,})/g,
-  /(?:^|\s)(?:ادفع|صرفت|اشتريت|جبت)\s+(?:ل|لـ|على)\s*([ا-ي]{2,})/g,
-  /(?:^|\s)(?:عزمت|دعيت)\s+([ا-ي]{3,})/g,
+const TEXT_AMOUNTS_MAP: Record<string, number> = {
+  "ألفين ونص": 2500,
+  "الفين ونص": 2500,
+  "ألفين": 2000,
+  "الفين": 2000,
+  "ميتين": 200,
+  "مائتين": 200,
+};
+
+const TRANSFER_VERBS = [
+  "اديت", "أديت", "إديت", "حولت", "بعت", "سلفت", "بعتت", 
+  "عطيت", "عطي", "حولي", "حولولي", "بعتلي", 
+  "اداني", "إداني", "جابلي", "عزمت", "دعيت",
+  "خدت", "اخدت", "أخدت", "استلمت", "قبضت", "استلفت"
 ];
 
 const PLACE_PATTERNS = [
@@ -101,12 +109,82 @@ const DATE_HINT_PATTERNS = [
 ];
 
 /**
+ * Check if the number match is in a valid financial context
+ */
+export function isFinancialContext(text: string, matchIndex: number, matchLength: number): boolean {
+  const precedingStr = text.substring(0, matchIndex).trim();
+  const followingStr = text.substring(matchIndex + matchLength).trim();
+
+  // Get last word of preceding string
+  const precedingWords = precedingStr.split(/\s+/);
+  const lastPrecedingWord = precedingWords[precedingWords.length - 1] || "";
+  
+  // Get first word of following string
+  const followingWords = followingStr.split(/\s+/);
+  const firstFollowingWord = followingWords[0] || "";
+
+  const normalizeWord = (w: string) => {
+    return w
+      .replace(/[^\u0600-\u06FFa-zA-Z]/g, "") // Keep only Arabic and English letters
+      .replace(/^[وفبل]/, "") // Strip prefixes
+      .replace(/^ال/, "") // Strip definite article
+      .replace(/[إأآٱ]/g, "ا")
+      .replace(/ى/g, "ي")
+      .replace(/ة/g, "ه")
+      .trim();
+  };
+
+  const normPreceding = normalizeWord(lastPrecedingWord);
+  const normFollowing = normalizeWord(firstFollowingWord);
+
+  const PRECEDING_NON_FINANCIAL = [
+    "شقة", "شقه", "دور", "الدور", "شارع", "سنة", "سنه", "عام", "رقم", "تليفون", "موبايل", "بوابة", "بوابه", "كود", "رمز", "سنتين", "يومين", "ساعتين", "شهرين",
+    "room", "flat", "apt", "apartment", "floor", "street", "st", "year", "yr", "no", "number", "phone", "mobile", "gate", "code", "pin"
+  ].map(w => w.replace(/[إأآٱ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").toLowerCase());
+
+  const FOLLOWING_NON_FINANCIAL = [
+    "ساعة", "ساعه", "ساعات", "يوم", "ايام", "أيام", "مرة", "مره", "مرات", "سنة", "سنه", "عام", "بوابة", "بوابه", "دقيقة", "دقيقه", "دقايق", "شهر", "شهور",
+    "سنتين", "يومين", "ساعتين", "دقيقتين", "شهرين", "اسبوع", "أسبوع", "اسابيع", "أسابيع", "اسبوعين", "أسبوعين",
+    "hour", "hours", "hr", "hrs", "day", "days", "d", "time", "times", "year", "years", "yr", "yrs", "gate", "gates",
+    "minute", "minutes", "min", "mins", "month", "months", "mo", "mos", "week", "weeks", "wk", "wks", "second", "seconds", "sec", "secs"
+  ].map(w => w.replace(/[إأآٱ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").toLowerCase());
+
+  if (PRECEDING_NON_FINANCIAL.includes(normPreceding)) {
+    return false;
+  }
+
+  if (FOLLOWING_NON_FINANCIAL.includes(normFollowing)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Extract all amounts from text
  */
-export function extractAmounts(text: string): ExtractedAmount[] {
-  text = parseArabicNumbers(text);
+export function extractAmounts(rawText: string): ExtractedAmount[] {
+  let text = rawText;
   const amounts: ExtractedAmount[] = [];
-  const amountPattern = /(\d+(?:[.,]\d+)?(?:[.,]\d+)?)\s*(جنيه|ج\.م|ج|الف|ألف)?/g;
+
+  for (const [key, val] of Object.entries(TEXT_AMOUNTS_MAP)) {
+    let index = text.indexOf(key);
+    while (index !== -1) {
+      if (val >= 100 || isFinancialContext(rawText, index, key.length)) {
+        amounts.push({
+          amount: val,
+          index,
+          length: key.length,
+          rawMatch: key,
+        });
+      }
+      text = text.substring(0, index) + " ".repeat(key.length) + text.substring(index + key.length);
+      index = text.indexOf(key, index + key.length);
+    }
+  }
+
+  text = parseArabicNumbers(text);
+  const amountPattern = /(\d+(?:[.,]\d{3})*(?:[.,]\d+)?)\s*(جنيه|ج\.م|ج|الف|ألف)?/g;
   let match;
 
   while ((match = amountPattern.exec(text)) !== null) {
@@ -120,6 +198,7 @@ export function extractAmounts(text: string): ExtractedAmount[] {
     const suffix = match[2]?.trim();
     if (suffix === "الف" || suffix === "ألف") amount *= 1000;
     if (amount <= 0 || amount > 50000000) continue;
+    if (amount < 100 && !isFinancialContext(text, match.index, match[0].length)) continue;
     amounts.push({
       amount,
       index: match.index,
@@ -127,6 +206,8 @@ export function extractAmounts(text: string): ExtractedAmount[] {
       rawMatch: match[0],
     });
   }
+
+  amounts.sort((a, b) => a.index - b.index);
 
   return amounts;
 }
@@ -147,46 +228,91 @@ export function extractPeople(
     }
   }
 
-  // 2. Pattern-based extraction
-  for (const pattern of PERSON_PATTERNS) {
-    const regex = new RegExp(pattern.source, pattern.flags);
-    let match;
-    while ((match = regex.exec(text)) !== null) {
-      let name = match[1]?.trim();
-      // clean prefixes if matched dynamically
-      if (
-        name.startsWith("ل") &&
-        name.length > 2 &&
-        !isLikelyPersonName(name) &&
-        isLikelyPersonName(name.substring(1))
-      ) {
-        name = name.substring(1);
-      }
-      if (name && name.length >= 2 && !/^\d+$/.test(name)) {
-        people.add(name);
-      }
-    }
-  }
-
-  // 3. Dictionary-based extraction (if a word is a known name and isn't a merchant)
+  // 2. Context-Aware Windowing for dynamic extraction
   const words = text.split(/\s+/);
-  for (const word of words) {
-    let cleanWord = word.replace(/[^ا-ي]/g, ""); // strip punctuation
-    if (
-      !isLikelyPersonName(cleanWord) &&
-      cleanWord.length > 3 &&
-      /^[بلف]/.test(cleanWord)
-    ) {
-      if (isLikelyPersonName(cleanWord.substring(1))) {
-        cleanWord = cleanWord.substring(1);
+  for (let i = 0; i < words.length; i++) {
+    const cleanWord = words[i].replace(/[^\u0600-\u06FF]/g, "");
+    const baseWord = cleanWord.replace(/^[وف]/, "");
+    
+    if (TRANSFER_VERBS.includes(cleanWord) || TRANSFER_VERBS.includes(baseWord)) {
+      // Look ahead up to 5 words
+      const windowSize = Math.min(words.length - i - 1, 5);
+      for (let j = 1; j <= windowSize; j++) {
+        let rawCandidate = words[i + j].replace(/[^\u0600-\u06FF]/g, "");
+        if (!rawCandidate) continue;
+
+        let candidateWithoutPrefix = rawCandidate.replace(/^[وف]/, "");
+        let candidatesToTest = [rawCandidate, candidateWithoutPrefix];
+
+        for (let c of candidatesToTest) {
+          let candidate = c;
+
+          // Clean "لـ" or "ل" prefixes
+          if (candidate.startsWith("لـ") && candidate.length > 2) {
+            candidate = candidate.substring(2);
+          } else if (candidate.startsWith("ل") && candidate.length > 3) {
+            if (!isLikelyPersonName(candidate) && isLikelyPersonName(candidate.substring(1))) {
+              candidate = candidate.substring(1);
+            }
+          }
+
+          if (candidate.length >= 2 && !/^[\d\u0660-\u0669\u06F0-\u06F9]+$/.test(candidate)) {
+            // Exclude words starting with "ال" (definite article) unless they are known contacts
+            if (candidate.startsWith("ال") && !knownNames.includes(candidate)) {
+              continue;
+            }
+
+            if (isLikelyPersonName(candidate) || knownNames.includes(candidate)) {
+              people.add(candidate);
+              break; // Found a valid person for THIS candidate string, but we want to process other words
+            }
+          }
+        }
       }
-    }
-    if (isLikelyPersonName(cleanWord)) {
-      people.add(cleanWord);
     }
   }
 
-  // Filter out definitely NOT people (like merchants misclassified by "من كارفور")
+  // 3. Scan for preposition-prefixed person names (e.g., لعلي, لمروان, لأحمد, للوالد, مع مروان)
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    let rawWord = word.replace(/[^\u0600-\u06FF]/g, "");
+    if (!rawWord) continue;
+    
+    let candidate = "";
+    if (rawWord.startsWith("لـ") && rawWord.length > 2) {
+      candidate = rawWord.substring(2);
+    } else if (rawWord.startsWith("لل") && rawWord.length > 3) {
+      candidate = rawWord.substring(2);
+    } else if (rawWord.startsWith("ل") && rawWord.length > 2) {
+      candidate = rawWord.substring(1);
+    } else if (rawWord.startsWith("من") && rawWord.length > 3) {
+      candidate = rawWord.substring(2);
+    } else if (rawWord.startsWith("مع") && rawWord.length > 3) {
+      candidate = rawWord.substring(2);
+    } else if (rawWord === "من" || rawWord === "مع") {
+      if (i + 1 < words.length) {
+        candidate = words[i + 1].replace(/[^\u0600-\u06FF]/g, "");
+      }
+    }
+    
+    if (candidate) {
+      let cleanCandidate = candidate.replace(/^[وف]/, "");
+      const candidatesToTest = [candidate, cleanCandidate];
+      for (const c of candidatesToTest) {
+        if (c.length >= 2 && !/^[\d\u0660-\u0669\u06F0-\u06F9]+$/.test(c)) {
+          if (c.startsWith("ال") && !knownNames.includes(c)) {
+            continue;
+          }
+          if (isLikelyPersonName(c) || knownNames.includes(c)) {
+            people.add(c);
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // Filter out definitely NOT people (like merchants misclassified)
   const filtered = Array.from(people).filter((name) => {
     // We already added it if it's in knownNames, keep it regardless
     if (knownNames.includes(name)) return true;
@@ -195,18 +321,36 @@ export function extractPeople(
     if (
       Object.keys(MERCHANT_PATTERNS).some((k) => k === name || name.includes(k))
     ) {
+      // Context-aware disambiguation for "كريم"
+      if (name === "كريم" || name === "كرييم") {
+        const isPersonContext = /(سلفت|اديت|اعطيت|عطيت|حولت|دفعت|دفعتل|اخدت|استلفت|خدت|بعت)/.test(text);
+        const isTransportContext = /(ركبت|اخدت|مشيت|طلبت)/.test(text);
+        if (isPersonContext && !isTransportContext) {
+          return true; // Keep it as a person
+        }
+      }
       return false;
     }
 
-    // Exclude common verbs, pronouns, and filler words that get caught by patterns
-    const EXCLUDED = [
-      "انا", "انت", "هو", "هي", "احنا", "هما", 
-      "اديت", "خدت", "بعت", "حولت", "صرفت", "جبت", "اخدت", "دفعت", "عطيت",
-      "عشان", "عشانك", "علشان", "نفسي", "بتاع", "بتاعتي",
-      "الشغل", "البيت", "المحل", "السوبر", "ماركت", "كورة", "فلوس", "جنيه", 
-      "الف", "سلف", "ديون", "دين", "جمعية", "قسط", "ايجار", "الايجار", "كهربا", "ميه", "غاز"
-    ];
-    if (EXCLUDED.includes(name)) {
+    // Explicitly ignore places
+    if (PLACE_PATTERNS.some((p) => p === name || name.includes(p))) {
+      return false;
+    }
+
+    // Exclude common verbs, pronouns, and filler words using the unified NON_PERSON_TERMS
+    if (NON_PERSON_TERMS.has(name) || NON_PERSON_TERMS.has(name.toLowerCase())) {
+      const reg = new RegExp(`(?:^|\\s)(?:ل|لل|من|مع|ب)${name}(?:\\s|$)`);
+      if ((name === "علي" || name === "على") && reg.test(text)) {
+         return true;
+      }
+      return false;
+    }
+    const norm = name.replace(/[إأآٱ]/g, "ا").replace(/ة/g, "ه");
+    if (NON_PERSON_TERMS.has(norm)) {
+      const reg = new RegExp(`(?:^|\\s)(?:ل|لل|من|مع|ب)${norm}(?:\\s|$)`);
+      if ((norm === "علي" || norm === "على") && reg.test(text)) {
+         return true;
+      }
       return false;
     }
 

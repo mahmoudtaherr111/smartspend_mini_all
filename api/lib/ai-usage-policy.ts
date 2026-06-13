@@ -63,9 +63,9 @@ const HARD_REQUEST_TOKEN_CAP: Record<PlanId, Record<AiUsageChannel, number>> = {
 
 /** Max AI channel events per user per minute (abuse guard) */
 const BURST_LIMIT_PER_MINUTE: Record<PlanId, number> = {
-  free: 30,
-  pro: 60,
-  ultra: 120,
+  free: 1000,
+  pro: 1000,
+  ultra: 1000,
 };
 
 export function asPlan(plan: string | undefined): PlanId {

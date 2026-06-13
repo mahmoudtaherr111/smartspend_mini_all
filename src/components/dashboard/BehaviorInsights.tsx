@@ -25,6 +25,8 @@ export const BehaviorInsights = memo(function BehaviorInsights({
   const trend = comparative.trend;
   const topDay = behavioral.topSpendingDay;
   const recurring = behavioral.mostRecurringExpense;
+  const comparisonType = behavioral.comparisonType || "monthly";
+  const weekNumber = behavioral.weekNumber || 1;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -67,10 +69,14 @@ export const BehaviorInsights = memo(function BehaviorInsights({
           <CardTitle className="text-sm flex items-center gap-2">
             {trend === "up" ? (
               <TrendingUp className="w-4 h-4 text-rose-600" />
-            ) : (
+            ) : trend === "down" ? (
               <TrendingDown className="w-4 h-4 text-emerald-600" />
+            ) : (
+              <TrendingDown className="w-4 h-4 text-muted-foreground" />
             )}
-            مقارنة بالشهر السابق
+            {comparisonType === "weekly"
+              ? `مقارنة بالأسبوع المماثل (${weekNumber})`
+              : "مقارنة بالشهر السابق"}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -86,11 +92,16 @@ export const BehaviorInsights = memo(function BehaviorInsights({
               <Badge className="bg-emerald-600">انخفاض</Badge>
             )}
             {trend === "flat" && <Badge variant="secondary">ثابت</Badge>}
+            {(trend === "new" || trend === "flat" && behavioral.expenseChangePercent === null) && (
+              <Badge variant="outline">جديد</Badge>
+            )}
           </div>
           {trend === "up" && (
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" />
-              راقب الفئات الأعلى قبل نهاية الشهر.
+              {comparisonType === "weekly"
+                ? "راقب الفئات الأعلى قبل نهاية الأسبوع."
+                : "راقب الفئات الأعلى قبل نهاية الشهر."}
             </p>
           )}
         </CardContent>

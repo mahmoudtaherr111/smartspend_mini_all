@@ -32,6 +32,12 @@ import {
   ShieldAlert,
   AlertCircle,
   Bell,
+  MessageCircle,
+  Megaphone,
+  BookOpen,
+  FileText,
+  History,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,6 +67,13 @@ import { toast } from "sonner";
 import { AdminSettingsTab } from "@/components/admin/AdminSettingsTab";
 import { NotificationsTab } from "@/components/admin/NotificationsTab";
 import { ClarificationsTab } from "@/components/admin/ClarificationsTab";
+import { AdminWhatsAppTab } from "@/components/admin/AdminWhatsAppTab";
+import { AdminAdsTab } from "@/components/admin/AdminAdsTab";
+import { AdminRulesTab } from "@/components/admin/AdminRulesTab";
+import { AdminRawSmsTab } from "@/components/admin/AdminRawSmsTab";
+import { AdminAuditTab } from "@/components/admin/AdminAuditTab";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function Admin() {
   const { user } = useAuth();
@@ -72,6 +85,23 @@ export default function Admin() {
   const [showExports, setShowExports] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [userToDelete, setUserToDelete] = useState<any | null>(null);
+
+  // Modal states for user-specific message popup
+  const [messageUser, setMessageUser] = useState<any>(null);
+  const [messageChannel, setMessageChannel] = useState<"whatsapp" | "email">("whatsapp");
+  const [messageText, setMessageText] = useState("");
+
+  const sendWhatsappMutation = trpc.adminWhatsapp.sendDirectMessage.useMutation({
+    onSuccess: (res) => {
+      toast.success(res.message || "تم إرسال رسالة الواتساب بنجاح! 🎉");
+      setMessageUser(null);
+      setMessageText("");
+    },
+    onError: (err) => {
+      toast.error(`فشل الإرسال: ${err.message}`);
+    },
+  });
 
   const {
     stats,
@@ -284,6 +314,36 @@ export default function Admin() {
                   <AlertCircle className="w-4 h-4 shrink-0" /> التوضيحات المعلقة
                 </TabsTrigger>
                 <TabsTrigger
+                  value="whatsapp"
+                  className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-green-50 data-[state=active]:text-green-700 dark:data-[state=active]:bg-green-900/30 transition-all"
+                >
+                  <MessageCircle className="w-4 h-4 shrink-0" /> الواتساب
+                </TabsTrigger>
+                <TabsTrigger
+                  value="ads"
+                  className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-pink-50 data-[state=active]:text-pink-700 dark:data-[state=active]:bg-pink-900/30 transition-all"
+                >
+                  <Megaphone className="w-4 h-4 shrink-0" /> الحملات الإعلانية
+                </TabsTrigger>
+                <TabsTrigger
+                  value="rules"
+                  className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 dark:data-[state=active]:bg-teal-900/30 transition-all"
+                >
+                  <BookOpen className="w-4 h-4 shrink-0" /> القاموس والقواعد
+                </TabsTrigger>
+                <TabsTrigger
+                  value="raw-sms"
+                  className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700 dark:data-[state=active]:bg-violet-900/30 transition-all"
+                >
+                  <FileText className="w-4 h-4 shrink-0" /> سجل الـ SMS
+                </TabsTrigger>
+                <TabsTrigger
+                  value="audit"
+                  className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 dark:data-[state=active]:bg-slate-800 transition-all"
+                >
+                  <History className="w-4 h-4 shrink-0" /> سجل الرقابة
+                </TabsTrigger>
+                <TabsTrigger
                   value="notifications"
                   className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-sky-50 data-[state=active]:text-sky-700 dark:data-[state=active]:bg-sky-900/30 transition-all"
                 >
@@ -418,12 +478,12 @@ export default function Admin() {
                   </div>
                   <div className="flex flex-wrap gap-3 w-full md:w-auto">
                     <div className="relative flex-1 md:w-64 min-w-[200px]">
-                      <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Search className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <Input
                         placeholder="بحث بالاسم، الإيميل، رقم الهاتف..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="pr-10 bg-white dark:bg-slate-950"
+                        className="pe-10 bg-white dark:bg-slate-950"
                       />
                     </div>
                     <Select value={roleFilter} onValueChange={setRoleFilter}>
@@ -452,7 +512,7 @@ export default function Admin() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-right">
+                  <table className="w-full text-sm text-end">
                     <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 font-medium border-b">
                       <tr>
                         <th className="py-4 px-6 min-w-[200px]">
@@ -605,6 +665,18 @@ export default function Admin() {
                           {user?.role === "admin" && (
                             <td className="py-4 px-6">
                               <div className="flex gap-2 justify-center">
+                                 <Button
+                                   size="icon"
+                                   variant="outline"
+                                   className="h-8 w-8 hover:bg-blue-50 hover:text-blue-600 border-blue-100 text-blue-500"
+                                   onClick={() => {
+                                     setMessageUser(u);
+                                     setMessageChannel(u.phone ? "whatsapp" : "email");
+                                   }}
+                                   title="إرسال رسالة"
+                                 >
+                                   <MessageCircle className="w-4 h-4" />
+                                 </Button>
                                 <Button
                                   size="icon"
                                   variant="outline"
@@ -634,15 +706,7 @@ export default function Admin() {
                                   variant="outline"
                                   className="h-8 w-8 hover:bg-rose-50 hover:text-rose-600 border-rose-100 text-rose-500"
                                   onClick={() => {
-                                    if (
-                                      confirm(
-                                        "تحذير: سيتم حذف بيانات المستخدم بالكامل. هل أنت متأكد؟",
-                                      )
-                                    )
-                                      deleteUser.mutate({
-                                        userId: u.id,
-                                        userType: u.userType,
-                                      });
+                                    setUserToDelete(u);
                                   }}
                                   title="حذف الحساب"
                                 >
@@ -786,6 +850,10 @@ export default function Admin() {
 
             {user?.role === "admin" && (
               <>
+                <TabsContent value="whatsapp" className="space-y-6">
+                  <AdminWhatsAppTab />
+                </TabsContent>
+
                 <TabsContent value="ai" className="space-y-8">
                   <ApiKeyErrorsPanel />
                   <section>
@@ -830,7 +898,7 @@ export default function Admin() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="overflow-x-auto">
-                      <table className="w-full text-sm text-right">
+                      <table className="w-full text-sm text-end">
                         <thead className="text-muted-foreground border-b">
                           <tr>
                             <th className="py-2 px-3">المستخدم</th>
@@ -868,6 +936,22 @@ export default function Admin() {
                   <NotificationsTab />
                 </TabsContent>
 
+                <TabsContent value="ads">
+                  <AdminAdsTab />
+                </TabsContent>
+
+                <TabsContent value="rules">
+                  <AdminRulesTab />
+                </TabsContent>
+
+                <TabsContent value="raw-sms">
+                  <AdminRawSmsTab />
+                </TabsContent>
+
+                <TabsContent value="audit">
+                  <AdminAuditTab />
+                </TabsContent>
+
                 <TabsContent value="settings">
                   <AdminSettingsTab />
                 </TabsContent>
@@ -879,6 +963,49 @@ export default function Admin() {
           </div>
         </Tabs>
       </div>
+
+      {/* Premium Delete User Dialog */}
+      <Dialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+        <DialogContent className="max-w-sm p-6 rounded-3xl" dir="rtl">
+          <div className="flex flex-col items-center text-center space-y-4">
+            <div className="p-4 bg-rose-50 dark:bg-rose-950/30 text-rose-500 rounded-full">
+              <ShieldAlert className="w-8 h-8" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100">
+                حذف حساب المستخدم نهائياً؟
+              </h3>
+              <p className="text-sm text-slate-500 leading-relaxed">
+                تحذير: سيتم حذف بيانات المستخدم <span className="font-bold text-rose-600">"{userToDelete?.name}"</span> بالكامل بما في ذلك المصروفات والملف الذكي والجلسات. هذا الإجراء غير قابل للتراجع.
+              </p>
+            </div>
+            <div className="flex gap-3 w-full pt-2">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl"
+                onClick={() => setUserToDelete(null)}
+              >
+                إلغاء
+              </Button>
+              <Button
+                className="flex-1 rounded-xl bg-rose-600 hover:bg-rose-700 text-white"
+                disabled={deleteUser.isPending}
+                onClick={() => {
+                  if (userToDelete) {
+                    deleteUser.mutate({
+                      userId: userToDelete.id,
+                      userType: userToDelete.userType,
+                    });
+                    setUserToDelete(null);
+                  }
+                }}
+              >
+                {deleteUser.isPending ? "جاري الحذف..." : "نعم، احذف نهائياً"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialogs */}
       <Dialog open={showSessions} onOpenChange={setShowSessions}>
@@ -1178,7 +1305,7 @@ export default function Admin() {
               variant="outline"
               onClick={() => exportMutation.mutate({ format: "xlsx" })}
             >
-              <FileSpreadsheet className="w-5 h-5 ml-3 text-emerald-600" />{" "}
+              <FileSpreadsheet className="w-5 h-5 ms-3 text-emerald-600" />{" "}
               تصدير كملف Excel (.xlsx)
             </Button>
             <Button
@@ -1186,16 +1313,102 @@ export default function Admin() {
               variant="outline"
               onClick={() => exportMutation.mutate({ format: "csv" })}
             >
-              <FileJson className="w-5 h-5 ml-3 text-blue-600" /> تصدير كملف CSV
+              <FileJson className="w-5 h-5 ms-3 text-blue-600" /> تصدير كملف CSV
             </Button>
             <Button
               className="w-full justify-start h-12 text-base"
               variant="outline"
               onClick={() => exportMutation.mutate({ format: "json" })}
             >
-              <FileJson className="w-5 h-5 ml-3 text-amber-600" /> تصدير كملف
+              <FileJson className="w-5 h-5 ms-3 text-amber-600" /> تصدير كملف
               JSON (نسخة احتياطية للمطورين)
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Message User Dialog */}
+      <Dialog open={!!messageUser} onOpenChange={(open) => !open && setMessageUser(null)}>
+        <DialogContent className="max-w-md p-6 overflow-hidden rounded-3xl" dir="rtl">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="flex items-center gap-2 text-xl font-bold text-slate-800 dark:text-slate-100">
+              <MessageCircle className="w-6 h-6 text-green-500" />
+              مراسلة المستخدم: {messageUser?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>طريقة المراسلة</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  variant={messageChannel === "whatsapp" ? "default" : "outline"}
+                  onClick={() => setMessageChannel("whatsapp")}
+                  disabled={!messageUser?.phone}
+                  className="rounded-xl flex items-center justify-center gap-2"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  الواتساب
+                </Button>
+                <Button
+                  type="button"
+                  variant={messageChannel === "email" ? "default" : "outline"}
+                  onClick={() => setMessageChannel("email")}
+                  disabled={!messageUser?.email}
+                  className="rounded-xl flex items-center justify-center gap-2"
+                >
+                  <Send className="w-4 h-4" />
+                  البريد الإلكتروني
+                </Button>
+              </div>
+              {!messageUser?.phone && messageChannel === "whatsapp" && (
+                <p className="text-xs text-rose-500 mt-1">هذا الحساب لا يملك رقم هاتف مسجل</p>
+              )}
+              {!messageUser?.email && messageChannel === "email" && (
+                <p className="text-xs text-rose-500 mt-1">هذا الحساب لا يملك بريد إلكتروني مسجل</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>نص الرسالة</Label>
+              <Textarea
+                placeholder="اكتب رسالتك هنا..."
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                className="min-h-[120px] rounded-xl resize-none"
+              />
+            </div>
+
+            <div className="flex gap-3 justify-end pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setMessageUser(null)}
+                className="rounded-xl"
+              >
+                إلغاء
+              </Button>
+              <Button
+                onClick={() => {
+                  if (messageChannel === "whatsapp") {
+                    sendWhatsappMutation.mutate({
+                      phone: messageUser.phone,
+                      text: messageText,
+                    });
+                  } else {
+                    // Send Email via mailto link
+                    const mailtoUrl = `mailto:${messageUser.email}?subject=SmartSpend&body=${encodeURIComponent(messageText)}`;
+                    window.open(mailtoUrl, "_blank");
+                    setMessageUser(null);
+                    setMessageText("");
+                    toast.success("تم فتح عميل البريد الإلكتروني الخاص بك لإرسال الرسالة.");
+                  }
+                }}
+                disabled={!messageText.trim() || sendWhatsappMutation.isPending}
+                className="rounded-xl bg-green-600 hover:bg-green-700 text-white"
+              >
+                {sendWhatsappMutation.isPending ? "جاري الإرسال..." : "إرسال الآن"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -1350,7 +1563,7 @@ function ApiKeyErrorsPanel() {
       </div>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-right">
+          <table className="w-full text-sm text-end">
             <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 border-b">
               <tr>
                 <th className="py-3 px-6">المصدر</th>
@@ -1513,7 +1726,7 @@ function ClassificationDashboard() {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-slate-500 border-b font-medium text-right">
+              <thead className="bg-slate-50 text-slate-500 border-b font-medium text-end">
                 <tr>
                   <th className="py-3 px-6">المستخدم</th>
                   <th className="py-3 px-4">النص الأصلي</th>

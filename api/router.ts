@@ -5,6 +5,7 @@ import { expenseRouter } from "./expense-router";
 import { aiRouter } from "./ai-router";
 import { analyticsRouter } from "./analytics-router";
 import { adminRouter } from "./admin-router";
+import { adminWhatsappRouter } from "./admin-whatsapp-router";
 import { supportRouter } from "./support-router";
 import { exportRouter } from "./export-router";
 import { sessionRouter } from "./session-router";
@@ -25,6 +26,7 @@ export const appRouter = router({
   ai: aiRouter,
   analytics: analyticsRouter,
   admin: adminRouter,
+  adminWhatsapp: adminWhatsappRouter,
   support: supportRouter,
   export: exportRouter,
   session: sessionRouter,

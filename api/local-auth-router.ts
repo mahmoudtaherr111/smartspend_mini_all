@@ -26,6 +26,8 @@ import {
   webhookTokens,
   rawSmsEvents,
   expenseCategories,
+  whatsappOtpCodes,
+  systemSettings,
 } from "../db/schema";
 import { eq, count, sum, sql, like, desc, and } from "drizzle-orm";
 import {
@@ -35,8 +37,11 @@ import {
   createSession,
   validatePhone,
   generateReferralCode,
+  cleanPhoneNumber,
 } from "./local-auth-utils";
 import { getIncomingHeader } from "./lib/get-client-ip";
+import { whatsappService } from "./services/whatsapp-service";
+import { otpCache, checkRateLimit } from "./services/otp-cache";
 
 export const localAuthRouter = router({
   register: strictPublicProcedure
@@ -50,7 +55,6 @@ export const localAuthRouter = router({
       }),
     )
     .mutation(async ({ input }) => {
-      // Validate phone
       const phoneValidation = validatePhone(input.phone);
       if (!phoneValidation.valid) {
         throw new TRPCError({
@@ -59,15 +63,46 @@ export const localAuthRouter = router({
         });
       }
 
-      // Check if phone exists
-      const existing = await db.query.localUsers.findFirst({
-        where: eq(localUsers.phone, input.phone),
+      const cleanPhone = cleanPhoneNumber(input.phone);
+
+      // Check if phone already exists in local users
+      const existingUser = await db.query.localUsers.findFirst({
+        where: eq(localUsers.phone, cleanPhone),
       });
-      if (existing) {
+      if (existingUser) {
         throw new TRPCError({
           code: "CONFLICT",
           message: "رقم التليفون مسجل بالفعل",
         });
+      }
+
+      // Check if OTP verification is globally enabled
+      const otpSetting = await db.query.systemSettings.findFirst({
+        where: eq(systemSettings.key, "whatsapp_otp_enabled"),
+      });
+
+      if (otpSetting?.value === "true") {
+        // Check if phone is verified in our in-memory cache
+        const verificationRecord = otpCache.get(cleanPhone);
+
+        if (!verificationRecord || !verificationRecord.verified) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "برجاء توثيق رقم التليفون عبر واتساب أولاً",
+          });
+        }
+
+        // Check expiration
+        if (verificationRecord.expiresAt < Date.now()) {
+          otpCache.delete(cleanPhone);
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "انتهت صلاحية توثيق الرقم، برجاء المحاولة مرة أخرى",
+          });
+        }
+        
+        // Clean up the verification code from cache
+        otpCache.delete(cleanPhone);
       }
 
       const hashedPassword = await hashPassword(input.password);
@@ -102,12 +137,71 @@ export const localAuthRouter = router({
         user: {
           id: newUser.id,
           name: input.name,
-          phone: input.phone,
+          phone: cleanPhone,
           role: "user",
           plan: "free",
         },
       };
     }),
+
+  generateVerificationCode: strictPublicProcedure
+    .input(z.object({ phone: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const phoneValidation = validatePhone(input.phone);
+      if (!phoneValidation.valid) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: phoneValidation.message });
+      }
+      
+      const cleanPhone = cleanPhoneNumber(input.phone);
+
+      // Check In-Memory Rate Limiting
+      const rateLimit = checkRateLimit(ctx.ip, cleanPhone);
+      if (!rateLimit.allowed) {
+        throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: rateLimit.message });
+      }
+
+      const code = "SS-" + Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes from now
+
+      // Store in memory cache (0 database writes!)
+      otpCache.set(cleanPhone, {
+        phone: cleanPhone,
+        code,
+        expiresAt,
+        verified: false,
+      });
+
+      return { success: true, code };
+    }),
+
+  getVerificationSettings: publicProcedure.query(async () => {
+    const setting = await db.query.systemSettings.findFirst({
+      where: eq(systemSettings.key, "whatsapp_otp_enabled"),
+    });
+    return { enabled: setting?.value === "true" };
+  }),
+
+  checkVerificationStatus: strictPublicProcedure
+    .input(z.object({ phone: z.string() }))
+    .query(async ({ input }) => {
+      const cleanPhone = cleanPhoneNumber(input.phone);
+      const record = otpCache.get(cleanPhone);
+
+      if (!record) return { verified: false };
+      
+      // Check expiration
+      if (record.expiresAt < Date.now()) {
+        otpCache.delete(cleanPhone);
+        return { verified: false, expired: true };
+      }
+
+      return { verified: record.verified };
+    }),
+
+  getBotPhoneNumber: publicProcedure.query(() => {
+    const status = whatsappService.getStatus();
+    return status.phoneNumber || "201000000000"; // Fallback if not connected yet
+  }),
 
   login: strictPublicProcedure
     .input(
@@ -117,8 +211,9 @@ export const localAuthRouter = router({
       }),
     )
     .mutation(async ({ input }) => {
+      const cleanPhone = cleanPhoneNumber(input.phone);
       const user = await db.query.localUsers.findFirst({
-        where: eq(localUsers.phone, input.phone),
+        where: eq(localUsers.phone, cleanPhone),
       });
 
       if (!user) {

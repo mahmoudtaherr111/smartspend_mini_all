@@ -116,7 +116,7 @@ export function FinancialGoalsPanel({
   };
 
   const cardContent = (
-    <div className="space-y-4 text-right" dir="rtl">
+    <div className="space-y-4 text-end" dir="rtl">
       {/* Premium Marketing Copy */}
       <div className="space-y-1 bg-gradient-to-br from-indigo-50 to-indigo-100/30 dark:from-indigo-950/20 dark:to-slate-900 p-3.5 rounded-xl border border-indigo-100/30 dark:border-slate-800">
         <h4 className="font-extrabold text-xs sm:text-sm text-indigo-950 dark:text-indigo-200">
@@ -167,7 +167,7 @@ export function FinancialGoalsPanel({
               placeholder="التكلفة بالجنيه"
               value={cost}
               onChange={(e) => setCost(e.target.value)}
-              className="h-11 rounded-xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 font-bold text-xs sm:text-sm text-left"
+              className="h-11 rounded-xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 font-bold text-xs sm:text-sm text-start"
               dir="ltr"
             />
             {/* Left input (Details) */}
@@ -179,7 +179,7 @@ export function FinancialGoalsPanel({
             />
           </div>
           {/* Opaque full-width guide caption to avoid layout truncation on mobile */}
-          <p className="text-[10px] text-indigo-600/80 dark:text-indigo-400/80 font-medium text-right mt-1.5 leading-relaxed">
+          <p className="text-[10px] text-indigo-600/80 dark:text-indigo-400/80 font-medium text-end mt-1.5 leading-relaxed">
             💡 مثال للتفاصيل: شايف إنك ممكن توصل لهدفك ده بعد قد إيه؟ (مثلاً: 6
             شهور)
           </p>
@@ -220,7 +220,7 @@ export function FinancialGoalsPanel({
                         <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
                           {getDreamIcon(g.title)}
                         </div>
-                        <div className="min-w-0 text-right">
+                        <div className="min-w-0 text-end">
                           <p className="font-extrabold text-xs sm:text-sm text-foreground truncate">
                             {g.title}
                           </p>
@@ -231,7 +231,7 @@ export function FinancialGoalsPanel({
                           )}
                         </div>
                       </div>
-                      <div className="text-left shrink-0">
+                      <div className="text-start shrink-0">
                         <span className="font-extrabold text-xs sm:text-sm block">
                           {targetAmt.toLocaleString()} ج
                         </span>
@@ -282,7 +282,7 @@ export function FinancialGoalsPanel({
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-2 left-2 w-8 h-8 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 z-10"
+          className="absolute top-2 start-2 w-8 h-8 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 z-10"
           onClick={handleDismiss}
         >
           <X className="w-4 h-4" />

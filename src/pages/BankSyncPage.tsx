@@ -109,7 +109,7 @@ export default function BankSyncPage() {
 
       {/* Hero */}
       <div className="bg-gradient-to-br from-emerald-600 to-teal-900 rounded-3xl p-6 sm:p-10 text-white shadow-xl relative overflow-hidden text-center">
-        <div className="absolute top-0 right-0 w-72 h-72 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
+        <div className="absolute top-0 end-0 w-72 h-72 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
         <div className="relative z-10 space-y-3">
           <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm font-semibold mb-2">
             <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
@@ -153,7 +153,7 @@ export default function BankSyncPage() {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />3
               خطوات فقط
             </div>
-            <ArrowRight className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all opacity-0 group-hover:opacity-100" />
+            <ArrowRight className="absolute start-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all opacity-0 group-hover:opacity-100" />
           </button>
 
           {/* Android */}
@@ -177,7 +177,7 @@ export default function BankSyncPage() {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />3
               خطوات فقط
             </div>
-            <ArrowRight className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all opacity-0 group-hover:opacity-100" />
+            <ArrowRight className="absolute start-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all opacity-0 group-hover:opacity-100" />
           </button>
         </div>
 

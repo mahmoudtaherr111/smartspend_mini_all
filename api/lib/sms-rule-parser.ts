@@ -115,8 +115,8 @@ function detectProvider(text: string, sender?: string): string {
 function extractAmount(text: string): number | null {
   // First, strip balance indicators and their corresponding amounts from the text used to find the transaction amount
   const balancePatterns = [
-    /(?:رصيدك|الرصيد|رصيد حسابك|الرصيد المتاح)[\s:]*(?:الكلي|الحالي|الجديد|المتاح)?\s*(?:هو|اصبح)?\s*[\d]+(?:\.\d{1,2})?\s*(?:جنيه|ج\.?م\.?|egp|جم)?/gi,
-    /(?:avail(?:able)?|new|current|updated)\s*(?:bal(?:ance)?|lim(?:it)?)?[\s.:]*(?:egp)?\s*[\d]+(?:\.\d{1,2})?/gi,
+    /(?:رصيدك|الرصيد|رصيد حسابك|الرصيد المتاح)[\s:]*(?:الكلي|الحالي|الجديد|المتاح)?\s*(?:هو|اصبح)?\s*[\d,]+(?:\.\d{1,2})?\s*(?:جنيه|ج\.?م\.?|egp|جم)?/gi,
+    /(?:avail(?:able)?|new|current|updated)\s*(?:bal(?:ance)?|lim(?:it)?)?[\s.:]*(?:egp)?\s*[\d,]+(?:\.\d{1,2})?/gi,
   ];
   let cleanedForAmount = text;
   for (const bp of balancePatterns) {

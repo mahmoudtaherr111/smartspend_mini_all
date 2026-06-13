@@ -13,6 +13,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { CATEGORIES, type MainCategory } from "./category-registry";
 import type { PlanId } from "./ai-usage-policy";
 import { getRedisClient } from "./redis-client";
+import * as fs from "fs";
+import * as path from "path";
 
 // ─────────────────────────────────────────────────
 //  Types
@@ -49,7 +51,10 @@ export interface ComplexityFeatures {
 //  Constants
 // ─────────────────────────────────────────────────
 
-const EMBEDDING_MODEL = "text-embedding-004";
+const PRIMARY_EMBEDDING_MODEL = "gemini-embedding-001";
+const SECONDARY_EMBEDDING_MODEL = "gemini-embedding-2";
+// Keep old name for backward compatibility
+const EMBEDDING_MODEL = SECONDARY_EMBEDDING_MODEL;
 
 /**
  * Category descriptors – short Arabic phrases that represent each category
@@ -666,37 +671,49 @@ let categoryEmbeddingsPromise: Promise<void> | null = null;
 //  Core Functions
 // ─────────────────────────────────────────────────
 
-async function getEmbedding(text: string, apiKey: string): Promise<number[]> {
+async function getEmbedding(text: string, apiKey: string, userId?: string): Promise<number[]> {
   const redis = await getRedisClient();
-  const cacheKey = `embedding:${text}`;
-  
+
+  const cacheKey = userId ? `embedding:${userId}:${text}` : `embedding:global:${text}`;
+
+  // Check cache first
   if (redis) {
     try {
       const cachedStr = await redis.get(cacheKey);
-      if (cachedStr) {
-        return JSON.parse(cachedStr) as number[];
-      }
+      if (cachedStr) return JSON.parse(cachedStr) as number[];
     } catch (e) {
-      console.warn("Redis get error:", e);
+      console.warn('Redis get error:', e);
     }
   } else {
-    const cached = inputEmbeddingCache.get(text);
+    const cached = inputEmbeddingCache.get(cacheKey);
     if (cached) return cached;
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
-  const result = await model.embedContent(text);
-  const vector = result.embedding.values;
+  // Helper to embed using a specific model
+  const embedWith = async (modelName: string): Promise<number[]> => {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: modelName });
+    const result = await model.embedContent(text);
+    return result.embedding.values;
+  };
 
+  let vector: number[];
+  try {
+    vector = await embedWith(PRIMARY_EMBEDDING_MODEL);
+  } catch (e) {
+    console.warn(`Primary model (${PRIMARY_EMBEDDING_MODEL}) failed, falling back:`, (e as any)?.message ?? String(e));
+    vector = await embedWith(SECONDARY_EMBEDDING_MODEL);
+  }
+
+  // Cache result
   if (redis) {
     try {
-      await redis.setEx(cacheKey, 604800, JSON.stringify(vector)); // Cache for 7 days
+      await redis.setEx(cacheKey, 604800, JSON.stringify(vector));
     } catch (e) {
-      console.warn("Redis set error:", e);
+      console.warn('Redis set error:', e);
     }
   } else {
-    inputEmbeddingCache.set(text, vector);
+    inputEmbeddingCache.set(cacheKey, vector);
   }
   
   return vector;
@@ -718,7 +735,18 @@ async function ensureCategoryEmbeddings(apiKey: string): Promise<void> {
       vector: number[];
     }> = [];
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
+    const primaryModel = genAI.getGenerativeModel({ model: PRIMARY_EMBEDDING_MODEL });
+    const secondaryModel = genAI.getGenerativeModel({ model: SECONDARY_EMBEDDING_MODEL });
+
+    // Helper to embed a descriptor with fallback
+    const embedDesc = async (desc: string): Promise<any> => {
+      try {
+        return await primaryModel.embedContent(desc);
+      } catch (e) {
+        console.warn(`Primary model (${PRIMARY_EMBEDDING_MODEL}) failed for descriptor "${desc}", falling back.`);
+        return await secondaryModel.embedContent(desc);
+      }
+    };
     
     // We maintain an in-memory fallback, while optionally storing in Redis Vector DB
     // for future true vector-search integration if required by the infrastructure.
@@ -726,15 +754,17 @@ async function ensureCategoryEmbeddings(apiKey: string): Promise<void> {
     for (const cat of CATEGORY_DESCRIPTORS) {
       for (const desc of cat.descriptors) {
         try {
-          const result = await model.embedContent(desc);
+          const result = await embedDesc(desc);
           results.push({
             category: cat.category,
             subCategory: cat.subCategory,
             descriptor: desc,
             vector: result.embedding.values,
           });
+          await new Promise(r => setTimeout(r, 100)); // 100ms delay to prevent rate limit
         } catch (err) {
-          console.warn(`Embedding failed for "${desc}":`, err);
+          console.warn(`Embedding failed for "${desc}":`, (err as any).message || String(err));
+          await new Promise(r => setTimeout(r, 1000)); // longer delay on error
         }
       }
     }
@@ -788,10 +818,11 @@ function calibrateScore(rawSim: number, margin: number): number {
 /**
  * Find the best category match for a text segment
  */
-async function matchSegment(
+export async function matchSegment(
   text: string,
   apiKey: string,
 ): Promise<EmbeddingMatch | null> {
+  await ensureCategoryEmbeddings(apiKey);
   if (!categoryEmbeddings || categoryEmbeddings.length === 0) return null;
 
   const inputVector = await getEmbedding(text, apiKey);
@@ -1008,4 +1039,325 @@ export function warmupEmbeddingEngine(apiKey: string): void {
 export function resetEmbeddingCache(): void {
   categoryEmbeddings = null;
   categoryEmbeddingsPromise = null;
+}
+
+export interface PastTransactionMatch {
+  description: string;
+  category: string;
+  subCategory: string;
+  similarity: number;
+}
+
+/**
+ * Searches the user's past transactions using embeddings (Personalized RAG)
+ */
+export async function findSimilarPastTransactions(
+  text: string,
+  recentTransactions: { description: string; category: string; subCategory: string; }[],
+  apiKey: string,
+  modelName: string = EMBEDDING_MODEL,
+  userId?: string // Foundation for future user-specific Vector DB storage
+): Promise<PastTransactionMatch[]> {
+  try {
+    const inputVector = await getEmbedding(text, apiKey, userId);
+    
+    // De-duplicate past transactions by description
+    const uniqueMap = new Map<string, { description: string; category: string; subCategory: string; }>();
+    for (const t of recentTransactions) {
+      if (t.description && t.description.length > 2 && t.category) {
+        uniqueMap.set(t.description.trim(), t);
+      }
+    }
+    const uniqueTx = Array.from(uniqueMap.values());
+
+    const results = await Promise.all(
+      uniqueTx.map(async (tx) => {
+        try {
+          const txVector = await getEmbedding(tx.description, apiKey, userId);
+          const sim = cosineSimilarity(inputVector, txVector);
+          return { ...tx, similarity: sim };
+        } catch {
+          return null;
+        }
+      })
+    );
+
+    return results
+      .filter((r): r is PastTransactionMatch => r !== null)
+      .sort((a, b) => b.similarity - a.similarity);
+
+  } catch (err) {
+    console.error("findSimilarPastTransactions error:", err);
+    return [];
+  }
+}
+
+// ─────────────────────────────────────────────────
+//  Global Knowledge Base (Egyptian Brand & Slang RAG)
+// ─────────────────────────────────────────────────
+
+export interface GlobalMerchantEntry {
+  merchant: string;
+  category: string;
+  subCategory: string;
+  keywords: string[];
+  isInstallmentCommon: boolean;
+}
+
+export interface GlobalMerchantEmbedding {
+  merchant: string;
+  category: string;
+  subCategory: string;
+  keyword: string;
+  vector: number[];
+  isInstallmentCommon: boolean;
+}
+
+export interface GlobalRAGMatch {
+  merchant: string;
+  category: string;
+  subCategory: string;
+  similarity: number;
+  score: number; // 0-100 calibrated
+  isInstallmentCommon: boolean;
+  matchedKeyword: string;
+}
+
+const GLOBAL_CATEGORY_MAP: Record<string, string> = {
+  "Telecom": "فواتير",
+  "Transport": "مواصلات",
+  "Food": "أكل وشرب",
+  "Groceries": "أكل وشرب",
+  "Shopping": "تسوق",
+  "Electronics": "تسوق",
+  "Financial": "تحويل",
+  "Health": "صحة",
+  "Charity": "هدايا وصدقات",
+  "Entertainment": "ترفيه",
+  "Services": "متنوعات",
+  "Bills": "فواتير",
+  "Furniture": "سكن",
+  "Education": "تعليم"
+};
+
+const GLOBAL_SUBCATEGORY_MAP: Record<string, string> = {
+  // Food
+  "Fast Food": "وجبات سريعة",
+  "Restaurant": "مطعم",
+  "Cafe": "قهوة وكافيه",
+  "Bakery": "مخبوزات",
+  "Delivery": "دليفري",
+  "Local": "عام",
+  "Nuts & Coffee": "قهوة وكافيه",
+  "Nuts": "سناكس",
+
+  // Transport
+  "Ride-Hailing": "أوبر/كريم",
+  "Bus": "أتوبيس",
+  "Public Transport": "مترو",
+  "Fuel": "بنزين",
+  "Micobuses & Taxis": "عام",
+  "Flight": "طيران",
+
+  // Bills
+  "Payment Gateway": "عام",
+  "Electricity": "كهرباء",
+  "Gas": "غاز",
+  "Water": "مياه",
+  "Traffic": "عام",
+  "Syndicate": "عام",
+
+  // Shopping
+  "E-commerce": "عام",
+  "Home & Electronics": "أجهزة إلكترونية",
+  "Retail & Installments": "أجهزة إلكترونية",
+  "Retail": "عام",
+  "Fashion": "ملابس",
+  "Cosmetics": "عناية شخصية",
+  "Toys": "عام",
+  "Kids": "عام",
+  "Eyewear": "نظارات",
+  "Pets": "عام",
+  "Furniture": "أثاث",
+
+  // Health
+  "Booking": "دكتور",
+  "Pharmacy": "صيدلية",
+  "Consultation": "دكتور",
+  "Clinics": "دكتور",
+  "Hospital": "مستشفى",
+
+  // Entertainment
+  "Streaming": "منصات مشاهدة",
+  "Music": "سبوتيفاي",
+  "Sports": "رياضة وجيم",
+  "Cinema": "سينما",
+  "Theme Park": "فسحة",
+
+  // Services
+  "Maintenance": "صيانة",
+  "Car Maintenance": "صيانة عربية",
+  "Coworking": "مساحة عمل",
+
+  // Financial
+  "Installments": "أقساط",
+  "Transfer": "انستاباي",
+  "Mobile Wallet": "فودافون كاش",
+  "Bank": "تحويل بنكي",
+  "App": "عام",
+  "Donation": "صدقة/تبرع",
+
+  // General Slang & personal care
+  "Tips": "عام",
+  "Personal Care": "عناية شخصية",
+  "Education": "عام",
+  "Fitness": "رياضة وجيم"
+};
+
+let globalMerchantEmbeddings: GlobalMerchantEmbedding[] | null = null;
+let globalKnowledgeBasePromise: Promise<void> | null = null;
+
+/**
+ * Loads the Global Knowledge Base from egypt_merchants_rag.json
+ * and its pre-computed embeddings from egypt_merchants_rag_embeddings.json
+ */
+export async function loadGlobalKnowledgeBase(apiKey?: string): Promise<void> {
+  if (globalMerchantEmbeddings) return;
+  if (globalKnowledgeBasePromise) return globalKnowledgeBasePromise;
+
+  globalKnowledgeBasePromise = (async () => {
+    try {
+      const baseDir = path.resolve(process.cwd(), "api/lib");
+      const dictPath = path.join(baseDir, "egypt_merchants_rag.json");
+      const embeddingsPath = path.join(baseDir, "egypt_merchants_rag_embeddings.json");
+
+      if (!fs.existsSync(dictPath)) {
+        console.warn(`[Global RAG] Dictionary file not found at ${dictPath}. Global RAG matches will be empty.`);
+        globalMerchantEmbeddings = [];
+        return;
+      }
+
+      // 1. Try to load pre-computed embeddings from disk
+      if (fs.existsSync(embeddingsPath)) {
+        try {
+          const rawEmbeddings = fs.readFileSync(embeddingsPath, "utf-8");
+          globalMerchantEmbeddings = JSON.parse(rawEmbeddings) as GlobalMerchantEmbedding[];
+          console.log(`[Global RAG] Loaded ${globalMerchantEmbeddings.length} pre-computed merchant embeddings from cache.`);
+          return;
+        } catch (e) {
+          console.error("[Global RAG] Failed to parse pre-computed embeddings file:", e);
+        }
+      }
+
+      // 2. Fallback: Parse egypt_merchants_rag.json and generate embeddings on the fly
+      console.log("[Global RAG] Pre-computed embeddings cache not found. Initializing runtime fallback...");
+      const rawDict = fs.readFileSync(dictPath, "utf-8");
+      const dict = JSON.parse(rawDict) as GlobalMerchantEntry[];
+      
+      const loaded: GlobalMerchantEmbedding[] = [];
+      
+      if (!apiKey) {
+        console.warn("[Global RAG] No API key provided for dynamic embedding. Skipping startup dynamic generation.");
+        globalMerchantEmbeddings = [];
+        return;
+      }
+
+      // Limit dynamically generated entries on startup to prevent token rate limits
+      const subset = dict.slice(0, 40);
+      console.log(`[Global RAG] Generating runtime fallback embeddings for first ${subset.length} entries...`);
+      
+      for (const entry of subset) {
+        const wordsToEmbed = Array.from(new Set([entry.merchant, ...entry.keywords])).filter(w => w && w.length > 1);
+        for (const word of wordsToEmbed) {
+          try {
+            const vector = await getEmbedding(word, apiKey);
+            // Map category and subcategory to standard registry names
+            const categoryAr = GLOBAL_CATEGORY_MAP[entry.category] || "متنوعات";
+            const subCategoryAr = GLOBAL_SUBCATEGORY_MAP[entry.subCategory] || "عام";
+            
+            loaded.push({
+              merchant: entry.merchant,
+              category: categoryAr,
+              subCategory: subCategoryAr,
+              keyword: word,
+              vector,
+              isInstallmentCommon: entry.isInstallmentCommon
+            });
+          } catch (err) {
+            console.warn(`[Global RAG] Failed to embed "${word}":`, err);
+          }
+        }
+      }
+      globalMerchantEmbeddings = loaded;
+      console.log(`[Global RAG] Dynamically initialized ${loaded.length} fallback embeddings in-memory.`);
+    } catch (err) {
+      console.error("[Global RAG] Initialization failed:", err);
+      globalMerchantEmbeddings = [];
+    }
+  })();
+
+  return globalKnowledgeBasePromise;
+}
+
+/**
+ * Searches the Global Knowledge Base for the best merchant/slang match.
+ * Returns a high-confidence match if similarity is above a threshold.
+ */
+export async function searchGlobalKnowledgeBase(
+  text: string,
+  apiKey: string,
+  minSimilarity: number = 0.82
+): Promise<GlobalRAGMatch | null> {
+  try {
+    // Ensure database is loaded/initialized
+    await loadGlobalKnowledgeBase(apiKey);
+
+    if (!globalMerchantEmbeddings || globalMerchantEmbeddings.length === 0) {
+      return null;
+    }
+
+    // Clean text of transaction keywords/amounts
+    const cleanText = text
+      .replace(/\d+(\.\d+)?/g, "")
+      .replace(/(جنيه|ج\.م|ج|الف|ألف|قسط|دفعت|حولت|صرفت|شحنت)/g, "")
+      .trim();
+
+    if (cleanText.length < 2) return null;
+
+    const inputVector = await getEmbedding(cleanText, apiKey);
+
+    let bestMatch: GlobalMerchantEmbedding | null = null;
+    let maxSim = -1;
+
+    for (const ge of globalMerchantEmbeddings) {
+      const sim = cosineSimilarity(inputVector, ge.vector);
+      if (sim > maxSim) {
+        maxSim = sim;
+        bestMatch = ge;
+      }
+    }
+
+    if (!bestMatch || maxSim < minSimilarity) {
+      return null;
+    }
+
+    // Calibrate similarity to 0-100 score
+    // mapping similarity [0.75, 0.95] -> [0, 100]
+    const MIN_SIM = 0.75;
+    const MAX_SIM = 0.95;
+    const calibrated = Math.max(0, Math.min(100, ((maxSim - MIN_SIM) / (MAX_SIM - MIN_SIM)) * 100));
+
+    return {
+      merchant: bestMatch.merchant,
+      category: bestMatch.category,
+      subCategory: bestMatch.subCategory,
+      similarity: maxSim,
+      score: Math.round(calibrated),
+      isInstallmentCommon: bestMatch.isInstallmentCommon,
+      matchedKeyword: bestMatch.keyword
+    };
+  } catch (err) {
+    console.error("[Global RAG] Search failed:", err);
+    return null;
+  }
 }

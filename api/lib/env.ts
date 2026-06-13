@@ -42,6 +42,12 @@ const envSchema = z.object({
   TRUST_PROXY: z.string().optional(),
   REDIS_URL: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
+  
+  // Firebase FCM
+  FIREBASE_PROJECT_ID: z.string().optional(),
+  FIREBASE_CLIENT_EMAIL: z.string().optional(),
+  FIREBASE_PRIVATE_KEY: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);
+

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { useIsFetching } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   BarChart3,
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
+import { NotificationBell } from "@/components/NotificationBell";
 import darkModeLogo from "../../photos/dark_mode_logo-removebg-preview.png";
 import whiteModeLogo from "../../photos/white_mode_logo-removebg-preview.png";
 import defaultProfile from "../../photos/profile.png";
@@ -41,7 +43,7 @@ const menuItems = [
 
 const bottomItems = [
   { icon: HelpCircle, label: "الدعم", href: "/support" },
-  { icon: User, label: "الملف الشخصي", href: "/settings" },
+  { icon: Settings, label: "الإعدادات", href: "/settings" },
 ];
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
@@ -50,6 +52,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const isFetching = useIsFetching();
 
   return (
     <>
@@ -64,12 +67,12 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed right-0 top-0 h-full z-50 transition-all duration-500 ease-out",
+          "fixed start-0 top-0 h-full z-50 transition-all duration-500 ease-out",
           "bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950",
-          "border-l border-white/10 shadow-2xl",
+          "border-e border-white/10 shadow-2xl",
           isOpen
             ? "w-72 translate-x-0"
-            : "w-72 translate-x-full lg:translate-x-0",
+            : "w-72 -translate-x-full rtl:translate-x-full lg:translate-x-0 lg:rtl:translate-x-0",
         )}
       >
         {/* Header */}
@@ -90,8 +93,15 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                 <Crown className="w-3 h-3" /> PRO
               </span>
             )}
+            {isFetching > 0 && (
+              <span className="text-[10px] text-emerald-400 flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                مزامنة...
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1">
+            <NotificationBell />
             <Button
               variant="ghost"
               size="icon"

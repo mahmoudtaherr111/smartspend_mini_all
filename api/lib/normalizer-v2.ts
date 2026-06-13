@@ -51,7 +51,7 @@ const NARRATIVE_CONNECTORS = [
 // ─── Word-to-Number Maps (for forAI conversion) ──────────────────
 
 const WORD_NUMBERS: Record<string, number> = {
-  واحد: 1,
+  // واحد: 1, // Commented out to prevent "واحد صاحبي" -> amount 1
   اتنين: 2,
   تلاته: 3,
   تلاتة: 3,
@@ -81,9 +81,7 @@ const WORD_NUMBERS: Record<string, number> = {
   تمانين: 80,
   ثمانين: 80,
   تسعين: 90,
-  مية: 100,
   مائة: 100,
-  ميه: 100,
   ميتين: 200,
   متين: 200,
   تلتمية: 300,
@@ -114,11 +112,24 @@ const COLLOQUIAL_NUMBERS: Record<string, number> = {
   "ربع الف": 250,
   "خمس تلاف": 5000,
   "عشر تلاف": 10000,
-  عشرتلاف: 10000,
-  خمستلاف: 5000,
-  خمستالاف: 5000,
-  تلاتلاف: 3000,
-  اربعتلاف: 4000,
+  "عشرتلاف": 10000,
+  "خمستلاف": 5000,
+  "خمستالاف": 5000,
+  "تلاتلاف": 3000,
+  "اربعتلاف": 4000,
+  "باكو ونص": 1500,
+  "أرنب ونص": 1500000,
+  "ارنب ونص": 1500000,
+  "نص باكو": 500,
+  "نص أرنب": 500000,
+  "نص ارنب": 500000,
+  "ربع باكو": 250,
+  "ربع أرنب": 250000,
+  "ربع ارنب": 250000,
+  "باكوين": 2000,
+  "باكو": 1000,
+  "أرنب": 1000000,
+  "ارنب": 1000000,
 };
 
 // ─── Amount Counting ──────────────────────────────────────────────
@@ -188,18 +199,6 @@ function normalizeLightForAI(text: string): string {
     });
   }
 
-  // 5. Convert word numbers to digits
-  for (const [word, num] of Object.entries(WORD_NUMBERS)) {
-    // Handle attached forms like "بعشرين"
-    const attached = new RegExp(`ب${word}(?=\\s|جنيه|ج\\.م|ج|$)`, "g");
-    result = result.replace(attached, ` ${num} `);
-    // Handle standalone
-    const regex = new RegExp(`(?:^|\\s)(ب|بـ|و)?${word}(?=\\s|$)`, "g");
-    result = result.replace(regex, (_, prefix) => {
-      return (prefix ? ` ${prefix} ` : " ") + num.toString() + " ";
-    });
-  }
-
   // 6. Handle "X ألف" patterns
   result = result.replace(/(\d+)\s*(الف|ألف)/g, (_, num) => {
     return (parseFloat(num) * 1000).toString();
@@ -209,6 +208,29 @@ function normalizeLightForAI(text: string): string {
   result = result.replace(/(\d+)\s*[kK]/g, (_, num) => {
     return (parseFloat(num) * 1000).toString();
   });
+
+  // 5. Convert word numbers to digits
+  for (const [word, num] of Object.entries(WORD_NUMBERS)) {
+    // Handle attached forms like "بعشرين"
+    const attached = new RegExp(`ب${word}(?=\\s|جنيه|ج\\.م|ج|$)`, "g");
+    result = result.replace(attached, ` ${num} `);
+    
+    // Bypass converting "واحد" to "1" if it is followed by common people/relation terms (indefinite pronoun usage)
+    if (word === "واحد") {
+      const regex = new RegExp(`(?:^|\\s)(ب|بـ|و)?واحد(?=\\s+(?:صاحب|صديق|زميل|أخ|اخ|أخت|اخت|قريب|سواق|بواب|شغال|موظف|مدير|حد|شخص|راجل|ست))`, "g");
+      result = result.replace(regex, (match) => match.replace("واحد", "___واحد___"));
+    }
+
+    // Handle standalone
+    const regex = new RegExp(`(?:^|\\s)(ب|بـ|و)?${word}(?=\\s|$)`, "g");
+    result = result.replace(regex, (_, prefix) => {
+      return (prefix ? ` ${prefix} ` : " ") + num.toString() + " ";
+    });
+
+    if (word === "واحد") {
+      result = result.replace(/___واحد___/g, "واحد");
+    }
+  }
 
   // 8. Remove weird symbols but keep Arabic text as-is (NO character normalization)
   result = result.replace(

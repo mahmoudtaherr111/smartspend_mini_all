@@ -62,4 +62,19 @@ describe("smart pipeline person memory", () => {
     expect(result.items.map((item) => item.amount)).toEqual([50, 80, 400]);
     expect(result.items[2]?.person_mentioned).toBe("مروان");
   });
+
+  it("asks one batched question for multiple unknown people", async () => {
+    const result = await runSmartPipeline({
+      ...baseInput,
+      text: "اديت مروان 400 وعلاء 500 جنيه",
+      userProfileContext: { knownPeople: [] },
+    });
+
+    expect(result.parsedBy).toBe("rule_engine");
+    expect(result.decision).toBe("clarify");
+    expect(result.clarificationQuestion).toContain("مروان");
+    expect(result.clarificationQuestion).toContain("علاء");
+    expect(result.items.map((item) => item.amount)).toEqual([400, 500]);
+  });
+
 });

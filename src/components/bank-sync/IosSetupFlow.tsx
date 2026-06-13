@@ -127,7 +127,7 @@ export function IosSetupFlow({ onBack }: Props) {
     <div className="w-full max-w-3xl mx-auto space-y-6 pb-20 px-4">
       {/* Back + Header */}
       <div className="bg-gradient-to-br from-slate-700 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
+        <div className="absolute top-0 end-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
         <div className="relative z-10 space-y-3">
           <button
             onClick={onBack}
@@ -167,7 +167,7 @@ export function IosSetupFlow({ onBack }: Props) {
               </div>
               <div className="flex-1 w-full bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border flex flex-col sm:flex-row gap-3 items-center">
                 <div className="flex-1 w-full flex items-center justify-between font-mono text-sm bg-white dark:bg-slate-900 px-3 py-2 rounded-lg border shadow-sm overflow-hidden">
-                  <span className="truncate ml-2 select-all">
+                  <span className="truncate ms-2 select-all">
                     {!hasLoaded
                       ? "جاري التحميل..."
                       : tokenVisible
@@ -209,7 +209,7 @@ export function IosSetupFlow({ onBack }: Props) {
                   className="w-full sm:w-auto shrink-0 border-dashed"
                 >
                   <RefreshCw
-                    className={`w-3.5 h-3.5 ml-2 ${isGenerating ? "animate-spin" : ""}`}
+                    className={`w-3.5 h-3.5 ms-2 ${isGenerating ? "animate-spin" : ""}`}
                   />{" "}
                   تحديث الرمز
                 </Button>
@@ -243,9 +243,9 @@ export function IosSetupFlow({ onBack }: Props) {
                   className="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg h-12 text-base font-bold"
                 >
                   {isConnecting ? (
-                    <RefreshCw className="w-5 h-5 ml-2 animate-spin" />
+                    <RefreshCw className="w-5 h-5 ms-2 animate-spin" />
                   ) : (
-                    <Smartphone className="w-5 h-5 ml-2" />
+                    <Smartphone className="w-5 h-5 ms-2" />
                   )}
                   Connect iPhone
                 </Button>
@@ -261,7 +261,7 @@ export function IosSetupFlow({ onBack }: Props) {
               </div>
               <h3 className="font-bold text-lg">تشغيل التتبع الآلي</h3>
             </div>
-            <div className="pr-11 space-y-5">
+            <div className="pe-11 space-y-5">
               <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3 max-w-md bg-white dark:bg-slate-950 p-4 rounded-xl border shadow-sm">
                 <div className="flex-1 w-full space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -294,14 +294,14 @@ export function IosSetupFlow({ onBack }: Props) {
                   {isSavingKeyword ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
                   ) : (
-                    <Save className="w-4 h-4 ml-2" />
+                    <Save className="w-4 h-4 ms-2" />
                   )}{" "}
                   حفظ الكلمة
                 </Button>
               </div>
 
               <div className="bg-slate-50 dark:bg-slate-900/50 p-5 rounded-2xl border relative overflow-hidden">
-                <div className="absolute left-0 top-0 w-1 h-full bg-emerald-400" />
+                <div className="absolute start-0 top-0 w-1 h-full bg-emerald-400" />
                 <ol className="space-y-3 text-sm text-slate-600 dark:text-slate-300 list-decimal list-inside font-medium leading-relaxed">
                   <li>
                     افتح <strong>Shortcuts</strong> → تبويب{" "}
@@ -362,7 +362,7 @@ export function IosSetupFlow({ onBack }: Props) {
               disabled={logsQuery.isFetching}
             >
               <RefreshCw
-                className={`w-3.5 h-3.5 ml-1.5 ${logsQuery.isFetching ? "animate-spin" : ""}`}
+                className={`w-3.5 h-3.5 ms-1.5 ${logsQuery.isFetching ? "animate-spin" : ""}`}
               />{" "}
               تحديث
             </Button>

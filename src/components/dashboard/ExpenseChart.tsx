@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { trpc } from "../../providers/trpc";
 import {
   PieChart,
   Pie,
@@ -58,6 +60,14 @@ export function ExpenseChart({
   familyBreakdown = [],
 }: ExpenseChartProps) {
   const [activeTab, setActiveTab] = useState("categories");
+  const { data: profile } = trpc.profile.getSmartProfile.useQuery();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash === "#budget") {
+      setActiveTab("budget");
+    }
+  }, [location.hash]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(
     null,
@@ -226,10 +236,57 @@ export function ExpenseChart({
     );
   }
 
+  // ─── Heatmap Logic ───
+  const daysOfWeek = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+  const heatmapData: Record<string, Record<number, number>> = {};
+  daysOfWeek.forEach((day) => {
+    heatmapData[day] = {};
+    for (let i = 0; i < 24; i++) heatmapData[day][i] = 0;
+  });
+
+  let maxHeatmapValue = 0;
+  let mostExpensiveHour = { name: "", value: 0 };
+  let mostExpensiveDay = { name: "", value: 0 };
+
+  if (items && items.length > 0) {
+    const dayTotals: Record<string, number> = {};
+    const hourTotals: Record<number, number> = {};
+
+    items.filter((i) => i.type === "expense").forEach((item) => {
+      const d = new Date(item.date);
+      if (isNaN(d.getTime())) return;
+      const dayName = daysOfWeek[d.getDay()];
+      const hour = d.getHours();
+      const amount = Number(item.amount) || 0;
+
+      heatmapData[dayName][hour] += amount;
+      dayTotals[dayName] = (dayTotals[dayName] || 0) + amount;
+      hourTotals[hour] = (hourTotals[hour] || 0) + amount;
+
+      if (heatmapData[dayName][hour] > maxHeatmapValue) {
+        maxHeatmapValue = heatmapData[dayName][hour];
+      }
+    });
+
+    Object.entries(dayTotals).forEach(([day, total]) => {
+      if (total > mostExpensiveDay.value) {
+        mostExpensiveDay = { name: day, value: total };
+      }
+    });
+    Object.entries(hourTotals).forEach(([hour, total]) => {
+      if (total > mostExpensiveHour.value) {
+        const hNum = Number(hour);
+        const ampm = hNum >= 12 ? "م" : "ص";
+        const h = hNum % 12 || 12;
+        mostExpensiveHour = { name: `${h} ${ampm}`, value: total };
+      }
+    });
+  }
+
   return (
     <div className="space-y-4">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 h-12 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-1">
+        <TabsList className="grid w-full grid-cols-5 h-12 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-1">
           <TabsTrigger
             value="categories"
             className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm transition-all text-xs sm:text-sm whitespace-nowrap"
@@ -253,6 +310,12 @@ export function ExpenseChart({
             className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm transition-all text-xs sm:text-sm whitespace-nowrap"
           >
             الميزانية
+          </TabsTrigger>
+          <TabsTrigger
+            value="timing"
+            className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm transition-all text-xs sm:text-sm whitespace-nowrap"
+          >
+            التوقيت
           </TabsTrigger>
         </TabsList>
 
@@ -297,7 +360,7 @@ export function ExpenseChart({
                         const data = payload[0];
                         return (
                           <div
-                            className="bg-zinc-950/95 backdrop-blur-lg p-3 border border-zinc-800/80 rounded-xl shadow-2xl flex flex-col gap-1 text-right text-zinc-100 min-w-[140px] transform -translate-y-2 pointer-events-none"
+                            className="bg-zinc-950/95 backdrop-blur-lg p-3 border border-zinc-800/80 rounded-xl shadow-2xl flex flex-col gap-1 text-end text-zinc-100 min-w-[140px] transform -translate-y-2 pointer-events-none"
                             dir="rtl"
                           >
                             <span className="text-zinc-400 text-xs font-semibold mb-1 border-b border-zinc-800/50 pb-1">
@@ -380,10 +443,10 @@ export function ExpenseChart({
                         <span className="font-extrabold text-foreground">
                           {entry.value.toLocaleString()}
                         </span>
-                        <span className="text-xs text-muted-foreground font-medium mr-1">
+                        <span className="text-xs text-muted-foreground font-medium me-1">
                           ج.م
                         </span>
-                        <span className="text-xs text-muted-foreground mr-1.5 font-semibold">
+                        <span className="text-xs text-muted-foreground me-1.5 font-semibold">
                           ({percentage.toFixed(0)}%)
                         </span>
                       </div>
@@ -407,7 +470,7 @@ export function ExpenseChart({
 
           <TabsContent value="family" className="m-0">
             {familyBreakdown.length > 0 ? (
-              <div className="space-y-4 max-h-[320px] overflow-y-auto pl-2">
+              <div className="space-y-4 max-h-[320px] overflow-y-auto ps-2">
                 {familyBreakdown.map((person, idx) => (
                   <div
                     key={idx}
@@ -572,7 +635,7 @@ export function ExpenseChart({
 
                   {/* Right Column: Grid of Active Wallet Cards */}
                   <div className="lg:col-span-7 space-y-4">
-                    <h4 className="text-sm font-bold text-foreground text-right mb-2">
+                    <h4 className="text-sm font-bold text-foreground text-end mb-2">
                       الحسابات والمحافظ الإلكترونية النشطة 💳
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -619,7 +682,7 @@ export function ExpenseChart({
                             </div>
 
                             <div
-                              className="space-y-2 mb-4 text-right"
+                              className="space-y-2 mb-4 text-end"
                               dir="rtl"
                             >
                               <div className="flex justify-between items-center text-xs">
@@ -643,7 +706,7 @@ export function ExpenseChart({
                             </div>
 
                             <div className="mt-auto border-t border-slate-100 dark:border-slate-800/60 pt-3 flex items-center justify-between">
-                              <div className="text-right">
+                              <div className="text-end">
                                 <span className="text-[10px] text-muted-foreground block">
                                   آخر رصيد معروف
                                 </span>
@@ -699,7 +762,8 @@ export function ExpenseChart({
               const totalInc = items
                 .filter((i) => i.type === "income")
                 .reduce((sum, item) => sum + Number(item.amount), 0);
-              const budgetLimit = totalInc > 0 ? totalInc : 10000;
+              const profileIncome = profile?.financialInfo?.averageMonthlyIncome;
+              const budgetLimit = profileIncome || (totalInc > 0 ? totalInc : 10000);
               const budgetPercentage = Math.min(
                 100,
                 Math.round((totalExp / budgetLimit) * 100),
@@ -718,7 +782,7 @@ export function ExpenseChart({
                         تتبع مصاريفك مقارنة بدخلك
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-end">
                       <span className="text-2xl font-bold text-foreground block">
                         {totalExp.toLocaleString()} ج
                       </span>
@@ -756,18 +820,81 @@ export function ExpenseChart({
                     </div>
                   </div>
 
-                  {totalInc === 0 && (
+                  {!profileIncome && totalInc === 0 && (
                     <div className="bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 p-3 rounded-lg text-sm flex items-center gap-2">
                       <span>💡</span>
                       <span>
-                        سجل دخلك الشهري عشان الميزانية تحسب صح (دلوقتي محسوبة
-                        على أساس 10,000 ج.م كافتراضي).
+                        سجل ميزانيتك الشهرية في ملفك الشخصي أو أضف دخلاً ليتم حساب الميزانية بدقة (دلوقتي محسوبة على أساس 10,000 ج.م كافتراضي).
                       </span>
                     </div>
                   )}
                 </div>
               );
             })()}
+          </TabsContent>
+
+          <TabsContent value="timing" className="m-0 space-y-6">
+            <div className="bg-white/50 dark:bg-slate-900/30 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-slate-100 dark:border-slate-800 shadow-sm">
+              <h3 className="font-bold text-lg mb-6 text-end">خريطة التوقيت (Heatmap) ⏰</h3>
+              
+              <div className="overflow-x-auto pb-4" dir="rtl">
+                <div className="min-w-[600px] sm:min-w-[700px]">
+                  <div className="grid grid-cols-[auto_repeat(24,1fr)] gap-0.5 sm:gap-1 mb-2">
+                    <div className="w-12 sm:w-16"></div>
+                    {Array.from({ length: 24 }).map((_, i) => (
+                      <div key={i} className="text-[9px] sm:text-[10px] text-center text-muted-foreground font-medium">
+                        {i}
+                      </div>
+                    ))}
+                  </div>
+
+                  {daysOfWeek.map((day) => (
+                    <div key={day} className="grid grid-cols-[auto_repeat(24,1fr)] gap-0.5 sm:gap-1 mb-0.5 sm:mb-1">
+                      <div className="w-12 sm:w-16 text-[10px] sm:text-xs font-semibold flex items-center text-muted-foreground">
+                        {day}
+                      </div>
+                      {Array.from({ length: 24 }).map((_, hour) => {
+                        const val = heatmapData[day][hour];
+                        const intensity = maxHeatmapValue > 0 ? (val / maxHeatmapValue) : 0;
+                        const opacity = Math.max(0.05, intensity);
+                        const isZero = val === 0;
+                        
+                        return (
+                          <div
+                            key={hour}
+                            className="aspect-square rounded-sm sm:rounded relative group cursor-default transition-all duration-300"
+                            style={{ 
+                              backgroundColor: isZero 
+                                ? 'var(--tw-colors-slate-200, rgba(226, 232, 240, 0.4))'
+                                : `rgba(99, 102, 241, ${Math.max(0.15, opacity)})`
+                            }}
+                          >
+                            {!isZero && (
+                              <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity z-50 bottom-full left-1/2 -translate-x-1/2 mb-1 bg-slate-900 dark:bg-slate-800 text-white text-[10px] sm:text-[11px] px-2 py-1 rounded whitespace-nowrap pointer-events-none shadow-lg">
+                                {val.toLocaleString()} ج.م
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-6">
+                <div className="p-3 sm:p-4 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/30 flex flex-col items-center justify-center text-center gap-1">
+                  <span className="text-[10px] sm:text-xs text-indigo-600/70 dark:text-indigo-400/70">أكثر يوم بتصرف فيه</span>
+                  <span className="font-bold text-base sm:text-lg text-indigo-700 dark:text-indigo-300">{mostExpensiveDay.name || "—"}</span>
+                  <span className="text-[10px] sm:text-xs font-semibold text-indigo-600">{mostExpensiveDay.value > 0 ? `${mostExpensiveDay.value.toLocaleString()} ج.م` : ""}</span>
+                </div>
+                <div className="p-3 sm:p-4 rounded-xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 flex flex-col items-center justify-center text-center gap-1">
+                  <span className="text-[10px] sm:text-xs text-rose-600/70 dark:text-rose-400/70">أكثر ساعة بتصرف فيها</span>
+                  <span className="font-bold text-base sm:text-lg text-rose-700 dark:text-rose-300">{mostExpensiveHour.name || "—"}</span>
+                  <span className="text-[10px] sm:text-xs font-semibold text-rose-600">{mostExpensiveHour.value > 0 ? `${mostExpensiveHour.value.toLocaleString()} ج.م` : ""}</span>
+                </div>
+              </div>
+            </div>
           </TabsContent>
         </div>
       </Tabs>
@@ -783,7 +910,7 @@ export function ExpenseChart({
             </DialogTitle>
           </DialogHeader>
           <div
-            className="max-h-[350px] overflow-y-auto pr-1 pl-1 space-y-4 py-2 mt-4"
+            className="max-h-[350px] overflow-y-auto pe-1 ps-1 space-y-4 py-2 mt-4"
             dir="rtl"
           >
             {(() => {
@@ -933,7 +1060,7 @@ export function ExpenseChart({
                       key={idx}
                       className="border rounded-xl p-3 bg-white dark:bg-slate-900/40 shadow-sm flex items-center justify-between gap-3 border-slate-100 dark:border-slate-800"
                     >
-                      <div className="text-right">
+                      <div className="text-end">
                         <span className="font-semibold text-sm block text-foreground">
                           {item.description || item.category}
                         </span>
