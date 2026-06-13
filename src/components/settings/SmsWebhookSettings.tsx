@@ -168,7 +168,7 @@ export function SmsWebhookSettings() {
             <h3 className="text-sm font-semibold">تثبيت الـ Shortcut</h3>
           </div>
 
-          <div className="ml-8 p-4 rounded-xl border border-sky-200 dark:border-sky-800 bg-white dark:bg-slate-900 shadow-sm space-y-3">
+          <div className="ms-8 p-4 rounded-xl border border-sky-200 dark:border-sky-800 bg-white dark:bg-slate-900 shadow-sm space-y-3">
             {!hasLoaded ? (
               <div className="h-10 bg-muted animate-pulse rounded-lg" />
             ) : (
@@ -187,9 +187,9 @@ export function SmsWebhookSettings() {
                   className="w-full sm:w-auto bg-sky-600 hover:bg-sky-700 text-white shadow-md shadow-sky-600/20"
                 >
                   {isConnecting ? (
-                    <RefreshCw className="w-4 h-4 ml-2 animate-spin" />
+                    <RefreshCw className="w-4 h-4 ms-2 animate-spin" />
                   ) : (
-                    <ArrowRight className="w-4 h-4 ml-2" />
+                    <ArrowRight className="w-4 h-4 ms-2" />
                   )}
                   نسخ الإعدادات وتثبيت الاختصار
                 </Button>
@@ -210,7 +210,7 @@ export function SmsWebhookSettings() {
               </h3>
             </div>
 
-            <div className="ml-8 space-y-4">
+            <div className="ms-8 space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-end gap-2 max-w-sm">
                 <div className="flex-1 space-y-1.5 w-full">
                   <label className="text-xs font-medium text-muted-foreground">
@@ -238,7 +238,7 @@ export function SmsWebhookSettings() {
                   {isSavingKeyword ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
                   ) : (
-                    <Save className="w-4 h-4 ml-2" />
+                    <Save className="w-4 h-4 ms-2" />
                   )}
                   حفظ
                 </Button>
@@ -255,7 +255,7 @@ export function SmsWebhookSettings() {
                   </li>
                   <li>
                     في خانة <strong>Message Contains</strong>، اكتب:{" "}
-                    <span className="inline-flex px-1.5 py-0.5 rounded-md bg-sky-100 dark:bg-sky-900 text-sky-800 dark:text-sky-200 font-bold ml-1">
+                    <span className="inline-flex px-1.5 py-0.5 rounded-md bg-sky-100 dark:bg-sky-900 text-sky-800 dark:text-sky-200 font-bold ms-1">
                       {keyword || "EGP"}
                     </span>
                   </li>
@@ -286,14 +286,14 @@ export function SmsWebhookSettings() {
               <KeyRound className="w-3.5 h-3.5" />
               <span>إعدادات متقدمة (Webhook Token)</span>
               {showAdvanced ? (
-                <ChevronUp className="w-3.5 h-3.5 mr-auto" />
+                <ChevronUp className="w-3.5 h-3.5 me-auto" />
               ) : (
-                <ChevronDown className="w-3.5 h-3.5 mr-auto" />
+                <ChevronDown className="w-3.5 h-3.5 me-auto" />
               )}
             </button>
 
             {showAdvanced && (
-              <div className="mt-3 ml-5 space-y-3 animate-in fade-in slide-in-from-top-2">
+              <div className="mt-3 ms-5 space-y-3 animate-in fade-in slide-in-from-top-2">
                 <div className="flex items-center gap-2">
                   <div className="flex-1 font-mono text-xs bg-muted rounded-lg px-3 py-2.5 truncate select-all border shadow-sm">
                     {tokenVisible ? token : maskedToken}
@@ -331,7 +331,7 @@ export function SmsWebhookSettings() {
                   className="text-xs text-muted-foreground h-8"
                 >
                   <RefreshCw
-                    className={`w-3 h-3 ml-1.5 ${isGenerating ? "animate-spin" : ""}`}
+                    className={`w-3 h-3 ms-1.5 ${isGenerating ? "animate-spin" : ""}`}
                   />
                   إنشاء Token جديد (سيلغي القديم)
                 </Button>
@@ -356,7 +356,7 @@ export function SmsWebhookSettings() {
                 disabled={logsQuery.isFetching}
               >
                 <RefreshCw
-                  className={`w-3.5 h-3.5 mr-1 ${logsQuery.isFetching ? "animate-spin" : ""}`}
+                  className={`w-3.5 h-3.5 me-1 ${logsQuery.isFetching ? "animate-spin" : ""}`}
                 />
                 تحديث
               </Button>

@@ -63,4 +63,20 @@ describe("person resolver", () => {
     expect(result.category).toBe("أصدقاء");
     expect(result.subCategory).toBe("مروان صاحبك");
   });
+
+  it("binds each relationship to the nearest name in a multi-person clarification", () => {
+    const result = resolvePersonForTransaction({
+      candidateName: "علاء",
+      transactionText: "وعلاء 500 جنيه",
+      originalText:
+        "اديت مروان 400 وعلاء 500 جنيه التوضيح: مروان اخويا وعلاء صاحبي",
+      knownPeople: [],
+    });
+
+    expect(result.needsClarification).toBe(false);
+    expect(result.relationship).toBe("صديق");
+    expect(result.category).toBe("أصدقاء");
+    expect(result.subCategory).toBe("علاء صاحبك");
+  });
+
 });

@@ -16,7 +16,7 @@ export default function NotFound() {
         </p>
         <Button asChild>
           <Link to="/dashboard">
-            <Home className="w-4 h-4 ml-2" />
+            <Home className="w-4 h-4 ms-2" />
             الرجوع للرئيسية
           </Link>
         </Button>

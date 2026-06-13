@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { trpc } from "@/providers/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,12 +35,13 @@ import {
   ChevronUp,
   Wallet,
 } from "lucide-react";
-import { motion, useAnimation, PanInfo } from "framer-motion";
+import { motion, useAnimation, PanInfo, useMotionValue, useTransform } from "framer-motion";
 import { useHaptics } from "@/hooks/useHaptics";
 
 interface RecentExpensesProps {
   onRefresh?: () => void;
   limit?: number;
+  month?: string; // e.g. "2025-06" — filters to this calendar month
 }
 
 const categoryColors: Record<string, string> = {
@@ -242,14 +244,37 @@ function getTypeMeta(type: string | null | undefined) {
   };
 }
 
-export function RecentExpenses({ onRefresh, limit = 10 }: RecentExpensesProps) {
+export function RecentExpenses({ onRefresh, limit = 100, month }: RecentExpensesProps) {
   const [page, setPage] = useState(0);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
-  const { data, isLoading, isFetching, refetch } = trpc.expense.list.useQuery({
+  // Reset to page 0 whenever the active month changes
+  const [prevMonth, setPrevMonth] = useState(month);
+  if (prevMonth !== month) {
+    setPrevMonth(month);
+    setPage(0);
+  }
+
+  // Derive startDate / endDate from the month string ("YYYY-MM")
+  const dateRange = month
+    ? (() => {
+        const [y, m] = month.split("-").map(Number);
+        const start = new Date(y, m - 1, 1);
+        const end = new Date(y, m, 0, 23, 59, 59, 999); // last day of month
+        return {
+          startDate: start.toISOString(),
+          endDate: end.toISOString(),
+        };
+      })()
+    : {};
+
+  const queryInput = {
     limit,
     offset: page * limit,
-  }, {
+    ...dateRange,
+  };
+
+  const { data, isLoading, isFetching, refetch } = trpc.expense.list.useQuery(queryInput, {
     placeholderData: (prev) => prev,
   });
 
@@ -259,12 +284,9 @@ export function RecentExpenses({ onRefresh, limit = 10 }: RecentExpensesProps) {
   const deleteMutation = trpc.expense.delete.useMutation({
     onMutate: async (variables) => {
       await utilsTrpc.expense.list.cancel();
-      const previousData = utilsTrpc.expense.list.getData({
-        limit,
-        offset: page * limit,
-      });
+      const previousData = utilsTrpc.expense.list.getData(queryInput);
 
-      utilsTrpc.expense.list.setData({ limit, offset: page * limit }, (old) => {
+      utilsTrpc.expense.list.setData(queryInput, (old) => {
         if (!old) return old;
         return {
           ...old,
@@ -283,10 +305,7 @@ export function RecentExpenses({ onRefresh, limit = 10 }: RecentExpensesProps) {
     onError: (err, variables, context) => {
       hapticError();
       if (context?.previousData) {
-        utilsTrpc.expense.list.setData(
-          { limit, offset: page * limit },
-          context.previousData,
-        );
+        utilsTrpc.expense.list.setData(queryInput, context.previousData);
       }
       toast.error("مش قادرين نكمل الحذف — جرّب تاني ❌");
     },
@@ -330,7 +349,7 @@ export function RecentExpenses({ onRefresh, limit = 10 }: RecentExpensesProps) {
               className="w-16 h-16 text-emerald-500 animate-bounce"
               style={{ animationDuration: "3s" }}
             />
-            <div className="absolute top-0 right-0 w-8 h-8 rounded-full bg-amber-200 dark:bg-amber-700/50 flex items-center justify-center -translate-y-2 translate-x-2 animate-pulse">
+            <div className="absolute top-0 end-0 w-8 h-8 rounded-full bg-amber-200 dark:bg-amber-700/50 flex items-center justify-center -translate-y-2 translate-x-2 animate-pulse">
               <span className="text-amber-700 dark:text-amber-200 text-lg">
                 💡
               </span>
@@ -359,7 +378,7 @@ export function RecentExpenses({ onRefresh, limit = 10 }: RecentExpensesProps) {
               <Receipt className="w-5 h-5 text-blue-500" />
               آخر العمليات
               <Badge variant="secondary">{data ? Number(data.total) : 0} عملية</Badge>
-              {isFetching && <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground ml-2" />}
+              {isFetching && <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground ms-2" />}
             </CardTitle>
             <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isFetching}>
               <RefreshCw className={cn("w-4 h-4", isFetching && "animate-spin")} />
@@ -379,35 +398,18 @@ export function RecentExpenses({ onRefresh, limit = 10 }: RecentExpensesProps) {
           </div>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4 pt-4 border-t">
+            <div className="flex justify-center mt-4 pt-4 border-t">
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
+                className="rounded-xl w-full"
                 onClick={(e) => {
                   e.preventDefault();
-                  setPage((p) => Math.max(0, p - 1));
-                }}
-                disabled={page === 0 || isFetching}
-              >
-                <ChevronUp className="w-4 h-4" />
-                السابق
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                صفحة {page + 1} من {totalPages}
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setPage((p) => Math.min(totalPages - 1, p + 1));
+                  setPage((p) => p + 1);
                 }}
                 disabled={page >= totalPages - 1 || isFetching}
               >
-                التالي
-                <ChevronDown className="w-4 h-4" />
+                {isFetching ? "جاري التحميل..." : "تحميل المزيد ⬇️"}
               </Button>
             </div>
           )}
@@ -482,16 +484,27 @@ function ExpenseItem({
     year: "numeric",
   });
 
-  const isSms = expense.source === "sms";
   const controls = useAnimation();
   const { mediumTap } = useHaptics();
+  const isRTL = typeof document !== "undefined" && document.documentElement.dir === "rtl";
+  const dragConstraints = isRTL ? { left: -80, right: 0 } : { right: 80, left: 0 };
+  const isSms = expense.source === "sms";
+  const x = useMotionValue(0);
+
+  // Smoothly fade in the background action as card is dragged, preventing it from showing through translucent cards
+  const bgOpacity = useTransform(x, (val) => {
+    const absVal = Math.abs(val);
+    if (absVal <= 5) return 0;
+    return Math.min(1, (absVal - 5) / 35); // fully opaque after dragging 40px
+  });
 
   const handleDragEnd = async (e: any, info: PanInfo) => {
-    // In RTL, dragging right means info.offset.x > 0
-    if (info.offset.x > 60) {
+    const threshold = 60;
+    const hasDraggedPastThreshold = isRTL ? info.offset.x < -threshold : info.offset.x > threshold;
+
+    if (hasDraggedPastThreshold) {
       mediumTap();
       onRequestDelete(expense.id);
-      // Snap back if user cancels the dialog later
       controls.start({ x: 0 });
     } else {
       controls.start({ x: 0 });
@@ -501,21 +514,25 @@ function ExpenseItem({
   return (
     <div className="relative overflow-hidden rounded-lg border shadow-sm touch-pan-y">
       {/* Background Actions (Delete) */}
-      <div className="absolute inset-y-0 left-0 w-20 bg-red-500 flex items-center justify-center">
+      <motion.div 
+        style={{ opacity: bgOpacity }}
+        className="absolute inset-y-0 start-0 w-20 bg-red-500 flex items-center justify-center"
+      >
         <Trash2 className="text-white w-6 h-6 animate-pulse" />
-      </div>
+      </motion.div>
 
       {/* Foreground Draggable Content */}
       <motion.div
         drag="x"
-        dragConstraints={{ right: 80, left: 0 }}
+        dragConstraints={dragConstraints}
         dragElastic={0.1}
         onDragEnd={handleDragEnd}
         animate={controls}
+        style={{ x }}
         className="relative bg-white dark:bg-slate-900/90 p-3 flex items-center justify-between z-10 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors gap-3"
       >
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="text-right min-w-0 flex-1">
+          <div className="text-end min-w-0 flex-1">
             <div className={cn("font-bold text-lg truncate", typeMeta.amountClass)}>
               {typeMeta.sign}
               {Number(expense.amount).toFixed(0)} جنيه
@@ -712,7 +729,7 @@ function ExpenseItemSkeleton() {
   return (
     <div className="relative overflow-hidden rounded-lg border shadow-sm p-3 flex items-center justify-between bg-white dark:bg-slate-900/90">
       <div className="flex items-center gap-3">
-        <div className="text-right space-y-2">
+        <div className="text-end space-y-2">
           <Skeleton className="h-6 w-20" />
           <Skeleton className="h-3 w-16" />
         </div>

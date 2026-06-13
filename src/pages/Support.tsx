@@ -66,7 +66,7 @@ export default function Support() {
 
   return (
     <div
-      className="min-h-screen bg-background p-4 pb-nav-safe md:p-8 md:pb-8"
+      className="min-h-screen bg-background p-4 md:p-8"
       dir="rtl"
     >
       <SEOMeta path="/support" title="مركز الدعم - SmartSpend AI" />

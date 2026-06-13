@@ -72,6 +72,9 @@
   html {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation; /* Removes mobile double-tap delay and double-tap zoom delay globally */
+    /* Fill the entire screen including safe areas */
+    height: 100%;
+    background-color: hsl(var(--background));
   }
   body {
     @apply bg-background text-foreground;
@@ -86,6 +89,9 @@
     overflow-x: hidden;
     overflow-y: hidden; /* Prevent body scrolling entirely */
     overscroll-behavior-y: none; /* Disables native browser pull-to-refresh and rubber-band elastic effects */
+    height: 100%;
+    /* Ensure background covers safe areas in PWA */
+    background-color: hsl(var(--background));
 
     /* Native App Feel: Disable text copy-highlighting globally on all backgrounds, cards, buttons, etc. */
     -webkit-user-select: none;
@@ -114,9 +120,15 @@
     font-size: 16px;
     touch-action: manipulation;
   }
+  img {
+    -webkit-user-drag: none;
+    user-drag: none;
+    -webkit-touch-callout: none;
+  }
   button,
   a {
     touch-action: manipulation; /* Instant physical click response (zero 300ms mobile tap delay) */
+    -webkit-touch-callout: none;
   }
   @media (min-width: 640px) {
     input,
@@ -135,7 +147,7 @@
     padding-top: max(0.25rem, env(safe-area-inset-top));
   }
   .pb-nav-safe {
-    padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));
+    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));
   }
   .tap-target {
     @apply min-h-[44px] min-w-[44px];
@@ -164,7 +176,11 @@
 
   /* Native App Shell layout utilities */
   .app-shell {
+    /* Use dvh for viewport filling, fall back to svh if browser supports it for stable height */
     height: 100dvh;
+    /* On some PWA environments, 100dvh can be taller than the visual viewport.
+       Using min-height + max-height pins the shell precisely to the screen. */
+    min-height: -webkit-fill-available;
     width: 100vw;
     overflow: hidden;
     display: flex;
@@ -193,5 +209,13 @@
   }
   .hide-scrollbar::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
+  }
+
+  /* Visual Viewport Keyboard Avoidance overrides */
+  .keyboard-active .mobile-bottom-nav {
+    display: none !important;
+  }
+  .keyboard-active .app-content {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom)) !important;
   }
 }

@@ -8,6 +8,7 @@
 
 import { CATEGORIES, getCategoryByArabicName } from "./category-registry";
 import type { ParsedTransaction } from "./rule-engine";
+import { extractAmounts } from "./entity-extractor";
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -42,6 +43,8 @@ export interface MonthlyContext {
 
 // ─── Category Type Maps ──────────────────────────────────────────
 
+// Bug #14 fix: متنوعات is a neutral fallback, NOT expense-only.
+// Removing it prevents unclassified income from being silently converted to expense.
 const EXPENSE_ONLY_CATEGORIES = new Set([
   "أكل وشرب",
   "مواصلات",
@@ -59,7 +62,7 @@ const EXPENSE_ONLY_CATEGORIES = new Set([
   "خدمات رقمية",
   "خدمات سيارات",
   "خروجات",
-  "متنوعات",
+  // "متنوعات" — REMOVED: neutral fallback, not expense-only
 ]);
 
 const INCOME_ONLY_CATEGORIES = new Set(["مرتب", "عمل حر", "عوائد استثمار"]);
@@ -84,27 +87,32 @@ export function verifyClassifiedItems(
   }
 
   const flags: VerificationFlag[] = [];
-  let verifiedItems = [...items];
+  // Bug #15 fix: Deep copy using spread on each item — prevents mutations from
+  // leaking back to the caller's original array (shallow [...items] was mutating originals).
+  let verifiedItems = items.map((item) => ({ ...item }));
 
   // Step 1: Normalize amounts
   verifiedItems = normalizeAmounts(verifiedItems);
 
   // Step 2: Detect duplicates
-  const dupFlags = detectDuplicates(verifiedItems);
-  if (dupFlags.length > 0) {
-    flags.push(...dupFlags);
-    // Remove the lower-confidence duplicate
-    const toRemove = new Set<number>();
-    for (const flag of dupFlags) {
-      if (flag.affectedItems.length >= 2) {
-        const [a, b] = flag.affectedItems;
-        // Keep the one with higher confidence
-        const remove =
-          verifiedItems[a].confidence >= verifiedItems[b].confidence ? b : a;
-        toRemove.add(remove);
+  const totalAmountsInText = extractAmounts(originalText).length;
+  if (verifiedItems.length !== totalAmountsInText) {
+    const dupFlags = detectDuplicates(verifiedItems);
+    if (dupFlags.length > 0) {
+      flags.push(...dupFlags);
+      // Remove the lower-confidence duplicate
+      const toRemove = new Set<number>();
+      for (const flag of dupFlags) {
+        if (flag.affectedItems.length >= 2) {
+          const [a, b] = flag.affectedItems;
+          // Keep the one with higher confidence
+          const remove =
+            verifiedItems[a].confidence >= verifiedItems[b].confidence ? b : a;
+          toRemove.add(remove);
+        }
       }
+      verifiedItems = verifiedItems.filter((_, idx) => !toRemove.has(idx));
     }
-    verifiedItems = verifiedItems.filter((_, idx) => !toRemove.has(idx));
   }
 
   // Step 3: Check intent-taxonomy conflicts
@@ -172,7 +180,8 @@ function detectDuplicates(items: ParsedTransaction[]): VerificationFlag[] {
       if (
         a.amount === b.amount &&
         a.category === b.category &&
-        a.type === b.type
+        a.type === b.type &&
+        a.person_mentioned === b.person_mentioned
       ) {
         // Check if descriptions are also similar (not different items of same price)
         const descSimilar = areDescriptionsSimilar(
@@ -194,13 +203,27 @@ function detectDuplicates(items: ParsedTransaction[]): VerificationFlag[] {
   return flags;
 }
 
+// Bug #17 fix: Apply Arabic text normalization before comparing descriptions.
+// Previously, "صيدليه" and "صيدلية" would NOT be considered duplicates.
+function normalizeArabicForCompare(str: string): string {
+  return String(str || "")
+    .trim()
+    .replace(/[\u064B-\u065F\u0670]/g, "") // remove tashkeel
+    .replace(/[إأآٱ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/ؤ/g, "و")
+    .replace(/ئ/g, "ي")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
 function areDescriptionsSimilar(a: string, b: string): boolean {
-  if (!a || !b) return true; // If either is empty, consider similar
-  const na = a.replace(/\s+/g, " ").trim().toLowerCase();
-  const nb = b.replace(/\s+/g, " ").trim().toLowerCase();
+  if (!a || !b) return true;
+  const na = normalizeArabicForCompare(a);
+  const nb = normalizeArabicForCompare(b);
   if (na === nb) return true;
 
-  // Check word overlap
   const wordsA = na.split(/\s+/);
   const wordsB = new Set(nb.split(/\s+/));
   let overlap = 0;
@@ -209,7 +232,7 @@ function areDescriptionsSimilar(a: string, b: string): boolean {
   }
   const uniqueA = new Set(wordsA);
   const similarity = overlap / Math.max(uniqueA.size, wordsB.size);
-  return similarity >= 0.6; // 60%+ word overlap = similar
+  return similarity >= 0.6;
 }
 
 // ─── Step 3: Intent-Taxonomy Conflict ────────────────────────────
@@ -220,17 +243,30 @@ function checkIntentTaxonomyConflicts(
   const flags: VerificationFlag[] = [];
 
   items.forEach((item, idx) => {
-    // Income type but expense-only category
+    // Bug #14 fix: متنوعات is now neutral — don't auto-flip income→expense for it.
+    // Only correct genuine expense-only categories (food, transport, bills, etc.).
     if (item.type === "income" && EXPENSE_ONLY_CATEGORIES.has(item.category)) {
-      flags.push({
-        type: "intent_conflict",
-        severity: "warning",
-        message: `تعارض: نوع العملية "دخل" لكن الفئة "${item.category}" فئة مصروفات — هيتم تصحيحها تلقائي`,
-        affectedItems: [idx],
-      });
-      // Auto-correct: likely expense, not income
-      item.type = "expense";
-      item.confidence = Math.max(item.confidence - 10, 30);
+      if (item.category === "متنوعات") {
+        // متنوعات = unclassified, not inherently expense.
+        // Mark for review but do NOT change intent.
+        item.needsReview = true;
+        flags.push({
+          type: "intent_conflict",
+          severity: "info",
+          message: `دخل غير مصنف في "متنوعات" — يرجى مراجعة تصنيف هذا الدخل`,
+          affectedItems: [idx],
+        });
+      } else {
+        // Genuine expense-only category with income intent → correct it
+        flags.push({
+          type: "intent_conflict",
+          severity: "warning",
+          message: `تعارض: نوع العملية "دخل" لكن الفئة "${item.category}" فئة مصروفات — هيتم تصحيحها تلقائي`,
+          affectedItems: [idx],
+        });
+        item.type = "expense";
+        item.confidence = Math.max(item.confidence - 10, 30);
+      }
     }
 
     // Expense type but income-only category
@@ -241,7 +277,6 @@ function checkIntentTaxonomyConflicts(
         message: `تعارض: نوع العملية "مصروف" لكن الفئة "${item.category}" فئة دخل — هيتم تصحيحها تلقائي`,
         affectedItems: [idx],
       });
-      // Auto-correct: likely income
       item.type = "income";
       item.confidence = Math.max(item.confidence - 10, 30);
     }
@@ -267,32 +302,49 @@ function validateTaxonomy(items: ParsedTransaction[]): VerificationFlag[] {
       return;
     }
 
-    // Check if subcategory belongs to this category
-    const subExists = cat.subcategories.some(
-      (s) => s.name_ar === item.subCategory,
-    );
+    const subExists = cat.subcategories.some((s) => s.name_ar === item.subCategory);
     if (!subExists && item.subCategory !== "عام") {
-      // EXCEPTION: Allow dynamic subcategories (person names) for specific transaction categories
+      // EXCEPTION: person-name subcategories for relationship categories
       if (["العائلة", "أصدقاء", "موظفين"].includes(item.category)) {
-        return; // Accept the dynamic person name as-is
+        return;
+      }
+      if (item.category === "تحويل" && item.subCategory === "تحويلات شخصية") {
+        return;
       }
 
-      // Try to find it in the category's subcategories (fuzzy)
-      const found = cat.subcategories.find(
-        (s) =>
-          s.name_ar.includes(item.subCategory) ||
-          item.subCategory.includes(s.name_ar),
-      );
-      if (found) {
-        item.subCategory = found.name_ar; // Auto-correct to exact name
+      // Bug #16 fix: Use BEST match (highest overlap) instead of first match.
+      // Previously, "دكتور" could match "دكتور عيون" before "دكتور" via .find().
+      let bestMatch: { name_ar: string } | null = null;
+      let bestScore = 0;
+      for (const s of cat.subcategories) {
+        let score = 0;
+        if (s.name_ar === item.subCategory) { score = 3; } // exact
+        else if (s.name_ar.includes(item.subCategory)) { score = 1; } // sub is prefix of registry
+        else if (item.subCategory.includes(s.name_ar)) { score = 2; } // registry is prefix of sub (tighter)
+        if (score > bestScore) { bestScore = score; bestMatch = s; }
+      }
+
+      if (bestMatch && bestScore > 0) {
+        item.subCategory = bestMatch.name_ar;
       } else {
-        flags.push({
-          type: "taxonomy_invalid",
-          severity: "info",
-          message: `الفئة الفرعية "${item.subCategory}" مش موجودة في "${item.category}" — هيتم استخدام "عام"`,
-          affectedItems: [idx],
-        });
-        item.subCategory = "عام";
+        // Special case for "تحويل" when a person is mentioned
+        if (item.category === "تحويل" && item.person_mentioned) {
+            flags.push({
+              type: "taxonomy_invalid",
+              severity: "info",
+              message: `الفئة الفرعية "${item.subCategory}" غير دقيقة في "تحويل" مع وجود شخص — هيتم استخدام "تحويلات شخصية"`,
+              affectedItems: [idx],
+            });
+            item.subCategory = "تحويلات شخصية";
+        } else {
+            flags.push({
+              type: "taxonomy_invalid",
+              severity: "info",
+              message: `الفئة الفرعية "${item.subCategory}" مش موجودة في "${item.category}" — هيتم استخدام "عام"`,
+              affectedItems: [idx],
+            });
+            item.subCategory = "عام";
+        }
       }
     }
   });
@@ -372,7 +424,7 @@ function detectAnomalies(
   const flags: VerificationFlag[] = [];
 
   const avgMonthlyExpense = ctx.totalExpense > 0 ? ctx.totalExpense / 30 : 500;
-  const avgMonthlyIncome = ctx.totalIncome > 0 ? ctx.totalIncome / 30 : 1000;
+  const avgMonthlyIncome = ctx.totalIncome > 0 ? ctx.totalIncome / 30 : 5000;
 
   items.forEach((item, idx) => {
     // Single income > 3x daily average
@@ -435,9 +487,13 @@ function adjustConfidence(
       adjustedConfidence = Math.max(adjustedConfidence - 15, 20);
     } else if (warningIndices.has(idx)) {
       adjustedConfidence = Math.max(adjustedConfidence - 5, 30);
-    } else if (flags.length === 0) {
-      // All clean — small boost for passing verification
-      adjustedConfidence = Math.min(adjustedConfidence + 5, 100);
+    } else {
+      // Bug #18 fix: Only boost items with ZERO flags affecting THEM specifically.
+      // Previously: blocked for ALL items if any item had a flag — unfair penalty.
+      const hasNoPersonalFlag = !errorIndices.has(idx) && !warningIndices.has(idx);
+      if (hasNoPersonalFlag) {
+        adjustedConfidence = Math.min(adjustedConfidence + 5, 100);
+      }
     }
 
     return {

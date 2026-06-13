@@ -271,8 +271,8 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
     <div className="space-y-8 animate-fade-in">
       {/* Head Panel */}
       <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 rounded-3xl p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden border border-white/10">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500 opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-blue-500 opacity-5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4 pointer-events-none" />
+        <div className="absolute top-0 end-0 w-80 h-80 bg-emerald-500 opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
+        <div className="absolute bottom-0 start-0 w-80 h-80 bg-blue-500 opacity-5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4 pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
@@ -448,7 +448,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
 
                   {/* Indicator if selected */}
                   {isSelected && (
-                    <div className="absolute top-3 left-3 bg-emerald-500 text-white rounded-full p-1 shadow-md z-20">
+                    <div className="absolute top-3 start-3 bg-emerald-500 text-white rounded-full p-1 shadow-md z-20">
                       <CheckCircle className="w-3.5 h-3.5" />
                     </div>
                   )}
@@ -600,7 +600,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
                 </div>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-[450px] overflow-y-auto pr-1">
+              <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-[450px] overflow-y-auto pe-1">
                 {transactions.map((tx: any) => {
                   const isIncome = tx.type === "income";
                   const dateStr = new Date(tx.date).toLocaleDateString(
@@ -644,7 +644,7 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
                         </div>
                       </div>
 
-                      <div className="text-left shrink-0">
+                      <div className="text-start shrink-0">
                         <p
                           className={`text-sm font-black tracking-tight ${
                             isIncome
@@ -786,9 +786,9 @@ export function DigitalBankingSuite({ onShowSetupInstructions }: SuiteProps) {
                       required
                       value={newBalance}
                       onChange={(e) => setNewBalance(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pr-4 pl-10 py-2.5 text-xs text-left font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pe-4 ps-10 py-2.5 text-xs text-start font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">
+                    <span className="absolute start-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">
                       ج.م
                     </span>
                   </div>

@@ -33,7 +33,7 @@ const MAX_REQUESTS = 100; // 100 requests per minute
 // AI Rate Limiter (Stricter for expensive operations)
 const aiRateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const AI_RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const AI_MAX_REQUESTS = 10; // 10 requests per minute
+const AI_MAX_REQUESTS = 100;
 
 // Auto-cleanup expired rate limiter and AI rate limiter entries every 5 minutes to prevent memory leaks
 const cleanupInterval = setInterval(() => {

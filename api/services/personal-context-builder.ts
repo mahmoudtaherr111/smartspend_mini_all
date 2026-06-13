@@ -40,8 +40,8 @@ export function buildPersonalContext(
       knownPeople.push({
         name: name.trim(),
         relationship: "ابن/ابنة",
-        category: "تحويلات",
-        subCategory: "مصاريف الأولاد",
+        category: "العائلة",
+        subCategory: `${name.trim()} من ولادك`,
       });
     }
   }
@@ -52,8 +52,8 @@ export function buildPersonalContext(
     knownPeople.push({
       name: partnerName.trim(),
       relationship: "زوج/زوجة",
-      category: "تحويلات",
-      subCategory: "شريك الحياة",
+      category: "العائلة",
+      subCategory: `${partnerName.trim()} شريك الحياة`,
     });
   }
 
@@ -92,8 +92,8 @@ export function buildPersonalContext(
       knownPeople.push({
         name: name.trim(),
         relationship: "أخ/أخت",
-        category: "تحويلات",
-        subCategory: "دعم الإخوة",
+        category: "العائلة",
+        subCategory: `${name.trim()} أخوك/أختك`,
       });
     }
   }
@@ -107,8 +107,8 @@ export function buildPersonalContext(
       knownPeople.push({
         name: name.trim(),
         relationship: "والد/والدة",
-        category: "تحويلات",
-        subCategory: "دعم الأهل",
+        category: "العائلة",
+        subCategory: `${name.trim()} من الوالدين`,
       });
     }
   }
@@ -139,11 +139,15 @@ export function buildPersonalContext(
       const rel = typeof rawRel === "string" ? rawRel.trim() : "شخص معروف";
       const normalized = normalizeRelationship(rel);
       const name = contact.name.trim();
-      const subCat = rel && rel !== "شخص معروف" ? `${name} ${rel}` : name;
+      const suffix = getRelationshipSuffix(normalized.normalized);
+      const subCat =
+        rel && rel !== "شخص معروف" && normalized.category !== "تحويلات"
+          ? `${name} ${suffix}`
+          : name;
 
       knownPeople.push({
         name,
-        relationship: rel,
+        relationship: normalized.normalized || rel,
         category: normalized.category,
         subCategory: subCat,
       });

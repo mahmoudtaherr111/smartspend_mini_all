@@ -359,6 +359,11 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
     subCategory: "كاش باك",
     confidence: 98,
   },
+  "كاشباك": {
+    category: "عوائد استثمار",
+    subCategory: "كاش باك",
+    confidence: 98,
+  },
 
   // ─── Financial Transfers & Payments (تحويل / استثمار) ───
   "سحبت من الـ ATM": {

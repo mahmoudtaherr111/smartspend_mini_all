@@ -87,7 +87,7 @@ export function AndroidSetupFlow({ onBack }: Props) {
     <div className="w-full max-w-3xl mx-auto space-y-6 pb-20 px-4">
       {/* ── Header ── */}
       <div className="bg-gradient-to-br from-emerald-600 to-teal-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
+        <div className="absolute top-0 end-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
         <div className="relative z-10 space-y-3">
           <button
             onClick={onBack}
@@ -154,7 +154,7 @@ export function AndroidSetupFlow({ onBack }: Props) {
                   onClick={handleDownload}
                   className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25 h-12 px-6 font-bold text-base"
                 >
-                  <Download className="w-5 h-5 ml-2" /> تحميل SmartSpend Sync
+                  <Download className="w-5 h-5 ms-2" /> تحميل SmartSpend Sync
                 </Button>
 
                 <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700">
@@ -200,16 +200,16 @@ export function AndroidSetupFlow({ onBack }: Props) {
                 >
                   {isConnecting ? (
                     <>
-                      <RefreshCw className="w-5 h-5 ml-2 animate-spin" /> جاري
+                      <RefreshCw className="w-5 h-5 ms-2 animate-spin" /> جاري
                       الفتح…
                     </>
                   ) : connected ? (
                     <>
-                      <Check className="w-5 h-5 ml-2" /> تم الربط ✅
+                      <Check className="w-5 h-5 ms-2" /> تم الربط ✅
                     </>
                   ) : (
                     <>
-                      <Link2 className="w-5 h-5 ml-2" /> ربط التطبيق بحسابي
+                      <Link2 className="w-5 h-5 ms-2" /> ربط التطبيق بحسابي
                     </>
                   )}
                 </Button>

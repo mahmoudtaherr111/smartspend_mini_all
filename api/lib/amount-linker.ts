@@ -68,8 +68,29 @@ const EXPENSE_VERBS_SET = new Set([
   "صلحت",
   "قطعت",
   "وديت",
-  "خدت",
-  "اخدت",
+  "خرجت",
+  "اتعشيت",
+  "اتغديت",
+  "فطرت",
+  "قعدت",
+  "قعدنا",
+  "ضربت",
+  "روحت",
+  "لعبت",
+  "لعبنا",
+  "حجزنا",
+  "شحنا",
+  "حاسبنا",
+  "صلحنا",
+  "خرجنا",
+  "اتعشينا",
+  "اتغدينا",
+  "فطرنا",
+  "سافرنا",
+  "سافرت",
+  "اتفسحت",
+  "اتفسحنا",
+  "ضربنا",
 ]);
 
 const INCOME_VERBS_SET = new Set([
@@ -87,6 +108,8 @@ const INCOME_VERBS_SET = new Set([
   "رجعولي",
   "نزل",
   "اتحولتلي",
+  "خدت",
+  "اخدت",
 ]);
 
 const ALL_VERBS = [...EXPENSE_VERBS_SET, ...INCOME_VERBS_SET];
@@ -212,8 +235,8 @@ const FINANCIAL_NOUNS = new Set([
 
 // ─── Amount Extraction ────────────────────────────────────────────
 
-/** Main amount pattern — matches digits with optional decimals */
-const AMOUNT_PATTERN = /(\d+(?:[.,]\d{1,2})?)/g;
+/** Main amount pattern — matches digits with optional decimals and thousands separators */
+const AMOUNT_PATTERN = /(\d+(?:[.,]\d{3})*(?:[.,]\d+)?)/g;
 
 /** Currency indicators that follow an amount */
 const CURRENCY_SUFFIX = /^\s*(?:جنيه|ج\.م|ج(?:\s|$)|دولار|\$|يورو|€|ريال|درهم)/;
@@ -233,7 +256,13 @@ export function extractLinkedAmounts(text: string): LinkedAmount[] {
   AMOUNT_PATTERN.lastIndex = 0;
 
   while ((match = AMOUNT_PATTERN.exec(text)) !== null) {
-    const numStr = match[1].replace(",", ".");
+    let numStr = match[1];
+    // Handle thousands separator (comma followed by exactly 3 digits) vs decimal comma
+    if (numStr.includes(",") && numStr.split(",")[1].length === 3) {
+      numStr = numStr.replace(/,/g, "");
+    } else {
+      numStr = numStr.replace(",", ".");
+    }
     const amount = parseFloat(numStr);
 
     if (isNaN(amount) || amount <= 0) continue;

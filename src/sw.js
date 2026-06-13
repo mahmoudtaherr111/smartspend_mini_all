@@ -40,6 +40,17 @@ const bgSyncPlugin = new self.workbox.backgroundSync.BackgroundSyncPlugin(
     onSync: async ({ queue }) => {
       try {
         await queue.replayRequests();
+        // Send a local push notification to the user
+        if (self.registration && self.registration.showNotification) {
+          self.registration.showNotification("تمت المزامنة بنجاح 🚀", {
+            body: "تم إرسال ومعالجة جميع مصاريفك التي أضفتها وأنت أوفلاين.",
+            icon: "/pwa-192x192.png",
+            badge: "/pwa-192x192.png",
+            vibrate: [50, 100, 50],
+            data: "/",
+          });
+        }
+        
         // Notify clients that sync was successful so they can show a toast or refresh data
         self.clients.matchAll().then((clients) => {
           clients.forEach((client) =>
@@ -208,24 +219,48 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  const urlToOpen = new URL(
-    event.notification.data || "/",
-    self.location.origin,
-  ).href;
+  let targetUrl = "/";
+  const notificationData = event.notification.data;
+  
+  if (notificationData) {
+    if (typeof notificationData === "string") {
+      targetUrl = notificationData;
+    } else if (typeof notificationData === "object") {
+      // Support FCM payload formats, webpush format, and data object format
+      targetUrl = notificationData.url || 
+                  notificationData.FCM_MSG?.data?.url || 
+                  notificationData.FCM_MSG?.notification?.click_action || 
+                  "/";
+    }
+  }
+
+  const urlToOpen = new URL(targetUrl, self.location.origin).href;
 
   event.waitUntil(
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((windowClients) => {
-        // Check if there is already a window/tab open with the target URL
+        // Find an open PWA window
+        let matchingClient = null;
         for (let i = 0; i < windowClients.length; i++) {
           const client = windowClients[i];
-          // If so, just focus it.
-          if (client.url === urlToOpen && "focus" in client) {
-            return client.focus();
+          if (client.url.startsWith(self.location.origin) && "focus" in client) {
+            matchingClient = client;
+            break;
           }
         }
-        // If not, then open the target URL in a new window/tab.
+        
+        if (matchingClient) {
+          // Focus the existing window and send a navigation postMessage to avoid page reload
+          return matchingClient.focus().then((client) => {
+             client.postMessage({
+               type: "NAVIGATE_TO",
+               url: urlToOpen
+             });
+          });
+        }
+        
+        // If no window is open, open a new one
         if (self.clients.openWindow) {
           return self.clients.openWindow(urlToOpen);
         }

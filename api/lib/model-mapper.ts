@@ -13,21 +13,22 @@ export function mapModelName(modelName: string): string {
     normalized = normalized.replace("models/", "");
   }
 
-  if (!normalized) return "gemini-2.5-flash";
+  if (!normalized) return "gemini-3.1-flash-lite";
 
   // Standard admin shorthand mapping
   if (normalized === "flash") {
-    return "gemini-2.5-flash";
+    return "gemini-3.1-flash-lite";
   }
   if (normalized === "pro" || normalized === "ultra") {
-    return "gemini-2.5-pro";
+    return "gemini-3.5-pro";
   }
 
-  if (/^gemini-3(?:\.\d+)?-flash/.test(normalized)) {
-    return "gemini-2.5-flash";
+  // Redirect legacy / deprecated models to the modern standard gemini-3.1-flash-lite / gemini-3.5-pro
+  if (normalized.includes("1.5-flash") || normalized.includes("2.0-flash") || normalized.includes("2.5-flash")) {
+    return "gemini-3.1-flash-lite";
   }
-  if (/^gemini-3(?:\.\d+)?-pro/.test(normalized)) {
-    return "gemini-2.5-pro";
+  if (normalized.includes("1.5-pro") || normalized.includes("2.0-pro") || normalized.includes("2.5-pro")) {
+    return "gemini-3.5-pro";
   }
 
   // Pure passthrough: Let the requested model string pass to the API exactly as is.
@@ -56,9 +57,9 @@ export function isGeminiModel(modelName: string): boolean {
 }
 
 export function defaultGeminiModelForPlan(plan: AiPlanName): string {
-  if (plan === "ultra") return "gemini-2.5-pro";
-  if (plan === "pro") return "gemini-2.5-flash";
-  return "gemini-2.0-flash";
+  if (plan === "ultra") return "gemini-3.5-pro";
+  if (plan === "pro") return "gemini-3.1-flash-lite";
+  return "gemini-3.1-flash-lite";
 }
 
 export function defaultGroqModelForPlan(plan: AiPlanName): string {

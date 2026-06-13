@@ -108,7 +108,7 @@ export function ReceiptCapture({ onSaved }: ReceiptCaptureProps) {
               alt="معاينة"
               className="w-full object-cover max-h-40"
             />
-            <ImageIcon className="absolute top-2 left-2 w-4 h-4 text-white drop-shadow" />
+            <ImageIcon className="absolute top-2 start-2 w-4 h-4 text-white drop-shadow" />
           </div>
         )}
         <p className="text-xs text-muted-foreground">

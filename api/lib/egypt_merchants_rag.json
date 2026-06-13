@@ -1,0 +1,7401 @@
+[
+  {
+    "merchant": "WE",
+    "category": "Telecom",
+    "subCategory": "Mobile & Internet",
+    "keywords": [
+      "المصرية للاتصالات",
+      "Telecom Egypt",
+      "TE Data",
+      "تي داتا",
+      "وي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Vodafone",
+    "category": "Telecom",
+    "subCategory": "Mobile & Internet",
+    "keywords": [
+      "فودافون",
+      "ڤودافون",
+      "فوادفون"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Etisalat",
+    "category": "Telecom",
+    "subCategory": "Mobile & Internet",
+    "keywords": [
+      "اتصالات",
+      "اتصلات"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Orange",
+    "category": "Telecom",
+    "subCategory": "Mobile & Internet",
+    "keywords": [
+      "موبينيل",
+      "اورانج",
+      "Mobinil",
+      "اورنج"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "NOOR",
+    "category": "Telecom",
+    "subCategory": "Internet",
+    "keywords": [
+      "نور للانترنت",
+      "Noor ADSL",
+      "نور"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Uber",
+    "category": "Transport",
+    "subCategory": "Ride-Hailing",
+    "keywords": [
+      "أوبر",
+      "اوبر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Careem",
+    "category": "Transport",
+    "subCategory": "Ride-Hailing",
+    "keywords": [
+      "كريم"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "inDrive",
+    "category": "Transport",
+    "subCategory": "Ride-Hailing",
+    "keywords": [
+      "ان درايف",
+      "اندرايف",
+      "In driver"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "DiDi",
+    "category": "Transport",
+    "subCategory": "Ride-Hailing",
+    "keywords": [
+      "ديدي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Swvl",
+    "category": "Transport",
+    "subCategory": "Bus",
+    "keywords": [
+      "سوفل",
+      "سويفل"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "GoBus",
+    "category": "Transport",
+    "subCategory": "Bus",
+    "keywords": [
+      "حجز جوباص",
+      "جوباص",
+      "Go Bus",
+      "تذكرة جوباص",
+      "جو باص"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Cairo Metro",
+    "category": "Transport",
+    "subCategory": "Public Transport",
+    "keywords": [
+      "المترو",
+      "تذكرة المترو",
+      "مترو الانفاق",
+      "مترو القاهرة",
+      "مترو",
+      "اشتراك المترو"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Buseet",
+    "category": "Transport",
+    "subCategory": "Bus",
+    "keywords": [
+      "بسيط",
+      "رحلة بسيط",
+      "بصيط",
+      "Buseet"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Super Jet",
+    "category": "Transport",
+    "subCategory": "Bus",
+    "keywords": [
+      "اتوبيس سوبر جيت",
+      "سوبرجيت",
+      "Super Jet",
+      "سوبر جيت"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Blue Bus",
+    "category": "Transport",
+    "subCategory": "Bus",
+    "keywords": [
+      "تذكرة بلو باص",
+      "Blue Bus",
+      "بلو باص",
+      "بلوباص"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "East Delta",
+    "category": "Transport",
+    "subCategory": "Bus",
+    "keywords": [
+      "شرق الدلتا",
+      "الشرق للدلتا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "EgyBus",
+    "category": "Transport",
+    "subCategory": "Bus",
+    "keywords": [
+      "إيجي باص",
+      "EgyBus",
+      "ايجي باص"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Talabat",
+    "category": "Food",
+    "subCategory": "Delivery",
+    "keywords": [
+      "طلبات",
+      "اطلب",
+      "Otlob"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "InstaShop",
+    "category": "Groceries",
+    "subCategory": "Delivery",
+    "keywords": [
+      "انستا شوب",
+      "انستاشوب"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Breadfast",
+    "category": "Groceries",
+    "subCategory": "Delivery",
+    "keywords": [
+      "تطبيق بريدفاست",
+      "بريد فاست",
+      "بريدفاست",
+      "بريد فست",
+      "Breadfast"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Rabbit",
+    "category": "Groceries",
+    "subCategory": "Delivery",
+    "keywords": [
+      "رابيت",
+      "رابت"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Carrefour",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "كارفور",
+      "كرفور"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Spinneys",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "سبينيس",
+      "سبينس"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Seoudi",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "ماركت سعودي",
+      "سعودى",
+      "سعودي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Kazyon",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "Kazyon",
+      "سوبر ماركت كازيون",
+      "كازيون",
+      "كزيون"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "BIM",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "بيم"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Awlad Ragab",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "أولاد رجب",
+      "Ragab Sons",
+      "اولاد رجب"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Hyper One",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "Hyper One",
+      "هايبر وان",
+      "هايبروان",
+      "هايبر الشيخ زايد"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Oscar",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "اوسكار",
+      "أوسكار"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Fathalla",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "فتح الله",
+      "اسواق فتح الله"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Zahran",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "ماركت زهران",
+      "زهران"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Gourmet",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "جورميه",
+      "غورميه"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Abu Ashara",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "ابو عشرة",
+      "أبو عشرة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Lulu Hypermarket",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "لولو",
+      "Lulu",
+      "لولو هايبر",
+      "Lulu Hypermarket"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Metro Market",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "مترو ماركت",
+      "Metro Market",
+      "ماركت مترو"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Kheir Zaman",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "Kheir Zaman",
+      "خيرزمان",
+      "خير زمان"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Hawary",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "الهواري",
+      "الهوارى"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Mahmoud Elfar",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "الفار",
+      "سوبرماركت الفار",
+      "محمود الفار"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "B.TECH",
+    "category": "Electronics",
+    "subCategory": "Retail & Installments",
+    "keywords": [
+      "تقسيط بي تك",
+      "B TECH",
+      "BTECH",
+      "بي تك",
+      "بيتك"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Raneen",
+    "category": "Shopping",
+    "subCategory": "Home & Electronics",
+    "keywords": [
+      "عروض رنين",
+      "رنين"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Aman",
+    "category": "Financial",
+    "subCategory": "Installments",
+    "keywords": [
+      "أمان",
+      "امان",
+      "تقسيط امان"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "ValU",
+    "category": "Financial",
+    "subCategory": "Installments",
+    "keywords": [
+      "ValU",
+      "ڤاليو",
+      "فاليو",
+      "تقسيط فاليو",
+      "قسط فاليو",
+      "ابلكيشن فاليو"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Sympl",
+    "category": "Financial",
+    "subCategory": "Installments",
+    "keywords": [
+      "Sympl",
+      "قسط سيمبل",
+      "سيمبل",
+      "تقسيط سيمبل",
+      "سمبل"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Shahry",
+    "category": "Financial",
+    "subCategory": "Installments",
+    "keywords": [
+      "تقسيط شهري",
+      "قسط شهري",
+      "شهري",
+      "Shahry",
+      "شهرى"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Amazon Egypt",
+    "category": "Shopping",
+    "subCategory": "E-commerce",
+    "keywords": [
+      "Souq",
+      "امازون مصر",
+      "أمازون",
+      "AMAZON.EG",
+      "امازون",
+      "سوق دوت كوم"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Jumia",
+    "category": "Shopping",
+    "subCategory": "E-commerce",
+    "keywords": [
+      "جوميا"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Noon",
+    "category": "Shopping",
+    "subCategory": "E-commerce",
+    "keywords": [
+      "نون"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Raya Shop",
+    "category": "Electronics",
+    "subCategory": "Retail & Installments",
+    "keywords": [
+      "تقسيط راية",
+      "Raya Shop",
+      "رايه",
+      "راية",
+      "راية شوب"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "2B",
+    "category": "Electronics",
+    "subCategory": "Retail & Installments",
+    "keywords": [
+      "توبي",
+      "تو بي"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "El Araby Group",
+    "category": "Electronics",
+    "subCategory": "Retail & Installments",
+    "keywords": [
+      "تورنيدو",
+      "العربي",
+      "العربى",
+      "توشيبا",
+      "مجموعة العربي",
+      "Toshiba",
+      "Tornado"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Fresh",
+    "category": "Electronics",
+    "subCategory": "Retail",
+    "keywords": [
+      "اجهزة فريش",
+      "Fresh electric",
+      "فريش"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Unionaire",
+    "category": "Electronics",
+    "subCategory": "Retail",
+    "keywords": [
+      "يونيون اير",
+      "Unionaire"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Premium Card",
+    "category": "Financial",
+    "subCategory": "Installments",
+    "keywords": [
+      "Premium Card",
+      "تقسيط بريميوم كارد",
+      "بريميم كارد",
+      "بريميوم كارد"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Contact",
+    "category": "Financial",
+    "subCategory": "Installments",
+    "keywords": [
+      "كونتكت",
+      "قسط كونتكت",
+      "Contact",
+      "كونتكت كار",
+      "كونتكت للتقسيط"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Souhoola",
+    "category": "Financial",
+    "subCategory": "Installments",
+    "keywords": [
+      "قسط سهولة",
+      "سهولة",
+      "تقسيط سهولة",
+      "Souhoola",
+      "ابلكيشن سهولة"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Forsa",
+    "category": "Financial",
+    "subCategory": "Installments",
+    "keywords": [
+      "Forsa",
+      "قسط فرصة",
+      "ابلكيشن فرصة",
+      "تقسيط فرصة",
+      "فرصة"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "KFC",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "كنتاكى",
+      "كنتاكي",
+      "دجاج كنتاكي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "McDonald's",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "ماكدونالدز",
+      "ماك",
+      "Mac",
+      "Mcdonalds"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Buffalo Burger",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "بافلوا",
+      "بافلو",
+      "Buffalo Burger",
+      "بافلو برجر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Bazooka",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "بزوكا",
+      "Bazooka Fried Chicken",
+      "بازوكا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Spectra",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "سبكترا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Cilantro",
+    "category": "Food",
+    "subCategory": "Cafe",
+    "keywords": [
+      "سلانترو",
+      "Cilantro",
+      "سيلانترو"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Costa Coffee",
+    "category": "Food",
+    "subCategory": "Cafe",
+    "keywords": [
+      "كوستا",
+      "كافيه كوستا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Starbucks",
+    "category": "Food",
+    "subCategory": "Cafe",
+    "keywords": [
+      "ستاربكس",
+      "استاربكس"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "TBS",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "المخبز",
+      "تي بي اس",
+      "The Bakery Shop"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Hardee's",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "هارديز"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Pizza Hut",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "بيتزا هت"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Papa John's",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "بابا جونز"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Domino's Pizza",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "دومينوز بيتزا",
+      "دومينوز"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Pronto Pizza",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "برونتو",
+      "برونتو بيتزا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Cook Door",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "Cook Door",
+      "كوكدور",
+      "كوك دور"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Mo'men",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "سندوتشات مؤمن",
+      "مؤمن",
+      "Momen"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Prego",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "سندوتشات بريجو",
+      "Prego",
+      "بريجو"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary El Tahrir",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "كشري التحرير",
+      "كشرى التحرير",
+      "التحرير"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary Abou Tarek",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "ابو طارق",
+      "أبو طارق",
+      "كشري ابو طارق",
+      "كشرى ابو طارق"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Sayed Hanafy",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "كشري سيد حنفي",
+      "سيد حنفى",
+      "سيد حنفي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Majesty",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "ماجيستي",
+      "ماجيستى"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Dawar",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "الدوار",
+      "فطير الدوار",
+      "فطاطري الدوار"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Willy's Kitchen",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "Willys Kitchen",
+      "ويليز",
+      "ويليز كيتشن"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Zack's",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "Zack's",
+      "زاكس",
+      "زاكس فرايد تشيكن"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Heart Attack",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "Heart Attack Restaurant",
+      "هارت اتاك",
+      "هارت أتاك"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Macarona Reda",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "مكرونة رضا",
+      "مكرونه رضا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Sobhy Kaber",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "صبحى كابر",
+      "كابر",
+      "مشويات صبحي كابر",
+      "صبحي كابر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Prince",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "البرنس",
+      "كبدة البرنس",
+      "كبارى البرنس",
+      "برنس امبابة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Qasr El Kababgi",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "قصر الكبابجي",
+      "الكبابجي",
+      "قصر الكبابجى",
+      "الكبابجى"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Andrea",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "اندريا",
+      "أندريا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Abou Shakra",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "ابو شقره",
+      "Abou Shakra",
+      "أبو شقرة",
+      "ابو شقرة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Beano's",
+    "category": "Food",
+    "subCategory": "Cafe",
+    "keywords": [
+      "بينوز",
+      "بينوز كافيه"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Espresso Lab",
+    "category": "Food",
+    "subCategory": "Cafe",
+    "keywords": [
+      "اسبريسو لاب",
+      "اسبريسولاب"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Paul",
+    "category": "Food",
+    "subCategory": "Cafe",
+    "keywords": [
+      "مخبز بول",
+      "بول"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Second Cup",
+    "category": "Food",
+    "subCategory": "Cafe",
+    "keywords": [
+      "سكند كوب",
+      "سكند كاب"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Cinnabon",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "سينابون"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Dunkin' Donuts",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "دانكن",
+      "دانكن دونتس"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Krispy Kreme",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "كرسبي كريم",
+      "كريسبي كريم"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Nola",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "نولا كب كيك",
+      "نولا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Salé Sucré",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "Sale Sucre",
+      "ساليه سوكريه"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "La Poire",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "حلواني لابوار",
+      "لا بوار",
+      "La Poire",
+      "لابوار"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Abd Patisserie",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "بسكوت العبد",
+      "El Abd",
+      "العبد",
+      "حلواني العبد"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Tseppas",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "تسيباس",
+      "Tseppas"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Etoile",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "حلواني ايتوال",
+      "Etoile",
+      "ايتوال",
+      "إيتوال"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Mandarine Koueider",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "ماندرين قويدر",
+      "Koueider",
+      "قويدر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Twinkies",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "توينكيز",
+      "تونكيز"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Monginis",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "Monginis",
+      "مونجيني",
+      "مونجينى",
+      "تورته مونجيني"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Vezeeta",
+    "category": "Health",
+    "subCategory": "Booking",
+    "keywords": [
+      "فيزيتا",
+      "حجز دكتور فيزيتا",
+      "ڤيزيتا",
+      "Vezeeta"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Yashfee",
+    "category": "Health",
+    "subCategory": "Pharmacy",
+    "keywords": [
+      "يشفي",
+      "يشفى",
+      "صيدلية يشفي",
+      "Yashfee"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Ezaby Pharmacy",
+    "category": "Health",
+    "subCategory": "Pharmacy",
+    "keywords": [
+      "العزبي",
+      "صيدلية العزبي",
+      "صيدليات العزبي",
+      "El Ezaby"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Seif Pharmacy",
+    "category": "Health",
+    "subCategory": "Pharmacy",
+    "keywords": [
+      "سيف",
+      "صيدلية سيف",
+      "Seif Pharmacies",
+      "صيدليات سيف"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "19011 Pharmacy",
+    "category": "Health",
+    "subCategory": "Pharmacy",
+    "keywords": [
+      "19011",
+      "صيدلية 19011",
+      "صيدليات 19011"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Roshdy Pharmacy",
+    "category": "Health",
+    "subCategory": "Pharmacy",
+    "keywords": [
+      "رشدي",
+      "صيدليات رشدي",
+      "صيدلية رشدي",
+      "Roshdy"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Elezz Pharmacy",
+    "category": "Health",
+    "subCategory": "Pharmacy",
+    "keywords": [
+      "العز",
+      "صيدلية العز",
+      "صيدليات العز"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Chefaa",
+    "category": "Health",
+    "subCategory": "Pharmacy",
+    "keywords": [
+      "تطبيق شفاء",
+      "Chefaa",
+      "شفاء"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Dawaya",
+    "category": "Health",
+    "subCategory": "Pharmacy",
+    "keywords": [
+      "دوايا",
+      "Dawaya"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Esaal",
+    "category": "Health",
+    "subCategory": "Consultation",
+    "keywords": [
+      "Esaal",
+      "إسأل",
+      "اسأل"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Dawi Clinics",
+    "category": "Health",
+    "subCategory": "Clinics",
+    "keywords": [
+      "داوي",
+      "عيادات داوي",
+      "Dawi"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Andalusia Hospitals",
+    "category": "Health",
+    "subCategory": "Hospital",
+    "keywords": [
+      "مستشفيات اندلسية",
+      "اندلسية",
+      "Andalusia"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Cleopatra Hospitals",
+    "category": "Health",
+    "subCategory": "Hospital",
+    "keywords": [
+      "Cleopatra Hospital",
+      "كليوباترا",
+      "مستشفى كليوباترا"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Magdi Yacoub Heart Foundation",
+    "category": "Charity",
+    "subCategory": "Donation",
+    "keywords": [
+      "MYF",
+      "مستشفى مجدي يعقوب",
+      "مؤسسة مجدى يعقوب",
+      "مؤسسة مجدي يعقوب"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Baheya Foundation",
+    "category": "Charity",
+    "subCategory": "Donation",
+    "keywords": [
+      "Baheya",
+      "مؤسسة بهية",
+      "مستشفى بهية"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "57357 Hospital",
+    "category": "Charity",
+    "subCategory": "Donation",
+    "keywords": [
+      "مستشفى 57357",
+      "مستشفى سرطان الاطفال",
+      "57357"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Orman Association",
+    "category": "Charity",
+    "subCategory": "Donation",
+    "keywords": [
+      "جمعية الاورمان",
+      "الاورمان",
+      "Orman"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Resala Association",
+    "category": "Charity",
+    "subCategory": "Donation",
+    "keywords": [
+      "Resala",
+      "جمعية رسالة",
+      "رسالة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Misr El Kheir",
+    "category": "Charity",
+    "subCategory": "Donation",
+    "keywords": [
+      "Misr El Kheir",
+      "مؤسسة مصر الخير",
+      "مصر الخير"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Food Bank",
+    "category": "Charity",
+    "subCategory": "Donation",
+    "keywords": [
+      "بنك الطعام",
+      "بنك الطعام المصري"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Netflix",
+    "category": "Entertainment",
+    "subCategory": "Streaming",
+    "keywords": [
+      "نتفلكس",
+      "نتفليكس"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "WatchIT",
+    "category": "Entertainment",
+    "subCategory": "Streaming",
+    "keywords": [
+      "واتش ات",
+      "واتشيت",
+      "Watch It"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Shahid",
+    "category": "Entertainment",
+    "subCategory": "Streaming",
+    "keywords": [
+      "شاهد نت",
+      "شاهد في اي بي",
+      "شاهد"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "OSN+",
+    "category": "Entertainment",
+    "subCategory": "Streaming",
+    "keywords": [
+      "OSN",
+      "اواس ان",
+      "OSN+",
+      "او اس ان"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Spotify",
+    "category": "Entertainment",
+    "subCategory": "Music",
+    "keywords": [
+      "اسبوتيفاي",
+      "سبوتيفاي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Anghami",
+    "category": "Entertainment",
+    "subCategory": "Music",
+    "keywords": [
+      "انغامي",
+      "أنغامي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "YouTube Premium",
+    "category": "Entertainment",
+    "subCategory": "Streaming",
+    "keywords": [
+      "يوتيوب",
+      "يوتيوب بريميوم"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Todd",
+    "category": "Entertainment",
+    "subCategory": "Streaming",
+    "keywords": [
+      "تود",
+      "منصة تود"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "beIN Sports",
+    "category": "Entertainment",
+    "subCategory": "Sports",
+    "keywords": [
+      "بين سبورت",
+      "بي ان سبورت"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Vox Cinemas",
+    "category": "Entertainment",
+    "subCategory": "Cinema",
+    "keywords": [
+      "ڤوكس",
+      "فوكس سينما",
+      "سينما فوكس"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Renaissance Cinemas",
+    "category": "Entertainment",
+    "subCategory": "Cinema",
+    "keywords": [
+      "رينيسانس",
+      "سينما رينيسانس",
+      "Renaissance"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Galaxy Cinema",
+    "category": "Entertainment",
+    "subCategory": "Cinema",
+    "keywords": [
+      "جلاكسي",
+      "سينما جلاكسي",
+      "Galaxy Cinema"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Plaza Cinema",
+    "category": "Entertainment",
+    "subCategory": "Cinema",
+    "keywords": [
+      "سينما بلازا",
+      "Plaza Cinema",
+      "بلازا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Dream Park",
+    "category": "Entertainment",
+    "subCategory": "Theme Park",
+    "keywords": [
+      "ملاهي دريم بارك",
+      "Dream Park",
+      "دريم بارك"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Zed Park",
+    "category": "Entertainment",
+    "subCategory": "Theme Park",
+    "keywords": [
+      "ملاهي زيد",
+      "Zed Park",
+      "زيد بارك",
+      "زد بارك"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Magic Planet",
+    "category": "Entertainment",
+    "subCategory": "Theme Park",
+    "keywords": [
+      "ماجيك بلانيت",
+      "ماجيك بلانت"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Ski Egypt",
+    "category": "Entertainment",
+    "subCategory": "Theme Park",
+    "keywords": [
+      "سكي ايجيبت",
+      "سكي مصر",
+      "Ski Egypt"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Zara",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "زرا",
+      "زارا"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "H&M",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "اتش اند إم",
+      "اتش اند ام"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "LC Waikiki",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "وايكيكي",
+      "ال سي وايكيكي",
+      "ال سى وايكيكى"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Defacto",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "ديفاكتو",
+      "دي فاكتو"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Town Team",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "تاون تيم",
+      "Town Team"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Ravin",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "رافين"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Max Fashion",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "ماكس فاشون",
+      "ماكس"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Splash",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "سبلاش"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Adidas",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "اديداس",
+      "أديداس"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Nike",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "نايكي",
+      "نايك"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Puma",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "بوما"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Reebok",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "ريبوك"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Activ",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "Activ",
+      "اكتيف",
+      "أكتيف",
+      "أبو علاء اكتيف"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Kickers",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "كيكرز"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Aldo",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "الدو",
+      "ألدو"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Bata",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "احذية باتا",
+      "باتا"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Fawry",
+    "category": "Bills",
+    "subCategory": "Payment Gateway",
+    "keywords": [
+      "فورى",
+      "فوري"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Masary",
+    "category": "Bills",
+    "subCategory": "Payment Gateway",
+    "keywords": [
+      "مصاري",
+      "مصارى"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Bee",
+    "category": "Bills",
+    "subCategory": "Payment Gateway",
+    "keywords": [
+      "دفع بي",
+      "خدمات بي",
+      "بي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Khales",
+    "category": "Bills",
+    "subCategory": "Payment Gateway",
+    "keywords": [
+      "خدمات خالص",
+      "خالص"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Sahl",
+    "category": "Bills",
+    "subCategory": "Payment Gateway",
+    "keywords": [
+      "تطبيق سهل",
+      "سهل"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "EEHC",
+    "category": "Bills",
+    "subCategory": "Electricity",
+    "keywords": [
+      "شركة الكهرباء",
+      "الكهرباء",
+      "فاتورة الكهرباء"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Egypt Gas",
+    "category": "Bills",
+    "subCategory": "Gas",
+    "keywords": [
+      "فاتورة الغاز",
+      "بتروتريد",
+      "Petrotrade",
+      "شركة الغاز",
+      "الغاز",
+      "غاز مصر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "HCWW",
+    "category": "Bills",
+    "subCategory": "Water",
+    "keywords": [
+      "المياه",
+      "شركة المياه",
+      "فاتورة المياه"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Syndicate",
+    "category": "Bills",
+    "subCategory": "Syndicate",
+    "keywords": [
+      "اشتراك النقابة",
+      "النقابة",
+      "نقابة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Traffic",
+    "category": "Bills",
+    "subCategory": "Traffic",
+    "keywords": [
+      "مخالفات المرور",
+      "رخصة",
+      "المرور"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "IKEA",
+    "category": "Shopping",
+    "subCategory": "Furniture",
+    "keywords": [
+      "ايكيا",
+      "إيكيا"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "In&Out",
+    "category": "Shopping",
+    "subCategory": "Furniture",
+    "keywords": [
+      "إن أند أوت",
+      "ان اند اوت"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Hub Furniture",
+    "category": "Shopping",
+    "subCategory": "Furniture",
+    "keywords": [
+      "Hub Furniture",
+      "هاب للاثاث",
+      "هاب فرنيتشر"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Kemitt",
+    "category": "Shopping",
+    "subCategory": "Furniture",
+    "keywords": [
+      "Kemitt",
+      "كيميت"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Homzmart",
+    "category": "Shopping",
+    "subCategory": "Furniture",
+    "keywords": [
+      "Homzmart",
+      "هومزمارت"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Ariika",
+    "category": "Shopping",
+    "subCategory": "Furniture",
+    "keywords": [
+      "بين باج",
+      "اريكا",
+      "أريكا",
+      "Ariika"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Kabbani Furniture",
+    "category": "Shopping",
+    "subCategory": "Furniture",
+    "keywords": [
+      "قباني",
+      "قباني للاثاث",
+      "Kabbani Furniture"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "InstaPay",
+    "category": "Financial",
+    "subCategory": "Transfer",
+    "keywords": [
+      "انستا باى",
+      "انستا باي",
+      "انستاباي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "NBE",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "البنك الاهلي",
+      "البنك الاهلى المصرى",
+      "الاهلي"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Banque Misr",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "بنكمصر",
+      "ميزة بنك مصر",
+      "BM",
+      "بنك مصر",
+      "بي ام اون لاين",
+      "فيزا بنك مصر",
+      "بطاقة بنك مصر",
+      "ماستر كارد بنك مصر"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "CIB",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "السي اي بي",
+      "البنك التجاري الدولي",
+      "سي اي بي",
+      "التجاري الدولي"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "QNB",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "قطر الوطني",
+      "كيو ان بي"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Alex Bank",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "بنك اسكندرية",
+      "بنك الاسكندرية"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Banque du Caire",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "القاهرة",
+      "BDC",
+      "بنك القاهرة",
+      "فيزا بنك القاهرة",
+      "بنك القاهره"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Vodafone Cash",
+    "category": "Financial",
+    "subCategory": "Mobile Wallet",
+    "keywords": [
+      "ايداع فودافون كاش",
+      "سحب فودافون كاش",
+      "محفظة فودافون",
+      "فودافون كاش",
+      "vf cash",
+      "فودافونكاش"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Orange Cash",
+    "category": "Financial",
+    "subCategory": "Mobile Wallet",
+    "keywords": [
+      "محفظة اورنج",
+      "orange cash",
+      "اورنج كاش",
+      "اورانج كاش"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Etisalat Cash",
+    "category": "Financial",
+    "subCategory": "Mobile Wallet",
+    "keywords": [
+      "etisalat cash",
+      "محفظة اتصالات",
+      "اتصالات كاش"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "WE Pay",
+    "category": "Financial",
+    "subCategory": "Mobile Wallet",
+    "keywords": [
+      "وي باي",
+      "we pay",
+      "وي باى",
+      "محفظة وي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Smart Wallet",
+    "category": "Financial",
+    "subCategory": "Mobile Wallet",
+    "keywords": [
+      "سمارت والت",
+      "المحفظة الذكية"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Telda",
+    "category": "Financial",
+    "subCategory": "App",
+    "keywords": [
+      "Telda",
+      "تلدا",
+      "كارت تيلدا",
+      "تيلدا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Nexta",
+    "category": "Financial",
+    "subCategory": "App",
+    "keywords": [
+      "نكستا",
+      "Nexta",
+      "كارت نكستا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Klivvr",
+    "category": "Financial",
+    "subCategory": "App",
+    "keywords": [
+      "Klivvr",
+      "كليفر",
+      "كارت كليفر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Thndr",
+    "category": "Financial",
+    "subCategory": "App",
+    "keywords": [
+      "البورصة المصرية ثاندر",
+      "Thndr",
+      "ثاندر",
+      "استثمار",
+      "شحن ثاندر",
+      "تطبيق ثاندر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "FilKhedma",
+    "category": "Services",
+    "subCategory": "Maintenance",
+    "keywords": [
+      "فى الخدمة",
+      "FilKhedma",
+      "في الخدمة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Taskty",
+    "category": "Services",
+    "subCategory": "Maintenance",
+    "keywords": [
+      "Taskty",
+      "تاسكتى",
+      "تاسكتي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "General Transport",
+    "category": "Transport",
+    "subCategory": "Micobuses & Taxis",
+    "keywords": [
+      "مكروباص",
+      "مواصلات",
+      "ميكروباص",
+      "تاكسي",
+      "تكتك",
+      "توكتوك"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "General Coffee",
+    "category": "Food",
+    "subCategory": "Cafe",
+    "keywords": [
+      "مقهى",
+      "مشاريب",
+      "شيشة",
+      "قهوة",
+      "شاي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "General Groceries",
+    "category": "Groceries",
+    "subCategory": "Local",
+    "keywords": [
+      "سوبر ماركت",
+      "بقال",
+      "كشك",
+      "بقالة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "General Food",
+    "category": "Food",
+    "subCategory": "Local",
+    "keywords": [
+      "غداء",
+      "عشاء",
+      "فطار",
+      "عربية فول",
+      "سندوتشات"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Tips & Baksheesh",
+    "category": "Services",
+    "subCategory": "Tips",
+    "keywords": [
+      "لله",
+      "تبس",
+      "سايس",
+      "بقشيش",
+      "تيبس",
+      "بواب"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Gas Station",
+    "category": "Transport",
+    "subCategory": "Fuel",
+    "keywords": [
+      "توتال",
+      "تفويلة",
+      "شيل",
+      "بنزينة",
+      "امارات مصر",
+      "وطنية",
+      "بنزين"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Barber / Salon",
+    "category": "Services",
+    "subCategory": "Personal Care",
+    "keywords": [
+      "كوافير",
+      "حلاق",
+      "صالون"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Laundry",
+    "category": "Services",
+    "subCategory": "Personal Care",
+    "keywords": [
+      "مكوجي",
+      "دراي كلين",
+      "مغسلة",
+      "دري كلين"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Education",
+    "category": "Services",
+    "subCategory": "Education",
+    "keywords": [
+      "كورس",
+      "مدرسة",
+      "مكتبة",
+      "سنتر",
+      "جامعة",
+      "دروس",
+      "كتب"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Gym",
+    "category": "Health",
+    "subCategory": "Fitness",
+    "keywords": [
+      "سمارت جيم",
+      "نادي",
+      "جولدز جيم",
+      "اشتراك جيم",
+      "جيم"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Dejavu",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "ديجافو",
+      "احذية ديجافو"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Pixi",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "بيكسي",
+      "بكسي"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Or",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "اور",
+      "محلات اور"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Dalin",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "دالين"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Cottonil",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "Cottonil",
+      "قطنيل",
+      "قطونيل"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Dice",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "دايس",
+      "ديس"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Embrator",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "الامبراطور",
+      "امبراطور",
+      "Embrator"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Mazaya",
+    "category": "Shopping",
+    "subCategory": "Cosmetics",
+    "keywords": [
+      "مزايا",
+      "مزايا للعطور",
+      "Mazaya"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Faces",
+    "category": "Shopping",
+    "subCategory": "Cosmetics",
+    "keywords": [
+      "فيسيز",
+      "وجوه"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Fortune",
+    "category": "Shopping",
+    "subCategory": "Cosmetics",
+    "keywords": [
+      "فورتشن",
+      "فورشن"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Bath & Body Works",
+    "category": "Shopping",
+    "subCategory": "Cosmetics",
+    "keywords": [
+      "باث اند بودى ووركس",
+      "باث اند بودي"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "The Body Shop",
+    "category": "Shopping",
+    "subCategory": "Cosmetics",
+    "keywords": [
+      "ذا بودي شوب",
+      "بودي شوب"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Hedeya",
+    "category": "Shopping",
+    "subCategory": "Toys",
+    "keywords": [
+      "محلات هدية",
+      "هدية",
+      "لعب اطفال"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Mothercare",
+    "category": "Shopping",
+    "subCategory": "Kids",
+    "keywords": [
+      "مذر كير",
+      "مذركير"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Toy World",
+    "category": "Shopping",
+    "subCategory": "Toys",
+    "keywords": [
+      "توي ورلد",
+      "توي وورلد"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Baraka",
+    "category": "Shopping",
+    "subCategory": "Eyewear",
+    "keywords": [
+      "بركة للنظارات",
+      "بركة",
+      "نظارات"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "C&Co",
+    "category": "Shopping",
+    "subCategory": "Eyewear",
+    "keywords": [
+      "سي اند كو",
+      "سى اند كو"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Magrabi",
+    "category": "Shopping",
+    "subCategory": "Eyewear",
+    "keywords": [
+      "مغربي للنظارات",
+      "مغربي"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Amin Pet Shop",
+    "category": "Shopping",
+    "subCategory": "Pets",
+    "keywords": [
+      "امين بت شوب",
+      "دراي فود",
+      "اكل قطط",
+      "اكل كلاب"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Pets Egypt",
+    "category": "Shopping",
+    "subCategory": "Pets",
+    "keywords": [
+      "بتس ايجيبت"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Ghabbour Auto",
+    "category": "Services",
+    "subCategory": "Car Maintenance",
+    "keywords": [
+      "صيانة غبور",
+      "جي بي اوتو",
+      "GB Auto",
+      "غبور"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Mansour Auto",
+    "category": "Services",
+    "subCategory": "Car Maintenance",
+    "keywords": [
+      "صيانة منصور",
+      "Mansour Automotive",
+      "منصور",
+      "منصور شيفروليه"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Nacita",
+    "category": "Services",
+    "subCategory": "Car Maintenance",
+    "keywords": [
+      "نصيتا",
+      "ناسيتا"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Fit & Fix",
+    "category": "Services",
+    "subCategory": "Car Maintenance",
+    "keywords": [
+      "فيت و فيكس",
+      "فيت اند فيكس",
+      "كاوتش",
+      "Fit & Fix",
+      "كاوتش فيت اند فيكس"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "MoneyFellows",
+    "category": "Financial",
+    "subCategory": "App",
+    "keywords": [
+      "ماني فيلوز",
+      "قبض جمعية ماني فيلوز",
+      "جمعية",
+      "MoneyFellows",
+      "جمعية ماني فيلوز",
+      "ماني فلوز"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "AlMaqarr",
+    "category": "Services",
+    "subCategory": "Coworking",
+    "keywords": [
+      "وورك سبيس",
+      "المقر",
+      "مساحة عمل"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Makanak",
+    "category": "Services",
+    "subCategory": "Coworking",
+    "keywords": [
+      "وورك سبيس",
+      "مكانك"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Abu Auf",
+    "category": "Food",
+    "subCategory": "Nuts & Coffee",
+    "keywords": [
+      "ابو عوف",
+      "مكسرات ابو عوف",
+      "Abu Auf",
+      "قهوة ابو عوف",
+      "أبو عوف"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Mahdes",
+    "category": "Food",
+    "subCategory": "Nuts",
+    "keywords": [
+      "مقلة المهندس",
+      "المهندس"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Tradeline",
+    "category": "Electronics",
+    "subCategory": "Retail & Installments",
+    "keywords": [
+      "ابل",
+      "تريدلاين",
+      "Apple reseller",
+      "تريد لاين",
+      "Apple",
+      "Tradeline"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Dream 2000",
+    "category": "Electronics",
+    "subCategory": "Retail & Installments",
+    "keywords": [
+      "Dream 2000",
+      "دريم الفين",
+      "دريم 2000"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "El Safy",
+    "category": "Electronics",
+    "subCategory": "Retail & Installments",
+    "keywords": [
+      "الصافي ستورز",
+      "El Safy",
+      "الصافي",
+      "الصافى"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "EgyptAir",
+    "category": "Transport",
+    "subCategory": "Flight",
+    "keywords": [
+      "EGYPTAIR",
+      "تذكرة مصر للطيران",
+      "تذاكر طيران",
+      "مكتب مصر للطيران",
+      "مصر للطيران"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Air Arabia",
+    "category": "Transport",
+    "subCategory": "Flight",
+    "keywords": [
+      "العربية للطيران",
+      "طيران العربية"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Travco",
+    "category": "Services",
+    "subCategory": "Travel Agency",
+    "keywords": [
+      "رحلة",
+      "Travco",
+      "رحلات ترافكو",
+      "ترافكو للسياحة",
+      "ترافكو",
+      "فندق"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Gifts / Hedeya",
+    "category": "Shopping",
+    "subCategory": "Gifts",
+    "keywords": [
+      "مناسبة",
+      "هدية",
+      "عيد ميلاد"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Pharmacy General",
+    "category": "Health",
+    "subCategory": "Pharmacy",
+    "keywords": [
+      "علاج",
+      "روشتة",
+      "دواء",
+      "صيدلية",
+      "ادوية"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary Sayed Hanafy",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "حنفى",
+      "سيد حنفى",
+      "حنفي",
+      "سيد حنفي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary Hend",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "كشري هند",
+      "هند",
+      "كشرى هند"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary Zooba",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "زوبى",
+      "زوبة",
+      "زوبه"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary El Omda",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "كشري العمدة",
+      "العمده",
+      "العمدة",
+      "كشرى العمدة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary Hekaya",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "كشرى حكاية",
+      "حكايه",
+      "كشري حكاية",
+      "حكاية"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary Karama",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "كشري كرامة",
+      "كرامه",
+      "كشرى كرامة",
+      "كرامة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary Goha",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "كشري جحا",
+      "كشرى جحا",
+      "جحا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary El Domyati",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "كشري الدمياطي",
+      "كشرى الدمياطى",
+      "الدمياطي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary Tom and Basal",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "توم اند بصل",
+      "توم وبصل",
+      "طوم وبصل"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary Rigo",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "كشري ريجو",
+      "ريجو"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary El Thawra",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "كشري الثورة",
+      "كشرى الثورة",
+      "الثورة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary Abou Ramy",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "ابو رامي",
+      "كشري ابو رامي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary Hamada",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "كشرى حماده",
+      "كشري حمادة",
+      "حمادة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary El Agamy",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "العجمى",
+      "كشري العجمي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary El Safwa",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "كشري الصفوة",
+      "الصفوه"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary Shaker",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "شاكر",
+      "كشري شاكر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary El Zaeem",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "كشري الزعيم",
+      "الزعيم"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Koshary Asmak",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "كشري اسماك",
+      "أسماك"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Karam El Sham",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "كرم الشام شاورما",
+      "شاورما كرم الشام",
+      "كرم الشام"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Abou Haidar",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "أبو حيدر",
+      "ابو حيدر",
+      "شاورما ابو حيدر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Abu Anas El Syrian",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "أبو أنس السوري",
+      "ابو انس",
+      "ابو انس السوري"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Semsema",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "سمسمة",
+      "سمسمه",
+      "شاورما سمسمة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Shawarma El Reem",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "الريم",
+      "شاورما الريم"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Shawarma Shaker",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "شاورما شاكر",
+      "شاكر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Abu Mazen El Syrian",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "أبو مازن السوري",
+      "ابو مازن السوري",
+      "ابو مازن",
+      "شاورما ابو مازن"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Caizo",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "كايزو",
+      "سندوتشات كايزو"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Semo Shawarma",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "شاورما سيمو",
+      "سيمو"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Shawarma El Emprator",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "الامبراطور",
+      "شاورما الامبراطور"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Menoufy El Kababgi",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "المنوفى",
+      "المنوفي",
+      "كباب المنوفي",
+      "المنوفى الكبابجي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Refaey Kabab",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "الرفاعى",
+      "الرفاعي",
+      "كباب الرفاعي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Hosny El Kababgi",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "حسني الكبابجي",
+      "حسني الكبابجى",
+      "حسنى الكبابجى"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Hawaoshi El Rabea",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "حواوشى الربع",
+      "حواوشى الربيع",
+      "حواوشي الربيع",
+      "الربيع"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Wahba El Kababgi",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "وهبة",
+      "كبدة وهبة",
+      "وهبه",
+      "كبده وهبه"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Kebda El Fallah",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "كبده الفلاح",
+      "كبدة الفلاح",
+      "الفلاح"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Haty",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "الحاتى",
+      "كبابجى الحاتى",
+      "الحاتي",
+      "كبابجي الحاتي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Ezba",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "العزبه",
+      "العزبة",
+      "قرية العزبة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Balbaa Alexandria",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "مشويات بلبع",
+      "بلبع",
+      "بلبع الاسكندرية"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Zephyr Sea Food",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "اسماك زفير",
+      "سمك زفير",
+      "زفير"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Hala'et El Asmak",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "حلقة السمك",
+      "حلقه السمك"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Aroos El Bahr",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "عروس البحر",
+      "سمك عروس البحر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Domyati Foul",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "فول الدمياطي",
+      "الدمياطى",
+      "الدمياطي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Tabey El Domyati",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "التابعى",
+      "التابعي",
+      "التابعى الدمياطى",
+      "التابعي الدمياطي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Gad Restaurant",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "جاد",
+      "مطعم جاد"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Al Shabrawy",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "الشبراوي",
+      "الشبراوى",
+      "شبراوى",
+      "شبراوي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Fattatry El Hoda",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "الهدى فطير",
+      "الهدى",
+      "فطاطري الهدى",
+      "فطيرة الهدى"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Fattatry El Hosny",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "فطيرة الحسني",
+      "الحسني",
+      "فطاطرى الحسنى",
+      "فطاطري الحسني"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Fattatry El Nile",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "فطاطري النيل",
+      "فطيرة النيل",
+      "النيل"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Fattatry Master",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "ماستر",
+      "ماستر فطير",
+      "فطاطري ماستر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Dar El Amar",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "دار القمر",
+      "مطعم دار القمر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Garoub",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "جروب",
+      "الجروب",
+      "فطير الجروب"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Awlad Taqi",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "تقي",
+      "اولاد تقي",
+      "تقى",
+      "أولاد تقي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Street Foul Cart",
+    "category": "Food",
+    "subCategory": "Street Food",
+    "keywords": [
+      "فطار وعشاء",
+      "عربية الفول",
+      "فول الشارع",
+      "عربية فول",
+      "فطار وعشا",
+      "عربية فول وطعمية"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Baladi Coffee Shop",
+    "category": "Food",
+    "subCategory": "Cafe",
+    "keywords": [
+      "قهوه بلدي",
+      "القهوة البلدي",
+      "شاي بلدي",
+      "قهوة بلدي",
+      "مشاريب القهوة",
+      "شاي بلدى",
+      "قهوة بلدى"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Local Kiosk",
+    "category": "Groceries",
+    "subCategory": "Kiosk",
+    "keywords": [
+      "الكشك",
+      "كشك أبو علي",
+      "كشك سجاير",
+      "كشك الشارع",
+      "كشك البركه",
+      "كشك ابو علي",
+      "كشك ابو على",
+      "كشك البركة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Street Fruit Vendor",
+    "category": "Groceries",
+    "subCategory": "Local Vendor",
+    "keywords": [
+      "فاكهاني",
+      "بياع فاكهة",
+      "فاكهانى",
+      "عربية فاكهة",
+      "فاكهة الشارع"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Street Vegetable Vendor",
+    "category": "Groceries",
+    "subCategory": "Local Vendor",
+    "keywords": [
+      "خضرى",
+      "خضري",
+      "بياع خضار",
+      "عربية خضار",
+      "خضار الشارع"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Gas Cylinders Delivery",
+    "category": "Bills",
+    "subCategory": "Utilities",
+    "keywords": [
+      "انبوبة",
+      "شحن انبوبة",
+      "أنبوبة",
+      "بتوجاز",
+      "غاز انبوبة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Tuk-Tuk Driver",
+    "category": "Transport",
+    "subCategory": "Micobuses & Taxis",
+    "keywords": [
+      "توك توك",
+      "أجرة توكتوك",
+      "تكتك",
+      "توكتوك",
+      "اجرة توكتوك"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Microbus Rider",
+    "category": "Transport",
+    "subCategory": "Micobuses & Taxis",
+    "keywords": [
+      "الميكروباص",
+      "اجرة ميكروباص",
+      "اجرة المشروع",
+      "مكروباص",
+      "ميكروباص",
+      "مشروع",
+      "أجرة ميكروباص"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Baksheesh & Tips",
+    "category": "Services",
+    "subCategory": "Tips",
+    "keywords": [
+      "لله",
+      "بقشيش الدليفري",
+      "بقشيش البواب",
+      "تبس",
+      "نفحة",
+      "بقشيش",
+      "تيبس"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Street Parking Caretaker",
+    "category": "Services",
+    "subCategory": "Tips",
+    "keywords": [
+      "ركنة السايس",
+      "سايس",
+      "اركن يا باشا",
+      "فلوس السايس",
+      "منادي",
+      "السايس"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Sundry Expenses / Miscellaneous",
+    "category": "Services",
+    "subCategory": "Miscellaneous",
+    "keywords": [
+      "نثريات البيت",
+      "نثريات",
+      "فكه",
+      "مصاريف صغيرة",
+      "مصاريف نثريات",
+      "فكة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Local Baker",
+    "category": "Groceries",
+    "subCategory": "Bread",
+    "keywords": [
+      "عيش بلدي",
+      "الطابونة",
+      "مخبز بلدي",
+      "فرن بلدي",
+      "عيش فينو",
+      "فرن عيش"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Baladi Butcher",
+    "category": "Groceries",
+    "subCategory": "Meat",
+    "keywords": [
+      "جزار بلدي",
+      "جزار",
+      "لحمة بلدي",
+      "كيلو لحمة",
+      "الجزار"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Baladi Fishmonger",
+    "category": "Groceries",
+    "subCategory": "Seafood",
+    "keywords": [
+      "محل سمك",
+      "سمك مشوي",
+      "فسخانى",
+      "سمك مقلي",
+      "فسخاني",
+      "سماك"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Shisha / Tobacco Spot",
+    "category": "Food",
+    "subCategory": "Smoking",
+    "keywords": [
+      "حجر شيشة",
+      "سجاير فرط",
+      "شيشة",
+      "معسل قص",
+      "شيشه",
+      "سجائر فرط",
+      "معسل"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Local Ironer",
+    "category": "Services",
+    "subCategory": "Laundry",
+    "keywords": [
+      "مكوجي",
+      "كوي هدوم",
+      "مكوجى",
+      "المكوجي",
+      "مكوجي الشارع"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Local Plumber",
+    "category": "Services",
+    "subCategory": "Maintenance",
+    "keywords": [
+      "سباك",
+      "السباك",
+      "مصنعية سباك",
+      "سباك بلدي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Local Carpenter",
+    "category": "Services",
+    "subCategory": "Maintenance",
+    "keywords": [
+      "نجار بلدي",
+      "تنجيد",
+      "النجار",
+      "نجار"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Local Electrician",
+    "category": "Services",
+    "subCategory": "Maintenance",
+    "keywords": [
+      "كهربائي",
+      "تصليح كهربا",
+      "كهربائى",
+      "كهربائي منازل"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Porter / Concierge",
+    "category": "Services",
+    "subCategory": "Tips",
+    "keywords": [
+      "بواب العمارة",
+      "حارس العقار",
+      "بواب العشيرة",
+      "البواب",
+      "فلوس البواب"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Trash Collector",
+    "category": "Services",
+    "subCategory": "Utilities",
+    "keywords": [
+      "فلوس الزبال",
+      "عامل النظافة",
+      "جامع الزبالة",
+      "زبال",
+      "جامع القمامة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Local Herbist",
+    "category": "Groceries",
+    "subCategory": "Herbs & Spices",
+    "keywords": [
+      "بخور",
+      "عطارة",
+      "توابل",
+      "عطار",
+      "العطار"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Local Dairy Shop",
+    "category": "Groceries",
+    "subCategory": "Dairy",
+    "keywords": [
+      "كيلو لبن",
+      "محل لبان",
+      "لبان",
+      "اللبان",
+      "جبنة قديمة",
+      "زبادي بلدي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Baladi Roastery",
+    "category": "Food",
+    "subCategory": "Snacks",
+    "keywords": [
+      "مقله",
+      "محمصات",
+      "مقلة",
+      "لب وسوداني",
+      "سوداني",
+      "مقلة لب",
+      "لب سوبر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Chicken Vendor",
+    "category": "Groceries",
+    "subCategory": "Poultry",
+    "keywords": [
+      "فرارجي",
+      "فرارجى",
+      "محل فراخ",
+      "تنظيف فراخ",
+      "الفراخ"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Local Pharmacy",
+    "category": "Health",
+    "subCategory": "Pharmacy",
+    "keywords": [
+      "روشتة",
+      "صيدلية الشارع",
+      "أجزخانة",
+      "اجزاخانة",
+      "دكتور صيدلي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Home Maintenance Services",
+    "category": "Services",
+    "subCategory": "Maintenance",
+    "keywords": [
+      "صنايعية",
+      "صنايعي",
+      "يومية صنايعي",
+      "مصنعية",
+      "شغل صنايعي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Custom Dressmaker / Tailor",
+    "category": "Services",
+    "subCategory": "Personal Care",
+    "keywords": [
+      "ترزي",
+      "تصليح لبس",
+      "ترزى",
+      "الترزي",
+      "تفصيل هدوم"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Custom Cobbler",
+    "category": "Services",
+    "subCategory": "Personal Care",
+    "keywords": [
+      "خياطة جزمة",
+      "صرماتى",
+      "كندرجي",
+      "صرماتي",
+      "تصليح احذية"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Public Bath / Hamam",
+    "category": "Services",
+    "subCategory": "Personal Care",
+    "keywords": [
+      "حمام بلدى",
+      "حمام المغربي",
+      "حمام بلدي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Street Beverage Cart",
+    "category": "Food",
+    "subCategory": "Street Food",
+    "keywords": [
+      "خروب",
+      "عربية عصير قصب",
+      "سوبيا",
+      "تمر هندي",
+      "عصير فريش",
+      "عصير قصب"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Liver Sandwiches Cart",
+    "category": "Food",
+    "subCategory": "Street Food",
+    "keywords": [
+      "سندوتش كبدة",
+      "عربية كبده",
+      "عربية كبدة",
+      "كبدة كلاب",
+      "كبدة الشارع"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Street Sweet Potato Cart",
+    "category": "Food",
+    "subCategory": "Street Food",
+    "keywords": [
+      "بطاطا مشوية",
+      "عربية بطاطا",
+      "بطاطا بالبشاميل",
+      "بطاطا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Street Grilled Corn Cart",
+    "category": "Food",
+    "subCategory": "Street Food",
+    "keywords": [
+      "كوز درة",
+      "درة مشوي",
+      "عربية درة",
+      "دره مشوى"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Local Sweets Shop",
+    "category": "Food",
+    "subCategory": "Dessert",
+    "keywords": [
+      "بسبوسة وهريسة",
+      "هريسة",
+      "شرقي وغربي",
+      "حلويات شرقية",
+      "حلويات شرقيه"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Local Stationery / Bookshop",
+    "category": "Shopping",
+    "subCategory": "Stationery",
+    "keywords": [
+      "مكتبة ادوات مدرسية",
+      "كشكول وقلم",
+      "الفجالة",
+      "الفجاله",
+      "مكتبة الفجالة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Flea Market",
+    "category": "Shopping",
+    "subCategory": "Local Market",
+    "keywords": [
+      "سوق الجمعة",
+      "البالة",
+      "سوق الجمعه",
+      "وكالة البلح",
+      "سوق السبت",
+      "الوكالة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Perfume Mixer",
+    "category": "Shopping",
+    "subCategory": "Cosmetics",
+    "keywords": [
+      "تركيب عطور",
+      "محل تركيب برفانات",
+      "برفان تركيب",
+      "زيت عطري"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Souvenir Shop",
+    "category": "Shopping",
+    "subCategory": "Gifts",
+    "keywords": [
+      "انتيكات",
+      "خان الخليلي",
+      "خان الخليلى",
+      "بازار"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Street Charity / Donation Box",
+    "category": "Charity",
+    "subCategory": "Donation",
+    "keywords": [
+      "لله",
+      "جمعية خيرية",
+      "صدقة جارية",
+      "تبرع للمسجد",
+      "شنطة رمضان"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Traditional Midwife / Healer",
+    "category": "Health",
+    "subCategory": "Alternative Medicine",
+    "keywords": [
+      "شيخ معالج",
+      "علاج طبيعي شعبي",
+      "دايه",
+      "حجامة",
+      "داية"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Traditional Gym",
+    "category": "Health",
+    "subCategory": "Fitness",
+    "keywords": [
+      "جيم شعبي",
+      "صالة حديد",
+      "جيم الحارة",
+      "جيم شعبى"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Traditional Registry / Ma'zoun",
+    "category": "Services",
+    "subCategory": "Official",
+    "keywords": [
+      "المأذون",
+      "مأذون",
+      "مصاريف المأذون",
+      "كتب كتاب"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Traditional Upholsterer",
+    "category": "Services",
+    "subCategory": "Maintenance",
+    "keywords": [
+      "منجد مراتب",
+      "تنجيد",
+      "منجد",
+      "منجد بلدي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Traditional Sais Fee",
+    "category": "Services",
+    "subCategory": "Tips",
+    "keywords": [
+      "اركن يا باشا",
+      "ايتاوة",
+      "مليم السايس",
+      "إتاوة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Water Cart",
+    "category": "Groceries",
+    "subCategory": "Water",
+    "keywords": [
+      "سقا",
+      "شحن كرت مياه",
+      "كولر مياه",
+      "مبرد مياه",
+      "شربات"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Traditional Cafe",
+    "category": "Food",
+    "subCategory": "Cafe",
+    "keywords": [
+      "مقهى الفيشاوي",
+      "الفيشاوى",
+      "الفيشاوي",
+      "قهوة الفيشاوي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Traditional Alexandria Grill",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "كبابجى الكنج",
+      "كبابجي الكينج",
+      "مشويات بلدي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Malky",
+    "category": "Food",
+    "subCategory": "Dessert",
+    "keywords": [
+      "رز بلبن المالكي",
+      "المالكى",
+      "حلواني المالكي",
+      "المالكي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Azza Ice Cream",
+    "category": "Food",
+    "subCategory": "Dessert",
+    "keywords": [
+      "جيلاتي عزه",
+      "جيلاتي عزة",
+      "عزة",
+      "جيلاتى عزه",
+      "جيلاتى عزة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Saber Patisserie",
+    "category": "Food",
+    "subCategory": "Dessert",
+    "keywords": [
+      "رز بلبن صابر",
+      "حلواني صابر",
+      "صابر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Hassan Abu Ali Kiosk",
+    "category": "Groceries",
+    "subCategory": "Kiosk",
+    "keywords": [
+      "كشك حسن ابو علي",
+      "حسن ابو علي",
+      "كشك حسن ابو على"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Baraka Kiosk",
+    "category": "Groceries",
+    "subCategory": "Kiosk",
+    "keywords": [
+      "كشك بركة",
+      "كشك البركة",
+      "كشك البركه"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Abou Ashraf Seafood",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "ابو اشرف",
+      "سمك ابو اشرف",
+      "اسماك ابو اشرف",
+      "أبو أشرف"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Sea Gull Restaurant",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "سي جول المكس",
+      "مطعم سي جول",
+      "سي جول"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Safra Alexandria",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "الصفرة",
+      "مطعم الصفرة",
+      "الصفره"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Samakmak Alexandria",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "سمكمك",
+      "سمكمك الانفوشي",
+      "اسماك سمكمك"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Kadoura Seafood",
+    "category": "Food",
+    "subCategory": "Local Restaurant",
+    "keywords": [
+      "قدوره",
+      "اسماك قدورة",
+      "قدورة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Brown Nose Cafe",
+    "category": "Food",
+    "subCategory": "Cafe",
+    "keywords": [
+      "براون نوز كافيه",
+      "Brown Nose",
+      "براون نوز"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "3am Mobarez Cafe",
+    "category": "Food",
+    "subCategory": "Cafe",
+    "keywords": [
+      "قهوة عم مبارز",
+      "قهوه عم مبارز",
+      "عم مبارز"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Retro Cafe",
+    "category": "Food",
+    "subCategory": "Cafe",
+    "keywords": [
+      "ريترو كافيه",
+      "ريترو"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Fishawy Cafe",
+    "category": "Food",
+    "subCategory": "Cafe",
+    "keywords": [
+      "الفيشاوى",
+      "الفيشاوي",
+      "كافيه الفيشاوي",
+      "قهوة الفيشاوى"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "WE (Telecom Egypt)",
+    "category": "Bills",
+    "subCategory": "Mobile & Internet",
+    "keywords": [
+      "ماي وي",
+      "المصرية للاتصالات",
+      "Telecom Egypt",
+      "WE internet",
+      "فاتورة الارضي",
+      "شحن رصيد وي",
+      "TE Data",
+      "تي داتا",
+      "My WE",
+      "وي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Vodafone Egypt",
+    "category": "Bills",
+    "subCategory": "Mobile & Internet",
+    "keywords": [
+      "فودافون ADSL",
+      "Vodafone",
+      "فودافون",
+      "فوادفون",
+      "كارت فكة فودافون",
+      "ڤودافون",
+      "فودافون فلتر",
+      "باقة فودافون",
+      "شحن رصيد فودافون"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Etisalat Egypt",
+    "category": "Bills",
+    "subCategory": "Mobile & Internet",
+    "keywords": [
+      "اتصالات ADSL",
+      "شحن اتصالات",
+      "اتصالات",
+      "Etisalat",
+      "ميكسات اتصالات",
+      "اتصلات",
+      "اتصالات VDSL",
+      "باقة اتصالات"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Orange Egypt",
+    "category": "Bills",
+    "subCategory": "Mobile & Internet",
+    "keywords": [
+      "اورانج",
+      "Mobinil",
+      "اورنج",
+      "باقة اورنج",
+      "اورنج dsl",
+      "شحن اورنج",
+      "موبينيل",
+      "Orange",
+      "كارت شحن اورنج"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Noor ADSL",
+    "category": "Bills",
+    "subCategory": "Internet",
+    "keywords": [
+      "Noor ADSL",
+      "نور للانترنت",
+      "Noor Internet",
+      "شركة نور",
+      "نور"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Fawry Pay",
+    "category": "Bills",
+    "subCategory": "Payment Gateway",
+    "keywords": [
+      "فوري باي",
+      "دفع فوري",
+      "خدمة فوري",
+      "Fawry",
+      "فوري بايمنت",
+      "فوري",
+      "فورى"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Masary Payment",
+    "category": "Bills",
+    "subCategory": "Payment Gateway",
+    "keywords": [
+      "دفع مصاري",
+      "مصاري",
+      "مصارى",
+      "Masary",
+      "شحن مصاري"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Bee Mobile",
+    "category": "Bills",
+    "subCategory": "Payment Gateway",
+    "keywords": [
+      "خدمات بي",
+      "Bee Smart",
+      "Bee Payment",
+      "بي",
+      "دفع بي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Khales Service",
+    "category": "Bills",
+    "subCategory": "Payment Gateway",
+    "keywords": [
+      "بوابة خالص",
+      "خدمات خالص",
+      "خالص",
+      "اي خالص",
+      "e-khales"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Sahl App",
+    "category": "Bills",
+    "subCategory": "Payment Gateway",
+    "keywords": [
+      "Sahl App",
+      "تطبيق سهل",
+      "شحن سهل",
+      "سهل"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "EEHC (Electricity)",
+    "category": "Bills",
+    "subCategory": "Electricity",
+    "keywords": [
+      "الكهرباء",
+      "عداد الكهرباء",
+      "الشركة القابضة لكهرباء مصر",
+      "EEHC",
+      "فاتورة الكهرباء",
+      "شحن كارت الكهرباء",
+      "شركة الكهرباء"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Egypt Gas (Petrotrade)",
+    "category": "Bills",
+    "subCategory": "Gas",
+    "keywords": [
+      "بتروتريد",
+      "فاتورة الغاز",
+      "Petrotrade",
+      "شركة الغاز",
+      "الغاز",
+      "تاون جاس",
+      "غاز مصر",
+      "ثروة بروداكشن",
+      "Town Gas"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "HCWW (Water)",
+    "category": "Bills",
+    "subCategory": "Water",
+    "keywords": [
+      "HCWW",
+      "عداد المياه",
+      "شركة المياه والصرف الصحى",
+      "شركة المياه",
+      "فاتورة المياه",
+      "المياه"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Syndicate Fees",
+    "category": "Bills",
+    "subCategory": "Syndicate",
+    "keywords": [
+      "نقابة المهندسين",
+      "نقابة التجاريين",
+      "نقابة الاطباء",
+      "اشتراك النقابة",
+      "النقابة",
+      "نقابة المحامين",
+      "نقابة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Traffic Department",
+    "category": "Bills",
+    "subCategory": "Traffic",
+    "keywords": [
+      "مخالفات المرور",
+      "ترخيص السيارة",
+      "المرور",
+      "فحص السيارة",
+      "بوابة مرور مصر",
+      "نيابة المرور",
+      "رخصة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Real Estate Tax Authority",
+    "category": "Bills",
+    "subCategory": "Taxes",
+    "keywords": [
+      "مصلحة الضرائب العقارية",
+      "الضرائب العقارية",
+      "الضرائب المصرية",
+      "فاتورة الضرائب"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Egyptian Customs",
+    "category": "Bills",
+    "subCategory": "Customs",
+    "keywords": [
+      "الجمارك المصرية",
+      "رسوم جمركية",
+      "جمارك المطار",
+      "مصلحة الجمارك"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "ElSewedy Electric Bills",
+    "category": "Bills",
+    "subCategory": "Electricity",
+    "keywords": [
+      "فاتورة السويدي",
+      "السويدي للكابلات",
+      "السويدى اليكتريك"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Madinet Masr Maintenance",
+    "category": "Bills",
+    "subCategory": "Maintenance",
+    "keywords": [
+      "صيانة سراي",
+      "مدينة نصر للاسكان",
+      "وديعة الصيانة",
+      "صيانة تاج سيتي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "TMG Maintenance",
+    "category": "Bills",
+    "subCategory": "Maintenance",
+    "keywords": [
+      "صيانة الرحاب",
+      "صيانة مدينتي",
+      "مجموعة طلعت مصطفى",
+      "وديعة صيانة طلعت مصطفى"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Damis (e-finance)",
+    "category": "Bills",
+    "subCategory": "Payment Gateway",
+    "keywords": [
+      "e-finance",
+      "بوابة الدفع الالكترونية",
+      "اي فاينانس",
+      "داميس"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Momken",
+    "category": "Bills",
+    "subCategory": "Payment Gateway",
+    "keywords": [
+      "ممكن",
+      "شحن ممكن",
+      "خدمات ممكن",
+      "دفع ممكن"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "MCIT Fees",
+    "category": "Bills",
+    "subCategory": "Taxes",
+    "keywords": [
+      "رسوم الترخيص",
+      "وزارة الاتصالات",
+      "مكلفات الاتصالات"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Neqabty",
+    "category": "Bills",
+    "subCategory": "Syndicate",
+    "keywords": [
+      "تطبيق نقابتي",
+      "نقابتي",
+      "اشتراك نقابتي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Cairo Cleanliness Service",
+    "category": "Bills",
+    "subCategory": "Utilities",
+    "keywords": [
+      "رسوم النظافة",
+      "فاتورة النظافة",
+      "هيئة النظافة والتجميل"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Uber Egypt",
+    "category": "Transport",
+    "subCategory": "Ride-Hailing",
+    "keywords": [
+      "أوبر",
+      "UBER.COM",
+      "Uber Trip",
+      "اوبر",
+      "اوبر ايجيبت"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Careem Egypt",
+    "category": "Transport",
+    "subCategory": "Ride-Hailing",
+    "keywords": [
+      "رحلة كريم",
+      "كريم",
+      "Careem",
+      "توصيلة كريم"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "inDrive Egypt",
+    "category": "Transport",
+    "subCategory": "Ride-Hailing",
+    "keywords": [
+      "In driver",
+      "inDrive",
+      "تطبيق اندرايف",
+      "ان درايف",
+      "اندرايف"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "DiDi Egypt",
+    "category": "Transport",
+    "subCategory": "Ride-Hailing",
+    "keywords": [
+      "رحلة ديدي",
+      "Didi",
+      "تطبيق ديدي",
+      "ديدي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Swvl Egypt",
+    "category": "Transport",
+    "subCategory": "Bus",
+    "keywords": [
+      "رحلة سويفل",
+      "اتوبيس سويفل",
+      "سوفل",
+      "سويفل",
+      "Swvl"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "East Delta Bus",
+    "category": "Transport",
+    "subCategory": "Bus",
+    "keywords": [
+      "الشرق للدلتا",
+      "اتوبيس شرق الدلتا",
+      "شرق الدلتا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "West Delta Bus",
+    "category": "Transport",
+    "subCategory": "Bus",
+    "keywords": [
+      "غرب الدلتا",
+      "اتوبيس غرب الدلتا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Middle Delta Bus",
+    "category": "Transport",
+    "subCategory": "Bus",
+    "keywords": [
+      "وسط الدلتا",
+      "اتوبيس وسط الدلتا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Upper Egypt Bus",
+    "category": "Transport",
+    "subCategory": "Bus",
+    "keywords": [
+      "اتوبيس الوجه القبلي",
+      "الوجه القبلي للنقل",
+      "اتوبيس الصعيد"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Nile Air",
+    "category": "Transport",
+    "subCategory": "Flight",
+    "keywords": [
+      "Nile Air",
+      "تذكرة النيل للطيران",
+      "النيل للطيران"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Air Arabia Egypt",
+    "category": "Transport",
+    "subCategory": "Flight",
+    "keywords": [
+      "طيران العربية",
+      "العربية للطيران",
+      "Air Arabia"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "FlyEgypt",
+    "category": "Transport",
+    "subCategory": "Flight",
+    "keywords": [
+      "طيران فلاي ايجيبت",
+      "FlyEgypt",
+      "فلاي ايجيبت"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Nesma Airlines",
+    "category": "Transport",
+    "subCategory": "Flight",
+    "keywords": [
+      "نسما للطيران",
+      "طيران نسما",
+      "Nesma Airlines"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Cairo Aviation",
+    "category": "Transport",
+    "subCategory": "Flight",
+    "keywords": [
+      "القاهرة للطيران",
+      "Cairo Aviation",
+      "طيران القاهرة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Air Cairo",
+    "category": "Transport",
+    "subCategory": "Flight",
+    "keywords": [
+      "إير كايرو",
+      "اير كايرو",
+      "Air Cairo"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "LRT Transit",
+    "category": "Transport",
+    "subCategory": "Public Transport",
+    "keywords": [
+      "تذكرة LRT",
+      "القطار الكهربائي الخفيف",
+      "القطار الكهربائي",
+      "LRT"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Cairo Monorail",
+    "category": "Transport",
+    "subCategory": "Public Transport",
+    "keywords": [
+      "المونوريل",
+      "مونوريل العاصمة",
+      "مونوريل اكتوبر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "ENR (Egyptian Railways)",
+    "category": "Transport",
+    "subCategory": "Public Transport",
+    "keywords": [
+      "تذكرة القطار",
+      "قطار النوم",
+      "سكك حديد مصر",
+      "الهيئة القومية لسكك حديد مصر",
+      "ENR"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Cairo Airport Shuttle",
+    "category": "Transport",
+    "subCategory": "Public Transport",
+    "keywords": [
+      "اتوبيس مطار القاهرة",
+      "شاتل باص المطار",
+      "تاكسي مطار القاهرة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Raye7",
+    "category": "Transport",
+    "subCategory": "Ride-Hailing",
+    "keywords": [
+      "Raye7",
+      "تطبيق رايح",
+      "رايح"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Mobil Gas Station",
+    "category": "Transport",
+    "subCategory": "Fuel",
+    "keywords": [
+      "موبيل",
+      "Mobil Station",
+      "بنزينة موبيل",
+      "تفويلة موبيل"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Shell Gas Station",
+    "category": "Transport",
+    "subCategory": "Fuel",
+    "keywords": [
+      "بنزينة شيل",
+      "Shell Station",
+      "شيل",
+      "تفويلة شيل"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Total Gas Station",
+    "category": "Transport",
+    "subCategory": "Fuel",
+    "keywords": [
+      "Total Station",
+      "توتال",
+      "تفويلة توتال",
+      "بنزينة توتال"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Chillout Gas Station",
+    "category": "Transport",
+    "subCategory": "Fuel",
+    "keywords": [
+      "Chillout",
+      "تفويلة تشيل اوت",
+      "بنزينة تشيل اوت",
+      "تشيل اوت"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Wataniya Gas Station",
+    "category": "Transport",
+    "subCategory": "Fuel",
+    "keywords": [
+      "Wataniya Station",
+      "وطنية",
+      "بنزينة وطنية",
+      "تفويلة وطنية"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Emarat Misr Gas",
+    "category": "Transport",
+    "subCategory": "Fuel",
+    "keywords": [
+      "Emarat Misr",
+      "امارات مصر",
+      "بنزينة امارات مصر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Taqa Gas Station",
+    "category": "Transport",
+    "subCategory": "Fuel",
+    "keywords": [
+      "Taqa Petroleum",
+      "تفويلة طاقة",
+      "بنزينة طاقة",
+      "طاقة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Misr Petroleum",
+    "category": "Transport",
+    "subCategory": "Fuel",
+    "keywords": [
+      "تفويلة مصر للبترول",
+      "مصر للبترول",
+      "بنزينة مصر للبترول"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Coop Petroleum",
+    "category": "Transport",
+    "subCategory": "Fuel",
+    "keywords": [
+      "الجمعية التعاونية للبترول",
+      "بنزينة الجمعية",
+      "Coop Station",
+      "التعاون للبترول"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Carrefour Egypt",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "كارفور",
+      "Carrefour",
+      "ماي كلوب كارفور",
+      "كرفور"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Spinneys Egypt",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "سبينيس",
+      "سبينس",
+      "Spinneys"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Seoudi Market",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "ماركت سعودي",
+      "سعودى",
+      "Seoudi",
+      "سعودي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "BIM Egypt",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "ماركت بيم",
+      "بيم",
+      "Bim"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Oscar Grand Stores",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "اوسكار",
+      "أوسكار",
+      "Oscar Market"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Fathalla Market",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "فتح الله",
+      "اسواق فتح الله",
+      "Fathalla"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Zahran Market",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "Zahran",
+      "ماركت زهران",
+      "زهران"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Gourmet Egypt",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "جورميه",
+      "Gourmet Egypt",
+      "Gourmet",
+      "غورميه"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Abu Ashara Market",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "أبو عشرة",
+      "Abu Ashara",
+      "ابو عشرة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Hawary Market",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "الهواري",
+      "سوبرماركت الهواري",
+      "الهوارى"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Gomla Market",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "Gomla Market",
+      "جملة ماركت",
+      "فتحي الله جملة ماركت"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Royal House",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "رويال هاوس",
+      "Royal House"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Alfa Market",
+    "category": "Groceries",
+    "subCategory": "Supermarket",
+    "keywords": [
+      "Alfa Market",
+      "الفا ماركت",
+      "ألفا ماركت"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Rabbit Market",
+    "category": "Groceries",
+    "subCategory": "Delivery",
+    "keywords": [
+      "رابيت",
+      "Rabbit Market",
+      "رابت",
+      "Rabbit App"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "InstaShop Egypt",
+    "category": "Groceries",
+    "subCategory": "Delivery",
+    "keywords": [
+      "InstaShop",
+      "انستا شوب",
+      "انستاشوب"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Talabat Mart",
+    "category": "Groceries",
+    "subCategory": "Delivery",
+    "keywords": [
+      "Talabat Mart",
+      "طلبات مارت",
+      "tMart"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Noon Daily",
+    "category": "Groceries",
+    "subCategory": "Delivery",
+    "keywords": [
+      "بقالة نون",
+      "نون ديلي",
+      "Noon Daily"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Talabat Egypt",
+    "category": "Food",
+    "subCategory": "Delivery",
+    "keywords": [
+      "طلبات",
+      "اطلب",
+      "Talabat",
+      "Otlob",
+      "اوردر طلبات"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Elmenus",
+    "category": "Food",
+    "subCategory": "Delivery",
+    "keywords": [
+      "elmenus",
+      "تطبيق المنيوز",
+      "المنيوس",
+      "المنيوز"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Waffarha",
+    "category": "Food",
+    "subCategory": "Offers",
+    "keywords": [
+      "وفرها",
+      "waffarha",
+      "كوبون وفرها"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Mrsool Egypt",
+    "category": "Food",
+    "subCategory": "Delivery",
+    "keywords": [
+      "تطبيق مرسول",
+      "مرسول",
+      "mrsool",
+      "مرسول مصر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "KFC Egypt",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "KFC",
+      "كنتاكى",
+      "كنتاكي",
+      "دجاج كنتاكي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "McDonald's Egypt",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "ماكدونالدز",
+      "ماك",
+      "Mac",
+      "Mcdonalds"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Burger King Egypt",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "برجر كينج",
+      "برجر كينغ",
+      "Burger King"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Hardee's Egypt",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "Hardees",
+      "هارديز",
+      "مطعم هارديز"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Pizza Hut Egypt",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "Pizza Hut",
+      "بيتزا هت"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Domino's Pizza Egypt",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "Dominos",
+      "دومينوز بيتزا",
+      "دومينوز"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Papa John's Egypt",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "بابا جونز بيتزا",
+      "بابا جونز",
+      "Papa Johns"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Kansas Fried Chicken",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "Kansas Fried Chicken",
+      "كانساس",
+      "كانزاس"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Chicken Tikka",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "Tikka",
+      "تيكا",
+      "تشيكن تيكا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Texas Chicken",
+    "category": "Food",
+    "subCategory": "Fast Food",
+    "keywords": [
+      "Texas Chicken",
+      "تكساس فرايد تشيكن",
+      "تكساس تشيكن"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Gad",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "جاد",
+      "مطعم جاد",
+      "فول جاد"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Shabrawy",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "الشبراوي",
+      "الشبراوى",
+      "فول الشبراوي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Menoufey Kababgi",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "المنوفي الكبابجي",
+      "كبابجى المنوفى",
+      "المنوفى"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "El Basha Kababgi",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "كبابجي الباشا",
+      "الباشا الكبابجي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Anas El Demeshky",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "انس الدمشقي",
+      "أنس الدمشقي",
+      "انس الدمشقى"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Ibn El Sham",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "ابن الشام",
+      "مطعم ابن الشام"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Aroos El Demeshq",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "عروس الدمشق",
+      "شاورما عروس الدمشق"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Taza Restaurant",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "مطعم تازا",
+      "Taza",
+      "تازا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Zooba",
+    "category": "Food",
+    "subCategory": "Restaurant",
+    "keywords": [
+      "Zooba",
+      "زوبا",
+      "مطعم زوبا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Nola Cupcakes",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "نولا كب كيك",
+      "نولا",
+      "Nola"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Coppermelt",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "Coppermelt",
+      "كوبر ميلت"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Tortina",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "Tortina",
+      "تورتينا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Twinkies Bakery",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "توينكيز",
+      "Twinkies",
+      "تونكيز"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Costa Coffee Egypt",
+    "category": "Food",
+    "subCategory": "Cafe",
+    "keywords": [
+      "Costa Coffee",
+      "كوستا",
+      "كافيه كوستا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Starbucks Egypt",
+    "category": "Food",
+    "subCategory": "Cafe",
+    "keywords": [
+      "ستاربكس",
+      "استاربكس",
+      "Starbucks"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Beano's Cafe",
+    "category": "Food",
+    "subCategory": "Cafe",
+    "keywords": [
+      "بينوز",
+      "بينوز كافيه",
+      "Beano's"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Espresso Lab Egypt",
+    "category": "Food",
+    "subCategory": "Cafe",
+    "keywords": [
+      "اسبريسو لاب",
+      "اسبريسولاب",
+      "Espresso Lab"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "TBS (The Bakery Shop)",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "المخبز",
+      "تي بي اس",
+      "The Bakery Shop",
+      "TBS"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "B.Laban",
+    "category": "Food",
+    "subCategory": "Dessert",
+    "keywords": [
+      "ب-لبن",
+      "قشطوزة",
+      "ب لبن",
+      "B.Laban",
+      "بلبن"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Cinnabon Egypt",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "سينابون رول",
+      "Cinnabon",
+      "سينابون"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Dunkin' Donuts Egypt",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "دانكن",
+      "Dunkin Donuts",
+      "دانكن دونتس"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Krispy Kreme Egypt",
+    "category": "Food",
+    "subCategory": "Bakery",
+    "keywords": [
+      "Krispy Kreme",
+      "كرسبي كريم",
+      "كريسبي كريم"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Caribou Coffee Egypt",
+    "category": "Food",
+    "subCategory": "Cafe",
+    "keywords": [
+      "كاريبو كوفي",
+      "Caribou Coffee"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Jumia Egypt",
+    "category": "Shopping",
+    "subCategory": "E-commerce",
+    "keywords": [
+      "جوميا",
+      "Jumia",
+      "جوميا باي",
+      "جوميا مصر"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Noon Egypt",
+    "category": "Shopping",
+    "subCategory": "E-commerce",
+    "keywords": [
+      "نون",
+      "نون مصر",
+      "Noon",
+      "اكواد نون"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "2B Egypt",
+    "category": "Shopping",
+    "subCategory": "Electronics & Retail",
+    "keywords": [
+      "2B Egypt",
+      "توبي",
+      "2B computer",
+      "تو بي"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Elghazawy",
+    "category": "Shopping",
+    "subCategory": "Electronics & Retail",
+    "keywords": [
+      "الغزاوى",
+      "الغزاوي",
+      "محلات الغزاوي",
+      "Elghazawy"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Sharaf DG Egypt",
+    "category": "Shopping",
+    "subCategory": "Electronics",
+    "keywords": [
+      "شرف دي جي",
+      "Sharaf DG"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Zara Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "زرا",
+      "Zara",
+      "زارا"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "H&M Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "اتش اند إم",
+      "H&M",
+      "اتش اند ام"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "LC Waikiki Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "وايكيكي",
+      "ال سي وايكيكي",
+      "ال سى وايكيكى",
+      "LC Waikiki"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Defacto Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "ديفاكتو",
+      "دي فاكتو",
+      "Defacto"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Ravin Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "Ravin",
+      "رافين"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Max Fashion Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "Max Fashion",
+      "ماكس فاشون",
+      "ماكس"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Splash Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "Splash",
+      "سبلاش"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Adidas Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "اديداس",
+      "Adidas",
+      "أديداس"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Nike Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "Nike",
+      "نايكي",
+      "نايك"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Puma Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "Puma",
+      "بوما"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Reebok Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "ريبوك",
+      "Reebok"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Dejavu Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "ديجافو",
+      "احذية ديجافو",
+      "Dejavu"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Pixi Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "بيكسي",
+      "Pixi",
+      "بكسي"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Or Shop",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "اور",
+      "محلات اور",
+      "Or shop"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Dalin Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "دالين",
+      "Dalin"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Dice Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "دايس",
+      "Dice underwear",
+      "ديس"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Carina Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "Carina",
+      "كارينا"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Concrete Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "Concrete",
+      "كونكريت"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Mobaco Cottons",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "موباكو",
+      "Mobaco"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Beymen Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "بيمن",
+      "Beymen"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "American Eagle Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "امريكان ايجل",
+      "American Eagle"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Pull & Bear Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "بول اند بير",
+      "Pull & Bear"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Bershka Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "Bershka",
+      "بيرشكا"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Stradivarius Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "Stradivarius",
+      "ستراديفاريوس"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Marks & Spencer Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "Marks & Spencer",
+      "ماركس اند سبنسر"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Timberland Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "Timberland",
+      "تمبرلاند"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Clarks Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "Clarks",
+      "كلاركس"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Crocs Egypt",
+    "category": "Shopping",
+    "subCategory": "Fashion",
+    "keywords": [
+      "كروكس",
+      "Crocs"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Faces Egypt",
+    "category": "Shopping",
+    "subCategory": "Cosmetics",
+    "keywords": [
+      "فيسيز",
+      "Faces",
+      "وجوه"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Fortune Cosmetics",
+    "category": "Shopping",
+    "subCategory": "Cosmetics",
+    "keywords": [
+      "فورتشن",
+      "فورشن",
+      "Fortune Cosmetics"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Bath & Body Works Egypt",
+    "category": "Shopping",
+    "subCategory": "Cosmetics",
+    "keywords": [
+      "Bath & Body Works",
+      "باث اند بودى ووركس",
+      "باث اند بودي"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "The Body Shop Egypt",
+    "category": "Shopping",
+    "subCategory": "Cosmetics",
+    "keywords": [
+      "The Body Shop",
+      "ذا بودي شوب",
+      "بودي شوب"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "IKEA Egypt",
+    "category": "Shopping",
+    "subCategory": "Furniture",
+    "keywords": [
+      "إيكيا",
+      "IKEA",
+      "ايكيا"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "El Sewedy Electrometer",
+    "category": "Shopping",
+    "subCategory": "Electronics",
+    "keywords": [
+      "عداد السويدي",
+      "السويدي للكابلات"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Hedeya Toys",
+    "category": "Shopping",
+    "subCategory": "Toys",
+    "keywords": [
+      "محلات هدية",
+      "هدية",
+      "Hedeya",
+      "لعب اطفال"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Mothercare Egypt",
+    "category": "Shopping",
+    "subCategory": "Kids",
+    "keywords": [
+      "Mothercare",
+      "مذر كير",
+      "مذركير"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Toy World Egypt",
+    "category": "Shopping",
+    "subCategory": "Toys",
+    "keywords": [
+      "توي ورلد",
+      "Toy World",
+      "توي وورلد"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Baraka Optics",
+    "category": "Shopping",
+    "subCategory": "Eyewear",
+    "keywords": [
+      "بركة للنظارات",
+      "بركة",
+      "نظارات بركة",
+      "Baraka"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "C&Co Optics",
+    "category": "Shopping",
+    "subCategory": "Eyewear",
+    "keywords": [
+      "سي اند كو",
+      "C&Co",
+      "سى اند كو"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Magrabi Optics",
+    "category": "Shopping",
+    "subCategory": "Eyewear",
+    "keywords": [
+      "مغربي للنظارات",
+      "Magrabi",
+      "مغربي"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "El-Mawardy Jewelry",
+    "category": "Shopping",
+    "subCategory": "Jewelry",
+    "keywords": [
+      "مجوهرات المواردي",
+      "المواردي للمجوهرات",
+      "المواردى"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Damas Jewelry",
+    "category": "Shopping",
+    "subCategory": "Jewelry",
+    "keywords": [
+      "داماس للمجوهرات",
+      "داماس",
+      "Damas"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Iram Jewelry",
+    "category": "Shopping",
+    "subCategory": "Jewelry",
+    "keywords": [
+      "Iram",
+      "مجوهرات ايرام",
+      "ايرام للمجوهرات"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Netflix Egypt",
+    "category": "Entertainment",
+    "subCategory": "Streaming",
+    "keywords": [
+      "نتفلكس",
+      "نتفليكس",
+      "Netflix",
+      "NETFLIX.COM"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Spotify Egypt",
+    "category": "Entertainment",
+    "subCategory": "Music",
+    "keywords": [
+      "اسبوتيفاي",
+      "SPOTIFY.COM",
+      "سبوتيفاي",
+      "Spotify"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "YouTube Premium Egypt",
+    "category": "Entertainment",
+    "subCategory": "Streaming",
+    "keywords": [
+      "يوتيوب",
+      "يوتيوب بريميوم",
+      "YouTube Premium"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Shahid VIP",
+    "category": "Entertainment",
+    "subCategory": "Streaming",
+    "keywords": [
+      "شاهد نت",
+      "Shahid VIP",
+      "شاهد",
+      "شاهد VIP"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Watch IT",
+    "category": "Entertainment",
+    "subCategory": "Streaming",
+    "keywords": [
+      "واتش ات",
+      "Watch It",
+      "Watchit",
+      "واتشيت"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Anghami Egypt",
+    "category": "Entertainment",
+    "subCategory": "Music",
+    "keywords": [
+      "Anghami",
+      "انغامي",
+      "أنغامي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Todd Streaming",
+    "category": "Entertainment",
+    "subCategory": "Streaming",
+    "keywords": [
+      "تود",
+      "Todd",
+      "منصة تود"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "beIN Sports Egypt",
+    "category": "Entertainment",
+    "subCategory": "Sports",
+    "keywords": [
+      "بين سبورت",
+      "beIN Sports",
+      "بي ان سبورت"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Disney+ Egypt",
+    "category": "Entertainment",
+    "subCategory": "Streaming",
+    "keywords": [
+      "ديزني بلس",
+      "Disney+",
+      "ديزني+"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Apple TV+",
+    "category": "Entertainment",
+    "subCategory": "Streaming",
+    "keywords": [
+      "Apple TV",
+      "ابل تي في"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Steam Games",
+    "category": "Entertainment",
+    "subCategory": "Gaming",
+    "keywords": [
+      "STEAMPOWERED",
+      "ستيم",
+      "Steam Games"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "PlayStation Network (PSN)",
+    "category": "Entertainment",
+    "subCategory": "Gaming",
+    "keywords": [
+      "playstation network",
+      "psn",
+      "بلايستيشن",
+      "PlayStation Store"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Xbox Live",
+    "category": "Entertainment",
+    "subCategory": "Gaming",
+    "keywords": [
+      "Microsoft Xbox",
+      "اكس بوكس",
+      "xbox live"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Epic Games",
+    "category": "Entertainment",
+    "subCategory": "Gaming",
+    "keywords": [
+      "إيبك جيمز",
+      "Epic Store",
+      "epic games"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Nintendo eShop",
+    "category": "Entertainment",
+    "subCategory": "Gaming",
+    "keywords": [
+      "نينتندو",
+      "nintendo eshop"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Vox Cinemas Egypt",
+    "category": "Entertainment",
+    "subCategory": "Cinema",
+    "keywords": [
+      "Vox Cinemas",
+      "ڤوكس",
+      "فوكس سينما",
+      "سينما فوكس"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Sun City Cinema",
+    "category": "Entertainment",
+    "subCategory": "Cinema",
+    "keywords": [
+      "Sun City Cinema",
+      "سينما صن سيتى",
+      "سينما صن سيتي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Magic Planet Egypt",
+    "category": "Entertainment",
+    "subCategory": "Theme Park",
+    "keywords": [
+      "Magic Planet",
+      "ماجيك بلانيت",
+      "ماجيك بلانت"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Al-Ahly Club",
+    "category": "Entertainment",
+    "subCategory": "Social Club",
+    "keywords": [
+      "اشتراك نادي الاهلي",
+      "نادي الاهلي",
+      "الاهلي الجزيرة"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Zamalek Club",
+    "category": "Entertainment",
+    "subCategory": "Social Club",
+    "keywords": [
+      "اشتراك نادي الزمالك",
+      "الزمالك ميت عقبة",
+      "نادي الزمالك"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Gezira Sporting Club",
+    "category": "Entertainment",
+    "subCategory": "Social Club",
+    "keywords": [
+      "نادي الجزيرة",
+      "نادى الجزيرة الرياضى",
+      "Gezira Club"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Shooting Club",
+    "category": "Entertainment",
+    "subCategory": "Social Club",
+    "keywords": [
+      "نادي الصيد",
+      "نادي الصيد بالدقي",
+      "Shooting Club"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Wadi Degla Club",
+    "category": "Entertainment",
+    "subCategory": "Social Club",
+    "keywords": [
+      "Wadi Degla",
+      "وادي دجلة",
+      "نادى وادى دجلة"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Misr Pharmacies",
+    "category": "Health",
+    "subCategory": "Pharmacy",
+    "keywords": [
+      "صيدلية مصر",
+      "صيدليات مصر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Abu Ali Pharmacy",
+    "category": "Health",
+    "subCategory": "Pharmacy",
+    "keywords": [
+      "صيدلية ابو علي",
+      "صيدلية ابو على"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Dar Al Fouad Hospital",
+    "category": "Health",
+    "subCategory": "Hospital",
+    "keywords": [
+      "دار الفؤاد",
+      "Dar Al Fouad",
+      "مستشفى دار الفؤاد"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Al Salam International",
+    "category": "Health",
+    "subCategory": "Hospital",
+    "keywords": [
+      "السلام الدولي",
+      "مستشفى السلام الدولي",
+      "Al Salam Hospital"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Saudi German Hospital",
+    "category": "Health",
+    "subCategory": "Hospital",
+    "keywords": [
+      "SGH Egypt",
+      "السعودي الالماني",
+      "المستشفى السعودي الالماني"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Prime Clinics",
+    "category": "Health",
+    "subCategory": "Clinics",
+    "keywords": [
+      "Prime Clinics",
+      "برايم كلينكس"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Alfa Labs",
+    "category": "Health",
+    "subCategory": "Diagnostics",
+    "keywords": [
+      "الفا للاشعة والتحاليل",
+      "Alfa Labs",
+      "معامل الفا"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Al Borg Laboratories",
+    "category": "Health",
+    "subCategory": "Diagnostics",
+    "keywords": [
+      "معمل البرج",
+      "Al Borg Lab",
+      "البرج للتحاليل"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Al Mokhtabar",
+    "category": "Health",
+    "subCategory": "Diagnostics",
+    "keywords": [
+      "معمل المختبر",
+      "المختبر للتحاليل",
+      "Al Mokhtabar"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Cairo Lab",
+    "category": "Health",
+    "subCategory": "Diagnostics",
+    "keywords": [
+      "Cairo Lab",
+      "كايرو لاب"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Egyptian Food Bank",
+    "category": "Charity",
+    "subCategory": "Donation",
+    "keywords": [
+      "Egyptian Food Bank",
+      "بنك الطعام",
+      "بنك الطعام المصري"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Mersal Foundation",
+    "category": "Charity",
+    "subCategory": "Donation",
+    "keywords": [
+      "مؤسسة مرسال",
+      "Mersal",
+      "مرسال"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Ahl Masr Foundation",
+    "category": "Charity",
+    "subCategory": "Donation",
+    "keywords": [
+      "اهل مصر",
+      "Ahl Masr",
+      "مؤسسة اهل مصر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Egyptian Clothing Bank",
+    "category": "Charity",
+    "subCategory": "Donation",
+    "keywords": [
+      "بنك الكساء المصري",
+      "Clothing Bank",
+      "بنك الكساء"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Tahya Misr Fund",
+    "category": "Charity",
+    "subCategory": "Donation",
+    "keywords": [
+      "Tahya Misr",
+      "صندوق تحيا مصر",
+      "تحيا مصر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Beit Al-Zakat",
+    "category": "Charity",
+    "subCategory": "Donation",
+    "keywords": [
+      "بيت الزكاة المصري",
+      "بيت الزكاة والصدقات المصرى",
+      "بيت الزكاة والصدقات"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "500500 Hospital",
+    "category": "Charity",
+    "subCategory": "Donation",
+    "keywords": [
+      "مستشفى ٥٠٠٥٠٠",
+      "500500",
+      "مستشفى الاورام الجديد ٥٠٠٥٠٠"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Egyptian Cure Bank",
+    "category": "Charity",
+    "subCategory": "Donation",
+    "keywords": [
+      "بنك الشفاء المصري",
+      "بنك الشفاء",
+      "Cure Bank"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "AlMaqarr Coworking",
+    "category": "Services",
+    "subCategory": "Coworking",
+    "keywords": [
+      "مساحة عمل المقر",
+      "المقر",
+      "AlMaqarr"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Makanak Coworking",
+    "category": "Services",
+    "subCategory": "Coworking",
+    "keywords": [
+      "مكانك",
+      "مكاتب مكانك",
+      "Makanak"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Nacita Auto Care",
+    "category": "Services",
+    "subCategory": "Car Maintenance",
+    "keywords": [
+      "Nacita",
+      "نصيتا",
+      "ناسيتا"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Ghabbour Auto (GB Auto)",
+    "category": "Services",
+    "subCategory": "Car Maintenance",
+    "keywords": [
+      "صيانة غبور",
+      "جي بي اوتو",
+      "GB Auto",
+      "غبور"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Ezz Elarab",
+    "category": "Services",
+    "subCategory": "Car Maintenance",
+    "keywords": [
+      "صيانة عز العرب",
+      "عز العرب",
+      "Ezz Elarab",
+      "عزالعرب"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Abou Ghaly Motors",
+    "category": "Services",
+    "subCategory": "Car Maintenance",
+    "keywords": [
+      "ابو غالى",
+      "Abou Ghaly Motors",
+      "ابو غالي موتورز"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "GitHub",
+    "category": "Services",
+    "subCategory": "SaaS",
+    "keywords": [
+      "جيت هاب كوبايلوت",
+      "github",
+      "GITHUB.COM",
+      "جيت هاب",
+      "github copilot"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "OpenAI",
+    "category": "Services",
+    "subCategory": "SaaS",
+    "keywords": [
+      "openai",
+      "chatgpt",
+      "CHATGPT.COM",
+      "شات جي بي تي",
+      "openai billing"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Google One / Storage",
+    "category": "Services",
+    "subCategory": "SaaS",
+    "keywords": [
+      "جوجل درايف",
+      "google storage",
+      "google one",
+      "جوجل ون",
+      "GOOGLE*STORAGE"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Google Workspace",
+    "category": "Services",
+    "subCategory": "SaaS",
+    "keywords": [
+      "google workspace",
+      "GOOGLE GSUITE",
+      "gsuite",
+      "جوجل ورك سبيس"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Google Cloud Platform",
+    "category": "Services",
+    "subCategory": "Cloud",
+    "keywords": [
+      "جوجل كلاود",
+      "google cloud",
+      "GOOGLE*CLOUD",
+      "GCP"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Amazon Web Services (AWS)",
+    "category": "Services",
+    "subCategory": "Cloud",
+    "keywords": [
+      "اي دبليو اس",
+      "AWS BILLING",
+      "aws",
+      "amazon web services"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Microsoft Azure",
+    "category": "Services",
+    "subCategory": "Cloud",
+    "keywords": [
+      "مايكروسوفت ازور",
+      "MICROSOFT*AZURE",
+      "azure"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Microsoft 365",
+    "category": "Services",
+    "subCategory": "SaaS",
+    "keywords": [
+      "مايكروسوفت ٣٦٥",
+      "MICROSOFT*OFFICE",
+      "office 365",
+      "msofficestore"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Vercel Cloud",
+    "category": "Services",
+    "subCategory": "Cloud",
+    "keywords": [
+      "فيرسيل",
+      "vercel",
+      "VERCEL*BILLING"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Netlify",
+    "category": "Services",
+    "subCategory": "Cloud",
+    "keywords": [
+      "نتليفاي",
+      "netlify",
+      "NETLIFY*INC"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "DigitalOcean",
+    "category": "Services",
+    "subCategory": "Cloud",
+    "keywords": [
+      "DIGITALOCEAN*CLOUD",
+      "digitalocean",
+      "ديجيتال اوشن"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Hetzner Online",
+    "category": "Services",
+    "subCategory": "Cloud",
+    "keywords": [
+      "Hetzner Online",
+      "هتزنر",
+      "hetzner"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Hostinger",
+    "category": "Services",
+    "subCategory": "Hosting",
+    "keywords": [
+      "HOSTINGER.COM",
+      "hostinger",
+      "هوستنجر"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "GoDaddy",
+    "category": "Services",
+    "subCategory": "Hosting",
+    "keywords": [
+      "جو دادي",
+      "godaddy",
+      "GODADDY.COM"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Namecheap",
+    "category": "Services",
+    "subCategory": "Hosting",
+    "keywords": [
+      "namecheap",
+      "نيم شيب",
+      "NAMECHEAP*BILL"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Adobe Creative Cloud",
+    "category": "Services",
+    "subCategory": "SaaS",
+    "keywords": [
+      "ADOBE*SYSTEMS",
+      "adobe",
+      "creative cloud",
+      "ادوبي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Canva",
+    "category": "Services",
+    "subCategory": "SaaS",
+    "keywords": [
+      "كانفا",
+      "canva",
+      "CANVA.COM"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Figma",
+    "category": "Services",
+    "subCategory": "SaaS",
+    "keywords": [
+      "FIGMA.COM",
+      "فيجما",
+      "figma"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Notion Labs",
+    "category": "Services",
+    "subCategory": "SaaS",
+    "keywords": [
+      "notion",
+      "نوشن",
+      "NOTION*LABS"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Zoom Video",
+    "category": "Services",
+    "subCategory": "SaaS",
+    "keywords": [
+      "زوم",
+      "ZOOM*VIDEO",
+      "zoom.us"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Slack Technologies",
+    "category": "Services",
+    "subCategory": "SaaS",
+    "keywords": [
+      "سلاك",
+      "slack",
+      "SLACK*INC"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Apple Developer",
+    "category": "Services",
+    "subCategory": "SaaS",
+    "keywords": [
+      "ابل ديفيلوبر",
+      "apple developer",
+      "APPLE*DEVELOPER"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Google Play Console",
+    "category": "Services",
+    "subCategory": "SaaS",
+    "keywords": [
+      "GOOGLE*PLAY",
+      "جوجل بلاي كونسول",
+      "google play console"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Cloudflare",
+    "category": "Services",
+    "subCategory": "SaaS",
+    "keywords": [
+      "CLOUDFLARE*INC",
+      "كلاود فلير",
+      "cloudflare"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Shopify",
+    "category": "Services",
+    "subCategory": "SaaS",
+    "keywords": [
+      "shopify",
+      "شوبيفاي",
+      "SHOPIFY*CHARGE"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Midjourney AI",
+    "category": "Services",
+    "subCategory": "SaaS",
+    "keywords": [
+      "ميدجورني",
+      "MIDJOURNEY*AI",
+      "midjourney"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "LinkedIn Premium",
+    "category": "Services",
+    "subCategory": "SaaS",
+    "keywords": [
+      "linkedin premium",
+      "LINKEDIN*PREMIUM",
+      "لينكد ان بريميوم"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Mailchimp",
+    "category": "Services",
+    "subCategory": "SaaS",
+    "keywords": [
+      "MAILCHIMP*CHARGE",
+      "mailchimp",
+      "ميل شيمب"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "SendGrid",
+    "category": "Services",
+    "subCategory": "SaaS",
+    "keywords": [
+      "sendgrid",
+      "SENDGRID*CHARGE",
+      "سيند جريد"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Heroku",
+    "category": "Services",
+    "subCategory": "Cloud",
+    "keywords": [
+      "heroku",
+      "هيروكو",
+      "HEROKU*CHARGE"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Coursera",
+    "category": "Services",
+    "subCategory": "Education",
+    "keywords": [
+      "COURSERA*ORG",
+      "كورسيرا",
+      "coursera"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Udemy",
+    "category": "Services",
+    "subCategory": "Education",
+    "keywords": [
+      "UDEMY*COURSE",
+      "يوديمي",
+      "udemy"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Udacity",
+    "category": "Services",
+    "subCategory": "Education",
+    "keywords": [
+      "يوداسيتي",
+      "UDACITY*NANODEGREE",
+      "udacity"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "British Council Egypt",
+    "category": "Services",
+    "subCategory": "Education",
+    "keywords": [
+      "المجلس البريطاني",
+      "كورس انجليزي بريتش كاونسل",
+      "british council"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "AMIDEAST Egypt",
+    "category": "Services",
+    "subCategory": "Education",
+    "keywords": [
+      "اميديست مصر",
+      "amideast",
+      "اميديست"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Berlitz Egypt",
+    "category": "Services",
+    "subCategory": "Education",
+    "keywords": [
+      "berlitz",
+      "بيرلتز",
+      "مراكز بيرلتز"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "American University in Cairo (AUC)",
+    "category": "Services",
+    "subCategory": "Education",
+    "keywords": [
+      "مصاريف AUC",
+      "الجامعة الامريكية",
+      "الجامعه الامريكيه",
+      "AUC",
+      "الجامعة الامريكية بالقاهرة"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "German University in Cairo (GUC)",
+    "category": "Services",
+    "subCategory": "Education",
+    "keywords": [
+      "GUC",
+      "الجامعه الالمانيه",
+      "الجامعة الالمانية بالقاهرة",
+      "الجامعة الالمانية",
+      "مصاريف GUC"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "British University in Egypt (BUE)",
+    "category": "Services",
+    "subCategory": "Education",
+    "keywords": [
+      "الجامعة البريطانية",
+      "مصاريف BUE",
+      "BUE",
+      "الجامعه البريطانيه"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Arab Academy (AASTMT)",
+    "category": "Services",
+    "subCategory": "Education",
+    "keywords": [
+      "الاكاديميه البحريه",
+      "الاكاديمية البحرية",
+      "AAST",
+      "مصاريف الاكاديمية",
+      "AASTMT"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Cairo University",
+    "category": "Services",
+    "subCategory": "Education",
+    "keywords": [
+      "جامعه القاهره",
+      "مصاريف جامعة القاهرة",
+      "جامعة القاهرة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Ain Shams University",
+    "category": "Services",
+    "subCategory": "Education",
+    "keywords": [
+      "جامعة عين شمس",
+      "مصاريف جامعة عين شمس",
+      "جامعه عين شمس"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Helwan University",
+    "category": "Services",
+    "subCategory": "Education",
+    "keywords": [
+      "جامعه حلوان",
+      "مصاريف جامعة حلوان",
+      "جامعة حلوان"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Alex University",
+    "category": "Services",
+    "subCategory": "Education",
+    "keywords": [
+      "مصاريف جامعة الاسكندرية",
+      "جامعه الاسكندريه",
+      "جامعة الاسكندرية"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Gold's Gym Egypt",
+    "category": "Services",
+    "subCategory": "Fitness",
+    "keywords": [
+      "اشتراك جولدز جيم",
+      "golds gym",
+      "جولدز جيم"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Smart Gym",
+    "category": "Services",
+    "subCategory": "Fitness",
+    "keywords": [
+      "smart gym",
+      "سمارت جيم",
+      "اشتراك سمارت جيم"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "H2O Gym",
+    "category": "Services",
+    "subCategory": "Fitness",
+    "keywords": [
+      "h2o gym",
+      "اشتراك h2o",
+      "اتش تو او جيم"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Hers Gym",
+    "category": "Services",
+    "subCategory": "Fitness",
+    "keywords": [
+      "اشتراك هيرز",
+      "هيرز جيم",
+      "hers gym"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "UFC Gym Egypt",
+    "category": "Services",
+    "subCategory": "Fitness",
+    "keywords": [
+      "يو اف سي جيم",
+      "ufc gym",
+      "اشتراك ufc"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "BeFit Egypt",
+    "category": "Services",
+    "subCategory": "Fitness",
+    "keywords": [
+      "befit",
+      "بي فيت",
+      "اشتراك بي فيت"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Booking.com Egypt",
+    "category": "Services",
+    "subCategory": "Travel Agency",
+    "keywords": [
+      "بوكينج",
+      "booking.com",
+      "حجز بوكينج"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Airbnb Egypt",
+    "category": "Services",
+    "subCategory": "Travel Agency",
+    "keywords": [
+      "اير بي ان بي",
+      "airbnb",
+      "حجز اير بي ان بي"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Expedia Egypt",
+    "category": "Services",
+    "subCategory": "Travel Agency",
+    "keywords": [
+      "اكسبيديا",
+      "expedia",
+      "حجز اكسبيديا"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "National Bank of Egypt (NBE)",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "الاهلي موبايل",
+      "فيزا البنك الاهلي",
+      "ماستر كارد البنك الاهلي",
+      "البنك الاهلى المصرى",
+      "بطاقة الاهلي",
+      "الاهلي نت",
+      "البنك الاهلي",
+      "الاهلي",
+      "NBE"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Commercial International Bank (CIB)",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "فيزا CIB",
+      "البنك التجاري الدولي",
+      "السي اي بي",
+      "ماستر كارد CIB",
+      "سي اي بي",
+      "cib online",
+      "CIB",
+      "التجاري الدولي"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "QNB Alahli",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "قطر الوطني",
+      "كيو ان بي",
+      "qnb alahli",
+      "فيزا QNB",
+      "كارت QNB",
+      "QNB"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Arab African International Bank",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "AAIB",
+      "aaib online",
+      "البنك العربي الافريقي الدولي",
+      "العربي الافريقي",
+      "كارت العربي الافريقي"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Alex Bank (Bank of Alexandria)",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "فيزا بنك اسكندرية",
+      "بنك اسكندرية",
+      "Alex Bank",
+      "alexbank",
+      "بنك الاسكندرية"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "HSBC Egypt",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "فيزا hsbc",
+      "بنك HSBC",
+      "hsbc net",
+      "hsbc",
+      "اتش اس بي سي"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Faisal Islamic Bank",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "Faisal Bank",
+      "فيصل الاسلامي",
+      "فيصل الاسلامى",
+      "بنك فيصل الاسلامي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "EG Bank (Egyptian Gulf Bank)",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "egbank",
+      "EG Bank",
+      "البنك المصري الخليجي",
+      "ايجي بنك"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "SAIB Bank",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "saib",
+      "بنك سيب",
+      "بنك الشركة العربية المصرفية"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "ADIB Egypt",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "مصرف ابوظبي الاسلامي",
+      "ابوظبي الاسلامي",
+      "adib",
+      "ADIB Egypt"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Midbank",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "midbank",
+      "ميد بنك",
+      "بنك مصر ايران سابقا"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Al Baraka Bank Egypt",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "البركة",
+      "Al Baraka",
+      "بنك البركة"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Attijariwafa Bank Egypt",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "التجارى وفا",
+      "التجاري وفا بنك",
+      "Attijariwafa"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Credit Agricole Egypt",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "كريدي اجريكول",
+      "كارت كريدي اجريكول",
+      "credit agricole"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "ADCB Egypt",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "adcb",
+      "بنك ابوظبي التجاري",
+      "ابوظبي التجاري"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Arab Bank Egypt",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "البنك العربي",
+      "البنك العربى",
+      "arab bank"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Mashreq Bank Egypt",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "mashreq neo",
+      "المشرق",
+      "mashreq",
+      "بنك المشرق"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Housing & Development Bank",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "HDB",
+      "بنك التعمير والاسكان",
+      "التعمير والاسكان"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Emirates NBD Egypt",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "امارات دبي الوطني",
+      "Emirates NBD",
+      "بنك امارات دبي الوطني"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "First Abu Dhabi Bank (FAB Egypt)",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "FAB Egypt",
+      "بنك عوده سابقا",
+      "ابوظبي الاول",
+      "بنك ابوظبي الاول"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Suez Canal Bank",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "قناة السويس",
+      "بنك قناة السويس"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "United Bank of Egypt",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "المصرف المتحد",
+      "المصرف المتحد مصر",
+      "United Bank"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "aiBANK",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "aiBANK",
+      "بنك الاستثمار العربي"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Export Development Bank of Egypt",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "بنك تنمية الصادرات",
+      "تنمية الصادرات",
+      "EBE"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Industrial Development Bank",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "IDB",
+      "التنمية الصناعية",
+      "بنك التنمية الصناعية"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "National Bank of Kuwait Egypt",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "NBK Egypt",
+      "بنك الكويت الوطني",
+      "الكويت الوطني"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Arab International Bank",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "AIB bank",
+      "العربي الدولي",
+      "المصرف العربي الدولي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Citibank Egypt",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "سيتي بنك",
+      "citibank"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Central Bank of Egypt",
+    "category": "Financial",
+    "subCategory": "Bank",
+    "keywords": [
+      "البنك المركزي",
+      "CBE",
+      "البنك المركزي المصري"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "InstaPay Egypt",
+    "category": "Financial",
+    "subCategory": "Transfer",
+    "keywords": [
+      "انستاباي",
+      "انستا باى",
+      "تحويل انستاباي",
+      "instapay",
+      "انستا باي",
+      "IPN"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Lucky App",
+    "category": "Financial",
+    "subCategory": "Fintech & Cashback",
+    "keywords": [
+      "لاكي",
+      "كارت لاكي",
+      "لاكى",
+      "Lucky App",
+      "كاش باك لاكي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "OPay Egypt",
+    "category": "Financial",
+    "subCategory": "Payment Terminal",
+    "keywords": [
+      "OPay",
+      "دفع اوباي",
+      "اوباي",
+      "اوباى"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Fawry Gold",
+    "category": "Financial",
+    "subCategory": "App & Card",
+    "keywords": [
+      "فوري دهب",
+      "كارت فوري الاصفر",
+      "فوري الاصفر",
+      "Fawry Gold",
+      "فوري جولد"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "JumiaPay",
+    "category": "Financial",
+    "subCategory": "Fintech",
+    "keywords": [
+      "JumiaPay",
+      "جوميا باى",
+      "جوميا باي"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Paymob",
+    "category": "Financial",
+    "subCategory": "Payment Gateway",
+    "keywords": [
+      "بي موب",
+      "بيموب",
+      "دفع عن طريق بيموب",
+      "Paymob"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Kashier",
+    "category": "Financial",
+    "subCategory": "Payment Gateway",
+    "keywords": [
+      "كاشير",
+      "بوابة دفع كاشير",
+      "Kashier"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Aman Installments",
+    "category": "Financial",
+    "subCategory": "Installments",
+    "keywords": [
+      "أمان",
+      "قسط امان",
+      "تقسيط امان",
+      "كارت امان",
+      "امان",
+      "Aman"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "getGo",
+    "category": "Financial",
+    "subCategory": "Installments",
+    "keywords": [
+      "جيت جو",
+      "قسط جيت جو",
+      "تقسيط جيت جو",
+      "getgo"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "EasyCash",
+    "category": "Financial",
+    "subCategory": "Fintech",
+    "keywords": [
+      "ايزي كاش",
+      "EasyCash",
+      "إيزي كاش"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Khazna",
+    "category": "Financial",
+    "subCategory": "Fintech & Salary",
+    "keywords": [
+      "ابلكيشن خزنة",
+      "خزنة",
+      "سحب من خزنة",
+      "Khazna"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "MNT-Halan",
+    "category": "Financial",
+    "subCategory": "Fintech & Microfinance",
+    "keywords": [
+      "قرض حالا",
+      "MNT Halan",
+      "تقسيط حالا",
+      "حالا",
+      "ام ان تي حالا"
+    ],
+    "isInstallmentCommon": true
+  },
+  {
+    "merchant": "Bosta COD",
+    "category": "Financial",
+    "subCategory": "Fintech",
+    "keywords": [
+      "تحصيل بوسطة",
+      "بوسطة شحن",
+      "Bosta COD"
+    ],
+    "isInstallmentCommon": false
+  },
+  {
+    "merchant": "Egyptian Post (El-Barid)",
+    "category": "Financial",
+    "subCategory": "Bank & Postal",
+    "keywords": [
+      "فيزا البريد",
+      "البريد المصري",
+      "البريد المصرى",
+      "كارت ميزة البريد",
+      "حساب البريد",
+      "El-Barid"
+    ],
+    "isInstallmentCommon": false
+  }
+]

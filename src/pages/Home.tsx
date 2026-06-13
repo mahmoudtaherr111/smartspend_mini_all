@@ -6,6 +6,7 @@ import {
   Suspense,
   memo,
   useCallback,
+  useRef,
   type ReactNode,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,6 +23,8 @@ import {
   TrendingDown,
   TrendingUp,
   WalletCards,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { trpc } from "@/providers/trpc";
 
@@ -102,21 +105,42 @@ const SummaryChip = memo(function SummaryChip({
 
   return (
     <div
-      className={`premium-card px-3 py-2.5 transition-all duration-300 hover:scale-[1.02] hover:translate-y-0 ${toneClass}`}
+      className={`premium-card px-2 xs:px-3 py-2.5 transition-all duration-300 hover:scale-[1.02] hover:translate-y-0 ${toneClass}`}
     >
-      <div className="flex items-center gap-2">
-        <div className="shrink-0 p-1.5 rounded-md bg-background/50">{icon}</div>
+      <div className="flex items-center gap-1.5 xs:gap-2">
+        <div className="shrink-0 p-1 xs:p-1.5 rounded-md bg-background/50">{icon}</div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] text-muted-foreground">{label}</p>
-          <p className="text-sm font-bold truncate">{value}</p>
+          <p className="text-[9px] xs:text-[10px] text-muted-foreground">{label}</p>
+          <p className="text-xs xs:text-sm font-bold break-words">{value}</p>
         </div>
       </div>
       {helper && (
-        <p className="mt-1 text-[10px] text-muted-foreground">{helper}</p>
+        <p className="mt-1 text-[9px] xs:text-[10px] text-muted-foreground">{helper}</p>
       )}
     </div>
   );
 });
+
+const getPreviousMonthString = (monthStr: string) => {
+  const [year, month] = monthStr.split("-").map(Number);
+  const d = new Date(year, month - 2, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+};
+
+const getNextMonthString = (monthStr: string) => {
+  const [year, month] = monthStr.split("-").map(Number);
+  const d = new Date(year, month, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+};
+
+const getMonthLabelAr = (monthStr: string) => {
+  const [year, month] = monthStr.split("-").map(Number);
+  const monthNames = [
+    "يناير", "فبراير", "مارس", "إبريل", "مايو", "يونيو",
+    "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
+  ];
+  return `${monthNames[month - 1]} ${year}`;
+};
 
 export default function Home() {
   const { user } = useAuth();
@@ -129,19 +153,170 @@ export default function Home() {
     searchParams.get("month") || currentMonthValue(),
   );
 
+  const [sharedText, setSharedText] = useState<string>("");
+
+  // Handle Web Share Target API query parameters
+  useEffect(() => {
+    const textParam = searchParams.get("share_text");
+    const titleParam = searchParams.get("share_title");
+    const urlParam = searchParams.get("share_url");
+    const foundText = textParam || titleParam || urlParam;
+
+    if (foundText) {
+      setSharedText(foundText);
+      
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("share_text");
+      newParams.delete("share_title");
+      newParams.delete("share_url");
+      setSearchParams(newParams, { replace: true });
+      
+      toast.success("تم تلقي النص المشارك بنجاح. المساعد جاهز للتحليل!");
+    }
+  }, [searchParams, setSearchParams]);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const swipeState = useRef({
+    startX: 0,
+    startY: 0,
+    isSwiping: false,
+    directionLocked: false,
+  });
+
+  // Content Swipe Tab Transition Engine with directional locking & exclusions
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      let target = e.target as HTMLElement | null;
+      while (target) {
+        if (
+          target.classList.contains("no-swipe") ||
+          target.classList.contains("recharts-wrapper") ||
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable
+        ) {
+          return;
+        }
+        target = target.parentElement;
+      }
+
+      swipeState.current = {
+        startX: e.touches[0].clientX,
+        startY: e.touches[0].clientY,
+        isSwiping: true,
+        directionLocked: false,
+      };
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const state = swipeState.current;
+      if (!state.isSwiping) return;
+
+      const currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
+      const deltaX = currentX - state.startX;
+      const deltaY = currentY - state.startY;
+
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+
+      if (!state.directionLocked) {
+        if (absY > absX && absY > 10) {
+          state.isSwiping = false;
+          return;
+        }
+        if (absX > absY && absX > 10) {
+          state.directionLocked = true;
+        }
+      }
+
+      if (state.directionLocked) {
+        if (e.cancelable) {
+          e.preventDefault(); // Lock vertical scroll
+        }
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      const state = swipeState.current;
+      if (!state.isSwiping || !state.directionLocked) {
+        state.isSwiping = false;
+        return;
+      }
+
+      state.isSwiping = false;
+      const endX = e.changedTouches[0].clientX;
+      const deltaX = endX - state.startX;
+      const SWIPE_THRESHOLD = 75;
+
+      if (Math.abs(deltaX) >= SWIPE_THRESHOLD) {
+        const tabOrder: HomeTab[] = ["record", "stats", "ai", "calendar"];
+        const currentIndex = tabOrder.indexOf(activeTab);
+
+        if (deltaX < 0) {
+          // RTL Next Tab (Right-to-Left drag = move to right tab)
+          if (currentIndex < tabOrder.length - 1) {
+            updateView(tabOrder[currentIndex + 1]);
+          }
+        } else {
+          // RTL Previous Tab (Left-to-Right drag = move to left tab)
+          if (currentIndex > 0) {
+            updateView(tabOrder[currentIndex - 1]);
+          }
+        }
+      }
+    };
+
+    el.addEventListener("touchstart", handleTouchStart, { passive: true });
+    el.addEventListener("touchmove", handleTouchMove, { passive: false });
+    el.addEventListener("touchend", handleTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener("touchstart", handleTouchStart);
+      el.removeEventListener("touchmove", handleTouchMove);
+      el.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [activeTab, month]);
+
   const { subscribeToPush } = usePushNotifications();
 
+  const [showPushPrompt, setShowPushPrompt] = useState(false);
+
   useEffect(() => {
-    // Automatically trigger notification request if supported and not yet prompted
-    if ("Notification" in window && Notification.permission === "default") {
-      const timer = setTimeout(() => {
-        subscribeToPush().catch((err) =>
-          console.error("Auto notification error:", err),
-        );
-      }, 3000);
-      return () => clearTimeout(timer);
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    
+    if (Notification.permission === "default") {
+      const dismissedTime = localStorage.getItem("smartspend_push_prompt_dismissed");
+      const isCoolDownOver = !dismissedTime || (Date.now() - Number(dismissedTime) > 7 * 24 * 60 * 60 * 1000);
+      
+      if (isCoolDownOver) {
+        const timer = setTimeout(() => {
+          setShowPushPrompt(true);
+        }, 8000);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [subscribeToPush]);
+  }, []);
+
+  const handleEnablePush = async () => {
+    setShowPushPrompt(false);
+    try {
+      await subscribeToPush();
+      toast.success("تم تفعيل التنبيهات الذكية بنجاح! 🔔");
+    } catch (err) {
+      console.error(err);
+      toast.error("حدث خطأ أثناء تفعيل التنبيهات.");
+    }
+  };
+
+  const handleDismissPush = () => {
+    setShowPushPrompt(false);
+    localStorage.setItem("smartspend_push_prompt_dismissed", String(Date.now()));
+  };
 
   const { data: goalsData } = trpc.goals.list.useQuery(undefined, {
     staleTime: 60_000,
@@ -190,6 +365,64 @@ export default function Home() {
     profile?.financialInfo?.hasFixedSalary && profile?.financialInfo?.salaryDay
       ? Number(profile.financialInfo.salaryDay)
       : undefined;
+
+  // --- 1. Session Restoration & Default Active Financial Month ---
+  useEffect(() => {
+    const sessionInitialized = sessionStorage.getItem("dashboard_session_initialized");
+    
+    if (profile !== undefined) {
+      const salaryDayVal = profile?.financialInfo?.hasFixedSalary && profile?.financialInfo?.salaryDay
+        ? Number(profile.financialInfo.salaryDay)
+        : null;
+
+      const now = new Date();
+      const currentDay = now.getDate();
+      let activeFinancialMonth = now.toISOString().slice(0, 7);
+      
+      if (salaryDayVal && salaryDayVal > 1 && currentDay < salaryDayVal) {
+        const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        activeFinancialMonth = prevMonthDate.toISOString().slice(0, 7);
+      }
+
+      if (!sessionInitialized) {
+        sessionStorage.setItem("dashboard_session_initialized", "true");
+        
+        const currentUrlMonth = searchParams.get("month");
+        if (currentUrlMonth !== activeFinancialMonth) {
+          const newParams = new URLSearchParams(searchParams);
+          newParams.set("month", activeFinancialMonth);
+          setSearchParams(newParams, { replace: true });
+          setMonth(activeFinancialMonth);
+        }
+      } else {
+        if (!searchParams.get("month")) {
+          const newParams = new URLSearchParams(searchParams);
+          newParams.set("month", activeFinancialMonth);
+          setSearchParams(newParams, { replace: true });
+          setMonth(activeFinancialMonth);
+        }
+      }
+    }
+  }, [profile, searchParams, setSearchParams]);
+
+  // --- 2. Prefetch Adjacent Months (Performance Optimization) ---
+  useEffect(() => {
+    if (!month) return;
+    
+    const prevMonth = getPreviousMonthString(month);
+    const nextMonth = getNextMonthString(month);
+
+    utils.expense.getMonthSummary.prefetch({ month: prevMonth, salaryDay });
+    utils.expense.getMonthSummary.prefetch({ month: nextMonth, salaryDay });
+
+    if (activeTab === "stats") {
+      utils.expense.getMonthlyStats.prefetch({ month: prevMonth, salaryDay });
+      utils.expense.getMonthlyStats.prefetch({ month: nextMonth, salaryDay });
+    } else if (activeTab === "calendar") {
+      utils.expense.getMonthlyStats.prefetch({ month: prevMonth, salaryDay: null });
+      utils.expense.getMonthlyStats.prefetch({ month: nextMonth, salaryDay: null });
+    }
+  }, [month, salaryDay, activeTab, utils]);
 
   const { data: summary, isFetching: summaryFetching } =
     trpc.expense.getMonthSummary.useQuery(
@@ -257,14 +490,14 @@ export default function Home() {
   const netFlow = summary?.netFlow || 0;
 
   return (
-    <div className="min-h-full bg-slate-50/70 dark:bg-slate-950/40">
+    <div ref={containerRef} className="min-h-full bg-slate-50/70 dark:bg-slate-950/40">
       <OnboardingFlow />
       <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-5">
         <OnboardingCard />
         <header className="flex flex-col gap-3 -mx-1 px-1 py-2">
           <div className="space-y-3">
-            <div className="flex items-center gap-2 flex-wrap justify-between w-full">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
                   {pageTitle}
                 </h1>
@@ -280,6 +513,45 @@ export default function Home() {
                   }
                 />
               </div>
+
+              {/* Month Navigation Control */}
+              {(activeTab === "stats" || activeTab === "calendar") && (
+                <div className="flex items-center gap-0.5 self-start sm:self-auto bg-slate-100/55 dark:bg-slate-800/30 backdrop-blur-md border border-slate-200/30 dark:border-slate-800/20 rounded-lg p-0.5 shadow-sm">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-7 h-7 rounded-md hover:bg-slate-200/50 dark:hover:bg-slate-700/40 active-press"
+                    onClick={() => handleMonthChange(getPreviousMonthString(month))}
+                    title="الشهر السابق"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Button>
+                  
+                  <div className="relative flex items-center min-w-[105px] justify-center px-1.5 py-1 text-[11px] font-bold select-none text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-200/30 dark:hover:bg-slate-700/20 transition-colors duration-200">
+                    <input
+                      type="month"
+                      value={month}
+                      onChange={(e) => handleMonthChange(e.target.value)}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                    />
+                    <span className="flex items-center gap-1 cursor-pointer">
+                      <CalendarDays className="w-3 h-3 text-sky-600 shrink-0" />
+                      {getMonthLabelAr(month)}
+                    </span>
+                  </div>
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-7 h-7 rounded-md hover:bg-slate-200/50 dark:hover:bg-slate-700/40 active-press"
+                    onClick={() => handleMonthChange(getNextMonthString(month))}
+                    title="الشهر التالي"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              )}
+
               <div className="flex items-center gap-3">
                 <StreakCounter
                   currentStreak={profile?.gamification?.currentStreak || 0}
@@ -341,15 +613,18 @@ export default function Home() {
             >
               <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)] gap-5 items-start">
                 <ExpenseForm
+                  initialText={sharedText}
                   onSuccess={() => {
                     utils.expense.getMonthSummary.invalidate({ month });
                     utils.expense.getMonthlyStats.invalidate({ month });
                     utils.profile.getSmartProfile.invalidate();
+                    setSharedText("");
                   }}
                 />
                 <div className="space-y-4">
                   <RecentExpenses
                     limit={7}
+                    month={month}
                     onRefresh={() =>
                       utils.expense.getMonthSummary.invalidate({ month })
                     }
@@ -363,7 +638,7 @@ export default function Home() {
                       </Card>
                     }
                   >
-                    <div id="goals-panel-widget">
+                    <div id="goals-panel-widget" className="no-swipe">
                       <FinancialGoalsPanel />
                     </div>
                   </Suspense>
@@ -451,7 +726,7 @@ export default function Home() {
                     تقويم الشهر
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="no-swipe">
                   {calendarFetching && !calendarStats ? (
                     <div className="py-10 text-center text-sm text-muted-foreground">
                       جاري تحميل التقويم...
@@ -469,6 +744,56 @@ export default function Home() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Double-Prompt Push Notification Modal */}
+      {showPushPrompt && (
+        <div className="fixed inset-0 z-[100000] flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-300" dir="rtl">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 shadow-2xl p-6 space-y-4 animate-in slide-in-from-bottom sm:zoom-in-95 duration-350 ease-out">
+            <div className="flex flex-col items-center text-center space-y-3">
+              <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-inner">
+                <span className="text-2xl">🔔</span>
+              </div>
+              <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100">فَعّل التنبيهات المالية الذكية</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm">
+                تابع مصاريفك أسبوعياً، واحصل على نصائح تحليلات الذكاء الاصطناعي لميزانيتك وتذكير يومي لتسجيل مصاريفك بصوتك.
+              </p>
+            </div>
+
+            <div className="space-y-2.5">
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 text-xs text-slate-700 dark:text-slate-300">
+                <span className="text-base">🎯</span>
+                <div className="text-right">
+                  <p className="font-bold">تذكير التسجيل اليومي</p>
+                  <p className="text-[10px] text-slate-400">تذكيرك في نهاية اليوم لتسجيل معاملاتك بصوتك في ثوانٍ.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 text-xs text-slate-700 dark:text-slate-300">
+                <span className="text-base">💡</span>
+                <div className="text-right">
+                  <p className="font-bold">تحليلات وتنبيهات فورية</p>
+                  <p className="text-[10px] text-slate-400">تنبيه فوري عند تخطي ميزانية الفئات أو حدوث نمط صرف شاذ.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 flex flex-col gap-2">
+              <Button
+                onClick={handleEnablePush}
+                className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 rounded-xl py-3 font-bold text-sm shadow-md active-press"
+              >
+                تفعيل التنبيهات الآن
+              </Button>
+              <button
+                onClick={handleDismissPush}
+                className="w-full text-center py-2 text-xs font-semibold text-slate-400 hover:text-slate-650 dark:hover:text-slate-350 transition-colors"
+              >
+                ليس الآن، تذكيري لاحقاً
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -489,6 +814,8 @@ const StatsView = memo(function StatsView({
   const topCategory = stats?.topCategories?.[0];
   const changePercent = stats?.behavioralInsights?.expenseChangePercent;
   const isUp = typeof changePercent === "number" && changePercent > 0;
+  const comparisonType = stats?.behavioralInsights?.comparisonType || "monthly";
+  const weekNumber = stats?.behavioralInsights?.weekNumber || 1;
   const dailyAvg = stats?.dailyAverage || 0;
   const topCategories = stats?.topCategories?.slice(0, 5) || [];
   const totalExpense = stats?.totalExpense || 0;
@@ -565,24 +892,36 @@ const StatsView = memo(function StatsView({
         <div
           className={cn(
             "premium-card p-4 flex flex-col gap-1",
-            isUp
-              ? "border-rose-500/20 bg-rose-500/5 text-rose-700 dark:text-rose-300"
-              : "border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300",
+            changePercent == null
+              ? "text-muted-foreground"
+              : isUp
+                ? "border-rose-500/20 bg-rose-500/5 text-rose-700 dark:text-rose-300"
+                : "border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300",
           )}
         >
-          <p className="text-[11px] font-medium">مقارنة بالشهر السابق</p>
+          <p className="text-[11px] font-medium">
+            {comparisonType === "weekly"
+              ? `مقارنة بالأسبوع المماثل (${weekNumber})`
+              : "مقارنة بالشهر السابق"}
+          </p>
           <p className="text-xl font-bold" dir="ltr">
             {changePercent != null
               ? `${isUp ? "+" : ""}${changePercent.toFixed(1)}%`
               : "—"}
           </p>
           <div className="flex items-center gap-1 text-[10px] opacity-90">
-            {isUp ? (
-              <TrendingUp className="w-3 h-3" />
+            {changePercent != null ? (
+              <>
+                {isUp ? (
+                  <TrendingUp className="w-3 h-3" />
+                ) : (
+                  <TrendingDown className="w-3 h-3" />
+                )}
+                {isUp ? "زيادة في الصرف" : "انخفاض في الصرف"}
+              </>
             ) : (
-              <TrendingDown className="w-3 h-3" />
+              "لا يوجد بيانات مقارنة"
             )}
-            {isUp ? "زيادة في الصرف" : "انخفاض في الصرف"}
           </div>
         </div>
 
@@ -629,7 +968,7 @@ const StatsView = memo(function StatsView({
                 تحليل الفئات والتوقيت
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="no-swipe">
               <Suspense
                 fallback={<Skeleton className="h-[320px] w-full rounded-lg" />}
               >

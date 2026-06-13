@@ -91,7 +91,7 @@ export function OnboardingFlow() {
       >
         <button
           onClick={finishTour}
-          className="absolute top-5 left-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors bg-slate-100/50 dark:bg-slate-800/50 rounded-full p-2"
+          className="absolute top-5 start-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors bg-slate-100/50 dark:bg-slate-800/50 rounded-full p-2"
         >
           <X className="w-5 h-5" />
         </button>

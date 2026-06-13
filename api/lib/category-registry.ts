@@ -301,6 +301,7 @@ export const CATEGORIES: MainCategory[] = [
       { id: "savings", name: "Savings", name_ar: "ادخار" },
       { id: "debt", name: "Debt/Loan", name_ar: "دين/سلفة" },
       { id: "cash_transfer", name: "Cash Transfer", name_ar: "تحويل كاش" },
+      { id: "people", name: "People", name_ar: "أشخاص" },
     ],
   },
   {
@@ -457,7 +458,10 @@ export const CATEGORIES: MainCategory[] = [
     icon: "📦",
     color: "#94a3b8",
     type: "expense",
-    subcategories: [{ id: "general", name: "General", name_ar: "عام" }],
+    subcategories: [
+      { id: "general", name: "General", name_ar: "عام" },
+      { id: "people", name: "People", name_ar: "أشخاص" },
+    ],
   },
 ];
 
@@ -520,6 +524,15 @@ const CATEGORY_ALIASES: Array<[string, string]> = [
   ["صحاب", "أصدقاء"],
   ["أصدقاء", "أصدقاء"],
   ["صديق", "أصدقاء"],
+  ["رياضة", "ترفيه"],
+  ["رياضه", "ترفيه"],
+  ["ألعاب", "ترفيه"],
+  ["لعب", "ترفيه"],
+  ["كورة", "ترفيه"],
+  ["مشتريات", "تسوق"],
+  ["طعام", "أكل وشرب"],
+  ["أغذية", "أكل وشرب"],
+  ["بقالة", "أكل وشرب"],
   ["صاحبي", "أصدقاء"],
   ["Friends", "أصدقاء"],
   ["موظف", "موظفين"],
@@ -679,16 +692,10 @@ function inferSubCategory(
       if (hasAny(evidence, ["كهرب", "نور"])) return "كهرباء";
       if (hasAny(evidence, ["مية", "مياه", "مايه"])) return "مياه";
       if (hasAny(evidence, ["غاز"])) return "غاز";
+      // Use word-boundary regex to avoid matching "نت" inside "انت/كنت/أنت"
       if (
-        hasAny(evidence, [
-          "نت",
-          "انترنت",
-          "إنترنت",
-          "راوتر",
-          "واي فاي",
-          "wifi",
-          "باقة",
-        ])
+        hasAny(evidence, ["انترنت", "إنترنت", "راوتر", "واي فاي", "wifi", "باقة"]) ||
+        /(?:^|[\s،,؟!])(?:نت|النت)(?=[\s،,؟!]|$)/.test(comparableArabic(evidence))
       )
         return "إنترنت";
       if (hasAny(evidence, ["شحن", "رصيد", "كارت فكة", "كارت شحن"]))
@@ -746,18 +753,20 @@ function inferSubCategory(
       )
         return "قهوة وكافيه";
       if (hasAny(evidence, ["دليفري", "تيك اواي", "طلبات"])) return "دليفري";
-      if (hasAny(evidence, ["سوبر", "بقال", "خضار", "فاكهة", "بيض", "لبن"]))
+      if (hasAny(evidence, ["سوبر", "بقال", "خضار", "فاكهة", "بيض", "لبن", "مياه", "ميه", "ازايز", "زجاجات", "كشك", "ماركت"]))
         return "بقالة";
-      if (hasAny(evidence, ["لحمة", "فراخ", "سمك", "جمبري"]))
+      if (hasAny(evidence, ["لحمة", "فراخ", "سمك", "جمبري", "سوشي"]))
         return "لحوم ودواجن";
       if (hasAny(evidence, ["عيش", "مخبز", "فرن"])) return "مخبوزات";
-      if (hasAny(evidence, ["شيبسي", "شوكولاتة", "حلويات", "ايس كريم"]))
+      if (hasAny(evidence, ["شيبسي", "شوكولاتة", "حلويات", "ايس كريم", "كانز", "بيبسي"]))
         return "سناكس";
+      if (hasAny(evidence, ["بيتزا", "شاورما", "برجر", "كريب"])) return "وجبات سريعة";
+      if (hasAny(evidence, ["فول", "طعمية", "كبدة", "حواوشي"])) return "مطعم";
       return undefined;
     case "مواصلات":
-      if (hasAny(evidence, ["اوبر", "أوبر", "كريم"])) return "أوبر/كريم";
-      if (hasAny(evidence, ["مترو"])) return "مترو";
-      if (hasAny(evidence, ["اتوبيس", "باص", "ميكروباص"])) return "أتوبيس";
+      if (hasAny(evidence, ["اوبر", "أوبر", "كريم", "ان درايف", "اندرايف", "ديدي"])) return "أوبر/كريم";
+      if (hasAny(evidence, ["مترو", "تذكرة", "تيكت"])) return "مترو";
+      if (hasAny(evidence, ["اتوبيس", "باص", "ميكروباص", "سويفل", "مشروع"])) return "أتوبيس";
       if (hasAny(evidence, ["تاكسي", "تكسي"])) return "تاكسي";
       if (hasAny(evidence, ["بنزين", "تفويلة"])) return "بنزين";
       if (hasAny(evidence, ["ركنة", "جراج"])) return "ركنة";
@@ -796,10 +805,10 @@ function inferSubCategory(
       return undefined;
     case "ترفيه":
       if (hasAny(evidence, ["سينما", "فيلم"])) return "سينما";
-      if (hasAny(evidence, ["كافيه", "قهوة"])) return "كافيه";
+      if (hasAny(evidence, ["كافيه", "قهوة", "شاي", "عصير"])) return "كافيه";
       if (hasAny(evidence, ["سفر", "مصيف", "رحلة"])) return "سفر";
-      if (hasAny(evidence, ["جيم", "رياضة", "بروتين"])) return "رياضة وجيم";
-      if (hasAny(evidence, ["بلايستيشن", "العاب", "ألعاب", "gaming"]))
+      if (hasAny(evidence, ["جيم", "رياضة", "رياضه", "بروتين", "كرة", "كورة", "ملعب", "ماتش", "حجز", "بادل", "خماسي", "تراك"])) return "رياضة وجيم";
+      if (hasAny(evidence, ["بلايستيشن", "العاب", "ألعاب", "gaming", "بلياردو"]))
         return "ألعاب";
       if (hasAny(evidence, ["خروجة", "فسحة", "تمشية"])) return "خروجة";
       return undefined;
@@ -811,13 +820,13 @@ function inferSubCategory(
       if (hasAny(evidence, ["عيد ميلاد"])) return "عيد ميلاد";
       return undefined;
     case "اشتراكات":
-      if (hasAny(evidence, ["نتفلكس", "netflix"])) return "نتفلكس";
-      if (hasAny(evidence, ["سبوتيفاي", "spotify"])) return "سبوتيفاي";
+      if (hasAny(evidence, ["نتفلكس", "netflix", "شاهد", "برايم", "واتش ات"])) return "نتفلكس";
+      if (hasAny(evidence, ["سبوتيفاي", "spotify", "انغامي"])) return "سبوتيفاي";
       if (hasAny(evidence, ["شات جي بي تي", "chatgpt", "gpt"]))
         return "شات جي بي تي";
       if (hasAny(evidence, ["جوجل ai", "google ai", "gemini"]))
         return "جوجل AI";
-      if (hasAny(evidence, ["saas", "برنامج", "برمجيات"])) return "برمجيات";
+      if (hasAny(evidence, ["saas", "برنامج", "برمجيات", "يوتيوب"])) return "برمجيات";
       return undefined;
     case "تدخين":
       if (hasAny(evidence, ["سجاير", "سجائر", "علبة"])) return "سجائر";
@@ -858,8 +867,8 @@ function inferSubCategory(
       if (hasAny(evidence, ["انستاباي", "instapay"])) return "انستاباي";
       if (hasAny(evidence, ["فودافون كاش"])) return "فودافون كاش";
       if (hasAny(evidence, ["ادخار", "تحويش"])) return "ادخار";
-      if (hasAny(evidence, ["دين", "سلف", "سلفة", "قرض", "loan"]))
-        return "دين/سلفة";
+      if (hasAny(evidence, ["دين", "سلف", "سلفة", "قرض", "loan"])) return "دين/سلفة";
+      if (hasAny(evidence, ["أشخاص"])) return "أشخاص";
       return "تحويل بنكي";
     case "استثمار":
       if (hasAny(evidence, ["دهب", "ذهب", "سبيكة"])) return "ذهب";

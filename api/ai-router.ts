@@ -88,10 +88,20 @@ export async function runSTTPipeline(
   modelName: string,
   mode: string = "standard"
 ) {
-  let prompt = "قم بتحويل هذا المقطع الصوتي إلى نص دقيق باللهجة المصرية. لا تضف أي تعليقات من عندك، فقط اكتب ما سمعته.";
-  if (mode === "enhanced") {
-      prompt = "قم بتحويل هذا المقطع الصوتي إلى نص دقيق جداً باللهجة المصرية. ركز على التفاصيل والأرقام والأسماء بدقة متناهية. لا تضف أي تعليقات من عندك، فقط اكتب ما سمعته بالضبط.";
-  }
+  // ── Gemini STT prompt: optimized for downstream pipeline ──
+  // Key requirements for the pipeline:
+  //   1. Numbers as DIGITS (50 not خمسين) — extractAmounts() needs /\d+/
+  //   2. Egyptian colloquial verbs (اديت not أعطيت) — rule engine patterns
+  //   3. Egyptian relationship words (صاحبي not صديقي) — person-resolver aliases
+  //   4. Preserve names exactly as spoken — extractPeople() fuzzy match
+  const geminiPrompt = "حوّل الصوت لنص مصري عامي. أرقام بأرقام (50 مش خمسين). لا تضف شرح.";
+
+  // ── Groq Whisper prompt: domain-hint keywords (not instructions) ──
+  // Whisper's `prompt` param works as context/vocabulary hint, not instruction.
+  // We feed it the exact vocabulary our pipeline expects to condition the output.
+  const whisperPrompt = "مصاريف مصرية: اوبر كريم بنزين كهربا فودافون فاليو انستاباي. اديت صرفت دفعت ركبت فطرت اكلت اشتريت جبت حولت قبضت سلفت. صاحبي اخويا مراتي بابا ماما. ميه ميتين الف خمسين.";
+
+  const prompt = isGroqModel(modelName) ? whisperPrompt : geminiPrompt;
 
   if (isGroqModel(modelName)) {
     // ─── Groq Audio API (Whisper) ───
@@ -659,12 +669,18 @@ export const aiRouter = router({
 
       // --- INJECT KNOWN PEOPLE INTO USER DICT ---
       for (const p of personalContextRaw.knownPeople) {
-        if (p.name && p.name.length >= 2) {
-           userDict.push({ word: p.name, category: p.category, subCategory: p.subCategory });
-        }
-        const firstName = p.name.split(/\s+/)[0]; // Match on first name as fallback
-        if (firstName && firstName.length >= 2 && firstName !== p.name) {
-           userDict.push({ word: firstName, category: p.category, subCategory: p.subCategory });
+        // GUARD: Only inject if category is specific enough (not neutral "تحويلات")
+        // This prevents the rule engine from blindly categorizing people as "تحويلات"
+        // and bypassing the person-resolver.
+        const safeCategory = (p.category && p.category !== "تحويلات") ? p.category : null;
+        if (safeCategory) {
+          if (p.name && p.name.length >= 2) {
+             userDict.push({ word: p.name, category: safeCategory, subCategory: p.subCategory });
+          }
+          const firstName = p.name.split(/\s+/)[0]; // Match on first name as fallback
+          if (firstName && firstName.length >= 2 && firstName !== p.name) {
+             userDict.push({ word: firstName, category: safeCategory, subCategory: p.subCategory });
+          }
         }
       }
 
@@ -681,6 +697,7 @@ export const aiRouter = router({
         monthlyContext: { totalIncome, totalExpense },
         userProfileContext: {
           promptSummary: summarizeProfileForAI(smartProfile),
+          recentTransactions: currentMonthOps.slice(0, 50).map(e => ({ description: e.description, category: e.category, subCategory: e.subCategory })),
           personalContextPrompt: buildPersonalContextPrompt(personalContextRaw),
           spendingBehavior:
             typeof smartProfile.aiInferredAttributes?.spendingBehavior ===
@@ -702,7 +719,12 @@ export const aiRouter = router({
         // Dynamic routing
         provider: resolvedProvider,
         groqApiKey: resolvedGroqKey,
-        pipelineSettings: cfgFull,
+        pipelineSettings: {
+            ...cfgFull,
+            rag_api_key: cfgFull.rag_api_key || apiKey,
+            rag_model: cfgFull.rag_model || "text-embedding-004",
+            enable_rag: String(cfgFull.enable_rag !== "false"),
+          },
       });
 
       // Track tokens
@@ -790,10 +812,60 @@ export const aiRouter = router({
       let clarificationId: number | undefined;
       if (result.decision === "clarify") {
         try {
+          // ─── Build queue of all unknown names upfront ───
+          // Extract all person names from the text that need clarification.
+          // This lets answerClarification ask about them sequentially without
+          // re-running the full AI pipeline on each answer.
+          const { extractPeople } = await import("./lib/entity-extractor");
+          const { cleanPersonName, resolvePersonForTransaction } = await import("./lib/person-resolver");
+          const allKnownNames = (personalContextRaw.knownPeople || []).map((p: any) => p.name).filter(Boolean) as string[];
+          const detectedPeople = extractPeople(input.text, allKnownNames);
+          
+          // Find which of the detected people are unknown (need clarification)
+          const unknownNames: string[] = [];
+          for (const rawName of detectedPeople) {
+            const cleanedName = cleanPersonName(rawName, input.text);
+            if (!cleanedName) continue;
+            const resolution = resolvePersonForTransaction({
+              candidateName: cleanedName,
+              transactionText: input.text,
+              originalText: input.text,
+              knownPeople: personalContextRaw.knownPeople || [],
+            });
+            if (resolution.needsClarification && !unknownNames.includes(cleanedName)) {
+              unknownNames.push(cleanedName);
+            }
+          }
+
+          // If no names extracted deterministically, extract the name from the clarification question
+          if (unknownNames.length === 0 && result.clarificationQuestion) {
+            const nameMatch = result.clarificationQuestion.match(/مين\s+(.*?)[\؟?]/);
+            if (nameMatch?.[1]) {
+              const nameFromQ = nameMatch[1].trim().replace(/[\؟?()،,]/g, "").trim();
+              if (nameFromQ && nameFromQ.length >= 2) {
+                unknownNames.push(nameFromQ);
+              }
+            }
+          }
+
+          // If multiple names need clarification, ask about all of them at once
+          let firstQuestion = result.clarificationQuestion || "ممكن توضح أكتر؟";
+          if (unknownNames.length === 1) {
+            const firstRes = resolvePersonForTransaction({
+              candidateName: unknownNames[0],
+              transactionText: input.text,
+              originalText: input.text,
+              knownPeople: personalContextRaw.knownPeople || [],
+            });
+            firstQuestion = firstRes.clarificationQuestion || `مين ${unknownNames[0]}؟ (أخوك، صديقك، موظف عندك...)`;
+          } else if (unknownNames.length > 1) {
+            firstQuestion = `محتاج أوضح دول مين: ${unknownNames.join(" و ")}؟`;
+          }
+
           await db.insert(pendingClarifications).values({
             userId: ctx.user.id,
             userType: ctx.user.type,
-            question: result.clarificationQuestion || "ممكن توضح أكتر؟",
+            question: firstQuestion,
             originalText: input.text,
             status: "pending",
             contextData: {
@@ -801,6 +873,9 @@ export const aiRouter = router({
               decision: result.decision,
               confidence: result.overallConfidence,
               log: result.log,
+              // Queue-based system: all names that need clarification
+              pendingNames: unknownNames,
+              resolvedAnswers: {},
             },
           });
           const [pending] = await db
@@ -816,7 +891,10 @@ export const aiRouter = router({
             .orderBy(desc(pendingClarifications.id))
             .limit(1);
           clarificationId = pending?.id;
-        } catch {
+          // Override the clarification question returned to frontend with the first one
+          result.clarificationQuestion = firstQuestion;
+        } catch (err) {
+          console.error("Failed to insert pending clarification:", err);
           clarificationId = undefined;
         }
       }
@@ -917,6 +995,9 @@ export const aiRouter = router({
     );
     const voiceLimit = planValue(voiceLimits, ctx.user.plan, 300);
     const aiBudget = await getAiBudget(ctx.user, "parse", cfg);
+    const offlineLimit = ctx.user.plan === "free"
+      ? parseInt(cfg.offline_limit_free || "3")
+      : parseInt(cfg.offline_limit_pro || "30");
 
     return {
       ai: {
@@ -936,6 +1017,9 @@ export const aiRouter = router({
           cycleStart.getDate(),
         ).toISOString(),
         maxPerRequest: planValue(voicePerReq, ctx.user.plan, 60),
+      },
+      offline: {
+        limit: offlineLimit,
       },
     };
   }),
@@ -1308,9 +1392,26 @@ export const aiRouter = router({
       const client = await getAiClient("parse", ctx.user.plan);
       const estimatedInputTokens = estimateTokensFromText(transcribedText) + 420;
       const budget = await assertAiBudget(ctx.user, "parse", estimatedInputTokens);
+      const maxParseTokens = clampOutputTokens(
+        budget.perRequestMax,
+        budget.remaining,
+        estimatedInputTokens,
+      );
 
       const userDict = userDictRows.map((row) => ({ word: row.word, category: row.category, subCategory: row.subCategory ?? undefined }));
       const personalContextRaw = buildPersonalContext(smartProfile);
+
+      for (const p of personalContextRaw.knownPeople) {
+        const safeCategory = p.category && p.category !== "تحويلات" ? p.category : null;
+        if (!safeCategory) continue;
+        if (p.name && p.name.length >= 2) {
+          userDict.push({ word: p.name, category: safeCategory, subCategory: p.subCategory });
+        }
+        const firstName = p.name.split(/\s+/)[0];
+        if (firstName && firstName.length >= 2 && firstName !== p.name) {
+          userDict.push({ word: firstName, category: safeCategory, subCategory: p.subCategory });
+        }
+      }
 
       // ── Dynamic Routing for Voice Classification ──
       let resolvedProvider: "gemini" | "groq" = "gemini";
@@ -1345,7 +1446,7 @@ export const aiRouter = router({
         apiKey: apiKey,
         apiKey2: client.apiKey2,
         modelName: modelName,
-        maxTokens: 512,
+        maxTokens: maxParseTokens,
         monthlyContext: { 
            totalIncome: currentMonthOps.filter((e) => e.type === "income").reduce((s, e) => s + Number(e.amount), 0), 
            totalExpense: currentMonthOps.filter((e) => e.type === "expense").reduce((s, e) => s + Number(e.amount), 0) 
@@ -1365,7 +1466,12 @@ export const aiRouter = router({
         skipClarification: false,
         provider: resolvedProvider,
         groqApiKey: resolvedGroqKey,
-        pipelineSettings: cfg,
+        pipelineSettings: {
+            ...cfg,
+            rag_api_key: cfg.rag_api_key || apiKey,
+            rag_model: cfg.rag_model || "text-embedding-004",
+            enable_rag: String(cfg.enable_rag !== "false"),
+          },
       });
 
       if (parseResult.tokensUsed > 0) {
@@ -1402,10 +1508,46 @@ export const aiRouter = router({
       let clarificationId: number | undefined;
       if (parseResult.decision === "clarify") {
         try {
+          const { extractPeople } = await import("./lib/entity-extractor");
+          const { cleanPersonName, resolvePersonForTransaction } = await import("./lib/person-resolver");
+          const allKnownNames = (personalContextRaw.knownPeople || []).map((p: any) => p.name).filter(Boolean) as string[];
+          const detectedPeople = extractPeople(transcribedText, allKnownNames);
+          
+          const unknownNames: string[] = [];
+          for (const rawName of detectedPeople) {
+            const cleanedName = cleanPersonName(rawName, transcribedText);
+            if (!cleanedName) continue;
+            const resolution = resolvePersonForTransaction({
+              candidateName: cleanedName,
+              transactionText: transcribedText,
+              originalText: transcribedText,
+              knownPeople: personalContextRaw.knownPeople || [],
+            });
+            if (resolution.needsClarification && !unknownNames.includes(cleanedName)) {
+              unknownNames.push(cleanedName);
+            }
+          }
+
+          if (unknownNames.length === 0 && parseResult.clarificationQuestion) {
+            const nameMatch = parseResult.clarificationQuestion.match(/مين\s+(.*?)[\؟?]/);
+            if (nameMatch?.[1]) {
+              const nameFromQ = nameMatch[1].trim().replace(/[\؟?()،,]/g, "").trim();
+              if (nameFromQ && nameFromQ.length >= 2) {
+                unknownNames.push(nameFromQ);
+              }
+            }
+          }
+
+          const firstQuestion = unknownNames.length > 1
+            ? `محتاج أوضح دول مين: ${unknownNames.join(" و ")}؟`
+            : unknownNames.length === 1 
+            ? `مين ${unknownNames[0]}؟ (أخوك، صديقك، موظف عندك...)`
+            : (parseResult.clarificationQuestion || "ممكن توضح أكتر؟");
+
           await db.insert(pendingClarifications).values({
             userId: ctx.user.id,
             userType: ctx.user.type,
-            question: parseResult.clarificationQuestion || "ممكن توضح أكتر؟",
+            question: firstQuestion,
             originalText: transcribedText,
             status: "pending",
             contextData: {
@@ -1413,6 +1555,8 @@ export const aiRouter = router({
               decision: parseResult.decision,
               confidence: parseResult.overallConfidence,
               log: parseResult.log,
+              pendingNames: unknownNames,
+              resolvedAnswers: {},
             },
           });
           const [pending] = await db
@@ -1428,7 +1572,9 @@ export const aiRouter = router({
             .orderBy(desc(pendingClarifications.id))
             .limit(1);
           clarificationId = pending?.id;
-        } catch {
+          parseResult.clarificationQuestion = firstQuestion;
+        } catch (err) {
+          console.error("Failed to insert pending voice clarification:", err);
           clarificationId = undefined;
         }
       }

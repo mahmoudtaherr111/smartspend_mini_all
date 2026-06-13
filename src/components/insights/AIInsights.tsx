@@ -346,9 +346,9 @@ export function AIInsights({ month }: AIInsightsProps) {
                       className="text-xs min-h-[44px] w-full sm:w-auto active-press"
                     >
                       {insightsMutation.isPending ? (
-                        <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                        <Loader2 className="w-3 h-3 animate-spin me-1" />
                       ) : (
-                        <Sparkles className="w-3 h-3 mr-1" />
+                        <Sparkles className="w-3 h-3 me-1" />
                       )}
                       تحديث التحليل
                     </Button>

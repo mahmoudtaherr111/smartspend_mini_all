@@ -27,15 +27,15 @@ export function GlobalSearch() {
   return (
     <div className="relative w-full max-w-sm">
       <div className="relative">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Search className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           placeholder="ابحث عن عملية (كارفور، أوبر، ...)"
-          className="pr-9"
+          className="pe-9"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         {isFetching && (
-          <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+          <Loader2 className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
         )}
       </div>
 

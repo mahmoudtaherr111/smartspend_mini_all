@@ -17,6 +17,7 @@ import Decimal from "decimal.js";
 import { ExpenseInputLimits } from "../contracts/constants";
 import { invalidateUserMemory } from "./lib/muscle-memory";
 import { withCache, getRedisClient } from "./lib/redis-client";
+import { checkUserBudgetExceeded } from "./notification-engine";
 
 async function invalidateExpenseCache(userId: number | string, userType: string) {
   try {
@@ -202,6 +203,113 @@ export const expenseRouter = router({
       }
 
       await invalidateExpenseCache(userId, requestUserType);
+      
+      if (input.type === "expense") {
+        checkUserBudgetExceeded(userId as number, requestUserType).catch(err => {
+          console.error("Budget exceeded check failed:", err);
+        });
+      }
+
+      return { success: true };
+    }),
+
+  batchCreate: authedProcedure
+    .input(
+      z.array(
+        z.object({
+          amount: expenseAmount,
+          type: transactionTypeSchema.default("expense"),
+          category: expenseCategory,
+          subCategory: z.string().max(ExpenseInputLimits.subCategoryMax).optional(),
+          description: z.string().max(ExpenseInputLimits.descriptionMax).optional(),
+          rawText: expenseRawText,
+          source: z.enum(["voice", "manual", "ai_parsed", "image", "sms"]).default("manual"),
+          date: z.string().optional(),
+        })
+      )
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = getDb();
+      const userId = ctx.user!.id;
+      const requestUserType = ctx.user!.type;
+
+      if (input.length === 0) return { success: true };
+
+      const valuesToInsert = input.map(item => ({
+        userId,
+        userType: requestUserType,
+        type: item.type,
+        amount: item.amount.toString(),
+        category: item.category,
+        subCategory: item.subCategory || "عام",
+        description: item.description || "",
+        rawText: item.rawText,
+        source: item.source,
+        date: item.date ? new Date(item.date) : new Date(),
+      }));
+
+      await db.insert(expenses).values(valuesToInsert);
+
+      invalidateUserMemory(userId, requestUserType);
+
+      const personCategories = ["العائلة", "أصدقاء", "موظفين", "خدمات سيارات", "أخرى"];
+      for (const item of input) {
+        if (personCategories.includes(item.category) && item.subCategory && item.subCategory !== "عام") {
+          const { name, relationship } = parseNameAndRelationship(item.subCategory, item.category);
+          if (name && name !== "عام" && name !== "شخص") {
+            const { addDynamicContact } = await import("./services/user-profile-service");
+            await addDynamicContact(userId as number, requestUserType, name, relationship);
+          }
+        }
+      }
+
+      try {
+        const now = new Date();
+        const todayStr = now.toISOString().split("T")[0];
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+        if (requestUserType === "oauth") {
+          const [u] = await db.select().from(users).where(eq(users.id, Number(userId)));
+          if (u) {
+            const lastDate = u.lastStreakAt ? new Date(u.lastStreakAt) : null;
+            const lastStr = lastDate ? lastDate.toISOString().split("T")[0] : null;
+
+            if (lastStr !== todayStr) {
+              let newStreak = lastStr === yesterdayStr ? (u.currentStreak || 0) + 1 : 1;
+              let highestStreak = Math.max(u.highestStreak || 0, newStreak);
+              await db.update(users).set({ currentStreak: newStreak, highestStreak, lastStreakAt: now })
+                .where(eq(users.id, Number(userId)));
+            }
+          }
+        } else {
+          const [u] = await db.select().from(localUsers).where(eq(localUsers.id, userId as number));
+          if (u) {
+            const lastDate = u.lastStreakAt ? new Date(u.lastStreakAt) : null;
+            const lastStr = lastDate ? lastDate.toISOString().split("T")[0] : null;
+
+            if (lastStr !== todayStr) {
+              let newStreak = lastStr === yesterdayStr ? (u.currentStreak || 0) + 1 : 1;
+              let highestStreak = Math.max(u.highestStreak || 0, newStreak);
+              await db.update(localUsers).set({ currentStreak: newStreak, highestStreak, lastStreakAt: now })
+                .where(eq(localUsers.id, userId as number));
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Streak logic error:", err);
+      }
+
+      await invalidateExpenseCache(userId, requestUserType);
+      
+      const hasExpenses = input.some(item => item.type === "expense");
+      if (hasExpenses) {
+        checkUserBudgetExceeded(userId as number, requestUserType).catch(err => {
+          console.error("Budget exceeded check failed:", err);
+        });
+      }
+
       return { success: true };
     }),
 
@@ -794,13 +902,65 @@ export const expenseRouter = router({
       const activeDays = safeDayDiff(userStartDate, endOfMonth);
       const dailyAverage = totalExpense / Math.min(activeDays, 30);
       const previousNetFlow = previousTotalIncome - previousTotalExpense;
-      const expenseChangePercent =
-        previousTotalExpense > 0
-          ? Math.round(
-              ((totalExpense - previousTotalExpense) / previousTotalExpense) *
-                100,
-            )
-          : null;
+      // Day-matched weekly vs monthly comparison logic
+      const getDayOfFinancialMonth = (d: Date, start: Date) => {
+        return Math.max(1, Math.ceil((d.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+      };
+
+      const currentDayNumber = Math.max(1, getDayOfFinancialMonth(today, startDate));
+      let comparisonType: "weekly" | "monthly" = "monthly";
+      let weekNumber = 1;
+      let expenseChangePercent: number | null = null;
+
+      if (currentDayNumber > 24) {
+        comparisonType = "monthly";
+        expenseChangePercent =
+          previousTotalExpense > 0
+            ? Math.round(
+                ((totalExpense - previousTotalExpense) / previousTotalExpense) *
+                  100,
+              )
+            : null;
+      } else {
+        comparisonType = "weekly";
+        let startDay = 1;
+        let endDay = 7;
+
+        if (currentDayNumber > 21) {
+          weekNumber = 4;
+          startDay = 22;
+          endDay = 28;
+        } else if (currentDayNumber > 14) {
+          weekNumber = 3;
+          startDay = 15;
+          endDay = 21;
+        } else if (currentDayNumber > 7) {
+          weekNumber = 2;
+          startDay = 8;
+          endDay = 14;
+        } else {
+          weekNumber = 1;
+          startDay = 1;
+          endDay = 7;
+        }
+
+        const currentWeekExpenses = items.filter((i) => {
+          if (i.type !== "expense") return false;
+          const itemDay = getDayOfFinancialMonth(new Date(i.date), startDate);
+          return itemDay >= startDay && itemDay <= Math.min(endDay, currentDayNumber);
+        });
+
+        const prevWeekExpenses = previousItems.filter((i) => {
+          if (i.type !== "expense") return false;
+          const itemDay = getDayOfFinancialMonth(new Date(i.date), prevStartDate);
+          return itemDay >= startDay && itemDay <= Math.min(endDay, currentDayNumber);
+        });
+
+        const currentWeekSum = currentWeekExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
+        const prevWeekSum = prevWeekExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
+
+        expenseChangePercent = prevWeekSum > 0 ? Math.round(((currentWeekSum - prevWeekSum) / prevWeekSum) * 100) : null;
+      }
       const incomeChangePercent =
         previousTotalIncome > 0
           ? Math.round(
@@ -955,6 +1115,8 @@ export const expenseRouter = router({
           spendingIncreased:
             expenseChangePercent === null ? null : expenseChangePercent > 0,
           spendingBehavior,
+          comparisonType,
+          weekNumber,
         },
         comparativeAnalysis: {
           previousMonth: {
@@ -1127,15 +1289,238 @@ export const expenseRouter = router({
         throw new Error("Clarification not found");
       }
 
-      // Re-run the classification pipeline with the full context (Original Text + User Answer)
+      let ctxData: Record<string, any> = {};
+      if (typeof clarification.contextData === "string") {
+        try {
+          ctxData = JSON.parse(clarification.contextData);
+        } catch (e) {
+          ctxData = {};
+        }
+      } else if (clarification.contextData) {
+        ctxData = clarification.contextData as Record<string, any>;
+      }
+
+      const pendingNames: string[] = Array.isArray(ctxData.pendingNames) ? [...ctxData.pendingNames] : [];
+      const resolvedAnswers: Record<string, string> = typeof ctxData.resolvedAnswers === "object" && !Array.isArray(ctxData.resolvedAnswers) ? { ...ctxData.resolvedAnswers } : {};
+
+      if (pendingNames.length > 0) {
+        const trimmedAnswer = input.answer.trim();
+        const { inferRelationshipFromText } = await import("./lib/person-resolver");
+
+        let anyResolved = false;
+        const remainingNames: string[] = [];
+
+        // Attempt to resolve each pending name from the user's answer
+        for (const name of pendingNames) {
+           const inferredRel = inferRelationshipFromText(trimmedAnswer, name);
+           const nameMentioned = trimmedAnswer.includes(name) || trimmedAnswer.includes(name.split(" ")[0]);
+           
+           if (inferredRel) {
+               resolvedAnswers[name] = inferredRel;
+               anyResolved = true;
+           } else if (nameMentioned || pendingNames.length === 1) {
+               // If name is mentioned but no explicit relationship is inferred, or if there's only 1 name, assign the remaining text
+               const finalAnswer = (trimmedAnswer === "تخطي" || trimmedAnswer.toLowerCase() === "skip")
+                 ? "صاحبه"
+                 : trimmedAnswer.replace(new RegExp(`(?:^|\\s)${name}(?:\\s|$)`), " ").trim() || trimmedAnswer;
+               resolvedAnswers[name] = finalAnswer || "معروف";
+               anyResolved = true;
+           } else {
+               remainingNames.push(name);
+           }
+        }
+
+        // Fallback: If user typed something generic (e.g., "أخويا") without mentioning names, apply to the first pending name
+        if (!anyResolved && pendingNames.length > 0) {
+           const currentName = pendingNames[0];
+           const finalAnswer = (trimmedAnswer === "تخطي" || trimmedAnswer.toLowerCase() === "skip")
+                 ? "صاحبه" : trimmedAnswer;
+           resolvedAnswers[currentName] = finalAnswer;
+           remainingNames.push(...pendingNames.slice(1));
+        }
+
+        if (remainingNames.length > 0) {
+          const nextQuestion = `محتاج أوضح دول مين: ${remainingNames.join(" و ")}؟`;
+          
+          await db
+            .update(pendingClarifications)
+            .set({
+              question: nextQuestion,
+              contextData: {
+                ...ctxData,
+                pendingNames: remainingNames,
+                resolvedAnswers,
+              },
+            })
+            .where(eq(pendingClarifications.id, input.clarificationId));
+
+          let currentEnrichedText = clarification.originalText;
+          for (const [name, rel] of Object.entries(resolvedAnswers)) {
+            const looseName = name.replace(/[اأإآ]/g, "[اأإآ]").replace(/[يى]/g, "[يى]").replace(/[هة]/g, "[هة]");
+            const nameRegex = new RegExp(`(?:^|\\s)(${looseName})(?:\\s|$)`);
+            if (nameRegex.test(currentEnrichedText)) {
+              currentEnrichedText = currentEnrichedText.replace(nameRegex, (match, p1) => match.replace(p1, `${p1} (${rel})`));
+            } else {
+              // Try without boundaries just in case
+              const looseRegex = new RegExp(`(${looseName})`);
+              if (looseRegex.test(currentEnrichedText)) {
+                 currentEnrichedText = currentEnrichedText.replace(looseRegex, (match, p1) => match.replace(p1, `${p1} (${rel})`));
+              } else {
+                 // Absolute fallback, append to end
+                 currentEnrichedText = `${currentEnrichedText} (${name} ${rel})`;
+              }
+            }
+          }
+
+          return {
+            success: false,
+            savedCount: 0,
+            needsClarification: true,
+            clarificationQuestion: nextQuestion,
+            clarificationId: input.clarificationId,
+            enrichedText: currentEnrichedText,
+          };
+        }
+
+        let savedCount = 0;
+        try {
+          let enrichedText = clarification.originalText;
+          for (const [name, rel] of Object.entries(resolvedAnswers)) {
+            const looseName = name.replace(/[اأإآ]/g, "[اأإآ]").replace(/[يى]/g, "[يى]").replace(/[هة]/g, "[هة]");
+            const nameRegex = new RegExp(`(?:^|\\s)(${looseName})(?:\\s|$)`);
+            if (nameRegex.test(enrichedText)) {
+              enrichedText = enrichedText.replace(nameRegex, (match, p1) => match.replace(p1, `${p1} (${rel})`));
+            } else {
+              const looseRegex = new RegExp(`(${looseName})`);
+              if (looseRegex.test(enrichedText)) {
+                enrichedText = enrichedText.replace(looseRegex, (match, p1) => match.replace(p1, `${p1} (${rel})`));
+              } else {
+                enrichedText = `${enrichedText} (${name} ${rel})`;
+              }
+            }
+          }
+
+          const { runSmartPipeline } = await import("./lib/smart-pipeline");
+          const { env } = await import("./lib/env");
+          const { resolveRoutingConfig } = await import("./ai-router");
+          const { getSmartProfile, summarizeProfileForAI } = await import("./services/user-profile-service");
+          const { buildPersonalContext, buildPersonalContextPrompt } = await import("./services/personal-context-builder");
+
+          const [userDictRows, smartProfile, settingRows] = await Promise.all([
+            db.select().from(userDictionaries)
+              .where(and(eq(userDictionaries.userId, userId), eq(userDictionaries.userType, userType))),
+            getSmartProfile(userId as number, userType as string),
+            db.select().from(systemSettings),
+          ]);
+          const cfg: Record<string, string> = {};
+          settingRows.forEach((s) => {
+            if (s.value) cfg[s.key] = s.value;
+          });
+
+          const routing = await resolveRoutingConfig(ctx.user!.plan ?? "free", 0, cfg);
+          const userDict = userDictRows.map((row) => ({ word: row.word, category: row.category, subCategory: row.subCategory ?? undefined }));
+          const personalContextRaw = buildPersonalContext(smartProfile);
+
+          for (const p of personalContextRaw.knownPeople) {
+            const safeCategory = p.category && p.category !== "تحويلات" ? p.category : null;
+            if (!safeCategory) continue;
+            if (p.name && p.name.length >= 2) userDict.push({ word: p.name, category: safeCategory, subCategory: p.subCategory });
+            const firstName = p.name.split(/\s+/)[0];
+            if (firstName && firstName.length >= 2) userDict.push({ word: firstName, category: safeCategory, subCategory: p.subCategory });
+          }
+          
+          const pipeline = await runSmartPipeline({
+            text: enrichedText,
+            userId: userId as number,
+            userType: userType as string,
+            userPlan: ctx.user!.plan,
+            userDict,
+            apiKey: routing.apiKey || env.GEMINI_API_KEY || "",
+            apiKey2: routing.apiKey || env.GEMINI_API_KEY || "",
+            modelName: routing.model,
+            maxTokens: 2000,
+            skipClarification: true,
+            userProfileContext: {
+              promptSummary: summarizeProfileForAI(smartProfile),
+              personalContextPrompt: buildPersonalContextPrompt(personalContextRaw),
+              spendingBehavior: typeof smartProfile.aiInferredAttributes?.spendingBehavior === "string" ? smartProfile.aiInferredAttributes.spendingBehavior : undefined,
+              hasChildren: smartProfile.lifestyleInfo.hasChildren as boolean | null,
+              responsibleForFamily: smartProfile.lifestyleInfo.responsibleForFamily as boolean | null,
+              supportsOthers: smartProfile.lifestyleInfo.supportsOthers,
+              fixedMonthlyCommitments: smartProfile.lifestyleInfo.fixedMonthlyCommitments,
+              isSmoker: smartProfile.lifestyleInfo.smoking === true,
+              hasCar: Boolean(smartProfile.lifestyleInfo.carOwnership),
+              hasDebt: Boolean((smartProfile.financialInfo as any)?.hasDebt),
+              knownPeople: personalContextRaw.knownPeople,
+            },
+            pipelineSettings: cfg,
+          });
+
+          const itemsToSave = pipeline.items && pipeline.items.length > 0
+            ? pipeline.items
+            : Array.isArray(ctxData.items) ? ctxData.items : [];
+
+          for (const item of itemsToSave) {
+            await db.insert(expenses).values({
+              userId: userId as number,
+              userType: userType as string,
+              amount: item.amount.toString(),
+              description: item.description || enrichedText,
+              category: item.category,
+              subCategory: item.subCategory,
+              type: item.type,
+              date: new Date(),
+              source: "manual",
+              rawText: enrichedText,
+            });
+
+            if (item.person_mentioned && item.person_relationship) {
+              const pName = item.person_mentioned.trim();
+              const pRel = item.person_relationship.trim();
+              if (pName && pName !== "عام" && pName !== "شخص") {
+                const { addDynamicContact } = await import("./services/user-profile-service");
+                await addDynamicContact(userId as number, userType as string, pName, pRel);
+              }
+            }
+            savedCount += 1;
+          }
+          await invalidateExpenseCache(userId as number, userType as string);
+          
+          const hasExpenses = itemsToSave.some((item: any) => item.type === "expense");
+          if (hasExpenses) {
+            checkUserBudgetExceeded(userId as number, userType as string).catch(err => {
+              console.error("Budget exceeded check failed:", err);
+            });
+          }
+        } catch (err) {
+          console.error("Failed to save after queue clarification:", err);
+          throw new Error(err instanceof Error ? err.message : "تعذر حفظ العمليات بعد التوضيح.");
+        }
+
+        await db
+          .update(pendingClarifications)
+          .set({ status: "resolved" })
+          .where(eq(pendingClarifications.id, input.clarificationId));
+
+        return {
+          success: true,
+          savedCount,
+          needsClarification: false,
+          clarificationQuestion: undefined,
+          clarificationId: undefined,
+          enrichedText: undefined,
+        };
+      }
+
       let savedCount = 0;
       try {
         const { runSmartPipeline } = await import("./lib/smart-pipeline");
         const { env } = await import("./lib/env");
+        const { resolveRoutingConfig } = await import("./ai-router");
         const { getSmartProfile, summarizeProfileForAI } = await import("./services/user-profile-service");
         const { buildPersonalContext, buildPersonalContextPrompt } = await import("./services/personal-context-builder");
 
-        const enrichedText = clarification.originalText + " التوضيح: " + input.answer;
+        const enrichedText = clarification.originalText + " (" + input.answer + ")";
         
         const [userDictRows, smartProfile, settingRows] = await Promise.all([
           db.select().from(userDictionaries)
@@ -1148,13 +1533,24 @@ export const expenseRouter = router({
           if (s.value) cfg[s.key] = s.value;
         });
 
+        const routing = await resolveRoutingConfig(
+          ctx.user!.plan ?? "free",
+          0,
+          cfg,
+        );
+
         const userDict = userDictRows.map((row) => ({ word: row.word, category: row.category, subCategory: row.subCategory ?? undefined }));
         const personalContextRaw = buildPersonalContext(smartProfile);
 
         for (const p of personalContextRaw.knownPeople) {
+          const safeCategory = p.category && p.category !== "تحويلات" ? p.category : null;
+          if (!safeCategory) continue;
+          if (p.name && p.name.length >= 2) {
+             userDict.push({ word: p.name, category: safeCategory, subCategory: p.subCategory });
+          }
           const firstName = p.name.split(/\s+/)[0];
           if (firstName && firstName.length >= 2) {
-             userDict.push({ word: firstName, category: p.category, subCategory: p.subCategory });
+             userDict.push({ word: firstName, category: safeCategory, subCategory: p.subCategory });
           }
         }
         
@@ -1164,10 +1560,10 @@ export const expenseRouter = router({
           userType: userType as string,
           userPlan: ctx.user!.plan,
           userDict,
-          apiKey: env.GEMINI_API_KEY || "",
-          apiKey2: env.GEMINI_API_KEY || "",
-          modelName: "gemini-2.5-flash",
-          maxTokens: 1024,
+          apiKey: routing.apiKey || env.GEMINI_API_KEY || "",
+          apiKey2: routing.apiKey || env.GEMINI_API_KEY || "",
+          modelName: routing.model,
+          maxTokens: 2000,
           userProfileContext: {
             promptSummary: summarizeProfileForAI(smartProfile),
             personalContextPrompt: buildPersonalContextPrompt(personalContextRaw),
@@ -1184,16 +1580,37 @@ export const expenseRouter = router({
           pipelineSettings: cfg,
         });
         
+        if (pipeline.decision === "clarify") {
+          await db
+            .update(pendingClarifications)
+            .set({
+              originalText: enrichedText,
+              question: pipeline.clarificationQuestion || "ممكن توضح أكتر؟",
+              contextData: {
+                items: pipeline.items,
+                decision: pipeline.decision,
+                confidence: pipeline.overallConfidence,
+                log: pipeline.log,
+              },
+            })
+            .where(eq(pendingClarifications.id, input.clarificationId));
+
+          return {
+            success: false,
+            savedCount: 0,
+            needsClarification: true,
+            clarificationQuestion: pipeline.clarificationQuestion || "ممكن توضح أكتر؟",
+            clarificationId: input.clarificationId,
+            enrichedText,
+          };
+        }
+
         if (
           !pipeline.items ||
           pipeline.items.length === 0 ||
-          pipeline.decision === "clarify" ||
           pipeline.overallConfidence < 70
         ) {
-          throw new Error(
-            pipeline.clarificationQuestion ||
-              "التوضيح لسه مش كافي لتسجيل العملية بدقة.",
-          );
+          throw new Error("التوضيح لسه مش كافي لتسجيل العملية بدقة.");
         }
 
         if (pipeline.items && pipeline.items.length > 0) {
@@ -1211,7 +1628,6 @@ export const expenseRouter = router({
                rawText: enrichedText,
              });
              
-             // Auto-learn dynamic contacts from AI person_mentioned
              if (item.person_mentioned && item.person_relationship) {
                const pName = item.person_mentioned.trim();
                const pRel = item.person_relationship.trim();
@@ -1228,6 +1644,13 @@ export const expenseRouter = router({
              savedCount += 1;
           }
           await invalidateExpenseCache(userId as number, userType as string);
+          
+          const hasExpenses = pipeline.items && pipeline.items.some((item: any) => item.type === "expense");
+          if (hasExpenses) {
+            checkUserBudgetExceeded(userId as number, userType as string).catch(err => {
+              console.error("Budget exceeded check failed:", err);
+            });
+          }
         }
 
         await db
@@ -1243,6 +1666,13 @@ export const expenseRouter = router({
         );
       }
 
-      return { success: true, savedCount };
+      return {
+        success: true,
+        savedCount,
+        needsClarification: false,
+        clarificationQuestion: undefined,
+        clarificationId: undefined,
+        enrichedText: undefined,
+      };
     }),
 });

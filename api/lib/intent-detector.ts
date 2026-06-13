@@ -44,6 +44,23 @@ const STRONG_INCOME = [
   "قبضت الجمعية",
   "نزل المرتب",
   "اتكلم مرتب",
+  "اديتني",
+  "أديتني",
+  "اديتنى",
+  "أديتنى",
+  "إدتني",
+  "إدتنى",
+  "ادتني",
+  "ادتنى",
+  // Generic "خدت من [anyone]" = receiving money from someone
+  "خدت من",
+  "اخدت من",
+  "جاني",
+  "جاني من",
+  "رجعلي",
+  "كاشباك",
+  "لقيت",
+  "لقينا",
 ];
 
 /** Normal income indicators (weight = 15) */
@@ -117,6 +134,38 @@ const STRONG_EXPENSE = [
   "جبت",
   "جبتي",
   "جبنا",
+  "اديت",
+  "أديت",
+  "خرجت",
+  "اتعشيت",
+  "اتغديت",
+  "فطرت",
+  "فرتكت",
+  "طيرت",
+  "خرشت",
+  "ضيعت",
+  "طيرت",
+  "خربت",
+  "بوظت",
+  "قعدت",
+  "قعدنا",
+  "ضربت",
+  "روحت",
+  "لعبت",
+  "لعبنا",
+  "حجزنا",
+  "شحنا",
+  "حاسبنا",
+  "صلحنا",
+  "خرجنا",
+  "اتعشينا",
+  "اتغدينا",
+  "فطرنا",
+  "سافرنا",
+  "سافرت",
+  "اتفسحت",
+  "اتفسحنا",
+  "ضربنا",
 ];
 
 /** Normal expense indicators (weight = 15) */
@@ -165,6 +214,9 @@ const TRANSFER_KEYWORDS = [
   "سلفت",
   "سلفه",
   "اديت سلفه",
+  "شلت",  // Egyptian: pulled/withdrew
+  "رجعت",  // returned money to someone
+  "فكيت",  // breaking a bill
 ];
 
 /** Investment indicators */
@@ -182,6 +234,8 @@ const INVESTMENT_KEYWORDS = [
   "عقار",
   "ارض",
   "شقه تمليك",
+  "شلت دهب", // Egyptian: bought gold
+  "شلت ذهب",
 ];
 
 function normalizeArabic(text: string): string {
@@ -229,6 +283,12 @@ export interface IntentResult {
   confidence: number;
 }
 
+function includesWord(text: string, word: string): boolean {
+  const escapedWord = word.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+  const regex = new RegExp(`(?:^|\\s|[.,،؛؟?!\\(\\)])` + escapedWord + `(?:$|\\s|[.,،؛؟?!\\(\\)])`);
+  return regex.test(text);
+}
+
 /**
  * Detect intent for a given context string
  */
@@ -242,27 +302,27 @@ export function detectIntent(context: string): IntentResult {
 
   // Strong indicators (weight 50)
   for (const kw of NORM_STRONG_INCOME)
-    if (normContext.includes(kw)) incomeScore += 50;
+    if (includesWord(normContext, kw)) incomeScore += 50;
   for (const kw of NORM_STRONG_EXPENSE)
-    if (normContext.includes(kw)) expenseScore += 50;
+    if (includesWord(normContext, kw)) expenseScore += 50;
 
   // Normal indicators (weight 15)
   for (const kw of NORM_INCOME_KEYWORDS)
-    if (normContext.includes(kw)) incomeScore += 15;
+    if (includesWord(normContext, kw)) incomeScore += 15;
   for (const kw of NORM_EXPENSE_KEYWORDS)
-    if (normContext.includes(kw)) expenseScore += 15;
+    if (includesWord(normContext, kw)) expenseScore += 15;
 
   // Transfer indicators (weight 40)
   for (const kw of NORM_TRANSFER_KEYWORDS)
-    if (normContext.includes(kw)) transferScore += 40;
+    if (includesWord(normContext, kw)) transferScore += 40;
 
   // Investment indicators (weight 40)
   for (const kw of NORM_INVESTMENT_KEYWORDS)
-    if (normContext.includes(kw)) investmentScore += 40;
+    if (includesWord(normContext, kw)) investmentScore += 40;
 
   // Contextual patterns
   if (
-    /(?:حولت|بعت|بعتت|[اإ]?ديت|اعطيت|عطيت)\s+.*?\s*لـ?(?:\s+|[ا-ي]+)/.test(
+    /(?:حولت|بعت|بعتت)\s+.*?\s*لـ?(?:\s+|[ا-ي]+)/.test(
       normContext,
     ) ||
     /حولت\s*(ل|لـ)?/.test(normContext)
@@ -282,9 +342,25 @@ export function detectIntent(context: string): IntentResult {
   if (/رجع(و|)لي/.test(normContext)) {
     incomeScore += 40;
   }
-  if (/(?:^|\s)(?:خدت|اخدت|استلمت|جالي|قبضت)\s+من\s+/.test(normContext)) {
-    incomeScore += 60;
+  if (/(?:^|\s)و?(?:خدت|اخدت|أخدت|سحبت|استلمت|جالي|قبضت)\s+(?:.*?\s+)?من(?:ه|ها|هم|نا|ني)?(?:\s+|$)/.test(normContext)) {
+    // If it's withdrawing from a machine/bank, it's a transfer, not income
+    if (/(?:atm|بنك|فيزا|حساب|مكنه|مكنة|ماكينه|ماكينة)/.test(normContext)) {
+      transferScore += 100;
+    } else {
+      incomeScore += 80;
+      expenseScore -= 40;
+    }
+  }
+  if (/(?:^|\s)[وف]?(?:منه|منها|منهم|مني|مننا)\s+(?:.*?\s+)?(?:خدت|اخدت|أخدت|سحبت|استلمت|جالي|قبضت)(?:\s+|$)/.test(normContext)) {
+    incomeScore += 80;
     expenseScore -= 40;
+  }
+  if (/(?:^|\s)[وف]?(?:جالي|جاني|وصلني|وصلتلي|استلمت|رجعلي|إداني|اداني|قبضت)\s+(?:تحويل|مبلغ|فلوس|باقي)/.test(normContext)) {
+    incomeScore += 80;
+    transferScore -= 40;
+  }
+  if (/(?:في|على|على\s+ال)\s*(?:الارض|الأرض)/.test(normContext)) {
+    investmentScore = 0;
   }
   if (/(?:دخلت|دخلنا)\s+(?:سينما|فيلم|ملاهي|حفله|حفلة|متحف)/.test(normContext)) {
     expenseScore += 80;
@@ -322,11 +398,15 @@ export function detectIntent(context: string): IntentResult {
     intent = "expense";
   }
 
-  // Calculate confidence (how decisive the winner is)
+  // Calculate confidence (how decisive the winner is) using clamped scores
+  const clampedIncome = Math.max(0, incomeScore);
+  const clampedExpense = Math.max(0, expenseScore);
+  const clampedTransfer = Math.max(0, transferScore);
+  const clampedInvestment = Math.max(0, investmentScore);
   const totalScore =
-    incomeScore + expenseScore + transferScore + investmentScore;
+    clampedIncome + clampedExpense + clampedTransfer + clampedInvestment;
   const confidence =
-    totalScore > 0 ? Math.round((maxScore / totalScore) * 100) : 30;
+    totalScore > 0 ? Math.min(100, Math.round((Math.max(0, maxScore) / totalScore) * 100)) : 30;
 
   return {
     intent,

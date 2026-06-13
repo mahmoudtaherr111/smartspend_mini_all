@@ -74,10 +74,7 @@ https://smartspend.ai/dashboard
 شكراً لثقتك بنا! 🚀`;
 
       // 4. Send via WhatsApp
-      await whatsappService.sendMessage({
-        toPhone: targetPhone,
-        body: reportContent,
-      });
+      await whatsappService.sendMessage(targetPhone, reportContent);
 
       console.log(
         `[MonthlyReportJob] Sent report to user ${u.id} at ${targetPhone}`,

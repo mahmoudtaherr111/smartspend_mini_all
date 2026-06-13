@@ -147,6 +147,7 @@ export function OnboardingCard() {
         accumulatedAnswers.current = {};
         try {
           localStorage.removeItem(`onboarding_answers_${profile.data?.basicInfo?.name || "user"}`);
+          localStorage.removeItem("onboarding_last_dismissed");
         } catch (e) {}
       } else {
         // Use local question state to avoid race condition with server refetch
@@ -215,18 +216,31 @@ export function OnboardingCard() {
     Math.round((answeredCount / TOTAL_QUESTIONS) * 100),
   );
 
-  // Smart reminder: show after delay + 24h cooldown
+  // Smart reminder: show after delay + 48h cooldown
   useEffect(() => {
     if (profile.data && !isComplete && question) {
       const lastAsked = nextQuestion.data?.lastAskedAt;
       let inCooldown = false;
+      
+      const now = Date.now();
+      
+      // Check server cooldown
       if (lastAsked) {
-        const hoursSince =
-          (Date.now() - new Date(lastAsked).getTime()) / (1000 * 3600);
-        if (hoursSince < 48) inCooldown = true; // Changed from 24h to 48h
+        const hoursSince = (now - new Date(lastAsked).getTime()) / (1000 * 3600);
+        if (hoursSince < 48) inCooldown = true;
       }
+      
+      // Check local dismiss cooldown (CRITICAL: because server doesn't save dismissals)
+      try {
+        const localDismissed = localStorage.getItem('onboarding_last_dismissed');
+        if (localDismissed) {
+          const hoursSinceDismiss = (now - parseInt(localDismissed, 10)) / (1000 * 3600);
+          if (hoursSinceDismiss < 48) inCooldown = true;
+        }
+      } catch (e) {}
+
       if (!inCooldown) {
-        const delay = answeredCount === 0 ? 15000 : 300000; // 15s for new users, 5min otherwise (was 0 / 3m)
+        const delay = answeredCount === 0 ? 15000 : 300000; // 15s for new users, 5min otherwise
         const timer = setTimeout(() => setShow(true), delay);
         return () => clearTimeout(timer);
       }
@@ -466,6 +480,7 @@ export function OnboardingCard() {
               className="shrink-0 -mt-1"
               onClick={() => {
                 setShow(false);
+                try { localStorage.setItem('onboarding_last_dismissed', Date.now().toString()); } catch(e) {}
                 dismissMutation.mutate();
               }}
             >
@@ -490,7 +505,12 @@ export function OnboardingCard() {
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-2 pt-1">
             <Button
-              className="flex-1 gap-2 h-11 text-sm"
+              className={cn(
+                "flex-1 gap-2 h-11 text-sm transition-all",
+                canSubmit && !submitAnswer.isPending
+                  ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg ring-2 ring-emerald-500/50"
+                  : ""
+              )}
               onClick={() => submit(false)}
               disabled={!canSubmit || submitAnswer.isPending}
             >
@@ -515,6 +535,7 @@ export function OnboardingCard() {
               variant="ghost"
               onClick={() => {
                 setShow(false);
+                try { localStorage.setItem('onboarding_last_dismissed', Date.now().toString()); } catch(e) {}
                 dismissMutation.mutate();
               }}
               className="sm:w-24 h-11 text-sm text-muted-foreground"

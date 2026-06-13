@@ -1,7 +1,7 @@
 export const numMap: Record<string, number> = {
-  واحد: 1,
-  واحده: 1,
-  واحدة: 1,
+  // واحد: 1, // Commented out because "واحد صاحبي" or "واحد بيبسي" shouldn't extract amount 1
+  // واحده: 1,
+  // واحدة: 1,
   اتنين: 2,
   إثنين: 2,
   اثنين: 2,
@@ -74,11 +74,10 @@ export const numMap: Record<string, number> = {
   ثمانين: 80,
   تمانين: 80,
   تسعين: 90,
-  مية: 100,
-  ميه: 100,
+  // مية: 100, // Commented out because "مية" (water) in Egyptian Arabic shouldn't extract amount 100
+  // ميه: 100,
   مائة: 100,
-  مائه: 100,
-  ميت: 100,
+  مائته: 100,
   ميتين: 200,
   مئتين: 200,
   تلاتمية: 300,
@@ -142,6 +141,13 @@ export function parseArabicNumbers(text: string): string {
     .replace(/(^|\s)ربع أرنب(?=\s|$)/g, "$1250000")
     .replace(/(^|\s)ربع ارنب(?=\s|$)/g, "$1250000");
 
+  for (const [key, value] of Object.entries(numMap)) {
+    if (key.includes(" ")) {
+      const regex = new RegExp(`(^|\\s)${key}(?=\\s|$)`, "g");
+      processedText = processedText.replace(regex, `$1${value}`);
+    }
+  }
+
   const words = processedText.split(/\s+/);
   const resultTokens: string[] = [];
 
@@ -155,18 +161,19 @@ export function parseArabicNumbers(text: string): string {
 
     if (word.length > 1 && word.startsWith("و")) {
       let withoutWaw = word.substring(1);
-      if (numMap[withoutWaw] || multiplierMap[withoutWaw]) {
+      if (numMap[withoutWaw] || multiplierMap[withoutWaw] || /^\d+(?:[.,]\d+)?$/.test(withoutWaw)) {
         checkWord = withoutWaw;
       }
     } else if (word.length > 1 && word.startsWith("ب")) {
       let withoutB = word.substring(1);
-      if (numMap[withoutB] || multiplierMap[withoutB]) {
+      if (numMap[withoutB] || multiplierMap[withoutB] || /^\d+(?:[.,]\d+)?$/.test(withoutB)) {
         checkWord = withoutB;
       }
     }
 
-    let val = numMap[checkWord];
-    let mult = multiplierMap[checkWord];
+    const isDigit = /^\d+(?:[.,]\d+)?$/.test(checkWord);
+    const val = isDigit ? parseFloat(checkWord.replace(",", ".")) : numMap[checkWord];
+    const mult = multiplierMap[checkWord];
 
     if (val !== undefined || mult !== undefined) {
       hasNumber = true;

@@ -30,6 +30,10 @@ import {
   Cigarette,
   CreditCard,
   Users,
+  ChevronLeft,
+  ChevronRight,
+  Trash2,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -118,20 +122,21 @@ function TogglePill({
       type="button"
       onClick={onClick}
       className={cn(
-        "h-10 rounded-md border px-3 text-sm transition-colors flex items-center justify-center gap-2",
+        "h-10 rounded-xl border px-3 text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95",
         active
-          ? "border-slate-900 bg-slate-900 text-white dark:border-white dark:bg-white dark:text-slate-950"
-          : "border-border bg-background hover:bg-muted",
+          ? "border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 dark:border-indigo-400/50"
+          : "border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 hover:bg-slate-100 dark:hover:bg-slate-900/50 text-slate-600 dark:text-slate-300",
       )}
     >
       {children}
-      {active && <Check className="w-3.5 h-3.5" />}
+      {active && <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />}
     </button>
   );
 }
 
-export function SmartProfileSettings() {
+export function SmartProfileSettings({ onCancel }: { onCancel?: () => void }) {
   const utils = trpc.useUtils();
+  const [activeTab, setActiveTab] = useState<'basic' | 'financial' | 'lifestyle' | 'preferences'>('basic');
   const {
     data: profile,
     isLoading,
@@ -404,158 +409,174 @@ export function SmartProfileSettings() {
     );
   }
 
+  const tabs = [
+    { id: "basic" as const, label: "الهوية", icon: CircleUserRound },
+    { id: "financial" as const, label: "المالية", icon: BriefcaseBusiness },
+    { id: "lifestyle" as const, label: "الحياة", icon: UsersRound },
+    { id: "preferences" as const, label: "تفضيلات AI", icon: Sparkles },
+  ];
+
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border-slate-200/60 dark:border-slate-800 shadow-xl overflow-hidden bg-white dark:bg-slate-950">
+      <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/10">
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-emerald-600" />
-              البروفايل الذكي
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2 text-xl font-black">
+              <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse" />
+              تعديل البروفايل الذكي
             </CardTitle>
-            <CardDescription>
-              البيانات هنا تؤثر مباشرة على التصنيف والتقارير والـ AI insights.
+            <CardDescription className="text-xs sm:text-sm">
+              البيانات هنا تؤثر مباشرة على التصنيف المالي الذكي وتوصيات الذكاء الاصطناعي.
             </CardDescription>
           </div>
-          <Badge variant={completionScore >= 70 ? "default" : "secondary"}>
+          <Badge
+            variant={completionScore >= 70 ? "default" : "secondary"}
+            className={cn(
+              "px-3 py-1 rounded-full text-xs font-bold shrink-0",
+              completionScore >= 70
+                ? "bg-indigo-500 text-white"
+                : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+            )}
+          >
             {completionScore}% مكتمل
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <section className="space-y-3">
-          <div className="flex items-center gap-2 font-semibold text-sm">
-            <CircleUserRound className="w-4 h-4" />
-            الهوية
-          </div>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 hidden">
-            {avatarSet.map((id) => (
+      <CardContent className="p-4 sm:p-6 space-y-6">
+        
+        {/* Modern Tabs Bar */}
+        <div className="grid grid-cols-4 gap-1 p-1 bg-slate-100/80 dark:bg-slate-900/60 rounded-2xl border border-slate-200/50 dark:border-white/5">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
               <button
-                key={id}
+                key={tab.id}
                 type="button"
-                onClick={() => setAvatarId(id)}
+                onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "h-12 rounded-md border flex items-center justify-center transition-colors",
-                  avatarId === id
-                    ? "border-slate-900 dark:border-white"
-                    : "border-border",
+                  "flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2.5 px-1 rounded-xl transition-all duration-300 text-[10px] sm:text-xs font-black",
+                  isActive
+                    ? "bg-white dark:bg-slate-950 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/30 dark:border-white/5 scale-102"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
                 )}
               >
-                <span
-                  className={cn("w-7 h-7 rounded-full", avatarClasses[id])}
-                />
+                <Icon className="w-4 h-4" />
+                <span className="truncate">{tab.label}</span>
               </button>
-            ))}
-          </div>
+            );
+          })}
+        </div>
 
-          <div className="grid sm:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>الاسم</Label>
-              <div className="relative">
-                <User className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="اسمك"
-                  className="pr-9"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>رابط الصورة الشخصية (اختياري)</Label>
-              <div className="relative">
-                <LinkIcon className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={avatarInput}
-                  onChange={(e) => setAvatarInput(e.target.value)}
-                  placeholder="https://..."
-                  className="pr-9 text-left"
-                  dir="ltr"
-                />
-              </div>
-            </div>
-
-            {user?.type !== "oauth" && (
-              <div className="space-y-2">
-                <Label>رقم التليفون</Label>
+        {/* Tab 1: Basic Info */}
+        {activeTab === "basic" && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2 text-end">
+                <Label className="font-bold text-slate-700 dark:text-slate-300">الاسم</Label>
                 <div className="relative">
-                  <Phone className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <User className="absolute end-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="رقم التليفون"
-                    className="pr-9 text-right"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="اسمك الكريم"
+                    className="pe-9 rounded-xl border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 h-11 focus:ring-2 focus:ring-indigo-500/10 transition-all font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 text-end">
+                <Label className="font-bold text-slate-700 dark:text-slate-300">المهنة</Label>
+                <div className="relative">
+                  <BriefcaseBusiness className="absolute end-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={profession}
+                    onChange={(event) => setProfession(event.target.value)}
+                    placeholder="مثال: مصمم، موظف، صاحب مشروع"
+                    className="pe-9 rounded-xl border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 h-11 focus:ring-2 focus:ring-indigo-500/10 transition-all font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 text-end">
+                <Label className="font-bold text-slate-700 dark:text-slate-300">رابط الصورة الشخصية (اختياري)</Label>
+                <div className="relative">
+                  <LinkIcon className="absolute end-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={avatarInput}
+                    onChange={(e) => setAvatarInput(e.target.value)}
+                    placeholder="https://..."
+                    className="pe-9 text-start rounded-xl border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 h-11 focus:ring-2 focus:ring-indigo-500/10 transition-all font-medium"
                     dir="ltr"
                   />
                 </div>
               </div>
-            )}
-
-            <div className="space-y-2">
-              <Label>المهنة</Label>
-              <Input
-                value={profession}
-                onChange={(event) => setProfession(event.target.value)}
-                placeholder="مثال: مصمم، موظف، صاحب مشروع"
-              />
-            </div>
-          </div>
-        </section>
-
-        <section className="space-y-3">
-          <div className="flex items-center gap-2 font-semibold text-sm">
-            <BriefcaseBusiness className="w-4 h-4" />
-            الوضع المالي
-          </div>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>متوسط الدخل الشهري</Label>
-              <Input
-                type="number"
-                inputMode="decimal"
-                dir="ltr"
-                value={monthlyIncome}
-                onChange={(event) => setMonthlyIncome(event.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>هدفك الأساسي</Label>
-              <select
-                value={goal}
-                onChange={(event) => setGoal(event.target.value)}
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-              >
-                <option value="organize_expenses">تنظيم المصاريف</option>
-                <option value="reduce_spending">تقليل الصرف</option>
-                <option value="track_income">تتبع الدخل</option>
-                <option value="manage_business">إدارة مشروع</option>
-              </select>
-            </div>
-          </div>
-
-          {selectedSources.includes("salary") && (
-            <div className="grid sm:grid-cols-2 gap-3 mt-3 bg-muted/50 p-3 rounded-lg border">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5 text-right">
-                  <Label>هل مرتبك ينزل في تاريخ ثابت؟</Label>
-                  <p className="text-[11px] text-muted-foreground">
-                    هنحسب شهرك المالي منه
-                  </p>
+              {user?.type !== "oauth" && (
+                <div className="space-y-2 text-end">
+                  <Label className="font-bold text-slate-700 dark:text-slate-300">رقم التليفون</Label>
+                  <div className="relative">
+                    <Phone className="absolute end-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="01xxxxxxxxx"
+                      className="pe-9 text-start rounded-xl border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 h-11 focus:ring-2 focus:ring-indigo-500/10 transition-all font-medium"
+                      dir="ltr"
+                    />
+                  </div>
                 </div>
-                <Button
-                  variant={hasFixedSalary ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setHasFixedSalary(!hasFixedSalary)}
-                  className="h-8"
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: Financial Info */}
+        {activeTab === "financial" && (
+          <div className="space-y-5 animate-in fade-in duration-200">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2 text-end">
+                <Label className="font-bold text-slate-700 dark:text-slate-300">متوسط الدخل الشهري</Label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    dir="ltr"
+                    value={monthlyIncome}
+                    onChange={(event) => setMonthlyIncome(event.target.value)}
+                    className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 h-11 focus:ring-2 focus:ring-indigo-500/10 transition-all font-bold text-start"
+                    placeholder="بالجنيه المصري"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 text-end">
+                <Label className="font-bold text-slate-700 dark:text-slate-300">هدفك المالي الأساسي</Label>
+                <select
+                  value={goal}
+                  onChange={(event) => setGoal(event.target.value)}
+                  className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 px-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all cursor-pointer font-semibold"
                 >
-                  {hasFixedSalary ? "نعم ثابت" : "لا"}
-                </Button>
+                  <option value="organize_expenses">تنظيم المصاريف اليومية</option>
+                  <option value="reduce_spending">ترشيد وتقليل الاستهلاك</option>
+                  <option value="track_income">تتبع وإحصاء الدخل</option>
+                  <option value="manage_business">إدارة الميزانية لمشروع خاص</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Switch 1: Fixed salary */}
+            <div className="bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-4 transition-all hover:bg-slate-50 dark:hover:bg-slate-900/50">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5 text-end">
+                  <Label className="font-bold text-sm text-slate-800 dark:text-slate-200">هل مرتبك ينزل في تاريخ ثابت؟</Label>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">تسهل لنا حساب الشهر المالي الخاص بك تلقائياً</p>
+                </div>
+                <Switch checked={hasFixedSalary} onCheckedChange={setHasFixedSalary} />
               </div>
 
               {hasFixedSalary && (
-                <div className="space-y-2">
-                  <Label>بينزل يوم كام في الشهر؟ (1-31)</Label>
+                <div className="space-y-2 text-end mt-4 p-3 bg-white/50 dark:bg-slate-900/50 rounded-xl border border-dashed animate-in slide-in-from-top-2 duration-200">
+                  <Label className="font-semibold text-xs text-slate-600 dark:text-slate-400">يوم نزول المرتب المالي (1 - 31)</Label>
                   <Input
                     type="number"
                     inputMode="numeric"
@@ -564,438 +585,519 @@ export function SmartProfileSettings() {
                     max="31"
                     value={salaryDay}
                     onChange={(event) => setSalaryDay(event.target.value)}
-                    placeholder="مثال: 5"
+                    placeholder="مثال: 25"
+                    className="rounded-xl h-10 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-start font-bold"
                   />
                 </div>
               )}
             </div>
-          )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
-            {incomeSources.map((source) => (
-              <TogglePill
-                key={source.value}
-                active={selectedSources.includes(source.value)}
-                onClick={() =>
-                  toggleList(selectedSources, source.value, setSelectedSources)
-                }
-              >
-                {source.label}
-              </TogglePill>
-            ))}
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              ["stable", "ثابت"],
-              ["variable", "متغير"],
-              ["unclear", "غير واضح"],
-            ].map(([value, label]) => (
-              <TogglePill
-                key={value}
-                active={spendingPattern === value}
-                onClick={() => setSpendingPattern(value)}
-              >
-                {label}
-              </TogglePill>
-            ))}
-          </div>
-        </section>
-
-        <section className="space-y-3">
-          <div className="flex items-center gap-2 font-semibold text-sm">
-            <UsersRound className="w-4 h-4" />
-            نمط الحياة
-          </div>
-          <div className="grid sm:grid-cols-3 gap-3">
-            <label className="flex items-center justify-between rounded-md border p-3 text-sm">
-              لديك أطفال
-              <Switch checked={hasChildren} onCheckedChange={setHasChildren} />
-            </label>
-            <label className="flex items-center justify-between rounded-md border p-3 text-sm">
-              مسؤول عن أسرة
-              <Switch
-                checked={responsibleForFamily}
-                onCheckedChange={setResponsibleForFamily}
-              />
-            </label>
-            <label className="flex items-center justify-between rounded-md border p-3 text-sm">
-              تعيش وحدك
-              <Switch checked={livesAlone} onCheckedChange={setLivesAlone} />
-            </label>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>عدد الأطفال</Label>
-              <Input
-                type="number"
-                inputMode="numeric"
-                dir="ltr"
-                value={childrenCount}
-                onChange={(event) => setChildrenCount(event.target.value)}
-                disabled={!hasChildren}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>عدد الالتزامات الشهرية</Label>
-              <Input
-                type="number"
-                inputMode="numeric"
-                dir="ltr"
-                value={fixedCommitments}
-                onChange={(event) => setFixedCommitments(event.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Children Names */}
-          {hasChildren && (
-            <div className="space-y-2">
-              <Label>أسماء الأطفال</Label>
-              {childrenNames.map((n, i) => (
-                <div key={i} className="flex gap-2">
-                  <Input
-                    value={n}
-                    onChange={(e) => {
-                      const next = [...childrenNames];
-                      next[i] = e.target.value;
-                      setChildrenNames(next);
-                    }}
-                    placeholder={`طفل ${i + 1}`}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0"
+            {/* Income Sources */}
+            <div className="space-y-3 text-end">
+              <Label className="font-bold text-slate-700 dark:text-slate-300">مصادر دخلك المالي</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {incomeSources.map((source) => (
+                  <TogglePill
+                    key={source.value}
+                    active={selectedSources.includes(source.value)}
                     onClick={() =>
-                      setChildrenNames(childrenNames.filter((_, j) => j !== i))
+                      toggleList(selectedSources, source.value, setSelectedSources)
                     }
                   >
-                    ✕
-                  </Button>
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setChildrenNames([...childrenNames, ""])}
-              >
-                + إضافة اسم
-              </Button>
-            </div>
-          )}
-
-          {/* Living Situation */}
-          <div className="grid sm:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>وضع السكن</Label>
-              <select
-                value={livingSituation}
-                onChange={(e) => setLivingSituation(e.target.value)}
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-              >
-                <option value="">اختر...</option>
-                {livingSituationOptions.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
+                    {source.label}
+                  </TogglePill>
                 ))}
-              </select>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>اسم شريك/شريكة الحياة</Label>
-              <Input
-                value={partnerName}
-                onChange={(e) => setPartnerName(e.target.value)}
-                placeholder="اسم الشريك (اختياري)"
-              />
-            </div>
-          </div>
 
-          {/* Housing */}
-          <div className="grid sm:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>نوع السكن</Label>
-              <select
-                value={housingType}
-                onChange={(e) => setHousingType(e.target.value)}
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-              >
-                <option value="">اختر...</option>
-                {housingTypeOptions.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
+            {/* Spending Pattern */}
+            <div className="space-y-3 text-end">
+              <Label className="font-bold text-slate-700 dark:text-slate-300">نمط ونظام صرفك المالي</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  ["stable", "ثابت ومخطط"],
+                  ["variable", "متغير ومرن"],
+                  ["unclear", "غير واضح بعد"],
+                ].map(([value, label]) => (
+                  <TogglePill
+                    key={value}
+                    active={spendingPattern === value}
+                    onClick={() => setSpendingPattern(value)}
+                  >
+                    {label}
+                  </TogglePill>
                 ))}
-              </select>
-            </div>
-            {housingType === "rent" && (
-              <div className="space-y-2">
-                <Label>الإيجار الشهري</Label>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  dir="ltr"
-                  value={monthlyRent}
-                  onChange={(e) => setMonthlyRent(e.target.value)}
-                  placeholder="بالجنيه"
-                />
               </div>
-            )}
-          </div>
-
-          {/* Debt */}
-          <div className="grid sm:grid-cols-2 gap-3">
-            <label className="flex items-center justify-between rounded-md border p-3 text-sm">
-              عندك ديون / أقساط
-              <Switch checked={hasDebt} onCheckedChange={setHasDebt} />
-            </label>
-            {hasDebt && (
-              <div className="space-y-2">
-                <Label>المبلغ الشهري للديون</Label>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  dir="ltr"
-                  value={debtMonthly}
-                  onChange={(e) => setDebtMonthly(e.target.value)}
-                  placeholder="بالجنيه"
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Support Others */}
-          <div className="space-y-2">
-            <Label>بتصرف على مين بشكل منتظم؟</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {supportOptions.map((option) => (
-                <TogglePill
-                  key={option.value}
-                  active={supportsOthers.includes(option.value)}
-                  onClick={() =>
-                    toggleList(supportsOthers, option.value, setSupportsOthers)
-                  }
-                >
-                  {option.label}
-                </TogglePill>
-              ))}
             </div>
-          </div>
-        </section>
 
-        {/* Deep Personal Data Section */}
-        <section className="space-y-3">
-          <div className="flex items-center gap-2 font-semibold text-sm">
-            <Heart className="w-4 h-4" />
-            بيانات شخصية (اختيارية - تحسّن دقة AI)
-          </div>
-
-          {/* Car */}
-          <div className="grid sm:grid-cols-3 gap-3">
-            <label className="flex items-center justify-between rounded-md border p-3 text-sm">
-              <span className="flex items-center gap-2">
-                <Car className="w-4 h-4" /> عندك عربية
-              </span>
-              <Switch
-                checked={carOwnership}
-                onCheckedChange={setCarOwnership}
-              />
-            </label>
-            {carOwnership && (
-              <>
-                <div className="space-y-2">
-                  <Label>نوع العربية</Label>
-                  <Input
-                    value={carType}
-                    onChange={(e) => setCarType(e.target.value)}
-                    placeholder="مثال: كيا سيراتو"
-                  />
+            {/* Switch 2: Debts */}
+            <div className="bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-4 transition-all hover:bg-slate-50 dark:hover:bg-slate-900/50">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5 text-end">
+                  <Label className="font-bold text-sm text-slate-800 dark:text-slate-200">هل لديك ديون، جمعيات، أو أقساط؟</Label>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">سنقوم بحجز هذا المبلغ من ميزانيتك الشهرية الصافية</p>
                 </div>
-                <div className="space-y-2">
-                  <Label>تكلفة شهرية</Label>
+                <Switch checked={hasDebt} onCheckedChange={setHasDebt} />
+              </div>
+
+              {hasDebt && (
+                <div className="space-y-2 text-end mt-4 p-3 bg-white/50 dark:bg-slate-900/50 rounded-xl border border-dashed animate-in slide-in-from-top-2 duration-200">
+                  <Label className="font-semibold text-xs text-slate-600 dark:text-slate-400">القيمة الإجمالية للأقساط الشهرية</Label>
                   <Input
                     type="number"
                     inputMode="decimal"
                     dir="ltr"
-                    value={monthlyCarCost}
-                    onChange={(e) => setMonthlyCarCost(e.target.value)}
-                    placeholder="بنزين + صيانة"
+                    value={debtMonthly}
+                    onChange={(e) => setDebtMonthly(e.target.value)}
+                    placeholder="بالجنيه المصري"
+                    className="rounded-xl h-10 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-start font-bold"
                   />
                 </div>
-              </>
-            )}
+              )}
+            </div>
           </div>
+        )}
 
-          {/* Pets */}
-          <div className="space-y-2">
-            <label className="flex items-center justify-between rounded-md border p-3 text-sm">
-              <span className="flex items-center gap-2">
-                <PawPrint className="w-4 h-4" /> عندك حيوانات أليفة
-              </span>
-              <Switch checked={hasPets} onCheckedChange={setHasPets} />
-            </label>
-            {hasPets && (
-              <div className="space-y-2">
-                <Label>أسماءهم</Label>
-                {petNames.map((n, i) => (
-                  <div key={i} className="flex gap-2">
+        {/* Tab 3: Lifestyle */}
+        {activeTab === "lifestyle" && (
+          <div className="space-y-5 animate-in fade-in duration-200">
+            {/* Housing & Family */}
+            <div className="space-y-4 p-4 bg-slate-50/30 dark:bg-slate-900/10 border rounded-2xl">
+              <h4 className="text-xs font-extrabold uppercase text-indigo-500 tracking-wider text-end border-b pb-2">السكن والوضع العائلي</h4>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2 text-end">
+                  <Label className="font-bold text-slate-700 dark:text-slate-300">وضع السكن الحالي</Label>
+                  <select
+                    value={livingSituation}
+                    onChange={(e) => setLivingSituation(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 px-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all cursor-pointer font-semibold"
+                  >
+                    <option value="">اختر من القائمة...</option>
+                    {livingSituationOptions.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2 text-end">
+                  <Label className="font-bold text-slate-700 dark:text-slate-300">اسم شريك / شريكة الحياة</Label>
+                  <Input
+                    value={partnerName}
+                    onChange={(e) => setPartnerName(e.target.value)}
+                    placeholder="اسم الشريك (اختياري)"
+                    className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 h-11 focus:ring-2 focus:ring-indigo-500/10 transition-all font-medium"
+                  />
+                </div>
+
+                <div className="space-y-2 text-end">
+                  <Label className="font-bold text-slate-700 dark:text-slate-300">نوع ملكية السكن</Label>
+                  <select
+                    value={housingType}
+                    onChange={(e) => setHousingType(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 px-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all cursor-pointer font-semibold"
+                  >
+                    <option value="">اختر من القائمة...</option>
+                    {housingTypeOptions.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {housingType === "rent" && (
+                  <div className="space-y-2 text-end animate-in slide-in-from-top-2 duration-200">
+                    <Label className="font-bold text-slate-700 dark:text-slate-300">قيمة الإيجار الشهري</Label>
                     <Input
-                      value={n}
-                      onChange={(e) => {
-                        const next = [...petNames];
-                        next[i] = e.target.value;
-                        setPetNames(next);
-                      }}
-                      placeholder={`حيوان ${i + 1}`}
+                      type="number"
+                      inputMode="decimal"
+                      dir="ltr"
+                      value={monthlyRent}
+                      onChange={(e) => setMonthlyRent(e.target.value)}
+                      placeholder="بالجنيه المصري"
+                      className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 h-11 focus:ring-2 focus:ring-indigo-500/10 transition-all font-bold text-start"
                     />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="shrink-0"
-                      onClick={() =>
-                        setPetNames(petNames.filter((_, j) => j !== i))
-                      }
-                    >
-                      ✕
-                    </Button>
                   </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPetNames([...petNames, ""])}
-                >
-                  + إضافة
-                </Button>
+                )}
               </div>
-            )}
-          </div>
-
-          {/* Smoking */}
-          <label className="flex items-center justify-between rounded-md border p-3 text-sm">
-            <span className="flex items-center gap-2">
-              <Cigarette className="w-4 h-4" /> بتدخن
-            </span>
-            <Switch checked={smoking} onCheckedChange={setSmoking} />
-          </label>
-
-          {/* Subscriptions */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4" /> الاشتراكات الثابتة
-            </Label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {subscriptionOptions.map((o) => (
-                <TogglePill
-                  key={o.value}
-                  active={subscriptions.includes(o.value)}
-                  onClick={() =>
-                    toggleList(subscriptions, o.value, setSubscriptions)
-                  }
-                >
-                  {o.label}
-                </TogglePill>
-              ))}
             </div>
-          </div>
 
-          {/* Regular Contacts */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Users className="w-4 h-4" /> أشخاص بتحولهم فلوس بانتظام
-            </Label>
-            {regularContacts.map((n, i) => (
-              <div key={i} className="flex gap-2">
-                <Input
-                  value={n}
-                  onChange={(e) => {
-                    const next = [...regularContacts];
-                    next[i] = e.target.value;
-                    setRegularContacts(next);
-                  }}
-                  placeholder={`شخص ${i + 1}`}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="shrink-0"
-                  onClick={() =>
-                    setRegularContacts(
-                      regularContacts.filter((_, j) => j !== i),
-                    )
-                  }
-                >
-                  ✕
-                </Button>
+            {/* Children & Dependents Switches Group */}
+            <div className="space-y-3 p-4 bg-slate-50/30 dark:bg-slate-900/10 border rounded-2xl">
+              <h4 className="text-xs font-extrabold uppercase text-indigo-500 tracking-wider text-end border-b pb-2">الأبناء والمسؤوليات</h4>
+              
+              <div className="grid sm:grid-cols-3 gap-3">
+                <div className="flex items-center justify-between rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-950/50 p-3">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">لديك أطفال</span>
+                  <Switch checked={hasChildren} onCheckedChange={setHasChildren} />
+                </div>
+                
+                <div className="flex items-center justify-between rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-950/50 p-3">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">مسؤول عن أسرة</span>
+                  <Switch checked={responsibleForFamily} onCheckedChange={setResponsibleForFamily} />
+                </div>
+
+                <div className="flex items-center justify-between rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-950/50 p-3">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">تعيش وحدك</span>
+                  <Switch checked={livesAlone} onCheckedChange={setLivesAlone} />
+                </div>
               </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setRegularContacts([...regularContacts, ""])}
-            >
-              + إضافة شخص
-            </Button>
-          </div>
-        </section>
 
-        <section className="space-y-3">
-          <div className="grid sm:grid-cols-3 gap-3">
-            <div className="space-y-2">
-              <Label>تفصيل التقارير</Label>
-              <select
-                value={detailLevel}
-                onChange={(event) => setDetailLevel(event.target.value)}
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-              >
-                <option value="summary">مختصر</option>
-                <option value="balanced">متوازن</option>
-                <option value="detailed">تفصيلي</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label>دقة الأسئلة</Label>
-              <select
-                value={questionFriction}
-                onChange={(event) => setQuestionFriction(event.target.value)}
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-              >
-                <option value="low">منخفضة</option>
-                <option value="medium">متوسطة</option>
-                <option value="high">عالية</option>
-              </select>
-            </div>
-            <label className="flex items-center justify-between rounded-md border p-3 text-sm">
-              التنبيهات
-              <Switch
-                checked={alertsEnabled}
-                onCheckedChange={setAlertsEnabled}
-              />
-            </label>
-          </div>
-        </section>
+              {hasChildren && (
+                <div className="grid sm:grid-cols-2 gap-4 pt-3 border-t border-dashed animate-in slide-in-from-top-2 duration-200">
+                  <div className="space-y-2 text-end">
+                    <Label className="font-bold text-slate-700 dark:text-slate-300">عدد الأطفال</Label>
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      dir="ltr"
+                      value={childrenCount}
+                      onChange={(event) => setChildrenCount(event.target.value)}
+                      className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 h-10 text-start font-bold"
+                    />
+                  </div>
 
+                  <div className="space-y-2 text-end">
+                    <Label className="font-bold text-slate-700 dark:text-slate-300">أسماء أطفالك (اختياري)</Label>
+                    <div className="space-y-2">
+                      {childrenNames.map((n, i) => (
+                        <div key={i} className="flex gap-2 items-center">
+                          <Input
+                            value={n}
+                            onChange={(e) => {
+                              const next = [...childrenNames];
+                              next[i] = e.target.value;
+                              setChildrenNames(next);
+                            }}
+                            placeholder={`اسم طفلك ${i + 1}`}
+                            className="rounded-xl h-10 font-medium"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="shrink-0 h-9 w-9 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl"
+                            onClick={() =>
+                              setChildrenNames(childrenNames.filter((_, j) => j !== i))
+                            }
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setChildrenNames([...childrenNames, ""])}
+                        className="rounded-xl text-xs gap-1 border-dashed hover:bg-indigo-50/50 hover:text-indigo-600 dark:hover:bg-indigo-950/20"
+                      >
+                        + إضافة اسم طفل
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid sm:grid-cols-2 gap-4 pt-3 border-t border-dashed">
+                <div className="space-y-2 text-end">
+                  <Label className="font-bold text-slate-700 dark:text-slate-300">بتصرف على مين بشكل منتظم؟</Label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {supportOptions.map((option) => (
+                      <TogglePill
+                        key={option.value}
+                        active={supportsOthers.includes(option.value)}
+                        onClick={() =>
+                          toggleList(supportsOthers, option.value, setSupportsOthers)
+                        }
+                      >
+                        {option.label}
+                      </TogglePill>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-end">
+                  <Label className="font-bold text-slate-700 dark:text-slate-300">عدد التزاماتك الشهرية الأخرى</Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    dir="ltr"
+                    value={fixedCommitments}
+                    onChange={(event) => setFixedCommitments(event.target.value)}
+                    className="rounded-xl border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 h-11 focus:ring-2 focus:ring-indigo-500/10 transition-all font-bold text-start"
+                    placeholder="فواتير أخرى، إيجار محال، إلخ"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Assets & Luxury Group */}
+            <div className="space-y-4 p-4 bg-slate-50/30 dark:bg-slate-900/10 border rounded-2xl">
+              <h4 className="text-xs font-extrabold uppercase text-indigo-500 tracking-wider text-end border-b pb-2">السيارة والرفاهية</h4>
+              
+              {/* Switch 3: Car */}
+              <div className="bg-white/50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-3">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
+                    <Car className="w-4 h-4 text-slate-500" /> هل تمتلك سيارة خاصة؟
+                  </span>
+                  <Switch checked={carOwnership} onCheckedChange={setCarOwnership} />
+                </div>
+                
+                {carOwnership && (
+                  <div className="grid sm:grid-cols-2 gap-3 mt-3 pt-3 border-t border-dashed animate-in slide-in-from-top-2 duration-200">
+                    <div className="space-y-1 text-end">
+                      <Label className="text-xs font-bold">نوع السيارة وموديلها</Label>
+                      <Input
+                        value={carType}
+                        onChange={(e) => setCarType(e.target.value)}
+                        placeholder="مثال: كيا سيراتو"
+                        className="rounded-xl h-9"
+                      />
+                    </div>
+                    <div className="space-y-1 text-end">
+                      <Label className="text-xs font-bold">المصاريف الشهرية (بنزين + صيانة)</Label>
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        dir="ltr"
+                        value={monthlyCarCost}
+                        onChange={(e) => setMonthlyCarCost(e.target.value)}
+                        placeholder="بالجنيه"
+                        className="rounded-xl h-9 text-start font-bold"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Switch 4: Pets */}
+              <div className="bg-white/50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-3">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
+                    <PawPrint className="w-4 h-4 text-slate-500" /> هل تربي حيوانات أليفة؟
+                  </span>
+                  <Switch checked={hasPets} onCheckedChange={setHasPets} />
+                </div>
+                
+                {hasPets && (
+                  <div className="space-y-2 text-end mt-3 pt-3 border-t border-dashed animate-in slide-in-from-top-2 duration-200">
+                    <Label className="text-xs font-bold">أسماءهم (اختياري)</Label>
+                    <div className="space-y-2">
+                      {petNames.map((n, i) => (
+                        <div key={i} className="flex gap-2 items-center">
+                          <Input
+                            value={n}
+                            onChange={(e) => {
+                              const next = [...petNames];
+                              next[i] = e.target.value;
+                              setPetNames(next);
+                            }}
+                            placeholder={`حيوان ${i + 1}`}
+                            className="rounded-xl h-9 font-medium"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="shrink-0 h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl"
+                            onClick={() => setPetNames(petNames.filter((_, j) => j !== i))}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPetNames([...petNames, ""])}
+                        className="rounded-xl text-xs gap-1 border-dashed hover:bg-indigo-50/50 hover:text-indigo-600"
+                      >
+                        + إضافة حيوان أليف
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Switch 5: Smoking */}
+              <div className="flex items-center justify-between rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-950/50 p-3">
+                <span className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <Cigarette className="w-4 h-4 text-slate-500" /> هل تدخن؟
+                </span>
+                <Switch checked={smoking} onCheckedChange={setSmoking} />
+              </div>
+            </div>
+
+            {/* Subscriptions & Transfers Group */}
+            <div className="space-y-4 p-4 bg-slate-50/30 dark:bg-slate-900/10 border rounded-2xl">
+              <h4 className="text-xs font-extrabold uppercase text-indigo-500 tracking-wider text-end border-b pb-2">الاشتراكات والتحويلات المنتظمة</h4>
+              
+              <div className="space-y-2 text-end">
+                <Label className="font-bold text-xs text-slate-600 dark:text-slate-400">الاشتراكات الشهرية الثابتة</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {subscriptionOptions.map((o) => (
+                    <TogglePill
+                      key={o.value}
+                      active={subscriptions.includes(o.value)}
+                      onClick={() => toggleList(subscriptions, o.value, setSubscriptions)}
+                    >
+                      {o.label}
+                    </TogglePill>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2 text-end pt-3 border-t border-dashed">
+                <Label className="font-bold text-xs text-slate-600 dark:text-slate-400">أشخاص تحوّل لهم أموال بانتظام (عائلة، فريلانسرز، إلخ)</Label>
+                <div className="space-y-2">
+                  {regularContacts.map((n, i) => (
+                    <div key={i} className="flex gap-2 items-center">
+                      <Input
+                        value={n}
+                        onChange={(e) => {
+                          const next = [...regularContacts];
+                          next[i] = e.target.value;
+                          setRegularContacts(next);
+                        }}
+                        placeholder={`اسم الشخص المستلم ${i + 1}`}
+                        className="rounded-xl h-10 font-medium"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0 h-9 w-9 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl"
+                        onClick={() =>
+                          setRegularContacts(regularContacts.filter((_, j) => j !== i))
+                        }
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setRegularContacts([...regularContacts, ""])}
+                    className="rounded-xl text-xs gap-1 border-dashed hover:bg-indigo-50/50 hover:text-indigo-600"
+                  >
+                    + إضافة شخص
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Preferences */}
+        {activeTab === "preferences" && (
+          <div className="space-y-5 animate-in fade-in duration-200">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2 text-end">
+                <Label className="font-bold text-slate-700 dark:text-slate-300">مستوى تفصيل التقارير المالية</Label>
+                <select
+                  value={detailLevel}
+                  onChange={(event) => setDetailLevel(event.target.value)}
+                  className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 px-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all cursor-pointer font-semibold"
+                >
+                  <option value="summary">مختصر وسريع</option>
+                  <option value="balanced">متوازن وشامل</option>
+                  <option value="detailed">تفصيلي وتحليلي دقيق</option>
+                </select>
+              </div>
+
+              <div className="space-y-2 text-end">
+                <Label className="font-bold text-slate-700 dark:text-slate-300">معدل تكرار أسئلة الـ AI</Label>
+                <select
+                  value={questionFriction}
+                  onChange={(event) => setQuestionFriction(event.target.value)}
+                  className="h-11 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 px-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all cursor-pointer font-semibold"
+                >
+                  <option value="low">منخفض (تفاعل قليل)</option>
+                  <option value="medium">متوسط (توازن مناسب)</option>
+                  <option value="high">مرتفع (أسئلة دقيقة وتفصيلية)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Switch 6: Alerts */}
+            <div className="flex items-center justify-between rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-950/50 p-4">
+              <div className="space-y-0.5 text-end">
+                <Label className="font-bold text-sm text-slate-800 dark:text-slate-200">تنبيهات وتوصيات الميزانية</Label>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">تفعيل إشعارات التحذير في حال اقترابك من تجاوز سقف الميزانية</p>
+              </div>
+              <Switch checked={alertsEnabled} onCheckedChange={setAlertsEnabled} />
+            </div>
+          </div>
+        )}
+
+        {/* Errors display */}
         {saveError && (
-          <div className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/20 dark:text-rose-300">
+          <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-300 text-end animate-shake" dir="rtl">
             <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
             <span>{saveError}</span>
           </div>
         )}
 
-        <Button
-          onClick={save}
-          disabled={updateProfile.isPending}
-          className="w-full gap-2"
-        >
-          <Save className="w-4 h-4" />
-          {updateProfile.isPending ? "جاري الحفظ..." : "حفظ البروفايل الذكي"}
-        </Button>
+        {/* Footer Navigation & Actions */}
+        <div className="flex flex-col gap-3 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+          <Button
+            onClick={save}
+            disabled={updateProfile.isPending}
+            className="w-full gap-2 rounded-xl h-11 bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-lg shadow-indigo-500/10 transition-all active:scale-98"
+          >
+            <Save className="w-4 h-4" />
+            {updateProfile.isPending ? "جاري الحفظ والتحليل..." : "حفظ بيانات البروفايل الذكي"}
+          </Button>
+
+          <div className="flex justify-between items-center gap-2">
+            {/* Prev Tab */}
+            {activeTab !== "basic" ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const idx = tabs.findIndex(t => t.id === activeTab);
+                  if (idx > 0) setActiveTab(tabs[idx - 1].id);
+                }}
+                className="gap-1 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900/50 h-9"
+              >
+                <ChevronRight className="w-4 h-4" />
+                السابق
+              </Button>
+            ) : <div />}
+
+            {/* Cancel Button */}
+            {onCancel && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onCancel}
+                className="rounded-xl border-slate-200 dark:border-slate-800 h-9 text-xs font-bold px-4"
+              >
+                إلغاء
+              </Button>
+            )}
+
+            {/* Next Tab */}
+            {activeTab !== "preferences" ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const idx = tabs.findIndex(t => t.id === activeTab);
+                  if (idx !== -1 && idx < tabs.length - 1) setActiveTab(tabs[idx + 1].id);
+                }}
+                className="gap-1 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 h-9"
+              >
+                التالي
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+            ) : <div />}
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

@@ -5,7 +5,8 @@ import {
   userProfiles,
   users,
 } from "../../db/schema";
-import { normalizeRelationship } from "../lib/relationship-normalizer";
+import { normalizeRelationship, parseNameAndRelationship } from "../lib/relationship-normalizer";
+import { extractExplicitPeopleContext, cleanPersonName } from "../lib/person-resolver";
 
 export const SMART_PROFILE_VERSION = 2;
 
@@ -406,6 +407,11 @@ export async function getSmartProfile(
       
     if (contacts.length > 0) {
       result.aiInferredAttributes.knownPeople = contacts as any;
+      result.lifestyleInfo.dynamicContacts = contacts.map(c => ({
+        name: c.name,
+        relationship: c.relationship,
+        rawRelationship: c.relationship,
+      })) as any;
     }
     
     // Fetch latest learning events for context injection.
@@ -718,6 +724,138 @@ export async function recordProfileLearningEvent(input: {
 }
 
 /**
+ * Helper to clean and parse candidate dynamic contact name and relationship.
+ * Strips clarification prefixes, resolves suffixes, decouples compound answers,
+ * and validates the name and relationship to avoid database profile corruption.
+ */
+function cleanNameAndRelationship(
+  name: string,
+  relationship: string,
+): { name: string | null; relationship: string | null } {
+  let cleanName = name.trim();
+  let cleanRel = relationship.trim();
+
+  // Strip common clarification/introductory prefixes from both name and relationship
+  const prefixesToStrip = [
+    /^الناس\s+دول\s+/,
+    /^الناس\s+/,
+    /^دول\s+/,
+    /^الاشخاص\s+/,
+    /^الأشخاص\s+/,
+    /^التوضيح\s*:\s*/,
+    /^التوضيح\s+/,
+    /^توضيح\s+/,
+    /^مين\s+/,
+    /^يا\s+عم\s+/,
+    /^يا\s+/,
+    /^هو\s+/,
+    /^هي\s+/,
+    /^هم\s+/,
+    /^احنا\s+/,
+    /^يكون\s+/,
+    /^تكون\s+/,
+    /^بيقولي\s+/,
+    /^بيقول\s+لي\s+/,
+    /^بيقول\s+/,
+  ];
+
+  for (const regex of prefixesToStrip) {
+    cleanName = cleanName.replace(regex, "");
+    cleanRel = cleanRel.replace(regex, "");
+  }
+
+  cleanName = cleanName.trim();
+  cleanRel = cleanRel.trim();
+
+  // Strip category paths if the AI/Fallback returned them as relationships (e.g., 'أصدقاء/علي صاحبك' -> 'علي صاحبك')
+  if (cleanRel.includes("/")) {
+    const parts = cleanRel.split("/");
+    cleanRel = parts[parts.length - 1].trim();
+  }
+
+  // Strip the name itself from the relationship if it's mixed in (e.g., name='علي', rel='علي صاحبك' -> rel='صاحبك')
+  if (cleanName && cleanRel.includes(cleanName) && cleanRel !== cleanName) {
+    cleanRel = cleanRel.replace(cleanName, "").trim();
+  }
+
+  // If the cleanName itself is a relationship term, reject it as a person name!
+  const compName = cleanName
+    .replace(/[إأآٱ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .toLowerCase();
+
+  const relationWords = [
+    "صاحبي", "صاحبتي", "صحبتي", "صديقي", "صديقتي",
+    "اخويا", "أخويا", "اختي", "أختي", "امي", "أمي",
+    "ابويا", "أبويا", "بابا", "ماما", "مراتي", "جوزي",
+    "بنتي", "ابني", "سواق", "بواب", "شغال", "شغالة",
+    "سواقين", "موظف", "مدير", "زميل", "زميلي", "زميلتي",
+    "صاحب", "صديق", "اخ", "أخ", "اخت", "أخت", "اب", "أب",
+    "ام", "أم", "ابن", "بنت", "زوج", "زوجة", "جوز", "مرات"
+  ];
+
+  const noisyNames = [
+    "الناس", "الناس دول", "حد", "واحد", "واحدة", "واحده", "شخص", "شخص معروف", "عام"
+  ];
+
+  if (noisyNames.includes(compName) || noisyNames.includes(cleanName.toLowerCase().trim())) {
+    return { name: null, relationship: null };
+  }
+
+  // If the cleanName itself is a relationship term (e.g. "أمي", "صاحبي"), users often use this as the actual name.
+  if (relationWords.includes(compName)) {
+    const { normalized } = normalizeRelationship(cleanName);
+    if (!cleanRel || cleanRel === "شخص" || cleanRel === "شخص معروف" || cleanRel === cleanName) {
+       cleanRel = normalized;
+    }
+  }
+
+  // If cleanName contains a relationship suffix (e.g. "سلمى أختي"), parse it
+  const parsed = parseNameAndRelationship(cleanName, "العائلة");
+  if (parsed.name && parsed.name !== "شخص" && parsed.relationship !== "شخص معروف") {
+    cleanName = parsed.name;
+    if (!cleanRel || cleanRel === "شخص معروف" || cleanRel === "قريب" || cleanRel === "شخص") {
+      cleanRel = parsed.relationship;
+    }
+  }
+
+  // If the relationship is compound/lists multiple people, parse specific relationship for cleanName
+  if (
+    cleanRel.includes("،") ||
+    cleanRel.includes(",") ||
+    cleanRel.includes(";") ||
+    cleanRel.includes("؛") ||
+    cleanRel.includes(" و ")
+  ) {
+    // Wrap inside parentheses to leverage extractExplicitPeopleContext
+    const parenthesized = `(${cleanRel})`;
+    const parsedPeople = extractExplicitPeopleContext(parenthesized);
+    
+    // Normalize cleanName for robust matching (ignore spaces & standard letters)
+    const normClean = cleanName.replace(/\s+/g, "").replace(/[إأآٱ]/g, "ا").replace(/[ىي]/g, "ي").replace(/ة/g, "ه").toLowerCase().trim();
+    
+    // Find if cleanName is in the parsed people
+    const match = parsedPeople.find((p) => {
+      if (!p.name) return false;
+      const normPName = p.name.replace(/\s+/g, "").replace(/[إأآٱ]/g, "ا").replace(/[ىي]/g, "ي").replace(/ة/g, "ه").toLowerCase().trim();
+      return normPName.includes(normClean) || normClean.includes(normPName);
+    });
+    if (match && match.relationship) {
+      cleanRel = match.relationship;
+    }
+  }
+
+  // Double check name validity
+  const finalName = cleanPersonName(cleanName);
+  if (!finalName || finalName === "شخص" || finalName === "عام") {
+    return { name: null, relationship: null };
+  }
+
+  return { name: finalName, relationship: cleanRel };
+}
+
+/**
  * Add a dynamic contact to the user's profile based on chat clarifications.
  */
 export async function addDynamicContact(
@@ -726,6 +864,16 @@ export async function addDynamicContact(
   name: string,
   relationship: string,
 ): Promise<void> {
+  // Clean and validate the contact before saving
+  const cleaned = cleanNameAndRelationship(name, relationship);
+  if (!cleaned.name || !cleaned.relationship) {
+    console.log(`[Profile Healing] Rejected saving invalid/noisy contact: name="${name}", rel="${relationship}"`);
+    return;
+  }
+
+  const cleanName = cleaned.name;
+  const cleanRel = cleaned.relationship;
+
   const profile = await getSmartProfile(userId, userType);
   const lifestyleInfo = profile.lifestyleInfo as Record<string, any>;
 
@@ -733,10 +881,10 @@ export async function addDynamicContact(
     ? [...lifestyleInfo.dynamicContacts]
     : [];
 
-  const { normalized } = normalizeRelationship(relationship);
+  const { normalized } = normalizeRelationship(cleanRel);
 
   // Avoid duplicates or update existing
-  const existingIndex = dynamicContacts.findIndex((c: any) => c.name === name);
+  const existingIndex = dynamicContacts.findIndex((c: any) => c.name === cleanName);
   if (existingIndex >= 0) {
     const existing = dynamicContacts[existingIndex];
     // Safeguard: Do not overwrite a specific relationship (like 'أم') with a generic fallback (like 'قريب')
@@ -755,17 +903,17 @@ export async function addDynamicContact(
       !genericTerms.includes(existing.relationship) &&
       !genericTerms.includes(existing.rawRelationship);
     const isNewGeneric =
-      genericTerms.includes(relationship) || genericTerms.includes(normalized);
+      genericTerms.includes(cleanRel) || genericTerms.includes(normalized);
 
     if (!hasSpecific || !isNewGeneric) {
       dynamicContacts[existingIndex].relationship = normalized;
-      dynamicContacts[existingIndex].rawRelationship = relationship;
+      dynamicContacts[existingIndex].rawRelationship = cleanRel;
     }
   } else {
     dynamicContacts.push({
-      name,
+      name: cleanName,
       relationship: normalized,
-      rawRelationship: relationship,
+      rawRelationship: cleanRel,
     });
   }
 
@@ -775,4 +923,5 @@ export async function addDynamicContact(
       dynamicContacts,
     },
   });
+  console.log(`[Profile Healing] Saved clean contact: name="${cleanName}", relationship="${normalized}" (raw: "${cleanRel}")`);
 }

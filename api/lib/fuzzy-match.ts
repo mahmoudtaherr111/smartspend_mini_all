@@ -126,3 +126,14 @@ export function matchArabicPhrase(text: string, phrase: string): boolean {
 
   return false;
 }
+
+/**
+ * Strips common Arabic prefixes (و, ف, ب, ل, ال, لل, وال, بال, فال)
+ * from a word if the remaining length is at least 3 characters.
+ */
+export function stripArabicPrefix(word: string): string {
+  const normalized = normalizeArabic(word).toLowerCase();
+  const prefixesRegex = /^(?:وال|بال|فال|لل|ال|ب|و|ف|ل)(?=[^\s]{3,})/i;
+  return normalized.replace(prefixesRegex, "");
+}
+

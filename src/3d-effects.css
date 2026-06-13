@@ -2,43 +2,63 @@
 
 /* Glassmorphism cards */
 .glass-card {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.68) 0%,
+    rgba(255, 255, 255, 0.4) 100%
+  );
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
   box-shadow:
-    0 10px 30px -10px rgba(0, 0, 0, 0.04),
-    0 1px 1px 0 rgba(0, 0, 0, 0.02);
+    0 8px 32px 0 rgba(31, 38, 135, 0.04),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
   border-radius: 1.25rem;
 }
 
 .dark .glass-card {
-  background: rgba(15, 23, 42, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: linear-gradient(
+    135deg,
+    rgba(15, 23, 42, 0.45) 0%,
+    rgba(9, 13, 22, 0.25) 100%
+  );
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   box-shadow:
-    0 10px 30px -10px rgba(0, 0, 0, 0.3),
-    0 1px 0 0 rgba(255, 255, 255, 0.02) inset;
+    0 8px 32px 0 rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
 }
 
 /* Premium Card (Frosted glass + ambient occlusion shadow) */
 .premium-card {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.72) 0%,
+    rgba(255, 255, 255, 0.45) 100%
+  );
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
   border-radius: 1.25rem;
   box-shadow:
-    0 10px 30px -10px rgba(0, 0, 0, 0.04),
-    0 1px 1px 0 rgba(0, 0, 0, 0.02);
+    0 8px 32px 0 rgba(31, 38, 135, 0.04),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .dark .premium-card {
-  background: rgba(30, 41, 59, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: linear-gradient(
+    135deg,
+    rgba(15, 23, 42, 0.5) 0%,
+    rgba(9, 13, 22, 0.3) 100%
+  );
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   box-shadow:
-    0 10px 30px -10px rgba(0, 0, 0, 0.3),
-    0 1px 0 0 rgba(255, 255, 255, 0.02) inset;
+    0 8px 32px 0 rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
 }
 
 /* Premium radial glows for background */
@@ -48,14 +68,14 @@
   height: 400px;
   border-radius: 50%;
   filter: blur(130px);
-  opacity: 0.12;
+  opacity: 0.15;
   pointer-events: none;
   z-index: 0;
   transform: translateZ(0);
 }
 
 .dark .ambient-glow {
-  opacity: 0.08;
+  opacity: 0.12;
 }
 
 .glow-indigo {

@@ -36,6 +36,21 @@ const origin =
     : "http://localhost:5173";
 
 export const webauthnRouter = router({
+  checkHasPasskey: authedProcedure.query(async ({ ctx }) => {
+    const db = getDb();
+    const userId = ctx.user.id;
+    const userType = ctx.user.type;
+
+    const credential = await db.query.userCredentials.findFirst({
+      where: and(
+        eq(userCredentials.userId, userId),
+        eq(userCredentials.userType, userType),
+      ),
+    });
+
+    return { hasPasskey: !!credential };
+  }),
+
   // 1. Generate Registration Options (Requires Auth to tie passkey to an existing account)
   generateRegistrationOptions: authedProcedure.mutation(async ({ ctx }) => {
     const db = getDb();

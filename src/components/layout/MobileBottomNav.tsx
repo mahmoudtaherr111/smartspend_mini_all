@@ -57,9 +57,11 @@ export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
     };
   }, []);
 
-  if (location.pathname !== "/dashboard") return null;
+  const visibleRoutes = ["/dashboard", "/settings", "/support", "/pro", "/bank-sync"];
+  if (!visibleRoutes.includes(location.pathname)) return null;
 
-  const activeTab = searchParams.get("tab") || "record";
+  const isMoreActive = ["/settings", "/support", "/pro", "/bank-sync"].includes(location.pathname);
+  const activeTab = isMoreActive ? "" : (searchParams.get("tab") || "record");
   const month =
     searchParams.get("month") || new Date().toISOString().slice(0, 7);
 
@@ -71,7 +73,7 @@ export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className="lg:hidden fixed bottom-0 inset-x-0 z-50 border-t border-slate-200/50 dark:border-white/10 bg-white/85 dark:bg-slate-950/85 backdrop-blur-2xl pb-[env(safe-area-inset-bottom)]"
+          className="lg:hidden fixed bottom-0 inset-x-0 z-50 border-t border-slate-200/50 dark:border-white/10 bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl pb-[env(safe-area-inset-bottom)] pt-2 mobile-bottom-nav"
           aria-label="التنقل الرئيسي"
         >
           <div className="grid grid-cols-5 gap-1 p-1 max-w-md mx-auto">
@@ -121,9 +123,25 @@ export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
                 mediumTap();
                 onOpenMenu();
               }}
-              className="tap-target active-press flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground"
+              className={cn(
+                "tap-target active-press relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-[10px] font-semibold transition-colors duration-200 z-10",
+                isMoreActive
+                  ? "text-emerald-600 dark:text-emerald-400 font-bold"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
               aria-label="فتح القائمة"
             >
+              {isMoreActive && (
+                <motion.div
+                  layoutId="activeTabIndicator"
+                  className="absolute inset-0 bg-emerald-500/10 dark:bg-emerald-400/10 rounded-xl z-[-1] border border-emerald-500/10 dark:border-emerald-400/5"
+                  transition={{
+                    type: "spring",
+                    stiffness: 380,
+                    damping: 30,
+                  }}
+                />
+              )}
               <Menu className="w-5 h-5" />
               <span>المزيد</span>
             </button>

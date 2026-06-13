@@ -45,6 +45,7 @@ import {
   Info,
   Zap,
   GitBranch,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -54,7 +55,7 @@ function Hint({ text }: { text: string }) {
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Info className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 cursor-help inline-block ml-1 shrink-0" />
+          <Info className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600 cursor-help inline-block ms-1 shrink-0" />
         </TooltipTrigger>
         <TooltipContent
           side="top"
@@ -200,7 +201,7 @@ function RoutingRangesEditor({
             </div>
           </div>
 
-          <div className="flex-1 min-w-[200px] flex items-center gap-3 border-r pr-3 dark:border-slate-800">
+          <div className="flex-1 min-w-[200px] flex items-center gap-3 border-r pe-3 dark:border-slate-800">
             <div className="space-y-1 w-28">
               <Label className="text-[10px] text-slate-500">الإجراء</Label>
               <Select
@@ -524,14 +525,14 @@ function NumInput({
         <Input
           type="number"
           dir="ltr"
-          className={`font-mono bg-slate-50 dark:bg-slate-900 ${unit ? 'pl-16' : ''}`}
+          className={`font-mono bg-slate-50 dark:bg-slate-900 ${unit ? 'ps-16' : ''}`}
           value={formData[settingKey] || ""}
           min={min}
           max={max}
           onChange={(e) => updateField(settingKey, e.target.value)}
         />
         {unit && (
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">
+          <span className="absolute start-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">
             {unit}
           </span>
         )}
@@ -600,6 +601,14 @@ function PlanAdvancedLimits({
           formData={formData}
           updateField={updateField}
           unit="رسالة"
+        />
+        <NumInput
+          label="حد العمليات أوفلاين"
+          hint="أقصى عدد معاملات نصية يمكن للمستخدم تسجيلها وحفظها محلياً في وضع أوفلاين"
+          settingKey={`offline_limit_${plan}`}
+          formData={formData}
+          updateField={updateField}
+          unit="عملية"
         />
       </div>
 
@@ -711,6 +720,28 @@ export function AdminSettingsTab() {
     onError: () => toast.error("حدث خطأ أثناء حفظ الإعدادات"),
   });
 
+  const backupMutation = trpc.admin.triggerBackupDemo.useMutation({
+    onSuccess: (data) => {
+      const blob = new Blob([JSON.stringify(data.backupData, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `smartspend_backup_${new Date().toISOString().split("T")[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(data.message || "تم تنزيل النسخة الاحتياطية بنجاح! 💾");
+    },
+    onError: (err) => {
+      toast.error(`فشل إنشاء النسخة الاحتياطية: ${err.message}`);
+    },
+  });
+
+  const handleBackup = () => {
+    backupMutation.mutate();
+  };
+
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -755,21 +786,34 @@ export function AdminSettingsTab() {
           </h2>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             كل إعداد هنا له تأثير مباشر على النظام — تحقق من الملاحظات
-            <Info className="w-3.5 h-3.5 inline-block mr-1 text-slate-400" />
+            <Info className="w-3.5 h-3.5 inline-block me-1 text-slate-400" />
             لفهم وظيفة كل خانة
           </p>
         </div>
-        <Button
-          onClick={handleSubmit}
-          disabled={updateSettings.isPending}
-          size="lg"
-          className="gap-2 shadow-lg bg-indigo-600 hover:bg-indigo-700 text-white px-8"
-        >
-          <Save className="w-5 h-5" />
-          {updateSettings.isPending
-            ? "جاري الحفظ والتطبيق..."
-            : "حفظ وتنفيذ الإعدادات"}
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            type="button"
+            onClick={handleBackup}
+            disabled={backupMutation.isPending}
+            variant="outline"
+            size="lg"
+            className="gap-2 border-indigo-200 hover:bg-indigo-50 dark:border-slate-800 text-indigo-700 dark:text-indigo-400"
+          >
+            <Download className="w-5 h-5" />
+            {backupMutation.isPending ? "جاري التجميع..." : "نسخة احتياطية (Backup)"}
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={updateSettings.isPending}
+            size="lg"
+            className="gap-2 shadow-lg bg-indigo-600 hover:bg-indigo-700 text-white px-8"
+          >
+            <Save className="w-5 h-5" />
+            {updateSettings.isPending
+              ? "جاري الحفظ والتطبيق..."
+              : "حفظ وتنفيذ الإعدادات"}
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="plans" className="w-full space-y-8">
@@ -975,7 +1019,7 @@ export function AdminSettingsTab() {
                 <TabsContent
                   key={plan}
                   value={plan}
-                  className="space-y-8 animate-in slide-in-from-right-4"
+                  className="space-y-8 animate-in slide-in-from-end-4"
                 >
                   {/* Routing Ranges */}
                   <Card className="border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm overflow-hidden border-t-4 border-t-indigo-500">
@@ -1149,6 +1193,66 @@ export function AdminSettingsTab() {
               </CardContent>
             </Card>
 
+            {/* RAG Settings */}
+            <Card className="border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm overflow-hidden mt-8 border-t-4 border-t-purple-500">
+              <SectionHeader
+                icon={<BrainCircuit className="w-5 h-5 text-purple-600" />}
+                title="إعدادات الـ Personalized RAG"
+                description="تحكم في نظام استرجاع المعاملات السابقة (RAG) لزيادة دقة التصنيف"
+              />
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex flex-col gap-3 bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border dark:border-slate-800 col-span-1 md:col-span-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="cursor-pointer font-medium flex items-center gap-2">
+                          تفعيل نظام الـ RAG
+                          <Badge variant="outline" className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200">New</Badge>
+                        </Label>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          يقوم بمطابقة معاملات المستخدم الجديدة مع تاريخه القديم لزيادة الدقة وتقليل الهلوسة
+                        </p>
+                      </div>
+                      <Switch
+                        checked={formData.enable_rag !== "false"}
+                        onCheckedChange={(c) =>
+                          updateField("enable_rag", c ? "true" : "false")
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <FieldLabel hint="المفتاح المخصص لمحرك الـ RAG. إذا تركته فارغاً سيتم استخدام المفتاح الأساسي للذكاء الاصطناعي كاحتياطي.">
+                      مفتاح واجهة الـ RAG (API Key)
+                    </FieldLabel>
+                    <Input
+                      type="password"
+                      placeholder="مثال: AIzaSy... (اختياري)"
+                      value={formData.rag_api_key || ""}
+                      onChange={(e) => updateField("rag_api_key", e.target.value)}
+                      dir="ltr"
+                      className="font-mono bg-slate-50 dark:bg-slate-900"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <FieldLabel hint="الموديل المستخدم لإنشاء الـ Embeddings. (الافتراضي لجوجل هو text-embedding-004)">
+                      اسم الموديل (Model Name)
+                    </FieldLabel>
+                    <Input
+                      type="text"
+                      placeholder="text-embedding-004"
+                      value={formData.rag_model || ""}
+                      onChange={(e) => updateField("rag_model", e.target.value)}
+                      dir="ltr"
+                      className="font-mono bg-slate-50 dark:bg-slate-900"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* STT Fallback moved here */}
             <Card className="border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm overflow-hidden mt-8">
               <SectionHeader
@@ -1246,7 +1350,7 @@ export function AdminSettingsTab() {
                         updateField("promo_code_discount", e.target.value)
                       }
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
+                    <span className="absolute end-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
                       %
                     </span>
                   </div>

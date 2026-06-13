@@ -48,11 +48,20 @@ export async function invalidateSession(token: string) {
 }
 
 // Smart phone validation for Egyptian numbers
+export function cleanPhoneNumber(phone: string): string {
+  // Convert Arabic numerals to English numerals
+  const englishPhone = phone.replace(/[٠١٢٣٤٥٦٧٨٩]/g, function (d) {
+    return (d.charCodeAt(0) - 1632).toString();
+  });
+  
+  return englishPhone.replace(/\s/g, "").replace(/^\+?2/, "");
+}
+
 export function validatePhone(phone: string): {
   valid: boolean;
   message?: string;
 } {
-  const clean = phone.replace(/\s/g, "").replace(/^\+?2/, "");
+  const clean = cleanPhoneNumber(phone);
 
   if (!/^01[0-9]{9}$/.test(clean)) {
     return {

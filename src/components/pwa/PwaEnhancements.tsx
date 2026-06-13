@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Download, Share, X, ChevronDown } from "lucide-react";
+import { Download, Share, X, ChevronDown, RefreshCw, Trash2, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import {
   getDeferredInstallPrompt,
   isIosSafari,
@@ -8,10 +9,13 @@ import {
   triggerInstallPrompt,
 } from "@/pwa/register-sw";
 import { cn } from "@/lib/utils";
+import { useTheme } from "next-themes";
 
 const DISMISS_KEY = "smartspend_pwa_install_dismissed_v2";
 
 export function PwaEnhancements() {
+  const navigate = useNavigate();
+  const { resolvedTheme } = useTheme();
   const [canInstall, setCanInstall] = useState(false);
   const [showIosHint, setShowIosHint] = useState(false);
   const [isReadyToShow, setIsReadyToShow] = useState(false);
@@ -28,6 +32,66 @@ export function PwaEnhancements() {
     typeof navigator !== "undefined" ? navigator.onLine : true,
   );
   const [showNetworkStatus, setShowNetworkStatus] = useState(false);
+
+  // Offline outbox queue sync manager states
+  const [pendingTexts, setPendingTexts] = useState<any[]>([]);
+  const [pendingManual, setPendingManual] = useState<any[]>([]);
+  const [showSyncDialog, setShowSyncDialog] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  const loadQueues = () => {
+    try {
+      const texts = JSON.parse(localStorage.getItem("smartspend_offline_texts") || "[]");
+      const manual = JSON.parse(localStorage.getItem("smartspend_offline_manual") || "[]");
+      setPendingTexts(texts);
+      setPendingManual(manual);
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    loadQueues();
+    window.addEventListener("storage", loadQueues);
+    const handleSyncFinished = () => {
+      setTimeout(loadQueues, 1000);
+    };
+    window.addEventListener("online", handleSyncFinished);
+    return () => {
+      window.removeEventListener("storage", loadQueues);
+      window.removeEventListener("online", handleSyncFinished);
+    };
+  }, []);
+
+  const handleManualSync = () => {
+    setIsRetrying(true);
+    window.dispatchEvent(new Event("online"));
+    import("sonner").then(({ toast }) => {
+      toast.info("جاري محاولة مزامنة العمليات المعلقة...");
+    });
+    setTimeout(() => {
+      loadQueues();
+      setIsRetrying(false);
+    }, 2500);
+  };
+
+  const handleDeleteTextItem = (index: number) => {
+    try {
+      const texts = JSON.parse(localStorage.getItem("smartspend_offline_texts") || "[]");
+      texts.splice(index, 1);
+      localStorage.setItem("smartspend_offline_texts", JSON.stringify(texts));
+      loadQueues();
+      import("sonner").then(({ toast }) => toast.success("تم حذف العملية المعلقة."));
+    } catch (e) {}
+  };
+
+  const handleDeleteManualItem = (index: number) => {
+    try {
+      const manual = JSON.parse(localStorage.getItem("smartspend_offline_manual") || "[]");
+      manual.splice(index, 1);
+      localStorage.setItem("smartspend_offline_manual", JSON.stringify(manual));
+      loadQueues();
+      import("sonner").then(({ toast }) => toast.success("تم حذف العملية المعلقة."));
+    } catch (e) {}
+  };
 
   useEffect(() => {
     if (isStandalonePwa()) return;
@@ -60,6 +124,41 @@ export function PwaEnhancements() {
     }
   }, []);
 
+  // Disable Pinch-to-Zoom in iOS Standalone PWA
+  useEffect(() => {
+    if (!isIosSafari() || !isStandalonePwa()) return;
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+    return () => {
+      document.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, []);
+
+  // Sync PWA status bar style and theme-color meta tags with next-themes dynamically
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    const themeColorMetas = document.querySelectorAll('meta[name="theme-color"]');
+    const color = resolvedTheme === "dark" ? "#090d16" : "#f8fafc";
+    themeColorMetas.forEach((meta) => {
+      meta.setAttribute("content", color);
+    });
+
+    const statusBarMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    if (statusBarMeta) {
+      statusBarMeta.setAttribute(
+        "content",
+        resolvedTheme === "dark" ? "black-translucent" : "default"
+      );
+    }
+  }, [resolvedTheme]);
+
   // Connection status listener
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -87,7 +186,81 @@ export function PwaEnhancements() {
     };
   }, []);
 
-  // Background Sync completion listener
+  // Keyboard Avoidance Engine using Visual Viewport API and fast focus listeners
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return;
+
+    const root = document.documentElement;
+
+    const handleViewportChange = () => {
+      const viewport = window.visualViewport;
+      if (!viewport) return;
+
+      const keyboardHeight = window.innerHeight - viewport.height;
+      const isKeyboardOpen = keyboardHeight > 60; // 60px is a safe threshold
+
+      if (isKeyboardOpen) {
+        root.classList.add("keyboard-active");
+        root.style.setProperty("--keyboard-height", `${keyboardHeight}px`);
+        root.style.setProperty("--visual-viewport-height", `${viewport.height}px`);
+      } else {
+        const activeEl = document.activeElement;
+        const isFocusingInput = activeEl && (
+          activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          activeEl.tagName === "SELECT" ||
+          (activeEl as HTMLElement).isContentEditable
+        );
+        if (!isFocusingInput) {
+          root.classList.remove("keyboard-active");
+        }
+        root.style.setProperty("--keyboard-height", "0px");
+        root.style.setProperty("--visual-viewport-height", `${window.innerHeight}px`);
+      }
+    };
+
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      ) {
+        root.classList.add("keyboard-active");
+      }
+    };
+
+    const handleFocusOut = () => {
+      setTimeout(() => {
+        const activeEl = document.activeElement;
+        const isStillInput = activeEl && (
+          activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          activeEl.tagName === "SELECT" ||
+          (activeEl as HTMLElement).isContentEditable
+        );
+        if (!isStillInput) {
+          root.classList.remove("keyboard-active");
+        }
+      }, 50);
+    };
+
+    window.visualViewport.addEventListener("resize", handleViewportChange);
+    window.visualViewport.addEventListener("scroll", handleViewportChange);
+    document.addEventListener("focusin", handleFocusIn);
+    document.addEventListener("focusout", handleFocusOut);
+
+    return () => {
+      window.visualViewport?.removeEventListener("resize", handleViewportChange);
+      window.visualViewport?.removeEventListener("scroll", handleViewportChange);
+      document.removeEventListener("focusin", handleFocusIn);
+      document.removeEventListener("focusout", handleFocusOut);
+      root.classList.remove("keyboard-active");
+    };
+  }, []);
+
+  // Background Sync and Notification Navigation listener
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
 
@@ -98,13 +271,20 @@ export function PwaEnhancements() {
             description: "تم رفع المصاريف اللي سجلتها بدون إنترنت.",
           });
         });
+      } else if (event.data && event.data.type === "NAVIGATE_TO") {
+        try {
+          const urlObj = new URL(event.data.url, window.location.origin);
+          navigate(urlObj.pathname + urlObj.search + urlObj.hash);
+        } catch (e) {
+          console.error("Failed to parse navigation URL:", e);
+        }
       }
     };
 
     navigator.serviceWorker.addEventListener("message", handleMessage);
     return () =>
       navigator.serviceWorker.removeEventListener("message", handleMessage);
-  }, []);
+  }, [navigate]);
 
   const dismiss = () => {
     setDismissed(true);
@@ -123,11 +303,39 @@ export function PwaEnhancements() {
 
   return (
     <>
+      {/* Pending Offline Sync Banner */}
+      {isOnline && (pendingTexts.length > 0 || pendingManual.length > 0) && (
+        <div
+          className="fixed top-0 start-0 end-0 z-[10000] bg-gradient-to-r from-indigo-600 to-indigo-500 text-white text-center py-2.5 px-4 text-xs font-bold shadow-md flex items-center justify-center gap-3 animate-in slide-in-from-top duration-300"
+          dir="rtl"
+        >
+          <Database className="w-4 h-4 animate-pulse" />
+          <span>لديك {pendingTexts.length + pendingManual.length} عمليات مسجلة أوفلاين لم تتم مزامنتها بعد.</span>
+          <button
+            onClick={() => setShowSyncDialog(true)}
+            className="bg-white/20 hover:bg-white/30 text-white px-2 py-0.5 rounded-md font-bold text-[10px] transition-colors active-press"
+          >
+            مراجعة ومزامنة
+          </button>
+        </div>
+      )}
+
+      {/* Persistent Offline Banner */}
+      {!isOnline && (
+        <div
+          className="fixed top-0 start-0 end-0 z-[10000] bg-gradient-to-r from-amber-600 to-amber-500 text-white text-center py-2 px-4 text-xs font-bold shadow-md flex items-center justify-center gap-2 animate-in slide-in-from-top duration-300"
+          dir="rtl"
+        >
+          <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
+          <span>أنت تعمل حالياً دون اتصال بالإنترنت. تم تفعيل الإدخال المبسط وتعطيل العمليات السحابية.</span>
+        </div>
+      )}
+
       {/* Network Status Toast */}
       {showNetworkStatus && (
         <div
           className={cn(
-            "fixed top-4 left-4 right-4 z-[9999] max-w-sm mx-auto rounded-2xl p-3 flex items-center gap-3 border shadow-lg backdrop-blur-2xl animate-in slide-in-from-top duration-500",
+            "fixed top-4 start-4 end-4 z-[9999] max-w-sm mx-auto rounded-2xl p-3 flex items-center gap-3 border shadow-lg backdrop-blur-2xl animate-in slide-in-from-top duration-500",
             isOnline
               ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-900 dark:text-emerald-300"
               : "bg-amber-500/15 border-amber-500/30 text-amber-900 dark:text-amber-300",
@@ -182,7 +390,7 @@ export function PwaEnhancements() {
               </svg>
             )}
           </div>
-          <div className="flex-1 min-w-0 text-right">
+          <div className="flex-1 min-w-0 text-end">
             <p className="text-sm font-bold leading-tight">
               {isOnline ? "تمت العودة للإنترنت" : "بدون اتصال بالإنترنت"}
             </p>
@@ -199,7 +407,7 @@ export function PwaEnhancements() {
       {showInstallCard && (
         <div
           className={cn(
-            "lg:hidden fixed left-3 right-3 z-[100]",
+            "lg:hidden fixed start-3 end-3 z-[100]",
             // Positioned right above the mobile bottom nav with smooth entry
             "bottom-[calc(5rem+env(safe-area-inset-bottom))]",
             "animate-in slide-in-from-bottom-8 fade-in duration-700 ease-out",
@@ -226,7 +434,7 @@ export function PwaEnhancements() {
                     <button
                       type="button"
                       onClick={dismiss}
-                      className="tap-target -mt-1 -mr-2 h-8 w-8 shrink-0 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 rounded-full text-slate-400 transition-colors"
+                      className="tap-target -mt-1 -me-2 h-8 w-8 shrink-0 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 rounded-full text-slate-400 transition-colors"
                       aria-label="إغلاق"
                     >
                       <X className="w-5 h-5" />
@@ -265,7 +473,7 @@ export function PwaEnhancements() {
                     <button
                       type="button"
                       onClick={dismiss}
-                      className="tap-target -mt-1 -mr-2 h-8 w-8 shrink-0 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 rounded-full text-slate-400 transition-colors"
+                      className="tap-target -mt-1 -me-2 h-8 w-8 shrink-0 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 rounded-full text-slate-400 transition-colors"
                       aria-label="إغلاق"
                     >
                       <X className="w-5 h-5" />
@@ -298,11 +506,95 @@ export function PwaEnhancements() {
               </div>
 
               {/* Bouncy arrow pointing down to the Safari share button */}
-              <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex justify-center w-full pointer-events-none opacity-60">
+              <div className="absolute -bottom-4 start-1/2 -translate-x-1/2 flex justify-center w-full pointer-events-none opacity-60">
                 <ChevronDown className="w-8 h-8 text-slate-400 dark:text-slate-500 animate-bounce" />
               </div>
             </div>
           )}
+        </div>
+      )}
+      {/* Sync Manager Modal */}
+      {showSyncDialog && (
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" dir="rtl">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl border border-slate-100 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            {/* Header */}
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
+              <div className="flex items-center gap-2">
+                <Database className="w-5 h-5 text-indigo-500" />
+                <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">صندوق المزامنة المعلقة</h3>
+              </div>
+              <button
+                onClick={() => setShowSyncDialog(false)}
+                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 dark:text-slate-500 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-5 max-h-[350px] overflow-y-auto space-y-3 hide-scrollbar">
+              {pendingTexts.length === 0 && pendingManual.length === 0 ? (
+                <p className="text-center text-sm text-slate-500 py-6">لا توجد عمليات معلقة حالياً!</p>
+              ) : (
+                <>
+                  {pendingTexts.map((item, idx) => (
+                    <div key={`text-${idx}`} className="flex justify-between items-center p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/20 text-xs">
+                      <div className="flex-1 min-w-0 pr-1 text-slate-700 dark:text-slate-300 text-right">
+                        <p className="font-semibold truncate">"{item.text}"</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          تاريخ التسجيل: {new Date(item.timestamp).toLocaleTimeString("ar-EG")}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteTextItem(idx)}
+                        className="p-2 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-500 rounded-lg transition-colors shrink-0"
+                        title="حذف"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+
+                  {pendingManual.map((item, idx) => (
+                    <div key={`manual-${idx}`} className="flex justify-between items-center p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/20 text-xs">
+                      <div className="flex-1 min-w-0 pr-1 text-slate-700 dark:text-slate-300 text-right">
+                        <p className="font-semibold text-emerald-600 dark:text-emerald-400">
+                          {item.amount} ج.م - {item.category}
+                        </p>
+                        <p className="text-[10px] text-slate-400 mt-0.5 truncate">{item.description || "معاملة يدوية أوفلاين"}</p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteManualItem(idx)}
+                        className="p-2 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-500 rounded-lg transition-colors shrink-0"
+                        title="حذف"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex gap-3">
+              <Button
+                onClick={handleManualSync}
+                disabled={isRetrying || (pendingTexts.length === 0 && pendingManual.length === 0)}
+                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-2 gap-2 text-sm font-bold active-press"
+              >
+                <RefreshCw className={cn("w-4 h-4", isRetrying && "animate-spin")} />
+                {isRetrying ? "جاري المزامنة..." : "مزامنة الآن"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowSyncDialog(false)}
+                className="rounded-xl border-slate-200 dark:border-slate-700 py-2 text-sm font-semibold"
+              >
+                إغلاق
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </>

@@ -36,7 +36,7 @@ const KEYWORD_PRIORS: Array<{ pattern: RegExp; categories: string[] }> = [
     categories: ["فواتير"],
   },
   {
-    pattern: /(?:^|\s)(?:فودافون|اورنج|اتصالات|وي)(?=\s|$|[.,،؟?!؛:])/i,
+    pattern: /(?:^|\s)(?:فودافون|اورنج|اتصالات|وي|رصيد|شحن|باقة|باقه)(?=\s|$|[.,،؟?!؛:])/i,
     categories: ["فواتير"],
   },
 
@@ -68,7 +68,7 @@ const KEYWORD_PRIORS: Array<{ pattern: RegExp; categories: string[] }> = [
   },
   {
     pattern:
-      /سينما|فيلم|خروجه|فسحه|كورنيش|بلايستيشن|board\s*game|بولينج|جيم|رياضه|نادي/i,
+      /سينما|فيلم|خروجه|فسحه|كورنيش|بلايستيشن|board\s*game|بولينج|جيم|رياضه|نادي|عزمت|عزوم/i,
     categories: ["ترفيه", "خروجات"],
   },
 
@@ -78,7 +78,7 @@ const KEYWORD_PRIORS: Array<{ pattern: RegExp; categories: string[] }> = [
     categories: ["تدخين"],
   },
 
-  // Transfers / investment
+  // Transfers / investment / obligations
   {
     pattern:
       /(?:^|\s)(?:تحويل|انستاباي|instapay|فودافون\s*كاش|wallet|محفظه|محفظة|سحب|ايداع|atm)(?=\s|$|[.,،؟?!؛:])/i,
@@ -86,8 +86,12 @@ const KEYWORD_PRIORS: Array<{ pattern: RegExp; categories: string[] }> = [
   },
   {
     pattern:
-      /ذهب|دهب|سبيكه|سبايك|بورصه|بورصة|اسهم|أسهم|ثاندر|شهاده|شهادة|وديعه|وديعة|استثمار|كريبتو|عملات\s*رقميه/i,
+      /ذهب|دهب|سبيكه|سبايك|بورصه|بورصة|اسهم|أسهم|ثاندر|شهاده|شهادة|وديعه|وديعة|استثمار|كريبتو|عملات\s*رقميه|توفير|بنك/i,
     categories: ["استثمار"],
+  },
+  {
+    pattern: /قسط|اقساط|جمعي/i,
+    categories: ["التزامات وجمعيات", "فواتير"],
   },
 
   // Income (keep broad, but not too broad)
