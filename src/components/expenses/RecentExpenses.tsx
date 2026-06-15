@@ -42,6 +42,7 @@ interface RecentExpensesProps {
   onRefresh?: () => void;
   limit?: number;
   month?: string; // e.g. "2025-06" — filters to this calendar month
+  salaryDay?: number;
 }
 
 const categoryColors: Record<string, string> = {
@@ -244,7 +245,7 @@ function getTypeMeta(type: string | null | undefined) {
   };
 }
 
-export function RecentExpenses({ onRefresh, limit = 100, month }: RecentExpensesProps) {
+export function RecentExpenses({ onRefresh, limit = 100, month, salaryDay }: RecentExpensesProps) {
   const [page, setPage] = useState(0);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
@@ -255,16 +256,48 @@ export function RecentExpenses({ onRefresh, limit = 100, month }: RecentExpenses
     setPage(0);
   }
 
-  // Derive startDate / endDate from the month string ("YYYY-MM")
+  // Derive startDate / endDate from the month string ("YYYY-MM") and salaryDay
   const dateRange = month
     ? (() => {
-        const [y, m] = month.split("-").map(Number);
-        const start = new Date(y, m - 1, 1);
-        const end = new Date(y, m, 0, 23, 59, 59, 999); // last day of month
-        return {
-          startDate: start.toISOString(),
-          endDate: end.toISOString(),
-        };
+        if (salaryDay && salaryDay > 1) {
+          const [year, monthIdx] = month.split("-").map(Number);
+          const month0 = monthIdx - 1;
+
+          const clampDay = (y: number, m: number, d: number) => {
+            const daysInMonth = new Date(y, m + 1, 0).getDate();
+            return Math.min(d, daysInMonth);
+          };
+
+          const clampedStart = clampDay(year, month0, salaryDay);
+          const start = new Date(year, month0, clampedStart, 0, 0, 0, 0);
+
+          const nextMonth0 = month0 + 1;
+          const nextYear = nextMonth0 > 11 ? year + 1 : year;
+          const nextMonth0Clamped = nextMonth0 > 11 ? 0 : nextMonth0;
+          const clampedEnd = clampDay(nextYear, nextMonth0Clamped, salaryDay);
+          const end = new Date(
+            nextYear,
+            nextMonth0Clamped,
+            clampedEnd - 1,
+            23,
+            59,
+            59,
+            999,
+          );
+
+          return {
+            startDate: start.toISOString(),
+            endDate: end.toISOString(),
+          };
+        } else {
+          const [y, m] = month.split("-").map(Number);
+          const start = new Date(y, m - 1, 1);
+          const end = new Date(y, m, 0, 23, 59, 59, 999); // last day of month
+          return {
+            startDate: start.toISOString(),
+            endDate: end.toISOString(),
+          };
+        }
       })()
     : {};
 

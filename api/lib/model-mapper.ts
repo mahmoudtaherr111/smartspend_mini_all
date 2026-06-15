@@ -35,7 +35,7 @@ export function mapModelName(modelName: string): string {
   return normalized;
 }
 
-export type AiProviderName = "gemini" | "groq";
+export type AiProviderName = "gemini" | "groq" | "fireworks";
 export type AiPlanName = "free" | "pro" | "ultra";
 
 export function isGroqModel(modelName: string): boolean {
@@ -56,6 +56,14 @@ export function isGeminiModel(modelName: string): boolean {
   return mapModelName(modelName).startsWith("gemini-");
 }
 
+export function isFireworksModel(modelName: string): boolean {
+  const normalized = mapModelName(modelName);
+  return (
+    normalized.startsWith("accounts/fireworks/") ||
+    normalized.startsWith("fireworks/")
+  );
+}
+
 export function defaultGeminiModelForPlan(plan: AiPlanName): string {
   if (plan === "ultra") return "gemini-3.5-pro";
   if (plan === "pro") return "gemini-3.1-flash-lite";
@@ -67,10 +75,18 @@ export function defaultGroqModelForPlan(plan: AiPlanName): string {
   return "llama-3.3-70b-versatile";
 }
 
+export function defaultFireworksModelForPlan(plan: AiPlanName): string {
+  if (plan === "ultra" || plan === "pro") return "accounts/fireworks/models/deepseek-v4-pro";
+  return "accounts/fireworks/models/deepseek-v4-flash";
+}
+
 export function defaultModelForProvider(
   provider: AiProviderName,
   plan: AiPlanName,
 ): string {
+  if (provider === "fireworks") {
+    return defaultFireworksModelForPlan(plan);
+  }
   return provider === "groq"
     ? defaultGroqModelForPlan(plan)
     : defaultGeminiModelForPlan(plan);
@@ -89,6 +105,9 @@ export function coerceModelForProvider(
   }
   if (provider === "gemini" && isGroqModel(mapped)) {
     return defaultGeminiModelForPlan(plan);
+  }
+  if (provider === "fireworks" && !isFireworksModel(mapped)) {
+    return defaultFireworksModelForPlan(plan);
   }
   return mapped;
 }

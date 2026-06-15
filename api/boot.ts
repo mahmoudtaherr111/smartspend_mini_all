@@ -321,7 +321,25 @@ if (env.NODE_ENV === "production") {
   console.log(
     `🚀 SmartSpend Monorepo Server running on http://localhost:${port}`,
   );
-  serve({ fetch: app.fetch, port, hostname: "0.0.0.0" });
+  const server = serve({ fetch: app.fetch, port, hostname: "0.0.0.0" });
+
+  // Bind WebSocket Server for Live Voice Calls in production mode
+  const { WebSocketServer } = await import("ws");
+  const { handleVoiceCallWebSocket } = await import("./services/voice-call-service");
+  const wss = new WebSocketServer({ noServer: true });
+
+  server.on("upgrade", (request, socket, head) => {
+    const url = new URL(request.url || "", "http://localhost");
+    if (url.pathname.startsWith("/api/voice/live")) {
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        wss.emit("connection", ws, request);
+      });
+    }
+  });
+
+  wss.on("connection", (ws, request) => {
+    handleVoiceCallWebSocket(ws, request);
+  });
 }
 
 // Auto-start WhatsApp service if credentials exist

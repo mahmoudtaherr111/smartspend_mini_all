@@ -11,6 +11,7 @@ import { normalizeText } from "./text-normalizer";
 import { CATEGORIES } from "./category-registry";
 import { findTaxonomyMatch } from "./taxonomy-adapter";
 import { matchSegment } from "./embedding-engine";
+import { isKareemPersonContext } from "./egyptian-names-dictionary";
 
 export interface RuleEngineResult {
   items: ParsedTransaction[];
@@ -148,10 +149,13 @@ export const SUB_CATEGORY_MAP: Record<
   باقه: { category: "فواتير", subCategory: "إنترنت" },
   باقة: { category: "فواتير", subCategory: "إنترنت" },
   // Home subcategories
+  سكن: { category: "سكن", subCategory: "عام" },
   ايجار: { category: "سكن", subCategory: "إيجار" },
-  شقه: { category: "سكن", subCategory: "إيجار" },
-  شقة: { category: "سكن", subCategory: "إيجار" },
-  عفش: { category: "سكن", subCategory: "أثاث" },
+  الايجار: { category: "سكن", subCategory: "إيجار" },
+  إيجار: { category: "سكن", subCategory: "إيجار" },
+  تشطيب: { category: "سكن", subCategory: "صيانة" },
+  مقاول: { category: "سكن", subCategory: "صيانة" },
+  صيانة: { category: "سكن", subCategory: "صيانة" },
   سباك: { category: "سكن", subCategory: "صيانة" },
   كهربائي: { category: "سكن", subCategory: "صيانة" },
   نقاش: { category: "سكن", subCategory: "صيانة" },
@@ -196,6 +200,10 @@ export const SUB_CATEGORY_MAP: Record<
   كوتشي: { category: "تسوق", subCategory: "أحذية" },
   جزمه: { category: "تسوق", subCategory: "أحذية" },
   شوبينج: { category: "تسوق", subCategory: "تسوق عام" },
+  حلاق: { category: "تسوق", subCategory: "عناية شخصية" },
+  كوافير: { category: "تسوق", subCategory: "عناية شخصية" },
+  مغسله: { category: "تسوق", subCategory: "عناية شخصية" },
+  مغسلة: { category: "تسوق", subCategory: "عناية شخصية" },
   // Bug #8 fix: كارفور removed from SUB_CATEGORY_MAP (dead code — MERCHANT_REGISTRY at L251
   // always runs first and overrides this. Having two conflicting entries is misleading).
   // كارفور: { category: "تسوق", subCategory: "سوبر ماركت" }, ← DELETED
@@ -205,6 +213,7 @@ export const SUB_CATEGORY_MAP: Record<
   دكتور: { category: "صحة", subCategory: "دكتور" },
   كشف: { category: "صحة", subCategory: "دكتور" },
   صيدليه: { category: "صحة", subCategory: "صيدلية" },
+  صيدلية: { category: "صحة", subCategory: "صيدلية" },
   دوا: { category: "صحة", subCategory: "صيدلية" },
   تحاليل: { category: "صحة", subCategory: "تحاليل" },
   تحليل: { category: "صحة", subCategory: "تحاليل" },
@@ -233,9 +242,10 @@ export const SUB_CATEGORY_MAP: Record<
   فرتكت: { category: "ترفيه", subCategory: "ترفيه عام" },
   طيرت: { category: "ترفيه", subCategory: "ترفيه عام" },
   رميت: { category: "استثمار", subCategory: "توفير" },
-  جمعيه: { category: "متنوعات", subCategory: "التزامات" },
-  الجمعيه: { category: "متنوعات", subCategory: "التزامات" },
-  الجمعية: { category: "متنوعات", subCategory: "التزامات" },
+  الجمعية: { category: "تحويل", subCategory: "ادخار" },
+  جمعية: { category: "تحويل", subCategory: "ادخار" },
+  جمعيه: { category: "تحويل", subCategory: "ادخار" },
+  الجمعيه: { category: "تحويل", subCategory: "ادخار" },
   بادل: { category: "ترفيه", subCategory: "رياضة وجيم" },
   خماسي: { category: "ترفيه", subCategory: "رياضة وجيم" },
   تراك: { category: "ترفيه", subCategory: "رياضة وجيم" },
@@ -283,13 +293,13 @@ export const SUB_CATEGORY_MAP: Record<
   شيشه: { category: "تدخين", subCategory: "شيشة/معسل" },
   شيشة: { category: "تدخين", subCategory: "شيشة/معسل" },
   معسل: { category: "تدخين", subCategory: "شيشة/معسل" },
-  حلاق: { category: "تسوق", subCategory: "عناية شخصية" },
+
   بامبرز: { category: "مصاريف شخصية", subCategory: "عناية شخصية" },
   حفاظات: { category: "مصاريف شخصية", subCategory: "عناية شخصية" },
   لبن: { category: "أكل وشرب", subCategory: "بقالة" },
   مناديل: { category: "منزل", subCategory: "مستلزمات" },
   مسحوق: { category: "منزل", subCategory: "مستلزمات" },
-  كوافير: { category: "تسوق", subCategory: "عناية شخصية" },
+
   صالون: { category: "تسوق", subCategory: "عناية شخصية" },
   مكواه: { category: "تسوق", subCategory: "ملابس" },
   مكواة: { category: "تسوق", subCategory: "ملابس" },
@@ -762,9 +772,7 @@ export async function runRuleEngine(
       
       // Skip "كريم" in person context during pre-check
       if (norm === "كريم" || norm === "كرييم") {
-        const isPersonContext = /(سلفت|اديت|اعطيت|عطيت|حولت|دفعت|دفعتل|اخدت|استلفت|خدت|بعت)/.test(allContextNorm);
-        const isTransportContext = /(ركبت|اخدت|مشيت|طلبت)/.test(allContextNorm);
-        if (isPersonContext && !isTransportContext) {
+        if (isKareemPersonContext(allContextNorm)) {
           continue;
         }
       }
@@ -1086,11 +1094,8 @@ export async function runRuleEngine(
         }
 
         // Context-aware disambiguation for "كريم":
-        // "ركبت كريم" → transport, but "سلفت كريم / اديت كريم" → it's a person name
         if (normalizedWord === "كريم" || normalizedWord === "كرييم") {
-          const isPersonContext = /(سلفت|اديت|اعطيت|عطيت|حولت|دفعت|دفعتل|اخدت|استلفت|خدت|بعت)/.test(allContextNorm);
-          const isTransportContext = /(ركبت|اخدت|مشيت|طلبت)/.test(allContextNorm);
-          if (isPersonContext && !isTransportContext) {
+          if (isKareemPersonContext(allContextNorm)) {
             // This is a person, not the Careem app — skip dictionary lookup
             continue;
           }

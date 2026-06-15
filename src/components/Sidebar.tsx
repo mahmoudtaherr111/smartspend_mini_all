@@ -37,7 +37,7 @@ interface SidebarProps {
 const menuItems = [
   { icon: LayoutDashboard, label: "الرئيسية", href: "/dashboard" },
   { icon: BarChart3, label: "إحصائيات", href: "/dashboard?tab=stats" },
-  { icon: Brain, label: "تحليل AI", href: "/dashboard?tab=ai" },
+  { icon: Sparkles, label: "مركز AI", href: "/ai" },
   { icon: Calendar, label: "التقويم", href: "/dashboard?tab=calendar" },
 ];
 
@@ -159,11 +159,11 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
           {menuItems.map((item) => {
             const tab =
               new URLSearchParams(location.search).get("tab") || "record";
-            const targetTab =
-              new URLSearchParams(item.href.split("?")[1] || "").get("tab") ||
-              "record";
-            const isActive =
-              location.pathname === "/dashboard" && tab === targetTab;
+            const itemUrl = new URL(item.href, "http://localhost");
+            const targetTab = itemUrl.searchParams.get("tab") || "";
+            const isActive = item.href === "/ai"
+              ? location.pathname === "/ai"
+              : location.pathname === "/dashboard" && (targetTab ? tab === targetTab : tab === "record");
             const Icon = item.icon;
 
             return (

@@ -58,7 +58,7 @@ import { GlobalSearch } from "@/components/dashboard/GlobalSearch";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { toast } from "sonner";
 
-type HomeTab = "record" | "stats" | "ai" | "calendar";
+type HomeTab = "record" | "stats" | "calendar";
 
 function money(value: unknown) {
   return Number(value || 0).toLocaleString("en-US", {
@@ -71,7 +71,7 @@ function currentMonthValue() {
 }
 
 function normalizeTab(value: string | null): HomeTab {
-  if (value === "stats" || value === "ai" || value === "calendar") return value;
+  if (value === "stats" || value === "calendar") return value;
   return "record";
 }
 
@@ -254,7 +254,7 @@ export default function Home() {
       const SWIPE_THRESHOLD = 75;
 
       if (Math.abs(deltaX) >= SWIPE_THRESHOLD) {
-        const tabOrder: HomeTab[] = ["record", "stats", "ai", "calendar"];
+        const tabOrder: HomeTab[] = ["record", "stats", "calendar"];
         const currentIndex = tabOrder.indexOf(activeTab);
 
         if (deltaX < 0) {
@@ -441,13 +441,14 @@ export default function Home() {
   );
   const { data: calendarStats, isFetching: calendarFetching } =
     trpc.expense.getMonthlyStats.useQuery(
-      { month, salaryDay: null },
+      { month, salaryDay },
       { enabled: activeTab === "calendar", staleTime: 30_000, retry: 1 },
     );
   const refreshInferences = trpc.profile.refreshInferences.useMutation({
     onSuccess: () => {
       utils.profile.getSmartProfile.invalidate();
-      utils.expense.getMonthlyStats.invalidate({ month });
+      utils.expense.getMonthlyStats.invalidate({ month, salaryDay });
+      utils.expense.getMonthlyStats.invalidate({ month, salaryDay: null });
     },
   });
 
@@ -457,7 +458,6 @@ export default function Home() {
 
   const pageTitle = useMemo(() => {
     if (activeTab === "stats") return "الإحصائيات المالية";
-    if (activeTab === "ai") return "تحليل الذكاء الاصطناعي";
     if (activeTab === "calendar") return "تقويم الشهر";
     return "تسجيل العمليات";
   }, [activeTab]);
@@ -479,11 +479,9 @@ export default function Home() {
   };
 
   const handleRefresh = () => {
-    utils.expense.getMonthSummary.invalidate({ month });
-    if (activeTab === "stats") {
+    utils.expense.getMonthSummary.invalidate({ month, salaryDay });
+    if (activeTab === "stats" || activeTab === "calendar") {
       utils.expense.getMonthlyStats.invalidate({ month, salaryDay });
-    } else if (activeTab === "calendar") {
-      utils.expense.getMonthlyStats.invalidate({ month, salaryDay: null });
     }
   };
 
@@ -568,16 +566,12 @@ export default function Home() {
             onValueChange={(v) => updateView(v as HomeTab)}
             className="hidden sm:block w-full"
           >
-            <TabsList className="w-full grid grid-cols-4 h-auto p-1">
+            <TabsList className="w-full grid grid-cols-3 h-auto p-1">
               <TabsTrigger value="record" className="text-xs sm:text-sm">
                 تسجيل
               </TabsTrigger>
               <TabsTrigger value="stats" className="text-xs sm:text-sm">
                 إحصائيات
-              </TabsTrigger>
-              <TabsTrigger value="ai" className="text-xs sm:text-sm gap-1">
-                <Brain className="w-3.5 h-3.5" />
-                ذكاء اصطناعي
               </TabsTrigger>
               <TabsTrigger value="calendar" className="text-xs sm:text-sm">
                 تقويم
@@ -615,8 +609,9 @@ export default function Home() {
                 <ExpenseForm
                   initialText={sharedText}
                   onSuccess={() => {
-                    utils.expense.getMonthSummary.invalidate({ month });
-                    utils.expense.getMonthlyStats.invalidate({ month });
+                    utils.expense.getMonthSummary.invalidate({ month, salaryDay });
+                    utils.expense.getMonthlyStats.invalidate({ month, salaryDay });
+                    utils.expense.getMonthlyStats.invalidate({ month, salaryDay: null });
                     utils.profile.getSmartProfile.invalidate();
                     setSharedText("");
                   }}
@@ -625,8 +620,9 @@ export default function Home() {
                   <RecentExpenses
                     limit={7}
                     month={month}
+                    salaryDay={salaryDay}
                     onRefresh={() =>
-                      utils.expense.getMonthSummary.invalidate({ month })
+                      utils.expense.getMonthSummary.invalidate({ month, salaryDay })
                     }
                   />
                   <Suspense
@@ -699,17 +695,7 @@ export default function Home() {
             </motion.div>
           )}
 
-          {activeTab === "ai" && (
-            <motion.div
-              key="ai"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-            >
-              <AIInsights month={month} />
-            </motion.div>
-          )}
+
 
           {activeTab === "calendar" && (
             <motion.div

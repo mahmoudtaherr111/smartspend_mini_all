@@ -542,13 +542,7 @@ export function getLocalRAGEngine(): LocalRAGEngine {
   return _engine;
 }
 
-/**
- * Quick search function for use in the pipeline.
- * No API key needed — everything is local.
- */
-export function localRAGSearch(query: string, minScore: number = 0.55): RAGMatch | null {
-  return getLocalRAGEngine().search(query, minScore);
-}
+
 
 /**
  * Search for top-K distinct categories matching the query.

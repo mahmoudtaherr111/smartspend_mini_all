@@ -2,9 +2,10 @@ import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { normalizeV2 } from "./normalizer-v2";
 import { runRuleEngine, SUB_CATEGORY_MAP } from "./rule-engine";
 import { CATEGORY_DICTIONARY } from "./egyptian-dictionary";
-import { buildSmartSystemPrompt } from "./dynamic-prompt-builder";
+import { buildSmartSystemPrompt, buildFireworksPrompts } from "./dynamic-prompt-builder";
 import { normalizeTransactionTaxonomyList } from "./category-registry";
 import { callGroqAPI } from "./groq-client";
+import { callFireworksAPI } from "./fireworks-client";
 import { mapModelName } from "./model-mapper";
 import type { ParsedTransaction } from "./rule-engine";
 import { matchArabicPhrase, stripArabicPrefix } from "./fuzzy-match";
@@ -31,6 +32,7 @@ export interface PipelineInput {
   skipClarification?: boolean;
   provider?: string;
   groqApiKey?: string;
+  fireworksApiKey?: string;
   pipelineSettings?: Record<string, string>;
 }
 
@@ -44,6 +46,7 @@ export interface PipelineLog {
   routing?: Record<string, unknown>;
   finalConfidence?: number;
   finalDecision?: string;
+  cachedTokens?: number;
 }
 
 export interface PipelineResult {
@@ -52,6 +55,7 @@ export interface PipelineResult {
   clarificationQuestion?: string;
   overallConfidence: number;
   tokensUsed: number;
+  cachedTokens?: number;
   parsedBy: string;
   modelUsed: string;
   processingTimeMs: number;
@@ -70,7 +74,7 @@ type KnownPersonContext = {
 const SMART_CLASSIFIER_SCHEMA = {
   type: SchemaType.OBJECT,
   properties: {
-    thoughts: {
+    reasoning: {
       type: SchemaType.ARRAY,
       items: { type: SchemaType.STRING },
     },
@@ -176,11 +180,21 @@ function safeExtractItems(data: any): any[] {
 }
 
 function robustJsonParse(text: string): any {
+  let cleaned = text;
+  // 1. Remove <thought> blocks completely (if any)
+  cleaned = cleaned.replace(/<thought>[\s\S]*?<\/thought>/gi, "");
+  
+  // 2. Extract from markdown JSON blocks
+  const matchMarkdown = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (matchMarkdown) {
+      cleaned = matchMarkdown[1];
+  }
+
   try {
-    return JSON.parse(text);
+    return JSON.parse(cleaned.trim());
   } catch (e) {
     console.warn("[JSON Fallback] Strict parse failed, attempting regex extraction...");
-    const match = text.match(/\[.*\]|\{.*\}/s);
+    const match = cleaned.match(/\[.*\]|\{.*\}/s);
     if (match) {
       try {
         const fixedStr = match[0]
@@ -384,6 +398,7 @@ export async function runSmartPipeline(
 ): Promise<PipelineResult> {
   const startTime = Date.now();
   let totalTokens = 0;
+  let cachedTokens = 0;
   const provider = input.provider || "gemini";
   const modelUsed = mapModelName(input.modelName);
   
@@ -528,47 +543,47 @@ export async function runSmartPipeline(
         input.userDict,
         input.userProfileContext,
       );
-      let bestItem = segmentRule.items[0];
-
-      if (!bestItem) {
+      if (segmentRule.items.length === 0) {
         failedSegments.push(segment);
         continue;
       }
 
-      const candidates = pickAllPersonCandidates(
-        bestItem.person_mentioned || segment.personMentioned,
-        segmentTextWithVerb,
-        knownNames,
-      );
-
       let anyNeedsClarification = false;
       const segmentResolvedItems: ParsedTransaction[] = [];
 
-      if (candidates.length > 0) {
-        const splitAmount = numAmounts === 1 && candidates.length > 1 
-          ? Number((bestItem.amount / candidates.length).toFixed(2)) 
-          : bestItem.amount;
+      for (const item of segmentRule.items) {
+          const candidates = pickAllPersonCandidates(
+            item.person_mentioned || segment.personMentioned,
+            segmentTextWithVerb,
+            knownNames,
+          );
 
-        for (const candidateName of candidates) {
-          const clonedItem = { ...bestItem, amount: splitAmount };
-          const personApplied = personMemoryEnabled
-            ? applyPersonResolution(
-                clonedItem,
-                candidateName,
-                segmentTextWithVerb,
-                input.text,
-                knownPeople,
-              )
-            : { item: clonedItem, needsClarification: false, clarificationQuestion: undefined };
-          
-          if (personApplied.needsClarification) {
-            anyNeedsClarification = true;
-            localUnknownNames.push(candidateName);
+          if (candidates.length > 0) {
+            const splitAmount = numAmounts === 1 && candidates.length > 1 && segmentRule.items.length === 1
+              ? Number((item.amount / candidates.length).toFixed(2)) 
+              : item.amount;
+
+            for (const candidateName of candidates) {
+              const clonedItem = { ...item, amount: splitAmount };
+              const personApplied = personMemoryEnabled
+                ? applyPersonResolution(
+                    clonedItem,
+                    candidateName,
+                    segmentTextWithVerb,
+                    input.text,
+                    knownPeople,
+                  )
+                : { item: clonedItem, needsClarification: false, clarificationQuestion: undefined };
+              
+              if (personApplied.needsClarification) {
+                anyNeedsClarification = true;
+                localUnknownNames.push(candidateName);
+              }
+              segmentResolvedItems.push(personApplied.item);
+            }
+          } else {
+            segmentResolvedItems.push(item);
           }
-          segmentResolvedItems.push(personApplied.item);
-        }
-      } else {
-        segmentResolvedItems.push(bestItem);
       }
 
       const isPro = input.userPlan === "pro" || input.userPlan === "ultra";
@@ -620,46 +635,46 @@ export async function runSmartPipeline(
     ruleResult = await runRuleEngine(normalizedText, input.userDict, input.userProfileContext);
     
     if (ruleResult.items.length > 0) {
-      let bestItem = ruleResult.items.reduce((prev, current) => 
-        (prev.confidence > current.confidence) ? prev : current
-      );
-      const knownNames = knownPeople.map((p) => p.name).filter(Boolean);
-      const candidates = pickAllPersonCandidates(
-        bestItem.person_mentioned,
-        input.text,
-        knownNames,
-      );
-      
       const segmentResolvedItems: ParsedTransaction[] = [];
-      let localClarification: string | undefined;
-      const localUnknownNames: string[] = [];
       let anyNeedsClarification = false;
+      const localUnknownNames: string[] = [];
+      const knownNames = knownPeople.map((p) => p.name).filter(Boolean);
 
-      if (candidates.length > 0) {
-        const splitAmount = numAmounts === 1 && candidates.length > 1 
-          ? Number((bestItem.amount / candidates.length).toFixed(2)) 
-          : bestItem.amount;
+      for (const item of ruleResult.items) {
+          const candidates = pickAllPersonCandidates(
+            item.person_mentioned,
+            input.text,
+            knownNames,
+          );
 
-        for (const candidateName of candidates) {
-          const clonedItem = { ...bestItem, amount: splitAmount };
-          const personApplied = personMemoryEnabled
-            ? applyPersonResolution(
-                clonedItem,
-                candidateName,
-                input.text,
-                input.text,
-                knownPeople,
-              )
-            : { item: clonedItem, needsClarification: false, clarificationQuestion: undefined };
+          if (candidates.length > 0) {
+            // Only split amount if there's exactly 1 amount detected overall BUT multiple candidates 
+            // AND we only found 1 item from rule engine (to avoid double splitting)
+            const splitAmount = numAmounts === 1 && candidates.length > 1 && ruleResult.items.length === 1
+              ? Number((item.amount / candidates.length).toFixed(2)) 
+              : item.amount;
 
-          if (personApplied.needsClarification) {
-            anyNeedsClarification = true;
-            localUnknownNames.push(candidateName);
+            for (const candidateName of candidates) {
+              const clonedItem = { ...item, amount: splitAmount };
+              const personApplied = personMemoryEnabled
+                ? applyPersonResolution(
+                    clonedItem,
+                    candidateName,
+                    input.text,
+                    input.text,
+                    knownPeople,
+                  )
+                : { item: clonedItem, needsClarification: false, clarificationQuestion: undefined };
+
+              if (personApplied.needsClarification) {
+                anyNeedsClarification = true;
+                localUnknownNames.push(candidateName);
+              }
+              segmentResolvedItems.push(personApplied.item);
+            }
+          } else {
+            segmentResolvedItems.push(item);
           }
-          segmentResolvedItems.push(personApplied.item);
-        }
-      } else {
-        segmentResolvedItems.push(bestItem);
       }
 
       if (anyNeedsClarification) {
@@ -673,33 +688,36 @@ export async function runSmartPipeline(
         decision = "clarify";
         clarificationQuestion = localClarification;
         overallConfidence = 0;
-      } else {
-         bestItem = segmentResolvedItems[0];
       }
       
       const isPro = input.userPlan === "pro" || input.userPlan === "ultra";
 
       if (ruleSucceeded) {
-        // Handled
-      } else if (isPro) {
-        if (bestItem.confidence >= Math.max(autoSaveThreshold, 90) && bestItem.category !== "متنوعات") {
-            finalItems.push(...segmentResolvedItems);
-            ruleSucceeded = true;
-            decision = "auto_save";
-            overallConfidence = bestItem.confidence;
-        }
+        // Handled by needsClarification above
       } else {
-        if (bestItem.confidence >= autoSaveThreshold && bestItem.category !== "متنوعات") {
+        let lowestConfidence = 100;
+        let hasMutaNawi3at = false;
+        
+        for (const item of segmentResolvedItems) {
+            if ((item.confidence || 0) < lowestConfidence) lowestConfidence = item.confidence || 0;
+            if (item.category === "متنوعات") hasMutaNawi3at = true;
+        }
+
+        const effectiveAutoSaveThresh = isPro ? Math.max(autoSaveThreshold, 90) : autoSaveThreshold;
+
+        if (lowestConfidence >= effectiveAutoSaveThresh && !hasMutaNawi3at) {
             finalItems.push(...segmentResolvedItems);
             ruleSucceeded = true;
             decision = "auto_save";
-            overallConfidence = bestItem.confidence;
-        } else if (bestItem.confidence >= reviewThreshold && bestItem.confidence < autoSaveThreshold && bestItem.category !== "متنوعات") {
+            overallConfidence = lowestConfidence;
+        } else if (!isPro && lowestConfidence >= reviewThreshold && lowestConfidence < autoSaveThreshold && !hasMutaNawi3at) {
             finalItems.push(...segmentResolvedItems);
             ruleSucceeded = true;
-            decision = "clarify";
-            clarificationQuestion = `هل تقصد تسجيل مصروف بقيمة ${bestItem.amount} جنيه في قسم "${bestItem.category}"؟`;
-            overallConfidence = bestItem.confidence;
+            decision = "review";
+            overallConfidence = lowestConfidence;
+        } else if (hasMutaNawi3at || lowestConfidence < reviewThreshold) {
+            // If any item is mutanawi3at or very low confidence, we should NOT accept it locally.
+            // Leave ruleSucceeded = false so it falls back to AI!
         }
       }
     }
@@ -712,9 +730,15 @@ export async function runSmartPipeline(
     // For simplicity, we just dump localSucceededItems + whatever we can get from failed.
     ruleSucceeded = true;
     for (const seg of failedSegments) {
-      const segRule = await runRuleEngine(seg.text, input.userDict, input.userProfileContext);
-      if (segRule.items.length > 0) finalItems.push(...segRule.items);
+      const segRule = runRuleEngine(seg.text, input.userDict, input.userProfileContext);
+      for (const item of segRule.items) {
+          if (item.confidence < autoSaveThreshold || item.category === "متنوعات") {
+              item.needsReview = true;
+          }
+          finalItems.push(item);
+      }
     }
+    decision = "review"; // Always review massive inputs forced locally
   }
 
   // 3. Single-Pass Semantic Extraction (AI)
@@ -746,11 +770,15 @@ export async function runSmartPipeline(
           ? recentTx.filter(tx => {
               const descClean = normalizeArabicString(tx.item_name || "").toLowerCase();
               return keywords.some(kw => descClean.includes(normalizeArabicString(kw).toLowerCase()));
-            }).slice(0, 5)
+            }).slice(0, 3)
           : [];
 
         if (matchedTx.length > 0) {
-          userHistoryContext = matchedTx.map(tx => `- "${tx.item_name}" -> ${tx.main_category}/${tx.sub_category || "عام"}`).join("\n");
+          userHistoryContext = matchedTx.map(tx => {
+            const words = (tx.item_name || "").split(/\s+/);
+            const truncated = words.slice(0, 5).join(" ") + (words.length > 5 ? "..." : "");
+            return `- "${truncated}" -> ${tx.main_category}/${tx.sub_category || "عام"}`;
+          }).join("\n");
           const categoryCounts = new Map<string, number>();
           for (const tx of matchedTx) {
             categoryCounts.set(tx.main_category, (categoryCounts.get(tx.main_category) || 0) + 1);
@@ -774,43 +802,77 @@ export async function runSmartPipeline(
     const useSimpleSchema = numAmountsToClassify <= 1 && !filteredDecomp.isComplex;
     const responseSchema = useSimpleSchema ? SIMPLE_CLASSIFIER_SCHEMA : SMART_CLASSIFIER_SCHEMA;
 
-    const systemPrompt = buildSmartSystemPrompt(
-      textToClassify,
-      knownPeople.map((p) => ({
-        name: p.name,
-        relationship: p.relationship || "شخص معروف",
-        category: p.category || "تحويل",
-        subCategory: p.subCategory || "تحويلات شخصية",
-      })),
-      undefined,
-      useSimpleSchema,
-      userHistoryContext,
-      userHistoryCategories,
-      numAmountsToClassify
-    );
-    
     const classifierUserPrompt = buildGlobalVerifierPrompt(
       textToClassify,
       filteredDecomp,
     );
+
+    let finalSystemPrompt: string;
+    let finalUserPrompt: string;
+
+    if (provider === "fireworks") {
+        const fireworksPrompts = buildFireworksPrompts(
+          textToClassify,
+          knownPeople.map((p) => ({
+            name: p.name,
+            relationship: p.relationship || "شخص معروف",
+            category: p.category || "تحويل",
+            subCategory: p.subCategory || "تحويلات شخصية",
+          })),
+          useSimpleSchema,
+          userHistoryContext,
+          userHistoryCategories,
+          numAmountsToClassify,
+          classifierUserPrompt
+        );
+        finalSystemPrompt = fireworksPrompts.systemPrompt;
+        finalUserPrompt = fireworksPrompts.userPrompt;
+    } else {
+        finalSystemPrompt = buildSmartSystemPrompt(
+          textToClassify,
+          knownPeople.map((p) => ({
+            name: p.name,
+            relationship: p.relationship || "شخص معروف",
+            category: p.category || "تحويل",
+            subCategory: p.subCategory || "تحويلات شخصية",
+          })),
+          undefined,
+          useSimpleSchema,
+          userHistoryContext,
+          userHistoryCategories,
+          numAmountsToClassify
+        );
+        finalUserPrompt = classifierUserPrompt;
+    }
+
     let classItems: any[] = [];
     try {
       if (provider === "groq") {
         const result = await callGroqAPI(
           input.groqApiKey || input.apiKey,
           modelUsed,
-          systemPrompt,
-          classifierUserPrompt,
+          finalSystemPrompt,
+          finalUserPrompt,
           input.maxTokens || 4096
         );
         totalTokens += result.tokensUsed;
-        const cleanedText = result.text.replace(/```(?:json)?\s*([\s\S]*?)```/g, "$1").trim();
-        classItems = safeExtractItems(robustJsonParse(cleanedText));
+        classItems = safeExtractItems(robustJsonParse(result.text));
+      } else if (provider === "fireworks") {
+        const result = await callFireworksAPI(
+          input.fireworksApiKey || input.apiKey,
+          modelUsed,
+          finalSystemPrompt,
+          finalUserPrompt,
+          input.maxTokens || 4096
+        );
+        totalTokens += result.tokensUsed;
+        cachedTokens = result.cachedTokens || 0;
+        classItems = safeExtractItems(robustJsonParse(result.text));
       } else {
         const genAI = new GoogleGenerativeAI(input.apiKey);
         const geminiModel = genAI.getGenerativeModel({
           model: modelUsed,
-          systemInstruction: systemPrompt,
+          systemInstruction: finalSystemPrompt,
           generationConfig: {
             temperature: 0.1,
             responseMimeType: "application/json",
@@ -822,7 +884,7 @@ export async function runSmartPipeline(
         let retries = 3;
         while (retries > 0) {
           try {
-            dRes = await geminiModel.generateContent(classifierUserPrompt);
+            dRes = await geminiModel.generateContent(finalUserPrompt);
             break;
           } catch (e: any) {
             const isRateLimit = e.status === 429 || (e.message && e.message.includes("429")) || (e.message && e.message.includes("quota"));
@@ -836,8 +898,7 @@ export async function runSmartPipeline(
           }
         }
         totalTokens += dRes.response.usageMetadata?.totalTokenCount || 0;
-        const cleanedText = dRes.response.text().replace(/```(?:json)?\s*([\s\S]*?)```/g, "$1").trim();
-        classItems = safeExtractItems(JSON.parse(cleanedText));
+        classItems = safeExtractItems(robustJsonParse(dRes.response.text()));
       }
 
       if (classItems.length === 0) {
@@ -1001,6 +1062,46 @@ export async function runSmartPipeline(
       }
   }
 
+  // --- DEEP FIX: Deduplicate Items ---
+  // If local rule engine and AI both returned the same item (same amount and same category), we should deduplicate
+  // ONLY if their descriptions also overlap, to avoid destroying identical but separate transactions.
+  const uniqueItems: ParsedTransaction[] = [];
+  for (const item of finalItems) {
+      const itemDesc = String(item.description || item.item_name || "").toLowerCase();
+      const itemWords = new Set(itemDesc.split(/\s+/).filter(w => w.length > 2));
+      let isDuplicate = false;
+      
+      for (let i = 0; i < uniqueItems.length; i++) {
+          const existing = uniqueItems[i];
+          if (item.amount === existing.amount && item.category === existing.category) {
+              const existingDesc = String(existing.description || existing.item_name || "").toLowerCase();
+              const existingWords = new Set(existingDesc.split(/\s+/).filter(w => w.length > 2));
+              
+              let intersection = 0;
+              for (const w of itemWords) {
+                  if (existingWords.has(w)) intersection++;
+              }
+              
+              const minWords = Math.min(itemWords.size, existingWords.size);
+              // Deduplicate if they share at least 1 significant word, or if both have no significant words.
+              // CRITICAL: Only deduplicate if they came from different parsers (e.g. AI vs Local) to prevent merging valid same-source transactions.
+              if ((minWords === 0 || intersection > 0) && item.parsedBy !== existing.parsedBy) {
+                  isDuplicate = true;
+                  // Keep the one with higher confidence
+                  if ((item.confidence || 0) > (existing.confidence || 0)) {
+                      uniqueItems[i] = item;
+                  }
+                  break;
+              }
+          }
+      }
+      if (!isDuplicate) {
+          uniqueItems.push(item);
+      }
+  }
+  finalItems.length = 0;
+  finalItems.push(...uniqueItems);
+
   // --- DEEP FIX: Logical Amount Thresholds ---
   for (const item of finalItems) {
       if ((item.category === "استثمار" || item.category === "عقارات") && item.amount < 50) {
@@ -1161,6 +1262,7 @@ export async function runSmartPipeline(
     },
     finalConfidence: overallConfidence,
     finalDecision: decision,
+    cachedTokens,
   };
 
   return {
@@ -1172,6 +1274,7 @@ export async function runSmartPipeline(
     clarificationQuestion,
     alertMessage: firstAlertMessage,
     tokensUsed: totalTokens,
+    cachedTokens,
     processingTimeMs: Date.now() - startTime,
     log,
   };

@@ -30,9 +30,10 @@ import {
   Briefcase,
   Check,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 
-type SettingsView = "main" | "profile" | "notifications" | "passkeys" | "theme";
+type SettingsView = "main" | "profile" | "notifications" | "passkeys" | "theme" | "ai_report";
 
 export default function Settings() {
   const { user, logout } = useAuth();
@@ -228,6 +229,25 @@ export default function Settings() {
                         <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:-translate-x-0.5 transition-transform" />
                       </div>
                     </div>
+
+                    {/* Row: AI Report Settings */}
+                    <div
+                      onClick={() => setCurrentView("ai_report")}
+                      className="tap-target active-press flex items-center justify-between p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md cursor-pointer hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-all group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-sm">
+                          <Sparkles className="w-5 h-5" />
+                        </div>
+                        <div className="text-end">
+                          <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">التحليل الشهري بالذكاء الاصطناعي</h4>
+                          <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">إعدادات تقرير الواتساب وموعد الإرسال</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:-translate-x-0.5 transition-transform" />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -402,6 +422,60 @@ export default function Settings() {
                   {theme === "system" && <Check className="w-4 h-4 text-slate-500" />}
                 </div>
               </div>
+            </motion.div>
+          )}
+
+          {currentView === "ai_report" && (
+            <motion.div key="ai_report" variants={subViewTransition} initial="initial" animate="animate" exit="exit" className="space-y-6">
+              <SubViewHeader title="إعدادات التحليل والواتساب" onBack={() => setCurrentView("main")} />
+              
+              <Card className="border-0 shadow-sm rounded-2xl overflow-hidden glass-card">
+                <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800/60 pb-4">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-emerald-500" />
+                    التقرير الذكي والواتساب
+                  </CardTitle>
+                  <CardDescription className="text-xs mt-1">
+                    تحكم في كيفية وموعد استلام التقرير الشهري. يتم إرسال التقرير حصرياً للمشتركين بخطة Pro.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-5 space-y-6">
+                  {/* Whatsapp Toggle */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">إرسال التقرير عبر الواتساب</h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">استلام تحليل مصاريفك شهرياً على الواتس</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" className="sr-only peer" defaultChecked />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-500"></div>
+                    </label>
+                  </div>
+
+                  <div className="h-px bg-slate-100 dark:bg-slate-800/60" />
+
+                  {/* Timing Option */}
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">موعد استلام التقرير</h4>
+                    <div className="grid gap-3">
+                      <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <input type="radio" name="report_timing" value="end_of_month" className="w-4 h-4 text-emerald-600 bg-slate-100 border-slate-300 focus:ring-emerald-500" defaultChecked />
+                        <div>
+                          <span className="block text-sm font-bold text-slate-800 dark:text-slate-200">نهاية الشهر الميلادي</span>
+                          <span className="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">يوم 1 من كل شهر جديد</span>
+                        </div>
+                      </label>
+                      <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <input type="radio" name="report_timing" value="salary_day" className="w-4 h-4 text-emerald-600 bg-slate-100 border-slate-300 focus:ring-emerald-500" />
+                        <div>
+                          <span className="block text-sm font-bold text-slate-800 dark:text-slate-200">يوم استلام الراتب</span>
+                          <span className="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">يبدأ التحليل مع دورة راتبك (حسب ما حددت في ملفك)</span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </motion.div>
           )}
         </AnimatePresence>

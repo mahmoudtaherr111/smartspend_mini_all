@@ -1,9 +1,19 @@
+import dotenv from "dotenv";
 import { db } from "./api/queries/connection";
 import { systemSettings } from "./db/schema";
 
+dotenv.config();
+
 async function main() {
   const settingsToUpdate = [
-    { key: "ai_api_key", value: "YOUR_GEMINI_API_KEY_HERE" },
+    { key: "ai_api_key", value: process.env.GEMINI_API_KEY || "" },
+    { key: "voice_call_model", value: "gemini-2.5-flash" },
+    { key: "voice_call_enabled_free", value: "true" },
+    { key: "voice_call_limit_free", value: "5" },
+    { key: "voice_call_duration_free", value: "120" },
+    { key: "voice_call_enabled_pro", value: "true" },
+    { key: "voice_call_limit_pro", value: "60" },
+    { key: "voice_call_duration_pro", value: "600" },
     { key: "ai_model_free", value: "gemini-2.5-flash" },
     { key: "ai_model_pro", value: "gemini-2.5-flash" },
     { key: "ai_model_ultra", value: "gemini-2.5-pro" },

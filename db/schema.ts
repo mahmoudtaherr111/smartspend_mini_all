@@ -385,9 +385,7 @@ export const seoPages = mysqlTable("seo_pages", {
 export const systemSettings = mysqlTable("system_settings", {
   key: varchar("key", { length: 100 }).primaryKey(),
   value: text("value").notNull(),
-  updatedAt: datetime("updated_at").default(
-    sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
-  ),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
 });
 
 // ─── User Profiles (Financial Context for AI) ───
@@ -619,6 +617,22 @@ export const rawSmsEvents = mysqlTable(
   ],
 );
 
+// ─── WhatsApp OTP Codes ───
+export const whatsappOtpCodes = mysqlTable(
+  "whatsapp_otp_codes",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    phone: varchar("phone", { length: 20 }).notNull(),
+    code: varchar("code", { length: 20 }).notNull(),
+    verified: boolean("verified").notNull().default(false),
+    expiresAt: datetime("expires_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => [
+    index("whatsapp_otp_phone_idx").on(t.phone),
+  ]
+);
+
 // ─── API Key Error Logs (Admin Monitoring) ───
 export const apiKeyErrors = mysqlTable(
   "api_key_errors",
@@ -649,13 +663,16 @@ export const pushSubscriptions = mysqlTable(
     id: int("id").primaryKey().autoincrement(),
     userId: int("user_id").notNull(),
     userType: varchar("user_type", { length: 50 }).notNull(),
-    endpoint: text("endpoint").notNull(),
-    p256dh: varchar("p256dh", { length: 255 }).notNull(),
-    auth: varchar("auth", { length: 255 }).notNull(),
+    endpoint: text("endpoint"), // Nullable for FCM
+    p256dh: varchar("p256dh", { length: 255 }), // Nullable for FCM
+    auth: varchar("auth", { length: 255 }), // Nullable for FCM
+    fcmToken: text("fcm_token"), // For Firebase Cloud Messaging tokens
+    deviceType: varchar("device_type", { length: 50 }).default("web"), // web | ios | android
     createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
   },
   (t) => [index("push_subs_user_idx").on(t.userId, t.userType)],
 );
+
 // ─── WebAuthn Credentials (Passkeys) ───
 export const userCredentials = mysqlTable(
   "user_credentials",
@@ -686,3 +703,99 @@ export const authChallenges = mysqlTable("auth_challenges", {
   userType: varchar("user_type", { length: 50 }),
   expiresAt: datetime("expires_at").notNull(),
 });
+
+// ─── Notification Templates (Smart Engine) ───
+export const notificationTemplates = mysqlTable("notification_templates", {
+  id: int("id").primaryKey().autoincrement(),
+  name: varchar("name", { length: 255 }).notNull(),
+  eventType: varchar("event_type", { length: 100 }).notNull(), // manual_scheduled | budget_exceeded | inactivity_reminder | usage_milestone
+  titleTemplate: varchar("title_template", { length: 255 }), // Legacy
+  bodyTemplate: text("body_template"), // Legacy
+  titleTemplateAr: varchar("title_template_ar", { length: 255 }), // Arabic title
+  bodyTemplateAr: text("body_template_ar"), // Arabic body
+  titleTemplateEn: varchar("title_template_en", { length: 255 }), // English title
+  bodyTemplateEn: text("body_template_en"), // English body
+  isActive: boolean("is_active").default(true),
+  targetSegment: json("target_segment"), // e.g. { "plan": "free", "minUsage": 10 }
+  sendAt: datetime("send_at"), // for scheduled ones
+  createdBy: int("created_by"),
+  createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+});
+
+// ─── In-App Notifications (The Bell) ───
+export const inAppNotifications = mysqlTable(
+  "in_app_notifications",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    title: varchar("title", { length: 255 }).notNull(),
+    body: text("body").notNull(),
+    actionUrl: varchar("action_url", { length: 500 }),
+    isRead: boolean("is_read").default(false),
+    createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("in_app_notif_user_idx").on(t.userId, t.userType),
+    index("in_app_notif_read_idx").on(t.isRead),
+  ]
+);
+
+// ─── Notification Logs ───
+export const notificationLogs = mysqlTable(
+  "notification_logs",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    templateId: int("template_id"),
+    userId: int("user_id"),
+    userType: varchar("user_type", { length: 50 }),
+    sentVia: varchar("sent_via", { length: 50 }), // push | in_app | whatsapp
+    status: varchar("status", { length: 50 }).default("sent"), // sent | failed
+    errorMessage: text("error_message"),
+    sentAt: datetime("sent_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("notif_logs_user_idx").on(t.userId, t.userType),
+    index("notif_logs_template_idx").on(t.templateId),
+  ]
+);
+
+// ─── AI Chat Conversations ───
+export const chatConversations = mysqlTable(
+  "chat_conversations",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    title: varchar("title", { length: 255 }),
+    messageCount: int("message_count").default(0),
+    totalTokens: int("total_tokens").default(0),
+    lastMessageAt: datetime("last_message_at"),
+    createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("chat_conv_user_idx").on(t.userId, t.userType),
+    index("chat_conv_last_msg_idx").on(t.lastMessageAt),
+  ]
+);
+
+// ─── AI Chat Messages ───
+export const chatMessages = mysqlTable(
+  "chat_messages",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    conversationId: int("conversation_id").notNull(),
+    role: varchar("role", { length: 20 }).notNull(), // user | assistant | system | tool
+    content: text("content").notNull(),
+    toolCalls: json("tool_calls"),
+    toolResults: json("tool_results"),
+    tokensUsed: int("tokens_used").default(0),
+    model: varchar("model", { length: 100 }),
+    createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("chat_msg_conv_idx").on(t.conversationId),
+    index("chat_msg_created_idx").on(t.conversationId, t.createdAt),
+  ]
+);

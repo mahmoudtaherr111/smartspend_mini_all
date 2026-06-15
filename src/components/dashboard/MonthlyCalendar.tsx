@@ -150,24 +150,72 @@ export const MonthlyCalendar = memo(function MonthlyCalendar({
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   
   const [year, monthNumber] = month.split("-").map(Number);
-  const firstDay = new Date(year, monthNumber - 1, 1);
-  const daysInMonth = new Date(year, monthNumber, 0).getDate();
-  const leading = firstDay.getDay();
+  const month0 = monthNumber - 1;
+
+  let start: Date;
+  let end: Date;
+
+  if (salaryDay && salaryDay > 1) {
+    const clampDay = (y: number, m: number, d: number) => {
+      const daysInMonth = new Date(y, m + 1, 0).getDate();
+      return Math.min(d, daysInMonth);
+    };
+
+    const clampedStart = clampDay(year, month0, salaryDay);
+    start = new Date(year, month0, clampedStart, 0, 0, 0, 0);
+
+    const nextMonth0 = month0 + 1;
+    const nextYear = nextMonth0 > 11 ? year + 1 : year;
+    const nextMonth0Clamped = nextMonth0 > 11 ? 0 : nextMonth0;
+    const clampedEnd = clampDay(nextYear, nextMonth0Clamped, salaryDay);
+    end = new Date(
+      nextYear,
+      nextMonth0Clamped,
+      clampedEnd - 1,
+      23,
+      59,
+      59,
+      999,
+    );
+  } else {
+    start = new Date(year, month0, 1, 0, 0, 0, 0);
+    end = new Date(year, month0 + 1, 0, 23, 59, 59, 999);
+  }
+
+  const daysTotal = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const leading = start.getDay();
+
   const trendMap = new Map(
-    dayTrend.map((day: any) => [String(day.date).slice(-2), day]),
+    dayTrend.map((day: any) => [day.date, day]),
   );
+
   const maxSpend = Math.max(
     1,
     ...dayTrend.map((day: any) => Number(day.amount || 0)),
   );
+
   const cells = [
     ...Array.from({ length: leading }, (_, index) => ({
       empty: true,
       key: `empty-${index}`,
+      fullDateStr: null,
+      day: null,
     })),
-    ...Array.from({ length: daysInMonth }, (_, index) => {
-      const day = String(index + 1).padStart(2, "0");
-      return { day, key: day, data: trendMap.get(day) };
+    ...Array.from({ length: daysTotal }, (_, index) => {
+      const date = new Date(start);
+      date.setDate(start.getDate() + index);
+
+      const dayStr = String(date.getDate()).padStart(2, "0");
+      const monthStr = String(date.getMonth() + 1).padStart(2, "0");
+      const key = `${monthStr}-${dayStr}`; // MM-DD
+      const fullDateStr = `${date.getFullYear()}-${monthStr}-${dayStr}`;
+
+      return {
+        day: String(date.getDate()),
+        key: fullDateStr,
+        fullDateStr,
+        data: trendMap.get(key),
+      };
     }),
   ];
 
@@ -206,7 +254,8 @@ export const MonthlyCalendar = memo(function MonthlyCalendar({
               );
             }
 
-            const fullDateStr = `${year}-${String(monthNumber).padStart(2, "0")}-${String(cell.day).padStart(2, "0")}`;
+            const fullDateStr = cell.fullDateStr;
+            const isSalaryDay = salaryDay && Number(cell.day) === salaryDay;
 
             return (
               <button
@@ -217,19 +266,25 @@ export const MonthlyCalendar = memo(function MonthlyCalendar({
                   "min-h-[3.75rem] xs:min-h-[4.5rem] sm:min-h-[5rem] rounded-lg border text-end transition-all overflow-hidden flex flex-col justify-between p-0.5 xs:p-1 sm:p-2 cursor-pointer active-press select-none",
                   amount === 0 && income === 0 && "bg-white dark:bg-slate-950 hover:bg-slate-50 dark:hover:bg-slate-900/50 border-slate-200 dark:border-slate-800",
                   amount > 0 && "bg-rose-500/5 border-rose-500/10 hover:bg-rose-500/10 dark:bg-rose-500/10 dark:border-rose-500/20",
-                  income > 0 && amount === 0 && "bg-emerald-500/5 border-emerald-500/10 hover:bg-emerald-500/10 dark:bg-emerald-500/10 dark:border-emerald-500/20"
+                  income > 0 && amount === 0 && "bg-emerald-500/5 border-emerald-500/10 hover:bg-emerald-500/10 dark:bg-emerald-500/10 dark:border-emerald-500/20",
+                  isSalaryDay && "border-amber-400 dark:border-amber-600/80 shadow-md shadow-amber-500/5 bg-amber-50/10 dark:bg-amber-950/5 ring-1 ring-amber-400/30"
                 )}
                 style={
                   amount > 0 ? { opacity: 0.65 + intensity * 0.35 } : undefined
                 }
               >
                 <div className="flex justify-between items-center w-full">
-                  <span className="font-extrabold text-[10px] xs:text-xs sm:text-sm text-slate-800 dark:text-slate-200">
+                  <span className={cn(
+                    "font-extrabold text-[10px] xs:text-xs sm:text-sm",
+                    isSalaryDay ? "text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/50 px-1 rounded font-black" : "text-slate-800 dark:text-slate-200"
+                  )}>
                     {Number(cell.day)}
                   </span>
-                  {hasData && (
+                  {isSalaryDay ? (
+                    <span className="text-[10px] sm:text-xs" title="يوم القبض">💰</span>
+                  ) : hasData ? (
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 dark:bg-indigo-400 sm:hidden animate-pulse" />
-                  )}
+                  ) : null}
                 </div>
                 <div className="w-full mt-auto space-y-0.5 text-start" dir="ltr">
                   {amount > 0 && (

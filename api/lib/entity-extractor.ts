@@ -4,7 +4,7 @@
  */
 
 import { extractCurrency } from "./text-normalizer";
-import { isLikelyPersonName } from "./egyptian-names-dictionary";
+import { isLikelyPersonName, isKareemPersonContext } from "./egyptian-names-dictionary";
 import { matchArabicPhrase } from "./fuzzy-match";
 import { parseArabicNumbers } from "./arabic-number-parser";
 import { NON_PERSON_TERMS } from "./person-resolver";
@@ -197,7 +197,7 @@ export function extractAmounts(rawText: string): ExtractedAmount[] {
     let amount = parseFloat(cleanNum);
     const suffix = match[2]?.trim();
     if (suffix === "الف" || suffix === "ألف") amount *= 1000;
-    if (amount <= 0 || amount > 50000000) continue;
+    if (amount <= 0 || amount > 10000000) continue;
     if (amount < 100 && !isFinancialContext(text, match.index, match[0].length)) continue;
     amounts.push({
       amount,
@@ -262,6 +262,11 @@ export function extractPeople(
               continue;
             }
 
+            const NON_PEOPLE = ["الجمعية", "الجمعيه", "جمعية", "جمعيه", "مقاول", "سباك", "كهربائي", "صنايعي", "دكتور"];
+            if (NON_PEOPLE.includes(candidate)) {
+                continue;
+            }
+
             if (isLikelyPersonName(candidate) || knownNames.includes(candidate)) {
               people.add(candidate);
               break; // Found a valid person for THIS candidate string, but we want to process other words
@@ -323,11 +328,7 @@ export function extractPeople(
     ) {
       // Context-aware disambiguation for "كريم"
       if (name === "كريم" || name === "كرييم") {
-        const isPersonContext = /(سلفت|اديت|اعطيت|عطيت|حولت|دفعت|دفعتل|اخدت|استلفت|خدت|بعت)/.test(text);
-        const isTransportContext = /(ركبت|اخدت|مشيت|طلبت)/.test(text);
-        if (isPersonContext && !isTransportContext) {
-          return true; // Keep it as a person
-        }
+        if (isKareemPersonContext(text)) return true;
       }
       return false;
     }

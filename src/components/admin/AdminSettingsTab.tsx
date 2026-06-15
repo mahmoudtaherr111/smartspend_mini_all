@@ -249,6 +249,7 @@ function RoutingRangesEditor({
                     <SelectContent>
                       <SelectItem value="gemini">Google</SelectItem>
                       <SelectItem value="groq">Groq</SelectItem>
+                      <SelectItem value="fireworks">Fireworks</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -268,7 +269,9 @@ function RoutingRangesEditor({
                         .filter((m) =>
                           r.provider === "groq"
                             ? m.provider === "groq"
-                            : m.provider === "gemini",
+                            : r.provider === "fireworks"
+                              ? m.provider === "fireworks"
+                              : m.provider === "gemini",
                         )
                         .map((m) => (
                           <SelectItem key={m.id} value={m.id}>
@@ -293,6 +296,7 @@ function RoutingRangesEditor({
                       <SelectItem value="key1">🔑 Gemini Primary</SelectItem>
                       <SelectItem value="key2">🔑 Gemini Backup</SelectItem>
                       <SelectItem value="groq">🔑 Groq Key</SelectItem>
+                      <SelectItem value="fireworks">🔑 Fireworks Key</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -451,6 +455,7 @@ function ReportPlanConfig({
           <SelectContent>
             <SelectItem value="gemini">Google Cloud</SelectItem>
             <SelectItem value="groq">Groq (سرعة عالية)</SelectItem>
+            <SelectItem value="fireworks">Fireworks.ai</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -467,7 +472,11 @@ function ReportPlanConfig({
           </SelectTrigger>
           <SelectContent>
             {models
-              .filter((m) => !m.id.includes("whisper"))
+              .filter((m) => {
+                if (m.id.includes("whisper")) return false;
+                const currentProvider = formData[providerKey] || "gemini";
+                return m.provider === currentProvider;
+              })
               .map((m) => (
                 <SelectItem key={m.id} value={m.id}>
                   {m.name}
@@ -491,6 +500,7 @@ function ReportPlanConfig({
             <SelectItem value="key1">🔑 Gemini Primary</SelectItem>
             <SelectItem value="key2">🔑 Gemini Backup</SelectItem>
             <SelectItem value="groq">🔑 Groq Key</SelectItem>
+            <SelectItem value="fireworks">🔑 Fireworks Key</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -1092,8 +1102,211 @@ export function AdminSettingsTab() {
                 </TabsContent>
               ))}
             </Tabs>
-          </TabsContent>
 
+            {/* ─── AI Voice Call Settings (جديد) ─── */}
+            <Card className="border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm overflow-hidden border-t-4 border-t-indigo-500 mt-8">
+              <SectionHeader
+                icon={<Mic className="w-6 h-6 text-indigo-600" />}
+                title="إعدادات المكالمة الصوتية بالذكاء الاصطناعي (Voice Call Configuration)"
+                description="تحكم في باقات المكالمات الصوتية للذكاء الاصطناعي، نموذج التوليد الصوتي، والحدود الزمنية لكل باقة."
+              />
+              <CardContent className="p-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-2xl">
+                  <div className="space-y-2">
+                    <FieldLabel hint="نموذج توليد وتجاوب الصوت الحي المفضل للمكالمات (Gemini Multimodal Live)">
+                      نموذج الصوت الحي (Voice Model)
+                    </FieldLabel>
+                    <Select
+                      value={formData.voice_call_model || "gemini-2.5-flash-native-audio-preview-12-2025"}
+                      onValueChange={(v) => updateField("voice_call_model", v)}
+                    >
+                      <SelectTrigger className="bg-slate-50 dark:bg-slate-900 font-mono text-xs">
+                        <SelectValue placeholder="اختر الموديل" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="gemini-2.5-flash-native-audio-preview-12-2025">
+                          Gemini 2.5 Flash Native Audio Dialog
+                        </SelectItem>
+                        <SelectItem value="gemini-3.1-flash-live-preview">
+                          Gemini 3.1 Flash Live
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-200 dark:border-slate-800 pt-6">
+                  <h3 className="text-sm font-bold mb-4 text-slate-800 dark:text-slate-200">
+                    حدود الاتصال والتشغيل حسب باقات الاشتراك:
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {[
+                      { planKey: "free", label: "الباقة المجانية (Free)" },
+                      { planKey: "pro", label: "باقة البرو (Pro)" },
+                      { planKey: "ultra", label: "باقة الألترا (Ultra 💎)" },
+                    ].map(({ planKey, label }) => {
+                      const enabledKey = `voice_call_enabled_${planKey}`;
+                      const limitKey = `voice_call_limit_${planKey}`;
+                      const durationKey = `voice_call_duration_${planKey}`;
+
+                      return (
+                        <div
+                          key={planKey}
+                          className="p-4 rounded-xl border bg-white dark:bg-slate-950/40 space-y-4"
+                        >
+                          <div className="flex items-center justify-between">
+                            <Label className="font-bold text-xs">{label}</Label>
+                            <Switch
+                              checked={(formData[enabledKey] || "true") === "true"}
+                              onCheckedChange={(checked) =>
+                                updateField(enabledKey, String(checked))
+                              }
+                            />
+                          </div>
+
+                          <div className="space-y-3 pt-2">
+                            <div className="space-y-1">
+                              <Label className="text-[10px] text-slate-500 font-medium">
+                                الحد الشهري (بالدقائق)
+                              </Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                value={formData[limitKey] || ""}
+                                onChange={(e) => updateField(limitKey, e.target.value)}
+                                className="h-8 font-mono bg-slate-50 dark:bg-slate-900"
+                                disabled={(formData[enabledKey] || "true") === "false"}
+                              />
+                            </div>
+
+                            <div className="space-y-1">
+                              <Label className="text-[10px] text-slate-500 font-medium">
+                                أقصى مدة للمكالمة الواحدة (بالثواني)
+                              </Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                value={formData[durationKey] || ""}
+                                onChange={(e) => updateField(durationKey, e.target.value)}
+                                className="h-8 font-mono bg-slate-50 dark:bg-slate-900"
+                                disabled={(formData[enabledKey] || "true") === "false"}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* ──── AI Chatbot Settings ──── */}
+            <Card className="border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm overflow-hidden border-t-4 border-t-indigo-500">
+              <SectionHeader
+                icon="🤖"
+                title="إعدادات الشات بوت الذكي (AI Chatbot)"
+                description="التحكم في موديل الشات بوت، الحدود، والمفاتيح"
+              />
+              <CardContent className="space-y-4">
+                {/* Model & API */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium">Chatbot Model</Label>
+                    <Input
+                      value={formData.chatbot_model || "accounts/fireworks/models/deepseek-v4-0324"}
+                      onChange={(e) => updateField("chatbot_model", e.target.value)}
+                      className="h-8 font-mono text-xs bg-slate-50 dark:bg-slate-900"
+                      placeholder="accounts/fireworks/models/deepseek-v4-0324"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium">Base URL</Label>
+                    <Input
+                      value={formData.chatbot_base_url || "https://api.fireworks.ai/inference/v1"}
+                      onChange={(e) => updateField("chatbot_base_url", e.target.value)}
+                      className="h-8 font-mono text-xs bg-slate-50 dark:bg-slate-900"
+                      placeholder="https://api.fireworks.ai/inference/v1"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium">Chatbot API Key</Label>
+                    <Input
+                      type="password"
+                      value={formData.chatbot_api_key || ""}
+                      onChange={(e) => updateField("chatbot_api_key", e.target.value)}
+                      className="h-8 font-mono text-xs bg-slate-50 dark:bg-slate-900"
+                      placeholder="يستخدم مفتاح Fireworks لو فاضي"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium">Max History (رسائل)</Label>
+                    <Input
+                      type="number"
+                      value={formData.chatbot_max_history || "10"}
+                      onChange={(e) => updateField("chatbot_max_history", e.target.value)}
+                      className="h-8 font-mono bg-slate-50 dark:bg-slate-900"
+                    />
+                  </div>
+                </div>
+
+                {/* Per-Plan Settings */}
+                <div className="space-y-3 pt-2">
+                  <p className="text-xs font-bold text-muted-foreground">إعدادات لكل باقة</p>
+                  {(["free", "pro", "ultra"] as const).map((plan) => {
+                    const enabledKey = `chatbot_enabled_${plan}` as keyof typeof formData;
+                    const dailyKey = `chatbot_daily_limit_${plan}` as keyof typeof formData;
+                    const tokensKey = `chatbot_max_tokens_${plan}` as keyof typeof formData;
+                    const planLabel = plan === "free" ? "مجاني" : plan === "pro" ? "PRO" : "ULTRA";
+                    const planColor = plan === "free" ? "bg-slate-200 dark:bg-slate-700" : plan === "pro" ? "bg-amber-100 dark:bg-amber-900/30" : "bg-violet-100 dark:bg-violet-900/30";
+                    const defaults = {
+                      free: { daily: "20", tokens: "1000" },
+                      pro: { daily: "200", tokens: "3000" },
+                      ultra: { daily: "999999", tokens: "5000" },
+                    };
+                    return (
+                      <div key={plan} className={`rounded-xl p-3 ${planColor}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold">{planLabel}</span>
+                          <div className="flex items-center gap-2">
+                            <Label className="text-[10px]">تفعيل</Label>
+                            <Switch
+                              checked={(formData[enabledKey] || "true") === "true"}
+                              onCheckedChange={(v) => updateField(enabledKey as string, v ? "true" : "false")}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <Label className="text-[10px]">رسائل/يوم</Label>
+                            <Input
+                              type="number"
+                              value={formData[dailyKey] || defaults[plan].daily}
+                              onChange={(e) => updateField(dailyKey as string, e.target.value)}
+                              className="h-7 font-mono text-xs bg-white dark:bg-slate-800"
+                              disabled={(formData[enabledKey] || "true") === "false"}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-[10px]">Max Tokens/رد</Label>
+                            <Input
+                              type="number"
+                              value={formData[tokensKey] || defaults[plan].tokens}
+                              onChange={(e) => updateField(tokensKey as string, e.target.value)}
+                              className="h-7 font-mono text-xs bg-white dark:bg-slate-800"
+                              disabled={(formData[enabledKey] || "true") === "false"}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
           {/* ══════════════════════════════════════════════════════════
               TAB 3: خزنة المفاتيح
           ══════════════════════════════════════════════════════════ */}
@@ -1134,6 +1347,15 @@ export function AdminSettingsTab() {
                     hint: "مفتاح Groq للموديلات السريعة (Llama, Whisper). يُستخدم عند اختيار groq",
                   },
                   {
+                    label: "Fireworks AI Key",
+                    id: "fireworks",
+                    field: "fireworks_api_key",
+                    placeholder: "fw_...",
+                    badge: "للاستجابة الفائقة",
+                    color: "purple",
+                    hint: "مفتاح Fireworks.ai للموديلات مثل DeepSeek V4. يُستخدم عند اختيار fireworks",
+                  },
+                  {
                     label: "Custom STT Primary Key",
                     id: "stt",
                     field: "stt_api_key",
@@ -1162,9 +1384,11 @@ export function AdminSettingsTab() {
                           <span className="text-xl">
                             {field.includes("groq")
                               ? "⚡"
-                              : field.includes("stt")
-                                ? "🎤"
-                                : "🔑"}
+                              : field.includes("fireworks")
+                                ? "🎆"
+                                : field.includes("stt")
+                                  ? "🎤"
+                                  : "🔑"}
                           </span>
                           {label}
                           <Hint text={hint} />

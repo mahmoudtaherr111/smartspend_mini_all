@@ -1,26 +1,45 @@
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { getDb } from "../queries/connection";
-import { users, localUsers, userProfiles } from "../../db/schema";
+import { users, localUsers, systemSettings } from "../../db/schema";
 import { whatsappService } from "../services/whatsapp-service";
 import { getSmartProfile } from "../services/user-profile-service";
+import { processAIChatMessage } from "../services/ai-chat-service";
 
 /**
- * Monthly Report Cron Job
+ * Monthly Report Cron Job (Agentic Workflow)
  *
- * This job is designed to run automatically at the end of every month.
- * It queries all active PRO users, generates their monthly financial summary,
- * and sends it directly to their WhatsApp.
+ * Runs automatically, fetches PRO users, uses the DeepSeek Agentic RAG
+ * to generate a comprehensive, personalized monthly report by pulling data dynamically
+ * through function calls, then sends the final report via WhatsApp.
  */
 export async function runMonthlyReportJob(targetMonth?: string) {
   console.log("[MonthlyReportJob] Starting execution...");
 
   const db = getDb();
-
-  // Calculate the target month if not provided (e.g. "2024-05")
   const month = targetMonth || new Date().toISOString().slice(0, 7);
 
   try {
-    // 1. Fetch all PRO users (assuming 'pro' plan is what qualifies)
+    // 1. Fetch system config for the AI
+    const settingsRows = await db.select().from(systemSettings);
+    const s: Record<string, string> = {};
+    settingsRows.forEach((r) => {
+      if (r.key && r.value) s[r.key] = r.value;
+    });
+
+    const aiConfig = {
+      apiKey: s.chatbot_api_key || s.fireworks_api_key || "",
+      baseUrl: s.chatbot_base_url || "https://api.fireworks.ai/inference/v1",
+      model: s.chatbot_model || "accounts/fireworks/models/deepseek-v4-flash",
+      maxTokens: parseInt(s.chatbot_max_tokens_ultra || "5000"), // High limit for report
+      maxHistory: 0,
+    };
+
+    if (!aiConfig.apiKey) {
+      console.error("[MonthlyReportJob] Missing AI API Key. Aborting.");
+      return;
+    }
+
+    // 2. Fetch all PRO users
     const proOauthUsers = await db.query.users.findMany({
       where: eq(users.plan, "pro"),
     });
@@ -30,19 +49,15 @@ export async function runMonthlyReportJob(targetMonth?: string) {
     });
 
     console.log(
-      `[MonthlyReportJob] Found ${proOauthUsers.length + proLocalUsers.length} Pro users.`,
+      `[MonthlyReportJob] Found ${proOauthUsers.length + proLocalUsers.length} Pro users.`
     );
 
-    // 2. Process each user (could be batched for scale)
+    // 3. Process each user via Agentic Workflow
     for (const u of [...proOauthUsers, ...proLocalUsers]) {
       const isLocal = "phone" in u;
       const userType = isLocal ? "local" : "oauth";
 
-      // We need a phone number to send WhatsApp
-      const phone = isLocal ? (u as any).phone : null;
-      // Note: For OAuth users, we would fetch phone from userProfiles.basicInfo
-      let targetPhone = phone;
-
+      let targetPhone = isLocal ? (u as any).phone : null;
       const profile = await getSmartProfile(u.id, userType);
 
       if (!targetPhone && profile.basicInfo.phone) {
@@ -50,35 +65,47 @@ export async function runMonthlyReportJob(targetMonth?: string) {
       }
 
       if (!targetPhone) {
-        console.warn(
-          `[MonthlyReportJob] Skipping user ${u.id} - No phone number found.`,
-        );
+        console.warn(`[MonthlyReportJob] Skipping user ${u.id} - No phone number.`);
         continue;
       }
 
-      // 3. Generate the summary
-      // In production, this would use the Batch AI Pipeline for massive scale
-      // For now, we simulate fetching the compiled report
-      const reportContent = `🌟 *تقريرك الشهري من SmartSpend* 🌟
+      // Check if user has WhatsApp sending enabled (future setting)
+      // if (profile.preferences.disable_whatsapp_report) continue;
+
+      console.log(`[MonthlyReportJob] Generating Agentic Report for user ${u.id}...`);
+
+      const agentPrompt = `الرجاء إنشاء تقرير مالي شهري شامل لشهر ${month}. 
+استخدم الأدوات المتاحة لجلب:
+1. ملخص الشهر الحالي (المصاريف، الدخل)
+2. تقسيم مصاريفي حسب الفئات
+3. مقارنة سريعة مع الشهر الماضي
+ثم اكتب رسالة احترافية جداً ومشجعة ومناسبة للإرسال عبر واتساب للمستخدم (ابدأ بـ "أهلاً يا [اسمي]").
+ركز على اكتشاف أي مصاريف غير عادية (Anomaly) وقدم نصيحة واحدة قوية لتحسين هدفي المالي.
+اكتب رسالة الواتساب وتكون مقسمة ومنسقة باستخدام النجوم (*bold*).`;
+
+      let reportContent = "";
       
-أهلاً ${u.name}!
-لقد قمنا بتحليل مصروفاتك لشهر ${month}. 
-
-📊 *ملخص سريع:*
-- أنت منضبط في ميزانيتك.
-- تم تحقيق 80% من هدفك المالي.
-
-للاطلاع على التقرير المفصل، افتح التطبيق:
-https://smartspend.ai/dashboard
-
-شكراً لثقتك بنا! 🚀`;
+      try {
+        const aiResult = await processAIChatMessage({
+          userId: u.id,
+          userType,
+          userPlan: "pro",
+          message: agentPrompt,
+          conversationHistory: [],
+          config: aiConfig,
+        });
+        
+        reportContent = aiResult.response;
+        console.log(`[MonthlyReportJob] Used ${aiResult.tokensUsed} tokens for user ${u.id}. Tools used: ${aiResult.toolsUsed.join(", ")}`);
+      } catch (err: any) {
+        console.error(`[MonthlyReportJob] AI Error for user ${u.id}:`, err.message);
+        // Fallback message
+        reportContent = `🌟 *تقريرك الشهري من SmartSpend* 🌟\n\nأهلاً بك!\nتم تجهيز ملخص شهر ${month}. يرجى فتح التطبيق للاطلاع على التفاصيل.`;
+      }
 
       // 4. Send via WhatsApp
       await whatsappService.sendMessage(targetPhone, reportContent);
-
-      console.log(
-        `[MonthlyReportJob] Sent report to user ${u.id} at ${targetPhone}`,
-      );
+      console.log(`[MonthlyReportJob] Sent report to user ${u.id} at ${targetPhone}`);
     }
 
     console.log("[MonthlyReportJob] Finished successfully.");

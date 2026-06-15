@@ -7,14 +7,14 @@
  * Architecture:
  *   Signal 1: Keyword Priors     (weight: 40) — Regex keyword matching
  *   Signal 2: Local RAG TF-IDF   (weight: 35) — n-gram similarity search
- *   Signal 3: User History Prior  (weight: 15) — Personalized category frequency
- *   Signal 4: Co-occurrence       (weight: 10) — Related category expansion
- *   Signal 5: Intent Injection    (mandatory)  — Income/Transfer/Investment routing
- *   Signal 6: Person Detection    (mandatory)  — Family/Friends/Employees injection
+ *   Signal 3: User History Prior  (weight: 20) — Personalized category frequency
+ *   Signal 4: Co-occurrence       (weight: 15) — Related category expansion
+ *   Signal 5: Intent Injection    (mandatory 25)  — Income/Transfer/Investment routing
+ *   Signal 6: Person Detection    (mandatory 10-20)  — Family/Friends/Employees injection
  *
- * Total scoring budget: 100 points max per category.
- * Threshold: Categories scoring >= 20 are included.
- * Safety: Always ≥ 3 categories, ≤ 10, always includes "متنوعات".
+ * Total scoring budget: 155 points max per category.
+ * Threshold: Categories scoring >= 15 are included.
+ * Safety: Always ≥ 5 categories, ≤ 10, always includes "متنوعات".
  */
 
 import { CATEGORIES, type MainCategory } from "./category-registry";
@@ -42,7 +42,7 @@ export interface ScorerResult {
 // ─── Constants ────────────────────────────────────────────────────
 
 const INCLUSION_THRESHOLD = 15;
-const MIN_CATEGORIES = 3;
+const MIN_CATEGORIES = 5;
 const MAX_CATEGORIES = 10;
 const MAX_CATEGORIES_BULK = 15;  // For multi-amount text
 
@@ -233,7 +233,7 @@ export function scoreCategories(
     };
   }
 
-  // ── Safety: Minimum 3 categories ──
+  // ── Safety: Minimum 5 categories ──
   if (included.length < MIN_CATEGORIES) {
     const remaining = rankedCategories.filter(c => c.score < INCLUSION_THRESHOLD);
     while (included.length < MIN_CATEGORIES && remaining.length > 0) {

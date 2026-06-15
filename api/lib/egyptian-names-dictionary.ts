@@ -840,3 +840,22 @@ export function isFamilyTerm(word: string): boolean {
 export function isMerchantOrPlace(word: string): boolean {
   return MERCHANT_NEGATIVE_LIST.has(comparableArabic(word.trim()));
 }
+
+/**
+ * دالة مركزية لحل تعارض اسم "كريم" بين التطبيق والشخص بناءً على السياق
+ * @returns true إذا كان المعنى هو شخص، false إذا كان المعنى تطبيق أو غير محدد
+ */
+export function isKareemPersonContext(text: string): boolean {
+  const isPersonContext = /(سلفت|اديت|اعطيت|عطيت|حولت|دفعت|دفعتل|اخدت|استلفت|خدت|بعت|من|لـ|مع)/.test(text);
+  const isTransportContext = /(ركبت|اخدت|مشيت|طلبت|توصيله|توصيل|مشوار|تطبيق)/.test(text);
+  const hasRelationship = /(صاحب|زميل|اخو|عم|خال|ابن|ابو|حساب)/.test(text);
+  
+  // إذا وجدنا أفعال ركوب وبدون اسم علاقة صريح، فهي بالتأكيد التطبيق
+  if (isTransportContext && !hasRelationship) return false;
+  
+  // إذا وجدنا أفعال تحويل أموال أو اسم علاقة، فهو شخص
+  if (isPersonContext || hasRelationship) return true;
+  
+  // الافتراضي: نعتبره تطبيق مواصلات لأنها الحالة الأكثر شيوعاً
+  return false;
+}

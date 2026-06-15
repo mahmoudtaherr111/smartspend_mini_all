@@ -618,16 +618,34 @@ function decomposeAmountAnchored(
       }
     }
 
+    let isInherited = false;
     if (nearestPrecedingVerb) {
       seg.linkedVerb = nearestPrecedingVerb;
     } else if (previousVerb) {
       seg.linkedVerb = previousVerb;
+      isInherited = true;
     }
 
     if (seg.linkedVerb) {
-      previousVerb = seg.linkedVerb;
       if (seg.direction === "unknown") {
-        seg.direction = detectSegmentDirection(seg.linkedVerb + " " + segmentText);
+        if (isInherited) {
+          const intrinsicDirection = detectSegmentDirection(segmentText);
+          const verbDirection = detectSegmentDirection(seg.linkedVerb);
+          // If the segment has a strong intrinsic direction that contradicts the inherited verb
+          if (intrinsicDirection !== "unknown" && verbDirection !== "unknown" && intrinsicDirection !== verbDirection) {
+            seg.direction = "unknown";
+            seg.linkedVerb = null;
+            // Removed: previousVerb = null; to keep the inheritance chain intact for future segments
+          } else {
+            seg.direction = detectSegmentDirection(seg.linkedVerb + " " + segmentText);
+            previousVerb = seg.linkedVerb;
+          }
+        } else {
+          seg.direction = detectSegmentDirection(seg.linkedVerb + " " + segmentText);
+          previousVerb = seg.linkedVerb;
+        }
+      } else {
+        previousVerb = seg.linkedVerb;
       }
     }
 

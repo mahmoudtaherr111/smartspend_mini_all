@@ -544,8 +544,21 @@ export const adminRouter = router({
       // ── Gemini API Keys ──
       ai_api_key: env.GEMINI_API_KEY || "",
       ai_api_key_2: "",
+      // ── AI Voice Call Settings ──
+      voice_call_model: "gemini-2.5-flash",
+      voice_call_enabled_free: "true",
+      voice_call_limit_free: "2",
+      voice_call_duration_free: "60",
+      voice_call_enabled_pro: "true",
+      voice_call_limit_pro: "30",
+      voice_call_duration_pro: "300",
+      voice_call_enabled_ultra: "true",
+      voice_call_limit_ultra: "999999",
+      voice_call_duration_ultra: "1200",
       // ── Groq API Key (جديد) ──
       groq_api_key: "",
+      // ── Fireworks API Key ──
+      fireworks_api_key: env.FIREWORKS_API_KEY || "",
       // ── Legacy model selectors (used for reports + ultra fallback) ──
       ai_model_free: env.GEMINI_MODEL_FREE || "gemini-2.0-flash",
       ai_model_pro: env.GEMINI_MODEL_PRO || "gemini-1.5-flash",
@@ -941,8 +954,27 @@ export const adminRouter = router({
       }
     }
 
+    const fallbackFireworksModels = [
+      {
+        id: "accounts/fireworks/models/deepseek-v4-flash",
+        name: "DeepSeek V4 Flash (Fireworks)",
+        provider: "fireworks",
+        tier: "free",
+        pricing: "سريع واقتصادي / Fast",
+        description: "موديل تفكير خفيف وسريع جداً مع ذاكرة 1M توكن",
+      },
+      {
+        id: "accounts/fireworks/models/deepseek-v4-pro",
+        name: "DeepSeek V4 Pro (Fireworks)",
+        provider: "fireworks",
+        tier: "pro",
+        pricing: "ذكي للغاية / Smart",
+        description: "موديل تفكير متطور للمهام المعقدة والتحليل المتقدم مع ذاكرة 1M توكن",
+      }
+    ];
+
     return {
-      models: [...geminiModels, ...fallbackGroqModels],
+      models: [...geminiModels, ...fallbackGroqModels, ...fallbackFireworksModels],
     };
   }),
 
@@ -1455,7 +1487,7 @@ export const adminRouter = router({
   validateApiKey: adminProcedure
     .input(
       z.object({
-        provider: z.enum(["gemini", "groq"]),
+        provider: z.enum(["gemini", "groq", "fireworks"]),
         apiKey: z.string().min(1),
       }),
     )
@@ -1483,9 +1515,32 @@ export const adminRouter = router({
             errorType: null,
             message: "المفتاح يعمل بشكل سليم ✅",
           };
-        } else {
+        } else if (input.provider === "groq") {
           // Groq: call /v1/models
           const res = await fetch("https://api.groq.com/openai/v1/models", {
+            method: "GET",
+            headers: { Authorization: `Bearer ${input.apiKey}` },
+            signal: AbortSignal.timeout(10000),
+          });
+          if (!res.ok) {
+            const body = await res.text().catch(() => "");
+            const errorType = classifyApiError(res.status, body);
+            return {
+              valid: false,
+              status: res.status,
+              errorType,
+              message: body.substring(0, 300),
+            };
+          }
+          return {
+            valid: true,
+            status: 200,
+            errorType: null,
+            message: "المفتاح يعمل بشكل سليم ✅",
+          };
+        } else {
+          // Fireworks: call /inference/v1/models
+          const res = await fetch("https://api.fireworks.ai/inference/v1/models", {
             method: "GET",
             headers: { Authorization: `Bearer ${input.apiKey}` },
             signal: AbortSignal.timeout(10000),

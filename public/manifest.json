@@ -1,5 +1,14 @@
 {
   "id": "/",
+  "share_target": {
+    "action": "/dashboard?tab=record",
+    "method": "GET",
+    "params": {
+      "title": "share_title",
+      "text": "share_text",
+      "url": "share_url"
+    }
+  },
   "name": "SmartSpend AI",
   "short_name": "SmartSpend",
   "description": "المساعد المالي الذكي وتتبع المصاريف بالصوت والذكاء الاصطناعي",
