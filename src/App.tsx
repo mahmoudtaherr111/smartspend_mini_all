@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { PageLoadingSkeleton } from "@/components/PageLoadingSkeleton";
 import { UltraFeatureRoute } from "@/components/routing/PlanGates";
 import { FeedbackButton } from "@/components/FeedbackButton";
+// VoiceCallFAB removed — voice calls are now in the AI Center page
 import { NotificationBell } from "@/components/NotificationBell";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { PwaEnhancements } from "@/components/pwa/PwaEnhancements";
@@ -48,6 +49,7 @@ const Pro = lazy(() => import("@/pages/Pro"));
 const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
+const AICenter = lazy(() => import("@/pages/AICenter"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -422,6 +424,16 @@ function AnimatedRoutes() {
             <ProtectedRoute>
               <PageTransition>
                 <BankSyncPage />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ai"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <AICenter />
               </PageTransition>
             </ProtectedRoute>
           }

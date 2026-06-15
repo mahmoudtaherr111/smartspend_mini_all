@@ -113,4 +113,23 @@ const port = parseInt(env.PORT);
 console.log(`🚀 SmartSpend Backend running on http://localhost:${port}`);
 console.log(`   Allowed origins: ${allowedOrigins.join(", ")}`);
 
-serve({ fetch: app.fetch, port, hostname: "0.0.0.0" });
+const server = serve({ fetch: app.fetch, port, hostname: "0.0.0.0" });
+
+// Bind WebSocket Server for Live Voice Calls
+import { WebSocketServer } from "ws";
+import { handleVoiceCallWebSocket } from "./services/voice-call-service";
+
+const wss = new WebSocketServer({ noServer: true });
+
+server.on("upgrade", (request, socket, head) => {
+  const url = new URL(request.url || "", "http://localhost");
+  if (url.pathname.startsWith("/api/voice/live")) {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit("connection", ws, request);
+    });
+  }
+});
+
+wss.on("connection", (ws, request) => {
+  handleVoiceCallWebSocket(ws, request);
+});

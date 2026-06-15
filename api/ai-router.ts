@@ -58,9 +58,11 @@ import {
   defaultModelForProvider,
   mapModelName,
   isGroqModel,
+  isFireworksModel,
   type AiPlanName,
   type AiProviderName,
 } from "./lib/model-mapper";
+import { callFireworksAPI } from "./lib/fireworks-client";
 import {
   assertAiBudget,
   asPlan,
@@ -77,6 +79,7 @@ import {
   buildProReportPrompt,
   type ProReportBackendSummary,
 } from "./services/pro-report-engine";
+import { processAIChatMessage } from "./services/ai-chat-service";
 
 // ────────────────────────────────────────────────────────
 // STT Helper (Speech-to-Text)
@@ -244,10 +247,11 @@ export async function resolveRoutingConfig(
         : cfg.ai_model_free || defaultGeminiModelForPlan(plan);
 
   const resolveKey = (
-    provider: AiProviderName,
-    keySlot?: RoutingRange["key_slot"],
+    provider: string,
+    keySlot?: string,
   ) => {
     if (provider === "groq") return cfg.groq_api_key || "";
+    if (provider === "fireworks") return cfg.fireworks_api_key || env.FIREWORKS_API_KEY || "";
     if (keySlot === "key2") {
       return cfg.ai_api_key_2 || cfg.ai_api_key || env.GEMINI_API_KEY || "";
     }
@@ -307,9 +311,9 @@ export async function resolveRoutingConfig(
   // Resolve API key from the selected provider. Provider wins over a mismatched slot.
   const provider: AiProviderName =
     matchedRange.provider ??
-    (matchedRange.key_slot === "groq" ? "groq" : "gemini");
+    (matchedRange.key_slot === "groq" ? "groq" : matchedRange.key_slot === "fireworks" ? "fireworks" : "gemini");
   const keySlot =
-    matchedRange.key_slot ?? (provider === "groq" ? "groq" : "key1");
+    matchedRange.key_slot ?? (provider === "groq" ? "groq" : provider === "fireworks" ? "fireworks" : "key1");
   const resolvedKey = resolveKey(provider, keySlot);
 
   if (!resolvedKey) {
@@ -524,6 +528,7 @@ async function getAiClient(
   });
 
   const groqApiKey = cfg.groq_api_key || "";
+  const fireworksApiKey = cfg.fireworks_api_key || env.FIREWORKS_API_KEY || "";
 
   return {
     aiModel,
@@ -531,6 +536,7 @@ async function getAiClient(
     apiKey,
     apiKey2,
     groqApiKey,
+    fireworksApiKey,
     reportProvider,
     reportKeySlot,
     tokenLimit: tokenLimits[plan] || 50000,
@@ -620,8 +626,9 @@ export const aiRouter = router({
       );
 
       // ── Dynamic Routing: resolve correct provider/key/model based on tokens used ──
-      let resolvedProvider: "gemini" | "groq" = "gemini";
+      let resolvedProvider: "gemini" | "groq" | "fireworks" = "gemini";
       let resolvedGroqKey = "";
+      let resolvedFireworksKey = "";
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
       // ── Run independent queries in parallel to speed up ──
@@ -652,6 +659,7 @@ export const aiRouter = router({
         );
         resolvedProvider = routing.provider;
         resolvedGroqKey = routing.provider === "groq" ? routing.apiKey : "";
+        resolvedFireworksKey = routing.provider === "fireworks" ? routing.apiKey : "";
         apiKey = routing.apiKey;
         modelName = routing.model;
       } catch (routingErr) {
@@ -719,6 +727,7 @@ export const aiRouter = router({
         // Dynamic routing
         provider: resolvedProvider,
         groqApiKey: resolvedGroqKey,
+        fireworksApiKey: resolvedFireworksKey,
         pipelineSettings: {
             ...cfgFull,
             rag_api_key: cfgFull.rag_api_key || apiKey,
@@ -777,6 +786,7 @@ export const aiRouter = router({
             ruleEngine: result.log.ruleEngineResult,
             ai: result.log.aiResult,
             routing: result.log.routing,
+            cachedTokens: result.cachedTokens,
             ...(isV2
               ? {
                   pipelineVersion: "v2",
@@ -1414,8 +1424,9 @@ export const aiRouter = router({
       }
 
       // ── Dynamic Routing for Voice Classification ──
-      let resolvedProvider: "gemini" | "groq" = "gemini";
+      let resolvedProvider: "gemini" | "groq" | "fireworks" = "gemini";
       let resolvedGroqKey = "";
+      let resolvedFireworksKey = "";
       let apiKey = client.apiKey;
       let modelName = client.modelName;
 
@@ -1427,6 +1438,7 @@ export const aiRouter = router({
         );
         resolvedProvider = routing.provider;
         resolvedGroqKey = routing.provider === "groq" ? routing.apiKey : "";
+        resolvedFireworksKey = routing.provider === "fireworks" ? routing.apiKey : "";
         apiKey = routing.apiKey;
         modelName = routing.model;
       } catch (routingErr) {
@@ -1466,6 +1478,7 @@ export const aiRouter = router({
         skipClarification: false,
         provider: resolvedProvider,
         groqApiKey: resolvedGroqKey,
+        fireworksApiKey: resolvedFireworksKey,
         pipelineSettings: {
             ...cfg,
             rag_api_key: cfg.rag_api_key || apiKey,
@@ -1695,10 +1708,40 @@ export const aiRouter = router({
       }
 
       // ── 1. Backend Preprocessing (saves 80% tokens) ──
-      const [year, month] = input.month.split("-");
-      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-      const endDate = new Date(parseInt(year), parseInt(month), 0);
-      const daysInMonth = endDate.getDate();
+      // Get smart user profile for personalization context to check salaryDay
+      const userProfile = await getSmartProfile(ctx.user.id, ctx.user.type);
+      const salaryDay = Number((userProfile.financialInfo as any).salaryDay) || 0;
+
+      let startDate: Date;
+      let endDate: Date;
+      let prevStart: Date;
+      let prevEnd: Date;
+      let daysInMonth: number;
+
+      if (salaryDay > 1) {
+        const { getFinancialMonthDates } = await import("./services/financial-month");
+        const currentDates = getFinancialMonthDates(input.month, salaryDay);
+        startDate = currentDates.startDate;
+        endDate = currentDates.endDate;
+
+        // Calculate previous month string
+        const [y, m] = input.month.split("-").map(Number);
+        const prevMonthDate = new Date(y, m - 2, 1);
+        const prevMonthStr = prevMonthDate.toISOString().slice(0, 7);
+        const prevDates = getFinancialMonthDates(prevMonthStr, salaryDay);
+        prevStart = prevDates.startDate;
+        prevEnd = prevDates.endDate;
+
+        daysInMonth = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      } else {
+        const [year, month] = input.month.split("-");
+        startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+        endDate = new Date(parseInt(year), parseInt(month), 0);
+        daysInMonth = endDate.getDate();
+
+        prevStart = new Date(parseInt(year), parseInt(month) - 2, 1);
+        prevEnd = new Date(parseInt(year), parseInt(month) - 1, 0);
+      }
 
       // Current month expenses
       const userExpenses = await db
@@ -1728,8 +1771,6 @@ export const aiRouter = router({
       }
 
       // Previous month for comparison
-      const prevStart = new Date(parseInt(year), parseInt(month) - 2, 1);
-      const prevEnd = new Date(parseInt(year), parseInt(month) - 1, 0);
       const prevExpenses = await db
         .select()
         .from(expenses)
@@ -1742,8 +1783,6 @@ export const aiRouter = router({
           ),
         );
 
-      // Get smart user profile for personalization context
-      const userProfile = await getSmartProfile(ctx.user.id, ctx.user.type);
       const previousAiAttributes = userProfile.aiInferredAttributes;
       const behaviorSnapshot = buildBehaviorSnapshot(
         userExpenses,
@@ -1761,8 +1800,6 @@ export const aiRouter = router({
 
       // Financial month context — salary day awareness for AI reports
       let financialMonthContext = "";
-      const salaryDay =
-        Number((userProfile.financialInfo as any).salaryDay) || 0;
       if (salaryDay > 0) {
         const { buildFinancialMonthPrompt } =
           await import("./services/financial-month");
@@ -1974,6 +2011,7 @@ export const aiRouter = router({
       let reportProvider = "gemini";
       let reportApiKey = env.GEMINI_API_KEY;
       let groqApiKey = "";
+      let fireworksApiKey = "";
       let modelName = "backend";
       let aiResponseLength = "medium";
       let aiFocus = "balanced";
@@ -1996,6 +2034,7 @@ export const aiRouter = router({
         reportProvider = client.reportProvider || "gemini";
         reportApiKey = client.apiKey;
         groqApiKey = client.groqApiKey;
+        fireworksApiKey = client.fireworksApiKey;
         reportTargetWords = client.reportTargetWords;
         reportSubcatsLimit = client.reportSubcatsLimit;
         reportTopItemsLimit = client.reportTopItemsLimit;
@@ -2126,82 +2165,45 @@ ${financialMonthContext}`;
           const useProReportEngine = planId === "pro" || planId === "ultra";
 
           if (useProReportEngine) {
-            const proSummary: ProReportBackendSummary = {
-              month: input.month,
-              totalExpense,
-              totalIncome: comparisonIncome,
-              netFlow: totalIncome - totalExpense,
-              dailyAvg,
-              monthlyChangePercent: monthlyChange,
-              topSubCategories: topSubCategories.map((s) => ({
-                name: s.name,
-                amount: s.amount,
-                percent: s.percent,
-              })),
-              alerts,
-              personality,
-              forecast: forecast || undefined,
-              patternMemory: patternMemory || undefined,
-              recurringBills: recurringBills.length
-                ? recurringBills
-                : undefined,
-              transactionCount: userExpenses.length,
+            const agentPrompt = `قم بإنشاء تقريري المالي لشهر ${input.month}.
+قم أولاً بالبحث في بياناتي باستخدام الأدوات المتاحة لجلب:
+1. إجمالي الدخل والمصروفات.
+2. تقسيم مصاريفي حسب الفئات.
+3. التغيرات مقارنة بالشهر الماضي.
+ثم قم بصياغة تقرير احترافي جداً ومركز.
+استخدم الأسلوب المالي وتحدث بضمير "أنت".`;
+
+            const aiConfig = {
+              apiKey: fireworksApiKey || reportApiKey,
+              baseUrl: "https://api.fireworks.ai/inference/v1",
+              model: "accounts/fireworks/models/deepseek-v4-flash",
+              maxTokens: 5000,
+              maxHistory: 0,
             };
-            const { systemInstruction, userPrompt } = buildProReportPrompt({
-              profile: userProfile,
-              snapshot: behaviorSnapshot,
-              summary: proSummary,
-              targetWords: reportTargetWords,
-              topItemsContext,
+
+            const aiResult = await processAIChatMessage({
+              userId: ctx.user.id,
+              userType: ctx.user.type,
+              userPlan: planId,
+              message: agentPrompt,
+              conversationHistory: [],
+              config: aiConfig,
             });
-            let raw = "";
-            let tokens = 0;
-            if (reportProvider === "groq" || isGroqModel(modelName)) {
-              const res = await callGroqAPI(
-                groqApiKey || reportApiKey,
-                modelName,
-                systemInstruction,
-                userPrompt,
-                capRequestOutputTokens(planId, "report", reportTargetWords * 4),
-              );
-              raw = res.text;
-              tokens = res.tokensUsed;
-            } else {
-              const genAI = new GoogleGenerativeAI(reportApiKey);
-              const proReportModel = genAI.getGenerativeModel({
-                model: modelName,
-                systemInstruction,
-                generationConfig: {
-                  temperature: 0.65,
-                  maxOutputTokens: capRequestOutputTokens(
-                    planId,
-                    "report",
-                    reportTargetWords * 4,
-                  ),
-                  responseMimeType: "application/json",
-                },
-              });
-              const result = await proReportModel.generateContent(userPrompt);
-              raw = result.response
-                .text()
-                .replace(/```json?/g, "")
-                .replace(/```/g, "")
-                .trim();
-              tokens = result.response.usageMetadata?.totalTokenCount || 0;
-            }
+
             await trackTokens(
               ctx.user.id,
               ctx.user.type,
-              tokens,
+              aiResult.tokensUsed,
               "report",
-              `pro_report:${modelName}`,
+              `pro_report_agentic:${aiResult.model}`,
             );
-            try {
-              responseJson = JSON.parse(raw);
-            } catch {
-              const match = raw.match(/\{[\s\S]*\}/);
-              if (match) responseJson = JSON.parse(match[0]);
-            }
+
+            responseJson = {
+              response_text: aiResult.response,
+              alerts: alerts,
+              personality_flag: personality,
+              data_table: []
+            };
           } else {
             let lengthInstruction =
               "اكتب تحليلاً متوازناً ومناسباً للشرح بأسلوب مهني.";
@@ -2299,7 +2301,21 @@ ${personalizedSummaryForAI}
 
             let raw = "";
             let tokens = 0;
-            if (reportProvider === "groq" || isGroqModel(modelName)) {
+            if (reportProvider === "fireworks" || isFireworksModel(modelName)) {
+              const res = await callFireworksAPI(
+                fireworksApiKey || reportApiKey,
+                modelName,
+                aiSystemPrompt,
+                prompt,
+                capRequestOutputTokens(
+                  ctx.user.plan,
+                  "report",
+                  reportTargetWords * 4,
+                ),
+              );
+              raw = res.text;
+              tokens = res.tokensUsed;
+            } else if (reportProvider === "groq" || isGroqModel(modelName)) {
               const res = await callGroqAPI(
                 groqApiKey || reportApiKey,
                 modelName,

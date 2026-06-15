@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860.3208333333332 1855.5110000000002" width="860.3208333333332" height="1855.5110000000002" style="--bg:#1F1F1F;--fg:#CCCCCC;--line:#CCCCCC;--accent:#0078D4;--muted:#CCCCCCCC;--surface:#181818;--border:#CCCCCC;background:var(--bg)">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+  text { font-family: 'Inter', system-ui, sans-serif; }
+  svg {
+    /* Derived from --bg and --fg (overridable via --line, --accent, etc.) */
+    --_text:          var(--fg);
+    --_text-sec:      var(--muted, color-mix(in srgb, var(--fg) 60%, var(--bg)));
+    --_text-muted:    var(--muted, color-mix(in srgb, var(--fg) 40%, var(--bg)));
+    --_text-faint:    color-mix(in srgb, var(--fg) 25%, var(--bg));
+    --_line:          var(--line, color-mix(in srgb, var(--fg) 50%, var(--bg)));
+    --_arrow:         var(--accent, color-mix(in srgb, var(--fg) 85%, var(--bg)));
+    --_node-fill:     var(--surface, color-mix(in srgb, var(--fg) 3%, var(--bg)));
+    --_node-stroke:   var(--border, color-mix(in srgb, var(--fg) 20%, var(--bg)));
+    --_group-fill:    var(--bg);
+    --_group-hdr:     color-mix(in srgb, var(--fg) 5%, var(--bg));
+    --_inner-stroke:  color-mix(in srgb, var(--fg) 12%, var(--bg));
+    --_key-badge:     color-mix(in srgb, var(--fg) 10%, var(--bg));
+  }
+</style>
+<defs>
+  <marker id="arrowhead" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">
+    <polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+  <marker id="arrowhead-start" markerWidth="8" markerHeight="5" refX="1" refY="2.5" orient="auto-start-reverse">
+    <polygon points="8 0, 0 2.5, 8 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round" />
+  </marker>
+</defs>
+<polyline class="edge" data-from="Input" data-to="Normalizer" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="422.0286666666666,76.9 422.02866666666665,124.9" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Normalizer" data-to="InjectDict" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="422.02866666666665,161.8 422.02866666666665,209.8" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="InjectDict" data-to="RuleEngine" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="422.02866666666665,246.70000000000002 422.02866666666665,294.70000000000005" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="RuleEngine" data-to="MatchItem" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="نعم (Zero Tokens)" points="364.9715,579.9858333333334 364.9715,1163.677 191.39100000000002,1163.677 191.391,1439.0109999999997" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="MatchItem" data-to="PostProcess" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="191.391,1475.9109999999998 191.391,1523.9109999999998" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="PostProcess" data-to="AutoSave" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="191.391,1560.811 191.391,1596.811 291.2038333333333,1596.811 291.2038333333333,1608.811" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="RuleEngine" data-to="VectorSearch" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="لا" points="479.0858333333333,579.9858333333334 479.0858333333333,673.043 606.9945,673.043 606.9945,753.343" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="VectorSearch" data-to="Embeddings" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="نعم" points="555.9888333333333,1008.3713333333333 555.9888333333333,1095.377 510.317,1095.377 510.317,1175.677" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="VectorSearch" data-to="LLMFallback" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="لا" points="658.0001666666666,1008.3713333333334 658.0001666666666,1163.677 703.672,1163.677 703.672,1596.811 664.3124999999999,1596.811 664.3124999999999,1608.811" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Embeddings" data-to="Confidence" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="510.317,1212.577 510.317,1260.577" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Confidence" data-to="AutoSave" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="نعم (Zero Tokens)" points="471.66133333333335,1453.8553333333334 471.66133333333335,1528.511 464.51266666666663,1528.511 464.51266666666663,1596.811 357.55116666666663,1596.811 357.55116666666663,1608.811" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="Confidence" data-to="LLMFallback" data-style="solid" data-arrow-start="false" data-arrow-end="true" data-label="لا" points="548.9726666666667,1453.8553333333334 548.9726666666667,1596.811 588.3321666666666,1596.811 588.3321666666666,1608.811" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="LLMFallback" data-to="FactInjection" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="626.3223333333333,1645.711 626.3223333333333,1693.711" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<polyline class="edge" data-from="FactInjection" data-to="LLMGenerate" data-style="solid" data-arrow-start="false" data-arrow-end="true" points="626.3223333333333,1730.611 626.3223333333333,1778.611" fill="none" stroke="var(--_line)" stroke-width="1" marker-end="url(#arrowhead)" />
+<g class="edge-label" data-from="RuleEngine" data-to="MatchItem" data-label="نعم (Zero Tokens)">
+  <rect x="138.39100000000002" y="1365.7109999999998" width="105.562" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="191.17200000000003" y="1380.8609999999999" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">نعم (Zero Tokens)</text>
+</g>
+<g class="edge-label" data-from="RuleEngine" data-to="VectorSearch" data-label="لا">
+  <rect x="591.9945" y="680.043" width="29.53" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="606.7595" y="695.193" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">لا</text>
+</g>
+<g class="edge-label" data-from="VectorSearch" data-to="Embeddings" data-label="نعم">
+  <rect x="492.317" y="1102.377" width="35.47" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="510.052" y="1117.527" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">نعم</text>
+</g>
+<g class="edge-label" data-from="VectorSearch" data-to="LLMFallback" data-label="لا">
+  <rect x="688.672" y="1535.511" width="29.53" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="703.437" y="1550.661" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">لا</text>
+</g>
+<g class="edge-label" data-from="Confidence" data-to="AutoSave" data-label="نعم (Zero Tokens)">
+  <rect x="411.51266666666663" y="1535.511" width="105.562" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="464.29366666666664" y="1550.661" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">نعم (Zero Tokens)</text>
+</g>
+<g class="edge-label" data-from="Confidence" data-to="LLMFallback" data-label="لا">
+  <rect x="533.9726666666667" y="1535.511" width="29.53" height="30.3" rx="2" ry="2" fill="var(--bg)" stroke="var(--_inner-stroke)" stroke-width="1" />
+  <text x="548.7376666666667" y="1550.661" text-anchor="middle" font-size="11" font-weight="400" fill="var(--_text-sec)" dy="3.8499999999999996">لا</text>
+</g>
+<g class="node" data-id="Input" data-label="مدخلات المستخدم مثلاً: هدية عيد ميلاد 350" data-shape="rectangle">
+  <rect x="266.93266666666665" y="40" width="310.19199999999995" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="422.0286666666666" y="58.45" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">مدخلات المستخدم مثلاً: هدية عيد ميلاد 350</text>
+</g>
+<g class="node" data-id="Normalizer" data-label="محرك تنظيف وتوحيد الحروف العربية" data-shape="rectangle">
+  <rect x="292.86766666666665" y="124.9" width="258.322" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="422.02866666666665" y="143.35000000000002" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">محرك تنظيف وتوحيد الحروف العربية</text>
+</g>
+<g class="node" data-id="InjectDict" data-label="حقن الـ 2849 كلمة مفتاحية للـ RAG الموحد" data-shape="rectangle">
+  <rect x="268.78516666666667" y="209.8" width="306.48699999999997" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="422.02866666666665" y="228.25" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">حقن الـ 2849 كلمة مفتاحية للـ RAG الموحد</text>
+</g>
+<g class="node" data-id="RuleEngine" data-label="هل الكلمة مطابقة محلياً في الـ Rule Engine؟" data-shape="diamond">
+  <polygon points="422.02866666666665,294.70000000000005 593.2001666666666,465.8715 422.02866666666665,637.043 250.85716666666667,465.8715" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="422.02866666666665" y="465.8715" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">هل الكلمة مطابقة محلياً في الـ Rule Engine؟</text>
+</g>
+<g class="node" data-id="MatchItem" data-label="استخراج المعاملة محلياً وتصنيفها فوراً" data-shape="rectangle">
+  <rect x="40" y="1439.0109999999997" width="302.782" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="191.391" y="1457.4609999999998" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">استخراج المعاملة محلياً وتصنيفها فوراً</text>
+</g>
+<g class="node" data-id="PostProcess" data-label="منطق الضبط الفوري للمطابقة الفائقة" data-shape="rectangle">
+  <rect x="54.81999999999999" y="1523.9109999999998" width="273.142" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="191.391" y="1542.3609999999999" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">منطق الضبط الفوري للمطابقة الفائقة</text>
+</g>
+<g class="node" data-id="AutoSave" data-label="حفظ تلقائي فوراً 0 توكنز" data-shape="rectangle">
+  <rect x="224.85649999999998" y="1608.811" width="199.042" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="324.3775" y="1627.261" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">حفظ تلقائي فوراً 0 توكنز</text>
+</g>
+<g class="node" data-id="VectorSearch" data-label="هل مفتاح الـ API يدعم الـ Embeddings؟" data-shape="diamond">
+  <polygon points="606.9945,753.3429999999998 760.0115000000001,906.3599999999999 606.9945,1059.377 453.9775,906.3599999999999" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="606.9945" y="906.3599999999999" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">هل مفتاح الـ API يدعم الـ Embeddings؟</text>
+</g>
+<g class="node" data-id="Embeddings" data-label="مطابقة دلالية عبر الـ In-Memory Vector DB" data-shape="rectangle">
+  <rect x="355.962" y="1175.677" width="308.71" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="510.317" y="1194.127" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">مطابقة دلالية عبر الـ In-Memory Vector DB</text>
+</g>
+<g class="node" data-id="LLMFallback" data-label="تمرير المعاملة لنموذج Gemini" data-shape="rectangle">
+  <rect x="512.3518333333333" y="1608.811" width="227.94099999999995" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="626.3223333333333" y="1627.261" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">تمرير المعاملة لنموذج Gemini</text>
+</g>
+<g class="node" data-id="Confidence" data-label="هل التطابق دلالياً &gt; 88%؟" data-shape="diamond">
+  <polygon points="510.317,1260.577 626.284,1376.544 510.317,1492.5110000000002 394.35,1376.544" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="510.317" y="1376.544" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">هل التطابق دلالياً &gt; 88%؟</text>
+</g>
+<g class="node" data-id="FactInjection" data-label="حقن الاسم والتصنيف المستخرج كحقيقة مؤكدة بالـ Prompt" data-shape="rectangle">
+  <rect x="432.32383333333337" y="1693.711" width="387.9969999999999" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="626.3223333333333" y="1712.161" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">حقن الاسم والتصنيف المستخرج كحقيقة مؤكدة بالـ Prompt</text>
+</g>
+<g class="node" data-id="LLMGenerate" data-label="الـ LLM يولد الـ JSON بأعلى دقة وبدون أي هلوسة" data-shape="rectangle">
+  <rect x="451.9603333333333" y="1778.611" width="348.72399999999993" height="36.900000000000006" rx="0" ry="0" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75" />
+  <text x="626.3223333333333" y="1797.0610000000001" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)" dy="4.55">الـ LLM يولد الـ JSON بأعلى دقة وبدون أي هلوسة</text>
+</g>
+</svg>

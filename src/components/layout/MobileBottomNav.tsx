@@ -6,16 +6,17 @@ import {
   CalendarDays,
   LayoutDashboard,
   Menu,
+  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useHaptics } from "@/hooks/useHaptics";
 
 const tabs = [
-  { id: "record", label: "تسجيل", icon: LayoutDashboard, tab: "record" },
-  { id: "stats", label: "إحصائيات", icon: BarChart3, tab: "stats" },
-  { id: "ai", label: "ذكاء AI", icon: Brain, tab: "ai" },
-  { id: "calendar", label: "تقويم", icon: CalendarDays, tab: "calendar" },
+  { id: "record", label: "تسجيل", icon: LayoutDashboard, tab: "record", href: "/dashboard?tab=record" },
+  { id: "stats", label: "إحصائيات", icon: BarChart3, tab: "stats", href: "/dashboard?tab=stats" },
+  { id: "ai", label: "مركز AI", icon: Sparkles, tab: "ai", href: "/ai" },
+  { id: "calendar", label: "تقويم", icon: CalendarDays, tab: "calendar", href: "/dashboard?tab=calendar" },
 ] as const;
 
 interface MobileBottomNavProps {
@@ -57,11 +58,12 @@ export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
     };
   }, []);
 
-  const visibleRoutes = ["/dashboard", "/settings", "/support", "/pro", "/bank-sync"];
+  const visibleRoutes = ["/dashboard", "/settings", "/support", "/pro", "/bank-sync", "/ai"];
   if (!visibleRoutes.includes(location.pathname)) return null;
 
   const isMoreActive = ["/settings", "/support", "/pro", "/bank-sync"].includes(location.pathname);
-  const activeTab = isMoreActive ? "" : (searchParams.get("tab") || "record");
+  const isAiPage = location.pathname === "/ai";
+  const activeTab = isAiPage ? "ai" : isMoreActive ? "" : (searchParams.get("tab") || "record");
   const month =
     searchParams.get("month") || new Date().toISOString().slice(0, 7);
 
@@ -83,7 +85,7 @@ export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
               return (
                 <Link
                   key={item.id}
-                  to={`/dashboard?tab=${item.tab}&month=${month}`}
+                  to={item.href.includes("?") ? `${item.href}&month=${month}` : item.href}
                   onClick={() => {
                     if (!isActive) lightTap();
                   }}

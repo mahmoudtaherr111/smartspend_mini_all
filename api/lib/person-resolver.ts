@@ -1,5 +1,6 @@
 import { normalizeRelationship, getRelationshipSuffix } from "./relationship-normalizer";
 import { matchArabicPhrase, normalizeArabic, levenshtein } from "./fuzzy-match";
+import { isKareemPersonContext } from "./egyptian-names-dictionary";
 import { extractPeople } from "./entity-extractor";
 
 export interface KnownPersonForResolver {
@@ -51,7 +52,7 @@ export const NON_PERSON_TERMS = new Set([
   // كلمات خدمية وبنكية
   "تحويل", "فوري", "انستاباي", "انستا", "باي", "شحن", "كاش", "فيزا", "محفظة", "محفظه",
   // مصطلحات مالية
-  "سلف", "سلفة", "سلفه", "دين", "ديون", "قرض", "جمعية", "جمعيه", "قسط", "اقساط", "أقساط", "ايجار", "إيجار", "الايجار", "الإيجار",
+  "سلف", "سلفة", "سلفه", "دين", "ديون", "قرض", "جمعية", "جمعيه", "الجمعية", "الجمعيه", "المقاول", "مقاول", "قسط", "اقساط", "أقساط", "ايجار", "إيجار", "الايجار", "الإيجار",
   "مرتب", "المرتب", "راتب", "الراتب", "معاش", "المعاش", "بونص", "البونص", "مكافأة", "مكافاه", "المكافأة", "كاشباك", "الكاشباك",
   // مصطلحات خيرية ودينية لا تعتبر أشخاص
   "صدقة", "صدقه", "زكاة", "زكاه", "تبرع", "لله", "مسجد", "جامع", "فقير", "فقراء", "الفقراء", "محتاجين", "المحتاجين"
@@ -156,7 +157,7 @@ function contextAroundName(text: string, name: string): string {
 
   const index = normalizedText.indexOf(normalizedName);
   if (index < 0) return `${normalizedText} ${clarificationTail}`.trim();
-  return `${normalizedText.slice(Math.max(0, index - 45), index + normalizedName.length + 45)} ${clarificationTail}`.trim();
+  return `${normalizedText.slice(Math.max(0, index - 60), index + normalizedName.length + 60)} ${clarificationTail}`.trim();
 }
 
 export function inferRelationshipFromText(text: string, name?: string | null): string | null {
@@ -319,9 +320,7 @@ export function resolvePersonForTransaction(input: {
 
   // Context-aware brand resolution for "كريم" (Careem vs. Karim the person)
   if (name === "كريم" || name === "كرييم") {
-    const isTransportContext = /(?:ركبت|طلبت|اوبر|أوبر|تاكسي|تاكسى|تكسي|تكسى|مواصلات|بنزين|بنزينه|بنزينة|عربيه|عربية|مشوار)/.test(input.transactionText);
-    const isTransferContext = /(?:حولت|سلفت|اديت|أديت|إديت|بعت|بعتت|سلّفت)/.test(input.transactionText);
-    if (isTransportContext && !isTransferContext) {
+    if (!isKareemPersonContext(input.transactionText)) {
       return {
         name: null,
         relationship: null,
@@ -417,8 +416,11 @@ export function resolvePersonForTransaction(input: {
   }
   
   if (!explicitRelationship && input.aiRelationship) {
-    // Rely on AI's understanding of the full sentence as a last resort before asking
-    explicitRelationship = input.aiRelationship;
+    // Only trust AI relationship if it actually appears in the text, to prevent random guessing bypassing clarification
+    const normalizedAiRel = compactArabic(input.aiRelationship);
+    if (compactArabic(input.originalText).includes(normalizedAiRel)) {
+       explicitRelationship = input.aiRelationship;
+    }
   }
 
   if (known) {

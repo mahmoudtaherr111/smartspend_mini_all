@@ -20,6 +20,7 @@ const envSchema = z.object({
   GEMINI_MODEL_PRO: z.string().default("gemini-2.5-flash"),
   GEMINI_MODEL_REPORTS: z.string().default("gemini-2.5-pro"),
   GROQ_API_KEY: z.string().optional(),
+  FIREWORKS_API_KEY: z.string().optional(),
 
   // App
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),

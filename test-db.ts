@@ -1,15 +1,15 @@
-import "dotenv/config";
-import { db } from "./api/queries/connection";
-import { systemSettings } from "./db/schema";
+import 'dotenv/config';
+import { db } from './api/queries/connection';
+import { sql } from 'drizzle-orm';
 
-async function main() {
+async function test() {
   try {
-    const settings = await db.select().from(systemSettings);
-    console.log("System Settings:", JSON.stringify(settings, null, 2));
-  } catch (err) {
-    console.error("Error fetching system settings:", err);
+    const res = await db.execute(sql`DESCRIBE whatsapp_otp_codes`);
+    console.log("whatsapp_otp_codes columns:", res[0]);
+  } catch (err: any) {
+    console.error("whatsapp_otp_codes Error:", err.message);
   }
   process.exit(0);
 }
 
-main().catch(console.error);
+test();

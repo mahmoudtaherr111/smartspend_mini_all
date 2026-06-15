@@ -46,7 +46,7 @@ async function testModel(modelName: string, apiKey: string) {
 }
 
 async function run() {
-  const apiKey = "YOUR_GEMINI_API_KEY_HERE";
+  const apiKey = process.env.GEMINI_API_KEY || "";
   console.log("=== STARTING LIVE API KEY VERIFICATION ===");
   
   // Test 1: Stable Production Flash
