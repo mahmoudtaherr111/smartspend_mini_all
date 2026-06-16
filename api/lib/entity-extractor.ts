@@ -198,7 +198,7 @@ export function extractAmounts(rawText: string): ExtractedAmount[] {
     const suffix = match[2]?.trim();
     if (suffix === "الف" || suffix === "ألف") amount *= 1000;
     if (amount <= 0 || amount > 10000000) continue;
-    if (amount < 100 && !isFinancialContext(text, match.index, match[0].length)) continue;
+    if (amount < 100 && !suffix && !isFinancialContext(text, match.index, match[0].length)) continue;
     amounts.push({
       amount,
       index: match.index,

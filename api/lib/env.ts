@@ -42,6 +42,7 @@ const envSchema = z.object({
   BILLING_SIMULATE: z.enum(["true", "false"]).optional(),
   TRUST_PROXY: z.string().optional(),
   REDIS_URL: z.string().optional(),
+  AI_ALLOW_MEMORY_CACHE_IN_PRODUCTION: z.enum(["true", "false"]).optional(),
   SENTRY_DSN: z.string().optional(),
   
   // Firebase FCM
@@ -51,4 +52,3 @@ const envSchema = z.object({
 });
 
 export const env = envSchema.parse(process.env);
-

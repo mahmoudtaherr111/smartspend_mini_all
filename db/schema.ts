@@ -597,6 +597,32 @@ export const financialGoals = mysqlTable(
   ],
 );
 
+export const userBudgets = mysqlTable(
+  "user_budgets",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    title: varchar("title", { length: 200 }).notNull(),
+    category: varchar("category", { length: 100 }),
+    monthlyLimit: decimal("monthly_limit", { precision: 12, scale: 2 }).notNull(),
+    periodStartDay: int("period_start_day").notNull().default(1),
+    linkedGoalId: int("linked_goal_id"),
+    status: varchar("status", { length: 30 }).notNull().default("active"),
+    alertThresholdPercent: int("alert_threshold_percent").notNull().default(80),
+    metadata: json("metadata"),
+    createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").default(
+      sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
+    ),
+  },
+  (t) => [
+    index("user_budgets_user_idx").on(t.userId, t.userType, t.status),
+    index("user_budgets_category_idx").on(t.category),
+    index("user_budgets_goal_idx").on(t.linkedGoalId),
+  ],
+);
+
 // ─── Raw SMS Events (For Audit & Parsing Logs) ───
 export const rawSmsEvents = mysqlTable(
   "raw_sms_events",
@@ -798,4 +824,153 @@ export const chatMessages = mysqlTable(
     index("chat_msg_conv_idx").on(t.conversationId),
     index("chat_msg_created_idx").on(t.conversationId, t.createdAt),
   ]
+);
+
+// AI Memory Layer
+export const aiConversationSummaries = mysqlTable(
+  "ai_conversation_summaries",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    conversationId: int("conversation_id").notNull(),
+    capsule: varchar("capsule", { length: 500 }).notNull(),
+    runningSummary: text("running_summary"),
+    messageCount: int("message_count").default(0),
+    source: varchar("source", { length: 50 }).notNull().default("chat"),
+    createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").default(
+      sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
+    ),
+  },
+  (t) => [
+    uniqueIndex("ai_conv_summary_unique_idx").on(t.conversationId),
+    index("ai_conv_summary_user_idx").on(t.userId, t.userType),
+    index("ai_conv_summary_updated_idx").on(t.updatedAt),
+  ],
+);
+
+export const aiMemoryItems = mysqlTable(
+  "ai_memory_items",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    memoryType: varchar("memory_type", { length: 50 }).notNull().default("fact"),
+    content: text("content").notNull(),
+    contentHash: varchar("content_hash", { length: 64 }).notNull(),
+    importance: int("importance").notNull().default(50),
+    sourceConversationId: int("source_conversation_id"),
+    sourceMessageId: int("source_message_id"),
+    status: varchar("status", { length: 30 }).notNull().default("active"),
+    metadata: json("metadata"),
+    createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").default(
+      sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
+    ),
+  },
+  (t) => [
+    index("ai_memory_user_idx").on(t.userId, t.userType, t.status),
+    uniqueIndex("ai_memory_hash_unique_idx").on(t.userId, t.userType, t.contentHash),
+    index("ai_memory_type_idx").on(t.memoryType),
+    index("ai_memory_updated_idx").on(t.updatedAt),
+  ],
+);
+
+export const aiMemoryEmbeddings = mysqlTable(
+  "ai_memory_embeddings",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    memoryItemId: int("memory_item_id").notNull(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    provider: varchar("provider", { length: 50 }).notNull().default("fireworks"),
+    model: varchar("model", { length: 200 }).notNull(),
+    dimensions: int("dimensions").notNull(),
+    vectorHash: varchar("vector_hash", { length: 64 }),
+    vector: json("vector"),
+    createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("ai_memory_embedding_item_idx").on(t.memoryItemId),
+    index("ai_memory_embedding_user_idx").on(t.userId, t.userType),
+    uniqueIndex("ai_memory_embedding_unique_idx").on(
+      t.memoryItemId,
+      t.provider,
+      t.model,
+      t.dimensions,
+    ),
+  ],
+);
+
+export const aiActionMemory = mysqlTable(
+  "ai_action_memory",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    actionName: varchar("action_name", { length: 120 }).notNull(),
+    status: varchar("status", { length: 40 }).notNull(),
+    summary: varchar("summary", { length: 500 }).notNull(),
+    payload: json("payload"),
+    sourceConversationId: int("source_conversation_id"),
+    createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").default(
+      sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
+    ),
+  },
+  (t) => [
+    index("ai_action_memory_user_idx").on(t.userId, t.userType),
+    index("ai_action_memory_action_idx").on(t.actionName, t.status),
+    index("ai_action_memory_updated_idx").on(t.updatedAt),
+  ],
+);
+
+export const aiPendingActions = mysqlTable(
+  "ai_pending_actions",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    conversationId: int("conversation_id"),
+    actionName: varchar("action_name", { length: 120 }).notNull(),
+    status: varchar("status", { length: 40 }).notNull().default("pending_confirmation"),
+    risk: varchar("risk", { length: 30 }).notNull().default("medium"),
+    summary: varchar("summary", { length: 500 }).notNull(),
+    payload: json("payload").notNull(),
+    result: json("result"),
+    expiresAt: datetime("expires_at").notNull(),
+    confirmedAt: datetime("confirmed_at"),
+    executedAt: datetime("executed_at"),
+    cancelledAt: datetime("cancelled_at"),
+    createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").default(
+      sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
+    ),
+  },
+  (t) => [
+    index("ai_pending_action_user_idx").on(t.userId, t.userType, t.status),
+    index("ai_pending_action_expiry_idx").on(t.expiresAt),
+    index("ai_pending_action_conversation_idx").on(t.conversationId),
+  ],
+);
+
+export const aiActionAuditLogs = mysqlTable(
+  "ai_action_audit_logs",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    actionId: int("action_id"),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    actionName: varchar("action_name", { length: 120 }).notNull(),
+    event: varchar("event", { length: 80 }).notNull(),
+    status: varchar("status", { length: 40 }).notNull(),
+    metadata: json("metadata"),
+    createdAt: datetime("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("ai_action_audit_action_idx").on(t.actionId),
+    index("ai_action_audit_user_idx").on(t.userId, t.userType),
+    index("ai_action_audit_event_idx").on(t.event),
+  ],
 );

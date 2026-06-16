@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
         filename: "sw.js",
         registerType: "autoUpdate",
         devOptions: {
-          enabled: true,
+          enabled: false,
           type: "module",
         },
         includeAssets: ["favicon.ico", "apple-touch-icon.png", "mask-icon.svg"],

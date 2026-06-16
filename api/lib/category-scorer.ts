@@ -209,6 +209,20 @@ export function scoreCategories(
 
   // ── Safety: Ambiguity Fallback ──
   if (included.length === 0 || (included.length > 0 && included[0].score < 15)) {
+    const hasRealSignal = rankedCategories.some((category) =>
+      category.signals.some((signal) => signal !== "safety"),
+    );
+
+    if (!hasRealSignal) {
+      return {
+        filteredCategories: CATEGORIES,
+        scores: rankedCategories,
+        totalCategories: CATEGORIES.length,
+        allCategories: CATEGORIES.length,
+        intent,
+      };
+    }
+
     const fallbackCategoryNames = new Set<string>();
     
     // 1. Take top 5 ranked

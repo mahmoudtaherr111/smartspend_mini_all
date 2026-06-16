@@ -46,6 +46,7 @@ function notifyWaitingWorker(registration: ServiceWorkerRegistration) {
 
 export function registerAppServiceWorker(): void {
   if (!("serviceWorker" in navigator)) return;
+  if (!import.meta.env.PROD) return;
 
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();

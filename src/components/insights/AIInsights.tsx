@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,6 +37,10 @@ export function AIInsights({ month }: AIInsightsProps) {
 
   const [insightsData, setInsightsData] = useState<string | null>(null);
   const [compareData, setCompareData] = useState<string | null>(null);
+  const [compareTrace, setCompareTrace] = useState<Record<string, unknown> | null>(null);
+  const [compareStatus, setCompareStatus] = useState<string>("idle");
+  const [compareRunning, setCompareRunning] = useState(false);
+  const reportCompareQaRef = useRef<string | null>(null);
 
   // Automatically fetch cached insights on load to prevent token waste and rate limit errors
   const cachedQuery = trpc.ai.getCachedMonthlyInsights.useQuery({ month });
@@ -51,7 +55,7 @@ export function AIInsights({ month }: AIInsightsProps) {
 
   const handleGenerateInsights = () => {
     insightsMutation.mutate(
-      { month },
+      { month, forceRefresh: true },
       {
         onSuccess: (data) => {
           setInsightsData(data.insights);
@@ -107,17 +111,50 @@ export function AIInsights({ month }: AIInsightsProps) {
     }
   };
 
-  const handleCompare = () => {
+  const runCompare = (targetMonth = compareMonth) => {
     setShowComparison(true);
-    compareMutation.mutate(
-      { month1: month, month2: compareMonth },
-      {
-        onSuccess: (data) => {
-          setCompareData(data.comparison);
-        },
-      },
-    );
+    setCompareMonth(targetMonth);
+    setCompareData(null);
+    setCompareTrace(null);
+    setCompareRunning(true);
+    setCompareStatus(`started:${month}:${targetMonth}`);
+    void compareMutation
+      .mutateAsync({ month1: month, month2: targetMonth })
+      .then((data) => {
+        setCompareStatus(`success:${month}:${targetMonth}`);
+        setCompareData(data.comparison);
+        setCompareTrace(
+          data.trace && typeof data.trace === "object"
+            ? (data.trace as Record<string, unknown>)
+            : null,
+        );
+      })
+      .catch((error) => {
+        setCompareStatus(`error:${error?.message ?? "unknown"}`);
+        setCompareTrace(null);
+      })
+      .finally(() => {
+        setCompareRunning(false);
+      });
   };
+
+  const handleCompare = () => {
+    runCompare();
+  };
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    const targetMonth = params.get("report_qa_compare_month");
+    if (!targetMonth || !/^\d{4}-\d{2}$/.test(targetMonth) || targetMonth === month) return;
+
+    const qaKey = `${month}:${targetMonth}`;
+    if (reportCompareQaRef.current === qaKey || compareRunning || compareMutation.isPending) return;
+
+    reportCompareQaRef.current = qaKey;
+    runCompare(targetMonth);
+  }, [compareMutation.isPending, compareRunning, month]);
 
   return (
     <div className="space-y-4">
@@ -201,9 +238,46 @@ export function AIInsights({ month }: AIInsightsProps) {
                 // If not valid JSON, show as text
                 parsed = { response_text: insightsData };
               }
+              const trace =
+                parsed.ai_trace && typeof parsed.ai_trace === "object"
+                  ? (parsed.ai_trace as Record<string, unknown>)
+                  : null;
+              const traceTools = Array.isArray(trace?.tools)
+                ? trace.tools.map((item) => String(item)).join(", ")
+                : "none";
+              const numericAccuracy =
+                trace?.numericAccuracy && typeof trace.numericAccuracy === "object"
+                  ? (trace.numericAccuracy as Record<string, unknown>)
+                  : null;
+              const accuracyPercent =
+                typeof numericAccuracy?.accuracy === "number"
+                  ? Math.round(numericAccuracy.accuracy * 100)
+                  : null;
 
               return (
                 <div className="p-4 rounded-xl bg-white/60 dark:bg-slate-800/60 space-y-4">
+                  {trace && (
+                    <div
+                      className="rounded-lg border bg-white/70 dark:bg-slate-900/70 p-3 text-xs text-muted-foreground space-y-1"
+                      aria-label={`report-ai-trace route=${String(trace.route ?? "unknown")} tools=${traceTools} risk=${String(trace.hallucinationRisk ?? "unknown")}`}
+                    >
+                      <div className="font-medium text-foreground">Trace</div>
+                      <div>
+                        route={String(trace.route ?? "unknown")} · tools={traceTools}
+                      </div>
+                      <div>
+                        facts={String(trace.factCount ?? 0)} · source={String(trace.factsSource ?? "unknown")} · LLM={String(trace.llmCalls ?? 0)} · embed={String(trace.embeddingCalls ?? 0)}
+                      </div>
+                      <div>
+                        risk={String(trace.hallucinationRisk ?? "unknown")}
+                        {accuracyPercent !== null ? ` · nums ${accuracyPercent}%` : ""}
+                      </div>
+                      <div>
+                        tokens in={String(trace.inputTokens ?? 0)} / total={String(trace.totalTokens ?? 0)} · model={String(trace.model ?? "unknown")}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Main Analysis Text */}
                   {parsed.response_text && (
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">
@@ -418,9 +492,9 @@ export function AIInsights({ month }: AIInsightsProps) {
             <Button
               size="sm"
               onClick={handleCompare}
-              disabled={compareMonth === month || compareMutation.isPending}
+              disabled={compareMonth === month || compareRunning || compareMutation.isPending}
             >
-              {compareMutation.isPending ? (
+              {compareRunning || compareMutation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 "قارن"
@@ -428,7 +502,16 @@ export function AIInsights({ month }: AIInsightsProps) {
             </Button>
           </div>
 
-          {showComparison && compareMutation.isPending && (
+          {import.meta.env.DEV && (
+            <div
+              className="sr-only"
+              aria-label={`compare-qa-status ${compareStatus}`}
+            >
+              {compareStatus}
+            </div>
+          )}
+
+          {showComparison && (compareRunning || compareMutation.isPending) && (
             <div className="text-center py-4">
               <Loader2 className="w-5 h-5 animate-spin mx-auto" />
             </div>
@@ -436,6 +519,42 @@ export function AIInsights({ month }: AIInsightsProps) {
 
           {showComparison && compareData && (
             <div className="space-y-3 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+              {compareTrace &&
+                (() => {
+                  const traceTools = Array.isArray(compareTrace.tools)
+                    ? compareTrace.tools.map((item) => String(item)).join(", ")
+                    : "none";
+                  const numericAccuracy =
+                    compareTrace.numericAccuracy && typeof compareTrace.numericAccuracy === "object"
+                      ? (compareTrace.numericAccuracy as Record<string, unknown>)
+                      : null;
+                  const accuracyPercent =
+                    typeof numericAccuracy?.accuracy === "number"
+                      ? Math.round(numericAccuracy.accuracy * 100)
+                      : null;
+
+                  return (
+                    <div
+                      className="rounded-lg border bg-white/70 dark:bg-slate-900/70 p-3 text-xs text-muted-foreground space-y-1"
+                      aria-label={`compare-ai-trace route=${String(compareTrace.route ?? "unknown")} tools=${traceTools} risk=${String(compareTrace.hallucinationRisk ?? "unknown")}`}
+                    >
+                      <div className="font-medium text-foreground">Trace</div>
+                      <div>
+                        route={String(compareTrace.route ?? "unknown")} · tools={traceTools}
+                      </div>
+                      <div>
+                        facts={String(compareTrace.factCount ?? 0)} · source={String(compareTrace.factsSource ?? "unknown")} · LLM={String(compareTrace.llmCalls ?? 0)} · embed={String(compareTrace.embeddingCalls ?? 0)}
+                      </div>
+                      <div>
+                        risk={String(compareTrace.hallucinationRisk ?? "unknown")}
+                        {accuracyPercent !== null ? ` · nums ${accuracyPercent}%` : ""}
+                      </div>
+                      <div>
+                        tokens in={String(compareTrace.inputTokens ?? 0)} / total={String(compareTrace.totalTokens ?? 0)} · model={String(compareTrace.model ?? "unknown")}
+                      </div>
+                    </div>
+                  );
+                })()}
               <div className="flex items-start gap-2 text-sm">
                 <TrendingDown className="w-4 h-4 text-purple-500 mt-0.5 shrink-0" />
                 <p className="leading-relaxed whitespace-pre-wrap">

@@ -41,6 +41,10 @@ const aiTabs = [
   },
 ];
 
+function normalizeAiTab(value: string | null): AITab {
+  return value === "voice" || value === "report" || value === "chat" ? value : "chat";
+}
+
 function TabSkeleton() {
   return (
     <div className="p-4 space-y-4">
@@ -52,7 +56,10 @@ function TabSkeleton() {
 }
 
 export default function AICenter() {
-  const [activeTab, setActiveTab] = useState<AITab>("chat");
+  const [activeTab, setActiveTab] = useState<AITab>(() => {
+    if (typeof window === "undefined") return "chat";
+    return normalizeAiTab(new URLSearchParams(window.location.search).get("ai_tab"));
+  });
   const { lightTap } = useHaptics();
 
   return (

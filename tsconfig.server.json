@@ -23,5 +23,10 @@
     }
   },
   "include": ["src", "api", "contracts", "db"],
-  "exclude": ["api/test-*.ts", "api/**/*.test.ts"]
+  "exclude": [
+    "api/test-*.ts",
+    "api/**/*.test.ts",
+    "api/scripts/**/*.ts",
+    "api/lib/test-*.ts"
+  ]
 }

@@ -17,7 +17,7 @@ export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const { data: oauthUser, isLoading: oauthLoading } = trpc.auth.me.useQuery(
+  const { data: oauthUser, isFetched: oauthFetched } = trpc.auth.me.useQuery(
     undefined,
     {
       retry: false,
@@ -25,7 +25,7 @@ export function useAuth() {
     },
   );
 
-  const { data: localUser, isLoading: localLoading } =
+  const { data: localUser, isFetched: localFetched } =
     trpc.localAuth.me.useQuery(undefined, {
       retry: false,
       refetchOnWindowFocus: false,
@@ -47,7 +47,12 @@ export function useAuth() {
   });
 
   useEffect(() => {
-    if (!oauthLoading && !localLoading) {
+    if (!oauthFetched || !localFetched) {
+      setIsLoading(true);
+      return;
+    }
+
+    if (oauthFetched && localFetched) {
       if (oauthUser) {
         setUser({
           id: oauthUser.id,
@@ -75,7 +80,7 @@ export function useAuth() {
       }
       setIsLoading(false);
     }
-  }, [oauthUser, localUser, oauthLoading, localLoading]);
+  }, [oauthUser, localUser, oauthFetched, localFetched]);
 
   const logout = useCallback(() => {
     localStorage.removeItem("local_auth_token");

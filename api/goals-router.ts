@@ -20,6 +20,7 @@ import {
   getSmartProfile,
   summarizeProfileForAI,
 } from "./services/user-profile-service";
+import { invalidateFinanceUserCache } from "./services/finance-semantic-layer";
 
 const FREE_DESCRIPTION_MAX = 120;
 const FREE_GOALS_LIMIT = 3;
@@ -155,6 +156,7 @@ export const goalsRouter = router({
         targetDate: input.targetDate ? new Date(input.targetDate) : null,
         status: "active",
       });
+      await invalidateFinanceUserCache(ctx.user.id, ctx.user.type);
 
       return {
         success: true,
@@ -256,6 +258,7 @@ export const goalsRouter = router({
           lastAnalyzedAt: new Date(),
         })
         .where(eq(financialGoals.id, goal.id));
+      await invalidateFinanceUserCache(ctx.user.id, ctx.user.type);
 
       return { goalId: goal.id, analysis: aiPlan, tokensUsed: tokens };
     }),
@@ -278,6 +281,7 @@ export const goalsRouter = router({
             eq(financialGoals.userType, ctx.user.type),
           ),
         );
+      await invalidateFinanceUserCache(ctx.user.id, ctx.user.type);
       return { success: true };
     }),
 });

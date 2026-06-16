@@ -24,6 +24,7 @@ import {
 } from "../db/schema";
 import { eq, sql, desc, count, and, gte, lte, sum } from "drizzle-orm";
 import { env } from "./lib/env";
+import { getCacheRuntimeStatus } from "./lib/redis-client";
 import { runSmartPipeline } from "./lib/smart-pipeline";
 import { CATEGORIES } from "./lib/category-registry";
 import {
@@ -75,11 +76,92 @@ import {
   type AiUsageChannel,
 } from "./lib/ai-usage-policy";
 import {
-  buildProReportDataBlock,
-  buildProReportPrompt,
-  type ProReportBackendSummary,
-} from "./services/pro-report-engine";
-import { processAIChatMessage } from "./services/ai-chat-service";
+  buildMonthlyReportFactsPack,
+  getChartData,
+  getFinanceBreakdown,
+  getFinanceSummary,
+  type FinanceSummary,
+} from "./services/finance-semantic-layer";
+import {
+  recordAICostMetric,
+  resolveAICostPolicy,
+  validateNumbersAgainstFacts,
+} from "./services/ai-cost-policy";
+import {
+  embeddingApiCallsFromCacheHits,
+  embeddingApiStatusFor,
+  type DataNeed,
+  type ResolvedFact,
+} from "./services/ai-kernel";
+import {
+  clearVoiceSessionState,
+  createVoiceSessionState,
+  executeVoiceTool,
+  type VoiceToolName,
+} from "./services/voice-kernel";
+import { buildParserTrace } from "./services/parser-trace";
+
+const MONTHLY_REPORT_TRANSACTION_EVIDENCE_LIMIT = 4;
+const VOICE_QA_TOOL_NAMES = ["finance_query", "memory_search", "action_draft"] as const;
+
+function compactQaFact(fact: ResolvedFact): Record<string, unknown> {
+  return {
+    label: fact.label,
+    source: fact.source,
+    confidence: fact.confidence,
+    value:
+      typeof fact.value === "string" && fact.value.length > 120
+        ? `${fact.value.slice(0, 117)}...`
+        : fact.value,
+  };
+}
+
+function summarizeVoiceQaToolResponse(toolName: VoiceToolName, response: unknown): Record<string, unknown> {
+  const record = response && typeof response === "object" ? (response as Record<string, unknown>) : {};
+  const dataNeeds = Array.isArray(record.dataNeeds)
+    ? (record.dataNeeds.filter((need) => need && typeof need === "object") as DataNeed[])
+    : [];
+  const facts = Array.isArray(record.facts) ? (record.facts as ResolvedFact[]) : [];
+  const artifacts = Array.isArray(record.artifacts) ? record.artifacts : [];
+  const cacheHits = Array.isArray(record.cacheHits) ? record.cacheHits.map((hit) => String(hit)) : [];
+  const result = record.result && typeof record.result === "object" ? (record.result as Record<string, unknown>) : {};
+  const action = record.action && typeof record.action === "object" ? (record.action as Record<string, unknown>) : undefined;
+
+  return {
+    toolName,
+    ok: record.ok === true,
+    dataNeeds: dataNeeds.map((need) => need.kind).filter(Boolean),
+    factCount: facts.length,
+    artifactCount: artifacts.length,
+    factsPreview: facts.slice(0, 4).map(compactQaFact),
+    cacheHits,
+    embeddingCalls: embeddingApiCallsFromCacheHits(cacheHits),
+    embeddingApiStatus:
+      typeof record.embeddingApiStatus === "string"
+        ? record.embeddingApiStatus
+        : embeddingApiStatusFor(dataNeeds, cacheHits),
+    retrievalPolicy:
+      record.retrievalPolicy && typeof record.retrievalPolicy === "object"
+        ? record.retrievalPolicy
+        : undefined,
+    cacheRuntime: getCacheRuntimeStatus(),
+    action: action
+      ? {
+          id: action.id,
+          actionName: action.actionName,
+          status: action.status,
+          summary: action.summary,
+          requiresUiConfirmation: action.requiresUiConfirmation,
+        }
+      : undefined,
+    result: {
+      requiresConfirmation: result.requiresConfirmation,
+      requiresUiConfirmation: result.requiresUiConfirmation,
+      errors: Array.isArray(result.errors) ? result.errors.map(String).slice(0, 4) : [],
+    },
+    error: typeof record.error === "string" ? record.error : undefined,
+  };
+}
 
 // ────────────────────────────────────────────────────────
 // STT Helper (Speech-to-Text)
@@ -213,13 +295,13 @@ export interface RoutingRange {
   to: number | null;
   action?: "block";
   message?: string;
-  provider?: "gemini" | "groq";
-  key_slot?: "key1" | "key2" | "groq";
+  provider?: AiProviderName;
+  key_slot?: "key1" | "key2" | "groq" | "fireworks";
   model?: string;
 }
 
 export interface ResolvedRouting {
-  provider: "gemini" | "groq";
+  provider: AiProviderName;
   apiKey: string;
   model: string;
 }
@@ -406,6 +488,27 @@ function planValue<T>(values: Record<string, T>, plan: string, fallback: T): T {
     : fallback;
 }
 
+function materialReportMissingNumbers(missing: string[] | undefined): string[] {
+  return (missing ?? []).filter((item) => {
+    const parsed = Math.abs(Number(item));
+    if (!Number.isFinite(parsed)) return false;
+    return parsed >= 10 || !Number.isInteger(parsed);
+  });
+}
+
+function reportHallucinationRisk(
+  missing: string[] | undefined,
+  llmCalls: number,
+): { risk: "low" | "medium" | "high"; signals: string[] } {
+  if (llmCalls <= 0) return { risk: "low", signals: [] };
+  const materialMissing = materialReportMissingNumbers(missing);
+  if (materialMissing.length === 0) return { risk: "low", signals: [] };
+  return {
+    risk: materialMissing.length <= 2 ? "medium" : "high",
+    signals: materialMissing.map((number) => `missing_number:${number}`),
+  };
+}
+
 async function getAiClient(
   taskType: "parse" | "report",
   userPlan: string = "free",
@@ -561,6 +664,51 @@ export const aiRouter = router({
   // ─── Voice Settings ───
 
   // ─── Parse Expense (New Pipeline) ───
+  runVoiceToolQa: aiProcedure
+    .input(
+      z.object({
+        toolName: z.enum(VOICE_QA_TOOL_NAMES),
+        args: z.record(z.string(), z.unknown()).optional().default({}),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (env.NODE_ENV === "production") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Voice QA is disabled in production.",
+        });
+      }
+
+      const voiceSession = await createVoiceSessionState({
+        userId: ctx.user.id,
+        userType: ctx.user.type,
+        userPlan: ctx.user.plan || "free",
+      });
+
+      try {
+        const response = await executeVoiceTool({
+          toolName: input.toolName,
+          args: input.args,
+          ctx: {
+            userId: ctx.user.id,
+            userType: ctx.user.type,
+            userPlan: ctx.user.plan || "free",
+            sessionId: voiceSession.sessionId,
+          },
+        });
+
+        return {
+          voiceSessionId: voiceSession.sessionId,
+          qa: true,
+          ...summarizeVoiceQaToolResponse(input.toolName, response),
+        };
+      } finally {
+        await clearVoiceSessionState(voiceSession.sessionId).catch((error: unknown) => {
+          console.warn("[Voice QA] failed to clear session", error instanceof Error ? error.message : String(error));
+        });
+      }
+    }),
+
   parseExpense: aiProcedure
     .input(
       z.object({
@@ -635,14 +783,11 @@ export const aiRouter = router({
       const [
         settings,
         userDictRows,
-        currentMonthOps,
         smartProfile
       ] = await Promise.all([
         db.select().from(systemSettings),
         db.select().from(userDictionaries)
           .where(and(eq(userDictionaries.userId, ctx.user.id), eq(userDictionaries.userType, ctx.user.type))),
-        db.select().from(expenses)
-          .where(and(eq(expenses.userId, ctx.user.id), eq(expenses.userType, ctx.user.type), gte(expenses.date, startOfMonth))),
         getSmartProfile(ctx.user.id, ctx.user.type)
       ]);
 
@@ -671,9 +816,21 @@ export const aiRouter = router({
       }
 
       const userDict = userDictRows.map((row) => ({ word: row.word, category: row.category, subCategory: row.subCategory ?? undefined }));
-      const totalIncome = currentMonthOps.filter((e) => e.type === "income").reduce((s, e) => s + Number(e.amount), 0);
-      const totalExpense = currentMonthOps.filter((e) => e.type === "expense").reduce((s, e) => s + Number(e.amount), 0);
       const personalContextRaw = buildPersonalContext(smartProfile);
+      const salaryDay = Number((smartProfile.financialInfo as any)?.salaryDay) || 0;
+      const currentMonthSummary = await getFinanceSummary(
+        {
+          userId: ctx.user.id,
+          userType: ctx.user.type,
+          salaryDay,
+        },
+        { period: "current_month" },
+      ).catch((error: unknown) => {
+        console.warn("[Parse Expense] finance summary failed", error instanceof Error ? error.message : String(error));
+        return null;
+      });
+      const totalIncome = currentMonthSummary?.totalIncome ?? 0;
+      const totalExpense = currentMonthSummary?.totalExpense ?? 0;
 
       // --- INJECT KNOWN PEOPLE INTO USER DICT ---
       for (const p of personalContextRaw.knownPeople) {
@@ -705,7 +862,6 @@ export const aiRouter = router({
         monthlyContext: { totalIncome, totalExpense },
         userProfileContext: {
           promptSummary: summarizeProfileForAI(smartProfile),
-          recentTransactions: currentMonthOps.slice(0, 50).map(e => ({ description: e.description, category: e.category, subCategory: e.subCategory })),
           personalContextPrompt: buildPersonalContextPrompt(personalContextRaw),
           spendingBehavior:
             typeof smartProfile.aiInferredAttributes?.spendingBehavior ===
@@ -735,6 +891,16 @@ export const aiRouter = router({
             enable_rag: String(cfgFull.enable_rag !== "false"),
           },
       });
+      const financeContextSource = currentMonthSummary ? "finance.summary" : "fallback_zero";
+      const parseTrace = buildParserTrace({
+        route: "expense_parse",
+        inputChannel: input.inputChannel,
+        provider: resolvedProvider,
+        estimatedInputTokens,
+        result,
+        latencyMs: Date.now() - startTime,
+        financeContextSource,
+      });
 
       // Track tokens
       if (result.tokensUsed > 0) {
@@ -746,6 +912,34 @@ export const aiRouter = router({
           result.modelUsed,
         );
       }
+      void recordAICostMetric({
+        userId: ctx.user.id,
+        userType: ctx.user.type,
+        channel: "parse",
+        plan: ctx.user.plan || "free",
+        intentKind: "expense_parse",
+        model: result.modelUsed,
+        inputTokens: parseTrace.inputTokens,
+        outputTokens: Math.max(0, result.tokensUsed - parseTrace.inputTokens),
+        totalTokens: result.tokensUsed,
+        embeddingCalls: parseTrace.embeddingCalls,
+        llmCalls: parseTrace.llmCalls,
+        toolCalls: 0,
+        latencyMs: Date.now() - startTime,
+        metadata: {
+          inputChannel: input.inputChannel,
+          provider: resolvedProvider,
+          parsedBy: result.parsedBy,
+          decision: result.decision,
+          confidence: result.overallConfidence,
+          itemCount: result.items.length,
+          routing: result.log.routing,
+          cachedTokens: result.cachedTokens ?? 0,
+          sttTokensUsed: input.sttTokensUsed ?? 0,
+          financeContextSource,
+          trace: parseTrace,
+        },
+      });
 
       // ── Auto-learn dynamic contacts ──
       for (const item of result.items) {
@@ -786,6 +980,7 @@ export const aiRouter = router({
             ruleEngine: result.log.ruleEngineResult,
             ai: result.log.aiResult,
             routing: result.log.routing,
+            trace: parseTrace,
             cachedTokens: result.cachedTokens,
             ...(isV2
               ? {
@@ -920,6 +1115,7 @@ export const aiRouter = router({
         clarificationQuestion: result.clarificationQuestion,
         clarificationId,
         processingTimeMs: result.processingTimeMs,
+        trace: parseTrace,
       };
     }),
 
@@ -1357,8 +1553,6 @@ export const aiRouter = router({
       const cleanMimeType = input.mimeType.split(";")[0];
       const pureBase64 = input.audioBase64.includes(",") ? input.audioBase64.split(",")[1] : input.audioBase64;
 
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      
       // 1. Run STT and DB Logic Concurrently
       const sttPromise = (async () => {
         try {
@@ -1375,11 +1569,10 @@ export const aiRouter = router({
 
       const dbPromise = Promise.all([
         db.select().from(userDictionaries).where(and(eq(userDictionaries.userId, ctx.user.id), eq(userDictionaries.userType, ctx.user.type))),
-        db.select().from(expenses).where(and(eq(expenses.userId, ctx.user.id), eq(expenses.userType, ctx.user.type), gte(expenses.date, startOfMonth))),
         getSmartProfile(ctx.user.id, ctx.user.type)
       ]);
 
-      const [sttResult, [userDictRows, currentMonthOps, smartProfile]] = await Promise.all([sttPromise, dbPromise]);
+      const [sttResult, [userDictRows, smartProfile]] = await Promise.all([sttPromise, dbPromise]);
       
       const transcribedText = sttResult.text;
 
@@ -1410,6 +1603,18 @@ export const aiRouter = router({
 
       const userDict = userDictRows.map((row) => ({ word: row.word, category: row.category, subCategory: row.subCategory ?? undefined }));
       const personalContextRaw = buildPersonalContext(smartProfile);
+      const salaryDay = Number((smartProfile.financialInfo as any)?.salaryDay) || 0;
+      const currentMonthSummary = await getFinanceSummary(
+        {
+          userId: ctx.user.id,
+          userType: ctx.user.type,
+          salaryDay,
+        },
+        { period: "current_month" },
+      ).catch((error: unknown) => {
+        console.warn("[Parse Voice Expense] finance summary failed", error instanceof Error ? error.message : String(error));
+        return null;
+      });
 
       for (const p of personalContextRaw.knownPeople) {
         const safeCategory = p.category && p.category !== "تحويلات" ? p.category : null;
@@ -1459,9 +1664,9 @@ export const aiRouter = router({
         apiKey2: client.apiKey2,
         modelName: modelName,
         maxTokens: maxParseTokens,
-        monthlyContext: { 
-           totalIncome: currentMonthOps.filter((e) => e.type === "income").reduce((s, e) => s + Number(e.amount), 0), 
-           totalExpense: currentMonthOps.filter((e) => e.type === "expense").reduce((s, e) => s + Number(e.amount), 0) 
+        monthlyContext: {
+           totalIncome: currentMonthSummary?.totalIncome ?? 0,
+           totalExpense: currentMonthSummary?.totalExpense ?? 0
         },
         userProfileContext: {
           promptSummary: summarizeProfileForAI(smartProfile),
@@ -1486,10 +1691,74 @@ export const aiRouter = router({
             enable_rag: String(cfg.enable_rag !== "false"),
           },
       });
+      const financeContextSource = currentMonthSummary ? "finance.summary" : "fallback_zero";
+      const parseTrace = buildParserTrace({
+        route: "voice_expense_parse",
+        inputChannel: "voice",
+        provider: resolvedProvider,
+        estimatedInputTokens,
+        result: parseResult,
+        latencyMs: Date.now() - startTime,
+        financeContextSource,
+        stt: {
+          model: sttResult.modelUsed,
+          tokensUsed: sttResult.tokensUsed,
+          durationSeconds: input.durationSeconds,
+        },
+      });
 
       if (parseResult.tokensUsed > 0) {
         await trackTokens(ctx.user.id, ctx.user.type, parseResult.tokensUsed, "parse", parseResult.modelUsed);
       }
+      void recordAICostMetric({
+        userId: ctx.user.id,
+        userType: ctx.user.type,
+        channel: "speech",
+        plan: ctx.user.plan || "free",
+        intentKind: "stt",
+        model: sttResult.modelUsed,
+        inputTokens: 0,
+        outputTokens: sttResult.tokensUsed,
+        totalTokens: sttResult.tokensUsed,
+        embeddingCalls: 0,
+        llmCalls: 0,
+        toolCalls: 0,
+        latencyMs: Date.now() - startTime,
+        metadata: {
+          durationSeconds: input.durationSeconds,
+          mimeType: cleanMimeType,
+          provider: isGroqModel(sttResult.modelUsed) ? "groq" : "gemini",
+        },
+      });
+      void recordAICostMetric({
+        userId: ctx.user.id,
+        userType: ctx.user.type,
+        channel: "parse",
+        plan: ctx.user.plan || "free",
+        intentKind: "voice_expense_parse",
+        model: parseResult.modelUsed,
+        inputTokens: parseTrace.inputTokens,
+        outputTokens: Math.max(0, parseResult.tokensUsed - parseTrace.inputTokens),
+        totalTokens: parseResult.tokensUsed,
+        embeddingCalls: parseTrace.embeddingCalls,
+        llmCalls: parseTrace.llmCalls,
+        toolCalls: 0,
+        latencyMs: Date.now() - startTime,
+        metadata: {
+          inputChannel: "voice",
+          provider: resolvedProvider,
+          parsedBy: parseResult.parsedBy,
+          decision: parseResult.decision,
+          confidence: parseResult.overallConfidence,
+          itemCount: parseResult.items.length,
+          routing: parseResult.log.routing,
+          cachedTokens: parseResult.cachedTokens ?? 0,
+          sttTokensUsed: sttResult.tokensUsed,
+          sttModel: sttResult.modelUsed,
+          financeContextSource,
+          trace: parseTrace,
+        },
+      });
 
       const isV2 = false;
       await db.insert(classificationLogs).values({
@@ -1509,6 +1778,7 @@ export const aiRouter = router({
             ruleEngine: parseResult.log.ruleEngineResult,
             ai: parseResult.log.aiResult,
             routing: parseResult.log.routing,
+            trace: parseTrace,
           },
           ambiguityFlags: parseResult.items.flatMap((item: any) => item.ambiguityFlags || []),
           inputChannel: "voice",
@@ -1603,6 +1873,7 @@ export const aiRouter = router({
         clarificationQuestion: parseResult.clarificationQuestion,
         clarificationId,
         processingTimeMs: Date.now() - startTime,
+        trace: parseTrace,
       };
     }),
 
@@ -1641,6 +1912,7 @@ export const aiRouter = router({
       z.object({
         month: z.string(),
         model: z.enum(["flash", "pro", "ultra", "gemma"]).default("flash"),
+        forceRefresh: z.boolean().optional().default(false),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -1658,11 +1930,19 @@ export const aiRouter = router({
         )
         .limit(1);
 
-      if (existingSummary[0]) {
+      if (existingSummary[0] && !input.forceRefresh) {
+        let trace: unknown = null;
+        try {
+          const parsed = JSON.parse(existingSummary[0].content);
+          trace = parsed?.ai_trace ?? null;
+        } catch {
+          trace = null;
+        }
         return {
           insights: existingSummary[0].content,
           cached: true,
           model: existingSummary[0].model,
+          trace,
         };
       }
 
@@ -1680,7 +1960,7 @@ export const aiRouter = router({
         .orderBy(desc(aiSummaries.createdAt))
         .limit(1);
 
-      if (lastSummary[0]) {
+      if (lastSummary[0] && !(input.forceRefresh && existingSummary[0])) {
         const sysSettings = await db.select().from(systemSettings);
         const limits: Record<string, number> = { free: 30, pro: 14, ultra: 1 };
         sysSettings.forEach((s) => {
@@ -1711,6 +1991,24 @@ export const aiRouter = router({
       // Get smart user profile for personalization context to check salaryDay
       const userProfile = await getSmartProfile(ctx.user.id, ctx.user.type);
       const salaryDay = Number((userProfile.financialInfo as any).salaryDay) || 0;
+      const semanticReportFacts = await buildMonthlyReportFactsPack(
+        {
+          userId: ctx.user.id,
+          userType: ctx.user.type,
+          salaryDay,
+        },
+        input.month,
+        {
+          forceLive: input.forceRefresh,
+          skipCache: input.forceRefresh,
+        },
+      ).catch((error: unknown) => {
+        console.warn(
+          "[Monthly Report Semantic Facts] failed",
+          error instanceof Error ? error.message : String(error),
+        );
+        return null;
+      });
 
       let startDate: Date;
       let endDate: Date;
@@ -2051,6 +2349,19 @@ export const aiRouter = router({
             aiReportStructureOverride = s.value;
         });
 
+        if (semanticReportFacts) {
+          reportTargetWords = Math.min(Math.max(reportTargetWords, 220), 420);
+          reportSubcatsLimit = Math.min(reportSubcatsLimit, 8);
+          reportTopItemsLimit = 0;
+          aiResponseLength = "short";
+          aiFocus = "statistics";
+          aiSystemPrompt =
+            "أنت مستشار مالي مصري ذكي. اكتب تقريرا شهريا مختصرا ودقيقا من الحقائق المرسلة فقط، ولا تخترع أي رقم.";
+          aiAdvancedInstructions =
+            "- استخدم SEMANTIC_REPORT_FACTS فقط كمصدر للأرقام.\n- لا تقرب الأرقام المالية؛ انسخ القيم العشرية كما هي مثل 2337.5.\n- لا تطلب أدوات ولا بيانات إضافية.\n- اكتب توصيات عملية قصيرة مبنية على أعلى الفئات والصافي والأهداف إن وجدت.";
+          aiReportStructureOverride = "";
+        }
+
         // Check token limit
         const tokenField =
           ctx.user.type === "oauth"
@@ -2067,6 +2378,7 @@ export const aiRouter = router({
         if (usedTokens >= limit) {
           aiModel = null;
           modelName = "backend";
+          reportProvider = "backend";
         }
       } catch (e) {
         if (e instanceof TRPCError) throw e;
@@ -2078,20 +2390,26 @@ export const aiRouter = router({
         .map((s) => `${s.name}: ${s.amount}ج (${s.percent}%)`)
         .join(" | ");
 
-      // Build top items list (descriptions of biggest/most recurring expenses) for Pro/Ultra
+      // Build a small evidence pack only. Never send a raw transaction dump to the report LLM.
       let topItemsContext = "";
-      if (reportTopItemsLimit > 0) {
+      const reportEvidenceLimit = Math.min(
+        reportTopItemsLimit,
+        MONTHLY_REPORT_TRANSACTION_EVIDENCE_LIMIT,
+      );
+      if (reportEvidenceLimit > 0) {
         const expenseItems = userExpenses.filter((e) => e.type === "expense");
-        // Top items by amount (biggest purchases) - locally anonymized
+        const biggestLimit = Math.max(1, Math.ceil(reportEvidenceLimit / 2));
+        // Top items by amount - locally anonymized and hard-capped as evidence.
         const biggestItems = [...expenseItems]
           .sort((a, b) => Number(b.amount) - Number(a.amount))
-          .slice(0, Math.ceil(reportTopItemsLimit / 2))
+          .slice(0, biggestLimit)
           .map((e) =>
             redactSensitiveData(
               `${e.description || e.category}${e.subCategory && e.subCategory !== "عام" ? ` (${e.subCategory})` : ""}: ${e.amount}ج [${e.category}]`,
             ),
           );
-        // Most recurring items (by description frequency) - locally anonymized
+        const recurringLimit = Math.max(0, reportEvidenceLimit - biggestItems.length);
+        // Most recurring items - aggregated by description and hard-capped as evidence.
         const descFreq: Record<
           string,
           { count: number; total: number; cat: string; subCat: string }
@@ -2111,7 +2429,7 @@ export const aiRouter = router({
         const recurringItemsList = Object.entries(descFreq)
           .filter(([, v]) => v.count >= 2)
           .sort((a, b) => b[1].count - a[1].count)
-          .slice(0, Math.ceil(reportTopItemsLimit / 2))
+          .slice(0, recurringLimit)
           .map(([name, v]) =>
             redactSensitiveData(
               `${name} (${v.subCat}): ${v.count} مرات، إجمالي ${v.total}ج [${v.cat}]`,
@@ -2119,11 +2437,11 @@ export const aiRouter = router({
           );
 
         if (biggestItems.length > 0 || recurringItemsList.length > 0) {
-          topItemsContext = `\n--- تفاصيل العمليات الفردية ---`;
+          topItemsContext = `\n--- LIMITED_TRANSACTION_EVIDENCE: max_${MONTHLY_REPORT_TRANSACTION_EVIDENCE_LIMIT}_items ---`;
           if (biggestItems.length > 0)
-            topItemsContext += `\nأكبر العمليات هذا الشهر: ${biggestItems.join(" | ")}`;
+            topItemsContext += `\nأكبر evidence محدود هذا الشهر: ${biggestItems.join(" | ")}`;
           if (recurringItemsList.length > 0)
-            topItemsContext += `\nالعمليات المتكررة: ${recurringItemsList.join(" | ")}`;
+            topItemsContext += `\nأنماط متكررة مجمعة: ${recurringItemsList.join(" | ")}`;
         }
       }
 
@@ -2149,63 +2467,38 @@ ${prevTotal > 0 ? `تغير إجمالي المصاريف عن الشهر الس
 - التوقع المالي المستقبلي (Forecasting): ${forecast || "غير متاح لعدم كفاية بيانات الدخل/الأيام"}`;
 
       // ── 6. Try AI, fallback to backend ──
-      const personalizedSummaryForAI = `${summaryForAI}
----
-${reportPersonalizationContext}
-${familyReportContext}
-${personalContextForClassification}
-${financialMonthContext}`;
+      const compactReportContext = [
+        semanticReportFacts?.factsBlock ?? summaryForAI.slice(0, 1200),
+        `user_name: ${userProfile.basicInfo.name || ctx.user.name || "SmartSpend user"}`,
+        salaryDay > 0 ? `salary_day: ${salaryDay}` : "",
+        financialMonthContext ? `financial_month: ${financialMonthContext.slice(0, 280)}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+      const personalizedSummaryForAI = compactReportContext;
 
       let responseJson: any;
       let aiErrorMsg = "";
+      let reportEstimatedInputTokens = 0;
+      let reportTotalTokens = 0;
+      let reportLlmCalls = 0;
+      let reportLatencyMs: number | null = null;
+      const semanticNumber = (label: string): number | undefined => {
+        const value = semanticReportFacts?.facts.find((fact) => fact.label === label)?.value;
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : undefined;
+      };
 
-      if (aiModel || reportProvider === "groq" || isGroqModel(modelName)) {
+      if (modelName !== "backend" && (aiModel || reportProvider === "groq" || isGroqModel(modelName))) {
         try {
           const planId = asPlan(ctx.user.plan);
-          const useProReportEngine = planId === "pro" || planId === "ultra";
-
-          if (useProReportEngine) {
-            const agentPrompt = `قم بإنشاء تقريري المالي لشهر ${input.month}.
-قم أولاً بالبحث في بياناتي باستخدام الأدوات المتاحة لجلب:
-1. إجمالي الدخل والمصروفات.
-2. تقسيم مصاريفي حسب الفئات.
-3. التغيرات مقارنة بالشهر الماضي.
-ثم قم بصياغة تقرير احترافي جداً ومركز.
-استخدم الأسلوب المالي وتحدث بضمير "أنت".`;
-
-            const aiConfig = {
-              apiKey: fireworksApiKey || reportApiKey,
-              baseUrl: "https://api.fireworks.ai/inference/v1",
-              model: "accounts/fireworks/models/deepseek-v4-flash",
-              maxTokens: 5000,
-              maxHistory: 0,
-            };
-
-            const aiResult = await processAIChatMessage({
-              userId: ctx.user.id,
-              userType: ctx.user.type,
-              userPlan: planId,
-              message: agentPrompt,
-              conversationHistory: [],
-              config: aiConfig,
-            });
-
-            await trackTokens(
-              ctx.user.id,
-              ctx.user.type,
-              aiResult.tokensUsed,
-              "report",
-              `pro_report_agentic:${aiResult.model}`,
-            );
-
-            responseJson = {
-              response_text: aiResult.response,
-              alerts: alerts,
-              personality_flag: personality,
-              data_table: []
-            };
-          } else {
-            let lengthInstruction =
+          const reportCostPolicy = resolveAICostPolicy({
+            channel: "report",
+            plan: planId,
+            intentKind: "report_request",
+          });
+          const reportStartedAt = Date.now();
+          let lengthInstruction =
               "اكتب تحليلاً متوازناً ومناسباً للشرح بأسلوب مهني.";
             if (aiResponseLength === "short")
               lengthInstruction =
@@ -2252,14 +2545,14 @@ ${financialMonthContext}`;
                 sectionCount = 4;
                 structureInstruction = `اكتب تقريراً مالياً شاملاً (${reportTargetWords} كلمة تقريباً) مقسم إلى ${sectionCount} أقسام مفصلة:
 القسم 1 - نظرة عامة: الأرقام الأساسية + المقارنة بالشهر السابق + تقييم الوضع المالي العام.
-القسم 2 - تحليل الفئات الفرعية: حلل كل فئة فرعية بالتفصيل (قهوة/مطاعم/أجهزة إلكترونية/مواصلات...) مع ذكر الأوصاف والأماكن إن وُجدت.
+القسم 2 - تحليل الفئات الفرعية: حلل أعلى الفئات الفرعية فقط من الأرقام المجمعة، واستخدم أمثلة evidence المحدودة إن وُجدت بدون محاولة سرد كل العمليات.
 القسم 3 - الأنماط السلوكية: اشرح نمط الإنفاق (اندفاعي؟ محافظ؟) مع نقاط القوة والضعف المالية.
 القسم 4 - خطة التحسين: قدم 5+ توصيات استراتيجية مفصلة بأرقام مقترحة وجدول زمني.`;
               } else {
                 sectionCount = 5;
                 structureInstruction = `اكتب تقريراً مالياً عميقاً ومشبعاً (لا يقل عن ${reportTargetWords} كلمة) مقسم إجبارياً إلى ${sectionCount} أقسام رئيسية على الأقل:
 القسم 1 - نظرة عامة شاملة: الأرقام الدقيقة + المقارنات + نسبة الاستهلاك من الدخل + تقييم السيولة.
-القسم 2 - تحليل تفصيلي عميق: كل فئة فرعية وكل عملية فردية (ستاربكس، جرير، كارفور...) مع شرح السياق.
+القسم 2 - تحليل تفصيلي عميق: أعلى الفئات الفرعية والأنماط المجمعة فقط. لا تسرد كل عملية فردية؛ استخدم evidence محدودا بحد أقصى 4 أمثلة إن كان متاحا.
 القسم 3 - الأنماط والتوجهات: تحليل سلوكي عميق مع شرح الأسباب المحتملة والمقارنة التاريخية.
 القسم 4 - المخاطر المالية: تحليل السيولة (Burn Rate) + نقاط الضعف + سيناريوهات محتملة.
 القسم 5 - خطة تحسين مفصلة: توصيات استراتيجية مع أرقام مقترحة لكل بند + جدول زمني + أهداف الشهر القادم.`;
@@ -2271,7 +2564,7 @@ ${financialMonthContext}`;
                 ? aiAdvancedInstructions
                 : `- تحدث بضمير المخاطب المباشر (أنت) كأنك تجلس مع المستخدم وجهاً لوجه.
 - ادمج الأرقام الحقيقية من البيانات في التحليل بشكل طبيعي.
-- إذا وُجدت تفاصيل عمليات فردية (أسماء أماكن/منتجات)، حللها بعمق واذكرها بالاسم.
+- إذا وُجد LIMITED_TRANSACTION_EVIDENCE فاستخدمه كأمثلة داعمة فقط، ولا تحوله إلى سرد خام لكل العمليات أو تستنتج منه عمليات غير موجودة.
 - كل قسم يجب أن يكون فقرة طويلة كاملة (ليس مجرد جملة أو جملتين).`;
 
             const prompt = `${aiSystemPrompt}
@@ -2281,6 +2574,7 @@ ${financialMonthContext}`;
 [Instructions]
 - ${lengthInstruction}
 - ${focusInstruction}
+- قاعدة بيانات إلزامية: لا تستخدم raw transactions في الرد. الأرقام تأتي من facts المجمعة فقط، وأي تفاصيل عمليات فردية مسموحة فقط إذا ظهرت داخل LIMITED_TRANSACTION_EVIDENCE وبحد أقصى ${MONTHLY_REPORT_TRANSACTION_EVIDENCE_LIMIT} أمثلة داعمة.
 - **الهيكل الإلزامي**: ${structureInstruction}
 ${advancedInstructionsStr}
 
@@ -2310,7 +2604,7 @@ ${personalizedSummaryForAI}
                 capRequestOutputTokens(
                   ctx.user.plan,
                   "report",
-                  reportTargetWords * 4,
+                  Math.min(reportTargetWords * 4, reportCostPolicy.maxOutputTokens),
                 ),
               );
               raw = res.text;
@@ -2324,7 +2618,7 @@ ${personalizedSummaryForAI}
                 capRequestOutputTokens(
                   ctx.user.plan,
                   "report",
-                  reportTargetWords * 4,
+                  Math.min(reportTargetWords * 4, reportCostPolicy.maxOutputTokens),
                 ),
               );
               raw = res.text;
@@ -2345,6 +2639,34 @@ ${personalizedSummaryForAI}
               "report",
               modelName,
             );
+            const estimatedInputTokens = estimateTokensFromText(prompt);
+            reportEstimatedInputTokens = estimatedInputTokens;
+            reportTotalTokens = tokens;
+            reportLlmCalls = tokens > 0 ? 1 : 0;
+            reportLatencyMs = Date.now() - reportStartedAt;
+            void recordAICostMetric({
+              userId: ctx.user.id,
+              userType: ctx.user.type,
+              channel: "report",
+              plan: planId,
+              intentKind: "report_request",
+              model: modelName,
+              inputTokens: estimatedInputTokens,
+              outputTokens: Math.max(0, tokens - estimatedInputTokens),
+              totalTokens: tokens,
+              llmCalls: reportLlmCalls,
+              toolCalls: 0,
+              latencyMs: reportLatencyMs,
+              metadata: {
+                month: input.month,
+                source: "monthly_report_endpoint",
+                provider: reportProvider,
+                factsSource: semanticReportFacts?.source ?? null,
+                factsCacheKey: semanticReportFacts?.cacheKey ?? null,
+                semanticFactsAvailable: Boolean(semanticReportFacts),
+                maxOutputTokens: reportCostPolicy.maxOutputTokens,
+              },
+            });
 
             try {
               responseJson = JSON.parse(raw);
@@ -2364,7 +2686,6 @@ ${personalizedSummaryForAI}
                 );
               }
             }
-          }
         } catch (err: any) {
           console.error(`AI Insights Error: ${err.message}\n${err.stack}`);
           if (err.message.includes("429") || err.message.includes("Quota"))
@@ -2380,7 +2701,10 @@ ${personalizedSummaryForAI}
       // ── 7. Backend Fallback (still smart!) ──
       if (!responseJson) {
         modelName = "backend";
+        reportProvider = "backend";
         let text = "";
+        const fallbackDailyAvg = semanticNumber("daily_average_expense") ?? dailyAvg;
+        const fallbackTotalExpense = semanticNumber("total_expense") ?? totalExpense;
 
         if (!aiModel) {
           text +=
@@ -2406,7 +2730,7 @@ ${personalizedSummaryForAI}
         if (incomeRatio && incomeRatio > 80) {
           text += `⚠️ صرفت ${incomeRatio}% من دخلك. لازم تسيب هامش أمان 20% على الأقل.\n\n`;
         }
-        text += `متوسط صرفك اليومي ${dailyAvg} ج.م (${totalExpense} ج.م إجمالي الشهر).`;
+        text += `متوسط صرفك اليومي ${fallbackDailyAvg} ج.م (${fallbackTotalExpense} ج.م إجمالي الشهر).`;
         if (personality === "impulsive")
           text +=
             "\n\nلاحظ إن نسبة كبيرة من صرفك على حاجات مرنة (ترفيه/تسوق). حاول تحط ليها حد شهري.";
@@ -2434,6 +2758,57 @@ ${personalizedSummaryForAI}
         ...behaviorSnapshot.inferredAttributes,
         financialPersonality: personality,
       };
+      if (responseJson && typeof responseJson === "object") {
+        const reportText = String(responseJson.response_text ?? "");
+        const validationFacts =
+          reportLlmCalls > 0
+            ? (semanticReportFacts?.facts ?? [])
+            : {
+                semanticFacts: semanticReportFacts?.facts ?? [],
+                serverDerivedFacts: {
+                  totalExpense,
+                  totalIncome,
+                  prevTotal,
+                  dailyAvg,
+                  semanticDailyAverageExpense: semanticNumber("daily_average_expense"),
+                  semanticTotalExpense: semanticNumber("total_expense"),
+                  monthlyChange,
+                  topCategoryPercent,
+                  incomeRatio,
+                },
+              };
+        const numericAccuracy = semanticReportFacts
+          ? validateNumbersAgainstFacts(reportText, validationFacts)
+          : { accuracy: 1, numbers: [], supported: [], missing: [] };
+        const hallucination = reportHallucinationRisk(numericAccuracy.missing, reportLlmCalls);
+        responseJson.semantic_facts = {
+          source: semanticReportFacts?.source ?? "unavailable",
+          factCount: semanticReportFacts?.facts.length ?? 0,
+          artifactCount: semanticReportFacts?.artifacts.length ?? 0,
+        };
+        responseJson.ai_trace = {
+          route: "report_request",
+          tools: ["monthly_report.facts"],
+          factsSource: semanticReportFacts?.source ?? "unavailable",
+          factCount: semanticReportFacts?.facts.length ?? 0,
+          artifactCount: semanticReportFacts?.artifacts.length ?? 0,
+          model: modelName,
+          provider: reportProvider,
+          llmCalls: reportLlmCalls,
+          embeddingCalls: 0,
+          inputTokens: reportEstimatedInputTokens,
+          totalTokens: reportTotalTokens,
+          latencyMs: reportLatencyMs,
+          numericAccuracy: {
+            accuracy: numericAccuracy.accuracy,
+            numbers: numericAccuracy.numbers,
+            supported: numericAccuracy.supported,
+            missing: numericAccuracy.missing,
+          },
+          hallucinationRisk: hallucination.risk,
+          hallucinationSignals: hallucination.signals,
+        };
+      }
       await saveSmartProfile(ctx.user.id, ctx.user.type, {
         ...userProfile,
         aiInferredAttributes: {
@@ -2486,19 +2861,31 @@ ${personalizedSummaryForAI}
       });
 
       const insightsStr = JSON.stringify(responseJson);
-      await db
-        .insert(aiSummaries)
-        .values({
-          userId: ctx.user.id,
-          userType: ctx.user.type,
-          period: "monthly",
-          periodValue: input.month,
-          model: modelName,
-          content: insightsStr,
-        })
-        .catch(() => {});
+      if (existingSummary[0]?.id) {
+        await db
+          .update(aiSummaries)
+          .set({
+            model: modelName,
+            content: insightsStr,
+            createdAt: new Date(),
+          })
+          .where(eq(aiSummaries.id, existingSummary[0].id))
+          .catch(() => {});
+      } else {
+        await db
+          .insert(aiSummaries)
+          .values({
+            userId: ctx.user.id,
+            userType: ctx.user.type,
+            period: "monthly",
+            periodValue: input.month,
+            model: modelName,
+            content: insightsStr,
+          })
+          .catch(() => {});
+      }
 
-      return { insights: insightsStr, cached: false, model: modelName };
+      return { insights: insightsStr, cached: false, model: modelName, trace: responseJson?.ai_trace ?? null };
     }),
 
   // ─── Compare Months ───
@@ -2511,75 +2898,167 @@ ${personalizedSummaryForAI}
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      let aiModel: any;
-      let modelName = "demo";
-      try {
-        const client = await getAiClient("report", ctx.user.plan);
-        if (!client.canUseAnalysis) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message:
-              "تحليلات المقارنة بالذكاء الاصطناعي غير متاحة في خطتك الحالية.",
-          });
+      const startedAt = Date.now();
+      const settingsRows = await db.select().from(systemSettings);
+      const settings: Record<string, string> = {};
+      settingsRows.forEach((setting) => {
+        if (setting.value !== undefined && setting.value !== null) {
+          settings[setting.key] = setting.value;
         }
-        aiModel = client.aiModel;
-        modelName = client.modelName;
-      } catch (e) {
-        if (e instanceof TRPCError) throw e;
+      });
+
+      const plan = asPlan(ctx.user.plan);
+      if (settings[`${plan}_ai_analysis`] === "false") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "تحليلات المقارنة غير متاحة في خطتك الحالية.",
+        });
       }
 
-      const getMonthData = async (monthStr: string) => {
-        const [y, m] = monthStr.split("-");
-        const start = new Date(parseInt(y), parseInt(m) - 1, 1);
-        const end = new Date(parseInt(y), parseInt(m), 0);
-        const exps = await db
-          .select()
-          .from(expenses)
-          .where(
-            and(
-              eq(expenses.userId, ctx.user.id),
-              eq(expenses.userType, ctx.user.type),
-              gte(expenses.date, start),
-              lte(expenses.date, end),
-            ),
-          );
-        return {
-          total: exps.reduce((s, e) => s + Number(e.amount), 0),
-          count: exps.length,
-        };
+      const userProfile = await getSmartProfile(ctx.user.id, ctx.user.type).catch(() => null);
+      const salaryDay = Number((userProfile?.financialInfo as any)?.salaryDay) || 0;
+      const financeCtx = {
+        userId: ctx.user.id,
+        userType: ctx.user.type,
+        salaryDay,
       };
 
-      const d1 = await getMonthData(input.month1);
-      const d2 = await getMonthData(input.month2);
+      const [month1, month2] = await Promise.all([
+        getFinanceSummary(financeCtx, { period: "current_month", month: input.month1 }),
+        getFinanceSummary(financeCtx, { period: "current_month", month: input.month2 }),
+      ]);
 
-      const prompt = `قارن بين شهرين ماليا بالعامية المصرية:
-${input.month1}: ${d1.total} جنيه (${d1.count} عملية)
-${input.month2}: ${d2.total} جنيه (${d2.count} عملية)
-اعمل مقارنة مختصرة.`;
+      const roundMoney = (value: number) => Math.round((Number(value) || 0) * 100) / 100;
+      const formatMoney = (value: number) => `${roundMoney(value).toLocaleString("en-US")} جنيه`;
+      const formatPercent = (value: number | null) =>
+        value === null || !Number.isFinite(value)
+          ? "غير محسوبة"
+          : `${roundMoney(value)}%`;
+      const periodDateLabel = (value: Date | string | number) => {
+        if (value instanceof Date) return value.toISOString().slice(0, 10);
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime())
+          ? String(value).slice(0, 10)
+          : parsed.toISOString().slice(0, 10);
+      };
+      const periodLabel = (summary: FinanceSummary) =>
+        `${periodDateLabel(summary.period.startDate as Date | string | number)}..${periodDateLabel(summary.period.endDate as Date | string | number)}`;
+      const expenseDifference = month1.totalExpense - month2.totalExpense;
+      const incomeDifference = month1.totalIncome - month2.totalIncome;
+      const netFlowDifference = month1.netFlow - month2.netFlow;
+      const expenseChangePercent =
+        month2.totalExpense === 0
+          ? month1.totalExpense === 0
+            ? 0
+            : null
+          : (expenseDifference / month2.totalExpense) * 100;
+      const direction =
+        expenseDifference > 0
+          ? "أعلى"
+          : expenseDifference < 0
+            ? "أقل"
+            : "نفس المستوى";
 
-      let comparison = "";
-      try {
-        if (!aiModel) throw new Error("Demo Mode or Client Error");
-        const result = await aiModel.generateContent(prompt);
-        comparison = result.response.text();
-        const tokens = result.response.usageMetadata?.totalTokenCount || 0;
-        await trackTokens(
-          ctx.user.id,
-          ctx.user.type,
-          tokens,
-          "report",
-          modelName,
-        );
-      } catch (err) {
-        console.error("AI Compare Error:", err);
-        comparison = `(Fallback Mode) مقارنة بين الشهور:
-مقارنة بين ${input.month1} و ${input.month2}.
-مصاريف ${input.month1}: ${d1.total} جنيه
-مصاريف ${input.month2}: ${d2.total} جنيه
-الفرق هو ${Math.abs(d1.total - d2.total)} جنيه.`;
-      }
+      const comparison = [
+        `مقارنة ${input.month1} مع ${input.month2}:`,
+        `- المصروفات: ${formatMoney(month1.totalExpense)} مقابل ${formatMoney(month2.totalExpense)}. شهر ${input.month1} ${direction} بفارق ${formatMoney(Math.abs(expenseDifference))} (${formatPercent(expenseChangePercent)}).`,
+        `- الدخل: ${formatMoney(month1.totalIncome)} مقابل ${formatMoney(month2.totalIncome)}. الفرق ${formatMoney(incomeDifference)}.`,
+        `- الصافي: ${formatMoney(month1.netFlow)} مقابل ${formatMoney(month2.netFlow)}. الفرق ${formatMoney(netFlowDifference)}.`,
+        `- عدد العمليات: ${month1.transactionCount} مقابل ${month2.transactionCount}.`,
+      ].join("\n");
 
-      return { comparison, model: modelName, data: { month1: d1, month2: d2 } };
+      const numericAccuracy = validateNumbersAgainstFacts(comparison, {
+        month1: input.month1,
+        month2: input.month2,
+        month1Period: periodLabel(month1),
+        month2Period: periodLabel(month2),
+        month1TotalExpense: roundMoney(month1.totalExpense),
+        month2TotalExpense: roundMoney(month2.totalExpense),
+        month1TotalIncome: roundMoney(month1.totalIncome),
+        month2TotalIncome: roundMoney(month2.totalIncome),
+        month1NetFlow: roundMoney(month1.netFlow),
+        month2NetFlow: roundMoney(month2.netFlow),
+        expenseDifference: roundMoney(expenseDifference),
+        absoluteExpenseDifference: roundMoney(Math.abs(expenseDifference)),
+        incomeDifference: roundMoney(incomeDifference),
+        netFlowDifference: roundMoney(netFlowDifference),
+        expenseChangePercent:
+          expenseChangePercent === null ? null : roundMoney(expenseChangePercent),
+        month1TransactionCount: month1.transactionCount,
+        month2TransactionCount: month2.transactionCount,
+      });
+      const hallucination = reportHallucinationRisk(numericAccuracy.missing, 0);
+      const inputTokens = estimateTokensFromText(
+        JSON.stringify({
+          month1: input.month1,
+          month2: input.month2,
+          month1Expense: month1.totalExpense,
+          month2Expense: month2.totalExpense,
+          month1Income: month1.totalIncome,
+          month2Income: month2.totalIncome,
+          month1NetFlow: month1.netFlow,
+          month2NetFlow: month2.netFlow,
+        }),
+      );
+      const outputTokens = estimateTokensFromText(comparison);
+      const trace = {
+        route: "finance_period_comparison",
+        tools: ["finance.summary"],
+        factsSource: "semantic_live",
+        factCount: 10,
+        artifactCount: 0,
+        model: "semantic-deterministic",
+        provider: "backend",
+        llmCalls: 0,
+        embeddingCalls: 0,
+        inputTokens,
+        totalTokens: inputTokens + outputTokens,
+        latencyMs: Date.now() - startedAt,
+        numericAccuracy: {
+          accuracy: numericAccuracy.accuracy,
+          numbers: numericAccuracy.numbers,
+          supported: numericAccuracy.supported,
+          missing: numericAccuracy.missing,
+        },
+        hallucinationRisk: hallucination.risk,
+        hallucinationSignals: hallucination.signals,
+      };
+
+      void recordAICostMetric({
+        userId: ctx.user.id,
+        userType: ctx.user.type,
+        channel: "report",
+        plan,
+        intentKind: "finance.period_comparison",
+        model: "semantic-deterministic",
+        inputTokens,
+        outputTokens,
+        totalTokens: inputTokens + outputTokens,
+        embeddingCalls: 0,
+        llmCalls: 0,
+        toolCalls: 2,
+        latencyMs: trace.latencyMs,
+        metadata: {
+          route: trace.route,
+          factsSource: trace.factsSource,
+          factCount: trace.factCount,
+          numericAccuracy: numericAccuracy.accuracy,
+        },
+      });
+
+      return {
+        comparison,
+        model: "semantic-deterministic",
+        trace,
+        data: {
+          month1,
+          month2,
+          expenseDifference,
+          expenseChangePercent,
+          incomeDifference,
+          netFlowDifference,
+        },
+      };
     }),
 
   // ─── Generate Yearly Insights ───
@@ -2591,74 +3070,189 @@ ${input.month2}: ${d2.total} جنيه (${d2.count} عملية)
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      let aiModel: any;
-      let modelName = "demo";
-      try {
-        const client = await getAiClient("report", ctx.user.plan);
-        if (!client.canUseAnalysis) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message:
-              "التحليلات السنوية بالذكاء الاصطناعي غير متاحة في خطتك الحالية.",
-          });
+      const startedAt = Date.now();
+      const year = Number.parseInt(input.year, 10);
+      if (!Number.isFinite(year) || year < 2000 || year > 2100) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "سنة التقرير غير صحيحة.",
+        });
+      }
+
+      const settingsRows = await db.select().from(systemSettings);
+      const settings: Record<string, string> = {};
+      settingsRows.forEach((setting) => {
+        if (setting.value !== undefined && setting.value !== null) {
+          settings[setting.key] = setting.value;
         }
-        aiModel = client.aiModel;
-        modelName = client.modelName;
-      } catch (e) {
-        if (e instanceof TRPCError) throw e;
+      });
+
+      const plan = asPlan(ctx.user.plan);
+      if (settings[`${plan}_ai_analysis`] === "false") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "التحليلات السنوية غير متاحة في خطتك الحالية.",
+        });
       }
 
-      const start = new Date(parseInt(input.year), 0, 1);
-      const end = new Date(parseInt(input.year), 11, 31);
-      const exps = await db
-        .select()
-        .from(expenses)
-        .where(
-          and(
-            eq(expenses.userId, ctx.user.id),
-            eq(expenses.userType, ctx.user.type),
-            gte(expenses.date, start),
-            lte(expenses.date, end),
-          ),
-        );
+      const userProfile = await getSmartProfile(ctx.user.id, ctx.user.type).catch(() => null);
+      const salaryDay = Number((userProfile?.financialInfo as any)?.salaryDay) || 0;
+      const financeCtx = {
+        userId: ctx.user.id,
+        userType: ctx.user.type,
+        salaryDay,
+      };
+      const startDate = new Date(year, 0, 1);
+      const endDate = new Date(year, 11, 31, 23, 59, 59, 999);
 
-      const total = exps.reduce((s, e) => s + Number(e.amount), 0);
-      const byMonth = exps.reduce(
-        (acc, e) => {
-          const m = new Date(e.date).getMonth() + 1;
-          acc[m] = (acc[m] || 0) + Number(e.amount);
-          return acc;
-        },
-        {} as Record<number, number>,
+      const [summary, monthlyChart, categoryBreakdown] = await Promise.all([
+        getFinanceSummary(financeCtx, { period: "custom", startDate, endDate }),
+        getChartData(financeCtx, {
+          period: "custom",
+          startDate,
+          endDate,
+          granularity: "month",
+          limit: 12,
+        }),
+        getFinanceBreakdown(financeCtx, {
+          period: "custom",
+          startDate,
+          endDate,
+          granularity: "category",
+          limit: 5,
+        }),
+      ]);
+
+      const roundMoney = (value: number) => Math.round((Number(value) || 0) * 100) / 100;
+      const formatMoney = (value: number) => `${roundMoney(value).toLocaleString("en-US")} جنيه`;
+      const monthlyPoints = monthlyChart.points;
+      const peakMonth = monthlyPoints.reduce(
+        (best, point) => (Number(point.value) > Number(best.value) ? point : best),
+        monthlyPoints[0] ?? { label: String(year), value: 0, count: 0 },
       );
+      const activeMonths = monthlyPoints.filter((point) => Number(point.value) > 0).length;
+      const topCategory = categoryBreakdown.items[0];
+      const monthlyLine = monthlyPoints
+        .map((point) => `${point.label}: ${roundMoney(Number(point.value) || 0)}`)
+        .join(" | ");
+      const categoryLine =
+        categoryBreakdown.items.length > 0
+          ? categoryBreakdown.items
+              .map((item) => `${item.name}: ${roundMoney(item.amount)} (${item.percent}%)`)
+              .join(" | ")
+          : "لا توجد فئات مصروفات مسجلة";
 
-      const prompt = `حلل مصاريف السنة ${input.year} بالعامية المصرية:
-إجمالي: ${total} جنيه
-الشهور: ${Object.entries(byMonth)
-        .map(([k, v]) => `شهر ${k}: ${v}`)
-        .join(", ")}
-اعمل ملخص سنوي وتوقعات.`;
+      const insights = [
+        `ملخص سنة ${year}:`,
+        `- إجمالي المصروفات: ${formatMoney(summary.totalExpense)} من ${summary.expenseCount} عملية مصروفات.`,
+        `- إجمالي الدخل: ${formatMoney(summary.totalIncome)}، والصافي: ${formatMoney(summary.netFlow)}.`,
+        `- متوسط الصرف اليومي: ${formatMoney(summary.dailyAverageExpense)}.`,
+        `- أعلى شهر في الصرف: ${peakMonth.label} بقيمة ${formatMoney(Number(peakMonth.value) || 0)}.`,
+        `- عدد الشهور التي فيها مصروفات: ${activeMonths} من 12.`,
+        topCategory
+          ? `- أعلى فئة: ${topCategory.name} بقيمة ${formatMoney(topCategory.amount)} (${topCategory.percent}%).`
+          : "- لا توجد فئات كافية لاستخراج أعلى فئة.",
+        `- توزيع الشهور: ${monthlyLine || "لا توجد بيانات شهرية"}.`,
+        `- أعلى الفئات: ${categoryLine}.`,
+      ].join("\n");
 
-      let insights = "";
-      try {
-        if (!aiModel) throw new Error("Demo Mode or Client Error");
-        const result = await aiModel.generateContent(prompt);
-        insights = result.response.text();
-        const tokens = result.response.usageMetadata?.totalTokenCount || 0;
-        await trackTokens(
-          ctx.user.id,
-          ctx.user.type,
-          tokens,
-          "report",
-          modelName,
-        );
-      } catch (err) {
-        console.error("AI Yearly Error:", err);
-        insights = `(Fallback Mode) ملخص سنة ${input.year}:
-إجمالي المصاريف: ${total} جنيه.
-تأكد من إعدادات الـ API Key للحصول على تحليل ذكي.`;
-      }
-      return { insights, model: modelName, total };
+      const numericAccuracy = validateNumbersAgainstFacts(insights, {
+        year,
+        totalExpense: roundMoney(summary.totalExpense),
+        expenseCount: summary.expenseCount,
+        totalIncome: roundMoney(summary.totalIncome),
+        netFlow: roundMoney(summary.netFlow),
+        dailyAverageExpense: roundMoney(summary.dailyAverageExpense),
+        peakMonthLabel: peakMonth.label,
+        peakMonthValue: roundMoney(Number(peakMonth.value) || 0),
+        activeMonths,
+        monthsInYear: 12,
+        topCategoryName: topCategory?.name,
+        topCategoryAmount: topCategory ? roundMoney(topCategory.amount) : null,
+        topCategoryPercent: topCategory?.percent ?? null,
+        monthlyPoints: monthlyPoints.map((point) => ({
+          label: point.label,
+          value: roundMoney(Number(point.value) || 0),
+          count: point.count,
+        })),
+        categoryBreakdown: categoryBreakdown.items.map((item) => ({
+          name: item.name,
+          amount: roundMoney(item.amount),
+          percent: item.percent,
+          count: item.count,
+        })),
+      });
+      const hallucination = reportHallucinationRisk(numericAccuracy.missing, 0);
+      const inputTokens = estimateTokensFromText(
+        JSON.stringify({
+          year,
+          summary: {
+            totalExpense: summary.totalExpense,
+            totalIncome: summary.totalIncome,
+            netFlow: summary.netFlow,
+            transactionCount: summary.transactionCount,
+          },
+          monthlyPoints,
+          categoryBreakdown: categoryBreakdown.items,
+        }),
+      );
+      const outputTokens = estimateTokensFromText(insights);
+      const trace = {
+        route: "yearly_report",
+        tools: ["finance.summary", "chart.data", "finance.breakdown"],
+        factsSource: "semantic_live",
+        factCount: 8 + monthlyPoints.length + categoryBreakdown.items.length,
+        artifactCount: 1,
+        model: "semantic-deterministic",
+        provider: "backend",
+        llmCalls: 0,
+        embeddingCalls: 0,
+        inputTokens,
+        totalTokens: inputTokens + outputTokens,
+        latencyMs: Date.now() - startedAt,
+        numericAccuracy: {
+          accuracy: numericAccuracy.accuracy,
+          numbers: numericAccuracy.numbers,
+          supported: numericAccuracy.supported,
+          missing: numericAccuracy.missing,
+        },
+        hallucinationRisk: hallucination.risk,
+        hallucinationSignals: hallucination.signals,
+      };
+
+      void recordAICostMetric({
+        userId: ctx.user.id,
+        userType: ctx.user.type,
+        channel: "report",
+        plan,
+        intentKind: "yearly_report",
+        model: "semantic-deterministic",
+        inputTokens,
+        outputTokens,
+        totalTokens: inputTokens + outputTokens,
+        embeddingCalls: 0,
+        llmCalls: 0,
+        toolCalls: 3,
+        latencyMs: trace.latencyMs,
+        metadata: {
+          route: trace.route,
+          factsSource: trace.factsSource,
+          factCount: trace.factCount,
+          numericAccuracy: numericAccuracy.accuracy,
+        },
+      });
+
+      return {
+        insights,
+        model: "semantic-deterministic",
+        total: summary.totalExpense,
+        trace,
+        data: {
+          summary,
+          monthlyChart,
+          categoryBreakdown,
+        },
+      };
     }),
 
   // ─── Financial Copilot: Get Cached Monthly Insights (Premium UX) ───

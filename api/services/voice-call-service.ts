@@ -3,9 +3,23 @@ import { systemSettings, voiceUsage, apiKeyErrors, users, localUsers, sessions }
 import { eq, and, gt, sum } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 import { env } from "../lib/env";
+import { getCacheRuntimeStatus } from "../lib/redis-client";
 import WebSocket from "ws";
-import { getUserFinancialContextSummary } from "./voice-context-service";
-import { TOOL_DEFINITIONS, executeTool } from "./ai-chat-tools";
+import {
+  VOICE_TOOL_DECLARATIONS,
+  buildVoiceHotContext,
+  buildVoiceSystemPrompt,
+  clearVoiceSessionState,
+  createVoiceSessionState,
+  endVoiceSessionState,
+  executeVoiceTool,
+  prefetchVoiceTurnContext,
+  persistVoiceCallArchive,
+  type VoiceArchiveMessage,
+  type VoiceToolResponse,
+} from "./voice-kernel";
+import { embeddingApiCallsFromCacheHits, embeddingApiStatusFor, type DataNeed } from "./ai-kernel";
+import { recordAICostMetric, resolveAICostPolicy } from "./ai-cost-policy";
 
 // Helper to parse cookies
 function parseCookie(cookieHeader: string | undefined, name: string): string | undefined {
@@ -69,6 +83,124 @@ function resolveLiveModelId(modelName: string): string {
   return `models/${modelName}`;
 }
 
+export function normalizeVoiceToolResponse(resultString: string): Record<string, unknown> {
+  const trimmed = resultString.trim();
+  if (!trimmed) {
+    return { result: "" };
+  }
+
+  try {
+    return { result: JSON.parse(trimmed) as unknown };
+  } catch {
+    return { result_text: trimmed };
+  }
+}
+
+export function summarizeVoiceToolResponse(toolName: string, response: unknown): Record<string, unknown> {
+  const record = response && typeof response === "object" ? (response as Record<string, unknown>) : {};
+  const dataNeeds = Array.isArray(record.dataNeeds)
+    ? record.dataNeeds
+        .map((need) =>
+          need && typeof need === "object" && "kind" in need
+            ? String((need as { kind?: unknown }).kind)
+            : "",
+        )
+        .filter(Boolean)
+    : [];
+  const facts = Array.isArray(record.facts) ? record.facts : [];
+  const artifacts = Array.isArray(record.artifacts) ? record.artifacts : [];
+  const cacheHits = Array.isArray(record.cacheHits) ? record.cacheHits.map((hit) => String(hit)) : [];
+  const retrievalPolicy =
+    record.retrievalPolicy && typeof record.retrievalPolicy === "object"
+      ? record.retrievalPolicy
+      : undefined;
+  const embeddingApiStatus =
+    typeof record.embeddingApiStatus === "string"
+      ? record.embeddingApiStatus
+      : embeddingApiStatusFor(
+          dataNeeds.map((kind, index) => ({ id: `voice_summary_${index}`, kind })) as DataNeed[],
+          cacheHits,
+        );
+  const result = record.result && typeof record.result === "object" ? (record.result as Record<string, unknown>) : {};
+  const errors = Array.isArray(result.errors) ? result.errors.map((item) => String(item)).filter(Boolean) : [];
+
+  return {
+    toolName,
+    ok: record.ok === true,
+    dataNeeds,
+    factCount: facts.length,
+    artifactCount: artifacts.length,
+    cacheHits,
+    embeddingCalls: embeddingApiCallsFromCacheHits(cacheHits),
+    embeddingApiStatus,
+    retrievalPolicy,
+    cacheRuntime: getCacheRuntimeStatus(),
+    error: typeof record.error === "string" ? record.error : undefined,
+    errors,
+  };
+}
+
+function extractTranscriptionText(value: unknown): string | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const record = value as Record<string, unknown>;
+  const text = record.text ?? record.content ?? record.transcript;
+  return typeof text === "string" && text.trim() ? text.trim() : undefined;
+}
+
+export function buildVoiceToolLimitResponse(toolName: string, maxToolRounds: number): VoiceToolResponse {
+  return {
+    ok: false,
+    tool: toolName,
+    error: `voice_tool_limit_exceeded:${maxToolRounds}`,
+    result: {
+      errors: [`voice_tool_limit_exceeded:${maxToolRounds}`],
+      requiresConfirmation: false,
+      requiresUiConfirmation: false,
+    },
+  };
+}
+
+function isVoiceConfirmationTool(toolName: string): boolean {
+  return toolName === "action_confirm" || toolName === "action_cancel";
+}
+
+export function shouldExecuteLiveVoiceTool(input: {
+  toolName: string;
+  executedToolCalls: number;
+  maxToolRounds: number;
+}): {
+  execute: boolean;
+  countsTowardLimit: boolean;
+  maxToolRounds: number;
+  reason: "within_limit" | "confirmation_or_cancel" | "tool_limit_exceeded";
+} {
+  const maxToolRounds = Math.max(0, Math.floor(input.maxToolRounds));
+  if (isVoiceConfirmationTool(input.toolName)) {
+    return {
+      execute: true,
+      countsTowardLimit: false,
+      maxToolRounds,
+      reason: "confirmation_or_cancel",
+    };
+  }
+
+  if (input.executedToolCalls >= maxToolRounds) {
+    return {
+      execute: false,
+      countsTowardLimit: false,
+      maxToolRounds,
+      reason: "tool_limit_exceeded",
+    };
+  }
+
+  return {
+    execute: true,
+    countsTowardLimit: true,
+    maxToolRounds,
+    reason: "within_limit",
+  };
+}
+
 export async function handleVoiceCallWebSocket(ws: WebSocket, request: any) {
   const parsedUrl = new URL(request.url || "", "http://localhost");
   const tokenParam = parsedUrl.searchParams.get("token");
@@ -112,6 +244,12 @@ export async function handleVoiceCallWebSocket(ws: WebSocket, request: any) {
   });
 
   const plan = user.plan || "free";
+  const voicePolicy = resolveAICostPolicy({
+    channel: "voice",
+    plan,
+    role: user.role,
+    settings: config,
+  });
   const isEnabled = config[`voice_call_enabled_${plan}`] === "true";
   const limitMinutes = parseInt(config[`voice_call_limit_${plan}`] || "0");
   const maxCallSeconds = parseInt(config[`voice_call_duration_${plan}`] || "60");
@@ -148,23 +286,55 @@ export async function handleVoiceCallWebSocket(ws: WebSocket, request: any) {
 
   console.log(`[Voice Call] Authorized. Duration: ${allowedCallSeconds}s`);
 
-  // Assemble financial context and instructions
-  const userContext = await getUserFinancialContextSummary(user.id, userType);
-  const voiceSystemPrompt = `أنت "سمارت" — مستشار مالي مصري ذكي ومتعاطف.
-تتكلم عامية مصرية راقية ومبسطة في مكالمة صوتية حية.
-
-قواعد المكالمة:
-- ردودك مختصرة جداً (جملة أو اتنين بس)
-- متقراش جداول أو أرقام كتير — اعطي خلاصات ذكية
-- كأنك صاحب ومستشار شخصي
-- خلي الكلام ممتع وسريع
-
-${userContext}`;
+  // Assemble a compact voice context. Deeper facts are fetched by voice tools on demand.
+  let voiceSession: Awaited<ReturnType<typeof createVoiceSessionState>>;
+  let hotContext: Awaited<ReturnType<typeof buildVoiceHotContext>>;
+  try {
+    voiceSession = await createVoiceSessionState({
+      userId: user.id,
+      userType,
+      userPlan: plan,
+    });
+    hotContext = await buildVoiceHotContext({
+      userId: user.id,
+      userType,
+      userPlan: plan,
+      sessionId: voiceSession.sessionId,
+    });
+  } catch (error) {
+    console.error("[Voice Call] Failed to initialize voice session", error);
+    ws.send(JSON.stringify({
+      error: "تعذر بدء المكالمة الصوتية لأن حالة الجلسة السريعة غير متاحة حاليا. تأكد من إعداد Redis ثم جرّب تاني.",
+    }));
+    ws.close(1011);
+    return;
+  }
+  const voiceSystemPrompt = buildVoiceSystemPrompt(hotContext);
 
   // Start call session
   const callStartTime = Date.now();
   let usageSaved = false;
-  let callTranscript: string[] = []; // To store AI's side of the conversation
+  let callTranscript: VoiceArchiveMessage[] = [];
+  let voiceToolCallCount = 0;
+  let blockedVoiceToolCallCount = 0;
+  let earlyPrefetchStarted = false;
+
+  const maybePrefetchEarlyTurn = (transcript: string) => {
+    if (earlyPrefetchStarted) return;
+    if (Date.now() - callStartTime > 2500) return;
+    earlyPrefetchStarted = true;
+    void prefetchVoiceTurnContext({
+      ctx: {
+        userId: user.id,
+        userType,
+        userPlan: plan,
+        sessionId: voiceSession.sessionId,
+      },
+      transcript,
+    }).catch((error: unknown) => {
+      console.warn("[Voice Prefetch] failed", error instanceof Error ? error.message : String(error));
+    });
+  };
 
   const endCallSession = async (closeCode: number, reason: string) => {
     if (usageSaved) return;
@@ -188,39 +358,51 @@ ${userContext}`;
       }
     }
 
-    // Save transcript to chat_messages if there was a conversation
+    // Archive voice memory in its own conversation, never inside the latest chat.
     if (callTranscript.length > 0) {
       try {
-        const { chatConversations, chatMessages } = await import("../../db/schema");
-        const { desc } = await import("drizzle-orm");
-        
-        // Find latest conversation or create one
-        let conversationId: number;
-        const latestConvos = await db.select().from(chatConversations)
-          .where(and(eq(chatConversations.userId, user.id), eq(chatConversations.userType, userType)))
-          .orderBy(desc(chatConversations.lastMessageAt)).limit(1);
-
-        if (latestConvos.length > 0) {
-          conversationId = latestConvos[0].id;
-        } else {
-          const inserted = await db.insert(chatConversations).values({
-            userId: user.id, userType: userType,
-            title: "مكالمة صوتية", messageCount: 0, totalTokens: 0,
-            lastMessageAt: new Date()
-          });
-          conversationId = (inserted as any).insertId || (inserted as any)[0]?.insertId;
-        }
-
-        const summaryText = "[ملخص المكالمة الصوتية - ما قاله المساعد]:\n" + callTranscript.join(" ");
-        await db.insert(chatMessages).values({
-          conversationId, role: "system", content: summaryText, tokensUsed: 0,
-          createdAt: new Date()
+        await persistVoiceCallArchive({
+          userId: user.id,
+          userType,
+          sessionId: voiceSession.sessionId,
+          transcript: callTranscript,
         });
-        console.log("[Voice Call] Saved call transcript to chat memory.");
+        console.log("[Voice Call] Archived voice call memory.");
       } catch (err) {
-        console.error("[Voice Call] Failed to save transcript to chat:", err);
+        console.error("[Voice Call] Failed to archive voice call:", err);
       }
     }
+
+    try {
+      await endVoiceSessionState(voiceSession.sessionId);
+      await clearVoiceSessionState(voiceSession.sessionId);
+    } catch (err) {
+      console.error("[Voice Call] Failed to close voice session state:", err);
+    }
+
+    void recordAICostMetric({
+      userId: user.id,
+      userType,
+      channel: "voice",
+      plan,
+      intentKind: "voice_session",
+      model: targetModel,
+      inputTokens: Math.ceil(elapsedSeconds * 6),
+      outputTokens: 0,
+      totalTokens: Math.ceil(elapsedSeconds * 6),
+      llmCalls: 1,
+      toolCalls: voiceToolCallCount,
+      latencyMs: elapsedSeconds * 1000,
+      metadata: {
+        reason,
+        closeCode,
+        sessionId: voiceSession.sessionId,
+        durationSeconds: elapsedSeconds,
+        maxOutputTokens: voicePolicy.maxOutputTokens,
+        maxToolRounds: voicePolicy.maxToolRounds,
+        blockedToolCalls: blockedVoiceToolCallCount,
+      },
+    });
 
     if (ws.readyState === WebSocket.OPEN) {
       ws.close(closeCode);
@@ -274,7 +456,7 @@ ${userContext}`;
               parts: [{ text: systemPrompt }]
             },
             tools: [{
-              functionDeclarations: TOOL_DEFINITIONS.map(t => t.function)
+              functionDeclarations: VOICE_TOOL_DECLARATIONS
             }]
           },
         };
@@ -348,7 +530,8 @@ ${userContext}`;
   ws.send(JSON.stringify({ 
     status: "ready", 
     message: "متصل الآن بالمستشار المالي",
-    modelName: targetModel.replace("models/", "")
+    modelName: targetModel.replace("models/", ""),
+    voiceSessionId: voiceSession.sessionId
   }));
 
   // 4. Send opening greeting so the AI speaks first (user hears something immediately)
@@ -395,6 +578,10 @@ ${userContext}`;
         if (parsed.type === "end_call") {
           endCallSession(1000, "User clicked end call");
         }
+        if ((parsed.type === "user_transcript" || parsed.type === "transcript") && typeof parsed.text === "string") {
+          callTranscript.push({ role: "user", content: parsed.text });
+          maybePrefetchEarlyTurn(parsed.text);
+        }
       } catch (err) {
         // Ignore
       }
@@ -423,22 +610,71 @@ ${userContext}`;
           const toolName = call.name;
           let args = {};
           try { args = call.args || {}; } catch {}
+
+          const toolDecision = shouldExecuteLiveVoiceTool({
+            toolName,
+            executedToolCalls: voiceToolCallCount,
+            maxToolRounds: voicePolicy.maxToolRounds,
+          });
+          if (!toolDecision.execute) {
+            blockedVoiceToolCallCount += 1;
+            const limitResponse = buildVoiceToolLimitResponse(toolName, toolDecision.maxToolRounds);
+
+            console.warn(
+              `[Voice Call] Blocked tool ${toolName}; maxToolRounds=${toolDecision.maxToolRounds} already reached.`,
+            );
+
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({
+                type: "voice_tool_result",
+                payload: summarizeVoiceToolResponse(toolName, limitResponse),
+              }));
+            }
+
+            functionResponses.push({
+              id: call.id,
+              name: toolName,
+              response: limitResponse,
+            });
+            continue;
+          }
+
+          if (toolDecision.countsTowardLimit) {
+            voiceToolCallCount += 1;
+          }
           
           console.log(`[Voice Call] Executing tool ${toolName} during call...`);
           
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({
               type: "tool_execution",
+              toolName,
               message: `يبحث في بياناتك... (${toolName})`
             }));
           }
           
-          const resultString = await executeTool(toolName, args, { userId: user.id, userType });
+          const toolResponse = await executeVoiceTool({
+            toolName,
+            args: args as Record<string, unknown>,
+            ctx: {
+              userId: user.id,
+              userType,
+              userPlan: plan,
+              sessionId: voiceSession.sessionId,
+            },
+          });
+
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: "voice_tool_result",
+              payload: summarizeVoiceToolResponse(toolName, toolResponse),
+            }));
+          }
           
           functionResponses.push({
             id: call.id,
             name: toolName,
-            response: { result: JSON.parse(resultString) }
+            response: toolResponse
           });
         }
         
@@ -454,6 +690,16 @@ ${userContext}`;
 
       if (msg.serverContent) {
         // --- Audio extraction: handle all known Gemini Live API response schemas ---
+        const inputTranscript = extractTranscriptionText(msg.serverContent.inputTranscription);
+        if (inputTranscript) {
+          callTranscript.push({ role: "user", content: inputTranscript });
+          maybePrefetchEarlyTurn(inputTranscript);
+        }
+
+        const outputTranscript = extractTranscriptionText(msg.serverContent.outputTranscription);
+        if (outputTranscript) {
+          callTranscript.push({ role: "assistant", content: outputTranscript });
+        }
 
         // Schema A: serverContent.modelTurn.parts[*].inlineData (standard Live API)
         const modelTurn = msg.serverContent.modelTurn;
@@ -462,7 +708,7 @@ ${userContext}`;
             // Forward text parts to UI
             if (part.text) {
               console.log("[Voice Call] Gemini text part:", part.text);
-              callTranscript.push(part.text);
+              callTranscript.push({ role: "assistant", content: part.text });
               if (ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({
                   type: "gemini_message",
@@ -511,6 +757,7 @@ ${userContext}`;
               }
             }
             if (part.text) {
+              callTranscript.push({ role: "assistant", content: part.text });
               if (ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({
                   type: "gemini_message",

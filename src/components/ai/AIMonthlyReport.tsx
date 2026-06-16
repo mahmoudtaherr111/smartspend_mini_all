@@ -8,6 +8,12 @@ function currentMonthValue() {
   return new Date().toISOString().slice(0, 7);
 }
 
+function queryMonthValue(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  const value = new URLSearchParams(window.location.search).get(key);
+  return value && /^\d{4}-\d{2}$/.test(value) ? value : null;
+}
+
 const MONTH_NAMES_AR = [
   "يناير", "فبراير", "مارس", "إبريل", "مايو", "يونيو",
   "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر",
@@ -19,7 +25,7 @@ function formatMonth(month: string): string {
 }
 
 export default function AIMonthlyReport() {
-  const [month, setMonth] = useState(currentMonthValue);
+  const [month, setMonth] = useState(() => queryMonthValue("report_qa_month") ?? currentMonthValue());
   const { lightTap } = useHaptics();
 
   const prevMonth = () => {

@@ -534,8 +534,8 @@ var init_body = __esm({
     init_request();
     parseBody = async (request, options = /* @__PURE__ */ Object.create(null)) => {
       const { all = false, dot = false } = options;
-      const headers = request instanceof HonoRequest ? request.raw.headers : request.headers;
-      const contentType = headers.get("Content-Type");
+      const headers2 = request instanceof HonoRequest ? request.raw.headers : request.headers;
+      const contentType = headers2.get("Content-Type");
       if (contentType?.startsWith("multipart/form-data") || contentType?.startsWith("application/x-www-form-urlencoded")) {
         return parseFormData(request, { all, dot });
       }
@@ -621,15 +621,15 @@ var init_url = __esm({
       }
       const match2 = label.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/);
       if (match2) {
-        const cacheKey2 = `${label}#${next}`;
-        if (!patternCache[cacheKey2]) {
+        const cacheKey3 = `${label}#${next}`;
+        if (!patternCache[cacheKey3]) {
           if (match2[2]) {
-            patternCache[cacheKey2] = next && next[0] !== ":" && next[0] !== "*" ? [cacheKey2, match2[1], new RegExp(`^${match2[2]}(?=/${next})`)] : [label, match2[1], new RegExp(`^${match2[2]}$`)];
+            patternCache[cacheKey3] = next && next[0] !== ":" && next[0] !== "*" ? [cacheKey3, match2[1], new RegExp(`^${match2[2]}(?=/${next})`)] : [label, match2[1], new RegExp(`^${match2[2]}$`)];
           } else {
-            patternCache[cacheKey2] = [label, match2[1], true];
+            patternCache[cacheKey3] = [label, match2[1], true];
           }
         }
-        return patternCache[cacheKey2];
+        return patternCache[cacheKey3];
       }
       return null;
     };
@@ -1117,10 +1117,10 @@ var init_context = __esm({
     init_request();
     init_html();
     TEXT_PLAIN = "text/plain; charset=UTF-8";
-    setDefaultContentType = (contentType, headers) => {
+    setDefaultContentType = (contentType, headers2) => {
       return {
         "Content-Type": contentType,
-        ...headers
+        ...headers2
       };
     };
     createResponseInstance = (body, init2) => new Response(body, init2);
@@ -1325,13 +1325,13 @@ var init_context = __esm({
         if (this.finalized) {
           this.#res = createResponseInstance(this.#res.body, this.#res);
         }
-        const headers = this.#res ? this.#res.headers : this.#preparedHeaders ??= new Headers();
+        const headers2 = this.#res ? this.#res.headers : this.#preparedHeaders ??= new Headers();
         if (value === void 0) {
-          headers.delete(name2);
+          headers2.delete(name2);
         } else if (options?.append) {
-          headers.append(name2, value);
+          headers2.append(name2, value);
         } else {
-          headers.set(name2, value);
+          headers2.set(name2, value);
         }
       };
       status = (status) => {
@@ -1387,7 +1387,7 @@ var init_context = __esm({
         }
         return Object.fromEntries(this.#var);
       }
-      #newResponse(data, arg, headers) {
+      #newResponse(data, arg, headers2) {
         const responseHeaders = this.#res ? new Headers(this.#res.headers) : this.#preparedHeaders ?? new Headers();
         if (typeof arg === "object" && "headers" in arg) {
           const argHeaders = arg.headers instanceof Headers ? arg.headers : new Headers(arg.headers);
@@ -1399,8 +1399,8 @@ var init_context = __esm({
             }
           }
         }
-        if (headers) {
-          for (const [k2, v] of Object.entries(headers)) {
+        if (headers2) {
+          for (const [k2, v] of Object.entries(headers2)) {
             if (typeof v === "string") {
               responseHeaders.set(k2, v);
             } else {
@@ -1436,7 +1436,7 @@ var init_context = __esm({
        * })
        * ```
        */
-      body = (data, arg, headers) => this.#newResponse(data, arg, headers);
+      body = (data, arg, headers2) => this.#newResponse(data, arg, headers2);
       /**
        * `.text()` can render text as `Content-Type:text/plain`.
        *
@@ -1449,11 +1449,11 @@ var init_context = __esm({
        * })
        * ```
        */
-      text = (text2, arg, headers) => {
-        return !this.#preparedHeaders && !this.#status && !arg && !headers && !this.finalized ? new Response(text2) : this.#newResponse(
+      text = (text2, arg, headers2) => {
+        return !this.#preparedHeaders && !this.#status && !arg && !headers2 && !this.finalized ? new Response(text2) : this.#newResponse(
           text2,
           arg,
-          setDefaultContentType(TEXT_PLAIN, headers)
+          setDefaultContentType(TEXT_PLAIN, headers2)
         );
       };
       /**
@@ -1468,15 +1468,15 @@ var init_context = __esm({
        * })
        * ```
        */
-      json = (object2, arg, headers) => {
+      json = (object2, arg, headers2) => {
         return this.#newResponse(
           JSON.stringify(object2),
           arg,
-          setDefaultContentType("application/json", headers)
+          setDefaultContentType("application/json", headers2)
         );
       };
-      html = (html, arg, headers) => {
-        const res = (html2) => this.#newResponse(html2, arg, setDefaultContentType("text/html; charset=UTF-8", headers));
+      html = (html, arg, headers2) => {
+        const res = (html2) => this.#newResponse(html2, arg, setDefaultContentType("text/html; charset=UTF-8", headers2));
         return typeof html === "object" ? resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then(res) : res(html);
       };
       /**
@@ -2750,8 +2750,8 @@ var init_codes_DagpWZLc = __esm({
 // node_modules/@trpc/server/dist/getErrorShape-BPSzUA7W.mjs
 function createInnerProxy(callback, path5, memo2) {
   var _memo$cacheKey;
-  const cacheKey2 = path5.join(".");
-  (_memo$cacheKey = memo2[cacheKey2]) !== null && _memo$cacheKey !== void 0 || (memo2[cacheKey2] = new Proxy(noop, {
+  const cacheKey3 = path5.join(".");
+  (_memo$cacheKey = memo2[cacheKey3]) !== null && _memo$cacheKey !== void 0 || (memo2[cacheKey3] = new Proxy(noop, {
     get(_obj, key) {
       if (typeof key !== "string" || key === "then") return void 0;
       return createInnerProxy(callback, [...path5, key], memo2);
@@ -2779,7 +2779,7 @@ function createInnerProxy(callback, path5, memo2) {
       return callback(opts);
     }
   }));
-  return memo2[cacheKey2];
+  return memo2[cacheKey3];
 }
 function getStatusCodeFromKey(code) {
   var _JSONRPC2_TO_HTTP_COD;
@@ -3029,31 +3029,31 @@ function createRouterFactory(config3) {
       };
     }
     function step(from, path5 = []) {
-      const aggregate = emptyObject();
+      const aggregate2 = emptyObject();
       for (const [key, item] of Object.entries(from !== null && from !== void 0 ? from : {})) {
         if (isLazy(item)) {
           lazy$1[[...path5, key].join(".")] = createLazyLoader({
             path: path5,
             ref: item,
             key,
-            aggregate
+            aggregate: aggregate2
           });
           continue;
         }
         if (isRouter(item)) {
-          aggregate[key] = step(item._def.record, [...path5, key]);
+          aggregate2[key] = step(item._def.record, [...path5, key]);
           continue;
         }
         if (!isProcedure(item)) {
-          aggregate[key] = step(item, [...path5, key]);
+          aggregate2[key] = step(item, [...path5, key]);
           continue;
         }
         const newPath = [...path5, key].join(".");
         if (procedures[newPath]) throw new Error(`Duplicate key: ${newPath}`);
         procedures[newPath] = item;
-        aggregate[key] = item;
+        aggregate2[key] = item;
       }
-      return aggregate;
+      return aggregate2;
     }
     const record2 = step(input);
     const _def = (0, import_objectSpread22.default)((0, import_objectSpread22.default)({
@@ -18036,41 +18036,41 @@ var require_lib = __commonJS({
     var isRecord = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
     var isWordChar = (code) => code >= 65 && code <= 90 || code >= 97 && code <= 122 || code >= 48 && code <= 57 || code === 95;
     var isWhitespace = (code) => code === charCode.space || code === charCode.tab || code === charCode.newline || code === charCode.carriageReturn;
-    var hasOnlyWhitespaceBetween = (sql7, start, end) => {
+    var hasOnlyWhitespaceBetween = (sql6, start, end) => {
       if (start >= end)
         return true;
       for (let i2 = start; i2 < end; i2++) {
-        const code = sql7.charCodeAt(i2);
+        const code = sql6.charCodeAt(i2);
         if (code !== charCode.space && code !== charCode.tab && code !== charCode.newline && code !== charCode.carriageReturn)
           return false;
       }
       return true;
     };
     var toLower = (code) => code | 32;
-    var matchesWord = (sql7, position, word, length) => {
+    var matchesWord = (sql6, position, word, length) => {
       for (let offset = 0; offset < word.length; offset++)
-        if (toLower(sql7.charCodeAt(position + offset)) !== word.charCodeAt(offset))
+        if (toLower(sql6.charCodeAt(position + offset)) !== word.charCodeAt(offset))
           return false;
-      return (position === 0 || !isWordChar(sql7.charCodeAt(position - 1))) && (position + word.length >= length || !isWordChar(sql7.charCodeAt(position + word.length)));
+      return (position === 0 || !isWordChar(sql6.charCodeAt(position - 1))) && (position + word.length >= length || !isWordChar(sql6.charCodeAt(position + word.length)));
     };
-    var skipSqlContext = (sql7, position) => {
-      const currentChar = sql7.charCodeAt(position);
-      const nextChar = sql7.charCodeAt(position + 1);
+    var skipSqlContext = (sql6, position) => {
+      const currentChar = sql6.charCodeAt(position);
+      const nextChar = sql6.charCodeAt(position + 1);
       if (currentChar === charCode.singleQuote) {
-        for (let cursor = position + 1; cursor < sql7.length; cursor++) {
-          if (sql7.charCodeAt(cursor) === charCode.backslash)
+        for (let cursor = position + 1; cursor < sql6.length; cursor++) {
+          if (sql6.charCodeAt(cursor) === charCode.backslash)
             cursor++;
-          else if (sql7.charCodeAt(cursor) === charCode.singleQuote)
+          else if (sql6.charCodeAt(cursor) === charCode.singleQuote)
             return cursor + 1;
         }
-        return sql7.length;
+        return sql6.length;
       }
       if (currentChar === charCode.backtick) {
-        const length = sql7.length;
+        const length = sql6.length;
         for (let cursor = position + 1; cursor < length; cursor++) {
-          if (sql7.charCodeAt(cursor) !== charCode.backtick)
+          if (sql6.charCodeAt(cursor) !== charCode.backtick)
             continue;
-          if (sql7.charCodeAt(cursor + 1) === charCode.backtick) {
+          if (sql6.charCodeAt(cursor + 1) === charCode.backtick) {
             cursor++;
             continue;
           }
@@ -18079,48 +18079,48 @@ var require_lib = __commonJS({
         return length;
       }
       if (currentChar === charCode.dash && nextChar === charCode.dash) {
-        const lineBreak = sql7.indexOf("\n", position + 2);
-        return lineBreak === -1 ? sql7.length : lineBreak + 1;
+        const lineBreak = sql6.indexOf("\n", position + 2);
+        return lineBreak === -1 ? sql6.length : lineBreak + 1;
       }
       if (currentChar === charCode.slash && nextChar === charCode.asterisk) {
-        const commentEnd = sql7.indexOf("*/", position + 2);
-        return commentEnd === -1 ? sql7.length : commentEnd + 2;
+        const commentEnd = sql6.indexOf("*/", position + 2);
+        return commentEnd === -1 ? sql6.length : commentEnd + 2;
       }
       return -1;
     };
-    var findNextPlaceholder = (sql7, start) => {
-      const sqlLength = sql7.length;
+    var findNextPlaceholder = (sql6, start) => {
+      const sqlLength = sql6.length;
       for (let position = start; position < sqlLength; position++) {
-        const code = sql7.charCodeAt(position);
+        const code = sql6.charCodeAt(position);
         if (code === charCode.questionMark)
           return position;
         if (code === charCode.singleQuote || code === charCode.backtick || code === charCode.dash || code === charCode.slash) {
-          const contextEnd = skipSqlContext(sql7, position);
+          const contextEnd = skipSqlContext(sql6, position);
           if (contextEnd !== -1)
             position = contextEnd - 1;
         }
       }
       return -1;
     };
-    var findSetKeyword = (sql7, startFrom = 0) => {
-      const length = sql7.length;
+    var findSetKeyword = (sql6, startFrom = 0) => {
+      const length = sql6.length;
       for (let position = startFrom; position < length; position++) {
-        const code = sql7.charCodeAt(position);
+        const code = sql6.charCodeAt(position);
         const lower3 = code | 32;
         if (code === charCode.singleQuote || code === charCode.backtick || code === charCode.dash || code === charCode.slash) {
-          const contextEnd = skipSqlContext(sql7, position);
+          const contextEnd = skipSqlContext(sql6, position);
           if (contextEnd !== -1) {
             position = contextEnd - 1;
             continue;
           }
         }
-        if (lower3 === 115 && matchesWord(sql7, position, "set", length))
+        if (lower3 === 115 && matchesWord(sql6, position, "set", length))
           return position + 3;
-        if (lower3 === 107 && matchesWord(sql7, position, "key", length)) {
+        if (lower3 === 107 && matchesWord(sql6, position, "key", length)) {
           let cursor = position + 3;
-          while (cursor < length && isWhitespace(sql7.charCodeAt(cursor)))
+          while (cursor < length && isWhitespace(sql6.charCodeAt(cursor)))
             cursor++;
-          if (matchesWord(sql7, cursor, "update", length))
+          if (matchesWord(sql6, cursor, "update", length))
             return cursor + 6;
         }
       }
@@ -18215,19 +18215,19 @@ var require_lib = __commonJS({
       const keysLength = keys.length;
       if (keysLength === 0)
         return "";
-      let sql7 = "";
+      let sql6 = "";
       for (let i2 = 0; i2 < keysLength; i2++) {
         const key = keys[i2];
         const value = object2[key];
         if (typeof value === "function")
           continue;
-        if (sql7.length > 0)
-          sql7 += ", ";
-        sql7 += (0, exports.escapeId)(key);
-        sql7 += " = ";
-        sql7 += (0, exports.escape)(value, true, timezone);
+        if (sql6.length > 0)
+          sql6 += ", ";
+        sql6 += (0, exports.escapeId)(key);
+        sql6 += " = ";
+        sql6 += (0, exports.escape)(value, true, timezone);
       }
-      return sql7;
+      return sql6;
     };
     exports.objectToValues = objectToValues;
     var bufferToString = (buffer) => `X${escapeString(buffer.toString("hex"))}`;
@@ -18278,25 +18278,25 @@ var require_lib = __commonJS({
       }
     };
     exports.escape = escape2;
-    var format2 = (sql7, values, stringifyObjects, timezone) => {
+    var format2 = (sql6, values, stringifyObjects, timezone) => {
       if (values === void 0 || values === null)
-        return sql7;
+        return sql6;
       const valuesArray = Array.isArray(values) ? values : [values];
       const length = valuesArray.length;
       let setIndex = -2;
       let result = "";
       let chunkIndex = 0;
       let valuesIndex = 0;
-      let placeholderPosition = findNextPlaceholder(sql7, 0);
+      let placeholderPosition = findNextPlaceholder(sql6, 0);
       while (valuesIndex < length && placeholderPosition !== -1) {
         let placeholderEnd = placeholderPosition + 1;
         let escapedValue;
-        while (sql7.charCodeAt(placeholderEnd) === 63)
+        while (sql6.charCodeAt(placeholderEnd) === 63)
           placeholderEnd++;
         const placeholderLength = placeholderEnd - placeholderPosition;
         const currentValue = valuesArray[valuesIndex];
         if (placeholderLength > 2) {
-          placeholderPosition = findNextPlaceholder(sql7, placeholderEnd);
+          placeholderPosition = findNextPlaceholder(sql6, placeholderEnd);
           continue;
         }
         if (placeholderLength === 2)
@@ -18305,32 +18305,32 @@ var require_lib = __commonJS({
           escapedValue = `${currentValue}`;
         else if (typeof currentValue === "object" && currentValue !== null && !stringifyObjects) {
           if (setIndex === -2)
-            setIndex = findSetKeyword(sql7);
-          if (setIndex !== -1 && setIndex <= placeholderPosition && hasOnlyWhitespaceBetween(sql7, setIndex, placeholderPosition) && !hasSqlString(currentValue) && !Array.isArray(currentValue) && !node_buffer_1.Buffer.isBuffer(currentValue) && !(currentValue instanceof Uint8Array) && !isDate(currentValue) && isRecord(currentValue)) {
+            setIndex = findSetKeyword(sql6);
+          if (setIndex !== -1 && setIndex <= placeholderPosition && hasOnlyWhitespaceBetween(sql6, setIndex, placeholderPosition) && !hasSqlString(currentValue) && !Array.isArray(currentValue) && !node_buffer_1.Buffer.isBuffer(currentValue) && !(currentValue instanceof Uint8Array) && !isDate(currentValue) && isRecord(currentValue)) {
             escapedValue = (0, exports.objectToValues)(currentValue, timezone);
-            setIndex = findSetKeyword(sql7, placeholderEnd);
+            setIndex = findSetKeyword(sql6, placeholderEnd);
           } else
             escapedValue = (0, exports.escape)(currentValue, true, timezone);
         } else
           escapedValue = (0, exports.escape)(currentValue, stringifyObjects, timezone);
-        result += sql7.slice(chunkIndex, placeholderPosition);
+        result += sql6.slice(chunkIndex, placeholderPosition);
         result += escapedValue;
         chunkIndex = placeholderEnd;
         valuesIndex++;
-        placeholderPosition = findNextPlaceholder(sql7, placeholderEnd);
+        placeholderPosition = findNextPlaceholder(sql6, placeholderEnd);
       }
       if (chunkIndex === 0)
-        return sql7;
-      if (chunkIndex < sql7.length)
-        return result + sql7.slice(chunkIndex);
+        return sql6;
+      if (chunkIndex < sql6.length)
+        return result + sql6.slice(chunkIndex);
       return result;
     };
     exports.format = format2;
-    var raw2 = (sql7) => {
-      if (typeof sql7 !== "string")
+    var raw2 = (sql6) => {
+      if (typeof sql6 !== "string")
         throw new TypeError("argument sql must be a string");
       return {
-        toSqlString: () => sql7
+        toSqlString: () => sql6
       };
     };
     exports.raw = raw2;
@@ -31217,8 +31217,8 @@ var require_prepare_statement = __commonJS({
     var StringParser = require_string();
     var CharsetToEncoding = require_charset_encodings();
     var PrepareStatement = class {
-      constructor(sql7, charsetNumber) {
-        this.query = sql7;
+      constructor(sql6, charsetNumber) {
+        this.query = sql6;
         this.charsetNumber = charsetNumber;
         this.encoding = CharsetToEncoding[charsetNumber];
       }
@@ -31267,8 +31267,8 @@ var require_query = __commonJS({
     var Types = require_types();
     var { toParameter } = require_encode_parameter();
     var Query = class {
-      constructor(sql7, charsetNumber, attributes, clientFlags) {
-        this.query = sql7;
+      constructor(sql6, charsetNumber, attributes, clientFlags) {
+        this.query = sql6;
         this.charsetNumber = charsetNumber;
         this.encoding = CharsetToEncoding[charsetNumber];
         this.attributes = attributes;
@@ -35318,17 +35318,17 @@ var require_connection = __commonJS({
         }
         return cmd;
       }
-      format(sql7, values) {
+      format(sql6, values) {
         if (typeof this.config.queryFormat === "function") {
           return this.config.queryFormat.call(
             this,
-            sql7,
+            sql6,
             values,
             this.config.timezone
           );
         }
         const opts = {
-          sql: sql7,
+          sql: sql6,
           values
         };
         this._resolveNamedPlaceholders(opts);
@@ -35345,8 +35345,8 @@ var require_connection = __commonJS({
       escapeId(value) {
         return SqlString.escapeId(value, false);
       }
-      raw(sql7) {
-        return SqlString.raw(sql7);
+      raw(sql6) {
+        return SqlString.raw(sql6);
       }
       _resolveNamedPlaceholders(options) {
         let unnamed;
@@ -35362,12 +35362,12 @@ var require_connection = __commonJS({
           options.values = unnamed[1];
         }
       }
-      query(sql7, values, cb) {
+      query(sql6, values, cb) {
         let cmdQuery;
-        if (sql7.constructor === Commands.Query) {
-          cmdQuery = sql7;
+        if (sql6.constructor === Commands.Query) {
+          cmdQuery = sql6;
         } else {
-          cmdQuery = _BaseConnection.createQuery(sql7, values, cb, this.config);
+          cmdQuery = _BaseConnection.createQuery(sql6, values, cb, this.config);
         }
         this._resolveNamedPlaceholders(cmdQuery);
         const rawSql = this.format(
@@ -35443,12 +35443,12 @@ var require_connection = __commonJS({
         }
         return this.addCommand(new Commands.Prepare(options, cb));
       }
-      unprepare(sql7) {
+      unprepare(sql6) {
         let options = {};
-        if (typeof sql7 === "object") {
-          options = sql7;
+        if (typeof sql6 === "object") {
+          options = sql6;
         } else {
-          options.sql = sql7;
+          options.sql = sql6;
         }
         const key = _BaseConnection.statementKey(options);
         const stmt = this._statements.get(key);
@@ -35458,16 +35458,16 @@ var require_connection = __commonJS({
         }
         return stmt;
       }
-      execute(sql7, values, cb) {
+      execute(sql6, values, cb) {
         let options = {
           infileStreamFactory: this.config.infileStreamFactory
         };
-        if (typeof sql7 === "object") {
+        if (typeof sql6 === "object") {
           options = {
             ...options,
-            ...sql7,
-            sql: sql7.sql,
-            values: sql7.values
+            ...sql6,
+            sql: sql6.sql,
+            values: sql6.values
           };
           if (typeof values === "function") {
             cb = values;
@@ -35476,10 +35476,10 @@ var require_connection = __commonJS({
           }
         } else if (typeof values === "function") {
           cb = values;
-          options.sql = sql7;
+          options.sql = sql6;
           options.values = void 0;
         } else {
-          options.sql = sql7;
+          options.sql = sql6;
           options.values = values;
         }
         this._resolveNamedPlaceholders(options);
@@ -35760,17 +35760,17 @@ var require_connection = __commonJS({
         this.addCommand = this._addCommandClosedState;
         return quitCmd;
       }
-      static createQuery(sql7, values, cb, config3) {
+      static createQuery(sql6, values, cb, config3) {
         let options = {
           rowsAsArray: config3.rowsAsArray,
           infileStreamFactory: config3.infileStreamFactory
         };
-        if (typeof sql7 === "object") {
+        if (typeof sql6 === "object") {
           options = {
             ...options,
-            ...sql7,
-            sql: sql7.sql,
-            values: sql7.values
+            ...sql6,
+            sql: sql6.sql,
+            values: sql6.values
           };
           if (typeof values === "function") {
             cb = values;
@@ -35779,10 +35779,10 @@ var require_connection = __commonJS({
           }
         } else if (typeof values === "function") {
           cb = values;
-          options.sql = sql7;
+          options.sql = sql6;
           options.values = void 0;
         } else {
-          options.sql = sql7;
+          options.sql = sql6;
           options.values = values;
         }
         return new Commands.Query(options, cb);
@@ -36413,9 +36413,9 @@ var require_pool = __commonJS({
           connection._realEnd(endCB);
         }
       }
-      query(sql7, values, cb) {
+      query(sql6, values, cb) {
         const cmdQuery = BaseConnection.createQuery(
-          sql7,
+          sql6,
           values,
           cb,
           this.config.connectionConfig
@@ -36459,7 +36459,7 @@ var require_pool = __commonJS({
         });
         return cmdQuery;
       }
-      execute(sql7, values, cb) {
+      execute(sql6, values, cb) {
         if (typeof values === "function") {
           cb = values;
           values = [];
@@ -36469,7 +36469,7 @@ var require_pool = __commonJS({
             return cb(err);
           }
           try {
-            conn.execute(sql7, values, (err2, rows, fields) => {
+            conn.execute(sql6, values, (err2, rows, fields) => {
               if (isReadOnlyError(err2)) {
                 conn.destroy();
               }
@@ -36506,9 +36506,9 @@ var require_pool = __commonJS({
           }
         }, 1e3);
       }
-      format(sql7, values) {
+      format(sql6, values) {
         return SqlString.format(
-          sql7,
+          sql6,
           values,
           this.config.connectionConfig.stringifyObjects,
           this.config.connectionConfig.timezone
@@ -36564,7 +36564,7 @@ var require_pool2 = __commonJS({
       releaseConnection(connection) {
         if (connection instanceof PromisePoolConnection) connection.release();
       }
-      query(sql7, args) {
+      query(sql6, args) {
         const corePool = this.pool;
         const stackHolder = captureStackHolder(_PromisePool.prototype.query);
         if (typeof args === "function") {
@@ -36575,13 +36575,13 @@ var require_pool2 = __commonJS({
         return new this.Promise((resolve2, reject) => {
           const done = makeDoneCb(resolve2, reject, stackHolder);
           if (args !== void 0) {
-            corePool.query(sql7, args, done);
+            corePool.query(sql6, args, done);
           } else {
-            corePool.query(sql7, done);
+            corePool.query(sql6, done);
           }
         });
       }
-      execute(sql7, args) {
+      execute(sql6, args) {
         const corePool = this.pool;
         const stackHolder = captureStackHolder(_PromisePool.prototype.execute);
         if (typeof args === "function") {
@@ -36592,9 +36592,9 @@ var require_pool2 = __commonJS({
         return new this.Promise((resolve2, reject) => {
           const done = makeDoneCb(resolve2, reject, stackHolder);
           if (args) {
-            corePool.execute(sql7, args, done);
+            corePool.execute(sql6, args, done);
           } else {
-            corePool.execute(sql7, done);
+            corePool.execute(sql6, done);
           }
         });
       }
@@ -36750,8 +36750,8 @@ var require_pool_cluster = __commonJS({
        * @param {*} cb
        * @returns query
        */
-      query(sql7, values, cb) {
-        const query = Connection.createQuery(sql7, values, cb, {});
+      query(sql6, values, cb) {
+        const query = Connection.createQuery(sql6, values, cb, {});
         this.getConnection((err, conn) => {
           if (err) {
             if (typeof query.onResult === "function") {
@@ -36778,7 +36778,7 @@ var require_pool_cluster = __commonJS({
        * @param {*} values
        * @param {*} cb
        */
-      execute(sql7, values, cb) {
+      execute(sql6, values, cb) {
         if (typeof values === "function") {
           cb = values;
           values = [];
@@ -36788,7 +36788,7 @@ var require_pool_cluster = __commonJS({
             return cb(err);
           }
           try {
-            conn.execute(sql7, values, cb).once("end", () => {
+            conn.execute(sql6, values, cb).once("end", () => {
               conn.release();
             });
           } catch (e2) {
@@ -37084,7 +37084,7 @@ var require_pool_cluster2 = __commonJS({
           });
         });
       }
-      query(sql7, values) {
+      query(sql6, values) {
         const corePoolNamespace = this.poolNamespace;
         const stackHolder = captureStackHolder(
           _PromisePoolNamespace.prototype.query
@@ -37096,10 +37096,10 @@ var require_pool_cluster2 = __commonJS({
         }
         return new this.Promise((resolve2, reject) => {
           const done = makeDoneCb(resolve2, reject, stackHolder);
-          corePoolNamespace.query(sql7, values, done);
+          corePoolNamespace.query(sql6, values, done);
         });
       }
-      execute(sql7, values) {
+      execute(sql6, values) {
         const corePoolNamespace = this.poolNamespace;
         const stackHolder = captureStackHolder(
           _PromisePoolNamespace.prototype.execute
@@ -37111,7 +37111,7 @@ var require_pool_cluster2 = __commonJS({
         }
         return new this.Promise((resolve2, reject) => {
           const done = makeDoneCb(resolve2, reject, stackHolder);
-          corePoolNamespace.execute(sql7, values, done);
+          corePoolNamespace.execute(sql6, values, done);
         });
       }
     };
@@ -37192,7 +37192,7 @@ var require_promise = __commonJS({
           );
         });
       }
-      query(sql7, args) {
+      query(sql6, args) {
         const corePoolCluster = this.poolCluster;
         const stackHolder = captureStackHolder(_PromisePoolCluster.prototype.query);
         if (typeof args === "function") {
@@ -37202,10 +37202,10 @@ var require_promise = __commonJS({
         }
         return new this.Promise((resolve2, reject) => {
           const done = makeDoneCb(resolve2, reject, stackHolder);
-          corePoolCluster.query(sql7, args, done);
+          corePoolCluster.query(sql6, args, done);
         });
       }
-      execute(sql7, args) {
+      execute(sql6, args) {
         const corePoolCluster = this.poolCluster;
         const stackHolder = captureStackHolder(
           _PromisePoolCluster.prototype.execute
@@ -37217,7 +37217,7 @@ var require_promise = __commonJS({
         }
         return new this.Promise((resolve2, reject) => {
           const done = makeDoneCb(resolve2, reject, stackHolder);
-          corePoolCluster.execute(sql7, args, done);
+          corePoolCluster.execute(sql6, args, done);
         });
       }
       of(pattern, selector) {
@@ -38087,10 +38087,10 @@ var init_subquery = __esm({
     init_entity();
     Subquery = class {
       static [entityKind] = "Subquery";
-      constructor(sql7, fields, alias, isWith = false, usedTables = []) {
+      constructor(sql6, fields, alias, isWith = false, usedTables = []) {
         this._ = {
           brand: "Subquery",
-          sql: sql7,
+          sql: sql6,
           selectedFields: fields,
           alias,
           isWith,
@@ -39995,9 +39995,9 @@ var init_indexes = __esm({
   "node_modules/drizzle-orm/mysql-core/indexes.js"() {
     init_entity();
     IndexBuilderOn = class {
-      constructor(name2, unique) {
+      constructor(name2, unique2) {
         this.name = name2;
-        this.unique = unique;
+        this.unique = unique2;
       }
       static [entityKind] = "MySqlIndexBuilderOn";
       on(...columns) {
@@ -40008,11 +40008,11 @@ var init_indexes = __esm({
       static [entityKind] = "MySqlIndexBuilder";
       /** @internal */
       config;
-      constructor(name2, columns, unique) {
+      constructor(name2, columns, unique2) {
         this.config = {
           name: name2,
           columns,
-          unique
+          unique: unique2
         };
       }
       using(using) {
@@ -41944,7 +41944,7 @@ var init_dialect = __esm({
         table,
         joins,
         orderBy,
-        groupBy,
+        groupBy: groupBy2,
         limit,
         offset,
         lockingClause,
@@ -42030,7 +42030,7 @@ var init_dialect = __esm({
         const whereSql = where ? sql` where ${where}` : void 0;
         const havingSql = having ? sql` having ${having}` : void 0;
         const orderBySql = this.buildOrderBy(orderBy);
-        const groupBySql = groupBy && groupBy.length > 0 ? sql` group by ${sql.join(groupBy, sql`, `)}` : void 0;
+        const groupBySql = groupBy2 && groupBy2.length > 0 ? sql` group by ${sql.join(groupBy2, sql`, `)}` : void 0;
         const limitSql = this.buildLimit(limit);
         const offsetSql = offset ? sql` offset ${offset}` : void 0;
         const useIndexSql = this.buildIndex({ indexes: useIndex, indexFor: "USE" });
@@ -43372,13 +43372,13 @@ var init_select2 = __esm({
       }
       groupBy(...columns) {
         if (typeof columns[0] === "function") {
-          const groupBy = columns[0](
+          const groupBy2 = columns[0](
             new Proxy(
               this.config.fields,
               new SelectionProxyHandler({ sqlAliasedBehavior: "alias", sqlBehavior: "sql" })
             )
           );
-          this.config.groupBy = Array.isArray(groupBy) ? groupBy : [groupBy];
+          this.config.groupBy = Array.isArray(groupBy2) ? groupBy2 : [groupBy2];
         } else {
           this.config.groupBy = columns;
         }
@@ -44262,8 +44262,8 @@ var init_db = __esm({
 });
 
 // node_modules/drizzle-orm/cache/core/cache.js
-async function hashQuery(sql7, params) {
-  const dataToHash = `${sql7}-${JSON.stringify(params)}`;
+async function hashQuery(sql6, params) {
+  const dataToHash = `${sql6}-${JSON.stringify(params)}`;
   const encoder = new TextEncoder();
   const data = encoder.encode(dataToHash);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
@@ -45010,6 +45010,12 @@ var schema_exports = {};
 __export(schema_exports, {
   adClicks: () => adClicks,
   ads: () => ads,
+  aiActionAuditLogs: () => aiActionAuditLogs,
+  aiActionMemory: () => aiActionMemory,
+  aiConversationSummaries: () => aiConversationSummaries,
+  aiMemoryEmbeddings: () => aiMemoryEmbeddings,
+  aiMemoryItems: () => aiMemoryItems,
+  aiPendingActions: () => aiPendingActions,
   aiSummaries: () => aiSummaries,
   apiKeyErrors: () => apiKeyErrors,
   authChallenges: () => authChallenges,
@@ -45048,7 +45054,7 @@ __export(schema_exports, {
   webhookTokens: () => webhookTokens,
   whatsappOtpCodes: () => whatsappOtpCodes
 });
-var users, localUsers, expenses, userContacts, pendingClarifications, expenseCategories, userWallets, monthlyReports, sessions, userAnalytics, supportTickets, discountCodes, aiSummaries, ads, adClicks, referrals, proSubscriptions, seoPages, systemSettings, userProfiles, profileLearningEvents, monthlyBehaviorSnapshots, onboardingQuestions, userDictionaries, classificationLogs, voiceUsage, webhookTokens, financialGoals, rawSmsEvents, whatsappOtpCodes, apiKeyErrors, pushSubscriptions, userCredentials, authChallenges, notificationTemplates, inAppNotifications, notificationLogs, chatConversations, chatMessages;
+var users, localUsers, expenses, userContacts, pendingClarifications, expenseCategories, userWallets, monthlyReports, sessions, userAnalytics, supportTickets, discountCodes, aiSummaries, ads, adClicks, referrals, proSubscriptions, seoPages, systemSettings, userProfiles, profileLearningEvents, monthlyBehaviorSnapshots, onboardingQuestions, userDictionaries, classificationLogs, voiceUsage, webhookTokens, financialGoals, rawSmsEvents, whatsappOtpCodes, apiKeyErrors, pushSubscriptions, userCredentials, authChallenges, notificationTemplates, inAppNotifications, notificationLogs, chatConversations, chatMessages, aiConversationSummaries, aiMemoryItems, aiMemoryEmbeddings, aiActionMemory, aiPendingActions, aiActionAuditLogs;
 var init_schema2 = __esm({
   "db/schema.ts"() {
     init_mysql_core();
@@ -45825,6 +45831,148 @@ var init_schema2 = __esm({
         index("chat_msg_created_idx").on(t3.conversationId, t3.createdAt)
       ]
     );
+    aiConversationSummaries = mysqlTable(
+      "ai_conversation_summaries",
+      {
+        id: int2("id").primaryKey().autoincrement(),
+        userId: int2("user_id").notNull(),
+        userType: varchar("user_type", { length: 50 }).notNull(),
+        conversationId: int2("conversation_id").notNull(),
+        capsule: varchar("capsule", { length: 500 }).notNull(),
+        runningSummary: text("running_summary"),
+        messageCount: int2("message_count").default(0),
+        source: varchar("source", { length: 50 }).notNull().default("chat"),
+        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+        updatedAt: datetime3("updated_at").default(
+          sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
+        )
+      },
+      (t3) => [
+        uniqueIndex("ai_conv_summary_unique_idx").on(t3.conversationId),
+        index("ai_conv_summary_user_idx").on(t3.userId, t3.userType),
+        index("ai_conv_summary_updated_idx").on(t3.updatedAt)
+      ]
+    );
+    aiMemoryItems = mysqlTable(
+      "ai_memory_items",
+      {
+        id: int2("id").primaryKey().autoincrement(),
+        userId: int2("user_id").notNull(),
+        userType: varchar("user_type", { length: 50 }).notNull(),
+        memoryType: varchar("memory_type", { length: 50 }).notNull().default("fact"),
+        content: text("content").notNull(),
+        contentHash: varchar("content_hash", { length: 64 }).notNull(),
+        importance: int2("importance").notNull().default(50),
+        sourceConversationId: int2("source_conversation_id"),
+        sourceMessageId: int2("source_message_id"),
+        status: varchar("status", { length: 30 }).notNull().default("active"),
+        metadata: json2("metadata"),
+        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+        updatedAt: datetime3("updated_at").default(
+          sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
+        )
+      },
+      (t3) => [
+        index("ai_memory_user_idx").on(t3.userId, t3.userType, t3.status),
+        uniqueIndex("ai_memory_hash_unique_idx").on(t3.userId, t3.userType, t3.contentHash),
+        index("ai_memory_type_idx").on(t3.memoryType),
+        index("ai_memory_updated_idx").on(t3.updatedAt)
+      ]
+    );
+    aiMemoryEmbeddings = mysqlTable(
+      "ai_memory_embeddings",
+      {
+        id: int2("id").primaryKey().autoincrement(),
+        memoryItemId: int2("memory_item_id").notNull(),
+        userId: int2("user_id").notNull(),
+        userType: varchar("user_type", { length: 50 }).notNull(),
+        provider: varchar("provider", { length: 50 }).notNull().default("fireworks"),
+        model: varchar("model", { length: 200 }).notNull(),
+        dimensions: int2("dimensions").notNull(),
+        vectorHash: varchar("vector_hash", { length: 64 }),
+        vector: json2("vector"),
+        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+      },
+      (t3) => [
+        index("ai_memory_embedding_item_idx").on(t3.memoryItemId),
+        index("ai_memory_embedding_user_idx").on(t3.userId, t3.userType),
+        uniqueIndex("ai_memory_embedding_unique_idx").on(
+          t3.memoryItemId,
+          t3.provider,
+          t3.model,
+          t3.dimensions
+        )
+      ]
+    );
+    aiActionMemory = mysqlTable(
+      "ai_action_memory",
+      {
+        id: int2("id").primaryKey().autoincrement(),
+        userId: int2("user_id").notNull(),
+        userType: varchar("user_type", { length: 50 }).notNull(),
+        actionName: varchar("action_name", { length: 120 }).notNull(),
+        status: varchar("status", { length: 40 }).notNull(),
+        summary: varchar("summary", { length: 500 }).notNull(),
+        payload: json2("payload"),
+        sourceConversationId: int2("source_conversation_id"),
+        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+        updatedAt: datetime3("updated_at").default(
+          sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
+        )
+      },
+      (t3) => [
+        index("ai_action_memory_user_idx").on(t3.userId, t3.userType),
+        index("ai_action_memory_action_idx").on(t3.actionName, t3.status),
+        index("ai_action_memory_updated_idx").on(t3.updatedAt)
+      ]
+    );
+    aiPendingActions = mysqlTable(
+      "ai_pending_actions",
+      {
+        id: int2("id").primaryKey().autoincrement(),
+        userId: int2("user_id").notNull(),
+        userType: varchar("user_type", { length: 50 }).notNull(),
+        conversationId: int2("conversation_id"),
+        actionName: varchar("action_name", { length: 120 }).notNull(),
+        status: varchar("status", { length: 40 }).notNull().default("pending_confirmation"),
+        risk: varchar("risk", { length: 30 }).notNull().default("medium"),
+        summary: varchar("summary", { length: 500 }).notNull(),
+        payload: json2("payload").notNull(),
+        result: json2("result"),
+        expiresAt: datetime3("expires_at").notNull(),
+        confirmedAt: datetime3("confirmed_at"),
+        executedAt: datetime3("executed_at"),
+        cancelledAt: datetime3("cancelled_at"),
+        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+        updatedAt: datetime3("updated_at").default(
+          sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
+        )
+      },
+      (t3) => [
+        index("ai_pending_action_user_idx").on(t3.userId, t3.userType, t3.status),
+        index("ai_pending_action_expiry_idx").on(t3.expiresAt),
+        index("ai_pending_action_conversation_idx").on(t3.conversationId)
+      ]
+    );
+    aiActionAuditLogs = mysqlTable(
+      "ai_action_audit_logs",
+      {
+        id: int2("id").primaryKey().autoincrement(),
+        actionId: int2("action_id"),
+        userId: int2("user_id").notNull(),
+        userType: varchar("user_type", { length: 50 }).notNull(),
+        actionName: varchar("action_name", { length: 120 }).notNull(),
+        event: varchar("event", { length: 80 }).notNull(),
+        status: varchar("status", { length: 40 }).notNull(),
+        metadata: json2("metadata"),
+        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+      },
+      (t3) => [
+        index("ai_action_audit_action_idx").on(t3.actionId),
+        index("ai_action_audit_user_idx").on(t3.userId, t3.userType),
+        index("ai_action_audit_event_idx").on(t3.event)
+      ]
+    );
   }
 });
 
@@ -45954,6 +46102,7 @@ var init_env = __esm({
       BILLING_SIMULATE: external_exports.enum(["true", "false"]).optional(),
       TRUST_PROXY: external_exports.string().optional(),
       REDIS_URL: external_exports.string().optional(),
+      AI_ALLOW_MEMORY_CACHE_IN_PRODUCTION: external_exports.enum(["true", "false"]).optional(),
       SENTRY_DSN: external_exports.string().optional(),
       // Firebase FCM
       FIREBASE_PROJECT_ID: external_exports.string().optional(),
@@ -54770,7 +54919,7 @@ var require_filesystem = __commonJS({
       });
       return buffer.subarray(0, bytesRead);
     };
-    var readFile2 = (path5) => new Promise((resolve2, reject) => {
+    var readFile3 = (path5) => new Promise((resolve2, reject) => {
       fs8.open(path5, "r", (err, fd) => {
         if (err) {
           reject(err);
@@ -54788,7 +54937,7 @@ var require_filesystem = __commonJS({
       LDD_PATH,
       SELF_PATH,
       readFileSync: readFileSync2,
-      readFile: readFile2
+      readFile: readFile3
     };
   }
 });
@@ -54836,7 +54985,7 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = __require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, SELF_PATH, readFile: readFile2, readFileSync: readFileSync2 } = require_filesystem();
+    var { LDD_PATH, SELF_PATH, readFile: readFile3, readFileSync: readFileSync2 } = require_filesystem();
     var { interpreterPath } = require_elf();
     var cachedFamilyInterpreter;
     var cachedFamilyFilesystem;
@@ -54916,7 +55065,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = await readFile2(LDD_PATH);
+        const lddContent = await readFile3(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e2) {
       }
@@ -54940,7 +55089,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyInterpreter = null;
       try {
-        const selfContent = await readFile2(SELF_PATH);
+        const selfContent = await readFile3(SELF_PATH);
         const path5 = interpreterPath(selfContent);
         cachedFamilyInterpreter = familyFromInterpreterPath(path5);
       } catch (e2) {
@@ -55002,7 +55151,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = await readFile2(LDD_PATH);
+        const lddContent = await readFile3(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -55238,13 +55387,13 @@ var require_parse_options = __commonJS({
 var require_identifiers = __commonJS({
   "node_modules/sharp/node_modules/semver/internal/identifiers.js"(exports, module) {
     "use strict";
-    var numeric = /^[0-9]+$/;
+    var numeric2 = /^[0-9]+$/;
     var compareIdentifiers = (a, b) => {
       if (typeof a === "number" && typeof b === "number") {
         return a === b ? 0 : a < b ? -1 : 1;
       }
-      const anum = numeric.test(a);
-      const bnum = numeric.test(b);
+      const anum = numeric2.test(a);
+      const bnum = numeric2.test(b);
       if (anum && bnum) {
         a = +a;
         b = +b;
@@ -56486,7 +56635,7 @@ var require_package2 = __commonJS({
 var require_libvips = __commonJS({
   "node_modules/sharp/lib/libvips.js"(exports, module) {
     var { spawnSync } = __require("node:child_process");
-    var { createHash: createHash6 } = __require("node:crypto");
+    var { createHash: createHash8 } = __require("node:crypto");
     var semverCoerce = require_coerce();
     var semverGreaterThanOrEqualTo = require_gte();
     var semverSatisfies = require_satisfies();
@@ -56577,7 +56726,7 @@ var require_libvips = __commonJS({
       }
       return false;
     };
-    var sha5122 = (s3) => createHash6("sha512").update(s3).digest("hex");
+    var sha5122 = (s3) => createHash8("sha512").update(s3).digest("hex");
     var yarnLocator = () => {
       try {
         const identHash = sha5122(`imgsharp-libvips-${buildPlatformArch()}`);
@@ -58737,9 +58886,9 @@ var require_color = __commonJS({
         return null;
       }
       for (i2 = 0; i2 < 3; i2++) {
-        rgb[i2] = clamp2(rgb[i2], 0, 255);
+        rgb[i2] = clamp3(rgb[i2], 0, 255);
       }
-      rgb[3] = clamp2(rgb[3], 0, 1);
+      rgb[3] = clamp3(rgb[3], 0, 1);
       return rgb;
     };
     cs.get.hsl = function(string4) {
@@ -58751,9 +58900,9 @@ var require_color = __commonJS({
       if (match2) {
         const alpha = Number.parseFloat(match2[4]);
         const h2 = (Number.parseFloat(match2[1]) % 360 + 360) % 360;
-        const s3 = clamp2(Number.parseFloat(match2[2]), 0, 100);
-        const l = clamp2(Number.parseFloat(match2[3]), 0, 100);
-        const a = clamp2(Number.isNaN(alpha) ? 1 : alpha, 0, 1);
+        const s3 = clamp3(Number.parseFloat(match2[2]), 0, 100);
+        const l = clamp3(Number.parseFloat(match2[3]), 0, 100);
+        const a = clamp3(Number.isNaN(alpha) ? 1 : alpha, 0, 1);
         return [h2, s3, l, a];
       }
       return null;
@@ -58767,9 +58916,9 @@ var require_color = __commonJS({
       if (match2) {
         const alpha = Number.parseFloat(match2[4]);
         const h2 = (Number.parseFloat(match2[1]) % 360 + 360) % 360;
-        const w = clamp2(Number.parseFloat(match2[2]), 0, 100);
-        const b = clamp2(Number.parseFloat(match2[3]), 0, 100);
-        const a = clamp2(Number.isNaN(alpha) ? 1 : alpha, 0, 1);
+        const w = clamp3(Number.parseFloat(match2[2]), 0, 100);
+        const b = clamp3(Number.parseFloat(match2[3]), 0, 100);
+        const a = clamp3(Number.isNaN(alpha) ? 1 : alpha, 0, 1);
         return [h2, w, b, a];
       }
       return null;
@@ -58799,7 +58948,7 @@ var require_color = __commonJS({
     cs.to.keyword = function(...rgb) {
       return reverseNames[rgb.slice(0, 3)];
     };
-    function clamp2(number_, min3, max3) {
+    function clamp3(number_, min3, max3) {
       return Math.min(Math.max(min3, number_), max3);
     }
     function hexDouble(number_) {
@@ -64732,12 +64881,12 @@ function getFileTypeFromMimeType(mimeType) {
     default:
   }
 }
-function _check2(buffer, headers, options) {
+function _check2(buffer, headers2, options) {
   options = {
     offset: 0,
     ...options
   };
-  for (const [index2, header] of headers.entries()) {
+  for (const [index2, header] of headers2.entries()) {
     if (options.mask) {
       if (header !== (options.mask[index2] & buffer[index2 + options.offset])) {
         return false;
@@ -77170,7 +77319,7 @@ var require_sonic_boom = __commonJS({
       if (!(this instanceof SonicBoom)) {
         return new SonicBoom(opts);
       }
-      let { fd, dest, minLength, maxLength, maxWrite, periodicFlush, sync, append: append2 = true, mkdir: mkdir2, retryEAGAIN, fsync, contentMode, mode } = opts || {};
+      let { fd, dest, minLength, maxLength, maxWrite, periodicFlush, sync, append: append2 = true, mkdir: mkdir3, retryEAGAIN, fsync, contentMode, mode } = opts || {};
       fd = fd || dest;
       this._len = 0;
       this.fd = -1;
@@ -77195,7 +77344,7 @@ var require_sonic_boom = __commonJS({
       this.append = append2 || false;
       this.mode = mode;
       this.retryEAGAIN = retryEAGAIN || (() => true);
-      this.mkdir = mkdir2 || false;
+      this.mkdir = mkdir3 || false;
       let fsWriteSync;
       let fsWrite;
       if (contentMode === kContentModeBuffer) {
@@ -78561,7 +78710,7 @@ var require_tools = __commonJS({
         }
       }
     }
-    function asString(str) {
+    function asString3(str) {
       let result = "";
       let last = 0;
       let found = false;
@@ -78632,13 +78781,13 @@ var require_tools = __commonJS({
               if (stringifier) value = stringifier(value);
               break;
             case "string":
-              value = (stringifier || asString)(value);
+              value = (stringifier || asString3)(value);
               break;
             default:
               value = (stringifier || stringify2)(value, stringifySafe);
           }
           if (value === void 0) continue;
-          const strKey = asString(key);
+          const strKey = asString3(key);
           propStr += "," + strKey + ":" + value;
         }
       }
@@ -78659,7 +78808,7 @@ var require_tools = __commonJS({
             msgStr = ',"' + messageKey + '":' + value;
             break;
           case "string":
-            value = (stringifier || asString)(value);
+            value = (stringifier || asString3)(value);
             msgStr = ',"' + messageKey + '":' + value;
             break;
           default:
@@ -80665,9 +80814,9 @@ var require_permessage_deflate = __commonJS({
        * @private
        */
       _decompress(data, fin, callback) {
-        const endpoint = this._isServer ? "client" : "server";
+        const endpoint2 = this._isServer ? "client" : "server";
         if (!this._inflate) {
-          const key = `${endpoint}_max_window_bits`;
+          const key = `${endpoint2}_max_window_bits`;
           const windowBits = typeof this.params[key] !== "number" ? zlib3.Z_DEFAULT_WINDOWBITS : this.params[key];
           this._inflate = zlib3.createInflateRaw({
             ...this._options.zlibInflateOptions,
@@ -80700,7 +80849,7 @@ var require_permessage_deflate = __commonJS({
           } else {
             this._inflate[kTotalLength] = 0;
             this._inflate[kBuffers] = [];
-            if (fin && this.params[`${endpoint}_no_context_takeover`]) {
+            if (fin && this.params[`${endpoint2}_no_context_takeover`]) {
               this._inflate.reset();
             }
           }
@@ -80716,9 +80865,9 @@ var require_permessage_deflate = __commonJS({
        * @private
        */
       _compress(data, fin, callback) {
-        const endpoint = this._isServer ? "server" : "client";
+        const endpoint2 = this._isServer ? "server" : "client";
         if (!this._deflate) {
-          const key = `${endpoint}_max_window_bits`;
+          const key = `${endpoint2}_max_window_bits`;
           const windowBits = typeof this.params[key] !== "number" ? zlib3.Z_DEFAULT_WINDOWBITS : this.params[key];
           this._deflate = zlib3.createDeflateRaw({
             ...this._options.zlibDeflateOptions,
@@ -80744,7 +80893,7 @@ var require_permessage_deflate = __commonJS({
           this._deflate[kCallback] = null;
           this._deflate[kTotalLength] = 0;
           this._deflate[kBuffers] = [];
-          if (fin && this.params[`${endpoint}_no_context_takeover`]) {
+          if (fin && this.params[`${endpoint2}_no_context_takeover`]) {
             this._deflate.reset();
           }
           callback(null, data2);
@@ -82497,7 +82646,7 @@ var require_websocket = __commonJS({
     var http5 = __require("http");
     var net = __require("net");
     var tls = __require("tls");
-    var { randomBytes: randomBytes12, createHash: createHash6 } = __require("crypto");
+    var { randomBytes: randomBytes12, createHash: createHash8 } = __require("crypto");
     var { Duplex, Readable: Readable4 } = __require("stream");
     var { URL: URL4 } = __require("url");
     var PerMessageDeflate2 = require_permessage_deflate();
@@ -83094,10 +83243,10 @@ var require_websocket = __commonJS({
           websocket._originalIpc = isIpcUrl;
           websocket._originalSecure = isSecure;
           websocket._originalHostOrSocketPath = isIpcUrl ? opts.socketPath : parsedUrl.host;
-          const headers = options && options.headers;
+          const headers2 = options && options.headers;
           options = { ...options, headers: {} };
-          if (headers) {
-            for (const [key2, value] of Object.entries(headers)) {
+          if (headers2) {
+            for (const [key2, value] of Object.entries(headers2)) {
               options.headers[key2.toLowerCase()] = value;
             }
           }
@@ -83165,7 +83314,7 @@ var require_websocket = __commonJS({
           abortHandshake(websocket, socket, "Invalid Upgrade header");
           return;
         }
-        const digest2 = createHash6("sha1").update(key + GUID).digest("base64");
+        const digest2 = createHash8("sha1").update(key + GUID).digest("base64");
         if (res.headers["sec-websocket-accept"] !== digest2) {
           abortHandshake(websocket, socket, "Invalid Sec-WebSocket-Accept header");
           return;
@@ -83534,7 +83683,7 @@ var require_websocket_server = __commonJS({
     var EventEmitter5 = __require("events");
     var http5 = __require("http");
     var { Duplex } = __require("stream");
-    var { createHash: createHash6 } = __require("crypto");
+    var { createHash: createHash8 } = __require("crypto");
     var extension2 = require_extension();
     var PerMessageDeflate2 = require_permessage_deflate();
     var subprotocol2 = require_subprotocol();
@@ -83800,9 +83949,9 @@ var require_websocket_server = __commonJS({
             req
           };
           if (this.options.verifyClient.length === 2) {
-            this.options.verifyClient(info, (verified, code, message, headers) => {
+            this.options.verifyClient(info, (verified, code, message, headers2) => {
               if (!verified) {
-                return abortHandshake(socket, code || 401, message, headers);
+                return abortHandshake(socket, code || 401, message, headers2);
               }
               this.completeUpgrade(
                 extensions2,
@@ -83841,8 +83990,8 @@ var require_websocket_server = __commonJS({
           );
         }
         if (this._state > RUNNING) return abortHandshake(socket, 503);
-        const digest2 = createHash6("sha1").update(key + GUID).digest("base64");
-        const headers = [
+        const digest2 = createHash8("sha1").update(key + GUID).digest("base64");
+        const headers2 = [
           "HTTP/1.1 101 Switching Protocols",
           "Upgrade: websocket",
           "Connection: Upgrade",
@@ -83852,7 +84001,7 @@ var require_websocket_server = __commonJS({
         if (protocols.size) {
           const protocol = this.options.handleProtocols ? this.options.handleProtocols(protocols, req) : protocols.values().next().value;
           if (protocol) {
-            headers.push(`Sec-WebSocket-Protocol: ${protocol}`);
+            headers2.push(`Sec-WebSocket-Protocol: ${protocol}`);
             ws._protocol = protocol;
           }
         }
@@ -83861,11 +84010,11 @@ var require_websocket_server = __commonJS({
           const value = extension2.format({
             [PerMessageDeflate2.extensionName]: [params]
           });
-          headers.push(`Sec-WebSocket-Extensions: ${value}`);
+          headers2.push(`Sec-WebSocket-Extensions: ${value}`);
           ws._extensions = extensions2;
         }
-        this.emit("headers", headers, req);
-        socket.write(headers.concat("\r\n").join("\r\n"));
+        this.emit("headers", headers2, req);
+        socket.write(headers2.concat("\r\n").join("\r\n"));
         socket.removeListener("error", socketOnError);
         ws.setSocket(socket, head, {
           allowSynchronousEvents: this.options.allowSynchronousEvents,
@@ -83902,27 +84051,27 @@ var require_websocket_server = __commonJS({
     function socketOnError() {
       this.destroy();
     }
-    function abortHandshake(socket, code, message, headers) {
+    function abortHandshake(socket, code, message, headers2) {
       message = message || http5.STATUS_CODES[code];
-      headers = {
+      headers2 = {
         Connection: "close",
         "Content-Type": "text/html",
         "Content-Length": Buffer.byteLength(message),
-        ...headers
+        ...headers2
       };
       socket.once("finish", socket.destroy);
       socket.end(
         `HTTP/1.1 ${code} ${http5.STATUS_CODES[code]}\r
-` + Object.keys(headers).map((h2) => `${h2}: ${headers[h2]}`).join("\r\n") + "\r\n\r\n" + message
+` + Object.keys(headers2).map((h2) => `${h2}: ${headers2[h2]}`).join("\r\n") + "\r\n\r\n" + message
       );
     }
-    function abortHandshakeOrEmitwsClientError(server, req, socket, code, message, headers) {
+    function abortHandshakeOrEmitwsClientError(server, req, socket, code, message, headers2) {
       if (server.listenerCount("wsClientError")) {
         const err = new Error(message);
         Error.captureStackTrace(err, abortHandshakeOrEmitwsClientError);
         server.emit("wsClientError", err, socket, req);
       } else {
-        abortHandshake(socket, code, message, headers);
+        abortHandshake(socket, code, message, headers2);
       }
     }
   }
@@ -85071,7 +85220,7 @@ var require_tools2 = __commonJS({
     var transport = require_transport2();
     var [nodeMajor] = process.versions.node.split(".").map((v) => Number(v));
     var asJsonChan = diagChan.tracingChannel("pino_asJson");
-    var asString = nodeMajor >= 25 ? (str) => JSON.stringify(str) : _asString;
+    var asString3 = nodeMajor >= 25 ? (str) => JSON.stringify(str) : _asString;
     function noop5() {
     }
     function genLog(level, hook) {
@@ -85180,13 +85329,13 @@ var require_tools2 = __commonJS({
               if (stringifier) value = stringifier(value);
               break;
             case "string":
-              value = (stringifier || asString)(value);
+              value = (stringifier || asString3)(value);
               break;
             default:
               value = (stringifier || stringify2)(value, stringifySafe);
           }
           if (value === void 0) continue;
-          const strKey = asString(key);
+          const strKey = asString3(key);
           propStr += "," + strKey + ":" + value;
         }
       }
@@ -85207,7 +85356,7 @@ var require_tools2 = __commonJS({
             msgStr = ',"' + messageKey + '":' + value;
             break;
           case "string":
-            value = (stringifier || asString)(value);
+            value = (stringifier || asString3)(value);
             msgStr = ',"' + messageKey + '":' + value;
             break;
           default:
@@ -87067,7 +87216,7 @@ var require_version_check = __commonJS({
 // node_modules/qrcode/lib/core/regex.js
 var require_regex = __commonJS({
   "node_modules/qrcode/lib/core/regex.js"(exports) {
-    var numeric = "[0-9]+";
+    var numeric2 = "[0-9]+";
     var alphanumeric = "[A-Z $%*+\\-./:]+";
     var kanji = "(?:[u3000-u303F]|[u3040-u309F]|[u30A0-u30FF]|[uFF00-uFFEF]|[u4E00-u9FAF]|[u2605-u2606]|[u2190-u2195]|u203B|[u2010u2015u2018u2019u2025u2026u201Cu201Du2225u2260]|[u0391-u0451]|[u00A7u00A8u00B1u00B4u00D7u00F7])+";
     kanji = kanji.replace(/u/g, "\\u");
@@ -87075,10 +87224,10 @@ var require_regex = __commonJS({
     exports.KANJI = new RegExp(kanji, "g");
     exports.BYTE_KANJI = new RegExp("[^A-Z0-9 $%*+\\-./:]+", "g");
     exports.BYTE = new RegExp(byte, "g");
-    exports.NUMERIC = new RegExp(numeric, "g");
+    exports.NUMERIC = new RegExp(numeric2, "g");
     exports.ALPHANUMERIC = new RegExp(alphanumeric, "g");
     var TEST_KANJI = new RegExp("^" + kanji + "$");
-    var TEST_NUMERIC = new RegExp("^" + numeric + "$");
+    var TEST_NUMERIC = new RegExp("^" + numeric2 + "$");
     var TEST_ALPHANUMERIC = new RegExp("^[A-Z0-9 $%*+\\-./:]+$");
     exports.testKanji = function testKanji(str) {
       return TEST_KANJI.test(str);
@@ -92631,6 +92780,59 @@ var init_relationship_normalizer = __esm({
       \u062C\u0627\u0631: "\u062C\u0627\u0631\u0643",
       \u062C\u0627\u0631\u0629: "\u062C\u0627\u0631\u062A\u0643"
     };
+  }
+});
+
+// api/lib/muscle-memory.ts
+function invalidateUserMemory(userId, userType) {
+  memoryCache.invalidate(userId, userType);
+}
+var UserMemoryCache, memoryCache;
+var init_muscle_memory = __esm({
+  "api/lib/muscle-memory.ts"() {
+    init_connection();
+    init_schema2();
+    UserMemoryCache = class {
+      cache = /* @__PURE__ */ new Map();
+      // key = "userId:userType"
+      loadedAt = /* @__PURE__ */ new Map();
+      maxPatternsPerUser = 200;
+      ttlMs = 30 * 60 * 1e3;
+      // 30 minutes before re-fetching
+      userKey(userId, userType) {
+        return `${userId}:${userType}`;
+      }
+      isStale(userId, userType) {
+        const key = this.userKey(userId, userType);
+        const loaded = this.loadedAt.get(key);
+        if (!loaded) return true;
+        return Date.now() - loaded > this.ttlMs;
+      }
+      get(userId, userType) {
+        const key = this.userKey(userId, userType);
+        if (this.isStale(userId, userType)) return void 0;
+        return this.cache.get(key);
+      }
+      set(userId, userType, patterns) {
+        const key = this.userKey(userId, userType);
+        const sorted = patterns.sort((a, b) => b.usageCount - a.usageCount).slice(0, this.maxPatternsPerUser);
+        this.cache.set(key, sorted);
+        this.loadedAt.set(key, Date.now());
+        if (this.cache.size > 500) {
+          const oldest = [...this.loadedAt.entries()].sort((a, b) => a[1] - b[1]).slice(0, 100);
+          for (const [k2] of oldest) {
+            this.cache.delete(k2);
+            this.loadedAt.delete(k2);
+          }
+        }
+      }
+      invalidate(userId, userType) {
+        const key = this.userKey(userId, userType);
+        this.cache.delete(key);
+        this.loadedAt.delete(key);
+      }
+    };
+    memoryCache = new UserMemoryCache();
   }
 });
 
@@ -112757,8 +112959,8 @@ var require_cache = __commonJS({
         */
       async handleCache(client, parser, fn, transformReply, typeMapping) {
         let reply;
-        const cacheKey2 = generateCacheKey(parser.redisArgs);
-        let cacheEntry = this.get(cacheKey2);
+        const cacheKey3 = generateCacheKey(parser.redisArgs);
+        let cacheEntry = this.get(cacheKey3);
         if (cacheEntry) {
           if (cacheEntry instanceof ClientSideCacheEntryValue) {
             this.#statsCounter.recordHits(1);
@@ -112777,7 +112979,7 @@ var require_cache = __commonJS({
           const startTime = performance.now();
           const promise2 = fn();
           cacheEntry = this.createPromiseEntry(client, promise2);
-          this.set(cacheKey2, cacheEntry, parser.keys);
+          this.set(cacheKey3, cacheEntry, parser.keys);
           try {
             reply = await promise2;
             const loadTime = performance.now() - startTime;
@@ -112786,7 +112988,7 @@ var require_cache = __commonJS({
             const loadTime = performance.now() - startTime;
             this.#statsCounter.recordLoadFailure(loadTime);
             if (cacheEntry.validate()) {
-              this.delete(cacheKey2);
+              this.delete(cacheKey3);
             }
             throw err;
           }
@@ -112799,8 +113001,8 @@ var require_cache = __commonJS({
         }
         if (cacheEntry.validate()) {
           cacheEntry = this.createValueEntry(client, val);
-          this.set(cacheKey2, cacheEntry, parser.keys);
-          this.emit("cached-key", cacheKey2);
+          this.set(cacheKey3, cacheEntry, parser.keys);
+          this.emit("cached-key", cacheKey3);
         } else {
         }
         return structuredClone(val);
@@ -112821,13 +113023,13 @@ var require_cache = __commonJS({
         const keySet = this.#keyToCacheKeySetMap.get(key.toString());
         if (keySet) {
           let deletedCount = 0;
-          for (const cacheKey2 of keySet) {
-            const entry = this.#cacheKeyToEntryMap.get(cacheKey2);
+          for (const cacheKey3 of keySet) {
+            const entry = this.#cacheKeyToEntryMap.get(cacheKey3);
             if (entry) {
               entry.invalidate();
               deletedCount++;
             }
-            this.#cacheKeyToEntryMap.delete(cacheKey2);
+            this.#cacheKeyToEntryMap.delete(cacheKey3);
           }
           this.#keyToCacheKeySetMap.delete(key.toString());
           if (deletedCount > 0) {
@@ -112850,34 +113052,34 @@ var require_cache = __commonJS({
           }
         }
       }
-      get(cacheKey2) {
-        const val = this.#cacheKeyToEntryMap.get(cacheKey2);
+      get(cacheKey3) {
+        const val = this.#cacheKeyToEntryMap.get(cacheKey3);
         if (val && !val.validate()) {
-          this.delete(cacheKey2);
+          this.delete(cacheKey3);
           this.#statsCounter.recordEvictions(1);
           (0, tracing_1.publish)(tracing_1.CHANNELS.CACHE_EVICTION, () => ({ reason: "ttl", count: 1 }));
-          this.emit("cache-evict", cacheKey2);
+          this.emit("cache-evict", cacheKey3);
           return void 0;
         }
         if (val !== void 0 && this.lru) {
-          this.#cacheKeyToEntryMap.delete(cacheKey2);
-          this.#cacheKeyToEntryMap.set(cacheKey2, val);
+          this.#cacheKeyToEntryMap.delete(cacheKey3);
+          this.#cacheKeyToEntryMap.set(cacheKey3, val);
         }
         return val;
       }
-      delete(cacheKey2) {
-        const entry = this.#cacheKeyToEntryMap.get(cacheKey2);
+      delete(cacheKey3) {
+        const entry = this.#cacheKeyToEntryMap.get(cacheKey3);
         if (entry) {
           entry.invalidate();
-          this.#cacheKeyToEntryMap.delete(cacheKey2);
+          this.#cacheKeyToEntryMap.delete(cacheKey3);
         }
       }
-      has(cacheKey2) {
-        return this.#cacheKeyToEntryMap.has(cacheKey2);
+      has(cacheKey3) {
+        return this.#cacheKeyToEntryMap.has(cacheKey3);
       }
-      set(cacheKey2, cacheEntry, keys) {
+      set(cacheKey3, cacheEntry, keys) {
         let count4 = this.#cacheKeyToEntryMap.size;
-        const oldEntry = this.#cacheKeyToEntryMap.get(cacheKey2);
+        const oldEntry = this.#cacheKeyToEntryMap.get(cacheKey3);
         if (oldEntry) {
           count4--;
           oldEntry.invalidate();
@@ -112887,13 +113089,13 @@ var require_cache = __commonJS({
           this.#statsCounter.recordEvictions(1);
           (0, tracing_1.publish)(tracing_1.CHANNELS.CACHE_EVICTION, () => ({ reason: "full", count: 1 }));
         }
-        this.#cacheKeyToEntryMap.set(cacheKey2, cacheEntry);
+        this.#cacheKeyToEntryMap.set(cacheKey3, cacheEntry);
         for (const key of keys) {
           if (!this.#keyToCacheKeySetMap.has(key.toString())) {
             this.#keyToCacheKeySetMap.set(key.toString(), /* @__PURE__ */ new Set());
           }
           const cacheKeySet = this.#keyToCacheKeySetMap.get(key.toString());
-          cacheKeySet.add(cacheKey2);
+          cacheKeySet.add(cacheKey3);
         }
       }
       size() {
@@ -112953,17 +113155,17 @@ var require_cache = __commonJS({
       enable() {
         this.#disabled = false;
       }
-      get(cacheKey2) {
+      get(cacheKey3) {
         if (this.#disabled) {
           return void 0;
         }
-        return super.get(cacheKey2);
+        return super.get(cacheKey3);
       }
-      has(cacheKey2) {
+      has(cacheKey3) {
         if (this.#disabled) {
           return false;
         }
-        return super.has(cacheKey2);
+        return super.has(cacheKey3);
       }
       onPoolClose() {
         this.clear();
@@ -127054,16 +127256,16 @@ var require_MRANGE_GROUPBY = __commonJS({
       VAR_P: "VAR.P",
       VAR_S: "VAR.S"
     };
-    function parseGroupByArguments(parser, groupBy) {
-      parser.push("GROUPBY", groupBy.label, "REDUCE", groupBy.REDUCE);
+    function parseGroupByArguments(parser, groupBy2) {
+      parser.push("GROUPBY", groupBy2.label, "REDUCE", groupBy2.REDUCE);
     }
     exports.parseGroupByArguments = parseGroupByArguments;
     function createTransformMRangeGroupByArguments(command) {
-      return (parser, fromTimestamp, toTimestamp, filter, groupBy, options) => {
+      return (parser, fromTimestamp, toTimestamp, filter, groupBy2, options) => {
         parser.push(command);
         (0, RANGE_1.parseRangeArguments)(parser, fromTimestamp, toTimestamp, options);
         (0, MGET_1.parseFilterArgument)(parser, filter);
-        parseGroupByArguments(parser, groupBy);
+        parseGroupByArguments(parser, groupBy2);
       };
     }
     exports.createTransformMRangeGroupByArguments = createTransformMRangeGroupByArguments;
@@ -127300,12 +127502,12 @@ var require_MRANGE_SELECTED_LABELS_GROUPBY = __commonJS({
     var MGET_1 = require_MGET3();
     var MRANGE_SELECTED_LABELS_1 = __importDefault3(require_MRANGE_SELECTED_LABELS());
     function createMRangeSelectedLabelsGroupByTransformArguments(command) {
-      return (parser, fromTimestamp, toTimestamp, selectedLabels, filter, groupBy, options) => {
+      return (parser, fromTimestamp, toTimestamp, selectedLabels, filter, groupBy2, options) => {
         parser.push(command);
         (0, RANGE_1.parseRangeArguments)(parser, fromTimestamp, toTimestamp, options);
         (0, helpers_1.parseSelectedLabelsArguments)(parser, selectedLabels);
         (0, MGET_1.parseFilterArgument)(parser, filter);
-        (0, MRANGE_GROUPBY_1.parseGroupByArguments)(parser, groupBy);
+        (0, MRANGE_GROUPBY_1.parseGroupByArguments)(parser, groupBy2);
       };
     }
     exports.createMRangeSelectedLabelsGroupByTransformArguments = createMRangeSelectedLabelsGroupByTransformArguments;
@@ -127389,12 +127591,12 @@ var require_MRANGE_WITHLABELS_GROUPBY = __commonJS({
     var MRANGE_GROUPBY_1 = require_MRANGE_GROUPBY();
     var MGET_1 = require_MGET3();
     function createMRangeWithLabelsGroupByTransformArguments(command) {
-      return (parser, fromTimestamp, toTimestamp, filter, groupBy, options) => {
+      return (parser, fromTimestamp, toTimestamp, filter, groupBy2, options) => {
         parser.push(command);
         (0, RANGE_1.parseRangeArguments)(parser, fromTimestamp, toTimestamp, options);
         parser.push("WITHLABELS");
         (0, MGET_1.parseFilterArgument)(parser, filter);
-        (0, MRANGE_GROUPBY_1.parseGroupByArguments)(parser, groupBy);
+        (0, MRANGE_GROUPBY_1.parseGroupByArguments)(parser, groupBy2);
       };
     }
     exports.createMRangeWithLabelsGroupByTransformArguments = createMRangeWithLabelsGroupByTransformArguments;
@@ -128731,10 +128933,100 @@ var require_dist2 = __commonJS({
 });
 
 // api/lib/redis-client.ts
+function nowMs() {
+  return Date.now();
+}
+function purgeExpiredMemoryCache(now = nowMs()) {
+  for (const [key, entry] of memoryCache2.entries()) {
+    if (entry.expiresAt <= now) memoryCache2.delete(key);
+  }
+}
+function enforceMemoryCacheLimit() {
+  if (memoryCache2.size <= MEMORY_CACHE_MAX_ENTRIES) return;
+  const overflow = memoryCache2.size - MEMORY_CACHE_MAX_ENTRIES;
+  const victims = [...memoryCache2.entries()].sort((a, b) => a[1].lastAccessedAt - b[1].lastAccessedAt).slice(0, overflow);
+  for (const [key] of victims) {
+    memoryCache2.delete(key);
+  }
+}
+function memoryGet(key) {
+  const entry = memoryCache2.get(key);
+  if (!entry) return null;
+  const now = nowMs();
+  if (entry.expiresAt <= now) {
+    memoryCache2.delete(key);
+    return null;
+  }
+  entry.lastAccessedAt = now;
+  return entry.value;
+}
+function memorySet(key, ttlSeconds, value) {
+  if (ttlSeconds <= 0) return;
+  purgeExpiredMemoryCache();
+  memoryCache2.set(key, {
+    value,
+    expiresAt: nowMs() + ttlSeconds * 1e3,
+    lastAccessedAt: nowMs()
+  });
+  enforceMemoryCacheLimit();
+}
+function patternToRegExp(pattern) {
+  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*");
+  return new RegExp(`^${escaped}$`);
+}
+function deleteMemoryByPattern(pattern) {
+  purgeExpiredMemoryCache();
+  const re2 = patternToRegExp(pattern);
+  let count4 = 0;
+  for (const key of memoryCache2.keys()) {
+    if (re2.test(key)) {
+      memoryCache2.delete(key);
+      count4 += 1;
+    }
+  }
+  return count4;
+}
+function memoryFallbackAllowed() {
+  return env.NODE_ENV !== "production" || env.AI_ALLOW_MEMORY_CACHE_IN_PRODUCTION === "true";
+}
+function warnDisabledProductionFallback() {
+  if (warnedDisabledProductionFallback) return;
+  console.warn(
+    "REDIS_URL is unavailable in production. In-process RAM cache fallback is disabled; cacheable work will recompute until Redis is configured."
+  );
+  warnedDisabledProductionFallback = true;
+}
+function timeoutAfter(promise2, ms, label) {
+  let timeout;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeout = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+    timeout.unref?.();
+  });
+  return Promise.race([promise2, timeoutPromise]).finally(() => {
+    if (timeout) clearTimeout(timeout);
+  });
+}
+async function closeFailedRedisClient(client) {
+  try {
+    if ("destroy" in client && typeof client.destroy === "function") {
+      client.destroy();
+      return;
+    }
+    await client.disconnect();
+  } catch {
+  }
+}
 async function getRedisClient() {
   if (redisClient) return redisClient;
   if (!env.REDIS_URL) {
-    console.warn("\u26A0\uFE0F REDIS_URL not provided. Redis caching disabled.");
+    if (!memoryFallbackAllowed()) {
+      warnDisabledProductionFallback();
+      return null;
+    }
+    if (!warnedMissingRedis) {
+      console.warn("\u26A0\uFE0F REDIS_URL not provided. Using in-process RAM cache fallback.");
+      warnedMissingRedis = true;
+    }
     return null;
   }
   if (isConnecting) {
@@ -128742,9 +129034,14 @@ async function getRedisClient() {
     return redisClient;
   }
   isConnecting = true;
+  let client = null;
   try {
-    const client = (0, import_redis.createClient)({
-      url: env.REDIS_URL
+    client = (0, import_redis.createClient)({
+      url: env.REDIS_URL,
+      socket: {
+        connectTimeout: REDIS_CONNECT_TIMEOUT_MS,
+        reconnectStrategy: false
+      }
     });
     client.on("error", (err) => {
       console.error("\u274C Redis Client Error", err);
@@ -128752,25 +129049,88 @@ async function getRedisClient() {
     client.on("connect", () => {
       console.log("\u2705 Redis Connected");
     });
-    await client.connect();
+    const connectPromise = client.connect();
+    connectPromise.catch(() => void 0);
+    await timeoutAfter(connectPromise, REDIS_CONNECT_TIMEOUT_MS + 500, "Redis connect");
     redisClient = client;
     return redisClient;
   } catch (error48) {
     console.error("\u274C Failed to connect to Redis", error48);
+    if (client) {
+      await closeFailedRedisClient(client);
+    }
     return null;
   } finally {
     isConnecting = false;
   }
 }
-async function withCache(key, ttlSeconds, compute) {
+function getCacheRuntimeStatus() {
+  purgeExpiredMemoryCache();
+  const fallbackAllowed = memoryFallbackAllowed();
+  return {
+    backend: redisClient ? "redis" : fallbackAllowed ? "memory" : "disabled",
+    memoryEntries: memoryCache2.size,
+    memoryFallbackAllowed: fallbackAllowed,
+    redisConfigured: Boolean(env.REDIS_URL),
+    redisConnected: Boolean(redisClient)
+  };
+}
+async function deleteCacheByPattern(pattern) {
+  const memoryDeleted = deleteMemoryByPattern(pattern);
+  const client = await getRedisClient();
+  if (!client) return memoryDeleted;
+  try {
+    const keys = await client.keys(pattern);
+    if (keys.length > 0) {
+      await client.del(keys);
+    }
+    return memoryDeleted + keys.length;
+  } catch (err) {
+    console.warn(`Redis delete pattern error for ${pattern}:`, err);
+    return memoryDeleted;
+  }
+}
+async function withCacheStatus(key, ttlSeconds, compute) {
   const client = await getRedisClient();
   if (!client) {
-    return compute();
+    if (!memoryFallbackAllowed()) {
+      warnDisabledProductionFallback();
+      return {
+        key,
+        value: await compute(),
+        hit: false,
+        backend: "disabled"
+      };
+    }
+    const cached2 = memoryGet(key);
+    if (cached2) {
+      return {
+        key,
+        value: JSON.parse(cached2),
+        hit: true,
+        backend: "memory"
+      };
+    }
+    const result2 = await compute();
+    if (result2 !== void 0 && result2 !== null) {
+      memorySet(key, ttlSeconds, JSON.stringify(result2));
+    }
+    return {
+      key,
+      value: result2,
+      hit: false,
+      backend: "memory"
+    };
   }
   try {
     const cached2 = await client.get(key);
     if (cached2) {
-      return JSON.parse(cached2);
+      return {
+        key,
+        value: JSON.parse(cached2),
+        hit: true,
+        backend: "redis"
+      };
     }
   } catch (err) {
     console.warn(`Redis get error for key ${key}:`, err);
@@ -128783,15 +129143,28 @@ async function withCache(key, ttlSeconds, compute) {
   } catch (err) {
     console.warn(`Redis set error for key ${key}:`, err);
   }
-  return result;
+  return {
+    key,
+    value: result,
+    hit: false,
+    backend: "redis"
+  };
 }
-var import_redis, redisClient, isConnecting;
+async function withCache(key, ttlSeconds, compute) {
+  return (await withCacheStatus(key, ttlSeconds, compute)).value;
+}
+var import_redis, redisClient, isConnecting, warnedMissingRedis, warnedDisabledProductionFallback, MEMORY_CACHE_MAX_ENTRIES, REDIS_CONNECT_TIMEOUT_MS, memoryCache2;
 var init_redis_client = __esm({
   "api/lib/redis-client.ts"() {
     import_redis = __toESM(require_dist2(), 1);
     init_env();
     redisClient = null;
     isConnecting = false;
+    warnedMissingRedis = false;
+    warnedDisabledProductionFallback = false;
+    MEMORY_CACHE_MAX_ENTRIES = 2e3;
+    REDIS_CONNECT_TIMEOUT_MS = 2e3;
+    memoryCache2 = /* @__PURE__ */ new Map();
   }
 });
 
@@ -134645,14 +135018,14 @@ var require_encryption_helper = __commonJS({
 var require_web_push_error = __commonJS({
   "node_modules/web-push/src/web-push-error.js"(exports, module) {
     "use strict";
-    function WebPushError(message, statusCode, headers, body, endpoint) {
+    function WebPushError(message, statusCode, headers2, body, endpoint2) {
       Error.captureStackTrace(this, this.constructor);
       this.name = this.constructor.name;
       this.message = message;
       this.statusCode = statusCode;
-      this.headers = headers;
+      this.headers = headers2;
       this.body = body;
-      this.endpoint = endpoint;
+      this.endpoint = endpoint2;
     }
     __require("util").inherits(WebPushError, Error);
     module.exports = WebPushError;
@@ -134941,7 +135314,7 @@ var require_parse_proxy_response = __commonJS({
           const firstLineParts = firstLine.split(" ");
           const statusCode = +firstLineParts[1];
           const statusText = firstLineParts.slice(2).join(" ");
-          const headers = {};
+          const headers2 = {};
           for (const header of headerParts) {
             if (!header)
               continue;
@@ -134952,22 +135325,22 @@ var require_parse_proxy_response = __commonJS({
             }
             const key = header.slice(0, firstColon).toLowerCase();
             const value = header.slice(firstColon + 1).trimStart();
-            const current = headers[key];
+            const current = headers2[key];
             if (typeof current === "string") {
-              headers[key] = [current, value];
+              headers2[key] = [current, value];
             } else if (Array.isArray(current)) {
               current.push(value);
             } else {
-              headers[key] = value;
+              headers2[key] = value;
             }
           }
-          debug31("got proxy server response: %o %o", firstLine, headers);
+          debug31("got proxy server response: %o %o", firstLine, headers2);
           cleanup();
           resolve2({
             connect: {
               statusCode,
               statusText,
-              headers
+              headers: headers2
             },
             buffered
           });
@@ -135068,20 +135441,20 @@ var require_dist4 = __commonJS({
           debug31("Creating `net.Socket`: %o", this.connectOpts);
           socket = net.connect(this.connectOpts);
         }
-        const headers = typeof this.proxyHeaders === "function" ? this.proxyHeaders() : { ...this.proxyHeaders };
+        const headers2 = typeof this.proxyHeaders === "function" ? this.proxyHeaders() : { ...this.proxyHeaders };
         const host = net.isIPv6(opts.host) ? `[${opts.host}]` : opts.host;
         let payload = `CONNECT ${host}:${opts.port} HTTP/1.1\r
 `;
         if (proxy.username || proxy.password) {
           const auth = `${decodeURIComponent(proxy.username)}:${decodeURIComponent(proxy.password)}`;
-          headers["Proxy-Authorization"] = `Basic ${Buffer.from(auth).toString("base64")}`;
+          headers2["Proxy-Authorization"] = `Basic ${Buffer.from(auth).toString("base64")}`;
         }
-        headers.Host = `${host}:${opts.port}`;
-        if (!headers["Proxy-Connection"]) {
-          headers["Proxy-Connection"] = this.keepAlive ? "Keep-Alive" : "close";
+        headers2.Host = `${host}:${opts.port}`;
+        if (!headers2["Proxy-Connection"]) {
+          headers2["Proxy-Connection"] = this.keepAlive ? "Keep-Alive" : "close";
         }
-        for (const name2 of Object.keys(headers)) {
-          payload += `${name2}: ${headers[name2]}\r
+        for (const name2 of Object.keys(headers2)) {
+          payload += `${name2}: ${headers2[name2]}\r
 `;
         }
         const proxyResponsePromise = (0, parse_proxy_response_1.parseProxyResponse)(socket);
@@ -135831,12 +136204,12 @@ var require_common2 = __commonJS({
     }
     function defaultErrorRedactor(data) {
       const REDACT = "<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.";
-      function redactHeaders(headers) {
-        if (!headers)
+      function redactHeaders(headers2) {
+        if (!headers2)
           return;
-        headers.forEach((_, key) => {
+        headers2.forEach((_, key) => {
           if (/^authentication$/i.test(key) || /^authorization$/i.test(key) || /secret/i.test(key))
-            headers.set(key, REDACT);
+            headers2.set(key, REDACT);
         });
       }
       function redactString(obj, key) {
@@ -141493,9 +141866,9 @@ var init_body2 = __esm({
 // node_modules/google-auth-library/node_modules/node-fetch/src/headers.js
 import { types as types2 } from "node:util";
 import http from "node:http";
-function fromRawHeaders(headers = []) {
+function fromRawHeaders(headers2 = []) {
   return new Headers2(
-    headers.reduce((result, value, index2, array2) => {
+    headers2.reduce((result, value, index2, array2) => {
       if (index2 % 2 === 0) {
         result.push(array2.slice(index2, index2 + 2));
       }
@@ -141704,11 +142077,11 @@ var init_response = __esm({
       constructor(body = null, options = {}) {
         super(body, options);
         const status = options.status != null ? options.status : 200;
-        const headers = new Headers2(options.headers);
-        if (body !== null && !headers.has("Content-Type")) {
+        const headers2 = new Headers2(options.headers);
+        if (body !== null && !headers2.has("Content-Type")) {
           const contentType = extractContentType(body, this);
           if (contentType) {
-            headers.append("Content-Type", contentType);
+            headers2.append("Content-Type", contentType);
           }
         }
         this[INTERNALS2] = {
@@ -141716,7 +142089,7 @@ var init_response = __esm({
           url: options.url,
           status,
           statusText: options.statusText || "",
-          headers,
+          headers: headers2,
           counter: options.counter,
           highWaterMark: options.highWaterMark
         };
@@ -141792,13 +142165,13 @@ var init_response = __esm({
         if (body === void 0) {
           throw new TypeError("data is not JSON serializable");
         }
-        const headers = new Headers2(init2 && init2.headers);
-        if (!headers.has("content-type")) {
-          headers.set("content-type", "application/json");
+        const headers2 = new Headers2(init2 && init2.headers);
+        if (!headers2.has("content-type")) {
+          headers2.set("content-type", "application/json");
         }
         return new _Response2(body, {
           ...init2,
-          headers
+          headers: headers2
         });
       }
       get [Symbol.toStringTag]() {
@@ -141950,8 +142323,8 @@ function determineRequestsReferrer(request, { referrerURLCallback, referrerOrigi
       throw new TypeError(`Invalid referrerPolicy: ${policy}`);
   }
 }
-function parseReferrerPolicyFromHeader(headers) {
-  const policyTokens = (headers.get("referrer-policy") || "").split(/[,\s]+/);
+function parseReferrerPolicyFromHeader(headers2) {
+  const policyTokens = (headers2.get("referrer-policy") || "").split(/[,\s]+/);
   let policy = "";
   for (const token of policyTokens) {
     if (token && ReferrerPolicy.has(token)) {
@@ -142025,11 +142398,11 @@ var init_request2 = __esm({
         super(inputBody, {
           size: init2.size || input.size || 0
         });
-        const headers = new Headers2(init2.headers || input.headers || {});
-        if (inputBody !== null && !headers.has("Content-Type")) {
+        const headers2 = new Headers2(init2.headers || input.headers || {});
+        if (inputBody !== null && !headers2.has("Content-Type")) {
           const contentType = extractContentType(inputBody, this);
           if (contentType) {
-            headers.set("Content-Type", contentType);
+            headers2.set("Content-Type", contentType);
           }
         }
         let signal = isRequest(input) ? input.signal : null;
@@ -142051,7 +142424,7 @@ var init_request2 = __esm({
         this[INTERNALS3] = {
           method,
           redirect: init2.redirect || input.redirect || "follow",
-          headers,
+          headers: headers2,
           parsedURL,
           signal,
           referrer
@@ -142126,9 +142499,9 @@ var init_request2 = __esm({
     });
     getNodeRequestOptions = (request) => {
       const { parsedURL } = request[INTERNALS3];
-      const headers = new Headers2(request[INTERNALS3].headers);
-      if (!headers.has("Accept")) {
-        headers.set("Accept", "*/*");
+      const headers2 = new Headers2(request[INTERNALS3].headers);
+      if (!headers2.has("Accept")) {
+        headers2.set("Accept", "*/*");
       }
       let contentLengthValue = null;
       if (request.body === null && /^(post|put)$/i.test(request.method)) {
@@ -142141,7 +142514,7 @@ var init_request2 = __esm({
         }
       }
       if (contentLengthValue) {
-        headers.set("Content-Length", contentLengthValue);
+        headers2.set("Content-Length", contentLengthValue);
       }
       if (request.referrerPolicy === "") {
         request.referrerPolicy = DEFAULT_REFERRER_POLICY;
@@ -142152,13 +142525,13 @@ var init_request2 = __esm({
         request[INTERNALS3].referrer = "no-referrer";
       }
       if (request[INTERNALS3].referrer instanceof URL) {
-        headers.set("Referer", request.referrer);
+        headers2.set("Referer", request.referrer);
       }
-      if (!headers.has("User-Agent")) {
-        headers.set("User-Agent", "node-fetch");
+      if (!headers2.has("User-Agent")) {
+        headers2.set("User-Agent", "node-fetch");
       }
-      if (request.compress && !headers.has("Accept-Encoding")) {
-        headers.set("Accept-Encoding", "gzip, deflate, br");
+      if (request.compress && !headers2.has("Accept-Encoding")) {
+        headers2.set("Accept-Encoding", "gzip, deflate, br");
       }
       let { agent } = request;
       if (typeof agent === "function") {
@@ -142170,7 +142543,7 @@ var init_request2 = __esm({
         path: parsedURL.pathname + search,
         // The following options are not expressed in the URL
         method: request.method,
-        headers: headers[/* @__PURE__ */ Symbol.for("nodejs.util.inspect.custom")](),
+        headers: headers2[/* @__PURE__ */ Symbol.for("nodejs.util.inspect.custom")](),
         insecureHTTPParser: request.insecureHTTPParser,
         agent
       };
@@ -142290,9 +142663,9 @@ async function fetch2(url2, options_) {
     }
     request_.on("response", (response_) => {
       request_.setTimeout(0);
-      const headers = fromRawHeaders(response_.rawHeaders);
+      const headers2 = fromRawHeaders(response_.rawHeaders);
       if (isRedirect(response_.statusCode)) {
-        const location = headers.get("Location");
+        const location = headers2.get("Location");
         let locationURL = null;
         try {
           locationURL = location === null ? null : new URL(location, request.url);
@@ -142347,7 +142720,7 @@ async function fetch2(url2, options_) {
               requestOptions.body = void 0;
               requestOptions.headers.delete("content-length");
             }
-            const responseReferrerPolicy = parseReferrerPolicyFromHeader(headers);
+            const responseReferrerPolicy = parseReferrerPolicyFromHeader(headers2);
             if (responseReferrerPolicy) {
               requestOptions.referrerPolicy = responseReferrerPolicy;
             }
@@ -142376,12 +142749,12 @@ async function fetch2(url2, options_) {
         url: request.url,
         status: response_.statusCode,
         statusText: response_.statusMessage,
-        headers,
+        headers: headers2,
         size: request.size,
         counter: request.counter,
         highWaterMark: request.highWaterMark
       };
-      const codings = headers.get("Content-Encoding");
+      const codings = headers2.get("Content-Encoding");
       if (!request.compress || request.method === "HEAD" || codings === null || response_.statusCode === 204 || response_.statusCode === 304) {
         response = new Response2(body, responseOptions);
         resolve2(response);
@@ -142454,8 +142827,8 @@ function fixResponseChunkedTransferBadEnding(request, errorCallback) {
   let properLastChunkReceived = false;
   let previousChunk;
   request.on("response", (response) => {
-    const { headers } = response;
-    isChunkedTransfer = headers["transfer-encoding"] === "chunked" && !headers["content-length"];
+    const { headers: headers2 } = response;
+    isChunkedTransfer = headers2["transfer-encoding"] === "chunked" && !headers2["content-length"];
   });
   request.on("socket", (socket) => {
     const onSocketClose = () => {
@@ -142515,7 +142888,7 @@ var require_gaxios = __commonJS({
     var retry_js_1 = require_retry();
     var stream_1 = __require("stream");
     var interceptor_js_1 = require_interceptor();
-    var randomUUID = async () => globalThis.crypto?.randomUUID() || (await import("crypto")).randomUUID();
+    var randomUUID3 = async () => globalThis.crypto?.randomUUID() || (await import("crypto")).randomUUID();
     var HTTP_STATUS_NO_CONTENT = 204;
     var Gaxios = class {
       agentCache = /* @__PURE__ */ new Map();
@@ -142560,7 +142933,7 @@ var require_gaxios = __commonJS({
         const input = args[0];
         const init2 = args[1];
         let url2 = void 0;
-        const headers = new Headers();
+        const headers2 = new Headers();
         if (typeof input === "string") {
           url2 = new URL(input);
         } else if (input instanceof URL) {
@@ -142569,15 +142942,15 @@ var require_gaxios = __commonJS({
           url2 = new URL(input.url);
         }
         if (input && typeof input === "object" && "headers" in input) {
-          _a3.mergeHeaders(headers, input.headers);
+          _a3.mergeHeaders(headers2, input.headers);
         }
         if (init2) {
-          _a3.mergeHeaders(headers, new Headers(init2.headers));
+          _a3.mergeHeaders(headers2, new Headers(init2.headers));
         }
         if (typeof input === "object" && !(input instanceof URL)) {
-          return this.request({ ...init2, ...input, headers, url: url2 });
+          return this.request({ ...init2, ...input, headers: headers2, url: url2 });
         } else {
-          return this.request({ ...init2, headers, url: url2 });
+          return this.request({ ...init2, headers: headers2, url: url2 });
         }
       }
       /**
@@ -142788,7 +143161,7 @@ var require_gaxios = __commonJS({
          */
         ["Blob", "File", "FormData"].includes(opts.data?.constructor?.name || "");
         if (opts.multipart?.length) {
-          const boundary = await randomUUID();
+          const boundary = await randomUUID3();
           preparedHeaders.set("content-type", `multipart/related; boundary=${boundary}`);
           opts.body = stream_1.Readable.from(this.getMultipartRequest(opts.multipart, boundary));
         } else if (shouldDirectlyPassData) {
@@ -142848,11 +143221,11 @@ var require_gaxios = __commonJS({
       }
       #appendTimeoutToSignal(opts) {
         if (opts.timeout) {
-          const timeoutSignal = AbortSignal.timeout(opts.timeout);
+          const timeoutSignal2 = AbortSignal.timeout(opts.timeout);
           if (opts.signal && !opts.signal.aborted) {
-            opts.signal = AbortSignal.any([opts.signal, timeoutSignal]);
+            opts.signal = AbortSignal.any([opts.signal, timeoutSignal2]);
           } else {
-            opts.signal = timeoutSignal;
+            opts.signal = timeoutSignal2;
           }
         }
       }
@@ -142959,8 +143332,8 @@ Content-Type: ${partContentType}\r
        */
       static mergeHeaders(base, ...append2) {
         base = base instanceof Headers ? base : new Headers(base);
-        for (const headers of append2) {
-          const add3 = headers instanceof Headers ? headers : new Headers(headers);
+        for (const headers2 of append2) {
+          const add3 = headers2 instanceof Headers ? headers2 : new Headers(headers2);
           add3.forEach((value, key) => {
             key === "set-cookie" ? base.append(key, value) : base.set(key, value);
           });
@@ -143310,12 +143683,12 @@ var require_common3 = __commonJS({
     }
     function defaultErrorRedactor(data) {
       const REDACT = "<<REDACTED> - See `errorRedactor` option in `gaxios` for configuration>.";
-      function redactHeaders(headers) {
-        if (!headers)
+      function redactHeaders(headers2) {
+        if (!headers2)
           return;
-        headers.forEach((_, key) => {
+        headers2.forEach((_, key) => {
           if (/^authentication$/i.test(key) || /^authorization$/i.test(key) || /secret/i.test(key))
-            headers.set(key, REDACT);
+            headers2.set(key, REDACT);
         });
       }
       function redactString(obj, key) {
@@ -144183,9 +144556,9 @@ var init_body3 = __esm({
 // node_modules/gcp-metadata/node_modules/node-fetch/src/headers.js
 import { types as types4 } from "node:util";
 import http3 from "node:http";
-function fromRawHeaders2(headers = []) {
+function fromRawHeaders2(headers2 = []) {
   return new Headers3(
-    headers.reduce((result, value, index2, array2) => {
+    headers2.reduce((result, value, index2, array2) => {
       if (index2 % 2 === 0) {
         result.push(array2.slice(index2, index2 + 2));
       }
@@ -144394,11 +144767,11 @@ var init_response2 = __esm({
       constructor(body = null, options = {}) {
         super(body, options);
         const status = options.status != null ? options.status : 200;
-        const headers = new Headers3(options.headers);
-        if (body !== null && !headers.has("Content-Type")) {
+        const headers2 = new Headers3(options.headers);
+        if (body !== null && !headers2.has("Content-Type")) {
           const contentType = extractContentType2(body, this);
           if (contentType) {
-            headers.append("Content-Type", contentType);
+            headers2.append("Content-Type", contentType);
           }
         }
         this[INTERNALS5] = {
@@ -144406,7 +144779,7 @@ var init_response2 = __esm({
           url: options.url,
           status,
           statusText: options.statusText || "",
-          headers,
+          headers: headers2,
           counter: options.counter,
           highWaterMark: options.highWaterMark
         };
@@ -144482,13 +144855,13 @@ var init_response2 = __esm({
         if (body === void 0) {
           throw new TypeError("data is not JSON serializable");
         }
-        const headers = new Headers3(init2 && init2.headers);
-        if (!headers.has("content-type")) {
-          headers.set("content-type", "application/json");
+        const headers2 = new Headers3(init2 && init2.headers);
+        if (!headers2.has("content-type")) {
+          headers2.set("content-type", "application/json");
         }
         return new _Response2(body, {
           ...init2,
-          headers
+          headers: headers2
         });
       }
       get [Symbol.toStringTag]() {
@@ -144640,8 +145013,8 @@ function determineRequestsReferrer2(request, { referrerURLCallback, referrerOrig
       throw new TypeError(`Invalid referrerPolicy: ${policy}`);
   }
 }
-function parseReferrerPolicyFromHeader2(headers) {
-  const policyTokens = (headers.get("referrer-policy") || "").split(/[,\s]+/);
+function parseReferrerPolicyFromHeader2(headers2) {
+  const policyTokens = (headers2.get("referrer-policy") || "").split(/[,\s]+/);
   let policy = "";
   for (const token of policyTokens) {
     if (token && ReferrerPolicy2.has(token)) {
@@ -144715,11 +145088,11 @@ var init_request3 = __esm({
         super(inputBody, {
           size: init2.size || input.size || 0
         });
-        const headers = new Headers3(init2.headers || input.headers || {});
-        if (inputBody !== null && !headers.has("Content-Type")) {
+        const headers2 = new Headers3(init2.headers || input.headers || {});
+        if (inputBody !== null && !headers2.has("Content-Type")) {
           const contentType = extractContentType2(inputBody, this);
           if (contentType) {
-            headers.set("Content-Type", contentType);
+            headers2.set("Content-Type", contentType);
           }
         }
         let signal = isRequest2(input) ? input.signal : null;
@@ -144741,7 +145114,7 @@ var init_request3 = __esm({
         this[INTERNALS6] = {
           method,
           redirect: init2.redirect || input.redirect || "follow",
-          headers,
+          headers: headers2,
           parsedURL,
           signal,
           referrer
@@ -144816,9 +145189,9 @@ var init_request3 = __esm({
     });
     getNodeRequestOptions2 = (request) => {
       const { parsedURL } = request[INTERNALS6];
-      const headers = new Headers3(request[INTERNALS6].headers);
-      if (!headers.has("Accept")) {
-        headers.set("Accept", "*/*");
+      const headers2 = new Headers3(request[INTERNALS6].headers);
+      if (!headers2.has("Accept")) {
+        headers2.set("Accept", "*/*");
       }
       let contentLengthValue = null;
       if (request.body === null && /^(post|put)$/i.test(request.method)) {
@@ -144831,7 +145204,7 @@ var init_request3 = __esm({
         }
       }
       if (contentLengthValue) {
-        headers.set("Content-Length", contentLengthValue);
+        headers2.set("Content-Length", contentLengthValue);
       }
       if (request.referrerPolicy === "") {
         request.referrerPolicy = DEFAULT_REFERRER_POLICY2;
@@ -144842,13 +145215,13 @@ var init_request3 = __esm({
         request[INTERNALS6].referrer = "no-referrer";
       }
       if (request[INTERNALS6].referrer instanceof URL) {
-        headers.set("Referer", request.referrer);
+        headers2.set("Referer", request.referrer);
       }
-      if (!headers.has("User-Agent")) {
-        headers.set("User-Agent", "node-fetch");
+      if (!headers2.has("User-Agent")) {
+        headers2.set("User-Agent", "node-fetch");
       }
-      if (request.compress && !headers.has("Accept-Encoding")) {
-        headers.set("Accept-Encoding", "gzip, deflate, br");
+      if (request.compress && !headers2.has("Accept-Encoding")) {
+        headers2.set("Accept-Encoding", "gzip, deflate, br");
       }
       let { agent } = request;
       if (typeof agent === "function") {
@@ -144860,7 +145233,7 @@ var init_request3 = __esm({
         path: parsedURL.pathname + search,
         // The following options are not expressed in the URL
         method: request.method,
-        headers: headers[/* @__PURE__ */ Symbol.for("nodejs.util.inspect.custom")](),
+        headers: headers2[/* @__PURE__ */ Symbol.for("nodejs.util.inspect.custom")](),
         insecureHTTPParser: request.insecureHTTPParser,
         agent
       };
@@ -144980,9 +145353,9 @@ async function fetch3(url2, options_) {
     }
     request_.on("response", (response_) => {
       request_.setTimeout(0);
-      const headers = fromRawHeaders2(response_.rawHeaders);
+      const headers2 = fromRawHeaders2(response_.rawHeaders);
       if (isRedirect2(response_.statusCode)) {
-        const location = headers.get("Location");
+        const location = headers2.get("Location");
         let locationURL = null;
         try {
           locationURL = location === null ? null : new URL(location, request.url);
@@ -145037,7 +145410,7 @@ async function fetch3(url2, options_) {
               requestOptions.body = void 0;
               requestOptions.headers.delete("content-length");
             }
-            const responseReferrerPolicy = parseReferrerPolicyFromHeader2(headers);
+            const responseReferrerPolicy = parseReferrerPolicyFromHeader2(headers2);
             if (responseReferrerPolicy) {
               requestOptions.referrerPolicy = responseReferrerPolicy;
             }
@@ -145066,12 +145439,12 @@ async function fetch3(url2, options_) {
         url: request.url,
         status: response_.statusCode,
         statusText: response_.statusMessage,
-        headers,
+        headers: headers2,
         size: request.size,
         counter: request.counter,
         highWaterMark: request.highWaterMark
       };
-      const codings = headers.get("Content-Encoding");
+      const codings = headers2.get("Content-Encoding");
       if (!request.compress || request.method === "HEAD" || codings === null || response_.statusCode === 204 || response_.statusCode === 304) {
         response = new Response3(body, responseOptions);
         resolve2(response);
@@ -145144,8 +145517,8 @@ function fixResponseChunkedTransferBadEnding2(request, errorCallback) {
   let properLastChunkReceived = false;
   let previousChunk;
   request.on("response", (response) => {
-    const { headers } = response;
-    isChunkedTransfer = headers["transfer-encoding"] === "chunked" && !headers["content-length"];
+    const { headers: headers2 } = response;
+    isChunkedTransfer = headers2["transfer-encoding"] === "chunked" && !headers2["content-length"];
   });
   request.on("socket", (socket) => {
     const onSocketClose = () => {
@@ -145205,7 +145578,7 @@ var require_gaxios2 = __commonJS({
     var retry_js_1 = require_retry2();
     var stream_1 = __require("stream");
     var interceptor_js_1 = require_interceptor2();
-    var randomUUID = async () => globalThis.crypto?.randomUUID() || (await import("crypto")).randomUUID();
+    var randomUUID3 = async () => globalThis.crypto?.randomUUID() || (await import("crypto")).randomUUID();
     var HTTP_STATUS_NO_CONTENT = 204;
     var Gaxios = class {
       agentCache = /* @__PURE__ */ new Map();
@@ -145250,7 +145623,7 @@ var require_gaxios2 = __commonJS({
         const input = args[0];
         const init2 = args[1];
         let url2 = void 0;
-        const headers = new Headers();
+        const headers2 = new Headers();
         if (typeof input === "string") {
           url2 = new URL(input);
         } else if (input instanceof URL) {
@@ -145259,15 +145632,15 @@ var require_gaxios2 = __commonJS({
           url2 = new URL(input.url);
         }
         if (input && typeof input === "object" && "headers" in input) {
-          _a3.mergeHeaders(headers, input.headers);
+          _a3.mergeHeaders(headers2, input.headers);
         }
         if (init2) {
-          _a3.mergeHeaders(headers, new Headers(init2.headers));
+          _a3.mergeHeaders(headers2, new Headers(init2.headers));
         }
         if (typeof input === "object" && !(input instanceof URL)) {
-          return this.request({ ...init2, ...input, headers, url: url2 });
+          return this.request({ ...init2, ...input, headers: headers2, url: url2 });
         } else {
-          return this.request({ ...init2, headers, url: url2 });
+          return this.request({ ...init2, headers: headers2, url: url2 });
         }
       }
       /**
@@ -145478,7 +145851,7 @@ var require_gaxios2 = __commonJS({
          */
         ["Blob", "File", "FormData"].includes(opts.data?.constructor?.name || "");
         if (opts.multipart?.length) {
-          const boundary = await randomUUID();
+          const boundary = await randomUUID3();
           preparedHeaders.set("content-type", `multipart/related; boundary=${boundary}`);
           opts.body = stream_1.Readable.from(this.getMultipartRequest(opts.multipart, boundary));
         } else if (shouldDirectlyPassData) {
@@ -145538,11 +145911,11 @@ var require_gaxios2 = __commonJS({
       }
       #appendTimeoutToSignal(opts) {
         if (opts.timeout) {
-          const timeoutSignal = AbortSignal.timeout(opts.timeout);
+          const timeoutSignal2 = AbortSignal.timeout(opts.timeout);
           if (opts.signal && !opts.signal.aborted) {
-            opts.signal = AbortSignal.any([opts.signal, timeoutSignal]);
+            opts.signal = AbortSignal.any([opts.signal, timeoutSignal2]);
           } else {
-            opts.signal = timeoutSignal;
+            opts.signal = timeoutSignal2;
           }
         }
       }
@@ -145649,8 +146022,8 @@ Content-Type: ${partContentType}\r
        */
       static mergeHeaders(base, ...append2) {
         base = base instanceof Headers ? base : new Headers(base);
-        for (const headers of append2) {
-          const add3 = headers instanceof Headers ? headers : new Headers(headers);
+        for (const headers2 of append2) {
+          const add3 = headers2 instanceof Headers ? headers2 : new Headers(headers2);
           add3.forEach((value, key) => {
             key === "set-cookie" ? base.append(key, value) : base.set(key, value);
           });
@@ -147988,12 +148361,12 @@ var require_src6 = __commonJS({
       });
     }
     async function metadataAccessor(type, options = {}, noResponseRetries = 3, fastFail = false) {
-      const headers = new Headers(exports.HEADERS);
+      const headers2 = new Headers(exports.HEADERS);
       let metadataKey = "";
       let params = {};
       if (typeof type === "object") {
         const metadataAccessor2 = type;
-        new Headers(metadataAccessor2.headers).forEach((value, key) => headers.set(key, value));
+        new Headers(metadataAccessor2.headers).forEach((value, key) => headers2.set(key, value));
         metadataKey = metadataAccessor2.metadataKey;
         params = metadataAccessor2.params || params;
         noResponseRetries = metadataAccessor2.noResponseRetries || noResponseRetries;
@@ -148008,13 +148381,13 @@ var require_src6 = __commonJS({
         if (options.property) {
           metadataKey += `/${options.property}`;
         }
-        new Headers(options.headers).forEach((value, key) => headers.set(key, value));
+        new Headers(options.headers).forEach((value, key) => headers2.set(key, value));
         params = options.params || params;
       }
       const requestMethod = fastFail ? fastFailMetadataRequest : gaxios_1.request;
       const req = {
         url: `${getBaseUrl()}/${metadataKey}`,
-        headers,
+        headers: headers2,
         retryConfig: { noResponseRetries },
         params,
         responseType: "text",
@@ -148771,7 +149144,7 @@ var require_authclient = __commonJS({
         const input = args[0];
         const init2 = args[1];
         let url2 = void 0;
-        const headers = new Headers();
+        const headers2 = new Headers();
         if (typeof input === "string") {
           url2 = new URL(input);
         } else if (input instanceof URL) {
@@ -148780,15 +149153,15 @@ var require_authclient = __commonJS({
           url2 = new URL(input.url);
         }
         if (input && typeof input === "object" && "headers" in input) {
-          gaxios_1.Gaxios.mergeHeaders(headers, input.headers);
+          gaxios_1.Gaxios.mergeHeaders(headers2, input.headers);
         }
         if (init2) {
-          gaxios_1.Gaxios.mergeHeaders(headers, new Headers(init2.headers));
+          gaxios_1.Gaxios.mergeHeaders(headers2, new Headers(init2.headers));
         }
         if (typeof input === "object" && !(input instanceof URL)) {
-          return this.request({ ...init2, ...input, headers, url: url2 });
+          return this.request({ ...init2, ...input, headers: headers2, url: url2 });
         } else {
-          return this.request({ ...init2, headers, url: url2 });
+          return this.request({ ...init2, headers: headers2, url: url2 });
         }
       }
       /**
@@ -148805,12 +149178,12 @@ var require_authclient = __commonJS({
        *
        * @param headers object to append additional headers to.
        */
-      addSharedMetadataHeaders(headers) {
-        if (!headers.has("x-goog-user-project") && // don't override a value the user sets.
+      addSharedMetadataHeaders(headers2) {
+        if (!headers2.has("x-goog-user-project") && // don't override a value the user sets.
         this.quotaProjectId) {
-          headers.set("x-goog-user-project", this.quotaProjectId);
+          headers2.set("x-goog-user-project", this.quotaProjectId);
         }
-        return headers;
+        return headers2;
       }
       /**
        * Adds the `x-goog-user-project` and `authorization` headers to the target Headers
@@ -149119,7 +149492,7 @@ var require_oauth2client = __commonJS({
       }
       async getTokenAsync(options) {
         const url2 = this.endpoints.oauth2TokenUrl.toString();
-        const headers = new Headers();
+        const headers2 = new Headers();
         const values = {
           client_id: options.client_id || this._clientId,
           code_verifier: options.codeVerifier,
@@ -149129,7 +149502,7 @@ var require_oauth2client = __commonJS({
         };
         if (this.clientAuthentication === ClientAuthentication.ClientSecretBasic) {
           const basic = Buffer.from(`${this._clientId}:${this._clientSecret}`);
-          headers.set("authorization", `Basic ${basic.toString("base64")}`);
+          headers2.set("authorization", `Basic ${basic.toString("base64")}`);
         }
         if (this.clientAuthentication === ClientAuthentication.ClientSecretPost) {
           values.client_secret = this._clientSecret;
@@ -149139,7 +149512,7 @@ var require_oauth2client = __commonJS({
           method: "POST",
           url: url2,
           data: new URLSearchParams((0, util_1.removeUndefinedValuesInObject)(values)),
-          headers
+          headers: headers2
         };
         authclient_1.AuthClient.setMethodName(opts, "getTokenAsync");
         const res = await this.transporter.request(opts);
@@ -149261,8 +149634,8 @@ var require_oauth2client = __commonJS({
        * { authorization: 'Bearer <access_token_value>' }
        */
       async getRequestHeaders(url2) {
-        const headers = (await this.getRequestMetadataAsync(url2)).headers;
-        return headers;
+        const headers2 = (await this.getRequestMetadataAsync(url2)).headers;
+        return headers2;
       }
       async getRequestMetadataAsync(url2) {
         url2;
@@ -149272,19 +149645,19 @@ var require_oauth2client = __commonJS({
         }
         if (thisCreds.access_token && !this.isTokenExpiring()) {
           thisCreds.token_type = thisCreds.token_type || "Bearer";
-          const headers2 = new Headers({
+          const headers3 = new Headers({
             authorization: thisCreds.token_type + " " + thisCreds.access_token
           });
-          return { headers: this.addSharedMetadataHeaders(headers2) };
+          return { headers: this.addSharedMetadataHeaders(headers3) };
         }
         if (this.refreshHandler) {
           const refreshedAccessToken = await this.processAndValidateRefreshHandler();
           if (refreshedAccessToken?.access_token) {
             this.setCredentials(refreshedAccessToken);
-            const headers2 = new Headers({
+            const headers3 = new Headers({
               authorization: "Bearer " + this.credentials.access_token
             });
-            return { headers: this.addSharedMetadataHeaders(headers2) };
+            return { headers: this.addSharedMetadataHeaders(headers3) };
           }
         }
         if (this.apiKey) {
@@ -149306,10 +149679,10 @@ var require_oauth2client = __commonJS({
         credentials.token_type = credentials.token_type || "Bearer";
         tokens.refresh_token = credentials.refresh_token;
         this.credentials = tokens;
-        const headers = new Headers({
+        const headers2 = new Headers({
           authorization: credentials.token_type + " " + tokens.access_token
         });
-        return { headers: this.addSharedMetadataHeaders(headers), res: r2.res };
+        return { headers: this.addSharedMetadataHeaders(headers2), res: r2.res };
       }
       /**
        * Generates an URL to revoke the given token.
@@ -149782,10 +150155,10 @@ var require_idtokenclient = __commonJS({
             expiry_date: this.getIdTokenExpiryDate(idToken)
           };
         }
-        const headers = new Headers({
+        const headers2 = new Headers({
           authorization: "Bearer " + this.credentials.id_token
         });
-        return { headers };
+        return { headers: headers2 };
       }
       getIdTokenExpiryDate(idToken) {
         const payloadB64 = idToken.split(".")[1];
@@ -149981,7 +150354,7 @@ var require_getCredentials = __commonJS({
     var fs8 = __require("fs");
     var util_1 = __require("util");
     var errorWithCode_1 = require_errorWithCode();
-    var readFile2 = fs8.readFile ? (0, util_1.promisify)(fs8.readFile) : async () => {
+    var readFile3 = fs8.readFile ? (0, util_1.promisify)(fs8.readFile) : async () => {
       throw new errorWithCode_1.ErrorWithCode("use key rather than keyFile.", "MISSING_CREDENTIALS");
     };
     var ExtensionFiles;
@@ -150003,7 +150376,7 @@ var require_getCredentials = __commonJS({
        * @returns A promise that resolves with the credentials.
        */
       async getCredentials() {
-        const key = await readFile2(this.keyFilePath, "utf8");
+        const key = await readFile3(this.keyFilePath, "utf8");
         let body;
         try {
           body = JSON.parse(key);
@@ -150029,7 +150402,7 @@ var require_getCredentials = __commonJS({
        * @returns A promise that resolves with the private key.
        */
       async getCredentials() {
-        const privateKey = await readFile2(this.keyFilePath, "utf8");
+        const privateKey = await readFile3(this.keyFilePath, "utf8");
         return { privateKey };
       }
     };
@@ -150333,16 +150706,16 @@ var require_jwtaccess = __commonJS({
        * @returns A string that returns the cached key.
        */
       getCachedKey(url2, scopes) {
-        let cacheKey2 = url2;
+        let cacheKey3 = url2;
         if (scopes && Array.isArray(scopes) && scopes.length) {
-          cacheKey2 = url2 ? `${url2}_${scopes.join("_")}` : `${scopes.join("_")}`;
+          cacheKey3 = url2 ? `${url2}_${scopes.join("_")}` : `${scopes.join("_")}`;
         } else if (typeof scopes === "string") {
-          cacheKey2 = url2 ? `${url2}_${scopes}` : scopes;
+          cacheKey3 = url2 ? `${url2}_${scopes}` : scopes;
         }
-        if (!cacheKey2) {
+        if (!cacheKey3) {
           throw Error("Scopes or url must be provided");
         }
-        return cacheKey2;
+        return cacheKey3;
       }
       /**
        * Get a non-expired access token, after refreshing if necessary.
@@ -150392,12 +150765,12 @@ var require_jwtaccess = __commonJS({
         const header = this.keyId ? { ...DEFAULT_HEADER, kid: this.keyId } : DEFAULT_HEADER;
         const payload = Object.assign(defaultClaims, additionalClaims);
         const signedJWT = jws.sign({ header, payload, secret: this.key });
-        const headers = new Headers({ authorization: `Bearer ${signedJWT}` });
+        const headers2 = new Headers({ authorization: `Bearer ${signedJWT}` });
         this.cache.set(key, {
           expiration: exp2 * 1e3,
-          headers
+          headers: headers2
         });
-        return headers;
+        return headers2;
       }
       /**
        * Returns an expiration time for the JWT token.
@@ -150540,7 +150913,7 @@ var require_jwtclient = __commonJS({
               scopes = this.defaultScopes;
             }
             const useScopes = this.useJWTAccessWithScope || this.universeDomain !== authclient_1.DEFAULT_UNIVERSE;
-            const headers = await this.access.getRequestHeaders(
+            const headers2 = await this.access.getRequestHeaders(
               url2 ?? void 0,
               this.additionalClaims,
               // Scopes take precedent over audience for signing,
@@ -150548,7 +150921,7 @@ var require_jwtclient = __commonJS({
               // if we are in a non-default universe
               useScopes ? scopes : void 0
             );
-            return { headers: this.addSharedMetadataHeaders(headers) };
+            return { headers: this.addSharedMetadataHeaders(headers2) };
           }
         } else if (this.hasAnyScopes() || this.apiKey) {
           return super.getRequestMetadataAsync(url2);
@@ -151115,8 +151488,8 @@ var require_oauth2common = __commonJS({
           if (!METHODS_SUPPORTING_REQUEST_BODY.includes(method)) {
             throw new Error(`${method} HTTP method does not support ${this.#clientAuthentication.confidentialClientType} client authentication`);
           }
-          const headers = new Headers(opts.headers);
-          const contentType = headers.get("content-type");
+          const headers2 = new Headers(opts.headers);
+          const contentType = headers2.get("content-type");
           if (contentType?.startsWith("application/x-www-form-urlencoded") || opts.data instanceof URLSearchParams) {
             const data = new URLSearchParams(opts.data ?? "");
             data.append("client_id", this.#clientAuthentication.clientId);
@@ -151227,7 +151600,7 @@ var require_stscredentials = __commonJS({
        * @return A promise that resolves with the token exchange response containing
        *   the requested token and its expiration time.
        */
-      async exchangeToken(stsCredentialsOptions, headers, options) {
+      async exchangeToken(stsCredentialsOptions, headers2, options) {
         const values = {
           grant_type: stsCredentialsOptions.grantType,
           resource: stsCredentialsOptions.resource,
@@ -151245,7 +151618,7 @@ var require_stscredentials = __commonJS({
           ..._StsCredentials.RETRY_CONFIG,
           url: this.#tokenExchangeEndpoint.toString(),
           method: "POST",
-          headers,
+          headers: headers2,
           data: new URLSearchParams((0, util_1.removeUndefinedValuesInObject)(values)),
           responseType: "json"
         };
@@ -151427,10 +151800,10 @@ var require_baseexternalclient = __commonJS({
        */
       async getRequestHeaders() {
         const accessTokenResponse = await this.getAccessToken();
-        const headers = new Headers({
+        const headers2 = new Headers({
           authorization: `Bearer ${accessTokenResponse.token}`
         });
-        return this.addSharedMetadataHeaders(headers);
+        return this.addSharedMetadataHeaders(headers2);
       }
       request(opts, callback) {
         if (callback) {
@@ -151461,10 +151834,10 @@ var require_baseexternalclient = __commonJS({
         if (this.projectId) {
           return this.projectId;
         } else if (projectNumber) {
-          const headers = await this.getRequestHeaders();
+          const headers2 = await this.getRequestHeaders();
           const opts = {
             ..._BaseExternalAccountClient.RETRY_CONFIG,
-            headers,
+            headers: headers2,
             url: `${this.cloudResourceManagerURL.toString()}${projectNumber}`,
             responseType: "json"
           };
@@ -151659,7 +152032,7 @@ var require_filesubjecttokensupplier = __commonJS({
     exports.FileSubjectTokenSupplier = void 0;
     var util_1 = __require("util");
     var fs8 = __require("fs");
-    var readFile2 = (0, util_1.promisify)(fs8.readFile ?? (() => {
+    var readFile3 = (0, util_1.promisify)(fs8.readFile ?? (() => {
     }));
     var realpath = (0, util_1.promisify)(fs8.realpath ?? (() => {
     }));
@@ -151699,7 +152072,7 @@ var require_filesubjecttokensupplier = __commonJS({
           throw err;
         }
         let subjectToken;
-        const rawText = await readFile2(parsedFilePath, { encoding: "utf8" });
+        const rawText = await readFile3(parsedFilePath, { encoding: "utf8" });
         if (this.formatType === "text") {
           subjectToken = rawText;
         } else if (this.formatType === "json" && this.subjectTokenFieldName) {
@@ -152011,7 +152384,7 @@ var require_identitypoolclient = __commonJS({
           const file2 = credentialSourceOpts.get("file");
           const url2 = credentialSourceOpts.get("url");
           const certificate = credentialSourceOpts.get("certificate");
-          const headers = credentialSourceOpts.get("headers");
+          const headers2 = credentialSourceOpts.get("headers");
           if (file2 && url2 || url2 && certificate || file2 && certificate) {
             throw new Error('No valid Identity Pool "credential_source" provided, must be either file, url, or certificate.');
           } else if (file2) {
@@ -152027,7 +152400,7 @@ var require_identitypoolclient = __commonJS({
               url: url2,
               formatType,
               subjectTokenFieldName: formatSubjectTokenFieldName,
-              headers,
+              headers: headers2,
               additionalGaxiosOptions: _IdentityPoolClient.RETRY_CONFIG
             });
           } else if (certificate) {
@@ -152131,7 +152504,7 @@ var require_awsrequestsigner = __commonJS({
           requestPayload,
           additionalAmzHeaders
         });
-        const headers = gaxios_1.Gaxios.mergeHeaders(
+        const headers2 = gaxios_1.Gaxios.mergeHeaders(
           // Add x-amz-date if available.
           headerMap.amzDate ? { "x-amz-date": headerMap.amzDate } : {},
           {
@@ -152141,14 +152514,14 @@ var require_awsrequestsigner = __commonJS({
           additionalAmzHeaders || {}
         );
         if (awsSecurityCredentials.token) {
-          gaxios_1.Gaxios.mergeHeaders(headers, {
+          gaxios_1.Gaxios.mergeHeaders(headers2, {
             "x-amz-security-token": awsSecurityCredentials.token
           });
         }
         const awsSignedReq = {
           url: url2,
           method,
-          headers
+          headers: headers2
         };
         if (requestPayload !== void 0) {
           awsSignedReq.body = requestPayload;
@@ -152322,7 +152695,7 @@ var require_defaultawssecuritycredentialssupplier = __commonJS({
        * @return A promise that resolves with the assigned role to the current
        *   AWS VM. This is needed for calling the security-credentials endpoint.
        */
-      async #getAwsRoleName(headers, transporter) {
+      async #getAwsRoleName(headers2, transporter) {
         if (!this.securityCredentialsUrl) {
           throw new Error('Unable to determine AWS role name due to missing "options.credential_source.url"');
         }
@@ -152331,7 +152704,7 @@ var require_defaultawssecuritycredentialssupplier = __commonJS({
           url: this.securityCredentialsUrl,
           method: "GET",
           responseType: "text",
-          headers
+          headers: headers2
         };
         authclient_1.AuthClient.setMethodName(opts, "#getAwsRoleName");
         const response = await transporter.request(opts);
@@ -152346,11 +152719,11 @@ var require_defaultawssecuritycredentialssupplier = __commonJS({
        * @return A promise that resolves with the temporary AWS credentials
        *   needed for creating the GetCallerIdentity signed request.
        */
-      async #retrieveAwsSecurityCredentials(roleName, headers, transporter) {
+      async #retrieveAwsSecurityCredentials(roleName, headers2, transporter) {
         const opts = {
           ...this.additionalGaxiosOptions,
           url: `${this.securityCredentialsUrl}/${roleName}`,
-          headers,
+          headers: headers2,
           responseType: "json"
         };
         authclient_1.AuthClient.setMethodName(opts, "#retrieveAwsSecurityCredentials");
@@ -152972,12 +153345,12 @@ var require_externalAccountAuthorizedUserClient = __commonJS({
        * @return A promise that resolves with the token refresh response containing
        *   the requested access token and its expiration time.
        */
-      async refreshToken(refreshToken2, headers) {
+      async refreshToken(refreshToken2, headers2) {
         const opts = {
           ..._ExternalAccountAuthorizedUserHandler.RETRY_CONFIG,
           url: this.#tokenRefreshEndpoint,
           method: "POST",
-          headers,
+          headers: headers2,
           data: new URLSearchParams({
             grant_type: "refresh_token",
             refresh_token: refreshToken2
@@ -153050,10 +153423,10 @@ var require_externalAccountAuthorizedUserClient = __commonJS({
       }
       async getRequestHeaders() {
         const accessTokenResponse = await this.getAccessToken();
-        const headers = new Headers({
+        const headers2 = new Headers({
           authorization: `Bearer ${accessTokenResponse.token}`
         });
-        return this.addSharedMetadataHeaders(headers);
+        return this.addSharedMetadataHeaders(headers2);
       }
       request(opts, callback) {
         if (callback) {
@@ -154050,10 +154423,10 @@ var require_googleauth = __commonJS({
           const client = await this.#pendingAuthClient;
           if (client instanceof gdchclient_1.GdchClient && !client.apiAudience) {
             const opts = this.clientOptions;
-            const endpoint = opts.apiEndpoint || opts.servicePath;
-            if (endpoint) {
-              const scheme = endpoint.startsWith("http") ? "" : "https://";
-              const formattedAudience = `${scheme}${endpoint}/`.replace(/\/+$/, "/");
+            const endpoint2 = opts.apiEndpoint || opts.servicePath;
+            if (endpoint2) {
+              const scheme = endpoint2.startsWith("http") ? "" : "https://";
+              const formattedAudience = `${scheme}${endpoint2}/`.replace(/\/+$/, "/");
               const newClient = client.createWithGdchAudience(formattedAudience);
               this.cachedCredential = newClient;
               return newClient;
@@ -154117,8 +154490,8 @@ var require_googleauth = __commonJS({
       async authorizeRequest(opts = {}) {
         const url2 = opts.url;
         const client = await this.getClient();
-        const headers = await client.getRequestHeaders(url2);
-        opts.headers = gaxios_1.Gaxios.mergeHeaders(opts.headers, headers);
+        const headers2 = await client.getRequestHeaders(url2);
+        opts.headers = gaxios_1.Gaxios.mergeHeaders(opts.headers, headers2);
         return opts;
       }
       /**
@@ -154174,10 +154547,10 @@ var require_googleauth = __commonJS({
        * sign('data', 'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/');
        * ```
        */
-      async sign(data, endpoint) {
+      async sign(data, endpoint2) {
         const client = await this.getClient();
         const universe = await this.getUniverseDomain();
-        endpoint = endpoint || `https://iamcredentials.${universe}/v1/projects/-/serviceAccounts/`;
+        endpoint2 = endpoint2 || `https://iamcredentials.${universe}/v1/projects/-/serviceAccounts/`;
         if (client instanceof impersonated_1.Impersonated) {
           const signed = await client.sign(data);
           return signed.signedBlob;
@@ -154191,10 +154564,10 @@ var require_googleauth = __commonJS({
         if (!creds.client_email) {
           throw new Error("Cannot sign data without `client_email`.");
         }
-        return this.signBlob(crypto3, creds.client_email, data, endpoint);
+        return this.signBlob(crypto3, creds.client_email, data, endpoint2);
       }
-      async signBlob(crypto3, emailOrUniqueId, data, endpoint) {
-        const url2 = new URL(endpoint + `${emailOrUniqueId}:signBlob`);
+      async signBlob(crypto3, emailOrUniqueId, data, endpoint2) {
+        const url2 = new URL(endpoint2 + `${emailOrUniqueId}:signBlob`);
         const res = await this.request({
           method: "POST",
           url: url2.href,
@@ -154341,10 +154714,10 @@ var require_downscopedclient = __commonJS({
        */
       async getRequestHeaders() {
         const accessTokenResponse = await this.getAccessToken();
-        const headers = new Headers({
+        const headers2 = new Headers({
           authorization: `Bearer ${accessTokenResponse.token}`
         });
-        return this.addSharedMetadataHeaders(headers);
+        return this.addSharedMetadataHeaders(headers2);
       }
       request(opts, callback) {
         if (callback) {
@@ -154802,16 +155175,16 @@ var require_validator = __commonJS({
       const re2 = /[\da-zA-Z]+/;
       return re1.test(phoneNumber) && re2.test(phoneNumber);
     }
-    function isISODateString(dateString) {
+    function isISODateString(dateString2) {
       try {
-        return isNonEmptyString(dateString) && new Date(dateString).toISOString() === dateString;
+        return isNonEmptyString(dateString2) && new Date(dateString2).toISOString() === dateString2;
       } catch (e2) {
         return false;
       }
     }
-    function isUTCDateString(dateString) {
+    function isUTCDateString(dateString2) {
       try {
-        return isNonEmptyString(dateString) && new Date(dateString).toUTCString() === dateString;
+        return isNonEmptyString(dateString2) && new Date(dateString2).toUTCString() === dateString2;
       } catch (e2) {
         return false;
       }
@@ -158760,7 +159133,7 @@ var require_main2 = __commonJS({
         throw new TypeError("Missing Content-Type-header.");
       }
       const {
-        headers,
+        headers: headers2,
         ...streamOptions
       } = opts;
       this.opts = {
@@ -158769,7 +159142,7 @@ var require_main2 = __commonJS({
       };
       WritableStream2.call(this, this.opts);
       this._done = false;
-      this._parser = this.getParserByHeaders(headers);
+      this._parser = this.getParserByHeaders(headers2);
       this._finished = false;
     }
     inherits(Busboy, WritableStream2);
@@ -158785,12 +159158,12 @@ var require_main2 = __commonJS({
       }
       WritableStream2.prototype.emit.apply(this, arguments);
     };
-    Busboy.prototype.getParserByHeaders = function(headers) {
-      const parsed = parseParams(headers["content-type"]);
+    Busboy.prototype.getParserByHeaders = function(headers2) {
+      const parsed = parseParams(headers2["content-type"]);
       const cfg = {
         defCharset: this.opts.defCharset,
         fileHwm: this.opts.fileHwm,
-        headers,
+        headers: headers2,
         highWaterMark: this.opts.highWaterMark,
         isPartAFile: this.opts.isPartAFile,
         limits: this.opts.limits,
@@ -159144,12 +159517,12 @@ var require_api_request = __commonJS({
       const headerLines = responseText.substring(0, endOfHeaderPos).split("\r\n");
       const statusLine = headerLines[0];
       const status = statusLine.trim().split(/\s/)[1];
-      const headers = {};
+      const headers2 = {};
       headerLines.slice(1).forEach((line) => {
         const colonPos = line.indexOf(":");
         const name2 = line.substring(0, colonPos).trim().toLowerCase();
         const value = line.substring(colonPos + 1).trim();
-        headers[name2] = value;
+        headers2[name2] = value;
       });
       let data = responseText.substring(endOfHeaderPos + 4);
       if (data.endsWith("\n")) {
@@ -159160,7 +159533,7 @@ var require_api_request = __commonJS({
       }
       const lowLevelResponse = {
         status: parseInt(status, 10),
-        headers,
+        headers: headers2,
         data,
         config: config3,
         request: null
@@ -159181,8 +159554,8 @@ var require_api_request = __commonJS({
        * If the content-type header does not exist, or does not start with
        * 'multipart/', then null will be returned.
        */
-      getMultipartBoundary(headers) {
-        const contentType = headers["content-type"];
+      getMultipartBoundary(headers2) {
+        const contentType = headers2["content-type"];
         if (!contentType || !contentType.startsWith("multipart/")) {
           return null;
         }
@@ -159387,8 +159760,8 @@ var require_api_request = __commonJS({
           ":path": this.options.path,
           ...this.options.headers
         });
-        req.on("response", (headers) => {
-          this.handleHttp2Response(headers, req);
+        req.on("response", (headers2) => {
+          this.handleHttp2Response(headers2, req);
         });
         req.on("error", (err) => {
           if (req.aborted) {
@@ -159406,38 +159779,38 @@ var require_api_request = __commonJS({
         }
         req.end(this.entity);
       }
-      handleHttp2Response(headers, stream2) {
+      handleHttp2Response(headers2, stream2) {
         if (stream2.aborted) {
           return;
         }
-        if (!headers[":status"]) {
+        if (!headers2[":status"]) {
           throw new error_2.FirebaseAppError({
             code: error_2.AppErrorCode.INTERNAL_ERROR,
             message: "Expected a statusCode on the response from a ClientRequest"
           });
         }
         const response = {
-          status: headers[":status"],
-          headers,
+          status: headers2[":status"],
+          headers: headers2,
           request: stream2,
           data: void 0,
           config: this.http2ConfigImpl
         };
-        const boundary = this.getMultipartBoundary(headers);
-        const respStream = this.uncompressResponse(headers, stream2);
+        const boundary = this.getMultipartBoundary(headers2);
+        const respStream = this.uncompressResponse(headers2, stream2);
         if (boundary) {
           this.handleMultipartResponse(response, respStream, boundary);
         } else {
           this.handleRegularResponse(response, respStream);
         }
       }
-      uncompressResponse(headers, stream2) {
+      uncompressResponse(headers2, stream2) {
         let respStream = stream2;
         const encodings = ["gzip", "compress", "deflate"];
-        if (headers["content-encoding"] && encodings.indexOf(headers["content-encoding"]) !== -1) {
+        if (headers2["content-encoding"] && encodings.indexOf(headers2["content-encoding"]) !== -1) {
           const zlib3 = __require("zlib");
           respStream = respStream.pipe(zlib3.createUnzip());
-          delete headers["content-encoding"];
+          delete headers2["content-encoding"];
         }
         return respStream;
       }
@@ -159462,7 +159835,7 @@ var require_api_request = __commonJS({
       get timeout() {
         return this.config.timeout;
       }
-      buildEntity(headers) {
+      buildEntity(headers2) {
         let data;
         if (!this.hasEntity() || !this.isEntityEnclosingRequest()) {
           return data;
@@ -159471,15 +159844,15 @@ var require_api_request = __commonJS({
           data = this.data;
         } else if (validator.isObject(this.data)) {
           data = Buffer.from(JSON.stringify(this.data), "utf-8");
-          if (typeof headers["content-type"] === "undefined") {
-            headers["content-type"] = "application/json;charset=utf-8";
+          if (typeof headers2["content-type"] === "undefined") {
+            headers2["content-type"] = "application/json;charset=utf-8";
           }
         } else if (validator.isString(this.data)) {
           data = Buffer.from(this.data, "utf-8");
         } else {
           throw new Error("Request data must be a string, a Buffer or a json serializable object");
         }
-        headers["Content-Length"] = data.length.toString();
+        headers2["Content-Length"] = data.length.toString();
         return data;
       }
       buildUrl() {
@@ -159623,8 +159996,8 @@ var require_api_request = __commonJS({
     };
     exports.AuthorizedHttp2Client = AuthorizedHttp2Client;
     var ApiSettings = class {
-      constructor(endpoint, httpMethod = "POST") {
-        this.endpoint = endpoint;
+      constructor(endpoint2, httpMethod = "POST") {
+        this.endpoint = endpoint2;
         this.httpMethod = httpMethod;
         this.setRequestValidator(null).setResponseValidator(null);
       }
@@ -160410,6 +160783,1425 @@ var require_messaging2 = __commonJS({
     Object.defineProperty(exports, "MessagingErrorCode", { enumerable: true, get: function() {
       return error_1.MessagingErrorCode;
     } });
+  }
+});
+
+// api/services/finance-semantic-layer/types.ts
+var init_types5 = __esm({
+  "api/services/finance-semantic-layer/types.ts"() {
+  }
+});
+
+// api/services/finance-semantic-layer/cache.ts
+import { AsyncLocalStorage as AsyncLocalStorage2 } from "async_hooks";
+function sanitizePart(value) {
+  return String(value ?? "none").replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_.:-]/g, "_").slice(0, 80);
+}
+function financeCacheKey(userId, userType, capability, ...parts) {
+  return [
+    PREFIX,
+    sanitizePart(userId),
+    sanitizePart(userType),
+    sanitizePart(capability),
+    ...parts.map(sanitizePart)
+  ].join(":");
+}
+function financeCacheTtl(periodKey) {
+  if (periodKey.startsWith("today:")) return 60;
+  if (periodKey.startsWith("yesterday:")) return 10 * 60;
+  return 60 * 60;
+}
+async function withFinanceCache(key, ttlSeconds, compute) {
+  const result = await withCacheStatus(key, ttlSeconds, compute);
+  financeCacheTrace.getStore()?.push(
+    `finance_cache:${result.hit ? "hit" : "miss"}:${result.backend}:${cacheTraceLabel(key)}`
+  );
+  return result.value;
+}
+function cacheTraceLabel(key) {
+  const parts = key.split(":");
+  return parts.slice(3).join(":") || "unknown";
+}
+async function collectFinanceCacheTrace(compute) {
+  const cacheHits = [];
+  const value = await financeCacheTrace.run(cacheHits, compute);
+  return {
+    value,
+    cacheHits
+  };
+}
+async function invalidateFinanceUserCache(userId, userType) {
+  return deleteCacheByPattern(`${PREFIX}:${sanitizePart(userId)}:${sanitizePart(userType)}:*`);
+}
+var PREFIX, financeCacheTrace;
+var init_cache2 = __esm({
+  "api/services/finance-semantic-layer/cache.ts"() {
+    init_redis_client();
+    PREFIX = "finance_ai";
+    financeCacheTrace = new AsyncLocalStorage2();
+  }
+});
+
+// api/services/finance-semantic-layer/category-matcher.ts
+function normalizeFinanceText(value) {
+  return String(value ?? "").toLowerCase().normalize("NFKC").replace(/[\u064B-\u065F\u0670]/g, "").replace(/[\u0623\u0625\u0622\u0671]/g, "\u0627").replace(/\u0624/g, "\u0648").replace(/\u0626/g, "\u064A").replace(/\u0649/g, "\u064A").replace(/\u0629/g, "\u0647").replace(/\s+/g, " ").trim();
+}
+function getCategoryAliases(category) {
+  const normalized = normalizeFinanceText(category);
+  const direct = CATEGORY_ALIASES2[normalized];
+  if (direct) return [.../* @__PURE__ */ new Set([category, ...direct])];
+  const matched = Object.values(CATEGORY_ALIASES2).find(
+    (aliases) => aliases.some((alias) => normalizeFinanceText(alias) === normalized)
+  );
+  return matched ? [.../* @__PURE__ */ new Set([category, ...matched])] : [category];
+}
+function canonicalCategoryForRow(rowCategory, rowSubCategory, ...extraFields) {
+  const categoryText = String(rowCategory ?? "").trim();
+  const normalizedCategory = normalizeFinanceText(categoryText);
+  const extraHaystack = [rowSubCategory, ...extraFields].map((value) => normalizeFinanceText(value)).join(" ");
+  for (const key of CATEGORY_INFERENCE_PRIORITY) {
+    if (getCategoryAliases(key).some((alias) => extraHaystack.includes(normalizeFinanceText(alias)))) {
+      return key;
+    }
+  }
+  for (const key of Object.keys(CATEGORY_ALIASES2)) {
+    if (getCategoryAliases(key).some((alias) => normalizeFinanceText(alias) === normalizedCategory)) {
+      return key;
+    }
+  }
+  const haystack = [rowCategory, rowSubCategory, ...extraFields].map((value) => normalizeFinanceText(value)).join(" ");
+  for (const key of Object.keys(CATEGORY_ALIASES2)) {
+    if (getCategoryAliases(key).some((alias) => haystack.includes(normalizeFinanceText(alias)))) {
+      return key;
+    }
+  }
+  return categoryText || "uncategorized";
+}
+function displayFinanceCategory(category) {
+  const key = String(category ?? "").trim();
+  return CATEGORY_DISPLAY_NAMES[key] ?? (key || CATEGORY_DISPLAY_NAMES.uncategorized);
+}
+function matchesCategory(rowCategory, rowSubCategory, category, ...extraFields) {
+  const haystack = [rowCategory, rowSubCategory, ...extraFields].map((value) => normalizeFinanceText(value)).join(" ");
+  return getCategoryAliases(category).some((alias) => haystack.includes(normalizeFinanceText(alias)));
+}
+var CATEGORY_ALIASES2, CATEGORY_DISPLAY_NAMES, CATEGORY_INFERENCE_PRIORITY;
+var init_category_matcher = __esm({
+  "api/services/finance-semantic-layer/category-matcher.ts"() {
+    CATEGORY_ALIASES2 = {
+      food: [
+        "food",
+        "\u0627\u0643\u0644 \u0648\u0634\u0631\u0628",
+        "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+        "\u0627\u0643\u0644",
+        "\u0623\u0643\u0644",
+        "restaurant",
+        "\u0627\u0643\u0644",
+        "\u0623\u0643\u0644",
+        "\u0645\u0637\u0639\u0645",
+        "\u0645\u0637\u0627\u0639\u0645",
+        "\u0642\u0647\u0648\u0647",
+        "\u0642\u0647\u0648\u0629",
+        "\u0633\u0648\u0628\u0631 \u0645\u0627\u0631\u0643\u062A",
+        "\u0633\u0648\u0628\u0631\u0645\u0627\u0631\u0643\u062A",
+        "\u0645\u0627\u0631\u0643\u062A",
+        "\u0647\u0627\u064A\u0628\u0631",
+        "\u0647\u0627\u064A\u0628\u0631 \u0645\u0627\u0631\u0643\u062A",
+        "\u0643\u0627\u0631\u0641\u0648\u0631",
+        "\u062E\u0636\u0627\u0631",
+        "\u0641\u0627\u0643\u0647\u0629",
+        "\u0644\u062D\u0645\u0629",
+        "\u0644\u062D\u0645\u0647",
+        "\u0641\u0631\u0627\u062E",
+        "\u062F\u0644\u064A\u0641\u0631\u064A",
+        "\u0637\u0644\u0628\u0627\u062A",
+        "talabat"
+      ],
+      transport: [
+        "transport",
+        "\u062A\u0646\u0642\u0644\u0627\u062A",
+        "uber",
+        "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+        "\u0627\u0648\u0628\u0631",
+        "\u0643\u0631\u064A\u0645",
+        "\u0628\u0646\u0632\u064A\u0646",
+        "\u062A\u0627\u0643\u0633\u064A",
+        "\u0645\u062A\u0631\u0648"
+      ],
+      shopping: [
+        "shopping",
+        "\u062A\u0633\u0648\u0642 \u0648\u0645\u0644\u0627\u0628\u0633",
+        "\u062A\u0633\u0648\u0642",
+        "\u0644\u0628\u0633",
+        "\u0645\u0644\u0627\u0628\u0633",
+        "\u0645\u0634\u062A\u0631\u064A\u0627\u062A"
+      ],
+      health: [
+        "health",
+        "\u0635\u062D\u0629",
+        "\u0635\u062D\u0647",
+        "\u0635\u064A\u062F\u0644\u064A\u0629",
+        "\u0635\u064A\u062F\u0644\u064A\u0647",
+        "\u062F\u0648\u0627",
+        "\u062F\u0648\u0627\u0621",
+        "\u0639\u0644\u0627\u062C",
+        "\u0643\u0634\u0641",
+        "\u062F\u0643\u062A\u0648\u0631"
+      ],
+      bills: [
+        "bills",
+        "\u0641\u0648\u0627\u062A\u064A\u0631",
+        "\u0641\u0627\u062A\u0648\u0631\u0629",
+        "\u0641\u0627\u062A\u0648\u0631\u0647",
+        "\u0642\u0633\u0637",
+        "\u0627\u0642\u0633\u0627\u0637",
+        "\u0643\u0647\u0631\u0628\u0627",
+        "\u063A\u0627\u0632",
+        "\u0645\u064A\u0627\u0647",
+        "\u0646\u062A",
+        "\u0627\u0646\u062A\u0631\u0646\u062A"
+      ],
+      income: [
+        "income",
+        "\u062F\u062E\u0644",
+        "\u0645\u0631\u062A\u0628",
+        "\u0631\u0627\u062A\u0628",
+        "\u0642\u0628\u0636",
+        "salary"
+      ],
+      saving: [
+        "saving",
+        "\u0627\u062F\u062E\u0627\u0631",
+        "\u062A\u062D\u0648\u064A\u0634",
+        "\u062C\u0645\u0639\u064A\u0629",
+        "\u062C\u0645\u0639\u064A\u0647"
+      ]
+    };
+    CATEGORY_DISPLAY_NAMES = {
+      food: "\u0627\u0644\u0623\u0643\u0644",
+      transport: "\u0627\u0644\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+      shopping: "\u0627\u0644\u062A\u0633\u0648\u0642",
+      health: "\u0627\u0644\u0635\u062D\u0629",
+      bills: "\u0627\u0644\u0641\u0648\u0627\u062A\u064A\u0631",
+      income: "\u0627\u0644\u062F\u062E\u0644",
+      saving: "\u0627\u0644\u0627\u062F\u062E\u0627\u0631",
+      uncategorized: "\u063A\u064A\u0631 \u0645\u0635\u0646\u0641"
+    };
+    CATEGORY_INFERENCE_PRIORITY = [
+      "food",
+      "transport",
+      "health",
+      "bills",
+      "saving",
+      "shopping",
+      "income"
+    ];
+  }
+});
+
+// api/services/finance-semantic-layer/row-aggregators.ts
+function amountOf(row) {
+  const value = Number(row.amount ?? 0);
+  return Number.isFinite(value) ? value : 0;
+}
+function dateKey(value, granularity) {
+  const date6 = value instanceof Date ? value : new Date(value ?? 0);
+  if (Number.isNaN(date6.getTime())) return "unknown";
+  if (granularity === "month") return date6.toISOString().slice(0, 7);
+  if (granularity === "week") {
+    const start = new Date(date6);
+    const day = start.getDay();
+    const offset = day === 0 ? -6 : 1 - day;
+    start.setDate(start.getDate() + offset);
+    return start.toISOString().slice(0, 10);
+  }
+  return date6.toISOString().slice(0, 10);
+}
+function isTimeGranularity(granularity) {
+  return granularity === "day" || granularity === "week" || granularity === "month";
+}
+function startOfTimeBucket(date6, granularity) {
+  const bucket = new Date(Date.UTC(date6.getUTCFullYear(), date6.getUTCMonth(), date6.getUTCDate()));
+  if (granularity === "month") {
+    bucket.setUTCDate(1);
+  } else if (granularity === "week") {
+    const day = bucket.getUTCDay();
+    const offset = day === 0 ? -6 : 1 - day;
+    bucket.setUTCDate(bucket.getUTCDate() + offset);
+  }
+  return bucket;
+}
+function addTimeBucket(date6, granularity) {
+  const next = new Date(date6);
+  if (granularity === "month") next.setUTCMonth(next.getUTCMonth() + 1);
+  else if (granularity === "week") next.setUTCDate(next.getUTCDate() + 7);
+  else next.setUTCDate(next.getUTCDate() + 1);
+  return next;
+}
+function timeBucketLabels(period, granularity, limit) {
+  if (!isTimeGranularity(granularity)) return [];
+  const labels = [];
+  let cursor = startOfTimeBucket(period.startDate, granularity);
+  const end = period.endDate;
+  while (cursor <= end && labels.length < 366) {
+    labels.push(dateKey(cursor, granularity));
+    cursor = addTimeBucket(cursor, granularity);
+  }
+  return labels.slice(-Math.max(1, limit));
+}
+function aggregateFinanceSummary(rows, period) {
+  let totalIncome = 0;
+  let totalExpense = 0;
+  let totalTransfers = 0;
+  let totalInvestments = 0;
+  let incomeCount = 0;
+  let expenseCount = 0;
+  for (const row of rows) {
+    const amount = amountOf(row);
+    if (row.type === "income") {
+      totalIncome += amount;
+      incomeCount++;
+    } else if (row.type === "transfer") {
+      totalTransfers += amount;
+    } else if (row.type === "investment") {
+      totalInvestments += amount;
+    } else {
+      totalExpense += amount;
+      expenseCount++;
+    }
+  }
+  return {
+    period,
+    totalIncome,
+    totalExpense,
+    totalTransfers,
+    totalInvestments,
+    netFlow: totalIncome - totalExpense,
+    transactionCount: rows.length,
+    expenseCount,
+    incomeCount,
+    dailyAverageExpense: Math.round(totalExpense / Math.max(1, period.daysElapsed) * 100) / 100
+  };
+}
+function buildBreakdown(rows, period, granularity, limit = 10) {
+  const expenseRows = rows.filter((row) => row.type !== "income");
+  const totalExpense = expenseRows.reduce((sum4, row) => sum4 + amountOf(row), 0);
+  const grouped = /* @__PURE__ */ new Map();
+  for (const row of expenseRows) {
+    const name2 = granularity === "day" || granularity === "week" || granularity === "month" ? dateKey(row.date, granularity) : granularity === "sub_category" ? row.subCategory || "general" : granularity === "merchant" ? row.placeHint || row.description || "unknown" : granularity === "payment_method" ? row.paymentMethod || "unknown" : displayFinanceCategory(
+      canonicalCategoryForRow(row.category, row.subCategory, row.description, row.rawText, row.placeHint)
+    );
+    const existing = grouped.get(name2) ?? { amount: 0, count: 0 };
+    existing.amount += amountOf(row);
+    existing.count += 1;
+    grouped.set(name2, existing);
+  }
+  const items = [...grouped.entries()].map(([name2, item]) => ({
+    name: name2,
+    amount: item.amount,
+    count: item.count,
+    percent: totalExpense > 0 ? Math.round(item.amount / totalExpense * 100) : 0
+  })).sort((a, b) => b.amount - a.amount).slice(0, limit);
+  return { period, granularity, totalExpense, items };
+}
+function buildChartData(rows, period, granularity, limit = 12) {
+  if (isTimeGranularity(granularity)) {
+    const grouped = /* @__PURE__ */ new Map();
+    for (const row of rows.filter((item) => item.type !== "income")) {
+      const key = dateKey(row.date, granularity);
+      if (key === "unknown") continue;
+      const existing = grouped.get(key) ?? { amount: 0, count: 0 };
+      existing.amount += amountOf(row);
+      existing.count += 1;
+      grouped.set(key, existing);
+    }
+    const labels = timeBucketLabels(period, granularity, limit);
+    const fallbackLabels = [...grouped.keys()].sort((a, b) => a.localeCompare(b)).slice(-limit);
+    const selectedLabels = labels.length > 0 ? labels : fallbackLabels;
+    const points2 = selectedLabels.map((label) => {
+      const item = grouped.get(label);
+      return {
+        label,
+        value: item?.amount ?? 0,
+        count: item?.count ?? 0
+      };
+    });
+    return {
+      period,
+      granularity,
+      points: points2
+    };
+  }
+  const breakdown = buildBreakdown(rows, period, granularity, limit);
+  const points = breakdown.items.map((item) => ({
+    label: item.name,
+    value: item.amount,
+    count: item.count
+  })).sort((a, b) => a.label.localeCompare(b.label));
+  return {
+    period,
+    granularity,
+    points
+  };
+}
+function uniqueCategories(values) {
+  return [...new Set(values.map((value) => String(value ?? "").trim()).filter(Boolean))];
+}
+function canonicalCategoryOf(row) {
+  return canonicalCategoryForRow(row.category, row.subCategory, row.description, row.rawText, row.placeHint);
+}
+function buildMultiCategoryChartData(rows, period, categories, granularity, limit = 12) {
+  const series = uniqueCategories(categories);
+  const grouped = /* @__PURE__ */ new Map();
+  for (const row of rows) {
+    if (row.type === "income") continue;
+    const matchedCategory = series.find((category) => canonicalCategoryOf(row) === category);
+    if (!matchedCategory) continue;
+    const label = dateKey(row.date, granularity);
+    if (label === "unknown") continue;
+    const point = grouped.get(label) ?? { label, value: 0, count: 0 };
+    const amount = amountOf(row);
+    point[matchedCategory] = Number(point[matchedCategory] ?? 0) + amount;
+    point.value = Number(point.value ?? 0) + amount;
+    point.count = Number(point.count ?? 0) + 1;
+    grouped.set(label, point);
+  }
+  const fallbackLabels = [...grouped.keys()].sort((a, b) => a.localeCompare(b)).slice(-limit);
+  const labels = timeBucketLabels(period, granularity, limit);
+  const selectedLabels = labels.length > 0 ? labels : fallbackLabels;
+  const points = selectedLabels.map((label) => {
+    const point = grouped.get(label) ?? { label, value: 0, count: 0 };
+    for (const category of series) {
+      point[category] = Number(point[category] ?? 0);
+    }
+    return point;
+  });
+  return {
+    period,
+    granularity,
+    points,
+    series: series.map((category) => ({
+      key: category,
+      label: displayFinanceCategory(category),
+      unit: "EGP"
+    }))
+  };
+}
+var init_row_aggregators = __esm({
+  "api/services/finance-semantic-layer/row-aggregators.ts"() {
+    init_category_matcher();
+  }
+});
+
+// api/services/finance-semantic-layer/chart-artifacts.ts
+function displaySeriesName(value) {
+  const names = {
+    food: "\u0627\u0644\u0623\u0643\u0644",
+    transport: "\u0627\u0644\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+    shopping: "\u0627\u0644\u062A\u0633\u0648\u0642",
+    health: "\u0627\u0644\u0635\u062D\u0629",
+    bills: "\u0627\u0644\u0641\u0648\u0627\u062A\u064A\u0631",
+    income: "\u0627\u0644\u062F\u062E\u0644",
+    saving: "\u0627\u0644\u0627\u062F\u062E\u0627\u0631",
+    value: "\u0627\u0644\u0645\u0628\u0644\u063A"
+  };
+  return names[value] ?? value;
+}
+function chartTitle(data) {
+  const axis = data.granularity === "month" ? "\u0634\u0647\u0631\u064A" : data.granularity === "day" ? "\u064A\u0648\u0645\u064A" : data.granularity === "category" ? "\u062D\u0633\u0628 \u0627\u0644\u0641\u0626\u0629" : `\u062D\u0633\u0628 ${data.granularity}`;
+  return `\u0631\u0633\u0645 \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641 ${axis}`;
+}
+function moneyValue(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.round(parsed * 100) / 100 : 0;
+}
+function createFinanceChartArtifact(need, data) {
+  const series = data.series && data.series.length > 0 ? data.series.map((item, index2) => ({
+    key: item.key,
+    label: displaySeriesName(item.label),
+    unit: item.unit ?? "EGP",
+    color: SERIES_COLORS[index2 % SERIES_COLORS.length]
+  })) : [
+    {
+      key: "value",
+      label: "\u0627\u0644\u0645\u0628\u0644\u063A",
+      unit: "EGP",
+      color: SERIES_COLORS[0]
+    }
+  ];
+  return {
+    id: `${need.id}:chart`,
+    type: "chart",
+    title: chartTitle(data),
+    payload: {
+      contractVersion: 1,
+      source: "finance.chartData",
+      chartKind: data.granularity === "day" || data.granularity === "month" ? "bar" : "bar",
+      period: data.period.label,
+      granularity: data.granularity,
+      xKey: "label",
+      yKey: series[0]?.key ?? "value",
+      series,
+      points: data.points.map((point) => ({
+        ...point,
+        label: point.label,
+        value: moneyValue(point.value),
+        count: point.count,
+        ...Object.fromEntries(
+          series.map((item) => [item.key, moneyValue(point[item.key])])
+        )
+      }))
+    }
+  };
+}
+var SERIES_COLORS;
+var init_chart_artifacts = __esm({
+  "api/services/finance-semantic-layer/chart-artifacts.ts"() {
+    SERIES_COLORS = ["#2563eb", "#16a34a", "#dc2626", "#9333ea", "#ea580c", "#0891b2"];
+  }
+});
+
+// api/services/finance-semantic-layer/period-resolver.ts
+function clampSalaryDay(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 1;
+  return Math.max(1, Math.min(31, Math.floor(parsed)));
+}
+function startOfDay(value) {
+  const date6 = new Date(value);
+  date6.setHours(0, 0, 0, 0);
+  return date6;
+}
+function endOfDay(value) {
+  const date6 = new Date(value);
+  date6.setHours(23, 59, 59, 999);
+  return date6;
+}
+function parseDateInput(value, fallback) {
+  if (!value) return new Date(fallback);
+  const date6 = value instanceof Date ? new Date(value) : new Date(value);
+  return Number.isNaN(date6.getTime()) ? new Date(fallback) : date6;
+}
+function monthKey(date6) {
+  return `${date6.getFullYear()}-${String(date6.getMonth() + 1).padStart(2, "0")}`;
+}
+function localDateKey(date6) {
+  return [
+    date6.getFullYear(),
+    String(date6.getMonth() + 1).padStart(2, "0"),
+    String(date6.getDate()).padStart(2, "0")
+  ].join("-");
+}
+function daysInMonth(year2, month0) {
+  return new Date(year2, month0 + 1, 0).getDate();
+}
+function clampDay(year2, month0, day) {
+  return Math.min(day, daysInMonth(year2, month0));
+}
+function addMonths(date6, offset) {
+  return new Date(date6.getFullYear(), date6.getMonth() + offset, 1);
+}
+function currentFinancialMonthStart(referenceDate, salaryDay) {
+  if (salaryDay <= 1) {
+    return new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1);
+  }
+  const year2 = referenceDate.getFullYear();
+  const month0 = referenceDate.getMonth();
+  const day = referenceDate.getDate();
+  const startMonth0 = day >= salaryDay ? month0 : month0 - 1;
+  const startDate = new Date(year2, startMonth0, 1);
+  const clamped = clampDay(startDate.getFullYear(), startDate.getMonth(), salaryDay);
+  return new Date(startDate.getFullYear(), startDate.getMonth(), clamped, 0, 0, 0, 0);
+}
+function financialMonthRange(month, salaryDay) {
+  const [year2, monthNumber] = month.split("-").map(Number);
+  const month0 = (monthNumber || 1) - 1;
+  if (salaryDay <= 1) {
+    return {
+      startDate: new Date(year2, month0, 1, 0, 0, 0, 0),
+      endDate: new Date(year2, month0 + 1, 0, 23, 59, 59, 999)
+    };
+  }
+  const startDay = clampDay(year2, month0, salaryDay);
+  const nextMonth = new Date(year2, month0 + 1, 1);
+  const nextStartDay = clampDay(nextMonth.getFullYear(), nextMonth.getMonth(), salaryDay);
+  return {
+    startDate: new Date(year2, month0, startDay, 0, 0, 0, 0),
+    endDate: new Date(nextMonth.getFullYear(), nextMonth.getMonth(), nextStartDay - 1, 23, 59, 59, 999)
+  };
+}
+function weekStart(referenceDate) {
+  const date6 = startOfDay(referenceDate);
+  const jsDay = date6.getDay();
+  const mondayOffset = jsDay === 0 ? -6 : 1 - jsDay;
+  date6.setDate(date6.getDate() + mondayOffset);
+  return date6;
+}
+function buildResolved(kind, startDate, endDate, salaryDay, referenceDate, isSalaryCycle) {
+  const safeStart = startOfDay(startDate);
+  const safeEnd = endOfDay(endDate);
+  const daysTotal = Math.max(1, Math.ceil((safeEnd.getTime() - safeStart.getTime() + 1) / MS_PER_DAY));
+  const elapsedEnd = referenceDate < safeStart ? safeStart : referenceDate > safeEnd ? safeEnd : referenceDate;
+  const daysElapsed = Math.max(1, Math.min(daysTotal, Math.ceil((endOfDay(elapsedEnd).getTime() - safeStart.getTime() + 1) / MS_PER_DAY)));
+  const startKey = localDateKey(safeStart);
+  const endKey = localDateKey(safeEnd);
+  const label = kind === "today" ? "\u0627\u0644\u064A\u0648\u0645" : kind === "yesterday" ? "\u0623\u0645\u0633" : kind === "current_week" ? "\u0627\u0644\u0623\u0633\u0628\u0648\u0639 \u0627\u0644\u062D\u0627\u0644\u064A" : kind === "current_month" ? "\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062D\u0627\u0644\u064A" : kind === "previous_month" ? "\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0633\u0627\u0628\u0642" : kind === "salary_cycle" ? "\u062F\u0648\u0631\u0629 \u0627\u0644\u0645\u0631\u062A\u0628 \u0627\u0644\u062D\u0627\u0644\u064A\u0629" : startKey === endKey ? startKey : `${startKey}..${endKey}`;
+  return {
+    kind,
+    key: `${kind}:${startKey}:${endKey}:salary_${salaryDay}`,
+    label,
+    startDate: safeStart,
+    endDate: safeEnd,
+    salaryDay,
+    daysElapsed,
+    daysTotal,
+    isSalaryCycle
+  };
+}
+function resolveFinancePeriod(input = {}, context2 = {}) {
+  const referenceDate = context2.referenceDate ? new Date(context2.referenceDate) : /* @__PURE__ */ new Date();
+  const salaryDay = clampSalaryDay(context2.salaryDay);
+  const period = input.period ?? "current_month";
+  if (period === "today") {
+    return buildResolved(period, referenceDate, referenceDate, salaryDay, referenceDate, false);
+  }
+  if (period === "yesterday") {
+    const date6 = new Date(referenceDate);
+    date6.setDate(date6.getDate() - 1);
+    return buildResolved(period, date6, date6, salaryDay, referenceDate, false);
+  }
+  if (period === "current_week") {
+    const start = weekStart(referenceDate);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return buildResolved(period, start, end, salaryDay, referenceDate, false);
+  }
+  if (period === "custom") {
+    const start = parseDateInput(input.startDate, referenceDate);
+    const end = parseDateInput(input.endDate, start);
+    return buildResolved(period, start, end, salaryDay, referenceDate, false);
+  }
+  if (period === "previous_month") {
+    const currentStart = currentFinancialMonthStart(referenceDate, salaryDay);
+    const previousStart = addMonths(currentStart, -1);
+    const range2 = financialMonthRange(monthKey(previousStart), salaryDay);
+    return buildResolved(period, range2.startDate, range2.endDate, salaryDay, referenceDate, salaryDay > 1);
+  }
+  if (period === "salary_cycle" || period === "current_month") {
+    const month2 = input.month ?? monthKey(currentFinancialMonthStart(referenceDate, salaryDay));
+    const range2 = financialMonthRange(month2, salaryDay);
+    return buildResolved(period, range2.startDate, range2.endDate, salaryDay, referenceDate, salaryDay > 1);
+  }
+  const month = input.month ?? monthKey(referenceDate);
+  const range = financialMonthRange(month, salaryDay);
+  return buildResolved(period, range.startDate, range.endDate, salaryDay, referenceDate, salaryDay > 1);
+}
+var MS_PER_DAY, financePeriodTestUtils;
+var init_period_resolver = __esm({
+  "api/services/finance-semantic-layer/period-resolver.ts"() {
+    MS_PER_DAY = 24 * 60 * 60 * 1e3;
+    financePeriodTestUtils = {
+      startOfDay,
+      endOfDay,
+      monthKey,
+      localDateKey,
+      currentFinancialMonthStart
+    };
+  }
+});
+
+// api/services/finance-semantic-layer/resolvers.ts
+function uniqueList(values) {
+  return [...new Set(values.map((value) => String(value ?? "").trim()).filter(Boolean))];
+}
+function numeric(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+function jsonRecord(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+function dateString(value) {
+  const date6 = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date6.getTime()) ? "" : date6.toISOString().slice(0, 10);
+}
+function rowCanonicalCategory(row) {
+  return canonicalCategoryForRow(row.category, row.subCategory, row.description, row.rawText, row.placeHint);
+}
+function rowMatchesCategory(row, category) {
+  return rowCanonicalCategory(row) === category;
+}
+function rowMatchesAnyCategory(row, categories) {
+  return categories.some((category) => rowMatchesCategory(row, category));
+}
+function sourceOf(kind) {
+  return kind;
+}
+function makeFact(dataNeedId, source, label, value, confidence = 1, evidence) {
+  return {
+    id: `${dataNeedId}:${label}`,
+    dataNeedId,
+    source: sourceOf(source),
+    label,
+    value,
+    confidence,
+    evidence
+  };
+}
+async function loadRowsForPeriod(ctx, period) {
+  return db.select().from(expenses).where(
+    and(
+      eq(expenses.userId, ctx.userId),
+      eq(expenses.userType, ctx.userType),
+      gte(expenses.date, period.startDate),
+      lte(expenses.date, period.endDate)
+    )
+  ).orderBy(desc(expenses.date));
+}
+function resolveInputFromNeed(need) {
+  return {
+    period: need.scope?.period,
+    startDate: need.scope?.startDate,
+    endDate: need.scope?.endDate
+  };
+}
+async function getFinanceSummary(ctx, input = {}) {
+  const period = resolveFinancePeriod(input, ctx);
+  const key = financeCacheKey(ctx.userId, ctx.userType, "summary", period.key);
+  return withFinanceCache(key, financeCacheTtl(period.key), async () => {
+    const rows = await loadRowsForPeriod(ctx, period);
+    return aggregateFinanceSummary(rows, period);
+  });
+}
+function percentChange(current, previous) {
+  if (!Number.isFinite(previous) || previous === 0) {
+    return current === 0 ? 0 : null;
+  }
+  return (current - previous) / previous * 100;
+}
+async function getFinancePeriodComparison(ctx, input = {}) {
+  const currentInput = {
+    period: input.period ?? "current_month",
+    startDate: input.startDate,
+    endDate: input.endDate
+  };
+  const key = financeCacheKey(
+    ctx.userId,
+    ctx.userType,
+    "period_comparison",
+    currentInput.period ?? "current_month",
+    input.startDate ? String(input.startDate) : "",
+    input.endDate ? String(input.endDate) : ""
+  );
+  return withFinanceCache(key, financeCacheTtl(currentInput.period ?? "current_month"), async () => {
+    const [current, previous] = await Promise.all([
+      getFinanceSummary(ctx, currentInput),
+      getFinanceSummary(ctx, { period: "previous_month" })
+    ]);
+    return {
+      current,
+      previous,
+      expenseDifference: current.totalExpense - previous.totalExpense,
+      expenseChangePercent: percentChange(current.totalExpense, previous.totalExpense),
+      incomeDifference: current.totalIncome - previous.totalIncome,
+      incomeChangePercent: percentChange(current.totalIncome, previous.totalIncome),
+      netFlowDifference: current.netFlow - previous.netFlow
+    };
+  });
+}
+async function getWalletSummary(ctx) {
+  const key = financeCacheKey(ctx.userId, ctx.userType, "wallet_summary");
+  return withFinanceCache(key, 60, async () => {
+    const wallets = await db.select().from(userWallets).where(and(eq(userWallets.userId, ctx.userId), eq(userWallets.userType, ctx.userType))).orderBy(userWallets.createdAt);
+    const normalized = wallets.map((wallet) => ({
+      id: wallet.id,
+      name: wallet.name,
+      provider: wallet.provider,
+      balance: numeric(wallet.balance),
+      lastFourDigits: wallet.lastFourDigits
+    }));
+    return {
+      totalBalance: normalized.reduce((sum4, wallet) => sum4 + wallet.balance, 0),
+      walletCount: normalized.length,
+      wallets: normalized
+    };
+  });
+}
+async function getCategoryTotal(ctx, category, input = {}) {
+  const period = resolveFinancePeriod(input, ctx);
+  const aliases = getCategoryAliases(category);
+  const key = financeCacheKey(ctx.userId, ctx.userType, "category_total", period.key, category);
+  return withFinanceCache(key, financeCacheTtl(period.key), async () => {
+    const rows = (await loadRowsForPeriod(ctx, period)).filter((row) => rowMatchesCategory(row, category));
+    const subCategories = /* @__PURE__ */ new Map();
+    let totalExpense = 0;
+    let totalIncome = 0;
+    for (const row of rows) {
+      const amount = amountOf(row);
+      if (row.type === "income") {
+        totalIncome += amount;
+      } else {
+        totalExpense += amount;
+        const name2 = row.subCategory || "general";
+        const existing = subCategories.get(name2) ?? { amount: 0, count: 0 };
+        existing.amount += amount;
+        existing.count += 1;
+        subCategories.set(name2, existing);
+      }
+    }
+    return {
+      period,
+      category,
+      aliases,
+      totalExpense,
+      totalIncome,
+      transactionCount: rows.length,
+      topSubCategories: [...subCategories.entries()].map(([name2, item]) => ({ name: name2, amount: item.amount, count: item.count })).sort((a, b) => b.amount - a.amount).slice(0, 5)
+    };
+  });
+}
+async function getFinanceBreakdown(ctx, input = {}) {
+  const period = resolveFinancePeriod(input, ctx);
+  const granularity = input.granularity ?? "category";
+  const limit = Math.min(Math.max(input.limit ?? 10, 1), 30);
+  const key = financeCacheKey(
+    ctx.userId,
+    ctx.userType,
+    "breakdown",
+    period.key,
+    input.category ?? "all",
+    granularity,
+    limit
+  );
+  return withFinanceCache(key, financeCacheTtl(period.key), async () => {
+    let rows = await loadRowsForPeriod(ctx, period);
+    if (input.category) {
+      rows = rows.filter((row) => rowMatchesCategory(row, input.category));
+    }
+    return buildBreakdown(rows, period, granularity, limit);
+  });
+}
+async function getFinanceTransactions(ctx, input = {}) {
+  const period = resolveFinancePeriod(input, ctx);
+  const limit = Math.min(Math.max(input.limit ?? 10, 1), 30);
+  const transactionTypes = uniqueList(input.transactionTypes ?? ["expense"]);
+  const categories = uniqueList([...input.categories ?? [], input.category]);
+  const categoryKey = categories.length > 0 ? [...categories].sort().join("+") : "all";
+  const key = financeCacheKey(
+    ctx.userId,
+    ctx.userType,
+    "transactions",
+    period.key,
+    categoryKey,
+    transactionTypes.join("+"),
+    limit
+  );
+  return withFinanceCache(key, Math.min(financeCacheTtl(period.key), 5 * 60), async () => {
+    let rows = await loadRowsForPeriod(ctx, period);
+    if (transactionTypes.length > 0) {
+      rows = rows.filter((row) => transactionTypes.includes(row.type));
+    }
+    if (categories.length > 0) {
+      rows = rows.filter((row) => rowMatchesAnyCategory(row, categories));
+    }
+    const transactions = rows.slice(0, limit).map((row) => ({
+      id: row.id,
+      type: row.type,
+      amount: numeric(row.amount),
+      category: canonicalCategoryForRow(row.category, row.subCategory, row.description, row.rawText, row.placeHint),
+      subCategory: row.subCategory,
+      description: row.description,
+      paymentMethod: row.paymentMethod,
+      placeHint: row.placeHint,
+      date: dateString(row.date)
+    }));
+    return {
+      period,
+      totalMatched: rows.length,
+      returned: transactions.length,
+      transactions
+    };
+  });
+}
+async function loadGoals(ctx) {
+  return db.select().from(financialGoals).where(
+    and(
+      eq(financialGoals.userId, ctx.userId),
+      eq(financialGoals.userType, ctx.userType),
+      eq(financialGoals.status, "active")
+    )
+  ).orderBy(desc(financialGoals.createdAt)).limit(10);
+}
+async function getGoalProgress(ctx) {
+  const key = financeCacheKey(ctx.userId, ctx.userType, "goals_active");
+  return withFinanceCache(key, 5 * 60, async () => {
+    const [goals, summary] = await Promise.all([
+      loadGoals(ctx),
+      getFinanceSummary(ctx, { period: "current_month" })
+    ]);
+    const capacity = Math.max(0, summary.netFlow);
+    return {
+      goals: goals.map((goal) => {
+        const targetAmount = numeric(goal.targetAmount);
+        return {
+          id: goal.id,
+          title: goal.title,
+          status: goal.status,
+          targetAmount,
+          targetDate: goal.targetDate ? dateString(goal.targetDate) : null,
+          estimatedMonthlyCapacity: capacity,
+          estimatedMonthsNeeded: capacity > 0 && targetAmount > 0 ? Math.ceil(targetAmount / capacity) : null
+        };
+      })
+    };
+  });
+}
+async function getChartData(ctx, input = {}) {
+  const period = resolveFinancePeriod(input, ctx);
+  const granularity = input.granularity ?? "category";
+  const limit = Math.min(Math.max(input.limit ?? 12, 1), 60);
+  const categories = uniqueList([...input.categories ?? [], input.category]);
+  const categoryKey = categories.length > 0 ? [...categories].sort().join("+") : "all";
+  const key = financeCacheKey(ctx.userId, ctx.userType, "chart_data", period.key, categoryKey, granularity, limit);
+  return withFinanceCache(key, financeCacheTtl(period.key), async () => {
+    let rows = await loadRowsForPeriod(ctx, period);
+    if (categories.length > 1) {
+      return buildMultiCategoryChartData(rows, period, categories, granularity, limit);
+    }
+    if (categories[0]) {
+      rows = rows.filter((row) => rowMatchesCategory(row, categories[0]));
+    }
+    return buildChartData(rows, period, granularity, limit);
+  });
+}
+async function getProfileSnapshot(ctx) {
+  const key = financeCacheKey(ctx.userId, ctx.userType, "profile_snapshot");
+  return withFinanceCache(key, 5 * 60, async () => {
+    const [profile] = await db.select().from(userProfiles).where(and(eq(userProfiles.userId, ctx.userId), eq(userProfiles.userType, ctx.userType))).limit(1);
+    const financialInfo = jsonRecord(profile?.financialInfo);
+    const salaryDay = numeric(financialInfo.salaryDay, ctx.salaryDay ?? 1);
+    return {
+      monthlyIncome: profile?.monthlyIncome == null ? null : numeric(profile.monthlyIncome),
+      financialGoal: profile?.financialGoal ?? null,
+      financialPersonality: profile?.financialPersonality ?? null,
+      salaryDay: Math.max(1, Math.min(31, Math.floor(salaryDay || 1)))
+    };
+  });
+}
+function summaryFacts(need, summary) {
+  return [
+    makeFact(need.id, need.kind, "period", summary.period.label),
+    makeFact(need.id, need.kind, "total_income", summary.totalIncome),
+    makeFact(need.id, need.kind, "total_expense", summary.totalExpense),
+    makeFact(need.id, need.kind, "net_flow", summary.netFlow),
+    makeFact(need.id, need.kind, "transaction_count", summary.transactionCount),
+    makeFact(need.id, need.kind, "expense_count", summary.expenseCount),
+    makeFact(need.id, need.kind, "income_count", summary.incomeCount),
+    makeFact(need.id, need.kind, "daily_average_expense", summary.dailyAverageExpense)
+  ];
+}
+function comparisonFacts(need, comparison) {
+  return [
+    makeFact(need.id, need.kind, "current_period", comparison.current.period.label),
+    makeFact(need.id, need.kind, "previous_period", comparison.previous.period.label),
+    makeFact(need.id, need.kind, "current_total_income", comparison.current.totalIncome),
+    makeFact(need.id, need.kind, "previous_total_income", comparison.previous.totalIncome),
+    makeFact(need.id, need.kind, "current_total_expense", comparison.current.totalExpense),
+    makeFact(need.id, need.kind, "previous_total_expense", comparison.previous.totalExpense),
+    makeFact(need.id, need.kind, "expense_difference", comparison.expenseDifference),
+    makeFact(need.id, need.kind, "expense_change_percent", comparison.expenseChangePercent),
+    makeFact(need.id, need.kind, "current_net_flow", comparison.current.netFlow),
+    makeFact(need.id, need.kind, "previous_net_flow", comparison.previous.netFlow),
+    makeFact(need.id, need.kind, "net_flow_difference", comparison.netFlowDifference),
+    makeFact(need.id, need.kind, "current_transaction_count", comparison.current.transactionCount),
+    makeFact(need.id, need.kind, "previous_transaction_count", comparison.previous.transactionCount)
+  ];
+}
+function categoryFacts(need, category) {
+  return [
+    makeFact(need.id, need.kind, "category", category.category),
+    makeFact(need.id, need.kind, "period", category.period.label),
+    makeFact(need.id, need.kind, "category_total_expense", category.totalExpense),
+    makeFact(need.id, need.kind, "category_total_income", category.totalIncome),
+    makeFact(need.id, need.kind, "transaction_count", category.transactionCount)
+  ];
+}
+function breakdownFacts(need, breakdown) {
+  return [
+    makeFact(need.id, need.kind, "period", breakdown.period.label),
+    makeFact(need.id, need.kind, "granularity", breakdown.granularity),
+    makeFact(need.id, need.kind, "total_expense", breakdown.totalExpense),
+    ...breakdown.items.slice(0, 8).map(
+      (item, index2) => makeFact(
+        need.id,
+        need.kind,
+        `top_${index2 + 1}_${item.name}`,
+        item.amount,
+        1,
+        [{ id: item.name, label: item.name, value: item.count }]
+      )
+    )
+  ];
+}
+function transactionFacts(need, result) {
+  return [
+    makeFact(need.id, need.kind, "period", result.period.label),
+    makeFact(need.id, need.kind, "total_matched", result.totalMatched),
+    makeFact(need.id, need.kind, "returned", result.returned),
+    ...result.transactions.slice(0, 12).map(
+      (row, index2) => makeFact(
+        need.id,
+        need.kind,
+        `transaction_${index2 + 1}`,
+        `${row.date} ${row.category} ${row.amount}`,
+        1,
+        [{ id: row.id, label: row.description || row.category, value: row.amount }]
+      )
+    )
+  ];
+}
+function walletFacts(need, summary) {
+  return [
+    makeFact(need.id, need.kind, "wallet_count", summary.walletCount),
+    makeFact(need.id, need.kind, "total_balance", summary.totalBalance),
+    ...summary.wallets.slice(0, 8).map(
+      (wallet, index2) => makeFact(
+        need.id,
+        need.kind,
+        `wallet_${index2 + 1}`,
+        `${wallet.name} (${wallet.provider}) balance=${wallet.balance}`,
+        1,
+        [
+          {
+            id: wallet.id,
+            label: wallet.lastFourDigits ? `${wallet.name} ending ${wallet.lastFourDigits}` : wallet.name,
+            value: wallet.balance
+          }
+        ]
+      )
+    )
+  ];
+}
+function goalFacts(need, result) {
+  const facts = [makeFact(need.id, need.kind, "active_goal_count", result.goals.length)];
+  for (const [index2, goal] of result.goals.slice(0, 8).entries()) {
+    const key = `goal_${index2 + 1}`;
+    facts.push(
+      makeFact(
+        need.id,
+        need.kind,
+        key,
+        `${goal.title}: target=${goal.targetAmount}; months_needed=${goal.estimatedMonthsNeeded ?? "unknown"}`,
+        0.9,
+        [{ id: goal.id, label: goal.title, value: goal.targetAmount }]
+      ),
+      makeFact(need.id, need.kind, `${key}_title`, goal.title, 1, [
+        { id: goal.id, label: "goal_id", value: goal.id }
+      ]),
+      makeFact(need.id, need.kind, `${key}_target_amount`, goal.targetAmount),
+      makeFact(need.id, need.kind, `${key}_target_date`, goal.targetDate ?? null),
+      makeFact(need.id, need.kind, `${key}_estimated_monthly_capacity`, goal.estimatedMonthlyCapacity),
+      makeFact(need.id, need.kind, `${key}_estimated_months_needed`, goal.estimatedMonthsNeeded ?? null),
+      makeFact(need.id, need.kind, `${key}_tracked_saved_amount`, null, 0.6)
+    );
+  }
+  return facts;
+}
+function profileFacts(need, profile) {
+  return [
+    makeFact(need.id, need.kind, "monthly_income", profile.monthlyIncome),
+    makeFact(need.id, need.kind, "financial_goal", profile.financialGoal),
+    makeFact(need.id, need.kind, "financial_personality", profile.financialPersonality),
+    makeFact(need.id, need.kind, "salary_day", profile.salaryDay)
+  ];
+}
+async function resolveKernelDataNeeds(ctx, dataNeeds) {
+  const facts = [];
+  const artifacts = [];
+  const errors = [];
+  let profileSnapshot2;
+  const needsFinancialPeriod = dataNeeds.some(
+    (need) => need.kind.startsWith("finance.") || need.kind === "chart.data" || need.kind === "goals.active"
+  );
+  if (needsFinancialPeriod && !ctx.salaryDay) {
+    try {
+      profileSnapshot2 = await getProfileSnapshot(ctx);
+      ctx.salaryDay = profileSnapshot2.salaryDay;
+    } catch (error48) {
+      errors.push(`profile_snapshot_prefetch:${error48 instanceof Error ? error48.message : String(error48)}`);
+    }
+  }
+  const financeCacheTrace2 = await collectFinanceCacheTrace(async () => {
+    for (const need of dataNeeds) {
+      try {
+        if (need.kind === "none") continue;
+        if (need.kind === "finance.summary") {
+          facts.push(...summaryFacts(need, await getFinanceSummary(ctx, resolveInputFromNeed(need))));
+        } else if (need.kind === "finance.period_comparison") {
+          facts.push(...comparisonFacts(need, await getFinancePeriodComparison(ctx, resolveInputFromNeed(need))));
+        } else if (need.kind === "finance.category_total") {
+          facts.push(
+            ...categoryFacts(
+              need,
+              await getCategoryTotal(ctx, need.scope?.category ?? "uncategorized", resolveInputFromNeed(need))
+            )
+          );
+        } else if (need.kind === "finance.breakdown") {
+          facts.push(
+            ...breakdownFacts(
+              need,
+              await getFinanceBreakdown(ctx, {
+                ...resolveInputFromNeed(need),
+                category: need.scope?.category,
+                granularity: need.scope?.granularity,
+                limit: need.scope?.limit
+              })
+            )
+          );
+        } else if (need.kind === "finance.transactions") {
+          facts.push(
+            ...transactionFacts(
+              need,
+              await getFinanceTransactions(ctx, {
+                ...resolveInputFromNeed(need),
+                category: need.scope?.category,
+                categories: need.scope?.categories,
+                transactionTypes: need.scope?.transactionTypes,
+                limit: need.scope?.limit ?? need.maxRows
+              })
+            )
+          );
+        } else if (need.kind === "finance.goal_progress" || need.kind === "goals.active") {
+          facts.push(...goalFacts(need, await getGoalProgress(ctx)));
+        } else if (need.kind === "profile.snapshot") {
+          const profile = profileSnapshot2 ?? await getProfileSnapshot(ctx);
+          ctx.salaryDay = profile.salaryDay;
+          facts.push(...profileFacts(need, profile));
+        } else if (need.kind === "wallet.summary") {
+          facts.push(...walletFacts(need, await getWalletSummary(ctx)));
+        } else if (need.kind === "chart.data") {
+          const chart = await getChartData(ctx, {
+            ...resolveInputFromNeed(need),
+            category: need.scope?.category,
+            categories: need.scope?.categories,
+            granularity: need.scope?.granularity,
+            limit: need.scope?.limit
+          });
+          artifacts.push(createFinanceChartArtifact(need, chart));
+        }
+      } catch (error48) {
+        errors.push(`${need.id}:${error48 instanceof Error ? error48.message : String(error48)}`);
+      }
+    }
+  });
+  return {
+    facts,
+    artifacts,
+    errors,
+    cacheHits: financeCacheTrace2.cacheHits
+  };
+}
+var init_resolvers = __esm({
+  "api/services/finance-semantic-layer/resolvers.ts"() {
+    init_drizzle_orm();
+    init_schema2();
+    init_connection();
+    init_cache2();
+    init_category_matcher();
+    init_chart_artifacts();
+    init_row_aggregators();
+    init_period_resolver();
+  }
+});
+
+// api/services/finance-semantic-layer/monthly-report-facts.ts
+function fact(label, value, source = "finance.summary") {
+  return {
+    id: `monthly_report:${label}`,
+    dataNeedId: "monthly_report",
+    label,
+    value,
+    source,
+    confidence: 1
+  };
+}
+function numberValue(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.round(parsed) : 0;
+}
+function moneyValue2(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.round(parsed * 100) / 100 : 0;
+}
+function compactJson(value, max3 = 8) {
+  if (!Array.isArray(value)) return "";
+  return value.slice(0, max3).map((item) => {
+    if (!item || typeof item !== "object") return String(item);
+    const row = item;
+    const name2 = row.name ?? row.category ?? row.label ?? "item";
+    const amount = row.amount ?? row.value ?? "";
+    return `${name2}:${amount}`;
+  }).join(" | ");
+}
+function factsBlockFromFacts(month, facts, source) {
+  return [
+    `SEMANTIC_REPORT_FACTS month=${month} source=${source}`,
+    ...facts.map((item) => `${item.label}: ${item.value ?? "unknown"}`)
+  ].join("\n");
+}
+async function buildFromSnapshot(ctx, month) {
+  const [snapshot] = await db.select().from(monthlyBehaviorSnapshots).where(
+    and(
+      eq(monthlyBehaviorSnapshots.userId, ctx.userId),
+      eq(monthlyBehaviorSnapshots.userType, ctx.userType),
+      eq(monthlyBehaviorSnapshots.month, month)
+    )
+  ).limit(1);
+  if (!snapshot) return null;
+  const facts = [
+    fact("total_income", numberValue(snapshot.totalIncome)),
+    fact("total_expense", numberValue(snapshot.totalExpense)),
+    fact("net_flow", numberValue(snapshot.netFlow)),
+    fact("top_categories", compactJson(snapshot.topCategories), "finance.breakdown"),
+    fact("top_sub_categories", compactJson(snapshot.topSubCategories), "finance.breakdown"),
+    fact("behavior_flags", compactJson(snapshot.behaviorFlags), "manual")
+  ];
+  return {
+    month,
+    source: "snapshot",
+    facts,
+    artifacts: [],
+    factsBlock: factsBlockFromFacts(month, facts, "snapshot"),
+    cacheKey: financeCacheKey(ctx.userId, ctx.userType, "monthly_report_facts", month, "snapshot")
+  };
+}
+async function buildMonthlyReportFactsPack(ctx, month, options = {}) {
+  const key = financeCacheKey(ctx.userId, ctx.userType, "monthly_report_facts", month, "live_v2");
+  const compute = async () => {
+    if (options.preferSnapshot && !options.forceLive) {
+      const snapshot = await buildFromSnapshot(ctx, month);
+      if (snapshot) return snapshot;
+    }
+    const [summary, breakdown, goals, chart] = await Promise.all([
+      getFinanceSummary(ctx, { period: "current_month", month }),
+      getFinanceBreakdown(ctx, { period: "current_month", month, granularity: "category", limit: 8 }),
+      getGoalProgress(ctx),
+      getChartData(ctx, { period: "current_month", month, granularity: "category", limit: 8 })
+    ]);
+    const facts = [
+      fact("period", summary.period.label),
+      fact("total_income", moneyValue2(summary.totalIncome)),
+      fact("total_expense", moneyValue2(summary.totalExpense)),
+      fact("net_flow", moneyValue2(summary.netFlow)),
+      fact("transaction_count", summary.transactionCount),
+      fact("daily_average_expense", moneyValue2(summary.dailyAverageExpense)),
+      fact(
+        "top_categories",
+        breakdown.items.slice(0, 8).map((item) => `${item.name}:${moneyValue2(item.amount)} (${item.percent}%)`).join(" | "),
+        "finance.breakdown"
+      ),
+      fact(
+        "active_goals",
+        goals.goals.slice(0, 5).map((goal) => `${goal.title}:${moneyValue2(goal.targetAmount)}`).join(" | "),
+        "goals.active"
+      )
+    ];
+    const chartNeed = {
+      id: "monthly_report_chart",
+      kind: "chart.data",
+      priority: "normal",
+      reason: "monthly_report_visual_summary",
+      scope: { period: "current_month", granularity: "category", limit: 8 }
+    };
+    return {
+      month,
+      source: "semantic_live",
+      facts,
+      artifacts: [createFinanceChartArtifact(chartNeed, chart)],
+      factsBlock: factsBlockFromFacts(month, facts, "semantic_live"),
+      cacheKey: key
+    };
+  };
+  if (options.skipCache || options.forceLive) {
+    return compute();
+  }
+  return withFinanceCache(key, 10 * 60, compute);
+}
+var init_monthly_report_facts = __esm({
+  "api/services/finance-semantic-layer/monthly-report-facts.ts"() {
+    init_drizzle_orm();
+    init_schema2();
+    init_connection();
+    init_cache2();
+    init_resolvers();
+    init_chart_artifacts();
+  }
+});
+
+// api/services/finance-semantic-layer/proactive-insights.ts
+function money(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.round(parsed) : 0;
+}
+function percentChange2(current, previous) {
+  if (previous <= 0) return null;
+  return Math.round((current - previous) / previous * 100);
+}
+function fact2(id, label, value) {
+  return {
+    id,
+    dataNeedId: "proactive_insights",
+    label,
+    value,
+    source: "manual",
+    confidence: 1
+  };
+}
+function insightArtifact(insight) {
+  return {
+    id: `proactive:${insight.id}`,
+    type: "text_block",
+    title: insight.title,
+    payload: {
+      severity: insight.severity,
+      body: insight.body,
+      facts: insight.facts.map((item) => ({
+        label: item.label,
+        value: item.value
+      }))
+    }
+  };
+}
+function buildProactiveInsightsFromSnapshots(snapshots) {
+  const ordered = [...snapshots].sort((a, b) => String(b.month).localeCompare(String(a.month)));
+  const current = ordered[0];
+  const previous = ordered[1];
+  if (!current) return [];
+  const currentExpense = money(current.totalExpense);
+  const currentIncome = money(current.totalIncome);
+  const currentNet = money(current.netFlow);
+  const previousExpense = previous ? money(previous.totalExpense) : 0;
+  const change = previous ? percentChange2(currentExpense, previousExpense) : null;
+  const insights = [];
+  if (change !== null && change >= 25) {
+    insights.push({
+      id: "expense_spike",
+      severity: "warning",
+      title: "\u0645\u0635\u0627\u0631\u064A\u0641\u0643 \u0632\u0627\u062F\u062A \u0628\u0634\u0643\u0644 \u0645\u0644\u062D\u0648\u0638",
+      body: `\u0645\u0635\u0627\u0631\u064A\u0641 ${current.month} \u0623\u0639\u0644\u0649 \u0645\u0646 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0633\u0627\u0628\u0642 \u0628\u062D\u0648\u0627\u0644\u064A ${change}%. \u0631\u0627\u062C\u0639 \u0623\u0643\u0628\u0631 \u0641\u0626\u062A\u064A\u0646 \u0642\u0628\u0644 \u0646\u0647\u0627\u064A\u0629 \u0627\u0644\u0634\u0647\u0631.`,
+      facts: [
+        fact2("expense_spike:current", "current_expense", currentExpense),
+        fact2("expense_spike:previous", "previous_expense", previousExpense),
+        fact2("expense_spike:change", "change_percent", change)
+      ]
+    });
+  }
+  if (change !== null && change <= -15) {
+    insights.push({
+      id: "expense_improved",
+      severity: "positive",
+      title: "\u062A\u062D\u0633\u0646 \u0648\u0627\u0636\u062D \u0641\u064A \u0627\u0644\u0625\u0646\u0641\u0627\u0642",
+      body: `\u0645\u0635\u0627\u0631\u064A\u0641 ${current.month} \u0623\u0642\u0644 \u0645\u0646 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0633\u0627\u0628\u0642 \u0628\u062D\u0648\u0627\u0644\u064A ${Math.abs(change)}%. \u062D\u0627\u0641\u0638 \u0639\u0644\u0649 \u0646\u0641\u0633 \u0627\u0644\u0633\u0644\u0648\u0643 \u0623\u0633\u0628\u0648\u0639\u064A\u0646 \u0643\u0645\u0627\u0646.`,
+      facts: [
+        fact2("expense_improved:current", "current_expense", currentExpense),
+        fact2("expense_improved:previous", "previous_expense", previousExpense),
+        fact2("expense_improved:change", "change_percent", change)
+      ]
+    });
+  }
+  if (currentIncome > 0) {
+    const burnRate = Math.round(currentExpense / currentIncome * 100);
+    if (burnRate >= 85) {
+      insights.push({
+        id: "income_burn_rate",
+        severity: "warning",
+        title: "\u0646\u0633\u0628\u0629 \u0627\u0633\u062A\u0647\u0644\u0627\u0643 \u0627\u0644\u062F\u062E\u0644 \u0639\u0627\u0644\u064A\u0629",
+        body: `\u0627\u0633\u062A\u0647\u0644\u0627\u0643\u0643 \u0645\u0646 \u0627\u0644\u062F\u062E\u0644 \u0648\u0635\u0644 ${burnRate}%. \u062D\u0627\u0648\u0644 \u062A\u0633\u064A\u0628 \u0647\u0627\u0645\u0634 \u0623\u0645\u0627\u0646 15-20% \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644.`,
+        facts: [
+          fact2("income_burn_rate:expense", "total_expense", currentExpense),
+          fact2("income_burn_rate:income", "total_income", currentIncome),
+          fact2("income_burn_rate:percent", "burn_rate_percent", burnRate)
+        ]
+      });
+    }
+  }
+  if (currentNet > 0 && currentIncome > 0) {
+    const savingsRate = Math.round(currentNet / currentIncome * 100);
+    if (savingsRate >= 10) {
+      insights.push({
+        id: "positive_net_flow",
+        severity: "positive",
+        title: "\u0641\u064A\u0647 \u0641\u0631\u0635\u0629 \u0627\u062F\u062E\u0627\u0631 \u062C\u0627\u0647\u0632\u0629",
+        body: `\u0627\u0644\u0635\u0627\u0641\u064A \u0645\u0648\u062C\u0628 \u0628\u062D\u0648\u0627\u0644\u064A ${currentNet} \u062C\u0646\u064A\u0647. \u0645\u0645\u0643\u0646 \u062A\u062D\u0648\u0644 \u062C\u0632\u0621 \u0645\u0646\u0647 \u0644\u0647\u062F\u0641 \u0627\u062F\u062E\u0627\u0631 \u0628\u062F\u0644 \u0645\u0627 \u064A\u0630\u0648\u0628 \u0641\u064A \u0645\u0635\u0627\u0631\u064A\u0641 \u0635\u063A\u064A\u0631\u0629.`,
+        facts: [
+          fact2("positive_net_flow:net", "net_flow", currentNet),
+          fact2("positive_net_flow:savings_rate", "savings_rate_percent", savingsRate)
+        ]
+      });
+    }
+  }
+  return insights.map((item) => ({
+    ...item,
+    artifact: insightArtifact(item)
+  }));
+}
+async function getProactiveInsights(ctx) {
+  const rows = await db.select().from(monthlyBehaviorSnapshots).where(
+    and(
+      eq(monthlyBehaviorSnapshots.userId, ctx.userId),
+      eq(monthlyBehaviorSnapshots.userType, ctx.userType)
+    )
+  ).orderBy(desc(monthlyBehaviorSnapshots.month)).limit(Math.max(2, Math.min(ctx.limit ?? 3, 6)));
+  return buildProactiveInsightsFromSnapshots(rows);
+}
+var init_proactive_insights = __esm({
+  "api/services/finance-semantic-layer/proactive-insights.ts"() {
+    init_drizzle_orm();
+    init_schema2();
+    init_connection();
+  }
+});
+
+// api/services/finance-semantic-layer/index.ts
+var finance_semantic_layer_exports = {};
+__export(finance_semantic_layer_exports, {
+  aggregateFinanceSummary: () => aggregateFinanceSummary,
+  amountOf: () => amountOf,
+  buildBreakdown: () => buildBreakdown,
+  buildChartData: () => buildChartData,
+  buildMonthlyReportFactsPack: () => buildMonthlyReportFactsPack,
+  buildProactiveInsightsFromSnapshots: () => buildProactiveInsightsFromSnapshots,
+  createFinanceChartArtifact: () => createFinanceChartArtifact,
+  financeCacheKey: () => financeCacheKey,
+  financeCacheTtl: () => financeCacheTtl,
+  financePeriodTestUtils: () => financePeriodTestUtils,
+  getCategoryAliases: () => getCategoryAliases,
+  getCategoryTotal: () => getCategoryTotal,
+  getChartData: () => getChartData,
+  getFinanceBreakdown: () => getFinanceBreakdown,
+  getFinanceSummary: () => getFinanceSummary,
+  getFinanceTransactions: () => getFinanceTransactions,
+  getGoalProgress: () => getGoalProgress,
+  getProactiveInsights: () => getProactiveInsights,
+  getProfileSnapshot: () => getProfileSnapshot,
+  invalidateFinanceUserCache: () => invalidateFinanceUserCache,
+  matchesCategory: () => matchesCategory,
+  normalizeFinanceText: () => normalizeFinanceText,
+  resolveFinancePeriod: () => resolveFinancePeriod,
+  resolveKernelDataNeeds: () => resolveKernelDataNeeds,
+  withFinanceCache: () => withFinanceCache
+});
+var init_finance_semantic_layer = __esm({
+  "api/services/finance-semantic-layer/index.ts"() {
+    init_types5();
+    init_cache2();
+    init_category_matcher();
+    init_row_aggregators();
+    init_chart_artifacts();
+    init_monthly_report_facts();
+    init_proactive_insights();
+    init_period_resolver();
+    init_resolvers();
   }
 });
 
@@ -161400,7 +163192,7 @@ function extractAmounts(rawText) {
     const suffix = match2[2]?.trim();
     if (suffix === "\u0627\u0644\u0641" || suffix === "\u0623\u0644\u0641") amount *= 1e3;
     if (amount <= 0 || amount > 1e7) continue;
-    if (amount < 100 && !isFinancialContext(text2, match2.index, match2[0].length)) continue;
+    if (amount < 100 && !suffix && !isFinancialContext(text2, match2.index, match2[0].length)) continue;
     amounts.push({
       amount,
       index: match2.index,
@@ -163208,19 +165000,19 @@ __export(financial_month_exports, {
   getFinancialMonthDates: () => getFinancialMonthDates,
   getFinancialMonthRange: () => getFinancialMonthRange
 });
-function clampDay(year2, month, salaryDay) {
-  const daysInMonth = new Date(year2, month + 1, 0).getDate();
-  return Math.min(salaryDay, daysInMonth);
+function clampDay2(year2, month, salaryDay) {
+  const daysInMonth2 = new Date(year2, month + 1, 0).getDate();
+  return Math.min(salaryDay, daysInMonth2);
 }
 function getFinancialMonthRange(calendarMonth, salaryDay, referenceDate = /* @__PURE__ */ new Date()) {
   const [year2, monthIdx] = calendarMonth.split("-").map(Number);
   const month0 = monthIdx - 1;
-  const clampedStart = clampDay(year2, month0, salaryDay);
+  const clampedStart = clampDay2(year2, month0, salaryDay);
   const start = new Date(year2, month0, clampedStart, 0, 0, 0, 0);
   const nextMonth0 = month0 + 1;
   const nextYear = nextMonth0 > 11 ? year2 + 1 : year2;
   const nextMonth0Clamped = nextMonth0 > 11 ? 0 : nextMonth0;
-  const clampedEnd = clampDay(nextYear, nextMonth0Clamped, salaryDay);
+  const clampedEnd = clampDay2(nextYear, nextMonth0Clamped, salaryDay);
   const end = new Date(
     nextYear,
     nextMonth0Clamped,
@@ -163345,10 +165137,10 @@ function getClientHeaders(requestOptions) {
 }
 async function getHeaders(url2) {
   var _a3;
-  const headers = new Headers();
-  headers.append("Content-Type", "application/json");
-  headers.append("x-goog-api-client", getClientHeaders(url2.requestOptions));
-  headers.append("x-goog-api-key", url2.apiKey);
+  const headers2 = new Headers();
+  headers2.append("Content-Type", "application/json");
+  headers2.append("x-goog-api-client", getClientHeaders(url2.requestOptions));
+  headers2.append("x-goog-api-key", url2.apiKey);
   let customHeaders = (_a3 = url2.requestOptions) === null || _a3 === void 0 ? void 0 : _a3.customHeaders;
   if (customHeaders) {
     if (!(customHeaders instanceof Headers)) {
@@ -163364,10 +165156,10 @@ async function getHeaders(url2) {
       } else if (headerName === "x-goog-api-client") {
         throw new GoogleGenerativeAIRequestInputError(`Header name ${headerName} can only be set using the apiClient field`);
       }
-      headers.append(headerName, headerValue);
+      headers2.append(headerName, headerValue);
     }
   }
-  return headers;
+  return headers2;
 }
 async function constructModelRequest(model, task, apiKey, stream2, body, requestOptions) {
   const url2 = new RequestUrl(model, task, apiKey, stream2, requestOptions);
@@ -166276,16 +168068,16 @@ var init_taxonomy_adapter = __esm({
 // api/lib/embedding-engine.ts
 async function getEmbedding(text2, apiKey, userId) {
   const redis = await getRedisClient();
-  const cacheKey2 = userId ? `embedding:${userId}:${text2}` : `embedding:global:${text2}`;
+  const cacheKey3 = userId ? `embedding:${userId}:${text2}` : `embedding:global:${text2}`;
   if (redis) {
     try {
-      const cachedStr = await redis.get(cacheKey2);
+      const cachedStr = await redis.get(cacheKey3);
       if (cachedStr) return JSON.parse(cachedStr);
     } catch (e2) {
       console.warn("Redis get error:", e2);
     }
   } else {
-    const cached2 = inputEmbeddingCache.get(cacheKey2);
+    const cached2 = inputEmbeddingCache.get(cacheKey3);
     if (cached2) return cached2;
   }
   const embedWith = async (modelName) => {
@@ -166303,12 +168095,12 @@ async function getEmbedding(text2, apiKey, userId) {
   }
   if (redis) {
     try {
-      await redis.setEx(cacheKey2, 604800, JSON.stringify(vector));
+      await redis.setEx(cacheKey3, 604800, JSON.stringify(vector));
     } catch (e2) {
       console.warn("Redis set error:", e2);
     }
   } else {
-    inputEmbeddingCache.set(cacheKey2, vector);
+    inputEmbeddingCache.set(cacheKey3, vector);
   }
   return vector;
 }
@@ -168555,6 +170347,18 @@ function scoreCategories(text2, userHistoryCategories, numAmounts = 1) {
   let rankedCategories = [...scores.entries()].map(([category, data]) => ({ category, score: data.score, signals: data.signals })).sort((a, b) => b.score - a.score);
   let included = rankedCategories.filter((c) => c.score >= INCLUSION_THRESHOLD);
   if (included.length === 0 || included.length > 0 && included[0].score < 15) {
+    const hasRealSignal = rankedCategories.some(
+      (category) => category.signals.some((signal) => signal !== "safety")
+    );
+    if (!hasRealSignal) {
+      return {
+        filteredCategories: CATEGORIES,
+        scores: rankedCategories,
+        totalCategories: CATEGORIES.length,
+        allCategories: CATEGORIES.length,
+        intent
+      };
+    }
     const fallbackCategoryNames = /* @__PURE__ */ new Set();
     const topRanked = rankedCategories.slice(0, 5).map((c) => c.category);
     topRanked.forEach((name2) => fallbackCategoryNames.add(name2));
@@ -168834,10 +170638,10 @@ var init_error = __esm({
     GroqError = class extends Error {
     };
     APIError = class _APIError extends GroqError {
-      constructor(status, error48, message, headers) {
+      constructor(status, error48, message, headers2) {
         super(`${_APIError.makeMessage(status, error48, message)}`);
         this.status = status;
-        this.headers = headers;
+        this.headers = headers2;
         this.error = error48;
       }
       static makeMessage(status, error48, message) {
@@ -168853,36 +170657,36 @@ var init_error = __esm({
         }
         return "(no status code or body)";
       }
-      static generate(status, errorResponse, message, headers) {
-        if (!status || !headers) {
+      static generate(status, errorResponse, message, headers2) {
+        if (!status || !headers2) {
           return new APIConnectionError({ message, cause: castToError(errorResponse) });
         }
         const error48 = errorResponse;
         if (status === 400) {
-          return new BadRequestError(status, error48, message, headers);
+          return new BadRequestError(status, error48, message, headers2);
         }
         if (status === 401) {
-          return new AuthenticationError(status, error48, message, headers);
+          return new AuthenticationError(status, error48, message, headers2);
         }
         if (status === 403) {
-          return new PermissionDeniedError(status, error48, message, headers);
+          return new PermissionDeniedError(status, error48, message, headers2);
         }
         if (status === 404) {
-          return new NotFoundError(status, error48, message, headers);
+          return new NotFoundError(status, error48, message, headers2);
         }
         if (status === 409) {
-          return new ConflictError(status, error48, message, headers);
+          return new ConflictError(status, error48, message, headers2);
         }
         if (status === 422) {
-          return new UnprocessableEntityError(status, error48, message, headers);
+          return new UnprocessableEntityError(status, error48, message, headers2);
         }
         if (status === 429) {
-          return new RateLimitError(status, error48, message, headers);
+          return new RateLimitError(status, error48, message, headers2);
         }
         if (status >= 500) {
-          return new InternalServerError(status, error48, message, headers);
+          return new InternalServerError(status, error48, message, headers2);
         }
-        return new _APIError(status, error48, message, headers);
+        return new _APIError(status, error48, message, headers2);
       }
     };
     APIUserAbortError = class extends APIError {
@@ -169196,7 +171000,7 @@ var init_shims = __esm({
 var FallbackEncoder;
 var init_request_options = __esm({
   "node_modules/groq-sdk/internal/request-options.mjs"() {
-    FallbackEncoder = ({ headers, body }) => {
+    FallbackEncoder = ({ headers: headers2, body }) => {
       return {
         bodyHeaders: {
           "content-type": "application/json"
@@ -169388,11 +171192,11 @@ var init_resource = __esm({
 });
 
 // node_modules/groq-sdk/internal/headers.mjs
-function* iterateHeaders(headers) {
-  if (!headers)
+function* iterateHeaders(headers2) {
+  if (!headers2)
     return;
-  if (brand_privateNullableHeaders in headers) {
-    const { values, nulls } = headers;
+  if (brand_privateNullableHeaders in headers2) {
+    const { values, nulls } = headers2;
     yield* values.entries();
     for (const name2 of nulls) {
       yield [name2, null];
@@ -169401,13 +171205,13 @@ function* iterateHeaders(headers) {
   }
   let shouldClear = false;
   let iter;
-  if (headers instanceof Headers) {
-    iter = headers.entries();
-  } else if (isReadonlyArray(headers)) {
-    iter = headers;
+  if (headers2 instanceof Headers) {
+    iter = headers2.entries();
+  } else if (isReadonlyArray(headers2)) {
+    iter = headers2;
   } else {
     shouldClear = true;
-    iter = Object.entries(headers ?? {});
+    iter = Object.entries(headers2 ?? {});
   }
   for (let row of iter) {
     const name2 = row[0];
@@ -169434,9 +171238,9 @@ var init_headers3 = __esm({
     buildHeaders = (newHeaders) => {
       const targetHeaders = new Headers();
       const nullHeaders = /* @__PURE__ */ new Set();
-      for (const headers of newHeaders) {
+      for (const headers2 of newHeaders) {
         const seenHeaders = /* @__PURE__ */ new Set();
-        for (const [name2, value] of iterateHeaders(headers)) {
+        for (const [name2, value] of iterateHeaders(headers2)) {
           const lowerName = name2.toLowerCase();
           if (!seenHeaders.has(lowerName)) {
             targetHeaders.delete(name2);
@@ -170539,8 +172343,8 @@ var init_client = __esm({
       defaultIdempotencyKey() {
         return `stainless-node-retry-${uuid42()}`;
       }
-      makeStatusError(status, error48, message, headers) {
-        return APIError.generate(status, error48, message, headers);
+      makeStatusError(status, error48, message, headers2) {
+        return APIError.generate(status, error48, message, headers2);
       }
       buildURL(path5, query, defaultBaseURL) {
         const baseURL = !__classPrivateFieldGet(this, _Groq_instances, "m", _Groq_baseURLOverridden).call(this) && defaultBaseURL || this.baseURL;
@@ -170786,7 +172590,7 @@ var init_client = __esm({
             options.idempotencyKey = this.defaultIdempotencyKey();
           idempotencyHeaders[this.idempotencyHeader] = options.idempotencyKey;
         }
-        const headers = buildHeaders([
+        const headers2 = buildHeaders([
           idempotencyHeaders,
           {
             Accept: "application/json",
@@ -170800,8 +172604,8 @@ var init_client = __esm({
           bodyHeaders,
           options.headers
         ]);
-        this.validateHeaders(headers);
-        return headers.values;
+        this.validateHeaders(headers2);
+        return headers2.values;
       }
       _makeAbort(controller) {
         return () => controller.abort();
@@ -170810,11 +172614,11 @@ var init_client = __esm({
         if (!body) {
           return { bodyHeaders: void 0, body: void 0 };
         }
-        const headers = buildHeaders([rawHeaders]);
+        const headers2 = buildHeaders([rawHeaders]);
         if (
           // Pass raw type verbatim
           ArrayBuffer.isView(body) || body instanceof ArrayBuffer || body instanceof DataView || typeof body === "string" && // Preserve legacy string encoding behavior for now
-          headers.values.has("content-type") || // `Blob` is superset of `File`
+          headers2.values.has("content-type") || // `Blob` is superset of `File`
           globalThis.Blob && body instanceof globalThis.Blob || // `FormData` -> `multipart/form-data`
           body instanceof FormData || // `URLSearchParams` -> `application/x-www-form-urlencoded`
           body instanceof URLSearchParams || // Send chunked stream (each chunk has own `length`)
@@ -170823,13 +172627,13 @@ var init_client = __esm({
           return { bodyHeaders: void 0, body };
         } else if (typeof body === "object" && (Symbol.asyncIterator in body || Symbol.iterator in body && "next" in body && typeof body.next === "function")) {
           return { bodyHeaders: void 0, body: ReadableStreamFrom(body) };
-        } else if (typeof body === "object" && headers.values.get("content-type") === "application/x-www-form-urlencoded") {
+        } else if (typeof body === "object" && headers2.values.get("content-type") === "application/x-www-form-urlencoded") {
           return {
             bodyHeaders: { "content-type": "application/x-www-form-urlencoded" },
             body: this.stringifyQuery(body)
           };
         } else {
-          return __classPrivateFieldGet(this, _Groq_encoder, "f").call(this, { body, headers });
+          return __classPrivateFieldGet(this, _Groq_encoder, "f").call(this, { body, headers: headers2 });
         }
       }
     };
@@ -171890,12 +173694,12 @@ function hasLoanIntent(text2) {
   return /(?:سلف|سلفة|سلفه|دين|ديون|قرض|استلف|استلفت)/.test(text2);
 }
 function isDirectedPersonPayment(text2, candidateName) {
-  const compactText = normalizeArabicString(text2);
+  const compactText2 = normalizeArabicString(text2);
   const compactName = candidateName ? normalizeArabicString(candidateName) : "";
   const hasDirectedVerb = /[وف]?(?:اديت|أديت|إديت|عطيت|أعطيت|اعطيت|حولت|بعت|سلفت|أرسلت|ارسلت|رسلت|دفعت|خدت|اخدت|أخدت|أخذت|اخذت|استلمت|قبضت|استلفت|جالي|جاني|رجعلي|رجعولي|إداني|اداني|بعتلي|وصلني)/.test(
-    compactText
+    compactText2
   );
-  const hasLamName = compactName.length >= 2 && (compactText.includes(`\u0644${compactName}`) || compactText.includes(`\u0644\u0644${compactName}`) || compactText.includes(`\u0645\u0646${compactName}`) || compactText.includes(`\u0645\u0639${compactName}`));
+  const hasLamName = compactName.length >= 2 && (compactText2.includes(`\u0644${compactName}`) || compactText2.includes(`\u0644\u0644${compactName}`) || compactText2.includes(`\u0645\u0646${compactName}`) || compactText2.includes(`\u0645\u0639${compactName}`));
   return hasDirectedVerb || hasLamName;
 }
 function shouldResolvePerson(transactionText, candidateName, category, knownPeople) {
@@ -172155,7 +173959,7 @@ async function runSmartPipeline(input) {
   const localSucceededItems = [];
   const failedSegments = [];
   if (decomposition.segments.length > 1) {
-    let localClarification2;
+    let localClarification;
     const localUnknownNames = [];
     const knownNames = knownPeople.map((p) => p.name).filter(Boolean);
     for (const segment of decomposition.segments) {
@@ -172212,9 +174016,9 @@ async function runSmartPipeline(input) {
       localSucceededItems.push(...segmentResolvedItems);
       if (anyNeedsClarification) {
         const uniqueUnknowns = Array.from(new Set(localUnknownNames));
-        localClarification2 = uniqueUnknowns.length === 1 ? `\u0645\u064A\u0646 ${uniqueUnknowns[0]}\u061F (\u0623\u062E\u0648\u0643\u060C \u0635\u062F\u064A\u0642\u0643\u060C \u0645\u0648\u0638\u0641 \u0639\u0646\u062F\u0643...)` : `\u0645\u062D\u062A\u0627\u062C \u0623\u0648\u0636\u062D \u062F\u0648\u0644 \u0645\u064A\u0646: ${uniqueUnknowns.join(" \u0648 ")}\u061F`;
+        localClarification = uniqueUnknowns.length === 1 ? `\u0645\u064A\u0646 ${uniqueUnknowns[0]}\u061F (\u0623\u062E\u0648\u0643\u060C \u0635\u062F\u064A\u0642\u0643\u060C \u0645\u0648\u0638\u0641 \u0639\u0646\u062F\u0643...)` : `\u0645\u062D\u062A\u0627\u062C \u0623\u0648\u0636\u062D \u062F\u0648\u0644 \u0645\u064A\u0646: ${uniqueUnknowns.join(" \u0648 ")}\u061F`;
         decision = "clarify";
-        clarificationQuestion = localClarification2;
+        clarificationQuestion = localClarification;
         overallConfidence = 0;
       }
     }
@@ -172222,9 +174026,9 @@ async function runSmartPipeline(input) {
       finalItems.push(...localSucceededItems);
       ruleSucceeded = true;
       if (decision === "unknown") {
-        decision = localClarification2 ? "clarify" : "auto_save";
-        clarificationQuestion = localClarification2;
-        overallConfidence = localClarification2 ? 0 : Math.round(
+        decision = localClarification ? "clarify" : "auto_save";
+        clarificationQuestion = localClarification;
+        overallConfidence = localClarification ? 0 : Math.round(
           localSucceededItems.reduce((sum4, item) => sum4 + item.confidence, 0) / localSucceededItems.length
         );
       }
@@ -172268,7 +174072,7 @@ async function runSmartPipeline(input) {
       }
       if (anyNeedsClarification) {
         const uniqueUnknowns = Array.from(new Set(localUnknownNames));
-        localClarification = uniqueUnknowns.length === 1 ? `\u0645\u064A\u0646 ${uniqueUnknowns[0]}\u061F (\u0623\u062E\u0648\u0643\u060C \u0635\u062F\u064A\u0642\u0643\u060C \u0645\u0648\u0638\u0641 \u0639\u0646\u062F\u0643...)` : `\u0645\u062D\u062A\u0627\u062C \u0623\u0648\u0636\u062D \u062F\u0648\u0644 \u0645\u064A\u0646: ${uniqueUnknowns.join(" \u0648 ")}\u061F`;
+        const localClarification = uniqueUnknowns.length === 1 ? `\u0645\u064A\u0646 ${uniqueUnknowns[0]}\u061F (\u0623\u062E\u0648\u0643\u060C \u0635\u062F\u064A\u0642\u0643\u060C \u0645\u0648\u0638\u0641 \u0639\u0646\u062F\u0643...)` : `\u0645\u062D\u062A\u0627\u062C \u0623\u0648\u0636\u062D \u062F\u0648\u0644 \u0645\u064A\u0646: ${uniqueUnknowns.join(" \u0648 ")}\u061F`;
         finalItems.push(...segmentResolvedItems);
         ruleSucceeded = true;
         decision = "clarify";
@@ -172303,7 +174107,7 @@ async function runSmartPipeline(input) {
   if (!ruleSucceeded && (numAmounts > 5 || numWords > 30)) {
     ruleSucceeded = true;
     for (const seg of failedSegments) {
-      const segRule = runRuleEngine(seg.text, input.userDict, input.userProfileContext);
+      const segRule = await runRuleEngine(seg.text, input.userDict, input.userProfileContext);
       for (const item of segRule.items) {
         if (item.confidence < autoSaveThreshold || item.category === "\u0645\u062A\u0646\u0648\u0639\u0627\u062A") {
           item.needsReview = true;
@@ -172444,6 +174248,9 @@ async function runSmartPipeline(input) {
               throw e2;
             }
           }
+        }
+        if (!dRes) {
+          throw new Error("Gemini API returned no response after retries.");
         }
         totalTokens += dRes.response.usageMetadata?.totalTokenCount || 0;
         classItems = safeExtractItems(robustJsonParse(dRes.response.text()));
@@ -172866,7 +174673,7 @@ var init_smart_pipeline = __esm({
 });
 
 // api/services/lifestyle-inference-engine.ts
-function amountOf(item) {
+function amountOf2(item) {
   const amount = Number(item.amount);
   return Number.isFinite(amount) ? amount : 0;
 }
@@ -172876,14 +174683,14 @@ function percentage(amount, total) {
 function buildBehaviorSnapshot(items, previousItems = [], profile) {
   const expenses2 = items.filter((item) => item.type === "expense");
   const income = items.filter((item) => item.type === "income");
-  const totalExpense = expenses2.reduce((sum4, item) => sum4 + amountOf(item), 0);
-  const totalIncome = income.reduce((sum4, item) => sum4 + amountOf(item), 0);
+  const totalExpense = expenses2.reduce((sum4, item) => sum4 + amountOf2(item), 0);
+  const totalIncome = income.reduce((sum4, item) => sum4 + amountOf2(item), 0);
   const categoryMap = {};
   const subCategoryMap = {};
   const dayMap = {};
   const weekdayMap = {};
   for (const item of expenses2) {
-    const amount = amountOf(item);
+    const amount = amountOf2(item);
     categoryMap[item.category] ||= { amount: 0, count: 0 };
     categoryMap[item.category].amount += amount;
     categoryMap[item.category].count += 1;
@@ -172925,7 +174732,7 @@ function buildBehaviorSnapshot(items, previousItems = [], profile) {
   const flexCategories = /* @__PURE__ */ new Set(["\u062A\u0631\u0641\u064A\u0647", "\u062A\u0633\u0648\u0642", "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", "\u062E\u0631\u0648\u062C\u0627\u062A"]);
   const flexSpend = topCategories.filter((cat) => flexCategories.has(cat.name)).reduce((sum4, cat) => sum4 + cat.amount, 0);
   const flexPercent = percentage(flexSpend, totalExpense);
-  const previousTotalExpense = previousItems.filter((item) => item.type === "expense").reduce((sum4, item) => sum4 + amountOf(item), 0);
+  const previousTotalExpense = previousItems.filter((item) => item.type === "expense").reduce((sum4, item) => sum4 + amountOf2(item), 0);
   const monthOverMonthChange = previousTotalExpense > 0 ? Math.round(
     (totalExpense - previousTotalExpense) / previousTotalExpense * 100
   ) : null;
@@ -173509,28 +175316,28 @@ function clampOutputTokens(perRequestMax, remaining, estimatedInputTokens = 0) {
 }
 async function assertAiBudget(user, channel, estimatedInputTokens = 0, cfg) {
   await assertAiAbuseGuard(user, channel);
-  const budget = await getAiBudget(user, channel, cfg);
-  if (budget.limit === 0 || budget.perRequestMax === 0) {
+  const budget2 = await getAiBudget(user, channel, cfg);
+  if (budget2.limit === 0 || budget2.perRequestMax === 0) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "\u0647\u0630\u0647 \u0627\u0644\u0645\u064A\u0632\u0629 \u063A\u064A\u0631 \u0645\u0641\u0639\u0644\u0629 \u0641\u064A \u062E\u0637\u062A\u0643 \u0627\u0644\u062D\u0627\u0644\u064A\u0629."
     });
   }
-  const hardCap = HARD_REQUEST_TOKEN_CAP[budget.plan][channel];
+  const hardCap = HARD_REQUEST_TOKEN_CAP[budget2.plan][channel];
   if (estimatedInputTokens > hardCap) {
     throw new TRPCError({
       code: "BAD_REQUEST",
       message: "\u062D\u062C\u0645 \u0627\u0644\u0637\u0644\u0628 \u0643\u0628\u064A\u0631 \u062C\u062F\u0627\u064B. \u0642\u0644\u0651\u0644 \u0627\u0644\u0646\u0635 \u0623\u0648 \u0627\u0644\u0635\u0648\u0631\u0629 \u0648\u062D\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062E\u0631\u0649."
     });
   }
-  if (budget.remaining <= 0 || estimatedInputTokens > budget.remaining) {
-    const upgradeTo = budget.plan === "free" ? "Pro" : "Ultra";
+  if (budget2.remaining <= 0 || estimatedInputTokens > budget2.remaining) {
+    const upgradeTo = budget2.plan === "free" ? "Pro" : "Ultra";
     throw new TRPCError({
       code: "FORBIDDEN",
-      message: `\u0627\u0633\u062A\u0647\u0644\u0643\u062A \u062D\u062F \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u0627\u0644\u0645\u062A\u0627\u062D (${budget.limit.toLocaleString()} \u062A\u0648\u0643\u0646). \u0627\u0644\u062A\u0631\u0642\u064A\u0629 \u0625\u0644\u0649 ${upgradeTo} \u062A\u0641\u062A\u062D \u062D\u062F\u064B\u0627 \u0623\u0639\u0644\u0649.`
+      message: `\u0627\u0633\u062A\u0647\u0644\u0643\u062A \u062D\u062F \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u0627\u0644\u0645\u062A\u0627\u062D (${budget2.limit.toLocaleString()} \u062A\u0648\u0643\u0646). \u0627\u0644\u062A\u0631\u0642\u064A\u0629 \u0625\u0644\u0649 ${upgradeTo} \u062A\u0641\u062A\u062D \u062D\u062F\u064B\u0627 \u0623\u0639\u0644\u0649.`
     });
   }
-  return budget;
+  return budget2;
 }
 async function countDailyAiRequests(user, channel) {
   const today = /* @__PURE__ */ new Date();
@@ -173610,6 +175417,398 @@ var init_ai_usage_policy = __esm({
   }
 });
 
+// api/services/ai-cost-policy.ts
+function budget(maxInputTokens, maxOutputTokens, maxFactTokens, maxMemoryTokens, maxHistoryTokens, maxToolRounds) {
+  return {
+    maxInputTokens,
+    maxOutputTokens,
+    maxFactTokens,
+    maxMemoryTokens,
+    maxHistoryTokens,
+    maxToolRounds
+  };
+}
+function asCostPlan(plan) {
+  return plan === "pro" || plan === "ultra" ? plan : "free";
+}
+function readSetting(settings, key) {
+  const value = settings?.[key];
+  if (value === void 0 || value === null) return void 0;
+  return String(value);
+}
+function readBool(settings, key, fallback) {
+  const value = readSetting(settings, key);
+  if (value === void 0) return fallback;
+  return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
+}
+function readOptionalInt(settings, key) {
+  const value = readSetting(settings, key);
+  if (value === void 0) return void 0;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : void 0;
+}
+function readNumber(settings, key, fallback) {
+  const value = readSetting(settings, key);
+  if (value === void 0) return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+function readCsv(settings, key) {
+  const value = readSetting(settings, key);
+  if (!value) return [];
+  return value.split(",").map((item) => item.trim()).filter(Boolean);
+}
+function clamp2(value, min3, max3) {
+  return Math.max(min3, Math.min(max3, value));
+}
+function overrideBudgetValue(settings, channel, plan, suffix, fallback, max3) {
+  const planKey = `ai_cost_${channel}_${suffix}_${plan}`;
+  const globalKey = `ai_cost_${channel}_${suffix}`;
+  const value = readOptionalInt(settings, planKey) ?? readOptionalInt(settings, globalKey) ?? fallback;
+  return clamp2(value, 0, max3);
+}
+function estimateAICostUnits(input) {
+  const inputTokens = Math.max(0, Math.round(input.inputTokens ?? 0));
+  const outputTokens = Math.max(0, Math.round(input.outputTokens ?? 0));
+  const totalTokens = Math.max(0, Math.round(input.totalTokens ?? inputTokens + outputTokens));
+  const embeddingCalls = Math.max(0, Math.round(input.embeddingCalls ?? 0));
+  const llmCalls = Math.max(0, Math.round(input.llmCalls ?? 0));
+  const toolCalls = Math.max(0, Math.round(input.toolCalls ?? 0));
+  return totalTokens + outputTokens * 2 + embeddingCalls * 25 + llmCalls * 100 + toolCalls * 10;
+}
+function resolveAICostPolicy(input) {
+  const plan = asCostPlan(input.plan);
+  const channel = input.channel;
+  const intentKind = input.intentKind || "unknown";
+  const base = BASE_POLICIES[channel][plan];
+  const caps = HARD_CAPS[channel];
+  const complexIntent = COMPLEX_TOOL_INTENTS.has(String(intentKind));
+  let maxToolRounds = complexIntent && channel !== "voice" ? Math.max(base.maxToolRounds, 2) : Math.min(base.maxToolRounds, 1);
+  maxToolRounds = overrideBudgetValue(
+    input.settings,
+    channel,
+    plan,
+    "max_tool_rounds",
+    maxToolRounds,
+    caps.maxToolRounds
+  );
+  if (!complexIntent && channel !== "report") {
+    maxToolRounds = Math.min(maxToolRounds, 1);
+  }
+  if (channel === "voice" || channel === "embedding" || channel === "speech" || channel === "parse") {
+    maxToolRounds = Math.min(maxToolRounds, caps.maxToolRounds);
+  }
+  const policy = {
+    channel,
+    plan,
+    intentKind: String(intentKind),
+    maxInputTokens: overrideBudgetValue(input.settings, channel, plan, "max_input", base.maxInputTokens, caps.maxInputTokens),
+    maxOutputTokens: overrideBudgetValue(input.settings, channel, plan, "max_output", base.maxOutputTokens, caps.maxOutputTokens),
+    maxFactTokens: overrideBudgetValue(input.settings, channel, plan, "max_fact", base.maxFactTokens, caps.maxFactTokens),
+    maxMemoryTokens: overrideBudgetValue(input.settings, channel, plan, "max_memory", base.maxMemoryTokens, caps.maxMemoryTokens),
+    maxHistoryTokens: overrideBudgetValue(input.settings, channel, plan, "max_history", base.maxHistoryTokens, caps.maxHistoryTokens),
+    maxToolRounds,
+    estimatedMaxCostUnits: 0
+  };
+  policy.estimatedMaxCostUnits = estimateAICostUnits({
+    inputTokens: policy.maxInputTokens,
+    outputTokens: policy.maxOutputTokens,
+    embeddingCalls: channel === "embedding" ? 1 : 0,
+    llmCalls: channel === "embedding" || channel === "speech" ? 0 : 1,
+    toolCalls: policy.maxToolRounds
+  });
+  return policy;
+}
+async function recordAICostMetric(input) {
+  const inputTokens = Math.max(0, Math.round(input.inputTokens ?? 0));
+  const outputTokens = Math.max(0, Math.round(input.outputTokens ?? 0));
+  const totalTokens = Math.max(0, Math.round(input.totalTokens ?? inputTokens + outputTokens));
+  const costUnits = Math.max(
+    0,
+    Math.round(
+      input.costUnits ?? estimateAICostUnits({
+        inputTokens,
+        outputTokens,
+        totalTokens,
+        embeddingCalls: input.embeddingCalls,
+        llmCalls: input.llmCalls,
+        toolCalls: input.toolCalls
+      })
+    )
+  );
+  const metadata = {
+    plan: asCostPlan(input.plan),
+    intentKind: input.intentKind ?? null,
+    model: input.model ?? null,
+    inputTokens,
+    outputTokens,
+    totalTokens,
+    embeddingCalls: input.embeddingCalls ?? 0,
+    llmCalls: input.llmCalls ?? 0,
+    toolCalls: input.toolCalls ?? 0,
+    latencyMs: input.latencyMs ?? null,
+    costUnits,
+    ...input.metadata || {}
+  };
+  try {
+    console.info("[AI Cost]", JSON.stringify({
+      userId: input.userId,
+      userType: input.userType,
+      channel: input.channel,
+      ...metadata
+    }));
+  } catch {
+  }
+  try {
+    const [{ db: db3 }, schema] = await Promise.all([
+      Promise.resolve().then(() => (init_connection(), connection_exports)),
+      Promise.resolve().then(() => (init_schema2(), schema_exports))
+    ]);
+    await db3.insert(schema.userAnalytics).values({
+      userId: input.userId,
+      userType: input.userType,
+      event: `ai_cost_${input.channel}`,
+      metadata
+    });
+  } catch {
+  }
+}
+function stableHash(value) {
+  let hash4 = 2166136261;
+  for (let i2 = 0; i2 < value.length; i2 += 1) {
+    hash4 ^= value.charCodeAt(i2);
+    hash4 = Math.imul(hash4, 16777619);
+  }
+  return hash4 >>> 0;
+}
+function resolveAIRollout(input) {
+  const prefix = input.flagPrefix || "ai_kernel";
+  const plan = asCostPlan(input.plan);
+  const role = String(input.role || "user");
+  const userId = String(input.userId);
+  const bucket = stableHash(`${prefix}:${userId}`) % 100;
+  if (!readBool(input.settings, `${prefix}_rollout_enabled`, true)) {
+    return { enabled: false, reason: "rollout_disabled", bucket };
+  }
+  const userAllowList = readCsv(input.settings, `${prefix}_rollout_user_ids`);
+  if (userAllowList.includes(userId)) {
+    return { enabled: true, reason: "user_allowlist", bucket };
+  }
+  const adminOnly = readBool(input.settings, `${prefix}_rollout_admin_only`, false);
+  if (adminOnly && role !== "admin") {
+    return { enabled: false, reason: "admin_only", bucket };
+  }
+  if (role === "admin" && readBool(input.settings, `${prefix}_rollout_admin_bypass`, true)) {
+    return { enabled: true, reason: "admin", bucket };
+  }
+  const allowedPlans = readCsv(input.settings, `${prefix}_rollout_plans`);
+  if (allowedPlans.length > 0 && !allowedPlans.includes(plan)) {
+    return { enabled: false, reason: "plan_not_in_rollout", bucket };
+  }
+  const percentage2 = clamp2(readNumber(input.settings, `${prefix}_rollout_percentage`, 100), 0, 100);
+  if (percentage2 <= 0) {
+    return { enabled: false, reason: "percentage_zero", bucket };
+  }
+  if (bucket >= percentage2) {
+    return { enabled: false, reason: "percentage_bucket", bucket };
+  }
+  return { enabled: true, reason: "enabled", bucket };
+}
+function normalizeNumericText(value) {
+  return value.replace(/[٠-٩۰-۹]/g, (digit) => NUMERAL_MAP[digit] || digit).replace(/\u066b/g, ".").replace(/\u066c/g, ",");
+}
+function extractNumbers(value) {
+  const normalized = normalizeNumericText(value);
+  return normalized.match(/-?\d+(?:[,.]\d+)*/g)?.map(canonicalNumber).filter(Boolean) ?? [];
+}
+function canonicalNumber(value) {
+  const withoutThousands = value.replace(/,/g, "");
+  const parsed = Number(withoutThousands);
+  if (!Number.isFinite(parsed)) return withoutThousands;
+  return Object.is(parsed, -0) ? "0" : parsed.toString();
+}
+function collectNumbersFromFacts(value, target, depth = 0) {
+  if (depth > 4 || value === null || value === void 0) return;
+  if (typeof value === "number") {
+    target.add(canonicalNumber(String(value)));
+    return;
+  }
+  if (typeof value === "string") {
+    for (const number4 of extractNumbers(value)) target.add(number4);
+    return;
+  }
+  if (typeof value === "boolean") return;
+  if (Array.isArray(value)) {
+    for (const item of value) collectNumbersFromFacts(item, target, depth + 1);
+    return;
+  }
+  if (typeof value === "object") {
+    for (const item of Object.values(value)) {
+      collectNumbersFromFacts(item, target, depth + 1);
+    }
+  }
+}
+function validateNumbersAgainstFacts(responseText, facts) {
+  const numbers = [...new Set(extractNumbers(responseText))];
+  const factNumbers = /* @__PURE__ */ new Set();
+  collectNumbersFromFacts(facts, factNumbers);
+  const supported = numbers.filter((number4) => factNumbers.has(number4));
+  const missing = numbers.filter((number4) => !factNumbers.has(number4));
+  return {
+    numbers,
+    supported,
+    missing,
+    accuracy: numbers.length === 0 ? 1 : supported.length / numbers.length
+  };
+}
+function normalizeSearchText(value) {
+  return value.toLowerCase().replace(/[^\p{L}\p{N}\s]+/gu, " ").split(/\s+/).filter((token) => token.length >= 2);
+}
+function buildDeterministicFallbackEmbedding(text2, dimensions) {
+  const safeDimensions = Math.max(1, Math.min(Math.round(dimensions), 4096));
+  const vector = Array.from({ length: safeDimensions }, () => 0);
+  const tokens = normalizeSearchText(text2);
+  const sourceTokens = tokens.length > 0 ? tokens : [text2 || "empty"];
+  for (const token of sourceTokens) {
+    const hash4 = stableHash(token);
+    const index2 = hash4 % safeDimensions;
+    const sign4 = hash4 % 2 === 0 ? 1 : -1;
+    const weight = 1 + hash4 % 997 / 997;
+    vector[index2] += sign4 * weight;
+  }
+  const norm = Math.sqrt(vector.reduce((sum4, item) => sum4 + item * item, 0)) || 1;
+  return vector.map((item) => Number((item / norm).toFixed(6)));
+}
+var BASE_POLICIES, HARD_CAPS, COMPLEX_TOOL_INTENTS, NUMERAL_MAP;
+var init_ai_cost_policy = __esm({
+  "api/services/ai-cost-policy.ts"() {
+    BASE_POLICIES = {
+      chat: {
+        free: budget(700, 350, 360, 120, 140, 1),
+        pro: budget(1200, 600, 520, 180, 220, 1),
+        ultra: budget(1800, 900, 720, 260, 320, 1)
+      },
+      voice: {
+        free: budget(350, 100, 220, 70, 70, 1),
+        pro: budget(550, 140, 300, 90, 90, 1),
+        ultra: budget(700, 180, 360, 110, 110, 1)
+      },
+      report: {
+        free: budget(1600, 900, 900, 160, 140, 2),
+        pro: budget(2600, 1600, 1300, 220, 180, 2),
+        ultra: budget(3600, 2400, 1800, 280, 220, 2)
+      },
+      system: {
+        free: budget(650, 240, 320, 100, 100, 1),
+        pro: budget(900, 320, 420, 140, 140, 1),
+        ultra: budget(1200, 420, 520, 180, 180, 1)
+      },
+      embedding: {
+        free: budget(220, 0, 0, 0, 0, 0),
+        pro: budget(320, 0, 0, 0, 0, 0),
+        ultra: budget(420, 0, 0, 0, 0, 0)
+      },
+      action: {
+        free: budget(500, 160, 180, 80, 60, 1),
+        pro: budget(700, 220, 240, 100, 80, 1),
+        ultra: budget(900, 300, 320, 120, 100, 1)
+      },
+      parse: {
+        free: budget(650, 260, 0, 0, 0, 0),
+        pro: budget(1200, 420, 0, 0, 0, 0),
+        ultra: budget(1500, 560, 0, 0, 0, 0)
+      },
+      speech: {
+        free: budget(420, 0, 0, 0, 0, 0),
+        pro: budget(700, 0, 0, 0, 0, 0),
+        ultra: budget(900, 0, 0, 0, 0, 0)
+      }
+    };
+    HARD_CAPS = {
+      chat: budget(2500, 1200, 1e3, 360, 420, 2),
+      voice: budget(900, 220, 500, 160, 160, 1),
+      report: budget(4200, 2600, 2200, 420, 420, 2),
+      system: budget(1500, 600, 700, 220, 220, 1),
+      embedding: budget(600, 0, 0, 0, 0, 0),
+      action: budget(1e3, 380, 420, 180, 160, 1),
+      parse: budget(1800, 700, 0, 0, 0, 0),
+      speech: budget(1200, 0, 0, 0, 0, 0)
+    };
+    COMPLEX_TOOL_INTENTS = /* @__PURE__ */ new Set([
+      "finance_analysis",
+      "goal_planning",
+      "report_request",
+      "chart_request"
+    ]);
+    NUMERAL_MAP = {
+      "\u0660": "0",
+      "\u0661": "1",
+      "\u0662": "2",
+      "\u0663": "3",
+      "\u0664": "4",
+      "\u0665": "5",
+      "\u0666": "6",
+      "\u0667": "7",
+      "\u0668": "8",
+      "\u0669": "9",
+      "\u06F0": "0",
+      "\u06F1": "1",
+      "\u06F2": "2",
+      "\u06F3": "3",
+      "\u06F4": "4",
+      "\u06F5": "5",
+      "\u06F6": "6",
+      "\u06F7": "7",
+      "\u06F8": "8",
+      "\u06F9": "9"
+    };
+  }
+});
+
+// api/services/ai-kernel/ai-trace-logger.ts
+function safeError(error48) {
+  if (error48 instanceof Error) return error48.message;
+  return String(error48);
+}
+function serializeTraceEvent(event) {
+  return {
+    traceId: event.traceId,
+    mode: event.mode,
+    status: event.status,
+    channel: event.channel,
+    userId: event.userId,
+    userType: event.userType,
+    userPlan: event.userPlan,
+    conversationId: event.conversationId,
+    route: event.intent.kind,
+    confidence: event.intent.confidence,
+    dataNeeds: event.dataNeeds.map((need) => ({
+      id: need.id,
+      kind: need.kind,
+      priority: need.priority,
+      scope: need.scope,
+      cache: need.cache
+    })),
+    cacheHits: event.cacheHits,
+    cost: event.cost,
+    estimatedInputTokens: event.contextPack?.estimatedInputTokens,
+    latencyMs: event.latencyMs,
+    error: event.error,
+    metadata: event.metadata
+  };
+}
+function logAITrace(event) {
+  try {
+    console.info("[AI Kernel Trace]", JSON.stringify(serializeTraceEvent(event)));
+  } catch (error48) {
+    console.warn("[AI Kernel Trace] failed_to_serialize", safeError(error48));
+  }
+}
+var init_ai_trace_logger = __esm({
+  "api/services/ai-kernel/ai-trace-logger.ts"() {
+  }
+});
+
 // api/lib/deepseek-client.ts
 async function callChatCompletionAPI(baseUrl, apiKey, request) {
   const url2 = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
@@ -173682,470 +175881,5544 @@ var init_deepseek_client = __esm({
   }
 });
 
-// api/services/ai-chat-tools.ts
-function startOfToday() {
-  const d = /* @__PURE__ */ new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
+// api/services/ai-kernel/context-packer.ts
+function estimateTokens(value) {
+  if (!value.trim()) return 0;
+  return Math.ceil(value.length / 3.5);
 }
-function endOfToday() {
-  const d = /* @__PURE__ */ new Date();
-  d.setHours(23, 59, 59, 999);
-  return d;
+function summarizeDataNeeds(dataNeeds) {
+  return dataNeeds.map((need) => {
+    const scope = need.scope ? Object.entries(need.scope).filter(([, value]) => value !== void 0).map(([key, value]) => `${key}=${String(value)}`).join(",") : "";
+    return `${need.id}:${need.kind}:${need.priority}${scope ? `(${scope})` : ""}`;
+  }).join("\n");
 }
-function startOfMonth(month) {
-  if (month) {
-    const [y, m2] = month.split("-").map(Number);
-    return new Date(y, m2 - 1, 1);
+function recentHistory(request, tokenBudget) {
+  const history = request.conversationHistory ?? [];
+  const lines = [];
+  let usedTokens = 0;
+  for (const item of history.slice().reverse()) {
+    const line = `${item.role}: ${item.content}`;
+    const lineTokens = estimateTokens(line);
+    if (usedTokens + lineTokens > tokenBudget) break;
+    lines.unshift(line);
+    usedTokens += lineTokens;
   }
-  const d = /* @__PURE__ */ new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1);
+  return lines.join("\n");
 }
-function endOfMonth(month) {
-  if (month) {
-    const [y, m2] = month.split("-").map(Number);
-    return new Date(y, m2, 0, 23, 59, 59, 999);
+function getTokenBudget(channel, plan = "free", intentKind) {
+  return resolveAICostPolicy({ channel, plan, intentKind });
+}
+function buildContextPack(request, intent, dataNeeds) {
+  const tokenBudget = getTokenBudget(request.channel, request.userPlan, intent.kind);
+  const sections = [
+    {
+      name: "guardrails",
+      priority: "hot",
+      tokenBudget: 80,
+      content: "Use resolved facts for money numbers. Do not execute actions without explicit confirmation."
+    },
+    {
+      name: "intent",
+      priority: "hot",
+      tokenBudget: 90,
+      content: `kind=${intent.kind}; confidence=${intent.confidence}; reason=${intent.reason}; period=${intent.slots.period ?? "none"}; category=${intent.slots.category ?? "none"}`
+    },
+    {
+      name: "facts",
+      priority: "hot",
+      tokenBudget: tokenBudget.maxFactTokens,
+      content: summarizeDataNeeds(dataNeeds)
+    }
+  ];
+  const historyContent = recentHistory(request, tokenBudget.maxHistoryTokens);
+  if (historyContent) {
+    sections.push({
+      name: "history",
+      priority: "normal",
+      tokenBudget: tokenBudget.maxHistoryTokens,
+      content: historyContent
+    });
   }
-  const d = /* @__PURE__ */ new Date();
-  return new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
-}
-async function get_today_expenses(ctx, _args) {
-  const rows = await db.select().from(expenses).where(
-    and(
-      eq(expenses.userId, ctx.userId),
-      eq(expenses.userType, ctx.userType),
-      gte(expenses.date, startOfToday()),
-      lte(expenses.date, endOfToday())
-    )
-  ).orderBy(desc(expenses.date));
-  const totalExpense = rows.filter((r2) => r2.type === "expense").reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  const totalIncome = rows.filter((r2) => r2.type === "income").reduce((s3, r2) => s3 + Number(r2.amount), 0);
+  const estimatedInputTokens = sections.reduce((sum4, section) => sum4 + estimateTokens(section.content), 0);
   return {
-    total_expense: totalExpense,
-    total_income: totalIncome,
-    count: rows.length,
-    items: rows.slice(0, 20).map((r2) => ({
-      description: r2.description || r2.category,
-      amount: Number(r2.amount),
-      category: r2.category,
-      type: r2.type
-    }))
+    channel: request.channel,
+    tokenBudget,
+    estimatedInputTokens,
+    sections,
+    dataNeeds
   };
 }
-async function get_month_summary(ctx, args) {
-  const month = args.month || (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
-  const rows = await db.select().from(expenses).where(
-    and(
-      eq(expenses.userId, ctx.userId),
-      eq(expenses.userType, ctx.userType),
-      gte(expenses.date, startOfMonth(month)),
-      lte(expenses.date, endOfMonth(month))
-    )
-  );
-  const totalExpense = rows.filter((r2) => r2.type === "expense").reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  const totalIncome = rows.filter((r2) => r2.type === "income").reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  const daysInMonth = endOfMonth(month).getDate();
-  const daysPassed = month === (/* @__PURE__ */ new Date()).toISOString().slice(0, 7) ? (/* @__PURE__ */ new Date()).getDate() : daysInMonth;
+var init_context_packer = __esm({
+  "api/services/ai-kernel/context-packer.ts"() {
+    init_ai_cost_policy();
+  }
+});
+
+// api/services/ai-kernel/data-need-compiler.ts
+function makeNeed(index2, kind, priority, reason, scope = {}, maxRows) {
+  const period = scope.period ?? "current_month";
+  const keyParts = [kind, period, scope.category, scope.granularity, scope.limit].filter(Boolean).join(":");
   return {
-    month,
-    total_expense: totalExpense,
-    total_income: totalIncome,
-    net_flow: totalIncome - totalExpense,
-    transaction_count: rows.length,
-    daily_average: daysPassed > 0 ? Math.round(totalExpense / daysPassed) : 0,
-    days_passed: daysPassed,
-    days_in_month: daysInMonth
+    id: `need_${index2}_${kind.replace(".", "_")}`,
+    kind,
+    priority,
+    reason,
+    scope,
+    maxRows,
+    cache: kind === "none" ? void 0 : {
+      keyHint: keyParts,
+      ttlSeconds: priority === "hot" ? 60 : 300,
+      hot: priority === "hot"
+    }
   };
 }
-async function get_category_breakdown(ctx, args) {
-  const month = args.month || (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
-  const rows = await db.select().from(expenses).where(
-    and(
-      eq(expenses.userId, ctx.userId),
-      eq(expenses.userType, ctx.userType),
-      eq(expenses.type, "expense"),
-      gte(expenses.date, startOfMonth(month)),
-      lte(expenses.date, endOfMonth(month))
-    )
-  );
-  const total = rows.reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  const byCategory = {};
-  rows.forEach((r2) => {
-    byCategory[r2.category] = (byCategory[r2.category] || 0) + Number(r2.amount);
+function defaultPeriod(intent, fallback = "current_month") {
+  return intent.slots.period ?? fallback;
+}
+function comparisonBasePeriod(intent) {
+  const query = intent.slots.query ?? "";
+  if (query.includes("\u0627\u0644\u0634\u0647\u0631 \u062F\u0647") || query.includes("\u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631") || query.includes("\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062D\u0627\u0644\u064A") || query.includes("current month")) {
+    return "current_month";
+  }
+  return defaultPeriod(intent, "current_month");
+}
+function lastMonthsScope(query, months) {
+  const text2 = (query ?? "").replace(/[٠-٩]/g, (digit) => String("\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669".indexOf(digit)));
+  const hasMonths = /(شهور|اشهر|شهر|months?)/i.test(text2);
+  const explicitNumber = new RegExp(`(^|\\D)${months}(\\D|$)`).test(text2);
+  if (!hasMonths || !explicitNumber) return null;
+  const end = /* @__PURE__ */ new Date();
+  const start = new Date(end);
+  start.setMonth(start.getMonth() - (months - 1));
+  start.setDate(1);
+  start.setHours(0, 0, 0, 0);
+  return {
+    period: "custom",
+    startDate: start.toISOString().slice(0, 10),
+    endDate: end.toISOString().slice(0, 10),
+    granularity: "month"
+  };
+}
+function isGoalProgressQuestion(intent) {
+  if (intent.slots.actionName) return false;
+  const query = intent.slots.query ?? "";
+  return [
+    "\u0648\u0635\u0644\u062A",
+    "\u062A\u0642\u062F\u0645",
+    "\u0646\u0633\u0628\u0647",
+    "\u0646\u0633\u0628\u0629",
+    "\u0628\u0627\u0642\u064A",
+    "\u0641\u0627\u0636\u0644",
+    "\u0627\u0647\u062F\u0627\u0641 \u0627\u0644\u0627\u062F\u062E\u0627\u0631",
+    "\u0647\u062F\u0641 \u0627\u0644\u0627\u062F\u062E\u0627\u0631",
+    "progress"
+  ].some((term) => query.includes(term));
+}
+function compileDataNeeds(intent) {
+  const needs = [];
+  const add3 = (kind, priority, reason, scope = {}, maxRows) => {
+    needs.push(makeNeed(needs.length + 1, kind, priority, reason, scope, maxRows));
+  };
+  switch (intent.kind) {
+    case "finance_query": {
+      const period = defaultPeriod(intent, "today");
+      if (intent.slots.wallet) {
+        add3("wallet.summary", "hot", "wallet_balance_question_needs_wallet_summary", {}, 8);
+      } else if (intent.slots.category) {
+        add3(
+          "finance.category_total",
+          "hot",
+          "exact_category_total_for_finance_question",
+          { period, category: intent.slots.category },
+          1
+        );
+      } else {
+        add3("finance.summary", "hot", "small_finance_question_needs_only_summary", { period }, 1);
+      }
+      if (intent.slots.needsEvidence) {
+        add3(
+          "finance.transactions",
+          "normal",
+          "user_asked_for_evidence_rows",
+          { period, category: intent.slots.category, limit: 12, transactionTypes: ["expense"] },
+          12
+        );
+      }
+      return needs;
+    }
+    case "finance_analysis": {
+      const period = comparisonBasePeriod(intent);
+      if (intent.reason === "classification_explanation_match") {
+        add3(
+          "finance.transactions",
+          "hot",
+          "classification_question_needs_recent_matching_transactions",
+          {
+            period,
+            category: intent.slots.category,
+            categories: intent.slots.categories,
+            limit: 12,
+            transactionTypes: ["expense"]
+          },
+          12
+        );
+        add3(
+          "finance.breakdown",
+          "normal",
+          "classification_question_needs_category_breakdown",
+          { period, granularity: "category", limit: 8 },
+          8
+        );
+        return needs;
+      }
+      if (intent.slots.metric === "comparison") {
+        add3(
+          "finance.period_comparison",
+          "hot",
+          "comparison_needs_current_and_previous_period_totals",
+          { period, comparePeriod: "previous_month", category: intent.slots.category },
+          2
+        );
+        if (intent.slots.needsEvidence) {
+          add3(
+            "finance.transactions",
+            "deep",
+            "comparison_requested_supporting_transactions",
+            { period, category: intent.slots.category, limit: 10, transactionTypes: ["expense"] },
+            10
+          );
+        }
+        return needs;
+      }
+      add3("finance.summary", "hot", "analysis_needs_top_level_totals", { period }, 1);
+      add3(
+        "finance.breakdown",
+        "normal",
+        "analysis_needs_grouped_breakdown_not_raw_rows",
+        { period, category: intent.slots.category, granularity: intent.slots.category ? "merchant" : "category", limit: 8 },
+        8
+      );
+      if (intent.slots.needsEvidence) {
+        add3(
+          "finance.transactions",
+          "deep",
+          "analysis_requested_supporting_transactions",
+          { period, category: intent.slots.category, limit: 10, transactionTypes: ["expense"] },
+          10
+        );
+      }
+      return needs;
+    }
+    case "goal_planning": {
+      const period = defaultPeriod(intent, "current_month");
+      if (isGoalProgressQuestion(intent)) {
+        add3("finance.goal_progress", "hot", "goal_progress_question_needs_active_goal_progress", {}, 8);
+        return needs;
+      }
+      add3("profile.snapshot", "hot", "goal_planning_needs_income_and_profile_limits", {}, 1);
+      add3("goals.active", "hot", "avoid_duplicate_or_conflicting_goals", {}, 5);
+      add3("finance.summary", "normal", "goal_plan_needs_available_cash_context", { period }, 1);
+      add3("finance.breakdown", "normal", "goal_plan_needs_top_spending_levers", { period, granularity: "category", limit: 5 }, 5);
+      return needs;
+    }
+    case "action_request": {
+      add3("profile.snapshot", "hot", "action_validation_needs_user_profile", {}, 1);
+      add3("goals.active", "normal", "generic_actions_may_depend_on_current_goals", {}, 5);
+      return needs;
+    }
+    case "advice_request": {
+      const period = defaultPeriod(intent, "current_month");
+      add3("profile.snapshot", "hot", "advice_needs_user_profile_limits", {}, 1);
+      add3("finance.summary", "hot", "advice_needs_current_financial_baseline", { period }, 1);
+      if (intent.slots.category) {
+        add3(
+          "finance.category_total",
+          "normal",
+          "advice_mentions_specific_category_total",
+          { period, category: intent.slots.category },
+          1
+        );
+      }
+      add3(
+        "finance.breakdown",
+        "normal",
+        "advice_needs_small_spending_levers_not_raw_transactions",
+        { period, category: intent.slots.category, granularity: intent.slots.category ? "merchant" : "category", limit: 6 },
+        6
+      );
+      add3("goals.active", "normal", "advice_should_consider_active_goals", {}, 5);
+      add3("memory.search", "normal", "advice_should_reuse_relevant_user_preferences_and_old_plans", {
+        query: intent.slots.query,
+        limit: 4
+      }, 4);
+      return needs;
+    }
+    case "site_help": {
+      add3("site_guide.search", "normal", "answer_should_use_product_knowledge_chunks", { query: intent.slots.query, limit: 4 }, 4);
+      return needs;
+    }
+    case "memory_question": {
+      add3("memory.search", "normal", "user_is_asking_about_previous_conversation", { query: intent.slots.query, limit: 6 }, 6);
+      return needs;
+    }
+    case "report_request": {
+      const period = defaultPeriod(intent, "current_month");
+      add3("finance.summary", "hot", "report_needs_month_summary", { period }, 1);
+      add3("finance.breakdown", "normal", "report_needs_grouped_insights", { period, granularity: "category", limit: 10 }, 10);
+      add3("goals.active", "normal", "report_should_include_goal_progress_if_available", {}, 5);
+      return needs;
+    }
+    case "chart_request": {
+      const sixMonthScope = lastMonthsScope(intent.slots.query, 6);
+      const period = sixMonthScope?.period ?? defaultPeriod(intent, "current_month");
+      add3("chart.data", "normal", "chart_request_needs_prepared_visual_dataset", {
+        period,
+        category: intent.slots.category,
+        categories: intent.slots.categories,
+        startDate: sixMonthScope?.startDate,
+        endDate: sixMonthScope?.endDate,
+        granularity: sixMonthScope?.granularity ?? (intent.slots.metric === "trend" ? "day" : "category"),
+        limit: 12
+      });
+      return needs;
+    }
+    case "expense_capture": {
+      add3("profile.snapshot", "hot", "expense_capture_needs_default_currency_and_wallet_context", {}, 1);
+      return needs;
+    }
+    case "smalltalk":
+    case "unknown":
+    default:
+      add3("none", "hot", "no_external_data_needed_yet", {}, 0);
+      return needs;
+  }
+}
+var init_data_need_compiler = __esm({
+  "api/services/ai-kernel/data-need-compiler.ts"() {
+  }
+});
+
+// api/services/ai-kernel/intent-router.ts
+function normalizeForIntent(value) {
+  return value.toLowerCase().normalize("NFKC").replace(/[\u064B-\u065F\u0670]/g, "").replace(/[أإآٱ]/g, "\u0627").replace(/ؤ/g, "\u0648").replace(/ئ/g, "\u064A").replace(/ى/g, "\u064A").replace(/ة/g, "\u0647").replace(/[؟?،,.!]/g, " ").replace(/\s+/g, " ").trim();
+}
+function expandIntentToken(token) {
+  const variants = /* @__PURE__ */ new Set([token]);
+  const queue = [token];
+  for (const current of queue) {
+    const next = [];
+    if (current.startsWith("\u0628\u0627\u0644") && current.length > 5) next.push(current.slice(3));
+    if (current.startsWith("\u0644\u0644") && current.length > 4) next.push(current.slice(2));
+    if (current.startsWith("\u0627\u0644") && current.length > 4) next.push(current.slice(2));
+    if (/^[وبفل]/.test(current) && current.length > 4) next.push(current.slice(1));
+    for (const variant of next) {
+      if (!variants.has(variant)) {
+        variants.add(variant);
+        queue.push(variant);
+      }
+    }
+  }
+  return [...variants];
+}
+function hasAny2(text2, patterns) {
+  const tokens = new Set(text2.split(/\s+/).flatMap(expandIntentToken));
+  return patterns.some((pattern) => {
+    const normalized = normalizeForIntent(pattern);
+    if (!normalized) return false;
+    if (normalized === "\u0643\u0627\u0645" || normalized === "\u0643\u0645") {
+      return tokens.has(normalized);
+    }
+    return text2.includes(normalized);
   });
-  const sorted = Object.entries(byCategory).sort((a, b) => b[1] - a[1]).map(([name2, amount]) => ({
-    name: name2,
-    amount,
-    percent: total > 0 ? Math.round(amount / total * 100) : 0
+}
+function detectPeriod(text2) {
+  if (hasAny2(text2, PATTERNS.today)) return "today";
+  if (hasAny2(text2, PATTERNS.yesterday)) return "yesterday";
+  if (hasAny2(text2, PATTERNS.previousMonth)) return "previous_month";
+  if (hasAny2(text2, PATTERNS.month)) return "current_month";
+  if (hasAny2(text2, PATTERNS.week)) return "current_week";
+  if (hasAny2(text2, PATTERNS.salaryCycle)) return "salary_cycle";
+  return void 0;
+}
+function detectCategories(text2) {
+  const categories = [];
+  if (hasAny2(text2, PATTERNS.food)) categories.push("food");
+  if (hasAny2(text2, PATTERNS.transport)) categories.push("transport");
+  if (hasAny2(text2, PATTERNS.shopping)) categories.push("shopping");
+  if (hasAny2(text2, PATTERNS.health)) categories.push("health");
+  if (hasAny2(text2, PATTERNS.bills)) categories.push("bills");
+  if (hasAny2(text2, PATTERNS.income)) categories.push("income");
+  if (hasAny2(text2, PATTERNS.saving)) categories.push("saving");
+  return [...new Set(categories)];
+}
+function isClassificationExplanation(text2) {
+  const categories = detectCategories(text2);
+  const hasCategoryChoice = categories.length > 1 && /\b(ولا|او|أو|or)\b/.test(text2);
+  const hasDirectClassificationLanguage = hasAny2(text2, [
+    "\u0627\u062A\u0635\u0646\u0641",
+    "\u0645\u0635\u0646\u0641",
+    "\u062A\u0635\u0646\u064A\u0641",
+    "\u0627\u0644\u0641\u0626\u0629",
+    "\u0627\u0644\u0641\u0626\u0647",
+    "\u063A\u0644\u0637",
+    "\u0635\u062D"
+  ]);
+  const hasCalculatedClassificationLanguage = hasAny2(text2, ["\u0627\u062A\u062D\u0633\u0628", "\u0645\u062D\u0633\u0648\u0628"]) && (hasCategoryChoice || hasDirectClassificationLanguage);
+  return categories.length > 0 && (hasDirectClassificationLanguage || hasCalculatedClassificationLanguage) || hasCategoryChoice;
+}
+function detectMetric(text2) {
+  if (hasAny2(text2, ["\u0642\u0627\u0631\u0646", "\u0645\u0642\u0627\u0631\u0646\u0647", "\u0641\u0631\u0642"])) return "comparison";
+  if (hasAny2(text2, ["\u062A\u0631\u0646\u062F", "\u0627\u062A\u062C\u0627\u0647", "\u0632\u0627\u062F", "\u0642\u0644"])) return "trend";
+  if (hasAny2(text2, ["\u0645\u062A\u0648\u0633\u0637", "average"])) return "average";
+  if (hasAny2(text2, ["\u0639\u062F\u062F", "\u0643\u0627\u0645 \u0645\u0631\u0647"])) return "count";
+  return "total";
+}
+function baseIntent(kind, confidence, reason, text2, secondaryIntents = []) {
+  const period = detectPeriod(text2);
+  const categories = detectCategories(text2);
+  const category = categories[0];
+  return {
+    kind,
+    confidence,
+    reason,
+    slots: {
+      period,
+      category,
+      categories: categories.length > 1 ? categories : void 0,
+      metric: detectMetric(text2),
+      wallet: hasAny2(text2, PATTERNS.wallet),
+      needsEvidence: hasAny2(text2, PATTERNS.evidence),
+      needsChart: hasAny2(text2, PATTERNS.chart),
+      query: text2
+    },
+    secondaryIntents
+  };
+}
+function routeIntent(message) {
+  const text2 = normalizeForIntent(message);
+  const isShortGreeting = text2.length <= 24 && hasAny2(text2, PATTERNS.greetings);
+  if (!text2) {
+    return baseIntent("unknown", 0.2, "empty_message", text2);
+  }
+  if (isShortGreeting) {
+    return baseIntent("smalltalk", 0.9, "short_greeting", text2);
+  }
+  const hasGoal = hasAny2(text2, PATTERNS.goals);
+  const hasAction = hasAny2(text2, PATTERNS.action);
+  const hasFinance = hasAny2(text2, PATTERNS.finance);
+  const hasAnalysis = hasAny2(text2, PATTERNS.analysis);
+  const hasAdvice = hasAny2(text2, PATTERNS.advice);
+  const hasLifestyle = hasAny2(text2, PATTERNS.lifestyle);
+  const hasMemory = hasAny2(text2, PATTERNS.memory);
+  const hasSiteHelp = hasAny2(text2, PATTERNS.siteHelp);
+  const asksHowTo = hasAny2(text2, ["\u0627\u0632\u0627\u064A", "\u0643\u064A\u0641", "\u0634\u0631\u062D", "\u0637\u0631\u064A\u0642\u0629", "\u062E\u0637\u0648\u0627\u062A", "how to"]) || /[؟?]/.test(message);
+  const directSiteAction = hasAction && hasSiteHelp && !asksHowTo;
+  const hasAmount = /\d|[٠-٩۰-۹]/.test(text2);
+  const asksAmount = /(كام|كم|قد ايه|اجمالي|مجموع|ملخص)/i.test(text2);
+  const explicitExpenseCapture = hasAmount && !asksAmount && (hasAny2(text2, ["\u0633\u062C\u0644", "\u0627\u062D\u0641\u0638", "\u0627\u0636\u0641", "\u0636\u064A\u0641", "\u0633\u062C\u0644 \u0645\u0635\u0631\u0648\u0641", "\u0627\u0634\u062A\u0631\u064A\u062A"]) || /(دفعت|صرفت)\s+.*(\d|[٠-٩۰-۹])/i.test(text2));
+  const startsWithMemoryRecall = /^(فاكر|تفتكر|افتكر|remember)(\s|$)/i.test(text2);
+  const referencesOldConversation = hasAny2(text2, [
+    "\u0627\u062A\u0643\u0644\u0645\u0646\u0627",
+    "\u0643\u0644\u0645\u062A\u0643",
+    "\u0642\u0644\u062A\u0644\u0643",
+    "\u0627\u0644\u0634\u0627\u062A \u0627\u0644\u0642\u062F\u064A\u0645",
+    "\u0627\u0644\u0634\u0627\u062A\u0627\u062A \u0627\u0644\u0642\u062F\u064A\u0645\u0647",
+    "\u0630\u0627\u0643\u0631\u0647",
+    "\u0627\u0644\u0630\u0627\u0643\u0631\u0647",
+    "\u0630\u0643\u0631\u064A\u0627\u062A"
+  ]);
+  const memoryOnlyQuestion = hasMemory && !hasAction && !hasFinance && !hasAnalysis && !explicitExpenseCapture && (startsWithMemoryRecall || referencesOldConversation);
+  if (memoryOnlyQuestion) {
+    return baseIntent("memory_question", 0.9, "memory_keyword_match", text2);
+  }
+  if (explicitExpenseCapture) {
+    return baseIntent("expense_capture", 0.86, "expense_capture_amount_action_match", text2);
+  }
+  if (hasAny2(text2, PATTERNS.report)) {
+    return baseIntent("report_request", 0.88, "report_keyword_match", text2);
+  }
+  if (hasAny2(text2, PATTERNS.chart)) {
+    return baseIntent("chart_request", 0.86, "chart_keyword_match", text2, hasFinance ? ["finance_query"] : []);
+  }
+  if (isClassificationExplanation(text2)) {
+    return baseIntent(
+      "finance_analysis",
+      0.88,
+      "classification_explanation_match",
+      text2,
+      ["finance_query"]
+    );
+  }
+  if (hasAdvice || hasLifestyle && (hasAnalysis || hasAny2(text2, ["\u062E\u0637\u0629", "\u0627\u0642\u0644\u0644", "\u0646\u0638\u0645", "\u0638\u0628\u0637"]))) {
+    return baseIntent(
+      "advice_request",
+      hasFinance || hasLifestyle ? 0.82 : 0.74,
+      hasLifestyle ? "lifestyle_or_financial_advice_match" : "financial_advice_match",
+      text2,
+      hasFinance ? ["finance_analysis"] : []
+    );
+  }
+  if (hasGoal) {
+    const intent = baseIntent(
+      "goal_planning",
+      hasAction ? 0.92 : 0.84,
+      hasAction ? "goal_planning_with_action_words" : "goal_keyword_match",
+      text2,
+      hasAction ? ["action_request"] : []
+    );
+    intent.slots.actionName = hasAction ? "goal.create" : void 0;
+    return intent;
+  }
+  if (hasSiteHelp && !hasFinance && asksHowTo) {
+    return baseIntent("site_help", 0.86, "site_help_keyword_match", text2);
+  }
+  if (directSiteAction) {
+    return baseIntent("action_request", 0.82, "direct_site_action_keyword_match", text2);
+  }
+  if (hasAction && !hasFinance) {
+    return baseIntent("action_request", 0.72, "generic_action_keyword_match", text2);
+  }
+  if (hasFinance && hasAnalysis) {
+    return baseIntent("finance_analysis", 0.88, "finance_analysis_keyword_match", text2);
+  }
+  if (hasFinance) {
+    return baseIntent("finance_query", 0.84, "finance_keyword_match", text2);
+  }
+  if (hasAny2(text2, PATTERNS.expenseCapture)) {
+    return baseIntent("expense_capture", 0.7, "expense_capture_keyword_match", text2);
+  }
+  return baseIntent("unknown", 0.35, "no_deterministic_route", text2);
+}
+var PATTERNS;
+var init_intent_router = __esm({
+  "api/services/ai-kernel/intent-router.ts"() {
+    PATTERNS = {
+      greetings: ["\u0627\u0647\u0644\u0627", "\u0627\u0647\u0644\u064A\u0646", "\u0647\u0627\u064A", "hi", "hello", "\u0627\u0632\u064A\u0643", "\u0635\u0628\u0627\u062D \u0627\u0644\u062E\u064A\u0631", "\u0645\u0633\u0627\u0621 \u0627\u0644\u062E\u064A\u0631"],
+      finance: [
+        "\u0635\u0631\u0641\u062A",
+        "\u0635\u0631\u0641",
+        "\u0645\u0635\u0631\u0648\u0641",
+        "\u0645\u0635\u0627\u0631\u064A\u0641",
+        "\u0627\u0646\u0641\u0627\u0642",
+        "\u062F\u0641\u0639\u062A",
+        "\u0641\u0644\u0648\u0633",
+        "\u062F\u062E\u0644",
+        "\u0631\u0635\u064A\u062F",
+        "\u0645\u062D\u0641\u0638\u0647",
+        "\u0645\u062D\u0641\u0638\u062A\u064A",
+        "\u0643\u0627\u0645",
+        "\u0641\u0626\u0647",
+        "\u0641\u0626\u0627\u062A",
+        "\u062A\u0635\u0646\u064A\u0641",
+        "\u062A\u0635\u0646\u064A\u0641\u0627\u062A",
+        "\u0628\u0646\u062F",
+        "\u0628\u0646\u0648\u062F"
+      ],
+      wallet: [
+        "\u0645\u062D\u0641\u0638\u0647",
+        "\u0645\u062D\u0641\u0638\u062A\u064A",
+        "\u0645\u062D\u0627\u0641\u0638",
+        "\u0645\u062D\u0627\u0641\u0638\u064A",
+        "wallet",
+        "\u0631\u0635\u064A\u062F \u0627\u0644\u0645\u062D\u0641\u0638\u0647",
+        "\u0631\u0635\u064A\u062F \u0645\u062D\u0627\u0641\u0638\u064A",
+        "\u0641\u0627\u0636\u0644 \u0643\u0627\u0645"
+      ],
+      analysis: ["\u062D\u0644\u0644", "\u0645\u0642\u0627\u0631\u0646\u0647", "\u0642\u0627\u0631\u0646", "\u062A\u0631\u0646\u062F", "\u0627\u0643\u062A\u0631", "\u0627\u0639\u0644\u064A", "\u0627\u0642\u0644", "\u0646\u0633\u0628\u0647", "\u0644\u064A\u0647"],
+      advice: [
+        "\u0646\u0635\u064A\u062D\u0647",
+        "\u0646\u0635\u064A\u062D\u0629",
+        "\u0627\u0642\u062A\u0631\u062D",
+        "\u0627\u0639\u0645\u0644 \u062E\u0637\u0647",
+        "\u062E\u0637\u0629",
+        "\u0627\u0648\u0641\u0651\u0631",
+        "\u0627\u0648\u0641\u0631",
+        "\u0648\u0641\u0631",
+        "\u0623\u0648\u0641\u0631",
+        "\u0627\u0633\u062A\u062B\u0645\u0631",
+        "\u0627\u0633\u062A\u062B\u0645\u0627\u0631",
+        "\u0627\u0633\u062A\u062B\u0645\u0631\u0647\u0645",
+        "\u0641\u0644\u0648\u0633 \u0632\u064A\u0627\u062F\u0647",
+        "\u0641\u0644\u0648\u0633 \u0632\u064A\u0627\u062F\u0629"
+      ],
+      lifestyle: ["\u0646\u0648\u0645", "\u0627\u0646\u0627\u0645", "\u0623\u0646\u0627\u0645", "\u0642\u0647\u0648\u0647", "\u0642\u0647\u0648\u0629", "\u0639\u0627\u062F\u0629", "\u0639\u0627\u062F\u0647", "\u0631\u0648\u062A\u064A\u0646", "\u0635\u062D\u064A", "\u0635\u062D\u0629"],
+      goals: ["\u0647\u062F\u0641", "\u0627\u0647\u062F\u0627\u0641", "\u0627\u062D\u0648\u0634", "\u0627\u062F\u062E\u0631", "\u062A\u0648\u0641\u064A\u0631", "\u062D\u0648\u0634", "\u0639\u0631\u0628\u064A\u0647", "\u0634\u0642\u0647", "\u0645\u0642\u062F\u0645"],
+      action: ["\u0627\u0639\u0645\u0644", "\u0627\u0646\u0634\u0626", "\u0636\u064A\u0641", "\u0627\u0636\u0641", "\u0627\u0631\u0628\u0637", "\u0646\u0641\u0630", "\u0633\u062C\u0644", "\u0627\u062D\u0641\u0638", "\u062D\u0637", "\u062B\u0628\u062A", "add", "create", "link"],
+      siteHelp: ["\u0627\u0632\u0627\u064A", "\u0643\u064A\u0641", "\u0627\u0631\u0628\u0637", "\u0641\u064A\u0632\u0627", "\u0643\u0627\u0631\u062A", "\u0628\u0637\u0627\u0642\u0647", "sms", "\u0631\u0633\u0627\u0626\u0644", "\u0627\u0633\u062A\u062E\u062F\u0645", "\u0627\u0644\u0645\u0648\u0642\u0639", "\u0627\u0644\u062A\u0637\u0628\u064A\u0642"],
+      memory: [
+        "\u0641\u0627\u0643\u0631",
+        "\u062A\u0641\u062A\u0643\u0631",
+        "\u0627\u062A\u0641\u0642\u0646\u0627",
+        "\u0643\u0644\u0645\u062A\u0643",
+        "\u0642\u0644\u062A\u0644\u0643",
+        "\u0627\u0644\u0645\u062D\u0627\u062F\u062B\u0647",
+        "\u0627\u0644\u0634\u0627\u062A \u0627\u0644\u0642\u062F\u064A\u0645",
+        "\u0627\u0644\u0634\u0627\u062A\u0627\u062A \u0627\u0644\u0642\u062F\u064A\u0645\u0647",
+        "\u0630\u0627\u0643\u0631\u0647",
+        "\u0627\u0644\u0630\u0627\u0643\u0631\u0647",
+        "\u0645\u0646 \u0627\u0644\u0630\u0627\u0643\u0631\u0647",
+        "\u0630\u0643\u0631\u064A\u0627\u062A",
+        "memory",
+        "remember",
+        "recall"
+      ],
+      report: ["\u062A\u0642\u0631\u064A\u0631", "\u0645\u0644\u062E\u0635 \u0627\u0644\u0634\u0647\u0631", "\u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0634\u0647\u0631\u064A", "monthly report", "summary"],
+      chart: ["\u0631\u0633\u0645", "\u062C\u0631\u0627\u0641", "chart", "\u0627\u062D\u0635\u0627\u0626\u064A\u0647", "\u0627\u062D\u0635\u0627\u0626\u064A\u0627\u062A", "\u0645\u0646\u062D\u0646\u064A", "\u0628\u064A\u0627\u0646\u064A"],
+      expenseCapture: ["\u0627\u0634\u062A\u0631\u064A\u062A", "\u062F\u0641\u0639\u062A", "\u0635\u0631\u0641\u062A", "\u0633\u062C\u0644 \u0645\u0635\u0631\u0648\u0641", "\u0627\u0636\u0641 \u0645\u0635\u0631\u0648\u0641"],
+      confirmation: ["\u0645\u0648\u0627\u0641\u0642", "\u0627\u0643\u062F", "\u0623\u0643\u062F", "\u062A\u0645\u0627\u0645 \u0646\u0641\u0630", "\u0646\u0641\u0630", "\u0627\u0639\u0645\u0644\u0647\u0627", "yes", "confirm"],
+      evidence: ["\u062A\u0641\u0627\u0635\u064A\u0644", "\u0639\u0645\u0644\u064A\u0627\u062A", "\u0627\u064A\u0647 \u0627\u0644\u0644\u064A", "\u0643\u0644", "\u0628\u0627\u0644\u0638\u0628\u0637", "\u0628\u0627\u0644\u0636\u0628\u0637", "\u0627\u062B\u0628\u0627\u062A"],
+      today: ["\u0627\u0644\u0646\u0647\u0627\u0631\u062F\u0647", "\u0627\u0644\u064A\u0648\u0645", "today", "\u062F\u0644\u0648\u0642\u062A\u064A"],
+      yesterday: ["\u0627\u0645\u0628\u0627\u0631\u062D", "yesterday"],
+      week: ["\u0627\u0644\u0627\u0633\u0628\u0648\u0639", "\u0627\u0633\u0628\u0648\u0639", "week"],
+      month: ["\u0627\u0644\u0634\u0647\u0631 \u062F\u0647", "\u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631", "\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062D\u0627\u0644\u064A", "month"],
+      previousMonth: ["\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0644\u064A \u0641\u0627\u062A", "\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0633\u0627\u0628\u0642", "previous month"],
+      salaryCycle: ["\u0645\u0646 \u0627\u0644\u0645\u0631\u062A\u0628", "\u062F\u0648\u0631\u0647 \u0627\u0644\u0645\u0631\u062A\u0628", "salary", "\u0642\u0628\u0636"],
+      food: ["\u0627\u0643\u0644", "\u0645\u0637\u0639\u0645", "\u0645\u0637\u0627\u0639\u0645", "\u0642\u0647\u0648\u0647", "\u0633\u0648\u0628\u0631 \u0645\u0627\u0631\u0643\u062A", "\u0628\u0642\u0627\u0644\u0647", "\u063A\u062F\u0627", "\u0641\u0637\u0627\u0631", "\u0639\u0634\u0627"],
+      transport: ["\u0645\u0648\u0627\u0635\u0644\u0627\u062A", "\u0627\u0648\u0628\u0631", "\u0643\u0631\u064A\u0645", "\u0628\u0646\u0632\u064A\u0646", "\u0645\u062A\u0631\u0648", "\u062A\u0627\u0643\u0633\u064A"],
+      shopping: ["\u062A\u0633\u0648\u0642", "\u0644\u0628\u0633", "\u0645\u0644\u0627\u0628\u0633", "\u0634\u0631\u0627\u0621", "\u0645\u0634\u062A\u0631\u064A\u0627\u062A"],
+      health: ["\u0635\u062D\u0647", "\u0635\u062D\u0629", "\u0635\u064A\u062F\u0644\u064A\u0647", "\u0635\u064A\u062F\u0644\u064A\u0629", "\u062F\u0648\u0627", "\u062F\u0648\u0627\u0621", "\u0639\u0644\u0627\u062C", "\u062F\u0643\u062A\u0648\u0631"],
+      bills: ["\u0641\u0648\u0627\u062A\u064A\u0631", "\u0641\u0627\u062A\u0648\u0631\u0647", "\u0641\u0627\u062A\u0648\u0631\u0629", "\u0642\u0633\u0637", "\u0627\u0642\u0633\u0627\u0637", "\u0643\u0647\u0631\u0628\u0627", "\u063A\u0627\u0632", "\u0645\u064A\u0627\u0647", "\u0627\u0646\u062A\u0631\u0646\u062A", "\u0646\u062A"],
+      income: ["\u062F\u062E\u0644", "\u0645\u0631\u062A\u0628", "\u0631\u0627\u062A\u0628", "\u0642\u0628\u0636", "salary"],
+      saving: ["\u0627\u062F\u062E\u0627\u0631", "\u062A\u062D\u0648\u064A\u0634", "\u062C\u0645\u0639\u064A\u0647", "\u062C\u0645\u0639\u064A\u0629"]
+    };
+  }
+});
+
+// api/services/ai-kernel/retrieval-policy.ts
+function embeddingApiStatusFor(dataNeeds, cacheHits) {
+  const needs = new Set(dataNeeds.map((need) => need.kind));
+  const embeddingHits = cacheHits.filter((hit) => hit.startsWith("embedding:"));
+  if (cacheHits.some((hit) => hit.startsWith("memory_cache:hit"))) {
+    return "semantic_result_cache_hit";
+  }
+  if (embeddingHits.some((hit) => hit.startsWith("embedding:fallback"))) {
+    return "fireworks_fallback";
+  }
+  if (embeddingHits.includes("embedding:disabled")) {
+    return "embedding_disabled";
+  }
+  if (embeddingHits.includes("embedding:query_cache_hit") && embeddingHits.includes("embedding:fireworks")) {
+    return "query_embedding_cache_hit";
+  }
+  if (embeddingHits.includes("embedding:query_embedded") && embeddingHits.includes("embedding:fireworks")) {
+    return "fireworks_live_call";
+  }
+  if (cacheHits.includes("site_guide:static_256")) {
+    return "static_local";
+  }
+  if (needs.has("memory.search")) {
+    return "missing_trace";
+  }
+  return "skipped";
+}
+function retrievalPolicyFor(intentKind, dataNeeds, cacheHits) {
+  const needs = new Set(dataNeeds.map((need) => need.kind));
+  const embeddingHits = cacheHits.filter((hit) => hit.startsWith("embedding:"));
+  const memoryCacheHit = cacheHits.some((hit) => hit.startsWith("memory_cache:hit"));
+  const rowHit = embeddingHits.find((hit) => hit.startsWith("embedding:rows:"));
+  const rowCount = rowHit ? Number(rowHit.split(":").at(-1)) : void 0;
+  if (embeddingHits.some((hit) => hit.startsWith("embedding:fallback"))) {
+    return {
+      embedding: "fallback",
+      reason: embeddingHits.find((hit) => hit.startsWith("embedding:fallback")) ?? "embedding_fallback",
+      vectorRows: Number.isFinite(rowCount) ? rowCount : void 0
+    };
+  }
+  if (embeddingHits.includes("embedding:fireworks")) {
+    return {
+      embedding: "fireworks_qwen",
+      reason: "memory_search_semantic_retrieval",
+      vectorRows: Number.isFinite(rowCount) ? rowCount : void 0
+    };
+  }
+  if (cacheHits.includes("site_guide:static_256")) {
+    return {
+      embedding: "static_local",
+      reason: "site_guide_uses_zero_api_static_256_vectors",
+      dimensions: 256
+    };
+  }
+  if (needs.has("memory.search")) {
+    if (embeddingHits.includes("embedding:disabled")) {
+      return {
+        embedding: "fallback",
+        reason: "memory_search_embedding_disabled_lexical_fallback"
+      };
+    }
+    return {
+      embedding: "fallback",
+      reason: memoryCacheHit ? "memory_search_cache_hit_without_embedding_trace" : "memory_search_requested_without_embedding_trace",
+      vectorRows: Number.isFinite(rowCount) ? rowCount : void 0
+    };
+  }
+  if (needs.has("finance.summary") || needs.has("finance.category_total") || needs.has("finance.transactions") || needs.has("finance.breakdown") || needs.has("finance.period_comparison") || needs.has("finance.goal_progress") || needs.has("wallet.summary") || needs.has("chart.data")) {
+    return {
+      embedding: "skipped",
+      reason: "structured_sql_or_cached_facts_do_not_need_embedding"
+    };
+  }
+  return {
+    embedding: "skipped",
+    reason: intentKind === "smalltalk" || intentKind === "unknown" ? "no_external_retrieval_needed" : "no_semantic_data_need"
+  };
+}
+var init_retrieval_policy = __esm({
+  "api/services/ai-kernel/retrieval-policy.ts"() {
+  }
+});
+
+// api/services/ai-kernel/response-normalizer.ts
+function normalizeAIResponse(input) {
+  return {
+    traceId: input.traceId,
+    channel: input.channel,
+    content: input.content ?? "",
+    intent: input.intent,
+    dataNeeds: input.dataNeeds,
+    facts: input.facts ?? [],
+    artifacts: input.artifacts ?? [],
+    actions: input.actions ?? [],
+    tokenBudget: input.tokenBudget ?? input.contextPack.tokenBudget,
+    model: input.model,
+    tokensUsed: input.tokensUsed,
+    debug: {
+      ...input.debug ?? {},
+      responseSchemaVersion: AI_RESPONSE_SCHEMA_VERSION
+    }
+  };
+}
+var AI_RESPONSE_SCHEMA_VERSION;
+var init_response_normalizer = __esm({
+  "api/services/ai-kernel/response-normalizer.ts"() {
+    AI_RESPONSE_SCHEMA_VERSION = 2;
+  }
+});
+
+// api/services/ai-memory/text-utils.ts
+import { createHash as createHash6 } from "crypto";
+function normalizeMemoryText(value) {
+  return value.toLowerCase().normalize("NFKC").replace(/[\u064B-\u065F\u0670]/g, "").replace(/[\u0623\u0625\u0622\u0671]/g, "\u0627").replace(/\u0624/g, "\u0648").replace(/\u0626/g, "\u064A").replace(/\u0649/g, "\u064A").replace(/\u0629/g, "\u0647").replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+}
+function contentHash(value) {
+  return createHash6("sha256").update(normalizeMemoryText(value)).digest("hex");
+}
+function truncateWords(value, maxWords) {
+  const words = value.trim().split(/\s+/).filter(Boolean);
+  if (words.length <= maxWords) return words.join(" ");
+  return words.slice(0, maxWords).join(" ");
+}
+function includesAny(value, patterns) {
+  return patterns.some((pattern) => value.includes(pattern));
+}
+function hasTokenOrLightPrefix(tokens, token) {
+  return tokens.has(token) || tokens.has(`\u0648${token}`) || tokens.has(`\u0641${token}`) || tokens.has(`\u0628${token}`) || tokens.has(`\u0644${token}`);
+}
+function isMemoryRecallQuestion(value) {
+  const normalized = normalizeMemoryText(value);
+  if (!normalized) return false;
+  const tokens = new Set(normalized.split(/\s+/).filter(Boolean));
+  const storeCommand = includesAny(normalized, [
+    "\u0627\u0641\u062A\u0643\u0631 \u0627\u0646",
+    "\u062E\u0644\u064A\u0643 \u0641\u0627\u0643\u0631",
+    "\u0627\u062D\u0641\u0638",
+    "\u0633\u062C\u0644 \u0645\u0639\u0644\u0648\u0645\u0647",
+    "\u0645\u062A\u0646\u0633\u0627\u0634 \u0627\u0646",
+    "remember that"
+  ]);
+  if (storeCommand) return false;
+  const hasRecallVerb = ["\u0641\u0627\u0643\u0631", "\u062A\u0641\u062A\u0643\u0631", "\u0627\u0641\u062A\u0643\u0631", "remember"].some(
+    (token) => hasTokenOrLightPrefix(tokens, token)
+  );
+  if (!hasRecallVerb) return false;
+  const asksForRecall = /[؟?]/.test(value) || ["\u0642\u0648\u0644\u064A", "\u0642\u0648\u0644\u0644\u064A", "\u0627\u064A\u0647", "\u0627\u064A", "\u0643\u0627\u0646", "\u0643\u0646\u0627", "\u0627\u062A\u0643\u0644\u0645\u0646\u0627", "\u062D\u0627\u0648\u0644\u062A", "\u0641\u064A\u0646", "\u0627\u0645\u062A\u064A", "\u0627\u0645\u062A\u0649", "\u0627\u0644\u062E\u0637\u0629", "\u0627\u0644\u062E\u0637\u0647"].some(
+    (token) => tokens.has(token)
+  ) || ["\u0627\u062A\u0641\u0642\u0646\u0627", "\u0627\u062A\u0641\u0627\u0642\u0646\u0627"].some((token) => tokens.has(token)) || normalized.includes("\u0642\u0648\u0644 \u0644\u064A");
+  return asksForRecall;
+}
+function isLowSignalMemoryText(value) {
+  const normalized = normalizeMemoryText(value);
+  if (!normalized) return true;
+  const tokens = new Set(normalized.split(/\s+/).filter(Boolean));
+  const asksMemoryLookup = (tokens.has("\u0630\u0627\u0643\u0631\u0647") || tokens.has("\u0627\u0644\u0630\u0627\u0643\u0631\u0647") || tokens.has("\u0630\u0643\u0631\u064A\u0627\u062A") || normalized.includes("\u0645\u0646 \u0627\u0644\u0630\u0627\u0643\u0631\u0647")) && ([
+    "\u0647\u0627\u062A\u0644\u064A",
+    "\u0647\u0627\u062A",
+    "\u0637\u0644\u0639",
+    "\u062F\u0648\u0631",
+    "\u0627\u0628\u062D\u062B",
+    "\u0631\u0627\u062C\u0639",
+    "\u0627\u0630\u0643\u0631",
+    "\u0639\u0646\u062F\u0643",
+    "\u0643\u0627\u0646\u062A",
+    "\u0643\u0627\u0646",
+    "\u0627\u064A\u0647",
+    "\u0627\u064A",
+    "\u0642\u0648\u0644\u064A",
+    "\u0642\u0644",
+    "\u0639\u0627\u064A\u0632",
+    "\u0639\u0627\u0648\u0632"
+  ].some((token) => tokens.has(token)) || normalized.includes("\u0642\u0644 \u0644\u064A") || normalized.includes("\u0645\u0646 \u063A\u064A\u0631 \u0645\u0627 \u062A\u0643\u0631\u0631"));
+  if (isMemoryRecallQuestion(value)) return true;
+  if (asksMemoryLookup) return true;
+  if (normalized.startsWith("\u0641\u0627\u0643\u0631 \u0627\u0644\u0627\u062A\u064A") || normalized.includes(" \u0641\u0627\u0643\u0631 \u0627\u0644\u0627\u062A\u064A ")) return true;
+  if (normalized.startsWith("\u0641\u0627\u0643\u0631 \u0627\u0644\u062E\u0644\u0627\u0635\u0647") || normalized.includes(" \u0641\u0627\u0643\u0631 \u0627\u0644\u062E\u0644\u0627\u0635\u0647 ")) return true;
+  if (normalized.startsWith("\u0630\u0627\u0643\u0631\u0647 ") && normalized.includes("\u0627\u0630\u0643\u0631")) return true;
+  if (normalized.includes("\u0645\u0634 \u0644\u0627\u0642\u064A \u0630\u0643\u0631\u064A") || normalized.includes("\u0627\u0633\u062A\u0639\u0644\u0627\u0645 \u0630\u0627\u0643\u0631\u0647 \u0628\u062F\u0648\u0646 \u0630\u0643\u0631\u064A \u062C\u062F\u064A\u062F\u0647")) {
+    return true;
+  }
+  if (normalized.includes("\u0627\u062C\u0645\u0627\u0644\u064A \u0635\u0631\u0641\u0643") || normalized.includes("\u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A \u0627\u0644\u0644\u064A \u062F\u062E\u0644\u062A") || normalized.includes("\u0645\u0646 \u0628\u064A\u0627\u0646\u0627\u062A\u0643 \u0627\u0644\u0645\u0624\u0643\u062F\u0647") || normalized.includes("\u062E\u0637\u0647 \u0627\u0645\u0646\u0647 \u0639\u0644\u064A \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u0624\u0643\u062F\u0647") || normalized.includes("\u0646\u062D\u062A\u0627\u062C \u0644\u0631\u062F \u0639\u0644\u064A \u0637\u0644\u0628 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645") || normalized.includes("\u0627\u0643\u062A\u0628 \u0627\u0644\u0631\u062F \u0627\u0644\u0646\u0647\u0627\u0626\u064A")) {
+    return true;
+  }
+  if (/^(موافق|تمام|اوك|اكد|نفذ|اعمل الهدف دلوقتي)(\s|$)/.test(normalized)) return true;
+  if (normalized.includes("\u0635\u0631\u0641\u062A \u0643\u0627\u0645") || normalized.includes("\u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A \u0627\u0644\u0644\u064A \u0627\u062A\u062D\u0633\u0628\u062A")) return true;
+  return false;
+}
+function keywordTokens(value) {
+  const ignored = /* @__PURE__ */ new Set([
+    "\u0641\u064A",
+    "\u0645\u0646",
+    "\u0639\u0644\u0649",
+    "\u0639\u0646",
+    "\u0627\u0646\u0627",
+    "\u0627\u0646\u062A",
+    "\u0647\u0648",
+    "\u0647\u064A",
+    "\u062F\u0647",
+    "\u062F\u064A",
+    "\u062F\u0627",
+    "\u0627\u064A\u0647",
+    "\u0643\u0627\u0645",
+    "\u0627\u0644\u0644\u064A",
+    "\u0627\u0644\u0644\u0649",
+    "\u0627\u0644\u064A",
+    "\u0627\u0644\u0630\u064A",
+    "\u0627\u0644\u062A\u064A",
+    "\u0627\u062A\u0643\u0644\u0645\u0646\u0627",
+    "\u062A\u0643\u0644\u0645\u0646\u0627",
+    "\u0627\u062A\u062D\u062F\u062B\u0646\u0627",
+    "\u0627\u062A\u0643\u0644\u0645\u062A",
+    "\u0627\u062A\u0643\u0644\u0645",
+    "\u0639\u0646\u0647\u0627",
+    "\u0639\u0646\u0647",
+    "\u0639\u0644\u064A\u0647\u0627",
+    "\u0639\u0644\u064A\u0647",
+    "\u0641\u0627\u0643\u0631",
+    "\u062A\u0641\u062A\u0643\u0631",
+    "\u0627\u0641\u062A\u0643\u0631",
+    "\u0643\u0644\u0645\u062A\u0643",
+    "\u0642\u0644\u062A\u0644\u0643",
+    "\u0627\u0644\u0645\u062D\u0627\u062F\u062B\u0647",
+    "\u0627\u0644\u0634\u0627\u062A",
+    "\u0631\u0642\u0645",
+    "\u0627\u0644\u0631\u0642\u0645",
+    "\u0645\u062F\u0647",
+    "\u0627\u0644\u0645\u062F\u0647",
+    "\u0645\u062F\u0629",
+    "\u0627\u0644\u0645\u062F\u0629",
+    "\u0641\u0642\u0637",
+    "\u0628\u0633",
+    "\u0639\u0627\u064A\u0632",
+    "\u0639\u0627\u0648\u0632",
+    "\u0643\u0646\u062A",
+    "the",
+    "and",
+    "for",
+    "with",
+    "\u0639\u0634\u0627\u0646",
+    "\u0639\u0644\u0634\u0627\u0646",
+    "\u0639\u0634\u0627\u0646\u0643",
+    "\u0639\u0634\u0627\u0646\u0647",
+    "\u0639\u0634\u0627\u0646\u0647\u0627"
+  ]);
+  const expandToken = (token) => {
+    const variants = /* @__PURE__ */ new Set([token]);
+    const queue = [token];
+    for (const current of queue) {
+      const next = [];
+      if (current.startsWith("\u0644\u0644") && current.length > 4) next.push(current.slice(2));
+      if (current.startsWith("\u0627\u0644") && current.length > 4) next.push(current.slice(2));
+      if (/^[وبفل]/.test(current) && current.length > 4) next.push(current.slice(1));
+      for (const variant of next) {
+        if (!variants.has(variant)) {
+          variants.add(variant);
+          queue.push(variant);
+        }
+      }
+    }
+    return [...variants];
+  };
+  const tokens = normalizeMemoryText(value).split(/\s+/).flatMap(expandToken).filter((token) => token.length >= 3 && !ignored.has(token));
+  return new Set(tokens);
+}
+function specificTokenScore(query, candidate) {
+  const queryTokens = [...keywordTokens(query)].filter((token) => !GENERIC_MEMORY_TOKENS.has(token));
+  if (queryTokens.length === 0) return 0;
+  const candidateTokens = keywordTokens(candidate);
+  const matches = queryTokens.filter((token) => candidateTokens.has(token)).length;
+  if (matches === 0) return -0.2;
+  return Math.min(0.45, 0.18 + matches / queryTokens.length * 0.27);
+}
+function lexicalScore(query, candidate) {
+  const queryTokens = keywordTokens(query);
+  const candidateTokens = keywordTokens(candidate);
+  if (queryTokens.size === 0 || candidateTokens.size === 0) return 0;
+  let overlap = 0;
+  for (const token of queryTokens) {
+    if (candidateTokens.has(token)) overlap += 1;
+  }
+  return overlap / Math.sqrt(queryTokens.size * candidateTokens.size);
+}
+function cosineSimilarity3(a, b) {
+  if (!a || !b || a.length === 0 || a.length !== b.length) return 0;
+  let dot = 0;
+  let aMag = 0;
+  let bMag = 0;
+  for (let i2 = 0; i2 < a.length; i2++) {
+    dot += a[i2] * b[i2];
+    aMag += a[i2] * a[i2];
+    bMag += b[i2] * b[i2];
+  }
+  if (aMag === 0 || bMag === 0) return 0;
+  return dot / (Math.sqrt(aMag) * Math.sqrt(bMag));
+}
+function localDateTime(value) {
+  if (!value) return null;
+  const date6 = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date6.getTime()) ? null : date6;
+}
+var GENERIC_MEMORY_TOKEN_VALUES, GENERIC_MEMORY_TOKENS;
+var init_text_utils = __esm({
+  "api/services/ai-memory/text-utils.ts"() {
+    GENERIC_MEMORY_TOKEN_VALUES = [
+      "\u0647\u062F\u0641",
+      "\u0627\u0644\u0647\u062F\u0641",
+      "\u0627\u0647\u062F\u0627\u0641",
+      "\u0627\u0644\u0627\u0647\u062F\u0627\u0641",
+      "\u0627\u062F\u062E\u0627\u0631",
+      "\u062A\u0648\u0641\u064A\u0631",
+      "\u062E\u0637\u0647",
+      "\u0627\u0644\u062E\u0637\u0647",
+      "\u062E\u0637\u0629",
+      "\u0627\u0644\u062E\u0637\u0629",
+      "\u0631\u0642\u0645",
+      "\u0627\u0644\u0631\u0642\u0645",
+      "\u0645\u062F\u0647",
+      "\u0627\u0644\u0645\u062F\u0647",
+      "\u0645\u062F\u0629",
+      "\u0627\u0644\u0645\u062F\u0629",
+      "\u0627\u062A\u0641\u0627\u0642",
+      "\u0645\u062D\u0627\u062F\u062B\u0647",
+      "\u0630\u0627\u0643\u0631\u0647",
+      "\u0627\u062D\u0648\u0634",
+      "\u0627\u062F\u062E\u0631",
+      "\u062E\u0637\u0629",
+      "saving",
+      "target",
+      "goal",
+      "memory"
+    ];
+    GENERIC_MEMORY_TOKENS = new Set(
+      GENERIC_MEMORY_TOKEN_VALUES.flatMap((token) => [token, normalizeMemoryText(token)])
+    );
+  }
+});
+
+// api/services/ai-kernel/types.ts
+var init_types6 = __esm({
+  "api/services/ai-kernel/types.ts"() {
+  }
+});
+
+// api/services/ai-memory/types.ts
+var init_types7 = __esm({
+  "api/services/ai-memory/types.ts"() {
+  }
+});
+
+// api/services/ai-memory/embedding-client.ts
+function clampDimensions(value, fallback) {
+  return value === 256 || value === 768 || value === 1024 ? value : fallback;
+}
+function endpoint(baseUrl) {
+  return `${baseUrl.replace(/\/+$/, "")}/embeddings`;
+}
+function modelCandidates(model) {
+  const trimmed = model.trim();
+  const candidates = [trimmed];
+  const accountPrefix = "accounts/fireworks/models/";
+  if (trimmed.startsWith(accountPrefix)) {
+    candidates.push(`fireworks/${trimmed.slice(accountPrefix.length)}`);
+  }
+  return [...new Set(candidates.filter(Boolean))];
+}
+function timeoutSignal(ms = 12e3) {
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), ms).unref?.();
+  return controller.signal;
+}
+function parseEmbeddingResponse(data) {
+  const record2 = data;
+  const vector = record2.data?.[0]?.embedding;
+  if (!Array.isArray(vector) || vector.some((item) => typeof item !== "number")) {
+    throw new Error("Invalid embedding response");
+  }
+  return vector;
+}
+function embeddingCacheIdentity(input) {
+  if (input.userId === void 0 || input.userId === null || input.userId === "") return "global";
+  return `${input.userType ?? "unknown"}:${input.userId}`;
+}
+function fallbackResult(input, config3, dimensions, reason) {
+  return {
+    vector: buildDeterministicFallbackEmbedding(input.text, dimensions),
+    model: config3.model,
+    dimensions,
+    provider: "fireworks",
+    cacheHit: false,
+    fallback: true,
+    fallbackReason: reason
+  };
+}
+var FireworksEmbeddingClient;
+var init_embedding_client = __esm({
+  "api/services/ai-memory/embedding-client.ts"() {
+    init_redis_client();
+    init_ai_cost_policy();
+    init_text_utils();
+    FireworksEmbeddingClient = class {
+      constructor(config3) {
+        this.config = config3;
+      }
+      async embedText(input) {
+        const dimensions = clampDimensions(input.dimensions, this.config.dimensions);
+        if (!this.config.enabled) {
+          return fallbackResult(input, this.config, dimensions, "embedding_client_disabled");
+        }
+        if (!this.config.apiKey) {
+          return fallbackResult(input, this.config, dimensions, "fireworks_api_key_missing");
+        }
+        const cacheKey3 = `ai_memory_embedding:${this.config.model}:${dimensions}:${embeddingCacheIdentity(input)}:${contentHash(input.text)}`;
+        const redis = await getRedisClient();
+        if (redis) {
+          const cached2 = await redis.get(cacheKey3);
+          if (cached2) {
+            return {
+              vector: JSON.parse(cached2),
+              model: this.config.model,
+              dimensions,
+              provider: "fireworks",
+              cacheHit: true
+            };
+          }
+        }
+        try {
+          const failures = [];
+          let vector;
+          let requestModel = this.config.model;
+          for (const candidate of modelCandidates(this.config.model)) {
+            requestModel = candidate;
+            const response = await fetch(endpoint(this.config.baseUrl), {
+              method: "POST",
+              signal: timeoutSignal(),
+              headers: {
+                Authorization: `Bearer ${this.config.apiKey}`,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                model: candidate,
+                input: input.text,
+                dimensions
+              })
+            });
+            if (response.ok) {
+              vector = parseEmbeddingResponse(await response.json());
+              break;
+            }
+            failures.push(`${candidate}:${response.status}`);
+            if (![400, 404, 422].includes(response.status)) {
+              break;
+            }
+          }
+          if (!vector) {
+            return fallbackResult(input, this.config, dimensions, `fireworks_embedding_failed_${failures.join("|")}`);
+          }
+          if (redis) {
+            await redis.setEx(cacheKey3, 60 * 60 * 24 * 14, JSON.stringify(vector));
+          }
+          return {
+            vector,
+            model: this.config.model,
+            requestModel,
+            dimensions,
+            provider: "fireworks",
+            cacheHit: false
+          };
+        } catch (error48) {
+          const reason = error48 instanceof Error ? error48.message : String(error48);
+          return fallbackResult(input, this.config, dimensions, `embedding_exception:${reason}`);
+        }
+      }
+    };
+  }
+});
+
+// api/services/ai-memory/embedding-settings.ts
+function dimension(value, fallback) {
+  const parsed = Number(value);
+  if (parsed === 256 || parsed === 768 || parsed === 1024) return parsed;
+  return fallback;
+}
+function embeddingSettingsKeys() {
+  return {
+    enabled: "ai_memory_embedding_enabled",
+    provider: "ai_embedding_provider",
+    baseUrl: "ai_embedding_base_url",
+    model: "ai_embedding_model",
+    shortDimensions: "ai_embedding_dimensions_short",
+    memoryDimensions: "ai_embedding_dimensions_memory",
+    deepDimensions: "ai_embedding_dimensions_deep"
+  };
+}
+async function loadEmbeddingConfig(useCase = "memory") {
+  const rows = await db.select().from(systemSettings);
+  const settings = Object.fromEntries(rows.map((row) => [row.key, row.value]));
+  const keys = embeddingSettingsKeys();
+  const dimensionKey = useCase === "short" ? keys.shortDimensions : useCase === "deep" ? keys.deepDimensions : keys.memoryDimensions;
+  return {
+    provider: "fireworks",
+    apiKey: settings.fireworks_api_key || settings.chatbot_api_key || env.FIREWORKS_API_KEY || "",
+    baseUrl: settings[keys.baseUrl] || DEFAULT_EMBEDDING_BASE_URL,
+    model: settings[keys.model] || DEFAULT_EMBEDDING_MODEL,
+    dimensions: dimension(settings[dimensionKey], useCase === "short" ? 256 : useCase === "deep" ? 1024 : 768),
+    enabled: settings[keys.enabled] === "true"
+  };
+}
+var DEFAULT_EMBEDDING_MODEL, DEFAULT_EMBEDDING_BASE_URL;
+var init_embedding_settings = __esm({
+  "api/services/ai-memory/embedding-settings.ts"() {
+    init_schema2();
+    init_connection();
+    init_env();
+    DEFAULT_EMBEDDING_MODEL = "accounts/fireworks/models/qwen3-embedding-8b";
+    DEFAULT_EMBEDDING_BASE_URL = "https://api.fireworks.ai/inference/v1";
+  }
+});
+
+// api/services/ai-memory/embedding-backfill.ts
+async function smokeTestEmbeddingEndpoint() {
+  const config3 = await loadEmbeddingConfig("short");
+  const enabledConfig = { ...config3, enabled: true };
+  const client = new FireworksEmbeddingClient(enabledConfig);
+  const result = await client.embedText({
+    text: "\u0627\u062E\u062A\u0628\u0627\u0631 \u0630\u0627\u0643\u0631\u0629 SmartSpend",
+    dimensions: enabledConfig.dimensions
+  });
+  return {
+    ok: !result.fallback && result.vector.length === enabledConfig.dimensions,
+    model: result.model,
+    dimensions: result.dimensions,
+    vectorLength: result.vector.length,
+    cacheHit: Boolean(result.cacheHit),
+    fallback: Boolean(result.fallback),
+    fallbackReason: result.fallbackReason
+  };
+}
+async function backfillMemoryEmbeddings(input = {}) {
+  const config3 = await loadEmbeddingConfig("memory");
+  const enabledConfig = { ...config3, enabled: input.forceEnabled || config3.enabled };
+  const result = {
+    scanned: 0,
+    inserted: 0,
+    skippedExisting: 0,
+    skippedFallback: 0,
+    failed: 0,
+    model: enabledConfig.model,
+    dimensions: enabledConfig.dimensions
+  };
+  if (!enabledConfig.enabled || !enabledConfig.apiKey) {
+    return result;
+  }
+  const filters = [eq(aiMemoryItems.status, "active")];
+  if (input.userId !== void 0) filters.push(eq(aiMemoryItems.userId, input.userId));
+  if (input.userType) filters.push(eq(aiMemoryItems.userType, input.userType));
+  const rows = await db.select({
+    id: aiMemoryItems.id,
+    userId: aiMemoryItems.userId,
+    userType: aiMemoryItems.userType,
+    content: aiMemoryItems.content
+  }).from(aiMemoryItems).where(and(...filters)).orderBy(desc(aiMemoryItems.updatedAt)).limit(Math.min(Math.max(input.limit ?? 200, 1), 1e3));
+  const client = new FireworksEmbeddingClient(enabledConfig);
+  for (const row of rows) {
+    result.scanned += 1;
+    try {
+      const [existing] = await db.select({ id: aiMemoryEmbeddings.id }).from(aiMemoryEmbeddings).where(
+        and(
+          eq(aiMemoryEmbeddings.memoryItemId, row.id),
+          eq(aiMemoryEmbeddings.provider, "fireworks"),
+          eq(aiMemoryEmbeddings.model, enabledConfig.model),
+          eq(aiMemoryEmbeddings.dimensions, enabledConfig.dimensions)
+        )
+      ).limit(1);
+      if (existing?.id) {
+        result.skippedExisting += 1;
+        continue;
+      }
+      const embedded = await client.embedText({
+        text: row.content,
+        dimensions: enabledConfig.dimensions,
+        userId: row.userId,
+        userType: row.userType
+      });
+      if (embedded.fallback && !input.allowFallbackVectors) {
+        result.skippedFallback += 1;
+        continue;
+      }
+      await db.insert(aiMemoryEmbeddings).values({
+        memoryItemId: row.id,
+        userId: row.userId,
+        userType: row.userType,
+        provider: embedded.provider,
+        model: embedded.model,
+        dimensions: embedded.dimensions,
+        vectorHash: contentHash(embedded.vector.join(",")),
+        vector: embedded.vector
+      }).onDuplicateKeyUpdate({
+        set: {
+          vectorHash: contentHash(embedded.vector.join(",")),
+          vector: embedded.vector
+        }
+      });
+      result.inserted += 1;
+    } catch (error48) {
+      result.failed += 1;
+      console.warn("[AI Memory] embedding backfill skipped item", {
+        memoryItemId: row.id,
+        error: error48 instanceof Error ? error48.message : String(error48)
+      });
+    }
+  }
+  return result;
+}
+var init_embedding_backfill = __esm({
+  "api/services/ai-memory/embedding-backfill.ts"() {
+    init_drizzle_orm();
+    init_schema2();
+    init_connection();
+    init_embedding_client();
+    init_embedding_settings();
+    init_text_utils();
+  }
+});
+
+// api/services/ai-memory/retrieval-enhancements.ts
+function unique(values) {
+  return [...new Set(values.map((item) => item.trim()).filter(Boolean))];
+}
+function reformulateMemoryQuery(query) {
+  const matched = DOMAIN_TERMS.filter((entry) => entry.pattern.test(query));
+  const terms = unique(matched.flatMap((entry) => entry.terms));
+  if (terms.length === 0) {
+    return {
+      original: query,
+      expanded: query,
+      terms: [],
+      reason: "no_reformulation_needed"
+    };
+  }
+  return {
+    original: query,
+    expanded: unique([query, ...terms]).join(" "),
+    terms,
+    reason: unique(matched.map((entry) => entry.reason)).join("+")
+  };
+}
+function isRetrievalAmbiguous(results, options = {}) {
+  if (results.length < 2) return false;
+  const gap = options.ambiguousScoreGap ?? 0.08;
+  const lowConfidence = options.lowConfidenceThreshold ?? 0.28;
+  const [first, second] = results;
+  return first.score < lowConfidence || Math.abs(first.score - second.score) <= gap;
+}
+function metadataNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+function phraseBonus(query, candidate) {
+  const normalizedQuery = normalizeMemoryText(query);
+  const normalizedCandidate = normalizeMemoryText(candidate);
+  if (!normalizedQuery || !normalizedCandidate) return 0;
+  if (normalizedCandidate.includes(normalizedQuery)) return 0.2;
+  const queryTokens = [...keywordTokens(query)];
+  if (queryTokens.length === 0) return 0;
+  const orderedHits = queryTokens.filter((token) => normalizedCandidate.includes(token)).length;
+  return Math.min(0.16, orderedHits * 0.04);
+}
+function cheapRerankResults(query, results, options = {}) {
+  if (!isRetrievalAmbiguous(results, options)) return results;
+  const reformulated = reformulateMemoryQuery(query);
+  return results.map((result) => {
+    const importance = metadataNumber(result.document.metadata?.importance) / 1e3;
+    const lexical = lexicalScore(reformulated.expanded, result.document.text);
+    return {
+      ...result,
+      score: result.score * 0.55 + lexical * 0.3 + phraseBonus(query, result.document.text) + importance
+    };
+  }).sort((a, b) => b.score - a.score);
+}
+var DOMAIN_TERMS;
+var init_retrieval_enhancements = __esm({
+  "api/services/ai-memory/retrieval-enhancements.ts"() {
+    init_text_utils();
+    DOMAIN_TERMS = [
+      {
+        pattern: /(هدف|اهداف|احوش|ادخر|توفير|saving|goal|خطة)/i,
+        terms: ["\u0647\u062F\u0641", "\u0627\u062F\u062E\u0627\u0631", "\u062E\u0637\u0629", "\u062A\u0648\u0641\u064A\u0631", "target", "saving"],
+        reason: "goal_or_saving_query"
+      },
+      {
+        pattern: /(اكل|مطعم|قهوة|food|restaurant|cafe)/i,
+        terms: ["\u0627\u0643\u0644", "\u0645\u0637\u0627\u0639\u0645", "\u0642\u0647\u0648\u0629", "food", "category"],
+        reason: "food_spending_query"
+      },
+      {
+        pattern: /(عربية|سيارة|car)/i,
+        terms: ["\u0639\u0631\u0628\u064A\u0629", "\u0633\u064A\u0627\u0631\u0629", "car", "vehicle"],
+        reason: "car_goal_query"
+      },
+      {
+        pattern: /(اتفقنا|فاكر|كلمتك|المحادثة|memory|remember)/i,
+        terms: ["\u0627\u062A\u0641\u0627\u0642", "\u0645\u062D\u0627\u062F\u062B\u0629", "\u0630\u0627\u0643\u0631\u0629", "\u062E\u0637\u0629", "memory"],
+        reason: "conversation_memory_query"
+      },
+      {
+        pattern: /(محفظة|فيزا|كارت|wallet|card|visa)/i,
+        terms: ["\u0645\u062D\u0641\u0638\u0629", "\u0643\u0627\u0631\u062A", "\u0641\u064A\u0632\u0627", "wallet", "card"],
+        reason: "wallet_or_card_query"
+      }
+    ];
+  }
+});
+
+// api/services/ai-memory/vector-store.ts
+var InMemoryVectorStore;
+var init_vector_store = __esm({
+  "api/services/ai-memory/vector-store.ts"() {
+    init_text_utils();
+    init_retrieval_enhancements();
+    InMemoryVectorStore = class {
+      documents = /* @__PURE__ */ new Map();
+      async upsert(documents) {
+        for (const document2 of documents) {
+          this.documents.set(document2.id, document2);
+        }
+      }
+      async search(query) {
+        const reformulated = reformulateMemoryQuery(query.text);
+        const results = [...this.documents.values()].filter((document2) => document2.userId === query.userId && document2.userType === query.userType).map((document2) => ({
+          id: document2.id,
+          document: document2,
+          score: Math.max(
+            lexicalScore(reformulated.expanded, document2.text),
+            cosineSimilarity3(query.vector, document2.vector)
+          )
+        })).filter((result) => result.score > 0).sort((a, b) => b.score - a.score).slice(0, Math.max(query.limit, 2));
+        return cheapRerankResults(query.text, results).slice(0, query.limit);
+      }
+      async deleteByUser(userId, userType) {
+        let deleted = 0;
+        for (const [id, document2] of this.documents.entries()) {
+          if (document2.userId === userId && document2.userType === userType) {
+            this.documents.delete(id);
+            deleted++;
+          }
+        }
+        return deleted;
+      }
+    };
+  }
+});
+
+// api/services/ai-memory/qdrant-vector-store.ts
+import { createHash as createHash7 } from "crypto";
+function qdrantUrl(config3, path5) {
+  return `${config3.baseUrl.replace(/\/+$/, "")}/collections/${encodeURIComponent(config3.collection)}${path5}`;
+}
+function pointId(documentId) {
+  const hex4 = createHash7("sha256").update(documentId).digest("hex").slice(0, 32);
+  return `${hex4.slice(0, 8)}-${hex4.slice(8, 12)}-${hex4.slice(12, 16)}-${hex4.slice(16, 20)}-${hex4.slice(20)}`;
+}
+function headers(config3) {
+  return {
+    "Content-Type": "application/json",
+    ...config3.apiKey ? { "api-key": config3.apiKey } : {}
+  };
+}
+async function qdrantRequest(config3, path5, init2) {
+  const response = await fetch(qdrantUrl(config3, path5), {
+    ...init2,
+    headers: {
+      ...headers(config3),
+      ...init2.headers || {}
+    }
+  });
+  if (!response.ok) {
+    throw new Error(`Qdrant request failed: ${response.status}`);
+  }
+  return await response.json();
+}
+var QdrantVectorStore;
+var init_qdrant_vector_store = __esm({
+  "api/services/ai-memory/qdrant-vector-store.ts"() {
+    QdrantVectorStore = class {
+      constructor(config3) {
+        this.config = config3;
+      }
+      async upsert(documents) {
+        const points = documents.filter((document2) => Array.isArray(document2.vector) && document2.vector.length > 0).map((document2) => ({
+          id: pointId(document2.id),
+          vector: document2.vector,
+          payload: {
+            id: document2.id,
+            userId: document2.userId,
+            userType: document2.userType,
+            text: document2.text,
+            metadata: document2.metadata || {}
+          }
+        }));
+        if (points.length === 0) return;
+        await qdrantRequest(this.config, "/points?wait=true", {
+          method: "PUT",
+          body: JSON.stringify({ points })
+        });
+      }
+      async search(query) {
+        if (!query.vector || query.vector.length === 0) return [];
+        const response = await qdrantRequest(this.config, "/points/search", {
+          method: "POST",
+          body: JSON.stringify({
+            vector: query.vector,
+            limit: query.limit,
+            with_payload: true,
+            filter: {
+              must: [
+                { key: "userId", match: { value: query.userId } },
+                { key: "userType", match: { value: query.userType } }
+              ]
+            }
+          })
+        });
+        return (response.result || []).map((point) => {
+          const payload = point.payload || {};
+          const document2 = {
+            id: String(payload.id ?? point.id),
+            userId: Number(payload.userId ?? query.userId),
+            userType: String(payload.userType ?? query.userType),
+            text: String(payload.text ?? ""),
+            metadata: payload.metadata || {}
+          };
+          return {
+            id: document2.id,
+            score: Number(point.score || 0),
+            document: document2
+          };
+        }).filter((result) => result.document.userId === query.userId && result.document.userType === query.userType);
+      }
+      async deleteByUser(userId, userType) {
+        await qdrantRequest(this.config, "/points/delete?wait=true", {
+          method: "POST",
+          body: JSON.stringify({
+            filter: {
+              must: [
+                { key: "userId", match: { value: userId } },
+                { key: "userType", match: { value: userType } }
+              ]
+            }
+          })
+        });
+        return 0;
+      }
+    };
+  }
+});
+
+// api/services/ai-memory/quantized-vector-store.ts
+import { mkdir as mkdir2, readFile as readFile2, rename, writeFile as writeFile2 } from "fs/promises";
+import { dirname } from "path";
+function quantizeVector(vector) {
+  if (!vector || vector.length === 0) return void 0;
+  const maxAbs = Math.max(...vector.map((value) => Math.abs(value)));
+  const scale = maxAbs > 0 ? maxAbs / 127 : 1;
+  return {
+    scale,
+    values: vector.map((value) => Math.max(-127, Math.min(127, Math.round(value / scale))))
+  };
+}
+function dequantizeVector(vector) {
+  if (!vector) return void 0;
+  return vector.values.map((value) => value * vector.scale);
+}
+var QuantizedOnDiskVectorStore;
+var init_quantized_vector_store = __esm({
+  "api/services/ai-memory/quantized-vector-store.ts"() {
+    init_text_utils();
+    QuantizedOnDiskVectorStore = class {
+      constructor(filePath) {
+        this.filePath = filePath;
+      }
+      documents = /* @__PURE__ */ new Map();
+      loaded = false;
+      async load() {
+        if (this.loaded) return;
+        this.loaded = true;
+        try {
+          const data = JSON.parse(await readFile2(this.filePath, "utf8"));
+          for (const document2 of data.documents || []) {
+            this.documents.set(document2.id, document2);
+          }
+        } catch (error48) {
+          if (error48.code !== "ENOENT") {
+            throw error48;
+          }
+        }
+      }
+      async persist() {
+        await mkdir2(dirname(this.filePath), { recursive: true });
+        const tempPath = `${this.filePath}.tmp`;
+        const data = {
+          version: 1,
+          documents: [...this.documents.values()]
+        };
+        await writeFile2(tempPath, JSON.stringify(data), "utf8");
+        await rename(tempPath, this.filePath);
+      }
+      async upsert(documents) {
+        await this.load();
+        for (const document2 of documents) {
+          const { vector, ...rest } = document2;
+          this.documents.set(document2.id, {
+            ...rest,
+            quantizedVector: quantizeVector(vector)
+          });
+        }
+        await this.persist();
+      }
+      async search(query) {
+        await this.load();
+        return [...this.documents.values()].filter((document2) => document2.userId === query.userId && document2.userType === query.userType).map((document2) => {
+          const vector = dequantizeVector(document2.quantizedVector);
+          const restored = {
+            ...document2,
+            vector
+          };
+          return {
+            id: document2.id,
+            document: restored,
+            score: Math.max(
+              lexicalScore(query.text, document2.text),
+              cosineSimilarity3(query.vector, vector)
+            )
+          };
+        }).filter((result) => result.score > 0).sort((a, b) => b.score - a.score).slice(0, query.limit);
+      }
+      async deleteByUser(userId, userType) {
+        await this.load();
+        let deleted = 0;
+        for (const [id, document2] of this.documents.entries()) {
+          if (document2.userId === userId && document2.userType === userType) {
+            this.documents.delete(id);
+            deleted += 1;
+          }
+        }
+        if (deleted > 0) await this.persist();
+        return deleted;
+      }
+    };
+  }
+});
+
+// api/services/ai-memory/memory-retriever.ts
+function cacheKey(ctx) {
+  return `ai_memory:${ctx.userId}:${ctx.userType}:${ctx.limit ?? 6}:${Buffer.from(ctx.query).toString("base64url").slice(0, 80)}`;
+}
+function invalidateMemoryUserCache(userId, userType) {
+  return deleteCacheByPattern(`ai_memory:${userId}:${userType}:*`);
+}
+function recencyBoost(date6) {
+  if (!date6) return 0;
+  const ageMs = Date.now() - date6.getTime();
+  const ageDays = Math.max(0, ageMs / (24 * 60 * 60 * 1e3));
+  return Math.max(0, 0.15 - ageDays / 1e3);
+}
+function memoryFact(dataNeedId, item, index2) {
+  return {
+    id: `${dataNeedId}:memory_${index2 + 1}`,
+    dataNeedId,
+    label: `memory_${index2 + 1}`,
+    value: item.content,
+    source: "memory.search",
+    confidence: Math.min(1, Math.max(0.1, item.score)),
+    evidence: [
+      {
+        id: item.id,
+        label: item.source,
+        value: item.importance
+      }
+    ]
+  };
+}
+function scoreAndSort(query, items, limit) {
+  return items.map((item) => ({
+    ...item,
+    score: item.score + lexicalScore(query, item.content) + specificTokenScore(query, item.content) + item.importance / 1e3 + recencyBoost(item.createdAt)
+  })).filter((item) => item.score > 0.02).sort((a, b) => b.score - a.score).slice(0, limit);
+}
+function parseVector(value) {
+  if (!Array.isArray(value)) return void 0;
+  const vector = value.map((item) => Number(item));
+  return vector.length > 0 && vector.every(Number.isFinite) ? vector : void 0;
+}
+function mergeMemoryCandidates(candidates, limit) {
+  const merged = /* @__PURE__ */ new Map();
+  for (const list of candidates) {
+    for (const item of list) {
+      const key = String(item.id);
+      const existing = merged.get(key);
+      if (!existing || item.score > existing.score) {
+        merged.set(key, item);
+      }
+    }
+  }
+  return [...merged.values()].sort((a, b) => b.score - a.score).slice(0, limit);
+}
+function focusSpecificCandidates(query, items) {
+  const scored = items.map((item) => ({
+    item,
+    specificScore: specificTokenScore(query, item.content)
   }));
-  return { month, total, categories: sorted.slice(0, 10) };
+  const focused = scored.filter((entry) => entry.specificScore > 0).map((entry) => entry.item);
+  return focused.length > 0 ? focused : items;
 }
-async function get_recent_transactions(ctx, args) {
-  const count4 = Math.min(Number(args.count) || 10, 30);
-  const rows = await db.select().from(expenses).where(
-    and(
-      eq(expenses.userId, ctx.userId),
-      eq(expenses.userType, ctx.userType)
-    )
-  ).orderBy(desc(expenses.date)).limit(count4);
-  return {
-    transactions: rows.map((r2) => ({
-      description: r2.description || r2.category,
-      amount: Number(r2.amount),
-      category: r2.category,
-      sub_category: r2.subCategory,
-      type: r2.type,
-      date: r2.date ? new Date(r2.date).toLocaleDateString("ar-EG") : ""
-    }))
-  };
-}
-async function get_spending_by_person(ctx, args) {
-  const name2 = args.name || "";
-  if (!name2) return { error: "\u0645\u062D\u062A\u0627\u062C \u0627\u0633\u0645 \u0627\u0644\u0634\u062E\u0635" };
-  const rows = await db.select().from(expenses).where(
-    and(
-      eq(expenses.userId, ctx.userId),
-      eq(expenses.userType, ctx.userType),
-      like(expenses.description, `%${name2}%`)
-    )
-  ).orderBy(desc(expenses.date)).limit(20);
-  const total = rows.reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  return {
-    person: name2,
-    total_amount: total,
-    transaction_count: rows.length,
-    recent: rows.slice(0, 5).map((r2) => ({
-      description: r2.description,
-      amount: Number(r2.amount),
-      date: r2.date ? new Date(r2.date).toLocaleDateString("ar-EG") : "",
-      category: r2.category
-    }))
-  };
-}
-async function get_family_spending(ctx, _args) {
-  const familyCategories = ["\u0623\u0648\u0644\u0627\u062F", "\u062A\u0639\u0644\u064A\u0645", "\u0623\u0633\u0631\u0629"];
-  const familyKeywords = ["\u0627\u0628\u0646", "\u0627\u0628\u0646\u0629", "\u0628\u0646\u062A", "\u0648\u0644\u062F", "\u0623\u0648\u0644\u0627\u062F", "\u0645\u062F\u0631\u0633\u0629", "\u062D\u0636\u0627\u0646\u0629", "\u062A\u0639\u0644\u064A\u0645", "\u0623\u0633\u0631\u0629"];
-  const month = (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
-  const rows = await db.select().from(expenses).where(
-    and(
-      eq(expenses.userId, ctx.userId),
-      eq(expenses.userType, ctx.userType),
-      eq(expenses.type, "expense"),
-      gte(expenses.date, startOfMonth(month)),
-      lte(expenses.date, endOfMonth(month))
-    )
+function selectMemoryCandidatesForFacts(query, input, limit) {
+  const candidatePool = [...input.memories, ...input.capsules, ...input.actions].sort(
+    (a, b) => b.score - a.score
   );
-  const familyExpenses = rows.filter(
-    (r2) => familyCategories.some((c) => r2.category.includes(c) || (r2.subCategory || "").includes(c)) || familyKeywords.some((kw) => (r2.description || "").includes(kw))
-  );
-  const total = familyExpenses.reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  return {
-    total_family_spending: total,
-    count: familyExpenses.length,
-    breakdown: familyExpenses.slice(0, 10).map((r2) => ({
-      description: r2.description || r2.category,
-      amount: Number(r2.amount),
-      category: r2.category
-    }))
-  };
+  const focused = focusSpecificCandidates(query, candidatePool);
+  const hasDirectMemory = focused.some((item) => item.source === "memory");
+  const cleaned = hasDirectMemory ? focused.filter((item) => item.source !== "capsule") : focused;
+  return (cleaned.length > 0 ? cleaned : focused).slice(0, limit);
 }
-async function get_wallet_balances(ctx, _args) {
-  const wallets = await db.select().from(userWallets).where(
+async function loadVectorMemories(ctx, scoringQuery, limit) {
+  const config3 = await loadEmbeddingConfig("memory");
+  if (!config3.enabled) {
+    return { items: [], cacheHits: ["embedding:disabled"], errors: [] };
+  }
+  const client = new FireworksEmbeddingClient(config3);
+  const embedded = await client.embedText({
+    text: scoringQuery,
+    dimensions: config3.dimensions,
+    userId: ctx.userId,
+    userType: ctx.userType
+  });
+  const queryVector = embedded.vector;
+  const queryTokens = keywordTokens(scoringQuery);
+  const rows = await db.select({
+    memoryItemId: aiMemoryItems.id,
+    memoryType: aiMemoryItems.memoryType,
+    content: aiMemoryItems.content,
+    importance: aiMemoryItems.importance,
+    sourceConversationId: aiMemoryItems.sourceConversationId,
+    updatedAt: aiMemoryItems.updatedAt,
+    vector: aiMemoryEmbeddings.vector,
+    dimensions: aiMemoryEmbeddings.dimensions
+  }).from(aiMemoryEmbeddings).innerJoin(aiMemoryItems, eq(aiMemoryEmbeddings.memoryItemId, aiMemoryItems.id)).where(
     and(
-      eq(userWallets.userId, ctx.userId),
-      eq(userWallets.userType, ctx.userType)
+      eq(aiMemoryEmbeddings.userId, ctx.userId),
+      eq(aiMemoryEmbeddings.userType, ctx.userType),
+      eq(aiMemoryEmbeddings.model, config3.model),
+      eq(aiMemoryEmbeddings.dimensions, embedded.dimensions),
+      eq(aiMemoryItems.status, "active")
     )
-  );
-  const totalBalance = wallets.reduce((s3, w) => s3 + Number(w.balance || 0), 0);
+  ).limit(160);
+  const items = rows.filter((row) => !isLowSignalMemoryText(row.content)).map((row) => {
+    const vector = parseVector(row.vector);
+    const vectorScore = cosineSimilarity3(queryVector, vector);
+    const lexical = lexicalScore(scoringQuery, row.content);
+    const originalLexical = lexicalScore(ctx.query, row.content);
+    const specificScore = specificTokenScore(ctx.query, row.content);
+    const vectorContribution = queryTokens.size > 0 && (lexical === 0 || specificScore < 0) ? vectorScore * 0.25 : vectorScore;
+    return {
+      id: row.memoryItemId,
+      type: row.memoryType,
+      content: row.content,
+      score: vectorContribution + lexical * 0.15 + originalLexical * 0.55 + specificScore + (row.importance ?? 50) / 1200 + recencyBoost(localDateTime(row.updatedAt)),
+      importance: row.importance ?? 50,
+      source: "memory",
+      sourceConversationId: row.sourceConversationId,
+      createdAt: localDateTime(row.updatedAt)
+    };
+  }).filter((item) => item.score > 0.08).sort((a, b) => b.score - a.score).slice(0, limit);
   return {
-    total_balance: totalBalance,
-    wallets: wallets.map((w) => ({
-      name: w.name,
-      provider: w.provider,
-      balance: Number(w.balance || 0),
-      last_four: w.lastFourDigits
-    }))
+    items,
+    cacheHits: [
+      embedded.cacheHit ? "embedding:query_cache_hit" : "embedding:query_embedded",
+      embedded.fallback ? `embedding:fallback:${embedded.fallbackReason ?? "unknown"}` : "embedding:fireworks",
+      embedded.requestModel && embedded.requestModel !== embedded.model ? `embedding:model_alias:${embedded.requestModel}` : "",
+      `embedding:rows:${rows.length}`
+    ].filter(Boolean),
+    errors: []
   };
 }
-async function get_financial_goals(ctx, _args) {
-  const goals = await db.select().from(financialGoals).where(
+async function computeMemoryContext(ctx, limit, candidateLimit, scoringQuery, reformulated) {
+  const [summaryRows, memoryRows, actionRows, vectorResult] = await Promise.all([
+    db.select().from(aiConversationSummaries).where(and(eq(aiConversationSummaries.userId, ctx.userId), eq(aiConversationSummaries.userType, ctx.userType))).orderBy(desc(aiConversationSummaries.updatedAt)).limit(10),
+    db.select().from(aiMemoryItems).where(
+      and(
+        eq(aiMemoryItems.userId, ctx.userId),
+        eq(aiMemoryItems.userType, ctx.userType),
+        eq(aiMemoryItems.status, "active")
+      )
+    ).orderBy(desc(aiMemoryItems.updatedAt)).limit(80),
+    db.select().from(aiActionMemory).where(and(eq(aiActionMemory.userId, ctx.userId), eq(aiActionMemory.userType, ctx.userType))).orderBy(desc(aiActionMemory.updatedAt)).limit(20),
+    loadVectorMemories(ctx, scoringQuery, candidateLimit).catch((error48) => ({
+      items: [],
+      cacheHits: [],
+      errors: [`embedding_retrieval:${error48 instanceof Error ? error48.message : String(error48)}`]
+    }))
+  ]);
+  const capsules = scoreAndSort(
+    scoringQuery,
+    summaryRows.filter((row) => !isLowSignalMemoryText(row.capsule)).map((row) => ({
+      id: `conversation:${row.conversationId}`,
+      type: "summary",
+      content: row.capsule,
+      score: 0,
+      importance: 45,
+      source: "capsule",
+      sourceConversationId: row.conversationId,
+      createdAt: localDateTime(row.updatedAt)
+    })),
+    Math.min(10, candidateLimit)
+  );
+  const lexicalMemories = scoreAndSort(
+    ctx.query,
+    memoryRows.filter((row) => !isLowSignalMemoryText(row.content)).map((row) => ({
+      id: row.id,
+      type: row.memoryType,
+      content: row.content,
+      score: 0,
+      importance: row.importance ?? 50,
+      source: "memory",
+      sourceConversationId: row.sourceConversationId,
+      createdAt: localDateTime(row.updatedAt)
+    })),
+    candidateLimit
+  );
+  const memories = mergeMemoryCandidates([vectorResult.items, lexicalMemories], candidateLimit);
+  const actions = scoreAndSort(
+    scoringQuery,
+    actionRows.map((row) => ({
+      id: row.id,
+      type: "action",
+      content: `${row.actionName}: ${row.summary}`,
+      score: 0,
+      importance: 60,
+      source: "action",
+      sourceConversationId: row.sourceConversationId,
+      createdAt: localDateTime(row.updatedAt)
+    })),
+    Math.min(5, candidateLimit)
+  );
+  const selected = selectMemoryCandidatesForFacts(ctx.query, { memories, capsules, actions }, limit);
+  const result = {
+    query: ctx.query,
+    capsules: focusSpecificCandidates(ctx.query, capsules).slice(0, limit),
+    memories: focusSpecificCandidates(ctx.query, memories).slice(0, limit),
+    actions: focusSpecificCandidates(ctx.query, actions).slice(0, limit),
+    facts: selected.map((item, index2) => memoryFact("memory.search", item, index2)),
+    artifacts: [],
+    errors: [],
+    cacheHits: []
+  };
+  if (reformulated.terms.length > 0) {
+    result.cacheHits.push(`query_reformulated:${reformulated.reason}`);
+  }
+  result.cacheHits.push(...vectorResult.cacheHits);
+  result.errors.push(...vectorResult.errors);
+  return result;
+}
+async function retrieveMemoryContext(ctx) {
+  const limit = Math.min(Math.max(ctx.limit ?? 6, 1), 12);
+  const candidateLimit = Math.min(12, Math.max(limit * 2, limit));
+  const reformulated = reformulateMemoryQuery(ctx.query);
+  const scoringQuery = reformulated.expanded;
+  const key = cacheKey({ ...ctx, limit });
+  const cached2 = await withCacheStatus(
+    key,
+    5 * 60,
+    () => computeMemoryContext(ctx, limit, candidateLimit, scoringQuery, reformulated)
+  );
+  return {
+    ...cached2.value,
+    cacheHits: [
+      `memory_cache:${cached2.hit ? "hit" : "miss"}:${cached2.backend}`,
+      ...cached2.value.cacheHits ?? []
+    ]
+  };
+}
+async function resolveMemoryDataNeeds(ctx, dataNeeds) {
+  const facts = [];
+  const errors = [];
+  const cacheHits = [];
+  const handledNeeds = dataNeeds.filter((need) => need.kind === "memory.search");
+  for (const need of handledNeeds) {
+    try {
+      const result = await retrieveMemoryContext({
+        ...ctx,
+        query: need.scope?.query ?? "",
+        limit: need.scope?.limit ?? need.maxRows ?? 6
+      });
+      facts.push(
+        ...result.facts.map((fact3) => ({
+          ...fact3,
+          id: fact3.id.replace("memory.search", need.id),
+          dataNeedId: need.id
+        }))
+      );
+      cacheHits.push(...result.cacheHits);
+    } catch (error48) {
+      errors.push(`${need.id}:${error48 instanceof Error ? error48.message : String(error48)}`);
+    }
+  }
+  return {
+    facts,
+    artifacts: [],
+    errors,
+    cacheHits,
+    handledNeeds
+  };
+}
+var init_memory_retriever = __esm({
+  "api/services/ai-memory/memory-retriever.ts"() {
+    init_drizzle_orm();
+    init_schema2();
+    init_redis_client();
+    init_connection();
+    init_embedding_client();
+    init_embedding_settings();
+    init_retrieval_enhancements();
+    init_text_utils();
+  }
+});
+
+// api/services/ai-memory/memory-writer.ts
+function memorySignalFor(content) {
+  const normalized = normalizeMemoryText(content);
+  for (const rule of MEMORY_SIGNAL_RULES) {
+    if (rule.patterns.some((pattern) => normalized.includes(normalizeMemoryText(pattern)))) {
+      return {
+        type: rule.type,
+        importance: rule.importance,
+        reason: rule.reason
+      };
+    }
+  }
+  if (MEMORY_TRIGGERS.some((trigger) => normalized.includes(normalizeMemoryText(trigger)))) {
+    return {
+      type: memoryTypeFor(content),
+      importance: importanceFor(content),
+      reason: "core_memory_trigger"
+    };
+  }
+  return null;
+}
+function importanceFor(content) {
+  const normalized = normalizeMemoryText(content);
+  let score = 55;
+  if (normalized.includes("\u0647\u062F\u0641") || normalized.includes("goal")) score += 20;
+  if (normalized.includes("\u0627\u062A\u0641\u0642\u0646\u0627") || normalized.includes("plan")) score += 15;
+  if (normalized.includes("\u0627\u062D\u0648\u0634") || normalized.includes("\u0627\u062F\u062E\u0631")) score += 10;
+  return Math.min(95, score);
+}
+function memoryTypeFor(content) {
+  const normalized = normalizeMemoryText(content);
+  if (normalized.includes("\u0647\u062F\u0641") || normalized.includes("\u0627\u062D\u0648\u0634") || normalized.includes("\u0627\u062F\u062E\u0631")) return "plan";
+  if (normalized.includes("\u0627\u062A\u0641\u0642\u0646\u0627") || normalized.includes("\u0627\u062A\u0641\u0627\u0642")) return "agreement";
+  if (normalized.includes("\u0627\u0641\u0636\u0644") || normalized.includes("\u0628\u062D\u0628") || normalized.includes("\u0628\u0643\u0631\u0647")) return "preference";
+  return "fact";
+}
+function buildConversationCapsule(messages) {
+  const lastUser = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
+  const lastAssistant = [...messages].reverse().find((message) => message.role === "assistant")?.content ?? "";
+  if (lastUser && isLowSignalMemoryText(lastUser)) {
+    return "\u0627\u0633\u062A\u0639\u0644\u0627\u0645 \u0630\u0627\u0643\u0631\u0629 \u0628\u062F\u0648\u0646 \u0630\u0643\u0631\u0649 \u062C\u062F\u064A\u062F\u0629";
+  }
+  const seed = [lastUser, lastAssistant].filter(Boolean).join(" ");
+  const compactSeed = seed.replace(/\s+/g, " ");
+  if (!isLowSignalMemoryText(compactSeed)) {
+    return truncateWords(compactSeed, 30);
+  }
+  const substantiveUser = [...messages].reverse().find((message) => message.role === "user" && !isLowSignalMemoryText(message.content))?.content;
+  const substantiveAssistant = [...messages].reverse().find((message) => message.role === "assistant" && !isLowSignalMemoryText(message.content))?.content;
+  const fallback = [substantiveUser, substantiveAssistant].filter(Boolean).join(" ").replace(/\s+/g, " ");
+  return fallback ? truncateWords(fallback, 30) : "\u0627\u0633\u062A\u0639\u0644\u0627\u0645 \u0630\u0627\u0643\u0631\u0629 \u0628\u062F\u0648\u0646 \u0630\u0643\u0631\u0649 \u062C\u062F\u064A\u062F\u0629";
+}
+function buildRunningSummary(messages, previousSummary = "") {
+  const recent = messages.slice(-8).map((message) => `${message.role}: ${truncateWords(message.content, 28)}`).join("\n");
+  return truncateWords([previousSummary, recent].filter(Boolean).join("\n"), 130);
+}
+function extractSemanticMemories(messages) {
+  const memories = /* @__PURE__ */ new Map();
+  for (const message of messages) {
+    if (message.role !== "user") continue;
+    if (isLowSignalMemoryText(message.content)) continue;
+    const signal = memorySignalFor(message.content);
+    if (!signal) continue;
+    const content = truncateWords(message.content, 40);
+    if (content.length < 8) continue;
+    const hash4 = contentHash(content);
+    memories.set(hash4, {
+      type: signal.type ?? memoryTypeFor(content),
+      content,
+      importance: signal.importance,
+      sourceMessageId: message.id,
+      metadata: {
+        extractedBy: "deterministic_v2",
+        reason: signal.reason
+      }
+    });
+  }
+  return [...memories.values()].slice(0, 5);
+}
+function hasSemanticMemoryCandidate(messages) {
+  return extractSemanticMemories(messages).length > 0;
+}
+function draftConversationMemory(input, previousSummary = "") {
+  return {
+    capsule: buildConversationCapsule(input.messages),
+    runningSummary: buildRunningSummary(input.messages, previousSummary),
+    memories: extractSemanticMemories(input.messages)
+  };
+}
+async function maybeStoreEmbedding(memoryItemId, input, content) {
+  try {
+    const config3 = await loadEmbeddingConfig("memory");
+    if (!config3.enabled) return;
+    const [existing] = await db.select({ id: aiMemoryEmbeddings.id }).from(aiMemoryEmbeddings).where(
+      and(
+        eq(aiMemoryEmbeddings.memoryItemId, memoryItemId),
+        eq(aiMemoryEmbeddings.provider, "fireworks"),
+        eq(aiMemoryEmbeddings.model, config3.model),
+        eq(aiMemoryEmbeddings.dimensions, config3.dimensions)
+      )
+    ).limit(1);
+    if (existing?.id) return;
+    const client = new FireworksEmbeddingClient(config3);
+    const result = await client.embedText({
+      text: content,
+      dimensions: config3.dimensions,
+      userId: input.userId,
+      userType: input.userType
+    });
+    if (result.fallback) {
+      console.warn("[AI Memory] embedding skipped fallback", result.fallbackReason ?? "unknown");
+      return;
+    }
+    await db.insert(aiMemoryEmbeddings).values({
+      memoryItemId,
+      userId: input.userId,
+      userType: input.userType,
+      provider: result.provider,
+      model: result.model,
+      dimensions: result.dimensions,
+      vectorHash: contentHash(result.vector.join(",")),
+      vector: result.vector
+    }).onDuplicateKeyUpdate({
+      set: {
+        vectorHash: contentHash(result.vector.join(",")),
+        vector: result.vector
+      }
+    });
+  } catch (error48) {
+    console.warn("[AI Memory] embedding skipped", error48 instanceof Error ? error48.message : String(error48));
+  }
+}
+async function writeConversationMemory(input) {
+  const [existing] = await db.select().from(aiConversationSummaries).where(eq(aiConversationSummaries.conversationId, input.conversationId)).limit(1);
+  const draft = draftConversationMemory(input, existing?.runningSummary ?? "");
+  await db.insert(aiConversationSummaries).values({
+    userId: input.userId,
+    userType: input.userType,
+    conversationId: input.conversationId,
+    capsule: draft.capsule,
+    runningSummary: draft.runningSummary,
+    messageCount: input.messages.length,
+    source: input.source ?? "chat"
+  }).onDuplicateKeyUpdate({
+    set: {
+      capsule: draft.capsule,
+      runningSummary: draft.runningSummary,
+      messageCount: input.messages.length,
+      source: input.source ?? "chat"
+    }
+  });
+  for (const memory of draft.memories) {
+    const hash4 = contentHash(memory.content);
+    await db.insert(aiMemoryItems).values({
+      userId: input.userId,
+      userType: input.userType,
+      memoryType: memory.type,
+      content: memory.content,
+      contentHash: hash4,
+      importance: memory.importance,
+      sourceConversationId: input.conversationId,
+      sourceMessageId: memory.sourceMessageId,
+      status: "active",
+      metadata: memory.metadata
+    }).onDuplicateKeyUpdate({
+      set: {
+        importance: memory.importance,
+        status: "active",
+        metadata: memory.metadata
+      }
+    });
+    const [stored] = await db.select({ id: aiMemoryItems.id }).from(aiMemoryItems).where(
+      and(
+        eq(aiMemoryItems.userId, input.userId),
+        eq(aiMemoryItems.userType, input.userType),
+        eq(aiMemoryItems.contentHash, hash4)
+      )
+    ).limit(1);
+    if (stored?.id) {
+      await maybeStoreEmbedding(stored.id, input, memory.content);
+    }
+  }
+  const previousCapsule = typeof existing?.capsule === "string" ? existing.capsule : "";
+  const retrievalRelevantMemoryChange = draft.memories.length > 0 || !isLowSignalMemoryText(draft.capsule) || previousCapsule.length > 0 && !isLowSignalMemoryText(previousCapsule);
+  if (retrievalRelevantMemoryChange) {
+    await invalidateMemoryUserCache(input.userId, input.userType).catch((error48) => {
+      console.warn("[AI Memory] cache invalidation failed", error48 instanceof Error ? error48.message : String(error48));
+    });
+  }
+  return draft;
+}
+var MEMORY_TRIGGERS, MEMORY_SIGNAL_RULES;
+var init_memory_writer = __esm({
+  "api/services/ai-memory/memory-writer.ts"() {
+    init_drizzle_orm();
+    init_schema2();
+    init_connection();
+    init_embedding_client();
+    init_embedding_settings();
+    init_memory_retriever();
+    init_text_utils();
+    MEMORY_TRIGGERS = [
+      "\u0627\u062A\u0641\u0642\u0646\u0627",
+      "\u0627\u062A\u0641\u0627\u0642",
+      "\u062E\u0637\u0629",
+      "\u0647\u062F\u0641",
+      "\u0627\u062D\u0648\u0634",
+      "\u0627\u062F\u062E\u0631",
+      "\u0639\u0627\u064A\u0632",
+      "\u0639\u0627\u0648\u0632",
+      "\u0627\u0641\u0636\u0644",
+      "\u0645\u0647\u0645",
+      "\u0627\u0641\u062A\u0643\u0631",
+      "\u0641\u0627\u0643\u0631",
+      "remember",
+      "plan",
+      "goal"
+    ];
+    MEMORY_SIGNAL_RULES = [
+      {
+        type: "preference",
+        importance: 72,
+        reason: "preference_signal",
+        patterns: [
+          "\u0628\u062D\u0628",
+          "\u0628\u0643\u0631\u0647",
+          "\u0627\u0641\u0636\u0644",
+          "\u0645\u0641\u0636\u0644",
+          "\u0645\u0634 \u0628\u062D\u0628",
+          "prefer",
+          "avoid",
+          "hate",
+          "like"
+        ]
+      },
+      {
+        type: "plan",
+        importance: 78,
+        reason: "commitment_or_constraint_signal",
+        patterns: [
+          "\u0645\u0634 \u0647\u0644\u0645\u0633",
+          "\u0645\u0627 \u062A\u0644\u0645\u0633\u0634",
+          "\u0645\u062A\u0646\u0641\u0630\u0634",
+          "\u0645\u0627 \u062A\u0646\u0641\u0630\u0634",
+          "\u063A\u064A\u0631 \u0644\u0645\u0627 \u0627\u0643\u062F",
+          "\u0644\u0645\u0627 \u0627\u0643\u062F",
+          "\u062D\u062F \u0627\u0642\u0635\u064A",
+          "\u0645\u064A\u0632\u0627\u0646\u064A\u0647",
+          "budget",
+          "limit",
+          "confirm"
+        ]
+      },
+      {
+        type: "fact",
+        importance: 52,
+        reason: "site_help_interest_signal",
+        patterns: [
+          "\u0627\u0632\u0627\u064A \u0627\u0631\u0628\u0637",
+          "\u0643\u064A\u0641 \u0627\u0631\u0628\u0637",
+          "\u0627\u0631\u0628\u0637 \u0627\u0644\u0641\u064A\u0632\u0627",
+          "\u0627\u0631\u0628\u0637 \u0627\u0644\u0643\u0627\u0631\u062A",
+          "sms",
+          "\u0631\u0633\u0627\u0626\u0644",
+          "\u0627\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u062A\u0637\u0628\u064A\u0642",
+          "\u0627\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0645\u0648\u0642\u0639",
+          "bank",
+          "visa",
+          "card"
+        ]
+      }
+    ];
+  }
+});
+
+// api/services/ai-memory/index.ts
+var ai_memory_exports = {};
+__export(ai_memory_exports, {
+  DEFAULT_EMBEDDING_BASE_URL: () => DEFAULT_EMBEDDING_BASE_URL,
+  DEFAULT_EMBEDDING_MODEL: () => DEFAULT_EMBEDDING_MODEL,
+  FireworksEmbeddingClient: () => FireworksEmbeddingClient,
+  InMemoryVectorStore: () => InMemoryVectorStore,
+  QdrantVectorStore: () => QdrantVectorStore,
+  QuantizedOnDiskVectorStore: () => QuantizedOnDiskVectorStore,
+  backfillMemoryEmbeddings: () => backfillMemoryEmbeddings,
+  buildConversationCapsule: () => buildConversationCapsule,
+  buildRunningSummary: () => buildRunningSummary,
+  cheapRerankResults: () => cheapRerankResults,
+  contentHash: () => contentHash,
+  cosineSimilarity: () => cosineSimilarity3,
+  dequantizeVector: () => dequantizeVector,
+  draftConversationMemory: () => draftConversationMemory,
+  embeddingSettingsKeys: () => embeddingSettingsKeys,
+  extractSemanticMemories: () => extractSemanticMemories,
+  hasSemanticMemoryCandidate: () => hasSemanticMemoryCandidate,
+  invalidateMemoryUserCache: () => invalidateMemoryUserCache,
+  isRetrievalAmbiguous: () => isRetrievalAmbiguous,
+  keywordTokens: () => keywordTokens,
+  lexicalScore: () => lexicalScore,
+  loadEmbeddingConfig: () => loadEmbeddingConfig,
+  normalizeMemoryText: () => normalizeMemoryText,
+  quantizeVector: () => quantizeVector,
+  reformulateMemoryQuery: () => reformulateMemoryQuery,
+  resolveMemoryDataNeeds: () => resolveMemoryDataNeeds,
+  retrieveMemoryContext: () => retrieveMemoryContext,
+  smokeTestEmbeddingEndpoint: () => smokeTestEmbeddingEndpoint,
+  truncateWords: () => truncateWords,
+  writeConversationMemory: () => writeConversationMemory
+});
+var init_ai_memory = __esm({
+  "api/services/ai-memory/index.ts"() {
+    init_types7();
+    init_embedding_client();
+    init_embedding_backfill();
+    init_embedding_settings();
+    init_vector_store();
+    init_qdrant_vector_store();
+    init_quantized_vector_store();
+    init_retrieval_enhancements();
+    init_memory_writer();
+    init_memory_retriever();
+    init_text_utils();
+  }
+});
+
+// api/services/site-guide/types.ts
+var init_types8 = __esm({
+  "api/services/site-guide/types.ts"() {
+  }
+});
+
+// api/services/site-guide/embedding.ts
+function normalizeSiteGuideText(value) {
+  return value.toLowerCase().normalize("NFKC").replace(/[أإآٱؤئىة]/g, (char2) => ARABIC_NORMALIZE_MAP[char2] ?? char2).replace(/[\u064B-\u065F\u0670]/g, "").replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+}
+function siteGuideTokens(value) {
+  const tokens = normalizeSiteGuideText(value).split(" ").map((token) => token.trim()).filter((token) => token.length >= 2);
+  const variants = /* @__PURE__ */ new Set();
+  for (const token of tokens) {
+    variants.add(token);
+    if (token.startsWith("\u0627\u0644") && token.length > 4) variants.add(token.slice(2));
+    if (token.startsWith("\u0627") && token.length > 4) variants.add(token.slice(1));
+    if (token.endsWith("\u064A") && token.length > 4) variants.add(token.slice(0, -1));
+    if (token.startsWith("\u0628\u0627\u0644") && token.length > 5) variants.add(token.slice(3));
+    if (token.startsWith("\u0628") && token.length > 4) variants.add(token.slice(1));
+  }
+  return [...variants];
+}
+function hashToken(token) {
+  let hash4 = 2166136261;
+  for (let index2 = 0; index2 < token.length; index2 += 1) {
+    hash4 ^= token.charCodeAt(index2);
+    hash4 = Math.imul(hash4, 16777619);
+  }
+  return hash4 >>> 0;
+}
+function buildSiteGuideEmbedding(text2) {
+  const vector = Array.from({ length: SITE_GUIDE_EMBEDDING_DIMENSIONS }, () => 0);
+  for (const token of siteGuideTokens(text2)) {
+    const hash4 = hashToken(token);
+    const index2 = hash4 % SITE_GUIDE_EMBEDDING_DIMENSIONS;
+    vector[index2] += hash4 % 2 === 0 ? 1 : -1;
+  }
+  const norm = Math.sqrt(vector.reduce((sum4, value) => sum4 + value * value, 0)) || 1;
+  return vector.map((value) => Number((value / norm).toFixed(6)));
+}
+function cosineSimilarity4(a, b) {
+  const length = Math.min(a.length, b.length);
+  let dot = 0;
+  for (let index2 = 0; index2 < length; index2 += 1) {
+    dot += a[index2] * b[index2];
+  }
+  return dot;
+}
+var SITE_GUIDE_EMBEDDING_DIMENSIONS, ARABIC_NORMALIZE_MAP;
+var init_embedding = __esm({
+  "api/services/site-guide/embedding.ts"() {
+    SITE_GUIDE_EMBEDDING_DIMENSIONS = 256;
+    ARABIC_NORMALIZE_MAP = {
+      \u0623: "\u0627",
+      \u0625: "\u0627",
+      \u0622: "\u0627",
+      \u0671: "\u0627",
+      \u0624: "\u0648",
+      \u0626: "\u064A",
+      \u0649: "\u064A",
+      \u0629: "\u0647"
+    };
+  }
+});
+
+// api/services/site-guide/knowledge-base.ts
+var SITE_GUIDE_CHUNKS;
+var init_knowledge_base = __esm({
+  "api/services/site-guide/knowledge-base.ts"() {
+    SITE_GUIDE_CHUNKS = [
+      {
+        id: "sms:auto_import",
+        title: "\u0631\u0628\u0637 \u0631\u0633\u0627\u0626\u0644 SMS \u0644\u0627\u0633\u062A\u062E\u0631\u0627\u062C \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641 \u062A\u0644\u0642\u0627\u0626\u064A\u0627",
+        area: "sms",
+        tags: ["sms", "\u0631\u0633\u0627\u0626\u0644", "\u062A\u0644\u0642\u0627\u0626\u064A", "\u0628\u0646\u0643", "\u0628\u0646\u0643\u064A", "\u0641\u064A\u0632\u0627", "\u0628\u0637\u0627\u0642\u0629", "\u0643\u0627\u0631\u062A", "\u0645\u0635\u0631\u0648\u0641", "\u0627\u0633\u062A\u062E\u0631\u0627\u062C"],
+        content: "\u064A\u0645\u0643\u0646 \u0644\u0644\u062A\u0637\u0628\u064A\u0642 \u0642\u0631\u0627\u0621\u0629 \u0631\u0633\u0627\u0626\u0644 \u0627\u0644\u0628\u0646\u0643 \u0623\u0648 \u0627\u0644\u0645\u062D\u0641\u0638\u0629 \u0627\u0644\u062A\u064A \u062A\u0635\u0644 \u0628\u0635\u064A\u063A\u0629 SMS \u0648\u062A\u062D\u0648\u064A\u0644\u0647\u0627 \u0625\u0644\u0649 \u0645\u0635\u0627\u0631\u064A\u0641 \u0623\u0648 \u062F\u062E\u0644 \u0628\u0639\u062F \u0645\u0631\u0627\u062C\u0639\u0629 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645. \u0627\u0644\u0647\u062F\u0641 \u0647\u0648 \u062A\u0642\u0644\u064A\u0644 \u0627\u0644\u0625\u062F\u062E\u0627\u0644 \u0627\u0644\u064A\u062F\u0648\u064A \u0645\u0639 \u0627\u0644\u062D\u0641\u0627\u0638 \u0639\u0644\u0649 \u062A\u0623\u0643\u064A\u062F \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0639\u0646\u062F \u0627\u0644\u062D\u0627\u062C\u0629.",
+        steps: [
+          "\u0627\u0641\u062A\u062D \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A \u062B\u0645 \u0625\u0639\u062F\u0627\u062F\u0627\u062A \u0627\u0644\u0631\u0628\u0637 \u0623\u0648 \u0627\u0644\u0631\u0633\u0627\u0626\u0644.",
+          "\u0641\u0639\u0651\u0644 \u0625\u0630\u0646 \u0642\u0631\u0627\u0621\u0629 \u0631\u0633\u0627\u0626\u0644 SMS \u0627\u0644\u062E\u0627\u0635\u0629 \u0628\u0627\u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A \u0627\u0644\u0645\u0627\u0644\u064A\u0629.",
+          "\u0627\u062E\u062A\u0631 \u0627\u0644\u062D\u0633\u0627\u0628 \u0623\u0648 \u0627\u0644\u0645\u062D\u0641\u0638\u0629 \u0627\u0644\u062A\u064A \u062A\u0631\u064A\u062F \u0631\u0628\u0637 \u0627\u0644\u0631\u0633\u0627\u0626\u0644 \u0628\u0647\u0627.",
+          "\u0631\u0627\u062C\u0639 \u0623\u0648\u0644 \u0645\u0639\u0627\u0645\u0644\u0627\u062A \u0645\u0642\u062A\u0631\u062D\u0629 \u0648\u062A\u0623\u0643\u062F \u0623\u0646 \u0627\u0644\u062A\u0635\u0646\u064A\u0641 \u0635\u062D\u064A\u062D."
+        ]
+      },
+      {
+        id: "card:link_visa",
+        title: "\u0631\u0628\u0637 \u0627\u0644\u0641\u064A\u0632\u0627 \u0623\u0648 \u0627\u0644\u0628\u0637\u0627\u0642\u0629 \u062F\u0627\u062E\u0644 SmartSpend",
+        area: "card",
+        tags: ["\u0641\u064A\u0632\u0627", "\u0628\u0637\u0627\u0642\u0629", "\u0643\u0627\u0631\u062A", "visa", "bank", "sms", "\u0631\u0628\u0637"],
+        content: "\u0631\u0628\u0637 \u0627\u0644\u0641\u064A\u0632\u0627 \u064A\u062A\u0645 \u0645\u0646 \u062E\u0644\u0627\u0644 \u0625\u0646\u0634\u0627\u0621 \u0645\u062D\u0641\u0638\u0629 \u0623\u0648 \u062D\u0633\u0627\u0628 \u0628\u0627\u0633\u0645 \u0627\u0644\u0628\u0637\u0627\u0642\u0629 \u062B\u0645 \u062A\u0641\u0639\u064A\u0644 \u0631\u0628\u0637 \u0631\u0633\u0627\u0626\u0644 \u0627\u0644\u0628\u0646\u0643 \u0627\u0644\u062E\u0627\u0635\u0629 \u0628\u0647\u0627. \u0627\u0644\u062A\u0637\u0628\u064A\u0642 \u0644\u0627 \u064A\u062D\u062A\u0627\u062C \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0628\u0637\u0627\u0642\u0629 \u0627\u0644\u0643\u0627\u0645\u0644\u0629\u061B \u0622\u062E\u0631 \u0623\u0631\u0628\u0639\u0629 \u0623\u0631\u0642\u0627\u0645 \u0648\u0627\u0633\u0645 \u0627\u0644\u0628\u0646\u0643 \u064A\u0643\u0641\u0648\u0627 \u0644\u0644\u062A\u0645\u064A\u064A\u0632.",
+        steps: [
+          "\u0627\u062F\u062E\u0644 \u0639\u0644\u0649 \u0627\u0644\u0645\u062D\u0627\u0641\u0638 \u0648\u0627\u0644\u062D\u0633\u0627\u0628\u0627\u062A.",
+          "\u0627\u0636\u063A\u0637 \u0625\u0636\u0627\u0641\u0629 \u062D\u0633\u0627\u0628 \u0623\u0648 \u0645\u062D\u0641\u0638\u0629.",
+          "\u0627\u062E\u062A\u0631 \u0646\u0648\u0639 \u0627\u0644\u062D\u0633\u0627\u0628 \u0628\u0637\u0627\u0642\u0629 \u0623\u0648 Visa \u0648\u0627\u0643\u062A\u0628 \u0627\u0633\u0645 \u0627\u0644\u0628\u0646\u0643 \u0648\u0622\u062E\u0631 \u0623\u0631\u0628\u0639\u0629 \u0623\u0631\u0642\u0627\u0645.",
+          "\u0641\u0639\u0651\u0644 \u0631\u0628\u0637 SMS \u0644\u0647\u0630\u0627 \u0627\u0644\u062D\u0633\u0627\u0628 \u062D\u062A\u0649 \u062A\u0633\u062C\u0644 \u0639\u0645\u0644\u064A\u0627\u062A \u0627\u0644\u0628\u0637\u0627\u0642\u0629 \u062A\u0644\u0642\u0627\u0626\u064A\u0627."
+        ]
+      },
+      {
+        id: "wallet:add_wallet",
+        title: "\u0625\u0636\u0627\u0641\u0629 \u0645\u062D\u0641\u0638\u0629 \u0623\u0648 \u062D\u0633\u0627\u0628 \u0646\u0642\u062F\u064A",
+        area: "wallet",
+        tags: ["\u0645\u062D\u0641\u0638\u0629", "\u062D\u0633\u0627\u0628", "\u0631\u0635\u064A\u062F", "vodafone cash", "instapay", "cash"],
+        content: "\u0627\u0644\u0645\u062D\u0627\u0641\u0638 \u062A\u0633\u0627\u0639\u062F \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u064A\u0639\u0631\u0641 \u0631\u0635\u064A\u062F\u0647 \u0648\u064A\u062A\u062A\u0628\u0639 \u0637\u0631\u064A\u0642\u0629 \u0627\u0644\u062F\u0641\u0639. \u064A\u0645\u0643\u0646 \u0625\u0636\u0627\u0641\u0629 \u0643\u0627\u0634\u060C \u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0643\u0627\u0634\u060C InstaPay\u060C \u062D\u0633\u0627\u0628 \u0628\u0646\u0643\u064A\u060C \u0623\u0648 \u0628\u0637\u0627\u0642\u0629.",
+        steps: [
+          "\u0627\u0641\u062A\u062D \u0635\u0641\u062D\u0629 \u0627\u0644\u0645\u062D\u0627\u0641\u0638.",
+          "\u0627\u0636\u063A\u0637 \u0625\u0636\u0627\u0641\u0629 \u0645\u062D\u0641\u0638\u0629.",
+          "\u0627\u0643\u062A\u0628 \u0627\u0644\u0627\u0633\u0645 \u0648\u0627\u0644\u0646\u0648\u0639 \u0648\u0627\u0644\u0631\u0635\u064A\u062F \u0627\u0644\u0627\u0641\u062A\u062A\u0627\u062D\u064A.",
+          "\u0627\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0645\u062D\u0641\u0638\u0629 \u0639\u0646\u062F \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0645\u0635\u0631\u0648\u0641 \u0623\u0648 \u0627\u0644\u062F\u062E\u0644."
+        ]
+      },
+      {
+        id: "expenses:add_manual",
+        title: "\u062A\u0633\u062C\u064A\u0644 \u0645\u0635\u0631\u0648\u0641 \u0623\u0648 \u062F\u062E\u0644 \u064A\u062F\u0648\u064A\u0627",
+        area: "expenses",
+        tags: ["\u0645\u0635\u0631\u0648\u0641", "\u062F\u062E\u0644", "\u062A\u0633\u062C\u064A\u0644", "\u062A\u0635\u0646\u064A\u0641", "\u0641\u0626\u0629", "\u0639\u0645\u0644\u064A\u0629"],
+        content: "\u064A\u0645\u0643\u0646 \u062A\u0633\u062C\u064A\u0644 \u0623\u064A \u0645\u0635\u0631\u0648\u0641 \u0623\u0648 \u062F\u062E\u0644 \u064A\u062F\u0648\u064A\u0627 \u0645\u0639 \u0627\u0644\u0645\u0628\u0644\u063A \u0648\u0627\u0644\u062A\u0627\u0631\u064A\u062E \u0648\u0627\u0644\u0641\u0626\u0629 \u0648\u0637\u0631\u064A\u0642\u0629 \u0627\u0644\u062F\u0641\u0639. \u0627\u0644\u062A\u0635\u0646\u064A\u0641 \u0627\u0644\u062C\u064A\u062F \u064A\u062C\u0639\u0644 \u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631 \u0648\u0627\u0644\u0634\u0627\u062A \u0623\u062F\u0642.",
+        steps: [
+          "\u0627\u0636\u063A\u0637 \u0632\u0631 \u0625\u0636\u0627\u0641\u0629 \u0645\u0635\u0631\u0648\u0641.",
+          "\u0627\u0643\u062A\u0628 \u0627\u0644\u0645\u0628\u0644\u063A \u0648\u0627\u0644\u0648\u0635\u0641 \u0648\u0627\u062E\u062A\u0631 \u0627\u0644\u0646\u0648\u0639: \u0645\u0635\u0631\u0648\u0641 \u0623\u0648 \u062F\u062E\u0644.",
+          "\u0627\u062E\u062A\u0631 \u0627\u0644\u0641\u0626\u0629 \u0648\u0627\u0644\u0641\u0626\u0629 \u0627\u0644\u0641\u0631\u0639\u064A\u0629 \u0648\u0637\u0631\u064A\u0642\u0629 \u0627\u0644\u062F\u0641\u0639.",
+          "\u0627\u062D\u0641\u0638 \u0627\u0644\u0639\u0645\u0644\u064A\u0629 \u0648\u0631\u0627\u062C\u0639\u0647\u0627 \u0645\u0646 \u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641."
+        ]
+      },
+      {
+        id: "goals:create_goal",
+        title: "\u0625\u0646\u0634\u0627\u0621 \u0647\u062F\u0641 \u0627\u062F\u062E\u0627\u0631",
+        area: "goals",
+        tags: ["\u0647\u062F\u0641", "\u0627\u062F\u062E\u0627\u0631", "\u062A\u062D\u0648\u064A\u0634", "\u062E\u0637\u0629", "\u0633\u064A\u0627\u0631\u0629", "\u0634\u0642\u0629"],
+        content: "\u0627\u0644\u0623\u0647\u062F\u0627\u0641 \u062A\u062D\u0648\u0644 \u0627\u0644\u0646\u064A\u0629 \u0625\u0644\u0649 \u0631\u0642\u0645 \u0648\u062A\u0627\u0631\u064A\u062E. \u064A\u0645\u0643\u0646 \u0644\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u0645\u0646\u0627\u0642\u0634\u0629 \u0627\u0644\u0647\u062F\u0641 \u062B\u0645 \u062A\u062C\u0647\u064A\u0632 \u0645\u0633\u0648\u062F\u0629\u060C \u0644\u0643\u0646 \u0627\u0644\u062A\u0646\u0641\u064A\u0630 \u064A\u062D\u062A\u0627\u062C \u062A\u0623\u0643\u064A\u062F \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645.",
+        steps: [
+          "\u0627\u0641\u062A\u062D \u0635\u0641\u062D\u0629 \u0627\u0644\u0623\u0647\u062F\u0627\u0641 \u0623\u0648 \u0627\u0637\u0644\u0628 \u0645\u0646 \u0627\u0644\u0634\u0627\u062A \u0625\u0646\u0634\u0627\u0621 \u0647\u062F\u0641.",
+          "\u062D\u062F\u062F \u0627\u0633\u0645 \u0627\u0644\u0647\u062F\u0641 \u0648\u0627\u0644\u0645\u0628\u0644\u063A \u0627\u0644\u0645\u0633\u062A\u0647\u062F\u0641 \u0648\u0627\u0644\u062A\u0627\u0631\u064A\u062E \u0625\u0646 \u0648\u062C\u062F.",
+          "\u0631\u0627\u062C\u0639 \u0627\u0644\u062E\u0637\u0629 \u0627\u0644\u0634\u0647\u0631\u064A\u0629 \u0627\u0644\u0645\u0642\u062A\u0631\u062D\u0629.",
+          "\u0623\u0643\u062F \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0647\u062F\u0641 \u062D\u062A\u0649 \u064A\u0638\u0647\u0631 \u0636\u0645\u0646 \u0623\u0647\u062F\u0627\u0641\u0643 \u0627\u0644\u0646\u0634\u0637\u0629."
+        ]
+      },
+      {
+        id: "reports:monthly",
+        title: "\u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0634\u0647\u0631\u064A \u0648\u0627\u0644\u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0630\u0643\u064A",
+        area: "reports",
+        tags: ["\u062A\u0642\u0631\u064A\u0631", "\u0634\u0647\u0631\u064A", "\u062A\u062D\u0644\u064A\u0644", "\u0645\u0644\u062E\u0635", "insights", "report"],
+        content: "\u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0634\u0647\u0631\u064A \u064A\u0644\u062E\u0635 \u0627\u0644\u062F\u062E\u0644 \u0648\u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641 \u0648\u0627\u0644\u0635\u0627\u0641\u064A \u0648\u0623\u0643\u0628\u0631 \u0627\u0644\u0641\u0626\u0627\u062A \u0648\u0627\u0644\u062A\u0646\u0628\u064A\u0647\u0627\u062A. \u064A\u0639\u062A\u0645\u062F \u0639\u0644\u0649 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u0633\u062C\u0644\u0629 \u0641\u064A \u0627\u0644\u0634\u0647\u0631 \u0623\u0648 \u062F\u0648\u0631\u0629 \u0627\u0644\u0631\u0627\u062A\u0628 \u0644\u0648 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0645\u062D\u062F\u062F \u064A\u0648\u0645 \u0631\u0627\u062A\u0628.",
+        steps: [
+          "\u0627\u0641\u062A\u062D \u0645\u0631\u0643\u0632 AI \u062B\u0645 \u062A\u0628\u0648\u064A\u0628 \u0627\u0644\u062A\u0642\u0631\u064A\u0631.",
+          "\u0627\u062E\u062A\u0631 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0645\u0637\u0644\u0648\u0628.",
+          "\u0627\u0636\u063A\u0637 \u062A\u0648\u0644\u064A\u062F \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0625\u0630\u0627 \u0644\u0645 \u064A\u0643\u0646 \u0645\u0648\u062C\u0648\u062F\u0627 \u0641\u064A \u0627\u0644\u0643\u0627\u0634.",
+          "\u0631\u0627\u062C\u0639 \u0627\u0644\u062A\u0646\u0628\u064A\u0647\u0627\u062A \u0648\u0627\u0644\u062A\u0648\u0635\u064A\u0627\u062A \u0648\u062E\u0637\u0629 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0642\u0627\u062F\u0645."
+        ]
+      },
+      {
+        id: "plans:budget_plan",
+        title: "\u0639\u0645\u0644 \u062E\u0637\u0629 \u062A\u0648\u0641\u064A\u0631 \u0623\u0648 \u062A\u0642\u0644\u064A\u0644 \u0645\u0635\u0627\u0631\u064A\u0641",
+        area: "plans",
+        tags: ["\u062E\u0637\u0629", "\u0645\u064A\u0632\u0627\u0646\u064A\u0629", "\u062A\u0648\u0641\u064A\u0631", "\u062A\u0642\u0644\u064A\u0644", "\u0645\u0635\u0631\u0648\u0641", "budget"],
+        content: "\u0627\u0644\u062E\u0637\u0629 \u0627\u0644\u062C\u064A\u062F\u0629 \u062A\u0628\u062F\u0623 \u0645\u0646 \u0645\u0644\u062E\u0635 \u0627\u0644\u0634\u0647\u0631 \u062B\u0645 \u0623\u0643\u0628\u0631 \u0627\u0644\u0628\u0646\u0648\u062F \u0627\u0644\u0642\u0627\u0628\u0644\u0629 \u0644\u0644\u062A\u0642\u0644\u064A\u0644\u060C \u0648\u0628\u0639\u062F\u0647\u0627 \u0647\u062F\u0641 \u0634\u0647\u0631\u064A \u0648\u0627\u0642\u0639\u064A. \u064A\u0645\u0643\u0646 \u0644\u0644\u0634\u0627\u062A \u0627\u0642\u062A\u0631\u0627\u062D \u062E\u0637\u0629 \u062B\u0645 \u062A\u062D\u0648\u064A\u0644\u0647\u0627 \u0644\u0647\u062F\u0641 \u0623\u0648 \u062A\u0630\u0643\u064A\u0631 \u0628\u0639\u062F \u0627\u0644\u062A\u0623\u0643\u064A\u062F.",
+        steps: [
+          "\u0627\u0637\u0644\u0628 \u0645\u0646 \u0627\u0644\u0634\u0627\u062A \u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0634\u0647\u0631 \u0623\u0648 \u0623\u0643\u0628\u0631 \u0641\u0626\u0627\u062A \u0627\u0644\u0635\u0631\u0641.",
+          "\u062D\u062F\u062F \u0627\u0644\u0647\u062F\u0641: \u062A\u0642\u0644\u064A\u0644 \u0641\u0626\u0629 \u0645\u0639\u064A\u0646\u0629 \u0623\u0648 \u062A\u0648\u0641\u064A\u0631 \u0645\u0628\u0644\u063A \u0645\u062D\u062F\u062F.",
+          "\u0631\u0627\u062C\u0639 \u0627\u0644\u0627\u0642\u062A\u0631\u0627\u062D\u0627\u062A \u0627\u0644\u0631\u0642\u0645\u064A\u0629 \u0642\u0628\u0644 \u0627\u0644\u062A\u0646\u0641\u064A\u0630.",
+          "\u0623\u0643\u062F \u0623\u064A \u0639\u0645\u0644\u064A\u0629 \u064A\u0631\u064A\u062F \u0627\u0644\u0634\u0627\u062A \u062A\u0646\u0641\u064A\u0630\u0647\u0627 \u062F\u0627\u062E\u0644 \u0627\u0644\u0645\u0648\u0642\u0639."
+        ]
+      }
+    ];
+  }
+});
+
+// api/services/site-guide/retriever.ts
+function vectorForChunk(chunk2) {
+  const existing = chunkVectors.get(chunk2.id);
+  if (existing) return existing;
+  const vector = buildSiteGuideEmbedding(
+    [chunk2.title, chunk2.area, chunk2.tags.join(" "), chunk2.content, chunk2.steps.join(" ")].join(" ")
+  );
+  chunkVectors.set(chunk2.id, vector);
+  return vector;
+}
+function keywordScore(query, chunk2) {
+  const queryTokens = new Set(siteGuideTokens(query));
+  const haystack = normalizeSiteGuideText(
+    [chunk2.title, chunk2.area, chunk2.tags.join(" "), chunk2.content, chunk2.steps.join(" ")].join(" ")
+  );
+  let score = 0;
+  for (const token of queryTokens) {
+    if (haystack.includes(token)) score += 0.08;
+  }
+  for (const tag2 of chunk2.tags) {
+    if (queryTokens.has(normalizeSiteGuideText(tag2))) score += 0.18;
+  }
+  return score;
+}
+function siteGuideFact(dataNeedId, chunk2, index2) {
+  return {
+    id: `${dataNeedId}:site_guide_${index2 + 1}`,
+    dataNeedId,
+    label: chunk2.title,
+    value: `${chunk2.content} \u0627\u0644\u062E\u0637\u0648\u0627\u062A: ${chunk2.steps.join(" | ")}`,
+    source: "site_guide.search",
+    confidence: Math.min(1, Math.max(0.2, chunk2.score)),
+    evidence: [
+      {
+        id: chunk2.id,
+        label: chunk2.area,
+        value: chunk2.tags.join(", ")
+      }
+    ]
+  };
+}
+function siteGuideArtifact(dataNeedId, chunk2) {
+  return {
+    id: `${dataNeedId}:${chunk2.id}`,
+    type: "text_block",
+    title: chunk2.title,
+    payload: {
+      contractVersion: 1,
+      source: "site_guide",
+      area: chunk2.area,
+      content: chunk2.content,
+      steps: chunk2.steps,
+      tags: chunk2.tags,
+      score: Number(chunk2.score.toFixed(4)),
+      embeddingDimensions: SITE_GUIDE_EMBEDDING_DIMENSIONS
+    }
+  };
+}
+function searchSiteGuide(query, limit = 4) {
+  const safeLimit = Math.min(Math.max(Math.floor(limit || 4), 1), 8);
+  const queryVector = buildSiteGuideEmbedding(query);
+  const chunks = SITE_GUIDE_CHUNKS.map((chunk2) => ({
+    ...chunk2,
+    score: cosineSimilarity4(queryVector, vectorForChunk(chunk2)) + keywordScore(query, chunk2)
+  })).filter((chunk2) => chunk2.score > 0.02).sort((a, b) => b.score - a.score).slice(0, safeLimit);
+  const selected = chunks.length > 0 ? chunks : SITE_GUIDE_CHUNKS.slice(0, safeLimit).map((chunk2) => ({ ...chunk2, score: 0.05 }));
+  const facts = selected.map((chunk2, index2) => siteGuideFact("site_guide.search", chunk2, index2));
+  const artifacts = selected.slice(0, 2).map((chunk2) => siteGuideArtifact("site_guide.search", chunk2));
+  return {
+    query,
+    chunks: selected,
+    facts,
+    artifacts,
+    errors: [],
+    cacheHits: ["site_guide:static_256"]
+  };
+}
+async function resolveSiteGuideDataNeeds(dataNeeds) {
+  const facts = [];
+  const artifacts = [];
+  const errors = [];
+  const cacheHits = [];
+  const handledNeeds = dataNeeds.filter((need) => need.kind === "site_guide.search");
+  for (const need of handledNeeds) {
+    try {
+      const result = searchSiteGuide(need.scope?.query ?? "", need.scope?.limit ?? need.maxRows ?? 4);
+      facts.push(
+        ...result.facts.map((fact3) => ({
+          ...fact3,
+          id: fact3.id.replace("site_guide.search", need.id),
+          dataNeedId: need.id
+        }))
+      );
+      artifacts.push(
+        ...result.artifacts.map((artifact) => ({
+          ...artifact,
+          id: artifact.id.replace("site_guide.search", need.id)
+        }))
+      );
+      cacheHits.push(...result.cacheHits);
+    } catch (error48) {
+      errors.push(`${need.id}:${error48 instanceof Error ? error48.message : String(error48)}`);
+    }
+  }
+  return {
+    facts,
+    artifacts,
+    errors,
+    cacheHits,
+    handledNeeds
+  };
+}
+var chunkVectors;
+var init_retriever = __esm({
+  "api/services/site-guide/retriever.ts"() {
+    init_embedding();
+    init_knowledge_base();
+    chunkVectors = /* @__PURE__ */ new Map();
+  }
+});
+
+// api/services/site-guide/index.ts
+var site_guide_exports = {};
+__export(site_guide_exports, {
+  SITE_GUIDE_CHUNKS: () => SITE_GUIDE_CHUNKS,
+  SITE_GUIDE_EMBEDDING_DIMENSIONS: () => SITE_GUIDE_EMBEDDING_DIMENSIONS,
+  buildSiteGuideEmbedding: () => buildSiteGuideEmbedding,
+  normalizeSiteGuideText: () => normalizeSiteGuideText,
+  resolveSiteGuideDataNeeds: () => resolveSiteGuideDataNeeds,
+  searchSiteGuide: () => searchSiteGuide,
+  siteGuideTokens: () => siteGuideTokens
+});
+var init_site_guide = __esm({
+  "api/services/site-guide/index.ts"() {
+    init_types8();
+    init_embedding();
+    init_knowledge_base();
+    init_retriever();
+  }
+});
+
+// api/services/ai-kernel/index.ts
+function createTraceId() {
+  return `aik_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+function fallbackIntent(error48) {
+  return {
+    kind: "unknown",
+    confidence: 0,
+    reason: "ai_kernel_shadow_failed",
+    slots: {
+      query: error48 instanceof Error ? error48.message : String(error48)
+    }
+  };
+}
+function shouldResolveDataNeeds(request) {
+  return request.metadata?.resolveDataNeeds !== false;
+}
+function embeddingApiCallsFromCacheHits(cacheHits) {
+  if (cacheHits.some((hit) => hit.startsWith("memory_cache:hit"))) {
+    return 0;
+  }
+  if (cacheHits.includes("embedding:query_embedded") && cacheHits.includes("embedding:fireworks")) {
+    return 1;
+  }
+  return 0;
+}
+function metadataNumber2(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : void 0;
+}
+async function resolveShadowFacts(request, dataNeeds) {
+  if (!shouldResolveDataNeeds(request)) {
+    return { facts: [], artifacts: [], errors: [], cacheHits: [] };
+  }
+  try {
+    const { resolveKernelDataNeeds: resolveKernelDataNeeds2 } = await Promise.resolve().then(() => (init_finance_semantic_layer(), finance_semantic_layer_exports));
+    const finance = await resolveKernelDataNeeds2(
+      {
+        userId: request.userId,
+        userType: request.userType,
+        salaryDay: metadataNumber2(request.metadata?.salaryDay)
+      },
+      dataNeeds
+    );
+    const { resolveMemoryDataNeeds: resolveMemoryDataNeeds2 } = await Promise.resolve().then(() => (init_ai_memory(), ai_memory_exports));
+    const memory = await resolveMemoryDataNeeds2(
+      {
+        userId: request.userId,
+        userType: request.userType
+      },
+      dataNeeds
+    );
+    const { resolveSiteGuideDataNeeds: resolveSiteGuideDataNeeds2 } = await Promise.resolve().then(() => (init_site_guide(), site_guide_exports));
+    const siteGuide = await resolveSiteGuideDataNeeds2(dataNeeds);
+    return {
+      facts: [...finance.facts, ...memory.facts, ...siteGuide.facts],
+      artifacts: [...finance.artifacts, ...memory.artifacts, ...siteGuide.artifacts],
+      errors: [...finance.errors, ...memory.errors, ...siteGuide.errors],
+      cacheHits: [...finance.cacheHits, ...memory.cacheHits, ...siteGuide.cacheHits]
+    };
+  } catch (error48) {
+    return {
+      facts: [],
+      artifacts: [],
+      errors: [error48 instanceof Error ? error48.message : String(error48)],
+      cacheHits: []
+    };
+  }
+}
+function materialMissingNumbers(missing) {
+  return (missing ?? []).filter((item) => {
+    const parsed = Math.abs(Number(item));
+    if (!Number.isFinite(parsed)) return false;
+    return parsed >= 10 || !Number.isInteger(parsed);
+  });
+}
+function hallucinationRiskFor(content, facts, llmCalls) {
+  const numericAccuracy = validateNumbersAgainstFacts(content, facts);
+  if (llmCalls <= 0) {
+    return {
+      numericAccuracy,
+      hallucinationRisk: "low",
+      hallucinationSignals: []
+    };
+  }
+  const materialMissing = materialMissingNumbers(numericAccuracy.missing);
+  const hallucinationRisk = materialMissing.length === 0 ? "low" : materialMissing.length <= 2 ? "medium" : "high";
+  return {
+    numericAccuracy,
+    hallucinationRisk,
+    hallucinationSignals: materialMissing.map((number4) => `missing_number:${number4}`)
+  };
+}
+function safeContentAfterUnsupportedNumbers(intent, facts, blockedNumbers) {
+  if (intent.kind === "advice_request") {
+    return buildGroundedAdviceContent(intent, facts);
+  }
+  const numericFacts = facts.filter((fact3) => typeof fact3.value === "number" || typeof fact3.value === "string" && /\d|[٠-٩۰-۹]/.test(fact3.value)).slice(0, 6).map((fact3) => `- ${fact3.source}.${fact3.label.replace(/\d+/g, "item")}: ${fact3.value}`);
+  return [
+    "\u0645\u0646\u0639\u062A \u0631\u0642\u0645 \u063A\u064A\u0631 \u0645\u0624\u0643\u062F \u0645\u0646 \u0627\u0644\u0631\u062F \u0639\u0634\u0627\u0646 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0644\u0627\u0632\u0645 \u062A\u0637\u0644\u0639 \u0645\u0646 \u0628\u064A\u0627\u0646\u0627\u062A\u0643 \u0627\u0644\u0641\u0639\u0644\u064A\u0629 \u0641\u0642\u0637.",
+    numericFacts.length > 0 ? `\u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u0645\u0624\u0643\u062F\u0629 \u0627\u0644\u0645\u062A\u0627\u062D\u0629:
+${numericFacts.join("\n")}` : "\u0645\u0641\u064A\u0634 \u0623\u0631\u0642\u0627\u0645 \u0645\u0624\u0643\u062F\u0629 \u0643\u0641\u0627\u064A\u0629 \u0641\u064A \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u062A\u0627\u062D\u0629 \u0644\u0644\u0631\u062F \u0627\u0644\u0631\u0642\u0645\u064A \u0627\u0644\u062F\u0642\u064A\u0642.",
+    "\u0627\u0633\u0623\u0644\u0646\u064A \u0628\u0635\u064A\u063A\u0629 \u0623\u0636\u064A\u0642 \u0623\u0648 \u0627\u0637\u0644\u0628 \u062A\u0641\u0635\u064A\u0644\u0629 \u0645\u062D\u062F\u062F\u0629\u060C \u0648\u0633\u0623\u0631\u062C\u0639\u0647\u0627 \u0645\u0646 \u0623\u062F\u0648\u0627\u062A \u0627\u0644\u0645\u0648\u0642\u0639 \u0645\u0628\u0627\u0634\u0631\u0629.",
+    blockedNumbers.length > 0 ? "\u062A\u0645 \u062A\u0633\u062C\u064A\u0644 \u0645\u062D\u0627\u0648\u0644\u0629 \u0631\u0642\u0645 \u063A\u064A\u0631 \u0645\u062F\u0639\u0648\u0645 \u0641\u064A trace \u0644\u0644\u0645\u0631\u0627\u062C\u0639\u0629." : ""
+  ].filter(Boolean).join("\n");
+}
+function factValue(facts, label, source) {
+  return facts.find((fact3) => fact3.label === label && (!source || fact3.source === source))?.value;
+}
+function numericFact(facts, label, source) {
+  const value = factValue(facts, label, source);
+  if (value === null || value === void 0 || value === "") return void 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : void 0;
+}
+function textFact(facts, label, source) {
+  const value = factValue(facts, label, source);
+  return typeof value === "string" && value.trim() ? value : void 0;
+}
+function money2(value) {
+  const safe = Number.isFinite(value) ? value : 0;
+  return `${safe.toLocaleString("ar-EG", {
+    maximumFractionDigits: Number.isInteger(safe) ? 0 : 2
+  })} \u062C\u0646\u064A\u0647`;
+}
+function amountFromText(value) {
+  if (!value) return void 0;
+  const normalized = normalizeNumericText2(value);
+  const match2 = normalized.match(/(\d+(?:[.,٬]\d{3})*(?:[.,]\d+)?)\s*(الف|ألف|k|مليون|million)?/i);
+  if (!match2) return void 0;
+  return applyAmountUnit(parseAmountNumber(match2[1]), match2[2]);
+}
+function normalizeNumericText2(value) {
+  return value.replace(/[٠-٩۰-۹]/g, (digit) => {
+    const arabic = "\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669";
+    const eastern = "\u06F0\u06F1\u06F2\u06F3\u06F4\u06F5\u06F6\u06F7\u06F8\u06F9";
+    const arabicIndex = arabic.indexOf(digit);
+    if (arabicIndex >= 0) return String(arabicIndex);
+    const easternIndex = eastern.indexOf(digit);
+    return easternIndex >= 0 ? String(easternIndex) : digit;
+  }).replace(/[٬،]/g, ",");
+}
+function parseAmountNumber(raw2) {
+  if (!raw2) return void 0;
+  let cleaned = raw2.replace(/\s+/g, "");
+  if (/^\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(cleaned)) {
+    cleaned = cleaned.replace(/,/g, "");
+  } else if (/^\d+,\d{1,2}$/.test(cleaned)) {
+    cleaned = cleaned.replace(",", ".");
+  } else {
+    cleaned = cleaned.replace(/,/g, "");
+  }
+  const base = Number(cleaned);
+  if (!Number.isFinite(base) || base <= 0) return void 0;
+  return base;
+}
+function applyAmountUnit(base, unitValue) {
+  if (base === void 0 || !Number.isFinite(base)) return void 0;
+  const unit = unitValue ?? "";
+  if (unit === "\u0645\u0644\u064A\u0648\u0646" || unit === "million") return Math.round(base * 1e6);
+  if (unit === "\u0627\u0644\u0641" || unit === "\u0623\u0644\u0641" || unit.toLowerCase() === "k") return Math.round(base * 1e3);
+  return Math.round(base);
+}
+function moneyAmountFromText(value) {
+  const normalized = normalizeNumericText2(value);
+  const amountPattern = "(\\d+(?:[.,]\\d{3})*(?:[.,]\\d+)?)\\s*(\u0627\u0644\u0641|\u0623\u0644\u0641|k|\u0645\u0644\u064A\u0648\u0646|million)?";
+  const withCurrency = normalized.match(new RegExp(`${amountPattern}\\s*(?:\u062C\u0646\u064A\u0647|\u062C\u0646\u064A\u0647\u0627|egp|pounds?|\u062C\\b)`, "i"));
+  if (withCurrency) return applyAmountUnit(parseAmountNumber(withCurrency[1]), withCurrency[2]);
+  const afterGoalVerb = normalized.match(
+    new RegExp(`(?:\u0627\u062D\u0648\u0634|\u0627\u062F\u062E\u0631|\u0628\u0645\u0628\u0644\u063A|\u0627\u0644\u0645\u0628\u0644\u063A \u0627\u0644\u0645\u0633\u062A\u0647\u062F\u0641|\u0645\u0628\u0644\u063A|target|amount)\\s+${amountPattern}`, "i")
+  );
+  if (afterGoalVerb) return applyAmountUnit(parseAmountNumber(afterGoalVerb[1]), afterGoalVerb[2]);
+  return void 0;
+}
+function countText(count4) {
+  if (!Number.isFinite(count4)) return "";
+  return ` \u0645\u0646 ${Math.round(count4).toLocaleString("ar-EG")} \u0639\u0645\u0644\u064A\u0629`;
+}
+function knownCategoryDisplayName(value) {
+  const normalized = (value ?? "").trim().toLowerCase();
+  return CATEGORY_DISPLAY_NAMES2[normalized];
+}
+function displayCategoryName(value) {
+  return knownCategoryDisplayName(value) ?? value ?? "\u0627\u0644\u0641\u0626\u0629 \u062F\u064A";
+}
+function uniqueMemoryFacts(facts) {
+  const seen = /* @__PURE__ */ new Set();
+  const result = [];
+  for (const fact3 of facts) {
+    const value = String(fact3.value ?? "").replace(/\s+/g, " ").trim();
+    if (!value || isLowSignalMemoryText(value)) continue;
+    const key = value.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push({ ...fact3, value });
+  }
+  return result;
+}
+function preferDirectMemoryFacts(facts) {
+  const direct = facts.filter(
+    (fact3) => fact3.evidence?.some((item) => String(item.label ?? "") === "memory")
+  );
+  return direct.length > 0 ? direct : facts;
+}
+function memoryPlanLine(value) {
+  const amount = moneyAmountFromText(value);
+  const monthsMatch = value.match(/(\d+|[٠-٩]+)\s*(?:شهر|شهور)/);
+  const months = amountFromText(monthsMatch?.[1]);
+  const itemMatch = value.match(/(?:اجيب|اشتري|شراء)\s+([^،.؟?]+?)(?:\s+خلال|\s+بس|$)/);
+  const item = itemMatch?.[1]?.trim();
+  const isGoalLike = /(هدف|احوش|ادخر|ادخار|خطة|خطه)/.test(value);
+  if (isGoalLike && (amount || months || item)) {
+    return [
+      item ? `\u0647\u062F\u0641 ${item}` : "\u0647\u062F\u0641 \u0627\u062F\u062E\u0627\u0631",
+      amount ? `\u0628\u0645\u0628\u0644\u063A ${money2(amount)}` : "",
+      months ? `\u062E\u0644\u0627\u0644 ${months.toLocaleString("ar-EG")} \u0634\u0647\u0648\u0631` : "",
+      /ما تنفذش|ااكد|أأكد|اوافق|أوافق/.test(value) ? "\u0648\u0643\u0627\u0646 \u0645\u062D\u062A\u0627\u062C \u062A\u0623\u0643\u064A\u062F \u0642\u0628\u0644 \u0627\u0644\u062A\u0646\u0641\u064A\u0630" : ""
+    ].filter(Boolean).join("\u060C ");
+  }
+  return truncateWords(value, 28);
+}
+function focusMemoryFactsForQuery(facts, query) {
+  const normalizedQuery = normalizeMemoryText(query ?? "");
+  const subjects = MEMORY_SUBJECT_HINTS.map((item) => normalizeMemoryText(item)).filter(
+    (item) => normalizedQuery.includes(item)
+  );
+  if (subjects.length === 0) return facts;
+  const focused = facts.filter((fact3) => {
+    const normalizedValue = normalizeMemoryText(String(fact3.value ?? ""));
+    return subjects.some((subject) => normalizedValue.includes(subject));
+  });
+  return focused.length > 0 ? focused : facts;
+}
+function percentText(value) {
+  if (value === void 0) return "\u0645\u0634 \u0642\u0627\u0628\u0644 \u0644\u0644\u062D\u0633\u0627\u0628 \u0644\u0623\u0646 \u0627\u0644\u0641\u062A\u0631\u0629 \u0627\u0644\u0633\u0627\u0628\u0642\u0629 \u0635\u0641\u0631";
+  const absolute = Math.abs(value).toLocaleString("ar-EG", { maximumFractionDigits: 1 });
+  if (Math.abs(value) < 0.05) return "\u0628\u062F\u0648\u0646 \u062A\u063A\u064A\u064A\u0631 \u062A\u0642\u0631\u064A\u0628\u0627";
+  return value > 0 ? `\u0632\u064A\u0627\u062F\u0629 ${absolute}%` : `\u0627\u0646\u062E\u0641\u0627\u0636 ${absolute}%`;
+}
+function sourceFacts(facts, source) {
+  return facts.filter((fact3) => fact3.source === source);
+}
+function transactionEvidenceLines(facts, limit = 5) {
+  return sourceFacts(facts, "finance.transactions").filter((fact3) => fact3.label.startsWith("transaction_")).slice(0, limit).map((fact3) => {
+    const evidence = fact3.evidence?.[0];
+    const amount = Number(evidence?.value);
+    if (evidence?.label && Number.isFinite(amount)) {
+      return `${evidence.label}: ${money2(amount)}`;
+    }
+    return String(fact3.value);
+  });
+}
+function isClassificationExplanationIntent(intent) {
+  return intent.reason === "classification_explanation_match";
+}
+function categoryFromTransactionFact(fact3) {
+  const value = String(fact3.value ?? "");
+  const parts = value.split(/\s+/);
+  return parts.length >= 2 ? parts[1] : void 0;
+}
+function buildClassificationExplanationContent(intent, facts) {
+  if (!isClassificationExplanationIntent(intent)) return void 0;
+  const categories = [
+    ...new Set([...intent.slots.categories ?? [], intent.slots.category].filter(Boolean))
+  ];
+  const transactionFacts2 = sourceFacts(facts, "finance.transactions").filter(
+    (fact3) => fact3.label.startsWith("transaction_")
+  );
+  const totalMatched = numericFact(facts, "total_matched", "finance.transactions") ?? transactionFacts2.length;
+  const period = textFact(facts, "period", "finance.transactions") ?? "\u0627\u0644\u0641\u062A\u0631\u0629 \u0627\u0644\u062D\u0627\u0644\u064A\u0629";
+  const categoryCounts = /* @__PURE__ */ new Map();
+  for (const fact3 of transactionFacts2) {
+    const category = categoryFromTransactionFact(fact3) ?? "uncategorized";
+    categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);
+  }
+  const primaryCategory = [...categoryCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? intent.slots.category;
+  const categoryText = primaryCategory ? displayCategoryName(primaryCategory) : "\u0627\u0644\u0641\u0626\u0629 \u0627\u0644\u0623\u0642\u0631\u0628";
+  const comparedCategories = categories.length ? categories.map((category) => displayCategoryName(category)).join(" / ") : "\u0627\u0644\u0641\u0626\u0627\u062A \u0627\u0644\u0645\u0630\u0643\u0648\u0631\u0629";
+  const evidenceLines = transactionEvidenceLines(facts, 5);
+  if (totalMatched <= 0) {
+    return [
+      `\u0645\u0634 \u0644\u0627\u0642\u064A \u0639\u0645\u0644\u064A\u0627\u062A \u0645\u0637\u0627\u0628\u0642\u0629 \u0641\u064A ${period} \u062A\u0643\u0641\u064A \u0623\u062D\u0643\u0645 \u0647\u0644 \u062F\u064A ${comparedCategories}.`,
+      "\u0627\u0644\u0642\u0627\u0639\u062F\u0629 \u0627\u0644\u0639\u0645\u0644\u064A\u0629: \u0644\u0648 \u0627\u0644\u0634\u0631\u0627\u0621 \u062E\u0636\u0627\u0631/\u0644\u062D\u0645\u0629/\u0623\u0643\u0644 \u0645\u0646 \u0643\u0627\u0631\u0641\u0648\u0631 \u064A\u0628\u0642\u0649 \u0623\u0643\u0644\u060C \u0648\u0644\u0648 \u0645\u0644\u0627\u0628\u0633/\u0623\u062C\u0647\u0632\u0629/\u0645\u0634\u062A\u0631\u064A\u0627\u062A \u0639\u0627\u0645\u0629 \u064A\u0628\u0642\u0649 \u062A\u0633\u0648\u0642.",
+      "\u0644\u0648 \u0644\u0642\u064A\u062A \u0639\u0645\u0644\u064A\u0629 \u0645\u062A\u0635\u0646\u0641\u0629 \u063A\u0644\u0637\u060C \u0627\u0628\u0639\u062A\u0647\u0627 \u0644\u064A \u0623\u0648 \u0627\u0641\u062A\u062D \u0627\u0644\u0639\u0645\u0644\u064A\u0629 \u0648\u0639\u062F\u0644 \u0627\u0644\u0641\u0626\u0629\u061B \u0648\u0628\u0639\u062F \u0627\u0644\u062A\u0623\u0643\u064A\u062F \u0623\u0642\u062F\u0631 \u0623\u062C\u0647\u0632 \u0644\u0643 \u062A\u0639\u062F\u064A\u0644 \u0622\u0645\u0646."
+    ].join("\n");
+  }
+  return [
+    `\u062D\u0633\u0628 \u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A \u0627\u0644\u0645\u0637\u0627\u0628\u0642\u0629 \u0641\u064A ${period}: \u0627\u0644\u0623\u0642\u0631\u0628 \u0625\u0646\u0647\u0627 ${categoryText}.`,
+    `\u0631\u0627\u062C\u0639\u062A ${totalMatched.toLocaleString("ar-EG")} \u0639\u0645\u0644\u064A\u0629 \u0636\u0645\u0646 ${comparedCategories}.`,
+    evidenceLines.length ? `\u0623\u0645\u062B\u0644\u0629 \u062F\u062E\u0644\u062A \u0641\u064A \u0627\u0644\u062D\u0643\u0645:
+${evidenceLines.join("\n")}` : "",
+    "\u0644\u0648 \u0641\u064A \u0639\u0645\u0644\u064A\u0629 \u0645\u0639\u064A\u0646\u0629 \u0637\u0627\u0644\u0639\u0629 \u063A\u0644\u0637\u060C \u0627\u0628\u0639\u062A\u0647\u0627 \u0644\u064A \u0628\u0627\u0644\u0627\u0633\u0645 \u0623\u0648 \u0627\u0644\u0631\u0642\u0645 \u0648\u0623\u0646\u0627 \u0623\u062C\u0647\u0632 \u062A\u0639\u062F\u064A\u0644 \u062A\u0635\u0646\u064A\u0641 \u0643\u0645\u0633\u0648\u062F\u0629\u060C \u0648\u0627\u0644\u062A\u0646\u0641\u064A\u0630 \u0644\u0627 \u064A\u062D\u0635\u0644 \u0625\u0644\u0627 \u0628\u0639\u062F \u062A\u0623\u0643\u064A\u062F\u0643."
+  ].filter(Boolean).join("\n");
+}
+function goalProgressLines(facts, source) {
+  const lines = [];
+  for (let index2 = 1; index2 <= 8; index2 += 1) {
+    const title = textFact(facts, `goal_${index2}_title`, source);
+    if (!title) continue;
+    const target = numericFact(facts, `goal_${index2}_target_amount`, source);
+    const monthsNeeded = numericFact(facts, `goal_${index2}_estimated_months_needed`, source);
+    const capacity = numericFact(facts, `goal_${index2}_estimated_monthly_capacity`, source);
+    const targetDate = textFact(facts, `goal_${index2}_target_date`, source);
+    const parts = [`- ${title}`];
+    if (target && target > 0) parts.push(`\u0627\u0644\u0645\u0633\u062A\u0647\u062F\u0641 ${money2(target)}`);
+    if (targetDate) parts.push(`\u0627\u0644\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u0633\u062A\u0647\u062F\u0641 ${targetDate}`);
+    if (capacity !== void 0) parts.push(`\u0642\u062F\u0631\u062A\u0643 \u0627\u0644\u0634\u0647\u0631\u064A\u0629 \u0627\u0644\u0645\u0642\u062F\u0631\u0629 ${money2(capacity)}`);
+    if (monthsNeeded !== void 0) parts.push(`\u0627\u0644\u0645\u062F\u0629 \u0627\u0644\u062A\u0642\u062F\u064A\u0631\u064A\u0629 ${monthsNeeded.toLocaleString("ar-EG")} \u0634\u0647\u0631`);
+    if (!target || target <= 0) parts.push("\u0645\u062D\u062A\u0627\u062C \u062A\u062D\u062F\u064A\u062F \u0645\u0628\u0644\u063A \u0645\u0633\u062A\u0647\u062F\u0641 \u0639\u0634\u0627\u0646 \u0623\u062D\u0633\u0628 \u062A\u0642\u062F\u0645\u0647");
+    lines.push(parts.join(" - "));
+  }
+  return lines;
+}
+function buildGroundedAdviceContent(intent, facts) {
+  const net = numericFact(facts, "net_flow", "finance.summary");
+  const totalExpense = numericFact(facts, "total_expense", "finance.summary");
+  const expenseCount = numericFact(facts, "expense_count", "finance.summary");
+  const memories = uniqueMemoryFacts(
+    preferDirectMemoryFacts(facts.filter((fact3) => fact3.source === "memory.search"))
+  ).slice(0, 1);
+  const levers = sourceFacts(facts, "finance.breakdown").filter((fact3) => /^top_[1-4]_/.test(fact3.label)).slice(0, 3).map((fact3) => {
+    const category = knownCategoryDisplayName(fact3.label.replace(/^top_\d+_/, ""));
+    if (!category) return void 0;
+    const amount = Number(fact3.value);
+    return Number.isFinite(amount) ? `${category}: ${money2(amount)}` : category;
+  }).filter((item) => Boolean(item));
+  const financeLine = net !== void 0 || totalExpense !== void 0 ? `\u0645\u0646 \u0628\u064A\u0627\u0646\u0627\u062A\u0643 \u0627\u0644\u0645\u0624\u0643\u062F\u0629: \u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062A ${money2(totalExpense)}\u060C \u0648\u0627\u0644\u0635\u0627\u0641\u064A ${money2(net)}${expenseCount !== void 0 ? countText(expenseCount) : ""}.` : "";
+  const memoryLine = memories[0] ? `\u0641\u0627\u0643\u0631 \u0645\u0646 \u0643\u0644\u0627\u0645\u0646\u0627: ${memoryPlanLine(String(memories[0].value))}` : "";
+  const leversLine = levers.length ? `\u0623\u0643\u062A\u0631 \u0628\u0646\u0648\u062F \u0645\u062D\u062A\u0627\u062C\u0629 \u0645\u062A\u0627\u0628\u0639\u0629: ${levers.join("\u060C ")}.` : "";
+  return [
+    "\u062A\u0645\u0627\u0645\u060C \u0647\u0628\u0646\u064A \u0644\u0643 \u062E\u0637\u0629 \u0622\u0645\u0646\u0629 \u0639\u0644\u0649 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u0624\u0643\u062F\u0629 \u0645\u0646 \u063A\u064A\u0631 \u0623\u0631\u0642\u0627\u0645 \u0645\u062E\u062A\u0631\u0639\u0629:",
+    financeLine,
+    memoryLine,
+    leversLine,
+    "\u0627\u0644\u062E\u0637\u0629 \u0627\u0644\u0639\u0645\u0644\u064A\u0629: \u0631\u0627\u0642\u0628 \u0633\u0628\u0628 \u0627\u0644\u0635\u0631\u0641 \u0627\u0644\u0645\u062A\u0643\u0631\u0631\u060C \u062D\u062F\u062F \u0642\u0631\u0627\u0631 \u0648\u0627\u0636\u062D \u0642\u0628\u0644 \u0627\u0644\u0634\u0631\u0627\u0621\u060C \u0648\u0627\u0631\u0628\u0637 \u0627\u0644\u062A\u063A\u064A\u064A\u0631 \u0628\u0639\u0627\u062F\u0629 \u064A\u0648\u0645\u064A\u0629 \u0633\u0647\u0644\u0629. \u0644\u0648 \u0639\u0627\u064A\u0632 \u0631\u0642\u0645 \u062A\u0648\u0641\u064A\u0631 \u0645\u062D\u062F\u062F \u0627\u0633\u0623\u0644\u0646\u064A \u0639\u0646 \u0628\u0646\u062F \u0648\u0627\u062D\u062F\u060C \u0648\u0633\u0623\u062D\u0633\u0628\u0647 \u0645\u0646 \u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A \u0645\u0628\u0627\u0634\u0631\u0629."
+  ].filter(Boolean).join("\n");
+}
+function lowQualityLLMContentReason(intent, content) {
+  if (intent.kind !== "advice_request") return void 0;
+  const text2 = content.trim();
+  if (!text2) return "llm_response_empty";
+  if (/^(نحتاج|يجب|سنقدم|سأقدم|لازم\s+ن|المستخدم\s+يطلب|تحليل|we need|need to respond)/i.test(text2) || /\b(ResolvedFacts|intent|رسالة المستخدم|اكتب الرد النهائي)\b/i.test(text2)) {
+    return "llm_returned_meta_reasoning";
+  }
+  const hasFirstBullet = /(^|\n)\s*(1|١)[.)]/.test(text2);
+  const hasSecondBullet = /(^|\n)\s*(2|٢)[.)]/.test(text2);
+  const endsCleanly = /[.!؟]$/.test(text2);
+  if (hasFirstBullet && !hasSecondBullet) return "llm_response_incomplete";
+  if (!endsCleanly && text2.length < 420 && /[:\n]/.test(text2)) return "llm_response_incomplete";
+  return void 0;
+}
+function buildInvestmentAdviceContent(intent, facts) {
+  const query = intent.slots.query ?? "";
+  if (!/(استثمر|استثمار|استثمرهم|invest)/i.test(query)) return void 0;
+  const amount = amountFromText(query);
+  const amountText = amount !== void 0 ? money2(amount) : "\u0627\u0644\u0645\u0628\u0644\u063A \u0627\u0644\u0641\u0627\u0636\u0644";
+  const net = numericFact(facts, "net_flow", "finance.summary");
+  const totalExpense = numericFact(facts, "total_expense", "finance.summary");
+  const goals = goalProgressLines(facts, sourceFacts(facts, "finance.goal_progress").length ? "finance.goal_progress" : "goals.active").slice(0, 1);
+  const topLevers = sourceFacts(facts, "finance.breakdown").filter((fact3) => /^top_[1-3]_/.test(fact3.label)).map((fact3) => displayCategoryName(fact3.label.replace(/^top_\d+_/, ""))).slice(0, 2);
+  return [
+    `\u0644\u0648 \u0641\u0627\u0636 \u0645\u0639\u0627\u0643 ${amountText} \u0622\u062E\u0631 \u0627\u0644\u0634\u0647\u0631\u060C \u062E\u0644\u064A\u0643 \u0645\u062D\u0627\u0641\u0638 \u0648\u0645\u0627\u062A\u062F\u062E\u0644\u0634 \u0645\u062E\u0627\u0637\u0631\u0629 \u0639\u0627\u0644\u064A\u0629 \u0642\u0628\u0644 \u0645\u0627 \u062A\u062B\u0628\u062A \u0627\u0644\u0637\u0648\u0627\u0631\u0626 \u0648\u0627\u0644\u0623\u0647\u062F\u0627\u0641.`,
+    net !== void 0 || totalExpense !== void 0 ? `\u0645\u0646 \u0628\u064A\u0627\u0646\u0627\u062A\u0643: \u0627\u0644\u0635\u0627\u0641\u064A \u0627\u0644\u062D\u0627\u0644\u064A ${money2(net)}\u060C \u0648\u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062A ${money2(totalExpense)}.` : "",
+    goals.length ? `\u0623\u0647\u0645 \u0647\u062F\u0641 \u0638\u0627\u0647\u0631: ${goals[0]}` : "",
+    topLevers.length ? `\u0642\u0628\u0644 \u0627\u0644\u0627\u0633\u062A\u062B\u0645\u0627\u0631 \u0631\u0627\u062C\u0639 \u0623\u0643\u0628\u0631 \u0628\u0646\u0648\u062F \u0627\u0644\u0635\u0631\u0641: ${topLevers.join(" \u0648")}.` : "",
+    "\u062E\u0637\u0629 \u0645\u062E\u062A\u0635\u0631\u0629: 1) \u062C\u0632\u0621 \u0644\u0644\u0637\u0648\u0627\u0631\u0626/\u0633\u064A\u0648\u0644\u0629 \u0633\u0631\u064A\u0639\u0629. 2) \u062C\u0632\u0621 \u064A\u0642\u0631\u0628\u0643 \u0645\u0646 \u0647\u062F\u0641\u0643 \u0627\u0644\u0646\u0634\u0637. 3) \u0644\u0648 \u0647\u062A\u0633\u062A\u062B\u0645\u0631\u060C \u0627\u062E\u062A\u0627\u0631 \u0623\u062F\u0648\u0627\u062A \u0645\u0646\u062E\u0641\u0636\u0629 \u0627\u0644\u0645\u062E\u0627\u0637\u0631 \u0648\u0633\u064A\u0648\u0644\u062A\u0647\u0627 \u0648\u0627\u0636\u062D\u0629. 4) \u062A\u062C\u0646\u0628 \u0627\u0644\u0623\u0633\u0647\u0645 \u0648\u0627\u0644\u0639\u0645\u0644\u0627\u062A \u0639\u0627\u0644\u064A\u0629 \u0627\u0644\u062A\u0642\u0644\u0628 \u0644\u0648 \u0627\u0644\u0645\u0628\u0644\u063A \u0645\u062D\u062A\u0627\u062C\u0647 \u0642\u0631\u064A\u0628."
+  ].filter(Boolean).join("\n");
+}
+function shouldKeepFactForIntent(fact3, intent) {
+  if (intent.kind !== "advice_request") return true;
+  if (fact3.source === "profile.snapshot") return true;
+  if (fact3.source === "memory.search") return true;
+  if (fact3.source === "finance.summary") {
+    return ["period", "total_income", "total_expense", "net_flow", "expense_count"].includes(fact3.label);
+  }
+  if (fact3.source === "finance.breakdown") {
+    return fact3.label === "period" || fact3.label === "total_expense" || /^top_[1-4]_/.test(fact3.label);
+  }
+  if (fact3.source === "goals.active" || fact3.source === "finance.goal_progress") {
+    return fact3.label === "active_goal_count" || /^goal_[1-3]_/.test(fact3.label);
+  }
+  return false;
+}
+function compactAdviceFacts(facts) {
+  const profile = facts.filter((fact3) => fact3.source === "profile.snapshot").slice(0, 2);
+  const summary = facts.filter(
+    (fact3) => fact3.source === "finance.summary" && ["period", "total_income", "total_expense", "net_flow", "expense_count"].includes(fact3.label)
+  ).slice(0, 5);
+  const breakdown = facts.filter((fact3) => fact3.source === "finance.breakdown" && /^top_[1-4]_/.test(fact3.label)).slice(0, 4);
+  const goals = facts.filter(
+    (fact3) => (fact3.source === "goals.active" || fact3.source === "finance.goal_progress") && (fact3.label === "active_goal_count" || /^goal_[1-2]_/.test(fact3.label))
+  ).slice(0, 4);
+  const memories = preferDirectMemoryFacts(facts.filter((fact3) => fact3.source === "memory.search")).slice(0, 2);
+  return [...profile, ...summary, ...breakdown, ...goals, ...memories].slice(0, 12);
+}
+function compactGeneralFacts(facts, intent) {
+  const selected = [];
+  let transactionEvidenceCount = 0;
+  let transactionMetaCount = 0;
+  for (const fact3 of facts) {
+    if (!shouldKeepFactForIntent(fact3, intent)) continue;
+    if (fact3.source === "finance.transactions") {
+      if (fact3.label.startsWith("transaction_")) {
+        if (transactionEvidenceCount >= 5) continue;
+        transactionEvidenceCount += 1;
+      } else {
+        if (transactionMetaCount >= 4) continue;
+        transactionMetaCount += 1;
+      }
+    }
+    selected.push(fact3);
+    if (selected.length >= 32) break;
+  }
+  return selected;
+}
+function compactFactsForPrompt(facts, intent) {
+  const selected = intent.kind === "advice_request" ? compactAdviceFacts(facts) : compactGeneralFacts(facts, intent);
+  return selected.map((fact3) => ({
+    source: fact3.source,
+    label: fact3.label,
+    value: fact3.value,
+    confidence: fact3.confidence,
+    evidence: intent.kind === "advice_request" ? void 0 : fact3.evidence?.slice(0, 3)
+  }));
+}
+function compactArtifactsForPrompt(artifacts) {
+  return artifacts.slice(0, 6).map((artifact) => ({
+    type: artifact.type,
+    title: artifact.title,
+    payload: artifact.payload
+  }));
+}
+function buildSiteHelpContent(facts) {
+  const guideFacts = facts.filter((fact3) => fact3.source === "site_guide.search").slice(0, 2);
+  if (guideFacts.length === 0) return void 0;
+  const areas = new Set(guideFacts.map((fact3) => String(fact3.evidence?.[0]?.label ?? "")));
+  const titles = guideFacts.map((fact3) => `- ${fact3.label}`).join("\n");
+  if (areas.has("card") || areas.has("sms")) {
+    return [
+      "\u0623\u064A\u0648\u0647\u060C \u0627\u0644\u0631\u0628\u0637 \u0647\u0646\u0627 \u0628\u064A\u062A\u0645 \u0639\u0644\u0649 \u062E\u0637\u0648\u062A\u064A\u0646 \u0623\u0633\u0627\u0633\u064A\u062A\u064A\u0646:",
+      titles,
+      "\u0627\u0628\u062F\u0623 \u0628\u0625\u0646\u0634\u0627\u0621 \u062D\u0633\u0627\u0628/\u0628\u0637\u0627\u0642\u0629 \u0628\u0627\u0633\u0645 \u0627\u0644\u0641\u064A\u0632\u0627 \u0623\u0648 \u0627\u0644\u0628\u0646\u0643\u060C \u0648\u0628\u0639\u062F\u0647\u0627 \u0641\u0639\u0651\u0644 \u0631\u0628\u0637 SMS \u0639\u0634\u0627\u0646 \u0639\u0645\u0644\u064A\u0627\u062A \u0627\u0644\u0628\u0646\u0643 \u062A\u062A\u062D\u0648\u0644 \u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A \u0642\u0627\u0628\u0644\u0629 \u0644\u0644\u0645\u0631\u0627\u062C\u0639\u0629. \u0627\u0644\u062A\u0641\u0627\u0635\u064A\u0644 \u0627\u0644\u062F\u0642\u064A\u0642\u0629 \u0645\u0648\u062C\u0648\u062F\u0629 \u0641\u064A \u0627\u0644\u0628\u0637\u0627\u0642\u0627\u062A \u062A\u062D\u062A \u0627\u0644\u0631\u0633\u0627\u0644\u0629."
+    ].join("\n");
+  }
+  return ["\u0644\u0642\u064A\u062A \u0644\u0643 \u0627\u0644\u062F\u0644\u064A\u0644 \u0627\u0644\u0645\u0646\u0627\u0633\u0628 \u0641\u064A \u0627\u0644\u062A\u0637\u0628\u064A\u0642:", titles, "\u0631\u0627\u062C\u0639 \u0627\u0644\u0628\u0637\u0627\u0642\u0627\u062A \u062A\u062D\u062A \u0627\u0644\u0631\u0633\u0627\u0644\u0629 \u0644\u0644\u062E\u0637\u0648\u0627\u062A \u0627\u0644\u062A\u0641\u0635\u064A\u0644\u064A\u0629."].join("\n");
+}
+function buildDeterministicContent(intent, facts, artifacts) {
+  if (intent.kind === "smalltalk") {
+    return "\u0623\u0647\u0644\u0627 \u0628\u064A\u0643. \u0627\u0633\u0623\u0644\u0646\u064A \u0639\u0646 \u0645\u0635\u0627\u0631\u064A\u0641\u0643\u060C \u0623\u0647\u062F\u0627\u0641\u0643\u060C \u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631\u060C \u0623\u0648 \u0623\u064A \u062D\u0627\u062C\u0629 \u0645\u062D\u062A\u0627\u062C \u062A\u0641\u0647\u0645\u0647\u0627 \u0641\u064A SmartSpend.";
+  }
+  if (intent.kind === "finance_query") {
+    const walletBalance = numericFact(facts, "total_balance", "wallet.summary");
+    if (walletBalance !== void 0) {
+      const walletCount = numericFact(facts, "wallet_count", "wallet.summary") ?? 0;
+      if (walletCount === 0) {
+        return "\u0645\u0641\u064A\u0634 \u0645\u062D\u0627\u0641\u0638 \u0645\u0633\u062C\u0644\u0629 \u0639\u0646\u062F\u0643 \u062D\u0627\u0644\u064A\u0627. \u062A\u0642\u062F\u0631 \u062A\u0636\u064A\u0641 \u0645\u062D\u0641\u0638\u0629 \u0623\u0648 \u0643\u0627\u0631\u062A \u0645\u0646 \u0635\u0641\u062D\u0629 \u0627\u0644\u0645\u062D\u0627\u0641\u0638\u060C \u0648\u0628\u0639\u062F\u0647\u0627 \u0623\u0642\u062F\u0631 \u0623\u0642\u0648\u0644\u0643 \u0627\u0644\u0631\u0635\u064A\u062F \u0641\u0648\u0631\u0627\u064B.";
+      }
+      const walletLines = sourceFacts(facts, "wallet.summary").filter((fact3) => fact3.label.startsWith("wallet_")).slice(0, 6).map((fact3) => {
+        const evidence = fact3.evidence?.[0];
+        const amount = Number(evidence?.value);
+        return evidence?.label && Number.isFinite(amount) ? `- ${evidence.label}: ${money2(amount)}` : `- ${String(fact3.value)}`;
+      });
+      return [
+        `\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0631\u0635\u064A\u062F \u0627\u0644\u0645\u0633\u062C\u0644 \u0641\u064A \u0645\u062D\u0627\u0641\u0638\u0643 ${money2(walletBalance)} \u0639\u0628\u0631 ${walletCount.toLocaleString("ar-EG")} \u0645\u062D\u0641\u0638\u0629.`,
+        walletLines.length ? walletLines.join("\n") : ""
+      ].filter(Boolean).join("\n");
+    }
+    const categoryTotal = numericFact(facts, "category_total_expense", "finance.category_total");
+    if (categoryTotal !== void 0) {
+      const category = displayCategoryName(
+        textFact(facts, "category", "finance.category_total") ?? intent.slots.category
+      );
+      const period = textFact(facts, "period", "finance.category_total") ?? "\u0627\u0644\u0641\u062A\u0631\u0629 \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629";
+      const count4 = numericFact(facts, "transaction_count", "finance.category_total");
+      const evidenceLines = transactionEvidenceLines(facts);
+      return [
+        `\u0641\u064A ${period}\u060C \u0625\u062C\u0645\u0627\u0644\u064A \u0635\u0631\u0641\u0643 \u0639\u0644\u0649 ${category} \u0647\u0648 ${money2(categoryTotal)}${countText(count4)}.`,
+        evidenceLines.length ? `\u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A \u0627\u0644\u0644\u064A \u062F\u062E\u0644\u062A \u0641\u064A \u0627\u0644\u0631\u0642\u0645:
+${evidenceLines.join("\n")}` : ""
+      ].filter(Boolean).join("\n");
+    }
+    const totalExpense = numericFact(facts, "total_expense", "finance.summary");
+    if (totalExpense !== void 0) {
+      const period = textFact(facts, "period", "finance.summary") ?? "\u0627\u0644\u0641\u062A\u0631\u0629 \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629";
+      const income = numericFact(facts, "total_income", "finance.summary") ?? 0;
+      const net = numericFact(facts, "net_flow", "finance.summary") ?? income - totalExpense;
+      const count4 = numericFact(facts, "expense_count", "finance.summary") ?? numericFact(facts, "transaction_count", "finance.summary");
+      const evidenceLines = transactionEvidenceLines(facts);
+      return [
+        `\u0641\u064A ${period}\u060C \u0635\u0631\u0641\u062A ${money2(totalExpense)}${countText(count4)}. \u0627\u0644\u062F\u062E\u0644 \u0627\u0644\u0645\u0633\u062C\u0644 ${money2(income)}\u060C \u0648\u0627\u0644\u0635\u0627\u0641\u064A ${money2(net)}.`,
+        evidenceLines.length ? `\u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A \u0627\u0644\u0644\u064A \u062F\u062E\u0644\u062A \u0641\u064A \u0627\u0644\u0631\u0642\u0645:
+${evidenceLines.join("\n")}` : ""
+      ].filter(Boolean).join("\n");
+    }
+  }
+  if (intent.kind === "finance_analysis") {
+    const classificationContent = buildClassificationExplanationContent(intent, facts);
+    if (classificationContent) return classificationContent;
+    const currentExpense = numericFact(facts, "current_total_expense", "finance.period_comparison");
+    if (currentExpense !== void 0) {
+      const previousExpense = numericFact(facts, "previous_total_expense", "finance.period_comparison") ?? 0;
+      const difference = numericFact(facts, "expense_difference", "finance.period_comparison") ?? currentExpense - previousExpense;
+      const percent = numericFact(facts, "expense_change_percent", "finance.period_comparison");
+      const currentPeriod = textFact(facts, "current_period", "finance.period_comparison") ?? "\u0627\u0644\u0641\u062A\u0631\u0629 \u0627\u0644\u062D\u0627\u0644\u064A\u0629";
+      const previousPeriod = textFact(facts, "previous_period", "finance.period_comparison") ?? "\u0627\u0644\u0641\u062A\u0631\u0629 \u0627\u0644\u0633\u0627\u0628\u0642\u0629";
+      const currentNet = numericFact(facts, "current_net_flow", "finance.period_comparison") ?? 0;
+      const previousNet = numericFact(facts, "previous_net_flow", "finance.period_comparison") ?? 0;
+      return [
+        `\u0645\u0642\u0627\u0631\u0646\u0629 \u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062A: ${currentPeriod} = ${money2(currentExpense)}\u060C \u0648${previousPeriod} = ${money2(previousExpense)}.`,
+        `\u0627\u0644\u0641\u0631\u0642 ${money2(Math.abs(difference))} (${percentText(percent)}).`,
+        `\u0627\u0644\u0635\u0627\u0641\u064A: ${currentPeriod} ${money2(currentNet)} \u0645\u0642\u0627\u0628\u0644 ${money2(previousNet)} \u0641\u064A ${previousPeriod}.`
+      ].join("\n");
+    }
+    const breakdownItems = sourceFacts(facts, "finance.breakdown").filter((fact3) => /^top_\d+_/.test(fact3.label)).slice(0, 5).map((fact3) => {
+      const name2 = fact3.label.replace(/^top_\d+_/, "");
+      const amount = Number(fact3.value);
+      const count4 = Number(fact3.evidence?.[0]?.value);
+      return `- ${displayCategoryName(name2)}: ${money2(amount)}${Number.isFinite(count4) ? countText(count4) : ""}`;
+    });
+    if (breakdownItems.length > 0) {
+      const period = textFact(facts, "period", "finance.breakdown") ?? "\u0627\u0644\u0641\u062A\u0631\u0629 \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629";
+      const total = numericFact(facts, "total_expense", "finance.breakdown") ?? 0;
+      return `\u0641\u064A ${period}\u060C \u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062A ${money2(total)}. \u0623\u0639\u0644\u0649 \u0627\u0644\u0628\u0646\u0648\u062F:
+${breakdownItems.join("\n")}`;
+    }
+  }
+  if (intent.kind === "goal_planning" && !intent.slots.actionName) {
+    const progressSource = sourceFacts(facts, "finance.goal_progress").length ? "finance.goal_progress" : "goals.active";
+    const activeGoalCount = numericFact(facts, "active_goal_count", progressSource);
+    if (activeGoalCount !== void 0) {
+      if (activeGoalCount === 0) {
+        return "\u0645\u0641\u064A\u0634 \u0623\u0647\u062F\u0627\u0641 \u0627\u062F\u062E\u0627\u0631 \u0646\u0634\u0637\u0629 \u0639\u0646\u062F\u0643 \u062D\u0627\u0644\u064A\u0627. \u0646\u0642\u062F\u0631 \u0646\u0628\u062F\u0623 \u0628\u0647\u062F\u0641 \u062C\u062F\u064A\u062F \u0648\u0646\u062D\u062F\u062F\u0647 \u0628\u0645\u0628\u0644\u063A \u0648\u0645\u062F\u0629 \u0648\u0627\u0636\u062D\u0629 \u0642\u0628\u0644 \u0623\u064A \u062A\u0646\u0641\u064A\u0630.";
+      }
+      const lines = goalProgressLines(facts, progressSource);
+      if (lines.length > 0) {
+        return [
+          `\u0639\u0646\u062F\u0643 ${activeGoalCount.toLocaleString("ar-EG")} \u0623\u0647\u062F\u0627\u0641 \u0627\u062F\u062E\u0627\u0631 \u0646\u0634\u0637\u0629:`,
+          lines.join("\n"),
+          "\u0645\u0644\u0627\u062D\u0638\u0629 \u0645\u0647\u0645\u0629: \u0627\u0644\u062A\u0637\u0628\u064A\u0642 \u062D\u0627\u0644\u064A\u0627 \u0644\u0627 \u064A\u0633\u062C\u0644 \u0645\u0628\u0644\u063A \u0645\u062D\u0648\u0634 \u0641\u0639\u0644\u064A \u0645\u0646\u0641\u0635\u0644 \u062F\u0627\u062E\u0644 \u0643\u0644 \u0647\u062F\u0641\u060C \u0641\u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u062F\u064A \u062A\u0642\u062F\u064A\u0631 \u0645\u0646 \u0635\u0627\u0641\u064A \u062A\u062F\u0641\u0642\u0643 \u0627\u0644\u062D\u0627\u0644\u064A \u0648\u0644\u064A\u0633\u062A \u0631\u0635\u064A\u062F \u0647\u062F\u0641 \u0645\u062D\u0641\u0648\u0638."
+        ].join("\n");
+      }
+    }
+  }
+  if (intent.kind === "memory_question") {
+    const memoryFacts = focusMemoryFactsForQuery(
+      uniqueMemoryFacts(preferDirectMemoryFacts(facts.filter((fact3) => fact3.source === "memory.search"))),
+      intent.slots.query
+    );
+    if (memoryFacts.length === 0) {
+      return "\u0645\u0634 \u0644\u0627\u0642\u064A \u0630\u0643\u0631\u0649 \u0645\u062D\u0641\u0648\u0638\u0629 \u0648\u0627\u0636\u062D\u0629 \u0639\u0646 \u0627\u0644\u0646\u0642\u0637\u0629 \u062F\u064A. \u0644\u0648 \u062A\u062D\u0628\u060C \u0641\u0643\u0651\u0631\u0646\u064A \u0628\u0627\u0644\u062A\u0641\u0627\u0635\u064A\u0644 \u0648\u0647\u0646\u0628\u0646\u064A \u0639\u0644\u064A\u0647\u0627 \u0645\u0646 \u0647\u0646\u0627.";
+    }
+    return `\u0641\u0627\u0643\u0631 \u0627\u0644\u062E\u0644\u0627\u0635\u0629 \u062F\u064A:
+${memoryFacts.slice(0, 4).map((fact3, index2) => `${index2 + 1}. ${memoryPlanLine(String(fact3.value))}`).join("\n")}`;
+  }
+  if (intent.kind === "site_help") {
+    return buildSiteHelpContent(facts);
+  }
+  if (intent.kind === "advice_request") {
+    return buildInvestmentAdviceContent(intent, facts);
+  }
+  if (intent.kind === "chart_request" && artifacts.some((artifact) => artifact.type === "chart")) {
+    return "\u062C\u0647\u0632\u062A \u0644\u0643 \u0627\u0644\u0631\u0633\u0645 \u0627\u0644\u0628\u064A\u0627\u0646\u064A \u0645\u0646 \u0628\u064A\u0627\u0646\u0627\u062A\u0643 \u0627\u0644\u0641\u0639\u0644\u064A\u0629. \u062A\u0642\u062F\u0631 \u062A\u0631\u0627\u062C\u0639\u0647 \u0641\u064A \u0627\u0644\u0628\u0637\u0627\u0642\u0629 \u0627\u0644\u0645\u0639\u0631\u0648\u0636\u0629 \u062A\u062D\u062A \u0627\u0644\u0631\u0633\u0627\u0644\u0629.";
+  }
+  if (intent.kind === "expense_capture") {
+    return "\u0623\u0642\u062F\u0631 \u0623\u0633\u0627\u0639\u062F\u0643 \u0641\u064A \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0645\u0635\u0631\u0648\u0641\u060C \u0644\u0643\u0646 \u0644\u0627\u0632\u0645 \u0623\u0631\u0627\u062C\u0639\u0647 \u0643\u0639\u0645\u0644\u064A\u0629 \u0645\u0624\u0643\u062F\u0629 \u0642\u0628\u0644 \u0627\u0644\u062D\u0641\u0638 \u0639\u0634\u0627\u0646 \u0627\u0644\u062A\u0635\u0646\u064A\u0641 \u0648\u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u064A\u0641\u0636\u0644\u0648\u0627 \u0645\u0636\u0628\u0648\u0637\u064A\u0646.";
+  }
+  if (intent.kind === "unknown" && facts.length === 0) {
+    return "\u0645\u062D\u062A\u0627\u062C \u062A\u0648\u0636\u062D\u0644\u064A \u0642\u0635\u062F\u0643 \u0634\u0648\u064A\u0629: \u0647\u0644 \u0628\u062A\u0633\u0623\u0644 \u0639\u0646 \u0645\u0635\u0627\u0631\u064A\u0641\u060C \u0647\u062F\u0641\u060C \u062A\u0642\u0631\u064A\u0631\u060C \u0623\u0648 \u0637\u0631\u064A\u0642\u0629 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0627\u0644\u062A\u0637\u0628\u064A\u0642\u061F";
+  }
+  return void 0;
+}
+function shouldUseLLM(intent, deterministicContent) {
+  if (deterministicContent && intent.kind !== "report_request") {
+    return false;
+  }
+  return [
+    "finance_analysis",
+    "goal_planning",
+    "action_request",
+    "advice_request",
+    "report_request",
+    "chart_request"
+  ].includes(intent.kind);
+}
+function buildActiveMessages(request, intent, facts, artifacts) {
+  const historyLimit = intent.kind === "advice_request" ? 2 : 4;
+  const historyTextLimit = intent.kind === "advice_request" ? 120 : 700;
+  const history = (request.conversationHistory ?? []).slice(-historyLimit).map((message) => `${message.role}: ${message.content.slice(0, historyTextLimit)}`).join("\n");
+  const factsJson = JSON.stringify(compactFactsForPrompt(facts, intent), null, 2).slice(
+    0,
+    intent.kind === "advice_request" ? 1400 : 7e3
+  );
+  const artifactsJson = JSON.stringify(compactArtifactsForPrompt(artifacts), null, 2).slice(0, 2500);
+  const adviceGuardrail = intent.kind === "advice_request" ? "\u0641\u064A \u0627\u0644\u0646\u0635\u0627\u0626\u062D \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0623\u0648 \u0627\u0644\u0627\u0633\u062A\u062B\u0645\u0627\u0631\u064A\u0629: \u0644\u0627 \u062A\u0630\u0643\u0631 \u0646\u0633\u0628 \u0639\u0648\u0627\u0626\u062F \u0623\u0648 \u0623\u0633\u0639\u0627\u0631 \u0623\u0648 \u062A\u0648\u0642\u0639\u0627\u062A \u0631\u0642\u0645\u064A\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629 \u0641\u064A ResolvedFacts. \u0627\u062C\u0639\u0644 \u0627\u0644\u0631\u062F 90 \u0643\u0644\u0645\u0629 \u0643\u062D\u062F \u0623\u0642\u0635\u0649\u060C 4 \u0646\u0642\u0627\u0637 \u0639\u0645\u0644\u064A\u0629 \u0643\u062D\u062F \u0623\u0642\u0635\u0649\u060C \u0648\u0627\u0630\u0643\u0631 \u0627\u0644\u0645\u062E\u0627\u0637\u0631 \u0628\u0635\u0648\u0631\u0629 \u0646\u0648\u0639\u064A\u0629." : "";
+  return [
+    {
+      role: "system",
+      content: "\u0623\u0646\u062A SmartSpend AI Kernel responder. \u0631\u062F \u0628\u0627\u0644\u0644\u0647\u062C\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629 \u0627\u0644\u0631\u0627\u0642\u064A\u0629. \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0644\u0627\u0632\u0645 \u062A\u0623\u062A\u064A \u0641\u0642\u0637 \u0645\u0646 ResolvedFacts. \u0644\u0627 \u062A\u062E\u062A\u0631\u0639 \u0623\u0631\u0642\u0627\u0645. \u0644\u0648 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0637\u0644\u0628 \u062A\u0646\u0641\u064A\u0630 \u0639\u0645\u0644\u064A\u0629\u060C \u0646\u0627\u0642\u0634 \u0627\u0644\u062E\u0637\u0629 \u0648\u0627\u0648\u0636\u062D \u0623\u0646 \u0627\u0644\u062A\u0646\u0641\u064A\u0630 \u0627\u0644\u0646\u0647\u0627\u0626\u064A \u064A\u062D\u062A\u0627\u062C \u062A\u0623\u0643\u064A\u062F. \u0627\u0633\u062A\u062E\u062F\u0645 \u0625\u062C\u0627\u0628\u0629 \u0645\u062E\u062A\u0635\u0631\u0629 \u0648\u0645\u0641\u064A\u062F\u0629\u060C \u0648\u0627\u0630\u0643\u0631 \u0639\u062F\u0645 \u062A\u0648\u0641\u0631 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0628\u0635\u0631\u0627\u062D\u0629. " + adviceGuardrail
+    },
+    {
+      role: "user",
+      content: [
+        `\u0631\u0633\u0627\u0644\u0629 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645: ${request.message}`,
+        `intent: ${intent.kind}`,
+        history ? `\u0633\u064A\u0627\u0642 \u0642\u0631\u064A\u0628:
+${history}` : "",
+        `ResolvedFacts JSON:
+${factsJson || "[]"}`,
+        artifacts.length ? `Artifacts JSON:
+${artifactsJson}` : "",
+        "\u0627\u0643\u062A\u0628 \u0627\u0644\u0631\u062F \u0627\u0644\u0646\u0647\u0627\u0626\u064A \u0644\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0641\u0642\u0637."
+      ].filter(Boolean).join("\n\n")
+    }
+  ];
+}
+function fallbackActiveContent(intent, facts) {
+  if (facts.length > 0) {
+    return "\u0644\u0642\u064A\u062A \u0628\u064A\u0627\u0646\u0627\u062A \u0645\u0631\u062A\u0628\u0637\u0629 \u0628\u0633\u0624\u0627\u0644\u0643\u060C \u0644\u0643\u0646 \u0645\u062D\u062A\u0627\u062C \u0623\u0639\u064A\u062F \u0635\u064A\u0627\u063A\u062A\u0647\u0627 \u0628\u0634\u0643\u0644 \u0623\u0648\u0636\u062D. \u062C\u0631\u0651\u0628 \u062A\u0633\u0623\u0644\u0646\u064A \u0628\u0635\u064A\u063A\u0629 \u0623\u062F\u0642 \u0623\u0648 \u0627\u0637\u0644\u0628 \u062A\u0641\u0627\u0635\u064A\u0644 \u0645\u062D\u062F\u062F\u0629.";
+  }
+  if (intent.kind === "goal_planning") {
+    return "\u062A\u0645\u0627\u0645\u060C \u0646\u0642\u062F\u0631 \u0646\u0628\u0646\u064A \u0627\u0644\u062E\u0637\u0629. \u0642\u0644\u0651\u064A \u0627\u0644\u0647\u062F\u0641 \u0643\u0627\u0645\u060C \u0648\u0627\u0644\u0645\u062F\u0629 \u0627\u0644\u0645\u0646\u0627\u0633\u0628\u0629\u060C \u0648\u0647\u0644 \u0641\u064A \u0645\u0628\u0644\u063A \u062A\u0642\u062F\u0631 \u062A\u062D\u0648\u0634\u0647 \u0634\u0647\u0631\u064A\u0627\u061F";
+  }
+  if (intent.kind === "advice_request") {
+    return "\u0623\u0642\u062F\u0631 \u0623\u0633\u0627\u0639\u062F\u0643 \u0628\u062E\u0637\u0629 \u0639\u0645\u0644\u064A\u0629\u060C \u0644\u0643\u0646 \u0645\u062D\u062A\u0627\u062C \u0628\u064A\u0627\u0646\u0627\u062A \u0645\u0627\u0644\u064A\u0629 \u0623\u0648 \u062A\u0641\u0627\u0635\u064A\u0644 \u0623\u0643\u062A\u0631 \u0639\u0634\u0627\u0646 \u0627\u0644\u0646\u0635\u064A\u062D\u0629 \u062A\u0628\u0642\u0649 \u0645\u0646\u0627\u0633\u0628\u0629 \u0644\u064A\u0643.";
+  }
+  return "\u0645\u0634 \u0642\u0627\u062F\u0631 \u0623\u0648\u0635\u0644 \u0644\u0625\u062C\u0627\u0628\u0629 \u062F\u0642\u064A\u0642\u0629 \u0645\u0646 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u062A\u0627\u062D\u0629 \u062D\u0627\u0644\u064A\u0627. \u062C\u0631\u0651\u0628 \u062A\u0648\u0636\u062D \u0627\u0644\u0633\u0624\u0627\u0644 \u0634\u0648\u064A\u0629.";
+}
+async function runAIKernelActive(request, config3) {
+  const startedAt = Date.now();
+  const traceId = request.requestId ?? createTraceId();
+  try {
+    const intent = routeIntent(request.message);
+    const dataNeeds = compileDataNeeds(intent);
+    const contextPack = buildContextPack(request, intent, dataNeeds);
+    const resolved = await resolveShadowFacts(request, dataNeeds);
+    const cacheRuntime = getCacheRuntimeStatus();
+    const deterministicContent = buildDeterministicContent(intent, resolved.facts, resolved.artifacts);
+    const retrievalPolicy = retrievalPolicyFor(intent.kind, dataNeeds, resolved.cacheHits);
+    const embeddingCalls = embeddingApiCallsFromCacheHits(resolved.cacheHits);
+    const embeddingApiStatus = embeddingApiStatusFor(dataNeeds, resolved.cacheHits);
+    let content = deterministicContent;
+    let tokensUsed = contextPack.estimatedInputTokens + estimateTokens(content ?? "");
+    let model;
+    let llmCalls = 0;
+    let numericGuard;
+    let responseQualityGuard;
+    if (shouldUseLLM(intent, deterministicContent) && config3.apiKey) {
+      const maxOutputTokens = intent.kind === "advice_request" ? Math.min(220, config3.maxTokens ?? contextPack.tokenBudget.maxOutputTokens) : Math.min(config3.maxTokens ?? contextPack.tokenBudget.maxOutputTokens, contextPack.tokenBudget.maxOutputTokens);
+      const llm = await callChatCompletionAPI(config3.baseUrl, config3.apiKey, {
+        model: config3.model,
+        messages: buildActiveMessages(request, intent, resolved.facts, resolved.artifacts),
+        tool_choice: "none",
+        max_tokens: maxOutputTokens,
+        temperature: 0.35
+      });
+      content = llm.text?.trim() || deterministicContent || fallbackActiveContent(intent, resolved.facts);
+      tokensUsed = llm.tokensUsed || tokensUsed + estimateTokens(content);
+      model = llm.model;
+      llmCalls = 1;
+    }
+    if (!content) {
+      content = fallbackActiveContent(intent, resolved.facts);
+    }
+    if (llmCalls > 0) {
+      const originalAccuracy = validateNumbersAgainstFacts(content, resolved.facts);
+      const blockedNumbers = materialMissingNumbers(originalAccuracy.missing);
+      if (blockedNumbers.length > 0) {
+        numericGuard = {
+          applied: true,
+          blockedNumbers,
+          originalAccuracy: originalAccuracy.accuracy
+        };
+        content = safeContentAfterUnsupportedNumbers(intent, resolved.facts, blockedNumbers);
+        tokensUsed = contextPack.estimatedInputTokens + estimateTokens(content);
+      }
+    }
+    const responseQualityReason = !numericGuard?.applied && llmCalls > 0 ? lowQualityLLMContentReason(intent, content) : void 0;
+    if (responseQualityReason) {
+      responseQualityGuard = {
+        applied: true,
+        reason: responseQualityReason
+      };
+      content = buildGroundedAdviceContent(intent, resolved.facts);
+      tokensUsed = contextPack.estimatedInputTokens + estimateTokens(content);
+    }
+    const risk = hallucinationRiskFor(content, resolved.facts, llmCalls);
+    const response = normalizeAIResponse({
+      traceId,
+      channel: request.channel,
+      content,
+      intent,
+      dataNeeds,
+      contextPack,
+      facts: resolved.facts,
+      artifacts: resolved.artifacts,
+      model: model ?? config3.model,
+      tokensUsed,
+      debug: {
+        mode: "active",
+        deterministic: Boolean(deterministicContent),
+        llmCalls,
+        estimatedInputTokens: contextPack.estimatedInputTokens,
+        resolvedFacts: resolved.facts.length,
+        resolvedArtifacts: resolved.artifacts.length,
+        resolverErrors: resolved.errors,
+        cacheHits: resolved.cacheHits,
+        embeddingCalls,
+        embeddingApiStatus,
+        retrievalPolicy,
+        cacheRuntime,
+        numericAccuracy: {
+          accuracy: risk.numericAccuracy.accuracy,
+          numbers: risk.numericAccuracy.numbers,
+          supported: risk.numericAccuracy.supported,
+          missing: risk.numericAccuracy.missing
+        },
+        hallucinationRisk: risk.hallucinationRisk,
+        hallucinationSignals: risk.hallucinationSignals,
+        numericGuard,
+        responseQualityGuard
+      }
+    });
+    logAITrace({
+      traceId,
+      mode: "active",
+      status: "success",
+      channel: request.channel,
+      userId: request.userId,
+      userType: request.userType,
+      userPlan: request.userPlan,
+      conversationId: request.conversationId,
+      intent,
+      dataNeeds,
+      contextPack,
+      cacheHits: resolved.cacheHits,
+      cost: {
+        estimatedInputTokens: contextPack.estimatedInputTokens,
+        estimatedOutputTokens: estimateTokens(content),
+        estimatedEmbeddingCalls: embeddingCalls,
+        llmCalls
+      },
+      latencyMs: Date.now() - startedAt,
+      metadata: {
+        ...request.metadata,
+        activeModel: model ?? config3.model,
+        deterministic: Boolean(deterministicContent),
+        resolvedFacts: resolved.facts.length,
+        resolvedArtifacts: resolved.artifacts.length,
+        resolverErrors: resolved.errors,
+        cacheRuntime,
+        retrievalPolicy,
+        embeddingApiStatus,
+        numericGuard,
+        numericAccuracy: {
+          accuracy: risk.numericAccuracy.accuracy,
+          missing: risk.numericAccuracy.missing
+        },
+        hallucinationRisk: risk.hallucinationRisk,
+        hallucinationSignals: risk.hallucinationSignals,
+        responseQualityGuard
+      }
+    });
+    return response;
+  } catch (error48) {
+    const intent = fallbackIntent(error48);
+    const dataNeeds = compileDataNeeds(intent);
+    const contextPack = buildContextPack(request, intent, dataNeeds);
+    const content = fallbackActiveContent(intent, []);
+    const response = normalizeAIResponse({
+      traceId,
+      channel: request.channel,
+      content,
+      intent,
+      dataNeeds,
+      contextPack,
+      debug: {
+        mode: "active",
+        error: error48 instanceof Error ? error48.message : String(error48)
+      }
+    });
+    logAITrace({
+      traceId,
+      mode: "active",
+      status: "error",
+      channel: request.channel,
+      userId: request.userId,
+      userType: request.userType,
+      userPlan: request.userPlan,
+      conversationId: request.conversationId,
+      intent,
+      dataNeeds,
+      contextPack,
+      cacheHits: [],
+      cost: {
+        estimatedInputTokens: contextPack.estimatedInputTokens,
+        estimatedOutputTokens: estimateTokens(content),
+        estimatedEmbeddingCalls: 0,
+        llmCalls: 0
+      },
+      latencyMs: Date.now() - startedAt,
+      error: error48 instanceof Error ? error48.message : String(error48),
+      metadata: request.metadata
+    });
+    return response;
+  }
+}
+async function runAIKernelShadow(request) {
+  const startedAt = Date.now();
+  const traceId = request.requestId ?? createTraceId();
+  try {
+    const intent = routeIntent(request.message);
+    const dataNeeds = compileDataNeeds(intent);
+    const contextPack = buildContextPack(request, intent, dataNeeds);
+    const resolved = await resolveShadowFacts(request, dataNeeds);
+    const cacheRuntime = getCacheRuntimeStatus();
+    const retrievalPolicy = retrievalPolicyFor(intent.kind, dataNeeds, resolved.cacheHits);
+    const embeddingCalls = embeddingApiCallsFromCacheHits(resolved.cacheHits);
+    const embeddingApiStatus = embeddingApiStatusFor(dataNeeds, resolved.cacheHits);
+    const response = normalizeAIResponse({
+      traceId,
+      channel: request.channel,
+      content: "",
+      intent,
+      dataNeeds,
+      contextPack,
+      facts: resolved.facts,
+      artifacts: resolved.artifacts,
+      debug: {
+        mode: "shadow",
+        legacyPath: request.metadata?.legacyPath,
+        estimatedInputTokens: contextPack.estimatedInputTokens,
+        resolvedFacts: resolved.facts.length,
+        resolvedArtifacts: resolved.artifacts.length,
+        resolverErrors: resolved.errors,
+        cacheHits: resolved.cacheHits,
+        embeddingCalls,
+        embeddingApiStatus,
+        retrievalPolicy,
+        cacheRuntime
+      }
+    });
+    logAITrace({
+      traceId,
+      mode: "shadow",
+      status: "success",
+      channel: request.channel,
+      userId: request.userId,
+      userType: request.userType,
+      userPlan: request.userPlan,
+      conversationId: request.conversationId,
+      intent,
+      dataNeeds,
+      contextPack,
+      cacheHits: resolved.cacheHits,
+      cost: {
+        estimatedInputTokens: contextPack.estimatedInputTokens,
+        estimatedOutputTokens: contextPack.tokenBudget.maxOutputTokens,
+        estimatedEmbeddingCalls: embeddingCalls,
+        llmCalls: 0
+      },
+      latencyMs: Date.now() - startedAt,
+      metadata: {
+        ...request.metadata,
+        resolvedFacts: resolved.facts.length,
+        resolvedArtifacts: resolved.artifacts.length,
+        resolverErrors: resolved.errors,
+        cacheRuntime,
+        retrievalPolicy,
+        embeddingApiStatus
+      }
+    });
+    return response;
+  } catch (error48) {
+    const intent = fallbackIntent(error48);
+    const dataNeeds = compileDataNeeds(intent);
+    const contextPack = buildContextPack(request, intent, dataNeeds);
+    const response = normalizeAIResponse({
+      traceId,
+      channel: request.channel,
+      content: "",
+      intent,
+      dataNeeds,
+      contextPack,
+      debug: {
+        mode: "shadow",
+        error: error48 instanceof Error ? error48.message : String(error48)
+      }
+    });
+    logAITrace({
+      traceId,
+      mode: "shadow",
+      status: "error",
+      channel: request.channel,
+      userId: request.userId,
+      userType: request.userType,
+      userPlan: request.userPlan,
+      conversationId: request.conversationId,
+      intent,
+      dataNeeds,
+      contextPack,
+      cacheHits: [],
+      cost: {
+        estimatedInputTokens: contextPack.estimatedInputTokens,
+        estimatedOutputTokens: 0,
+        estimatedEmbeddingCalls: 0,
+        llmCalls: 0
+      },
+      latencyMs: Date.now() - startedAt,
+      error: error48 instanceof Error ? error48.message : String(error48),
+      metadata: request.metadata
+    });
+    return response;
+  }
+}
+var CATEGORY_DISPLAY_NAMES2, MEMORY_SUBJECT_HINTS;
+var init_ai_kernel = __esm({
+  "api/services/ai-kernel/index.ts"() {
+    init_ai_trace_logger();
+    init_deepseek_client();
+    init_redis_client();
+    init_ai_cost_policy();
+    init_context_packer();
+    init_data_need_compiler();
+    init_intent_router();
+    init_retrieval_policy();
+    init_response_normalizer();
+    init_text_utils();
+    init_types6();
+    init_context_packer();
+    init_data_need_compiler();
+    init_intent_router();
+    init_retrieval_policy();
+    init_response_normalizer();
+    init_ai_trace_logger();
+    CATEGORY_DISPLAY_NAMES2 = {
+      food: "\u0627\u0644\u0623\u0643\u0644",
+      transport: "\u0627\u0644\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+      shopping: "\u0627\u0644\u062A\u0633\u0648\u0642",
+      health: "\u0627\u0644\u0635\u062D\u0629",
+      bills: "\u0627\u0644\u0641\u0648\u0627\u062A\u064A\u0631",
+      income: "\u0627\u0644\u062F\u062E\u0644",
+      saving: "\u0627\u0644\u0627\u062F\u062E\u0627\u0631",
+      uncategorized: "\u063A\u064A\u0631 \u0645\u0635\u0646\u0641"
+    };
+    MEMORY_SUBJECT_HINTS = [
+      "\u0643\u0627\u0645\u064A\u0631\u0627",
+      "\u0645\u0648\u0628\u0627\u064A\u0644",
+      "\u0633\u0645\u0627\u0639\u0627\u062A",
+      "\u0639\u0631\u0628\u064A\u0647",
+      "\u0639\u0631\u0628\u064A\u0629",
+      "\u0634\u0642\u0647",
+      "\u0634\u0642\u0629",
+      "\u0644\u0627\u0628\u062A\u0648\u0628",
+      "\u0633\u0644\u0641\u0647",
+      "\u0633\u0644\u0641\u0629"
+    ];
+  }
+});
+
+// api/services/voice-kernel/types.ts
+var init_types9 = __esm({
+  "api/services/voice-kernel/types.ts"() {
+  }
+});
+
+// api/services/voice-kernel/hot-context.ts
+function money3(value) {
+  if (value === null || value === void 0 || !Number.isFinite(Number(value))) return "unknown";
+  const numeric2 = Number(value);
+  return Number.isInteger(numeric2) ? String(numeric2) : numeric2.toFixed(2).replace(/\.?0+$/, "");
+}
+function compactText(value, max3 = 120) {
+  const text2 = String(value ?? "").replace(/\s+/g, " ").trim();
+  return text2.length > max3 ? `${text2.slice(0, max3 - 3)}...` : text2;
+}
+function financeSnapshot(summary) {
+  return {
+    period: summary.period.label,
+    totalIncome: summary.totalIncome,
+    totalExpense: summary.totalExpense,
+    netFlow: summary.netFlow,
+    transactionCount: summary.transactionCount,
+    dailyAverageExpense: summary.dailyAverageExpense
+  };
+}
+function profileSnapshot(profile) {
+  return {
+    monthlyIncome: profile.monthlyIncome,
+    financialGoal: profile.financialGoal,
+    financialPersonality: profile.financialPersonality,
+    salaryDay: profile.salaryDay
+  };
+}
+function goalSnapshots(result) {
+  return result.goals.slice(0, 5).map((goal) => ({
+    id: goal.id,
+    title: goal.title,
+    targetAmount: goal.targetAmount,
+    targetDate: goal.targetDate,
+    estimatedMonthlyCapacity: goal.estimatedMonthlyCapacity,
+    estimatedMonthsNeeded: goal.estimatedMonthsNeeded
+  }));
+}
+async function capture(label, errors, fn) {
+  try {
+    return await fn();
+  } catch (error48) {
+    errors.push(`${label}:${error48 instanceof Error ? error48.message : String(error48)}`);
+    return void 0;
+  }
+}
+async function loadRecentMemoryHints(input) {
+  const [capsules, memories, actions] = await Promise.all([
+    db.select({ content: aiConversationSummaries.capsule, updatedAt: aiConversationSummaries.updatedAt }).from(aiConversationSummaries).where(
+      and(
+        eq(aiConversationSummaries.userId, input.userId),
+        eq(aiConversationSummaries.userType, input.userType)
+      )
+    ).orderBy(desc(aiConversationSummaries.updatedAt)).limit(4),
+    db.select({ content: aiMemoryItems.content, updatedAt: aiMemoryItems.updatedAt }).from(aiMemoryItems).where(
+      and(
+        eq(aiMemoryItems.userId, input.userId),
+        eq(aiMemoryItems.userType, input.userType),
+        eq(aiMemoryItems.status, "active")
+      )
+    ).orderBy(desc(aiMemoryItems.updatedAt)).limit(5),
+    db.select({ content: aiActionMemory.summary, updatedAt: aiActionMemory.updatedAt }).from(aiActionMemory).where(
+      and(
+        eq(aiActionMemory.userId, input.userId),
+        eq(aiActionMemory.userType, input.userType)
+      )
+    ).orderBy(desc(aiActionMemory.updatedAt)).limit(3)
+  ]);
+  const seen = /* @__PURE__ */ new Set();
+  return [...memories, ...capsules, ...actions].map((item) => compactText(item.content, 110)).filter((content) => {
+    const key = content.toLowerCase();
+    if (!content || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 5);
+}
+async function buildVoiceHotContext(input) {
+  const errors = [];
+  const baseCtx = {
+    userId: input.userId,
+    userType: input.userType
+  };
+  const profile = await capture("profile", errors, () => getProfileSnapshot(baseCtx));
+  const financeCtx = {
+    ...baseCtx,
+    salaryDay: profile?.salaryDay
+  };
+  const [today, month, goals, memory] = await Promise.all([
+    capture("today_summary", errors, () => getFinanceSummary(financeCtx, { period: "today" })),
+    capture("month_summary", errors, () => getFinanceSummary(financeCtx, { period: "current_month" })),
+    capture("active_goals", errors, () => getGoalProgress(financeCtx)),
+    capture("recent_memory", errors, () => loadRecentMemoryHints(input))
+  ]);
+  const recentCapsules = memory ?? [];
+  return {
+    profile: profile ? profileSnapshot(profile) : void 0,
+    today: today ? financeSnapshot(today) : void 0,
+    month: month ? financeSnapshot(month) : void 0,
+    activeGoals: goals ? goalSnapshots(goals) : [],
+    recentCapsules,
+    errors
+  };
+}
+function renderVoiceHotContext(context2) {
+  const lines = ["HOT_FACTS"];
+  if (context2.profile) {
+    lines.push(
+      `profile: income=${money3(context2.profile.monthlyIncome)}; salary_day=${context2.profile.salaryDay}; goal=${compactText(context2.profile.financialGoal ?? "unknown", 60)}; personality=${compactText(context2.profile.financialPersonality ?? "unknown", 60)}`
+    );
+  }
+  if (context2.today) {
+    lines.push(
+      `today: expense=${money3(context2.today.totalExpense)}; income=${money3(context2.today.totalIncome)}; net=${money3(context2.today.netFlow)}; tx=${context2.today.transactionCount}; avg=${money3(context2.today.dailyAverageExpense)}`
+    );
+  }
+  if (context2.month) {
+    lines.push(
+      `month: expense=${money3(context2.month.totalExpense)}; income=${money3(context2.month.totalIncome)}; net=${money3(context2.month.netFlow)}; tx=${context2.month.transactionCount}; avg=${money3(context2.month.dailyAverageExpense)}`
+    );
+  }
+  if (context2.activeGoals.length > 0) {
+    lines.push(
+      `goals: ${context2.activeGoals.map(
+        (goal) => `${compactText(goal.title, 40)} target=${money3(goal.targetAmount)} months=${goal.estimatedMonthsNeeded ?? "unknown"}`
+      ).join(" | ")}`
+    );
+  }
+  if (context2.recentCapsules.length > 0) {
+    lines.push(`recent_memory: ${context2.recentCapsules.join(" | ")}`);
+  }
+  if (context2.errors.length > 0) {
+    lines.push(`context_errors: ${context2.errors.slice(0, 3).join(" | ")}`);
+  }
+  return lines.join("\n");
+}
+var init_hot_context = __esm({
+  "api/services/voice-kernel/hot-context.ts"() {
+    init_schema2();
+    init_connection();
+    init_drizzle_orm();
+    init_finance_semantic_layer();
+  }
+});
+
+// api/services/voice-kernel/voice-prompt.ts
+function buildVoiceSystemPrompt(hotContext) {
+  return `
+You are Smart, a practical Egyptian Arabic financial assistant in a live voice call.
+Speak in short, natural Egyptian Arabic. Keep most replies to one or two short sentences.
+
+Voice rules:
+- Do not dump tables or long lists in voice.
+- If the user asks for exact money, categories, transactions, charts, goals, or old chat memory, call the smallest matching tool first.
+- Use wallet_summary for wallet/balance questions and period_comparison for comparisons such as this month vs last month.
+- Never invent financial numbers. Use HOT_FACTS only for quick top-level answers; use tools for exact or deeper questions.
+- For actions inside the website, discuss the plan first, then create a draft action, then ask for explicit confirmation.
+- Low and medium risk actions can execute after clear voice confirmation. High risk actions must return UI confirmation and must not execute by voice.
+- If a tool returns an error or missing data, say the limitation briefly and ask one focused follow-up.
+
+${renderVoiceHotContext(hotContext)}
+`.trim();
+}
+var init_voice_prompt = __esm({
+  "api/services/voice-kernel/voice-prompt.ts"() {
+    init_hot_context();
+  }
+});
+
+// api/services/voice-kernel/voice-session-state.ts
+import { randomUUID } from "crypto";
+function sessionKey(sessionId) {
+  return `voice_session:${sessionId}`;
+}
+function nowIso() {
+  return (/* @__PURE__ */ new Date()).toISOString();
+}
+function expiresIso() {
+  return new Date(Date.now() + VOICE_SESSION_TTL_SECONDS * 1e3).toISOString();
+}
+function cloneState(state) {
+  return JSON.parse(JSON.stringify(state));
+}
+function pruneMemoryStore() {
+  const now = Date.now();
+  for (const [key, value] of memoryStore.entries()) {
+    if (value.expiresAtMs <= now) memoryStore.delete(key);
+  }
+}
+function canUseMemoryFallback() {
+  return getCacheRuntimeStatus().memoryFallbackAllowed;
+}
+function voiceSessionRedisRequiredError() {
+  return new Error("Voice session state requires Redis when memory cache fallback is disabled.");
+}
+async function saveState(state) {
+  const next = {
+    ...state,
+    updatedAt: nowIso()
+  };
+  const redis = await getRedisClient();
+  if (redis) {
+    try {
+      await redis.setEx(sessionKey(next.sessionId), VOICE_SESSION_TTL_SECONDS, JSON.stringify(next));
+      return cloneState(next);
+    } catch (error48) {
+      console.warn("[Voice Session] Redis set failed, using memory fallback", error48);
+    }
+  }
+  if (!canUseMemoryFallback()) {
+    throw voiceSessionRedisRequiredError();
+  }
+  pruneMemoryStore();
+  memoryStore.set(next.sessionId, {
+    expiresAtMs: Date.now() + VOICE_SESSION_TTL_SECONDS * 1e3,
+    state: cloneState(next)
+  });
+  return cloneState(next);
+}
+async function createVoiceSessionState(input) {
+  const startedAt = nowIso();
+  return saveState({
+    sessionId: input.sessionId ?? `voice_${randomUUID()}`,
+    userId: input.userId,
+    userType: input.userType,
+    userPlan: input.userPlan,
+    status: "active",
+    startedAt,
+    updatedAt: startedAt,
+    expiresAt: expiresIso(),
+    pendingActions: []
+  });
+}
+async function getVoiceSessionState(sessionId) {
+  const redis = await getRedisClient();
+  if (redis) {
+    try {
+      const cached2 = await redis.get(sessionKey(sessionId));
+      if (cached2) return JSON.parse(cached2);
+    } catch (error48) {
+      console.warn("[Voice Session] Redis get failed, using memory fallback", error48);
+    }
+  }
+  if (!canUseMemoryFallback()) {
+    return null;
+  }
+  pruneMemoryStore();
+  const entry = memoryStore.get(sessionId);
+  return entry ? cloneState(entry.state) : null;
+}
+async function updateVoiceSessionState(sessionId, updater) {
+  const current = await getVoiceSessionState(sessionId);
+  if (!current) return null;
+  return saveState(updater(current));
+}
+async function addVoicePendingAction(sessionId, action) {
+  const updated = await updateVoiceSessionState(sessionId, (state) => ({
+    ...state,
+    pendingActions: [
+      ...state.pendingActions.filter((item) => item.id !== action.id),
+      action
+    ]
+  }));
+  if (!updated) {
+    throw new Error("Voice session not found");
+  }
+  return action;
+}
+async function getVoicePendingAction(sessionId, actionId) {
+  const state = await getVoiceSessionState(sessionId);
+  if (!state) return null;
+  const pending = state.pendingActions.filter((action) => action.status === "pending_confirmation");
+  if (actionId) return pending.find((action) => action.id === actionId) ?? null;
+  return pending[pending.length - 1] ?? null;
+}
+async function updateVoicePendingAction(sessionId, actionId, patch) {
+  let nextAction = null;
+  const updated = await updateVoiceSessionState(sessionId, (state) => ({
+    ...state,
+    pendingActions: state.pendingActions.map((action) => {
+      if (action.id !== actionId) return action;
+      nextAction = {
+        ...action,
+        ...patch,
+        updatedAt: nowIso()
+      };
+      return nextAction;
+    })
+  }));
+  if (!updated) return null;
+  return nextAction;
+}
+async function endVoiceSessionState(sessionId) {
+  await updateVoiceSessionState(sessionId, (state) => ({
+    ...state,
+    status: "ended"
+  }));
+}
+async function clearVoiceSessionState(sessionId) {
+  const redis = await getRedisClient();
+  if (redis) {
+    try {
+      await redis.del(sessionKey(sessionId));
+    } catch (error48) {
+      console.warn("[Voice Session] Redis delete failed", error48);
+    }
+  }
+  memoryStore.delete(sessionId);
+}
+var VOICE_SESSION_TTL_SECONDS, memoryStore;
+var init_voice_session_state = __esm({
+  "api/services/voice-kernel/voice-session-state.ts"() {
+    init_redis_client();
+    VOICE_SESSION_TTL_SECONDS = 60 * 60;
+    memoryStore = /* @__PURE__ */ new Map();
+  }
+});
+
+// api/services/action-runtime/artifacts.ts
+function goalSummary(payload) {
+  const parts = [payload.title];
+  if (payload.targetAmount) parts.push(`${payload.targetAmount} EGP`);
+  if (payload.targetDate) parts.push(`until ${payload.targetDate}`);
+  return parts.join(" - ");
+}
+function displayCategory(value) {
+  const categories = {
+    food: "food",
+    transport: "transport",
+    shopping: "shopping",
+    health: "health",
+    bills: "bills",
+    saving: "saving",
+    uncategorized: "uncategorized"
+  };
+  return categories[value ?? ""] ?? value ?? "uncategorized";
+}
+function actionSummary(actionName, payload) {
+  if (actionName === "goal.create") return goalSummary(payload);
+  if (actionName === "goal.update") {
+    const goal = payload;
+    return `Update goal #${goal.goalId}${goal.title ? ` - ${goal.title}` : ""}${goal.targetAmount ? ` - ${goal.targetAmount} EGP` : ""}`;
+  }
+  if (actionName === "goal.stop") {
+    const goal = payload;
+    return `Stop goal #${goal.goalId}${goal.reason ? ` - ${goal.reason.slice(0, 80)}` : ""}`;
+  }
+  if (actionName === "expense.create") {
+    const expense = payload;
+    return `Record expense ${expense.amount} EGP - ${displayCategory(expense.category)}${expense.placeHint ? ` - ${expense.placeHint}` : ""}`;
+  }
+  if (actionName === "expense.recategorize") {
+    const expense = payload;
+    return `Recategorize expense #${expense.expenseId} to ${displayCategory(expense.category)}`;
+  }
+  if (actionName === "budget.create") {
+    const budget2 = payload;
+    return `${budget2.title} - ${budget2.monthlyLimit} EGP${budget2.category ? ` - ${displayCategory(budget2.category)}` : ""}`;
+  }
+  if (actionName === "profile.update") {
+    const profile = payload;
+    return `Update profile ${profile.section}: ${Object.keys(profile.patch).join(", ")}`;
+  }
+  if (actionName === "wallet.create") {
+    const wallet = payload;
+    return `Create wallet ${wallet.name} (${wallet.provider})`;
+  }
+  if (actionName === "wallet.update") {
+    const wallet = payload;
+    return `Update wallet #${wallet.walletId}${wallet.name ? ` - ${wallet.name}` : ""}${wallet.balance ? ` - balance ${wallet.balance}` : ""}`;
+  }
+  const undo = payload;
+  return `Undo ${undo.targetActionName ?? "last reversible action"}`;
+}
+function actionTitle(actionName) {
+  const titles = {
+    "goal.create": "Confirm goal creation",
+    "goal.update": "Confirm goal update",
+    "goal.stop": "Confirm goal stop",
+    "expense.create": "Confirm expense recording",
+    "expense.recategorize": "Confirm expense recategorization",
+    "budget.create": "Confirm budget plan",
+    "profile.update": "Confirm profile update",
+    "wallet.create": "Confirm wallet creation",
+    "wallet.update": "Confirm wallet update",
+    "action.undo": "Confirm undo"
+  };
+  return titles[actionName] ?? "Confirm action";
+}
+function actionConfirmationArtifact(action) {
+  return {
+    id: `action_confirmation:${action.id}`,
+    type: "action_confirmation",
+    title: actionTitle(action.name),
+    payload: {
+      actionId: action.id,
+      actionName: action.name,
+      summary: action.summary,
+      risk: action.risk,
+      fields: action.payload,
+      confirmLabel: "Confirm",
+      cancelLabel: "Cancel"
+    }
+  };
+}
+var init_artifacts = __esm({
+  "api/services/action-runtime/artifacts.ts"() {
+  }
+});
+
+// api/services/action-runtime/extended-actions.ts
+function normalizeDigits(value) {
+  const arabic = "\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669";
+  const eastern = "\u06F0\u06F1\u06F2\u06F3\u06F4\u06F5\u06F6\u06F7\u06F8\u06F9";
+  return value.replace(/[٠-٩۰-۹]/g, (digit) => {
+    const arabicIndex = arabic.indexOf(digit);
+    if (arabicIndex >= 0) return String(arabicIndex);
+    const easternIndex = eastern.indexOf(digit);
+    return easternIndex >= 0 ? String(easternIndex) : digit;
+  });
+}
+function extractAmount(message) {
+  const normalized = normalizeDigits(message.toLowerCase());
+  const match2 = normalized.match(/(\d+(?:[.,]\d+)?)\s*(الف|ألف|k|مليون|million)?/i);
+  if (!match2) return void 0;
+  const base = Number(match2[1].replace(",", "."));
+  if (!Number.isFinite(base) || base <= 0) return void 0;
+  const unit = match2[2] ?? "";
+  if (unit === "\u0645\u0644\u064A\u0648\u0646" || unit === "million") return Math.round(base * 1e6);
+  if (unit === "\u0627\u0644\u0641" || unit === "\u0623\u0644\u0641" || unit.toLowerCase() === "k") return Math.round(base * 1e3);
+  return Math.round(base);
+}
+function categoryFromMessage(message) {
+  const normalized = message.toLowerCase();
+  if (/(اكل|أكل|مطاعم|قهوة|قهوه|عصير|مشروب|مشروبات|كافيه|كافيهات|juice|drink|food|restaurant)/i.test(normalized)) return "food";
+  if (/(مواصلات|بنزين|اوبر|transport|gas)/i.test(normalized)) return "transport";
+  if (/(تسوق|ملابس|shopping)/i.test(normalized)) return "shopping";
+  if (/(ادخار|تحويش|saving)/i.test(normalized)) return "saving";
+  return void 0;
+}
+function isExpenseCaptureMessage(message) {
+  const normalized = normalizeDigits(message.toLowerCase());
+  if (!extractAmount(message)) return false;
+  if (/(كام|كم|قد ايه|اجمالي|مجموع|ملخص|تقرير)/i.test(normalized)) return false;
+  return /(سجل|احفظ|اضف|ضيف|اشتريت|دفعت|صرفت|مصروف|expense|add)/i.test(normalized);
+}
+function extractPlaceHint(message) {
+  const normalized = message.trim();
+  const match2 = normalized.match(/(?:من|في|عند)\s+([^،,.؟\n]{2,80})/i);
+  return match2?.[1]?.replace(/(النهارده|اليوم|today|امبارح|yesterday)/gi, "").replace(/\s+/g, " ").trim();
+}
+function extractExpenseDate(message) {
+  const normalized = message.toLowerCase();
+  const date6 = /* @__PURE__ */ new Date();
+  if (/(امبارح|yesterday)/i.test(normalized)) {
+    date6.setDate(date6.getDate() - 1);
+    return date6.toISOString().slice(0, 10);
+  }
+  if (/(النهارده|اليوم|today)/i.test(normalized)) {
+    return date6.toISOString().slice(0, 10);
+  }
+  return void 0;
+}
+function createExpensePayloadFromMessage(message) {
+  if (!isExpenseCaptureMessage(message)) return null;
+  const amount = extractAmount(message);
+  if (!amount) return null;
+  const category = categoryFromMessage(message) ?? "uncategorized";
+  const placeHint = extractPlaceHint(message);
+  return {
+    amount,
+    type: "expense",
+    category,
+    subCategory: category === "uncategorized" ? "\u0639\u0627\u0645" : void 0,
+    description: placeHint ? `\u0645\u0635\u0631\u0648\u0641 \u0645\u0646 ${placeHint}` : message.trim().slice(0, 160),
+    rawText: message.trim(),
+    date: extractExpenseDate(message),
+    placeHint
+  };
+}
+function createBudgetPayloadFromMessage(message) {
+  const normalized = message.toLowerCase();
+  if (!/(ميزانية|حد شهري|budget|limit)/i.test(normalized)) return null;
+  const amount = extractAmount(message);
+  if (!amount) return null;
+  const category = categoryFromMessage(message);
+  return {
+    title: category ? `\u0645\u064A\u0632\u0627\u0646\u064A\u0629 ${category}` : "\u0645\u064A\u0632\u0627\u0646\u064A\u0629 \u0634\u0647\u0631\u064A\u0629 \u062C\u062F\u064A\u062F\u0629",
+    category,
+    monthlyLimit: amount
+  };
+}
+function createProfileUpdatePayloadFromMessage(message) {
+  const normalized = message.toLowerCase();
+  const amount = extractAmount(message);
+  if (amount && /(دخلي|مرتبي|راتبي|income|salary)/i.test(normalized)) {
+    return {
+      section: "financialInfo",
+      patch: { averageMonthlyIncome: amount }
+    };
+  }
+  const profession = normalized.match(/(?:وظيفتي|شغلي|profession)\s*(?:هي|:)?\s*([\p{L}\s]{2,40})/iu);
+  if (profession?.[1]) {
+    return {
+      section: "basicInfo",
+      patch: { profession: profession[1].trim() }
+    };
+  }
+  return null;
+}
+function providerFromMessage(message) {
+  const normalized = message.toLowerCase();
+  if (/cib/.test(normalized)) return "CIB";
+  if (/vodafone|فودافون/.test(normalized)) return "VodafoneCash";
+  if (/instapay|انستاباي/.test(normalized)) return "InstaPay";
+  if (/visa|فيزا/.test(normalized)) return "Visa";
+  if (/mastercard|ماستر/.test(normalized)) return "Mastercard";
+  return "Card";
+}
+function createWalletPayloadFromMessage(message) {
+  const normalized = message.toLowerCase();
+  if (!/(محفظة|كارت|فيزا|wallet|card)/i.test(normalized)) return null;
+  if (/(ازاي|كيف|شرح|طريقة|خطوات|how to|what is|\?|\u061f)/i.test(normalized)) return null;
+  if (!/(ضيف|اضف|اربط|سجل|add|create|link)/i.test(normalized)) return null;
+  const provider = providerFromMessage(message);
+  const lastFour = normalizeDigits(message).match(/(?:اخر|آخر|ending|last)?\s*(\d{4})(?!\d)/i)?.[1];
+  const balanceMatch = normalizeDigits(message).match(/(?:رصيد|balance)\s*(\d+(?:[.,]\d+)?)/i);
+  const balance = balanceMatch ? Number(balanceMatch[1].replace(",", ".")) : void 0;
+  return {
+    name: provider === "Card" ? "\u0643\u0627\u0631\u062A \u062C\u062F\u064A\u062F" : provider,
+    provider,
+    lastFourDigits: lastFour,
+    balance: balance && Number.isFinite(balance) ? String(Math.round(balance)) : void 0
+  };
+}
+function extractEntityId(message, labels) {
+  const normalized = normalizeDigits(message.toLowerCase());
+  for (const label of labels) {
+    const match2 = normalized.match(new RegExp(`${label}\\s*#?\\s*(\\d+)`, "i"));
+    if (match2?.[1]) {
+      const id = Number(match2[1]);
+      if (Number.isInteger(id) && id > 0) return id;
+    }
+  }
+  const generic = normalized.match(/#\s*(\d+)/);
+  if (generic?.[1]) {
+    const id = Number(generic[1]);
+    if (Number.isInteger(id) && id > 0) return id;
+  }
+  return void 0;
+}
+function createGoalUpdatePayloadFromMessage(message) {
+  const normalized = message.toLowerCase();
+  if (!/(goal|target)/i.test(normalized) || !/(update|edit|change|modify)/i.test(normalized)) return null;
+  const goalId = extractEntityId(message, ["goal", "target"]);
+  if (!goalId) return null;
+  const amountMatch = normalizeDigits(message).match(/(?:targetAmount|target amount|amount)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
+  const amount = amountMatch ? Number(amountMatch[1].replace(",", ".")) : void 0;
+  const titleMatch = message.match(/(?:title|name)\s*[:=]\s*([^,\n]{2,120})/i);
+  const statusMatch = normalized.match(/\b(active|completed|cancelled)\b/i);
+  const payload = {
+    goalId,
+    title: titleMatch?.[1]?.trim(),
+    targetAmount: amount,
+    status: statusMatch?.[1]
+  };
+  return goalUpdatePayloadSchema.safeParse(payload).success ? payload : null;
+}
+function createGoalStopPayloadFromMessage(message) {
+  const normalized = message.toLowerCase();
+  if (!/(goal|target)/i.test(normalized) || !/(stop|pause|cancel|delete|archive)/i.test(normalized)) return null;
+  const goalId = extractEntityId(message, ["goal", "target"]);
+  if (!goalId) return null;
+  return { goalId, reason: message.trim().slice(0, 500) };
+}
+function createExpenseRecategorizePayloadFromMessage(message) {
+  const normalized = message.toLowerCase();
+  if (!/(expense|transaction)/i.test(normalized) || !/(category|recategorize|classify|change)/i.test(normalized)) return null;
+  const expenseId = extractEntityId(message, ["expense", "transaction"]);
+  if (!expenseId) return null;
+  const category = normalized.match(/category\s*(?:to|:|=)?\s*([a-z_]{2,40})/i)?.[1] ?? normalized.match(/\bto\s+([a-z_]{2,40})/i)?.[1] ?? categoryFromMessage(message);
+  if (!category) return null;
+  return {
+    expenseId,
+    category,
+    reason: message.trim().slice(0, 500)
+  };
+}
+function createWalletUpdatePayloadFromMessage(message) {
+  const normalized = message.toLowerCase();
+  if (!/(wallet|card)/i.test(normalized) || !/(update|edit|change|modify)/i.test(normalized)) return null;
+  const walletId = extractEntityId(message, ["wallet", "card"]);
+  if (!walletId) return null;
+  const provider = providerFromMessage(message);
+  const balanceMatch = normalizeDigits(message).match(/(?:balance)\s*(\d+(?:[.,]\d+)?)/i);
+  const lastFour = normalizeDigits(message).match(/(?:last|ending)\s*(\d{4})(?!\d)/i)?.[1];
+  const nameMatch = message.match(/(?:name|title)\s*[:=]\s*([^,\n]{2,100})/i);
+  const payload = {
+    walletId,
+    name: nameMatch?.[1]?.trim(),
+    provider: provider === "Card" ? void 0 : provider,
+    lastFourDigits: lastFour,
+    balance: balanceMatch ? Number(balanceMatch[1].replace(",", ".")).toFixed(2) : void 0
+  };
+  return walletUpdatePayloadSchema.safeParse(payload).success ? payload : null;
+}
+function createUndoPayloadFromMessage(message) {
+  const normalized = message.toLowerCase();
+  if (!/(تراجع|ارجع|رجع|الغاء اخر|إلغاء آخر|undo|revert)/i.test(normalized)) return null;
+  return {};
+}
+function createPhase8PayloadFromMessage(message) {
+  const undo = createUndoPayloadFromMessage(message);
+  if (undo) return { actionName: "action.undo", payload: undo };
+  const goalStop = createGoalStopPayloadFromMessage(message);
+  if (goalStop) return { actionName: "goal.stop", payload: goalStop };
+  const goalUpdate = createGoalUpdatePayloadFromMessage(message);
+  if (goalUpdate) return { actionName: "goal.update", payload: goalUpdate };
+  const walletUpdate = createWalletUpdatePayloadFromMessage(message);
+  if (walletUpdate) return { actionName: "wallet.update", payload: walletUpdate };
+  const expenseRecategorize = createExpenseRecategorizePayloadFromMessage(message);
+  if (expenseRecategorize) return { actionName: "expense.recategorize", payload: expenseRecategorize };
+  const expense = createExpensePayloadFromMessage(message);
+  if (expense) return { actionName: "expense.create", payload: expense };
+  const wallet = createWalletPayloadFromMessage(message);
+  if (wallet) return { actionName: "wallet.create", payload: wallet };
+  const profile = createProfileUpdatePayloadFromMessage(message);
+  if (profile) return { actionName: "profile.update", payload: profile };
+  const budget2 = createBudgetPayloadFromMessage(message);
+  if (budget2) return { actionName: "budget.create", payload: budget2 };
+  return null;
+}
+function createBudgetSuggestionFromGoal(goal, goalId) {
+  if (!goal.targetAmount) return null;
+  const targetDate = goal.targetDate ? new Date(goal.targetDate) : null;
+  const months = targetDate && Number.isFinite(targetDate.getTime()) ? Math.max(1, Math.ceil((targetDate.getTime() - Date.now()) / (30 * 24 * 60 * 60 * 1e3))) : 12;
+  return {
+    title: `\u0645\u064A\u0632\u0627\u0646\u064A\u0629 \u0627\u062F\u062E\u0627\u0631: ${goal.title}`,
+    category: "saving",
+    monthlyLimit: Math.ceil(goal.targetAmount / months),
+    linkedGoalId: goalId
+  };
+}
+async function validateRuntimeAction(_ctx, actionName, payload) {
+  if (actionName === "goal.update") return goalUpdatePayloadSchema.parse(payload);
+  if (actionName === "goal.stop") return goalStopPayloadSchema.parse(payload);
+  if (actionName === "expense.create") return expenseCreatePayloadSchema.parse(payload);
+  if (actionName === "expense.recategorize") return expenseRecategorizePayloadSchema.parse(payload);
+  if (actionName === "budget.create") return budgetCreatePayloadSchema.parse(payload);
+  if (actionName === "profile.update") return profileUpdatePayloadSchema.parse(payload);
+  if (actionName === "wallet.create") return walletCreatePayloadSchema.parse(payload);
+  if (actionName === "wallet.update") return walletUpdatePayloadSchema.parse(payload);
+  if (actionName === "action.undo") return undoPayloadSchema.parse(payload);
+  return payload;
+}
+async function executeExpenseCreate(ctx, payload) {
+  const expense = expenseCreatePayloadSchema.parse(payload);
+  const expenseDate = expense.date ? new Date(expense.date) : /* @__PURE__ */ new Date();
+  const [inserted] = await db.insert(expenses).values({
+    userId: ctx.userId,
+    userType: ctx.userType,
+    type: expense.type ?? "expense",
+    amount: expense.amount.toString(),
+    category: expense.category,
+    subCategory: expense.subCategory || "\u0639\u0627\u0645",
+    description: expense.description || "",
+    rawText: expense.rawText,
+    source: "ai_parsed",
+    placeHint: expense.placeHint || null,
+    date: Number.isNaN(expenseDate.getTime()) ? /* @__PURE__ */ new Date() : expenseDate
+  });
+  invalidateUserMemory(ctx.userId, ctx.userType);
+  await invalidateFinanceUserCache(ctx.userId, ctx.userType);
+  return {
+    expenseId: Number(inserted?.insertId || 0),
+    amount: expense.amount,
+    category: expense.category,
+    description: expense.description || "",
+    date: (Number.isNaN(expenseDate.getTime()) ? /* @__PURE__ */ new Date() : expenseDate).toISOString().slice(0, 10)
+  };
+}
+async function executeGoalUpdate(ctx, payload) {
+  const goal = goalUpdatePayloadSchema.parse(payload);
+  const [existing] = await db.select().from(financialGoals).where(
     and(
+      eq(financialGoals.id, goal.goalId),
+      eq(financialGoals.userId, ctx.userId),
+      eq(financialGoals.userType, ctx.userType)
+    )
+  ).limit(1);
+  if (!existing) throw new Error("Goal not found");
+  const update = {};
+  if (goal.title !== void 0) update.title = goal.title;
+  if (goal.description !== void 0) update.description = goal.description || null;
+  if (goal.targetAmount !== void 0) update.targetAmount = goal.targetAmount.toString();
+  if (goal.targetDate !== void 0) {
+    const parsedDate = goal.targetDate ? new Date(goal.targetDate) : null;
+    if (parsedDate && Number.isNaN(parsedDate.getTime())) throw new Error("Invalid targetDate");
+    update.targetDate = parsedDate;
+  }
+  if (goal.status !== void 0) update.status = goal.status;
+  await db.update(financialGoals).set(update).where(
+    and(
+      eq(financialGoals.id, goal.goalId),
       eq(financialGoals.userId, ctx.userId),
       eq(financialGoals.userType, ctx.userType)
     )
   );
+  await invalidateFinanceUserCache(ctx.userId, ctx.userType);
+  invalidateUserMemory(ctx.userId, ctx.userType);
   return {
-    goals: goals.map((g) => ({
-      title: g.title,
-      target_amount: Number(g.targetAmount || 0),
-      status: g.status,
-      description: g.description
-    }))
+    goalId: goal.goalId,
+    previous: {
+      title: existing.title,
+      description: existing.description,
+      targetAmount: existing.targetAmount,
+      targetDate: existing.targetDate,
+      status: existing.status
+    },
+    updated: goal
   };
 }
-async function get_previous_month_comparison(ctx, _args) {
+async function executeGoalStop(ctx, payload) {
+  const goal = goalStopPayloadSchema.parse(payload);
+  const [existing] = await db.select().from(financialGoals).where(
+    and(
+      eq(financialGoals.id, goal.goalId),
+      eq(financialGoals.userId, ctx.userId),
+      eq(financialGoals.userType, ctx.userType)
+    )
+  ).limit(1);
+  if (!existing) throw new Error("Goal not found");
+  await db.update(financialGoals).set({
+    status: "cancelled",
+    aiAlerts: {
+      stoppedBy: "ai_action",
+      reason: goal.reason || null,
+      stoppedAt: (/* @__PURE__ */ new Date()).toISOString()
+    }
+  }).where(
+    and(
+      eq(financialGoals.id, goal.goalId),
+      eq(financialGoals.userId, ctx.userId),
+      eq(financialGoals.userType, ctx.userType)
+    )
+  );
+  await invalidateFinanceUserCache(ctx.userId, ctx.userType);
+  invalidateUserMemory(ctx.userId, ctx.userType);
+  return {
+    goalId: goal.goalId,
+    previousStatus: existing.status,
+    status: "cancelled",
+    reason: goal.reason
+  };
+}
+async function executeExpenseRecategorize(ctx, payload) {
+  const recategorize = expenseRecategorizePayloadSchema.parse(payload);
+  const [existing] = await db.select().from(expenses).where(
+    and(
+      eq(expenses.id, recategorize.expenseId),
+      eq(expenses.userId, ctx.userId),
+      eq(expenses.userType, ctx.userType)
+    )
+  ).limit(1);
+  if (!existing) throw new Error("Expense not found");
+  const previous = {
+    category: existing.category,
+    subCategory: existing.subCategory,
+    parsedMetadata: existing.parsedMetadata
+  };
+  await db.update(expenses).set({
+    category: recategorize.category,
+    subCategory: recategorize.subCategory || existing.subCategory || "\u0639\u0627\u0645",
+    parsedMetadata: {
+      ...existing.parsedMetadata && typeof existing.parsedMetadata === "object" ? existing.parsedMetadata : {},
+      aiRecategorizedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      aiRecategorizeReason: recategorize.reason || null,
+      previousCategory: existing.category,
+      previousSubCategory: existing.subCategory
+    }
+  }).where(
+    and(
+      eq(expenses.id, recategorize.expenseId),
+      eq(expenses.userId, ctx.userId),
+      eq(expenses.userType, ctx.userType)
+    )
+  );
+  invalidateUserMemory(ctx.userId, ctx.userType);
+  await invalidateFinanceUserCache(ctx.userId, ctx.userType);
+  return {
+    expenseId: recategorize.expenseId,
+    previous,
+    category: recategorize.category,
+    subCategory: recategorize.subCategory || existing.subCategory || "\u0639\u0627\u0645"
+  };
+}
+function pickPreviousValues(base, patch) {
+  const previous = {};
+  for (const key of Object.keys(patch)) {
+    previous[key] = base[key];
+  }
+  return previous;
+}
+async function executeProfileUpdate(ctx, payload) {
+  const profile = await getSmartProfile(ctx.userId, ctx.userType);
+  const previous = pickPreviousValues(profile[payload.section], payload.patch);
+  const nextProfile = {
+    ...profile,
+    [payload.section]: {
+      ...profile[payload.section],
+      ...payload.patch
+    },
+    lastAiRefreshAt: /* @__PURE__ */ new Date()
+  };
+  await saveSmartProfile(ctx.userId, ctx.userType, nextProfile);
+  return {
+    section: payload.section,
+    patch: payload.patch,
+    previous
+  };
+}
+async function executeWalletCreate(ctx, payload) {
+  const [inserted] = await db.insert(userWallets).values({
+    userId: ctx.userId,
+    userType: ctx.userType,
+    name: payload.name,
+    provider: payload.provider,
+    lastFourDigits: payload.lastFourDigits || null,
+    balance: payload.balance || "0.00"
+  });
+  return {
+    walletId: Number(inserted?.insertId || 0),
+    ...payload
+  };
+}
+async function executeWalletUpdate(ctx, payload) {
+  const wallet = walletUpdatePayloadSchema.parse(payload);
+  const [existing] = await db.select().from(userWallets).where(
+    and(
+      eq(userWallets.id, wallet.walletId),
+      eq(userWallets.userId, ctx.userId),
+      eq(userWallets.userType, ctx.userType)
+    )
+  ).limit(1);
+  if (!existing) throw new Error("Wallet not found");
+  const update = {};
+  if (wallet.name !== void 0) update.name = wallet.name;
+  if (wallet.provider !== void 0) update.provider = wallet.provider;
+  if (wallet.lastFourDigits !== void 0) update.lastFourDigits = wallet.lastFourDigits || null;
+  if (wallet.balance !== void 0) update.balance = wallet.balance;
+  await db.update(userWallets).set(update).where(
+    and(
+      eq(userWallets.id, wallet.walletId),
+      eq(userWallets.userId, ctx.userId),
+      eq(userWallets.userType, ctx.userType)
+    )
+  );
+  invalidateUserMemory(ctx.userId, ctx.userType);
+  await invalidateFinanceUserCache(ctx.userId, ctx.userType);
+  return {
+    walletId: wallet.walletId,
+    previous: {
+      name: existing.name,
+      provider: existing.provider,
+      lastFourDigits: existing.lastFourDigits,
+      balance: existing.balance
+    },
+    updated: wallet
+  };
+}
+async function findUndoTarget(ctx, payload) {
+  let rows;
+  if (payload.targetActionMemoryId) {
+    rows = await db.select().from(aiActionMemory).where(
+      and(
+        eq(aiActionMemory.id, payload.targetActionMemoryId),
+        eq(aiActionMemory.userId, ctx.userId),
+        eq(aiActionMemory.userType, ctx.userType),
+        eq(aiActionMemory.status, "executed")
+      )
+    ).limit(1);
+  } else {
+    rows = await db.select().from(aiActionMemory).where(
+      and(
+        eq(aiActionMemory.userId, ctx.userId),
+        eq(aiActionMemory.userType, ctx.userType),
+        eq(aiActionMemory.status, "executed")
+      )
+    ).orderBy(desc(aiActionMemory.updatedAt)).limit(5);
+  }
+  return (rows || []).find((row) => {
+    if (row.actionName === "action.undo" || row.status !== "executed") return false;
+    if (payload.targetActionName && row.actionName !== payload.targetActionName) return false;
+    return [
+      "goal.create",
+      "goal.update",
+      "goal.stop",
+      "expense.recategorize",
+      "wallet.create",
+      "wallet.update",
+      "profile.update"
+    ].includes(row.actionName);
+  });
+}
+async function executeUndo(ctx, payload) {
+  const target = await findUndoTarget(ctx, payload);
+  if (!target) throw new Error("No reversible action found");
+  const targetPayload = target.payload || {};
+  if (target.actionName === "goal.create") {
+    const goalId = Number(targetPayload.goalId);
+    if (!goalId) throw new Error("Goal action has no goalId to undo");
+    await db.update(financialGoals).set({ status: "cancelled" }).where(
+      and(
+        eq(financialGoals.id, goalId),
+        eq(financialGoals.userId, ctx.userId),
+        eq(financialGoals.userType, ctx.userType)
+      )
+    );
+    await invalidateFinanceUserCache(ctx.userId, ctx.userType);
+    return { undoneActionMemoryId: target.id, undoneActionName: target.actionName, goalId };
+  }
+  if (target.actionName === "wallet.create") {
+    const walletId = Number(targetPayload.walletId);
+    if (!walletId) throw new Error("Wallet action has no walletId to undo");
+    await db.delete(userWallets).where(
+      and(
+        eq(userWallets.id, walletId),
+        eq(userWallets.userId, ctx.userId),
+        eq(userWallets.userType, ctx.userType)
+      )
+    );
+    return { undoneActionMemoryId: target.id, undoneActionName: target.actionName, walletId };
+  }
+  if (target.actionName === "goal.update") {
+    const goalId = Number(targetPayload.goalId);
+    const previous = targetPayload.previous;
+    if (!goalId || !previous) throw new Error("Goal update action has no previous state to undo");
+    await db.update(financialGoals).set({
+      title: typeof previous.title === "string" ? previous.title : void 0,
+      description: typeof previous.description === "string" ? previous.description : null,
+      targetAmount: previous.targetAmount !== void 0 && previous.targetAmount !== null ? String(previous.targetAmount) : null,
+      targetDate: previous.targetDate ? new Date(String(previous.targetDate)) : null,
+      status: typeof previous.status === "string" ? previous.status : "active"
+    }).where(
+      and(
+        eq(financialGoals.id, goalId),
+        eq(financialGoals.userId, ctx.userId),
+        eq(financialGoals.userType, ctx.userType)
+      )
+    );
+    await invalidateFinanceUserCache(ctx.userId, ctx.userType);
+    invalidateUserMemory(ctx.userId, ctx.userType);
+    return { undoneActionMemoryId: target.id, undoneActionName: target.actionName, goalId };
+  }
+  if (target.actionName === "goal.stop") {
+    const goalId = Number(targetPayload.goalId);
+    const previousStatus = typeof targetPayload.previousStatus === "string" ? targetPayload.previousStatus : "active";
+    if (!goalId) throw new Error("Goal stop action has no goalId to undo");
+    await db.update(financialGoals).set({ status: previousStatus }).where(
+      and(
+        eq(financialGoals.id, goalId),
+        eq(financialGoals.userId, ctx.userId),
+        eq(financialGoals.userType, ctx.userType)
+      )
+    );
+    await invalidateFinanceUserCache(ctx.userId, ctx.userType);
+    invalidateUserMemory(ctx.userId, ctx.userType);
+    return { undoneActionMemoryId: target.id, undoneActionName: target.actionName, goalId };
+  }
+  if (target.actionName === "expense.recategorize") {
+    const expenseId = Number(targetPayload.expenseId);
+    const previous = targetPayload.previous;
+    if (!expenseId || !previous) throw new Error("Expense recategorize action has no previous state to undo");
+    await db.update(expenses).set({
+      category: String(previous.category || "uncategorized"),
+      subCategory: previous.subCategory ? String(previous.subCategory) : null,
+      parsedMetadata: previous.parsedMetadata ?? null
+    }).where(
+      and(
+        eq(expenses.id, expenseId),
+        eq(expenses.userId, ctx.userId),
+        eq(expenses.userType, ctx.userType)
+      )
+    );
+    invalidateUserMemory(ctx.userId, ctx.userType);
+    await invalidateFinanceUserCache(ctx.userId, ctx.userType);
+    return { undoneActionMemoryId: target.id, undoneActionName: target.actionName, expenseId };
+  }
+  if (target.actionName === "wallet.update") {
+    const walletId = Number(targetPayload.walletId);
+    const previous = targetPayload.previous;
+    if (!walletId || !previous) throw new Error("Wallet update action has no previous state to undo");
+    await db.update(userWallets).set({
+      name: String(previous.name || "Wallet"),
+      provider: String(previous.provider || "Card"),
+      lastFourDigits: previous.lastFourDigits ? String(previous.lastFourDigits) : null,
+      balance: previous.balance !== void 0 && previous.balance !== null ? String(previous.balance) : "0.00"
+    }).where(
+      and(
+        eq(userWallets.id, walletId),
+        eq(userWallets.userId, ctx.userId),
+        eq(userWallets.userType, ctx.userType)
+      )
+    );
+    invalidateUserMemory(ctx.userId, ctx.userType);
+    await invalidateFinanceUserCache(ctx.userId, ctx.userType);
+    return { undoneActionMemoryId: target.id, undoneActionName: target.actionName, walletId };
+  }
+  if (target.actionName === "profile.update") {
+    const section = targetPayload.section;
+    const previous = targetPayload.previous;
+    if (!section || !previous) throw new Error("Profile action has no previous state to undo");
+    await executeProfileUpdate(ctx, { section, patch: previous });
+    return { undoneActionMemoryId: target.id, undoneActionName: target.actionName, section };
+  }
+  throw new Error(`Action ${target.actionName} is not reversible`);
+}
+async function executeRuntimeAction(ctx, actionName, payload) {
+  if (actionName === "goal.update") {
+    return executeGoalUpdate(ctx, goalUpdatePayloadSchema.parse(payload));
+  }
+  if (actionName === "goal.stop") {
+    return executeGoalStop(ctx, goalStopPayloadSchema.parse(payload));
+  }
+  if (actionName === "expense.create") {
+    return executeExpenseCreate(ctx, expenseCreatePayloadSchema.parse(payload));
+  }
+  if (actionName === "expense.recategorize") {
+    return executeExpenseRecategorize(ctx, expenseRecategorizePayloadSchema.parse(payload));
+  }
+  if (actionName === "budget.create") {
+    const budget2 = budgetCreatePayloadSchema.parse(payload);
+    return {
+      budgetPlanId: `budget:${Date.now()}`,
+      ...budget2,
+      storage: "ai_action_memory"
+    };
+  }
+  if (actionName === "profile.update") {
+    return executeProfileUpdate(ctx, profileUpdatePayloadSchema.parse(payload));
+  }
+  if (actionName === "wallet.create") {
+    return executeWalletCreate(ctx, walletCreatePayloadSchema.parse(payload));
+  }
+  if (actionName === "wallet.update") {
+    return executeWalletUpdate(ctx, walletUpdatePayloadSchema.parse(payload));
+  }
+  if (actionName === "action.undo") {
+    return executeUndo(ctx, undoPayloadSchema.parse(payload));
+  }
+  throw new Error(`Unsupported phase 8 action ${actionName}`);
+}
+var budgetCreatePayloadSchema, goalUpdatePayloadSchema, goalStopPayloadSchema, expenseCreatePayloadSchema, expenseRecategorizePayloadSchema, profileUpdatePayloadSchema, walletCreatePayloadSchema, walletUpdatePayloadSchema, undoPayloadSchema;
+var init_extended_actions = __esm({
+  "api/services/action-runtime/extended-actions.ts"() {
+    init_zod();
+    init_drizzle_orm();
+    init_schema2();
+    init_connection();
+    init_muscle_memory();
+    init_finance_semantic_layer();
+    init_user_profile_service();
+    budgetCreatePayloadSchema = external_exports.object({
+      title: external_exports.string().min(2).max(200),
+      category: external_exports.string().min(2).max(100).optional(),
+      monthlyLimit: external_exports.number().positive(),
+      linkedGoalId: external_exports.number().int().positive().optional()
+    });
+    goalUpdatePayloadSchema = external_exports.object({
+      goalId: external_exports.number().int().positive(),
+      title: external_exports.string().min(2).max(200).optional(),
+      description: external_exports.string().max(1e3).optional(),
+      targetAmount: external_exports.number().positive().optional(),
+      targetDate: external_exports.string().optional(),
+      status: external_exports.enum(["active", "completed", "cancelled"]).optional()
+    }).refine(
+      (payload) => payload.title !== void 0 || payload.description !== void 0 || payload.targetAmount !== void 0 || payload.targetDate !== void 0 || payload.status !== void 0,
+      "goal.update requires at least one field"
+    );
+    goalStopPayloadSchema = external_exports.object({
+      goalId: external_exports.number().int().positive(),
+      reason: external_exports.string().max(500).optional()
+    });
+    expenseCreatePayloadSchema = external_exports.object({
+      amount: external_exports.number().positive(),
+      type: external_exports.enum(["income", "expense", "transfer", "investment"]).default("expense"),
+      category: external_exports.string().min(1).max(100),
+      subCategory: external_exports.string().min(1).max(100).optional(),
+      description: external_exports.string().max(500).optional(),
+      rawText: external_exports.string().min(1).max(1e3),
+      date: external_exports.string().optional(),
+      placeHint: external_exports.string().max(150).optional()
+    });
+    expenseRecategorizePayloadSchema = external_exports.object({
+      expenseId: external_exports.number().int().positive(),
+      category: external_exports.string().min(1).max(100),
+      subCategory: external_exports.string().min(1).max(100).optional(),
+      reason: external_exports.string().max(500).optional()
+    });
+    profileUpdatePayloadSchema = external_exports.object({
+      section: external_exports.enum(["basicInfo", "financialInfo", "lifestyleInfo", "preferences"]),
+      patch: external_exports.record(external_exports.string(), external_exports.unknown()).refine((value) => Object.keys(value).length > 0, "empty patch")
+    });
+    walletCreatePayloadSchema = external_exports.object({
+      name: external_exports.string().min(2).max(100),
+      provider: external_exports.string().min(2).max(50),
+      lastFourDigits: external_exports.string().regex(/^\d{4}$/).optional(),
+      balance: external_exports.string().regex(/^\d+(\.\d{1,2})?$/).optional()
+    });
+    walletUpdatePayloadSchema = external_exports.object({
+      walletId: external_exports.number().int().positive(),
+      name: external_exports.string().min(2).max(100).optional(),
+      provider: external_exports.string().min(2).max(50).optional(),
+      lastFourDigits: external_exports.string().regex(/^\d{4}$/).optional(),
+      balance: external_exports.string().regex(/^\d+(\.\d{1,2})?$/).optional()
+    }).refine(
+      (payload) => payload.name !== void 0 || payload.provider !== void 0 || payload.lastFourDigits !== void 0 || payload.balance !== void 0,
+      "wallet.update requires at least one field"
+    );
+    undoPayloadSchema = external_exports.object({
+      targetActionMemoryId: external_exports.number().int().positive().optional(),
+      targetActionName: external_exports.enum([
+        "goal.create",
+        "goal.update",
+        "goal.stop",
+        "expense.create",
+        "expense.recategorize",
+        "budget.create",
+        "profile.update",
+        "wallet.create",
+        "wallet.update",
+        "action.undo"
+      ]).optional()
+    });
+  }
+});
+
+// api/services/action-runtime/goal-create.ts
+function normalizeDigits2(value) {
+  const arabic = "\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669";
+  const eastern = "\u06F0\u06F1\u06F2\u06F3\u06F4\u06F5\u06F6\u06F7\u06F8\u06F9";
+  return value.replace(/[٠-٩۰-۹]/g, (digit) => {
+    const arabicIndex = arabic.indexOf(digit);
+    if (arabicIndex >= 0) return String(arabicIndex);
+    const easternIndex = eastern.indexOf(digit);
+    return easternIndex >= 0 ? String(easternIndex) : digit;
+  });
+}
+function extractAmount2(message) {
+  const normalized = normalizeDigits2(message.toLowerCase());
+  const match2 = normalized.match(/(\d+(?:[.,]\d+)?)\s*(الف|ألف|k|مليون|million)?/i);
+  if (!match2) return void 0;
+  const base = Number(match2[1].replace(",", "."));
+  if (!Number.isFinite(base) || base <= 0) return void 0;
+  const unit = match2[2] ?? "";
+  if (unit === "\u0645\u0644\u064A\u0648\u0646" || unit === "million") return Math.round(base * 1e6);
+  if (unit === "\u0627\u0644\u0641" || unit === "\u0623\u0644\u0641" || unit.toLowerCase() === "k") return Math.round(base * 1e3);
+  return Math.round(base);
+}
+function extractTargetDate(message) {
+  const normalized = normalizeDigits2(message.toLowerCase());
   const now = /* @__PURE__ */ new Date();
-  const currentMonth = now.toISOString().slice(0, 7);
-  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const prevMonth = prevDate.toISOString().slice(0, 7);
-  const [currentRows, prevRows] = await Promise.all([
-    db.select().from(expenses).where(
-      and(
-        eq(expenses.userId, ctx.userId),
-        eq(expenses.userType, ctx.userType),
-        eq(expenses.type, "expense"),
-        gte(expenses.date, startOfMonth(currentMonth)),
-        lte(expenses.date, endOfMonth(currentMonth))
-      )
-    ),
-    db.select().from(expenses).where(
-      and(
-        eq(expenses.userId, ctx.userId),
-        eq(expenses.userType, ctx.userType),
-        eq(expenses.type, "expense"),
-        gte(expenses.date, startOfMonth(prevMonth)),
-        lte(expenses.date, endOfMonth(prevMonth))
-      )
-    )
-  ]);
-  const currentTotal = currentRows.reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  const prevTotal = prevRows.reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  const changePercent = prevTotal > 0 ? Math.round((currentTotal - prevTotal) / prevTotal * 100) : 0;
+  if (normalized.includes("\u0633\u0646\u0647") || normalized.includes("\u0633\u0646\u0629") || normalized.includes("year")) {
+    const date6 = new Date(now);
+    date6.setFullYear(date6.getFullYear() + 1);
+    return date6.toISOString().slice(0, 10);
+  }
+  const months = normalized.match(/(\d+)\s*(شهر|شهور|months?)/i);
+  if (months) {
+    const date6 = new Date(now);
+    date6.setMonth(date6.getMonth() + Number(months[1]));
+    return date6.toISOString().slice(0, 10);
+  }
+  return void 0;
+}
+function cleanupGoalTitleCandidate(value) {
+  return normalizeDigits2(value).replace(/[؟?,،.!]/g, " ").replace(/خلال\s+.*$/i, " ").replace(/في\s+غضون\s+.*$/i, " ").replace(/\d+(?:[.,]\d+)?\s*(جنيه|ج|egp|الف|ألف|k|مليون|million)?/gi, " ").replace(/\b(سنه|سنة|year|شهر|شهور|months?)\b/gi, " ").replace(/\b(هدف|احوش|ادخر|توفير|حوش|اعمل|انشئ|أنشئ|ضيف|حط|سجل|create|add|saving|goal)\b/gi, " ").replace(/\b(اشتري|اشترى|شراء|اجيب|أجيب|جيب|عايز|عاوز)\b/gi, " ").replace(/\s+/g, " ").trim();
+}
+function knownGoalTitle(candidate) {
+  const normalized = candidate.toLowerCase();
+  if (normalized.includes("\u0639\u0631\u0628\u064A") || normalized.includes("\u0633\u064A\u0627\u0631\u0647") || normalized.includes("\u0633\u064A\u0627\u0631\u0629")) {
+    return "\u0647\u062F\u0641 \u0634\u0631\u0627\u0621 \u0639\u0631\u0628\u064A\u0629";
+  }
+  if (normalized.includes("\u0634\u0642\u0647") || normalized.includes("\u0634\u0642\u0629")) {
+    return "\u0647\u062F\u0641 \u0634\u0631\u0627\u0621 \u0634\u0642\u0629";
+  }
+  if (normalized.includes("\u0633\u0641\u0631")) {
+    return "\u0647\u062F\u0641 \u0627\u0644\u0633\u0641\u0631";
+  }
+  return void 0;
+}
+function extractPurposeTitle(message) {
+  const normalized = normalizeDigits2(message);
+  const purposePatterns = [
+    /(?:عشان|علشان|لجل)\s+(?:اشتري|اشترى|شراء|اجيب|أجيب|جيب)?\s*([^،,.؟\n]+)/i,
+    /(?:^|\s)(?:لـ|لل)\s*([^،,.؟\n]+)/i,
+    /(?:^|\s)ل\s+([^،,.؟\n]+)/i
+  ];
+  for (const pattern of purposePatterns) {
+    const match2 = normalized.match(pattern);
+    const candidate = cleanupGoalTitleCandidate(match2?.[1] ?? "");
+    if (candidate.length >= 2 && candidate.length <= 60) {
+      return knownGoalTitle(candidate) ?? `\u0647\u062F\u0641 \u0634\u0631\u0627\u0621 ${candidate}`;
+    }
+  }
+  const cleaned = cleanupGoalTitleCandidate(normalized);
+  if (cleaned.length >= 2 && cleaned.length <= 40) {
+    return knownGoalTitle(cleaned) ?? `\u0647\u062F\u0641 ${cleaned}`;
+  }
+  return void 0;
+}
+function titleFromMessage(message) {
+  const known = knownGoalTitle(message);
+  if (known) return known;
+  const extracted = extractPurposeTitle(message);
+  if (extracted) return extracted;
+  return "\u0647\u062F\u0641 \u0627\u062F\u062E\u0627\u0631 \u062C\u062F\u064A\u062F";
+}
+function isGoalCreateRequest(message) {
+  const normalized = message.toLowerCase();
+  const hasGoal = /(هدف|احوش|ادخر|توفير|حوش|saving|goal)/i.test(normalized);
+  const hasAction = /(اعمل|انشئ|أنشئ|ضيف|حط|سجل|create|add|نفذ)/i.test(normalized);
+  return hasGoal && hasAction && extractAmount2(message) !== void 0;
+}
+function createGoalPayloadFromMessage(message) {
+  if (!isGoalCreateRequest(message)) return null;
   return {
-    current_month: currentMonth,
-    current_total: currentTotal,
-    previous_month: prevMonth,
-    previous_total: prevTotal,
-    change_percent: changePercent,
-    direction: changePercent > 0 ? "\u0632\u064A\u0627\u062F\u0629" : changePercent < 0 ? "\u0646\u0642\u0635\u0627\u0646" : "\u062B\u0627\u0628\u062A"
+    title: titleFromMessage(message),
+    description: message.trim().slice(0, 500),
+    targetAmount: extractAmount2(message),
+    targetDate: extractTargetDate(message)
   };
 }
-async function get_daily_average(ctx, _args) {
-  const month = (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
-  const rows = await db.select().from(expenses).where(
+async function validateGoalCreate(ctx, payload) {
+  const parsed = goalCreatePayloadSchema.parse(payload);
+  const existing = await db.select({ count: sql`COUNT(*)` }).from(financialGoals).where(
     and(
-      eq(expenses.userId, ctx.userId),
-      eq(expenses.userType, ctx.userType),
-      eq(expenses.type, "expense"),
-      gte(expenses.date, startOfMonth(month)),
-      lte(expenses.date, endOfMonth(month))
+      eq(financialGoals.userId, ctx.userId),
+      eq(financialGoals.userType, ctx.userType),
+      eq(financialGoals.status, "active")
     )
   );
-  const total = rows.reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  const daysPassed = Math.max(1, (/* @__PURE__ */ new Date()).getDate());
-  const daysInMonth = endOfMonth(month).getDate();
-  const projected = Math.round(total / daysPassed * daysInMonth);
+  const isPro = ctx.userPlan === "pro" || ctx.userPlan === "ultra";
+  const count4 = Number(existing[0]?.count || 0);
+  if (!isPro && count4 >= FREE_GOALS_LIMIT) {
+    throw new Error(`Free plan supports ${FREE_GOALS_LIMIT} active goals`);
+  }
+  return parsed;
+}
+async function executeGoalCreate(ctx, payload) {
+  const validated = await validateGoalCreate(ctx, payload);
+  const [inserted] = await db.insert(financialGoals).values({
+    userId: ctx.userId,
+    userType: ctx.userType,
+    title: validated.title,
+    description: validated.description || null,
+    targetAmount: validated.targetAmount?.toString(),
+    targetDate: validated.targetDate ? new Date(validated.targetDate) : null,
+    status: "active"
+  });
+  await invalidateFinanceUserCache(ctx.userId, ctx.userType);
   return {
-    daily_average: Math.round(total / daysPassed),
-    total_so_far: total,
-    days_passed: daysPassed,
-    projected_monthly_total: projected
+    goalId: Number(inserted?.insertId || 0),
+    payload: validated
   };
 }
-async function get_spending_by_date_range(ctx, args) {
-  const startDate = args.start_date ? new Date(args.start_date) : startOfMonth();
-  const endDate = args.end_date ? new Date(args.end_date) : endOfToday();
-  const rows = await db.select().from(expenses).where(
+var FREE_GOALS_LIMIT, goalCreatePayloadSchema;
+var init_goal_create = __esm({
+  "api/services/action-runtime/goal-create.ts"() {
+    init_zod();
+    init_drizzle_orm();
+    init_schema2();
+    init_connection();
+    init_finance_semantic_layer();
+    FREE_GOALS_LIMIT = 3;
+    goalCreatePayloadSchema = external_exports.object({
+      title: external_exports.string().min(2).max(200),
+      description: external_exports.string().max(2e3).optional(),
+      targetAmount: external_exports.number().positive().optional(),
+      targetDate: external_exports.string().optional()
+    });
+  }
+});
+
+// api/services/action-runtime/types.ts
+var init_types10 = __esm({
+  "api/services/action-runtime/types.ts"() {
+  }
+});
+
+// api/services/action-runtime/index.ts
+function expiresAt() {
+  const date6 = /* @__PURE__ */ new Date();
+  const timezoneSafetyMinutes = Math.max(0, -date6.getTimezoneOffset());
+  date6.setMinutes(date6.getMinutes() + ACTION_TTL_MINUTES + timezoneSafetyMinutes);
+  return date6;
+}
+function parsePayload(value) {
+  if (value && typeof value === "object") return value;
+  if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && typeof parsed === "object") return parsed;
+    } catch {
+    }
+  }
+  return { title: "\u0647\u062F\u0641 \u0627\u062F\u062E\u0627\u0631 \u062C\u062F\u064A\u062F" };
+}
+function actionRisk(actionName) {
+  if (actionName === "action.undo" || actionName === "goal.stop") return "high";
+  if (actionName === "profile.update" || actionName === "wallet.create" || actionName === "wallet.update" || actionName === "goal.update" || actionName === "expense.recategorize") {
+    return "medium";
+  }
+  return "medium";
+}
+function toActionDraft(id, actionName, payload) {
+  return {
+    id: String(id),
+    name: actionName,
+    status: "pending_confirmation",
+    risk: actionRisk(actionName),
+    confirmationRequired: true,
+    summary: actionSummary(actionName, payload),
+    payload: { ...payload }
+  };
+}
+async function audit(ctx, actionId, actionName, event, status, metadata) {
+  await db.insert(aiActionAuditLogs).values({
+    actionId,
+    userId: ctx.userId,
+    userType: ctx.userType,
+    actionName,
+    event,
+    status,
+    metadata
+  });
+}
+async function createPendingRuntimeAction(ctx, actionName, payload) {
+  const validated = await validateRuntimeAction(ctx, actionName, payload);
+  const [inserted] = await db.insert(aiPendingActions).values({
+    userId: ctx.userId,
+    userType: ctx.userType,
+    conversationId: ctx.conversationId,
+    actionName,
+    status: "pending_confirmation",
+    risk: actionRisk(actionName),
+    summary: actionSummary(actionName, validated),
+    payload: validated,
+    expiresAt: expiresAt()
+  });
+  const actionId = Number(inserted?.insertId || 0);
+  await audit(ctx, actionId, actionName, "draft_created", "pending_confirmation", {
+    conversationId: ctx.conversationId
+  });
+  void recordAICostMetric({
+    userId: ctx.userId,
+    userType: ctx.userType,
+    channel: "action",
+    plan: ctx.userPlan,
+    intentKind: "action_request",
+    totalTokens: 0,
+    toolCalls: 0,
+    llmCalls: 0,
+    metadata: {
+      actionId,
+      actionName,
+      actionEvent: "draft_created",
+      conversationId: ctx.conversationId
+    }
+  });
+  const action = toActionDraft(actionId, actionName, validated);
+  return {
+    action,
+    artifact: actionConfirmationArtifact(action)
+  };
+}
+async function createPendingGoalAction(ctx, payload) {
+  const validated = await validateGoalCreate(ctx, payload);
+  const [inserted] = await db.insert(aiPendingActions).values({
+    userId: ctx.userId,
+    userType: ctx.userType,
+    conversationId: ctx.conversationId,
+    actionName: "goal.create",
+    status: "pending_confirmation",
+    risk: "medium",
+    summary: goalSummary(validated),
+    payload: validated,
+    expiresAt: expiresAt()
+  });
+  const actionId = Number(inserted?.insertId || 0);
+  await audit(ctx, actionId, "goal.create", "draft_created", "pending_confirmation", {
+    conversationId: ctx.conversationId
+  });
+  void recordAICostMetric({
+    userId: ctx.userId,
+    userType: ctx.userType,
+    channel: "action",
+    plan: ctx.userPlan,
+    intentKind: "action_request",
+    totalTokens: 0,
+    toolCalls: 0,
+    llmCalls: 0,
+    metadata: {
+      actionId,
+      actionName: "goal.create",
+      actionEvent: "draft_created",
+      conversationId: ctx.conversationId
+    }
+  });
+  const action = toActionDraft(actionId, "goal.create", validated);
+  return {
+    action,
+    artifact: actionConfirmationArtifact(action)
+  };
+}
+async function maybeCreateActionDraftFromMessage(ctx, message) {
+  const payload = createGoalPayloadFromMessage(message);
+  if (payload) return createPendingGoalAction(ctx, payload);
+  const phase8 = createPhase8PayloadFromMessage(message);
+  if (!phase8) return null;
+  return createPendingRuntimeAction(ctx, phase8.actionName, phase8.payload);
+}
+async function loadPendingAction(ctx, actionId) {
+  const [row] = await db.select().from(aiPendingActions).where(
     and(
-      eq(expenses.userId, ctx.userId),
-      eq(expenses.userType, ctx.userType),
-      gte(expenses.date, startDate),
-      lte(expenses.date, endDate)
+      eq(aiPendingActions.id, actionId),
+      eq(aiPendingActions.userId, ctx.userId),
+      eq(aiPendingActions.userType, ctx.userType)
     )
+  ).limit(1);
+  if (!row) throw new Error("Action not found");
+  if (row.status !== "pending_confirmation") throw new Error(`Action is ${row.status}`);
+  if (ctx.conversationId !== void 0 && Number(row.conversationId) !== Number(ctx.conversationId)) {
+    throw new Error("Action does not belong to this conversation");
+  }
+  if (row.expiresAt && new Date(row.expiresAt).getTime() < Date.now()) {
+    throw new Error("Action expired");
+  }
+  return {
+    id: row.id,
+    userId: row.userId,
+    userType: row.userType,
+    conversationId: row.conversationId,
+    actionName: row.actionName,
+    status: row.status,
+    risk: row.risk,
+    summary: row.summary,
+    payload: parsePayload(row.payload),
+    expiresAt: new Date(row.expiresAt)
+  };
+}
+async function confirmAction(ctx, actionId) {
+  const action = await loadPendingAction(ctx, actionId);
+  await db.update(aiPendingActions).set({ status: "confirmed", confirmedAt: /* @__PURE__ */ new Date() }).where(eq(aiPendingActions.id, actionId));
+  await audit(ctx, actionId, action.actionName, "confirmed", "confirmed");
+  void recordAICostMetric({
+    userId: ctx.userId,
+    userType: ctx.userType,
+    channel: "action",
+    plan: ctx.userPlan,
+    intentKind: "action_request",
+    totalTokens: 0,
+    toolCalls: 0,
+    llmCalls: 0,
+    metadata: {
+      actionId,
+      actionName: action.actionName,
+      actionEvent: "confirmed"
+    }
+  });
+  try {
+    const output = action.actionName === "goal.create" ? await executeGoalCreate(ctx, action.payload).then((result) => ({
+      goalId: result.goalId,
+      title: result.payload.title,
+      targetAmount: result.payload.targetAmount,
+      targetDate: result.payload.targetDate
+    })) : await executeRuntimeAction(ctx, action.actionName, action.payload);
+    await db.update(aiPendingActions).set({
+      status: "executed",
+      executedAt: /* @__PURE__ */ new Date(),
+      result: output
+    }).where(eq(aiPendingActions.id, actionId));
+    await db.insert(aiActionMemory).values({
+      userId: ctx.userId,
+      userType: ctx.userType,
+      actionName: action.actionName,
+      status: "executed",
+      summary: action.summary,
+      payload: output,
+      sourceConversationId: action.conversationId
+    });
+    await invalidateMemoryUserCache(ctx.userId, ctx.userType).catch((error48) => {
+      console.warn("[AI Action Runtime] memory cache invalidation failed", error48 instanceof Error ? error48.message : String(error48));
+    });
+    await audit(ctx, actionId, action.actionName, "executed", "executed", output);
+    let suggestedBudgetAction = null;
+    if (action.actionName === "goal.create") {
+      const suggestion = createBudgetSuggestionFromGoal(action.payload, Number(output.goalId));
+      if (suggestion) {
+        suggestedBudgetAction = await createPendingRuntimeAction(ctx, "budget.create", suggestion).catch(() => null);
+      }
+    }
+    void recordAICostMetric({
+      userId: ctx.userId,
+      userType: ctx.userType,
+      channel: "action",
+      plan: ctx.userPlan,
+      intentKind: "action_request",
+      totalTokens: 0,
+      toolCalls: 1,
+      llmCalls: 0,
+      metadata: {
+        actionId,
+        actionName: action.actionName,
+        actionEvent: "executed",
+        result: output,
+        suggestedActionId: suggestedBudgetAction?.action.id
+      }
+    });
+    const artifact = {
+      id: `action_result:${actionId}`,
+      type: "metric_card",
+      title: action.actionName === "goal.create" ? "\u062A\u0645 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0647\u062F\u0641" : action.actionName === "expense.create" ? "\u062A\u0645 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0645\u0635\u0631\u0648\u0641" : "\u062A\u0645 \u062A\u0646\u0641\u064A\u0630 \u0627\u0644\u0639\u0645\u0644\u064A\u0629",
+      payload: output
+    };
+    const artifacts = suggestedBudgetAction?.artifact ? [artifact, suggestedBudgetAction.artifact] : [artifact];
+    return {
+      actionId,
+      actionName: action.actionName,
+      status: "executed",
+      message: action.actionName === "goal.create" ? "\u062A\u0645 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0647\u062F\u0641 \u0628\u0646\u062C\u0627\u062D." : action.actionName === "expense.create" ? "\u062A\u0645 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0645\u0635\u0631\u0648\u0641 \u0628\u0646\u062C\u0627\u062D." : "\u062A\u0645 \u062A\u0646\u0641\u064A\u0630 \u0627\u0644\u0639\u0645\u0644\u064A\u0629 \u0628\u0646\u062C\u0627\u062D.",
+      result: output,
+      artifact,
+      artifacts
+    };
+  } catch (error48) {
+    const message = error48 instanceof Error ? error48.message : String(error48);
+    await db.update(aiPendingActions).set({
+      status: "failed",
+      result: { error: message }
+    }).where(eq(aiPendingActions.id, actionId));
+    await audit(ctx, actionId, action.actionName, "failed", "failed", { error: message });
+    void recordAICostMetric({
+      userId: ctx.userId,
+      userType: ctx.userType,
+      channel: "action",
+      plan: ctx.userPlan,
+      intentKind: "action_request",
+      totalTokens: 0,
+      toolCalls: 1,
+      llmCalls: 0,
+      metadata: {
+        actionId,
+        actionName: action.actionName,
+        actionEvent: "failed",
+        error: message
+      }
+    });
+    throw error48;
+  }
+}
+async function cancelAction(ctx, actionId) {
+  const action = await loadPendingAction(ctx, actionId);
+  await db.update(aiPendingActions).set({ status: "cancelled", cancelledAt: /* @__PURE__ */ new Date() }).where(eq(aiPendingActions.id, actionId));
+  await audit(ctx, actionId, action.actionName, "cancelled", "cancelled");
+  void recordAICostMetric({
+    userId: ctx.userId,
+    userType: ctx.userType,
+    channel: "action",
+    plan: ctx.userPlan,
+    intentKind: "action_request",
+    totalTokens: 0,
+    toolCalls: 0,
+    llmCalls: 0,
+    metadata: {
+      actionId,
+      actionName: action.actionName,
+      actionEvent: "cancelled"
+    }
+  });
+  return {
+    actionId,
+    actionName: action.actionName,
+    status: "cancelled",
+    message: "\u062A\u0645 \u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u0639\u0645\u0644\u064A\u0629."
+  };
+}
+function mergeActionArtifacts(baseArtifacts, draft) {
+  if (!draft) return { artifacts: baseArtifacts, actions: [] };
+  return {
+    artifacts: [...baseArtifacts, draft.artifact],
+    actions: [draft.action]
+  };
+}
+var ACTION_TTL_MINUTES;
+var init_action_runtime = __esm({
+  "api/services/action-runtime/index.ts"() {
+    init_drizzle_orm();
+    init_schema2();
+    init_connection();
+    init_ai_memory();
+    init_ai_cost_policy();
+    init_artifacts();
+    init_extended_actions();
+    init_goal_create();
+    init_types10();
+    init_artifacts();
+    init_extended_actions();
+    init_goal_create();
+    ACTION_TTL_MINUTES = 30;
+  }
+});
+
+// api/services/voice-kernel/voice-tool-adapter.ts
+import { randomUUID as randomUUID2 } from "crypto";
+function asString(value) {
+  return typeof value === "string" && value.trim() ? value.trim() : void 0;
+}
+function asNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : void 0;
+}
+function clampLimit(value, fallback, max3) {
+  const parsed = Math.floor(Number(value));
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(Math.max(parsed, 1), max3);
+}
+function dateArg(value) {
+  const raw2 = asString(value);
+  if (!raw2 || !/^\d{4}-\d{2}-\d{2}$/.test(raw2)) return void 0;
+  return raw2;
+}
+function periodScope(args, period) {
+  return {
+    period,
+    startDate: period === "custom" ? dateArg(args.startDate) : void 0,
+    endDate: period === "custom" ? dateArg(args.endDate) : void 0
+  };
+}
+function periodFrom(value, fallback) {
+  const period = asString(value);
+  return period && PERIODS.includes(period) ? period : fallback;
+}
+function makeNeed2(index2, kind, reason, scope = {}, maxRows) {
+  return {
+    id: `voice_need_${index2}_${kind.replace(".", "_")}`,
+    kind,
+    priority: maxRows && maxRows > 8 ? "deep" : "hot",
+    reason,
+    scope,
+    maxRows,
+    cache: kind === "none" ? void 0 : {
+      keyHint: ["voice", kind, scope.period, scope.category, scope.granularity, scope.limit].filter(Boolean).join(":"),
+      ttlSeconds: 60,
+      hot: true
+    }
+  };
+}
+function buildFinanceNeeds(args) {
+  const kind = FINANCE_QUERY_KINDS.includes(args.kind) ? args.kind : "summary";
+  const period = periodFrom(args.period, kind === "summary" ? "today" : "current_month");
+  const category = asString(args.category);
+  const limit = clampLimit(args.limit, kind === "transactions" ? 8 : 6, 20);
+  const granularity = asString(args.granularity);
+  const baseScope = periodScope(args, period);
+  if (kind === "wallet_summary") {
+    return [makeNeed2(1, "wallet.summary", "voice_wallet_summary", {}, 8)];
+  }
+  if (kind === "period_comparison") {
+    return [
+      makeNeed2(
+        1,
+        "finance.period_comparison",
+        "voice_period_comparison",
+        {
+          period,
+          comparePeriod: "previous_month",
+          category,
+          startDate: baseScope.startDate,
+          endDate: baseScope.endDate
+        },
+        2
+      )
+    ];
+  }
+  if (kind === "category_total") {
+    return category ? [
+      makeNeed2(
+        1,
+        "finance.category_total",
+        "voice_exact_category_total",
+        { ...baseScope, category },
+        1
+      )
+    ] : [makeNeed2(1, "finance.summary", "voice_category_missing_fallback_summary", baseScope, 1)];
+  }
+  if (kind === "breakdown") {
+    return [
+      makeNeed2(
+        1,
+        "finance.breakdown",
+        "voice_grouped_breakdown",
+        {
+          ...baseScope,
+          category,
+          granularity: granularity ?? "category",
+          limit
+        },
+        limit
+      )
+    ];
+  }
+  if (kind === "transactions") {
+    return [
+      makeNeed2(
+        1,
+        "finance.transactions",
+        "voice_supporting_transactions",
+        { ...baseScope, category, limit },
+        limit
+      )
+    ];
+  }
+  if (kind === "chart") {
+    return [
+      makeNeed2(
+        1,
+        "chart.data",
+        "voice_chart_dataset",
+        {
+          ...baseScope,
+          category,
+          granularity: granularity ?? "category",
+          limit
+        },
+        limit
+      )
+    ];
+  }
+  if (kind === "goal_progress") {
+    return [makeNeed2(1, "finance.goal_progress", "voice_active_goal_progress", {}, 8)];
+  }
+  return [makeNeed2(1, "finance.summary", "voice_top_level_summary", baseScope, 1)];
+}
+function compactFacts(facts) {
+  return facts.slice(0, 18).map((fact3) => ({
+    ...fact3,
+    evidence: fact3.evidence?.slice(0, 3)
+  }));
+}
+async function executeFinanceQuery(ctx, args) {
+  const dataNeeds = buildFinanceNeeds(args);
+  const result = await resolveKernelDataNeeds(
+    {
+      userId: ctx.userId,
+      userType: ctx.userType
+    },
+    dataNeeds
   );
-  const totalExpense = rows.filter((r2) => r2.type === "expense").reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  const totalIncome = rows.filter((r2) => r2.type === "income").reduce((s3, r2) => s3 + Number(r2.amount), 0);
   return {
-    start_date: startDate.toLocaleDateString("ar-EG"),
-    end_date: endDate.toLocaleDateString("ar-EG"),
-    total_expense: totalExpense,
-    total_income: totalIncome,
-    transaction_count: rows.length
+    ok: true,
+    tool: "finance_query",
+    dataNeeds,
+    facts: compactFacts(result.facts),
+    artifacts: result.artifacts,
+    cacheHits: result.cacheHits,
+    retrievalPolicy: retrievalPolicyFor("voice_finance_query", dataNeeds, result.cacheHits),
+    embeddingApiStatus: embeddingApiStatusFor(dataNeeds, result.cacheHits),
+    result: {
+      errors: result.errors,
+      factCount: result.facts.length,
+      artifactCount: result.artifacts.length
+    }
   };
 }
-async function search_transactions(ctx, args) {
-  const query = args.query || "";
-  if (!query) return { error: "\u0645\u062D\u062A\u0627\u062C \u0643\u0644\u0645\u0629 \u0644\u0644\u0628\u062D\u062B" };
-  const rows = await db.select().from(expenses).where(
-    and(
-      eq(expenses.userId, ctx.userId),
-      eq(expenses.userType, ctx.userType),
-      like(expenses.description, `%${query}%`)
-    )
-  ).orderBy(desc(expenses.date)).limit(15);
-  return {
+async function executeMemorySearch(ctx, args) {
+  const query = asString(args.query);
+  if (!query) {
+    return { ok: false, tool: "memory_search", error: "query is required" };
+  }
+  const limit = clampLimit(args.limit, 5, 8);
+  const dataNeeds = [
+    makeNeed2(1, "memory.search", "voice_explicit_memory_search", { query, limit }, limit)
+  ];
+  const result = await retrieveMemoryContext({
+    userId: ctx.userId,
+    userType: ctx.userType,
     query,
-    results_count: rows.length,
-    results: rows.map((r2) => ({
-      description: r2.description,
-      amount: Number(r2.amount),
-      category: r2.category,
-      type: r2.type,
-      date: r2.date ? new Date(r2.date).toLocaleDateString("ar-EG") : ""
-    }))
+    limit
+  });
+  const facts = compactFacts(result.facts);
+  return {
+    ok: true,
+    tool: "memory_search",
+    dataNeeds,
+    facts,
+    artifacts: result.artifacts,
+    cacheHits: result.cacheHits,
+    retrievalPolicy: retrievalPolicyFor("voice_memory_search", dataNeeds, result.cacheHits),
+    embeddingApiStatus: embeddingApiStatusFor(dataNeeds, result.cacheHits),
+    result: {
+      query,
+      selected: facts.map((fact3) => fact3.value),
+      errors: result.errors
+    }
   };
 }
-async function executeTool(name2, args, ctx) {
-  const executor = TOOL_EXECUTORS[name2];
-  if (!executor) {
-    return JSON.stringify({ error: `Tool "${name2}" not found` });
+function payloadFromArgs(args) {
+  const title = asString(args.title);
+  const targetAmount = asNumber(args.targetAmount);
+  const targetDate = asString(args.targetDate);
+  const description = asString(args.description) ?? asString(args.message);
+  if (!title && !targetAmount) return null;
+  return {
+    title: title ?? "New saving goal",
+    description,
+    targetAmount,
+    targetDate
+  };
+}
+function voiceActionRisk(actionName) {
+  if (actionName === "goal.stop") return "high";
+  return "medium";
+}
+function objectPayload(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : null;
+}
+async function resolveVoiceActionPayload(ctx, actionName, args) {
+  const explicitPayload = objectPayload(args.payload);
+  if (explicitPayload) return validateRuntimeAction(ctx, actionName, explicitPayload);
+  const message = asString(args.message) ?? "";
+  if (actionName === "goal.create") {
+    const payload = payloadFromArgs(args) ?? createGoalPayloadFromMessage(message);
+    return payload ? validateGoalCreate(ctx, payload) : null;
+  }
+  const parsed = createPhase8PayloadFromMessage(message);
+  if (parsed && parsed.actionName === actionName) {
+    return validateRuntimeAction(ctx, actionName, parsed.payload);
+  }
+  return null;
+}
+async function executeActionDraft(ctx, args) {
+  const actionName = asString(args.actionName) ?? "goal.create";
+  const payload = await resolveVoiceActionPayload(ctx, actionName, args);
+  if (!payload) {
+    return {
+      ok: false,
+      tool: "action_draft",
+      error: `Could not infer ${actionName} payload. Ask for the missing exact fields before drafting.`
+    };
+  }
+  const risk = voiceActionRisk(actionName);
+  const now = /* @__PURE__ */ new Date();
+  const action = {
+    id: `voice_action_${randomUUID2()}`,
+    actionName,
+    risk,
+    status: "pending_confirmation",
+    summary: actionName === "goal.create" ? goalSummary(payload) : actionSummary(actionName, payload),
+    payload,
+    requiresUiConfirmation: risk === "high",
+    createdAt: now.toISOString(),
+    updatedAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + VOICE_ACTION_TTL_MS).toISOString()
+  };
+  await addVoicePendingAction(ctx.sessionId, action);
+  return {
+    ok: true,
+    tool: "action_draft",
+    action,
+    result: {
+      requiresConfirmation: true,
+      requiresUiConfirmation: action.requiresUiConfirmation,
+      instruction: "Ask the user for explicit confirmation before calling action_confirm."
+    }
+  };
+}
+async function executeActionConfirm(ctx, args) {
+  const action = await getVoicePendingAction(ctx.sessionId, asString(args.actionId));
+  if (!action) {
+    return { ok: false, tool: "action_confirm", error: "No pending voice action found" };
+  }
+  if (action.risk === "high" || action.requiresUiConfirmation) {
+    return {
+      ok: false,
+      tool: "action_confirm",
+      error: "High risk actions require UI confirmation",
+      requiresUiConfirmation: true,
+      result: {
+        actionId: action.id,
+        summary: action.summary
+      }
+    };
   }
   try {
-    const result = await executor(ctx, args);
-    return JSON.stringify(result);
+    const draft = action.actionName === "goal.create" ? await createPendingGoalAction(ctx, action.payload) : await createPendingRuntimeAction(ctx, action.actionName, action.payload);
+    const dbActionId = Number(draft.action.id);
+    const execution = await confirmAction(ctx, dbActionId);
+    const result = {
+      actionId: execution.actionId,
+      actionName: execution.actionName,
+      status: execution.status,
+      message: execution.message,
+      result: execution.result
+    };
+    await updateVoicePendingAction(ctx.sessionId, action.id, {
+      status: "executed",
+      dbActionId,
+      result
+    });
+    return {
+      ok: true,
+      tool: "action_confirm",
+      message: execution.message,
+      result: {
+        voiceActionId: action.id,
+        ...result
+      },
+      artifacts: execution.artifact ? [execution.artifact] : []
+    };
   } catch (error48) {
-    console.error(`[AI Chat Tool] Error executing ${name2}:`, error48.message);
-    return JSON.stringify({ error: `\u0641\u0634\u0644 \u0641\u064A \u062A\u0646\u0641\u064A\u0630 ${name2}` });
+    await updateVoicePendingAction(ctx.sessionId, action.id, {
+      status: "failed",
+      result: {
+        error: error48 instanceof Error ? error48.message : String(error48)
+      }
+    });
+    throw error48;
   }
 }
-var TOOL_EXECUTORS, TOOL_DEFINITIONS;
-var init_ai_chat_tools = __esm({
-  "api/services/ai-chat-tools.ts"() {
-    init_connection();
-    init_schema2();
-    init_drizzle_orm();
-    TOOL_EXECUTORS = {
-      get_today_expenses,
-      get_month_summary,
-      get_category_breakdown,
-      get_recent_transactions,
-      get_spending_by_person,
-      get_family_spending,
-      get_wallet_balances,
-      get_financial_goals,
-      get_previous_month_comparison,
-      get_daily_average,
-      get_spending_by_date_range,
-      search_transactions
+async function executeActionCancel(ctx, args) {
+  const action = await getVoicePendingAction(ctx.sessionId, asString(args.actionId));
+  if (!action) {
+    return { ok: false, tool: "action_cancel", error: "No pending voice action found" };
+  }
+  await updateVoicePendingAction(ctx.sessionId, action.id, { status: "cancelled" });
+  return {
+    ok: true,
+    tool: "action_cancel",
+    message: "Pending voice action cancelled.",
+    result: {
+      voiceActionId: action.id,
+      status: "cancelled"
+    }
+  };
+}
+async function executeVoiceTool(request) {
+  const toolName = request.toolName;
+  try {
+    if (toolName === "finance_query") {
+      return executeFinanceQuery(request.ctx, request.args);
+    }
+    if (toolName === "memory_search") {
+      return executeMemorySearch(request.ctx, request.args);
+    }
+    if (toolName === "action_draft") {
+      return executeActionDraft(request.ctx, request.args);
+    }
+    if (toolName === "action_confirm") {
+      return executeActionConfirm(request.ctx, request.args);
+    }
+    if (toolName === "action_cancel") {
+      return executeActionCancel(request.ctx, request.args);
+    }
+    return { ok: false, tool: request.toolName, error: `Unknown voice tool ${request.toolName}` };
+  } catch (error48) {
+    return {
+      ok: false,
+      tool: request.toolName,
+      error: error48 instanceof Error ? error48.message : String(error48)
     };
-    TOOL_DEFINITIONS = [
+  }
+}
+var PERIODS, FINANCE_QUERY_KINDS, VOICE_ACTION_TTL_MS, VOICE_TOOL_DECLARATIONS;
+var init_voice_tool_adapter = __esm({
+  "api/services/voice-kernel/voice-tool-adapter.ts"() {
+    init_retrieval_policy();
+    init_action_runtime();
+    init_ai_memory();
+    init_finance_semantic_layer();
+    init_voice_session_state();
+    PERIODS = [
+      "today",
+      "yesterday",
+      "current_week",
+      "current_month",
+      "previous_month",
+      "salary_cycle",
+      "custom"
+    ];
+    FINANCE_QUERY_KINDS = [
+      "summary",
+      "wallet_summary",
+      "period_comparison",
+      "category_total",
+      "breakdown",
+      "transactions",
+      "chart",
+      "goal_progress"
+    ];
+    VOICE_ACTION_TTL_MS = 30 * 60 * 1e3;
+    VOICE_TOOL_DECLARATIONS = [
       {
-        type: "function",
-        function: {
-          name: "get_today_expenses",
-          description: "\u062C\u0644\u0628 \u0645\u0635\u0627\u0631\u064A\u0641 \u0648\u062F\u062E\u0644 \u0627\u0644\u064A\u0648\u0645 \u0628\u0627\u0644\u062A\u0641\u0635\u064A\u0644",
-          parameters: { type: "object", properties: {}, required: [] }
+        name: "finance_query",
+        description: "Fetch the smallest exact financial dataset needed for a voice answer.",
+        parameters: {
+          type: "object",
+          properties: {
+            kind: {
+              type: "string",
+              enum: FINANCE_QUERY_KINDS,
+              description: "summary, wallet_summary, period_comparison, category_total, breakdown, transactions, chart, or goal_progress"
+            },
+            period: {
+              type: "string",
+              enum: PERIODS,
+              description: "Time window. Prefer today for simple daily questions and current_month for analysis."
+            },
+            category: {
+              type: "string",
+              description: "Optional spending category such as food, transport, subscriptions."
+            },
+            granularity: {
+              type: "string",
+              enum: ["day", "week", "month", "category", "merchant"],
+              description: "Grouping for breakdowns or charts."
+            },
+            limit: {
+              type: "number",
+              description: "Maximum rows or points. Keep it small in voice."
+            },
+            startDate: {
+              type: "string",
+              description: "YYYY-MM-DD for custom ranges, for example the first day of a 6-month chart."
+            },
+            endDate: {
+              type: "string",
+              description: "YYYY-MM-DD for custom ranges, usually today's date."
+            }
+          },
+          required: ["kind"]
         }
       },
       {
-        type: "function",
-        function: {
-          name: "get_month_summary",
-          description: "\u0645\u0644\u062E\u0635 \u0627\u0644\u0634\u0647\u0631: \u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641 \u0648\u0627\u0644\u062F\u062E\u0644 \u0648\u0627\u0644\u0635\u0627\u0641\u064A \u0648\u0645\u062A\u0648\u0633\u0637 \u0627\u0644\u0635\u0631\u0641 \u0627\u0644\u064A\u0648\u0645\u064A",
-          parameters: {
-            type: "object",
-            properties: {
-              month: { type: "string", description: "\u0627\u0644\u0634\u0647\u0631 \u0628\u0635\u064A\u063A\u0629 YYYY-MM (\u0627\u062E\u062A\u064A\u0627\u0631\u064A\u060C \u0627\u0644\u0627\u0641\u062A\u0631\u0627\u0636\u064A \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062D\u0627\u0644\u064A)" }
+        name: "memory_search",
+        description: "Search previous AI chat/call memory capsules only when the user asks about prior discussions or preferences.",
+        parameters: {
+          type: "object",
+          properties: {
+            query: { type: "string", description: "The exact memory topic to search for." },
+            limit: { type: "number", description: "Small result limit, usually 3 to 5." }
+          },
+          required: ["query"]
+        }
+      },
+      {
+        name: "action_draft",
+        description: "Prepare a website action draft after discussing it. Does not execute anything.",
+        parameters: {
+          type: "object",
+          properties: {
+            actionName: {
+              type: "string",
+              enum: [
+                "goal.create",
+                "goal.update",
+                "goal.stop",
+                "expense.create",
+                "expense.recategorize",
+                "budget.create",
+                "profile.update",
+                "wallet.create",
+                "wallet.update"
+              ]
+            },
+            message: {
+              type: "string",
+              description: "The user's spoken request or agreed plan."
+            },
+            title: { type: "string" },
+            targetAmount: { type: "number" },
+            targetDate: { type: "string", description: "YYYY-MM-DD if known." },
+            description: { type: "string" },
+            payload: {
+              type: "object",
+              description: "Structured action payload when the model has already collected the exact fields."
+            }
+          },
+          required: ["actionName"]
+        }
+      },
+      {
+        name: "action_confirm",
+        description: "Execute the latest pending low/medium risk voice action only after explicit user confirmation.",
+        parameters: {
+          type: "object",
+          properties: {
+            actionId: {
+              type: "string",
+              description: "Optional voice action id. If absent, confirm the latest pending action."
             }
           }
         }
       },
       {
-        type: "function",
-        function: {
-          name: "get_category_breakdown",
-          description: "\u062A\u0641\u0635\u064A\u0644 \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641 \u062D\u0633\u0628 \u0627\u0644\u0641\u0626\u0629 \u0645\u0639 \u0627\u0644\u0646\u0633\u0628 \u0627\u0644\u0645\u0626\u0648\u064A\u0629",
-          parameters: {
-            type: "object",
-            properties: {
-              month: { type: "string", description: "\u0627\u0644\u0634\u0647\u0631 \u0628\u0635\u064A\u063A\u0629 YYYY-MM (\u0627\u062E\u062A\u064A\u0627\u0631\u064A)" }
+        name: "action_cancel",
+        description: "Cancel a pending voice action.",
+        parameters: {
+          type: "object",
+          properties: {
+            actionId: {
+              type: "string",
+              description: "Optional voice action id. If absent, cancel the latest pending action."
             }
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "get_recent_transactions",
-          description: "\u0622\u062E\u0631 \u0627\u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A \u0627\u0644\u0645\u0633\u062C\u0644\u0629 \u0628\u0627\u0644\u062A\u0641\u0635\u064A\u0644",
-          parameters: {
-            type: "object",
-            properties: {
-              count: { type: "number", description: "\u0639\u062F\u062F \u0627\u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A (\u0627\u0644\u0627\u0641\u062A\u0631\u0627\u0636\u064A 10\u060C \u0627\u0644\u0623\u0642\u0635\u0649 30)" }
-            }
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "get_spending_by_person",
-          description: "\u0627\u0644\u0645\u0628\u0627\u0644\u063A \u0627\u0644\u0645\u062D\u0648\u0651\u0644\u0629 \u0623\u0648 \u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0629 \u0639\u0644\u0649 \u0634\u062E\u0635 \u0645\u0639\u064A\u0651\u0646",
-          parameters: {
-            type: "object",
-            properties: {
-              name: { type: "string", description: "\u0627\u0633\u0645 \u0627\u0644\u0634\u062E\u0635" }
-            },
-            required: ["name"]
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "get_family_spending",
-          description: "\u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u0623\u0633\u0631\u0629 \u0648\u0627\u0644\u0623\u0648\u0644\u0627\u062F \u0648\u0627\u0644\u062A\u0639\u0644\u064A\u0645 \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631",
-          parameters: { type: "object", properties: {} }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "get_wallet_balances",
-          description: "\u0623\u0631\u0635\u062F\u0629 \u0643\u0644 \u0627\u0644\u0645\u062D\u0627\u0641\u0638 \u0648\u0627\u0644\u062D\u0633\u0627\u0628\u0627\u062A",
-          parameters: { type: "object", properties: {} }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "get_financial_goals",
-          description: "\u0623\u0647\u062F\u0627\u0641 \u0627\u0644\u0627\u062F\u062E\u0627\u0631 \u0627\u0644\u0646\u0634\u0637\u0629 \u0648\u0627\u0644\u062A\u0642\u062F\u0645 \u0641\u064A\u0647\u0627",
-          parameters: { type: "object", properties: {} }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "get_previous_month_comparison",
-          description: "\u0645\u0642\u0627\u0631\u0646\u0629 \u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062D\u0627\u0644\u064A \u0628\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0633\u0627\u0628\u0642",
-          parameters: { type: "object", properties: {} }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "get_daily_average",
-          description: "\u0645\u062A\u0648\u0633\u0637 \u0627\u0644\u0635\u0631\u0641 \u0627\u0644\u064A\u0648\u0645\u064A \u0648\u0627\u0644\u062A\u0648\u0642\u0639\u0627\u062A \u0644\u0646\u0647\u0627\u064A\u0629 \u0627\u0644\u0634\u0647\u0631",
-          parameters: { type: "object", properties: {} }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "get_spending_by_date_range",
-          description: "\u0645\u0635\u0627\u0631\u064A\u0641 \u0641\u062A\u0631\u0629 \u0632\u0645\u0646\u064A\u0629 \u0645\u062D\u062F\u062F\u0629",
-          parameters: {
-            type: "object",
-            properties: {
-              start_date: { type: "string", description: "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0628\u062F\u0627\u064A\u0629 (YYYY-MM-DD)" },
-              end_date: { type: "string", description: "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0646\u0647\u0627\u064A\u0629 (YYYY-MM-DD)" }
-            },
-            required: ["start_date", "end_date"]
-          }
-        }
-      },
-      {
-        type: "function",
-        function: {
-          name: "search_transactions",
-          description: "\u0628\u062D\u062B \u0641\u064A \u0627\u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A \u0628\u0643\u0644\u0645\u0629 \u0623\u0648 \u0648\u0635\u0641 \u0645\u0639\u064A\u0651\u0646",
-          parameters: {
-            type: "object",
-            properties: {
-              query: { type: "string", description: "\u0643\u0644\u0645\u0629 \u0627\u0644\u0628\u062D\u062B" }
-            },
-            required: ["query"]
           }
         }
       }
@@ -174153,123 +181426,205 @@ var init_ai_chat_tools = __esm({
   }
 });
 
-// api/services/ai-chat-service.ts
-async function buildSystemPrompt(userId, userType) {
-  let userName = "\u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645";
-  let profession = "";
-  let goal = "";
-  let personality = "";
-  try {
-    const profile = await getSmartProfile(userId, userType);
-    userName = profile.basicInfo.name || userName;
-    profession = profile.basicInfo.profession || "";
-    goal = {
-      organize_expenses: "\u062A\u0646\u0638\u064A\u0645 \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641",
-      reduce_spending: "\u062A\u0642\u0644\u064A\u0644 \u0627\u0644\u0635\u0631\u0641",
-      track_income: "\u062A\u062A\u0628\u0639 \u0627\u0644\u062F\u062E\u0644",
-      save_money: "\u0627\u062F\u062E\u0627\u0631 \u0627\u0644\u0645\u0627\u0644",
-      manage_business: "\u0625\u062F\u0627\u0631\u0629 \u0645\u0634\u0631\u0648\u0639",
-      pay_debt: "\u0633\u062F\u0627\u062F \u0627\u0644\u062F\u064A\u0648\u0646"
-    }[String(profile.financialInfo.primaryGoal)] || "";
-    personality = String(
-      profile.aiInferredAttributes?.spendingBehavior || ""
-    );
-  } catch {
-  }
-  const profileLine = [
-    profession ? `\u0627\u0644\u0645\u0647\u0646\u0629: ${profession}` : "",
-    goal ? `\u0627\u0644\u0647\u062F\u0641: ${goal}` : "",
-    personality ? `\u0623\u0633\u0644\u0648\u0628 \u0627\u0644\u0625\u0646\u0641\u0627\u0642: ${personality}` : ""
-  ].filter(Boolean).join(". ");
-  return `\u0623\u0646\u062A "\u0633\u0645\u0627\u0631\u062A" \u2014 \u0627\u0644\u0645\u0633\u062A\u0634\u0627\u0631 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0630\u0643\u064A \u0627\u0644\u062E\u0627\u0635 \u0628\u0640 ${userName} \u0641\u064A \u062A\u0637\u0628\u064A\u0642 SmartSpend.
-${profileLine ? profileLine + "." : ""}
-
-\u0644\u062F\u064A\u0643 \u0623\u062F\u0648\u0627\u062A (functions) \u062A\u0642\u062F\u0631 \u062A\u0633\u062A\u062E\u062F\u0645\u0647\u0627 \u0639\u0634\u0627\u0646 \u062A\u062C\u064A\u0628 \u0623\u064A \u0645\u0639\u0644\u0648\u0645\u0629 \u0645\u0627\u0644\u064A\u0629 \u0639\u0646 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645. \u0627\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0623\u062F\u0648\u0627\u062A \u0627\u0644\u0645\u0646\u0627\u0633\u0628\u0629 \u0628\u062F\u0644 \u0645\u0627 \u062A\u0641\u062A\u0631\u0636 \u0623\u0631\u0642\u0627\u0645.
-
-\u0642\u0648\u0627\u0639\u062F \u0645\u0647\u0645\u0629:
-1. \u0627\u062A\u0643\u0644\u0645 \u0628\u0627\u0644\u0645\u0635\u0631\u064A \u0628\u0634\u0643\u0644 \u0648\u062F\u064A \u0648\u0645\u062E\u062A\u0635\u0631
-2. \u0644\u0648 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0633\u0623\u0644\u0643 \u0639\u0646 \u0623\u0631\u0642\u0627\u0645/\u0645\u0635\u0627\u0631\u064A\u0641 \u2192 \u0627\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0623\u062F\u0648\u0627\u062A \u0623\u0648\u0644\u0627\u064B
-3. \u0645\u0627 \u062A\u0642\u0648\u0644\u0634 \u0623\u0631\u0642\u0627\u0645 \u0645\u0646 \u062E\u064A\u0627\u0644\u0643 \u0623\u0628\u062F\u0627\u064B
-4. \u0631\u062F\u0648\u062F\u0643 \u062A\u0643\u0648\u0646 \u0645\u062E\u062A\u0635\u0631\u0629 \u0648\u0645\u0641\u064A\u062F\u0629 (\u0645\u0634 \u0623\u0643\u062A\u0631 \u0645\u0646 3-4 \u0633\u0637\u0648\u0631 \u0625\u0644\u0627 \u0644\u0648 \u0637\u0644\u0628 \u062A\u0641\u0627\u0635\u064A\u0644)
-5. \u0644\u0648 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0639\u0627\u064A\u0632 \u064A\u0636\u064A\u0641 \u0645\u0635\u0631\u0648\u0641 \u0623\u0648 \u064A\u0639\u062F\u0644 \u062D\u0627\u062C\u0629\u060C \u0623\u0643\u062F \u0645\u0639\u0627\u0647 \u0627\u0644\u0623\u0648\u0644 \u0642\u0628\u0644 \u0645\u0627 \u062A\u0646\u0641\u0630
-6. \u0627\u0633\u062A\u062E\u062F\u0645 \u0625\u064A\u0645\u0648\u062C\u064A \u0628\u0634\u0643\u0644 \u062E\u0641\u064A\u0641 \u{1F4B0}\u{1F4CA}
-7. \u0644\u0648 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0633\u0644\u0651\u0645 \u0639\u0644\u064A\u0643 \u0623\u0648 \u0643\u0644\u0645\u0643 \u0643\u0644\u0627\u0645 \u0639\u0627\u062F\u064A\u060C \u0631\u062F \u0639\u0644\u064A\u0647 \u0628\u0634\u0643\u0644 \u0637\u0628\u064A\u0639\u064A \u0628\u062F\u0648\u0646 \u0645\u0627 \u062A\u0633\u062A\u062E\u062F\u0645 \u0623\u062F\u0648\u0627\u062A`;
+// api/services/voice-kernel/voice-call-archive.ts
+function insertedId(result) {
+  const direct = Number(result?.insertId);
+  if (Number.isFinite(direct) && direct > 0) return direct;
+  const first = Array.isArray(result) ? result[0] : void 0;
+  const nested = Number(first?.insertId);
+  return Number.isFinite(nested) && nested > 0 ? nested : 0;
 }
-async function processAIChatMessage(input) {
-  const { userId, userType, message, conversationHistory, config: config3 } = input;
-  const systemPrompt = await buildSystemPrompt(userId, userType);
-  const messages = [
-    { role: "system", content: systemPrompt }
-  ];
-  const historyWindow = conversationHistory.slice(
-    -(config3.maxHistory * 2)
-  );
-  for (const msg of historyWindow) {
-    if (msg.role === "user" || msg.role === "assistant") {
-      messages.push({ role: msg.role, content: msg.content });
-    }
-  }
-  messages.push({ role: "user", content: message });
-  let totalTokens = 0;
-  const toolsUsed = [];
-  let response = await callChatCompletionAPI(config3.baseUrl, config3.apiKey, {
-    model: config3.model,
-    messages,
-    tools: TOOL_DEFINITIONS,
-    tool_choice: "auto",
-    max_tokens: config3.maxTokens,
-    temperature: 0.7
+function compactTranscript(messages) {
+  return messages.map((message) => ({
+    role: message.role,
+    content: message.content.replace(/\s+/g, " ").trim()
+  })).filter((message) => message.content.length > 0).slice(-40);
+}
+function archiveSummary(sessionId, messages) {
+  const text2 = messages.slice(-12).map((message) => `${message.role}: ${message.content}`).join("\n");
+  const compact = text2.length > 2500 ? `${text2.slice(0, 2497)}...` : text2;
+  return [`[Voice call archive]`, `session=${sessionId}`, compact].join("\n");
+}
+async function persistVoiceCallArchive(input) {
+  const transcript = compactTranscript(input.transcript);
+  if (transcript.length === 0) return null;
+  const inserted = await db.insert(chatConversations).values({
+    userId: input.userId,
+    userType: input.userType,
+    title: `Voice call archive ${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}`,
+    messageCount: 1,
+    totalTokens: 0,
+    lastMessageAt: /* @__PURE__ */ new Date()
   });
-  totalTokens += response.tokensUsed;
-  let round2 = 0;
-  while (response.toolCalls && round2 < MAX_TOOL_ROUNDS) {
-    round2++;
-    messages.push({
-      role: "assistant",
-      content: response.text || "",
-      tool_calls: response.toolCalls
-    });
-    for (const tc of response.toolCalls) {
-      const toolName = tc.function.name;
-      toolsUsed.push(toolName);
-      let args = {};
-      try {
-        args = JSON.parse(tc.function.arguments || "{}");
-      } catch {
-        args = {};
-      }
-      console.log(`[AI Chat] Executing tool: ${toolName}(${JSON.stringify(args)})`);
-      const result = await executeTool(toolName, args, { userId, userType });
-      messages.push({
-        role: "tool",
-        content: result,
-        tool_call_id: tc.id
-      });
-    }
-    response = await callChatCompletionAPI(config3.baseUrl, config3.apiKey, {
-      model: config3.model,
-      messages,
-      tools: TOOL_DEFINITIONS,
-      tool_choice: "auto",
-      max_tokens: config3.maxTokens,
-      temperature: 0.7
-    });
-    totalTokens += response.tokensUsed;
+  const conversationId = insertedId(inserted);
+  if (!conversationId) {
+    throw new Error("Failed to create voice call archive conversation");
   }
+  await db.insert(chatMessages).values({
+    conversationId,
+    role: "system",
+    content: archiveSummary(input.sessionId, transcript),
+    tokensUsed: 0,
+    model: "gemini_live_voice",
+    createdAt: /* @__PURE__ */ new Date()
+  });
+  await writeConversationMemory({
+    userId: input.userId,
+    userType: input.userType,
+    conversationId,
+    messages: transcript,
+    source: "voice"
+  });
   return {
-    response: response.text || "\u0639\u0630\u0631\u0627\u064B\u060C \u0645\u0634 \u0642\u0627\u062F\u0631 \u0623\u0631\u062F \u062F\u0644\u0648\u0642\u062A\u064A. \u062C\u0631\u0628 \u062A\u0627\u0646\u064A.",
-    tokensUsed: totalTokens,
-    model: response.model,
-    toolsUsed: [...new Set(toolsUsed)]
+    conversationId,
+    archivedMessages: transcript.length
   };
 }
-var MAX_TOOL_ROUNDS;
-var init_ai_chat_service = __esm({
-  "api/services/ai-chat-service.ts"() {
-    init_deepseek_client();
-    init_ai_chat_tools();
-    init_user_profile_service();
-    MAX_TOOL_ROUNDS = 3;
+var init_voice_call_archive = __esm({
+  "api/services/voice-kernel/voice-call-archive.ts"() {
+    init_schema2();
+    init_connection();
+    init_ai_memory();
+  }
+});
+
+// api/services/voice-kernel/voice-prefetch.ts
+function voicePrefetchNeeds(dataNeeds) {
+  const needs = dataNeeds.filter(
+    (need) => need.priority === "hot" && VOICE_PREFETCH_STRUCTURED_KINDS.has(need.kind)
+  );
+  const skipped = dataNeeds.filter((need) => !needs.includes(need) && need.kind !== "none").map((need) => need.kind);
+  return { needs, skipped };
+}
+function previewFacts(facts) {
+  return facts.slice(0, 6).map((fact3) => ({
+    label: fact3.label,
+    value: fact3.value
+  }));
+}
+async function prefetchVoiceTurnContext(input) {
+  const transcript = input.transcript.trim();
+  if (transcript.length < 2) return null;
+  const startedAt = (/* @__PURE__ */ new Date()).toISOString();
+  const intent = routeIntent(transcript);
+  const dataNeeds = compileDataNeeds(intent).slice(0, 3);
+  const prefetch = voicePrefetchNeeds(dataNeeds);
+  const errors = [];
+  const facts = [];
+  const cacheHits = prefetch.skipped.map((kind) => `voice_prefetch:skipped:${kind}`);
+  try {
+    if (prefetch.needs.length > 0) {
+      const finance = await resolveKernelDataNeeds(
+        {
+          userId: input.ctx.userId,
+          userType: input.ctx.userType
+        },
+        prefetch.needs
+      );
+      facts.push(...finance.facts);
+      errors.push(...finance.errors);
+      cacheHits.push(...finance.cacheHits);
+    }
+  } catch (error48) {
+    errors.push(`finance:${error48 instanceof Error ? error48.message : String(error48)}`);
+  }
+  const prefetchState = {
+    transcript,
+    intentKind: intent.kind,
+    dataNeedKinds: prefetch.needs.map((need) => need.kind),
+    factsPreview: previewFacts(facts),
+    cacheHits,
+    errors,
+    startedAt,
+    completedAt: (/* @__PURE__ */ new Date()).toISOString()
+  };
+  await updateVoiceSessionState(input.ctx.sessionId, (state) => ({
+    ...state,
+    prefetch: prefetchState
+  }));
+  return prefetchState;
+}
+var VOICE_PREFETCH_STRUCTURED_KINDS;
+var init_voice_prefetch = __esm({
+  "api/services/voice-kernel/voice-prefetch.ts"() {
+    init_ai_kernel();
+    init_finance_semantic_layer();
+    init_voice_session_state();
+    VOICE_PREFETCH_STRUCTURED_KINDS = /* @__PURE__ */ new Set([
+      "finance.summary",
+      "finance.category_total",
+      "finance.period_comparison",
+      "finance.goal_progress",
+      "wallet.summary",
+      "profile.snapshot",
+      "goals.active"
+    ]);
+  }
+});
+
+// api/services/voice-kernel/index.ts
+var init_voice_kernel = __esm({
+  "api/services/voice-kernel/index.ts"() {
+    init_types9();
+    init_hot_context();
+    init_voice_prompt();
+    init_voice_session_state();
+    init_voice_tool_adapter();
+    init_voice_call_archive();
+    init_voice_prefetch();
+  }
+});
+
+// api/services/parser-trace.ts
+function parseRisk(result) {
+  if (result.decision === "clarify" || result.overallConfidence < 60) return "high";
+  if (result.decision === "review" || result.overallConfidence < 85) return "medium";
+  return "low";
+}
+function buildParserTrace(input) {
+  const llmCalls = input.result.log.aiResult?.attempted ? 1 : 0;
+  const embeddingCalls = input.result.log.embeddingResult?.attempted ? 1 : 0;
+  const classifierTool = input.result.parsedBy === "rule_engine" ? "rule_engine" : "classifier.ai";
+  const dataNeeds = [
+    input.financeContextSource,
+    input.inputChannel === "voice" ? "speech.transcription" : null,
+    "classification.expense"
+  ].filter(Boolean);
+  return {
+    schemaVersion: 2,
+    route: input.route,
+    engine: "classification_engine.v1",
+    engineRole: "expense_classification",
+    agentBoundary: "independent_classification_engine",
+    tools: ["classification_engine.v1", "smart_pipeline", classifierTool],
+    dataNeeds,
+    costPolicy: {
+      llm: llmCalls > 0 ? "conditional_classifier_fallback" : "skipped",
+      embedding: embeddingCalls > 0 ? "candidate_category_lookup" : "skipped",
+      sendsRawHistoryToLLM: false,
+      usesFinanceSummaryOnly: input.financeContextSource === "finance.summary"
+    },
+    inputChannel: input.inputChannel,
+    provider: input.provider,
+    model: input.result.modelUsed,
+    parsedBy: input.result.parsedBy,
+    decision: input.result.decision,
+    confidence: input.result.overallConfidence,
+    itemCount: input.result.items.length,
+    llmCalls,
+    embeddingCalls,
+    inputTokens: llmCalls > 0 ? input.estimatedInputTokens : 0,
+    totalTokens: input.result.tokensUsed,
+    cachedTokens: input.result.cachedTokens ?? 0,
+    latencyMs: input.latencyMs,
+    financeContextSource: input.financeContextSource,
+    hallucinationRisk: parseRisk(input.result),
+    routing: input.result.log.routing ?? null,
+    stt: input.stt
+  };
+}
+var init_parser_trace = __esm({
+  "api/services/parser-trace.ts"() {
   }
 });
 
@@ -174281,6 +181636,49 @@ __export(ai_router_exports, {
   resolveRoutingConfig: () => resolveRoutingConfig,
   runSTTPipeline: () => runSTTPipeline
 });
+function compactQaFact(fact3) {
+  return {
+    label: fact3.label,
+    source: fact3.source,
+    confidence: fact3.confidence,
+    value: typeof fact3.value === "string" && fact3.value.length > 120 ? `${fact3.value.slice(0, 117)}...` : fact3.value
+  };
+}
+function summarizeVoiceQaToolResponse(toolName, response) {
+  const record2 = response && typeof response === "object" ? response : {};
+  const dataNeeds = Array.isArray(record2.dataNeeds) ? record2.dataNeeds.filter((need) => need && typeof need === "object") : [];
+  const facts = Array.isArray(record2.facts) ? record2.facts : [];
+  const artifacts = Array.isArray(record2.artifacts) ? record2.artifacts : [];
+  const cacheHits = Array.isArray(record2.cacheHits) ? record2.cacheHits.map((hit) => String(hit)) : [];
+  const result = record2.result && typeof record2.result === "object" ? record2.result : {};
+  const action = record2.action && typeof record2.action === "object" ? record2.action : void 0;
+  return {
+    toolName,
+    ok: record2.ok === true,
+    dataNeeds: dataNeeds.map((need) => need.kind).filter(Boolean),
+    factCount: facts.length,
+    artifactCount: artifacts.length,
+    factsPreview: facts.slice(0, 4).map(compactQaFact),
+    cacheHits,
+    embeddingCalls: embeddingApiCallsFromCacheHits(cacheHits),
+    embeddingApiStatus: typeof record2.embeddingApiStatus === "string" ? record2.embeddingApiStatus : embeddingApiStatusFor(dataNeeds, cacheHits),
+    retrievalPolicy: record2.retrievalPolicy && typeof record2.retrievalPolicy === "object" ? record2.retrievalPolicy : void 0,
+    cacheRuntime: getCacheRuntimeStatus(),
+    action: action ? {
+      id: action.id,
+      actionName: action.actionName,
+      status: action.status,
+      summary: action.summary,
+      requiresUiConfirmation: action.requiresUiConfirmation
+    } : void 0,
+    result: {
+      requiresConfirmation: result.requiresConfirmation,
+      requiresUiConfirmation: result.requiresUiConfirmation,
+      errors: Array.isArray(result.errors) ? result.errors.map(String).slice(0, 4) : []
+    },
+    error: typeof record2.error === "string" ? record2.error : void 0
+  };
+}
 async function runSTTPipeline(base64Audio, mimeType, apiKey, modelName, mode = "standard") {
   const geminiPrompt = "\u062D\u0648\u0651\u0644 \u0627\u0644\u0635\u0648\u062A \u0644\u0646\u0635 \u0645\u0635\u0631\u064A \u0639\u0627\u0645\u064A. \u0623\u0631\u0642\u0627\u0645 \u0628\u0623\u0631\u0642\u0627\u0645 (50 \u0645\u0634 \u062E\u0645\u0633\u064A\u0646). \u0644\u0627 \u062A\u0636\u0641 \u0634\u0631\u062D.";
   const whisperPrompt = "\u0645\u0635\u0627\u0631\u064A\u0641 \u0645\u0635\u0631\u064A\u0629: \u0627\u0648\u0628\u0631 \u0643\u0631\u064A\u0645 \u0628\u0646\u0632\u064A\u0646 \u0643\u0647\u0631\u0628\u0627 \u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0641\u0627\u0644\u064A\u0648 \u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A. \u0627\u062F\u064A\u062A \u0635\u0631\u0641\u062A \u062F\u0641\u0639\u062A \u0631\u0643\u0628\u062A \u0641\u0637\u0631\u062A \u0627\u0643\u0644\u062A \u0627\u0634\u062A\u0631\u064A\u062A \u062C\u0628\u062A \u062D\u0648\u0644\u062A \u0642\u0628\u0636\u062A \u0633\u0644\u0641\u062A. \u0635\u0627\u062D\u0628\u064A \u0627\u062E\u0648\u064A\u0627 \u0645\u0631\u0627\u062A\u064A \u0628\u0627\u0628\u0627 \u0645\u0627\u0645\u0627. \u0645\u064A\u0647 \u0645\u064A\u062A\u064A\u0646 \u0627\u0644\u0641 \u062E\u0645\u0633\u064A\u0646.";
@@ -174473,6 +181871,22 @@ async function getVoiceSecondsSince(userId, userType, cycleStart) {
 function planValue(values, plan, fallback) {
   return Object.prototype.hasOwnProperty.call(values, plan) ? values[plan] : fallback;
 }
+function materialReportMissingNumbers(missing) {
+  return (missing ?? []).filter((item) => {
+    const parsed = Math.abs(Number(item));
+    if (!Number.isFinite(parsed)) return false;
+    return parsed >= 10 || !Number.isInteger(parsed);
+  });
+}
+function reportHallucinationRisk(missing, llmCalls) {
+  if (llmCalls <= 0) return { risk: "low", signals: [] };
+  const materialMissing = materialReportMissingNumbers(missing);
+  if (materialMissing.length === 0) return { risk: "low", signals: [] };
+  return {
+    risk: materialMissing.length <= 2 ? "medium" : "high",
+    signals: materialMissing.map((number4) => `missing_number:${number4}`)
+  };
+}
 async function getAiClient(taskType, userPlan = "free") {
   const settings = await db.select().from(systemSettings);
   const cfg = {};
@@ -174593,7 +182007,7 @@ async function getAiClient(taskType, userPlan = "free") {
     cfg
   };
 }
-var aiRouter;
+var MONTHLY_REPORT_TRANSACTION_EVIDENCE_LIMIT, VOICE_QA_TOOL_NAMES, aiRouter;
 var init_ai_router = __esm({
   "api/ai-router.ts"() {
     init_zod();
@@ -174604,6 +182018,7 @@ var init_ai_router = __esm({
     init_schema2();
     init_drizzle_orm();
     init_env();
+    init_redis_client();
     init_smart_pipeline();
     init_user_profile_service();
     init_lifestyle_inference_engine();
@@ -174613,10 +182028,55 @@ var init_ai_router = __esm({
     init_model_mapper();
     init_fireworks_client();
     init_ai_usage_policy();
-    init_ai_chat_service();
+    init_finance_semantic_layer();
+    init_ai_cost_policy();
+    init_ai_kernel();
+    init_voice_kernel();
+    init_parser_trace();
+    MONTHLY_REPORT_TRANSACTION_EVIDENCE_LIMIT = 4;
+    VOICE_QA_TOOL_NAMES = ["finance_query", "memory_search", "action_draft"];
     aiRouter = router({
       // ─── Voice Settings ───
       // ─── Parse Expense (New Pipeline) ───
+      runVoiceToolQa: aiProcedure.input(
+        external_exports.object({
+          toolName: external_exports.enum(VOICE_QA_TOOL_NAMES),
+          args: external_exports.record(external_exports.string(), external_exports.unknown()).optional().default({})
+        })
+      ).mutation(async ({ ctx, input }) => {
+        if (env.NODE_ENV === "production") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Voice QA is disabled in production."
+          });
+        }
+        const voiceSession = await createVoiceSessionState({
+          userId: ctx.user.id,
+          userType: ctx.user.type,
+          userPlan: ctx.user.plan || "free"
+        });
+        try {
+          const response = await executeVoiceTool({
+            toolName: input.toolName,
+            args: input.args,
+            ctx: {
+              userId: ctx.user.id,
+              userType: ctx.user.type,
+              userPlan: ctx.user.plan || "free",
+              sessionId: voiceSession.sessionId
+            }
+          });
+          return {
+            voiceSessionId: voiceSession.sessionId,
+            qa: true,
+            ...summarizeVoiceQaToolResponse(input.toolName, response)
+          };
+        } finally {
+          await clearVoiceSessionState(voiceSession.sessionId).catch((error48) => {
+            console.warn("[Voice QA] failed to clear session", error48 instanceof Error ? error48.message : String(error48));
+          });
+        }
+      }),
       parseExpense: aiProcedure.input(
         external_exports.object({
           text: external_exports.string(),
@@ -174662,15 +182122,15 @@ var init_ai_router = __esm({
           });
         }
         const estimatedInputTokens = estimateTokensFromText(input.text) + 420;
-        const budget = await assertAiBudget(
+        const budget2 = await assertAiBudget(
           ctx.user,
           "parse",
           estimatedInputTokens
         );
-        tokenLimit = budget.limit;
+        tokenLimit = budget2.limit;
         maxPerRequest = clampOutputTokens(
-          budget.perRequestMax,
-          budget.remaining,
+          budget2.perRequestMax,
+          budget2.remaining,
           estimatedInputTokens
         );
         let resolvedProvider = "gemini";
@@ -174680,12 +182140,10 @@ var init_ai_router = __esm({
         const [
           settings,
           userDictRows,
-          currentMonthOps,
           smartProfile
         ] = await Promise.all([
           db.select().from(systemSettings),
           db.select().from(userDictionaries).where(and(eq(userDictionaries.userId, ctx.user.id), eq(userDictionaries.userType, ctx.user.type))),
-          db.select().from(expenses).where(and(eq(expenses.userId, ctx.user.id), eq(expenses.userType, ctx.user.type), gte(expenses.date, startOfMonth2))),
           getSmartProfile(ctx.user.id, ctx.user.type)
         ]);
         const cfgFull = {};
@@ -174695,7 +182153,7 @@ var init_ai_router = __esm({
         try {
           const routing = await resolveRoutingConfig(
             ctx.user.plan,
-            budget.used,
+            budget2.used,
             cfgFull
           );
           resolvedProvider = routing.provider;
@@ -174711,9 +182169,21 @@ var init_ai_router = __esm({
           );
         }
         const userDict = userDictRows.map((row) => ({ word: row.word, category: row.category, subCategory: row.subCategory ?? void 0 }));
-        const totalIncome = currentMonthOps.filter((e2) => e2.type === "income").reduce((s3, e2) => s3 + Number(e2.amount), 0);
-        const totalExpense = currentMonthOps.filter((e2) => e2.type === "expense").reduce((s3, e2) => s3 + Number(e2.amount), 0);
         const personalContextRaw = buildPersonalContext(smartProfile);
+        const salaryDay = Number(smartProfile.financialInfo?.salaryDay) || 0;
+        const currentMonthSummary = await getFinanceSummary(
+          {
+            userId: ctx.user.id,
+            userType: ctx.user.type,
+            salaryDay
+          },
+          { period: "current_month" }
+        ).catch((error48) => {
+          console.warn("[Parse Expense] finance summary failed", error48 instanceof Error ? error48.message : String(error48));
+          return null;
+        });
+        const totalIncome = currentMonthSummary?.totalIncome ?? 0;
+        const totalExpense = currentMonthSummary?.totalExpense ?? 0;
         for (const p of personalContextRaw.knownPeople) {
           const safeCategory = p.category && p.category !== "\u062A\u062D\u0648\u064A\u0644\u0627\u062A" ? p.category : null;
           if (safeCategory) {
@@ -174739,7 +182209,6 @@ var init_ai_router = __esm({
           monthlyContext: { totalIncome, totalExpense },
           userProfileContext: {
             promptSummary: summarizeProfileForAI(smartProfile),
-            recentTransactions: currentMonthOps.slice(0, 50).map((e2) => ({ description: e2.description, category: e2.category, subCategory: e2.subCategory })),
             personalContextPrompt: buildPersonalContextPrompt(personalContextRaw),
             spendingBehavior: typeof smartProfile.aiInferredAttributes?.spendingBehavior === "string" ? smartProfile.aiInferredAttributes.spendingBehavior : void 0,
             hasChildren: smartProfile.lifestyleInfo.hasChildren,
@@ -174763,6 +182232,16 @@ var init_ai_router = __esm({
             enable_rag: String(cfgFull.enable_rag !== "false")
           }
         });
+        const financeContextSource = currentMonthSummary ? "finance.summary" : "fallback_zero";
+        const parseTrace = buildParserTrace({
+          route: "expense_parse",
+          inputChannel: input.inputChannel,
+          provider: resolvedProvider,
+          estimatedInputTokens,
+          result,
+          latencyMs: Date.now() - startTime,
+          financeContextSource
+        });
         if (result.tokensUsed > 0) {
           await trackTokens(
             ctx.user.id,
@@ -174772,6 +182251,34 @@ var init_ai_router = __esm({
             result.modelUsed
           );
         }
+        void recordAICostMetric({
+          userId: ctx.user.id,
+          userType: ctx.user.type,
+          channel: "parse",
+          plan: ctx.user.plan || "free",
+          intentKind: "expense_parse",
+          model: result.modelUsed,
+          inputTokens: parseTrace.inputTokens,
+          outputTokens: Math.max(0, result.tokensUsed - parseTrace.inputTokens),
+          totalTokens: result.tokensUsed,
+          embeddingCalls: parseTrace.embeddingCalls,
+          llmCalls: parseTrace.llmCalls,
+          toolCalls: 0,
+          latencyMs: Date.now() - startTime,
+          metadata: {
+            inputChannel: input.inputChannel,
+            provider: resolvedProvider,
+            parsedBy: result.parsedBy,
+            decision: result.decision,
+            confidence: result.overallConfidence,
+            itemCount: result.items.length,
+            routing: result.log.routing,
+            cachedTokens: result.cachedTokens ?? 0,
+            sttTokensUsed: input.sttTokensUsed ?? 0,
+            financeContextSource,
+            trace: parseTrace
+          }
+        });
         for (const item of result.items) {
           if (item.person_mentioned && item.person_relationship) {
             const pName = item.person_mentioned.trim();
@@ -174805,6 +182312,7 @@ var init_ai_router = __esm({
             ruleEngine: result.log.ruleEngineResult,
             ai: result.log.aiResult,
             routing: result.log.routing,
+            trace: parseTrace,
             cachedTokens: result.cachedTokens,
             ...isV2 ? {
               pipelineVersion: "v2",
@@ -174913,7 +182421,8 @@ var init_ai_router = __esm({
           overallConfidence: result.overallConfidence,
           clarificationQuestion: result.clarificationQuestion,
           clarificationId,
-          processingTimeMs: result.processingTimeMs
+          processingTimeMs: result.processingTimeMs,
+          trace: parseTrace
         };
       }),
       // ─── Get User Limits (Voice, AI) ───
@@ -175262,7 +182771,6 @@ var init_ai_router = __esm({
         };
         const cleanMimeType = input.mimeType.split(";")[0];
         const pureBase64 = input.audioBase64.includes(",") ? input.audioBase64.split(",")[1] : input.audioBase64;
-        const startOfMonth2 = new Date(now.getFullYear(), now.getMonth(), 1);
         const sttPromise = (async () => {
           try {
             return await runSTTPipeline(pureBase64, cleanMimeType, getSTTKey(sttModel), sttModel, "standard");
@@ -175277,10 +182785,9 @@ var init_ai_router = __esm({
         })();
         const dbPromise = Promise.all([
           db.select().from(userDictionaries).where(and(eq(userDictionaries.userId, ctx.user.id), eq(userDictionaries.userType, ctx.user.type))),
-          db.select().from(expenses).where(and(eq(expenses.userId, ctx.user.id), eq(expenses.userType, ctx.user.type), gte(expenses.date, startOfMonth2))),
           getSmartProfile(ctx.user.id, ctx.user.type)
         ]);
-        const [sttResult, [userDictRows, currentMonthOps, smartProfile]] = await Promise.all([sttPromise, dbPromise]);
+        const [sttResult, [userDictRows, smartProfile]] = await Promise.all([sttPromise, dbPromise]);
         const transcribedText = sttResult.text;
         if (!transcribedText || transcribedText.trim() === "") {
           throw new TRPCError({ code: "BAD_REQUEST", message: "\u0644\u0645 \u0646\u062A\u0645\u0643\u0646 \u0645\u0646 \u0633\u0645\u0627\u0639 \u0634\u064A\u0621. \u062D\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062E\u0631\u0649." });
@@ -175297,14 +182804,26 @@ var init_ai_router = __esm({
         }
         const client = await getAiClient("parse", ctx.user.plan);
         const estimatedInputTokens = estimateTokensFromText(transcribedText) + 420;
-        const budget = await assertAiBudget(ctx.user, "parse", estimatedInputTokens);
+        const budget2 = await assertAiBudget(ctx.user, "parse", estimatedInputTokens);
         const maxParseTokens = clampOutputTokens(
-          budget.perRequestMax,
-          budget.remaining,
+          budget2.perRequestMax,
+          budget2.remaining,
           estimatedInputTokens
         );
         const userDict = userDictRows.map((row) => ({ word: row.word, category: row.category, subCategory: row.subCategory ?? void 0 }));
         const personalContextRaw = buildPersonalContext(smartProfile);
+        const salaryDay = Number(smartProfile.financialInfo?.salaryDay) || 0;
+        const currentMonthSummary = await getFinanceSummary(
+          {
+            userId: ctx.user.id,
+            userType: ctx.user.type,
+            salaryDay
+          },
+          { period: "current_month" }
+        ).catch((error48) => {
+          console.warn("[Parse Voice Expense] finance summary failed", error48 instanceof Error ? error48.message : String(error48));
+          return null;
+        });
         for (const p of personalContextRaw.knownPeople) {
           const safeCategory = p.category && p.category !== "\u062A\u062D\u0648\u064A\u0644\u0627\u062A" ? p.category : null;
           if (!safeCategory) continue;
@@ -175324,7 +182843,7 @@ var init_ai_router = __esm({
         try {
           const routing = await resolveRoutingConfig(
             ctx.user.plan,
-            budget.used,
+            budget2.used,
             cfg
           );
           resolvedProvider = routing.provider;
@@ -175350,8 +182869,8 @@ var init_ai_router = __esm({
           modelName,
           maxTokens: maxParseTokens,
           monthlyContext: {
-            totalIncome: currentMonthOps.filter((e2) => e2.type === "income").reduce((s3, e2) => s3 + Number(e2.amount), 0),
-            totalExpense: currentMonthOps.filter((e2) => e2.type === "expense").reduce((s3, e2) => s3 + Number(e2.amount), 0)
+            totalIncome: currentMonthSummary?.totalIncome ?? 0,
+            totalExpense: currentMonthSummary?.totalExpense ?? 0
           },
           userProfileContext: {
             promptSummary: summarizeProfileForAI(smartProfile),
@@ -175376,9 +182895,73 @@ var init_ai_router = __esm({
             enable_rag: String(cfg.enable_rag !== "false")
           }
         });
+        const financeContextSource = currentMonthSummary ? "finance.summary" : "fallback_zero";
+        const parseTrace = buildParserTrace({
+          route: "voice_expense_parse",
+          inputChannel: "voice",
+          provider: resolvedProvider,
+          estimatedInputTokens,
+          result: parseResult,
+          latencyMs: Date.now() - startTime,
+          financeContextSource,
+          stt: {
+            model: sttResult.modelUsed,
+            tokensUsed: sttResult.tokensUsed,
+            durationSeconds: input.durationSeconds
+          }
+        });
         if (parseResult.tokensUsed > 0) {
           await trackTokens(ctx.user.id, ctx.user.type, parseResult.tokensUsed, "parse", parseResult.modelUsed);
         }
+        void recordAICostMetric({
+          userId: ctx.user.id,
+          userType: ctx.user.type,
+          channel: "speech",
+          plan: ctx.user.plan || "free",
+          intentKind: "stt",
+          model: sttResult.modelUsed,
+          inputTokens: 0,
+          outputTokens: sttResult.tokensUsed,
+          totalTokens: sttResult.tokensUsed,
+          embeddingCalls: 0,
+          llmCalls: 0,
+          toolCalls: 0,
+          latencyMs: Date.now() - startTime,
+          metadata: {
+            durationSeconds: input.durationSeconds,
+            mimeType: cleanMimeType,
+            provider: isGroqModel(sttResult.modelUsed) ? "groq" : "gemini"
+          }
+        });
+        void recordAICostMetric({
+          userId: ctx.user.id,
+          userType: ctx.user.type,
+          channel: "parse",
+          plan: ctx.user.plan || "free",
+          intentKind: "voice_expense_parse",
+          model: parseResult.modelUsed,
+          inputTokens: parseTrace.inputTokens,
+          outputTokens: Math.max(0, parseResult.tokensUsed - parseTrace.inputTokens),
+          totalTokens: parseResult.tokensUsed,
+          embeddingCalls: parseTrace.embeddingCalls,
+          llmCalls: parseTrace.llmCalls,
+          toolCalls: 0,
+          latencyMs: Date.now() - startTime,
+          metadata: {
+            inputChannel: "voice",
+            provider: resolvedProvider,
+            parsedBy: parseResult.parsedBy,
+            decision: parseResult.decision,
+            confidence: parseResult.overallConfidence,
+            itemCount: parseResult.items.length,
+            routing: parseResult.log.routing,
+            cachedTokens: parseResult.cachedTokens ?? 0,
+            sttTokensUsed: sttResult.tokensUsed,
+            sttModel: sttResult.modelUsed,
+            financeContextSource,
+            trace: parseTrace
+          }
+        });
         const isV2 = false;
         await db.insert(classificationLogs).values({
           userId: ctx.user.id,
@@ -175396,7 +182979,8 @@ var init_ai_router = __esm({
             entities: parseResult.log.entitiesFound,
             ruleEngine: parseResult.log.ruleEngineResult,
             ai: parseResult.log.aiResult,
-            routing: parseResult.log.routing
+            routing: parseResult.log.routing,
+            trace: parseTrace
           },
           ambiguityFlags: parseResult.items.flatMap((item) => item.ambiguityFlags || []),
           inputChannel: "voice",
@@ -175477,7 +183061,8 @@ var init_ai_router = __esm({
           overallConfidence: parseResult.overallConfidence,
           clarificationQuestion: parseResult.clarificationQuestion,
           clarificationId,
-          processingTimeMs: Date.now() - startTime
+          processingTimeMs: Date.now() - startTime,
+          trace: parseTrace
         };
       }),
       // ─── Financial Copilot: Personal Learning ───
@@ -175506,7 +183091,8 @@ var init_ai_router = __esm({
       generateMonthlyInsights: authedProcedure.input(
         external_exports.object({
           month: external_exports.string(),
-          model: external_exports.enum(["flash", "pro", "ultra", "gemma"]).default("flash")
+          model: external_exports.enum(["flash", "pro", "ultra", "gemma"]).default("flash"),
+          forceRefresh: external_exports.boolean().optional().default(false)
         })
       ).mutation(async ({ ctx, input }) => {
         const existingSummary = await db.select().from(aiSummaries).where(
@@ -175517,11 +183103,19 @@ var init_ai_router = __esm({
             eq(aiSummaries.periodValue, input.month)
           )
         ).limit(1);
-        if (existingSummary[0]) {
+        if (existingSummary[0] && !input.forceRefresh) {
+          let trace2 = null;
+          try {
+            const parsed = JSON.parse(existingSummary[0].content);
+            trace2 = parsed?.ai_trace ?? null;
+          } catch {
+            trace2 = null;
+          }
           return {
             insights: existingSummary[0].content,
             cached: true,
-            model: existingSummary[0].model
+            model: existingSummary[0].model,
+            trace: trace2
           };
         }
         const lastSummary = await db.select().from(aiSummaries).where(
@@ -175531,7 +183125,7 @@ var init_ai_router = __esm({
             eq(aiSummaries.period, "monthly")
           )
         ).orderBy(desc(aiSummaries.createdAt)).limit(1);
-        if (lastSummary[0]) {
+        if (lastSummary[0] && !(input.forceRefresh && existingSummary[0])) {
           const sysSettings = await db.select().from(systemSettings);
           const limits = { free: 30, pro: 14, ultra: 1 };
           sysSettings.forEach((s3) => {
@@ -175555,11 +183149,29 @@ var init_ai_router = __esm({
         }
         const userProfile = await getSmartProfile(ctx.user.id, ctx.user.type);
         const salaryDay = Number(userProfile.financialInfo.salaryDay) || 0;
+        const semanticReportFacts = await buildMonthlyReportFactsPack(
+          {
+            userId: ctx.user.id,
+            userType: ctx.user.type,
+            salaryDay
+          },
+          input.month,
+          {
+            forceLive: input.forceRefresh,
+            skipCache: input.forceRefresh
+          }
+        ).catch((error48) => {
+          console.warn(
+            "[Monthly Report Semantic Facts] failed",
+            error48 instanceof Error ? error48.message : String(error48)
+          );
+          return null;
+        });
         let startDate;
         let endDate;
         let prevStart;
         let prevEnd;
-        let daysInMonth;
+        let daysInMonth2;
         if (salaryDay > 1) {
           const { getFinancialMonthDates: getFinancialMonthDates2 } = await Promise.resolve().then(() => (init_financial_month(), financial_month_exports));
           const currentDates = getFinancialMonthDates2(input.month, salaryDay);
@@ -175571,12 +183183,12 @@ var init_ai_router = __esm({
           const prevDates = getFinancialMonthDates2(prevMonthStr, salaryDay);
           prevStart = prevDates.startDate;
           prevEnd = prevDates.endDate;
-          daysInMonth = Math.round((endDate.getTime() - startDate.getTime()) / (1e3 * 60 * 60 * 24));
+          daysInMonth2 = Math.round((endDate.getTime() - startDate.getTime()) / (1e3 * 60 * 60 * 24));
         } else {
           const [year2, month] = input.month.split("-");
           startDate = new Date(parseInt(year2), parseInt(month) - 1, 1);
           endDate = new Date(parseInt(year2), parseInt(month), 0);
-          daysInMonth = endDate.getDate();
+          daysInMonth2 = endDate.getDate();
           prevStart = new Date(parseInt(year2), parseInt(month) - 2, 1);
           prevEnd = new Date(parseInt(year2), parseInt(month) - 1, 0);
         }
@@ -175632,7 +183244,7 @@ var init_ai_router = __esm({
         const totalExpense = userExpenses.filter((e2) => e2.type === "expense").reduce((s3, e2) => s3 + Number(e2.amount), 0);
         const totalIncome = userExpenses.filter((e2) => e2.type === "income").reduce((s3, e2) => s3 + Number(e2.amount), 0);
         const prevTotal = prevExpenses.filter((e2) => e2.type === "expense").reduce((s3, e2) => s3 + Number(e2.amount), 0);
-        const dailyAvg = Math.round(totalExpense / daysInMonth);
+        const dailyAvg = Math.round(totalExpense / daysInMonth2);
         const byCategory = {};
         userExpenses.filter((e2) => e2.type === "expense").forEach((e2) => {
           byCategory[e2.category] = (byCategory[e2.category] || 0) + Number(e2.amount);
@@ -175728,7 +183340,7 @@ var init_ai_router = __esm({
         let forecast = "";
         if (today.getMonth() === endDate.getMonth() && today.getFullYear() === endDate.getFullYear()) {
           const currentDay = Math.max(1, today.getDate());
-          const runRate = Math.round(totalExpense / currentDay * daysInMonth);
+          const runRate = Math.round(totalExpense / currentDay * daysInMonth2);
           if (comparisonIncome > 0) {
             if (runRate > comparisonIncome) {
               const runwayDays = Math.floor(
@@ -175783,25 +183395,42 @@ var init_ai_router = __esm({
             if (s3.key === "ai_report_structure_override" && s3.value)
               aiReportStructureOverride = s3.value;
           });
+          if (semanticReportFacts) {
+            reportTargetWords = Math.min(Math.max(reportTargetWords, 220), 420);
+            reportSubcatsLimit = Math.min(reportSubcatsLimit, 8);
+            reportTopItemsLimit = 0;
+            aiResponseLength = "short";
+            aiFocus = "statistics";
+            aiSystemPrompt = "\u0623\u0646\u062A \u0645\u0633\u062A\u0634\u0627\u0631 \u0645\u0627\u0644\u064A \u0645\u0635\u0631\u064A \u0630\u0643\u064A. \u0627\u0643\u062A\u0628 \u062A\u0642\u0631\u064A\u0631\u0627 \u0634\u0647\u0631\u064A\u0627 \u0645\u062E\u062A\u0635\u0631\u0627 \u0648\u062F\u0642\u064A\u0642\u0627 \u0645\u0646 \u0627\u0644\u062D\u0642\u0627\u0626\u0642 \u0627\u0644\u0645\u0631\u0633\u0644\u0629 \u0641\u0642\u0637\u060C \u0648\u0644\u0627 \u062A\u062E\u062A\u0631\u0639 \u0623\u064A \u0631\u0642\u0645.";
+            aiAdvancedInstructions = "- \u0627\u0633\u062A\u062E\u062F\u0645 SEMANTIC_REPORT_FACTS \u0641\u0642\u0637 \u0643\u0645\u0635\u062F\u0631 \u0644\u0644\u0623\u0631\u0642\u0627\u0645.\n- \u0644\u0627 \u062A\u0642\u0631\u0628 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u0645\u0627\u0644\u064A\u0629\u061B \u0627\u0646\u0633\u062E \u0627\u0644\u0642\u064A\u0645 \u0627\u0644\u0639\u0634\u0631\u064A\u0629 \u0643\u0645\u0627 \u0647\u064A \u0645\u062B\u0644 2337.5.\n- \u0644\u0627 \u062A\u0637\u0644\u0628 \u0623\u062F\u0648\u0627\u062A \u0648\u0644\u0627 \u0628\u064A\u0627\u0646\u0627\u062A \u0625\u0636\u0627\u0641\u064A\u0629.\n- \u0627\u0643\u062A\u0628 \u062A\u0648\u0635\u064A\u0627\u062A \u0639\u0645\u0644\u064A\u0629 \u0642\u0635\u064A\u0631\u0629 \u0645\u0628\u0646\u064A\u0629 \u0639\u0644\u0649 \u0623\u0639\u0644\u0649 \u0627\u0644\u0641\u0626\u0627\u062A \u0648\u0627\u0644\u0635\u0627\u0641\u064A \u0648\u0627\u0644\u0623\u0647\u062F\u0627\u0641 \u0625\u0646 \u0648\u062C\u062F\u062A.";
+            aiReportStructureOverride = "";
+          }
           const tokenField = ctx.user.type === "oauth" ? await db.select({ t: users.aiTokensUsed }).from(users).where(eq(users.id, ctx.user.id)) : await db.select({ t: localUsers.aiTokensUsed }).from(localUsers).where(eq(localUsers.id, ctx.user.id));
           const usedTokens = tokenField[0]?.t || 0;
           const limit = client.tokenLimit;
           if (usedTokens >= limit) {
             aiModel = null;
             modelName = "backend";
+            reportProvider = "backend";
           }
         } catch (e2) {
           if (e2 instanceof TRPCError) throw e2;
         }
         const subCatSummary = topSubCategories.slice(0, reportSubcatsLimit).map((s3) => `${s3.name}: ${s3.amount}\u062C (${s3.percent}%)`).join(" | ");
         let topItemsContext = "";
-        if (reportTopItemsLimit > 0) {
+        const reportEvidenceLimit = Math.min(
+          reportTopItemsLimit,
+          MONTHLY_REPORT_TRANSACTION_EVIDENCE_LIMIT
+        );
+        if (reportEvidenceLimit > 0) {
           const expenseItems = userExpenses.filter((e2) => e2.type === "expense");
-          const biggestItems = [...expenseItems].sort((a, b) => Number(b.amount) - Number(a.amount)).slice(0, Math.ceil(reportTopItemsLimit / 2)).map(
+          const biggestLimit = Math.max(1, Math.ceil(reportEvidenceLimit / 2));
+          const biggestItems = [...expenseItems].sort((a, b) => Number(b.amount) - Number(a.amount)).slice(0, biggestLimit).map(
             (e2) => redactSensitiveData(
               `${e2.description || e2.category}${e2.subCategory && e2.subCategory !== "\u0639\u0627\u0645" ? ` (${e2.subCategory})` : ""}: ${e2.amount}\u062C [${e2.category}]`
             )
           );
+          const recurringLimit = Math.max(0, reportEvidenceLimit - biggestItems.length);
           const descFreq = {};
           expenseItems.forEach((e2) => {
             const key = e2.description || e2.category;
@@ -175815,20 +183444,20 @@ var init_ai_router = __esm({
             descFreq[key].count++;
             descFreq[key].total += Number(e2.amount);
           });
-          const recurringItemsList = Object.entries(descFreq).filter(([, v]) => v.count >= 2).sort((a, b) => b[1].count - a[1].count).slice(0, Math.ceil(reportTopItemsLimit / 2)).map(
+          const recurringItemsList = Object.entries(descFreq).filter(([, v]) => v.count >= 2).sort((a, b) => b[1].count - a[1].count).slice(0, recurringLimit).map(
             ([name2, v]) => redactSensitiveData(
               `${name2} (${v.subCat}): ${v.count} \u0645\u0631\u0627\u062A\u060C \u0625\u062C\u0645\u0627\u0644\u064A ${v.total}\u062C [${v.cat}]`
             )
           );
           if (biggestItems.length > 0 || recurringItemsList.length > 0) {
             topItemsContext = `
---- \u062A\u0641\u0627\u0635\u064A\u0644 \u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A \u0627\u0644\u0641\u0631\u062F\u064A\u0629 ---`;
+--- LIMITED_TRANSACTION_EVIDENCE: max_${MONTHLY_REPORT_TRANSACTION_EVIDENCE_LIMIT}_items ---`;
             if (biggestItems.length > 0)
               topItemsContext += `
-\u0623\u0643\u0628\u0631 \u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631: ${biggestItems.join(" | ")}`;
+\u0623\u0643\u0628\u0631 evidence \u0645\u062D\u062F\u0648\u062F \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631: ${biggestItems.join(" | ")}`;
             if (recurringItemsList.length > 0)
               topItemsContext += `
-\u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A \u0627\u0644\u0645\u062A\u0643\u0631\u0631\u0629: ${recurringItemsList.join(" | ")}`;
+\u0623\u0646\u0645\u0627\u0637 \u0645\u062A\u0643\u0631\u0631\u0629 \u0645\u062C\u0645\u0639\u0629: ${recurringItemsList.join(" | ")}`;
           }
         }
         const summaryForAI = `\u0627\u0644\u0634\u0647\u0631: ${input.month}
@@ -175847,111 +183476,90 @@ ${prevTotal > 0 ? `\u062A\u063A\u064A\u0631 \u0625\u062C\u0645\u0627\u0644\u064A
 - \u0630\u0627\u0643\u0631\u0629 \u0627\u0644\u0623\u0646\u0645\u0627\u0637: ${patternMemory || "\u0644\u0627 \u064A\u0648\u062C\u062F \u0628\u064A\u0627\u0646\u0627\u062A \u0643\u0627\u0641\u064A\u0629 \u0644\u0644\u0645\u0642\u0627\u0631\u0646\u0629 \u0627\u0644\u062A\u0627\u0631\u064A\u062E\u064A\u0629"}
 - \u0641\u0648\u0627\u062A\u064A\u0631 \u0648\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A \u0645\u062A\u0648\u0642\u0639\u0629 \u0642\u0631\u064A\u0628\u0627\u064B: ${recurringBills.length > 0 ? recurringBills.join(" | ") : "\u0644\u0627 \u064A\u0648\u062C\u062F \u0641\u0648\u0627\u062A\u064A\u0631 \u0645\u0639\u0644\u0642\u0629 \u0645\u0643\u062A\u0634\u0641\u0629 \u0628\u0646\u0627\u0621\u064B \u0639\u0644\u0649 \u0627\u0644\u0633\u062C\u0644 \u0627\u0644\u0633\u0627\u0628\u0642"}
 - \u0627\u0644\u062A\u0648\u0642\u0639 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0633\u062A\u0642\u0628\u0644\u064A (Forecasting): ${forecast || "\u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u0644\u0639\u062F\u0645 \u0643\u0641\u0627\u064A\u0629 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u062F\u062E\u0644/\u0627\u0644\u0623\u064A\u0627\u0645"}`;
-        const personalizedSummaryForAI = `${summaryForAI}
----
-${reportPersonalizationContext}
-${familyReportContext}
-${personalContextForClassification}
-${financialMonthContext}`;
+        const compactReportContext = [
+          semanticReportFacts?.factsBlock ?? summaryForAI.slice(0, 1200),
+          `user_name: ${userProfile.basicInfo.name || ctx.user.name || "SmartSpend user"}`,
+          salaryDay > 0 ? `salary_day: ${salaryDay}` : "",
+          financialMonthContext ? `financial_month: ${financialMonthContext.slice(0, 280)}` : ""
+        ].filter(Boolean).join("\n");
+        const personalizedSummaryForAI = compactReportContext;
         let responseJson;
         let aiErrorMsg = "";
-        if (aiModel || reportProvider === "groq" || isGroqModel(modelName)) {
+        let reportEstimatedInputTokens = 0;
+        let reportTotalTokens = 0;
+        let reportLlmCalls = 0;
+        let reportLatencyMs = null;
+        const semanticNumber = (label) => {
+          const value = semanticReportFacts?.facts.find((fact3) => fact3.label === label)?.value;
+          const parsed = Number(value);
+          return Number.isFinite(parsed) ? parsed : void 0;
+        };
+        if (modelName !== "backend" && (aiModel || reportProvider === "groq" || isGroqModel(modelName))) {
           try {
             const planId = asPlan(ctx.user.plan);
-            const useProReportEngine = planId === "pro" || planId === "ultra";
-            if (useProReportEngine) {
-              const agentPrompt = `\u0642\u0645 \u0628\u0625\u0646\u0634\u0627\u0621 \u062A\u0642\u0631\u064A\u0631\u064A \u0627\u0644\u0645\u0627\u0644\u064A \u0644\u0634\u0647\u0631 ${input.month}.
-\u0642\u0645 \u0623\u0648\u0644\u0627\u064B \u0628\u0627\u0644\u0628\u062D\u062B \u0641\u064A \u0628\u064A\u0627\u0646\u0627\u062A\u064A \u0628\u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0627\u0644\u0623\u062F\u0648\u0627\u062A \u0627\u0644\u0645\u062A\u0627\u062D\u0629 \u0644\u062C\u0644\u0628:
-1. \u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u062F\u062E\u0644 \u0648\u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062A.
-2. \u062A\u0642\u0633\u064A\u0645 \u0645\u0635\u0627\u0631\u064A\u0641\u064A \u062D\u0633\u0628 \u0627\u0644\u0641\u0626\u0627\u062A.
-3. \u0627\u0644\u062A\u063A\u064A\u0631\u0627\u062A \u0645\u0642\u0627\u0631\u0646\u0629 \u0628\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0645\u0627\u0636\u064A.
-\u062B\u0645 \u0642\u0645 \u0628\u0635\u064A\u0627\u063A\u0629 \u062A\u0642\u0631\u064A\u0631 \u0627\u062D\u062A\u0631\u0627\u0641\u064A \u062C\u062F\u0627\u064B \u0648\u0645\u0631\u0643\u0632.
-\u0627\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0623\u0633\u0644\u0648\u0628 \u0627\u0644\u0645\u0627\u0644\u064A \u0648\u062A\u062D\u062F\u062B \u0628\u0636\u0645\u064A\u0631 "\u0623\u0646\u062A".`;
-              const aiConfig = {
-                apiKey: fireworksApiKey || reportApiKey,
-                baseUrl: "https://api.fireworks.ai/inference/v1",
-                model: "accounts/fireworks/models/deepseek-v4-flash",
-                maxTokens: 5e3,
-                maxHistory: 0
-              };
-              const aiResult = await processAIChatMessage({
-                userId: ctx.user.id,
-                userType: ctx.user.type,
-                userPlan: planId,
-                message: agentPrompt,
-                conversationHistory: [],
-                config: aiConfig
-              });
-              await trackTokens(
-                ctx.user.id,
-                ctx.user.type,
-                aiResult.tokensUsed,
-                "report",
-                `pro_report_agentic:${aiResult.model}`
-              );
-              responseJson = {
-                response_text: aiResult.response,
-                alerts,
-                personality_flag: personality,
-                data_table: []
-              };
+            const reportCostPolicy = resolveAICostPolicy({
+              channel: "report",
+              plan: planId,
+              intentKind: "report_request"
+            });
+            const reportStartedAt = Date.now();
+            let lengthInstruction = "\u0627\u0643\u062A\u0628 \u062A\u062D\u0644\u064A\u0644\u0627\u064B \u0645\u062A\u0648\u0627\u0632\u0646\u0627\u064B \u0648\u0645\u0646\u0627\u0633\u0628\u0627\u064B \u0644\u0644\u0634\u0631\u062D \u0628\u0623\u0633\u0644\u0648\u0628 \u0645\u0647\u0646\u064A.";
+            if (aiResponseLength === "short")
+              lengthInstruction = "\u0627\u0643\u062A\u0628 \u0645\u0648\u062C\u0632\u0627\u064B \u062A\u0646\u0641\u064A\u0630\u064A\u0627\u064B (Executive Summary) \u0645\u062E\u062A\u0635\u0631\u0627\u064B \u0648\u0645\u0628\u0627\u0634\u0631\u0627\u064B \u0648\u0636\u0639 \u0627\u0644\u0646\u0642\u0627\u0637 \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629 \u0644\u0644\u0642\u0631\u0627\u0631 \u0627\u0644\u0645\u0627\u0644\u064A.";
+            if (aiResponseLength === "detailed")
+              lengthInstruction = "\u0627\u0643\u062A\u0628 \u062A\u0642\u0631\u064A\u0631\u0627\u064B \u0645\u0627\u0644\u064A\u0627\u064B (Financial Report) \u0645\u062A\u0639\u0645\u0642\u0627\u064B \u062C\u062F\u0627\u064B \u0648\u0645\u0641\u0635\u0644\u0627\u064B \u064A\u0634\u0631\u062D \u0643\u0644 \u0627\u0644\u062C\u0648\u0627\u0646\u0628\u060C \u0648\u064A\u062D\u0644\u0644 \u0627\u0644\u0645\u062E\u0627\u0637\u0631\u060C \u0648\u0627\u0644\u0641\u0631\u0635\u060C \u0648\u0627\u0644\u0623\u0646\u0645\u0627\u0637 \u0628\u0634\u0643\u0644 \u062F\u0642\u064A\u0642 \u0648\u0627\u062D\u062A\u0631\u0627\u0641\u064A.";
+            lengthInstruction += ` (\u0645\u0644\u0627\u062D\u0638\u0629: \u0627\u0644\u0646\u0638\u0627\u0645 \u064A\u062D\u062A\u0648\u064A \u0639\u0644\u0649 \u062A\u0641\u0627\u0635\u064A\u0644 ${userExpenses.length} \u0645\u0639\u0627\u0645\u0644\u0629. \u064A\u0631\u062C\u0649 \u062A\u0643\u064A\u064A\u0641 \u0643\u062B\u0627\u0641\u0629 \u0648\u0639\u0645\u0642 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0644\u064A\u0639\u0643\u0633 \u0647\u0630\u0627 \u0627\u0644\u062D\u062C\u0645 \u0645\u0646 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0628\u062F\u0642\u0629).`;
+            let focusInstruction = "\u0631\u0643\u0632 \u0639\u0644\u0649 \u0625\u0639\u0637\u0627\u0621 \u0645\u0632\u064A\u062C \u0645\u062A\u0648\u0627\u0632\u0646 \u0628\u064A\u0646 \u0627\u0644\u0625\u062D\u0635\u0627\u0626\u064A\u0627\u062A\u060C \u0648\u0645\u0624\u0634\u0631\u0627\u062A \u0627\u0644\u0623\u062F\u0627\u0621\u060C \u0648\u0627\u0644\u062A\u0648\u0635\u064A\u0627\u062A.";
+            if (aiFocus === "statistics")
+              focusInstruction = "\u0631\u0643\u0632 \u0628\u0634\u0643\u0644 \u0643\u0627\u0645\u0644 \u0639\u0644\u0649 \u0627\u0644\u0623\u0631\u0642\u0627\u0645\u060C \u0627\u0644\u0646\u0633\u0628 \u0627\u0644\u0645\u0626\u0648\u064A\u0629\u060C \u0648\u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0627\u062A \u0627\u0644\u0625\u062D\u0635\u0627\u0626\u064A\u0629 \u0627\u0644\u062F\u0642\u064A\u0642\u0629\u060C \u0648\u0627\u0644\u0645\u0624\u0634\u0631\u0627\u062A \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0645\u062B\u0644 \u0645\u0639\u062F\u0644 \u0627\u0644\u062D\u0631\u0642 \u0627\u0644\u0645\u0627\u0644\u064A \u0648\u0627\u0644\u0627\u062F\u062E\u0627\u0631.";
+            if (aiFocus === "tips")
+              focusInstruction = "\u0631\u0643\u0632 \u0628\u0634\u0643\u0644 \u0643\u0628\u064A\u0631 \u0639\u0644\u0649 \u062A\u0642\u062F\u064A\u0645 \u062A\u0648\u0635\u064A\u0627\u062A \u0627\u0633\u062A\u0631\u0627\u062A\u064A\u062C\u064A\u0629 \u0648\u062D\u0644\u0648\u0644 \u0639\u0645\u0644\u064A\u0629 \u0644\u0625\u0639\u0627\u062F\u0629 \u0647\u064A\u0643\u0644\u0629 \u0627\u0644\u0645\u064A\u0632\u0627\u0646\u064A\u0629 \u0648\u062A\u062D\u0633\u064A\u0646 \u0643\u0641\u0627\u0621\u0629 \u0627\u0644\u0625\u0646\u0641\u0627\u0642.";
+            if (aiFocus === "patterns")
+              focusInstruction = "\u0631\u0643\u0632 \u0639\u0644\u0649 \u0627\u0643\u062A\u0634\u0627\u0641 \u0627\u0644\u0623\u0646\u0645\u0627\u0637 \u0627\u0644\u0633\u0644\u0648\u0643\u064A\u0629\u060C \u0648\u062A\u0641\u0633\u064A\u0631 \u062A\u0648\u062C\u0647\u0627\u062A \u0627\u0644\u0625\u0646\u0641\u0627\u0642 (Spending Trends)\u060C \u0648\u062A\u0642\u064A\u064A\u0645 \u0627\u0644\u0633\u0644\u0648\u0643 \u0627\u0644\u0645\u0627\u0644\u064A \u0639\u0644\u0649 \u0627\u0644\u0645\u062F\u0649 \u0627\u0644\u0637\u0648\u064A\u0644.";
+            let structureInstruction;
+            let sectionCount = 4;
+            if (aiReportStructureOverride && aiReportStructureOverride.trim() !== "") {
+              structureInstruction = aiReportStructureOverride;
+              sectionCount = 0;
             } else {
-              let lengthInstruction = "\u0627\u0643\u062A\u0628 \u062A\u062D\u0644\u064A\u0644\u0627\u064B \u0645\u062A\u0648\u0627\u0632\u0646\u0627\u064B \u0648\u0645\u0646\u0627\u0633\u0628\u0627\u064B \u0644\u0644\u0634\u0631\u062D \u0628\u0623\u0633\u0644\u0648\u0628 \u0645\u0647\u0646\u064A.";
-              if (aiResponseLength === "short")
-                lengthInstruction = "\u0627\u0643\u062A\u0628 \u0645\u0648\u062C\u0632\u0627\u064B \u062A\u0646\u0641\u064A\u0630\u064A\u0627\u064B (Executive Summary) \u0645\u062E\u062A\u0635\u0631\u0627\u064B \u0648\u0645\u0628\u0627\u0634\u0631\u0627\u064B \u0648\u0636\u0639 \u0627\u0644\u0646\u0642\u0627\u0637 \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629 \u0644\u0644\u0642\u0631\u0627\u0631 \u0627\u0644\u0645\u0627\u0644\u064A.";
-              if (aiResponseLength === "detailed")
-                lengthInstruction = "\u0627\u0643\u062A\u0628 \u062A\u0642\u0631\u064A\u0631\u0627\u064B \u0645\u0627\u0644\u064A\u0627\u064B (Financial Report) \u0645\u062A\u0639\u0645\u0642\u0627\u064B \u062C\u062F\u0627\u064B \u0648\u0645\u0641\u0635\u0644\u0627\u064B \u064A\u0634\u0631\u062D \u0643\u0644 \u0627\u0644\u062C\u0648\u0627\u0646\u0628\u060C \u0648\u064A\u062D\u0644\u0644 \u0627\u0644\u0645\u062E\u0627\u0637\u0631\u060C \u0648\u0627\u0644\u0641\u0631\u0635\u060C \u0648\u0627\u0644\u0623\u0646\u0645\u0627\u0637 \u0628\u0634\u0643\u0644 \u062F\u0642\u064A\u0642 \u0648\u0627\u062D\u062A\u0631\u0627\u0641\u064A.";
-              lengthInstruction += ` (\u0645\u0644\u0627\u062D\u0638\u0629: \u0627\u0644\u0646\u0638\u0627\u0645 \u064A\u062D\u062A\u0648\u064A \u0639\u0644\u0649 \u062A\u0641\u0627\u0635\u064A\u0644 ${userExpenses.length} \u0645\u0639\u0627\u0645\u0644\u0629. \u064A\u0631\u062C\u0649 \u062A\u0643\u064A\u064A\u0641 \u0643\u062B\u0627\u0641\u0629 \u0648\u0639\u0645\u0642 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0644\u064A\u0639\u0643\u0633 \u0647\u0630\u0627 \u0627\u0644\u062D\u062C\u0645 \u0645\u0646 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0628\u062F\u0642\u0629).`;
-              let focusInstruction = "\u0631\u0643\u0632 \u0639\u0644\u0649 \u0625\u0639\u0637\u0627\u0621 \u0645\u0632\u064A\u062C \u0645\u062A\u0648\u0627\u0632\u0646 \u0628\u064A\u0646 \u0627\u0644\u0625\u062D\u0635\u0627\u0626\u064A\u0627\u062A\u060C \u0648\u0645\u0624\u0634\u0631\u0627\u062A \u0627\u0644\u0623\u062F\u0627\u0621\u060C \u0648\u0627\u0644\u062A\u0648\u0635\u064A\u0627\u062A.";
-              if (aiFocus === "statistics")
-                focusInstruction = "\u0631\u0643\u0632 \u0628\u0634\u0643\u0644 \u0643\u0627\u0645\u0644 \u0639\u0644\u0649 \u0627\u0644\u0623\u0631\u0642\u0627\u0645\u060C \u0627\u0644\u0646\u0633\u0628 \u0627\u0644\u0645\u0626\u0648\u064A\u0629\u060C \u0648\u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0627\u062A \u0627\u0644\u0625\u062D\u0635\u0627\u0626\u064A\u0629 \u0627\u0644\u062F\u0642\u064A\u0642\u0629\u060C \u0648\u0627\u0644\u0645\u0624\u0634\u0631\u0627\u062A \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0645\u062B\u0644 \u0645\u0639\u062F\u0644 \u0627\u0644\u062D\u0631\u0642 \u0627\u0644\u0645\u0627\u0644\u064A \u0648\u0627\u0644\u0627\u062F\u062E\u0627\u0631.";
-              if (aiFocus === "tips")
-                focusInstruction = "\u0631\u0643\u0632 \u0628\u0634\u0643\u0644 \u0643\u0628\u064A\u0631 \u0639\u0644\u0649 \u062A\u0642\u062F\u064A\u0645 \u062A\u0648\u0635\u064A\u0627\u062A \u0627\u0633\u062A\u0631\u0627\u062A\u064A\u062C\u064A\u0629 \u0648\u062D\u0644\u0648\u0644 \u0639\u0645\u0644\u064A\u0629 \u0644\u0625\u0639\u0627\u062F\u0629 \u0647\u064A\u0643\u0644\u0629 \u0627\u0644\u0645\u064A\u0632\u0627\u0646\u064A\u0629 \u0648\u062A\u062D\u0633\u064A\u0646 \u0643\u0641\u0627\u0621\u0629 \u0627\u0644\u0625\u0646\u0641\u0627\u0642.";
-              if (aiFocus === "patterns")
-                focusInstruction = "\u0631\u0643\u0632 \u0639\u0644\u0649 \u0627\u0643\u062A\u0634\u0627\u0641 \u0627\u0644\u0623\u0646\u0645\u0627\u0637 \u0627\u0644\u0633\u0644\u0648\u0643\u064A\u0629\u060C \u0648\u062A\u0641\u0633\u064A\u0631 \u062A\u0648\u062C\u0647\u0627\u062A \u0627\u0644\u0625\u0646\u0641\u0627\u0642 (Spending Trends)\u060C \u0648\u062A\u0642\u064A\u064A\u0645 \u0627\u0644\u0633\u0644\u0648\u0643 \u0627\u0644\u0645\u0627\u0644\u064A \u0639\u0644\u0649 \u0627\u0644\u0645\u062F\u0649 \u0627\u0644\u0637\u0648\u064A\u0644.";
-              let structureInstruction;
-              let sectionCount = 4;
-              if (aiReportStructureOverride && aiReportStructureOverride.trim() !== "") {
-                structureInstruction = aiReportStructureOverride;
-                sectionCount = 0;
-              } else {
-                if (reportTargetWords <= 300) {
-                  sectionCount = 2;
-                  structureInstruction = `\u0627\u0643\u062A\u0628 \u0645\u0644\u062E\u0635\u0627\u064B \u0645\u0627\u0644\u064A\u0627\u064B \u0645\u0631\u0643\u0632\u0627\u064B (${reportTargetWords} \u0643\u0644\u0645\u0629 \u062A\u0642\u0631\u064A\u0628\u0627\u064B) \u0645\u0642\u0633\u0645 \u0625\u0644\u0649 ${sectionCount} \u0642\u0633\u0645: (1) \u0627\u0644\u0648\u0636\u0639 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0639\u0627\u0645 \u0628\u0627\u0644\u0623\u0631\u0642\u0627\u0645\u060C (2) \u0623\u0647\u0645 \u062A\u0648\u0635\u064A\u0629 \u0639\u0645\u0644\u064A\u0629.`;
-                } else if (reportTargetWords <= 600) {
-                  sectionCount = 3;
-                  structureInstruction = `\u0627\u0643\u062A\u0628 \u062A\u0642\u0631\u064A\u0631\u0627\u064B \u0645\u0627\u0644\u064A\u0627\u064B (${reportTargetWords} \u0643\u0644\u0645\u0629 \u062A\u0642\u0631\u064A\u0628\u0627\u064B) \u0645\u0642\u0633\u0645 \u0625\u0644\u0649 ${sectionCount} \u0623\u0642\u0633\u0627\u0645 \u0645\u0641\u0635\u0644\u0629:
+              if (reportTargetWords <= 300) {
+                sectionCount = 2;
+                structureInstruction = `\u0627\u0643\u062A\u0628 \u0645\u0644\u062E\u0635\u0627\u064B \u0645\u0627\u0644\u064A\u0627\u064B \u0645\u0631\u0643\u0632\u0627\u064B (${reportTargetWords} \u0643\u0644\u0645\u0629 \u062A\u0642\u0631\u064A\u0628\u0627\u064B) \u0645\u0642\u0633\u0645 \u0625\u0644\u0649 ${sectionCount} \u0642\u0633\u0645: (1) \u0627\u0644\u0648\u0636\u0639 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0639\u0627\u0645 \u0628\u0627\u0644\u0623\u0631\u0642\u0627\u0645\u060C (2) \u0623\u0647\u0645 \u062A\u0648\u0635\u064A\u0629 \u0639\u0645\u0644\u064A\u0629.`;
+              } else if (reportTargetWords <= 600) {
+                sectionCount = 3;
+                structureInstruction = `\u0627\u0643\u062A\u0628 \u062A\u0642\u0631\u064A\u0631\u0627\u064B \u0645\u0627\u0644\u064A\u0627\u064B (${reportTargetWords} \u0643\u0644\u0645\u0629 \u062A\u0642\u0631\u064A\u0628\u0627\u064B) \u0645\u0642\u0633\u0645 \u0625\u0644\u0649 ${sectionCount} \u0623\u0642\u0633\u0627\u0645 \u0645\u0641\u0635\u0644\u0629:
 \u0627\u0644\u0642\u0633\u0645 1 - \u0646\u0638\u0631\u0629 \u0639\u0627\u0645\u0629: \u0627\u0639\u0631\u0636 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629 (\u0627\u0644\u062F\u062E\u0644\u060C \u0627\u0644\u0645\u0635\u0631\u0648\u0641\u060C \u0627\u0644\u0635\u0627\u0641\u064A\u060C \u0627\u0644\u0645\u062A\u0648\u0633\u0637 \u0627\u0644\u064A\u0648\u0645\u064A) \u0645\u0639 \u062A\u0639\u0644\u064A\u0642 \u0639\u0644\u064A\u0647\u0627.
 \u0627\u0644\u0642\u0633\u0645 2 - \u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0641\u0626\u0627\u062A: \u062D\u0644\u0644 \u0623\u0639\u0644\u0649 3-5 \u0641\u0626\u0627\u062A \u0625\u0646\u0641\u0627\u0642 \u0628\u0627\u0644\u062A\u0641\u0635\u064A\u0644 \u0645\u0639 \u0627\u0644\u0646\u0633\u0628 \u0648\u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0629 \u0628\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0633\u0627\u0628\u0642.
 \u0627\u0644\u0642\u0633\u0645 3 - \u0627\u0644\u062A\u0648\u0635\u064A\u0627\u062A: \u0642\u062F\u0645 3-4 \u0646\u0635\u0627\u0626\u062D \u0639\u0645\u0644\u064A\u0629 \u0648\u0645\u062D\u062F\u062F\u0629 \u0628\u0623\u0631\u0642\u0627\u0645 (\u0645\u062B\u0644\u0627\u064B "\u0642\u0644\u0644 \u0628\u0646\u062F X \u0645\u0646 Y \u0625\u0644\u0649 Z").`;
-                } else if (reportTargetWords <= 1e3) {
-                  sectionCount = 4;
-                  structureInstruction = `\u0627\u0643\u062A\u0628 \u062A\u0642\u0631\u064A\u0631\u0627\u064B \u0645\u0627\u0644\u064A\u0627\u064B \u0634\u0627\u0645\u0644\u0627\u064B (${reportTargetWords} \u0643\u0644\u0645\u0629 \u062A\u0642\u0631\u064A\u0628\u0627\u064B) \u0645\u0642\u0633\u0645 \u0625\u0644\u0649 ${sectionCount} \u0623\u0642\u0633\u0627\u0645 \u0645\u0641\u0635\u0644\u0629:
+              } else if (reportTargetWords <= 1e3) {
+                sectionCount = 4;
+                structureInstruction = `\u0627\u0643\u062A\u0628 \u062A\u0642\u0631\u064A\u0631\u0627\u064B \u0645\u0627\u0644\u064A\u0627\u064B \u0634\u0627\u0645\u0644\u0627\u064B (${reportTargetWords} \u0643\u0644\u0645\u0629 \u062A\u0642\u0631\u064A\u0628\u0627\u064B) \u0645\u0642\u0633\u0645 \u0625\u0644\u0649 ${sectionCount} \u0623\u0642\u0633\u0627\u0645 \u0645\u0641\u0635\u0644\u0629:
 \u0627\u0644\u0642\u0633\u0645 1 - \u0646\u0638\u0631\u0629 \u0639\u0627\u0645\u0629: \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629 + \u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0629 \u0628\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0633\u0627\u0628\u0642 + \u062A\u0642\u064A\u064A\u0645 \u0627\u0644\u0648\u0636\u0639 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0639\u0627\u0645.
-\u0627\u0644\u0642\u0633\u0645 2 - \u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0641\u0626\u0627\u062A \u0627\u0644\u0641\u0631\u0639\u064A\u0629: \u062D\u0644\u0644 \u0643\u0644 \u0641\u0626\u0629 \u0641\u0631\u0639\u064A\u0629 \u0628\u0627\u0644\u062A\u0641\u0635\u064A\u0644 (\u0642\u0647\u0648\u0629/\u0645\u0637\u0627\u0639\u0645/\u0623\u062C\u0647\u0632\u0629 \u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A\u0629/\u0645\u0648\u0627\u0635\u0644\u0627\u062A...) \u0645\u0639 \u0630\u0643\u0631 \u0627\u0644\u0623\u0648\u0635\u0627\u0641 \u0648\u0627\u0644\u0623\u0645\u0627\u0643\u0646 \u0625\u0646 \u0648\u064F\u062C\u062F\u062A.
+\u0627\u0644\u0642\u0633\u0645 2 - \u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0641\u0626\u0627\u062A \u0627\u0644\u0641\u0631\u0639\u064A\u0629: \u062D\u0644\u0644 \u0623\u0639\u0644\u0649 \u0627\u0644\u0641\u0626\u0627\u062A \u0627\u0644\u0641\u0631\u0639\u064A\u0629 \u0641\u0642\u0637 \u0645\u0646 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u0645\u062C\u0645\u0639\u0629\u060C \u0648\u0627\u0633\u062A\u062E\u062F\u0645 \u0623\u0645\u062B\u0644\u0629 evidence \u0627\u0644\u0645\u062D\u062F\u0648\u062F\u0629 \u0625\u0646 \u0648\u064F\u062C\u062F\u062A \u0628\u062F\u0648\u0646 \u0645\u062D\u0627\u0648\u0644\u0629 \u0633\u0631\u062F \u0643\u0644 \u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A.
 \u0627\u0644\u0642\u0633\u0645 3 - \u0627\u0644\u0623\u0646\u0645\u0627\u0637 \u0627\u0644\u0633\u0644\u0648\u0643\u064A\u0629: \u0627\u0634\u0631\u062D \u0646\u0645\u0637 \u0627\u0644\u0625\u0646\u0641\u0627\u0642 (\u0627\u0646\u062F\u0641\u0627\u0639\u064A\u061F \u0645\u062D\u0627\u0641\u0638\u061F) \u0645\u0639 \u0646\u0642\u0627\u0637 \u0627\u0644\u0642\u0648\u0629 \u0648\u0627\u0644\u0636\u0639\u0641 \u0627\u0644\u0645\u0627\u0644\u064A\u0629.
 \u0627\u0644\u0642\u0633\u0645 4 - \u062E\u0637\u0629 \u0627\u0644\u062A\u062D\u0633\u064A\u0646: \u0642\u062F\u0645 5+ \u062A\u0648\u0635\u064A\u0627\u062A \u0627\u0633\u062A\u0631\u0627\u062A\u064A\u062C\u064A\u0629 \u0645\u0641\u0635\u0644\u0629 \u0628\u0623\u0631\u0642\u0627\u0645 \u0645\u0642\u062A\u0631\u062D\u0629 \u0648\u062C\u062F\u0648\u0644 \u0632\u0645\u0646\u064A.`;
-                } else {
-                  sectionCount = 5;
-                  structureInstruction = `\u0627\u0643\u062A\u0628 \u062A\u0642\u0631\u064A\u0631\u0627\u064B \u0645\u0627\u0644\u064A\u0627\u064B \u0639\u0645\u064A\u0642\u0627\u064B \u0648\u0645\u0634\u0628\u0639\u0627\u064B (\u0644\u0627 \u064A\u0642\u0644 \u0639\u0646 ${reportTargetWords} \u0643\u0644\u0645\u0629) \u0645\u0642\u0633\u0645 \u0625\u062C\u0628\u0627\u0631\u064A\u0627\u064B \u0625\u0644\u0649 ${sectionCount} \u0623\u0642\u0633\u0627\u0645 \u0631\u0626\u064A\u0633\u064A\u0629 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644:
+              } else {
+                sectionCount = 5;
+                structureInstruction = `\u0627\u0643\u062A\u0628 \u062A\u0642\u0631\u064A\u0631\u0627\u064B \u0645\u0627\u0644\u064A\u0627\u064B \u0639\u0645\u064A\u0642\u0627\u064B \u0648\u0645\u0634\u0628\u0639\u0627\u064B (\u0644\u0627 \u064A\u0642\u0644 \u0639\u0646 ${reportTargetWords} \u0643\u0644\u0645\u0629) \u0645\u0642\u0633\u0645 \u0625\u062C\u0628\u0627\u0631\u064A\u0627\u064B \u0625\u0644\u0649 ${sectionCount} \u0623\u0642\u0633\u0627\u0645 \u0631\u0626\u064A\u0633\u064A\u0629 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644:
 \u0627\u0644\u0642\u0633\u0645 1 - \u0646\u0638\u0631\u0629 \u0639\u0627\u0645\u0629 \u0634\u0627\u0645\u0644\u0629: \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u062F\u0642\u064A\u0642\u0629 + \u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0627\u062A + \u0646\u0633\u0628\u0629 \u0627\u0644\u0627\u0633\u062A\u0647\u0644\u0627\u0643 \u0645\u0646 \u0627\u0644\u062F\u062E\u0644 + \u062A\u0642\u064A\u064A\u0645 \u0627\u0644\u0633\u064A\u0648\u0644\u0629.
-\u0627\u0644\u0642\u0633\u0645 2 - \u062A\u062D\u0644\u064A\u0644 \u062A\u0641\u0635\u064A\u0644\u064A \u0639\u0645\u064A\u0642: \u0643\u0644 \u0641\u0626\u0629 \u0641\u0631\u0639\u064A\u0629 \u0648\u0643\u0644 \u0639\u0645\u0644\u064A\u0629 \u0641\u0631\u062F\u064A\u0629 (\u0633\u062A\u0627\u0631\u0628\u0643\u0633\u060C \u062C\u0631\u064A\u0631\u060C \u0643\u0627\u0631\u0641\u0648\u0631...) \u0645\u0639 \u0634\u0631\u062D \u0627\u0644\u0633\u064A\u0627\u0642.
+\u0627\u0644\u0642\u0633\u0645 2 - \u062A\u062D\u0644\u064A\u0644 \u062A\u0641\u0635\u064A\u0644\u064A \u0639\u0645\u064A\u0642: \u0623\u0639\u0644\u0649 \u0627\u0644\u0641\u0626\u0627\u062A \u0627\u0644\u0641\u0631\u0639\u064A\u0629 \u0648\u0627\u0644\u0623\u0646\u0645\u0627\u0637 \u0627\u0644\u0645\u062C\u0645\u0639\u0629 \u0641\u0642\u0637. \u0644\u0627 \u062A\u0633\u0631\u062F \u0643\u0644 \u0639\u0645\u0644\u064A\u0629 \u0641\u0631\u062F\u064A\u0629\u061B \u0627\u0633\u062A\u062E\u062F\u0645 evidence \u0645\u062D\u062F\u0648\u062F\u0627 \u0628\u062D\u062F \u0623\u0642\u0635\u0649 4 \u0623\u0645\u062B\u0644\u0629 \u0625\u0646 \u0643\u0627\u0646 \u0645\u062A\u0627\u062D\u0627.
 \u0627\u0644\u0642\u0633\u0645 3 - \u0627\u0644\u0623\u0646\u0645\u0627\u0637 \u0648\u0627\u0644\u062A\u0648\u062C\u0647\u0627\u062A: \u062A\u062D\u0644\u064A\u0644 \u0633\u0644\u0648\u0643\u064A \u0639\u0645\u064A\u0642 \u0645\u0639 \u0634\u0631\u062D \u0627\u0644\u0623\u0633\u0628\u0627\u0628 \u0627\u0644\u0645\u062D\u062A\u0645\u0644\u0629 \u0648\u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0629 \u0627\u0644\u062A\u0627\u0631\u064A\u062E\u064A\u0629.
 \u0627\u0644\u0642\u0633\u0645 4 - \u0627\u0644\u0645\u062E\u0627\u0637\u0631 \u0627\u0644\u0645\u0627\u0644\u064A\u0629: \u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0633\u064A\u0648\u0644\u0629 (Burn Rate) + \u0646\u0642\u0627\u0637 \u0627\u0644\u0636\u0639\u0641 + \u0633\u064A\u0646\u0627\u0631\u064A\u0648\u0647\u0627\u062A \u0645\u062D\u062A\u0645\u0644\u0629.
 \u0627\u0644\u0642\u0633\u0645 5 - \u062E\u0637\u0629 \u062A\u062D\u0633\u064A\u0646 \u0645\u0641\u0635\u0644\u0629: \u062A\u0648\u0635\u064A\u0627\u062A \u0627\u0633\u062A\u0631\u0627\u062A\u064A\u062C\u064A\u0629 \u0645\u0639 \u0623\u0631\u0642\u0627\u0645 \u0645\u0642\u062A\u0631\u062D\u0629 \u0644\u0643\u0644 \u0628\u0646\u062F + \u062C\u062F\u0648\u0644 \u0632\u0645\u0646\u064A + \u0623\u0647\u062F\u0627\u0641 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0642\u0627\u062F\u0645.`;
-                }
               }
-              const advancedInstructionsStr = aiAdvancedInstructions.trim() !== "" ? aiAdvancedInstructions : `- \u062A\u062D\u062F\u062B \u0628\u0636\u0645\u064A\u0631 \u0627\u0644\u0645\u062E\u0627\u0637\u0628 \u0627\u0644\u0645\u0628\u0627\u0634\u0631 (\u0623\u0646\u062A) \u0643\u0623\u0646\u0643 \u062A\u062C\u0644\u0633 \u0645\u0639 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0648\u062C\u0647\u0627\u064B \u0644\u0648\u062C\u0647.
+            }
+            const advancedInstructionsStr = aiAdvancedInstructions.trim() !== "" ? aiAdvancedInstructions : `- \u062A\u062D\u062F\u062B \u0628\u0636\u0645\u064A\u0631 \u0627\u0644\u0645\u062E\u0627\u0637\u0628 \u0627\u0644\u0645\u0628\u0627\u0634\u0631 (\u0623\u0646\u062A) \u0643\u0623\u0646\u0643 \u062A\u062C\u0644\u0633 \u0645\u0639 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0648\u062C\u0647\u0627\u064B \u0644\u0648\u062C\u0647.
 - \u0627\u062F\u0645\u062C \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u062D\u0642\u064A\u0642\u064A\u0629 \u0645\u0646 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0641\u064A \u0627\u0644\u062A\u062D\u0644\u064A\u0644 \u0628\u0634\u0643\u0644 \u0637\u0628\u064A\u0639\u064A.
-- \u0625\u0630\u0627 \u0648\u064F\u062C\u062F\u062A \u062A\u0641\u0627\u0635\u064A\u0644 \u0639\u0645\u0644\u064A\u0627\u062A \u0641\u0631\u062F\u064A\u0629 (\u0623\u0633\u0645\u0627\u0621 \u0623\u0645\u0627\u0643\u0646/\u0645\u0646\u062A\u062C\u0627\u062A)\u060C \u062D\u0644\u0644\u0647\u0627 \u0628\u0639\u0645\u0642 \u0648\u0627\u0630\u0643\u0631\u0647\u0627 \u0628\u0627\u0644\u0627\u0633\u0645.
+- \u0625\u0630\u0627 \u0648\u064F\u062C\u062F LIMITED_TRANSACTION_EVIDENCE \u0641\u0627\u0633\u062A\u062E\u062F\u0645\u0647 \u0643\u0623\u0645\u062B\u0644\u0629 \u062F\u0627\u0639\u0645\u0629 \u0641\u0642\u0637\u060C \u0648\u0644\u0627 \u062A\u062D\u0648\u0644\u0647 \u0625\u0644\u0649 \u0633\u0631\u062F \u062E\u0627\u0645 \u0644\u0643\u0644 \u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A \u0623\u0648 \u062A\u0633\u062A\u0646\u062A\u062C \u0645\u0646\u0647 \u0639\u0645\u0644\u064A\u0627\u062A \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629.
 - \u0643\u0644 \u0642\u0633\u0645 \u064A\u062C\u0628 \u0623\u0646 \u064A\u0643\u0648\u0646 \u0641\u0642\u0631\u0629 \u0637\u0648\u064A\u0644\u0629 \u0643\u0627\u0645\u0644\u0629 (\u0644\u064A\u0633 \u0645\u062C\u0631\u062F \u062C\u0645\u0644\u0629 \u0623\u0648 \u062C\u0645\u0644\u062A\u064A\u0646).`;
-              const prompt = `${aiSystemPrompt}
+            const prompt = `${aiSystemPrompt}
 
 **[\u062A\u0639\u0644\u064A\u0645\u0629 \u062D\u0627\u0633\u0645\u0629]**: \u064A\u062C\u0628 \u0623\u0646 \u064A\u0643\u0648\u0646 \u0637\u0648\u0644 response_text \u062D\u0648\u0627\u0644\u064A ${reportTargetWords} \u0643\u0644\u0645\u0629 \u0639\u0631\u0628\u064A\u0629. \u0647\u0630\u0627 \u0634\u0631\u0637 \u063A\u064A\u0631 \u0642\u0627\u0628\u0644 \u0644\u0644\u062A\u0641\u0627\u0648\u0636. \u0625\u0630\u0627 \u0643\u0627\u0646 \u0631\u062F\u0643 \u0623\u0642\u0635\u0631 \u0645\u0646 ${Math.round(reportTargetWords * 0.7)} \u0643\u0644\u0645\u0629\u060C \u0641\u0623\u0646\u062A \u062A\u062E\u0627\u0644\u0641 \u0627\u0644\u062A\u0639\u0644\u064A\u0645\u0627\u062A.
 
 [Instructions]
 - ${lengthInstruction}
 - ${focusInstruction}
+- \u0642\u0627\u0639\u062F\u0629 \u0628\u064A\u0627\u0646\u0627\u062A \u0625\u0644\u0632\u0627\u0645\u064A\u0629: \u0644\u0627 \u062A\u0633\u062A\u062E\u062F\u0645 raw transactions \u0641\u064A \u0627\u0644\u0631\u062F. \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u062A\u0623\u062A\u064A \u0645\u0646 facts \u0627\u0644\u0645\u062C\u0645\u0639\u0629 \u0641\u0642\u0637\u060C \u0648\u0623\u064A \u062A\u0641\u0627\u0635\u064A\u0644 \u0639\u0645\u0644\u064A\u0627\u062A \u0641\u0631\u062F\u064A\u0629 \u0645\u0633\u0645\u0648\u062D\u0629 \u0641\u0642\u0637 \u0625\u0630\u0627 \u0638\u0647\u0631\u062A \u062F\u0627\u062E\u0644 LIMITED_TRANSACTION_EVIDENCE \u0648\u0628\u062D\u062F \u0623\u0642\u0635\u0649 ${MONTHLY_REPORT_TRANSACTION_EVIDENCE_LIMIT} \u0623\u0645\u062B\u0644\u0629 \u062F\u0627\u0639\u0645\u0629.
 - **\u0627\u0644\u0647\u064A\u0643\u0644 \u0627\u0644\u0625\u0644\u0632\u0627\u0645\u064A**: ${structureInstruction}
 ${advancedInstructionsStr}
 
@@ -175969,70 +183577,97 @@ ${personalizedSummaryForAI}
   "personality_flag": "${personality}",
   "data_table": []
 }`;
-              let raw2 = "";
-              let tokens = 0;
-              if (reportProvider === "fireworks" || isFireworksModel(modelName)) {
-                const res = await callFireworksAPI(
-                  fireworksApiKey || reportApiKey,
-                  modelName,
-                  aiSystemPrompt,
-                  prompt,
-                  capRequestOutputTokens(
-                    ctx.user.plan,
-                    "report",
-                    reportTargetWords * 4
-                  )
-                );
-                raw2 = res.text;
-                tokens = res.tokensUsed;
-              } else if (reportProvider === "groq" || isGroqModel(modelName)) {
-                const res = await callGroqAPI2(
-                  groqApiKey || reportApiKey,
-                  modelName,
-                  aiSystemPrompt,
-                  prompt,
-                  capRequestOutputTokens(
-                    ctx.user.plan,
-                    "report",
-                    reportTargetWords * 4
-                  )
-                );
-                raw2 = res.text;
-                tokens = res.tokensUsed;
-              } else if (aiModel) {
-                const result = await aiModel.generateContent(prompt);
-                raw2 = result.response.text().replace(/```json?/g, "").replace(/```/g, "").trim();
-                tokens = result.response.usageMetadata?.totalTokenCount || 0;
-              }
-              await trackTokens(
-                ctx.user.id,
-                ctx.user.type,
-                tokens,
-                "report",
-                modelName
+            let raw2 = "";
+            let tokens = 0;
+            if (reportProvider === "fireworks" || isFireworksModel(modelName)) {
+              const res = await callFireworksAPI(
+                fireworksApiKey || reportApiKey,
+                modelName,
+                aiSystemPrompt,
+                prompt,
+                capRequestOutputTokens(
+                  ctx.user.plan,
+                  "report",
+                  Math.min(reportTargetWords * 4, reportCostPolicy.maxOutputTokens)
+                )
               );
-              try {
-                responseJson = JSON.parse(raw2);
-              } catch (e2) {
-                const match2 = raw2.match(/\{[\s\S]*\}/);
-                if (match2) {
-                  try {
-                    responseJson = JSON.parse(match2[0]);
-                  } catch (e22) {
-                    console.error(
-                      `Regex Parse Error: ${e22.message}
-Raw:
-${raw2}`
-                    );
-                  }
-                } else {
+              raw2 = res.text;
+              tokens = res.tokensUsed;
+            } else if (reportProvider === "groq" || isGroqModel(modelName)) {
+              const res = await callGroqAPI2(
+                groqApiKey || reportApiKey,
+                modelName,
+                aiSystemPrompt,
+                prompt,
+                capRequestOutputTokens(
+                  ctx.user.plan,
+                  "report",
+                  Math.min(reportTargetWords * 4, reportCostPolicy.maxOutputTokens)
+                )
+              );
+              raw2 = res.text;
+              tokens = res.tokensUsed;
+            } else if (aiModel) {
+              const result = await aiModel.generateContent(prompt);
+              raw2 = result.response.text().replace(/```json?/g, "").replace(/```/g, "").trim();
+              tokens = result.response.usageMetadata?.totalTokenCount || 0;
+            }
+            await trackTokens(
+              ctx.user.id,
+              ctx.user.type,
+              tokens,
+              "report",
+              modelName
+            );
+            const estimatedInputTokens = estimateTokensFromText(prompt);
+            reportEstimatedInputTokens = estimatedInputTokens;
+            reportTotalTokens = tokens;
+            reportLlmCalls = tokens > 0 ? 1 : 0;
+            reportLatencyMs = Date.now() - reportStartedAt;
+            void recordAICostMetric({
+              userId: ctx.user.id,
+              userType: ctx.user.type,
+              channel: "report",
+              plan: planId,
+              intentKind: "report_request",
+              model: modelName,
+              inputTokens: estimatedInputTokens,
+              outputTokens: Math.max(0, tokens - estimatedInputTokens),
+              totalTokens: tokens,
+              llmCalls: reportLlmCalls,
+              toolCalls: 0,
+              latencyMs: reportLatencyMs,
+              metadata: {
+                month: input.month,
+                source: "monthly_report_endpoint",
+                provider: reportProvider,
+                factsSource: semanticReportFacts?.source ?? null,
+                factsCacheKey: semanticReportFacts?.cacheKey ?? null,
+                semanticFactsAvailable: Boolean(semanticReportFacts),
+                maxOutputTokens: reportCostPolicy.maxOutputTokens
+              }
+            });
+            try {
+              responseJson = JSON.parse(raw2);
+            } catch (e2) {
+              const match2 = raw2.match(/\{[\s\S]*\}/);
+              if (match2) {
+                try {
+                  responseJson = JSON.parse(match2[0]);
+                } catch (e22) {
                   console.error(
-                    `No JSON matched.
-Parse Error: ${e2.message}
+                    `Regex Parse Error: ${e22.message}
 Raw:
 ${raw2}`
                   );
                 }
+              } else {
+                console.error(
+                  `No JSON matched.
+Parse Error: ${e2.message}
+Raw:
+${raw2}`
+                );
               }
             }
           } catch (err) {
@@ -176047,7 +183682,10 @@ ${err.stack}`);
         }
         if (!responseJson) {
           modelName = "backend";
+          reportProvider = "backend";
           let text2 = "";
+          const fallbackDailyAvg = semanticNumber("daily_average_expense") ?? dailyAvg;
+          const fallbackTotalExpense = semanticNumber("total_expense") ?? totalExpense;
           if (!aiModel) {
             text2 += "\u{1F4A1} (\u0645\u0644\u0627\u062D\u0638\u0629: \u0647\u0630\u0627 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u062A\u0645 \u062A\u0648\u0644\u064A\u062F\u0647 \u0628\u0648\u0627\u0633\u0637\u0629 \u0627\u0644\u0646\u0638\u0627\u0645 \u0627\u0644\u0623\u0633\u0627\u0633\u064A \u0644\u0623\u0646\u0643 \u0627\u0633\u062A\u0647\u0644\u0643\u062A \u0643\u0644 \u0627\u0644\u062A\u0648\u0643\u0646\u0632 \u0627\u0644\u0645\u062A\u0627\u062D\u0629 \u0644\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631. \u0642\u0645 \u0628\u0627\u0644\u062A\u0631\u0642\u064A\u0629 \u0644\u0632\u064A\u0627\u062F\u0629 \u0627\u0644\u062D\u062F\u0648\u062F!)\n\n";
           } else {
@@ -176078,7 +183716,7 @@ ${err.stack}`);
 
 `;
           }
-          text2 += `\u0645\u062A\u0648\u0633\u0637 \u0635\u0631\u0641\u0643 \u0627\u0644\u064A\u0648\u0645\u064A ${dailyAvg} \u062C.\u0645 (${totalExpense} \u062C.\u0645 \u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0634\u0647\u0631).`;
+          text2 += `\u0645\u062A\u0648\u0633\u0637 \u0635\u0631\u0641\u0643 \u0627\u0644\u064A\u0648\u0645\u064A ${fallbackDailyAvg} \u062C.\u0645 (${fallbackTotalExpense} \u062C.\u0645 \u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0634\u0647\u0631).`;
           if (personality === "impulsive")
             text2 += "\n\n\u0644\u0627\u062D\u0638 \u0625\u0646 \u0646\u0633\u0628\u0629 \u0643\u0628\u064A\u0631\u0629 \u0645\u0646 \u0635\u0631\u0641\u0643 \u0639\u0644\u0649 \u062D\u0627\u062C\u0627\u062A \u0645\u0631\u0646\u0629 (\u062A\u0631\u0641\u064A\u0647/\u062A\u0633\u0648\u0642). \u062D\u0627\u0648\u0644 \u062A\u062D\u0637 \u0644\u064A\u0647\u0627 \u062D\u062F \u0634\u0647\u0631\u064A.";
           responseJson = {
@@ -176101,6 +183739,52 @@ ${err.stack}`);
           ...behaviorSnapshot.inferredAttributes,
           financialPersonality: personality
         };
+        if (responseJson && typeof responseJson === "object") {
+          const reportText = String(responseJson.response_text ?? "");
+          const validationFacts = reportLlmCalls > 0 ? semanticReportFacts?.facts ?? [] : {
+            semanticFacts: semanticReportFacts?.facts ?? [],
+            serverDerivedFacts: {
+              totalExpense,
+              totalIncome,
+              prevTotal,
+              dailyAvg,
+              semanticDailyAverageExpense: semanticNumber("daily_average_expense"),
+              semanticTotalExpense: semanticNumber("total_expense"),
+              monthlyChange,
+              topCategoryPercent,
+              incomeRatio
+            }
+          };
+          const numericAccuracy = semanticReportFacts ? validateNumbersAgainstFacts(reportText, validationFacts) : { accuracy: 1, numbers: [], supported: [], missing: [] };
+          const hallucination = reportHallucinationRisk(numericAccuracy.missing, reportLlmCalls);
+          responseJson.semantic_facts = {
+            source: semanticReportFacts?.source ?? "unavailable",
+            factCount: semanticReportFacts?.facts.length ?? 0,
+            artifactCount: semanticReportFacts?.artifacts.length ?? 0
+          };
+          responseJson.ai_trace = {
+            route: "report_request",
+            tools: ["monthly_report.facts"],
+            factsSource: semanticReportFacts?.source ?? "unavailable",
+            factCount: semanticReportFacts?.facts.length ?? 0,
+            artifactCount: semanticReportFacts?.artifacts.length ?? 0,
+            model: modelName,
+            provider: reportProvider,
+            llmCalls: reportLlmCalls,
+            embeddingCalls: 0,
+            inputTokens: reportEstimatedInputTokens,
+            totalTokens: reportTotalTokens,
+            latencyMs: reportLatencyMs,
+            numericAccuracy: {
+              accuracy: numericAccuracy.accuracy,
+              numbers: numericAccuracy.numbers,
+              supported: numericAccuracy.supported,
+              missing: numericAccuracy.missing
+            },
+            hallucinationRisk: hallucination.risk,
+            hallucinationSignals: hallucination.signals
+          };
+        }
         await saveSmartProfile(ctx.user.id, ctx.user.type, {
           ...userProfile,
           aiInferredAttributes: {
@@ -176150,16 +183834,25 @@ ${err.stack}`);
           }
         });
         const insightsStr = JSON.stringify(responseJson);
-        await db.insert(aiSummaries).values({
-          userId: ctx.user.id,
-          userType: ctx.user.type,
-          period: "monthly",
-          periodValue: input.month,
-          model: modelName,
-          content: insightsStr
-        }).catch(() => {
-        });
-        return { insights: insightsStr, cached: false, model: modelName };
+        if (existingSummary[0]?.id) {
+          await db.update(aiSummaries).set({
+            model: modelName,
+            content: insightsStr,
+            createdAt: /* @__PURE__ */ new Date()
+          }).where(eq(aiSummaries.id, existingSummary[0].id)).catch(() => {
+          });
+        } else {
+          await db.insert(aiSummaries).values({
+            userId: ctx.user.id,
+            userType: ctx.user.type,
+            period: "monthly",
+            periodValue: input.month,
+            model: modelName,
+            content: insightsStr
+          }).catch(() => {
+          });
+        }
+        return { insights: insightsStr, cached: false, model: modelName, trace: responseJson?.ai_trace ?? null };
       }),
       // ─── Compare Months ───
       compareMonths: authedProcedure.input(
@@ -176169,66 +183862,142 @@ ${err.stack}`);
           model: external_exports.enum(["flash", "pro", "ultra", "gemma"]).default("flash")
         })
       ).mutation(async ({ ctx, input }) => {
-        let aiModel;
-        let modelName = "demo";
-        try {
-          const client = await getAiClient("report", ctx.user.plan);
-          if (!client.canUseAnalysis) {
-            throw new TRPCError({
-              code: "FORBIDDEN",
-              message: "\u062A\u062D\u0644\u064A\u0644\u0627\u062A \u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0629 \u0628\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u0641\u064A \u062E\u0637\u062A\u0643 \u0627\u0644\u062D\u0627\u0644\u064A\u0629."
-            });
+        const startedAt = Date.now();
+        const settingsRows = await db.select().from(systemSettings);
+        const settings = {};
+        settingsRows.forEach((setting) => {
+          if (setting.value !== void 0 && setting.value !== null) {
+            settings[setting.key] = setting.value;
           }
-          aiModel = client.aiModel;
-          modelName = client.modelName;
-        } catch (e2) {
-          if (e2 instanceof TRPCError) throw e2;
+        });
+        const plan = asPlan(ctx.user.plan);
+        if (settings[`${plan}_ai_analysis`] === "false") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "\u062A\u062D\u0644\u064A\u0644\u0627\u062A \u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0629 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u0641\u064A \u062E\u0637\u062A\u0643 \u0627\u0644\u062D\u0627\u0644\u064A\u0629."
+          });
         }
-        const getMonthData = async (monthStr) => {
-          const [y, m2] = monthStr.split("-");
-          const start = new Date(parseInt(y), parseInt(m2) - 1, 1);
-          const end = new Date(parseInt(y), parseInt(m2), 0);
-          const exps = await db.select().from(expenses).where(
-            and(
-              eq(expenses.userId, ctx.user.id),
-              eq(expenses.userType, ctx.user.type),
-              gte(expenses.date, start),
-              lte(expenses.date, end)
-            )
-          );
-          return {
-            total: exps.reduce((s3, e2) => s3 + Number(e2.amount), 0),
-            count: exps.length
-          };
+        const userProfile = await getSmartProfile(ctx.user.id, ctx.user.type).catch(() => null);
+        const salaryDay = Number(userProfile?.financialInfo?.salaryDay) || 0;
+        const financeCtx = {
+          userId: ctx.user.id,
+          userType: ctx.user.type,
+          salaryDay
         };
-        const d1 = await getMonthData(input.month1);
-        const d2 = await getMonthData(input.month2);
-        const prompt = `\u0642\u0627\u0631\u0646 \u0628\u064A\u0646 \u0634\u0647\u0631\u064A\u0646 \u0645\u0627\u0644\u064A\u0627 \u0628\u0627\u0644\u0639\u0627\u0645\u064A\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629:
-${input.month1}: ${d1.total} \u062C\u0646\u064A\u0647 (${d1.count} \u0639\u0645\u0644\u064A\u0629)
-${input.month2}: ${d2.total} \u062C\u0646\u064A\u0647 (${d2.count} \u0639\u0645\u0644\u064A\u0629)
-\u0627\u0639\u0645\u0644 \u0645\u0642\u0627\u0631\u0646\u0629 \u0645\u062E\u062A\u0635\u0631\u0629.`;
-        let comparison = "";
-        try {
-          if (!aiModel) throw new Error("Demo Mode or Client Error");
-          const result = await aiModel.generateContent(prompt);
-          comparison = result.response.text();
-          const tokens = result.response.usageMetadata?.totalTokenCount || 0;
-          await trackTokens(
-            ctx.user.id,
-            ctx.user.type,
-            tokens,
-            "report",
-            modelName
-          );
-        } catch (err) {
-          console.error("AI Compare Error:", err);
-          comparison = `(Fallback Mode) \u0645\u0642\u0627\u0631\u0646\u0629 \u0628\u064A\u0646 \u0627\u0644\u0634\u0647\u0648\u0631:
-\u0645\u0642\u0627\u0631\u0646\u0629 \u0628\u064A\u0646 ${input.month1} \u0648 ${input.month2}.
-\u0645\u0635\u0627\u0631\u064A\u0641 ${input.month1}: ${d1.total} \u062C\u0646\u064A\u0647
-\u0645\u0635\u0627\u0631\u064A\u0641 ${input.month2}: ${d2.total} \u062C\u0646\u064A\u0647
-\u0627\u0644\u0641\u0631\u0642 \u0647\u0648 ${Math.abs(d1.total - d2.total)} \u062C\u0646\u064A\u0647.`;
-        }
-        return { comparison, model: modelName, data: { month1: d1, month2: d2 } };
+        const [month1, month2] = await Promise.all([
+          getFinanceSummary(financeCtx, { period: "current_month", month: input.month1 }),
+          getFinanceSummary(financeCtx, { period: "current_month", month: input.month2 })
+        ]);
+        const roundMoney = (value) => Math.round((Number(value) || 0) * 100) / 100;
+        const formatMoney = (value) => `${roundMoney(value).toLocaleString("en-US")} \u062C\u0646\u064A\u0647`;
+        const formatPercent = (value) => value === null || !Number.isFinite(value) ? "\u063A\u064A\u0631 \u0645\u062D\u0633\u0648\u0628\u0629" : `${roundMoney(value)}%`;
+        const periodDateLabel = (value) => {
+          if (value instanceof Date) return value.toISOString().slice(0, 10);
+          const parsed = new Date(value);
+          return Number.isNaN(parsed.getTime()) ? String(value).slice(0, 10) : parsed.toISOString().slice(0, 10);
+        };
+        const periodLabel = (summary) => `${periodDateLabel(summary.period.startDate)}..${periodDateLabel(summary.period.endDate)}`;
+        const expenseDifference = month1.totalExpense - month2.totalExpense;
+        const incomeDifference = month1.totalIncome - month2.totalIncome;
+        const netFlowDifference = month1.netFlow - month2.netFlow;
+        const expenseChangePercent = month2.totalExpense === 0 ? month1.totalExpense === 0 ? 0 : null : expenseDifference / month2.totalExpense * 100;
+        const direction = expenseDifference > 0 ? "\u0623\u0639\u0644\u0649" : expenseDifference < 0 ? "\u0623\u0642\u0644" : "\u0646\u0641\u0633 \u0627\u0644\u0645\u0633\u062A\u0648\u0649";
+        const comparison = [
+          `\u0645\u0642\u0627\u0631\u0646\u0629 ${input.month1} \u0645\u0639 ${input.month2}:`,
+          `- \u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062A: ${formatMoney(month1.totalExpense)} \u0645\u0642\u0627\u0628\u0644 ${formatMoney(month2.totalExpense)}. \u0634\u0647\u0631 ${input.month1} ${direction} \u0628\u0641\u0627\u0631\u0642 ${formatMoney(Math.abs(expenseDifference))} (${formatPercent(expenseChangePercent)}).`,
+          `- \u0627\u0644\u062F\u062E\u0644: ${formatMoney(month1.totalIncome)} \u0645\u0642\u0627\u0628\u0644 ${formatMoney(month2.totalIncome)}. \u0627\u0644\u0641\u0631\u0642 ${formatMoney(incomeDifference)}.`,
+          `- \u0627\u0644\u0635\u0627\u0641\u064A: ${formatMoney(month1.netFlow)} \u0645\u0642\u0627\u0628\u0644 ${formatMoney(month2.netFlow)}. \u0627\u0644\u0641\u0631\u0642 ${formatMoney(netFlowDifference)}.`,
+          `- \u0639\u062F\u062F \u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A: ${month1.transactionCount} \u0645\u0642\u0627\u0628\u0644 ${month2.transactionCount}.`
+        ].join("\n");
+        const numericAccuracy = validateNumbersAgainstFacts(comparison, {
+          month1: input.month1,
+          month2: input.month2,
+          month1Period: periodLabel(month1),
+          month2Period: periodLabel(month2),
+          month1TotalExpense: roundMoney(month1.totalExpense),
+          month2TotalExpense: roundMoney(month2.totalExpense),
+          month1TotalIncome: roundMoney(month1.totalIncome),
+          month2TotalIncome: roundMoney(month2.totalIncome),
+          month1NetFlow: roundMoney(month1.netFlow),
+          month2NetFlow: roundMoney(month2.netFlow),
+          expenseDifference: roundMoney(expenseDifference),
+          absoluteExpenseDifference: roundMoney(Math.abs(expenseDifference)),
+          incomeDifference: roundMoney(incomeDifference),
+          netFlowDifference: roundMoney(netFlowDifference),
+          expenseChangePercent: expenseChangePercent === null ? null : roundMoney(expenseChangePercent),
+          month1TransactionCount: month1.transactionCount,
+          month2TransactionCount: month2.transactionCount
+        });
+        const hallucination = reportHallucinationRisk(numericAccuracy.missing, 0);
+        const inputTokens = estimateTokensFromText(
+          JSON.stringify({
+            month1: input.month1,
+            month2: input.month2,
+            month1Expense: month1.totalExpense,
+            month2Expense: month2.totalExpense,
+            month1Income: month1.totalIncome,
+            month2Income: month2.totalIncome,
+            month1NetFlow: month1.netFlow,
+            month2NetFlow: month2.netFlow
+          })
+        );
+        const outputTokens = estimateTokensFromText(comparison);
+        const trace2 = {
+          route: "finance_period_comparison",
+          tools: ["finance.summary"],
+          factsSource: "semantic_live",
+          factCount: 10,
+          artifactCount: 0,
+          model: "semantic-deterministic",
+          provider: "backend",
+          llmCalls: 0,
+          embeddingCalls: 0,
+          inputTokens,
+          totalTokens: inputTokens + outputTokens,
+          latencyMs: Date.now() - startedAt,
+          numericAccuracy: {
+            accuracy: numericAccuracy.accuracy,
+            numbers: numericAccuracy.numbers,
+            supported: numericAccuracy.supported,
+            missing: numericAccuracy.missing
+          },
+          hallucinationRisk: hallucination.risk,
+          hallucinationSignals: hallucination.signals
+        };
+        void recordAICostMetric({
+          userId: ctx.user.id,
+          userType: ctx.user.type,
+          channel: "report",
+          plan,
+          intentKind: "finance.period_comparison",
+          model: "semantic-deterministic",
+          inputTokens,
+          outputTokens,
+          totalTokens: inputTokens + outputTokens,
+          embeddingCalls: 0,
+          llmCalls: 0,
+          toolCalls: 2,
+          latencyMs: trace2.latencyMs,
+          metadata: {
+            route: trace2.route,
+            factsSource: trace2.factsSource,
+            factCount: trace2.factCount,
+            numericAccuracy: numericAccuracy.accuracy
+          }
+        });
+        return {
+          comparison,
+          model: "semantic-deterministic",
+          trace: trace2,
+          data: {
+            month1,
+            month2,
+            expenseDifference,
+            expenseChangePercent,
+            incomeDifference,
+            netFlowDifference
+          }
+        };
       }),
       // ─── Generate Yearly Insights ───
       generateYearlyInsights: authedProcedure.input(
@@ -176237,64 +184006,171 @@ ${input.month2}: ${d2.total} \u062C\u0646\u064A\u0647 (${d2.count} \u0639\u0645\
           model: external_exports.enum(["flash", "pro", "ultra", "gemma"]).default("pro")
         })
       ).mutation(async ({ ctx, input }) => {
-        let aiModel;
-        let modelName = "demo";
-        try {
-          const client = await getAiClient("report", ctx.user.plan);
-          if (!client.canUseAnalysis) {
-            throw new TRPCError({
-              code: "FORBIDDEN",
-              message: "\u0627\u0644\u062A\u062D\u0644\u064A\u0644\u0627\u062A \u0627\u0644\u0633\u0646\u0648\u064A\u0629 \u0628\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u0641\u064A \u062E\u0637\u062A\u0643 \u0627\u0644\u062D\u0627\u0644\u064A\u0629."
-            });
+        const startedAt = Date.now();
+        const year2 = Number.parseInt(input.year, 10);
+        if (!Number.isFinite(year2) || year2 < 2e3 || year2 > 2100) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "\u0633\u0646\u0629 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629."
+          });
+        }
+        const settingsRows = await db.select().from(systemSettings);
+        const settings = {};
+        settingsRows.forEach((setting) => {
+          if (setting.value !== void 0 && setting.value !== null) {
+            settings[setting.key] = setting.value;
           }
-          aiModel = client.aiModel;
-          modelName = client.modelName;
-        } catch (e2) {
-          if (e2 instanceof TRPCError) throw e2;
+        });
+        const plan = asPlan(ctx.user.plan);
+        if (settings[`${plan}_ai_analysis`] === "false") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "\u0627\u0644\u062A\u062D\u0644\u064A\u0644\u0627\u062A \u0627\u0644\u0633\u0646\u0648\u064A\u0629 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u0641\u064A \u062E\u0637\u062A\u0643 \u0627\u0644\u062D\u0627\u0644\u064A\u0629."
+          });
         }
-        const start = new Date(parseInt(input.year), 0, 1);
-        const end = new Date(parseInt(input.year), 11, 31);
-        const exps = await db.select().from(expenses).where(
-          and(
-            eq(expenses.userId, ctx.user.id),
-            eq(expenses.userType, ctx.user.type),
-            gte(expenses.date, start),
-            lte(expenses.date, end)
-          )
+        const userProfile = await getSmartProfile(ctx.user.id, ctx.user.type).catch(() => null);
+        const salaryDay = Number(userProfile?.financialInfo?.salaryDay) || 0;
+        const financeCtx = {
+          userId: ctx.user.id,
+          userType: ctx.user.type,
+          salaryDay
+        };
+        const startDate = new Date(year2, 0, 1);
+        const endDate = new Date(year2, 11, 31, 23, 59, 59, 999);
+        const [summary, monthlyChart, categoryBreakdown] = await Promise.all([
+          getFinanceSummary(financeCtx, { period: "custom", startDate, endDate }),
+          getChartData(financeCtx, {
+            period: "custom",
+            startDate,
+            endDate,
+            granularity: "month",
+            limit: 12
+          }),
+          getFinanceBreakdown(financeCtx, {
+            period: "custom",
+            startDate,
+            endDate,
+            granularity: "category",
+            limit: 5
+          })
+        ]);
+        const roundMoney = (value) => Math.round((Number(value) || 0) * 100) / 100;
+        const formatMoney = (value) => `${roundMoney(value).toLocaleString("en-US")} \u062C\u0646\u064A\u0647`;
+        const monthlyPoints = monthlyChart.points;
+        const peakMonth = monthlyPoints.reduce(
+          (best, point) => Number(point.value) > Number(best.value) ? point : best,
+          monthlyPoints[0] ?? { label: String(year2), value: 0, count: 0 }
         );
-        const total = exps.reduce((s3, e2) => s3 + Number(e2.amount), 0);
-        const byMonth = exps.reduce(
-          (acc, e2) => {
-            const m2 = new Date(e2.date).getMonth() + 1;
-            acc[m2] = (acc[m2] || 0) + Number(e2.amount);
-            return acc;
+        const activeMonths = monthlyPoints.filter((point) => Number(point.value) > 0).length;
+        const topCategory = categoryBreakdown.items[0];
+        const monthlyLine = monthlyPoints.map((point) => `${point.label}: ${roundMoney(Number(point.value) || 0)}`).join(" | ");
+        const categoryLine = categoryBreakdown.items.length > 0 ? categoryBreakdown.items.map((item) => `${item.name}: ${roundMoney(item.amount)} (${item.percent}%)`).join(" | ") : "\u0644\u0627 \u062A\u0648\u062C\u062F \u0641\u0626\u0627\u062A \u0645\u0635\u0631\u0648\u0641\u0627\u062A \u0645\u0633\u062C\u0644\u0629";
+        const insights = [
+          `\u0645\u0644\u062E\u0635 \u0633\u0646\u0629 ${year2}:`,
+          `- \u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062A: ${formatMoney(summary.totalExpense)} \u0645\u0646 ${summary.expenseCount} \u0639\u0645\u0644\u064A\u0629 \u0645\u0635\u0631\u0648\u0641\u0627\u062A.`,
+          `- \u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u062F\u062E\u0644: ${formatMoney(summary.totalIncome)}\u060C \u0648\u0627\u0644\u0635\u0627\u0641\u064A: ${formatMoney(summary.netFlow)}.`,
+          `- \u0645\u062A\u0648\u0633\u0637 \u0627\u0644\u0635\u0631\u0641 \u0627\u0644\u064A\u0648\u0645\u064A: ${formatMoney(summary.dailyAverageExpense)}.`,
+          `- \u0623\u0639\u0644\u0649 \u0634\u0647\u0631 \u0641\u064A \u0627\u0644\u0635\u0631\u0641: ${peakMonth.label} \u0628\u0642\u064A\u0645\u0629 ${formatMoney(Number(peakMonth.value) || 0)}.`,
+          `- \u0639\u062F\u062F \u0627\u0644\u0634\u0647\u0648\u0631 \u0627\u0644\u062A\u064A \u0641\u064A\u0647\u0627 \u0645\u0635\u0631\u0648\u0641\u0627\u062A: ${activeMonths} \u0645\u0646 12.`,
+          topCategory ? `- \u0623\u0639\u0644\u0649 \u0641\u0626\u0629: ${topCategory.name} \u0628\u0642\u064A\u0645\u0629 ${formatMoney(topCategory.amount)} (${topCategory.percent}%).` : "- \u0644\u0627 \u062A\u0648\u062C\u062F \u0641\u0626\u0627\u062A \u0643\u0627\u0641\u064A\u0629 \u0644\u0627\u0633\u062A\u062E\u0631\u0627\u062C \u0623\u0639\u0644\u0649 \u0641\u0626\u0629.",
+          `- \u062A\u0648\u0632\u064A\u0639 \u0627\u0644\u0634\u0647\u0648\u0631: ${monthlyLine || "\u0644\u0627 \u062A\u0648\u062C\u062F \u0628\u064A\u0627\u0646\u0627\u062A \u0634\u0647\u0631\u064A\u0629"}.`,
+          `- \u0623\u0639\u0644\u0649 \u0627\u0644\u0641\u0626\u0627\u062A: ${categoryLine}.`
+        ].join("\n");
+        const numericAccuracy = validateNumbersAgainstFacts(insights, {
+          year: year2,
+          totalExpense: roundMoney(summary.totalExpense),
+          expenseCount: summary.expenseCount,
+          totalIncome: roundMoney(summary.totalIncome),
+          netFlow: roundMoney(summary.netFlow),
+          dailyAverageExpense: roundMoney(summary.dailyAverageExpense),
+          peakMonthLabel: peakMonth.label,
+          peakMonthValue: roundMoney(Number(peakMonth.value) || 0),
+          activeMonths,
+          monthsInYear: 12,
+          topCategoryName: topCategory?.name,
+          topCategoryAmount: topCategory ? roundMoney(topCategory.amount) : null,
+          topCategoryPercent: topCategory?.percent ?? null,
+          monthlyPoints: monthlyPoints.map((point) => ({
+            label: point.label,
+            value: roundMoney(Number(point.value) || 0),
+            count: point.count
+          })),
+          categoryBreakdown: categoryBreakdown.items.map((item) => ({
+            name: item.name,
+            amount: roundMoney(item.amount),
+            percent: item.percent,
+            count: item.count
+          }))
+        });
+        const hallucination = reportHallucinationRisk(numericAccuracy.missing, 0);
+        const inputTokens = estimateTokensFromText(
+          JSON.stringify({
+            year: year2,
+            summary: {
+              totalExpense: summary.totalExpense,
+              totalIncome: summary.totalIncome,
+              netFlow: summary.netFlow,
+              transactionCount: summary.transactionCount
+            },
+            monthlyPoints,
+            categoryBreakdown: categoryBreakdown.items
+          })
+        );
+        const outputTokens = estimateTokensFromText(insights);
+        const trace2 = {
+          route: "yearly_report",
+          tools: ["finance.summary", "chart.data", "finance.breakdown"],
+          factsSource: "semantic_live",
+          factCount: 8 + monthlyPoints.length + categoryBreakdown.items.length,
+          artifactCount: 1,
+          model: "semantic-deterministic",
+          provider: "backend",
+          llmCalls: 0,
+          embeddingCalls: 0,
+          inputTokens,
+          totalTokens: inputTokens + outputTokens,
+          latencyMs: Date.now() - startedAt,
+          numericAccuracy: {
+            accuracy: numericAccuracy.accuracy,
+            numbers: numericAccuracy.numbers,
+            supported: numericAccuracy.supported,
+            missing: numericAccuracy.missing
           },
-          {}
-        );
-        const prompt = `\u062D\u0644\u0644 \u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u0633\u0646\u0629 ${input.year} \u0628\u0627\u0644\u0639\u0627\u0645\u064A\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629:
-\u0625\u062C\u0645\u0627\u0644\u064A: ${total} \u062C\u0646\u064A\u0647
-\u0627\u0644\u0634\u0647\u0648\u0631: ${Object.entries(byMonth).map(([k2, v]) => `\u0634\u0647\u0631 ${k2}: ${v}`).join(", ")}
-\u0627\u0639\u0645\u0644 \u0645\u0644\u062E\u0635 \u0633\u0646\u0648\u064A \u0648\u062A\u0648\u0642\u0639\u0627\u062A.`;
-        let insights = "";
-        try {
-          if (!aiModel) throw new Error("Demo Mode or Client Error");
-          const result = await aiModel.generateContent(prompt);
-          insights = result.response.text();
-          const tokens = result.response.usageMetadata?.totalTokenCount || 0;
-          await trackTokens(
-            ctx.user.id,
-            ctx.user.type,
-            tokens,
-            "report",
-            modelName
-          );
-        } catch (err) {
-          console.error("AI Yearly Error:", err);
-          insights = `(Fallback Mode) \u0645\u0644\u062E\u0635 \u0633\u0646\u0629 ${input.year}:
-\u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641: ${total} \u062C\u0646\u064A\u0647.
-\u062A\u0623\u0643\u062F \u0645\u0646 \u0625\u0639\u062F\u0627\u062F\u0627\u062A \u0627\u0644\u0640 API Key \u0644\u0644\u062D\u0635\u0648\u0644 \u0639\u0644\u0649 \u062A\u062D\u0644\u064A\u0644 \u0630\u0643\u064A.`;
-        }
-        return { insights, model: modelName, total };
+          hallucinationRisk: hallucination.risk,
+          hallucinationSignals: hallucination.signals
+        };
+        void recordAICostMetric({
+          userId: ctx.user.id,
+          userType: ctx.user.type,
+          channel: "report",
+          plan,
+          intentKind: "yearly_report",
+          model: "semantic-deterministic",
+          inputTokens,
+          outputTokens,
+          totalTokens: inputTokens + outputTokens,
+          embeddingCalls: 0,
+          llmCalls: 0,
+          toolCalls: 3,
+          latencyMs: trace2.latencyMs,
+          metadata: {
+            route: trace2.route,
+            factsSource: trace2.factsSource,
+            factCount: trace2.factCount,
+            numericAccuracy: numericAccuracy.accuracy
+          }
+        });
+        return {
+          insights,
+          model: "semantic-deterministic",
+          total: summary.totalExpense,
+          trace: trace2,
+          data: {
+            summary,
+            monthlyChart,
+            categoryBreakdown
+          }
+        };
       }),
       // ─── Financial Copilot: Get Cached Monthly Insights (Premium UX) ───
       getCachedMonthlyInsights: authedProcedure.input(external_exports.object({ month: external_exports.string().regex(/^\d{4}-\d{2}$/) })).query(async ({ ctx, input }) => {
@@ -181381,8 +189257,8 @@ var require_xlsx = __commonJS({
           }
           return L2.length - R2.length;
         }
-        function dirname(p) {
-          if (p.charAt(p.length - 1) == "/") return p.slice(0, -1).indexOf("/") === -1 ? p : dirname(p.slice(0, -1));
+        function dirname2(p) {
+          if (p.charAt(p.length - 1) == "/") return p.slice(0, -1).indexOf("/") === -1 ? p : dirname2(p.slice(0, -1));
           var c = p.lastIndexOf("/");
           return c === -1 ? p : p.slice(0, c + 1);
         }
@@ -181803,7 +189679,7 @@ var require_xlsx = __commonJS({
             data.push([cfb.FullPaths[i3], cfb.FileIndex[i3]]);
           }
           for (i3 = 0; i3 < data.length; ++i3) {
-            var dad = dirname(data[i3][0]);
+            var dad = dirname2(data[i3][0]);
             s3 = fullPaths[dad];
             if (!s3) {
               data.push([dad, {
@@ -181839,13 +189715,13 @@ var require_xlsx = __commonJS({
               elt.size = 0;
               elt.type = 5;
             } else if (nm.slice(-1) == "/") {
-              for (j2 = i3 + 1; j2 < data.length; ++j2) if (dirname(cfb.FullPaths[j2]) == nm) break;
+              for (j2 = i3 + 1; j2 < data.length; ++j2) if (dirname2(cfb.FullPaths[j2]) == nm) break;
               elt.C = j2 >= data.length ? -1 : j2;
-              for (j2 = i3 + 1; j2 < data.length; ++j2) if (dirname(cfb.FullPaths[j2]) == dirname(nm)) break;
+              for (j2 = i3 + 1; j2 < data.length; ++j2) if (dirname2(cfb.FullPaths[j2]) == dirname2(nm)) break;
               elt.R = j2 >= data.length ? -1 : j2;
               elt.type = 1;
             } else {
-              if (dirname(cfb.FullPaths[i3 + 1] || "") == dirname(nm)) elt.R = i3 + 1;
+              if (dirname2(cfb.FullPaths[i3 + 1] || "") == dirname2(nm)) elt.R = i3 + 1;
               elt.type = 2;
             }
           }
@@ -183562,7 +191438,7 @@ var require_xlsx = __commonJS({
         };
       })();
       var vtvregex = /<\/?(?:vt:)?variant>/g, vtmregex = /<(?:vt:)([^>]*)>([\s\S]*)</;
-      function parseVector(data, opts) {
+      function parseVector2(data, opts) {
         var h2 = parsexmltag(data);
         var matches = data.match(vtregex(h2.baseType)) || [];
         var res = [];
@@ -185558,11 +193434,11 @@ var require_xlsx = __commonJS({
       ];
       function load_props_pairs(HP, TOP, props, opts) {
         var v = [];
-        if (typeof HP == "string") v = parseVector(HP, opts);
+        if (typeof HP == "string") v = parseVector2(HP, opts);
         else for (var j2 = 0; j2 < HP.length; ++j2) v = v.concat(HP[j2].map(function(hp) {
           return { v: hp };
         }));
-        var parts = typeof TOP == "string" ? parseVector(TOP, opts).map(function(x2) {
+        var parts = typeof TOP == "string" ? parseVector2(TOP, opts).map(function(x2) {
           return x2.v;
         }) : TOP;
         var idx = 0, len = 0;
@@ -187949,22 +195825,22 @@ var require_xlsx = __commonJS({
           if (o.type == "string") throw new Error("Cannot write DBF to JS string");
           var ba = buf_array();
           var aoa = sheet_to_json(ws, { header: 1, raw: true, cellDates: true });
-          var headers = aoa[0], data = aoa.slice(1), cols = ws["!cols"] || [];
+          var headers2 = aoa[0], data = aoa.slice(1), cols = ws["!cols"] || [];
           var i2 = 0, j2 = 0, hcnt = 0, rlen = 1;
-          for (i2 = 0; i2 < headers.length; ++i2) {
+          for (i2 = 0; i2 < headers2.length; ++i2) {
             if (((cols[i2] || {}).DBF || {}).name) {
-              headers[i2] = cols[i2].DBF.name;
+              headers2[i2] = cols[i2].DBF.name;
               ++hcnt;
               continue;
             }
-            if (headers[i2] == null) continue;
+            if (headers2[i2] == null) continue;
             ++hcnt;
-            if (typeof headers[i2] === "number") headers[i2] = headers[i2].toString(10);
-            if (typeof headers[i2] !== "string") throw new Error("DBF Invalid column name " + headers[i2] + " |" + typeof headers[i2] + "|");
-            if (headers.indexOf(headers[i2]) !== i2) {
+            if (typeof headers2[i2] === "number") headers2[i2] = headers2[i2].toString(10);
+            if (typeof headers2[i2] !== "string") throw new Error("DBF Invalid column name " + headers2[i2] + " |" + typeof headers2[i2] + "|");
+            if (headers2.indexOf(headers2[i2]) !== i2) {
               for (j2 = 0; j2 < 1024; ++j2)
-                if (headers.indexOf(headers[i2] + "_" + j2) == -1) {
-                  headers[i2] += "_" + j2;
+                if (headers2.indexOf(headers2[i2] + "_" + j2) == -1) {
+                  headers2[i2] += "_" + j2;
                   break;
                 }
             }
@@ -187979,7 +195855,7 @@ var require_xlsx = __commonJS({
             for (j2 = 0; j2 < data.length; ++j2) {
               if (data[j2][i2] != null) col.push(data[j2][i2]);
             }
-            if (col.length == 0 || headers[i2] == null) {
+            if (col.length == 0 || headers2[i2] == null) {
               coltypes[i2] = "?";
               continue;
             }
@@ -188025,10 +195901,10 @@ var require_xlsx = __commonJS({
           h2.write_shift(2, rlen);
           for (i2 = 0; i2 < 4; ++i2) h2.write_shift(4, 0);
           h2.write_shift(4, 0 | (+dbf_reverse_map[current_ansi] || 3) << 8);
-          for (i2 = 0, j2 = 0; i2 < headers.length; ++i2) {
-            if (headers[i2] == null) continue;
+          for (i2 = 0, j2 = 0; i2 < headers2.length; ++i2) {
+            if (headers2[i2] == null) continue;
             var hf = ba.next(32);
-            var _f = (headers[i2].slice(-10) + "\0\0\0\0\0\0\0\0\0\0\0").slice(0, 11);
+            var _f = (headers2[i2].slice(-10) + "\0\0\0\0\0\0\0\0\0\0\0").slice(0, 11);
             hf.write_shift(1, _f, "sbcs");
             hf.write_shift(1, coltypes[i2] == "?" ? "C" : coltypes[i2], "sbcs");
             hf.write_shift(4, j2);
@@ -188047,8 +195923,8 @@ var require_xlsx = __commonJS({
           for (i2 = 0; i2 < data.length; ++i2) {
             var rout = ba.next(rlen);
             rout.write_shift(1, 0);
-            for (j2 = 0; j2 < headers.length; ++j2) {
-              if (headers[j2] == null) continue;
+            for (j2 = 0; j2 < headers2.length; ++j2) {
+              if (headers2[j2] == null) continue;
               switch (coltypes[j2]) {
                 case "L":
                   rout.write_shift(1, data[i2][j2] == null ? 63 : data[i2][j2] ? 84 : 70);
@@ -209780,7 +217656,7 @@ function detectProvider(text2, sender) {
   if (/meeza|ميزه/i.test(t3)) return "Meeza";
   return "Unknown";
 }
-function extractAmount(text2) {
+function extractAmount3(text2) {
   const balancePatterns = [
     /(?:رصيدك|الرصيد|رصيد حسابك|الرصيد المتاح)[\s:]*(?:الكلي|الحالي|الجديد|المتاح)?\s*(?:هو|اصبح)?\s*[\d,]+(?:\.\d{1,2})?\s*(?:جنيه|ج\.?م\.?|egp|جم)?/gi,
     /(?:avail(?:able)?|new|current|updated)\s*(?:bal(?:ance)?|lim(?:it)?)?[\s.:]*(?:egp)?\s*[\d,]+(?:\.\d{1,2})?/gi
@@ -210029,7 +217905,7 @@ function parseSmsByRules(message, sender) {
   if (isNonFinancial(norm))
     return { ...empty, provider, matched_rule: "non_financial_filter" };
   const { direction, category, rule } = parseDirection(norm, provider);
-  const amount = extractAmount(norm);
+  const amount = extractAmount3(norm);
   if (!amount || !direction)
     return { ...empty, provider, matched_rule: "no_amount_or_dir" };
   const balance_after = extractBalanceAfter(norm);
@@ -226594,9 +234470,9 @@ var require_x509_cjs = __commonJS({
           };
           const headersString = matches[2];
           if (headersString) {
-            const headers = headersString.split(new RegExp(rEolGroup, "g"));
+            const headers2 = headersString.split(new RegExp(rEolGroup, "g"));
             let lastHeader = null;
-            for (const header of headers) {
+            for (const header of headers2) {
               const [key, value] = header.split(/:(.*)/);
               if (value === void 0) {
                 if (!lastHeader) {
@@ -229051,13 +236927,13 @@ var require_parse_options2 = __commonJS({
 var require_identifiers2 = __commonJS({
   "node_modules/jsonwebtoken/node_modules/semver/internal/identifiers.js"(exports, module) {
     "use strict";
-    var numeric = /^[0-9]+$/;
+    var numeric2 = /^[0-9]+$/;
     var compareIdentifiers = (a, b) => {
       if (typeof a === "number" && typeof b === "number") {
         return a === b ? 0 : a < b ? -1 : 1;
       }
-      const anum = numeric.test(a);
-      const bnum = numeric.test(b);
+      const anum = numeric2.test(a);
+      const bnum = numeric2.test(b);
       if (anum && bnum) {
         a = +a;
         b = +b;
@@ -231839,7 +239715,7 @@ function writeFromReadableStream(stream2, writable) {
   }
   return writeFromReadableStreamDefaultReader(stream2.getReader(), writable);
 }
-var RequestError, toRequestError, GlobalRequest, Request4, newHeadersFromIncoming, wrapBodyStream, newRequestFromIncoming, getRequestCache, requestCache, incomingKey, urlKey, headersKey, abortControllerKey, getAbortController, requestPrototype, newRequest, responseCache, getResponseCache, cacheKey, GlobalResponse, Response22, buildOutgoingHttpHeaders, X_ALREADY_SENT, outgoingEnded, incomingDraining, DRAIN_TIMEOUT_MS, MAX_DRAIN_BYTES, drainIncoming, handleRequestError, handleFetchError, handleResponseError2, flushHeaders, responseViaCache, isPromise2, responseViaResponseObject, getRequestListener, createAdaptorServer, serve;
+var RequestError, toRequestError, GlobalRequest, Request4, newHeadersFromIncoming, wrapBodyStream, newRequestFromIncoming, getRequestCache, requestCache, incomingKey, urlKey, headersKey, abortControllerKey, getAbortController, requestPrototype, newRequest, responseCache, getResponseCache, cacheKey2, GlobalResponse, Response22, buildOutgoingHttpHeaders, X_ALREADY_SENT, outgoingEnded, incomingDraining, DRAIN_TIMEOUT_MS, MAX_DRAIN_BYTES, drainIncoming, handleRequestError, handleFetchError, handleResponseError2, flushHeaders, responseViaCache, isPromise2, responseViaResponseObject, getRequestListener, createAdaptorServer, serve;
 var init_dist5 = __esm({
   "node_modules/@hono/node-server/dist/index.mjs"() {
     RequestError = class extends Error {
@@ -231880,10 +239756,10 @@ var init_dist5 = __esm({
       return new Headers(headerRecord);
     };
     wrapBodyStream = /* @__PURE__ */ Symbol("wrapBodyStream");
-    newRequestFromIncoming = (method, url2, headers, incoming, abortController) => {
+    newRequestFromIncoming = (method, url2, headers2, incoming, abortController) => {
       const init2 = {
         method,
-        headers,
+        headers: headers2,
         signal: abortController.signal
       };
       if (method === "TRACE") {
@@ -232037,17 +239913,17 @@ var init_dist5 = __esm({
     };
     responseCache = /* @__PURE__ */ Symbol("responseCache");
     getResponseCache = /* @__PURE__ */ Symbol("getResponseCache");
-    cacheKey = /* @__PURE__ */ Symbol("cache");
+    cacheKey2 = /* @__PURE__ */ Symbol("cache");
     GlobalResponse = global.Response;
     Response22 = class _Response {
       #body;
       #init;
       [getResponseCache]() {
-        delete this[cacheKey];
+        delete this[cacheKey2];
         return this[responseCache] ||= new GlobalResponse(this.#body, this.#init);
       }
       constructor(body, init2) {
-        let headers;
+        let headers2;
         this.#body = body;
         if (init2 instanceof _Response) {
           const cachedGlobalResponse = init2[responseCache];
@@ -232057,18 +239933,18 @@ var init_dist5 = __esm({
             return;
           } else {
             this.#init = init2.#init;
-            headers = new Headers(init2.#init.headers);
+            headers2 = new Headers(init2.#init.headers);
           }
         } else {
           this.#init = init2;
         }
         if (typeof body === "string" || typeof body?.getReader !== "undefined" || body instanceof Blob || body instanceof Uint8Array) {
           ;
-          this[cacheKey] = [init2?.status || 200, body, headers || init2?.headers];
+          this[cacheKey2] = [init2?.status || 200, body, headers2 || init2?.headers];
         }
       }
       get headers() {
-        const cache = this[cacheKey];
+        const cache = this[cacheKey2];
         if (cache) {
           if (!(cache[2] instanceof Headers)) {
             cache[2] = new Headers(
@@ -232080,7 +239956,7 @@ var init_dist5 = __esm({
         return this[getResponseCache]().headers;
       }
       get status() {
-        return this[cacheKey]?.[0] ?? this[getResponseCache]().status;
+        return this[cacheKey2]?.[0] ?? this[getResponseCache]().status;
       }
       get ok() {
         const status = this.status;
@@ -232114,13 +239990,13 @@ var init_dist5 = __esm({
     });
     Object.setPrototypeOf(Response22, GlobalResponse);
     Object.setPrototypeOf(Response22.prototype, GlobalResponse.prototype);
-    buildOutgoingHttpHeaders = (headers) => {
+    buildOutgoingHttpHeaders = (headers2) => {
       const res = {};
-      if (!(headers instanceof Headers)) {
-        headers = new Headers(headers ?? void 0);
+      if (!(headers2 instanceof Headers)) {
+        headers2 = new Headers(headers2 ?? void 0);
       }
       const cookies = [];
-      for (const [k2, v] of headers) {
+      for (const [k2, v] of headers2) {
         if (k2 === "set-cookie") {
           cookies.push(v);
         } else {
@@ -232207,7 +240083,7 @@ var init_dist5 = __esm({
       }
     };
     responseViaCache = async (res, outgoing) => {
-      let [status, body, header] = res[cacheKey];
+      let [status, body, header] = res[cacheKey2];
       let hasContentLength = false;
       if (!header) {
         header = { "content-type": "text/plain; charset=UTF-8" };
@@ -232266,7 +240142,7 @@ var init_dist5 = __esm({
           res = await res.catch(handleFetchError);
         }
       }
-      if (cacheKey in res) {
+      if (cacheKey2 in res) {
         return responseViaCache(res, outgoing);
       }
       const resHeaderRecord = buildOutgoingHttpHeaders(res.headers);
@@ -232386,7 +240262,7 @@ var init_dist5 = __esm({
             }
           });
           res = fetchCallback(req, { incoming, outgoing });
-          if (cacheKey in res) {
+          if (cacheKey2 in res) {
             return responseViaCache(res, outgoing);
           }
         } catch (e2) {
@@ -232671,108 +240547,14 @@ var init_serve_static = __esm({
   }
 });
 
-// api/services/voice-context-service.ts
-async function getUserFinancialContextSummary(userId, userType) {
-  try {
-    const profile = await db.query.userProfiles.findFirst({
-      where: and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType))
-    });
-    const wallets = await db.select().from(userWallets).where(and(eq(userWallets.userId, userId), eq(userWallets.userType, userType)));
-    const now = /* @__PURE__ */ new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthlyTransactions = await db.select().from(expenses).where(
-      and(
-        eq(expenses.userId, userId),
-        eq(expenses.userType, userType),
-        gte(expenses.date, monthStart)
-      )
-    );
-    const activeGoals = await db.select().from(financialGoals).where(
-      and(
-        eq(financialGoals.userId, userId),
-        eq(financialGoals.userType, userType),
-        eq(financialGoals.status, "active")
-      )
-    );
-    const totalWalletBalance = wallets.reduce(
-      (sum4, w) => sum4 + parseFloat(w.balance || "0"),
-      0
-    );
-    let totalIncome = 0;
-    let totalExpense = 0;
-    const categoryTotals = {};
-    monthlyTransactions.forEach((t3) => {
-      const amt = parseFloat(t3.amount || "0");
-      if (t3.type === "income") {
-        totalIncome += amt;
-      } else {
-        totalExpense += amt;
-        const cat = t3.category || "\u0623\u062E\u0631\u0649";
-        categoryTotals[cat] = (categoryTotals[cat] || 0) + amt;
-      }
-    });
-    let summary = `[\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0627\u0644\u062D\u0627\u0644\u064A\u0629]
-`;
-    summary += `- \u0627\u0644\u062F\u062E\u0644 \u0627\u0644\u0634\u0647\u0631\u064A \u0627\u0644\u0645\u0639\u0644\u0646: ${profile?.monthlyIncome || "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"} \u062C\u0646\u064A\u0647 \u0645\u0635\u0631\u064A.
-`;
-    summary += `- \u0627\u0644\u0647\u062F\u0641 \u0627\u0644\u0645\u0627\u0644\u064A \u0627\u0644\u0639\u0627\u0645: ${profile?.financialGoal || "\u063A\u064A\u0631 \u0645\u062D\u062F\u062F"}.
-`;
-    summary += `- \u0627\u0644\u0634\u062E\u0635\u064A\u0629 \u0627\u0644\u0645\u0627\u0644\u064A\u0629: ${profile?.financialPersonality || "\u0645\u062A\u0648\u0627\u0632\u0646\u0629"}.
-`;
-    summary += `- \u0625\u062C\u0645\u0627\u0644\u064A \u0631\u0635\u064A\u062F \u0627\u0644\u0645\u062D\u0627\u0641\u0638: ${totalWalletBalance.toFixed(2)} \u062C\u0646\u064A\u0647 \u0645\u0635\u0631\u064A.
-`;
-    summary += `- \u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u062F\u062E\u0644 \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631: ${totalIncome.toFixed(2)} \u062C\u0646\u064A\u0647 \u0645\u0635\u0631\u064A.
-`;
-    summary += `- \u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062A \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631: ${totalExpense.toFixed(2)} \u062C\u0646\u064A\u0647 \u0645\u0635\u0631\u064A.
-`;
-    if (Object.keys(categoryTotals).length > 0) {
-      summary += `
-[\u0623\u0639\u0644\u0649 \u0627\u0644\u0641\u0626\u0627\u062A \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631]:
-`;
-      const sorted = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]).slice(0, 5);
-      for (const [cat, amt] of sorted) {
-        const pct = totalExpense > 0 ? Math.round(amt / totalExpense * 100) : 0;
-        summary += ` - ${cat}: ${Math.round(amt)} \u062C.\u0645 (${pct}%)
-`;
-      }
-    }
-    if (wallets.length > 0) {
-      summary += `
-[\u0627\u0644\u0645\u062D\u0627\u0641\u0638 \u0648\u0627\u0644\u062D\u0633\u0627\u0628\u0627\u062A \u0627\u0644\u0641\u0639\u0627\u0644\u0629]:
-`;
-      wallets.forEach((w) => {
-        summary += ` - \u0645\u062D\u0641\u0638\u0629 "${w.name}" (${w.provider}): \u0631\u0635\u064A\u062F\u0647\u0627 ${parseFloat(w.balance || "0").toFixed(2)} \u062C\u0646\u064A\u0647 \u0645\u0635\u0631\u064A.
-`;
-      });
-    }
-    if (activeGoals.length > 0) {
-      summary += `
-[\u0623\u0647\u062F\u0627\u0641 \u0627\u0644\u0627\u062F\u062E\u0627\u0631 \u0627\u0644\u0646\u0634\u0637\u0629]:
-`;
-      activeGoals.forEach((g) => {
-        const target = parseFloat(g.targetAmount || "0");
-        summary += ` - \u0647\u062F\u0641 "${g.title}": \u0627\u0644\u0645\u0628\u0644\u063A \u0627\u0644\u0645\u0633\u062A\u0647\u062F\u0641 ${target.toFixed(2)} \u062C\u0646\u064A\u0647 \u0645\u0635\u0631\u064A.
-`;
-      });
-    }
-    return summary;
-  } catch (error48) {
-    console.error("Error generating financial context summary:", error48);
-    return "[\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u063A\u064A\u0631 \u0645\u062A\u0648\u0641\u0631\u0629 \u062D\u0627\u0644\u064A\u0627\u064B \u0628\u0633\u0628\u0628 \u062E\u0637\u0623 \u0641\u0646\u064A]";
-  }
-}
-var init_voice_context_service = __esm({
-  "api/services/voice-context-service.ts"() {
-    init_connection();
-    init_schema2();
-    init_drizzle_orm();
-  }
-});
-
 // api/services/voice-call-service.ts
 var voice_call_service_exports = {};
 __export(voice_call_service_exports, {
-  handleVoiceCallWebSocket: () => handleVoiceCallWebSocket
+  buildVoiceToolLimitResponse: () => buildVoiceToolLimitResponse,
+  handleVoiceCallWebSocket: () => handleVoiceCallWebSocket,
+  normalizeVoiceToolResponse: () => normalizeVoiceToolResponse,
+  shouldExecuteLiveVoiceTool: () => shouldExecuteLiveVoiceTool,
+  summarizeVoiceToolResponse: () => summarizeVoiceToolResponse
 });
 function parseCookie2(cookieHeader, name2) {
   if (!cookieHeader) return void 0;
@@ -232822,6 +240604,93 @@ function resolveLiveModelId(modelName) {
   }
   return `models/${modelName}`;
 }
+function normalizeVoiceToolResponse(resultString) {
+  const trimmed = resultString.trim();
+  if (!trimmed) {
+    return { result: "" };
+  }
+  try {
+    return { result: JSON.parse(trimmed) };
+  } catch {
+    return { result_text: trimmed };
+  }
+}
+function summarizeVoiceToolResponse(toolName, response) {
+  const record2 = response && typeof response === "object" ? response : {};
+  const dataNeeds = Array.isArray(record2.dataNeeds) ? record2.dataNeeds.map(
+    (need) => need && typeof need === "object" && "kind" in need ? String(need.kind) : ""
+  ).filter(Boolean) : [];
+  const facts = Array.isArray(record2.facts) ? record2.facts : [];
+  const artifacts = Array.isArray(record2.artifacts) ? record2.artifacts : [];
+  const cacheHits = Array.isArray(record2.cacheHits) ? record2.cacheHits.map((hit) => String(hit)) : [];
+  const retrievalPolicy = record2.retrievalPolicy && typeof record2.retrievalPolicy === "object" ? record2.retrievalPolicy : void 0;
+  const embeddingApiStatus = typeof record2.embeddingApiStatus === "string" ? record2.embeddingApiStatus : embeddingApiStatusFor(
+    dataNeeds.map((kind, index2) => ({ id: `voice_summary_${index2}`, kind })),
+    cacheHits
+  );
+  const result = record2.result && typeof record2.result === "object" ? record2.result : {};
+  const errors = Array.isArray(result.errors) ? result.errors.map((item) => String(item)).filter(Boolean) : [];
+  return {
+    toolName,
+    ok: record2.ok === true,
+    dataNeeds,
+    factCount: facts.length,
+    artifactCount: artifacts.length,
+    cacheHits,
+    embeddingCalls: embeddingApiCallsFromCacheHits(cacheHits),
+    embeddingApiStatus,
+    retrievalPolicy,
+    cacheRuntime: getCacheRuntimeStatus(),
+    error: typeof record2.error === "string" ? record2.error : void 0,
+    errors
+  };
+}
+function extractTranscriptionText(value) {
+  if (!value || typeof value !== "object") return void 0;
+  const record2 = value;
+  const text2 = record2.text ?? record2.content ?? record2.transcript;
+  return typeof text2 === "string" && text2.trim() ? text2.trim() : void 0;
+}
+function buildVoiceToolLimitResponse(toolName, maxToolRounds) {
+  return {
+    ok: false,
+    tool: toolName,
+    error: `voice_tool_limit_exceeded:${maxToolRounds}`,
+    result: {
+      errors: [`voice_tool_limit_exceeded:${maxToolRounds}`],
+      requiresConfirmation: false,
+      requiresUiConfirmation: false
+    }
+  };
+}
+function isVoiceConfirmationTool(toolName) {
+  return toolName === "action_confirm" || toolName === "action_cancel";
+}
+function shouldExecuteLiveVoiceTool(input) {
+  const maxToolRounds = Math.max(0, Math.floor(input.maxToolRounds));
+  if (isVoiceConfirmationTool(input.toolName)) {
+    return {
+      execute: true,
+      countsTowardLimit: false,
+      maxToolRounds,
+      reason: "confirmation_or_cancel"
+    };
+  }
+  if (input.executedToolCalls >= maxToolRounds) {
+    return {
+      execute: false,
+      countsTowardLimit: false,
+      maxToolRounds,
+      reason: "tool_limit_exceeded"
+    };
+  }
+  return {
+    execute: true,
+    countsTowardLimit: true,
+    maxToolRounds,
+    reason: "within_limit"
+  };
+}
 async function handleVoiceCallWebSocket(ws, request) {
   const parsedUrl = new URL(request.url || "", "http://localhost");
   const tokenParam = parsedUrl.searchParams.get("token");
@@ -232858,6 +240727,12 @@ async function handleVoiceCallWebSocket(ws, request) {
     if (s3.value) config3[s3.key] = s3.value;
   });
   const plan = user.plan || "free";
+  const voicePolicy = resolveAICostPolicy({
+    channel: "voice",
+    plan,
+    role: user.role,
+    settings: config3
+  });
   const isEnabled = config3[`voice_call_enabled_${plan}`] === "true";
   const limitMinutes = parseInt(config3[`voice_call_limit_${plan}`] || "0");
   const maxCallSeconds = parseInt(config3[`voice_call_duration_${plan}`] || "60");
@@ -232884,19 +240759,51 @@ async function handleVoiceCallWebSocket(ws, request) {
     return;
   }
   console.log(`[Voice Call] Authorized. Duration: ${allowedCallSeconds}s`);
-  const userContext = await getUserFinancialContextSummary(user.id, userType);
-  const voiceSystemPrompt = `\u0623\u0646\u062A "\u0633\u0645\u0627\u0631\u062A" \u2014 \u0645\u0633\u062A\u0634\u0627\u0631 \u0645\u0627\u0644\u064A \u0645\u0635\u0631\u064A \u0630\u0643\u064A \u0648\u0645\u062A\u0639\u0627\u0637\u0641.
-\u062A\u062A\u0643\u0644\u0645 \u0639\u0627\u0645\u064A\u0629 \u0645\u0635\u0631\u064A\u0629 \u0631\u0627\u0642\u064A\u0629 \u0648\u0645\u0628\u0633\u0637\u0629 \u0641\u064A \u0645\u0643\u0627\u0644\u0645\u0629 \u0635\u0648\u062A\u064A\u0629 \u062D\u064A\u0629.
-
-\u0642\u0648\u0627\u0639\u062F \u0627\u0644\u0645\u0643\u0627\u0644\u0645\u0629:
-- \u0631\u062F\u0648\u062F\u0643 \u0645\u062E\u062A\u0635\u0631\u0629 \u062C\u062F\u0627\u064B (\u062C\u0645\u0644\u0629 \u0623\u0648 \u0627\u062A\u0646\u064A\u0646 \u0628\u0633)
-- \u0645\u062A\u0642\u0631\u0627\u0634 \u062C\u062F\u0627\u0648\u0644 \u0623\u0648 \u0623\u0631\u0642\u0627\u0645 \u0643\u062A\u064A\u0631 \u2014 \u0627\u0639\u0637\u064A \u062E\u0644\u0627\u0635\u0627\u062A \u0630\u0643\u064A\u0629
-- \u0643\u0623\u0646\u0643 \u0635\u0627\u062D\u0628 \u0648\u0645\u0633\u062A\u0634\u0627\u0631 \u0634\u062E\u0635\u064A
-- \u062E\u0644\u064A \u0627\u0644\u0643\u0644\u0627\u0645 \u0645\u0645\u062A\u0639 \u0648\u0633\u0631\u064A\u0639
-
-${userContext}`;
+  let voiceSession;
+  let hotContext;
+  try {
+    voiceSession = await createVoiceSessionState({
+      userId: user.id,
+      userType,
+      userPlan: plan
+    });
+    hotContext = await buildVoiceHotContext({
+      userId: user.id,
+      userType,
+      userPlan: plan,
+      sessionId: voiceSession.sessionId
+    });
+  } catch (error48) {
+    console.error("[Voice Call] Failed to initialize voice session", error48);
+    ws.send(JSON.stringify({
+      error: "\u062A\u0639\u0630\u0631 \u0628\u062F\u0621 \u0627\u0644\u0645\u0643\u0627\u0644\u0645\u0629 \u0627\u0644\u0635\u0648\u062A\u064A\u0629 \u0644\u0623\u0646 \u062D\u0627\u0644\u0629 \u0627\u0644\u062C\u0644\u0633\u0629 \u0627\u0644\u0633\u0631\u064A\u0639\u0629 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u062D\u0627\u0644\u064A\u0627. \u062A\u0623\u0643\u062F \u0645\u0646 \u0625\u0639\u062F\u0627\u062F Redis \u062B\u0645 \u062C\u0631\u0651\u0628 \u062A\u0627\u0646\u064A."
+    }));
+    ws.close(1011);
+    return;
+  }
+  const voiceSystemPrompt = buildVoiceSystemPrompt(hotContext);
   const callStartTime = Date.now();
   let usageSaved = false;
+  let callTranscript = [];
+  let voiceToolCallCount = 0;
+  let blockedVoiceToolCallCount = 0;
+  let earlyPrefetchStarted = false;
+  const maybePrefetchEarlyTurn = (transcript) => {
+    if (earlyPrefetchStarted) return;
+    if (Date.now() - callStartTime > 2500) return;
+    earlyPrefetchStarted = true;
+    void prefetchVoiceTurnContext({
+      ctx: {
+        userId: user.id,
+        userType,
+        userPlan: plan,
+        sessionId: voiceSession.sessionId
+      },
+      transcript
+    }).catch((error48) => {
+      console.warn("[Voice Prefetch] failed", error48 instanceof Error ? error48.message : String(error48));
+    });
+  };
   const endCallSession = async (closeCode, reason) => {
     if (usageSaved) return;
     usageSaved = true;
@@ -232915,6 +240822,48 @@ ${userContext}`;
         console.error("[Voice Call] Failed to save usage in database:", dbErr);
       }
     }
+    if (callTranscript.length > 0) {
+      try {
+        await persistVoiceCallArchive({
+          userId: user.id,
+          userType,
+          sessionId: voiceSession.sessionId,
+          transcript: callTranscript
+        });
+        console.log("[Voice Call] Archived voice call memory.");
+      } catch (err) {
+        console.error("[Voice Call] Failed to archive voice call:", err);
+      }
+    }
+    try {
+      await endVoiceSessionState(voiceSession.sessionId);
+      await clearVoiceSessionState(voiceSession.sessionId);
+    } catch (err) {
+      console.error("[Voice Call] Failed to close voice session state:", err);
+    }
+    void recordAICostMetric({
+      userId: user.id,
+      userType,
+      channel: "voice",
+      plan,
+      intentKind: "voice_session",
+      model: targetModel,
+      inputTokens: Math.ceil(elapsedSeconds * 6),
+      outputTokens: 0,
+      totalTokens: Math.ceil(elapsedSeconds * 6),
+      llmCalls: 1,
+      toolCalls: voiceToolCallCount,
+      latencyMs: elapsedSeconds * 1e3,
+      metadata: {
+        reason,
+        closeCode,
+        sessionId: voiceSession.sessionId,
+        durationSeconds: elapsedSeconds,
+        maxOutputTokens: voicePolicy.maxOutputTokens,
+        maxToolRounds: voicePolicy.maxToolRounds,
+        blockedToolCalls: blockedVoiceToolCallCount
+      }
+    });
     if (ws.readyState === wrapper_default.OPEN) {
       ws.close(closeCode);
     }
@@ -232953,7 +240902,7 @@ ${userContext}`;
               parts: [{ text: systemPrompt }]
             },
             tools: [{
-              functionDeclarations: TOOL_DEFINITIONS.map((t3) => t3.function)
+              functionDeclarations: VOICE_TOOL_DECLARATIONS
             }]
           }
         };
@@ -233016,7 +240965,8 @@ ${userContext}`;
   ws.send(JSON.stringify({
     status: "ready",
     message: "\u0645\u062A\u0635\u0644 \u0627\u0644\u0622\u0646 \u0628\u0627\u0644\u0645\u0633\u062A\u0634\u0627\u0631 \u0627\u0644\u0645\u0627\u0644\u064A",
-    modelName: targetModel.replace("models/", "")
+    modelName: targetModel.replace("models/", ""),
+    voiceSessionId: voiceSession.sessionId
   }));
   if (googleWs.readyState === wrapper_default.OPEN) {
     googleWs.send(JSON.stringify({
@@ -233057,6 +241007,10 @@ ${userContext}`;
         if (parsed.type === "end_call") {
           endCallSession(1e3, "User clicked end call");
         }
+        if ((parsed.type === "user_transcript" || parsed.type === "transcript") && typeof parsed.text === "string") {
+          callTranscript.push({ role: "user", content: parsed.text });
+          maybePrefetchEarlyTurn(parsed.text);
+        }
       } catch (err) {
       }
     }
@@ -233081,18 +241035,61 @@ ${userContext}`;
             args = call.args || {};
           } catch {
           }
+          const toolDecision = shouldExecuteLiveVoiceTool({
+            toolName,
+            executedToolCalls: voiceToolCallCount,
+            maxToolRounds: voicePolicy.maxToolRounds
+          });
+          if (!toolDecision.execute) {
+            blockedVoiceToolCallCount += 1;
+            const limitResponse = buildVoiceToolLimitResponse(toolName, toolDecision.maxToolRounds);
+            console.warn(
+              `[Voice Call] Blocked tool ${toolName}; maxToolRounds=${toolDecision.maxToolRounds} already reached.`
+            );
+            if (ws.readyState === wrapper_default.OPEN) {
+              ws.send(JSON.stringify({
+                type: "voice_tool_result",
+                payload: summarizeVoiceToolResponse(toolName, limitResponse)
+              }));
+            }
+            functionResponses.push({
+              id: call.id,
+              name: toolName,
+              response: limitResponse
+            });
+            continue;
+          }
+          if (toolDecision.countsTowardLimit) {
+            voiceToolCallCount += 1;
+          }
           console.log(`[Voice Call] Executing tool ${toolName} during call...`);
           if (ws.readyState === wrapper_default.OPEN) {
             ws.send(JSON.stringify({
               type: "tool_execution",
+              toolName,
               message: `\u064A\u0628\u062D\u062B \u0641\u064A \u0628\u064A\u0627\u0646\u0627\u062A\u0643... (${toolName})`
             }));
           }
-          const resultString = await executeTool(toolName, args, { userId: user.id, userType });
+          const toolResponse = await executeVoiceTool({
+            toolName,
+            args,
+            ctx: {
+              userId: user.id,
+              userType,
+              userPlan: plan,
+              sessionId: voiceSession.sessionId
+            }
+          });
+          if (ws.readyState === wrapper_default.OPEN) {
+            ws.send(JSON.stringify({
+              type: "voice_tool_result",
+              payload: summarizeVoiceToolResponse(toolName, toolResponse)
+            }));
+          }
           functionResponses.push({
             id: call.id,
             name: toolName,
-            response: { result: JSON.parse(resultString) }
+            response: toolResponse
           });
         }
         if (googleWs.readyState === wrapper_default.OPEN) {
@@ -233105,11 +241102,21 @@ ${userContext}`;
         }
       }
       if (msg.serverContent) {
+        const inputTranscript = extractTranscriptionText(msg.serverContent.inputTranscription);
+        if (inputTranscript) {
+          callTranscript.push({ role: "user", content: inputTranscript });
+          maybePrefetchEarlyTurn(inputTranscript);
+        }
+        const outputTranscript = extractTranscriptionText(msg.serverContent.outputTranscription);
+        if (outputTranscript) {
+          callTranscript.push({ role: "assistant", content: outputTranscript });
+        }
         const modelTurn = msg.serverContent.modelTurn;
         if (modelTurn && modelTurn.parts) {
           for (const part of modelTurn.parts) {
             if (part.text) {
               console.log("[Voice Call] Gemini text part:", part.text);
+              callTranscript.push({ role: "assistant", content: part.text });
               if (ws.readyState === wrapper_default.OPEN) {
                 ws.send(JSON.stringify({
                   type: "gemini_message",
@@ -233152,6 +241159,7 @@ ${userContext}`;
               }
             }
             if (part.text) {
+              callTranscript.push({ role: "assistant", content: part.text });
               if (ws.readyState === wrapper_default.OPEN) {
                 ws.send(JSON.stringify({
                   type: "gemini_message",
@@ -233226,9 +241234,11 @@ var init_voice_call_service = __esm({
     init_drizzle_orm();
     import_jsonwebtoken2 = __toESM(require_jsonwebtoken(), 1);
     init_env();
+    init_redis_client();
     init_wrapper();
-    init_voice_context_service();
-    init_ai_chat_tools();
+    init_voice_kernel();
+    init_ai_kernel();
+    init_ai_cost_policy();
   }
 });
 
@@ -233308,15 +241318,15 @@ var cors = (options) => {
       if (allowMethods.length) {
         set2("Access-Control-Allow-Methods", allowMethods.join(","));
       }
-      let headers = opts.allowHeaders;
-      if (!headers?.length) {
+      let headers2 = opts.allowHeaders;
+      if (!headers2?.length) {
         const requestHeaders = c.req.header("Access-Control-Request-Headers");
         if (requestHeaders) {
-          headers = requestHeaders.split(/\s*,\s*/);
+          headers2 = requestHeaders.split(/\s*,\s*/);
         }
       }
-      if (headers?.length) {
-        set2("Access-Control-Allow-Headers", headers.join(","));
+      if (headers2?.length) {
+        set2("Access-Control-Allow-Headers", headers2.join(","));
         c.res.headers.append("Vary", "Access-Control-Request-Headers");
       }
       c.res.headers.delete("Content-Length");
@@ -233504,9 +241514,9 @@ function parseConnectionParamsFromString(str) {
   return parseConnectionParamsFromUnknown(parsed);
 }
 var import_objectSpread2$12 = __toESM2(require_objectSpread2(), 1);
-function getAcceptHeader(headers) {
+function getAcceptHeader(headers2) {
   var _ref, _headers$get;
-  return (_ref = headers.get("trpc-accept")) !== null && _ref !== void 0 ? _ref : ((_headers$get = headers.get("accept")) === null || _headers$get === void 0 ? void 0 : _headers$get.split(",").some((t3) => t3.trim() === "application/jsonl")) ? "application/jsonl" : null;
+  return (_ref = headers2.get("trpc-accept")) !== null && _ref !== void 0 ? _ref : ((_headers$get = headers2.get("accept")) === null || _headers$get === void 0 ? void 0 : _headers$get.split(",").some((t3) => t3.trim() === "application/jsonl")) ? "application/jsonl" : null;
 }
 function memo(fn) {
   let promise2 = null;
@@ -234731,7 +242741,7 @@ var TYPE_ACCEPTED_METHOD_MAP_WITH_METHOD_OVERRIDE = {
 };
 function initResponse(initOpts) {
   var _responseMeta, _info$calls$find$proc, _info$calls$find;
-  const { ctx, info, responseMeta, untransformedJSON, errors = [], headers } = initOpts;
+  const { ctx, info, responseMeta, untransformedJSON, errors = [], headers: headers2 } = initOpts;
   let status = untransformedJSON ? getHTTPStatusCode(untransformedJSON) : 200;
   const eagerGeneration = !untransformedJSON;
   const data = eagerGeneration ? [] : Array.isArray(untransformedJSON) ? untransformedJSON : [untransformedJSON];
@@ -234748,10 +242758,10 @@ function initResponse(initOpts) {
     })) === null || _info$calls$find === void 0 || (_info$calls$find = _info$calls$find.procedure) === null || _info$calls$find === void 0 ? void 0 : _info$calls$find._def.type) !== null && _info$calls$find$proc !== void 0 ? _info$calls$find$proc : "unknown"
   })) !== null && _responseMeta !== void 0 ? _responseMeta : {};
   if (meta3.headers) {
-    if (meta3.headers instanceof Headers) for (const [key, value] of meta3.headers.entries()) headers.append(key, value);
+    if (meta3.headers instanceof Headers) for (const [key, value] of meta3.headers.entries()) headers2.append(key, value);
     else
-      for (const [key, value] of Object.entries(meta3.headers)) if (Array.isArray(value)) for (const v of value) headers.append(key, v);
-      else if (typeof value === "string") headers.set(key, value);
+      for (const [key, value] of Object.entries(meta3.headers)) if (Array.isArray(value)) for (const v of value) headers2.append(key, v);
+      else if (typeof value === "string") headers2.set(key, value);
   }
   if (meta3.status) status = meta3.status;
   return { status };
@@ -234791,7 +242801,7 @@ function isDataStream(v) {
 async function resolveResponse(opts) {
   var _ref, _opts$allowBatching, _opts$batching, _opts$allowMethodOver, _config$sse$enabled, _config$sse;
   const { router: router2, req } = opts;
-  const headers = new Headers([["vary", "trpc-accept, accept"]]);
+  const headers2 = new Headers([["vary", "trpc-accept, accept"]]);
   const config3 = router2._def._config;
   const url2 = new URL(req.url);
   if (req.method === "HEAD") return new Response(null, { status: 204 });
@@ -234913,7 +242923,7 @@ async function resolveResponse(opts) {
         case "unknown":
         case "mutation":
         case "query": {
-          headers.set("content-type", "application/json");
+          headers2.set("content-type", "application/json");
           if (isDataStream(result === null || result === void 0 ? void 0 : result.data)) throw new TRPCError({
             code: "UNSUPPORTED_MEDIA_TYPE",
             message: "Cannot use stream-like response in non-streaming request - use httpBatchStreamLink"
@@ -234931,12 +242941,12 @@ async function resolveResponse(opts) {
             info,
             responseMeta: opts.responseMeta,
             errors: error48 ? [error48] : [],
-            headers,
+            headers: headers2,
             untransformedJSON: [res]
           });
           return new Response(JSON.stringify(transformTRPCResponse(config3, res)), {
             status: headResponse$1.status,
-            headers
+            headers: headers2
           });
         }
         case "subscription": {
@@ -234981,13 +242991,13 @@ async function resolveResponse(opts) {
               return shape;
             }
           }));
-          for (const [key, value] of Object.entries(sseHeaders)) headers.set(key, value);
+          for (const [key, value] of Object.entries(sseHeaders)) headers2.set(key, value);
           const headResponse$1 = initResponse({
             ctx: ctxManager.valueOrUndefined(),
             info,
             responseMeta: opts.responseMeta,
             errors: [],
-            headers,
+            headers: headers2,
             untransformedJSON: null
           });
           const abortSignal = result === null || result === void 0 ? void 0 : result.signal;
@@ -235012,21 +243022,21 @@ async function resolveResponse(opts) {
             });
           }
           return new Response(responseBody, {
-            headers,
+            headers: headers2,
             status: headResponse$1.status
           });
         }
       }
     }
     if (info.accept === "application/jsonl") {
-      headers.set("content-type", "application/json");
-      headers.set("transfer-encoding", "chunked");
+      headers2.set("content-type", "application/json");
+      headers2.set("transfer-encoding", "chunked");
       const headResponse$1 = initResponse({
         ctx: ctxManager.valueOrUndefined(),
         info,
         responseMeta: opts.responseMeta,
         errors: [],
-        headers,
+        headers: headers2,
         untransformedJSON: null
       });
       const stream2 = jsonlStreamProducer((0, import_objectSpread23.default)((0, import_objectSpread23.default)({}, config3.jsonl), {}, {
@@ -235079,11 +243089,11 @@ async function resolveResponse(opts) {
         }
       }));
       return new Response(stream2, {
-        headers,
+        headers: headers2,
         status: headResponse$1.status
       });
     }
-    headers.set("content-type", "application/json");
+    headers2.set("content-type", "application/json");
     const results = (await Promise.all(rpcCalls)).map((res) => {
       const [error48, result] = res;
       if (error48) return res;
@@ -235115,11 +243125,11 @@ async function resolveResponse(opts) {
       responseMeta: opts.responseMeta,
       untransformedJSON: resultAsRPCResponse,
       errors,
-      headers
+      headers: headers2
     });
     return new Response(JSON.stringify(transformTRPCResponse(config3, resultAsRPCResponse)), {
       status: headResponse.status,
-      headers
+      headers: headers2
     });
   } catch (cause) {
     var _info$type2;
@@ -235136,11 +243146,11 @@ async function resolveResponse(opts) {
       responseMeta: opts.responseMeta,
       untransformedJSON,
       errors: [error48],
-      headers
+      headers: headers2
     });
     return new Response(body, {
       status: headResponse.status,
-      headers
+      headers: headers2
     });
   }
 }
@@ -235163,8 +243173,8 @@ async function fetchRequestHandler(opts) {
   };
   const url2 = new URL(opts.req.url);
   const pathname = trimSlashes(url2.pathname);
-  const endpoint = trimSlashes(opts.endpoint);
-  const path5 = trimSlashes(pathname.slice(endpoint.length));
+  const endpoint2 = trimSlashes(opts.endpoint);
+  const path5 = trimSlashes(pathname.slice(endpoint2.length));
   return await resolveResponse((0, import_objectSpread24.default)((0, import_objectSpread24.default)({}, opts), {}, {
     req: opts.req,
     createContext: createContext2,
@@ -235201,7 +243211,7 @@ var matchedRoutes = (c) => (
 var routePath = (c, index2) => matchedRoutes(c).at(index2 ?? c.req.routeIndex)?.path ?? "";
 
 // node_modules/@hono/trpc-server/dist/index.js
-var trpcServer = ({ endpoint, createContext: createContext2, ...rest }) => {
+var trpcServer = ({ endpoint: endpoint2, createContext: createContext2, ...rest }) => {
   const bodyProps = /* @__PURE__ */ new Set([
     "arrayBuffer",
     "blob",
@@ -235211,8 +243221,8 @@ var trpcServer = ({ endpoint, createContext: createContext2, ...rest }) => {
   ]);
   return async (c) => {
     const canWithBody = c.req.method === "GET" || c.req.method === "HEAD";
-    let resolvedEndpoint = endpoint;
-    if (!endpoint) {
+    let resolvedEndpoint = endpoint2;
+    if (!endpoint2) {
       const path5 = routePath(c);
       if (path5) resolvedEndpoint = path5.replace(/\/\*+$/, "") || "/trpc";
       else resolvedEndpoint = "/trpc";
@@ -235377,13 +243387,13 @@ async function generateToken(userId, userType) {
   );
 }
 async function createSession(userId, userType, token) {
-  const expiresAt = /* @__PURE__ */ new Date();
-  expiresAt.setDate(expiresAt.getDate() + 7);
+  const expiresAt2 = /* @__PURE__ */ new Date();
+  expiresAt2.setDate(expiresAt2.getDate() + 7);
   await db.insert(sessions).values({
     userId,
     userType,
     token,
-    expiresAt
+    expiresAt: expiresAt2
   });
 }
 function cleanPhoneNumber(phone) {
@@ -328484,19 +336494,19 @@ var downloadEncryptedContent = async (downloadUrl, { cipherKey, iv }, { startByt
   }
   const endChunk = endByte ? toSmallestChunkSize(endByte || 0) + AES_CHUNK_SIZE : void 0;
   const headersInit = options?.headers ? options.headers : void 0;
-  const headers = {
+  const headers2 = {
     ...headersInit ? Array.isArray(headersInit) ? Object.fromEntries(headersInit) : headersInit : {},
     Origin: DEFAULT_ORIGIN
   };
   if (startChunk || endChunk) {
-    headers.Range = `bytes=${startChunk}-`;
+    headers2.Range = `bytes=${startChunk}-`;
     if (endChunk) {
-      headers.Range += endChunk;
+      headers2.Range += endChunk;
     }
   }
   const fetched = await getHttpStream(downloadUrl, {
     ...options || {},
-    headers
+    headers: headers2
   });
   let remainingBytes = Buffer.from([]);
   let aes;
@@ -328548,7 +336558,7 @@ var downloadEncryptedContent = async (downloadUrl, { cipherKey, iv }, { startByt
 var isNodeRuntime = () => {
   return typeof process !== "undefined" && process.versions?.node !== null && typeof process.versions.bun === "undefined" && typeof globalThis.Deno === "undefined";
 };
-var uploadWithNodeHttp = async ({ url: url2, filePath, headers, timeoutMs, agent }, redirectCount = 0) => {
+var uploadWithNodeHttp = async ({ url: url2, filePath, headers: headers2, timeoutMs, agent }, redirectCount = 0) => {
   if (redirectCount > 5) {
     throw new Error("Too many redirects");
   }
@@ -328563,7 +336573,7 @@ var uploadWithNodeHttp = async ({ url: url2, filePath, headers, timeoutMs, agent
       path: parsedUrl.pathname + parsedUrl.search,
       method: "POST",
       headers: {
-        ...headers,
+        ...headers2,
         "Content-Length": fileSize
       },
       agent,
@@ -328575,7 +336585,7 @@ var uploadWithNodeHttp = async ({ url: url2, filePath, headers, timeoutMs, agent
         resolve2(uploadWithNodeHttp({
           url: newUrl,
           filePath,
-          headers,
+          headers: headers2,
           timeoutMs,
           agent
         }, redirectCount + 1));
@@ -328604,7 +336614,7 @@ var uploadWithNodeHttp = async ({ url: url2, filePath, headers, timeoutMs, agent
     });
   });
 };
-var uploadWithFetch = async ({ url: url2, filePath, headers, timeoutMs, agent }) => {
+var uploadWithFetch = async ({ url: url2, filePath, headers: headers2, timeoutMs, agent }) => {
   const nodeStream = createReadStream(filePath);
   const webStream = Readable.toWeb(nodeStream);
   const dispatcher = typeof agent?.dispatch === "function" ? agent : void 0;
@@ -328612,7 +336622,7 @@ var uploadWithFetch = async ({ url: url2, filePath, headers, timeoutMs, agent })
     ...dispatcher ? { dispatcher } : {},
     method: "POST",
     body: webStream,
-    headers,
+    headers: headers2,
     duplex: "half",
     signal: timeoutMs ? AbortSignal.timeout(timeoutMs) : void 0
   });
@@ -328643,7 +336653,7 @@ var getWAUploadToServer = ({ customUploadHosts, fetchAgent, logger: logger2, opt
         return {};
       return Array.isArray(hdrs) ? Object.fromEntries(hdrs) : hdrs;
     })();
-    const headers = {
+    const headers2 = {
       ...customHeaders,
       "Content-Type": "application/octet-stream",
       Origin: DEFAULT_ORIGIN
@@ -328657,7 +336667,7 @@ var getWAUploadToServer = ({ customUploadHosts, fetchAgent, logger: logger2, opt
         result = await uploadMedia({
           url: url2,
           filePath,
-          headers,
+          headers: headers2,
           timeoutMs,
           agent: fetchAgent
         }, logger2);
@@ -332532,9 +340542,9 @@ var Hashery = class extends Hookified {
     };
     await this.beforeHook("toHash", context2);
     const stringified = this._stringify(context2.data);
-    const cacheKey2 = `${context2.algorithm}:${stringified}`;
+    const cacheKey3 = `${context2.algorithm}:${stringified}`;
     if (this._cache.enabled) {
-      const cached2 = this._cache.get(cacheKey2);
+      const cached2 = this._cache.get(cacheKey3);
       if (cached2 !== void 0) {
         let cachedHash = cached2;
         if (options?.maxLength && cachedHash.length > options.maxLength) {
@@ -332563,7 +340573,7 @@ var Hashery = class extends Hookified {
     }
     let hash4 = await provider.toHash(dataBuffer);
     if (this._cache.enabled) {
-      this._cache.set(cacheKey2, hash4);
+      this._cache.set(cacheKey3, hash4);
     }
     if (options?.maxLength && hash4.length > options?.maxLength) {
       hash4 = hash4.substring(0, options.maxLength);
@@ -332655,9 +340665,9 @@ var Hashery = class extends Hookified {
     this.hookSync("before:toHashSync", context2);
     const algorithm = context2.algorithm;
     const stringified = this._stringify(context2.data);
-    const cacheKey2 = `${algorithm}:${stringified}`;
+    const cacheKey3 = `${algorithm}:${stringified}`;
     if (this._cache.enabled) {
-      const cached2 = this._cache.get(cacheKey2);
+      const cached2 = this._cache.get(cacheKey3);
       if (cached2 !== void 0) {
         let cachedHash = cached2;
         if (options?.maxLength && cachedHash.length > options.maxLength) {
@@ -332694,7 +340704,7 @@ var Hashery = class extends Hookified {
     }
     let hash4 = provider.toHashSync(dataBuffer);
     if (this._cache.enabled) {
-      this._cache.set(cacheKey2, hash4);
+      this._cache.set(cacheKey3, hash4);
     }
     if (options?.maxLength && hash4.length > options?.maxLength) {
       hash4 = hash4.substring(0, options.maxLength);
@@ -332883,22 +340893,22 @@ function hashToNumberSync(object2, options = {
 function wrapSync(function_, options) {
   const { ttl, keyPrefix, cache, serialize: serialize2 } = options;
   return (...arguments_) => {
-    let cacheKey2 = createWrapKey(function_, arguments_, {
+    let cacheKey3 = createWrapKey(function_, arguments_, {
       keyPrefix,
       serialize: serialize2
     });
     if (options.createKey) {
-      cacheKey2 = options.createKey(function_, arguments_, options);
+      cacheKey3 = options.createKey(function_, arguments_, options);
     }
-    let value = cache.get(cacheKey2);
+    let value = cache.get(cacheKey3);
     if (value === void 0) {
       try {
         value = function_(...arguments_);
-        cache.set(cacheKey2, value, ttl);
+        cache.set(cacheKey3, value, ttl);
       } catch (error48) {
         cache.emit("error", error48);
         if (options.cacheErrors) {
-          cache.set(cacheKey2, error48, ttl);
+          cache.set(cacheKey3, error48, ttl);
         }
       }
     }
@@ -337805,18 +345815,18 @@ var LIDMappingStore = class {
     if (pns.length === 0)
       return null;
     const sortedPns = [...new Set(pns)].sort();
-    const cacheKey2 = sortedPns.join(",");
-    const inflight = this.inflightLIDLookups.get(cacheKey2);
+    const cacheKey3 = sortedPns.join(",");
+    const inflight = this.inflightLIDLookups.get(cacheKey3);
     if (inflight) {
       this.logger.trace(`Coalescing getLIDsForPNs request for ${sortedPns.length} PNs`);
       return inflight;
     }
     const promise2 = this._getLIDsForPNsImpl(pns);
-    this.inflightLIDLookups.set(cacheKey2, promise2);
+    this.inflightLIDLookups.set(cacheKey3, promise2);
     try {
       return await promise2;
     } finally {
-      this.inflightLIDLookups.delete(cacheKey2);
+      this.inflightLIDLookups.delete(cacheKey3);
     }
   }
   async _getLIDsForPNsImpl(pns) {
@@ -337916,18 +345926,18 @@ var LIDMappingStore = class {
     if (lids.length === 0)
       return null;
     const sortedLids = [...new Set(lids)].sort();
-    const cacheKey2 = sortedLids.join(",");
-    const inflight = this.inflightPNLookups.get(cacheKey2);
+    const cacheKey3 = sortedLids.join(",");
+    const inflight = this.inflightPNLookups.get(cacheKey3);
     if (inflight) {
       this.logger.trace(`Coalescing getPNsForLIDs request for ${sortedLids.length} LIDs`);
       return inflight;
     }
     const promise2 = this._getPNsForLIDsImpl(lids);
-    this.inflightPNLookups.set(cacheKey2, promise2);
+    this.inflightPNLookups.set(cacheKey3, promise2);
     try {
       return await promise2;
     } finally {
-      this.inflightPNLookups.delete(cacheKey2);
+      this.inflightPNLookups.delete(cacheKey3);
     }
   }
   async _getPNsForLIDsImpl(lids) {
@@ -338190,9 +346200,9 @@ function makeLibSignalRepository(auth, logger2, pnToLIDFunc) {
       const deviceSessionKeys = uncachedDevices.map((device) => `${user}.${device}`);
       const existingSessions = await parsedKeys.get("session", deviceSessionKeys);
       const deviceJids = [];
-      for (const [sessionKey, sessionData] of Object.entries(existingSessions)) {
+      for (const [sessionKey2, sessionData] of Object.entries(existingSessions)) {
         if (sessionData) {
-          const deviceStr = sessionKey.split(".")[1];
+          const deviceStr = sessionKey2.split(".")[1];
           if (!deviceStr)
             continue;
           const deviceNum = parseInt(deviceStr);
@@ -346342,6 +354352,7 @@ if (!globalForWhatsApp.whatsappService) {
 whatsappService = globalForWhatsApp.whatsappService;
 
 // api/local-auth-router.ts
+var WHATSAPP_AUTH_TEMPORARILY_DISABLED = true;
 var localAuthRouter = router({
   register: strictPublicProcedure.input(
     external_exports.object({
@@ -346372,7 +354383,7 @@ var localAuthRouter = router({
     const otpSetting = await db.query.systemSettings.findFirst({
       where: eq(systemSettings.key, "whatsapp_otp_enabled")
     });
-    if (otpSetting?.value === "true") {
+    if (!WHATSAPP_AUTH_TEMPORARILY_DISABLED && otpSetting?.value === "true") {
       const verificationRecord = otpCache.get(cleanPhone);
       if (!verificationRecord || !verificationRecord.verified) {
         throw new TRPCError({
@@ -346421,6 +354432,12 @@ var localAuthRouter = router({
     };
   }),
   generateVerificationCode: strictPublicProcedure.input(external_exports.object({ phone: external_exports.string() })).mutation(async ({ input, ctx }) => {
+    if (WHATSAPP_AUTH_TEMPORARILY_DISABLED) {
+      throw new TRPCError({
+        code: "SERVICE_UNAVAILABLE",
+        message: "\u062A\u0648\u062B\u064A\u0642 \u0648\u0627\u062A\u0633\u0627\u0628 \u0645\u062A\u0648\u0642\u0641 \u0645\u0624\u0642\u062A\u0627\u064B. \u0627\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0639\u0627\u062F\u064A \u062D\u0627\u0644\u064A\u0627\u064B."
+      });
+    }
     const phoneValidation = validatePhone(input.phone);
     if (!phoneValidation.valid) {
       throw new TRPCError({ code: "BAD_REQUEST", message: phoneValidation.message });
@@ -346431,16 +354448,19 @@ var localAuthRouter = router({
       throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: rateLimit.message });
     }
     const code = "SS-" + Math.floor(1e5 + Math.random() * 9e5).toString();
-    const expiresAt = Date.now() + 10 * 60 * 1e3;
+    const expiresAt2 = Date.now() + 10 * 60 * 1e3;
     otpCache.set(cleanPhone, {
       phone: cleanPhone,
       code,
-      expiresAt,
+      expiresAt: expiresAt2,
       verified: false
     });
     return { success: true, code };
   }),
   getVerificationSettings: publicProcedure.query(async () => {
+    if (WHATSAPP_AUTH_TEMPORARILY_DISABLED) {
+      return { enabled: false, temporarilyDisabled: true };
+    }
     const setting = await db.query.systemSettings.findFirst({
       where: eq(systemSettings.key, "whatsapp_otp_enabled")
     });
@@ -348863,55 +356883,8 @@ var ExpenseInputLimits = {
   amountMax: 999999999
 };
 
-// api/lib/muscle-memory.ts
-init_connection();
-init_schema2();
-var UserMemoryCache = class {
-  cache = /* @__PURE__ */ new Map();
-  // key = "userId:userType"
-  loadedAt = /* @__PURE__ */ new Map();
-  maxPatternsPerUser = 200;
-  ttlMs = 30 * 60 * 1e3;
-  // 30 minutes before re-fetching
-  userKey(userId, userType) {
-    return `${userId}:${userType}`;
-  }
-  isStale(userId, userType) {
-    const key = this.userKey(userId, userType);
-    const loaded = this.loadedAt.get(key);
-    if (!loaded) return true;
-    return Date.now() - loaded > this.ttlMs;
-  }
-  get(userId, userType) {
-    const key = this.userKey(userId, userType);
-    if (this.isStale(userId, userType)) return void 0;
-    return this.cache.get(key);
-  }
-  set(userId, userType, patterns) {
-    const key = this.userKey(userId, userType);
-    const sorted = patterns.sort((a, b) => b.usageCount - a.usageCount).slice(0, this.maxPatternsPerUser);
-    this.cache.set(key, sorted);
-    this.loadedAt.set(key, Date.now());
-    if (this.cache.size > 500) {
-      const oldest = [...this.loadedAt.entries()].sort((a, b) => a[1] - b[1]).slice(0, 100);
-      for (const [k2] of oldest) {
-        this.cache.delete(k2);
-        this.loadedAt.delete(k2);
-      }
-    }
-  }
-  invalidate(userId, userType) {
-    const key = this.userKey(userId, userType);
-    this.cache.delete(key);
-    this.loadedAt.delete(key);
-  }
-};
-var memoryCache = new UserMemoryCache();
-function invalidateUserMemory(userId, userType) {
-  memoryCache.invalidate(userId, userType);
-}
-
 // api/expense-router.ts
+init_muscle_memory();
 init_redis_client();
 
 // api/notification-engine.ts
@@ -349613,14 +357586,11 @@ async function checkAndTriggerSmartActivityNotifications() {
 }
 
 // api/expense-router.ts
+init_finance_semantic_layer();
 async function invalidateExpenseCache(userId, userType) {
   try {
-    const client = await getRedisClient();
-    if (!client) return;
-    const keys = await client.keys(`expense_stats:${userId}:${userType}:*`);
-    if (keys.length > 0) {
-      await client.del(keys);
-    }
+    await deleteCacheByPattern(`expense_stats:${userId}:${userType}:*`);
+    await invalidateFinanceUserCache(userId, userType);
   } catch (err) {
     console.warn("Failed to invalidate expense cache", err);
   }
@@ -349651,6 +357621,21 @@ function safeDayDiff(start, end) {
     (end.getTime() - start.getTime()) / (1e3 * 60 * 60 * 24)
   );
   return Number.isFinite(diff) && diff > 0 ? diff : 1;
+}
+var statsCategoryDisplayNames = {
+  food: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
+  transport: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+  shopping: "\u062A\u0633\u0648\u0642",
+  health: "\u0635\u062D\u0629",
+  bills: "\u0641\u0648\u0627\u062A\u064A\u0631",
+  income: "\u062F\u062E\u0644",
+  saving: "\u0627\u062F\u062E\u0627\u0631",
+  uncategorized: "\u063A\u064A\u0631 \u0645\u0635\u0646\u0641"
+};
+function normalizeStatsCategory(value) {
+  const raw2 = String(value ?? "").trim();
+  if (!raw2) return "\u063A\u064A\u0631 \u0645\u0635\u0646\u0641";
+  return statsCategoryDisplayNames[raw2.toLowerCase()] ?? raw2;
 }
 var expenseRouter = router({
   create: authedProcedure.input(
@@ -350038,8 +358023,8 @@ var expenseRouter = router({
     const db3 = getDb();
     const userId = ctx.user.id;
     const userType = ctx.user.type;
-    const cacheKey2 = `expense_stats:${userId}:${userType}:summary:${input.month}:${input.salaryDay || 0}`;
-    return withCache(cacheKey2, 60 * 60 * 24, async () => {
+    const cacheKey3 = `expense_stats:${userId}:${userType}:summary:${input.month}:${input.salaryDay || 0}`;
+    return withCache(cacheKey3, 60 * 60 * 24, async () => {
       const { getFinancialMonthDates: getFinancialMonthDates2 } = await Promise.resolve().then(() => (init_financial_month(), financial_month_exports));
       const { startDate, endDate } = getFinancialMonthDates2(
         input.month,
@@ -350080,8 +358065,8 @@ var expenseRouter = router({
     const db3 = getDb();
     const userId = ctx.user.id;
     const userType = ctx.user.type;
-    const cacheKey2 = `expense_stats:${userId}:${userType}:stats:${input.month}:${input.salaryDay || 0}`;
-    return withCache(cacheKey2, 60 * 60 * 24, async () => {
+    const cacheKey3 = `expense_stats:${userId}:${userType}:stats:${input.month}:${input.salaryDay || 0}`;
+    return withCache(cacheKey3, 60 * 60 * 24, async () => {
       const { getFinancialMonthDates: getFinancialMonthDates2 } = await Promise.resolve().then(() => (init_financial_month(), financial_month_exports));
       const { startDate, endDate } = getFinancialMonthDates2(
         input.month,
@@ -350154,10 +358139,11 @@ var expenseRouter = router({
       const subCategoryMap = {};
       items.filter((i2) => i2.type === "expense").forEach((item) => {
         const amt = Number(item.amount);
-        if (!categoryMap[item.category])
-          categoryMap[item.category] = { value: 0, count: 0 };
-        categoryMap[item.category].value += amt;
-        categoryMap[item.category].count += 1;
+        const categoryName = normalizeStatsCategory(item.category);
+        if (!categoryMap[categoryName])
+          categoryMap[categoryName] = { value: 0, count: 0 };
+        categoryMap[categoryName].value += amt;
+        categoryMap[categoryName].count += 1;
         if (item.subCategory && item.subCategory !== "\u0639\u0627\u0645") {
           if (!subCategoryMap[item.subCategory])
             subCategoryMap[item.subCategory] = { value: 0, count: 0 };
@@ -350190,7 +358176,7 @@ var expenseRouter = router({
         count: main.count,
         children: subCategoryBreakdown.filter(
           (s3) => items.some(
-            (it) => it.category === main.name && it.subCategory === s3.name
+            (it) => normalizeStatsCategory(it.category) === main.name && it.subCategory === s3.name
           )
         )
       }));
@@ -350273,7 +358259,8 @@ var expenseRouter = router({
       const previousCategoryMap = {};
       const previousSubCategoryMap = {};
       previousItems.filter((i2) => i2.type === "expense").forEach((item) => {
-        previousCategoryMap[item.category] = (previousCategoryMap[item.category] || 0) + Number(item.amount);
+        const categoryName = normalizeStatsCategory(item.category);
+        previousCategoryMap[categoryName] = (previousCategoryMap[categoryName] || 0) + Number(item.amount);
         if (item.subCategory)
           previousSubCategoryMap[item.subCategory] = (previousSubCategoryMap[item.subCategory] || 0) + Number(item.amount);
       });
@@ -351005,6 +358992,118 @@ async function resolveAllApiKeyErrors() {
 init_dist2();
 init_env();
 init_user_profile_service();
+
+// api/services/ai-cost-analytics.ts
+init_drizzle_orm();
+init_schema2();
+init_connection();
+function asRecord(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+function asNumber2(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+function stringValue(value, fallback) {
+  return typeof value === "string" && value.trim() ? value : fallback;
+}
+function hasFallbackSignal(value) {
+  if (typeof value === "string") return value.toLowerCase().includes("fallback");
+  if (Array.isArray(value)) return value.some(hasFallbackSignal);
+  if (value && typeof value === "object") {
+    return Object.entries(value).some(([key, item]) => {
+      if (key.toLowerCase().includes("fallback")) return Boolean(item);
+      return hasFallbackSignal(item);
+    });
+  }
+  return false;
+}
+function cacheHitFromMetadata(metadata) {
+  if (typeof metadata.cacheHit === "boolean") return metadata.cacheHit;
+  const cacheHits = metadata.cacheHits;
+  if (Array.isArray(cacheHits)) return cacheHits.length > 0;
+  const trace2 = asRecord(metadata.trace);
+  const traceCacheHits = trace2.cacheHits;
+  if (Array.isArray(traceCacheHits)) return traceCacheHits.length > 0;
+  return null;
+}
+function normalizeAICostAnalyticsEvent(row) {
+  const metadata = asRecord(row.metadata);
+  const trace2 = asRecord(metadata.trace);
+  const routing = asRecord(metadata.routing);
+  const route = stringValue(metadata.route, "") || stringValue(trace2.route, "") || stringValue(routing.route, "") || stringValue(metadata.intentKind, "unknown");
+  return {
+    id: row.id,
+    userId: row.userId,
+    userType: row.userType,
+    channel: row.event.replace(/^ai_cost_/, ""),
+    route,
+    intentKind: stringValue(metadata.intentKind, "unknown"),
+    totalTokens: asNumber2(metadata.totalTokens),
+    inputTokens: asNumber2(metadata.inputTokens),
+    outputTokens: asNumber2(metadata.outputTokens),
+    embeddingCalls: asNumber2(metadata.embeddingCalls),
+    llmCalls: asNumber2(metadata.llmCalls),
+    toolCalls: asNumber2(metadata.toolCalls),
+    latencyMs: asNumber2(metadata.latencyMs),
+    costUnits: asNumber2(metadata.costUnits),
+    cacheHit: cacheHitFromMetadata(metadata),
+    fallback: hasFallbackSignal(metadata),
+    createdAt: row.createdAt
+  };
+}
+function aggregate(events) {
+  const count4 = events.length;
+  const totalTokens = events.reduce((sum4, event) => sum4 + event.totalTokens, 0);
+  const totalCostUnits = events.reduce((sum4, event) => sum4 + event.costUnits, 0);
+  const totalLatency = events.reduce((sum4, event) => sum4 + event.latencyMs, 0);
+  const cacheKnown = events.filter((event) => event.cacheHit !== null);
+  const cacheHits = cacheKnown.filter((event) => event.cacheHit).length;
+  const fallbackCount = events.filter((event) => event.fallback).length;
+  return {
+    count: count4,
+    totalTokens,
+    totalCostUnits,
+    llmCalls: events.reduce((sum4, event) => sum4 + event.llmCalls, 0),
+    embeddingCalls: events.reduce((sum4, event) => sum4 + event.embeddingCalls, 0),
+    toolCalls: events.reduce((sum4, event) => sum4 + event.toolCalls, 0),
+    avgTokens: count4 ? Math.round(totalTokens / count4) : 0,
+    avgLatencyMs: count4 ? Math.round(totalLatency / count4) : 0,
+    cacheHitRate: cacheKnown.length ? Math.round(cacheHits / cacheKnown.length * 100) / 100 : null,
+    fallbackRate: count4 ? Math.round(fallbackCount / count4 * 100) / 100 : 0
+  };
+}
+function groupBy(events, key) {
+  const grouped = {};
+  for (const event of events) {
+    const groupKey = key(event) || "unknown";
+    grouped[groupKey] = grouped[groupKey] || [];
+    grouped[groupKey].push(event);
+  }
+  return Object.fromEntries(
+    Object.entries(grouped).map(([groupKey, groupEvents]) => [groupKey, aggregate(groupEvents)])
+  );
+}
+function buildAICostOverview(events) {
+  return {
+    totals: aggregate(events),
+    byChannel: groupBy(events, (event) => event.channel),
+    byRoute: groupBy(events, (event) => event.route),
+    byUser: groupBy(events, (event) => `${event.userType}:${event.userId}`),
+    recent: events.slice(0, 50)
+  };
+}
+async function loadAICostOverview(input = {}) {
+  const conditions = [like(userAnalytics.event, "ai_cost_%")];
+  if (input.userId !== void 0) conditions.push(eq(userAnalytics.userId, input.userId));
+  if (input.userType) conditions.push(eq(userAnalytics.userType, input.userType));
+  if (input.from) conditions.push(gte(userAnalytics.createdAt, input.from));
+  if (input.to) conditions.push(lte(userAnalytics.createdAt, input.to));
+  const rows = await db.select().from(userAnalytics).where(and(...conditions)).orderBy(desc(userAnalytics.createdAt)).limit(Math.min(Math.max(input.limit ?? 1e3, 1), 1e4));
+  return buildAICostOverview(rows.map(normalizeAICostAnalyticsEvent));
+}
+
+// api/admin-router.ts
 var import_web_push2 = __toESM(require_src2(), 1);
 var vapidPublicKey = process.env.VAPID_PUBLIC_KEY || "BBtKP6w97Av5YT6NvKCh3EostLvYiXIHQqM-QGSMlMYRk8fJPalWo3dvXEcghrnlizV1selpCWTOjU4qTjIBb3o";
 var vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || "-31rwR0LxanvleE02FotUVGGx3mVno1YJtR7hTaNHrA";
@@ -351056,6 +359155,23 @@ var adminRouter = router({
     };
   }),
   // ─── List All Users ───
+  getAICostOverview: adminProcedure.input(
+    external_exports.object({
+      userId: external_exports.number().int().positive().optional(),
+      userType: external_exports.enum(["oauth", "local"]).optional(),
+      from: external_exports.string().datetime().optional(),
+      to: external_exports.string().datetime().optional(),
+      limit: external_exports.number().int().min(1).max(1e4).default(1e3)
+    }).optional()
+  ).query(
+    async ({ input }) => loadAICostOverview({
+      userId: input?.userId,
+      userType: input?.userType,
+      from: input?.from ? new Date(input.from) : void 0,
+      to: input?.to ? new Date(input.to) : void 0,
+      limit: input?.limit
+    })
+  ),
   listAllUsers: moderatorProcedure.input(
     external_exports.object({
       search: external_exports.string().optional(),
@@ -352402,6 +360518,7 @@ init_schema2();
 init_drizzle_orm();
 var broadcastQueue = [];
 var isBroadcasting = false;
+var WHATSAPP_AUTH_TEMPORARILY_DISABLED2 = true;
 var randomDelay = (min3, max3) => {
   const ms = Math.floor(Math.random() * (max3 - min3 + 1)) + min3;
   return new Promise((resolve2) => setTimeout(resolve2, ms));
@@ -352456,6 +360573,9 @@ var adminWhatsappRouter = router({
     return { success: true, message: "\u062A\u0645 \u0625\u064A\u0642\u0627\u0641 \u0627\u0644\u062E\u062F\u0645\u0629" };
   }),
   getSettings: adminProcedure.query(async () => {
+    if (WHATSAPP_AUTH_TEMPORARILY_DISABLED2) {
+      return { otpEnabled: false, temporarilyDisabled: true };
+    }
     const setting = await db.query.systemSettings.findFirst({
       where: eq(systemSettings.key, "whatsapp_otp_enabled")
     });
@@ -354399,6 +362519,7 @@ async function parseReceiptImage(input) {
 // api/image-router.ts
 init_model_mapper();
 init_user_profile_service();
+init_muscle_memory();
 async function trackImageTokens(userId, userType, tokens, model) {
   if (!tokens) return;
   if (userType === "oauth") {
@@ -354430,7 +362551,7 @@ var imageRouter = router({
       });
     }
     const estimated = estimateTokensFromText(input.ocrTextHint || "") + 900;
-    const budget = await assertAiBudget(ctx.user, "image", estimated);
+    const budget2 = await assertAiBudget(ctx.user, "image", estimated);
     const cfg = await loadSystemConfig();
     const apiKey = cfg.ai_api_key || env.GEMINI_API_KEY;
     const apiKey2 = cfg.ai_api_key_2 || "";
@@ -354438,8 +362559,8 @@ var imageRouter = router({
       cfg.ai_model_pro || env.GEMINI_MODEL_PRO || "gemini-2.5-pro"
     );
     const maxTokens = clampOutputTokens(
-      budget.perRequestMax,
-      budget.remaining,
+      budget2.perRequestMax,
+      budget2.remaining,
       estimated
     );
     const startOfMonth2 = /* @__PURE__ */ new Date();
@@ -354543,8 +362664,9 @@ init_env();
 init_ai_usage_policy();
 init_model_mapper();
 init_user_profile_service();
+init_finance_semantic_layer();
 var FREE_DESCRIPTION_MAX = 120;
-var FREE_GOALS_LIMIT = 3;
+var FREE_GOALS_LIMIT2 = 3;
 function isMissingGoalsTable(err) {
   const msg = err instanceof Error ? err.message : String(err ?? "");
   return msg.includes("financial_goals") && (msg.includes("doesn't exist") || msg.includes("ER_NO_SUCH_TABLE") || msg.includes("Failed query"));
@@ -354618,10 +362740,10 @@ var goalsRouter = router({
       )
     );
     const count4 = Number(existing[0]?.count || 0);
-    if (!isPro && count4 >= FREE_GOALS_LIMIT) {
+    if (!isPro && count4 >= FREE_GOALS_LIMIT2) {
       throw new TRPCError({
         code: "FORBIDDEN",
-        message: `\u0627\u0644\u062E\u0637\u0629 \u0627\u0644\u0645\u062C\u0627\u0646\u064A\u0629 \u062A\u062F\u0639\u0645 ${FREE_GOALS_LIMIT} \u0623\u0647\u062F\u0627\u0641 \u0646\u0634\u0637\u0629. \u0631\u0642\u0651\u064A \u0644\u0640 Pro \u0644\u0623\u0647\u062F\u0627\u0641 \u063A\u064A\u0631 \u0645\u062D\u062F\u0648\u062F\u0629 \u0645\u0639 \u062A\u062D\u0644\u064A\u0644 \u0630\u0643\u064A.`
+        message: `\u0627\u0644\u062E\u0637\u0629 \u0627\u0644\u0645\u062C\u0627\u0646\u064A\u0629 \u062A\u062F\u0639\u0645 ${FREE_GOALS_LIMIT2} \u0623\u0647\u062F\u0627\u0641 \u0646\u0634\u0637\u0629. \u0631\u0642\u0651\u064A \u0644\u0640 Pro \u0644\u0623\u0647\u062F\u0627\u0641 \u063A\u064A\u0631 \u0645\u062D\u062F\u0648\u062F\u0629 \u0645\u0639 \u062A\u062D\u0644\u064A\u0644 \u0630\u0643\u064A.`
       });
     }
     let description = input.description?.trim() || "";
@@ -354637,6 +362759,7 @@ var goalsRouter = router({
       targetDate: input.targetDate ? new Date(input.targetDate) : null,
       status: "active"
     });
+    await invalidateFinanceUserCache(ctx.user.id, ctx.user.type);
     return {
       success: true,
       proUpsell: isPro ? null : PRO_UPSELL,
@@ -354672,7 +362795,7 @@ var goalsRouter = router({
 \u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062D\u0627\u0644\u064A: ${monthExpense[0]?.total || 0}
 \u0645\u0644\u0641 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645: ${summarizeProfileForAI(profile)}`;
     const estimated = estimateTokensFromText(promptText) + 600;
-    const budget = await assertAiBudget(ctx.user, "goal", estimated);
+    const budget2 = await assertAiBudget(ctx.user, "goal", estimated);
     const cfg = await loadSystemConfig();
     const apiKey = cfg.ai_api_key || env.GEMINI_API_KEY;
     const modelName = mapModelName(cfg.ai_model_pro || env.GEMINI_MODEL_PRO);
@@ -354680,9 +362803,9 @@ var goalsRouter = router({
       capRequestOutputTokens(
         asPlan(ctx.user.plan),
         "goal",
-        budget.perRequestMax
+        budget2.perRequestMax
       ),
-      budget.remaining,
+      budget2.remaining,
       estimated
     );
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -354712,6 +362835,7 @@ var goalsRouter = router({
       aiPlan,
       lastAnalyzedAt: /* @__PURE__ */ new Date()
     }).where(eq(financialGoals.id, goal.id));
+    await invalidateFinanceUserCache(ctx.user.id, ctx.user.type);
     return { goalId: goal.id, analysis: aiPlan, tokensUsed: tokens };
   }),
   setStatus: authedProcedure.input(
@@ -354727,6 +362851,7 @@ var goalsRouter = router({
         eq(financialGoals.userType, ctx.user.type)
       )
     );
+    await invalidateFinanceUserCache(ctx.user.id, ctx.user.type);
     return { success: true };
   })
 });
@@ -360909,7 +369034,7 @@ function parsePubArea(pubArea) {
   pointer += 2;
   const authPolicy = pubArea.slice(pointer, pointer += authPolicyLength);
   const parameters = {};
-  let unique = Uint8Array.from([]);
+  let unique2 = Uint8Array.from([]);
   if (type === "TPM_ALG_RSA") {
     const symmetric = TPM_ALG[dataView.getUint16(pointer)];
     pointer += 2;
@@ -360922,7 +369047,7 @@ function parsePubArea(pubArea) {
     parameters.rsa = { symmetric, scheme, keyBits, exponent };
     const uniqueLength = dataView.getUint16(pointer);
     pointer += 2;
-    unique = pubArea.slice(pointer, pointer += uniqueLength);
+    unique2 = pubArea.slice(pointer, pointer += uniqueLength);
   } else if (type === "TPM_ALG_ECC") {
     const symmetric = TPM_ALG[dataView.getUint16(pointer)];
     pointer += 2;
@@ -360939,7 +369064,7 @@ function parsePubArea(pubArea) {
     const uniqueYLength = dataView.getUint16(pointer);
     pointer += 2;
     const uniqueY = pubArea.slice(pointer, pointer += uniqueYLength);
-    unique = isoUint8Array_exports.concat([uniqueX, uniqueY]);
+    unique2 = isoUint8Array_exports.concat([uniqueX, uniqueY]);
   } else {
     throw new Error(`Unexpected type "${type}" (TPM)`);
   }
@@ -360949,7 +369074,7 @@ function parsePubArea(pubArea) {
     objectAttributes,
     authPolicy,
     parameters,
-    unique
+    unique: unique2
   };
 }
 
@@ -360984,7 +369109,7 @@ async function verifyAttestationTPM(options) {
     throw new Error("Attestation statement did not contain certInfo (TPM)");
   }
   const parsedPubArea = parsePubArea(pubArea);
-  const { unique, type: pubType, parameters } = parsedPubArea;
+  const { unique: unique2, type: pubType, parameters } = parsedPubArea;
   const cosePublicKey = decodeCredentialPublicKey(credentialPublicKey);
   if (pubType === "TPM_ALG_RSA") {
     if (!isCOSEPublicKeyRSA(cosePublicKey)) {
@@ -360998,7 +369123,7 @@ async function verifyAttestationTPM(options) {
     if (!e2) {
       throw new Error("COSE public key missing e (TPM|RSA)");
     }
-    if (!isoUint8Array_exports.areEqual(unique, n)) {
+    if (!isoUint8Array_exports.areEqual(unique2, n)) {
       throw new Error("PubArea unique is not same as credentialPublicKey (TPM|RSA)");
     }
     if (!parameters.rsa) {
@@ -361026,7 +369151,7 @@ async function verifyAttestationTPM(options) {
     if (!y) {
       throw new Error("COSE public key missing y (TPM|ECC)");
     }
-    if (!isoUint8Array_exports.areEqual(unique, isoUint8Array_exports.concat([x2, y]))) {
+    if (!isoUint8Array_exports.areEqual(unique2, isoUint8Array_exports.concat([x2, y]))) {
       throw new Error("PubArea unique is not same as public key x and y (TPM|ECC)");
     }
     if (!parameters.ecc) {
@@ -362462,7 +370587,997 @@ init_dist2();
 init_connection();
 init_schema2();
 init_drizzle_orm();
-init_ai_chat_service();
+
+// api/services/ai-chat-service.ts
+init_deepseek_client();
+init_connection();
+
+// api/services/ai-chat-tools.ts
+init_connection();
+init_schema2();
+init_drizzle_orm();
+init_finance_semantic_layer();
+function startOfToday() {
+  const d = /* @__PURE__ */ new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+function endOfToday() {
+  const d = /* @__PURE__ */ new Date();
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
+function startOfMonth(month, salaryDay = 1) {
+  let year2;
+  let m2;
+  if (month) {
+    const parts = month.split("-");
+    year2 = parseInt(parts[0]);
+    m2 = parseInt(parts[1]) - 1;
+  } else {
+    const d = /* @__PURE__ */ new Date();
+    year2 = d.getFullYear();
+    m2 = d.getMonth();
+    if (d.getDate() < salaryDay) {
+      m2 -= 1;
+    }
+  }
+  return new Date(year2, m2, salaryDay, 0, 0, 0, 0);
+}
+function endOfMonth(month, salaryDay = 1) {
+  const start = startOfMonth(month, salaryDay);
+  const end = new Date(start.getFullYear(), start.getMonth() + 1, start.getDate() - 1, 23, 59, 59, 999);
+  return end;
+}
+var FINANCE_QUERY_KINDS2 = [
+  "summary",
+  "wallet_summary",
+  "period_comparison",
+  "category_total",
+  "breakdown",
+  "transactions",
+  "chart",
+  "goal_progress"
+];
+var PERIOD_HINTS = [
+  "today",
+  "yesterday",
+  "current_week",
+  "current_month",
+  "previous_month",
+  "salary_cycle",
+  "custom"
+];
+function asString2(value) {
+  return typeof value === "string" && value.trim() ? value.trim() : void 0;
+}
+function clampLimit2(value, fallback, max3) {
+  const parsed = Math.floor(Number(value));
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(Math.max(parsed, 1), max3);
+}
+function periodFrom2(value, fallback) {
+  const period = asString2(value);
+  return period && PERIOD_HINTS.includes(period) ? period : fallback;
+}
+function makeFinanceNeed(index2, kind, reason, scope = {}, maxRows) {
+  return {
+    id: `legacy_finance_${index2}_${kind.replace(".", "_")}`,
+    kind,
+    priority: maxRows && maxRows > 8 ? "deep" : "hot",
+    reason,
+    scope,
+    maxRows,
+    cache: {
+      keyHint: ["legacy_finance", kind, scope.period, scope.category, scope.granularity, scope.limit].filter(Boolean).join(":"),
+      ttlSeconds: 60,
+      hot: true
+    }
+  };
+}
+function buildFinanceQueryNeeds(args) {
+  const kind = FINANCE_QUERY_KINDS2.includes(args.kind) ? args.kind : "summary";
+  const period = periodFrom2(args.period, kind === "summary" ? "today" : "current_month");
+  const category = asString2(args.category);
+  const query = asString2(args.query) ?? asString2(args.search_query);
+  const startDate = asString2(args.start_date) ?? asString2(args.startDate);
+  const endDate = asString2(args.end_date) ?? asString2(args.endDate);
+  const limit = clampLimit2(args.limit, kind === "transactions" ? 8 : 6, 20);
+  const granularity = asString2(args.granularity);
+  const baseScope = {
+    period,
+    category,
+    query,
+    startDate,
+    endDate
+  };
+  if (kind === "wallet_summary") {
+    return [makeFinanceNeed(1, "wallet.summary", "legacy_wallet_summary", {}, 8)];
+  }
+  if (kind === "period_comparison") {
+    return [
+      makeFinanceNeed(
+        1,
+        "finance.period_comparison",
+        "legacy_period_comparison",
+        { ...baseScope, comparePeriod: period === "previous_month" ? "current_month" : "previous_month" },
+        2
+      )
+    ];
+  }
+  if (kind === "category_total") {
+    return category ? [
+      makeFinanceNeed(
+        1,
+        "finance.category_total",
+        "legacy_exact_category_total",
+        baseScope,
+        1
+      ),
+      makeFinanceNeed(
+        2,
+        "finance.transactions",
+        "legacy_category_evidence",
+        { ...baseScope, limit: Math.min(limit, 5) },
+        Math.min(limit, 5)
+      )
+    ] : [makeFinanceNeed(1, "finance.summary", "legacy_category_missing_fallback_summary", baseScope, 1)];
+  }
+  if (kind === "breakdown") {
+    return [
+      makeFinanceNeed(
+        1,
+        "finance.breakdown",
+        "legacy_grouped_breakdown",
+        { ...baseScope, granularity: granularity ?? "category", limit },
+        limit
+      )
+    ];
+  }
+  if (kind === "transactions") {
+    return [
+      makeFinanceNeed(
+        1,
+        "finance.transactions",
+        "legacy_supporting_transactions",
+        { ...baseScope, limit },
+        limit
+      )
+    ];
+  }
+  if (kind === "chart") {
+    return [
+      makeFinanceNeed(
+        1,
+        "chart.data",
+        "legacy_chart_dataset",
+        { ...baseScope, granularity: granularity ?? "category", limit },
+        limit
+      )
+    ];
+  }
+  if (kind === "goal_progress") {
+    return [makeFinanceNeed(1, "goals.active", "legacy_goal_progress", {}, 5)];
+  }
+  return [makeFinanceNeed(1, "finance.summary", "legacy_top_level_summary", baseScope, 1)];
+}
+async function finance_query(ctx, args) {
+  const dataNeeds = buildFinanceQueryNeeds(args);
+  const result = await resolveKernelDataNeeds(
+    {
+      userId: ctx.userId,
+      userType: ctx.userType,
+      salaryDay: ctx.salaryDay
+    },
+    dataNeeds
+  );
+  return {
+    contract: "finance.query.v1",
+    dataNeeds,
+    facts: result.facts.slice(0, 30),
+    artifacts: result.artifacts.slice(0, 4),
+    errors: result.errors,
+    cacheHits: result.cacheHits,
+    guidance: "Answer only from facts. If a number is not present in facts, say it is unavailable instead of guessing."
+  };
+}
+async function get_today_expenses(ctx, _args) {
+  const rows = await db.select().from(expenses).where(
+    and(
+      eq(expenses.userId, ctx.userId),
+      eq(expenses.userType, ctx.userType),
+      gte(expenses.date, startOfToday()),
+      lte(expenses.date, endOfToday())
+    )
+  ).orderBy(desc(expenses.date));
+  const totalExpense = rows.filter((r2) => r2.type === "expense").reduce((s3, r2) => s3 + Number(r2.amount), 0);
+  const totalIncome = rows.filter((r2) => r2.type === "income").reduce((s3, r2) => s3 + Number(r2.amount), 0);
+  return {
+    total_expense: totalExpense,
+    total_income: totalIncome,
+    count: rows.length,
+    items: rows.slice(0, 20).map((r2) => ({
+      description: r2.description || r2.category,
+      amount: Number(r2.amount),
+      category: r2.category,
+      type: r2.type
+    }))
+  };
+}
+async function get_month_summary(ctx, args) {
+  const month = args.month || (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
+  const rows = await db.select().from(expenses).where(
+    and(
+      eq(expenses.userId, ctx.userId),
+      eq(expenses.userType, ctx.userType),
+      gte(expenses.date, startOfMonth(month)),
+      lte(expenses.date, endOfMonth(month))
+    )
+  );
+  const totalExpense = rows.filter((r2) => r2.type === "expense").reduce((s3, r2) => s3 + Number(r2.amount), 0);
+  const totalIncome = rows.filter((r2) => r2.type === "income").reduce((s3, r2) => s3 + Number(r2.amount), 0);
+  const daysInMonth2 = endOfMonth(month).getDate();
+  const daysPassed = month === (/* @__PURE__ */ new Date()).toISOString().slice(0, 7) ? (/* @__PURE__ */ new Date()).getDate() : daysInMonth2;
+  return {
+    month,
+    total_expense: totalExpense,
+    total_income: totalIncome,
+    net_flow: totalIncome - totalExpense,
+    transaction_count: rows.length,
+    daily_average: daysPassed > 0 ? Math.round(totalExpense / daysPassed) : 0,
+    days_passed: daysPassed,
+    days_in_month: daysInMonth2
+  };
+}
+async function get_category_breakdown(ctx, args) {
+  const month = args.month || (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
+  const rows = await db.select().from(expenses).where(
+    and(
+      eq(expenses.userId, ctx.userId),
+      eq(expenses.userType, ctx.userType),
+      eq(expenses.type, "expense"),
+      gte(expenses.date, startOfMonth(month)),
+      lte(expenses.date, endOfMonth(month))
+    )
+  );
+  const total = rows.reduce((s3, r2) => s3 + Number(r2.amount), 0);
+  const byCategory = {};
+  rows.forEach((r2) => {
+    byCategory[r2.category] = (byCategory[r2.category] || 0) + Number(r2.amount);
+  });
+  const sorted = Object.entries(byCategory).sort((a, b) => b[1] - a[1]).map(([name2, amount]) => ({
+    name: name2,
+    amount,
+    percent: total > 0 ? Math.round(amount / total * 100) : 0
+  }));
+  return { month, total, categories: sorted.slice(0, 10) };
+}
+async function get_recent_transactions(ctx, args) {
+  const count4 = Math.min(Number(args.count) || 10, 30);
+  const rows = await db.select().from(expenses).where(
+    and(
+      eq(expenses.userId, ctx.userId),
+      eq(expenses.userType, ctx.userType)
+    )
+  ).orderBy(desc(expenses.date)).limit(count4);
+  return {
+    transactions: rows.map((r2) => ({
+      description: r2.description || r2.category,
+      amount: Number(r2.amount),
+      category: r2.category,
+      sub_category: r2.subCategory,
+      type: r2.type,
+      date: r2.date ? new Date(r2.date).toLocaleDateString("ar-EG") : ""
+    }))
+  };
+}
+async function get_spending_by_person(ctx, args) {
+  const name2 = args.name || "";
+  if (!name2) return { error: "\u0645\u062D\u062A\u0627\u062C \u0627\u0633\u0645 \u0627\u0644\u0634\u062E\u0635" };
+  const rows = await db.select().from(expenses).where(
+    and(
+      eq(expenses.userId, ctx.userId),
+      eq(expenses.userType, ctx.userType),
+      like(expenses.description, `%${name2}%`)
+    )
+  ).orderBy(desc(expenses.date)).limit(20);
+  const total = rows.reduce((s3, r2) => s3 + Number(r2.amount), 0);
+  return {
+    person: name2,
+    total_amount: total,
+    transaction_count: rows.length,
+    recent: rows.slice(0, 5).map((r2) => ({
+      description: r2.description,
+      amount: Number(r2.amount),
+      date: r2.date ? new Date(r2.date).toLocaleDateString("ar-EG") : "",
+      category: r2.category
+    }))
+  };
+}
+async function get_family_spending(ctx, _args) {
+  const familyCategories = ["\u0623\u0648\u0644\u0627\u062F", "\u062A\u0639\u0644\u064A\u0645", "\u0623\u0633\u0631\u0629"];
+  const familyKeywords = ["\u0627\u0628\u0646", "\u0627\u0628\u0646\u0629", "\u0628\u0646\u062A", "\u0648\u0644\u062F", "\u0623\u0648\u0644\u0627\u062F", "\u0645\u062F\u0631\u0633\u0629", "\u062D\u0636\u0627\u0646\u0629", "\u062A\u0639\u0644\u064A\u0645", "\u0623\u0633\u0631\u0629"];
+  const month = (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
+  const rows = await db.select().from(expenses).where(
+    and(
+      eq(expenses.userId, ctx.userId),
+      eq(expenses.userType, ctx.userType),
+      eq(expenses.type, "expense"),
+      gte(expenses.date, startOfMonth(month)),
+      lte(expenses.date, endOfMonth(month))
+    )
+  );
+  const familyExpenses = rows.filter(
+    (r2) => familyCategories.some((c) => r2.category.includes(c) || (r2.subCategory || "").includes(c)) || familyKeywords.some((kw) => (r2.description || "").includes(kw))
+  );
+  const total = familyExpenses.reduce((s3, r2) => s3 + Number(r2.amount), 0);
+  return {
+    total_family_spending: total,
+    count: familyExpenses.length,
+    breakdown: familyExpenses.slice(0, 10).map((r2) => ({
+      description: r2.description || r2.category,
+      amount: Number(r2.amount),
+      category: r2.category
+    }))
+  };
+}
+async function get_wallet_balances(ctx, _args) {
+  const wallets = await db.select().from(userWallets).where(
+    and(
+      eq(userWallets.userId, ctx.userId),
+      eq(userWallets.userType, ctx.userType)
+    )
+  );
+  const totalBalance = wallets.reduce((s3, w) => s3 + Number(w.balance || 0), 0);
+  return {
+    total_balance: totalBalance,
+    wallets: wallets.map((w) => ({
+      name: w.name,
+      provider: w.provider,
+      balance: Number(w.balance || 0),
+      last_four: w.lastFourDigits
+    }))
+  };
+}
+async function get_financial_goals(ctx, _args) {
+  const goals = await db.select().from(financialGoals).where(
+    and(
+      eq(financialGoals.userId, ctx.userId),
+      eq(financialGoals.userType, ctx.userType)
+    )
+  );
+  return {
+    goals: goals.map((g) => ({
+      title: g.title,
+      target_amount: Number(g.targetAmount || 0),
+      status: g.status,
+      description: g.description
+    }))
+  };
+}
+async function get_previous_month_comparison(ctx, _args) {
+  const now = /* @__PURE__ */ new Date();
+  const currentMonth = now.toISOString().slice(0, 7);
+  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonth = prevDate.toISOString().slice(0, 7);
+  const [currentRows, prevRows] = await Promise.all([
+    db.select().from(expenses).where(
+      and(
+        eq(expenses.userId, ctx.userId),
+        eq(expenses.userType, ctx.userType),
+        eq(expenses.type, "expense"),
+        gte(expenses.date, startOfMonth(currentMonth)),
+        lte(expenses.date, endOfMonth(currentMonth))
+      )
+    ),
+    db.select().from(expenses).where(
+      and(
+        eq(expenses.userId, ctx.userId),
+        eq(expenses.userType, ctx.userType),
+        eq(expenses.type, "expense"),
+        gte(expenses.date, startOfMonth(prevMonth)),
+        lte(expenses.date, endOfMonth(prevMonth))
+      )
+    )
+  ]);
+  const currentTotal = currentRows.reduce((s3, r2) => s3 + Number(r2.amount), 0);
+  const prevTotal = prevRows.reduce((s3, r2) => s3 + Number(r2.amount), 0);
+  const changePercent = prevTotal > 0 ? Math.round((currentTotal - prevTotal) / prevTotal * 100) : 0;
+  return {
+    current_month: currentMonth,
+    current_total: currentTotal,
+    previous_month: prevMonth,
+    previous_total: prevTotal,
+    change_percent: changePercent,
+    direction: changePercent > 0 ? "\u0632\u064A\u0627\u062F\u0629" : changePercent < 0 ? "\u0646\u0642\u0635\u0627\u0646" : "\u062B\u0627\u0628\u062A"
+  };
+}
+async function get_daily_average(ctx, _args) {
+  const month = (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
+  const rows = await db.select().from(expenses).where(
+    and(
+      eq(expenses.userId, ctx.userId),
+      eq(expenses.userType, ctx.userType),
+      eq(expenses.type, "expense"),
+      gte(expenses.date, startOfMonth(month)),
+      lte(expenses.date, endOfMonth(month))
+    )
+  );
+  const total = rows.reduce((s3, r2) => s3 + Number(r2.amount), 0);
+  const daysPassed = Math.max(1, (/* @__PURE__ */ new Date()).getDate());
+  const daysInMonth2 = endOfMonth(month).getDate();
+  const projected = Math.round(total / daysPassed * daysInMonth2);
+  return {
+    daily_average: Math.round(total / daysPassed),
+    total_so_far: total,
+    days_passed: daysPassed,
+    projected_monthly_total: projected
+  };
+}
+async function get_spending_by_date_range(ctx, args) {
+  const startDate = args.start_date ? new Date(args.start_date) : startOfMonth();
+  const endDate = args.end_date ? new Date(args.end_date) : endOfToday();
+  const rows = await db.select().from(expenses).where(
+    and(
+      eq(expenses.userId, ctx.userId),
+      eq(expenses.userType, ctx.userType),
+      gte(expenses.date, startDate),
+      lte(expenses.date, endDate)
+    )
+  );
+  const totalExpense = rows.filter((r2) => r2.type === "expense").reduce((s3, r2) => s3 + Number(r2.amount), 0);
+  const totalIncome = rows.filter((r2) => r2.type === "income").reduce((s3, r2) => s3 + Number(r2.amount), 0);
+  return {
+    start_date: startDate.toLocaleDateString("ar-EG"),
+    end_date: endDate.toLocaleDateString("ar-EG"),
+    total_expense: totalExpense,
+    total_income: totalIncome,
+    transaction_count: rows.length
+  };
+}
+async function search_transactions(ctx, args) {
+  const query = args.query || "";
+  if (!query) return { error: "\u0645\u062D\u062A\u0627\u062C \u0643\u0644\u0645\u0629 \u0644\u0644\u0628\u062D\u062B" };
+  const rows = await db.select().from(expenses).where(
+    and(
+      eq(expenses.userId, ctx.userId),
+      eq(expenses.userType, ctx.userType),
+      like(expenses.description, `%${query}%`)
+    )
+  ).orderBy(desc(expenses.date)).limit(15);
+  return {
+    query,
+    results_count: rows.length,
+    results: rows.map((r2) => ({
+      description: r2.description,
+      amount: Number(r2.amount),
+      category: r2.category,
+      type: r2.type,
+      date: r2.date ? new Date(r2.date).toLocaleDateString("ar-EG") : ""
+    }))
+  };
+}
+async function analyze_finances(ctx, args) {
+  let conditions = [
+    eq(expenses.userId, ctx.userId),
+    eq(expenses.userType, ctx.userType)
+  ];
+  if (args.start_date) conditions.push(gte(expenses.date, new Date(args.start_date)));
+  if (args.end_date) {
+    const ed = new Date(args.end_date);
+    ed.setHours(23, 59, 59, 999);
+    conditions.push(lte(expenses.date, ed));
+  }
+  if (args.type) conditions.push(eq(expenses.type, args.type));
+  if (args.category) conditions.push(like(expenses.category, `%${args.category}%`));
+  if (args.search_query) conditions.push(like(expenses.description, `%${args.search_query}%`));
+  const limit = Math.min(Number(args.limit) || 30, 50);
+  const rows = await db.select().from(expenses).where(and(...conditions)).orderBy(desc(expenses.date));
+  let totalIncome = 0;
+  let totalExpense = 0;
+  rows.forEach((r2) => {
+    if (r2.type === "income") totalIncome += Number(r2.amount);
+    else totalExpense += Number(r2.amount);
+  });
+  const summary = { totalIncome, totalExpense, netFlow: totalIncome - totalExpense };
+  if (args.group_by === "category") {
+    const grouped = {};
+    rows.forEach((r2) => {
+      const cat = r2.category || "\u0623\u062E\u0631\u0649";
+      grouped[cat] = (grouped[cat] || 0) + Number(r2.amount);
+    });
+    return { summary, category_breakdown: grouped };
+  } else if (args.group_by === "month") {
+    const grouped = {};
+    rows.forEach((r2) => {
+      if (!r2.date) return;
+      const m2 = r2.date.toISOString().slice(0, 7);
+      grouped[m2] = (grouped[m2] || 0) + Number(r2.amount);
+    });
+    return { summary, monthly_breakdown: grouped };
+  } else {
+    return { summary, rows: rows.slice(0, limit).map((r2) => ({ date: r2.date, type: r2.type, amount: r2.amount, category: r2.category, description: r2.description })) };
+  }
+}
+async function get_app_guide(_ctx, _args) {
+  return {
+    contract: "site.guide.v1",
+    topic: "smartspend_usage",
+    summary: "\u062F\u0644\u064A\u0644 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 SmartSpend \u0627\u0644\u0633\u0631\u064A\u0639",
+    sections: [
+      {
+        id: "expense_capture",
+        title: "\u0625\u0636\u0627\u0641\u0629 \u0645\u0635\u0631\u0648\u0641 \u0623\u0648 \u062F\u062E\u0644",
+        steps: ["\u0645\u0646 \u0627\u0644\u0635\u0641\u062D\u0629 \u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0629 \u0627\u0636\u063A\u0637 \u0639\u0644\u0649 \u0632\u0631 \u0627\u0644\u0625\u0636\u0627\u0641\u0629 \u0627\u0644\u0639\u0627\u0626\u0645.", "\u0627\u0643\u062A\u0628 \u0627\u0644\u0648\u0635\u0641 \u0648\u0627\u0644\u0645\u0628\u0644\u063A \u0648\u0631\u0627\u062C\u0639 \u0627\u0644\u062A\u0635\u0646\u064A\u0641 \u0642\u0628\u0644 \u0627\u0644\u062D\u0641\u0638."]
+      },
+      {
+        id: "financial_profile",
+        title: "\u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u0645\u064A\u0632\u0627\u0646\u064A\u0629",
+        steps: ["\u0627\u0641\u062A\u062D \u0627\u0644\u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u062C\u0627\u0646\u0628\u064A\u0629 \u0623\u0648 \u0635\u0641\u062D\u0629 \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A.", "\u0627\u062E\u062A\u0631 \u0627\u0644\u0628\u0631\u0648\u0641\u0627\u064A\u0644 \u0627\u0644\u0645\u0627\u0644\u064A \u0648\u0639\u062F\u0644 \u062F\u062E\u0644\u0643 \u0623\u0648 \u0645\u064A\u0632\u0627\u0646\u064A\u062A\u0643."]
+      },
+      {
+        id: "wallets",
+        title: "\u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0645\u062D\u0627\u0641\u0638",
+        steps: ["\u0627\u0641\u062A\u062D \u0642\u0633\u0645 \u0627\u0644\u0645\u062D\u0627\u0641\u0638.", "\u0623\u0636\u0641 \u0645\u062D\u0641\u0638\u0629 \u0623\u0648 \u062D\u0633\u0627\u0628\u0627 \u0628\u0646\u0643\u064A\u0627 \u0648\u0627\u0643\u062A\u0628 \u0627\u0644\u0631\u0635\u064A\u062F \u0648\u0627\u0633\u0645 \u0627\u0644\u0645\u0632\u0648\u062F."]
+      },
+      {
+        id: "sms_cards",
+        title: "\u0631\u0628\u0637 \u0631\u0633\u0627\u0626\u0644 SMS \u0623\u0648 \u0628\u0637\u0627\u0642\u0629",
+        steps: [
+          "\u0641\u0639\u0651\u0644 \u0625\u0630\u0646 \u0642\u0631\u0627\u0621\u0629 \u0631\u0633\u0627\u0626\u0644 SMS \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0645\u0646 \u0625\u0639\u062F\u0627\u062F\u0627\u062A \u0627\u0644\u0631\u0628\u0637.",
+          "\u0627\u0631\u0628\u0637 \u0627\u0644\u0631\u0633\u0627\u0626\u0644 \u0628\u0627\u0644\u062D\u0633\u0627\u0628 \u0623\u0648 \u0627\u0644\u0645\u062D\u0641\u0638\u0629 \u0627\u0644\u0645\u0646\u0627\u0633\u0628\u0629.",
+          "\u0644\u0644\u0628\u0637\u0627\u0642\u0629\u060C \u0627\u062D\u0641\u0638 \u0627\u0633\u0645 \u0627\u0644\u0628\u0646\u0643 \u0648\u0622\u062E\u0631 \u0623\u0631\u0628\u0639\u0629 \u0623\u0631\u0642\u0627\u0645 \u0641\u0642\u0637 \u0648\u0644\u0627 \u062A\u062F\u062E\u0644 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0628\u0637\u0627\u0642\u0629 \u0627\u0644\u0643\u0627\u0645\u0644\u0629."
+        ]
+      },
+      {
+        id: "contacts_debts",
+        title: "\u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u0623\u0635\u062F\u0642\u0627\u0621 \u0648\u0627\u0644\u062F\u064A\u0648\u0646",
+        steps: [
+          "\u0627\u0643\u062A\u0628 \u0627\u0633\u0645 \u0627\u0644\u0634\u062E\u0635 \u0641\u064A \u0648\u0635\u0641 \u0627\u0644\u0645\u0635\u0631\u0648\u0641 \u0644\u062A\u062A\u0628\u0639\u0647 \u0628\u0633\u0647\u0648\u0644\u0629.",
+          "\u0627\u0633\u062A\u062E\u062F\u0645 \u062C\u0647\u0627\u062A \u0627\u0644\u0627\u062A\u0635\u0627\u0644 \u0625\u0630\u0627 \u0643\u0627\u0646\u062A \u0645\u062A\u0627\u062D\u0629 \u0641\u064A \u062D\u0633\u0627\u0628\u0643."
+        ]
+      },
+      {
+        id: "reports_goals",
+        title: "\u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631 \u0648\u0627\u0644\u0623\u0647\u062F\u0627\u0641",
+        steps: [
+          "\u0627\u0641\u062A\u062D \u0642\u0633\u0645 \u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631 \u0644\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u0631\u0633\u0648\u0645 \u0648\u0627\u0644\u062A\u062D\u0644\u064A\u0644\u0627\u062A.",
+          "\u0645\u0646 \u0642\u0633\u0645 \u0627\u0644\u0623\u0647\u062F\u0627\u0641 \u064A\u0645\u0643\u0646\u0643 \u0625\u0646\u0634\u0627\u0621 \u0647\u062F\u0641 \u0627\u062F\u062E\u0627\u0631 \u0648\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062E\u0637\u0629."
+        ]
+      }
+    ]
+  };
+}
+var TOOL_EXECUTORS = {
+  finance_query,
+  get_today_expenses,
+  get_month_summary,
+  get_category_breakdown,
+  get_recent_transactions,
+  get_spending_by_person,
+  get_family_spending,
+  get_wallet_balances,
+  get_financial_goals,
+  get_previous_month_comparison,
+  get_daily_average,
+  get_spending_by_date_range,
+  search_transactions,
+  analyze_finances,
+  get_app_guide
+};
+function compactJson2(value) {
+  return JSON.stringify(value, (_key2, item) => {
+    if (typeof item === "bigint") return item.toString();
+    if (item instanceof Date) return item.toISOString();
+    return item;
+  });
+}
+async function executeTool(name2, args, ctx) {
+  const executor = TOOL_EXECUTORS[name2];
+  if (!executor) {
+    return compactJson2({ ok: false, tool: name2, error: `Tool "${name2}" not found` });
+  }
+  try {
+    const result = await executor(ctx, args);
+    return compactJson2({ ok: true, tool: name2, result });
+  } catch (error48) {
+    console.error(`[AI Chat Tool] Error executing ${name2}:`, error48.message);
+    return compactJson2({
+      ok: false,
+      tool: name2,
+      error: error48 instanceof Error ? error48.message : String(error48)
+    });
+  }
+}
+var TOOL_DEFINITIONS = [
+  {
+    type: "function",
+    function: {
+      name: "finance_query",
+      description: "\u0627\u0644\u0623\u062F\u0627\u0629 \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629 \u0627\u0644\u0645\u0641\u0636\u0644\u0629. \u062A\u0631\u062C\u0639 JSON \u0645\u0646\u0638\u0645 \u0645\u0646 Finance Semantic Layer \u0628\u0623\u0642\u0644 facts \u0645\u0637\u0644\u0648\u0628\u0629 \u0641\u0642\u0637: \u0645\u0644\u062E\u0635\u060C \u0641\u0626\u0629\u060C \u0645\u0639\u0627\u0645\u0644\u0627\u062A\u060C \u0645\u0642\u0627\u0631\u0646\u0629\u060C \u0623\u0631\u0635\u062F\u0629 \u0645\u062D\u0627\u0641\u0638\u060C \u0623\u0647\u062F\u0627\u0641\u060C \u0623\u0648 \u0628\u064A\u0627\u0646\u0627\u062A \u0631\u0633\u0645.",
+      parameters: {
+        type: "object",
+        properties: {
+          kind: {
+            type: "string",
+            enum: FINANCE_QUERY_KINDS2,
+            description: "summary, wallet_summary, period_comparison, category_total, breakdown, transactions, chart, or goal_progress"
+          },
+          period: {
+            type: "string",
+            enum: PERIOD_HINTS,
+            description: "today, yesterday, current_week, current_month, previous_month, salary_cycle, or custom"
+          },
+          category: { type: "string", description: "Optional canonical category such as food or transport." },
+          query: { type: "string", description: "Optional exact search query for transaction evidence." },
+          start_date: { type: "string", description: "YYYY-MM-DD for custom periods." },
+          end_date: { type: "string", description: "YYYY-MM-DD for custom periods." },
+          granularity: {
+            type: "string",
+            enum: ["day", "week", "month", "category", "merchant"],
+            description: "Grouping for breakdowns or charts."
+          },
+          limit: { type: "number", description: "Maximum rows/points. Keep small." }
+        },
+        required: ["kind"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_today_expenses",
+      description: "\u062C\u0644\u0628 \u0645\u0635\u0627\u0631\u064A\u0641 \u0648\u062F\u062E\u0644 \u0627\u0644\u064A\u0648\u0645 \u0628\u0627\u0644\u062A\u0641\u0635\u064A\u0644",
+      parameters: { type: "object", properties: {}, required: [] }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_month_summary",
+      description: "\u0645\u0644\u062E\u0635 \u0627\u0644\u0634\u0647\u0631: \u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641 \u0648\u0627\u0644\u062F\u062E\u0644 \u0648\u0627\u0644\u0635\u0627\u0641\u064A \u0648\u0645\u062A\u0648\u0633\u0637 \u0627\u0644\u0635\u0631\u0641 \u0627\u0644\u064A\u0648\u0645\u064A",
+      parameters: {
+        type: "object",
+        properties: {
+          month: { type: "string", description: "\u0627\u0644\u0634\u0647\u0631 \u0628\u0635\u064A\u063A\u0629 YYYY-MM (\u0627\u062E\u062A\u064A\u0627\u0631\u064A\u060C \u0627\u0644\u0627\u0641\u062A\u0631\u0627\u0636\u064A \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062D\u0627\u0644\u064A)" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_category_breakdown",
+      description: "\u062A\u0641\u0635\u064A\u0644 \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641 \u062D\u0633\u0628 \u0627\u0644\u0641\u0626\u0629 \u0645\u0639 \u0627\u0644\u0646\u0633\u0628 \u0627\u0644\u0645\u0626\u0648\u064A\u0629",
+      parameters: {
+        type: "object",
+        properties: {
+          month: { type: "string", description: "\u0627\u0644\u0634\u0647\u0631 \u0628\u0635\u064A\u063A\u0629 YYYY-MM (\u0627\u062E\u062A\u064A\u0627\u0631\u064A)" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_recent_transactions",
+      description: "\u0622\u062E\u0631 \u0627\u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A \u0627\u0644\u0645\u0633\u062C\u0644\u0629 \u0628\u0627\u0644\u062A\u0641\u0635\u064A\u0644",
+      parameters: {
+        type: "object",
+        properties: {
+          count: { type: "number", description: "\u0639\u062F\u062F \u0627\u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A (\u0627\u0644\u0627\u0641\u062A\u0631\u0627\u0636\u064A 10\u060C \u0627\u0644\u0623\u0642\u0635\u0649 30)" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_spending_by_person",
+      description: "\u0627\u0644\u0645\u0628\u0627\u0644\u063A \u0627\u0644\u0645\u062D\u0648\u0651\u0644\u0629 \u0623\u0648 \u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0629 \u0639\u0644\u0649 \u0634\u062E\u0635 \u0645\u0639\u064A\u0651\u0646",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "\u0627\u0633\u0645 \u0627\u0644\u0634\u062E\u0635" }
+        },
+        required: ["name"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_family_spending",
+      description: "\u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u0623\u0633\u0631\u0629 \u0648\u0627\u0644\u0623\u0648\u0644\u0627\u062F \u0648\u0627\u0644\u062A\u0639\u0644\u064A\u0645 \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631",
+      parameters: { type: "object", properties: {} }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_wallet_balances",
+      description: "\u0623\u0631\u0635\u062F\u0629 \u0643\u0644 \u0627\u0644\u0645\u062D\u0627\u0641\u0638 \u0648\u0627\u0644\u062D\u0633\u0627\u0628\u0627\u062A",
+      parameters: { type: "object", properties: {} }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_financial_goals",
+      description: "\u0623\u0647\u062F\u0627\u0641 \u0627\u0644\u0627\u062F\u062E\u0627\u0631 \u0627\u0644\u0646\u0634\u0637\u0629 \u0648\u0627\u0644\u062A\u0642\u062F\u0645 \u0641\u064A\u0647\u0627",
+      parameters: { type: "object", properties: {} }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_previous_month_comparison",
+      description: "\u0645\u0642\u0627\u0631\u0646\u0629 \u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062D\u0627\u0644\u064A \u0628\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0633\u0627\u0628\u0642",
+      parameters: { type: "object", properties: {} }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_daily_average",
+      description: "\u0645\u062A\u0648\u0633\u0637 \u0627\u0644\u0635\u0631\u0641 \u0627\u0644\u064A\u0648\u0645\u064A \u0648\u0627\u0644\u062A\u0648\u0642\u0639\u0627\u062A \u0644\u0646\u0647\u0627\u064A\u0629 \u0627\u0644\u0634\u0647\u0631",
+      parameters: { type: "object", properties: {} }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_spending_by_date_range",
+      description: "\u0645\u0635\u0627\u0631\u064A\u0641 \u0641\u062A\u0631\u0629 \u0632\u0645\u0646\u064A\u0629 \u0645\u062D\u062F\u062F\u0629",
+      parameters: {
+        type: "object",
+        properties: {
+          start_date: { type: "string", description: "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0628\u062F\u0627\u064A\u0629 (YYYY-MM-DD)" },
+          end_date: { type: "string", description: "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0646\u0647\u0627\u064A\u0629 (YYYY-MM-DD)" }
+        },
+        required: ["start_date", "end_date"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "search_transactions",
+      description: "\u0628\u062D\u062B \u0641\u064A \u0627\u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A \u0628\u0643\u0644\u0645\u0629 \u0623\u0648 \u0648\u0635\u0641 \u0645\u0639\u064A\u0651\u0646",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "\u0643\u0644\u0645\u0629 \u0627\u0644\u0628\u062D\u062B" }
+        },
+        required: ["query"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "analyze_finances",
+      description: "\u0623\u062F\u0627\u0629 \u0625\u0636\u0627\u0641\u064A\u0629 \u0642\u0648\u064A\u0629 \u0644\u0644\u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0645\u0639\u0642\u062F. \u0627\u0633\u062A\u062E\u062F\u0645\u0647\u0627 \u0644\u0644\u0623\u0633\u0626\u0644\u0629 \u0627\u0644\u0645\u0639\u0642\u062F\u0629 \u0627\u0644\u062A\u064A \u062A\u062D\u062A\u0627\u062C \u0628\u062D\u062B \u0645\u062E\u0635\u0635 \u0644\u0627 \u062A\u063A\u0637\u064A\u0647 \u0627\u0644\u0623\u062F\u0648\u0627\u062A \u0627\u0644\u0633\u0627\u0628\u0642\u0629.",
+      parameters: {
+        type: "object",
+        properties: {
+          start_date: { type: "string", description: "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0628\u062F\u0627\u064A\u0629 (YYYY-MM-DD)" },
+          end_date: { type: "string", description: "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0646\u0647\u0627\u064A\u0629 (YYYY-MM-DD)" },
+          type: { type: "string", enum: ["income", "expense"] },
+          category: { type: "string" },
+          search_query: { type: "string" },
+          group_by: { type: "string", enum: ["category", "month"] },
+          limit: { type: "number" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_app_guide",
+      description: "\u062F\u0644\u064A\u0644 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0627\u0644\u062A\u0637\u0628\u064A\u0642 \u0648\u0643\u064A\u0641\u064A\u0629 \u0625\u0636\u0627\u0641\u0629 \u0645\u0635\u0627\u0631\u064A\u0641 \u0623\u0648 \u0645\u064A\u0632\u0627\u0646\u064A\u0629 \u0623\u0648 \u0645\u062D\u0641\u0638\u0629\u060C \u0627\u0633\u062A\u062E\u062F\u0645\u0647\u0627 \u0644\u0644\u0631\u062F \u0639\u0644\u0649 \u0623\u0633\u0626\u0644\u0629 \u062D\u0648\u0644 \u0643\u064A\u0641\u064A\u0629 \u0639\u0645\u0644 \u0627\u0644\u062A\u0637\u0628\u064A\u0642",
+      parameters: { type: "object", properties: {} }
+    }
+  }
+];
+
+// api/services/ai-chat-service.ts
+init_user_profile_service();
+function profileString(value, fallback = "") {
+  return typeof value === "string" ? value : fallback;
+}
+function profileNumber(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+function looksLikeToolPreludeOnly(text2) {
+  const normalized = text2.trim();
+  if (!normalized) return true;
+  return normalized.length < 220 && /(خليني اشوف|خليني أشوف|اشوف تفاصيل|أشوف تفاصيل|هراجع|هشيك)/i.test(
+    normalized
+  );
+}
+function buildGoalFallback(toolResult) {
+  if (!toolResult) return void 0;
+  try {
+    const parsed2 = JSON.parse(toolResult);
+    const goals = parsed2.result?.goals ?? [];
+    if (Array.isArray(goals) && goals.length > 0) {
+      const normalizedGoals = goals.map((goal) => ({
+        title: profileString(goal.title, ""),
+        targetAmount: profileNumber(goal.target_amount ?? goal.targetAmount, 0),
+        status: profileString(goal.status, "")
+      })).filter((goal) => goal.title || goal.targetAmount > 0);
+      const preferred2 = normalizedGoals.find((goal) => /عربي|سيار|car/i.test(goal.title) && goal.targetAmount > 0) ?? normalizedGoals.find((goal) => goal.targetAmount > 0) ?? normalizedGoals[0];
+      if (preferred2) {
+        const amountText2 = preferred2.targetAmount > 0 ? `${preferred2.targetAmount.toLocaleString("ar-EG")} \u062C\u0646\u064A\u0647` : "\u0645\u0628\u0644\u063A \u063A\u064A\u0631 \u0645\u062D\u062F\u062F";
+        return `\u0623\u064A\u0648\u0647\u060C \u062D\u0633\u0628 \u0623\u0647\u062F\u0627\u0641\u0643 \u0627\u0644\u0645\u0633\u062C\u0644\u0629 \u0647\u062F\u0641 \u0627\u0644\u0639\u0631\u0628\u064A\u0629 \u0647\u0648 ${amountText2}. \u0627\u0644\u0647\u062F\u0641 \u0638\u0627\u0647\u0631 \u0639\u0646\u062F\u0643 \u0628\u0627\u0633\u0645 "${preferred2.title}" \u0648\u062D\u0627\u0644\u062A\u0647 ${preferred2.status || "\u0646\u0634\u0637"}.`;
+      }
+    }
+  } catch {
+  }
+  const rows = toolResult.split("\n").map((line) => line.trim()).filter((line) => line.includes("|") && !line.startsWith("title |"));
+  const parsed = rows.map((line) => {
+    const [title = "", amount = "", status = ""] = line.split("|").map((part) => part.trim());
+    const targetAmount = Number(amount);
+    return {
+      title,
+      targetAmount: Number.isFinite(targetAmount) ? targetAmount : 0,
+      status
+    };
+  }).filter((goal) => goal.title || goal.targetAmount > 0);
+  if (parsed.length === 0) return void 0;
+  const preferred = parsed.find((goal) => /عربي|سيار|car/i.test(goal.title) && goal.targetAmount > 0) ?? parsed.find((goal) => goal.targetAmount > 0) ?? parsed[0];
+  const amountText = preferred.targetAmount > 0 ? `${preferred.targetAmount.toLocaleString("ar-EG")} \u062C\u0646\u064A\u0647` : "\u0645\u0628\u0644\u063A \u063A\u064A\u0631 \u0645\u062D\u062F\u062F";
+  return `\u0623\u064A\u0648\u0647\u060C \u062D\u0633\u0628 \u0623\u0647\u062F\u0627\u0641\u0643 \u0627\u0644\u0645\u0633\u062C\u0644\u0629 \u0647\u062F\u0641 \u0627\u0644\u0639\u0631\u0628\u064A\u0629 \u0647\u0648 ${amountText}. \u0627\u0644\u0647\u062F\u0641 \u0638\u0627\u0647\u0631 \u0639\u0646\u062F\u0643 \u0628\u0627\u0633\u0645 "${preferred.title}" \u0648\u062D\u0627\u0644\u062A\u0647 ${preferred.status || "\u0646\u0634\u0637"}.`;
+}
+async function buildSystemPrompt(userId, userType) {
+  let userName = "\u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645";
+  let profession = "";
+  let goal = "";
+  let personality = "";
+  let salaryDay = 1;
+  let createdAtAr = "";
+  try {
+    const profile = await getSmartProfile(userId, userType);
+    userName = profileString(profile.basicInfo.name, userName);
+    profession = profileString(profile.basicInfo.profession);
+    salaryDay = profileNumber(profile.financialInfo.salaryDay, 1);
+    goal = {
+      organize_expenses: "\u062A\u0646\u0638\u064A\u0645 \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641",
+      reduce_spending: "\u062A\u0642\u0644\u064A\u0644 \u0627\u0644\u0635\u0631\u0641",
+      track_income: "\u062A\u062A\u0628\u0639 \u0627\u0644\u062F\u062E\u0644",
+      save_money: "\u0627\u062F\u062E\u0627\u0631 \u0627\u0644\u0645\u0627\u0644",
+      manage_business: "\u0625\u062F\u0627\u0631\u0629 \u0645\u0634\u0631\u0648\u0639",
+      pay_debt: "\u0633\u062F\u0627\u062F \u0627\u0644\u062F\u064A\u0648\u0646"
+    }[String(profile.financialInfo.primaryGoal)] || "";
+    personality = String(
+      profile.aiInferredAttributes?.spendingBehavior || ""
+    );
+    const { users: users2, localUsers: localUsers2 } = await Promise.resolve().then(() => (init_schema2(), schema_exports));
+    const { eq: eq2 } = await Promise.resolve().then(() => (init_drizzle_orm(), drizzle_orm_exports));
+    let userRecord;
+    if (userType === "local") {
+      userRecord = await db.query.localUsers.findFirst({ where: eq2(localUsers2.id, userId) });
+    } else {
+      userRecord = await db.query.users.findFirst({ where: eq2(users2.id, userId) });
+    }
+    if (userRecord && userRecord.createdAt) {
+      createdAtAr = new Date(userRecord.createdAt).toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
+    }
+  } catch {
+  }
+  const profileLine = [
+    profession ? `\u0627\u0644\u0645\u0647\u0646\u0629: ${profession}` : "",
+    goal ? `\u0627\u0644\u0647\u062F\u0641: ${goal}` : "",
+    personality ? `\u0623\u0633\u0644\u0648\u0628 \u0627\u0644\u0625\u0646\u0641\u0627\u0642: ${personality}` : ""
+  ].filter(Boolean).join(" | ");
+  const now = /* @__PURE__ */ new Date();
+  const todayAr = now.toLocaleDateString("ar-EG", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  const prompt = `\u0623\u0646\u062A "\u0633\u0645\u0627\u0631\u062A" \u2014 \u0645\u0633\u062A\u0634\u0627\u0631 \u0645\u0627\u0644\u064A \u0627\u062D\u062A\u0631\u0627\u0641\u064A \u0648\u0634\u0627\u062A \u0628\u0648\u062A \u0645\u062A\u0637\u0648\u0631 \u062C\u062F\u0627\u064B \u0641\u064A \u062A\u0637\u0628\u064A\u0642 SmartSpend. 
+\u0627\u0633\u0645 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645: ${userName}
+${profileLine ? "\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645: " + profileLine : ""}
+
+[\u0645\u0639\u0644\u0648\u0645\u0627\u062A \u0632\u0645\u0646\u064A\u0629 \u0647\u0627\u0645\u0629 - \u062F\u0642\u064A\u0642\u0629 \u062C\u062F\u0627\u064B \u0644\u0644\u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0641\u064A \u0627\u0644\u0623\u062F\u0648\u0627\u062A]:
+- \u0627\u0644\u064A\u0648\u0645 \u0647\u0648: ${todayAr}
+- \u064A\u0648\u0645 \u0646\u0632\u0648\u0644 \u0627\u0644\u0631\u0627\u062A\u0628 (\u0628\u062F\u0627\u064A\u0629 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0645\u0627\u0644\u064A): \u064A\u0648\u0645 ${salaryDay} \u0645\u0646 \u0643\u0644 \u0634\u0647\u0631.
+${createdAtAr ? `- \u062A\u0627\u0631\u064A\u062E \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0641\u064A \u0627\u0644\u062A\u0637\u0628\u064A\u0642: ${createdAtAr}.
+(\u0642\u0627\u0639\u062F\u0629 \u0635\u0627\u0631\u0645\u0629: \u0644\u0627 \u062A\u062D\u0627\u0648\u0644 \u062C\u0644\u0628 \u0623\u0648 \u062A\u062D\u0644\u064A\u0644 \u0628\u064A\u0627\u0646\u0627\u062A \u0644\u0634\u0647\u0648\u0631 \u0623\u0648 \u0641\u062A\u0631\u0627\u062A \u062A\u0633\u0628\u0642 \u0647\u0630\u0627 \u0627\u0644\u062A\u0627\u0631\u064A\u062E. \u0625\u0630\u0627 \u0637\u0644\u0628 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0645\u0642\u0627\u0631\u0646\u0629 \u0628\u0634\u0647\u0648\u0631 \u0642\u062F\u064A\u0645\u0629 \u0642\u0628\u0644 \u0627\u0634\u062A\u0631\u0627\u0643\u0647\u060C \u0623\u062E\u0628\u0631\u0647 \u0628\u0643\u0644 \u0648\u0636\u0648\u062D \u0648\u0644\u0628\u0627\u0642\u0629 \u0623\u0646 \u062D\u0633\u0627\u0628\u0647 \u0644\u0645 \u064A\u0643\u0646 \u0645\u0648\u062C\u0648\u062F\u0627\u064B \u0648\u0642\u062A\u0647\u0627 \u0648\u0644\u0627 \u062A\u0648\u062C\u062F \u062A\u0641\u0627\u0635\u064A\u0644 \u0644\u062A\u0644\u0643 \u0627\u0644\u0641\u062A\u0631\u0629\u060C \u0648\u0644\u0627 \u062A\u0633\u062A\u063A\u0631\u0628 \u0645\u0646 \u063A\u064A\u0627\u0628 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0648\u0644\u0627 \u062A\u062E\u062A\u0631\u0639 \u0623\u0631\u0642\u0627\u0645\u0627\u064B).` : ""}
+\u0627\u0633\u062A\u062E\u062F\u0645 \u0647\u0630\u0647 \u0627\u0644\u062A\u0648\u0627\u0631\u064A\u062E \u0628\u062F\u0642\u0629 \u0625\u0630\u0627 \u0637\u0644\u0628 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u062A\u0642\u0627\u0631\u064A\u0631 \u0639\u0646 "\u0627\u0644\u064A\u0648\u0645"\u060C "\u0623\u0645\u0633"\u060C "\u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631"\u060C \u0625\u0644\u062E.
+
+[\u0642\u0648\u0627\u0639\u062F \u0627\u0644\u0627\u0633\u062A\u062C\u0627\u0628\u0629 \u0627\u0644\u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629]:
+1. \u062A\u062D\u062F\u062B \u0643\u062E\u0628\u064A\u0631 \u0645\u0627\u0644\u064A \u0645\u062A\u0645\u0631\u0633 (\u0645\u062B\u0644 ChatGPT)\u060C \u0648\u0642\u062F\u0645 \u0625\u062C\u0627\u0628\u0627\u062A \u0645\u0641\u0635\u0644\u0629\u060C \u0648\u0627\u0636\u062D\u0629\u060C \u0648\u063A\u0646\u064A\u0629 \u0628\u0627\u0644\u0645\u0639\u0644\u0648\u0645\u0627\u062A (\u0644\u0627 \u062A\u0642\u062A\u0635\u0631 \u0639\u0644\u0649 \u0627\u0644\u0631\u062F\u0648\u062F \u0627\u0644\u0642\u0635\u064A\u0631\u0629).
+2. \u0627\u0633\u062A\u062E\u062F\u0645 \u062C\u062F\u0627\u0648\u0644 Markdown (Markdown Tables) \u0644\u062A\u0646\u0633\u064A\u0642 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0648\u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0627\u062A \u0628\u0634\u0643\u0644 \u062C\u0645\u0627\u0644\u064A \u0648\u0645\u0642\u0631\u0648\u0621 \u0625\u0630\u0627 \u0643\u0627\u0646\u062A \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0643\u062B\u064A\u0631\u0629.
+3. \u0627\u0633\u062A\u062F\u0639\u0650 \u0627\u0644\u0623\u062F\u0648\u0627\u062A \u0627\u0644\u0645\u0646\u0627\u0633\u0628\u0629 \u0628\u062F\u0642\u0629:
+   - \u0641\u064A \u0627\u0644\u0623\u0633\u0626\u0644\u0629 \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0627\u0633\u062A\u062E\u062F\u0645 finance_query \u0643\u062E\u064A\u0627\u0631 \u0623\u0648\u0644 \u062F\u0627\u0626\u0645\u0627\u064B \u0644\u0623\u0646\u0647\u0627 \u062A\u0631\u062C\u0639 JSON facts \u0635\u063A\u064A\u0631 \u0645\u0646 Finance Semantic Layer.
+   - \u0625\u0630\u0627 \u0633\u0623\u0644 \u0639\u0646 \u0641\u0626\u0629 \u0645\u0639\u064A\u0646\u0629 (\u0645\u062B\u0644 \u0627\u0644\u0623\u0643\u0644)\u060C \u0627\u0633\u062A\u062E\u062F\u0645 finance_query \u0628\u0646\u0648\u0639 category_total \u0648\u0645\u0639 category \u0645\u0646\u0627\u0633\u0628\u0629.
+   - \u0625\u0630\u0627 \u0633\u0623\u0644 \u0639\u0646 \u0643\u064A\u0641\u064A\u0629 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0627\u0644\u062A\u0637\u0628\u064A\u0642\u060C \u0627\u0633\u062A\u062E\u062F\u0645 \u0623\u062F\u0627\u0629 get_app_guide.
+   - \u0625\u0630\u0627 \u0637\u0644\u0628 \u0625\u0646\u0634\u0627\u0621 \u0647\u062F\u0641/\u0645\u064A\u0632\u0627\u0646\u064A\u0629/\u0645\u062D\u0641\u0638\u0629 \u0623\u0648 \u062A\u0646\u0641\u064A\u0630 \u0639\u0645\u0644\u064A\u0629 \u062F\u0627\u062E\u0644 \u0627\u0644\u062A\u0637\u0628\u064A\u0642\u060C \u0627\u0634\u0631\u062D \u0625\u0646\u0643 \u0633\u062A\u062C\u0647\u0632 \u0627\u0644\u0639\u0645\u0644\u064A\u0629 \u0644\u0644\u0645\u0631\u0627\u062C\u0639\u0629 \u0648\u0623\u0646 \u0627\u0644\u062A\u0646\u0641\u064A\u0630 \u0627\u0644\u0646\u0647\u0627\u0626\u064A \u064A\u062D\u062A\u0627\u062C \u062A\u0623\u0643\u064A\u062F \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645. \u0644\u0627 \u062A\u0642\u0644 \u0625\u0646\u0643 \u0644\u0627 \u062A\u0633\u062A\u0637\u064A\u0639 \u062A\u0646\u0641\u064A\u0630\u0647\u0627 \u0623\u0648 \u0625\u0646 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0644\u0627\u0632\u0645 \u064A\u0639\u0645\u0644\u0647\u0627 \u064A\u062F\u0648\u064A\u0627\u064B \u0625\u0630\u0627 \u0643\u0627\u0646 \u0637\u0644\u0628\u0647 \u0648\u0627\u0636\u062D\u0627\u064B.
+4. \u062F\u0644\u064A\u0644 \u0627\u0644\u062A\u0637\u0628\u064A\u0642 \u0627\u0644\u0646\u0627\u062A\u062C \u0645\u0646 get_app_guide \u0647\u0648 \u0627\u0644\u0645\u0635\u062F\u0631 \u0627\u0644\u062D\u0627\u0633\u0645 \u0641\u064A \u0623\u0633\u0626\u0644\u0629 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 SmartSpend. \u0644\u0627 \u062A\u0642\u0644 \u0625\u0646 \u062E\u0627\u0635\u064A\u0629 \u063A\u064A\u0631 \u0645\u062F\u0639\u0648\u0645\u0629 \u0625\u0630\u0627 \u0630\u0643\u0631\u0647\u0627 \u0627\u0644\u062F\u0644\u064A\u0644.
+5. \u0646\u062A\u0627\u0626\u062C \u0627\u0644\u0623\u062F\u0648\u0627\u062A \u062A\u0623\u062A\u064A \u0641\u064A JSON envelope. \u0627\u0642\u0631\u0623 result/facts/artifacts \u0641\u0642\u0637\u060C \u0648\u0644\u0627 \u062A\u062E\u062A\u0631\u0639 \u0623\u0631\u0642\u0627\u0645\u0627\u064B \u0623\u0628\u062F\u0627\u064B \u0645\u0646 \u062E\u064A\u0627\u0644\u0643.
+6. \u0642\u062F\u0645 \u062F\u0627\u0626\u0645\u0627\u064B \u062A\u062D\u0644\u064A\u0644\u0627\u064B \u0623\u0648 \u0646\u0635\u064A\u062D\u0629 \u0645\u0627\u0644\u064A\u0629 \u0639\u0645\u064A\u0642\u0629 \u0628\u0639\u062F \u0633\u0631\u062F \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A\u060C \u0648\u0644\u0627 \u062A\u0643\u062A\u0641\u0650 \u0628\u0633\u0631\u062F \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0641\u0642\u0637.
+7. \u0628\u0639\u062F \u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0623\u064A \u0623\u062F\u0627\u0629\u060C \u0644\u0627 \u062A\u0631\u062F \u0628\u062C\u0645\u0644\u0629 \u062A\u0645\u0647\u064A\u062F\u064A\u0629 \u0641\u0642\u0637 \u0645\u062B\u0644 "\u062E\u0644\u064A\u0646\u064A \u0623\u0634\u0648\u0641". \u0644\u0627\u0632\u0645 \u062A\u0631\u062C\u0639 \u0627\u0644\u0646\u062A\u064A\u062C\u0629 \u0627\u0644\u0646\u0647\u0627\u0626\u064A\u0629 \u0645\u0646 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0623\u062F\u0627\u0629 \u0641\u064A \u0646\u0641\u0633 \u0627\u0644\u0631\u062F.
+8. \u062A\u062D\u062F\u062B \u0628\u0627\u0644\u0644\u0647\u062C\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629 \u0627\u0644\u0631\u0627\u0642\u064A\u0629 \u0648\u0627\u0644\u0648\u062F\u064A\u0629.`;
+  return { prompt, salaryDay };
+}
+async function processAIChatMessage(input) {
+  const { userId, userType, message, conversationHistory, config: config3 } = input;
+  const { prompt: systemPrompt, salaryDay } = await buildSystemPrompt(userId, userType);
+  const messages = [
+    { role: "system", content: systemPrompt }
+  ];
+  const historyWindow = conversationHistory.slice(-6);
+  for (const msg of historyWindow) {
+    if (msg.role === "user" || msg.role === "assistant") {
+      messages.push({ role: msg.role, content: msg.content });
+    }
+  }
+  messages.push({ role: "user", content: message });
+  let totalTokens = 0;
+  const toolsUsed = [];
+  const toolResults = [];
+  const maxToolRounds = Math.max(0, Math.min(input.config.maxToolRounds ?? 1, 2));
+  let response = await callChatCompletionAPI(config3.baseUrl, config3.apiKey, {
+    model: config3.model,
+    messages,
+    tools: TOOL_DEFINITIONS,
+    tool_choice: "auto",
+    max_tokens: config3.maxTokens,
+    temperature: 0.7
+  });
+  totalTokens += response.tokensUsed;
+  let round2 = 0;
+  while (response.toolCalls && round2 < maxToolRounds) {
+    round2++;
+    messages.push({
+      role: "assistant",
+      content: response.text || "",
+      tool_calls: response.toolCalls
+    });
+    for (const tc of response.toolCalls) {
+      const toolName = tc.function.name;
+      toolsUsed.push(toolName);
+      let args = {};
+      try {
+        args = JSON.parse(tc.function.arguments || "{}");
+      } catch {
+        args = {};
+      }
+      console.log(`[AI Chat] Executing tool: ${toolName}(${JSON.stringify(args)})`);
+      const result = await executeTool(toolName, args, { userId, userType, salaryDay });
+      toolResults.push({ name: toolName, content: result });
+      messages.push({
+        role: "tool",
+        content: result,
+        tool_call_id: tc.id
+      });
+    }
+    response = await callChatCompletionAPI(config3.baseUrl, config3.apiKey, {
+      model: config3.model,
+      messages,
+      tools: TOOL_DEFINITIONS,
+      tool_choice: "auto",
+      max_tokens: config3.maxTokens,
+      temperature: 0.7
+    });
+    totalTokens += response.tokensUsed;
+  }
+  const goalFallback = toolsUsed.includes("get_financial_goals") && looksLikeToolPreludeOnly(response.text || "") ? buildGoalFallback(toolResults.find((item) => item.name === "get_financial_goals")?.content) : void 0;
+  return {
+    response: goalFallback || response.text || "\u0639\u0630\u0631\u0627\u064B\u060C \u0645\u0634 \u0642\u0627\u062F\u0631 \u0623\u0631\u062F \u062F\u0644\u0648\u0642\u062A\u064A. \u062C\u0631\u0628 \u062A\u0627\u0646\u064A.",
+    tokensUsed: totalTokens,
+    model: response.model,
+    toolsUsed: [...new Set(toolsUsed)]
+  };
+}
+
+// api/chat-router.ts
+init_ai_kernel();
+init_intent_router();
+init_ai_memory();
+init_ai_cost_policy();
+init_action_runtime();
 async function loadChatConfig() {
   const rows = await db.select().from(systemSettings);
   const s3 = {};
@@ -362488,7 +371603,10 @@ async function loadChatConfig() {
       free: s3.chatbot_enabled_free !== "false",
       pro: s3.chatbot_enabled_pro !== "false",
       ultra: s3.chatbot_enabled_ultra !== "false"
-    }
+    },
+    aiKernelEnabled: s3.ai_kernel_enabled === "true",
+    aiKernelPrimaryEnabled: s3.ai_kernel_primary_enabled !== "false",
+    settings: s3
   };
 }
 async function getTodayMessageCount(userId, userType) {
@@ -362507,6 +371625,190 @@ async function getTodayMessageCount(userId, userType) {
   );
   return Number(result[0]?.count || 0);
 }
+function minimalStructuredResponse(content, artifacts, actions) {
+  return {
+    traceId: `legacy_structured_${Date.now()}`,
+    channel: "chat",
+    content,
+    intent: {
+      kind: "action_request",
+      confidence: 0.6,
+      reason: "action_draft_only",
+      slots: {}
+    },
+    dataNeeds: [],
+    facts: [],
+    artifacts,
+    actions,
+    tokenBudget: {
+      maxInputTokens: 900,
+      maxOutputTokens: 450,
+      maxFactTokens: 420,
+      maxMemoryTokens: 140,
+      maxHistoryTokens: 180,
+      maxToolRounds: 1
+    },
+    debug: {
+      responseSchemaVersion: AI_RESPONSE_SCHEMA_VERSION
+    }
+  };
+}
+function factNumber(facts, label, source) {
+  const value = facts?.find((fact3) => fact3.label === label && (!source || fact3.source === source))?.value;
+  if (value === null || value === void 0 || value === "") return void 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : void 0;
+}
+function localMoney(value) {
+  const safe = Number.isFinite(value) ? value : 0;
+  return `${safe.toLocaleString("ar-EG", {
+    maximumFractionDigits: Number.isInteger(safe) ? 0 : 2
+  })} \u062C\u0646\u064A\u0647`;
+}
+function localCategoryName(value) {
+  const names = {
+    food: "\u0627\u0644\u0623\u0643\u0644 \u0648\u0627\u0644\u0645\u0634\u0631\u0648\u0628\u0627\u062A",
+    transport: "\u0627\u0644\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+    shopping: "\u0627\u0644\u062A\u0633\u0648\u0642",
+    health: "\u0627\u0644\u0635\u062D\u0629",
+    bills: "\u0627\u0644\u0641\u0648\u0627\u062A\u064A\u0631",
+    saving: "\u0627\u0644\u0627\u062F\u062E\u0627\u0631",
+    uncategorized: "\u063A\u064A\u0631 \u0645\u0635\u0646\u0641"
+  };
+  return names[value ?? ""] ?? value ?? "\u063A\u064A\u0631 \u0645\u0635\u0646\u0641";
+}
+function responseForActionDraft(fallback, action, facts) {
+  if (!action) return fallback;
+  if (action.name === "goal.create") {
+    const payload = action.payload;
+    const income = factNumber(facts, "total_income", "finance.summary");
+    const expense = factNumber(facts, "total_expense", "finance.summary");
+    const net = factNumber(facts, "net_flow", "finance.summary");
+    const factsLine = income !== void 0 || expense !== void 0 || net !== void 0 ? `\u0645\u0646 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062D\u0627\u0644\u064A: \u0627\u0644\u062F\u062E\u0644 ${localMoney(income)}\u060C \u0627\u0644\u0645\u0635\u0631\u0648\u0641 ${localMoney(expense)}\u060C \u0648\u0627\u0644\u0635\u0627\u0641\u064A ${localMoney(net)}.` : "";
+    return [
+      `\u062C\u0647\u0632\u062A \u0644\u0643 \u0645\u0633\u0648\u062F\u0629 \u0647\u062F\u0641: ${payload.title ?? action.summary}.`,
+      payload.targetAmount ? `\u0627\u0644\u0645\u0628\u0644\u063A \u0627\u0644\u0645\u0633\u062A\u0647\u062F\u0641 ${localMoney(payload.targetAmount)}.` : "",
+      payload.targetDate ? `\u0627\u0644\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u0633\u062A\u0647\u062F\u0641 ${payload.targetDate}.` : "",
+      factsLine,
+      "\u0644\u0633\u0647 \u0645\u0627 \u0646\u0641\u0630\u062A\u0634 \u062D\u0627\u062C\u0629. \u0631\u0627\u062C\u0639 \u0627\u0644\u062A\u0641\u0627\u0635\u064A\u0644 \u0648\u0627\u0636\u063A\u0637 \u062A\u0623\u0643\u064A\u062F \u0644\u0648 \u0645\u0648\u0627\u0641\u0642\u060C \u0623\u0648 \u0625\u0644\u063A\u0627\u0621 \u0644\u0648 \u0639\u0627\u064A\u0632 \u0646\u0639\u062F\u0651\u0644 \u0627\u0644\u062E\u0637\u0629."
+    ].filter(Boolean).join("\n");
+  }
+  if (action.name === "expense.create") {
+    const payload = action.payload;
+    return [
+      `\u062C\u0647\u0632\u062A \u0645\u0633\u0648\u062F\u0629 \u062A\u0633\u062C\u064A\u0644 \u0645\u0635\u0631\u0648\u0641 \u0628\u0642\u064A\u0645\u0629 ${localMoney(payload.amount)}.`,
+      payload.category ? `\u0627\u0644\u0641\u0626\u0629 \u0627\u0644\u0645\u0642\u062A\u0631\u062D\u0629: ${localCategoryName(payload.category)}.` : "",
+      payload.placeHint ? `\u0627\u0644\u0645\u0643\u0627\u0646: ${payload.placeHint}.` : "",
+      payload.date ? `\u0627\u0644\u062A\u0627\u0631\u064A\u062E: ${payload.date}.` : "",
+      "\u0644\u0633\u0647 \u0645\u0627 \u0633\u062C\u0644\u062A\u0634 \u0627\u0644\u0645\u0635\u0631\u0648\u0641. \u0627\u0636\u063A\u0637 \u062A\u0623\u0643\u064A\u062F \u0623\u0648 \u0627\u0643\u062A\u0628 \u0645\u0648\u0627\u0641\u0642 \u0644\u0648 \u0627\u0644\u062A\u0641\u0627\u0635\u064A\u0644 \u0635\u062D\u060C \u0623\u0648 \u0625\u0644\u063A\u0627\u0621 \u0644\u0648 \u0639\u0627\u064A\u0632 \u062A\u0648\u0642\u0641\u0647\u0627."
+    ].filter(Boolean).join("\n");
+  }
+  return [
+    `\u062C\u0647\u0632\u062A \u0645\u0633\u0648\u062F\u0629 \u0639\u0645\u0644\u064A\u0629: ${action.summary}.`,
+    "\u0644\u0633\u0647 \u0645\u0627 \u0646\u0641\u0630\u062A\u0634 \u062D\u0627\u062C\u0629. \u0627\u0636\u063A\u0637 \u062A\u0623\u0643\u064A\u062F \u0644\u0648 \u0645\u0648\u0627\u0641\u0642\u060C \u0623\u0648 \u0625\u0644\u063A\u0627\u0621 \u0644\u0648 \u0639\u0627\u064A\u0632 \u062A\u0648\u0642\u0641\u0647\u0627."
+  ].join("\n");
+}
+function responseForActionDraftFailure(errorMessage) {
+  const freeLimit = errorMessage.match(/Free plan supports (\d+) active goals/i);
+  if (freeLimit) {
+    return [
+      `\u0645\u0627\u0642\u062F\u0631\u062A\u0634 \u0623\u062C\u0647\u0632 \u0645\u0633\u0648\u062F\u0629 \u0647\u062F\u0641 \u062C\u062F\u064A\u062F\u0629 \u0644\u0623\u0646 \u062E\u0637\u0629 Free \u062A\u0633\u0645\u062D \u0628\u0640 ${freeLimit[1]} \u0623\u0647\u062F\u0627\u0641 \u0646\u0634\u0637\u0629 \u0641\u0642\u0637.`,
+      "\u0644\u0633\u0647 \u0645\u0627 \u0646\u0641\u0630\u062A\u0634 \u062D\u0627\u062C\u0629. \u0645\u0645\u0643\u0646 \u062A\u0642\u0641\u0644 \u0623\u0648 \u062A\u0644\u063A\u064A \u0647\u062F\u0641 \u0642\u062F\u064A\u0645\u060C \u0623\u0648 \u062A\u0631\u0642\u064A \u0627\u0644\u062E\u0637\u0629\u060C \u0648\u0628\u0639\u062F\u0647\u0627 \u0623\u0642\u062F\u0631 \u0623\u062C\u0647\u0632 \u0644\u0643 \u0627\u0644\u0645\u0633\u0648\u062F\u0629 \u0644\u0644\u062A\u0623\u0643\u064A\u062F."
+    ].join("\n");
+  }
+  return [
+    `\u0645\u0627\u0642\u062F\u0631\u062A\u0634 \u0623\u062C\u0647\u0632 \u0645\u0633\u0648\u062F\u0629 \u0627\u0644\u062A\u0646\u0641\u064A\u0630: ${errorMessage}`,
+    "\u0644\u0633\u0647 \u0645\u0627 \u0646\u0641\u0630\u062A\u0634 \u062D\u0627\u062C\u0629. \u062C\u0631\u0651\u0628 \u062A\u0628\u0633\u0637 \u0627\u0644\u0637\u0644\u0628 \u0623\u0648 \u062A\u0639\u062F\u0644 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629."
+  ].join("\n");
+}
+function embeddingCallsFromStructured(structured) {
+  const debug31 = structured?.debug;
+  const explicit = Number(debug31?.embeddingCalls);
+  if (Number.isFinite(explicit) && explicit >= 0) return explicit;
+  const cacheHits = Array.isArray(debug31?.cacheHits) ? debug31.cacheHits : [];
+  return embeddingApiCallsFromCacheHits(cacheHits.map(String));
+}
+function dataNeedKinds(structured) {
+  return [...new Set((structured?.dataNeeds ?? []).map((need) => need.kind))];
+}
+function structuredFromToolResults(value) {
+  let parsed = value;
+  if (typeof parsed === "string" && parsed.trim()) {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      return void 0;
+    }
+  }
+  if (!parsed || typeof parsed !== "object") return void 0;
+  const record2 = parsed;
+  const structured = record2.structured;
+  if (!structured || typeof structured !== "object") return void 0;
+  const response = structured;
+  const debug31 = response.debug && typeof response.debug === "object" && !Array.isArray(response.debug) ? response.debug : {};
+  if (debug31.responseSchemaVersion) return response;
+  return {
+    ...response,
+    debug: {
+      ...debug31,
+      responseSchemaVersion: 0,
+      historicalStructuredResponse: true
+    }
+  };
+}
+function normalizeActionReply(value) {
+  return value.toLowerCase().normalize("NFKC").replace(/[أإآٱ]/g, "\u0627").replace(/ؤ/g, "\u0648").replace(/ئ/g, "\u064A").replace(/ى/g, "\u064A").replace(/ة/g, "\u0647").replace(/[؟?،,.!]/g, " ").replace(/\s+/g, " ").trim();
+}
+function actionReplyKind(message) {
+  const text2 = normalizeActionReply(message);
+  if (!text2 || text2.length > 80) return null;
+  if (/\d|[٠-٩۰-۹]/.test(text2)) return null;
+  if (/(سجل|احفظ|اضف|ضيف|اشتريت|دفعت|صرفت|مصروف|هدف|ميزانيه|محفظه|كارت|فيزا)/i.test(text2)) {
+    return null;
+  }
+  const tokens = new Set(text2.split(/\s+/).filter(Boolean));
+  const exactConfirm = /* @__PURE__ */ new Set(["\u0645\u0648\u0627\u0641\u0642", "\u0627\u0643\u062F", "\u0623\u0643\u062F", "\u0627\u0648\u0643", "\u062A\u0645\u0627\u0645", "yes", "confirm"]);
+  const exactCancel = /* @__PURE__ */ new Set(["\u0627\u0644\u063A", "\u0627\u0644\u063A\u064A", "\u0625\u0644\u063A\u0627\u0621", "\u0627\u0644\u063A\u0627\u0621", "cancel", "\u0648\u0642\u0641", "\u0628\u0644\u0627\u0634", "\u0644\u0627"]);
+  if (text2 === "\u0645\u0634 \u0645\u0648\u0627\u0641\u0642" || text2 === "\u0644\u0627 \u0645\u0634 \u0645\u0648\u0627\u0641\u0642" || text2 === "\u0644\u0627 \u0646\u0641\u0630" || text2 === "\u0644\u0627 \u062A\u0646\u0641\u0630") {
+    return "cancel";
+  }
+  if ([...exactCancel].some((item) => text2 === normalizeActionReply(item))) return "cancel";
+  if ([...exactConfirm].some((item) => text2 === normalizeActionReply(item))) return "confirm";
+  if (tokens.has("\u062A\u0645\u0627\u0645") && (tokens.has("\u0646\u0641\u0630") || tokens.has("\u0646\u0641\u0630\u0647\u0627")) || text2 === "\u0646\u0641\u0630\u0647\u0627" || text2 === "\u0627\u0639\u0645\u0644\u0647\u0627") {
+    return "confirm";
+  }
+  return null;
+}
+async function findLatestPendingActionId(userId, userType, conversationId) {
+  const rows = await db.select({
+    id: aiPendingActions.id,
+    conversationId: aiPendingActions.conversationId
+  }).from(aiPendingActions).where(
+    and(
+      eq(aiPendingActions.userId, userId),
+      eq(aiPendingActions.userType, userType),
+      eq(aiPendingActions.status, "pending_confirmation")
+    )
+  ).orderBy(desc(aiPendingActions.createdAt)).limit(10);
+  const sameConversation = rows.find((row) => Number(row.conversationId) === conversationId);
+  return Number(sameConversation?.id) || void 0;
+}
+async function resolveTextActionReply(ctx, message, conversationId) {
+  const kind = actionReplyKind(message);
+  if (!kind) return null;
+  const actionId = await findLatestPendingActionId(ctx.userId, ctx.userType, conversationId);
+  if (!actionId) return null;
+  const result = kind === "confirm" ? await confirmAction({ ...ctx, conversationId }, actionId) : await cancelAction({ ...ctx, conversationId }, actionId);
+  const artifacts = result.artifacts ?? (result.artifact ? [result.artifact] : []);
+  const response = result.message;
+  return {
+    response,
+    structured: minimalStructuredResponse(response, artifacts, []),
+    tokensUsed: Math.ceil((message.length + response.length) / 3.5),
+    model: "server-action-runtime",
+    toolsUsed: [`action.${kind}`]
+  };
+}
 var chatRouter = router({
   /**
    * Send a message to the AI chatbot and get a response.
@@ -362514,12 +371816,31 @@ var chatRouter = router({
   sendMessage: aiProcedure.input(
     external_exports.object({
       message: external_exports.string().min(1).max(2e3),
-      conversationId: external_exports.number().optional()
+      conversationId: external_exports.number().optional(),
+      devQaBypassDailyLimit: external_exports.boolean().optional()
     })
   ).mutation(async ({ ctx, input }) => {
     const { user } = ctx;
     const plan = user.plan || "free";
+    const startedAt = Date.now();
     const config3 = await loadChatConfig();
+    const routedIntent = routeIntent(input.message);
+    const chatPolicy = resolveAICostPolicy({
+      channel: "chat",
+      plan,
+      intentKind: routedIntent.kind,
+      role: user.role,
+      settings: config3.settings
+    });
+    const rollout = resolveAIRollout({
+      userId: user.id,
+      role: user.role,
+      plan,
+      settings: config3.settings,
+      flagPrefix: "ai_kernel"
+    });
+    const aiKernelActive = config3.aiKernelEnabled && rollout.enabled;
+    const legacyFallbackAllowed = !aiKernelActive || config3.settings.ai_kernel_legacy_fallback_enabled === "true";
     if (!config3.enabled[plan]) {
       throw new TRPCError({
         code: "FORBIDDEN",
@@ -362534,7 +371855,8 @@ var chatRouter = router({
     }
     const todayCount = await getTodayMessageCount(user.id, user.type);
     const dailyLimit = config3.dailyLimits[plan] || 20;
-    if (todayCount >= dailyLimit) {
+    const devQaBypassDailyLimit = input.devQaBypassDailyLimit === true && process.env.NODE_ENV !== "production";
+    if (!devQaBypassDailyLimit && todayCount >= dailyLimit) {
       throw new TRPCError({
         code: "TOO_MANY_REQUESTS",
         message: `\u0648\u0635\u0644\u062A \u0627\u0644\u062D\u062F \u0627\u0644\u064A\u0648\u0645\u064A (${dailyLimit} \u0631\u0633\u0627\u0644\u0629). \u062C\u0631\u0628 \u0628\u0643\u0631\u0647 \u0623\u0648 \u062A\u0631\u0642\u064A \u062E\u0637\u062A\u0643! \u{1F48E}`
@@ -362550,19 +371872,130 @@ var chatRouter = router({
         totalTokens: 0,
         lastMessageAt: /* @__PURE__ */ new Date()
       });
-      conversationId = inserted.insertId;
+      conversationId = Number(inserted?.insertId);
+      if (!Number.isInteger(conversationId) || conversationId <= 0) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "\u062A\u0639\u0630\u0631 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0645\u062D\u0627\u062F\u062B\u0629. \u062C\u0631\u0651\u0628 \u062A\u0627\u0646\u064A."
+        });
+      }
     }
-    const existingMessages = await db.select({ role: chatMessages.role, content: chatMessages.content }).from(chatMessages).where(eq(chatMessages.conversationId, conversationId)).orderBy(chatMessages.createdAt);
-    const conversationHistory = existingMessages.filter((m2) => m2.role === "user" || m2.role === "assistant").map((m2) => ({ role: m2.role, content: m2.content }));
+    const activeConversationId = conversationId;
+    const existingMessages = await db.select({ role: chatMessages.role, content: chatMessages.content }).from(chatMessages).where(eq(chatMessages.conversationId, activeConversationId)).orderBy(chatMessages.createdAt);
+    const conversationHistory = existingMessages.filter((m2) => m2.role === "user" || m2.role === "assistant").map((m2) => ({
+      role: m2.role,
+      content: m2.content
+    }));
     await db.insert(chatMessages).values({
-      conversationId,
+      conversationId: activeConversationId,
       role: "user",
       content: input.message,
       tokensUsed: 0,
       createdAt: /* @__PURE__ */ new Date()
     });
-    const maxTokens = config3.maxTokens[plan] || 1e3;
-    const result = await processAIChatMessage({
+    const kernelRequest = {
+      channel: "chat",
+      userId: user.id,
+      userType: user.type,
+      userPlan: plan,
+      message: input.message,
+      conversationId: activeConversationId,
+      conversationHistory: conversationHistory.slice(-config3.maxHistory),
+      metadata: {
+        legacyPath: legacyFallbackAllowed ? "processAIChatMessage" : "disabled",
+        legacyModel: config3.model,
+        legacyFallbackAllowed,
+        deprecatedPrimaryFlag: config3.aiKernelPrimaryEnabled,
+        rollout,
+        devQaBypassDailyLimit
+      }
+    };
+    const textActionResult = aiKernelActive ? await resolveTextActionReply(
+      {
+        userId: user.id,
+        userType: user.type,
+        userPlan: plan
+      },
+      input.message,
+      activeConversationId
+    ).catch((error48) => {
+      const message = error48 instanceof Error ? error48.message : String(error48);
+      console.warn("[AI Action Runtime] text confirmation failed", message);
+      return null;
+    }) : null;
+    if (textActionResult) {
+      await db.insert(chatMessages).values({
+        conversationId: activeConversationId,
+        role: "assistant",
+        content: textActionResult.response,
+        tokensUsed: textActionResult.tokensUsed,
+        model: textActionResult.model,
+        toolCalls: textActionResult.toolsUsed,
+        toolResults: { structured: textActionResult.structured },
+        createdAt: /* @__PURE__ */ new Date()
+      });
+      await db.update(chatConversations).set({
+        messageCount: sql`message_count + 2`,
+        totalTokens: sql`total_tokens + ${textActionResult.tokensUsed}`,
+        lastMessageAt: /* @__PURE__ */ new Date(),
+        title: conversationHistory.length === 0 ? input.message.slice(0, 100) : void 0
+      }).where(eq(chatConversations.id, activeConversationId));
+      if (user.type === "oauth") {
+        await db.update(users).set({ aiTokensUsed: sql`ai_tokens_used + ${textActionResult.tokensUsed}` }).where(eq(users.id, user.id));
+      } else {
+        await db.update(localUsers).set({ aiTokensUsed: sql`ai_tokens_used + ${textActionResult.tokensUsed}` }).where(eq(localUsers.id, user.id));
+      }
+      void recordAICostMetric({
+        userId: user.id,
+        userType: user.type,
+        channel: "chat",
+        plan,
+        intentKind: "action_request",
+        model: textActionResult.model,
+        inputTokens: Math.ceil(input.message.length / 3.5),
+        outputTokens: Math.ceil(textActionResult.response.length / 3.5),
+        totalTokens: textActionResult.tokensUsed,
+        llmCalls: 0,
+        toolCalls: 1,
+        latencyMs: Date.now() - startedAt,
+        metadata: {
+          conversationId: activeConversationId,
+          kernelMode: "action_text_confirmation",
+          rollout
+        }
+      });
+      return {
+        response: textActionResult.response,
+        conversationId: activeConversationId,
+        tokensUsed: textActionResult.tokensUsed,
+        model: textActionResult.model,
+        toolsUsed: textActionResult.toolsUsed,
+        structured: textActionResult.structured
+      };
+    }
+    const kernelPrimaryCandidate = aiKernelActive ? await runAIKernelActive(kernelRequest, {
+      apiKey: config3.apiKey,
+      baseUrl: config3.baseUrl,
+      model: config3.model,
+      maxTokens: chatPolicy.maxOutputTokens
+    }).catch((error48) => {
+      const message = error48 instanceof Error ? error48.message : String(error48);
+      console.warn("[AI Kernel Active] failed", message);
+      return void 0;
+    }) : void 0;
+    const kernelPrimary = kernelPrimaryCandidate;
+    const kernelShadowPromise = legacyFallbackAllowed && config3.aiKernelEnabled && !kernelPrimary ? runAIKernelShadow(kernelRequest).catch((error48) => {
+      const message = error48 instanceof Error ? error48.message : String(error48);
+      console.warn("[AI Kernel Shadow] failed", message);
+      return void 0;
+    }) : void 0;
+    const maxTokens = Math.min(config3.maxTokens[plan] || 1e3, chatPolicy.maxOutputTokens);
+    let result = kernelPrimary ? {
+      response: kernelPrimary.content,
+      tokensUsed: kernelPrimary.tokensUsed ?? Math.ceil(kernelPrimary.content.length / 3.5),
+      model: kernelPrimary.model ?? config3.model,
+      toolsUsed: dataNeedKinds(kernelPrimary)
+    } : legacyFallbackAllowed ? await processAIChatMessage({
       userId: user.id,
       userType: user.type,
       userPlan: plan,
@@ -362573,24 +372006,148 @@ var chatRouter = router({
         baseUrl: config3.baseUrl,
         model: config3.model,
         maxTokens,
-        maxHistory: config3.maxHistory
+        maxHistory: config3.maxHistory,
+        maxToolRounds: chatPolicy.maxToolRounds
       }
-    });
+    }) : {
+      response: "\u0645\u0634 \u0642\u0627\u062F\u0631 \u0623\u0648\u0635\u0644 \u0644\u0639\u0642\u0644 \u0627\u0644\u0634\u0627\u062A \u0627\u0644\u0645\u0631\u0643\u0632\u064A \u062F\u0644\u0648\u0642\u062A\u064A. \u062C\u0631\u0651\u0628 \u062A\u0627\u0646\u064A \u0628\u0639\u062F \u0644\u062D\u0638\u0629.",
+      tokensUsed: Math.ceil(input.message.length / 3.5) + 18,
+      model: "ai-kernel-unavailable",
+      toolsUsed: []
+    };
+    const shadow = kernelPrimary ?? (kernelShadowPromise ? await kernelShadowPromise : void 0);
+    if (shadow) {
+      console.info(
+        "[AI Kernel Comparison]",
+        JSON.stringify({
+          traceId: shadow.traceId,
+          conversationId: activeConversationId,
+          responseModel: result.model,
+          responseTokensUsed: result.tokensUsed,
+          responseToolsUsed: result.toolsUsed,
+          kernelMode: shadow.debug?.mode ?? "unknown",
+          shadowIntent: shadow.intent?.kind ?? "unknown",
+          shadowDataNeeds: shadow.dataNeeds?.map((need) => need.kind) ?? [],
+          shadowResolvedFacts: shadow.facts?.length ?? 0,
+          shadowArtifacts: shadow.artifacts?.length ?? 0,
+          shadowEstimatedInputTokens: shadow.debug?.estimatedInputTokens,
+          shadowResolverErrors: shadow.debug?.resolverErrors
+        })
+      );
+    }
+    let actionDraftError = null;
+    const actionDraft = aiKernelActive ? await maybeCreateActionDraftFromMessage(
+      {
+        userId: user.id,
+        userType: user.type,
+        userPlan: plan,
+        conversationId: activeConversationId
+      },
+      input.message
+    ).catch((error48) => {
+      const message = error48 instanceof Error ? error48.message : String(error48);
+      actionDraftError = message;
+      console.warn("[AI Action Runtime] draft failed", message);
+      return null;
+    }) : null;
+    const actionAwareResponse = actionDraftError ? responseForActionDraftFailure(actionDraftError) : responseForActionDraft(
+      result.response,
+      actionDraft?.action,
+      shadow?.facts
+    );
+    if (actionAwareResponse !== result.response) {
+      result = {
+        ...result,
+        response: actionAwareResponse,
+        tokensUsed: result.tokensUsed + Math.ceil(Math.max(0, actionAwareResponse.length - result.response.length) / 3.5)
+      };
+    }
+    const mergedActions = mergeActionArtifacts(shadow?.artifacts ?? [], actionDraft);
+    const structured = shadow ? {
+      ...shadow,
+      content: result.response,
+      artifacts: mergedActions.artifacts,
+      actions: [...shadow.actions ?? [], ...mergedActions.actions]
+    } : actionDraft ? minimalStructuredResponse(result.response, mergedActions.artifacts, mergedActions.actions) : void 0;
     await db.insert(chatMessages).values({
-      conversationId,
+      conversationId: activeConversationId,
       role: "assistant",
       content: result.response,
       tokensUsed: result.tokensUsed,
       model: result.model,
       toolCalls: result.toolsUsed.length > 0 ? result.toolsUsed : null,
+      toolResults: structured ? { structured } : null,
       createdAt: /* @__PURE__ */ new Date()
+    });
+    if (aiKernelActive) {
+      const memoryMessages = [
+        ...conversationHistory.map((message) => ({
+          role: message.role,
+          content: message.content
+        })),
+        { role: "user", content: input.message },
+        { role: "assistant", content: result.response }
+      ];
+      const memoryInput = {
+        userId: user.id,
+        userType: user.type,
+        conversationId: activeConversationId,
+        source: "chat",
+        messages: memoryMessages
+      };
+      const memoryWrite = writeConversationMemory(memoryInput).catch((error48) => {
+        const message = error48 instanceof Error ? error48.message : String(error48);
+        console.warn("[AI Memory] write failed", message);
+      });
+      if (hasSemanticMemoryCandidate(memoryInput.messages)) {
+        await memoryWrite;
+      } else {
+        void memoryWrite;
+      }
+    }
+    const estimatedInputTokens = typeof shadow?.debug?.estimatedInputTokens === "number" ? shadow.debug.estimatedInputTokens : Math.ceil(input.message.length / 3.5);
+    const measuredLlmCalls = kernelPrimary ? Number(kernelPrimary.debug?.llmCalls ?? 0) : 1 + result.toolsUsed.length;
+    const measuredToolCalls = result.toolsUsed.length;
+    const measuredEmbeddingCalls = embeddingCallsFromStructured(structured);
+    const numericAccuracy = structured?.facts?.length ? validateNumbersAgainstFacts(result.response, structured.facts) : void 0;
+    void recordAICostMetric({
+      userId: user.id,
+      userType: user.type,
+      channel: "chat",
+      plan,
+      intentKind: routedIntent.kind,
+      model: result.model,
+      inputTokens: estimatedInputTokens,
+      outputTokens: Math.max(0, result.tokensUsed - estimatedInputTokens),
+      totalTokens: result.tokensUsed,
+      embeddingCalls: measuredEmbeddingCalls,
+      llmCalls: measuredLlmCalls,
+      toolCalls: measuredToolCalls,
+      latencyMs: Date.now() - startedAt,
+      metadata: {
+        conversationId: activeConversationId,
+        traceId: structured?.traceId,
+        dataNeeds: dataNeedKinds(structured),
+        cacheHits: structured?.debug?.cacheHits ?? [],
+        resolvedFacts: structured?.facts?.length ?? 0,
+        maxOutputTokens: chatPolicy.maxOutputTokens,
+        maxToolRounds: chatPolicy.maxToolRounds,
+        kernelMode: kernelPrimary ? "active" : shadow ? "legacy_with_shadow" : legacyFallbackAllowed ? "legacy_explicit" : "kernel_unavailable",
+        legacyFallbackAllowed,
+        actionDraftError,
+        rollout,
+        numericAccuracy: numericAccuracy ? {
+          accuracy: numericAccuracy.accuracy,
+          missing: numericAccuracy.missing
+        } : null
+      }
     });
     await db.update(chatConversations).set({
       messageCount: sql`message_count + 2`,
       totalTokens: sql`total_tokens + ${result.tokensUsed}`,
       lastMessageAt: /* @__PURE__ */ new Date(),
       title: conversationHistory.length === 0 ? input.message.slice(0, 100) : void 0
-    }).where(eq(chatConversations.id, conversationId));
+    }).where(eq(chatConversations.id, activeConversationId));
     const tokensToAdd = result.tokensUsed;
     if (user.type === "oauth") {
       await db.update(users).set({ aiTokensUsed: sql`ai_tokens_used + ${tokensToAdd}` }).where(eq(users.id, user.id));
@@ -362599,11 +372156,34 @@ var chatRouter = router({
     }
     return {
       response: result.response,
-      conversationId,
+      conversationId: activeConversationId,
       tokensUsed: result.tokensUsed,
       model: result.model,
-      toolsUsed: result.toolsUsed
+      toolsUsed: result.toolsUsed,
+      structured
     };
+  }),
+  confirmAction: aiProcedure.input(external_exports.object({ actionId: external_exports.number().int().positive(), conversationId: external_exports.number().int().positive().optional() })).mutation(async ({ ctx, input }) => {
+    return confirmAction(
+      {
+        userId: ctx.user.id,
+        userType: ctx.user.type,
+        userPlan: ctx.user.plan || "free",
+        conversationId: input.conversationId
+      },
+      input.actionId
+    );
+  }),
+  cancelAction: aiProcedure.input(external_exports.object({ actionId: external_exports.number().int().positive(), conversationId: external_exports.number().int().positive().optional() })).mutation(async ({ ctx, input }) => {
+    return cancelAction(
+      {
+        userId: ctx.user.id,
+        userType: ctx.user.type,
+        userPlan: ctx.user.plan || "free",
+        conversationId: input.conversationId
+      },
+      input.actionId
+    );
   }),
   /**
    * Get user's conversation list.
@@ -362651,7 +372231,8 @@ var chatRouter = router({
         id: m2.id,
         role: m2.role,
         content: m2.content,
-        createdAt: m2.createdAt
+        createdAt: m2.createdAt,
+        structured: structuredFromToolResults(m2.toolResults)
       }))
     };
   }),
