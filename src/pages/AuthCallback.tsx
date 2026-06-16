@@ -18,6 +18,9 @@ export default function AuthCallback() {
     }
 
     if (token) {
+      if (import.meta.env.DEV && searchParams.get("local") === "1") {
+        localStorage.setItem("local_auth_token", token);
+      }
       // Token is already set in cookie by the server
       toast.success("تم تسجيل الدخول بنجاح!");
       navigate("/dashboard");

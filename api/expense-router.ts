@@ -16,17 +16,14 @@ import { eq, and, gte, lte, desc, sql, lt } from "drizzle-orm";
 import Decimal from "decimal.js";
 import { ExpenseInputLimits } from "../contracts/constants";
 import { invalidateUserMemory } from "./lib/muscle-memory";
-import { withCache, getRedisClient } from "./lib/redis-client";
+import { deleteCacheByPattern, withCache } from "./lib/redis-client";
 import { checkUserBudgetExceeded } from "./notification-engine";
+import { invalidateFinanceUserCache } from "./services/finance-semantic-layer";
 
 async function invalidateExpenseCache(userId: number | string, userType: string) {
   try {
-    const client = await getRedisClient();
-    if (!client) return;
-    const keys = await client.keys(`expense_stats:${userId}:${userType}:*`);
-    if (keys.length > 0) {
-      await client.del(keys);
-    }
+    await deleteCacheByPattern(`expense_stats:${userId}:${userType}:*`);
+    await invalidateFinanceUserCache(userId, userType);
   } catch (err) {
     console.warn("Failed to invalidate expense cache", err);
   }
@@ -63,6 +60,23 @@ function safeDayDiff(start: Date, end: Date): number {
     (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
   );
   return Number.isFinite(diff) && diff > 0 ? diff : 1;
+}
+
+const statsCategoryDisplayNames: Record<string, string> = {
+  food: "أكل وشرب",
+  transport: "مواصلات",
+  shopping: "تسوق",
+  health: "صحة",
+  bills: "فواتير",
+  income: "دخل",
+  saving: "ادخار",
+  uncategorized: "غير مصنف",
+};
+
+function normalizeStatsCategory(value: unknown): string {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "غير مصنف";
+  return statsCategoryDisplayNames[raw.toLowerCase()] ?? raw;
 }
 
 export const expenseRouter = router({
@@ -810,10 +824,11 @@ export const expenseRouter = router({
         .filter((i) => i.type === "expense")
         .forEach((item) => {
           const amt = Number(item.amount);
-          if (!categoryMap[item.category])
-            categoryMap[item.category] = { value: 0, count: 0 };
-          categoryMap[item.category].value += amt;
-          categoryMap[item.category].count += 1;
+          const categoryName = normalizeStatsCategory(item.category);
+          if (!categoryMap[categoryName])
+            categoryMap[categoryName] = { value: 0, count: 0 };
+          categoryMap[categoryName].value += amt;
+          categoryMap[categoryName].count += 1;
 
           if (item.subCategory && item.subCategory !== "عام") {
             if (!subCategoryMap[item.subCategory])
@@ -858,7 +873,7 @@ export const expenseRouter = router({
         count: main.count,
         children: subCategoryBreakdown.filter((s) =>
           items.some(
-            (it) => it.category === main.name && it.subCategory === s.name,
+            (it) => normalizeStatsCategory(it.category) === main.name && it.subCategory === s.name,
           ),
         ),
       }));
@@ -972,8 +987,9 @@ export const expenseRouter = router({
       previousItems
         .filter((i) => i.type === "expense")
         .forEach((item) => {
-          previousCategoryMap[item.category] =
-            (previousCategoryMap[item.category] || 0) + Number(item.amount);
+          const categoryName = normalizeStatsCategory(item.category);
+          previousCategoryMap[categoryName] =
+            (previousCategoryMap[categoryName] || 0) + Number(item.amount);
           if (item.subCategory)
             previousSubCategoryMap[item.subCategory] =
               (previousSubCategoryMap[item.subCategory] || 0) +

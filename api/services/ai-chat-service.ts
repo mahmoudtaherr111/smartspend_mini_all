@@ -9,10 +9,9 @@ import {
   callChatCompletionAPI,
   type ChatMessage,
 } from "../lib/deepseek-client";
+import { db } from "../queries/connection";
 import { TOOL_DEFINITIONS, executeTool } from "./ai-chat-tools";
 import { getSmartProfile } from "./user-profile-service";
-
-const MAX_TOOL_ROUNDS = 2;
 
 interface ChatInput {
   userId: number;
@@ -26,6 +25,7 @@ interface ChatInput {
     model: string;
     maxTokens: number;
     maxHistory: number;
+    maxToolRounds?: number;
   };
 }
 
@@ -34,6 +34,89 @@ interface ChatOutput {
   tokensUsed: number;
   model: string;
   toolsUsed: string[];
+}
+
+function profileString(value: unknown, fallback = ""): string {
+  return typeof value === "string" ? value : fallback;
+}
+
+function profileNumber(value: unknown, fallback: number): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function looksLikeToolPreludeOnly(text: string): boolean {
+  const normalized = text.trim();
+  if (!normalized) return true;
+  return (
+    normalized.length < 220 &&
+    /(خليني اشوف|خليني أشوف|اشوف تفاصيل|أشوف تفاصيل|هراجع|هشيك)/i.test(
+      normalized,
+    )
+  );
+}
+
+function buildGoalFallback(toolResult: string | undefined): string | undefined {
+  if (!toolResult) return undefined;
+
+  try {
+    const parsed = JSON.parse(toolResult) as {
+      result?: { goals?: Array<{ title?: string; target_amount?: number; targetAmount?: number; status?: string }> };
+    };
+    const goals = parsed.result?.goals ?? [];
+    if (Array.isArray(goals) && goals.length > 0) {
+      const normalizedGoals = goals
+        .map((goal) => ({
+          title: profileString(goal.title, ""),
+          targetAmount: profileNumber(goal.target_amount ?? goal.targetAmount, 0),
+          status: profileString(goal.status, ""),
+        }))
+        .filter((goal) => goal.title || goal.targetAmount > 0);
+      const preferred =
+        normalizedGoals.find((goal) => /عربي|سيار|car/i.test(goal.title) && goal.targetAmount > 0) ??
+        normalizedGoals.find((goal) => goal.targetAmount > 0) ??
+        normalizedGoals[0];
+      if (preferred) {
+        const amountText =
+          preferred.targetAmount > 0
+            ? `${preferred.targetAmount.toLocaleString("ar-EG")} جنيه`
+            : "مبلغ غير محدد";
+        return `أيوه، حسب أهدافك المسجلة هدف العربية هو ${amountText}. الهدف ظاهر عندك باسم "${preferred.title}" وحالته ${preferred.status || "نشط"}.`;
+      }
+    }
+  } catch {
+    // Older tool results may be compact text; fall through to the legacy parser below.
+  }
+
+  const rows = toolResult
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.includes("|") && !line.startsWith("title |"));
+
+  const parsed = rows
+    .map((line) => {
+      const [title = "", amount = "", status = ""] = line
+        .split("|")
+        .map((part) => part.trim());
+      const targetAmount = Number(amount);
+      return {
+        title,
+        targetAmount: Number.isFinite(targetAmount) ? targetAmount : 0,
+        status,
+      };
+    })
+    .filter((goal) => goal.title || goal.targetAmount > 0);
+
+  if (parsed.length === 0) return undefined;
+
+  const preferred =
+    parsed.find((goal) => /عربي|سيار|car/i.test(goal.title) && goal.targetAmount > 0) ??
+    parsed.find((goal) => goal.targetAmount > 0) ??
+    parsed[0];
+
+  const amountText =
+    preferred.targetAmount > 0 ? `${preferred.targetAmount.toLocaleString("ar-EG")} جنيه` : "مبلغ غير محدد";
+  return `أيوه، حسب أهدافك المسجلة هدف العربية هو ${amountText}. الهدف ظاهر عندك باسم "${preferred.title}" وحالته ${preferred.status || "نشط"}.`;
 }
 
 /**
@@ -53,9 +136,9 @@ async function buildSystemPrompt(
 
   try {
     const profile = await getSmartProfile(userId, userType);
-    userName = profile.basicInfo.name || userName;
-    profession = profile.basicInfo.profession || "";
-    salaryDay = profile.financialInfo.salaryDay || 1;
+    userName = profileString(profile.basicInfo.name, userName);
+    profession = profileString(profile.basicInfo.profession);
+    salaryDay = profileNumber(profile.financialInfo.salaryDay, 1);
     goal =
       {
         organize_expenses: "تنظيم المصاريف",
@@ -110,12 +193,16 @@ ${createdAtAr ? `- تاريخ تسجيل المستخدم في التطبيق: $
 [قواعد الاستجابة الاحترافية]:
 1. تحدث كخبير مالي متمرس (مثل ChatGPT)، وقدم إجابات مفصلة، واضحة، وغنية بالمعلومات (لا تقتصر على الردود القصيرة).
 2. استخدم جداول Markdown (Markdown Tables) لتنسيق الأرقام والمقارنات بشكل جمالي ومقروء إذا كانت البيانات كثيرة.
-3. استدعِ الأدوات المناسبة بدقة: 
-   - إذا سأل عن فئة معينة (مثل الأكل)، استخدم أداة تدعم التصفية بالفئة (مثل analyze_finances).
+3. استدعِ الأدوات المناسبة بدقة:
+   - في الأسئلة المالية استخدم finance_query كخيار أول دائماً لأنها ترجع JSON facts صغير من Finance Semantic Layer.
+   - إذا سأل عن فئة معينة (مثل الأكل)، استخدم finance_query بنوع category_total ومع category مناسبة.
    - إذا سأل عن كيفية استخدام التطبيق، استخدم أداة get_app_guide.
-4. لا تخترع أرقاماً أبداً من خيالك، اعتمد 100% على الأدوات.
-5. قدم دائماً تحليلاً أو نصيحة مالية عميقة بعد سرد البيانات، ولا تكتفِ بسرد الأرقام فقط.
-6. تحدث باللهجة المصرية الراقية والودية.`;
+   - إذا طلب إنشاء هدف/ميزانية/محفظة أو تنفيذ عملية داخل التطبيق، اشرح إنك ستجهز العملية للمراجعة وأن التنفيذ النهائي يحتاج تأكيد المستخدم. لا تقل إنك لا تستطيع تنفيذها أو إن المستخدم لازم يعملها يدوياً إذا كان طلبه واضحاً.
+4. دليل التطبيق الناتج من get_app_guide هو المصدر الحاسم في أسئلة استخدام SmartSpend. لا تقل إن خاصية غير مدعومة إذا ذكرها الدليل.
+5. نتائج الأدوات تأتي في JSON envelope. اقرأ result/facts/artifacts فقط، ولا تخترع أرقاماً أبداً من خيالك.
+6. قدم دائماً تحليلاً أو نصيحة مالية عميقة بعد سرد البيانات، ولا تكتفِ بسرد الأرقام فقط.
+7. بعد استخدام أي أداة، لا ترد بجملة تمهيدية فقط مثل "خليني أشوف". لازم ترجع النتيجة النهائية من بيانات الأداة في نفس الرد.
+8. تحدث باللهجة المصرية الراقية والودية.`;
 
   return { prompt, salaryDay };
 }
@@ -150,6 +237,8 @@ export async function processAIChatMessage(
   // 3. Call DeepSeek with tools
   let totalTokens = 0;
   const toolsUsed: string[] = [];
+  const toolResults: Array<{ name: string; content: string }> = [];
+  const maxToolRounds = Math.max(0, Math.min(input.config.maxToolRounds ?? 1, 2));
 
   let response = await callChatCompletionAPI(config.baseUrl, config.apiKey, {
     model: config.model,
@@ -162,9 +251,9 @@ export async function processAIChatMessage(
 
   totalTokens += response.tokensUsed;
 
-  // 4. Tool calling loop (up to MAX_TOOL_ROUNDS)
+  // 4. Tool calling loop (policy-limited; default is one round)
   let round = 0;
-  while (response.toolCalls && round < MAX_TOOL_ROUNDS) {
+  while (response.toolCalls && round < maxToolRounds) {
     round++;
 
     // Add assistant message with tool calls
@@ -189,6 +278,7 @@ export async function processAIChatMessage(
       console.log(`[AI Chat] Executing tool: ${toolName}(${JSON.stringify(args)})`);
 
       const result = await executeTool(toolName, args, { userId, userType, salaryDay });
+      toolResults.push({ name: toolName, content: result });
 
       // Add tool result
       messages.push({
@@ -211,8 +301,13 @@ export async function processAIChatMessage(
     totalTokens += response.tokensUsed;
   }
 
+  const goalFallback =
+    toolsUsed.includes("get_financial_goals") && looksLikeToolPreludeOnly(response.text || "")
+      ? buildGoalFallback(toolResults.find((item) => item.name === "get_financial_goals")?.content)
+      : undefined;
+
   return {
-    response: response.text || "عذراً، مش قادر أرد دلوقتي. جرب تاني.",
+    response: goalFallback || response.text || "عذراً، مش قادر أرد دلوقتي. جرب تاني.",
     tokensUsed: totalTokens,
     model: response.model,
     toolsUsed: [...new Set(toolsUsed)],

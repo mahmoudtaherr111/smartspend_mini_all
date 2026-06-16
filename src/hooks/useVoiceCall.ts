@@ -2,6 +2,34 @@ import { useState, useEffect, useRef, useCallback } from "react";
 
 export type CallStatus = "idle" | "connecting" | "connected" | "warning" | "error" | "ended";
 
+export interface VoiceTraceEvent {
+  type: "ready" | "tool_execution" | "tool_result";
+  at: string;
+  toolName?: string;
+  modelName?: string;
+  voiceSessionId?: string;
+  ok?: boolean;
+  dataNeeds?: string[];
+  cacheHits?: string[];
+  retrievalPolicy?: {
+    embedding?: string;
+    reason?: string;
+    vectorRows?: number;
+    dimensions?: number;
+  };
+  cacheRuntime?: {
+    backend?: string;
+    redisConfigured?: boolean;
+    redisConnected?: boolean;
+    memoryEntries?: number;
+  };
+  embeddingCalls?: number;
+  embeddingApiStatus?: string;
+  factCount?: number;
+  artifactCount?: number;
+  error?: string;
+}
+
 // Inline AudioWorklet processor as a Blob URL to avoid needing a separate file
 const WORKLET_CODE = `
 class PCMProcessor extends AudioWorkletProcessor {
@@ -59,6 +87,35 @@ class PCMProcessor extends AudioWorkletProcessor {
 registerProcessor('pcm-processor', PCMProcessor);
 `;
 
+function normalizeVoiceError(error: unknown): string {
+  const name = typeof error === "object" && error && "name" in error ? String((error as { name?: unknown }).name) : "";
+  const message =
+    typeof error === "object" && error && "message" in error
+      ? String((error as { message?: unknown }).message)
+      : String(error ?? "");
+  const combined = `${name} ${message}`.toLowerCase();
+
+  if (
+    name === "NotAllowedError" ||
+    name === "PermissionDeniedError" ||
+    combined.includes("permission denied") ||
+    combined.includes("not allowed")
+  ) {
+    return "محتاج تفتح إذن الميكروفون من المتصفح عشان نبدأ المكالمة الصوتية.";
+  }
+  if (name === "NotFoundError" || combined.includes("requested device not found")) {
+    return "مش لاقي ميكروفون متصل بالجهاز. وصل ميكروفون أو اختار جهاز إدخال صوت.";
+  }
+  if (name === "NotReadableError" || combined.includes("could not start audio source")) {
+    return "الميكروفون مشغول في تطبيق تاني أو المتصفح مش قادر يفتحه حاليا.";
+  }
+  if (combined.includes("websocket") || combined.includes("server") || combined.includes("خادم")) {
+    return "فشل الاتصال بخادم الصوت. جرّب تاني بعد لحظات.";
+  }
+
+  return "حصل خطأ أثناء بدء المكالمة. راجع إذن الميكروفون وجرب مرة تانية.";
+}
+
 export function useVoiceCall() {
   const [status, setStatus] = useState<CallStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -66,6 +123,8 @@ export function useVoiceCall() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [aiText, setAiText] = useState<string>("");
   const [activeModel, setActiveModel] = useState<string>("");
+  const [voiceSessionId, setVoiceSessionId] = useState<string>("");
+  const [voiceTrace, setVoiceTrace] = useState<VoiceTraceEvent[]>([]);
 
   const wsRef = useRef<WebSocket | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -158,6 +217,8 @@ export function useVoiceCall() {
     stopPlayback();
     setAiText("");
     setActiveModel("");
+    setVoiceSessionId("");
+    setVoiceTrace([]);
     userHasSpokenRef.current = false;
 
     if (timerIntervalRef.current) {
@@ -233,6 +294,8 @@ export function useVoiceCall() {
     setElapsedSeconds(0);
     setAiText("");
     setActiveModel("");
+    setVoiceSessionId("");
+    setVoiceTrace([]);
     userHasSpokenRef.current = false;
     nextPlayTimeRef.current = 0;
 
@@ -342,11 +405,21 @@ export function useVoiceCall() {
             if (msg.error) {
               console.error("[Voice Call] Server error:", msg.error);
               setStatus("error");
-              setErrorMessage(msg.error);
+              setErrorMessage(normalizeVoiceError(msg.error));
               cleanupResources();
             } else if (msg.status === "ready") {
               setStatus("connected");
               if (msg.modelName) setActiveModel(msg.modelName);
+              if (msg.voiceSessionId) setVoiceSessionId(String(msg.voiceSessionId));
+              setVoiceTrace((prev) => [
+                ...prev.slice(-10),
+                {
+                  type: "ready",
+                  at: new Date().toISOString(),
+                  modelName: msg.modelName ? String(msg.modelName) : undefined,
+                  voiceSessionId: msg.voiceSessionId ? String(msg.voiceSessionId) : undefined,
+                },
+              ]);
               if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
               timerIntervalRef.current = setInterval(() => {
                 setElapsedSeconds((p) => p + 1);
@@ -361,6 +434,40 @@ export function useVoiceCall() {
               setAiText("");
             } else if (msg.type === "tool_execution") {
               setAiText(msg.message);
+              setVoiceTrace((prev) => [
+                ...prev.slice(-10),
+                {
+                  type: "tool_execution",
+                  at: new Date().toISOString(),
+                  toolName: msg.toolName ? String(msg.toolName) : undefined,
+                },
+              ]);
+            } else if (msg.type === "voice_tool_result") {
+              const payload = msg.payload && typeof msg.payload === "object"
+                ? msg.payload as Record<string, unknown>
+                : {};
+              setVoiceTrace((prev) => [
+                ...prev.slice(-10),
+                {
+                  type: "tool_result",
+                  at: new Date().toISOString(),
+                  toolName: typeof payload.toolName === "string" ? payload.toolName : undefined,
+                  ok: payload.ok === true,
+                  dataNeeds: Array.isArray(payload.dataNeeds) ? payload.dataNeeds.map(String) : [],
+                  cacheHits: Array.isArray(payload.cacheHits) ? payload.cacheHits.map(String) : [],
+                  retrievalPolicy: payload.retrievalPolicy && typeof payload.retrievalPolicy === "object"
+                    ? payload.retrievalPolicy as VoiceTraceEvent["retrievalPolicy"]
+                    : undefined,
+                  cacheRuntime: payload.cacheRuntime && typeof payload.cacheRuntime === "object"
+                    ? payload.cacheRuntime as VoiceTraceEvent["cacheRuntime"]
+                    : undefined,
+                  embeddingCalls: Number.isFinite(Number(payload.embeddingCalls)) ? Number(payload.embeddingCalls) : undefined,
+                  embeddingApiStatus: typeof payload.embeddingApiStatus === "string" ? payload.embeddingApiStatus : undefined,
+                  factCount: Number.isFinite(Number(payload.factCount)) ? Number(payload.factCount) : undefined,
+                  artifactCount: Number.isFinite(Number(payload.artifactCount)) ? Number(payload.artifactCount) : undefined,
+                  error: typeof payload.error === "string" ? payload.error : undefined,
+                },
+              ]);
             } else if (msg.type === "gemini_message") {
               const text = msg.payload?.serverContent?.modelTurn?.parts?.[0]?.text;
               if (text) {
@@ -417,7 +524,7 @@ export function useVoiceCall() {
     } catch (err: any) {
       console.error("[Voice Call] Failed to start:", err);
       setStatus("error");
-      setErrorMessage(err.message || "تأكد من إذن الميكروفون.");
+      setErrorMessage(normalizeVoiceError(err));
       cleanupResources();
     }
   }, [cleanupResources, playAudioChunk, stopPlayback]);
@@ -450,6 +557,8 @@ export function useVoiceCall() {
     elapsedSeconds,
     aiText,
     activeModel,
+    voiceSessionId,
+    voiceTrace,
     startCall,
     endCall,
     toggleMute,

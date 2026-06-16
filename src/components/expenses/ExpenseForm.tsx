@@ -46,6 +46,87 @@ interface ExpenseFormProps {
   initialText?: string;
 }
 
+type ParserTraceRecord = Record<string, unknown>;
+
+function asParserTrace(value: unknown): ParserTraceRecord | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as ParserTraceRecord)
+    : null;
+}
+
+function traceString(trace: ParserTraceRecord, key: string, fallback = "-"): string {
+  const value = trace[key];
+  return typeof value === "string" && value.trim() ? value : fallback;
+}
+
+function traceNumber(trace: ParserTraceRecord, key: string): number {
+  const value = Number(trace[key]);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function traceTools(trace: ParserTraceRecord): string {
+  const tools = trace.tools;
+  return Array.isArray(tools) ? tools.map(String).join(", ") : "-";
+}
+
+function traceStringList(trace: ParserTraceRecord, key: string): string {
+  const values = trace[key];
+  return Array.isArray(values) ? values.map(String).join(", ") : "-";
+}
+
+function ParserTracePanel({ trace }: { trace: ParserTraceRecord | null }) {
+  if (!trace) return null;
+
+  const route = traceString(trace, "route");
+  const parsedBy = traceString(trace, "parsedBy");
+  const decision = traceString(trace, "decision");
+  const provider = traceString(trace, "provider");
+  const risk = traceString(trace, "hallucinationRisk");
+  const financeContext = traceString(trace, "financeContextSource");
+  const engine = traceString(trace, "engine");
+  const boundary = traceString(trace, "agentBoundary");
+  const dataNeeds = traceStringList(trace, "dataNeeds");
+  const llmCalls = traceNumber(trace, "llmCalls");
+  const embeddingCalls = traceNumber(trace, "embeddingCalls");
+  const totalTokens = traceNumber(trace, "totalTokens");
+  const inputTokens = traceNumber(trace, "inputTokens");
+  const confidence = traceNumber(trace, "confidence");
+  const tools = traceTools(trace);
+
+  return (
+    <div
+      className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-[11px] text-slate-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400"
+      aria-label={`parser-trace route=${route} engine=${engine} boundary=${boundary} tools=${tools} parsedBy=${parsedBy} decision=${decision} llm=${llmCalls} embedding=${embeddingCalls} tokens=${totalTokens} context=${financeContext} dataNeeds=${dataNeeds} risk=${risk}`}
+      dir="ltr"
+    >
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="font-mono font-semibold text-slate-700 dark:text-slate-300">
+          parser trace
+        </span>
+        <span className="rounded-full bg-white px-2 py-0.5 font-mono text-[10px] text-slate-500 dark:bg-slate-900">
+          {route}
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1 font-mono sm:grid-cols-4">
+        <span>tools {tools}</span>
+        <span>engine {engine}</span>
+        <span>by {parsedBy}</span>
+        <span>decision {decision}</span>
+        <span>confidence {Math.round(confidence)}%</span>
+        <span>boundary {boundary}</span>
+        <span>provider {provider}</span>
+        <span>LLM {llmCalls}</span>
+        <span>embed {embeddingCalls}</span>
+        <span>tokens {totalTokens}</span>
+        <span>input {inputTokens}</span>
+        <span>context {financeContext}</span>
+        <span>needs {dataNeeds}</span>
+        <span>risk {risk}</span>
+      </div>
+    </div>
+  );
+}
+
 export function ExpenseForm({ onSuccess, initialText }: ExpenseFormProps) {
   const [text, setText] = useState(initialText || "");
   const [isRecording, setIsRecording] = useState(false);
@@ -73,7 +154,10 @@ export function ExpenseForm({ onSuccess, initialText }: ExpenseFormProps) {
   );
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncRemaining, setSyncRemaining] = useState(0);
+  const [latestParserTrace, setLatestParserTrace] =
+    useState<ParserTraceRecord | null>(null);
   const syncInProgressRef = useRef(false);
+  const expenseQaTextSentRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (initialText) {
@@ -224,6 +308,7 @@ export function ExpenseForm({ onSuccess, initialText }: ExpenseFormProps) {
   // ─── Voice Parsing (Combined STT + Parse) ───
   const parseVoiceMutation = trpc.ai.parseVoiceExpense.useMutation({
     onSuccess: (data) => {
+      setLatestParserTrace(asParserTrace((data as { trace?: unknown }).trace));
       setIsProcessingVoice(false);
       setDecision(data.decision as any);
       setClarificationQuestion(null);
@@ -257,6 +342,7 @@ export function ExpenseForm({ onSuccess, initialText }: ExpenseFormProps) {
       }
     },
     onError: (err) => {
+      setLatestParserTrace(null);
       hapticError();
       toast.error(err.message || "فشل تحليل الصوت.");
       setIsProcessingVoice(false);
@@ -267,6 +353,7 @@ export function ExpenseForm({ onSuccess, initialText }: ExpenseFormProps) {
   // ─── Parsing Mutation ───
   const parseMutation = trpc.ai.parseExpense.useMutation({
     onSuccess: (data) => {
+      setLatestParserTrace(asParserTrace((data as { trace?: unknown }).trace));
       setIsProcessingVoice(false);
       setDecision(data.decision as any);
       setClarificationQuestion(null);
@@ -302,6 +389,7 @@ export function ExpenseForm({ onSuccess, initialText }: ExpenseFormProps) {
       }
     },
     onError: (err) => {
+      setLatestParserTrace(null);
       hapticError();
       toast.error(err.message || "حدث خطأ أثناء تحليل النص.");
       setIsProcessingVoice(false);
@@ -458,6 +546,7 @@ export function ExpenseForm({ onSuccess, initialText }: ExpenseFormProps) {
     }
 
     try {
+      setLatestParserTrace(null);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       let mimeType = "audio/webm";
       if (!MediaRecorder.isTypeSupported("audio/webm")) {
@@ -480,6 +569,7 @@ export function ExpenseForm({ onSuccess, initialText }: ExpenseFormProps) {
           const base64Audio = (reader.result as string).split(",")[1];
           setIsProcessingVoice(true);
           setFlowStage("processing");
+          setLatestParserTrace(null);
           parseVoiceMutation.mutate({
             audioBase64: base64Audio,
             mimeType: mimeType,
@@ -668,6 +758,7 @@ export function ExpenseForm({ onSuccess, initialText }: ExpenseFormProps) {
     setIsProcessingVoice(true);
     setFlowStage("processing");
     setInputSource("text");
+    setLatestParserTrace(null);
     parseMutation.mutate({ text, inputChannel: "text" });
   };
 
@@ -775,6 +866,36 @@ export function ExpenseForm({ onSuccess, initialText }: ExpenseFormProps) {
     }
   }, [text]);
 
+  useEffect(() => {
+    if (!import.meta.env.DEV || typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    const qaText = params.get("expense_qa_text")?.trim();
+    if (!qaText) return;
+
+    const prompt = qaText.slice(0, ExpenseInputLimits.rawTextMax);
+    const skipClarification = params.get("expense_qa_skip_clarification") === "1";
+    const qaKey = `${skipClarification ? "skip" : "normal"}:${prompt}`;
+    if (expenseQaTextSentRef.current === qaKey || parseMutation.isPending || createMutation.isPending) return;
+
+    expenseQaTextSentRef.current = qaKey;
+    setText(prompt);
+    setIsProcessingVoice(true);
+    setFlowStage("processing");
+    setInputSource("text");
+    setDecision(null);
+    setParsedItems(null);
+    setClarificationQuestion(null);
+    setClarificationId(null);
+    setLocalSuggestion(null);
+    setLatestParserTrace(null);
+    parseMutation.mutate({
+      text: prompt,
+      inputChannel: "text",
+      skipClarification,
+    });
+  }, [createMutation.isPending, parseMutation]);
+
   const handleSkip = () => {
     setIsSkipping(true);
     submitClarificationAnswer("تخطي");
@@ -798,6 +919,7 @@ export function ExpenseForm({ onSuccess, initialText }: ExpenseFormProps) {
     const newText = `${text} (${personName} ${trimmed})`;
     setText(newText);
     setDecision(null);
+    setLatestParserTrace(null);
     parseMutation.mutate({
       text: newText,
       inputChannel: inputSource,
@@ -938,25 +1060,23 @@ export function ExpenseForm({ onSuccess, initialText }: ExpenseFormProps) {
                 <Button
                   type="button"
                   size="sm"
-                  onClick={async () => {
+                  onClick={() => {
                     mediumTap();
-                    try {
-                      await createMutation.mutateAsync({
-                        amount: localSuggestion.amount,
-                        type: localSuggestion.type,
-                        category: localSuggestion.category,
-                        subCategory: localSuggestion.subCategory,
-                        description: localSuggestion.description,
-                        rawText: text,
-                        source: "manual",
-                        date: new Date().toISOString(),
-                      });
-                      setText("");
-                      setLocalSuggestion(null);
-                      toast.success("تم الحفظ السريع! (تجاوز السيرفر)");
-                    } catch (e) {
-                      toast.error("فشل الحفظ السريع.");
+                    if (!text.trim()) return;
+                    if (!isOnline) {
+                      toast.info("احفظها من زر الإضافة العادي عشان تدخل في Queue الأوفلاين بأمان.");
+                      return;
                     }
+                    setIsProcessingVoice(true);
+                    setFlowStage("processing");
+                    setInputSource("text");
+                    setLocalSuggestion(null);
+                    setLatestParserTrace(null);
+                    parseMutation.mutate({
+                      text,
+                      inputChannel: "text",
+                      skipClarification: true,
+                    });
                   }}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-3.5 h-8 rounded-xl shrink-0"
                 >
@@ -1081,6 +1201,8 @@ export function ExpenseForm({ onSuccess, initialText }: ExpenseFormProps) {
             </HapticButton>
           </div>
         </form>
+
+        <ParserTracePanel trace={latestParserTrace} />
 
         {/* ─── Processing View (Skeleton Loader) ─── */}
         {flowStage === "processing" && (

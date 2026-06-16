@@ -85,6 +85,20 @@
       "when": 1781429394074,
       "tag": "0011_chunky_mercury",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1781510400000,
+      "tag": "0012_ai_memory_layer",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1781596800000,
+      "tag": "0013_ai_action_runtime",
+      "breakpoints": true
     }
   ]
 }

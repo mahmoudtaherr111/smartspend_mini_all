@@ -679,7 +679,7 @@ export async function runSmartPipeline(
 
       if (anyNeedsClarification) {
         const uniqueUnknowns = Array.from(new Set(localUnknownNames));
-        localClarification = uniqueUnknowns.length === 1 
+        const localClarification = uniqueUnknowns.length === 1 
           ? `مين ${uniqueUnknowns[0]}؟ (أخوك، صديقك، موظف عندك...)`
           : `محتاج أوضح دول مين: ${uniqueUnknowns.join(" و ")}؟`;
         
@@ -730,7 +730,7 @@ export async function runSmartPipeline(
     // For simplicity, we just dump localSucceededItems + whatever we can get from failed.
     ruleSucceeded = true;
     for (const seg of failedSegments) {
-      const segRule = runRuleEngine(seg.text, input.userDict, input.userProfileContext);
+      const segRule = await runRuleEngine(seg.text, input.userDict, input.userProfileContext);
       for (const item of segRule.items) {
           if (item.confidence < autoSaveThreshold || item.category === "متنوعات") {
               item.needsReview = true;
@@ -897,6 +897,9 @@ export async function runSmartPipeline(
             }
           }
         }
+        if (!dRes) {
+          throw new Error("Gemini API returned no response after retries.");
+        }
         totalTokens += dRes.response.usageMetadata?.totalTokenCount || 0;
         classItems = safeExtractItems(robustJsonParse(dRes.response.text()));
       }
@@ -933,7 +936,7 @@ export async function runSmartPipeline(
             let detectedPersonName = item.person_mentioned && typeof item.person_mentioned === "string" ? item.person_mentioned.trim() : null;
             const itemContext = item.item_name || item.description || item.name || textToClassify;
             
-            let namesList = detectedPersonName ? detectedPersonName.split(/\s+و\s+|،|,|and/).map(n => n.trim()).filter(Boolean) : [];
+            let namesList = detectedPersonName ? detectedPersonName.split(/\s+و\s+|،|,|and/).map((n: string) => n.trim()).filter(Boolean) : [];
             let unknownNames: string[] = [];
             
             if (namesList.length === 0) {
@@ -1067,14 +1070,14 @@ export async function runSmartPipeline(
   // ONLY if their descriptions also overlap, to avoid destroying identical but separate transactions.
   const uniqueItems: ParsedTransaction[] = [];
   for (const item of finalItems) {
-      const itemDesc = String(item.description || item.item_name || "").toLowerCase();
+      const itemDesc = String(item.description || (item as ParsedTransaction & { item_name?: string }).item_name || "").toLowerCase();
       const itemWords = new Set(itemDesc.split(/\s+/).filter(w => w.length > 2));
       let isDuplicate = false;
       
       for (let i = 0; i < uniqueItems.length; i++) {
           const existing = uniqueItems[i];
           if (item.amount === existing.amount && item.category === existing.category) {
-              const existingDesc = String(existing.description || existing.item_name || "").toLowerCase();
+              const existingDesc = String(existing.description || (existing as ParsedTransaction & { item_name?: string }).item_name || "").toLowerCase();
               const existingWords = new Set(existingDesc.split(/\s+/).filter(w => w.length > 2));
               
               let intersection = 0;

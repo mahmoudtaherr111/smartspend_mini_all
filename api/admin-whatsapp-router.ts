@@ -8,6 +8,7 @@ import { isNotNull, and, ne, eq } from "drizzle-orm";
 // A simple in-memory queue for broadcasting
 let broadcastQueue: { phone: string; text: string }[] = [];
 let isBroadcasting = false;
+const WHATSAPP_AUTH_TEMPORARILY_DISABLED = true;
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -74,6 +75,10 @@ export const adminWhatsappRouter = router({
   }),
 
   getSettings: adminProcedure.query(async () => {
+    if (WHATSAPP_AUTH_TEMPORARILY_DISABLED) {
+      return { otpEnabled: false, temporarilyDisabled: true };
+    }
+
     const setting = await db.query.systemSettings.findFirst({
       where: eq(systemSettings.key, "whatsapp_otp_enabled"),
     });

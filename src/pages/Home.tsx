@@ -11,7 +11,7 @@ import {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -145,27 +145,32 @@ const getMonthLabelAr = (monthStr: string) => {
 export default function Home() {
   const { user } = useAuth();
   const utils = trpc.useUtils();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const currentParams = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search],
+  );
   const [activeTab, setActiveTab] = useState<HomeTab>(
-    normalizeTab(searchParams.get("tab")),
+    normalizeTab(currentParams.get("tab")),
   );
   const [month, setMonth] = useState(
-    searchParams.get("month") || currentMonthValue(),
+    currentParams.get("month") || currentMonthValue(),
   );
 
   const [sharedText, setSharedText] = useState<string>("");
 
   // Handle Web Share Target API query parameters
   useEffect(() => {
-    const textParam = searchParams.get("share_text");
-    const titleParam = searchParams.get("share_title");
-    const urlParam = searchParams.get("share_url");
+    const textParam = currentParams.get("share_text");
+    const titleParam = currentParams.get("share_title");
+    const urlParam = currentParams.get("share_url");
     const foundText = textParam || titleParam || urlParam;
 
     if (foundText) {
       setSharedText(foundText);
       
-      const newParams = new URLSearchParams(searchParams);
+      const newParams = new URLSearchParams(currentParams);
       newParams.delete("share_text");
       newParams.delete("share_title");
       newParams.delete("share_url");
@@ -173,7 +178,7 @@ export default function Home() {
       
       toast.success("تم تلقي النص المشارك بنجاح. المساعد جاهز للتحليل!");
     }
-  }, [searchParams, setSearchParams]);
+  }, [currentParams, setSearchParams]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const swipeState = useRef({
@@ -354,9 +359,12 @@ export default function Home() {
   }, [goalsData, user]);
 
   useEffect(() => {
-    setActiveTab(normalizeTab(searchParams.get("tab")));
-    setMonth(searchParams.get("month") || currentMonthValue());
-  }, [searchParams]);
+    const nextTab = normalizeTab(currentParams.get("tab"));
+    const nextMonth = currentParams.get("month") || currentMonthValue();
+
+    setActiveTab((current) => (current === nextTab ? current : nextTab));
+    setMonth((current) => (current === nextMonth ? current : nextMonth));
+  }, [currentParams]);
 
   const shouldLoadStats = activeTab === "stats";
 
@@ -387,23 +395,23 @@ export default function Home() {
       if (!sessionInitialized) {
         sessionStorage.setItem("dashboard_session_initialized", "true");
         
-        const currentUrlMonth = searchParams.get("month");
-        if (currentUrlMonth !== activeFinancialMonth) {
-          const newParams = new URLSearchParams(searchParams);
+        const currentUrlMonth = currentParams.get("month");
+        if (!currentUrlMonth) {
+          const newParams = new URLSearchParams(currentParams);
           newParams.set("month", activeFinancialMonth);
           setSearchParams(newParams, { replace: true });
           setMonth(activeFinancialMonth);
         }
       } else {
-        if (!searchParams.get("month")) {
-          const newParams = new URLSearchParams(searchParams);
+        if (!currentParams.get("month")) {
+          const newParams = new URLSearchParams(currentParams);
           newParams.set("month", activeFinancialMonth);
           setSearchParams(newParams, { replace: true });
           setMonth(activeFinancialMonth);
         }
       }
     }
-  }, [profile, searchParams, setSearchParams]);
+  }, [profile, currentParams, setSearchParams]);
 
   // --- 2. Prefetch Adjacent Months (Performance Optimization) ---
   useEffect(() => {
@@ -464,18 +472,19 @@ export default function Home() {
 
   const updateView = (tab: HomeTab, nextMonth = month) => {
     setActiveTab(tab);
-    const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set("tab", tab);
-    newUrl.searchParams.set("month", nextMonth);
-    window.history.replaceState({}, "", newUrl.toString());
+    setMonth(nextMonth);
+    const newParams = new URLSearchParams(location.search);
+    newParams.set("tab", tab);
+    newParams.set("month", nextMonth);
+    setSearchParams(newParams, { replace: true });
   };
 
   const handleMonthChange = (value: string) => {
     setMonth(value);
-    const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set("tab", activeTab);
-    newUrl.searchParams.set("month", value);
-    window.history.replaceState({}, "", newUrl.toString());
+    const newParams = new URLSearchParams(location.search);
+    newParams.set("tab", activeTab);
+    newParams.set("month", value);
+    setSearchParams(newParams, { replace: true });
   };
 
   const handleRefresh = () => {

@@ -54,6 +54,7 @@ import {
 import { TRPCError } from "@trpc/server";
 import { env } from "./lib/env";
 import { getSmartProfile } from "./services/user-profile-service";
+import { loadAICostOverview } from "./services/ai-cost-analytics";
 import webpush from "web-push";
 import { sendPush, checkAndTriggerSmartActivityNotifications } from "./notification-engine";
 
@@ -144,6 +145,28 @@ export const adminRouter = router({
   }),
 
   // ─── List All Users ───
+  getAICostOverview: adminProcedure
+    .input(
+      z
+        .object({
+          userId: z.number().int().positive().optional(),
+          userType: z.enum(["oauth", "local"]).optional(),
+          from: z.string().datetime().optional(),
+          to: z.string().datetime().optional(),
+          limit: z.number().int().min(1).max(10000).default(1000),
+        })
+        .optional(),
+    )
+    .query(async ({ input }) =>
+      loadAICostOverview({
+        userId: input?.userId,
+        userType: input?.userType,
+        from: input?.from ? new Date(input.from) : undefined,
+        to: input?.to ? new Date(input.to) : undefined,
+        limit: input?.limit,
+      }),
+    ),
+
   listAllUsers: moderatorProcedure
     .input(
       z

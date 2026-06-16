@@ -43,6 +43,8 @@ import { getIncomingHeader } from "./lib/get-client-ip";
 import { whatsappService } from "./services/whatsapp-service";
 import { otpCache, checkRateLimit } from "./services/otp-cache";
 
+const WHATSAPP_AUTH_TEMPORARILY_DISABLED = true;
+
 export const localAuthRouter = router({
   register: strictPublicProcedure
     .input(
@@ -81,7 +83,7 @@ export const localAuthRouter = router({
         where: eq(systemSettings.key, "whatsapp_otp_enabled"),
       });
 
-      if (otpSetting?.value === "true") {
+      if (!WHATSAPP_AUTH_TEMPORARILY_DISABLED && otpSetting?.value === "true") {
         // Check if phone is verified in our in-memory cache
         const verificationRecord = otpCache.get(cleanPhone);
 
@@ -147,6 +149,13 @@ export const localAuthRouter = router({
   generateVerificationCode: strictPublicProcedure
     .input(z.object({ phone: z.string() }))
     .mutation(async ({ input, ctx }) => {
+      if (WHATSAPP_AUTH_TEMPORARILY_DISABLED) {
+        throw new TRPCError({
+          code: "SERVICE_UNAVAILABLE",
+          message: "توثيق واتساب متوقف مؤقتاً. استخدم التسجيل العادي حالياً.",
+        });
+      }
+
       const phoneValidation = validatePhone(input.phone);
       if (!phoneValidation.valid) {
         throw new TRPCError({ code: "BAD_REQUEST", message: phoneValidation.message });
@@ -175,6 +184,10 @@ export const localAuthRouter = router({
     }),
 
   getVerificationSettings: publicProcedure.query(async () => {
+    if (WHATSAPP_AUTH_TEMPORARILY_DISABLED) {
+      return { enabled: false, temporarilyDisabled: true };
+    }
+
     const setting = await db.query.systemSettings.findFirst({
       where: eq(systemSettings.key, "whatsapp_otp_enabled"),
     });

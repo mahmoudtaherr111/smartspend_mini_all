@@ -14,6 +14,8 @@ import {
 } from "../../db/schema";
 import { eq, and, gte, lte, desc, like } from "drizzle-orm";
 import type { ToolDefinition } from "../lib/deepseek-client";
+import type { DataNeed, DataNeedKind, PeriodHint } from "./ai-kernel/types";
+import { resolveKernelDataNeeds } from "./finance-semantic-layer";
 
 // ─── Helper ───
 function startOfToday(): Date {
@@ -52,8 +54,193 @@ function endOfMonth(month?: string, salaryDay: number = 1): Date {
 
 type ToolArgs = Record<string, unknown>;
 type ToolContext = { userId: number; userType: string; salaryDay?: number };
+type DataNeedScope = NonNullable<DataNeed["scope"]>;
+
+const FINANCE_QUERY_KINDS = [
+  "summary",
+  "wallet_summary",
+  "period_comparison",
+  "category_total",
+  "breakdown",
+  "transactions",
+  "chart",
+  "goal_progress",
+] as const;
+
+type FinanceQueryKind = (typeof FINANCE_QUERY_KINDS)[number];
+
+const PERIOD_HINTS: PeriodHint[] = [
+  "today",
+  "yesterday",
+  "current_week",
+  "current_month",
+  "previous_month",
+  "salary_cycle",
+  "custom",
+];
+
+function asString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function clampLimit(value: unknown, fallback: number, max: number): number {
+  const parsed = Math.floor(Number(value));
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(Math.max(parsed, 1), max);
+}
+
+function periodFrom(value: unknown, fallback: PeriodHint): PeriodHint {
+  const period = asString(value);
+  return period && PERIOD_HINTS.includes(period as PeriodHint) ? (period as PeriodHint) : fallback;
+}
+
+function makeFinanceNeed(
+  index: number,
+  kind: DataNeedKind,
+  reason: string,
+  scope: DataNeed["scope"] = {},
+  maxRows?: number,
+): DataNeed {
+  return {
+    id: `legacy_finance_${index}_${kind.replace(".", "_")}`,
+    kind,
+    priority: maxRows && maxRows > 8 ? "deep" : "hot",
+    reason,
+    scope,
+    maxRows,
+    cache: {
+      keyHint: ["legacy_finance", kind, scope.period, scope.category, scope.granularity, scope.limit]
+        .filter(Boolean)
+        .join(":"),
+      ttlSeconds: 60,
+      hot: true,
+    },
+  };
+}
+
+function buildFinanceQueryNeeds(args: ToolArgs): DataNeed[] {
+  const kind = FINANCE_QUERY_KINDS.includes(args.kind as FinanceQueryKind)
+    ? (args.kind as FinanceQueryKind)
+    : "summary";
+  const period = periodFrom(args.period, kind === "summary" ? "today" : "current_month");
+  const category = asString(args.category);
+  const query = asString(args.query) ?? asString(args.search_query);
+  const startDate = asString(args.start_date) ?? asString(args.startDate);
+  const endDate = asString(args.end_date) ?? asString(args.endDate);
+  const limit = clampLimit(args.limit, kind === "transactions" ? 8 : 6, 20);
+  const granularity = asString(args.granularity) as DataNeedScope["granularity"] | undefined;
+  const baseScope: DataNeed["scope"] = {
+    period,
+    category,
+    query,
+    startDate,
+    endDate,
+  };
+
+  if (kind === "wallet_summary") {
+    return [makeFinanceNeed(1, "wallet.summary", "legacy_wallet_summary", {}, 8)];
+  }
+
+  if (kind === "period_comparison") {
+    return [
+      makeFinanceNeed(
+        1,
+        "finance.period_comparison",
+        "legacy_period_comparison",
+        { ...baseScope, comparePeriod: period === "previous_month" ? "current_month" : "previous_month" },
+        2,
+      ),
+    ];
+  }
+
+  if (kind === "category_total") {
+    return category
+      ? [
+          makeFinanceNeed(
+            1,
+            "finance.category_total",
+            "legacy_exact_category_total",
+            baseScope,
+            1,
+          ),
+          makeFinanceNeed(
+            2,
+            "finance.transactions",
+            "legacy_category_evidence",
+            { ...baseScope, limit: Math.min(limit, 5) },
+            Math.min(limit, 5),
+          ),
+        ]
+      : [makeFinanceNeed(1, "finance.summary", "legacy_category_missing_fallback_summary", baseScope, 1)];
+  }
+
+  if (kind === "breakdown") {
+    return [
+      makeFinanceNeed(
+        1,
+        "finance.breakdown",
+        "legacy_grouped_breakdown",
+        { ...baseScope, granularity: granularity ?? "category", limit },
+        limit,
+      ),
+    ];
+  }
+
+  if (kind === "transactions") {
+    return [
+      makeFinanceNeed(
+        1,
+        "finance.transactions",
+        "legacy_supporting_transactions",
+        { ...baseScope, limit },
+        limit,
+      ),
+    ];
+  }
+
+  if (kind === "chart") {
+    return [
+      makeFinanceNeed(
+        1,
+        "chart.data",
+        "legacy_chart_dataset",
+        { ...baseScope, granularity: granularity ?? "category", limit },
+        limit,
+      ),
+    ];
+  }
+
+  if (kind === "goal_progress") {
+    return [makeFinanceNeed(1, "goals.active", "legacy_goal_progress", {}, 5)];
+  }
+
+  return [makeFinanceNeed(1, "finance.summary", "legacy_top_level_summary", baseScope, 1)];
+}
 
 // ─── Tool Implementations ───
+
+async function finance_query(ctx: ToolContext, args: ToolArgs) {
+  const dataNeeds = buildFinanceQueryNeeds(args);
+  const result = await resolveKernelDataNeeds(
+    {
+      userId: ctx.userId,
+      userType: ctx.userType,
+      salaryDay: ctx.salaryDay,
+    },
+    dataNeeds,
+  );
+
+  return {
+    contract: "finance.query.v1",
+    dataNeeds,
+    facts: result.facts.slice(0, 30),
+    artifacts: result.artifacts.slice(0, 4),
+    errors: result.errors,
+    cacheHits: result.cacheHits,
+    guidance:
+      "Answer only from facts. If a number is not present in facts, say it is unavailable instead of guessing.",
+  };
+}
 
 async function get_today_expenses(ctx: ToolContext, _args: ToolArgs) {
   const rows = await db
@@ -473,21 +660,60 @@ async function analyze_finances(ctx: ToolContext, args: ToolArgs) {
   }
 }
 
-async function get_app_guide(ctx: ToolContext, _args: ToolArgs) {
-  return `
-  دليل استخدام SmartSpend السريع:
-  - إضافة مصروف/دخل: من الصفحة الرئيسية، اضغط على زر الإضافة (+) العائم.
-  - تعديل الميزانية: من القائمة الجانبية (أو صفحة الإعدادات) اختر "البروفايل المالي" وعدل ميزانيتك.
-  - إدارة المحافظ (بنوك/كاش): اذهب إلى قسم "المحافظ" لإضافة أو تعديل رصيد حساباتك.
-  - مصاريف الأصدقاء والديون: لسهولة التتبع، يمكنك إضافة المصروف وتحديد اسم الصديق في خانة "الوصف"، أو استخدام ميزة "جهات الاتصال" إذا كانت متاحة.
-  - التقارير والإحصائيات: تجدها في قسم "التقارير" وتظهر لك رسوماً بيانية تفصيلية.
-  - أهداف الادخار: من قسم "الأهداف" يمكنك إنشاء هدف وتتبع مدى اقترابك منه.
-  `;
+async function get_app_guide(_ctx: ToolContext, _args: ToolArgs) {
+  return {
+    contract: "site.guide.v1",
+    topic: "smartspend_usage",
+    summary: "دليل استخدام SmartSpend السريع",
+    sections: [
+      {
+        id: "expense_capture",
+        title: "إضافة مصروف أو دخل",
+        steps: ["من الصفحة الرئيسية اضغط على زر الإضافة العائم.", "اكتب الوصف والمبلغ وراجع التصنيف قبل الحفظ."],
+      },
+      {
+        id: "financial_profile",
+        title: "تعديل الميزانية",
+        steps: ["افتح القائمة الجانبية أو صفحة الإعدادات.", "اختر البروفايل المالي وعدل دخلك أو ميزانيتك."],
+      },
+      {
+        id: "wallets",
+        title: "إدارة المحافظ",
+        steps: ["افتح قسم المحافظ.", "أضف محفظة أو حسابا بنكيا واكتب الرصيد واسم المزود."],
+      },
+      {
+        id: "sms_cards",
+        title: "ربط رسائل SMS أو بطاقة",
+        steps: [
+          "فعّل إذن قراءة رسائل SMS المالية من إعدادات الربط.",
+          "اربط الرسائل بالحساب أو المحفظة المناسبة.",
+          "للبطاقة، احفظ اسم البنك وآخر أربعة أرقام فقط ولا تدخل بيانات البطاقة الكاملة.",
+        ],
+      },
+      {
+        id: "contacts_debts",
+        title: "مصاريف الأصدقاء والديون",
+        steps: [
+          "اكتب اسم الشخص في وصف المصروف لتتبعه بسهولة.",
+          "استخدم جهات الاتصال إذا كانت متاحة في حسابك.",
+        ],
+      },
+      {
+        id: "reports_goals",
+        title: "التقارير والأهداف",
+        steps: [
+          "افتح قسم التقارير لمتابعة الرسوم والتحليلات.",
+          "من قسم الأهداف يمكنك إنشاء هدف ادخار ومتابعة الخطة.",
+        ],
+      },
+    ],
+  };
 }
 
-// ─── Tool Executor & Compressor ───
+// ─── Tool Executor ───
 
 const TOOL_EXECUTORS: Record<string, (ctx: ToolContext, args: ToolArgs) => Promise<unknown>> = {
+  finance_query,
   get_today_expenses,
   get_month_summary,
   get_category_breakdown,
@@ -504,32 +730,12 @@ const TOOL_EXECUTORS: Record<string, (ctx: ToolContext, args: ToolArgs) => Promi
   get_app_guide,
 };
 
-/**
- * Converts a Javascript object/array into a compact text format to save Tokens.
- */
-function compressToText(obj: any): string {
-  if (Array.isArray(obj)) {
-    if (obj.length === 0) return "No data";
-    if (typeof obj[0] === "object" && obj[0] !== null) {
-      const keys = Object.keys(obj[0]);
-      const header = keys.join(" | ");
-      const rows = obj.map(item => keys.map(k => String(item[k] ?? "")).join(" | "));
-      return [header, ...rows].join("\n");
-    }
-    return obj.join(", ");
-  }
-  
-  let result = "";
-  for (const [key, value] of Object.entries(obj)) {
-    if (Array.isArray(value)) {
-      result += `\n[${key}]\n` + compressToText(value) + "\n";
-    } else if (typeof value === "object" && value !== null) {
-      result += `\n[${key}]\n` + Object.entries(value).map(([k, v]) => `${k}: ${v}`).join("\n") + "\n";
-    } else {
-      result += `${key}: ${value}\n`;
-    }
-  }
-  return result.trim();
+function compactJson(value: unknown): string {
+  return JSON.stringify(value, (_key, item) => {
+    if (typeof item === "bigint") return item.toString();
+    if (item instanceof Date) return item.toISOString();
+    return item;
+  });
 }
 
 /**
@@ -542,21 +748,59 @@ export async function executeTool(
 ): Promise<string> {
   const executor = TOOL_EXECUTORS[name];
   if (!executor) {
-    return JSON.stringify({ error: `Tool "${name}" not found` });
+    return compactJson({ ok: false, tool: name, error: `Tool "${name}" not found` });
   }
   try {
     const result = await executor(ctx, args);
-    // Compress the output to text/CSV instead of verbose JSON
-    return compressToText(result);
+    return compactJson({ ok: true, tool: name, result });
   } catch (error: any) {
     console.error(`[AI Chat Tool] Error executing ${name}:`, error.message);
-    return `Error executing ${name}: ${error.message}`;
+    return compactJson({
+      ok: false,
+      tool: name,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 
 // ─── Tool Definitions (OpenAI Format) ───
 
 export const TOOL_DEFINITIONS: ToolDefinition[] = [
+  {
+    type: "function",
+    function: {
+      name: "finance_query",
+      description:
+        "الأداة المالية الأساسية المفضلة. ترجع JSON منظم من Finance Semantic Layer بأقل facts مطلوبة فقط: ملخص، فئة، معاملات، مقارنة، أرصدة محافظ، أهداف، أو بيانات رسم.",
+      parameters: {
+        type: "object",
+        properties: {
+          kind: {
+            type: "string",
+            enum: FINANCE_QUERY_KINDS,
+            description:
+              "summary, wallet_summary, period_comparison, category_total, breakdown, transactions, chart, or goal_progress",
+          },
+          period: {
+            type: "string",
+            enum: PERIOD_HINTS,
+            description: "today, yesterday, current_week, current_month, previous_month, salary_cycle, or custom",
+          },
+          category: { type: "string", description: "Optional canonical category such as food or transport." },
+          query: { type: "string", description: "Optional exact search query for transaction evidence." },
+          start_date: { type: "string", description: "YYYY-MM-DD for custom periods." },
+          end_date: { type: "string", description: "YYYY-MM-DD for custom periods." },
+          granularity: {
+            type: "string",
+            enum: ["day", "week", "month", "category", "merchant"],
+            description: "Grouping for breakdowns or charts.",
+          },
+          limit: { type: "number", description: "Maximum rows/points. Keep small." },
+        },
+        required: ["kind"],
+      },
+    },
+  },
   {
     type: "function",
     function: {
