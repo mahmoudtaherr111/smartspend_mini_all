@@ -1,11 +1,11 @@
 # AI Center QA Runner Last Result
 
-Generated: 2026-06-16T00:45:59.990Z
+Generated: 2026-06-21T20:50:41.908Z
 Status: PASS
 
 ## Seed
 
-- User: AI Center QA Seed / 01055501999 / id 29
+- User: AI Center QA Seed / 01055501999 / id 1
 - Expenses: 11
 - Wallets: 1
 - Goals: 1
@@ -17,11 +17,11 @@ Status: PASS
 
 ### PASS - chat finance today uses SQL facts without embedding
 
-- Duration: 47 ms
+- Duration: 29 ms
 
 ```json
 {
-  "traceId": "aik_mqfx8bhl_dzwwg0",
+  "traceId": "aik_mqo9gun5_eeahfn",
   "intent": "finance_query",
   "needs": [
     "finance.summary"
@@ -37,28 +37,28 @@ Status: PASS
     "reason": "structured_sql_or_cached_facts_do_not_need_embedding"
   },
   "cacheHits": [
-    "finance_cache:miss:memory:summary:today:2026-06-16:2026-06-16:salary_1"
+    "finance_cache:miss:redis:summary:today:2026-06-21:2026-06-21:salary_1"
   ],
   "embeddingRows": 0,
-  "contentPreview": "في اليوم، صرفت ٢١٥٫٥ جنيه من ٣ عملية. الدخل المسجل ٠ جنيه، والصافي ؜-٢١٥٫٥ جنيه."
+  "contentPreview": "في اليوم، صرفت ٣٨٥٫٥ جنيه من ٦ عملية. الدخل المسجل ٠ جنيه، والصافي ؜-٣٨٥٫٥ جنيه."
 }
 ```
 
 ### PASS - chat food current month returns category total and evidence rows
 
-- Duration: 19 ms
+- Duration: 16 ms
 
 ```json
 {
-  "traceId": "aik_mqfx8biv_mo88jx",
+  "traceId": "aik_mqo9gunx_5qk4kn",
   "intent": "finance_query",
   "needs": [
     "finance.category_total",
     "finance.transactions"
   ],
-  "factCount": 11,
+  "factCount": 20,
   "artifactTypes": [],
-  "tokensUsed": 165,
+  "tokensUsed": 181,
   "llmCalls": 0,
   "embeddingCalls": 0,
   "embeddingApiStatus": "skipped",
@@ -67,17 +67,17 @@ Status: PASS
     "reason": "structured_sql_or_cached_facts_do_not_need_embedding"
   },
   "cacheHits": [
-    "finance_cache:miss:memory:category_total:current_month:2026-06-01:2026-06-30:salary_1:food",
-    "finance_cache:miss:memory:transactions:current_month:2026-06-01:2026-06-30:salary_1:food:expense:12"
+    "finance_cache:miss:redis:category_total:current_month:2026-06-01:2026-06-30:salary_1:food",
+    "finance_cache:miss:redis:transactions:current_month:2026-06-01:2026-06-30:salary_1:food:expense:12"
   ],
   "embeddingRows": 0,
-  "contentPreview": "في الشهر الحالي، إجمالي صرفك على الأكل هو ٥٥١٫٢٥ جنيه من ٣ عملية.\nالعمليات اللي دخلت في الرقم:\nLunch: ١٢٠ جنيه\nMorning coffee: ٥٥٫٥ جنيه\nGroceries: ٣٧٥٫٧٥ جنيه"
+  "contentPreview": "في الشهر الحالي، إجمالي صرفك على الأكل هو ٣٬٠٦٥٫٢٥ جنيه من ١٤ عملية.\nالعمليات اللي دخلت في الرقم:\nجبت ب منهم شيبسي: ٥٠ جنيه\nدومتي: ٢٠ جنيه\nLunch: ١٢٠ جنيه\nMorning coffee: ٥٥٫٥ جنيه"
 }
 ```
 
 ### PASS - chat memory recall uses Fireworks Qwen vector retrieval
 
-- Duration: 935 ms
+- Duration: 11 ms
 
 ```json
 {
@@ -92,9 +92,9 @@ Status: PASS
     "vectorRows": 2
   },
   "cacheHits": [
-    "memory_cache:miss:memory",
+    "memory_cache:miss:redis",
     "query_reformulated:goal_or_saving_query+car_goal_query",
-    "embedding:query_embedded",
+    "embedding:query_cache_hit",
     "embedding:fireworks",
     "embedding:rows:2"
   ],
@@ -109,11 +109,11 @@ Status: PASS
 
 ### PASS - chat chart request returns chart artifact
 
-- Duration: 13 ms
+- Duration: 10 ms
 
 ```json
 {
-  "traceId": "aik_mqfx8c9e_yt0qm7",
+  "traceId": "aik_mqo9guoo_hvu2ju",
   "intent": "chart_request",
   "needs": [
     "chart.data"
@@ -131,7 +131,7 @@ Status: PASS
     "reason": "structured_sql_or_cached_facts_do_not_need_embedding"
   },
   "cacheHits": [
-    "finance_cache:miss:memory:chart_data:custom:2026-01-01:2026-06-16:salary_1:food:month:12"
+    "finance_cache:miss:redis:chart_data:custom:2026-01-01:2026-06-21:salary_1:food:month:12"
   ],
   "embeddingRows": 0,
   "contentPreview": "جهزت لك الرسم البياني من بياناتك الفعلية. تقدر تراجعه في البطاقة المعروضة تحت الرسالة."
@@ -140,11 +140,11 @@ Status: PASS
 
 ### PASS - chat site guide answers from local product guide
 
-- Duration: 14 ms
+- Duration: 6 ms
 
 ```json
 {
-  "traceId": "aik_mqfx8c9r_0rtl4s",
+  "traceId": "aik_mqo9guoy_hkjmuc",
   "intent": "site_help",
   "needs": [
     "site_guide.search"
@@ -173,7 +173,7 @@ Status: PASS
 
 ### PASS - voice finance tool uses exact hot summary
 
-- Duration: 4 ms
+- Duration: 6 ms
 
 ```json
 {
@@ -190,7 +190,7 @@ Status: PASS
     "reason": "structured_sql_or_cached_facts_do_not_need_embedding"
   },
   "cacheHits": [
-    "finance_cache:hit:memory:summary:today:2026-06-16:2026-06-16:salary_1"
+    "finance_cache:hit:redis:summary:today:2026-06-21:2026-06-21:salary_1"
   ],
   "embeddingRows": 0,
   "result": {
@@ -203,7 +203,7 @@ Status: PASS
 
 ### PASS - voice memory tool uses same vector memory
 
-- Duration: 1 ms
+- Duration: 2 ms
 
 ```json
 {
@@ -221,9 +221,9 @@ Status: PASS
     "vectorRows": 2
   },
   "cacheHits": [
-    "memory_cache:hit:memory",
+    "memory_cache:hit:redis",
     "query_reformulated:goal_or_saving_query+car_goal_query",
-    "embedding:query_embedded",
+    "embedding:query_cache_hit",
     "embedding:fireworks",
     "embedding:rows:2"
   ],

@@ -66,6 +66,24 @@ cron.schedule("0 20 * * *", async () => {
   }
 });
 
+// Boot-time Redis health check (non-blocking — logs warning if unavailable)
+import { getRedisClient, getCacheRuntimeStatus } from "./lib/redis-client";
+(async () => {
+  try {
+    const client = await getRedisClient();
+    const status = getCacheRuntimeStatus();
+    if (client) {
+      console.log(`✅ [Boot] Redis connected (backend: ${status.backend})`);
+    } else if (status.memoryFallbackAllowed) {
+      console.warn(`⚠️ [Boot] Redis unavailable — using in-memory cache fallback (backend: ${status.backend})`);
+    } else {
+      console.warn(`❌ [Boot] Redis unavailable and memory fallback disabled. Voice calls will NOT work.`);
+    }
+  } catch (err) {
+    console.warn(`❌ [Boot] Redis health check failed:`, err instanceof Error ? err.message : err);
+  }
+})();
+
 const app = new Hono();
 
 app.use("*", logger());
