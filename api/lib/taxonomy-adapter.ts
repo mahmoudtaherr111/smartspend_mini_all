@@ -83,40 +83,40 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
   "مترو الأنفاق": { category: "مواصلات", subCategory: "مترو", confidence: 98 },
   ميكروباص: { category: "مواصلات", subCategory: "أتوبيس", confidence: 95 },
 
-  // ─── Digital & Telecom (خدمات رقمية / التزامات يومية) ───
+  // ─── Digital & Telecom (فواتير) ───
   "شحنت رصيد": {
-    category: "التزامات يومية",
-    subCategory: "شحن موبايل",
+    category: "فواتير",
+    subCategory: "شحن رصيد",
     confidence: 97,
   },
   "رصيد موبايل": {
-    category: "التزامات يومية",
-    subCategory: "شحن موبايل",
+    category: "فواتير",
+    subCategory: "شحن رصيد",
     confidence: 97,
   },
   "جددت الباقة": {
-    category: "التزامات يومية",
-    subCategory: "باقات إنترنت",
+    category: "فواتير",
+    subCategory: "إنترنت",
     confidence: 95,
   },
   "باقة الموبايل": {
-    category: "التزامات يومية",
-    subCategory: "شحن موبايل",
+    category: "فواتير",
+    subCategory: "شحن رصيد",
     confidence: 95,
   },
   "شحنت باقة النت": {
-    category: "التزامات يومية",
-    subCategory: "باقات إنترنت",
+    category: "فواتير",
+    subCategory: "إنترنت",
     confidence: 97,
   },
   "فاتورة النت": {
-    category: "التزامات يومية",
-    subCategory: "باقات إنترنت",
+    category: "فواتير",
+    subCategory: "إنترنت",
     confidence: 98,
   },
   "نت منزلي": {
-    category: "التزامات يومية",
-    subCategory: "باقات إنترنت",
+    category: "فواتير",
+    subCategory: "إنترنت",
     confidence: 97,
   },
   "اشتركت vpn": {
@@ -135,29 +135,29 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
     confidence: 90,
   },
 
-  // ─── Utilities (التزامات يومية) ───
+  // ─── Utilities (فواتير) ───
   "دفعت للكهربا": {
-    category: "التزامات يومية",
+    category: "فواتير",
     subCategory: "كهرباء",
     confidence: 95,
   },
   "فاتورة الكهربا": {
-    category: "التزامات يومية",
+    category: "فواتير",
     subCategory: "كهرباء",
     confidence: 98,
   },
   "كارت الكهربا": {
-    category: "التزامات يومية",
+    category: "فواتير",
     subCategory: "كهرباء",
     confidence: 98,
   },
   "فاتورة المية": {
-    category: "التزامات يومية",
+    category: "فواتير",
     subCategory: "مياه",
     confidence: 98,
   },
   "فاتورة الغاز": {
-    category: "التزامات يومية",
+    category: "فواتير",
     subCategory: "غاز",
     confidence: 98,
   },
@@ -277,8 +277,8 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
   },
   "كتب المدرسة": { category: "تعليم", subCategory: "كتب", confidence: 97 },
 
-  // ─── Entertainment & Outings (خروجات / ترفيه) ───
-  سينما: { category: "خروجات", subCategory: "سينما", confidence: 98 },
+  // ─── Entertainment & Outings (ترفيه) ───
+  سينما: { category: "ترفيه", subCategory: "سينما", confidence: 98 },
   "اشتراك الجيم": {
     category: "ترفيه",
     subCategory: "رياضة وجيم",
@@ -290,14 +290,14 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
     confidence: 95,
   },
   "حجزت ملعب": { category: "ترفيه", subCategory: "رياضة وجيم", confidence: 90 },
-  بلايستيشن: { category: "خروجات", subCategory: "PlayStation", confidence: 98 },
+  بلايستيشن: { category: "ترفيه", subCategory: "ألعاب", confidence: 98 },
   "خروجة صحاب": {
-    category: "خروجات",
-    subCategory: "خروجة صحاب",
+    category: "ترفيه",
+    subCategory: "خروجة",
     confidence: 98,
   },
   "سفرية مصيف": { category: "ترفيه", subCategory: "سفر", confidence: 98 },
-  فسحة: { category: "خروجات", subCategory: "فسحة", confidence: 95 },
+  فسحة: { category: "ترفيه", subCategory: "خروجة", confidence: 95 },
   "حجزت ماتش": { category: "ترفيه", subCategory: "رياضة وجيم", confidence: 90 },
 
   // ─── Smoking (تدخين) ───
@@ -371,6 +371,16 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
     subCategory: "سحب ATM",
     confidence: 98,
   },
+  "سحبت من ATM": {
+    category: "تحويل",
+    subCategory: "سحب ATM",
+    confidence: 98,
+  },
+  "سحبت atm": {
+    category: "تحويل",
+    subCategory: "سحب ATM",
+    confidence: 97,
+  },
   "تحويل انستاباي": {
     category: "تحويل",
     subCategory: "انستاباي",
@@ -403,11 +413,12 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
 };
 
 const LEGACY_CATEGORY_ALIASES: Record<string, string> = {
-  "سكن وفواتير": "التزامات يومية",
-  فواتير: "التزامات يومية",
-  ترفيه: "خروجات",
-  "هدايا وصدقات": "مجاملات",
-  عمل: "أدوات شغل",
+  "سكن وفواتير": "فواتير",
+  // "فواتير" → "التزامات يومية" removed: both exist in CATEGORIES but "فواتير"
+  // is the primary canonical name. Mapping it away caused circular conversions.
+  // "ترفيه" → "خروجات" removed: both exist in CATEGORIES. "ترفيه" is canonical.
+  // "هدايا وصدقات" → "مجاملات" removed: "مجاملات" does NOT exist in CATEGORIES → orphaned.
+  // "عمل" → "أدوات شغل" removed: "أدوات شغل" does NOT exist in CATEGORIES → orphaned.
 };
 
 const KNOWN_CATEGORIES = new Set(CATEGORIES.map((c) => c.name_ar));

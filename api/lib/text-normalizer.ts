@@ -6,6 +6,68 @@
 
 import { applySttCorrections } from "./stt-corrections";
 
+/**
+ * Franco-Arab (Arabizi) Converter
+ * Converts Egyptian Franco-Arab text (Latin + digits as Arabic letters) to Arabic.
+ * Only processes words that mix Latin letters with specific digits — standalone
+ * numbers (amounts) are never touched.
+ * Common patterns: "7awalte" → حولت, "dafa3t" → دفعت, "kahraba" → كهربا
+ */
+const FRANCO_DIGIT_TO_ARABIC: Record<string, string> = {
+  "2": "ء", "3": "ع", "5": "خ", "6": "ط", "7": "ح", "8": "غ", "9": "ق",
+};
+
+const FRANCO_LETTER_TO_ARABIC: Record<string, string> = {
+  a: "ا", b: "ب", c: "ك", d: "د", e: "ي", f: "ف", g: "ج", h: "ه",
+  i: "ي", j: "ج", k: "ك", l: "ل", m: "م", n: "ن", o: "و", p: "ب",
+  q: "ق", r: "ر", s: "س", t: "ت", u: "و", v: "ف", w: "و", x: "ك",
+  y: "ي", z: "ز",
+};
+
+const FRANCO_ARAB_DICT: Record<string, string> = {
+  "7awalte": "حولت", "7awalt": "حولت", "7awalteh": "حولت",
+  "dafa3t": "دفعت", "dafaat": "دفعت", "dafa't": "دفعت",
+  "kahraba": "كهربا", "kahrb": "كهربا", "kahriba": "كهربا",
+  "el": "ال", "elkahraba": "الكهربا",
+  "3agbni": "عجبني", "3agbnii": "عجبني",
+  "5od": "خد", "5odi": "خدي",
+  "7atet": "حطيت", "7atyt": "حطيت",
+  "salafte": "سلفت", "salaf": "سلف",
+  "akalt": "اكلت", "akaltu": "اكلت",
+  "shribt": "شربت", "sh8rbt": "شربت",
+  "3la": "على", "ala": "على",
+  "feen": "فين", "fen": "فين",
+  "3ashan": "عشان", "ashan": "عشان",
+  "3ala": "على",
+  "masry": "مصري", "masri": "مصري",
+  "flous": "فلوس", "floos": "فلوس",
+  "gneh": "جنيه", "geneh": "جنيه",
+  "benzin": "بنزين", "banzeen": "بنزين",
+  "kahwa": "قهوة", "qahwa": "قهوة",
+  "akl": "أكل", "akel": "أكل",
+  "atm": "ATM", "ATM": "ATM",
+  "3": "ع", "7": "ح", "5": "خ", "6": "ط", "8": "غ", "9": "ق",
+};
+
+function convertFrancoArab(text: string): string {
+  // Match: (1) words with digits (7awalte), (2) known Franco words without digits (el, kahraba)
+  return text.replace(/[a-zA-Z][a-zA-Z0-9']*[0-9][a-zA-Z0-9']*|[0-9][a-zA-Z0-9']*[a-zA-Z][a-zA-Z0-9']*|[a-zA-Z]{2,}/g, (word) => {
+    const lower = word.toLowerCase();
+    if (FRANCO_ARAB_DICT[lower]) return FRANCO_ARAB_DICT[lower];
+    let result = "";
+    for (const char of lower) {
+      if (FRANCO_DIGIT_TO_ARABIC[char]) {
+        result += FRANCO_DIGIT_TO_ARABIC[char];
+      } else if (FRANCO_LETTER_TO_ARABIC[char]) {
+        result += FRANCO_LETTER_TO_ARABIC[char];
+      } else {
+        result += char;
+      }
+    }
+    return result;
+  });
+}
+
 /** Convert Arabic-Indic numerals (٠١٢...) to Western Arabic (012...) */
 export function arabicToEnglishNumbers(str: string): string {
   return str.replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString());
@@ -225,6 +287,9 @@ export function normalizeText(text: string): string {
 
   // 0. Apply STT corrections FIRST (fix speech-to-text errors before anything)
   result = applySttCorrections(result);
+
+  // 0.1 Convert Franco-Arab (Arabizi) to Arabic — before any other processing
+  result = convertFrancoArab(result);
 
   // 0.5 Apply metaphorical slang normalizer (Strategy 4: Negative Keywords Engine)
   // Must run BEFORE phrase normalization to catch idioms like "طلعت عيني في تصليح العربية"

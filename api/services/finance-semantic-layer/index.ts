@@ -25,12 +25,17 @@ export {
 } from "./proactive-insights";
 export { financePeriodTestUtils, resolveFinancePeriod } from "./period-resolver";
 export {
+  getBusinessCashflow,
+  getCategoryInclusion,
   getCategoryTotal,
   getChartData,
+  getComparisonDrivers,
   getFinanceBreakdown,
   getFinanceSummary,
   getFinanceTransactions,
+  getGoalFeasibility,
   getGoalProgress,
   getProfileSnapshot,
+  getTransactionLookup,
   resolveKernelDataNeeds,
 } from "./resolvers";

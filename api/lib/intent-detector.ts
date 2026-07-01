@@ -238,16 +238,7 @@ const INVESTMENT_KEYWORDS = [
   "شلت ذهب",
 ];
 
-function normalizeArabic(text: string): string {
-  return text
-    .replace(/[\u064B-\u065F\u0670]/g, "") // remove tashkeel
-    .replace(/[إأآٱ]/g, "ا") // normalize alef
-    .replace(/ى/g, "ي") // ya
-    .replace(/ة/g, "ه") // ta marbuta → ha
-    .replace(/ؤ/g, "و") // waw hamza
-    .replace(/ئ/g, "ي") // ya hamza
-    .trim();
-}
+import { normalizeArabic } from "./unified-normalizer";
 
 const NORM_STRONG_INCOME = STRONG_INCOME.map((k) =>
   normalizeArabic(k).toLowerCase(),
@@ -344,7 +335,7 @@ export function detectIntent(context: string): IntentResult {
   }
   if (/(?:^|\s)و?(?:خدت|اخدت|أخدت|سحبت|استلمت|جالي|قبضت)\s+(?:.*?\s+)?من(?:ه|ها|هم|نا|ني)?(?:\s+|$)/.test(normContext)) {
     // If it's withdrawing from a machine/bank, it's a transfer, not income
-    if (/(?:atm|بنك|فيزا|حساب|مكنه|مكنة|ماكينه|ماكينة)/.test(normContext)) {
+    if (/(?:atm|بنك|فيزا|حساب|مكنه|مكنة|ماكينه|ماكينة)/i.test(normContext)) {
       transferScore += 100;
     } else {
       incomeScore += 80;

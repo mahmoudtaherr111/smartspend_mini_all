@@ -16,6 +16,42 @@ import {
   normalizeText as normalizeTextV1,
 } from "./text-normalizer";
 
+// ─── Franco-Arab (Arabizi) Light Converter for AI ────────────────
+const FRANCO_DIGIT_MAP: Record<string, string> = {
+  "2": "ء", "3": "ع", "5": "خ", "6": "ط", "7": "ح", "8": "غ", "9": "ق",
+};
+const FRANCO_LETTER_MAP: Record<string, string> = {
+  a: "ا", b: "ب", c: "ك", d: "د", e: "ي", f: "ف", g: "ج", h: "ه",
+  i: "ي", j: "ج", k: "ك", l: "ل", m: "م", n: "ن", o: "و", p: "ب",
+  q: "ق", r: "ر", s: "س", t: "ت", u: "و", v: "ف", w: "و", x: "ك",
+  y: "ي", z: "ز",
+};
+const FRANCO_LIGHT_DICT: Record<string, string> = {
+  "dafa3t": "دفعت", "dafaat": "دفعت",
+  "kahraba": "كهربا", "kahriba": "كهربا",
+  "el": "ال", "3la": "على", "ala": "على",
+  "benzin": "بنزين", "banzeen": "بنزين",
+  "kahwa": "قهوة", "qahwa": "قهوة",
+  "akl": "أكل", "akel": "أكل",
+  "atm": "ATM",
+  "flous": "فلوس", "floos": "فلوس",
+  "gneh": "جنيه", "geneh": "جنيه",
+};
+
+function convertFrancoArabLight(text: string): string {
+  return text.replace(/[a-zA-Z][a-zA-Z0-9']*[0-9][a-zA-Z0-9']*|[0-9][a-zA-Z0-9']*[a-zA-Z][a-zA-Z0-9']*|[a-zA-Z]{2,}/g, (word) => {
+    const lower = word.toLowerCase();
+    if (FRANCO_LIGHT_DICT[lower]) return FRANCO_LIGHT_DICT[lower];
+    let result = "";
+    for (const char of lower) {
+      if (FRANCO_DIGIT_MAP[char]) result += FRANCO_DIGIT_MAP[char];
+      else if (FRANCO_LETTER_MAP[char]) result += FRANCO_LETTER_MAP[char];
+      else result += char;
+    }
+    return result;
+  });
+}
+
 // ─── Types ────────────────────────────────────────────────────────
 
 export interface NormalizerV2Output {
@@ -181,6 +217,9 @@ function estimateComplexity(
  */
 function normalizeLightForAI(text: string): string {
   let result = text.trim();
+
+  // 0. Convert Franco-Arab (Arabizi) to Arabic — AI understands Arabic better
+  result = convertFrancoArabLight(result);
 
   // 1. Apply STT corrections (fix speech-to-text typos)
   result = applySttCorrections(result);

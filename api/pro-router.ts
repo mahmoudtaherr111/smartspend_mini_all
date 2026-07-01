@@ -106,13 +106,19 @@ export const proRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const simOk =
-        env.NODE_ENV === "development" || env.BILLING_SIMULATE === "true";
-      if (!simOk) {
+      if (env.NODE_ENV === "production") {
         throw new TRPCError({
           code: "FORBIDDEN",
           message:
             "الترقية المباشرة غير مسموح بها في البيئة الإنتاجية. يجب إتمام عملية الدفع عبر بوابة الدفع الرسمية.",
+        });
+      }
+      const simOk = env.BILLING_SIMULATE === "true";
+      if (!simOk) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message:
+            "الترقية المباشرة غير مسموح بها. يجب إتمام عملية الدفع عبر بوابة الدفع الرسمية.",
         });
       }
 

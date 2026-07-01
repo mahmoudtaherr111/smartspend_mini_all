@@ -61,7 +61,6 @@ const EXPENSE_ONLY_CATEGORIES = new Set([
   "التزامات يومية",
   "خدمات رقمية",
   "خدمات سيارات",
-  "خروجات",
   // "متنوعات" — REMOVED: neutral fallback, not expense-only
 ]);
 
@@ -203,20 +202,7 @@ function detectDuplicates(items: ParsedTransaction[]): VerificationFlag[] {
   return flags;
 }
 
-// Bug #17 fix: Apply Arabic text normalization before comparing descriptions.
-// Previously, "صيدليه" and "صيدلية" would NOT be considered duplicates.
-function normalizeArabicForCompare(str: string): string {
-  return String(str || "")
-    .trim()
-    .replace(/[\u064B-\u065F\u0670]/g, "") // remove tashkeel
-    .replace(/[إأآٱ]/g, "ا")
-    .replace(/ى/g, "ي")
-    .replace(/ة/g, "ه")
-    .replace(/ؤ/g, "و")
-    .replace(/ئ/g, "ي")
-    .replace(/\s+/g, " ")
-    .toLowerCase();
-}
+import { normalizeArabicCompact as normalizeArabicForCompare } from "./unified-normalizer";
 
 function areDescriptionsSimilar(a: string, b: string): boolean {
   if (!a || !b) return true;

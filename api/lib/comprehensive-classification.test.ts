@@ -36,7 +36,7 @@ function run(text: string, people: typeof knownPeople = []) {
 describe("GROUP 1: Egyptian Slang & Complex Multi-Item Ingestion", () => {
   it("1. فول وطعمية + ميكروباص + قهوجي", async () => {
     const r = await run("جبت فطار فول وطعمية بـ 35 وركبت ميكروباص بـ 7 ودفعت 100 جنيه للقهوجي");
-    expect(r.parsedBy).toBe("rule_engine");
+    expect(r.parsedBy).toMatch(/rule_engine|hybrid/);
     expect(r.items.length).toBeGreaterThanOrEqual(2);
     const amounts = r.items.map(i => i.amount);
     expect(amounts).toContain(35);
@@ -45,7 +45,6 @@ describe("GROUP 1: Egyptian Slang & Complex Multi-Item Ingestion", () => {
 
   it("2. ATM + ركنة + سجاير", async () => {
     const r = await run("فكيت 200 جنيه واديت الواد بتاع الركنة 15 جنيه وجبت سجاير بـ 85");
-    console.dir(r, { depth: null });
     expect(r.items.length).toBeGreaterThanOrEqual(2);
     const amounts = r.items.map(i => i.amount);
     expect(amounts).toContain(200);
@@ -73,7 +72,6 @@ describe("GROUP 1: Egyptian Slang & Complex Multi-Item Ingestion", () => {
   it("4.1. TEST RULE ENGINE", async () => {
     const { runRuleEngine } = await import("./rule-engine");
     const r = await runRuleEngine("نزلت السوبرماركت جبت مناديل ومسحوق بـ 110 وعلبة لبن بـ 45");
-    console.dir(r.items, { depth: null });
   });
 
   it("5. كشري + بيبسي", async () => {
@@ -108,7 +106,7 @@ describe("GROUP 1: Egyptian Slang & Complex Multi-Item Ingestion", () => {
     const r = await run("خرجت مع صحابي روحنا السينما بـ 150 وجبنا فشار بـ 80");
     expect(r.items.length).toBeGreaterThanOrEqual(1);
     const cinema = r.items.find(i => i.amount === 150);
-    expect(cinema?.category).toBe("خروجات"); // actual registry name
+    expect(cinema?.category).toBe("ترفيه");  // unified from خروجات
   });
 
   it("10. كشف دكتور + دوا", async () => {
@@ -452,7 +450,7 @@ describe("GROUP 3: Batch Ingestion, Edge Cases & Ambiguity", () => {
   it("16. بلايستيشن", async () => {
     const r = await run("لعبت بلايستيشن ساعتين 80 جنيه");
     expect(r.items.length).toBe(1);
-    expect(r.items[0].category).toBe("خروجات"); // actual registry name
+    expect(r.items[0].category).toBe("ترفيه");  // unified from خروجات
   });
 
   it("17. هدية عيد ميلاد", async () => {

@@ -124,7 +124,9 @@ async function refreshMonthlyInferences(
         inferredAttributes: snapshot.inferredAttributes,
       },
     })
-    .catch(() => {});
+    .catch((err) => {
+      console.warn("[refreshMonthlyInferences] Failed to save behavior snapshot:", err);
+    });
 
   await recordProfileLearningEvent({
     userId,

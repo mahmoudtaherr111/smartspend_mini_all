@@ -82,7 +82,7 @@ const AMOUNT_RULES: AmountRule[] = [
     alertLow: "",
   },
   {
-    category: "خروجات",
+    category: "ترفيه",
     minAmount: 1,
     maxAmount: 5000,
     alertHigh: "المبلغ ده كبير على الخروجات. متأكد؟",
@@ -216,7 +216,7 @@ export function getTimeContext(): TimeHint | null {
   }
   // Friday outings
   if (day === 5 && hour >= 10 && hour <= 22) {
-    return { category: "خروجات" };
+    return { category: "ترفيه" };
   }
 
   return null;
@@ -266,7 +266,6 @@ export function checkIntentConflict(item: ParsedTransaction): AnomalyResult {
     "صحة",
     "تعليم",
     "ترفيه",
-    "خروجات",
     "خدمات سيارات",
   ];
   const incomeOnlyCategories = ["مرتب", "عمل حر", "عوائد استثمار"];

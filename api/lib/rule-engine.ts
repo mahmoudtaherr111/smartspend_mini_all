@@ -95,8 +95,8 @@ export const SUB_CATEGORY_MAP: Record<
   كبدة: { category: "أكل وشرب", subCategory: "مطعم" },
   حواوشي: { category: "أكل وشرب", subCategory: "مطعم" },
   كريب: { category: "أكل وشرب", subCategory: "وجبات سريعة" },
-  عصير: { category: "أكل وشرب", subCategory: "قهوة وكافيه" },
-  قصب: { category: "أكل وشرب", subCategory: "قهوة وكافيه" },
+  عصير: { category: "أكل وشرب", subCategory: "مشروبات" },
+  قصب: { category: "أكل وشرب", subCategory: "مشروبات" },
   بيتزا: { category: "أكل وشرب", subCategory: "وجبات سريعة" },
   سوشي: { category: "أكل وشرب", subCategory: "سي فود" },
   برجر: { category: "أكل وشرب", subCategory: "وجبات سريعة" },
@@ -127,7 +127,8 @@ export const SUB_CATEGORY_MAP: Record<
   تذكره: { category: "مواصلات", subCategory: "مترو" },
   تذكرة: { category: "مواصلات", subCategory: "مترو" },
   تيكت: { category: "مواصلات", subCategory: "مترو" },
-  مشروع: { category: "مواصلات", subCategory: "أتوبيس" },
+  // "مشروع" removed — means "project/business" in Egyptian Arabic, NOT a bus.
+  // Was causing "دفعت في المشروع 5000" → مواصلات/أتوبيس (critical misclassification).
   // Bug #10 fix: "قطر" means the country Qatar, not a train.
   // Use "قطار" (train) instead as the keyword.
   قطار: { category: "مواصلات", subCategory: "قطار" },
@@ -145,7 +146,7 @@ export const SUB_CATEGORY_MAP: Record<
   قسط: { category: "فواتير", subCategory: "أقساط" },
   اقساط: { category: "فواتير", subCategory: "أقساط" },
   تامين: { category: "فواتير", subCategory: "تأمين" },
-  ضرايب: { category: "فواتير", subCategory: "ضرائب" },
+  ضرايب: { category: "خدمات حكومية", subCategory: "ضرائب" },
   باقه: { category: "فواتير", subCategory: "إنترنت" },
   باقة: { category: "فواتير", subCategory: "إنترنت" },
   // Home subcategories
@@ -208,7 +209,7 @@ export const SUB_CATEGORY_MAP: Record<
   // always runs first and overrides this. Having two conflicting entries is misleading).
   // كارفور: { category: "تسوق", subCategory: "سوبر ماركت" }, ← DELETED
   سوبرماركت: { category: "أكل وشرب", subCategory: "بقالة" },
-  "سوبر ماركت": { category: "تسوق", subCategory: "سوبر ماركت" },
+  "سوبر ماركت": { category: "أكل وشرب", subCategory: "بقالة" },
   // Health subcategories
   دكتور: { category: "صحة", subCategory: "دكتور" },
   كشف: { category: "صحة", subCategory: "دكتور" },
@@ -241,7 +242,8 @@ export const SUB_CATEGORY_MAP: Record<
   عزمت: { category: "ترفيه", subCategory: "خروجة" },
   فرتكت: { category: "ترفيه", subCategory: "ترفيه عام" },
   طيرت: { category: "ترفيه", subCategory: "ترفيه عام" },
-  رميت: { category: "استثمار", subCategory: "توفير" },
+  // "رميت" removed from استثمار — in Egyptian Arabic "رميت" means "I spent/lost",
+  // NOT investment. Was causing "رميت 50 على القهوة" → استثمار/توفير (critical bug).
   الجمعية: { category: "تحويل", subCategory: "ادخار" },
   جمعية: { category: "تحويل", subCategory: "ادخار" },
   جمعيه: { category: "تحويل", subCategory: "ادخار" },
@@ -270,7 +272,8 @@ export const SUB_CATEGORY_MAP: Record<
   اسهم: { category: "استثمار", subCategory: "أسهم" },
   شهاده: { category: "استثمار", subCategory: "شهادات" },
   // Egyptian slang
-  شلت: { category: "استثمار", subCategory: "ذهب" }, // Default: شلت = investment in gold (most common)
+  // "شلت" alone removed — ambiguous: "شلت فلوس"=withdrawal, "شلت دهب"=gold purchase.
+  // Only specific phrases "شلت دهب"/"شلت ذهب" remain mapped to investment/gold.
   "شلت دهب": { category: "استثمار", subCategory: "ذهب" },
   "شلت ذهب": { category: "استثمار", subCategory: "ذهب" },
   // Income subcategories
@@ -294,11 +297,11 @@ export const SUB_CATEGORY_MAP: Record<
   شيشة: { category: "تدخين", subCategory: "شيشة/معسل" },
   معسل: { category: "تدخين", subCategory: "شيشة/معسل" },
 
-  بامبرز: { category: "مصاريف شخصية", subCategory: "عناية شخصية" },
-  حفاظات: { category: "مصاريف شخصية", subCategory: "عناية شخصية" },
+  بامبرز: { category: "تسوق", subCategory: "عناية شخصية" },
+  حفاظات: { category: "تسوق", subCategory: "عناية شخصية" },
   لبن: { category: "أكل وشرب", subCategory: "بقالة" },
-  مناديل: { category: "منزل", subCategory: "مستلزمات" },
-  مسحوق: { category: "منزل", subCategory: "مستلزمات" },
+  مناديل: { category: "سكن", subCategory: "منظفات" },
+  مسحوق: { category: "سكن", subCategory: "منظفات" },
 
   صالون: { category: "تسوق", subCategory: "عناية شخصية" },
   مكواه: { category: "تسوق", subCategory: "ملابس" },
@@ -374,6 +377,54 @@ export const SUB_CATEGORY_MAP: Record<
   فك: { category: "تحويل", subCategory: "أخرى" },
   فكه: { category: "تحويل", subCategory: "أخرى" },
   كاش: { category: "تحويل", subCategory: "عام" },
+  // Government services
+  "جواز سفر": { category: "خدمات حكومية", subCategory: "جواز سفر" },
+  جواز: { category: "خدمات حكومية", subCategory: "جواز سفر" },
+  "رقم قومي": { category: "خدمات حكومية", subCategory: "بطاقة رقم قومي" },
+  "بطاقة رقم قومي": { category: "خدمات حكومية", subCategory: "بطاقة رقم قومي" },
+  "مخالفة مرور": { category: "خدمات حكومية", subCategory: "مخالفة مرور" },
+  مخالفه: { category: "خدمات حكومية", subCategory: "مخالفة مرور" },
+  مخالفة: { category: "خدمات حكومية", subCategory: "مخالفة مرور" },
+  "تجديد رخصة": { category: "خدمات حكومية", subCategory: "رخصة" },
+  رخصه: { category: "خدمات حكومية", subCategory: "رخصة" },
+  رخصة: { category: "خدمات حكومية", subCategory: "رخصة" },
+  توثيق: { category: "خدمات حكومية", subCategory: "توثيق" },
+  // Missing Egyptian food words
+  كنافه: { category: "أكل وشرب", subCategory: "سناكس" },
+  كنافة: { category: "أكل وشرب", subCategory: "سناكس" },
+  ملوخيه: { category: "أكل وشرب", subCategory: "مطعم" },
+  ملوخية: { category: "أكل وشرب", subCategory: "مطعم" },
+  فته: { category: "أكل وشرب", subCategory: "مطعم" },
+  فتة: { category: "أكل وشرب", subCategory: "مطعم" },
+  "فول مدمس": { category: "أكل وشرب", subCategory: "مطعم" },
+  شعريه: { category: "أكل وشرب", subCategory: "بقالة" },
+  شعرية: { category: "أكل وشرب", subCategory: "بقالة" },
+  بوفيه: { category: "أكل وشرب", subCategory: "مطعم" },
+  // Missing transport/car words
+  ونش: { category: "مواصلات", subCategory: "صيانة عربية" },
+  ميكانيكي: { category: "مواصلات", subCategory: "صيانة عربية" },
+  كاوتش: { category: "خدمات سيارات", subCategory: "إطارات" },
+  "غسلت العربية": { category: "مواصلات", subCategory: "صيانة عربية" },
+  "غسيل العربية": { category: "مواصلات", subCategory: "صيانة عربية" },
+  // Missing health words
+  تطعيم: { category: "صحة", subCategory: "دكتور" },
+  طوارئ: { category: "صحة", subCategory: "مستشفى" },
+  اسعاف: { category: "صحة", subCategory: "مستشفى" },
+  "علاج طبيعي": { category: "صحة", subCategory: "دكتور" },
+  بيطري: { category: "حيوانات أليفة", subCategory: "طبيب بيطري" },
+  // General missing words
+  مول: { category: "تسوق", subCategory: "عام" },
+  جزمجي: { category: "تسوق", subCategory: "أحذية" },
+  ترزي: { category: "تسوق", subCategory: "ملابس" },
+  خياط: { category: "تسوق", subCategory: "ملابس" },
+  "مكنة الصراف": { category: "تحويل", subCategory: "سحب ATM" },
+  "ماكينة الصراف": { category: "تحويل", subCategory: "سحب ATM" },
+  atm: { category: "تحويل", subCategory: "سحب ATM" },
+  // Context-aware: "اشتريت شقة" = investment, "إيجار شقة" = home
+  "اشتريت شقة": { category: "استثمار", subCategory: "عقارات" },
+  "اشتريت شقه": { category: "استثمار", subCategory: "عقارات" },
+  "شقة تمليك": { category: "استثمار", subCategory: "عقارات" },
+  "شقه تمليك": { category: "استثمار", subCategory: "عقارات" },
 };
 
 /**
@@ -692,6 +743,79 @@ export function isSimpleText(text: string): boolean {
 }
 
 /**
+ * Context-Aware Disambiguation for multi-meaning Egyptian Arabic words.
+ * Resolves ambiguity for words that have completely different meanings
+ * depending on context (e.g. "نور" = electricity vs a girl's name).
+ *
+ * Called after SUB_CATEGORY_MAP or MERCHANT_REGISTRY match to verify
+ * the category fits the surrounding context. Only overrides when the
+ * context provides a clear signal — otherwise keeps the default mapping.
+ */
+const DISAMBIGUATION_RULES: Record<string, Array<{
+  contextPattern: RegExp;
+  category: string;
+  subCategory: string;
+}>> = {
+  "عربية": [
+    { contextPattern: /فول|كبد[ةه]|خضار|بطاطس|طعمي[ةه]|بيض|لبن/, category: "أكل وشرب", subCategory: "مطعم" },
+    { contextPattern: /اشتريت|جبت|جديد|مستعمل/, category: "تسوق", subCategory: "أجهزة إلكترونية" },
+    { contextPattern: /طفل|بيبي|حضان[ةه]|عربان[ةه]/, category: "تسوق", subCategory: "عام" },
+  ],
+  "عربيه": [
+    { contextPattern: /فول|كبد[ةه]|خضار|بطاطس|طعمي[ةه]|بيض|لبن/, category: "أكل وشرب", subCategory: "مطعم" },
+    { contextPattern: /اشتريت|جبت|جديد|مستعمل/, category: "تسوق", subCategory: "أجهزة إلكترونية" },
+    { contextPattern: /طفل|بيبي|حضان[ةه]|عربان[ةه]/, category: "تسوق", subCategory: "عام" },
+  ],
+  "نور": [
+    { contextPattern: /(?:اديت|أديت|حولت|بعت|سلفت|عطيت)\s+(?:ل(?:ـ)?)?\s*(?:نور|\S{0,5}نور)/, category: "تحويل", subCategory: "أشخاص" },
+  ],
+  "سيف": [
+    { contextPattern: /(?:اديت|أديت|حولت|بعت|سلفت|عطيت)\s+(?:ل(?:ـ)?)?\s*(?:سيف|صيدلي[ةه])/, category: "تحويل", subCategory: "أشخاص" },
+  ],
+  "تذكرة": [
+    { contextPattern: /سينما|فيلم/, category: "ترفيه", subCategory: "سينما" },
+    { contextPattern: /طيران|طيار[ةه]|flight/i, category: "مواصلات", subCategory: "طيران" },
+  ],
+  "تذكره": [
+    { contextPattern: /سينما|فيلم/, category: "ترفيه", subCategory: "سينما" },
+    { contextPattern: /طيران|طيار[ةه]|flight/i, category: "مواصلات", subCategory: "طيران" },
+  ],
+  "شراب": [
+    { contextPattern: /شربت|مشروب|عصير|عصاير/, category: "أكل وشرب", subCategory: "مشروبات" },
+  ],
+  "كفر": [
+    { contextPattern: /عربي?[ةه]|كاوتش|إطار|اطار|تاير|tire/i, category: "خدمات سيارات", subCategory: "إطارات" },
+  ],
+  "المنصورة": [
+    { contextPattern: /سافرت|روحت|خروج[ةه]|مصيف|رحل[ةه]/, category: "ترفيه", subCategory: "سفر" },
+  ],
+  "المنصوره": [
+    { contextPattern: /سافرت|روحت|خروج[ةه]|مصيف|رحل[ةه]/, category: "ترفيه", subCategory: "سفر" },
+  ],
+};
+
+function disambiguateContext(
+  matchedWord: string,
+  context: string,
+  currentCategory: string,
+  currentSubCategory: string,
+): { category: string; subCategory: string } | null {
+  const normalizedWord = normalizeArabic(matchedWord).toLowerCase().trim();
+  const rules = DISAMBIGUATION_RULES[matchedWord] || DISAMBIGUATION_RULES[normalizedWord];
+  if (!rules) return null;
+
+  const normalizedContext = normalizeArabic(context).toLowerCase();
+  for (const rule of rules) {
+    if (rule.contextPattern.test(normalizedContext)) {
+      if (rule.category !== currentCategory || rule.subCategory !== currentSubCategory) {
+        return { category: rule.category, subCategory: rule.subCategory };
+      }
+    }
+  }
+  return null;
+}
+
+/**
  * Run the rule engine on normalized text
  */
 export async function runRuleEngine(
@@ -703,6 +827,7 @@ export async function runRuleEngine(
   }> = [],
   profileContext?: ClassificationProfileContext,
   apiKey?: string,
+  fireworksApiKey?: string,
 ): Promise<RuleEngineResult> {
   const amounts = extractAmounts(normalizedText);
 
@@ -790,11 +915,6 @@ export async function runRuleEngine(
     }
     distinctCats.delete("متنوعات");
     distinctCats.delete("اشتراكات");
-    
-    // DEBUG: Print distinct categories to see why it fails
-    if (normalizedText.includes("مناديل ومسحوق")) {
-      console.log(`[DEBUG] Segment distinctCats:`, Array.from(distinctCats), "context:", allContext);
-    }
     
     // If multiple different categories exist in the same segment, 
     // it's a complex ambiguous sentence (e.g. "جبت أكل وركبت اوبر بـ 500").
@@ -931,6 +1051,14 @@ export async function runRuleEngine(
           confidence = 100;
           inferenceSource = "dictionary";
           ambiguityFlags = ["merchant_registry_hit"];
+          // Context-aware disambiguation for merchant names that are also person names
+          const disambiguated = disambiguateContext(merchant, allContext, category, subCategory);
+          if (disambiguated) {
+            category = disambiguated.category;
+            subCategory = disambiguated.subCategory;
+            confidence = 85;
+            ambiguityFlags = [...(ambiguityFlags || []), "disambiguated_from_merchant"];
+          }
           found = true;
           break;
         }
@@ -963,10 +1091,10 @@ export async function runRuleEngine(
             SUB_CATEGORY_MAP[phrase] || SUB_CATEGORY_MAP[phraseNorm];
           if (phraseSubHit) {
             subCategory = phraseSubHit.subCategory;
-            confidence = 93;
+            confidence = 87;
           } else {
             subCategory = "عام";
-            confidence = 92;
+            confidence = 85;
           }
           inferenceSource = "dictionary";
           found = true;
@@ -987,10 +1115,10 @@ export async function runRuleEngine(
               SUB_CATEGORY_MAP[phrase] || SUB_CATEGORY_MAP[phraseNorm];
             if (phraseSubHit) {
               subCategory = phraseSubHit.subCategory;
-              confidence = 91;
+              confidence = 85;
             } else {
               subCategory = "عام";
-              confidence = 89;
+              confidence = 82;
             }
             inferenceSource = "dictionary";
             found = true;
@@ -1008,10 +1136,12 @@ export async function runRuleEngine(
         const phraseNorm = normalizeArabic(phrase).toLowerCase();
         const hit = SUB_CATEGORY_MAP[phrase] || SUB_CATEGORY_MAP[phraseNorm];
         if (hit) {
-          category = hit.category;
-          subCategory = hit.subCategory;
-          confidence = 96; // Raised from 90 to 96
+          const disambiguated = disambiguateContext(phrase, allContext, hit.category, hit.subCategory);
+          category = disambiguated ? disambiguated.category : hit.category;
+          subCategory = disambiguated ? disambiguated.subCategory : hit.subCategory;
+          confidence = 92; // Trigram: high confidence (auto-save threshold)
           inferenceSource = "rule";
+          if (disambiguated) ambiguityFlags = [...(ambiguityFlags || []), "context_disambiguated"];
           found = true;
           break;
         }
@@ -1023,10 +1153,12 @@ export async function runRuleEngine(
           const phraseNorm = normalizeArabic(phrase).toLowerCase();
           const hit = SUB_CATEGORY_MAP[phrase] || SUB_CATEGORY_MAP[phraseNorm];
           if (hit) {
-            category = hit.category;
-            subCategory = hit.subCategory;
-            confidence = 95; // Raised from 88 to 95
+            const disambiguated = disambiguateContext(phrase, allContext, hit.category, hit.subCategory);
+            category = disambiguated ? disambiguated.category : hit.category;
+            subCategory = disambiguated ? disambiguated.subCategory : hit.subCategory;
+            confidence = 88; // Bigram: above auto-save threshold
             inferenceSource = "rule";
+            if (disambiguated) ambiguityFlags = [...(ambiguityFlags || []), "context_disambiguated"];
             found = true;
             break;
           }
@@ -1046,7 +1178,7 @@ export async function runRuleEngine(
           (stripped !== normalizedWord ? SUB_CATEGORY_MAP[stripped] : undefined);
         if (hit) {
           const isExact = SUB_CATEGORY_MAP[word] || SUB_CATEGORY_MAP[normalizedWord];
-          const baseScore = isExact ? 93 : 91; // 93 for exact unigram, 91 for prefix-stripped unigram
+          const baseScore = isExact ? 85 : 82; // Calibrated: single-word exact = auto-save borderline, prefix = review
           const refinedSub = refineSubCategory(hit.category, hit.subCategory, allContext);
           // Boost if it's refined (not "عام")
           const currentScore = baseScore + (refinedSub !== "عام" && hit.subCategory === "عام" ? 2 : 0);
@@ -1062,6 +1194,20 @@ export async function runRuleEngine(
         }
       }
       if (bestHit) {
+        // Context-aware disambiguation for multi-meaning words
+        for (const word of words) {
+          const normalizedWord = normalizeArabic(word).toLowerCase();
+          const stripped = stripArabicPrefix(normalizedWord);
+          const disambiguated = disambiguateContext(word, allContext, bestHit.category, bestHit.subCategory)
+            || disambiguateContext(normalizedWord, allContext, bestHit.category, bestHit.subCategory)
+            || (stripped !== normalizedWord ? disambiguateContext(stripped, allContext, bestHit.category, bestHit.subCategory) : null);
+          if (disambiguated) {
+            bestHit.category = disambiguated.category;
+            bestHit.subCategory = disambiguated.subCategory;
+            ambiguityFlags = [...(ambiguityFlags || []), "context_disambiguated"];
+            break;
+          }
+        }
         category = bestHit.category;
         subCategory = bestHit.subCategory;
         confidence = bestHit.confidence;
@@ -1120,13 +1266,10 @@ export async function runRuleEngine(
             (strippedWord !== normalizedWord ? SUB_CATEGORY_MAP[strippedWord] : undefined);
           if (subHit) {
             subCategory = subHit.subCategory;
-            // Bug #13 fix: single-word+subcat = 87 (bigram+subcat=91, bigram=89, single-word=80)
-            // Hierarchy: bigram+sub > bigram > single+sub > single-word-only
-            confidence = 93; // Raised from 87 to 93
+            confidence = 85; // Single-word + subcat: auto-save borderline
           } else {
             subCategory = "عام";
-            // single-word match without known subcategory = 80 (lowest, correctly below all bigram scores)
-            confidence = 91; // Raised from 80 to 91
+            confidence = 78; // Single-word only: needs review
           }
           inferenceSource = "dictionary";
           found = true;
@@ -1135,16 +1278,18 @@ export async function runRuleEngine(
       }
     }
 
-    // 6. Fuzzy match
+    // 6. Fuzzy match (Damerau-Levenshtein — handles transpositions)
     if (!found) {
       for (const word of words) {
         if (word.length >= 3) {
-          const limit = word.length <= 4 ? 0 : (word.length <= 6 ? 1 : 2);
+          // Damerau handles transpositions (e.g. "كهارب" ↔ "كهربا" = distance 2, not 3)
+          // Short words (≤3 chars) need strict matching to avoid false positives
+          const limit = word.length <= 3 ? 0 : (word.length <= 6 ? 2 : 2);
           const fuzzyResult = fuzzyFindCategory(word, CATEGORY_DICTIONARY, limit);
           if (fuzzyResult && typeof fuzzyResult === "string") {
             category = fuzzyResult;
             subCategory = "عام";
-            confidence = 60;
+            confidence = 55;
             inferenceSource = "dictionary";
             found = true;
             break;
@@ -1153,10 +1298,10 @@ export async function runRuleEngine(
       }
     }
 
-    // 7. Semantic Hybrid Fallback (gemini-embedding-2)
-    if ((!found || confidence < 80) && apiKey) {
+    // 7. Semantic Hybrid Fallback (local n-gram + Fireworks embedding)
+    if ((!found || confidence < 80)) {
       try {
-        const semanticMatch = await matchSegment(allContextNorm, apiKey);
+        const semanticMatch = await matchSegment(allContextNorm, apiKey, fireworksApiKey);
         if (semanticMatch && semanticMatch.score >= 80 && semanticMatch.score > confidence) {
           category = semanticMatch.category;
           subCategory = semanticMatch.subCategory;
@@ -1181,11 +1326,11 @@ export async function runRuleEngine(
       confidence = intentResult.confidence;
     }
 
-    // Expense with no specific category but strong intent
+    // Expense with no specific category — low confidence so AI fallback can engage
     if (intentResult.intent === "expense" && !found) {
       category = "متنوعات";
       subCategory = "عام";
-      confidence = Math.max(intentResult.confidence, 85); // High confidence to bypass AI
+      confidence = Math.min(intentResult.confidence, 40); // Low confidence → triggers AI fallback
       found = true;
     }
 
@@ -1204,7 +1349,7 @@ export async function runRuleEngine(
     if (!description || description.length < 2) {
       // Bug #13 fix: Multi-word matches should score HIGHER than single-word.
       // Previously: bigram=84-86, unigram=85-88 (inverted — fixed to 89/87).
-      confidence = intentResult.intent === "income" ? 89 : 87;
+      confidence = intentResult.intent === "income" ? 75 : 70;
       description = intentResult.intent === "income" ? "دخل" : category;
     }
 
@@ -1217,15 +1362,28 @@ export async function runRuleEngine(
 
     let finalConfidence = confidence;
     if (subCategory === "عام" && refinedSubCategory !== "عام") {
-      finalConfidence = Math.max(finalConfidence, 87);
+      finalConfidence = Math.max(finalConfidence, 82);
     }
 
-    // Ambiguity Scorer: Force confidence to 10 if text contains ambiguous Egyptian words, 
-    // EXCEPT if we already identified it with high confidence (e.g. direct rule match for recharge)
+    // Context-Aware Ambiguity Scorer: Only penalize when ambiguous words appear
+    // WITHOUT a clear disambiguating context. Previously, words like "باقة" or "شحن"
+    // would nuke confidence to 10% even when the text clearly said "باقة النت" (internet bill).
     const ambiguityRegex = /(حساب|باقة|باقه|كارت|شحن|رصيد)/;
     if (ambiguityRegex.test(allContextNorm) && finalConfidence < 90) {
-      finalConfidence = 10;
-      ambiguityFlags = [...(ambiguityFlags || []), "ambiguity_scorer_penalty"];
+      // Check if context already disambiguates the ambiguous word
+      const hasClearContext =
+        /(?:نت|انترنت|إنترنت|راوتر|واي\s*فاي|wifi|وي)/i.test(allContextNorm) ||  // internet bill
+        /(?:كهربا|كهرباء|مياه|مايه|غاز)/.test(allContextNorm) ||                  // utility bill
+        /(?:موبايل|تليفون|فودافون|اورنج|اتصالات)/i.test(allContextNorm) ||       // mobile recharge
+        /(?:فواتير|فاتوره|فاتورة)/.test(allContextNorm) ||                        // explicit bill context
+        /(?:بنزين|تفويل[ةه]|محط[ةه])/i.test(allContextNorm) ||                     // fuel context for "شحن"
+        /(?:شحن\s*رصيد|رصيد\s*شحن)/.test(allContextNorm) ||                        // "شحن رصيد" together = clear
+        ambiguityFlags?.includes("merchant_registry_hit") ||                        // merchant already matched
+        ambiguityFlags?.includes("context_disambiguated");                          // disambiguation already resolved
+      if (!hasClearContext) {
+        finalConfidence = Math.min(finalConfidence, 45); // Penalize but not to 10%
+        ambiguityFlags = [...(ambiguityFlags || []), "ambiguity_scorer_penalty"];
+      }
     }
 
     let registeredType = CATEGORIES.find(

@@ -1,0 +1,11 @@
+{
+	"appId": "com.smartspend.app",
+	"appName": "SmartSpend AI",
+	"webDir": "dist/public",
+	"packageClassList": [
+		"KeyboardPlugin",
+		"SplashScreenPlugin",
+		"StatusBarPlugin",
+		"SafeAreaPlugin"
+	]
+}

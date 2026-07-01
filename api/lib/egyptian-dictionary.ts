@@ -41,10 +41,10 @@ type CategoryName =
   | "استثمار"
   | "خدمات رقمية"
   | "خدمات سيارات"
-  | "خروجات"
   | "العائلة"
   | "أصدقاء"
   | "موظفين"
+  | "خدمات حكومية"
   | "متنوعات";
 
 function normKey(input: string): string {
@@ -452,8 +452,6 @@ function buildDictionary(): Record<string, CategoryName> {
     [
       "سكن",
       "بيت",
-      "شقه",
-      "شقة",
       "ايجار",
       "إيجار",
       "اجار",
@@ -733,7 +731,6 @@ function buildDictionary(): Record<string, CategoryName> {
   addMany(
     dict,
     [
-      "خروجات",
       "خروجه صحاب",
       "خروجة صحاب",
       "بورد جيم",
@@ -747,7 +744,7 @@ function buildDictionary(): Record<string, CategoryName> {
       "بلايستيشن",
       "playstation",
     ],
-    "خروجات",
+    "ترفيه",
   );
 
   addMany(
@@ -1113,6 +1110,19 @@ function buildDictionary(): Record<string, CategoryName> {
   );
 
   addMany(dict, ["اديت", "ديت", "إديت", "أديت", "عطيت", "اعطيت"], "متنوعات");
+
+  // ───────────────────────────────
+  // Government Services
+  // ───────────────────────────────
+  addMany(
+    dict,
+    [
+      "رخصة", "رخصه", "جواز", "جواز سفر", "رقم قومي", "بطاقة رقم قومي",
+      "مخالفة", "مخالفه", "مخالفة مرور", "توثيق", "توثيق عقد",
+      "تجديد رخصة", "تجديد رخصه", "مرور", "traffic",
+    ],
+    "خدمات حكومية",
+  );
 
   return dict;
 }

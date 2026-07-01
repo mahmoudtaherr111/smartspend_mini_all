@@ -72,7 +72,7 @@ describe("AI kernel intent routing", () => {
         needsEvidence: true,
       }),
     });
-    expect(needs.map((need) => need.kind)).toEqual(["finance.transactions", "finance.breakdown"]);
+    expect(needs.map((need) => need.kind)).toEqual(["finance.transactions", "finance.breakdown", "finance.category_inclusion"]);
     expect(needs[0]).toMatchObject({
       priority: "hot",
       scope: expect.objectContaining({

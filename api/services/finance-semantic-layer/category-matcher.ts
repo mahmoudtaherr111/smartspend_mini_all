@@ -1,137 +1,42 @@
-const CATEGORY_ALIASES: Record<string, string[]> = {
-  food: [
-    "food",
-    "اكل وشرب",
-    "أكل وشرب",
-    "اكل",
-    "أكل",
-    "restaurant",
-    "\u0627\u0643\u0644",
-    "\u0623\u0643\u0644",
-    "\u0645\u0637\u0639\u0645",
-    "\u0645\u0637\u0627\u0639\u0645",
-    "\u0642\u0647\u0648\u0647",
-    "\u0642\u0647\u0648\u0629",
-    "\u0633\u0648\u0628\u0631 \u0645\u0627\u0631\u0643\u062a",
-    "سوبرماركت",
-    "ماركت",
-    "هايبر",
-    "هايبر ماركت",
-    "كارفور",
-    "خضار",
-    "فاكهة",
-    "لحمة",
-    "لحمه",
-    "فراخ",
-    "دليفري",
-    "طلبات",
-    "talabat",
-  ],
-  transport: [
-    "transport",
-    "تنقلات",
-    "uber",
-    "\u0645\u0648\u0627\u0635\u0644\u0627\u062a",
-    "\u0627\u0648\u0628\u0631",
-    "\u0643\u0631\u064a\u0645",
-    "\u0628\u0646\u0632\u064a\u0646",
-    "\u062a\u0627\u0643\u0633\u064a",
-    "\u0645\u062a\u0631\u0648",
-  ],
-  shopping: [
-    "shopping",
-    "تسوق وملابس",
-    "\u062a\u0633\u0648\u0642",
-    "\u0644\u0628\u0633",
-    "\u0645\u0644\u0627\u0628\u0633",
-    "\u0645\u0634\u062a\u0631\u064a\u0627\u062a",
-  ],
-  health: [
-    "health",
-    "صحة",
-    "صحه",
-    "صيدلية",
-    "صيدليه",
-    "دوا",
-    "دواء",
-    "علاج",
-    "كشف",
-    "دكتور",
-  ],
-  bills: [
-    "bills",
-    "فواتير",
-    "فاتورة",
-    "فاتوره",
-    "قسط",
-    "اقساط",
-    "كهربا",
-    "غاز",
-    "مياه",
-    "نت",
-    "انترنت",
-  ],
-  income: [
-    "income",
-    "دخل",
-    "مرتب",
-    "راتب",
-    "قبض",
-    "salary",
-  ],
-  saving: [
-    "saving",
-    "ادخار",
-    "تحويش",
-    "جمعية",
-    "جمعيه",
-  ],
+/**
+ * Finance Semantic Layer — Category Matcher
+ * Delegates to the unified taxonomy in category-registry.ts.
+ * Internal canonical = English ID (e.g., "food").
+ * Display = Arabic name (e.g., "أكل وشرب").
+ */
+import {
+  canonicalCategoryId,
+  arabicDisplayName,
+  getCategoryAliasesById,
+  comparableArabic,
+} from "../../lib/category-registry";
+
+const AGGREGATE_GROUP_MAP: Record<string, string[]> = {
+  income: ["salary", "freelance", "investment_income"],
+  saving: ["transfer"],
+  bills: ["bills", "daily_commitments"],
+  transport: ["transport", "car_services"],
+  entertainment: ["entertainment", "outings"],
 };
 
-const CATEGORY_DISPLAY_NAMES: Record<string, string> = {
-  food: "\u0627\u0644\u0623\u0643\u0644",
-  transport: "\u0627\u0644\u0645\u0648\u0627\u0635\u0644\u0627\u062a",
-  shopping: "\u0627\u0644\u062a\u0633\u0648\u0642",
-  health: "\u0627\u0644\u0635\u062d\u0629",
-  bills: "\u0627\u0644\u0641\u0648\u0627\u062a\u064a\u0631",
-  income: "\u0627\u0644\u062f\u062e\u0644",
-  saving: "\u0627\u0644\u0627\u062f\u062e\u0627\u0631",
-  uncategorized: "\u063a\u064a\u0631 \u0645\u0635\u0646\u0641",
-};
-
-const CATEGORY_INFERENCE_PRIORITY = [
-  "food",
-  "transport",
-  "health",
-  "bills",
-  "saving",
-  "shopping",
-  "income",
-];
+function expandAggregate(id: string): string[] {
+  if (AGGREGATE_GROUP_MAP[id]) return AGGREGATE_GROUP_MAP[id];
+  return [id];
+}
 
 export function normalizeFinanceText(value: unknown): string {
-  return String(value ?? "")
-    .toLowerCase()
-    .normalize("NFKC")
-    .replace(/[\u064B-\u065F\u0670]/g, "")
-    .replace(/[\u0623\u0625\u0622\u0671]/g, "\u0627")
-    .replace(/\u0624/g, "\u0648")
-    .replace(/\u0626/g, "\u064a")
-    .replace(/\u0649/g, "\u064a")
-    .replace(/\u0629/g, "\u0647")
-    .replace(/\s+/g, " ")
-    .trim();
+  return comparableArabic(String(value ?? ""));
 }
 
 export function getCategoryAliases(category: string): string[] {
-  const normalized = normalizeFinanceText(category);
-  const direct = CATEGORY_ALIASES[normalized];
-  if (direct) return [...new Set([category, ...direct])];
-
-  const matched = Object.values(CATEGORY_ALIASES).find((aliases) =>
-    aliases.some((alias) => normalizeFinanceText(alias) === normalized),
-  );
-  return matched ? [...new Set([category, ...matched])] : [category];
+  const ids = expandAggregate(category);
+  const aliases = new Set<string>([category]);
+  for (const id of ids) {
+    for (const alias of getCategoryAliasesById(id)) {
+      aliases.add(alias);
+    }
+  }
+  return [...aliases];
 }
 
 export function canonicalCategoryForRow(
@@ -140,38 +45,75 @@ export function canonicalCategoryForRow(
   ...extraFields: unknown[]
 ): string {
   const categoryText = String(rowCategory ?? "").trim();
-  const normalizedCategory = normalizeFinanceText(categoryText);
   const extraHaystack = [rowSubCategory, ...extraFields]
-    .map((value) => normalizeFinanceText(value))
+    .map((v) => normalizeFinanceText(v))
     .join(" ");
 
-  for (const key of CATEGORY_INFERENCE_PRIORITY) {
-    if (getCategoryAliases(key).some((alias) => extraHaystack.includes(normalizeFinanceText(alias)))) {
-      return key;
-    }
+  // Step 1: Infer from extra fields FIRST (description is more reliable than stored category)
+  if (extraHaystack) {
+    const inferred = inferCategoryFromHaystack(extraHaystack);
+    if (inferred && inferred !== "uncategorized") return inferred;
   }
 
-  for (const key of Object.keys(CATEGORY_ALIASES)) {
-    if (getCategoryAliases(key).some((alias) => normalizeFinanceText(alias) === normalizedCategory)) {
-      return key;
-    }
+  // Step 2: Try direct category match
+  if (categoryText) {
+    const direct = canonicalCategoryId(categoryText);
+    if (direct !== "uncategorized") return direct;
   }
 
-  const haystack = [rowCategory, rowSubCategory, ...extraFields]
-    .map((value) => normalizeFinanceText(value))
-    .join(" ");
-  for (const key of Object.keys(CATEGORY_ALIASES)) {
-    if (getCategoryAliases(key).some((alias) => haystack.includes(normalizeFinanceText(alias)))) {
-      return key;
-    }
-  }
+  // Step 3: Try full haystack (category + extra)
+  const fullHaystack = normalizeFinanceText(categoryText) + " " + extraHaystack;
+  const inferred = inferCategoryFromHaystack(fullHaystack);
+  if (inferred) return inferred;
 
   return categoryText || "uncategorized";
 }
 
+function inferCategoryFromHaystack(haystack: string): string | null {
+  if (!haystack) return null;
+  for (const [alias, id] of aliasEntries()) {
+    if (alias.length >= 3 && haystack.includes(alias)) {
+      return id;
+    }
+  }
+  return null;
+}
+
+let cachedAliasEntries: Array<[string, string]> | null = null;
+function aliasEntries(): Array<[string, string]> {
+  if (cachedAliasEntries) return cachedAliasEntries;
+  const entries: Array<[string, string]> = [];
+  const seen = new Set<string>();
+  for (const catId of allCanonicalIds()) {
+    for (const alias of getCategoryAliasesById(catId)) {
+      const normalized = normalizeFinanceText(alias);
+      if (normalized && normalized.length >= 3 && !seen.has(normalized)) {
+        entries.push([normalized, catId]);
+        seen.add(normalized);
+      }
+    }
+  }
+  entries.sort((a, b) => b[0].length - a[0].length);
+  cachedAliasEntries = entries;
+  return entries;
+}
+
+function allCanonicalIds(): string[] {
+  const ids = new Set<string>([
+    "food", "transport", "shopping", "health", "bills", "home",
+    "education", "entertainment", "subscriptions", "smoking", "gifts",
+    "pets", "work", "salary", "freelance", "investment_income",
+    "transfer", "investment", "daily_commitments", "digital_services",
+    "car_services", "outings", "family_transactions", "friends_transactions",
+    "employees_transactions", "liabilities_and_gam3eyat", "miscellaneous",
+    "income", "saving", "uncategorized",
+  ]);
+  return [...ids];
+}
+
 export function displayFinanceCategory(category: unknown): string {
-  const key = String(category ?? "").trim();
-  return CATEGORY_DISPLAY_NAMES[key] ?? (key || CATEGORY_DISPLAY_NAMES.uncategorized);
+  const id = String(category ?? "").trim();
+  return arabicDisplayName(id);
 }
 
 export function matchesCategory(
@@ -180,8 +122,14 @@ export function matchesCategory(
   category: string,
   ...extraFields: unknown[]
 ): boolean {
+  const rowCanonical = canonicalCategoryForRow(rowCategory, rowSubCategory, ...extraFields);
+  const targetIds = expandAggregate(category);
+  if (targetIds.includes(rowCanonical)) return true;
+
   const haystack = [rowCategory, rowSubCategory, ...extraFields]
-    .map((value) => normalizeFinanceText(value))
+    .map((v) => normalizeFinanceText(v))
     .join(" ");
-  return getCategoryAliases(category).some((alias) => haystack.includes(normalizeFinanceText(alias)));
+  return getCategoryAliases(category).some(
+    (alias) => alias.length >= 3 && haystack.includes(normalizeFinanceText(alias)),
+  );
 }

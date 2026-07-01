@@ -5,9 +5,10 @@ import {
   moderatorProcedure,
   adminProcedure,
 } from "./middleware";
+import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
 import { supportTickets, users, localUsers } from "../db/schema";
-import { eq, desc, and, sql, count } from "drizzle-orm";
+import { eq, desc, and, sql, count, inArray } from "drizzle-orm";
 
 export const supportRouter = router({
   // ─── Create Ticket ───
@@ -71,7 +72,7 @@ export const supportRouter = router({
         .from(supportTickets)
         .where(eq(supportTickets.id, input.id))
         .limit(1);
-      if (!ticket[0]) throw new Error("التذكرة غير موجودة");
+      if (!ticket[0]) throw new TRPCError({ code: "NOT_FOUND", message: "التذكرة غير موجودة" });
       // Allow if owner or moderator/admin
       if (
         ticket[0].userId !== ctx.user.id ||
@@ -127,7 +128,6 @@ export const supportRouter = router({
               avatarUrl = u[0].avatar || "";
             }
           } else {
-            // localUsers don't have avatar yet, just name. (Actually we'll add it if needed, or fallback)
             const u = await db
               .select({ name: localUsers.name })
               .from(localUsers)
@@ -139,8 +139,32 @@ export const supportRouter = router({
         }),
       );
 
+      const oauthIds = [...new Set(list.filter((t) => t.userType === "oauth").map((t) => t.userId))];
+      const localIds = [...new Set(list.filter((t) => t.userType === "local").map((t) => t.userId))];
+
+      const nameMap = new Map<string, { name: string; avatar: string }>();
+      if (oauthIds.length > 0) {
+        const oauthRows = await db
+          .select({ id: users.id, name: users.name, avatar: users.avatar })
+          .from(users)
+          .where(inArray(users.id, oauthIds));
+        for (const r of oauthRows) nameMap.set(`oauth:${r.id}`, { name: r.name, avatar: r.avatar || "" });
+      }
+      if (localIds.length > 0) {
+        const localRows = await db
+          .select({ id: localUsers.id, name: localUsers.name })
+          .from(localUsers)
+          .where(inArray(localUsers.id, localIds));
+        for (const r of localRows) nameMap.set(`local:${r.id}`, { name: r.name, avatar: "" });
+      }
+
+      const enrichedList = list.map((t) => {
+        const info = nameMap.get(`${t.userType}:${t.userId}`);
+        return { ...t, userName: info?.name || "مجهول", userAvatar: info?.avatar || "" };
+      });
+
       const total = await db.select({ count: count() }).from(supportTickets);
-      return { list: enriched, total: total[0]?.count ?? 0, page, limit };
+      return { list: enrichedList, total: total[0]?.count ?? 0, page, limit };
     }),
 
   // ─── Respond to Ticket ───
@@ -192,7 +216,7 @@ export const supportRouter = router({
         .from(supportTickets)
         .where(eq(supportTickets.id, input.id))
         .limit(1);
-      if (!ticket[0]) throw new Error("غير موجود");
+      if (!ticket[0]) throw new TRPCError({ code: "NOT_FOUND", message: "غير موجود" });
       if (
         ticket[0].userId !== ctx.user.id ||
         ticket[0].userType !== ctx.user.type

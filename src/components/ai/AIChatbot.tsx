@@ -834,6 +834,10 @@ function actionFieldLabel(key: string): string {
     provider: "المزود",
     section: "القسم",
     patch: "التعديلات",
+    confirmLabel: "الإجراء",
+    cancelLabel: "الإجراء",
+    risk: "المخاطرة",
+    summary: "الملخص",
   };
   return labels[key] ?? key;
 }
@@ -850,19 +854,9 @@ function displayActionValue(key: string, value: unknown): string | undefined {
     };
     return types[text] ?? text;
   }
-  if (key === "category") {
-    const categories: Record<string, string> = {
-      food: "الأكل والمشروبات",
-      transport: "المواصلات",
-      shopping: "التسوق",
-      health: "الصحة",
-      bills: "الفواتير",
-      saving: "الادخار",
-      uncategorized: "غير مصنف",
-    };
-    return categories[text] ?? text;
-  }
-  if (key === "subCategory" && text === "عام") return "عام";
+  // Server now sends Arabic display names; use directly
+  if (key === "category" || key === "subCategory") return text;
+  if (key === "confirmLabel" || key === "cancelLabel") return text;
   return undefined;
 }
 

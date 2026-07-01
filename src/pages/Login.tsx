@@ -96,8 +96,7 @@ export default function Login() {
     Boolean(verificationSettings?.enabled) && !WHATSAPP_AUTH_TEMPORARILY_DISABLED;
 
   const generateCodeMutation = trpc.localAuth.generateVerificationCode.useMutation({
-    onSuccess: (data) => {
-      setVerificationCode(data.code);
+    onSuccess: () => {
       setIsVerifying(true);
       setTimeLeft(600);
     },

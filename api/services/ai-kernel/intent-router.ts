@@ -74,7 +74,7 @@ const PATTERNS = {
   chart: ["رسم", "جراف", "chart", "احصائيه", "احصائيات", "منحني", "بياني"],
   expenseCapture: ["اشتريت", "دفعت", "صرفت", "سجل مصروف", "اضف مصروف"],
   confirmation: ["موافق", "اكد", "أكد", "تمام نفذ", "نفذ", "اعملها", "yes", "confirm"],
-  evidence: ["تفاصيل", "عمليات", "ايه اللي", "كل", "بالظبط", "بالضبط", "اثبات"],
+  evidence: ["تفاصيل", "عمليات", "ايه اللي", "كل", "بالظبط", "بالضبط", "اثبات", "هل", "محسوب"],
   today: ["النهارده", "اليوم", "today", "دلوقتي"],
   yesterday: ["امبارح", "yesterday"],
   week: ["الاسبوع", "اسبوع", "week"],
@@ -139,8 +139,18 @@ function hasAny(text: string, patterns: string[]): boolean {
 function detectPeriod(text: string): PeriodHint | undefined {
   if (hasAny(text, PATTERNS.today)) return "today";
   if (hasAny(text, PATTERNS.yesterday)) return "yesterday";
-  if (hasAny(text, PATTERNS.previousMonth)) return "previous_month";
-  if (hasAny(text, PATTERNS.month)) return "current_month";
+  const hasPreviousMonth = hasAny(text, PATTERNS.previousMonth);
+  const hasCurrentMonth = hasAny(text, PATTERNS.month);
+  const hasExplicitCurrentMonth = hasAny(text, [
+    "الشهر ده",
+    "هذا الشهر",
+    "الشهر الحالي",
+    "this month",
+    "current month",
+  ]);
+  if (hasPreviousMonth && hasExplicitCurrentMonth) return "current_month";
+  if (hasPreviousMonth) return "previous_month";
+  if (hasCurrentMonth) return "current_month";
   if (hasAny(text, PATTERNS.week)) return "current_week";
   if (hasAny(text, PATTERNS.salaryCycle)) return "salary_cycle";
   return undefined;
@@ -179,6 +189,65 @@ function isClassificationExplanation(text: string): boolean {
     (hasCategoryChoice || hasDirectClassificationLanguage);
 
   return (categories.length > 0 && (hasDirectClassificationLanguage || hasCalculatedClassificationLanguage)) || hasCategoryChoice;
+}
+
+function lastMentionedCategory(text: string, categories = detectCategories(text)): string | undefined {
+  let best: { category: string; index: number } | undefined;
+  const aliasesByCategory: Record<string, string[]> = {
+    food: PATTERNS.food,
+    transport: PATTERNS.transport,
+    shopping: PATTERNS.shopping,
+    health: PATTERNS.health,
+    bills: PATTERNS.bills,
+    income: PATTERNS.income,
+    saving: PATTERNS.saving,
+  };
+
+  for (const category of categories) {
+    for (const alias of aliasesByCategory[category] ?? []) {
+      const normalized = normalizeForIntent(alias);
+      const index = normalized ? text.lastIndexOf(normalized) : -1;
+      if (index >= 0 && (!best || index > best.index)) {
+        best = { category, index };
+      }
+    }
+  }
+
+  return best?.category;
+}
+
+function recategorizeTargetCategory(text: string): string | undefined {
+  const categories = detectCategories(text);
+  if (categories.length === 0) return undefined;
+  const actionLanguage = hasAny(text, ["خليه", "خليها", "خلي", "الى", "إلى", "to", "category to"]);
+  return actionLanguage ? lastMentionedCategory(text, categories) ?? categories[0] : categories[0];
+}
+
+function recategorizeSourceCategory(text: string, targetCategory?: string): string | undefined {
+  const categories = detectCategories(text).filter((category) => category !== targetCategory);
+  return categories[0];
+}
+
+function isExpenseRecategorizeRequest(text: string): boolean {
+  const hasCorrection = hasAny(text, [
+    "صحح",
+    "عدل",
+    "غير",
+    "خليه",
+    "خليها",
+    "recategorize",
+    "classify",
+    "change category",
+  ]);
+  const hasExpenseReference = hasAny(text, ["مصروف", "عملية", "transaction", "expense", "اتحسب", "تصنيف"]);
+  return hasCorrection && hasExpenseReference && detectCategories(text).length > 0;
+}
+
+function lookupQueryForRecategorize(text: string): string {
+  const merchantMatch = text.match(/(?:من|عند|في)\s+(.+?)(?:\s+(?:لو|اذا|وخليه|وخليها|وخلي|خليه|خليها|الى|إلى|to)\b|$)/i);
+  const merchant = merchantMatch?.[1]?.replace(/\s+/g, " ").trim();
+  if (merchant && merchant.length >= 2) return merchant.slice(0, 80);
+  return text;
 }
 
 function detectMetric(text: string): IntentResult["slots"]["metric"] {
@@ -242,6 +311,11 @@ export function routeIntent(message: string): IntentResult {
   const directSiteAction = hasAction && hasSiteHelp && !asksHowTo;
   const hasAmount = /\d|[٠-٩۰-۹]/.test(text);
   const asksAmount = /(كام|كم|قد ايه|اجمالي|مجموع|ملخص)/i.test(text);
+  const asksWhy = /(ليه|لماذا|السبب|سبب|عشان|عشان كده|ايه السبب)/i.test(text);
+  const asksPlan = /(خطة|خطه|خطط|نظم|اعمل ايه|أعمل ايه|اقترح|نصح|نصحنى)/i.test(text);
+  const isExplicitComparison = hasAny(text, ["قارن", "مقارنه", "فرق", "مختلف"]);
+  const compositeComparisonWhy = hasFinance && hasAnalysis && asksWhy && isExplicitComparison;
+  const compositeBusiness = hasFinance && /(مشروع|بيزنس|بزنس|business|ارباح|أرباح|صافي|net|تكاليف|كاش فلو|cashflow)/i.test(text);
   const explicitExpenseCapture =
     hasAmount &&
     !asksAmount &&
@@ -268,6 +342,34 @@ export function routeIntent(message: string): IntentResult {
 
   if (memoryOnlyQuestion) {
     return baseIntent("memory_question", 0.9, "memory_keyword_match", text);
+  }
+
+  if (isExpenseRecategorizeRequest(text)) {
+    const targetCategory = recategorizeTargetCategory(text);
+    const sourceCategory = recategorizeSourceCategory(text, targetCategory);
+    const intent = baseIntent("action_request", 0.9, "expense_recategorize_latest_match", text, ["finance_analysis"]);
+    intent.slots.actionName = "expense.recategorize";
+    intent.slots.targetCategory = targetCategory;
+    intent.slots.sourceCategory = sourceCategory;
+    intent.slots.lookupQuery = lookupQueryForRecategorize(text);
+    intent.slots.needsEvidence = true;
+    return intent;
+  }
+
+  if (compositeBusiness) {
+    return baseIntent("finance_analysis", 0.88, "business_cashflow_match", text, ["finance_query", "advice_request"]);
+  }
+
+  if (compositeComparisonWhy) {
+    return baseIntent("finance_analysis", 0.90, "composite_comparison_drivers_match", text, ["finance_query"]);
+  }
+
+  if (hasFinance && asksPlan && !hasAdvice && !hasLifestyle) {
+    return baseIntent("advice_request", 0.86, "finance_planning_composite_match", text, ["finance_analysis"]);
+  }
+
+  if (hasGoal && asksPlan) {
+    return baseIntent("goal_planning", 0.90, "goal_with_plan_composite_match", text, ["advice_request"]);
   }
 
   if (explicitExpenseCapture) {

@@ -32,12 +32,12 @@ describe("finance row aggregators", () => {
     const chart = buildChartData(rows, period, "category", 5);
 
     expect(breakdown.items).toEqual([
-      { name: "الأكل", amount: 120, count: 1, percent: 60 },
-      { name: "المواصلات", amount: 80, count: 1, percent: 40 },
+      { name: "أكل وشرب", amount: 120, count: 1, percent: 60 },
+      { name: "مواصلات", amount: 80, count: 1, percent: 40 },
     ]);
     expect(chart.points).toEqual([
-      { label: "الأكل", value: 120, count: 1 },
-      { label: "المواصلات", value: 80, count: 1 },
+      { label: "أكل وشرب", value: 120, count: 1 },
+      { label: "مواصلات", value: 80, count: 1 },
     ]);
   });
 
@@ -55,8 +55,8 @@ describe("finance row aggregators", () => {
     );
 
     expect(breakdown.items).toEqual([
-      { name: "الأكل", amount: 550.5, count: 3, percent: 87 },
-      { name: "المواصلات", amount: 80, count: 1, percent: 13 },
+      { name: "أكل وشرب", amount: 550.5, count: 3, percent: 87 },
+      { name: "مواصلات", amount: 80, count: 1, percent: 13 },
     ]);
   });
 
@@ -121,8 +121,8 @@ describe("finance row aggregators", () => {
     );
 
     expect(chart.series).toEqual([
-      { key: "food", label: "الأكل", unit: "EGP" },
-      { key: "transport", label: "المواصلات", unit: "EGP" },
+      { key: "food", label: "أكل وشرب", unit: "EGP" },
+      { key: "transport", label: "مواصلات", unit: "EGP" },
     ]);
     expect(chart.points).toEqual([
       { label: "2026-01", value: 0, count: 0, food: 0, transport: 0 },

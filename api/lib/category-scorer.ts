@@ -49,11 +49,10 @@ const MAX_CATEGORIES_BULK = 15;  // For multi-amount text
 // ─── Signal 4: Co-occurrence Map ──────────────────────────────────
 
 const CO_OCCURRENCE: Record<string, string[]> = {
-  "أكل وشرب":       ["ترفيه", "خروجات"],
+  "أكل وشرب":       ["ترفيه"],
   "مواصلات":         ["خدمات سيارات"],
   "فواتير":          ["التزامات يومية"],
-  "ترفيه":           ["أكل وشرب", "خروجات"],
-  "خروجات":          ["أكل وشرب", "ترفيه"],
+  "ترفيه":           ["أكل وشرب"],
   "تسوق":            ["سكن"],
   "سكن":             ["تسوق"],
   "العائلة":         ["أصدقاء", "موظفين", "تحويل"],
@@ -71,6 +70,7 @@ const CO_OCCURRENCE: Record<string, string[]> = {
   "مرتب":            ["عمل حر"],
   "عمل حر":          ["مرتب"],
   "التزامات وجمعيات": ["فواتير", "تحويل"],
+  "خدمات حكومية":      ["فواتير", "خدمات سيارات"],
 };
 
 // ─── Signal 5: Intent → Category Injection ────────────────────────
@@ -97,12 +97,15 @@ export function detectTransactionIntent(text: string): TransactionIntent {
   return "expense";  // Default to expense (most common case)
 }
 
-// ─── Signal 6: Person Detection ───────────────────────────────────
+// ─── Signal 6: Person Detection (context-aware) ───────────────────
 
-const PERSON_PATTERNS = /(?:^|\s)(?:اخو|أخو|أختي|اختي|ابو|أبو|أم\s|ام\s|خال|عم\s|عمت|خالت|ابن|ابنت|جدو|جدت|بابا|ماما|صاحب|صحاب|صحب|زميل|مديري|موظف|شغال|بواب|حارس|سواق|عامل|اديت\s|عطيت\s|سلفت\s|حولت\s|ل(?:ـ)?\s*[\u0600-\u06FF]{2,})/i;
+const FAMILY_PATTERNS = /(?:^|\s)(?:اخو|أخو|أختي|اختي|ابو|أبو|أم\s|ام\s|خال|عم\s|عمت|خالت|ابن|ابنت|جدو|جدت|بابا|ماما|جوز|زوج|مرات|أهل|العائل|والدي|والدت)/i;
+const FRIEND_PATTERNS = /(?:^|\s)(?:صاحب|صاحبي|صحاب|صحب|زميل|رفيق|اصحاب|أصحاب|صديق)/i;
+const EMPLOYEE_PATTERNS = /(?:^|\s)(?:موظف|شغال|بواب|حارس|سواق|سائق|فراش|سايس|سايق|ميكانيكي|عامل|صنايعي|خادم|خدام)/i;
 
 function hasPersonMention(text: string): boolean {
-  return PERSON_PATTERNS.test(text);
+  return FAMILY_PATTERNS.test(text) || FRIEND_PATTERNS.test(text) || EMPLOYEE_PATTERNS.test(text) ||
+    /(?:^|\s)(?:اديت\s|عطيت\s|سلفت\s|حولت\s|ل(?:ـ)?\s*[\u0600-\u06FF]{2,})/i.test(text);
 }
 
 // ─── Scoring Engine ───────────────────────────────────────────────
@@ -186,12 +189,25 @@ export function scoreCategories(
     addScore(scores, cat, 25, "intent");
   }
 
-  // ── Signal 6: Person Detection (mandatory) ──
+  // ── Signal 6: Person Detection (context-aware) ──
   if (hasPersonMention(text)) {
-    addScore(scores, "العائلة", 20, "person");
-    addScore(scores, "أصدقاء", 20, "person");
-    addScore(scores, "موظفين", 15, "person");
-    addScore(scores, "متنوعات", 10, "person");
+    // Only add scores for the specific type of person detected
+    if (FAMILY_PATTERNS.test(text)) {
+      addScore(scores, "العائلة", 30, "person_family");
+    }
+    if (FRIEND_PATTERNS.test(text)) {
+      addScore(scores, "أصدقاء", 30, "person_friend");
+    }
+    if (EMPLOYEE_PATTERNS.test(text)) {
+      addScore(scores, "موظفين", 25, "person_employee");
+    }
+    // Generic person transfer (verb + name) — add smaller scores to all
+    if (!FAMILY_PATTERNS.test(text) && !FRIEND_PATTERNS.test(text) && !EMPLOYEE_PATTERNS.test(text)) {
+      addScore(scores, "العائلة", 15, "person_generic");
+      addScore(scores, "أصدقاء", 15, "person_generic");
+      addScore(scores, "موظفين", 10, "person_generic");
+    }
+    addScore(scores, "متنوعات", 5, "person_safety");
   }
 
   // ── Always include "متنوعات" as safety net ──

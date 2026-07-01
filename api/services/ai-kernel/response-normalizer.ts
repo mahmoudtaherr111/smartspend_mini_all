@@ -7,6 +7,7 @@ import type {
   DataNeed,
   IntentResult,
   ResolvedFact,
+  ResponseRecipe,
   TokenBudget,
 } from "./types";
 
@@ -20,6 +21,8 @@ export interface NormalizeAIResponseInput {
   facts?: ResolvedFact[];
   artifacts?: Artifact[];
   actions?: ActionDraft[];
+  proposedActions?: ActionDraft[];
+  recipe?: ResponseRecipe;
   model?: string;
   tokensUsed?: number;
   tokenBudget?: TokenBudget;
@@ -38,6 +41,8 @@ export function normalizeAIResponse(input: NormalizeAIResponseInput): AIResponse
     facts: input.facts ?? [],
     artifacts: input.artifacts ?? [],
     actions: input.actions ?? [],
+    proposedActions: input.proposedActions,
+    recipe: input.recipe,
     tokenBudget: input.tokenBudget ?? input.contextPack.tokenBudget,
     model: input.model,
     tokensUsed: input.tokensUsed,

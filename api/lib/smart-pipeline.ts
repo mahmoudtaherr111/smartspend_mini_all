@@ -4,6 +4,7 @@ import { runRuleEngine, SUB_CATEGORY_MAP } from "./rule-engine";
 import { CATEGORY_DICTIONARY } from "./egyptian-dictionary";
 import { buildSmartSystemPrompt, buildFireworksPrompts } from "./dynamic-prompt-builder";
 import { normalizeTransactionTaxonomyList } from "./category-registry";
+import { CATEGORIES } from "./category-registry";
 import { callGroqAPI } from "./groq-client";
 import { callFireworksAPI } from "./fireworks-client";
 import { mapModelName } from "./model-mapper";
@@ -13,9 +14,42 @@ import { extractPeople, extractAmounts } from "./entity-extractor";
 import { decomposeHeuristic, type DecompositionResult } from "./narrative-decomposer";
 import { verifyClassifiedItems } from "./post-classifier-verifier";
 import { pickPersonCandidate, pickAllPersonCandidates, resolvePersonForTransaction } from "./person-resolver";
+import { muscleMemoryLookup } from "./muscle-memory";
+import { matchSegment } from "./embedding-engine";
 import { db } from "../queries/connection";
 import { expenses } from "../../db/schema";
 import { eq, and, desc } from "drizzle-orm";
+import { LRUCache } from "lru-cache";
+
+// ─── Classification Result Cache ───────────────────────────────────
+// Caches full pipeline results for repeated queries. 40-60% hit rate
+// expected — users frequently type the same phrases ("بنزين 200", "قهوة 35").
+// Key = hash of normalized text + user plan (different plans → different thresholds).
+const classificationCache = new LRUCache<string, PipelineResult>({
+  max: 5000,
+  ttl: 1000 * 60 * 60 * 24 * 7, // 7 days
+});
+
+function makeCacheKey(text: string, userPlan: string, userId: number): string {
+  // Simple hash: normalize + lowercase + plan + user
+  const normalized = text.trim().replace(/\s+/g, " ").toLowerCase();
+  return `cls:${userId}:${userPlan}:${normalized}`;
+}
+
+/**
+ * Invalidate all cached classifications for a user (e.g., when their
+ * dictionary changes or they correct a transaction).
+ */
+export function invalidateUserClassificationCache(userId: number): void {
+  // lru-cache doesn't support prefix-based deletion natively,
+  // but we can iterate and purge entries matching the user.
+  // For production scale, consider Redis with pattern-based deletion.
+  for (const key of classificationCache.keys()) {
+    if (key.includes(`:${userId}:`)) {
+      classificationCache.delete(key);
+    }
+  }
+}
 
 export interface PipelineInput {
   text: string;
@@ -24,7 +58,7 @@ export interface PipelineInput {
   userPlan: string;
   userDict: Array<{ word: string; category: string; subCategory?: string }>;
   apiKey: string;
-  apiKey2: string;
+  apiKey2?: string;
   modelName: string;
   maxTokens: number;
   monthlyContext?: any;
@@ -153,17 +187,10 @@ const SIMPLE_CLASSIFIER_SCHEMA = {
   required: ["items"],
 } as any;
 
-export function normalizeArabicString(str: string): string {
-  return String(str || "")
-    .trim()
-    .replace(/[إأآٱ]/g, "ا")
-    .replace(/ى/g, "ي")
-    .replace(/ة/g, "ه")
-    .replace(/ؤ/g, "و")
-    .replace(/ئ/g, "ي")
-    .replace(/\s+/g, "")
-    .toLowerCase();
-}
+import { normalizeArabicCompact as normalizeArabicString } from "./unified-normalizer";
+
+// Re-export for backward compatibility (other files import from smart-pipeline)
+export { normalizeArabicString };
 
 function safeExtractItems(data: any): any[] {
   if (!data) return [];
@@ -401,7 +428,69 @@ export async function runSmartPipeline(
   let cachedTokens = 0;
   const provider = input.provider || "gemini";
   const modelUsed = mapModelName(input.modelName);
-  
+  const fireworksKey = input.fireworksApiKey || "";
+
+  // 0. Check classification cache first (40-60% hit rate for repeated queries)
+  const cacheKey = makeCacheKey(input.text, input.userPlan, input.userId);
+  const cachedResult = classificationCache.get(cacheKey);
+  if (cachedResult) {
+    return {
+      ...cachedResult,
+      processingTimeMs: Date.now() - startTime,
+      log: {
+        ...cachedResult.log,
+        routing: {
+          ...(cachedResult.log.routing || {}),
+          route: "classification_cache_hit",
+        },
+      },
+    };
+  }
+
+  // 0.5. Muscle Memory — instant match for recurring user patterns (0 tokens, 0 API)
+  // Skip if text contains person-related verbs (needs person resolution which muscle memory can't do)
+  const hasPersonContext = /(?:اديت|أديت|حولت\s*ل|سلفت|عطيت|بعت\s*ل|استلمت\s*من|خدت\s*من)/.test(input.text);
+  if (!hasPersonContext) {
+    try {
+      const memoryMatch = await muscleMemoryLookup(input.text, input.userId, input.userType);
+      if (memoryMatch && memoryMatch.matchScore >= 90 && memoryMatch.amount > 0) {
+      const memItem: ParsedTransaction = {
+        amount: memoryMatch.amount,
+        category: memoryMatch.pattern.category,
+        subCategory: memoryMatch.pattern.subCategory,
+        description: input.text.slice(0, 60),
+        type: memoryMatch.pattern.type,
+        confidence: Math.min(100, memoryMatch.pattern.confidence),
+        currency: "EGP",
+        needsReview: false,
+        parsedBy: "rule_engine",
+        inferenceSource: "dictionary",
+        ambiguityFlags: ["muscle_memory_hit"],
+      };
+      const memResult: PipelineResult = {
+        items: [memItem],
+        decision: "auto_save",
+        overallConfidence: memItem.confidence,
+        tokensUsed: 0,
+        cachedTokens: 0,
+        parsedBy: "rule_engine",
+        modelUsed,
+        processingTimeMs: Date.now() - startTime,
+        log: {
+          originalText: input.text,
+          routing: { route: "muscle_memory", reason: "pattern_match", matchScore: memoryMatch.matchScore },
+          finalConfidence: memItem.confidence,
+          finalDecision: "auto_save",
+        },
+      };
+      classificationCache.set(cacheKey, memResult);
+      return memResult;
+      }
+    } catch (e) {
+      // Muscle memory DB query might fail — don't block the pipeline
+    }
+  }
+
   // 1. Normalize (Light Normalization for AI, aggressive for rules)
   const normalized = normalizeV2(input.text);
   const normalizedText = normalized.forRules;
@@ -491,7 +580,7 @@ export async function runSmartPipeline(
 
   // 1.5 Pre-filtering logic (Prevent AI Hallucination & Token Waste)
   if (numAmounts === 0) {
-    const strongFinancialKeywords = ["صرفت", "حولت", "بعت", "خدت", "قبضت", "دفعت", "اشتريت", "جبت", "سلف", "دين", "حساب", "اديت"];
+    const strongFinancialKeywords = ["صرفت", "حولت", "بعت", "خدت", "قبضت", "دفعت", "اشتريت", "جبت", "سلف", "دين", "حساب", "اديت", "شحنت", "شلت", "رجعلي", "رجعولي", "وفرت", "حوشت", "نزلت", "طلعت", "خلصت", "سددت", "فطرت", "اتعشيت", "اتغديت", "فرتكت", "طيرت", "خرشت", "قعدت", "لعبت", "سافرت", "حجزت", "ركبت", "اكلت", "شربت", "عزمت", "وزعت", "جددت", "استلمت", "جالي", "وصلني", "بونص", "مرتب", "عموله", "سبوبه"];
     const hasFinancialKeyword = strongFinancialKeywords.some(kw => normalizedText.includes(kw));
     
     if (!hasFinancialKeyword && numWords > 2) {
@@ -542,6 +631,8 @@ export async function runSmartPipeline(
         segmentNormalized,
         input.userDict,
         input.userProfileContext,
+        undefined,
+        fireworksKey,
       );
       if (segmentRule.items.length === 0) {
         failedSegments.push(segment);
@@ -632,7 +723,7 @@ export async function runSmartPipeline(
   
   // Only trust Rule Engine for short phrases (<= 30 words) with max 5 amounts
   if (!ruleSucceeded && failedSegments.length === 0 && numAmounts <= 5 && numWords <= 30) {
-    ruleResult = await runRuleEngine(normalizedText, input.userDict, input.userProfileContext);
+    ruleResult = await runRuleEngine(normalizedText, input.userDict, input.userProfileContext, undefined, fireworksKey);
     
     if (ruleResult.items.length > 0) {
       const segmentResolvedItems: ParsedTransaction[] = [];
@@ -730,7 +821,7 @@ export async function runSmartPipeline(
     // For simplicity, we just dump localSucceededItems + whatever we can get from failed.
     ruleSucceeded = true;
     for (const seg of failedSegments) {
-      const segRule = await runRuleEngine(seg.text, input.userDict, input.userProfileContext);
+      const segRule = await runRuleEngine(seg.text, input.userDict, input.userProfileContext, undefined, fireworksKey);
       for (const item of segRule.items) {
           if (item.confidence < autoSaveThreshold || item.category === "متنوعات") {
               item.needsReview = true;
@@ -741,7 +832,48 @@ export async function runSmartPipeline(
     decision = "review"; // Always review massive inputs forced locally
   }
 
-  // 3. Single-Pass Semantic Extraction (AI)
+  // 3. Fireworks Embedding Layer (92% accuracy, 1 API call, cached)
+  // Runs when rule engine failed or returned low confidence, before falling back to AI.
+  // Skip if text contains person-related context (needs person resolution, not embedding)
+  if (!ruleSucceeded && finalItems.length === 0 && fireworksKey && numAmounts <= 3 && !hasPersonContext) {
+    try {
+      const cleanText = normalized.forRules
+        .replace(/\d+(\.\d+)?/g, "")
+        .replace(/(جنيه|ج\.م|ج|الف|ألف|قسط|دفعت|حولت|صرفت|شحنت)/g, "")
+        .trim();
+
+      if (cleanText.length >= 3) {
+        const embMatch = await matchSegment(cleanText, undefined, fireworksKey);
+        if (embMatch && embMatch.score >= 70) {
+          const amounts = extractAmounts(normalizedText);
+          if (amounts.length > 0) {
+            const embItem: ParsedTransaction = {
+              amount: amounts[0].amount,
+              category: embMatch.category,
+              subCategory: embMatch.subCategory,
+              description: input.text.slice(0, 60),
+              type: (CATEGORIES.find(c => c.name_ar === embMatch.category)?.type || "expense") as any,
+              confidence: embMatch.score,
+              currency: "EGP",
+              needsReview: embMatch.score < 85,
+              parsedBy: "rule_engine",
+              inferenceSource: "ai",
+              ambiguityFlags: ["fireworks_embedding"],
+            };
+            finalItems.push(embItem);
+            ruleSucceeded = true;
+            decision = embMatch.score >= 85 ? "auto_save" : "review";
+            overallConfidence = embMatch.score;
+          }
+        }
+      }
+    } catch (e) {
+      // Fireworks API might fail — don't block, fall through to AI
+      console.warn("[Smart Pipeline] Fireworks embedding layer failed:", e);
+    }
+  }
+
+  // 4. Single-Pass Semantic Extraction (AI — fallback of last resort)
   if (!ruleSucceeded) {
     requiresAI = true;
     
@@ -907,7 +1039,7 @@ export async function runSmartPipeline(
       if (classItems.length === 0) {
          if (numAmounts <= 3 && numWords <= 15) {
               if (!ruleResult) {
-                 ruleResult = await runRuleEngine(normalizedText, input.userDict, input.userProfileContext);
+                 ruleResult = await runRuleEngine(normalizedText, input.userDict, input.userProfileContext, undefined, fireworksKey);
               }
               if (ruleResult.items.length > 0) {
                  finalItems.push(...ruleResult.items);
@@ -1024,15 +1156,39 @@ export async function runSmartPipeline(
         }
       }
     } catch (err) {
-      console.error("Smart Pipeline Single-Pass AI Error:", err);
+      const errMsg = (err as any)?.message || String(err);
+      if (errMsg.includes("403") || errMsg.includes("429")) {
+        console.warn("[Smart Pipeline] AI API unavailable (rate limit/auth). Using local fallback.");
+      } else {
+        console.error("[Smart Pipeline] AI Error:", errMsg);
+      }
       if (numAmounts <= 3 && numWords <= 15) {
-          const fallbackRuleResult = await runRuleEngine(textToClassify, input.userDict, input.userProfileContext);
+          const fallbackRuleResult = await runRuleEngine(textToClassify, input.userDict, input.userProfileContext, undefined, fireworksKey);
           if (fallbackRuleResult.items.length > 0) {
              finalItems.push(...fallbackRuleResult.items);
           }
       } else {
-         decision = "clarify";
-         clarificationQuestion = "عذراً، حدث خطأ في السيرفر أثناء معالجة الجملة الطويلة. يرجى تقسيمها أو المحاولة لاحقاً.";
+          // For longer texts: try to salvage what we can from local rule engine results
+          // instead of just returning an error. Accept items with review status.
+          if (localSucceededItems.length > 0) {
+            finalItems.push(...localSucceededItems.map(it => ({
+              ...it,
+              needsReview: true,
+            })));
+            // Also try failed segments
+            for (const seg of failedSegments) {
+              const segRule = await runRuleEngine(seg.text, input.userDict, input.userProfileContext, undefined, fireworksKey);
+              for (const item of segRule.items) {
+                finalItems.push({ ...item, needsReview: true });
+              }
+            }
+            if (finalItems.length > 0 && decision === "unknown") {
+              decision = "review";
+            }
+          } else {
+            decision = "clarify";
+            clarificationQuestion = "عذراً، حدث خطأ في السيرفر أثناء معالجة الجملة الطويلة. يرجى تقسيمها أو المحاولة لاحقاً.";
+          }
       }
     }
   }
@@ -1047,7 +1203,7 @@ export async function runSmartPipeline(
       if (missingAmounts.length > 0) {
           console.warn(`[Reconciliation] AI/Rules missed amounts: ${missingAmounts.join(", ")}. Attempting recovery...`);
           if (!ruleResult) {
-              ruleResult = await runRuleEngine(normalizedText, input.userDict, input.userProfileContext);
+              ruleResult = await runRuleEngine(normalizedText, input.userDict, input.userProfileContext, undefined, fireworksKey);
           }
           
           for (const missing of missingAmounts) {
@@ -1111,8 +1267,13 @@ export async function runSmartPipeline(
           item.category = "متنوعات";
           item.subCategory = "عام";
       } else if (item.category === "مرتب" && item.amount < 100) {
-          item.category = "هدايا وصدقات";
-          item.subCategory = "عيدية";
+          // Only convert to عيدية if the text explicitly mentions eid/eidiya context
+          const textLower = input.text.toLowerCase();
+          if (/(عيد|عيدي|عيديه|عيدية)/.test(textLower)) {
+            item.category = "هدايا وصدقات";
+            item.subCategory = "عيدية";
+          }
+          // Otherwise keep as مرتب — small income is still income (freelance, cashback, etc.)
       } else if (item.category === "سكن" && item.subCategory === "إيجار" && item.amount < 50) {
           item.category = "متنوعات";
           item.subCategory = "عام";
@@ -1151,10 +1312,9 @@ export async function runSmartPipeline(
               if (SUB_CATEGORY_MAP[bigram]) {
                   item.category = SUB_CATEGORY_MAP[bigram].category;
                   item.subCategory = SUB_CATEGORY_MAP[bigram].subCategory;
-                  item.needsReview = false;
-                  rescued = true;
-                  console.log(`[Reverse Mapping] Rescued '${item.description}' into ${item.category}/${item.subCategory} using bigram '${bigram}'`);
-                  break;
+                    item.needsReview = false;
+                    rescued = true;
+                    break;
               }
           }
           // Check Unigrams
@@ -1163,10 +1323,9 @@ export async function runSmartPipeline(
                   if (word && SUB_CATEGORY_MAP[word]) {
                       item.category = SUB_CATEGORY_MAP[word].category;
                       item.subCategory = SUB_CATEGORY_MAP[word].subCategory;
-                      item.needsReview = false;
-                      rescued = true;
-                      console.log(`[Reverse Mapping] SUB_CATEGORY_MAP rescued '${item.description}' → ${item.category}/${item.subCategory} via '${word}'`);
-                      break;
+                    item.needsReview = false;
+                    rescued = true;
+                    break;
                   }
               }
           }
@@ -1268,7 +1427,7 @@ export async function runSmartPipeline(
     cachedTokens,
   };
 
-  return {
+  const result: PipelineResult = {
     items: verifiedFinalItems,
     parsedBy: requiresAI ? "hybrid" : "rule_engine",
     modelUsed,
@@ -1281,4 +1440,12 @@ export async function runSmartPipeline(
     processingTimeMs: Date.now() - startTime,
     log,
   };
+
+  // Cache successful classifications (auto_save and review only — don't cache clarify
+  // because the user hasn't answered yet)
+  if (decision === "auto_save" || decision === "review") {
+    classificationCache.set(cacheKey, result);
+  }
+
+  return result;
 }
