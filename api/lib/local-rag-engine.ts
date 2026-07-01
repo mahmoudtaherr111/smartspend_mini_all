@@ -21,6 +21,11 @@
 
 import * as fs from "fs";
 import * as path from "path";
+import damerauPkg from "damerau-levenshtein";
+const damerauLevenshtein = (a: string, b: string): number => {
+  const result = (damerauPkg as any)(a, b);
+  return typeof result === "number" ? result : result.steps;
+};
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -169,8 +174,8 @@ const CATEGORY_OVERRIDES: CategoryOverride[] = [
   },
   {
     test: (kw) => kw.includes("بلايستيشن") || kw.includes("بلاي ستيشن") || kw.includes("بلاستيشن"),
-    category: "خروجات",
-    subCategory: "PlayStation",
+    category: "ترفيه",
+    subCategory: "ألعاب",
   },
   {
     test: (kw) => kw.includes("عيد ميلاد"),
@@ -184,34 +189,7 @@ const CATEGORY_OVERRIDES: CategoryOverride[] = [
   },
 ];
 
-// ─── Arabic Text Normalization ────────────────────────────────────
-
-function normalizeArabic(text: string): string {
-  return String(text || "")
-    .trim()
-    .toLowerCase()
-    // Remove diacritics (tashkeel)
-    .replace(/[\u064B-\u065F\u0670]/g, "")
-    // Normalize hamza variants
-    .replace(/[إأآٱ]/g, "ا")
-    // Normalize ya/alef maksura
-    .replace(/ى/g, "ي")
-    // Normalize ta marbuta
-    .replace(/ة/g, "ه")
-    // Normalize waw with hamza
-    .replace(/ؤ/g, "و")
-    // Normalize ya with hamza
-    .replace(/ئ/g, "ي")
-    // Remove tatweel
-    .replace(/ـ/g, "")
-    // Egyptian phonetic equivalents (common substitutions in informal writing)
-    .replace(/ث/g, "س")   // ث → س (Egyptian dialect)
-    .replace(/ذ/g, "ز")   // ذ → ز
-    .replace(/ظ/g, "ز")   // ظ → ز
-    // Collapse whitespace
-    .replace(/\s+/g, " ")
-    .trim();
-}
+import { normalizeArabicEgyptian as normalizeArabic } from "./unified-normalizer";
 
 // ─── Character N-gram Tokenizer ───────────────────────────────────
 
@@ -267,39 +245,14 @@ function cosineSimilarity(a: Map<string, number>, b: Map<string, number>): numbe
   return denom === 0 ? 0 : dotProduct / denom;
 }
 
-// ─── Levenshtein Distance (Fuzzy Fallback) ─────────────────────────
+// ─── Damerau-Levenshtein Fuzzy Fallback ───────────────────────────
+// Uses the C-optimized damerau-levenshtein package (replaces the
+// hand-rolled implementation that was duplicated in 3 files).
 
-function levenshteinDistance(a: string, b: string): number {
-  const m = a.length;
-  const n = b.length;
-  if (m === 0) return n;
-  if (n === 0) return m;
-
-  // Use single-row optimization
-  let prev = new Array(n + 1);
-  let curr = new Array(n + 1);
-
-  for (let j = 0; j <= n; j++) prev[j] = j;
-
-  for (let i = 1; i <= m; i++) {
-    curr[0] = i;
-    for (let j = 1; j <= n; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      curr[j] = Math.min(
-        prev[j] + 1,       // deletion
-        curr[j - 1] + 1,   // insertion
-        prev[j - 1] + cost  // substitution
-      );
-    }
-    [prev, curr] = [curr, prev];
-  }
-  return prev[n];
-}
-
-function levenshteinSimilarity(a: string, b: string): number {
+function damerauSimilarity(a: string, b: string): number {
   const maxLen = Math.max(a.length, b.length);
   if (maxLen === 0) return 1;
-  return 1 - levenshteinDistance(a, b) / maxLen;
+  return 1 - damerauLevenshtein(a, b) / maxLen;
 }
 
 // ─── The Local RAG Engine ──────────────────────────────────────────
@@ -491,6 +444,25 @@ class LocalRAGEngine {
           const sim = cosineSimilarity(queryVector, entry.vector);
           if (sim >= minScore) {
             fragResults.push({ category: entry.category, sim });
+          }
+        }
+
+        // Damerau-Levenshtein fuzzy fallback for short fragments
+        // that didn't get a good TF-IDF score
+        if (fragResults.length === 0 && normalizedFrag.length >= 3 && normalizedFrag.length <= 12) {
+          let bestFuzzySim = 0;
+          let bestFuzzyCat = "";
+          for (const entry of this.index) {
+            if (Math.abs(entry.normalizedKeyword.length - normalizedFrag.length) > 2) continue;
+            const sim = damerauSimilarity(normalizedFrag, entry.normalizedKeyword);
+            if (sim > bestFuzzySim) {
+              bestFuzzySim = sim;
+              bestFuzzyCat = entry.category;
+            }
+          }
+          if (bestFuzzySim >= 0.75) {
+            const calibrated = Math.round(bestFuzzySim * 80);
+            fragResults.push({ category: bestFuzzyCat, sim: calibrated / 100 });
           }
         }
 

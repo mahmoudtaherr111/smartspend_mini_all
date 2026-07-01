@@ -463,6 +463,23 @@ export const CATEGORIES: MainCategory[] = [
       { id: "people", name: "People", name_ar: "أشخاص" },
     ],
   },
+  {
+    id: "government_services",
+    name: "Government Services",
+    name_ar: "خدمات حكومية",
+    icon: "🏛️",
+    color: "#78716c",
+    type: "expense",
+    subcategories: [
+      { id: "license", name: "License", name_ar: "رخصة" },
+      { id: "passport", name: "Passport", name_ar: "جواز سفر" },
+      { id: "national_id", name: "National ID", name_ar: "بطاقة رقم قومي" },
+      { id: "traffic_violation", name: "Traffic Violation", name_ar: "مخالفة مرور" },
+      { id: "taxes_gov", name: "Taxes", name_ar: "ضرائب" },
+      { id: "documentation", name: "Documentation", name_ar: "توثيق" },
+      { id: "gov_general", name: "General", name_ar: "عام" },
+    ],
+  },
 ];
 
 /** Get category by Arabic name */
@@ -547,7 +564,9 @@ const CATEGORY_ALIASES: Array<[string, string]> = [
   ["قسط جمعية", "التزامات وجمعيات"],
   ["أقساط شركات", "التزامات وجمعيات"],
   ["فاليو", "التزامات وجمعيات"],
-  ["أقساط", "التزامات وجمعيات"],
+  ["حكومي", "خدمات حكومية"],
+  ["خدمات حكومة", "خدمات حكومية"],
+  ["رسوم حكومية", "خدمات حكومية"],
   ["هدايا", "هدايا وصدقات"],
   ["مجاملات", "هدايا وصدقات"],
   ["صيانة", "سكن"],
@@ -577,15 +596,11 @@ const DEFAULT_SUBCATEGORY_BY_CATEGORY = new Map(
   ]),
 );
 
+import { normalizeArabic } from "./unified-normalizer";
+
 export function comparableArabic(value: string): string {
-  return String(value || "")
-    .trim()
+  return normalizeArabic(value)
     .replace(/\s+/g, " ")
-    .replace(/[إأآٱ]/g, "ا")
-    .replace(/ى/g, "ي")
-    .replace(/ة/g, "ه")
-    .replace(/ؤ/g, "و")
-    .replace(/ئ/g, "ي")
     .toLowerCase();
 }
 
@@ -980,4 +995,308 @@ export function normalizeTransactionTaxonomyList<
   evidence = "",
 ): Array<T & { category: string; subCategory: string; type: TransactionType }> {
   return items.map((item) => normalizeTransactionTaxonomy(item, evidence));
+}
+
+// ─── Unified Taxonomy Bridge ───
+// Internal canonical = English `id` from CATEGORIES
+// Display = Arabic `name_ar` from CATEGORIES
+// This bridge ensures no mixing of "food" and "أكل وشرب" in storage and analysis.
+
+const CATEGORY_ID_MAP = new Map<string, MainCategory>(
+  CATEGORIES.map((c) => [c.id, c]),
+);
+
+const CATEGORY_BY_NORMALIZED_AR = new Map<string, MainCategory>(
+  CATEGORIES.map((c) => [comparableArabic(c.name_ar), c]),
+);
+
+const CATEGORY_BY_NORMALIZED_EN = new Map<string, MainCategory>(
+  CATEGORIES.map((c) => [c.name.toLowerCase(), c]),
+);
+
+const EXTRA_ALIASES_TO_ID: Array<[string, string]> = [
+  ["كارفور", "food"],
+  ["خضار", "food"],
+  ["خضه", "food"],
+  ["فاكهه", "food"],
+  ["فاكهة", "food"],
+  ["لحمه", "food"],
+  ["لحمة", "food"],
+  ["فراخ", "food"],
+  ["دليفري", "food"],
+  ["طلبات", "food"],
+  ["talabat", "food"],
+  ["سوبرماركت", "food"],
+  ["سوبر ماركت", "food"],
+  ["ماركت", "food"],
+  ["هايبر", "food"],
+  ["جروسري", "food"],
+  ["groceries", "food"],
+  ["restaurant", "food"],
+  ["مطعم", "food"],
+  ["مطاعم", "food"],
+  ["قهوة", "food"],
+  ["قهوه", "food"],
+  ["كافيه", "food"],
+  ["كافيهات", "food"],
+  ["بنزين", "transport"],
+  ["تفويلة", "transport"],
+  ["اوبر", "transport"],
+  ["كريم", "transport"],
+  ["مترو", "transport"],
+  ["تاكسي", "transport"],
+  ["اتوبيس", "transport"],
+  ["ميكروباص", "transport"],
+  ["uber", "transport"],
+  ["لبس", "shopping"],
+  ["هدوم", "shopping"],
+  ["ملابس", "shopping"],
+  ["جزمة", "shopping"],
+  ["كوتشي", "shopping"],
+  ["شوز", "shopping"],
+  ["عنايه شخصيه", "shopping"],
+  ["عطر", "shopping"],
+  ["دكتور", "health"],
+  ["صيدليه", "health"],
+  ["صيدلية", "health"],
+  ["دوا", "health"],
+  ["دواء", "health"],
+  ["علاج", "health"],
+  ["تحاليل", "health"],
+  ["كهربا", "bills"],
+  ["كهرباء", "bills"],
+  ["مياه", "bills"],
+  ["مايه", "bills"],
+  ["غاز", "bills"],
+  ["نت", "bills"],
+  ["انترنت", "bills"],
+  ["إنترنت", "bills"],
+  ["شحن", "bills"],
+  ["رصيد", "bills"],
+  ["فاتوره", "bills"],
+  ["فاتورة", "bills"],
+  ["قسط", "bills"],
+  ["اقساط", "bills"],
+  ["أقساط", "bills"],
+  ["مرتب", "salary"],
+  ["راتب", "salary"],
+  ["salary", "salary"],
+  ["قبض", "salary"],
+  ["دخل", "salary"],
+  ["بونص", "salary"],
+  ["مكافاه", "salary"],
+  ["مكافأة", "salary"],
+  ["سبوبه", "freelance"],
+  ["فريلانس", "freelance"],
+  ["عموله", "freelance"],
+  ["كاش باك", "investment_income"],
+  ["كاشباك", "investment_income"],
+  ["استرجاع", "investment_income"],
+  ["ارباح", "investment_income"],
+  ["أرباح", "investment_income"],
+  ["فوائد", "investment_income"],
+  ["atm", "transfer"],
+  ["سحب", "transfer"],
+  ["انستاباي", "transfer"],
+  ["instapay", "transfer"],
+  ["فودافون كاش", "transfer"],
+  ["دين", "transfer"],
+  ["سلفه", "transfer"],
+  ["سلفة", "transfer"],
+  ["قرض", "transfer"],
+  ["ادخار", "transfer"],
+  ["تحويش", "transfer"],
+  ["ذهب", "investment"],
+  ["دهب", "investment"],
+  ["سهم", "investment"],
+  ["أسهم", "investment"],
+  ["اسهم", "investment"],
+  ["بورصه", "investment"],
+  ["بورصة", "investment"],
+  ["شهادات", "investment"],
+  ["شهاده", "investment"],
+  ["عقار", "investment"],
+  ["شقه", "investment"],
+  ["شقة", "investment"],
+  ["ايجار", "home"],
+  ["إيجار", "home"],
+  ["عفش", "home"],
+  ["أثاث", "home"],
+  ["اثاث", "home"],
+  ["سباك", "home"],
+  ["كهربائي", "home"],
+  ["نقاش", "home"],
+  ["منظفات", "home"],
+  ["سينما", "entertainment"],
+  ["كافيهات", "outings"],
+  ["بلايستيشن", "outings"],
+  ["جيم", "entertainment"],
+  ["رياضه", "entertainment"],
+  ["رياضة", "entertainment"],
+  ["نتفلكس", "subscriptions"],
+  ["netflix", "subscriptions"],
+  ["سبوتيفاي", "subscriptions"],
+  ["spotify", "subscriptions"],
+  ["chatgpt", "subscriptions"],
+  ["شات جي بي تي", "subscriptions"],
+  ["سجاير", "smoking"],
+  ["سجائر", "smoking"],
+  ["علبه", "smoking"],
+  ["علبة", "smoking"],
+  ["فيب", "smoking"],
+  ["ليكود", "smoking"],
+  ["شيشه", "smoking"],
+  ["شيشة", "smoking"],
+  ["معسل", "smoking"],
+  ["صدقه", "gifts"],
+  ["صدقة", "gifts"],
+  ["تبرع", "gifts"],
+  ["اتبرعت", "gifts"],
+  ["زكاه", "gifts"],
+  ["زكاة", "gifts"],
+  ["عيديه", "gifts"],
+  ["عيدية", "gifts"],
+  ["فرح", "gifts"],
+  ["خطوبه", "gifts"],
+  ["خطوبة", "gifts"],
+  ["كارتة", "car_services"],
+  ["ركنه", "car_services"],
+  ["ركنة", "car_services"],
+  ["زيت", "car_services"],
+  ["مخالفه", "car_services"],
+  ["مخالفة", "car_services"],
+  ["بطاريه", "car_services"],
+  ["بطارية", "car_services"],
+  ["كاوتش", "car_services"],
+  ["إطارات", "car_services"],
+  ["اطارات", "car_services"],
+  [" vpn", "digital_services"],
+  ["vpn", "digital_services"],
+  ["cloud", "digital_services"],
+  ["كلاود", "digital_services"],
+  ["دومين", "digital_services"],
+  ["domain", "digital_services"],
+  ["hosting", "digital_services"],
+  ["hosting", "work"],
+  ["استضافه", "work"],
+  ["استضافة", "work"],
+  ["api", "work"],
+  ["واجهه", "work"],
+  ["واجهات", "work"],
+  ["مكتب", "work"],
+  ["ادوات", "work"],
+  ["أدوات", "work"],
+  ["مدرسه", "education"],
+  ["مدرسة", "education"],
+  ["جامعه", "education"],
+  ["جامعة", "education"],
+  ["كورس", "education"],
+  ["كورسات", "education"],
+  ["كتاب", "education"],
+  ["كتب", "education"],
+  ["دروس", "education"],
+  ["جمعيه", "liabilities_and_gam3eyat"],
+  ["جمعية", "liabilities_and_gam3eyat"],
+  ["فاليو", "liabilities_and_gam3eyat"],
+  ["تمويل", "liabilities_and_gam3eyat"],
+];
+
+const ALIAS_TO_ID = new Map<string, string>();
+
+function buildAliasMap(): void {
+  for (const cat of CATEGORIES) {
+    ALIAS_TO_ID.set(comparableArabic(cat.id), cat.id);
+    ALIAS_TO_ID.set(comparableArabic(cat.name), cat.id);
+    ALIAS_TO_ID.set(comparableArabic(cat.name_ar), cat.id);
+    for (const sub of cat.subcategories) {
+      ALIAS_TO_ID.set(comparableArabic(sub.id), cat.id);
+      ALIAS_TO_ID.set(comparableArabic(sub.name), cat.id);
+      ALIAS_TO_ID.set(comparableArabic(sub.name_ar), cat.id);
+    }
+  }
+  for (const [alias, id] of EXTRA_ALIASES_TO_ID) {
+    ALIAS_TO_ID.set(comparableArabic(alias), id);
+  }
+  for (const [from, to] of CATEGORY_ALIASES) {
+    const targetCat = findCategoryByAnyName(to);
+    if (targetCat) {
+      ALIAS_TO_ID.set(comparableArabic(from), targetCat.id);
+    }
+  }
+}
+
+buildAliasMap();
+
+const VIRTUAL_AGGREGATE_IDS: Record<string, { id: string; arabicName: string; type: string }> = {
+  income: { id: "income", arabicName: "الدخل", type: "income" },
+  saving: { id: "saving", arabicName: "الادخار", type: "transfer" },
+  uncategorized: { id: "uncategorized", arabicName: "غير مصنف", type: "expense" },
+};
+
+export function canonicalCategoryId(input: string | null | undefined): string {
+  if (!input) return "uncategorized";
+  const normalized = comparableArabic(input);
+  if (!normalized) return "uncategorized";
+
+  const direct = ALIAS_TO_ID.get(normalized);
+  if (direct) return direct;
+
+  for (const [alias, id] of ALIAS_TO_ID) {
+    if (normalized.includes(alias) && alias.length >= 3) {
+      return id;
+    }
+  }
+
+  const cat = findCategoryByAnyName(input);
+  if (cat) return cat.id;
+
+  return "uncategorized";
+}
+
+export function arabicDisplayName(id: string | null | undefined): string {
+  if (!id) return "غير مصنف";
+  if (VIRTUAL_AGGREGATE_IDS[id]) return VIRTUAL_AGGREGATE_IDS[id].arabicName;
+  const cat = CATEGORY_ID_MAP.get(id);
+  return cat?.name_ar ?? (id || "غير مصنف");
+}
+
+export function getCategoryAliasesById(id: string): string[] {
+  if (VIRTUAL_AGGREGATE_IDS[id]) {
+    const aliases: string[] = [id];
+    if (id === "income") aliases.push("دخل", "مرتب", "راتب", "salary", "قبض");
+    if (id === "saving") aliases.push("ادخار", "تحويش", "جمعية", "جمعيه");
+    if (id === "uncategorized") aliases.push("غير مصنف", "أخرى", "متنوعات");
+    return [...new Set(aliases)];
+  }
+  const cat = CATEGORY_ID_MAP.get(id);
+  if (!cat) return [id];
+  const aliases = [id, cat.name, cat.name_ar];
+  for (const [alias, targetId] of ALIAS_TO_ID) {
+    if (targetId === id) {
+      const originalAlias = [...EXTRA_ALIASES_TO_ID].find(([a]) => comparableArabic(a) === alias)?.[0];
+      if (originalAlias) aliases.push(originalAlias);
+    }
+  }
+  return [...new Set(aliases)];
+}
+
+export function categoryTypeOf(id: string | null | undefined): string {
+  if (!id) return "expense";
+  if (VIRTUAL_AGGREGATE_IDS[id]) return VIRTUAL_AGGREGATE_IDS[id].type;
+  const cat = CATEGORY_ID_MAP.get(id);
+  return cat?.type ?? "expense";
+}
+
+export function normalizeCategoryFromUserText(text: string): string {
+  return canonicalCategoryId(text);
+}
+
+export function normalizeStoredCategory(stored: string | null | undefined): string {
+  if (!stored) return "uncategorized";
+  const id = canonicalCategoryId(stored);
+  return id;
+}
+
+export function taxonomyVersion(): string {
+  return "tax_v2_2026_06";
 }

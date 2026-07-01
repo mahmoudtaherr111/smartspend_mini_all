@@ -39,6 +39,13 @@ describe("AI memory writer helpers", () => {
     expect(memories[0]).toMatchObject({
       type: "plan",
       importance: expect.any(Number),
+      metadata: expect.objectContaining({
+        structuredType: "constraint",
+        amount: 100000,
+        subject_amount: 100000,
+        status: "active",
+        confidence: expect.any(Number),
+      }),
     });
     expect(memories[0].content).toContain("100");
   });
@@ -57,5 +64,28 @@ describe("AI memory writer helpers", () => {
     expect(draft.capsule).toContain("عربية");
     expect(draft.runningSummary).toContain("user:");
     expect(draft.memories[0].content).toContain("عربية");
+    expect(draft.memories[0].metadata).toMatchObject({
+      sourceConversationId: 5,
+    });
+  });
+
+  it("stores an assistant plan when the user explicitly confirms remembering it", () => {
+    const memories = extractSemanticMemories([
+      { role: "assistant", id: 10, content: "خطة اللابتوب: احوش 80000 جنيه خلال 10 شهور، ومافيش تنفيذ غير بعد تأكيد." },
+      { role: "user", id: 11, content: "تمام كده احفظ الخطة وافتكرها" },
+    ]);
+
+    expect(memories[0]).toMatchObject({
+      type: "plan",
+      sourceMessageId: 10,
+      metadata: expect.objectContaining({
+        reason: "assistant_plan_confirmed_by_user",
+        structuredType: "agreement",
+        amount: 80000,
+        estimated_months: 10,
+        status: "pending_confirmation",
+      }),
+    });
+    expect(memories[0].content).toContain("اللابتوب");
   });
 });

@@ -53,7 +53,6 @@ describe("Category Scorer V3", () => {
       const catNames = result.filteredCategories.map(c => c.name_ar);
       
       expect(catNames).toContain("أكل وشرب");
-      expect(catNames).toContain("خروجات");
       expect(catNames).toContain("ترفيه");
       expect(catNames).toContain("أصدقاء"); // from person detection
     });

@@ -37,7 +37,8 @@ export const exportRouter = router({
       const data = await db
         .select()
         .from(expenses)
-        .where(and(...conditions));
+        .where(and(...conditions))
+        .limit(10000);
       const formatted = data.map((e) => ({
         التاريخ: e.date.toISOString().split("T")[0],
         النوع: e.type === "income" ? "دخل" : "مصروف",

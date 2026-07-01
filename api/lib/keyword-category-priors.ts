@@ -75,7 +75,7 @@ const KEYWORD_PRIORS: Array<{ pattern: RegExp; categories: string[] }> = [
   {
     pattern:
       /سينما|فيلم|خروجه|فسحه|كورنيش|بلايستيشن|board\s*game|بولينج|جيم|رياضه|نادي|عزمت|عزوم/i,
-    categories: ["ترفيه", "خروجات"],
+    categories: ["ترفيه"],
   },
 
   // Smoking

@@ -284,7 +284,7 @@ describe("AI kernel phase 2 data resolution", () => {
       },
     );
 
-    expect(response.content).toContain("الأكل");
+    expect(response.content).toContain("أكل وشرب");
     expect(response.content).toContain("٥٥٠٫٥");
     expect(response.content).toContain("كارفور خضار ولحمة");
     expect(response.debug).toMatchObject({
@@ -433,7 +433,7 @@ describe("AI kernel phase 2 data resolution", () => {
       kind: "finance_analysis",
       reason: "classification_explanation_match",
     });
-    expect(response.dataNeeds.map((need) => need.kind)).toEqual(["finance.transactions", "finance.breakdown"]);
+    expect(response.dataNeeds.map((need) => need.kind)).toEqual(["finance.transactions", "finance.breakdown", "finance.category_inclusion"]);
     expect(response.content).toContain("الأقرب");
     expect(response.content).toContain("كارفور خضار ولحمة");
     expect(response.debug).toMatchObject({
@@ -503,8 +503,8 @@ describe("AI kernel phase 2 data resolution", () => {
     );
 
     expect(response.content).toContain("أعلى البنود");
-    expect(response.content).toContain("الأكل");
-    expect(response.content).toContain("المواصلات");
+    expect(response.content).toContain("أكل وشرب");
+    expect(response.content).toContain("مواصلات");
     expect(response.content).toContain("٢٬١٦٥٫٥");
     expect(response.debug).toMatchObject({
       deterministic: true,

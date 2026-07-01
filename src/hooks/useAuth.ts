@@ -31,20 +31,8 @@ export function useAuth() {
       refetchOnWindowFocus: false,
     });
 
-  const logoutMutation = trpc.auth.logout.useMutation({
-    onSuccess: () => {
-      setUser(null);
-      window.location.reload();
-    },
-  });
-
-  const localLogoutMutation = trpc.localAuth.logout.useMutation({
-    onSuccess: () => {
-      localStorage.removeItem("local_auth_token");
-      setUser(null);
-      window.location.reload();
-    },
-  });
+  const logoutMutation = trpc.auth.logout.useMutation();
+  const localLogoutMutation = trpc.localAuth.logout.useMutation();
 
   useEffect(() => {
     if (!oauthFetched || !localFetched) {
@@ -82,12 +70,19 @@ export function useAuth() {
     }
   }, [oauthUser, localUser, oauthFetched, localFetched]);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     localStorage.removeItem("local_auth_token");
     document.cookie =
       "google_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    logoutMutation.mutate();
-    localLogoutMutation.mutate();
+    try {
+      await Promise.all([
+        logoutMutation.mutateAsync(),
+        localLogoutMutation.mutateAsync(),
+      ]);
+    } catch {
+      // Even if server-side logout fails, proceed to login
+    }
+    setUser(null);
     window.location.href = "/login";
   }, [logoutMutation, localLogoutMutation]);
 

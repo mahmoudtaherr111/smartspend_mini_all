@@ -330,18 +330,7 @@ const FINANCIAL_NOUNS = [
   "عيدية",
 ];
 
-// Helper to normalize Arabic string inside narrative-decomposer (to prevent circular imports)
-function normalizeArabicString(str: string): string {
-  return String(str || "")
-    .trim()
-    .replace(/[إأآٱ]/g, "ا")
-    .replace(/ى/g, "ي")
-    .replace(/ة/g, "ه")
-    .replace(/ؤ/g, "و")
-    .replace(/ئ/g, "ي")
-    .replace(/\s+/g, "")
-    .toLowerCase();
-}
+import { normalizeArabicCompact as normalizeArabicString } from "./unified-normalizer";
 
 // ─── Is Financial Segment? ─────────────────────────────────────────
 

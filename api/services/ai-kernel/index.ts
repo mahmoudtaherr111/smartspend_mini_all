@@ -7,8 +7,9 @@ import { compileDataNeeds } from "./data-need-compiler";
 import { routeIntent } from "./intent-router";
 import { embeddingApiStatusFor, retrievalPolicyFor } from "./retrieval-policy";
 import { normalizeAIResponse } from "./response-normalizer";
+import { displayFinanceCategory } from "../finance-semantic-layer/category-matcher";
 import { isLowSignalMemoryText, normalizeMemoryText, truncateWords } from "../ai-memory/text-utils";
-import type { AIRequest, AIResponse, Artifact, DataNeed, IntentResult, ResolvedFact } from "./types";
+import type { ActionDraft, AIRequest, AIResponse, Artifact, DataNeed, IntentResult, ResolvedFact, ResponseRecipe } from "./types";
 
 export * from "./types";
 export { buildContextPack, estimateTokens, getTokenBudget } from "./context-packer";
@@ -267,24 +268,181 @@ function countText(count: number | undefined): string {
   return ` من ${Math.round(count!).toLocaleString("ar-EG")} عملية`;
 }
 
-const CATEGORY_DISPLAY_NAMES: Record<string, string> = {
-  food: "الأكل",
-  transport: "المواصلات",
-  shopping: "التسوق",
-  health: "الصحة",
-  bills: "الفواتير",
-  income: "الدخل",
-  saving: "الادخار",
-  uncategorized: "غير مصنف",
-};
-
-function knownCategoryDisplayName(value: string | undefined): string | undefined {
-  const normalized = (value ?? "").trim().toLowerCase();
-  return CATEGORY_DISPLAY_NAMES[normalized];
+function displayCategoryName(value: string | undefined): string {
+  if (!value || value === "uncategorized") return "غير مصنف";
+  return displayFinanceCategory(value);
 }
 
-function displayCategoryName(value: string | undefined): string {
-  return knownCategoryDisplayName(value) ?? value ?? "الفئة دي";
+function goalTargetDateFromText(value: string): string | undefined {
+  const query = normalizeNumericText(value.toLowerCase());
+  const now = new Date();
+  if (/(سنه|سنة|year)/i.test(query)) {
+    const date = new Date(now);
+    date.setFullYear(date.getFullYear() + 1);
+    return date.toISOString().slice(0, 10);
+  }
+  const months = query.match(/(\d+)\s*(شهر|شهور|months?)/i);
+  if (months?.[1]) {
+    const date = new Date(now);
+    date.setMonth(date.getMonth() + Number(months[1]));
+    return date.toISOString().slice(0, 10);
+  }
+  return undefined;
+}
+
+function goalTitleFromText(value: string): string {
+  const normalized = value.toLowerCase();
+  if (/(لابتوب|لاب توب|laptop)/i.test(normalized)) return "هدف شراء لابتوب";
+  if (/(عربيه|عربية|سياره|سيارة|car)/i.test(normalized)) return "هدف شراء عربية";
+  if (/(شقه|شقة|apartment|flat)/i.test(normalized)) return "هدف شراء شقة";
+  if (/(سفر|travel)/i.test(normalized)) return "هدف السفر";
+  const cleaned = normalizeNumericText(value)
+    .replace(/[؟?,،.!]/g, " ")
+    .replace(/خلال\s+.*$/i, " ")
+    .replace(/\d+(?:[.,]\d+)?\s*(جنيه|ج|egp|الف|ألف|k|مليون|million)?/gi, " ")
+    .replace(/\b(هدف|احوش|ادخر|توفير|حوش|اعمل|انشئ|أضف|ضيف|حط|سجل|create|add|saving|goal)\b/gi, " ")
+    .replace(/\b(اشتري|شراء|اجيب|أجيب|جيب|عايز|عاوز|لل|ل)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return cleaned.length >= 2 && cleaned.length <= 50 ? `هدف ${cleaned}` : "هدف ادخار جديد";
+}
+
+function proposedGoalCreateAction(intent: IntentResult, facts: ResolvedFact[]): ActionDraft[] {
+  if (intent.kind !== "goal_planning" || intent.slots.actionName !== "goal.create") return [];
+  const query = intent.slots.query ?? "";
+  const targetAmount =
+    moneyAmountFromText(query) ??
+    numericFact(facts, "target_amount", "goal.feasibility");
+  const targetDate = goalTargetDateFromText(query);
+  const title = goalTitleFromText(query);
+  const summaryParts = [title];
+  if (targetAmount) summaryParts.push(money(targetAmount));
+  if (targetDate) summaryParts.push(`حتى ${targetDate}`);
+
+  return [
+    {
+      id: `proposed:goal.create:${targetAmount ?? "new"}`,
+      name: "goal.create",
+      status: "draft",
+      risk: "medium",
+      confirmationRequired: true,
+      summary: summaryParts.join(" - "),
+      payload: {
+        title,
+        description: query.slice(0, 500),
+        targetAmount,
+        targetDate,
+      },
+    },
+  ];
+}
+
+function proposedActionsFromFacts(intent: IntentResult, facts: ResolvedFact[]): ActionDraft[] {
+  const goalActions = proposedGoalCreateAction(intent, facts);
+  if (goalActions.length > 0) return goalActions;
+
+  if (intent.kind !== "action_request" || intent.slots.actionName !== "expense.recategorize") {
+    return [];
+  }
+
+  const notFound = factValue(facts, "not_found", "finance.transaction_lookup") === true;
+  if (notFound) return [];
+
+  const expenseId = numericFact(facts, "expense_id", "finance.transaction_lookup");
+  const targetCategory =
+    textFact(facts, "target_category", "finance.transaction_lookup") ??
+    intent.slots.targetCategory ??
+    intent.slots.category;
+  if (!Number.isFinite(expenseId) || !targetCategory || targetCategory === "uncategorized") {
+    return [];
+  }
+
+  const currentCategory = textFact(facts, "category", "finance.transaction_lookup");
+  const description = textFact(facts, "description", "finance.transaction_lookup");
+  const amount = numericFact(facts, "amount", "finance.transaction_lookup");
+  const date = textFact(facts, "date", "finance.transaction_lookup");
+  const targetDisplay = displayCategoryName(targetCategory);
+  const currentDisplay = displayCategoryName(currentCategory);
+  const descriptor = description ? `"${description}"` : `#${Math.round(expenseId!)}`;
+  const amountText = amount !== undefined ? ` بقيمة ${money(amount)}` : "";
+  const dateText = date ? ` بتاريخ ${date}` : "";
+
+  return [
+    {
+      id: `proposed:expense.recategorize:${Math.round(expenseId!)}`,
+      name: "expense.recategorize",
+      status: "draft",
+      risk: "medium",
+      confirmationRequired: true,
+      summary: `تعديل تصنيف مصروف ${descriptor}${amountText}${dateText} من ${currentDisplay} إلى ${targetDisplay}`,
+      payload: {
+        expenseId: Math.round(expenseId!),
+        category: targetCategory,
+        reason: intent.slots.query ?? "AI recategorization request",
+      },
+    },
+  ];
+}
+
+function buildActionConfirmationContent(
+  intent: IntentResult,
+  facts: ResolvedFact[],
+  proposedActions: ActionDraft[],
+): string | undefined {
+  if (intent.kind === "goal_planning" && intent.slots.actionName === "goal.create") {
+    const action = proposedActions.find((item) => item.name === "goal.create");
+    if (!action) return undefined;
+    const payload = action.payload;
+    const targetAmount = typeof payload.targetAmount === "number" ? payload.targetAmount : undefined;
+    const targetDate = typeof payload.targetDate === "string" ? payload.targetDate : undefined;
+    const monthlyCapacity = numericFact(facts, "monthly_capacity", "goal.feasibility");
+    const estimatedMonths = numericFact(facts, "estimated_months", "goal.feasibility");
+    const rating = textFact(facts, "feasibility_rating", "goal.feasibility");
+    const lines = [
+      "جهزت مسودة الهدف، لكنها لن تتنفذ غير بعد تأكيدك.",
+      `الهدف: ${String(payload.title ?? "هدف ادخار جديد")}`,
+      targetAmount !== undefined ? `المبلغ المستهدف: ${money(targetAmount)}` : "",
+      targetDate ? `التاريخ المستهدف: ${targetDate}` : "",
+      monthlyCapacity !== undefined ? `قدرتك الشهرية المقدرة من صافي التدفق الحالي: ${money(monthlyCapacity)}` : "",
+      estimatedMonths !== undefined ? `المدة المقدرة حسب البيانات الحالية: ${estimatedMonths.toLocaleString("ar-EG")} شهر` : "",
+      rating ? `تقييم القابلية: ${rating}` : "",
+      "لو موافق أكد الإجراء من زر التأكيد تحت الرسالة.",
+    ];
+    return lines.filter(Boolean).join("\n");
+  }
+
+  if (intent.kind !== "action_request" || intent.slots.actionName !== "expense.recategorize") {
+    return undefined;
+  }
+
+  const notFound = factValue(facts, "not_found", "finance.transaction_lookup") === true;
+  if (notFound) {
+    return "ملقتش عملية مطابقة أقدر أعدل تصنيفها بثقة. ابعتلي اسم التاجر أو رقم العملية، أو اطلب آخر مصروف بدون شرط التصنيف.";
+  }
+
+  const action = proposedActions[0];
+  if (!action) {
+    return "لقيت طلب تعديل تصنيف، لكن البيانات المتاحة مش كفاية لتجهيز إجراء مؤكد. محتاج العملية المقصودة أو رقمها.";
+  }
+
+  const description = textFact(facts, "description", "finance.transaction_lookup");
+  const amount = numericFact(facts, "amount", "finance.transaction_lookup");
+  const currentCategory = textFact(facts, "category", "finance.transaction_lookup");
+  const targetCategory = String(action.payload.category ?? "");
+  const evidence = [
+    description ? `العملية: ${description}` : "",
+    amount !== undefined ? `المبلغ: ${money(amount)}` : "",
+    currentCategory ? `التصنيف الحالي: ${displayCategoryName(currentCategory)}` : "",
+    targetCategory ? `التصنيف المقترح: ${displayCategoryName(targetCategory)}` : "",
+  ].filter(Boolean);
+
+  return [
+    "لقيت العملية وجهزت تعديل التصنيف، لكنه لن يتنفذ غير بعد تأكيدك.",
+    evidence.length ? evidence.join("\n") : "",
+    "لو موافق أكد الإجراء من زر التأكيد تحت الرسالة.",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function uniqueMemoryFacts(facts: ResolvedFact[]): ResolvedFact[] {
@@ -469,7 +627,7 @@ function buildGroundedAdviceContent(intent: IntentResult, facts: ResolvedFact[])
     .filter((fact) => /^top_[1-4]_/.test(fact.label))
     .slice(0, 3)
     .map((fact): string | undefined => {
-      const category = knownCategoryDisplayName(fact.label.replace(/^top_\d+_/, ""));
+      const category = displayCategoryName(fact.label.replace(/^top_\d+_/, ""));
       if (!category) return undefined;
       const amount = Number(fact.value);
       return Number.isFinite(amount) ? `${category}: ${money(amount)}` : category;
@@ -648,10 +806,14 @@ function buildDeterministicContent(
   intent: IntentResult,
   facts: ResolvedFact[],
   artifacts: Artifact[],
+  proposedActions: ActionDraft[] = [],
 ): string | undefined {
   if (intent.kind === "smalltalk") {
     return "أهلا بيك. اسألني عن مصاريفك، أهدافك، التقارير، أو أي حاجة محتاج تفهمها في SmartSpend.";
   }
+
+  const actionContent = buildActionConfirmationContent(intent, facts, proposedActions);
+  if (actionContent) return actionContent;
 
   if (intent.kind === "finance_query") {
     const walletBalance = numericFact(facts, "total_balance", "wallet.summary");
@@ -809,7 +971,19 @@ function buildDeterministicContent(
 }
 
 function shouldUseLLM(intent: IntentResult, deterministicContent: string | undefined): boolean {
-  if (deterministicContent && intent.kind !== "report_request") {
+  // Never call LLM for classification explanation (pure rule-based evidence)
+  if (intent.reason === "classification_explanation_match") return false;
+
+  // Allow LLM for synthesis questions even if deterministic content exists
+  const query = intent.slots.query ?? "";
+  const needsSynthesis =
+    /(ليه|لماذا|السبب|خطة|خطط|اقترح|اعمل ايه|أعمل ايه|نصحنى|نصيحة|نصيحه|حلل)/i.test(query) ||
+    intent.reason === "composite_comparison_drivers_match" ||
+    intent.reason === "business_cashflow_match" ||
+    intent.reason === "goal_with_plan_composite_match" ||
+    intent.reason === "finance_planning_composite_match";
+
+  if (deterministicContent && !needsSynthesis) {
     return false;
   }
   return [
@@ -822,52 +996,74 @@ function shouldUseLLM(intent: IntentResult, deterministicContent: string | undef
   ].includes(intent.kind);
 }
 
+function determineRecipe(intent: IntentResult, facts: ResolvedFact[]): ResponseRecipe {
+  if (intent.kind === "smalltalk" || intent.kind === "site_help") return "simple_deterministic";
+  if (intent.kind === "action_request") return "action_confirmation";
+  if (intent.kind === "memory_question") return "answer_first";
+  if (intent.reason === "composite_comparison_drivers_match") return "drivers_then_plan";
+  if (intent.reason === "business_cashflow_match") return "drivers_then_plan";
+  if (intent.reason === "goal_with_plan_composite_match") return "plan_with_confirmation";
+  if (intent.kind === "goal_planning" && intent.slots.actionName) return "plan_with_confirmation";
+  if (intent.kind === "advice_request") return "plan_with_confirmation";
+  if (intent.slots.needsEvidence) return "evidence_then_answer";
+  return "answer_first";
+}
+
 function buildActiveMessages(
   request: AIRequest,
   intent: IntentResult,
   facts: ResolvedFact[],
   artifacts: Artifact[],
 ): ChatMessage[] {
-  const historyLimit = intent.kind === "advice_request" ? 2 : 4;
-  const historyTextLimit = intent.kind === "advice_request" ? 120 : 700;
+  const recipe = determineRecipe(intent, facts);
+  const historyLimit = intent.kind === "advice_request" ? 1 : 3;
   const history = (request.conversationHistory ?? [])
     .slice(-historyLimit)
-    .map((message) => `${message.role}: ${message.content.slice(0, historyTextLimit)}`)
+    .map((message) => `${message.role}: ${message.content.slice(0, 200)}`)
     .join("\n");
-  const factsJson = JSON.stringify(compactFactsForPrompt(facts, intent), null, 2).slice(
+  const factsJson = JSON.stringify(compactFactsForPrompt(facts, intent), null, 0).slice(
     0,
-    intent.kind === "advice_request" ? 1400 : 7000,
+    intent.kind === "advice_request" ? 2000 : 4000,
   );
-  const artifactsJson = JSON.stringify(compactArtifactsForPrompt(artifacts), null, 2).slice(0, 2500);
-  const adviceGuardrail =
-    intent.kind === "advice_request"
-      ? "في النصائح المالية أو الاستثمارية: لا تذكر نسب عوائد أو أسعار أو توقعات رقمية غير موجودة في ResolvedFacts. اجعل الرد 90 كلمة كحد أقصى، 4 نقاط عملية كحد أقصى، واذكر المخاطر بصورة نوعية."
-      : "";
+  const recipeGuards: Record<ResponseRecipe, string> = {
+    answer_first: "جاوب على السؤال أولا، ثم اذكر السبب أو الدليل بإيجاز. لا تقترح خطة بدون طلب.",
+    evidence_then_answer: "قدم الدليل أولا (أعلى 3-5 صفوف)، ثم الجواب. لا تخترع أرقام.",
+    drivers_then_plan: "اشرح الفروقات بين الفترات بالدليل، ثم اقترح خطوة واحدة عملية.",
+    plan_with_confirmation: "قدم خطة مختصرة بـ 3 نقاط. وضح أن التنفيذ يحتاج تأكيد قبل أي تغيير.",
+    action_confirmation: "اعرض الإجراء المقترح والدليل المختصر عليه. وضح بوضوح أنه لن يتنفذ إلا بعد تأكيد المستخدم. لا تقل إنك نفذته.",
+    ask_clarification: "اسأل سؤالا توضيحيا واحدا فقط إذا البيانات غير كافية.",
+    simple_deterministic: "جاوب مباشرة دون إطالة.",
+  };
 
   return [
     {
       role: "system",
       content:
-        "أنت SmartSpend AI Kernel responder. رد باللهجة المصرية الراقية. " +
-        "الأرقام المالية لازم تأتي فقط من ResolvedFacts. لا تخترع أرقام. " +
-        "لو المستخدم طلب تنفيذ عملية، ناقش الخطة واوضح أن التنفيذ النهائي يحتاج تأكيد. " +
-        "استخدم إجابة مختصرة ومفيدة، واذكر عدم توفر البيانات بصراحة. " +
-        adviceGuardrail,
+        "أنت SmartSpend AI. رد باللهجة المصرية الراقية. " +
+        "الأرقام المالية تأتي فقط من ResolvedFacts. " +
+        recipeGuards[recipe] + " " +
+        (intent.kind === "advice_request"
+          ? "لا تذكر نسب عوائد أو توقعات رقمية غير موجودة. 4 نقاط كحد أقصى. "
+          : ""),
     },
     {
       role: "user",
       content: [
-        `رسالة المستخدم: ${request.message}`,
-        `intent: ${intent.kind}`,
-        history ? `سياق قريب:\n${history}` : "",
-        `ResolvedFacts JSON:\n${factsJson || "[]"}`,
-        artifacts.length ? `Artifacts JSON:\n${artifactsJson}` : "",
-        "اكتب الرد النهائي للمستخدم فقط.",
+        `سؤال: ${request.message}`,
+        `intent=${intent.kind} recipe=${recipe}`,
+        history ? `سياق: ${history}` : "",
+        `Facts: ${factsJson || "[]"}`,
+        artifacts.length ? `Artifacts: ${artifactBriefs(artifacts)}` : "",
+        "اكتب الرد النهائي.",
       ]
         .filter(Boolean)
-        .join("\n\n"),
+        .join("\n"),
     },
   ];
+}
+
+function artifactBriefs(artifacts: Artifact[]): string {
+  return artifacts.slice(0, 3).map((a) => `[${a.type}] ${a.title ?? ""}`).join(" | ");
 }
 
 function fallbackActiveContent(intent: IntentResult, facts: ResolvedFact[]): string {
@@ -896,7 +1092,13 @@ export async function runAIKernelActive(
     const contextPack = buildContextPack(request, intent, dataNeeds);
     const resolved = await resolveShadowFacts(request, dataNeeds);
     const cacheRuntime = getCacheRuntimeStatus();
-    const deterministicContent = buildDeterministicContent(intent, resolved.facts, resolved.artifacts);
+    const proposedActions = proposedActionsFromFacts(intent, resolved.facts);
+    const deterministicContent = buildDeterministicContent(
+      intent,
+      resolved.facts,
+      resolved.artifacts,
+      proposedActions,
+    );
     const retrievalPolicy = retrievalPolicyFor(intent.kind, dataNeeds, resolved.cacheHits);
     const embeddingCalls = embeddingApiCallsFromCacheHits(resolved.cacheHits);
     const embeddingApiStatus = embeddingApiStatusFor(dataNeeds, resolved.cacheHits);
@@ -966,6 +1168,8 @@ export async function runAIKernelActive(
 
     const risk = hallucinationRiskFor(content, resolved.facts, llmCalls);
 
+    const recipe = determineRecipe(intent, resolved.facts);
+
     const response = normalizeAIResponse({
       traceId,
       channel: request.channel,
@@ -975,6 +1179,8 @@ export async function runAIKernelActive(
       contextPack,
       facts: resolved.facts,
       artifacts: resolved.artifacts,
+      proposedActions,
+      recipe,
       model: model ?? config.model,
       tokensUsed,
       debug: {
@@ -984,6 +1190,7 @@ export async function runAIKernelActive(
         estimatedInputTokens: contextPack.estimatedInputTokens,
         resolvedFacts: resolved.facts.length,
         resolvedArtifacts: resolved.artifacts.length,
+        proposedActions: proposedActions.length,
         resolverErrors: resolved.errors,
         cacheHits: resolved.cacheHits,
         embeddingCalls,

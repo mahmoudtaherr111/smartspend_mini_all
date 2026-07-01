@@ -42,9 +42,13 @@ import {
 import {
   cancelAction as runtimeCancelAction,
   confirmAction as runtimeConfirmAction,
+  createPendingGoalAction,
+  createPendingRuntimeAction,
   maybeCreateActionDraftFromMessage,
   mergeActionArtifacts,
 } from "./services/action-runtime";
+import type { ActionDraftResult, GoalCreatePayload, RuntimeActionName, RuntimeActionPayload } from "./services/action-runtime/types";
+import { displayFinanceCategory } from "./services/finance-semantic-layer/category-matcher";
 
 // ─── Helpers ───
 
@@ -170,16 +174,8 @@ function localMoney(value: number | undefined): string {
 }
 
 function localCategoryName(value: string | undefined): string {
-  const names: Record<string, string> = {
-    food: "الأكل والمشروبات",
-    transport: "المواصلات",
-    shopping: "التسوق",
-    health: "الصحة",
-    bills: "الفواتير",
-    saving: "الادخار",
-    uncategorized: "غير مصنف",
-  };
-  return names[value ?? ""] ?? value ?? "غير مصنف";
+  if (!value) return "غير مصنف";
+  return displayFinanceCategory(value);
 }
 
 function responseForActionDraft(
@@ -674,22 +670,31 @@ export const chatRouter = router({
       }
 
       let actionDraftError: string | null = null;
-      const actionDraft = aiKernelActive
-        ? await maybeCreateActionDraftFromMessage(
-            {
-              userId: user.id,
-              userType: user.type,
-              userPlan: plan,
-              conversationId: activeConversationId,
-            },
-            input.message,
-          ).catch((error: unknown) => {
-            const message = error instanceof Error ? error.message : String(error);
-            actionDraftError = message;
-            console.warn("[AI Action Runtime] draft failed", message);
-            return null;
-          })
-        : null;
+      let actionDraft: ActionDraftResult | null = null;
+      if (aiKernelActive) {
+        const actionCtx = {
+          userId: user.id,
+          userType: user.type,
+          userPlan: plan,
+          conversationId: activeConversationId,
+        };
+        const proposedAction = shadow?.proposedActions?.[0];
+        actionDraft = await (proposedAction
+          ? proposedAction.name === "goal.create"
+            ? createPendingGoalAction(actionCtx, proposedAction.payload as unknown as GoalCreatePayload)
+            : createPendingRuntimeAction(
+                actionCtx,
+                proposedAction.name as RuntimeActionName,
+                proposedAction.payload as RuntimeActionPayload,
+              )
+          : maybeCreateActionDraftFromMessage(actionCtx, input.message)
+        ).catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : String(error);
+          actionDraftError = message;
+          console.warn("[AI Action Runtime] draft failed", message);
+          return null;
+        });
+      }
       const actionAwareResponse = actionDraftError
         ? responseForActionDraftFailure(actionDraftError)
         : responseForActionDraft(
@@ -767,6 +772,8 @@ export const chatRouter = router({
       const numericAccuracy = structured?.facts?.length
         ? validateNumbersAgainstFacts(result.response, structured.facts)
         : undefined;
+      const structuredDebug = structured?.debug as Record<string, unknown> | undefined;
+      const cacheRuntime = structuredDebug?.cacheRuntime as Record<string, unknown> | undefined;
       void recordAICostMetric({
         userId: user.id,
         userType: user.type,
@@ -785,7 +792,17 @@ export const chatRouter = router({
           conversationId: activeConversationId,
           traceId: structured?.traceId,
           dataNeeds: dataNeedKinds(structured),
-          cacheHits: ((structured?.debug as { cacheHits?: unknown[] } | undefined)?.cacheHits ?? []),
+          cacheHits: structuredDebug?.cacheHits ?? [],
+          cacheBackend: cacheRuntime?.backend,
+          redisConfigured: cacheRuntime?.redisConfigured,
+          recipe: structured?.recipe,
+          proposedActions: structured?.proposedActions?.length ?? 0,
+          embeddingApiStatus: structuredDebug?.embeddingApiStatus,
+          retrievalPolicy: structuredDebug?.retrievalPolicy,
+          estimatedInputTokens,
+          llmCalls: measuredLlmCalls,
+          embeddingCalls: measuredEmbeddingCalls,
+          toolCalls: measuredToolCalls,
           resolvedFacts: structured?.facts?.length ?? 0,
           maxOutputTokens: chatPolicy.maxOutputTokens,
           maxToolRounds: chatPolicy.maxToolRounds,
@@ -1007,6 +1024,10 @@ export const chatRouter = router({
       {
         label: "🎯 أهداف الادخار",
         prompt: "وصلت كام في أهداف الادخار بتاعتي؟",
+      },
+      {
+        label: "💼 تحليل الكاش فلو",
+        prompt: "إيه الدخل والمصروف والصافي الشهر ده؟ وإيه أكتر بندين عايزين مراجعة؟",
       },
     ];
   }),

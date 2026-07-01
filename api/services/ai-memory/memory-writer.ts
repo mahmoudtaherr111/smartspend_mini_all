@@ -136,7 +136,114 @@ function memoryTypeFor(content: string): ExtractedMemory["type"] {
   if (normalized.includes("هدف") || normalized.includes("احوش") || normalized.includes("ادخر")) return "plan";
   if (normalized.includes("اتفقنا") || normalized.includes("اتفاق")) return "agreement";
   if (normalized.includes("افضل") || normalized.includes("بحب") || normalized.includes("بكره")) return "preference";
+  if (normalized.includes("ميزانيه") || normalized.includes("حد") || normalized.includes("قيد")) return "plan";
+  if (normalized.includes("مشروع") || normalized.includes("بيزنس") || normalized.includes("business")) return "plan";
   return "fact";
+}
+
+function structuredMemoryTypeFor(content: string, fallback: ExtractedMemory["type"]): string {
+  const normalized = normalizeMemoryText(content);
+  if (normalized.includes("مشروع") || normalized.includes("بيزنس") || normalized.includes("business")) {
+    return "business_context";
+  }
+  if (
+    normalized.includes("حد اقصي") ||
+    normalized.includes("ميزانيه") ||
+    normalized.includes("مش هلمس") ||
+    normalized.includes("ما تلمسش") ||
+    normalized.includes("ما تنفذش") ||
+    normalized.includes("متنفذش") ||
+    normalized.includes("لما اكد") ||
+    normalized.includes("بعد تاكيد") ||
+    normalized.includes("confirm") ||
+    normalized.includes("limit")
+  ) {
+    return "constraint";
+  }
+  if (fallback === "fact") return "fact";
+  return fallback;
+}
+
+function extractStructuredMemoryMeta(content: string): Record<string, unknown> {
+  const normalized = normalizeMemoryText(content);
+  const meta: Record<string, unknown> = {};
+  const amountMatches = [...normalized.matchAll(/(\d+)\s*(الف|ألف|k|مليون|million)?/gi)];
+  const amounts = amountMatches
+    .map((match) => {
+      const base = Number(match[1]);
+      if (!Number.isFinite(base)) return undefined;
+      const unit = String(match[2] ?? "").toLowerCase();
+      if (unit === "الف" || unit === "ألف" || unit === "k") return base * 1000;
+      if (unit === "مليون" || unit === "million") return base * 1_000_000;
+      return base;
+    })
+    .filter((value): value is number => value !== undefined && Number.isFinite(value) && value > 10);
+
+  if (amounts && amounts.length > 0) {
+    const maxAmount = Math.max(...amounts);
+    meta.subject_amount = maxAmount;
+    meta.amount = maxAmount;
+  }
+
+  const monthMatch = normalized.match(/(\d+)\s*(شهر|شهور|months?)/i);
+  if (monthMatch) {
+    meta.estimated_months = Number(monthMatch[1]);
+    meta.period = `${Number(monthMatch[1])} months`;
+  } else if (normalized.includes("الشهر ده") || normalized.includes("هذا الشهر")) {
+    meta.period = "current_month";
+  }
+
+  const deadlineMatch = normalized.match(/(?:قبل|بحلول|deadline|by)\s+([^،.؟?]{2,40})/i);
+  if (deadlineMatch?.[1]) meta.deadline = deadlineMatch[1].trim();
+
+  const subjectPatterns = ["سياره", "سيارة", "شقه", "شقة", "سفر", "عربيه", "عربية", "لابتوب", "موبايل", "كاميرا"];
+  for (const subject of subjectPatterns) {
+    if (normalized.includes(normalizeMemoryText(subject))) {
+      meta.subject = subject;
+      break;
+    }
+  }
+
+  if (normalized.includes("ادخار") || normalized.includes("احوش") || normalized.includes("ادخر")) {
+    meta.intent = "saving";
+  }
+  if (normalized.includes("شراء") || normalized.includes("اشتري") || normalized.includes("اجيب")) {
+    meta.intent = "purchase";
+  }
+  meta.status =
+    normalized.includes("ما تنفذش") ||
+    normalized.includes("متنفذش") ||
+    normalized.includes("لما اكد") ||
+    normalized.includes("بعد تاكيد")
+      ? "pending_confirmation"
+      : "active";
+
+  return Object.keys(meta).length > 0 ? meta : undefined!;
+}
+
+function assistantPlanCommitSignal(content: string): boolean {
+  const normalized = normalizeMemoryText(content);
+  return [
+    "احفظ",
+    "خزن",
+    "افتكر كده",
+    "تمام افتكر",
+    "تمام كده",
+    "موافق",
+    "اتفقنا",
+    "remember this",
+    "save this",
+  ].some((term) => normalized.includes(normalizeMemoryText(term)));
+}
+
+function assistantPlanCandidate(content: string): boolean {
+  const normalized = normalizeMemoryText(content);
+  return (
+    !isLowSignalMemoryText(content) &&
+    ["خطه", "خطة", "هدف", "ادخار", "احوش", "ميزانيه", "budget", "plan", "goal"].some((term) =>
+      normalized.includes(normalizeMemoryText(term)),
+    )
+  );
 }
 
 export function buildConversationCapsule(messages: MemoryMessage[]): string {
@@ -172,9 +279,36 @@ export function buildRunningSummary(messages: MemoryMessage[], previousSummary =
 export function extractSemanticMemories(messages: MemoryMessage[]): ExtractedMemory[] {
   const memories = new Map<string, ExtractedMemory>();
 
-  for (const message of messages) {
+  for (const [index, message] of messages.entries()) {
     if (message.role !== "user") continue;
+
+    if (assistantPlanCommitSignal(message.content)) {
+      const previousAssistant = [...messages.slice(0, index)]
+        .reverse()
+        .find((item) => item.role === "assistant" && assistantPlanCandidate(item.content));
+      if (previousAssistant) {
+        const content = truncateWords(previousAssistant.content, 60);
+        const hash = contentHash(`assistant_plan:${content}`);
+        const structuredMeta = extractStructuredMemoryMeta(content);
+        memories.set(hash, {
+          type: "plan",
+          content,
+          importance: 82,
+          sourceMessageId: previousAssistant.id,
+          metadata: {
+            extractedBy: "deterministic_v2",
+            reason: "assistant_plan_confirmed_by_user",
+            structuredType: "agreement",
+            status: "active",
+            confidence: 0.82,
+            ...(structuredMeta || {}),
+          },
+        });
+      }
+    }
+
     if (isLowSignalMemoryText(message.content)) continue;
+
     const signal = memorySignalFor(message.content);
     if (!signal) continue;
 
@@ -182,14 +316,20 @@ export function extractSemanticMemories(messages: MemoryMessage[]): ExtractedMem
     if (content.length < 8) continue;
 
     const hash = contentHash(content);
+    const structuredMeta = extractStructuredMemoryMeta(content);
+    const type = signal.type ?? memoryTypeFor(content);
     memories.set(hash, {
-      type: signal.type ?? memoryTypeFor(content),
+      type,
       content,
       importance: signal.importance,
       sourceMessageId: message.id,
       metadata: {
         extractedBy: "deterministic_v2",
         reason: signal.reason,
+        structuredType: structuredMemoryTypeFor(content, type),
+        status: "active",
+        confidence: Math.min(0.98, Math.max(0.5, signal.importance / 100)),
+        ...(structuredMeta || {}),
       },
     });
   }
@@ -208,7 +348,13 @@ export function draftConversationMemory(
   return {
     capsule: buildConversationCapsule(input.messages),
     runningSummary: buildRunningSummary(input.messages, previousSummary),
-    memories: extractSemanticMemories(input.messages),
+    memories: extractSemanticMemories(input.messages).map((memory) => ({
+      ...memory,
+      metadata: {
+        ...(memory.metadata ?? {}),
+        sourceConversationId: input.conversationId,
+      },
+    })),
   };
 }
 

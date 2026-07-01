@@ -10,6 +10,8 @@ describe("finance semantic cache tracing", () => {
     const key = financeCacheKey("qa-user", "local", "summary", "today");
     const compute = vi.fn(async () => ({ total: 123 }));
 
+    expect(key).toContain("tax_v2_2026_06");
+
     const first = await collectFinanceCacheTrace(() => withFinanceCache(key, 60, compute));
     const second = await collectFinanceCacheTrace(() => withFinanceCache(key, 60, compute));
 

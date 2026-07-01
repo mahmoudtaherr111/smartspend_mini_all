@@ -19,8 +19,13 @@ export type DataNeedKind =
   | "finance.category_total"
   | "finance.breakdown"
   | "finance.transactions"
+  | "finance.transaction_lookup"
   | "finance.period_comparison"
+  | "finance.comparison_drivers"
+  | "finance.category_inclusion"
+  | "finance.business_cashflow"
   | "finance.goal_progress"
+  | "goal.feasibility"
   | "wallet.summary"
   | "memory.search"
   | "site_guide.search"
@@ -76,6 +81,9 @@ export interface IntentResult {
     metric?: "total" | "count" | "average" | "comparison" | "trend";
     actionName?: string;
     query?: string;
+    lookupQuery?: string;
+    sourceCategory?: string;
+    targetCategory?: string;
     wallet?: boolean;
     needsEvidence?: boolean;
     needsChart?: boolean;
@@ -93,6 +101,11 @@ export interface DataNeed {
     comparePeriod?: PeriodHint;
     category?: string;
     categories?: string[];
+    sourceCategory?: string;
+    targetCategory?: string;
+    targetAmount?: number;
+    targetDate?: string;
+    goalTitle?: string;
     query?: string;
     limit?: number;
     startDate?: string;
@@ -177,6 +190,15 @@ export interface ContextPack {
   dataNeeds: DataNeed[];
 }
 
+export type ResponseRecipe =
+  | "answer_first"
+  | "evidence_then_answer"
+  | "drivers_then_plan"
+  | "plan_with_confirmation"
+  | "action_confirmation"
+  | "ask_clarification"
+  | "simple_deterministic";
+
 export interface AIResponse {
   traceId: string;
   channel: AIChannel;
@@ -186,6 +208,8 @@ export interface AIResponse {
   facts: ResolvedFact[];
   artifacts: Artifact[];
   actions: ActionDraft[];
+  proposedActions?: ActionDraft[];
+  recipe?: ResponseRecipe;
   tokenBudget: TokenBudget;
   model?: string;
   tokensUsed?: number;

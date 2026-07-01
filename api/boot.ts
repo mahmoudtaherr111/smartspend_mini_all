@@ -22,6 +22,7 @@ import fs from "fs";
 import path from "path";
 import { whatsappService } from "./services/whatsapp-service";
 import { processScheduledNotifications, seedDefaultTemplates, checkAndTriggerSmartActivityNotifications } from "./notification-engine";
+import { warmupEmbeddingEngine } from "./lib/embedding-engine";
 
 if (env.SENTRY_DSN) {
   Sentry.init({
@@ -46,6 +47,10 @@ cron.schedule("0 0 * * *", async () => {
 seedDefaultTemplates().catch((err) => {
   console.error("[Boot] Failed to seed default notification templates:", err);
 });
+
+// Warmup embedding engine (local index + Fireworks descriptor index)
+// Non-blocking — runs in background. Prevents 10-30s delay on first classification.
+warmupEmbeddingEngine(undefined, process.env.FIREWORKS_API_KEY || "");
 
 // Cron job for processing scheduled and event-based notifications
 cron.schedule("* * * * *", async () => {
@@ -97,15 +102,16 @@ app.use(
   cors({
     origin: (origin) => {
       if (!origin) return allowedOrigins[0];
-      if (
-        env.NODE_ENV === "development" ||
-        origin.endsWith(".loca.lt") ||
-        origin.endsWith(".serveousercontent.com") ||
-        origin.endsWith(".lhr.life") ||
-        origin.includes("localhost") ||
-        origin.includes("127.0.0.1")
-      ) {
-        return origin;
+      if (env.NODE_ENV === "development") {
+        if (
+          origin.includes("localhost") ||
+          origin.includes("127.0.0.1") ||
+          origin.endsWith(".loca.lt") ||
+          origin.endsWith(".serveousercontent.com") ||
+          origin.endsWith(".lhr.life")
+        ) {
+          return origin;
+        }
       }
       return allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
     },
@@ -119,15 +125,16 @@ app.use(
   csrf({
     origin: (origin) => {
       if (!origin) return false;
-      if (
-        env.NODE_ENV === "development" ||
-        origin.endsWith(".loca.lt") ||
-        origin.endsWith(".serveousercontent.com") ||
-        origin.endsWith(".lhr.life") ||
-        origin.includes("localhost") ||
-        origin.includes("127.0.0.1")
-      ) {
-        return true;
+      if (env.NODE_ENV === "development") {
+        if (
+          origin.includes("localhost") ||
+          origin.includes("127.0.0.1") ||
+          origin.endsWith(".loca.lt") ||
+          origin.endsWith(".serveousercontent.com") ||
+          origin.endsWith(".lhr.life")
+        ) {
+          return true;
+        }
       }
       return allowedOrigins.includes(origin);
     },
@@ -137,7 +144,11 @@ app.use(
 // Error handling
 app.onError((err, c) => {
   console.error("Hono Error:", err);
-  return c.json({ error: err.message || "Internal Server Error" }, 500);
+  const isProd = env.NODE_ENV === "production";
+  const message = isProd
+    ? "حدث خطأ داخلي في الخادم. برجاء المحاولة لاحقاً."
+    : err.message || "Internal Server Error";
+  return c.json({ error: message }, 500);
 });
 
 app.notFound(async (c) => {
@@ -295,7 +306,26 @@ app.post("/api/webhooks/paymob", async (c) => {
       | "pro_monthly"
       | "pro_yearly";
 
+    const PLAN_PRICES_EGP: Record<string, number> = {
+      pro_monthly: 49,
+      pro_yearly: 499,
+    };
+
+    const expectedAmountCents = PLAN_PRICES_EGP[plan]
+      ? PLAN_PRICES_EGP[plan] * 100
+      : null;
+
     if (userId && (userType === "oauth" || userType === "local")) {
+      if (expectedAmountCents !== null && obj.amount_cents) {
+        const paidCents = Number(obj.amount_cents);
+        if (paidCents < expectedAmountCents) {
+          console.warn(
+            `Paymob webhook: amount mismatch — expected ${expectedAmountCents} cents for ${plan}, got ${paidCents}. Rejecting.`,
+          );
+          return c.json({ error: "Amount mismatch" }, 400);
+        }
+      }
+
       console.info(
         `Granting Pro subscription to user ${userId} (${userType}) via Paymob webhook`,
       );

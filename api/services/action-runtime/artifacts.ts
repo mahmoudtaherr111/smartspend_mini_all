@@ -16,76 +16,70 @@ import type {
 
 export function goalSummary(payload: GoalCreatePayload): string {
   const parts = [payload.title];
-  if (payload.targetAmount) parts.push(`${payload.targetAmount} EGP`);
-  if (payload.targetDate) parts.push(`until ${payload.targetDate}`);
+  if (payload.targetAmount) parts.push(`${payload.targetAmount.toLocaleString("ar-EG")} جنيه`);
+  if (payload.targetDate) parts.push(`حتى ${payload.targetDate}`);
   return parts.join(" - ");
 }
 
-function displayCategory(value: string | undefined): string {
-  const categories: Record<string, string> = {
-    food: "food",
-    transport: "transport",
-    shopping: "shopping",
-    health: "health",
-    bills: "bills",
-    saving: "saving",
-    uncategorized: "uncategorized",
-  };
-  return categories[value ?? ""] ?? value ?? "uncategorized";
+import { displayFinanceCategory } from "../finance-semantic-layer/category-matcher";
+
+function displayCategoryAr(value: string | undefined): string {
+  if (!value || value === "uncategorized") return "غير مصنف";
+  return displayFinanceCategory(value);
 }
 
 export function actionSummary(actionName: RuntimeActionName, payload: RuntimeActionPayload): string {
   if (actionName === "goal.create") return goalSummary(payload as GoalCreatePayload);
   if (actionName === "goal.update") {
     const goal = payload as GoalUpdatePayload;
-    return `Update goal #${goal.goalId}${goal.title ? ` - ${goal.title}` : ""}${goal.targetAmount ? ` - ${goal.targetAmount} EGP` : ""}`;
+    return `تعديل هدف #${goal.goalId}${goal.title ? ` - ${goal.title}` : ""}${goal.targetAmount ? ` - ${goal.targetAmount.toLocaleString("ar-EG")} جنيه` : ""}`;
   }
   if (actionName === "goal.stop") {
     const goal = payload as GoalStopPayload;
-    return `Stop goal #${goal.goalId}${goal.reason ? ` - ${goal.reason.slice(0, 80)}` : ""}`;
+    return `إيقاف هدف #${goal.goalId}${goal.reason ? ` - ${goal.reason.slice(0, 80)}` : ""}`;
   }
   if (actionName === "expense.create") {
     const expense = payload as ExpenseCreatePayload;
-    return `Record expense ${expense.amount} EGP - ${displayCategory(expense.category)}${expense.placeHint ? ` - ${expense.placeHint}` : ""}`;
+    return `تسجيل ${expense.amount.toLocaleString("ar-EG")} جنيه - ${displayCategoryAr(expense.category)}${expense.placeHint ? ` - ${expense.placeHint}` : ""}`;
   }
   if (actionName === "expense.recategorize") {
     const expense = payload as ExpenseRecategorizePayload;
-    return `Recategorize expense #${expense.expenseId} to ${displayCategory(expense.category)}`;
+    return `تعديل تصنيف مصروف #${expense.expenseId} إلى ${displayCategoryAr(expense.category)}`;
   }
   if (actionName === "budget.create") {
     const budget = payload as BudgetCreatePayload;
-    return `${budget.title} - ${budget.monthlyLimit} EGP${budget.category ? ` - ${displayCategory(budget.category)}` : ""}`;
+    return `اقتراح ميزانية: ${budget.title} - ${budget.monthlyLimit.toLocaleString("ar-EG")} جنيه${budget.category ? ` - ${displayCategoryAr(budget.category)}` : ""}`;
   }
   if (actionName === "profile.update") {
     const profile = payload as ProfileUpdatePayload;
-    return `Update profile ${profile.section}: ${Object.keys(profile.patch).join(", ")}`;
+    return `تعديل الملف الشخصي - ${profile.section}: ${Object.keys(profile.patch).join("، ")}`;
   }
   if (actionName === "wallet.create") {
     const wallet = payload as WalletCreatePayload;
-    return `Create wallet ${wallet.name} (${wallet.provider})`;
+    return `إضافة محفظة ${wallet.name} (${wallet.provider})`;
   }
   if (actionName === "wallet.update") {
     const wallet = payload as WalletUpdatePayload;
-    return `Update wallet #${wallet.walletId}${wallet.name ? ` - ${wallet.name}` : ""}${wallet.balance ? ` - balance ${wallet.balance}` : ""}`;
+    return `تحديث محفظة #${wallet.walletId}${wallet.name ? ` - ${wallet.name}` : ""}${wallet.balance ? ` - رصيد ${wallet.balance}` : ""}`;
   }
   const undo = payload as UndoPayload;
-  return `Undo ${undo.targetActionName ?? "last reversible action"}`;
+  return `تراجع عن ${undo.targetActionName ?? "آخر عملية قابلة للتراجع"}`;
 }
 
 function actionTitle(actionName: RuntimeActionName): string {
   const titles: Record<RuntimeActionName, string> = {
-    "goal.create": "Confirm goal creation",
-    "goal.update": "Confirm goal update",
-    "goal.stop": "Confirm goal stop",
-    "expense.create": "Confirm expense recording",
-    "expense.recategorize": "Confirm expense recategorization",
-    "budget.create": "Confirm budget plan",
-    "profile.update": "Confirm profile update",
-    "wallet.create": "Confirm wallet creation",
-    "wallet.update": "Confirm wallet update",
-    "action.undo": "Confirm undo",
+    "goal.create": "تأكيد إنشاء الهدف",
+    "goal.update": "تأكيد تعديل الهدف",
+    "goal.stop": "تأكيد إيقاف الهدف",
+    "expense.create": "تأكيد تسجيل المصروف",
+    "expense.recategorize": "تأكيد تعديل التصنيف",
+    "budget.create": "تأكيد خطة الميزانية",
+    "profile.update": "تأكيد تعديل الملف الشخصي",
+    "wallet.create": "تأكيد إضافة المحفظة",
+    "wallet.update": "تأكيد تحديث المحفظة",
+    "action.undo": "تأكيد التراجع",
   };
-  return titles[actionName] ?? "Confirm action";
+  return titles[actionName] ?? "تأكيد العملية";
 }
 
 export function actionConfirmationArtifact(action: ActionDraft): Artifact {
@@ -99,8 +93,8 @@ export function actionConfirmationArtifact(action: ActionDraft): Artifact {
       summary: action.summary,
       risk: action.risk,
       fields: action.payload,
-      confirmLabel: "Confirm",
-      cancelLabel: "Cancel",
+      confirmLabel: "تأكيد",
+      cancelLabel: "إلغاء",
     },
   };
 }

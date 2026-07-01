@@ -116,6 +116,8 @@ vi.mock("./services/ai-memory", () => ({
 }));
 
 vi.mock("./services/action-runtime", () => ({
+  createPendingGoalAction: vi.fn(async () => null),
+  createPendingRuntimeAction: vi.fn(async () => null),
   maybeCreateActionDraftFromMessage: vi.fn(async () => null),
   mergeActionArtifacts: vi.fn((artifacts) => ({ artifacts, actions: [] })),
   confirmAction: vi.fn(),

@@ -70,6 +70,7 @@ export const sessionRouter = router({
       z
         .object({
           userId: z.number().optional(),
+          userType: z.enum(["oauth", "local"]).optional(),
           activeOnly: z.boolean().default(false),
           page: z.number().default(1),
           limit: z.number().default(50),
@@ -79,10 +80,17 @@ export const sessionRouter = router({
     .query(async ({ input }) => {
       const { userId, activeOnly, page = 1, limit = 50 } = input ?? {};
       const offset = (page - 1) * limit;
-      let query = db.select().from(sessions).orderBy(desc(sessions.createdAt));
-      if (userId) query = query.where(eq(sessions.userId, userId)) as any;
-      if (activeOnly)
-        query = query.where(gte(sessions.expiresAt, new Date())) as any;
+      const conditions = [];
+      if (userId) {
+        conditions.push(eq(sessions.userId, userId));
+        if (input?.userType) {
+          conditions.push(eq(sessions.userType, input.userType));
+        }
+      }
+      if (activeOnly) conditions.push(gte(sessions.expiresAt, new Date()));
+      let query = db.select().from(sessions).$dynamic();
+      if (conditions.length > 0) query = query.where(and(...conditions));
+      query = query.orderBy(desc(sessions.createdAt));
       const list = await query.limit(limit).offset(offset);
       const total = await db.select({ count: count() }).from(sessions);
       return { list, total: total[0]?.count ?? 0, page, limit };
@@ -92,7 +100,22 @@ export const sessionRouter = router({
   trackEvent: authedProcedure
     .input(
       z.object({
-        event: z.string(),
+        event: z.enum([
+          "login",
+          "logout",
+          "page_view",
+          "expense_create",
+          "expense_update",
+          "expense_delete",
+          "ai_use",
+          "upgrade_to_pro",
+          "export_data",
+          "voice_record",
+          "sms_ingest",
+          "onboarding_complete",
+          "budget_exceeded",
+          "chat_message",
+        ]),
         metadata: z.record(z.string(), z.any()).optional(),
       }),
     )

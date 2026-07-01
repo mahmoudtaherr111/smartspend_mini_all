@@ -20,6 +20,7 @@ export interface FinanceContext {
 
 export interface FinancePeriodInput {
   period?: FinancePeriodKind;
+  comparePeriod?: FinancePeriodKind;
   month?: string;
   startDate?: Date | string;
   endDate?: Date | string;
@@ -161,4 +162,42 @@ export interface FinanceResolverResult {
   artifacts: import("../ai-kernel/types").Artifact[];
   errors: string[];
   cacheHits: string[];
+}
+
+export interface FinanceComparisonDriver {
+  category: string;
+  type: "category" | "merchant";
+  currentAmount: number;
+  previousAmount: number;
+  difference: number;
+  changePercent: number | null;
+  direction: "up" | "down" | "stable";
+}
+
+export interface FinanceBusinessCashflow {
+  period: string;
+  totalIncome: number;
+  totalExpense: number;
+  netFlow: number;
+  topExpenseCategories: Array<{ category: string; amount: number }>;
+  topIncomeCategories: Array<{ category: string; amount: number }>;
+  dailyAverageExpense: number;
+  projectedMonthEnd: number;
+  suggestedWeeklyPlan: string[];
+}
+
+export interface FinanceCategoryInclusion {
+  category: string;
+  merchants: string[];
+  sampleTransactions: Array<{ description: string; amount: number; date: string }>;
+  ruleExplanation: string;
+  totalMatched: number;
+}
+
+export interface FinanceGoalFeasibility {
+  monthlyCapacity: number;
+  targetAmount: number;
+  estimatedMonths: number | null;
+  topExpenseLevers: Array<{ category: string; amount: number; potentialSavings: number }>;
+  feasibilityRating: "easy" | "moderate" | "challenging";
 }

@@ -1,24 +1,30 @@
 /**
- * SmartSpend Muscle Memory Cache
- * ──────────────────────────────
+ * SmartSpend Muscle Memory Cache V2
+ * ───────────────────────────────────
  * Learns from user's classification history to instantly classify
  * recurring transactions with 0 tokens and 100% confidence.
  *
- * How it works:
- * 1. When a user confirms a classification, we extract a "template"
- *    by replacing numbers with {X} placeholder.
- * 2. Next time a similar text comes in, we match it against templates.
- * 3. If match found → instant classification (no AI needed).
+ * V2 changes:
+ *  - Uses lru-cache (production-grade) instead of hand-rolled Map cache
+ *  - Uses damerau-levenshtein for template similarity (handles transpositions)
+ *  - Accepts both AI and rule_engine classifications (not just AI)
+ *  - Lower threshold: 85% instead of 98% (allows "دفعت كهربا 200" to match "دفعت الكهربا 300")
  */
 
 import { db } from "../queries/connection";
 import { classificationLogs, userDictionaries } from "../../db/schema";
 import { eq, and, gte, desc } from "drizzle-orm";
+import { LRUCache } from "lru-cache";
+import damerauPkg from "damerau-levenshtein";
+const damerauLevenshtein = (a: string, b: string): number => {
+  const result = (damerauPkg as any)(a, b);
+  return typeof result === "number" ? result : result.steps;
+};
 
 // ─── Types ───
 
 export interface MemoryPattern {
-  template: string; // e.g. "دفعت {X} للمدرس"
+  template: string;
   category: string;
   subCategory: string;
   type: "income" | "expense";
@@ -30,71 +36,26 @@ export interface MemoryPattern {
 export interface MemoryMatch {
   pattern: MemoryPattern;
   amount: number;
-  matchScore: number; // 0-100, how well it matched
+  matchScore: number;
 }
 
-// ─── LRU Per-User Cache ───
+// ─── Per-User LRU Cache (production-grade) ───
 
-class UserMemoryCache {
-  private cache = new Map<string, MemoryPattern[]>(); // key = "userId:userType"
-  private loadedAt = new Map<string, number>();
-  private maxPatternsPerUser = 200;
-  private ttlMs = 30 * 60 * 1000; // 30 minutes before re-fetching
+const userMemoryCache = new LRUCache<string, MemoryPattern[]>({
+  max: 500,
+  ttl: 30 * 60 * 1000,
+});
 
-  private userKey(userId: number, userType: string): string {
-    return `${userId}:${userType}`;
-  }
-
-  isStale(userId: number, userType: string): boolean {
-    const key = this.userKey(userId, userType);
-    const loaded = this.loadedAt.get(key);
-    if (!loaded) return true;
-    return Date.now() - loaded > this.ttlMs;
-  }
-
-  get(userId: number, userType: string): MemoryPattern[] | undefined {
-    const key = this.userKey(userId, userType);
-    if (this.isStale(userId, userType)) return undefined;
-    return this.cache.get(key);
-  }
-
-  set(userId: number, userType: string, patterns: MemoryPattern[]): void {
-    const key = this.userKey(userId, userType);
-    // Keep only top N patterns by usage count
-    const sorted = patterns
-      .sort((a, b) => b.usageCount - a.usageCount)
-      .slice(0, this.maxPatternsPerUser);
-    this.cache.set(key, sorted);
-    this.loadedAt.set(key, Date.now());
-
-    // Evict old users if cache grows too large (>500 users)
-    if (this.cache.size > 500) {
-      const oldest = [...this.loadedAt.entries()]
-        .sort((a, b) => a[1] - b[1])
-        .slice(0, 100);
-      for (const [k] of oldest) {
-        this.cache.delete(k);
-        this.loadedAt.delete(k);
-      }
-    }
-  }
-
-  invalidate(userId: number, userType: string): void {
-    const key = this.userKey(userId, userType);
-    this.cache.delete(key);
-    this.loadedAt.delete(key);
-  }
+function userKey(userId: number, userType: string): string {
+  return `${userId}:${userType}`;
 }
 
-const memoryCache = new UserMemoryCache();
+export function invalidateUserMemory(userId: number, userType: string): void {
+  userMemoryCache.delete(userKey(userId, userType));
+}
 
 // ─── Template Extraction ───
 
-/**
- * Convert a transaction text into a template by replacing numbers with {X}.
- * "دفعت 200 للمدرس" → "دفعت {X} للمدرس"
- * "اكلت بيتزا بـ 100 جنيه" → "اكلت بيتزا بـ {X} جنيه"
- */
 export function textToTemplate(text: string): string {
   return text
     .replace(/\d+(\.\d+)?/g, "{X}")
@@ -102,23 +63,16 @@ export function textToTemplate(text: string): string {
     .trim();
 }
 
-/**
- * Extract the amount from text that matches a template.
- * Returns the first number found.
- */
 function extractAmountFromText(text: string): number {
   const match = text.match(/(\d+(?:\.\d+)?)/);
   return match ? parseFloat(match[1]) : 0;
 }
 
-/**
- * Calculate similarity between two templates.
- * Returns a score from 0-100.
- */
+// ─── Template Similarity (V2: Damerau + Jaccard hybrid) ───
+
 function templateSimilarity(a: string, b: string): number {
   if (a === b) return 100;
 
-  // Normalize both
   const na = a.replace(/\{X\}/g, "").replace(/\s+/g, " ").trim();
   const nb = b.replace(/\{X\}/g, "").replace(/\s+/g, " ").trim();
 
@@ -138,7 +92,7 @@ function templateSimilarity(a: string, b: string): number {
   const union = new Set([...wordsA, ...wordsB]).size;
   const jaccard = intersection / union;
 
-  // Check word order similarity (important for Arabic context)
+  // Check word order similarity
   const arrA = [...wordsA];
   const arrB = [...wordsB];
   let orderScore = 0;
@@ -148,22 +102,22 @@ function templateSimilarity(a: string, b: string): number {
   const orderRatio =
     arrA.length > 0 ? orderScore / Math.max(arrA.length, arrB.length) : 0;
 
-  // Combined score: 70% content + 30% order
-  return Math.round(jaccard * 70 + orderRatio * 30);
+  // Damerau-Levenshtein on the full template strings (handles transpositions)
+  const damerauDist = damerauLevenshtein(na, nb);
+  const maxLen = Math.max(na.length, nb.length);
+  const damerauSim = maxLen > 0 ? 1 - damerauDist / maxLen : 1;
+
+  // Combined: 50% content + 20% order + 30% damerau
+  return Math.round(jaccard * 50 + orderRatio * 20 + damerauSim * 30);
 }
 
 // ─── Pattern Loading ───
 
-/**
- * Load classification patterns for a user from the database.
- * Only loads patterns with high confidence that weren't corrected.
- */
 async function loadUserPatterns(
   userId: number,
   userType: string,
 ): Promise<MemoryPattern[]> {
   try {
-    // Get successful classifications from the last 90 days
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
@@ -180,7 +134,6 @@ async function loadUserPatterns(
       .orderBy(desc(classificationLogs.createdAt))
       .limit(500);
 
-    // Group by template and count occurrences
     const templateMap = new Map<
       string,
       {
@@ -199,7 +152,6 @@ async function loadUserPatterns(
       const template = textToTemplate(text);
       if (template.length < 3) continue;
 
-      // Parse final result
       const finalResult = log.finalResult as any;
       if (
         !finalResult ||
@@ -211,10 +163,9 @@ async function loadUserPatterns(
       const first = finalResult[0];
       const confidence = log.confidence || 0;
 
-      // Skip low-confidence or corrected entries, and only allow logs parsed by AI
-      if (confidence < 98) continue;
+      if (confidence < 85) continue;
       if (log.wasCorrected) continue;
-      if (log.parsedBy !== "ai") continue;
+      if (log.parsedBy !== "ai" && log.parsedBy !== "rule_engine" && log.parsedBy !== "hybrid") continue;
 
       const existing = templateMap.get(template);
       if (existing) {
@@ -236,7 +187,6 @@ async function loadUserPatterns(
       }
     }
 
-    // Convert to MemoryPattern array (only patterns used 2+ times)
     const patterns: MemoryPattern[] = [];
     for (const [template, data] of templateMap) {
       if (data.count >= 2) {
@@ -245,7 +195,7 @@ async function loadUserPatterns(
           category: data.category,
           subCategory: data.subCategory,
           type: data.type as "income" | "expense",
-          confidence: Math.min(100, data.confidence + data.count * 2), // Boost by repeat usage
+          confidence: Math.min(100, data.confidence + data.count * 2),
           usageCount: data.count,
           lastUsed: data.lastUsed,
         });
@@ -261,37 +211,30 @@ async function loadUserPatterns(
 
 // ─── Public API ───
 
-/**
- * Try to match user input against muscle memory patterns.
- * Returns a match if found with high confidence.
- */
 export async function muscleMemoryLookup(
   text: string,
   userId: number,
   userType: string,
 ): Promise<MemoryMatch | null> {
-  // 1. Get or load patterns
-  let patterns = memoryCache.get(userId, userType);
+  const key = userKey(userId, userType);
+  let patterns = userMemoryCache.get(key);
   if (!patterns) {
     patterns = await loadUserPatterns(userId, userType);
-    memoryCache.set(userId, userType, patterns);
+    userMemoryCache.set(key, patterns);
   }
 
   if (patterns.length === 0) return null;
 
-  // 2. Convert input to template
   const inputTemplate = textToTemplate(text);
   if (inputTemplate.length < 3) return null;
 
-  // 3. Find best match
   let bestMatch: MemoryMatch | null = null;
   let bestScore = 0;
 
   for (const pattern of patterns) {
     const score = templateSimilarity(inputTemplate, pattern.template);
 
-    // Require 98% similarity threshold to avoid false positive matches
-    if (score > bestScore && score >= 98) {
+    if (score > bestScore && score >= 85) {
       bestScore = score;
       bestMatch = {
         pattern,
@@ -302,12 +245,4 @@ export async function muscleMemoryLookup(
   }
 
   return bestMatch;
-}
-
-/**
- * Record a successful classification for future muscle memory.
- * Called after user confirms/saves a transaction.
- */
-export function invalidateUserMemory(userId: number, userType: string): void {
-  memoryCache.invalidate(userId, userType);
 }

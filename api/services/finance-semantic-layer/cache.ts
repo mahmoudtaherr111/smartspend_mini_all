@@ -1,7 +1,9 @@
 import { AsyncLocalStorage } from "async_hooks";
 import { deleteCacheByPattern, withCacheStatus } from "../../lib/redis-client";
+import { taxonomyVersion } from "../../lib/category-registry";
 
 const PREFIX = "finance_ai";
+const CACHE_SCHEMA_VERSION = `schema_v3_${taxonomyVersion()}`;
 const financeCacheTrace = new AsyncLocalStorage<string[]>();
 
 function sanitizePart(value: unknown): string {
@@ -19,6 +21,7 @@ export function financeCacheKey(
 ): string {
   return [
     PREFIX,
+    sanitizePart(CACHE_SCHEMA_VERSION),
     sanitizePart(userId),
     sanitizePart(userType),
     sanitizePart(capability),
@@ -46,7 +49,7 @@ export async function withFinanceCache<T>(
 
 function cacheTraceLabel(key: string): string {
   const parts = key.split(":");
-  return parts.slice(3).join(":") || "unknown";
+  return parts.slice(4).join(":") || "unknown";
 }
 
 export async function collectFinanceCacheTrace<T>(
@@ -64,5 +67,5 @@ export async function invalidateFinanceUserCache(
   userId: number | string,
   userType: string,
 ): Promise<number> {
-  return deleteCacheByPattern(`${PREFIX}:${sanitizePart(userId)}:${sanitizePart(userType)}:*`);
+  return deleteCacheByPattern(`${PREFIX}:*:${sanitizePart(userId)}:${sanitizePart(userType)}:*`);
 }

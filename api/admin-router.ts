@@ -61,19 +61,21 @@ import { sendPush, checkAndTriggerSmartActivityNotifications } from "./notificat
 // Setup Web Push
 // In a real app these should be in env vars, but we'll use the ones generated earlier
 const vapidPublicKey =
-  process.env.VAPID_PUBLIC_KEY ||
-  "BBtKP6w97Av5YT6NvKCh3EostLvYiXIHQqM-QGSMlMYRk8fJPalWo3dvXEcghrnlizV1selpCWTOjU4qTjIBb3o";
+  process.env.VAPID_PUBLIC_KEY || "";
 const vapidPrivateKey =
-  process.env.VAPID_PRIVATE_KEY ||
-  "-31rwR0LxanvleE02FotUVGGx3mVno1YJtR7hTaNHrA";
-try {
-  webpush.setVapidDetails(
-    "mailto:admin@smartspend.ai",
-    vapidPublicKey,
-    vapidPrivateKey,
-  );
-} catch (error) {
-  console.warn("⚠️ Failed to set VAPID details in admin-router.ts:", error);
+  process.env.VAPID_PRIVATE_KEY || "";
+if (vapidPublicKey && vapidPrivateKey) {
+  try {
+    webpush.setVapidDetails(
+      "mailto:admin@smartspend.ai",
+      vapidPublicKey,
+      vapidPrivateKey,
+    );
+  } catch (error) {
+    console.warn("⚠️ Failed to set VAPID details in admin-router.ts:", error);
+  }
+} else {
+  console.warn("⚠️ VAPID keys not configured — push notifications will not work.");
 }
 
 function isMissingTableError(err: unknown, table: string): boolean {
@@ -201,14 +203,21 @@ export const adminRouter = router({
       if (localFilters.length)
         localQuery = localQuery.where(and(...localFilters));
 
-      const oauthUsers = await oauthQuery.limit(limit).offset(offset);
-      const localUsersList = await localQuery.limit(limit).offset(offset);
+      const [oauthUsersAll, localUsersAll] = await Promise.all([
+        oauthQuery.orderBy(desc(users.createdAt)),
+        localQuery.orderBy(desc(localUsers.createdAt)),
+      ]);
 
-      const oauthCount = await db.select({ count: count() }).from(users);
-      const localCount = await db.select({ count: count() }).from(localUsers);
+      const merged = [
+        ...oauthUsersAll.map((u) => ({ ...u, userType: "oauth" as const })),
+        ...localUsersAll.map((u) => ({ ...u, userType: "local" as const })),
+      ];
 
-      const oauthIds = oauthUsers.map((u) => u.id);
-      const localIds = localUsersList.map((u) => u.id);
+      const total = merged.length;
+      const paged = merged.slice(offset, offset + limit);
+
+      const oauthIds = paged.filter((u) => u.userType === "oauth").map((u) => u.id);
+      const localIds = paged.filter((u) => u.userType === "local").map((u) => u.id);
 
       const statMap = new Map<
         string,
@@ -253,29 +262,18 @@ export const adminRouter = router({
         }
       }
 
-      const enrichedOAuth = oauthUsers.map((u) => {
-        const s = statMap.get(`oauth:${u.id}`);
+      const enriched = paged.map((u) => {
+        const s = statMap.get(`${u.userType}:${u.id}`);
         return {
           ...u,
-          userType: "oauth" as const,
-          expenseCount: s?.expenseCount ?? 0,
-          totalSpent: s?.totalSpent ?? "0",
-        };
-      });
-
-      const enrichedLocal = localUsersList.map((u) => {
-        const s = statMap.get(`local:${u.id}`);
-        return {
-          ...u,
-          userType: "local" as const,
           expenseCount: s?.expenseCount ?? 0,
           totalSpent: s?.totalSpent ?? "0",
         };
       });
 
       return {
-        users: [...enrichedOAuth, ...enrichedLocal],
-        total: (oauthCount[0]?.count ?? 0) + (localCount[0]?.count ?? 0),
+        users: enriched,
+        total,
         page,
         limit,
       };
@@ -340,137 +338,32 @@ export const adminRouter = router({
     )
     .mutation(async ({ input }) => {
       const { userId, userType } = input;
-      // Delete related data first
-      await db
-        .delete(expenses)
-        .where(
-          and(eq(expenses.userId, userId), eq(expenses.userType, userType)),
-        );
-      await db
-        .delete(sessions)
-        .where(
-          and(eq(sessions.userId, userId), eq(sessions.userType, userType)),
-        );
-      await db
-        .delete(userAnalytics)
-        .where(
-          and(
-            eq(userAnalytics.userId, userId),
-            eq(userAnalytics.userType, userType),
-          ),
-        );
-      await db
-        .delete(supportTickets)
-        .where(
-          and(
-            eq(supportTickets.userId, userId),
-            eq(supportTickets.userType, userType),
-          ),
-        );
-      await db
-        .delete(userWallets)
-        .where(
-          and(
-            eq(userWallets.userId, userId),
-            eq(userWallets.userType, userType),
-          ),
-        );
-      await db
-        .delete(proSubscriptions)
-        .where(
-          and(
-            eq(proSubscriptions.userId, userId),
-            eq(proSubscriptions.userType, userType),
-          ),
-        );
-      await db
-        .delete(monthlyReports)
-        .where(
-          and(
-            eq(monthlyReports.userId, userId),
-            eq(monthlyReports.userType, userType),
-          ),
-        );
-      await db
-        .delete(aiSummaries)
-        .where(
-          and(
-            eq(aiSummaries.userId, userId),
-            eq(aiSummaries.userType, userType),
-          ),
-        );
-      await db
-        .delete(userProfiles)
-        .where(
-          and(
-            eq(userProfiles.userId, userId),
-            eq(userProfiles.userType, userType),
-          ),
-        );
-      await db
-        .delete(profileLearningEvents)
-        .where(
-          and(
-            eq(profileLearningEvents.userId, userId),
-            eq(profileLearningEvents.userType, userType),
-          ),
-        );
-      await db
-        .delete(monthlyBehaviorSnapshots)
-        .where(
-          and(
-            eq(monthlyBehaviorSnapshots.userId, userId),
-            eq(monthlyBehaviorSnapshots.userType, userType),
-          ),
-        );
-      await db
-        .delete(userDictionaries)
-        .where(
-          and(
-            eq(userDictionaries.userId, userId),
-            eq(userDictionaries.userType, userType),
-          ),
-        );
-      await db
-        .delete(classificationLogs)
-        .where(
-          and(
-            eq(classificationLogs.userId, userId),
-            eq(classificationLogs.userType, userType),
-          ),
-        );
-      await db
-        .delete(voiceUsage)
-        .where(
-          and(eq(voiceUsage.userId, userId), eq(voiceUsage.userType, userType)),
-        );
-      await db
-        .delete(webhookTokens)
-        .where(
-          and(
-            eq(webhookTokens.userId, userId),
-            eq(webhookTokens.userType, userType),
-          ),
-        );
-      await db
-        .delete(rawSmsEvents)
-        .where(
-          and(
-            eq(rawSmsEvents.userId, userId),
-            eq(rawSmsEvents.userType, userType),
-          ),
-        );
-      await db
-        .delete(expenseCategories)
-        .where(
-          and(
-            eq(expenseCategories.userId, userId),
-            eq(expenseCategories.userType, userType),
-          ),
-        );
 
-      const table = userType === "oauth" ? users : localUsers;
-      await db.delete(table).where(eq(table.id, userId));
+      await db.transaction(async (tx) => {
+        await tx.delete(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType)));
+        await tx.delete(sessions).where(and(eq(sessions.userId, userId), eq(sessions.userType, userType)));
+        await tx.delete(userAnalytics).where(and(eq(userAnalytics.userId, userId), eq(userAnalytics.userType, userType)));
+        await tx.delete(supportTickets).where(and(eq(supportTickets.userId, userId), eq(supportTickets.userType, userType)));
+        await tx.delete(userWallets).where(and(eq(userWallets.userId, userId), eq(userWallets.userType, userType)));
+        await tx.delete(proSubscriptions).where(and(eq(proSubscriptions.userId, userId), eq(proSubscriptions.userType, userType)));
+        await tx.delete(monthlyReports).where(and(eq(monthlyReports.userId, userId), eq(monthlyReports.userType, userType)));
+        await tx.delete(aiSummaries).where(and(eq(aiSummaries.userId, userId), eq(aiSummaries.userType, userType)));
+        await tx.delete(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)));
+        await tx.delete(profileLearningEvents).where(and(eq(profileLearningEvents.userId, userId), eq(profileLearningEvents.userType, userType)));
+        await tx.delete(monthlyBehaviorSnapshots).where(and(eq(monthlyBehaviorSnapshots.userId, userId), eq(monthlyBehaviorSnapshots.userType, userType)));
+        await tx.delete(userDictionaries).where(and(eq(userDictionaries.userId, userId), eq(userDictionaries.userType, userType)));
+        await tx.delete(classificationLogs).where(and(eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType)));
+        await tx.delete(voiceUsage).where(and(eq(voiceUsage.userId, userId), eq(voiceUsage.userType, userType)));
+        await tx.delete(webhookTokens).where(and(eq(webhookTokens.userId, userId), eq(webhookTokens.userType, userType)));
+        await tx.delete(rawSmsEvents).where(and(eq(rawSmsEvents.userId, userId), eq(rawSmsEvents.userType, userType)));
+        await tx.delete(expenseCategories).where(and(eq(expenseCategories.userId, userId), eq(expenseCategories.userType, userType)));
+        await tx.delete(pushSubscriptions).where(and(eq(pushSubscriptions.userId, userId), eq(pushSubscriptions.userType, userType)));
+        await tx.delete(pendingClarifications).where(and(eq(pendingClarifications.userId, userId), eq(pendingClarifications.userType, userType)));
+
+        const table = userType === "oauth" ? users : localUsers;
+        await tx.delete(table).where(eq(table.id, userId));
+      });
+
       return { success: true, message: "تم حذف المستخدم بنجاح" };
     }),
 
@@ -738,7 +631,48 @@ export const adminRouter = router({
   updateSettings: adminProcedure
     .input(z.record(z.string(), z.string()))
     .mutation(async ({ input }) => {
+      const allowedKeys = new Set([
+        "ai_api_key", "ai_api_key_2", "voice_call_model",
+        "voice_call_enabled_free", "voice_call_limit_free", "voice_call_duration_free",
+        "voice_call_enabled_pro", "voice_call_limit_pro", "voice_call_duration_pro",
+        "voice_call_enabled_ultra", "voice_call_limit_ultra", "voice_call_duration_ultra",
+        "groq_api_key", "fireworks_api_key",
+        "ai_model_free", "ai_model_pro", "ai_model_ultra", "ai_model_reports",
+        "free_routing_ranges", "pro_routing_ranges",
+        "free_token_limit", "pro_token_limit", "ultra_token_limit",
+        "free_daily_limit", "pro_daily_limit", "ultra_daily_limit",
+        "free_max_per_request", "pro_max_per_request", "ultra_max_per_request",
+        "free_ai_analysis", "pro_ai_analysis", "ultra_ai_analysis",
+        "free_ai_parse", "pro_ai_parse", "ultra_ai_parse",
+        "voice_limit_free", "voice_limit_pro", "voice_limit_ultra",
+        "voice_per_req_free", "voice_per_req_pro", "voice_per_req_ultra",
+        "free_stt_provider", "free_stt_model", "free_stt_key_slot",
+        "pro_stt_provider", "pro_stt_model", "pro_stt_key_slot",
+        "stt_api_key", "stt_api_key_2", "stt_model", "stt_fallback_model", "stt_processing_mode",
+        "report_provider_free", "report_model_free", "report_key_slot_free",
+        "report_provider_pro", "report_model_pro", "report_key_slot_pro",
+        "confidence_auto_save", "confidence_review",
+        "parser_fast_decomposition_enabled", "parser_person_memory_enabled",
+        "parser_local_verifier_enabled", "parser_auto_save_threshold", "parser_review_threshold",
+        "ai_response_length", "ai_focus", "ai_system_prompt", "ai_advanced_instructions",
+        "ai_report_structure_override",
+        "report_limit_free", "report_limit_pro", "report_limit_ultra",
+        "report_words_free", "report_words_pro", "report_words_ultra",
+        "report_max_tokens_free", "report_max_tokens_pro", "report_max_tokens_ultra",
+        "report_subcats_free", "report_subcats_pro", "report_subcats_ultra",
+        "report_top_items_pro", "report_top_items_ultra",
+        "sms_limit_free", "sms_limit_pro", "sms_limit_ultra",
+        "promo_code_discount",
+        "offline_limit_free", "offline_limit_pro",
+        "pipeline_version",
+        "whatsapp_otp_enabled",
+      ]);
+
       for (const [key, value] of Object.entries(input)) {
+        if (!allowedKeys.has(key)) {
+          console.warn(`[Admin] Rejected unknown setting key: ${key}`);
+          continue;
+        }
         if (value !== undefined && value !== null) {
           await db
             .insert(systemSettings)

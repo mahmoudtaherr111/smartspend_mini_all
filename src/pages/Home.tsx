@@ -449,7 +449,7 @@ export default function Home() {
   );
   const { data: calendarStats, isFetching: calendarFetching } =
     trpc.expense.getMonthlyStats.useQuery(
-      { month, salaryDay },
+      { month, salaryDay: null },
       { enabled: activeTab === "calendar", staleTime: 30_000, retry: 1 },
     );
   const refreshInferences = trpc.profile.refreshInferences.useMutation({

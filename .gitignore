@@ -22,3 +22,8 @@ Thumbs.db
 scratch/
 .gemini/
 *.prompt.md
+whatsapp_auth_info/
+*.log
+*.txt
+*.jar
+

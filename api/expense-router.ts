@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { router, authedProcedure } from "./middleware";
 import { db, getDb } from "./queries/connection";
 import {
@@ -62,6 +63,92 @@ function safeDayDiff(start: Date, end: Date): number {
   return Number.isFinite(diff) && diff > 0 ? diff : 1;
 }
 
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function buildArabicNameRegex(name: string): RegExp {
+  const escaped = escapeRegex(name);
+  const looseName = escaped
+    .replace(/[\u0627\u0623\u0625\u0622]/g, "[\u0627\u0623\u0625\u0622]")
+    .replace(/[\u064A\u0649]/g, "[\u064A\u0649]")
+    .replace(/[\u0647\u0629]/g, "[\u0647\u0629]");
+  return new RegExp(`(?:^|\\s)(${looseName})(?:\\s|$)`);
+}
+
+function enrichTextWithNameRelation(
+  text: string,
+  name: string,
+  relation: string,
+): string {
+  const nameRegex = buildArabicNameRegex(name);
+  if (nameRegex.test(text)) {
+    return text.replace(nameRegex, (match, p1) =>
+      match.replace(p1, `${p1} (${relation})`),
+    );
+  }
+  const looseRegex = new RegExp(
+    `(${escapeRegex(name)
+      .replace(/[\u0627\u0623\u0625\u0622]/g, "[\u0627\u0623\u0625\u0622]")
+      .replace(/[\u064A\u0649]/g, "[\u064A\u0649]")
+      .replace(/[\u0647\u0629]/g, "[\u0647\u0629]")})`,
+  );
+  if (looseRegex.test(text)) {
+    return text.replace(looseRegex, (match, p1) =>
+      match.replace(p1, `${p1} (${relation})`),
+    );
+  }
+  return `${text} (${name} ${relation})`;
+}
+
+async function updateStreak(
+  dbInstance: ReturnType<typeof getDb>,
+  userId: number,
+  userType: string,
+): Promise<void> {
+  const now = new Date();
+  const todayStr = now.toISOString().split("T")[0];
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+  if (userType === "oauth") {
+    const [u] = await dbInstance
+      .select()
+      .from(users)
+      .where(eq(users.id, Number(userId)));
+    if (u) {
+      const lastDate = u.lastStreakAt ? new Date(u.lastStreakAt) : null;
+      const lastStr = lastDate ? lastDate.toISOString().split("T")[0] : null;
+      if (lastStr !== todayStr) {
+        const newStreak = lastStr === yesterdayStr ? (u.currentStreak || 0) + 1 : 1;
+        const highestStreak = Math.max(u.highestStreak || 0, newStreak);
+        await dbInstance
+          .update(users)
+          .set({ currentStreak: newStreak, highestStreak, lastStreakAt: now })
+          .where(eq(users.id, Number(userId)));
+      }
+    }
+  } else {
+    const [u] = await dbInstance
+      .select()
+      .from(localUsers)
+      .where(eq(localUsers.id, userId));
+    if (u) {
+      const lastDate = u.lastStreakAt ? new Date(u.lastStreakAt) : null;
+      const lastStr = lastDate ? lastDate.toISOString().split("T")[0] : null;
+      if (lastStr !== todayStr) {
+        const newStreak = lastStr === yesterdayStr ? (u.currentStreak || 0) + 1 : 1;
+        const highestStreak = Math.max(u.highestStreak || 0, newStreak);
+        await dbInstance
+          .update(localUsers)
+          .set({ currentStreak: newStreak, highestStreak, lastStreakAt: now })
+          .where(eq(localUsers.id, userId));
+      }
+    }
+  }
+}
+
 const statsCategoryDisplayNames: Record<string, string> = {
   food: "أكل وشرب",
   transport: "مواصلات",
@@ -107,6 +194,12 @@ export const expenseRouter = router({
       const requestUserType = ctx.user!.type;
 
       const expenseDate = input.date ? new Date(input.date) : new Date();
+      if (isNaN(expenseDate.getTime())) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "التاريخ غير صحيح",
+        });
+      }
 
       await db.insert(expenses).values({
         userId,
@@ -155,63 +248,7 @@ export const expenseRouter = router({
 
       // ─── Gamification: Update Streaks ───
       try {
-        const now = new Date();
-        const todayStr = now.toISOString().split("T")[0];
-        const yesterday = new Date(now);
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split("T")[0];
-
-        if (requestUserType === "oauth") {
-          const [u] = await db
-            .select()
-            .from(users)
-            .where(eq(users.id, Number(userId)));
-          if (u) {
-            const lastDate = u.lastStreakAt ? new Date(u.lastStreakAt) : null;
-            const lastStr = lastDate
-              ? lastDate.toISOString().split("T")[0]
-              : null;
-
-            if (lastStr !== todayStr) {
-              let newStreak =
-                lastStr === yesterdayStr ? (u.currentStreak || 0) + 1 : 1;
-              let highestStreak = Math.max(u.highestStreak || 0, newStreak);
-              await db
-                .update(users)
-                .set({
-                  currentStreak: newStreak,
-                  highestStreak,
-                  lastStreakAt: now,
-                })
-                .where(eq(users.id, Number(userId)));
-            }
-          }
-        } else {
-          const [u] = await db
-            .select()
-            .from(localUsers)
-            .where(eq(localUsers.id, userId as number));
-          if (u) {
-            const lastDate = u.lastStreakAt ? new Date(u.lastStreakAt) : null;
-            const lastStr = lastDate
-              ? lastDate.toISOString().split("T")[0]
-              : null;
-
-            if (lastStr !== todayStr) {
-              let newStreak =
-                lastStr === yesterdayStr ? (u.currentStreak || 0) + 1 : 1;
-              let highestStreak = Math.max(u.highestStreak || 0, newStreak);
-              await db
-                .update(localUsers)
-                .set({
-                  currentStreak: newStreak,
-                  highestStreak,
-                  lastStreakAt: now,
-                })
-                .where(eq(localUsers.id, userId as number));
-            }
-          }
-        }
+        await updateStreak(db, userId as number, requestUserType);
       } catch (err) {
         console.error("Streak logic error:", err);
       }
@@ -240,7 +277,7 @@ export const expenseRouter = router({
           source: z.enum(["voice", "manual", "ai_parsed", "image", "sms"]).default("manual"),
           date: z.string().optional(),
         })
-      )
+      ).max(100, "حد أقصى 100 عملية في الطلب الواحد")
     )
     .mutation(async ({ ctx, input }) => {
       const db = getDb();
@@ -278,39 +315,7 @@ export const expenseRouter = router({
       }
 
       try {
-        const now = new Date();
-        const todayStr = now.toISOString().split("T")[0];
-        const yesterday = new Date(now);
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split("T")[0];
-
-        if (requestUserType === "oauth") {
-          const [u] = await db.select().from(users).where(eq(users.id, Number(userId)));
-          if (u) {
-            const lastDate = u.lastStreakAt ? new Date(u.lastStreakAt) : null;
-            const lastStr = lastDate ? lastDate.toISOString().split("T")[0] : null;
-
-            if (lastStr !== todayStr) {
-              let newStreak = lastStr === yesterdayStr ? (u.currentStreak || 0) + 1 : 1;
-              let highestStreak = Math.max(u.highestStreak || 0, newStreak);
-              await db.update(users).set({ currentStreak: newStreak, highestStreak, lastStreakAt: now })
-                .where(eq(users.id, Number(userId)));
-            }
-          }
-        } else {
-          const [u] = await db.select().from(localUsers).where(eq(localUsers.id, userId as number));
-          if (u) {
-            const lastDate = u.lastStreakAt ? new Date(u.lastStreakAt) : null;
-            const lastStr = lastDate ? lastDate.toISOString().split("T")[0] : null;
-
-            if (lastStr !== todayStr) {
-              let newStreak = lastStr === yesterdayStr ? (u.currentStreak || 0) + 1 : 1;
-              let highestStreak = Math.max(u.highestStreak || 0, newStreak);
-              await db.update(localUsers).set({ currentStreak: newStreak, highestStreak, lastStreakAt: now })
-                .where(eq(localUsers.id, userId as number));
-            }
-          }
-        }
+        await updateStreak(db, userId as number, requestUserType);
       } catch (err) {
         console.error("Streak logic error:", err);
       }
@@ -684,7 +689,7 @@ export const expenseRouter = router({
   getMonthlyStats: authedProcedure
     .input(
       z.object({
-        month: z.string(),
+        month: z.string().regex(/^\d{4}-\d{2}$/, "الشهر لازم يكون بصيغة YYYY-MM"),
         salaryDay: z.number().min(1).max(31).optional().nullable(),
       }),
     )
@@ -1157,7 +1162,7 @@ export const expenseRouter = router({
     }),
 
   getYearlyStats: authedProcedure
-    .input(z.object({ year: z.string() }))
+    .input(z.object({ year: z.string().regex(/^\d{4}$/, "السنة لازم تكون 4 أرقام") }))
     .query(async ({ ctx, input }) => {
       const db = getDb();
       const userId = ctx.user!.id;
@@ -1180,10 +1185,10 @@ export const expenseRouter = router({
 
       const totalExpense = items
         .filter((i) => i.type === "expense")
-        .reduce((sum, item) => sum + Number(item.amount), 0);
+        .reduce((sum, item) => sum.plus(new Decimal(item.amount)), new Decimal(0)).toNumber();
       const totalIncome = items
         .filter((i) => i.type === "income")
-        .reduce((sum, item) => sum + Number(item.amount), 0);
+        .reduce((sum, item) => sum.plus(new Decimal(item.amount)), new Decimal(0)).toNumber();
 
       const monthMap: Record<string, number> = {};
       for (let i = 1; i <= 12; i++) {
@@ -1230,9 +1235,19 @@ export const expenseRouter = router({
       };
     }),
 
-  getCategoryList: authedProcedure.query(async () => {
+  getCategoryList: authedProcedure.query(async ({ ctx }) => {
     const db = getDb();
-    return await db.select().from(expenseCategories);
+    const userId = ctx.user!.id;
+    const userType = ctx.user!.type;
+    return await db
+      .select()
+      .from(expenseCategories)
+      .where(
+        and(
+          eq(expenseCategories.userId, userId),
+          eq(expenseCategories.userType, userType),
+        ),
+      );
   }),
 
   createCategory: authedProcedure
@@ -1372,20 +1387,7 @@ export const expenseRouter = router({
 
           let currentEnrichedText = clarification.originalText;
           for (const [name, rel] of Object.entries(resolvedAnswers)) {
-            const looseName = name.replace(/[اأإآ]/g, "[اأإآ]").replace(/[يى]/g, "[يى]").replace(/[هة]/g, "[هة]");
-            const nameRegex = new RegExp(`(?:^|\\s)(${looseName})(?:\\s|$)`);
-            if (nameRegex.test(currentEnrichedText)) {
-              currentEnrichedText = currentEnrichedText.replace(nameRegex, (match, p1) => match.replace(p1, `${p1} (${rel})`));
-            } else {
-              // Try without boundaries just in case
-              const looseRegex = new RegExp(`(${looseName})`);
-              if (looseRegex.test(currentEnrichedText)) {
-                 currentEnrichedText = currentEnrichedText.replace(looseRegex, (match, p1) => match.replace(p1, `${p1} (${rel})`));
-              } else {
-                 // Absolute fallback, append to end
-                 currentEnrichedText = `${currentEnrichedText} (${name} ${rel})`;
-              }
-            }
+            currentEnrichedText = enrichTextWithNameRelation(currentEnrichedText, name, rel);
           }
 
           return {
@@ -1402,18 +1404,7 @@ export const expenseRouter = router({
         try {
           let enrichedText = clarification.originalText;
           for (const [name, rel] of Object.entries(resolvedAnswers)) {
-            const looseName = name.replace(/[اأإآ]/g, "[اأإآ]").replace(/[يى]/g, "[يى]").replace(/[هة]/g, "[هة]");
-            const nameRegex = new RegExp(`(?:^|\\s)(${looseName})(?:\\s|$)`);
-            if (nameRegex.test(enrichedText)) {
-              enrichedText = enrichedText.replace(nameRegex, (match, p1) => match.replace(p1, `${p1} (${rel})`));
-            } else {
-              const looseRegex = new RegExp(`(${looseName})`);
-              if (looseRegex.test(enrichedText)) {
-                enrichedText = enrichedText.replace(looseRegex, (match, p1) => match.replace(p1, `${p1} (${rel})`));
-              } else {
-                enrichedText = `${enrichedText} (${name} ${rel})`;
-              }
-            }
+            enrichedText = enrichTextWithNameRelation(enrichedText, name, rel);
           }
 
           const { runSmartPipeline } = await import("./lib/smart-pipeline");

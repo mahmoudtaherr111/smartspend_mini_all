@@ -9,7 +9,7 @@ function makeNeed(
   maxRows?: number,
 ): DataNeed {
   const period = scope.period ?? "current_month";
-  const keyParts = [kind, period, scope.category, scope.granularity, scope.limit]
+  const keyParts = [kind, period, scope.category, scope.targetAmount, scope.granularity, scope.limit]
     .filter(Boolean)
     .join(":");
 
@@ -84,6 +84,35 @@ function isGoalProgressQuestion(intent: IntentResult): boolean {
   ].some((term) => query.includes(term));
 }
 
+function asksCategoryInclusion(intent: IntentResult): boolean {
+  const query = intent.slots.query ?? "";
+  return [
+    "بتشمل",
+    "تضم",
+    "داخل",
+    "يعني",
+    "زي ايه",
+    "مثل ماذا",
+    "عبارة عن",
+    "معناها",
+    "تفاصيل",
+    "محسوب",
+    "حساب",
+  ].some((term) => query.includes(term));
+}
+
+function goalTargetAmountFromQuery(query?: string): number | undefined {
+  if (!query) return undefined;
+  const text = query.replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)));
+  const match = text.match(/(\d+)(?:\s*(?:الف|ألف|جنية|جنيه|k|kilo))?/i);
+  if (!match) return undefined;
+  let amount = parseInt(match[1], 10);
+  if (text.includes("الف") || text.includes("ألف") || text.toLowerCase().includes("k")) {
+    if (amount < 1000) amount *= 1000;
+  }
+  return amount;
+}
+
 export function compileDataNeeds(intent: IntentResult): DataNeed[] {
   const needs: DataNeed[] = [];
   const add = (
@@ -121,11 +150,22 @@ export function compileDataNeeds(intent: IntentResult): DataNeed[] {
           12,
         );
       }
+      if (intent.slots.category && asksCategoryInclusion(intent)) {
+        add(
+          "finance.category_inclusion",
+          "normal",
+          "explain_category_inclusion_for_user_question",
+          { period, category: intent.slots.category, categories: intent.slots.categories },
+          4,
+        );
+      }
       return needs;
     }
 
     case "finance_analysis": {
       const period = comparisonBasePeriod(intent);
+      const isCompositeDrivers = intent.reason === "composite_comparison_drivers_match";
+      const isBusiness = intent.reason === "business_cashflow_match";
       if (intent.reason === "classification_explanation_match") {
         add(
           "finance.transactions",
@@ -147,9 +187,24 @@ export function compileDataNeeds(intent: IntentResult): DataNeed[] {
           { period, granularity: "category", limit: 8 },
           8,
         );
+        add(
+          "finance.category_inclusion",
+          "normal",
+          "explain_why_items_fall_under_category",
+          { period, category: intent.slots.category, categories: intent.slots.categories },
+          3,
+        );
         return needs;
       }
-      if (intent.slots.metric === "comparison") {
+      if (isBusiness) {
+        add("finance.business_cashflow", "hot", "business_cashflow_with_plan", {
+          period: "current_month",
+          comparePeriod: "previous_month",
+        }, 12);
+        add("memory.search", "normal", "business_context_memory", { query: intent.slots.query, limit: 2 }, 2);
+        return needs;
+      }
+      if (isCompositeDrivers || intent.slots.metric === "comparison") {
         add(
           "finance.period_comparison",
           "hot",
@@ -157,6 +212,15 @@ export function compileDataNeeds(intent: IntentResult): DataNeed[] {
           { period, comparePeriod: "previous_month", category: intent.slots.category },
           2,
         );
+        if (isCompositeDrivers || intent.slots.needsEvidence) {
+          add(
+            "finance.comparison_drivers",
+            "normal",
+            "explain_why_expense_changed_between_periods",
+            { period, comparePeriod: "previous_month" },
+            8,
+          );
+        }
         if (intent.slots.needsEvidence) {
           add(
             "finance.transactions",
@@ -194,14 +258,49 @@ export function compileDataNeeds(intent: IntentResult): DataNeed[] {
         add("finance.goal_progress", "hot", "goal_progress_question_needs_active_goal_progress", {}, 8);
         return needs;
       }
+      const isCompositePlan = intent.reason === "goal_with_plan_composite_match";
       add("profile.snapshot", "hot", "goal_planning_needs_income_and_profile_limits", {}, 1);
       add("goals.active", "hot", "avoid_duplicate_or_conflicting_goals", {}, 5);
       add("finance.summary", "normal", "goal_plan_needs_available_cash_context", { period }, 1);
       add("finance.breakdown", "normal", "goal_plan_needs_top_spending_levers", { period, granularity: "category", limit: 5 }, 5);
+      if (isCompositePlan || intent.slots.actionName === "goal.create") {
+        add("goal.feasibility", "normal", "estimate_feasibility_with_spending_levers", {
+          period,
+          targetAmount: goalTargetAmountFromQuery(intent.slots.query),
+          query: intent.slots.query,
+        }, 6);
+        add("memory.search", "normal", "reuse_previous_goal_memories", { query: intent.slots.query, limit: 2 }, 2);
+      }
       return needs;
     }
 
     case "action_request": {
+      if (intent.slots.actionName === "expense.recategorize") {
+        add(
+          "finance.transaction_lookup",
+          "hot",
+          "recategorize_latest_matching_expense_requires_lookup",
+          {
+            period: defaultPeriod(intent, "current_month"),
+            query: intent.slots.lookupQuery ?? intent.slots.query,
+            sourceCategory: intent.slots.sourceCategory,
+            targetCategory: intent.slots.targetCategory ?? intent.slots.category,
+            limit: 1,
+            transactionTypes: ["expense"],
+          },
+          1,
+        );
+        if (intent.slots.targetCategory ?? intent.slots.category) {
+          add(
+            "finance.category_inclusion",
+            "normal",
+            "recategorize_should_explain_target_category_rule",
+            { period: defaultPeriod(intent, "current_month"), category: intent.slots.targetCategory ?? intent.slots.category },
+            4,
+          );
+        }
+        return needs;
+      }
       add("profile.snapshot", "hot", "action_validation_needs_user_profile", {}, 1);
       add("goals.active", "normal", "generic_actions_may_depend_on_current_goals", {}, 5);
       return needs;
@@ -214,10 +313,17 @@ export function compileDataNeeds(intent: IntentResult): DataNeed[] {
       if (intent.slots.category) {
         add(
           "finance.category_total",
-          "normal",
-          "advice_mentions_specific_category_total",
+          "hot",
+          "exact_category_total_for_finance_question",
           { period, category: intent.slots.category },
           1,
+        );
+        add(
+          "finance.category_inclusion",
+          "normal",
+          "category_total_needs_inclusion_explanation_for_trust",
+          { period, category: intent.slots.category, categories: intent.slots.categories },
+          4,
         );
       }
       add(

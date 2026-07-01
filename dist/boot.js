@@ -45044,6 +45044,7 @@ __export(schema_exports, {
   supportTickets: () => supportTickets,
   systemSettings: () => systemSettings,
   userAnalytics: () => userAnalytics,
+  userBudgets: () => userBudgets,
   userContacts: () => userContacts,
   userCredentials: () => userCredentials,
   userDictionaries: () => userDictionaries,
@@ -45054,7 +45055,7 @@ __export(schema_exports, {
   webhookTokens: () => webhookTokens,
   whatsappOtpCodes: () => whatsappOtpCodes
 });
-var users, localUsers, expenses, userContacts, pendingClarifications, expenseCategories, userWallets, monthlyReports, sessions, userAnalytics, supportTickets, discountCodes, aiSummaries, ads, adClicks, referrals, proSubscriptions, seoPages, systemSettings, userProfiles, profileLearningEvents, monthlyBehaviorSnapshots, onboardingQuestions, userDictionaries, classificationLogs, voiceUsage, webhookTokens, financialGoals, rawSmsEvents, whatsappOtpCodes, apiKeyErrors, pushSubscriptions, userCredentials, authChallenges, notificationTemplates, inAppNotifications, notificationLogs, chatConversations, chatMessages, aiConversationSummaries, aiMemoryItems, aiMemoryEmbeddings, aiActionMemory, aiPendingActions, aiActionAuditLogs;
+var users, localUsers, expenses, userContacts, pendingClarifications, expenseCategories, userWallets, monthlyReports, sessions, userAnalytics, supportTickets, discountCodes, aiSummaries, ads, adClicks, referrals, proSubscriptions, seoPages, systemSettings, userProfiles, profileLearningEvents, monthlyBehaviorSnapshots, onboardingQuestions, userDictionaries, classificationLogs, voiceUsage, webhookTokens, financialGoals, userBudgets, rawSmsEvents, whatsappOtpCodes, apiKeyErrors, pushSubscriptions, userCredentials, authChallenges, notificationTemplates, inAppNotifications, notificationLogs, chatConversations, chatMessages, aiConversationSummaries, aiMemoryItems, aiMemoryEmbeddings, aiActionMemory, aiPendingActions, aiActionAuditLogs;
 var init_schema2 = __esm({
   "db/schema.ts"() {
     init_mysql_core();
@@ -45065,7 +45066,7 @@ var init_schema2 = __esm({
         id: int2("id").primaryKey().autoincrement(),
         unionId: varchar("union_id", { length: 255 }).notNull().unique(),
         name: varchar("name", { length: 255 }).notNull(),
-        email: varchar("email", { length: 255 }),
+        email: varchar("email", { length: 255 }).unique(),
         avatar: varchar("avatar", { length: 500 }),
         role: varchar("role", { length: 50 }).notNull().default("user"),
         // user | moderator | admin
@@ -45073,7 +45074,7 @@ var init_schema2 = __esm({
         // free | pro | ultra
         referralCode: varchar("referral_code", { length: 50 }).unique(),
         referredBy: int2("referred_by"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
         updatedAt: datetime3("updated_at").default(
           sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
         ),
@@ -45104,7 +45105,7 @@ var init_schema2 = __esm({
         // free | pro | ultra
         referralCode: varchar("referral_code", { length: 50 }).unique(),
         referredBy: int2("referred_by"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
         updatedAt: datetime3("updated_at").default(
           sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
         ),
@@ -45142,7 +45143,7 @@ var init_schema2 = __esm({
         date: datetime3("date").notNull(),
         status: varchar("status", { length: 50 }).notNull().default("confirmed"),
         // confirmed | pending_clarification
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
         updatedAt: datetime3("updated_at").default(
           sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
         )
@@ -45165,7 +45166,7 @@ var init_schema2 = __esm({
         name: varchar("name", { length: 255 }).notNull(),
         relation: varchar("relation", { length: 100 }),
         aliases: json2("aliases"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [
         index("contacts_user_idx").on(t3.userId, t3.userType),
@@ -45186,7 +45187,7 @@ var init_schema2 = __esm({
         // pending | resolved | ignored
         contextData: json2("context_data"),
         // To store any state needed to resume the pipeline
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [
         index("clarifications_user_idx").on(t3.userId, t3.userType),
@@ -45201,7 +45202,7 @@ var init_schema2 = __esm({
       icon: varchar("icon", { length: 50 }),
       color: varchar("color", { length: 50 }),
       isDefault: boolean4("is_default").default(false),
-      createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+      createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
     });
     userWallets = mysqlTable(
       "user_wallets",
@@ -45216,7 +45217,7 @@ var init_schema2 = __esm({
         lastFourDigits: varchar("last_four_digits", { length: 4 }),
         // For visual realism
         balance: decimal("balance", { precision: 12, scale: 2 }).default("0.00"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [index("wallets_user_idx").on(t3.userId, t3.userType)]
     );
@@ -45236,7 +45237,7 @@ var init_schema2 = __esm({
       highestDay: varchar("highest_day", { length: 10 }),
       insights: text("insights"),
       aiReport: text("ai_report"),
-      createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+      createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
       updatedAt: datetime3("updated_at").default(
         sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
       )
@@ -45251,7 +45252,7 @@ var init_schema2 = __esm({
         ipAddress: varchar("ip_address", { length: 100 }),
         userAgent: text("user_agent"),
         expiresAt: datetime3("expires_at").notNull(),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [
         index("sessions_user_idx").on(t3.userId, t3.userType),
@@ -45267,7 +45268,7 @@ var init_schema2 = __esm({
         event: varchar("event", { length: 100 }).notNull(),
         // login | logout | page_view | expense_create | ai_use
         metadata: json2("metadata"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [
         index("analytics_user_idx").on(t3.userId, t3.userType),
@@ -45289,7 +45290,7 @@ var init_schema2 = __esm({
         assignedTo: int2("assigned_to"),
         response: text("response"),
         respondedAt: datetime3("responded_at"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
         updatedAt: datetime3("updated_at").default(
           sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
         )
@@ -45310,7 +45311,7 @@ var init_schema2 = __esm({
       usedCount: int2("used_count").default(0),
       createdBy: int2("created_by"),
       expiresAt: datetime3("expires_at"),
-      createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+      createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
     });
     aiSummaries = mysqlTable(
       "ai_summaries",
@@ -45324,7 +45325,7 @@ var init_schema2 = __esm({
         // 2024-01 | 2024
         model: varchar("model", { length: 100 }).default("gemini-1.5-flash"),
         content: text("content").notNull(),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [
         index("ai_summary_user_idx").on(t3.userId, t3.userType),
@@ -45352,7 +45353,7 @@ var init_schema2 = __esm({
       impressions: int2("impressions").default(0),
       isActive: boolean4("is_active").default(true),
       createdBy: int2("created_by"),
-      createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+      createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
     });
     adClicks = mysqlTable("ad_clicks", {
       id: int2("id").primaryKey().autoincrement(),
@@ -45360,7 +45361,7 @@ var init_schema2 = __esm({
       userId: int2("user_id"),
       userType: varchar("user_type", { length: 50 }),
       ipAddress: varchar("ip_address", { length: 100 }),
-      createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+      createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
     });
     referrals = mysqlTable(
       "referrals",
@@ -45374,7 +45375,7 @@ var init_schema2 = __esm({
         status: varchar("status", { length: 50 }).default("pending"),
         // pending | completed | rewarded
         rewardGiven: boolean4("reward_given").default(false),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [
         uniqueIndex("referral_unique_idx").on(
@@ -45399,7 +45400,7 @@ var init_schema2 = __esm({
         endDate: datetime3("end_date").notNull(),
         paymentMethod: varchar("payment_method", { length: 100 }),
         transactionId: varchar("transaction_id", { length: 255 }),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
         updatedAt: datetime3("updated_at").default(
           sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
         )
@@ -45445,7 +45446,7 @@ var init_schema2 = __esm({
         lastAiRefreshAt: datetime3("last_ai_refresh_at"),
         profileCompleted: boolean4("profile_completed").default(false),
         lastAskedAt: datetime3("last_asked_at"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
         updatedAt: datetime3("updated_at").default(
           sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
         )
@@ -45464,7 +45465,7 @@ var init_schema2 = __esm({
         previousAttributes: json2("previous_attributes"),
         newAttributes: json2("new_attributes"),
         metadata: json2("metadata"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [
         index("profile_learning_user_idx").on(t3.userId, t3.userType),
@@ -45491,7 +45492,7 @@ var init_schema2 = __esm({
         spendingByWeekday: json2("spending_by_weekday"),
         behaviorFlags: json2("behavior_flags"),
         inferredAttributes: json2("inferred_attributes"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
         updatedAt: datetime3("updated_at").default(
           sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
         )
@@ -45516,7 +45517,7 @@ var init_schema2 = __esm({
       // for select type: ["توفير", "سداد ديون", ...]
       isActive: boolean4("is_active").default(true),
       sortOrder: int2("sort_order").default(0),
-      createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+      createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
     });
     userDictionaries = mysqlTable(
       "user_dictionaries",
@@ -45527,7 +45528,7 @@ var init_schema2 = __esm({
         word: varchar("word", { length: 100 }).notNull(),
         category: varchar("category", { length: 100 }).notNull(),
         subCategory: varchar("sub_category", { length: 100 }),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [
         index("user_dict_user_idx").on(t3.userId, t3.userType),
@@ -45562,7 +45563,7 @@ var init_schema2 = __esm({
         modelUsed: varchar("model_used", { length: 100 }),
         tokensUsed: int2("tokens_used").default(0),
         processingTimeMs: int2("processing_time_ms").default(0),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [
         index("cls_log_user_idx").on(t3.userId, t3.userType),
@@ -45581,7 +45582,7 @@ var init_schema2 = __esm({
         // YYYY-MM
         source: varchar("source", { length: 50 }).default("gemini_stt"),
         // gemini_stt | browser_api
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [index("voice_user_month_idx").on(t3.userId, t3.userType, t3.month)]
     );
@@ -45593,7 +45594,7 @@ var init_schema2 = __esm({
         userType: varchar("user_type", { length: 50 }).notNull(),
         token: varchar("token", { length: 255 }).notNull().unique(),
         name: varchar("name", { length: 100 }).default("Default Token"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [
         index("webhook_tokens_user_idx").on(t3.userId, t3.userType),
@@ -45614,7 +45615,7 @@ var init_schema2 = __esm({
         aiPlan: json2("ai_plan"),
         aiAlerts: json2("ai_alerts"),
         lastAnalyzedAt: datetime3("last_analyzed_at"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
         updatedAt: datetime3("updated_at").default(
           sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
         )
@@ -45622,6 +45623,31 @@ var init_schema2 = __esm({
       (t3) => [
         index("financial_goals_user_idx").on(t3.userId, t3.userType),
         index("financial_goals_status_idx").on(t3.status)
+      ]
+    );
+    userBudgets = mysqlTable(
+      "user_budgets",
+      {
+        id: int2("id").primaryKey().autoincrement(),
+        userId: int2("user_id").notNull(),
+        userType: varchar("user_type", { length: 50 }).notNull(),
+        title: varchar("title", { length: 200 }).notNull(),
+        category: varchar("category", { length: 100 }),
+        monthlyLimit: decimal("monthly_limit", { precision: 12, scale: 2 }).notNull(),
+        periodStartDay: int2("period_start_day").notNull().default(1),
+        linkedGoalId: int2("linked_goal_id"),
+        status: varchar("status", { length: 30 }).notNull().default("active"),
+        alertThresholdPercent: int2("alert_threshold_percent").notNull().default(80),
+        metadata: json2("metadata"),
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+        updatedAt: datetime3("updated_at").default(
+          sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
+        )
+      },
+      (t3) => [
+        index("user_budgets_user_idx").on(t3.userId, t3.userType, t3.status),
+        index("user_budgets_category_idx").on(t3.category),
+        index("user_budgets_goal_idx").on(t3.linkedGoalId)
       ]
     );
     rawSmsEvents = mysqlTable(
@@ -45636,7 +45662,7 @@ var init_schema2 = __esm({
         status: varchar("status", { length: 50 }).default("pending"),
         // pending | processed | ignored | error
         metadata: json2("metadata"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [
         index("raw_sms_user_idx").on(t3.userId, t3.userType),
@@ -45674,7 +45700,7 @@ var init_schema2 = __esm({
         // nullable: which user triggered it (null = system-level check)
         resolved: boolean4("resolved").default(false),
         resolvedAt: datetime3("resolved_at"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [
         index("api_key_errors_provider_idx").on(t3.provider),
@@ -45699,7 +45725,7 @@ var init_schema2 = __esm({
         // For Firebase Cloud Messaging tokens
         deviceType: varchar("device_type", { length: 50 }).default("web"),
         // web | ios | android
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [index("push_subs_user_idx").on(t3.userId, t3.userType)]
     );
@@ -45718,7 +45744,7 @@ var init_schema2 = __esm({
         backedUp: boolean4("backed_up").notNull().default(false),
         transports: varchar("transports", { length: 255 }),
         // e.g. "internal,usb,ble,nfc"
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
         lastUsedAt: datetime3("last_used_at").default(
           sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
         )
@@ -45756,7 +45782,7 @@ var init_schema2 = __esm({
       sendAt: datetime3("send_at"),
       // for scheduled ones
       createdBy: int2("created_by"),
-      createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+      createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
       updatedAt: datetime3("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`)
     });
     inAppNotifications = mysqlTable(
@@ -45769,7 +45795,7 @@ var init_schema2 = __esm({
         body: text("body").notNull(),
         actionUrl: varchar("action_url", { length: 500 }),
         isRead: boolean4("is_read").default(false),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [
         index("in_app_notif_user_idx").on(t3.userId, t3.userType),
@@ -45805,7 +45831,7 @@ var init_schema2 = __esm({
         messageCount: int2("message_count").default(0),
         totalTokens: int2("total_tokens").default(0),
         lastMessageAt: datetime3("last_message_at"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [
         index("chat_conv_user_idx").on(t3.userId, t3.userType),
@@ -45824,7 +45850,7 @@ var init_schema2 = __esm({
         toolResults: json2("tool_results"),
         tokensUsed: int2("tokens_used").default(0),
         model: varchar("model", { length: 100 }),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [
         index("chat_msg_conv_idx").on(t3.conversationId),
@@ -45842,7 +45868,7 @@ var init_schema2 = __esm({
         runningSummary: text("running_summary"),
         messageCount: int2("message_count").default(0),
         source: varchar("source", { length: 50 }).notNull().default("chat"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
         updatedAt: datetime3("updated_at").default(
           sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
         )
@@ -45867,7 +45893,7 @@ var init_schema2 = __esm({
         sourceMessageId: int2("source_message_id"),
         status: varchar("status", { length: 30 }).notNull().default("active"),
         metadata: json2("metadata"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
         updatedAt: datetime3("updated_at").default(
           sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
         )
@@ -45891,7 +45917,7 @@ var init_schema2 = __esm({
         dimensions: int2("dimensions").notNull(),
         vectorHash: varchar("vector_hash", { length: 64 }),
         vector: json2("vector"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [
         index("ai_memory_embedding_item_idx").on(t3.memoryItemId),
@@ -45915,7 +45941,7 @@ var init_schema2 = __esm({
         summary: varchar("summary", { length: 500 }).notNull(),
         payload: json2("payload"),
         sourceConversationId: int2("source_conversation_id"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
         updatedAt: datetime3("updated_at").default(
           sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
         )
@@ -45943,7 +45969,7 @@ var init_schema2 = __esm({
         confirmedAt: datetime3("confirmed_at"),
         executedAt: datetime3("executed_at"),
         cancelledAt: datetime3("cancelled_at"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`),
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
         updatedAt: datetime3("updated_at").default(
           sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`
         )
@@ -45965,7 +45991,7 @@ var init_schema2 = __esm({
         event: varchar("event", { length: 80 }).notNull(),
         status: varchar("status", { length: 40 }).notNull(),
         metadata: json2("metadata"),
-        createdAt: datetime3("created_at").default(sql`CURRENT_TIMESTAMP`)
+        createdAt: datetime3("created_at").notNull().default(sql`CURRENT_TIMESTAMP`)
       },
       (t3) => [
         index("ai_action_audit_action_idx").on(t3.actionId),
@@ -46134,8 +46160,11 @@ var init_connection = __esm({
       uri: env.DATABASE_URL,
       charset: "utf8mb4",
       waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0
+      connectionLimit: env.NODE_ENV === "production" ? 30 : 10,
+      queueLimit: 0,
+      connectTimeout: 1e4,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 1e4
     });
     db = drizzle(pool, {
       schema: { ...schema_exports, ...relations_exports },
@@ -91191,7 +91220,74 @@ function normalizeTransactionTaxonomy(item, evidence = "") {
 function normalizeTransactionTaxonomyList(items, evidence = "") {
   return items.map((item) => normalizeTransactionTaxonomy(item, evidence));
 }
-var CATEGORIES, CATEGORY_ALIASES, DEFAULT_SUBCATEGORY_BY_CATEGORY;
+function buildAliasMap() {
+  for (const cat of CATEGORIES) {
+    ALIAS_TO_ID.set(comparableArabic(cat.id), cat.id);
+    ALIAS_TO_ID.set(comparableArabic(cat.name), cat.id);
+    ALIAS_TO_ID.set(comparableArabic(cat.name_ar), cat.id);
+    for (const sub2 of cat.subcategories) {
+      ALIAS_TO_ID.set(comparableArabic(sub2.id), cat.id);
+      ALIAS_TO_ID.set(comparableArabic(sub2.name), cat.id);
+      ALIAS_TO_ID.set(comparableArabic(sub2.name_ar), cat.id);
+    }
+  }
+  for (const [alias, id] of EXTRA_ALIASES_TO_ID) {
+    ALIAS_TO_ID.set(comparableArabic(alias), id);
+  }
+  for (const [from, to] of CATEGORY_ALIASES) {
+    const targetCat = findCategoryByAnyName(to);
+    if (targetCat) {
+      ALIAS_TO_ID.set(comparableArabic(from), targetCat.id);
+    }
+  }
+}
+function canonicalCategoryId(input) {
+  if (!input) return "uncategorized";
+  const normalized = comparableArabic(input);
+  if (!normalized) return "uncategorized";
+  const direct = ALIAS_TO_ID.get(normalized);
+  if (direct) return direct;
+  for (const [alias, id] of ALIAS_TO_ID) {
+    if (normalized.includes(alias) && alias.length >= 3) {
+      return id;
+    }
+  }
+  const cat = findCategoryByAnyName(input);
+  if (cat) return cat.id;
+  return "uncategorized";
+}
+function arabicDisplayName(id) {
+  if (!id) return "\u063A\u064A\u0631 \u0645\u0635\u0646\u0641";
+  if (VIRTUAL_AGGREGATE_IDS[id]) return VIRTUAL_AGGREGATE_IDS[id].arabicName;
+  const cat = CATEGORY_ID_MAP.get(id);
+  return cat?.name_ar ?? (id || "\u063A\u064A\u0631 \u0645\u0635\u0646\u0641");
+}
+function getCategoryAliasesById(id) {
+  if (VIRTUAL_AGGREGATE_IDS[id]) {
+    const aliases2 = [id];
+    if (id === "income") aliases2.push("\u062F\u062E\u0644", "\u0645\u0631\u062A\u0628", "\u0631\u0627\u062A\u0628", "salary", "\u0642\u0628\u0636");
+    if (id === "saving") aliases2.push("\u0627\u062F\u062E\u0627\u0631", "\u062A\u062D\u0648\u064A\u0634", "\u062C\u0645\u0639\u064A\u0629", "\u062C\u0645\u0639\u064A\u0647");
+    if (id === "uncategorized") aliases2.push("\u063A\u064A\u0631 \u0645\u0635\u0646\u0641", "\u0623\u062E\u0631\u0649", "\u0645\u062A\u0646\u0648\u0639\u0627\u062A");
+    return [...new Set(aliases2)];
+  }
+  const cat = CATEGORY_ID_MAP.get(id);
+  if (!cat) return [id];
+  const aliases = [id, cat.name, cat.name_ar];
+  for (const [alias, targetId] of ALIAS_TO_ID) {
+    if (targetId === id) {
+      const originalAlias = [...EXTRA_ALIASES_TO_ID].find(([a]) => comparableArabic(a) === alias)?.[0];
+      if (originalAlias) aliases.push(originalAlias);
+    }
+  }
+  return [...new Set(aliases)];
+}
+function normalizeCategoryFromUserText(text2) {
+  return canonicalCategoryId(text2);
+}
+function taxonomyVersion() {
+  return "tax_v2_2026_06";
+}
+var CATEGORIES, CATEGORY_ALIASES, DEFAULT_SUBCATEGORY_BY_CATEGORY, CATEGORY_ID_MAP, CATEGORY_BY_NORMALIZED_AR, CATEGORY_BY_NORMALIZED_EN, EXTRA_ALIASES_TO_ID, ALIAS_TO_ID, VIRTUAL_AGGREGATE_IDS;
 var init_category_registry = __esm({
   "api/lib/category-registry.ts"() {
     CATEGORIES = [
@@ -91710,6 +91806,208 @@ var init_category_registry = __esm({
         category.subcategories.find((sub2) => sub2.name_ar === "\u0639\u0627\u0645")?.name_ar || category.subcategories[0]?.name_ar || "\u0639\u0627\u0645"
       ])
     );
+    CATEGORY_ID_MAP = new Map(
+      CATEGORIES.map((c) => [c.id, c])
+    );
+    CATEGORY_BY_NORMALIZED_AR = new Map(
+      CATEGORIES.map((c) => [comparableArabic(c.name_ar), c])
+    );
+    CATEGORY_BY_NORMALIZED_EN = new Map(
+      CATEGORIES.map((c) => [c.name.toLowerCase(), c])
+    );
+    EXTRA_ALIASES_TO_ID = [
+      ["\u0643\u0627\u0631\u0641\u0648\u0631", "food"],
+      ["\u062E\u0636\u0627\u0631", "food"],
+      ["\u062E\u0636\u0647", "food"],
+      ["\u0641\u0627\u0643\u0647\u0647", "food"],
+      ["\u0641\u0627\u0643\u0647\u0629", "food"],
+      ["\u0644\u062D\u0645\u0647", "food"],
+      ["\u0644\u062D\u0645\u0629", "food"],
+      ["\u0641\u0631\u0627\u062E", "food"],
+      ["\u062F\u0644\u064A\u0641\u0631\u064A", "food"],
+      ["\u0637\u0644\u0628\u0627\u062A", "food"],
+      ["talabat", "food"],
+      ["\u0633\u0648\u0628\u0631\u0645\u0627\u0631\u0643\u062A", "food"],
+      ["\u0633\u0648\u0628\u0631 \u0645\u0627\u0631\u0643\u062A", "food"],
+      ["\u0645\u0627\u0631\u0643\u062A", "food"],
+      ["\u0647\u0627\u064A\u0628\u0631", "food"],
+      ["\u062C\u0631\u0648\u0633\u0631\u064A", "food"],
+      ["groceries", "food"],
+      ["restaurant", "food"],
+      ["\u0645\u0637\u0639\u0645", "food"],
+      ["\u0645\u0637\u0627\u0639\u0645", "food"],
+      ["\u0642\u0647\u0648\u0629", "food"],
+      ["\u0642\u0647\u0648\u0647", "food"],
+      ["\u0643\u0627\u0641\u064A\u0647", "food"],
+      ["\u0643\u0627\u0641\u064A\u0647\u0627\u062A", "food"],
+      ["\u0628\u0646\u0632\u064A\u0646", "transport"],
+      ["\u062A\u0641\u0648\u064A\u0644\u0629", "transport"],
+      ["\u0627\u0648\u0628\u0631", "transport"],
+      ["\u0643\u0631\u064A\u0645", "transport"],
+      ["\u0645\u062A\u0631\u0648", "transport"],
+      ["\u062A\u0627\u0643\u0633\u064A", "transport"],
+      ["\u0627\u062A\u0648\u0628\u064A\u0633", "transport"],
+      ["\u0645\u064A\u0643\u0631\u0648\u0628\u0627\u0635", "transport"],
+      ["uber", "transport"],
+      ["\u0644\u0628\u0633", "shopping"],
+      ["\u0647\u062F\u0648\u0645", "shopping"],
+      ["\u0645\u0644\u0627\u0628\u0633", "shopping"],
+      ["\u062C\u0632\u0645\u0629", "shopping"],
+      ["\u0643\u0648\u062A\u0634\u064A", "shopping"],
+      ["\u0634\u0648\u0632", "shopping"],
+      ["\u0639\u0646\u0627\u064A\u0647 \u0634\u062E\u0635\u064A\u0647", "shopping"],
+      ["\u0639\u0637\u0631", "shopping"],
+      ["\u062F\u0643\u062A\u0648\u0631", "health"],
+      ["\u0635\u064A\u062F\u0644\u064A\u0647", "health"],
+      ["\u0635\u064A\u062F\u0644\u064A\u0629", "health"],
+      ["\u062F\u0648\u0627", "health"],
+      ["\u062F\u0648\u0627\u0621", "health"],
+      ["\u0639\u0644\u0627\u062C", "health"],
+      ["\u062A\u062D\u0627\u0644\u064A\u0644", "health"],
+      ["\u0643\u0647\u0631\u0628\u0627", "bills"],
+      ["\u0643\u0647\u0631\u0628\u0627\u0621", "bills"],
+      ["\u0645\u064A\u0627\u0647", "bills"],
+      ["\u0645\u0627\u064A\u0647", "bills"],
+      ["\u063A\u0627\u0632", "bills"],
+      ["\u0646\u062A", "bills"],
+      ["\u0627\u0646\u062A\u0631\u0646\u062A", "bills"],
+      ["\u0625\u0646\u062A\u0631\u0646\u062A", "bills"],
+      ["\u0634\u062D\u0646", "bills"],
+      ["\u0631\u0635\u064A\u062F", "bills"],
+      ["\u0641\u0627\u062A\u0648\u0631\u0647", "bills"],
+      ["\u0641\u0627\u062A\u0648\u0631\u0629", "bills"],
+      ["\u0642\u0633\u0637", "bills"],
+      ["\u0627\u0642\u0633\u0627\u0637", "bills"],
+      ["\u0623\u0642\u0633\u0627\u0637", "bills"],
+      ["\u0645\u0631\u062A\u0628", "salary"],
+      ["\u0631\u0627\u062A\u0628", "salary"],
+      ["salary", "salary"],
+      ["\u0642\u0628\u0636", "salary"],
+      ["\u062F\u062E\u0644", "salary"],
+      ["\u0628\u0648\u0646\u0635", "salary"],
+      ["\u0645\u0643\u0627\u0641\u0627\u0647", "salary"],
+      ["\u0645\u0643\u0627\u0641\u0623\u0629", "salary"],
+      ["\u0633\u0628\u0648\u0628\u0647", "freelance"],
+      ["\u0641\u0631\u064A\u0644\u0627\u0646\u0633", "freelance"],
+      ["\u0639\u0645\u0648\u0644\u0647", "freelance"],
+      ["\u0643\u0627\u0634 \u0628\u0627\u0643", "investment_income"],
+      ["\u0643\u0627\u0634\u0628\u0627\u0643", "investment_income"],
+      ["\u0627\u0633\u062A\u0631\u062C\u0627\u0639", "investment_income"],
+      ["\u0627\u0631\u0628\u0627\u062D", "investment_income"],
+      ["\u0623\u0631\u0628\u0627\u062D", "investment_income"],
+      ["\u0641\u0648\u0627\u0626\u062F", "investment_income"],
+      ["atm", "transfer"],
+      ["\u0633\u062D\u0628", "transfer"],
+      ["\u0627\u0646\u0633\u062A\u0627\u0628\u0627\u064A", "transfer"],
+      ["instapay", "transfer"],
+      ["\u0641\u0648\u062F\u0627\u0641\u0648\u0646 \u0643\u0627\u0634", "transfer"],
+      ["\u062F\u064A\u0646", "transfer"],
+      ["\u0633\u0644\u0641\u0647", "transfer"],
+      ["\u0633\u0644\u0641\u0629", "transfer"],
+      ["\u0642\u0631\u0636", "transfer"],
+      ["\u0627\u062F\u062E\u0627\u0631", "transfer"],
+      ["\u062A\u062D\u0648\u064A\u0634", "transfer"],
+      ["\u0630\u0647\u0628", "investment"],
+      ["\u062F\u0647\u0628", "investment"],
+      ["\u0633\u0647\u0645", "investment"],
+      ["\u0623\u0633\u0647\u0645", "investment"],
+      ["\u0627\u0633\u0647\u0645", "investment"],
+      ["\u0628\u0648\u0631\u0635\u0647", "investment"],
+      ["\u0628\u0648\u0631\u0635\u0629", "investment"],
+      ["\u0634\u0647\u0627\u062F\u0627\u062A", "investment"],
+      ["\u0634\u0647\u0627\u062F\u0647", "investment"],
+      ["\u0639\u0642\u0627\u0631", "investment"],
+      ["\u0634\u0642\u0647", "investment"],
+      ["\u0634\u0642\u0629", "investment"],
+      ["\u0627\u064A\u062C\u0627\u0631", "home"],
+      ["\u0625\u064A\u062C\u0627\u0631", "home"],
+      ["\u0639\u0641\u0634", "home"],
+      ["\u0623\u062B\u0627\u062B", "home"],
+      ["\u0627\u062B\u0627\u062B", "home"],
+      ["\u0633\u0628\u0627\u0643", "home"],
+      ["\u0643\u0647\u0631\u0628\u0627\u0626\u064A", "home"],
+      ["\u0646\u0642\u0627\u0634", "home"],
+      ["\u0645\u0646\u0638\u0641\u0627\u062A", "home"],
+      ["\u0633\u064A\u0646\u0645\u0627", "entertainment"],
+      ["\u0643\u0627\u0641\u064A\u0647\u0627\u062A", "outings"],
+      ["\u0628\u0644\u0627\u064A\u0633\u062A\u064A\u0634\u0646", "outings"],
+      ["\u062C\u064A\u0645", "entertainment"],
+      ["\u0631\u064A\u0627\u0636\u0647", "entertainment"],
+      ["\u0631\u064A\u0627\u0636\u0629", "entertainment"],
+      ["\u0646\u062A\u0641\u0644\u0643\u0633", "subscriptions"],
+      ["netflix", "subscriptions"],
+      ["\u0633\u0628\u0648\u062A\u064A\u0641\u0627\u064A", "subscriptions"],
+      ["spotify", "subscriptions"],
+      ["chatgpt", "subscriptions"],
+      ["\u0634\u0627\u062A \u062C\u064A \u0628\u064A \u062A\u064A", "subscriptions"],
+      ["\u0633\u062C\u0627\u064A\u0631", "smoking"],
+      ["\u0633\u062C\u0627\u0626\u0631", "smoking"],
+      ["\u0639\u0644\u0628\u0647", "smoking"],
+      ["\u0639\u0644\u0628\u0629", "smoking"],
+      ["\u0641\u064A\u0628", "smoking"],
+      ["\u0644\u064A\u0643\u0648\u062F", "smoking"],
+      ["\u0634\u064A\u0634\u0647", "smoking"],
+      ["\u0634\u064A\u0634\u0629", "smoking"],
+      ["\u0645\u0639\u0633\u0644", "smoking"],
+      ["\u0635\u062F\u0642\u0647", "gifts"],
+      ["\u0635\u062F\u0642\u0629", "gifts"],
+      ["\u062A\u0628\u0631\u0639", "gifts"],
+      ["\u0627\u062A\u0628\u0631\u0639\u062A", "gifts"],
+      ["\u0632\u0643\u0627\u0647", "gifts"],
+      ["\u0632\u0643\u0627\u0629", "gifts"],
+      ["\u0639\u064A\u062F\u064A\u0647", "gifts"],
+      ["\u0639\u064A\u062F\u064A\u0629", "gifts"],
+      ["\u0641\u0631\u062D", "gifts"],
+      ["\u062E\u0637\u0648\u0628\u0647", "gifts"],
+      ["\u062E\u0637\u0648\u0628\u0629", "gifts"],
+      ["\u0643\u0627\u0631\u062A\u0629", "car_services"],
+      ["\u0631\u0643\u0646\u0647", "car_services"],
+      ["\u0631\u0643\u0646\u0629", "car_services"],
+      ["\u0632\u064A\u062A", "car_services"],
+      ["\u0645\u062E\u0627\u0644\u0641\u0647", "car_services"],
+      ["\u0645\u062E\u0627\u0644\u0641\u0629", "car_services"],
+      ["\u0628\u0637\u0627\u0631\u064A\u0647", "car_services"],
+      ["\u0628\u0637\u0627\u0631\u064A\u0629", "car_services"],
+      ["\u0643\u0627\u0648\u062A\u0634", "car_services"],
+      ["\u0625\u0637\u0627\u0631\u0627\u062A", "car_services"],
+      ["\u0627\u0637\u0627\u0631\u0627\u062A", "car_services"],
+      [" vpn", "digital_services"],
+      ["vpn", "digital_services"],
+      ["cloud", "digital_services"],
+      ["\u0643\u0644\u0627\u0648\u062F", "digital_services"],
+      ["\u062F\u0648\u0645\u064A\u0646", "digital_services"],
+      ["domain", "digital_services"],
+      ["hosting", "digital_services"],
+      ["hosting", "work"],
+      ["\u0627\u0633\u062A\u0636\u0627\u0641\u0647", "work"],
+      ["\u0627\u0633\u062A\u0636\u0627\u0641\u0629", "work"],
+      ["api", "work"],
+      ["\u0648\u0627\u062C\u0647\u0647", "work"],
+      ["\u0648\u0627\u062C\u0647\u0627\u062A", "work"],
+      ["\u0645\u0643\u062A\u0628", "work"],
+      ["\u0627\u062F\u0648\u0627\u062A", "work"],
+      ["\u0623\u062F\u0648\u0627\u062A", "work"],
+      ["\u0645\u062F\u0631\u0633\u0647", "education"],
+      ["\u0645\u062F\u0631\u0633\u0629", "education"],
+      ["\u062C\u0627\u0645\u0639\u0647", "education"],
+      ["\u062C\u0627\u0645\u0639\u0629", "education"],
+      ["\u0643\u0648\u0631\u0633", "education"],
+      ["\u0643\u0648\u0631\u0633\u0627\u062A", "education"],
+      ["\u0643\u062A\u0627\u0628", "education"],
+      ["\u0643\u062A\u0628", "education"],
+      ["\u062F\u0631\u0648\u0633", "education"],
+      ["\u062C\u0645\u0639\u064A\u0647", "liabilities_and_gam3eyat"],
+      ["\u062C\u0645\u0639\u064A\u0629", "liabilities_and_gam3eyat"],
+      ["\u0641\u0627\u0644\u064A\u0648", "liabilities_and_gam3eyat"],
+      ["\u062A\u0645\u0648\u064A\u0644", "liabilities_and_gam3eyat"]
+    ];
+    ALIAS_TO_ID = /* @__PURE__ */ new Map();
+    buildAliasMap();
+    VIRTUAL_AGGREGATE_IDS = {
+      income: { id: "income", arabicName: "\u0627\u0644\u062F\u062E\u0644", type: "income" },
+      saving: { id: "saving", arabicName: "\u0627\u0644\u0627\u062F\u062E\u0627\u0631", type: "transfer" },
+      uncategorized: { id: "uncategorized", arabicName: "\u063A\u064A\u0631 \u0645\u0635\u0646\u0641", type: "expense" }
+    };
   }
 });
 
@@ -93225,11 +93523,10 @@ var require_decoder = __commonJS({
               this.#cursor = cursor + 1;
               return this.#cursor < chunk2.length ? this.#decodeDoubleDecimal(isNegative2, 0, integer2, chunk2) : this.#decodeDoubleDecimal.bind(this, isNegative2, 0, integer2);
             case ASCII.E:
-            case ASCII.e: {
+            case ASCII.e:
               this.#cursor = cursor + 1;
               const i2 = isNegative2 ? -integer2 : integer2;
               return this.#cursor < chunk2.length ? this.#decodeDoubleExponent(i2, chunk2) : this.#decodeDoubleExponent.bind(this, i2);
-            }
             case ASCII["\r"]:
               this.#cursor = cursor + 2;
               return isNegative2 ? -integer2 : integer2;
@@ -93268,11 +93565,10 @@ var require_decoder = __commonJS({
           const byte = chunk2[cursor];
           switch (byte) {
             case ASCII.E:
-            case ASCII.e: {
+            case ASCII.e:
               this.#cursor = cursor + 1;
               const d = isNegative2 ? -double2 : double2;
               return this.#cursor === chunk2.length ? this.#decodeDoubleExponent.bind(this, d) : this.#decodeDoubleExponent(d, chunk2);
-            }
             case ASCII["\r"]:
               this.#cursor = cursor + 2;
               return isNegative2 ? -double2 : double2;
@@ -93553,7 +93849,7 @@ var require_decoder = __commonJS({
           case Array:
             return this.#decodeArrayItems(new Array(length * 2), 0, typeMapping, chunk2);
           default:
-            return this.#decodeMapAsObject({}, length, typeMapping, chunk2);
+            return this.#decodeMapAsObject(/* @__PURE__ */ Object.create(null), length, typeMapping, chunk2);
         }
       }
       #decodeMapAsMap(map2, remaining, typeMapping, chunk2) {
@@ -93666,17 +93962,6 @@ var require_decoder = __commonJS({
   }
 });
 
-// node_modules/@redis/client/dist/lib/RESP/types.js
-var require_types3 = __commonJS({
-  "node_modules/@redis/client/dist/lib/RESP/types.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.DEFAULT_RESP = void 0;
-    var decoder_1 = require_decoder();
-    exports.DEFAULT_RESP = 3;
-  }
-});
-
 // node_modules/@redis/client/dist/lib/lua-script.js
 var require_lua_script = __commonJS({
   "node_modules/@redis/client/dist/lib/lua-script.js"(exports) {
@@ -93734,6 +94019,11 @@ var require_ACL_CAT = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Lists ACL categories or commands in a category
+       * @param parser - The Redis command parser
+       * @param categoryName - Optional category name to filter commands
+       */
       parseCommand(parser, categoryName) {
         parser.push("ACL", "CAT");
         if (categoryName) {
@@ -93753,6 +94043,11 @@ var require_ACL_DELUSER = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Deletes one or more users from the ACL
+       * @param parser - The Redis command parser
+       * @param username - Username(s) to delete
+       */
       parseCommand(parser, username) {
         parser.push("ACL", "DELUSER");
         parser.pushVariadic(username);
@@ -93770,6 +94065,12 @@ var require_ACL_DRYRUN = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Simulates ACL operations without executing them
+       * @param parser - The Redis command parser
+       * @param username - Username to simulate ACL operations for
+       * @param command - Command arguments to simulate
+       */
       parseCommand(parser, username, command) {
         parser.push("ACL", "DRYRUN", username, ...command);
       },
@@ -93786,6 +94087,11 @@ var require_ACL_GENPASS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Generates a secure password for ACL users
+       * @param parser - The Redis command parser
+       * @param bits - Optional number of bits for password entropy
+       */
       parseCommand(parser, bits) {
         parser.push("ACL", "GENPASS");
         if (bits) {
@@ -93805,6 +94111,11 @@ var require_ACL_GETUSER = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns ACL information about a specific user
+       * @param parser - The Redis command parser
+       * @param username - Username to get information for
+       */
       parseCommand(parser, username) {
         parser.push("ACL", "GETUSER", username);
       },
@@ -93838,6 +94149,10 @@ var require_ACL_LIST = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns all configured ACL users and their permissions
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("ACL", "LIST");
       },
@@ -93854,6 +94169,10 @@ var require_ACL_LOAD = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Reloads ACL configuration from the ACL file
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("ACL", "LOAD");
       },
@@ -93949,7 +94268,7 @@ var require_generic_transformers = __commonJS({
   "node_modules/@redis/client/dist/lib/commands/generic-transformers.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.transformRedisJsonNullReply = exports.transformRedisJsonReply = exports.transformRedisJsonArgument = exports.transformStreamsMessagesReplyResp3Compat = exports.transformStreamsMessagesReplyResp3 = exports.transformStreamsMessagesReplyResp2 = exports.transformStreamMessagesReply = exports.transformStreamMessageNullReply = exports.transformStreamMessageReply = exports.parseArgs = exports.parseZKeysArguments = exports.transformRangeReply = exports.parseSlotRangesArguments = exports.transformFunctionListItemReply = exports.RedisFunctionFlags = exports.transformCommandReply = exports.CommandCategories = exports.CommandFlags = exports.parseOptionalVariadicArgument = exports.pushVariadicArgument = exports.pushVariadicNumberArguments = exports.pushVariadicArguments = exports.pushEvalArguments = exports.evalFirstKeyIndex = exports.transformPXAT = exports.transformEXAT = exports.transformSortedSetReply = exports.transformTuplesReply = exports.createTransformTuplesReplyFunc = exports.transformTuplesToMap = exports.transformNullableDoubleReply = exports.createTransformNullableDoubleReplyResp2Func = exports.transformDoubleArrayReply = exports.createTransformDoubleReplyResp2Func = exports.transformDoubleReply = exports.transformStringDoubleArgument = exports.transformDoubleArgument = exports.transformBooleanArrayReply = exports.transformBooleanReply = exports.isArrayReply = exports.isNullReply = void 0;
+    exports.transformRedisJsonNullReply = exports.transformRedisJsonReply = exports.transformRedisJsonArgument = exports.transformStreamsMessagesReplyResp3 = exports.transformStreamsMessagesReplyResp2 = exports.transformStreamMessagesReply = exports.transformStreamMessageNullReply = exports.transformStreamMessageReply = exports.parseArgs = exports.parseZKeysArguments = exports.transformRangeReply = exports.parseSlotRangesArguments = exports.transformFunctionListItemReply = exports.RedisFunctionFlags = exports.transformCommandReply = exports.CommandCategories = exports.CommandFlags = exports.parseOptionalVariadicArgument = exports.pushVariadicArgument = exports.pushVariadicNumberArguments = exports.pushVariadicArguments = exports.pushEvalArguments = exports.evalFirstKeyIndex = exports.transformPXAT = exports.transformEXAT = exports.transformSortedSetReply = exports.transformTuplesReply = exports.createTransformTuplesReplyFunc = exports.transformTuplesToMap = exports.transformNullableDoubleReply = exports.createTransformNullableDoubleReplyResp2Func = exports.transformDoubleArrayReply = exports.createTransformDoubleReplyResp2Func = exports.transformDoubleReply = exports.transformStringDoubleArgument = exports.transformDoubleArgument = exports.transformBooleanArrayReply = exports.transformBooleanReply = exports.isArrayReply = exports.isNullReply = void 0;
     var parser_1 = require_parser2();
     var decoder_1 = require_decoder();
     function isNullReply(reply) {
@@ -93988,7 +94307,6 @@ var require_generic_transformers = __commonJS({
     }
     exports.transformStringDoubleArgument = transformStringDoubleArgument;
     exports.transformDoubleReply = {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- matches TransformReply contract
       2: (reply, preserve, typeMapping) => {
         const double2 = typeMapping ? typeMapping[decoder_1.RESP_TYPES.DOUBLE] : void 0;
         switch (double2) {
@@ -94024,7 +94342,6 @@ var require_generic_transformers = __commonJS({
     }
     exports.createTransformDoubleReplyResp2Func = createTransformDoubleReplyResp2Func;
     exports.transformDoubleArrayReply = {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- matches TransformReply contract
       2: (reply, preserve, typeMapping) => {
         return reply.map(createTransformDoubleReplyResp2Func(preserve, typeMapping));
       },
@@ -94037,7 +94354,6 @@ var require_generic_transformers = __commonJS({
     }
     exports.createTransformNullableDoubleReplyResp2Func = createTransformNullableDoubleReplyResp2Func;
     exports.transformNullableDoubleReply = {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- matches TransformReply contract
       2: (reply, preserve, typeMapping) => {
         if (reply === null)
           return null;
@@ -94046,7 +94362,7 @@ var require_generic_transformers = __commonJS({
       3: void 0
     };
     function transformTuplesToMap(reply, func) {
-      const message = {};
+      const message = /* @__PURE__ */ Object.create(null);
       for (let i2 = 0; i2 < reply.length; i2 += 2) {
         message[reply[i2].toString()] = func(reply[i2 + 1]);
       }
@@ -94075,7 +94391,7 @@ var require_generic_transformers = __commonJS({
           ;
         }
         default: {
-          const ret = {};
+          const ret = /* @__PURE__ */ Object.create(null);
           for (let i2 = 0; i2 < inferred.length; i2 += 2) {
             ret[inferred[i2].toString()] = inferred[i2 + 1];
           }
@@ -94086,7 +94402,6 @@ var require_generic_transformers = __commonJS({
     }
     exports.transformTuplesReply = transformTuplesReply;
     exports.transformSortedSetReply = {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- matches TransformReply contract
       2: (reply, preserve, typeMapping) => {
         const inferred = reply, members = [];
         for (let i2 = 0; i2 < inferred.length; i2 += 2) {
@@ -94356,7 +94671,7 @@ var require_generic_transformers = __commonJS({
               return ret as unknown as MapReply<string, StreamMessagesReply>;
             }
             default: {
-              const ret: Record<string, StreamMessagesReply> = {};
+              const ret: Record<string, StreamMessagesReply> = Object.create(null);
         
               for (let i=0; i < reply.length; i++) {
                 const stream = reply[i] as unknown as UnwrapReply<StreamMessagesRawReply>;
@@ -94377,7 +94692,7 @@ var require_generic_transformers = __commonJS({
             const stream2 = reply[i2];
             ret.push({
               name: stream2[0],
-              messages: transformStreamMessagesReply(stream2[1], typeMapping)
+              messages: transformStreamMessagesReply(stream2[1])
             });
           }
           return ret;
@@ -94385,14 +94700,14 @@ var require_generic_transformers = __commonJS({
       }
     }
     exports.transformStreamsMessagesReplyResp2 = transformStreamsMessagesReplyResp2;
-    function transformStreamsMessagesReplyResp3(reply, typeMapping) {
+    function transformStreamsMessagesReplyResp3(reply) {
       if (reply === null)
         return null;
       if (reply instanceof Map) {
         const ret = /* @__PURE__ */ new Map();
         for (const [n, rawMessages] of reply) {
           const name2 = n;
-          ret.set(name2.toString(), transformStreamMessagesReply(rawMessages, typeMapping));
+          ret.set(name2.toString(), transformStreamMessagesReply(rawMessages));
         }
         return ret;
       } else if (reply instanceof Array) {
@@ -94401,51 +94716,18 @@ var require_generic_transformers = __commonJS({
           const name2 = reply[i2];
           const rawMessages = reply[i2 + 1];
           ret.push(name2);
-          ret.push(transformStreamMessagesReply(rawMessages, typeMapping));
+          ret.push(transformStreamMessagesReply(rawMessages));
         }
         return ret;
       } else {
-        const ret = {};
+        const ret = /* @__PURE__ */ Object.create(null);
         for (const [name2, rawMessages] of Object.entries(reply)) {
-          ret[name2] = transformStreamMessagesReply(rawMessages, typeMapping);
+          ret[name2] = transformStreamMessagesReply(rawMessages);
         }
         return ret;
       }
     }
     exports.transformStreamsMessagesReplyResp3 = transformStreamsMessagesReplyResp3;
-    function transformStreamsMessagesReplyResp3Compat(reply, preserve, typeMapping) {
-      const transformed = transformStreamsMessagesReplyResp3(reply, typeMapping);
-      if (transformed === null)
-        return null;
-      const compat = [];
-      if (transformed instanceof Map) {
-        for (const [name2, messages] of transformed.entries()) {
-          compat.push({
-            name: name2,
-            messages
-          });
-        }
-        return compat;
-      }
-      if (Array.isArray(transformed)) {
-        for (let i2 = 0; i2 < transformed.length; i2 += 2) {
-          const rawName = transformed[i2];
-          compat.push({
-            name: rawName?.toString?.() ?? rawName,
-            messages: transformed[i2 + 1]
-          });
-        }
-        return compat;
-      }
-      for (const [name2, messages] of Object.entries(transformed)) {
-        compat.push({
-          name: name2,
-          messages
-        });
-      }
-      return compat;
-    }
-    exports.transformStreamsMessagesReplyResp3Compat = transformStreamsMessagesReplyResp3Compat;
     function transformRedisJsonArgument(json3) {
       return JSON.stringify(json3);
     }
@@ -94471,6 +94753,11 @@ var require_ACL_LOG = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns ACL security events log entries
+       * @param parser - The Redis command parser
+       * @param count - Optional maximum number of entries to return
+       */
       parseCommand(parser, count4) {
         parser.push("ACL", "LOG");
         if (count4 != void 0) {
@@ -94513,6 +94800,10 @@ var require_ACL_LOG_RESET = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: ACL_LOG_1.default.IS_READ_ONLY,
+      /**
+       * Clears the ACL security events log
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("ACL", "LOG", "RESET");
       },
@@ -94529,6 +94820,10 @@ var require_ACL_SAVE = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Saves the current ACL configuration to the ACL file
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("ACL", "SAVE");
       },
@@ -94545,6 +94840,12 @@ var require_ACL_SETUSER = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Creates or modifies ACL user with specified rules
+       * @param parser - The Redis command parser
+       * @param username - Username to create or modify
+       * @param rule - ACL rule(s) to apply to the user
+       */
       parseCommand(parser, username, rule) {
         parser.push("ACL", "SETUSER", username);
         parser.pushVariadic(rule);
@@ -94562,6 +94863,10 @@ var require_ACL_USERS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns a list of all configured ACL usernames
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("ACL", "USERS");
       },
@@ -94578,6 +94883,10 @@ var require_ACL_WHOAMI = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the username of the current connection
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("ACL", "WHOAMI");
       },
@@ -94593,413 +94902,14 @@ var require_APPEND = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Appends a value to a string key
+       * @param parser - The Redis command parser
+       * @param key - The key to append to
+       * @param value - The value to append
+       */
       parseCommand(parser, key, value) {
         parser.push("APPEND", key, value);
-      },
-      transformReply: void 0
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/ARCOUNT.js
-var require_ARCOUNT = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/ARCOUNT.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.default = {
-      IS_READ_ONLY: true,
-      parseCommand(parser, key) {
-        parser.push("ARCOUNT");
-        parser.pushKey(key);
-      },
-      transformReply: void 0
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/ARDEL.js
-var require_ARDEL = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/ARDEL.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.default = {
-      parseCommand(parser, key, indices) {
-        parser.push("ARDEL");
-        parser.pushKey(key);
-        if (Array.isArray(indices)) {
-          for (const i2 of indices)
-            parser.push(i2.toString());
-        } else {
-          parser.push(indices.toString());
-        }
-      },
-      transformReply: void 0
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/ARDELRANGE.js
-var require_ARDELRANGE = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/ARDELRANGE.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.default = {
-      parseCommand(parser, key, ranges) {
-        parser.push("ARDELRANGE");
-        parser.pushKey(key);
-        for (const [start, end] of ranges) {
-          parser.push(start.toString(), end.toString());
-        }
-      },
-      transformReply: void 0
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/ARGET.js
-var require_ARGET = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/ARGET.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.default = {
-      IS_READ_ONLY: true,
-      parseCommand(parser, key, index2) {
-        parser.push("ARGET");
-        parser.pushKey(key);
-        parser.push(index2.toString());
-      },
-      transformReply: void 0
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/ARGETRANGE.js
-var require_ARGETRANGE = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/ARGETRANGE.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.default = {
-      IS_READ_ONLY: true,
-      parseCommand(parser, key, start, end) {
-        parser.push("ARGETRANGE");
-        parser.pushKey(key);
-        parser.push(start.toString(), end.toString());
-      },
-      transformReply: void 0
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/ARGREP.js
-var require_ARGREP = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/ARGREP.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.parseArGrepArguments = exports.AR_PREDICATE_COMBINATORS = exports.AR_PREDICATE_TYPES = void 0;
-    exports.AR_PREDICATE_TYPES = {
-      EXACT: "EXACT",
-      MATCH: "MATCH",
-      GLOB: "GLOB",
-      RE: "RE"
-    };
-    exports.AR_PREDICATE_COMBINATORS = {
-      AND: "AND",
-      OR: "OR"
-    };
-    function parseArGrepArguments(parser, key, start, end, predicates, options) {
-      parser.pushKey(key);
-      parser.push(typeof start === "number" ? start.toString() : start, typeof end === "number" ? end.toString() : end);
-      for (const [type, value] of predicates) {
-        parser.push(type, value);
-      }
-      if (options?.COMBINATOR !== void 0) {
-        parser.push(options.COMBINATOR);
-      }
-      if (options?.LIMIT !== void 0) {
-        parser.push("LIMIT", options.LIMIT.toString());
-      }
-      if (options?.NOCASE) {
-        parser.push("NOCASE");
-      }
-    }
-    exports.parseArGrepArguments = parseArGrepArguments;
-    exports.default = {
-      IS_READ_ONLY: true,
-      parseCommand(parser, ...args) {
-        parser.push("ARGREP");
-        parseArGrepArguments(parser, ...args);
-      },
-      transformReply: void 0
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/ARGREP_WITHVALUES.js
-var require_ARGREP_WITHVALUES = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/ARGREP_WITHVALUES.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var ARGREP_1 = require_ARGREP();
-    exports.default = {
-      IS_READ_ONLY: true,
-      parseCommand(parser, ...args) {
-        parser.push("ARGREP");
-        (0, ARGREP_1.parseArGrepArguments)(parser, ...args);
-        parser.push("WITHVALUES");
-      },
-      transformReply: (reply) => {
-        const unwrapped = reply;
-        return unwrapped.map((pair) => {
-          const [index2, value] = pair;
-          return { index: index2, value };
-        });
-      }
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/ARINFO.js
-var require_ARINFO = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/ARINFO.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var generic_transformers_1 = require_generic_transformers();
-    exports.default = {
-      IS_READ_ONLY: true,
-      parseCommand(parser, key, options) {
-        parser.push("ARINFO");
-        parser.pushKey(key);
-        if (options?.FULL) {
-          parser.push("FULL");
-        }
-      },
-      transformReply: {
-        2: (reply, preserve, typeMapping) => (0, generic_transformers_1.transformTuplesReply)(reply, preserve, typeMapping),
-        3: void 0
-      }
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/ARINSERT.js
-var require_ARINSERT = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/ARINSERT.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.default = {
-      parseCommand(parser, key, values) {
-        parser.push("ARINSERT");
-        parser.pushKey(key);
-        parser.pushVariadic(values);
-      },
-      transformReply: void 0
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/ARLASTITEMS.js
-var require_ARLASTITEMS = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/ARLASTITEMS.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.default = {
-      IS_READ_ONLY: true,
-      parseCommand(parser, key, count4, options) {
-        parser.push("ARLASTITEMS");
-        parser.pushKey(key);
-        parser.push(count4.toString());
-        if (options?.REV) {
-          parser.push("REV");
-        }
-      },
-      transformReply: void 0
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/ARLEN.js
-var require_ARLEN = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/ARLEN.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.default = {
-      IS_READ_ONLY: true,
-      parseCommand(parser, key) {
-        parser.push("ARLEN");
-        parser.pushKey(key);
-      },
-      transformReply: void 0
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/ARMGET.js
-var require_ARMGET = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/ARMGET.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.default = {
-      IS_READ_ONLY: true,
-      parseCommand(parser, key, indices) {
-        parser.push("ARMGET");
-        parser.pushKey(key);
-        if (Array.isArray(indices)) {
-          for (const i2 of indices)
-            parser.push(i2.toString());
-        } else {
-          parser.push(indices.toString());
-        }
-      },
-      transformReply: void 0
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/ARMSET.js
-var require_ARMSET = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/ARMSET.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.default = {
-      parseCommand(parser, key, entries) {
-        parser.push("ARMSET");
-        parser.pushKey(key);
-        if (entries instanceof Map) {
-          for (const [index2, value] of entries.entries()) {
-            parser.push(index2.toString(), value);
-          }
-        } else if (Array.isArray(entries)) {
-          for (const [index2, value] of entries) {
-            parser.push(index2.toString(), value);
-          }
-        } else {
-          for (const index2 of Object.keys(entries)) {
-            parser.push(index2, entries[index2]);
-          }
-        }
-      },
-      transformReply: void 0
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/ARNEXT.js
-var require_ARNEXT = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/ARNEXT.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.default = {
-      IS_READ_ONLY: true,
-      parseCommand(parser, key) {
-        parser.push("ARNEXT");
-        parser.pushKey(key);
-      },
-      transformReply: void 0
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/AROP.js
-var require_AROP = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/AROP.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.AR_OPERATIONS = void 0;
-    exports.AR_OPERATIONS = {
-      SUM: "SUM",
-      MIN: "MIN",
-      MAX: "MAX",
-      AND: "AND",
-      OR: "OR",
-      XOR: "XOR",
-      MATCH: "MATCH",
-      USED: "USED"
-    };
-    exports.default = {
-      IS_READ_ONLY: true,
-      parseCommand(parser, key, start, end, operation, value) {
-        parser.push("AROP");
-        parser.pushKey(key);
-        parser.push(start.toString(), end.toString(), operation);
-        if (value !== void 0) {
-          parser.push(typeof value === "number" ? value.toString() : value);
-        }
-      },
-      transformReply: void 0
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/ARRING.js
-var require_ARRING = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/ARRING.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.default = {
-      parseCommand(parser, key, size, values) {
-        parser.push("ARRING");
-        parser.pushKey(key);
-        parser.push(size.toString());
-        parser.pushVariadic(values);
-      },
-      transformReply: void 0
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/ARSCAN.js
-var require_ARSCAN = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/ARSCAN.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.default = {
-      IS_READ_ONLY: true,
-      parseCommand(parser, key, start, end, options) {
-        parser.push("ARSCAN");
-        parser.pushKey(key);
-        parser.push(start.toString(), end.toString());
-        if (options?.LIMIT !== void 0) {
-          parser.push("LIMIT", options.LIMIT.toString());
-        }
-      },
-      transformReply: (reply) => {
-        const unwrapped = reply;
-        return unwrapped.map((pair) => {
-          const [index2, value] = pair;
-          return { index: index2, value };
-        });
-      }
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/ARSEEK.js
-var require_ARSEEK = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/ARSEEK.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.default = {
-      parseCommand(parser, key, index2) {
-        parser.push("ARSEEK");
-        parser.pushKey(key);
-        parser.push(index2.toString());
-      },
-      transformReply: void 0
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/ARSET.js
-var require_ARSET = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/ARSET.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.default = {
-      parseCommand(parser, key, index2, value) {
-        parser.push("ARSET");
-        parser.pushKey(key);
-        parser.push(index2.toString());
-        parser.pushVariadic(value);
       },
       transformReply: void 0
     };
@@ -95016,6 +94926,10 @@ var require_ASKING = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Tells a Redis cluster node that the client is ok receiving such redirects
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push(exports.ASKING_CMD);
       },
@@ -95032,6 +94946,13 @@ var require_AUTH = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Authenticates the connection using a password or username and password
+       * @param parser - The Redis command parser
+       * @param options - Authentication options containing username and/or password
+       * @param options.username - Optional username for authentication
+       * @param options.password - Password for authentication
+       */
       parseCommand(parser, { username, password }) {
         parser.push("AUTH");
         if (username !== void 0) {
@@ -95052,6 +94973,10 @@ var require_BGREWRITEAOF = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Asynchronously rewrites the append-only file
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("BGREWRITEAOF");
       },
@@ -95068,6 +94993,12 @@ var require_BGSAVE = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Asynchronously saves the dataset to disk
+       * @param parser - The Redis command parser
+       * @param options - Optional configuration
+       * @param options.SCHEDULE - Schedule a BGSAVE operation when no BGSAVE is already in progress
+       */
       parseCommand(parser, options) {
         parser.push("BGSAVE");
         if (options?.SCHEDULE) {
@@ -95087,6 +95018,15 @@ var require_BITCOUNT = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the count of set bits in a string key
+       * @param parser - The Redis command parser
+       * @param key - The key to count bits in
+       * @param range - Optional range specification
+       * @param range.start - Start offset in bytes/bits
+       * @param range.end - End offset in bytes/bits
+       * @param range.mode - Optional counting mode: BYTE or BIT
+       */
       parseCommand(parser, key, range) {
         parser.push("BITCOUNT");
         parser.pushKey(key);
@@ -95111,6 +95051,12 @@ var require_BITFIELD_RO = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Performs read-only bitfield integer operations on strings
+       * @param parser - The Redis command parser
+       * @param key - The key holding the string
+       * @param operations - Array of GET operations to perform on the bitfield
+       */
       parseCommand(parser, key, operations) {
         parser.push("BITFIELD_RO");
         parser.pushKey(key);
@@ -95132,6 +95078,12 @@ var require_BITFIELD = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Performs arbitrary bitfield integer operations on strings
+       * @param parser - The Redis command parser
+       * @param key - The key holding the string
+       * @param operations - Array of bitfield operations to perform: GET, SET, INCRBY or OVERFLOW
+       */
       parseCommand(parser, key, operations) {
         parser.push("BITFIELD");
         parser.pushKey(key);
@@ -95164,6 +95116,13 @@ var require_BITOP = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Performs bitwise operations between strings
+       * @param parser - The Redis command parser
+       * @param operation - Bitwise operation to perform: AND, OR, XOR, NOT, DIFF, DIFF1, ANDOR, ONE
+       * @param destKey - Destination key to store the result
+       * @param key - Source key(s) to perform operation on
+       */
       parseCommand(parser, operation, destKey, key) {
         parser.push("BITOP", operation);
         parser.pushKey(destKey);
@@ -95182,6 +95141,15 @@ var require_BITPOS = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the position of first bit set to 0 or 1 in a string
+       * @param parser - The Redis command parser
+       * @param key - The key holding the string
+       * @param bit - The bit value to look for (0 or 1)
+       * @param start - Optional starting position in bytes/bits
+       * @param end - Optional ending position in bytes/bits
+       * @param mode - Optional counting mode: BYTE or BIT
+       */
       parseCommand(parser, key, bit, start, end, mode) {
         parser.push("BITPOS");
         parser.pushKey(key);
@@ -95208,6 +95176,15 @@ var require_BLMOVE = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Pop an element from a list, push it to another list and return it; or block until one is available
+       * @param parser - The Redis command parser
+       * @param source - Key of the source list
+       * @param destination - Key of the destination list
+       * @param sourceSide - Side of source list to pop from (LEFT or RIGHT)
+       * @param destinationSide - Side of destination list to push to (LEFT or RIGHT)
+       * @param timeout - Timeout in seconds, 0 to block indefinitely
+       */
       parseCommand(parser, source, destination, sourceSide, destinationSide, timeout) {
         parser.push("BLMOVE");
         parser.pushKeys([source, destination]);
@@ -95234,6 +95211,13 @@ var require_LMPOP = __commonJS({
     exports.parseLMPopArguments = parseLMPopArguments;
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the LMPOP command
+       *
+       * @param parser - The command parser
+       * @param args - Arguments including keys, side (LEFT or RIGHT), and options
+       * @see https://redis.io/commands/lmpop/
+       */
       parseCommand(parser, ...args) {
         parser.push("LMPOP");
         parseLMPopArguments(parser, ...args);
@@ -95278,6 +95262,12 @@ var require_BLMPOP = __commonJS({
     var LMPOP_1 = __importStar3(require_LMPOP());
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Pops elements from multiple lists; blocks until elements are available
+       * @param parser - The Redis command parser
+       * @param timeout - Timeout in seconds, 0 to block indefinitely
+       * @param args - Additional arguments for LMPOP command
+       */
       parseCommand(parser, timeout, ...args) {
         parser.push("BLMPOP", timeout.toString());
         (0, LMPOP_1.parseLMPopArguments)(parser, ...args);
@@ -95294,6 +95284,12 @@ var require_BLPOP = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Removes and returns the first element in a list, or blocks until one is available
+       * @param parser - The Redis command parser
+       * @param key - Key of the list to pop from, or array of keys to try sequentially
+       * @param timeout - Maximum seconds to block, 0 to block indefinitely
+       */
       parseCommand(parser, key, timeout) {
         parser.push("BLPOP");
         parser.pushKeys(key);
@@ -95322,6 +95318,12 @@ var require_BRPOP = __commonJS({
     var BLPOP_1 = __importDefault3(require_BLPOP());
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Removes and returns the last element in a list, or blocks until one is available
+       * @param parser - The Redis command parser
+       * @param key - Key of the list to pop from, or array of keys to try sequentially
+       * @param timeout - Maximum seconds to block, 0 to block indefinitely
+       */
       parseCommand(parser, key, timeout) {
         parser.push("BRPOP");
         parser.pushKeys(key);
@@ -95339,6 +95341,13 @@ var require_BRPOPLPUSH = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Pops an element from a list, pushes it to another list and returns it; blocks until element is available
+       * @param parser - The Redis command parser
+       * @param source - Key of the source list to pop from
+       * @param destination - Key of the destination list to push to
+       * @param timeout - Maximum seconds to block, 0 to block indefinitely
+       */
       parseCommand(parser, source, destination, timeout) {
         parser.push("BRPOPLPUSH");
         parser.pushKeys([source, destination]);
@@ -95366,6 +95375,13 @@ var require_ZMPOP = __commonJS({
     exports.parseZMPopArguments = parseZMPopArguments;
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Removes and returns up to count members with the highest/lowest scores from the first non-empty sorted set.
+       * @param parser - The Redis command parser.
+       * @param keys - Keys of the sorted sets to pop from.
+       * @param side - Side to pop from (MIN or MAX).
+       * @param options - Optional parameters including COUNT.
+       */
       parseCommand(parser, keys, side, options) {
         parser.push("ZMPOP");
         parseZMPopArguments(parser, keys, side, options);
@@ -95429,6 +95445,12 @@ var require_BZMPOP = __commonJS({
     var ZMPOP_1 = __importStar3(require_ZMPOP());
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Removes and returns members from one or more sorted sets in the specified order; blocks until elements are available
+       * @param parser - The Redis command parser
+       * @param timeout - Maximum seconds to block, 0 to block indefinitely
+       * @param args - Additional arguments specifying the keys, min/max count, and order (MIN/MAX)
+       */
       parseCommand(parser, timeout, ...args) {
         parser.push("BZMPOP", timeout.toString());
         (0, ZMPOP_1.parseZMPopArguments)(parser, ...args);
@@ -95446,6 +95468,12 @@ var require_BZPOPMAX = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Removes and returns the member with the highest score in a sorted set, or blocks until one is available
+       * @param parser - The Redis command parser
+       * @param keys - Key of the sorted set, or array of keys to try sequentially
+       * @param timeout - Maximum seconds to block, 0 to block indefinitely
+       */
       parseCommand(parser, keys, timeout) {
         parser.push("BZPOPMAX");
         parser.pushKeys(keys);
@@ -95482,6 +95510,12 @@ var require_BZPOPMIN = __commonJS({
     var BZPOPMAX_1 = __importDefault3(require_BZPOPMAX());
     exports.default = {
       IS_READ_ONLY: BZPOPMAX_1.default.IS_READ_ONLY,
+      /**
+       * Removes and returns the member with the lowest score in a sorted set, or blocks until one is available
+       * @param parser - The Redis command parser
+       * @param keys - Key of the sorted set, or array of keys to try sequentially
+       * @param timeout - Maximum seconds to block, 0 to block indefinitely
+       */
       parseCommand(parser, keys, timeout) {
         parser.push("BZPOPMIN");
         parser.pushKeys(keys);
@@ -95500,6 +95534,11 @@ var require_CLIENT_CACHING = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Instructs the server about tracking or not keys in the next request
+       * @param parser - The Redis command parser
+       * @param value - Whether to enable (true) or disable (false) tracking
+       */
       parseCommand(parser, value) {
         parser.push("CLIENT", "CACHING", value ? "YES" : "NO");
       },
@@ -95516,6 +95555,10 @@ var require_CLIENT_GETNAME = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the name of the current connection
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("CLIENT", "GETNAME");
       },
@@ -95532,6 +95575,10 @@ var require_CLIENT_GETREDIR = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the ID of the client to which the current client is redirecting tracking notifications
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("CLIENT", "GETREDIR");
       },
@@ -95548,6 +95595,10 @@ var require_CLIENT_ID = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the client ID for the current connection
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("CLIENT", "ID");
       },
@@ -95565,6 +95616,10 @@ var require_CLIENT_INFO = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns information and statistics about the current client connection
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("CLIENT", "INFO");
       },
@@ -95637,6 +95692,11 @@ var require_CLIENT_KILL = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Closes client connections matching the specified filters
+       * @param parser - The Redis command parser
+       * @param filters - One or more filters to match client connections to kill
+       */
       parseCommand(parser, filters) {
         parser.push("CLIENT", "KILL");
         if (Array.isArray(filters)) {
@@ -95694,6 +95754,11 @@ var require_CLIENT_LIST = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns information about all client connections. Can be filtered by type or ID
+       * @param parser - The Redis command parser
+       * @param filter - Optional filter to return only specific client types or IDs
+       */
       parseCommand(parser, filter) {
         parser.push("CLIENT", "LIST");
         if (filter) {
@@ -95724,6 +95789,11 @@ var require_CLIENT_NO_EVICT = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Controls whether to prevent the client's connections from being evicted
+       * @param parser - The Redis command parser
+       * @param value - Whether to enable (true) or disable (false) the no-evict mode
+       */
       parseCommand(parser, value) {
         parser.push("CLIENT", "NO-EVICT", value ? "ON" : "OFF");
       },
@@ -95740,6 +95810,11 @@ var require_CLIENT_NO_TOUCH = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Controls whether to prevent the client from touching the LRU/LFU of keys
+       * @param parser - The Redis command parser
+       * @param value - Whether to enable (true) or disable (false) the no-touch mode
+       */
       parseCommand(parser, value) {
         parser.push("CLIENT", "NO-TOUCH", value ? "ON" : "OFF");
       },
@@ -95756,6 +95831,12 @@ var require_CLIENT_PAUSE = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Stops the server from processing client commands for the specified duration
+       * @param parser - The Redis command parser
+       * @param timeout - Time in milliseconds to pause command processing
+       * @param mode - Optional mode: 'WRITE' to pause only write commands, 'ALL' to pause all commands
+       */
       parseCommand(parser, timeout, mode) {
         parser.push("CLIENT", "PAUSE", timeout.toString());
         if (mode) {
@@ -95775,6 +95856,11 @@ var require_CLIENT_SETNAME = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Assigns a name to the current connection
+       * @param parser - The Redis command parser
+       * @param name - The name to assign to the connection
+       */
       parseCommand(parser, name2) {
         parser.push("CLIENT", "SETNAME", name2);
       },
@@ -95791,6 +95877,12 @@ var require_CLIENT_TRACKING = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Controls server-assisted client side caching for the current connection
+       * @param parser - The Redis command parser
+       * @param mode - Whether to enable (true) or disable (false) tracking
+       * @param options - Optional configuration including REDIRECT, BCAST, PREFIX, OPTIN, OPTOUT, and NOLOOP options
+       */
       parseCommand(parser, mode, options) {
         parser.push("CLIENT", "TRACKING", mode ? "ON" : "OFF");
         if (mode) {
@@ -95840,6 +95932,10 @@ var require_CLIENT_TRACKINGINFO = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns information about the current connection's key tracking state
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("CLIENT", "TRACKINGINFO");
       },
@@ -95855,30 +95951,6 @@ var require_CLIENT_TRACKINGINFO = __commonJS({
   }
 });
 
-// node_modules/@redis/client/dist/lib/commands/CLIENT_UNBLOCK.js
-var require_CLIENT_UNBLOCK = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/CLIENT_UNBLOCK.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.CLIENT_UNBLOCK_MODES = void 0;
-    exports.CLIENT_UNBLOCK_MODES = {
-      TIMEOUT: "TIMEOUT",
-      ERROR: "ERROR"
-    };
-    exports.default = {
-      NOT_KEYED_COMMAND: true,
-      IS_READ_ONLY: true,
-      parseCommand(parser, clientId, mode) {
-        parser.push("CLIENT", "UNBLOCK", typeof clientId === "number" ? clientId.toString() : clientId);
-        if (mode) {
-          parser.push(mode);
-        }
-      },
-      transformReply: void 0
-    };
-  }
-});
-
 // node_modules/@redis/client/dist/lib/commands/CLIENT_UNPAUSE.js
 var require_CLIENT_UNPAUSE = __commonJS({
   "node_modules/@redis/client/dist/lib/commands/CLIENT_UNPAUSE.js"(exports) {
@@ -95887,6 +95959,10 @@ var require_CLIENT_UNPAUSE = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Resumes processing of client commands after a CLIENT PAUSE
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("CLIENT", "UNPAUSE");
       },
@@ -95903,6 +95979,11 @@ var require_CLUSTER_ADDSLOTS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Assigns hash slots to the current node in a Redis Cluster
+       * @param parser - The Redis command parser
+       * @param slots - One or more hash slots to be assigned
+       */
       parseCommand(parser, slots) {
         parser.push("CLUSTER", "ADDSLOTS");
         parser.pushVariadicNumber(slots);
@@ -95921,6 +96002,11 @@ var require_CLUSTER_ADDSLOTSRANGE = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Assigns hash slot ranges to the current node in a Redis Cluster
+       * @param parser - The Redis command parser
+       * @param ranges - One or more slot ranges to be assigned, each specified as [start, end]
+       */
       parseCommand(parser, ranges) {
         parser.push("CLUSTER", "ADDSLOTSRANGE");
         (0, generic_transformers_1.parseSlotRangesArguments)(parser, ranges);
@@ -95938,6 +96024,10 @@ var require_CLUSTER_BUMPEPOCH = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Advances the cluster config epoch
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("CLUSTER", "BUMPEPOCH");
       },
@@ -95954,6 +96044,11 @@ var require_CLUSTER_COUNT_FAILURE_REPORTS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the number of failure reports for a given node
+       * @param parser - The Redis command parser
+       * @param nodeId - The ID of the node to check
+       */
       parseCommand(parser, nodeId) {
         parser.push("CLUSTER", "COUNT-FAILURE-REPORTS", nodeId);
       },
@@ -95970,6 +96065,11 @@ var require_CLUSTER_COUNTKEYSINSLOT = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the number of keys in the specified hash slot
+       * @param parser - The Redis command parser
+       * @param slot - The hash slot to check
+       */
       parseCommand(parser, slot) {
         parser.push("CLUSTER", "COUNTKEYSINSLOT", slot.toString());
       },
@@ -95986,6 +96086,11 @@ var require_CLUSTER_DELSLOTS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Removes hash slots from the current node in a Redis Cluster
+       * @param parser - The Redis command parser
+       * @param slots - One or more hash slots to be removed
+       */
       parseCommand(parser, slots) {
         parser.push("CLUSTER", "DELSLOTS");
         parser.pushVariadicNumber(slots);
@@ -96004,6 +96109,11 @@ var require_CLUSTER_DELSLOTSRANGE = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Removes hash slot ranges from the current node in a Redis Cluster
+       * @param parser - The Redis command parser
+       * @param ranges - One or more slot ranges to be removed, each specified as [start, end]
+       */
       parseCommand(parser, ranges) {
         parser.push("CLUSTER", "DELSLOTSRANGE");
         (0, generic_transformers_1.parseSlotRangesArguments)(parser, ranges);
@@ -96026,6 +96136,11 @@ var require_CLUSTER_FAILOVER = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Forces a replica to perform a manual failover of its master
+       * @param parser - The Redis command parser
+       * @param options - Optional configuration with FORCE or TAKEOVER mode
+       */
       parseCommand(parser, options) {
         parser.push("CLUSTER", "FAILOVER");
         if (options?.mode) {
@@ -96045,6 +96160,10 @@ var require_CLUSTER_FLUSHSLOTS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Deletes all hash slots from the current node in a Redis Cluster
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("CLUSTER", "FLUSHSLOTS");
       },
@@ -96061,6 +96180,11 @@ var require_CLUSTER_FORGET = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Removes a node from the cluster
+       * @param parser - The Redis command parser
+       * @param nodeId - The ID of the node to remove
+       */
       parseCommand(parser, nodeId) {
         parser.push("CLUSTER", "FORGET", nodeId);
       },
@@ -96077,6 +96201,12 @@ var require_CLUSTER_GETKEYSINSLOT = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns a number of keys from the specified hash slot
+       * @param parser - The Redis command parser
+       * @param slot - The hash slot to get keys from
+       * @param count - Maximum number of keys to return
+       */
       parseCommand(parser, slot, count4) {
         parser.push("CLUSTER", "GETKEYSINSLOT", slot.toString(), count4.toString());
       },
@@ -96093,6 +96223,10 @@ var require_CLUSTER_INFO = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns information about the state of a Redis Cluster
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("CLUSTER", "INFO");
       },
@@ -96109,6 +96243,11 @@ var require_CLUSTER_KEYSLOT = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the hash slot number for a given key
+       * @param parser - The Redis command parser
+       * @param key - The key to get the hash slot for
+       */
       parseCommand(parser, key) {
         parser.push("CLUSTER", "KEYSLOT", key);
       },
@@ -96125,6 +96264,10 @@ var require_CLUSTER_LINKS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns information about all cluster links (lower level connections to other nodes)
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("CLUSTER", "LINKS");
       },
@@ -96154,6 +96297,12 @@ var require_CLUSTER_MEET = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Initiates a handshake with another node in the cluster
+       * @param parser - The Redis command parser
+       * @param host - Host name or IP address of the node
+       * @param port - TCP port of the node
+       */
       parseCommand(parser, host, port) {
         parser.push("CLUSTER", "MEET", host, port.toString());
       },
@@ -96170,6 +96319,10 @@ var require_CLUSTER_MYID = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the node ID of the current Redis Cluster node
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("CLUSTER", "MYID");
       },
@@ -96186,6 +96339,10 @@ var require_CLUSTER_MYSHARDID = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the shard ID of the current Redis Cluster node
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("CLUSTER", "MYSHARDID");
       },
@@ -96202,6 +96359,10 @@ var require_CLUSTER_NODES = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns serialized information about the nodes in a Redis Cluster
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("CLUSTER", "NODES");
       },
@@ -96218,6 +96379,11 @@ var require_CLUSTER_REPLICAS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the replica nodes replicating from the specified primary node
+       * @param parser - The Redis command parser
+       * @param nodeId - Node ID of the primary node
+       */
       parseCommand(parser, nodeId) {
         parser.push("CLUSTER", "REPLICAS", nodeId);
       },
@@ -96234,6 +96400,11 @@ var require_CLUSTER_REPLICATE = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Reconfigures a node as a replica of the specified primary node
+       * @param parser - The Redis command parser
+       * @param nodeId - Node ID of the primary node to replicate
+       */
       parseCommand(parser, nodeId) {
         parser.push("CLUSTER", "REPLICATE", nodeId);
       },
@@ -96250,6 +96421,11 @@ var require_CLUSTER_RESET = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Resets a Redis Cluster node, clearing all information and returning it to a brand new state
+       * @param parser - The Redis command parser
+       * @param options - Options for the reset operation
+       */
       parseCommand(parser, options) {
         parser.push("CLUSTER", "RESET");
         if (options?.mode) {
@@ -96269,6 +96445,10 @@ var require_CLUSTER_SAVECONFIG = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Forces a Redis Cluster node to save the cluster configuration to disk
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("CLUSTER", "SAVECONFIG");
       },
@@ -96285,6 +96465,11 @@ var require_CLUSTER_SET_CONFIG_EPOCH = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Sets the configuration epoch for a Redis Cluster node
+       * @param parser - The Redis command parser
+       * @param configEpoch - The configuration epoch to set
+       */
       parseCommand(parser, configEpoch) {
         parser.push("CLUSTER", "SET-CONFIG-EPOCH", configEpoch.toString());
       },
@@ -96308,6 +96493,13 @@ var require_CLUSTER_SETSLOT = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Assigns a hash slot to a specific Redis Cluster node
+       * @param parser - The Redis command parser
+       * @param slot - The slot number to assign
+       * @param state - The state to set for the slot (IMPORTING, MIGRATING, STABLE, NODE)
+       * @param nodeId - Node ID (required for IMPORTING, MIGRATING, and NODE states)
+       */
       parseCommand(parser, slot, state, nodeId) {
         parser.push("CLUSTER", "SETSLOT", slot.toString(), state);
         if (nodeId) {
@@ -96327,6 +96519,10 @@ var require_CLUSTER_SLOTS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns information about which Redis Cluster node handles which hash slots
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("CLUSTER", "SLOTS");
       },
@@ -96358,6 +96554,10 @@ var require_COMMAND_COUNT = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the total number of commands available in the Redis server
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("COMMAND", "COUNT");
       },
@@ -96374,6 +96574,11 @@ var require_COMMAND_GETKEYS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Extracts the key names from a Redis command
+       * @param parser - The Redis command parser
+       * @param args - Command arguments to analyze
+       */
       parseCommand(parser, args) {
         parser.push("COMMAND", "GETKEYS");
         parser.push(...args);
@@ -96391,6 +96596,11 @@ var require_COMMAND_GETKEYSANDFLAGS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Extracts the key names and access flags from a Redis command
+       * @param parser - The Redis command parser
+       * @param args - Command arguments to analyze
+       */
       parseCommand(parser, args) {
         parser.push("COMMAND", "GETKEYSANDFLAGS");
         parser.push(...args);
@@ -96417,6 +96627,11 @@ var require_COMMAND_INFO = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns details about specific Redis commands
+       * @param parser - The Redis command parser
+       * @param commands - Array of command names to get information about
+       */
       parseCommand(parser, commands) {
         parser.push("COMMAND", "INFO", ...commands);
       },
@@ -96442,6 +96657,11 @@ var require_COMMAND_LIST = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns a list of all commands supported by the Redis server
+       * @param parser - The Redis command parser
+       * @param options - Options for filtering the command list
+       */
       parseCommand(parser, options) {
         parser.push("COMMAND", "LIST");
         if (options?.FILTERBY) {
@@ -96462,6 +96682,10 @@ var require_COMMAND = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns an array with details about all Redis commands
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("COMMAND");
       },
@@ -96482,6 +96706,11 @@ var require_CONFIG_GET = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Gets the values of configuration parameters
+       * @param parser - The Redis command parser
+       * @param parameters - Pattern or specific configuration parameter names
+       */
       parseCommand(parser, parameters) {
         parser.push("CONFIG", "GET");
         parser.pushVariadic(parameters);
@@ -96502,6 +96731,10 @@ var require_CONFIG_RESETSTAT = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Resets the statistics reported by Redis using the INFO command
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("CONFIG", "RESETSTAT");
       },
@@ -96518,6 +96751,10 @@ var require_CONFIG_REWRITE = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Rewrites the Redis configuration file with the current configuration
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("CONFIG", "REWRITE");
       },
@@ -96534,6 +96771,12 @@ var require_CONFIG_SET = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Sets configuration parameters to the specified values
+       * @param parser - The Redis command parser
+       * @param parameterOrConfig - Either a single parameter name or a configuration object
+       * @param value - Value for the parameter (when using single parameter format)
+       */
       parseCommand(parser, ...[parameterOrConfig, value]) {
         parser.push("CONFIG", "SET");
         if (typeof parameterOrConfig === "string" || parameterOrConfig instanceof Buffer) {
@@ -96556,6 +96799,13 @@ var require_COPY = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Copies the value stored at the source key to the destination key
+       * @param parser - The Redis command parser
+       * @param source - Source key
+       * @param destination - Destination key
+       * @param options - Options for the copy operation
+       */
       parseCommand(parser, source, destination, options) {
         parser.push("COPY");
         parser.pushKeys([source, destination]);
@@ -96579,6 +96829,10 @@ var require_DBSIZE = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the number of keys in the current database
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("DBSIZE");
       },
@@ -96593,6 +96847,11 @@ var require_DECR = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Decrements the integer value of a key by one
+       * @param parser - The Redis command parser
+       * @param key - Key to decrement
+       */
       parseCommand(parser, key) {
         parser.push("DECR");
         parser.pushKey(key);
@@ -96608,6 +96867,12 @@ var require_DECRBY = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Decrements the integer value of a key by the given number
+       * @param parser - The Redis command parser
+       * @param key - Key to decrement
+       * @param decrement - Decrement amount
+       */
       parseCommand(parser, key, decrement) {
         parser.push("DECRBY");
         parser.pushKey(key);
@@ -96625,6 +96890,11 @@ var require_DEL = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Removes the specified keys. A key is ignored if it does not exist
+       * @param parser - The Redis command parser
+       * @param keys - One or more keys to delete
+       */
       parseCommand(parser, keys) {
         parser.push("DEL");
         parser.pushKeys(keys);
@@ -96660,6 +96930,15 @@ var require_DELEX = __commonJS({
     };
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       *
+       * @experimental
+       *
+       * Conditionally removes the specified key based on value or digest comparison.
+       *
+       * @param parser - The Redis command parser
+       * @param key - Key to delete
+       */
       parseCommand(parser, key, options) {
         parser.push("DELEX");
         parser.pushKey(key);
@@ -96680,6 +96959,15 @@ var require_DIGEST = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       *
+       * @experimental
+       *
+       * Returns the XXH3 hash of a string value.
+       *
+       * @param parser - The Redis command parser
+       * @param key - Key to get the digest of
+       */
       parseCommand(parser, key) {
         parser.push("DIGEST");
         parser.pushKey(key);
@@ -96696,6 +96984,11 @@ var require_DUMP = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns a serialized version of the value stored at the key
+       * @param parser - The Redis command parser
+       * @param key - Key to dump
+       */
       parseCommand(parser, key) {
         parser.push("DUMP");
         parser.pushKey(key);
@@ -96713,6 +97006,11 @@ var require_ECHO = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the given string
+       * @param parser - The Redis command parser
+       * @param message - Message to echo back
+       */
       parseCommand(parser, message) {
         parser.push("ECHO", message);
       },
@@ -96741,6 +97039,12 @@ var require_EVAL = __commonJS({
     exports.parseEvalArguments = parseEvalArguments;
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Executes a Lua script server side
+       * @param parser - The Redis command parser
+       * @param script - Lua script to execute
+       * @param options - Script execution options including keys and arguments
+       */
       parseCommand(...args) {
         args[0].push("EVAL");
         parseEvalArguments(...args);
@@ -96785,6 +97089,12 @@ var require_EVAL_RO = __commonJS({
     var EVAL_1 = __importStar3(require_EVAL());
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Executes a read-only Lua script server side
+       * @param parser - The Redis command parser
+       * @param script - Lua script to execute
+       * @param options - Script execution options including keys and arguments
+       */
       parseCommand(...args) {
         args[0].push("EVAL_RO");
         (0, EVAL_1.parseEvalArguments)(...args);
@@ -96829,6 +97139,12 @@ var require_EVALSHA_RO = __commonJS({
     var EVAL_1 = __importStar3(require_EVAL());
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Executes a read-only Lua script server side using the script's SHA1 digest
+       * @param parser - The Redis command parser
+       * @param sha1 - SHA1 digest of the script
+       * @param options - Script execution options including keys and arguments
+       */
       parseCommand(...args) {
         args[0].push("EVALSHA_RO");
         (0, EVAL_1.parseEvalArguments)(...args);
@@ -96873,6 +97189,12 @@ var require_EVALSHA = __commonJS({
     var EVAL_1 = __importStar3(require_EVAL());
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Executes a Lua script server side using the script's SHA1 digest
+       * @param parser - The Redis command parser
+       * @param sha1 - SHA1 digest of the script
+       * @param options - Script execution options including keys and arguments
+       */
       parseCommand(...args) {
         args[0].push("EVALSHA");
         (0, EVAL_1.parseEvalArguments)(...args);
@@ -96889,6 +97211,13 @@ var require_GEOADD = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Adds geospatial items to the specified key
+       * @param parser - The Redis command parser
+       * @param key - Key to add the geospatial items to
+       * @param toAdd - Geospatial member(s) to add
+       * @param options - Options for the GEOADD command
+       */
       parseCommand(parser, key, toAdd, options) {
         parser.push("GEOADD");
         parser.pushKey(key);
@@ -96926,6 +97255,14 @@ var require_GEODIST = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the distance between two members in a geospatial index
+       * @param parser - The Redis command parser
+       * @param key - Key of the geospatial index
+       * @param member1 - First member in the geospatial index
+       * @param member2 - Second member in the geospatial index
+       * @param unit - Unit of distance (m, km, ft, mi)
+       */
       parseCommand(parser, key, member1, member2, unit) {
         parser.push("GEODIST");
         parser.pushKey(key);
@@ -96949,6 +97286,12 @@ var require_GEOHASH = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the Geohash string representation of one or more position members
+       * @param parser - The Redis command parser
+       * @param key - Key of the geospatial index
+       * @param member - One or more members in the geospatial index
+       */
       parseCommand(parser, key, member) {
         parser.push("GEOHASH");
         parser.pushKey(key);
@@ -96967,6 +97310,12 @@ var require_GEOPOS = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the longitude and latitude of one or more members in a geospatial index
+       * @param parser - The Redis command parser
+       * @param key - Key of the geospatial index
+       * @param member - One or more members in the geospatial index
+       */
       parseCommand(parser, key, member) {
         parser.push("GEOPOS");
         parser.pushKey(key);
@@ -97024,6 +97373,14 @@ var require_GEOSEARCH = __commonJS({
     exports.parseGeoSearchOptions = parseGeoSearchOptions;
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Queries members inside an area of a geospatial index
+       * @param parser - The Redis command parser
+       * @param key - Key of the geospatial index
+       * @param from - Center point of the search (member name or coordinates)
+       * @param by - Search area specification (radius or box dimensions)
+       * @param options - Additional search options
+       */
       parseCommand(parser, key, from, by, options) {
         parser.push("GEOSEARCH");
         parseGeoSearchArguments(parser, key, from, by, options);
@@ -97048,6 +97405,15 @@ var require_GEORADIUS = __commonJS({
     exports.parseGeoRadiusArguments = parseGeoRadiusArguments;
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Queries members in a geospatial index based on a radius from a center point
+       * @param parser - The Redis command parser
+       * @param key - Key of the geospatial index
+       * @param from - Center coordinates for the search
+       * @param radius - Radius of the search area
+       * @param unit - Unit of distance (m, km, ft, mi)
+       * @param options - Additional search options
+       */
       parseCommand(...args) {
         args[0].push("GEORADIUS");
         return parseGeoRadiusArguments(...args);
@@ -97066,9 +97432,7 @@ var require_GEOSEARCH_WITH = __commonJS({
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.GEO_REPLY_WITH = void 0;
-    var decoder_1 = require_decoder();
     var GEOSEARCH_1 = __importDefault3(require_GEOSEARCH());
-    var generic_transformers_1 = require_generic_transformers();
     exports.GEO_REPLY_WITH = {
       DISTANCE: "WITHDIST",
       HASH: "WITHHASH",
@@ -97076,32 +97440,31 @@ var require_GEOSEARCH_WITH = __commonJS({
     };
     exports.default = {
       IS_READ_ONLY: GEOSEARCH_1.default.IS_READ_ONLY,
+      /**
+       * Queries members inside an area of a geospatial index with additional information
+       * @param parser - The Redis command parser
+       * @param key - Key of the geospatial index
+       * @param from - Center point of the search (member name or coordinates)
+       * @param by - Search area specification (radius or box dimensions)
+       * @param replyWith - Information to include with each returned member
+       * @param options - Additional search options
+       */
       parseCommand(parser, key, from, by, replyWith, options) {
         GEOSEARCH_1.default.parseCommand(parser, key, from, by, options);
         parser.push(...replyWith);
         parser.preserve = replyWith;
       },
-      transformReply(reply, replyWith, typeMapping) {
+      transformReply(reply, replyWith) {
         const replyWithSet = new Set(replyWith);
         let index2 = 0;
         const distanceIndex = replyWithSet.has(exports.GEO_REPLY_WITH.DISTANCE) && ++index2, hashIndex = replyWithSet.has(exports.GEO_REPLY_WITH.HASH) && ++index2, coordinatesIndex = replyWithSet.has(exports.GEO_REPLY_WITH.COORDINATES) && ++index2;
-        const doubleMapping = typeMapping ? typeMapping[decoder_1.RESP_TYPES.DOUBLE] : void 0;
-        const parseDouble = (value) => {
-          if (typeof value !== "number") {
-            return generic_transformers_1.transformDoubleReply[2](value, void 0, typeMapping);
-          }
-          if (doubleMapping === String) {
-            return value.toString();
-          }
-          return value;
-        };
         return reply.map((raw2) => {
           const unwrapped = raw2;
           const item = {
             member: unwrapped[0]
           };
           if (distanceIndex) {
-            item.distance = parseDouble(unwrapped[distanceIndex]);
+            item.distance = unwrapped[distanceIndex];
           }
           if (hashIndex) {
             item.hash = unwrapped[hashIndex];
@@ -97109,8 +97472,8 @@ var require_GEOSEARCH_WITH = __commonJS({
           if (coordinatesIndex) {
             const [longitude, latitude] = unwrapped[coordinatesIndex];
             item.coordinates = {
-              longitude: parseDouble(longitude),
-              latitude: parseDouble(latitude)
+              longitude,
+              latitude
             };
           }
           return item;
@@ -97166,6 +97529,16 @@ var require_GEORADIUS_WITH = __commonJS({
     exports.parseGeoRadiusWithArguments = parseGeoRadiusWithArguments;
     exports.default = {
       IS_READ_ONLY: GEORADIUS_1.default.IS_READ_ONLY,
+      /**
+       * Queries members in a geospatial index based on a radius from a center point with additional information
+       * @param parser - The Redis command parser
+       * @param key - Key of the geospatial index
+       * @param from - Center coordinates for the search
+       * @param radius - Radius of the search area
+       * @param unit - Unit of distance (m, km, ft, mi)
+       * @param replyWith - Information to include with each returned member
+       * @param options - Additional search options
+       */
       parseCommand(parser, key, from, radius, unit, replyWith, options) {
         parser.push("GEORADIUS");
         parseGeoRadiusWithArguments(parser, key, from, radius, unit, replyWith, options);
@@ -97188,6 +97561,16 @@ var require_GEORADIUS_RO_WITH = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Read-only variant that queries members in a geospatial index based on a radius from a center point with additional information
+       * @param parser - The Redis command parser
+       * @param key - Key of the geospatial index
+       * @param from - Center coordinates for the search
+       * @param radius - Radius of the search area
+       * @param unit - Unit of distance (m, km, ft, mi)
+       * @param replyWith - Information to include with each returned member
+       * @param options - Additional search options
+       */
       parseCommand(...args) {
         args[0].push("GEORADIUS_RO");
         (0, GEORADIUS_WITH_1.parseGeoRadiusWithArguments)(...args);
@@ -97233,6 +97616,15 @@ var require_GEORADIUS_RO = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Read-only variant that queries members in a geospatial index based on a radius from a center point
+       * @param parser - The Redis command parser
+       * @param key - Key of the geospatial index
+       * @param from - Center coordinates for the search
+       * @param radius - Radius of the search area
+       * @param unit - Unit of distance (m, km, ft, mi)
+       * @param options - Additional search options
+       */
       parseCommand(...args) {
         args[0].push("GEORADIUS_RO");
         (0, GEORADIUS_1.parseGeoRadiusArguments)(...args);
@@ -97277,6 +97669,16 @@ var require_GEORADIUS_STORE = __commonJS({
     var GEORADIUS_1 = __importStar3(require_GEORADIUS());
     exports.default = {
       IS_READ_ONLY: GEORADIUS_1.default.IS_READ_ONLY,
+      /**
+       * Queries members in a geospatial index based on a radius from a center point and stores the results
+       * @param parser - The Redis command parser
+       * @param key - Key of the geospatial index
+       * @param from - Center coordinates for the search
+       * @param radius - Radius of the search area
+       * @param unit - Unit of distance (m, km, ft, mi)
+       * @param destination - Key to store the results
+       * @param options - Additional search and storage options
+       */
       parseCommand(parser, key, from, radius, unit, destination, options) {
         parser.push("GEORADIUS");
         (0, GEORADIUS_1.parseGeoRadiusArguments)(parser, key, from, radius, unit, options);
@@ -97308,6 +97710,15 @@ var require_GEORADIUSBYMEMBER = __commonJS({
     exports.parseGeoRadiusByMemberArguments = parseGeoRadiusByMemberArguments;
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Queries members in a geospatial index based on a radius from a member
+       * @param parser - The Redis command parser
+       * @param key - Key of the geospatial index
+       * @param from - Member name to use as center point
+       * @param radius - Radius of the search area
+       * @param unit - Unit of distance (m, km, ft, mi)
+       * @param options - Additional search options
+       */
       parseCommand(parser, key, from, radius, unit, options) {
         parser.push("GEORADIUSBYMEMBER");
         parseGeoRadiusByMemberArguments(parser, key, from, radius, unit, options);
@@ -97339,6 +97750,16 @@ var require_GEORADIUSBYMEMBER_WITH = __commonJS({
     exports.parseGeoRadiusByMemberWithArguments = parseGeoRadiusByMemberWithArguments;
     exports.default = {
       IS_READ_ONLY: GEORADIUSBYMEMBER_1.default.IS_READ_ONLY,
+      /**
+       * Queries members in a geospatial index based on a radius from a member with additional information
+       * @param parser - The Redis command parser
+       * @param key - Key of the geospatial index
+       * @param from - Member name to use as center point
+       * @param radius - Radius of the search area
+       * @param unit - Unit of distance (m, km, ft, mi)
+       * @param replyWith - Information to include with each returned member
+       * @param options - Additional search options
+       */
       parseCommand(parser, key, from, radius, unit, replyWith, options) {
         parser.push("GEORADIUSBYMEMBER");
         parseGeoRadiusByMemberWithArguments(parser, key, from, radius, unit, replyWith, options);
@@ -97384,6 +97805,15 @@ var require_GEORADIUSBYMEMBER_RO_WITH = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Read-only variant that queries members in a geospatial index based on a radius from a member with additional information
+       * @param parser - The Redis command parser
+       * @param key - Key of the geospatial index
+       * @param from - Member name to use as center point
+       * @param radius - Radius of the search area
+       * @param unit - Unit of distance (m, km, ft, mi)
+       * @param withValues - Information to include with each returned member
+       */
       parseCommand(...args) {
         const parser = args[0];
         parser.push("GEORADIUSBYMEMBER_RO");
@@ -97430,6 +97860,15 @@ var require_GEORADIUSBYMEMBER_RO = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Read-only variant that queries members in a geospatial index based on a radius from a member
+       * @param parser - The Redis command parser
+       * @param key - Key of the geospatial index
+       * @param from - Member name to use as center point
+       * @param radius - Radius of the search area
+       * @param unit - Unit of distance (m, km, ft, mi)
+       * @param options - Additional search options
+       */
       parseCommand(...args) {
         const parser = args[0];
         parser.push("GEORADIUSBYMEMBER_RO");
@@ -97475,6 +97914,16 @@ var require_GEORADIUSBYMEMBER_STORE = __commonJS({
     var GEORADIUSBYMEMBER_1 = __importStar3(require_GEORADIUSBYMEMBER());
     exports.default = {
       IS_READ_ONLY: GEORADIUSBYMEMBER_1.default.IS_READ_ONLY,
+      /**
+       * Queries members in a geospatial index based on a radius from a member and stores the results
+       * @param parser - The Redis command parser
+       * @param key - Key of the geospatial index
+       * @param from - Member name to use as center point
+       * @param radius - Radius of the search area
+       * @param unit - Unit of distance (m, km, ft, mi)
+       * @param destination - Key to store the results
+       * @param options - Additional search and storage options
+       */
       parseCommand(parser, key, from, radius, unit, destination, options) {
         parser.push("GEORADIUSBYMEMBER");
         (0, GEORADIUSBYMEMBER_1.parseGeoRadiusByMemberArguments)(parser, key, from, radius, unit, options);
@@ -97499,6 +97948,15 @@ var require_GEOSEARCHSTORE = __commonJS({
     var GEOSEARCH_1 = require_GEOSEARCH();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Searches a geospatial index and stores the results in a new sorted set
+       * @param parser - The Redis command parser
+       * @param destination - Key to store the results
+       * @param source - Key of the geospatial index to search
+       * @param from - Center point of the search (member name or coordinates)
+       * @param by - Search area specification (radius or box dimensions)
+       * @param options - Additional search and storage options
+       */
       parseCommand(parser, destination, source, from, by, options) {
         parser.push("GEOSEARCHSTORE");
         if (destination !== void 0) {
@@ -97522,6 +97980,11 @@ var require_GET = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Gets the value of a key
+       * @param parser - The Redis command parser
+       * @param key - Key to get the value of
+       */
       parseCommand(parser, key) {
         parser.push("GET");
         parser.pushKey(key);
@@ -97539,6 +98002,12 @@ var require_GETBIT = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the bit value at a given offset in a string value
+       * @param parser - The Redis command parser
+       * @param key - Key to retrieve the bit from
+       * @param offset - Bit offset
+       */
       parseCommand(parser, key, offset) {
         parser.push("GETBIT");
         parser.pushKey(key);
@@ -97556,6 +98025,11 @@ var require_GETDEL = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Gets the value of a key and deletes the key
+       * @param parser - The Redis command parser
+       * @param key - Key to get and delete
+       */
       parseCommand(parser, key) {
         parser.push("GETDEL");
         parser.pushKey(key);
@@ -97573,6 +98047,12 @@ var require_GETEX = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Gets the value of a key and optionally sets its expiration
+       * @param parser - The Redis command parser
+       * @param key - Key to get value from
+       * @param options - Options for setting expiration
+       */
       parseCommand(parser, key, options) {
         parser.push("GETEX");
         parser.pushKey(key);
@@ -97617,6 +98097,13 @@ var require_GETRANGE = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns a substring of the string stored at a key
+       * @param parser - The Redis command parser
+       * @param key - Key to get substring from
+       * @param start - Start position of the substring
+       * @param end - End position of the substring
+       */
       parseCommand(parser, key, start, end) {
         parser.push("GETRANGE");
         parser.pushKey(key);
@@ -97634,6 +98121,12 @@ var require_GETSET = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Sets a key to a new value and returns its old value
+       * @param parser - The Redis command parser
+       * @param key - Key to set
+       * @param value - Value to set
+       */
       parseCommand(parser, key, value) {
         parser.push("GETSET");
         parser.pushKey(key);
@@ -97652,6 +98145,11 @@ var require_EXISTS = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Determines if the specified keys exist
+       * @param parser - The Redis command parser
+       * @param keys - One or more keys to check
+       */
       parseCommand(parser, keys) {
         parser.push("EXISTS");
         parser.pushKeys(keys);
@@ -97667,6 +98165,13 @@ var require_EXPIRE = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Sets a timeout on key. After the timeout has expired, the key will be automatically deleted
+       * @param parser - The Redis command parser
+       * @param key - Key to set expiration on
+       * @param seconds - Number of seconds until key expiration
+       * @param mode - Expiration mode: NX (only if key has no expiry), XX (only if key has existing expiry), GT (only if new expiry is greater than current), LT (only if new expiry is less than current)
+       */
       parseCommand(parser, key, seconds, mode) {
         parser.push("EXPIRE");
         parser.pushKey(key);
@@ -97687,6 +98192,13 @@ var require_EXPIREAT = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
+      /**
+       * Sets the expiration for a key at a specific Unix timestamp
+       * @param parser - The Redis command parser
+       * @param key - Key to set expiration on
+       * @param timestamp - Unix timestamp (seconds since January 1, 1970) or Date object
+       * @param mode - Expiration mode: NX (only if key has no expiry), XX (only if key has existing expiry), GT (only if new expiry is greater than current), LT (only if new expiry is less than current)
+       */
       parseCommand(parser, key, timestamp2, mode) {
         parser.push("EXPIREAT");
         parser.pushKey(key);
@@ -97707,6 +98219,11 @@ var require_EXPIRETIME = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns the absolute Unix timestamp (since January 1, 1970) at which the given key will expire
+       * @param parser - The Redis command parser
+       * @param key - Key to check expiration time
+       */
       parseCommand(parser, key) {
         parser.push("EXPIRETIME");
         parser.pushKey(key);
@@ -97729,6 +98246,11 @@ var require_FLUSHALL = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: false,
+      /**
+       * Removes all keys from all databases
+       * @param parser - The Redis command parser
+       * @param mode - Optional flush mode (ASYNC or SYNC)
+       */
       parseCommand(parser, mode) {
         parser.push("FLUSHALL");
         if (mode) {
@@ -97748,6 +98270,11 @@ var require_FLUSHDB = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: false,
+      /**
+       * Removes all keys from the current database
+       * @param parser - The Redis command parser
+       * @param mode - Optional flush mode (ASYNC or SYNC)
+       */
       parseCommand(parser, mode) {
         parser.push("FLUSHDB");
         if (mode) {
@@ -97794,6 +98321,12 @@ var require_FCALL = __commonJS({
     var EVAL_1 = __importStar3(require_EVAL());
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Invokes a Redis function
+       * @param parser - The Redis command parser
+       * @param functionName - Name of the function to call
+       * @param options - Function execution options including keys and arguments
+       */
       parseCommand(...args) {
         args[0].push("FCALL");
         (0, EVAL_1.parseEvalArguments)(...args);
@@ -97838,6 +98371,12 @@ var require_FCALL_RO = __commonJS({
     var EVAL_1 = __importStar3(require_EVAL());
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Invokes a read-only Redis function
+       * @param parser - The Redis command parser
+       * @param functionName - Name of the function to call
+       * @param options - Function execution options including keys and arguments
+       */
       parseCommand(...args) {
         args[0].push("FCALL_RO");
         (0, EVAL_1.parseEvalArguments)(...args);
@@ -97855,6 +98394,11 @@ var require_FUNCTION_DELETE = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: false,
+      /**
+       * Deletes a library and all its functions
+       * @param parser - The Redis command parser
+       * @param library - Name of the library to delete
+       */
       parseCommand(parser, library) {
         parser.push("FUNCTION", "DELETE", library);
       },
@@ -97871,6 +98415,10 @@ var require_FUNCTION_DUMP = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns a serialized payload representing the current functions loaded in the server
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("FUNCTION", "DUMP");
       },
@@ -97887,6 +98435,11 @@ var require_FUNCTION_FLUSH = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: false,
+      /**
+       * Deletes all the libraries and functions from a Redis server
+       * @param parser - The Redis command parser
+       * @param mode - Optional flush mode (ASYNC or SYNC)
+       */
       parseCommand(parser, mode) {
         parser.push("FUNCTION", "FLUSH");
         if (mode) {
@@ -97906,6 +98459,10 @@ var require_FUNCTION_KILL = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Kills a function that is currently executing
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("FUNCTION", "KILL");
       },
@@ -97922,6 +98479,11 @@ var require_FUNCTION_LIST = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: false,
+      /**
+       * Returns all libraries and functions
+       * @param parser - The Redis command parser
+       * @param options - Options for listing functions
+       */
       parseCommand(parser, options) {
         parser.push("FUNCTION", "LIST");
         if (options?.LIBRARYNAME) {
@@ -97964,6 +98526,11 @@ var require_FUNCTION_LIST_WITHCODE = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: FUNCTION_LIST_1.default.NOT_KEYED_COMMAND,
       IS_READ_ONLY: FUNCTION_LIST_1.default.IS_READ_ONLY,
+      /**
+       * Returns all libraries and functions including their source code
+       * @param parser - The Redis command parser
+       * @param options - Options for listing functions
+       */
       parseCommand(...args) {
         FUNCTION_LIST_1.default.parseCommand(...args);
         args[0].push("WITHCODE");
@@ -98001,6 +98568,12 @@ var require_FUNCTION_LOAD = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: false,
+      /**
+       * Loads a library to Redis
+       * @param parser - The Redis command parser
+       * @param code - Library code to load
+       * @param options - Function load options
+       */
       parseCommand(parser, code, options) {
         parser.push("FUNCTION", "LOAD");
         if (options?.REPLACE) {
@@ -98021,6 +98594,12 @@ var require_FUNCTION_RESTORE = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: false,
+      /**
+       * Restores libraries from the dump payload
+       * @param parser - The Redis command parser
+       * @param dump - Serialized payload of functions to restore
+       * @param options - Options for the restore operation
+       */
       parseCommand(parser, dump, options) {
         parser.push("FUNCTION", "RESTORE", dump);
         if (options?.mode) {
@@ -98041,6 +98620,10 @@ var require_FUNCTION_STATS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns information about the function that is currently running and information about the available execution engines
+       * @param parser - The Redis command parser
+       */
       parseCommand(parser) {
         parser.push("FUNCTION", "STATS");
       },
@@ -98067,7 +98650,7 @@ var require_FUNCTION_STATS = __commonJS({
     }
     function transformEngines(reply) {
       const unwraped = reply;
-      const engines = {};
+      const engines = /* @__PURE__ */ Object.create(null);
       for (let i2 = 0; i2 < unwraped.length; i2++) {
         const name2 = unwraped[i2], stats = unwraped[++i2], unwrapedStats = stats;
         engines[name2.toString()] = {
@@ -98086,6 +98669,12 @@ var require_HDEL = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Removes one or more fields from a hash
+       * @param parser - The Redis command parser
+       * @param key - Key of the hash
+       * @param field - Field(s) to remove
+       */
       parseCommand(parser, key, field) {
         parser.push("HDEL");
         parser.pushKey(key);
@@ -98102,6 +98691,12 @@ var require_HELLO = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Handshakes with the Redis server and switches to the specified protocol version
+       * @param parser - The Redis command parser
+       * @param protover - Protocol version to use
+       * @param options - Additional options for authentication and connection naming
+       */
       parseCommand(parser, protover, options) {
         parser.push("HELLO");
         if (protover) {
@@ -98138,6 +98733,12 @@ var require_HEXISTS = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Determines whether a field exists in a hash
+       * @param parser - The Redis command parser
+       * @param key - Key of the hash
+       * @param field - Field to check
+       */
       parseCommand(parser, key, field) {
         parser.push("HEXISTS");
         parser.pushKey(key);
@@ -98165,6 +98766,14 @@ var require_HEXPIRE = __commonJS({
       DELETED: 2
     };
     exports.default = {
+      /**
+       * Sets a timeout on hash fields. After the timeout has expired, the fields will be automatically deleted
+       * @param parser - The Redis command parser
+       * @param key - Key of the hash
+       * @param fields - Fields to set expiration on
+       * @param seconds - Number of seconds until field expiration
+       * @param mode - Expiration mode: NX (only if field has no expiry), XX (only if field has existing expiry), GT (only if new expiry is greater than current), LT (only if new expiry is less than current)
+       */
       parseCommand(parser, key, fields, seconds, mode) {
         parser.push("HEXPIRE");
         parser.pushKey(key);
@@ -98187,6 +98796,14 @@ var require_HEXPIREAT = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
+      /**
+       * Sets the expiration for hash fields at a specific Unix timestamp
+       * @param parser - The Redis command parser
+       * @param key - Key of the hash
+       * @param fields - Fields to set expiration on
+       * @param timestamp - Unix timestamp (seconds since January 1, 1970) or Date object
+       * @param mode - Expiration mode: NX (only if field has no expiry), XX (only if field has existing expiry), GT (only if new expiry is greater than current), LT (only if new expiry is less than current)
+       */
       parseCommand(parser, key, fields, timestamp2, mode) {
         parser.push("HEXPIREAT");
         parser.pushKey(key);
@@ -98216,6 +98833,12 @@ var require_HEXPIRETIME = __commonJS({
     };
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns the absolute Unix timestamp (since January 1, 1970) at which the given hash fields will expire
+       * @param parser - The Redis command parser
+       * @param key - Key of the hash
+       * @param fields - Fields to check expiration time
+       */
       parseCommand(parser, key, fields) {
         parser.push("HEXPIRETIME");
         parser.pushKey(key);
@@ -98235,6 +98858,12 @@ var require_HGET = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Gets the value of a field in a hash
+       * @param parser - The Redis command parser
+       * @param key - Key of the hash
+       * @param field - Field to get the value of
+       */
       parseCommand(parser, key, field) {
         parser.push("HGET");
         parser.pushKey(key);
@@ -98254,6 +98883,11 @@ var require_HGETALL = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Gets all fields and values in a hash
+       * @param parser - The Redis command parser
+       * @param key - Key of the hash
+       */
       parseCommand(parser, key) {
         parser.push("HGETALL");
         parser.pushKey(key);
@@ -98273,6 +98907,12 @@ var require_HGETDEL = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Gets and deletes the specified fields from a hash
+       * @param parser - The Redis command parser
+       * @param key - Key of the hash
+       * @param fields - Fields to get and delete
+       */
       parseCommand(parser, key, fields) {
         parser.push("HGETDEL");
         parser.pushKey(key);
@@ -98290,6 +98930,13 @@ var require_HGETEX = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Gets the values of the specified fields in a hash and optionally sets their expiration
+       * @param parser - The Redis command parser
+       * @param key - Key of the hash
+       * @param fields - Fields to get values from
+       * @param options - Options for setting expiration
+       */
       parseCommand(parser, key, fields, options) {
         parser.push("HGETEX");
         parser.pushKey(key);
@@ -98316,6 +98963,13 @@ var require_HINCRBY = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Increments the integer value of a field in a hash by the given number
+       * @param parser - The Redis command parser
+       * @param key - Key of the hash
+       * @param field - Field to increment
+       * @param increment - Increment amount
+       */
       parseCommand(parser, key, field, increment) {
         parser.push("HINCRBY");
         parser.pushKey(key);
@@ -98332,6 +98986,13 @@ var require_HINCRBYFLOAT = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Increments the float value of a field in a hash by the given amount
+       * @param parser - The Redis command parser
+       * @param key - Key of the hash
+       * @param field - Field to increment
+       * @param increment - Increment amount (float)
+       */
       parseCommand(parser, key, field, increment) {
         parser.push("HINCRBYFLOAT");
         parser.pushKey(key);
@@ -98350,6 +99011,11 @@ var require_HKEYS = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Gets all field names in a hash
+       * @param parser - The Redis command parser
+       * @param key - Key of the hash
+       */
       parseCommand(parser, key) {
         parser.push("HKEYS");
         parser.pushKey(key);
@@ -98367,6 +99033,11 @@ var require_HLEN = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Gets the number of fields in a hash.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the hash.
+       */
       parseCommand(parser, key) {
         parser.push("HLEN");
         parser.pushKey(key);
@@ -98384,6 +99055,12 @@ var require_HMGET = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Gets the values of all the specified fields in a hash.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the hash.
+       * @param fields - Fields to get from the hash.
+       */
       parseCommand(parser, key, fields) {
         parser.push("HMGET");
         parser.pushKey(key);
@@ -98400,6 +99077,12 @@ var require_HPERSIST = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Removes the expiration from the specified fields in a hash.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the hash.
+       * @param fields - Fields to remove expiration from.
+       */
       parseCommand(parser, key, fields) {
         parser.push("HPERSIST");
         parser.pushKey(key);
@@ -98417,6 +99100,15 @@ var require_HPEXPIRE = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Parses the arguments for the `HPEXPIRE` command.
+       *
+       * @param parser - The command parser instance.
+       * @param key - The key of the hash.
+       * @param fields - The fields to set the expiration for.
+       * @param ms - The expiration time in milliseconds.
+       * @param mode - Optional mode for the command ('NX', 'XX', 'GT', 'LT').
+       */
       parseCommand(parser, key, fields, ms, mode) {
         parser.push("HPEXPIRE");
         parser.pushKey(key);
@@ -98440,6 +99132,15 @@ var require_HPEXPIREAT = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Parses the arguments for the `HPEXPIREAT` command.
+       *
+       * @param parser - The command parser instance.
+       * @param key - The key of the hash.
+       * @param fields - The fields to set the expiration for.
+       * @param timestamp - The expiration timestamp (Unix timestamp or Date object).
+       * @param mode - Optional mode for the command ('NX', 'XX', 'GT', 'LT').
+       */
       parseCommand(parser, key, fields, timestamp2, mode) {
         parser.push("HPEXPIREAT");
         parser.pushKey(key);
@@ -98462,6 +99163,14 @@ var require_HPEXPIRETIME = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the HPEXPIRETIME command
+       *
+       * @param parser - The command parser
+       * @param key - The key to retrieve expiration time for
+       * @param fields - The fields to retrieve expiration time for
+       * @see https://redis.io/commands/hpexpiretime/
+       */
       parseCommand(parser, key, fields) {
         parser.push("HPEXPIRETIME");
         parser.pushKey(key);
@@ -98480,6 +99189,14 @@ var require_HPTTL = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the HPTTL command
+       *
+       * @param parser - The command parser
+       * @param key - The key to check time-to-live for
+       * @param fields - The fields to check time-to-live for
+       * @see https://redis.io/commands/hpttl/
+       */
       parseCommand(parser, key, fields) {
         parser.push("HPTTL");
         parser.pushKey(key);
@@ -98498,6 +99215,14 @@ var require_HRANDFIELD_COUNT_WITHVALUES = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the HRANDFIELD command with count parameter and WITHVALUES option
+       *
+       * @param parser - The command parser
+       * @param key - The key of the hash to get random fields from
+       * @param count - The number of fields to return (positive: unique fields, negative: may repeat fields)
+       * @see https://redis.io/commands/hrandfield/
+       */
       parseCommand(parser, key, count4) {
         parser.push("HRANDFIELD");
         parser.pushKey(key);
@@ -98536,6 +99261,14 @@ var require_HRANDFIELD_COUNT = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the HRANDFIELD command with count parameter
+       *
+       * @param parser - The command parser
+       * @param key - The key of the hash to get random fields from
+       * @param count - The number of fields to return (positive: unique fields, negative: may repeat fields)
+       * @see https://redis.io/commands/hrandfield/
+       */
       parseCommand(parser, key, count4) {
         parser.push("HRANDFIELD");
         parser.pushKey(key);
@@ -98553,6 +99286,13 @@ var require_HRANDFIELD = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the HRANDFIELD command
+       *
+       * @param parser - The command parser
+       * @param key - The key of the hash to get a random field from
+       * @see https://redis.io/commands/hrandfield/
+       */
       parseCommand(parser, key) {
         parser.push("HRANDFIELD");
         parser.pushKey(key);
@@ -98592,6 +99332,14 @@ var require_SCAN = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the SCAN command
+       *
+       * @param parser - The command parser
+       * @param cursor - The cursor position to start scanning from
+       * @param options - Scan options
+       * @see https://redis.io/commands/scan/
+       */
       parseCommand(parser, cursor, options) {
         parser.push("SCAN");
         parseScanArguments(parser, cursor, options);
@@ -98623,6 +99371,15 @@ var require_HSCAN = __commonJS({
     var SCAN_1 = require_SCAN();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the HSCAN command
+       *
+       * @param parser - The command parser
+       * @param key - The key of the hash to scan
+       * @param cursor - The cursor position to start scanning from
+       * @param options - Options for the scan (COUNT, MATCH, TYPE)
+       * @see https://redis.io/commands/hscan/
+       */
       parseCommand(parser, key, cursor, options) {
         parser.push("HSCAN");
         parser.pushKey(key);
@@ -98657,6 +99414,12 @@ var require_HSCAN_NOVALUES = __commonJS({
     var HSCAN_1 = __importDefault3(require_HSCAN());
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the HSCAN command with NOVALUES option
+       *
+       * @param args - The same parameters as HSCAN command
+       * @see https://redis.io/commands/hscan/
+       */
       parseCommand(...args) {
         const parser = args[0];
         HSCAN_1.default.parseCommand(...args);
@@ -98678,6 +99441,15 @@ var require_HSET = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the HSET command
+       *
+       * @param parser - The command parser
+       * @param key - The key of the hash
+       * @param value - Either the field name (when using single field) or an object/map/array of field-value pairs
+       * @param fieldValue - The value to set (only used with single field variant)
+       * @see https://redis.io/commands/hset/
+       */
       parseCommand(parser, ...[key, value, fieldValue]) {
         parser.push("HSET");
         parser.pushKey(key);
@@ -98725,6 +99497,15 @@ var require_HSETEX = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     var parser_1 = require_parser2();
     exports.default = {
+      /**
+       * Constructs the HSETEX command
+       *
+       * @param parser - The command parser
+       * @param key - The key of the hash
+       * @param fields - Object, Map, or Array of field-value pairs to set
+       * @param options - Optional configuration for expiration and mode settings
+       * @see https://redis.io/commands/hsetex/
+       */
       parseCommand(parser, key, fields, options) {
         parser.push("HSETEX");
         parser.pushKey(key);
@@ -98798,6 +99579,15 @@ var require_HSETNX = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the HSETNX command
+       *
+       * @param parser - The command parser
+       * @param key - The key of the hash
+       * @param field - The field to set if it does not exist
+       * @param value - The value to set
+       * @see https://redis.io/commands/hsetnx/
+       */
       parseCommand(parser, key, field, value) {
         parser.push("HSETNX");
         parser.pushKey(key);
@@ -98816,6 +99606,14 @@ var require_HSTRLEN = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the HSTRLEN command
+       *
+       * @param parser - The command parser
+       * @param key - The key of the hash
+       * @param field - The field to get the string length of
+       * @see https://redis.io/commands/hstrlen/
+       */
       parseCommand(parser, key, field) {
         parser.push("HSTRLEN");
         parser.pushKey(key);
@@ -98833,6 +99631,12 @@ var require_HTTL = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns the remaining time to live of field(s) in a hash.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the hash.
+       * @param fields - Fields to check time to live.
+       */
       parseCommand(parser, key, fields) {
         parser.push("HTTL");
         parser.pushKey(key);
@@ -98852,6 +99656,11 @@ var require_HVALS = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Gets all values in a hash.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the hash.
+       */
       parseCommand(parser, key) {
         parser.push("HVALS");
         parser.pushKey(key);
@@ -98861,146 +99670,42 @@ var require_HVALS = __commonJS({
   }
 });
 
-// node_modules/@redis/client/dist/lib/commands/reply-utils.js
-var require_reply_utils = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/reply-utils.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getMapValue = exports.mapLikeToFlatArray = exports.mapLikeToObject = exports.mapLikeValues = exports.mapLikeEntries = exports.keyToString = exports.isPlainObject = void 0;
-    function isPlainObject3(value) {
-      return value !== null && typeof value === "object" && !Array.isArray(value) && !(value instanceof Map) && !ArrayBuffer.isView(value) && Object.prototype.toString.call(value) === "[object Object]";
-    }
-    exports.isPlainObject = isPlainObject3;
-    function keyToString(key) {
-      if (key === null || key === void 0)
-        return "";
-      return key.toString();
-    }
-    exports.keyToString = keyToString;
-    function mapLikeEntries(value) {
-      if (value instanceof Map) {
-        return Array.from(value.entries(), ([key, entryValue]) => [keyToString(key), entryValue]);
-      }
-      if (Array.isArray(value)) {
-        if (value.length === 1 && (Array.isArray(value[0]) || value[0] instanceof Map || isPlainObject3(value[0]))) {
-          return mapLikeEntries(value[0]);
-        }
-        if (value.every((item) => Array.isArray(item) && item.length >= 2)) {
-          return value.map((item) => [keyToString(item[0]), item[1]]);
-        }
-        const entries = [];
-        for (let i2 = 0; i2 < value.length - 1; i2 += 2) {
-          entries.push([keyToString(value[i2]), value[i2 + 1]]);
-        }
-        return entries;
-      }
-      if (isPlainObject3(value)) {
-        return Object.entries(value);
-      }
-      return [];
-    }
-    exports.mapLikeEntries = mapLikeEntries;
-    function mapLikeValues(value) {
-      if (Array.isArray(value))
-        return value;
-      if (value instanceof Map)
-        return [...value.values()];
-      if (isPlainObject3(value))
-        return Object.values(value);
-      return [];
-    }
-    exports.mapLikeValues = mapLikeValues;
-    function mapLikeToObject(value) {
-      const object2 = {};
-      for (const [key, entryValue] of mapLikeEntries(value)) {
-        object2[key] = entryValue;
-      }
-      return object2;
-    }
-    exports.mapLikeToObject = mapLikeToObject;
-    function mapLikeToFlatArray(value) {
-      const flat = [];
-      for (const [key, entryValue] of mapLikeEntries(value)) {
-        flat.push(key, entryValue);
-      }
-      return flat;
-    }
-    exports.mapLikeToFlatArray = mapLikeToFlatArray;
-    function getMapValue(value, keys) {
-      const object2 = mapLikeToObject(value);
-      for (const key of keys) {
-        if (Object.hasOwn(object2, key)) {
-          return object2[key];
-        }
-      }
-      const lowerCaseKeyToOriginal = /* @__PURE__ */ new Map();
-      for (const key of Object.keys(object2)) {
-        const lowerCaseKey = key.toLowerCase();
-        if (!lowerCaseKeyToOriginal.has(lowerCaseKey)) {
-          lowerCaseKeyToOriginal.set(lowerCaseKey, key);
-        }
-      }
-      for (const key of keys) {
-        const original = lowerCaseKeyToOriginal.get(key.toLowerCase());
-        if (original !== void 0) {
-          return object2[original];
-        }
-      }
-      return void 0;
-    }
-    exports.getMapValue = getMapValue;
-  }
-});
-
 // node_modules/@redis/client/dist/lib/commands/HOTKEYS_GET.js
 var require_HOTKEYS_GET = __commonJS({
   "node_modules/@redis/client/dist/lib/commands/HOTKEYS_GET.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var reply_utils_1 = require_reply_utils();
-    function toSlotNumber(value) {
-      const slot = Number(value);
-      if (!Number.isFinite(slot)) {
-        throw new TypeError(`HOTKEYS GET: expected slot to be a finite number, got ${JSON.stringify(value)}`);
-      }
-      return slot;
-    }
     function parseHotkeysList(arr) {
-      return (0, reply_utils_1.mapLikeEntries)(arr).map(([key, value]) => ({
-        key,
-        value: Number(value)
-      }));
+      const result = [];
+      for (let i2 = 0; i2 < arr.length; i2 += 2) {
+        result.push({
+          key: arr[i2].toString(),
+          value: Number(arr[i2 + 1])
+        });
+      }
+      return result;
     }
     function parseSlotRanges(arr) {
-      return (0, reply_utils_1.mapLikeValues)(arr).map((range) => {
-        let unwrapped;
-        if (Array.isArray(range)) {
-          unwrapped = range;
-        } else if (range instanceof Map) {
-          unwrapped = [...range.values()];
-        } else if ((0, reply_utils_1.isPlainObject)(range)) {
-          const start = range.start ?? range[0];
-          const end = range.end ?? range[1] ?? start;
-          unwrapped = [start, end];
-        } else {
-          const slot = toSlotNumber(range);
-          return { start: slot, end: slot };
-        }
+      return arr.map((range) => {
+        const unwrapped = range;
         if (unwrapped.length === 1) {
-          const slot = toSlotNumber(unwrapped[0]);
-          return { start: slot, end: slot };
+          return {
+            start: Number(unwrapped[0]),
+            end: Number(unwrapped[0])
+          };
         }
         return {
-          start: toSlotNumber(unwrapped[0]),
-          end: toSlotNumber(unwrapped[1])
+          start: Number(unwrapped[0]),
+          end: Number(unwrapped[1])
         };
       });
     }
     function transformHotkeysGetReply(reply) {
-      if (reply === null)
-        return null;
       const result = {};
-      for (const [key, value] of (0, reply_utils_1.mapLikeEntries)(reply)) {
+      const data = reply[0];
+      for (let i2 = 0; i2 < data.length; i2 += 2) {
+        const key = data[i2].toString();
+        const value = data[i2 + 1];
         switch (key) {
           case "tracking-active":
             result.trackingActive = Number(value);
@@ -99057,10 +99762,24 @@ var require_HOTKEYS_GET = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the top K hotkeys by CPU time and network bytes.
+       * Returns null if no tracking has been started or tracking was reset.
+       * @param parser - The Redis command parser
+       * @see https://redis.io/commands/hotkeys-get/
+       */
       parseCommand(parser) {
         parser.push("HOTKEYS", "GET");
       },
-      transformReply: transformHotkeysGetReply
+      transformReply: {
+        2: (reply) => {
+          if (reply === null)
+            return null;
+          return transformHotkeysGetReply(reply);
+        },
+        3: void 0
+      },
+      unstableResp3: true
     };
   }
 });
@@ -99073,6 +99792,12 @@ var require_HOTKEYS_RESET = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: false,
+      /**
+       * Releases resources used for hotkey tracking.
+       * Returns error if a session is active (must be stopped first).
+       * @param parser - The Redis command parser
+       * @see https://redis.io/commands/hotkeys-reset/
+       */
       parseCommand(parser) {
         parser.push("HOTKEYS", "RESET");
       },
@@ -99094,6 +99819,12 @@ var require_HOTKEYS_START = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: false,
+      /**
+       * Starts hotkeys tracking with specified options.
+       * @param parser - The Redis command parser
+       * @param options - Configuration options for hotkeys tracking
+       * @see https://redis.io/commands/hotkeys-start/
+       */
       parseCommand(parser, options) {
         parser.push("HOTKEYS", "START");
         parser.push("METRICS", options.METRICS.count.toString());
@@ -99132,6 +99863,12 @@ var require_HOTKEYS_STOP = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: false,
+      /**
+       * Stops hotkeys tracking. Results remain available via HOTKEYS GET.
+       * Returns null if no session was started or is already stopped.
+       * @param parser - The Redis command parser
+       * @see https://redis.io/commands/hotkeys-stop/
+       */
       parseCommand(parser) {
         parser.push("HOTKEYS", "STOP");
       },
@@ -99146,6 +99883,13 @@ var require_INCR = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the INCR command
+       *
+       * @param parser - The command parser
+       * @param key - The key to increment
+       * @see https://redis.io/commands/incr/
+       */
       parseCommand(parser, key) {
         parser.push("INCR");
         parser.pushKey(key);
@@ -99161,6 +99905,14 @@ var require_INCRBY = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the INCRBY command
+       *
+       * @param parser - The command parser
+       * @param key - The key to increment
+       * @param increment - The amount to increment by
+       * @see https://redis.io/commands/incrby/
+       */
       parseCommand(parser, key, increment) {
         parser.push("INCRBY");
         parser.pushKey(key);
@@ -99177,89 +99929,20 @@ var require_INCRBYFLOAT = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the INCRBYFLOAT command
+       *
+       * @param parser - The command parser
+       * @param key - The key to increment
+       * @param increment - The floating-point value to increment by
+       * @see https://redis.io/commands/incrbyfloat/
+       */
       parseCommand(parser, key, increment) {
         parser.push("INCRBYFLOAT");
         parser.pushKey(key);
         parser.push(increment.toString());
       },
       transformReply: void 0
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/INCREX.js
-var require_INCREX = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/INCREX.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var generic_transformers_1 = require_generic_transformers();
-    exports.default = {
-      parseCommand(parser, key, options) {
-        parser.push("INCREX");
-        parser.pushKey(key);
-        if (options?.by !== void 0) {
-          parser.push("BYINT", (0, generic_transformers_1.transformStringDoubleArgument)(options.by));
-        }
-        if (options?.lowerBound !== void 0) {
-          parser.push("LBOUND", (0, generic_transformers_1.transformStringDoubleArgument)(options.lowerBound));
-        }
-        if (options?.upperBound !== void 0) {
-          parser.push("UBOUND", (0, generic_transformers_1.transformStringDoubleArgument)(options.upperBound));
-        }
-        if (options?.saturate) {
-          parser.push("SATURATE");
-        }
-        if (options?.expiration) {
-          if (options.expiration.type === "PERSIST") {
-            parser.push("PERSIST");
-          } else {
-            parser.push(options.expiration.type, options.expiration.value.toString());
-            if (options.expiration.ENX) {
-              parser.push("ENX");
-            }
-          }
-        }
-      },
-      transformReply: void 0
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/INCREXBYFLOAT.js
-var require_INCREXBYFLOAT = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/INCREXBYFLOAT.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var generic_transformers_1 = require_generic_transformers();
-    exports.default = {
-      parseCommand(parser, key, value, options) {
-        parser.push("INCREX");
-        parser.pushKey(key);
-        parser.push("BYFLOAT", (0, generic_transformers_1.transformStringDoubleArgument)(value));
-        if (options?.lowerBound !== void 0) {
-          parser.push("LBOUND", (0, generic_transformers_1.transformStringDoubleArgument)(options.lowerBound));
-        }
-        if (options?.upperBound !== void 0) {
-          parser.push("UBOUND", (0, generic_transformers_1.transformStringDoubleArgument)(options.upperBound));
-        }
-        if (options?.saturate) {
-          parser.push("SATURATE");
-        }
-        if (options?.expiration) {
-          if (options.expiration.type === "PERSIST") {
-            parser.push("PERSIST");
-          } else {
-            parser.push(options.expiration.type, options.expiration.value.toString());
-            if (options.expiration.ENX) {
-              parser.push("ENX");
-            }
-          }
-        }
-      },
-      transformReply: {
-        2: void 0,
-        3: void 0
-      }
     };
   }
 });
@@ -99272,6 +99955,13 @@ var require_INFO = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the INFO command
+       *
+       * @param parser - The command parser
+       * @param section - Optional specific section of information to retrieve
+       * @see https://redis.io/commands/info/
+       */
       parseCommand(parser, section) {
         parser.push("INFO");
         if (section) {
@@ -99291,6 +99981,13 @@ var require_KEYS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the KEYS command
+       *
+       * @param parser - The command parser
+       * @param pattern - The pattern to match keys against
+       * @see https://redis.io/commands/keys/
+       */
       parseCommand(parser, pattern) {
         parser.push("KEYS", pattern);
       },
@@ -99307,6 +100004,12 @@ var require_LASTSAVE = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the LASTSAVE command
+       *
+       * @param parser - The command parser
+       * @see https://redis.io/commands/lastsave/
+       */
       parseCommand(parser) {
         parser.push("LASTSAVE");
       },
@@ -99323,6 +100026,12 @@ var require_LATENCY_DOCTOR = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the LATENCY DOCTOR command
+       *
+       * @param parser - The command parser
+       * @see https://redis.io/commands/latency-doctor/
+       */
       parseCommand(parser) {
         parser.push("LATENCY", "DOCTOR");
       },
@@ -99358,6 +100067,13 @@ var require_LATENCY_GRAPH = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the LATENCY GRAPH command
+       *
+       * @param parser - The command parser
+       * @param event - The latency event to get the graph for
+       * @see https://redis.io/commands/latency-graph/
+       */
       parseCommand(parser, event) {
         parser.push("LATENCY", "GRAPH", event);
       },
@@ -99374,6 +100090,13 @@ var require_LATENCY_HISTORY = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the LATENCY HISTORY command
+       *
+       * @param parser - The command parser
+       * @param event - The latency event to get the history for
+       * @see https://redis.io/commands/latency-history/
+       */
       parseCommand(parser, event) {
         parser.push("LATENCY", "HISTORY", event);
       },
@@ -99390,6 +100113,12 @@ var require_LATENCY_LATEST = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the LATENCY LATEST command
+       *
+       * @param parser - The command parser
+       * @see https://redis.io/commands/latency-latest/
+       */
       parseCommand(parser) {
         parser.push("LATENCY", "LATEST");
       },
@@ -99411,6 +100140,12 @@ var require_LATENCY_RESET = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: false,
+      /**
+       * Constructs the LATENCY RESET command
+       * * @param parser - The command parser
+       * @param events - The latency events to reset. If not specified, all events are reset.
+       * @see https://redis.io/commands/latency-reset/
+       */
       parseCommand(parser, ...events) {
         const args = ["LATENCY", "RESET"];
         if (events.length > 0) {
@@ -99430,6 +100165,14 @@ var require_LCS = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the LCS command (Longest Common Substring)
+       *
+       * @param parser - The command parser
+       * @param key1 - First key containing the first string
+       * @param key2 - Second key containing the second string
+       * @see https://redis.io/commands/lcs/
+       */
       parseCommand(parser, key1, key2) {
         parser.push("LCS");
         parser.pushKeys([key1, key2]);
@@ -99450,6 +100193,15 @@ var require_LCS_IDX = __commonJS({
     var LCS_1 = __importDefault3(require_LCS());
     exports.default = {
       IS_READ_ONLY: LCS_1.default.IS_READ_ONLY,
+      /**
+       * Constructs the LCS command with IDX option
+       *
+       * @param parser - The command parser
+       * @param key1 - First key containing the first string
+       * @param key2 - Second key containing the second string
+       * @param options - Additional options for the LCS IDX command
+       * @see https://redis.io/commands/lcs/
+       */
       parseCommand(parser, key1, key2, options) {
         LCS_1.default.parseCommand(parser, key1, key2);
         parser.push("IDX");
@@ -99479,6 +100231,12 @@ var require_LCS_IDX_WITHMATCHLEN = __commonJS({
     var LCS_IDX_1 = __importDefault3(require_LCS_IDX());
     exports.default = {
       IS_READ_ONLY: LCS_IDX_1.default.IS_READ_ONLY,
+      /**
+       * Constructs the LCS command with IDX and WITHMATCHLEN options
+       *
+       * @param args - The same parameters as LCS_IDX command
+       * @see https://redis.io/commands/lcs/
+       */
       parseCommand(...args) {
         const parser = args[0];
         LCS_IDX_1.default.parseCommand(...args);
@@ -99506,6 +100264,12 @@ var require_LCS_LEN = __commonJS({
     var LCS_1 = __importDefault3(require_LCS());
     exports.default = {
       IS_READ_ONLY: LCS_1.default.IS_READ_ONLY,
+      /**
+       * Constructs the LCS command with LEN option
+       *
+       * @param args - The same parameters as LCS command
+       * @see https://redis.io/commands/lcs/
+       */
       parseCommand(...args) {
         const parser = args[0];
         LCS_1.default.parseCommand(...args);
@@ -99524,6 +100288,14 @@ var require_LINDEX = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the LINDEX command
+       *
+       * @param parser - The command parser
+       * @param key - The key of the list
+       * @param index - The index of the element to retrieve
+       * @see https://redis.io/commands/lindex/
+       */
       parseCommand(parser, key, index2) {
         parser.push("LINDEX");
         parser.pushKey(key);
@@ -99541,6 +100313,16 @@ var require_LINSERT = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the LINSERT command
+       *
+       * @param parser - The command parser
+       * @param key - The key of the list
+       * @param position - The position where to insert (BEFORE or AFTER)
+       * @param pivot - The element to find in the list
+       * @param element - The element to insert
+       * @see https://redis.io/commands/linsert/
+       */
       parseCommand(parser, key, position, pivot, element) {
         parser.push("LINSERT");
         parser.pushKey(key);
@@ -99559,6 +100341,13 @@ var require_LLEN = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the LLEN command
+       *
+       * @param parser - The command parser
+       * @param key - The key of the list to get the length of
+       * @see https://redis.io/commands/llen/
+       */
       parseCommand(parser, key) {
         parser.push("LLEN");
         parser.pushKey(key);
@@ -99575,6 +100364,16 @@ var require_LMOVE = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the LMOVE command
+       *
+       * @param parser - The command parser
+       * @param source - The source list key
+       * @param destination - The destination list key
+       * @param sourceSide - The side to pop from (LEFT or RIGHT)
+       * @param destinationSide - The side to push to (LEFT or RIGHT)
+       * @see https://redis.io/commands/lmove/
+       */
       parseCommand(parser, source, destination, sourceSide, destinationSide) {
         parser.push("LMOVE");
         parser.pushKeys([source, destination]);
@@ -99593,6 +100392,14 @@ var require_LOLWUT = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the LOLWUT command
+       *
+       * @param parser - The command parser
+       * @param version - Optional version parameter
+       * @param optionalArguments - Additional optional numeric arguments
+       * @see https://redis.io/commands/lolwut/
+       */
       parseCommand(parser, version4, ...optionalArguments) {
         parser.push("LOLWUT");
         if (version4) {
@@ -99611,6 +100418,13 @@ var require_LPOP = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the LPOP command
+       *
+       * @param parser - The command parser
+       * @param key - The key of the list to pop from
+       * @see https://redis.io/commands/lpop/
+       */
       parseCommand(parser, key) {
         parser.push("LPOP");
         parser.pushKey(key);
@@ -99631,6 +100445,14 @@ var require_LPOP_COUNT = __commonJS({
     var LPOP_1 = __importDefault3(require_LPOP());
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the LPOP command with count parameter
+       *
+       * @param parser - The command parser
+       * @param key - The key of the list to pop from
+       * @param count - The number of elements to pop
+       * @see https://redis.io/commands/lpop/
+       */
       parseCommand(parser, key, count4) {
         LPOP_1.default.parseCommand(parser, key);
         parser.push(count4.toString());
@@ -99648,6 +100470,15 @@ var require_LPOS = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the LPOS command
+       *
+       * @param parser - The command parser
+       * @param key - The key of the list
+       * @param element - The element to search for
+       * @param options - Optional parameters for RANK and MAXLEN
+       * @see https://redis.io/commands/lpos/
+       */
       parseCommand(parser, key, element, options) {
         parser.push("LPOS");
         parser.pushKey(key);
@@ -99676,6 +100507,16 @@ var require_LPOS_COUNT = __commonJS({
     exports.default = {
       CACHEABLE: LPOS_1.default.CACHEABLE,
       IS_READ_ONLY: LPOS_1.default.IS_READ_ONLY,
+      /**
+       * Constructs the LPOS command with COUNT option
+       *
+       * @param parser - The command parser
+       * @param key - The key of the list
+       * @param element - The element to search for
+       * @param count - The number of positions to return
+       * @param options - Optional parameters for RANK and MAXLEN
+       * @see https://redis.io/commands/lpos/
+       */
       parseCommand(parser, key, element, count4, options) {
         LPOS_1.default.parseCommand(parser, key, element, options);
         parser.push("COUNT", count4.toString());
@@ -99691,6 +100532,14 @@ var require_LPUSH = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the LPUSH command
+       *
+       * @param parser - The command parser
+       * @param key - The key of the list
+       * @param elements - One or more elements to push to the list
+       * @see https://redis.io/commands/lpush/
+       */
       parseCommand(parser, key, elements) {
         parser.push("LPUSH");
         parser.pushKey(key);
@@ -99707,6 +100556,14 @@ var require_LPUSHX = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the LPUSHX command
+       *
+       * @param parser - The command parser
+       * @param key - The key of the list
+       * @param elements - One or more elements to push to the list if it exists
+       * @see https://redis.io/commands/lpushx/
+       */
       parseCommand(parser, key, elements) {
         parser.push("LPUSHX");
         parser.pushKey(key);
@@ -99725,6 +100582,15 @@ var require_LRANGE = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the LRANGE command
+       *
+       * @param parser - The command parser
+       * @param key - The key of the list
+       * @param start - The starting index
+       * @param stop - The ending index
+       * @see https://redis.io/commands/lrange/
+       */
       parseCommand(parser, key, start, stop) {
         parser.push("LRANGE");
         parser.pushKey(key);
@@ -99742,6 +100608,15 @@ var require_LREM = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the LREM command
+       *
+       * @param parser - The command parser
+       * @param key - The key of the list
+       * @param count - The count of elements to remove (negative: from tail to head, 0: all occurrences, positive: from head to tail)
+       * @param element - The element to remove
+       * @see https://redis.io/commands/lrem/
+       */
       parseCommand(parser, key, count4, element) {
         parser.push("LREM");
         parser.pushKey(key);
@@ -99760,6 +100635,15 @@ var require_LSET = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the LSET command
+       *
+       * @param parser - The command parser
+       * @param key - The key of the list
+       * @param index - The index of the element to replace
+       * @param element - The new value to set
+       * @see https://redis.io/commands/lset/
+       */
       parseCommand(parser, key, index2, element) {
         parser.push("LSET");
         parser.pushKey(key);
@@ -99776,6 +100660,15 @@ var require_LTRIM = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the LTRIM command
+       *
+       * @param parser - The command parser
+       * @param key - The key of the list
+       * @param start - The starting index
+       * @param stop - The ending index
+       * @see https://redis.io/commands/ltrim/
+       */
       parseCommand(parser, key, start, stop) {
         parser.push("LTRIM");
         parser.pushKey(key);
@@ -99794,6 +100687,12 @@ var require_MEMORY_DOCTOR = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the MEMORY DOCTOR command
+       *
+       * @param parser - The command parser
+       * @see https://redis.io/commands/memory-doctor/
+       */
       parseCommand(parser) {
         parser.push("MEMORY", "DOCTOR");
       },
@@ -99810,6 +100709,12 @@ var require_MEMORY_MALLOC_STATS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the MEMORY MALLOC-STATS command
+       *
+       * @param parser - The command parser
+       * @see https://redis.io/commands/memory-malloc-stats/
+       */
       parseCommand(parser) {
         parser.push("MEMORY", "MALLOC-STATS");
       },
@@ -99826,6 +100731,12 @@ var require_MEMORY_PURGE = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: false,
+      /**
+       * Constructs the MEMORY PURGE command
+       *
+       * @param parser - The command parser
+       * @see https://redis.io/commands/memory-purge/
+       */
       parseCommand(parser) {
         parser.push("MEMORY", "PURGE");
       },
@@ -99843,6 +100754,12 @@ var require_MEMORY_STATS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the MEMORY STATS command
+       *
+       * @param parser - The command parser
+       * @see https://redis.io/commands/memory-stats/
+       */
       parseCommand(parser) {
         parser.push("MEMORY", "STATS");
       },
@@ -99858,10 +100775,10 @@ var require_MEMORY_STATS = __commonJS({
               case "allocator-rss.ratio":
               case "rss-overhead.ratio":
               case "fragmentation":
-                reply[rawReply[i2++].toString()] = generic_transformers_1.transformDoubleReply[2](rawReply[i2++], preserve, typeMapping);
+                reply[rawReply[i2++]] = generic_transformers_1.transformDoubleReply[2](rawReply[i2++], preserve, typeMapping);
                 break;
               default:
-                reply[rawReply[i2++].toString()] = rawReply[i2++];
+                reply[rawReply[i2++]] = rawReply[i2++];
             }
           }
           return reply;
@@ -99879,6 +100796,14 @@ var require_MEMORY_USAGE = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the MEMORY USAGE command
+       *
+       * @param parser - The command parser
+       * @param key - The key to get memory usage for
+       * @param options - Optional parameters including SAMPLES
+       * @see https://redis.io/commands/memory-usage/
+       */
       parseCommand(parser, key, options) {
         parser.push("MEMORY", "USAGE");
         parser.pushKey(key);
@@ -99899,6 +100824,13 @@ var require_MGET = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the MGET command
+       *
+       * @param parser - The command parser
+       * @param keys - Array of keys to get
+       * @see https://redis.io/commands/mget/
+       */
       parseCommand(parser, keys) {
         parser.push("MGET");
         parser.pushKeys(keys);
@@ -99915,6 +100847,18 @@ var require_MIGRATE = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the MIGRATE command
+       *
+       * @param parser - The command parser
+       * @param host - Target Redis instance host
+       * @param port - Target Redis instance port
+       * @param key - Key or keys to migrate
+       * @param destinationDb - Target database index
+       * @param timeout - Timeout in milliseconds
+       * @param options - Optional parameters including COPY, REPLACE, and AUTH
+       * @see https://redis.io/commands/migrate/
+       */
       parseCommand(parser, host, port, key, destinationDb, timeout, options) {
         parser.push("MIGRATE", host, port.toString());
         const isKeyArray = Array.isArray(key);
@@ -99952,47 +100896,29 @@ var require_MODULE_LIST = __commonJS({
   "node_modules/@redis/client/dist/lib/commands/MODULE_LIST.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    function moduleEntries(moduleReply) {
-      if (Array.isArray(moduleReply)) {
-        const entries = [];
-        for (let i2 = 0; i2 + 1 < moduleReply.length; i2 += 2) {
-          const key = moduleReply[i2];
-          if (key === null || key === void 0)
-            continue;
-          entries.push([key.toString(), moduleReply[i2 + 1]]);
-        }
-        return entries;
-      }
-      if (moduleReply instanceof Map) {
-        return Array.from(moduleReply.entries(), ([key, value]) => {
-          const k2 = key === null || key === void 0 ? "" : key.toString();
-          return [k2, value];
-        });
-      }
-      if (moduleReply !== null && typeof moduleReply === "object") {
-        return Object.entries(moduleReply);
-      }
-      return [];
-    }
-    function transformModuleReply(moduleReply) {
-      const result = {};
-      for (const [key, value] of moduleEntries(moduleReply)) {
-        result[key] = value;
-      }
-      return result;
-    }
-    function transformModuleListReply(reply) {
-      return reply.map((moduleReply) => transformModuleReply(moduleReply));
-    }
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the MODULE LIST command
+       *
+       * @param parser - The command parser
+       * @see https://redis.io/commands/module-list/
+       */
       parseCommand(parser) {
         parser.push("MODULE", "LIST");
       },
       transformReply: {
-        2: transformModuleListReply,
-        3: transformModuleListReply
+        2: (reply) => {
+          return reply.map((module2) => {
+            const unwrapped = module2;
+            return {
+              name: unwrapped[1],
+              ver: unwrapped[3]
+            };
+          });
+        },
+        3: void 0
       }
     };
   }
@@ -100006,6 +100932,14 @@ var require_MODULE_LOAD = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the MODULE LOAD command
+       *
+       * @param parser - The command parser
+       * @param path - Path to the module file
+       * @param moduleArguments - Optional arguments to pass to the module
+       * @see https://redis.io/commands/module-load/
+       */
       parseCommand(parser, path5, moduleArguments) {
         parser.push("MODULE", "LOAD", path5);
         if (moduleArguments) {
@@ -100025,6 +100959,13 @@ var require_MODULE_UNLOAD = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the MODULE UNLOAD command
+       *
+       * @param parser - The command parser
+       * @param name - The name of the module to unload
+       * @see https://redis.io/commands/module-unload/
+       */
       parseCommand(parser, name2) {
         parser.push("MODULE", "UNLOAD", name2);
       },
@@ -100039,6 +100980,14 @@ var require_MOVE = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the MOVE command
+       *
+       * @param parser - The command parser
+       * @param key - The key to move
+       * @param db - The destination database index
+       * @see https://redis.io/commands/move/
+       */
       parseCommand(parser, key, db3) {
         parser.push("MOVE");
         parser.pushKey(key);
@@ -100082,6 +101031,13 @@ var require_MSET = __commonJS({
     exports.parseMSetArguments = parseMSetArguments;
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the MSET command
+       *
+       * @param parser - The command parser
+       * @param toSet - Key-value pairs to set (array of tuples, flat array, or object)
+       * @see https://redis.io/commands/mset/
+       */
       parseCommand(parser, toSet) {
         parser.push("MSET");
         return parseMSetArguments(parser, toSet);
@@ -100157,6 +101113,16 @@ var require_MSETEX = __commonJS({
     }
     exports.parseMSetExArguments = parseMSetExArguments;
     exports.default = {
+      /**
+       * Constructs the MSETEX command.
+       *
+       * Atomically sets multiple string keys with a shared expiration in a single operation.
+       *
+       * @param parser - The command parser
+       * @param keyValuePairs - Key-value pairs to set (array of tuples, flat array, or object)
+       * @param options - Configuration for expiration and set modes
+       * @see https://redis.io/commands/msetex/
+       */
       parseCommand(parser, keyValuePairs, options) {
         parser.push("MSETEX");
         parseMSetExArguments(parser, keyValuePairs);
@@ -100194,6 +101160,13 @@ var require_MSETNX = __commonJS({
     var MSET_1 = require_MSET();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the MSETNX command
+       *
+       * @param parser - The command parser
+       * @param toSet - Key-value pairs to set if none of the keys exist (array of tuples, flat array, or object)
+       * @see https://redis.io/commands/msetnx/
+       */
       parseCommand(parser, toSet) {
         parser.push("MSETNX");
         return (0, MSET_1.parseMSetArguments)(parser, toSet);
@@ -100210,6 +101183,13 @@ var require_OBJECT_ENCODING = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the OBJECT ENCODING command
+       *
+       * @param parser - The command parser
+       * @param key - The key to get the internal encoding for
+       * @see https://redis.io/commands/object-encoding/
+       */
       parseCommand(parser, key) {
         parser.push("OBJECT", "ENCODING");
         parser.pushKey(key);
@@ -100226,6 +101206,13 @@ var require_OBJECT_FREQ = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the OBJECT FREQ command
+       *
+       * @param parser - The command parser
+       * @param key - The key to get the access frequency for
+       * @see https://redis.io/commands/object-freq/
+       */
       parseCommand(parser, key) {
         parser.push("OBJECT", "FREQ");
         parser.pushKey(key);
@@ -100242,6 +101229,13 @@ var require_OBJECT_IDLETIME = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the OBJECT IDLETIME command
+       *
+       * @param parser - The command parser
+       * @param key - The key to get the idle time for
+       * @see https://redis.io/commands/object-idletime/
+       */
       parseCommand(parser, key) {
         parser.push("OBJECT", "IDLETIME");
         parser.pushKey(key);
@@ -100258,6 +101252,13 @@ var require_OBJECT_REFCOUNT = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the OBJECT REFCOUNT command
+       *
+       * @param parser - The command parser
+       * @param key - The key to get the reference count for
+       * @see https://redis.io/commands/object-refcount/
+       */
       parseCommand(parser, key) {
         parser.push("OBJECT", "REFCOUNT");
         parser.pushKey(key);
@@ -100273,6 +101274,13 @@ var require_PERSIST = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the PERSIST command
+       *
+       * @param parser - The command parser
+       * @param key - The key to remove the expiration from
+       * @see https://redis.io/commands/persist/
+       */
       parseCommand(parser, key) {
         parser.push("PERSIST");
         parser.pushKey(key);
@@ -100289,6 +101297,15 @@ var require_PEXPIRE = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the PEXPIRE command
+       *
+       * @param parser - The command parser
+       * @param key - The key to set the expiration for
+       * @param ms - The expiration time in milliseconds
+       * @param mode - Optional mode for the command ('NX', 'XX', 'GT', 'LT')
+       * @see https://redis.io/commands/pexpire/
+       */
       parseCommand(parser, key, ms, mode) {
         parser.push("PEXPIRE");
         parser.pushKey(key);
@@ -100310,6 +101327,15 @@ var require_PEXPIREAT = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the PEXPIREAT command
+       *
+       * @param parser - The command parser
+       * @param key - The key to set the expiration for
+       * @param msTimestamp - The expiration timestamp in milliseconds (Unix timestamp or Date object)
+       * @param mode - Optional mode for the command ('NX', 'XX', 'GT', 'LT')
+       * @see https://redis.io/commands/pexpireat/
+       */
       parseCommand(parser, key, msTimestamp, mode) {
         parser.push("PEXPIREAT");
         parser.pushKey(key);
@@ -100330,6 +101356,13 @@ var require_PEXPIRETIME = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the PEXPIRETIME command
+       *
+       * @param parser - The command parser
+       * @param key - The key to get the expiration time for in milliseconds
+       * @see https://redis.io/commands/pexpiretime/
+       */
       parseCommand(parser, key) {
         parser.push("PEXPIRETIME");
         parser.pushKey(key);
@@ -100346,6 +101379,14 @@ var require_PFADD = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the PFADD command
+       *
+       * @param parser - The command parser
+       * @param key - The key of the HyperLogLog
+       * @param element - Optional elements to add
+       * @see https://redis.io/commands/pfadd/
+       */
       parseCommand(parser, key, element) {
         parser.push("PFADD");
         parser.pushKey(key);
@@ -100365,6 +101406,13 @@ var require_PFCOUNT = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the PFCOUNT command
+       *
+       * @param parser - The command parser
+       * @param keys - One or more keys of HyperLogLog structures to count
+       * @see https://redis.io/commands/pfcount/
+       */
       parseCommand(parser, keys) {
         parser.push("PFCOUNT");
         parser.pushKeys(keys);
@@ -100380,6 +101428,14 @@ var require_PFMERGE = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the PFMERGE command
+       *
+       * @param parser - The command parser
+       * @param destination - The destination key to merge to
+       * @param sources - One or more source keys to merge from
+       * @see https://redis.io/commands/pfmerge/
+       */
       parseCommand(parser, destination, sources) {
         parser.push("PFMERGE");
         parser.pushKey(destination);
@@ -100400,6 +101456,13 @@ var require_PING = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the PING command
+       *
+       * @param parser - The command parser
+       * @param message - Optional message to be returned instead of PONG
+       * @see https://redis.io/commands/ping/
+       */
       parseCommand(parser, message) {
         parser.push("PING");
         if (message) {
@@ -100417,6 +101480,15 @@ var require_PSETEX = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the PSETEX command
+       *
+       * @param parser - The command parser
+       * @param key - The key to set
+       * @param ms - The expiration time in milliseconds
+       * @param value - The value to set
+       * @see https://redis.io/commands/psetex/
+       */
       parseCommand(parser, key, ms, value) {
         parser.push("PSETEX");
         parser.pushKey(key);
@@ -100434,6 +101506,13 @@ var require_PTTL = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the PTTL command
+       *
+       * @param parser - The command parser
+       * @param key - The key to get the time to live in milliseconds
+       * @see https://redis.io/commands/pttl/
+       */
       parseCommand(parser, key) {
         parser.push("PTTL");
         parser.pushKey(key);
@@ -100452,6 +101531,14 @@ var require_PUBLISH = __commonJS({
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
       IS_FORWARD_COMMAND: true,
+      /**
+       * Constructs the PUBLISH command
+       *
+       * @param parser - The command parser
+       * @param channel - The channel to publish to
+       * @param message - The message to publish
+       * @see https://redis.io/commands/publish/
+       */
       parseCommand(parser, channel, message) {
         parser.push("PUBLISH", channel, message);
       },
@@ -100468,6 +101555,13 @@ var require_PUBSUB_CHANNELS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the PUBSUB CHANNELS command
+       *
+       * @param parser - The command parser
+       * @param pattern - Optional pattern to filter channels
+       * @see https://redis.io/commands/pubsub-channels/
+       */
       parseCommand(parser, pattern) {
         parser.push("PUBSUB", "CHANNELS");
         if (pattern) {
@@ -100487,6 +101581,12 @@ var require_PUBSUB_NUMPAT = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the PUBSUB NUMPAT command
+       *
+       * @param parser - The command parser
+       * @see https://redis.io/commands/pubsub-numpat/
+       */
       parseCommand(parser) {
         parser.push("PUBSUB", "NUMPAT");
       },
@@ -100503,6 +101603,13 @@ var require_PUBSUB_NUMSUB = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the PUBSUB NUMSUB command
+       *
+       * @param parser - The command parser
+       * @param channels - Optional channel names to get subscription count for
+       * @see https://redis.io/commands/pubsub-numsub/
+       */
       parseCommand(parser, channels) {
         parser.push("PUBSUB", "NUMSUB");
         if (channels) {
@@ -100516,7 +101623,7 @@ var require_PUBSUB_NUMSUB = __commonJS({
        * @returns Record mapping channel names to their subscriber counts
        */
       transformReply(rawReply) {
-        const reply = {};
+        const reply = /* @__PURE__ */ Object.create(null);
         let i2 = 0;
         while (i2 < rawReply.length) {
           reply[rawReply[i2++].toString()] = Number(rawReply[i2++]);
@@ -100554,7 +101661,7 @@ var require_PUBSUB_SHARDNUMSUB = __commonJS({
        * @returns Record mapping shard channel names to their subscriber counts
        */
       transformReply(reply) {
-        const transformedReply = {};
+        const transformedReply = /* @__PURE__ */ Object.create(null);
         for (let i2 = 0; i2 < reply.length; i2 += 2) {
           transformedReply[reply[i2].toString()] = reply[i2 + 1];
         }
@@ -100572,6 +101679,13 @@ var require_PUBSUB_SHARDCHANNELS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the PUBSUB SHARDCHANNELS command
+       *
+       * @param parser - The command parser
+       * @param pattern - Optional pattern to filter shard channels
+       * @see https://redis.io/commands/pubsub-shardchannels/
+       */
       parseCommand(parser, pattern) {
         parser.push("PUBSUB", "SHARDCHANNELS");
         if (pattern) {
@@ -100591,6 +101705,12 @@ var require_RANDOMKEY = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the RANDOMKEY command
+       *
+       * @param parser - The command parser
+       * @see https://redis.io/commands/randomkey/
+       */
       parseCommand(parser) {
         parser.push("RANDOMKEY");
       },
@@ -100607,6 +101727,12 @@ var require_READONLY = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the READONLY command
+       *
+       * @param parser - The command parser
+       * @see https://redis.io/commands/readonly/
+       */
       parseCommand(parser) {
         parser.push("READONLY");
       },
@@ -100622,6 +101748,14 @@ var require_RENAME = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the RENAME command
+       *
+       * @param parser - The command parser
+       * @param key - The key to rename
+       * @param newKey - The new key name
+       * @see https://redis.io/commands/rename/
+       */
       parseCommand(parser, key, newKey) {
         parser.push("RENAME");
         parser.pushKeys([key, newKey]);
@@ -100638,6 +101772,14 @@ var require_RENAMENX = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the RENAMENX command
+       *
+       * @param parser - The command parser
+       * @param key - The key to rename
+       * @param newKey - The new key name, if it doesn't exist
+       * @see https://redis.io/commands/renamenx/
+       */
       parseCommand(parser, key, newKey) {
         parser.push("RENAMENX");
         parser.pushKeys([key, newKey]);
@@ -100655,6 +101797,14 @@ var require_REPLICAOF = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the REPLICAOF command
+       *
+       * @param parser - The command parser
+       * @param host - The host of the master to replicate from
+       * @param port - The port of the master to replicate from
+       * @see https://redis.io/commands/replicaof/
+       */
       parseCommand(parser, host, port) {
         parser.push("REPLICAOF", host, port.toString());
       },
@@ -100671,6 +101821,12 @@ var require_RESTORE_ASKING = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the RESTORE-ASKING command
+       *
+       * @param parser - The command parser
+       * @see https://redis.io/commands/restore-asking/
+       */
       parseCommand(parser) {
         parser.push("RESTORE-ASKING");
       },
@@ -100686,6 +101842,16 @@ var require_RESTORE = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the RESTORE command
+       *
+       * @param parser - The command parser
+       * @param key - The key to restore
+       * @param ttl - Time to live in milliseconds, 0 for no expiry
+       * @param serializedValue - The serialized value from DUMP command
+       * @param options - Options for the RESTORE command
+       * @see https://redis.io/commands/restore/
+       */
       parseCommand(parser, key, ttl, serializedValue, options) {
         parser.push("RESTORE");
         parser.pushKey(key);
@@ -100716,6 +101882,12 @@ var require_ROLE = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the ROLE command
+       *
+       * @param parser - The command parser
+       * @see https://redis.io/commands/role/
+       */
       parseCommand(parser) {
         parser.push("ROLE");
       },
@@ -100773,6 +101945,14 @@ var require_RPOP_COUNT = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the RPOP command with count parameter
+       *
+       * @param parser - The command parser
+       * @param key - The list key to pop from
+       * @param count - The number of elements to pop
+       * @see https://redis.io/commands/rpop/
+       */
       parseCommand(parser, key, count4) {
         parser.push("RPOP");
         parser.pushKey(key);
@@ -100789,6 +101969,13 @@ var require_RPOP = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the RPOP command
+       *
+       * @param parser - The command parser
+       * @param key - The list key to pop from
+       * @see https://redis.io/commands/rpop/
+       */
       parseCommand(parser, key) {
         parser.push("RPOP");
         parser.pushKey(key);
@@ -100804,6 +101991,14 @@ var require_RPOPLPUSH = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the RPOPLPUSH command
+       *
+       * @param parser - The command parser
+       * @param source - The source list key
+       * @param destination - The destination list key
+       * @see https://redis.io/commands/rpoplpush/
+       */
       parseCommand(parser, source, destination) {
         parser.push("RPOPLPUSH");
         parser.pushKeys([source, destination]);
@@ -100819,6 +102014,14 @@ var require_RPUSH = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the RPUSH command
+       *
+       * @param parser - The command parser
+       * @param key - The list key to push to
+       * @param element - One or more elements to push
+       * @see https://redis.io/commands/rpush/
+       */
       parseCommand(parser, key, element) {
         parser.push("RPUSH");
         parser.pushKey(key);
@@ -100835,6 +102038,14 @@ var require_RPUSHX = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the RPUSHX command
+       *
+       * @param parser - The command parser
+       * @param key - The list key to push to (only if it exists)
+       * @param element - One or more elements to push
+       * @see https://redis.io/commands/rpushx/
+       */
       parseCommand(parser, key, element) {
         parser.push("RPUSHX");
         parser.pushKey(key);
@@ -100851,6 +102062,14 @@ var require_SADD = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the SADD command
+       *
+       * @param parser - The command parser
+       * @param key - The set key to add members to
+       * @param members - One or more members to add to the set
+       * @see https://redis.io/commands/sadd/
+       */
       parseCommand(parser, key, members) {
         parser.push("SADD");
         parser.pushKey(key);
@@ -100869,6 +102088,13 @@ var require_SCARD = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the SCARD command
+       *
+       * @param parser - The command parser
+       * @param key - The set key to get the cardinality of
+       * @see https://redis.io/commands/scard/
+       */
       parseCommand(parser, key) {
         parser.push("SCARD");
         parser.pushKey(key);
@@ -100886,6 +102112,13 @@ var require_SCRIPT_DEBUG = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the SCRIPT DEBUG command
+       *
+       * @param parser - The command parser
+       * @param mode - Debug mode: YES, SYNC, or NO
+       * @see https://redis.io/commands/script-debug/
+       */
       parseCommand(parser, mode) {
         parser.push("SCRIPT", "DEBUG", mode);
       },
@@ -100902,6 +102135,13 @@ var require_SCRIPT_EXISTS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the SCRIPT EXISTS command
+       *
+       * @param parser - The command parser
+       * @param sha1 - One or more SHA1 digests of scripts
+       * @see https://redis.io/commands/script-exists/
+       */
       parseCommand(parser, sha12) {
         parser.push("SCRIPT", "EXISTS");
         parser.pushVariadic(sha12);
@@ -100919,6 +102159,13 @@ var require_SCRIPT_FLUSH = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the SCRIPT FLUSH command
+       *
+       * @param parser - The command parser
+       * @param mode - Optional flush mode: ASYNC or SYNC
+       * @see https://redis.io/commands/script-flush/
+       */
       parseCommand(parser, mode) {
         parser.push("SCRIPT", "FLUSH");
         if (mode) {
@@ -100938,6 +102185,12 @@ var require_SCRIPT_KILL = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the SCRIPT KILL command
+       *
+       * @param parser - The command parser
+       * @see https://redis.io/commands/script-kill/
+       */
       parseCommand(parser) {
         parser.push("SCRIPT", "KILL");
       },
@@ -100954,6 +102207,13 @@ var require_SCRIPT_LOAD = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the SCRIPT LOAD command
+       *
+       * @param parser - The command parser
+       * @param script - The Lua script to load
+       * @see https://redis.io/commands/script-load/
+       */
       parseCommand(parser, script) {
         parser.push("SCRIPT", "LOAD", script);
       },
@@ -100970,6 +102230,13 @@ var require_SDIFF = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the SDIFF command
+       *
+       * @param parser - The command parser
+       * @param keys - One or more set keys to compute the difference from
+       * @see https://redis.io/commands/sdiff/
+       */
       parseCommand(parser, keys) {
         parser.push("SDIFF");
         parser.pushKeys(keys);
@@ -100985,6 +102252,14 @@ var require_SDIFFSTORE = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the SDIFFSTORE command
+       *
+       * @param parser - The command parser
+       * @param destination - The destination key to store the result
+       * @param keys - One or more set keys to compute the difference from
+       * @see https://redis.io/commands/sdiffstore/
+       */
       parseCommand(parser, destination, keys) {
         parser.push("SDIFFSTORE");
         parser.pushKey(destination);
@@ -101001,6 +102276,15 @@ var require_SET = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the SET command
+       *
+       * @param parser - The command parser
+       * @param key - The key to set
+       * @param value - The value to set
+       * @param options - Additional options for the SET command
+       * @see https://redis.io/commands/set/
+       */
       parseCommand(parser, key, value, options) {
         parser.push("SET");
         parser.pushKey(key);
@@ -101050,6 +102334,15 @@ var require_SETBIT = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the SETBIT command
+       *
+       * @param parser - The command parser
+       * @param key - The key to set the bit on
+       * @param offset - The bit offset (zero-based)
+       * @param value - The bit value (0 or 1)
+       * @see https://redis.io/commands/setbit/
+       */
       parseCommand(parser, key, offset, value) {
         parser.push("SETBIT");
         parser.pushKey(key);
@@ -101066,6 +102359,15 @@ var require_SETEX = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the SETEX command
+       *
+       * @param parser - The command parser
+       * @param key - The key to set
+       * @param seconds - The expiration time in seconds
+       * @param value - The value to set
+       * @see https://redis.io/commands/setex/
+       */
       parseCommand(parser, key, seconds, value) {
         parser.push("SETEX");
         parser.pushKey(key);
@@ -101082,6 +102384,14 @@ var require_SETNX = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the SETNX command
+       *
+       * @param parser - The command parser
+       * @param key - The key to set if it doesn't exist
+       * @param value - The value to set
+       * @see https://redis.io/commands/setnx/
+       */
       parseCommand(parser, key, value) {
         parser.push("SETNX");
         parser.pushKey(key);
@@ -101098,6 +102408,15 @@ var require_SETRANGE = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
+      /**
+       * Constructs the SETRANGE command
+       *
+       * @param parser - The command parser
+       * @param key - The key to modify
+       * @param offset - The offset at which to start writing
+       * @param value - The value to write at the offset
+       * @see https://redis.io/commands/setrange/
+       */
       parseCommand(parser, key, offset, value) {
         parser.push("SETRANGE");
         parser.pushKey(key);
@@ -101116,6 +102435,13 @@ var require_SINTER = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the SINTER command
+       *
+       * @param parser - The command parser
+       * @param keys - One or more set keys to compute the intersection from
+       * @see https://redis.io/commands/sinter/
+       */
       parseCommand(parser, keys) {
         parser.push("SINTER");
         parser.pushKeys(keys);
@@ -101132,6 +102458,14 @@ var require_SINTERCARD = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the SINTERCARD command
+       *
+       * @param parser - The command parser
+       * @param keys - One or more set keys to compute the intersection cardinality from
+       * @param options - Options for the SINTERCARD command or a number for LIMIT (backwards compatibility)
+       * @see https://redis.io/commands/sintercard/
+       */
       parseCommand(parser, keys, options) {
         parser.push("SINTERCARD");
         parser.pushKeysLength(keys);
@@ -101153,6 +102487,14 @@ var require_SINTERSTORE = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the SINTERSTORE command
+       *
+       * @param parser - The command parser
+       * @param destination - The destination key to store the result
+       * @param keys - One or more set keys to compute the intersection from
+       * @see https://redis.io/commands/sinterstore/
+       */
       parseCommand(parser, destination, keys) {
         parser.push("SINTERSTORE");
         parser.pushKey(destination);
@@ -101171,6 +102513,14 @@ var require_SISMEMBER = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the SISMEMBER command
+       *
+       * @param parser - The command parser
+       * @param key - The set key to check membership in
+       * @param member - The member to check for existence
+       * @see https://redis.io/commands/sismember/
+       */
       parseCommand(parser, key, member) {
         parser.push("SISMEMBER");
         parser.pushKey(key);
@@ -101189,6 +102539,13 @@ var require_SMEMBERS = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the SMEMBERS command
+       *
+       * @param parser - The command parser
+       * @param key - The set key to get all members from
+       * @see https://redis.io/commands/smembers/
+       */
       parseCommand(parser, key) {
         parser.push("SMEMBERS");
         parser.pushKey(key);
@@ -101209,6 +102566,14 @@ var require_SMISMEMBER = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the SMISMEMBER command
+       *
+       * @param parser - The command parser
+       * @param key - The set key to check membership in
+       * @param members - The members to check for existence
+       * @see https://redis.io/commands/smismember/
+       */
       parseCommand(parser, key, members) {
         parser.push("SMISMEMBER");
         parser.pushKey(key);
@@ -101226,6 +102591,15 @@ var require_SMOVE = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the SMOVE command
+       *
+       * @param parser - The command parser
+       * @param source - The source set key
+       * @param destination - The destination set key
+       * @param member - The member to move
+       * @see https://redis.io/commands/smove/
+       */
       parseCommand(parser, source, destination, member) {
         parser.push("SMOVE");
         parser.pushKeys([source, destination]);
@@ -101269,6 +102643,14 @@ var require_SORT = __commonJS({
     exports.parseSortArguments = parseSortArguments;
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the SORT command
+       *
+       * @param parser - The command parser
+       * @param key - The key to sort (list, set, or sorted set)
+       * @param options - Sort options
+       * @see https://redis.io/commands/sort/
+       */
       parseCommand(parser, key, options) {
         parser.push("SORT");
         parseSortArguments(parser, key, options);
@@ -101313,6 +102695,10 @@ var require_SORT_RO = __commonJS({
     var SORT_1 = __importStar3(require_SORT());
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Read-only variant of SORT that sorts the elements in a list, set or sorted set.
+       * @param args - Same parameters as the SORT command.
+       */
       parseCommand(...args) {
         const parser = args[0];
         parser.push("SORT_RO");
@@ -101334,6 +102720,13 @@ var require_SORT_STORE = __commonJS({
     var SORT_1 = __importDefault3(require_SORT());
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Sorts the elements in a list, set or sorted set and stores the result in a new list.
+       * @param parser - The Redis command parser.
+       * @param source - Key of the source list, set or sorted set.
+       * @param destination - Destination key where the result will be stored.
+       * @param options - Optional sorting parameters.
+       */
       parseCommand(parser, source, destination, options) {
         SORT_1.default.parseCommand(parser, source, options);
         parser.push("STORE", destination);
@@ -101350,6 +102743,14 @@ var require_SPOP_COUNT = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the SPOP command to remove and return multiple random members from a set
+       *
+       * @param parser - The command parser
+       * @param key - The key of the set to pop from
+       * @param count - The number of members to pop
+       * @see https://redis.io/commands/spop/
+       */
       parseCommand(parser, key, count4) {
         parser.push("SPOP");
         parser.pushKey(key);
@@ -101367,6 +102768,13 @@ var require_SPOP = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the SPOP command to remove and return a random member from a set
+       *
+       * @param parser - The command parser
+       * @param key - The key of the set to pop from
+       * @see https://redis.io/commands/spop/
+       */
       parseCommand(parser, key) {
         parser.push("SPOP");
         parser.pushKey(key);
@@ -101383,6 +102791,14 @@ var require_SPUBLISH = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the SPUBLISH command to post a message to a Sharded Pub/Sub channel
+       *
+       * @param parser - The command parser
+       * @param channel - The channel to publish to
+       * @param message - The message to publish
+       * @see https://redis.io/commands/spublish/
+       */
       parseCommand(parser, channel, message) {
         parser.push("SPUBLISH");
         parser.pushKey(channel);
@@ -101400,6 +102816,13 @@ var require_SRANDMEMBER = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the SRANDMEMBER command to get a random member from a set
+       *
+       * @param parser - The command parser
+       * @param key - The key of the set to get random member from
+       * @see https://redis.io/commands/srandmember/
+       */
       parseCommand(parser, key) {
         parser.push("SRANDMEMBER");
         parser.pushKey(key);
@@ -101420,6 +102843,14 @@ var require_SRANDMEMBER_COUNT = __commonJS({
     var SRANDMEMBER_1 = __importDefault3(require_SRANDMEMBER());
     exports.default = {
       IS_READ_ONLY: SRANDMEMBER_1.default.IS_READ_ONLY,
+      /**
+       * Constructs the SRANDMEMBER command to get multiple random members from a set
+       *
+       * @param parser - The command parser
+       * @param key - The key of the set to get random members from
+       * @param count - The number of members to return. If negative, may return the same member multiple times
+       * @see https://redis.io/commands/srandmember/
+       */
       parseCommand(parser, key, count4) {
         SRANDMEMBER_1.default.parseCommand(parser, key);
         parser.push(count4.toString());
@@ -101436,6 +102867,15 @@ var require_SREM = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the SREM command to remove one or more members from a set
+       *
+       * @param parser - The command parser
+       * @param key - The key of the set to remove members from
+       * @param members - One or more members to remove from the set
+       * @returns The number of members that were removed from the set
+       * @see https://redis.io/commands/srem/
+       */
       parseCommand(parser, key, members) {
         parser.push("SREM");
         parser.pushKey(key);
@@ -101454,6 +102894,16 @@ var require_SSCAN = __commonJS({
     var SCAN_1 = require_SCAN();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the SSCAN command to incrementally iterate over elements in a set
+       *
+       * @param parser - The command parser
+       * @param key - The key of the set to scan
+       * @param cursor - The cursor position to start scanning from
+       * @param options - Optional scanning parameters (COUNT and MATCH)
+       * @returns Iterator containing cursor position and matching members
+       * @see https://redis.io/commands/sscan/
+       */
       parseCommand(parser, key, cursor, options) {
         parser.push("SSCAN");
         parser.pushKey(key);
@@ -101484,6 +102934,14 @@ var require_STRLEN = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the STRLEN command to get the length of a string value
+       *
+       * @param parser - The command parser
+       * @param key - The key holding the string value
+       * @returns The length of the string value, or 0 when key does not exist
+       * @see https://redis.io/commands/strlen/
+       */
       parseCommand(parser, key) {
         parser.push("STRLEN");
         parser.pushKey(key);
@@ -101501,6 +102959,14 @@ var require_SUNION = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the SUNION command to return the members of the set resulting from the union of all the given sets
+       *
+       * @param parser - The command parser
+       * @param keys - One or more set keys to compute the union from
+       * @returns Array of all elements that are members of at least one of the given sets
+       * @see https://redis.io/commands/sunion/
+       */
       parseCommand(parser, keys) {
         parser.push("SUNION");
         parser.pushKeys(keys);
@@ -101517,6 +102983,15 @@ var require_SUNIONSTORE = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the SUNIONSTORE command to store the union of multiple sets into a destination set
+       *
+       * @param parser - The command parser
+       * @param destination - The destination key to store the resulting set
+       * @param keys - One or more source set keys to compute the union from
+       * @returns The number of elements in the resulting set
+       * @see https://redis.io/commands/sunionstore/
+       */
       parseCommand(parser, destination, keys) {
         parser.push("SUNIONSTORE");
         parser.pushKey(destination);
@@ -101535,6 +103010,12 @@ var require_SWAPDB = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: false,
+      /**
+       * Swaps the data of two Redis databases.
+       * @param parser - The Redis command parser.
+       * @param index1 - First database index.
+       * @param index2 - Second database index.
+       */
       parseCommand(parser, index1, index2) {
         parser.push("SWAPDB", index1.toString(), index2.toString());
       },
@@ -101551,6 +103032,13 @@ var require_TIME = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the TIME command to return the server's current time
+       *
+       * @param parser - The command parser
+       * @returns Array containing the Unix timestamp in seconds and microseconds
+       * @see https://redis.io/commands/time/
+       */
       parseCommand(parser) {
         parser.push("TIME");
       },
@@ -101566,6 +103054,14 @@ var require_TOUCH = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the TOUCH command to alter the last access time of keys
+       *
+       * @param parser - The command parser
+       * @param key - One or more keys to touch
+       * @returns The number of keys that were touched
+       * @see https://redis.io/commands/touch/
+       */
       parseCommand(parser, key) {
         parser.push("TOUCH");
         parser.pushKeys(key);
@@ -101582,6 +103078,14 @@ var require_TTL = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the TTL command to get the remaining time to live of a key
+       *
+       * @param parser - The command parser
+       * @param key - Key to check
+       * @returns Time to live in seconds, -2 if key does not exist, -1 if has no timeout
+       * @see https://redis.io/commands/ttl/
+       */
       parseCommand(parser, key) {
         parser.push("TTL");
         parser.pushKey(key);
@@ -101599,6 +103103,14 @@ var require_TYPE = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the TYPE command to determine the data type stored at key
+       *
+       * @param parser - The command parser
+       * @param key - Key to check
+       * @returns String reply: "none", "string", "list", "set", "zset", "hash", "stream"
+       * @see https://redis.io/commands/type/
+       */
       parseCommand(parser, key) {
         parser.push("TYPE");
         parser.pushKey(key);
@@ -101615,6 +103127,14 @@ var require_UNLINK = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the UNLINK command to asynchronously delete one or more keys
+       *
+       * @param parser - The command parser
+       * @param keys - One or more keys to unlink
+       * @returns The number of keys that were unlinked
+       * @see https://redis.io/commands/unlink/
+       */
       parseCommand(parser, keys) {
         parser.push("UNLINK");
         parser.pushKeys(keys);
@@ -101632,6 +103152,15 @@ var require_WAIT = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the WAIT command to synchronize with replicas
+       *
+       * @param parser - The command parser
+       * @param numberOfReplicas - Number of replicas that must acknowledge the write
+       * @param timeout - Maximum time to wait in milliseconds
+       * @returns The number of replicas that acknowledged the write
+       * @see https://redis.io/commands/wait/
+       */
       parseCommand(parser, numberOfReplicas, timeout) {
         parser.push("WAIT", numberOfReplicas.toString(), timeout.toString());
       },
@@ -101647,6 +103176,16 @@ var require_XACK = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the XACK command to acknowledge the processing of stream messages in a consumer group
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @param group - The consumer group name
+       * @param id - One or more message IDs to acknowledge
+       * @returns The number of messages successfully acknowledged
+       * @see https://redis.io/commands/xack/
+       */
       parseCommand(parser, key, group, id) {
         parser.push("XACK");
         parser.pushKey(key);
@@ -101665,6 +103204,17 @@ var require_XACKDEL = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the XACKDEL command to acknowledge and delete one or multiple messages for a stream consumer group
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @param group - The consumer group name
+       * @param id - One or more message IDs to acknowledge and delete
+       * @param policy - Policy to apply when deleting entries (optional, defaults to KEEPREF)
+       * @returns Array of integers: -1 (not found), 1 (acknowledged and deleted), 2 (acknowledged with dangling refs)
+       * @see https://redis.io/commands/xackdel/
+       */
       parseCommand(parser, key, group, id, policy) {
         parser.push("XACKDEL");
         parser.pushKey(key);
@@ -101723,6 +103273,17 @@ var require_XADD = __commonJS({
     exports.parseXAddArguments = parseXAddArguments;
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the XADD command to append a new entry to a stream
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @param id - Message ID (* for auto-generation)
+       * @param message - Key-value pairs representing the message fields
+       * @param options - Additional options for stream trimming
+       * @returns The ID of the added entry
+       * @see https://redis.io/commands/xadd/
+       */
       parseCommand(...args) {
         return parseXAddArguments(void 0, ...args);
       },
@@ -101739,6 +103300,13 @@ var require_XADD_NOMKSTREAM = __commonJS({
     var XADD_1 = require_XADD();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the XADD command with NOMKSTREAM option to append a new entry to an existing stream
+       *
+       * @param args - Arguments tuple containing parser, key, id, message, and options
+       * @returns The ID of the added entry, or null if the stream doesn't exist
+       * @see https://redis.io/commands/xadd/
+       */
       parseCommand(...args) {
         return (0, XADD_1.parseXAddArguments)("NOMKSTREAM", ...args);
       },
@@ -101755,6 +103323,19 @@ var require_XAUTOCLAIM = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the XAUTOCLAIM command to automatically claim pending messages in a consumer group
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @param group - The consumer group name
+       * @param consumer - The consumer name that will claim the messages
+       * @param minIdleTime - Minimum idle time in milliseconds for a message to be claimed
+       * @param start - Message ID to start scanning from
+       * @param options - Additional options for the claim operation
+       * @returns Object containing nextId, claimed messages, and list of deleted message IDs
+       * @see https://redis.io/commands/xautoclaim/
+       */
       parseCommand(parser, key, group, consumer, minIdleTime, start, options) {
         parser.push("XAUTOCLAIM");
         parser.pushKey(key);
@@ -101793,6 +103374,13 @@ var require_XAUTOCLAIM_JUSTID = __commonJS({
     var XAUTOCLAIM_1 = __importDefault3(require_XAUTOCLAIM());
     exports.default = {
       IS_READ_ONLY: XAUTOCLAIM_1.default.IS_READ_ONLY,
+      /**
+       * Constructs the XAUTOCLAIM command with JUSTID option to get only message IDs
+       *
+       * @param args - Same parameters as XAUTOCLAIM command
+       * @returns Object containing nextId and arrays of claimed and deleted message IDs
+       * @see https://redis.io/commands/xautoclaim/
+       */
       parseCommand(...args) {
         const parser = args[0];
         XAUTOCLAIM_1.default.parseCommand(...args);
@@ -101823,6 +103411,19 @@ var require_XCLAIM = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the XCLAIM command to claim pending messages in a consumer group
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @param group - The consumer group name
+       * @param consumer - The consumer name that will claim the messages
+       * @param minIdleTime - Minimum idle time in milliseconds for a message to be claimed
+       * @param id - One or more message IDs to claim
+       * @param options - Additional options for the claim operation
+       * @returns Array of claimed messages
+       * @see https://redis.io/commands/xclaim/
+       */
       parseCommand(parser, key, group, consumer, minIdleTime, id, options) {
         parser.push("XCLAIM");
         parser.pushKey(key);
@@ -101870,6 +103471,13 @@ var require_XCLAIM_JUSTID = __commonJS({
     var XCLAIM_1 = __importDefault3(require_XCLAIM());
     exports.default = {
       IS_READ_ONLY: XCLAIM_1.default.IS_READ_ONLY,
+      /**
+       * Constructs the XCLAIM command with JUSTID option to get only message IDs
+       *
+       * @param args - Same parameters as XCLAIM command
+       * @returns Array of successfully claimed message IDs
+       * @see https://redis.io/commands/xclaim/
+       */
       parseCommand(...args) {
         const parser = args[0];
         XCLAIM_1.default.parseCommand(...args);
@@ -101892,6 +103500,17 @@ var require_XCFGSET = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Configures the idempotency parameters for a stream's IDMP map.
+       * Sets how long Redis remembers each iid and the maximum number of iids to track.
+       * This command clears the existing IDMP map (Redis forgets all previously stored iids),
+       * but only if the configuration value actually changes.
+       *
+       * @param parser - The command parser
+       * @param key - The name of the stream
+       * @param options - Optional idempotency configuration parameters
+       * @returns 'OK' on success
+       */
       parseCommand(parser, key, options) {
         parser.push("XCFGSET");
         parser.pushKey(key);
@@ -101914,6 +103533,15 @@ var require_XDEL = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the XDEL command to remove one or more messages from a stream
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @param id - One or more message IDs to delete
+       * @returns The number of messages actually deleted
+       * @see https://redis.io/commands/xdel/
+       */
       parseCommand(parser, key, id) {
         parser.push("XDEL");
         parser.pushKey(key);
@@ -101931,6 +103559,16 @@ var require_XDELEX = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the XDELEX command to delete one or multiple entries from the stream
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @param id - One or more message IDs to delete
+       * @param policy - Policy to apply when deleting entries (optional, defaults to KEEPREF)
+       * @returns Array of integers: -1 (not found), 1 (deleted), 2 (dangling refs)
+       * @see https://redis.io/commands/xdelex/
+       */
       parseCommand(parser, key, id, policy) {
         parser.push("XDELEX");
         parser.pushKey(key);
@@ -101952,6 +103590,17 @@ var require_XGROUP_CREATE = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the XGROUP CREATE command to create a consumer group for a stream
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @param group - Name of the consumer group
+       * @param id - ID of the last delivered item in the stream ('$' for last item, '0' for all items)
+       * @param options - Additional options for group creation
+       * @returns 'OK' if successful
+       * @see https://redis.io/commands/xgroup-create/
+       */
       parseCommand(parser, key, group, id, options) {
         parser.push("XGROUP", "CREATE");
         parser.pushKey(key);
@@ -101975,6 +103624,16 @@ var require_XGROUP_CREATECONSUMER = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the XGROUP CREATECONSUMER command to create a new consumer in a consumer group
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @param group - Name of the consumer group
+       * @param consumer - Name of the consumer to create
+       * @returns 1 if the consumer was created, 0 if it already existed
+       * @see https://redis.io/commands/xgroup-createconsumer/
+       */
       parseCommand(parser, key, group, consumer) {
         parser.push("XGROUP", "CREATECONSUMER");
         parser.pushKey(key);
@@ -101992,6 +103651,16 @@ var require_XGROUP_DELCONSUMER = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the XGROUP DELCONSUMER command to remove a consumer from a consumer group
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @param group - Name of the consumer group
+       * @param consumer - Name of the consumer to remove
+       * @returns The number of pending messages owned by the deleted consumer
+       * @see https://redis.io/commands/xgroup-delconsumer/
+       */
       parseCommand(parser, key, group, consumer) {
         parser.push("XGROUP", "DELCONSUMER");
         parser.pushKey(key);
@@ -102009,6 +103678,15 @@ var require_XGROUP_DESTROY = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the XGROUP DESTROY command to remove a consumer group
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @param group - Name of the consumer group to destroy
+       * @returns 1 if the group was destroyed, 0 if it did not exist
+       * @see https://redis.io/commands/xgroup-destroy/
+       */
       parseCommand(parser, key, group) {
         parser.push("XGROUP", "DESTROY");
         parser.pushKey(key);
@@ -102026,6 +103704,17 @@ var require_XGROUP_SETID = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the XGROUP SETID command to set the last delivered ID for a consumer group
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @param group - Name of the consumer group
+       * @param id - ID to set as last delivered message ('$' for last item, '0' for all items)
+       * @param options - Additional options for setting the group ID
+       * @returns 'OK' if successful
+       * @see https://redis.io/commands/xgroup-setid/
+       */
       parseCommand(parser, key, group, id, options) {
         parser.push("XGROUP", "SETID");
         parser.pushKey(key);
@@ -102046,6 +103735,15 @@ var require_XINFO_CONSUMERS = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the XINFO CONSUMERS command to list the consumers in a consumer group
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @param group - Name of the consumer group
+       * @returns Array of consumer information objects
+       * @see https://redis.io/commands/xinfo-consumers/
+       */
       parseCommand(parser, key, group) {
         parser.push("XINFO", "CONSUMERS");
         parser.pushKey(key);
@@ -102082,6 +103780,14 @@ var require_XINFO_GROUPS = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the XINFO GROUPS command to list the consumer groups of a stream
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @returns Array of consumer group information objects
+       * @see https://redis.io/commands/xinfo-groups/
+       */
       parseCommand(parser, key) {
         parser.push("XINFO", "GROUPS");
         parser.pushKey(key);
@@ -102126,6 +103832,14 @@ var require_XINFO_STREAM = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the XINFO STREAM command to get detailed information about a stream
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @returns Detailed information about the stream including its length, structure, and entries
+       * @see https://redis.io/commands/xinfo-stream/
+       */
       parseCommand(parser, key) {
         parser.push("XINFO", "STREAM");
         parser.pushKey(key);
@@ -102185,33 +103899,17 @@ var require_XLEN = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the XLEN command to get the number of entries in a stream
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @returns The number of entries inside the stream
+       * @see https://redis.io/commands/xlen/
+       */
       parseCommand(parser, key) {
         parser.push("XLEN");
         parser.pushKey(key);
-      },
-      transformReply: void 0
-    };
-  }
-});
-
-// node_modules/@redis/client/dist/lib/commands/XNACK.js
-var require_XNACK = __commonJS({
-  "node_modules/@redis/client/dist/lib/commands/XNACK.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.default = {
-      IS_READ_ONLY: false,
-      parseCommand(parser, key, group, mode, id, options) {
-        parser.push("XNACK");
-        parser.pushKey(key);
-        parser.push(group, mode, "IDS");
-        parser.pushVariadicWithLength(id);
-        if (options?.RETRYCOUNT !== void 0) {
-          parser.push("RETRYCOUNT", options.RETRYCOUNT.toString());
-        }
-        if (options?.FORCE) {
-          parser.push("FORCE");
-        }
       },
       transformReply: void 0
     };
@@ -102226,6 +103924,19 @@ var require_XPENDING_RANGE = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the XPENDING command with range parameters to get detailed information about pending messages
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @param group - Name of the consumer group
+       * @param start - Start of ID range (use '-' for minimum ID)
+       * @param end - End of ID range (use '+' for maximum ID)
+       * @param count - Maximum number of messages to return
+       * @param options - Additional filtering options
+       * @returns Array of pending message details
+       * @see https://redis.io/commands/xpending/
+       */
       parseCommand(parser, key, group, start, end, count4, options) {
         parser.push("XPENDING");
         parser.pushKey(key);
@@ -102267,6 +103978,15 @@ var require_XPENDING = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the XPENDING command to inspect pending messages of a consumer group
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @param group - Name of the consumer group
+       * @returns Summary of pending messages including total count, ID range, and per-consumer stats
+       * @see https://redis.io/commands/xpending/
+       */
       parseCommand(parser, key, group) {
         parser.push("XPENDING");
         parser.pushKey(key);
@@ -102315,6 +104035,15 @@ var require_XRANGE = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the XRANGE command to read stream entries in a specific range
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @param args - Arguments tuple containing start ID, end ID, and options
+       * @returns Array of messages in the specified range
+       * @see https://redis.io/commands/xrange/
+       */
       parseCommand(parser, key, ...args) {
         parser.push("XRANGE");
         parser.pushKey(key);
@@ -102359,6 +104088,15 @@ var require_XREAD = __commonJS({
     exports.pushXReadStreams = pushXReadStreams;
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the XREAD command to read messages from one or more streams
+       *
+       * @param parser - The command parser
+       * @param streams - Single stream or array of streams to read from
+       * @param options - Additional options for reading streams
+       * @returns Array of stream entries, each containing the stream name and its messages
+       * @see https://redis.io/commands/xread/
+       */
       parseCommand(parser, streams, options) {
         parser.push("XREAD");
         if (options?.COUNT) {
@@ -102374,8 +104112,9 @@ var require_XREAD = __commonJS({
        */
       transformReply: {
         2: generic_transformers_1.transformStreamsMessagesReplyResp2,
-        3: generic_transformers_1.transformStreamsMessagesReplyResp3Compat
-      }
+        3: void 0
+      },
+      unstableResp3: true
     };
   }
 });
@@ -102389,6 +104128,17 @@ var require_XREADGROUP = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Constructs the XREADGROUP command to read messages from streams as a consumer group member
+       *
+       * @param parser - The command parser
+       * @param group - Name of the consumer group
+       * @param consumer - Name of the consumer in the group
+       * @param streams - Single stream or array of streams to read from
+       * @param options - Additional options for reading streams
+       * @returns Array of stream entries, each containing the stream name and its messages
+       * @see https://redis.io/commands/xreadgroup/
+       */
       parseCommand(parser, group, consumer, streams, options) {
         parser.push("XREADGROUP", "GROUP", group, consumer);
         if (options?.COUNT !== void 0) {
@@ -102410,7 +104160,7 @@ var require_XREADGROUP = __commonJS({
        */
       transformReply: {
         2: generic_transformers_1.transformStreamsMessagesReplyResp2,
-        3: generic_transformers_1.transformStreamsMessagesReplyResp3Compat
+        3: void 0
       }
     };
   }
@@ -102452,6 +104202,15 @@ var require_XREVRANGE = __commonJS({
     exports.default = {
       CACHEABLE: XRANGE_1.default.CACHEABLE,
       IS_READ_ONLY: XRANGE_1.default.IS_READ_ONLY,
+      /**
+       * Constructs the XREVRANGE command to read stream entries in reverse order
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @param args - Arguments tuple containing start ID, end ID, and options
+       * @returns Array of messages in the specified range in reverse order
+       * @see https://redis.io/commands/xrevrange/
+       */
       parseCommand(parser, key, ...args) {
         parser.push("XREVRANGE");
         parser.pushKey(key);
@@ -102492,6 +104251,17 @@ var require_XTRIM = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Constructs the XTRIM command to trim a stream by length or minimum ID
+       *
+       * @param parser - The command parser
+       * @param key - The stream key
+       * @param strategy - Trim by maximum length (MAXLEN) or minimum ID (MINID)
+       * @param threshold - Maximum length or minimum ID threshold
+       * @param options - Additional options for trimming
+       * @returns Number of entries removed from the stream
+       * @see https://redis.io/commands/xtrim/
+       */
       parseCommand(parser, key, strategy, threshold, options) {
         parser.push("XTRIM");
         parser.pushKey(key);
@@ -102520,6 +104290,16 @@ var require_ZADD = __commonJS({
     exports.pushMembers = void 0;
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
+      /**
+       * Constructs the ZADD command to add one or more members to a sorted set
+       *
+       * @param parser - The command parser
+       * @param key - The sorted set key
+       * @param members - One or more members to add with their scores
+       * @param options - Additional options for adding members
+       * @returns Number of new members added (or changed members if CH is set)
+       * @see https://redis.io/commands/zadd/
+       */
       parseCommand(parser, key, members, options) {
         parser.push("ZADD");
         parser.pushKey(key);
@@ -102568,6 +104348,16 @@ var require_ZADD_INCR = __commonJS({
     var ZADD_1 = require_ZADD();
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
+      /**
+       * Constructs the ZADD command with INCR option to increment the score of a member
+       *
+       * @param parser - The command parser
+       * @param key - The sorted set key
+       * @param members - Member(s) whose score to increment
+       * @param options - Additional options for the increment operation
+       * @returns The new score of the member after increment (null if member does not exist with XX option)
+       * @see https://redis.io/commands/zadd/
+       */
       parseCommand(parser, key, members, options) {
         parser.push("ZADD");
         parser.pushKey(key);
@@ -102596,6 +104386,14 @@ var require_ZCARD = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the ZCARD command to get the cardinality (number of members) of a sorted set
+       *
+       * @param parser - The command parser
+       * @param key - The sorted set key
+       * @returns Number of members in the sorted set
+       * @see https://redis.io/commands/zcard/
+       */
       parseCommand(parser, key) {
         parser.push("ZCARD");
         parser.pushKey(key);
@@ -102614,6 +104412,13 @@ var require_ZCOUNT = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the number of elements in the sorted set with a score between min and max.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       * @param min - Minimum score to count from (inclusive).
+       * @param max - Maximum score to count to (inclusive).
+       */
       parseCommand(parser, key, min3, max3) {
         parser.push("ZCOUNT");
         parser.pushKey(key);
@@ -102631,6 +104436,11 @@ var require_ZDIFF = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns the difference between the first sorted set and all the successive sorted sets.
+       * @param parser - The Redis command parser.
+       * @param keys - Keys of the sorted sets.
+       */
       parseCommand(parser, keys) {
         parser.push("ZDIFF");
         parser.pushKeysLength(keys);
@@ -102652,6 +104462,11 @@ var require_ZDIFF_WITHSCORES = __commonJS({
     var ZDIFF_1 = __importDefault3(require_ZDIFF());
     exports.default = {
       IS_READ_ONLY: ZDIFF_1.default.IS_READ_ONLY,
+      /**
+       * Returns the difference between the first sorted set and all successive sorted sets with their scores.
+       * @param parser - The Redis command parser.
+       * @param keys - Keys of the sorted sets.
+       */
       parseCommand(parser, keys) {
         ZDIFF_1.default.parseCommand(parser, keys);
         parser.push("WITHSCORES");
@@ -102668,6 +104483,12 @@ var require_ZDIFFSTORE = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Computes the difference between the first and all successive sorted sets and stores it in a new key.
+       * @param parser - The Redis command parser.
+       * @param destination - Destination key where the result will be stored.
+       * @param inputKeys - Keys of the sorted sets to find the difference between.
+       */
       parseCommand(parser, destination, inputKeys) {
         parser.push("ZDIFFSTORE");
         parser.pushKey(destination);
@@ -102685,6 +104506,13 @@ var require_ZINCRBY = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
+      /**
+       * Increments the score of a member in a sorted set by the specified increment.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       * @param increment - Value to increment the score by.
+       * @param member - Member whose score should be incremented.
+       */
       parseCommand(parser, key, increment, member) {
         parser.push("ZINCRBY");
         parser.pushKey(key);
@@ -102711,6 +104539,12 @@ var require_ZINTER = __commonJS({
     exports.parseZInterArguments = parseZInterArguments;
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Intersects multiple sorted sets and returns the result as a new sorted set.
+       * @param parser - The Redis command parser.
+       * @param keys - Keys of the sorted sets to intersect.
+       * @param options - Optional parameters for the intersection operation.
+       */
       parseCommand(parser, keys, options) {
         parser.push("ZINTER");
         parseZInterArguments(parser, keys, options);
@@ -102732,6 +104566,10 @@ var require_ZINTER_WITHSCORES = __commonJS({
     var ZINTER_1 = __importDefault3(require_ZINTER());
     exports.default = {
       IS_READ_ONLY: ZINTER_1.default.IS_READ_ONLY,
+      /**
+       * Intersects multiple sorted sets and returns the result with scores.
+       * @param args - Same parameters as ZINTER command.
+       */
       parseCommand(...args) {
         ZINTER_1.default.parseCommand(...args);
         args[0].push("WITHSCORES");
@@ -102748,6 +104586,12 @@ var require_ZINTERCARD = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns the cardinality of the intersection of multiple sorted sets.
+       * @param parser - The Redis command parser.
+       * @param keys - Keys of the sorted sets to intersect.
+       * @param options - Limit option or options object with limit.
+       */
       parseCommand(parser, keys, options) {
         parser.push("ZINTERCARD");
         parser.pushKeysLength(keys);
@@ -102770,6 +104614,13 @@ var require_ZINTERSTORE = __commonJS({
     var ZINTER_1 = require_ZINTER();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Stores the result of intersection of multiple sorted sets in a new sorted set.
+       * @param parser - The Redis command parser.
+       * @param destination - Destination key where the result will be stored.
+       * @param keys - Keys of the sorted sets to intersect.
+       * @param options - Optional parameters for the intersection operation.
+       */
       parseCommand(parser, destination, keys, options) {
         parser.push("ZINTERSTORE");
         parser.pushKey(destination);
@@ -102788,6 +104639,13 @@ var require_ZLEXCOUNT = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the number of elements in the sorted set between the lexicographical range specified by min and max.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       * @param min - Minimum lexicographical value (inclusive).
+       * @param max - Maximum lexicographical value (inclusive).
+       */
       parseCommand(parser, key, min3, max3) {
         parser.push("ZLEXCOUNT");
         parser.pushKey(key);
@@ -102808,6 +104666,12 @@ var require_ZMSCORE = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the scores associated with the specified members in the sorted set stored at key.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       * @param member - One or more members to get scores for.
+       */
       parseCommand(parser, key, member) {
         parser.push("ZMSCORE");
         parser.pushKey(key);
@@ -102831,6 +104695,12 @@ var require_ZPOPMAX_COUNT = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Removes and returns up to count members with the highest scores in the sorted set.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       * @param count - Number of members to pop.
+       */
       parseCommand(parser, key, count4) {
         parser.push("ZPOPMAX");
         parser.pushKey(key);
@@ -102849,6 +104719,11 @@ var require_ZPOPMAX = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Removes and returns the member with the highest score in the sorted set.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       */
       parseCommand(parser, key) {
         parser.push("ZPOPMAX");
         parser.pushKey(key);
@@ -102883,6 +104758,12 @@ var require_ZPOPMIN_COUNT = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Removes and returns up to count members with the lowest scores in the sorted set.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       * @param count - Number of members to pop.
+       */
       parseCommand(parser, key, count4) {
         parser.push("ZPOPMIN");
         parser.pushKey(key);
@@ -102904,6 +104785,11 @@ var require_ZPOPMIN = __commonJS({
     var ZPOPMAX_1 = __importDefault3(require_ZPOPMAX());
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Removes and returns the member with the lowest score in the sorted set.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       */
       parseCommand(parser, key) {
         parser.push("ZPOPMIN");
         parser.pushKey(key);
@@ -102920,6 +104806,11 @@ var require_ZRANDMEMBER = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns a random member from a sorted set.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       */
       parseCommand(parser, key) {
         parser.push("ZRANDMEMBER");
         parser.pushKey(key);
@@ -102940,6 +104831,12 @@ var require_ZRANDMEMBER_COUNT = __commonJS({
     var ZRANDMEMBER_1 = __importDefault3(require_ZRANDMEMBER());
     exports.default = {
       IS_READ_ONLY: ZRANDMEMBER_1.default.IS_READ_ONLY,
+      /**
+       * Returns one or more random members from a sorted set.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       * @param count - Number of members to return.
+       */
       parseCommand(parser, key, count4) {
         ZRANDMEMBER_1.default.parseCommand(parser, key);
         parser.push(count4.toString());
@@ -102961,6 +104858,12 @@ var require_ZRANDMEMBER_COUNT_WITHSCORES = __commonJS({
     var ZRANDMEMBER_COUNT_1 = __importDefault3(require_ZRANDMEMBER_COUNT());
     exports.default = {
       IS_READ_ONLY: ZRANDMEMBER_COUNT_1.default.IS_READ_ONLY,
+      /**
+       * Returns one or more random members with their scores from a sorted set.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       * @param count - Number of members to return.
+       */
       parseCommand(parser, key, count4) {
         ZRANDMEMBER_COUNT_1.default.parseCommand(parser, key, count4);
         parser.push("WITHSCORES");
@@ -103002,6 +104905,14 @@ var require_ZRANGE = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the specified range of elements in the sorted set.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       * @param min - Minimum index, score or lexicographical value.
+       * @param max - Maximum index, score or lexicographical value.
+       * @param options - Optional parameters for range retrieval (BY, REV, LIMIT).
+       */
       parseCommand(parser, key, min3, max3, options) {
         parser.push("ZRANGE");
         parser.pushKey(key);
@@ -103025,6 +104936,10 @@ var require_ZRANGE_WITHSCORES = __commonJS({
     exports.default = {
       CACHEABLE: ZRANGE_1.default.CACHEABLE,
       IS_READ_ONLY: ZRANGE_1.default.IS_READ_ONLY,
+      /**
+       * Returns the specified range of elements in the sorted set with their scores.
+       * @param args - Same parameters as the ZRANGE command.
+       */
       parseCommand(...args) {
         const parser = args[0];
         ZRANGE_1.default.parseCommand(...args);
@@ -103044,6 +104959,14 @@ var require_ZRANGEBYLEX = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns all the elements in the sorted set at key with a lexicographical value between min and max.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       * @param min - Minimum lexicographical value.
+       * @param max - Maximum lexicographical value.
+       * @param options - Optional parameters including LIMIT.
+       */
       parseCommand(parser, key, min3, max3, options) {
         parser.push("ZRANGEBYLEX");
         parser.pushKey(key);
@@ -103066,6 +104989,14 @@ var require_ZRANGEBYSCORE = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns all the elements in the sorted set with a score between min and max.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       * @param min - Minimum score.
+       * @param max - Maximum score.
+       * @param options - Optional parameters including LIMIT.
+       */
       parseCommand(parser, key, min3, max3, options) {
         parser.push("ZRANGEBYSCORE");
         parser.pushKey(key);
@@ -103092,6 +105023,10 @@ var require_ZRANGEBYSCORE_WITHSCORES = __commonJS({
     exports.default = {
       CACHEABLE: ZRANGEBYSCORE_1.default.CACHEABLE,
       IS_READ_ONLY: ZRANGEBYSCORE_1.default.IS_READ_ONLY,
+      /**
+       * Returns all the elements in the sorted set with a score between min and max, with their scores.
+       * @param args - Same parameters as the ZRANGEBYSCORE command.
+       */
       parseCommand(...args) {
         const parser = args[0];
         ZRANGEBYSCORE_1.default.parseCommand(...args);
@@ -103110,6 +105045,15 @@ var require_ZRANGESTORE = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Stores the result of a range operation on a sorted set into a new sorted set.
+       * @param parser - The Redis command parser.
+       * @param destination - Destination key where the result will be stored.
+       * @param source - Key of the source sorted set.
+       * @param min - Minimum index, score or lexicographical value.
+       * @param max - Maximum index, score or lexicographical value.
+       * @param options - Optional parameters for the range operation (BY, REV, LIMIT).
+       */
       parseCommand(parser, destination, source, min3, max3, options) {
         parser.push("ZRANGESTORE");
         parser.pushKey(destination);
@@ -103143,6 +105087,13 @@ var require_ZREMRANGEBYSCORE = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Removes all elements in the sorted set with scores between min and max.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       * @param min - Minimum score.
+       * @param max - Maximum score.
+       */
       parseCommand(parser, key, min3, max3) {
         parser.push("ZREMRANGEBYSCORE");
         parser.pushKey(key);
@@ -103161,6 +105112,12 @@ var require_ZRANK = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the rank of a member in the sorted set, with scores ordered from low to high.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       * @param member - Member to get the rank for.
+       */
       parseCommand(parser, key, member) {
         parser.push("ZRANK");
         parser.pushKey(key);
@@ -103183,6 +105140,10 @@ var require_ZRANK_WITHSCORE = __commonJS({
     exports.default = {
       CACHEABLE: ZRANK_1.default.CACHEABLE,
       IS_READ_ONLY: ZRANK_1.default.IS_READ_ONLY,
+      /**
+       * Returns the rank of a member in the sorted set with its score.
+       * @param args - Same parameters as the ZRANK command.
+       */
       parseCommand(...args) {
         const parser = args[0];
         ZRANK_1.default.parseCommand(...args);
@@ -103217,6 +105178,12 @@ var require_ZREM = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Removes the specified members from the sorted set.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       * @param member - One or more members to remove.
+       */
       parseCommand(parser, key, member) {
         parser.push("ZREM");
         parser.pushKey(key);
@@ -103235,6 +105202,13 @@ var require_ZREMRANGEBYLEX = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Removes all elements in the sorted set with lexicographical values between min and max.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       * @param min - Minimum lexicographical value.
+       * @param max - Maximum lexicographical value.
+       */
       parseCommand(parser, key, min3, max3) {
         parser.push("ZREMRANGEBYLEX");
         parser.pushKey(key);
@@ -103252,6 +105226,13 @@ var require_ZREMRANGEBYRANK = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Removes all elements in the sorted set with rank between start and stop.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       * @param start - Minimum rank (starting from 0).
+       * @param stop - Maximum rank.
+       */
       parseCommand(parser, key, start, stop) {
         parser.push("ZREMRANGEBYRANK");
         parser.pushKey(key);
@@ -103270,6 +105251,12 @@ var require_ZREVRANK = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the rank of a member in the sorted set, with scores ordered from high to low.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       * @param member - Member to get the rank for.
+       */
       parseCommand(parser, key, member) {
         parser.push("ZREVRANK");
         parser.pushKey(key);
@@ -103289,6 +105276,13 @@ var require_ZSCAN = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Incrementally iterates over a sorted set.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       * @param cursor - Cursor position to start the scan from.
+       * @param options - Optional scan parameters (COUNT, MATCH, TYPE).
+       */
       parseCommand(parser, key, cursor, options) {
         parser.push("ZSCAN");
         parser.pushKey(key);
@@ -103313,6 +105307,12 @@ var require_ZSCORE = __commonJS({
     exports.default = {
       CACHEABLE: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the score of a member in a sorted set.
+       * @param parser - The Redis command parser.
+       * @param key - Key of the sorted set.
+       * @param member - Member to get the score for.
+       */
       parseCommand(parser, key, member) {
         parser.push("ZSCORE");
         parser.pushKey(key);
@@ -103331,6 +105331,12 @@ var require_ZUNION = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns the union of multiple sorted sets.
+       * @param parser - The Redis command parser.
+       * @param keys - Keys of the sorted sets to combine.
+       * @param options - Optional parameters for the union operation.
+       */
       parseCommand(parser, keys, options) {
         parser.push("ZUNION");
         (0, generic_transformers_1.parseZKeysArguments)(parser, keys);
@@ -103355,6 +105361,10 @@ var require_ZUNION_WITHSCORES = __commonJS({
     var ZUNION_1 = __importDefault3(require_ZUNION());
     exports.default = {
       IS_READ_ONLY: ZUNION_1.default.IS_READ_ONLY,
+      /**
+       * Returns the union of multiple sorted sets with their scores.
+       * @param args - Same parameters as the ZUNION command.
+       */
       parseCommand(...args) {
         const parser = args[0];
         ZUNION_1.default.parseCommand(...args);
@@ -103373,6 +105383,13 @@ var require_ZUNIONSTORE = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Stores the union of multiple sorted sets in a new sorted set.
+       * @param parser - The Redis command parser.
+       * @param destination - Destination key where the result will be stored.
+       * @param keys - Keys of the sorted sets to combine.
+       * @param options - Optional parameters for the union operation.
+       */
       parseCommand(parser, destination, keys, options) {
         parser.push("ZUNIONSTORE");
         parser.pushKey(destination);
@@ -103393,6 +105410,16 @@ var require_VADD = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
+      /**
+       * Add a new element into the vector set specified by key
+       *
+       * @param parser - The command parser
+       * @param key - The name of the key that will hold the vector set data
+       * @param vector - The vector data as array of numbers
+       * @param element - The name of the element being added to the vector set
+       * @param options - Optional parameters for vector addition
+       * @see https://redis.io/commands/vadd/
+       */
       parseCommand(parser, key, vector, element, options) {
         parser.push("VADD");
         parser.pushKey(key);
@@ -103407,9 +105434,7 @@ var require_VADD = __commonJS({
         if (options?.CAS) {
           parser.push("CAS");
         }
-        if (options?.QUANT) {
-          parser.push(options.QUANT);
-        }
+        options?.QUANT && parser.push(options.QUANT);
         if (options?.EF !== void 0) {
           parser.push("EF", options.EF.toString());
         }
@@ -103432,6 +105457,13 @@ var require_VCARD = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Retrieve the number of elements in a vector set
+       *
+       * @param parser - The command parser
+       * @param key - The key of the vector set
+       * @see https://redis.io/commands/vcard/
+       */
       parseCommand(parser, key) {
         parser.push("VCARD");
         parser.pushKey(key);
@@ -103448,6 +105480,13 @@ var require_VDIM = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Retrieve the dimension of the vectors in a vector set
+       *
+       * @param parser - The command parser
+       * @param key - The key of the vector set
+       * @see https://redis.io/commands/vdim/
+       */
       parseCommand(parser, key) {
         parser.push("VDIM");
         parser.pushKey(key);
@@ -103465,6 +105504,14 @@ var require_VEMB = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Retrieve the approximate vector associated with a vector set element
+       *
+       * @param parser - The command parser
+       * @param key - The key of the vector set
+       * @param element - The name of the element to retrieve the vector for
+       * @see https://redis.io/commands/vemb/
+       */
       parseCommand(parser, key, element) {
         parser.push("VEMB");
         parser.pushKey(key);
@@ -103505,6 +105552,14 @@ var require_VEMB_RAW = __commonJS({
     };
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Retrieve the RAW approximate vector associated with a vector set element
+       *
+       * @param parser - The command parser
+       * @param key - The key of the vector set
+       * @param element - The name of the element to retrieve the vector for
+       * @see https://redis.io/commands/vemb/
+       */
       parseCommand(parser, key, element) {
         VEMB_1.default.parseCommand(parser, key, element);
         parser.push("RAW");
@@ -103522,6 +105577,14 @@ var require_VGETATTR = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Retrieve the attributes of a vector set element
+       *
+       * @param parser - The command parser
+       * @param key - The key of the vector set
+       * @param element - The name of the element to retrieve attributes for
+       * @see https://redis.io/commands/vgetattr/
+       */
       parseCommand(parser, key, element) {
         parser.push("VGETATTR");
         parser.pushKey(key);
@@ -103552,7 +105615,7 @@ var require_VINFO = __commonJS({
       },
       transformReply: {
         2: (reply) => {
-          const ret = {};
+          const ret = /* @__PURE__ */ Object.create(null);
           for (let i2 = 0; i2 < reply.length; i2 += 2) {
             ret[reply[i2].toString()] = reply[i2 + 1];
           }
@@ -103571,6 +105634,14 @@ var require_VLINKS = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Retrieve the neighbors of a specified element in a vector set; the connections for each layer of the HNSW graph
+       *
+       * @param parser - The command parser
+       * @param key - The key of the vector set
+       * @param element - The name of the element to retrieve neighbors for
+       * @see https://redis.io/commands/vlinks/
+       */
       parseCommand(parser, key, element) {
         parser.push("VLINKS");
         parser.pushKey(key);
@@ -103594,7 +105665,7 @@ var require_VLINKS_WITHSCORES = __commonJS({
     function transformVLinksWithScoresReply(reply) {
       const layers = [];
       for (const layer of reply) {
-        const obj = {};
+        const obj = /* @__PURE__ */ Object.create(null);
         for (let i2 = 0; i2 < layer.length; i2 += 2) {
           const element = layer[i2];
           const score = generic_transformers_1.transformDoubleReply[2](layer[i2 + 1]);
@@ -103606,6 +105677,11 @@ var require_VLINKS_WITHSCORES = __commonJS({
     }
     exports.default = {
       IS_READ_ONLY: VLINKS_1.default.IS_READ_ONLY,
+      /**
+       * Get the connections for each layer of the HNSW graph with similarity scores
+       * @param args - Same parameters as the VLINKS command
+       * @see https://redis.io/commands/vlinks/
+       */
       parseCommand(...args) {
         const parser = args[0];
         VLINKS_1.default.parseCommand(...args);
@@ -103626,6 +105702,14 @@ var require_VRANDMEMBER = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Retrieve random elements of a vector set
+       *
+       * @param parser - The command parser
+       * @param key - The key of the vector set
+       * @param count - Optional number of elements to return
+       * @see https://redis.io/commands/vrandmember/
+       */
       parseCommand(parser, key, count4) {
         parser.push("VRANDMEMBER");
         parser.pushKey(key);
@@ -103645,6 +105729,22 @@ var require_VRANGE = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns elements in a lexicographical range from a vector set.
+       * Provides a stateless iterator for elements inside a vector set.
+       *
+       * @param parser - The command parser
+       * @param key - The key of the vector set
+       * @param start - The starting point of the lexicographical range.
+       *                Can be a string prefixed with `[` for inclusive (e.g., `[Redis`),
+       *                `(` for exclusive (e.g., `(a7`), or `-` for the minimum element.
+       * @param end - The ending point of the lexicographical range.
+       *              Can be a string prefixed with `[` for inclusive,
+       *              `(` for exclusive, or `+` for the maximum element.
+       * @param count - Optional maximum number of elements to return.
+       *                If negative, returns all elements in the specified range.
+       * @see https://redis.io/commands/vrange/
+       */
       parseCommand(parser, key, start, end, count4) {
         parser.push("VRANGE");
         parser.pushKey(key);
@@ -103665,6 +105765,14 @@ var require_VREM = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
+      /**
+       * Remove an element from a vector set
+       *
+       * @param parser - The command parser
+       * @param key - The key of the vector set
+       * @param element - The name of the element to remove from the vector set
+       * @see https://redis.io/commands/vrem/
+       */
       parseCommand(parser, key, element) {
         parser.push("VREM");
         parser.pushKey(key);
@@ -103682,6 +105790,15 @@ var require_VSETATTR = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
+      /**
+       * Set or replace attributes on a vector set element
+       *
+       * @param parser - The command parser
+       * @param key - The key of the vector set
+       * @param element - The name of the element to set attributes for
+       * @param attributes - The attributes to set (as JSON string or object)
+       * @see https://redis.io/commands/vsetattr/
+       */
       parseCommand(parser, key, element, attributes) {
         parser.push("VSETATTR");
         parser.pushKey(key);
@@ -103705,6 +105822,15 @@ var require_VSIM = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Retrieve elements similar to a given vector or element with optional filtering
+       *
+       * @param parser - The command parser
+       * @param key - The key of the vector set
+       * @param query - The query vector (array of numbers) or element name (string)
+       * @param options - Optional parameters for similarity search
+       * @see https://redis.io/commands/vsim/
+       */
       parseCommand(parser, key, query, options) {
         parser.push("VSIM");
         parser.pushKey(key);
@@ -103755,6 +105881,11 @@ var require_VSIM_WITHSCORES = __commonJS({
     var VSIM_1 = __importDefault3(require_VSIM());
     exports.default = {
       IS_READ_ONLY: VSIM_1.default.IS_READ_ONLY,
+      /**
+       * Retrieve elements similar to a given vector or element with similarity scores
+       * @param args - Same parameters as the VSIM command
+       * @see https://redis.io/commands/vsim/
+       */
       parseCommand(...args) {
         const parser = args[0];
         VSIM_1.default.parseCommand(...args);
@@ -103785,6 +105916,13 @@ var require_LATENCY_HISTOGRAM = __commonJS({
     exports.default = {
       CACHEABLE: false,
       IS_READ_ONLY: true,
+      /**
+       * Constructs the LATENCY HISTOGRAM command
+       *
+       * @param parser - The command parser
+       * @param commands - The list of redis commands to get histogram for
+       * @see https://redis.io/docs/latest/commands/latency-histogram/
+       */
       parseCommand(parser, ...commands) {
         const args = ["LATENCY", "HISTOGRAM"];
         if (commands.length !== 0) {
@@ -103847,7 +105985,7 @@ var require_commands3 = __commonJS({
       return mod4 && mod4.__esModule ? mod4 : { "default": mod4 };
     };
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.NON_STICKY_COMMANDS = exports.REDIS_FLUSH_MODES = exports.COMMAND_LIST_FILTER_BY = exports.CLUSTER_SLOT_STATES = exports.FAILOVER_MODES = exports.CLIENT_UNBLOCK_MODES = exports.CLIENT_KILL_FILTERS = exports.AR_OPERATIONS = exports.AR_PREDICATE_COMBINATORS = exports.AR_PREDICATE_TYPES = void 0;
+    exports.NON_STICKY_COMMANDS = exports.REDIS_FLUSH_MODES = exports.COMMAND_LIST_FILTER_BY = exports.CLUSTER_SLOT_STATES = exports.FAILOVER_MODES = exports.CLIENT_KILL_FILTERS = void 0;
     var ACL_CAT_1 = __importDefault3(require_ACL_CAT());
     var ACL_DELUSER_1 = __importDefault3(require_ACL_DELUSER());
     var ACL_DRYRUN_1 = __importDefault3(require_ACL_DRYRUN());
@@ -103862,34 +106000,6 @@ var require_commands3 = __commonJS({
     var ACL_USERS_1 = __importDefault3(require_ACL_USERS());
     var ACL_WHOAMI_1 = __importDefault3(require_ACL_WHOAMI());
     var APPEND_1 = __importDefault3(require_APPEND());
-    var ARCOUNT_1 = __importDefault3(require_ARCOUNT());
-    var ARDEL_1 = __importDefault3(require_ARDEL());
-    var ARDELRANGE_1 = __importDefault3(require_ARDELRANGE());
-    var ARGET_1 = __importDefault3(require_ARGET());
-    var ARGETRANGE_1 = __importDefault3(require_ARGETRANGE());
-    var ARGREP_1 = __importStar3(require_ARGREP());
-    Object.defineProperty(exports, "AR_PREDICATE_TYPES", { enumerable: true, get: function() {
-      return ARGREP_1.AR_PREDICATE_TYPES;
-    } });
-    Object.defineProperty(exports, "AR_PREDICATE_COMBINATORS", { enumerable: true, get: function() {
-      return ARGREP_1.AR_PREDICATE_COMBINATORS;
-    } });
-    var ARGREP_WITHVALUES_1 = __importDefault3(require_ARGREP_WITHVALUES());
-    var ARINFO_1 = __importDefault3(require_ARINFO());
-    var ARINSERT_1 = __importDefault3(require_ARINSERT());
-    var ARLASTITEMS_1 = __importDefault3(require_ARLASTITEMS());
-    var ARLEN_1 = __importDefault3(require_ARLEN());
-    var ARMGET_1 = __importDefault3(require_ARMGET());
-    var ARMSET_1 = __importDefault3(require_ARMSET());
-    var ARNEXT_1 = __importDefault3(require_ARNEXT());
-    var AROP_1 = __importStar3(require_AROP());
-    Object.defineProperty(exports, "AR_OPERATIONS", { enumerable: true, get: function() {
-      return AROP_1.AR_OPERATIONS;
-    } });
-    var ARRING_1 = __importDefault3(require_ARRING());
-    var ARSCAN_1 = __importDefault3(require_ARSCAN());
-    var ARSEEK_1 = __importDefault3(require_ARSEEK());
-    var ARSET_1 = __importDefault3(require_ARSET());
     var ASKING_1 = __importDefault3(require_ASKING());
     var AUTH_1 = __importDefault3(require_AUTH());
     var BGREWRITEAOF_1 = __importDefault3(require_BGREWRITEAOF());
@@ -103923,10 +106033,6 @@ var require_commands3 = __commonJS({
     var CLIENT_SETNAME_1 = __importDefault3(require_CLIENT_SETNAME());
     var CLIENT_TRACKING_1 = __importDefault3(require_CLIENT_TRACKING());
     var CLIENT_TRACKINGINFO_1 = __importDefault3(require_CLIENT_TRACKINGINFO());
-    var CLIENT_UNBLOCK_1 = __importStar3(require_CLIENT_UNBLOCK());
-    Object.defineProperty(exports, "CLIENT_UNBLOCK_MODES", { enumerable: true, get: function() {
-      return CLIENT_UNBLOCK_1.CLIENT_UNBLOCK_MODES;
-    } });
     var CLIENT_UNPAUSE_1 = __importDefault3(require_CLIENT_UNPAUSE());
     var CLUSTER_ADDSLOTS_1 = __importDefault3(require_CLUSTER_ADDSLOTS());
     var CLUSTER_ADDSLOTSRANGE_1 = __importDefault3(require_CLUSTER_ADDSLOTSRANGE());
@@ -104066,8 +106172,6 @@ var require_commands3 = __commonJS({
     var INCR_1 = __importDefault3(require_INCR());
     var INCRBY_1 = __importDefault3(require_INCRBY());
     var INCRBYFLOAT_1 = __importDefault3(require_INCRBYFLOAT());
-    var INCREX_1 = __importDefault3(require_INCREX());
-    var INCREXBYFLOAT_1 = __importDefault3(require_INCREXBYFLOAT());
     var INFO_1 = __importDefault3(require_INFO());
     var KEYS_1 = __importDefault3(require_KEYS());
     var LASTSAVE_1 = __importDefault3(require_LASTSAVE());
@@ -104205,7 +106309,6 @@ var require_commands3 = __commonJS({
     var XINFO_GROUPS_1 = __importDefault3(require_XINFO_GROUPS());
     var XINFO_STREAM_1 = __importDefault3(require_XINFO_STREAM());
     var XLEN_1 = __importDefault3(require_XLEN());
-    var XNACK_1 = __importDefault3(require_XNACK());
     var XPENDING_RANGE_1 = __importDefault3(require_XPENDING_RANGE());
     var XPENDING_1 = __importDefault3(require_XPENDING());
     var XRANGE_1 = __importDefault3(require_XRANGE());
@@ -104271,5523 +106374,751 @@ var require_commands3 = __commonJS({
     var VSIM_WITHSCORES_1 = __importDefault3(require_VSIM_WITHSCORES());
     var LATENCY_HISTOGRAM_1 = __importDefault3(require_LATENCY_HISTOGRAM());
     exports.default = {
-      /**
-       * Lists ACL categories or commands in a category
-       * @param categoryName - Optional category name to filter commands
-       */
       ACL_CAT: ACL_CAT_1.default,
-      /**
-       * Lists ACL categories or commands in a category
-       * @param categoryName - Optional category name to filter commands
-       */
       aclCat: ACL_CAT_1.default,
-      /**
-       * Deletes one or more users from the ACL
-       * @param username - Username(s) to delete
-       */
       ACL_DELUSER: ACL_DELUSER_1.default,
-      /**
-       * Deletes one or more users from the ACL
-       * @param username - Username(s) to delete
-       */
       aclDelUser: ACL_DELUSER_1.default,
-      /**
-       * Simulates ACL operations without executing them
-       * @param username - Username to simulate ACL operations for
-       * @param command - Command arguments to simulate
-       */
       ACL_DRYRUN: ACL_DRYRUN_1.default,
-      /**
-       * Simulates ACL operations without executing them
-       * @param username - Username to simulate ACL operations for
-       * @param command - Command arguments to simulate
-       */
       aclDryRun: ACL_DRYRUN_1.default,
-      /**
-       * Generates a secure password for ACL users
-       * @param bits - Optional number of bits for password entropy
-       */
       ACL_GENPASS: ACL_GENPASS_1.default,
-      /**
-       * Generates a secure password for ACL users
-       * @param bits - Optional number of bits for password entropy
-       */
       aclGenPass: ACL_GENPASS_1.default,
-      /**
-       * Returns ACL information about a specific user
-       * @param username - Username to get information for
-       */
       ACL_GETUSER: ACL_GETUSER_1.default,
-      /**
-       * Returns ACL information about a specific user
-       * @param username - Username to get information for
-       */
       aclGetUser: ACL_GETUSER_1.default,
-      /**
-       * Returns all configured ACL users and their permissions
-       */
       ACL_LIST: ACL_LIST_1.default,
-      /**
-       * Returns all configured ACL users and their permissions
-       */
       aclList: ACL_LIST_1.default,
-      /**
-       * Reloads ACL configuration from the ACL file
-       */
       ACL_LOAD: ACL_LOAD_1.default,
-      /**
-       * Reloads ACL configuration from the ACL file
-       */
       aclLoad: ACL_LOAD_1.default,
-      /**
-       * Clears the ACL security events log
-       */
       ACL_LOG_RESET: ACL_LOG_RESET_1.default,
-      /**
-       * Clears the ACL security events log
-       */
       aclLogReset: ACL_LOG_RESET_1.default,
-      /**
-       * Returns ACL security events log entries
-       * @param count - Optional maximum number of entries to return
-       */
       ACL_LOG: ACL_LOG_1.default,
-      /**
-       * Returns ACL security events log entries
-       * @param count - Optional maximum number of entries to return
-       */
       aclLog: ACL_LOG_1.default,
-      /**
-       * Saves the current ACL configuration to the ACL file
-       */
       ACL_SAVE: ACL_SAVE_1.default,
-      /**
-       * Saves the current ACL configuration to the ACL file
-       */
       aclSave: ACL_SAVE_1.default,
-      /**
-       * Creates or modifies ACL user with specified rules
-       * @param username - Username to create or modify
-       * @param rule - ACL rule(s) to apply to the user
-       */
       ACL_SETUSER: ACL_SETUSER_1.default,
-      /**
-       * Creates or modifies ACL user with specified rules
-       * @param username - Username to create or modify
-       * @param rule - ACL rule(s) to apply to the user
-       */
       aclSetUser: ACL_SETUSER_1.default,
-      /**
-       * Returns a list of all configured ACL usernames
-       */
       ACL_USERS: ACL_USERS_1.default,
-      /**
-       * Returns a list of all configured ACL usernames
-       */
       aclUsers: ACL_USERS_1.default,
-      /**
-       * Returns the username of the current connection
-       */
       ACL_WHOAMI: ACL_WHOAMI_1.default,
-      /**
-       * Returns the username of the current connection
-       */
       aclWhoAmI: ACL_WHOAMI_1.default,
-      /**
-       * Appends a value to a string key
-       * @param key - The key to append to
-       * @param value - The value to append
-       */
       APPEND: APPEND_1.default,
-      /**
-       * Appends a value to a string key
-       * @param key - The key to append to
-       * @param value - The value to append
-       */
       append: APPEND_1.default,
-      /**
-       * Returns the number of non-empty elements in the array stored at the given key
-       * @param key - Key of the array
-       * @remarks Returned indices may exceed `Number.MAX_SAFE_INTEGER` (2^53-1). For full precision, use `client.withTypeMapping({ [RESP_TYPES.NUMBER]: String })`.
-       */
-      ARCOUNT: ARCOUNT_1.default,
-      /**
-       * Returns the number of non-empty elements in the array stored at the given key
-       * @param key - Key of the array
-       * @remarks Returned indices may exceed `Number.MAX_SAFE_INTEGER` (2^53-1). For full precision, use `client.withTypeMapping({ [RESP_TYPES.NUMBER]: String })`.
-       */
-      arCount: ARCOUNT_1.default,
-      /**
-       * Deletes elements at the specified indices in the array stored at the given key
-       * @param key - Key of the array
-       * @param indices - Index or indices to delete
-       */
-      ARDEL: ARDEL_1.default,
-      /**
-       * Deletes elements at the specified indices in the array stored at the given key
-       * @param key - Key of the array
-       * @param indices - Index or indices to delete
-       */
-      arDel: ARDEL_1.default,
-      /**
-       * Deletes elements within one or more inclusive index ranges in the array stored at the given key
-       * @param key - Key of the array
-       * @param ranges - A `[start, end]` range or an array of `[start, end]` ranges
-       */
-      ARDELRANGE: ARDELRANGE_1.default,
-      /**
-       * Deletes elements within one or more inclusive index ranges in the array stored at the given key
-       * @param key - Key of the array
-       * @param ranges - A `[start, end]` range or an array of `[start, end]` ranges
-       */
-      arDelRange: ARDELRANGE_1.default,
-      /**
-       * Returns the value at the given index in the array stored at the given key
-       * @param key - Key of the array
-       * @param index - Index to read
-       */
-      ARGET: ARGET_1.default,
-      /**
-       * Returns the value at the given index in the array stored at the given key
-       * @param key - Key of the array
-       * @param index - Index to read
-       */
-      arGet: ARGET_1.default,
-      /**
-       * Returns the values in the inclusive index range [start, end] in the array stored at the given key
-       * @param key - Key of the array
-       * @param start - Start index (inclusive)
-       * @param end - End index (inclusive)
-       */
-      ARGETRANGE: ARGETRANGE_1.default,
-      /**
-       * Returns the values in the inclusive index range [start, end] in the array stored at the given key
-       * @param key - Key of the array
-       * @param start - Start index (inclusive)
-       * @param end - End index (inclusive)
-       */
-      arGetRange: ARGETRANGE_1.default,
-      /**
-       * Searches elements of the array stored at the given key using one or more textual predicates and returns matching indices
-       * @param key - Key of the array
-       * @param start - Start index (inclusive)
-       * @param end - End index (inclusive)
-       * @param predicates - Array of `[type, value]` predicates
-       * @param options - Optional COMBINATOR, LIMIT and NOCASE modifiers
-       * @remarks Returned indices may exceed `Number.MAX_SAFE_INTEGER` (2^53-1). For full precision, use `client.withTypeMapping({ [RESP_TYPES.NUMBER]: String })`.
-       */
-      ARGREP: ARGREP_1.default,
-      /**
-       * Searches elements of the array stored at the given key using one or more textual predicates and returns matching indices
-       * @param key - Key of the array
-       * @param start - Start index (inclusive)
-       * @param end - End index (inclusive)
-       * @param predicates - Array of `[type, value]` predicates
-       * @param options - Optional COMBINATOR, LIMIT and NOCASE modifiers
-       * @remarks Returned indices may exceed `Number.MAX_SAFE_INTEGER` (2^53-1). For full precision, use `client.withTypeMapping({ [RESP_TYPES.NUMBER]: String })`.
-       */
-      arGrep: ARGREP_1.default,
-      /**
-       * Searches elements of the array stored at the given key using one or more textual predicates and returns matching `{index, value}` pairs
-       * @param key - Key of the array
-       * @param start - Start index (inclusive)
-       * @param end - End index (inclusive)
-       * @param predicates - Array of `[type, value]` predicates
-       * @param options - Optional COMBINATOR, LIMIT and NOCASE modifiers
-       * @remarks Returned indices may exceed `Number.MAX_SAFE_INTEGER` (2^53-1). For full precision, use `client.withTypeMapping({ [RESP_TYPES.NUMBER]: String })`.
-       */
-      ARGREP_WITHVALUES: ARGREP_WITHVALUES_1.default,
-      /**
-       * Searches elements of the array stored at the given key using one or more textual predicates and returns matching `{index, value}` pairs
-       * @param key - Key of the array
-       * @param start - Start index (inclusive)
-       * @param end - End index (inclusive)
-       * @param predicates - Array of `[type, value]` predicates
-       * @param options - Optional COMBINATOR, LIMIT and NOCASE modifiers
-       * @remarks Returned indices may exceed `Number.MAX_SAFE_INTEGER` (2^53-1). For full precision, use `client.withTypeMapping({ [RESP_TYPES.NUMBER]: String })`.
-       */
-      arGrepWithValues: ARGREP_WITHVALUES_1.default,
-      /**
-       * Returns metadata about the array stored at the given key
-       * @param key - Key of the array
-       * @param options - Optional FULL flag for per-slice statistics
-       * @remarks Returned indices may exceed `Number.MAX_SAFE_INTEGER` (2^53-1). For full precision, use `client.withTypeMapping({ [RESP_TYPES.NUMBER]: String })`.
-       */
-      ARINFO: ARINFO_1.default,
-      /**
-       * Returns metadata about the array stored at the given key
-       * @param key - Key of the array
-       * @param options - Optional FULL flag for per-slice statistics
-       * @remarks Returned indices may exceed `Number.MAX_SAFE_INTEGER` (2^53-1). For full precision, use `client.withTypeMapping({ [RESP_TYPES.NUMBER]: String })`.
-       */
-      arInfo: ARINFO_1.default,
-      /**
-       * Inserts values at consecutive indices in the array stored at the given key, beginning at the current insert cursor position
-       * @param key - Key of the array
-       * @param values - Value or values to insert
-       * @remarks Returned indices may exceed `Number.MAX_SAFE_INTEGER` (2^53-1). For full precision, use `client.withTypeMapping({ [RESP_TYPES.NUMBER]: String })`.
-       */
-      ARINSERT: ARINSERT_1.default,
-      /**
-       * Inserts values at consecutive indices in the array stored at the given key, beginning at the current insert cursor position
-       * @param key - Key of the array
-       * @param values - Value or values to insert
-       * @remarks Returned indices may exceed `Number.MAX_SAFE_INTEGER` (2^53-1). For full precision, use `client.withTypeMapping({ [RESP_TYPES.NUMBER]: String })`.
-       */
-      arInsert: ARINSERT_1.default,
-      /**
-       * Returns up to `count` most recently inserted elements from the array stored at the given key
-       * @param key - Key of the array
-       * @param count - Maximum number of items to return
-       * @param options - Optional REV flag for reverse chronological order
-       */
-      ARLASTITEMS: ARLASTITEMS_1.default,
-      /**
-       * Returns up to `count` most recently inserted elements from the array stored at the given key
-       * @param key - Key of the array
-       * @param count - Maximum number of items to return
-       * @param options - Optional REV flag for reverse chronological order
-       */
-      arLastItems: ARLASTITEMS_1.default,
-      /**
-       * Returns the length of the array stored at the given key (max set index + 1)
-       * @param key - Key of the array
-       * @remarks Returned indices may exceed `Number.MAX_SAFE_INTEGER` (2^53-1). For full precision, use `client.withTypeMapping({ [RESP_TYPES.NUMBER]: String })`.
-       */
-      ARLEN: ARLEN_1.default,
-      /**
-       * Returns the length of the array stored at the given key (max set index + 1)
-       * @param key - Key of the array
-       * @remarks Returned indices may exceed `Number.MAX_SAFE_INTEGER` (2^53-1). For full precision, use `client.withTypeMapping({ [RESP_TYPES.NUMBER]: String })`.
-       */
-      arLen: ARLEN_1.default,
-      /**
-       * Returns the values at the specified indices in the array stored at the given key
-       * @param key - Key of the array
-       * @param indices - Index or indices to read
-       */
-      ARMGET: ARMGET_1.default,
-      /**
-       * Returns the values at the specified indices in the array stored at the given key
-       * @param key - Key of the array
-       * @param indices - Index or indices to read
-       */
-      arMGet: ARMGET_1.default,
-      /**
-       * Sets multiple index/value pairs in the array stored at the given key
-       * @param key - Key of the array
-       * @param entries - An object, Map, or array of `[index, value]` tuples
-       */
-      ARMSET: ARMSET_1.default,
-      /**
-       * Sets multiple index/value pairs in the array stored at the given key
-       * @param key - Key of the array
-       * @param entries - An object, Map, or array of `[index, value]` tuples
-       */
-      arMSet: ARMSET_1.default,
-      /**
-       * Returns the next index ARINSERT would use for the array stored at the given key
-       * @param key - Key of the array
-       * @remarks Returned indices may exceed `Number.MAX_SAFE_INTEGER` (2^53-1). For full precision, use `client.withTypeMapping({ [RESP_TYPES.NUMBER]: String })`.
-       */
-      ARNEXT: ARNEXT_1.default,
-      /**
-       * Returns the next index ARINSERT would use for the array stored at the given key
-       * @param key - Key of the array
-       * @remarks Returned indices may exceed `Number.MAX_SAFE_INTEGER` (2^53-1). For full precision, use `client.withTypeMapping({ [RESP_TYPES.NUMBER]: String })`.
-       */
-      arNext: ARNEXT_1.default,
-      /**
-       * Performs an aggregate operation on elements of the array stored at the given key in an inclusive index range
-       * @param key - Key of the array
-       * @param start - Start index (inclusive)
-       * @param end - End index (inclusive)
-       * @param operation - SUM, MIN, MAX, AND, OR, XOR, MATCH or USED
-       * @param value - Required value when operation is MATCH
-       */
-      AROP: AROP_1.default,
-      /**
-       * Performs an aggregate operation on elements of the array stored at the given key in an inclusive index range
-       * @param key - Key of the array
-       * @param start - Start index (inclusive)
-       * @param end - End index (inclusive)
-       * @param operation - SUM, MIN, MAX, AND, OR, XOR, MATCH or USED
-       * @param value - Required value when operation is MATCH
-       */
-      arOp: AROP_1.default,
-      /**
-       * Inserts values into the array stored at the given key as a fixed-size ring buffer
-       * @param key - Key of the array
-       * @param size - Number of slots in the ring buffer
-       * @param values - Value or values to insert
-       * @remarks Returned indices may exceed `Number.MAX_SAFE_INTEGER` (2^53-1). For full precision, use `client.withTypeMapping({ [RESP_TYPES.NUMBER]: String })`.
-       */
-      ARRING: ARRING_1.default,
-      /**
-       * Inserts values into the array stored at the given key as a fixed-size ring buffer
-       * @param key - Key of the array
-       * @param size - Number of slots in the ring buffer
-       * @param values - Value or values to insert
-       * @remarks Returned indices may exceed `Number.MAX_SAFE_INTEGER` (2^53-1). For full precision, use `client.withTypeMapping({ [RESP_TYPES.NUMBER]: String })`.
-       */
-      arRing: ARRING_1.default,
-      /**
-       * Iterates populated elements of the array stored at the given key in the inclusive index range and returns alternating index/value pairs
-       * @param key - Key of the array
-       * @param start - Start index (inclusive)
-       * @param end - End index (inclusive)
-       * @param options - Optional LIMIT modifier
-       * @remarks Returned indices may exceed `Number.MAX_SAFE_INTEGER` (2^53-1). For full precision, use `client.withTypeMapping({ [RESP_TYPES.NUMBER]: String })`.
-       */
-      ARSCAN: ARSCAN_1.default,
-      /**
-       * Iterates populated elements of the array stored at the given key in the inclusive index range and returns alternating index/value pairs
-       * @param key - Key of the array
-       * @param start - Start index (inclusive)
-       * @param end - End index (inclusive)
-       * @param options - Optional LIMIT modifier
-       * @remarks Returned indices may exceed `Number.MAX_SAFE_INTEGER` (2^53-1). For full precision, use `client.withTypeMapping({ [RESP_TYPES.NUMBER]: String })`.
-       */
-      arScan: ARSCAN_1.default,
-      /**
-       * Sets the insert cursor of the array stored at the given key to `index`
-       * @param key - Key of the array
-       * @param index - New cursor position
-       */
-      ARSEEK: ARSEEK_1.default,
-      /**
-       * Sets the insert cursor of the array stored at the given key to `index`
-       * @param key - Key of the array
-       * @param index - New cursor position
-       */
-      arSeek: ARSEEK_1.default,
-      /**
-       * Sets one or more contiguous values in the array stored at the given key starting at `index`
-       * @param key - Key of the array
-       * @param index - Starting index
-       * @param value - A single value or an array of values stored at consecutive indices
-       */
-      ARSET: ARSET_1.default,
-      /**
-       * Sets one or more contiguous values in the array stored at the given key starting at `index`
-       * @param key - Key of the array
-       * @param index - Starting index
-       * @param value - A single value or an array of values stored at consecutive indices
-       */
-      arSet: ARSET_1.default,
-      /**
-       * Tells a Redis cluster node that the client is ok receiving such redirects
-       */
       ASKING: ASKING_1.default,
-      /**
-       * Tells a Redis cluster node that the client is ok receiving such redirects
-       */
       asking: ASKING_1.default,
-      /**
-       * Authenticates the connection using a password or username and password
-       * @param options - Authentication options containing username and/or password
-       * @param options.username - Optional username for authentication
-       * @param options.password - Password for authentication
-       */
       AUTH: AUTH_1.default,
-      /**
-       * Authenticates the connection using a password or username and password
-       * @param options - Authentication options containing username and/or password
-       * @param options.username - Optional username for authentication
-       * @param options.password - Password for authentication
-       */
       auth: AUTH_1.default,
-      /**
-       * Asynchronously rewrites the append-only file
-       */
       BGREWRITEAOF: BGREWRITEAOF_1.default,
-      /**
-       * Asynchronously rewrites the append-only file
-       */
       bgRewriteAof: BGREWRITEAOF_1.default,
-      /**
-       * Asynchronously saves the dataset to disk
-       * @param options - Optional configuration
-       * @param options.SCHEDULE - Schedule a BGSAVE operation when no BGSAVE is already in progress
-       */
       BGSAVE: BGSAVE_1.default,
-      /**
-       * Asynchronously saves the dataset to disk
-       * @param options - Optional configuration
-       * @param options.SCHEDULE - Schedule a BGSAVE operation when no BGSAVE is already in progress
-       */
       bgSave: BGSAVE_1.default,
-      /**
-       * Returns the count of set bits in a string key
-       * @param key - The key to count bits in
-       * @param range - Optional range specification
-       * @param range.start - Start offset in bytes/bits
-       * @param range.end - End offset in bytes/bits
-       * @param range.mode - Optional counting mode: BYTE or BIT
-       */
       BITCOUNT: BITCOUNT_1.default,
-      /**
-       * Returns the count of set bits in a string key
-       * @param key - The key to count bits in
-       * @param range - Optional range specification
-       * @param range.start - Start offset in bytes/bits
-       * @param range.end - End offset in bytes/bits
-       * @param range.mode - Optional counting mode: BYTE or BIT
-       */
       bitCount: BITCOUNT_1.default,
-      /**
-       * Performs read-only bitfield integer operations on strings
-       * @param key - The key holding the string
-       * @param operations - Array of GET operations to perform on the bitfield
-       */
       BITFIELD_RO: BITFIELD_RO_1.default,
-      /**
-       * Performs read-only bitfield integer operations on strings
-       * @param key - The key holding the string
-       * @param operations - Array of GET operations to perform on the bitfield
-       */
       bitFieldRo: BITFIELD_RO_1.default,
-      /**
-       * Performs arbitrary bitfield integer operations on strings
-       * @param key - The key holding the string
-       * @param operations - Array of bitfield operations to perform: GET, SET, INCRBY or OVERFLOW
-       */
       BITFIELD: BITFIELD_1.default,
-      /**
-       * Performs arbitrary bitfield integer operations on strings
-       * @param key - The key holding the string
-       * @param operations - Array of bitfield operations to perform: GET, SET, INCRBY or OVERFLOW
-       */
       bitField: BITFIELD_1.default,
-      /**
-       * Performs bitwise operations between strings
-       * @param operation - Bitwise operation to perform: AND, OR, XOR, NOT, DIFF, DIFF1, ANDOR, ONE
-       * @param destKey - Destination key to store the result
-       * @param key - Source key(s) to perform operation on
-       */
       BITOP: BITOP_1.default,
-      /**
-       * Performs bitwise operations between strings
-       * @param operation - Bitwise operation to perform: AND, OR, XOR, NOT, DIFF, DIFF1, ANDOR, ONE
-       * @param destKey - Destination key to store the result
-       * @param key - Source key(s) to perform operation on
-       */
       bitOp: BITOP_1.default,
-      /**
-       * Returns the position of first bit set to 0 or 1 in a string
-       * @param key - The key holding the string
-       * @param bit - The bit value to look for (0 or 1)
-       * @param start - Optional starting position in bytes/bits
-       * @param end - Optional ending position in bytes/bits
-       * @param mode - Optional counting mode: BYTE or BIT
-       */
       BITPOS: BITPOS_1.default,
-      /**
-       * Returns the position of first bit set to 0 or 1 in a string
-       * @param key - The key holding the string
-       * @param bit - The bit value to look for (0 or 1)
-       * @param start - Optional starting position in bytes/bits
-       * @param end - Optional ending position in bytes/bits
-       * @param mode - Optional counting mode: BYTE or BIT
-       */
       bitPos: BITPOS_1.default,
-      /**
-       * Pop an element from a list, push it to another list and return it; or block until one is available
-       * @param source - Key of the source list
-       * @param destination - Key of the destination list
-       * @param sourceSide - Side of source list to pop from (LEFT or RIGHT)
-       * @param destinationSide - Side of destination list to push to (LEFT or RIGHT)
-       * @param timeout - Timeout in seconds, 0 to block indefinitely
-       */
       BLMOVE: BLMOVE_1.default,
-      /**
-       * Pop an element from a list, push it to another list and return it; or block until one is available
-       * @param source - Key of the source list
-       * @param destination - Key of the destination list
-       * @param sourceSide - Side of source list to pop from (LEFT or RIGHT)
-       * @param destinationSide - Side of destination list to push to (LEFT or RIGHT)
-       * @param timeout - Timeout in seconds, 0 to block indefinitely
-       */
       blMove: BLMOVE_1.default,
-      /**
-       * Pops elements from multiple lists; blocks until elements are available
-       * @param timeout - Timeout in seconds, 0 to block indefinitely
-       * @param args - Additional arguments for LMPOP command
-       */
       BLMPOP: BLMPOP_1.default,
-      /**
-       * Pops elements from multiple lists; blocks until elements are available
-       * @param timeout - Timeout in seconds, 0 to block indefinitely
-       * @param args - Additional arguments for LMPOP command
-       */
       blmPop: BLMPOP_1.default,
-      /**
-       * Removes and returns the first element in a list, or blocks until one is available
-       * @param key - Key of the list to pop from, or array of keys to try sequentially
-       * @param timeout - Maximum seconds to block, 0 to block indefinitely
-       */
       BLPOP: BLPOP_1.default,
-      /**
-       * Removes and returns the first element in a list, or blocks until one is available
-       * @param key - Key of the list to pop from, or array of keys to try sequentially
-       * @param timeout - Maximum seconds to block, 0 to block indefinitely
-       */
       blPop: BLPOP_1.default,
-      /**
-       * Removes and returns the last element in a list, or blocks until one is available
-       * @param key - Key of the list to pop from, or array of keys to try sequentially
-       * @param timeout - Maximum seconds to block, 0 to block indefinitely
-       */
       BRPOP: BRPOP_1.default,
-      /**
-       * Removes and returns the last element in a list, or blocks until one is available
-       * @param key - Key of the list to pop from, or array of keys to try sequentially
-       * @param timeout - Maximum seconds to block, 0 to block indefinitely
-       */
       brPop: BRPOP_1.default,
-      /**
-       * Pops an element from a list, pushes it to another list and returns it; blocks until element is available
-       * @param source - Key of the source list to pop from
-       * @param destination - Key of the destination list to push to
-       * @param timeout - Maximum seconds to block, 0 to block indefinitely
-       */
       BRPOPLPUSH: BRPOPLPUSH_1.default,
-      /**
-       * Pops an element from a list, pushes it to another list and returns it; blocks until element is available
-       * @param source - Key of the source list to pop from
-       * @param destination - Key of the destination list to push to
-       * @param timeout - Maximum seconds to block, 0 to block indefinitely
-       */
       brPopLPush: BRPOPLPUSH_1.default,
-      /**
-       * Removes and returns members from one or more sorted sets in the specified order; blocks until elements are available
-       * @param timeout - Maximum seconds to block, 0 to block indefinitely
-       * @param args - Additional arguments specifying the keys, min/max count, and order (MIN/MAX)
-       */
       BZMPOP: BZMPOP_1.default,
-      /**
-       * Removes and returns members from one or more sorted sets in the specified order; blocks until elements are available
-       * @param timeout - Maximum seconds to block, 0 to block indefinitely
-       * @param args - Additional arguments specifying the keys, min/max count, and order (MIN/MAX)
-       */
       bzmPop: BZMPOP_1.default,
-      /**
-       * Removes and returns the member with the highest score in a sorted set, or blocks until one is available
-       * @param keys - Key of the sorted set, or array of keys to try sequentially
-       * @param timeout - Maximum seconds to block, 0 to block indefinitely
-       */
       BZPOPMAX: BZPOPMAX_1.default,
-      /**
-       * Removes and returns the member with the highest score in a sorted set, or blocks until one is available
-       * @param keys - Key of the sorted set, or array of keys to try sequentially
-       * @param timeout - Maximum seconds to block, 0 to block indefinitely
-       */
       bzPopMax: BZPOPMAX_1.default,
-      /**
-       * Removes and returns the member with the lowest score in a sorted set, or blocks until one is available
-       * @param keys - Key of the sorted set, or array of keys to try sequentially
-       * @param timeout - Maximum seconds to block, 0 to block indefinitely
-       */
       BZPOPMIN: BZPOPMIN_1.default,
-      /**
-       * Removes and returns the member with the lowest score in a sorted set, or blocks until one is available
-       * @param keys - Key of the sorted set, or array of keys to try sequentially
-       * @param timeout - Maximum seconds to block, 0 to block indefinitely
-       */
       bzPopMin: BZPOPMIN_1.default,
-      /**
-       * Instructs the server about tracking or not keys in the next request
-       * @param value - Whether to enable (true) or disable (false) tracking
-       */
       CLIENT_CACHING: CLIENT_CACHING_1.default,
-      /**
-       * Instructs the server about tracking or not keys in the next request
-       * @param value - Whether to enable (true) or disable (false) tracking
-       */
       clientCaching: CLIENT_CACHING_1.default,
-      /**
-       * Returns the name of the current connection
-       */
       CLIENT_GETNAME: CLIENT_GETNAME_1.default,
-      /**
-       * Returns the name of the current connection
-       */
       clientGetName: CLIENT_GETNAME_1.default,
-      /**
-       * Returns the ID of the client to which the current client is redirecting tracking notifications
-       */
       CLIENT_GETREDIR: CLIENT_GETREDIR_1.default,
-      /**
-       * Returns the ID of the client to which the current client is redirecting tracking notifications
-       */
       clientGetRedir: CLIENT_GETREDIR_1.default,
-      /**
-       * Returns the client ID for the current connection
-       */
       CLIENT_ID: CLIENT_ID_1.default,
-      /**
-       * Returns the client ID for the current connection
-       */
       clientId: CLIENT_ID_1.default,
-      /**
-       * Returns information and statistics about the current client connection
-       */
       CLIENT_INFO: CLIENT_INFO_1.default,
-      /**
-       * Returns information and statistics about the current client connection
-       */
       clientInfo: CLIENT_INFO_1.default,
-      /**
-       * Closes client connections matching the specified filters
-       * @param filters - One or more filters to match client connections to kill
-       */
       CLIENT_KILL: CLIENT_KILL_1.default,
-      /**
-       * Closes client connections matching the specified filters
-       * @param filters - One or more filters to match client connections to kill
-       */
       clientKill: CLIENT_KILL_1.default,
-      /**
-       * Returns information about all client connections. Can be filtered by type or ID
-       * @param filter - Optional filter to return only specific client types or IDs
-       */
       CLIENT_LIST: CLIENT_LIST_1.default,
-      /**
-       * Returns information about all client connections. Can be filtered by type or ID
-       * @param filter - Optional filter to return only specific client types or IDs
-       */
       clientList: CLIENT_LIST_1.default,
-      /**
-       * Controls whether to prevent the client's connections from being evicted
-       * @param value - Whether to enable (true) or disable (false) the no-evict mode
-       */
       "CLIENT_NO-EVICT": CLIENT_NO_EVICT_1.default,
-      /**
-       * Controls whether to prevent the client's connections from being evicted
-       * @param value - Whether to enable (true) or disable (false) the no-evict mode
-       */
       clientNoEvict: CLIENT_NO_EVICT_1.default,
-      /**
-       * Controls whether to prevent the client from touching the LRU/LFU of keys
-       * @param value - Whether to enable (true) or disable (false) the no-touch mode
-       */
       "CLIENT_NO-TOUCH": CLIENT_NO_TOUCH_1.default,
-      /**
-       * Controls whether to prevent the client from touching the LRU/LFU of keys
-       * @param value - Whether to enable (true) or disable (false) the no-touch mode
-       */
       clientNoTouch: CLIENT_NO_TOUCH_1.default,
-      /**
-       * Stops the server from processing client commands for the specified duration
-       * @param timeout - Time in milliseconds to pause command processing
-       * @param mode - Optional mode: 'WRITE' to pause only write commands, 'ALL' to pause all commands
-       */
       CLIENT_PAUSE: CLIENT_PAUSE_1.default,
-      /**
-       * Stops the server from processing client commands for the specified duration
-       * @param timeout - Time in milliseconds to pause command processing
-       * @param mode - Optional mode: 'WRITE' to pause only write commands, 'ALL' to pause all commands
-       */
       clientPause: CLIENT_PAUSE_1.default,
-      /**
-       * Assigns a name to the current connection
-       * @param name - The name to assign to the connection
-       */
       CLIENT_SETNAME: CLIENT_SETNAME_1.default,
-      /**
-       * Assigns a name to the current connection
-       * @param name - The name to assign to the connection
-       */
       clientSetName: CLIENT_SETNAME_1.default,
-      /**
-       * Controls server-assisted client side caching for the current connection
-       * @param mode - Whether to enable (true) or disable (false) tracking
-       * @param options - Optional configuration including REDIRECT, BCAST, PREFIX, OPTIN, OPTOUT, and NOLOOP options
-       */
       CLIENT_TRACKING: CLIENT_TRACKING_1.default,
-      /**
-       * Controls server-assisted client side caching for the current connection
-       * @param mode - Whether to enable (true) or disable (false) tracking
-       * @param options - Optional configuration including REDIRECT, BCAST, PREFIX, OPTIN, OPTOUT, and NOLOOP options
-       */
       clientTracking: CLIENT_TRACKING_1.default,
-      /**
-       * Returns information about the current connection's key tracking state
-       */
       CLIENT_TRACKINGINFO: CLIENT_TRACKINGINFO_1.default,
-      /**
-       * Returns information about the current connection's key tracking state
-       */
       clientTrackingInfo: CLIENT_TRACKINGINFO_1.default,
-      /**
-       * Unblocks a client blocked by a blocking command from a different connection
-       * @param clientId - The ID of the client to unblock
-       * @param mode - Optional unblock mode: 'TIMEOUT' or 'ERROR'
-       */
-      CLIENT_UNBLOCK: CLIENT_UNBLOCK_1.default,
-      /**
-       * Unblocks a client blocked by a blocking command from a different connection
-       * @param clientId - The ID of the client to unblock
-       * @param mode - Optional unblock mode: 'TIMEOUT' or 'ERROR'
-       */
-      clientUnblock: CLIENT_UNBLOCK_1.default,
-      /**
-       * Resumes processing of client commands after a CLIENT PAUSE
-       */
       CLIENT_UNPAUSE: CLIENT_UNPAUSE_1.default,
-      /**
-       * Resumes processing of client commands after a CLIENT PAUSE
-       */
       clientUnpause: CLIENT_UNPAUSE_1.default,
-      /**
-       * Assigns hash slots to the current node in a Redis Cluster
-       * @param slots - One or more hash slots to be assigned
-       */
       CLUSTER_ADDSLOTS: CLUSTER_ADDSLOTS_1.default,
-      /**
-       * Assigns hash slots to the current node in a Redis Cluster
-       * @param slots - One or more hash slots to be assigned
-       */
       clusterAddSlots: CLUSTER_ADDSLOTS_1.default,
-      /**
-       * Assigns hash slot ranges to the current node in a Redis Cluster
-       * @param ranges - One or more slot ranges to be assigned, each specified as [start, end]
-       */
       CLUSTER_ADDSLOTSRANGE: CLUSTER_ADDSLOTSRANGE_1.default,
-      /**
-       * Assigns hash slot ranges to the current node in a Redis Cluster
-       * @param ranges - One or more slot ranges to be assigned, each specified as [start, end]
-       */
       clusterAddSlotsRange: CLUSTER_ADDSLOTSRANGE_1.default,
-      /**
-       * Advances the cluster config epoch
-       */
       CLUSTER_BUMPEPOCH: CLUSTER_BUMPEPOCH_1.default,
-      /**
-       * Advances the cluster config epoch
-       */
       clusterBumpEpoch: CLUSTER_BUMPEPOCH_1.default,
-      /**
-       * Returns the number of failure reports for a given node
-       * @param nodeId - The ID of the node to check
-       */
       "CLUSTER_COUNT-FAILURE-REPORTS": CLUSTER_COUNT_FAILURE_REPORTS_1.default,
-      /**
-       * Returns the number of failure reports for a given node
-       * @param nodeId - The ID of the node to check
-       */
       clusterCountFailureReports: CLUSTER_COUNT_FAILURE_REPORTS_1.default,
-      /**
-       * Returns the number of keys in the specified hash slot
-       * @param slot - The hash slot to check
-       */
       CLUSTER_COUNTKEYSINSLOT: CLUSTER_COUNTKEYSINSLOT_1.default,
-      /**
-       * Returns the number of keys in the specified hash slot
-       * @param slot - The hash slot to check
-       */
       clusterCountKeysInSlot: CLUSTER_COUNTKEYSINSLOT_1.default,
-      /**
-       * Removes hash slots from the current node in a Redis Cluster
-       * @param slots - One or more hash slots to be removed
-       */
       CLUSTER_DELSLOTS: CLUSTER_DELSLOTS_1.default,
-      /**
-       * Removes hash slots from the current node in a Redis Cluster
-       * @param slots - One or more hash slots to be removed
-       */
       clusterDelSlots: CLUSTER_DELSLOTS_1.default,
-      /**
-       * Removes hash slot ranges from the current node in a Redis Cluster
-       * @param ranges - One or more slot ranges to be removed, each specified as [start, end]
-       */
       CLUSTER_DELSLOTSRANGE: CLUSTER_DELSLOTSRANGE_1.default,
-      /**
-       * Removes hash slot ranges from the current node in a Redis Cluster
-       * @param ranges - One or more slot ranges to be removed, each specified as [start, end]
-       */
       clusterDelSlotsRange: CLUSTER_DELSLOTSRANGE_1.default,
-      /**
-       * Forces a replica to perform a manual failover of its master
-       * @param options - Optional configuration with FORCE or TAKEOVER mode
-       */
       CLUSTER_FAILOVER: CLUSTER_FAILOVER_1.default,
-      /**
-       * Forces a replica to perform a manual failover of its master
-       * @param options - Optional configuration with FORCE or TAKEOVER mode
-       */
       clusterFailover: CLUSTER_FAILOVER_1.default,
-      /**
-       * Deletes all hash slots from the current node in a Redis Cluster
-       */
       CLUSTER_FLUSHSLOTS: CLUSTER_FLUSHSLOTS_1.default,
-      /**
-       * Deletes all hash slots from the current node in a Redis Cluster
-       */
       clusterFlushSlots: CLUSTER_FLUSHSLOTS_1.default,
-      /**
-       * Removes a node from the cluster
-       * @param nodeId - The ID of the node to remove
-       */
       CLUSTER_FORGET: CLUSTER_FORGET_1.default,
-      /**
-       * Removes a node from the cluster
-       * @param nodeId - The ID of the node to remove
-       */
       clusterForget: CLUSTER_FORGET_1.default,
-      /**
-       * Returns a number of keys from the specified hash slot
-       * @param slot - The hash slot to get keys from
-       * @param count - Maximum number of keys to return
-       */
       CLUSTER_GETKEYSINSLOT: CLUSTER_GETKEYSINSLOT_1.default,
-      /**
-       * Returns a number of keys from the specified hash slot
-       * @param slot - The hash slot to get keys from
-       * @param count - Maximum number of keys to return
-       */
       clusterGetKeysInSlot: CLUSTER_GETKEYSINSLOT_1.default,
-      /**
-       * Returns information about the state of a Redis Cluster
-       */
       CLUSTER_INFO: CLUSTER_INFO_1.default,
-      /**
-       * Returns information about the state of a Redis Cluster
-       */
       clusterInfo: CLUSTER_INFO_1.default,
-      /**
-       * Returns the hash slot number for a given key
-       * @param key - The key to get the hash slot for
-       */
       CLUSTER_KEYSLOT: CLUSTER_KEYSLOT_1.default,
-      /**
-       * Returns the hash slot number for a given key
-       * @param key - The key to get the hash slot for
-       */
       clusterKeySlot: CLUSTER_KEYSLOT_1.default,
-      /**
-       * Returns information about all cluster links (lower level connections to other nodes)
-       */
       CLUSTER_LINKS: CLUSTER_LINKS_1.default,
-      /**
-       * Returns information about all cluster links (lower level connections to other nodes)
-       */
       clusterLinks: CLUSTER_LINKS_1.default,
-      /**
-       * Initiates a handshake with another node in the cluster
-       * @param host - Host name or IP address of the node
-       * @param port - TCP port of the node
-       */
       CLUSTER_MEET: CLUSTER_MEET_1.default,
-      /**
-       * Initiates a handshake with another node in the cluster
-       * @param host - Host name or IP address of the node
-       * @param port - TCP port of the node
-       */
       clusterMeet: CLUSTER_MEET_1.default,
-      /**
-       * Returns the node ID of the current Redis Cluster node
-       */
       CLUSTER_MYID: CLUSTER_MYID_1.default,
-      /**
-       * Returns the node ID of the current Redis Cluster node
-       */
       clusterMyId: CLUSTER_MYID_1.default,
-      /**
-       * Returns the shard ID of the current Redis Cluster node
-       */
       CLUSTER_MYSHARDID: CLUSTER_MYSHARDID_1.default,
-      /**
-       * Returns the shard ID of the current Redis Cluster node
-       */
       clusterMyShardId: CLUSTER_MYSHARDID_1.default,
-      /**
-       * Returns serialized information about the nodes in a Redis Cluster
-       */
       CLUSTER_NODES: CLUSTER_NODES_1.default,
-      /**
-       * Returns serialized information about the nodes in a Redis Cluster
-       */
       clusterNodes: CLUSTER_NODES_1.default,
-      /**
-       * Returns the replica nodes replicating from the specified primary node
-       * @param nodeId - Node ID of the primary node
-       */
       CLUSTER_REPLICAS: CLUSTER_REPLICAS_1.default,
-      /**
-       * Returns the replica nodes replicating from the specified primary node
-       * @param nodeId - Node ID of the primary node
-       */
       clusterReplicas: CLUSTER_REPLICAS_1.default,
-      /**
-       * Reconfigures a node as a replica of the specified primary node
-       * @param nodeId - Node ID of the primary node to replicate
-       */
       CLUSTER_REPLICATE: CLUSTER_REPLICATE_1.default,
-      /**
-       * Reconfigures a node as a replica of the specified primary node
-       * @param nodeId - Node ID of the primary node to replicate
-       */
       clusterReplicate: CLUSTER_REPLICATE_1.default,
-      /**
-       * Resets a Redis Cluster node, clearing all information and returning it to a brand new state
-       * @param options - Options for the reset operation
-       */
       CLUSTER_RESET: CLUSTER_RESET_1.default,
-      /**
-       * Resets a Redis Cluster node, clearing all information and returning it to a brand new state
-       * @param options - Options for the reset operation
-       */
       clusterReset: CLUSTER_RESET_1.default,
-      /**
-       * Forces a Redis Cluster node to save the cluster configuration to disk
-       */
       CLUSTER_SAVECONFIG: CLUSTER_SAVECONFIG_1.default,
-      /**
-       * Forces a Redis Cluster node to save the cluster configuration to disk
-       */
       clusterSaveConfig: CLUSTER_SAVECONFIG_1.default,
-      /**
-       * Sets the configuration epoch for a Redis Cluster node
-       * @param configEpoch - The configuration epoch to set
-       */
       "CLUSTER_SET-CONFIG-EPOCH": CLUSTER_SET_CONFIG_EPOCH_1.default,
-      /**
-       * Sets the configuration epoch for a Redis Cluster node
-       * @param configEpoch - The configuration epoch to set
-       */
       clusterSetConfigEpoch: CLUSTER_SET_CONFIG_EPOCH_1.default,
-      /**
-       * Assigns a hash slot to a specific Redis Cluster node
-       * @param slot - The slot number to assign
-       * @param state - The state to set for the slot (IMPORTING, MIGRATING, STABLE, NODE)
-       * @param nodeId - Node ID (required for IMPORTING, MIGRATING, and NODE states)
-       */
       CLUSTER_SETSLOT: CLUSTER_SETSLOT_1.default,
-      /**
-       * Assigns a hash slot to a specific Redis Cluster node
-       * @param slot - The slot number to assign
-       * @param state - The state to set for the slot (IMPORTING, MIGRATING, STABLE, NODE)
-       * @param nodeId - Node ID (required for IMPORTING, MIGRATING, and NODE states)
-       */
       clusterSetSlot: CLUSTER_SETSLOT_1.default,
-      /**
-       * Returns information about which Redis Cluster node handles which hash slots
-       */
       CLUSTER_SLOTS: CLUSTER_SLOTS_1.default,
-      /**
-       * Returns information about which Redis Cluster node handles which hash slots
-       */
       clusterSlots: CLUSTER_SLOTS_1.default,
-      /**
-       * Returns the total number of commands available in the Redis server
-       */
       COMMAND_COUNT: COMMAND_COUNT_1.default,
-      /**
-       * Returns the total number of commands available in the Redis server
-       */
       commandCount: COMMAND_COUNT_1.default,
-      /**
-       * Extracts the key names from a Redis command
-       * @param args - Command arguments to analyze
-       */
       COMMAND_GETKEYS: COMMAND_GETKEYS_1.default,
-      /**
-       * Extracts the key names from a Redis command
-       * @param args - Command arguments to analyze
-       */
       commandGetKeys: COMMAND_GETKEYS_1.default,
-      /**
-       * Extracts the key names and access flags from a Redis command
-       * @param args - Command arguments to analyze
-       */
       COMMAND_GETKEYSANDFLAGS: COMMAND_GETKEYSANDFLAGS_1.default,
-      /**
-       * Extracts the key names and access flags from a Redis command
-       * @param args - Command arguments to analyze
-       */
       commandGetKeysAndFlags: COMMAND_GETKEYSANDFLAGS_1.default,
-      /**
-       * Returns details about specific Redis commands
-       * @param commands - Array of command names to get information about
-       */
       COMMAND_INFO: COMMAND_INFO_1.default,
-      /**
-       * Returns details about specific Redis commands
-       * @param commands - Array of command names to get information about
-       */
       commandInfo: COMMAND_INFO_1.default,
-      /**
-       * Returns a list of all commands supported by the Redis server
-       * @param options - Options for filtering the command list
-       */
       COMMAND_LIST: COMMAND_LIST_1.default,
-      /**
-       * Returns a list of all commands supported by the Redis server
-       * @param options - Options for filtering the command list
-       */
       commandList: COMMAND_LIST_1.default,
-      /**
-       * Returns an array with details about all Redis commands
-       */
       COMMAND: COMMAND_1.default,
-      /**
-       * Returns an array with details about all Redis commands
-       */
       command: COMMAND_1.default,
-      /**
-       * Gets the values of configuration parameters
-       * @param parameters - Pattern or specific configuration parameter names
-       */
       CONFIG_GET: CONFIG_GET_1.default,
-      /**
-       * Gets the values of configuration parameters
-       * @param parameters - Pattern or specific configuration parameter names
-       */
       configGet: CONFIG_GET_1.default,
-      /**
-       * Resets the statistics reported by Redis using the INFO command
-       */
       CONFIG_RESETASTAT: CONFIG_RESETSTAT_1.default,
-      /**
-       * Resets the statistics reported by Redis using the INFO command
-       */
       configResetStat: CONFIG_RESETSTAT_1.default,
-      /**
-       * Rewrites the Redis configuration file with the current configuration
-       */
       CONFIG_REWRITE: CONFIG_REWRITE_1.default,
-      /**
-       * Rewrites the Redis configuration file with the current configuration
-       */
       configRewrite: CONFIG_REWRITE_1.default,
-      /**
-       * Sets configuration parameters to the specified values
-       * @param parameterOrConfig - Either a single parameter name or a configuration object
-       * @param value - Value for the parameter (when using single parameter format)
-       */
       CONFIG_SET: CONFIG_SET_1.default,
-      /**
-       * Sets configuration parameters to the specified values
-       * @param parameterOrConfig - Either a single parameter name or a configuration object
-       * @param value - Value for the parameter (when using single parameter format)
-       */
       configSet: CONFIG_SET_1.default,
-      /**
-       * Copies the value stored at the source key to the destination key
-       * @param source - Source key
-       * @param destination - Destination key
-       * @param options - Options for the copy operation
-       */
       COPY: COPY_1.default,
-      /**
-       * Copies the value stored at the source key to the destination key
-       * @param source - Source key
-       * @param destination - Destination key
-       * @param options - Options for the copy operation
-       */
       copy: COPY_1.default,
-      /**
-       * Returns the number of keys in the current database
-       */
       DBSIZE: DBSIZE_1.default,
-      /**
-       * Returns the number of keys in the current database
-       */
       dbSize: DBSIZE_1.default,
-      /**
-       * Decrements the integer value of a key by one
-       * @param key - Key to decrement
-       */
       DECR: DECR_1.default,
-      /**
-       * Decrements the integer value of a key by one
-       * @param key - Key to decrement
-       */
       decr: DECR_1.default,
-      /**
-       * Decrements the integer value of a key by the given number
-       * @param key - Key to decrement
-       * @param decrement - Decrement amount
-       */
       DECRBY: DECRBY_1.default,
-      /**
-       * Decrements the integer value of a key by the given number
-       * @param key - Key to decrement
-       * @param decrement - Decrement amount
-       */
       decrBy: DECRBY_1.default,
-      /**
-       * Removes the specified keys. A key is ignored if it does not exist
-       * @param keys - One or more keys to delete
-       */
       DEL: DEL_1.default,
-      /**
-       * Removes the specified keys. A key is ignored if it does not exist
-       * @param keys - One or more keys to delete
-       */
       del: DEL_1.default,
-      /**
-       *
-       * @experimental
-       *
-       * Conditionally removes the specified key based on value or digest comparison.
-       *
-       * @param key - Key to delete
-       */
       DELEX: DELEX_1.default,
-      /**
-       *
-       * @experimental
-       *
-       * Conditionally removes the specified key based on value or digest comparison.
-       *
-       * @param key - Key to delete
-       */
       delEx: DELEX_1.default,
-      /**
-       *
-       * @experimental
-       *
-       * Returns the XXH3 hash of a string value.
-       *
-       * @param key - Key to get the digest of
-       */
       DIGEST: DIGEST_1.default,
-      /**
-       *
-       * @experimental
-       *
-       * Returns the XXH3 hash of a string value.
-       *
-       * @param key - Key to get the digest of
-       */
       digest: DIGEST_1.default,
-      /**
-       * Returns a serialized version of the value stored at the key
-       * @param key - Key to dump
-       */
       DUMP: DUMP_1.default,
-      /**
-       * Returns a serialized version of the value stored at the key
-       * @param key - Key to dump
-       */
       dump: DUMP_1.default,
-      /**
-       * Returns the given string
-       * @param message - Message to echo back
-       */
       ECHO: ECHO_1.default,
-      /**
-       * Returns the given string
-       * @param message - Message to echo back
-       */
       echo: ECHO_1.default,
-      /**
-       * Executes a read-only Lua script server side
-       * @param script - Lua script to execute
-       * @param options - Script execution options including keys and arguments
-       */
       EVAL_RO: EVAL_RO_1.default,
-      /**
-       * Executes a read-only Lua script server side
-       * @param script - Lua script to execute
-       * @param options - Script execution options including keys and arguments
-       */
       evalRo: EVAL_RO_1.default,
-      /**
-       * Executes a Lua script server side
-       * @param script - Lua script to execute
-       * @param options - Script execution options including keys and arguments
-       */
       EVAL: EVAL_1.default,
-      /**
-       * Executes a Lua script server side
-       * @param script - Lua script to execute
-       * @param options - Script execution options including keys and arguments
-       */
       eval: EVAL_1.default,
-      /**
-       * Executes a read-only Lua script server side using the script's SHA1 digest
-       * @param sha1 - SHA1 digest of the script
-       * @param options - Script execution options including keys and arguments
-       */
       EVALSHA_RO: EVALSHA_RO_1.default,
-      /**
-       * Executes a read-only Lua script server side using the script's SHA1 digest
-       * @param sha1 - SHA1 digest of the script
-       * @param options - Script execution options including keys and arguments
-       */
       evalShaRo: EVALSHA_RO_1.default,
-      /**
-       * Executes a Lua script server side using the script's SHA1 digest
-       * @param sha1 - SHA1 digest of the script
-       * @param options - Script execution options including keys and arguments
-       */
       EVALSHA: EVALSHA_1.default,
-      /**
-       * Executes a Lua script server side using the script's SHA1 digest
-       * @param sha1 - SHA1 digest of the script
-       * @param options - Script execution options including keys and arguments
-       */
       evalSha: EVALSHA_1.default,
-      /**
-       * Determines if the specified keys exist
-       * @param keys - One or more keys to check
-       */
       EXISTS: EXISTS_1.default,
-      /**
-       * Determines if the specified keys exist
-       * @param keys - One or more keys to check
-       */
       exists: EXISTS_1.default,
-      /**
-       * Sets a timeout on key. After the timeout has expired, the key will be automatically deleted
-       * @param key - Key to set expiration on
-       * @param seconds - Number of seconds until key expiration
-       * @param mode - Expiration mode: NX (only if key has no expiry), XX (only if key has existing expiry), GT (only if new expiry is greater than current), LT (only if new expiry is less than current)
-       */
       EXPIRE: EXPIRE_1.default,
-      /**
-       * Sets a timeout on key. After the timeout has expired, the key will be automatically deleted
-       * @param key - Key to set expiration on
-       * @param seconds - Number of seconds until key expiration
-       * @param mode - Expiration mode: NX (only if key has no expiry), XX (only if key has existing expiry), GT (only if new expiry is greater than current), LT (only if new expiry is less than current)
-       */
       expire: EXPIRE_1.default,
-      /**
-       * Sets the expiration for a key at a specific Unix timestamp
-       * @param key - Key to set expiration on
-       * @param timestamp - Unix timestamp (seconds since January 1, 1970) or Date object
-       * @param mode - Expiration mode: NX (only if key has no expiry), XX (only if key has existing expiry), GT (only if new expiry is greater than current), LT (only if new expiry is less than current)
-       */
       EXPIREAT: EXPIREAT_1.default,
-      /**
-       * Sets the expiration for a key at a specific Unix timestamp
-       * @param key - Key to set expiration on
-       * @param timestamp - Unix timestamp (seconds since January 1, 1970) or Date object
-       * @param mode - Expiration mode: NX (only if key has no expiry), XX (only if key has existing expiry), GT (only if new expiry is greater than current), LT (only if new expiry is less than current)
-       */
       expireAt: EXPIREAT_1.default,
-      /**
-       * Returns the absolute Unix timestamp (since January 1, 1970) at which the given key will expire
-       * @param key - Key to check expiration time
-       */
       EXPIRETIME: EXPIRETIME_1.default,
-      /**
-       * Returns the absolute Unix timestamp (since January 1, 1970) at which the given key will expire
-       * @param key - Key to check expiration time
-       */
       expireTime: EXPIRETIME_1.default,
-      /**
-       * Removes all keys from all databases
-       * @param mode - Optional flush mode (ASYNC or SYNC)
-       */
       FLUSHALL: FLUSHALL_1.default,
-      /**
-       * Removes all keys from all databases
-       * @param mode - Optional flush mode (ASYNC or SYNC)
-       */
       flushAll: FLUSHALL_1.default,
-      /**
-       * Removes all keys from the current database
-       * @param mode - Optional flush mode (ASYNC or SYNC)
-       */
       FLUSHDB: FLUSHDB_1.default,
-      /**
-       * Removes all keys from the current database
-       * @param mode - Optional flush mode (ASYNC or SYNC)
-       */
       flushDb: FLUSHDB_1.default,
-      /**
-       * Invokes a Redis function
-       * @param functionName - Name of the function to call
-       * @param options - Function execution options including keys and arguments
-       */
       FCALL: FCALL_1.default,
-      /**
-       * Invokes a Redis function
-       * @param functionName - Name of the function to call
-       * @param options - Function execution options including keys and arguments
-       */
       fCall: FCALL_1.default,
-      /**
-       * Invokes a read-only Redis function
-       * @param functionName - Name of the function to call
-       * @param options - Function execution options including keys and arguments
-       */
       FCALL_RO: FCALL_RO_1.default,
-      /**
-       * Invokes a read-only Redis function
-       * @param functionName - Name of the function to call
-       * @param options - Function execution options including keys and arguments
-       */
       fCallRo: FCALL_RO_1.default,
-      /**
-       * Deletes a library and all its functions
-       * @param library - Name of the library to delete
-       */
       FUNCTION_DELETE: FUNCTION_DELETE_1.default,
-      /**
-       * Deletes a library and all its functions
-       * @param library - Name of the library to delete
-       */
       functionDelete: FUNCTION_DELETE_1.default,
-      /**
-       * Returns a serialized payload representing the current functions loaded in the server
-       */
       FUNCTION_DUMP: FUNCTION_DUMP_1.default,
-      /**
-       * Returns a serialized payload representing the current functions loaded in the server
-       */
       functionDump: FUNCTION_DUMP_1.default,
-      /**
-       * Deletes all the libraries and functions from a Redis server
-       * @param mode - Optional flush mode (ASYNC or SYNC)
-       */
       FUNCTION_FLUSH: FUNCTION_FLUSH_1.default,
-      /**
-       * Deletes all the libraries and functions from a Redis server
-       * @param mode - Optional flush mode (ASYNC or SYNC)
-       */
       functionFlush: FUNCTION_FLUSH_1.default,
-      /**
-       * Kills a function that is currently executing
-       */
       FUNCTION_KILL: FUNCTION_KILL_1.default,
-      /**
-       * Kills a function that is currently executing
-       */
       functionKill: FUNCTION_KILL_1.default,
-      /**
-       * Returns all libraries and functions including their source code
-       * @param options - Options for listing functions
-       */
       FUNCTION_LIST_WITHCODE: FUNCTION_LIST_WITHCODE_1.default,
-      /**
-       * Returns all libraries and functions including their source code
-       * @param options - Options for listing functions
-       */
       functionListWithCode: FUNCTION_LIST_WITHCODE_1.default,
-      /**
-       * Returns all libraries and functions
-       * @param options - Options for listing functions
-       */
       FUNCTION_LIST: FUNCTION_LIST_1.default,
-      /**
-       * Returns all libraries and functions
-       * @param options - Options for listing functions
-       */
       functionList: FUNCTION_LIST_1.default,
-      /**
-       * Loads a library to Redis
-       * @param code - Library code to load
-       * @param options - Function load options
-       */
       FUNCTION_LOAD: FUNCTION_LOAD_1.default,
-      /**
-       * Loads a library to Redis
-       * @param code - Library code to load
-       * @param options - Function load options
-       */
       functionLoad: FUNCTION_LOAD_1.default,
-      /**
-       * Restores libraries from the dump payload
-       * @param dump - Serialized payload of functions to restore
-       * @param options - Options for the restore operation
-       */
       FUNCTION_RESTORE: FUNCTION_RESTORE_1.default,
-      /**
-       * Restores libraries from the dump payload
-       * @param dump - Serialized payload of functions to restore
-       * @param options - Options for the restore operation
-       */
       functionRestore: FUNCTION_RESTORE_1.default,
-      /**
-       * Returns information about the function that is currently running and information about the available execution engines
-       */
       FUNCTION_STATS: FUNCTION_STATS_1.default,
-      /**
-       * Returns information about the function that is currently running and information about the available execution engines
-       */
       functionStats: FUNCTION_STATS_1.default,
-      /**
-       * Adds geospatial items to the specified key
-       * @param key - Key to add the geospatial items to
-       * @param toAdd - Geospatial member(s) to add
-       * @param options - Options for the GEOADD command
-       */
       GEOADD: GEOADD_1.default,
-      /**
-       * Adds geospatial items to the specified key
-       * @param key - Key to add the geospatial items to
-       * @param toAdd - Geospatial member(s) to add
-       * @param options - Options for the GEOADD command
-       */
       geoAdd: GEOADD_1.default,
-      /**
-       * Returns the distance between two members in a geospatial index
-       * @param key - Key of the geospatial index
-       * @param member1 - First member in the geospatial index
-       * @param member2 - Second member in the geospatial index
-       * @param unit - Unit of distance (m, km, ft, mi)
-       */
       GEODIST: GEODIST_1.default,
-      /**
-       * Returns the distance between two members in a geospatial index
-       * @param key - Key of the geospatial index
-       * @param member1 - First member in the geospatial index
-       * @param member2 - Second member in the geospatial index
-       * @param unit - Unit of distance (m, km, ft, mi)
-       */
       geoDist: GEODIST_1.default,
-      /**
-       * Returns the Geohash string representation of one or more position members
-       * @param key - Key of the geospatial index
-       * @param member - One or more members in the geospatial index
-       */
       GEOHASH: GEOHASH_1.default,
-      /**
-       * Returns the Geohash string representation of one or more position members
-       * @param key - Key of the geospatial index
-       * @param member - One or more members in the geospatial index
-       */
       geoHash: GEOHASH_1.default,
-      /**
-       * Returns the longitude and latitude of one or more members in a geospatial index
-       * @param key - Key of the geospatial index
-       * @param member - One or more members in the geospatial index
-       */
       GEOPOS: GEOPOS_1.default,
-      /**
-       * Returns the longitude and latitude of one or more members in a geospatial index
-       * @param key - Key of the geospatial index
-       * @param member - One or more members in the geospatial index
-       */
       geoPos: GEOPOS_1.default,
-      /**
-       * Read-only variant that queries members in a geospatial index based on a radius from a center point with additional information
-       * @param key - Key of the geospatial index
-       * @param from - Center coordinates for the search
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param replyWith - Information to include with each returned member
-       * @param options - Additional search options
-       */
       GEORADIUS_RO_WITH: GEORADIUS_RO_WITH_1.default,
-      /**
-       * Read-only variant that queries members in a geospatial index based on a radius from a center point with additional information
-       * @param key - Key of the geospatial index
-       * @param from - Center coordinates for the search
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param replyWith - Information to include with each returned member
-       * @param options - Additional search options
-       */
       geoRadiusRoWith: GEORADIUS_RO_WITH_1.default,
-      /**
-       * Read-only variant that queries members in a geospatial index based on a radius from a center point
-       * @param key - Key of the geospatial index
-       * @param from - Center coordinates for the search
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param options - Additional search options
-       */
       GEORADIUS_RO: GEORADIUS_RO_1.default,
-      /**
-       * Read-only variant that queries members in a geospatial index based on a radius from a center point
-       * @param key - Key of the geospatial index
-       * @param from - Center coordinates for the search
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param options - Additional search options
-       */
       geoRadiusRo: GEORADIUS_RO_1.default,
-      /**
-       * Queries members in a geospatial index based on a radius from a center point and stores the results
-       * @param key - Key of the geospatial index
-       * @param from - Center coordinates for the search
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param destination - Key to store the results
-       * @param options - Additional search and storage options
-       */
       GEORADIUS_STORE: GEORADIUS_STORE_1.default,
-      /**
-       * Queries members in a geospatial index based on a radius from a center point and stores the results
-       * @param key - Key of the geospatial index
-       * @param from - Center coordinates for the search
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param destination - Key to store the results
-       * @param options - Additional search and storage options
-       */
       geoRadiusStore: GEORADIUS_STORE_1.default,
-      /**
-       * Queries members in a geospatial index based on a radius from a center point with additional information
-       * @param key - Key of the geospatial index
-       * @param from - Center coordinates for the search
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param replyWith - Information to include with each returned member
-       * @param options - Additional search options
-       */
       GEORADIUS_WITH: GEORADIUS_WITH_1.default,
-      /**
-       * Queries members in a geospatial index based on a radius from a center point with additional information
-       * @param key - Key of the geospatial index
-       * @param from - Center coordinates for the search
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param replyWith - Information to include with each returned member
-       * @param options - Additional search options
-       */
       geoRadiusWith: GEORADIUS_WITH_1.default,
-      /**
-       * Queries members in a geospatial index based on a radius from a center point
-       * @param key - Key of the geospatial index
-       * @param from - Center coordinates for the search
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param options - Additional search options
-       */
       GEORADIUS: GEORADIUS_1.default,
-      /**
-       * Queries members in a geospatial index based on a radius from a center point
-       * @param key - Key of the geospatial index
-       * @param from - Center coordinates for the search
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param options - Additional search options
-       */
       geoRadius: GEORADIUS_1.default,
-      /**
-       * Read-only variant that queries members in a geospatial index based on a radius from a member with additional information
-       * @param key - Key of the geospatial index
-       * @param from - Member name to use as center point
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param withValues - Information to include with each returned member
-       */
       GEORADIUSBYMEMBER_RO_WITH: GEORADIUSBYMEMBER_RO_WITH_1.default,
-      /**
-       * Read-only variant that queries members in a geospatial index based on a radius from a member with additional information
-       * @param key - Key of the geospatial index
-       * @param from - Member name to use as center point
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param withValues - Information to include with each returned member
-       */
       geoRadiusByMemberRoWith: GEORADIUSBYMEMBER_RO_WITH_1.default,
-      /**
-       * Read-only variant that queries members in a geospatial index based on a radius from a member
-       * @param key - Key of the geospatial index
-       * @param from - Member name to use as center point
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param options - Additional search options
-       */
       GEORADIUSBYMEMBER_RO: GEORADIUSBYMEMBER_RO_1.default,
-      /**
-       * Read-only variant that queries members in a geospatial index based on a radius from a member
-       * @param key - Key of the geospatial index
-       * @param from - Member name to use as center point
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param options - Additional search options
-       */
       geoRadiusByMemberRo: GEORADIUSBYMEMBER_RO_1.default,
-      /**
-       * Queries members in a geospatial index based on a radius from a member and stores the results
-       * @param key - Key of the geospatial index
-       * @param from - Member name to use as center point
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param destination - Key to store the results
-       * @param options - Additional search and storage options
-       */
       GEORADIUSBYMEMBER_STORE: GEORADIUSBYMEMBER_STORE_1.default,
-      /**
-       * Queries members in a geospatial index based on a radius from a member and stores the results
-       * @param key - Key of the geospatial index
-       * @param from - Member name to use as center point
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param destination - Key to store the results
-       * @param options - Additional search and storage options
-       */
       geoRadiusByMemberStore: GEORADIUSBYMEMBER_STORE_1.default,
-      /**
-       * Queries members in a geospatial index based on a radius from a member with additional information
-       * @param key - Key of the geospatial index
-       * @param from - Member name to use as center point
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param replyWith - Information to include with each returned member
-       * @param options - Additional search options
-       */
       GEORADIUSBYMEMBER_WITH: GEORADIUSBYMEMBER_WITH_1.default,
-      /**
-       * Queries members in a geospatial index based on a radius from a member with additional information
-       * @param key - Key of the geospatial index
-       * @param from - Member name to use as center point
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param replyWith - Information to include with each returned member
-       * @param options - Additional search options
-       */
       geoRadiusByMemberWith: GEORADIUSBYMEMBER_WITH_1.default,
-      /**
-       * Queries members in a geospatial index based on a radius from a member
-       * @param key - Key of the geospatial index
-       * @param from - Member name to use as center point
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param options - Additional search options
-       */
       GEORADIUSBYMEMBER: GEORADIUSBYMEMBER_1.default,
-      /**
-       * Queries members in a geospatial index based on a radius from a member
-       * @param key - Key of the geospatial index
-       * @param from - Member name to use as center point
-       * @param radius - Radius of the search area
-       * @param unit - Unit of distance (m, km, ft, mi)
-       * @param options - Additional search options
-       */
       geoRadiusByMember: GEORADIUSBYMEMBER_1.default,
-      /**
-       * Queries members inside an area of a geospatial index with additional information
-       * @param key - Key of the geospatial index
-       * @param from - Center point of the search (member name or coordinates)
-       * @param by - Search area specification (radius or box dimensions)
-       * @param replyWith - Information to include with each returned member
-       * @param options - Additional search options
-       */
       GEOSEARCH_WITH: GEOSEARCH_WITH_1.default,
-      /**
-       * Queries members inside an area of a geospatial index with additional information
-       * @param key - Key of the geospatial index
-       * @param from - Center point of the search (member name or coordinates)
-       * @param by - Search area specification (radius or box dimensions)
-       * @param replyWith - Information to include with each returned member
-       * @param options - Additional search options
-       */
       geoSearchWith: GEOSEARCH_WITH_1.default,
-      /**
-       * Queries members inside an area of a geospatial index
-       * @param key - Key of the geospatial index
-       * @param from - Center point of the search (member name or coordinates)
-       * @param by - Search area specification (radius or box dimensions)
-       * @param options - Additional search options
-       */
       GEOSEARCH: GEOSEARCH_1.default,
-      /**
-       * Queries members inside an area of a geospatial index
-       * @param key - Key of the geospatial index
-       * @param from - Center point of the search (member name or coordinates)
-       * @param by - Search area specification (radius or box dimensions)
-       * @param options - Additional search options
-       */
       geoSearch: GEOSEARCH_1.default,
-      /**
-       * Searches a geospatial index and stores the results in a new sorted set
-       * @param destination - Key to store the results
-       * @param source - Key of the geospatial index to search
-       * @param from - Center point of the search (member name or coordinates)
-       * @param by - Search area specification (radius or box dimensions)
-       * @param options - Additional search and storage options
-       */
       GEOSEARCHSTORE: GEOSEARCHSTORE_1.default,
-      /**
-       * Searches a geospatial index and stores the results in a new sorted set
-       * @param destination - Key to store the results
-       * @param source - Key of the geospatial index to search
-       * @param from - Center point of the search (member name or coordinates)
-       * @param by - Search area specification (radius or box dimensions)
-       * @param options - Additional search and storage options
-       */
       geoSearchStore: GEOSEARCHSTORE_1.default,
-      /**
-       * Gets the value of a key
-       * @param key - Key to get the value of
-       */
       GET: GET_1.default,
-      /**
-       * Gets the value of a key
-       * @param key - Key to get the value of
-       */
       get: GET_1.default,
-      /**
-       * Returns the bit value at a given offset in a string value
-       * @param key - Key to retrieve the bit from
-       * @param offset - Bit offset
-       */
       GETBIT: GETBIT_1.default,
-      /**
-       * Returns the bit value at a given offset in a string value
-       * @param key - Key to retrieve the bit from
-       * @param offset - Bit offset
-       */
       getBit: GETBIT_1.default,
-      /**
-       * Gets the value of a key and deletes the key
-       * @param key - Key to get and delete
-       */
       GETDEL: GETDEL_1.default,
-      /**
-       * Gets the value of a key and deletes the key
-       * @param key - Key to get and delete
-       */
       getDel: GETDEL_1.default,
-      /**
-       * Gets the value of a key and optionally sets its expiration
-       * @param key - Key to get value from
-       * @param options - Options for setting expiration
-       */
       GETEX: GETEX_1.default,
-      /**
-       * Gets the value of a key and optionally sets its expiration
-       * @param key - Key to get value from
-       * @param options - Options for setting expiration
-       */
       getEx: GETEX_1.default,
-      /**
-       * Returns a substring of the string stored at a key
-       * @param key - Key to get substring from
-       * @param start - Start position of the substring
-       * @param end - End position of the substring
-       */
       GETRANGE: GETRANGE_1.default,
-      /**
-       * Returns a substring of the string stored at a key
-       * @param key - Key to get substring from
-       * @param start - Start position of the substring
-       * @param end - End position of the substring
-       */
       getRange: GETRANGE_1.default,
-      /**
-       * Sets a key to a new value and returns its old value
-       * @param key - Key to set
-       * @param value - Value to set
-       */
       GETSET: GETSET_1.default,
-      /**
-       * Sets a key to a new value and returns its old value
-       * @param key - Key to set
-       * @param value - Value to set
-       */
       getSet: GETSET_1.default,
-      /**
-       * Removes one or more fields from a hash
-       * @param key - Key of the hash
-       * @param field - Field(s) to remove
-       */
       HDEL: HDEL_1.default,
-      /**
-       * Removes one or more fields from a hash
-       * @param key - Key of the hash
-       * @param field - Field(s) to remove
-       */
       hDel: HDEL_1.default,
-      /**
-       * Handshakes with the Redis server and switches to the specified protocol version
-       * @param protover - Protocol version to use
-       * @param options - Additional options for authentication and connection naming
-       */
       HELLO: HELLO_1.default,
-      /**
-       * Handshakes with the Redis server and switches to the specified protocol version
-       * @param protover - Protocol version to use
-       * @param options - Additional options for authentication and connection naming
-       */
       hello: HELLO_1.default,
-      /**
-       * Determines whether a field exists in a hash
-       * @param key - Key of the hash
-       * @param field - Field to check
-       */
       HEXISTS: HEXISTS_1.default,
-      /**
-       * Determines whether a field exists in a hash
-       * @param key - Key of the hash
-       * @param field - Field to check
-       */
       hExists: HEXISTS_1.default,
-      /**
-       * Sets a timeout on hash fields. After the timeout has expired, the fields will be automatically deleted
-       * @param key - Key of the hash
-       * @param fields - Fields to set expiration on
-       * @param seconds - Number of seconds until field expiration
-       * @param mode - Expiration mode: NX (only if field has no expiry), XX (only if field has existing expiry), GT (only if new expiry is greater than current), LT (only if new expiry is less than current)
-       */
       HEXPIRE: HEXPIRE_1.default,
-      /**
-       * Sets a timeout on hash fields. After the timeout has expired, the fields will be automatically deleted
-       * @param key - Key of the hash
-       * @param fields - Fields to set expiration on
-       * @param seconds - Number of seconds until field expiration
-       * @param mode - Expiration mode: NX (only if field has no expiry), XX (only if field has existing expiry), GT (only if new expiry is greater than current), LT (only if new expiry is less than current)
-       */
       hExpire: HEXPIRE_1.default,
-      /**
-       * Sets the expiration for hash fields at a specific Unix timestamp
-       * @param key - Key of the hash
-       * @param fields - Fields to set expiration on
-       * @param timestamp - Unix timestamp (seconds since January 1, 1970) or Date object
-       * @param mode - Expiration mode: NX (only if field has no expiry), XX (only if field has existing expiry), GT (only if new expiry is greater than current), LT (only if new expiry is less than current)
-       */
       HEXPIREAT: HEXPIREAT_1.default,
-      /**
-       * Sets the expiration for hash fields at a specific Unix timestamp
-       * @param key - Key of the hash
-       * @param fields - Fields to set expiration on
-       * @param timestamp - Unix timestamp (seconds since January 1, 1970) or Date object
-       * @param mode - Expiration mode: NX (only if field has no expiry), XX (only if field has existing expiry), GT (only if new expiry is greater than current), LT (only if new expiry is less than current)
-       */
       hExpireAt: HEXPIREAT_1.default,
-      /**
-       * Returns the absolute Unix timestamp (since January 1, 1970) at which the given hash fields will expire
-       * @param key - Key of the hash
-       * @param fields - Fields to check expiration time
-       */
       HEXPIRETIME: HEXPIRETIME_1.default,
-      /**
-       * Returns the absolute Unix timestamp (since January 1, 1970) at which the given hash fields will expire
-       * @param key - Key of the hash
-       * @param fields - Fields to check expiration time
-       */
       hExpireTime: HEXPIRETIME_1.default,
-      /**
-       * Gets the value of a field in a hash
-       * @param key - Key of the hash
-       * @param field - Field to get the value of
-       */
       HGET: HGET_1.default,
-      /**
-       * Gets the value of a field in a hash
-       * @param key - Key of the hash
-       * @param field - Field to get the value of
-       */
       hGet: HGET_1.default,
-      /**
-       * Gets all fields and values in a hash
-       * @param key - Key of the hash
-       */
       HGETALL: HGETALL_1.default,
-      /**
-       * Gets all fields and values in a hash
-       * @param key - Key of the hash
-       */
       hGetAll: HGETALL_1.default,
-      /**
-       * Gets and deletes the specified fields from a hash
-       * @param key - Key of the hash
-       * @param fields - Fields to get and delete
-       */
       HGETDEL: HGETDEL_1.default,
-      /**
-       * Gets and deletes the specified fields from a hash
-       * @param key - Key of the hash
-       * @param fields - Fields to get and delete
-       */
       hGetDel: HGETDEL_1.default,
-      /**
-       * Gets the values of the specified fields in a hash and optionally sets their expiration
-       * @param key - Key of the hash
-       * @param fields - Fields to get values from
-       * @param options - Options for setting expiration
-       */
       HGETEX: HGETEX_1.default,
-      /**
-       * Gets the values of the specified fields in a hash and optionally sets their expiration
-       * @param key - Key of the hash
-       * @param fields - Fields to get values from
-       * @param options - Options for setting expiration
-       */
       hGetEx: HGETEX_1.default,
-      /**
-       * Increments the integer value of a field in a hash by the given number
-       * @param key - Key of the hash
-       * @param field - Field to increment
-       * @param increment - Increment amount
-       */
       HINCRBY: HINCRBY_1.default,
-      /**
-       * Increments the integer value of a field in a hash by the given number
-       * @param key - Key of the hash
-       * @param field - Field to increment
-       * @param increment - Increment amount
-       */
       hIncrBy: HINCRBY_1.default,
-      /**
-       * Increments the float value of a field in a hash by the given amount
-       * @param key - Key of the hash
-       * @param field - Field to increment
-       * @param increment - Increment amount (float)
-       */
       HINCRBYFLOAT: HINCRBYFLOAT_1.default,
-      /**
-       * Increments the float value of a field in a hash by the given amount
-       * @param key - Key of the hash
-       * @param field - Field to increment
-       * @param increment - Increment amount (float)
-       */
       hIncrByFloat: HINCRBYFLOAT_1.default,
-      /**
-       * Gets all field names in a hash
-       * @param key - Key of the hash
-       */
       HKEYS: HKEYS_1.default,
-      /**
-       * Gets all field names in a hash
-       * @param key - Key of the hash
-       */
       hKeys: HKEYS_1.default,
-      /**
-       * Gets the number of fields in a hash.
-       * @param key - Key of the hash.
-       */
       HLEN: HLEN_1.default,
-      /**
-       * Gets the number of fields in a hash.
-       * @param key - Key of the hash.
-       */
       hLen: HLEN_1.default,
-      /**
-       * Gets the values of all the specified fields in a hash.
-       * @param key - Key of the hash.
-       * @param fields - Fields to get from the hash.
-       */
       HMGET: HMGET_1.default,
-      /**
-       * Gets the values of all the specified fields in a hash.
-       * @param key - Key of the hash.
-       * @param fields - Fields to get from the hash.
-       */
       hmGet: HMGET_1.default,
-      /**
-       * Removes the expiration from the specified fields in a hash.
-       * @param key - Key of the hash.
-       * @param fields - Fields to remove expiration from.
-       */
       HPERSIST: HPERSIST_1.default,
-      /**
-       * Removes the expiration from the specified fields in a hash.
-       * @param key - Key of the hash.
-       * @param fields - Fields to remove expiration from.
-       */
       hPersist: HPERSIST_1.default,
-      /**
-       * Parses the arguments for the `HPEXPIRE` command.
-       *
-       * @param key - The key of the hash.
-       * @param fields - The fields to set the expiration for.
-       * @param ms - The expiration time in milliseconds.
-       * @param mode - Optional mode for the command ('NX', 'XX', 'GT', 'LT').
-       */
       HPEXPIRE: HPEXPIRE_1.default,
-      /**
-       * Parses the arguments for the `HPEXPIRE` command.
-       *
-       * @param key - The key of the hash.
-       * @param fields - The fields to set the expiration for.
-       * @param ms - The expiration time in milliseconds.
-       * @param mode - Optional mode for the command ('NX', 'XX', 'GT', 'LT').
-       */
       hpExpire: HPEXPIRE_1.default,
-      /**
-       * Parses the arguments for the `HPEXPIREAT` command.
-       *
-       * @param key - The key of the hash.
-       * @param fields - The fields to set the expiration for.
-       * @param timestamp - The expiration timestamp (Unix timestamp or Date object).
-       * @param mode - Optional mode for the command ('NX', 'XX', 'GT', 'LT').
-       */
       HPEXPIREAT: HPEXPIREAT_1.default,
-      /**
-       * Parses the arguments for the `HPEXPIREAT` command.
-       *
-       * @param key - The key of the hash.
-       * @param fields - The fields to set the expiration for.
-       * @param timestamp - The expiration timestamp (Unix timestamp or Date object).
-       * @param mode - Optional mode for the command ('NX', 'XX', 'GT', 'LT').
-       */
       hpExpireAt: HPEXPIREAT_1.default,
-      /**
-       * Constructs the HPEXPIRETIME command
-       *
-       * @param key - The key to retrieve expiration time for
-       * @param fields - The fields to retrieve expiration time for
-       * @see https://redis.io/commands/hpexpiretime/
-       */
       HPEXPIRETIME: HPEXPIRETIME_1.default,
-      /**
-       * Constructs the HPEXPIRETIME command
-       *
-       * @param key - The key to retrieve expiration time for
-       * @param fields - The fields to retrieve expiration time for
-       * @see https://redis.io/commands/hpexpiretime/
-       */
       hpExpireTime: HPEXPIRETIME_1.default,
-      /**
-       * Constructs the HPTTL command
-       *
-       * @param key - The key to check time-to-live for
-       * @param fields - The fields to check time-to-live for
-       * @see https://redis.io/commands/hpttl/
-       */
       HPTTL: HPTTL_1.default,
-      /**
-       * Constructs the HPTTL command
-       *
-       * @param key - The key to check time-to-live for
-       * @param fields - The fields to check time-to-live for
-       * @see https://redis.io/commands/hpttl/
-       */
       hpTTL: HPTTL_1.default,
-      /**
-       * Constructs the HRANDFIELD command with count parameter and WITHVALUES option
-       *
-       * @param key - The key of the hash to get random fields from
-       * @param count - The number of fields to return (positive: unique fields, negative: may repeat fields)
-       * @see https://redis.io/commands/hrandfield/
-       */
       HRANDFIELD_COUNT_WITHVALUES: HRANDFIELD_COUNT_WITHVALUES_1.default,
-      /**
-       * Constructs the HRANDFIELD command with count parameter and WITHVALUES option
-       *
-       * @param key - The key of the hash to get random fields from
-       * @param count - The number of fields to return (positive: unique fields, negative: may repeat fields)
-       * @see https://redis.io/commands/hrandfield/
-       */
       hRandFieldCountWithValues: HRANDFIELD_COUNT_WITHVALUES_1.default,
-      /**
-       * Constructs the HRANDFIELD command with count parameter
-       *
-       * @param key - The key of the hash to get random fields from
-       * @param count - The number of fields to return (positive: unique fields, negative: may repeat fields)
-       * @see https://redis.io/commands/hrandfield/
-       */
       HRANDFIELD_COUNT: HRANDFIELD_COUNT_1.default,
-      /**
-       * Constructs the HRANDFIELD command with count parameter
-       *
-       * @param key - The key of the hash to get random fields from
-       * @param count - The number of fields to return (positive: unique fields, negative: may repeat fields)
-       * @see https://redis.io/commands/hrandfield/
-       */
       hRandFieldCount: HRANDFIELD_COUNT_1.default,
-      /**
-       * Constructs the HRANDFIELD command
-       *
-       * @param key - The key of the hash to get a random field from
-       * @see https://redis.io/commands/hrandfield/
-       */
       HRANDFIELD: HRANDFIELD_1.default,
-      /**
-       * Constructs the HRANDFIELD command
-       *
-       * @param key - The key of the hash to get a random field from
-       * @see https://redis.io/commands/hrandfield/
-       */
       hRandField: HRANDFIELD_1.default,
-      /**
-       * Constructs the HSCAN command
-       *
-       * @param key - The key of the hash to scan
-       * @param cursor - The cursor position to start scanning from
-       * @param options - Options for the scan (COUNT, MATCH, TYPE)
-       * @see https://redis.io/commands/hscan/
-       */
       HSCAN: HSCAN_1.default,
-      /**
-       * Constructs the HSCAN command
-       *
-       * @param key - The key of the hash to scan
-       * @param cursor - The cursor position to start scanning from
-       * @param options - Options for the scan (COUNT, MATCH, TYPE)
-       * @see https://redis.io/commands/hscan/
-       */
       hScan: HSCAN_1.default,
-      /**
-       * Constructs the HSCAN command with NOVALUES option
-       *
-       * @param args - The same parameters as HSCAN command
-       * @see https://redis.io/commands/hscan/
-       */
       HSCAN_NOVALUES: HSCAN_NOVALUES_1.default,
-      /**
-       * Constructs the HSCAN command with NOVALUES option
-       *
-       * @param args - The same parameters as HSCAN command
-       * @see https://redis.io/commands/hscan/
-       */
       hScanNoValues: HSCAN_NOVALUES_1.default,
-      /**
-       * Constructs the HSET command
-       *
-       * @param key - The key of the hash
-       * @param value - Either the field name (when using single field) or an object/map/array of field-value pairs
-       * @param fieldValue - The value to set (only used with single field variant)
-       * @see https://redis.io/commands/hset/
-       */
       HSET: HSET_1.default,
-      /**
-       * Constructs the HSET command
-       *
-       * @param key - The key of the hash
-       * @param value - Either the field name (when using single field) or an object/map/array of field-value pairs
-       * @param fieldValue - The value to set (only used with single field variant)
-       * @see https://redis.io/commands/hset/
-       */
       hSet: HSET_1.default,
-      /**
-       * Constructs the HSETEX command
-       *
-       * @param key - The key of the hash
-       * @param fields - Object, Map, or Array of field-value pairs to set
-       * @param options - Optional configuration for expiration and mode settings
-       * @see https://redis.io/commands/hsetex/
-       */
       HSETEX: HSETEX_1.default,
-      /**
-       * Constructs the HSETEX command
-       *
-       * @param key - The key of the hash
-       * @param fields - Object, Map, or Array of field-value pairs to set
-       * @param options - Optional configuration for expiration and mode settings
-       * @see https://redis.io/commands/hsetex/
-       */
       hSetEx: HSETEX_1.default,
-      /**
-       * Constructs the HSETNX command
-       *
-       * @param key - The key of the hash
-       * @param field - The field to set if it does not exist
-       * @param value - The value to set
-       * @see https://redis.io/commands/hsetnx/
-       */
       HSETNX: HSETNX_1.default,
-      /**
-       * Constructs the HSETNX command
-       *
-       * @param key - The key of the hash
-       * @param field - The field to set if it does not exist
-       * @param value - The value to set
-       * @see https://redis.io/commands/hsetnx/
-       */
       hSetNX: HSETNX_1.default,
-      /**
-       * Constructs the HSTRLEN command
-       *
-       * @param key - The key of the hash
-       * @param field - The field to get the string length of
-       * @see https://redis.io/commands/hstrlen/
-       */
       HSTRLEN: HSTRLEN_1.default,
-      /**
-       * Constructs the HSTRLEN command
-       *
-       * @param key - The key of the hash
-       * @param field - The field to get the string length of
-       * @see https://redis.io/commands/hstrlen/
-       */
       hStrLen: HSTRLEN_1.default,
-      /**
-       * Returns the remaining time to live of field(s) in a hash.
-       * @param key - Key of the hash.
-       * @param fields - Fields to check time to live.
-       */
       HTTL: HTTL_1.default,
-      /**
-       * Returns the remaining time to live of field(s) in a hash.
-       * @param key - Key of the hash.
-       * @param fields - Fields to check time to live.
-       */
       hTTL: HTTL_1.default,
-      /**
-       * Gets all values in a hash.
-       * @param key - Key of the hash.
-       */
       HVALS: HVALS_1.default,
-      /**
-       * Gets all values in a hash.
-       * @param key - Key of the hash.
-       */
       hVals: HVALS_1.default,
-      /**
-       * Returns the top K hotkeys by CPU time and network bytes.
-       * Returns null if no tracking has been started or tracking was reset.
-       * @see https://redis.io/commands/hotkeys-get/
-       */
       HOTKEYS_GET: HOTKEYS_GET_1.default,
-      /**
-       * Returns the top K hotkeys by CPU time and network bytes.
-       * Returns null if no tracking has been started or tracking was reset.
-       * @see https://redis.io/commands/hotkeys-get/
-       */
       hotkeysGet: HOTKEYS_GET_1.default,
-      /**
-       * Releases resources used for hotkey tracking.
-       * Returns error if a session is active (must be stopped first).
-       * @see https://redis.io/commands/hotkeys-reset/
-       */
       HOTKEYS_RESET: HOTKEYS_RESET_1.default,
-      /**
-       * Releases resources used for hotkey tracking.
-       * Returns error if a session is active (must be stopped first).
-       * @see https://redis.io/commands/hotkeys-reset/
-       */
       hotkeysReset: HOTKEYS_RESET_1.default,
-      /**
-       * Starts hotkeys tracking with specified options.
-       * @param options - Configuration options for hotkeys tracking
-       * @see https://redis.io/commands/hotkeys-start/
-       */
       HOTKEYS_START: HOTKEYS_START_1.default,
-      /**
-       * Starts hotkeys tracking with specified options.
-       * @param options - Configuration options for hotkeys tracking
-       * @see https://redis.io/commands/hotkeys-start/
-       */
       hotkeysStart: HOTKEYS_START_1.default,
-      /**
-       * Stops hotkeys tracking. Results remain available via HOTKEYS GET.
-       * Returns null if no session was started or is already stopped.
-       * @see https://redis.io/commands/hotkeys-stop/
-       */
       HOTKEYS_STOP: HOTKEYS_STOP_1.default,
-      /**
-       * Stops hotkeys tracking. Results remain available via HOTKEYS GET.
-       * Returns null if no session was started or is already stopped.
-       * @see https://redis.io/commands/hotkeys-stop/
-       */
       hotkeysStop: HOTKEYS_STOP_1.default,
-      /**
-       * Constructs the INCR command
-       *
-       * @param key - The key to increment
-       * @see https://redis.io/commands/incr/
-       */
       INCR: INCR_1.default,
-      /**
-       * Constructs the INCR command
-       *
-       * @param key - The key to increment
-       * @see https://redis.io/commands/incr/
-       */
       incr: INCR_1.default,
-      /**
-       * Constructs the INCRBY command
-       *
-       * @param key - The key to increment
-       * @param increment - The amount to increment by
-       * @see https://redis.io/commands/incrby/
-       */
       INCRBY: INCRBY_1.default,
-      /**
-       * Constructs the INCRBY command
-       *
-       * @param key - The key to increment
-       * @param increment - The amount to increment by
-       * @see https://redis.io/commands/incrby/
-       */
       incrBy: INCRBY_1.default,
-      /**
-       * Constructs the INCRBYFLOAT command
-       *
-       * @param key - The key to increment
-       * @param increment - The floating-point value to increment by
-       * @see https://redis.io/commands/incrbyfloat/
-       */
       INCRBYFLOAT: INCRBYFLOAT_1.default,
-      /**
-       * Constructs the INCRBYFLOAT command
-       *
-       * @param key - The key to increment
-       * @param increment - The floating-point value to increment by
-       * @see https://redis.io/commands/incrbyfloat/
-       */
       incrByFloat: INCRBYFLOAT_1.default,
-      /**
-       * Atomic integer increment with optional bounds, overflow policy, and TTL control.
-       * For float increments use `INCREXBYFLOAT`.
-       *
-       * @param key - The key to increment
-       * @param options - Increment, bounds, overflow, and expiration options
-       * @see https://redis.io/commands/increx/
-       */
-      INCREX: INCREX_1.default,
-      /**
-       * Atomic integer increment with optional bounds, overflow policy, and TTL control.
-       * For float increments use `incrExByFloat`.
-       *
-       * @param key - The key to increment
-       * @param options - Increment, bounds, overflow, and expiration options
-       * @see https://redis.io/commands/increx/
-       */
-      increx: INCREX_1.default,
-      /**
-       * Atomic float increment with optional bounds, overflow policy, and TTL control.
-       *
-       * @param key - The key to increment
-       * @param value - The float increment to apply (BYFLOAT on the wire)
-       * @param options - Bounds, overflow, and expiration options
-       * @see https://redis.io/commands/increx/
-       */
-      INCREXBYFLOAT: INCREXBYFLOAT_1.default,
-      /**
-       * Atomic float increment with optional bounds, overflow policy, and TTL control.
-       *
-       * @param key - The key to increment
-       * @param value - The float increment to apply (BYFLOAT on the wire)
-       * @param options - Bounds, overflow, and expiration options
-       * @see https://redis.io/commands/increx/
-       */
-      incrExByFloat: INCREXBYFLOAT_1.default,
-      /**
-       * Constructs the INFO command
-       *
-       * @param section - Optional specific section of information to retrieve
-       * @see https://redis.io/commands/info/
-       */
       INFO: INFO_1.default,
-      /**
-       * Constructs the INFO command
-       *
-       * @param section - Optional specific section of information to retrieve
-       * @see https://redis.io/commands/info/
-       */
       info: INFO_1.default,
-      /**
-       * Constructs the KEYS command
-       *
-       * @param pattern - The pattern to match keys against
-       * @see https://redis.io/commands/keys/
-       */
       KEYS: KEYS_1.default,
-      /**
-       * Constructs the KEYS command
-       *
-       * @param pattern - The pattern to match keys against
-       * @see https://redis.io/commands/keys/
-       */
       keys: KEYS_1.default,
-      /**
-       * Constructs the LASTSAVE command
-       *
-       * @see https://redis.io/commands/lastsave/
-       */
       LASTSAVE: LASTSAVE_1.default,
-      /**
-       * Constructs the LASTSAVE command
-       *
-       * @see https://redis.io/commands/lastsave/
-       */
       lastSave: LASTSAVE_1.default,
-      /**
-       * Constructs the LATENCY DOCTOR command
-       *
-       * @see https://redis.io/commands/latency-doctor/
-       */
       LATENCY_DOCTOR: LATENCY_DOCTOR_1.default,
-      /**
-       * Constructs the LATENCY DOCTOR command
-       *
-       * @see https://redis.io/commands/latency-doctor/
-       */
       latencyDoctor: LATENCY_DOCTOR_1.default,
-      /**
-       * Constructs the LATENCY GRAPH command
-       *
-       * @param event - The latency event to get the graph for
-       * @see https://redis.io/commands/latency-graph/
-       */
       LATENCY_GRAPH: LATENCY_GRAPH_1.default,
-      /**
-       * Constructs the LATENCY GRAPH command
-       *
-       * @param event - The latency event to get the graph for
-       * @see https://redis.io/commands/latency-graph/
-       */
       latencyGraph: LATENCY_GRAPH_1.default,
-      /**
-       * Constructs the LATENCY HISTORY command
-       *
-       * @param event - The latency event to get the history for
-       * @see https://redis.io/commands/latency-history/
-       */
       LATENCY_HISTORY: LATENCY_HISTORY_1.default,
-      /**
-       * Constructs the LATENCY HISTORY command
-       *
-       * @param event - The latency event to get the history for
-       * @see https://redis.io/commands/latency-history/
-       */
       latencyHistory: LATENCY_HISTORY_1.default,
-      /**
-       * Constructs the LATENCY HISTOGRAM command
-       *
-       * @param commands - The list of redis commands to get histogram for
-       * @see https://redis.io/docs/latest/commands/latency-histogram/
-       */
       LATENCY_HISTOGRAM: LATENCY_HISTOGRAM_1.default,
-      /**
-       * Constructs the LATENCY HISTOGRAM command
-       *
-       * @param commands - The list of redis commands to get histogram for
-       * @see https://redis.io/docs/latest/commands/latency-histogram/
-       */
       latencyHistogram: LATENCY_HISTOGRAM_1.default,
-      /**
-       * Constructs the LATENCY LATEST command
-       *
-       * @see https://redis.io/commands/latency-latest/
-       */
       LATENCY_LATEST: LATENCY_LATEST_1.default,
-      /**
-       * Constructs the LATENCY LATEST command
-       *
-       * @see https://redis.io/commands/latency-latest/
-       */
       latencyLatest: LATENCY_LATEST_1.default,
-      /**
-       * Constructs the LATENCY RESET command
-       * @param events - The latency events to reset. If not specified, all events are reset.
-       * @see https://redis.io/commands/latency-reset/
-       */
       LATENCY_RESET: LATENCY_RESET_1.default,
-      /**
-       * Constructs the LATENCY RESET command
-       * @param events - The latency events to reset. If not specified, all events are reset.
-       * @see https://redis.io/commands/latency-reset/
-       */
       latencyReset: LATENCY_RESET_1.default,
-      /**
-       * Constructs the LCS command with IDX and WITHMATCHLEN options
-       *
-       * @param args - The same parameters as LCS_IDX command
-       * @see https://redis.io/commands/lcs/
-       */
       LCS_IDX_WITHMATCHLEN: LCS_IDX_WITHMATCHLEN_1.default,
-      /**
-       * Constructs the LCS command with IDX and WITHMATCHLEN options
-       *
-       * @param args - The same parameters as LCS_IDX command
-       * @see https://redis.io/commands/lcs/
-       */
       lcsIdxWithMatchLen: LCS_IDX_WITHMATCHLEN_1.default,
-      /**
-       * Constructs the LCS command with IDX option
-       *
-       * @param key1 - First key containing the first string
-       * @param key2 - Second key containing the second string
-       * @param options - Additional options for the LCS IDX command
-       * @see https://redis.io/commands/lcs/
-       */
       LCS_IDX: LCS_IDX_1.default,
-      /**
-       * Constructs the LCS command with IDX option
-       *
-       * @param key1 - First key containing the first string
-       * @param key2 - Second key containing the second string
-       * @param options - Additional options for the LCS IDX command
-       * @see https://redis.io/commands/lcs/
-       */
       lcsIdx: LCS_IDX_1.default,
-      /**
-       * Constructs the LCS command with LEN option
-       *
-       * @param args - The same parameters as LCS command
-       * @see https://redis.io/commands/lcs/
-       */
       LCS_LEN: LCS_LEN_1.default,
-      /**
-       * Constructs the LCS command with LEN option
-       *
-       * @param args - The same parameters as LCS command
-       * @see https://redis.io/commands/lcs/
-       */
       lcsLen: LCS_LEN_1.default,
-      /**
-       * Constructs the LCS command (Longest Common Substring)
-       *
-       * @param key1 - First key containing the first string
-       * @param key2 - Second key containing the second string
-       * @see https://redis.io/commands/lcs/
-       */
       LCS: LCS_1.default,
-      /**
-       * Constructs the LCS command (Longest Common Substring)
-       *
-       * @param key1 - First key containing the first string
-       * @param key2 - Second key containing the second string
-       * @see https://redis.io/commands/lcs/
-       */
       lcs: LCS_1.default,
-      /**
-       * Constructs the LINDEX command
-       *
-       * @param key - The key of the list
-       * @param index - The index of the element to retrieve
-       * @see https://redis.io/commands/lindex/
-       */
       LINDEX: LINDEX_1.default,
-      /**
-       * Constructs the LINDEX command
-       *
-       * @param key - The key of the list
-       * @param index - The index of the element to retrieve
-       * @see https://redis.io/commands/lindex/
-       */
       lIndex: LINDEX_1.default,
-      /**
-       * Constructs the LINSERT command
-       *
-       * @param key - The key of the list
-       * @param position - The position where to insert (BEFORE or AFTER)
-       * @param pivot - The element to find in the list
-       * @param element - The element to insert
-       * @see https://redis.io/commands/linsert/
-       */
       LINSERT: LINSERT_1.default,
-      /**
-       * Constructs the LINSERT command
-       *
-       * @param key - The key of the list
-       * @param position - The position where to insert (BEFORE or AFTER)
-       * @param pivot - The element to find in the list
-       * @param element - The element to insert
-       * @see https://redis.io/commands/linsert/
-       */
       lInsert: LINSERT_1.default,
-      /**
-       * Constructs the LLEN command
-       *
-       * @param key - The key of the list to get the length of
-       * @see https://redis.io/commands/llen/
-       */
       LLEN: LLEN_1.default,
-      /**
-       * Constructs the LLEN command
-       *
-       * @param key - The key of the list to get the length of
-       * @see https://redis.io/commands/llen/
-       */
       lLen: LLEN_1.default,
-      /**
-       * Constructs the LMOVE command
-       *
-       * @param source - The source list key
-       * @param destination - The destination list key
-       * @param sourceSide - The side to pop from (LEFT or RIGHT)
-       * @param destinationSide - The side to push to (LEFT or RIGHT)
-       * @see https://redis.io/commands/lmove/
-       */
       LMOVE: LMOVE_1.default,
-      /**
-       * Constructs the LMOVE command
-       *
-       * @param source - The source list key
-       * @param destination - The destination list key
-       * @param sourceSide - The side to pop from (LEFT or RIGHT)
-       * @param destinationSide - The side to push to (LEFT or RIGHT)
-       * @see https://redis.io/commands/lmove/
-       */
       lMove: LMOVE_1.default,
-      /**
-       * Constructs the LMPOP command
-       *
-       * @param args - Arguments including keys, side (LEFT or RIGHT), and options
-       * @see https://redis.io/commands/lmpop/
-       */
       LMPOP: LMPOP_1.default,
-      /**
-       * Constructs the LMPOP command
-       *
-       * @param args - Arguments including keys, side (LEFT or RIGHT), and options
-       * @see https://redis.io/commands/lmpop/
-       */
       lmPop: LMPOP_1.default,
-      /**
-       * Constructs the LOLWUT command
-       *
-       * @param version - Optional version parameter
-       * @param optionalArguments - Additional optional numeric arguments
-       * @see https://redis.io/commands/lolwut/
-       */
       LOLWUT: LOLWUT_1.default,
-      /**
-       * Constructs the LPOP command with count parameter
-       *
-       * @param key - The key of the list to pop from
-       * @param count - The number of elements to pop
-       * @see https://redis.io/commands/lpop/
-       */
       LPOP_COUNT: LPOP_COUNT_1.default,
-      /**
-       * Constructs the LPOP command with count parameter
-       *
-       * @param key - The key of the list to pop from
-       * @param count - The number of elements to pop
-       * @see https://redis.io/commands/lpop/
-       */
       lPopCount: LPOP_COUNT_1.default,
-      /**
-       * Constructs the LPOP command
-       *
-       * @param key - The key of the list to pop from
-       * @see https://redis.io/commands/lpop/
-       */
       LPOP: LPOP_1.default,
-      /**
-       * Constructs the LPOP command
-       *
-       * @param key - The key of the list to pop from
-       * @see https://redis.io/commands/lpop/
-       */
       lPop: LPOP_1.default,
-      /**
-       * Constructs the LPOS command with COUNT option
-       *
-       * @param key - The key of the list
-       * @param element - The element to search for
-       * @param count - The number of positions to return
-       * @param options - Optional parameters for RANK and MAXLEN
-       * @see https://redis.io/commands/lpos/
-       */
       LPOS_COUNT: LPOS_COUNT_1.default,
-      /**
-       * Constructs the LPOS command with COUNT option
-       *
-       * @param key - The key of the list
-       * @param element - The element to search for
-       * @param count - The number of positions to return
-       * @param options - Optional parameters for RANK and MAXLEN
-       * @see https://redis.io/commands/lpos/
-       */
       lPosCount: LPOS_COUNT_1.default,
-      /**
-       * Constructs the LPOS command
-       *
-       * @param key - The key of the list
-       * @param element - The element to search for
-       * @param options - Optional parameters for RANK and MAXLEN
-       * @see https://redis.io/commands/lpos/
-       */
       LPOS: LPOS_1.default,
-      /**
-       * Constructs the LPOS command
-       *
-       * @param key - The key of the list
-       * @param element - The element to search for
-       * @param options - Optional parameters for RANK and MAXLEN
-       * @see https://redis.io/commands/lpos/
-       */
       lPos: LPOS_1.default,
-      /**
-       * Constructs the LPUSH command
-       *
-       * @param key - The key of the list
-       * @param elements - One or more elements to push to the list
-       * @see https://redis.io/commands/lpush/
-       */
       LPUSH: LPUSH_1.default,
-      /**
-       * Constructs the LPUSH command
-       *
-       * @param key - The key of the list
-       * @param elements - One or more elements to push to the list
-       * @see https://redis.io/commands/lpush/
-       */
       lPush: LPUSH_1.default,
-      /**
-       * Constructs the LPUSHX command
-       *
-       * @param key - The key of the list
-       * @param elements - One or more elements to push to the list if it exists
-       * @see https://redis.io/commands/lpushx/
-       */
       LPUSHX: LPUSHX_1.default,
-      /**
-       * Constructs the LPUSHX command
-       *
-       * @param key - The key of the list
-       * @param elements - One or more elements to push to the list if it exists
-       * @see https://redis.io/commands/lpushx/
-       */
       lPushX: LPUSHX_1.default,
-      /**
-       * Constructs the LRANGE command
-       *
-       * @param key - The key of the list
-       * @param start - The starting index
-       * @param stop - The ending index
-       * @see https://redis.io/commands/lrange/
-       */
       LRANGE: LRANGE_1.default,
-      /**
-       * Constructs the LRANGE command
-       *
-       * @param key - The key of the list
-       * @param start - The starting index
-       * @param stop - The ending index
-       * @see https://redis.io/commands/lrange/
-       */
       lRange: LRANGE_1.default,
-      /**
-       * Constructs the LREM command
-       *
-       * @param key - The key of the list
-       * @param count - The count of elements to remove (negative: from tail to head, 0: all occurrences, positive: from head to tail)
-       * @param element - The element to remove
-       * @see https://redis.io/commands/lrem/
-       */
       LREM: LREM_1.default,
-      /**
-       * Constructs the LREM command
-       *
-       * @param key - The key of the list
-       * @param count - The count of elements to remove (negative: from tail to head, 0: all occurrences, positive: from head to tail)
-       * @param element - The element to remove
-       * @see https://redis.io/commands/lrem/
-       */
       lRem: LREM_1.default,
-      /**
-       * Constructs the LSET command
-       *
-       * @param key - The key of the list
-       * @param index - The index of the element to replace
-       * @param element - The new value to set
-       * @see https://redis.io/commands/lset/
-       */
       LSET: LSET_1.default,
-      /**
-       * Constructs the LSET command
-       *
-       * @param key - The key of the list
-       * @param index - The index of the element to replace
-       * @param element - The new value to set
-       * @see https://redis.io/commands/lset/
-       */
       lSet: LSET_1.default,
-      /**
-       * Constructs the LTRIM command
-       *
-       * @param key - The key of the list
-       * @param start - The starting index
-       * @param stop - The ending index
-       * @see https://redis.io/commands/ltrim/
-       */
       LTRIM: LTRIM_1.default,
-      /**
-       * Constructs the LTRIM command
-       *
-       * @param key - The key of the list
-       * @param start - The starting index
-       * @param stop - The ending index
-       * @see https://redis.io/commands/ltrim/
-       */
       lTrim: LTRIM_1.default,
-      /**
-       * Constructs the MEMORY DOCTOR command
-       *
-       * @see https://redis.io/commands/memory-doctor/
-       */
       MEMORY_DOCTOR: MEMORY_DOCTOR_1.default,
-      /**
-       * Constructs the MEMORY DOCTOR command
-       *
-       * @see https://redis.io/commands/memory-doctor/
-       */
       memoryDoctor: MEMORY_DOCTOR_1.default,
-      /**
-       * Constructs the MEMORY MALLOC-STATS command
-       *
-       * @see https://redis.io/commands/memory-malloc-stats/
-       */
       "MEMORY_MALLOC-STATS": MEMORY_MALLOC_STATS_1.default,
-      /**
-       * Constructs the MEMORY MALLOC-STATS command
-       *
-       * @see https://redis.io/commands/memory-malloc-stats/
-       */
       memoryMallocStats: MEMORY_MALLOC_STATS_1.default,
-      /**
-       * Constructs the MEMORY PURGE command
-       *
-       * @see https://redis.io/commands/memory-purge/
-       */
       MEMORY_PURGE: MEMORY_PURGE_1.default,
-      /**
-       * Constructs the MEMORY PURGE command
-       *
-       * @see https://redis.io/commands/memory-purge/
-       */
       memoryPurge: MEMORY_PURGE_1.default,
-      /**
-       * Constructs the MEMORY STATS command
-       *
-       * @see https://redis.io/commands/memory-stats/
-       */
       MEMORY_STATS: MEMORY_STATS_1.default,
-      /**
-       * Constructs the MEMORY STATS command
-       *
-       * @see https://redis.io/commands/memory-stats/
-       */
       memoryStats: MEMORY_STATS_1.default,
-      /**
-       * Constructs the MEMORY USAGE command
-       *
-       * @param key - The key to get memory usage for
-       * @param options - Optional parameters including SAMPLES
-       * @see https://redis.io/commands/memory-usage/
-       */
       MEMORY_USAGE: MEMORY_USAGE_1.default,
-      /**
-       * Constructs the MEMORY USAGE command
-       *
-       * @param key - The key to get memory usage for
-       * @param options - Optional parameters including SAMPLES
-       * @see https://redis.io/commands/memory-usage/
-       */
       memoryUsage: MEMORY_USAGE_1.default,
-      /**
-       * Constructs the MGET command
-       *
-       * @param keys - Array of keys to get
-       * @see https://redis.io/commands/mget/
-       */
       MGET: MGET_1.default,
-      /**
-       * Constructs the MGET command
-       *
-       * @param keys - Array of keys to get
-       * @see https://redis.io/commands/mget/
-       */
       mGet: MGET_1.default,
-      /**
-       * Constructs the MIGRATE command
-       *
-       * @param host - Target Redis instance host
-       * @param port - Target Redis instance port
-       * @param key - Key or keys to migrate
-       * @param destinationDb - Target database index
-       * @param timeout - Timeout in milliseconds
-       * @param options - Optional parameters including COPY, REPLACE, and AUTH
-       * @see https://redis.io/commands/migrate/
-       */
       MIGRATE: MIGRATE_1.default,
-      /**
-       * Constructs the MIGRATE command
-       *
-       * @param host - Target Redis instance host
-       * @param port - Target Redis instance port
-       * @param key - Key or keys to migrate
-       * @param destinationDb - Target database index
-       * @param timeout - Timeout in milliseconds
-       * @param options - Optional parameters including COPY, REPLACE, and AUTH
-       * @see https://redis.io/commands/migrate/
-       */
       migrate: MIGRATE_1.default,
-      /**
-       * Constructs the MODULE LIST command
-       *
-       * @see https://redis.io/commands/module-list/
-       */
       MODULE_LIST: MODULE_LIST_1.default,
-      /**
-       * Constructs the MODULE LIST command
-       *
-       * @see https://redis.io/commands/module-list/
-       */
       moduleList: MODULE_LIST_1.default,
-      /**
-       * Constructs the MODULE LOAD command
-       *
-       * @param path - Path to the module file
-       * @param moduleArguments - Optional arguments to pass to the module
-       * @see https://redis.io/commands/module-load/
-       */
       MODULE_LOAD: MODULE_LOAD_1.default,
-      /**
-       * Constructs the MODULE LOAD command
-       *
-       * @param path - Path to the module file
-       * @param moduleArguments - Optional arguments to pass to the module
-       * @see https://redis.io/commands/module-load/
-       */
       moduleLoad: MODULE_LOAD_1.default,
-      /**
-       * Constructs the MODULE UNLOAD command
-       *
-       * @param name - The name of the module to unload
-       * @see https://redis.io/commands/module-unload/
-       */
       MODULE_UNLOAD: MODULE_UNLOAD_1.default,
-      /**
-       * Constructs the MODULE UNLOAD command
-       *
-       * @param name - The name of the module to unload
-       * @see https://redis.io/commands/module-unload/
-       */
       moduleUnload: MODULE_UNLOAD_1.default,
-      /**
-       * Constructs the MOVE command
-       *
-       * @param key - The key to move
-       * @param db - The destination database index
-       * @see https://redis.io/commands/move/
-       */
       MOVE: MOVE_1.default,
-      /**
-       * Constructs the MOVE command
-       *
-       * @param key - The key to move
-       * @param db - The destination database index
-       * @see https://redis.io/commands/move/
-       */
       move: MOVE_1.default,
-      /**
-       * Constructs the MSET command
-       *
-       * @param toSet - Key-value pairs to set (array of tuples, flat array, or object)
-       * @see https://redis.io/commands/mset/
-       */
       MSET: MSET_1.default,
-      /**
-       * Constructs the MSET command
-       *
-       * @param toSet - Key-value pairs to set (array of tuples, flat array, or object)
-       * @see https://redis.io/commands/mset/
-       */
       mSet: MSET_1.default,
-      /**
-       * Constructs the MSETEX command.
-       *
-       * Atomically sets multiple string keys with a shared expiration in a single operation.
-       *
-       * @param keyValuePairs - Key-value pairs to set (array of tuples, flat array, or object)
-       * @param options - Configuration for expiration and set modes
-       * @see https://redis.io/commands/msetex/
-       */
       MSETEX: MSETEX_1.default,
-      /**
-       * Constructs the MSETEX command.
-       *
-       * Atomically sets multiple string keys with a shared expiration in a single operation.
-       *
-       * @param keyValuePairs - Key-value pairs to set (array of tuples, flat array, or object)
-       * @param options - Configuration for expiration and set modes
-       * @see https://redis.io/commands/msetex/
-       */
       mSetEx: MSETEX_1.default,
-      /**
-       * Constructs the MSETNX command
-       *
-       * @param toSet - Key-value pairs to set if none of the keys exist (array of tuples, flat array, or object)
-       * @see https://redis.io/commands/msetnx/
-       */
       MSETNX: MSETNX_1.default,
-      /**
-       * Constructs the MSETNX command
-       *
-       * @param toSet - Key-value pairs to set if none of the keys exist (array of tuples, flat array, or object)
-       * @see https://redis.io/commands/msetnx/
-       */
       mSetNX: MSETNX_1.default,
-      /**
-       * Constructs the OBJECT ENCODING command
-       *
-       * @param key - The key to get the internal encoding for
-       * @see https://redis.io/commands/object-encoding/
-       */
       OBJECT_ENCODING: OBJECT_ENCODING_1.default,
-      /**
-       * Constructs the OBJECT ENCODING command
-       *
-       * @param key - The key to get the internal encoding for
-       * @see https://redis.io/commands/object-encoding/
-       */
       objectEncoding: OBJECT_ENCODING_1.default,
-      /**
-       * Constructs the OBJECT FREQ command
-       *
-       * @param key - The key to get the access frequency for
-       * @see https://redis.io/commands/object-freq/
-       */
       OBJECT_FREQ: OBJECT_FREQ_1.default,
-      /**
-       * Constructs the OBJECT FREQ command
-       *
-       * @param key - The key to get the access frequency for
-       * @see https://redis.io/commands/object-freq/
-       */
       objectFreq: OBJECT_FREQ_1.default,
-      /**
-       * Constructs the OBJECT IDLETIME command
-       *
-       * @param key - The key to get the idle time for
-       * @see https://redis.io/commands/object-idletime/
-       */
       OBJECT_IDLETIME: OBJECT_IDLETIME_1.default,
-      /**
-       * Constructs the OBJECT IDLETIME command
-       *
-       * @param key - The key to get the idle time for
-       * @see https://redis.io/commands/object-idletime/
-       */
       objectIdleTime: OBJECT_IDLETIME_1.default,
-      /**
-       * Constructs the OBJECT REFCOUNT command
-       *
-       * @param key - The key to get the reference count for
-       * @see https://redis.io/commands/object-refcount/
-       */
       OBJECT_REFCOUNT: OBJECT_REFCOUNT_1.default,
-      /**
-       * Constructs the OBJECT REFCOUNT command
-       *
-       * @param key - The key to get the reference count for
-       * @see https://redis.io/commands/object-refcount/
-       */
       objectRefCount: OBJECT_REFCOUNT_1.default,
-      /**
-       * Constructs the PERSIST command
-       *
-       * @param key - The key to remove the expiration from
-       * @see https://redis.io/commands/persist/
-       */
       PERSIST: PERSIST_1.default,
-      /**
-       * Constructs the PERSIST command
-       *
-       * @param key - The key to remove the expiration from
-       * @see https://redis.io/commands/persist/
-       */
       persist: PERSIST_1.default,
-      /**
-       * Constructs the PEXPIRE command
-       *
-       * @param key - The key to set the expiration for
-       * @param ms - The expiration time in milliseconds
-       * @param mode - Optional mode for the command ('NX', 'XX', 'GT', 'LT')
-       * @see https://redis.io/commands/pexpire/
-       */
       PEXPIRE: PEXPIRE_1.default,
-      /**
-       * Constructs the PEXPIRE command
-       *
-       * @param key - The key to set the expiration for
-       * @param ms - The expiration time in milliseconds
-       * @param mode - Optional mode for the command ('NX', 'XX', 'GT', 'LT')
-       * @see https://redis.io/commands/pexpire/
-       */
       pExpire: PEXPIRE_1.default,
-      /**
-       * Constructs the PEXPIREAT command
-       *
-       * @param key - The key to set the expiration for
-       * @param msTimestamp - The expiration timestamp in milliseconds (Unix timestamp or Date object)
-       * @param mode - Optional mode for the command ('NX', 'XX', 'GT', 'LT')
-       * @see https://redis.io/commands/pexpireat/
-       */
       PEXPIREAT: PEXPIREAT_1.default,
-      /**
-       * Constructs the PEXPIREAT command
-       *
-       * @param key - The key to set the expiration for
-       * @param msTimestamp - The expiration timestamp in milliseconds (Unix timestamp or Date object)
-       * @param mode - Optional mode for the command ('NX', 'XX', 'GT', 'LT')
-       * @see https://redis.io/commands/pexpireat/
-       */
       pExpireAt: PEXPIREAT_1.default,
-      /**
-       * Constructs the PEXPIRETIME command
-       *
-       * @param key - The key to get the expiration time for in milliseconds
-       * @see https://redis.io/commands/pexpiretime/
-       */
       PEXPIRETIME: PEXPIRETIME_1.default,
-      /**
-       * Constructs the PEXPIRETIME command
-       *
-       * @param key - The key to get the expiration time for in milliseconds
-       * @see https://redis.io/commands/pexpiretime/
-       */
       pExpireTime: PEXPIRETIME_1.default,
-      /**
-       * Constructs the PFADD command
-       *
-       * @param key - The key of the HyperLogLog
-       * @param element - Optional elements to add
-       * @see https://redis.io/commands/pfadd/
-       */
       PFADD: PFADD_1.default,
-      /**
-       * Constructs the PFADD command
-       *
-       * @param key - The key of the HyperLogLog
-       * @param element - Optional elements to add
-       * @see https://redis.io/commands/pfadd/
-       */
       pfAdd: PFADD_1.default,
-      /**
-       * Constructs the PFCOUNT command
-       *
-       * @param keys - One or more keys of HyperLogLog structures to count
-       * @see https://redis.io/commands/pfcount/
-       */
       PFCOUNT: PFCOUNT_1.default,
-      /**
-       * Constructs the PFCOUNT command
-       *
-       * @param keys - One or more keys of HyperLogLog structures to count
-       * @see https://redis.io/commands/pfcount/
-       */
       pfCount: PFCOUNT_1.default,
-      /**
-       * Constructs the PFMERGE command
-       *
-       * @param destination - The destination key to merge to
-       * @param sources - One or more source keys to merge from
-       * @see https://redis.io/commands/pfmerge/
-       */
       PFMERGE: PFMERGE_1.default,
-      /**
-       * Constructs the PFMERGE command
-       *
-       * @param destination - The destination key to merge to
-       * @param sources - One or more source keys to merge from
-       * @see https://redis.io/commands/pfmerge/
-       */
       pfMerge: PFMERGE_1.default,
-      /**
-       * Constructs the PING command
-       *
-       * @param message - Optional message to be returned instead of PONG
-       * @see https://redis.io/commands/ping/
-       */
       PING: PING_1.default,
       /**
-       * Constructs the PING command
-       *
-       * @param message - Optional message to be returned instead of PONG
-       * @see https://redis.io/commands/ping/
+       * ping jsdoc
        */
       ping: PING_1.default,
-      /**
-       * Constructs the PSETEX command
-       *
-       * @param key - The key to set
-       * @param ms - The expiration time in milliseconds
-       * @param value - The value to set
-       * @see https://redis.io/commands/psetex/
-       */
       PSETEX: PSETEX_1.default,
-      /**
-       * Constructs the PSETEX command
-       *
-       * @param key - The key to set
-       * @param ms - The expiration time in milliseconds
-       * @param value - The value to set
-       * @see https://redis.io/commands/psetex/
-       */
       pSetEx: PSETEX_1.default,
-      /**
-       * Constructs the PTTL command
-       *
-       * @param key - The key to get the time to live in milliseconds
-       * @see https://redis.io/commands/pttl/
-       */
       PTTL: PTTL_1.default,
-      /**
-       * Constructs the PTTL command
-       *
-       * @param key - The key to get the time to live in milliseconds
-       * @see https://redis.io/commands/pttl/
-       */
       pTTL: PTTL_1.default,
-      /**
-       * Constructs the PUBLISH command
-       *
-       * @param channel - The channel to publish to
-       * @param message - The message to publish
-       * @see https://redis.io/commands/publish/
-       */
       PUBLISH: PUBLISH_1.default,
-      /**
-       * Constructs the PUBLISH command
-       *
-       * @param channel - The channel to publish to
-       * @param message - The message to publish
-       * @see https://redis.io/commands/publish/
-       */
       publish: PUBLISH_1.default,
-      /**
-       * Constructs the PUBSUB CHANNELS command
-       *
-       * @param pattern - Optional pattern to filter channels
-       * @see https://redis.io/commands/pubsub-channels/
-       */
       PUBSUB_CHANNELS: PUBSUB_CHANNELS_1.default,
-      /**
-       * Constructs the PUBSUB CHANNELS command
-       *
-       * @param pattern - Optional pattern to filter channels
-       * @see https://redis.io/commands/pubsub-channels/
-       */
       pubSubChannels: PUBSUB_CHANNELS_1.default,
-      /**
-       * Constructs the PUBSUB NUMPAT command
-       *
-       * @see https://redis.io/commands/pubsub-numpat/
-       */
       PUBSUB_NUMPAT: PUBSUB_NUMPAT_1.default,
-      /**
-       * Constructs the PUBSUB NUMPAT command
-       *
-       * @see https://redis.io/commands/pubsub-numpat/
-       */
       pubSubNumPat: PUBSUB_NUMPAT_1.default,
-      /**
-       * Constructs the PUBSUB NUMSUB command
-       *
-       * @param channels - Optional channel names to get subscription count for
-       * @see https://redis.io/commands/pubsub-numsub/
-       */
       PUBSUB_NUMSUB: PUBSUB_NUMSUB_1.default,
-      /**
-       * Constructs the PUBSUB NUMSUB command
-       *
-       * @param channels - Optional channel names to get subscription count for
-       * @see https://redis.io/commands/pubsub-numsub/
-       */
       pubSubNumSub: PUBSUB_NUMSUB_1.default,
-      /**
-       * Constructs the PUBSUB SHARDNUMSUB command
-       *
-       * @param channels - Optional shard channel names to get subscription count for
-       * @see https://redis.io/commands/pubsub-shardnumsub/
-       */
       PUBSUB_SHARDNUMSUB: PUBSUB_SHARDNUMSUB_1.default,
-      /**
-       * Constructs the PUBSUB SHARDNUMSUB command
-       *
-       * @param channels - Optional shard channel names to get subscription count for
-       * @see https://redis.io/commands/pubsub-shardnumsub/
-       */
       pubSubShardNumSub: PUBSUB_SHARDNUMSUB_1.default,
-      /**
-       * Constructs the PUBSUB SHARDCHANNELS command
-       *
-       * @param pattern - Optional pattern to filter shard channels
-       * @see https://redis.io/commands/pubsub-shardchannels/
-       */
       PUBSUB_SHARDCHANNELS: PUBSUB_SHARDCHANNELS_1.default,
-      /**
-       * Constructs the PUBSUB SHARDCHANNELS command
-       *
-       * @param pattern - Optional pattern to filter shard channels
-       * @see https://redis.io/commands/pubsub-shardchannels/
-       */
       pubSubShardChannels: PUBSUB_SHARDCHANNELS_1.default,
-      /**
-       * Constructs the RANDOMKEY command
-       *
-       * @see https://redis.io/commands/randomkey/
-       */
       RANDOMKEY: RANDOMKEY_1.default,
-      /**
-       * Constructs the RANDOMKEY command
-       *
-       * @see https://redis.io/commands/randomkey/
-       */
       randomKey: RANDOMKEY_1.default,
-      /**
-       * Constructs the READONLY command
-       *
-       * @see https://redis.io/commands/readonly/
-       */
       READONLY: READONLY_1.default,
-      /**
-       * Constructs the READONLY command
-       *
-       * @see https://redis.io/commands/readonly/
-       */
       readonly: READONLY_1.default,
-      /**
-       * Constructs the RENAME command
-       *
-       * @param key - The key to rename
-       * @param newKey - The new key name
-       * @see https://redis.io/commands/rename/
-       */
       RENAME: RENAME_1.default,
-      /**
-       * Constructs the RENAME command
-       *
-       * @param key - The key to rename
-       * @param newKey - The new key name
-       * @see https://redis.io/commands/rename/
-       */
       rename: RENAME_1.default,
-      /**
-       * Constructs the RENAMENX command
-       *
-       * @param key - The key to rename
-       * @param newKey - The new key name, if it doesn't exist
-       * @see https://redis.io/commands/renamenx/
-       */
       RENAMENX: RENAMENX_1.default,
-      /**
-       * Constructs the RENAMENX command
-       *
-       * @param key - The key to rename
-       * @param newKey - The new key name, if it doesn't exist
-       * @see https://redis.io/commands/renamenx/
-       */
       renameNX: RENAMENX_1.default,
-      /**
-       * Constructs the REPLICAOF command
-       *
-       * @param host - The host of the master to replicate from
-       * @param port - The port of the master to replicate from
-       * @see https://redis.io/commands/replicaof/
-       */
       REPLICAOF: REPLICAOF_1.default,
-      /**
-       * Constructs the REPLICAOF command
-       *
-       * @param host - The host of the master to replicate from
-       * @param port - The port of the master to replicate from
-       * @see https://redis.io/commands/replicaof/
-       */
       replicaOf: REPLICAOF_1.default,
-      /**
-       * Constructs the RESTORE-ASKING command
-       *
-       * @see https://redis.io/commands/restore-asking/
-       */
       "RESTORE-ASKING": RESTORE_ASKING_1.default,
-      /**
-       * Constructs the RESTORE-ASKING command
-       *
-       * @see https://redis.io/commands/restore-asking/
-       */
       restoreAsking: RESTORE_ASKING_1.default,
-      /**
-       * Constructs the RESTORE command
-       *
-       * @param key - The key to restore
-       * @param ttl - Time to live in milliseconds, 0 for no expiry
-       * @param serializedValue - The serialized value from DUMP command
-       * @param options - Options for the RESTORE command
-       * @see https://redis.io/commands/restore/
-       */
       RESTORE: RESTORE_1.default,
-      /**
-       * Constructs the RESTORE command
-       *
-       * @param key - The key to restore
-       * @param ttl - Time to live in milliseconds, 0 for no expiry
-       * @param serializedValue - The serialized value from DUMP command
-       * @param options - Options for the RESTORE command
-       * @see https://redis.io/commands/restore/
-       */
       restore: RESTORE_1.default,
-      /**
-       * Constructs the RPOP command with count parameter
-       *
-       * @param key - The list key to pop from
-       * @param count - The number of elements to pop
-       * @see https://redis.io/commands/rpop/
-       */
       RPOP_COUNT: RPOP_COUNT_1.default,
-      /**
-       * Constructs the RPOP command with count parameter
-       *
-       * @param key - The list key to pop from
-       * @param count - The number of elements to pop
-       * @see https://redis.io/commands/rpop/
-       */
       rPopCount: RPOP_COUNT_1.default,
-      /**
-       * Constructs the ROLE command
-       *
-       * @see https://redis.io/commands/role/
-       */
       ROLE: ROLE_1.default,
-      /**
-       * Constructs the ROLE command
-       *
-       * @see https://redis.io/commands/role/
-       */
       role: ROLE_1.default,
-      /**
-       * Constructs the RPOP command
-       *
-       * @param key - The list key to pop from
-       * @see https://redis.io/commands/rpop/
-       */
       RPOP: RPOP_1.default,
-      /**
-       * Constructs the RPOP command
-       *
-       * @param key - The list key to pop from
-       * @see https://redis.io/commands/rpop/
-       */
       rPop: RPOP_1.default,
-      /**
-       * Constructs the RPOPLPUSH command
-       *
-       * @param source - The source list key
-       * @param destination - The destination list key
-       * @see https://redis.io/commands/rpoplpush/
-       */
       RPOPLPUSH: RPOPLPUSH_1.default,
-      /**
-       * Constructs the RPOPLPUSH command
-       *
-       * @param source - The source list key
-       * @param destination - The destination list key
-       * @see https://redis.io/commands/rpoplpush/
-       */
       rPopLPush: RPOPLPUSH_1.default,
-      /**
-       * Constructs the RPUSH command
-       *
-       * @param key - The list key to push to
-       * @param element - One or more elements to push
-       * @see https://redis.io/commands/rpush/
-       */
       RPUSH: RPUSH_1.default,
-      /**
-       * Constructs the RPUSH command
-       *
-       * @param key - The list key to push to
-       * @param element - One or more elements to push
-       * @see https://redis.io/commands/rpush/
-       */
       rPush: RPUSH_1.default,
-      /**
-       * Constructs the RPUSHX command
-       *
-       * @param key - The list key to push to (only if it exists)
-       * @param element - One or more elements to push
-       * @see https://redis.io/commands/rpushx/
-       */
       RPUSHX: RPUSHX_1.default,
-      /**
-       * Constructs the RPUSHX command
-       *
-       * @param key - The list key to push to (only if it exists)
-       * @param element - One or more elements to push
-       * @see https://redis.io/commands/rpushx/
-       */
       rPushX: RPUSHX_1.default,
-      /**
-       * Constructs the SADD command
-       *
-       * @param key - The set key to add members to
-       * @param members - One or more members to add to the set
-       * @see https://redis.io/commands/sadd/
-       */
       SADD: SADD_1.default,
-      /**
-       * Constructs the SADD command
-       *
-       * @param key - The set key to add members to
-       * @param members - One or more members to add to the set
-       * @see https://redis.io/commands/sadd/
-       */
       sAdd: SADD_1.default,
-      /**
-       * Constructs the SCAN command
-       *
-       * @param cursor - The cursor position to start scanning from
-       * @param options - Scan options
-       * @see https://redis.io/commands/scan/
-       */
       SCAN: SCAN_1.default,
-      /**
-       * Constructs the SCAN command
-       *
-       * @param cursor - The cursor position to start scanning from
-       * @param options - Scan options
-       * @see https://redis.io/commands/scan/
-       */
       scan: SCAN_1.default,
-      /**
-       * Constructs the SCARD command
-       *
-       * @param key - The set key to get the cardinality of
-       * @see https://redis.io/commands/scard/
-       */
       SCARD: SCARD_1.default,
-      /**
-       * Constructs the SCARD command
-       *
-       * @param key - The set key to get the cardinality of
-       * @see https://redis.io/commands/scard/
-       */
       sCard: SCARD_1.default,
-      /**
-       * Constructs the SCRIPT DEBUG command
-       *
-       * @param mode - Debug mode: YES, SYNC, or NO
-       * @see https://redis.io/commands/script-debug/
-       */
       SCRIPT_DEBUG: SCRIPT_DEBUG_1.default,
-      /**
-       * Constructs the SCRIPT DEBUG command
-       *
-       * @param mode - Debug mode: YES, SYNC, or NO
-       * @see https://redis.io/commands/script-debug/
-       */
       scriptDebug: SCRIPT_DEBUG_1.default,
-      /**
-       * Constructs the SCRIPT EXISTS command
-       *
-       * @param sha1 - One or more SHA1 digests of scripts
-       * @see https://redis.io/commands/script-exists/
-       */
       SCRIPT_EXISTS: SCRIPT_EXISTS_1.default,
-      /**
-       * Constructs the SCRIPT EXISTS command
-       *
-       * @param sha1 - One or more SHA1 digests of scripts
-       * @see https://redis.io/commands/script-exists/
-       */
       scriptExists: SCRIPT_EXISTS_1.default,
-      /**
-       * Constructs the SCRIPT FLUSH command
-       *
-       * @param mode - Optional flush mode: ASYNC or SYNC
-       * @see https://redis.io/commands/script-flush/
-       */
       SCRIPT_FLUSH: SCRIPT_FLUSH_1.default,
-      /**
-       * Constructs the SCRIPT FLUSH command
-       *
-       * @param mode - Optional flush mode: ASYNC or SYNC
-       * @see https://redis.io/commands/script-flush/
-       */
       scriptFlush: SCRIPT_FLUSH_1.default,
-      /**
-       * Constructs the SCRIPT KILL command
-       *
-       * @see https://redis.io/commands/script-kill/
-       */
       SCRIPT_KILL: SCRIPT_KILL_1.default,
-      /**
-       * Constructs the SCRIPT KILL command
-       *
-       * @see https://redis.io/commands/script-kill/
-       */
       scriptKill: SCRIPT_KILL_1.default,
-      /**
-       * Constructs the SCRIPT LOAD command
-       *
-       * @param script - The Lua script to load
-       * @see https://redis.io/commands/script-load/
-       */
       SCRIPT_LOAD: SCRIPT_LOAD_1.default,
-      /**
-       * Constructs the SCRIPT LOAD command
-       *
-       * @param script - The Lua script to load
-       * @see https://redis.io/commands/script-load/
-       */
       scriptLoad: SCRIPT_LOAD_1.default,
-      /**
-       * Constructs the SDIFF command
-       *
-       * @param keys - One or more set keys to compute the difference from
-       * @see https://redis.io/commands/sdiff/
-       */
       SDIFF: SDIFF_1.default,
-      /**
-       * Constructs the SDIFF command
-       *
-       * @param keys - One or more set keys to compute the difference from
-       * @see https://redis.io/commands/sdiff/
-       */
       sDiff: SDIFF_1.default,
-      /**
-       * Constructs the SDIFFSTORE command
-       *
-       * @param destination - The destination key to store the result
-       * @param keys - One or more set keys to compute the difference from
-       * @see https://redis.io/commands/sdiffstore/
-       */
       SDIFFSTORE: SDIFFSTORE_1.default,
-      /**
-       * Constructs the SDIFFSTORE command
-       *
-       * @param destination - The destination key to store the result
-       * @param keys - One or more set keys to compute the difference from
-       * @see https://redis.io/commands/sdiffstore/
-       */
       sDiffStore: SDIFFSTORE_1.default,
-      /**
-       * Constructs the SET command
-       *
-       * @param key - The key to set
-       * @param value - The value to set
-       * @param options - Additional options for the SET command
-       * @see https://redis.io/commands/set/
-       */
       SET: SET_1.default,
-      /**
-       * Constructs the SET command
-       *
-       * @param key - The key to set
-       * @param value - The value to set
-       * @param options - Additional options for the SET command
-       * @see https://redis.io/commands/set/
-       */
       set: SET_1.default,
-      /**
-       * Constructs the SETBIT command
-       *
-       * @param key - The key to set the bit on
-       * @param offset - The bit offset (zero-based)
-       * @param value - The bit value (0 or 1)
-       * @see https://redis.io/commands/setbit/
-       */
       SETBIT: SETBIT_1.default,
-      /**
-       * Constructs the SETBIT command
-       *
-       * @param key - The key to set the bit on
-       * @param offset - The bit offset (zero-based)
-       * @param value - The bit value (0 or 1)
-       * @see https://redis.io/commands/setbit/
-       */
       setBit: SETBIT_1.default,
-      /**
-       * Constructs the SETEX command
-       *
-       * @param key - The key to set
-       * @param seconds - The expiration time in seconds
-       * @param value - The value to set
-       * @see https://redis.io/commands/setex/
-       */
       SETEX: SETEX_1.default,
-      /**
-       * Constructs the SETEX command
-       *
-       * @param key - The key to set
-       * @param seconds - The expiration time in seconds
-       * @param value - The value to set
-       * @see https://redis.io/commands/setex/
-       */
       setEx: SETEX_1.default,
-      /**
-       * Constructs the SETNX command
-       *
-       * @param key - The key to set if it doesn't exist
-       * @param value - The value to set
-       * @see https://redis.io/commands/setnx/
-       */
       SETNX: SETNX_1.default,
-      /**
-       * Constructs the SETNX command
-       *
-       * @param key - The key to set if it doesn't exist
-       * @param value - The value to set
-       * @see https://redis.io/commands/setnx/
-       */
       setNX: SETNX_1.default,
-      /**
-       * Constructs the SETRANGE command
-       *
-       * @param key - The key to modify
-       * @param offset - The offset at which to start writing
-       * @param value - The value to write at the offset
-       * @see https://redis.io/commands/setrange/
-       */
       SETRANGE: SETRANGE_1.default,
-      /**
-       * Constructs the SETRANGE command
-       *
-       * @param key - The key to modify
-       * @param offset - The offset at which to start writing
-       * @param value - The value to write at the offset
-       * @see https://redis.io/commands/setrange/
-       */
       setRange: SETRANGE_1.default,
-      /**
-       * Constructs the SINTER command
-       *
-       * @param keys - One or more set keys to compute the intersection from
-       * @see https://redis.io/commands/sinter/
-       */
       SINTER: SINTER_1.default,
-      /**
-       * Constructs the SINTER command
-       *
-       * @param keys - One or more set keys to compute the intersection from
-       * @see https://redis.io/commands/sinter/
-       */
       sInter: SINTER_1.default,
-      /**
-       * Constructs the SINTERCARD command
-       *
-       * @param keys - One or more set keys to compute the intersection cardinality from
-       * @param options - Options for the SINTERCARD command or a number for LIMIT (backwards compatibility)
-       * @see https://redis.io/commands/sintercard/
-       */
       SINTERCARD: SINTERCARD_1.default,
-      /**
-       * Constructs the SINTERCARD command
-       *
-       * @param keys - One or more set keys to compute the intersection cardinality from
-       * @param options - Options for the SINTERCARD command or a number for LIMIT (backwards compatibility)
-       * @see https://redis.io/commands/sintercard/
-       */
       sInterCard: SINTERCARD_1.default,
-      /**
-       * Constructs the SINTERSTORE command
-       *
-       * @param destination - The destination key to store the result
-       * @param keys - One or more set keys to compute the intersection from
-       * @see https://redis.io/commands/sinterstore/
-       */
       SINTERSTORE: SINTERSTORE_1.default,
-      /**
-       * Constructs the SINTERSTORE command
-       *
-       * @param destination - The destination key to store the result
-       * @param keys - One or more set keys to compute the intersection from
-       * @see https://redis.io/commands/sinterstore/
-       */
       sInterStore: SINTERSTORE_1.default,
-      /**
-       * Constructs the SISMEMBER command
-       *
-       * @param key - The set key to check membership in
-       * @param member - The member to check for existence
-       * @see https://redis.io/commands/sismember/
-       */
       SISMEMBER: SISMEMBER_1.default,
-      /**
-       * Constructs the SISMEMBER command
-       *
-       * @param key - The set key to check membership in
-       * @param member - The member to check for existence
-       * @see https://redis.io/commands/sismember/
-       */
       sIsMember: SISMEMBER_1.default,
-      /**
-       * Constructs the SMEMBERS command
-       *
-       * @param key - The set key to get all members from
-       * @see https://redis.io/commands/smembers/
-       */
       SMEMBERS: SMEMBERS_1.default,
-      /**
-       * Constructs the SMEMBERS command
-       *
-       * @param key - The set key to get all members from
-       * @see https://redis.io/commands/smembers/
-       */
       sMembers: SMEMBERS_1.default,
-      /**
-       * Constructs the SMISMEMBER command
-       *
-       * @param key - The set key to check membership in
-       * @param members - The members to check for existence
-       * @see https://redis.io/commands/smismember/
-       */
       SMISMEMBER: SMISMEMBER_1.default,
-      /**
-       * Constructs the SMISMEMBER command
-       *
-       * @param key - The set key to check membership in
-       * @param members - The members to check for existence
-       * @see https://redis.io/commands/smismember/
-       */
       smIsMember: SMISMEMBER_1.default,
-      /**
-       * Constructs the SMOVE command
-       *
-       * @param source - The source set key
-       * @param destination - The destination set key
-       * @param member - The member to move
-       * @see https://redis.io/commands/smove/
-       */
       SMOVE: SMOVE_1.default,
-      /**
-       * Constructs the SMOVE command
-       *
-       * @param source - The source set key
-       * @param destination - The destination set key
-       * @param member - The member to move
-       * @see https://redis.io/commands/smove/
-       */
       sMove: SMOVE_1.default,
-      /**
-       * Read-only variant of SORT that sorts the elements in a list, set or sorted set.
-       * @param args - Same parameters as the SORT command.
-       */
       SORT_RO: SORT_RO_1.default,
-      /**
-       * Read-only variant of SORT that sorts the elements in a list, set or sorted set.
-       * @param args - Same parameters as the SORT command.
-       */
       sortRo: SORT_RO_1.default,
-      /**
-       * Sorts the elements in a list, set or sorted set and stores the result in a new list.
-       * @param source - Key of the source list, set or sorted set.
-       * @param destination - Destination key where the result will be stored.
-       * @param options - Optional sorting parameters.
-       */
       SORT_STORE: SORT_STORE_1.default,
-      /**
-       * Sorts the elements in a list, set or sorted set and stores the result in a new list.
-       * @param source - Key of the source list, set or sorted set.
-       * @param destination - Destination key where the result will be stored.
-       * @param options - Optional sorting parameters.
-       */
       sortStore: SORT_STORE_1.default,
-      /**
-       * Constructs the SORT command
-       *
-       * @param key - The key to sort (list, set, or sorted set)
-       * @param options - Sort options
-       * @see https://redis.io/commands/sort/
-       */
       SORT: SORT_1.default,
-      /**
-       * Constructs the SORT command
-       *
-       * @param key - The key to sort (list, set, or sorted set)
-       * @param options - Sort options
-       * @see https://redis.io/commands/sort/
-       */
       sort: SORT_1.default,
-      /**
-       * Constructs the SPOP command to remove and return multiple random members from a set
-       *
-       * @param key - The key of the set to pop from
-       * @param count - The number of members to pop
-       * @see https://redis.io/commands/spop/
-       */
       SPOP_COUNT: SPOP_COUNT_1.default,
-      /**
-       * Constructs the SPOP command to remove and return multiple random members from a set
-       *
-       * @param key - The key of the set to pop from
-       * @param count - The number of members to pop
-       * @see https://redis.io/commands/spop/
-       */
       sPopCount: SPOP_COUNT_1.default,
-      /**
-       * Constructs the SPOP command to remove and return a random member from a set
-       *
-       * @param key - The key of the set to pop from
-       * @see https://redis.io/commands/spop/
-       */
       SPOP: SPOP_1.default,
-      /**
-       * Constructs the SPOP command to remove and return a random member from a set
-       *
-       * @param key - The key of the set to pop from
-       * @see https://redis.io/commands/spop/
-       */
       sPop: SPOP_1.default,
-      /**
-       * Constructs the SPUBLISH command to post a message to a Sharded Pub/Sub channel
-       *
-       * @param channel - The channel to publish to
-       * @param message - The message to publish
-       * @see https://redis.io/commands/spublish/
-       */
       SPUBLISH: SPUBLISH_1.default,
-      /**
-       * Constructs the SPUBLISH command to post a message to a Sharded Pub/Sub channel
-       *
-       * @param channel - The channel to publish to
-       * @param message - The message to publish
-       * @see https://redis.io/commands/spublish/
-       */
       sPublish: SPUBLISH_1.default,
-      /**
-       * Constructs the SRANDMEMBER command to get multiple random members from a set
-       *
-       * @param key - The key of the set to get random members from
-       * @param count - The number of members to return. If negative, may return the same member multiple times
-       * @see https://redis.io/commands/srandmember/
-       */
       SRANDMEMBER_COUNT: SRANDMEMBER_COUNT_1.default,
-      /**
-       * Constructs the SRANDMEMBER command to get multiple random members from a set
-       *
-       * @param key - The key of the set to get random members from
-       * @param count - The number of members to return. If negative, may return the same member multiple times
-       * @see https://redis.io/commands/srandmember/
-       */
       sRandMemberCount: SRANDMEMBER_COUNT_1.default,
-      /**
-       * Constructs the SRANDMEMBER command to get a random member from a set
-       *
-       * @param key - The key of the set to get random member from
-       * @see https://redis.io/commands/srandmember/
-       */
       SRANDMEMBER: SRANDMEMBER_1.default,
-      /**
-       * Constructs the SRANDMEMBER command to get a random member from a set
-       *
-       * @param key - The key of the set to get random member from
-       * @see https://redis.io/commands/srandmember/
-       */
       sRandMember: SRANDMEMBER_1.default,
-      /**
-       * Constructs the SREM command to remove one or more members from a set
-       *
-       * @param key - The key of the set to remove members from
-       * @param members - One or more members to remove from the set
-       * @returns The number of members that were removed from the set
-       * @see https://redis.io/commands/srem/
-       */
       SREM: SREM_1.default,
-      /**
-       * Constructs the SREM command to remove one or more members from a set
-       *
-       * @param key - The key of the set to remove members from
-       * @param members - One or more members to remove from the set
-       * @returns The number of members that were removed from the set
-       * @see https://redis.io/commands/srem/
-       */
       sRem: SREM_1.default,
-      /**
-       * Constructs the SSCAN command to incrementally iterate over elements in a set
-       *
-       * @param key - The key of the set to scan
-       * @param cursor - The cursor position to start scanning from
-       * @param options - Optional scanning parameters (COUNT and MATCH)
-       * @returns Iterator containing cursor position and matching members
-       * @see https://redis.io/commands/sscan/
-       */
       SSCAN: SSCAN_1.default,
-      /**
-       * Constructs the SSCAN command to incrementally iterate over elements in a set
-       *
-       * @param key - The key of the set to scan
-       * @param cursor - The cursor position to start scanning from
-       * @param options - Optional scanning parameters (COUNT and MATCH)
-       * @returns Iterator containing cursor position and matching members
-       * @see https://redis.io/commands/sscan/
-       */
       sScan: SSCAN_1.default,
-      /**
-       * Constructs the STRLEN command to get the length of a string value
-       *
-       * @param key - The key holding the string value
-       * @returns The length of the string value, or 0 when key does not exist
-       * @see https://redis.io/commands/strlen/
-       */
       STRLEN: STRLEN_1.default,
-      /**
-       * Constructs the STRLEN command to get the length of a string value
-       *
-       * @param key - The key holding the string value
-       * @returns The length of the string value, or 0 when key does not exist
-       * @see https://redis.io/commands/strlen/
-       */
       strLen: STRLEN_1.default,
-      /**
-       * Constructs the SUNION command to return the members of the set resulting from the union of all the given sets
-       *
-       * @param keys - One or more set keys to compute the union from
-       * @returns Array of all elements that are members of at least one of the given sets
-       * @see https://redis.io/commands/sunion/
-       */
       SUNION: SUNION_1.default,
-      /**
-       * Constructs the SUNION command to return the members of the set resulting from the union of all the given sets
-       *
-       * @param keys - One or more set keys to compute the union from
-       * @returns Array of all elements that are members of at least one of the given sets
-       * @see https://redis.io/commands/sunion/
-       */
       sUnion: SUNION_1.default,
-      /**
-       * Constructs the SUNIONSTORE command to store the union of multiple sets into a destination set
-       *
-       * @param destination - The destination key to store the resulting set
-       * @param keys - One or more source set keys to compute the union from
-       * @returns The number of elements in the resulting set
-       * @see https://redis.io/commands/sunionstore/
-       */
       SUNIONSTORE: SUNIONSTORE_1.default,
-      /**
-       * Constructs the SUNIONSTORE command to store the union of multiple sets into a destination set
-       *
-       * @param destination - The destination key to store the resulting set
-       * @param keys - One or more source set keys to compute the union from
-       * @returns The number of elements in the resulting set
-       * @see https://redis.io/commands/sunionstore/
-       */
       sUnionStore: SUNIONSTORE_1.default,
-      /**
-       * Swaps the data of two Redis databases.
-       * @param index1 - First database index.
-       * @param index2 - Second database index.
-       */
       SWAPDB: SWAPDB_1.default,
-      /**
-       * Swaps the data of two Redis databases.
-       * @param index1 - First database index.
-       * @param index2 - Second database index.
-       */
       swapDb: SWAPDB_1.default,
-      /**
-       * Constructs the TIME command to return the server's current time
-       *
-       * @returns Array containing the Unix timestamp in seconds and microseconds
-       * @see https://redis.io/commands/time/
-       */
       TIME: TIME_1.default,
-      /**
-       * Constructs the TIME command to return the server's current time
-       *
-       * @returns Array containing the Unix timestamp in seconds and microseconds
-       * @see https://redis.io/commands/time/
-       */
       time: TIME_1.default,
-      /**
-       * Constructs the TOUCH command to alter the last access time of keys
-       *
-       * @param key - One or more keys to touch
-       * @returns The number of keys that were touched
-       * @see https://redis.io/commands/touch/
-       */
       TOUCH: TOUCH_1.default,
-      /**
-       * Constructs the TOUCH command to alter the last access time of keys
-       *
-       * @param key - One or more keys to touch
-       * @returns The number of keys that were touched
-       * @see https://redis.io/commands/touch/
-       */
       touch: TOUCH_1.default,
-      /**
-       * Constructs the TTL command to get the remaining time to live of a key
-       *
-       * @param key - Key to check
-       * @returns Time to live in seconds, -2 if key does not exist, -1 if has no timeout
-       * @see https://redis.io/commands/ttl/
-       */
       TTL: TTL_1.default,
-      /**
-       * Constructs the TTL command to get the remaining time to live of a key
-       *
-       * @param key - Key to check
-       * @returns Time to live in seconds, -2 if key does not exist, -1 if has no timeout
-       * @see https://redis.io/commands/ttl/
-       */
       ttl: TTL_1.default,
-      /**
-       * Constructs the TYPE command to determine the data type stored at key
-       *
-       * @param key - Key to check
-       * @returns String reply: "none", "string", "list", "set", "zset", "hash", "stream"
-       * @see https://redis.io/commands/type/
-       */
       TYPE: TYPE_1.default,
-      /**
-       * Constructs the TYPE command to determine the data type stored at key
-       *
-       * @param key - Key to check
-       * @returns String reply: "none", "string", "list", "set", "zset", "hash", "stream"
-       * @see https://redis.io/commands/type/
-       */
       type: TYPE_1.default,
-      /**
-       * Constructs the UNLINK command to asynchronously delete one or more keys
-       *
-       * @param keys - One or more keys to unlink
-       * @returns The number of keys that were unlinked
-       * @see https://redis.io/commands/unlink/
-       */
       UNLINK: UNLINK_1.default,
-      /**
-       * Constructs the UNLINK command to asynchronously delete one or more keys
-       *
-       * @param keys - One or more keys to unlink
-       * @returns The number of keys that were unlinked
-       * @see https://redis.io/commands/unlink/
-       */
       unlink: UNLINK_1.default,
-      /**
-       * Constructs the WAIT command to synchronize with replicas
-       *
-       * @param numberOfReplicas - Number of replicas that must acknowledge the write
-       * @param timeout - Maximum time to wait in milliseconds
-       * @returns The number of replicas that acknowledged the write
-       * @see https://redis.io/commands/wait/
-       */
       WAIT: WAIT_1.default,
-      /**
-       * Constructs the WAIT command to synchronize with replicas
-       *
-       * @param numberOfReplicas - Number of replicas that must acknowledge the write
-       * @param timeout - Maximum time to wait in milliseconds
-       * @returns The number of replicas that acknowledged the write
-       * @see https://redis.io/commands/wait/
-       */
       wait: WAIT_1.default,
-      /**
-       * Constructs the XACK command to acknowledge the processing of stream messages in a consumer group
-       *
-       * @param key - The stream key
-       * @param group - The consumer group name
-       * @param id - One or more message IDs to acknowledge
-       * @returns The number of messages successfully acknowledged
-       * @see https://redis.io/commands/xack/
-       */
       XACK: XACK_1.default,
-      /**
-       * Constructs the XACK command to acknowledge the processing of stream messages in a consumer group
-       *
-       * @param key - The stream key
-       * @param group - The consumer group name
-       * @param id - One or more message IDs to acknowledge
-       * @returns The number of messages successfully acknowledged
-       * @see https://redis.io/commands/xack/
-       */
       xAck: XACK_1.default,
-      /**
-       * Constructs the XACKDEL command to acknowledge and delete one or multiple messages for a stream consumer group
-       *
-       * @param key - The stream key
-       * @param group - The consumer group name
-       * @param id - One or more message IDs to acknowledge and delete
-       * @param policy - Policy to apply when deleting entries (optional, defaults to KEEPREF)
-       * @returns Array of integers: -1 (not found), 1 (acknowledged and deleted), 2 (acknowledged with dangling refs)
-       * @see https://redis.io/commands/xackdel/
-       */
       XACKDEL: XACKDEL_1.default,
-      /**
-       * Constructs the XACKDEL command to acknowledge and delete one or multiple messages for a stream consumer group
-       *
-       * @param key - The stream key
-       * @param group - The consumer group name
-       * @param id - One or more message IDs to acknowledge and delete
-       * @param policy - Policy to apply when deleting entries (optional, defaults to KEEPREF)
-       * @returns Array of integers: -1 (not found), 1 (acknowledged and deleted), 2 (acknowledged with dangling refs)
-       * @see https://redis.io/commands/xackdel/
-       */
       xAckDel: XACKDEL_1.default,
-      /**
-       * Constructs the XADD command with NOMKSTREAM option to append a new entry to an existing stream
-       *
-       * @param args - Arguments tuple containing parser, key, id, message, and options
-       * @returns The ID of the added entry, or null if the stream doesn't exist
-       * @see https://redis.io/commands/xadd/
-       */
       XADD_NOMKSTREAM: XADD_NOMKSTREAM_1.default,
-      /**
-       * Constructs the XADD command with NOMKSTREAM option to append a new entry to an existing stream
-       *
-       * @param args - Arguments tuple containing parser, key, id, message, and options
-       * @returns The ID of the added entry, or null if the stream doesn't exist
-       * @see https://redis.io/commands/xadd/
-       */
       xAddNoMkStream: XADD_NOMKSTREAM_1.default,
-      /**
-       * Constructs the XADD command to append a new entry to a stream
-       *
-       * @param key - The stream key
-       * @param id - Message ID (* for auto-generation)
-       * @param message - Key-value pairs representing the message fields
-       * @param options - Additional options for stream trimming
-       * @returns The ID of the added entry
-       * @see https://redis.io/commands/xadd/
-       */
       XADD: XADD_1.default,
-      /**
-       * Constructs the XADD command to append a new entry to a stream
-       *
-       * @param key - The stream key
-       * @param id - Message ID (* for auto-generation)
-       * @param message - Key-value pairs representing the message fields
-       * @param options - Additional options for stream trimming
-       * @returns The ID of the added entry
-       * @see https://redis.io/commands/xadd/
-       */
       xAdd: XADD_1.default,
-      /**
-       * Constructs the XAUTOCLAIM command with JUSTID option to get only message IDs
-       *
-       * @param args - Same parameters as XAUTOCLAIM command
-       * @returns Object containing nextId and arrays of claimed and deleted message IDs
-       * @see https://redis.io/commands/xautoclaim/
-       */
       XAUTOCLAIM_JUSTID: XAUTOCLAIM_JUSTID_1.default,
-      /**
-       * Constructs the XAUTOCLAIM command with JUSTID option to get only message IDs
-       *
-       * @param args - Same parameters as XAUTOCLAIM command
-       * @returns Object containing nextId and arrays of claimed and deleted message IDs
-       * @see https://redis.io/commands/xautoclaim/
-       */
       xAutoClaimJustId: XAUTOCLAIM_JUSTID_1.default,
-      /**
-       * Constructs the XAUTOCLAIM command to automatically claim pending messages in a consumer group
-       *
-       * @param key - The stream key
-       * @param group - The consumer group name
-       * @param consumer - The consumer name that will claim the messages
-       * @param minIdleTime - Minimum idle time in milliseconds for a message to be claimed
-       * @param start - Message ID to start scanning from
-       * @param options - Additional options for the claim operation
-       * @returns Object containing nextId, claimed messages, and list of deleted message IDs
-       * @see https://redis.io/commands/xautoclaim/
-       */
       XAUTOCLAIM: XAUTOCLAIM_1.default,
-      /**
-       * Constructs the XAUTOCLAIM command to automatically claim pending messages in a consumer group
-       *
-       * @param key - The stream key
-       * @param group - The consumer group name
-       * @param consumer - The consumer name that will claim the messages
-       * @param minIdleTime - Minimum idle time in milliseconds for a message to be claimed
-       * @param start - Message ID to start scanning from
-       * @param options - Additional options for the claim operation
-       * @returns Object containing nextId, claimed messages, and list of deleted message IDs
-       * @see https://redis.io/commands/xautoclaim/
-       */
       xAutoClaim: XAUTOCLAIM_1.default,
-      /**
-       * Constructs the XCLAIM command with JUSTID option to get only message IDs
-       *
-       * @param args - Same parameters as XCLAIM command
-       * @returns Array of successfully claimed message IDs
-       * @see https://redis.io/commands/xclaim/
-       */
       XCLAIM_JUSTID: XCLAIM_JUSTID_1.default,
-      /**
-       * Constructs the XCLAIM command with JUSTID option to get only message IDs
-       *
-       * @param args - Same parameters as XCLAIM command
-       * @returns Array of successfully claimed message IDs
-       * @see https://redis.io/commands/xclaim/
-       */
       xClaimJustId: XCLAIM_JUSTID_1.default,
-      /**
-       * Constructs the XCLAIM command to claim pending messages in a consumer group
-       *
-       * @param key - The stream key
-       * @param group - The consumer group name
-       * @param consumer - The consumer name that will claim the messages
-       * @param minIdleTime - Minimum idle time in milliseconds for a message to be claimed
-       * @param id - One or more message IDs to claim
-       * @param options - Additional options for the claim operation
-       * @returns Array of claimed messages
-       * @see https://redis.io/commands/xclaim/
-       */
       XCLAIM: XCLAIM_1.default,
-      /**
-       * Constructs the XCLAIM command to claim pending messages in a consumer group
-       *
-       * @param key - The stream key
-       * @param group - The consumer group name
-       * @param consumer - The consumer name that will claim the messages
-       * @param minIdleTime - Minimum idle time in milliseconds for a message to be claimed
-       * @param id - One or more message IDs to claim
-       * @param options - Additional options for the claim operation
-       * @returns Array of claimed messages
-       * @see https://redis.io/commands/xclaim/
-       */
       xClaim: XCLAIM_1.default,
-      /**
-       * Configures the idempotency parameters for a stream's IDMP map.
-       * Sets how long Redis remembers each iid and the maximum number of iids to track.
-       * This command clears the existing IDMP map (Redis forgets all previously stored iids),
-       * but only if the configuration value actually changes.
-       *
-       * @param key - The name of the stream
-       * @param options - Optional idempotency configuration parameters
-       * @returns 'OK' on success
-       */
       XCFGSET: XCFGSET_1.default,
-      /**
-       * Configures the idempotency parameters for a stream's IDMP map.
-       * Sets how long Redis remembers each iid and the maximum number of iids to track.
-       * This command clears the existing IDMP map (Redis forgets all previously stored iids),
-       * but only if the configuration value actually changes.
-       *
-       * @param key - The name of the stream
-       * @param options - Optional idempotency configuration parameters
-       * @returns 'OK' on success
-       */
       xCfgSet: XCFGSET_1.default,
-      /**
-       * Constructs the XDEL command to remove one or more messages from a stream
-       *
-       * @param key - The stream key
-       * @param id - One or more message IDs to delete
-       * @returns The number of messages actually deleted
-       * @see https://redis.io/commands/xdel/
-       */
       XDEL: XDEL_1.default,
-      /**
-       * Constructs the XDEL command to remove one or more messages from a stream
-       *
-       * @param key - The stream key
-       * @param id - One or more message IDs to delete
-       * @returns The number of messages actually deleted
-       * @see https://redis.io/commands/xdel/
-       */
       xDel: XDEL_1.default,
-      /**
-       * Constructs the XDELEX command to delete one or multiple entries from the stream
-       *
-       * @param key - The stream key
-       * @param id - One or more message IDs to delete
-       * @param policy - Policy to apply when deleting entries (optional, defaults to KEEPREF)
-       * @returns Array of integers: -1 (not found), 1 (deleted), 2 (dangling refs)
-       * @see https://redis.io/commands/xdelex/
-       */
       XDELEX: XDELEX_1.default,
-      /**
-       * Constructs the XDELEX command to delete one or multiple entries from the stream
-       *
-       * @param key - The stream key
-       * @param id - One or more message IDs to delete
-       * @param policy - Policy to apply when deleting entries (optional, defaults to KEEPREF)
-       * @returns Array of integers: -1 (not found), 1 (deleted), 2 (dangling refs)
-       * @see https://redis.io/commands/xdelex/
-       */
       xDelEx: XDELEX_1.default,
-      /**
-       * Constructs the XGROUP CREATE command to create a consumer group for a stream
-       *
-       * @param key - The stream key
-       * @param group - Name of the consumer group
-       * @param id - ID of the last delivered item in the stream ('$' for last item, '0' for all items)
-       * @param options - Additional options for group creation
-       * @returns 'OK' if successful
-       * @see https://redis.io/commands/xgroup-create/
-       */
       XGROUP_CREATE: XGROUP_CREATE_1.default,
-      /**
-       * Constructs the XGROUP CREATE command to create a consumer group for a stream
-       *
-       * @param key - The stream key
-       * @param group - Name of the consumer group
-       * @param id - ID of the last delivered item in the stream ('$' for last item, '0' for all items)
-       * @param options - Additional options for group creation
-       * @returns 'OK' if successful
-       * @see https://redis.io/commands/xgroup-create/
-       */
       xGroupCreate: XGROUP_CREATE_1.default,
-      /**
-       * Constructs the XGROUP CREATECONSUMER command to create a new consumer in a consumer group
-       *
-       * @param key - The stream key
-       * @param group - Name of the consumer group
-       * @param consumer - Name of the consumer to create
-       * @returns 1 if the consumer was created, 0 if it already existed
-       * @see https://redis.io/commands/xgroup-createconsumer/
-       */
       XGROUP_CREATECONSUMER: XGROUP_CREATECONSUMER_1.default,
-      /**
-       * Constructs the XGROUP CREATECONSUMER command to create a new consumer in a consumer group
-       *
-       * @param key - The stream key
-       * @param group - Name of the consumer group
-       * @param consumer - Name of the consumer to create
-       * @returns 1 if the consumer was created, 0 if it already existed
-       * @see https://redis.io/commands/xgroup-createconsumer/
-       */
       xGroupCreateConsumer: XGROUP_CREATECONSUMER_1.default,
-      /**
-       * Constructs the XGROUP DELCONSUMER command to remove a consumer from a consumer group
-       *
-       * @param key - The stream key
-       * @param group - Name of the consumer group
-       * @param consumer - Name of the consumer to remove
-       * @returns The number of pending messages owned by the deleted consumer
-       * @see https://redis.io/commands/xgroup-delconsumer/
-       */
       XGROUP_DELCONSUMER: XGROUP_DELCONSUMER_1.default,
-      /**
-       * Constructs the XGROUP DELCONSUMER command to remove a consumer from a consumer group
-       *
-       * @param key - The stream key
-       * @param group - Name of the consumer group
-       * @param consumer - Name of the consumer to remove
-       * @returns The number of pending messages owned by the deleted consumer
-       * @see https://redis.io/commands/xgroup-delconsumer/
-       */
       xGroupDelConsumer: XGROUP_DELCONSUMER_1.default,
-      /**
-       * Constructs the XGROUP DESTROY command to remove a consumer group
-       *
-       * @param key - The stream key
-       * @param group - Name of the consumer group to destroy
-       * @returns 1 if the group was destroyed, 0 if it did not exist
-       * @see https://redis.io/commands/xgroup-destroy/
-       */
       XGROUP_DESTROY: XGROUP_DESTROY_1.default,
-      /**
-       * Constructs the XGROUP DESTROY command to remove a consumer group
-       *
-       * @param key - The stream key
-       * @param group - Name of the consumer group to destroy
-       * @returns 1 if the group was destroyed, 0 if it did not exist
-       * @see https://redis.io/commands/xgroup-destroy/
-       */
       xGroupDestroy: XGROUP_DESTROY_1.default,
-      /**
-       * Constructs the XGROUP SETID command to set the last delivered ID for a consumer group
-       *
-       * @param key - The stream key
-       * @param group - Name of the consumer group
-       * @param id - ID to set as last delivered message ('$' for last item, '0' for all items)
-       * @param options - Additional options for setting the group ID
-       * @returns 'OK' if successful
-       * @see https://redis.io/commands/xgroup-setid/
-       */
       XGROUP_SETID: XGROUP_SETID_1.default,
-      /**
-       * Constructs the XGROUP SETID command to set the last delivered ID for a consumer group
-       *
-       * @param key - The stream key
-       * @param group - Name of the consumer group
-       * @param id - ID to set as last delivered message ('$' for last item, '0' for all items)
-       * @param options - Additional options for setting the group ID
-       * @returns 'OK' if successful
-       * @see https://redis.io/commands/xgroup-setid/
-       */
       xGroupSetId: XGROUP_SETID_1.default,
-      /**
-       * Constructs the XINFO CONSUMERS command to list the consumers in a consumer group
-       *
-       * @param key - The stream key
-       * @param group - Name of the consumer group
-       * @returns Array of consumer information objects
-       * @see https://redis.io/commands/xinfo-consumers/
-       */
       XINFO_CONSUMERS: XINFO_CONSUMERS_1.default,
-      /**
-       * Constructs the XINFO CONSUMERS command to list the consumers in a consumer group
-       *
-       * @param key - The stream key
-       * @param group - Name of the consumer group
-       * @returns Array of consumer information objects
-       * @see https://redis.io/commands/xinfo-consumers/
-       */
       xInfoConsumers: XINFO_CONSUMERS_1.default,
-      /**
-       * Constructs the XINFO GROUPS command to list the consumer groups of a stream
-       *
-       * @param key - The stream key
-       * @returns Array of consumer group information objects
-       * @see https://redis.io/commands/xinfo-groups/
-       */
       XINFO_GROUPS: XINFO_GROUPS_1.default,
-      /**
-       * Constructs the XINFO GROUPS command to list the consumer groups of a stream
-       *
-       * @param key - The stream key
-       * @returns Array of consumer group information objects
-       * @see https://redis.io/commands/xinfo-groups/
-       */
       xInfoGroups: XINFO_GROUPS_1.default,
-      /**
-       * Constructs the XINFO STREAM command to get detailed information about a stream
-       *
-       * @param key - The stream key
-       * @returns Detailed information about the stream including its length, structure, and entries
-       * @see https://redis.io/commands/xinfo-stream/
-       */
       XINFO_STREAM: XINFO_STREAM_1.default,
-      /**
-       * Constructs the XINFO STREAM command to get detailed information about a stream
-       *
-       * @param key - The stream key
-       * @returns Detailed information about the stream including its length, structure, and entries
-       * @see https://redis.io/commands/xinfo-stream/
-       */
       xInfoStream: XINFO_STREAM_1.default,
-      /**
-       * Constructs the XLEN command to get the number of entries in a stream
-       *
-       * @param key - The stream key
-       * @returns The number of entries inside the stream
-       * @see https://redis.io/commands/xlen/
-       */
       XLEN: XLEN_1.default,
-      /**
-       * Constructs the XLEN command to get the number of entries in a stream
-       *
-       * @param key - The stream key
-       * @returns The number of entries inside the stream
-       * @see https://redis.io/commands/xlen/
-       */
       xLen: XLEN_1.default,
-      /**
-       * Constructs the XNACK command to negatively acknowledge one or more pending stream entries.
-       * Added since Redis 8.8.
-       *
-       * @param key - The stream key
-       * @param group - The consumer group name
-       * @param mode - NACK mode: SILENT, FAIL, or FATAL
-       * @param id - One or more message IDs to nack
-       * @param options - Additional options for retry count and force handling
-       * @returns Number of entries acknowledged
-       * @see https://redis.io/commands/xnack/
-       */
-      XNACK: XNACK_1.default,
-      /**
-       * Constructs the XNACK command to negatively acknowledge one or more pending stream entries.
-       * Added since Redis 8.8.
-       *
-       * @param key - The stream key
-       * @param group - The consumer group name
-       * @param mode - NACK mode: SILENT, FAIL, or FATAL
-       * @param id - One or more message IDs to nack
-       * @param options - Additional options for retry count and force handling
-       * @returns Number of entries acknowledged
-       * @see https://redis.io/commands/xnack/
-       */
-      xNack: XNACK_1.default,
-      /**
-       * Constructs the XPENDING command with range parameters to get detailed information about pending messages
-       *
-       * @param key - The stream key
-       * @param group - Name of the consumer group
-       * @param start - Start of ID range (use '-' for minimum ID)
-       * @param end - End of ID range (use '+' for maximum ID)
-       * @param count - Maximum number of messages to return
-       * @param options - Additional filtering options
-       * @returns Array of pending message details
-       * @see https://redis.io/commands/xpending/
-       */
       XPENDING_RANGE: XPENDING_RANGE_1.default,
-      /**
-       * Constructs the XPENDING command with range parameters to get detailed information about pending messages
-       *
-       * @param key - The stream key
-       * @param group - Name of the consumer group
-       * @param start - Start of ID range (use '-' for minimum ID)
-       * @param end - End of ID range (use '+' for maximum ID)
-       * @param count - Maximum number of messages to return
-       * @param options - Additional filtering options
-       * @returns Array of pending message details
-       * @see https://redis.io/commands/xpending/
-       */
       xPendingRange: XPENDING_RANGE_1.default,
-      /**
-       * Constructs the XPENDING command to inspect pending messages of a consumer group
-       *
-       * @param key - The stream key
-       * @param group - Name of the consumer group
-       * @returns Summary of pending messages including total count, ID range, and per-consumer stats
-       * @see https://redis.io/commands/xpending/
-       */
       XPENDING: XPENDING_1.default,
-      /**
-       * Constructs the XPENDING command to inspect pending messages of a consumer group
-       *
-       * @param key - The stream key
-       * @param group - Name of the consumer group
-       * @returns Summary of pending messages including total count, ID range, and per-consumer stats
-       * @see https://redis.io/commands/xpending/
-       */
       xPending: XPENDING_1.default,
-      /**
-       * Constructs the XRANGE command to read stream entries in a specific range
-       *
-       * @param key - The stream key
-       * @param args - Arguments tuple containing start ID, end ID, and options
-       * @returns Array of messages in the specified range
-       * @see https://redis.io/commands/xrange/
-       */
       XRANGE: XRANGE_1.default,
-      /**
-       * Constructs the XRANGE command to read stream entries in a specific range
-       *
-       * @param key - The stream key
-       * @param args - Arguments tuple containing start ID, end ID, and options
-       * @returns Array of messages in the specified range
-       * @see https://redis.io/commands/xrange/
-       */
       xRange: XRANGE_1.default,
-      /**
-       * Constructs the XREAD command to read messages from one or more streams
-       *
-       * @param streams - Single stream or array of streams to read from
-       * @param options - Additional options for reading streams
-       * @returns Array of stream entries, each containing the stream name and its messages
-       * @see https://redis.io/commands/xread/
-       */
       XREAD: XREAD_1.default,
-      /**
-       * Constructs the XREAD command to read messages from one or more streams
-       *
-       * @param streams - Single stream or array of streams to read from
-       * @param options - Additional options for reading streams
-       * @returns Array of stream entries, each containing the stream name and its messages
-       * @see https://redis.io/commands/xread/
-       */
       xRead: XREAD_1.default,
-      /**
-       * Constructs the XREADGROUP command to read messages from streams as a consumer group member
-       *
-       * @param group - Name of the consumer group
-       * @param consumer - Name of the consumer in the group
-       * @param streams - Single stream or array of streams to read from
-       * @param options - Additional options for reading streams
-       * @returns Array of stream entries, each containing the stream name and its messages
-       * @see https://redis.io/commands/xreadgroup/
-       */
       XREADGROUP: XREADGROUP_1.default,
-      /**
-       * Constructs the XREADGROUP command to read messages from streams as a consumer group member
-       *
-       * @param group - Name of the consumer group
-       * @param consumer - Name of the consumer in the group
-       * @param streams - Single stream or array of streams to read from
-       * @param options - Additional options for reading streams
-       * @returns Array of stream entries, each containing the stream name and its messages
-       * @see https://redis.io/commands/xreadgroup/
-       */
       xReadGroup: XREADGROUP_1.default,
-      /**
-       * Constructs the XREVRANGE command to read stream entries in reverse order
-       *
-       * @param key - The stream key
-       * @param args - Arguments tuple containing start ID, end ID, and options
-       * @returns Array of messages in the specified range in reverse order
-       * @see https://redis.io/commands/xrevrange/
-       */
       XREVRANGE: XREVRANGE_1.default,
-      /**
-       * Constructs the XREVRANGE command to read stream entries in reverse order
-       *
-       * @param key - The stream key
-       * @param args - Arguments tuple containing start ID, end ID, and options
-       * @returns Array of messages in the specified range in reverse order
-       * @see https://redis.io/commands/xrevrange/
-       */
       xRevRange: XREVRANGE_1.default,
-      /**
-       * Sets the stream's last-generated ID.
-       *
-       * @param key - The stream key
-       * @param lastId - The ID to set as the stream's last-generated ID
-       * @param options - Optional metadata values for ENTRIESADDED and MAXDELETEDID
-       * @returns OK on success
-       * @see https://redis.io/commands/xsetid/
-       */
       XSETID: XSETID_1.default,
-      /**
-       * Sets the stream's last-generated ID.
-       *
-       * @param key - The stream key
-       * @param lastId - The ID to set as the stream's last-generated ID
-       * @param options - Optional metadata values for ENTRIESADDED and MAXDELETEDID
-       * @returns OK on success
-       * @see https://redis.io/commands/xsetid/
-       */
       xSetId: XSETID_1.default,
-      /**
-       * Constructs the XTRIM command to trim a stream by length or minimum ID
-       *
-       * @param key - The stream key
-       * @param strategy - Trim by maximum length (MAXLEN) or minimum ID (MINID)
-       * @param threshold - Maximum length or minimum ID threshold
-       * @param options - Additional options for trimming
-       * @returns Number of entries removed from the stream
-       * @see https://redis.io/commands/xtrim/
-       */
       XTRIM: XTRIM_1.default,
-      /**
-       * Constructs the XTRIM command to trim a stream by length or minimum ID
-       *
-       * @param key - The stream key
-       * @param strategy - Trim by maximum length (MAXLEN) or minimum ID (MINID)
-       * @param threshold - Maximum length or minimum ID threshold
-       * @param options - Additional options for trimming
-       * @returns Number of entries removed from the stream
-       * @see https://redis.io/commands/xtrim/
-       */
       xTrim: XTRIM_1.default,
-      /**
-       * Constructs the ZADD command with INCR option to increment the score of a member
-       *
-       * @param key - The sorted set key
-       * @param members - Member(s) whose score to increment
-       * @param options - Additional options for the increment operation
-       * @returns The new score of the member after increment (null if member does not exist with XX option)
-       * @see https://redis.io/commands/zadd/
-       */
       ZADD_INCR: ZADD_INCR_1.default,
-      /**
-       * Constructs the ZADD command with INCR option to increment the score of a member
-       *
-       * @param key - The sorted set key
-       * @param members - Member(s) whose score to increment
-       * @param options - Additional options for the increment operation
-       * @returns The new score of the member after increment (null if member does not exist with XX option)
-       * @see https://redis.io/commands/zadd/
-       */
       zAddIncr: ZADD_INCR_1.default,
-      /**
-       * Constructs the ZADD command to add one or more members to a sorted set
-       *
-       * @param key - The sorted set key
-       * @param members - One or more members to add with their scores
-       * @param options - Additional options for adding members
-       * @returns Number of new members added (or changed members if CH is set)
-       * @see https://redis.io/commands/zadd/
-       */
       ZADD: ZADD_1.default,
-      /**
-       * Constructs the ZADD command to add one or more members to a sorted set
-       *
-       * @param key - The sorted set key
-       * @param members - One or more members to add with their scores
-       * @param options - Additional options for adding members
-       * @returns Number of new members added (or changed members if CH is set)
-       * @see https://redis.io/commands/zadd/
-       */
       zAdd: ZADD_1.default,
-      /**
-       * Constructs the ZCARD command to get the cardinality (number of members) of a sorted set
-       *
-       * @param key - The sorted set key
-       * @returns Number of members in the sorted set
-       * @see https://redis.io/commands/zcard/
-       */
       ZCARD: ZCARD_1.default,
-      /**
-       * Constructs the ZCARD command to get the cardinality (number of members) of a sorted set
-       *
-       * @param key - The sorted set key
-       * @returns Number of members in the sorted set
-       * @see https://redis.io/commands/zcard/
-       */
       zCard: ZCARD_1.default,
-      /**
-       * Returns the number of elements in the sorted set with a score between min and max.
-       * @param key - Key of the sorted set.
-       * @param min - Minimum score to count from (inclusive).
-       * @param max - Maximum score to count to (inclusive).
-       */
       ZCOUNT: ZCOUNT_1.default,
-      /**
-       * Returns the number of elements in the sorted set with a score between min and max.
-       * @param key - Key of the sorted set.
-       * @param min - Minimum score to count from (inclusive).
-       * @param max - Maximum score to count to (inclusive).
-       */
       zCount: ZCOUNT_1.default,
-      /**
-       * Returns the difference between the first sorted set and all successive sorted sets with their scores.
-       * @param keys - Keys of the sorted sets.
-       */
       ZDIFF_WITHSCORES: ZDIFF_WITHSCORES_1.default,
-      /**
-       * Returns the difference between the first sorted set and all successive sorted sets with their scores.
-       * @param keys - Keys of the sorted sets.
-       */
       zDiffWithScores: ZDIFF_WITHSCORES_1.default,
-      /**
-       * Returns the difference between the first sorted set and all the successive sorted sets.
-       * @param keys - Keys of the sorted sets.
-       */
       ZDIFF: ZDIFF_1.default,
-      /**
-       * Returns the difference between the first sorted set and all the successive sorted sets.
-       * @param keys - Keys of the sorted sets.
-       */
       zDiff: ZDIFF_1.default,
-      /**
-       * Computes the difference between the first and all successive sorted sets and stores it in a new key.
-       * @param destination - Destination key where the result will be stored.
-       * @param inputKeys - Keys of the sorted sets to find the difference between.
-       */
       ZDIFFSTORE: ZDIFFSTORE_1.default,
-      /**
-       * Computes the difference between the first and all successive sorted sets and stores it in a new key.
-       * @param destination - Destination key where the result will be stored.
-       * @param inputKeys - Keys of the sorted sets to find the difference between.
-       */
       zDiffStore: ZDIFFSTORE_1.default,
-      /**
-       * Increments the score of a member in a sorted set by the specified increment.
-       * @param key - Key of the sorted set.
-       * @param increment - Value to increment the score by.
-       * @param member - Member whose score should be incremented.
-       */
       ZINCRBY: ZINCRBY_1.default,
-      /**
-       * Increments the score of a member in a sorted set by the specified increment.
-       * @param key - Key of the sorted set.
-       * @param increment - Value to increment the score by.
-       * @param member - Member whose score should be incremented.
-       */
       zIncrBy: ZINCRBY_1.default,
-      /**
-       * Intersects multiple sorted sets and returns the result with scores.
-       * @param args - Same parameters as ZINTER command.
-       */
       ZINTER_WITHSCORES: ZINTER_WITHSCORES_1.default,
-      /**
-       * Intersects multiple sorted sets and returns the result with scores.
-       * @param args - Same parameters as ZINTER command.
-       */
       zInterWithScores: ZINTER_WITHSCORES_1.default,
-      /**
-       * Intersects multiple sorted sets and returns the result as a new sorted set.
-       * @param keys - Keys of the sorted sets to intersect.
-       * @param options - Optional parameters for the intersection operation.
-       */
       ZINTER: ZINTER_1.default,
-      /**
-       * Intersects multiple sorted sets and returns the result as a new sorted set.
-       * @param keys - Keys of the sorted sets to intersect.
-       * @param options - Optional parameters for the intersection operation.
-       */
       zInter: ZINTER_1.default,
-      /**
-       * Returns the cardinality of the intersection of multiple sorted sets.
-       * @param keys - Keys of the sorted sets to intersect.
-       * @param options - Limit option or options object with limit.
-       */
       ZINTERCARD: ZINTERCARD_1.default,
-      /**
-       * Returns the cardinality of the intersection of multiple sorted sets.
-       * @param keys - Keys of the sorted sets to intersect.
-       * @param options - Limit option or options object with limit.
-       */
       zInterCard: ZINTERCARD_1.default,
-      /**
-       * Stores the result of intersection of multiple sorted sets in a new sorted set.
-       * @param destination - Destination key where the result will be stored.
-       * @param keys - Keys of the sorted sets to intersect.
-       * @param options - Optional parameters for the intersection operation.
-       */
       ZINTERSTORE: ZINTERSTORE_1.default,
-      /**
-       * Stores the result of intersection of multiple sorted sets in a new sorted set.
-       * @param destination - Destination key where the result will be stored.
-       * @param keys - Keys of the sorted sets to intersect.
-       * @param options - Optional parameters for the intersection operation.
-       */
       zInterStore: ZINTERSTORE_1.default,
-      /**
-       * Returns the number of elements in the sorted set between the lexicographical range specified by min and max.
-       * @param key - Key of the sorted set.
-       * @param min - Minimum lexicographical value (inclusive).
-       * @param max - Maximum lexicographical value (inclusive).
-       */
       ZLEXCOUNT: ZLEXCOUNT_1.default,
-      /**
-       * Returns the number of elements in the sorted set between the lexicographical range specified by min and max.
-       * @param key - Key of the sorted set.
-       * @param min - Minimum lexicographical value (inclusive).
-       * @param max - Maximum lexicographical value (inclusive).
-       */
       zLexCount: ZLEXCOUNT_1.default,
-      /**
-       * Removes and returns up to count members with the highest/lowest scores from the first non-empty sorted set.
-       * @param keys - Keys of the sorted sets to pop from.
-       * @param side - Side to pop from (MIN or MAX).
-       * @param options - Optional parameters including COUNT.
-       */
       ZMPOP: ZMPOP_1.default,
-      /**
-       * Removes and returns up to count members with the highest/lowest scores from the first non-empty sorted set.
-       * @param keys - Keys of the sorted sets to pop from.
-       * @param side - Side to pop from (MIN or MAX).
-       * @param options - Optional parameters including COUNT.
-       */
       zmPop: ZMPOP_1.default,
-      /**
-       * Returns the scores associated with the specified members in the sorted set stored at key.
-       * @param key - Key of the sorted set.
-       * @param member - One or more members to get scores for.
-       */
       ZMSCORE: ZMSCORE_1.default,
-      /**
-       * Returns the scores associated with the specified members in the sorted set stored at key.
-       * @param key - Key of the sorted set.
-       * @param member - One or more members to get scores for.
-       */
       zmScore: ZMSCORE_1.default,
-      /**
-       * Removes and returns up to count members with the highest scores in the sorted set.
-       * @param key - Key of the sorted set.
-       * @param count - Number of members to pop.
-       */
       ZPOPMAX_COUNT: ZPOPMAX_COUNT_1.default,
-      /**
-       * Removes and returns up to count members with the highest scores in the sorted set.
-       * @param key - Key of the sorted set.
-       * @param count - Number of members to pop.
-       */
       zPopMaxCount: ZPOPMAX_COUNT_1.default,
-      /**
-       * Removes and returns the member with the highest score in the sorted set.
-       * @param key - Key of the sorted set.
-       */
       ZPOPMAX: ZPOPMAX_1.default,
-      /**
-       * Removes and returns the member with the highest score in the sorted set.
-       * @param key - Key of the sorted set.
-       */
       zPopMax: ZPOPMAX_1.default,
-      /**
-       * Removes and returns up to count members with the lowest scores in the sorted set.
-       * @param key - Key of the sorted set.
-       * @param count - Number of members to pop.
-       */
       ZPOPMIN_COUNT: ZPOPMIN_COUNT_1.default,
-      /**
-       * Removes and returns up to count members with the lowest scores in the sorted set.
-       * @param key - Key of the sorted set.
-       * @param count - Number of members to pop.
-       */
       zPopMinCount: ZPOPMIN_COUNT_1.default,
-      /**
-       * Removes and returns the member with the lowest score in the sorted set.
-       * @param key - Key of the sorted set.
-       */
       ZPOPMIN: ZPOPMIN_1.default,
-      /**
-       * Removes and returns the member with the lowest score in the sorted set.
-       * @param key - Key of the sorted set.
-       */
       zPopMin: ZPOPMIN_1.default,
-      /**
-       * Returns one or more random members with their scores from a sorted set.
-       * @param key - Key of the sorted set.
-       * @param count - Number of members to return.
-       */
       ZRANDMEMBER_COUNT_WITHSCORES: ZRANDMEMBER_COUNT_WITHSCORES_1.default,
-      /**
-       * Returns one or more random members with their scores from a sorted set.
-       * @param key - Key of the sorted set.
-       * @param count - Number of members to return.
-       */
       zRandMemberCountWithScores: ZRANDMEMBER_COUNT_WITHSCORES_1.default,
-      /**
-       * Returns one or more random members from a sorted set.
-       * @param key - Key of the sorted set.
-       * @param count - Number of members to return.
-       */
       ZRANDMEMBER_COUNT: ZRANDMEMBER_COUNT_1.default,
-      /**
-       * Returns one or more random members from a sorted set.
-       * @param key - Key of the sorted set.
-       * @param count - Number of members to return.
-       */
       zRandMemberCount: ZRANDMEMBER_COUNT_1.default,
-      /**
-       * Returns a random member from a sorted set.
-       * @param key - Key of the sorted set.
-       */
       ZRANDMEMBER: ZRANDMEMBER_1.default,
-      /**
-       * Returns a random member from a sorted set.
-       * @param key - Key of the sorted set.
-       */
       zRandMember: ZRANDMEMBER_1.default,
-      /**
-       * Returns the specified range of elements in the sorted set with their scores.
-       * @param args - Same parameters as the ZRANGE command.
-       */
       ZRANGE_WITHSCORES: ZRANGE_WITHSCORES_1.default,
-      /**
-       * Returns the specified range of elements in the sorted set with their scores.
-       * @param args - Same parameters as the ZRANGE command.
-       */
       zRangeWithScores: ZRANGE_WITHSCORES_1.default,
-      /**
-       * Returns the specified range of elements in the sorted set.
-       * @param key - Key of the sorted set.
-       * @param min - Minimum index, score or lexicographical value.
-       * @param max - Maximum index, score or lexicographical value.
-       * @param options - Optional parameters for range retrieval (BY, REV, LIMIT).
-       */
       ZRANGE: ZRANGE_1.default,
-      /**
-       * Returns the specified range of elements in the sorted set.
-       * @param key - Key of the sorted set.
-       * @param min - Minimum index, score or lexicographical value.
-       * @param max - Maximum index, score or lexicographical value.
-       * @param options - Optional parameters for range retrieval (BY, REV, LIMIT).
-       */
       zRange: ZRANGE_1.default,
-      /**
-       * Returns all the elements in the sorted set at key with a lexicographical value between min and max.
-       * @param key - Key of the sorted set.
-       * @param min - Minimum lexicographical value.
-       * @param max - Maximum lexicographical value.
-       * @param options - Optional parameters including LIMIT.
-       */
       ZRANGEBYLEX: ZRANGEBYLEX_1.default,
-      /**
-       * Returns all the elements in the sorted set at key with a lexicographical value between min and max.
-       * @param key - Key of the sorted set.
-       * @param min - Minimum lexicographical value.
-       * @param max - Maximum lexicographical value.
-       * @param options - Optional parameters including LIMIT.
-       */
       zRangeByLex: ZRANGEBYLEX_1.default,
-      /**
-       * Returns all the elements in the sorted set with a score between min and max, with their scores.
-       * @param args - Same parameters as the ZRANGEBYSCORE command.
-       */
       ZRANGEBYSCORE_WITHSCORES: ZRANGEBYSCORE_WITHSCORES_1.default,
-      /**
-       * Returns all the elements in the sorted set with a score between min and max, with their scores.
-       * @param args - Same parameters as the ZRANGEBYSCORE command.
-       */
       zRangeByScoreWithScores: ZRANGEBYSCORE_WITHSCORES_1.default,
-      /**
-       * Returns all the elements in the sorted set with a score between min and max.
-       * @param key - Key of the sorted set.
-       * @param min - Minimum score.
-       * @param max - Maximum score.
-       * @param options - Optional parameters including LIMIT.
-       */
       ZRANGEBYSCORE: ZRANGEBYSCORE_1.default,
-      /**
-       * Returns all the elements in the sorted set with a score between min and max.
-       * @param key - Key of the sorted set.
-       * @param min - Minimum score.
-       * @param max - Maximum score.
-       * @param options - Optional parameters including LIMIT.
-       */
       zRangeByScore: ZRANGEBYSCORE_1.default,
-      /**
-       * Stores the result of a range operation on a sorted set into a new sorted set.
-       * @param destination - Destination key where the result will be stored.
-       * @param source - Key of the source sorted set.
-       * @param min - Minimum index, score or lexicographical value.
-       * @param max - Maximum index, score or lexicographical value.
-       * @param options - Optional parameters for the range operation (BY, REV, LIMIT).
-       */
       ZRANGESTORE: ZRANGESTORE_1.default,
-      /**
-       * Stores the result of a range operation on a sorted set into a new sorted set.
-       * @param destination - Destination key where the result will be stored.
-       * @param source - Key of the source sorted set.
-       * @param min - Minimum index, score or lexicographical value.
-       * @param max - Maximum index, score or lexicographical value.
-       * @param options - Optional parameters for the range operation (BY, REV, LIMIT).
-       */
       zRangeStore: ZRANGESTORE_1.default,
-      /**
-       * Returns the rank of a member in the sorted set with its score.
-       * @param args - Same parameters as the ZRANK command.
-       */
       ZRANK_WITHSCORE: ZRANK_WITHSCORE_1.default,
-      /**
-       * Returns the rank of a member in the sorted set with its score.
-       * @param args - Same parameters as the ZRANK command.
-       */
       zRankWithScore: ZRANK_WITHSCORE_1.default,
-      /**
-       * Returns the rank of a member in the sorted set, with scores ordered from low to high.
-       * @param key - Key of the sorted set.
-       * @param member - Member to get the rank for.
-       */
       ZRANK: ZRANK_1.default,
-      /**
-       * Returns the rank of a member in the sorted set, with scores ordered from low to high.
-       * @param key - Key of the sorted set.
-       * @param member - Member to get the rank for.
-       */
       zRank: ZRANK_1.default,
-      /**
-       * Removes the specified members from the sorted set.
-       * @param key - Key of the sorted set.
-       * @param member - One or more members to remove.
-       */
       ZREM: ZREM_1.default,
-      /**
-       * Removes the specified members from the sorted set.
-       * @param key - Key of the sorted set.
-       * @param member - One or more members to remove.
-       */
       zRem: ZREM_1.default,
-      /**
-       * Removes all elements in the sorted set with lexicographical values between min and max.
-       * @param key - Key of the sorted set.
-       * @param min - Minimum lexicographical value.
-       * @param max - Maximum lexicographical value.
-       */
       ZREMRANGEBYLEX: ZREMRANGEBYLEX_1.default,
-      /**
-       * Removes all elements in the sorted set with lexicographical values between min and max.
-       * @param key - Key of the sorted set.
-       * @param min - Minimum lexicographical value.
-       * @param max - Maximum lexicographical value.
-       */
       zRemRangeByLex: ZREMRANGEBYLEX_1.default,
-      /**
-       * Removes all elements in the sorted set with rank between start and stop.
-       * @param key - Key of the sorted set.
-       * @param start - Minimum rank (starting from 0).
-       * @param stop - Maximum rank.
-       */
       ZREMRANGEBYRANK: ZREMRANGEBYRANK_1.default,
-      /**
-       * Removes all elements in the sorted set with rank between start and stop.
-       * @param key - Key of the sorted set.
-       * @param start - Minimum rank (starting from 0).
-       * @param stop - Maximum rank.
-       */
       zRemRangeByRank: ZREMRANGEBYRANK_1.default,
-      /**
-       * Removes all elements in the sorted set with scores between min and max.
-       * @param key - Key of the sorted set.
-       * @param min - Minimum score.
-       * @param max - Maximum score.
-       */
       ZREMRANGEBYSCORE: ZREMRANGEBYSCORE_1.default,
-      /**
-       * Removes all elements in the sorted set with scores between min and max.
-       * @param key - Key of the sorted set.
-       * @param min - Minimum score.
-       * @param max - Maximum score.
-       */
       zRemRangeByScore: ZREMRANGEBYSCORE_1.default,
-      /**
-       * Returns the rank of a member in the sorted set, with scores ordered from high to low.
-       * @param key - Key of the sorted set.
-       * @param member - Member to get the rank for.
-       */
       ZREVRANK: ZREVRANK_1.default,
-      /**
-       * Returns the rank of a member in the sorted set, with scores ordered from high to low.
-       * @param key - Key of the sorted set.
-       * @param member - Member to get the rank for.
-       */
       zRevRank: ZREVRANK_1.default,
-      /**
-       * Incrementally iterates over a sorted set.
-       * @param key - Key of the sorted set.
-       * @param cursor - Cursor position to start the scan from.
-       * @param options - Optional scan parameters (COUNT, MATCH, TYPE).
-       */
       ZSCAN: ZSCAN_1.default,
-      /**
-       * Incrementally iterates over a sorted set.
-       * @param key - Key of the sorted set.
-       * @param cursor - Cursor position to start the scan from.
-       * @param options - Optional scan parameters (COUNT, MATCH, TYPE).
-       */
       zScan: ZSCAN_1.default,
-      /**
-       * Returns the score of a member in a sorted set.
-       * @param key - Key of the sorted set.
-       * @param member - Member to get the score for.
-       */
       ZSCORE: ZSCORE_1.default,
-      /**
-       * Returns the score of a member in a sorted set.
-       * @param key - Key of the sorted set.
-       * @param member - Member to get the score for.
-       */
       zScore: ZSCORE_1.default,
-      /**
-       * Returns the union of multiple sorted sets with their scores.
-       * @param args - Same parameters as the ZUNION command.
-       */
       ZUNION_WITHSCORES: ZUNION_WITHSCORES_1.default,
-      /**
-       * Returns the union of multiple sorted sets with their scores.
-       * @param args - Same parameters as the ZUNION command.
-       */
       zUnionWithScores: ZUNION_WITHSCORES_1.default,
-      /**
-       * Returns the union of multiple sorted sets.
-       * @param keys - Keys of the sorted sets to combine.
-       * @param options - Optional parameters for the union operation.
-       */
       ZUNION: ZUNION_1.default,
-      /**
-       * Returns the union of multiple sorted sets.
-       * @param keys - Keys of the sorted sets to combine.
-       * @param options - Optional parameters for the union operation.
-       */
       zUnion: ZUNION_1.default,
-      /**
-       * Stores the union of multiple sorted sets in a new sorted set.
-       * @param destination - Destination key where the result will be stored.
-       * @param keys - Keys of the sorted sets to combine.
-       * @param options - Optional parameters for the union operation.
-       */
       ZUNIONSTORE: ZUNIONSTORE_1.default,
-      /**
-       * Stores the union of multiple sorted sets in a new sorted set.
-       * @param destination - Destination key where the result will be stored.
-       * @param keys - Keys of the sorted sets to combine.
-       * @param options - Optional parameters for the union operation.
-       */
       zUnionStore: ZUNIONSTORE_1.default,
-      /**
-       * Add a new element into the vector set specified by key
-       *
-       * @param key - The name of the key that will hold the vector set data
-       * @param vector - The vector data as array of numbers
-       * @param element - The name of the element being added to the vector set
-       * @param options - Optional parameters for vector addition
-       * @see https://redis.io/commands/vadd/
-       */
       VADD: VADD_1.default,
-      /**
-       * Add a new element into the vector set specified by key
-       *
-       * @param key - The name of the key that will hold the vector set data
-       * @param vector - The vector data as array of numbers
-       * @param element - The name of the element being added to the vector set
-       * @param options - Optional parameters for vector addition
-       * @see https://redis.io/commands/vadd/
-       */
       vAdd: VADD_1.default,
-      /**
-       * Retrieve the number of elements in a vector set
-       *
-       * @param key - The key of the vector set
-       * @see https://redis.io/commands/vcard/
-       */
       VCARD: VCARD_1.default,
-      /**
-       * Retrieve the number of elements in a vector set
-       *
-       * @param key - The key of the vector set
-       * @see https://redis.io/commands/vcard/
-       */
       vCard: VCARD_1.default,
-      /**
-       * Retrieve the dimension of the vectors in a vector set
-       *
-       * @param key - The key of the vector set
-       * @see https://redis.io/commands/vdim/
-       */
       VDIM: VDIM_1.default,
-      /**
-       * Retrieve the dimension of the vectors in a vector set
-       *
-       * @param key - The key of the vector set
-       * @see https://redis.io/commands/vdim/
-       */
       vDim: VDIM_1.default,
-      /**
-       * Retrieve the approximate vector associated with a vector set element
-       *
-       * @param key - The key of the vector set
-       * @param element - The name of the element to retrieve the vector for
-       * @see https://redis.io/commands/vemb/
-       */
       VEMB: VEMB_1.default,
-      /**
-       * Retrieve the approximate vector associated with a vector set element
-       *
-       * @param key - The key of the vector set
-       * @param element - The name of the element to retrieve the vector for
-       * @see https://redis.io/commands/vemb/
-       */
       vEmb: VEMB_1.default,
-      /**
-       * Retrieve the RAW approximate vector associated with a vector set element
-       *
-       * @param key - The key of the vector set
-       * @param element - The name of the element to retrieve the vector for
-       * @see https://redis.io/commands/vemb/
-       */
       VEMB_RAW: VEMB_RAW_1.default,
-      /**
-       * Retrieve the RAW approximate vector associated with a vector set element
-       *
-       * @param key - The key of the vector set
-       * @param element - The name of the element to retrieve the vector for
-       * @see https://redis.io/commands/vemb/
-       */
       vEmbRaw: VEMB_RAW_1.default,
-      /**
-       * Retrieve the attributes of a vector set element
-       *
-       * @param key - The key of the vector set
-       * @param element - The name of the element to retrieve attributes for
-       * @see https://redis.io/commands/vgetattr/
-       */
       VGETATTR: VGETATTR_1.default,
-      /**
-       * Retrieve the attributes of a vector set element
-       *
-       * @param key - The key of the vector set
-       * @param element - The name of the element to retrieve attributes for
-       * @see https://redis.io/commands/vgetattr/
-       */
       vGetAttr: VGETATTR_1.default,
-      /**
-       * Retrieve metadata and internal details about a vector set, including size, dimensions, quantization type, and graph structure
-       *
-       * @param key - The key of the vector set
-       * @see https://redis.io/commands/vinfo/
-       */
       VINFO: VINFO_1.default,
-      /**
-       * Retrieve metadata and internal details about a vector set, including size, dimensions, quantization type, and graph structure
-       *
-       * @param key - The key of the vector set
-       * @see https://redis.io/commands/vinfo/
-       */
       vInfo: VINFO_1.default,
-      /**
-       * Retrieve the neighbors of a specified element in a vector set; the connections for each layer of the HNSW graph
-       *
-       * @param key - The key of the vector set
-       * @param element - The name of the element to retrieve neighbors for
-       * @see https://redis.io/commands/vlinks/
-       */
       VLINKS: VLINKS_1.default,
-      /**
-       * Retrieve the neighbors of a specified element in a vector set; the connections for each layer of the HNSW graph
-       *
-       * @param key - The key of the vector set
-       * @param element - The name of the element to retrieve neighbors for
-       * @see https://redis.io/commands/vlinks/
-       */
       vLinks: VLINKS_1.default,
-      /**
-       * Get the connections for each layer of the HNSW graph with similarity scores
-       * @param args - Same parameters as the VLINKS command
-       * @see https://redis.io/commands/vlinks/
-       */
       VLINKS_WITHSCORES: VLINKS_WITHSCORES_1.default,
-      /**
-       * Get the connections for each layer of the HNSW graph with similarity scores
-       * @param args - Same parameters as the VLINKS command
-       * @see https://redis.io/commands/vlinks/
-       */
       vLinksWithScores: VLINKS_WITHSCORES_1.default,
-      /**
-       * Retrieve random elements of a vector set
-       *
-       * @param key - The key of the vector set
-       * @param count - Optional number of elements to return
-       * @see https://redis.io/commands/vrandmember/
-       */
       VRANDMEMBER: VRANDMEMBER_1.default,
-      /**
-       * Retrieve random elements of a vector set
-       *
-       * @param key - The key of the vector set
-       * @param count - Optional number of elements to return
-       * @see https://redis.io/commands/vrandmember/
-       */
       vRandMember: VRANDMEMBER_1.default,
-      /**
-       * Returns elements in a lexicographical range from a vector set.
-       * Provides a stateless iterator for elements inside a vector set.
-       *
-       * @param key - The key of the vector set
-       * @param start - The starting point of the lexicographical range.
-       *                Can be a string prefixed with `[` for inclusive (e.g., `[Redis`),
-       *                `(` for exclusive (e.g., `(a7`), or `-` for the minimum element.
-       * @param end - The ending point of the lexicographical range.
-       *              Can be a string prefixed with `[` for inclusive,
-       *              `(` for exclusive, or `+` for the maximum element.
-       * @param count - Optional maximum number of elements to return.
-       *                If negative, returns all elements in the specified range.
-       * @see https://redis.io/commands/vrange/
-       */
       VRANGE: VRANGE_1.default,
-      /**
-       * Returns elements in a lexicographical range from a vector set.
-       * Provides a stateless iterator for elements inside a vector set.
-       *
-       * @param key - The key of the vector set
-       * @param start - The starting point of the lexicographical range.
-       *                Can be a string prefixed with `[` for inclusive (e.g., `[Redis`),
-       *                `(` for exclusive (e.g., `(a7`), or `-` for the minimum element.
-       * @param end - The ending point of the lexicographical range.
-       *              Can be a string prefixed with `[` for inclusive,
-       *              `(` for exclusive, or `+` for the maximum element.
-       * @param count - Optional maximum number of elements to return.
-       *                If negative, returns all elements in the specified range.
-       * @see https://redis.io/commands/vrange/
-       */
       vRange: VRANGE_1.default,
-      /**
-       * Remove an element from a vector set
-       *
-       * @param key - The key of the vector set
-       * @param element - The name of the element to remove from the vector set
-       * @see https://redis.io/commands/vrem/
-       */
       VREM: VREM_1.default,
-      /**
-       * Remove an element from a vector set
-       *
-       * @param key - The key of the vector set
-       * @param element - The name of the element to remove from the vector set
-       * @see https://redis.io/commands/vrem/
-       */
       vRem: VREM_1.default,
-      /**
-       * Set or replace attributes on a vector set element
-       *
-       * @param key - The key of the vector set
-       * @param element - The name of the element to set attributes for
-       * @param attributes - The attributes to set (as JSON string or object)
-       * @see https://redis.io/commands/vsetattr/
-       */
       VSETATTR: VSETATTR_1.default,
-      /**
-       * Set or replace attributes on a vector set element
-       *
-       * @param key - The key of the vector set
-       * @param element - The name of the element to set attributes for
-       * @param attributes - The attributes to set (as JSON string or object)
-       * @see https://redis.io/commands/vsetattr/
-       */
       vSetAttr: VSETATTR_1.default,
-      /**
-       * Retrieve elements similar to a given vector or element with optional filtering
-       *
-       * @param key - The key of the vector set
-       * @param query - The query vector (array of numbers) or element name (string)
-       * @param options - Optional parameters for similarity search
-       * @see https://redis.io/commands/vsim/
-       */
       VSIM: VSIM_1.default,
-      /**
-       * Retrieve elements similar to a given vector or element with optional filtering
-       *
-       * @param key - The key of the vector set
-       * @param query - The query vector (array of numbers) or element name (string)
-       * @param options - Optional parameters for similarity search
-       * @see https://redis.io/commands/vsim/
-       */
       vSim: VSIM_1.default,
-      /**
-       * Retrieve elements similar to a given vector or element with similarity scores
-       * @param args - Same parameters as the VSIM command
-       * @see https://redis.io/commands/vsim/
-       */
       VSIM_WITHSCORES: VSIM_WITHSCORES_1.default,
-      /**
-       * Retrieve elements similar to a given vector or element with similarity scores
-       * @param args - Same parameters as the VSIM command
-       * @see https://redis.io/commands/vsim/
-       */
       vSimWithScores: VSIM_WITHSCORES_1.default
     };
     var index_1 = __importDefault3(require_commands3());
@@ -109918,7 +107249,6 @@ var require_enterprise_maintenance_manager = __commonJS({
     var node_assert_1 = __importDefault3(__require("node:assert"));
     var promises_2 = __require("node:timers/promises");
     var node_diagnostics_channel_1 = __importDefault3(__require("node:diagnostics_channel"));
-    var types_1 = require_types3();
     var tracing_1 = require_tracing2();
     exports.SMIGRATED_EVENT = "__SMIGRATED";
     exports.MAINTENANCE_EVENTS = {
@@ -109955,7 +107285,7 @@ var require_enterprise_maintenance_manager = __commonJS({
       #client;
       static setupDefaultMaintOptions(options) {
         if (options.maintNotifications === void 0) {
-          options.maintNotifications = (options?.RESP ?? types_1.DEFAULT_RESP) === 3 ? "auto" : "disabled";
+          options.maintNotifications = options?.RESP === 3 ? "auto" : "disabled";
         }
         if (options.maintEndpointType === void 0) {
           options.maintEndpointType = "auto";
@@ -109985,13 +107315,13 @@ var require_enterprise_maintenance_manager = __commonJS({
           ],
           errorHandler: (error48) => {
             (0, exports.dbgMaintenance)("handshake failed:", error48);
+            (0, tracing_1.publish)(tracing_1.CHANNELS.ERROR, () => ({
+              error: error48,
+              origin: "client",
+              internal: true,
+              clientId
+            }));
             if (options.maintNotifications === "enabled") {
-              (0, tracing_1.publish)(tracing_1.CHANNELS.ERROR, () => ({
-                error: error48,
-                origin: "client",
-                internal: true,
-                clientId
-              }));
               throw error48;
             }
           }
@@ -110003,7 +107333,6 @@ var require_enterprise_maintenance_manager = __commonJS({
         this.#client = client;
         this.#commandsQueue.addPushHandler(this.#onPush);
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous push payload
       #onPush = (push) => {
         (0, exports.dbgMaintenance)("ONPUSH:", push.map(String));
         if (!Array.isArray(push) || !Object.values(PN).includes(String(push[0]))) {
@@ -110149,7 +107478,6 @@ var require_enterprise_maintenance_manager = __commonJS({
         };
         this.#client._maintenanceUpdate(update);
       };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous push payload
       #onSMigrated = (push) => {
         const smigratedEvent = _a3.parseSMigratedPush(push);
         (0, exports.dbgMaintenance)(`emit smigratedEvent`, smigratedEvent);
@@ -110179,7 +107507,6 @@ var require_enterprise_maintenance_manager = __commonJS({
        * - Each destination contains the complete list of slots that moved from that source to that destination
        * - Note: The same destination address CAN appear under different sources (e.g., node X receives slots from both A and B)
        */
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous push payload
       static parseSMigratedPush(push) {
         const map2 = /* @__PURE__ */ new Map();
         for (const [src, destination, slots] of push[2]) {
@@ -110269,17 +107596,6 @@ var require_enterprise_maintenance_manager = __commonJS({
   }
 });
 
-// node_modules/@redis/client/dist/lib/defaults.js
-var require_defaults2 = __commonJS({
-  "node_modules/@redis/client/dist/lib/defaults.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.DEFAULT_COMMAND_TIMEOUT = exports.DEFAULT_KEEPALIVE_INITIAL_DELAY = void 0;
-    exports.DEFAULT_KEEPALIVE_INITIAL_DELAY = 3e4;
-    exports.DEFAULT_COMMAND_TIMEOUT = 5e3;
-  }
-});
-
 // node_modules/@redis/client/dist/lib/client/socket.js
 var require_socket = __commonJS({
   "node_modules/@redis/client/dist/lib/client/socket.js"(exports) {
@@ -110295,7 +107611,6 @@ var require_socket = __commonJS({
     var promises_1 = __require("node:timers/promises");
     var enterprise_maintenance_manager_1 = require_enterprise_maintenance_manager();
     var tracing_1 = require_tracing2();
-    var defaults_1 = require_defaults2();
     var RedisSocket = class extends node_events_1.EventEmitter {
       #initiator;
       #connectTimeout;
@@ -110347,12 +107662,6 @@ var require_socket = __commonJS({
               }
               return retryIn;
             } catch (err) {
-              (0, tracing_1.publish)(tracing_1.CHANNELS.ERROR, () => ({
-                error: err,
-                origin: "client",
-                internal: false,
-                clientId: this.#clientId
-              }));
               this.emit("error", err);
               return this.defaultReconnectStrategy(retries, err);
             }
@@ -110367,12 +107676,16 @@ var require_socket = __commonJS({
             port: options?.port ?? 6379,
             // https://nodejs.org/api/tls.html#tlsconnectoptions-callback "Any socket.connect() option not already listed"
             // @types/node is... incorrect...
-            // @ts-expect-error - @types/node omits socket.connect noDelay.
+            // @ts-expect-error
             noDelay: options?.noDelay ?? true,
-            // @ts-expect-error - @types/node omits socket.connect keepAlive.
+            // https://nodejs.org/api/tls.html#tlsconnectoptions-callback "Any socket.connect() option not already listed"
+            // @types/node is... incorrect...
+            // @ts-expect-error
             keepAlive: options?.keepAlive ?? true,
-            // @ts-expect-error - @types/node omits socket.connect keepAliveInitialDelay.
-            keepAliveInitialDelay: options?.keepAliveInitialDelay ?? defaults_1.DEFAULT_KEEPALIVE_INITIAL_DELAY,
+            // https://nodejs.org/api/tls.html#tlsconnectoptions-callback "Any socket.connect() option not already listed"
+            // @types/node is... incorrect...
+            // @ts-expect-error
+            keepAliveInitialDelay: options?.keepAliveInitialDelay ?? 5e3,
             timeout: void 0,
             onread: void 0,
             readable: true,
@@ -110405,7 +107718,7 @@ var require_socket = __commonJS({
           port: options?.port ?? 6379,
           noDelay: options?.noDelay ?? true,
           keepAlive: options?.keepAlive ?? true,
-          keepAliveInitialDelay: options?.keepAliveInitialDelay ?? defaults_1.DEFAULT_KEEPALIVE_INITIAL_DELAY,
+          keepAliveInitialDelay: options?.keepAliveInitialDelay ?? 5e3,
           timeout: void 0,
           onread: void 0,
           readable: true,
@@ -110422,22 +107735,10 @@ var require_socket = __commonJS({
         const retryIn = this.#reconnectStrategy(retries, cause);
         if (retryIn === false) {
           this.#isOpen = false;
-          (0, tracing_1.publish)(tracing_1.CHANNELS.ERROR, () => ({
-            error: cause,
-            origin: "client",
-            internal: false,
-            clientId: this.#clientId
-          }));
           this.emit("error", cause);
           return cause;
         } else if (retryIn instanceof Error) {
           this.#isOpen = false;
-          (0, tracing_1.publish)(tracing_1.CHANNELS.ERROR, () => ({
-            error: cause,
-            origin: "client",
-            internal: false,
-            clientId: this.#clientId
-          }));
           this.emit("error", cause);
           return new errors_1.ReconnectStrategyError(retryIn, cause);
         }
@@ -110487,12 +107788,6 @@ var require_socket = __commonJS({
             if (typeof retryIn !== "number") {
               throw retryIn;
             }
-            (0, tracing_1.publish)(tracing_1.CHANNELS.ERROR, () => ({
-              error: err,
-              origin: "client",
-              internal: false,
-              clientId: this.#clientId
-            }));
             this.emit("error", err);
             await (0, promises_1.setTimeout)(retryIn);
             this.emit("reconnecting");
@@ -110547,12 +107842,6 @@ var require_socket = __commonJS({
       #onSocketError(err) {
         const wasReady = this.#isReady;
         this.#isReady = false;
-        (0, tracing_1.publish)(tracing_1.CHANNELS.ERROR, () => ({
-          error: err,
-          origin: "client",
-          internal: false,
-          clientId: this.#clientId
-        }));
         this.emit("error", err);
         if (wasReady) {
           (0, tracing_1.publish)(tracing_1.CHANNELS.CONNECTION_CLOSED, () => ({ clientId: this.#clientId, reason: "error", wasConnected: true }));
@@ -110564,24 +107853,17 @@ var require_socket = __commonJS({
         });
       }
       write(iterable) {
-        if (!this.#socket || !this.#socket.writable)
+        if (!this.#socket)
           return;
         this.#socket.cork();
-        try {
-          for (const args of iterable) {
-            for (const toWrite of args) {
-              this.#socket.write(toWrite);
-            }
-            if (this.#socket.writableNeedDrain)
-              break;
+        for (const args of iterable) {
+          for (const toWrite of args) {
+            this.#socket.write(toWrite);
           }
-        } catch (err) {
-          if (!err || err.code !== "EPIPE") {
-            throw err;
-          }
-        } finally {
-          this.#socket.uncork();
+          if (this.#socket.writableNeedDrain)
+            break;
         }
+        this.#socket.uncork();
       }
       async quit(fn) {
         if (!this.#isOpen) {
@@ -111880,7 +109162,6 @@ var require_commands_queue = __commonJS({
       #onErrorReply(err) {
         this.#waitingForReply.shift().reject(err);
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous push payload
       #onPush(push) {
         if (this.#pubSub.handleMessageReply(push))
           return true;
@@ -111899,10 +109180,7 @@ var require_commands_queue = __commonJS({
         return false;
       }
       #getTypeMapping() {
-        const head = this.#waitingForReply.head;
-        if (!head)
-          return decoder_1.PUSH_TYPE_MAPPING;
-        return head.value.typeMapping ?? {};
+        return this.#waitingForReply.head.value.typeMapping ?? {};
       }
       #initiateDecoder() {
         return new decoder_1.Decoder({
@@ -112222,7 +109500,7 @@ var require_commands_queue = __commonJS({
       /**
        *
        * Extracts commands for the given slots from the toWrite queue.
-       * Some commands don't have "slotNumber", which means they are not designated to particular slot/node.
+       * Some commands dont have "slotNumber", which means they are not designated to particular slot/node.
        * We ignore those.
        */
       extractCommandsForSlots(slots) {
@@ -112275,25 +109553,35 @@ var require_commander = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.scriptArgumentsPrefix = exports.functionArgumentsPrefix = exports.getTransformReply = exports.attachConfig = void 0;
-    var types_1 = require_types3();
+    function throwResp3SearchModuleUnstableError() {
+      throw new Error("Some RESP3 results for Redis Query Engine responses may change. Refer to the readme for guidance");
+    }
     function attachConfig({ BaseClass, commands, createCommand, createModuleCommand, createFunctionCommand, createScriptCommand, config: config3 }) {
-      const RESP = config3?.RESP ?? types_1.DEFAULT_RESP, Class2 = class extends BaseClass {
+      const RESP = config3?.RESP ?? 2, Class2 = class extends BaseClass {
       };
       for (const [name2, command] of Object.entries(commands)) {
-        Class2.prototype[name2] = createCommand(command, RESP);
+        if (config3?.RESP == 3 && command.unstableResp3 && !config3.unstableResp3) {
+          Class2.prototype[name2] = throwResp3SearchModuleUnstableError;
+        } else {
+          Class2.prototype[name2] = createCommand(command, RESP);
+        }
       }
       if (config3?.modules) {
         for (const [moduleName, module2] of Object.entries(config3.modules)) {
-          const fns = {};
+          const fns = /* @__PURE__ */ Object.create(null);
           for (const [name2, command] of Object.entries(module2)) {
-            fns[name2] = createModuleCommand(command, RESP);
+            if (config3.RESP == 3 && command.unstableResp3 && !config3.unstableResp3) {
+              fns[name2] = throwResp3SearchModuleUnstableError;
+            } else {
+              fns[name2] = createModuleCommand(command, RESP);
+            }
           }
           attachNamespace(Class2.prototype, moduleName, fns);
         }
       }
       if (config3?.functions) {
         for (const [library, commands2] of Object.entries(config3.functions)) {
-          const fns = {};
+          const fns = /* @__PURE__ */ Object.create(null);
           for (const [name2, command] of Object.entries(commands2)) {
             fns[name2] = createFunctionCommand(name2, command, RESP);
           }
@@ -112308,21 +109596,12 @@ var require_commander = __commonJS({
       return Class2;
     }
     exports.attachConfig = attachConfig;
-    var namespaceCache = /* @__PURE__ */ new WeakMap();
     function attachNamespace(prototype, name2, fns) {
       Object.defineProperty(prototype, name2, {
         get() {
-          let perReceiver = namespaceCache.get(this);
-          if (perReceiver === void 0) {
-            perReceiver = /* @__PURE__ */ new Map();
-            namespaceCache.set(this, perReceiver);
-          }
-          let value = perReceiver.get(name2);
-          if (value === void 0) {
-            value = Object.create(fns);
-            value._self = this;
-            perReceiver.set(name2, value);
-          }
+          const value = Object.create(fns);
+          value._self = this;
+          Object.defineProperty(this, name2, { value });
           return value;
         }
       });
@@ -112545,7 +109824,6 @@ var require_legacy_mode = __commonJS({
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.RedisLegacyClient = void 0;
-    var types_1 = require_types3();
     var commander_1 = require_commander();
     var commands_1 = __importDefault3(require_commands3());
     var multi_command_1 = __importDefault3(require_multi_command());
@@ -112586,7 +109864,7 @@ var require_legacy_mode = __commonJS({
       #Multi;
       constructor(client) {
         this.#client = client;
-        const RESP = client.options?.RESP ?? types_1.DEFAULT_RESP;
+        const RESP = client.options?.RESP ?? 2;
         for (const [name2, command] of Object.entries(commands_1.default)) {
           this[name2] = _RedisLegacyClient.#createCommand(name2, command, RESP);
         }
@@ -113376,7 +110654,6 @@ var require_pool5 = __commonJS({
           return this.execute((client) => client._executeScript(script, parser, this._commandOptions, transformReply));
         };
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generic cache, keys/values vary per call site
       static #SingleEntryCache = new single_entry_cache_1.default();
       static create(clientOptions, options) {
         let Pool = _RedisClientPool.#SingleEntryCache.get(clientOptions);
@@ -113490,7 +110767,6 @@ var require_pool5 = __commonJS({
           }
         }
         this.#clientFactory = _1.default.factory(clientOptions).bind(void 0, clientOptions);
-        this._commandOptions = clientOptions?.commandOptions;
       }
       _self = this;
       _commandOptions;
@@ -113499,33 +110775,30 @@ var require_pool5 = __commonJS({
         proxy._commandOptions = options;
         return proxy;
       }
-      // Plain (not `#`) method so it can be invoked on prototype-derived proxies
-      // returned by `withCommandOptions(...)` — JS private (`#`) methods aren't
-      // accessible through the prototype chain, which would force the helper to
-      // be called via `this._self`, discarding any prior proxy overrides.
-      _commandOptionsProxy(key, value) {
+      #commandOptionsProxy(key, value) {
         const proxy = Object.create(this._self);
-        proxy._commandOptions = { ...this._commandOptions, [key]: value };
+        proxy._commandOptions = Object.create(this._commandOptions ?? null);
+        proxy._commandOptions[key] = value;
         return proxy;
       }
       /**
        * Override the `typeMapping` command option
        */
       withTypeMapping(typeMapping) {
-        return this._commandOptionsProxy("typeMapping", typeMapping);
+        return this._self.#commandOptionsProxy("typeMapping", typeMapping);
       }
       /**
        * Override the `abortSignal` command option
        */
       withAbortSignal(abortSignal) {
-        return this._commandOptionsProxy("abortSignal", abortSignal);
+        return this._self.#commandOptionsProxy("abortSignal", abortSignal);
       }
       /**
        * Override the `asap` command option to `true`
        * TODO: remove?
        */
       asap() {
-        return this._commandOptionsProxy("asap", true);
+        return this._self.#commandOptionsProxy("asap", true);
       }
       async connect() {
         if (this._self.#isOpen)
@@ -113573,7 +110846,7 @@ var require_pool5 = __commonJS({
             }
             const task = this._self.#tasksQueue.push({
               timeout,
-              // @ts-expect-error -- resolve generic variance
+              // @ts-ignore
               resolve: resolve2,
               reject,
               fn,
@@ -113631,8 +110904,7 @@ var require_pool5 = __commonJS({
         }
       }
       sendCommand(args, options) {
-        const mergedOptions = { ...this._commandOptions, ...options };
-        return this.execute((client) => client.sendCommand(args, mergedOptions));
+        return this.execute((client) => client.sendCommand(args, options));
       }
       MULTI() {
         return new this.Multi((commands, selectedDB) => this.execute((client) => client._executeMulti(commands, selectedDB)), (commands) => this.execute((client) => client._executePipeline(commands)), this._commandOptions?.typeMapping);
@@ -113659,7 +110931,7 @@ var require_pool5 = __commonJS({
           this._self.#clientSideCache?.onPoolClose();
           this._self.#idleClients.reset();
           this._self.#clientsInUse.reset();
-        } catch {
+        } catch (err) {
         } finally {
           this._self.#drainResolve = void 0;
           this._self.#isClosing = false;
@@ -113688,7 +110960,7 @@ var require_package5 = __commonJS({
   "node_modules/@redis/client/dist/package.json"(exports, module) {
     module.exports = {
       name: "@redis/client",
-      version: "6.0.0",
+      version: "5.12.1",
       license: "MIT",
       main: "./dist/index.js",
       types: "./dist/index.d.ts",
@@ -113724,7 +110996,7 @@ var require_package5 = __commonJS({
         }
       },
       engines: {
-        node: ">= 20.0.0"
+        node: ">= 18.19.0"
       },
       repository: {
         type: "git",
@@ -113818,7 +111090,7 @@ var require_client_registry = __commonJS({
 });
 
 // node_modules/@redis/client/dist/lib/opentelemetry/types.js
-var require_types4 = __commonJS({
+var require_types3 = __commonJS({
   "node_modules/@redis/client/dist/lib/opentelemetry/types.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -113948,7 +111220,7 @@ var require_error_util = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.isRedirectionError = exports.getErrorInfo = void 0;
-    var types_1 = require_types4();
+    var types_1 = require_types3();
     var errors_1 = require_errors3();
     var REDIS_ERROR_PREFIX_REGEX = /^([A-Z][A-Z0-9_]*)\s/;
     function extractRedisStatusCode(error48) {
@@ -114090,7 +111362,7 @@ var require_utils4 = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.parseClientAttributes = exports.noopFunction = exports.isRedirectionError = exports.getErrorInfo = void 0;
-    var types_1 = require_types4();
+    var types_1 = require_types3();
     var error_util_1 = require_error_util();
     Object.defineProperty(exports, "getErrorInfo", { enumerable: true, get: function() {
       return error_util_1.getErrorInfo;
@@ -114131,7 +111403,7 @@ var require_metrics = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.OTelMetrics = void 0;
     var client_registry_1 = require_client_registry();
-    var types_1 = require_types4();
+    var types_1 = require_types3();
     var utils_1 = require_utils4();
     var errors_1 = require_errors3();
     var tracing_1 = require_tracing2();
@@ -116357,7 +113629,7 @@ var require_opentelemetry = __commonJS({
       }
     };
     exports.OpenTelemetry = OpenTelemetry;
-    var types_1 = require_types4();
+    var types_1 = require_types3();
     Object.defineProperty(exports, "OTEL_ATTRIBUTES", { enumerable: true, get: function() {
       return types_1.OTEL_ATTRIBUTES;
     } });
@@ -116426,7 +113698,6 @@ var require_client2 = __commonJS({
     var errors_1 = require_errors3();
     var node_url_1 = __require("node:url");
     var pub_sub_1 = require_pub_sub();
-    var types_1 = require_types3();
     var multi_command_1 = __importDefault3(require_multi_command2());
     var HELLO_1 = __importDefault3(require_HELLO());
     var legacy_mode_1 = require_legacy_mode();
@@ -116440,7 +113711,6 @@ var require_client2 = __commonJS({
     var opentelemetry_1 = require_opentelemetry();
     var identity_1 = require_identity();
     var tracing_1 = require_tracing2();
-    var defaults_1 = require_defaults2();
     var noop5 = () => {
     };
     var RedisClient = class extends node_events_1.EventEmitter {
@@ -116480,7 +113750,6 @@ var require_client2 = __commonJS({
           return this._executeScript(script, parser, this._commandOptions, transformReply);
         };
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       static #SingleEntryCache = new single_entry_cache_1.default();
       static factory(config3) {
         let Client = _a3.#SingleEntryCache.get(config3);
@@ -116518,9 +113787,6 @@ var require_client2 = __commonJS({
         return options;
       }
       static parseURL(url2) {
-        if (url2.startsWith("unix:")) {
-          return _a3.#parseUnixURL(url2);
-        }
         const { hostname: hostname3, port, protocol, username, password, pathname } = new node_url_1.URL(url2), parsed = {
           socket: {
             // Use net.SocketAddress.parse() once supported.
@@ -116559,44 +113825,6 @@ var require_client2 = __commonJS({
         }
         return parsed;
       }
-      static #parseUnixURL(url2) {
-        const match2 = /^unix:\/\/(?:([^:@/]*)(?::([^@/]*))?@)?(\/[^?#]*)(?:\?([^#]*))?(?:#.*)?$/.exec(url2);
-        if (!match2 || match2[3] === "/") {
-          throw new TypeError("Invalid unix URL");
-        }
-        const [, username, password, rawPath, rawQuery] = match2, parsed = {
-          socket: {
-            path: decodeURIComponent(rawPath),
-            tls: false
-          }
-        };
-        if (username) {
-          parsed.username = decodeURIComponent(username);
-        }
-        if (password) {
-          parsed.password = decodeURIComponent(password);
-        }
-        if (username || password) {
-          parsed.credentialsProvider = {
-            type: "async-credentials-provider",
-            credentials: async () => ({
-              username: username ? decodeURIComponent(username) : void 0,
-              password: password ? decodeURIComponent(password) : void 0
-            })
-          };
-        }
-        if (rawQuery) {
-          const db3 = new URLSearchParams(rawQuery).get("db");
-          if (db3 !== null) {
-            const database = Number(db3);
-            if (isNaN(database)) {
-              throw new TypeError("Invalid db query parameter");
-            }
-            parsed.database = database;
-          }
-        }
-        return parsed;
-      }
       #options;
       #socket;
       #queue;
@@ -116606,7 +113834,7 @@ var require_client2 = __commonJS({
       _commandOptions;
       // flag used to annotate that the client
       // was in a watch transaction when
-      // a topology change occurred
+      // a topology change occured
       #dirtyWatch;
       #watchEpoch;
       #clientSideCache;
@@ -116764,17 +113992,16 @@ var require_client2 = __commonJS({
         }
       }
       #validateOptions(options) {
-        const resp = options?.RESP ?? types_1.DEFAULT_RESP;
-        if (options?.clientSideCache && resp !== 3) {
+        if (options?.clientSideCache && options?.RESP !== 3) {
           throw new Error("Client Side Caching is only supported with RESP3");
         }
-        if (options?.emitInvalidate && resp !== 3) {
+        if (options?.emitInvalidate && options?.RESP !== 3) {
           throw new Error("emitInvalidate is only supported with RESP3");
         }
         if (options?.clientSideCache && options?.emitInvalidate) {
           throw new Error("emitInvalidate is not supported (or necessary) when clientSideCache is enabled");
         }
-        if (options?.maintNotifications && options?.maintNotifications !== "disabled" && resp !== 3) {
+        if (options?.maintNotifications && options?.maintNotifications !== "disabled" && options?.RESP !== 3) {
           throw new Error("Graceful Maintenance is only supported with RESP3");
         }
       }
@@ -116791,7 +114018,9 @@ var require_client2 = __commonJS({
         if (options.database) {
           this._self.#selectedDB = options.database;
         }
-        this._commandOptions = { timeout: defaults_1.DEFAULT_COMMAND_TIMEOUT, ...options.commandOptions };
+        if (options.commandOptions) {
+          this._commandOptions = options.commandOptions;
+        }
         if (options.maintNotifications !== "disabled") {
           enterprise_maintenance_manager_1.default.setupDefaultMaintOptions(options);
         }
@@ -116805,13 +114034,13 @@ var require_client2 = __commonJS({
         return options;
       }
       #initiateQueue(clientId) {
-        return new commands_queue_1.default(this.#options.RESP ?? types_1.DEFAULT_RESP, this.#options.commandsQueueMaxLength, (channel, listeners) => this.emit("sharded-channel-moved", channel, listeners), clientId);
+        return new commands_queue_1.default(this.#options.RESP ?? 2, this.#options.commandsQueueMaxLength, (channel, listeners) => this.emit("sharded-channel-moved", channel, listeners), clientId);
       }
       /**
        * @param credentials
        */
       reAuthenticate = async (credentials) => {
-        if (!(this.isPubSubActive && (this.#options.RESP ?? types_1.DEFAULT_RESP) === 2)) {
+        if (!(this.isPubSubActive && !this.#options.RESP)) {
           await this.sendCommand((0, generic_transformers_1.parseArgs)(commands_1.default.AUTH, {
             username: credentials.username,
             password: credentials.password ?? ""
@@ -116848,8 +114077,7 @@ var require_client2 = __commonJS({
       async #getHandshakeCommands() {
         const commands = [];
         const cp = this.#options.credentialsProvider;
-        const resp = this.#options.RESP ?? types_1.DEFAULT_RESP;
-        if (resp !== 2) {
+        if (this.#options.RESP) {
           const hello = {};
           if (cp && cp.type === "async-credentials-provider") {
             const credentials = await cp.credentials();
@@ -116873,7 +114101,7 @@ var require_client2 = __commonJS({
           if (this.#options.name) {
             hello.SETNAME = this.#options.name;
           }
-          commands.push({ cmd: (0, generic_transformers_1.parseArgs)(HELLO_1.default, resp, hello) });
+          commands.push({ cmd: (0, generic_transformers_1.parseArgs)(HELLO_1.default, this.#options.RESP, hello) });
         } else {
           if (cp && cp.type === "async-credentials-provider") {
             const credentials = await cp.credentials();
@@ -117004,12 +114232,13 @@ var require_client2 = __commonJS({
       }
       withCommandOptions(options) {
         const proxy = Object.create(this._self);
-        proxy._commandOptions = { ...this._commandOptions, ...options };
+        proxy._commandOptions = options;
         return proxy;
       }
       _commandOptionsProxy(key, value) {
         const proxy = Object.create(this._self);
-        proxy._commandOptions = { ...this._commandOptions, [key]: value };
+        proxy._commandOptions = Object.create(this._commandOptions ?? null);
+        proxy._commandOptions[key] = value;
         return proxy;
       }
       /**
@@ -117150,7 +114379,7 @@ var require_client2 = __commonJS({
             return Promise.reject(new errors_1.ClientOfflineError());
           }
           const opts = {
-            ...this._commandOptions,
+            ...this._self._commandOptions,
             ...options
           };
           const promise2 = this._self.#queue.addCommand(args, opts);
@@ -117511,104 +114740,6 @@ var require_client2 = __commonJS({
   }
 });
 
-// node_modules/@redis/client/dist/lib/cluster/cluster-reconnection-tracker.js
-var require_cluster_reconnection_tracker = __commonJS({
-  "node_modules/@redis/client/dist/lib/cluster/cluster-reconnection-tracker.js"(exports) {
-    "use strict";
-    var _a3;
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var ClusterReconnectionTracker = class {
-      /** Default delay (ms) before triggering a topology refresh after reconnection starts */
-      static #DEFAULT_TOPOLOGY_REFRESH_ON_RECONNECTION_ATTEMPT = 5e3;
-      #strategy;
-      /** Maps client ID to its node address for clients currently in a reconnecting state */
-      #reconnectingClients = /* @__PURE__ */ new Map();
-      /** Timestamp of the first reconnection attempt in the current reconnection cycle */
-      #firstReconnectionAt;
-      /**
-       * Validates that a strategy value is acceptable before use.
-       * @throws If the strategy is not supported
-       */
-      #validate(strategy) {
-        if (strategy === void 0 || strategy === false || typeof strategy === "function" || typeof strategy === "number" && Number.isInteger(strategy) && strategy >= 0) {
-          return;
-        }
-        throw new TypeError("topologyRefreshOnReconnectionAttempt must be undefined, false, a non-negative integer, or a function");
-      }
-      constructor(strategy) {
-        this.#validate(strategy);
-        this.#strategy = strategy;
-      }
-      get reconnectingAddresses() {
-        return new Set(this.#reconnectingClients.values());
-      }
-      get firstReconnectionAt() {
-        return this.#firstReconnectionAt;
-      }
-      /**
-       * Records a reconnection attempt for the given client and evaluates whether
-       * the configured delay has elapsed since the first attempt in this cycle.
-       *
-       * @returns `true` if a topology refresh should be triggered, `false` otherwise
-       * @throws If a user-supplied strategy function returns an invalid value
-       */
-      onReconnectionAttempt(clientId, address, now = Date.now()) {
-        if (this.#strategy === false || this.#strategy === 0) {
-          return false;
-        }
-        this.#reconnectingClients.set(clientId, address);
-        this.#firstReconnectionAt ??= now;
-        const delay3 = this.#getDelay(this.#firstReconnectionAt);
-        if (delay3 === void 0 || now - this.#firstReconnectionAt < delay3) {
-          return false;
-        }
-        this.#firstReconnectionAt = now;
-        return true;
-      }
-      /** Removes a client from tracking (e.g. when it reconnects successfully or disconnects) */
-      removeClient(clientId) {
-        if (!this.#reconnectingClients.delete(clientId))
-          return;
-        this.#clearTimestampIfClean();
-      }
-      /** Resets all tracking state (e.g. on cluster disconnect or destroy) */
-      clear() {
-        this.#reconnectingClients.clear();
-        this.#firstReconnectionAt = void 0;
-      }
-      /**
-       * Evaluates the configured strategy to determine the delay before a topology refresh.
-       * @returns The delay in ms, or `undefined` if no refresh should occur
-       */
-      #getDelay(firstReconnectionAt) {
-        if (this.#strategy === void 0) {
-          return _a3.#DEFAULT_TOPOLOGY_REFRESH_ON_RECONNECTION_ATTEMPT;
-        }
-        if (this.#strategy === false) {
-          return;
-        }
-        if (typeof this.#strategy === "number") {
-          return this.#strategy;
-        }
-        const delay3 = this.#strategy(firstReconnectionAt);
-        if (delay3 === false || delay3 === void 0 || delay3 === 0)
-          return;
-        if (!Number.isInteger(delay3) || delay3 < 0) {
-          throw new TypeError(`topologyRefreshOnReconnectionAttempt should return \`false | undefined | number\`, got ${delay3} instead`);
-        }
-        return delay3;
-      }
-      #clearTimestampIfClean() {
-        if (this.#reconnectingClients.size === 0) {
-          this.#firstReconnectionAt = void 0;
-        }
-      }
-    };
-    _a3 = ClusterReconnectionTracker;
-    exports.default = ClusterReconnectionTracker;
-  }
-});
-
 // node_modules/@redis/client/dist/lib/cluster/cluster-slots.js
 var require_cluster_slots = __commonJS({
   "node_modules/@redis/client/dist/lib/cluster/cluster-slots.js"(exports) {
@@ -117622,12 +114753,10 @@ var require_cluster_slots = __commonJS({
     var errors_1 = require_errors3();
     var client_1 = __importDefault3(require_client2());
     var pub_sub_1 = require_pub_sub();
-    var types_1 = require_types3();
     var cluster_key_slot_1 = __importDefault3(require_lib10());
     var cache_1 = require_cache();
     var enterprise_maintenance_manager_1 = require_enterprise_maintenance_manager();
     var identity_1 = require_identity();
-    var cluster_reconnection_tracker_1 = __importDefault3(require_cluster_reconnection_tracker());
     exports.RESUBSCRIBE_LISTENERS_EVENT = "__resubscribeListeners";
     var RedisClusterSlots = class {
       static #SLOTS = 16384;
@@ -117635,7 +114764,6 @@ var require_cluster_slots = __commonJS({
       #clientFactory;
       #emit;
       #clusterClientId;
-      #reconnectionTracker;
       slots = new Array(_a3.#SLOTS);
       masters = new Array();
       replicas = new Array();
@@ -117643,13 +114771,12 @@ var require_cluster_slots = __commonJS({
       pubSubNode;
       clientSideCache;
       smigratedSeqIdsSeen = /* @__PURE__ */ new Set();
-      #topologyRefreshPromise;
       #isOpen = false;
       get isOpen() {
         return this.#isOpen;
       }
       #validateOptions(options) {
-        if (options?.clientSideCache && (options?.RESP ?? types_1.DEFAULT_RESP) !== 3) {
+        if (options?.clientSideCache && options?.RESP !== 3) {
           throw new Error("Client Side Caching is only supported with RESP3");
         }
       }
@@ -117657,7 +114784,6 @@ var require_cluster_slots = __commonJS({
         this.#validateOptions(options);
         this.#options = options;
         this.#clusterClientId = clusterClientId;
-        this.#reconnectionTracker = new cluster_reconnection_tracker_1.default(options.topologyRefreshOnReconnectionAttemptStrategy);
         if (options?.clientSideCache) {
           if (options.clientSideCache instanceof cache_1.PooledClientSideCacheProvider) {
             this.clientSideCache = options.clientSideCache;
@@ -117682,7 +114808,7 @@ var require_cluster_slots = __commonJS({
         }
       }
       async #discoverWithRootNodes() {
-        const start = Math.floor(Math.random() * this.#options.rootNodes.length);
+        let start = Math.floor(Math.random() * this.#options.rootNodes.length);
         for (let i2 = start; i2 < this.#options.rootNodes.length; i2++) {
           if (!this.#isOpen)
             throw new Error("Cluster closed");
@@ -117725,7 +114851,6 @@ var require_cluster_slots = __commonJS({
           }
           if (this.pubSubNode && !addressesInUse.has(this.pubSubNode.address)) {
             const channelsListeners = this.pubSubNode.client.getPubSubListeners(pub_sub_1.PUBSUB_TYPE.CHANNELS), patternsListeners = this.pubSubNode.client.getPubSubListeners(pub_sub_1.PUBSUB_TYPE.PATTERNS);
-            this.#reconnectionTracker.removeClient(this.pubSubNode.client._clientId);
             this.pubSubNode.client.destroy();
             if (channelsListeners.size || patternsListeners.size) {
               promises.push(this.#initiatePubSubClient({
@@ -117737,22 +114862,12 @@ var require_cluster_slots = __commonJS({
           for (const [address, node] of this.nodeByAddress.entries()) {
             if (addressesInUse.has(address))
               continue;
+            if (node.client) {
+              node.client.destroy();
+            }
             const { pubSub } = node;
             if (pubSub) {
-              const listeners = pubSub.client._getQueue().removeAllPubSubListeners();
-              if (listeners.CHANNELS.size || listeners.PATTERNS.size || listeners.SHARDED.size) {
-                this.#emit(exports.RESUBSCRIBE_LISTENERS_EVENT, listeners);
-              }
-            }
-            if (node.client) {
-              this.#reconnectionTracker.removeClient(node.client._clientId);
-              node.client.destroy();
-              node.client = void 0;
-            }
-            if (pubSub) {
-              this.#reconnectionTracker.removeClient(pubSub.client._clientId);
               pubSub.client.destroy();
-              node.pubSub = void 0;
             }
             this.nodeByAddress.delete(address);
           }
@@ -117885,14 +115000,11 @@ var require_cluster_slots = __commonJS({
                 } else {
                   this.pubSubNode = void 0;
                 }
-                this.#reconnectionTracker.removeClient(oldPubSubClient._clientId);
                 oldPubSubClient.destroy();
               }
-              this.#reconnectionTracker.removeClient(sourceNode.client?._clientId);
-              sourceNode.client.destroy();
-              if ("pubSub" in sourceNode && sourceNode.pubSub) {
-                this.#reconnectionTracker.removeClient(sourceNode.pubSub.client._clientId);
-                sourceNode.pubSub.client.destroy();
+              sourceNode.client?.destroy();
+              if ("pubSub" in sourceNode) {
+                sourceNode.pubSub?.client.destroy();
               }
             }
           } catch (err) {
@@ -117926,14 +115038,6 @@ var require_cluster_slots = __commonJS({
           case "function":
             return this.#options.nodeAddressMap(address);
         }
-      }
-      #nodeClientOptions(node) {
-        return {
-          socket: this.#getNodeAddress(node.address) ?? {
-            host: node.host,
-            port: node.port
-          }
-        };
       }
       #clientOptionsDefaults(options) {
         if (!this.#options.defaults)
@@ -117981,9 +115085,7 @@ var require_cluster_slots = __commonJS({
           host: socket.host,
           port: socket.port
         });
-        const address = node.address;
         const emit = this.#emit;
-        let wasReady = false;
         const client = this.#clientFactory(this.#clientOptionsDefaults({
           clientSideCache: this.clientSideCache,
           RESP: this.#options.RESP,
@@ -117991,18 +115093,7 @@ var require_cluster_slots = __commonJS({
           readonly: readonly2
         }));
         client._setIdentity(identity_1.ClientRole.CLUSTER_NODE, this.#clusterClientId);
-        client.on("error", (error48) => emit("node-error", error48, clientInfo)).on("reconnecting", () => {
-          emit("node-reconnecting", clientInfo);
-          if (!wasReady)
-            return;
-          this.#onNodeReconnectionAttempt(client._clientId, address);
-        }).on("ready", () => {
-          wasReady = true;
-          this.#reconnectionTracker.removeClient(client._clientId);
-        }).once("ready", () => emit("node-ready", clientInfo)).once("connect", () => emit("node-connect", clientInfo)).once("end", () => {
-          this.#reconnectionTracker.removeClient(client._clientId);
-          emit("node-disconnect", clientInfo);
-        }).on(enterprise_maintenance_manager_1.SMIGRATED_EVENT, this.#handleSmigrated).on("__MOVED", async (allPubSubListeners) => {
+        client.on("error", (error48) => emit("node-error", error48, clientInfo)).on("reconnecting", () => emit("node-reconnecting", clientInfo)).once("ready", () => emit("node-ready", clientInfo)).once("connect", () => emit("node-connect", clientInfo)).once("end", () => emit("node-disconnect", clientInfo)).on(enterprise_maintenance_manager_1.SMIGRATED_EVENT, this.#handleSmigrated).on("__MOVED", async (allPubSubListeners) => {
           await this.rediscover(client);
           this.#emit(exports.RESUBSCRIBE_LISTENERS_EVENT, allPubSubListeners);
         });
@@ -118020,71 +115111,16 @@ var require_cluster_slots = __commonJS({
         return this.#createNodeClient(node);
       }
       #runningRediscoverPromise;
-      async rediscover(startWith, excludedAddresses) {
-        this.#runningRediscoverPromise ??= this.#rediscover(startWith, excludedAddresses).finally(() => {
+      async rediscover(startWith) {
+        this.#runningRediscoverPromise ??= this.#rediscover(startWith).finally(() => {
           this.#runningRediscoverPromise = void 0;
         });
         return this.#runningRediscoverPromise;
       }
-      async #rediscover(startWith, excludedAddresses) {
-        if (startWith && await this.#discover(startWith.options))
-          return;
-        if (await this.#discoverWithKnownNodes(excludedAddresses))
+      async #rediscover(startWith) {
+        if (await this.#discover(startWith.options))
           return;
         return this.#discoverWithRootNodes();
-      }
-      async #discoverWithKnownNodes(excludedAddresses) {
-        const candidates = [];
-        const deferredCandidates = [];
-        const seen = /* @__PURE__ */ new Set();
-        for (const nodes of [this.masters, this.replicas]) {
-          for (const node of nodes) {
-            if (excludedAddresses?.has(node.address) || seen.has(node.address))
-              continue;
-            seen.add(node.address);
-            if (node.client?.isReady) {
-              candidates.push(node);
-            } else {
-              deferredCandidates.push(node);
-            }
-          }
-        }
-        return await this.#discoverWithKnownNodeCandidates(candidates) || await this.#discoverWithKnownNodeCandidates(deferredCandidates);
-      }
-      async #discoverWithKnownNodeCandidates(candidates) {
-        if (!candidates.length) {
-          return false;
-        }
-        const start = Math.floor(Math.random() * candidates.length);
-        for (let i2 = 0; i2 < candidates.length; i2++) {
-          if (!this.#isOpen) {
-            continue;
-          }
-          const candidate = candidates[(start + i2) % candidates.length];
-          if (await this.#discover(this.#nodeClientOptions(candidate))) {
-            return true;
-          }
-        }
-        return false;
-      }
-      #onNodeReconnectionAttempt(clientId, address) {
-        let shouldRefresh;
-        try {
-          shouldRefresh = this.#reconnectionTracker.onReconnectionAttempt(clientId, address);
-        } catch (err) {
-          this.#emit("error", err);
-          return;
-        }
-        if (shouldRefresh) {
-          this.#scheduleTopologyRefresh(this.#reconnectionTracker.reconnectingAddresses);
-        }
-      }
-      #scheduleTopologyRefresh(excludedAddresses) {
-        if (!this.#isOpen || this.#topologyRefreshPromise)
-          return;
-        this.#topologyRefreshPromise = this.rediscover(void 0, new Set(excludedAddresses)).catch((err) => this.#emit("error", err)).finally(() => {
-          this.#topologyRefreshPromise = void 0;
-        });
       }
       /**
        * @deprecated Use `close` instead.
@@ -118112,7 +115148,6 @@ var require_cluster_slots = __commonJS({
         }
         this.#resetSlots();
         this.nodeByAddress.clear();
-        this.#reconnectionTracker.clear();
         this.#emit("disconnect");
       }
       *#clients() {
@@ -118142,7 +115177,6 @@ var require_cluster_slots = __commonJS({
         }
         this.#resetSlots();
         this.nodeByAddress.clear();
-        this.#reconnectionTracker.clear();
         await Promise.allSettled(promises);
         this.#emit("disconnect");
       }
@@ -118253,7 +115287,6 @@ var require_cluster_slots = __commonJS({
         const client = await this.getPubSubClient();
         await unsubscribe(client);
         if (!client.isPubSubActive) {
-          this.#reconnectionTracker.removeClient(client._clientId);
           client.destroy();
           this.pubSubNode = void 0;
         }
@@ -118293,7 +115326,6 @@ var require_cluster_slots = __commonJS({
         const client = master.pubSub.connectPromise ? await master.pubSub.connectPromise : master.pubSub.client;
         await unsubscribe(client);
         if (!client.isPubSubActive) {
-          this.#reconnectionTracker.removeClient(client._clientId);
           client.destroy();
           master.pubSub = void 0;
         }
@@ -118479,7 +115511,6 @@ var require_cluster = __commonJS({
     var single_entry_cache_1 = __importDefault3(require_single_entry_cache());
     var tracing_1 = require_tracing2();
     var identity_1 = require_identity();
-    var defaults_1 = require_defaults2();
     var RedisCluster = class _RedisCluster extends node_events_1.EventEmitter {
       static #createCommand(command, resp) {
         const transformReply = (0, commander_1.getTransformReply)(command, resp);
@@ -118517,7 +115548,6 @@ var require_cluster = __commonJS({
           return this._self._execute(parser.firstKey, script.IS_READ_ONLY, this._commandOptions, (client, opts) => client._executeScript(script, parser, opts, transformReply));
         };
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- cache stores dynamically generated cluster subclasses
       static #SingleEntryCache = new single_entry_cache_1.default();
       static factory(config3) {
         let Cluster = _RedisCluster.#SingleEntryCache.get(config3);
@@ -118602,7 +115632,9 @@ var require_cluster = __commonJS({
         this._options = options;
         this._slots = new cluster_slots_1.default(options, this.emit.bind(this), this.#identity.id);
         this.on(cluster_slots_1.RESUBSCRIBE_LISTENERS_EVENT, this.resubscribeAllPubSubListeners.bind(this));
-        this._commandOptions = { timeout: defaults_1.DEFAULT_COMMAND_TIMEOUT, ...options?.commandOptions };
+        if (options?.commandOptions) {
+          this._commandOptions = options.commandOptions;
+        }
       }
       duplicate(overrides) {
         return new (Object.getPrototypeOf(this)).constructor({
@@ -118622,7 +115654,8 @@ var require_cluster = __commonJS({
       }
       _commandOptionsProxy(key, value) {
         const proxy = Object.create(this);
-        proxy._commandOptions = { ...this._commandOptions, [key]: value };
+        proxy._commandOptions = Object.create(this._commandOptions ?? null);
+        proxy._commandOptions[key] = value;
         return proxy;
       }
       /**
@@ -118657,7 +115690,8 @@ var require_cluster = __commonJS({
         let myFn = fn;
         while (true) {
           try {
-            const opts = { ...options, slotNumber };
+            const opts = options ?? {};
+            opts.slotNumber = slotNumber;
             return await myFn(client, opts);
           } catch (_err) {
             const err = _err;
@@ -118715,7 +115749,7 @@ var require_cluster = __commonJS({
       }
       async sendCommand(firstKey, isReadonly, args, options) {
         const opts = {
-          ...this._commandOptions,
+          ...this._self._commandOptions,
           ...options
         };
         return this._self._execute(firstKey, isReadonly, opts, (client, opts2) => client.sendCommand(args, opts2));
@@ -119421,9 +116455,8 @@ var require_sentinel = __commonJS({
       return mod4 && mod4.__esModule ? mod4 : { "default": mod4 };
     };
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.RedisSentinelFactory = exports.RedisSentinelInternal = exports.RedisSentinelClient = void 0;
+    exports.RedisSentinelFactory = exports.RedisSentinelClient = void 0;
     var node_events_1 = __require("node:events");
-    var types_1 = require_types3();
     var client_1 = __importDefault3(require_client2());
     var commander_1 = require_commander();
     var commands_1 = require_commands3();
@@ -119435,7 +116468,6 @@ var require_sentinel = __commonJS({
     var wait_queue_1 = require_wait_queue();
     var cache_1 = require_cache();
     var identity_1 = require_identity();
-    var defaults_1 = require_defaults2();
     var RedisSentinelClient = class _RedisSentinelClient {
       #clientInfo;
       #internal;
@@ -119457,16 +116489,14 @@ var require_sentinel = __commonJS({
         return this._self.#internal.isReady;
       }
       /**
-       * Gets the command options configured for this client. Merges the constructor-set
-       * options with any per-proxy override from `withCommandOptions(...)`.
+       * Gets the command options configured for this client
        *
-       * @returns The effective command options or `undefined` if none were set
+       * @returns The command options for this client or `undefined` if none were set
        */
       get commandOptions() {
-        return this._commandOptions !== void 0 ? { ...this._self.#commandOptions, ...this._commandOptions } : this._self.#commandOptions;
+        return this._self.#commandOptions;
       }
       #commandOptions;
-      _commandOptions;
       constructor(internal, clientInfo, commandOptions) {
         this._self = this;
         this.#internal = internal;
@@ -119498,7 +116528,8 @@ var require_sentinel = __commonJS({
       }
       _commandOptionsProxy(key, value) {
         const proxy = Object.create(this);
-        proxy._commandOptions = { ...this.commandOptions, [key]: value };
+        proxy._commandOptions = Object.create(this._self.#commandOptions ?? null);
+        proxy._commandOptions[key] = value;
         return proxy;
       }
       /**
@@ -119514,8 +116545,7 @@ var require_sentinel = __commonJS({
         return await this._self.#internal.execute(fn, this._self.#clientInfo);
       }
       async sendCommand(isReadonly, args, options) {
-        const mergedOptions = { ...this.commandOptions, ...options };
-        return this._execute(isReadonly, (client) => client.sendCommand(args, mergedOptions));
+        return this._execute(isReadonly, (client) => client.sendCommand(args, options));
       }
       /**
        * @internal
@@ -119589,7 +116619,7 @@ var require_sentinel = __commonJS({
         return this._self.#internal.isReady;
       }
       get commandOptions() {
-        return this._commandOptions !== void 0 ? { ...this._self.#commandOptions, ...this._commandOptions } : this._self.#commandOptions;
+        return this._self.#commandOptions;
       }
       /**
        * @internal
@@ -119599,7 +116629,6 @@ var require_sentinel = __commonJS({
         return this._self.#identity;
       }
       #commandOptions;
-      _commandOptions;
       #trace = () => {
       };
       #reservedClientInfo;
@@ -119617,7 +116646,9 @@ var require_sentinel = __commonJS({
           role: identity_1.ClientRole.SENTINEL
         };
         this.#options = options;
-        this.#commandOptions = { timeout: defaults_1.DEFAULT_COMMAND_TIMEOUT, ...options.commandOptions };
+        if (options.commandOptions) {
+          this.#commandOptions = options.commandOptions;
+        }
         this.#internal = new RedisSentinelInternal(options, this.#identity.id);
         this.#internal.on("error", (err) => this.emit("error", err));
         this.#internal.on("topology-change", (event) => {
@@ -119651,7 +116682,10 @@ var require_sentinel = __commonJS({
       }
       _commandOptionsProxy(key, value) {
         const proxy = Object.create(this);
-        proxy._commandOptions = { ...this.commandOptions, [key]: value };
+        proxy._self.#commandOptions = {
+          ...this._self.#commandOptions || {},
+          [key]: value
+        };
         return proxy;
       }
       /**
@@ -119659,13 +116693,6 @@ var require_sentinel = __commonJS({
        */
       withTypeMapping(typeMapping) {
         return this._commandOptionsProxy("typeMapping", typeMapping);
-      }
-      duplicate(overrides) {
-        return new (Object.getPrototypeOf(this)).constructor({
-          ...this._self.#options,
-          commandOptions: this.commandOptions,
-          ...overrides
-        });
       }
       async connect() {
         await this._self.#internal.connect();
@@ -119699,7 +116726,7 @@ var require_sentinel = __commonJS({
       async use(fn) {
         const clientInfo = await this._self.#internal.getClientLease();
         try {
-          return await fn(RedisSentinelClient.create(this._self.#options, this._self.#internal, clientInfo, this.commandOptions));
+          return await fn(RedisSentinelClient.create(this._self.#options, this._self.#internal, clientInfo, this._self.#commandOptions));
         } finally {
           const promise2 = this._self.#internal.releaseClientLease(clientInfo);
           if (promise2)
@@ -119707,8 +116734,7 @@ var require_sentinel = __commonJS({
         }
       }
       async sendCommand(isReadonly, args, options) {
-        const mergedOptions = { ...this.commandOptions, ...options };
-        return this._execute(isReadonly, (client) => client.sendCommand(args, mergedOptions));
+        return this._execute(isReadonly, (client) => client.sendCommand(args, options));
       }
       /**
        * @internal
@@ -119779,7 +116805,7 @@ var require_sentinel = __commonJS({
        */
       async acquire() {
         const clientInfo = await this._self.#internal.getClientLease();
-        return RedisSentinelClient.create(this._self.#options, this._self.#internal, clientInfo, this.commandOptions);
+        return RedisSentinelClient.create(this._self.#options, this._self.#internal, clientInfo, this._self.#commandOptions);
       }
       getSentinelNode() {
         return this._self.#internal.getSentinelNode();
@@ -119821,6 +116847,7 @@ var require_sentinel = __commonJS({
       #passthroughClientErrorEvents;
       #RESP;
       #anotherReset = false;
+      #configEpoch = 0;
       #sentinelSeedNodes;
       #sentinelRootNodes;
       #sentinelClient;
@@ -119845,7 +116872,7 @@ var require_sentinel = __commonJS({
         return this.#clientSideCache;
       }
       #validateOptions(options) {
-        if (options?.clientSideCache && (options?.RESP ?? types_1.DEFAULT_RESP) !== 3) {
+        if (options?.clientSideCache && options?.RESP !== 3) {
           throw new Error("Client Side Caching is only supported with RESP3");
         }
       }
@@ -119971,12 +116998,11 @@ var require_sentinel = __commonJS({
             this.#trace("#connect: returning");
             return;
           } catch (e2) {
-            const err = e2;
-            this.#trace(`#connect: exception ${err.message}`);
+            this.#trace(`#connect: exception ${e2.message}`);
             if (!this.#isReady && count4 > this.#maxCommandRediscovers) {
               throw e2;
             }
-            if (err.message !== "no valid master node") {
+            if (e2.message !== "no valid master node") {
               console.log(e2);
             }
             await (0, promises_1.setTimeout)(1e3);
@@ -120018,7 +117044,7 @@ var require_sentinel = __commonJS({
         }, true);
         return client;
       }
-      async #handlePubSubControlChannel(channel, _message) {
+      async #handlePubSubControlChannel(channel, message) {
         this.#trace("pubsub control channel message on " + channel);
         this.#reset();
       }
@@ -120257,7 +117283,7 @@ var require_sentinel = __commonJS({
       }
       async transform(analyzed) {
         this.#trace("transform: enter");
-        const promises = [];
+        let promises = [];
         if (analyzed.sentinelToOpen) {
           this.#trace(`transform: opening a new sentinel`);
           if (this.#sentinelClient !== void 0 && this.#sentinelClient.isOpen) {
@@ -120333,8 +117359,7 @@ var require_sentinel = __commonJS({
             this.#trace(`created master client to ${analyzed.masterToOpen.host}:${analyzed.masterToOpen.port}`);
           }
           this.#trace(`transform: adding promise to change #pubSubProxy node`);
-          const mappedPubSubNode = (0, utils_1.getMappedNode)(analyzed.masterToOpen.host, analyzed.masterToOpen.port, this.#nodeAddressMap);
-          masterPromises.push(this.#pubSubProxy.changeNode(mappedPubSubNode));
+          masterPromises.push(this.#pubSubProxy.changeNode(analyzed.masterToOpen));
           promises.push(...masterPromises);
           const event = {
             type: "MASTER_CHANGE",
@@ -120344,6 +117369,7 @@ var require_sentinel = __commonJS({
           if (!this.emit("topology-change", event)) {
             this.#trace(`transform: emit for topology-change for master_change returned false`);
           }
+          this.#configEpoch++;
         }
         const replicaCloseSet = /* @__PURE__ */ new Set();
         for (const node of analyzed.replicasToClose) {
@@ -120459,7 +117485,6 @@ var require_sentinel = __commonJS({
         }
       }
     };
-    exports.RedisSentinelInternal = RedisSentinelInternal;
     var RedisSentinelFactory = class extends node_events_1.EventEmitter {
       options;
       #sentinelRootNodes;
@@ -120523,7 +117548,7 @@ var require_sentinel = __commonJS({
           connected = true;
           try {
             const masterData = await client.sentinel.sentinelMaster(this.options.name);
-            const master = (0, utils_1.parseNode)(masterData);
+            let master = (0, utils_1.parseNode)(masterData);
             if (master === void 0) {
               continue;
             }
@@ -120636,11 +117661,7 @@ var require_dist = __commonJS({
       return mod4 && mod4.__esModule ? mod4 : { "default": mod4 };
     };
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.CHANNELS = exports.OpenTelemetry = exports.BasicPooledClientSideCache = exports.BasicClientSideCache = exports.AR_OPERATIONS = exports.AR_PREDICATE_COMBINATORS = exports.AR_PREDICATE_TYPES = exports.REDIS_FLUSH_MODES = exports.COMMAND_LIST_FILTER_BY = exports.CLUSTER_SLOT_STATES = exports.FAILOVER_MODES = exports.CLIENT_UNBLOCK_MODES = exports.CLIENT_KILL_FILTERS = exports.GEO_REPLY_WITH = exports.createSentinel = exports.RedisSentinelClient = exports.RedisSentinel = exports.createCluster = exports.RedisCluster = exports.createClientPool = exports.RedisClientPool = exports.createClient = exports.RedisClient = exports.digest = exports.defineScript = exports.VerbatimString = exports.RESP_TYPES = exports.DEFAULT_RESP = void 0;
-    var types_1 = require_types3();
-    Object.defineProperty(exports, "DEFAULT_RESP", { enumerable: true, get: function() {
-      return types_1.DEFAULT_RESP;
-    } });
+    exports.CHANNELS = exports.OpenTelemetry = exports.BasicPooledClientSideCache = exports.BasicClientSideCache = exports.REDIS_FLUSH_MODES = exports.COMMAND_LIST_FILTER_BY = exports.CLUSTER_SLOT_STATES = exports.FAILOVER_MODES = exports.CLIENT_KILL_FILTERS = exports.GEO_REPLY_WITH = exports.createSentinel = exports.createCluster = exports.createClientPool = exports.createClient = exports.digest = exports.defineScript = exports.VerbatimString = exports.RESP_TYPES = void 0;
     var decoder_1 = require_decoder();
     Object.defineProperty(exports, "RESP_TYPES", { enumerable: true, get: function() {
       return decoder_1.RESP_TYPES;
@@ -120659,22 +117680,12 @@ var require_dist = __commonJS({
     } });
     __exportStar3(require_errors3(), exports);
     var client_1 = __importDefault3(require_client2());
-    exports.RedisClient = client_1.default;
     exports.createClient = client_1.default.create;
     var pool_1 = require_pool5();
-    Object.defineProperty(exports, "RedisClientPool", { enumerable: true, get: function() {
-      return pool_1.RedisClientPool;
-    } });
     exports.createClientPool = pool_1.RedisClientPool.create;
     var cluster_1 = __importDefault3(require_cluster());
-    exports.RedisCluster = cluster_1.default;
     exports.createCluster = cluster_1.default.create;
     var sentinel_1 = __importDefault3(require_sentinel());
-    exports.RedisSentinel = sentinel_1.default;
-    var sentinel_2 = require_sentinel();
-    Object.defineProperty(exports, "RedisSentinelClient", { enumerable: true, get: function() {
-      return sentinel_2.RedisSentinelClient;
-    } });
     exports.createSentinel = sentinel_1.default.create;
     var GEOSEARCH_WITH_1 = require_GEOSEARCH_WITH();
     Object.defineProperty(exports, "GEO_REPLY_WITH", { enumerable: true, get: function() {
@@ -120683,9 +117694,6 @@ var require_dist = __commonJS({
     var commands_1 = require_commands3();
     Object.defineProperty(exports, "CLIENT_KILL_FILTERS", { enumerable: true, get: function() {
       return commands_1.CLIENT_KILL_FILTERS;
-    } });
-    Object.defineProperty(exports, "CLIENT_UNBLOCK_MODES", { enumerable: true, get: function() {
-      return commands_1.CLIENT_UNBLOCK_MODES;
     } });
     Object.defineProperty(exports, "FAILOVER_MODES", { enumerable: true, get: function() {
       return commands_1.FAILOVER_MODES;
@@ -120698,15 +117706,6 @@ var require_dist = __commonJS({
     } });
     Object.defineProperty(exports, "REDIS_FLUSH_MODES", { enumerable: true, get: function() {
       return commands_1.REDIS_FLUSH_MODES;
-    } });
-    Object.defineProperty(exports, "AR_PREDICATE_TYPES", { enumerable: true, get: function() {
-      return commands_1.AR_PREDICATE_TYPES;
-    } });
-    Object.defineProperty(exports, "AR_PREDICATE_COMBINATORS", { enumerable: true, get: function() {
-      return commands_1.AR_PREDICATE_COMBINATORS;
-    } });
-    Object.defineProperty(exports, "AR_OPERATIONS", { enumerable: true, get: function() {
-      return commands_1.AR_OPERATIONS;
     } });
     var cache_1 = require_cache();
     Object.defineProperty(exports, "BasicClientSideCache", { enumerable: true, get: function() {
@@ -120734,6 +117733,12 @@ var require_ADD = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Adds an item to a Bloom Filter
+       * @param parser - The command parser
+       * @param key - The name of the Bloom filter
+       * @param item - The item to add to the filter
+       */
       parseCommand(parser, key, item) {
         parser.push("BF.ADD");
         parser.pushKey(key);
@@ -120751,6 +117756,11 @@ var require_CARD = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns the cardinality (number of items) in a Bloom Filter
+       * @param parser - The command parser
+       * @param key - The name of the Bloom filter to query
+       */
       parseCommand(parser, key) {
         parser.push("BF.CARD");
         parser.pushKey(key);
@@ -120768,6 +117778,12 @@ var require_EXISTS2 = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Checks if an item exists in a Bloom Filter
+       * @param parser - The command parser
+       * @param key - The name of the Bloom filter
+       * @param item - The item to check for existence
+       */
       parseCommand(parser, key, item) {
         parser.push("BF.EXISTS");
         parser.pushKey(key);
@@ -120786,7 +117802,6 @@ var require_helpers2 = __commonJS({
     exports.transformInfoV2Reply = void 0;
     var client_1 = require_dist();
     function transformInfoV2Reply(reply, typeMapping) {
-      const entries = reply;
       const mapType = typeMapping ? typeMapping[client_1.RESP_TYPES.MAP] : void 0;
       switch (mapType) {
         case Array: {
@@ -120794,15 +117809,15 @@ var require_helpers2 = __commonJS({
         }
         case Map: {
           const ret = /* @__PURE__ */ new Map();
-          for (let i2 = 0; i2 < entries.length; i2 += 2) {
-            ret.set(entries[i2].toString(), entries[i2 + 1]);
+          for (let i2 = 0; i2 < reply.length; i2 += 2) {
+            ret.set(reply[i2].toString(), reply[i2 + 1]);
           }
           return ret;
         }
         default: {
-          const ret = {};
-          for (let i2 = 0; i2 < entries.length; i2 += 2) {
-            ret[entries[i2].toString()] = entries[i2 + 1];
+          const ret = /* @__PURE__ */ Object.create(null);
+          for (let i2 = 0; i2 < reply.length; i2 += 2) {
+            ret[reply[i2].toString()] = reply[i2 + 1];
           }
           return ret;
         }
@@ -120820,6 +117835,11 @@ var require_INFO2 = __commonJS({
     var helpers_1 = require_helpers2();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns information about a Bloom Filter, including capacity, size, number of filters, items inserted, and expansion rate
+       * @param parser - The command parser
+       * @param key - The name of the Bloom filter to get information about
+       */
       parseCommand(parser, key) {
         parser.push("BF.INFO");
         parser.pushKey(key);
@@ -120842,6 +117862,18 @@ var require_INSERT = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Adds one or more items to a Bloom Filter, creating it if it does not exist
+       * @param parser - The command parser
+       * @param key - The name of the Bloom filter
+       * @param items - One or more items to add to the filter
+       * @param options - Optional parameters for filter creation
+       * @param options.CAPACITY - Desired capacity for a new filter
+       * @param options.ERROR - Desired error rate for a new filter
+       * @param options.EXPANSION - Expansion rate for a new filter
+       * @param options.NOCREATE - If true, prevents automatic filter creation
+       * @param options.NONSCALING - Prevents the filter from creating additional sub-filters
+       */
       parseCommand(parser, key, items, options) {
         parser.push("BF.INSERT");
         parser.pushKey(key);
@@ -120875,6 +117907,13 @@ var require_LOADCHUNK = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Restores a Bloom Filter chunk previously saved using SCANDUMP
+       * @param parser - The command parser
+       * @param key - The name of the Bloom filter to restore
+       * @param iterator - Iterator value from the SCANDUMP command
+       * @param chunk - Data chunk from the SCANDUMP command
+       */
       parseCommand(parser, key, iterator, chunk2) {
         parser.push("BF.LOADCHUNK");
         parser.pushKey(key);
@@ -120893,6 +117932,12 @@ var require_MADD = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Adds multiple items to a Bloom Filter in a single call
+       * @param parser - The command parser
+       * @param key - The name of the Bloom filter
+       * @param items - One or more items to add to the filter
+       */
       parseCommand(parser, key, items) {
         parser.push("BF.MADD");
         parser.pushKey(key);
@@ -120911,6 +117956,12 @@ var require_MEXISTS = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Checks if multiple items exist in a Bloom Filter in a single call
+       * @param parser - The command parser
+       * @param key - The name of the Bloom filter
+       * @param items - One or more items to check for existence
+       */
       parseCommand(parser, key, items) {
         parser.push("BF.MEXISTS");
         parser.pushKey(key);
@@ -120928,6 +117979,16 @@ var require_RESERVE = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Creates an empty Bloom Filter with a given desired error ratio and initial capacity
+       * @param parser - The command parser
+       * @param key - The name of the Bloom filter to create
+       * @param errorRate - The desired probability for false positives (between 0 and 1)
+       * @param capacity - The number of entries intended to be added to the filter
+       * @param options - Optional parameters to tune the filter
+       * @param options.EXPANSION - Expansion rate for the filter
+       * @param options.NONSCALING - Prevents the filter from creating additional sub-filters
+       */
       parseCommand(parser, key, errorRate, capacity, options) {
         parser.push("BF.RESERVE");
         parser.pushKey(key);
@@ -120951,6 +118012,12 @@ var require_SCANDUMP = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Begins an incremental save of a Bloom Filter. This is useful for large filters that can't be saved at once
+       * @param parser - The command parser
+       * @param key - The name of the Bloom filter to save
+       * @param iterator - Iterator value; Start at 0, and use the iterator from the response for the next chunk
+       */
       parseCommand(parser, key, iterator) {
         parser.push("BF.SCANDUMP");
         parser.pushKey(key);
@@ -121002,143 +118069,25 @@ var require_bloom = __commonJS({
     var SCANDUMP_1 = __importDefault3(require_SCANDUMP());
     __exportStar3(require_helpers2(), exports);
     exports.default = {
-      /**
-       * Adds an item to a Bloom Filter
-       * @param key - The name of the Bloom filter
-       * @param item - The item to add to the filter
-       */
       ADD: ADD_1.default,
-      /**
-       * Adds an item to a Bloom Filter
-       * @param key - The name of the Bloom filter
-       * @param item - The item to add to the filter
-       */
       add: ADD_1.default,
-      /**
-       * Returns the cardinality (number of items) in a Bloom Filter
-       * @param key - The name of the Bloom filter to query
-       */
       CARD: CARD_1.default,
-      /**
-       * Returns the cardinality (number of items) in a Bloom Filter
-       * @param key - The name of the Bloom filter to query
-       */
       card: CARD_1.default,
-      /**
-       * Checks if an item exists in a Bloom Filter
-       * @param key - The name of the Bloom filter
-       * @param item - The item to check for existence
-       */
       EXISTS: EXISTS_1.default,
-      /**
-       * Checks if an item exists in a Bloom Filter
-       * @param key - The name of the Bloom filter
-       * @param item - The item to check for existence
-       */
       exists: EXISTS_1.default,
-      /**
-       * Returns information about a Bloom Filter, including capacity, size, number of filters, items inserted, and expansion rate
-       * @param key - The name of the Bloom filter to get information about
-       */
       INFO: INFO_1.default,
-      /**
-       * Returns information about a Bloom Filter, including capacity, size, number of filters, items inserted, and expansion rate
-       * @param key - The name of the Bloom filter to get information about
-       */
       info: INFO_1.default,
-      /**
-       * Adds one or more items to a Bloom Filter, creating it if it does not exist
-       * @param key - The name of the Bloom filter
-       * @param items - One or more items to add to the filter
-       * @param options - Optional parameters for filter creation
-       * @param options.CAPACITY - Desired capacity for a new filter
-       * @param options.ERROR - Desired error rate for a new filter
-       * @param options.EXPANSION - Expansion rate for a new filter
-       * @param options.NOCREATE - If true, prevents automatic filter creation
-       * @param options.NONSCALING - Prevents the filter from creating additional sub-filters
-       */
       INSERT: INSERT_1.default,
-      /**
-       * Adds one or more items to a Bloom Filter, creating it if it does not exist
-       * @param key - The name of the Bloom filter
-       * @param items - One or more items to add to the filter
-       * @param options - Optional parameters for filter creation
-       * @param options.CAPACITY - Desired capacity for a new filter
-       * @param options.ERROR - Desired error rate for a new filter
-       * @param options.EXPANSION - Expansion rate for a new filter
-       * @param options.NOCREATE - If true, prevents automatic filter creation
-       * @param options.NONSCALING - Prevents the filter from creating additional sub-filters
-       */
       insert: INSERT_1.default,
-      /**
-       * Restores a Bloom Filter chunk previously saved using SCANDUMP
-       * @param key - The name of the Bloom filter to restore
-       * @param iterator - Iterator value from the SCANDUMP command
-       * @param chunk - Data chunk from the SCANDUMP command
-       */
       LOADCHUNK: LOADCHUNK_1.default,
-      /**
-       * Restores a Bloom Filter chunk previously saved using SCANDUMP
-       * @param key - The name of the Bloom filter to restore
-       * @param iterator - Iterator value from the SCANDUMP command
-       * @param chunk - Data chunk from the SCANDUMP command
-       */
       loadChunk: LOADCHUNK_1.default,
-      /**
-       * Adds multiple items to a Bloom Filter in a single call
-       * @param key - The name of the Bloom filter
-       * @param items - One or more items to add to the filter
-       */
       MADD: MADD_1.default,
-      /**
-       * Adds multiple items to a Bloom Filter in a single call
-       * @param key - The name of the Bloom filter
-       * @param items - One or more items to add to the filter
-       */
       mAdd: MADD_1.default,
-      /**
-       * Checks if multiple items exist in a Bloom Filter in a single call
-       * @param key - The name of the Bloom filter
-       * @param items - One or more items to check for existence
-       */
       MEXISTS: MEXISTS_1.default,
-      /**
-       * Checks if multiple items exist in a Bloom Filter in a single call
-       * @param key - The name of the Bloom filter
-       * @param items - One or more items to check for existence
-       */
       mExists: MEXISTS_1.default,
-      /**
-       * Creates an empty Bloom Filter with a given desired error ratio and initial capacity
-       * @param key - The name of the Bloom filter to create
-       * @param errorRate - The desired probability for false positives (between 0 and 1)
-       * @param capacity - The number of entries intended to be added to the filter
-       * @param options - Optional parameters to tune the filter
-       * @param options.EXPANSION - Expansion rate for the filter
-       * @param options.NONSCALING - Prevents the filter from creating additional sub-filters
-       */
       RESERVE: RESERVE_1.default,
-      /**
-       * Creates an empty Bloom Filter with a given desired error ratio and initial capacity
-       * @param key - The name of the Bloom filter to create
-       * @param errorRate - The desired probability for false positives (between 0 and 1)
-       * @param capacity - The number of entries intended to be added to the filter
-       * @param options - Optional parameters to tune the filter
-       * @param options.EXPANSION - Expansion rate for the filter
-       * @param options.NONSCALING - Prevents the filter from creating additional sub-filters
-       */
       reserve: RESERVE_1.default,
-      /**
-       * Begins an incremental save of a Bloom Filter. This is useful for large filters that can't be saved at once
-       * @param key - The name of the Bloom filter to save
-       * @param iterator - Iterator value; Start at 0, and use the iterator from the response for the next chunk
-       */
       SCANDUMP: SCANDUMP_1.default,
-      /**
-       * Begins an incremental save of a Bloom Filter. This is useful for large filters that can't be saved at once
-       * @param key - The name of the Bloom filter to save
-       * @param iterator - Iterator value; Start at 0, and use the iterator from the response for the next chunk
-       */
       scanDump: SCANDUMP_1.default
     };
   }
@@ -121151,6 +118100,12 @@ var require_INCRBY2 = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Increases the count of one or more items in a Count-Min Sketch
+       * @param parser - The command parser
+       * @param key - The name of the sketch
+       * @param items - A single item or array of items to increment, each with an item and increment value
+       */
       parseCommand(parser, key, items) {
         parser.push("CMS.INCRBY");
         parser.pushKey(key);
@@ -121178,6 +118133,11 @@ var require_INFO3 = __commonJS({
     var bloom_1 = require_bloom();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns width, depth, and total count of items in a Count-Min Sketch
+       * @param parser - The command parser
+       * @param key - The name of the sketch to get information about
+       */
       parseCommand(parser, key) {
         parser.push("CMS.INFO");
         parser.pushKey(key);
@@ -121199,6 +118159,13 @@ var require_INITBYDIM = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Initialize a Count-Min Sketch using width and depth parameters
+       * @param parser - The command parser
+       * @param key - The name of the sketch
+       * @param width - Number of counters in each array (must be a multiple of 2)
+       * @param depth - Number of counter arrays (determines accuracy of estimates)
+       */
       parseCommand(parser, key, width, depth) {
         parser.push("CMS.INITBYDIM");
         parser.pushKey(key);
@@ -121216,6 +118183,13 @@ var require_INITBYPROB = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Initialize a Count-Min Sketch using error rate and probability parameters
+       * @param parser - The command parser
+       * @param key - The name of the sketch
+       * @param error - Estimate error, as a decimal between 0 and 1
+       * @param probability - The desired probability for inflated count, as a decimal between 0 and 1
+       */
       parseCommand(parser, key, error48, probability) {
         parser.push("CMS.INITBYPROB");
         parser.pushKey(key);
@@ -121233,6 +118207,12 @@ var require_MERGE = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Merges multiple Count-Min Sketches into a single sketch, with optional weights
+       * @param parser - The command parser
+       * @param destination - The name of the destination sketch
+       * @param source - Array of sketch names or array of sketches with weights
+       */
       parseCommand(parser, destination, source) {
         parser.push("CMS.MERGE");
         parser.pushKey(destination);
@@ -121264,6 +118244,12 @@ var require_QUERY = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns the count for one or more items in a Count-Min Sketch
+       * @param parser - The command parser
+       * @param key - The name of the sketch
+       * @param items - One or more items to get counts for
+       */
       parseCommand(parser, key, items) {
         parser.push("CMS.QUERY");
         parser.pushKey(key);
@@ -121289,79 +118275,17 @@ var require_count_min_sketch = __commonJS({
     var MERGE_1 = __importDefault3(require_MERGE());
     var QUERY_1 = __importDefault3(require_QUERY());
     exports.default = {
-      /**
-       * Increases the count of one or more items in a Count-Min Sketch
-       * @param key - The name of the sketch
-       * @param items - A single item or array of items to increment, each with an item and increment value
-       */
       INCRBY: INCRBY_1.default,
-      /**
-       * Increases the count of one or more items in a Count-Min Sketch
-       * @param key - The name of the sketch
-       * @param items - A single item or array of items to increment, each with an item and increment value
-       */
       incrBy: INCRBY_1.default,
-      /**
-       * Returns width, depth, and total count of items in a Count-Min Sketch
-       * @param key - The name of the sketch to get information about
-       */
       INFO: INFO_1.default,
-      /**
-       * Returns width, depth, and total count of items in a Count-Min Sketch
-       * @param key - The name of the sketch to get information about
-       */
       info: INFO_1.default,
-      /**
-       * Initialize a Count-Min Sketch using width and depth parameters
-       * @param key - The name of the sketch
-       * @param width - Number of counters in each array (must be a multiple of 2)
-       * @param depth - Number of counter arrays (determines accuracy of estimates)
-       */
       INITBYDIM: INITBYDIM_1.default,
-      /**
-       * Initialize a Count-Min Sketch using width and depth parameters
-       * @param key - The name of the sketch
-       * @param width - Number of counters in each array (must be a multiple of 2)
-       * @param depth - Number of counter arrays (determines accuracy of estimates)
-       */
       initByDim: INITBYDIM_1.default,
-      /**
-       * Initialize a Count-Min Sketch using error rate and probability parameters
-       * @param key - The name of the sketch
-       * @param error - Estimate error, as a decimal between 0 and 1
-       * @param probability - The desired probability for inflated count, as a decimal between 0 and 1
-       */
       INITBYPROB: INITBYPROB_1.default,
-      /**
-       * Initialize a Count-Min Sketch using error rate and probability parameters
-       * @param key - The name of the sketch
-       * @param error - Estimate error, as a decimal between 0 and 1
-       * @param probability - The desired probability for inflated count, as a decimal between 0 and 1
-       */
       initByProb: INITBYPROB_1.default,
-      /**
-       * Merges multiple Count-Min Sketches into a single sketch, with optional weights
-       * @param destination - The name of the destination sketch
-       * @param source - Array of sketch names or array of sketches with weights
-       */
       MERGE: MERGE_1.default,
-      /**
-       * Merges multiple Count-Min Sketches into a single sketch, with optional weights
-       * @param destination - The name of the destination sketch
-       * @param source - Array of sketch names or array of sketches with weights
-       */
       merge: MERGE_1.default,
-      /**
-       * Returns the count for one or more items in a Count-Min Sketch
-       * @param key - The name of the sketch
-       * @param items - One or more items to get counts for
-       */
       QUERY: QUERY_1.default,
-      /**
-       * Returns the count for one or more items in a Count-Min Sketch
-       * @param key - The name of the sketch
-       * @param items - One or more items to get counts for
-       */
       query: QUERY_1.default
     };
   }
@@ -121375,6 +118299,12 @@ var require_ADD2 = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Adds an item to a Cuckoo Filter, creating the filter if it does not exist
+       * @param parser - The command parser
+       * @param key - The name of the Cuckoo filter
+       * @param item - The item to add to the filter
+       */
       parseCommand(parser, key, item) {
         parser.push("CF.ADD");
         parser.pushKey(key);
@@ -121393,6 +118323,12 @@ var require_ADDNX = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Adds an item to a Cuckoo Filter only if it does not exist
+       * @param parser - The command parser
+       * @param key - The name of the Cuckoo filter
+       * @param item - The item to add to the filter if it doesn't exist
+       */
       parseCommand(parser, key, item) {
         parser.push("CF.ADDNX");
         parser.pushKey(key);
@@ -121410,6 +118346,12 @@ var require_COUNT = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns the number of times an item appears in a Cuckoo Filter
+       * @param parser - The command parser
+       * @param key - The name of the Cuckoo filter
+       * @param item - The item to count occurrences of
+       */
       parseCommand(parser, key, item) {
         parser.push("CF.COUNT");
         parser.pushKey(key);
@@ -121428,6 +118370,12 @@ var require_DEL2 = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Removes an item from a Cuckoo Filter if it exists
+       * @param parser - The command parser
+       * @param key - The name of the Cuckoo filter
+       * @param item - The item to remove from the filter
+       */
       parseCommand(parser, key, item) {
         parser.push("CF.DEL");
         parser.pushKey(key);
@@ -121446,6 +118394,12 @@ var require_EXISTS3 = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Checks if an item exists in a Cuckoo Filter
+       * @param parser - The command parser
+       * @param key - The name of the Cuckoo filter
+       * @param item - The item to check for existence
+       */
       parseCommand(parser, key, item) {
         parser.push("CF.EXISTS");
         parser.pushKey(key);
@@ -121464,6 +118418,11 @@ var require_INFO4 = __commonJS({
     var bloom_1 = require_bloom();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns detailed information about a Cuckoo Filter including size, buckets, filters count, items statistics and configuration
+       * @param parser - The command parser
+       * @param key - The name of the Cuckoo filter to get information about
+       */
       parseCommand(parser, key) {
         parser.push("CF.INFO");
         parser.pushKey(key);
@@ -121499,6 +118458,15 @@ var require_INSERT2 = __commonJS({
     exports.parseCfInsertArguments = parseCfInsertArguments;
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Adds one or more items to a Cuckoo Filter, creating it if it does not exist
+       * @param parser - The command parser
+       * @param key - The name of the Cuckoo filter
+       * @param items - One or more items to add to the filter
+       * @param options - Optional parameters for filter creation
+       * @param options.CAPACITY - The number of entries intended to be added to the filter
+       * @param options.NOCREATE - If true, prevents automatic filter creation
+       */
       parseCommand(...args) {
         args[0].push("CF.INSERT");
         parseCfInsertArguments(...args);
@@ -121547,7 +118515,7 @@ var require_INSERTNX = __commonJS({
         args[0].push("CF.INSERTNX");
         (0, INSERT_1.parseCfInsertArguments)(...args);
       },
-      transformReply: void 0
+      transformReply: INSERT_1.default.transformReply
     };
   }
 });
@@ -121559,6 +118527,13 @@ var require_LOADCHUNK2 = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Restores a Cuckoo Filter chunk previously saved using SCANDUMP
+       * @param parser - The command parser
+       * @param key - The name of the Cuckoo filter to restore
+       * @param iterator - Iterator value from the SCANDUMP command
+       * @param chunk - Data chunk from the SCANDUMP command
+       */
       parseCommand(parser, key, iterator, chunk2) {
         parser.push("CF.LOADCHUNK");
         parser.pushKey(key);
@@ -121576,6 +118551,16 @@ var require_RESERVE2 = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Creates an empty Cuckoo Filter with specified capacity and parameters
+       * @param parser - The command parser
+       * @param key - The name of the Cuckoo filter to create
+       * @param capacity - The number of entries intended to be added to the filter
+       * @param options - Optional parameters to tune the filter
+       * @param options.BUCKETSIZE - Number of items in each bucket
+       * @param options.MAXITERATIONS - Maximum number of iterations before declaring filter full
+       * @param options.EXPANSION - Number of additional buckets per expansion
+       */
       parseCommand(parser, key, capacity, options) {
         parser.push("CF.RESERVE");
         parser.pushKey(key);
@@ -121602,6 +118587,12 @@ var require_SCANDUMP2 = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Begins an incremental save of a Cuckoo Filter. This is useful for large filters that can't be saved at once
+       * @param parser - The command parser
+       * @param key - The name of the Cuckoo filter to save
+       * @param iterator - Iterator value; Start at 0, and use the iterator from the response for the next chunk
+       */
       parseCommand(parser, key, iterator) {
         parser.push("CF.SCANDUMP");
         parser.pushKey(key);
@@ -121637,157 +118628,27 @@ var require_cuckoo = __commonJS({
     var RESERVE_1 = __importDefault3(require_RESERVE2());
     var SCANDUMP_1 = __importDefault3(require_SCANDUMP2());
     exports.default = {
-      /**
-       * Adds an item to a Cuckoo Filter, creating the filter if it does not exist
-       * @param key - The name of the Cuckoo filter
-       * @param item - The item to add to the filter
-       */
       ADD: ADD_1.default,
-      /**
-       * Adds an item to a Cuckoo Filter, creating the filter if it does not exist
-       * @param key - The name of the Cuckoo filter
-       * @param item - The item to add to the filter
-       */
       add: ADD_1.default,
-      /**
-       * Adds an item to a Cuckoo Filter only if it does not exist
-       * @param key - The name of the Cuckoo filter
-       * @param item - The item to add to the filter if it doesn't exist
-       */
       ADDNX: ADDNX_1.default,
-      /**
-       * Adds an item to a Cuckoo Filter only if it does not exist
-       * @param key - The name of the Cuckoo filter
-       * @param item - The item to add to the filter if it doesn't exist
-       */
       addNX: ADDNX_1.default,
-      /**
-       * Returns the number of times an item appears in a Cuckoo Filter
-       * @param key - The name of the Cuckoo filter
-       * @param item - The item to count occurrences of
-       */
       COUNT: COUNT_1.default,
-      /**
-       * Returns the number of times an item appears in a Cuckoo Filter
-       * @param key - The name of the Cuckoo filter
-       * @param item - The item to count occurrences of
-       */
       count: COUNT_1.default,
-      /**
-       * Removes an item from a Cuckoo Filter if it exists
-       * @param key - The name of the Cuckoo filter
-       * @param item - The item to remove from the filter
-       */
       DEL: DEL_1.default,
-      /**
-       * Removes an item from a Cuckoo Filter if it exists
-       * @param key - The name of the Cuckoo filter
-       * @param item - The item to remove from the filter
-       */
       del: DEL_1.default,
-      /**
-       * Checks if an item exists in a Cuckoo Filter
-       * @param key - The name of the Cuckoo filter
-       * @param item - The item to check for existence
-       */
       EXISTS: EXISTS_1.default,
-      /**
-       * Checks if an item exists in a Cuckoo Filter
-       * @param key - The name of the Cuckoo filter
-       * @param item - The item to check for existence
-       */
       exists: EXISTS_1.default,
-      /**
-       * Returns detailed information about a Cuckoo Filter including size, buckets, filters count, items statistics and configuration
-       * @param key - The name of the Cuckoo filter to get information about
-       */
       INFO: INFO_1.default,
-      /**
-       * Returns detailed information about a Cuckoo Filter including size, buckets, filters count, items statistics and configuration
-       * @param key - The name of the Cuckoo filter to get information about
-       */
       info: INFO_1.default,
-      /**
-       * Adds one or more items to a Cuckoo Filter, creating it if it does not exist
-       * @param key - The name of the Cuckoo filter
-       * @param items - One or more items to add to the filter
-       * @param options - Optional parameters for filter creation
-       * @param options.CAPACITY - The number of entries intended to be added to the filter
-       * @param options.NOCREATE - If true, prevents automatic filter creation
-       */
       INSERT: INSERT_1.default,
-      /**
-       * Adds one or more items to a Cuckoo Filter, creating it if it does not exist
-       * @param key - The name of the Cuckoo filter
-       * @param items - One or more items to add to the filter
-       * @param options - Optional parameters for filter creation
-       * @param options.CAPACITY - The number of entries intended to be added to the filter
-       * @param options.NOCREATE - If true, prevents automatic filter creation
-       */
       insert: INSERT_1.default,
-      /**
-       * Adds one or more items to a Cuckoo Filter only if they do not exist yet, creating the filter if needed
-       * @param key - The name of the Cuckoo filter
-       * @param items - One or more items to add to the filter
-       * @param options - Optional parameters for filter creation
-       * @param options.CAPACITY - The number of entries intended to be added to the filter
-       * @param options.NOCREATE - If true, prevents automatic filter creation
-       */
       INSERTNX: INSERTNX_1.default,
-      /**
-       * Adds one or more items to a Cuckoo Filter only if they do not exist yet, creating the filter if needed
-       * @param key - The name of the Cuckoo filter
-       * @param items - One or more items to add to the filter
-       * @param options - Optional parameters for filter creation
-       * @param options.CAPACITY - The number of entries intended to be added to the filter
-       * @param options.NOCREATE - If true, prevents automatic filter creation
-       */
       insertNX: INSERTNX_1.default,
-      /**
-       * Restores a Cuckoo Filter chunk previously saved using SCANDUMP
-       * @param key - The name of the Cuckoo filter to restore
-       * @param iterator - Iterator value from the SCANDUMP command
-       * @param chunk - Data chunk from the SCANDUMP command
-       */
       LOADCHUNK: LOADCHUNK_1.default,
-      /**
-       * Restores a Cuckoo Filter chunk previously saved using SCANDUMP
-       * @param key - The name of the Cuckoo filter to restore
-       * @param iterator - Iterator value from the SCANDUMP command
-       * @param chunk - Data chunk from the SCANDUMP command
-       */
       loadChunk: LOADCHUNK_1.default,
-      /**
-       * Creates an empty Cuckoo Filter with specified capacity and parameters
-       * @param key - The name of the Cuckoo filter to create
-       * @param capacity - The number of entries intended to be added to the filter
-       * @param options - Optional parameters to tune the filter
-       * @param options.BUCKETSIZE - Number of items in each bucket
-       * @param options.MAXITERATIONS - Maximum number of iterations before declaring filter full
-       * @param options.EXPANSION - Number of additional buckets per expansion
-       */
       RESERVE: RESERVE_1.default,
-      /**
-       * Creates an empty Cuckoo Filter with specified capacity and parameters
-       * @param key - The name of the Cuckoo filter to create
-       * @param capacity - The number of entries intended to be added to the filter
-       * @param options - Optional parameters to tune the filter
-       * @param options.BUCKETSIZE - Number of items in each bucket
-       * @param options.MAXITERATIONS - Maximum number of iterations before declaring filter full
-       * @param options.EXPANSION - Number of additional buckets per expansion
-       */
       reserve: RESERVE_1.default,
-      /**
-       * Begins an incremental save of a Cuckoo Filter. This is useful for large filters that can't be saved at once
-       * @param key - The name of the Cuckoo filter to save
-       * @param iterator - Iterator value; Start at 0, and use the iterator from the response for the next chunk
-       */
       SCANDUMP: SCANDUMP_1.default,
-      /**
-       * Begins an incremental save of a Cuckoo Filter. This is useful for large filters that can't be saved at once
-       * @param key - The name of the Cuckoo filter to save
-       * @param iterator - Iterator value; Start at 0, and use the iterator from the response for the next chunk
-       */
       scanDump: SCANDUMP_1.default
     };
   }
@@ -121800,6 +118661,12 @@ var require_ADD3 = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Adds one or more observations to a t-digest sketch
+       * @param parser - The command parser
+       * @param key - The name of the t-digest sketch
+       * @param values - Array of numeric values to add to the sketch
+       */
       parseCommand(parser, key, values) {
         parser.push("TDIGEST.ADD");
         parser.pushKey(key);
@@ -121828,6 +118695,12 @@ var require_BYRANK = __commonJS({
     exports.transformByRankArguments = transformByRankArguments;
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns value estimates for one or more ranks in a t-digest sketch
+       * @param parser - The command parser
+       * @param key - The name of the t-digest sketch
+       * @param ranks - Array of ranks to get value estimates for (ascending order)
+       */
       parseCommand(...args) {
         args[0].push("TDIGEST.BYRANK");
         transformByRankArguments(...args);
@@ -121889,6 +118762,12 @@ var require_CDF = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Estimates the cumulative distribution function for values in a t-digest sketch
+       * @param parser - The command parser
+       * @param key - The name of the t-digest sketch
+       * @param values - Array of values to get CDF estimates for
+       */
       parseCommand(parser, key, values) {
         parser.push("TDIGEST.CDF");
         parser.pushKey(key);
@@ -121908,6 +118787,13 @@ var require_CREATE = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Creates a new t-digest sketch for storing distributions
+       * @param parser - The command parser
+       * @param key - The name of the t-digest sketch
+       * @param options - Optional parameters for sketch creation
+       * @param options.COMPRESSION - Compression parameter that affects performance and accuracy
+       */
       parseCommand(parser, key, options) {
         parser.push("TDIGEST.CREATE");
         parser.pushKey(key);
@@ -121928,6 +118814,11 @@ var require_INFO5 = __commonJS({
     var bloom_1 = require_bloom();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns information about a t-digest sketch including compression, capacity, nodes, weights, observations and memory usage
+       * @param parser - The command parser
+       * @param key - The name of the t-digest sketch to get information about
+       */
       parseCommand(parser, key) {
         parser.push("TDIGEST.INFO");
         parser.pushKey(key);
@@ -121950,6 +118841,11 @@ var require_MAX = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns the maximum value from a t-digest sketch
+       * @param parser - The command parser
+       * @param key - The name of the t-digest sketch
+       */
       parseCommand(parser, key) {
         parser.push("TDIGEST.MAX");
         parser.pushKey(key);
@@ -121966,6 +118862,15 @@ var require_MERGE2 = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Merges multiple t-digest sketches into one, with optional compression and override settings
+       * @param parser - The command parser
+       * @param destination - The name of the destination t-digest sketch
+       * @param source - One or more source sketch names to merge from
+       * @param options - Optional parameters for merge operation
+       * @param options.COMPRESSION - New compression value for merged sketch
+       * @param options.OVERRIDE - If true, override destination sketch if it exists
+       */
       parseCommand(parser, destination, source, options) {
         parser.push("TDIGEST.MERGE");
         parser.pushKey(destination);
@@ -121990,6 +118895,11 @@ var require_MIN = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns the minimum value from a t-digest sketch
+       * @param parser - The command parser
+       * @param key - The name of the t-digest sketch
+       */
       parseCommand(parser, key) {
         parser.push("TDIGEST.MIN");
         parser.pushKey(key);
@@ -122007,6 +118917,12 @@ var require_QUANTILE = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns value estimates at requested quantiles from a t-digest sketch
+       * @param parser - The command parser
+       * @param key - The name of the t-digest sketch
+       * @param quantiles - Array of quantiles (between 0 and 1) to get value estimates for
+       */
       parseCommand(parser, key, quantiles) {
         parser.push("TDIGEST.QUANTILE");
         parser.pushKey(key);
@@ -122034,6 +118950,12 @@ var require_RANK = __commonJS({
     exports.transformRankArguments = transformRankArguments;
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns the rank of one or more values in a t-digest sketch (number of values that are lower than each value)
+       * @param parser - The command parser
+       * @param key - The name of the t-digest sketch
+       * @param values - Array of values to get ranks for
+       */
       parseCommand(...args) {
         args[0].push("TDIGEST.RANK");
         transformRankArguments(...args);
@@ -122050,6 +118972,11 @@ var require_RESET = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Resets a t-digest sketch, clearing all previously added observations
+       * @param parser - The command parser
+       * @param key - The name of the t-digest sketch to reset
+       */
       parseCommand(parser, key) {
         parser.push("TDIGEST.RESET");
         parser.pushKey(key);
@@ -122111,6 +119038,13 @@ var require_TRIMMED_MEAN = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns the mean value from a t-digest sketch after trimming values at specified percentiles
+       * @param parser - The command parser
+       * @param key - The name of the t-digest sketch
+       * @param lowCutPercentile - Lower percentile cutoff (between 0 and 100)
+       * @param highCutPercentile - Higher percentile cutoff (between 0 and 100)
+       */
       parseCommand(parser, key, lowCutPercentile, highCutPercentile) {
         parser.push("TDIGEST.TRIMMED_MEAN");
         parser.pushKey(key);
@@ -122144,175 +119078,33 @@ var require_t_digest = __commonJS({
     var REVRANK_1 = __importDefault3(require_REVRANK());
     var TRIMMED_MEAN_1 = __importDefault3(require_TRIMMED_MEAN());
     exports.default = {
-      /**
-       * Adds one or more observations to a t-digest sketch
-       * @param key - The name of the t-digest sketch
-       * @param values - Array of numeric values to add to the sketch
-       */
       ADD: ADD_1.default,
-      /**
-       * Adds one or more observations to a t-digest sketch
-       * @param key - The name of the t-digest sketch
-       * @param values - Array of numeric values to add to the sketch
-       */
       add: ADD_1.default,
-      /**
-       * Returns value estimates for one or more ranks in a t-digest sketch
-       * @param key - The name of the t-digest sketch
-       * @param ranks - Array of ranks to get value estimates for (ascending order)
-       */
       BYRANK: BYRANK_1.default,
-      /**
-       * Returns value estimates for one or more ranks in a t-digest sketch
-       * @param key - The name of the t-digest sketch
-       * @param ranks - Array of ranks to get value estimates for (ascending order)
-       */
       byRank: BYRANK_1.default,
-      /**
-       * Returns value estimates for one or more ranks in a t-digest sketch, starting from highest rank
-       * @param key - The name of the t-digest sketch
-       * @param ranks - Array of ranks to get value estimates for (descending order)
-       */
       BYREVRANK: BYREVRANK_1.default,
-      /**
-       * Returns value estimates for one or more ranks in a t-digest sketch, starting from highest rank
-       * @param key - The name of the t-digest sketch
-       * @param ranks - Array of ranks to get value estimates for (descending order)
-       */
       byRevRank: BYREVRANK_1.default,
-      /**
-       * Estimates the cumulative distribution function for values in a t-digest sketch
-       * @param key - The name of the t-digest sketch
-       * @param values - Array of values to get CDF estimates for
-       */
       CDF: CDF_1.default,
-      /**
-       * Estimates the cumulative distribution function for values in a t-digest sketch
-       * @param key - The name of the t-digest sketch
-       * @param values - Array of values to get CDF estimates for
-       */
       cdf: CDF_1.default,
-      /**
-       * Creates a new t-digest sketch for storing distributions
-       * @param key - The name of the t-digest sketch
-       * @param options - Optional parameters for sketch creation
-       * @param options.COMPRESSION - Compression parameter that affects performance and accuracy
-       */
       CREATE: CREATE_1.default,
-      /**
-       * Creates a new t-digest sketch for storing distributions
-       * @param key - The name of the t-digest sketch
-       * @param options - Optional parameters for sketch creation
-       * @param options.COMPRESSION - Compression parameter that affects performance and accuracy
-       */
       create: CREATE_1.default,
-      /**
-       * Returns information about a t-digest sketch including compression, capacity, nodes, weights, observations and memory usage
-       * @param key - The name of the t-digest sketch to get information about
-       */
       INFO: INFO_1.default,
-      /**
-       * Returns information about a t-digest sketch including compression, capacity, nodes, weights, observations and memory usage
-       * @param key - The name of the t-digest sketch to get information about
-       */
       info: INFO_1.default,
-      /**
-       * Returns the maximum value from a t-digest sketch
-       * @param key - The name of the t-digest sketch
-       */
       MAX: MAX_1.default,
-      /**
-       * Returns the maximum value from a t-digest sketch
-       * @param key - The name of the t-digest sketch
-       */
       max: MAX_1.default,
-      /**
-       * Merges multiple t-digest sketches into one, with optional compression and override settings
-       * @param destination - The name of the destination t-digest sketch
-       * @param source - One or more source sketch names to merge from
-       * @param options - Optional parameters for merge operation
-       * @param options.COMPRESSION - New compression value for merged sketch
-       * @param options.OVERRIDE - If true, override destination sketch if it exists
-       */
       MERGE: MERGE_1.default,
-      /**
-       * Merges multiple t-digest sketches into one, with optional compression and override settings
-       * @param destination - The name of the destination t-digest sketch
-       * @param source - One or more source sketch names to merge from
-       * @param options - Optional parameters for merge operation
-       * @param options.COMPRESSION - New compression value for merged sketch
-       * @param options.OVERRIDE - If true, override destination sketch if it exists
-       */
       merge: MERGE_1.default,
-      /**
-       * Returns the minimum value from a t-digest sketch
-       * @param key - The name of the t-digest sketch
-       */
       MIN: MIN_1.default,
-      /**
-       * Returns the minimum value from a t-digest sketch
-       * @param key - The name of the t-digest sketch
-       */
       min: MIN_1.default,
-      /**
-       * Returns value estimates at requested quantiles from a t-digest sketch
-       * @param key - The name of the t-digest sketch
-       * @param quantiles - Array of quantiles (between 0 and 1) to get value estimates for
-       */
       QUANTILE: QUANTILE_1.default,
-      /**
-       * Returns value estimates at requested quantiles from a t-digest sketch
-       * @param key - The name of the t-digest sketch
-       * @param quantiles - Array of quantiles (between 0 and 1) to get value estimates for
-       */
       quantile: QUANTILE_1.default,
-      /**
-       * Returns the rank of one or more values in a t-digest sketch (number of values that are lower than each value)
-       * @param key - The name of the t-digest sketch
-       * @param values - Array of values to get ranks for
-       */
       RANK: RANK_1.default,
-      /**
-       * Returns the rank of one or more values in a t-digest sketch (number of values that are lower than each value)
-       * @param key - The name of the t-digest sketch
-       * @param values - Array of values to get ranks for
-       */
       rank: RANK_1.default,
-      /**
-       * Resets a t-digest sketch, clearing all previously added observations
-       * @param key - The name of the t-digest sketch to reset
-       */
       RESET: RESET_1.default,
-      /**
-       * Resets a t-digest sketch, clearing all previously added observations
-       * @param key - The name of the t-digest sketch to reset
-       */
       reset: RESET_1.default,
-      /**
-       * Returns the reverse rank of one or more values in a t-digest sketch (number of values that are higher than each value)
-       * @param key - The name of the t-digest sketch
-       * @param values - Array of values to get reverse ranks for
-       */
       REVRANK: REVRANK_1.default,
-      /**
-       * Returns the reverse rank of one or more values in a t-digest sketch (number of values that are higher than each value)
-       * @param key - The name of the t-digest sketch
-       * @param values - Array of values to get reverse ranks for
-       */
       revRank: REVRANK_1.default,
-      /**
-       * Returns the mean value from a t-digest sketch after trimming values at specified percentiles
-       * @param key - The name of the t-digest sketch
-       * @param lowCutPercentile - Lower percentile cutoff (between 0 and 100)
-       * @param highCutPercentile - Higher percentile cutoff (between 0 and 100)
-       */
       TRIMMED_MEAN: TRIMMED_MEAN_1.default,
-      /**
-       * Returns the mean value from a t-digest sketch after trimming values at specified percentiles
-       * @param key - The name of the t-digest sketch
-       * @param lowCutPercentile - Lower percentile cutoff (between 0 and 100)
-       * @param highCutPercentile - Higher percentile cutoff (between 0 and 100)
-       */
       trimmedMean: TRIMMED_MEAN_1.default
     };
   }
@@ -122325,6 +119117,12 @@ var require_ADD4 = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Adds one or more items to a Top-K filter and returns items dropped from the top-K list
+       * @param parser - The command parser
+       * @param key - The name of the Top-K filter
+       * @param items - One or more items to add to the filter
+       */
       parseCommand(parser, key, items) {
         parser.push("TOPK.ADD");
         parser.pushKey(key);
@@ -122342,6 +119140,12 @@ var require_COUNT2 = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns the count of occurrences for one or more items in a Top-K filter
+       * @param parser - The command parser
+       * @param key - The name of the Top-K filter
+       * @param items - One or more items to get counts for
+       */
       parseCommand(parser, key, items) {
         parser.push("TOPK.COUNT");
         parser.pushKey(key);
@@ -122362,6 +119166,12 @@ var require_INCRBY3 = __commonJS({
     }
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Increases the score of one or more items in a Top-K filter by specified increments
+       * @param parser - The command parser
+       * @param key - The name of the Top-K filter
+       * @param items - A single item or array of items to increment, each with an item name and increment value
+       */
       parseCommand(parser, key, items) {
         parser.push("TOPK.INCRBY");
         parser.pushKey(key);
@@ -122387,6 +119197,11 @@ var require_INFO6 = __commonJS({
     var bloom_1 = require_bloom();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns configuration and statistics of a Top-K filter, including k, width, depth, and decay parameters
+       * @param parser - The command parser
+       * @param key - The name of the Top-K filter to get information about
+       */
       parseCommand(parser, key) {
         parser.push("TOPK.INFO");
         parser.pushKey(key);
@@ -122409,6 +119224,11 @@ var require_LIST_WITHCOUNT = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns all items in a Top-K filter with their respective counts
+       * @param parser - The command parser
+       * @param key - The name of the Top-K filter
+       */
       parseCommand(parser, key) {
         parser.push("TOPK.LIST");
         parser.pushKey(key);
@@ -122435,6 +119255,11 @@ var require_LIST = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns all items in a Top-K filter
+       * @param parser - The command parser
+       * @param key - The name of the Top-K filter
+       */
       parseCommand(parser, key) {
         parser.push("TOPK.LIST");
         parser.pushKey(key);
@@ -122452,6 +119277,12 @@ var require_QUERY2 = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Checks if one or more items are in the Top-K list
+       * @param parser - The command parser
+       * @param key - The name of the Top-K filter
+       * @param items - One or more items to check in the filter
+       */
       parseCommand(parser, key, items) {
         parser.push("TOPK.QUERY");
         parser.pushKey(key);
@@ -122469,6 +119300,16 @@ var require_RESERVE3 = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Creates a new Top-K filter with specified parameters
+       * @param parser - The command parser
+       * @param key - The name of the Top-K filter
+       * @param topK - Number of top occurring items to keep
+       * @param options - Optional parameters for filter configuration
+       * @param options.width - Number of counters in each array
+       * @param options.depth - Number of counter-arrays
+       * @param options.decay - Counter decay factor
+       */
       parseCommand(parser, key, topK, options) {
         parser.push("TOPK.RESERVE");
         parser.pushKey(key);
@@ -122499,103 +119340,21 @@ var require_top_k = __commonJS({
     var QUERY_1 = __importDefault3(require_QUERY2());
     var RESERVE_1 = __importDefault3(require_RESERVE3());
     exports.default = {
-      /**
-       * Adds one or more items to a Top-K filter and returns items dropped from the top-K list
-       * @param key - The name of the Top-K filter
-       * @param items - One or more items to add to the filter
-       */
       ADD: ADD_1.default,
-      /**
-       * Adds one or more items to a Top-K filter and returns items dropped from the top-K list
-       * @param key - The name of the Top-K filter
-       * @param items - One or more items to add to the filter
-       */
       add: ADD_1.default,
-      /**
-       * Returns the count of occurrences for one or more items in a Top-K filter
-       * @param key - The name of the Top-K filter
-       * @param items - One or more items to get counts for
-       */
       COUNT: COUNT_1.default,
-      /**
-       * Returns the count of occurrences for one or more items in a Top-K filter
-       * @param key - The name of the Top-K filter
-       * @param items - One or more items to get counts for
-       */
       count: COUNT_1.default,
-      /**
-       * Increases the score of one or more items in a Top-K filter by specified increments
-       * @param key - The name of the Top-K filter
-       * @param items - A single item or array of items to increment, each with an item name and increment value
-       */
       INCRBY: INCRBY_1.default,
-      /**
-       * Increases the score of one or more items in a Top-K filter by specified increments
-       * @param key - The name of the Top-K filter
-       * @param items - A single item or array of items to increment, each with an item name and increment value
-       */
       incrBy: INCRBY_1.default,
-      /**
-       * Returns configuration and statistics of a Top-K filter, including k, width, depth, and decay parameters
-       * @param key - The name of the Top-K filter to get information about
-       */
       INFO: INFO_1.default,
-      /**
-       * Returns configuration and statistics of a Top-K filter, including k, width, depth, and decay parameters
-       * @param key - The name of the Top-K filter to get information about
-       */
       info: INFO_1.default,
-      /**
-       * Returns all items in a Top-K filter with their respective counts
-       * @param key - The name of the Top-K filter
-       */
       LIST_WITHCOUNT: LIST_WITHCOUNT_1.default,
-      /**
-       * Returns all items in a Top-K filter with their respective counts
-       * @param key - The name of the Top-K filter
-       */
       listWithCount: LIST_WITHCOUNT_1.default,
-      /**
-       * Returns all items in a Top-K filter
-       * @param key - The name of the Top-K filter
-       */
       LIST: LIST_1.default,
-      /**
-       * Returns all items in a Top-K filter
-       * @param key - The name of the Top-K filter
-       */
       list: LIST_1.default,
-      /**
-       * Checks if one or more items are in the Top-K list
-       * @param key - The name of the Top-K filter
-       * @param items - One or more items to check in the filter
-       */
       QUERY: QUERY_1.default,
-      /**
-       * Checks if one or more items are in the Top-K list
-       * @param key - The name of the Top-K filter
-       * @param items - One or more items to check in the filter
-       */
       query: QUERY_1.default,
-      /**
-       * Creates a new Top-K filter with specified parameters
-       * @param key - The name of the Top-K filter
-       * @param topK - Number of top occurring items to keep
-       * @param options - Optional parameters for filter configuration
-       * @param options.width - Number of counters in each array
-       * @param options.depth - Number of counter-arrays
-       * @param options.decay - Counter decay factor
-       */
       RESERVE: RESERVE_1.default,
-      /**
-       * Creates a new Top-K filter with specified parameters
-       * @param key - The name of the Top-K filter
-       * @param topK - Number of top occurring items to keep
-       * @param options - Optional parameters for filter configuration
-       * @param options.width - Number of counters in each array
-       * @param options.depth - Number of counter-arrays
-       * @param options.decay - Counter decay factor
-       */
       reserve: RESERVE_1.default
     };
   }
@@ -122648,6 +119407,16 @@ var require_ARRAPPEND = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Appends one or more values to the end of an array in a JSON document.
+       * Returns the new array length after append, or null if the path does not exist.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key to append to
+       * @param path - Path to the array in the JSON document
+       * @param json - The first value to append
+       * @param jsons - Additional values to append
+       */
       parseCommand(parser, key, path5, json3, ...jsons) {
         parser.push("JSON.ARRAPPEND");
         parser.pushKey(key);
@@ -122669,6 +119438,18 @@ var require_ARRINDEX = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns the index of the first occurrence of a value in a JSON array.
+       * If the specified value is not found, it returns -1, or null if the path does not exist.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the array
+       * @param path - Path to the array in the JSON document
+       * @param json - The value to search for
+       * @param options - Optional range parameters for the search
+       * @param options.range.start - Starting index for the search
+       * @param options.range.stop - Optional ending index for the search
+       */
       parseCommand(parser, key, path5, json3, options) {
         parser.push("JSON.ARRINDEX");
         parser.pushKey(key);
@@ -122693,6 +119474,17 @@ var require_ARRINSERT = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Inserts one or more values into an array at the specified index.
+       * Returns the new array length after insert, or null if the path does not exist.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the array
+       * @param path - Path to the array in the JSON document
+       * @param index - The position where to insert the values
+       * @param json - The first value to insert
+       * @param jsons - Additional values to insert
+       */
       parseCommand(parser, key, path5, index2, json3, ...jsons) {
         parser.push("JSON.ARRINSERT");
         parser.pushKey(key);
@@ -122713,6 +119505,15 @@ var require_ARRLEN = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns the length of an array in a JSON document.
+       * Returns null if the path does not exist or the value is not an array.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the array
+       * @param options - Optional parameters
+       * @param options.path - Path to the array in the JSON document
+       */
       parseCommand(parser, key, options) {
         parser.push("JSON.ARRLEN");
         parser.pushKey(key);
@@ -122733,6 +119534,16 @@ var require_ARRPOP = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Removes and returns an element from an array in a JSON document.
+       * Returns null if the path does not exist or the value is not an array.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the array
+       * @param options - Optional parameters
+       * @param options.path - Path to the array in the JSON document
+       * @param options.index - Optional index to pop from. Default is -1 (last element)
+       */
       parseCommand(parser, key, options) {
         parser.push("JSON.ARRPOP");
         parser.pushKey(key);
@@ -122757,6 +119568,16 @@ var require_ARRTRIM = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Trims an array in a JSON document to include only elements within the specified range.
+       * Returns the new array length after trimming, or null if the path does not exist.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the array
+       * @param path - Path to the array in the JSON document
+       * @param start - Starting index (inclusive)
+       * @param stop - Ending index (inclusive)
+       */
       parseCommand(parser, key, path5, start, stop) {
         parser.push("JSON.ARRTRIM");
         parser.pushKey(key);
@@ -122774,6 +119595,15 @@ var require_CLEAR = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Clears container values (arrays/objects) in a JSON document.
+       * Returns the number of values cleared (0 or 1), or null if the path does not exist.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the JSON document
+       * @param options - Optional parameters
+       * @param options.path - Path to the container to clear
+       */
       parseCommand(parser, key, options) {
         parser.push("JSON.CLEAR");
         parser.pushKey(key);
@@ -122793,6 +119623,15 @@ var require_DEBUG_MEMORY = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Reports memory usage details for a JSON document value.
+       * Returns size in bytes of the value, or null if the key or path does not exist.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the JSON document
+       * @param options - Optional parameters
+       * @param options.path - Path to the value to examine
+       */
       parseCommand(parser, key, options) {
         parser.push("JSON.DEBUG", "MEMORY");
         parser.pushKey(key);
@@ -122812,6 +119651,15 @@ var require_DEL3 = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Deletes a value from a JSON document.
+       * Returns the number of paths deleted (0 or 1), or null if the key does not exist.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the JSON document
+       * @param options - Optional parameters
+       * @param options.path - Path to the value to delete
+       */
       parseCommand(parser, key, options) {
         parser.push("JSON.DEL");
         parser.pushKey(key);
@@ -122831,6 +119679,15 @@ var require_FORGET = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Alias for JSON.DEL - Deletes a value from a JSON document.
+       * Returns the number of paths deleted (0 or 1), or null if the key does not exist.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the JSON document
+       * @param options - Optional parameters
+       * @param options.path - Path to the value to delete
+       */
       parseCommand(parser, key, options) {
         parser.push("JSON.FORGET");
         parser.pushKey(key);
@@ -122851,6 +119708,15 @@ var require_GET2 = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Gets values from a JSON document.
+       * Returns the value at the specified path, or null if the key or path does not exist.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the JSON document
+       * @param options - Optional parameters
+       * @param options.path - Path(s) to the value(s) to retrieve
+       */
       parseCommand(parser, key, options) {
         parser.push("JSON.GET");
         parser.pushKey(key);
@@ -122871,6 +119737,15 @@ var require_MERGE3 = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Merges a given JSON value into a JSON document.
+       * Returns OK on success, or null if the key does not exist.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the JSON document
+       * @param path - Path to merge into
+       * @param value - JSON value to merge
+       */
       parseCommand(parser, key, path5, value) {
         parser.push("JSON.MERGE");
         parser.pushKey(key);
@@ -122889,6 +119764,14 @@ var require_MGET2 = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Gets values at a specific path from multiple JSON documents.
+       * Returns an array of values at the path from each key, null for missing keys/paths.
+       *
+       * @param parser - The Redis command parser
+       * @param keys - Array of keys containing JSON documents
+       * @param path - Path to retrieve from each document
+       */
       parseCommand(parser, keys, path5) {
         parser.push("JSON.MGET");
         parser.pushKeys(keys);
@@ -122909,6 +119792,16 @@ var require_MSET2 = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Sets multiple JSON values in multiple documents.
+       * Returns OK on success.
+       *
+       * @param parser - The Redis command parser
+       * @param items - Array of objects containing key, path, and value to set
+       * @param items[].key - The key containing the JSON document
+       * @param items[].path - Path in the document to set
+       * @param items[].value - JSON value to set at the path
+       */
       parseCommand(parser, items) {
         parser.push("JSON.MSET");
         for (let i2 = 0; i2 < items.length; i2++) {
@@ -122928,6 +119821,15 @@ var require_NUMINCRBY = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Increments a numeric value stored in a JSON document by a given number.
+       * Returns the value after increment, or null if the key/path doesn't exist or value is not numeric.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the JSON document
+       * @param path - Path to the numeric value
+       * @param by - Amount to increment by
+       */
       parseCommand(parser, key, path5, by) {
         parser.push("JSON.NUMINCRBY");
         parser.pushKey(key);
@@ -122954,6 +119856,15 @@ var require_NUMMULTBY = __commonJS({
     var NUMINCRBY_1 = __importDefault3(require_NUMINCRBY());
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Multiplies a numeric value stored in a JSON document by a given number.
+       * Returns the value after multiplication, or null if the key/path doesn't exist or value is not numeric.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the JSON document
+       * @param path - Path to the numeric value
+       * @param by - Amount to multiply by
+       */
       parseCommand(parser, key, path5, by) {
         parser.push("JSON.NUMMULTBY");
         parser.pushKey(key);
@@ -122971,6 +119882,15 @@ var require_OBJKEYS = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Returns the keys in the object stored in a JSON document.
+       * Returns array of keys, array of arrays for multiple paths, or null if path doesn't exist.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the JSON document
+       * @param options - Optional parameters
+       * @param options.path - Path to the object to examine
+       */
       parseCommand(parser, key, options) {
         parser.push("JSON.OBJKEYS");
         parser.pushKey(key);
@@ -122990,6 +119910,15 @@ var require_OBJLEN = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns the number of keys in the object stored in a JSON document.
+       * Returns length of object, array of lengths for multiple paths, or null if path doesn't exist.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the JSON document
+       * @param options - Optional parameters
+       * @param options.path - Path to the object to examine
+       */
       parseCommand(parser, key, options) {
         parser.push("JSON.OBJLEN");
         parser.pushKey(key);
@@ -123010,6 +119939,19 @@ var require_SET2 = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Sets a JSON value at a specific path in a JSON document.
+       * Returns OK on success, or null if condition (NX/XX) is not met.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the JSON document
+       * @param path - Path in the document to set
+       * @param json - JSON value to set at the path
+       * @param options - Optional parameters
+       * @param options.condition - Set condition: NX (only if doesn't exist) or XX (only if exists)
+       * @deprecated options.NX - Use options.condition instead
+       * @deprecated options.XX - Use options.condition instead
+       */
       parseCommand(parser, key, path5, json3, options) {
         parser.push("JSON.SET");
         parser.pushKey(key);
@@ -123020,9 +119962,6 @@ var require_SET2 = __commonJS({
           parser.push("NX");
         } else if (options?.XX) {
           parser.push("XX");
-        }
-        if (options?.fpha !== void 0) {
-          parser.push("FPHA", options.fpha);
         }
       },
       transformReply: void 0
@@ -123038,6 +119977,16 @@ var require_STRAPPEND = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Appends a string to a string value stored in a JSON document.
+       * Returns new string length after append, or null if the path doesn't exist or value is not a string.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the JSON document
+       * @param append - String to append
+       * @param options - Optional parameters
+       * @param options.path - Path to the string value
+       */
       parseCommand(parser, key, append2, options) {
         parser.push("JSON.STRAPPEND");
         parser.pushKey(key);
@@ -123058,6 +120007,15 @@ var require_STRLEN2 = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns the length of a string value stored in a JSON document.
+       * Returns string length, array of lengths for multiple paths, or null if path doesn't exist.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the JSON document
+       * @param options - Optional parameters
+       * @param options.path - Path to the string value
+       */
       parseCommand(parser, key, options) {
         parser.push("JSON.STRLEN");
         parser.pushKey(key);
@@ -123077,6 +120035,14 @@ var require_TOGGLE = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Toggles a boolean value stored in a JSON document.
+       * Returns 1 if value was toggled to true, 0 if toggled to false, or null if path doesn't exist.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the JSON document
+       * @param path - Path to the boolean value
+       */
       parseCommand(parser, key, path5) {
         parser.push("JSON.TOGGLE");
         parser.pushKey(key);
@@ -123094,6 +120060,15 @@ var require_TYPE2 = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Returns the type of JSON value at a specific path in a JSON document.
+       * Returns the type as a string, array of types for multiple paths, or null if path doesn't exist.
+       *
+       * @param parser - The Redis command parser
+       * @param key - The key containing the JSON document
+       * @param options - Optional parameters
+       * @param options.path - Path to examine
+       */
       parseCommand(parser, key, options) {
         parser.push("JSON.TYPE");
         parser.pushKey(key);
@@ -123155,445 +120130,59 @@ var require_commands6 = __commonJS({
       return generic_transformers_1.transformRedisJsonNullReply;
     } });
     exports.default = {
-      /**
-       * Appends one or more values to the end of an array in a JSON document.
-       * Returns the new array length after append, or null if the path does not exist.
-       *
-       * @param key - The key to append to
-       * @param path - Path to the array in the JSON document
-       * @param json - The first value to append
-       * @param jsons - Additional values to append
-       */
       ARRAPPEND: ARRAPPEND_1.default,
-      /**
-       * Appends one or more values to the end of an array in a JSON document.
-       * Returns the new array length after append, or null if the path does not exist.
-       *
-       * @param key - The key to append to
-       * @param path - Path to the array in the JSON document
-       * @param json - The first value to append
-       * @param jsons - Additional values to append
-       */
       arrAppend: ARRAPPEND_1.default,
-      /**
-       * Returns the index of the first occurrence of a value in a JSON array.
-       * If the specified value is not found, it returns -1, or null if the path does not exist.
-       *
-       * @param key - The key containing the array
-       * @param path - Path to the array in the JSON document
-       * @param json - The value to search for
-       * @param options - Optional range parameters for the search
-       * @param options.range.start - Starting index for the search
-       * @param options.range.stop - Optional ending index for the search
-       */
       ARRINDEX: ARRINDEX_1.default,
-      /**
-       * Returns the index of the first occurrence of a value in a JSON array.
-       * If the specified value is not found, it returns -1, or null if the path does not exist.
-       *
-       * @param key - The key containing the array
-       * @param path - Path to the array in the JSON document
-       * @param json - The value to search for
-       * @param options - Optional range parameters for the search
-       * @param options.range.start - Starting index for the search
-       * @param options.range.stop - Optional ending index for the search
-       */
       arrIndex: ARRINDEX_1.default,
-      /**
-       * Inserts one or more values into an array at the specified index.
-       * Returns the new array length after insert, or null if the path does not exist.
-       *
-       * @param key - The key containing the array
-       * @param path - Path to the array in the JSON document
-       * @param index - The position where to insert the values
-       * @param json - The first value to insert
-       * @param jsons - Additional values to insert
-       */
       ARRINSERT: ARRINSERT_1.default,
-      /**
-       * Inserts one or more values into an array at the specified index.
-       * Returns the new array length after insert, or null if the path does not exist.
-       *
-       * @param key - The key containing the array
-       * @param path - Path to the array in the JSON document
-       * @param index - The position where to insert the values
-       * @param json - The first value to insert
-       * @param jsons - Additional values to insert
-       */
       arrInsert: ARRINSERT_1.default,
-      /**
-       * Returns the length of an array in a JSON document.
-       * Returns null if the path does not exist or the value is not an array.
-       *
-       * @param key - The key containing the array
-       * @param options - Optional parameters
-       * @param options.path - Path to the array in the JSON document
-       */
       ARRLEN: ARRLEN_1.default,
-      /**
-       * Returns the length of an array in a JSON document.
-       * Returns null if the path does not exist or the value is not an array.
-       *
-       * @param key - The key containing the array
-       * @param options - Optional parameters
-       * @param options.path - Path to the array in the JSON document
-       */
       arrLen: ARRLEN_1.default,
-      /**
-       * Removes and returns an element from an array in a JSON document.
-       * Returns null if the path does not exist or the value is not an array.
-       *
-       * @param key - The key containing the array
-       * @param options - Optional parameters
-       * @param options.path - Path to the array in the JSON document
-       * @param options.index - Optional index to pop from. Default is -1 (last element)
-       */
       ARRPOP: ARRPOP_1.default,
-      /**
-       * Removes and returns an element from an array in a JSON document.
-       * Returns null if the path does not exist or the value is not an array.
-       *
-       * @param key - The key containing the array
-       * @param options - Optional parameters
-       * @param options.path - Path to the array in the JSON document
-       * @param options.index - Optional index to pop from. Default is -1 (last element)
-       */
       arrPop: ARRPOP_1.default,
-      /**
-       * Trims an array in a JSON document to include only elements within the specified range.
-       * Returns the new array length after trimming, or null if the path does not exist.
-       *
-       * @param key - The key containing the array
-       * @param path - Path to the array in the JSON document
-       * @param start - Starting index (inclusive)
-       * @param stop - Ending index (inclusive)
-       */
       ARRTRIM: ARRTRIM_1.default,
-      /**
-       * Trims an array in a JSON document to include only elements within the specified range.
-       * Returns the new array length after trimming, or null if the path does not exist.
-       *
-       * @param key - The key containing the array
-       * @param path - Path to the array in the JSON document
-       * @param start - Starting index (inclusive)
-       * @param stop - Ending index (inclusive)
-       */
       arrTrim: ARRTRIM_1.default,
-      /**
-       * Clears container values (arrays/objects) in a JSON document.
-       * Returns the number of values cleared (0 or 1), or null if the path does not exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param options - Optional parameters
-       * @param options.path - Path to the container to clear
-       */
       CLEAR: CLEAR_1.default,
-      /**
-       * Clears container values (arrays/objects) in a JSON document.
-       * Returns the number of values cleared (0 or 1), or null if the path does not exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param options - Optional parameters
-       * @param options.path - Path to the container to clear
-       */
       clear: CLEAR_1.default,
-      /**
-       * Reports memory usage details for a JSON document value.
-       * Returns size in bytes of the value, or null if the key or path does not exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param options - Optional parameters
-       * @param options.path - Path to the value to examine
-       */
       DEBUG_MEMORY: DEBUG_MEMORY_1.default,
-      /**
-       * Reports memory usage details for a JSON document value.
-       * Returns size in bytes of the value, or null if the key or path does not exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param options - Optional parameters
-       * @param options.path - Path to the value to examine
-       */
       debugMemory: DEBUG_MEMORY_1.default,
-      /**
-       * Deletes a value from a JSON document.
-       * Returns the number of paths deleted (0 or 1), or null if the key does not exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param options - Optional parameters
-       * @param options.path - Path to the value to delete
-       */
       DEL: DEL_1.default,
-      /**
-       * Deletes a value from a JSON document.
-       * Returns the number of paths deleted (0 or 1), or null if the key does not exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param options - Optional parameters
-       * @param options.path - Path to the value to delete
-       */
       del: DEL_1.default,
-      /**
-       * Alias for JSON.DEL - Deletes a value from a JSON document.
-       * Returns the number of paths deleted (0 or 1), or null if the key does not exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param options - Optional parameters
-       * @param options.path - Path to the value to delete
-       */
       FORGET: FORGET_1.default,
-      /**
-       * Alias for JSON.DEL - Deletes a value from a JSON document.
-       * Returns the number of paths deleted (0 or 1), or null if the key does not exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param options - Optional parameters
-       * @param options.path - Path to the value to delete
-       */
       forget: FORGET_1.default,
-      /**
-       * Gets values from a JSON document.
-       * Returns the value at the specified path, or null if the key or path does not exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param options - Optional parameters
-       * @param options.path - Path(s) to the value(s) to retrieve
-       */
       GET: GET_1.default,
-      /**
-       * Gets values from a JSON document.
-       * Returns the value at the specified path, or null if the key or path does not exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param options - Optional parameters
-       * @param options.path - Path(s) to the value(s) to retrieve
-       */
       get: GET_1.default,
-      /**
-       * Merges a given JSON value into a JSON document.
-       * Returns OK on success, or null if the key does not exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param path - Path to merge into
-       * @param value - JSON value to merge
-       */
       MERGE: MERGE_1.default,
-      /**
-       * Merges a given JSON value into a JSON document.
-       * Returns OK on success, or null if the key does not exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param path - Path to merge into
-       * @param value - JSON value to merge
-       */
       merge: MERGE_1.default,
-      /**
-       * Gets values at a specific path from multiple JSON documents.
-       * Returns an array of values at the path from each key, null for missing keys/paths.
-       *
-       * @param keys - Array of keys containing JSON documents
-       * @param path - Path to retrieve from each document
-       */
       MGET: MGET_1.default,
-      /**
-       * Gets values at a specific path from multiple JSON documents.
-       * Returns an array of values at the path from each key, null for missing keys/paths.
-       *
-       * @param keys - Array of keys containing JSON documents
-       * @param path - Path to retrieve from each document
-       */
       mGet: MGET_1.default,
-      /**
-       * Sets multiple JSON values in multiple documents.
-       * Returns OK on success.
-       *
-       * @param items - Array of objects containing key, path, and value to set
-       * @param items[].key - The key containing the JSON document
-       * @param items[].path - Path in the document to set
-       * @param items[].value - JSON value to set at the path
-       */
       MSET: MSET_1.default,
-      /**
-       * Sets multiple JSON values in multiple documents.
-       * Returns OK on success.
-       *
-       * @param items - Array of objects containing key, path, and value to set
-       * @param items[].key - The key containing the JSON document
-       * @param items[].path - Path in the document to set
-       * @param items[].value - JSON value to set at the path
-       */
       mSet: MSET_1.default,
-      /**
-       * Increments a numeric value stored in a JSON document by a given number.
-       * Returns the value after increment, or null if the key/path doesn't exist or value is not numeric.
-       *
-       * @param key - The key containing the JSON document
-       * @param path - Path to the numeric value
-       * @param by - Amount to increment by
-       */
       NUMINCRBY: NUMINCRBY_1.default,
-      /**
-       * Increments a numeric value stored in a JSON document by a given number.
-       * Returns the value after increment, or null if the key/path doesn't exist or value is not numeric.
-       *
-       * @param key - The key containing the JSON document
-       * @param path - Path to the numeric value
-       * @param by - Amount to increment by
-       */
       numIncrBy: NUMINCRBY_1.default,
       /**
-       * Multiplies a numeric value stored in a JSON document by a given number.
-       * Returns the value after multiplication, or null if the key/path doesn't exist or value is not numeric.
-       *
-       * @param key - The key containing the JSON document
-       * @param path - Path to the numeric value
-       * @param by - Amount to multiply by
+       * @deprecated since JSON version 2.0
        */
       NUMMULTBY: NUMMULTBY_1.default,
       /**
-       * Multiplies a numeric value stored in a JSON document by a given number.
-       * Returns the value after multiplication, or null if the key/path doesn't exist or value is not numeric.
-       *
-       * @param key - The key containing the JSON document
-       * @param path - Path to the numeric value
-       * @param by - Amount to multiply by
+       * @deprecated since JSON version 2.0
        */
       numMultBy: NUMMULTBY_1.default,
-      /**
-       * Returns the keys in the object stored in a JSON document.
-       * Returns array of keys, array of arrays for multiple paths, or null if path doesn't exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param options - Optional parameters
-       * @param options.path - Path to the object to examine
-       */
       OBJKEYS: OBJKEYS_1.default,
-      /**
-       * Returns the keys in the object stored in a JSON document.
-       * Returns array of keys, array of arrays for multiple paths, or null if path doesn't exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param options - Optional parameters
-       * @param options.path - Path to the object to examine
-       */
       objKeys: OBJKEYS_1.default,
-      /**
-       * Returns the number of keys in the object stored in a JSON document.
-       * Returns length of object, array of lengths for multiple paths, or null if path doesn't exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param options - Optional parameters
-       * @param options.path - Path to the object to examine
-       */
       OBJLEN: OBJLEN_1.default,
-      /**
-       * Returns the number of keys in the object stored in a JSON document.
-       * Returns length of object, array of lengths for multiple paths, or null if path doesn't exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param options - Optional parameters
-       * @param options.path - Path to the object to examine
-       */
       objLen: OBJLEN_1.default,
       // RESP,
       // resp: RESP,
-      /**
-       * Sets a JSON value at a specific path in a JSON document.
-       * Returns OK on success, or null if condition (NX/XX) is not met.
-       *
-       * @param key - The key containing the JSON document
-       * @param path - Path in the document to set
-       * @param json - JSON value to set at the path
-       * @param options - Optional parameters
-       * @param options.condition - Set condition: NX (only if doesn't exist) or XX (only if exists)
-       * @deprecated options.NX - Use options.condition instead
-       * @deprecated options.XX - Use options.condition instead
-       */
       SET: SET_1.default,
-      /**
-       * Sets a JSON value at a specific path in a JSON document.
-       * Returns OK on success, or null if condition (NX/XX) is not met.
-       *
-       * @param key - The key containing the JSON document
-       * @param path - Path in the document to set
-       * @param json - JSON value to set at the path
-       * @param options - Optional parameters
-       * @param options.condition - Set condition: NX (only if doesn't exist) or XX (only if exists)
-       * @deprecated options.NX - Use options.condition instead
-       * @deprecated options.XX - Use options.condition instead
-       */
       set: SET_1.default,
-      /**
-       * Appends a string to a string value stored in a JSON document.
-       * Returns new string length after append, or null if the path doesn't exist or value is not a string.
-       *
-       * @param key - The key containing the JSON document
-       * @param append - String to append
-       * @param options - Optional parameters
-       * @param options.path - Path to the string value
-       */
       STRAPPEND: STRAPPEND_1.default,
-      /**
-       * Appends a string to a string value stored in a JSON document.
-       * Returns new string length after append, or null if the path doesn't exist or value is not a string.
-       *
-       * @param key - The key containing the JSON document
-       * @param append - String to append
-       * @param options - Optional parameters
-       * @param options.path - Path to the string value
-       */
       strAppend: STRAPPEND_1.default,
-      /**
-       * Returns the length of a string value stored in a JSON document.
-       * Returns string length, array of lengths for multiple paths, or null if path doesn't exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param options - Optional parameters
-       * @param options.path - Path to the string value
-       */
       STRLEN: STRLEN_1.default,
-      /**
-       * Returns the length of a string value stored in a JSON document.
-       * Returns string length, array of lengths for multiple paths, or null if path doesn't exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param options - Optional parameters
-       * @param options.path - Path to the string value
-       */
       strLen: STRLEN_1.default,
-      /**
-       * Toggles a boolean value stored in a JSON document.
-       * Returns 1 if value was toggled to true, 0 if toggled to false, or null if path doesn't exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param path - Path to the boolean value
-       */
       TOGGLE: TOGGLE_1.default,
-      /**
-       * Toggles a boolean value stored in a JSON document.
-       * Returns 1 if value was toggled to true, 0 if toggled to false, or null if path doesn't exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param path - Path to the boolean value
-       */
       toggle: TOGGLE_1.default,
-      /**
-       * Returns the type of JSON value at a specific path in a JSON document.
-       * Returns the type as a string, array of types for multiple paths, or null if path doesn't exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param options - Optional parameters
-       * @param options.path - Path to examine
-       */
       TYPE: TYPE_1.default,
-      /**
-       * Returns the type of JSON value at a specific path in a JSON document.
-       * Returns the type as a string, array of types for multiple paths, or null if path doesn't exist.
-       *
-       * @param key - The key containing the JSON document
-       * @param options - Optional parameters
-       * @param options.path - Path to examine
-       */
       type: TYPE_1.default
     };
   }
@@ -123623,6 +120212,10 @@ var require_LIST2 = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Lists all existing indexes in the database.
+       * @param parser - The command parser
+       */
       parseCommand(parser) {
         parser.push("FT._LIST");
       },
@@ -123746,7 +120339,7 @@ var require_CREATE2 = __commonJS({
               }
               parseCommonSchemaFieldOptions(parser, fieldOptions);
               break;
-            case exports.SCHEMA_FIELD_TYPE.VECTOR: {
+            case exports.SCHEMA_FIELD_TYPE.VECTOR:
               parser.push(fieldOptions.ALGORITHM);
               const args = [];
               args.push("TYPE", fieldOptions.TYPE, "DIM", fieldOptions.DIM.toString(), "DISTANCE_METRIC", fieldOptions.DISTANCE_METRIC);
@@ -123799,7 +120392,6 @@ var require_CREATE2 = __commonJS({
                 parser.push("INDEXMISSING");
               }
               break;
-            }
             case exports.SCHEMA_FIELD_TYPE.GEOSHAPE:
               if (fieldOptions.COORD_SYSTEM !== void 0) {
                 parser.push("COORD_SYSTEM", fieldOptions.COORD_SYSTEM);
@@ -123843,6 +120435,23 @@ var require_CREATE2 = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Creates a new search index with the given schema and options.
+       * @param parser - The command parser
+       * @param index - Name of the index to create
+       * @param schema - Index schema defining field names and types (TEXT, NUMERIC, GEO, TAG, VECTOR, GEOSHAPE).
+       *   Each field can be a single definition or an array to index the same field multiple times with different configurations.
+       * @param options - Optional parameters:
+       *   - ON: Type of container to index (HASH or JSON)
+       *   - PREFIX: Prefixes for document keys to index
+       *   - FILTER: Expression that filters indexed documents
+       *   - LANGUAGE/LANGUAGE_FIELD: Default language for indexing
+       *   - SCORE/SCORE_FIELD: Document ranking parameters
+       *   - MAXTEXTFIELDS: Index all text fields without specifying them
+       *   - TEMPORARY: Create a temporary index
+       *   - NOOFFSETS/NOHL/NOFIELDS/NOFREQS: Index optimization flags
+       *   - STOPWORDS: Custom stopword list
+       */
       parseCommand(parser, index2, schema, options) {
         parser.push("FT.CREATE", index2);
         if (options?.ON) {
@@ -123903,6 +120512,12 @@ var require_ALTER = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Alters an existing RediSearch index schema by adding new fields.
+       * @param parser - The command parser
+       * @param index - The index to alter
+       * @param schema - The schema definition containing new fields to add
+       */
       parseCommand(parser, index2, schema) {
         parser.push("FT.ALTER", index2, "SCHEMA", "ADD");
         (0, CREATE_1.parseSchema)(parser, schema);
@@ -123922,112 +120537,6 @@ var require_default = __commonJS({
   }
 });
 
-// node_modules/@redis/search/dist/lib/commands/reply-transformers.js
-var require_reply_transformers = __commonJS({
-  "node_modules/@redis/search/dist/lib/commands/reply-transformers.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.parseAggregateResultRow = exports.parseSearchResultRow = exports.normalizeProfileReply = exports.parseDocumentValue = exports.toCompatObject = exports.getMapValue = exports.mapLikeToFlatArray = exports.mapLikeToObject = exports.mapLikeValues = exports.mapLikeEntries = exports.isPlainObject = void 0;
-    var reply_utils_1 = require_reply_utils();
-    Object.defineProperty(exports, "isPlainObject", { enumerable: true, get: function() {
-      return reply_utils_1.isPlainObject;
-    } });
-    Object.defineProperty(exports, "mapLikeEntries", { enumerable: true, get: function() {
-      return reply_utils_1.mapLikeEntries;
-    } });
-    Object.defineProperty(exports, "mapLikeValues", { enumerable: true, get: function() {
-      return reply_utils_1.mapLikeValues;
-    } });
-    Object.defineProperty(exports, "mapLikeToObject", { enumerable: true, get: function() {
-      return reply_utils_1.mapLikeToObject;
-    } });
-    Object.defineProperty(exports, "mapLikeToFlatArray", { enumerable: true, get: function() {
-      return reply_utils_1.mapLikeToFlatArray;
-    } });
-    Object.defineProperty(exports, "getMapValue", { enumerable: true, get: function() {
-      return reply_utils_1.getMapValue;
-    } });
-    function toCompatObject(value) {
-      const descriptors = {};
-      for (const [key, entryValue] of Object.entries(value)) {
-        descriptors[key] = {
-          value: entryValue,
-          configurable: true,
-          enumerable: true,
-          writable: true
-        };
-      }
-      return Object.defineProperties({}, descriptors);
-    }
-    exports.toCompatObject = toCompatObject;
-    function assignDocumentField(target, key, value) {
-      if (key === "$") {
-        const json3 = value?.toString?.() ?? value;
-        if (typeof json3 === "string") {
-          try {
-            Object.assign(target, JSON.parse(json3));
-            return;
-          } catch {
-          }
-        }
-      }
-      target[key] = value;
-    }
-    function parseDocumentValue(value) {
-      const document2 = {};
-      for (const [key, entryValue] of (0, reply_utils_1.mapLikeEntries)(value)) {
-        assignDocumentField(document2, key, entryValue);
-      }
-      return document2;
-    }
-    exports.parseDocumentValue = parseDocumentValue;
-    function normalizeProfileValue(value) {
-      if (Array.isArray(value)) {
-        return value.map(normalizeProfileValue);
-      }
-      if (value instanceof Map || (0, reply_utils_1.isPlainObject)(value)) {
-        const normalized = [];
-        for (const [key, entryValue] of (0, reply_utils_1.mapLikeEntries)(value)) {
-          normalized.push(key, normalizeProfileValue(entryValue));
-        }
-        return normalized;
-      }
-      return value;
-    }
-    function normalizeProfileReply(profile) {
-      return normalizeProfileValue(profile);
-    }
-    exports.normalizeProfileReply = normalizeProfileReply;
-    function parseSearchResultRow(rawRow) {
-      const row = (0, reply_utils_1.mapLikeToObject)(rawRow);
-      const value = {};
-      Object.assign(value, parseDocumentValue((0, reply_utils_1.getMapValue)(row, ["values"])));
-      Object.assign(value, parseDocumentValue((0, reply_utils_1.getMapValue)(row, ["extra_attributes", "extraAttributes"])));
-      return {
-        id: (0, reply_utils_1.getMapValue)(row, ["id", "doc_id"]),
-        value: toCompatObject(value)
-      };
-    }
-    exports.parseSearchResultRow = parseSearchResultRow;
-    function parseAggregateResultRow(rawRow) {
-      const row = (0, reply_utils_1.mapLikeToObject)(rawRow);
-      const result = {};
-      Object.assign(result, parseDocumentValue((0, reply_utils_1.getMapValue)(row, ["values"])));
-      Object.assign(result, parseDocumentValue((0, reply_utils_1.getMapValue)(row, ["extra_attributes", "extraAttributes"])));
-      for (const [key, value] of Object.entries(row)) {
-        if (key === "id" || key === "values" || key.toLowerCase() === "extra_attributes" || key === "extraAttributes") {
-          continue;
-        }
-        if (!Object.hasOwn(result, key)) {
-          result[key] = value;
-        }
-      }
-      return toCompatObject(result);
-    }
-    exports.parseAggregateResultRow = parseAggregateResultRow;
-  }
-});
-
 // node_modules/@redis/search/dist/lib/commands/SEARCH.js
 var require_SEARCH = __commonJS({
   "node_modules/@redis/search/dist/lib/commands/SEARCH.js"(exports) {
@@ -124036,7 +120545,6 @@ var require_SEARCH = __commonJS({
     exports.parseSearchOptions = exports.parseParamsArgument = void 0;
     var generic_transformers_1 = require_generic_transformers();
     var default_1 = require_default();
-    var reply_transformers_1 = require_reply_transformers();
     function parseParamsArgument(parser, params) {
       if (params) {
         parser.push("PARAMS");
@@ -124125,54 +120633,66 @@ var require_SEARCH = __commonJS({
       }
     }
     exports.parseSearchOptions = parseSearchOptions;
-    function transformSearchReplyResp2(reply, _preserve, _typeMapping) {
-      const withoutDocuments = reply.length > 2 && !Array.isArray(reply[2]);
-      const documents = [];
-      let i2 = 1;
-      while (i2 < reply.length) {
-        documents.push({
-          id: reply[i2++],
-          value: withoutDocuments ? {} : documentValue(reply[i2++])
-        });
-      }
-      return {
-        total: reply[0],
-        documents
-      };
-    }
-    function transformSearchReplyResp3(rawReply, preserve, typeMapping) {
-      if (Array.isArray(rawReply)) {
-        return transformSearchReplyResp2(rawReply, preserve, typeMapping);
-      }
-      const reply = (0, reply_transformers_1.mapLikeToObject)(rawReply);
-      const total = Number((0, reply_transformers_1.getMapValue)(reply, ["total_results", "total"]) ?? 0);
-      const results = (0, reply_transformers_1.mapLikeValues)((0, reply_transformers_1.getMapValue)(reply, ["results", "documents"]) ?? []);
-      const documents = results.map((result) => {
-        const { id, value } = (0, reply_transformers_1.parseSearchResultRow)(result);
-        return {
-          id: String(id?.toString?.() ?? id ?? ""),
-          value
-        };
-      });
-      return {
-        total,
-        documents
-      };
-    }
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Searches a RediSearch index with the given query.
+       * @param parser - The command parser
+       * @param index - The index name to search
+       * @param query - The text query to search. For syntax, see https://redis.io/docs/stack/search/reference/query_syntax
+       * @param options - Optional search parameters including:
+       *   - VERBATIM: do not try to use stemming for query expansion
+       *   - NOSTOPWORDS: do not filter stopwords from the query
+       *   - INKEYS/INFIELDS: restrict the search to specific keys/fields
+       *   - RETURN: limit which fields are returned
+       *   - SUMMARIZE/HIGHLIGHT: create search result highlights
+       *   - LIMIT: pagination control
+       *   - SORTBY: sort results by a specific field
+       *   - PARAMS: bind parameters to the query
+       */
       parseCommand(parser, index2, query, options) {
         parser.push("FT.SEARCH", index2, query);
         parseSearchOptions(parser, options);
       },
       transformReply: {
-        2: transformSearchReplyResp2,
-        3: transformSearchReplyResp3
-      }
+        2: (reply) => {
+          const withoutDocuments = reply.length > 2 && !Array.isArray(reply[2]);
+          const documents = [];
+          let i2 = 1;
+          while (i2 < reply.length) {
+            documents.push({
+              id: reply[i2++],
+              value: withoutDocuments ? /* @__PURE__ */ Object.create(null) : documentValue(reply[i2++])
+            });
+          }
+          return {
+            total: reply[0],
+            documents
+          };
+        },
+        3: void 0
+      },
+      unstableResp3: true
     };
     function documentValue(tuples) {
-      return (0, reply_transformers_1.parseDocumentValue)(tuples);
+      const message = /* @__PURE__ */ Object.create(null);
+      if (!tuples) {
+        return message;
+      }
+      let i2 = 0;
+      while (i2 < tuples.length) {
+        const key = tuples[i2++], value = tuples[i2++];
+        if (key === "$") {
+          try {
+            Object.assign(message, JSON.parse(value));
+            continue;
+          } catch {
+          }
+        }
+        message[key] = value;
+      }
+      return message;
     }
   }
 });
@@ -124186,8 +120706,6 @@ var require_AGGREGATE = __commonJS({
     var SEARCH_1 = require_SEARCH();
     var generic_transformers_1 = require_generic_transformers();
     var default_1 = require_default();
-    var reply_transformers_1 = require_reply_transformers();
-    var decoder_1 = require_decoder();
     exports.FT_AGGREGATE_STEPS = {
       GROUPBY: "GROUPBY",
       SORTBY: "SORTBY",
@@ -124209,57 +120727,42 @@ var require_AGGREGATE = __commonJS({
       FIRST_VALUE: "FIRST_VALUE",
       RANDOM_SAMPLE: "RANDOM_SAMPLE"
     };
-    function transformAggregateReplyResp2(rawReply, preserve, typeMapping) {
-      const results = [];
-      for (let i2 = 1; i2 < rawReply.length; i2++) {
-        results.push((0, generic_transformers_1.transformTuplesReply)(rawReply[i2], preserve, typeMapping));
-      }
-      return {
-        //  https://redis.io/docs/latest/commands/ft.aggregate/#return
-        //  FT.AGGREGATE returns an array reply where each row is an array reply and represents a single aggregate result.
-        // The integer reply at position 1 does not represent a valid value.
-        total: Number(rawReply[0]),
-        results
-      };
-    }
-    function transformAggregateReplyResp3(rawReply, preserve, typeMapping) {
-      const reply = (0, reply_transformers_1.mapLikeToObject)(rawReply);
-      const total = Number((0, reply_transformers_1.getMapValue)(reply, ["total_results", "total"]) ?? 0);
-      const rawResults = (0, reply_transformers_1.mapLikeValues)((0, reply_transformers_1.getMapValue)(reply, ["results"]) ?? []);
-      const results = [];
-      const mapType = typeMapping ? typeMapping[decoder_1.RESP_TYPES.MAP] : void 0;
-      for (const rawResult of rawResults) {
-        const normalized = (0, reply_transformers_1.parseAggregateResultRow)(rawResult);
-        switch (mapType) {
-          case Array: {
-            results.push((0, reply_transformers_1.mapLikeToFlatArray)(normalized));
-            break;
-          }
-          case Map: {
-            results.push(new Map(Object.entries(normalized)));
-            break;
-          }
-          default: {
-            results.push(normalized);
-          }
-        }
-      }
-      return {
-        total,
-        results
-      };
-    }
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: false,
+      /**
+       * Performs an aggregation query on a RediSearch index.
+       * @param parser - The command parser
+       * @param index - The index name to query
+       * @param query - The text query to use as filter, use * to indicate no filtering
+       * @param options - Optional parameters for aggregation:
+       *   - VERBATIM: disable stemming in query evaluation
+       *   - LOAD: specify fields to load from documents
+       *   - STEPS: sequence of aggregation steps (GROUPBY, SORTBY, APPLY, LIMIT, FILTER)
+       *   - PARAMS: bind parameters for query evaluation
+       *   - TIMEOUT: maximum time to run the query
+       */
       parseCommand(parser, index2, query, options) {
         parser.push("FT.AGGREGATE", index2, query);
         return parseAggregateOptions(parser, options);
       },
       transformReply: {
-        2: transformAggregateReplyResp2,
-        3: transformAggregateReplyResp3
-      }
+        2: (rawReply, preserve, typeMapping) => {
+          const results = [];
+          for (let i2 = 1; i2 < rawReply.length; i2++) {
+            results.push((0, generic_transformers_1.transformTuplesReply)(rawReply[i2], preserve, typeMapping));
+          }
+          return {
+            //  https://redis.io/docs/latest/commands/ft.aggregate/#return
+            //  FT.AGGREGATE returns an array reply where each row is an array reply and represents a single aggregate result.
+            // The integer reply at position 1 does not represent a valid value.
+            total: Number(rawReply[0]),
+            results
+          };
+        },
+        3: void 0
+      },
+      unstableResp3: true
     };
     function parseAggregateOptions(parser, options) {
       if (options?.VERBATIM) {
@@ -124269,20 +120772,16 @@ var require_AGGREGATE = __commonJS({
         parser.push("ADDSCORES");
       }
       if (options?.LOAD) {
-        parser.push("LOAD");
-        if (options.LOAD === "*") {
-          parser.push("*");
-        } else {
-          const args = [];
-          if (Array.isArray(options?.LOAD)) {
-            for (const load of options.LOAD) {
-              pushLoadField(args, load);
-            }
-          } else {
-            pushLoadField(args, options?.LOAD);
+        const args = [];
+        if (Array.isArray(options.LOAD)) {
+          for (const load of options.LOAD) {
+            pushLoadField(args, load);
           }
-          parser.pushVariadicWithLength(args);
+        } else {
+          pushLoadField(args, options.LOAD);
         }
+        parser.push("LOAD");
+        parser.pushVariadicWithLength(args);
       }
       if (options?.TIMEOUT !== void 0) {
         parser.push("TIMEOUT", options.TIMEOUT.toString());
@@ -124305,7 +120804,7 @@ var require_AGGREGATE = __commonJS({
                 parseGroupByReducer(parser, step.REDUCE);
               }
               break;
-            case exports.FT_AGGREGATE_STEPS.SORTBY: {
+            case exports.FT_AGGREGATE_STEPS.SORTBY:
               const args = [];
               if (Array.isArray(step.BY)) {
                 for (const by of step.BY) {
@@ -124319,7 +120818,6 @@ var require_AGGREGATE = __commonJS({
               }
               parser.pushVariadicWithLength(args);
               break;
-            }
             case exports.FT_AGGREGATE_STEPS.APPLY:
               parser.push(step.expression, "AS", step.AS);
               break;
@@ -124416,23 +120914,18 @@ var require_AGGREGATE_WITHCURSOR = __commonJS({
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     var AGGREGATE_1 = __importDefault3(require_AGGREGATE());
-    var reply_transformers_1 = require_reply_transformers();
-    function transformAggregateWithCursorReplyResp3(reply, preserve, typeMapping) {
-      if (Array.isArray(reply)) {
-        return {
-          ...AGGREGATE_1.default.transformReply[3](reply[0], preserve, typeMapping),
-          cursor: reply[1]
-        };
-      }
-      const mappedReply = (0, reply_transformers_1.mapLikeToObject)(reply);
-      const rawResult = (0, reply_transformers_1.getMapValue)(mappedReply, ["results", "result"]) ?? mappedReply;
-      return {
-        ...AGGREGATE_1.default.transformReply[3](rawResult, preserve, typeMapping),
-        cursor: (0, reply_transformers_1.getMapValue)(mappedReply, ["cursor"]) ?? 0
-      };
-    }
     exports.default = {
       IS_READ_ONLY: AGGREGATE_1.default.IS_READ_ONLY,
+      /**
+       * Performs an aggregation with a cursor for retrieving large result sets.
+       * @param parser - The command parser
+       * @param index - Name of the index to query
+       * @param query - The aggregation query
+       * @param options - Optional parameters:
+       *   - All options supported by FT.AGGREGATE
+       *   - COUNT: Number of results to return per cursor fetch
+       *   - MAXIDLE: Maximum idle time for cursor in milliseconds
+       */
       parseCommand(parser, index2, query, options) {
         AGGREGATE_1.default.parseCommand(parser, index2, query, options);
         parser.push("WITHCURSOR");
@@ -124444,14 +120937,15 @@ var require_AGGREGATE_WITHCURSOR = __commonJS({
         }
       },
       transformReply: {
-        2: (reply, preserve, typeMapping) => {
+        2: (reply) => {
           return {
-            ...AGGREGATE_1.default.transformReply[2](reply[0], preserve, typeMapping),
+            ...AGGREGATE_1.default.transformReply[2](reply[0]),
             cursor: reply[1]
           };
         },
-        3: transformAggregateWithCursorReplyResp3
-      }
+        3: void 0
+      },
+      unstableResp3: true
     };
   }
 });
@@ -124464,6 +120958,12 @@ var require_ALIASADD = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Adds an alias to a RediSearch index.
+       * @param parser - The command parser
+       * @param alias - The alias to add
+       * @param index - The index name to alias
+       */
       parseCommand(parser, alias, index2) {
         parser.push("FT.ALIASADD", alias, index2);
       },
@@ -124480,6 +120980,11 @@ var require_ALIASDEL = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Removes an existing alias from a RediSearch index.
+       * @param parser - The command parser
+       * @param alias - The alias to remove
+       */
       parseCommand(parser, alias) {
         parser.push("FT.ALIASDEL", alias);
       },
@@ -124496,6 +121001,12 @@ var require_ALIASUPDATE = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Updates the index pointed to by an existing alias.
+       * @param parser - The command parser
+       * @param alias - The existing alias to update
+       * @param index - The new index name that the alias should point to
+       */
       parseCommand(parser, alias, index2) {
         parser.push("FT.ALIASUPDATE", alias, index2);
       },
@@ -124509,19 +121020,24 @@ var require_CONFIG_GET2 = __commonJS({
   "node_modules/@redis/search/dist/lib/commands/CONFIG_GET.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var reply_transformers_1 = require_reply_transformers();
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Gets a RediSearch configuration option value.
+       * @param parser - The command parser
+       * @param option - The name of the configuration option to retrieve
+       */
       parseCommand(parser, option) {
         parser.push("FT.CONFIG", "GET", option);
       },
       transformReply(reply) {
-        const transformedReply = {};
-        for (const [key, value] of (0, reply_transformers_1.mapLikeEntries)(reply)) {
-          transformedReply[key] = value;
+        const transformedReply = /* @__PURE__ */ Object.create(null);
+        for (const item of reply) {
+          const [key, value] = item;
+          transformedReply[key.toString()] = value;
         }
-        return (0, reply_transformers_1.toCompatObject)(transformedReply);
+        return transformedReply;
       }
     };
   }
@@ -124535,6 +121051,12 @@ var require_CONFIG_SET2 = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Sets a RediSearch configuration option value.
+       * @param parser - The command parser
+       * @param property - The name of the configuration option to set
+       * @param value - The value to set for the configuration option
+       */
       parseCommand(parser, property, value) {
         parser.push("FT.CONFIG", "SET", property, value);
       },
@@ -124551,6 +121073,12 @@ var require_CURSOR_DEL = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Deletes a cursor from an index.
+       * @param parser - The command parser
+       * @param index - The index name that contains the cursor
+       * @param cursorId - The cursor ID to delete
+       */
       parseCommand(parser, index2, cursorId) {
         parser.push("FT.CURSOR", "DEL", index2, cursorId.toString());
       },
@@ -124571,13 +121099,22 @@ var require_CURSOR_READ = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Reads from an existing cursor to get more results from an index.
+       * @param parser - The command parser
+       * @param index - The index name that contains the cursor
+       * @param cursor - The cursor ID to read from
+       * @param options - Optional parameters:
+       *   - COUNT: Maximum number of results to return
+       */
       parseCommand(parser, index2, cursor, options) {
         parser.push("FT.CURSOR", "READ", index2, cursor.toString());
         if (options?.COUNT !== void 0) {
           parser.push("COUNT", options.COUNT.toString());
         }
       },
-      transformReply: AGGREGATE_WITHCURSOR_1.default.transformReply
+      transformReply: AGGREGATE_WITHCURSOR_1.default.transformReply,
+      unstableResp3: true
     };
   }
 });
@@ -124590,6 +121127,12 @@ var require_DICTADD = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Adds terms to a dictionary.
+       * @param parser - The command parser
+       * @param dictionary - Name of the dictionary to add terms to
+       * @param term - One or more terms to add to the dictionary
+       */
       parseCommand(parser, dictionary, term) {
         parser.push("FT.DICTADD", dictionary);
         parser.pushVariadic(term);
@@ -124607,6 +121150,12 @@ var require_DICTDEL = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Deletes terms from a dictionary.
+       * @param parser - The command parser
+       * @param dictionary - Name of the dictionary to remove terms from
+       * @param term - One or more terms to delete from the dictionary
+       */
       parseCommand(parser, dictionary, term) {
         parser.push("FT.DICTDEL", dictionary);
         parser.pushVariadic(term);
@@ -124624,6 +121173,11 @@ var require_DICTDUMP = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns all terms in a dictionary.
+       * @param parser - The command parser
+       * @param dictionary - Name of the dictionary to dump
+       */
       parseCommand(parser, dictionary) {
         parser.push("FT.DICTDUMP", dictionary);
       },
@@ -124643,6 +121197,13 @@ var require_DROPINDEX = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Deletes an index and all associated documents.
+       * @param parser - The command parser
+       * @param index - Name of the index to delete
+       * @param options - Optional parameters:
+       *   - DD: Also delete the indexed documents themselves
+       */
       parseCommand(parser, index2, options) {
         parser.push("FT.DROPINDEX", index2);
         if (options?.DD) {
@@ -124667,6 +121228,15 @@ var require_EXPLAIN = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the execution plan for a complex query.
+       * @param parser - The command parser
+       * @param index - Name of the index to explain query against
+       * @param query - The query string to explain
+       * @param options - Optional parameters:
+       *   - PARAMS: Named parameters to use in the query
+       *   - DIALECT: Version of query dialect to use (defaults to 1)
+       */
       parseCommand(parser, index2, query, options) {
         parser.push("FT.EXPLAIN", index2, query);
         (0, SEARCH_1.parseParamsArgument)(parser, options?.PARAMS);
@@ -124690,6 +121260,14 @@ var require_EXPLAINCLI = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the execution plan for a complex query in a more verbose format than FT.EXPLAIN.
+       * @param parser - The command parser
+       * @param index - Name of the index to explain query against
+       * @param query - The query string to explain
+       * @param options - Optional parameters:
+       *   - DIALECT: Version of query dialect to use (defaults to 1)
+       */
       parseCommand(parser, index2, query, options) {
         parser.push("FT.EXPLAINCLI", index2, query);
         if (options?.DIALECT) {
@@ -124712,7 +121290,6 @@ var require_HYBRID = __commonJS({
     var generic_transformers_1 = require_generic_transformers();
     var SEARCH_1 = require_SEARCH();
     var AGGREGATE_1 = require_AGGREGATE();
-    var reply_transformers_1 = require_reply_transformers();
     exports.FT_HYBRID_VECTOR_METHOD = {
       /** K-Nearest Neighbors search configuration */
       KNN: "KNN",
@@ -124884,44 +121461,53 @@ var require_HYBRID = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Performs a hybrid search combining multiple search expressions.
+       * Supports multiple SEARCH and VECTOR expressions with various fusion methods.
+       *
+       * @experimental
+       * NOTE: FT.Hybrid is still in experimental state
+       * It's behaviour and function signature may change
+       *
+       * @param parser - The command parser
+       * @param index - The index name to search
+       * @param options - Hybrid search options including:
+       *   - SEARCH: Text search expression with optional scoring
+       *   - VSIM: Vector similarity expression with KNN/RANGE methods
+       *   - COMBINE: Fusion method (RRF, LINEAR)
+       *   - Post-processing operations: LOAD, GROUPBY, APPLY, SORTBY, FILTER
+       *   - Tunable options: LIMIT, PARAMS, TIMEOUT
+       */
       parseCommand(parser, index2, options) {
         parser.push("FT.HYBRID", index2);
         parseHybridOptions(parser, options);
       },
       transformReply: {
-        2: (reply, _preserve, _typeMapping) => {
+        2: (reply) => {
           return transformHybridSearchResults(reply);
         },
-        3: (reply, _preserve, _typeMapping) => {
-          return transformHybridSearchResults(reply);
-        }
-      }
+        3: void 0
+      },
+      unstableResp3: true
     };
     function transformHybridSearchResults(reply) {
       const replyMap = parseReplyMap(reply);
-      const totalResults = Number((0, reply_transformers_1.getMapValue)(replyMap, ["total_results", "totalResults"]) ?? 0);
-      const rawResults = (0, reply_transformers_1.mapLikeValues)((0, reply_transformers_1.getMapValue)(replyMap, ["results"]) ?? []);
-      const warnings = (0, reply_transformers_1.mapLikeValues)((0, reply_transformers_1.getMapValue)(replyMap, ["warnings", "warning"]) ?? []);
-      const executionTimeValue = (0, reply_transformers_1.getMapValue)(replyMap, [
-        "execution_time",
-        "executionTime"
-      ]);
-      const executionTime = executionTimeValue === void 0 ? 0 : Number(executionTimeValue);
+      const totalResults = replyMap["total_results"] ?? 0;
+      const rawResults = replyMap["results"] ?? [];
+      const warnings = replyMap["warnings"] ?? [];
+      const executionTime = replyMap["execution_time"] ? Number.parseFloat(replyMap["execution_time"]) : 0;
       const results = [];
       for (const result of rawResults) {
         const resultMap = parseReplyMap(result);
-        const doc = {};
-        const id = (0, reply_transformers_1.getMapValue)(resultMap, ["id"]);
-        if (id != null) {
-          doc.id = id.toString();
-        }
-        Object.assign(doc, (0, reply_transformers_1.parseDocumentValue)((0, reply_transformers_1.getMapValue)(resultMap, ["values"])));
-        Object.assign(doc, (0, reply_transformers_1.parseDocumentValue)((0, reply_transformers_1.getMapValue)(resultMap, ["extra_attributes", "extraAttributes"])));
+        const doc = /* @__PURE__ */ Object.create(null);
         for (const [key, value] of Object.entries(resultMap)) {
-          if (key === "id" || key === "values" || key.toLowerCase() === "extra_attributes" || key === "extraAttributes") {
-            continue;
-          }
-          if (!Object.hasOwn(doc, key)) {
+          if (key === "$") {
+            try {
+              Object.assign(doc, JSON.parse(value));
+            } catch {
+              doc[key] = value;
+            }
+          } else {
             doc[key] = value;
           }
         }
@@ -124930,25 +121516,23 @@ var require_HYBRID = __commonJS({
       return {
         totalResults,
         executionTime,
-        warnings: warnings.map(toWarningString),
+        warnings,
         results
       };
     }
     function parseReplyMap(reply) {
-      return (0, reply_transformers_1.mapLikeToObject)(reply);
-    }
-    function toWarningString(warning) {
-      if (typeof warning === "string")
-        return warning;
-      if (warning instanceof Buffer)
-        return warning.toString();
-      if (warning === null || warning === void 0)
-        return "";
-      try {
-        return JSON.stringify(warning);
-      } catch {
-        return String(warning);
+      const map2 = {};
+      if (!Array.isArray(reply)) {
+        return map2;
       }
+      for (let i2 = 0; i2 < reply.length; i2 += 2) {
+        const key = reply[i2];
+        const value = reply[i2 + 1];
+        if (typeof key === "string") {
+          map2[key] = value;
+        }
+      }
+      return map2;
     }
   }
 });
@@ -124962,13 +121546,19 @@ var require_INFO7 = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns information and statistics about an index.
+       * @param parser - The command parser
+       * @param index - Name of the index to get information about
+       */
       parseCommand(parser, index2) {
         parser.push("FT.INFO", index2);
       },
       transformReply: {
         2: transformV2Reply,
         3: void 0
-      }
+      },
+      unstableResp3: true
     };
     function transformV2Reply(reply, preserve, typeMapping) {
       const myTransformFunc = (0, generic_transformers_1.createTransformTuplesReplyFunc)(preserve, typeMapping);
@@ -125090,53 +121680,19 @@ var require_PROFILE_SEARCH = __commonJS({
       return result;
     };
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.transformProfileReply = exports.extractProfileResultsReply = void 0;
     var SEARCH_1 = __importStar3(require_SEARCH());
-    var reply_transformers_1 = require_reply_transformers();
-    function extractProfileResultsReply(reply) {
-      const replyObject = (0, reply_transformers_1.mapLikeToObject)(reply);
-      if (Object.hasOwn(replyObject, "Results")) {
-        return replyObject["Results"];
-      }
-      if ((Object.hasOwn(replyObject, "total_results") || Object.hasOwn(replyObject, "total")) && Object.hasOwn(replyObject, "results")) {
-        return reply;
-      }
-      if (Object.hasOwn(replyObject, "results")) {
-        return replyObject["results"];
-      }
-      return (0, reply_transformers_1.getMapValue)(replyObject, ["results"]) ?? reply;
-    }
-    exports.extractProfileResultsReply = extractProfileResultsReply;
-    function normalizeLegacyProfileReply(profile) {
-      return (0, reply_transformers_1.mapLikeEntries)(profile).map(([key, value]) => {
-        if (Array.isArray(value) && value.length === 1) {
-          const first = value[0];
-          if (Object.keys((0, reply_transformers_1.mapLikeToObject)(first)).length > 0) {
-            return [key, (0, reply_transformers_1.normalizeProfileReply)(first)];
-          }
-        }
-        return [key, (0, reply_transformers_1.normalizeProfileReply)(value)];
-      });
-    }
-    function transformProfileReply(reply) {
-      const replyObject = (0, reply_transformers_1.mapLikeToObject)(reply);
-      const profile = Object.hasOwn(replyObject, "Profile") ? replyObject["Profile"] : Object.hasOwn(replyObject, "profile") ? replyObject["profile"] : (0, reply_transformers_1.getMapValue)(replyObject, ["Profile", "profile"]);
-      const profileObject = (0, reply_transformers_1.mapLikeToObject)(profile);
-      if (Object.hasOwn(profileObject, "Total profile time")) {
-        return normalizeLegacyProfileReply(profile);
-      }
-      return (0, reply_transformers_1.normalizeProfileReply)(profile);
-    }
-    exports.transformProfileReply = transformProfileReply;
-    function transformProfileSearchReplyResp3(reply, preserve, typeMapping) {
-      return {
-        results: SEARCH_1.default.transformReply[3](extractProfileResultsReply(reply), preserve, typeMapping),
-        profile: transformProfileReply(reply)
-      };
-    }
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Profiles the execution of a search query for performance analysis.
+       * @param parser - The command parser
+       * @param index - Name of the index to profile query against
+       * @param query - The search query to profile
+       * @param options - Optional parameters:
+       *   - LIMITED: Collect limited timing information only
+       *   - All options supported by FT.SEARCH command
+       */
       parseCommand(parser, index2, query, options) {
         parser.push("FT.PROFILE", index2, "SEARCH");
         if (options?.LIMITED) {
@@ -125146,14 +121702,15 @@ var require_PROFILE_SEARCH = __commonJS({
         (0, SEARCH_1.parseSearchOptions)(parser, options);
       },
       transformReply: {
-        2: (reply, preserve, typeMapping) => {
+        2: (reply) => {
           return {
-            results: SEARCH_1.default.transformReply[2](reply[0], preserve, typeMapping),
+            results: SEARCH_1.default.transformReply[2](reply[0]),
             profile: reply[1]
           };
         },
-        3: transformProfileSearchReplyResp3
-      }
+        3: (reply) => reply
+      },
+      unstableResp3: true
     };
   }
 });
@@ -125191,10 +121748,18 @@ var require_PROFILE_AGGREGATE = __commonJS({
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     var AGGREGATE_1 = __importStar3(require_AGGREGATE());
-    var PROFILE_SEARCH_1 = require_PROFILE_SEARCH();
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Profiles the execution of an aggregation query for performance analysis.
+       * @param parser - The command parser
+       * @param index - Name of the index to profile query against
+       * @param query - The aggregation query to profile
+       * @param options - Optional parameters:
+       *   - LIMITED: Collect limited timing information only
+       *   - All options supported by FT.AGGREGATE command
+       */
       parseCommand(parser, index2, query, options) {
         parser.push("FT.PROFILE", index2, "AGGREGATE");
         if (options?.LIMITED) {
@@ -125204,19 +121769,15 @@ var require_PROFILE_AGGREGATE = __commonJS({
         (0, AGGREGATE_1.parseAggregateOptions)(parser, options);
       },
       transformReply: {
-        2: (reply, preserve, typeMapping) => {
+        2: (reply) => {
           return {
-            results: AGGREGATE_1.default.transformReply[2](reply[0], preserve, typeMapping),
+            results: AGGREGATE_1.default.transformReply[2](reply[0]),
             profile: reply[1]
           };
         },
-        3: (reply, preserve, typeMapping) => {
-          return {
-            results: AGGREGATE_1.default.transformReply[3]((0, PROFILE_SEARCH_1.extractProfileResultsReply)(reply), preserve, typeMapping),
-            profile: (0, PROFILE_SEARCH_1.transformProfileReply)(reply)
-          };
-        }
-      }
+        3: (reply) => reply
+      },
+      unstableResp3: true
     };
   }
 });
@@ -125233,6 +121794,14 @@ var require_SEARCH_NOCONTENT = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: SEARCH_1.default.NOT_KEYED_COMMAND,
       IS_READ_ONLY: SEARCH_1.default.IS_READ_ONLY,
+      /**
+       * Performs a search query but returns only document ids without their contents.
+       * @param args - Same parameters as FT.SEARCH:
+       *   - parser: The command parser
+       *   - index: Name of the index to search
+       *   - query: The text query to search
+       *   - options: Optional search parameters
+       */
       parseCommand(...args) {
         SEARCH_1.default.parseCommand(...args);
         args[0].push("NOCONTENT");
@@ -125244,14 +121813,9 @@ var require_SEARCH_NOCONTENT = __commonJS({
             documents: reply.slice(1)
           };
         },
-        3: (reply, preserve, typeMapping) => {
-          const transformed = SEARCH_1.default.transformReply[3](reply, preserve, typeMapping);
-          return {
-            total: transformed.total,
-            documents: transformed.documents.map((document2) => document2.id)
-          };
-        }
-      }
+        3: void 0
+      },
+      unstableResp3: true
     };
   }
 });
@@ -125262,49 +121826,19 @@ var require_SPELLCHECK = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var default_1 = require_default();
-    var reply_transformers_1 = require_reply_transformers();
-    function transformSpellCheckReplyResp3(rawReply) {
-      const transformed = [];
-      const results = (0, reply_transformers_1.getMapValue)(rawReply, ["results", "Results"]) ?? rawReply;
-      for (const [term, rawSuggestions] of (0, reply_transformers_1.mapLikeEntries)(results)) {
-        const suggestions = [];
-        for (const rawSuggestion of (0, reply_transformers_1.mapLikeValues)(rawSuggestions)) {
-          if (Array.isArray(rawSuggestion) && rawSuggestion.length >= 2) {
-            const first = rawSuggestion[0];
-            const second = rawSuggestion[1];
-            const numericFirst = Number(first);
-            if (!Number.isNaN(numericFirst)) {
-              suggestions.push({
-                score: numericFirst,
-                suggestion: second.toString()
-              });
-            } else {
-              suggestions.push({
-                score: Number(second),
-                suggestion: first.toString()
-              });
-            }
-            continue;
-          }
-          const entries = (0, reply_transformers_1.mapLikeEntries)(rawSuggestion);
-          if (entries.length === 0)
-            continue;
-          const [suggestion, score] = entries[0];
-          suggestions.push({
-            score: Number(score),
-            suggestion
-          });
-        }
-        transformed.push({
-          term,
-          suggestions
-        });
-      }
-      return transformed;
-    }
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Performs spelling correction on a search query.
+       * @param parser - The command parser
+       * @param index - Name of the index to use for spelling corrections
+       * @param query - The search query to check for spelling
+       * @param options - Optional parameters:
+       *   - DISTANCE: Maximum Levenshtein distance for spelling suggestions
+       *   - TERMS: Custom dictionary terms to include/exclude
+       *   - DIALECT: Version of query dialect to use (defaults to 1)
+       */
       parseCommand(parser, index2, query, options) {
         parser.push("FT.SPELLCHECK", index2, query);
         if (options?.DISTANCE) {
@@ -125335,8 +121869,9 @@ var require_SPELLCHECK = __commonJS({
             }))
           }));
         },
-        3: transformSpellCheckReplyResp3
-      }
+        3: void 0
+      },
+      unstableResp3: true
     };
     function parseTerms(parser, { mode, dictionary }) {
       parser.push("TERMS", mode, dictionary);
@@ -125351,6 +121886,16 @@ var require_SUGADD = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Adds a suggestion string to an auto-complete suggestion dictionary.
+       * @param parser - The command parser
+       * @param key - The suggestion dictionary key
+       * @param string - The suggestion string to add
+       * @param score - The suggestion score used for sorting
+       * @param options - Optional parameters:
+       *   - INCR: If true, increment the existing entry's score
+       *   - PAYLOAD: Optional payload to associate with the suggestion
+       */
       parseCommand(parser, key, string4, score, options) {
         parser.push("FT.SUGADD");
         parser.pushKey(key);
@@ -125374,6 +121919,12 @@ var require_SUGDEL = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Deletes a string from a suggestion dictionary.
+       * @param parser - The command parser
+       * @param key - The suggestion dictionary key
+       * @param string - The suggestion string to delete
+       */
       parseCommand(parser, key, string4) {
         parser.push("FT.SUGDEL");
         parser.pushKey(key);
@@ -125391,6 +121942,15 @@ var require_SUGGET = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Gets completion suggestions for a prefix from a suggestion dictionary.
+       * @param parser - The command parser
+       * @param key - The suggestion dictionary key
+       * @param prefix - The prefix to get completion suggestions for
+       * @param options - Optional parameters:
+       *   - FUZZY: Enable fuzzy prefix matching
+       *   - MAX: Maximum number of results to return
+       */
       parseCommand(parser, key, prefix, options) {
         parser.push("FT.SUGGET");
         parser.pushKey(key);
@@ -125419,6 +121979,14 @@ var require_SUGGET_WITHPAYLOADS = __commonJS({
     var SUGGET_1 = __importDefault3(require_SUGGET());
     exports.default = {
       IS_READ_ONLY: SUGGET_1.default.IS_READ_ONLY,
+      /**
+       * Gets completion suggestions with their payloads from a suggestion dictionary.
+       * @param args - Same parameters as FT.SUGGET:
+       *   - parser: The command parser
+       *   - key: The suggestion dictionary key
+       *   - prefix: The prefix to get completion suggestions for
+       *   - options: Optional parameters for fuzzy matching and max results
+       */
       parseCommand(...args) {
         SUGGET_1.default.parseCommand(...args);
         args[0].push("WITHPAYLOADS");
@@ -125452,6 +122020,14 @@ var require_SUGGET_WITHSCORES_WITHPAYLOADS = __commonJS({
     var SUGGET_1 = __importDefault3(require_SUGGET());
     exports.default = {
       IS_READ_ONLY: SUGGET_1.default.IS_READ_ONLY,
+      /**
+       * Gets completion suggestions with their scores and payloads from a suggestion dictionary.
+       * @param args - Same parameters as FT.SUGGET:
+       *   - parser: The command parser
+       *   - key: The suggestion dictionary key
+       *   - prefix: The prefix to get completion suggestions for
+       *   - options: Optional parameters for fuzzy matching and max results
+       */
       parseCommand(...args) {
         SUGGET_1.default.parseCommand(...args);
         args[0].push("WITHSCORES", "WITHPAYLOADS");
@@ -125502,6 +122078,14 @@ var require_SUGGET_WITHSCORES = __commonJS({
     var SUGGET_1 = __importDefault3(require_SUGGET());
     exports.default = {
       IS_READ_ONLY: SUGGET_1.default.IS_READ_ONLY,
+      /**
+       * Gets completion suggestions with their scores from a suggestion dictionary.
+       * @param args - Same parameters as FT.SUGGET:
+       *   - parser: The command parser
+       *   - key: The suggestion dictionary key
+       *   - prefix: The prefix to get completion suggestions for
+       *   - options: Optional parameters for fuzzy matching and max results
+       */
       parseCommand(...args) {
         SUGGET_1.default.parseCommand(...args);
         args[0].push("WITHSCORES");
@@ -125545,6 +122129,11 @@ var require_SUGLEN = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Gets the size of a suggestion dictionary.
+       * @param parser - The command parser
+       * @param key - The suggestion dictionary key
+       */
       parseCommand(parser, key) {
         parser.push("FT.SUGLEN", key);
       },
@@ -125561,6 +122150,11 @@ var require_SYNDUMP = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Dumps the contents of a synonym group.
+       * @param parser - The command parser
+       * @param index - Name of the index that contains the synonym group
+       */
       parseCommand(parser, index2) {
         parser.push("FT.SYNDUMP", index2);
       },
@@ -125588,6 +122182,15 @@ var require_SYNUPDATE = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Updates a synonym group with new terms.
+       * @param parser - The command parser
+       * @param index - Name of the index that contains the synonym group
+       * @param groupId - ID of the synonym group to update
+       * @param terms - One or more synonym terms to add to the group
+       * @param options - Optional parameters:
+       *   - SKIPINITIALSCAN: Skip the initial scan for existing documents
+       */
       parseCommand(parser, index2, groupId, terms, options) {
         parser.push("FT.SYNUPDATE", index2, groupId);
         if (options?.SKIPINITIALSCAN) {
@@ -125608,6 +122211,12 @@ var require_TAGVALS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Returns the distinct values in a TAG field.
+       * @param parser - The command parser
+       * @param index - Name of the index
+       * @param fieldName - Name of the TAG field to get values from
+       */
       parseCommand(parser, index2, fieldName) {
         parser.push("FT.TAGVALS", index2, fieldName);
       },
@@ -125663,571 +122272,87 @@ var require_commands7 = __commonJS({
     var SYNUPDATE_1 = __importDefault3(require_SYNUPDATE());
     var TAGVALS_1 = __importDefault3(require_TAGVALS());
     exports.default = {
-      /**
-       * Lists all existing indexes in the database.
-       */
       _LIST: _LIST_1.default,
-      /**
-       * Lists all existing indexes in the database.
-       */
       _list: _LIST_1.default,
-      /**
-       * Alters an existing RediSearch index schema by adding new fields.
-       * @param index - The index to alter
-       * @param schema - The schema definition containing new fields to add
-       */
       ALTER: ALTER_1.default,
-      /**
-       * Alters an existing RediSearch index schema by adding new fields.
-       * @param index - The index to alter
-       * @param schema - The schema definition containing new fields to add
-       */
       alter: ALTER_1.default,
-      /**
-       * Performs an aggregation with a cursor for retrieving large result sets.
-       * @param index - Name of the index to query
-       * @param query - The aggregation query
-       * @param options - Optional parameters:
-       *   - All options supported by FT.AGGREGATE
-       *   - COUNT: Number of results to return per cursor fetch
-       *   - MAXIDLE: Maximum idle time for cursor in milliseconds
-       */
       AGGREGATE_WITHCURSOR: AGGREGATE_WITHCURSOR_1.default,
-      /**
-       * Performs an aggregation with a cursor for retrieving large result sets.
-       * @param index - Name of the index to query
-       * @param query - The aggregation query
-       * @param options - Optional parameters:
-       *   - All options supported by FT.AGGREGATE
-       *   - COUNT: Number of results to return per cursor fetch
-       *   - MAXIDLE: Maximum idle time for cursor in milliseconds
-       */
       aggregateWithCursor: AGGREGATE_WITHCURSOR_1.default,
-      /**
-       * Performs an aggregation query on a RediSearch index.
-       * @param index - The index name to query
-       * @param query - The text query to use as filter, use * to indicate no filtering
-       * @param options - Optional parameters for aggregation:
-       *   - VERBATIM: disable stemming in query evaluation
-       *   - LOAD: specify fields to load from documents
-       *   - STEPS: sequence of aggregation steps (GROUPBY, SORTBY, APPLY, LIMIT, FILTER)
-       *   - PARAMS: bind parameters for query evaluation
-       *   - TIMEOUT: maximum time to run the query
-       */
       AGGREGATE: AGGREGATE_1.default,
-      /**
-       * Performs an aggregation query on a RediSearch index.
-       * @param index - The index name to query
-       * @param query - The text query to use as filter, use * to indicate no filtering
-       * @param options - Optional parameters for aggregation:
-       *   - VERBATIM: disable stemming in query evaluation
-       *   - LOAD: specify fields to load from documents
-       *   - STEPS: sequence of aggregation steps (GROUPBY, SORTBY, APPLY, LIMIT, FILTER)
-       *   - PARAMS: bind parameters for query evaluation
-       *   - TIMEOUT: maximum time to run the query
-       */
       aggregate: AGGREGATE_1.default,
-      /**
-       * Adds an alias to a RediSearch index.
-       * @param alias - The alias to add
-       * @param index - The index name to alias
-       */
       ALIASADD: ALIASADD_1.default,
-      /**
-       * Adds an alias to a RediSearch index.
-       * @param alias - The alias to add
-       * @param index - The index name to alias
-       */
       aliasAdd: ALIASADD_1.default,
-      /**
-       * Removes an existing alias from a RediSearch index.
-       * @param alias - The alias to remove
-       */
       ALIASDEL: ALIASDEL_1.default,
-      /**
-       * Removes an existing alias from a RediSearch index.
-       * @param alias - The alias to remove
-       */
       aliasDel: ALIASDEL_1.default,
-      /**
-       * Updates the index pointed to by an existing alias.
-       * @param alias - The existing alias to update
-       * @param index - The new index name that the alias should point to
-       */
       ALIASUPDATE: ALIASUPDATE_1.default,
-      /**
-       * Updates the index pointed to by an existing alias.
-       * @param alias - The existing alias to update
-       * @param index - The new index name that the alias should point to
-       */
       aliasUpdate: ALIASUPDATE_1.default,
       /**
-       * Gets a RediSearch configuration option value.
-       * @param option - The name of the configuration option to retrieve
+       * @deprecated Redis >=8 uses the standard CONFIG command
        */
       CONFIG_GET: CONFIG_GET_1.default,
       /**
-       * Gets a RediSearch configuration option value.
-       * @param option - The name of the configuration option to retrieve
+       * @deprecated Redis >=8 uses the standard CONFIG command
        */
       configGet: CONFIG_GET_1.default,
       /**
-       * Sets a RediSearch configuration option value.
-       * @param property - The name of the configuration option to set
-       * @param value - The value to set for the configuration option
+       * @deprecated Redis >=8 uses the standard CONFIG command
        */
       CONFIG_SET: CONFIG_SET_1.default,
       /**
-       * Sets a RediSearch configuration option value.
-       * @param property - The name of the configuration option to set
-       * @param value - The value to set for the configuration option
+       * @deprecated Redis >=8 uses the standard CONFIG command
        */
       configSet: CONFIG_SET_1.default,
-      /**
-       * Creates a new search index with the given schema and options.
-       * @param index - Name of the index to create
-       * @param schema - Index schema defining field names and types (TEXT, NUMERIC, GEO, TAG, VECTOR, GEOSHAPE).
-       *   Each field can be a single definition or an array to index the same field multiple times with different configurations.
-       * @param options - Optional parameters:
-       *   - ON: Type of container to index (HASH or JSON)
-       *   - PREFIX: Prefixes for document keys to index
-       *   - FILTER: Expression that filters indexed documents
-       *   - LANGUAGE/LANGUAGE_FIELD: Default language for indexing
-       *   - SCORE/SCORE_FIELD: Document ranking parameters
-       *   - MAXTEXTFIELDS: Index all text fields without specifying them
-       *   - TEMPORARY: Create a temporary index
-       *   - NOOFFSETS/NOHL/NOFIELDS/NOFREQS: Index optimization flags
-       *   - STOPWORDS: Custom stopword list
-       */
       CREATE: CREATE_1.default,
-      /**
-       * Creates a new search index with the given schema and options.
-       * @param index - Name of the index to create
-       * @param schema - Index schema defining field names and types (TEXT, NUMERIC, GEO, TAG, VECTOR, GEOSHAPE).
-       *   Each field can be a single definition or an array to index the same field multiple times with different configurations.
-       * @param options - Optional parameters:
-       *   - ON: Type of container to index (HASH or JSON)
-       *   - PREFIX: Prefixes for document keys to index
-       *   - FILTER: Expression that filters indexed documents
-       *   - LANGUAGE/LANGUAGE_FIELD: Default language for indexing
-       *   - SCORE/SCORE_FIELD: Document ranking parameters
-       *   - MAXTEXTFIELDS: Index all text fields without specifying them
-       *   - TEMPORARY: Create a temporary index
-       *   - NOOFFSETS/NOHL/NOFIELDS/NOFREQS: Index optimization flags
-       *   - STOPWORDS: Custom stopword list
-       */
       create: CREATE_1.default,
-      /**
-       * Deletes a cursor from an index.
-       * @param index - The index name that contains the cursor
-       * @param cursorId - The cursor ID to delete
-       */
       CURSOR_DEL: CURSOR_DEL_1.default,
-      /**
-       * Deletes a cursor from an index.
-       * @param index - The index name that contains the cursor
-       * @param cursorId - The cursor ID to delete
-       */
       cursorDel: CURSOR_DEL_1.default,
-      /**
-       * Reads from an existing cursor to get more results from an index.
-       * @param index - The index name that contains the cursor
-       * @param cursor - The cursor ID to read from
-       * @param options - Optional parameters:
-       *   - COUNT: Maximum number of results to return
-       */
       CURSOR_READ: CURSOR_READ_1.default,
-      /**
-       * Reads from an existing cursor to get more results from an index.
-       * @param index - The index name that contains the cursor
-       * @param cursor - The cursor ID to read from
-       * @param options - Optional parameters:
-       *   - COUNT: Maximum number of results to return
-       */
       cursorRead: CURSOR_READ_1.default,
-      /**
-       * Adds terms to a dictionary.
-       * @param dictionary - Name of the dictionary to add terms to
-       * @param term - One or more terms to add to the dictionary
-       */
       DICTADD: DICTADD_1.default,
-      /**
-       * Adds terms to a dictionary.
-       * @param dictionary - Name of the dictionary to add terms to
-       * @param term - One or more terms to add to the dictionary
-       */
       dictAdd: DICTADD_1.default,
-      /**
-       * Deletes terms from a dictionary.
-       * @param dictionary - Name of the dictionary to remove terms from
-       * @param term - One or more terms to delete from the dictionary
-       */
       DICTDEL: DICTDEL_1.default,
-      /**
-       * Deletes terms from a dictionary.
-       * @param dictionary - Name of the dictionary to remove terms from
-       * @param term - One or more terms to delete from the dictionary
-       */
       dictDel: DICTDEL_1.default,
-      /**
-       * Returns all terms in a dictionary.
-       * @param dictionary - Name of the dictionary to dump
-       */
       DICTDUMP: DICTDUMP_1.default,
-      /**
-       * Returns all terms in a dictionary.
-       * @param dictionary - Name of the dictionary to dump
-       */
       dictDump: DICTDUMP_1.default,
-      /**
-       * Deletes an index and all associated documents.
-       * @param index - Name of the index to delete
-       * @param options - Optional parameters:
-       *   - DD: Also delete the indexed documents themselves
-       */
       DROPINDEX: DROPINDEX_1.default,
-      /**
-       * Deletes an index and all associated documents.
-       * @param index - Name of the index to delete
-       * @param options - Optional parameters:
-       *   - DD: Also delete the indexed documents themselves
-       */
       dropIndex: DROPINDEX_1.default,
-      /**
-       * Returns the execution plan for a complex query.
-       * @param index - Name of the index to explain query against
-       * @param query - The query string to explain
-       * @param options - Optional parameters:
-       *   - PARAMS: Named parameters to use in the query
-       *   - DIALECT: Version of query dialect to use (defaults to 1)
-       */
       EXPLAIN: EXPLAIN_1.default,
-      /**
-       * Returns the execution plan for a complex query.
-       * @param index - Name of the index to explain query against
-       * @param query - The query string to explain
-       * @param options - Optional parameters:
-       *   - PARAMS: Named parameters to use in the query
-       *   - DIALECT: Version of query dialect to use (defaults to 1)
-       */
       explain: EXPLAIN_1.default,
-      /**
-       * Returns the execution plan for a complex query in a more verbose format than FT.EXPLAIN.
-       * @param index - Name of the index to explain query against
-       * @param query - The query string to explain
-       * @param options - Optional parameters:
-       *   - DIALECT: Version of query dialect to use (defaults to 1)
-       */
       EXPLAINCLI: EXPLAINCLI_1.default,
-      /**
-       * Returns the execution plan for a complex query in a more verbose format than FT.EXPLAIN.
-       * @param index - Name of the index to explain query against
-       * @param query - The query string to explain
-       * @param options - Optional parameters:
-       *   - DIALECT: Version of query dialect to use (defaults to 1)
-       */
       explainCli: EXPLAINCLI_1.default,
-      /**
-       * Performs a hybrid search combining multiple search expressions.
-       * Supports multiple SEARCH and VECTOR expressions with various fusion methods.
-       *
-       * @experimental
-       * NOTE: FT.Hybrid is still in experimental state
-       * It's behaviour and function signature may change
-       *
-       * @param index - The index name to search
-       * @param options - Hybrid search options including:
-       *   - SEARCH: Text search expression with optional scoring
-       *   - VSIM: Vector similarity expression with KNN/RANGE methods
-       *   - COMBINE: Fusion method (RRF, LINEAR)
-       *   - Post-processing operations: LOAD, GROUPBY, APPLY, SORTBY, FILTER
-       *   - Tunable options: LIMIT, PARAMS, TIMEOUT
-       */
       HYBRID: HYBRID_1.default,
-      /**
-       * Performs a hybrid search combining multiple search expressions.
-       * Supports multiple SEARCH and VECTOR expressions with various fusion methods.
-       *
-       * @experimental
-       * NOTE: FT.Hybrid is still in experimental state
-       * It's behaviour and function signature may change
-       *
-       * @param index - The index name to search
-       * @param options - Hybrid search options including:
-       *   - SEARCH: Text search expression with optional scoring
-       *   - VSIM: Vector similarity expression with KNN/RANGE methods
-       *   - COMBINE: Fusion method (RRF, LINEAR)
-       *   - Post-processing operations: LOAD, GROUPBY, APPLY, SORTBY, FILTER
-       *   - Tunable options: LIMIT, PARAMS, TIMEOUT
-       */
       hybrid: HYBRID_1.default,
-      /**
-       * Returns information and statistics about an index.
-       * @param index - Name of the index to get information about
-       */
       INFO: INFO_1.default,
-      /**
-       * Returns information and statistics about an index.
-       * @param index - Name of the index to get information about
-       */
       info: INFO_1.default,
-      /**
-       * Profiles the execution of a search query for performance analysis.
-       * @param index - Name of the index to profile query against
-       * @param query - The search query to profile
-       * @param options - Optional parameters:
-       *   - LIMITED: Collect limited timing information only
-       *   - All options supported by FT.SEARCH command
-       */
       PROFILESEARCH: PROFILE_SEARCH_1.default,
-      /**
-       * Profiles the execution of a search query for performance analysis.
-       * @param index - Name of the index to profile query against
-       * @param query - The search query to profile
-       * @param options - Optional parameters:
-       *   - LIMITED: Collect limited timing information only
-       *   - All options supported by FT.SEARCH command
-       */
       profileSearch: PROFILE_SEARCH_1.default,
-      /**
-       * Profiles the execution of an aggregation query for performance analysis.
-       * @param index - Name of the index to profile query against
-       * @param query - The aggregation query to profile
-       * @param options - Optional parameters:
-       *   - LIMITED: Collect limited timing information only
-       *   - All options supported by FT.AGGREGATE command
-       */
       PROFILEAGGREGATE: PROFILE_AGGREGATE_1.default,
-      /**
-       * Profiles the execution of an aggregation query for performance analysis.
-       * @param index - Name of the index to profile query against
-       * @param query - The aggregation query to profile
-       * @param options - Optional parameters:
-       *   - LIMITED: Collect limited timing information only
-       *   - All options supported by FT.AGGREGATE command
-       */
       profileAggregate: PROFILE_AGGREGATE_1.default,
-      /**
-       * Performs a search query but returns only document ids without their contents.
-       * @param args - Same parameters as FT.SEARCH:
-       *   - parser: The command parser
-       *   - index: Name of the index to search
-       *   - query: The text query to search
-       *   - options: Optional search parameters
-       */
       SEARCH_NOCONTENT: SEARCH_NOCONTENT_1.default,
-      /**
-       * Performs a search query but returns only document ids without their contents.
-       * @param args - Same parameters as FT.SEARCH:
-       *   - parser: The command parser
-       *   - index: Name of the index to search
-       *   - query: The text query to search
-       *   - options: Optional search parameters
-       */
       searchNoContent: SEARCH_NOCONTENT_1.default,
-      /**
-       * Searches a RediSearch index with the given query.
-       * @param index - The index name to search
-       * @param query - The text query to search. For syntax, see https://redis.io/docs/stack/search/reference/query_syntax
-       * @param options - Optional search parameters including:
-       *   - VERBATIM: do not try to use stemming for query expansion
-       *   - NOSTOPWORDS: do not filter stopwords from the query
-       *   - INKEYS/INFIELDS: restrict the search to specific keys/fields
-       *   - RETURN: limit which fields are returned
-       *   - SUMMARIZE/HIGHLIGHT: create search result highlights
-       *   - LIMIT: pagination control
-       *   - SORTBY: sort results by a specific field
-       *   - PARAMS: bind parameters to the query
-       */
       SEARCH: SEARCH_1.default,
-      /**
-       * Searches a RediSearch index with the given query.
-       * @param index - The index name to search
-       * @param query - The text query to search. For syntax, see https://redis.io/docs/stack/search/reference/query_syntax
-       * @param options - Optional search parameters including:
-       *   - VERBATIM: do not try to use stemming for query expansion
-       *   - NOSTOPWORDS: do not filter stopwords from the query
-       *   - INKEYS/INFIELDS: restrict the search to specific keys/fields
-       *   - RETURN: limit which fields are returned
-       *   - SUMMARIZE/HIGHLIGHT: create search result highlights
-       *   - LIMIT: pagination control
-       *   - SORTBY: sort results by a specific field
-       *   - PARAMS: bind parameters to the query
-       */
       search: SEARCH_1.default,
-      /**
-       * Performs spelling correction on a search query.
-       * @param index - Name of the index to use for spelling corrections
-       * @param query - The search query to check for spelling
-       * @param options - Optional parameters:
-       *   - DISTANCE: Maximum Levenshtein distance for spelling suggestions
-       *   - TERMS: Custom dictionary terms to include/exclude
-       *   - DIALECT: Version of query dialect to use (defaults to 1)
-       */
       SPELLCHECK: SPELLCHECK_1.default,
-      /**
-       * Performs spelling correction on a search query.
-       * @param index - Name of the index to use for spelling corrections
-       * @param query - The search query to check for spelling
-       * @param options - Optional parameters:
-       *   - DISTANCE: Maximum Levenshtein distance for spelling suggestions
-       *   - TERMS: Custom dictionary terms to include/exclude
-       *   - DIALECT: Version of query dialect to use (defaults to 1)
-       */
       spellCheck: SPELLCHECK_1.default,
-      /**
-       * Adds a suggestion string to an auto-complete suggestion dictionary.
-       * @param key - The suggestion dictionary key
-       * @param string - The suggestion string to add
-       * @param score - The suggestion score used for sorting
-       * @param options - Optional parameters:
-       *   - INCR: If true, increment the existing entry's score
-       *   - PAYLOAD: Optional payload to associate with the suggestion
-       */
       SUGADD: SUGADD_1.default,
-      /**
-       * Adds a suggestion string to an auto-complete suggestion dictionary.
-       * @param key - The suggestion dictionary key
-       * @param string - The suggestion string to add
-       * @param score - The suggestion score used for sorting
-       * @param options - Optional parameters:
-       *   - INCR: If true, increment the existing entry's score
-       *   - PAYLOAD: Optional payload to associate with the suggestion
-       */
       sugAdd: SUGADD_1.default,
-      /**
-       * Deletes a string from a suggestion dictionary.
-       * @param key - The suggestion dictionary key
-       * @param string - The suggestion string to delete
-       */
       SUGDEL: SUGDEL_1.default,
-      /**
-       * Deletes a string from a suggestion dictionary.
-       * @param key - The suggestion dictionary key
-       * @param string - The suggestion string to delete
-       */
       sugDel: SUGDEL_1.default,
-      /**
-       * Gets completion suggestions with their payloads from a suggestion dictionary.
-       * @param args - Same parameters as FT.SUGGET:
-       *   - parser: The command parser
-       *   - key: The suggestion dictionary key
-       *   - prefix: The prefix to get completion suggestions for
-       *   - options: Optional parameters for fuzzy matching and max results
-       */
       SUGGET_WITHPAYLOADS: SUGGET_WITHPAYLOADS_1.default,
-      /**
-       * Gets completion suggestions with their payloads from a suggestion dictionary.
-       * @param args - Same parameters as FT.SUGGET:
-       *   - parser: The command parser
-       *   - key: The suggestion dictionary key
-       *   - prefix: The prefix to get completion suggestions for
-       *   - options: Optional parameters for fuzzy matching and max results
-       */
       sugGetWithPayloads: SUGGET_WITHPAYLOADS_1.default,
-      /**
-       * Gets completion suggestions with their scores and payloads from a suggestion dictionary.
-       * @param args - Same parameters as FT.SUGGET:
-       *   - parser: The command parser
-       *   - key: The suggestion dictionary key
-       *   - prefix: The prefix to get completion suggestions for
-       *   - options: Optional parameters for fuzzy matching and max results
-       */
       SUGGET_WITHSCORES_WITHPAYLOADS: SUGGET_WITHSCORES_WITHPAYLOADS_1.default,
-      /**
-       * Gets completion suggestions with their scores and payloads from a suggestion dictionary.
-       * @param args - Same parameters as FT.SUGGET:
-       *   - parser: The command parser
-       *   - key: The suggestion dictionary key
-       *   - prefix: The prefix to get completion suggestions for
-       *   - options: Optional parameters for fuzzy matching and max results
-       */
       sugGetWithScoresWithPayloads: SUGGET_WITHSCORES_WITHPAYLOADS_1.default,
-      /**
-       * Gets completion suggestions with their scores from a suggestion dictionary.
-       * @param args - Same parameters as FT.SUGGET:
-       *   - parser: The command parser
-       *   - key: The suggestion dictionary key
-       *   - prefix: The prefix to get completion suggestions for
-       *   - options: Optional parameters for fuzzy matching and max results
-       */
       SUGGET_WITHSCORES: SUGGET_WITHSCORES_1.default,
-      /**
-       * Gets completion suggestions with their scores from a suggestion dictionary.
-       * @param args - Same parameters as FT.SUGGET:
-       *   - parser: The command parser
-       *   - key: The suggestion dictionary key
-       *   - prefix: The prefix to get completion suggestions for
-       *   - options: Optional parameters for fuzzy matching and max results
-       */
       sugGetWithScores: SUGGET_WITHSCORES_1.default,
-      /**
-       * Gets completion suggestions for a prefix from a suggestion dictionary.
-       * @param key - The suggestion dictionary key
-       * @param prefix - The prefix to get completion suggestions for
-       * @param options - Optional parameters:
-       *   - FUZZY: Enable fuzzy prefix matching
-       *   - MAX: Maximum number of results to return
-       */
       SUGGET: SUGGET_1.default,
-      /**
-       * Gets completion suggestions for a prefix from a suggestion dictionary.
-       * @param key - The suggestion dictionary key
-       * @param prefix - The prefix to get completion suggestions for
-       * @param options - Optional parameters:
-       *   - FUZZY: Enable fuzzy prefix matching
-       *   - MAX: Maximum number of results to return
-       */
       sugGet: SUGGET_1.default,
-      /**
-       * Gets the size of a suggestion dictionary.
-       * @param key - The suggestion dictionary key
-       */
       SUGLEN: SUGLEN_1.default,
-      /**
-       * Gets the size of a suggestion dictionary.
-       * @param key - The suggestion dictionary key
-       */
       sugLen: SUGLEN_1.default,
-      /**
-       * Dumps the contents of a synonym group.
-       * @param index - Name of the index that contains the synonym group
-       */
       SYNDUMP: SYNDUMP_1.default,
-      /**
-       * Dumps the contents of a synonym group.
-       * @param index - Name of the index that contains the synonym group
-       */
       synDump: SYNDUMP_1.default,
-      /**
-       * Updates a synonym group with new terms.
-       * @param index - Name of the index that contains the synonym group
-       * @param groupId - ID of the synonym group to update
-       * @param terms - One or more synonym terms to add to the group
-       * @param options - Optional parameters:
-       *   - SKIPINITIALSCAN: Skip the initial scan for existing documents
-       */
       SYNUPDATE: SYNUPDATE_1.default,
-      /**
-       * Updates a synonym group with new terms.
-       * @param index - Name of the index that contains the synonym group
-       * @param groupId - ID of the synonym group to update
-       * @param terms - One or more synonym terms to add to the group
-       * @param options - Optional parameters:
-       *   - SKIPINITIALSCAN: Skip the initial scan for existing documents
-       */
       synUpdate: SYNUPDATE_1.default,
-      /**
-       * Returns the distinct values in a TAG field.
-       * @param index - Name of the index
-       * @param fieldName - Name of the TAG field to get values from
-       */
       TAGVALS: TAGVALS_1.default,
-      /**
-       * Returns the distinct values in a TAG field.
-       * @param index - Name of the index
-       * @param fieldName - Name of the TAG field to get values from
-       */
       tagVals: TAGVALS_1.default
     };
   }
@@ -126274,7 +122399,7 @@ var require_helpers3 = __commonJS({
   "node_modules/@redis/time-series/dist/lib/commands/helpers.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.transformRESP2LabelsWithSources = exports.transformRESP2Labels = exports.parseSelectedLabelsArguments = exports.resp3MapToValue = exports.resp2MapToValue = exports.transformMultiAggregationSamplesReply = exports.transformMultiAggregationSampleReply = exports.transformSamplesReply = exports.transformSampleReply = exports.parseLabelsArgument = exports.transformTimestampArgument = exports.parseDuplicatePolicy = exports.TIME_SERIES_DUPLICATE_POLICIES = exports.parseChunkSizeArgument = exports.parseEncodingArgument = exports.TIME_SERIES_ENCODING = exports.parseRetentionArgument = exports.parseIgnoreArgument = void 0;
+    exports.transformRESP2LabelsWithSources = exports.transformRESP2Labels = exports.parseSelectedLabelsArguments = exports.resp3MapToValue = exports.resp2MapToValue = exports.transformSamplesReply = exports.transformSampleReply = exports.parseLabelsArgument = exports.transformTimestampArgument = exports.parseDuplicatePolicy = exports.TIME_SERIES_DUPLICATE_POLICIES = exports.parseChunkSizeArgument = exports.parseEncodingArgument = exports.TIME_SERIES_ENCODING = exports.parseRetentionArgument = exports.parseIgnoreArgument = void 0;
     var client_1 = require_dist();
     function parseIgnoreArgument(parser, ignore) {
       if (ignore !== void 0) {
@@ -126358,30 +122483,6 @@ var require_helpers3 = __commonJS({
         return reply.map((sample) => exports.transformSampleReply[3](sample));
       }
     };
-    exports.transformMultiAggregationSampleReply = {
-      2(reply) {
-        const [timestamp2, ...values] = reply;
-        return {
-          timestamp: timestamp2,
-          values: values.map((value) => Number(value))
-        };
-      },
-      3(reply) {
-        const [timestamp2, ...values] = reply;
-        return {
-          timestamp: timestamp2,
-          values
-        };
-      }
-    };
-    exports.transformMultiAggregationSamplesReply = {
-      2(reply) {
-        return reply.map((sample) => exports.transformMultiAggregationSampleReply[2](sample));
-      },
-      3(reply) {
-        return reply.map((sample) => exports.transformMultiAggregationSampleReply[3](sample));
-      }
-    };
     function resp2MapToValue(wrappedReply, parseFunc, typeMapping) {
       const reply = wrappedReply;
       switch (typeMapping?.[client_1.RESP_TYPES.MAP]) {
@@ -126402,7 +122503,7 @@ var require_helpers3 = __commonJS({
           return reply;
         }
         default: {
-          const ret = {};
+          const ret = /* @__PURE__ */ Object.create(null);
           for (const wrappedTuple of reply) {
             const tuple2 = wrappedTuple;
             const key = tuple2[0];
@@ -126439,7 +122540,7 @@ var require_helpers3 = __commonJS({
     function transformRESP2Labels(labels, typeMapping) {
       const unwrappedLabels = labels;
       switch (typeMapping?.[client_1.RESP_TYPES.MAP]) {
-        case Map: {
+        case Map:
           const map2 = /* @__PURE__ */ new Map();
           for (const tuple2 of unwrappedLabels) {
             const [key, value] = tuple2;
@@ -126447,19 +122548,17 @@ var require_helpers3 = __commonJS({
             map2.set(unwrappedKey.toString(), value);
           }
           return map2;
-        }
         case Array:
           return unwrappedLabels.flat();
         case Object:
-        default: {
-          const labelsObject = {};
+        default:
+          const labelsObject = /* @__PURE__ */ Object.create(null);
           for (const tuple2 of unwrappedLabels) {
             const [key, value] = tuple2;
             const unwrappedKey = key;
             labelsObject[unwrappedKey.toString()] = value;
           }
           return labelsObject;
-        }
       }
     }
     exports.transformRESP2Labels = transformRESP2Labels;
@@ -126468,7 +122567,7 @@ var require_helpers3 = __commonJS({
       const to = unwrappedLabels.length - 2;
       let transformedLabels;
       switch (typeMapping?.[client_1.RESP_TYPES.MAP]) {
-        case Map: {
+        case Map:
           const map2 = /* @__PURE__ */ new Map();
           for (let i2 = 0; i2 < to; i2++) {
             const [key, value] = unwrappedLabels[i2];
@@ -126477,13 +122576,12 @@ var require_helpers3 = __commonJS({
           }
           transformedLabels = map2;
           break;
-        }
         case Array:
           transformedLabels = unwrappedLabels.slice(0, to).flat();
           break;
         case Object:
-        default: {
-          const labelsObject = {};
+        default:
+          const labelsObject = /* @__PURE__ */ Object.create(null);
           for (let i2 = 0; i2 < to; i2++) {
             const [key, value] = unwrappedLabels[i2];
             const unwrappedKey = key;
@@ -126491,7 +122589,6 @@ var require_helpers3 = __commonJS({
           }
           transformedLabels = labelsObject;
           break;
-        }
       }
       const sourcesTuple = unwrappedLabels[unwrappedLabels.length - 1];
       const unwrappedSourcesTuple = sourcesTuple;
@@ -126538,6 +122635,14 @@ var require_ADD5 = __commonJS({
     var helpers_1 = require_helpers3();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Creates or appends a sample to a time series
+       * @param parser - The command parser
+       * @param key - The key name for the time series
+       * @param timestamp - The timestamp of the sample
+       * @param value - The value of the sample
+       * @param options - Optional configuration parameters
+       */
       parseCommand(parser, key, timestamp2, value, options) {
         parser.push("TS.ADD");
         parser.pushKey(key);
@@ -126564,6 +122669,12 @@ var require_ALTER2 = __commonJS({
     var helpers_1 = require_helpers3();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Alters the configuration of an existing time series
+       * @param parser - The command parser
+       * @param key - The key name for the time series
+       * @param options - Configuration parameters to alter
+       */
       parseCommand(parser, key, options) {
         parser.push("TS.ALTER");
         parser.pushKey(key);
@@ -126586,6 +122697,12 @@ var require_CREATE3 = __commonJS({
     var helpers_1 = require_helpers3();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Creates a new time series
+       * @param parser - The command parser
+       * @param key - The key name for the new time series
+       * @param options - Optional configuration parameters
+       */
       parseCommand(parser, key, options) {
         parser.push("TS.CREATE");
         parser.pushKey(key);
@@ -126632,6 +122749,15 @@ var require_CREATERULE = __commonJS({
     };
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Creates a compaction rule from source time series to destination time series
+       * @param parser - The command parser
+       * @param sourceKey - The source time series key
+       * @param destinationKey - The destination time series key
+       * @param aggregationType - The aggregation type to use
+       * @param bucketDuration - The duration of each bucket in milliseconds
+       * @param alignTimestamp - Optional timestamp for alignment
+       */
       parseCommand(parser, sourceKey, destinationKey, aggregationType, bucketDuration, alignTimestamp) {
         parser.push("TS.CREATERULE");
         parser.pushKeys([sourceKey, destinationKey]);
@@ -126669,6 +122795,10 @@ var require_INCRBY4 = __commonJS({
     exports.parseIncrByArguments = parseIncrByArguments;
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Increases the value of a time series by a given amount
+       * @param args - Arguments passed to the {@link parseIncrByArguments} function
+       */
       parseCommand(...args) {
         const parser = args[0];
         parser.push("TS.INCRBY");
@@ -126714,6 +122844,10 @@ var require_DECRBY2 = __commonJS({
     var INCRBY_1 = __importStar3(require_INCRBY4());
     exports.default = {
       IS_READ_ONLY: INCRBY_1.default.IS_READ_ONLY,
+      /**
+       * Decreases the value of a time series by a given amount
+       * @param args - Arguments passed to the parseIncrByArguments function
+       */
       parseCommand(...args) {
         const parser = args[0];
         parser.push("TS.DECRBY");
@@ -126732,6 +122866,13 @@ var require_DEL4 = __commonJS({
     var helpers_1 = require_helpers3();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Deletes samples between two timestamps from a time series
+       * @param parser - The command parser
+       * @param key - The key name of the time series
+       * @param fromTimestamp - Start timestamp to delete from
+       * @param toTimestamp - End timestamp to delete until
+       */
       parseCommand(parser, key, fromTimestamp, toTimestamp) {
         parser.push("TS.DEL");
         parser.pushKey(key);
@@ -126749,6 +122890,12 @@ var require_DELETERULE = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Deletes a compaction rule between source and destination time series
+       * @param parser - The command parser
+       * @param sourceKey - The source time series key
+       * @param destinationKey - The destination time series key
+       */
       parseCommand(parser, sourceKey, destinationKey) {
         parser.push("TS.DELETERULE");
         parser.pushKeys([sourceKey, destinationKey]);
@@ -126765,6 +122912,12 @@ var require_GET3 = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Gets the last sample of a time series
+       * @param parser - The command parser
+       * @param key - The key name of the time series
+       * @param options - Optional parameters for the command
+       */
       parseCommand(parser, key, options) {
         parser.push("TS.GET");
         parser.pushKey(key);
@@ -126795,155 +122948,60 @@ var require_INFO8 = __commonJS({
   "node_modules/@redis/time-series/dist/lib/commands/INFO.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var CREATERULE_1 = require_CREATERULE();
     var generic_transformers_1 = require_generic_transformers();
-    var reply_utils_1 = require_reply_utils();
-    function normalizeInfoLabels(labels) {
-      if (Array.isArray(labels)) {
-        if (labels.every((item) => Array.isArray(item) && item.length >= 2)) {
-          return labels.map((item) => [item[0], item[1]]);
-        }
-        const normalized = labels.map((label) => {
-          const object2 = (0, reply_utils_1.mapLikeToObject)(label);
-          return [
-            (0, reply_utils_1.getMapValue)(object2, ["name", "label"]),
-            (0, reply_utils_1.getMapValue)(object2, ["value"])
-          ];
-        }).filter(([name2]) => name2 !== void 0);
-        if (normalized.length > 0) {
-          return normalized;
-        }
-      }
-      return (0, reply_utils_1.mapLikeEntries)(labels).map(([name2, value]) => [name2, value]);
-    }
-    function normalizeInfoRules(rules) {
-      const normalized = [];
-      const aggregationTypes = new Set(Object.values(CREATERULE_1.TIME_SERIES_AGGREGATION_TYPE).map((type) => type.toUpperCase()));
-      const parseRuleTuple = (rule) => {
-        const stringCandidates = rule.filter((value) => typeof value === "string" || value instanceof Buffer);
-        const numberCandidates = rule.filter((value) => typeof value === "number");
-        const aggregationCandidate = stringCandidates.find((value) => {
-          return aggregationTypes.has(value.toString().toUpperCase());
-        });
-        const keyCandidate = stringCandidates.find((value) => value !== aggregationCandidate);
-        return [
-          keyCandidate ?? rule[0],
-          numberCandidates[0] ?? Number(rule[1]),
-          aggregationCandidate ?? rule[2]
-        ];
-      };
-      if (!Array.isArray(rules)) {
-        for (const [key, value] of (0, reply_utils_1.mapLikeEntries)(rules)) {
-          if (Array.isArray(value)) {
-            const timeBucket2 = value.find((item) => typeof item === "number") ?? Number(value[0]);
-            const aggregationType2 = value.find((item) => {
-              return (typeof item === "string" || item instanceof Buffer) && aggregationTypes.has(item.toString().toUpperCase());
-            }) ?? value[1];
-            normalized.push([
-              key,
-              timeBucket2,
-              aggregationType2
-            ]);
-            continue;
-          }
-          const object2 = (0, reply_utils_1.mapLikeToObject)(value);
-          const timeBucket = (0, reply_utils_1.getMapValue)(object2, ["timeBucket", "time_bucket"]);
-          const aggregationType = (0, reply_utils_1.getMapValue)(object2, ["aggregationType", "aggregation_type"]);
-          normalized.push([
-            key,
-            timeBucket,
-            aggregationType
-          ]);
-        }
-        return normalized;
-      }
-      if (Array.isArray(rules) && rules.every((rule) => Array.isArray(rule) && rule.length >= 3)) {
-        return rules.map((rule) => parseRuleTuple(rule));
-      }
-      for (const rule of (0, reply_utils_1.mapLikeValues)(rules)) {
-        if (Array.isArray(rule)) {
-          normalized.push(parseRuleTuple(rule));
-          continue;
-        }
-        const object2 = (0, reply_utils_1.mapLikeToObject)(rule);
-        const key = (0, reply_utils_1.getMapValue)(object2, ["key"]);
-        const timeBucket = (0, reply_utils_1.getMapValue)(object2, ["timeBucket", "time_bucket"]);
-        const aggregationType = (0, reply_utils_1.getMapValue)(object2, ["aggregationType", "aggregation_type"]);
-        normalized.push(parseRuleTuple([key, timeBucket, aggregationType]));
-      }
-      return normalized;
-    }
-    function normalizeInfoRawReply(reply) {
-      if (Array.isArray(reply)) {
-        return reply;
-      }
-      const normalized = [];
-      for (const [key, value] of (0, reply_utils_1.mapLikeEntries)(reply)) {
-        switch (key) {
-          case "labels":
-            normalized.push(key, normalizeInfoLabels(value));
-            break;
-          case "rules":
-            normalized.push(key, normalizeInfoRules(value));
-            break;
-          default:
-            normalized.push(key, value);
-            break;
-        }
-      }
-      return normalized;
-    }
-    function transformInfoReplyResp2(reply, _, typeMapping) {
-      const ret = {};
-      for (let i2 = 0; i2 < reply.length; i2 += 2) {
-        const key = reply[i2].toString();
-        switch (key) {
-          case "totalSamples":
-          case "memoryUsage":
-          case "firstTimestamp":
-          case "lastTimestamp":
-          case "retentionTime":
-          case "chunkCount":
-          case "chunkSize":
-          case "chunkType":
-          case "duplicatePolicy":
-          case "sourceKey":
-          case "ignoreMaxTimeDiff":
-            ret[key] = reply[i2 + 1];
-            break;
-          case "labels":
-            ret[key] = reply[i2 + 1].map(([name2, value]) => ({
-              name: name2,
-              value
-            }));
-            break;
-          case "rules":
-            ret[key] = reply[i2 + 1].map(([key2, timeBucket, aggregationType]) => ({
-              key: key2,
-              timeBucket,
-              aggregationType
-            }));
-            break;
-          case "ignoreMaxValDiff":
-            ret[key] = generic_transformers_1.transformDoubleReply[2](reply[i2 + 1], void 0, typeMapping);
-            break;
-        }
-      }
-      return ret;
-    }
-    function transformInfoReplyResp3(reply, preserve, typeMapping) {
-      return transformInfoReplyResp2(normalizeInfoRawReply(reply), preserve, typeMapping);
-    }
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Gets information about a time series
+       * @param parser - The command parser
+       * @param key - The key name of the time series
+       */
       parseCommand(parser, key) {
         parser.push("TS.INFO");
         parser.pushKey(key);
       },
       transformReply: {
-        2: transformInfoReplyResp2,
-        3: transformInfoReplyResp3
-      }
+        2: (reply, _, typeMapping) => {
+          const ret = {};
+          for (let i2 = 0; i2 < reply.length; i2 += 2) {
+            const key = reply[i2].toString();
+            switch (key) {
+              case "totalSamples":
+              case "memoryUsage":
+              case "firstTimestamp":
+              case "lastTimestamp":
+              case "retentionTime":
+              case "chunkCount":
+              case "chunkSize":
+              case "chunkType":
+              case "duplicatePolicy":
+              case "sourceKey":
+              case "ignoreMaxTimeDiff":
+                ret[key] = reply[i2 + 1];
+                break;
+              case "labels":
+                ret[key] = reply[i2 + 1].map(([name2, value]) => ({
+                  name: name2,
+                  value
+                }));
+                break;
+              case "rules":
+                ret[key] = reply[i2 + 1].map(([key2, timeBucket, aggregationType]) => ({
+                  key: key2,
+                  timeBucket,
+                  aggregationType
+                }));
+                break;
+              case "ignoreMaxValDiff":
+                ret[key] = generic_transformers_1.transformDoubleReply[2](reply[27], void 0, typeMapping);
+                break;
+            }
+          }
+          return ret;
+        },
+        3: void 0
+      },
+      unstableResp3: true
     };
   }
 });
@@ -126956,40 +123014,14 @@ var require_INFO_DEBUG = __commonJS({
       return mod4 && mod4.__esModule ? mod4 : { "default": mod4 };
     };
     Object.defineProperty(exports, "__esModule", { value: true });
-    var reply_utils_1 = require_reply_utils();
     var INFO_1 = __importDefault3(require_INFO8());
-    function normalizeChunks(chunks) {
-      return (0, reply_utils_1.mapLikeValues)(chunks).map((chunk2) => {
-        if (Array.isArray(chunk2)) {
-          if (chunk2.length >= 10 && chunk2[0] === "startTimestamp") {
-            return {
-              startTimestamp: chunk2[1],
-              endTimestamp: chunk2[3],
-              samples: chunk2[5],
-              size: chunk2[7],
-              bytesPerSample: chunk2[9].toString()
-            };
-          }
-          return {
-            startTimestamp: chunk2[0],
-            endTimestamp: chunk2[1],
-            samples: chunk2[2],
-            size: chunk2[3],
-            bytesPerSample: chunk2[4].toString()
-          };
-        }
-        const object2 = (0, reply_utils_1.mapLikeToObject)(chunk2);
-        return {
-          startTimestamp: object2.startTimestamp ?? object2.start_timestamp,
-          endTimestamp: object2.endTimestamp ?? object2.end_timestamp,
-          samples: object2.samples,
-          size: object2.size,
-          bytesPerSample: (object2.bytesPerSample ?? object2.bytes_per_sample).toString()
-        };
-      });
-    }
     exports.default = {
       IS_READ_ONLY: INFO_1.default.IS_READ_ONLY,
+      /**
+       * Gets debug information about a time series
+       * @param parser - The command parser
+       * @param key - The key name of the time series
+       */
       parseCommand(parser, key) {
         INFO_1.default.parseCommand(parser, key);
         parser.push("DEBUG");
@@ -127018,15 +123050,9 @@ var require_INFO_DEBUG = __commonJS({
           }
           return ret;
         },
-        3: (reply, preserve, typeMapping) => {
-          const ret = INFO_1.default.transformReply[3](reply, preserve, typeMapping);
-          const mappedReply = (0, reply_utils_1.mapLikeToObject)(reply);
-          ret.keySelfName = mappedReply.keySelfName ?? mappedReply.key_self_name;
-          const chunks = mappedReply.Chunks ?? mappedReply.chunks;
-          ret.chunks = normalizeChunks(chunks);
-          return ret;
-        }
-      }
+        3: void 0
+      },
+      unstableResp3: true
     };
   }
 });
@@ -127039,6 +123065,11 @@ var require_MADD2 = __commonJS({
     var helpers_1 = require_helpers3();
     exports.default = {
       IS_READ_ONLY: false,
+      /**
+       * Adds multiple samples to multiple time series
+       * @param parser - The command parser
+       * @param toAdd - Array of samples to add to different time series
+       */
       parseCommand(parser, toAdd) {
         parser.push("TS.MADD");
         for (const { key, timestamp: timestamp2, value } of toAdd) {
@@ -127072,6 +123103,12 @@ var require_MGET3 = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Gets the last samples matching a specific filter from multiple time series
+       * @param parser - The command parser
+       * @param filter - Filter to match time series keys
+       * @param options - Optional parameters for the command
+       */
       parseCommand(parser, filter, options) {
         parser.push("TS.MGET");
         parseLatestArgument(parser, options?.LATEST);
@@ -127128,6 +123165,12 @@ var require_MGET_WITHLABELS = __commonJS({
     exports.createTransformMGetLabelsReply = createTransformMGetLabelsReply;
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Gets the last samples matching a specific filter with labels
+       * @param parser - The command parser
+       * @param filter - Filter to match time series keys
+       * @param options - Optional parameters for the command
+       */
       parseCommand(parser, filter, options) {
         parser.push("TS.MGET");
         (0, MGET_1.parseLatestArgument)(parser, options?.LATEST);
@@ -127149,6 +123192,13 @@ var require_MGET_SELECTED_LABELS = __commonJS({
     var MGET_WITHLABELS_1 = require_MGET_WITHLABELS();
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Gets the last samples matching a specific filter with selected labels
+       * @param parser - The command parser
+       * @param filter - Filter to match time series keys
+       * @param selectedLabels - Labels to include in the output
+       * @param options - Optional parameters for the command
+       */
       parseCommand(parser, filter, selectedLabels, options) {
         parser.push("TS.MGET");
         (0, MGET_1.parseLatestArgument)(parser, options?.LATEST);
@@ -127210,6 +123260,10 @@ var require_RANGE = __commonJS({
     exports.transformRangeArguments = transformRangeArguments;
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Gets samples from a time series within a time range
+       * @param args - Arguments passed to the {@link transformRangeArguments} function
+       */
       parseCommand(...args) {
         const parser = args[0];
         parser.push("TS.RANGE");
@@ -127282,6 +123336,15 @@ var require_MRANGE_GROUPBY = __commonJS({
     exports.extractResp3MRangeSources = extractResp3MRangeSources;
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Gets samples for time series matching a filter within a time range with grouping
+       * @param parser - The command parser
+       * @param fromTimestamp - Start timestamp for range
+       * @param toTimestamp - End timestamp for range
+       * @param filter - Filter to match time series keys
+       * @param groupBy - Group by parameters
+       * @param options - Optional parameters for the command
+       */
       parseCommand: createTransformMRangeGroupByArguments("TS.MRANGE"),
       transformReply: {
         2(reply, _, typeMapping) {
@@ -127292,150 +123355,10 @@ var require_MRANGE_GROUPBY = __commonJS({
           }, typeMapping);
         },
         3(reply) {
-          return (0, helpers_1.resp3MapToValue)(reply, ([_labels, _metadata1, _metadata2, samples]) => {
+          return (0, helpers_1.resp3MapToValue)(reply, ([_labels, _metadata1, metadata2, samples]) => {
             return {
+              sources: extractResp3MRangeSources(metadata2),
               samples: helpers_1.transformSamplesReply[3](samples)
-            };
-          });
-        }
-      }
-    };
-  }
-});
-
-// node_modules/@redis/time-series/dist/lib/commands/RANGE_MULTIAGGR.js
-var require_RANGE_MULTIAGGR = __commonJS({
-  "node_modules/@redis/time-series/dist/lib/commands/RANGE_MULTIAGGR.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.transformRangeMultiArguments = exports.parseRangeMultiArguments = void 0;
-    var helpers_1 = require_helpers3();
-    function parseRangeMultiArguments(parser, fromTimestamp, toTimestamp, options) {
-      parser.push((0, helpers_1.transformTimestampArgument)(fromTimestamp), (0, helpers_1.transformTimestampArgument)(toTimestamp));
-      if (options.LATEST) {
-        parser.push("LATEST");
-      }
-      if (options.FILTER_BY_TS) {
-        parser.push("FILTER_BY_TS");
-        for (const timestamp2 of options.FILTER_BY_TS) {
-          parser.push((0, helpers_1.transformTimestampArgument)(timestamp2));
-        }
-      }
-      if (options.FILTER_BY_VALUE) {
-        parser.push("FILTER_BY_VALUE", options.FILTER_BY_VALUE.min.toString(), options.FILTER_BY_VALUE.max.toString());
-      }
-      if (options.COUNT !== void 0) {
-        parser.push("COUNT", options.COUNT.toString());
-      }
-      if (options.ALIGN !== void 0) {
-        parser.push("ALIGN", (0, helpers_1.transformTimestampArgument)(options.ALIGN));
-      }
-      parser.push("AGGREGATION", options.AGGREGATION.types.join(","), (0, helpers_1.transformTimestampArgument)(options.AGGREGATION.timeBucket));
-      if (options.AGGREGATION.BUCKETTIMESTAMP) {
-        parser.push("BUCKETTIMESTAMP", options.AGGREGATION.BUCKETTIMESTAMP);
-      }
-      if (options.AGGREGATION.EMPTY) {
-        parser.push("EMPTY");
-      }
-    }
-    exports.parseRangeMultiArguments = parseRangeMultiArguments;
-    function transformRangeMultiArguments(parser, key, fromTimestamp, toTimestamp, options) {
-      parser.pushKey(key);
-      parseRangeMultiArguments(parser, fromTimestamp, toTimestamp, options);
-    }
-    exports.transformRangeMultiArguments = transformRangeMultiArguments;
-    exports.default = {
-      IS_READ_ONLY: true,
-      parseCommand(...args) {
-        const parser = args[0];
-        parser.push("TS.RANGE");
-        transformRangeMultiArguments(...args);
-      },
-      transformReply: {
-        2(reply) {
-          return helpers_1.transformMultiAggregationSamplesReply[2](reply);
-        },
-        3(reply) {
-          return helpers_1.transformMultiAggregationSamplesReply[3](reply);
-        }
-      }
-    };
-  }
-});
-
-// node_modules/@redis/time-series/dist/lib/commands/MRANGE_MULTIAGGR.js
-var require_MRANGE_MULTIAGGR = __commonJS({
-  "node_modules/@redis/time-series/dist/lib/commands/MRANGE_MULTIAGGR.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.createTransformMRangeMultiArguments = void 0;
-    var helpers_1 = require_helpers3();
-    var RANGE_MULTIAGGR_1 = require_RANGE_MULTIAGGR();
-    var MGET_1 = require_MGET3();
-    function createTransformMRangeMultiArguments(command) {
-      return (parser, fromTimestamp, toTimestamp, filter, options) => {
-        parser.push(command);
-        (0, RANGE_MULTIAGGR_1.parseRangeMultiArguments)(parser, fromTimestamp, toTimestamp, options);
-        (0, MGET_1.parseFilterArgument)(parser, filter);
-      };
-    }
-    exports.createTransformMRangeMultiArguments = createTransformMRangeMultiArguments;
-    exports.default = {
-      NOT_KEYED_COMMAND: true,
-      IS_READ_ONLY: true,
-      parseCommand: createTransformMRangeMultiArguments("TS.MRANGE"),
-      transformReply: {
-        2(reply, _, typeMapping) {
-          return (0, helpers_1.resp2MapToValue)(reply, ([_key2, _labels, samples]) => {
-            return helpers_1.transformMultiAggregationSamplesReply[2](samples);
-          }, typeMapping);
-        },
-        3(reply) {
-          return (0, helpers_1.resp3MapToValue)(reply, ([_labels, _metadata, samples]) => {
-            return helpers_1.transformMultiAggregationSamplesReply[3](samples);
-          });
-        }
-      }
-    };
-  }
-});
-
-// node_modules/@redis/time-series/dist/lib/commands/MRANGE_SELECTED_LABELS_MULTIAGGR.js
-var require_MRANGE_SELECTED_LABELS_MULTIAGGR = __commonJS({
-  "node_modules/@redis/time-series/dist/lib/commands/MRANGE_SELECTED_LABELS_MULTIAGGR.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.createTransformMRangeSelectedLabelsMultiArguments = void 0;
-    var helpers_1 = require_helpers3();
-    var RANGE_MULTIAGGR_1 = require_RANGE_MULTIAGGR();
-    var MGET_1 = require_MGET3();
-    function createTransformMRangeSelectedLabelsMultiArguments(command) {
-      return (parser, fromTimestamp, toTimestamp, selectedLabels, filter, options) => {
-        parser.push(command);
-        (0, RANGE_MULTIAGGR_1.parseRangeMultiArguments)(parser, fromTimestamp, toTimestamp, options);
-        (0, helpers_1.parseSelectedLabelsArguments)(parser, selectedLabels);
-        (0, MGET_1.parseFilterArgument)(parser, filter);
-      };
-    }
-    exports.createTransformMRangeSelectedLabelsMultiArguments = createTransformMRangeSelectedLabelsMultiArguments;
-    exports.default = {
-      NOT_KEYED_COMMAND: true,
-      IS_READ_ONLY: true,
-      parseCommand: createTransformMRangeSelectedLabelsMultiArguments("TS.MRANGE"),
-      transformReply: {
-        2(reply, _, typeMapping) {
-          return (0, helpers_1.resp2MapToValue)(reply, ([_key2, labels, samples]) => {
-            return {
-              labels: (0, helpers_1.transformRESP2Labels)(labels, typeMapping),
-              samples: helpers_1.transformMultiAggregationSamplesReply[2](samples)
-            };
-          }, typeMapping);
-        },
-        3(reply) {
-          return (0, helpers_1.resp3MapToValue)(reply, ([labels, _metadata, samples]) => {
-            return {
-              labels,
-              samples: helpers_1.transformMultiAggregationSamplesReply[3](samples)
             };
           });
         }
@@ -127464,6 +123387,15 @@ var require_MRANGE_SELECTED_LABELS = __commonJS({
     exports.createTransformMRangeSelectedLabelsArguments = createTransformMRangeSelectedLabelsArguments;
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Gets samples for time series matching a filter with selected labels
+       * @param parser - The command parser
+       * @param fromTimestamp - Start timestamp for range
+       * @param toTimestamp - End timestamp for range
+       * @param selectedLabels - Labels to include in the output
+       * @param filter - Filter to match time series keys
+       * @param options - Optional parameters for the command
+       */
       parseCommand: createTransformMRangeSelectedLabelsArguments("TS.MRANGE"),
       transformReply: {
         2(reply, _, typeMapping) {
@@ -127475,7 +123407,7 @@ var require_MRANGE_SELECTED_LABELS = __commonJS({
           }, typeMapping);
         },
         3(reply) {
-          return (0, helpers_1.resp3MapToValue)(reply, ([labels, _metadata, samples]) => {
+          return (0, helpers_1.resp3MapToValue)(reply, ([_key2, labels, samples]) => {
             return {
               labels,
               samples: helpers_1.transformSamplesReply[3](samples)
@@ -127513,65 +123445,25 @@ var require_MRANGE_SELECTED_LABELS_GROUPBY = __commonJS({
     exports.createMRangeSelectedLabelsGroupByTransformArguments = createMRangeSelectedLabelsGroupByTransformArguments;
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Gets samples for time series matching a filter with selected labels and grouping
+       * @param parser - The command parser
+       * @param fromTimestamp - Start timestamp for range
+       * @param toTimestamp - End timestamp for range
+       * @param selectedLabels - Labels to include in the output
+       * @param filter - Filter to match time series keys
+       * @param groupBy - Group by parameters
+       * @param options - Optional parameters for the command
+       */
       parseCommand: createMRangeSelectedLabelsGroupByTransformArguments("TS.MRANGE"),
       transformReply: {
         2: MRANGE_SELECTED_LABELS_1.default.transformReply[2],
         3(reply) {
-          return (0, helpers_1.resp3MapToValue)(reply, ([labels, _metadata, _metadata2, samples]) => {
+          return (0, helpers_1.resp3MapToValue)(reply, ([labels, _metadata, metadata2, samples]) => {
             return {
               labels,
+              sources: (0, MRANGE_GROUPBY_1.extractResp3MRangeSources)(metadata2),
               samples: helpers_1.transformSamplesReply[3](samples)
-            };
-          });
-        }
-      }
-    };
-  }
-});
-
-// node_modules/@redis/time-series/dist/lib/commands/MRANGE_WITHLABELS_MULTIAGGR.js
-var require_MRANGE_WITHLABELS_MULTIAGGR = __commonJS({
-  "node_modules/@redis/time-series/dist/lib/commands/MRANGE_WITHLABELS_MULTIAGGR.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.createTransformMRangeWithLabelsMultiArguments = void 0;
-    var helpers_1 = require_helpers3();
-    var RANGE_MULTIAGGR_1 = require_RANGE_MULTIAGGR();
-    var MGET_1 = require_MGET3();
-    function createTransformMRangeWithLabelsMultiArguments(command) {
-      return (parser, fromTimestamp, toTimestamp, filter, options) => {
-        parser.push(command);
-        (0, RANGE_MULTIAGGR_1.parseRangeMultiArguments)(parser, fromTimestamp, toTimestamp, options);
-        parser.push("WITHLABELS");
-        (0, MGET_1.parseFilterArgument)(parser, filter);
-      };
-    }
-    exports.createTransformMRangeWithLabelsMultiArguments = createTransformMRangeWithLabelsMultiArguments;
-    exports.default = {
-      NOT_KEYED_COMMAND: true,
-      IS_READ_ONLY: true,
-      parseCommand: createTransformMRangeWithLabelsMultiArguments("TS.MRANGE"),
-      transformReply: {
-        2(reply, _, typeMapping) {
-          return (0, helpers_1.resp2MapToValue)(reply, ([_key2, labels, samples]) => {
-            const unwrappedLabels = labels;
-            const labelsObject = {};
-            for (const tuple2 of unwrappedLabels) {
-              const [key, value] = tuple2;
-              const unwrappedKey = key;
-              labelsObject[unwrappedKey.toString()] = value;
-            }
-            return {
-              labels: labelsObject,
-              samples: helpers_1.transformMultiAggregationSamplesReply[2](samples)
-            };
-          }, typeMapping);
-        },
-        3(reply) {
-          return (0, helpers_1.resp3MapToValue)(reply, ([labels, _metadata, samples]) => {
-            return {
-              labels,
-              samples: helpers_1.transformMultiAggregationSamplesReply[3](samples)
             };
           });
         }
@@ -127602,6 +123494,15 @@ var require_MRANGE_WITHLABELS_GROUPBY = __commonJS({
     exports.createMRangeWithLabelsGroupByTransformArguments = createMRangeWithLabelsGroupByTransformArguments;
     exports.default = {
       IS_READ_ONLY: true,
+      /**
+       * Gets samples for time series matching a filter with labels and grouping
+       * @param parser - The command parser
+       * @param fromTimestamp - Start timestamp for range
+       * @param toTimestamp - End timestamp for range
+       * @param filter - Filter to match time series keys
+       * @param groupBy - Group by parameters
+       * @param options - Optional parameters for the command
+       */
       parseCommand: createMRangeWithLabelsGroupByTransformArguments("TS.MRANGE"),
       transformReply: {
         2(reply, _, typeMapping) {
@@ -127649,12 +123550,20 @@ var require_MRANGE_WITHLABELS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Gets samples for time series matching a filter with labels
+       * @param parser - The command parser
+       * @param fromTimestamp - Start timestamp for range
+       * @param toTimestamp - End timestamp for range
+       * @param filter - Filter to match time series keys
+       * @param options - Optional parameters for the command
+       */
       parseCommand: createTransformMRangeWithLabelsArguments("TS.MRANGE"),
       transformReply: {
         2(reply, _, typeMapping) {
           return (0, helpers_1.resp2MapToValue)(reply, ([_key2, labels, samples]) => {
             const unwrappedLabels = labels;
-            const labelsObject = {};
+            const labelsObject = /* @__PURE__ */ Object.create(null);
             for (const tuple2 of unwrappedLabels) {
               const [key, value] = tuple2;
               const unwrappedKey = key;
@@ -127699,6 +123608,14 @@ var require_MRANGE = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Gets samples for time series matching a specific filter within a time range
+       * @param parser - The command parser
+       * @param fromTimestamp - Start timestamp for range
+       * @param toTimestamp - End timestamp for range
+       * @param filter - Filter to match time series keys
+       * @param options - Optional parameters for the command
+       */
       parseCommand: createTransformMRangeArguments("TS.MRANGE"),
       transformReply: {
         2(reply, _, typeMapping) {
@@ -127751,92 +123668,17 @@ var require_MREVRANGE_GROUPBY = __commonJS({
     var MRANGE_GROUPBY_1 = __importStar3(require_MRANGE_GROUPBY());
     exports.default = {
       IS_READ_ONLY: MRANGE_GROUPBY_1.default.IS_READ_ONLY,
+      /**
+       * Gets samples for time series matching a filter within a time range with grouping (in reverse order)
+       * @param parser - The command parser
+       * @param fromTimestamp - Start timestamp for range
+       * @param toTimestamp - End timestamp for range
+       * @param filter - Filter to match time series keys
+       * @param groupBy - Group by parameters
+       * @param options - Optional parameters for the command
+       */
       parseCommand: (0, MRANGE_GROUPBY_1.createTransformMRangeGroupByArguments)("TS.MREVRANGE"),
       transformReply: MRANGE_GROUPBY_1.default.transformReply
-    };
-  }
-});
-
-// node_modules/@redis/time-series/dist/lib/commands/MREVRANGE_MULTIAGGR.js
-var require_MREVRANGE_MULTIAGGR = __commonJS({
-  "node_modules/@redis/time-series/dist/lib/commands/MREVRANGE_MULTIAGGR.js"(exports) {
-    "use strict";
-    var __createBinding3 = exports && exports.__createBinding || (Object.create ? (function(o, m2, k2, k22) {
-      if (k22 === void 0) k22 = k2;
-      var desc2 = Object.getOwnPropertyDescriptor(m2, k2);
-      if (!desc2 || ("get" in desc2 ? !m2.__esModule : desc2.writable || desc2.configurable)) {
-        desc2 = { enumerable: true, get: function() {
-          return m2[k2];
-        } };
-      }
-      Object.defineProperty(o, k22, desc2);
-    }) : (function(o, m2, k2, k22) {
-      if (k22 === void 0) k22 = k2;
-      o[k22] = m2[k2];
-    }));
-    var __setModuleDefault2 = exports && exports.__setModuleDefault || (Object.create ? (function(o, v) {
-      Object.defineProperty(o, "default", { enumerable: true, value: v });
-    }) : function(o, v) {
-      o["default"] = v;
-    });
-    var __importStar3 = exports && exports.__importStar || function(mod4) {
-      if (mod4 && mod4.__esModule) return mod4;
-      var result = {};
-      if (mod4 != null) {
-        for (var k2 in mod4) if (k2 !== "default" && Object.prototype.hasOwnProperty.call(mod4, k2)) __createBinding3(result, mod4, k2);
-      }
-      __setModuleDefault2(result, mod4);
-      return result;
-    };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var MRANGE_MULTIAGGR_1 = __importStar3(require_MRANGE_MULTIAGGR());
-    exports.default = {
-      NOT_KEYED_COMMAND: MRANGE_MULTIAGGR_1.default.NOT_KEYED_COMMAND,
-      IS_READ_ONLY: MRANGE_MULTIAGGR_1.default.IS_READ_ONLY,
-      parseCommand: (0, MRANGE_MULTIAGGR_1.createTransformMRangeMultiArguments)("TS.MREVRANGE"),
-      transformReply: MRANGE_MULTIAGGR_1.default.transformReply
-    };
-  }
-});
-
-// node_modules/@redis/time-series/dist/lib/commands/MREVRANGE_SELECTED_LABELS_MULTIAGGR.js
-var require_MREVRANGE_SELECTED_LABELS_MULTIAGGR = __commonJS({
-  "node_modules/@redis/time-series/dist/lib/commands/MREVRANGE_SELECTED_LABELS_MULTIAGGR.js"(exports) {
-    "use strict";
-    var __createBinding3 = exports && exports.__createBinding || (Object.create ? (function(o, m2, k2, k22) {
-      if (k22 === void 0) k22 = k2;
-      var desc2 = Object.getOwnPropertyDescriptor(m2, k2);
-      if (!desc2 || ("get" in desc2 ? !m2.__esModule : desc2.writable || desc2.configurable)) {
-        desc2 = { enumerable: true, get: function() {
-          return m2[k2];
-        } };
-      }
-      Object.defineProperty(o, k22, desc2);
-    }) : (function(o, m2, k2, k22) {
-      if (k22 === void 0) k22 = k2;
-      o[k22] = m2[k2];
-    }));
-    var __setModuleDefault2 = exports && exports.__setModuleDefault || (Object.create ? (function(o, v) {
-      Object.defineProperty(o, "default", { enumerable: true, value: v });
-    }) : function(o, v) {
-      o["default"] = v;
-    });
-    var __importStar3 = exports && exports.__importStar || function(mod4) {
-      if (mod4 && mod4.__esModule) return mod4;
-      var result = {};
-      if (mod4 != null) {
-        for (var k2 in mod4) if (k2 !== "default" && Object.prototype.hasOwnProperty.call(mod4, k2)) __createBinding3(result, mod4, k2);
-      }
-      __setModuleDefault2(result, mod4);
-      return result;
-    };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var MRANGE_SELECTED_LABELS_MULTIAGGR_1 = __importStar3(require_MRANGE_SELECTED_LABELS_MULTIAGGR());
-    exports.default = {
-      NOT_KEYED_COMMAND: MRANGE_SELECTED_LABELS_MULTIAGGR_1.default.NOT_KEYED_COMMAND,
-      IS_READ_ONLY: MRANGE_SELECTED_LABELS_MULTIAGGR_1.default.IS_READ_ONLY,
-      parseCommand: (0, MRANGE_SELECTED_LABELS_MULTIAGGR_1.createTransformMRangeSelectedLabelsMultiArguments)("TS.MREVRANGE"),
-      transformReply: MRANGE_SELECTED_LABELS_MULTIAGGR_1.default.transformReply
     };
   }
 });
@@ -127876,6 +123718,16 @@ var require_MREVRANGE_SELECTED_LABELS_GROUPBY = __commonJS({
     var MRANGE_SELECTED_LABELS_GROUPBY_1 = __importStar3(require_MRANGE_SELECTED_LABELS_GROUPBY());
     exports.default = {
       IS_READ_ONLY: MRANGE_SELECTED_LABELS_GROUPBY_1.default.IS_READ_ONLY,
+      /**
+       * Gets samples for time series matching a filter with selected labels and grouping (in reverse order)
+       * @param parser - The command parser
+       * @param fromTimestamp - Start timestamp for range
+       * @param toTimestamp - End timestamp for range
+       * @param selectedLabels - Labels to include in the output
+       * @param filter - Filter to match time series keys
+       * @param groupBy - Group by parameters
+       * @param options - Optional parameters for the command
+       */
       parseCommand: (0, MRANGE_SELECTED_LABELS_GROUPBY_1.createMRangeSelectedLabelsGroupByTransformArguments)("TS.MREVRANGE"),
       transformReply: MRANGE_SELECTED_LABELS_GROUPBY_1.default.transformReply
     };
@@ -127917,50 +123769,17 @@ var require_MREVRANGE_SELECTED_LABELS = __commonJS({
     var MRANGE_SELECTED_LABELS_1 = __importStar3(require_MRANGE_SELECTED_LABELS());
     exports.default = {
       IS_READ_ONLY: MRANGE_SELECTED_LABELS_1.default.IS_READ_ONLY,
+      /**
+       * Gets samples for time series matching a filter with selected labels (in reverse order)
+       * @param parser - The command parser
+       * @param fromTimestamp - Start timestamp for range
+       * @param toTimestamp - End timestamp for range
+       * @param selectedLabels - Labels to include in the output
+       * @param filter - Filter to match time series keys
+       * @param options - Optional parameters for the command
+       */
       parseCommand: (0, MRANGE_SELECTED_LABELS_1.createTransformMRangeSelectedLabelsArguments)("TS.MREVRANGE"),
       transformReply: MRANGE_SELECTED_LABELS_1.default.transformReply
-    };
-  }
-});
-
-// node_modules/@redis/time-series/dist/lib/commands/MREVRANGE_WITHLABELS_MULTIAGGR.js
-var require_MREVRANGE_WITHLABELS_MULTIAGGR = __commonJS({
-  "node_modules/@redis/time-series/dist/lib/commands/MREVRANGE_WITHLABELS_MULTIAGGR.js"(exports) {
-    "use strict";
-    var __createBinding3 = exports && exports.__createBinding || (Object.create ? (function(o, m2, k2, k22) {
-      if (k22 === void 0) k22 = k2;
-      var desc2 = Object.getOwnPropertyDescriptor(m2, k2);
-      if (!desc2 || ("get" in desc2 ? !m2.__esModule : desc2.writable || desc2.configurable)) {
-        desc2 = { enumerable: true, get: function() {
-          return m2[k2];
-        } };
-      }
-      Object.defineProperty(o, k22, desc2);
-    }) : (function(o, m2, k2, k22) {
-      if (k22 === void 0) k22 = k2;
-      o[k22] = m2[k2];
-    }));
-    var __setModuleDefault2 = exports && exports.__setModuleDefault || (Object.create ? (function(o, v) {
-      Object.defineProperty(o, "default", { enumerable: true, value: v });
-    }) : function(o, v) {
-      o["default"] = v;
-    });
-    var __importStar3 = exports && exports.__importStar || function(mod4) {
-      if (mod4 && mod4.__esModule) return mod4;
-      var result = {};
-      if (mod4 != null) {
-        for (var k2 in mod4) if (k2 !== "default" && Object.prototype.hasOwnProperty.call(mod4, k2)) __createBinding3(result, mod4, k2);
-      }
-      __setModuleDefault2(result, mod4);
-      return result;
-    };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var MRANGE_WITHLABELS_MULTIAGGR_1 = __importStar3(require_MRANGE_WITHLABELS_MULTIAGGR());
-    exports.default = {
-      NOT_KEYED_COMMAND: MRANGE_WITHLABELS_MULTIAGGR_1.default.NOT_KEYED_COMMAND,
-      IS_READ_ONLY: MRANGE_WITHLABELS_MULTIAGGR_1.default.IS_READ_ONLY,
-      parseCommand: (0, MRANGE_WITHLABELS_MULTIAGGR_1.createTransformMRangeWithLabelsMultiArguments)("TS.MREVRANGE"),
-      transformReply: MRANGE_WITHLABELS_MULTIAGGR_1.default.transformReply
     };
   }
 });
@@ -128000,6 +123819,15 @@ var require_MREVRANGE_WITHLABELS_GROUPBY = __commonJS({
     var MRANGE_WITHLABELS_GROUPBY_1 = __importStar3(require_MRANGE_WITHLABELS_GROUPBY());
     exports.default = {
       IS_READ_ONLY: MRANGE_WITHLABELS_GROUPBY_1.default.IS_READ_ONLY,
+      /**
+       * Gets samples for time series matching a filter with labels and grouping (in reverse order)
+       * @param parser - The command parser
+       * @param fromTimestamp - Start timestamp for range
+       * @param toTimestamp - End timestamp for range
+       * @param filter - Filter to match time series keys
+       * @param groupBy - Group by parameters
+       * @param options - Optional parameters for the command
+       */
       parseCommand: (0, MRANGE_WITHLABELS_GROUPBY_1.createMRangeWithLabelsGroupByTransformArguments)("TS.MREVRANGE"),
       transformReply: MRANGE_WITHLABELS_GROUPBY_1.default.transformReply
     };
@@ -128042,6 +123870,14 @@ var require_MREVRANGE_WITHLABELS = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: MRANGE_WITHLABELS_1.default.NOT_KEYED_COMMAND,
       IS_READ_ONLY: MRANGE_WITHLABELS_1.default.IS_READ_ONLY,
+      /**
+       * Gets samples for time series matching a filter with labels (in reverse order)
+       * @param parser - The command parser
+       * @param fromTimestamp - Start timestamp for range
+       * @param toTimestamp - End timestamp for range
+       * @param filter - Filter to match time series keys
+       * @param options - Optional parameters for the command
+       */
       parseCommand: (0, MRANGE_WITHLABELS_1.createTransformMRangeWithLabelsArguments)("TS.MREVRANGE"),
       transformReply: MRANGE_WITHLABELS_1.default.transformReply
     };
@@ -128084,6 +123920,14 @@ var require_MREVRANGE = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: MRANGE_1.default.NOT_KEYED_COMMAND,
       IS_READ_ONLY: MRANGE_1.default.IS_READ_ONLY,
+      /**
+       * Gets samples for time series matching a specific filter within a time range (in reverse order)
+       * @param parser - The command parser
+       * @param fromTimestamp - Start timestamp for range
+       * @param toTimestamp - End timestamp for range
+       * @param filter - Filter to match time series keys
+       * @param options - Optional parameters for the command
+       */
       parseCommand: (0, MRANGE_1.createTransformMRangeArguments)("TS.MREVRANGE"),
       transformReply: MRANGE_1.default.transformReply
     };
@@ -128098,6 +123942,11 @@ var require_QUERYINDEX = __commonJS({
     exports.default = {
       NOT_KEYED_COMMAND: true,
       IS_READ_ONLY: true,
+      /**
+       * Queries the index for time series matching a specific filter
+       * @param parser - The command parser
+       * @param filter - Filter to match time series labels
+       */
       parseCommand(parser, filter) {
         parser.push("TS.QUERYINDEX");
         parser.pushVariadic(filter);
@@ -128106,51 +123955,6 @@ var require_QUERYINDEX = __commonJS({
         2: void 0,
         3: void 0
       }
-    };
-  }
-});
-
-// node_modules/@redis/time-series/dist/lib/commands/REVRANGE_MULTIAGGR.js
-var require_REVRANGE_MULTIAGGR = __commonJS({
-  "node_modules/@redis/time-series/dist/lib/commands/REVRANGE_MULTIAGGR.js"(exports) {
-    "use strict";
-    var __createBinding3 = exports && exports.__createBinding || (Object.create ? (function(o, m2, k2, k22) {
-      if (k22 === void 0) k22 = k2;
-      var desc2 = Object.getOwnPropertyDescriptor(m2, k2);
-      if (!desc2 || ("get" in desc2 ? !m2.__esModule : desc2.writable || desc2.configurable)) {
-        desc2 = { enumerable: true, get: function() {
-          return m2[k2];
-        } };
-      }
-      Object.defineProperty(o, k22, desc2);
-    }) : (function(o, m2, k2, k22) {
-      if (k22 === void 0) k22 = k2;
-      o[k22] = m2[k2];
-    }));
-    var __setModuleDefault2 = exports && exports.__setModuleDefault || (Object.create ? (function(o, v) {
-      Object.defineProperty(o, "default", { enumerable: true, value: v });
-    }) : function(o, v) {
-      o["default"] = v;
-    });
-    var __importStar3 = exports && exports.__importStar || function(mod4) {
-      if (mod4 && mod4.__esModule) return mod4;
-      var result = {};
-      if (mod4 != null) {
-        for (var k2 in mod4) if (k2 !== "default" && Object.prototype.hasOwnProperty.call(mod4, k2)) __createBinding3(result, mod4, k2);
-      }
-      __setModuleDefault2(result, mod4);
-      return result;
-    };
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var RANGE_MULTIAGGR_1 = __importStar3(require_RANGE_MULTIAGGR());
-    exports.default = {
-      IS_READ_ONLY: RANGE_MULTIAGGR_1.default.IS_READ_ONLY,
-      parseCommand(...args) {
-        const parser = args[0];
-        parser.push("TS.REVRANGE");
-        (0, RANGE_MULTIAGGR_1.transformRangeMultiArguments)(...args);
-      },
-      transformReply: RANGE_MULTIAGGR_1.default.transformReply
     };
   }
 });
@@ -128190,6 +123994,10 @@ var require_REVRANGE = __commonJS({
     var RANGE_1 = __importStar3(require_RANGE());
     exports.default = {
       IS_READ_ONLY: RANGE_1.default.IS_READ_ONLY,
+      /**
+       * Gets samples from a time series within a time range (in reverse order)
+       * @param args - Arguments passed to the {@link transformRangeArguments} function
+       */
       parseCommand(...args) {
         const parser = args[0];
         parser.push("TS.REVRANGE");
@@ -128240,575 +124048,81 @@ var require_commands8 = __commonJS({
     var MGET_WITHLABELS_1 = __importDefault3(require_MGET_WITHLABELS());
     var MGET_1 = __importDefault3(require_MGET3());
     var MRANGE_GROUPBY_1 = __importDefault3(require_MRANGE_GROUPBY());
-    var MRANGE_MULTIAGGR_1 = __importDefault3(require_MRANGE_MULTIAGGR());
-    var MRANGE_SELECTED_LABELS_MULTIAGGR_1 = __importDefault3(require_MRANGE_SELECTED_LABELS_MULTIAGGR());
     var MRANGE_SELECTED_LABELS_GROUPBY_1 = __importDefault3(require_MRANGE_SELECTED_LABELS_GROUPBY());
     var MRANGE_SELECTED_LABELS_1 = __importDefault3(require_MRANGE_SELECTED_LABELS());
-    var MRANGE_WITHLABELS_MULTIAGGR_1 = __importDefault3(require_MRANGE_WITHLABELS_MULTIAGGR());
     var MRANGE_WITHLABELS_GROUPBY_1 = __importDefault3(require_MRANGE_WITHLABELS_GROUPBY());
     var MRANGE_WITHLABELS_1 = __importDefault3(require_MRANGE_WITHLABELS());
     var MRANGE_1 = __importDefault3(require_MRANGE());
     var MREVRANGE_GROUPBY_1 = __importDefault3(require_MREVRANGE_GROUPBY());
-    var MREVRANGE_MULTIAGGR_1 = __importDefault3(require_MREVRANGE_MULTIAGGR());
-    var MREVRANGE_SELECTED_LABELS_MULTIAGGR_1 = __importDefault3(require_MREVRANGE_SELECTED_LABELS_MULTIAGGR());
     var MREVRANGE_SELECTED_LABELS_GROUPBY_1 = __importDefault3(require_MREVRANGE_SELECTED_LABELS_GROUPBY());
     var MREVRANGE_SELECTED_LABELS_1 = __importDefault3(require_MREVRANGE_SELECTED_LABELS());
-    var MREVRANGE_WITHLABELS_MULTIAGGR_1 = __importDefault3(require_MREVRANGE_WITHLABELS_MULTIAGGR());
     var MREVRANGE_WITHLABELS_GROUPBY_1 = __importDefault3(require_MREVRANGE_WITHLABELS_GROUPBY());
     var MREVRANGE_WITHLABELS_1 = __importDefault3(require_MREVRANGE_WITHLABELS());
     var MREVRANGE_1 = __importDefault3(require_MREVRANGE());
     var QUERYINDEX_1 = __importDefault3(require_QUERYINDEX());
-    var RANGE_MULTIAGGR_1 = __importDefault3(require_RANGE_MULTIAGGR());
     var RANGE_1 = __importDefault3(require_RANGE());
-    var REVRANGE_MULTIAGGR_1 = __importDefault3(require_REVRANGE_MULTIAGGR());
     var REVRANGE_1 = __importDefault3(require_REVRANGE());
     __exportStar3(require_helpers3(), exports);
     exports.default = {
-      /**
-       * Creates or appends a sample to a time series
-       * @param key - The key name for the time series
-       * @param timestamp - The timestamp of the sample
-       * @param value - The value of the sample
-       * @param options - Optional configuration parameters
-       */
       ADD: ADD_1.default,
-      /**
-       * Creates or appends a sample to a time series
-       * @param key - The key name for the time series
-       * @param timestamp - The timestamp of the sample
-       * @param value - The value of the sample
-       * @param options - Optional configuration parameters
-       */
       add: ADD_1.default,
-      /**
-       * Alters the configuration of an existing time series
-       * @param key - The key name for the time series
-       * @param options - Configuration parameters to alter
-       */
       ALTER: ALTER_1.default,
-      /**
-       * Alters the configuration of an existing time series
-       * @param key - The key name for the time series
-       * @param options - Configuration parameters to alter
-       */
       alter: ALTER_1.default,
-      /**
-       * Creates a new time series
-       * @param key - The key name for the new time series
-       * @param options - Optional configuration parameters
-       */
       CREATE: CREATE_1.default,
-      /**
-       * Creates a new time series
-       * @param key - The key name for the new time series
-       * @param options - Optional configuration parameters
-       */
       create: CREATE_1.default,
-      /**
-       * Creates a compaction rule from source time series to destination time series
-       * @param sourceKey - The source time series key
-       * @param destinationKey - The destination time series key
-       * @param aggregationType - The aggregation type to use
-       * @param bucketDuration - The duration of each bucket in milliseconds
-       * @param alignTimestamp - Optional timestamp for alignment
-       */
       CREATERULE: CREATERULE_1.default,
-      /**
-       * Creates a compaction rule from source time series to destination time series
-       * @param sourceKey - The source time series key
-       * @param destinationKey - The destination time series key
-       * @param aggregationType - The aggregation type to use
-       * @param bucketDuration - The duration of each bucket in milliseconds
-       * @param alignTimestamp - Optional timestamp for alignment
-       */
       createRule: CREATERULE_1.default,
-      /**
-       * Decreases the value of a time series by a given amount
-       * @param args - Arguments passed to the parseIncrByArguments function
-       */
       DECRBY: DECRBY_1.default,
-      /**
-       * Decreases the value of a time series by a given amount
-       * @param args - Arguments passed to the parseIncrByArguments function
-       */
       decrBy: DECRBY_1.default,
-      /**
-       * Deletes samples between two timestamps from a time series
-       * @param key - The key name of the time series
-       * @param fromTimestamp - Start timestamp to delete from
-       * @param toTimestamp - End timestamp to delete until
-       */
       DEL: DEL_1.default,
-      /**
-       * Deletes samples between two timestamps from a time series
-       * @param key - The key name of the time series
-       * @param fromTimestamp - Start timestamp to delete from
-       * @param toTimestamp - End timestamp to delete until
-       */
       del: DEL_1.default,
-      /**
-       * Deletes a compaction rule between source and destination time series
-       * @param sourceKey - The source time series key
-       * @param destinationKey - The destination time series key
-       */
       DELETERULE: DELETERULE_1.default,
-      /**
-       * Deletes a compaction rule between source and destination time series
-       * @param sourceKey - The source time series key
-       * @param destinationKey - The destination time series key
-       */
       deleteRule: DELETERULE_1.default,
-      /**
-       * Gets the last sample of a time series
-       * @param key - The key name of the time series
-       * @param options - Optional parameters for the command
-       */
       GET: GET_1.default,
-      /**
-       * Gets the last sample of a time series
-       * @param key - The key name of the time series
-       * @param options - Optional parameters for the command
-       */
       get: GET_1.default,
-      /**
-       * Increases the value of a time series by a given amount
-       * @param args - Arguments passed to the {@link parseIncrByArguments} function
-       */
       INCRBY: INCRBY_1.default,
-      /**
-       * Increases the value of a time series by a given amount
-       * @param args - Arguments passed to the {@link parseIncrByArguments} function
-       */
       incrBy: INCRBY_1.default,
-      /**
-       * Gets debug information about a time series
-       * @param key - The key name of the time series
-       */
       INFO_DEBUG: INFO_DEBUG_1.default,
-      /**
-       * Gets debug information about a time series
-       * @param key - The key name of the time series
-       */
       infoDebug: INFO_DEBUG_1.default,
-      /**
-       * Gets information about a time series
-       * @param key - The key name of the time series
-       */
       INFO: INFO_1.default,
-      /**
-       * Gets information about a time series
-       * @param key - The key name of the time series
-       */
       info: INFO_1.default,
-      /**
-       * Adds multiple samples to multiple time series
-       * @param toAdd - Array of samples to add to different time series
-       */
       MADD: MADD_1.default,
-      /**
-       * Adds multiple samples to multiple time series
-       * @param toAdd - Array of samples to add to different time series
-       */
       mAdd: MADD_1.default,
-      /**
-       * Gets the last samples matching a specific filter with selected labels
-       * @param filter - Filter to match time series keys
-       * @param selectedLabels - Labels to include in the output
-       * @param options - Optional parameters for the command
-       */
       MGET_SELECTED_LABELS: MGET_SELECTED_LABELS_1.default,
-      /**
-       * Gets the last samples matching a specific filter with selected labels
-       * @param filter - Filter to match time series keys
-       * @param selectedLabels - Labels to include in the output
-       * @param options - Optional parameters for the command
-       */
       mGetSelectedLabels: MGET_SELECTED_LABELS_1.default,
-      /**
-       * Gets the last samples matching a specific filter with labels
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
       MGET_WITHLABELS: MGET_WITHLABELS_1.default,
-      /**
-       * Gets the last samples matching a specific filter with labels
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
       mGetWithLabels: MGET_WITHLABELS_1.default,
-      /**
-       * Gets the last samples matching a specific filter from multiple time series
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
       MGET: MGET_1.default,
-      /**
-       * Gets the last samples matching a specific filter from multiple time series
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
       mGet: MGET_1.default,
-      /**
-       * Gets samples for time series matching a filter within a time range with grouping
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param groupBy - Group by parameters
-       * @param options - Optional parameters for the command
-       */
       MRANGE_GROUPBY: MRANGE_GROUPBY_1.default,
-      /**
-       * Gets samples for time series matching a filter within a time range with grouping
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param groupBy - Group by parameters
-       * @param options - Optional parameters for the command
-       */
       mRangeGroupBy: MRANGE_GROUPBY_1.default,
-      /**
-       * Gets multi-aggregation samples for time series matching a specific filter within a time range
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
-      MRANGE_MULTIAGGR: MRANGE_MULTIAGGR_1.default,
-      /**
-       * Gets multi-aggregation samples for time series matching a specific filter within a time range
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
-      mRangeMultiAggr: MRANGE_MULTIAGGR_1.default,
-      /**
-       * Gets multi-aggregation samples for time series matching a filter with selected labels
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param selectedLabels - Labels to include in the output
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
-      MRANGE_SELECTED_LABELS_MULTIAGGR: MRANGE_SELECTED_LABELS_MULTIAGGR_1.default,
-      /**
-       * Gets multi-aggregation samples for time series matching a filter with selected labels
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param selectedLabels - Labels to include in the output
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
-      mRangeSelectedLabelsMultiAggr: MRANGE_SELECTED_LABELS_MULTIAGGR_1.default,
-      /**
-       * Gets samples for time series matching a filter with selected labels and grouping
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param selectedLabels - Labels to include in the output
-       * @param filter - Filter to match time series keys
-       * @param groupBy - Group by parameters
-       * @param options - Optional parameters for the command
-       */
       MRANGE_SELECTED_LABELS_GROUPBY: MRANGE_SELECTED_LABELS_GROUPBY_1.default,
-      /**
-       * Gets samples for time series matching a filter with selected labels and grouping
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param selectedLabels - Labels to include in the output
-       * @param filter - Filter to match time series keys
-       * @param groupBy - Group by parameters
-       * @param options - Optional parameters for the command
-       */
       mRangeSelectedLabelsGroupBy: MRANGE_SELECTED_LABELS_GROUPBY_1.default,
-      /**
-       * Gets samples for time series matching a filter with selected labels
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param selectedLabels - Labels to include in the output
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
       MRANGE_SELECTED_LABELS: MRANGE_SELECTED_LABELS_1.default,
-      /**
-       * Gets samples for time series matching a filter with selected labels
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param selectedLabels - Labels to include in the output
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
       mRangeSelectedLabels: MRANGE_SELECTED_LABELS_1.default,
-      /**
-       * Gets multi-aggregation samples for time series matching a filter with labels
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
-      MRANGE_WITHLABELS_MULTIAGGR: MRANGE_WITHLABELS_MULTIAGGR_1.default,
-      /**
-       * Gets multi-aggregation samples for time series matching a filter with labels
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
-      mRangeWithLabelsMultiAggr: MRANGE_WITHLABELS_MULTIAGGR_1.default,
-      /**
-       * Gets samples for time series matching a filter with labels and grouping
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param groupBy - Group by parameters
-       * @param options - Optional parameters for the command
-       */
       MRANGE_WITHLABELS_GROUPBY: MRANGE_WITHLABELS_GROUPBY_1.default,
-      /**
-       * Gets samples for time series matching a filter with labels and grouping
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param groupBy - Group by parameters
-       * @param options - Optional parameters for the command
-       */
       mRangeWithLabelsGroupBy: MRANGE_WITHLABELS_GROUPBY_1.default,
-      /**
-       * Gets samples for time series matching a filter with labels
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
       MRANGE_WITHLABELS: MRANGE_WITHLABELS_1.default,
-      /**
-       * Gets samples for time series matching a filter with labels
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
       mRangeWithLabels: MRANGE_WITHLABELS_1.default,
-      /**
-       * Gets samples for time series matching a specific filter within a time range
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
       MRANGE: MRANGE_1.default,
-      /**
-       * Gets samples for time series matching a specific filter within a time range
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
       mRange: MRANGE_1.default,
-      /**
-       * Gets samples for time series matching a filter within a time range with grouping (in reverse order)
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param groupBy - Group by parameters
-       * @param options - Optional parameters for the command
-       */
       MREVRANGE_GROUPBY: MREVRANGE_GROUPBY_1.default,
-      /**
-       * Gets samples for time series matching a filter within a time range with grouping (in reverse order)
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param groupBy - Group by parameters
-       * @param options - Optional parameters for the command
-       */
       mRevRangeGroupBy: MREVRANGE_GROUPBY_1.default,
-      /**
-       * Gets multi-aggregation samples for time series matching a specific filter within a time range (in reverse order)
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
-      MREVRANGE_MULTIAGGR: MREVRANGE_MULTIAGGR_1.default,
-      /**
-       * Gets multi-aggregation samples for time series matching a specific filter within a time range (in reverse order)
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
-      mRevRangeMultiAggr: MREVRANGE_MULTIAGGR_1.default,
-      /**
-       * Gets multi-aggregation samples for time series matching a filter with selected labels (in reverse order)
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param selectedLabels - Labels to include in the output
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
-      MREVRANGE_SELECTED_LABELS_MULTIAGGR: MREVRANGE_SELECTED_LABELS_MULTIAGGR_1.default,
-      /**
-       * Gets multi-aggregation samples for time series matching a filter with selected labels (in reverse order)
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param selectedLabels - Labels to include in the output
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
-      mRevRangeSelectedLabelsMultiAggr: MREVRANGE_SELECTED_LABELS_MULTIAGGR_1.default,
-      /**
-       * Gets samples for time series matching a filter with selected labels and grouping (in reverse order)
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param selectedLabels - Labels to include in the output
-       * @param filter - Filter to match time series keys
-       * @param groupBy - Group by parameters
-       * @param options - Optional parameters for the command
-       */
       MREVRANGE_SELECTED_LABELS_GROUPBY: MREVRANGE_SELECTED_LABELS_GROUPBY_1.default,
-      /**
-       * Gets samples for time series matching a filter with selected labels and grouping (in reverse order)
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param selectedLabels - Labels to include in the output
-       * @param filter - Filter to match time series keys
-       * @param groupBy - Group by parameters
-       * @param options - Optional parameters for the command
-       */
       mRevRangeSelectedLabelsGroupBy: MREVRANGE_SELECTED_LABELS_GROUPBY_1.default,
-      /**
-       * Gets samples for time series matching a filter with selected labels (in reverse order)
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param selectedLabels - Labels to include in the output
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
       MREVRANGE_SELECTED_LABELS: MREVRANGE_SELECTED_LABELS_1.default,
-      /**
-       * Gets samples for time series matching a filter with selected labels (in reverse order)
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param selectedLabels - Labels to include in the output
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
       mRevRangeSelectedLabels: MREVRANGE_SELECTED_LABELS_1.default,
-      /**
-       * Gets multi-aggregation samples for time series matching a filter with labels (in reverse order)
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
-      MREVRANGE_WITHLABELS_MULTIAGGR: MREVRANGE_WITHLABELS_MULTIAGGR_1.default,
-      /**
-       * Gets multi-aggregation samples for time series matching a filter with labels (in reverse order)
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
-      mRevRangeWithLabelsMultiAggr: MREVRANGE_WITHLABELS_MULTIAGGR_1.default,
-      /**
-       * Gets samples for time series matching a filter with labels and grouping (in reverse order)
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param groupBy - Group by parameters
-       * @param options - Optional parameters for the command
-       */
       MREVRANGE_WITHLABELS_GROUPBY: MREVRANGE_WITHLABELS_GROUPBY_1.default,
-      /**
-       * Gets samples for time series matching a filter with labels and grouping (in reverse order)
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param groupBy - Group by parameters
-       * @param options - Optional parameters for the command
-       */
       mRevRangeWithLabelsGroupBy: MREVRANGE_WITHLABELS_GROUPBY_1.default,
-      /**
-       * Gets samples for time series matching a filter with labels (in reverse order)
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
       MREVRANGE_WITHLABELS: MREVRANGE_WITHLABELS_1.default,
-      /**
-       * Gets samples for time series matching a filter with labels (in reverse order)
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
       mRevRangeWithLabels: MREVRANGE_WITHLABELS_1.default,
-      /**
-       * Gets samples for time series matching a specific filter within a time range (in reverse order)
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
       MREVRANGE: MREVRANGE_1.default,
-      /**
-       * Gets samples for time series matching a specific filter within a time range (in reverse order)
-       * @param fromTimestamp - Start timestamp for range
-       * @param toTimestamp - End timestamp for range
-       * @param filter - Filter to match time series keys
-       * @param options - Optional parameters for the command
-       */
       mRevRange: MREVRANGE_1.default,
-      /**
-       * Queries the index for time series matching a specific filter
-       * @param filter - Filter to match time series labels
-       */
       QUERYINDEX: QUERYINDEX_1.default,
-      /**
-       * Queries the index for time series matching a specific filter
-       * @param filter - Filter to match time series labels
-       */
       queryIndex: QUERYINDEX_1.default,
-      /**
-       * Gets multi-aggregation samples from a time series within a time range
-       * @param args - Arguments passed to the {@link transformRangeMultiArguments} function
-       */
-      RANGE_MULTIAGGR: RANGE_MULTIAGGR_1.default,
-      /**
-       * Gets multi-aggregation samples from a time series within a time range
-       * @param args - Arguments passed to the {@link transformRangeMultiArguments} function
-       */
-      rangeMultiAggr: RANGE_MULTIAGGR_1.default,
-      /**
-       * Gets samples from a time series within a time range
-       * @param args - Arguments passed to the {@link transformRangeArguments} function
-       */
       RANGE: RANGE_1.default,
-      /**
-       * Gets samples from a time series within a time range
-       * @param args - Arguments passed to the {@link transformRangeArguments} function
-       */
       range: RANGE_1.default,
-      /**
-       * Gets multi-aggregation samples from a time series within a time range (in reverse order)
-       * @param args - Arguments passed to the {@link transformRangeMultiArguments} function
-       */
-      REVRANGE_MULTIAGGR: REVRANGE_MULTIAGGR_1.default,
-      /**
-       * Gets multi-aggregation samples from a time series within a time range (in reverse order)
-       * @param args - Arguments passed to the {@link transformRangeMultiArguments} function
-       */
-      revRangeMultiAggr: REVRANGE_MULTIAGGR_1.default,
-      /**
-       * Gets samples from a time series within a time range (in reverse order)
-       * @param args - Arguments passed to the {@link transformRangeArguments} function
-       */
       REVRANGE: REVRANGE_1.default,
-      /**
-       * Gets samples from a time series within a time range (in reverse order)
-       * @param args - Arguments passed to the {@link transformRangeArguments} function
-       */
       revRange: REVRANGE_1.default
     };
   }
@@ -160800,6 +156114,7 @@ function sanitizePart(value) {
 function financeCacheKey(userId, userType, capability, ...parts) {
   return [
     PREFIX,
+    sanitizePart(CACHE_SCHEMA_VERSION),
     sanitizePart(userId),
     sanitizePart(userType),
     sanitizePart(capability),
@@ -160820,7 +156135,7 @@ async function withFinanceCache(key, ttlSeconds, compute) {
 }
 function cacheTraceLabel(key) {
   const parts = key.split(":");
-  return parts.slice(3).join(":") || "unknown";
+  return parts.slice(4).join(":") || "unknown";
 }
 async function collectFinanceCacheTrace(compute) {
   const cacheHits = [];
@@ -160831,171 +156146,139 @@ async function collectFinanceCacheTrace(compute) {
   };
 }
 async function invalidateFinanceUserCache(userId, userType) {
-  return deleteCacheByPattern(`${PREFIX}:${sanitizePart(userId)}:${sanitizePart(userType)}:*`);
+  return deleteCacheByPattern(`${PREFIX}:*:${sanitizePart(userId)}:${sanitizePart(userType)}:*`);
 }
-var PREFIX, financeCacheTrace;
+var PREFIX, CACHE_SCHEMA_VERSION, financeCacheTrace;
 var init_cache2 = __esm({
   "api/services/finance-semantic-layer/cache.ts"() {
     init_redis_client();
+    init_category_registry();
     PREFIX = "finance_ai";
+    CACHE_SCHEMA_VERSION = `schema_v3_${taxonomyVersion()}`;
     financeCacheTrace = new AsyncLocalStorage2();
   }
 });
 
 // api/services/finance-semantic-layer/category-matcher.ts
+function expandAggregate(id) {
+  if (AGGREGATE_GROUP_MAP[id]) return AGGREGATE_GROUP_MAP[id];
+  return [id];
+}
 function normalizeFinanceText(value) {
-  return String(value ?? "").toLowerCase().normalize("NFKC").replace(/[\u064B-\u065F\u0670]/g, "").replace(/[\u0623\u0625\u0622\u0671]/g, "\u0627").replace(/\u0624/g, "\u0648").replace(/\u0626/g, "\u064A").replace(/\u0649/g, "\u064A").replace(/\u0629/g, "\u0647").replace(/\s+/g, " ").trim();
+  return comparableArabic(String(value ?? ""));
 }
 function getCategoryAliases(category) {
-  const normalized = normalizeFinanceText(category);
-  const direct = CATEGORY_ALIASES2[normalized];
-  if (direct) return [.../* @__PURE__ */ new Set([category, ...direct])];
-  const matched = Object.values(CATEGORY_ALIASES2).find(
-    (aliases) => aliases.some((alias) => normalizeFinanceText(alias) === normalized)
-  );
-  return matched ? [.../* @__PURE__ */ new Set([category, ...matched])] : [category];
+  const ids = expandAggregate(category);
+  const aliases = /* @__PURE__ */ new Set([category]);
+  for (const id of ids) {
+    for (const alias of getCategoryAliasesById(id)) {
+      aliases.add(alias);
+    }
+  }
+  return [...aliases];
 }
 function canonicalCategoryForRow(rowCategory, rowSubCategory, ...extraFields) {
   const categoryText = String(rowCategory ?? "").trim();
-  const normalizedCategory = normalizeFinanceText(categoryText);
-  const extraHaystack = [rowSubCategory, ...extraFields].map((value) => normalizeFinanceText(value)).join(" ");
-  for (const key of CATEGORY_INFERENCE_PRIORITY) {
-    if (getCategoryAliases(key).some((alias) => extraHaystack.includes(normalizeFinanceText(alias)))) {
-      return key;
-    }
+  const extraHaystack = [rowSubCategory, ...extraFields].map((v) => normalizeFinanceText(v)).join(" ");
+  if (extraHaystack) {
+    const inferred2 = inferCategoryFromHaystack(extraHaystack);
+    if (inferred2 && inferred2 !== "uncategorized") return inferred2;
   }
-  for (const key of Object.keys(CATEGORY_ALIASES2)) {
-    if (getCategoryAliases(key).some((alias) => normalizeFinanceText(alias) === normalizedCategory)) {
-      return key;
-    }
+  if (categoryText) {
+    const direct = canonicalCategoryId(categoryText);
+    if (direct !== "uncategorized") return direct;
   }
-  const haystack = [rowCategory, rowSubCategory, ...extraFields].map((value) => normalizeFinanceText(value)).join(" ");
-  for (const key of Object.keys(CATEGORY_ALIASES2)) {
-    if (getCategoryAliases(key).some((alias) => haystack.includes(normalizeFinanceText(alias)))) {
-      return key;
-    }
-  }
+  const fullHaystack = normalizeFinanceText(categoryText) + " " + extraHaystack;
+  const inferred = inferCategoryFromHaystack(fullHaystack);
+  if (inferred) return inferred;
   return categoryText || "uncategorized";
 }
+function inferCategoryFromHaystack(haystack) {
+  if (!haystack) return null;
+  for (const [alias, id] of aliasEntries()) {
+    if (alias.length >= 3 && haystack.includes(alias)) {
+      return id;
+    }
+  }
+  return null;
+}
+function aliasEntries() {
+  if (cachedAliasEntries) return cachedAliasEntries;
+  const entries = [];
+  const seen = /* @__PURE__ */ new Set();
+  for (const catId of allCanonicalIds()) {
+    for (const alias of getCategoryAliasesById(catId)) {
+      const normalized = normalizeFinanceText(alias);
+      if (normalized && normalized.length >= 3 && !seen.has(normalized)) {
+        entries.push([normalized, catId]);
+        seen.add(normalized);
+      }
+    }
+  }
+  entries.sort((a, b) => b[0].length - a[0].length);
+  cachedAliasEntries = entries;
+  return entries;
+}
+function allCanonicalIds() {
+  const ids = /* @__PURE__ */ new Set([
+    "food",
+    "transport",
+    "shopping",
+    "health",
+    "bills",
+    "home",
+    "education",
+    "entertainment",
+    "subscriptions",
+    "smoking",
+    "gifts",
+    "pets",
+    "work",
+    "salary",
+    "freelance",
+    "investment_income",
+    "transfer",
+    "investment",
+    "daily_commitments",
+    "digital_services",
+    "car_services",
+    "outings",
+    "family_transactions",
+    "friends_transactions",
+    "employees_transactions",
+    "liabilities_and_gam3eyat",
+    "miscellaneous",
+    "income",
+    "saving",
+    "uncategorized"
+  ]);
+  return [...ids];
+}
 function displayFinanceCategory(category) {
-  const key = String(category ?? "").trim();
-  return CATEGORY_DISPLAY_NAMES[key] ?? (key || CATEGORY_DISPLAY_NAMES.uncategorized);
+  const id = String(category ?? "").trim();
+  return arabicDisplayName(id);
 }
 function matchesCategory(rowCategory, rowSubCategory, category, ...extraFields) {
-  const haystack = [rowCategory, rowSubCategory, ...extraFields].map((value) => normalizeFinanceText(value)).join(" ");
-  return getCategoryAliases(category).some((alias) => haystack.includes(normalizeFinanceText(alias)));
+  const rowCanonical = canonicalCategoryForRow(rowCategory, rowSubCategory, ...extraFields);
+  const targetIds = expandAggregate(category);
+  if (targetIds.includes(rowCanonical)) return true;
+  const haystack = [rowCategory, rowSubCategory, ...extraFields].map((v) => normalizeFinanceText(v)).join(" ");
+  return getCategoryAliases(category).some(
+    (alias) => alias.length >= 3 && haystack.includes(normalizeFinanceText(alias))
+  );
 }
-var CATEGORY_ALIASES2, CATEGORY_DISPLAY_NAMES, CATEGORY_INFERENCE_PRIORITY;
+var AGGREGATE_GROUP_MAP, cachedAliasEntries;
 var init_category_matcher = __esm({
   "api/services/finance-semantic-layer/category-matcher.ts"() {
-    CATEGORY_ALIASES2 = {
-      food: [
-        "food",
-        "\u0627\u0643\u0644 \u0648\u0634\u0631\u0628",
-        "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
-        "\u0627\u0643\u0644",
-        "\u0623\u0643\u0644",
-        "restaurant",
-        "\u0627\u0643\u0644",
-        "\u0623\u0643\u0644",
-        "\u0645\u0637\u0639\u0645",
-        "\u0645\u0637\u0627\u0639\u0645",
-        "\u0642\u0647\u0648\u0647",
-        "\u0642\u0647\u0648\u0629",
-        "\u0633\u0648\u0628\u0631 \u0645\u0627\u0631\u0643\u062A",
-        "\u0633\u0648\u0628\u0631\u0645\u0627\u0631\u0643\u062A",
-        "\u0645\u0627\u0631\u0643\u062A",
-        "\u0647\u0627\u064A\u0628\u0631",
-        "\u0647\u0627\u064A\u0628\u0631 \u0645\u0627\u0631\u0643\u062A",
-        "\u0643\u0627\u0631\u0641\u0648\u0631",
-        "\u062E\u0636\u0627\u0631",
-        "\u0641\u0627\u0643\u0647\u0629",
-        "\u0644\u062D\u0645\u0629",
-        "\u0644\u062D\u0645\u0647",
-        "\u0641\u0631\u0627\u062E",
-        "\u062F\u0644\u064A\u0641\u0631\u064A",
-        "\u0637\u0644\u0628\u0627\u062A",
-        "talabat"
-      ],
-      transport: [
-        "transport",
-        "\u062A\u0646\u0642\u0644\u0627\u062A",
-        "uber",
-        "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
-        "\u0627\u0648\u0628\u0631",
-        "\u0643\u0631\u064A\u0645",
-        "\u0628\u0646\u0632\u064A\u0646",
-        "\u062A\u0627\u0643\u0633\u064A",
-        "\u0645\u062A\u0631\u0648"
-      ],
-      shopping: [
-        "shopping",
-        "\u062A\u0633\u0648\u0642 \u0648\u0645\u0644\u0627\u0628\u0633",
-        "\u062A\u0633\u0648\u0642",
-        "\u0644\u0628\u0633",
-        "\u0645\u0644\u0627\u0628\u0633",
-        "\u0645\u0634\u062A\u0631\u064A\u0627\u062A"
-      ],
-      health: [
-        "health",
-        "\u0635\u062D\u0629",
-        "\u0635\u062D\u0647",
-        "\u0635\u064A\u062F\u0644\u064A\u0629",
-        "\u0635\u064A\u062F\u0644\u064A\u0647",
-        "\u062F\u0648\u0627",
-        "\u062F\u0648\u0627\u0621",
-        "\u0639\u0644\u0627\u062C",
-        "\u0643\u0634\u0641",
-        "\u062F\u0643\u062A\u0648\u0631"
-      ],
-      bills: [
-        "bills",
-        "\u0641\u0648\u0627\u062A\u064A\u0631",
-        "\u0641\u0627\u062A\u0648\u0631\u0629",
-        "\u0641\u0627\u062A\u0648\u0631\u0647",
-        "\u0642\u0633\u0637",
-        "\u0627\u0642\u0633\u0627\u0637",
-        "\u0643\u0647\u0631\u0628\u0627",
-        "\u063A\u0627\u0632",
-        "\u0645\u064A\u0627\u0647",
-        "\u0646\u062A",
-        "\u0627\u0646\u062A\u0631\u0646\u062A"
-      ],
-      income: [
-        "income",
-        "\u062F\u062E\u0644",
-        "\u0645\u0631\u062A\u0628",
-        "\u0631\u0627\u062A\u0628",
-        "\u0642\u0628\u0636",
-        "salary"
-      ],
-      saving: [
-        "saving",
-        "\u0627\u062F\u062E\u0627\u0631",
-        "\u062A\u062D\u0648\u064A\u0634",
-        "\u062C\u0645\u0639\u064A\u0629",
-        "\u062C\u0645\u0639\u064A\u0647"
-      ]
+    init_category_registry();
+    AGGREGATE_GROUP_MAP = {
+      income: ["salary", "freelance", "investment_income"],
+      saving: ["transfer"],
+      bills: ["bills", "daily_commitments"],
+      transport: ["transport", "car_services"],
+      entertainment: ["entertainment", "outings"]
     };
-    CATEGORY_DISPLAY_NAMES = {
-      food: "\u0627\u0644\u0623\u0643\u0644",
-      transport: "\u0627\u0644\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
-      shopping: "\u0627\u0644\u062A\u0633\u0648\u0642",
-      health: "\u0627\u0644\u0635\u062D\u0629",
-      bills: "\u0627\u0644\u0641\u0648\u0627\u062A\u064A\u0631",
-      income: "\u0627\u0644\u062F\u062E\u0644",
-      saving: "\u0627\u0644\u0627\u062F\u062E\u0627\u0631",
-      uncategorized: "\u063A\u064A\u0631 \u0645\u0635\u0646\u0641"
-    };
-    CATEGORY_INFERENCE_PRIORITY = [
-      "food",
-      "transport",
-      "health",
-      "bills",
-      "saving",
-      "shopping",
-      "income"
-    ];
+    cachedAliasEntries = null;
   }
 });
 
@@ -161807,6 +157090,12 @@ function goalFacts(need, result) {
   }
   return facts;
 }
+function normalizeLookupText(text2) {
+  return text2.toLowerCase().replace(/[\u0600-\u06FF]/g, (c) => c === "\u0623" || c === "\u0625" || c === "\u0622" ? "\u0627" : c === "\u0629" ? "\u0647" : c);
+}
+function transactionLookupTokens(query) {
+  return normalizeLookupText(query).split(/\s+/).filter(Boolean);
+}
 function profileFacts(need, profile) {
   return [
     makeFact(need.id, need.kind, "monthly_income", profile.monthlyIncome),
@@ -161814,6 +157103,264 @@ function profileFacts(need, profile) {
     makeFact(need.id, need.kind, "financial_personality", profile.financialPersonality),
     makeFact(need.id, need.kind, "salary_day", profile.salaryDay)
   ];
+}
+async function getComparisonDrivers(ctx, input = {}) {
+  const [currentBreakdownCat, previousBreakdownCat, currentBreakdownMerchant, previousBreakdownMerchant] = await Promise.all([
+    getFinanceBreakdown(ctx, { period: input.period ?? "current_month", granularity: "category", limit: 10 }),
+    getFinanceBreakdown(ctx, { period: input.comparePeriod ?? "previous_month", granularity: "category", limit: 10 }),
+    getFinanceBreakdown(ctx, { period: input.period ?? "current_month", granularity: "merchant", limit: 10 }),
+    getFinanceBreakdown(ctx, { period: input.comparePeriod ?? "previous_month", granularity: "merchant", limit: 10 })
+  ]);
+  const previousByCategory = /* @__PURE__ */ new Map();
+  for (const item of previousBreakdownCat.items) {
+    previousByCategory.set(item.name, item.amount);
+  }
+  for (const item of previousBreakdownMerchant.items) {
+    previousByCategory.set(item.name, item.amount);
+  }
+  const drivers = [];
+  const addDrivers = (items, type) => {
+    for (const item of items) {
+      const prevAmount = previousByCategory.get(item.name) ?? 0;
+      drivers.push({
+        category: item.name,
+        type,
+        currentAmount: item.amount,
+        previousAmount: prevAmount,
+        difference: item.amount - prevAmount,
+        changePercent: prevAmount > 0 ? (item.amount - prevAmount) / prevAmount * 100 : null,
+        direction: item.amount > prevAmount ? "up" : item.amount < prevAmount ? "down" : "stable"
+      });
+    }
+  };
+  addDrivers(currentBreakdownCat.items, "category");
+  addDrivers(currentBreakdownMerchant.items, "merchant");
+  return drivers.filter((driver) => Math.abs(driver.difference) >= 1).sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference)).slice(0, 8);
+}
+function comparisonDriverFacts(need, drivers) {
+  const facts = [];
+  for (const [index2, driver] of drivers.slice(0, 8).entries()) {
+    const key = `driver_${index2 + 1}_${driver.type === "merchant" ? "merchant_" : ""}${driver.category.replace(/\s+/g, "_")}`;
+    facts.push(
+      makeFact(
+        need.id,
+        need.kind,
+        key,
+        driver.currentAmount,
+        0.9,
+        [
+          { id: `prev_${driver.category}`, label: `${driver.category}_previous`, value: driver.previousAmount },
+          { id: `diff_${driver.category}`, label: `${driver.category}_difference`, value: driver.difference }
+        ]
+      ),
+      makeFact(need.id, need.kind, `${key}_category`, driver.category),
+      makeFact(need.id, need.kind, `${key}_category_display`, displayFinanceCategory(driver.category)),
+      makeFact(need.id, need.kind, `${key}_previous_amount`, driver.previousAmount),
+      makeFact(need.id, need.kind, `${key}_difference`, driver.difference),
+      makeFact(need.id, need.kind, `${key}_direction`, driver.direction)
+    );
+  }
+  return facts;
+}
+async function getBusinessCashflow(ctx, input = {}) {
+  const summary = await getFinanceSummary(ctx, { period: input.period ?? "current_month" });
+  const incomeCategories = [];
+  const expenseCategories2 = [];
+  const allRows = await loadRowsForPeriod(ctx, summary.period);
+  const incomeByCategory = /* @__PURE__ */ new Map();
+  const expenseByCategory = /* @__PURE__ */ new Map();
+  for (const row of allRows) {
+    const amount = amountOf(row);
+    const cat = canonicalCategoryForRow(row.category, row.subCategory, row.description, row.rawText, row.placeHint);
+    if (row.type === "income") {
+      incomeByCategory.set(cat, (incomeByCategory.get(cat) ?? 0) + amount);
+    } else {
+      expenseByCategory.set(cat, (expenseByCategory.get(cat) ?? 0) + amount);
+    }
+  }
+  for (const [category, amount] of [...incomeByCategory].sort((a, b) => b[1] - a[1]).slice(0, 5)) {
+    incomeCategories.push({ category, amount });
+  }
+  for (const [category, amount] of [...expenseByCategory].sort((a, b) => b[1] - a[1]).slice(0, 8)) {
+    expenseCategories2.push({ category, amount });
+  }
+  const projectedMonthEnd = summary.dailyAverageExpense * summary.period.daysTotal;
+  const remainingDays = summary.period.daysTotal - summary.period.daysElapsed;
+  const suggestedWeeklyPlan = [
+    remainingDays > 0 ? `\u0645\u0639\u0627\u0643 ${Math.max(0, summary.netFlow - (projectedMonthEnd - summary.totalExpense)).toLocaleString("ar-EG")} \u062C\u0646\u064A\u0647 \u0645\u062A\u0628\u0642\u064A \u062A\u0642\u062F\u064A\u0631\u064A \u0644\u062A\u063A\u0637\u064A\u0629 ${remainingDays} \u064A\u0648\u0645.` : "\u0627\u0644\u0634\u0647\u0631 \u0641\u064A \u0622\u062E\u0631\u0647. \u0631\u0627\u062C\u0639 \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641 \u0648\u0627\u0644\u062A\u0632\u0645 \u0628\u0627\u0644\u0635\u0627\u0641\u064A \u0627\u0644\u062D\u0627\u0644\u064A.",
+    expenseCategories2.length > 0 ? `\u0623\u0643\u0628\u0631 \u0628\u0646\u062F: ${expenseCategories2[0].category} (${expenseCategories2[0].amount.toLocaleString("ar-EG")} \u062C\u0646\u064A\u0647).` : "",
+    `\u0627\u0644\u062F\u062E\u0644: ${summary.totalIncome.toLocaleString("ar-EG")} \u062C\u0646\u064A\u0647.`,
+    summary.netFlow > 0 ? `\u0627\u0644\u0635\u0627\u0641\u064A \u0625\u064A\u062C\u0627\u0628\u064A (+${summary.netFlow.toLocaleString("ar-EG")} \u062C\u0646\u064A\u0647).` : `\u0627\u0644\u0635\u0627\u0641\u064A \u0633\u0644\u0628\u064A (${summary.netFlow.toLocaleString("ar-EG")} \u062C\u0646\u064A\u0647). \u0631\u0627\u062C\u0639 \u0648\u0642\u0644\u0644.`
+  ].filter(Boolean);
+  return {
+    period: summary.period.label,
+    totalIncome: summary.totalIncome,
+    totalExpense: summary.totalExpense,
+    netFlow: summary.netFlow,
+    topExpenseCategories: expenseCategories2,
+    topIncomeCategories: incomeCategories,
+    dailyAverageExpense: summary.dailyAverageExpense,
+    projectedMonthEnd,
+    suggestedWeeklyPlan
+  };
+}
+function businessCashflowFacts(need, cashflow) {
+  return [
+    makeFact(need.id, need.kind, "period", cashflow.period),
+    makeFact(need.id, need.kind, "total_income", cashflow.totalIncome),
+    makeFact(need.id, need.kind, "total_expense", cashflow.totalExpense),
+    makeFact(need.id, need.kind, "net_flow", cashflow.netFlow),
+    makeFact(need.id, need.kind, "daily_average_expense", cashflow.dailyAverageExpense),
+    makeFact(need.id, need.kind, "projected_month_end", cashflow.projectedMonthEnd),
+    ...cashflow.suggestedWeeklyPlan.slice(0, 4).map(
+      (plan, index2) => makeFact(need.id, need.kind, `weekly_plan_${index2 + 1}`, plan)
+    ),
+    ...cashflow.topExpenseCategories.slice(0, 5).map(
+      (item, index2) => makeFact(need.id, need.kind, `top_expense_${index2 + 1}_${item.category}`, item.amount)
+    ),
+    ...cashflow.topIncomeCategories.slice(0, 3).map(
+      (item, index2) => makeFact(need.id, need.kind, `top_income_${index2 + 1}_${item.category}`, item.amount)
+    )
+  ];
+}
+async function getCategoryInclusion(ctx, category, input = {}) {
+  const period = resolveFinancePeriod(input, ctx);
+  const rows = await loadRowsForPeriod(ctx, period);
+  const matched = rows.filter((row) => rowMatchesCategory(row, category));
+  const aliases = getCategoryAliases(category);
+  const merchants = /* @__PURE__ */ new Set();
+  for (const row of matched) {
+    const desc2 = String(row.description ?? row.rawText ?? "");
+    if (desc2) merchants.add(desc2.slice(0, 40));
+  }
+  return {
+    category,
+    merchants: [...merchants].slice(0, 10),
+    sampleTransactions: matched.slice(0, 5).map((row) => ({
+      description: String(row.description ?? row.rawText ?? row.category ?? ""),
+      amount: amountOf(row),
+      date: dateString(row.date)
+    })),
+    ruleExplanation: `\u0643\u0644 \u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A \u0627\u0644\u0644\u064A \u0641\u064A\u0647\u0627: ${aliases.slice(0, 8).join("\u060C ")} \u0628\u062A\u062A\u0635\u0646\u0641 \u062A\u062D\u062A ${displayFinanceCategory(category)}.`,
+    totalMatched: matched.length
+  };
+}
+function categoryInclusionFacts(need, inclusion) {
+  return [
+    makeFact(need.id, need.kind, "category", inclusion.category),
+    makeFact(need.id, need.kind, "category_display", displayFinanceCategory(inclusion.category)),
+    makeFact(need.id, need.kind, "total_matched", inclusion.totalMatched),
+    makeFact(need.id, need.kind, "rule_explanation", inclusion.ruleExplanation),
+    makeFact(need.id, need.kind, "merchants", inclusion.merchants.join("\u060C ")),
+    ...inclusion.sampleTransactions.slice(0, 4).map(
+      (row, index2) => makeFact(
+        need.id,
+        need.kind,
+        `transaction_${index2 + 1}`,
+        `${row.date} ${row.description} ${row.amount}`,
+        1,
+        [{ id: index2 + 1, label: row.description, value: row.amount }]
+      )
+    )
+  ];
+}
+async function getGoalFeasibility(ctx, input = {}) {
+  const [summary, breakdown, goals] = await Promise.all([
+    getFinanceSummary(ctx, { period: input.period ?? "current_month" }),
+    getFinanceBreakdown(ctx, { period: input.period ?? "current_month", granularity: "category", limit: 8 }),
+    getGoalProgress(ctx)
+  ]);
+  const capacity = Math.max(0, summary.netFlow);
+  const activeGoal = goals.goals[0];
+  const targetAmount = input.targetAmount ?? activeGoal?.targetAmount ?? 0;
+  const estimatedMonths = capacity > 0 && targetAmount > 0 ? Math.ceil(targetAmount / capacity) : null;
+  const levers = breakdown.items.slice(0, 4).map((item) => ({
+    category: item.name,
+    amount: item.amount,
+    potentialSavings: Math.round(item.amount * 0.15)
+  }));
+  let feasibilityRating = "moderate";
+  if (estimatedMonths && estimatedMonths <= 6) feasibilityRating = "easy";
+  if (estimatedMonths && estimatedMonths >= 18) feasibilityRating = "challenging";
+  return {
+    monthlyCapacity: capacity,
+    targetAmount,
+    estimatedMonths,
+    topExpenseLevers: levers,
+    feasibilityRating
+  };
+}
+function goalFeasibilityFacts(need, feasibility) {
+  return [
+    makeFact(need.id, need.kind, "monthly_capacity", feasibility.monthlyCapacity),
+    makeFact(need.id, need.kind, "target_amount", feasibility.targetAmount),
+    makeFact(need.id, need.kind, "estimated_months", feasibility.estimatedMonths ?? null),
+    makeFact(need.id, need.kind, "feasibility_rating", feasibility.feasibilityRating),
+    ...feasibility.topExpenseLevers.slice(0, 4).map(
+      (lever, index2) => makeFact(need.id, need.kind, `lever_${index2 + 1}_${lever.category}`, lever.potentialSavings, 0.8, [
+        { id: lever.category, label: `${lever.category}_current`, value: lever.amount }
+      ])
+    )
+  ];
+}
+async function getTransactionLookup(ctx, query, category, transactionTypes, input = {}) {
+  const rows = await loadRowsForPeriod(ctx, resolveFinancePeriod(input, ctx));
+  const allowedTypes = new Set((transactionTypes ?? []).filter(Boolean));
+  const tokens = transactionLookupTokens(query);
+  const normalizedQuery = normalizeLookupText(String(query ?? ""));
+  const candidates = rows.filter((row) => {
+    if (allowedTypes.size > 0 && !allowedTypes.has(String(row.type))) return false;
+    if (category && !rowMatchesCategory(row, category)) return false;
+    return true;
+  });
+  const scored = candidates.map((row, index2) => {
+    const haystack = normalizeLookupText(
+      [
+        row.description,
+        row.rawText,
+        row.category,
+        row.subCategory,
+        row.placeHint
+      ].filter(Boolean).join(" ")
+    );
+    const tokenScore = tokens.reduce((score, token) => score + (haystack.includes(token) ? 1 : 0), 0);
+    const phraseScore = normalizedQuery && haystack.includes(normalizedQuery) ? 3 : 0;
+    return { row, index: index2, score: tokenScore + phraseScore };
+  }).filter((item) => tokens.length === 0 || item.score > 0).sort((a, b) => b.score - a.score || a.index - b.index);
+  const latest = scored[0]?.row ?? (tokens.length === 0 ? candidates[0] : void 0);
+  if (latest) {
+    return {
+      id: latest.id,
+      type: latest.type,
+      amount: amountOf(latest),
+      category: latest.category ?? "uncategorized",
+      subCategory: latest.subCategory,
+      description: latest.description,
+      placeHint: latest.placeHint,
+      date: dateString(latest.date)
+    };
+  }
+  return null;
+}
+function transactionLookupFacts(need, transaction) {
+  const facts = [
+    makeFact(need.id, need.kind, "expense_id", transaction.id),
+    makeFact(need.id, need.kind, "amount", transaction.amount),
+    makeFact(need.id, need.kind, "category", transaction.category),
+    makeFact(need.id, need.kind, "sub_category", transaction.subCategory ?? "\u0639\u0627\u0645"),
+    makeFact(need.id, need.kind, "description", transaction.description ?? ""),
+    makeFact(need.id, need.kind, "date", transaction.date)
+  ];
+  if (need.scope?.targetCategory) {
+    facts.push(makeFact(need.id, need.kind, "target_category", need.scope.targetCategory));
+  }
+  if (need.scope?.sourceCategory) {
+    facts.push(makeFact(need.id, need.kind, "source_category", need.scope.sourceCategory));
+  }
+  if (need.scope?.query) {
+    facts.push(makeFact(need.id, need.kind, "lookup_query", need.scope.query));
+  }
+  return facts;
 }
 async function resolveKernelDataNeeds(ctx, dataNeeds) {
   const facts = [];
@@ -161871,6 +157418,39 @@ async function resolveKernelDataNeeds(ctx, dataNeeds) {
               })
             )
           );
+        } else if (need.kind === "finance.comparison_drivers") {
+          facts.push(
+            ...comparisonDriverFacts(need, await getComparisonDrivers(ctx, resolveInputFromNeed(need)))
+          );
+        } else if (need.kind === "finance.business_cashflow") {
+          facts.push(
+            ...businessCashflowFacts(need, await getBusinessCashflow(ctx, resolveInputFromNeed(need)))
+          );
+        } else if (need.kind === "finance.category_inclusion") {
+          facts.push(
+            ...categoryInclusionFacts(
+              need,
+              await getCategoryInclusion(ctx, need.scope?.category ?? "food", resolveInputFromNeed(need))
+            )
+          );
+        } else if (need.kind === "goal.feasibility") {
+          facts.push(...goalFeasibilityFacts(need, await getGoalFeasibility(ctx, {
+            ...resolveInputFromNeed(need),
+            targetAmount: typeof need.scope?.targetAmount === "number" ? need.scope.targetAmount : void 0
+          })));
+        } else if (need.kind === "finance.transaction_lookup") {
+          const transaction = await getTransactionLookup(
+            ctx,
+            need.scope?.query ?? "",
+            need.scope?.category,
+            need.scope?.transactionTypes,
+            resolveInputFromNeed(need)
+          );
+          if (transaction) {
+            facts.push(...transactionLookupFacts(need, transaction));
+          } else {
+            facts.push(makeFact(need.id, need.kind, "not_found", true));
+          }
         } else if (need.kind === "finance.goal_progress" || need.kind === "goals.active") {
           facts.push(...goalFacts(need, await getGoalProgress(ctx)));
         } else if (need.kind === "profile.snapshot") {
@@ -161894,12 +157474,7 @@ async function resolveKernelDataNeeds(ctx, dataNeeds) {
       }
     }
   });
-  return {
-    facts,
-    artifacts,
-    errors,
-    cacheHits: financeCacheTrace2.cacheHits
-  };
+  return { facts, artifacts, errors, cacheHits: financeCacheTrace2.cacheHits };
 }
 var init_resolvers = __esm({
   "api/services/finance-semantic-layer/resolvers.ts"() {
@@ -162175,15 +157750,20 @@ __export(finance_semantic_layer_exports, {
   financeCacheKey: () => financeCacheKey,
   financeCacheTtl: () => financeCacheTtl,
   financePeriodTestUtils: () => financePeriodTestUtils,
+  getBusinessCashflow: () => getBusinessCashflow,
   getCategoryAliases: () => getCategoryAliases,
+  getCategoryInclusion: () => getCategoryInclusion,
   getCategoryTotal: () => getCategoryTotal,
   getChartData: () => getChartData,
+  getComparisonDrivers: () => getComparisonDrivers,
   getFinanceBreakdown: () => getFinanceBreakdown,
   getFinanceSummary: () => getFinanceSummary,
   getFinanceTransactions: () => getFinanceTransactions,
+  getGoalFeasibility: () => getGoalFeasibility,
   getGoalProgress: () => getGoalProgress,
   getProactiveInsights: () => getProactiveInsights,
   getProfileSnapshot: () => getProfileSnapshot,
+  getTransactionLookup: () => getTransactionLookup,
   invalidateFinanceUserCache: () => invalidateFinanceUserCache,
   matchesCategory: () => matchesCategory,
   normalizeFinanceText: () => normalizeFinanceText,
@@ -175957,7 +171537,7 @@ var init_context_packer = __esm({
 // api/services/ai-kernel/data-need-compiler.ts
 function makeNeed(index2, kind, priority, reason, scope = {}, maxRows) {
   const period = scope.period ?? "current_month";
-  const keyParts = [kind, period, scope.category, scope.granularity, scope.limit].filter(Boolean).join(":");
+  const keyParts = [kind, period, scope.category, scope.targetAmount, scope.granularity, scope.limit].filter(Boolean).join(":");
   return {
     id: `need_${index2}_${kind.replace(".", "_")}`,
     kind,
@@ -176014,6 +171594,33 @@ function isGoalProgressQuestion(intent) {
     "progress"
   ].some((term) => query.includes(term));
 }
+function asksCategoryInclusion(intent) {
+  const query = intent.slots.query ?? "";
+  return [
+    "\u0628\u062A\u0634\u0645\u0644",
+    "\u062A\u0636\u0645",
+    "\u062F\u0627\u062E\u0644",
+    "\u064A\u0639\u0646\u064A",
+    "\u0632\u064A \u0627\u064A\u0647",
+    "\u0645\u062B\u0644 \u0645\u0627\u0630\u0627",
+    "\u0639\u0628\u0627\u0631\u0629 \u0639\u0646",
+    "\u0645\u0639\u0646\u0627\u0647\u0627",
+    "\u062A\u0641\u0627\u0635\u064A\u0644",
+    "\u0645\u062D\u0633\u0648\u0628",
+    "\u062D\u0633\u0627\u0628"
+  ].some((term) => query.includes(term));
+}
+function goalTargetAmountFromQuery(query) {
+  if (!query) return void 0;
+  const text2 = query.replace(/[٠-٩]/g, (digit) => String("\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669".indexOf(digit)));
+  const match2 = text2.match(/(\d+)(?:\s*(?:الف|ألف|جنية|جنيه|k|kilo))?/i);
+  if (!match2) return void 0;
+  let amount = parseInt(match2[1], 10);
+  if (text2.includes("\u0627\u0644\u0641") || text2.includes("\u0623\u0644\u0641") || text2.toLowerCase().includes("k")) {
+    if (amount < 1e3) amount *= 1e3;
+  }
+  return amount;
+}
 function compileDataNeeds(intent) {
   const needs = [];
   const add3 = (kind, priority, reason, scope = {}, maxRows) => {
@@ -176044,10 +171651,21 @@ function compileDataNeeds(intent) {
           12
         );
       }
+      if (intent.slots.category && asksCategoryInclusion(intent)) {
+        add3(
+          "finance.category_inclusion",
+          "normal",
+          "explain_category_inclusion_for_user_question",
+          { period, category: intent.slots.category, categories: intent.slots.categories },
+          4
+        );
+      }
       return needs;
     }
     case "finance_analysis": {
       const period = comparisonBasePeriod(intent);
+      const isCompositeDrivers = intent.reason === "composite_comparison_drivers_match";
+      const isBusiness = intent.reason === "business_cashflow_match";
       if (intent.reason === "classification_explanation_match") {
         add3(
           "finance.transactions",
@@ -176069,9 +171687,24 @@ function compileDataNeeds(intent) {
           { period, granularity: "category", limit: 8 },
           8
         );
+        add3(
+          "finance.category_inclusion",
+          "normal",
+          "explain_why_items_fall_under_category",
+          { period, category: intent.slots.category, categories: intent.slots.categories },
+          3
+        );
         return needs;
       }
-      if (intent.slots.metric === "comparison") {
+      if (isBusiness) {
+        add3("finance.business_cashflow", "hot", "business_cashflow_with_plan", {
+          period: "current_month",
+          comparePeriod: "previous_month"
+        }, 12);
+        add3("memory.search", "normal", "business_context_memory", { query: intent.slots.query, limit: 2 }, 2);
+        return needs;
+      }
+      if (isCompositeDrivers || intent.slots.metric === "comparison") {
         add3(
           "finance.period_comparison",
           "hot",
@@ -176079,6 +171712,15 @@ function compileDataNeeds(intent) {
           { period, comparePeriod: "previous_month", category: intent.slots.category },
           2
         );
+        if (isCompositeDrivers || intent.slots.needsEvidence) {
+          add3(
+            "finance.comparison_drivers",
+            "normal",
+            "explain_why_expense_changed_between_periods",
+            { period, comparePeriod: "previous_month" },
+            8
+          );
+        }
         if (intent.slots.needsEvidence) {
           add3(
             "finance.transactions",
@@ -176115,13 +171757,48 @@ function compileDataNeeds(intent) {
         add3("finance.goal_progress", "hot", "goal_progress_question_needs_active_goal_progress", {}, 8);
         return needs;
       }
+      const isCompositePlan = intent.reason === "goal_with_plan_composite_match";
       add3("profile.snapshot", "hot", "goal_planning_needs_income_and_profile_limits", {}, 1);
       add3("goals.active", "hot", "avoid_duplicate_or_conflicting_goals", {}, 5);
       add3("finance.summary", "normal", "goal_plan_needs_available_cash_context", { period }, 1);
       add3("finance.breakdown", "normal", "goal_plan_needs_top_spending_levers", { period, granularity: "category", limit: 5 }, 5);
+      if (isCompositePlan || intent.slots.actionName === "goal.create") {
+        add3("goal.feasibility", "normal", "estimate_feasibility_with_spending_levers", {
+          period,
+          targetAmount: goalTargetAmountFromQuery(intent.slots.query),
+          query: intent.slots.query
+        }, 6);
+        add3("memory.search", "normal", "reuse_previous_goal_memories", { query: intent.slots.query, limit: 2 }, 2);
+      }
       return needs;
     }
     case "action_request": {
+      if (intent.slots.actionName === "expense.recategorize") {
+        add3(
+          "finance.transaction_lookup",
+          "hot",
+          "recategorize_latest_matching_expense_requires_lookup",
+          {
+            period: defaultPeriod(intent, "current_month"),
+            query: intent.slots.lookupQuery ?? intent.slots.query,
+            sourceCategory: intent.slots.sourceCategory,
+            targetCategory: intent.slots.targetCategory ?? intent.slots.category,
+            limit: 1,
+            transactionTypes: ["expense"]
+          },
+          1
+        );
+        if (intent.slots.targetCategory ?? intent.slots.category) {
+          add3(
+            "finance.category_inclusion",
+            "normal",
+            "recategorize_should_explain_target_category_rule",
+            { period: defaultPeriod(intent, "current_month"), category: intent.slots.targetCategory ?? intent.slots.category },
+            4
+          );
+        }
+        return needs;
+      }
       add3("profile.snapshot", "hot", "action_validation_needs_user_profile", {}, 1);
       add3("goals.active", "normal", "generic_actions_may_depend_on_current_goals", {}, 5);
       return needs;
@@ -176133,10 +171810,17 @@ function compileDataNeeds(intent) {
       if (intent.slots.category) {
         add3(
           "finance.category_total",
-          "normal",
-          "advice_mentions_specific_category_total",
+          "hot",
+          "exact_category_total_for_finance_question",
           { period, category: intent.slots.category },
           1
+        );
+        add3(
+          "finance.category_inclusion",
+          "normal",
+          "category_total_needs_inclusion_explanation_for_trust",
+          { period, category: intent.slots.category, categories: intent.slots.categories },
+          4
         );
       }
       add3(
@@ -176234,8 +171918,18 @@ function hasAny2(text2, patterns) {
 function detectPeriod(text2) {
   if (hasAny2(text2, PATTERNS.today)) return "today";
   if (hasAny2(text2, PATTERNS.yesterday)) return "yesterday";
-  if (hasAny2(text2, PATTERNS.previousMonth)) return "previous_month";
-  if (hasAny2(text2, PATTERNS.month)) return "current_month";
+  const hasPreviousMonth = hasAny2(text2, PATTERNS.previousMonth);
+  const hasCurrentMonth = hasAny2(text2, PATTERNS.month);
+  const hasExplicitCurrentMonth = hasAny2(text2, [
+    "\u0627\u0644\u0634\u0647\u0631 \u062F\u0647",
+    "\u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631",
+    "\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062D\u0627\u0644\u064A",
+    "this month",
+    "current month"
+  ]);
+  if (hasPreviousMonth && hasExplicitCurrentMonth) return "current_month";
+  if (hasPreviousMonth) return "previous_month";
+  if (hasCurrentMonth) return "current_month";
   if (hasAny2(text2, PATTERNS.week)) return "current_week";
   if (hasAny2(text2, PATTERNS.salaryCycle)) return "salary_cycle";
   return void 0;
@@ -176265,6 +171959,58 @@ function isClassificationExplanation(text2) {
   ]);
   const hasCalculatedClassificationLanguage = hasAny2(text2, ["\u0627\u062A\u062D\u0633\u0628", "\u0645\u062D\u0633\u0648\u0628"]) && (hasCategoryChoice || hasDirectClassificationLanguage);
   return categories.length > 0 && (hasDirectClassificationLanguage || hasCalculatedClassificationLanguage) || hasCategoryChoice;
+}
+function lastMentionedCategory(text2, categories = detectCategories(text2)) {
+  let best;
+  const aliasesByCategory = {
+    food: PATTERNS.food,
+    transport: PATTERNS.transport,
+    shopping: PATTERNS.shopping,
+    health: PATTERNS.health,
+    bills: PATTERNS.bills,
+    income: PATTERNS.income,
+    saving: PATTERNS.saving
+  };
+  for (const category of categories) {
+    for (const alias of aliasesByCategory[category] ?? []) {
+      const normalized = normalizeForIntent(alias);
+      const index2 = normalized ? text2.lastIndexOf(normalized) : -1;
+      if (index2 >= 0 && (!best || index2 > best.index)) {
+        best = { category, index: index2 };
+      }
+    }
+  }
+  return best?.category;
+}
+function recategorizeTargetCategory(text2) {
+  const categories = detectCategories(text2);
+  if (categories.length === 0) return void 0;
+  const actionLanguage = hasAny2(text2, ["\u062E\u0644\u064A\u0647", "\u062E\u0644\u064A\u0647\u0627", "\u062E\u0644\u064A", "\u0627\u0644\u0649", "\u0625\u0644\u0649", "to", "category to"]);
+  return actionLanguage ? lastMentionedCategory(text2, categories) ?? categories[0] : categories[0];
+}
+function recategorizeSourceCategory(text2, targetCategory) {
+  const categories = detectCategories(text2).filter((category) => category !== targetCategory);
+  return categories[0];
+}
+function isExpenseRecategorizeRequest(text2) {
+  const hasCorrection = hasAny2(text2, [
+    "\u0635\u062D\u062D",
+    "\u0639\u062F\u0644",
+    "\u063A\u064A\u0631",
+    "\u062E\u0644\u064A\u0647",
+    "\u062E\u0644\u064A\u0647\u0627",
+    "recategorize",
+    "classify",
+    "change category"
+  ]);
+  const hasExpenseReference = hasAny2(text2, ["\u0645\u0635\u0631\u0648\u0641", "\u0639\u0645\u0644\u064A\u0629", "transaction", "expense", "\u0627\u062A\u062D\u0633\u0628", "\u062A\u0635\u0646\u064A\u0641"]);
+  return hasCorrection && hasExpenseReference && detectCategories(text2).length > 0;
+}
+function lookupQueryForRecategorize(text2) {
+  const merchantMatch = text2.match(/(?:من|عند|في)\s+(.+?)(?:\s+(?:لو|اذا|وخليه|وخليها|وخلي|خليه|خليها|الى|إلى|to)\b|$)/i);
+  const merchant = merchantMatch?.[1]?.replace(/\s+/g, " ").trim();
+  if (merchant && merchant.length >= 2) return merchant.slice(0, 80);
+  return text2;
 }
 function detectMetric(text2) {
   if (hasAny2(text2, ["\u0642\u0627\u0631\u0646", "\u0645\u0642\u0627\u0631\u0646\u0647", "\u0641\u0631\u0642"])) return "comparison";
@@ -176315,6 +172061,11 @@ function routeIntent(message) {
   const directSiteAction = hasAction && hasSiteHelp && !asksHowTo;
   const hasAmount = /\d|[٠-٩۰-۹]/.test(text2);
   const asksAmount = /(كام|كم|قد ايه|اجمالي|مجموع|ملخص)/i.test(text2);
+  const asksWhy = /(ليه|لماذا|السبب|سبب|عشان|عشان كده|ايه السبب)/i.test(text2);
+  const asksPlan = /(خطة|خطه|خطط|نظم|اعمل ايه|أعمل ايه|اقترح|نصح|نصحنى)/i.test(text2);
+  const isExplicitComparison = hasAny2(text2, ["\u0642\u0627\u0631\u0646", "\u0645\u0642\u0627\u0631\u0646\u0647", "\u0641\u0631\u0642", "\u0645\u062E\u062A\u0644\u0641"]);
+  const compositeComparisonWhy = hasFinance && hasAnalysis && asksWhy && isExplicitComparison;
+  const compositeBusiness = hasFinance && /(مشروع|بيزنس|بزنس|business|ارباح|أرباح|صافي|net|تكاليف|كاش فلو|cashflow)/i.test(text2);
   const explicitExpenseCapture = hasAmount && !asksAmount && (hasAny2(text2, ["\u0633\u062C\u0644", "\u0627\u062D\u0641\u0638", "\u0627\u0636\u0641", "\u0636\u064A\u0641", "\u0633\u062C\u0644 \u0645\u0635\u0631\u0648\u0641", "\u0627\u0634\u062A\u0631\u064A\u062A"]) || /(دفعت|صرفت)\s+.*(\d|[٠-٩۰-۹])/i.test(text2));
   const startsWithMemoryRecall = /^(فاكر|تفتكر|افتكر|remember)(\s|$)/i.test(text2);
   const referencesOldConversation = hasAny2(text2, [
@@ -176330,6 +172081,29 @@ function routeIntent(message) {
   const memoryOnlyQuestion = hasMemory && !hasAction && !hasFinance && !hasAnalysis && !explicitExpenseCapture && (startsWithMemoryRecall || referencesOldConversation);
   if (memoryOnlyQuestion) {
     return baseIntent("memory_question", 0.9, "memory_keyword_match", text2);
+  }
+  if (isExpenseRecategorizeRequest(text2)) {
+    const targetCategory = recategorizeTargetCategory(text2);
+    const sourceCategory = recategorizeSourceCategory(text2, targetCategory);
+    const intent = baseIntent("action_request", 0.9, "expense_recategorize_latest_match", text2, ["finance_analysis"]);
+    intent.slots.actionName = "expense.recategorize";
+    intent.slots.targetCategory = targetCategory;
+    intent.slots.sourceCategory = sourceCategory;
+    intent.slots.lookupQuery = lookupQueryForRecategorize(text2);
+    intent.slots.needsEvidence = true;
+    return intent;
+  }
+  if (compositeBusiness) {
+    return baseIntent("finance_analysis", 0.88, "business_cashflow_match", text2, ["finance_query", "advice_request"]);
+  }
+  if (compositeComparisonWhy) {
+    return baseIntent("finance_analysis", 0.9, "composite_comparison_drivers_match", text2, ["finance_query"]);
+  }
+  if (hasFinance && asksPlan && !hasAdvice && !hasLifestyle) {
+    return baseIntent("advice_request", 0.86, "finance_planning_composite_match", text2, ["finance_analysis"]);
+  }
+  if (hasGoal && asksPlan) {
+    return baseIntent("goal_planning", 0.9, "goal_with_plan_composite_match", text2, ["advice_request"]);
   }
   if (explicitExpenseCapture) {
     return baseIntent("expense_capture", 0.86, "expense_capture_amount_action_match", text2);
@@ -176466,7 +172240,7 @@ var init_intent_router = __esm({
       chart: ["\u0631\u0633\u0645", "\u062C\u0631\u0627\u0641", "chart", "\u0627\u062D\u0635\u0627\u0626\u064A\u0647", "\u0627\u062D\u0635\u0627\u0626\u064A\u0627\u062A", "\u0645\u0646\u062D\u0646\u064A", "\u0628\u064A\u0627\u0646\u064A"],
       expenseCapture: ["\u0627\u0634\u062A\u0631\u064A\u062A", "\u062F\u0641\u0639\u062A", "\u0635\u0631\u0641\u062A", "\u0633\u062C\u0644 \u0645\u0635\u0631\u0648\u0641", "\u0627\u0636\u0641 \u0645\u0635\u0631\u0648\u0641"],
       confirmation: ["\u0645\u0648\u0627\u0641\u0642", "\u0627\u0643\u062F", "\u0623\u0643\u062F", "\u062A\u0645\u0627\u0645 \u0646\u0641\u0630", "\u0646\u0641\u0630", "\u0627\u0639\u0645\u0644\u0647\u0627", "yes", "confirm"],
-      evidence: ["\u062A\u0641\u0627\u0635\u064A\u0644", "\u0639\u0645\u0644\u064A\u0627\u062A", "\u0627\u064A\u0647 \u0627\u0644\u0644\u064A", "\u0643\u0644", "\u0628\u0627\u0644\u0638\u0628\u0637", "\u0628\u0627\u0644\u0636\u0628\u0637", "\u0627\u062B\u0628\u0627\u062A"],
+      evidence: ["\u062A\u0641\u0627\u0635\u064A\u0644", "\u0639\u0645\u0644\u064A\u0627\u062A", "\u0627\u064A\u0647 \u0627\u0644\u0644\u064A", "\u0643\u0644", "\u0628\u0627\u0644\u0638\u0628\u0637", "\u0628\u0627\u0644\u0636\u0628\u0637", "\u0627\u062B\u0628\u0627\u062A", "\u0647\u0644", "\u0645\u062D\u0633\u0648\u0628"],
       today: ["\u0627\u0644\u0646\u0647\u0627\u0631\u062F\u0647", "\u0627\u0644\u064A\u0648\u0645", "today", "\u062F\u0644\u0648\u0642\u062A\u064A"],
       yesterday: ["\u0627\u0645\u0628\u0627\u0631\u062D", "yesterday"],
       week: ["\u0627\u0644\u0627\u0633\u0628\u0648\u0639", "\u0627\u0633\u0628\u0648\u0639", "week"],
@@ -176578,6 +172352,8 @@ function normalizeAIResponse(input) {
     facts: input.facts ?? [],
     artifacts: input.artifacts ?? [],
     actions: input.actions ?? [],
+    proposedActions: input.proposedActions,
+    recipe: input.recipe,
     tokenBudget: input.tokenBudget ?? input.contextPack.tokenBudget,
     model: input.model,
     tokensUsed: input.tokensUsed,
@@ -177743,7 +173519,82 @@ function memoryTypeFor(content) {
   if (normalized.includes("\u0647\u062F\u0641") || normalized.includes("\u0627\u062D\u0648\u0634") || normalized.includes("\u0627\u062F\u062E\u0631")) return "plan";
   if (normalized.includes("\u0627\u062A\u0641\u0642\u0646\u0627") || normalized.includes("\u0627\u062A\u0641\u0627\u0642")) return "agreement";
   if (normalized.includes("\u0627\u0641\u0636\u0644") || normalized.includes("\u0628\u062D\u0628") || normalized.includes("\u0628\u0643\u0631\u0647")) return "preference";
+  if (normalized.includes("\u0645\u064A\u0632\u0627\u0646\u064A\u0647") || normalized.includes("\u062D\u062F") || normalized.includes("\u0642\u064A\u062F")) return "plan";
+  if (normalized.includes("\u0645\u0634\u0631\u0648\u0639") || normalized.includes("\u0628\u064A\u0632\u0646\u0633") || normalized.includes("business")) return "plan";
   return "fact";
+}
+function structuredMemoryTypeFor(content, fallback) {
+  const normalized = normalizeMemoryText(content);
+  if (normalized.includes("\u0645\u0634\u0631\u0648\u0639") || normalized.includes("\u0628\u064A\u0632\u0646\u0633") || normalized.includes("business")) {
+    return "business_context";
+  }
+  if (normalized.includes("\u062D\u062F \u0627\u0642\u0635\u064A") || normalized.includes("\u0645\u064A\u0632\u0627\u0646\u064A\u0647") || normalized.includes("\u0645\u0634 \u0647\u0644\u0645\u0633") || normalized.includes("\u0645\u0627 \u062A\u0644\u0645\u0633\u0634") || normalized.includes("\u0645\u0627 \u062A\u0646\u0641\u0630\u0634") || normalized.includes("\u0645\u062A\u0646\u0641\u0630\u0634") || normalized.includes("\u0644\u0645\u0627 \u0627\u0643\u062F") || normalized.includes("\u0628\u0639\u062F \u062A\u0627\u0643\u064A\u062F") || normalized.includes("confirm") || normalized.includes("limit")) {
+    return "constraint";
+  }
+  if (fallback === "fact") return "fact";
+  return fallback;
+}
+function extractStructuredMemoryMeta(content) {
+  const normalized = normalizeMemoryText(content);
+  const meta3 = {};
+  const amountMatches = [...normalized.matchAll(/(\d+)\s*(الف|ألف|k|مليون|million)?/gi)];
+  const amounts = amountMatches.map((match2) => {
+    const base = Number(match2[1]);
+    if (!Number.isFinite(base)) return void 0;
+    const unit = String(match2[2] ?? "").toLowerCase();
+    if (unit === "\u0627\u0644\u0641" || unit === "\u0623\u0644\u0641" || unit === "k") return base * 1e3;
+    if (unit === "\u0645\u0644\u064A\u0648\u0646" || unit === "million") return base * 1e6;
+    return base;
+  }).filter((value) => value !== void 0 && Number.isFinite(value) && value > 10);
+  if (amounts && amounts.length > 0) {
+    const maxAmount = Math.max(...amounts);
+    meta3.subject_amount = maxAmount;
+    meta3.amount = maxAmount;
+  }
+  const monthMatch = normalized.match(/(\d+)\s*(شهر|شهور|months?)/i);
+  if (monthMatch) {
+    meta3.estimated_months = Number(monthMatch[1]);
+    meta3.period = `${Number(monthMatch[1])} months`;
+  } else if (normalized.includes("\u0627\u0644\u0634\u0647\u0631 \u062F\u0647") || normalized.includes("\u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631")) {
+    meta3.period = "current_month";
+  }
+  const deadlineMatch = normalized.match(/(?:قبل|بحلول|deadline|by)\s+([^،.؟?]{2,40})/i);
+  if (deadlineMatch?.[1]) meta3.deadline = deadlineMatch[1].trim();
+  const subjectPatterns = ["\u0633\u064A\u0627\u0631\u0647", "\u0633\u064A\u0627\u0631\u0629", "\u0634\u0642\u0647", "\u0634\u0642\u0629", "\u0633\u0641\u0631", "\u0639\u0631\u0628\u064A\u0647", "\u0639\u0631\u0628\u064A\u0629", "\u0644\u0627\u0628\u062A\u0648\u0628", "\u0645\u0648\u0628\u0627\u064A\u0644", "\u0643\u0627\u0645\u064A\u0631\u0627"];
+  for (const subject of subjectPatterns) {
+    if (normalized.includes(normalizeMemoryText(subject))) {
+      meta3.subject = subject;
+      break;
+    }
+  }
+  if (normalized.includes("\u0627\u062F\u062E\u0627\u0631") || normalized.includes("\u0627\u062D\u0648\u0634") || normalized.includes("\u0627\u062F\u062E\u0631")) {
+    meta3.intent = "saving";
+  }
+  if (normalized.includes("\u0634\u0631\u0627\u0621") || normalized.includes("\u0627\u0634\u062A\u0631\u064A") || normalized.includes("\u0627\u062C\u064A\u0628")) {
+    meta3.intent = "purchase";
+  }
+  meta3.status = normalized.includes("\u0645\u0627 \u062A\u0646\u0641\u0630\u0634") || normalized.includes("\u0645\u062A\u0646\u0641\u0630\u0634") || normalized.includes("\u0644\u0645\u0627 \u0627\u0643\u062F") || normalized.includes("\u0628\u0639\u062F \u062A\u0627\u0643\u064A\u062F") ? "pending_confirmation" : "active";
+  return Object.keys(meta3).length > 0 ? meta3 : void 0;
+}
+function assistantPlanCommitSignal(content) {
+  const normalized = normalizeMemoryText(content);
+  return [
+    "\u0627\u062D\u0641\u0638",
+    "\u062E\u0632\u0646",
+    "\u0627\u0641\u062A\u0643\u0631 \u0643\u062F\u0647",
+    "\u062A\u0645\u0627\u0645 \u0627\u0641\u062A\u0643\u0631",
+    "\u062A\u0645\u0627\u0645 \u0643\u062F\u0647",
+    "\u0645\u0648\u0627\u0641\u0642",
+    "\u0627\u062A\u0641\u0642\u0646\u0627",
+    "remember this",
+    "save this"
+  ].some((term) => normalized.includes(normalizeMemoryText(term)));
+}
+function assistantPlanCandidate(content) {
+  const normalized = normalizeMemoryText(content);
+  return !isLowSignalMemoryText(content) && ["\u062E\u0637\u0647", "\u062E\u0637\u0629", "\u0647\u062F\u0641", "\u0627\u062F\u062E\u0627\u0631", "\u0627\u062D\u0648\u0634", "\u0645\u064A\u0632\u0627\u0646\u064A\u0647", "budget", "plan", "goal"].some(
+    (term) => normalized.includes(normalizeMemoryText(term))
+  );
 }
 function buildConversationCapsule(messages) {
   const lastUser = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
@@ -177767,22 +173618,50 @@ function buildRunningSummary(messages, previousSummary = "") {
 }
 function extractSemanticMemories(messages) {
   const memories = /* @__PURE__ */ new Map();
-  for (const message of messages) {
+  for (const [index2, message] of messages.entries()) {
     if (message.role !== "user") continue;
+    if (assistantPlanCommitSignal(message.content)) {
+      const previousAssistant = [...messages.slice(0, index2)].reverse().find((item) => item.role === "assistant" && assistantPlanCandidate(item.content));
+      if (previousAssistant) {
+        const content2 = truncateWords(previousAssistant.content, 60);
+        const hash5 = contentHash(`assistant_plan:${content2}`);
+        const structuredMeta2 = extractStructuredMemoryMeta(content2);
+        memories.set(hash5, {
+          type: "plan",
+          content: content2,
+          importance: 82,
+          sourceMessageId: previousAssistant.id,
+          metadata: {
+            extractedBy: "deterministic_v2",
+            reason: "assistant_plan_confirmed_by_user",
+            structuredType: "agreement",
+            status: "active",
+            confidence: 0.82,
+            ...structuredMeta2 || {}
+          }
+        });
+      }
+    }
     if (isLowSignalMemoryText(message.content)) continue;
     const signal = memorySignalFor(message.content);
     if (!signal) continue;
     const content = truncateWords(message.content, 40);
     if (content.length < 8) continue;
     const hash4 = contentHash(content);
+    const structuredMeta = extractStructuredMemoryMeta(content);
+    const type = signal.type ?? memoryTypeFor(content);
     memories.set(hash4, {
-      type: signal.type ?? memoryTypeFor(content),
+      type,
       content,
       importance: signal.importance,
       sourceMessageId: message.id,
       metadata: {
         extractedBy: "deterministic_v2",
-        reason: signal.reason
+        reason: signal.reason,
+        structuredType: structuredMemoryTypeFor(content, type),
+        status: "active",
+        confidence: Math.min(0.98, Math.max(0.5, signal.importance / 100)),
+        ...structuredMeta || {}
       }
     });
   }
@@ -177795,7 +173674,13 @@ function draftConversationMemory(input, previousSummary = "") {
   return {
     capsule: buildConversationCapsule(input.messages),
     runningSummary: buildRunningSummary(input.messages, previousSummary),
-    memories: extractSemanticMemories(input.messages)
+    memories: extractSemanticMemories(input.messages).map((memory) => ({
+      ...memory,
+      metadata: {
+        ...memory.metadata ?? {},
+        sourceConversationId: input.conversationId
+      }
+    }))
   };
 }
 async function maybeStoreEmbedding(memoryItemId, input, content) {
@@ -178519,12 +174404,147 @@ function countText(count4) {
   if (!Number.isFinite(count4)) return "";
   return ` \u0645\u0646 ${Math.round(count4).toLocaleString("ar-EG")} \u0639\u0645\u0644\u064A\u0629`;
 }
-function knownCategoryDisplayName(value) {
-  const normalized = (value ?? "").trim().toLowerCase();
-  return CATEGORY_DISPLAY_NAMES2[normalized];
-}
 function displayCategoryName(value) {
-  return knownCategoryDisplayName(value) ?? value ?? "\u0627\u0644\u0641\u0626\u0629 \u062F\u064A";
+  if (!value || value === "uncategorized") return "\u063A\u064A\u0631 \u0645\u0635\u0646\u0641";
+  return displayFinanceCategory(value);
+}
+function goalTargetDateFromText(value) {
+  const query = normalizeNumericText2(value.toLowerCase());
+  const now = /* @__PURE__ */ new Date();
+  if (/(سنه|سنة|year)/i.test(query)) {
+    const date6 = new Date(now);
+    date6.setFullYear(date6.getFullYear() + 1);
+    return date6.toISOString().slice(0, 10);
+  }
+  const months = query.match(/(\d+)\s*(شهر|شهور|months?)/i);
+  if (months?.[1]) {
+    const date6 = new Date(now);
+    date6.setMonth(date6.getMonth() + Number(months[1]));
+    return date6.toISOString().slice(0, 10);
+  }
+  return void 0;
+}
+function goalTitleFromText(value) {
+  const normalized = value.toLowerCase();
+  if (/(لابتوب|لاب توب|laptop)/i.test(normalized)) return "\u0647\u062F\u0641 \u0634\u0631\u0627\u0621 \u0644\u0627\u0628\u062A\u0648\u0628";
+  if (/(عربيه|عربية|سياره|سيارة|car)/i.test(normalized)) return "\u0647\u062F\u0641 \u0634\u0631\u0627\u0621 \u0639\u0631\u0628\u064A\u0629";
+  if (/(شقه|شقة|apartment|flat)/i.test(normalized)) return "\u0647\u062F\u0641 \u0634\u0631\u0627\u0621 \u0634\u0642\u0629";
+  if (/(سفر|travel)/i.test(normalized)) return "\u0647\u062F\u0641 \u0627\u0644\u0633\u0641\u0631";
+  const cleaned = normalizeNumericText2(value).replace(/[؟?,،.!]/g, " ").replace(/خلال\s+.*$/i, " ").replace(/\d+(?:[.,]\d+)?\s*(جنيه|ج|egp|الف|ألف|k|مليون|million)?/gi, " ").replace(/\b(هدف|احوش|ادخر|توفير|حوش|اعمل|انشئ|أضف|ضيف|حط|سجل|create|add|saving|goal)\b/gi, " ").replace(/\b(اشتري|شراء|اجيب|أجيب|جيب|عايز|عاوز|لل|ل)\b/gi, " ").replace(/\s+/g, " ").trim();
+  return cleaned.length >= 2 && cleaned.length <= 50 ? `\u0647\u062F\u0641 ${cleaned}` : "\u0647\u062F\u0641 \u0627\u062F\u062E\u0627\u0631 \u062C\u062F\u064A\u062F";
+}
+function proposedGoalCreateAction(intent, facts) {
+  if (intent.kind !== "goal_planning" || intent.slots.actionName !== "goal.create") return [];
+  const query = intent.slots.query ?? "";
+  const targetAmount = moneyAmountFromText(query) ?? numericFact(facts, "target_amount", "goal.feasibility");
+  const targetDate = goalTargetDateFromText(query);
+  const title = goalTitleFromText(query);
+  const summaryParts = [title];
+  if (targetAmount) summaryParts.push(money2(targetAmount));
+  if (targetDate) summaryParts.push(`\u062D\u062A\u0649 ${targetDate}`);
+  return [
+    {
+      id: `proposed:goal.create:${targetAmount ?? "new"}`,
+      name: "goal.create",
+      status: "draft",
+      risk: "medium",
+      confirmationRequired: true,
+      summary: summaryParts.join(" - "),
+      payload: {
+        title,
+        description: query.slice(0, 500),
+        targetAmount,
+        targetDate
+      }
+    }
+  ];
+}
+function proposedActionsFromFacts(intent, facts) {
+  const goalActions = proposedGoalCreateAction(intent, facts);
+  if (goalActions.length > 0) return goalActions;
+  if (intent.kind !== "action_request" || intent.slots.actionName !== "expense.recategorize") {
+    return [];
+  }
+  const notFound = factValue(facts, "not_found", "finance.transaction_lookup") === true;
+  if (notFound) return [];
+  const expenseId = numericFact(facts, "expense_id", "finance.transaction_lookup");
+  const targetCategory = textFact(facts, "target_category", "finance.transaction_lookup") ?? intent.slots.targetCategory ?? intent.slots.category;
+  if (!Number.isFinite(expenseId) || !targetCategory || targetCategory === "uncategorized") {
+    return [];
+  }
+  const currentCategory = textFact(facts, "category", "finance.transaction_lookup");
+  const description = textFact(facts, "description", "finance.transaction_lookup");
+  const amount = numericFact(facts, "amount", "finance.transaction_lookup");
+  const date6 = textFact(facts, "date", "finance.transaction_lookup");
+  const targetDisplay = displayCategoryName(targetCategory);
+  const currentDisplay = displayCategoryName(currentCategory);
+  const descriptor = description ? `"${description}"` : `#${Math.round(expenseId)}`;
+  const amountText = amount !== void 0 ? ` \u0628\u0642\u064A\u0645\u0629 ${money2(amount)}` : "";
+  const dateText = date6 ? ` \u0628\u062A\u0627\u0631\u064A\u062E ${date6}` : "";
+  return [
+    {
+      id: `proposed:expense.recategorize:${Math.round(expenseId)}`,
+      name: "expense.recategorize",
+      status: "draft",
+      risk: "medium",
+      confirmationRequired: true,
+      summary: `\u062A\u0639\u062F\u064A\u0644 \u062A\u0635\u0646\u064A\u0641 \u0645\u0635\u0631\u0648\u0641 ${descriptor}${amountText}${dateText} \u0645\u0646 ${currentDisplay} \u0625\u0644\u0649 ${targetDisplay}`,
+      payload: {
+        expenseId: Math.round(expenseId),
+        category: targetCategory,
+        reason: intent.slots.query ?? "AI recategorization request"
+      }
+    }
+  ];
+}
+function buildActionConfirmationContent(intent, facts, proposedActions) {
+  if (intent.kind === "goal_planning" && intent.slots.actionName === "goal.create") {
+    const action2 = proposedActions.find((item) => item.name === "goal.create");
+    if (!action2) return void 0;
+    const payload = action2.payload;
+    const targetAmount = typeof payload.targetAmount === "number" ? payload.targetAmount : void 0;
+    const targetDate = typeof payload.targetDate === "string" ? payload.targetDate : void 0;
+    const monthlyCapacity = numericFact(facts, "monthly_capacity", "goal.feasibility");
+    const estimatedMonths = numericFact(facts, "estimated_months", "goal.feasibility");
+    const rating = textFact(facts, "feasibility_rating", "goal.feasibility");
+    const lines = [
+      "\u062C\u0647\u0632\u062A \u0645\u0633\u0648\u062F\u0629 \u0627\u0644\u0647\u062F\u0641\u060C \u0644\u0643\u0646\u0647\u0627 \u0644\u0646 \u062A\u062A\u0646\u0641\u0630 \u063A\u064A\u0631 \u0628\u0639\u062F \u062A\u0623\u0643\u064A\u062F\u0643.",
+      `\u0627\u0644\u0647\u062F\u0641: ${String(payload.title ?? "\u0647\u062F\u0641 \u0627\u062F\u062E\u0627\u0631 \u062C\u062F\u064A\u062F")}`,
+      targetAmount !== void 0 ? `\u0627\u0644\u0645\u0628\u0644\u063A \u0627\u0644\u0645\u0633\u062A\u0647\u062F\u0641: ${money2(targetAmount)}` : "",
+      targetDate ? `\u0627\u0644\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u0633\u062A\u0647\u062F\u0641: ${targetDate}` : "",
+      monthlyCapacity !== void 0 ? `\u0642\u062F\u0631\u062A\u0643 \u0627\u0644\u0634\u0647\u0631\u064A\u0629 \u0627\u0644\u0645\u0642\u062F\u0631\u0629 \u0645\u0646 \u0635\u0627\u0641\u064A \u0627\u0644\u062A\u062F\u0641\u0642 \u0627\u0644\u062D\u0627\u0644\u064A: ${money2(monthlyCapacity)}` : "",
+      estimatedMonths !== void 0 ? `\u0627\u0644\u0645\u062F\u0629 \u0627\u0644\u0645\u0642\u062F\u0631\u0629 \u062D\u0633\u0628 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u062D\u0627\u0644\u064A\u0629: ${estimatedMonths.toLocaleString("ar-EG")} \u0634\u0647\u0631` : "",
+      rating ? `\u062A\u0642\u064A\u064A\u0645 \u0627\u0644\u0642\u0627\u0628\u0644\u064A\u0629: ${rating}` : "",
+      "\u0644\u0648 \u0645\u0648\u0627\u0641\u0642 \u0623\u0643\u062F \u0627\u0644\u0625\u062C\u0631\u0627\u0621 \u0645\u0646 \u0632\u0631 \u0627\u0644\u062A\u0623\u0643\u064A\u062F \u062A\u062D\u062A \u0627\u0644\u0631\u0633\u0627\u0644\u0629."
+    ];
+    return lines.filter(Boolean).join("\n");
+  }
+  if (intent.kind !== "action_request" || intent.slots.actionName !== "expense.recategorize") {
+    return void 0;
+  }
+  const notFound = factValue(facts, "not_found", "finance.transaction_lookup") === true;
+  if (notFound) {
+    return "\u0645\u0644\u0642\u062A\u0634 \u0639\u0645\u0644\u064A\u0629 \u0645\u0637\u0627\u0628\u0642\u0629 \u0623\u0642\u062F\u0631 \u0623\u0639\u062F\u0644 \u062A\u0635\u0646\u064A\u0641\u0647\u0627 \u0628\u062B\u0642\u0629. \u0627\u0628\u0639\u062A\u0644\u064A \u0627\u0633\u0645 \u0627\u0644\u062A\u0627\u062C\u0631 \u0623\u0648 \u0631\u0642\u0645 \u0627\u0644\u0639\u0645\u0644\u064A\u0629\u060C \u0623\u0648 \u0627\u0637\u0644\u0628 \u0622\u062E\u0631 \u0645\u0635\u0631\u0648\u0641 \u0628\u062F\u0648\u0646 \u0634\u0631\u0637 \u0627\u0644\u062A\u0635\u0646\u064A\u0641.";
+  }
+  const action = proposedActions[0];
+  if (!action) {
+    return "\u0644\u0642\u064A\u062A \u0637\u0644\u0628 \u062A\u0639\u062F\u064A\u0644 \u062A\u0635\u0646\u064A\u0641\u060C \u0644\u0643\u0646 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u062A\u0627\u062D\u0629 \u0645\u0634 \u0643\u0641\u0627\u064A\u0629 \u0644\u062A\u062C\u0647\u064A\u0632 \u0625\u062C\u0631\u0627\u0621 \u0645\u0624\u0643\u062F. \u0645\u062D\u062A\u0627\u062C \u0627\u0644\u0639\u0645\u0644\u064A\u0629 \u0627\u0644\u0645\u0642\u0635\u0648\u062F\u0629 \u0623\u0648 \u0631\u0642\u0645\u0647\u0627.";
+  }
+  const description = textFact(facts, "description", "finance.transaction_lookup");
+  const amount = numericFact(facts, "amount", "finance.transaction_lookup");
+  const currentCategory = textFact(facts, "category", "finance.transaction_lookup");
+  const targetCategory = String(action.payload.category ?? "");
+  const evidence = [
+    description ? `\u0627\u0644\u0639\u0645\u0644\u064A\u0629: ${description}` : "",
+    amount !== void 0 ? `\u0627\u0644\u0645\u0628\u0644\u063A: ${money2(amount)}` : "",
+    currentCategory ? `\u0627\u0644\u062A\u0635\u0646\u064A\u0641 \u0627\u0644\u062D\u0627\u0644\u064A: ${displayCategoryName(currentCategory)}` : "",
+    targetCategory ? `\u0627\u0644\u062A\u0635\u0646\u064A\u0641 \u0627\u0644\u0645\u0642\u062A\u0631\u062D: ${displayCategoryName(targetCategory)}` : ""
+  ].filter(Boolean);
+  return [
+    "\u0644\u0642\u064A\u062A \u0627\u0644\u0639\u0645\u0644\u064A\u0629 \u0648\u062C\u0647\u0632\u062A \u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u062A\u0635\u0646\u064A\u0641\u060C \u0644\u0643\u0646\u0647 \u0644\u0646 \u064A\u062A\u0646\u0641\u0630 \u063A\u064A\u0631 \u0628\u0639\u062F \u062A\u0623\u0643\u064A\u062F\u0643.",
+    evidence.length ? evidence.join("\n") : "",
+    "\u0644\u0648 \u0645\u0648\u0627\u0641\u0642 \u0623\u0643\u062F \u0627\u0644\u0625\u062C\u0631\u0627\u0621 \u0645\u0646 \u0632\u0631 \u0627\u0644\u062A\u0623\u0643\u064A\u062F \u062A\u062D\u062A \u0627\u0644\u0631\u0633\u0627\u0644\u0629."
+  ].filter(Boolean).join("\n");
 }
 function uniqueMemoryFacts(facts) {
   const seen = /* @__PURE__ */ new Set();
@@ -178662,7 +174682,7 @@ function buildGroundedAdviceContent(intent, facts) {
     preferDirectMemoryFacts(facts.filter((fact3) => fact3.source === "memory.search"))
   ).slice(0, 1);
   const levers = sourceFacts(facts, "finance.breakdown").filter((fact3) => /^top_[1-4]_/.test(fact3.label)).slice(0, 3).map((fact3) => {
-    const category = knownCategoryDisplayName(fact3.label.replace(/^top_\d+_/, ""));
+    const category = displayCategoryName(fact3.label.replace(/^top_\d+_/, ""));
     if (!category) return void 0;
     const amount = Number(fact3.value);
     return Number.isFinite(amount) ? `${category}: ${money2(amount)}` : category;
@@ -178766,13 +174786,6 @@ function compactFactsForPrompt(facts, intent) {
     evidence: intent.kind === "advice_request" ? void 0 : fact3.evidence?.slice(0, 3)
   }));
 }
-function compactArtifactsForPrompt(artifacts) {
-  return artifacts.slice(0, 6).map((artifact) => ({
-    type: artifact.type,
-    title: artifact.title,
-    payload: artifact.payload
-  }));
-}
 function buildSiteHelpContent(facts) {
   const guideFacts = facts.filter((fact3) => fact3.source === "site_guide.search").slice(0, 2);
   if (guideFacts.length === 0) return void 0;
@@ -178787,10 +174800,12 @@ function buildSiteHelpContent(facts) {
   }
   return ["\u0644\u0642\u064A\u062A \u0644\u0643 \u0627\u0644\u062F\u0644\u064A\u0644 \u0627\u0644\u0645\u0646\u0627\u0633\u0628 \u0641\u064A \u0627\u0644\u062A\u0637\u0628\u064A\u0642:", titles, "\u0631\u0627\u062C\u0639 \u0627\u0644\u0628\u0637\u0627\u0642\u0627\u062A \u062A\u062D\u062A \u0627\u0644\u0631\u0633\u0627\u0644\u0629 \u0644\u0644\u062E\u0637\u0648\u0627\u062A \u0627\u0644\u062A\u0641\u0635\u064A\u0644\u064A\u0629."].join("\n");
 }
-function buildDeterministicContent(intent, facts, artifacts) {
+function buildDeterministicContent(intent, facts, artifacts, proposedActions = []) {
   if (intent.kind === "smalltalk") {
     return "\u0623\u0647\u0644\u0627 \u0628\u064A\u0643. \u0627\u0633\u0623\u0644\u0646\u064A \u0639\u0646 \u0645\u0635\u0627\u0631\u064A\u0641\u0643\u060C \u0623\u0647\u062F\u0627\u0641\u0643\u060C \u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631\u060C \u0623\u0648 \u0623\u064A \u062D\u0627\u062C\u0629 \u0645\u062D\u062A\u0627\u062C \u062A\u0641\u0647\u0645\u0647\u0627 \u0641\u064A SmartSpend.";
   }
+  const actionContent = buildActionConfirmationContent(intent, facts, proposedActions);
+  if (actionContent) return actionContent;
   if (intent.kind === "finance_query") {
     const walletBalance = numericFact(facts, "total_balance", "wallet.summary");
     if (walletBalance !== void 0) {
@@ -178913,7 +174928,10 @@ ${memoryFacts.slice(0, 4).map((fact3, index2) => `${index2 + 1}. ${memoryPlanLin
   return void 0;
 }
 function shouldUseLLM(intent, deterministicContent) {
-  if (deterministicContent && intent.kind !== "report_request") {
+  if (intent.reason === "classification_explanation_match") return false;
+  const query = intent.slots.query ?? "";
+  const needsSynthesis = /(ليه|لماذا|السبب|خطة|خطط|اقترح|اعمل ايه|أعمل ايه|نصحنى|نصيحة|نصيحه|حلل)/i.test(query) || intent.reason === "composite_comparison_drivers_match" || intent.reason === "business_cashflow_match" || intent.reason === "goal_with_plan_composite_match" || intent.reason === "finance_planning_composite_match";
+  if (deterministicContent && !needsSynthesis) {
     return false;
   }
   return [
@@ -178925,36 +174943,55 @@ function shouldUseLLM(intent, deterministicContent) {
     "chart_request"
   ].includes(intent.kind);
 }
+function determineRecipe(intent, facts) {
+  if (intent.kind === "smalltalk" || intent.kind === "site_help") return "simple_deterministic";
+  if (intent.kind === "action_request") return "action_confirmation";
+  if (intent.kind === "memory_question") return "answer_first";
+  if (intent.reason === "composite_comparison_drivers_match") return "drivers_then_plan";
+  if (intent.reason === "business_cashflow_match") return "drivers_then_plan";
+  if (intent.reason === "goal_with_plan_composite_match") return "plan_with_confirmation";
+  if (intent.kind === "goal_planning" && intent.slots.actionName) return "plan_with_confirmation";
+  if (intent.kind === "advice_request") return "plan_with_confirmation";
+  if (intent.slots.needsEvidence) return "evidence_then_answer";
+  return "answer_first";
+}
 function buildActiveMessages(request, intent, facts, artifacts) {
-  const historyLimit = intent.kind === "advice_request" ? 2 : 4;
-  const historyTextLimit = intent.kind === "advice_request" ? 120 : 700;
-  const history = (request.conversationHistory ?? []).slice(-historyLimit).map((message) => `${message.role}: ${message.content.slice(0, historyTextLimit)}`).join("\n");
-  const factsJson = JSON.stringify(compactFactsForPrompt(facts, intent), null, 2).slice(
+  const recipe = determineRecipe(intent, facts);
+  const historyLimit = intent.kind === "advice_request" ? 1 : 3;
+  const history = (request.conversationHistory ?? []).slice(-historyLimit).map((message) => `${message.role}: ${message.content.slice(0, 200)}`).join("\n");
+  const factsJson = JSON.stringify(compactFactsForPrompt(facts, intent), null, 0).slice(
     0,
-    intent.kind === "advice_request" ? 1400 : 7e3
+    intent.kind === "advice_request" ? 2e3 : 4e3
   );
-  const artifactsJson = JSON.stringify(compactArtifactsForPrompt(artifacts), null, 2).slice(0, 2500);
-  const adviceGuardrail = intent.kind === "advice_request" ? "\u0641\u064A \u0627\u0644\u0646\u0635\u0627\u0626\u062D \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0623\u0648 \u0627\u0644\u0627\u0633\u062A\u062B\u0645\u0627\u0631\u064A\u0629: \u0644\u0627 \u062A\u0630\u0643\u0631 \u0646\u0633\u0628 \u0639\u0648\u0627\u0626\u062F \u0623\u0648 \u0623\u0633\u0639\u0627\u0631 \u0623\u0648 \u062A\u0648\u0642\u0639\u0627\u062A \u0631\u0642\u0645\u064A\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629 \u0641\u064A ResolvedFacts. \u0627\u062C\u0639\u0644 \u0627\u0644\u0631\u062F 90 \u0643\u0644\u0645\u0629 \u0643\u062D\u062F \u0623\u0642\u0635\u0649\u060C 4 \u0646\u0642\u0627\u0637 \u0639\u0645\u0644\u064A\u0629 \u0643\u062D\u062F \u0623\u0642\u0635\u0649\u060C \u0648\u0627\u0630\u0643\u0631 \u0627\u0644\u0645\u062E\u0627\u0637\u0631 \u0628\u0635\u0648\u0631\u0629 \u0646\u0648\u0639\u064A\u0629." : "";
+  const recipeGuards = {
+    answer_first: "\u062C\u0627\u0648\u0628 \u0639\u0644\u0649 \u0627\u0644\u0633\u0624\u0627\u0644 \u0623\u0648\u0644\u0627\u060C \u062B\u0645 \u0627\u0630\u0643\u0631 \u0627\u0644\u0633\u0628\u0628 \u0623\u0648 \u0627\u0644\u062F\u0644\u064A\u0644 \u0628\u0625\u064A\u062C\u0627\u0632. \u0644\u0627 \u062A\u0642\u062A\u0631\u062D \u062E\u0637\u0629 \u0628\u062F\u0648\u0646 \u0637\u0644\u0628.",
+    evidence_then_answer: "\u0642\u062F\u0645 \u0627\u0644\u062F\u0644\u064A\u0644 \u0623\u0648\u0644\u0627 (\u0623\u0639\u0644\u0649 3-5 \u0635\u0641\u0648\u0641)\u060C \u062B\u0645 \u0627\u0644\u062C\u0648\u0627\u0628. \u0644\u0627 \u062A\u062E\u062A\u0631\u0639 \u0623\u0631\u0642\u0627\u0645.",
+    drivers_then_plan: "\u0627\u0634\u0631\u062D \u0627\u0644\u0641\u0631\u0648\u0642\u0627\u062A \u0628\u064A\u0646 \u0627\u0644\u0641\u062A\u0631\u0627\u062A \u0628\u0627\u0644\u062F\u0644\u064A\u0644\u060C \u062B\u0645 \u0627\u0642\u062A\u0631\u062D \u062E\u0637\u0648\u0629 \u0648\u0627\u062D\u062F\u0629 \u0639\u0645\u0644\u064A\u0629.",
+    plan_with_confirmation: "\u0642\u062F\u0645 \u062E\u0637\u0629 \u0645\u062E\u062A\u0635\u0631\u0629 \u0628\u0640 3 \u0646\u0642\u0627\u0637. \u0648\u0636\u062D \u0623\u0646 \u0627\u0644\u062A\u0646\u0641\u064A\u0630 \u064A\u062D\u062A\u0627\u062C \u062A\u0623\u0643\u064A\u062F \u0642\u0628\u0644 \u0623\u064A \u062A\u063A\u064A\u064A\u0631.",
+    action_confirmation: "\u0627\u0639\u0631\u0636 \u0627\u0644\u0625\u062C\u0631\u0627\u0621 \u0627\u0644\u0645\u0642\u062A\u0631\u062D \u0648\u0627\u0644\u062F\u0644\u064A\u0644 \u0627\u0644\u0645\u062E\u062A\u0635\u0631 \u0639\u0644\u064A\u0647. \u0648\u0636\u062D \u0628\u0648\u0636\u0648\u062D \u0623\u0646\u0647 \u0644\u0646 \u064A\u062A\u0646\u0641\u0630 \u0625\u0644\u0627 \u0628\u0639\u062F \u062A\u0623\u0643\u064A\u062F \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645. \u0644\u0627 \u062A\u0642\u0644 \u0625\u0646\u0643 \u0646\u0641\u0630\u062A\u0647.",
+    ask_clarification: "\u0627\u0633\u0623\u0644 \u0633\u0624\u0627\u0644\u0627 \u062A\u0648\u0636\u064A\u062D\u064A\u0627 \u0648\u0627\u062D\u062F\u0627 \u0641\u0642\u0637 \u0625\u0630\u0627 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u063A\u064A\u0631 \u0643\u0627\u0641\u064A\u0629.",
+    simple_deterministic: "\u062C\u0627\u0648\u0628 \u0645\u0628\u0627\u0634\u0631\u0629 \u062F\u0648\u0646 \u0625\u0637\u0627\u0644\u0629."
+  };
   return [
     {
       role: "system",
-      content: "\u0623\u0646\u062A SmartSpend AI Kernel responder. \u0631\u062F \u0628\u0627\u0644\u0644\u0647\u062C\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629 \u0627\u0644\u0631\u0627\u0642\u064A\u0629. \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0644\u0627\u0632\u0645 \u062A\u0623\u062A\u064A \u0641\u0642\u0637 \u0645\u0646 ResolvedFacts. \u0644\u0627 \u062A\u062E\u062A\u0631\u0639 \u0623\u0631\u0642\u0627\u0645. \u0644\u0648 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0637\u0644\u0628 \u062A\u0646\u0641\u064A\u0630 \u0639\u0645\u0644\u064A\u0629\u060C \u0646\u0627\u0642\u0634 \u0627\u0644\u062E\u0637\u0629 \u0648\u0627\u0648\u0636\u062D \u0623\u0646 \u0627\u0644\u062A\u0646\u0641\u064A\u0630 \u0627\u0644\u0646\u0647\u0627\u0626\u064A \u064A\u062D\u062A\u0627\u062C \u062A\u0623\u0643\u064A\u062F. \u0627\u0633\u062A\u062E\u062F\u0645 \u0625\u062C\u0627\u0628\u0629 \u0645\u062E\u062A\u0635\u0631\u0629 \u0648\u0645\u0641\u064A\u062F\u0629\u060C \u0648\u0627\u0630\u0643\u0631 \u0639\u062F\u0645 \u062A\u0648\u0641\u0631 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0628\u0635\u0631\u0627\u062D\u0629. " + adviceGuardrail
+      content: "\u0623\u0646\u062A SmartSpend AI. \u0631\u062F \u0628\u0627\u0644\u0644\u0647\u062C\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629 \u0627\u0644\u0631\u0627\u0642\u064A\u0629. \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u062A\u0623\u062A\u064A \u0641\u0642\u0637 \u0645\u0646 ResolvedFacts. " + recipeGuards[recipe] + " " + (intent.kind === "advice_request" ? "\u0644\u0627 \u062A\u0630\u0643\u0631 \u0646\u0633\u0628 \u0639\u0648\u0627\u0626\u062F \u0623\u0648 \u062A\u0648\u0642\u0639\u0627\u062A \u0631\u0642\u0645\u064A\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629. 4 \u0646\u0642\u0627\u0637 \u0643\u062D\u062F \u0623\u0642\u0635\u0649. " : "")
     },
     {
       role: "user",
       content: [
-        `\u0631\u0633\u0627\u0644\u0629 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645: ${request.message}`,
-        `intent: ${intent.kind}`,
-        history ? `\u0633\u064A\u0627\u0642 \u0642\u0631\u064A\u0628:
-${history}` : "",
-        `ResolvedFacts JSON:
-${factsJson || "[]"}`,
-        artifacts.length ? `Artifacts JSON:
-${artifactsJson}` : "",
-        "\u0627\u0643\u062A\u0628 \u0627\u0644\u0631\u062F \u0627\u0644\u0646\u0647\u0627\u0626\u064A \u0644\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0641\u0642\u0637."
-      ].filter(Boolean).join("\n\n")
+        `\u0633\u0624\u0627\u0644: ${request.message}`,
+        `intent=${intent.kind} recipe=${recipe}`,
+        history ? `\u0633\u064A\u0627\u0642: ${history}` : "",
+        `Facts: ${factsJson || "[]"}`,
+        artifacts.length ? `Artifacts: ${artifactBriefs(artifacts)}` : "",
+        "\u0627\u0643\u062A\u0628 \u0627\u0644\u0631\u062F \u0627\u0644\u0646\u0647\u0627\u0626\u064A."
+      ].filter(Boolean).join("\n")
     }
   ];
+}
+function artifactBriefs(artifacts) {
+  return artifacts.slice(0, 3).map((a) => `[${a.type}] ${a.title ?? ""}`).join(" | ");
 }
 function fallbackActiveContent(intent, facts) {
   if (facts.length > 0) {
@@ -178977,7 +175014,13 @@ async function runAIKernelActive(request, config3) {
     const contextPack = buildContextPack(request, intent, dataNeeds);
     const resolved = await resolveShadowFacts(request, dataNeeds);
     const cacheRuntime = getCacheRuntimeStatus();
-    const deterministicContent = buildDeterministicContent(intent, resolved.facts, resolved.artifacts);
+    const proposedActions = proposedActionsFromFacts(intent, resolved.facts);
+    const deterministicContent = buildDeterministicContent(
+      intent,
+      resolved.facts,
+      resolved.artifacts,
+      proposedActions
+    );
     const retrievalPolicy = retrievalPolicyFor(intent.kind, dataNeeds, resolved.cacheHits);
     const embeddingCalls = embeddingApiCallsFromCacheHits(resolved.cacheHits);
     const embeddingApiStatus = embeddingApiStatusFor(dataNeeds, resolved.cacheHits);
@@ -179027,6 +175070,7 @@ async function runAIKernelActive(request, config3) {
       tokensUsed = contextPack.estimatedInputTokens + estimateTokens(content);
     }
     const risk = hallucinationRiskFor(content, resolved.facts, llmCalls);
+    const recipe = determineRecipe(intent, resolved.facts);
     const response = normalizeAIResponse({
       traceId,
       channel: request.channel,
@@ -179036,6 +175080,8 @@ async function runAIKernelActive(request, config3) {
       contextPack,
       facts: resolved.facts,
       artifacts: resolved.artifacts,
+      proposedActions,
+      recipe,
       model: model ?? config3.model,
       tokensUsed,
       debug: {
@@ -179045,6 +175091,7 @@ async function runAIKernelActive(request, config3) {
         estimatedInputTokens: contextPack.estimatedInputTokens,
         resolvedFacts: resolved.facts.length,
         resolvedArtifacts: resolved.artifacts.length,
+        proposedActions: proposedActions.length,
         resolverErrors: resolved.errors,
         cacheHits: resolved.cacheHits,
         embeddingCalls,
@@ -179255,7 +175302,7 @@ async function runAIKernelShadow(request) {
     return response;
   }
 }
-var CATEGORY_DISPLAY_NAMES2, MEMORY_SUBJECT_HINTS;
+var MEMORY_SUBJECT_HINTS;
 var init_ai_kernel = __esm({
   "api/services/ai-kernel/index.ts"() {
     init_ai_trace_logger();
@@ -179267,6 +175314,7 @@ var init_ai_kernel = __esm({
     init_intent_router();
     init_retrieval_policy();
     init_response_normalizer();
+    init_category_matcher();
     init_text_utils();
     init_types6();
     init_context_packer();
@@ -179275,16 +175323,6 @@ var init_ai_kernel = __esm({
     init_retrieval_policy();
     init_response_normalizer();
     init_ai_trace_logger();
-    CATEGORY_DISPLAY_NAMES2 = {
-      food: "\u0627\u0644\u0623\u0643\u0644",
-      transport: "\u0627\u0644\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
-      shopping: "\u0627\u0644\u062A\u0633\u0648\u0642",
-      health: "\u0627\u0644\u0635\u062D\u0629",
-      bills: "\u0627\u0644\u0641\u0648\u0627\u062A\u064A\u0631",
-      income: "\u0627\u0644\u062F\u062E\u0644",
-      saving: "\u0627\u0644\u0627\u062F\u062E\u0627\u0631",
-      uncategorized: "\u063A\u064A\u0631 \u0645\u0635\u0646\u0641"
-    };
     MEMORY_SUBJECT_HINTS = [
       "\u0643\u0627\u0645\u064A\u0631\u0627",
       "\u0645\u0648\u0628\u0627\u064A\u0644",
@@ -179626,73 +175664,65 @@ var init_voice_session_state = __esm({
 // api/services/action-runtime/artifacts.ts
 function goalSummary(payload) {
   const parts = [payload.title];
-  if (payload.targetAmount) parts.push(`${payload.targetAmount} EGP`);
-  if (payload.targetDate) parts.push(`until ${payload.targetDate}`);
+  if (payload.targetAmount) parts.push(`${payload.targetAmount.toLocaleString("ar-EG")} \u062C\u0646\u064A\u0647`);
+  if (payload.targetDate) parts.push(`\u062D\u062A\u0649 ${payload.targetDate}`);
   return parts.join(" - ");
 }
-function displayCategory(value) {
-  const categories = {
-    food: "food",
-    transport: "transport",
-    shopping: "shopping",
-    health: "health",
-    bills: "bills",
-    saving: "saving",
-    uncategorized: "uncategorized"
-  };
-  return categories[value ?? ""] ?? value ?? "uncategorized";
+function displayCategoryAr(value) {
+  if (!value || value === "uncategorized") return "\u063A\u064A\u0631 \u0645\u0635\u0646\u0641";
+  return displayFinanceCategory(value);
 }
 function actionSummary(actionName, payload) {
   if (actionName === "goal.create") return goalSummary(payload);
   if (actionName === "goal.update") {
     const goal = payload;
-    return `Update goal #${goal.goalId}${goal.title ? ` - ${goal.title}` : ""}${goal.targetAmount ? ` - ${goal.targetAmount} EGP` : ""}`;
+    return `\u062A\u0639\u062F\u064A\u0644 \u0647\u062F\u0641 #${goal.goalId}${goal.title ? ` - ${goal.title}` : ""}${goal.targetAmount ? ` - ${goal.targetAmount.toLocaleString("ar-EG")} \u062C\u0646\u064A\u0647` : ""}`;
   }
   if (actionName === "goal.stop") {
     const goal = payload;
-    return `Stop goal #${goal.goalId}${goal.reason ? ` - ${goal.reason.slice(0, 80)}` : ""}`;
+    return `\u0625\u064A\u0642\u0627\u0641 \u0647\u062F\u0641 #${goal.goalId}${goal.reason ? ` - ${goal.reason.slice(0, 80)}` : ""}`;
   }
   if (actionName === "expense.create") {
     const expense = payload;
-    return `Record expense ${expense.amount} EGP - ${displayCategory(expense.category)}${expense.placeHint ? ` - ${expense.placeHint}` : ""}`;
+    return `\u062A\u0633\u062C\u064A\u0644 ${expense.amount.toLocaleString("ar-EG")} \u062C\u0646\u064A\u0647 - ${displayCategoryAr(expense.category)}${expense.placeHint ? ` - ${expense.placeHint}` : ""}`;
   }
   if (actionName === "expense.recategorize") {
     const expense = payload;
-    return `Recategorize expense #${expense.expenseId} to ${displayCategory(expense.category)}`;
+    return `\u062A\u0639\u062F\u064A\u0644 \u062A\u0635\u0646\u064A\u0641 \u0645\u0635\u0631\u0648\u0641 #${expense.expenseId} \u0625\u0644\u0649 ${displayCategoryAr(expense.category)}`;
   }
   if (actionName === "budget.create") {
     const budget2 = payload;
-    return `${budget2.title} - ${budget2.monthlyLimit} EGP${budget2.category ? ` - ${displayCategory(budget2.category)}` : ""}`;
+    return `\u0627\u0642\u062A\u0631\u0627\u062D \u0645\u064A\u0632\u0627\u0646\u064A\u0629: ${budget2.title} - ${budget2.monthlyLimit.toLocaleString("ar-EG")} \u062C\u0646\u064A\u0647${budget2.category ? ` - ${displayCategoryAr(budget2.category)}` : ""}`;
   }
   if (actionName === "profile.update") {
     const profile = payload;
-    return `Update profile ${profile.section}: ${Object.keys(profile.patch).join(", ")}`;
+    return `\u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0634\u062E\u0635\u064A - ${profile.section}: ${Object.keys(profile.patch).join("\u060C ")}`;
   }
   if (actionName === "wallet.create") {
     const wallet = payload;
-    return `Create wallet ${wallet.name} (${wallet.provider})`;
+    return `\u0625\u0636\u0627\u0641\u0629 \u0645\u062D\u0641\u0638\u0629 ${wallet.name} (${wallet.provider})`;
   }
   if (actionName === "wallet.update") {
     const wallet = payload;
-    return `Update wallet #${wallet.walletId}${wallet.name ? ` - ${wallet.name}` : ""}${wallet.balance ? ` - balance ${wallet.balance}` : ""}`;
+    return `\u062A\u062D\u062F\u064A\u062B \u0645\u062D\u0641\u0638\u0629 #${wallet.walletId}${wallet.name ? ` - ${wallet.name}` : ""}${wallet.balance ? ` - \u0631\u0635\u064A\u062F ${wallet.balance}` : ""}`;
   }
   const undo = payload;
-  return `Undo ${undo.targetActionName ?? "last reversible action"}`;
+  return `\u062A\u0631\u0627\u062C\u0639 \u0639\u0646 ${undo.targetActionName ?? "\u0622\u062E\u0631 \u0639\u0645\u0644\u064A\u0629 \u0642\u0627\u0628\u0644\u0629 \u0644\u0644\u062A\u0631\u0627\u062C\u0639"}`;
 }
 function actionTitle(actionName) {
   const titles = {
-    "goal.create": "Confirm goal creation",
-    "goal.update": "Confirm goal update",
-    "goal.stop": "Confirm goal stop",
-    "expense.create": "Confirm expense recording",
-    "expense.recategorize": "Confirm expense recategorization",
-    "budget.create": "Confirm budget plan",
-    "profile.update": "Confirm profile update",
-    "wallet.create": "Confirm wallet creation",
-    "wallet.update": "Confirm wallet update",
-    "action.undo": "Confirm undo"
+    "goal.create": "\u062A\u0623\u0643\u064A\u062F \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0647\u062F\u0641",
+    "goal.update": "\u062A\u0623\u0643\u064A\u062F \u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u0647\u062F\u0641",
+    "goal.stop": "\u062A\u0623\u0643\u064A\u062F \u0625\u064A\u0642\u0627\u0641 \u0627\u0644\u0647\u062F\u0641",
+    "expense.create": "\u062A\u0623\u0643\u064A\u062F \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0645\u0635\u0631\u0648\u0641",
+    "expense.recategorize": "\u062A\u0623\u0643\u064A\u062F \u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u062A\u0635\u0646\u064A\u0641",
+    "budget.create": "\u062A\u0623\u0643\u064A\u062F \u062E\u0637\u0629 \u0627\u0644\u0645\u064A\u0632\u0627\u0646\u064A\u0629",
+    "profile.update": "\u062A\u0623\u0643\u064A\u062F \u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0634\u062E\u0635\u064A",
+    "wallet.create": "\u062A\u0623\u0643\u064A\u062F \u0625\u0636\u0627\u0641\u0629 \u0627\u0644\u0645\u062D\u0641\u0638\u0629",
+    "wallet.update": "\u062A\u0623\u0643\u064A\u062F \u062A\u062D\u062F\u064A\u062B \u0627\u0644\u0645\u062D\u0641\u0638\u0629",
+    "action.undo": "\u062A\u0623\u0643\u064A\u062F \u0627\u0644\u062A\u0631\u0627\u062C\u0639"
   };
-  return titles[actionName] ?? "Confirm action";
+  return titles[actionName] ?? "\u062A\u0623\u0643\u064A\u062F \u0627\u0644\u0639\u0645\u0644\u064A\u0629";
 }
 function actionConfirmationArtifact(action) {
   return {
@@ -179705,13 +175735,14 @@ function actionConfirmationArtifact(action) {
       summary: action.summary,
       risk: action.risk,
       fields: action.payload,
-      confirmLabel: "Confirm",
-      cancelLabel: "Cancel"
+      confirmLabel: "\u062A\u0623\u0643\u064A\u062F",
+      cancelLabel: "\u0625\u0644\u063A\u0627\u0621"
     }
   };
 }
 var init_artifacts = __esm({
   "api/services/action-runtime/artifacts.ts"() {
+    init_category_matcher();
   }
 });
 
@@ -179739,10 +175770,19 @@ function extractAmount(message) {
 }
 function categoryFromMessage(message) {
   const normalized = message.toLowerCase();
-  if (/(اكل|أكل|مطاعم|قهوة|قهوه|عصير|مشروب|مشروبات|كافيه|كافيهات|juice|drink|food|restaurant)/i.test(normalized)) return "food";
-  if (/(مواصلات|بنزين|اوبر|transport|gas)/i.test(normalized)) return "transport";
-  if (/(تسوق|ملابس|shopping)/i.test(normalized)) return "shopping";
-  if (/(ادخار|تحويش|saving)/i.test(normalized)) return "saving";
+  if (/(اكل|أكل|مطاعم|قهوة|قهوه|عصير|مشروب|مشروبات|كافيه|كافيهات|juice|drink|food|restaurant|جبت غدا|جبت فطار|جبت عشا|اتغديت|اتعشيت|فطرت|بقاله|بقالة|جبت اكل|كارفور|خضار|لحمة|groceries)/i.test(normalized)) return "food";
+  if (/(مواصلات|بنزين|اوبر|أوبر|transport|gas|تاكسي|مترو|اتوبيس|أتوبيس|تفويله|تفويلة)/i.test(normalized)) return "transport";
+  if (/(تسوق|ملابس|shopping|اشتريت|هدوم|لبس|جزمة|محل)/i.test(normalized)) return "shopping";
+  if (/(ادخار|إدخار|تحويش|saving)/i.test(normalized)) return "saving";
+  if (/(صحة|صحه|دكتور|دوا|دواء|صيدلية|صيدليه|علاج)/i.test(normalized)) return "health";
+  if (/(فواتير|فاتوره|فاتورة|قسط|اقساط|أقساط|كهربا|غاز|مياه|انترنت|إنترنت|نت|شحن)/i.test(normalized)) return "bills";
+  if (/(مرتب|راتب|دخل|قبض|salary)/i.test(normalized)) return "salary";
+  const compact = message.trim();
+  const looksLikeBareCategory = compact.length <= 30 && !/\d/.test(compact) && compact.split(/\s+/).length <= 4 && !/(حط|سجل|ضيف|اضف|أضف|اعمل|غير|صحح|خليه|ميزانية|مصروف)/i.test(compact);
+  if (looksLikeBareCategory) {
+    const canonical = normalizeCategoryFromUserText(compact);
+    if (canonical !== "uncategorized") return canonical;
+  }
   return void 0;
 }
 function isExpenseCaptureMessage(message) {
@@ -179792,7 +175832,7 @@ function createBudgetPayloadFromMessage(message) {
   if (!amount) return null;
   const category = categoryFromMessage(message);
   return {
-    title: category ? `\u0645\u064A\u0632\u0627\u0646\u064A\u0629 ${category}` : "\u0645\u064A\u0632\u0627\u0646\u064A\u0629 \u0634\u0647\u0631\u064A\u0629 \u062C\u062F\u064A\u062F\u0629",
+    title: category ? `\u0645\u064A\u0632\u0627\u0646\u064A\u0629 ${arabicDisplayName(category)}` : "\u0645\u064A\u0632\u0627\u0646\u064A\u0629 \u0634\u0647\u0631\u064A\u0629 \u062C\u062F\u064A\u062F\u0629",
     category,
     monthlyLimit: amount
   };
@@ -179951,9 +175991,18 @@ function createBudgetSuggestionFromGoal(goal, goalId) {
 async function validateRuntimeAction(_ctx, actionName, payload) {
   if (actionName === "goal.update") return goalUpdatePayloadSchema.parse(payload);
   if (actionName === "goal.stop") return goalStopPayloadSchema.parse(payload);
-  if (actionName === "expense.create") return expenseCreatePayloadSchema.parse(payload);
-  if (actionName === "expense.recategorize") return expenseRecategorizePayloadSchema.parse(payload);
-  if (actionName === "budget.create") return budgetCreatePayloadSchema.parse(payload);
+  if (actionName === "expense.create") {
+    const parsed = expenseCreatePayloadSchema.parse(payload);
+    return { ...parsed, category: normalizeCategoryFromUserText(parsed.category) };
+  }
+  if (actionName === "expense.recategorize") {
+    const parsed = expenseRecategorizePayloadSchema.parse(payload);
+    return { ...parsed, category: normalizeCategoryFromUserText(parsed.category) };
+  }
+  if (actionName === "budget.create") {
+    const parsed = budgetCreatePayloadSchema.parse(payload);
+    return parsed.category ? { ...parsed, category: normalizeCategoryFromUserText(parsed.category) } : parsed;
+  }
   if (actionName === "profile.update") return profileUpdatePayloadSchema.parse(payload);
   if (actionName === "wallet.create") return walletCreatePayloadSchema.parse(payload);
   if (actionName === "wallet.update") return walletUpdatePayloadSchema.parse(payload);
@@ -180135,6 +176184,7 @@ async function executeWalletCreate(ctx, payload) {
     lastFourDigits: payload.lastFourDigits || null,
     balance: payload.balance || "0.00"
   });
+  await invalidateFinanceUserCache(ctx.userId, ctx.userType);
   return {
     walletId: Number(inserted?.insertId || 0),
     ...payload
@@ -180365,6 +176415,7 @@ var init_extended_actions = __esm({
     init_schema2();
     init_connection();
     init_muscle_memory();
+    init_category_registry();
     init_finance_semantic_layer();
     init_user_profile_service();
     budgetCreatePayloadSchema = external_exports.object({
@@ -224794,7 +220845,7 @@ var require_octet_string = __commonJS({
 });
 
 // node_modules/@peculiar/asn1-schema/build/cjs/types/index.js
-var require_types5 = __commonJS({
+var require_types4 = __commonJS({
   "node_modules/@peculiar/asn1-schema/build/cjs/types/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -224815,7 +220866,7 @@ var require_converters = __commonJS({
     var asn1js8 = tslib_1.__importStar(require_build2());
     var bytes_1 = require_bytes();
     var enums_1 = require_enums();
-    var index_1 = require_types5();
+    var index_1 = require_types4();
     exports.AsnAnyConverter = {
       fromASN: (value) => value instanceof asn1js8.Null ? null : (0, bytes_1.toArrayBuffer)(value.valueBeforeDecodeView),
       toASN: (value) => {
@@ -225749,7 +221800,7 @@ var require_cjs = __commonJS({
     exports.AsnSerializer = exports.AsnParser = exports.AsnPropTypes = exports.AsnTypeTypes = exports.AsnSetType = exports.AsnSequenceType = exports.AsnChoiceType = exports.AsnType = exports.AsnProp = void 0;
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
     tslib_1.__exportStar(require_converters(), exports);
-    tslib_1.__exportStar(require_types5(), exports);
+    tslib_1.__exportStar(require_types4(), exports);
     var decorators_1 = require_decorators();
     Object.defineProperty(exports, "AsnProp", { enumerable: true, get: function() {
       return decorators_1.AsnProp;
@@ -228076,7 +224127,7 @@ var require_extension2 = __commonJS({
 });
 
 // node_modules/@peculiar/asn1-x509/build/cjs/types.js
-var require_types6 = __commonJS({
+var require_types5 = __commonJS({
   "node_modules/@peculiar/asn1-x509/build/cjs/types.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -228103,7 +224154,7 @@ var require_tbs_certificate = __commonJS({
     var subject_public_key_info_1 = require_subject_public_key_info();
     var validity_1 = require_validity();
     var extension_1 = require_extension2();
-    var types_1 = require_types6();
+    var types_1 = require_types5();
     var TBSCertificate2 = class {
       version = types_1.Version.v1;
       serialNumber = new ArrayBuffer(0);
@@ -228353,7 +224404,7 @@ var require_cjs2 = __commonJS({
     tslib_1.__exportStar(require_tbs_cert_list(), exports);
     tslib_1.__exportStar(require_tbs_certificate(), exports);
     tslib_1.__exportStar(require_time3(), exports);
-    tslib_1.__exportStar(require_types6(), exports);
+    tslib_1.__exportStar(require_types5(), exports);
     tslib_1.__exportStar(require_validity(), exports);
   }
 });
@@ -228422,7 +224473,7 @@ var require_signer_identifier = __commonJS({
 });
 
 // node_modules/@peculiar/asn1-cms/build/cjs/types.js
-var require_types7 = __commonJS({
+var require_types6 = __commonJS({
   "node_modules/@peculiar/asn1-cms/build/cjs/types.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -228516,7 +224567,7 @@ var require_signer_info = __commonJS({
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
     var asn1_schema_1 = require_cjs();
     var signer_identifier_1 = require_signer_identifier();
-    var types_1 = require_types7();
+    var types_1 = require_types6();
     var attribute_1 = require_attribute2();
     var SignerInfo = class {
       version = types_1.CMSVersion.v0;
@@ -229620,7 +225671,7 @@ var require_encrypted_content_info = __commonJS({
     exports.EncryptedContentInfo = exports.EncryptedContent = void 0;
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
     var asn1_schema_1 = require_cjs();
-    var types_1 = require_types7();
+    var types_1 = require_types6();
     var EncryptedContent = class EncryptedContent {
       value;
       constructedValue;
@@ -229712,7 +225763,7 @@ var require_key_agree_recipient_info = __commonJS({
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
     var asn1_schema_1 = require_cjs();
     var asn1_x509_1 = require_cjs2();
-    var types_1 = require_types7();
+    var types_1 = require_types6();
     var issuer_and_serial_number_1 = require_issuer_and_serial_number();
     var other_key_attribute_1 = require_other_key_attribute();
     var RecipientKeyIdentifier = class {
@@ -229884,7 +225935,7 @@ var require_key_trans_recipient_info = __commonJS({
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
     var asn1_schema_1 = require_cjs();
     var asn1_x509_1 = require_cjs2();
-    var types_1 = require_types7();
+    var types_1 = require_types6();
     var issuer_and_serial_number_1 = require_issuer_and_serial_number();
     var RecipientIdentifier = class RecipientIdentifier {
       subjectKeyIdentifier;
@@ -229941,7 +225992,7 @@ var require_kek_recipient_info = __commonJS({
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
     var asn1_schema_1 = require_cjs();
     var other_key_attribute_1 = require_other_key_attribute();
-    var types_1 = require_types7();
+    var types_1 = require_types6();
     var KEKIdentifier = class {
       keyIdentifier = new asn1_schema_1.OctetString();
       date;
@@ -229999,7 +226050,7 @@ var require_password_recipient_info = __commonJS({
     exports.PasswordRecipientInfo = void 0;
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
     var asn1_schema_1 = require_cjs();
-    var types_1 = require_types7();
+    var types_1 = require_types6();
     var PasswordRecipientInfo = class {
       version = types_1.CMSVersion.v0;
       keyDerivationAlgorithm;
@@ -230242,7 +226293,7 @@ var require_enveloped_data = __commonJS({
     exports.EnvelopedData = exports.UnprotectedAttributes = void 0;
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
     var asn1_schema_1 = require_cjs();
-    var types_1 = require_types7();
+    var types_1 = require_types6();
     var attribute_1 = require_attribute2();
     var recipient_infos_1 = require_recipient_infos();
     var originator_info_1 = require_originator_info();
@@ -230325,7 +226376,7 @@ var require_signed_data = __commonJS({
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
     var asn1_schema_1 = require_cjs();
     var certificate_choices_1 = require_certificate_choices();
-    var types_1 = require_types7();
+    var types_1 = require_types6();
     var encapsulated_content_info_1 = require_encapsulated_content_info();
     var revocation_info_choice_1 = require_revocation_info_choice();
     var signer_info_1 = require_signer_info();
@@ -230411,7 +226462,7 @@ var require_cjs4 = __commonJS({
     tslib_1.__exportStar(require_signed_data(), exports);
     tslib_1.__exportStar(require_signer_identifier(), exports);
     tslib_1.__exportStar(require_signer_info(), exports);
-    tslib_1.__exportStar(require_types7(), exports);
+    tslib_1.__exportStar(require_types6(), exports);
   }
 });
 
@@ -231465,7 +227516,7 @@ var require_lifecycle2 = __commonJS({
 });
 
 // node_modules/tsyringe/dist/cjs/types/index.js
-var require_types8 = __commonJS({
+var require_types7 = __commonJS({
   "node_modules/tsyringe/dist/cjs/types/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -232473,7 +228524,7 @@ var require_cjs7 = __commonJS({
     if (typeof Reflect === "undefined" || !Reflect.getMetadata) {
       throw new Error(`tsyringe requires a reflect polyfill. Please add 'import "reflect-metadata"' to the top of your entry point.`);
     }
-    var types_1 = require_types8();
+    var types_1 = require_types7();
     Object.defineProperty(exports, "Lifecycle", { enumerable: true, get: function() {
       return types_1.Lifecycle;
     } });
@@ -232580,7 +228631,7 @@ var require_object_identifiers6 = __commonJS({
 });
 
 // node_modules/@peculiar/asn1-pfx/build/cjs/bags/types.js
-var require_types9 = __commonJS({
+var require_types8 = __commonJS({
   "node_modules/@peculiar/asn1-pfx/build/cjs/bags/types.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -232604,7 +228655,7 @@ var require_cert_bag = __commonJS({
     exports.id_sdsiCertificate = exports.id_x509Certificate = exports.id_certTypes = exports.CertBag = void 0;
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
     var asn1_schema_1 = require_cjs();
-    var types_1 = require_types9();
+    var types_1 = require_types8();
     var CertBag = class {
       certId = "";
       certValue = new ArrayBuffer(0);
@@ -232636,7 +228687,7 @@ var require_crl_bag = __commonJS({
     exports.id_x509CRL = exports.id_crlTypes = exports.CRLBag = void 0;
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
     var asn1_schema_1 = require_cjs();
-    var types_1 = require_types9();
+    var types_1 = require_types8();
     var CRLBag = class {
       crlId = "";
       crltValue = new ArrayBuffer(0);
@@ -232834,7 +228885,7 @@ var require_bags = __commonJS({
     tslib_1.__exportStar(require_key_bag(), exports);
     tslib_1.__exportStar(require_pkcs8_shrouded_key_bag(), exports);
     tslib_1.__exportStar(require_secret_bag(), exports);
-    tslib_1.__exportStar(require_types9(), exports);
+    tslib_1.__exportStar(require_types8(), exports);
   }
 });
 
@@ -354455,7 +350506,7 @@ var localAuthRouter = router({
       expiresAt: expiresAt2,
       verified: false
     });
-    return { success: true, code };
+    return { success: true };
   }),
   getVerificationSettings: publicProcedure.query(async () => {
     if (WHATSAPP_AUTH_TEMPORARILY_DISABLED) {
@@ -354578,100 +350629,26 @@ var localAuthRouter = router({
   deleteUser: adminProcedure.input(external_exports.object({ id: external_exports.number() })).mutation(async ({ input }) => {
     const userId = input.id;
     const userType = "local";
-    await db.delete(expenses).where(
-      and(eq(expenses.userId, userId), eq(expenses.userType, userType))
-    );
-    await db.delete(sessions).where(
-      and(eq(sessions.userId, userId), eq(sessions.userType, userType))
-    );
-    await db.delete(userAnalytics).where(
-      and(
-        eq(userAnalytics.userId, userId),
-        eq(userAnalytics.userType, userType)
-      )
-    );
-    await db.delete(supportTickets).where(
-      and(
-        eq(supportTickets.userId, userId),
-        eq(supportTickets.userType, userType)
-      )
-    );
-    await db.delete(userWallets).where(
-      and(
-        eq(userWallets.userId, userId),
-        eq(userWallets.userType, userType)
-      )
-    );
-    await db.delete(proSubscriptions).where(
-      and(
-        eq(proSubscriptions.userId, userId),
-        eq(proSubscriptions.userType, userType)
-      )
-    );
-    await db.delete(monthlyReports).where(
-      and(
-        eq(monthlyReports.userId, userId),
-        eq(monthlyReports.userType, userType)
-      )
-    );
-    await db.delete(aiSummaries).where(
-      and(
-        eq(aiSummaries.userId, userId),
-        eq(aiSummaries.userType, userType)
-      )
-    );
-    await db.delete(userProfiles).where(
-      and(
-        eq(userProfiles.userId, userId),
-        eq(userProfiles.userType, userType)
-      )
-    );
-    await db.delete(profileLearningEvents).where(
-      and(
-        eq(profileLearningEvents.userId, userId),
-        eq(profileLearningEvents.userType, userType)
-      )
-    );
-    await db.delete(monthlyBehaviorSnapshots).where(
-      and(
-        eq(monthlyBehaviorSnapshots.userId, userId),
-        eq(monthlyBehaviorSnapshots.userType, userType)
-      )
-    );
-    await db.delete(userDictionaries).where(
-      and(
-        eq(userDictionaries.userId, userId),
-        eq(userDictionaries.userType, userType)
-      )
-    );
-    await db.delete(classificationLogs).where(
-      and(
-        eq(classificationLogs.userId, userId),
-        eq(classificationLogs.userType, userType)
-      )
-    );
-    await db.delete(voiceUsage).where(
-      and(eq(voiceUsage.userId, userId), eq(voiceUsage.userType, userType))
-    );
-    await db.delete(webhookTokens).where(
-      and(
-        eq(webhookTokens.userId, userId),
-        eq(webhookTokens.userType, userType)
-      )
-    );
-    await db.delete(rawSmsEvents).where(
-      and(
-        eq(rawSmsEvents.userId, userId),
-        eq(rawSmsEvents.userType, userType)
-      )
-    );
-    await db.delete(expenseCategories).where(
-      and(
-        eq(expenseCategories.userId, userId),
-        eq(expenseCategories.userType, userType)
-      )
-    );
-    await db.delete(localUsers).where(eq(localUsers.id, userId));
+    await db.transaction(async (tx) => {
+      await tx.delete(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType)));
+      await tx.delete(sessions).where(and(eq(sessions.userId, userId), eq(sessions.userType, userType)));
+      await tx.delete(userAnalytics).where(and(eq(userAnalytics.userId, userId), eq(userAnalytics.userType, userType)));
+      await tx.delete(supportTickets).where(and(eq(supportTickets.userId, userId), eq(supportTickets.userType, userType)));
+      await tx.delete(userWallets).where(and(eq(userWallets.userId, userId), eq(userWallets.userType, userType)));
+      await tx.delete(proSubscriptions).where(and(eq(proSubscriptions.userId, userId), eq(proSubscriptions.userType, userType)));
+      await tx.delete(monthlyReports).where(and(eq(monthlyReports.userId, userId), eq(monthlyReports.userType, userType)));
+      await tx.delete(aiSummaries).where(and(eq(aiSummaries.userId, userId), eq(aiSummaries.userType, userType)));
+      await tx.delete(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)));
+      await tx.delete(profileLearningEvents).where(and(eq(profileLearningEvents.userId, userId), eq(profileLearningEvents.userType, userType)));
+      await tx.delete(monthlyBehaviorSnapshots).where(and(eq(monthlyBehaviorSnapshots.userId, userId), eq(monthlyBehaviorSnapshots.userType, userType)));
+      await tx.delete(userDictionaries).where(and(eq(userDictionaries.userId, userId), eq(userDictionaries.userType, userType)));
+      await tx.delete(classificationLogs).where(and(eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType)));
+      await tx.delete(voiceUsage).where(and(eq(voiceUsage.userId, userId), eq(voiceUsage.userType, userType)));
+      await tx.delete(webhookTokens).where(and(eq(webhookTokens.userId, userId), eq(webhookTokens.userType, userType)));
+      await tx.delete(rawSmsEvents).where(and(eq(rawSmsEvents.userId, userId), eq(rawSmsEvents.userType, userType)));
+      await tx.delete(expenseCategories).where(and(eq(expenseCategories.userId, userId), eq(expenseCategories.userType, userType)));
+      await tx.delete(localUsers).where(eq(localUsers.id, userId));
+    });
     return { success: true };
   }),
   updateRole: adminProcedure.input(
@@ -354687,6 +350664,7 @@ var localAuthRouter = router({
 
 // api/expense-router.ts
 init_zod();
+init_dist2();
 init_middleware();
 init_connection();
 init_schema2();
@@ -357622,6 +353600,63 @@ function safeDayDiff(start, end) {
   );
   return Number.isFinite(diff) && diff > 0 ? diff : 1;
 }
+function escapeRegex2(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+function buildArabicNameRegex(name2) {
+  const escaped = escapeRegex2(name2);
+  const looseName = escaped.replace(/[\u0627\u0623\u0625\u0622]/g, "[\u0627\u0623\u0625\u0622]").replace(/[\u064A\u0649]/g, "[\u064A\u0649]").replace(/[\u0647\u0629]/g, "[\u0647\u0629]");
+  return new RegExp(`(?:^|\\s)(${looseName})(?:\\s|$)`);
+}
+function enrichTextWithNameRelation(text2, name2, relation) {
+  const nameRegex = buildArabicNameRegex(name2);
+  if (nameRegex.test(text2)) {
+    return text2.replace(
+      nameRegex,
+      (match2, p1) => match2.replace(p1, `${p1} (${relation})`)
+    );
+  }
+  const looseRegex = new RegExp(
+    `(${escapeRegex2(name2).replace(/[\u0627\u0623\u0625\u0622]/g, "[\u0627\u0623\u0625\u0622]").replace(/[\u064A\u0649]/g, "[\u064A\u0649]").replace(/[\u0647\u0629]/g, "[\u0647\u0629]")})`
+  );
+  if (looseRegex.test(text2)) {
+    return text2.replace(
+      looseRegex,
+      (match2, p1) => match2.replace(p1, `${p1} (${relation})`)
+    );
+  }
+  return `${text2} (${name2} ${relation})`;
+}
+async function updateStreak(dbInstance, userId, userType) {
+  const now = /* @__PURE__ */ new Date();
+  const todayStr = now.toISOString().split("T")[0];
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split("T")[0];
+  if (userType === "oauth") {
+    const [u3] = await dbInstance.select().from(users).where(eq(users.id, Number(userId)));
+    if (u3) {
+      const lastDate = u3.lastStreakAt ? new Date(u3.lastStreakAt) : null;
+      const lastStr = lastDate ? lastDate.toISOString().split("T")[0] : null;
+      if (lastStr !== todayStr) {
+        const newStreak = lastStr === yesterdayStr ? (u3.currentStreak || 0) + 1 : 1;
+        const highestStreak = Math.max(u3.highestStreak || 0, newStreak);
+        await dbInstance.update(users).set({ currentStreak: newStreak, highestStreak, lastStreakAt: now }).where(eq(users.id, Number(userId)));
+      }
+    }
+  } else {
+    const [u3] = await dbInstance.select().from(localUsers).where(eq(localUsers.id, userId));
+    if (u3) {
+      const lastDate = u3.lastStreakAt ? new Date(u3.lastStreakAt) : null;
+      const lastStr = lastDate ? lastDate.toISOString().split("T")[0] : null;
+      if (lastStr !== todayStr) {
+        const newStreak = lastStr === yesterdayStr ? (u3.currentStreak || 0) + 1 : 1;
+        const highestStreak = Math.max(u3.highestStreak || 0, newStreak);
+        await dbInstance.update(localUsers).set({ currentStreak: newStreak, highestStreak, lastStreakAt: now }).where(eq(localUsers.id, userId));
+      }
+    }
+  }
+}
 var statsCategoryDisplayNames = {
   food: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628",
   transport: "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
@@ -357654,6 +353689,12 @@ var expenseRouter = router({
     const userId = ctx.user.id;
     const requestUserType = ctx.user.type;
     const expenseDate = input.date ? new Date(input.date) : /* @__PURE__ */ new Date();
+    if (isNaN(expenseDate.getTime())) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "\u0627\u0644\u062A\u0627\u0631\u064A\u062E \u063A\u064A\u0631 \u0635\u062D\u064A\u062D"
+      });
+    }
     await db3.insert(expenses).values({
       userId,
       userType: requestUserType,
@@ -357690,42 +353731,7 @@ var expenseRouter = router({
       }
     }
     try {
-      const now = /* @__PURE__ */ new Date();
-      const todayStr = now.toISOString().split("T")[0];
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split("T")[0];
-      if (requestUserType === "oauth") {
-        const [u3] = await db3.select().from(users).where(eq(users.id, Number(userId)));
-        if (u3) {
-          const lastDate = u3.lastStreakAt ? new Date(u3.lastStreakAt) : null;
-          const lastStr = lastDate ? lastDate.toISOString().split("T")[0] : null;
-          if (lastStr !== todayStr) {
-            let newStreak = lastStr === yesterdayStr ? (u3.currentStreak || 0) + 1 : 1;
-            let highestStreak = Math.max(u3.highestStreak || 0, newStreak);
-            await db3.update(users).set({
-              currentStreak: newStreak,
-              highestStreak,
-              lastStreakAt: now
-            }).where(eq(users.id, Number(userId)));
-          }
-        }
-      } else {
-        const [u3] = await db3.select().from(localUsers).where(eq(localUsers.id, userId));
-        if (u3) {
-          const lastDate = u3.lastStreakAt ? new Date(u3.lastStreakAt) : null;
-          const lastStr = lastDate ? lastDate.toISOString().split("T")[0] : null;
-          if (lastStr !== todayStr) {
-            let newStreak = lastStr === yesterdayStr ? (u3.currentStreak || 0) + 1 : 1;
-            let highestStreak = Math.max(u3.highestStreak || 0, newStreak);
-            await db3.update(localUsers).set({
-              currentStreak: newStreak,
-              highestStreak,
-              lastStreakAt: now
-            }).where(eq(localUsers.id, userId));
-          }
-        }
-      }
+      await updateStreak(db3, userId, requestUserType);
     } catch (err) {
       console.error("Streak logic error:", err);
     }
@@ -357749,7 +353755,7 @@ var expenseRouter = router({
         source: external_exports.enum(["voice", "manual", "ai_parsed", "image", "sms"]).default("manual"),
         date: external_exports.string().optional()
       })
-    )
+    ).max(100, "\u062D\u062F \u0623\u0642\u0635\u0649 100 \u0639\u0645\u0644\u064A\u0629 \u0641\u064A \u0627\u0644\u0637\u0644\u0628 \u0627\u0644\u0648\u0627\u062D\u062F")
   ).mutation(async ({ ctx, input }) => {
     const db3 = getDb();
     const userId = ctx.user.id;
@@ -357780,34 +353786,7 @@ var expenseRouter = router({
       }
     }
     try {
-      const now = /* @__PURE__ */ new Date();
-      const todayStr = now.toISOString().split("T")[0];
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split("T")[0];
-      if (requestUserType === "oauth") {
-        const [u3] = await db3.select().from(users).where(eq(users.id, Number(userId)));
-        if (u3) {
-          const lastDate = u3.lastStreakAt ? new Date(u3.lastStreakAt) : null;
-          const lastStr = lastDate ? lastDate.toISOString().split("T")[0] : null;
-          if (lastStr !== todayStr) {
-            let newStreak = lastStr === yesterdayStr ? (u3.currentStreak || 0) + 1 : 1;
-            let highestStreak = Math.max(u3.highestStreak || 0, newStreak);
-            await db3.update(users).set({ currentStreak: newStreak, highestStreak, lastStreakAt: now }).where(eq(users.id, Number(userId)));
-          }
-        }
-      } else {
-        const [u3] = await db3.select().from(localUsers).where(eq(localUsers.id, userId));
-        if (u3) {
-          const lastDate = u3.lastStreakAt ? new Date(u3.lastStreakAt) : null;
-          const lastStr = lastDate ? lastDate.toISOString().split("T")[0] : null;
-          if (lastStr !== todayStr) {
-            let newStreak = lastStr === yesterdayStr ? (u3.currentStreak || 0) + 1 : 1;
-            let highestStreak = Math.max(u3.highestStreak || 0, newStreak);
-            await db3.update(localUsers).set({ currentStreak: newStreak, highestStreak, lastStreakAt: now }).where(eq(localUsers.id, userId));
-          }
-        }
-      }
+      await updateStreak(db3, userId, requestUserType);
     } catch (err) {
       console.error("Streak logic error:", err);
     }
@@ -358058,7 +354037,7 @@ var expenseRouter = router({
   }),
   getMonthlyStats: authedProcedure.input(
     external_exports.object({
-      month: external_exports.string(),
+      month: external_exports.string().regex(/^\d{4}-\d{2}$/, "\u0627\u0644\u0634\u0647\u0631 \u0644\u0627\u0632\u0645 \u064A\u0643\u0648\u0646 \u0628\u0635\u064A\u063A\u0629 YYYY-MM"),
       salaryDay: external_exports.number().min(1).max(31).optional().nullable()
     })
   ).query(async ({ ctx, input }) => {
@@ -358380,7 +354359,7 @@ var expenseRouter = router({
       };
     });
   }),
-  getYearlyStats: authedProcedure.input(external_exports.object({ year: external_exports.string() })).query(async ({ ctx, input }) => {
+  getYearlyStats: authedProcedure.input(external_exports.object({ year: external_exports.string().regex(/^\d{4}$/, "\u0627\u0644\u0633\u0646\u0629 \u0644\u0627\u0632\u0645 \u062A\u0643\u0648\u0646 4 \u0623\u0631\u0642\u0627\u0645") })).query(async ({ ctx, input }) => {
     const db3 = getDb();
     const userId = ctx.user.id;
     const userType = ctx.user.type;
@@ -358394,8 +354373,8 @@ var expenseRouter = router({
         lte(expenses.date, endDate)
       )
     );
-    const totalExpense = items.filter((i2) => i2.type === "expense").reduce((sum4, item) => sum4 + Number(item.amount), 0);
-    const totalIncome = items.filter((i2) => i2.type === "income").reduce((sum4, item) => sum4 + Number(item.amount), 0);
+    const totalExpense = items.filter((i2) => i2.type === "expense").reduce((sum4, item) => sum4.plus(new decimal_default(item.amount)), new decimal_default(0)).toNumber();
+    const totalIncome = items.filter((i2) => i2.type === "income").reduce((sum4, item) => sum4.plus(new decimal_default(item.amount)), new decimal_default(0)).toNumber();
     const monthMap = {};
     for (let i2 = 1; i2 <= 12; i2++) {
       monthMap[`${input.year}-${String(i2).padStart(2, "0")}`] = 0;
@@ -358434,9 +354413,16 @@ var expenseRouter = router({
       monthlyData
     };
   }),
-  getCategoryList: authedProcedure.query(async () => {
+  getCategoryList: authedProcedure.query(async ({ ctx }) => {
     const db3 = getDb();
-    return await db3.select().from(expenseCategories);
+    const userId = ctx.user.id;
+    const userType = ctx.user.type;
+    return await db3.select().from(expenseCategories).where(
+      and(
+        eq(expenseCategories.userId, userId),
+        eq(expenseCategories.userType, userType)
+      )
+    );
   }),
   createCategory: authedProcedure.input(
     external_exports.object({
@@ -358537,18 +354523,7 @@ var expenseRouter = router({
         }).where(eq(pendingClarifications.id, input.clarificationId));
         let currentEnrichedText = clarification.originalText;
         for (const [name2, rel] of Object.entries(resolvedAnswers)) {
-          const looseName = name2.replace(/[اأإآ]/g, "[\u0627\u0623\u0625\u0622]").replace(/[يى]/g, "[\u064A\u0649]").replace(/[هة]/g, "[\u0647\u0629]");
-          const nameRegex = new RegExp(`(?:^|\\s)(${looseName})(?:\\s|$)`);
-          if (nameRegex.test(currentEnrichedText)) {
-            currentEnrichedText = currentEnrichedText.replace(nameRegex, (match2, p1) => match2.replace(p1, `${p1} (${rel})`));
-          } else {
-            const looseRegex = new RegExp(`(${looseName})`);
-            if (looseRegex.test(currentEnrichedText)) {
-              currentEnrichedText = currentEnrichedText.replace(looseRegex, (match2, p1) => match2.replace(p1, `${p1} (${rel})`));
-            } else {
-              currentEnrichedText = `${currentEnrichedText} (${name2} ${rel})`;
-            }
-          }
+          currentEnrichedText = enrichTextWithNameRelation(currentEnrichedText, name2, rel);
         }
         return {
           success: false,
@@ -358563,18 +354538,7 @@ var expenseRouter = router({
       try {
         let enrichedText = clarification.originalText;
         for (const [name2, rel] of Object.entries(resolvedAnswers)) {
-          const looseName = name2.replace(/[اأإآ]/g, "[\u0627\u0623\u0625\u0622]").replace(/[يى]/g, "[\u064A\u0649]").replace(/[هة]/g, "[\u0647\u0629]");
-          const nameRegex = new RegExp(`(?:^|\\s)(${looseName})(?:\\s|$)`);
-          if (nameRegex.test(enrichedText)) {
-            enrichedText = enrichedText.replace(nameRegex, (match2, p1) => match2.replace(p1, `${p1} (${rel})`));
-          } else {
-            const looseRegex = new RegExp(`(${looseName})`);
-            if (looseRegex.test(enrichedText)) {
-              enrichedText = enrichedText.replace(looseRegex, (match2, p1) => match2.replace(p1, `${p1} (${rel})`));
-            } else {
-              enrichedText = `${enrichedText} (${name2} ${rel})`;
-            }
-          }
+          enrichedText = enrichTextWithNameRelation(enrichedText, name2, rel);
         }
         const { runSmartPipeline: runSmartPipeline2 } = await Promise.resolve().then(() => (init_smart_pipeline(), smart_pipeline_exports));
         const { env: env2 } = await Promise.resolve().then(() => (init_env(), env_exports));
@@ -359105,16 +355069,20 @@ async function loadAICostOverview(input = {}) {
 
 // api/admin-router.ts
 var import_web_push2 = __toESM(require_src2(), 1);
-var vapidPublicKey = process.env.VAPID_PUBLIC_KEY || "BBtKP6w97Av5YT6NvKCh3EostLvYiXIHQqM-QGSMlMYRk8fJPalWo3dvXEcghrnlizV1selpCWTOjU4qTjIBb3o";
-var vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || "-31rwR0LxanvleE02FotUVGGx3mVno1YJtR7hTaNHrA";
-try {
-  import_web_push2.default.setVapidDetails(
-    "mailto:admin@smartspend.ai",
-    vapidPublicKey,
-    vapidPrivateKey
-  );
-} catch (error48) {
-  console.warn("\u26A0\uFE0F Failed to set VAPID details in admin-router.ts:", error48);
+var vapidPublicKey = process.env.VAPID_PUBLIC_KEY || "";
+var vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || "";
+if (vapidPublicKey && vapidPrivateKey) {
+  try {
+    import_web_push2.default.setVapidDetails(
+      "mailto:admin@smartspend.ai",
+      vapidPublicKey,
+      vapidPrivateKey
+    );
+  } catch (error48) {
+    console.warn("\u26A0\uFE0F Failed to set VAPID details in admin-router.ts:", error48);
+  }
+} else {
+  console.warn("\u26A0\uFE0F VAPID keys not configured \u2014 push notifications will not work.");
 }
 function isMissingTableError2(err, table) {
   const message = err instanceof Error ? err.message : String(err ?? "");
@@ -359197,12 +355165,18 @@ var adminRouter = router({
     let localQuery = db.select().from(localUsers).$dynamic();
     if (localFilters.length)
       localQuery = localQuery.where(and(...localFilters));
-    const oauthUsers = await oauthQuery.limit(limit).offset(offset);
-    const localUsersList = await localQuery.limit(limit).offset(offset);
-    const oauthCount = await db.select({ count: count() }).from(users);
-    const localCount = await db.select({ count: count() }).from(localUsers);
-    const oauthIds = oauthUsers.map((u3) => u3.id);
-    const localIds = localUsersList.map((u3) => u3.id);
+    const [oauthUsersAll, localUsersAll] = await Promise.all([
+      oauthQuery.orderBy(desc(users.createdAt)),
+      localQuery.orderBy(desc(localUsers.createdAt))
+    ]);
+    const merged = [
+      ...oauthUsersAll.map((u3) => ({ ...u3, userType: "oauth" })),
+      ...localUsersAll.map((u3) => ({ ...u3, userType: "local" }))
+    ];
+    const total = merged.length;
+    const paged = merged.slice(offset, offset + limit);
+    const oauthIds = paged.filter((u3) => u3.userType === "oauth").map((u3) => u3.id);
+    const localIds = paged.filter((u3) => u3.userType === "local").map((u3) => u3.id);
     const statMap = /* @__PURE__ */ new Map();
     const expenseParts = [];
     if (oauthIds.length)
@@ -359235,27 +355209,17 @@ var adminRouter = router({
         });
       }
     }
-    const enrichedOAuth = oauthUsers.map((u3) => {
-      const s3 = statMap.get(`oauth:${u3.id}`);
+    const enriched = paged.map((u3) => {
+      const s3 = statMap.get(`${u3.userType}:${u3.id}`);
       return {
         ...u3,
-        userType: "oauth",
-        expenseCount: s3?.expenseCount ?? 0,
-        totalSpent: s3?.totalSpent ?? "0"
-      };
-    });
-    const enrichedLocal = localUsersList.map((u3) => {
-      const s3 = statMap.get(`local:${u3.id}`);
-      return {
-        ...u3,
-        userType: "local",
         expenseCount: s3?.expenseCount ?? 0,
         totalSpent: s3?.totalSpent ?? "0"
       };
     });
     return {
-      users: [...enrichedOAuth, ...enrichedLocal],
-      total: (oauthCount[0]?.count ?? 0) + (localCount[0]?.count ?? 0),
+      users: enriched,
+      total,
       page,
       limit
     };
@@ -359302,101 +355266,29 @@ var adminRouter = router({
     })
   ).mutation(async ({ input }) => {
     const { userId, userType } = input;
-    await db.delete(expenses).where(
-      and(eq(expenses.userId, userId), eq(expenses.userType, userType))
-    );
-    await db.delete(sessions).where(
-      and(eq(sessions.userId, userId), eq(sessions.userType, userType))
-    );
-    await db.delete(userAnalytics).where(
-      and(
-        eq(userAnalytics.userId, userId),
-        eq(userAnalytics.userType, userType)
-      )
-    );
-    await db.delete(supportTickets).where(
-      and(
-        eq(supportTickets.userId, userId),
-        eq(supportTickets.userType, userType)
-      )
-    );
-    await db.delete(userWallets).where(
-      and(
-        eq(userWallets.userId, userId),
-        eq(userWallets.userType, userType)
-      )
-    );
-    await db.delete(proSubscriptions).where(
-      and(
-        eq(proSubscriptions.userId, userId),
-        eq(proSubscriptions.userType, userType)
-      )
-    );
-    await db.delete(monthlyReports).where(
-      and(
-        eq(monthlyReports.userId, userId),
-        eq(monthlyReports.userType, userType)
-      )
-    );
-    await db.delete(aiSummaries).where(
-      and(
-        eq(aiSummaries.userId, userId),
-        eq(aiSummaries.userType, userType)
-      )
-    );
-    await db.delete(userProfiles).where(
-      and(
-        eq(userProfiles.userId, userId),
-        eq(userProfiles.userType, userType)
-      )
-    );
-    await db.delete(profileLearningEvents).where(
-      and(
-        eq(profileLearningEvents.userId, userId),
-        eq(profileLearningEvents.userType, userType)
-      )
-    );
-    await db.delete(monthlyBehaviorSnapshots).where(
-      and(
-        eq(monthlyBehaviorSnapshots.userId, userId),
-        eq(monthlyBehaviorSnapshots.userType, userType)
-      )
-    );
-    await db.delete(userDictionaries).where(
-      and(
-        eq(userDictionaries.userId, userId),
-        eq(userDictionaries.userType, userType)
-      )
-    );
-    await db.delete(classificationLogs).where(
-      and(
-        eq(classificationLogs.userId, userId),
-        eq(classificationLogs.userType, userType)
-      )
-    );
-    await db.delete(voiceUsage).where(
-      and(eq(voiceUsage.userId, userId), eq(voiceUsage.userType, userType))
-    );
-    await db.delete(webhookTokens).where(
-      and(
-        eq(webhookTokens.userId, userId),
-        eq(webhookTokens.userType, userType)
-      )
-    );
-    await db.delete(rawSmsEvents).where(
-      and(
-        eq(rawSmsEvents.userId, userId),
-        eq(rawSmsEvents.userType, userType)
-      )
-    );
-    await db.delete(expenseCategories).where(
-      and(
-        eq(expenseCategories.userId, userId),
-        eq(expenseCategories.userType, userType)
-      )
-    );
-    const table = userType === "oauth" ? users : localUsers;
-    await db.delete(table).where(eq(table.id, userId));
+    await db.transaction(async (tx) => {
+      await tx.delete(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType)));
+      await tx.delete(sessions).where(and(eq(sessions.userId, userId), eq(sessions.userType, userType)));
+      await tx.delete(userAnalytics).where(and(eq(userAnalytics.userId, userId), eq(userAnalytics.userType, userType)));
+      await tx.delete(supportTickets).where(and(eq(supportTickets.userId, userId), eq(supportTickets.userType, userType)));
+      await tx.delete(userWallets).where(and(eq(userWallets.userId, userId), eq(userWallets.userType, userType)));
+      await tx.delete(proSubscriptions).where(and(eq(proSubscriptions.userId, userId), eq(proSubscriptions.userType, userType)));
+      await tx.delete(monthlyReports).where(and(eq(monthlyReports.userId, userId), eq(monthlyReports.userType, userType)));
+      await tx.delete(aiSummaries).where(and(eq(aiSummaries.userId, userId), eq(aiSummaries.userType, userType)));
+      await tx.delete(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)));
+      await tx.delete(profileLearningEvents).where(and(eq(profileLearningEvents.userId, userId), eq(profileLearningEvents.userType, userType)));
+      await tx.delete(monthlyBehaviorSnapshots).where(and(eq(monthlyBehaviorSnapshots.userId, userId), eq(monthlyBehaviorSnapshots.userType, userType)));
+      await tx.delete(userDictionaries).where(and(eq(userDictionaries.userId, userId), eq(userDictionaries.userType, userType)));
+      await tx.delete(classificationLogs).where(and(eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType)));
+      await tx.delete(voiceUsage).where(and(eq(voiceUsage.userId, userId), eq(voiceUsage.userType, userType)));
+      await tx.delete(webhookTokens).where(and(eq(webhookTokens.userId, userId), eq(webhookTokens.userType, userType)));
+      await tx.delete(rawSmsEvents).where(and(eq(rawSmsEvents.userId, userId), eq(rawSmsEvents.userType, userType)));
+      await tx.delete(expenseCategories).where(and(eq(expenseCategories.userId, userId), eq(expenseCategories.userType, userType)));
+      await tx.delete(pushSubscriptions).where(and(eq(pushSubscriptions.userId, userId), eq(pushSubscriptions.userType, userType)));
+      await tx.delete(pendingClarifications).where(and(eq(pendingClarifications.userId, userId), eq(pendingClarifications.userType, userType)));
+      const table = userType === "oauth" ? users : localUsers;
+      await tx.delete(table).where(eq(table.id, userId));
+    });
     return { success: true, message: "\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0646\u062C\u0627\u062D" };
   }),
   // ─── Get User Sessions ───
@@ -359618,7 +355510,105 @@ var adminRouter = router({
     return config3;
   }),
   updateSettings: adminProcedure.input(external_exports.record(external_exports.string(), external_exports.string())).mutation(async ({ input }) => {
+    const allowedKeys = /* @__PURE__ */ new Set([
+      "ai_api_key",
+      "ai_api_key_2",
+      "voice_call_model",
+      "voice_call_enabled_free",
+      "voice_call_limit_free",
+      "voice_call_duration_free",
+      "voice_call_enabled_pro",
+      "voice_call_limit_pro",
+      "voice_call_duration_pro",
+      "voice_call_enabled_ultra",
+      "voice_call_limit_ultra",
+      "voice_call_duration_ultra",
+      "groq_api_key",
+      "fireworks_api_key",
+      "ai_model_free",
+      "ai_model_pro",
+      "ai_model_ultra",
+      "ai_model_reports",
+      "free_routing_ranges",
+      "pro_routing_ranges",
+      "free_token_limit",
+      "pro_token_limit",
+      "ultra_token_limit",
+      "free_daily_limit",
+      "pro_daily_limit",
+      "ultra_daily_limit",
+      "free_max_per_request",
+      "pro_max_per_request",
+      "ultra_max_per_request",
+      "free_ai_analysis",
+      "pro_ai_analysis",
+      "ultra_ai_analysis",
+      "free_ai_parse",
+      "pro_ai_parse",
+      "ultra_ai_parse",
+      "voice_limit_free",
+      "voice_limit_pro",
+      "voice_limit_ultra",
+      "voice_per_req_free",
+      "voice_per_req_pro",
+      "voice_per_req_ultra",
+      "free_stt_provider",
+      "free_stt_model",
+      "free_stt_key_slot",
+      "pro_stt_provider",
+      "pro_stt_model",
+      "pro_stt_key_slot",
+      "stt_api_key",
+      "stt_api_key_2",
+      "stt_model",
+      "stt_fallback_model",
+      "stt_processing_mode",
+      "report_provider_free",
+      "report_model_free",
+      "report_key_slot_free",
+      "report_provider_pro",
+      "report_model_pro",
+      "report_key_slot_pro",
+      "confidence_auto_save",
+      "confidence_review",
+      "parser_fast_decomposition_enabled",
+      "parser_person_memory_enabled",
+      "parser_local_verifier_enabled",
+      "parser_auto_save_threshold",
+      "parser_review_threshold",
+      "ai_response_length",
+      "ai_focus",
+      "ai_system_prompt",
+      "ai_advanced_instructions",
+      "ai_report_structure_override",
+      "report_limit_free",
+      "report_limit_pro",
+      "report_limit_ultra",
+      "report_words_free",
+      "report_words_pro",
+      "report_words_ultra",
+      "report_max_tokens_free",
+      "report_max_tokens_pro",
+      "report_max_tokens_ultra",
+      "report_subcats_free",
+      "report_subcats_pro",
+      "report_subcats_ultra",
+      "report_top_items_pro",
+      "report_top_items_ultra",
+      "sms_limit_free",
+      "sms_limit_pro",
+      "sms_limit_ultra",
+      "promo_code_discount",
+      "offline_limit_free",
+      "offline_limit_pro",
+      "pipeline_version",
+      "whatsapp_otp_enabled"
+    ]);
     for (const [key, value] of Object.entries(input)) {
+      if (!allowedKeys.has(key)) {
+        console.warn(`[Admin] Rejected unknown setting key: ${key}`);
+        continue;
+      }
       if (value !== void 0 && value !== null) {
         await db.insert(systemSettings).values({ key, value }).onDuplicateKeyUpdate({ set: { value } });
       }
@@ -360663,6 +356653,7 @@ var adminWhatsappRouter = router({
 // api/support-router.ts
 init_zod();
 init_middleware();
+init_dist2();
 init_connection();
 init_schema2();
 init_drizzle_orm();
@@ -360708,7 +356699,7 @@ var supportRouter = router({
   // ─── Get Ticket Details ───
   getById: authedProcedure.input(external_exports.object({ id: external_exports.number() })).query(async ({ ctx, input }) => {
     const ticket = await db.select().from(supportTickets).where(eq(supportTickets.id, input.id)).limit(1);
-    if (!ticket[0]) throw new Error("\u0627\u0644\u062A\u0630\u0643\u0631\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629");
+    if (!ticket[0]) throw new TRPCError({ code: "NOT_FOUND", message: "\u0627\u0644\u062A\u0630\u0643\u0631\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
     if (ticket[0].userId !== ctx.user.id || ticket[0].userType !== ctx.user.type) {
       if (ctx.user.role !== "moderator" && ctx.user.role !== "admin") {
         throw new Error("\u063A\u064A\u0631 \u0645\u0635\u0631\u062D");
@@ -360748,8 +356739,23 @@ var supportRouter = router({
         return { ...t3, userName: name2, userAvatar: avatarUrl };
       })
     );
+    const oauthIds = [...new Set(list.filter((t3) => t3.userType === "oauth").map((t3) => t3.userId))];
+    const localIds = [...new Set(list.filter((t3) => t3.userType === "local").map((t3) => t3.userId))];
+    const nameMap = /* @__PURE__ */ new Map();
+    if (oauthIds.length > 0) {
+      const oauthRows = await db.select({ id: users.id, name: users.name, avatar: users.avatar }).from(users).where(inArray(users.id, oauthIds));
+      for (const r2 of oauthRows) nameMap.set(`oauth:${r2.id}`, { name: r2.name, avatar: r2.avatar || "" });
+    }
+    if (localIds.length > 0) {
+      const localRows = await db.select({ id: localUsers.id, name: localUsers.name }).from(localUsers).where(inArray(localUsers.id, localIds));
+      for (const r2 of localRows) nameMap.set(`local:${r2.id}`, { name: r2.name, avatar: "" });
+    }
+    const enrichedList = list.map((t3) => {
+      const info = nameMap.get(`${t3.userType}:${t3.userId}`);
+      return { ...t3, userName: info?.name || "\u0645\u062C\u0647\u0648\u0644", userAvatar: info?.avatar || "" };
+    });
     const total = await db.select({ count: count() }).from(supportTickets);
-    return { list: enriched, total: total[0]?.count ?? 0, page, limit };
+    return { list: enrichedList, total: total[0]?.count ?? 0, page, limit };
   }),
   // ─── Respond to Ticket ───
   respond: moderatorProcedure.input(
@@ -360780,7 +356786,7 @@ var supportRouter = router({
   // ─── Close Ticket ───
   close: authedProcedure.input(external_exports.object({ id: external_exports.number() })).mutation(async ({ ctx, input }) => {
     const ticket = await db.select().from(supportTickets).where(eq(supportTickets.id, input.id)).limit(1);
-    if (!ticket[0]) throw new Error("\u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F");
+    if (!ticket[0]) throw new TRPCError({ code: "NOT_FOUND", message: "\u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
     if (ticket[0].userId !== ctx.user.id || ticket[0].userType !== ctx.user.type) {
       if (ctx.user.role !== "moderator" && ctx.user.role !== "admin") {
         throw new Error("\u063A\u064A\u0631 \u0645\u0635\u0631\u062D");
@@ -360849,7 +356855,7 @@ var exportRouter = router({
     if (input.endDate)
       conditions.push(lte(expenses.date, new Date(input.endDate)));
     if (input.type !== "all") conditions.push(eq(expenses.type, input.type));
-    const data = await db.select().from(expenses).where(and(...conditions));
+    const data = await db.select().from(expenses).where(and(...conditions)).limit(1e4);
     const formatted = data.map((e2) => ({
       \u0627\u0644\u062A\u0627\u0631\u064A\u062E: e2.date.toISOString().split("T")[0],
       \u0627\u0644\u0646\u0648\u0639: e2.type === "income" ? "\u062F\u062E\u0644" : "\u0645\u0635\u0631\u0648\u0641",
@@ -361001,6 +357007,7 @@ var sessionRouter = router({
   listAll: moderatorProcedure.input(
     external_exports.object({
       userId: external_exports.number().optional(),
+      userType: external_exports.enum(["oauth", "local"]).optional(),
       activeOnly: external_exports.boolean().default(false),
       page: external_exports.number().default(1),
       limit: external_exports.number().default(50)
@@ -361008,10 +357015,17 @@ var sessionRouter = router({
   ).query(async ({ input }) => {
     const { userId, activeOnly, page = 1, limit = 50 } = input ?? {};
     const offset = (page - 1) * limit;
-    let query = db.select().from(sessions).orderBy(desc(sessions.createdAt));
-    if (userId) query = query.where(eq(sessions.userId, userId));
-    if (activeOnly)
-      query = query.where(gte(sessions.expiresAt, /* @__PURE__ */ new Date()));
+    const conditions = [];
+    if (userId) {
+      conditions.push(eq(sessions.userId, userId));
+      if (input?.userType) {
+        conditions.push(eq(sessions.userType, input.userType));
+      }
+    }
+    if (activeOnly) conditions.push(gte(sessions.expiresAt, /* @__PURE__ */ new Date()));
+    let query = db.select().from(sessions).$dynamic();
+    if (conditions.length > 0) query = query.where(and(...conditions));
+    query = query.orderBy(desc(sessions.createdAt));
     const list = await query.limit(limit).offset(offset);
     const total = await db.select({ count: count() }).from(sessions);
     return { list, total: total[0]?.count ?? 0, page, limit };
@@ -361019,7 +357033,22 @@ var sessionRouter = router({
   // ─── Track Event ───
   trackEvent: authedProcedure.input(
     external_exports.object({
-      event: external_exports.string(),
+      event: external_exports.enum([
+        "login",
+        "logout",
+        "page_view",
+        "expense_create",
+        "expense_update",
+        "expense_delete",
+        "ai_use",
+        "upgrade_to_pro",
+        "export_data",
+        "voice_record",
+        "sms_ingest",
+        "onboarding_complete",
+        "budget_exceeded",
+        "chat_message"
+      ]),
       metadata: external_exports.record(external_exports.string(), external_exports.any()).optional()
     })
   ).mutation(async ({ ctx, input }) => {
@@ -361233,11 +357262,17 @@ var proRouter = router({
       transactionId: external_exports.string()
     })
   ).mutation(async ({ ctx, input }) => {
-    const simOk = env.NODE_ENV === "development" || env.BILLING_SIMULATE === "true";
-    if (!simOk) {
+    if (env.NODE_ENV === "production") {
       throw new TRPCError({
         code: "FORBIDDEN",
         message: "\u0627\u0644\u062A\u0631\u0642\u064A\u0629 \u0627\u0644\u0645\u0628\u0627\u0634\u0631\u0629 \u063A\u064A\u0631 \u0645\u0633\u0645\u0648\u062D \u0628\u0647\u0627 \u0641\u064A \u0627\u0644\u0628\u064A\u0626\u0629 \u0627\u0644\u0625\u0646\u062A\u0627\u062C\u064A\u0629. \u064A\u062C\u0628 \u0625\u062A\u0645\u0627\u0645 \u0639\u0645\u0644\u064A\u0629 \u0627\u0644\u062F\u0641\u0639 \u0639\u0628\u0631 \u0628\u0648\u0627\u0628\u0629 \u0627\u0644\u062F\u0641\u0639 \u0627\u0644\u0631\u0633\u0645\u064A\u0629."
+      });
+    }
+    const simOk = env.BILLING_SIMULATE === "true";
+    if (!simOk) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "\u0627\u0644\u062A\u0631\u0642\u064A\u0629 \u0627\u0644\u0645\u0628\u0627\u0634\u0631\u0629 \u063A\u064A\u0631 \u0645\u0633\u0645\u0648\u062D \u0628\u0647\u0627. \u064A\u062C\u0628 \u0625\u062A\u0645\u0627\u0645 \u0639\u0645\u0644\u064A\u0629 \u0627\u0644\u062F\u0641\u0639 \u0639\u0628\u0631 \u0628\u0648\u0627\u0628\u0629 \u0627\u0644\u062F\u0641\u0639 \u0627\u0644\u0631\u0633\u0645\u064A\u0629."
       });
     }
     const { endDate } = await grantProSubscription({
@@ -361939,7 +357974,8 @@ async function refreshMonthlyInferences(userId, userType, month) {
       behaviorFlags: snapshot.behaviorFlags,
       inferredAttributes: snapshot.inferredAttributes
     }
-  }).catch(() => {
+  }).catch((err) => {
+    console.warn("[refreshMonthlyInferences] Failed to save behavior snapshot:", err);
   });
   await recordProfileLearningEvent({
     userId,
@@ -371578,6 +367614,7 @@ init_intent_router();
 init_ai_memory();
 init_ai_cost_policy();
 init_action_runtime();
+init_category_matcher();
 async function loadChatConfig() {
   const rows = await db.select().from(systemSettings);
   const s3 = {};
@@ -371666,16 +367703,8 @@ function localMoney(value) {
   })} \u062C\u0646\u064A\u0647`;
 }
 function localCategoryName(value) {
-  const names = {
-    food: "\u0627\u0644\u0623\u0643\u0644 \u0648\u0627\u0644\u0645\u0634\u0631\u0648\u0628\u0627\u062A",
-    transport: "\u0627\u0644\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
-    shopping: "\u0627\u0644\u062A\u0633\u0648\u0642",
-    health: "\u0627\u0644\u0635\u062D\u0629",
-    bills: "\u0627\u0644\u0641\u0648\u0627\u062A\u064A\u0631",
-    saving: "\u0627\u0644\u0627\u062F\u062E\u0627\u0631",
-    uncategorized: "\u063A\u064A\u0631 \u0645\u0635\u0646\u0641"
-  };
-  return names[value ?? ""] ?? value ?? "\u063A\u064A\u0631 \u0645\u0635\u0646\u0641";
+  if (!value) return "\u063A\u064A\u0631 \u0645\u0635\u0646\u0641";
+  return displayFinanceCategory(value);
 }
 function responseForActionDraft(fallback, action, facts) {
   if (!action) return fallback;
@@ -372036,20 +368065,26 @@ var chatRouter = router({
       );
     }
     let actionDraftError = null;
-    const actionDraft = aiKernelActive ? await maybeCreateActionDraftFromMessage(
-      {
+    let actionDraft = null;
+    if (aiKernelActive) {
+      const actionCtx = {
         userId: user.id,
         userType: user.type,
         userPlan: plan,
         conversationId: activeConversationId
-      },
-      input.message
-    ).catch((error48) => {
-      const message = error48 instanceof Error ? error48.message : String(error48);
-      actionDraftError = message;
-      console.warn("[AI Action Runtime] draft failed", message);
-      return null;
-    }) : null;
+      };
+      const proposedAction = shadow?.proposedActions?.[0];
+      actionDraft = await (proposedAction ? proposedAction.name === "goal.create" ? createPendingGoalAction(actionCtx, proposedAction.payload) : createPendingRuntimeAction(
+        actionCtx,
+        proposedAction.name,
+        proposedAction.payload
+      ) : maybeCreateActionDraftFromMessage(actionCtx, input.message)).catch((error48) => {
+        const message = error48 instanceof Error ? error48.message : String(error48);
+        actionDraftError = message;
+        console.warn("[AI Action Runtime] draft failed", message);
+        return null;
+      });
+    }
     const actionAwareResponse = actionDraftError ? responseForActionDraftFailure(actionDraftError) : responseForActionDraft(
       result.response,
       actionDraft?.action,
@@ -372110,6 +368145,8 @@ var chatRouter = router({
     const measuredToolCalls = result.toolsUsed.length;
     const measuredEmbeddingCalls = embeddingCallsFromStructured(structured);
     const numericAccuracy = structured?.facts?.length ? validateNumbersAgainstFacts(result.response, structured.facts) : void 0;
+    const structuredDebug = structured?.debug;
+    const cacheRuntime = structuredDebug?.cacheRuntime;
     void recordAICostMetric({
       userId: user.id,
       userType: user.type,
@@ -372128,7 +368165,17 @@ var chatRouter = router({
         conversationId: activeConversationId,
         traceId: structured?.traceId,
         dataNeeds: dataNeedKinds(structured),
-        cacheHits: structured?.debug?.cacheHits ?? [],
+        cacheHits: structuredDebug?.cacheHits ?? [],
+        cacheBackend: cacheRuntime?.backend,
+        redisConfigured: cacheRuntime?.redisConfigured,
+        recipe: structured?.recipe,
+        proposedActions: structured?.proposedActions?.length ?? 0,
+        embeddingApiStatus: structuredDebug?.embeddingApiStatus,
+        retrievalPolicy: structuredDebug?.retrievalPolicy,
+        estimatedInputTokens,
+        llmCalls: measuredLlmCalls,
+        embeddingCalls: measuredEmbeddingCalls,
+        toolCalls: measuredToolCalls,
         resolvedFacts: structured?.facts?.length ?? 0,
         maxOutputTokens: chatPolicy.maxOutputTokens,
         maxToolRounds: chatPolicy.maxToolRounds,
@@ -372279,6 +368326,10 @@ var chatRouter = router({
       {
         label: "\u{1F3AF} \u0623\u0647\u062F\u0627\u0641 \u0627\u0644\u0627\u062F\u062E\u0627\u0631",
         prompt: "\u0648\u0635\u0644\u062A \u0643\u0627\u0645 \u0641\u064A \u0623\u0647\u062F\u0627\u0641 \u0627\u0644\u0627\u062F\u062E\u0627\u0631 \u0628\u062A\u0627\u0639\u062A\u064A\u061F"
+      },
+      {
+        label: "\u{1F4BC} \u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0643\u0627\u0634 \u0641\u0644\u0648",
+        prompt: "\u0625\u064A\u0647 \u0627\u0644\u062F\u062E\u0644 \u0648\u0627\u0644\u0645\u0635\u0631\u0648\u0641 \u0648\u0627\u0644\u0635\u0627\u0641\u064A \u0627\u0644\u0634\u0647\u0631 \u062F\u0647\u061F \u0648\u0625\u064A\u0647 \u0623\u0643\u062A\u0631 \u0628\u0646\u062F\u064A\u0646 \u0639\u0627\u064A\u0632\u064A\u0646 \u0645\u0631\u0627\u062C\u0639\u0629\u061F"
       }
     ];
   })
@@ -372615,6 +368666,7 @@ init_schema2();
 init_drizzle_orm();
 import fs7 from "fs";
 import path4 from "path";
+init_redis_client();
 if (env.SENTRY_DSN) {
   Sentry.init({
     dsn: env.SENTRY_DSN,
@@ -372649,6 +368701,21 @@ cron.schedule("0 20 * * *", async () => {
     console.error("[Cron] Failed to process smart activity notifications:", error48);
   }
 });
+(async () => {
+  try {
+    const client = await getRedisClient();
+    const status = getCacheRuntimeStatus();
+    if (client) {
+      console.log(`\u2705 [Boot] Redis connected (backend: ${status.backend})`);
+    } else if (status.memoryFallbackAllowed) {
+      console.warn(`\u26A0\uFE0F [Boot] Redis unavailable \u2014 using in-memory cache fallback (backend: ${status.backend})`);
+    } else {
+      console.warn(`\u274C [Boot] Redis unavailable and memory fallback disabled. Voice calls will NOT work.`);
+    }
+  } catch (err) {
+    console.warn(`\u274C [Boot] Redis health check failed:`, err instanceof Error ? err.message : err);
+  }
+})();
 var app = new Hono2();
 app.use("*", logger());
 var allowedOrigins = Array.from(
@@ -372659,8 +368726,10 @@ app.use(
   cors({
     origin: (origin2) => {
       if (!origin2) return allowedOrigins[0];
-      if (env.NODE_ENV === "development" || origin2.endsWith(".loca.lt") || origin2.endsWith(".serveousercontent.com") || origin2.endsWith(".lhr.life") || origin2.includes("localhost") || origin2.includes("127.0.0.1")) {
-        return origin2;
+      if (env.NODE_ENV === "development") {
+        if (origin2.includes("localhost") || origin2.includes("127.0.0.1") || origin2.endsWith(".loca.lt") || origin2.endsWith(".serveousercontent.com") || origin2.endsWith(".lhr.life")) {
+          return origin2;
+        }
       }
       return allowedOrigins.includes(origin2) ? origin2 : allowedOrigins[0];
     },
@@ -372672,8 +368741,10 @@ app.use(
   csrf({
     origin: (origin2) => {
       if (!origin2) return false;
-      if (env.NODE_ENV === "development" || origin2.endsWith(".loca.lt") || origin2.endsWith(".serveousercontent.com") || origin2.endsWith(".lhr.life") || origin2.includes("localhost") || origin2.includes("127.0.0.1")) {
-        return true;
+      if (env.NODE_ENV === "development") {
+        if (origin2.includes("localhost") || origin2.includes("127.0.0.1") || origin2.endsWith(".loca.lt") || origin2.endsWith(".serveousercontent.com") || origin2.endsWith(".lhr.life")) {
+          return true;
+        }
       }
       return allowedOrigins.includes(origin2);
     }
@@ -372681,7 +368752,9 @@ app.use(
 );
 app.onError((err, c) => {
   console.error("Hono Error:", err);
-  return c.json({ error: err.message || "Internal Server Error" }, 500);
+  const isProd = env.NODE_ENV === "production";
+  const message = isProd ? "\u062D\u062F\u062B \u062E\u0637\u0623 \u062F\u0627\u062E\u0644\u064A \u0641\u064A \u0627\u0644\u062E\u0627\u062F\u0645. \u0628\u0631\u062C\u0627\u0621 \u0627\u0644\u0645\u062D\u0627\u0648\u0644\u0629 \u0644\u0627\u062D\u0642\u0627\u064B." : err.message || "Internal Server Error";
+  return c.json({ error: message }, 500);
 });
 app.notFound(async (c) => {
   if (env.NODE_ENV === "production" && !c.req.path.startsWith("/api/")) {
@@ -372801,7 +368874,21 @@ app.post("/api/webhooks/paymob", async (c) => {
     const userId = Number(extraData.userId);
     const userType = extraData.userType;
     const plan = extraData.plan || "pro_monthly";
+    const PLAN_PRICES_EGP = {
+      pro_monthly: 49,
+      pro_yearly: 499
+    };
+    const expectedAmountCents = PLAN_PRICES_EGP[plan] ? PLAN_PRICES_EGP[plan] * 100 : null;
     if (userId && (userType === "oauth" || userType === "local")) {
+      if (expectedAmountCents !== null && obj.amount_cents) {
+        const paidCents = Number(obj.amount_cents);
+        if (paidCents < expectedAmountCents) {
+          console.warn(
+            `Paymob webhook: amount mismatch \u2014 expected ${expectedAmountCents} cents for ${plan}, got ${paidCents}. Rejecting.`
+          );
+          return c.json({ error: "Amount mismatch" }, 400);
+        }
+      }
       console.info(
         `Granting Pro subscription to user ${userId} (${userType}) via Paymob webhook`
       );
