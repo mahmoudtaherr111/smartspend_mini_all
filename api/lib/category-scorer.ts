@@ -51,7 +51,7 @@ const MAX_CATEGORIES_BULK = 15;  // For multi-amount text
 const CO_OCCURRENCE: Record<string, string[]> = {
   "أكل وشرب":       ["ترفيه"],
   "مواصلات":         ["خدمات سيارات"],
-  "فواتير":          ["التزامات يومية"],
+  "فواتير":          [],
   "ترفيه":           ["أكل وشرب"],
   "تسوق":            ["سكن"],
   "سكن":             ["تسوق"],

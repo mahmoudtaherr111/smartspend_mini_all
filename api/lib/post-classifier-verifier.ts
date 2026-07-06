@@ -58,7 +58,6 @@ const EXPENSE_ONLY_CATEGORIES = new Set([
   "تدخين",
   "حيوانات أليفة",
   "عمل",
-  "التزامات يومية",
   "خدمات رقمية",
   "خدمات سيارات",
   // "متنوعات" — REMOVED: neutral fallback, not expense-only

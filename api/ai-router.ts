@@ -21,6 +21,8 @@ import {
   voiceUsage,
   monthlyBehaviorSnapshots,
   pendingClarifications,
+  userBusinesses,
+  businessCategories as bizCategoriesTable,
 } from "../db/schema";
 import { eq, sql, desc, count, and, gte, lte, sum } from "drizzle-orm";
 import { env } from "./lib/env";
@@ -718,6 +720,7 @@ export const aiRouter = router({
         inputChannel: z.enum(["text", "voice"]).default("text"),
         voiceModelUsed: z.string().optional(),
         sttTokensUsed: z.number().optional(),
+        businessMode: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -834,19 +837,50 @@ export const aiRouter = router({
 
       // --- INJECT KNOWN PEOPLE INTO USER DICT ---
       for (const p of personalContextRaw.knownPeople) {
-        // GUARD: Only inject if category is specific enough (not neutral "تحويلات")
-        // This prevents the rule engine from blindly categorizing people as "تحويلات"
-        // and bypassing the person-resolver.
         const safeCategory = (p.category && p.category !== "تحويلات") ? p.category : null;
         if (safeCategory) {
           if (p.name && p.name.length >= 2) {
              userDict.push({ word: p.name, category: safeCategory, subCategory: p.subCategory });
           }
-          const firstName = p.name.split(/\s+/)[0]; // Match on first name as fallback
+          const firstName = p.name.split(/\s+/)[0];
           if (firstName && firstName.length >= 2 && firstName !== p.name) {
              userDict.push({ word: firstName, category: safeCategory, subCategory: p.subCategory });
           }
         }
+      }
+
+      // --- LOAD BUSINESS CATEGORIES (if user has an active business) ---
+      let bizCategoriesForPipeline: Array<{
+        id: number; name: string; nameAr: string; type: string;
+        keywords: string[]; matchExamples: string[];
+      }> | undefined;
+      try {
+        const biz = await db
+          .select({ id: userBusinesses.id })
+          .from(userBusinesses)
+          .where(and(
+            eq(userBusinesses.userId, ctx.user.id as number),
+            eq(userBusinesses.userType, ctx.user.type),
+            eq(userBusinesses.isActive, true),
+          ))
+          .limit(1);
+
+        if (biz.length > 0) {
+          const cats = await db
+            .select()
+            .from(bizCategoriesTable)
+            .where(and(
+              eq(bizCategoriesTable.businessId, biz[0].id),
+              eq(bizCategoriesTable.isActive, true),
+            ));
+          bizCategoriesForPipeline = cats.map((c) => ({
+            id: c.id, name: c.name, nameAr: c.nameAr, type: c.type,
+            keywords: Array.isArray(c.keywords) ? c.keywords as string[] : [],
+            matchExamples: Array.isArray(c.matchExamples) ? c.matchExamples as string[] : [],
+          }));
+        }
+      } catch (e) {
+        // Business categories load failed — don't block pipeline
       }
 
       const result = await runSmartPipeline({
@@ -880,7 +914,6 @@ export const aiRouter = router({
           knownPeople: personalContextRaw.knownPeople,
         },
         skipClarification: input.skipClarification,
-        // Dynamic routing
         provider: resolvedProvider,
         groqApiKey: resolvedGroqKey,
         fireworksApiKey: resolvedFireworksKey,
@@ -890,6 +923,8 @@ export const aiRouter = router({
             rag_model: cfgFull.rag_model || "text-embedding-004",
             enable_rag: String(cfgFull.enable_rag !== "false"),
           },
+        businessCategories: bizCategoriesForPipeline,
+        businessMode: input.businessMode || false,
       });
       const financeContextSource = currentMonthSummary ? "finance.summary" : "fallback_zero";
       const parseTrace = buildParserTrace({
@@ -1653,7 +1688,38 @@ export const aiRouter = router({
           routingErr,
         );
       }
-      
+
+      // ── Load Business Categories for voice pipeline ──
+      let voiceBizCats: Array<{
+        id: number; name: string; nameAr: string; type: string;
+        keywords: string[]; matchExamples: string[];
+      }> | undefined;
+      try {
+        const biz = await db
+          .select({ id: userBusinesses.id })
+          .from(userBusinesses)
+          .where(and(
+            eq(userBusinesses.userId, ctx.user.id as number),
+            eq(userBusinesses.userType, ctx.user.type),
+            eq(userBusinesses.isActive, true),
+          ))
+          .limit(1);
+        if (biz.length > 0) {
+          const cats = await db
+            .select()
+            .from(bizCategoriesTable)
+            .where(and(
+              eq(bizCategoriesTable.businessId, biz[0].id),
+              eq(bizCategoriesTable.isActive, true),
+            ));
+          voiceBizCats = cats.map((c) => ({
+            id: c.id, name: c.name, nameAr: c.nameAr, type: c.type,
+            keywords: Array.isArray(c.keywords) ? c.keywords as string[] : [],
+            matchExamples: Array.isArray(c.matchExamples) ? c.matchExamples as string[] : [],
+          }));
+        }
+      } catch {}
+
       const parseResult = await runSmartPipeline({
         text: transcribedText,
         userId: ctx.user.id,
@@ -1690,6 +1756,8 @@ export const aiRouter = router({
             rag_model: cfg.rag_model || "text-embedding-004",
             enable_rag: String(cfg.enable_rag !== "false"),
           },
+        businessCategories: voiceBizCats,
+        businessMode: false,
       });
       const financeContextSource = currentMonthSummary ? "finance.summary" : "fallback_zero";
       const parseTrace = buildParserTrace({

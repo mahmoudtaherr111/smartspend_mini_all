@@ -49,4 +49,31 @@ const Toaster = ({ ...props }: ToasterProps) => {
   );
 };
 
+import { toast as sonnerToast } from "sonner";
+
+export const useToast = () => {
+  return {
+    toast: ({
+      title,
+      description,
+      variant,
+    }: {
+      title: string;
+      description?: string;
+      variant?: "default" | "destructive" | "success" | "error" | "warning";
+    }) => {
+      if (variant === "error" || variant === "destructive") {
+        sonnerToast.error(title, { description });
+      } else if (variant === "success") {
+        sonnerToast.success(title, { description });
+      } else if (variant === "warning") {
+        sonnerToast.warning(title, { description });
+      } else {
+        sonnerToast(title, { description });
+      }
+    },
+  };
+};
+
 export { Toaster };
+

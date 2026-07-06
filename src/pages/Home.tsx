@@ -25,6 +25,8 @@ import {
   WalletCards,
   ChevronLeft,
   ChevronRight,
+  Store,
+  User as UserIcon,
 } from "lucide-react";
 import { trpc } from "@/providers/trpc";
 
@@ -374,6 +376,28 @@ export default function Home() {
       ? Number(profile.financialInfo.salaryDay)
       : undefined;
 
+  // ── Business Mode Toggle ──
+  const businessQuery = trpc.business.get.useQuery(undefined, { staleTime: 60_000 });
+  const hasBusiness = !!businessQuery.data?.business;
+  const [businessMode, setBusinessMode] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("smartspend_business_mode");
+    if (stored === "true" && hasBusiness) {
+      setBusinessMode(true);
+    }
+  }, [hasBusiness]);
+
+  const toggleBusinessMode = useCallback(() => {
+    setBusinessMode((prev) => {
+      const next = !prev;
+      localStorage.setItem("smartspend_business_mode", String(next));
+      return next;
+    });
+  }, []);
+
+  const activeBusinessId = businessMode && hasBusiness ? businessQuery.data!.business!.id : undefined;
+
   // --- 1. Session Restoration & Default Active Financial Month ---
   useEffect(() => {
     const sessionInitialized = sessionStorage.getItem("dashboard_session_initialized");
@@ -434,7 +458,7 @@ export default function Home() {
 
   const { data: summary, isFetching: summaryFetching } =
     trpc.expense.getMonthSummary.useQuery(
-      { month, salaryDay },
+      { month, salaryDay } as any,
       { staleTime: 30_000 },
     );
   const {
@@ -444,12 +468,12 @@ export default function Home() {
     error: statsQueryError,
     refetch: refetchStats,
   } = trpc.expense.getMonthlyStats.useQuery(
-    { month, salaryDay },
-    { enabled: shouldLoadStats, staleTime: 30_000, retry: 1 },
-  );
+      { month, salaryDay, businessId: activeBusinessId ?? null } as any,
+      { enabled: shouldLoadStats, staleTime: 30_000, retry: 1 },
+    );
   const { data: calendarStats, isFetching: calendarFetching } =
     trpc.expense.getMonthlyStats.useQuery(
-      { month, salaryDay: null },
+      { month, salaryDay: null, businessId: activeBusinessId ?? null } as any,
       { enabled: activeTab === "calendar", staleTime: 30_000, retry: 1 },
     );
   const refreshInferences = trpc.profile.refreshInferences.useMutation({
@@ -506,7 +530,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
-                  {pageTitle}
+                  {businessMode && hasBusiness ? businessQuery.data!.business!.name : pageTitle}
                 </h1>
                 <HealthBadge
                   ratio={
@@ -519,6 +543,24 @@ export default function Home() {
                       : null
                   }
                 />
+                {/* Business Mode Toggle */}
+                {hasBusiness && (
+                  <button
+                    onClick={toggleBusinessMode}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-300 shadow-sm ${
+                      businessMode
+                        ? "bg-indigo-500 text-white border border-indigo-400"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+                    }`}
+                    title={businessMode ? "ارجع للحساب الشخصي" : "لوضع المشروع"}
+                  >
+                    {businessMode ? (
+                      <><Store className="w-3.5 h-3.5" /> {businessQuery.data!.business!.name}</>
+                    ) : (
+                      <><UserIcon className="w-3.5 h-3.5" /> شخصي</>
+                    )}
+                  </button>
+                )}
               </div>
 
               {/* Month Navigation Control */}
@@ -617,6 +659,7 @@ export default function Home() {
               <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)] gap-5 items-start">
                 <ExpenseForm
                   initialText={sharedText}
+                  businessMode={businessMode}
                   onSuccess={() => {
                     utils.expense.getMonthSummary.invalidate({ month, salaryDay });
                     utils.expense.getMonthlyStats.invalidate({ month, salaryDay });

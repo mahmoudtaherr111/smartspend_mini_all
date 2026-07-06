@@ -191,7 +191,7 @@ export function scoreAndDecide(
   const hasIntentTaxonomyConflict = scoredItems.some(
     (i) =>
       i.type === "income" &&
-      ["أكل وشرب", "ترفيه", "خدمات سيارات", "التزامات يومية"].includes(
+      ["أكل وشرب", "ترفيه", "خدمات سيارات"].includes(
         i.category,
       ),
   );

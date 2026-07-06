@@ -11,6 +11,8 @@ import {
   classificationLogs,
   pendingClarifications,
   systemSettings,
+  userBusinesses,
+  businessCategories as bizCategoriesTable,
 } from "../db/schema";
 import { parseNameAndRelationship } from "./lib/relationship-normalizer";
 import { eq, and, gte, lte, desc, sql, lt } from "drizzle-orm";
@@ -27,6 +29,51 @@ async function invalidateExpenseCache(userId: number | string, userType: string)
     await invalidateFinanceUserCache(userId, userType);
   } catch (err) {
     console.warn("Failed to invalidate expense cache", err);
+  }
+}
+
+async function loadBusinessCategoriesForUser(
+  userId: number,
+  userType: string,
+): Promise<Array<{
+  id: number;
+  name: string;
+  nameAr: string;
+  type: string;
+  keywords: string[];
+  matchExamples: string[];
+}> | undefined> {
+  try {
+    const biz = await db
+      .select({ id: userBusinesses.id })
+      .from(userBusinesses)
+      .where(and(
+        eq(userBusinesses.userId, userId),
+        eq(userBusinesses.userType, userType),
+        eq(userBusinesses.isActive, true),
+      ))
+      .limit(1);
+
+    if (biz.length === 0) return undefined;
+
+    const cats = await db
+      .select()
+      .from(bizCategoriesTable)
+      .where(and(
+        eq(bizCategoriesTable.businessId, biz[0].id),
+        eq(bizCategoriesTable.isActive, true),
+      ));
+
+    return cats.map((c) => ({
+      id: c.id,
+      name: c.name,
+      nameAr: c.nameAr,
+      type: c.type,
+      keywords: Array.isArray(c.keywords) ? c.keywords as string[] : [],
+      matchExamples: Array.isArray(c.matchExamples) ? c.matchExamples as string[] : [],
+    }));
+  } catch {
+    return undefined;
   }
 }
 
@@ -212,6 +259,7 @@ export const expenseRouter = router({
         rawText: input.rawText,
         source: input.source,
         date: expenseDate,
+        businessId: (input as any).businessId || null,
       });
 
       // Phase 2: Invalidate muscle memory cache so it learns this new confirmed pattern
@@ -297,6 +345,7 @@ export const expenseRouter = router({
         rawText: item.rawText,
         source: item.source,
         date: item.date ? new Date(item.date) : new Date(),
+        businessId: (item as any).businessId || null,
       }));
 
       await db.insert(expenses).values(valuesToInsert);
@@ -691,6 +740,7 @@ export const expenseRouter = router({
       z.object({
         month: z.string().regex(/^\d{4}-\d{2}$/, "الشهر لازم يكون بصيغة YYYY-MM"),
         salaryDay: z.number().min(1).max(31).optional().nullable(),
+        businessId: z.number().nullable().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -698,7 +748,8 @@ export const expenseRouter = router({
       const userId = ctx.user!.id;
       const userType = ctx.user!.type;
       
-      const cacheKey = `expense_stats:${userId}:${userType}:stats:${input.month}:${input.salaryDay || 0}`;
+      const bizFilter = input.businessId !== undefined ? input.businessId : null;
+      const cacheKey = `expense_stats:${userId}:${userType}:stats:${input.month}:${input.salaryDay || 0}:biz:${bizFilter ?? "all"}`;
       
       return withCache(cacheKey, 60 * 60 * 24, async () => {
         const { getFinancialMonthDates } =
@@ -713,7 +764,13 @@ export const expenseRouter = router({
           .select({ date: expenses.date })
           .from(expenses)
           .where(
-            and(eq(expenses.userId, userId), eq(expenses.userType, userType)),
+            and(
+              eq(expenses.userId, userId),
+              eq(expenses.userType, userType),
+              bizFilter === null
+                ? sql`${expenses.businessId} IS NULL`
+                : eq(expenses.businessId, bizFilter),
+            ),
           )
           .orderBy(expenses.date)
           .limit(1);
@@ -729,6 +786,9 @@ export const expenseRouter = router({
               eq(expenses.userType, userType),
               gte(expenses.date, startDate),
               lte(expenses.date, endDate),
+              bizFilter === null
+                ? sql`${expenses.businessId} IS NULL`
+                : eq(expenses.businessId, bizFilter),
             ),
           );
 
@@ -752,6 +812,9 @@ export const expenseRouter = router({
               eq(expenses.userType, userType),
               gte(expenses.date, prevStartDate),
               lte(expenses.date, prevEndDate),
+              bizFilter === null
+                ? sql`${expenses.businessId} IS NULL`
+                : eq(expenses.businessId, bizFilter),
             ),
           );
 
@@ -1342,6 +1405,8 @@ export const expenseRouter = router({
         const remainingNames: string[] = [];
 
         // Attempt to resolve each pending name from the user's answer
+        const isSkipAnswer = (trimmedAnswer === "تخطي" || trimmedAnswer.toLowerCase() === "skip");
+
         for (const name of pendingNames) {
            const inferredRel = inferRelationshipFromText(trimmedAnswer, name);
            const nameMentioned = trimmedAnswer.includes(name) || trimmedAnswer.includes(name.split(" ")[0]);
@@ -1350,23 +1415,35 @@ export const expenseRouter = router({
                resolvedAnswers[name] = inferredRel;
                anyResolved = true;
            } else if (nameMentioned || pendingNames.length === 1) {
-               // If name is mentioned but no explicit relationship is inferred, or if there's only 1 name, assign the remaining text
-               const finalAnswer = (trimmedAnswer === "تخطي" || trimmedAnswer.toLowerCase() === "skip")
-                 ? "صاحبه"
-                 : trimmedAnswer.replace(new RegExp(`(?:^|\\s)${name}(?:\\s|$)`), " ").trim() || trimmedAnswer;
-               resolvedAnswers[name] = finalAnswer || "معروف";
+               if (isSkipAnswer) {
+                 // Silence this contact so we never ask about them again
+                 try {
+                   const { silenceContact } = await import("./services/user-profile-service");
+                   await silenceContact(userId as number, userType as string, name);
+                 } catch {}
+                 resolvedAnswers[name] = "جهة اتصال عامة";
+               } else {
+                 const finalAnswer = trimmedAnswer.replace(new RegExp(`(?:^|\\s)${name}(?:\\s|$)`), " ").trim() || trimmedAnswer;
+                 resolvedAnswers[name] = finalAnswer || "معروف";
+               }
                anyResolved = true;
            } else {
                remainingNames.push(name);
            }
         }
 
-        // Fallback: If user typed something generic (e.g., "أخويا") without mentioning names, apply to the first pending name
+        // Fallback: If user typed something generic without mentioning names, apply to the first pending name
         if (!anyResolved && pendingNames.length > 0) {
            const currentName = pendingNames[0];
-           const finalAnswer = (trimmedAnswer === "تخطي" || trimmedAnswer.toLowerCase() === "skip")
-                 ? "صاحبه" : trimmedAnswer;
-           resolvedAnswers[currentName] = finalAnswer;
+           if (isSkipAnswer) {
+             try {
+               const { silenceContact } = await import("./services/user-profile-service");
+               await silenceContact(userId as number, userType as string, currentName);
+             } catch {}
+             resolvedAnswers[currentName] = "جهة اتصال عامة";
+           } else {
+             resolvedAnswers[currentName] = trimmedAnswer;
+           }
            remainingNames.push(...pendingNames.slice(1));
         }
 
@@ -1436,6 +1513,8 @@ export const expenseRouter = router({
             if (firstName && firstName.length >= 2) userDict.push({ word: firstName, category: safeCategory, subCategory: p.subCategory });
           }
           
+          const bizCats = await loadBusinessCategoriesForUser(userId as number, userType as string);
+
           const pipeline = await runSmartPipeline({
             text: enrichedText,
             userId: userId as number,
@@ -1461,6 +1540,8 @@ export const expenseRouter = router({
               knownPeople: personalContextRaw.knownPeople,
             },
             pipelineSettings: cfg,
+            businessCategories: bizCats,
+            businessMode: false,
           });
 
           const itemsToSave = pipeline.items && pipeline.items.length > 0
@@ -1479,6 +1560,7 @@ export const expenseRouter = router({
               date: new Date(),
               source: "manual",
               rawText: enrichedText,
+              businessId: (item as any).businessId || null,
             });
 
             if (item.person_mentioned && item.person_relationship) {
@@ -1524,8 +1606,18 @@ export const expenseRouter = router({
         const { runSmartPipeline } = await import("./lib/smart-pipeline");
         const { env } = await import("./lib/env");
         const { resolveRoutingConfig } = await import("./ai-router");
-        const { getSmartProfile, summarizeProfileForAI } = await import("./services/user-profile-service");
+        const { getSmartProfile, summarizeProfileForAI, silenceContact } = await import("./services/user-profile-service");
         const { buildPersonalContext, buildPersonalContextPrompt } = await import("./services/personal-context-builder");
+
+        // If user skipped, silence the unknown contact
+        if (input.answer.trim() === "تخطي" || input.answer.trim().toLowerCase() === "skip") {
+          const nameMatch = clarification.question?.match(/مين\s+(.*?)\؟/);
+          if (nameMatch && nameMatch[1]) {
+            try {
+              await silenceContact(userId as number, userType as string, nameMatch[1].trim());
+            } catch {}
+          }
+        }
 
         const enrichedText = clarification.originalText + " (" + input.answer + ")";
         
@@ -1561,6 +1653,8 @@ export const expenseRouter = router({
           }
         }
         
+        const bizCats2 = await loadBusinessCategoriesForUser(userId as number, userType as string);
+
         const pipeline = await runSmartPipeline({
           text: enrichedText,
           userId: userId as number,
@@ -1585,6 +1679,8 @@ export const expenseRouter = router({
             knownPeople: personalContextRaw.knownPeople,
           },
           pipelineSettings: cfg,
+          businessCategories: bizCats2,
+          businessMode: false,
         });
         
         if (pipeline.decision === "clarify") {
@@ -1633,6 +1729,7 @@ export const expenseRouter = router({
                date: new Date(),
                source: "manual",
                rawText: enrichedText,
+               businessId: (item as any).businessId || null,
              });
              
              if (item.person_mentioned && item.person_relationship) {

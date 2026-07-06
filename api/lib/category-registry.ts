@@ -162,6 +162,10 @@ export const CATEGORIES: MainCategory[] = [
       { id: "gaming", name: "Gaming", name_ar: "ألعاب" },
       { id: "streaming", name: "Streaming", name_ar: "منصات مشاهدة" },
       { id: "outing", name: "Outing", name_ar: "خروجة" },
+      { id: "playstation", name: "PlayStation", name_ar: "PlayStation" },
+      { id: "board_games", name: "Board Games", name_ar: "كافيه بورد جيم" },
+      { id: "friends_outing", name: "Friends Outing", name_ar: "خروجة صحاب" },
+      { id: "corniche", name: "Corniche", name_ar: "كورنيش" },
       { id: "general_entertainment", name: "General", name_ar: "عام" },
     ],
   },
@@ -319,29 +323,7 @@ export const CATEGORIES: MainCategory[] = [
       { id: "crypto", name: "Crypto", name_ar: "عملات رقمية" },
     ],
   },
-  {
-    id: "daily_commitments",
-    name: "Daily Commitments",
-    name_ar: "التزامات يومية",
-    icon: "🧾",
-    color: "#ef4444",
-    type: "expense",
-    subcategories: [
-      { id: "electricity_daily", name: "Electricity", name_ar: "كهرباء" },
-      { id: "water_daily", name: "Water", name_ar: "مياه" },
-      {
-        id: "internet_bundle",
-        name: "Internet Bundle",
-        name_ar: "باقات إنترنت",
-      },
-      {
-        id: "mobile_recharge_new",
-        name: "Mobile Recharge",
-        name_ar: "شحن موبايل",
-      },
-      { id: "daily_general", name: "General", name_ar: "عام" },
-    ],
-  },
+  // "التزامات يومية" merged into "فواتير" — removed as separate category
   {
     id: "digital_services",
     name: "Digital Services",
@@ -375,26 +357,7 @@ export const CATEGORIES: MainCategory[] = [
       { id: "car_general", name: "General", name_ar: "عام" },
     ],
   },
-  {
-    id: "outings",
-    name: "Outings",
-    name_ar: "خروجات",
-    icon: "🎉",
-    color: "#f59e0b",
-    type: "expense",
-    subcategories: [
-      { id: "cinema_new", name: "Cinema", name_ar: "سينما" },
-      { id: "playstation", name: "PlayStation", name_ar: "PlayStation" },
-      {
-        id: "board_games",
-        name: "Board Games Cafe",
-        name_ar: "كافيه بورد جيم",
-      },
-      { id: "friends_outing", name: "Friends Outing", name_ar: "خروجة صحاب" },
-      { id: "corniche", name: "Corniche", name_ar: "كورنيش" },
-      { id: "outing_general", name: "General", name_ar: "فسحة" },
-    ],
-  },
+  // "خروجات" merged into "ترفيه" — removed as separate category
   {
     id: "family_transactions",
     name: "Family Transactions",
@@ -486,7 +449,7 @@ export const CATEGORIES: MainCategory[] = [
 export function getCategoryByArabicName(
   name_ar: string,
 ): MainCategory | undefined {
-  return CATEGORIES.find((c) => c.name_ar === name_ar);
+  return CATEGORY_BY_NORMALIZED_AR.get(comparableArabic(name_ar));
 }
 
 /** Get all category Arabic names */
@@ -496,16 +459,12 @@ export function getAllCategoryNames(): string[] {
 
 /** Get subcategories for a category */
 export function getSubcategoriesFor(categoryNameAr: string): SubCategory[] {
-  return (
-    CATEGORIES.find((c) => c.name_ar === categoryNameAr)?.subcategories || []
-  );
+  return getCategoryByArabicName(categoryNameAr)?.subcategories || [];
 }
 
 /** Get category type */
 export function getCategoryType(categoryNameAr: string): string {
-  return (
-    CATEGORIES.find((c) => c.name_ar === categoryNameAr)?.type || "expense"
-  );
+  return getCategoryByArabicName(categoryNameAr)?.type || "expense";
 }
 
 /** Get all expense category names */
@@ -528,6 +487,9 @@ const CATEGORY_ALIASES: Array<[string, string]> = [
   ["راتب", "مرتب"],
   ["سكن وفواتير", "فواتير"],
   ["التزامات يومية", "فواتير"],
+  ["Daily Commitments", "فواتير"],
+  ["خروجات", "ترفيه"],
+  ["Outings", "ترفيه"],
   ["ملابس", "تسوق"],
   ["سيارات", "خدمات سيارات"],
   ["تكنولوجيا", "خدمات رقمية"],

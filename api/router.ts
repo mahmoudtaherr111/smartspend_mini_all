@@ -19,6 +19,7 @@ import { imageRouter } from "./image-router";
 import { goalsRouter } from "./goals-router";
 import { webauthnRouter } from "./webauthn-router";
 import { chatRouter } from "./chat-router";
+import { businessRouter } from "./business-router";
 
 export const appRouter = router({
   auth: authRouter,
@@ -41,6 +42,7 @@ export const appRouter = router({
   goals: goalsRouter,
   webauthn: webauthnRouter,
   chat: chatRouter,
+  business: businessRouter,
 });
 
 export type AppRouter = typeof appRouter;

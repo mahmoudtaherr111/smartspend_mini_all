@@ -10,6 +10,7 @@ import {
 } from "@/pwa/register-sw";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
+import { toast } from "sonner";
 
 const DISMISS_KEY = "smartspend_pwa_install_dismissed_v2";
 
@@ -64,9 +65,7 @@ export function PwaEnhancements() {
   const handleManualSync = () => {
     setIsRetrying(true);
     window.dispatchEvent(new Event("online"));
-    import("sonner").then(({ toast }) => {
-      toast.info("جاري محاولة مزامنة العمليات المعلقة...");
-    });
+    toast.info("جاري محاولة مزامنة العمليات المعلقة...");
     setTimeout(() => {
       loadQueues();
       setIsRetrying(false);
@@ -79,7 +78,7 @@ export function PwaEnhancements() {
       texts.splice(index, 1);
       localStorage.setItem("smartspend_offline_texts", JSON.stringify(texts));
       loadQueues();
-      import("sonner").then(({ toast }) => toast.success("تم حذف العملية المعلقة."));
+      toast.success("تم حذف العملية المعلقة.");
     } catch (e) {}
   };
 
@@ -89,7 +88,7 @@ export function PwaEnhancements() {
       manual.splice(index, 1);
       localStorage.setItem("smartspend_offline_manual", JSON.stringify(manual));
       loadQueues();
-      import("sonner").then(({ toast }) => toast.success("تم حذف العملية المعلقة."));
+      toast.success("تم حذف العملية المعلقة.");
     } catch (e) {}
   };
 
@@ -266,10 +265,8 @@ export function PwaEnhancements() {
 
     const handleMessage = (event: MessageEvent) => {
       if (event.data && event.data.type === "OFFLINE_SYNC_SUCCESS") {
-        import("sonner").then(({ toast }) => {
-          toast.success("تمت مزامنة العمليات بنجاح", {
-            description: "تم رفع المصاريف اللي سجلتها بدون إنترنت.",
-          });
+        toast.success("تمت مزامنة العمليات بنجاح", {
+          description: "تم رفع المصاريف اللي سجلتها بدون إنترنت.",
         });
       } else if (event.data && event.data.type === "NAVIGATE_TO") {
         try {

@@ -8,7 +8,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { idbPersister } from "@/lib/queryPersister";
 import { trpc, trpcClient } from "@/providers/trpc";
@@ -22,9 +22,8 @@ import { AdBanner } from "@/components/ads/AdBanner";
 import { useSessionTracker } from "@/hooks/useSessionTracker";
 import { cn } from "@/lib/utils";
 import { PageLoadingSkeleton } from "@/components/PageLoadingSkeleton";
-import { UltraFeatureRoute } from "@/components/routing/PlanGates";
 import { FeedbackButton } from "@/components/FeedbackButton";
-// VoiceCallFAB removed — voice calls are now in the AI Center page
+// VoiceCallFAB removed - voice calls are now in the AI Center page
 import { NotificationBell } from "@/components/NotificationBell";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { PwaEnhancements } from "@/components/pwa/PwaEnhancements";
@@ -36,13 +35,12 @@ import "./print.css";
 import darkModeLogo from "../photos/dark_mode_logo-removebg-preview.png";
 import whiteModeLogo from "../photos/white_mode_logo-removebg-preview.png";
 
-import Login from "@/pages/Login";
-import Home from "@/pages/Home";
-import Settings from "@/pages/Settings";
-import BankSyncPage from "@/pages/BankSyncPage";
-import AuthCallback from "@/pages/AuthCallback";
-
 const Landing = lazy(() => import("@/pages/Landing"));
+const Login = lazy(() => import("@/pages/Login"));
+const Home = lazy(() => import("@/pages/Home"));
+const Settings = lazy(() => import("@/pages/Settings"));
+const BankSyncPage = lazy(() => import("@/pages/BankSyncPage"));
+const AuthCallback = lazy(() => import("@/pages/AuthCallback"));
 const Support = lazy(() => import("@/pages/Support"));
 const Admin = lazy(() => import("@/pages/Admin"));
 const Pro = lazy(() => import("@/pages/Pro"));
