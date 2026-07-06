@@ -33,9 +33,10 @@ export interface ParsedTransaction {
   parsedBy: "rule_engine" | "ai" | "manual";
   inferenceSource?: "synonym" | "rule" | "dictionary" | "ai";
   ambiguityFlags?: string[];
-  date?: string; // Add optional date string for parsed dates like "yesterday"
+  date?: string;
   person_mentioned?: string;
   person_relationship?: string;
+  businessId?: number;
   confidenceBreakdown?: {
     intent: number;
     taxonomy: number;

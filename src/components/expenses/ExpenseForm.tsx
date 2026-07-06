@@ -44,6 +44,7 @@ import {
 interface ExpenseFormProps {
   onSuccess?: () => void;
   initialText?: string;
+  businessMode?: boolean;
 }
 
 type ParserTraceRecord = Record<string, unknown>;
@@ -127,7 +128,7 @@ function ParserTracePanel({ trace }: { trace: ParserTraceRecord | null }) {
   );
 }
 
-export function ExpenseForm({ onSuccess, initialText }: ExpenseFormProps) {
+export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFormProps) {
   const [text, setText] = useState(initialText || "");
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
@@ -759,7 +760,7 @@ export function ExpenseForm({ onSuccess, initialText }: ExpenseFormProps) {
     setFlowStage("processing");
     setInputSource("text");
     setLatestParserTrace(null);
-    parseMutation.mutate({ text, inputChannel: "text" });
+    parseMutation.mutate({ text, inputChannel: "text", businessMode: businessMode || false });
   };
 
   // Sync offline data when coming back online or on mount
@@ -796,6 +797,7 @@ export function ExpenseForm({ onSuccess, initialText }: ExpenseFormProps) {
           await parseMutation.mutateAsync({
             text: item.text,
             inputChannel: "text",
+            businessMode: businessMode || false,
           });
 
           // Success: pop from queue and update storage
@@ -893,6 +895,7 @@ export function ExpenseForm({ onSuccess, initialText }: ExpenseFormProps) {
       text: prompt,
       inputChannel: "text",
       skipClarification,
+      businessMode: businessMode || false,
     });
   }, [createMutation.isPending, parseMutation]);
 
@@ -923,6 +926,7 @@ export function ExpenseForm({ onSuccess, initialText }: ExpenseFormProps) {
     parseMutation.mutate({
       text: newText,
       inputChannel: inputSource,
+      businessMode: businessMode || false,
     });
   };
 
@@ -1076,6 +1080,7 @@ export function ExpenseForm({ onSuccess, initialText }: ExpenseFormProps) {
                       text,
                       inputChannel: "text",
                       skipClarification: true,
+                      businessMode: businessMode || false,
                     });
                   }}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-3.5 h-8 rounded-xl shrink-0"

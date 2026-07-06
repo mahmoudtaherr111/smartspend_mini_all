@@ -12,8 +12,9 @@ import {
   rawSmsEvents,
   inAppNotifications,
   pushSubscriptions,
+  userContacts,
 } from "../db/schema";
-import { eq, and, gte, lte, desc } from "drizzle-orm";
+import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 
 import { randomBytes } from "crypto";
 import {
@@ -21,7 +22,10 @@ import {
   recordProfileLearningEvent,
   saveSmartProfile,
   updateSmartProfile,
+  getUserContacts,
 } from "./services/user-profile-service";
+import { invalidateUserClassificationCache } from "./lib/smart-pipeline";
+import { invalidateUserMemory } from "./lib/muscle-memory";
 import {
   ADAPTIVE_ONBOARDING_QUESTIONS,
   applyOnboardingAnswer,
@@ -516,5 +520,190 @@ export const profileRouter = router({
           eq(inAppNotifications.userType, ctx.user.type)
         ));
       return { success: true };
+    }),
+
+  // ─── People Management (People Hub) ───
+
+  listContacts: authedProcedure
+    .input(z.object({
+      filter: z.enum(["all", "personal", "business", "silenced"]).default("all"),
+      search: z.string().optional(),
+    }).optional())
+    .query(async ({ ctx, input }) => {
+      const filter = input?.filter || "all";
+      const search = input?.search;
+
+      let query = db
+        .select({
+          id: userContacts.id,
+          name: userContacts.name,
+          relation: userContacts.relation,
+          contactType: userContacts.contactType,
+          businessId: userContacts.businessId,
+          isSilenced: userContacts.isSilenced,
+          transactionCount: userContacts.transactionCount,
+          createdAt: userContacts.createdAt,
+        })
+        .from(userContacts)
+        .where(and(
+          eq(userContacts.userId, ctx.user.id as number),
+          eq(userContacts.userType, ctx.user.type),
+        ));
+
+      const rows = await query;
+
+      let filtered = rows;
+      if (filter === "personal") {
+        filtered = rows.filter(r => r.contactType === "personal" && !r.isSilenced);
+      } else if (filter === "business") {
+        filtered = rows.filter(r => r.contactType !== "personal");
+      } else if (filter === "silenced") {
+        filtered = rows.filter(r => r.isSilenced);
+      }
+
+      if (search && search.trim().length > 0) {
+        const q = search.trim().toLowerCase();
+        filtered = filtered.filter(r =>
+          r.name.toLowerCase().includes(q) ||
+          (r.relation || "").toLowerCase().includes(q)
+        );
+      }
+
+      return { contacts: filtered };
+    }),
+
+  addContact: authedProcedure
+    .input(z.object({
+      name: z.string().min(1).max(255),
+      relation: z.string().max(100).optional(),
+      contactType: z.enum(["personal", "business_supplier", "business_customer", "business_employee"]).default("personal"),
+      businessId: z.number().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const existing = await db
+        .select({ id: userContacts.id })
+        .from(userContacts)
+        .where(and(
+          eq(userContacts.userId, ctx.user.id as number),
+          eq(userContacts.userType, ctx.user.type),
+          eq(userContacts.name, input.name),
+        ))
+        .limit(1);
+
+      if (existing.length > 0) {
+        throw new TRPCError({ code: "CONFLICT", message: "شخص بنفس الاسم موجود بالفعل" });
+      }
+
+      const [result] = await db.insert(userContacts).values({
+        userId: ctx.user.id as number,
+        userType: ctx.user.type,
+        name: input.name,
+        relation: input.relation || null,
+        contactType: input.contactType,
+        businessId: input.businessId || null,
+        isSilenced: false,
+      });
+
+      invalidateUserClassificationCache(ctx.user.id as number);
+      invalidateUserMemory(ctx.user.id as number, ctx.user.type);
+      return { id: result.insertId, success: true };
+    }),
+
+  updateContact: authedProcedure
+    .input(z.object({
+      id: z.number(),
+      name: z.string().min(1).max(255).optional(),
+      relation: z.string().max(100).optional(),
+      contactType: z.enum(["personal", "business_supplier", "business_customer", "business_employee"]).optional(),
+      businessId: z.number().nullable().optional(),
+      isSilenced: z.boolean().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...updates } = input;
+      const cleanUpdates = Object.fromEntries(
+        Object.entries(updates).filter(([, v]) => v !== undefined),
+      );
+
+      if (Object.keys(cleanUpdates).length > 0) {
+        await db
+          .update(userContacts)
+          .set(cleanUpdates)
+          .where(and(
+            eq(userContacts.id, id),
+            eq(userContacts.userId, ctx.user.id as number),
+            eq(userContacts.userType, ctx.user.type),
+          ));
+      }
+
+      invalidateUserClassificationCache(ctx.user.id as number);
+      invalidateUserMemory(ctx.user.id as number, ctx.user.type);
+      return { success: true };
+    }),
+
+  deleteContact: authedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      await db
+        .delete(userContacts)
+        .where(and(
+          eq(userContacts.id, input.id),
+          eq(userContacts.userId, ctx.user.id as number),
+          eq(userContacts.userType, ctx.user.type),
+        ));
+
+      invalidateUserClassificationCache(ctx.user.id as number);
+      invalidateUserMemory(ctx.user.id as number, ctx.user.type);
+      return { success: true };
+    }),
+
+  mergeContacts: authedProcedure
+    .input(z.object({
+      primaryId: z.number(),
+      secondaryId: z.number(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.primaryId === input.secondaryId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "لا يمكن دمج الشخص بنفسه" });
+      }
+
+      const contacts = await db
+        .select()
+        .from(userContacts)
+        .where(and(
+          eq(userContacts.userId, ctx.user.id as number),
+          eq(userContacts.userType, ctx.user.type),
+        ));
+
+      const primary = contacts.find(c => c.id === input.primaryId);
+      const secondary = contacts.find(c => c.id === input.secondaryId);
+
+      if (!primary || !secondary) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "شخص غير موجود" });
+      }
+
+      const mergedRelation = primary.relation || secondary.relation;
+      const mergedTransactionCount = (primary.transactionCount || 0) + (secondary.transactionCount || 0);
+      const mergedIsSilenced = primary.isSilenced || secondary.isSilenced;
+      const mergedContactType = primary.contactType !== "personal" ? primary.contactType : secondary.contactType;
+      const mergedBusinessId = primary.businessId || secondary.businessId;
+
+      await db
+        .update(userContacts)
+        .set({
+          relation: mergedRelation,
+          transactionCount: mergedTransactionCount,
+          isSilenced: mergedIsSilenced,
+          contactType: mergedContactType,
+          businessId: mergedBusinessId,
+        })
+        .where(eq(userContacts.id, primary.id));
+
+      await db
+        .delete(userContacts)
+        .where(eq(userContacts.id, secondary.id));
+
+      invalidateUserClassificationCache(ctx.user.id as number);
+      invalidateUserMemory(ctx.user.id as number, ctx.user.type);
+      return { success: true, mergedInto: primary.name };
     }),
 });

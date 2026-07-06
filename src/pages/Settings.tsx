@@ -6,6 +6,8 @@ import { useTheme } from "next-themes";
 import { SmartProfileSettings } from "@/components/profile/SmartProfileSettings";
 import { SmartProfileView } from "@/components/profile/SmartProfileView";
 import { PasskeySettings } from "@/components/auth/PasskeySettings";
+import { PeopleSettingsView } from "@/components/settings/PeopleSettingsView";
+import { BusinessSettingsView } from "@/components/settings/BusinessSettingsView";
 import { Button } from "@/components/ui/button";
 import { usePushNotifications } from "../hooks/usePushNotifications";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,9 +33,11 @@ import {
   Check,
   ShieldCheck,
   Sparkles,
+  Users,
+  Store,
 } from "lucide-react";
 
-type SettingsView = "main" | "profile" | "notifications" | "passkeys" | "theme" | "ai_report";
+type SettingsView = "main" | "profile" | "notifications" | "passkeys" | "theme" | "ai_report" | "people" | "business";
 
 export default function Settings() {
   const { user, logout } = useAuth();
@@ -173,6 +177,50 @@ export default function Settings() {
                         <div className="text-end">
                           <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">الأمان والدخول بالبصمة</h4>
                           <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">تفعيل الدخول السريع ببصمة الوجه أو الأصبع</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:-translate-x-0.5 transition-transform" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Group 1.5: Relationship Management */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-black text-slate-400 dark:text-slate-600 uppercase tracking-wider px-2">إدارة العلاقات</h4>
+                  <div className="grid gap-2">
+                    {/* Row: People Hub */}
+                    <div
+                      onClick={() => setCurrentView("people")}
+                      className="tap-target active-press flex items-center justify-between p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md cursor-pointer hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-all group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-sm">
+                          <Users className="w-5 h-5" />
+                        </div>
+                        <div className="text-end">
+                          <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">الأشخاص والعلاقات</h4>
+                          <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">إدارة الأسماء، العلاقات، والدمج</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:-translate-x-0.5 transition-transform" />
+                      </div>
+                    </div>
+
+                    {/* Row: Business Mode */}
+                    <div
+                      onClick={() => setCurrentView("business")}
+                      className="tap-target active-press flex items-center justify-between p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md cursor-pointer hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-all group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-sm">
+                          <Store className="w-5 h-5" />
+                        </div>
+                        <div className="text-end">
+                          <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">مشروعك التجاري</h4>
+                          <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">فئات مخصصة وتصنيف تلقائي للمشروع</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -476,6 +524,20 @@ export default function Settings() {
                   </div>
                 </CardContent>
               </Card>
+            </motion.div>
+          )}
+
+          {/* Sub-view: People */}
+          {currentView === "people" && (
+            <motion.div key="people" variants={subViewTransition} initial="initial" animate="animate" exit="exit">
+              <PeopleSettingsView onBack={() => setCurrentView("main")} />
+            </motion.div>
+          )}
+
+          {/* Sub-view: Business */}
+          {currentView === "business" && (
+            <motion.div key="business" variants={subViewTransition} initial="initial" animate="animate" exit="exit">
+              <BusinessSettingsView onBack={() => setCurrentView("main")} />
             </motion.div>
           )}
         </AnimatePresence>

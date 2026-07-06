@@ -4,9 +4,12 @@ import {
   profileLearningEvents,
   userProfiles,
   users,
+  userContacts,
 } from "../../db/schema";
 import { normalizeRelationship, parseNameAndRelationship } from "../lib/relationship-normalizer";
 import { extractExplicitPeopleContext, cleanPersonName } from "../lib/person-resolver";
+import { invalidateUserClassificationCache } from "../lib/smart-pipeline";
+import { invalidateUserMemory } from "../lib/muscle-memory";
 
 export const SMART_PROFILE_VERSION = 2;
 
@@ -399,7 +402,10 @@ export async function getSmartProfile(
     const contacts = await db
       .select({
         name: userContacts.name,
-        relationship: userContacts.relation
+        relationship: userContacts.relation,
+        isSilenced: userContacts.isSilenced,
+        contactType: userContacts.contactType,
+        businessId: userContacts.businessId,
       })
       .from(userContacts)
       .where(and(eq(userContacts.userId, userId), eq(userContacts.userType, userType)))
@@ -411,7 +417,49 @@ export async function getSmartProfile(
         name: c.name,
         relationship: c.relationship,
         rawRelationship: c.relationship,
+        isSilenced: c.isSilenced,
       })) as any;
+    } else {
+      // Auto-migration: if no DB contacts but JSON has legacy ones, migrate them
+      const legacyContacts = Array.isArray(result.lifestyleInfo.dynamicContacts)
+        ? result.lifestyleInfo.dynamicContacts as Array<{ name: string; relationship?: string; rawRelationship?: string }>
+        : [];
+      if (legacyContacts.length > 0) {
+        for (const lc of legacyContacts) {
+          if (!lc.name || lc.name.length < 2) continue;
+          try {
+            await db.insert(userContacts).values({
+              userId,
+              userType,
+              name: lc.name,
+              relation: lc.relationship || lc.rawRelationship || "شخص معروف",
+              contactType: "personal",
+              isSilenced: false,
+            }).catch(() => {}); // ignore duplicates
+          } catch {}
+        }
+        // Re-fetch after migration
+        const migrated = await db
+          .select({
+            name: userContacts.name,
+            relationship: userContacts.relation,
+            isSilenced: userContacts.isSilenced,
+            contactType: userContacts.contactType,
+            businessId: userContacts.businessId,
+          })
+          .from(userContacts)
+          .where(and(eq(userContacts.userId, userId), eq(userContacts.userType, userType)))
+          .limit(50);
+        if (migrated.length > 0) {
+          result.aiInferredAttributes.knownPeople = migrated as any;
+          result.lifestyleInfo.dynamicContacts = migrated.map(c => ({
+            name: c.name,
+            relationship: c.relationship,
+            rawRelationship: c.relationship,
+            isSilenced: c.isSilenced,
+          })) as any;
+        }
+      }
     }
     
     // Fetch latest learning events for context injection.
@@ -856,7 +904,10 @@ function cleanNameAndRelationship(
 }
 
 /**
- * Add a dynamic contact to the user's profile based on chat clarifications.
+ * Add a dynamic contact to the user's contacts.
+ * Writes ONLY to user_contacts table (Single Source of Truth).
+ * getSmartProfile() injects user_contacts into the profile at read time,
+ * so buildPersonalContext() always sees fresh data.
  */
 export async function addDynamicContact(
   userId: number,
@@ -864,7 +915,6 @@ export async function addDynamicContact(
   name: string,
   relationship: string,
 ): Promise<void> {
-  // Clean and validate the contact before saving
   const cleaned = cleanNameAndRelationship(name, relationship);
   if (!cleaned.name || !cleaned.relationship) {
     console.log(`[Profile Healing] Rejected saving invalid/noisy contact: name="${name}", rel="${relationship}"`);
@@ -873,55 +923,142 @@ export async function addDynamicContact(
 
   const cleanName = cleaned.name;
   const cleanRel = cleaned.relationship;
-
-  const profile = await getSmartProfile(userId, userType);
-  const lifestyleInfo = profile.lifestyleInfo as Record<string, any>;
-
-  const dynamicContacts = Array.isArray(lifestyleInfo.dynamicContacts)
-    ? [...lifestyleInfo.dynamicContacts]
-    : [];
-
   const { normalized } = normalizeRelationship(cleanRel);
 
-  // Avoid duplicates or update existing
-  const existingIndex = dynamicContacts.findIndex((c: any) => c.name === cleanName);
-  if (existingIndex >= 0) {
-    const existing = dynamicContacts[existingIndex];
-    // Safeguard: Do not overwrite a specific relationship (like 'أم') with a generic fallback (like 'قريب')
-    const genericTerms = [
-      "قريب",
-      "صديق",
-      "موظف",
-      "شخص معروف",
-      "شخص",
-      "قريبتك",
-      "صاحبك",
-      "زميل",
-    ];
-    const hasSpecific =
-      existing.relationship &&
-      !genericTerms.includes(existing.relationship) &&
-      !genericTerms.includes(existing.rawRelationship);
-    const isNewGeneric =
-      genericTerms.includes(cleanRel) || genericTerms.includes(normalized);
+  const { db } = await import("../queries/connection");
+  const genericTerms = [
+    "قريب", "صديق", "موظف", "شخص معروف", "شخص", "قريبتك", "صاحبك", "زميل",
+  ];
 
-    if (!hasSpecific || !isNewGeneric) {
-      dynamicContacts[existingIndex].relationship = normalized;
-      dynamicContacts[existingIndex].rawRelationship = cleanRel;
+  try {
+    const existing = await db
+      .select()
+      .from(userContacts)
+      .where(and(
+        eq(userContacts.userId, userId),
+        eq(userContacts.userType, userType),
+        eq(userContacts.name, cleanName),
+      ))
+      .limit(1);
+
+    if (existing.length > 0) {
+      const row = existing[0];
+      const hasSpecific = row.relation && !genericTerms.includes(row.relation);
+      const isNewGeneric = genericTerms.includes(cleanRel) || genericTerms.includes(normalized);
+
+      if (!hasSpecific || !isNewGeneric) {
+        await db
+          .update(userContacts)
+          .set({ relation: normalized })
+          .where(eq(userContacts.id, row.id));
+      }
+    } else {
+      await db.insert(userContacts).values({
+        userId,
+        userType,
+        name: cleanName,
+        relation: normalized,
+        contactType: "personal",
+        isSilenced: false,
+      });
     }
-  } else {
-    dynamicContacts.push({
-      name: cleanName,
-      relationship: normalized,
-      rawRelationship: cleanRel,
-    });
+  } catch (err) {
+    console.error("[addDynamicContact] DB write failed:", err);
   }
 
-  await updateSmartProfile(userId, userType, {
-    lifestyleInfo: {
-      ...lifestyleInfo,
-      dynamicContacts,
-    },
-  });
-  console.log(`[Profile Healing] Saved clean contact: name="${cleanName}", relationship="${normalized}" (raw: "${cleanRel}")`);
+  invalidateUserClassificationCache(userId);
+  invalidateUserMemory(userId, userType);
+  console.log(`[Profile Healing] Saved contact to DB: name="${cleanName}", rel="${normalized}"`);
+}
+
+/**
+ * Silence a contact when the user skips clarification.
+ * Creates a silent record so the system never asks about this person again.
+ */
+export async function silenceContact(
+  userId: number,
+  userType: string,
+  name: string,
+): Promise<void> {
+  const cleaned = cleanNameAndRelationship(name, "جهة اتصال عامة");
+  if (!cleaned.name) {
+    console.log(`[Profile Healing] Silence: rejected invalid name="${name}"`);
+    return;
+  }
+
+  const cleanName = cleaned.name;
+  const { db } = await import("../queries/connection");
+
+  try {
+    const existing = await db
+      .select()
+      .from(userContacts)
+      .where(and(
+        eq(userContacts.userId, userId),
+        eq(userContacts.userType, userType),
+        eq(userContacts.name, cleanName),
+      ))
+      .limit(1);
+
+    if (existing.length > 0) {
+      await db
+        .update(userContacts)
+        .set({ isSilenced: true, relation: "جهة اتصال عامة" })
+        .where(eq(userContacts.id, existing[0].id));
+    } else {
+      await db.insert(userContacts).values({
+        userId,
+        userType,
+        name: cleanName,
+        relation: "جهة اتصال عامة",
+        contactType: "personal",
+        isSilenced: true,
+      });
+    }
+
+    invalidateUserClassificationCache(userId);
+    invalidateUserMemory(userId, userType);
+    console.log(`[Profile Healing] Silenced contact: name="${cleanName}"`);
+  } catch (err) {
+    console.error("[silenceContact] DB write failed:", err);
+  }
+}
+
+/**
+ * Get all contacts for a user from the user_contacts table.
+ */
+export async function getUserContacts(
+  userId: number,
+  userType: string,
+): Promise<Array<{
+  id: number;
+  name: string;
+  relation: string | null;
+  contactType: string;
+  businessId: number | null;
+  isSilenced: boolean;
+  transactionCount: number;
+}>> {
+  const { db } = await import("../queries/connection");
+  try {
+    const rows = await db
+      .select({
+        id: userContacts.id,
+        name: userContacts.name,
+        relation: userContacts.relation,
+        contactType: userContacts.contactType,
+        businessId: userContacts.businessId,
+        isSilenced: userContacts.isSilenced,
+        transactionCount: userContacts.transactionCount,
+      })
+      .from(userContacts)
+      .where(and(
+        eq(userContacts.userId, userId),
+        eq(userContacts.userType, userType),
+      ));
+    return rows;
+  } catch (err) {
+    console.error("[getUserContacts] Failed:", err);
+    return [];
+  }
 }

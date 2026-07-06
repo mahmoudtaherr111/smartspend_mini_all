@@ -19,7 +19,8 @@ export function buildSmartSystemPrompt(
   useSimpleSchema: boolean = false,
   userHistoryContext: string = "",
   userHistoryCategories: Array<{ category: string; count: number }> = [],
-  numAmounts: number = 1
+  numAmounts: number = 1,
+  businessCategories?: Array<{ nameAr: string; type: string; keywords: string[] }>,
 ): string {
   const scorerResult = scoreCategories(text, userHistoryCategories, numAmounts);
   const taxonomy = buildFilteredTaxonomy(scorerResult.filteredCategories);
@@ -42,6 +43,13 @@ export function buildSmartSystemPrompt(
   const schemaInstruction = useSimpleSchema 
     ? `JSON Schema Instruction:\nYou must output a JSON object containing ONLY the \`items\` array. DO NOT output \`reasoning\` or \`decomposed_sentences\`.`
     : `JSON Schema Instruction:\nYou must output a JSON object containing a \`reasoning\` array before the \`items\` array to enable Chain-of-Thought (CoT).`;
+
+  const businessBlock = businessCategories && businessCategories.length > 0
+    ? `\nBUSINESS_CATEGORIES (فئات مشروع المستخدم — استخدمها إذا كان النص يتعلق بالمشروع):\n` +
+      businessCategories.map((c) =>
+        `- "${c.nameAr}" (${c.type})${c.keywords.length > 0 ? ` keywords: ${c.keywords.join(", ")}` : ""}`
+      ).join("\n") + `\n⚡ لو النص يخص المشروع، استخدم فئة "مشروع" مع sub_category من BUSINESS_CATEGORIES.`
+    : "";
 
   return `أنت SmartSpend AI (V3) — محلل مالي مصري محترف. مهمتك: تحليل النصوص المالية بالعامية المصرية واستخراج العمليات كـ JSON.
 
@@ -83,7 +91,7 @@ export function buildSmartSystemPrompt(
 - "حولت 1000 انستاباي" → transfer, تحويل/انستاباي, 1000, confidence=95
 - "اديت لمحمود 200" → expense, تحويل/أشخاص, 200, confidence=80, person_mentioned="محمود"
 - "دفعت 3000 إيجار و500 كهربا" → عمليتان: سكن/إيجار 3000 + فواتير/كهرباء 500
-${knownPeopleBlock}${kareemWarning}${multiTransactionRules}${ragContext}
+${knownPeopleBlock}${kareemWarning}${multiTransactionRules}${ragContext}${businessBlock}
 
 DICT: ${dict}
 
@@ -102,7 +110,8 @@ export function buildFireworksPrompts(
   userHistoryContext: string = "",
   userHistoryCategories: Array<{ category: string; count: number }> = [],
   numAmounts: number = 1,
-  classifierUserPrompt: string = ""
+  classifierUserPrompt: string = "",
+  businessCategories?: Array<{ nameAr: string; type: string; keywords: string[] }>,
 ): { systemPrompt: string; userPrompt: string } {
   // --- V3 Multi-Signal Category Routing ---
   const scorerResult = scoreCategories(text, userHistoryCategories, numAmounts);
@@ -162,9 +171,16 @@ ${schemaInstruction}
 OUTPUT: JSON فقط بدون شرح. Only output JSON.`;
 
   // DYNAMIC USER PROMPT (Request-specific details)
+  const businessBlock = businessCategories && businessCategories.length > 0
+    ? `\nBUSINESS_CATEGORIES (فئات مشروع المستخدم):\n` +
+      businessCategories.map((c) =>
+        `- "${c.nameAr}" (${c.type})${c.keywords.length > 0 ? ` keywords: ${c.keywords.join(", ")}` : ""}`
+      ).join("\n") + `\n⚡ لو النص يخص المشروع، استخدم فئة "مشروع" مع sub_category من BUSINESS_CATEGORIES.\n`
+    : "";
+
   const userPrompt = `TAXONOMY (استخدم هذه الفئات فقط):
 ${taxonomy}
-${knownPeopleBlock}${kareemWarning}
+${businessBlock}${knownPeopleBlock}${kareemWarning}
 
 User History context:
 ${userHistoryContext}

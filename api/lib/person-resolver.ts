@@ -8,6 +8,7 @@ export interface KnownPersonForResolver {
   relationship?: string;
   category?: string;
   subCategory?: string;
+  isSilenced?: boolean;
 }
 
 export interface PersonResolution {
@@ -191,25 +192,29 @@ function findKnownPerson(
     }
   }
 
-  // Second pass: fuzzy match (Levenshtein distance <= 1 for typos like "مسعد" and "مساعد")
+  // Second pass: fuzzy match (Levenshtein distance for typos)
+  // Stricter thresholds to prevent false positives on short names:
+  //   length < 4  → exact match only (dist = 0) — prevents "عمر" matching "عمرو"
+  //   length 4-5  → dist ≤ 1
+  //   length ≥ 6  → dist ≤ 2
   const normTarget = normalizeArabic(name).toLowerCase();
   for (const person of knownPeople) {
     if (!person?.name) continue;
     const normPersonName = normalizeArabic(person.name).toLowerCase();
     
-    // Check full name distance
     const dist = levenshtein(normTarget, normPersonName);
-    const maxAllowedDist = normPersonName.length >= 6 ? 2 : 1;
+    const maxAllowedDist = normPersonName.length >= 6 ? 2 : normPersonName.length >= 4 ? 1 : 0;
     if (dist <= maxAllowedDist) {
       return person;
     }
 
-    // Check first name distance
+    // Check first name distance with same strictness
     const first = person.name.split(/\s+/)[0];
     if (first && first.length >= 3) {
       const normFirst = normalizeArabic(first).toLowerCase();
       const firstDist = levenshtein(normTarget, normFirst);
-      if (firstDist <= 1) {
+      const firstMaxDist = normFirst.length >= 6 ? 2 : normFirst.length >= 4 ? 1 : 0;
+      if (firstDist <= firstMaxDist) {
         return person;
       }
     }
@@ -334,6 +339,9 @@ export function resolvePersonForTransaction(input: {
   }
 
   // Bypass clarification for generic relationship descriptions (e.g. "واحد صاحبي")
+  // Do NOT auto-assign to a specific contact even if only one matches the relationship.
+  // "واحد صاحبي" means "a friend" (indefinite) — could be anyone, not necessarily
+  // the one registered contact.
   if (isGenericPersonDescription(name)) {
     const explicitRelationship =
       inferRelationshipFromText(input.transactionText, name) ||
@@ -346,18 +354,7 @@ export function resolvePersonForTransaction(input: {
       p.relationship && normalizeRelationship(p.relationship).normalized === normalized.normalized
     );
 
-    if (matchingContacts.length === 1) {
-      const known = matchingContacts[0];
-      return {
-        name: known.name,
-        relationship: known.relationship || normalized.normalized,
-        category: known.category || normalized.category,
-        subCategory: known.subCategory || buildPersonSubCategory(known.name, known.relationship || normalized.normalized),
-        isKnown: true,
-        shouldLearn: false,
-        needsClarification: false,
-      };
-    } else if (matchingContacts.length > 1) {
+    if (matchingContacts.length > 1) {
       const names = matchingContacts.map(p => p.name).join(" ولا ");
       return {
         name: null,
@@ -372,7 +369,7 @@ export function resolvePersonForTransaction(input: {
     }
 
     return {
-      name: null, // Generic description, do not save a proper name contact
+      name: null,
       relationship: normalized.normalized,
       category: normalized.category,
       subCategory: normalized.normalized === "شخص معروف" ? "تحويلات شخصية" : normalized.normalized,
@@ -475,6 +472,26 @@ export function resolvePersonForTransaction(input: {
       subCategory: buildPersonSubCategory(name, selfNormalized.normalized),
       isKnown: false,
       shouldLearn: true, // we implicitly learned they have this relation
+      needsClarification: false,
+    };
+  }
+
+  // Check if this person is silenced (user previously skipped clarification)
+  const silencedMatch = input.knownPeople.find(p =>
+    p.isSilenced === true && (
+      matchArabicPhrase(name, p.name) || matchArabicPhrase(p.name, name) ||
+      normalizeArabic(name).toLowerCase() === normalizeArabic(p.name).toLowerCase()
+    )
+  );
+
+  if (silencedMatch) {
+    return {
+      name: silencedMatch.name,
+      relationship: "جهة اتصال عامة",
+      category: "تحويل",
+      subCategory: "تحويلات شخصية",
+      isKnown: true,
+      shouldLearn: false,
       needsClarification: false,
     };
   }

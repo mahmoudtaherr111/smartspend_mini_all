@@ -30,10 +30,9 @@ const classificationCache = new LRUCache<string, PipelineResult>({
   ttl: 1000 * 60 * 60 * 24 * 7, // 7 days
 });
 
-function makeCacheKey(text: string, userPlan: string, userId: number): string {
-  // Simple hash: normalize + lowercase + plan + user
+function makeCacheKey(text: string, userPlan: string, userId: number, businessMode?: boolean): string {
   const normalized = text.trim().replace(/\s+/g, " ").toLowerCase();
-  return `cls:${userId}:${userPlan}:${normalized}`;
+  return `cls:${userId}:${userPlan}:${businessMode ? "biz" : "std"}:${normalized}`;
 }
 
 /**
@@ -68,6 +67,15 @@ export interface PipelineInput {
   groqApiKey?: string;
   fireworksApiKey?: string;
   pipelineSettings?: Record<string, string>;
+  businessCategories?: Array<{
+    id: number;
+    name: string;
+    nameAr: string;
+    type: string;
+    keywords: string[];
+    matchExamples: string[];
+  }>;
+  businessMode?: boolean;
 }
 
 export interface PipelineLog {
@@ -431,7 +439,7 @@ export async function runSmartPipeline(
   const fireworksKey = input.fireworksApiKey || "";
 
   // 0. Check classification cache first (40-60% hit rate for repeated queries)
-  const cacheKey = makeCacheKey(input.text, input.userPlan, input.userId);
+  const cacheKey = makeCacheKey(input.text, input.userPlan, input.userId, input.businessMode);
   const cachedResult = classificationCache.get(cacheKey);
   if (cachedResult) {
     return {
@@ -448,12 +456,12 @@ export async function runSmartPipeline(
   }
 
   // 0.5. Muscle Memory — instant match for recurring user patterns (0 tokens, 0 API)
-  // Skip if text contains person-related verbs (needs person resolution which muscle memory can't do)
-  const hasPersonContext = /(?:اديت|أديت|حولت\s*ل|سلفت|عطيت|بعت\s*ل|استلمت\s*من|خدت\s*من)/.test(input.text);
-  if (!hasPersonContext) {
-    try {
-      const memoryMatch = await muscleMemoryLookup(input.text, input.userId, input.userType);
-      if (memoryMatch && memoryMatch.matchScore >= 90 && memoryMatch.amount > 0) {
+  // Person transactions are now allowed: after a hit, we run person resolution
+  // to attach the correct person info. If the person is known → auto_save.
+  // If unknown → clarify (don't auto-save an unknown person).
+  try {
+    const memoryMatch = await muscleMemoryLookup(input.text, input.userId, input.userType);
+    if (memoryMatch && memoryMatch.matchScore >= 90 && memoryMatch.amount > 0) {
       const memItem: ParsedTransaction = {
         amount: memoryMatch.amount,
         category: memoryMatch.pattern.category,
@@ -467,6 +475,82 @@ export async function runSmartPipeline(
         inferenceSource: "dictionary",
         ambiguityFlags: ["muscle_memory_hit"],
       };
+
+      const memKnownPeople: KnownPersonContext[] = Array.isArray(
+        input.userProfileContext?.knownPeople,
+      )
+        ? input.userProfileContext.knownPeople
+        : [];
+      const memKnownNames = memKnownPeople.map((p) => p.name).filter(Boolean);
+
+      const memCandidates = pickAllPersonCandidates(
+        null,
+        input.text,
+        memKnownNames,
+      );
+
+      if (memCandidates.length > 0) {
+        const memResolvedItems: ParsedTransaction[] = [];
+        let memNeedsClarification = false;
+        let memClarificationQ: string | undefined;
+
+        for (const candidateName of memCandidates) {
+          const personApplied = applyPersonResolution(
+            { ...memItem, amount: memCandidates.length > 1 ? Number((memItem.amount / memCandidates.length).toFixed(2)) : memItem.amount },
+            candidateName,
+            input.text,
+            input.text,
+            memKnownPeople,
+          );
+          if (personApplied.needsClarification) {
+            memNeedsClarification = true;
+            memClarificationQ = personApplied.clarificationQuestion;
+          } else {
+            memResolvedItems.push(personApplied.item);
+          }
+        }
+
+        if (memNeedsClarification) {
+          const memResult: PipelineResult = {
+            items: memResolvedItems.length > 0 ? memResolvedItems : [{ ...memItem, needsReview: true, confidence: 60 }],
+            decision: "clarify",
+            clarificationQuestion: memClarificationQ,
+            overallConfidence: 0,
+            tokensUsed: 0,
+            cachedTokens: 0,
+            parsedBy: "rule_engine",
+            modelUsed,
+            processingTimeMs: Date.now() - startTime,
+            log: {
+              originalText: input.text,
+              routing: { route: "muscle_memory", reason: "person_needs_clarification", matchScore: memoryMatch.matchScore },
+              finalConfidence: 0,
+              finalDecision: "clarify",
+            },
+          };
+          return memResult;
+        }
+
+        const memResult: PipelineResult = {
+          items: memResolvedItems.length > 0 ? memResolvedItems : [memItem],
+          decision: "auto_save",
+          overallConfidence: memItem.confidence,
+          tokensUsed: 0,
+          cachedTokens: 0,
+          parsedBy: "rule_engine",
+          modelUsed,
+          processingTimeMs: Date.now() - startTime,
+          log: {
+            originalText: input.text,
+            routing: { route: "muscle_memory", reason: "pattern_match_with_person", matchScore: memoryMatch.matchScore },
+            finalConfidence: memItem.confidence,
+            finalDecision: "auto_save",
+          },
+        };
+        classificationCache.set(cacheKey, memResult);
+        return memResult;
+      }
+
       const memResult: PipelineResult = {
         items: [memItem],
         decision: "auto_save",
@@ -485,10 +569,154 @@ export async function runSmartPipeline(
       };
       classificationCache.set(cacheKey, memResult);
       return memResult;
-      }
-    } catch (e) {
-      // Muscle memory DB query might fail — don't block the pipeline
     }
+  } catch (e) {
+    // Muscle memory DB query might fail — don't block the pipeline
+  }
+
+  // 0.7. Business vs Personal Scoring (0 tokens)
+  // Instead of binary matching, we compute a business_score and personal_score
+  // for the text. If business_score dominates → classify as business.
+  // If personal_score dominates → let normal pipeline handle it (personal).
+  // If close → tag as ambiguous and let the normal pipeline + AI decide.
+  let businessMatchResult: { categoryId: number; nameAr: string; type: string; score: number } | null = null;
+  let businessScoreTotal = 0;
+  let personalScoreTotal = 0;
+
+  if (input.businessCategories && input.businessCategories.length > 0) {
+    const scoringNormalized = normalizeV2(input.text).forRules;
+
+    // --- Compute business score ---
+    for (const bizCat of input.businessCategories) {
+      let catScore = 0;
+      const allKeywords = [
+        ...(Array.isArray(bizCat.keywords) ? bizCat.keywords : []),
+        ...(Array.isArray(bizCat.matchExamples) ? bizCat.matchExamples : []),
+      ];
+
+      for (const kw of allKeywords) {
+        if (!kw || kw.length < 2) continue;
+        if (matchArabicPhrase(scoringNormalized, kw)) {
+          catScore += kw.length >= 4 ? 15 : 8;
+        }
+      }
+
+      if (bizCat.nameAr && matchArabicPhrase(scoringNormalized, bizCat.nameAr)) {
+        catScore += 20;
+      }
+
+      if (catScore > 0 && (!businessMatchResult || catScore > businessMatchResult.score)) {
+        businessMatchResult = { categoryId: bizCat.id, nameAr: bizCat.nameAr, type: bizCat.type, score: catScore };
+      }
+      businessScoreTotal += catScore;
+    }
+
+    // --- Compute personal score ---
+    // Check against the main category dictionary for personal keywords
+    const personalKeywords = [
+      "فطرت", "اتعشيت", "اتغديت", "اكلت", "شربت", "قهوة", "كافيه",
+      "اوبر", "كريم", "مترو", "تاكسي", "بنزين", "مواصلات",
+      "كهرباء", "مياه", "غاز", "نت", "انترنت", "تليفون", "شحن",
+      "ايجار", "إيجار", "سكن",
+      "دكتور", "صيدلية", "دوا", "علاج",
+      "ملابس", "هاتف", "موبايل",
+      "سينما", "جيم", "نادي",
+      "مرتب", "راتب", "بونص", "جالي", "قبضت",
+    ];
+    for (const pk of personalKeywords) {
+      if (scoringNormalized.includes(pk)) {
+        personalScoreTotal += 10;
+      }
+    }
+
+    // --- Salary detection in business mode ---
+    // "دفعت مرتب فلان" or "اديت مرتب" → business salary expense
+    const salaryPattern = /(?:مرتب|راتب|دفع\s+مرتب|اديت\s+مرتب|صرفت\s+مرتب)/;
+    const hasSalaryKeyword = salaryPattern.test(scoringNormalized);
+    if (hasSalaryKeyword && input.businessCategories.some(c => c.nameAr.includes("مرتب") || c.nameAr.includes("رواتب") || c.nameAr.includes("عمال"))) {
+      businessScoreTotal += 25;
+      if (businessMatchResult) {
+        // Override to salary category if available
+        const salaryCat = input.businessCategories.find(c =>
+          c.nameAr.includes("مرتب") || c.nameAr.includes("رواتب") || c.nameAr.includes("عمال")
+        );
+        if (salaryCat) {
+          businessMatchResult = { categoryId: salaryCat.id, nameAr: salaryCat.nameAr, type: salaryCat.type, score: businessMatchResult.score + 25 };
+        }
+      }
+    }
+
+    // --- Decision based on score difference ---
+    const scoreDiff = businessScoreTotal - personalScoreTotal;
+
+    if (businessMatchResult && businessMatchResult.score >= 15 && scoreDiff >= 10) {
+      // Strong business match — classify immediately (0 tokens)
+      const bizAmounts = extractAmounts(input.text);
+      const bizAmount = bizAmounts.length > 0 ? bizAmounts[0].amount : 0;
+
+      if (bizAmount > 0) {
+        const bizType = businessMatchResult.type === "income" ? "income" : "expense";
+
+        // Extract person for salary transactions
+        let bizPerson: string | undefined;
+        let bizPersonRel: string | undefined;
+        if (hasSalaryKeyword) {
+          const knownNames = knownPeople.map((p) => p.name).filter(Boolean);
+          const candidates = pickAllPersonCandidates(null, input.text, knownNames);
+          if (candidates.length > 0) {
+            bizPerson = candidates[0];
+            bizPersonRel = "موظف";
+          }
+        }
+
+        const bizItem: ParsedTransaction = {
+          amount: bizAmount,
+          category: "مشروع",
+          subCategory: businessMatchResult.nameAr,
+          description: input.text.slice(0, 60),
+          type: bizType as any,
+          confidence: Math.min(100, 75 + businessMatchResult.score),
+          currency: "EGP",
+          needsReview: false,
+          parsedBy: "rule_engine",
+          inferenceSource: "dictionary",
+          ambiguityFlags: ["business_scoring_match"],
+          businessId: businessMatchResult.categoryId,
+          person_mentioned: bizPerson,
+          person_relationship: bizPersonRel,
+        };
+
+        const bizResult: PipelineResult = {
+          items: [bizItem],
+          decision: "auto_save",
+          overallConfidence: bizItem.confidence,
+          tokensUsed: 0,
+          cachedTokens: 0,
+          parsedBy: "rule_engine",
+          modelUsed,
+          processingTimeMs: Date.now() - startTime,
+          log: {
+            originalText: input.text,
+            routing: {
+              route: "business_scoring",
+              reason: "business_score_dominant",
+              businessScore: businessScoreTotal,
+              personalScore: personalScoreTotal,
+              scoreDiff,
+              category: businessMatchResult.nameAr,
+              hasSalary: hasSalaryKeyword,
+            },
+            finalConfidence: bizItem.confidence,
+            finalDecision: "auto_save",
+          },
+        };
+        classificationCache.set(cacheKey, bizResult);
+        return bizResult;
+      }
+    }
+    // If personal_score >= business_score + 10 → don't interfere, let normal pipeline handle it.
+    // If |diff| < 10 → ambiguous, let normal pipeline + AI decide (the pipeline will tag it).
+    // The businessMatchResult is kept for later use if AI needs context.
   }
 
   // 1. Normalize (Light Normalization for AI, aggressive for rules)
@@ -955,7 +1183,12 @@ export async function runSmartPipeline(
           userHistoryContext,
           userHistoryCategories,
           numAmountsToClassify,
-          classifierUserPrompt
+          classifierUserPrompt,
+          input.businessCategories?.map((c) => ({
+            nameAr: c.nameAr,
+            type: c.type,
+            keywords: c.keywords || [],
+          })),
         );
         finalSystemPrompt = fireworksPrompts.systemPrompt;
         finalUserPrompt = fireworksPrompts.userPrompt;
@@ -972,7 +1205,12 @@ export async function runSmartPipeline(
           useSimpleSchema,
           userHistoryContext,
           userHistoryCategories,
-          numAmountsToClassify
+          numAmountsToClassify,
+          input.businessCategories?.map((c) => ({
+            nameAr: c.nameAr,
+            type: c.type,
+            keywords: c.keywords || [],
+          })),
         );
         finalUserPrompt = classifierUserPrompt;
     }

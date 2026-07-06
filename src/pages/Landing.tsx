@@ -51,14 +51,14 @@ export default function Landing() {
             تحليل بالعامية المصرية + صوت
           </div>
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
-            سجّل مصاريفك بطريقتك…
+            سجّل مصاريفك بطريقتك
             <span className="block text-emerald-600 dark:text-emerald-400">
-              والذكاء اليساعدك تفهم فين فلوسك رايحة
+              والذكاء يساعدك تفهم فلوسك رايحة فين
             </span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             اكتب زي ما بتتكلم، سجّل بالصوت، وشوف إحصائيات وتنبيهات مفيدة
-            لميزانيتك — مصمم للاستخدام اليومي على الموبايل.
+            لميزانيتك كل يوم على الموبايل.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12">
             <Button

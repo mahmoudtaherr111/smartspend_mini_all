@@ -7,6 +7,9 @@ import {
   sessions,
   userWallets,
   financialGoals,
+  userContacts,
+  userBusinesses,
+  businessCategories,
 } from "./schema";
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -15,6 +18,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   wallets: many(userWallets),
   goals: many(financialGoals),
+  contacts: many(userContacts),
+  businesses: many(userBusinesses),
 }));
 
 export const localUsersRelations = relations(localUsers, ({ many }) => ({
@@ -23,6 +28,8 @@ export const localUsersRelations = relations(localUsers, ({ many }) => ({
   sessions: many(sessions),
   wallets: many(userWallets),
   goals: many(financialGoals),
+  contacts: many(userContacts),
+  businesses: many(userBusinesses),
 }));
 
 export const expensesRelations = relations(expenses, ({ one }) => ({
@@ -33,6 +40,10 @@ export const expensesRelations = relations(expenses, ({ one }) => ({
   oauthUser: one(users, {
     fields: [expenses.userId],
     references: [users.id],
+  }),
+  business: one(userBusinesses, {
+    fields: [expenses.businessId],
+    references: [userBusinesses.id],
   }),
 }));
 
@@ -77,5 +88,33 @@ export const financialGoalsRelations = relations(financialGoals, ({ one }) => ({
   oauthUser: one(users, {
     fields: [financialGoals.userId],
     references: [users.id],
+  }),
+}));
+
+export const userContactsRelations = relations(userContacts, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [userContacts.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [userContacts.userId],
+    references: [users.id],
+  }),
+  business: one(userBusinesses, {
+    fields: [userContacts.businessId],
+    references: [userBusinesses.id],
+  }),
+}));
+
+export const userBusinessesRelations = relations(userBusinesses, ({ many }) => ({
+  categories: many(businessCategories),
+  contacts: many(userContacts),
+  expenses: many(expenses),
+}));
+
+export const businessCategoriesRelations = relations(businessCategories, ({ one }) => ({
+  business: one(userBusinesses, {
+    fields: [businessCategories.businessId],
+    references: [userBusinesses.id],
   }),
 }));

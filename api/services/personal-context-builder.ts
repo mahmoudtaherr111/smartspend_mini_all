@@ -6,9 +6,10 @@ import {
 
 export interface KnownPerson {
   name: string;
-  relationship: string; // ابن/ابنة, زوج/زوجة, والد/والدة, صديق, etc.
-  category: string; // default expense category when transferring to them
+  relationship: string;
+  category: string;
   subCategory: string;
+  isSilenced?: boolean;
 }
 
 export interface PersonalContext {
@@ -150,6 +151,7 @@ export function buildPersonalContext(
         relationship: normalized.normalized || rel,
         category: normalized.category,
         subCategory: subCat,
+        isSilenced: contact.isSilenced === true,
       });
     }
   }
