@@ -90,6 +90,10 @@ export const expenses = mysqlTable(
     paymentMethod: varchar("payment_method", { length: 50 }),
     placeHint: varchar("place_hint", { length: 150 }),
     parsedMetadata: json("parsed_metadata"),
+    // Canonical entity and decision-trace links.  Text remains a display/input
+    // artifact; reporting and learning must use stable ids instead.
+    contactId: int("contact_id"),
+    classificationLogId: int("classification_log_id"),
     businessId: int("business_id"), // null = personal, non-null = business expense
     date: datetime("date").notNull(),
     status: varchar("status", { length: 50 }).notNull().default("confirmed"), // confirmed | pending_clarification
@@ -106,6 +110,8 @@ export const expenses = mysqlTable(
     index("expenses_category_idx").on(t.category),
     index("expenses_status_idx").on(t.status),
     index("expenses_business_idx").on(t.businessId),
+    index("expenses_contact_idx").on(t.contactId),
+    index("expenses_classification_log_idx").on(t.classificationLogId),
   ],
 );
 
@@ -414,6 +420,7 @@ export const proSubscriptions = mysqlTable(
     userType: varchar("user_type", { length: 50 }).notNull(),
     plan: varchar("plan", { length: 50 }).notNull().default("pro_monthly"), // pro_monthly | pro_yearly
     status: varchar("status", { length: 50 }).notNull().default("active"), // active | cancelled | expired
+    autoRenew: boolean("auto_renew").notNull().default(true),
     startDate: datetime("start_date").notNull(),
     endDate: datetime("end_date").notNull(),
     paymentMethod: varchar("payment_method", { length: 100 }),

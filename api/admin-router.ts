@@ -203,17 +203,34 @@ export const adminRouter = router({
       if (localFilters.length)
         localQuery = localQuery.where(and(...localFilters));
 
-      const [oauthUsersAll, localUsersAll] = await Promise.all([
-        oauthQuery.orderBy(desc(users.createdAt)),
-        localQuery.orderBy(desc(localUsers.createdAt)),
+      // 1. Get total counts efficiently
+      const [oauthCountResult] = await db
+        .select({ count: count() })
+        .from(users)
+        .where(oauthFilters.length ? and(...oauthFilters) : undefined);
+      const [localCountResult] = await db
+        .select({ count: count() })
+        .from(localUsers)
+        .where(localFilters.length ? and(...localFilters) : undefined);
+      const total = oauthCountResult.count + localCountResult.count;
+
+      // 2. Fetch only up to offset + limit from both tables
+      const fetchLimit = offset + limit;
+      
+      const [oauthUsersChunk, localUsersChunk] = await Promise.all([
+        oauthQuery.orderBy(desc(users.createdAt)).limit(fetchLimit),
+        localQuery.orderBy(desc(localUsers.createdAt)).limit(fetchLimit),
       ]);
 
       const merged = [
-        ...oauthUsersAll.map((u) => ({ ...u, userType: "oauth" as const })),
-        ...localUsersAll.map((u) => ({ ...u, userType: "local" as const })),
+        ...oauthUsersChunk.map((u) => ({ ...u, userType: "oauth" as const })),
+        ...localUsersChunk.map((u) => ({ ...u, userType: "local" as const })),
       ];
 
-      const total = merged.length;
+      // 3. Sort the combined chunk by date descending
+      merged.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+
+      // 4. Slice the exact page window
       const paged = merged.slice(offset, offset + limit);
 
       const oauthIds = paged.filter((u) => u.userType === "oauth").map((u) => u.id);

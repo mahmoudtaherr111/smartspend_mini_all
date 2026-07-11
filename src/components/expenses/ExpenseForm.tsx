@@ -141,6 +141,7 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
     string | null
   >(null);
   const [clarificationId, setClarificationId] = useState<number | null>(null);
+  const [classificationLogId, setClassificationLogId] = useState<number | null>(null);
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
   const [isSkipping, setIsSkipping] = useState(false);
   const [flowStage, setFlowStage] = useState<
@@ -190,6 +191,18 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
 
   const utilsTrpc = trpc.useUtils();
   const learnMutation = trpc.ai.learnWord.useMutation();
+
+  const showNewContactToast = (c?: { name?: string; totalContacts?: number } | null) => {
+    if (!c || !c.name) return;
+    toast.success(
+      <div className="flex flex-col gap-1 text-right">
+        <span className="font-bold text-sm text-emerald-400">✨ تم التعرف على شخص جديد!</span>
+        <span className="text-xs text-white/90">تم حفظ "{c.name}" في قائمة الأشخاص والعلاقات عشان ما نسألكش عليه تاني.</span>
+      </div>,
+      { duration: 6000 }
+    );
+  };
+
   const answerClarificationMutation = trpc.expense.answerClarification.useMutation({
     onSuccess: (data) => {
       setIsSkipping(false);
@@ -219,7 +232,11 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
         setFlowStage("idle");
         setShowSuccessAnim(true);
         setTimeout(() => setShowSuccessAnim(false), 2000);
-        toast.success("تم حفظ التوضيح وتسجيل العملية.");
+        if ((data as any).newlyAddedContact) {
+          showNewContactToast((data as any).newlyAddedContact);
+        } else {
+          toast.success("تم حفظ التوضيح وتسجيل العملية.");
+        }
         if (onSuccess) onSuccess();
       }
     },
@@ -309,6 +326,8 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
   // ─── Voice Parsing (Combined STT + Parse) ───
   const parseVoiceMutation = trpc.ai.parseVoiceExpense.useMutation({
     onSuccess: (data) => {
+      const traceLogId = (data as { classificationLogId?: number }).classificationLogId ?? null;
+      setClassificationLogId(traceLogId);
       setLatestParserTrace(asParserTrace((data as { trace?: unknown }).trace));
       setIsProcessingVoice(false);
       setDecision(data.decision as any);
@@ -320,7 +339,7 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
       toast.success("تم فهم التسجيل!");
 
       if (data.decision === "auto_save" && data.items && data.items.length > 0) {
-        saveItems(data.items, true, data.text);
+        saveItems(data.items, true, data.text, traceLogId);
       } else if (data.decision === "review") {
         hapticSuccess();
         setFlowStage("review");
@@ -335,6 +354,9 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
 
       setIsSkipping(false);
 
+      if ((data as any).newlyAddedContact) {
+        showNewContactToast((data as any).newlyAddedContact);
+      }
       if (data.alertMessage) {
         toast.info("💡 تنبيه مالي", {
           description: data.alertMessage,
@@ -354,6 +376,8 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
   // ─── Parsing Mutation ───
   const parseMutation = trpc.ai.parseExpense.useMutation({
     onSuccess: (data) => {
+      const traceLogId = (data as { classificationLogId?: number }).classificationLogId ?? null;
+      setClassificationLogId(traceLogId);
       setLatestParserTrace(asParserTrace((data as { trace?: unknown }).trace));
       setIsProcessingVoice(false);
       setDecision(data.decision as any);
@@ -365,7 +389,7 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
         data.items &&
         data.items.length > 0
       ) {
-        saveItems(data.items, true, data.text);
+        saveItems(data.items, true, data.text, traceLogId);
       } else if (data.decision === "review") {
         hapticSuccess();
         setFlowStage("review");
@@ -382,6 +406,9 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
 
       setIsSkipping(false);
 
+      if ((data as any).newlyAddedContact) {
+        showNewContactToast((data as any).newlyAddedContact);
+      }
       if (data.alertMessage) {
         toast.info("💡 تنبيه مالي", {
           description: data.alertMessage,
@@ -494,8 +521,11 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
       utilsTrpc.expense.getMonthlyStats.invalidate();
       utilsTrpc.expense.getMonthSummary.invalidate();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       hapticSuccess();
+      if (data?.newlyAddedContact) {
+        showNewContactToast(data.newlyAddedContact);
+      }
       if (onSuccess) onSuccess();
     },
   });
@@ -518,8 +548,11 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
       utilsTrpc.expense.getMonthlyStats.invalidate();
       utilsTrpc.expense.getMonthSummary.invalidate();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       hapticSuccess();
+      if (data?.newlyAddedContact) {
+        showNewContactToast(data.newlyAddedContact);
+      }
       if (onSuccess) onSuccess();
     },
   });
@@ -549,12 +582,18 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
     try {
       setLatestParserTrace(null);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      let mimeType = "audio/webm";
-      if (!MediaRecorder.isTypeSupported("audio/webm")) {
+      let mimeType = "";
+      if (MediaRecorder.isTypeSupported("audio/webm")) {
+        mimeType = "audio/webm";
+      } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
         mimeType = "audio/mp4";
+      } else if (MediaRecorder.isTypeSupported("audio/aac")) {
+        mimeType = "audio/aac";
       }
 
-      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      const options = mimeType ? { mimeType } : undefined;
+      const mediaRecorder = new MediaRecorder(stream, options);
+      const actualMimeType = mediaRecorder.mimeType || mimeType || "audio/webm";
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -563,7 +602,7 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = () => {
@@ -573,7 +612,7 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
           setLatestParserTrace(null);
           parseVoiceMutation.mutate({
             audioBase64: base64Audio,
-            mimeType: mimeType,
+            mimeType: actualMimeType,
             durationSeconds: durationRef.current,
           });
         };
@@ -646,7 +685,12 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
       : "expense";
   };
 
-  const saveItems = async (items: any[], isAuto: boolean = false, overrideText?: string) => {
+  const saveItems = async (
+    items: any[],
+    isAuto: boolean = false,
+    overrideText?: string,
+    traceLogId: number | null = classificationLogId,
+  ) => {
     const normalizedItems = items
       .map((item) => ({
         ...item,
@@ -674,6 +718,7 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
           rawText: overrideText || text || "إدخال صوتي",
           source: (inputSource === "voice" ? "voice" : "ai_parsed") as any,
           date: item.date,
+          classificationLogId: traceLogId || undefined,
         }));
         await batchCreateMutation.mutateAsync(payload);
       } else {
@@ -687,12 +732,14 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
           rawText: overrideText || text || "إدخال صوتي",
           source: inputSource === "voice" ? "voice" : "ai_parsed",
           date: item.date,
+          classificationLogId: traceLogId || undefined,
         });
       }
       setParsedItems(null);
       setDecision(null);
       setClarificationQuestion(null);
       setClarificationId(null);
+      setClassificationLogId(null);
       setText("");
       setInputSource("text");
       setFlowStage("idle");
@@ -1690,12 +1737,14 @@ function ManualForm({ onSuccess, categories, createMutation, isOnline, userLimit
     }
 
     createMutation.mutate(payload, {
-      onSuccess: () => {
+      onSuccess: (data: any) => {
         setAmount("");
         setCategory("");
         setSubCategory("عام");
         setDescription("");
-        toast.success("تم التسجيل يدوياً!");
+        if (!data?.newlyAddedContact) {
+          toast.success("تم التسجيل يدوياً!");
+        }
       },
     });
   };

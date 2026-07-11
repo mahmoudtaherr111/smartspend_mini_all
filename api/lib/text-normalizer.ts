@@ -279,6 +279,14 @@ const COMMON_PHRASE_NORMALIZATIONS: Record<string, string> = {
   "شحنت كارت الغاز": "دفعت فاتورة الغاز",
 };
 
+/** Ambiguous single words that confuse the AI because of Standard Arabic vs Egyptian Slang */
+const AMBIGUOUS_WORDS_NORMALIZATIONS: Array<{ pattern: RegExp; replacement: string }> = [
+  // "غدا" means lunch in Egyptian, but "tomorrow" in Standard Arabic
+  { pattern: /(?:^|\s)غدا(?=\s|$)/g, replacement: " وجبة غداء " },
+  { pattern: /(?:^|\s)عشا(?=\s|$)/g, replacement: " وجبة عشاء " },
+  { pattern: /(?:^|\s)فطار(?=\s|$)/g, replacement: " وجبة إفطار " },
+];
+
 /**
  * Full text normalization pipeline
  */
@@ -307,6 +315,11 @@ export function normalizeText(text: string): string {
   for (const [source, target] of Object.entries(COMMON_PHRASE_NORMALIZATIONS)) {
     const regex = new RegExp(source, "gi");
     result = result.replace(regex, target);
+  }
+
+  // 2.5.5 Normalize ambiguous single words (e.g. غدا -> وجبة غداء)
+  for (const { pattern, replacement } of AMBIGUOUS_WORDS_NORMALIZATIONS) {
+    result = result.replace(pattern, replacement);
   }
 
   // 2.6 Handle complex expressions & negations (e.g. "مش دافع غير", "مفيش غير")

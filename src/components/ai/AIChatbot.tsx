@@ -157,6 +157,13 @@ export default function AIChatbot() {
   }, [messages, isTyping, scrollToBottom]);
 
   useEffect(() => {
+    const composer = inputRef.current;
+    if (!composer) return;
+    composer.style.height = "auto";
+    composer.style.height = `${Math.min(composer.scrollHeight, 128)}px`;
+  }, [input]);
+
+  useEffect(() => {
     const data = conversationDetails.data;
     if (!data || messages.length > 0) return;
 
@@ -243,8 +250,9 @@ export default function AIChatbot() {
     } catch (error: any) {
       const errMsg = error?.message || "حصل مشكلة. جرب تاني.";
       toast.error(errMsg);
-      // Remove the user message on error
+      // Remove the optimistic bubble but keep the draft ready for a retry.
       setMessages((prev) => prev.filter((m) => m.id !== userMsg.id));
+      setInput(messageText);
     } finally {
       setIsTyping(false);
     }
@@ -356,7 +364,7 @@ export default function AIChatbot() {
   const isEmpty = messages.length === 0;
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="relative flex h-full min-h-0 flex-col">
       {/* Chat header bar */}
       <div className="shrink-0 flex items-center justify-between px-4 py-2 border-b border-border/50">
         <div className="flex items-center gap-2">
@@ -375,6 +383,7 @@ export default function AIChatbot() {
             className="h-8 w-8 text-muted-foreground"
             onClick={handleNewConversation}
             title="محادثة جديدة"
+            aria-label="محادثة جديدة"
           >
             <Plus className="w-4 h-4" />
           </Button>
@@ -384,6 +393,7 @@ export default function AIChatbot() {
             className="h-8 w-8 text-muted-foreground"
             onClick={handleClear}
             title="مسح المحادثة"
+            aria-label="مسح المحادثة"
           >
             <Trash2 className="w-4 h-4" />
           </Button>
@@ -513,7 +523,7 @@ export default function AIChatbot() {
                     ))}
                   </div>
                 )}
-                {msg.role === "assistant" && msg.structured && (
+                {import.meta.env.DEV && msg.role === "assistant" && msg.structured && (
                   <TraceRenderer structured={msg.structured} />
                 )}
               </div>
@@ -565,6 +575,7 @@ export default function AIChatbot() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="اكتب رسالتك..."
+              aria-label="اكتب رسالتك إلى سمارت"
               rows={1}
               className="w-full resize-none rounded-xl border border-border/50 bg-muted/30 px-4 py-3 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 transition-all max-h-32"
               style={{ minHeight: "44px" }}
@@ -576,6 +587,7 @@ export default function AIChatbot() {
             size="icon"
             onClick={() => handleSend()}
             disabled={!input.trim() || sendMessage.isPending}
+            aria-label="إرسال الرسالة"
             className={cn(
               "tap-target active-press shrink-0 h-11 w-11 rounded-xl transition-all duration-200",
               input.trim()
@@ -653,6 +665,23 @@ const TRACE_FACT_PRIORITY: Record<string, string[]> = {
     "category",
     "category_total_expense",
     "transaction_count",
+  ],
+  "finance.person_total": [
+    "person_name",
+    "person_relation",
+    "period",
+    "person_total_expense",
+    "transaction_count",
+  ],
+  "finance.classification_trace": [
+    "expense_id",
+    "description",
+    "stored_category",
+    "date",
+    "trace_available",
+    "parsed_by",
+    "decision",
+    "confidence",
   ],
 };
 

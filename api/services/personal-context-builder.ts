@@ -32,127 +32,146 @@ export function buildPersonalContext(
   const lifestyle = profile.lifestyleInfo as Record<string, any>;
   const knownPeople: KnownPerson[] = [];
 
-  // Children names
-  const childrenNames: string[] = Array.isArray(lifestyle.childrenNames)
-    ? lifestyle.childrenNames
-    : [];
-  for (const name of childrenNames) {
-    if (name && typeof name === "string" && name.trim()) {
+  // Single Source of Truth: user_contacts table (populated via getSmartProfile into aiInferredAttributes.knownPeople / dynamicContacts)
+  const sourceContacts = Array.isArray(profile.aiInferredAttributes?.knownPeople)
+    ? profile.aiInferredAttributes.knownPeople
+    : (Array.isArray(lifestyle.dynamicContacts) ? lifestyle.dynamicContacts : []);
+
+  if (sourceContacts.length > 0 || profile.aiInferredAttributes?.contactsMigratedAll) {
+    for (const contact of sourceContacts) {
+      if (contact && typeof contact === "object" && contact.name) {
+        const rawRel =
+          contact.rawRelationship || contact.relationship || "شخص معروف";
+        const rel = typeof rawRel === "string" ? rawRel.trim() : "شخص معروف";
+        const normalized = normalizeRelationship(rel);
+        const name = contact.name.trim();
+        const suffix = getRelationshipSuffix(normalized.normalized);
+        const subCat =
+          rel && rel !== "شخص معروف" && normalized.category !== "تحويلات"
+            ? `${name} ${suffix}`
+            : name;
+
+        knownPeople.push({
+          name,
+          relationship: normalized.normalized || rel,
+          category: normalized.category,
+          subCategory: subCat,
+          isSilenced: contact.isSilenced === true,
+        });
+      }
+    }
+  } else {
+    // Children names
+    const childrenNames: string[] = Array.isArray(lifestyle.childrenNames)
+      ? lifestyle.childrenNames
+      : [];
+    for (const name of childrenNames) {
+      if (name && typeof name === "string" && name.trim()) {
+        knownPeople.push({
+          name: name.trim(),
+          relationship: "ابن/ابنة",
+          category: "العائلة",
+          subCategory: `${name.trim()} من ولادك`,
+        });
+      }
+    }
+
+    // Partner name
+    const partnerName = lifestyle.partnerName;
+    if (partnerName && typeof partnerName === "string" && partnerName.trim()) {
       knownPeople.push({
-        name: name.trim(),
-        relationship: "ابن/ابنة",
+        name: partnerName.trim(),
+        relationship: "زوج/زوجة",
         category: "العائلة",
-        subCategory: `${name.trim()} من ولادك`,
+        subCategory: `${partnerName.trim()} شريك الحياة`,
       });
     }
-  }
 
-  // Partner name
-  const partnerName = lifestyle.partnerName;
-  if (partnerName && typeof partnerName === "string" && partnerName.trim()) {
-    knownPeople.push({
-      name: partnerName.trim(),
-      relationship: "زوج/زوجة",
-      category: "العائلة",
-      subCategory: `${partnerName.trim()} شريك الحياة`,
-    });
-  }
-
-  // Regular contacts (non-family)
-  const contacts: string[] = Array.isArray(lifestyle.regularContacts)
-    ? lifestyle.regularContacts
-    : [];
-  for (const name of contacts) {
-    if (name && typeof name === "string" && name.trim()) {
-      knownPeople.push({
-        name: name.trim(),
-        relationship: "شخص معروف",
-        category: "تحويلات",
-        subCategory: "تحويلات شخصية",
-      });
+    // Regular contacts (non-family)
+    const contacts: string[] = Array.isArray(lifestyle.regularContacts)
+      ? lifestyle.regularContacts
+      : [];
+    for (const name of contacts) {
+      if (name && typeof name === "string" && name.trim()) {
+        knownPeople.push({
+          name: name.trim(),
+          relationship: "شخص معروف",
+          category: "تحويلات",
+          subCategory: "تحويلات شخصية",
+        });
+      }
     }
-  }
 
-  // Supports others (from earlier question: parents, siblings, etc.)
-  const supportsOthers: string[] = Array.isArray(lifestyle.supportsOthers)
-    ? lifestyle.supportsOthers
-    : [];
-  const supportsMap: Record<string, { rel: string; sub: string }> = {
-    parents: { rel: "والد/والدة", sub: "دعم الأهل" },
-    siblings: { rel: "أخ/أخت", sub: "دعم الإخوة" },
-    partner: { rel: "شريك/شريكة", sub: "شريك الحياة" },
-    extended: { rel: "أقارب", sub: "دعم الأقارب" },
-  };
-
-  // Siblings names (new question)
-  const siblingsNames: string[] = Array.isArray(lifestyle.siblingsNames)
-    ? lifestyle.siblingsNames
-    : [];
-  for (const name of siblingsNames) {
-    if (name && typeof name === "string" && name.trim()) {
-      knownPeople.push({
-        name: name.trim(),
-        relationship: "أخ/أخت",
-        category: "العائلة",
-        subCategory: `${name.trim()} أخوك/أختك`,
-      });
+    // Siblings names (new question)
+    const siblingsNames: string[] = Array.isArray(lifestyle.siblingsNames)
+      ? lifestyle.siblingsNames
+      : [];
+    for (const name of siblingsNames) {
+      if (name && typeof name === "string" && name.trim()) {
+        knownPeople.push({
+          name: name.trim(),
+          relationship: "أخ/أخت",
+          category: "العائلة",
+          subCategory: `${name.trim()} أخوك/أختك`,
+        });
+      }
     }
-  }
 
-  // Parents names (new question)
-  const parentsNames: string[] = Array.isArray(lifestyle.parentsNames)
-    ? lifestyle.parentsNames
-    : [];
-  for (const name of parentsNames) {
-    if (name && typeof name === "string" && name.trim()) {
-      knownPeople.push({
-        name: name.trim(),
-        relationship: "والد/والدة",
-        category: "العائلة",
-        subCategory: `${name.trim()} من الوالدين`,
-      });
+    // Parents names (new question)
+    const parentsNames: string[] = Array.isArray(lifestyle.parentsNames)
+      ? lifestyle.parentsNames
+      : [];
+    for (const name of parentsNames) {
+      if (name && typeof name === "string" && name.trim()) {
+        knownPeople.push({
+          name: name.trim(),
+          relationship: "والد/والدة",
+          category: "العائلة",
+          subCategory: `${name.trim()} من الوالدين`,
+        });
+      }
     }
-  }
 
-  // Pet names (for fun context)
-  const petNames: string[] = Array.isArray(lifestyle.petNames)
-    ? lifestyle.petNames
-    : [];
-  for (const name of petNames) {
-    if (name && typeof name === "string" && name.trim()) {
-      knownPeople.push({
-        name: name.trim(),
-        relationship: "حيوان أليف",
-        category: "متنوعات",
-        subCategory: "مصاريف الحيوانات",
-      });
+    // Pet names (for fun context)
+    const petNames: string[] = Array.isArray(lifestyle.petNames)
+      ? lifestyle.petNames
+      : [];
+    for (const name of petNames) {
+      if (name && typeof name === "string" && name.trim()) {
+        knownPeople.push({
+          name: name.trim(),
+          relationship: "حيوان أليف",
+          category: "متنوعات",
+          subCategory: "مصاريف الحيوانات",
+        });
+      }
     }
-  }
 
-  // Dynamic Contacts (added from chat)
-  const dynamicContacts = Array.isArray(lifestyle.dynamicContacts)
-    ? lifestyle.dynamicContacts
-    : [];
-  for (const contact of dynamicContacts) {
-    if (contact && typeof contact === "object" && contact.name) {
-      const rawRel =
-        contact.rawRelationship || contact.relationship || "شخص معروف";
-      const rel = typeof rawRel === "string" ? rawRel.trim() : "شخص معروف";
-      const normalized = normalizeRelationship(rel);
-      const name = contact.name.trim();
-      const suffix = getRelationshipSuffix(normalized.normalized);
-      const subCat =
-        rel && rel !== "شخص معروف" && normalized.category !== "تحويلات"
-          ? `${name} ${suffix}`
-          : name;
+    // Dynamic Contacts (added from chat)
+    const dynamicContacts = Array.isArray(lifestyle.dynamicContacts)
+      ? lifestyle.dynamicContacts
+      : [];
+    for (const contact of dynamicContacts) {
+      if (contact && typeof contact === "object" && contact.name) {
+        const rawRel =
+          contact.rawRelationship || contact.relationship || "شخص معروف";
+        const rel = typeof rawRel === "string" ? rawRel.trim() : "شخص معروف";
+        const normalized = normalizeRelationship(rel);
+        const name = contact.name.trim();
+        const suffix = getRelationshipSuffix(normalized.normalized);
+        const subCat =
+          rel && rel !== "شخص معروف" && normalized.category !== "تحويلات"
+            ? `${name} ${suffix}`
+            : name;
 
-      knownPeople.push({
-        name,
-        relationship: normalized.normalized || rel,
-        category: normalized.category,
-        subCategory: subCat,
-        isSilenced: contact.isSilenced === true,
-      });
+        knownPeople.push({
+          name,
+          relationship: normalized.normalized || rel,
+          category: normalized.category,
+          subCategory: subCat,
+          isSilenced: contact.isSilenced === true,
+        });
+      }
     }
   }
 

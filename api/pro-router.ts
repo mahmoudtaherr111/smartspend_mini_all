@@ -134,23 +134,26 @@ export const proRouter = router({
     }),
 
   cancel: authedProcedure.mutation(async ({ ctx }) => {
+    // Mark the subscription as cancelled, but DO NOT immediately downgrade
+    // the user's plan to "free". They've already paid for the current cycle
+    // and should retain Pro access until the billing period ends (endDate).
+    // A scheduled cron job or middleware check should downgrade expired
+    // cancelled subscriptions to "free".
     await db
       .update(proSubscriptions)
-      .set({ status: "cancelled" })
+      .set({ status: "cancelled", autoRenew: false })
       .where(
         and(
           eq(proSubscriptions.userId, ctx.user.id),
           eq(proSubscriptions.userType, ctx.user.type),
+          eq(proSubscriptions.status, "active"),
         ),
       );
 
-    const table = ctx.user.type === "oauth" ? users : localUsers;
-    await db
-      .update(table)
-      .set({ plan: "free" })
-      .where(eq(table.id, ctx.user.id));
+    // NOTE: We intentionally do NOT set plan to "free" here.
+    // The user keeps Pro access until their subscription endDate.
 
-    return { success: true, message: "تم إلغاء الاشتراك" };
+    return { success: true, message: "تم إلغاء التجديد التلقائي. ستستمر خدمة Pro حتى نهاية فترة الاشتراك الحالية." };
   }),
 
   listSubscriptions: adminProcedure

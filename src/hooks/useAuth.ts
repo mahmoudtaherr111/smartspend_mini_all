@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { trpc } from "@/providers/trpc";
+import { clearPersistedQueryCache } from "@/lib/queryPersister";
 
 export interface AuthUser {
   id: number;
@@ -72,6 +73,11 @@ export function useAuth() {
 
   const logout = useCallback(async () => {
     localStorage.removeItem("local_auth_token");
+    // Queued data and hydrated query results belong to the previous user. Never
+    // carry either into the next account on a shared phone.
+    localStorage.removeItem("smartspend_offline_texts");
+    localStorage.removeItem("smartspend_offline_manual");
+    await clearPersistedQueryCache();
     document.cookie =
       "google_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     try {

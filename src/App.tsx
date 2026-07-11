@@ -9,8 +9,7 @@ import {
 } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { QueryClient } from "@tanstack/react-query";
-import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { idbPersister } from "@/lib/queryPersister";
+import { clearPersistedQueryCache } from "@/lib/queryPersister";
 import { trpc, trpcClient } from "@/providers/trpc";
 import { Toaster } from "@/components/ui/sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -454,26 +453,24 @@ export default function App() {
   React.useEffect(() => {
     // Clear chunk error reload flag if application successfully loaded
     sessionStorage.removeItem("chunk_error_reloaded");
+    // Older releases persisted every financial tRPC response under one device
+    // key. Purge that legacy cache rather than hydrating another user's data.
+    void clearPersistedQueryCache();
   }, []);
 
   return (
     <ErrorBoundary>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <PersistQueryClientProvider
-          client={queryClient}
-          persistOptions={{ persister: idbPersister, maxAge: 24 * 60 * 60 * 1000 }}
-        >
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <BrowserRouter>
-              <Layout>
-                <Suspense fallback={<PageLoadingSkeleton />}>
-                  <AnimatedRoutes />
-                </Suspense>
-              </Layout>
-              <Toaster position="top-center" richColors className="pt-safe" />
-            </BrowserRouter>
-          </ThemeProvider>
-        </PersistQueryClientProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <BrowserRouter>
+            <Layout>
+              <Suspense fallback={<PageLoadingSkeleton />}>
+                <AnimatedRoutes />
+              </Suspense>
+            </Layout>
+            <Toaster position="top-center" richColors className="pt-safe" />
+          </BrowserRouter>
+        </ThemeProvider>
       </trpc.Provider>
     </ErrorBoundary>
   );

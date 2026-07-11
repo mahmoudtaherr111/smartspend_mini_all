@@ -83,16 +83,18 @@ export function ExpenseChart({
 
   // 1. Filter electronic transactions
   const electronicItems = items.filter((item) => {
-    if (typeof item.parsedMetadata === "string") {
+    // Parse metadata safely without mutating the original prop
+    let meta = item.parsedMetadata;
+    if (typeof meta === "string") {
       try {
-        item.parsedMetadata = JSON.parse(item.parsedMetadata);
+        meta = JSON.parse(meta);
       } catch (e) {
-        item.parsedMetadata = {};
+        meta = {};
       }
     }
     if (
       item.source === "sms" ||
-      (item.parsedMetadata && item.parsedMetadata.provider)
+      (meta && meta.provider)
     )
       return true;
     const eKeywords = [

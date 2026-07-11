@@ -61,6 +61,16 @@
     inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
 }
 
+/* Fallback for browsers that do not support backdrop-filter */
+@supports not (backdrop-filter: blur(24px)) {
+  .glass-card, .premium-card {
+    background: rgba(255, 255, 255, 0.95);
+  }
+  .dark .glass-card, .dark .premium-card {
+    background: rgba(15, 23, 42, 0.95);
+  }
+}
+
 /* Premium radial glows for background */
 .ambient-glow {
   position: absolute;

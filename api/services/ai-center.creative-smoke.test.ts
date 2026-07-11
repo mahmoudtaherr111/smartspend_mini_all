@@ -76,7 +76,7 @@ describe("AI Center creative system smoke", () => {
         categories: ["food", "shopping"],
       }),
     });
-    expect(classificationNeeds.map((need) => need.kind)).toEqual(["finance.transactions", "finance.breakdown", "finance.category_inclusion"]);
+    expect(classificationNeeds.map((need) => need.kind)).toEqual(["finance.classification_trace", "finance.transactions", "finance.breakdown", "finance.category_inclusion"]);
   });
 
   it("keeps context packs small and facts-first even with noisy chat history", () => {

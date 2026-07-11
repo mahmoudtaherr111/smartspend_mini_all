@@ -20,6 +20,8 @@ const RELATIONSHIP_MAP: Record<string, string> = {
   اخويا: "أخ",
   اخوي: "أخ",
   اخوك: "أخ",
+  اخواتي: "أخ",
+  اخوات: "أخ",
   اخت: "أخت",
   اختي: "أخت",
   اب: "أب",
@@ -51,6 +53,9 @@ const RELATIONSHIP_MAP: Record<string, string> = {
   جدتي: "جدة",
   تيته: "جدة",
   تيتا: "جدة",
+  قريب: "قريب",
+  قريبي: "قريب",
+  قرايبي: "قريب",
 
   // Spouse / Partner
   زوج: "زوج",
@@ -65,8 +70,12 @@ const RELATIONSHIP_MAP: Record<string, string> = {
   // Friends & Social
   صاحب: "صديق",
   صاحبي: "صديق",
+  اصحابي: "صديق",
+  أصحابي: "صديق",
   صديق: "صديق",
   صديقي: "صديق",
+  اصدقائي: "صديق",
+  أصدقائي: "صديق",
   صاحبه: "صديقة",
   صاحبتي: "صديقة",
   صحبتي: "صديقة",
@@ -75,6 +84,7 @@ const RELATIONSHIP_MAP: Record<string, string> = {
   صديقتي: "صديقة",
   زميل: "زميل",
   زميلي: "زميل",
+  زملائي: "زميل",
   زميله: "زميلة",
   زميلتي: "زميلة",
   جاري: "جار",
@@ -144,6 +154,20 @@ export function normalizeRelationship(
   // If not found with stripped prefix, try the original word in case the prefix wasn't a prefix
   if (!normalized) {
     normalized = RELATIONSHIP_MAP[comparableArabic(rawRelation.trim())];
+  }
+
+  // Suffix stripping: if not found directly, try stripping possessive suffixes (e.g. "اخوه", "ابوها", "امك")
+  if (!normalized) {
+    const possessiveSuffixes = ["وهم", "وكم", "وها", "وه", "يا", "ي", "ه", "ها", "ك", "نا", "كم", "هم"];
+    for (const suffix of possessiveSuffixes) {
+      if (compWord.endsWith(suffix) && compWord.length > suffix.length + 1) {
+        const root = compWord.slice(0, -suffix.length);
+        if (RELATIONSHIP_MAP[root]) {
+          normalized = RELATIONSHIP_MAP[root];
+          break;
+        }
+      }
+    }
   }
 
   // Fallback: If it's a multi-word phrase (e.g., "مساعد صاحبي"), try to find any known relationship word inside it
@@ -219,6 +243,22 @@ export function getRelationshipSuffix(normalizedRelation: string, personName?: s
   return SUFFIX_MAP[relation] || relation;
 }
 
+export function isRelationshipTerm(word: string): boolean {
+  if (!word) return false;
+  const clean = word.trim().replace(/^[بلكف]/, "");
+  const comp = comparableArabic(clean);
+  if (RELATIONSHIP_MAP[comp] || RELATIONSHIP_MAP[comparableArabic(word.trim())]) return true;
+  
+  const possessiveSuffixes = ["وهم", "وكم", "وها", "وه", "يا", "ي", "ه", "ها", "ك", "نا", "كم", "هم"];
+  for (const suffix of possessiveSuffixes) {
+    if (comp.endsWith(suffix) && comp.length > suffix.length + 1) {
+      const root = comp.slice(0, -suffix.length);
+      if (RELATIONSHIP_MAP[root]) return true;
+    }
+  }
+  return false;
+}
+
 /**
  * Intelligently parses subCategory string into separate contact name and relationship.
  * Supports multi-word names (e.g. "عبد الرحمن صاحبي") and reverse order (e.g. "صاحبي جلال").
@@ -264,10 +304,10 @@ export function parseNameAndRelationship(
     const firstWord = parts[0];
     const lastWord = parts[parts.length - 1];
 
-    if (relationWords.includes(lastWord)) {
+    if (relationWords.includes(lastWord) || isRelationshipTerm(lastWord)) {
       relationship = lastWord;
       name = parts.slice(0, -1).join(" ");
-    } else if (relationWords.includes(firstWord)) {
+    } else if (relationWords.includes(firstWord) || isRelationshipTerm(firstWord)) {
       relationship = firstWord;
       name = parts.slice(1).join(" ");
     } else {
@@ -275,13 +315,14 @@ export function parseNameAndRelationship(
       name = parts[0];
       relationship = parts.slice(1).join(" ");
     }
-  } else if (relationWords.includes(nameRaw)) {
+  } else if (relationWords.includes(nameRaw) || isRelationshipTerm(nameRaw)) {
     relationship = nameRaw;
     name = "شخص";
   } else {
     if (category === "أصدقاء") relationship = "صديق";
     else if (category === "موظفين") relationship = "موظف";
     else if (category === "العائلة") relationship = "قريب";
+    else relationship = "شخص معروف";
   }
 
   return { name: name.trim(), relationship: relationship.trim() };

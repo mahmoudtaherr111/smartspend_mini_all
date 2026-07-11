@@ -75,6 +75,24 @@ export interface FinanceCategoryTotal {
   }>;
 }
 
+export interface FinancePersonTotal {
+  period: ResolvedFinancePeriod;
+  contactId: number;
+  name: string;
+  relation?: string | null;
+  totalExpense: number;
+  transactionCount: number;
+}
+
+export interface FinanceClassificationTrace {
+  transaction: FinanceTransactionFact;
+  classificationLogId?: number | null;
+  parsedBy?: string | null;
+  decision?: string | null;
+  confidence?: number | null;
+  modelUsed?: string | null;
+}
+
 export interface FinanceBreakdownItem {
   name: string;
   amount: number;

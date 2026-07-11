@@ -32,131 +32,59 @@ function isSameOrigin(url) {
   return url.origin === self.location.origin;
 }
 
-// 2. Offline Background Sync for Mutations (POST / DELETE)
-const bgSyncPlugin = new self.workbox.backgroundSync.BackgroundSyncPlugin(
-  "smartspend-offline-queue",
-  {
-    maxRetentionTime: 24 * 60, // Retry for max of 24 Hours (specified in minutes)
-    onSync: async ({ queue }) => {
-      try {
-        await queue.replayRequests();
-        // Send a local push notification to the user
-        if (self.registration && self.registration.showNotification) {
-          self.registration.showNotification("تمت المزامنة بنجاح 🚀", {
-            body: "تم إرسال ومعالجة جميع مصاريفك التي أضفتها وأنت أوفلاين.",
-            icon: "/pwa-192x192.png",
-            badge: "/pwa-192x192.png",
-            vibrate: [50, 100, 50],
-            data: "/",
-          });
-        }
-        
-        // Notify clients that sync was successful so they can show a toast or refresh data
-        self.clients.matchAll().then((clients) => {
-          clients.forEach((client) =>
-            client.postMessage({ type: "OFFLINE_SYNC_SUCCESS" }),
-          );
-        });
-      } catch (error) {
-        console.error("Background sync failed:", error);
-      }
-    },
-  },
-);
+// 2. Never replay arbitrary mutations from a service worker. Replaying a stale
+// POST/DELETE can duplicate a transaction or apply a later-unwanted settings,
+// billing, or deletion action. ExpenseForm owns a visible, idempotent local
+// outbox and asks the user to review it before it is synchronized.
 
+// 3. Workbox routing for GET requests
+// FIX: Replaced the custom `fetch` event listener with Workbox registerRoute calls.
+// The raw listener was intercepting ALL requests before Workbox routing could run,
+// causing double-caching for precached assets and bypassing Workbox strategies.
+
+// 3a. User-specific API/tRPC reads stay network-only. Cache Storage keys do not
+// reliably isolate responses by authenticated user, while React Query handles
+// the in-app cache for the active session.
+
+// 3b. Navigation requests — NetworkFirst, falling back to cached app shell
 self.workbox.routing.registerRoute(
-  isApiRequest,
-  new self.workbox.strategies.NetworkOnly({
-    plugins: [bgSyncPlugin],
-  }),
-  "POST",
-);
-
-self.workbox.routing.registerRoute(
-  isApiRequest,
-  new self.workbox.strategies.NetworkOnly({
-    plugins: [bgSyncPlugin],
-  }),
-  "DELETE",
-);
-
-// 3. Fetch interceptions for GET requests
-self.addEventListener("fetch", (event) => {
-  const { request } = event;
-  if (request.method !== "GET") return;
-
-  const url = new URL(request.url);
-  if (!isSameOrigin(url)) return;
-
-  // Always bypass API / TRPC calls for GET (do not cache server data)
-  if (isApiRequest(url)) {
-    event.respondWith(fetch(request));
-    return;
-  }
-
-  // Navigation requests: Try network first, fall back to cached index.html or offline.html
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.ok) return response;
-          throw new Error("Network response not OK");
-        })
-        .catch(async () => {
-          const cached =
-            (await caches.match("/index.html")) ||
-            (await caches.match("/offline.html"));
-          return cached || Response.error();
-        }),
-    );
-    return;
-  }
-
-  // Dynamic Image caching using Stale-While-Revalidate
-  if (request.destination === "image") {
-    event.respondWith(
-      caches.open(IMAGE_CACHE).then(async (cache) => {
-        const cachedResponse = await cache.match(request);
-        const fetchPromise = fetch(request)
-          .then((networkResponse) => {
-            if (networkResponse.ok) {
-              cache.put(request, networkResponse.clone());
-              // Enforce limit of images in cache
-              cache.keys().then((keys) => {
-                if (keys.length > MAX_IMAGE_ENTRIES) {
-                  cache.delete(keys[0]);
-                }
-              });
-            }
-            return networkResponse;
-          })
-          .catch(() => null);
-
-        return cachedResponse || fetchPromise || Response.error();
+  ({ request }) => request.mode === "navigate",
+  new self.workbox.strategies.NetworkFirst({
+    cacheName: RUNTIME_CACHE,
+    networkTimeoutSeconds: 5,
+    plugins: [
+      new self.workbox.precaching.PrecacheFallbackPlugin({
+        fallbackURL: "/index.html",
       }),
-    );
-    return;
-  }
+    ],
+  }),
+);
 
-  // Generic static assets fall back to precache / cache
-  event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
+// 3c. Image caching — StaleWhileRevalidate with max entries
+self.workbox.routing.registerRoute(
+  ({ request }) => request.destination === "image",
+  new self.workbox.strategies.StaleWhileRevalidate({
+    cacheName: IMAGE_CACHE,
+    plugins: [
+      new self.workbox.expiration.ExpirationPlugin({
+        maxEntries: MAX_IMAGE_ENTRIES,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+      }),
+    ],
+  }),
+);
 
-      return fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse.ok && !isApiRequest(url)) {
-            const cacheCopy = networkResponse.clone();
-            caches.open(RUNTIME_CACHE).then((cache) => {
-              cache.put(request, cacheCopy);
-            });
-          }
-          return networkResponse;
-        })
-        .catch(() => Response.error());
-    }),
-  );
-});
+// 3d. Other same-origin static assets — StaleWhileRevalidate
+self.workbox.routing.registerRoute(
+  ({ url, request }) =>
+    isSameOrigin(url) &&
+    !isApiRequest(url) &&
+    request.destination !== "image" &&
+    request.mode !== "navigate",
+  new self.workbox.strategies.StaleWhileRevalidate({
+    cacheName: RUNTIME_CACHE,
+  }),
+);
 
 // 3. Message handling (SKIP_WAITING triggered by registration toast)
 self.addEventListener("message", (event) => {

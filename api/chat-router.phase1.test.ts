@@ -1,6 +1,5 @@
 import { chatRouter } from "./chat-router";
-import { processAIChatMessage } from "./services/ai-chat-service";
-import { runAIKernelActive, runAIKernelShadow } from "./services/ai-kernel";
+import { runAIKernelActive } from "./services/ai-kernel";
 
 const { dbMock } = vi.hoisted(() => {
   const dbMock: any = {
@@ -18,10 +17,11 @@ const { dbMock } = vi.hoisted(() => {
         const historyChain: any = {
           from: vi.fn(() => historyChain),
           where: vi.fn(() => historyChain),
-          orderBy: vi.fn(() =>
+          orderBy: vi.fn(() => historyChain),
+          limit: vi.fn(() =>
             Promise.resolve([
-              { role: "user", content: "عايز اخطط لهدف قريب" },
               { role: "assistant", content: "تمام، قولي الرقم والمدة." },
+              { role: "user", content: "عايز اخطط لهدف قريب" },
             ]),
           ),
         };
@@ -60,17 +60,6 @@ vi.mock("./queries/connection", () => ({
   db: dbMock,
 }));
 
-vi.mock("./services/ai-chat-service", () => ({
-  processAIChatMessage: vi.fn(() =>
-    Promise.resolve({
-      response: "legacy response",
-      tokensUsed: 21,
-      model: "legacy-model",
-      toolsUsed: [],
-    }),
-  ),
-}));
-
 vi.mock("./services/ai-kernel", () => ({
   embeddingApiCallsFromCacheHits: vi.fn((cacheHits: string[]) =>
     cacheHits.some((hit) => hit.startsWith("memory_cache:hit"))
@@ -102,7 +91,6 @@ vi.mock("./services/ai-kernel", () => ({
       debug: { mode: "active", llmCalls: 0 },
     }),
   ),
-  runAIKernelShadow: vi.fn(() => Promise.resolve({ traceId: "shadow_trace" })),
 }));
 
 vi.mock("./services/ai-memory", () => ({
@@ -121,9 +109,7 @@ vi.mock("./services/action-runtime", () => ({
 
 describe("chat router phase 1 kernel primary", () => {
   beforeEach(() => {
-    vi.mocked(processAIChatMessage).mockClear();
     vi.mocked(runAIKernelActive).mockClear();
-    vi.mocked(runAIKernelShadow).mockClear();
   });
 
   it("uses the AI Kernel as primary even when the deprecated primary flag is false", async () => {
@@ -151,9 +137,7 @@ describe("chat router phase 1 kernel primary", () => {
       model: "kernel-model",
       toolsUsed: ["finance.goal_progress"],
     });
-    expect(processAIChatMessage).not.toHaveBeenCalled();
     expect(runAIKernelActive).toHaveBeenCalledTimes(1);
-    expect(runAIKernelShadow).not.toHaveBeenCalled();
     expect(runAIKernelActive).toHaveBeenCalledWith(
       expect.objectContaining({
         channel: "chat",
@@ -167,10 +151,7 @@ describe("chat router phase 1 kernel primary", () => {
           { role: "assistant", content: "تمام، قولي الرقم والمدة." },
         ],
         metadata: expect.objectContaining({
-          legacyPath: "disabled",
-          legacyFallbackAllowed: false,
-          deprecatedPrimaryFlag: false,
-          legacyModel: "accounts/fireworks/models/deepseek-v4-flash",
+          agentRuntime: "plan_first_v1",
         }),
       }),
       expect.objectContaining({

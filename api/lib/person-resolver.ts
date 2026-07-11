@@ -1,6 +1,6 @@
 import { normalizeRelationship, getRelationshipSuffix } from "./relationship-normalizer";
 import { matchArabicPhrase, normalizeArabic, levenshtein } from "./fuzzy-match";
-import { isKareemPersonContext } from "./egyptian-names-dictionary";
+import { isKareemPersonContext, isLikelyPersonName } from "./egyptian-names-dictionary";
 import { extractPeople } from "./entity-extractor";
 
 export interface KnownPersonForResolver {
@@ -60,18 +60,18 @@ export const NON_PERSON_TERMS = new Set([
 ]);
 
 const RELATION_ALIASES: Array<{ canonical: string; aliases: string[] }> = [
-  { canonical: "أخ", aliases: ["اخويا", "أخويا", "اخوي", "اخو", "اخ", "أخ"] },
-  { canonical: "أخت", aliases: ["اختي", "أختي", "اخت", "أخت"] },
-  { canonical: "أب", aliases: ["ابويا", "أبويا", "بابا", "والدي", "اب"] },
+  { canonical: "أخ", aliases: ["اخواتي", "اخوات", "أخوات", "اخويا", "أخويا", "اخوي", "اخو", "اخ", "أخ", "اخي", "أخي"] },
+  { canonical: "أخت", aliases: ["اخواتي", "اخوات", "أخوات", "اختي", "أختي", "اخت", "أخت"] },
+  { canonical: "أب", aliases: ["ابويا", "أبويا", "بابا", "والدي", "اب", "ابي", "أبي"] },
   { canonical: "أم", aliases: ["امي", "أمي", "ماما", "والدتي", "ام"] },
   { canonical: "ابن", aliases: ["ابني", "ابن", "ولدي"] },
   { canonical: "ابنة", aliases: ["بنتي", "بنت"] },
   { canonical: "زوج", aliases: ["جوزي", "زوجي", "جوز"] },
   { canonical: "زوجة", aliases: ["مراتي", "زوجتي", "مرات"] },
-  { canonical: "صديق", aliases: ["صاحبي", "صديقي", "صاحب", "صديق"] },
-  { canonical: "صديقة", aliases: ["صاحبتي", "صحبتي", "صديقتي", "صاحبة", "صديقة"] },
-  { canonical: "زميل", aliases: ["زميلي", "زميل"] },
-  { canonical: "زميلة", aliases: ["زميلتي", "زميلة"] },
+  { canonical: "صديق", aliases: ["اصدقائي", "أصدقائي", "اصحابي", "أصحابي", "صاحبي", "صديقي", "صاحب", "صديق"] },
+  { canonical: "صديقة", aliases: ["اصدقائي", "أصدقائي", "اصحابي", "أصحابي", "صاحبتي", "صحبتي", "صديقتي", "صاحبة", "صديقة"] },
+  { canonical: "زميل", aliases: ["زملائي", "زملاء", "زميلي", "زميل"] },
+  { canonical: "زميلة", aliases: ["زملائي", "زملاء", "زميلتي", "زميلة"] },
   { canonical: "مدير", aliases: ["مديري", "المدير", "مدير"] },
   { canonical: "موظف", aliases: ["موظف عندي", "موظفي", "موظف", "عامل عندي", "عامل"] },
   { canonical: "حارس", aliases: ["البواب", "بواب", "حارس"] },
@@ -79,7 +79,7 @@ const RELATION_ALIASES: Array<{ canonical: string; aliases: string[] }> = [
   { canonical: "قريب", aliases: ["قريبي", "قريب", "قريبتي", "قرايبي"] },
 ];
 
-function compactArabic(value: string): string {
+export function compactArabic(value: string): string {
   return normalizeArabic(String(value || ""))
     .replace(/[^\u0600-\u06FFa-zA-Z\s]/g, " ")
     .replace(/\s+/g, " ")
@@ -88,7 +88,15 @@ function compactArabic(value: string): string {
 }
 
 export function cleanPersonName(value: string | null | undefined, text?: string): string | null {
-  const cleaned = compactArabic(String(value || ""))
+  const raw = String(value || "").trim();
+  // Early exit: if the raw input is already recognised as a known person name,
+  // return it without aggressive prefix stripping — prevents "فريدة" being
+  // corrupted to "ريدة" by the conjunction stripper below (legitimate names
+  // starting with و/ف/ب should be preserved when they ARE known names).
+  if (raw && isLikelyPersonName(raw)) {
+    return compactArabic(raw);
+  }
+  const cleaned = compactArabic(raw)
     .replace(/^[وفب]\s+/, "")  // Strip conjunction/preposition prefix "و X" or "ف X"
     .replace(/^[وف](?=[\u0600-\u06FF]{2,}$)/, "") // Strip "و" directly attached to name like "وكريم"
     .replace(/^(?:ل|لل|الى|إلى)\s*/u, "")
@@ -122,15 +130,26 @@ export function cleanPersonName(value: string | null | undefined, text?: string)
 
 function contextAroundName(text: string, name: string): string {
   // Exclude explicit clarification blocks that do not mention the target name
-  // This prevents generic clarifications from being applied to all unknown people
-  // by inferRelationshipFromText.
+  // AND do not look like a relationship descriptor (e.g. "أختي", "صاحبي").
+  // Previously we stripped ALL parenthesized content that didn't contain the
+  // name; that also stripped inline-relationship anchors like
+  // "دفعت لفريدة 200 (أختي)" — leaving the resolver with nothing to infer from.
+  // We now preserve parentheses that contain a recognised relation alias, so
+  // inferRelationshipFromText can still see the hint.
+  const relationAliasesFlat = RELATION_ALIASES.flatMap((e) => e.aliases);
+  function parenContainsRelation(parenContent: string): boolean {
+    return relationAliasesFlat.some((alias) =>
+      matchArabicPhrase(parenContent, alias),
+    );
+  }
+
   let safeText = text;
   const parenRegex = /\([^)]+\)/g;
   let match;
   while ((match = parenRegex.exec(text)) !== null) {
-    if (!match[0].includes(name)) {
-      safeText = safeText.replace(match[0], " ");
-    }
+    if (match[0].includes(name)) continue;
+    if (parenContainsRelation(match[0])) continue; // keep " (أختي) " etc.
+    safeText = safeText.replace(match[0], " ");
   }
 
   const normalizedText = compactArabic(safeText);
@@ -158,11 +177,60 @@ function contextAroundName(text: string, name: string): string {
 
   const index = normalizedText.indexOf(normalizedName);
   if (index < 0) return `${normalizedText} ${clarificationTail}`.trim();
-  return `${normalizedText.slice(Math.max(0, index - 60), index + normalizedName.length + 60)} ${clarificationTail}`.trim();
+
+  // Revert aggressive "و" clause splitting which broke multi-name lists ("محمد وسارة اخواتي") and "سامي والدي".
+  // Only split on strong clause boundaries (او/أو/ثم/بل/لكن/أما/اما or punctuation).
+  const strongSeparator = /(?:\s+(?:او|أو|ثم|بل|لكن|أما|اما)\s+|[،,;.\-|]\s*)/g;
+  
+  const parts = normalizedText.split(strongSeparator);
+  const matchingPart = parts.find(part => part.includes(normalizedName));
+  
+  if (matchingPart) {
+    return `${matchingPart} ${clarificationTail}`.replace(/\s+/g, " ").trim();
+  }
+
+  return `${normalizedText} ${clarificationTail}`.replace(/\s+/g, " ").trim();
 }
 
 export function inferRelationshipFromText(text: string, name?: string | null): string | null {
   const target = name ? contextAroundName(text, name) : compactArabic(text);
+
+  // If a specific name is targeted, use proximity scoring to pick the closest semantically bound relationship
+  if (name && target.includes(compactArabic(name))) {
+    const normName = compactArabic(name);
+    const nameIndex = target.indexOf(normName);
+    let bestMatch: { canonical: string; dist: number } | null = null;
+
+    for (const entry of RELATION_ALIASES) {
+      for (const alias of entry.aliases) {
+        if (matchArabicPhrase(target, alias)) {
+          const aliasIndex = target.indexOf(alias);
+          const pos = aliasIndex >= 0 ? aliasIndex : target.indexOf(alias.split(/\s+/)[0] || alias);
+          if (pos >= 0) {
+            let dist = Math.abs(pos - (nameIndex + normName.length));
+            if (pos < nameIndex) dist = Math.abs(nameIndex - (pos + alias.length));
+            
+            // If another person name separates this relationship from the target name, apply a distance penalty
+            // unless the relationship is plural/shared ("اخواتي", "اصدقائي")
+            if (target.includes(" و") || target.includes(" و ")) {
+              const betweenText = pos > nameIndex ? target.slice(nameIndex + normName.length, pos) : target.slice(pos + alias.length, nameIndex);
+              if (/\s+و[\u0600-\u06FF]{2,}/.test(betweenText) && !["اخواتي", "اخوات", "أخوات", "اصدقائي", "أصدقائي", "اصحابي", "أصحابي", "زملائي", "زملاء", "قرايبي"].includes(alias)) {
+                dist += 500;
+              }
+            }
+
+            if (!bestMatch || dist < bestMatch.dist) {
+              bestMatch = { canonical: entry.canonical, dist };
+            }
+          } else {
+            if (!bestMatch) bestMatch = { canonical: entry.canonical, dist: 100 };
+          }
+        }
+      }
+    }
+    if (bestMatch) return bestMatch.canonical;
+    return null;
+  }
 
   for (const entry of RELATION_ALIASES) {
     for (const alias of entry.aliases) {

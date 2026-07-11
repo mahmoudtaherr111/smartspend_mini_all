@@ -62,3 +62,7 @@ export const idbPersister: Persister = {
     }
   },
 };
+
+export async function clearPersistedQueryCache(): Promise<void> {
+  await idbPersister.removeClient();
+}

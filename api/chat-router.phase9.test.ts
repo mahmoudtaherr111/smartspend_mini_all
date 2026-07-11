@@ -1,5 +1,4 @@
 import { chatRouter, structuredFromToolResults } from "./chat-router";
-import { processAIChatMessage } from "./services/ai-chat-service";
 import { runAIKernelActive } from "./services/ai-kernel";
 
 const { dbMock, insertedRows } = vi.hoisted(() => {
@@ -20,7 +19,8 @@ const { dbMock, insertedRows } = vi.hoisted(() => {
         const historyChain: any = {
           from: vi.fn(() => historyChain),
           where: vi.fn(() => historyChain),
-          orderBy: vi.fn(() => Promise.resolve([])),
+          orderBy: vi.fn(() => historyChain),
+          limit: vi.fn(() => Promise.resolve([])),
         };
         return historyChain;
       }
@@ -58,17 +58,6 @@ const { dbMock, insertedRows } = vi.hoisted(() => {
 
 vi.mock("./queries/connection", () => ({
   db: dbMock,
-}));
-
-vi.mock("./services/ai-chat-service", () => ({
-  processAIChatMessage: vi.fn(() =>
-    Promise.resolve({
-      response: "legacy should not run",
-      tokensUsed: 999,
-      model: "legacy-model",
-      toolsUsed: ["legacy_tool"],
-    }),
-  ),
 }));
 
 vi.mock("./services/ai-kernel", async (importOriginal) => {
@@ -127,7 +116,6 @@ vi.mock("./services/action-runtime", () => ({
 describe("chat router phase 9 active kernel", () => {
   beforeEach(() => {
     insertedRows.length = 0;
-    vi.mocked(processAIChatMessage).mockClear();
     vi.mocked(runAIKernelActive).mockClear();
   });
 
@@ -152,7 +140,6 @@ describe("chat router phase 9 active kernel", () => {
     expect(result.tokensUsed).toBe(44);
     expect(result.structured?.debug).toMatchObject({ mode: "active" });
     expect(runAIKernelActive).toHaveBeenCalledTimes(1);
-    expect(processAIChatMessage).not.toHaveBeenCalled();
   });
 
   it("restores structured artifacts when stored tool results come back as a JSON string", () => {

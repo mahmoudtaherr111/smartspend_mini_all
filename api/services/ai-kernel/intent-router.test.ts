@@ -59,6 +59,34 @@ describe("AI kernel intent routing", () => {
     expect(needs.map((need) => need.kind)).toEqual(["finance.summary", "finance.breakdown"]);
   });
 
+  it("adds a canonical-person lookup for spending questions about a named relation", () => {
+    const intent = routeIntent("صرفت كام على ماما الشهر ده؟");
+    const needs = compileDataNeeds(intent);
+
+    expect(intent.kind).toBe("finance_query");
+    expect(needs).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: "finance.person_total",
+        scope: expect.objectContaining({
+          period: "current_month",
+          personQuery: expect.any(String),
+        }),
+      }),
+    ]));
+  });
+
+  it("routes a category-list question to a monthly breakdown instead of today's generic summary", () => {
+    const intent = routeIntent("وريني تصنيفات مصاريفي الشهر ده");
+    const needs = compileDataNeeds(intent);
+
+    expect(intent).toMatchObject({
+      kind: "finance_analysis",
+      reason: "category_breakdown_match",
+      slots: { period: "current_month" },
+    });
+    expect(needs.map((need) => need.kind)).toEqual(["finance.summary", "finance.breakdown"]);
+  });
+
   it("routes classification explanation questions to transaction evidence, not generic actions", () => {
     const intent = routeIntent("كارفور الخضار واللحمة اتحسب أكل ولا تسوق؟ ولو غلط أعمل إيه؟");
     const needs = compileDataNeeds(intent);
@@ -72,8 +100,8 @@ describe("AI kernel intent routing", () => {
         needsEvidence: true,
       }),
     });
-    expect(needs.map((need) => need.kind)).toEqual(["finance.transactions", "finance.breakdown", "finance.category_inclusion"]);
-    expect(needs[0]).toMatchObject({
+    expect(needs.map((need) => need.kind)).toEqual(["finance.classification_trace", "finance.transactions", "finance.breakdown", "finance.category_inclusion"]);
+    expect(needs[1]).toMatchObject({
       priority: "hot",
       scope: expect.objectContaining({
         categories: ["food", "shopping"],

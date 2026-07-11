@@ -480,7 +480,10 @@ export async function writeConversationMemory(input: ConversationMemoryInput): P
       .limit(1);
 
     if (stored?.id) {
-      await maybeStoreEmbedding(stored.id, input, memory.content);
+      // The textual memory is already durable and can be retrieved lexically on
+      // the next turn. Vector indexing is an enrichment, not a reason to hold
+      // the chat response open or spend provider time on the critical path.
+      void maybeStoreEmbedding(stored.id, input, memory.content);
     }
   }
 
