@@ -223,7 +223,7 @@ export async function handleVoiceCallWebSocket(ws: WebSocket, request: any) {
   // Load current settings
   const settings = await db.select().from(systemSettings);
   const config: Record<string, string> = {
-    voice_call_model: "gemini-2.5-flash-native-audio-preview-12-2025",
+    voice_call_model: "gemini-2.5-flash-native-audio-latest",
     voice_call_enabled_free: "true",
     voice_call_limit_free: "5",
     voice_call_duration_free: "120",

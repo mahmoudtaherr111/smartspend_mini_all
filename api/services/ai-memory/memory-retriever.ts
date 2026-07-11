@@ -107,6 +107,17 @@ function focusSpecificCandidates(query: string, items: RetrievedMemory[]): Retri
   return focused.length > 0 ? focused : items;
 }
 
+function hasStrongLexicalMemoryMatch(query: string, items: RetrievedMemory[]): boolean {
+  const queryTokens = keywordTokens(query);
+  if (queryTokens.size === 0) return false;
+
+  return items.some((item) => {
+    const lexical = lexicalScore(query, item.content);
+    const specific = specificTokenScore(query, item.content);
+    return lexical >= 0.42 && specific >= 0;
+  });
+}
+
 export function selectMemoryCandidatesForFacts(
   query: string,
   input: {
@@ -218,7 +229,7 @@ async function computeMemoryContext(
   scoringQuery: string,
   reformulated: ReturnType<typeof reformulateMemoryQuery>,
 ): Promise<MemoryRetrievalResult> {
-  const [summaryRows, memoryRows, actionRows, vectorResult] = await Promise.all([
+  const [summaryRows, memoryRows, actionRows] = await Promise.all([
     db
       .select()
       .from(aiConversationSummaries)
@@ -243,11 +254,6 @@ async function computeMemoryContext(
       .where(and(eq(aiActionMemory.userId, ctx.userId), eq(aiActionMemory.userType, ctx.userType)))
       .orderBy(desc(aiActionMemory.updatedAt))
       .limit(20),
-    loadVectorMemories(ctx, scoringQuery, candidateLimit).catch((error: unknown) => ({
-      items: [],
-      cacheHits: [],
-      errors: [`embedding_retrieval:${error instanceof Error ? error.message : String(error)}`],
-    })),
   ]);
 
   const capsules = scoreAndSort(
@@ -283,6 +289,16 @@ async function computeMemoryContext(
     })),
     candidateLimit,
   );
+  // A precise lexical match answers the common "فاكر ...؟" case reliably. Do
+  // not buy an embedding request just to rediscover the same stored memory.
+  // Semantic lookup is retained as a fallback for ambiguous wording.
+  const vectorResult = hasStrongLexicalMemoryMatch(ctx.query, lexicalMemories)
+    ? { items: [] as RetrievedMemory[], cacheHits: ["embedding:skipped_lexical_hit"], errors: [] as string[] }
+    : await loadVectorMemories(ctx, scoringQuery, candidateLimit).catch((error: unknown) => ({
+        items: [],
+        cacheHits: [],
+        errors: [`embedding_retrieval:${error instanceof Error ? error.message : String(error)}`],
+      }));
   const memories = mergeMemoryCandidates([vectorResult.items, lexicalMemories], candidateLimit);
 
   const actions = scoreAndSort(

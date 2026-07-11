@@ -1,5 +1,5 @@
 import { chatRouter } from "./chat-router";
-import { processAIChatMessage } from "./services/ai-chat-service";
+import { runAIKernelActive } from "./services/ai-kernel";
 
 const { dbMock, insertedRows, dbState } = vi.hoisted(() => {
   const insertedRows: Array<Record<string, unknown>> = [];
@@ -22,7 +22,8 @@ const { dbMock, insertedRows, dbState } = vi.hoisted(() => {
         const historyChain: any = {
           from: vi.fn(() => historyChain),
           where: vi.fn(() => historyChain),
-          orderBy: vi.fn(() => Promise.resolve([])),
+          orderBy: vi.fn(() => historyChain),
+          limit: vi.fn(() => Promise.resolve([])),
         };
         return historyChain;
       }
@@ -35,8 +36,7 @@ const { dbMock, insertedRows, dbState } = vi.hoisted(() => {
             { key: "chatbot_model", value: "accounts/fireworks/models/deepseek-v4-flash" },
             { key: "chatbot_daily_limit_free", value: "20" },
             { key: "chatbot_enabled_free", value: "true" },
-            { key: "ai_kernel_enabled", value: "false" },
-            { key: "ai_kernel_primary_enabled", value: "false" },
+            { key: "ai_kernel_enabled", value: "true" },
           ]),
         ),
       };
@@ -62,17 +62,6 @@ vi.mock("./queries/connection", () => ({
   db: dbMock,
 }));
 
-vi.mock("./services/ai-chat-service", () => ({
-  processAIChatMessage: vi.fn(() =>
-    Promise.resolve({
-      response: "رد تجريبي",
-      tokensUsed: 17,
-      model: "test-model",
-      toolsUsed: ["get_today_expenses"],
-    }),
-  ),
-}));
-
 vi.mock("./services/ai-kernel", () => ({
   embeddingApiCallsFromCacheHits: vi.fn((cacheHits: string[]) =>
     cacheHits.some((hit) => hit.startsWith("memory_cache:hit"))
@@ -81,8 +70,20 @@ vi.mock("./services/ai-kernel", () => ({
         ? 1
         : 0,
   ),
-  runAIKernelActive: vi.fn(() => Promise.resolve(undefined)),
-  runAIKernelShadow: vi.fn(() => Promise.resolve(undefined)),
+  runAIKernelActive: vi.fn(() => Promise.resolve({
+    traceId: "phase0_trace",
+    channel: "chat",
+    content: "رد الكيرنل التجريبي",
+    intent: { kind: "finance_query", confidence: 1, reason: "test", slots: {} },
+    dataNeeds: [],
+    facts: [],
+    artifacts: [],
+    actions: [],
+    tokenBudget: { maxInputTokens: 1, maxOutputTokens: 1, maxFactTokens: 1, maxMemoryTokens: 1, maxHistoryTokens: 1, maxToolRounds: 0 },
+    model: "local-finance-kernel",
+    tokensUsed: 0,
+    debug: { mode: "active", llmCalls: 0 },
+  })),
 }));
 
 vi.mock("./services/ai-memory", () => ({
@@ -103,7 +104,7 @@ describe("chat router phase 0 smoke", () => {
   beforeEach(() => {
     insertedRows.length = 0;
     dbState.todayCount = 0;
-    vi.mocked(processAIChatMessage).mockClear();
+    vi.mocked(runAIKernelActive).mockClear();
   });
 
   it("creates a conversation and saves user and assistant messages", async () => {
@@ -125,8 +126,8 @@ describe("chat router phase 0 smoke", () => {
     });
 
     expect(result.conversationId).toBe(42);
-    expect(result.response).toBe("رد تجريبي");
-    expect(processAIChatMessage).toHaveBeenCalledTimes(1);
+    expect(result.response).toBe("رد الكيرنل التجريبي");
+    expect(runAIKernelActive).toHaveBeenCalledTimes(1);
 
     const savedMessages = insertedRows.filter((row) => row.role);
     expect(savedMessages).toHaveLength(2);
@@ -138,9 +139,9 @@ describe("chat router phase 0 smoke", () => {
     expect(savedMessages[1]).toMatchObject({
       conversationId: 42,
       role: "assistant",
-      content: "رد تجريبي",
-      tokensUsed: 17,
-      model: "test-model",
+      content: "رد الكيرنل التجريبي",
+      tokensUsed: 0,
+      model: "local-finance-kernel",
     });
   });
 
@@ -168,8 +169,8 @@ describe("chat router phase 0 smoke", () => {
       devQaBypassDailyLimit: true,
     });
 
-    expect(result.response).toBe("رد تجريبي");
-    expect(processAIChatMessage).toHaveBeenCalledTimes(1);
+    expect(result.response).toBe("رد الكيرنل التجريبي");
+    expect(runAIKernelActive).toHaveBeenCalledTimes(1);
   });
 
   it("ignores the dev QA daily-limit bypass in production", async () => {
@@ -198,7 +199,7 @@ describe("chat router phase 0 smoke", () => {
       ).rejects.toMatchObject({
         code: "TOO_MANY_REQUESTS",
       });
-      expect(processAIChatMessage).not.toHaveBeenCalled();
+      expect(runAIKernelActive).not.toHaveBeenCalled();
     } finally {
       process.env.NODE_ENV = previousNodeEnv;
     }

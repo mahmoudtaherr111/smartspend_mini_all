@@ -248,7 +248,12 @@ export default function Support() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {myTickets.data?.length === 0 && (
+                  {myTickets.isLoading && (
+                    <div className="text-center py-12 text-muted-foreground animate-pulse">
+                      <p>جاري تحميل التذاكر...</p>
+                    </div>
+                  )}
+                  {!myTickets.isLoading && myTickets.data?.length === 0 && (
                     <div className="text-center py-12 text-muted-foreground">
                       <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
                       <p>مفيش تذاكر لسه. ابعت تذكرة لو محتاج مساعدة!</p>

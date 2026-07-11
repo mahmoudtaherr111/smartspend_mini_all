@@ -4,6 +4,7 @@ import { getCacheRuntimeStatus } from "../../lib/redis-client";
 import { validateNumbersAgainstFacts } from "../ai-cost-policy";
 import { buildContextPack, estimateTokens } from "./context-packer";
 import { compileDataNeeds } from "./data-need-compiler";
+import { planAgentTurn } from "./agent-planner";
 import { routeIntent } from "./intent-router";
 import { embeddingApiStatusFor, retrievalPolicyFor } from "./retrieval-policy";
 import { normalizeAIResponse } from "./response-normalizer";
@@ -14,6 +15,7 @@ import type { ActionDraft, AIRequest, AIResponse, Artifact, DataNeed, IntentResu
 export * from "./types";
 export { buildContextPack, estimateTokens, getTokenBudget } from "./context-packer";
 export { compileDataNeeds } from "./data-need-compiler";
+export { planAgentTurn } from "./agent-planner";
 export { normalizeForIntent, routeIntent } from "./intent-router";
 export { embeddingApiStatusFor, retrievalPolicyFor, type EmbeddingApiStatus, type RetrievalPolicy } from "./retrieval-policy";
 export { AI_RESPONSE_SCHEMA_VERSION, normalizeAIResponse } from "./response-normalizer";
@@ -66,40 +68,49 @@ async function resolveShadowFacts(
     return { facts: [], artifacts: [], errors: [], cacheHits: [] };
   }
 
-  try {
-    const { resolveKernelDataNeeds } = await import("../finance-semantic-layer");
-    const finance = await resolveKernelDataNeeds(
-      {
-        userId: request.userId,
-        userType: request.userType,
-        salaryDay: metadataNumber(request.metadata?.salaryDay),
-      },
-      dataNeeds,
-    );
-    const { resolveMemoryDataNeeds } = await import("../ai-memory");
-    const memory = await resolveMemoryDataNeeds(
-      {
-        userId: request.userId,
-        userType: request.userType,
-      },
-      dataNeeds,
-    );
-    const { resolveSiteGuideDataNeeds } = await import("../site-guide");
-    const siteGuide = await resolveSiteGuideDataNeeds(dataNeeds);
-    return {
-      facts: [...finance.facts, ...memory.facts, ...siteGuide.facts],
-      artifacts: [...finance.artifacts, ...memory.artifacts, ...siteGuide.artifacts],
-      errors: [...finance.errors, ...memory.errors, ...siteGuide.errors],
-      cacheHits: [...finance.cacheHits, ...memory.cacheHits, ...siteGuide.cacheHits],
-    };
-  } catch (error) {
-    return {
-      facts: [],
-      artifacts: [],
-      errors: [error instanceof Error ? error.message : String(error)],
-      cacheHits: [],
-    };
-  }
+  const empty = { facts: [] as ResolvedFact[], artifacts: [] as Artifact[], errors: [] as string[], cacheHits: [] as string[] };
+  const financeKinds = new Set([
+    "finance.summary", "finance.category_total", "finance.person_total", "finance.classification_trace",
+    "finance.breakdown", "finance.transactions", "finance.transaction_lookup", "finance.period_comparison",
+    "finance.comparison_drivers", "finance.category_inclusion", "finance.business_cashflow", "finance.goal_progress",
+    "goal.feasibility", "wallet.summary", "chart.data", "profile.snapshot", "goals.active",
+  ]);
+  const needsFinance = dataNeeds.some((need) => financeKinds.has(need.kind));
+  const needsMemory = dataNeeds.some((need) => need.kind === "memory.search");
+  const needsSiteGuide = dataNeeds.some((need) => need.kind === "site_guide.search");
+  const failOpen = <T extends typeof empty>(source: string, error: unknown): T => ({
+    ...empty,
+    errors: [`${source}:${error instanceof Error ? error.message : String(error)}`],
+  }) as T;
+
+  const [finance, memory, siteGuide] = await Promise.all([
+    needsFinance
+      ? import("../finance-semantic-layer")
+          .then(({ resolveKernelDataNeeds }) => resolveKernelDataNeeds({
+            userId: request.userId,
+            userType: request.userType,
+            salaryDay: metadataNumber(request.metadata?.salaryDay),
+          }, dataNeeds))
+          .catch((error) => failOpen("finance", error))
+      : Promise.resolve(empty),
+    needsMemory
+      ? import("../ai-memory")
+          .then(({ resolveMemoryDataNeeds }) => resolveMemoryDataNeeds({ userId: request.userId, userType: request.userType }, dataNeeds))
+          .catch((error) => failOpen("memory", error))
+      : Promise.resolve(empty),
+    needsSiteGuide
+      ? import("../site-guide")
+          .then(({ resolveSiteGuideDataNeeds }) => resolveSiteGuideDataNeeds(dataNeeds))
+          .catch((error) => failOpen("site_guide", error))
+      : Promise.resolve(empty),
+  ]);
+
+  return {
+    facts: [...finance.facts, ...memory.facts, ...siteGuide.facts],
+    artifacts: [...finance.artifacts, ...memory.artifacts, ...siteGuide.artifacts],
+    errors: [...finance.errors, ...memory.errors, ...siteGuide.errors],
+    cacheHits: [...finance.cacheHits, ...memory.cacheHits, ...siteGuide.cacheHits],
+  };
 }
 
 export interface AIKernelActiveConfig {
@@ -553,6 +564,23 @@ function categoryFromTransactionFact(fact: ResolvedFact): string | undefined {
 function buildClassificationExplanationContent(intent: IntentResult, facts: ResolvedFact[]): string | undefined {
   if (!isClassificationExplanationIntent(intent)) return undefined;
 
+  const exactCategory = textFact(facts, "stored_category", "finance.classification_trace");
+  if (exactCategory) {
+    const description = textFact(facts, "description", "finance.classification_trace") ?? "العملية دي";
+    const traceAvailable = sourceFacts(facts, "finance.classification_trace")
+      .find((fact) => fact.label === "trace_available")?.value === true;
+    const parsedBy = textFact(facts, "parsed_by", "finance.classification_trace");
+    const confidence = numericFact(facts, "confidence", "finance.classification_trace");
+    const decision = textFact(facts, "decision", "finance.classification_trace");
+    return [
+      `عملية «${description}» متسجلة تحت ${displayCategoryName(exactCategory)}.`,
+      traceAvailable
+        ? `اتخذنا القرار من مسار ${parsedBy ?? "التصنيف"}${confidence !== undefined ? ` بدرجة ثقة ${Math.round(confidence)}%` : ""}${decision ? `، وحالتها ${decision}` : ""}.`
+        : "العملية دي قديمة أو اتحفظت بدون أثر قرار مرتبط، فمش هافترض سببًا غير موجود في سجلك.",
+      "لو التصنيف مش مناسب، أقدر أجهز تعديل للمراجعة؛ التغيير لا يتم إلا بعد تأكيدك.",
+    ].join("\n");
+  }
+
   const categories = [
     ...new Set([...(intent.slots.categories ?? []), intent.slots.category].filter(Boolean) as string[]),
   ];
@@ -840,6 +868,20 @@ function buildDeterministicContent(
         .join("\n");
     }
 
+    const personTotal = numericFact(facts, "person_total_expense", "finance.person_total");
+    if (personTotal !== undefined) {
+      const personName = textFact(facts, "person_name", "finance.person_total") ?? "الشخص ده";
+      const relation = textFact(facts, "person_relation", "finance.person_total");
+      const period = textFact(facts, "period", "finance.person_total") ?? "الفترة المطلوبة";
+      const count = numericFact(facts, "transaction_count", "finance.person_total") ?? 0;
+      return [
+        `في ${period}، صرفك المسجّل مع ${personName}${relation ? ` (${relation})` : ""} هو ${money(personTotal)}${countText(count)}.`,
+        count === 0
+          ? "مهم: الرقم ده مبني على العمليات المربوطة بالشخص ده؛ العمليات القديمة غير المربوطة مش داخلة فيه."
+          : "الرقم ده مبني على العمليات المربوطة بالشخص في قائمة الأشخاص والعلاقات.",
+      ].join("\n");
+    }
+
     const categoryTotal = numericFact(facts, "category_total_expense", "finance.category_total");
     if (categoryTotal !== undefined) {
       const category = displayCategoryName(
@@ -887,10 +929,16 @@ function buildDeterministicContent(
       const previousPeriod = textFact(facts, "previous_period", "finance.period_comparison") ?? "الفترة السابقة";
       const currentNet = numericFact(facts, "current_net_flow", "finance.period_comparison") ?? 0;
       const previousNet = numericFact(facts, "previous_net_flow", "finance.period_comparison") ?? 0;
+      const comparisonExplanation =
+        previousExpense === 0 && currentExpense > 0
+          ? `في ${previousPeriod} مفيش مصروفات مسجلة، فمينفعش نحسب نسبة زيادة عادلة. الفرق الفعلي ${money(Math.abs(difference))}.`
+          : currentExpense === 0 && previousExpense === 0
+            ? "مفيش مصروفات مسجلة في الفترتين، فمش هينفع نستنتج اتجاه إنفاق من غير بيانات."
+            : `الفرق ${money(Math.abs(difference))} (${percentText(percent)}).`;
 
       return [
         `مقارنة المصروفات: ${currentPeriod} = ${money(currentExpense)}، و${previousPeriod} = ${money(previousExpense)}.`,
-        `الفرق ${money(Math.abs(difference))} (${percentText(percent)}).`,
+        comparisonExplanation,
         `الصافي: ${currentPeriod} ${money(currentNet)} مقابل ${money(previousNet)} في ${previousPeriod}.`,
       ].join("\n");
     }
@@ -1087,23 +1135,46 @@ export async function runAIKernelActive(
   const traceId = request.requestId ?? createTraceId();
 
   try {
-    const intent = routeIntent(request.message);
-    const dataNeeds = compileDataNeeds(intent);
-    const contextPack = buildContextPack(request, intent, dataNeeds);
-    const resolved = await resolveShadowFacts(request, dataNeeds);
+    const plan = planAgentTurn(request.message);
+    const intent = plan.intent;
+    const dataNeeds = plan.dataNeeds;
+    const plannedRequest: AIRequest = {
+      ...request,
+      conversationHistory: plan.historyMessages > 0
+        ? (request.conversationHistory ?? []).slice(-plan.historyMessages)
+        : [],
+    };
+    const contextPack = buildContextPack(plannedRequest, intent, dataNeeds);
+    const resolved = await resolveShadowFacts(plannedRequest, dataNeeds);
     const cacheRuntime = getCacheRuntimeStatus();
     const proposedActions = proposedActionsFromFacts(intent, resolved.facts);
+    const clarificationArtifacts: Artifact[] = plan.clarification
+      ? [{
+          id: `clarification:${traceId}`,
+          type: "quick_replies",
+          title: "سؤال سريع",
+          payload: {
+            question: plan.clarification.question,
+            replies: plan.clarification.quickReplies,
+            missing: plan.clarification.missing,
+          },
+        }]
+      : [];
+    const allArtifacts = [...resolved.artifacts, ...clarificationArtifacts];
     const deterministicContent = buildDeterministicContent(
       intent,
       resolved.facts,
-      resolved.artifacts,
+      allArtifacts,
       proposedActions,
     );
     const retrievalPolicy = retrievalPolicyFor(intent.kind, dataNeeds, resolved.cacheHits);
     const embeddingCalls = embeddingApiCallsFromCacheHits(resolved.cacheHits);
     const embeddingApiStatus = embeddingApiStatusFor(dataNeeds, resolved.cacheHits);
-    let content = deterministicContent;
-    let tokensUsed = contextPack.estimatedInputTokens + estimateTokens(content ?? "");
+    let content = plan.clarification?.question ?? deterministicContent;
+    // `tokensUsed` is provider usage, not an estimate of deterministic local
+    // work. The latter stays available in debug.estimatedInputTokens for
+    // observability without inflating a user's AI quota.
+    let tokensUsed = 0;
     let model: string | undefined;
     let llmCalls = 0;
     let numericGuard:
@@ -1120,20 +1191,23 @@ export async function runAIKernelActive(
         }
       | undefined;
 
-    if (shouldUseLLM(intent, deterministicContent) && config.apiKey) {
+    if (plan.maxProviderCalls === 1 && shouldUseLLM(intent, deterministicContent) && config.apiKey) {
       const maxOutputTokens =
         intent.kind === "advice_request"
           ? Math.min(220, config.maxTokens ?? contextPack.tokenBudget.maxOutputTokens)
           : Math.min(config.maxTokens ?? contextPack.tokenBudget.maxOutputTokens, contextPack.tokenBudget.maxOutputTokens);
       const llm = await callChatCompletionAPI(config.baseUrl, config.apiKey, {
         model: config.model,
-        messages: buildActiveMessages(request, intent, resolved.facts, resolved.artifacts),
+        messages: buildActiveMessages(plannedRequest, intent, resolved.facts, allArtifacts),
         tool_choice: "none",
         max_tokens: maxOutputTokens,
         temperature: 0.35,
       });
       content = llm.text?.trim() || deterministicContent || fallbackActiveContent(intent, resolved.facts);
-      tokensUsed = llm.tokensUsed || tokensUsed + estimateTokens(content);
+      // Only bill actual provider usage. A provider that omits usage metadata
+      // must be tracked as unknown by observability, never estimated and charged
+      // to the user as if it were a real token count.
+      tokensUsed = Number.isFinite(llm.tokensUsed) ? Math.max(0, llm.tokensUsed) : 0;
       model = llm.model;
       llmCalls = 1;
     }
@@ -1152,7 +1226,6 @@ export async function runAIKernelActive(
           originalAccuracy: originalAccuracy.accuracy,
         };
         content = safeContentAfterUnsupportedNumbers(intent, resolved.facts, blockedNumbers);
-        tokensUsed = contextPack.estimatedInputTokens + estimateTokens(content);
       }
     }
     const responseQualityReason =
@@ -1163,7 +1236,6 @@ export async function runAIKernelActive(
         reason: responseQualityReason,
       };
       content = buildGroundedAdviceContent(intent, resolved.facts);
-      tokensUsed = contextPack.estimatedInputTokens + estimateTokens(content);
     }
 
     const risk = hallucinationRiskFor(content, resolved.facts, llmCalls);
@@ -1178,18 +1250,25 @@ export async function runAIKernelActive(
       dataNeeds,
       contextPack,
       facts: resolved.facts,
-      artifacts: resolved.artifacts,
+      artifacts: allArtifacts,
       proposedActions,
       recipe,
-      model: model ?? config.model,
+      model: model ?? "local-finance-kernel",
       tokensUsed,
       debug: {
         mode: "active",
+        plan: {
+          mode: plan.mode,
+          rationale: plan.rationale,
+          historyMessages: plan.historyMessages,
+          maxProviderCalls: plan.maxProviderCalls,
+          missing: plan.clarification?.missing ?? [],
+        },
         deterministic: Boolean(deterministicContent),
         llmCalls,
         estimatedInputTokens: contextPack.estimatedInputTokens,
         resolvedFacts: resolved.facts.length,
-        resolvedArtifacts: resolved.artifacts.length,
+        resolvedArtifacts: allArtifacts.length,
         proposedActions: proposedActions.length,
         resolverErrors: resolved.errors,
         cacheHits: resolved.cacheHits,
@@ -1234,8 +1313,15 @@ export async function runAIKernelActive(
         ...request.metadata,
         activeModel: model ?? config.model,
         deterministic: Boolean(deterministicContent),
+        plan: {
+          mode: plan.mode,
+          rationale: plan.rationale,
+          historyMessages: plan.historyMessages,
+          maxProviderCalls: plan.maxProviderCalls,
+          missing: plan.clarification?.missing ?? [],
+        },
         resolvedFacts: resolved.facts.length,
-        resolvedArtifacts: resolved.artifacts.length,
+        resolvedArtifacts: allArtifacts.length,
         resolverErrors: resolved.errors,
         cacheRuntime,
         retrievalPolicy,

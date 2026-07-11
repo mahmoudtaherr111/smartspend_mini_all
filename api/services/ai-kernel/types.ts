@@ -17,6 +17,8 @@ export type AIIntentKind =
 export type DataNeedKind =
   | "finance.summary"
   | "finance.category_total"
+  | "finance.person_total"
+  | "finance.classification_trace"
   | "finance.breakdown"
   | "finance.transactions"
   | "finance.transaction_lookup"
@@ -77,6 +79,7 @@ export interface IntentResult {
   slots: {
     period?: PeriodHint;
     category?: string;
+    personQuery?: string;
     categories?: string[];
     metric?: "total" | "count" | "average" | "comparison" | "trend";
     actionName?: string;
@@ -100,6 +103,7 @@ export interface DataNeed {
     period?: PeriodHint;
     comparePeriod?: PeriodHint;
     category?: string;
+    personQuery?: string;
     categories?: string[];
     sourceCategory?: string;
     targetCategory?: string;
@@ -198,6 +202,27 @@ export type ResponseRecipe =
   | "action_confirmation"
   | "ask_clarification"
   | "simple_deterministic";
+
+/**
+ * A small, serializable contract between intent routing and execution.  It
+ * prevents the runtime from deciding ad-hoc to dump history into a model or to
+ * run a provider call before it knows exactly which facts are required.
+ */
+export type AgentExecutionMode = "deterministic" | "synthesis" | "clarification";
+
+export interface AgentTurnPlan {
+  mode: AgentExecutionMode;
+  intent: IntentResult;
+  dataNeeds: DataNeed[];
+  historyMessages: number;
+  maxProviderCalls: 0 | 1;
+  clarification?: {
+    question: string;
+    quickReplies: string[];
+    missing: string[];
+  };
+  rationale: string;
+}
 
 export interface AIResponse {
   traceId: string;

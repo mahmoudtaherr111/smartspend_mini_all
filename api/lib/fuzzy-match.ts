@@ -75,15 +75,27 @@ export function isArabicWordMatch(
   wordInText: string,
   targetKey: string,
 ): boolean {
-  const w = normalizeArabic(wordInText).toLowerCase();
-  const k = normalizeArabic(targetKey).toLowerCase();
+  // Strip leading/trailing non-Arabic, non-Latin punctuation so that
+  // parenthesized / bracketed relationship tokens such as "(أختي)" or
+  // "أختي)" still match the bare token "أختي". This is critical for
+  // extracting inline relationship context from user input like
+  // "دفعت لفريدة 200 (أختي)".
+  const stripPunct = (s: string) =>
+    s.replace(/^[^\u0600-\u06FFa-zA-Z]+|[^\u0600-\u06FFa-zA-Z]+$/g, "");
+  const w = stripPunct(normalizeArabic(wordInText).toLowerCase());
+  const k = stripPunct(normalizeArabic(targetKey).toLowerCase());
+  if (!k || !w) return false;
   if (w === k) return true;
 
-  // Strict matching for short keys (e.g. "وي") to avoid noisy false positives
+  // Strict matching for short keys (e.g. "اخ", "اب", "ام") with safe possessive pronoun suffixes
+  // We strictly exclude plural formatives (ين, ون, ة, ات) to prevent short names like "امين" matching "ام"
   if (k.length <= 2) {
-    const prefixes = ["و", "ف", "ب", "ل", "ال", "لل"];
+    const prefixes = ["", "و", "ف", "ب", "ل", "ال", "لل"];
+    const safePossessives = ["", "ي", "يا", "ويا", "ه", "ها", "ك", "نا", "ونا", "كم", "هم", "وه", "وها", "وك", "وكم", "وهم"];
     for (const p of prefixes) {
-      if (w === p + k) return true;
+      for (const s of safePossessives) {
+        if (w === p + k + s) return true;
+      }
     }
     return false;
   }

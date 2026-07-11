@@ -6,7 +6,7 @@ import {
   users,
   userContacts,
 } from "../../db/schema";
-import { normalizeRelationship, parseNameAndRelationship } from "../lib/relationship-normalizer";
+import { normalizeRelationship, parseNameAndRelationship, isRelationshipTerm } from "../lib/relationship-normalizer";
 import { extractExplicitPeopleContext, cleanPersonName } from "../lib/person-resolver";
 import { invalidateUserClassificationCache } from "../lib/smart-pipeline";
 import { invalidateUserMemory } from "../lib/muscle-memory";
@@ -398,7 +398,78 @@ export async function getSmartProfile(
     const { userContacts, profileLearningEvents } = await import("../../db/schema");
     const { desc } = await import("drizzle-orm");
     
-    // Fetch user contacts
+    // Auto-migration: ensure all legacy onboarding and JSON people are in user_contacts table
+    if (!result.aiInferredAttributes?.contactsMigratedAll) {
+      const allLegacyToMigrate: Array<{ name: string; rel: string }> = [];
+      
+      if (Array.isArray(result.lifestyleInfo.dynamicContacts)) {
+        for (const lc of result.lifestyleInfo.dynamicContacts as any[]) {
+          if (lc?.name && typeof lc.name === "string" && lc.name.length >= 2) {
+            allLegacyToMigrate.push({ name: lc.name.trim(), rel: lc.relationship || lc.rawRelationship || "شخص معروف" });
+          }
+        }
+      }
+      if (Array.isArray(result.lifestyleInfo.regularContacts)) {
+        for (const name of result.lifestyleInfo.regularContacts as string[]) {
+          if (name && typeof name === "string" && name.trim().length >= 2) {
+            allLegacyToMigrate.push({ name: name.trim(), rel: "شخص معروف" });
+          }
+        }
+      }
+      if (Array.isArray(result.lifestyleInfo.childrenNames)) {
+        for (const name of result.lifestyleInfo.childrenNames as string[]) {
+          if (name && typeof name === "string" && name.trim().length >= 2) {
+            allLegacyToMigrate.push({ name: name.trim(), rel: "ابن/ابنة" });
+          }
+        }
+      }
+      if (Array.isArray(result.lifestyleInfo.siblingsNames)) {
+        for (const name of result.lifestyleInfo.siblingsNames as string[]) {
+          if (name && typeof name === "string" && name.trim().length >= 2) {
+            allLegacyToMigrate.push({ name: name.trim(), rel: "أخ/أخت" });
+          }
+        }
+      }
+      if (Array.isArray(result.lifestyleInfo.parentsNames)) {
+        for (const name of result.lifestyleInfo.parentsNames as string[]) {
+          if (name && typeof name === "string" && name.trim().length >= 2) {
+            allLegacyToMigrate.push({ name: name.trim(), rel: "والد/والدة" });
+          }
+        }
+      }
+      if (typeof result.lifestyleInfo.partnerName === "string" && result.lifestyleInfo.partnerName.trim().length >= 2) {
+        allLegacyToMigrate.push({ name: result.lifestyleInfo.partnerName.trim(), rel: "زوج/زوجة" });
+      }
+      if (Array.isArray(result.lifestyleInfo.petNames)) {
+        for (const name of result.lifestyleInfo.petNames as string[]) {
+          if (name && typeof name === "string" && name.trim().length >= 2) {
+            allLegacyToMigrate.push({ name: name.trim(), rel: "حيوان أليف" });
+          }
+        }
+      }
+
+      for (const item of allLegacyToMigrate) {
+        try {
+          await db.insert(userContacts).values({
+            userId,
+            userType,
+            name: item.name,
+            relation: item.rel,
+            contactType: "personal",
+            isSilenced: false,
+          }).catch(() => {});
+        } catch {}
+      }
+
+      result.aiInferredAttributes.contactsMigratedAll = true;
+      try {
+        await db.update(userProfiles).set({
+          aiInferredAttributes: result.aiInferredAttributes as any,
+        }).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)));
+      } catch {}
+    }
+
+    // Fetch user contacts (Single Source of Truth)
     const contacts = await db
       .select({
         name: userContacts.name,
@@ -409,58 +480,23 @@ export async function getSmartProfile(
       })
       .from(userContacts)
       .where(and(eq(userContacts.userId, userId), eq(userContacts.userType, userType)))
-      .limit(50);
+      .limit(100);
       
-    if (contacts.length > 0) {
-      result.aiInferredAttributes.knownPeople = contacts as any;
-      result.lifestyleInfo.dynamicContacts = contacts.map(c => ({
-        name: c.name,
-        relationship: c.relationship,
-        rawRelationship: c.relationship,
-        isSilenced: c.isSilenced,
-      })) as any;
-    } else {
-      // Auto-migration: if no DB contacts but JSON has legacy ones, migrate them
-      const legacyContacts = Array.isArray(result.lifestyleInfo.dynamicContacts)
-        ? result.lifestyleInfo.dynamicContacts as Array<{ name: string; relationship?: string; rawRelationship?: string }>
-        : [];
-      if (legacyContacts.length > 0) {
-        for (const lc of legacyContacts) {
-          if (!lc.name || lc.name.length < 2) continue;
-          try {
-            await db.insert(userContacts).values({
-              userId,
-              userType,
-              name: lc.name,
-              relation: lc.relationship || lc.rawRelationship || "شخص معروف",
-              contactType: "personal",
-              isSilenced: false,
-            }).catch(() => {}); // ignore duplicates
-          } catch {}
-        }
-        // Re-fetch after migration
-        const migrated = await db
-          .select({
-            name: userContacts.name,
-            relationship: userContacts.relation,
-            isSilenced: userContacts.isSilenced,
-            contactType: userContacts.contactType,
-            businessId: userContacts.businessId,
-          })
-          .from(userContacts)
-          .where(and(eq(userContacts.userId, userId), eq(userContacts.userType, userType)))
-          .limit(50);
-        if (migrated.length > 0) {
-          result.aiInferredAttributes.knownPeople = migrated as any;
-          result.lifestyleInfo.dynamicContacts = migrated.map(c => ({
-            name: c.name,
-            relationship: c.relationship,
-            rawRelationship: c.relationship,
-            isSilenced: c.isSilenced,
-          })) as any;
-        }
-      }
-    }
+    result.aiInferredAttributes.knownPeople = contacts as any;
+    result.lifestyleInfo.dynamicContacts = contacts.map(c => ({
+      name: c.name,
+      relationship: c.relationship,
+      rawRelationship: c.relationship,
+      isSilenced: c.isSilenced,
+    })) as any;
+
+    // Clear legacy arrays in memory so buildPersonalContext() ONLY sees user_contacts table
+    result.lifestyleInfo.regularContacts = [];
+    result.lifestyleInfo.childrenNames = [];
+    result.lifestyleInfo.siblingsNames = [];
+    result.lifestyleInfo.parentsNames = [];
+    result.lifestyleInfo.partnerName = undefined;
+    result.lifestyleInfo.petNames = [];
     
     // Fetch latest learning events for context injection.
     const events = await db
@@ -852,7 +888,7 @@ function cleanNameAndRelationship(
   }
 
   // If the cleanName itself is a relationship term (e.g. "أمي", "صاحبي"), users often use this as the actual name.
-  if (relationWords.includes(compName)) {
+  if (relationWords.includes(compName) || isRelationshipTerm(compName)) {
     const { normalized } = normalizeRelationship(cleanName);
     if (!cleanRel || cleanRel === "شخص" || cleanRel === "شخص معروف" || cleanRel === cleanName) {
        cleanRel = normalized;
@@ -860,7 +896,7 @@ function cleanNameAndRelationship(
   }
 
   // If cleanName contains a relationship suffix (e.g. "سلمى أختي"), parse it
-  const parsed = parseNameAndRelationship(cleanName, "العائلة");
+  const parsed = parseNameAndRelationship(cleanName, cleanRel || "تحويلات");
   if (parsed.name && parsed.name !== "شخص" && parsed.relationship !== "شخص معروف") {
     cleanName = parsed.name;
     if (!cleanRel || cleanRel === "شخص معروف" || cleanRel === "قريب" || cleanRel === "شخص") {
@@ -914,11 +950,16 @@ export async function addDynamicContact(
   userType: string,
   name: string,
   relationship: string,
-): Promise<void> {
+): Promise<{
+  isNew: boolean;
+  name: string;
+  totalContacts: number;
+  contactId?: number;
+} | null> {
   const cleaned = cleanNameAndRelationship(name, relationship);
   if (!cleaned.name || !cleaned.relationship) {
     console.log(`[Profile Healing] Rejected saving invalid/noisy contact: name="${name}", rel="${relationship}"`);
-    return;
+    return null;
   }
 
   const cleanName = cleaned.name;
@@ -952,6 +993,9 @@ export async function addDynamicContact(
           .set({ relation: normalized })
           .where(eq(userContacts.id, row.id));
       }
+      invalidateUserClassificationCache(userId);
+      invalidateUserMemory(userId, userType);
+      return { isNew: false, name: cleanName, totalContacts: 0, contactId: row.id };
     } else {
       await db.insert(userContacts).values({
         userId,
@@ -961,14 +1005,34 @@ export async function addDynamicContact(
         contactType: "personal",
         isSilenced: false,
       });
+      const all = await db
+        .select({ id: userContacts.id })
+        .from(userContacts)
+        .where(and(eq(userContacts.userId, userId), eq(userContacts.userType, userType)));
+      invalidateUserClassificationCache(userId);
+      invalidateUserMemory(userId, userType);
+      console.log(`[Profile Healing] Saved contact to DB: name="${cleanName}", rel="${normalized}"`);
+      const [created] = await db
+        .select({ id: userContacts.id })
+        .from(userContacts)
+        .where(and(
+          eq(userContacts.userId, userId),
+          eq(userContacts.userType, userType),
+          eq(userContacts.name, cleanName),
+        ))
+        .orderBy(userContacts.id)
+        .limit(1);
+      return {
+        isNew: true,
+        name: cleanName,
+        totalContacts: all.length,
+        contactId: created?.id,
+      };
     }
   } catch (err) {
     console.error("[addDynamicContact] DB write failed:", err);
+    return null;
   }
-
-  invalidateUserClassificationCache(userId);
-  invalidateUserMemory(userId, userType);
-  console.log(`[Profile Healing] Saved contact to DB: name="${cleanName}", rel="${normalized}"`);
 }
 
 /**
@@ -1056,7 +1120,11 @@ export async function getUserContacts(
         eq(userContacts.userId, userId),
         eq(userContacts.userType, userType),
       ));
-    return rows;
+    return rows.map((r) => ({
+      ...r,
+      isSilenced: r.isSilenced ?? false,
+      transactionCount: r.transactionCount ?? 0,
+    }));
   } catch (err) {
     console.error("[getUserContacts] Failed:", err);
     return [];

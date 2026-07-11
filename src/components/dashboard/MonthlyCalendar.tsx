@@ -28,8 +28,10 @@ function DayTransactionsDialog({
 }) {
   if (!dateStr) return null;
 
-  const startDate = `${dateStr}T00:00:00.000Z`;
-  const endDate = `${dateStr}T23:59:59.999Z`;
+  // Use local timezone boundaries (no Z suffix) to prevent day-boundary shifts
+  // e.g., for UTC+2 (Egypt), "2026-01-15T00:00:00.000Z" would actually be 2am local time
+  const startDate = `${dateStr}T00:00:00.000`;
+  const endDate = `${dateStr}T23:59:59.999`;
 
   const { data, isLoading, isFetching } = trpc.expense.list.useQuery(
     { startDate, endDate, limit: 100 },

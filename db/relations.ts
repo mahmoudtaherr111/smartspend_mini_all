@@ -10,6 +10,7 @@ import {
   userContacts,
   userBusinesses,
   businessCategories,
+  classificationLogs,
 } from "./schema";
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -44,6 +45,14 @@ export const expensesRelations = relations(expenses, ({ one }) => ({
   business: one(userBusinesses, {
     fields: [expenses.businessId],
     references: [userBusinesses.id],
+  }),
+  contact: one(userContacts, {
+    fields: [expenses.contactId],
+    references: [userContacts.id],
+  }),
+  classificationLog: one(classificationLogs, {
+    fields: [expenses.classificationLogId],
+    references: [classificationLogs.id],
   }),
 }));
 
@@ -91,7 +100,7 @@ export const financialGoalsRelations = relations(financialGoals, ({ one }) => ({
   }),
 }));
 
-export const userContactsRelations = relations(userContacts, ({ one }) => ({
+export const userContactsRelations = relations(userContacts, ({ one, many }) => ({
   localUser: one(localUsers, {
     fields: [userContacts.userId],
     references: [localUsers.id],
@@ -104,6 +113,11 @@ export const userContactsRelations = relations(userContacts, ({ one }) => ({
     fields: [userContacts.businessId],
     references: [userBusinesses.id],
   }),
+  expenses: many(expenses),
+}));
+
+export const classificationLogsRelations = relations(classificationLogs, ({ many }) => ({
+  expenses: many(expenses),
 }));
 
 export const userBusinessesRelations = relations(userBusinesses, ({ many }) => ({

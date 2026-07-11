@@ -793,22 +793,43 @@ const MERCHANT_NEGATIVE_LIST_ITEMS = [
 import { comparableArabic } from "./category-registry";
 
 // ── إنشاء الـ Sets للبحث السريع O(1) ──
-export const EGYPTIAN_MALE_NAMES = new Set(
+// Frozen at runtime to guarantee immutable public dictionaries — prevents
+// accidental mutation by consumer code and concurrency races in hot paths.
+const EGYPTIAN_MALE_NAMES_SET = new Set(
   MALE_NAMES_LIST.map((n) => comparableArabic(n.trim())),
 );
-export const EGYPTIAN_FEMALE_NAMES = new Set(
+const EGYPTIAN_FEMALE_NAMES_SET = new Set(
   FEMALE_NAMES_LIST.map((n) => comparableArabic(n.trim())),
 );
-export const FAMILY_TERMS = new Set(
+const FAMILY_TERMS_SET = new Set(
   FAMILY_TERMS_LIST.map((n) => comparableArabic(n.trim())),
 );
-export const MERCHANT_NEGATIVE_LIST = new Set(
+const MERCHANT_NEGATIVE_LIST_SET = new Set(
   MERCHANT_NEGATIVE_LIST_ITEMS.map((n) => comparableArabic(n.trim())),
 );
-export const ALL_KNOWN_NAMES = new Set([
-  ...EGYPTIAN_MALE_NAMES,
-  ...EGYPTIAN_FEMALE_NAMES,
+const ALL_KNOWN_NAMES_SET = new Set<string>([
+  ...EGYPTIAN_MALE_NAMES_SET,
+  ...EGYPTIAN_FEMALE_NAMES_SET,
 ]);
+
+function freezeSet<T>(set: Set<T>): Set<T> {
+  (set as any).add = () => {
+    throw new TypeError("Cannot add to a frozen Set");
+  };
+  (set as any).delete = () => {
+    throw new TypeError("Cannot delete from a frozen Set");
+  };
+  (set as any).clear = () => {
+    throw new TypeError("Cannot clear a frozen Set");
+  };
+  return Object.freeze(set) as Set<T>;
+}
+
+export const EGYPTIAN_MALE_NAMES = freezeSet(EGYPTIAN_MALE_NAMES_SET);
+export const EGYPTIAN_FEMALE_NAMES = freezeSet(EGYPTIAN_FEMALE_NAMES_SET);
+export const FAMILY_TERMS = freezeSet(FAMILY_TERMS_SET);
+export const MERCHANT_NEGATIVE_LIST = freezeSet(MERCHANT_NEGATIVE_LIST_SET);
+export const ALL_KNOWN_NAMES = freezeSet(ALL_KNOWN_NAMES_SET);
 
 /**
  * يتحقق إذا كانت الكلمة على الأرجح اسم شخص

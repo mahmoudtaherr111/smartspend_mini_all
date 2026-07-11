@@ -211,6 +211,7 @@ describe("AI kernel phase 2 data resolution", () => {
     expect(response.content).toContain("يونيو 2026");
     expect(response.content).toContain("مايو 2026");
     expect(response.content).toContain("٢٬١٦٥٫٥");
+    expect(response.content).toContain("مفيش مصروفات مسجلة");
     expect(response.debug).toMatchObject({
       deterministic: true,
       llmCalls: 0,
@@ -433,7 +434,7 @@ describe("AI kernel phase 2 data resolution", () => {
       kind: "finance_analysis",
       reason: "classification_explanation_match",
     });
-    expect(response.dataNeeds.map((need) => need.kind)).toEqual(["finance.transactions", "finance.breakdown", "finance.category_inclusion"]);
+    expect(response.dataNeeds.map((need) => need.kind)).toEqual(["finance.classification_trace", "finance.transactions", "finance.breakdown", "finance.category_inclusion"]);
     expect(response.content).toContain("الأقرب");
     expect(response.content).toContain("كارفور خضار ولحمة");
     expect(response.debug).toMatchObject({

@@ -11,6 +11,7 @@ import {
   classificationLogs,
   pendingClarifications,
   systemSettings,
+  userContacts,
   userBusinesses,
   businessCategories as bizCategoriesTable,
 } from "../db/schema";
@@ -87,6 +88,91 @@ const transactionTypeSchema = z.enum([
 const expenseRawText = z.string().min(1).max(ExpenseInputLimits.rawTextMax);
 const expenseCategory = z.string().min(1).max(ExpenseInputLimits.categoryMax);
 const expenseAmount = z.number().positive().max(ExpenseInputLimits.amountMax);
+
+const PERSON_EXPENSE_CATEGORIES = new Set([
+  "العائلة",
+  "أصدقاء",
+  "موظفين",
+  "خدمات سيارات",
+  "أخرى",
+]);
+
+type ExpenseReferenceInput = {
+  category: string;
+  subCategory?: string;
+  contactId?: number;
+  classificationLogId?: number;
+};
+
+async function resolveExpenseReferences(
+  input: ExpenseReferenceInput,
+  userId: number,
+  userType: string,
+): Promise<{
+  contactId: number | null;
+  classificationLogId: number | null;
+  newlyAddedContact: {
+    isNew: boolean;
+    name: string;
+    totalContacts: number;
+  } | null;
+}> {
+  const database = getDb();
+  let contactId = input.contactId || null;
+  let newlyAddedContact: {
+    isNew: boolean;
+    name: string;
+    totalContacts: number;
+  } | null = null;
+
+  if (contactId) {
+    const [contact] = await database
+      .select({ id: userContacts.id })
+      .from(userContacts)
+      .where(and(
+        eq(userContacts.id, contactId),
+        eq(userContacts.userId, userId),
+        eq(userContacts.userType, userType),
+      ))
+      .limit(1);
+    if (!contact) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "الشخص المختار غير موجود" });
+    }
+  } else if (
+    PERSON_EXPENSE_CATEGORIES.has(input.category) &&
+    input.subCategory &&
+    input.subCategory !== "عام"
+  ) {
+    const { name, relationship } = parseNameAndRelationship(
+      input.subCategory,
+      input.category,
+    );
+    if (name && name !== "عام" && name !== "شخص") {
+      const { addDynamicContact } = await import("./services/user-profile-service");
+      const result = await addDynamicContact(userId, userType, name, relationship);
+      if (result?.contactId) contactId = result.contactId;
+      if (result?.isNew) newlyAddedContact = result;
+    }
+  }
+
+  let classificationLogId = input.classificationLogId || null;
+  if (classificationLogId) {
+    const [log] = await database
+      .select({ id: classificationLogs.id })
+      .from(classificationLogs)
+      .where(and(
+        eq(classificationLogs.id, classificationLogId),
+        eq(classificationLogs.userId, userId),
+        eq(classificationLogs.userType, userType),
+      ))
+      .limit(1);
+    if (!log) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "سجل التحليل غير موجود" });
+    }
+  }
+
+  return { contactId, classificationLogId, newlyAddedContact };
+}
 
 function isValidDate(value: unknown): value is Date {
   return value instanceof Date && !isNaN(value.getTime());
@@ -233,6 +319,8 @@ export const expenseRouter = router({
           .enum(["voice", "manual", "ai_parsed", "image", "sms"])
           .default("manual"),
         date: z.string().optional(),
+        contactId: z.number().int().positive().optional(),
+        classificationLogId: z.number().int().positive().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -248,6 +336,8 @@ export const expenseRouter = router({
         });
       }
 
+      const references = await resolveExpenseReferences(input, userId, requestUserType);
+
       await db.insert(expenses).values({
         userId,
         userType: requestUserType,
@@ -258,6 +348,8 @@ export const expenseRouter = router({
         description: input.description || "",
         rawText: input.rawText,
         source: input.source,
+        contactId: references.contactId,
+        classificationLogId: references.classificationLogId,
         date: expenseDate,
         businessId: (input as any).businessId || null,
       });
@@ -265,33 +357,11 @@ export const expenseRouter = router({
       // Phase 2: Invalidate muscle memory cache so it learns this new confirmed pattern
       invalidateUserMemory(userId, requestUserType);
 
-      // Phase 2.5: Auto-learn dynamic contacts from manually saved expenses
-      const personCategories = [
-        "العائلة",
-        "أصدقاء",
-        "موظفين",
-        "خدمات سيارات",
-        "أخرى",
-      ];
-      if (
-        personCategories.includes(input.category) &&
-        input.subCategory &&
-        input.subCategory !== "عام"
-      ) {
-        const { name, relationship } = parseNameAndRelationship(
-          input.subCategory,
-          input.category,
-        );
-        if (name && name !== "عام" && name !== "شخص") {
-          const { addDynamicContact } =
-            await import("./services/user-profile-service");
-          await addDynamicContact(
-            userId as number,
-            requestUserType,
-            name,
-            relationship,
-          );
-        }
+      if (references.contactId) {
+        await db
+          .update(userContacts)
+          .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
+          .where(eq(userContacts.id, references.contactId));
       }
 
       // ─── Gamification: Update Streaks ───
@@ -309,7 +379,7 @@ export const expenseRouter = router({
         });
       }
 
-      return { success: true };
+      return { success: true, newlyAddedContact: references.newlyAddedContact };
     }),
 
   batchCreate: authedProcedure
@@ -324,6 +394,8 @@ export const expenseRouter = router({
           rawText: expenseRawText,
           source: z.enum(["voice", "manual", "ai_parsed", "image", "sms"]).default("manual"),
           date: z.string().optional(),
+          contactId: z.number().int().positive().optional(),
+          classificationLogId: z.number().int().positive().optional(),
         })
       ).max(100, "حد أقصى 100 عملية في الطلب الواحد")
     )
@@ -334,7 +406,12 @@ export const expenseRouter = router({
 
       if (input.length === 0) return { success: true };
 
-      const valuesToInsert = input.map(item => ({
+      const references = [] as Awaited<ReturnType<typeof resolveExpenseReferences>>[];
+      for (const item of input) {
+        references.push(await resolveExpenseReferences(item, userId, requestUserType));
+      }
+
+      const valuesToInsert = input.map((item, index) => ({
         userId,
         userType: requestUserType,
         type: item.type,
@@ -344,6 +421,8 @@ export const expenseRouter = router({
         description: item.description || "",
         rawText: item.rawText,
         source: item.source,
+        contactId: references[index].contactId,
+        classificationLogId: references[index].classificationLogId,
         date: item.date ? new Date(item.date) : new Date(),
         businessId: (item as any).businessId || null,
       }));
@@ -352,15 +431,14 @@ export const expenseRouter = router({
 
       invalidateUserMemory(userId, requestUserType);
 
-      const personCategories = ["العائلة", "أصدقاء", "موظفين", "خدمات سيارات", "أخرى"];
-      for (const item of input) {
-        if (personCategories.includes(item.category) && item.subCategory && item.subCategory !== "عام") {
-          const { name, relationship } = parseNameAndRelationship(item.subCategory, item.category);
-          if (name && name !== "عام" && name !== "شخص") {
-            const { addDynamicContact } = await import("./services/user-profile-service");
-            await addDynamicContact(userId as number, requestUserType, name, relationship);
-          }
-        }
+      const linkedContactIds = references
+        .map((reference) => reference.contactId)
+        .filter((id): id is number => Boolean(id));
+      for (const contactId of linkedContactIds) {
+        await db
+          .update(userContacts)
+          .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
+          .where(eq(userContacts.id, contactId));
       }
 
       try {
@@ -378,7 +456,10 @@ export const expenseRouter = router({
         });
       }
 
-      return { success: true };
+      return {
+        success: true,
+        newlyAddedContact: references.find((reference) => reference.newlyAddedContact)?.newlyAddedContact || null,
+      };
     }),
 
   list: authedProcedure
@@ -544,6 +625,7 @@ export const expenseRouter = router({
       // Phase 2: Invalidate muscle memory cache so it learns this correction
       invalidateUserMemory(userId, userType);
 
+      let newlyAddedContact: { isNew: boolean; name: string; totalContacts: number } | null = null;
       // Phase 2.5: Auto-learn dynamic contacts from manually edited expenses
       const personCategories = [
         "العائلة",
@@ -565,12 +647,13 @@ export const expenseRouter = router({
         if (name && name !== "عام" && name !== "شخص") {
           const { addDynamicContact } =
             await import("./services/user-profile-service");
-          await addDynamicContact(
+          const res = await addDynamicContact(
             userId as number,
             userType,
             name,
             relationship,
           );
+          if (res && res.isNew) newlyAddedContact = res;
         }
       }
       // ── Strategy 6: Auto-Learning Muscle Memory ──
@@ -659,7 +742,7 @@ export const expenseRouter = router({
       }
 
       await invalidateExpenseCache(userId, userType);
-      return { success: true };
+      return { success: true, newlyAddedContact };
     }),
 
   delete: authedProcedure
@@ -1383,6 +1466,7 @@ export const expenseRouter = router({
         throw new Error("Clarification not found");
       }
 
+      let newlyAddedContact: { isNew: boolean; name: string; totalContacts: number } | null = null;
       let ctxData: Record<string, any> = {};
       if (typeof clarification.contextData === "string") {
         try {
@@ -1474,6 +1558,7 @@ export const expenseRouter = router({
             clarificationQuestion: nextQuestion,
             clarificationId: input.clarificationId,
             enrichedText: currentEnrichedText,
+            newlyAddedContact,
           };
         }
 
@@ -1544,11 +1629,31 @@ export const expenseRouter = router({
             businessMode: false,
           });
 
+          for (const [name, rel] of Object.entries(resolvedAnswers)) {
+            if (name && rel && rel !== "جهة اتصال عامة" && name !== "عام" && name !== "شخص") {
+              const { addDynamicContact } = await import("./services/user-profile-service");
+              const res = await addDynamicContact(userId as number, userType as string, name, rel);
+              if (res && res.isNew) newlyAddedContact = res;
+            }
+          }
+
           const itemsToSave = pipeline.items && pipeline.items.length > 0
             ? pipeline.items
             : Array.isArray(ctxData.items) ? ctxData.items : [];
 
           for (const item of itemsToSave) {
+            const references = await resolveExpenseReferences(
+              {
+                category: item.category,
+                subCategory: item.subCategory,
+                classificationLogId:
+                  typeof ctxData.classificationLogId === "number"
+                    ? ctxData.classificationLogId
+                    : undefined,
+              },
+              userId,
+              userType,
+            );
             await db.insert(expenses).values({
               userId: userId as number,
               userType: userType as string,
@@ -1560,15 +1665,25 @@ export const expenseRouter = router({
               date: new Date(),
               source: "manual",
               rawText: enrichedText,
+              contactId: references.contactId,
+              classificationLogId: references.classificationLogId,
               businessId: (item as any).businessId || null,
             });
+
+            if (references.contactId) {
+              await db
+                .update(userContacts)
+                .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
+                .where(eq(userContacts.id, references.contactId));
+            }
 
             if (item.person_mentioned && item.person_relationship) {
               const pName = item.person_mentioned.trim();
               const pRel = item.person_relationship.trim();
               if (pName && pName !== "عام" && pName !== "شخص") {
                 const { addDynamicContact } = await import("./services/user-profile-service");
-                await addDynamicContact(userId as number, userType as string, pName, pRel);
+                const res = await addDynamicContact(userId as number, userType as string, pName, pRel);
+                if (res && res.isNew) newlyAddedContact = res;
               }
             }
             savedCount += 1;
@@ -1598,6 +1713,7 @@ export const expenseRouter = router({
           clarificationQuestion: undefined,
           clarificationId: undefined,
           enrichedText: undefined,
+          newlyAddedContact,
         };
       }
 
@@ -1705,6 +1821,7 @@ export const expenseRouter = router({
             clarificationQuestion: pipeline.clarificationQuestion || "ممكن توضح أكتر؟",
             clarificationId: input.clarificationId,
             enrichedText,
+            newlyAddedContact,
           };
         }
 
@@ -1737,12 +1854,13 @@ export const expenseRouter = router({
                const pRel = item.person_relationship.trim();
                if (pName && pName !== "عام" && pName !== "شخص") {
                  const { addDynamicContact } = await import("./services/user-profile-service");
-                 await addDynamicContact(
+                 const res = await addDynamicContact(
                    userId as number,
                    userType as string,
                    pName,
                    pRel
                  );
+                 if (res && res.isNew) newlyAddedContact = res;
                }
              }
              savedCount += 1;
@@ -1777,6 +1895,7 @@ export const expenseRouter = router({
         clarificationQuestion: undefined,
         clarificationId: undefined,
         enrichedText: undefined,
+        newlyAddedContact,
       };
     }),
 });

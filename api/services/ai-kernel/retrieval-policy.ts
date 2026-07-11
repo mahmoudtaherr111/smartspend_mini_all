@@ -36,6 +36,9 @@ export function embeddingApiStatusFor(dataNeeds: DataNeed[], cacheHits: string[]
   if (embeddingHits.includes("embedding:disabled")) {
     return "embedding_disabled";
   }
+  if (embeddingHits.includes("embedding:skipped_lexical_hit")) {
+    return "skipped";
+  }
   if (embeddingHits.includes("embedding:query_cache_hit") && embeddingHits.includes("embedding:fireworks")) {
     return "query_embedding_cache_hit";
   }
@@ -75,6 +78,13 @@ export function retrievalPolicyFor(
       embedding: "fireworks_qwen",
       reason: "memory_search_semantic_retrieval",
       vectorRows: Number.isFinite(rowCount) ? rowCount : undefined,
+    };
+  }
+
+  if (embeddingHits.includes("embedding:skipped_lexical_hit")) {
+    return {
+      embedding: "skipped",
+      reason: "strong_lexical_memory_match_avoided_embedding",
     };
   }
 

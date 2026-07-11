@@ -2963,9 +2963,9 @@ function getCauseFromUnknown(cause) {
   return void 0;
 }
 function getTRPCErrorFromUnknown(cause) {
-  if (cause instanceof TRPCError2) return cause;
+  if (cause instanceof TRPCError) return cause;
   if (cause instanceof Error && cause.name === "TRPCError") return cause;
-  const trpcError = new TRPCError2({
+  const trpcError = new TRPCError({
     code: "INTERNAL_SERVER_ERROR",
     cause
   });
@@ -3096,7 +3096,7 @@ function createCallerFactory() {
         const procedure = await getProcedureAtPath(router2, fullPath);
         let ctx = void 0;
         try {
-          if (!procedure) throw new TRPCError2({
+          if (!procedure) throw new TRPCError({
             code: "NOT_FOUND",
             message: `No procedure found on path "${path5}"`
           });
@@ -3155,7 +3155,7 @@ function mergeRouters(...routerList) {
 function isTrackedEnvelope(value) {
   return Array.isArray(value) && value[2] === trackedSymbol;
 }
-var defaultFormatter, import_defineProperty, UnknownCauseError, TRPCError2, import_objectSpread2$1, defaultTransformer, import_objectSpread22, lazyMarker, emptyRouter, reservedWords, trackedSymbol;
+var defaultFormatter, import_defineProperty, UnknownCauseError, TRPCError, import_objectSpread2$1, defaultTransformer, import_objectSpread22, lazyMarker, emptyRouter, reservedWords, trackedSymbol;
 var init_tracked_DWInO6EQ = __esm({
   "node_modules/@trpc/server/dist/tracked-DWInO6EQ.mjs"() {
     init_getErrorShape_BPSzUA7W();
@@ -3170,7 +3170,7 @@ var init_tracked_DWInO6EQ = __esm({
         Object.assign(this, cause);
       }
     };
-    TRPCError2 = class extends Error {
+    TRPCError = class extends Error {
       constructor(opts) {
         var _ref, _opts$message, _this$cause;
         const cause = getCauseFromUnknown(opts.cause);
@@ -3238,7 +3238,7 @@ function createInputMiddleware(parse5) {
     try {
       parsedInput = await parse5(rawInput);
     } catch (cause) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "BAD_REQUEST",
         cause
       });
@@ -3257,7 +3257,7 @@ function createOutputMiddleware(parse5) {
       const data = await parse5(result.data);
       return (0, import_objectSpread2$2.default)((0, import_objectSpread2$2.default)({}, result), {}, { data });
     } catch (cause) {
-      throw new TRPCError2({
+      throw new TRPCError({
         message: "Output validation failed",
         code: "INTERNAL_SERVER_ERROR",
         cause
@@ -3406,7 +3406,7 @@ function createProcedureCaller(_def) {
   async function procedure(opts) {
     if (!opts || !("getRawInput" in opts)) throw new Error(codeblock);
     const result = await callRecursive(0, _def, opts);
-    if (!result) throw new TRPCError2({
+    if (!result) throw new TRPCError({
       code: "INTERNAL_SERVER_ERROR",
       message: "No result from middlewares - did you forget to `return next()`?"
     });
@@ -3557,7 +3557,7 @@ function createRateLimiter(max3, windowMs) {
       }
       limit.count++;
       if (limit.count > max3) {
-        throw new TRPCError2({ code: "TOO_MANY_REQUESTS", message });
+        throw new TRPCError({ code: "TOO_MANY_REQUESTS", message });
       }
     }
   };
@@ -3613,7 +3613,7 @@ var init_middleware = __esm({
     }
     authedProcedure = t.procedure.use(async ({ ctx, next }) => {
       if (!ctx.user) {
-        throw new TRPCError2({ code: "UNAUTHORIZED", message: "\u064A\u062C\u0628 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B" });
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "\u064A\u062C\u0628 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B" });
       }
       const key = `${ctx.user.type}:${ctx.user.id}`;
       const now = Date.now();
@@ -3623,7 +3623,7 @@ var init_middleware = __esm({
       } else {
         limit.count++;
         if (limit.count > MAX_REQUESTS) {
-          throw new TRPCError2({ code: "TOO_MANY_REQUESTS", message: "\u0637\u0644\u0628\u0627\u062A \u0643\u062A\u064A\u0631 \u062C\u062F\u0627\u064B! \u0627\u0647\u062F\u0649 \u0634\u0648\u064A\u0629." });
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "\u0637\u0644\u0628\u0627\u062A \u0643\u062A\u064A\u0631 \u062C\u062F\u0627\u064B! \u0627\u0647\u062F\u0649 \u0634\u0648\u064A\u0629." });
         }
       }
       return next({ ctx: { ...ctx, user: ctx.user } });
@@ -3637,44 +3637,44 @@ var init_middleware = __esm({
       } else {
         limit.count++;
         if (limit.count > AI_MAX_REQUESTS) {
-          throw new TRPCError2({ code: "TOO_MANY_REQUESTS", message: "\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u0643\u062A\u064A\u0631 \u062C\u062F\u0627\u064B! \u0627\u0633\u062A\u0646\u0649 \u062F\u0642\u064A\u0642\u0629 \u0648\u062D\u0627\u0648\u0644 \u062A\u0627\u0646\u064A." });
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "\u0637\u0644\u0628\u0627\u062A \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u0643\u062A\u064A\u0631 \u062C\u062F\u0627\u064B! \u0627\u0633\u062A\u0646\u0649 \u062F\u0642\u064A\u0642\u0629 \u0648\u062D\u0627\u0648\u0644 \u062A\u0627\u0646\u064A." });
         }
       }
       return next({ ctx: { ...ctx, user: ctx.user } });
     });
     moderatorProcedure = t.procedure.use(async ({ ctx, next }) => {
       if (!ctx.user) {
-        throw new TRPCError2({ code: "UNAUTHORIZED", message: "\u064A\u062C\u0628 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B" });
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "\u064A\u062C\u0628 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B" });
       }
       if (ctx.user.role !== "admin" && ctx.user.role !== "moderator") {
-        throw new TRPCError2({ code: "FORBIDDEN", message: "\u0644\u064A\u0633 \u0644\u062F\u064A\u0643 \u0635\u0644\u0627\u062D\u064A\u0629 \u0627\u0644\u0648\u0635\u0648\u0644" });
+        throw new TRPCError({ code: "FORBIDDEN", message: "\u0644\u064A\u0633 \u0644\u062F\u064A\u0643 \u0635\u0644\u0627\u062D\u064A\u0629 \u0627\u0644\u0648\u0635\u0648\u0644" });
       }
       return next({ ctx: { ...ctx, user: ctx.user } });
     });
     adminProcedure = t.procedure.use(async ({ ctx, next }) => {
       if (!ctx.user) {
-        throw new TRPCError2({ code: "UNAUTHORIZED", message: "\u064A\u062C\u0628 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B" });
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "\u064A\u062C\u0628 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B" });
       }
       if (ctx.user.role !== "admin") {
-        throw new TRPCError2({ code: "FORBIDDEN", message: "\u0644\u064A\u0633 \u0644\u062F\u064A\u0643 \u0635\u0644\u0627\u062D\u064A\u0629 \u0627\u0644\u0623\u062F\u0645\u0646" });
+        throw new TRPCError({ code: "FORBIDDEN", message: "\u0644\u064A\u0633 \u0644\u062F\u064A\u0643 \u0635\u0644\u0627\u062D\u064A\u0629 \u0627\u0644\u0623\u062F\u0645\u0646" });
       }
       return next({ ctx: { ...ctx, user: ctx.user } });
     });
     proProcedure = t.procedure.use(async ({ ctx, next }) => {
       if (!ctx.user) {
-        throw new TRPCError2({ code: "UNAUTHORIZED", message: "\u064A\u062C\u0628 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B" });
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "\u064A\u062C\u0628 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B" });
       }
       if (ctx.user.plan !== "pro" && ctx.user.plan !== "ultra" && ctx.user.role !== "admin") {
-        throw new TRPCError2({ code: "FORBIDDEN", message: "\u0647\u0630\u0647 \u0627\u0644\u0645\u064A\u0632\u0629 \u0645\u062A\u0627\u062D\u0629 \u0641\u0642\u0637 \u0644\u0644\u0628\u0631\u0648" });
+        throw new TRPCError({ code: "FORBIDDEN", message: "\u0647\u0630\u0647 \u0627\u0644\u0645\u064A\u0632\u0629 \u0645\u062A\u0627\u062D\u0629 \u0641\u0642\u0637 \u0644\u0644\u0628\u0631\u0648" });
       }
       return next({ ctx: { ...ctx, user: ctx.user } });
     });
     ultraProcedure = t.procedure.use(async ({ ctx, next }) => {
       if (!ctx.user) {
-        throw new TRPCError2({ code: "UNAUTHORIZED", message: "\u064A\u062C\u0628 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B" });
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "\u064A\u062C\u0628 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644 \u0623\u0648\u0644\u0627\u064B" });
       }
       if (ctx.user.plan !== "ultra" && ctx.user.role !== "admin") {
-        throw new TRPCError2({ code: "FORBIDDEN", message: "\u0647\u0630\u0647 \u0627\u0644\u0645\u064A\u0632\u0629 \u0645\u062A\u0627\u062D\u0629 \u0641\u0642\u0637 \u0644\u0645\u0634\u062A\u0631\u0643\u064A \u0627\u0644\u0623\u0644\u062A\u0631\u0627 \u{1F48E}" });
+        throw new TRPCError({ code: "FORBIDDEN", message: "\u0647\u0630\u0647 \u0627\u0644\u0645\u064A\u0632\u0629 \u0645\u062A\u0627\u062D\u0629 \u0641\u0642\u0637 \u0644\u0645\u0634\u062A\u0631\u0643\u064A \u0627\u0644\u0623\u0644\u062A\u0631\u0627 \u{1F48E}" });
       }
       return next({ ctx: { ...ctx, user: ctx.user } });
     });
@@ -18036,41 +18036,41 @@ var require_lib = __commonJS({
     var isRecord = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
     var isWordChar = (code) => code >= 65 && code <= 90 || code >= 97 && code <= 122 || code >= 48 && code <= 57 || code === 95;
     var isWhitespace = (code) => code === charCode.space || code === charCode.tab || code === charCode.newline || code === charCode.carriageReturn;
-    var hasOnlyWhitespaceBetween = (sql7, start, end) => {
+    var hasOnlyWhitespaceBetween = (sql6, start, end) => {
       if (start >= end)
         return true;
       for (let i2 = start; i2 < end; i2++) {
-        const code = sql7.charCodeAt(i2);
+        const code = sql6.charCodeAt(i2);
         if (code !== charCode.space && code !== charCode.tab && code !== charCode.newline && code !== charCode.carriageReturn)
           return false;
       }
       return true;
     };
     var toLower = (code) => code | 32;
-    var matchesWord = (sql7, position, word, length) => {
+    var matchesWord = (sql6, position, word, length) => {
       for (let offset = 0; offset < word.length; offset++)
-        if (toLower(sql7.charCodeAt(position + offset)) !== word.charCodeAt(offset))
+        if (toLower(sql6.charCodeAt(position + offset)) !== word.charCodeAt(offset))
           return false;
-      return (position === 0 || !isWordChar(sql7.charCodeAt(position - 1))) && (position + word.length >= length || !isWordChar(sql7.charCodeAt(position + word.length)));
+      return (position === 0 || !isWordChar(sql6.charCodeAt(position - 1))) && (position + word.length >= length || !isWordChar(sql6.charCodeAt(position + word.length)));
     };
-    var skipSqlContext = (sql7, position) => {
-      const currentChar = sql7.charCodeAt(position);
-      const nextChar = sql7.charCodeAt(position + 1);
+    var skipSqlContext = (sql6, position) => {
+      const currentChar = sql6.charCodeAt(position);
+      const nextChar = sql6.charCodeAt(position + 1);
       if (currentChar === charCode.singleQuote) {
-        for (let cursor = position + 1; cursor < sql7.length; cursor++) {
-          if (sql7.charCodeAt(cursor) === charCode.backslash)
+        for (let cursor = position + 1; cursor < sql6.length; cursor++) {
+          if (sql6.charCodeAt(cursor) === charCode.backslash)
             cursor++;
-          else if (sql7.charCodeAt(cursor) === charCode.singleQuote)
+          else if (sql6.charCodeAt(cursor) === charCode.singleQuote)
             return cursor + 1;
         }
-        return sql7.length;
+        return sql6.length;
       }
       if (currentChar === charCode.backtick) {
-        const length = sql7.length;
+        const length = sql6.length;
         for (let cursor = position + 1; cursor < length; cursor++) {
-          if (sql7.charCodeAt(cursor) !== charCode.backtick)
+          if (sql6.charCodeAt(cursor) !== charCode.backtick)
             continue;
-          if (sql7.charCodeAt(cursor + 1) === charCode.backtick) {
+          if (sql6.charCodeAt(cursor + 1) === charCode.backtick) {
             cursor++;
             continue;
           }
@@ -18079,48 +18079,48 @@ var require_lib = __commonJS({
         return length;
       }
       if (currentChar === charCode.dash && nextChar === charCode.dash) {
-        const lineBreak = sql7.indexOf("\n", position + 2);
-        return lineBreak === -1 ? sql7.length : lineBreak + 1;
+        const lineBreak = sql6.indexOf("\n", position + 2);
+        return lineBreak === -1 ? sql6.length : lineBreak + 1;
       }
       if (currentChar === charCode.slash && nextChar === charCode.asterisk) {
-        const commentEnd = sql7.indexOf("*/", position + 2);
-        return commentEnd === -1 ? sql7.length : commentEnd + 2;
+        const commentEnd = sql6.indexOf("*/", position + 2);
+        return commentEnd === -1 ? sql6.length : commentEnd + 2;
       }
       return -1;
     };
-    var findNextPlaceholder = (sql7, start) => {
-      const sqlLength = sql7.length;
+    var findNextPlaceholder = (sql6, start) => {
+      const sqlLength = sql6.length;
       for (let position = start; position < sqlLength; position++) {
-        const code = sql7.charCodeAt(position);
+        const code = sql6.charCodeAt(position);
         if (code === charCode.questionMark)
           return position;
         if (code === charCode.singleQuote || code === charCode.backtick || code === charCode.dash || code === charCode.slash) {
-          const contextEnd = skipSqlContext(sql7, position);
+          const contextEnd = skipSqlContext(sql6, position);
           if (contextEnd !== -1)
             position = contextEnd - 1;
         }
       }
       return -1;
     };
-    var findSetKeyword = (sql7, startFrom = 0) => {
-      const length = sql7.length;
+    var findSetKeyword = (sql6, startFrom = 0) => {
+      const length = sql6.length;
       for (let position = startFrom; position < length; position++) {
-        const code = sql7.charCodeAt(position);
+        const code = sql6.charCodeAt(position);
         const lower3 = code | 32;
         if (code === charCode.singleQuote || code === charCode.backtick || code === charCode.dash || code === charCode.slash) {
-          const contextEnd = skipSqlContext(sql7, position);
+          const contextEnd = skipSqlContext(sql6, position);
           if (contextEnd !== -1) {
             position = contextEnd - 1;
             continue;
           }
         }
-        if (lower3 === 115 && matchesWord(sql7, position, "set", length))
+        if (lower3 === 115 && matchesWord(sql6, position, "set", length))
           return position + 3;
-        if (lower3 === 107 && matchesWord(sql7, position, "key", length)) {
+        if (lower3 === 107 && matchesWord(sql6, position, "key", length)) {
           let cursor = position + 3;
-          while (cursor < length && isWhitespace(sql7.charCodeAt(cursor)))
+          while (cursor < length && isWhitespace(sql6.charCodeAt(cursor)))
             cursor++;
-          if (matchesWord(sql7, cursor, "update", length))
+          if (matchesWord(sql6, cursor, "update", length))
             return cursor + 6;
         }
       }
@@ -18215,19 +18215,19 @@ var require_lib = __commonJS({
       const keysLength = keys.length;
       if (keysLength === 0)
         return "";
-      let sql7 = "";
+      let sql6 = "";
       for (let i2 = 0; i2 < keysLength; i2++) {
         const key = keys[i2];
         const value = object2[key];
         if (typeof value === "function")
           continue;
-        if (sql7.length > 0)
-          sql7 += ", ";
-        sql7 += (0, exports.escapeId)(key);
-        sql7 += " = ";
-        sql7 += (0, exports.escape)(value, true, timezone);
+        if (sql6.length > 0)
+          sql6 += ", ";
+        sql6 += (0, exports.escapeId)(key);
+        sql6 += " = ";
+        sql6 += (0, exports.escape)(value, true, timezone);
       }
-      return sql7;
+      return sql6;
     };
     exports.objectToValues = objectToValues;
     var bufferToString = (buffer) => `X${escapeString(buffer.toString("hex"))}`;
@@ -18278,25 +18278,25 @@ var require_lib = __commonJS({
       }
     };
     exports.escape = escape2;
-    var format2 = (sql7, values, stringifyObjects, timezone) => {
+    var format2 = (sql6, values, stringifyObjects, timezone) => {
       if (values === void 0 || values === null)
-        return sql7;
+        return sql6;
       const valuesArray = Array.isArray(values) ? values : [values];
       const length = valuesArray.length;
       let setIndex = -2;
       let result = "";
       let chunkIndex = 0;
       let valuesIndex = 0;
-      let placeholderPosition = findNextPlaceholder(sql7, 0);
+      let placeholderPosition = findNextPlaceholder(sql6, 0);
       while (valuesIndex < length && placeholderPosition !== -1) {
         let placeholderEnd = placeholderPosition + 1;
         let escapedValue;
-        while (sql7.charCodeAt(placeholderEnd) === 63)
+        while (sql6.charCodeAt(placeholderEnd) === 63)
           placeholderEnd++;
         const placeholderLength = placeholderEnd - placeholderPosition;
         const currentValue = valuesArray[valuesIndex];
         if (placeholderLength > 2) {
-          placeholderPosition = findNextPlaceholder(sql7, placeholderEnd);
+          placeholderPosition = findNextPlaceholder(sql6, placeholderEnd);
           continue;
         }
         if (placeholderLength === 2)
@@ -18305,32 +18305,32 @@ var require_lib = __commonJS({
           escapedValue = `${currentValue}`;
         else if (typeof currentValue === "object" && currentValue !== null && !stringifyObjects) {
           if (setIndex === -2)
-            setIndex = findSetKeyword(sql7);
-          if (setIndex !== -1 && setIndex <= placeholderPosition && hasOnlyWhitespaceBetween(sql7, setIndex, placeholderPosition) && !hasSqlString(currentValue) && !Array.isArray(currentValue) && !node_buffer_1.Buffer.isBuffer(currentValue) && !(currentValue instanceof Uint8Array) && !isDate(currentValue) && isRecord(currentValue)) {
+            setIndex = findSetKeyword(sql6);
+          if (setIndex !== -1 && setIndex <= placeholderPosition && hasOnlyWhitespaceBetween(sql6, setIndex, placeholderPosition) && !hasSqlString(currentValue) && !Array.isArray(currentValue) && !node_buffer_1.Buffer.isBuffer(currentValue) && !(currentValue instanceof Uint8Array) && !isDate(currentValue) && isRecord(currentValue)) {
             escapedValue = (0, exports.objectToValues)(currentValue, timezone);
-            setIndex = findSetKeyword(sql7, placeholderEnd);
+            setIndex = findSetKeyword(sql6, placeholderEnd);
           } else
             escapedValue = (0, exports.escape)(currentValue, true, timezone);
         } else
           escapedValue = (0, exports.escape)(currentValue, stringifyObjects, timezone);
-        result += sql7.slice(chunkIndex, placeholderPosition);
+        result += sql6.slice(chunkIndex, placeholderPosition);
         result += escapedValue;
         chunkIndex = placeholderEnd;
         valuesIndex++;
-        placeholderPosition = findNextPlaceholder(sql7, placeholderEnd);
+        placeholderPosition = findNextPlaceholder(sql6, placeholderEnd);
       }
       if (chunkIndex === 0)
-        return sql7;
-      if (chunkIndex < sql7.length)
-        return result + sql7.slice(chunkIndex);
+        return sql6;
+      if (chunkIndex < sql6.length)
+        return result + sql6.slice(chunkIndex);
       return result;
     };
     exports.format = format2;
-    var raw2 = (sql7) => {
-      if (typeof sql7 !== "string")
+    var raw2 = (sql6) => {
+      if (typeof sql6 !== "string")
         throw new TypeError("argument sql must be a string");
       return {
-        toSqlString: () => sql7
+        toSqlString: () => sql6
       };
     };
     exports.raw = raw2;
@@ -31217,8 +31217,8 @@ var require_prepare_statement = __commonJS({
     var StringParser = require_string();
     var CharsetToEncoding = require_charset_encodings();
     var PrepareStatement = class {
-      constructor(sql7, charsetNumber) {
-        this.query = sql7;
+      constructor(sql6, charsetNumber) {
+        this.query = sql6;
         this.charsetNumber = charsetNumber;
         this.encoding = CharsetToEncoding[charsetNumber];
       }
@@ -31267,8 +31267,8 @@ var require_query = __commonJS({
     var Types = require_types();
     var { toParameter } = require_encode_parameter();
     var Query = class {
-      constructor(sql7, charsetNumber, attributes, clientFlags) {
-        this.query = sql7;
+      constructor(sql6, charsetNumber, attributes, clientFlags) {
+        this.query = sql6;
         this.charsetNumber = charsetNumber;
         this.encoding = CharsetToEncoding[charsetNumber];
         this.attributes = attributes;
@@ -35318,17 +35318,17 @@ var require_connection = __commonJS({
         }
         return cmd;
       }
-      format(sql7, values) {
+      format(sql6, values) {
         if (typeof this.config.queryFormat === "function") {
           return this.config.queryFormat.call(
             this,
-            sql7,
+            sql6,
             values,
             this.config.timezone
           );
         }
         const opts = {
-          sql: sql7,
+          sql: sql6,
           values
         };
         this._resolveNamedPlaceholders(opts);
@@ -35345,8 +35345,8 @@ var require_connection = __commonJS({
       escapeId(value) {
         return SqlString.escapeId(value, false);
       }
-      raw(sql7) {
-        return SqlString.raw(sql7);
+      raw(sql6) {
+        return SqlString.raw(sql6);
       }
       _resolveNamedPlaceholders(options) {
         let unnamed;
@@ -35362,12 +35362,12 @@ var require_connection = __commonJS({
           options.values = unnamed[1];
         }
       }
-      query(sql7, values, cb) {
+      query(sql6, values, cb) {
         let cmdQuery;
-        if (sql7.constructor === Commands.Query) {
-          cmdQuery = sql7;
+        if (sql6.constructor === Commands.Query) {
+          cmdQuery = sql6;
         } else {
-          cmdQuery = _BaseConnection.createQuery(sql7, values, cb, this.config);
+          cmdQuery = _BaseConnection.createQuery(sql6, values, cb, this.config);
         }
         this._resolveNamedPlaceholders(cmdQuery);
         const rawSql = this.format(
@@ -35443,12 +35443,12 @@ var require_connection = __commonJS({
         }
         return this.addCommand(new Commands.Prepare(options, cb));
       }
-      unprepare(sql7) {
+      unprepare(sql6) {
         let options = {};
-        if (typeof sql7 === "object") {
-          options = sql7;
+        if (typeof sql6 === "object") {
+          options = sql6;
         } else {
-          options.sql = sql7;
+          options.sql = sql6;
         }
         const key = _BaseConnection.statementKey(options);
         const stmt = this._statements.get(key);
@@ -35458,16 +35458,16 @@ var require_connection = __commonJS({
         }
         return stmt;
       }
-      execute(sql7, values, cb) {
+      execute(sql6, values, cb) {
         let options = {
           infileStreamFactory: this.config.infileStreamFactory
         };
-        if (typeof sql7 === "object") {
+        if (typeof sql6 === "object") {
           options = {
             ...options,
-            ...sql7,
-            sql: sql7.sql,
-            values: sql7.values
+            ...sql6,
+            sql: sql6.sql,
+            values: sql6.values
           };
           if (typeof values === "function") {
             cb = values;
@@ -35476,10 +35476,10 @@ var require_connection = __commonJS({
           }
         } else if (typeof values === "function") {
           cb = values;
-          options.sql = sql7;
+          options.sql = sql6;
           options.values = void 0;
         } else {
-          options.sql = sql7;
+          options.sql = sql6;
           options.values = values;
         }
         this._resolveNamedPlaceholders(options);
@@ -35760,17 +35760,17 @@ var require_connection = __commonJS({
         this.addCommand = this._addCommandClosedState;
         return quitCmd;
       }
-      static createQuery(sql7, values, cb, config3) {
+      static createQuery(sql6, values, cb, config3) {
         let options = {
           rowsAsArray: config3.rowsAsArray,
           infileStreamFactory: config3.infileStreamFactory
         };
-        if (typeof sql7 === "object") {
+        if (typeof sql6 === "object") {
           options = {
             ...options,
-            ...sql7,
-            sql: sql7.sql,
-            values: sql7.values
+            ...sql6,
+            sql: sql6.sql,
+            values: sql6.values
           };
           if (typeof values === "function") {
             cb = values;
@@ -35779,10 +35779,10 @@ var require_connection = __commonJS({
           }
         } else if (typeof values === "function") {
           cb = values;
-          options.sql = sql7;
+          options.sql = sql6;
           options.values = void 0;
         } else {
-          options.sql = sql7;
+          options.sql = sql6;
           options.values = values;
         }
         return new Commands.Query(options, cb);
@@ -36413,9 +36413,9 @@ var require_pool = __commonJS({
           connection._realEnd(endCB);
         }
       }
-      query(sql7, values, cb) {
+      query(sql6, values, cb) {
         const cmdQuery = BaseConnection.createQuery(
-          sql7,
+          sql6,
           values,
           cb,
           this.config.connectionConfig
@@ -36459,7 +36459,7 @@ var require_pool = __commonJS({
         });
         return cmdQuery;
       }
-      execute(sql7, values, cb) {
+      execute(sql6, values, cb) {
         if (typeof values === "function") {
           cb = values;
           values = [];
@@ -36469,7 +36469,7 @@ var require_pool = __commonJS({
             return cb(err);
           }
           try {
-            conn.execute(sql7, values, (err2, rows, fields) => {
+            conn.execute(sql6, values, (err2, rows, fields) => {
               if (isReadOnlyError(err2)) {
                 conn.destroy();
               }
@@ -36506,9 +36506,9 @@ var require_pool = __commonJS({
           }
         }, 1e3);
       }
-      format(sql7, values) {
+      format(sql6, values) {
         return SqlString.format(
-          sql7,
+          sql6,
           values,
           this.config.connectionConfig.stringifyObjects,
           this.config.connectionConfig.timezone
@@ -36564,7 +36564,7 @@ var require_pool2 = __commonJS({
       releaseConnection(connection) {
         if (connection instanceof PromisePoolConnection) connection.release();
       }
-      query(sql7, args) {
+      query(sql6, args) {
         const corePool = this.pool;
         const stackHolder = captureStackHolder(_PromisePool.prototype.query);
         if (typeof args === "function") {
@@ -36575,13 +36575,13 @@ var require_pool2 = __commonJS({
         return new this.Promise((resolve2, reject) => {
           const done = makeDoneCb(resolve2, reject, stackHolder);
           if (args !== void 0) {
-            corePool.query(sql7, args, done);
+            corePool.query(sql6, args, done);
           } else {
-            corePool.query(sql7, done);
+            corePool.query(sql6, done);
           }
         });
       }
-      execute(sql7, args) {
+      execute(sql6, args) {
         const corePool = this.pool;
         const stackHolder = captureStackHolder(_PromisePool.prototype.execute);
         if (typeof args === "function") {
@@ -36592,9 +36592,9 @@ var require_pool2 = __commonJS({
         return new this.Promise((resolve2, reject) => {
           const done = makeDoneCb(resolve2, reject, stackHolder);
           if (args) {
-            corePool.execute(sql7, args, done);
+            corePool.execute(sql6, args, done);
           } else {
-            corePool.execute(sql7, done);
+            corePool.execute(sql6, done);
           }
         });
       }
@@ -36750,8 +36750,8 @@ var require_pool_cluster = __commonJS({
        * @param {*} cb
        * @returns query
        */
-      query(sql7, values, cb) {
-        const query = Connection.createQuery(sql7, values, cb, {});
+      query(sql6, values, cb) {
+        const query = Connection.createQuery(sql6, values, cb, {});
         this.getConnection((err, conn) => {
           if (err) {
             if (typeof query.onResult === "function") {
@@ -36778,7 +36778,7 @@ var require_pool_cluster = __commonJS({
        * @param {*} values
        * @param {*} cb
        */
-      execute(sql7, values, cb) {
+      execute(sql6, values, cb) {
         if (typeof values === "function") {
           cb = values;
           values = [];
@@ -36788,7 +36788,7 @@ var require_pool_cluster = __commonJS({
             return cb(err);
           }
           try {
-            conn.execute(sql7, values, cb).once("end", () => {
+            conn.execute(sql6, values, cb).once("end", () => {
               conn.release();
             });
           } catch (e2) {
@@ -37084,7 +37084,7 @@ var require_pool_cluster2 = __commonJS({
           });
         });
       }
-      query(sql7, values) {
+      query(sql6, values) {
         const corePoolNamespace = this.poolNamespace;
         const stackHolder = captureStackHolder(
           _PromisePoolNamespace.prototype.query
@@ -37096,10 +37096,10 @@ var require_pool_cluster2 = __commonJS({
         }
         return new this.Promise((resolve2, reject) => {
           const done = makeDoneCb(resolve2, reject, stackHolder);
-          corePoolNamespace.query(sql7, values, done);
+          corePoolNamespace.query(sql6, values, done);
         });
       }
-      execute(sql7, values) {
+      execute(sql6, values) {
         const corePoolNamespace = this.poolNamespace;
         const stackHolder = captureStackHolder(
           _PromisePoolNamespace.prototype.execute
@@ -37111,7 +37111,7 @@ var require_pool_cluster2 = __commonJS({
         }
         return new this.Promise((resolve2, reject) => {
           const done = makeDoneCb(resolve2, reject, stackHolder);
-          corePoolNamespace.execute(sql7, values, done);
+          corePoolNamespace.execute(sql6, values, done);
         });
       }
     };
@@ -37192,7 +37192,7 @@ var require_promise = __commonJS({
           );
         });
       }
-      query(sql7, args) {
+      query(sql6, args) {
         const corePoolCluster = this.poolCluster;
         const stackHolder = captureStackHolder(_PromisePoolCluster.prototype.query);
         if (typeof args === "function") {
@@ -37202,10 +37202,10 @@ var require_promise = __commonJS({
         }
         return new this.Promise((resolve2, reject) => {
           const done = makeDoneCb(resolve2, reject, stackHolder);
-          corePoolCluster.query(sql7, args, done);
+          corePoolCluster.query(sql6, args, done);
         });
       }
-      execute(sql7, args) {
+      execute(sql6, args) {
         const corePoolCluster = this.poolCluster;
         const stackHolder = captureStackHolder(
           _PromisePoolCluster.prototype.execute
@@ -37217,7 +37217,7 @@ var require_promise = __commonJS({
         }
         return new this.Promise((resolve2, reject) => {
           const done = makeDoneCb(resolve2, reject, stackHolder);
-          corePoolCluster.execute(sql7, args, done);
+          corePoolCluster.execute(sql6, args, done);
         });
       }
       of(pattern, selector) {
@@ -38087,10 +38087,10 @@ var init_subquery = __esm({
     init_entity();
     Subquery = class {
       static [entityKind] = "Subquery";
-      constructor(sql7, fields, alias, isWith = false, usedTables = []) {
+      constructor(sql6, fields, alias, isWith = false, usedTables = []) {
         this._ = {
           brand: "Subquery",
-          sql: sql7,
+          sql: sql6,
           selectedFields: fields,
           alias,
           isWith,
@@ -44262,8 +44262,8 @@ var init_db = __esm({
 });
 
 // node_modules/drizzle-orm/cache/core/cache.js
-async function hashQuery(sql7, params) {
-  const dataToHash = `${sql7}-${JSON.stringify(params)}`;
+async function hashQuery(sql6, params) {
+  const dataToHash = `${sql6}-${JSON.stringify(params)}`;
   const encoder = new TextEncoder();
   const data = encoder.encode(dataToHash);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
@@ -45142,6 +45142,10 @@ var init_schema2 = __esm({
         paymentMethod: varchar("payment_method", { length: 50 }),
         placeHint: varchar("place_hint", { length: 150 }),
         parsedMetadata: json2("parsed_metadata"),
+        // Canonical entity and decision-trace links.  Text remains a display/input
+        // artifact; reporting and learning must use stable ids instead.
+        contactId: int2("contact_id"),
+        classificationLogId: int2("classification_log_id"),
         businessId: int2("business_id"),
         // null = personal, non-null = business expense
         date: datetime3("date").notNull(),
@@ -45159,7 +45163,9 @@ var init_schema2 = __esm({
         index("expenses_type_idx").on(t3.type),
         index("expenses_category_idx").on(t3.category),
         index("expenses_status_idx").on(t3.status),
-        index("expenses_business_idx").on(t3.businessId)
+        index("expenses_business_idx").on(t3.businessId),
+        index("expenses_contact_idx").on(t3.contactId),
+        index("expenses_classification_log_idx").on(t3.classificationLogId)
       ]
     );
     userBusinesses = mysqlTable(
@@ -45454,6 +45460,7 @@ var init_schema2 = __esm({
         // pro_monthly | pro_yearly
         status: varchar("status", { length: 50 }).notNull().default("active"),
         // active | cancelled | expired
+        autoRenew: boolean4("auto_renew").notNull().default(true),
         startDate: datetime3("start_date").notNull(),
         endDate: datetime3("end_date").notNull(),
         paymentMethod: varchar("payment_method", { length: 100 }),
@@ -46065,6 +46072,7 @@ var relations_exports = {};
 __export(relations_exports, {
   businessCategoriesRelations: () => businessCategoriesRelations,
   categoriesRelations: () => categoriesRelations,
+  classificationLogsRelations: () => classificationLogsRelations,
   expensesRelations: () => expensesRelations,
   financialGoalsRelations: () => financialGoalsRelations,
   localUsersRelations: () => localUsersRelations,
@@ -46074,7 +46082,7 @@ __export(relations_exports, {
   userWalletsRelations: () => userWalletsRelations,
   usersRelations: () => usersRelations
 });
-var usersRelations, localUsersRelations, expensesRelations, categoriesRelations, sessionsRelations, userWalletsRelations, financialGoalsRelations, userContactsRelations, userBusinessesRelations, businessCategoriesRelations;
+var usersRelations, localUsersRelations, expensesRelations, categoriesRelations, sessionsRelations, userWalletsRelations, financialGoalsRelations, userContactsRelations, classificationLogsRelations, userBusinessesRelations, businessCategoriesRelations;
 var init_relations2 = __esm({
   "db/relations.ts"() {
     init_drizzle_orm();
@@ -46109,6 +46117,14 @@ var init_relations2 = __esm({
       business: one(userBusinesses, {
         fields: [expenses.businessId],
         references: [userBusinesses.id]
+      }),
+      contact: one(userContacts, {
+        fields: [expenses.contactId],
+        references: [userContacts.id]
+      }),
+      classificationLog: one(classificationLogs, {
+        fields: [expenses.classificationLogId],
+        references: [classificationLogs.id]
       })
     }));
     categoriesRelations = relations(expenseCategories, ({ one }) => ({
@@ -46151,7 +46167,7 @@ var init_relations2 = __esm({
         references: [users.id]
       })
     }));
-    userContactsRelations = relations(userContacts, ({ one }) => ({
+    userContactsRelations = relations(userContacts, ({ one, many }) => ({
       localUser: one(localUsers, {
         fields: [userContacts.userId],
         references: [localUsers.id]
@@ -46163,7 +46179,11 @@ var init_relations2 = __esm({
       business: one(userBusinesses, {
         fields: [userContacts.businessId],
         references: [userBusinesses.id]
-      })
+      }),
+      expenses: many(expenses)
+    }));
+    classificationLogsRelations = relations(classificationLogs, ({ many }) => ({
+      expenses: many(expenses)
     }));
     userBusinessesRelations = relations(userBusinesses, ({ many }) => ({
       categories: many(businessCategories),
@@ -79420,7 +79440,7 @@ var require_tools = __commonJS({
         }
       }
     }
-    function asString3(str) {
+    function asString2(str) {
       let result = "";
       let last = 0;
       let found = false;
@@ -79491,13 +79511,13 @@ var require_tools = __commonJS({
               if (stringifier) value = stringifier(value);
               break;
             case "string":
-              value = (stringifier || asString3)(value);
+              value = (stringifier || asString2)(value);
               break;
             default:
               value = (stringifier || stringify2)(value, stringifySafe);
           }
           if (value === void 0) continue;
-          const strKey = asString3(key);
+          const strKey = asString2(key);
           propStr += "," + strKey + ":" + value;
         }
       }
@@ -79518,7 +79538,7 @@ var require_tools = __commonJS({
             msgStr = ',"' + messageKey + '":' + value;
             break;
           case "string":
-            value = (stringifier || asString3)(value);
+            value = (stringifier || asString2)(value);
             msgStr = ',"' + messageKey + '":' + value;
             break;
           default:
@@ -85930,7 +85950,7 @@ var require_tools2 = __commonJS({
     var transport = require_transport2();
     var [nodeMajor] = process.versions.node.split(".").map((v) => Number(v));
     var asJsonChan = diagChan.tracingChannel("pino_asJson");
-    var asString3 = nodeMajor >= 25 ? (str) => JSON.stringify(str) : _asString;
+    var asString2 = nodeMajor >= 25 ? (str) => JSON.stringify(str) : _asString;
     function noop5() {
     }
     function genLog(level, hook) {
@@ -86039,13 +86059,13 @@ var require_tools2 = __commonJS({
               if (stringifier) value = stringifier(value);
               break;
             case "string":
-              value = (stringifier || asString3)(value);
+              value = (stringifier || asString2)(value);
               break;
             default:
               value = (stringifier || stringify2)(value, stringifySafe);
           }
           if (value === void 0) continue;
-          const strKey = asString3(key);
+          const strKey = asString2(key);
           propStr += "," + strKey + ":" + value;
         }
       }
@@ -86066,7 +86086,7 @@ var require_tools2 = __commonJS({
             msgStr = ',"' + messageKey + '":' + value;
             break;
           case "string":
-            value = (stringifier || asString3)(value);
+            value = (stringifier || asString2)(value);
             msgStr = ',"' + messageKey + '":' + value;
             break;
           default:
@@ -92694,6 +92714,18 @@ var init_category_registry = __esm({
 });
 
 // api/lib/egyptian-names-dictionary.ts
+function freezeSet(set2) {
+  set2.add = () => {
+    throw new TypeError("Cannot add to a frozen Set");
+  };
+  set2.delete = () => {
+    throw new TypeError("Cannot delete from a frozen Set");
+  };
+  set2.clear = () => {
+    throw new TypeError("Cannot clear a frozen Set");
+  };
+  return Object.freeze(set2);
+}
 function isLikelyPersonName(word) {
   if (!word || word.length < 2) return false;
   if (/^[\d\u0660-\u0669\u06F0-\u06F9]+$/.test(word.replace(/[\s.,]/g, ""))) return false;
@@ -92709,7 +92741,7 @@ function isKareemPersonContext(text2) {
   if (isPersonContext || hasRelationship) return true;
   return false;
 }
-var MALE_NAMES_LIST, FEMALE_NAMES_LIST, FAMILY_TERMS_LIST, MERCHANT_NEGATIVE_LIST_ITEMS, EGYPTIAN_MALE_NAMES, EGYPTIAN_FEMALE_NAMES, FAMILY_TERMS, MERCHANT_NEGATIVE_LIST, ALL_KNOWN_NAMES;
+var MALE_NAMES_LIST, FEMALE_NAMES_LIST, FAMILY_TERMS_LIST, MERCHANT_NEGATIVE_LIST_ITEMS, EGYPTIAN_MALE_NAMES_SET, EGYPTIAN_FEMALE_NAMES_SET, FAMILY_TERMS_SET, MERCHANT_NEGATIVE_LIST_SET, ALL_KNOWN_NAMES_SET, EGYPTIAN_MALE_NAMES, EGYPTIAN_FEMALE_NAMES, FAMILY_TERMS, MERCHANT_NEGATIVE_LIST, ALL_KNOWN_NAMES;
 var init_egyptian_names_dictionary = __esm({
   "api/lib/egyptian-names-dictionary.ts"() {
     init_category_registry();
@@ -93491,22 +93523,27 @@ var init_egyptian_names_dictionary = __esm({
       "\u0627\u0643\u062A\u0648\u0628\u0631",
       "\u0627\u0644\u0634\u064A\u062E\u0632\u0627\u064A\u062F"
     ];
-    EGYPTIAN_MALE_NAMES = new Set(
+    EGYPTIAN_MALE_NAMES_SET = new Set(
       MALE_NAMES_LIST.map((n) => comparableArabic(n.trim()))
     );
-    EGYPTIAN_FEMALE_NAMES = new Set(
+    EGYPTIAN_FEMALE_NAMES_SET = new Set(
       FEMALE_NAMES_LIST.map((n) => comparableArabic(n.trim()))
     );
-    FAMILY_TERMS = new Set(
+    FAMILY_TERMS_SET = new Set(
       FAMILY_TERMS_LIST.map((n) => comparableArabic(n.trim()))
     );
-    MERCHANT_NEGATIVE_LIST = new Set(
+    MERCHANT_NEGATIVE_LIST_SET = new Set(
       MERCHANT_NEGATIVE_LIST_ITEMS.map((n) => comparableArabic(n.trim()))
     );
-    ALL_KNOWN_NAMES = /* @__PURE__ */ new Set([
-      ...EGYPTIAN_MALE_NAMES,
-      ...EGYPTIAN_FEMALE_NAMES
+    ALL_KNOWN_NAMES_SET = /* @__PURE__ */ new Set([
+      ...EGYPTIAN_MALE_NAMES_SET,
+      ...EGYPTIAN_FEMALE_NAMES_SET
     ]);
+    EGYPTIAN_MALE_NAMES = freezeSet(EGYPTIAN_MALE_NAMES_SET);
+    EGYPTIAN_FEMALE_NAMES = freezeSet(EGYPTIAN_FEMALE_NAMES_SET);
+    FAMILY_TERMS = freezeSet(FAMILY_TERMS_SET);
+    MERCHANT_NEGATIVE_LIST = freezeSet(MERCHANT_NEGATIVE_LIST_SET);
+    ALL_KNOWN_NAMES = freezeSet(ALL_KNOWN_NAMES_SET);
   }
 });
 
@@ -93525,6 +93562,18 @@ function normalizeRelationship(rawRelation) {
   let normalized = RELATIONSHIP_MAP[compWord];
   if (!normalized) {
     normalized = RELATIONSHIP_MAP[comparableArabic(rawRelation.trim())];
+  }
+  if (!normalized) {
+    const possessiveSuffixes = ["\u0648\u0647\u0645", "\u0648\u0643\u0645", "\u0648\u0647\u0627", "\u0648\u0647", "\u064A\u0627", "\u064A", "\u0647", "\u0647\u0627", "\u0643", "\u0646\u0627", "\u0643\u0645", "\u0647\u0645"];
+    for (const suffix of possessiveSuffixes) {
+      if (compWord.endsWith(suffix) && compWord.length > suffix.length + 1) {
+        const root = compWord.slice(0, -suffix.length);
+        if (RELATIONSHIP_MAP[root]) {
+          normalized = RELATIONSHIP_MAP[root];
+          break;
+        }
+      }
+    }
   }
   if (!normalized) {
     const words = rawRelation.trim().split(/\s+/);
@@ -93597,6 +93646,20 @@ function getRelationshipSuffix(normalizedRelation, personName) {
   }
   return SUFFIX_MAP[relation] || relation;
 }
+function isRelationshipTerm(word) {
+  if (!word) return false;
+  const clean = word.trim().replace(/^[بلكف]/, "");
+  const comp = comparableArabic(clean);
+  if (RELATIONSHIP_MAP[comp] || RELATIONSHIP_MAP[comparableArabic(word.trim())]) return true;
+  const possessiveSuffixes = ["\u0648\u0647\u0645", "\u0648\u0643\u0645", "\u0648\u0647\u0627", "\u0648\u0647", "\u064A\u0627", "\u064A", "\u0647", "\u0647\u0627", "\u0643", "\u0646\u0627", "\u0643\u0645", "\u0647\u0645"];
+  for (const suffix of possessiveSuffixes) {
+    if (comp.endsWith(suffix) && comp.length > suffix.length + 1) {
+      const root = comp.slice(0, -suffix.length);
+      if (RELATIONSHIP_MAP[root]) return true;
+    }
+  }
+  return false;
+}
 function parseNameAndRelationship(subCategory, category) {
   const nameRaw = subCategory.trim();
   let name2 = nameRaw;
@@ -93633,23 +93696,24 @@ function parseNameAndRelationship(subCategory, category) {
     const parts = nameRaw.split(/\s+/);
     const firstWord = parts[0];
     const lastWord = parts[parts.length - 1];
-    if (relationWords.includes(lastWord)) {
+    if (relationWords.includes(lastWord) || isRelationshipTerm(lastWord)) {
       relationship = lastWord;
       name2 = parts.slice(0, -1).join(" ");
-    } else if (relationWords.includes(firstWord)) {
+    } else if (relationWords.includes(firstWord) || isRelationshipTerm(firstWord)) {
       relationship = firstWord;
       name2 = parts.slice(1).join(" ");
     } else {
       name2 = parts[0];
       relationship = parts.slice(1).join(" ");
     }
-  } else if (relationWords.includes(nameRaw)) {
+  } else if (relationWords.includes(nameRaw) || isRelationshipTerm(nameRaw)) {
     relationship = nameRaw;
     name2 = "\u0634\u062E\u0635";
   } else {
     if (category === "\u0623\u0635\u062F\u0642\u0627\u0621") relationship = "\u0635\u062F\u064A\u0642";
     else if (category === "\u0645\u0648\u0638\u0641\u064A\u0646") relationship = "\u0645\u0648\u0638\u0641";
     else if (category === "\u0627\u0644\u0639\u0627\u0626\u0644\u0629") relationship = "\u0642\u0631\u064A\u0628";
+    else relationship = "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641";
   }
   return { name: name2.trim(), relationship: relationship.trim() };
 }
@@ -93664,6 +93728,8 @@ var init_relationship_normalizer = __esm({
       \u0627\u062E\u0648\u064A\u0627: "\u0623\u062E",
       \u0627\u062E\u0648\u064A: "\u0623\u062E",
       \u0627\u062E\u0648\u0643: "\u0623\u062E",
+      \u0627\u062E\u0648\u0627\u062A\u064A: "\u0623\u062E",
+      \u0627\u062E\u0648\u0627\u062A: "\u0623\u062E",
       \u0627\u062E\u062A: "\u0623\u062E\u062A",
       \u0627\u062E\u062A\u064A: "\u0623\u062E\u062A",
       \u0627\u0628: "\u0623\u0628",
@@ -93694,6 +93760,9 @@ var init_relationship_normalizer = __esm({
       \u062C\u062F\u062A\u064A: "\u062C\u062F\u0629",
       \u062A\u064A\u062A\u0647: "\u062C\u062F\u0629",
       \u062A\u064A\u062A\u0627: "\u062C\u062F\u0629",
+      \u0642\u0631\u064A\u0628: "\u0642\u0631\u064A\u0628",
+      \u0642\u0631\u064A\u0628\u064A: "\u0642\u0631\u064A\u0628",
+      \u0642\u0631\u0627\u064A\u0628\u064A: "\u0642\u0631\u064A\u0628",
       // Spouse / Partner
       \u0632\u0648\u062C: "\u0632\u0648\u062C",
       \u062C\u0648\u0632\u064A: "\u0632\u0648\u062C",
@@ -93706,8 +93775,12 @@ var init_relationship_normalizer = __esm({
       // Friends & Social
       \u0635\u0627\u062D\u0628: "\u0635\u062F\u064A\u0642",
       \u0635\u0627\u062D\u0628\u064A: "\u0635\u062F\u064A\u0642",
+      \u0627\u0635\u062D\u0627\u0628\u064A: "\u0635\u062F\u064A\u0642",
+      \u0623\u0635\u062D\u0627\u0628\u064A: "\u0635\u062F\u064A\u0642",
       \u0635\u062F\u064A\u0642: "\u0635\u062F\u064A\u0642",
       \u0635\u062F\u064A\u0642\u064A: "\u0635\u062F\u064A\u0642",
+      \u0627\u0635\u062F\u0642\u0627\u0626\u064A: "\u0635\u062F\u064A\u0642",
+      \u0623\u0635\u062F\u0642\u0627\u0626\u064A: "\u0635\u062F\u064A\u0642",
       \u0635\u0627\u062D\u0628\u0647: "\u0635\u062F\u064A\u0642\u0629",
       \u0635\u0627\u062D\u0628\u062A\u064A: "\u0635\u062F\u064A\u0642\u0629",
       \u0635\u062D\u0628\u062A\u064A: "\u0635\u062F\u064A\u0642\u0629",
@@ -93716,6 +93789,7 @@ var init_relationship_normalizer = __esm({
       \u0635\u062F\u064A\u0642\u062A\u064A: "\u0635\u062F\u064A\u0642\u0629",
       \u0632\u0645\u064A\u0644: "\u0632\u0645\u064A\u0644",
       \u0632\u0645\u064A\u0644\u064A: "\u0632\u0645\u064A\u0644",
+      \u0632\u0645\u0644\u0627\u0626\u064A: "\u0632\u0645\u064A\u0644",
       \u0632\u0645\u064A\u0644\u0647: "\u0632\u0645\u064A\u0644\u0629",
       \u0632\u0645\u064A\u0644\u062A\u064A: "\u0632\u0645\u064A\u0644\u0629",
       \u062C\u0627\u0631\u064A: "\u062C\u0627\u0631",
@@ -162549,9 +162623,13 @@ async function loadRowsForPeriod(ctx, period) {
 function resolveInputFromNeed(need) {
   return {
     period: need.scope?.period,
+    comparePeriod: need.scope?.comparePeriod,
     startDate: need.scope?.startDate,
     endDate: need.scope?.endDate
   };
+}
+function normalizePersonLookup(value) {
+  return value.toLowerCase().normalize("NFKC").replace(/[\u064B-\u065F\u0670]/g, "").replace(/[أإآ]/g, "\u0627").replace(/[ى]/g, "\u064A").replace(/[ة]/g, "\u0647").replace(/[^\u0600-\u06FFa-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
 }
 async function getFinanceSummary(ctx, input = {}) {
   const period = resolveFinancePeriod(input, ctx);
@@ -162570,6 +162648,7 @@ function percentChange(current, previous) {
 async function getFinancePeriodComparison(ctx, input = {}) {
   const currentInput = {
     period: input.period ?? "current_month",
+    comparePeriod: input.comparePeriod,
     startDate: input.startDate,
     endDate: input.endDate
   };
@@ -162578,13 +162657,14 @@ async function getFinancePeriodComparison(ctx, input = {}) {
     ctx.userType,
     "period_comparison",
     currentInput.period ?? "current_month",
+    currentInput.comparePeriod ?? "previous_month",
     input.startDate ? String(input.startDate) : "",
     input.endDate ? String(input.endDate) : ""
   );
   return withFinanceCache(key, financeCacheTtl(currentInput.period ?? "current_month"), async () => {
     const [current, previous] = await Promise.all([
       getFinanceSummary(ctx, currentInput),
-      getFinanceSummary(ctx, { period: "previous_month" })
+      getFinanceSummary(ctx, { period: currentInput.comparePeriod ?? "previous_month" })
     ]);
     return {
       current,
@@ -162645,6 +162725,32 @@ async function getCategoryTotal(ctx, category, input = {}) {
       totalIncome,
       transactionCount: rows.length,
       topSubCategories: [...subCategories.entries()].map(([name2, item]) => ({ name: name2, amount: item.amount, count: item.count })).sort((a, b) => b.amount - a.amount).slice(0, 5)
+    };
+  });
+}
+async function getPersonTotal(ctx, personQuery, input = {}) {
+  const period = resolveFinancePeriod(input, ctx);
+  const normalizedQuery = normalizePersonLookup(personQuery);
+  if (!normalizedQuery) return null;
+  const contacts = await db.select({ id: userContacts.id, name: userContacts.name, relation: userContacts.relation }).from(userContacts).where(and(
+    eq(userContacts.userId, ctx.userId),
+    eq(userContacts.userType, ctx.userType),
+    eq(userContacts.isSilenced, false)
+  ));
+  const contact = contacts.map((item) => ({ ...item, normalizedName: normalizePersonLookup(item.name) })).filter((item) => item.normalizedName.length >= 2 && normalizedQuery.includes(item.normalizedName)).sort((left, right) => right.normalizedName.length - left.normalizedName.length)[0];
+  if (!contact) return null;
+  const key = financeCacheKey(ctx.userId, ctx.userType, "person_total", period.key, contact.id);
+  return withFinanceCache(key, financeCacheTtl(period.key), async () => {
+    const rows = (await loadRowsForPeriod(ctx, period)).filter(
+      (row) => row.contactId === contact.id && row.type === "expense"
+    );
+    return {
+      period,
+      contactId: contact.id,
+      name: contact.name,
+      relation: contact.relation,
+      totalExpense: rows.reduce((sum4, row) => sum4 + amountOf(row), 0),
+      transactionCount: rows.length
     };
   });
 }
@@ -162812,6 +162918,16 @@ function categoryFacts(need, category) {
     makeFact(need.id, need.kind, "category_total_expense", category.totalExpense),
     makeFact(need.id, need.kind, "category_total_income", category.totalIncome),
     makeFact(need.id, need.kind, "transaction_count", category.transactionCount)
+  ];
+}
+function personTotalFacts(need, total) {
+  if (!total) return [];
+  return [
+    makeFact(need.id, need.kind, "person_name", total.name),
+    makeFact(need.id, need.kind, "person_relation", total.relation ?? null),
+    makeFact(need.id, need.kind, "period", total.period.label),
+    makeFact(need.id, need.kind, "person_total_expense", total.totalExpense),
+    makeFact(need.id, need.kind, "transaction_count", total.transactionCount)
   ];
 }
 function breakdownFacts(need, breakdown) {
@@ -163147,6 +163263,35 @@ async function getTransactionLookup(ctx, query, category, transactionTypes, inpu
   }
   return null;
 }
+async function getClassificationTrace(ctx, query, input = {}) {
+  const transaction = await getTransactionLookup(ctx, query, void 0, ["expense"], input);
+  if (!transaction) return null;
+  const [expense] = await db.select({ classificationLogId: expenses.classificationLogId }).from(expenses).where(and(
+    eq(expenses.id, transaction.id),
+    eq(expenses.userId, ctx.userId),
+    eq(expenses.userType, ctx.userType)
+  )).limit(1);
+  if (!expense?.classificationLogId) return { transaction, classificationLogId: null };
+  const [log4] = await db.select({
+    id: classificationLogs.id,
+    parsedBy: classificationLogs.parsedBy,
+    decision: classificationLogs.decision,
+    confidence: classificationLogs.confidence,
+    modelUsed: classificationLogs.modelUsed
+  }).from(classificationLogs).where(and(
+    eq(classificationLogs.id, expense.classificationLogId),
+    eq(classificationLogs.userId, ctx.userId),
+    eq(classificationLogs.userType, ctx.userType)
+  )).limit(1);
+  return {
+    transaction,
+    classificationLogId: expense.classificationLogId,
+    parsedBy: log4?.parsedBy ?? null,
+    decision: log4?.decision ?? null,
+    confidence: log4?.confidence == null ? null : numeric(log4.confidence),
+    modelUsed: log4?.modelUsed ?? null
+  };
+}
 function transactionLookupFacts(need, transaction) {
   const facts = [
     makeFact(need.id, need.kind, "expense_id", transaction.id),
@@ -163166,6 +163311,19 @@ function transactionLookupFacts(need, transaction) {
     facts.push(makeFact(need.id, need.kind, "lookup_query", need.scope.query));
   }
   return facts;
+}
+function classificationTraceFacts(need, trace2) {
+  if (!trace2) return [];
+  return [
+    makeFact(need.id, need.kind, "expense_id", trace2.transaction.id),
+    makeFact(need.id, need.kind, "description", trace2.transaction.description ?? trace2.transaction.subCategory ?? "\u0639\u0645\u0644\u064A\u0629"),
+    makeFact(need.id, need.kind, "stored_category", trace2.transaction.category),
+    makeFact(need.id, need.kind, "date", trace2.transaction.date),
+    makeFact(need.id, need.kind, "trace_available", Boolean(trace2.parsedBy)),
+    makeFact(need.id, need.kind, "parsed_by", trace2.parsedBy ?? null),
+    makeFact(need.id, need.kind, "decision", trace2.decision ?? null),
+    makeFact(need.id, need.kind, "confidence", trace2.confidence ?? null)
+  ];
 }
 async function resolveKernelDataNeeds(ctx, dataNeeds) {
   const facts = [];
@@ -163196,6 +163354,28 @@ async function resolveKernelDataNeeds(ctx, dataNeeds) {
             ...categoryFacts(
               need,
               await getCategoryTotal(ctx, need.scope?.category ?? "uncategorized", resolveInputFromNeed(need))
+            )
+          );
+        } else if (need.kind === "finance.person_total") {
+          facts.push(
+            ...personTotalFacts(
+              need,
+              await getPersonTotal(
+                ctx,
+                need.scope?.personQuery ?? need.scope?.query ?? "",
+                resolveInputFromNeed(need)
+              )
+            )
+          );
+        } else if (need.kind === "finance.classification_trace") {
+          facts.push(
+            ...classificationTraceFacts(
+              need,
+              await getClassificationTrace(
+                ctx,
+                need.scope?.query ?? "",
+                resolveInputFromNeed(need)
+              )
             )
           );
         } else if (need.kind === "finance.breakdown") {
@@ -163560,12 +163740,14 @@ __export(finance_semantic_layer_exports, {
   getCategoryInclusion: () => getCategoryInclusion,
   getCategoryTotal: () => getCategoryTotal,
   getChartData: () => getChartData,
+  getClassificationTrace: () => getClassificationTrace,
   getComparisonDrivers: () => getComparisonDrivers,
   getFinanceBreakdown: () => getFinanceBreakdown,
   getFinanceSummary: () => getFinanceSummary,
   getFinanceTransactions: () => getFinanceTransactions,
   getGoalFeasibility: () => getGoalFeasibility,
   getGoalProgress: () => getGoalProgress,
+  getPersonTotal: () => getPersonTotal,
   getProactiveInsights: () => getProactiveInsights,
   getProfileSnapshot: () => getProfileSnapshot,
   getTransactionLookup: () => getTransactionLookup,
@@ -163613,13 +163795,18 @@ function fuzzyFindCategory(word, dictionary, maxDistance = 2) {
   return bestDist <= maxDistance ? bestMatch : null;
 }
 function isArabicWordMatch(wordInText, targetKey) {
-  const w = normalizeArabic(wordInText).toLowerCase();
-  const k2 = normalizeArabic(targetKey).toLowerCase();
+  const stripPunct = (s3) => s3.replace(/^[^\u0600-\u06FFa-zA-Z]+|[^\u0600-\u06FFa-zA-Z]+$/g, "");
+  const w = stripPunct(normalizeArabic(wordInText).toLowerCase());
+  const k2 = stripPunct(normalizeArabic(targetKey).toLowerCase());
+  if (!k2 || !w) return false;
   if (w === k2) return true;
   if (k2.length <= 2) {
-    const prefixes = ["\u0648", "\u0641", "\u0628", "\u0644", "\u0627\u0644", "\u0644\u0644"];
+    const prefixes = ["", "\u0648", "\u0641", "\u0628", "\u0644", "\u0627\u0644", "\u0644\u0644"];
+    const safePossessives = ["", "\u064A", "\u064A\u0627", "\u0648\u064A\u0627", "\u0647", "\u0647\u0627", "\u0643", "\u0646\u0627", "\u0648\u0646\u0627", "\u0643\u0645", "\u0647\u0645", "\u0648\u0647", "\u0648\u0647\u0627", "\u0648\u0643", "\u0648\u0643\u0645", "\u0648\u0647\u0645"];
     for (const p of prefixes) {
-      if (w === p + k2) return true;
+      for (const s3 of safePossessives) {
+        if (w === p + k2 + s3) return true;
+      }
     }
     return false;
   }
@@ -163992,6 +164179,9 @@ function normalizeText(text2) {
     const regex = new RegExp(source, "gi");
     result = result.replace(regex, target);
   }
+  for (const { pattern, replacement } of AMBIGUOUS_WORDS_NORMALIZATIONS) {
+    result = result.replace(pattern, replacement);
+  }
   for (const { pattern, replacement } of NEGATION_NORMALIZATIONS) {
     result = result.replace(pattern, replacement);
   }
@@ -164034,7 +164224,7 @@ function extractCurrency(text2) {
   if (/درهم|dirham/i.test(text2)) return "AED";
   return "EGP";
 }
-var FRANCO_DIGIT_TO_ARABIC, FRANCO_LETTER_TO_ARABIC, FRANCO_ARAB_DICT, WORD_NUMBERS, COLLOQUIAL_NUMBERS, METAPHOR_NORMALIZATIONS, NEGATION_NORMALIZATIONS, FILLER_WORDS, COMMON_PHRASE_NORMALIZATIONS;
+var FRANCO_DIGIT_TO_ARABIC, FRANCO_LETTER_TO_ARABIC, FRANCO_ARAB_DICT, WORD_NUMBERS, COLLOQUIAL_NUMBERS, METAPHOR_NORMALIZATIONS, NEGATION_NORMALIZATIONS, FILLER_WORDS, COMMON_PHRASE_NORMALIZATIONS, AMBIGUOUS_WORDS_NORMALIZATIONS;
 var init_text_normalizer = __esm({
   "api/lib/text-normalizer.ts"() {
     init_stt_corrections();
@@ -164302,6 +164492,12 @@ var init_text_normalizer = __esm({
       "\u0634\u062D\u0646\u062A \u0643\u0627\u0631\u062A \u0627\u0644\u0645\u064A\u0647": "\u062F\u0641\u0639\u062A \u0641\u0627\u062A\u0648\u0631\u0629 \u0627\u0644\u0645\u064A\u0627\u0647",
       "\u0634\u062D\u0646\u062A \u0643\u0627\u0631\u062A \u0627\u0644\u063A\u0627\u0632": "\u062F\u0641\u0639\u062A \u0641\u0627\u062A\u0648\u0631\u0629 \u0627\u0644\u063A\u0627\u0632"
     };
+    AMBIGUOUS_WORDS_NORMALIZATIONS = [
+      // "غدا" means lunch in Egyptian, but "tomorrow" in Standard Arabic
+      { pattern: /(?:^|\s)غدا(?=\s|$)/g, replacement: " \u0648\u062C\u0628\u0629 \u063A\u062F\u0627\u0621 " },
+      { pattern: /(?:^|\s)عشا(?=\s|$)/g, replacement: " \u0648\u062C\u0628\u0629 \u0639\u0634\u0627\u0621 " },
+      { pattern: /(?:^|\s)فطار(?=\s|$)/g, replacement: " \u0648\u062C\u0628\u0629 \u0625\u0641\u0637\u0627\u0631 " }
+    ];
   }
 });
 
@@ -164687,6 +164883,19 @@ function extractAmounts(rawText) {
   amounts.sort((a, b) => a.index - b.index);
   return amounts;
 }
+function tryExtendTheophoric(candidate, words, candidateIndex) {
+  if (!candidate) return candidate;
+  if (candidate !== "\u0639\u0628\u062F" && candidate !== "\u0639\u0628\u062F\u0647") return candidate;
+  const nextRaw = words[candidateIndex + 1];
+  if (!nextRaw) return candidate;
+  const nextClean = nextRaw.replace(/[^\u0600-\u06FF]/g, "");
+  if (!nextClean) return candidate;
+  if (nextClean.startsWith("\u0627\u0644") && nextClean.length > 3) {
+    const combined = `${candidate} ${nextClean}`;
+    return combined;
+  }
+  return candidate;
+}
 function extractPeople(text2, knownNames = []) {
   const people = /* @__PURE__ */ new Set();
   for (const name2 of knownNames) {
@@ -164722,7 +164931,9 @@ function extractPeople(text2, knownNames = []) {
             if (NON_PEOPLE.includes(candidate)) {
               continue;
             }
-            if (isLikelyPersonName(candidate) || knownNames.includes(candidate)) {
+            candidate = tryExtendTheophoric(candidate, words, i2 + j2);
+            const isKnownName = knownNames.includes(candidate) || knownNames.some((kn) => kn === candidate || matchArabicPhrase(kn, candidate));
+            if (isLikelyPersonName(candidate) || isLikelyPersonName(candidate.replace(/\s+/g, "")) || isKnownName) {
               people.add(candidate);
               break;
             }
@@ -164736,6 +164947,7 @@ function extractPeople(text2, knownNames = []) {
     let rawWord = word.replace(/[^\u0600-\u06FF]/g, "");
     if (!rawWord) continue;
     let candidate = "";
+    let candidateSourceIndex = i2;
     if (rawWord.startsWith("\u0644\u0640") && rawWord.length > 2) {
       candidate = rawWord.substring(2);
     } else if (rawWord.startsWith("\u0644\u0644") && rawWord.length > 3) {
@@ -164749,6 +164961,7 @@ function extractPeople(text2, knownNames = []) {
     } else if (rawWord === "\u0645\u0646" || rawWord === "\u0645\u0639") {
       if (i2 + 1 < words.length) {
         candidate = words[i2 + 1].replace(/[^\u0600-\u06FF]/g, "");
+        candidateSourceIndex = i2 + 1;
       }
     }
     if (candidate) {
@@ -164759,9 +164972,16 @@ function extractPeople(text2, knownNames = []) {
           if (c.startsWith("\u0627\u0644") && !knownNames.includes(c)) {
             continue;
           }
-          if (isLikelyPersonName(c) || knownNames.includes(c)) {
-            people.add(c);
-            break;
+          const extended = tryExtendTheophoric(c, words, candidateSourceIndex);
+          const variants = extended === c ? [c] : [extended, c];
+          for (const v of variants) {
+            if (v.length < 2 || /^[\d\u0660-\u0669\u06F0-\u06F9]+$/.test(v)) continue;
+            if (v.startsWith("\u0627\u0644") && !knownNames.includes(v)) continue;
+            const isKnownName = knownNames.includes(v) || knownNames.some((kn) => kn === v || matchArabicPhrase(kn, v));
+            if (isLikelyPersonName(v) || isLikelyPersonName(v.replace(/\s+/g, "")) || isKnownName) {
+              people.add(v);
+              break;
+            }
           }
         }
       }
@@ -164946,6 +165166,7 @@ __export(person_resolver_exports, {
   NON_PERSON_TERMS: () => NON_PERSON_TERMS,
   buildPersonSubCategory: () => buildPersonSubCategory,
   cleanPersonName: () => cleanPersonName,
+  compactArabic: () => compactArabic,
   extractExplicitPeopleContext: () => extractExplicitPeopleContext,
   extractExplicitPersonContext: () => extractExplicitPersonContext,
   inferRelationshipFromText: () => inferRelationshipFromText,
@@ -164958,7 +165179,11 @@ function compactArabic(value) {
   return normalizeArabic(String(value || "")).replace(/[^\u0600-\u06FFa-zA-Z\s]/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
 }
 function cleanPersonName(value, text2) {
-  const cleaned = compactArabic(String(value || "")).replace(/^[وفب]\s+/, "").replace(/^[وف](?=[\u0600-\u06FF]{2,}$)/, "").replace(/^(?:ل|لل|الى|إلى)\s*/u, "").replace(/^ل(?=[\u0600-\u06FF]{2,}$)/u, "").trim();
+  const raw2 = String(value || "").trim();
+  if (raw2 && isLikelyPersonName(raw2)) {
+    return compactArabic(raw2);
+  }
+  const cleaned = compactArabic(raw2).replace(/^[وفب]\s+/, "").replace(/^[وف](?=[\u0600-\u06FF]{2,}$)/, "").replace(/^(?:ل|لل|الى|إلى)\s*/u, "").replace(/^ل(?=[\u0600-\u06FF]{2,}$)/u, "").trim();
   if (!cleaned || cleaned.length < 2) return null;
   if (/^[\d\u0660-\u0669\u06F0-\u06F9]+$/.test(cleaned.replace(/[\s.,]/g, ""))) return null;
   if (NON_PERSON_TERMS.has(cleaned)) {
@@ -164978,13 +165203,19 @@ function cleanPersonName(value, text2) {
   return cleaned;
 }
 function contextAroundName(text2, name2) {
+  const relationAliasesFlat = RELATION_ALIASES.flatMap((e2) => e2.aliases);
+  function parenContainsRelation(parenContent) {
+    return relationAliasesFlat.some(
+      (alias) => matchArabicPhrase(parenContent, alias)
+    );
+  }
   let safeText = text2;
   const parenRegex = /\([^)]+\)/g;
   let match2;
   while ((match2 = parenRegex.exec(text2)) !== null) {
-    if (!match2[0].includes(name2)) {
-      safeText = safeText.replace(match2[0], " ");
-    }
+    if (match2[0].includes(name2)) continue;
+    if (parenContainsRelation(match2[0])) continue;
+    safeText = safeText.replace(match2[0], " ");
   }
   const normalizedText = compactArabic(safeText);
   const normalizedName = compactArabic(name2);
@@ -165006,10 +165237,46 @@ function contextAroundName(text2, name2) {
   }
   const index2 = normalizedText.indexOf(normalizedName);
   if (index2 < 0) return `${normalizedText} ${clarificationTail}`.trim();
-  return `${normalizedText.slice(Math.max(0, index2 - 60), index2 + normalizedName.length + 60)} ${clarificationTail}`.trim();
+  const strongSeparator = /(?:\s+(?:او|أو|ثم|بل|لكن|أما|اما)\s+|[،,;.\-|]\s*)/g;
+  const parts = normalizedText.split(strongSeparator);
+  const matchingPart = parts.find((part) => part.includes(normalizedName));
+  if (matchingPart) {
+    return `${matchingPart} ${clarificationTail}`.replace(/\s+/g, " ").trim();
+  }
+  return `${normalizedText} ${clarificationTail}`.replace(/\s+/g, " ").trim();
 }
 function inferRelationshipFromText(text2, name2) {
   const target = name2 ? contextAroundName(text2, name2) : compactArabic(text2);
+  if (name2 && target.includes(compactArabic(name2))) {
+    const normName = compactArabic(name2);
+    const nameIndex = target.indexOf(normName);
+    let bestMatch = null;
+    for (const entry of RELATION_ALIASES) {
+      for (const alias of entry.aliases) {
+        if (matchArabicPhrase(target, alias)) {
+          const aliasIndex = target.indexOf(alias);
+          const pos = aliasIndex >= 0 ? aliasIndex : target.indexOf(alias.split(/\s+/)[0] || alias);
+          if (pos >= 0) {
+            let dist = Math.abs(pos - (nameIndex + normName.length));
+            if (pos < nameIndex) dist = Math.abs(nameIndex - (pos + alias.length));
+            if (target.includes(" \u0648") || target.includes(" \u0648 ")) {
+              const betweenText = pos > nameIndex ? target.slice(nameIndex + normName.length, pos) : target.slice(pos + alias.length, nameIndex);
+              if (/\s+و[\u0600-\u06FF]{2,}/.test(betweenText) && !["\u0627\u062E\u0648\u0627\u062A\u064A", "\u0627\u062E\u0648\u0627\u062A", "\u0623\u062E\u0648\u0627\u062A", "\u0627\u0635\u062F\u0642\u0627\u0626\u064A", "\u0623\u0635\u062F\u0642\u0627\u0626\u064A", "\u0627\u0635\u062D\u0627\u0628\u064A", "\u0623\u0635\u062D\u0627\u0628\u064A", "\u0632\u0645\u0644\u0627\u0626\u064A", "\u0632\u0645\u0644\u0627\u0621", "\u0642\u0631\u0627\u064A\u0628\u064A"].includes(alias)) {
+                dist += 500;
+              }
+            }
+            if (!bestMatch || dist < bestMatch.dist) {
+              bestMatch = { canonical: entry.canonical, dist };
+            }
+          } else {
+            if (!bestMatch) bestMatch = { canonical: entry.canonical, dist: 100 };
+          }
+        }
+      }
+    }
+    if (bestMatch) return bestMatch.canonical;
+    return null;
+  }
   for (const entry of RELATION_ALIASES) {
     for (const alias of entry.aliases) {
       if (matchArabicPhrase(target, alias)) {
@@ -165774,18 +166041,18 @@ var init_person_resolver = __esm({
       "\u0627\u0644\u0645\u062D\u062A\u0627\u062C\u064A\u0646"
     ]);
     RELATION_ALIASES = [
-      { canonical: "\u0623\u062E", aliases: ["\u0627\u062E\u0648\u064A\u0627", "\u0623\u062E\u0648\u064A\u0627", "\u0627\u062E\u0648\u064A", "\u0627\u062E\u0648", "\u0627\u062E", "\u0623\u062E"] },
-      { canonical: "\u0623\u062E\u062A", aliases: ["\u0627\u062E\u062A\u064A", "\u0623\u062E\u062A\u064A", "\u0627\u062E\u062A", "\u0623\u062E\u062A"] },
-      { canonical: "\u0623\u0628", aliases: ["\u0627\u0628\u0648\u064A\u0627", "\u0623\u0628\u0648\u064A\u0627", "\u0628\u0627\u0628\u0627", "\u0648\u0627\u0644\u062F\u064A", "\u0627\u0628"] },
+      { canonical: "\u0623\u062E", aliases: ["\u0627\u062E\u0648\u0627\u062A\u064A", "\u0627\u062E\u0648\u0627\u062A", "\u0623\u062E\u0648\u0627\u062A", "\u0627\u062E\u0648\u064A\u0627", "\u0623\u062E\u0648\u064A\u0627", "\u0627\u062E\u0648\u064A", "\u0627\u062E\u0648", "\u0627\u062E", "\u0623\u062E", "\u0627\u062E\u064A", "\u0623\u062E\u064A"] },
+      { canonical: "\u0623\u062E\u062A", aliases: ["\u0627\u062E\u0648\u0627\u062A\u064A", "\u0627\u062E\u0648\u0627\u062A", "\u0623\u062E\u0648\u0627\u062A", "\u0627\u062E\u062A\u064A", "\u0623\u062E\u062A\u064A", "\u0627\u062E\u062A", "\u0623\u062E\u062A"] },
+      { canonical: "\u0623\u0628", aliases: ["\u0627\u0628\u0648\u064A\u0627", "\u0623\u0628\u0648\u064A\u0627", "\u0628\u0627\u0628\u0627", "\u0648\u0627\u0644\u062F\u064A", "\u0627\u0628", "\u0627\u0628\u064A", "\u0623\u0628\u064A"] },
       { canonical: "\u0623\u0645", aliases: ["\u0627\u0645\u064A", "\u0623\u0645\u064A", "\u0645\u0627\u0645\u0627", "\u0648\u0627\u0644\u062F\u062A\u064A", "\u0627\u0645"] },
       { canonical: "\u0627\u0628\u0646", aliases: ["\u0627\u0628\u0646\u064A", "\u0627\u0628\u0646", "\u0648\u0644\u062F\u064A"] },
       { canonical: "\u0627\u0628\u0646\u0629", aliases: ["\u0628\u0646\u062A\u064A", "\u0628\u0646\u062A"] },
       { canonical: "\u0632\u0648\u062C", aliases: ["\u062C\u0648\u0632\u064A", "\u0632\u0648\u062C\u064A", "\u062C\u0648\u0632"] },
       { canonical: "\u0632\u0648\u062C\u0629", aliases: ["\u0645\u0631\u0627\u062A\u064A", "\u0632\u0648\u062C\u062A\u064A", "\u0645\u0631\u0627\u062A"] },
-      { canonical: "\u0635\u062F\u064A\u0642", aliases: ["\u0635\u0627\u062D\u0628\u064A", "\u0635\u062F\u064A\u0642\u064A", "\u0635\u0627\u062D\u0628", "\u0635\u062F\u064A\u0642"] },
-      { canonical: "\u0635\u062F\u064A\u0642\u0629", aliases: ["\u0635\u0627\u062D\u0628\u062A\u064A", "\u0635\u062D\u0628\u062A\u064A", "\u0635\u062F\u064A\u0642\u062A\u064A", "\u0635\u0627\u062D\u0628\u0629", "\u0635\u062F\u064A\u0642\u0629"] },
-      { canonical: "\u0632\u0645\u064A\u0644", aliases: ["\u0632\u0645\u064A\u0644\u064A", "\u0632\u0645\u064A\u0644"] },
-      { canonical: "\u0632\u0645\u064A\u0644\u0629", aliases: ["\u0632\u0645\u064A\u0644\u062A\u064A", "\u0632\u0645\u064A\u0644\u0629"] },
+      { canonical: "\u0635\u062F\u064A\u0642", aliases: ["\u0627\u0635\u062F\u0642\u0627\u0626\u064A", "\u0623\u0635\u062F\u0642\u0627\u0626\u064A", "\u0627\u0635\u062D\u0627\u0628\u064A", "\u0623\u0635\u062D\u0627\u0628\u064A", "\u0635\u0627\u062D\u0628\u064A", "\u0635\u062F\u064A\u0642\u064A", "\u0635\u0627\u062D\u0628", "\u0635\u062F\u064A\u0642"] },
+      { canonical: "\u0635\u062F\u064A\u0642\u0629", aliases: ["\u0627\u0635\u062F\u0642\u0627\u0626\u064A", "\u0623\u0635\u062F\u0642\u0627\u0626\u064A", "\u0627\u0635\u062D\u0627\u0628\u064A", "\u0623\u0635\u062D\u0627\u0628\u064A", "\u0635\u0627\u062D\u0628\u062A\u064A", "\u0635\u062D\u0628\u062A\u064A", "\u0635\u062F\u064A\u0642\u062A\u064A", "\u0635\u0627\u062D\u0628\u0629", "\u0635\u062F\u064A\u0642\u0629"] },
+      { canonical: "\u0632\u0645\u064A\u0644", aliases: ["\u0632\u0645\u0644\u0627\u0626\u064A", "\u0632\u0645\u0644\u0627\u0621", "\u0632\u0645\u064A\u0644\u064A", "\u0632\u0645\u064A\u0644"] },
+      { canonical: "\u0632\u0645\u064A\u0644\u0629", aliases: ["\u0632\u0645\u0644\u0627\u0626\u064A", "\u0632\u0645\u0644\u0627\u0621", "\u0632\u0645\u064A\u0644\u062A\u064A", "\u0632\u0645\u064A\u0644\u0629"] },
       { canonical: "\u0645\u062F\u064A\u0631", aliases: ["\u0645\u062F\u064A\u0631\u064A", "\u0627\u0644\u0645\u062F\u064A\u0631", "\u0645\u062F\u064A\u0631"] },
       { canonical: "\u0645\u0648\u0638\u0641", aliases: ["\u0645\u0648\u0638\u0641 \u0639\u0646\u062F\u064A", "\u0645\u0648\u0638\u0641\u064A", "\u0645\u0648\u0638\u0641", "\u0639\u0627\u0645\u0644 \u0639\u0646\u062F\u064A", "\u0639\u0627\u0645\u0644"] },
       { canonical: "\u062D\u0627\u0631\u0633", aliases: ["\u0627\u0644\u0628\u0648\u0627\u0628", "\u0628\u0648\u0627\u0628", "\u062D\u0627\u0631\u0633"] },
@@ -170496,8 +170763,11 @@ var init_rule_engine = __esm({
       \u0627\u0643\u0644\u062A: { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0645\u0637\u0639\u0645" },
       \u0623\u0643\u0644\u062A: { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0645\u0637\u0639\u0645" },
       \u063A\u062F\u0627: { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0645\u0637\u0639\u0645" },
+      \u063A\u062F\u0627\u0621: { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0645\u0637\u0639\u0645" },
       \u0639\u0634\u0627: { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0645\u0637\u0639\u0645" },
+      \u0639\u0634\u0627\u0621: { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0645\u0637\u0639\u0645" },
       \u0641\u0637\u0627\u0631: { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0645\u0637\u0639\u0645" },
+      \u0625\u0641\u0637\u0627\u0631: { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0645\u0637\u0639\u0645" },
       \u062F\u0644\u064A\u0641\u0631\u064A: { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u062F\u0644\u064A\u0641\u0631\u064A" },
       "\u062A\u064A\u0643 \u0627\u0648\u0627\u064A": { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u062F\u0644\u064A\u0641\u0631\u064A" },
       \u0642\u0647\u0648\u0647: { category: "\u0623\u0643\u0644 \u0648\u0634\u0631\u0628", subCategory: "\u0642\u0647\u0648\u0629 \u0648\u0643\u0627\u0641\u064A\u0647" },
@@ -174351,6 +174621,33 @@ function decomposeVerbAnchored(text2, knownNames = []) {
   for (let i2 = 0; i2 < words.length; i2++) {
     const w = words[i2].replace(/^[وف]/, "");
     if (ALL_FINANCIAL_VERBS.includes(w) || ALL_FINANCIAL_VERBS.includes(words[i2])) {
+      if (verbIndices.length > 0) {
+        const prevIdx = verbIndices[verbIndices.length - 1];
+        let hasOrConjunctionBetween = false;
+        for (let j2 = prevIdx + 1; j2 < i2; j2++) {
+          if (words[j2] === "\u0623\u0648" || words[j2] === "\u0627\u0648") {
+            hasOrConjunctionBetween = true;
+            break;
+          }
+        }
+        if (hasOrConjunctionBetween) {
+          continue;
+        }
+        let hasSubstantialContent = false;
+        for (let j2 = prevIdx + 1; j2 < i2; j2++) {
+          const wordInGap = words[j2];
+          const cleanW = wordInGap.replace(/[^\u0600-\u06FFa-zA-Z]/g, "").replace(/^[وفبل]/, "").replace(/^ال/, "");
+          const isNumber = /^\d+$/.test(wordInGap) || ["\u0645\u064A\u0629", "\u0645\u064A\u0647", "\u0627\u0644\u0641", "\u0623\u0644\u0641", "\u0645\u0644\u064A\u0648\u0646", "\u0645\u0627\u0626\u0629", "\u062B\u0644\u0627\u062B\u064A\u0646", "\u0627\u0631\u0628\u0639\u064A\u0646", "\u062E\u0645\u0633\u064A\u0646"].includes(cleanW);
+          const isNounOrName = isLikelyPersonName(wordInGap) || knownNames.includes(wordInGap) || cleanW.length >= 3 && !["\u0628\u0639\u062F\u064A\u0646", "\u062B\u0645", "\u0628\u0639\u062F", "\u0628\u0639\u062F\u0647\u0645", "\u062A\u062D\u062A", "\u0641\u0648\u0642", "\u0642\u0628\u0644", "\u0645\u0639", "\u0645\u0646", "\u0639\u0646"].includes(cleanW);
+          if (isNumber || isNounOrName) {
+            hasSubstantialContent = true;
+            break;
+          }
+        }
+        if (!hasSubstantialContent) {
+          continue;
+        }
+      }
       verbIndices.push(i2);
     }
   }
@@ -174388,7 +174685,12 @@ function decomposeVerbAnchored(text2, knownNames = []) {
 }
 function decomposeHeuristic(text2, knownNames = []) {
   let segments = decomposeAmountAnchored(text2, knownNames);
-  if (!segments || segments.length === 0) {
+  if (segments && segments.length === 1) {
+    const verbSegments = decomposeVerbAnchored(text2, knownNames);
+    if (verbSegments && verbSegments.length > 1) {
+      segments = verbSegments;
+    }
+  } else if (!segments || segments.length === 0) {
     segments = decomposeVerbAnchored(text2, knownNames);
   }
   if (segments && segments.length > 0) {
@@ -174911,6 +175213,26 @@ function makeCacheKey(text2, userPlan, userId, businessMode) {
   const normalized = text2.trim().replace(/\s+/g, " ").toLowerCase();
   return `cls:${userId}:${userPlan}:${businessMode ? "biz" : "std"}:${normalized}`;
 }
+function isStructuralOrConjunction(text2, candidates = []) {
+  if (!/\s+(?:او|أو)\s+/.test(text2)) return false;
+  if (candidates.length > 1) {
+    for (let i2 = 0; i2 < candidates.length; i2++) {
+      for (let j2 = i2 + 1; j2 < candidates.length; j2++) {
+        const c1 = compactArabic(candidates[i2]);
+        const c2 = compactArabic(candidates[j2]);
+        const normText = compactArabic(text2);
+        const reg = new RegExp(`${c1}.*?\\s+(?:\u0627\u0648|\u0623\u0648)\\s+.*?${c2}|${c2}.*?\\s+(?:\u0627\u0648|\u0623\u0648)\\s+.*?${c1}`);
+        if (reg.test(normText)) return true;
+      }
+    }
+  }
+  const parts = text2.split(/\s+(?:او|أو)\s+/);
+  if (parts.length >= 2) {
+    const verbsFound = parts.filter((p) => ALL_FINANCIAL_VERBS.some((v) => p.includes(v)));
+    if (verbsFound.length >= 2) return true;
+  }
+  return false;
+}
 function invalidateUserClassificationCache(userId) {
   for (const key of classificationCache.keys()) {
     if (key.includes(`:${userId}:`)) {
@@ -175121,6 +175443,9 @@ async function runSmartPipeline(input) {
   const provider = input.provider || "gemini";
   const modelUsed = mapModelName(input.modelName);
   const fireworksKey = input.fireworksApiKey || "";
+  const knownPeople = Array.isArray(
+    input.userProfileContext?.knownPeople
+  ) ? input.userProfileContext.knownPeople : [];
   const cacheKey3 = makeCacheKey(input.text, input.userPlan, input.userId, input.businessMode);
   const cachedResult = classificationCache.get(cacheKey3);
   if (cachedResult) {
@@ -175152,10 +175477,7 @@ async function runSmartPipeline(input) {
         inferenceSource: "dictionary",
         ambiguityFlags: ["muscle_memory_hit"]
       };
-      const memKnownPeople = Array.isArray(
-        input.userProfileContext?.knownPeople
-      ) ? input.userProfileContext.knownPeople : [];
-      const memKnownNames = memKnownPeople.map((p) => p.name).filter(Boolean);
+      const memKnownNames = knownPeople.map((p) => p.name).filter(Boolean);
       const memCandidates = pickAllPersonCandidates(
         null,
         input.text,
@@ -175171,7 +175493,7 @@ async function runSmartPipeline(input) {
             candidateName,
             input.text,
             input.text,
-            memKnownPeople
+            knownPeople
           );
           if (personApplied.needsClarification) {
             memNeedsClarification = true;
@@ -175265,53 +175587,12 @@ async function runSmartPipeline(input) {
       }
       businessScoreTotal += catScore;
     }
-    const personalKeywords = [
-      "\u0641\u0637\u0631\u062A",
-      "\u0627\u062A\u0639\u0634\u064A\u062A",
-      "\u0627\u062A\u063A\u062F\u064A\u062A",
-      "\u0627\u0643\u0644\u062A",
-      "\u0634\u0631\u0628\u062A",
-      "\u0642\u0647\u0648\u0629",
-      "\u0643\u0627\u0641\u064A\u0647",
-      "\u0627\u0648\u0628\u0631",
-      "\u0643\u0631\u064A\u0645",
-      "\u0645\u062A\u0631\u0648",
-      "\u062A\u0627\u0643\u0633\u064A",
-      "\u0628\u0646\u0632\u064A\u0646",
-      "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
-      "\u0643\u0647\u0631\u0628\u0627\u0621",
-      "\u0645\u064A\u0627\u0647",
-      "\u063A\u0627\u0632",
-      "\u0646\u062A",
-      "\u0627\u0646\u062A\u0631\u0646\u062A",
-      "\u062A\u0644\u064A\u0641\u0648\u0646",
-      "\u0634\u062D\u0646",
-      "\u0627\u064A\u062C\u0627\u0631",
-      "\u0625\u064A\u062C\u0627\u0631",
-      "\u0633\u0643\u0646",
-      "\u062F\u0643\u062A\u0648\u0631",
-      "\u0635\u064A\u062F\u0644\u064A\u0629",
-      "\u062F\u0648\u0627",
-      "\u0639\u0644\u0627\u062C",
-      "\u0645\u0644\u0627\u0628\u0633",
-      "\u0647\u0627\u062A\u0641",
-      "\u0645\u0648\u0628\u0627\u064A\u0644",
-      "\u0633\u064A\u0646\u0645\u0627",
-      "\u062C\u064A\u0645",
-      "\u0646\u0627\u062F\u064A",
-      "\u0645\u0631\u062A\u0628",
-      "\u0631\u0627\u062A\u0628",
-      "\u0628\u0648\u0646\u0635",
-      "\u062C\u0627\u0644\u064A",
-      "\u0642\u0628\u0636\u062A"
-    ];
-    for (const pk of personalKeywords) {
+    for (const pk of PERSONAL_KEYWORDS) {
       if (scoringNormalized.includes(pk)) {
         personalScoreTotal += 10;
       }
     }
-    const salaryPattern = /(?:مرتب|راتب|دفع\s+مرتب|اديت\s+مرتب|صرفت\s+مرتب)/;
-    const hasSalaryKeyword = salaryPattern.test(scoringNormalized);
+    const hasSalaryKeyword = SALARY_PATTERN.test(scoringNormalized);
     if (hasSalaryKeyword && input.businessCategories.some((c) => c.nameAr.includes("\u0645\u0631\u062A\u0628") || c.nameAr.includes("\u0631\u0648\u0627\u062A\u0628") || c.nameAr.includes("\u0639\u0645\u0627\u0644"))) {
       businessScoreTotal += 25;
       if (businessMatchResult) {
@@ -175332,8 +175613,8 @@ async function runSmartPipeline(input) {
         let bizPerson;
         let bizPersonRel;
         if (hasSalaryKeyword) {
-          const knownNames = knownPeople.map((p) => p.name).filter(Boolean);
-          const candidates = pickAllPersonCandidates(null, input.text, knownNames);
+          const knownNames2 = knownPeople.map((p) => p.name).filter(Boolean);
+          const candidates = pickAllPersonCandidates(null, input.text, knownNames2);
           if (candidates.length > 0) {
             bizPerson = candidates[0];
             bizPersonRel = "\u0645\u0648\u0638\u0641";
@@ -175351,7 +175632,7 @@ async function runSmartPipeline(input) {
           parsedBy: "rule_engine",
           inferenceSource: "dictionary",
           ambiguityFlags: ["business_scoring_match"],
-          businessId: businessMatchResult.categoryId,
+          businessId: input.businessId ?? void 0,
           person_mentioned: bizPerson,
           person_relationship: bizPersonRel
         };
@@ -175392,9 +175673,6 @@ async function runSmartPipeline(input) {
   let decision = "unknown";
   let firstAlertMessage = void 0;
   let overallConfidence = 100;
-  const knownPeople = Array.isArray(
-    input.userProfileContext?.knownPeople
-  ) ? input.userProfileContext.knownPeople : [];
   const pipelineSettings = input.pipelineSettings || {};
   const decompositionEnabled = settingBoolean(
     pipelineSettings,
@@ -175482,15 +175760,15 @@ async function runSmartPipeline(input) {
       };
     }
   }
+  const knownNames = knownPeople.map((p) => p.name).filter(Boolean);
   let ruleResult = null;
   let ruleSucceeded = false;
-  const decomposition = decompositionEnabled ? decomposeHeuristic(input.text) : { segments: [], method: "simple", isComplex: false };
+  const decomposition = decompositionEnabled ? decomposeHeuristic(input.text, knownNames) : { segments: [], method: "simple", isComplex: false };
   const localSucceededItems = [];
   const failedSegments = [];
   if (decomposition.segments.length > 1) {
     let localClarification;
     const localUnknownNames = [];
-    const knownNames = knownPeople.map((p) => p.name).filter(Boolean);
     for (const segment of decomposition.segments) {
       const segmentText = segment.text.trim();
       const segmentTextWithVerb = segment.linkedVerb && !segmentText.includes(segment.linkedVerb) ? `${segment.linkedVerb} ${segmentText}` : segmentText;
@@ -175515,9 +175793,15 @@ async function runSmartPipeline(input) {
           knownNames
         );
         if (candidates.length > 0) {
-          const splitAmount = numAmounts === 1 && candidates.length > 1 && segmentRule.items.length === 1 ? Number((item.amount / candidates.length).toFixed(2)) : item.amount;
+          const hasOrConjunction = isStructuralOrConjunction(segmentTextWithVerb, candidates);
+          const splitAmount = numAmounts === 1 && candidates.length > 1 && segmentRule.items.length === 1 && !hasOrConjunction ? Number((item.amount / candidates.length).toFixed(2)) : item.amount;
           for (const candidateName of candidates) {
-            const clonedItem = { ...item, amount: splitAmount };
+            const clonedItem = {
+              ...item,
+              amount: splitAmount,
+              needsReview: hasOrConjunction ? true : item.needsReview,
+              confidence: hasOrConjunction ? Math.min(item.confidence, 50) : item.confidence
+            };
             const personApplied = personMemoryEnabled ? applyPersonResolution(
               clonedItem,
               candidateName,
@@ -175573,7 +175857,6 @@ async function runSmartPipeline(input) {
       const segmentResolvedItems = [];
       let anyNeedsClarification = false;
       const localUnknownNames = [];
-      const knownNames = knownPeople.map((p) => p.name).filter(Boolean);
       for (const item of ruleResult.items) {
         const candidates = pickAllPersonCandidates(
           item.person_mentioned,
@@ -175581,9 +175864,15 @@ async function runSmartPipeline(input) {
           knownNames
         );
         if (candidates.length > 0) {
-          const splitAmount = numAmounts === 1 && candidates.length > 1 && ruleResult.items.length === 1 ? Number((item.amount / candidates.length).toFixed(2)) : item.amount;
+          const hasOrConjunction = isStructuralOrConjunction(input.text, candidates);
+          const splitAmount = numAmounts === 1 && candidates.length > 1 && ruleResult.items.length === 1 && !hasOrConjunction ? Number((item.amount / candidates.length).toFixed(2)) : item.amount;
           for (const candidateName of candidates) {
-            const clonedItem = { ...item, amount: splitAmount };
+            const clonedItem = {
+              ...item,
+              amount: splitAmount,
+              needsReview: hasOrConjunction ? true : item.needsReview,
+              confidence: hasOrConjunction ? Math.min(item.confidence, 50) : item.confidence
+            };
             const personApplied = personMemoryEnabled ? applyPersonResolution(
               clonedItem,
               candidateName,
@@ -175648,6 +175937,9 @@ async function runSmartPipeline(input) {
     }
     decision = "review";
   }
+  const allKnownNames = knownPeople.map((p) => p.name).filter(Boolean);
+  const personCandidates = pickAllPersonCandidates(null, input.text, allKnownNames);
+  const hasPersonContext = personCandidates.length > 0 || isDirectedPersonPayment(input.text);
   if (!ruleSucceeded && finalItems.length === 0 && fireworksKey && numAmounts <= 3 && !hasPersonContext) {
     try {
       const cleanText = normalized.forRules.replace(/\d+(\.\d+)?/g, "").replace(/(جنيه|ج\.م|ج|الف|ألف|قسط|دفعت|حولت|صرفت|شحنت)/g, "").trim();
@@ -175841,8 +176133,8 @@ async function runSmartPipeline(input) {
           clarificationQuestion = "\u0639\u0630\u0631\u0627\u064B\u060C \u0627\u0644\u062C\u0645\u0644\u0629 \u0637\u0648\u064A\u0644\u0629 \u0648\u0645\u0641\u0635\u0644\u0629 \u0648\u0644\u0645 \u0623\u062A\u0645\u0643\u0646 \u0645\u0646 \u0627\u0633\u062A\u062E\u0631\u0627\u062C \u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A. \u064A\u0631\u062C\u0649 \u062A\u0642\u0633\u064A\u0645\u0647\u0627 \u0623\u0648 \u0625\u0639\u0627\u062F\u0629 \u0627\u0644\u0645\u062D\u0627\u0648\u0644\u0629.";
         }
       } else {
-        const allKnownNames = knownPeople.map((p) => p.name);
-        const deterministicPeople = extractPeople(textToClassify, allKnownNames);
+        const allKnownNames2 = knownPeople.map((p) => p.name);
+        const deterministicPeople = extractPeople(textToClassify, allKnownNames2);
         for (const item of classItems) {
           let itemClarify = Boolean(item.needsClarification);
           let itemClarifyQ = item.clarificationQuestion || "\u0645\u0645\u0643\u0646 \u062A\u0648\u0636\u062D \u0623\u0643\u062A\u0631\u061F";
@@ -175869,7 +176161,7 @@ async function runSmartPipeline(input) {
           let bestPersonCandidate = null;
           if (namesList.length > 0 && personMemoryEnabled) {
             for (const n of namesList) {
-              const candidate = pickPersonCandidate(n, itemContext, allKnownNames);
+              const candidate = pickPersonCandidate(n, itemContext, allKnownNames2);
               if (candidate) {
                 const res = resolvePersonForTransaction({
                   candidateName: candidate,
@@ -175886,7 +176178,7 @@ async function runSmartPipeline(input) {
               }
             }
           } else if (namesList.length > 0) {
-            bestPersonCandidate = pickPersonCandidate(namesList[0], itemContext, allKnownNames);
+            bestPersonCandidate = pickPersonCandidate(namesList[0], itemContext, allKnownNames2);
           }
           if (unknownNames.length > 0) {
             itemClarify = true;
@@ -176169,7 +176461,7 @@ async function runSmartPipeline(input) {
   }
   return result;
 }
-var classificationCache, SMART_CLASSIFIER_SCHEMA, SIMPLE_CLASSIFIER_SCHEMA;
+var classificationCache, PERSONAL_KEYWORDS, SALARY_PATTERN, SMART_CLASSIFIER_SCHEMA, SIMPLE_CLASSIFIER_SCHEMA;
 var init_smart_pipeline = __esm({
   "api/lib/smart-pipeline.ts"() {
     init_dist4();
@@ -176198,6 +176490,47 @@ var init_smart_pipeline = __esm({
       ttl: 1e3 * 60 * 60 * 24 * 7
       // 7 days
     });
+    PERSONAL_KEYWORDS = [
+      "\u0641\u0637\u0631\u062A",
+      "\u0627\u062A\u0639\u0634\u064A\u062A",
+      "\u0627\u062A\u063A\u062F\u064A\u062A",
+      "\u0627\u0643\u0644\u062A",
+      "\u0634\u0631\u0628\u062A",
+      "\u0642\u0647\u0648\u0629",
+      "\u0643\u0627\u0641\u064A\u0647",
+      "\u0627\u0648\u0628\u0631",
+      "\u0643\u0631\u064A\u0645",
+      "\u0645\u062A\u0631\u0648",
+      "\u062A\u0627\u0643\u0633\u064A",
+      "\u0628\u0646\u0632\u064A\u0646",
+      "\u0645\u0648\u0627\u0635\u0644\u0627\u062A",
+      "\u0643\u0647\u0631\u0628\u0627\u0621",
+      "\u0645\u064A\u0627\u0647",
+      "\u063A\u0627\u0632",
+      "\u0646\u062A",
+      "\u0627\u0646\u062A\u0631\u0646\u062A",
+      "\u062A\u0644\u064A\u0641\u0648\u0646",
+      "\u0634\u062D\u0646",
+      "\u0627\u064A\u062C\u0627\u0631",
+      "\u0625\u064A\u062C\u0627\u0631",
+      "\u0633\u0643\u0646",
+      "\u062F\u0643\u062A\u0648\u0631",
+      "\u0635\u064A\u062F\u0644\u064A\u0629",
+      "\u062F\u0648\u0627",
+      "\u0639\u0644\u0627\u062C",
+      "\u0645\u0644\u0627\u0628\u0633",
+      "\u0647\u0627\u062A\u0641",
+      "\u0645\u0648\u0628\u0627\u064A\u0644",
+      "\u0633\u064A\u0646\u0645\u0627",
+      "\u062C\u064A\u0645",
+      "\u0646\u0627\u062F\u064A",
+      "\u0645\u0631\u062A\u0628",
+      "\u0631\u0627\u062A\u0628",
+      "\u0628\u0648\u0646\u0635",
+      "\u062C\u0627\u0644\u064A",
+      "\u0642\u0628\u0636\u062A"
+    ];
+    SALARY_PATTERN = /(?:مرتب|راتب|دفع\s+مرتب|اديت\s+مرتب|صرفت\s+مرتب)/;
     SMART_CLASSIFIER_SCHEMA = {
       type: SchemaType.OBJECT,
       properties: {
@@ -176544,59 +176877,97 @@ async function getSmartProfile(userId, userType) {
   }
   const result = buildDefaultSmartProfile(identity2, row);
   try {
-    const { userContacts: userContacts3, profileLearningEvents: profileLearningEvents2 } = await Promise.resolve().then(() => (init_schema2(), schema_exports));
+    const { userContacts: userContacts2, profileLearningEvents: profileLearningEvents2 } = await Promise.resolve().then(() => (init_schema2(), schema_exports));
     const { desc: desc2 } = await Promise.resolve().then(() => (init_drizzle_orm(), drizzle_orm_exports));
-    const contacts = await db2.select({
-      name: userContacts3.name,
-      relationship: userContacts3.relation,
-      isSilenced: userContacts3.isSilenced,
-      contactType: userContacts3.contactType,
-      businessId: userContacts3.businessId
-    }).from(userContacts3).where(and(eq(userContacts3.userId, userId), eq(userContacts3.userType, userType))).limit(50);
-    if (contacts.length > 0) {
-      result.aiInferredAttributes.knownPeople = contacts;
-      result.lifestyleInfo.dynamicContacts = contacts.map((c) => ({
-        name: c.name,
-        relationship: c.relationship,
-        rawRelationship: c.relationship,
-        isSilenced: c.isSilenced
-      }));
-    } else {
-      const legacyContacts = Array.isArray(result.lifestyleInfo.dynamicContacts) ? result.lifestyleInfo.dynamicContacts : [];
-      if (legacyContacts.length > 0) {
-        for (const lc of legacyContacts) {
-          if (!lc.name || lc.name.length < 2) continue;
-          try {
-            await db2.insert(userContacts3).values({
-              userId,
-              userType,
-              name: lc.name,
-              relation: lc.relationship || lc.rawRelationship || "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641",
-              contactType: "personal",
-              isSilenced: false
-            }).catch(() => {
-            });
-          } catch {
+    if (!result.aiInferredAttributes?.contactsMigratedAll) {
+      const allLegacyToMigrate = [];
+      if (Array.isArray(result.lifestyleInfo.dynamicContacts)) {
+        for (const lc of result.lifestyleInfo.dynamicContacts) {
+          if (lc?.name && typeof lc.name === "string" && lc.name.length >= 2) {
+            allLegacyToMigrate.push({ name: lc.name.trim(), rel: lc.relationship || lc.rawRelationship || "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641" });
           }
         }
-        const migrated = await db2.select({
-          name: userContacts3.name,
-          relationship: userContacts3.relation,
-          isSilenced: userContacts3.isSilenced,
-          contactType: userContacts3.contactType,
-          businessId: userContacts3.businessId
-        }).from(userContacts3).where(and(eq(userContacts3.userId, userId), eq(userContacts3.userType, userType))).limit(50);
-        if (migrated.length > 0) {
-          result.aiInferredAttributes.knownPeople = migrated;
-          result.lifestyleInfo.dynamicContacts = migrated.map((c) => ({
-            name: c.name,
-            relationship: c.relationship,
-            rawRelationship: c.relationship,
-            isSilenced: c.isSilenced
-          }));
+      }
+      if (Array.isArray(result.lifestyleInfo.regularContacts)) {
+        for (const name2 of result.lifestyleInfo.regularContacts) {
+          if (name2 && typeof name2 === "string" && name2.trim().length >= 2) {
+            allLegacyToMigrate.push({ name: name2.trim(), rel: "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641" });
+          }
         }
       }
+      if (Array.isArray(result.lifestyleInfo.childrenNames)) {
+        for (const name2 of result.lifestyleInfo.childrenNames) {
+          if (name2 && typeof name2 === "string" && name2.trim().length >= 2) {
+            allLegacyToMigrate.push({ name: name2.trim(), rel: "\u0627\u0628\u0646/\u0627\u0628\u0646\u0629" });
+          }
+        }
+      }
+      if (Array.isArray(result.lifestyleInfo.siblingsNames)) {
+        for (const name2 of result.lifestyleInfo.siblingsNames) {
+          if (name2 && typeof name2 === "string" && name2.trim().length >= 2) {
+            allLegacyToMigrate.push({ name: name2.trim(), rel: "\u0623\u062E/\u0623\u062E\u062A" });
+          }
+        }
+      }
+      if (Array.isArray(result.lifestyleInfo.parentsNames)) {
+        for (const name2 of result.lifestyleInfo.parentsNames) {
+          if (name2 && typeof name2 === "string" && name2.trim().length >= 2) {
+            allLegacyToMigrate.push({ name: name2.trim(), rel: "\u0648\u0627\u0644\u062F/\u0648\u0627\u0644\u062F\u0629" });
+          }
+        }
+      }
+      if (typeof result.lifestyleInfo.partnerName === "string" && result.lifestyleInfo.partnerName.trim().length >= 2) {
+        allLegacyToMigrate.push({ name: result.lifestyleInfo.partnerName.trim(), rel: "\u0632\u0648\u062C/\u0632\u0648\u062C\u0629" });
+      }
+      if (Array.isArray(result.lifestyleInfo.petNames)) {
+        for (const name2 of result.lifestyleInfo.petNames) {
+          if (name2 && typeof name2 === "string" && name2.trim().length >= 2) {
+            allLegacyToMigrate.push({ name: name2.trim(), rel: "\u062D\u064A\u0648\u0627\u0646 \u0623\u0644\u064A\u0641" });
+          }
+        }
+      }
+      for (const item of allLegacyToMigrate) {
+        try {
+          await db2.insert(userContacts2).values({
+            userId,
+            userType,
+            name: item.name,
+            relation: item.rel,
+            contactType: "personal",
+            isSilenced: false
+          }).catch(() => {
+          });
+        } catch {
+        }
+      }
+      result.aiInferredAttributes.contactsMigratedAll = true;
+      try {
+        await db2.update(userProfiles).set({
+          aiInferredAttributes: result.aiInferredAttributes
+        }).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)));
+      } catch {
+      }
     }
+    const contacts = await db2.select({
+      name: userContacts2.name,
+      relationship: userContacts2.relation,
+      isSilenced: userContacts2.isSilenced,
+      contactType: userContacts2.contactType,
+      businessId: userContacts2.businessId
+    }).from(userContacts2).where(and(eq(userContacts2.userId, userId), eq(userContacts2.userType, userType))).limit(100);
+    result.aiInferredAttributes.knownPeople = contacts;
+    result.lifestyleInfo.dynamicContacts = contacts.map((c) => ({
+      name: c.name,
+      relationship: c.relationship,
+      rawRelationship: c.relationship,
+      isSilenced: c.isSilenced
+    }));
+    result.lifestyleInfo.regularContacts = [];
+    result.lifestyleInfo.childrenNames = [];
+    result.lifestyleInfo.siblingsNames = [];
+    result.lifestyleInfo.parentsNames = [];
+    result.lifestyleInfo.partnerName = void 0;
+    result.lifestyleInfo.petNames = [];
     const events = await db2.select({
       eventType: profileLearningEvents2.eventType,
       metadata: profileLearningEvents2.metadata
@@ -176918,13 +177289,13 @@ function cleanNameAndRelationship(name2, relationship) {
   if (noisyNames.includes(compName) || noisyNames.includes(cleanName.toLowerCase().trim())) {
     return { name: null, relationship: null };
   }
-  if (relationWords.includes(compName)) {
+  if (relationWords.includes(compName) || isRelationshipTerm(compName)) {
     const { normalized } = normalizeRelationship(cleanName);
     if (!cleanRel || cleanRel === "\u0634\u062E\u0635" || cleanRel === "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641" || cleanRel === cleanName) {
       cleanRel = normalized;
     }
   }
-  const parsed = parseNameAndRelationship(cleanName, "\u0627\u0644\u0639\u0627\u0626\u0644\u0629");
+  const parsed = parseNameAndRelationship(cleanName, cleanRel || "\u062A\u062D\u0648\u064A\u0644\u0627\u062A");
   if (parsed.name && parsed.name !== "\u0634\u062E\u0635" && parsed.relationship !== "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641") {
     cleanName = parsed.name;
     if (!cleanRel || cleanRel === "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641" || cleanRel === "\u0642\u0631\u064A\u0628" || cleanRel === "\u0634\u062E\u0635") {
@@ -176954,7 +177325,7 @@ async function addDynamicContact(userId, userType, name2, relationship) {
   const cleaned = cleanNameAndRelationship(name2, relationship);
   if (!cleaned.name || !cleaned.relationship) {
     console.log(`[Profile Healing] Rejected saving invalid/noisy contact: name="${name2}", rel="${relationship}"`);
-    return;
+    return null;
   }
   const cleanName = cleaned.name;
   const cleanRel = cleaned.relationship;
@@ -176983,6 +177354,9 @@ async function addDynamicContact(userId, userType, name2, relationship) {
       if (!hasSpecific || !isNewGeneric) {
         await db2.update(userContacts).set({ relation: normalized }).where(eq(userContacts.id, row.id));
       }
+      invalidateUserClassificationCache(userId);
+      invalidateUserMemory(userId, userType);
+      return { isNew: false, name: cleanName, totalContacts: 0, contactId: row.id };
     } else {
       await db2.insert(userContacts).values({
         userId,
@@ -176992,13 +177366,26 @@ async function addDynamicContact(userId, userType, name2, relationship) {
         contactType: "personal",
         isSilenced: false
       });
+      const all = await db2.select({ id: userContacts.id }).from(userContacts).where(and(eq(userContacts.userId, userId), eq(userContacts.userType, userType)));
+      invalidateUserClassificationCache(userId);
+      invalidateUserMemory(userId, userType);
+      console.log(`[Profile Healing] Saved contact to DB: name="${cleanName}", rel="${normalized}"`);
+      const [created] = await db2.select({ id: userContacts.id }).from(userContacts).where(and(
+        eq(userContacts.userId, userId),
+        eq(userContacts.userType, userType),
+        eq(userContacts.name, cleanName)
+      )).orderBy(userContacts.id).limit(1);
+      return {
+        isNew: true,
+        name: cleanName,
+        totalContacts: all.length,
+        contactId: created?.id
+      };
     }
   } catch (err) {
     console.error("[addDynamicContact] DB write failed:", err);
+    return null;
   }
-  invalidateUserClassificationCache(userId);
-  invalidateUserMemory(userId, userType);
-  console.log(`[Profile Healing] Saved contact to DB: name="${cleanName}", rel="${normalized}"`);
 }
 async function silenceContact(userId, userType, name2) {
   const cleaned = cleanNameAndRelationship(name2, "\u062C\u0647\u0629 \u0627\u062A\u0635\u0627\u0644 \u0639\u0627\u0645\u0629");
@@ -177048,7 +177435,11 @@ async function getUserContacts(userId, userType) {
       eq(userContacts.userId, userId),
       eq(userContacts.userType, userType)
     ));
-    return rows;
+    return rows.map((r2) => ({
+      ...r2,
+      isSilenced: r2.isSilenced ?? false,
+      transactionCount: r2.transactionCount ?? 0
+    }));
   } catch (err) {
     console.error("[getUserContacts] Failed:", err);
     return [];
@@ -177488,93 +177879,107 @@ __export(personal_context_builder_exports, {
 function buildPersonalContext(profile) {
   const lifestyle = profile.lifestyleInfo;
   const knownPeople = [];
-  const childrenNames = Array.isArray(lifestyle.childrenNames) ? lifestyle.childrenNames : [];
-  for (const name2 of childrenNames) {
-    if (name2 && typeof name2 === "string" && name2.trim()) {
+  const sourceContacts = Array.isArray(profile.aiInferredAttributes?.knownPeople) ? profile.aiInferredAttributes.knownPeople : Array.isArray(lifestyle.dynamicContacts) ? lifestyle.dynamicContacts : [];
+  if (sourceContacts.length > 0 || profile.aiInferredAttributes?.contactsMigratedAll) {
+    for (const contact of sourceContacts) {
+      if (contact && typeof contact === "object" && contact.name) {
+        const rawRel = contact.rawRelationship || contact.relationship || "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641";
+        const rel = typeof rawRel === "string" ? rawRel.trim() : "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641";
+        const normalized = normalizeRelationship(rel);
+        const name2 = contact.name.trim();
+        const suffix = getRelationshipSuffix(normalized.normalized);
+        const subCat = rel && rel !== "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641" && normalized.category !== "\u062A\u062D\u0648\u064A\u0644\u0627\u062A" ? `${name2} ${suffix}` : name2;
+        knownPeople.push({
+          name: name2,
+          relationship: normalized.normalized || rel,
+          category: normalized.category,
+          subCategory: subCat,
+          isSilenced: contact.isSilenced === true
+        });
+      }
+    }
+  } else {
+    const childrenNames = Array.isArray(lifestyle.childrenNames) ? lifestyle.childrenNames : [];
+    for (const name2 of childrenNames) {
+      if (name2 && typeof name2 === "string" && name2.trim()) {
+        knownPeople.push({
+          name: name2.trim(),
+          relationship: "\u0627\u0628\u0646/\u0627\u0628\u0646\u0629",
+          category: "\u0627\u0644\u0639\u0627\u0626\u0644\u0629",
+          subCategory: `${name2.trim()} \u0645\u0646 \u0648\u0644\u0627\u062F\u0643`
+        });
+      }
+    }
+    const partnerName = lifestyle.partnerName;
+    if (partnerName && typeof partnerName === "string" && partnerName.trim()) {
       knownPeople.push({
-        name: name2.trim(),
-        relationship: "\u0627\u0628\u0646/\u0627\u0628\u0646\u0629",
+        name: partnerName.trim(),
+        relationship: "\u0632\u0648\u062C/\u0632\u0648\u062C\u0629",
         category: "\u0627\u0644\u0639\u0627\u0626\u0644\u0629",
-        subCategory: `${name2.trim()} \u0645\u0646 \u0648\u0644\u0627\u062F\u0643`
+        subCategory: `${partnerName.trim()} \u0634\u0631\u064A\u0643 \u0627\u0644\u062D\u064A\u0627\u0629`
       });
     }
-  }
-  const partnerName = lifestyle.partnerName;
-  if (partnerName && typeof partnerName === "string" && partnerName.trim()) {
-    knownPeople.push({
-      name: partnerName.trim(),
-      relationship: "\u0632\u0648\u062C/\u0632\u0648\u062C\u0629",
-      category: "\u0627\u0644\u0639\u0627\u0626\u0644\u0629",
-      subCategory: `${partnerName.trim()} \u0634\u0631\u064A\u0643 \u0627\u0644\u062D\u064A\u0627\u0629`
-    });
-  }
-  const contacts = Array.isArray(lifestyle.regularContacts) ? lifestyle.regularContacts : [];
-  for (const name2 of contacts) {
-    if (name2 && typeof name2 === "string" && name2.trim()) {
-      knownPeople.push({
-        name: name2.trim(),
-        relationship: "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641",
-        category: "\u062A\u062D\u0648\u064A\u0644\u0627\u062A",
-        subCategory: "\u062A\u062D\u0648\u064A\u0644\u0627\u062A \u0634\u062E\u0635\u064A\u0629"
-      });
+    const contacts = Array.isArray(lifestyle.regularContacts) ? lifestyle.regularContacts : [];
+    for (const name2 of contacts) {
+      if (name2 && typeof name2 === "string" && name2.trim()) {
+        knownPeople.push({
+          name: name2.trim(),
+          relationship: "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641",
+          category: "\u062A\u062D\u0648\u064A\u0644\u0627\u062A",
+          subCategory: "\u062A\u062D\u0648\u064A\u0644\u0627\u062A \u0634\u062E\u0635\u064A\u0629"
+        });
+      }
     }
-  }
-  const supportsOthers = Array.isArray(lifestyle.supportsOthers) ? lifestyle.supportsOthers : [];
-  const supportsMap = {
-    parents: { rel: "\u0648\u0627\u0644\u062F/\u0648\u0627\u0644\u062F\u0629", sub: "\u062F\u0639\u0645 \u0627\u0644\u0623\u0647\u0644" },
-    siblings: { rel: "\u0623\u062E/\u0623\u062E\u062A", sub: "\u062F\u0639\u0645 \u0627\u0644\u0625\u062E\u0648\u0629" },
-    partner: { rel: "\u0634\u0631\u064A\u0643/\u0634\u0631\u064A\u0643\u0629", sub: "\u0634\u0631\u064A\u0643 \u0627\u0644\u062D\u064A\u0627\u0629" },
-    extended: { rel: "\u0623\u0642\u0627\u0631\u0628", sub: "\u062F\u0639\u0645 \u0627\u0644\u0623\u0642\u0627\u0631\u0628" }
-  };
-  const siblingsNames = Array.isArray(lifestyle.siblingsNames) ? lifestyle.siblingsNames : [];
-  for (const name2 of siblingsNames) {
-    if (name2 && typeof name2 === "string" && name2.trim()) {
-      knownPeople.push({
-        name: name2.trim(),
-        relationship: "\u0623\u062E/\u0623\u062E\u062A",
-        category: "\u0627\u0644\u0639\u0627\u0626\u0644\u0629",
-        subCategory: `${name2.trim()} \u0623\u062E\u0648\u0643/\u0623\u062E\u062A\u0643`
-      });
+    const siblingsNames = Array.isArray(lifestyle.siblingsNames) ? lifestyle.siblingsNames : [];
+    for (const name2 of siblingsNames) {
+      if (name2 && typeof name2 === "string" && name2.trim()) {
+        knownPeople.push({
+          name: name2.trim(),
+          relationship: "\u0623\u062E/\u0623\u062E\u062A",
+          category: "\u0627\u0644\u0639\u0627\u0626\u0644\u0629",
+          subCategory: `${name2.trim()} \u0623\u062E\u0648\u0643/\u0623\u062E\u062A\u0643`
+        });
+      }
     }
-  }
-  const parentsNames = Array.isArray(lifestyle.parentsNames) ? lifestyle.parentsNames : [];
-  for (const name2 of parentsNames) {
-    if (name2 && typeof name2 === "string" && name2.trim()) {
-      knownPeople.push({
-        name: name2.trim(),
-        relationship: "\u0648\u0627\u0644\u062F/\u0648\u0627\u0644\u062F\u0629",
-        category: "\u0627\u0644\u0639\u0627\u0626\u0644\u0629",
-        subCategory: `${name2.trim()} \u0645\u0646 \u0627\u0644\u0648\u0627\u0644\u062F\u064A\u0646`
-      });
+    const parentsNames = Array.isArray(lifestyle.parentsNames) ? lifestyle.parentsNames : [];
+    for (const name2 of parentsNames) {
+      if (name2 && typeof name2 === "string" && name2.trim()) {
+        knownPeople.push({
+          name: name2.trim(),
+          relationship: "\u0648\u0627\u0644\u062F/\u0648\u0627\u0644\u062F\u0629",
+          category: "\u0627\u0644\u0639\u0627\u0626\u0644\u0629",
+          subCategory: `${name2.trim()} \u0645\u0646 \u0627\u0644\u0648\u0627\u0644\u062F\u064A\u0646`
+        });
+      }
     }
-  }
-  const petNames = Array.isArray(lifestyle.petNames) ? lifestyle.petNames : [];
-  for (const name2 of petNames) {
-    if (name2 && typeof name2 === "string" && name2.trim()) {
-      knownPeople.push({
-        name: name2.trim(),
-        relationship: "\u062D\u064A\u0648\u0627\u0646 \u0623\u0644\u064A\u0641",
-        category: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A",
-        subCategory: "\u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u062D\u064A\u0648\u0627\u0646\u0627\u062A"
-      });
+    const petNames = Array.isArray(lifestyle.petNames) ? lifestyle.petNames : [];
+    for (const name2 of petNames) {
+      if (name2 && typeof name2 === "string" && name2.trim()) {
+        knownPeople.push({
+          name: name2.trim(),
+          relationship: "\u062D\u064A\u0648\u0627\u0646 \u0623\u0644\u064A\u0641",
+          category: "\u0645\u062A\u0646\u0648\u0639\u0627\u062A",
+          subCategory: "\u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u062D\u064A\u0648\u0627\u0646\u0627\u062A"
+        });
+      }
     }
-  }
-  const dynamicContacts = Array.isArray(lifestyle.dynamicContacts) ? lifestyle.dynamicContacts : [];
-  for (const contact of dynamicContacts) {
-    if (contact && typeof contact === "object" && contact.name) {
-      const rawRel = contact.rawRelationship || contact.relationship || "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641";
-      const rel = typeof rawRel === "string" ? rawRel.trim() : "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641";
-      const normalized = normalizeRelationship(rel);
-      const name2 = contact.name.trim();
-      const suffix = getRelationshipSuffix(normalized.normalized);
-      const subCat = rel && rel !== "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641" && normalized.category !== "\u062A\u062D\u0648\u064A\u0644\u0627\u062A" ? `${name2} ${suffix}` : name2;
-      knownPeople.push({
-        name: name2,
-        relationship: normalized.normalized || rel,
-        category: normalized.category,
-        subCategory: subCat,
-        isSilenced: contact.isSilenced === true
-      });
+    const dynamicContacts = Array.isArray(lifestyle.dynamicContacts) ? lifestyle.dynamicContacts : [];
+    for (const contact of dynamicContacts) {
+      if (contact && typeof contact === "object" && contact.name) {
+        const rawRel = contact.rawRelationship || contact.relationship || "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641";
+        const rel = typeof rawRel === "string" ? rawRel.trim() : "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641";
+        const normalized = normalizeRelationship(rel);
+        const name2 = contact.name.trim();
+        const suffix = getRelationshipSuffix(normalized.normalized);
+        const subCat = rel && rel !== "\u0634\u062E\u0635 \u0645\u0639\u0631\u0648\u0641" && normalized.category !== "\u062A\u062D\u0648\u064A\u0644\u0627\u062A" ? `${name2} ${suffix}` : name2;
+        knownPeople.push({
+          name: name2,
+          relationship: normalized.normalized || rel,
+          category: normalized.category,
+          subCategory: subCat,
+          isSilenced: contact.isSilenced === true
+        });
+      }
     }
   }
   const subscriptions = Array.isArray(lifestyle.subscriptions) ? lifestyle.subscriptions : [];
@@ -177827,7 +178232,7 @@ async function assertAiAbuseGuard(user, channel) {
   const limit = BURST_LIMIT_PER_MINUTE[plan];
   const burst = await countBurstAiEvents(user, channel);
   if (burst >= limit) {
-    throw new TRPCError2({
+    throw new TRPCError({
       code: "TOO_MANY_REQUESTS",
       message: "\u0637\u0644\u0628\u0627\u062A \u0630\u0643\u0627\u0621 \u0627\u0635\u0637\u0646\u0627\u0639\u064A \u0633\u0631\u064A\u0639\u0629 \u062C\u062F\u0627\u064B. \u0627\u0646\u062A\u0638\u0631 \u062F\u0642\u064A\u0642\u0629 \u0648\u062D\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062E\u0631\u0649."
     });
@@ -177858,21 +178263,21 @@ async function assertAiBudget(user, channel, estimatedInputTokens = 0, cfg) {
   await assertAiAbuseGuard(user, channel);
   const budget2 = await getAiBudget(user, channel, cfg);
   if (budget2.limit === 0 || budget2.perRequestMax === 0) {
-    throw new TRPCError2({
+    throw new TRPCError({
       code: "FORBIDDEN",
       message: "\u0647\u0630\u0647 \u0627\u0644\u0645\u064A\u0632\u0629 \u063A\u064A\u0631 \u0645\u0641\u0639\u0644\u0629 \u0641\u064A \u062E\u0637\u062A\u0643 \u0627\u0644\u062D\u0627\u0644\u064A\u0629."
     });
   }
   const hardCap = HARD_REQUEST_TOKEN_CAP[budget2.plan][channel];
   if (estimatedInputTokens > hardCap) {
-    throw new TRPCError2({
+    throw new TRPCError({
       code: "BAD_REQUEST",
       message: "\u062D\u062C\u0645 \u0627\u0644\u0637\u0644\u0628 \u0643\u0628\u064A\u0631 \u062C\u062F\u0627\u064B. \u0642\u0644\u0651\u0644 \u0627\u0644\u0646\u0635 \u0623\u0648 \u0627\u0644\u0635\u0648\u0631\u0629 \u0648\u062D\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062E\u0631\u0649."
     });
   }
   if (budget2.remaining <= 0 || estimatedInputTokens > budget2.remaining) {
     const upgradeTo = budget2.plan === "free" ? "Pro" : "Ultra";
-    throw new TRPCError2({
+    throw new TRPCError({
       code: "FORBIDDEN",
       message: `\u0627\u0633\u062A\u0647\u0644\u0643\u062A \u062D\u062F \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u0627\u0644\u0645\u062A\u0627\u062D (${budget2.limit.toLocaleString()} \u062A\u0648\u0643\u0646). \u0627\u0644\u062A\u0631\u0642\u064A\u0629 \u0625\u0644\u0649 ${upgradeTo} \u062A\u0641\u062A\u062D \u062D\u062F\u064B\u0627 \u0623\u0639\u0644\u0649.`
     });
@@ -178581,6 +178986,10 @@ function goalTargetAmountFromQuery(query) {
   }
   return amount;
 }
+function mayReferencePerson(intent) {
+  const query = intent.slots.query ?? "";
+  return /(?:\b(?:على|ل|مع)\s+[\p{L}\u0600-\u06FF]{2,}|ماما|بابا|أخويا|أختي|صاحبي|صاحبتي|friend|with|for)/iu.test(query);
+}
 function compileDataNeeds(intent) {
   const needs = [];
   const add3 = (kind, priority, reason, scope = {}, maxRows) => {
@@ -178601,6 +179010,15 @@ function compileDataNeeds(intent) {
         );
       } else {
         add3("finance.summary", "hot", "small_finance_question_needs_only_summary", { period }, 1);
+      }
+      if (mayReferencePerson(intent)) {
+        add3(
+          "finance.person_total",
+          "hot",
+          "person_spending_question_needs_canonical_contact_lookup",
+          { period, personQuery: intent.slots.query },
+          1
+        );
       }
       if (intent.slots.needsEvidence) {
         add3(
@@ -178627,6 +179045,13 @@ function compileDataNeeds(intent) {
       const isCompositeDrivers = intent.reason === "composite_comparison_drivers_match";
       const isBusiness = intent.reason === "business_cashflow_match";
       if (intent.reason === "classification_explanation_match") {
+        add3(
+          "finance.classification_trace",
+          "hot",
+          "exact_classification_question_needs_saved_decision_trace",
+          { period, query: intent.slots.query, transactionTypes: ["expense"] },
+          1
+        );
         add3(
           "finance.transactions",
           "hot",
@@ -178920,6 +179345,12 @@ function isClassificationExplanation(text2) {
   const hasCalculatedClassificationLanguage = hasAny2(text2, ["\u0627\u062A\u062D\u0633\u0628", "\u0645\u062D\u0633\u0648\u0628"]) && (hasCategoryChoice || hasDirectClassificationLanguage);
   return categories.length > 0 && (hasDirectClassificationLanguage || hasCalculatedClassificationLanguage) || hasCategoryChoice;
 }
+function asksForCategoryBreakdown(text2) {
+  const mentionsCategories = hasAny2(text2, ["\u0641\u0626\u0647", "\u0641\u0626\u0627\u062A", "\u062A\u0635\u0646\u064A\u0641", "\u062A\u0635\u0646\u064A\u0641\u0627\u062A", "\u0628\u0646\u062F", "\u0628\u0646\u0648\u062F", "\u062A\u0642\u0633\u064A\u0645", "\u062A\u0648\u0632\u064A\u0639"]);
+  const asksForList = hasAny2(text2, ["\u0627\u064A\u0647", "\u0627\u064A", "\u0645\u0627 \u0647\u064A", "\u0648\u0631\u064A\u0646\u064A", "\u0627\u0639\u0631\u0636", "\u0642\u0627\u0626\u0645\u0647", "\u0642\u0627\u0626\u0645\u0629", "\u0643\u0644", "\u0627\u0639\u0644\u0649", "\u0627\u0643\u062B\u0631", "\u062A\u0631\u062A\u064A\u0628", "\u062A\u0642\u0633\u064A\u0645", "\u062A\u0648\u0632\u064A\u0639"]);
+  const asksForExplanation = hasAny2(text2, ["\u0644\u064A\u0647", "\u0633\u0628\u0628", "\u0627\u062A\u0635\u0646\u0641", "\u0645\u0635\u0646\u0641", "\u063A\u0644\u0637", "\u0635\u062D"]);
+  return mentionsCategories && asksForList && !asksForExplanation;
+}
 function lastMentionedCategory(text2, categories = detectCategories(text2)) {
   let best;
   const aliasesByCategory = {
@@ -179019,14 +179450,14 @@ function routeIntent(message) {
   const hasSiteHelp = hasAny2(text2, PATTERNS.siteHelp);
   const asksHowTo = hasAny2(text2, ["\u0627\u0632\u0627\u064A", "\u0643\u064A\u0641", "\u0634\u0631\u062D", "\u0637\u0631\u064A\u0642\u0629", "\u062E\u0637\u0648\u0627\u062A", "how to"]) || /[؟?]/.test(message);
   const directSiteAction = hasAction && hasSiteHelp && !asksHowTo;
-  const hasAmount = /\d|[٠-٩۰-۹]/.test(text2);
+  const hasAmount2 = /\d|[٠-٩۰-۹]/.test(text2);
   const asksAmount = /(كام|كم|قد ايه|اجمالي|مجموع|ملخص)/i.test(text2);
   const asksWhy = /(ليه|لماذا|السبب|سبب|عشان|عشان كده|ايه السبب)/i.test(text2);
   const asksPlan = /(خطة|خطه|خطط|نظم|اعمل ايه|أعمل ايه|اقترح|نصح|نصحنى)/i.test(text2);
   const isExplicitComparison = hasAny2(text2, ["\u0642\u0627\u0631\u0646", "\u0645\u0642\u0627\u0631\u0646\u0647", "\u0641\u0631\u0642", "\u0645\u062E\u062A\u0644\u0641"]);
   const compositeComparisonWhy = hasFinance && hasAnalysis && asksWhy && isExplicitComparison;
   const compositeBusiness = hasFinance && /(مشروع|بيزنس|بزنس|business|ارباح|أرباح|صافي|net|تكاليف|كاش فلو|cashflow)/i.test(text2);
-  const explicitExpenseCapture = hasAmount && !asksAmount && (hasAny2(text2, ["\u0633\u062C\u0644", "\u0627\u062D\u0641\u0638", "\u0627\u0636\u0641", "\u0636\u064A\u0641", "\u0633\u062C\u0644 \u0645\u0635\u0631\u0648\u0641", "\u0627\u0634\u062A\u0631\u064A\u062A"]) || /(دفعت|صرفت)\s+.*(\d|[٠-٩۰-۹])/i.test(text2));
+  const explicitExpenseCapture = hasAmount2 && !asksAmount && (hasAny2(text2, ["\u0633\u062C\u0644", "\u0627\u062D\u0641\u0638", "\u0627\u0636\u0641", "\u0636\u064A\u0641", "\u0633\u062C\u0644 \u0645\u0635\u0631\u0648\u0641", "\u0627\u0634\u062A\u0631\u064A\u062A"]) || /(دفعت|صرفت)\s+.*(\d|[٠-٩۰-۹])/i.test(text2));
   const startsWithMemoryRecall = /^(فاكر|تفتكر|افتكر|remember)(\s|$)/i.test(text2);
   const referencesOldConversation = hasAny2(text2, [
     "\u0627\u062A\u0643\u0644\u0645\u0646\u0627",
@@ -179082,6 +179513,9 @@ function routeIntent(message) {
       text2,
       ["finance_query"]
     );
+  }
+  if (hasFinance && asksForCategoryBreakdown(text2)) {
+    return baseIntent("finance_analysis", 0.86, "category_breakdown_match", text2, ["finance_query"]);
   }
   if (hasAdvice || hasLifestyle && (hasAnalysis || hasAny2(text2, ["\u062E\u0637\u0629", "\u0627\u0642\u0644\u0644", "\u0646\u0638\u0645", "\u0638\u0628\u0637"]))) {
     return baseIntent(
@@ -179218,6 +179652,76 @@ var init_intent_router = __esm({
   }
 });
 
+// api/services/ai-kernel/agent-planner.ts
+function hasAmount(text2) {
+  return /\d|[٠-٩۰-۹]/.test(text2);
+}
+function asksForSynthesis(intent) {
+  const query = intent.slots.query ?? "";
+  return intent.kind === "advice_request" || intent.kind === "goal_planning" || /(?:ليه|لماذا|السبب|خطة|خطط|اقترح|اعمل ايه|أعمل ايه|نصحني|نصيحة|حلل)/i.test(query) || [
+    "composite_comparison_drivers_match",
+    "business_cashflow_match",
+    "goal_with_plan_composite_match",
+    "finance_planning_composite_match"
+  ].includes(intent.reason);
+}
+function clarificationFor(intent) {
+  const query = intent.slots.query ?? "";
+  if (intent.kind === "unknown") {
+    return {
+      question: "\u062A\u062D\u0628 \u0623\u0639\u0631\u0641\u0643 \u0625\u064A\u0647 \u0628\u0627\u0644\u0638\u0628\u0637: \u0645\u0635\u0627\u0631\u064A\u0641\u0643\u060C \u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0634\u0647\u0631\u060C \u0647\u062F\u0641\u060C \u0648\u0644\u0627 \u0637\u0631\u064A\u0642\u0629 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0627\u0644\u062A\u0637\u0628\u064A\u0642\u061F",
+      quickReplies: ["\u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u0646\u0647\u0627\u0631\u062F\u0647", "\u062D\u0644\u0644 \u0627\u0644\u0634\u0647\u0631", "\u0627\u0639\u0645\u0644 \u0647\u062F\u0641", "\u0645\u0633\u0627\u0639\u062F\u0629 \u0641\u064A \u0627\u0644\u062A\u0637\u0628\u064A\u0642"],
+      missing: ["intent"]
+    };
+  }
+  if (intent.kind === "expense_capture" && !hasAmount(query)) {
+    return {
+      question: "\u062A\u0645\u0627\u0645\u060C \u0627\u0643\u062A\u0628\u0644\u064A \u0627\u0644\u0645\u0628\u0644\u063A \u0648\u0627\u062A\u0635\u0631\u0641 \u0641\u064A \u0625\u064A\u0647 \u0623\u0648 \u0644\u0645\u064A\u0646 \u0639\u0634\u0627\u0646 \u0623\u062C\u0647\u0632 \u0627\u0644\u0639\u0645\u0644\u064A\u0629 \u0644\u0644\u0645\u0631\u0627\u062C\u0639\u0629.",
+      quickReplies: ["\u062F\u0641\u0639\u062A \u0662\u0660\u0660 \u0645\u0648\u0627\u0635\u0644\u0627\u062A", "\u0627\u0634\u062A\u0631\u064A\u062A \u0623\u0643\u0644 \u0628\u0640\u0663\u0665\u0660", "\u062D\u0648\u0644\u062A \u0665\u0660\u0660 \u0644\u0635\u0627\u062D\u0628\u064A"],
+      missing: ["amount", "transaction_context"]
+    };
+  }
+  if (intent.kind === "goal_planning" && intent.slots.actionName === "goal.create" && !hasAmount(query)) {
+    return {
+      question: "\u0639\u0627\u064A\u0632 \u062A\u0648\u0635\u0644 \u0644\u0643\u0627\u0645\u060C \u0648\u0641\u064A \u062E\u0644\u0627\u0644 \u0642\u062F \u0625\u064A\u0647\u061F",
+      quickReplies: ["\u0662\u0660 \u0623\u0644\u0641 \u062E\u0644\u0627\u0644 \u0666 \u0634\u0647\u0648\u0631", "\u0661\u0660\u0660 \u0623\u0644\u0641 \u0641\u064A \u0633\u0646\u0629"],
+      missing: ["target_amount", "target_date"]
+    };
+  }
+  return void 0;
+}
+function planAgentTurn(message) {
+  const intent = routeIntent(message);
+  const clarification = clarificationFor(intent);
+  if (clarification) {
+    return {
+      mode: "clarification",
+      intent,
+      dataNeeds: [],
+      historyMessages: 0,
+      maxProviderCalls: 0,
+      clarification,
+      rationale: "one_required_slot_is_missing"
+    };
+  }
+  const mode = asksForSynthesis(intent) ? "synthesis" : "deterministic";
+  const historyMessages = intent.kind === "memory_question" ? 4 : intent.kind === "advice_request" || intent.kind === "goal_planning" ? 2 : intent.kind === "action_request" ? 1 : 0;
+  return {
+    mode,
+    intent,
+    dataNeeds: compileDataNeeds(intent),
+    historyMessages,
+    maxProviderCalls: mode === "synthesis" ? 1 : 0,
+    rationale: mode === "synthesis" ? "compact_fact_synthesis_required" : "facts_are_sufficient_or_no_provider_needed"
+  };
+}
+var init_agent_planner = __esm({
+  "api/services/ai-kernel/agent-planner.ts"() {
+    init_data_need_compiler();
+    init_intent_router();
+  }
+});
+
 // api/services/ai-kernel/retrieval-policy.ts
 function embeddingApiStatusFor(dataNeeds, cacheHits) {
   const needs = new Set(dataNeeds.map((need) => need.kind));
@@ -179230,6 +179734,9 @@ function embeddingApiStatusFor(dataNeeds, cacheHits) {
   }
   if (embeddingHits.includes("embedding:disabled")) {
     return "embedding_disabled";
+  }
+  if (embeddingHits.includes("embedding:skipped_lexical_hit")) {
+    return "skipped";
   }
   if (embeddingHits.includes("embedding:query_cache_hit") && embeddingHits.includes("embedding:fireworks")) {
     return "query_embedding_cache_hit";
@@ -179263,6 +179770,12 @@ function retrievalPolicyFor(intentKind, dataNeeds, cacheHits) {
       embedding: "fireworks_qwen",
       reason: "memory_search_semantic_retrieval",
       vectorRows: Number.isFinite(rowCount) ? rowCount : void 0
+    };
+  }
+  if (embeddingHits.includes("embedding:skipped_lexical_hit")) {
+    return {
+      embedding: "skipped",
+      reason: "strong_lexical_memory_match_avoided_embedding"
     };
   }
   if (cacheHits.includes("site_guide:static_256")) {
@@ -180233,6 +180746,15 @@ function focusSpecificCandidates(query, items) {
   const focused = scored.filter((entry) => entry.specificScore > 0).map((entry) => entry.item);
   return focused.length > 0 ? focused : items;
 }
+function hasStrongLexicalMemoryMatch(query, items) {
+  const queryTokens = keywordTokens(query);
+  if (queryTokens.size === 0) return false;
+  return items.some((item) => {
+    const lexical = lexicalScore(query, item.content);
+    const specific = specificTokenScore(query, item.content);
+    return lexical >= 0.42 && specific >= 0;
+  });
+}
 function selectMemoryCandidatesForFacts(query, input, limit) {
   const candidatePool = [...input.memories, ...input.capsules, ...input.actions].sort(
     (a, b) => b.score - a.score
@@ -180304,7 +180826,7 @@ async function loadVectorMemories(ctx, scoringQuery, limit) {
   };
 }
 async function computeMemoryContext(ctx, limit, candidateLimit, scoringQuery, reformulated) {
-  const [summaryRows, memoryRows, actionRows, vectorResult] = await Promise.all([
+  const [summaryRows, memoryRows, actionRows] = await Promise.all([
     db.select().from(aiConversationSummaries).where(and(eq(aiConversationSummaries.userId, ctx.userId), eq(aiConversationSummaries.userType, ctx.userType))).orderBy(desc(aiConversationSummaries.updatedAt)).limit(10),
     db.select().from(aiMemoryItems).where(
       and(
@@ -180313,12 +180835,7 @@ async function computeMemoryContext(ctx, limit, candidateLimit, scoringQuery, re
         eq(aiMemoryItems.status, "active")
       )
     ).orderBy(desc(aiMemoryItems.updatedAt)).limit(80),
-    db.select().from(aiActionMemory).where(and(eq(aiActionMemory.userId, ctx.userId), eq(aiActionMemory.userType, ctx.userType))).orderBy(desc(aiActionMemory.updatedAt)).limit(20),
-    loadVectorMemories(ctx, scoringQuery, candidateLimit).catch((error48) => ({
-      items: [],
-      cacheHits: [],
-      errors: [`embedding_retrieval:${error48 instanceof Error ? error48.message : String(error48)}`]
-    }))
+    db.select().from(aiActionMemory).where(and(eq(aiActionMemory.userId, ctx.userId), eq(aiActionMemory.userType, ctx.userType))).orderBy(desc(aiActionMemory.updatedAt)).limit(20)
   ]);
   const capsules = scoreAndSort(
     scoringQuery,
@@ -180348,6 +180865,11 @@ async function computeMemoryContext(ctx, limit, candidateLimit, scoringQuery, re
     })),
     candidateLimit
   );
+  const vectorResult = hasStrongLexicalMemoryMatch(ctx.query, lexicalMemories) ? { items: [], cacheHits: ["embedding:skipped_lexical_hit"], errors: [] } : await loadVectorMemories(ctx, scoringQuery, candidateLimit).catch((error48) => ({
+    items: [],
+    cacheHits: [],
+    errors: [`embedding_retrieval:${error48 instanceof Error ? error48.message : String(error48)}`]
+  }));
   const memories = mergeMemoryCandidates([vectorResult.items, lexicalMemories], candidateLimit);
   const actions = scoreAndSort(
     scoringQuery,
@@ -180733,7 +181255,7 @@ async function writeConversationMemory(input) {
       )
     ).limit(1);
     if (stored?.id) {
-      await maybeStoreEmbedding(stored.id, input, memory.content);
+      void maybeStoreEmbedding(stored.id, input, memory.content);
     }
   }
   const previousCapsule = typeof existing?.capsule === "string" ? existing.capsule : "";
@@ -181220,40 +181742,48 @@ async function resolveShadowFacts(request, dataNeeds) {
   if (!shouldResolveDataNeeds(request)) {
     return { facts: [], artifacts: [], errors: [], cacheHits: [] };
   }
-  try {
-    const { resolveKernelDataNeeds: resolveKernelDataNeeds2 } = await Promise.resolve().then(() => (init_finance_semantic_layer(), finance_semantic_layer_exports));
-    const finance = await resolveKernelDataNeeds2(
-      {
-        userId: request.userId,
-        userType: request.userType,
-        salaryDay: metadataNumber2(request.metadata?.salaryDay)
-      },
-      dataNeeds
-    );
-    const { resolveMemoryDataNeeds: resolveMemoryDataNeeds2 } = await Promise.resolve().then(() => (init_ai_memory(), ai_memory_exports));
-    const memory = await resolveMemoryDataNeeds2(
-      {
-        userId: request.userId,
-        userType: request.userType
-      },
-      dataNeeds
-    );
-    const { resolveSiteGuideDataNeeds: resolveSiteGuideDataNeeds2 } = await Promise.resolve().then(() => (init_site_guide(), site_guide_exports));
-    const siteGuide = await resolveSiteGuideDataNeeds2(dataNeeds);
-    return {
-      facts: [...finance.facts, ...memory.facts, ...siteGuide.facts],
-      artifacts: [...finance.artifacts, ...memory.artifacts, ...siteGuide.artifacts],
-      errors: [...finance.errors, ...memory.errors, ...siteGuide.errors],
-      cacheHits: [...finance.cacheHits, ...memory.cacheHits, ...siteGuide.cacheHits]
-    };
-  } catch (error48) {
-    return {
-      facts: [],
-      artifacts: [],
-      errors: [error48 instanceof Error ? error48.message : String(error48)],
-      cacheHits: []
-    };
-  }
+  const empty = { facts: [], artifacts: [], errors: [], cacheHits: [] };
+  const financeKinds = /* @__PURE__ */ new Set([
+    "finance.summary",
+    "finance.category_total",
+    "finance.person_total",
+    "finance.classification_trace",
+    "finance.breakdown",
+    "finance.transactions",
+    "finance.transaction_lookup",
+    "finance.period_comparison",
+    "finance.comparison_drivers",
+    "finance.category_inclusion",
+    "finance.business_cashflow",
+    "finance.goal_progress",
+    "goal.feasibility",
+    "wallet.summary",
+    "chart.data",
+    "profile.snapshot",
+    "goals.active"
+  ]);
+  const needsFinance = dataNeeds.some((need) => financeKinds.has(need.kind));
+  const needsMemory = dataNeeds.some((need) => need.kind === "memory.search");
+  const needsSiteGuide = dataNeeds.some((need) => need.kind === "site_guide.search");
+  const failOpen = (source, error48) => ({
+    ...empty,
+    errors: [`${source}:${error48 instanceof Error ? error48.message : String(error48)}`]
+  });
+  const [finance, memory, siteGuide] = await Promise.all([
+    needsFinance ? Promise.resolve().then(() => (init_finance_semantic_layer(), finance_semantic_layer_exports)).then(({ resolveKernelDataNeeds: resolveKernelDataNeeds2 }) => resolveKernelDataNeeds2({
+      userId: request.userId,
+      userType: request.userType,
+      salaryDay: metadataNumber2(request.metadata?.salaryDay)
+    }, dataNeeds)).catch((error48) => failOpen("finance", error48)) : Promise.resolve(empty),
+    needsMemory ? Promise.resolve().then(() => (init_ai_memory(), ai_memory_exports)).then(({ resolveMemoryDataNeeds: resolveMemoryDataNeeds2 }) => resolveMemoryDataNeeds2({ userId: request.userId, userType: request.userType }, dataNeeds)).catch((error48) => failOpen("memory", error48)) : Promise.resolve(empty),
+    needsSiteGuide ? Promise.resolve().then(() => (init_site_guide(), site_guide_exports)).then(({ resolveSiteGuideDataNeeds: resolveSiteGuideDataNeeds2 }) => resolveSiteGuideDataNeeds2(dataNeeds)).catch((error48) => failOpen("site_guide", error48)) : Promise.resolve(empty)
+  ]);
+  return {
+    facts: [...finance.facts, ...memory.facts, ...siteGuide.facts],
+    artifacts: [...finance.artifacts, ...memory.artifacts, ...siteGuide.artifacts],
+    errors: [...finance.errors, ...memory.errors, ...siteGuide.errors],
+    cacheHits: [...finance.cacheHits, ...memory.cacheHits, ...siteGuide.cacheHits]
+  };
 }
 function materialMissingNumbers(missing) {
   return (missing ?? []).filter((item) => {
@@ -181583,6 +182113,19 @@ function categoryFromTransactionFact(fact3) {
 }
 function buildClassificationExplanationContent(intent, facts) {
   if (!isClassificationExplanationIntent(intent)) return void 0;
+  const exactCategory = textFact(facts, "stored_category", "finance.classification_trace");
+  if (exactCategory) {
+    const description = textFact(facts, "description", "finance.classification_trace") ?? "\u0627\u0644\u0639\u0645\u0644\u064A\u0629 \u062F\u064A";
+    const traceAvailable = sourceFacts(facts, "finance.classification_trace").find((fact3) => fact3.label === "trace_available")?.value === true;
+    const parsedBy = textFact(facts, "parsed_by", "finance.classification_trace");
+    const confidence = numericFact(facts, "confidence", "finance.classification_trace");
+    const decision = textFact(facts, "decision", "finance.classification_trace");
+    return [
+      `\u0639\u0645\u0644\u064A\u0629 \xAB${description}\xBB \u0645\u062A\u0633\u062C\u0644\u0629 \u062A\u062D\u062A ${displayCategoryName(exactCategory)}.`,
+      traceAvailable ? `\u0627\u062A\u062E\u0630\u0646\u0627 \u0627\u0644\u0642\u0631\u0627\u0631 \u0645\u0646 \u0645\u0633\u0627\u0631 ${parsedBy ?? "\u0627\u0644\u062A\u0635\u0646\u064A\u0641"}${confidence !== void 0 ? ` \u0628\u062F\u0631\u062C\u0629 \u062B\u0642\u0629 ${Math.round(confidence)}%` : ""}${decision ? `\u060C \u0648\u062D\u0627\u0644\u062A\u0647\u0627 ${decision}` : ""}.` : "\u0627\u0644\u0639\u0645\u0644\u064A\u0629 \u062F\u064A \u0642\u062F\u064A\u0645\u0629 \u0623\u0648 \u0627\u062A\u062D\u0641\u0638\u062A \u0628\u062F\u0648\u0646 \u0623\u062B\u0631 \u0642\u0631\u0627\u0631 \u0645\u0631\u062A\u0628\u0637\u060C \u0641\u0645\u0634 \u0647\u0627\u0641\u062A\u0631\u0636 \u0633\u0628\u0628\u064B\u0627 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F \u0641\u064A \u0633\u062C\u0644\u0643.",
+      "\u0644\u0648 \u0627\u0644\u062A\u0635\u0646\u064A\u0641 \u0645\u0634 \u0645\u0646\u0627\u0633\u0628\u060C \u0623\u0642\u062F\u0631 \u0623\u062C\u0647\u0632 \u062A\u0639\u062F\u064A\u0644 \u0644\u0644\u0645\u0631\u0627\u062C\u0639\u0629\u061B \u0627\u0644\u062A\u063A\u064A\u064A\u0631 \u0644\u0627 \u064A\u062A\u0645 \u0625\u0644\u0627 \u0628\u0639\u062F \u062A\u0623\u0643\u064A\u062F\u0643."
+    ].join("\n");
+  }
   const categories = [
     ...new Set([...intent.slots.categories ?? [], intent.slots.category].filter(Boolean))
   ];
@@ -181783,6 +182326,17 @@ function buildDeterministicContent(intent, facts, artifacts, proposedActions = [
         walletLines.length ? walletLines.join("\n") : ""
       ].filter(Boolean).join("\n");
     }
+    const personTotal = numericFact(facts, "person_total_expense", "finance.person_total");
+    if (personTotal !== void 0) {
+      const personName = textFact(facts, "person_name", "finance.person_total") ?? "\u0627\u0644\u0634\u062E\u0635 \u062F\u0647";
+      const relation = textFact(facts, "person_relation", "finance.person_total");
+      const period = textFact(facts, "period", "finance.person_total") ?? "\u0627\u0644\u0641\u062A\u0631\u0629 \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629";
+      const count4 = numericFact(facts, "transaction_count", "finance.person_total") ?? 0;
+      return [
+        `\u0641\u064A ${period}\u060C \u0635\u0631\u0641\u0643 \u0627\u0644\u0645\u0633\u062C\u0651\u0644 \u0645\u0639 ${personName}${relation ? ` (${relation})` : ""} \u0647\u0648 ${money2(personTotal)}${countText(count4)}.`,
+        count4 === 0 ? "\u0645\u0647\u0645: \u0627\u0644\u0631\u0642\u0645 \u062F\u0647 \u0645\u0628\u0646\u064A \u0639\u0644\u0649 \u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A \u0627\u0644\u0645\u0631\u0628\u0648\u0637\u0629 \u0628\u0627\u0644\u0634\u062E\u0635 \u062F\u0647\u061B \u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A \u0627\u0644\u0642\u062F\u064A\u0645\u0629 \u063A\u064A\u0631 \u0627\u0644\u0645\u0631\u0628\u0648\u0637\u0629 \u0645\u0634 \u062F\u0627\u062E\u0644\u0629 \u0641\u064A\u0647." : "\u0627\u0644\u0631\u0642\u0645 \u062F\u0647 \u0645\u0628\u0646\u064A \u0639\u0644\u0649 \u0627\u0644\u0639\u0645\u0644\u064A\u0627\u062A \u0627\u0644\u0645\u0631\u0628\u0648\u0637\u0629 \u0628\u0627\u0644\u0634\u062E\u0635 \u0641\u064A \u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u0623\u0634\u062E\u0627\u0635 \u0648\u0627\u0644\u0639\u0644\u0627\u0642\u0627\u062A."
+      ].join("\n");
+    }
     const categoryTotal = numericFact(facts, "category_total_expense", "finance.category_total");
     if (categoryTotal !== void 0) {
       const category = displayCategoryName(
@@ -181823,9 +182377,10 @@ ${evidenceLines.join("\n")}` : ""
       const previousPeriod = textFact(facts, "previous_period", "finance.period_comparison") ?? "\u0627\u0644\u0641\u062A\u0631\u0629 \u0627\u0644\u0633\u0627\u0628\u0642\u0629";
       const currentNet = numericFact(facts, "current_net_flow", "finance.period_comparison") ?? 0;
       const previousNet = numericFact(facts, "previous_net_flow", "finance.period_comparison") ?? 0;
+      const comparisonExplanation = previousExpense === 0 && currentExpense > 0 ? `\u0641\u064A ${previousPeriod} \u0645\u0641\u064A\u0634 \u0645\u0635\u0631\u0648\u0641\u0627\u062A \u0645\u0633\u062C\u0644\u0629\u060C \u0641\u0645\u064A\u0646\u0641\u0639\u0634 \u0646\u062D\u0633\u0628 \u0646\u0633\u0628\u0629 \u0632\u064A\u0627\u062F\u0629 \u0639\u0627\u062F\u0644\u0629. \u0627\u0644\u0641\u0631\u0642 \u0627\u0644\u0641\u0639\u0644\u064A ${money2(Math.abs(difference))}.` : currentExpense === 0 && previousExpense === 0 ? "\u0645\u0641\u064A\u0634 \u0645\u0635\u0631\u0648\u0641\u0627\u062A \u0645\u0633\u062C\u0644\u0629 \u0641\u064A \u0627\u0644\u0641\u062A\u0631\u062A\u064A\u0646\u060C \u0641\u0645\u0634 \u0647\u064A\u0646\u0641\u0639 \u0646\u0633\u062A\u0646\u062A\u062C \u0627\u062A\u062C\u0627\u0647 \u0625\u0646\u0641\u0627\u0642 \u0645\u0646 \u063A\u064A\u0631 \u0628\u064A\u0627\u0646\u0627\u062A." : `\u0627\u0644\u0641\u0631\u0642 ${money2(Math.abs(difference))} (${percentText(percent)}).`;
       return [
         `\u0645\u0642\u0627\u0631\u0646\u0629 \u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0627\u062A: ${currentPeriod} = ${money2(currentExpense)}\u060C \u0648${previousPeriod} = ${money2(previousExpense)}.`,
-        `\u0627\u0644\u0641\u0631\u0642 ${money2(Math.abs(difference))} (${percentText(percent)}).`,
+        comparisonExplanation,
         `\u0627\u0644\u0635\u0627\u0641\u064A: ${currentPeriod} ${money2(currentNet)} \u0645\u0642\u0627\u0628\u0644 ${money2(previousNet)} \u0641\u064A ${previousPeriod}.`
       ].join("\n");
     }
@@ -181969,38 +182524,54 @@ async function runAIKernelActive(request, config3) {
   const startedAt = Date.now();
   const traceId = request.requestId ?? createTraceId();
   try {
-    const intent = routeIntent(request.message);
-    const dataNeeds = compileDataNeeds(intent);
-    const contextPack = buildContextPack(request, intent, dataNeeds);
-    const resolved = await resolveShadowFacts(request, dataNeeds);
+    const plan = planAgentTurn(request.message);
+    const intent = plan.intent;
+    const dataNeeds = plan.dataNeeds;
+    const plannedRequest = {
+      ...request,
+      conversationHistory: plan.historyMessages > 0 ? (request.conversationHistory ?? []).slice(-plan.historyMessages) : []
+    };
+    const contextPack = buildContextPack(plannedRequest, intent, dataNeeds);
+    const resolved = await resolveShadowFacts(plannedRequest, dataNeeds);
     const cacheRuntime = getCacheRuntimeStatus();
     const proposedActions = proposedActionsFromFacts(intent, resolved.facts);
+    const clarificationArtifacts = plan.clarification ? [{
+      id: `clarification:${traceId}`,
+      type: "quick_replies",
+      title: "\u0633\u0624\u0627\u0644 \u0633\u0631\u064A\u0639",
+      payload: {
+        question: plan.clarification.question,
+        replies: plan.clarification.quickReplies,
+        missing: plan.clarification.missing
+      }
+    }] : [];
+    const allArtifacts = [...resolved.artifacts, ...clarificationArtifacts];
     const deterministicContent = buildDeterministicContent(
       intent,
       resolved.facts,
-      resolved.artifacts,
+      allArtifacts,
       proposedActions
     );
     const retrievalPolicy = retrievalPolicyFor(intent.kind, dataNeeds, resolved.cacheHits);
     const embeddingCalls = embeddingApiCallsFromCacheHits(resolved.cacheHits);
     const embeddingApiStatus = embeddingApiStatusFor(dataNeeds, resolved.cacheHits);
-    let content = deterministicContent;
-    let tokensUsed = contextPack.estimatedInputTokens + estimateTokens(content ?? "");
+    let content = plan.clarification?.question ?? deterministicContent;
+    let tokensUsed = 0;
     let model;
     let llmCalls = 0;
     let numericGuard;
     let responseQualityGuard;
-    if (shouldUseLLM(intent, deterministicContent) && config3.apiKey) {
+    if (plan.maxProviderCalls === 1 && shouldUseLLM(intent, deterministicContent) && config3.apiKey) {
       const maxOutputTokens = intent.kind === "advice_request" ? Math.min(220, config3.maxTokens ?? contextPack.tokenBudget.maxOutputTokens) : Math.min(config3.maxTokens ?? contextPack.tokenBudget.maxOutputTokens, contextPack.tokenBudget.maxOutputTokens);
       const llm = await callChatCompletionAPI(config3.baseUrl, config3.apiKey, {
         model: config3.model,
-        messages: buildActiveMessages(request, intent, resolved.facts, resolved.artifacts),
+        messages: buildActiveMessages(plannedRequest, intent, resolved.facts, allArtifacts),
         tool_choice: "none",
         max_tokens: maxOutputTokens,
         temperature: 0.35
       });
       content = llm.text?.trim() || deterministicContent || fallbackActiveContent(intent, resolved.facts);
-      tokensUsed = llm.tokensUsed || tokensUsed + estimateTokens(content);
+      tokensUsed = Number.isFinite(llm.tokensUsed) ? Math.max(0, llm.tokensUsed) : 0;
       model = llm.model;
       llmCalls = 1;
     }
@@ -182017,7 +182588,6 @@ async function runAIKernelActive(request, config3) {
           originalAccuracy: originalAccuracy.accuracy
         };
         content = safeContentAfterUnsupportedNumbers(intent, resolved.facts, blockedNumbers);
-        tokensUsed = contextPack.estimatedInputTokens + estimateTokens(content);
       }
     }
     const responseQualityReason = !numericGuard?.applied && llmCalls > 0 ? lowQualityLLMContentReason(intent, content) : void 0;
@@ -182027,7 +182597,6 @@ async function runAIKernelActive(request, config3) {
         reason: responseQualityReason
       };
       content = buildGroundedAdviceContent(intent, resolved.facts);
-      tokensUsed = contextPack.estimatedInputTokens + estimateTokens(content);
     }
     const risk = hallucinationRiskFor(content, resolved.facts, llmCalls);
     const recipe = determineRecipe(intent, resolved.facts);
@@ -182039,18 +182608,25 @@ async function runAIKernelActive(request, config3) {
       dataNeeds,
       contextPack,
       facts: resolved.facts,
-      artifacts: resolved.artifacts,
+      artifacts: allArtifacts,
       proposedActions,
       recipe,
-      model: model ?? config3.model,
+      model: model ?? "local-finance-kernel",
       tokensUsed,
       debug: {
         mode: "active",
+        plan: {
+          mode: plan.mode,
+          rationale: plan.rationale,
+          historyMessages: plan.historyMessages,
+          maxProviderCalls: plan.maxProviderCalls,
+          missing: plan.clarification?.missing ?? []
+        },
         deterministic: Boolean(deterministicContent),
         llmCalls,
         estimatedInputTokens: contextPack.estimatedInputTokens,
         resolvedFacts: resolved.facts.length,
-        resolvedArtifacts: resolved.artifacts.length,
+        resolvedArtifacts: allArtifacts.length,
         proposedActions: proposedActions.length,
         resolverErrors: resolved.errors,
         cacheHits: resolved.cacheHits,
@@ -182094,8 +182670,15 @@ async function runAIKernelActive(request, config3) {
         ...request.metadata,
         activeModel: model ?? config3.model,
         deterministic: Boolean(deterministicContent),
+        plan: {
+          mode: plan.mode,
+          rationale: plan.rationale,
+          historyMessages: plan.historyMessages,
+          maxProviderCalls: plan.maxProviderCalls,
+          missing: plan.clarification?.missing ?? []
+        },
         resolvedFacts: resolved.facts.length,
-        resolvedArtifacts: resolved.artifacts.length,
+        resolvedArtifacts: allArtifacts.length,
         resolverErrors: resolved.errors,
         cacheRuntime,
         retrievalPolicy,
@@ -182154,114 +182737,6 @@ async function runAIKernelActive(request, config3) {
     return response;
   }
 }
-async function runAIKernelShadow(request) {
-  const startedAt = Date.now();
-  const traceId = request.requestId ?? createTraceId();
-  try {
-    const intent = routeIntent(request.message);
-    const dataNeeds = compileDataNeeds(intent);
-    const contextPack = buildContextPack(request, intent, dataNeeds);
-    const resolved = await resolveShadowFacts(request, dataNeeds);
-    const cacheRuntime = getCacheRuntimeStatus();
-    const retrievalPolicy = retrievalPolicyFor(intent.kind, dataNeeds, resolved.cacheHits);
-    const embeddingCalls = embeddingApiCallsFromCacheHits(resolved.cacheHits);
-    const embeddingApiStatus = embeddingApiStatusFor(dataNeeds, resolved.cacheHits);
-    const response = normalizeAIResponse({
-      traceId,
-      channel: request.channel,
-      content: "",
-      intent,
-      dataNeeds,
-      contextPack,
-      facts: resolved.facts,
-      artifacts: resolved.artifacts,
-      debug: {
-        mode: "shadow",
-        legacyPath: request.metadata?.legacyPath,
-        estimatedInputTokens: contextPack.estimatedInputTokens,
-        resolvedFacts: resolved.facts.length,
-        resolvedArtifacts: resolved.artifacts.length,
-        resolverErrors: resolved.errors,
-        cacheHits: resolved.cacheHits,
-        embeddingCalls,
-        embeddingApiStatus,
-        retrievalPolicy,
-        cacheRuntime
-      }
-    });
-    logAITrace({
-      traceId,
-      mode: "shadow",
-      status: "success",
-      channel: request.channel,
-      userId: request.userId,
-      userType: request.userType,
-      userPlan: request.userPlan,
-      conversationId: request.conversationId,
-      intent,
-      dataNeeds,
-      contextPack,
-      cacheHits: resolved.cacheHits,
-      cost: {
-        estimatedInputTokens: contextPack.estimatedInputTokens,
-        estimatedOutputTokens: contextPack.tokenBudget.maxOutputTokens,
-        estimatedEmbeddingCalls: embeddingCalls,
-        llmCalls: 0
-      },
-      latencyMs: Date.now() - startedAt,
-      metadata: {
-        ...request.metadata,
-        resolvedFacts: resolved.facts.length,
-        resolvedArtifacts: resolved.artifacts.length,
-        resolverErrors: resolved.errors,
-        cacheRuntime,
-        retrievalPolicy,
-        embeddingApiStatus
-      }
-    });
-    return response;
-  } catch (error48) {
-    const intent = fallbackIntent(error48);
-    const dataNeeds = compileDataNeeds(intent);
-    const contextPack = buildContextPack(request, intent, dataNeeds);
-    const response = normalizeAIResponse({
-      traceId,
-      channel: request.channel,
-      content: "",
-      intent,
-      dataNeeds,
-      contextPack,
-      debug: {
-        mode: "shadow",
-        error: error48 instanceof Error ? error48.message : String(error48)
-      }
-    });
-    logAITrace({
-      traceId,
-      mode: "shadow",
-      status: "error",
-      channel: request.channel,
-      userId: request.userId,
-      userType: request.userType,
-      userPlan: request.userPlan,
-      conversationId: request.conversationId,
-      intent,
-      dataNeeds,
-      contextPack,
-      cacheHits: [],
-      cost: {
-        estimatedInputTokens: contextPack.estimatedInputTokens,
-        estimatedOutputTokens: 0,
-        estimatedEmbeddingCalls: 0,
-        llmCalls: 0
-      },
-      latencyMs: Date.now() - startedAt,
-      error: error48 instanceof Error ? error48.message : String(error48),
-      metadata: request.metadata
-    });
-    return response;
-  }
-}
 var MEMORY_SUBJECT_HINTS;
 var init_ai_kernel = __esm({
   "api/services/ai-kernel/index.ts"() {
@@ -182271,6 +182746,7 @@ var init_ai_kernel = __esm({
     init_ai_cost_policy();
     init_context_packer();
     init_data_need_compiler();
+    init_agent_planner();
     init_intent_router();
     init_retrieval_policy();
     init_response_normalizer();
@@ -182279,6 +182755,7 @@ var init_ai_kernel = __esm({
     init_types6();
     init_context_packer();
     init_data_need_compiler();
+    init_agent_planner();
     init_intent_router();
     init_retrieval_policy();
     init_response_normalizer();
@@ -184811,13 +185288,13 @@ async function resolveRoutingConfig(userPlan, tokensUsed, cfg) {
     return tokensUsed < to;
   });
   if (!matchedRange) {
-    throw new TRPCError2({
+    throw new TRPCError({
       code: "FORBIDDEN",
       message: `\u0627\u0633\u062A\u0647\u0644\u0643\u062A \u0631\u0635\u064A\u062F\u0643 \u0627\u0644\u0634\u0647\u0631\u064A \u0645\u0646 \u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A. \u064A\u062A\u062C\u062F\u062F \u062A\u0644\u0642\u0627\u0626\u064A\u0627\u064B \u0641\u064A \u0628\u062F\u0627\u064A\u0629 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062C\u0627\u064A.`
     });
   }
   if (matchedRange.action === "block") {
-    throw new TRPCError2({
+    throw new TRPCError({
       code: "FORBIDDEN",
       message: matchedRange.message || `\u0648\u0635\u0644\u062A \u0644\u0644\u062D\u062F \u0627\u0644\u0634\u0647\u0631\u064A. \u064A\u062A\u062C\u062F\u062F \u062A\u0644\u0642\u0627\u0626\u064A\u0627\u064B \u0641\u064A \u0628\u062F\u0627\u064A\u0629 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062C\u0627\u064A.`
     });
@@ -185056,7 +185533,7 @@ var init_ai_router = __esm({
         })
       ).mutation(async ({ ctx, input }) => {
         if (env.NODE_ENV === "production") {
-          throw new TRPCError2({
+          throw new TRPCError({
             code: "FORBIDDEN",
             message: "Voice QA is disabled in production."
           });
@@ -185111,7 +185588,7 @@ var init_ai_router = __esm({
         try {
           const client = await getAiClient("parse", ctx.user.plan);
           if (!client.canUseParse) {
-            throw new TRPCError2({
+            throw new TRPCError({
               code: "FORBIDDEN",
               message: "\u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0631\u0633\u0627\u0626\u0644 \u0628\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u063A\u064A\u0631 \u0645\u062A\u0627\u062D \u0641\u064A \u062E\u0637\u062A\u0643 \u0627\u0644\u062D\u0627\u0644\u064A\u0629."
             });
@@ -185123,12 +185600,12 @@ var init_ai_router = __esm({
           modelName = client.modelName;
           maxPerRequest = client.maxPerRequest;
         } catch (error48) {
-          if (error48 instanceof TRPCError2) throw error48;
+          if (error48 instanceof TRPCError) throw error48;
         }
         const todayUsage = await countDailyAiRequests(ctx.user, "parse");
         if (todayUsage >= dailyLimit) {
           const upgradeTo = ctx.user.plan === "free" ? "\u0628\u0631\u0648" : "\u0623\u0644\u062A\u0631\u0627";
-          throw new TRPCError2({
+          throw new TRPCError({
             code: "FORBIDDEN",
             message: `\u0648\u0635\u0644\u062A \u0644\u0644\u062D\u062F \u0627\u0644\u064A\u0648\u0645\u064A (${dailyLimit} \u0637\u0644\u0628). \u062D\u062F\u062B \u0644\u0640${upgradeTo}!`
           });
@@ -185148,7 +185625,7 @@ var init_ai_router = __esm({
         let resolvedProvider = "gemini";
         let resolvedGroqKey = "";
         let resolvedFireworksKey = "";
-        const startOfMonth2 = new Date(today.getFullYear(), today.getMonth(), 1);
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
         const [
           settings,
           userDictRows,
@@ -185174,7 +185651,7 @@ var init_ai_router = __esm({
           apiKey = routing.apiKey;
           modelName = routing.model;
         } catch (routingErr) {
-          if (routingErr instanceof TRPCError2) throw routingErr;
+          if (routingErr instanceof TRPCError) throw routingErr;
           console.warn(
             "Routing config resolution failed, using defaults:",
             routingErr
@@ -185209,8 +185686,9 @@ var init_ai_router = __esm({
           }
         }
         let bizCategoriesForPipeline;
+        let biz = [];
         try {
-          const biz = await db.select({ id: userBusinesses.id }).from(userBusinesses).where(and(
+          biz = await db.select({ id: userBusinesses.id }).from(userBusinesses).where(and(
             eq(userBusinesses.userId, ctx.user.id),
             eq(userBusinesses.userType, ctx.user.type),
             eq(userBusinesses.isActive, true)
@@ -185266,6 +185744,7 @@ var init_ai_router = __esm({
             enable_rag: String(cfgFull.enable_rag !== "false")
           },
           businessCategories: bizCategoriesForPipeline,
+          businessId: biz.length > 0 ? biz[0].id : null,
           businessMode: input.businessMode || false
         });
         const financeContextSource = currentMonthSummary ? "finance.summary" : "fallback_zero";
@@ -185315,57 +185794,46 @@ var init_ai_router = __esm({
             trace: parseTrace
           }
         });
-        for (const item of result.items) {
-          if (item.person_mentioned && item.person_relationship) {
-            const pName = item.person_mentioned.trim();
-            const pRel = item.person_relationship.trim();
-            if (pName && pName !== "\u0639\u0627\u0645" && pName !== "\u0634\u062E\u0635") {
-              const { addDynamicContact: addDynamicContact2 } = await Promise.resolve().then(() => (init_user_profile_service(), user_profile_service_exports));
-              await addDynamicContact2(
-                ctx.user.id,
-                ctx.user.type,
-                pName,
-                pRel
-              );
-            }
-          }
-        }
         const isV2 = false;
-        await db.insert(classificationLogs).values({
-          userId: ctx.user.id,
-          userType: ctx.user.type,
-          originalText: input.text,
-          normalizedText: result.log.normalizedText,
-          parsedBy: result.parsedBy,
-          ruleEngineResult: result.log.ruleEngineResult,
-          aiResult: result.log.aiResult,
-          finalResult: result.items,
-          confidence: result.overallConfidence,
-          decision: result.decision,
-          classificationVersion: isV2 ? "v2.2" : "v2.1",
-          reasoningTraceLight: {
-            entities: result.log.entitiesFound,
-            ruleEngine: result.log.ruleEngineResult,
-            ai: result.log.aiResult,
-            routing: result.log.routing,
-            trace: parseTrace,
-            cachedTokens: result.cachedTokens,
-            ...isV2 ? {
-              pipelineVersion: "v2",
-              decompositionMethod: result.log.routing?.route || "unknown",
-              v2Stats: result.log.routing?.reason || ""
-            } : {}
-          },
-          ambiguityFlags: result.items.flatMap(
-            (item) => item.ambiguityFlags || []
-          ),
-          inputChannel: input.inputChannel,
-          needsFollowup: result.decision === "clarify" || result.overallConfidence < 60,
-          modelUsed: input.voiceModelUsed ? `STT: ${input.voiceModelUsed} | Parse: ${result.modelUsed}` : result.modelUsed,
-          tokensUsed: result.tokensUsed + (input.sttTokensUsed || 0),
-          processingTimeMs: result.processingTimeMs
-        }).catch(() => {
-        });
+        let classificationLogId;
+        try {
+          const [classificationLog] = await db.insert(classificationLogs).values({
+            userId: ctx.user.id,
+            userType: ctx.user.type,
+            originalText: input.text,
+            normalizedText: result.log.normalizedText,
+            parsedBy: result.parsedBy,
+            ruleEngineResult: result.log.ruleEngineResult,
+            aiResult: result.log.aiResult,
+            finalResult: result.items,
+            confidence: result.overallConfidence,
+            decision: result.decision,
+            classificationVersion: isV2 ? "v2.2" : "v2.1",
+            reasoningTraceLight: {
+              entities: result.log.entitiesFound,
+              ruleEngine: result.log.ruleEngineResult,
+              ai: result.log.aiResult,
+              routing: result.log.routing,
+              trace: parseTrace,
+              cachedTokens: result.cachedTokens,
+              ...isV2 ? {
+                pipelineVersion: "v2",
+                decompositionMethod: result.log.routing?.route || "unknown",
+                v2Stats: result.log.routing?.reason || ""
+              } : {}
+            },
+            ambiguityFlags: result.items.flatMap(
+              (item) => item.ambiguityFlags || []
+            ),
+            inputChannel: input.inputChannel,
+            needsFollowup: result.decision === "clarify" || result.overallConfidence < 60,
+            modelUsed: input.voiceModelUsed ? `STT: ${input.voiceModelUsed} | Parse: ${result.modelUsed}` : result.modelUsed,
+            tokensUsed: result.tokensUsed + (input.sttTokensUsed || 0),
+            processingTimeMs: result.processingTimeMs
+          });
+          classificationLogId = Number(classificationLog.insertId) || void 0;
+        } catch {
+        }
         await db.insert(aiSummaries).values({
           userId: ctx.user.id,
           userType: ctx.user.type,
@@ -185425,6 +185893,7 @@ var init_ai_router = __esm({
               status: "pending",
               contextData: {
                 items: result.items,
+                classificationLogId,
                 decision: result.decision,
                 confidence: result.overallConfidence,
                 log: result.log,
@@ -185458,7 +185927,8 @@ var init_ai_router = __esm({
           clarificationQuestion: result.clarificationQuestion,
           clarificationId,
           processingTimeMs: result.processingTimeMs,
-          trace: parseTrace
+          trace: parseTrace,
+          classificationLogId
         };
       }),
       // ─── Get User Limits (Voice, AI) ───
@@ -185562,7 +186032,7 @@ var init_ai_router = __esm({
         })
       ).mutation(async ({ ctx, input }) => {
         if (input.audioBase64.length > 13333333) {
-          throw new TRPCError2({
+          throw new TRPCError({
             code: "BAD_REQUEST",
             message: "\u062D\u062C\u0645 \u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0635\u0648\u062A\u064A \u0643\u0628\u064A\u0631 \u062C\u062F\u0627\u064B. \u064A\u0631\u062C\u0649 \u0625\u0631\u0633\u0627\u0644 \u062A\u0633\u062C\u064A\u0644 \u0623\u0635\u063A\u0631 \u0645\u0646 10 \u0645\u064A\u062C\u0627\u0628\u0627\u064A\u062A."
           });
@@ -185633,19 +186103,19 @@ var init_ai_router = __esm({
         const limit = planValue(voiceLimits, ctx.user.plan, 300);
         const maxPerRequest = planValue(voicePerReq, ctx.user.plan, 60);
         if (input.durationSeconds > maxPerRequest) {
-          throw new TRPCError2({
+          throw new TRPCError({
             code: "FORBIDDEN",
             message: `\u0645\u062F\u0629 \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0648\u0627\u062D\u062F \u0644\u0627 \u064A\u0645\u0643\u0646 \u0623\u0646 \u062A\u062A\u062C\u0627\u0648\u0632 ${maxPerRequest} \u062B\u0627\u0646\u064A\u0629 \u0641\u064A \u062E\u0637\u062A\u0643 \u0627\u0644\u062D\u0627\u0644\u064A\u0629.`
           });
         }
         if (limit > 0 && usedSeconds >= limit) {
-          throw new TRPCError2({
+          throw new TRPCError({
             code: "FORBIDDEN",
             message: `\u0648\u0642\u062A \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0635\u0648\u062A\u064A \u0627\u0644\u0645\u062A\u0627\u062D \u0644\u064A\u0643 \u062E\u0644\u0635 (${limit} \u062B\u0627\u0646\u064A\u0629/\u0634\u0647\u0631). \u064A\u0631\u062C\u0649 \u0627\u0644\u062A\u0631\u0642\u064A\u0629 \u0644\u0640 Pro \u0644\u0644\u062D\u0635\u0648\u0644 \u0639\u0644\u0649 \u0627\u0644\u0645\u0632\u064A\u062F!`
           });
         }
         if (limit > 0 && usedSeconds + input.durationSeconds > limit) {
-          throw new TRPCError2({
+          throw new TRPCError({
             code: "FORBIDDEN",
             message: `\u0645\u062F\u0629 \u0647\u0630\u0627 \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u062A\u062A\u062C\u0627\u0648\u0632 \u0627\u0644\u0631\u0635\u064A\u062F \u0627\u0644\u0645\u062A\u0628\u0642\u064A \u0644\u0643 \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631. \u0627\u0644\u0645\u062A\u0627\u062D \u0627\u0644\u0622\u0646 ${Math.max(0, limit - usedSeconds)} \u062B\u0627\u0646\u064A\u0629 \u0641\u0642\u0637.`
           });
@@ -185733,7 +186203,7 @@ var init_ai_router = __esm({
           }
         }
         if (!result) {
-          throw new TRPCError2({
+          throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: "\u0641\u0634\u0644 \u062A\u062D\u0648\u064A\u0644 \u0627\u0644\u0635\u0648\u062A: " + lastError
           });
@@ -185778,7 +186248,7 @@ var init_ai_router = __esm({
       ).mutation(async ({ ctx, input }) => {
         const startTime = Date.now();
         if (input.audioBase64.length > 13333333) {
-          throw new TRPCError2({
+          throw new TRPCError({
             code: "BAD_REQUEST",
             message: "\u062D\u062C\u0645 \u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0635\u0648\u062A\u064A \u0643\u0628\u064A\u0631 \u062C\u062F\u0627\u064B."
           });
@@ -185794,7 +186264,7 @@ var init_ai_router = __esm({
         const voiceLimit = parseInt(cfg.voice_limit_free || "300");
         const maxPerRequest = parseInt(cfg.voice_per_req_free || "60");
         if (input.durationSeconds > maxPerRequest) {
-          throw new TRPCError2({ code: "FORBIDDEN", message: `\u0645\u062F\u0629 \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u062A\u062C\u0627\u0648\u0632\u062A ${maxPerRequest} \u062B\u0627\u0646\u064A\u0629.` });
+          throw new TRPCError({ code: "FORBIDDEN", message: `\u0645\u062F\u0629 \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u062A\u062C\u0627\u0648\u0632\u062A ${maxPerRequest} \u062B\u0627\u0646\u064A\u0629.` });
         }
         const plan = ctx.user.plan === "ultra" ? "pro" : ctx.user.plan || "free";
         const sttModelSetting = cfg[`${plan}_stt_model`] || cfg.stt_model || "gemini-1.5-flash";
@@ -185815,7 +186285,7 @@ var init_ai_router = __esm({
             try {
               return await runSTTPipeline(pureBase64, cleanMimeType, getSTTKey("gemini-2.0-flash"), "gemini-2.0-flash", "standard");
             } catch (e22) {
-              throw new TRPCError2({ code: "INTERNAL_SERVER_ERROR", message: "\u0641\u0634\u0644 \u062A\u062D\u0648\u064A\u0644 \u0627\u0644\u0635\u0648\u062A: " + e22.message });
+              throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "\u0641\u0634\u0644 \u062A\u062D\u0648\u064A\u0644 \u0627\u0644\u0635\u0648\u062A: " + e22.message });
             }
           }
         })();
@@ -185826,7 +186296,7 @@ var init_ai_router = __esm({
         const [sttResult, [userDictRows, smartProfile]] = await Promise.all([sttPromise, dbPromise]);
         const transcribedText = sttResult.text;
         if (!transcribedText || transcribedText.trim() === "") {
-          throw new TRPCError2({ code: "BAD_REQUEST", message: "\u0644\u0645 \u0646\u062A\u0645\u0643\u0646 \u0645\u0646 \u0633\u0645\u0627\u0639 \u0634\u064A\u0621. \u062D\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062E\u0631\u0649." });
+          throw new TRPCError({ code: "BAD_REQUEST", message: "\u0644\u0645 \u0646\u062A\u0645\u0643\u0646 \u0645\u0646 \u0633\u0645\u0627\u0639 \u0634\u064A\u0621. \u062D\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062E\u0631\u0649." });
         }
         try {
           await db.insert(voiceUsage).values({
@@ -185888,15 +186358,16 @@ var init_ai_router = __esm({
           apiKey = routing.apiKey;
           modelName = routing.model;
         } catch (routingErr) {
-          if (routingErr instanceof TRPCError2) throw routingErr;
+          if (routingErr instanceof TRPCError) throw routingErr;
           console.warn(
             "Voice Routing config resolution failed, using defaults:",
             routingErr
           );
         }
         let voiceBizCats;
+        let biz = [];
         try {
-          const biz = await db.select({ id: userBusinesses.id }).from(userBusinesses).where(and(
+          biz = await db.select({ id: userBusinesses.id }).from(userBusinesses).where(and(
             eq(userBusinesses.userId, ctx.user.id),
             eq(userBusinesses.userType, ctx.user.type),
             eq(userBusinesses.isActive, true)
@@ -185954,8 +186425,26 @@ var init_ai_router = __esm({
             enable_rag: String(cfg.enable_rag !== "false")
           },
           businessCategories: voiceBizCats,
+          businessId: biz.length > 0 ? biz[0].id : null,
           businessMode: false
         });
+        let newlyAddedContact = null;
+        for (const item of parseResult.items) {
+          if (item.person_mentioned && item.person_relationship) {
+            const pName = item.person_mentioned.trim();
+            const pRel = item.person_relationship.trim();
+            if (pName && pName !== "\u0639\u0627\u0645" && pName !== "\u0634\u062E\u0635") {
+              const { addDynamicContact: addDynamicContact2 } = await Promise.resolve().then(() => (init_user_profile_service(), user_profile_service_exports));
+              const res = await addDynamicContact2(
+                ctx.user.id,
+                ctx.user.type,
+                pName,
+                pRel
+              );
+              if (res && res.isNew) newlyAddedContact = res;
+            }
+          }
+        }
         const financeContextSource = currentMonthSummary ? "finance.summary" : "fallback_zero";
         const parseTrace = buildParserTrace({
           route: "voice_expense_parse",
@@ -186024,33 +186513,37 @@ var init_ai_router = __esm({
           }
         });
         const isV2 = false;
-        await db.insert(classificationLogs).values({
-          userId: ctx.user.id,
-          userType: ctx.user.type,
-          originalText: transcribedText,
-          normalizedText: parseResult.log.normalizedText,
-          parsedBy: parseResult.parsedBy,
-          ruleEngineResult: parseResult.log.ruleEngineResult,
-          aiResult: parseResult.log.aiResult,
-          finalResult: parseResult.items,
-          confidence: parseResult.overallConfidence,
-          decision: parseResult.decision,
-          classificationVersion: "v2.1",
-          reasoningTraceLight: {
-            entities: parseResult.log.entitiesFound,
-            ruleEngine: parseResult.log.ruleEngineResult,
-            ai: parseResult.log.aiResult,
-            routing: parseResult.log.routing,
-            trace: parseTrace
-          },
-          ambiguityFlags: parseResult.items.flatMap((item) => item.ambiguityFlags || []),
-          inputChannel: "voice",
-          needsFollowup: parseResult.decision === "clarify" || parseResult.overallConfidence < 60,
-          modelUsed: `STT: ${sttResult.modelUsed} | Parse: ${parseResult.modelUsed}`,
-          tokensUsed: parseResult.tokensUsed + sttResult.tokensUsed,
-          processingTimeMs: Date.now() - startTime
-        }).catch(() => {
-        });
+        let classificationLogId;
+        try {
+          const [classificationLog] = await db.insert(classificationLogs).values({
+            userId: ctx.user.id,
+            userType: ctx.user.type,
+            originalText: transcribedText,
+            normalizedText: parseResult.log.normalizedText,
+            parsedBy: parseResult.parsedBy,
+            ruleEngineResult: parseResult.log.ruleEngineResult,
+            aiResult: parseResult.log.aiResult,
+            finalResult: parseResult.items,
+            confidence: parseResult.overallConfidence,
+            decision: parseResult.decision,
+            classificationVersion: "v2.1",
+            reasoningTraceLight: {
+              entities: parseResult.log.entitiesFound,
+              ruleEngine: parseResult.log.ruleEngineResult,
+              ai: parseResult.log.aiResult,
+              routing: parseResult.log.routing,
+              trace: parseTrace
+            },
+            ambiguityFlags: parseResult.items.flatMap((item) => item.ambiguityFlags || []),
+            inputChannel: "voice",
+            needsFollowup: parseResult.decision === "clarify" || parseResult.overallConfidence < 60,
+            modelUsed: `STT: ${sttResult.modelUsed} | Parse: ${parseResult.modelUsed}`,
+            tokensUsed: parseResult.tokensUsed + sttResult.tokensUsed,
+            processingTimeMs: Date.now() - startTime
+          });
+          classificationLogId = Number(classificationLog.insertId) || void 0;
+        } catch {
+        }
         let clarificationId;
         if (parseResult.decision === "clarify") {
           try {
@@ -186090,6 +186583,7 @@ var init_ai_router = __esm({
               status: "pending",
               contextData: {
                 items: parseResult.items,
+                classificationLogId,
                 decision: parseResult.decision,
                 confidence: parseResult.overallConfidence,
                 log: parseResult.log,
@@ -186123,7 +186617,8 @@ var init_ai_router = __esm({
           clarificationQuestion: parseResult.clarificationQuestion,
           clarificationId,
           processingTimeMs: Date.now() - startTime,
-          trace: parseTrace
+          trace: parseTrace,
+          classificationLogId
         };
       }),
       // ─── Financial Copilot: Personal Learning ───
@@ -186202,7 +186697,7 @@ var init_ai_router = __esm({
           const daysSinceLast = ((/* @__PURE__ */ new Date()).getTime() - (lastSummary[0]?.createdAt?.getTime() || 0)) / (1e3 * 3600 * 24);
           if (allowedDays > 0 && daysSinceLast < allowedDays) {
             const remainingDays = Math.ceil(allowedDays - daysSinceLast);
-            throw new TRPCError2({
+            throw new TRPCError({
               code: "TOO_MANY_REQUESTS",
               message: `\u0645\u062A\u0628\u0642\u064A ${remainingDays} \u064A\u0648\u0645 \u0644\u0637\u0644\u0628 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u0627\u0644\u0630\u0643\u064A \u0627\u0644\u0642\u0627\u062F\u0645 \u0641\u064A \u062E\u0637\u062A\u0643 (${plan.toUpperCase()}). \u0644\u0644\u062A\u0631\u0642\u064A\u0629\u060C \u0642\u0645 \u0628\u0632\u064A\u0627\u0631\u0629 \u0635\u0641\u062D\u0629 \u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643.`
             });
@@ -186431,7 +186926,7 @@ var init_ai_router = __esm({
         try {
           const client = await getAiClient("report", ctx.user.plan);
           if (!client.canUseAnalysis) {
-            throw new TRPCError2({
+            throw new TRPCError({
               code: "FORBIDDEN",
               message: "\u0627\u0644\u062A\u062D\u0644\u064A\u0644\u0627\u062A \u0627\u0644\u0634\u0647\u0631\u064A\u0629 \u0628\u0627\u0644\u0630\u0643\u0627\u0621 \u0627\u0644\u0627\u0635\u0637\u0646\u0627\u0639\u064A \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u0641\u064A \u062E\u0637\u062A\u0643 \u0627\u0644\u062D\u0627\u0644\u064A\u0629."
             });
@@ -186475,7 +186970,7 @@ var init_ai_router = __esm({
             reportProvider = "backend";
           }
         } catch (e2) {
-          if (e2 instanceof TRPCError2) throw e2;
+          if (e2 instanceof TRPCError) throw e2;
         }
         const subCatSummary = topSubCategories.slice(0, reportSubcatsLimit).map((s3) => `${s3.name}: ${s3.amount}\u062C (${s3.percent}%)`).join(" | ");
         let topItemsContext = "";
@@ -186933,7 +187428,7 @@ ${err.stack}`);
         });
         const plan = asPlan(ctx.user.plan);
         if (settings[`${plan}_ai_analysis`] === "false") {
-          throw new TRPCError2({
+          throw new TRPCError({
             code: "FORBIDDEN",
             message: "\u062A\u062D\u0644\u064A\u0644\u0627\u062A \u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0629 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u0641\u064A \u062E\u0637\u062A\u0643 \u0627\u0644\u062D\u0627\u0644\u064A\u0629."
           });
@@ -187070,7 +187565,7 @@ ${err.stack}`);
         const startedAt = Date.now();
         const year2 = Number.parseInt(input.year, 10);
         if (!Number.isFinite(year2) || year2 < 2e3 || year2 > 2100) {
-          throw new TRPCError2({
+          throw new TRPCError({
             code: "BAD_REQUEST",
             message: "\u0633\u0646\u0629 \u0627\u0644\u062A\u0642\u0631\u064A\u0631 \u063A\u064A\u0631 \u0635\u062D\u064A\u062D\u0629."
           });
@@ -187084,7 +187579,7 @@ ${err.stack}`);
         });
         const plan = asPlan(ctx.user.plan);
         if (settings[`${plan}_ai_analysis`] === "false") {
-          throw new TRPCError2({
+          throw new TRPCError({
             code: "FORBIDDEN",
             message: "\u0627\u0644\u062A\u062D\u0644\u064A\u0644\u0627\u062A \u0627\u0644\u0633\u0646\u0648\u064A\u0629 \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u0641\u064A \u062E\u0637\u062A\u0643 \u0627\u0644\u062D\u0627\u0644\u064A\u0629."
           });
@@ -221371,6 +221866,17 @@ var init_sms_router = __esm({
           403
         );
       }
+      const duplicateCheck = await db2.select({ id: rawSmsEvents.id }).from(rawSmsEvents).where(
+        and(
+          eq(rawSmsEvents.userId, userId),
+          eq(rawSmsEvents.userType, userType),
+          eq(rawSmsEvents.message, message.trim()),
+          gte(rawSmsEvents.createdAt, new Date(Date.now() - 24 * 60 * 60 * 1e3))
+        )
+      ).limit(1);
+      if (duplicateCheck.length > 0) {
+        return c.json({ success: true, message: "Duplicate SMS detected, ignored." });
+      }
       const [insertedSms] = await db2.insert(rawSmsEvents).values({
         userId,
         userType,
@@ -243770,7 +244276,7 @@ async function handleVoiceCallWebSocket(ws, request) {
   console.log(`[Voice Call] User connected: ${user.name} (${user.plan})`);
   const settings = await db.select().from(systemSettings);
   const config3 = {
-    voice_call_model: "gemini-2.5-flash-native-audio-preview-12-2025",
+    voice_call_model: "gemini-2.5-flash-native-audio-latest",
     voice_call_enabled_free: "true",
     voice_call_limit_free: "5",
     voice_call_duration_free: "120",
@@ -244554,7 +245060,7 @@ function parseConnectionParamsFromUnknown(parsed) {
     if (nonStringValues.length > 0) throw new Error(`Expected connectionParams to be string values. Got ${nonStringValues.map(([key, value]) => `${key}: ${typeof value}`).join(", ")}`);
     return parsed;
   } catch (cause) {
-    throw new TRPCError2({
+    throw new TRPCError({
       code: "PARSE_ERROR",
       message: "Invalid connection params shape",
       cause
@@ -244566,7 +245072,7 @@ function parseConnectionParamsFromString(str) {
   try {
     parsed = JSON.parse(str);
   } catch (cause) {
-    throw new TRPCError2({
+    throw new TRPCError({
       code: "PARSE_ERROR",
       message: "Not JSON-parsable query params",
       cause
@@ -244588,8 +245094,8 @@ function memo(fn) {
       var _promise2;
       if (value !== sym) return value;
       (_promise2 = promise2) !== null && _promise2 !== void 0 || (promise2 = fn().catch((cause) => {
-        if (cause instanceof TRPCError2) throw cause;
-        throw new TRPCError2({
+        if (cause instanceof TRPCError) throw cause;
+        throw new TRPCError({
           code: "BAD_REQUEST",
           message: cause instanceof Error ? cause.message : "Invalid input",
           cause
@@ -244615,7 +245121,7 @@ var jsonContentTypeHandler = {
     const isBatchCall = opts.searchParams.get("batch") === "1";
     const maxBatchSize = opts.maxBatchSize;
     const paths = isBatchCall ? opts.path.split(",") : [opts.path];
-    if (isBatchCall && typeof maxBatchSize === "number" && paths.length > maxBatchSize) throw new TRPCError2({
+    if (isBatchCall && typeof maxBatchSize === "number" && paths.length > maxBatchSize) throw new TRPCError({
       code: "BAD_REQUEST",
       message: `Batch call exceeds maximum size`
     });
@@ -244631,7 +245137,7 @@ var jsonContentTypeHandler = {
         result[0] = opts.router._def._config.transformer.input.deserialize(inputs);
         return result;
       }
-      if (!isObject(inputs)) throw new TRPCError2({
+      if (!isObject(inputs)) throw new TRPCError({
         code: "BAD_REQUEST",
         message: '"input" needs to be an object when doing a batch call'
       });
@@ -244672,7 +245178,7 @@ var jsonContentTypeHandler = {
       var _call$procedure;
       return (_call$procedure = call.procedure) === null || _call$procedure === void 0 ? void 0 : _call$procedure._def.type;
     }).filter(Boolean));
-    if (types5.size > 1) throw new TRPCError2({
+    if (types5.size > 1) throw new TRPCError({
       code: "BAD_REQUEST",
       message: `Cannot mix procedure types in call: ${Array.from(types5).join(", ")}`
     });
@@ -244697,7 +245203,7 @@ var formDataContentTypeHandler = {
   },
   async parse(opts) {
     const { req } = opts;
-    if (req.method !== "POST") throw new TRPCError2({
+    if (req.method !== "POST") throw new TRPCError({
       code: "METHOD_NOT_SUPPORTED",
       message: "Only POST requests are supported for multipart/form-data requests"
     });
@@ -244730,7 +245236,7 @@ var octetStreamContentTypeHandler = {
   },
   async parse(opts) {
     const { req } = opts;
-    if (req.method !== "POST") throw new TRPCError2({
+    if (req.method !== "POST") throw new TRPCError({
       code: "METHOD_NOT_SUPPORTED",
       message: "Only POST requests are supported for application/octet-stream requests"
     });
@@ -244763,7 +245269,7 @@ function getContentTypeHandler(req) {
   const handler = handlers.find((handler$1) => handler$1.isMatch(req));
   if (handler) return handler;
   if (!handler && req.method === "GET") return jsonContentTypeHandler;
-  throw new TRPCError2({
+  throw new TRPCError({
     code: "UNSUPPORTED_MEDIA_TYPE",
     message: req.headers.has("content-type") ? `Unsupported content-type "${req.headers.get("content-type")}` : "Missing content-type header"
   });
@@ -245912,11 +246418,11 @@ async function resolveResponse(opts) {
   try {
     const [infoError, info] = infoTuple;
     if (infoError) throw infoError;
-    if (info.isBatchCall && !allowBatching) throw new TRPCError2({
+    if (info.isBatchCall && !allowBatching) throw new TRPCError({
       code: "BAD_REQUEST",
       message: `Batching is not enabled on the server`
     });
-    if (isStreamCall && !info.isBatchCall) throw new TRPCError2({
+    if (isStreamCall && !info.isBatchCall) throw new TRPCError({
       message: `Streaming requests must be batched (you can do a batch of 1)`,
       code: "BAD_REQUEST"
     });
@@ -245926,17 +246432,17 @@ async function resolveResponse(opts) {
       const combinedAbort = combinedAbortController(opts.req.signal);
       try {
         if (opts.error) throw opts.error;
-        if (!proc) throw new TRPCError2({
+        if (!proc) throw new TRPCError({
           code: "NOT_FOUND",
           message: `No procedure found on path "${call.path}"`
         });
-        if (!methodMapper[proc._def.type].includes(req.method)) throw new TRPCError2({
+        if (!methodMapper[proc._def.type].includes(req.method)) throw new TRPCError({
           code: "METHOD_NOT_SUPPORTED",
           message: `Unsupported ${req.method}-request to ${proc._def.type} procedure at path "${call.path}"`
         });
         if (proc._def.type === "subscription") {
           var _config$sse2;
-          if (info.isBatchCall) throw new TRPCError2({
+          if (info.isBatchCall) throw new TRPCError({
             code: "BAD_REQUEST",
             message: `Cannot batch subscription calls`
           });
@@ -245985,7 +246491,7 @@ async function resolveResponse(opts) {
         case "mutation":
         case "query": {
           headers2.set("content-type", "application/json");
-          if (isDataStream(result === null || result === void 0 ? void 0 : result.data)) throw new TRPCError2({
+          if (isDataStream(result === null || result === void 0 ? void 0 : result.data)) throw new TRPCError({
             code: "UNSUPPORTED_MEDIA_TYPE",
             message: "Cannot use stream-like response in non-streaming request - use httpBatchStreamLink"
           });
@@ -246013,11 +246519,11 @@ async function resolveResponse(opts) {
         case "subscription": {
           const iterable = run(() => {
             if (error48) return errorToAsyncIterable(error48);
-            if (!experimentalSSE) return errorToAsyncIterable(new TRPCError2({
+            if (!experimentalSSE) return errorToAsyncIterable(new TRPCError({
               code: "METHOD_NOT_SUPPORTED",
               message: 'Missing experimental flag "sseSubscriptions"'
             }));
-            if (!isObservable(result.data) && !isAsyncIterable(result.data)) return errorToAsyncIterable(new TRPCError2({
+            if (!isObservable(result.data) && !isAsyncIterable(result.data)) return errorToAsyncIterable(new TRPCError({
               message: `Subscription ${call.path} did not return an observable or a AsyncGenerator`,
               code: "INTERNAL_SERVER_ERROR"
             }));
@@ -246158,7 +246664,7 @@ async function resolveResponse(opts) {
     const results = (await Promise.all(rpcCalls)).map((res) => {
       const [error48, result] = res;
       if (error48) return res;
-      if (isDataStream(result.data)) return [new TRPCError2({
+      if (isDataStream(result.data)) return [new TRPCError({
         code: "UNSUPPORTED_MEDIA_TYPE",
         message: "Cannot use stream-like response in non-streaming request - use httpBatchStreamLink"
       }), void 0];
@@ -246331,7 +246837,7 @@ async function getGoogleTokens(code) {
     if (!response.ok) throw new Error("Google token response not ok");
     return await response.json();
   } catch (error48) {
-    throw new TRPCError2({ code: "INTERNAL_SERVER_ERROR", message: "Network error during Google OAuth token exchange" });
+    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Network error during Google OAuth token exchange" });
   }
 }
 async function getGoogleUserInfo(accessToken) {
@@ -246342,7 +246848,7 @@ async function getGoogleUserInfo(accessToken) {
     if (!response.ok) throw new Error("Google userinfo response not ok");
     return await response.json();
   } catch (error48) {
-    throw new TRPCError2({ code: "INTERNAL_SERVER_ERROR", message: "Network error during Google OAuth user info retrieval" });
+    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Network error during Google OAuth user info retrieval" });
   }
 }
 var authRouter = router({
@@ -246363,11 +246869,11 @@ var authRouter = router({
   googleCallback: strictPublicProcedure.input(external_exports.object({ code: external_exports.string() })).mutation(async ({ input }) => {
     const tokens = await getGoogleTokens(input.code);
     if (!tokens.access_token) {
-      throw new TRPCError2({ code: "BAD_REQUEST", message: "\u0641\u0634\u0644 \u0641\u064A \u0627\u0644\u0645\u0635\u0627\u062F\u0642\u0629 \u0645\u0639 Google" });
+      throw new TRPCError({ code: "BAD_REQUEST", message: "\u0641\u0634\u0644 \u0641\u064A \u0627\u0644\u0645\u0635\u0627\u062F\u0642\u0629 \u0645\u0639 Google" });
     }
     const googleUser = await getGoogleUserInfo(tokens.access_token);
     if (!googleUser.id) {
-      throw new TRPCError2({ code: "BAD_REQUEST", message: "\u0645\u0634 \u0642\u0627\u062F\u0631 \u0623\u062C\u064A\u0628 \u0628\u064A\u0627\u0646\u0627\u062A Google" });
+      throw new TRPCError({ code: "BAD_REQUEST", message: "\u0645\u0634 \u0642\u0627\u062F\u0631 \u0623\u062C\u064A\u0628 \u0628\u064A\u0627\u0646\u0627\u062A Google" });
     }
     let user = await db.query.users.findFirst({
       where: eq(users.unionId, googleUser.id)
@@ -246388,7 +246894,7 @@ var authRouter = router({
       await db.update(users).set({ lastSignInAt: /* @__PURE__ */ new Date() }).where(eq(users.id, user.id));
     }
     if (!user) {
-      throw new TRPCError2({ code: "INTERNAL_SERVER_ERROR", message: "\u062D\u0635\u0644 \u062E\u0637\u0623 \u0641\u064A \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u062D\u0633\u0627\u0628" });
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "\u062D\u0635\u0644 \u062E\u0637\u0623 \u0641\u064A \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u062D\u0633\u0627\u0628" });
     }
     const token = await sign2(
       { userId: user.id, type: "oauth", exp: Math.floor(Date.now() / 1e3) + 60 * 60 * 24 * 7 },
@@ -356847,7 +357353,7 @@ var localAuthRouter = router({
   ).mutation(async ({ input }) => {
     const phoneValidation = validatePhone(input.phone);
     if (!phoneValidation.valid) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "BAD_REQUEST",
         message: phoneValidation.message
       });
@@ -356857,7 +357363,7 @@ var localAuthRouter = router({
       where: eq(localUsers.phone, cleanPhone)
     });
     if (existingUser) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "CONFLICT",
         message: "\u0631\u0642\u0645 \u0627\u0644\u062A\u0644\u064A\u0641\u0648\u0646 \u0645\u0633\u062C\u0644 \u0628\u0627\u0644\u0641\u0639\u0644"
       });
@@ -356868,14 +357374,14 @@ var localAuthRouter = router({
     if (!WHATSAPP_AUTH_TEMPORARILY_DISABLED && otpSetting?.value === "true") {
       const verificationRecord = otpCache.get(cleanPhone);
       if (!verificationRecord || !verificationRecord.verified) {
-        throw new TRPCError2({
+        throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "\u0628\u0631\u062C\u0627\u0621 \u062A\u0648\u062B\u064A\u0642 \u0631\u0642\u0645 \u0627\u0644\u062A\u0644\u064A\u0641\u0648\u0646 \u0639\u0628\u0631 \u0648\u0627\u062A\u0633\u0627\u0628 \u0623\u0648\u0644\u0627\u064B"
         });
       }
       if (verificationRecord.expiresAt < Date.now()) {
         otpCache.delete(cleanPhone);
-        throw new TRPCError2({
+        throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "\u0627\u0646\u062A\u0647\u062A \u0635\u0644\u0627\u062D\u064A\u0629 \u062A\u0648\u062B\u064A\u0642 \u0627\u0644\u0631\u0642\u0645\u060C \u0628\u0631\u062C\u0627\u0621 \u0627\u0644\u0645\u062D\u0627\u0648\u0644\u0629 \u0645\u0631\u0629 \u0623\u062E\u0631\u0649"
         });
@@ -356915,19 +357421,19 @@ var localAuthRouter = router({
   }),
   generateVerificationCode: strictPublicProcedure.input(external_exports.object({ phone: external_exports.string() })).mutation(async ({ input, ctx }) => {
     if (WHATSAPP_AUTH_TEMPORARILY_DISABLED) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "SERVICE_UNAVAILABLE",
         message: "\u062A\u0648\u062B\u064A\u0642 \u0648\u0627\u062A\u0633\u0627\u0628 \u0645\u062A\u0648\u0642\u0641 \u0645\u0624\u0642\u062A\u0627\u064B. \u0627\u0633\u062A\u062E\u062F\u0645 \u0627\u0644\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0639\u0627\u062F\u064A \u062D\u0627\u0644\u064A\u0627\u064B."
       });
     }
     const phoneValidation = validatePhone(input.phone);
     if (!phoneValidation.valid) {
-      throw new TRPCError2({ code: "BAD_REQUEST", message: phoneValidation.message });
+      throw new TRPCError({ code: "BAD_REQUEST", message: phoneValidation.message });
     }
     const cleanPhone = cleanPhoneNumber(input.phone);
     const rateLimit = checkRateLimit(ctx.ip, cleanPhone);
     if (!rateLimit.allowed) {
-      throw new TRPCError2({ code: "TOO_MANY_REQUESTS", message: rateLimit.message });
+      throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: rateLimit.message });
     }
     const code = "SS-" + Math.floor(1e5 + Math.random() * 9e5).toString();
     const expiresAt2 = Date.now() + 10 * 60 * 1e3;
@@ -356973,14 +357479,14 @@ var localAuthRouter = router({
       where: eq(localUsers.phone, cleanPhone)
     });
     if (!user) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "NOT_FOUND",
         message: "\u0631\u0642\u0645 \u0627\u0644\u062A\u0644\u064A\u0641\u0648\u0646 \u0623\u0648 \u0627\u0644\u0628\u0627\u0633\u0648\u0631\u062F \u063A\u0644\u0637"
       });
     }
     const valid = await comparePassword(input.password, user.password);
     if (!valid) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "UNAUTHORIZED",
         message: "\u0631\u0642\u0645 \u0627\u0644\u062A\u0644\u064A\u0641\u0648\u0646 \u0623\u0648 \u0627\u0644\u0628\u0627\u0633\u0648\u0631\u062F \u063A\u0644\u0637"
       });
@@ -359727,16 +360233,16 @@ async function checkUserBudgetExceeded(userId, userType) {
     if (!profile[0] || !profile[0].monthlyIncome) return;
     const budgetLimit = parseFloat(profile[0].monthlyIncome);
     if (budgetLimit <= 0) return;
-    const startOfMonth2 = /* @__PURE__ */ new Date();
-    startOfMonth2.setDate(1);
-    startOfMonth2.setHours(0, 0, 0, 0);
-    const endOfMonth2 = new Date(startOfMonth2.getFullYear(), startOfMonth2.getMonth() + 1, 0, 23, 59, 59, 999);
+    const startOfMonth = /* @__PURE__ */ new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    const endOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0, 23, 59, 59, 999);
     const userExpenses = await db.select({ amount: expenses.amount }).from(expenses).where(
       and(
         eq(expenses.userId, userId),
         eq(expenses.userType, userType),
-        gte(expenses.date, startOfMonth2),
-        lte(expenses.date, endOfMonth2)
+        gte(expenses.date, startOfMonth),
+        lte(expenses.date, endOfMonth)
       )
     );
     const totalSpent = userExpenses.reduce((sum4, exp2) => sum4 + parseFloat(exp2.amount), 0);
@@ -359749,8 +360255,8 @@ async function checkUserBudgetExceeded(userId, userType) {
           eq(notificationLogs.templateId, template.id),
           eq(notificationLogs.userId, userId),
           eq(notificationLogs.userType, userType),
-          gte(notificationLogs.sentAt, startOfMonth2),
-          lte(notificationLogs.sentAt, endOfMonth2)
+          gte(notificationLogs.sentAt, startOfMonth),
+          lte(notificationLogs.sentAt, endOfMonth)
         )
       ).limit(1);
       if (logged.length === 0) {
@@ -359839,8 +360345,8 @@ async function checkAndTriggerSmartActivityNotifications() {
       const template = inactivityTemplate[0];
       const segment = parseSegment(template.targetSegment);
       const minStreak = segment.minStreak !== void 0 ? Number(segment.minStreak) : 2;
-      const startOfToday2 = /* @__PURE__ */ new Date();
-      startOfToday2.setHours(0, 0, 0, 0);
+      const startOfToday = /* @__PURE__ */ new Date();
+      startOfToday.setHours(0, 0, 0, 0);
       const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1e3);
       const thirtySixHoursAgo = new Date(now.getTime() - 36 * 60 * 60 * 1e3);
       const matchingOauth = await db.select({
@@ -359852,7 +360358,7 @@ async function checkAndTriggerSmartActivityNotifications() {
         eq(notificationLogs.userId, users.id),
         eq(notificationLogs.userType, "oauth"),
         eq(notificationLogs.templateId, template.id),
-        gte(notificationLogs.sentAt, startOfToday2)
+        gte(notificationLogs.sentAt, startOfToday)
       )).where(and(
         gte(users.currentStreak, minStreak),
         gte(users.lastStreakAt, thirtySixHoursAgo),
@@ -359868,7 +360374,7 @@ async function checkAndTriggerSmartActivityNotifications() {
         eq(notificationLogs.userId, localUsers.id),
         eq(notificationLogs.userType, "local"),
         eq(notificationLogs.templateId, template.id),
-        gte(notificationLogs.sentAt, startOfToday2)
+        gte(notificationLogs.sentAt, startOfToday)
       )).where(and(
         gte(localUsers.currentStreak, minStreak),
         gte(localUsers.lastStreakAt, thirtySixHoursAgo),
@@ -360037,6 +360543,51 @@ var transactionTypeSchema = external_exports.enum([
 var expenseRawText = external_exports.string().min(1).max(ExpenseInputLimits.rawTextMax);
 var expenseCategory = external_exports.string().min(1).max(ExpenseInputLimits.categoryMax);
 var expenseAmount = external_exports.number().positive().max(ExpenseInputLimits.amountMax);
+var PERSON_EXPENSE_CATEGORIES = /* @__PURE__ */ new Set([
+  "\u0627\u0644\u0639\u0627\u0626\u0644\u0629",
+  "\u0623\u0635\u062F\u0642\u0627\u0621",
+  "\u0645\u0648\u0638\u0641\u064A\u0646",
+  "\u062E\u062F\u0645\u0627\u062A \u0633\u064A\u0627\u0631\u0627\u062A",
+  "\u0623\u062E\u0631\u0649"
+]);
+async function resolveExpenseReferences(input, userId, userType) {
+  const database = getDb();
+  let contactId = input.contactId || null;
+  let newlyAddedContact = null;
+  if (contactId) {
+    const [contact] = await database.select({ id: userContacts.id }).from(userContacts).where(and(
+      eq(userContacts.id, contactId),
+      eq(userContacts.userId, userId),
+      eq(userContacts.userType, userType)
+    )).limit(1);
+    if (!contact) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "\u0627\u0644\u0634\u062E\u0635 \u0627\u0644\u0645\u062E\u062A\u0627\u0631 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
+    }
+  } else if (PERSON_EXPENSE_CATEGORIES.has(input.category) && input.subCategory && input.subCategory !== "\u0639\u0627\u0645") {
+    const { name: name2, relationship } = parseNameAndRelationship(
+      input.subCategory,
+      input.category
+    );
+    if (name2 && name2 !== "\u0639\u0627\u0645" && name2 !== "\u0634\u062E\u0635") {
+      const { addDynamicContact: addDynamicContact2 } = await Promise.resolve().then(() => (init_user_profile_service(), user_profile_service_exports));
+      const result = await addDynamicContact2(userId, userType, name2, relationship);
+      if (result?.contactId) contactId = result.contactId;
+      if (result?.isNew) newlyAddedContact = result;
+    }
+  }
+  let classificationLogId = input.classificationLogId || null;
+  if (classificationLogId) {
+    const [log4] = await database.select({ id: classificationLogs.id }).from(classificationLogs).where(and(
+      eq(classificationLogs.id, classificationLogId),
+      eq(classificationLogs.userId, userId),
+      eq(classificationLogs.userType, userType)
+    )).limit(1);
+    if (!log4) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "\u0633\u062C\u0644 \u0627\u0644\u062A\u062D\u0644\u064A\u0644 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
+    }
+  }
+  return { contactId, classificationLogId, newlyAddedContact };
+}
 function isValidDate(value) {
   return value instanceof Date && !isNaN(value.getTime());
 }
@@ -360137,7 +360688,9 @@ var expenseRouter = router({
       description: external_exports.string().max(ExpenseInputLimits.descriptionMax).optional(),
       rawText: expenseRawText,
       source: external_exports.enum(["voice", "manual", "ai_parsed", "image", "sms"]).default("manual"),
-      date: external_exports.string().optional()
+      date: external_exports.string().optional(),
+      contactId: external_exports.number().int().positive().optional(),
+      classificationLogId: external_exports.number().int().positive().optional()
     })
   ).mutation(async ({ ctx, input }) => {
     const db2 = getDb();
@@ -360145,11 +360698,12 @@ var expenseRouter = router({
     const requestUserType = ctx.user.type;
     const expenseDate = input.date ? new Date(input.date) : /* @__PURE__ */ new Date();
     if (isNaN(expenseDate.getTime())) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "BAD_REQUEST",
         message: "\u0627\u0644\u062A\u0627\u0631\u064A\u062E \u063A\u064A\u0631 \u0635\u062D\u064A\u062D"
       });
     }
+    const references = await resolveExpenseReferences(input, userId, requestUserType);
     await db2.insert(expenses).values({
       userId,
       userType: requestUserType,
@@ -360160,31 +360714,14 @@ var expenseRouter = router({
       description: input.description || "",
       rawText: input.rawText,
       source: input.source,
+      contactId: references.contactId,
+      classificationLogId: references.classificationLogId,
       date: expenseDate,
       businessId: input.businessId || null
     });
     invalidateUserMemory(userId, requestUserType);
-    const personCategories = [
-      "\u0627\u0644\u0639\u0627\u0626\u0644\u0629",
-      "\u0623\u0635\u062F\u0642\u0627\u0621",
-      "\u0645\u0648\u0638\u0641\u064A\u0646",
-      "\u062E\u062F\u0645\u0627\u062A \u0633\u064A\u0627\u0631\u0627\u062A",
-      "\u0623\u062E\u0631\u0649"
-    ];
-    if (personCategories.includes(input.category) && input.subCategory && input.subCategory !== "\u0639\u0627\u0645") {
-      const { name: name2, relationship } = parseNameAndRelationship(
-        input.subCategory,
-        input.category
-      );
-      if (name2 && name2 !== "\u0639\u0627\u0645" && name2 !== "\u0634\u062E\u0635") {
-        const { addDynamicContact: addDynamicContact2 } = await Promise.resolve().then(() => (init_user_profile_service(), user_profile_service_exports));
-        await addDynamicContact2(
-          userId,
-          requestUserType,
-          name2,
-          relationship
-        );
-      }
+    if (references.contactId) {
+      await db2.update(userContacts).set({ transactionCount: sql`${userContacts.transactionCount} + 1` }).where(eq(userContacts.id, references.contactId));
     }
     try {
       await updateStreak(db2, userId, requestUserType);
@@ -360197,7 +360734,7 @@ var expenseRouter = router({
         console.error("Budget exceeded check failed:", err);
       });
     }
-    return { success: true };
+    return { success: true, newlyAddedContact: references.newlyAddedContact };
   }),
   batchCreate: authedProcedure.input(
     external_exports.array(
@@ -360209,7 +360746,9 @@ var expenseRouter = router({
         description: external_exports.string().max(ExpenseInputLimits.descriptionMax).optional(),
         rawText: expenseRawText,
         source: external_exports.enum(["voice", "manual", "ai_parsed", "image", "sms"]).default("manual"),
-        date: external_exports.string().optional()
+        date: external_exports.string().optional(),
+        contactId: external_exports.number().int().positive().optional(),
+        classificationLogId: external_exports.number().int().positive().optional()
       })
     ).max(100, "\u062D\u062F \u0623\u0642\u0635\u0649 100 \u0639\u0645\u0644\u064A\u0629 \u0641\u064A \u0627\u0644\u0637\u0644\u0628 \u0627\u0644\u0648\u0627\u062D\u062F")
   ).mutation(async ({ ctx, input }) => {
@@ -360217,7 +360756,11 @@ var expenseRouter = router({
     const userId = ctx.user.id;
     const requestUserType = ctx.user.type;
     if (input.length === 0) return { success: true };
-    const valuesToInsert = input.map((item) => ({
+    const references = [];
+    for (const item of input) {
+      references.push(await resolveExpenseReferences(item, userId, requestUserType));
+    }
+    const valuesToInsert = input.map((item, index2) => ({
       userId,
       userType: requestUserType,
       type: item.type,
@@ -360227,20 +360770,16 @@ var expenseRouter = router({
       description: item.description || "",
       rawText: item.rawText,
       source: item.source,
+      contactId: references[index2].contactId,
+      classificationLogId: references[index2].classificationLogId,
       date: item.date ? new Date(item.date) : /* @__PURE__ */ new Date(),
       businessId: item.businessId || null
     }));
     await db2.insert(expenses).values(valuesToInsert);
     invalidateUserMemory(userId, requestUserType);
-    const personCategories = ["\u0627\u0644\u0639\u0627\u0626\u0644\u0629", "\u0623\u0635\u062F\u0642\u0627\u0621", "\u0645\u0648\u0638\u0641\u064A\u0646", "\u062E\u062F\u0645\u0627\u062A \u0633\u064A\u0627\u0631\u0627\u062A", "\u0623\u062E\u0631\u0649"];
-    for (const item of input) {
-      if (personCategories.includes(item.category) && item.subCategory && item.subCategory !== "\u0639\u0627\u0645") {
-        const { name: name2, relationship } = parseNameAndRelationship(item.subCategory, item.category);
-        if (name2 && name2 !== "\u0639\u0627\u0645" && name2 !== "\u0634\u062E\u0635") {
-          const { addDynamicContact: addDynamicContact2 } = await Promise.resolve().then(() => (init_user_profile_service(), user_profile_service_exports));
-          await addDynamicContact2(userId, requestUserType, name2, relationship);
-        }
-      }
+    const linkedContactIds = references.map((reference) => reference.contactId).filter((id) => Boolean(id));
+    for (const contactId of linkedContactIds) {
+      await db2.update(userContacts).set({ transactionCount: sql`${userContacts.transactionCount} + 1` }).where(eq(userContacts.id, contactId));
     }
     try {
       await updateStreak(db2, userId, requestUserType);
@@ -360254,7 +360793,10 @@ var expenseRouter = router({
         console.error("Budget exceeded check failed:", err);
       });
     }
-    return { success: true };
+    return {
+      success: true,
+      newlyAddedContact: references.find((reference) => reference.newlyAddedContact)?.newlyAddedContact || null
+    };
   }),
   list: authedProcedure.input(
     external_exports.object({
@@ -360361,6 +360903,7 @@ var expenseRouter = router({
       )
     );
     invalidateUserMemory(userId, userType);
+    let newlyAddedContact = null;
     const personCategories = [
       "\u0627\u0644\u0639\u0627\u0626\u0644\u0629",
       "\u0623\u0635\u062F\u0642\u0627\u0621",
@@ -360375,12 +360918,13 @@ var expenseRouter = router({
       );
       if (name2 && name2 !== "\u0639\u0627\u0645" && name2 !== "\u0634\u062E\u0635") {
         const { addDynamicContact: addDynamicContact2 } = await Promise.resolve().then(() => (init_user_profile_service(), user_profile_service_exports));
-        await addDynamicContact2(
+        const res = await addDynamicContact2(
           userId,
           userType,
           name2,
           relationship
         );
+        if (res && res.isNew) newlyAddedContact = res;
       }
     }
     const categoryChanged = input.category && originalExpense && originalExpense.category !== input.category;
@@ -360434,7 +360978,7 @@ var expenseRouter = router({
       }
     }
     await invalidateExpenseCache(userId, userType);
-    return { success: true };
+    return { success: true, newlyAddedContact };
   }),
   delete: authedProcedure.input(external_exports.object({ id: external_exports.number() })).mutation(async ({ ctx, input }) => {
     const db2 = getDb();
@@ -360646,8 +361190,8 @@ var expenseRouter = router({
         income: data.income
       }));
       const today = /* @__PURE__ */ new Date();
-      const endOfMonth2 = isValidDate(endDate) && endDate > today ? today : endDate;
-      const activeDays = safeDayDiff(userStartDate, endOfMonth2);
+      const endOfMonth = isValidDate(endDate) && endDate > today ? today : endDate;
+      const activeDays = safeDayDiff(userStartDate, endOfMonth);
       const dailyAverage = totalExpense / Math.min(activeDays, 30);
       const previousNetFlow = previousTotalIncome - previousTotalExpense;
       const getDayOfFinancialMonth = (d, start) => {
@@ -360939,6 +361483,7 @@ var expenseRouter = router({
     if (!clarification) {
       throw new Error("Clarification not found");
     }
+    let newlyAddedContact = null;
     let ctxData = {};
     if (typeof clarification.contextData === "string") {
       try {
@@ -361014,7 +361559,8 @@ var expenseRouter = router({
           needsClarification: true,
           clarificationQuestion: nextQuestion,
           clarificationId: input.clarificationId,
-          enrichedText: currentEnrichedText
+          enrichedText: currentEnrichedText,
+          newlyAddedContact
         };
       }
       let savedCount2 = 0;
@@ -361076,8 +361622,24 @@ var expenseRouter = router({
           businessCategories: bizCats,
           businessMode: false
         });
+        for (const [name2, rel] of Object.entries(resolvedAnswers)) {
+          if (name2 && rel && rel !== "\u062C\u0647\u0629 \u0627\u062A\u0635\u0627\u0644 \u0639\u0627\u0645\u0629" && name2 !== "\u0639\u0627\u0645" && name2 !== "\u0634\u062E\u0635") {
+            const { addDynamicContact: addDynamicContact2 } = await Promise.resolve().then(() => (init_user_profile_service(), user_profile_service_exports));
+            const res = await addDynamicContact2(userId, userType, name2, rel);
+            if (res && res.isNew) newlyAddedContact = res;
+          }
+        }
         const itemsToSave = pipeline4.items && pipeline4.items.length > 0 ? pipeline4.items : Array.isArray(ctxData.items) ? ctxData.items : [];
         for (const item of itemsToSave) {
+          const references = await resolveExpenseReferences(
+            {
+              category: item.category,
+              subCategory: item.subCategory,
+              classificationLogId: typeof ctxData.classificationLogId === "number" ? ctxData.classificationLogId : void 0
+            },
+            userId,
+            userType
+          );
           await db2.insert(expenses).values({
             userId,
             userType,
@@ -361089,14 +361651,20 @@ var expenseRouter = router({
             date: /* @__PURE__ */ new Date(),
             source: "manual",
             rawText: enrichedText,
+            contactId: references.contactId,
+            classificationLogId: references.classificationLogId,
             businessId: item.businessId || null
           });
+          if (references.contactId) {
+            await db2.update(userContacts).set({ transactionCount: sql`${userContacts.transactionCount} + 1` }).where(eq(userContacts.id, references.contactId));
+          }
           if (item.person_mentioned && item.person_relationship) {
             const pName = item.person_mentioned.trim();
             const pRel = item.person_relationship.trim();
             if (pName && pName !== "\u0639\u0627\u0645" && pName !== "\u0634\u062E\u0635") {
               const { addDynamicContact: addDynamicContact2 } = await Promise.resolve().then(() => (init_user_profile_service(), user_profile_service_exports));
-              await addDynamicContact2(userId, userType, pName, pRel);
+              const res = await addDynamicContact2(userId, userType, pName, pRel);
+              if (res && res.isNew) newlyAddedContact = res;
             }
           }
           savedCount2 += 1;
@@ -361119,7 +361687,8 @@ var expenseRouter = router({
         needsClarification: false,
         clarificationQuestion: void 0,
         clarificationId: void 0,
-        enrichedText: void 0
+        enrichedText: void 0,
+        newlyAddedContact
       };
     }
     let savedCount = 0;
@@ -361211,7 +361780,8 @@ var expenseRouter = router({
           needsClarification: true,
           clarificationQuestion: pipeline4.clarificationQuestion || "\u0645\u0645\u0643\u0646 \u062A\u0648\u0636\u062D \u0623\u0643\u062A\u0631\u061F",
           clarificationId: input.clarificationId,
-          enrichedText
+          enrichedText,
+          newlyAddedContact
         };
       }
       if (!pipeline4.items || pipeline4.items.length === 0 || pipeline4.overallConfidence < 70) {
@@ -361237,12 +361807,13 @@ var expenseRouter = router({
             const pRel = item.person_relationship.trim();
             if (pName && pName !== "\u0639\u0627\u0645" && pName !== "\u0634\u062E\u0635") {
               const { addDynamicContact: addDynamicContact2 } = await Promise.resolve().then(() => (init_user_profile_service(), user_profile_service_exports));
-              await addDynamicContact2(
+              const res = await addDynamicContact2(
                 userId,
                 userType,
                 pName,
                 pRel
               );
+              if (res && res.isNew) newlyAddedContact = res;
             }
           }
           savedCount += 1;
@@ -361268,7 +361839,8 @@ var expenseRouter = router({
       needsClarification: false,
       clarificationQuestion: void 0,
       clarificationId: void 0,
-      enrichedText: void 0
+      enrichedText: void 0,
+      newlyAddedContact
     };
   })
 });
@@ -361665,15 +362237,19 @@ var adminRouter = router({
     let localQuery = db.select().from(localUsers).$dynamic();
     if (localFilters.length)
       localQuery = localQuery.where(and(...localFilters));
-    const [oauthUsersAll, localUsersAll] = await Promise.all([
-      oauthQuery.orderBy(desc(users.createdAt)),
-      localQuery.orderBy(desc(localUsers.createdAt))
+    const [oauthCountResult] = await db.select({ count: count() }).from(users).where(oauthFilters.length ? and(...oauthFilters) : void 0);
+    const [localCountResult] = await db.select({ count: count() }).from(localUsers).where(localFilters.length ? and(...localFilters) : void 0);
+    const total = oauthCountResult.count + localCountResult.count;
+    const fetchLimit = offset + limit;
+    const [oauthUsersChunk, localUsersChunk] = await Promise.all([
+      oauthQuery.orderBy(desc(users.createdAt)).limit(fetchLimit),
+      localQuery.orderBy(desc(localUsers.createdAt)).limit(fetchLimit)
     ]);
     const merged = [
-      ...oauthUsersAll.map((u3) => ({ ...u3, userType: "oauth" })),
-      ...localUsersAll.map((u3) => ({ ...u3, userType: "local" }))
+      ...oauthUsersChunk.map((u3) => ({ ...u3, userType: "oauth" })),
+      ...localUsersChunk.map((u3) => ({ ...u3, userType: "local" }))
     ];
-    const total = merged.length;
+    merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     const paged = merged.slice(offset, offset + limit);
     const oauthIds = paged.filter((u3) => u3.userType === "oauth").map((u3) => u3.id);
     const localIds = paged.filter((u3) => u3.userType === "local").map((u3) => u3.id);
@@ -362534,7 +363110,7 @@ var adminRouter = router({
   ).mutation(async ({ input }) => {
     const existing = await db.select().from(discountCodes).where(eq(discountCodes.code, input.code.toUpperCase())).limit(1);
     if (existing.length > 0) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "BAD_REQUEST",
         message: "\u0627\u0644\u0643\u0648\u062F \u0645\u0648\u062C\u0648\u062F \u0628\u0627\u0644\u0641\u0639\u0644"
       });
@@ -363199,7 +363775,7 @@ var supportRouter = router({
   // ─── Get Ticket Details ───
   getById: authedProcedure.input(external_exports.object({ id: external_exports.number() })).query(async ({ ctx, input }) => {
     const ticket = await db.select().from(supportTickets).where(eq(supportTickets.id, input.id)).limit(1);
-    if (!ticket[0]) throw new TRPCError2({ code: "NOT_FOUND", message: "\u0627\u0644\u062A\u0630\u0643\u0631\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
+    if (!ticket[0]) throw new TRPCError({ code: "NOT_FOUND", message: "\u0627\u0644\u062A\u0630\u0643\u0631\u0629 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F\u0629" });
     if (ticket[0].userId !== ctx.user.id || ticket[0].userType !== ctx.user.type) {
       if (ctx.user.role !== "moderator" && ctx.user.role !== "admin") {
         throw new Error("\u063A\u064A\u0631 \u0645\u0635\u0631\u062D");
@@ -363286,7 +363862,7 @@ var supportRouter = router({
   // ─── Close Ticket ───
   close: authedProcedure.input(external_exports.object({ id: external_exports.number() })).mutation(async ({ ctx, input }) => {
     const ticket = await db.select().from(supportTickets).where(eq(supportTickets.id, input.id)).limit(1);
-    if (!ticket[0]) throw new TRPCError2({ code: "NOT_FOUND", message: "\u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
+    if (!ticket[0]) throw new TRPCError({ code: "NOT_FOUND", message: "\u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
     if (ticket[0].userId !== ctx.user.id || ticket[0].userType !== ctx.user.type) {
       if (ctx.user.role !== "moderator" && ctx.user.role !== "admin") {
         throw new Error("\u063A\u064A\u0631 \u0645\u0635\u0631\u062D");
@@ -363621,7 +364197,7 @@ async function paymobPost(path5, body) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const msg = data.detail || data.message || res.statusText;
-    throw new TRPCError2({ code: "BAD_REQUEST", message: `Paymob: ${msg}` });
+    throw new TRPCError({ code: "BAD_REQUEST", message: `Paymob: ${msg}` });
   }
   return data;
 }
@@ -363630,12 +364206,12 @@ async function getAuthToken() {
     api_key: env.PAYMOB_API_KEY
   });
   if (!data.token)
-    throw new TRPCError2({ code: "BAD_REQUEST", message: "Paymob auth failed" });
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Paymob auth failed" });
   return data.token;
 }
 async function createPaymobHostedCheckoutUrl(params) {
   if (!isPaymobConfigured()) {
-    throw new TRPCError2({
+    throw new TRPCError({
       code: "BAD_REQUEST",
       message: "\u0628\u0648\u0627\u0628\u0629 \u0627\u0644\u062F\u0641\u0639 \u063A\u064A\u0631 \u0645\u064F\u0643\u0648\u0651\u0646\u0629"
     });
@@ -363691,7 +364267,7 @@ async function createPaymobHostedCheckoutUrl(params) {
     }
   );
   if (!paymentKey.token) {
-    throw new TRPCError2({
+    throw new TRPCError({
       code: "BAD_REQUEST",
       message: "\u062A\u0639\u0630\u0631 \u0625\u0646\u0634\u0627\u0621 \u062C\u0644\u0633\u0629 \u0627\u0644\u062F\u0641\u0639"
     });
@@ -363763,14 +364339,14 @@ var proRouter = router({
     })
   ).mutation(async ({ ctx, input }) => {
     if (env.NODE_ENV === "production") {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "FORBIDDEN",
         message: "\u0627\u0644\u062A\u0631\u0642\u064A\u0629 \u0627\u0644\u0645\u0628\u0627\u0634\u0631\u0629 \u063A\u064A\u0631 \u0645\u0633\u0645\u0648\u062D \u0628\u0647\u0627 \u0641\u064A \u0627\u0644\u0628\u064A\u0626\u0629 \u0627\u0644\u0625\u0646\u062A\u0627\u062C\u064A\u0629. \u064A\u062C\u0628 \u0625\u062A\u0645\u0627\u0645 \u0639\u0645\u0644\u064A\u0629 \u0627\u0644\u062F\u0641\u0639 \u0639\u0628\u0631 \u0628\u0648\u0627\u0628\u0629 \u0627\u0644\u062F\u0641\u0639 \u0627\u0644\u0631\u0633\u0645\u064A\u0629."
       });
     }
     const simOk = env.BILLING_SIMULATE === "true";
     if (!simOk) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "FORBIDDEN",
         message: "\u0627\u0644\u062A\u0631\u0642\u064A\u0629 \u0627\u0644\u0645\u0628\u0627\u0634\u0631\u0629 \u063A\u064A\u0631 \u0645\u0633\u0645\u0648\u062D \u0628\u0647\u0627. \u064A\u062C\u0628 \u0625\u062A\u0645\u0627\u0645 \u0639\u0645\u0644\u064A\u0629 \u0627\u0644\u062F\u0641\u0639 \u0639\u0628\u0631 \u0628\u0648\u0627\u0628\u0629 \u0627\u0644\u062F\u0641\u0639 \u0627\u0644\u0631\u0633\u0645\u064A\u0629."
       });
@@ -363785,15 +364361,14 @@ var proRouter = router({
     return { success: true, message: "\u062A\u0645 \u0627\u0644\u062A\u0631\u0642\u064A\u0629 \u0644\u0628\u0631\u0648 \u0628\u0646\u062C\u0627\u062D!", endDate };
   }),
   cancel: authedProcedure.mutation(async ({ ctx }) => {
-    await db.update(proSubscriptions).set({ status: "cancelled" }).where(
+    await db.update(proSubscriptions).set({ status: "cancelled", autoRenew: false }).where(
       and(
         eq(proSubscriptions.userId, ctx.user.id),
-        eq(proSubscriptions.userType, ctx.user.type)
+        eq(proSubscriptions.userType, ctx.user.type),
+        eq(proSubscriptions.status, "active")
       )
     );
-    const table = ctx.user.type === "oauth" ? users : localUsers;
-    await db.update(table).set({ plan: "free" }).where(eq(table.id, ctx.user.id));
-    return { success: true, message: "\u062A\u0645 \u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643" };
+    return { success: true, message: "\u062A\u0645 \u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u062A\u062C\u062F\u064A\u062F \u0627\u0644\u062A\u0644\u0642\u0627\u0626\u064A. \u0633\u062A\u0633\u062A\u0645\u0631 \u062E\u062F\u0645\u0629 Pro \u062D\u062A\u0649 \u0646\u0647\u0627\u064A\u0629 \u0641\u062A\u0631\u0629 \u0627\u0644\u0627\u0634\u062A\u0631\u0627\u0643 \u0627\u0644\u062D\u0627\u0644\u064A\u0629." };
   }),
   listSubscriptions: adminProcedure.input(
     external_exports.object({
@@ -363965,7 +364540,7 @@ var referralRouter = router({
     const myTable = ctx.user.type === "oauth" ? users : localUsers;
     const me = await db.select().from(myTable).where(eq(myTable.id, ctx.user.id)).limit(1);
     if (me[0]?.referralCode === input.code) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "BAD_REQUEST",
         message: "\u0645\u0634 \u0645\u0645\u0643\u0646 \u062A\u0633\u062A\u062E\u062F\u0645 \u0643\u0648\u062F\u0643"
       });
@@ -363984,7 +364559,7 @@ var referralRouter = router({
       }
     }
     if (referrerId === null) {
-      throw new TRPCError2({ code: "NOT_FOUND", message: "\u0627\u0644\u0643\u0648\u062F \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
+      throw new TRPCError({ code: "NOT_FOUND", message: "\u0627\u0644\u0643\u0648\u062F \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
     }
     const existing = await db.select().from(referrals).where(
       and(
@@ -363993,7 +364568,7 @@ var referralRouter = router({
       )
     ).limit(1);
     if (existing.length > 0) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "BAD_REQUEST",
         message: "\u0623\u0646\u062A \u0645\u0633\u062C\u0644 \u0628\u0627\u0644\u0641\u0639\u0644 \u0628\u0643\u0648\u062F \u0625\u062D\u0627\u0644\u0629"
       });
@@ -364103,6 +364678,7 @@ ${allPaths.map(
 
 // api/profile-router.ts
 init_zod();
+init_dist2();
 init_middleware();
 init_connection();
 init_schema2();
@@ -364777,13 +365353,28 @@ var profileRouter = router({
       eq(userContacts.userType, ctx.user.type)
     ));
     const rows = await query;
-    let filtered = rows;
+    const counts = await db.select({
+      contactId: expenses.contactId,
+      total: sql`COUNT(*)`
+    }).from(expenses).where(and(
+      eq(expenses.userId, ctx.user.id),
+      eq(expenses.userType, ctx.user.type),
+      isNotNull(expenses.contactId)
+    )).groupBy(expenses.contactId);
+    const countByContactId = new Map(
+      counts.map((row) => [row.contactId, Number(row.total || 0)])
+    );
+    const rowsWithCounts = rows.map((row) => ({
+      ...row,
+      transactionCount: countByContactId.get(row.id) || 0
+    }));
+    let filtered = rowsWithCounts;
     if (filter === "personal") {
-      filtered = rows.filter((r2) => r2.contactType === "personal" && !r2.isSilenced);
+      filtered = rowsWithCounts.filter((r2) => r2.contactType === "personal" && !r2.isSilenced);
     } else if (filter === "business") {
-      filtered = rows.filter((r2) => r2.contactType !== "personal");
+      filtered = rowsWithCounts.filter((r2) => r2.contactType !== "personal");
     } else if (filter === "silenced") {
-      filtered = rows.filter((r2) => r2.isSilenced);
+      filtered = rowsWithCounts.filter((r2) => r2.isSilenced);
     }
     if (search && search.trim().length > 0) {
       const q = search.trim().toLowerCase();
@@ -364844,6 +365435,54 @@ var profileRouter = router({
     return { success: true };
   }),
   deleteContact: authedProcedure.input(external_exports.object({ id: external_exports.number() })).mutation(async ({ ctx, input }) => {
+    const [contactToDelete] = await db.select().from(userContacts).where(and(
+      eq(userContacts.id, input.id),
+      eq(userContacts.userId, ctx.user.id),
+      eq(userContacts.userType, ctx.user.type)
+    ));
+    if (contactToDelete?.name) {
+      try {
+        const [userProfile] = await db.select().from(userProfiles).where(and(
+          eq(userProfiles.userId, ctx.user.id),
+          eq(userProfiles.userType, ctx.user.type)
+        ));
+        if (userProfile && userProfile.lifestyleInfo) {
+          const lifestyle = userProfile.lifestyleInfo;
+          const target = contactToDelete.name.trim();
+          let changed = false;
+          const scrubArray = (arr) => {
+            if (!Array.isArray(arr)) return arr;
+            const filtered = arr.filter((item) => {
+              if (typeof item === "string") return item.trim() !== target;
+              if (item && typeof item === "object" && item.name) return item.name.trim() !== target;
+              return true;
+            });
+            if (filtered.length !== arr.length) changed = true;
+            return filtered;
+          };
+          lifestyle.dynamicContacts = scrubArray(lifestyle.dynamicContacts);
+          lifestyle.regularContacts = scrubArray(lifestyle.regularContacts);
+          lifestyle.childrenNames = scrubArray(lifestyle.childrenNames);
+          lifestyle.siblingsNames = scrubArray(lifestyle.siblingsNames);
+          lifestyle.parentsNames = scrubArray(lifestyle.parentsNames);
+          lifestyle.petNames = scrubArray(lifestyle.petNames);
+          if (lifestyle.partnerName && typeof lifestyle.partnerName === "string" && lifestyle.partnerName.trim() === target) {
+            lifestyle.partnerName = void 0;
+            changed = true;
+          }
+          if (changed) {
+            await db.update(userProfiles).set({ lifestyleInfo: lifestyle }).where(eq(userProfiles.id, userProfile.id));
+          }
+        }
+      } catch (err) {
+        console.error("[deleteContact] Profile scrub error:", err);
+      }
+    }
+    await db.update(expenses).set({ contactId: null }).where(and(
+      eq(expenses.contactId, input.id),
+      eq(expenses.userId, ctx.user.id),
+      eq(expenses.userType, ctx.user.type)
+    ));
     await db.delete(userContacts).where(and(
       eq(userContacts.id, input.id),
       eq(userContacts.userId, ctx.user.id),
@@ -364869,14 +365508,61 @@ var profileRouter = router({
     if (!primary || !secondary) {
       throw new TRPCError({ code: "NOT_FOUND", message: "\u0634\u062E\u0635 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
     }
+    if (secondary.name) {
+      try {
+        const [userProfile] = await db.select().from(userProfiles).where(and(
+          eq(userProfiles.userId, ctx.user.id),
+          eq(userProfiles.userType, ctx.user.type)
+        ));
+        if (userProfile && userProfile.lifestyleInfo) {
+          const lifestyle = userProfile.lifestyleInfo;
+          const target = secondary.name.trim();
+          let changed = false;
+          const scrubArray = (arr) => {
+            if (!Array.isArray(arr)) return arr;
+            const filtered = arr.filter((item) => {
+              if (typeof item === "string") return item.trim() !== target;
+              if (item && typeof item === "object" && item.name) return item.name.trim() !== target;
+              return true;
+            });
+            if (filtered.length !== arr.length) changed = true;
+            return filtered;
+          };
+          lifestyle.dynamicContacts = scrubArray(lifestyle.dynamicContacts);
+          lifestyle.regularContacts = scrubArray(lifestyle.regularContacts);
+          lifestyle.childrenNames = scrubArray(lifestyle.childrenNames);
+          lifestyle.siblingsNames = scrubArray(lifestyle.siblingsNames);
+          lifestyle.parentsNames = scrubArray(lifestyle.parentsNames);
+          lifestyle.petNames = scrubArray(lifestyle.petNames);
+          if (lifestyle.partnerName && typeof lifestyle.partnerName === "string" && lifestyle.partnerName.trim() === target) {
+            lifestyle.partnerName = void 0;
+            changed = true;
+          }
+          if (changed) {
+            await db.update(userProfiles).set({ lifestyleInfo: lifestyle }).where(eq(userProfiles.id, userProfile.id));
+          }
+        }
+      } catch (err) {
+        console.error("[mergeContacts] Profile scrub error:", err);
+      }
+    }
     const mergedRelation = primary.relation || secondary.relation;
-    const mergedTransactionCount = (primary.transactionCount || 0) + (secondary.transactionCount || 0);
     const mergedIsSilenced = primary.isSilenced || secondary.isSilenced;
     const mergedContactType = primary.contactType !== "personal" ? primary.contactType : secondary.contactType;
     const mergedBusinessId = primary.businessId || secondary.businessId;
+    await db.update(expenses).set({ contactId: primary.id }).where(and(
+      eq(expenses.contactId, secondary.id),
+      eq(expenses.userId, ctx.user.id),
+      eq(expenses.userType, ctx.user.type)
+    ));
+    const [canonicalCount] = await db.select({ total: sql`COUNT(*)` }).from(expenses).where(and(
+      eq(expenses.contactId, primary.id),
+      eq(expenses.userId, ctx.user.id),
+      eq(expenses.userType, ctx.user.type)
+    ));
     await db.update(userContacts).set({
       relation: mergedRelation,
-      transactionCount: mergedTransactionCount,
+      transactionCount: Number(canonicalCount?.total || 0),
       isSilenced: mergedIsSilenced,
       contactType: mergedContactType,
       businessId: mergedBusinessId
@@ -365213,7 +365899,7 @@ var imageRouter = router({
     })
   ).mutation(async ({ ctx, input }) => {
     if (input.imageBase64.length > 55e5) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "BAD_REQUEST",
         message: "\u062D\u062C\u0645 \u0627\u0644\u0635\u0648\u0631\u0629 \u0643\u0628\u064A\u0631 \u062C\u062F\u0627\u064B. \u0627\u0633\u062A\u062E\u062F\u0645 \u0636\u063A\u0637 \u0627\u0644\u0635\u0648\u0631\u0629 \u0645\u0646 \u0627\u0644\u0643\u0627\u0645\u064A\u0631\u0627 \u0648\u062D\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062E\u0631\u0649."
       });
@@ -365231,14 +365917,14 @@ var imageRouter = router({
       budget2.remaining,
       estimated
     );
-    const startOfMonth2 = /* @__PURE__ */ new Date();
-    startOfMonth2.setDate(1);
-    startOfMonth2.setHours(0, 0, 0, 0);
+    const startOfMonth = /* @__PURE__ */ new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
     const monthRows = await db.select({ amount: expenses.amount, type: expenses.type }).from(expenses).where(
       and(
         eq(expenses.userId, ctx.user.id),
         eq(expenses.userType, ctx.user.type),
-        gte(expenses.date, startOfMonth2)
+        gte(expenses.date, startOfMonth)
       )
     );
     const totalIncome = monthRows.filter((r2) => r2.type === "income").reduce((s3, r2) => s3 + Number(r2.amount), 0);
@@ -365272,7 +365958,7 @@ var imageRouter = router({
       ocrTextHint: input.ocrTextHint
     });
     if (!parsed) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "UNPROCESSABLE_CONTENT",
         message: "\u0644\u0645 \u0646\u062A\u0645\u0643\u0646 \u0645\u0646 \u0627\u0633\u062A\u062E\u0631\u0627\u062C \u0645\u0628\u0644\u063A \u0623\u0648 \u0641\u0626\u0629 \u0645\u0646 \u0627\u0644\u0635\u0648\u0631\u0629. \u062C\u0631\u0651\u0628 \u0635\u0648\u0631\u0629 \u0623\u0648\u0636\u062D \u0623\u0648 \u0623\u062F\u062E\u0644 \u0627\u0644\u0639\u0645\u0644\u064A\u0629 \u064A\u062F\u0648\u064A\u0627\u064B."
       });
@@ -365409,7 +366095,7 @@ var goalsRouter = router({
     );
     const count4 = Number(existing[0]?.count || 0);
     if (!isPro && count4 >= FREE_GOALS_LIMIT2) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "FORBIDDEN",
         message: `\u0627\u0644\u062E\u0637\u0629 \u0627\u0644\u0645\u062C\u0627\u0646\u064A\u0629 \u062A\u062F\u0639\u0645 ${FREE_GOALS_LIMIT2} \u0623\u0647\u062F\u0627\u0641 \u0646\u0634\u0637\u0629. \u0631\u0642\u0651\u064A \u0644\u0640 Pro \u0644\u0623\u0647\u062F\u0627\u0641 \u063A\u064A\u0631 \u0645\u062D\u062F\u0648\u062F\u0629 \u0645\u0639 \u062A\u062D\u0644\u064A\u0644 \u0630\u0643\u064A.`
       });
@@ -365443,17 +366129,17 @@ var goalsRouter = router({
       )
     ).limit(1);
     if (!goal) {
-      throw new TRPCError2({ code: "NOT_FOUND", message: "\u0627\u0644\u0647\u062F\u0641 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
+      throw new TRPCError({ code: "NOT_FOUND", message: "\u0627\u0644\u0647\u062F\u0641 \u063A\u064A\u0631 \u0645\u0648\u062C\u0648\u062F" });
     }
     const profile = await getSmartProfile(ctx.user.id, ctx.user.type);
-    const startOfMonth2 = /* @__PURE__ */ new Date();
-    startOfMonth2.setDate(1);
+    const startOfMonth = /* @__PURE__ */ new Date();
+    startOfMonth.setDate(1);
     const monthExpense = await db.select({ total: sql`COALESCE(SUM(amount),0)` }).from(expenses).where(
       and(
         eq(expenses.userId, ctx.user.id),
         eq(expenses.userType, ctx.user.type),
         eq(expenses.type, "expense"),
-        gte(expenses.date, startOfMonth2)
+        gte(expenses.date, startOfMonth)
       )
     );
     const promptText = `\u0647\u062F\u0641: ${goal.title}
@@ -373122,7 +373808,7 @@ var webauthnRouter = router({
       where: eq(authChallenges.id, `reg-${userType}-${userId}`)
     });
     if (!challengeRecord || challengeRecord.expiresAt < /* @__PURE__ */ new Date()) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "BAD_REQUEST",
         message: "Challenge expired or not found"
       });
@@ -373136,11 +373822,11 @@ var webauthnRouter = router({
         expectedRPID: rpID
       });
     } catch (error48) {
-      throw new TRPCError2({ code: "BAD_REQUEST", message: error48.message });
+      throw new TRPCError({ code: "BAD_REQUEST", message: error48.message });
     }
     const { verified, registrationInfo } = verification;
     if (!verified || !registrationInfo) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "BAD_REQUEST",
         message: "Registration failed"
       });
@@ -373194,7 +373880,7 @@ var webauthnRouter = router({
       where: eq(authChallenges.id, input.sessionId)
     });
     if (!challengeRecord || challengeRecord.expiresAt < /* @__PURE__ */ new Date()) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "BAD_REQUEST",
         message: "Challenge expired or not found"
       });
@@ -373203,7 +373889,7 @@ var webauthnRouter = router({
       where: eq(userCredentials.id, response.id)
     });
     if (!credentialRecord) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "UNAUTHORIZED",
         message: "Credential not found"
       });
@@ -373225,11 +373911,11 @@ var webauthnRouter = router({
         }
       });
     } catch (error48) {
-      throw new TRPCError2({ code: "BAD_REQUEST", message: error48.message });
+      throw new TRPCError({ code: "BAD_REQUEST", message: error48.message });
     }
     const { verified, authenticationInfo } = verification;
     if (!verified || !authenticationInfo) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "UNAUTHORIZED",
         message: "Authentication failed"
       });
@@ -373255,992 +373941,6 @@ init_dist2();
 init_connection();
 init_schema2();
 init_drizzle_orm();
-
-// api/services/ai-chat-service.ts
-init_deepseek_client();
-init_connection();
-
-// api/services/ai-chat-tools.ts
-init_connection();
-init_schema2();
-init_drizzle_orm();
-init_finance_semantic_layer();
-function startOfToday() {
-  const d = /* @__PURE__ */ new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-function endOfToday() {
-  const d = /* @__PURE__ */ new Date();
-  d.setHours(23, 59, 59, 999);
-  return d;
-}
-function startOfMonth(month, salaryDay = 1) {
-  let year2;
-  let m2;
-  if (month) {
-    const parts = month.split("-");
-    year2 = parseInt(parts[0]);
-    m2 = parseInt(parts[1]) - 1;
-  } else {
-    const d = /* @__PURE__ */ new Date();
-    year2 = d.getFullYear();
-    m2 = d.getMonth();
-    if (d.getDate() < salaryDay) {
-      m2 -= 1;
-    }
-  }
-  return new Date(year2, m2, salaryDay, 0, 0, 0, 0);
-}
-function endOfMonth(month, salaryDay = 1) {
-  const start = startOfMonth(month, salaryDay);
-  const end = new Date(start.getFullYear(), start.getMonth() + 1, start.getDate() - 1, 23, 59, 59, 999);
-  return end;
-}
-var FINANCE_QUERY_KINDS2 = [
-  "summary",
-  "wallet_summary",
-  "period_comparison",
-  "category_total",
-  "breakdown",
-  "transactions",
-  "chart",
-  "goal_progress"
-];
-var PERIOD_HINTS = [
-  "today",
-  "yesterday",
-  "current_week",
-  "current_month",
-  "previous_month",
-  "salary_cycle",
-  "custom"
-];
-function asString2(value) {
-  return typeof value === "string" && value.trim() ? value.trim() : void 0;
-}
-function clampLimit2(value, fallback, max3) {
-  const parsed = Math.floor(Number(value));
-  if (!Number.isFinite(parsed)) return fallback;
-  return Math.min(Math.max(parsed, 1), max3);
-}
-function periodFrom2(value, fallback) {
-  const period = asString2(value);
-  return period && PERIOD_HINTS.includes(period) ? period : fallback;
-}
-function makeFinanceNeed(index2, kind, reason, scope = {}, maxRows) {
-  return {
-    id: `legacy_finance_${index2}_${kind.replace(".", "_")}`,
-    kind,
-    priority: maxRows && maxRows > 8 ? "deep" : "hot",
-    reason,
-    scope,
-    maxRows,
-    cache: {
-      keyHint: ["legacy_finance", kind, scope.period, scope.category, scope.granularity, scope.limit].filter(Boolean).join(":"),
-      ttlSeconds: 60,
-      hot: true
-    }
-  };
-}
-function buildFinanceQueryNeeds(args) {
-  const kind = FINANCE_QUERY_KINDS2.includes(args.kind) ? args.kind : "summary";
-  const period = periodFrom2(args.period, kind === "summary" ? "today" : "current_month");
-  const category = asString2(args.category);
-  const query = asString2(args.query) ?? asString2(args.search_query);
-  const startDate = asString2(args.start_date) ?? asString2(args.startDate);
-  const endDate = asString2(args.end_date) ?? asString2(args.endDate);
-  const limit = clampLimit2(args.limit, kind === "transactions" ? 8 : 6, 20);
-  const granularity = asString2(args.granularity);
-  const baseScope = {
-    period,
-    category,
-    query,
-    startDate,
-    endDate
-  };
-  if (kind === "wallet_summary") {
-    return [makeFinanceNeed(1, "wallet.summary", "legacy_wallet_summary", {}, 8)];
-  }
-  if (kind === "period_comparison") {
-    return [
-      makeFinanceNeed(
-        1,
-        "finance.period_comparison",
-        "legacy_period_comparison",
-        { ...baseScope, comparePeriod: period === "previous_month" ? "current_month" : "previous_month" },
-        2
-      )
-    ];
-  }
-  if (kind === "category_total") {
-    return category ? [
-      makeFinanceNeed(
-        1,
-        "finance.category_total",
-        "legacy_exact_category_total",
-        baseScope,
-        1
-      ),
-      makeFinanceNeed(
-        2,
-        "finance.transactions",
-        "legacy_category_evidence",
-        { ...baseScope, limit: Math.min(limit, 5) },
-        Math.min(limit, 5)
-      )
-    ] : [makeFinanceNeed(1, "finance.summary", "legacy_category_missing_fallback_summary", baseScope, 1)];
-  }
-  if (kind === "breakdown") {
-    return [
-      makeFinanceNeed(
-        1,
-        "finance.breakdown",
-        "legacy_grouped_breakdown",
-        { ...baseScope, granularity: granularity ?? "category", limit },
-        limit
-      )
-    ];
-  }
-  if (kind === "transactions") {
-    return [
-      makeFinanceNeed(
-        1,
-        "finance.transactions",
-        "legacy_supporting_transactions",
-        { ...baseScope, limit },
-        limit
-      )
-    ];
-  }
-  if (kind === "chart") {
-    return [
-      makeFinanceNeed(
-        1,
-        "chart.data",
-        "legacy_chart_dataset",
-        { ...baseScope, granularity: granularity ?? "category", limit },
-        limit
-      )
-    ];
-  }
-  if (kind === "goal_progress") {
-    return [makeFinanceNeed(1, "goals.active", "legacy_goal_progress", {}, 5)];
-  }
-  return [makeFinanceNeed(1, "finance.summary", "legacy_top_level_summary", baseScope, 1)];
-}
-async function finance_query(ctx, args) {
-  const dataNeeds = buildFinanceQueryNeeds(args);
-  const result = await resolveKernelDataNeeds(
-    {
-      userId: ctx.userId,
-      userType: ctx.userType,
-      salaryDay: ctx.salaryDay
-    },
-    dataNeeds
-  );
-  return {
-    contract: "finance.query.v1",
-    dataNeeds,
-    facts: result.facts.slice(0, 30),
-    artifacts: result.artifacts.slice(0, 4),
-    errors: result.errors,
-    cacheHits: result.cacheHits,
-    guidance: "Answer only from facts. If a number is not present in facts, say it is unavailable instead of guessing."
-  };
-}
-async function get_today_expenses(ctx, _args) {
-  const rows = await db.select().from(expenses).where(
-    and(
-      eq(expenses.userId, ctx.userId),
-      eq(expenses.userType, ctx.userType),
-      gte(expenses.date, startOfToday()),
-      lte(expenses.date, endOfToday())
-    )
-  ).orderBy(desc(expenses.date));
-  const totalExpense = rows.filter((r2) => r2.type === "expense").reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  const totalIncome = rows.filter((r2) => r2.type === "income").reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  return {
-    total_expense: totalExpense,
-    total_income: totalIncome,
-    count: rows.length,
-    items: rows.slice(0, 20).map((r2) => ({
-      description: r2.description || r2.category,
-      amount: Number(r2.amount),
-      category: r2.category,
-      type: r2.type
-    }))
-  };
-}
-async function get_month_summary(ctx, args) {
-  const month = args.month || (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
-  const rows = await db.select().from(expenses).where(
-    and(
-      eq(expenses.userId, ctx.userId),
-      eq(expenses.userType, ctx.userType),
-      gte(expenses.date, startOfMonth(month)),
-      lte(expenses.date, endOfMonth(month))
-    )
-  );
-  const totalExpense = rows.filter((r2) => r2.type === "expense").reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  const totalIncome = rows.filter((r2) => r2.type === "income").reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  const daysInMonth2 = endOfMonth(month).getDate();
-  const daysPassed = month === (/* @__PURE__ */ new Date()).toISOString().slice(0, 7) ? (/* @__PURE__ */ new Date()).getDate() : daysInMonth2;
-  return {
-    month,
-    total_expense: totalExpense,
-    total_income: totalIncome,
-    net_flow: totalIncome - totalExpense,
-    transaction_count: rows.length,
-    daily_average: daysPassed > 0 ? Math.round(totalExpense / daysPassed) : 0,
-    days_passed: daysPassed,
-    days_in_month: daysInMonth2
-  };
-}
-async function get_category_breakdown(ctx, args) {
-  const month = args.month || (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
-  const rows = await db.select().from(expenses).where(
-    and(
-      eq(expenses.userId, ctx.userId),
-      eq(expenses.userType, ctx.userType),
-      eq(expenses.type, "expense"),
-      gte(expenses.date, startOfMonth(month)),
-      lte(expenses.date, endOfMonth(month))
-    )
-  );
-  const total = rows.reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  const byCategory = {};
-  rows.forEach((r2) => {
-    byCategory[r2.category] = (byCategory[r2.category] || 0) + Number(r2.amount);
-  });
-  const sorted = Object.entries(byCategory).sort((a, b) => b[1] - a[1]).map(([name2, amount]) => ({
-    name: name2,
-    amount,
-    percent: total > 0 ? Math.round(amount / total * 100) : 0
-  }));
-  return { month, total, categories: sorted.slice(0, 10) };
-}
-async function get_recent_transactions(ctx, args) {
-  const count4 = Math.min(Number(args.count) || 10, 30);
-  const rows = await db.select().from(expenses).where(
-    and(
-      eq(expenses.userId, ctx.userId),
-      eq(expenses.userType, ctx.userType)
-    )
-  ).orderBy(desc(expenses.date)).limit(count4);
-  return {
-    transactions: rows.map((r2) => ({
-      description: r2.description || r2.category,
-      amount: Number(r2.amount),
-      category: r2.category,
-      sub_category: r2.subCategory,
-      type: r2.type,
-      date: r2.date ? new Date(r2.date).toLocaleDateString("ar-EG") : ""
-    }))
-  };
-}
-async function get_spending_by_person(ctx, args) {
-  const name2 = args.name || "";
-  if (!name2) return { error: "\u0645\u062D\u062A\u0627\u062C \u0627\u0633\u0645 \u0627\u0644\u0634\u062E\u0635" };
-  const rows = await db.select().from(expenses).where(
-    and(
-      eq(expenses.userId, ctx.userId),
-      eq(expenses.userType, ctx.userType),
-      like(expenses.description, `%${name2}%`)
-    )
-  ).orderBy(desc(expenses.date)).limit(20);
-  const total = rows.reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  return {
-    person: name2,
-    total_amount: total,
-    transaction_count: rows.length,
-    recent: rows.slice(0, 5).map((r2) => ({
-      description: r2.description,
-      amount: Number(r2.amount),
-      date: r2.date ? new Date(r2.date).toLocaleDateString("ar-EG") : "",
-      category: r2.category
-    }))
-  };
-}
-async function get_family_spending(ctx, _args) {
-  const familyCategories = ["\u0623\u0648\u0644\u0627\u062F", "\u062A\u0639\u0644\u064A\u0645", "\u0623\u0633\u0631\u0629"];
-  const familyKeywords = ["\u0627\u0628\u0646", "\u0627\u0628\u0646\u0629", "\u0628\u0646\u062A", "\u0648\u0644\u062F", "\u0623\u0648\u0644\u0627\u062F", "\u0645\u062F\u0631\u0633\u0629", "\u062D\u0636\u0627\u0646\u0629", "\u062A\u0639\u0644\u064A\u0645", "\u0623\u0633\u0631\u0629"];
-  const month = (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
-  const rows = await db.select().from(expenses).where(
-    and(
-      eq(expenses.userId, ctx.userId),
-      eq(expenses.userType, ctx.userType),
-      eq(expenses.type, "expense"),
-      gte(expenses.date, startOfMonth(month)),
-      lte(expenses.date, endOfMonth(month))
-    )
-  );
-  const familyExpenses = rows.filter(
-    (r2) => familyCategories.some((c) => r2.category.includes(c) || (r2.subCategory || "").includes(c)) || familyKeywords.some((kw) => (r2.description || "").includes(kw))
-  );
-  const total = familyExpenses.reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  return {
-    total_family_spending: total,
-    count: familyExpenses.length,
-    breakdown: familyExpenses.slice(0, 10).map((r2) => ({
-      description: r2.description || r2.category,
-      amount: Number(r2.amount),
-      category: r2.category
-    }))
-  };
-}
-async function get_wallet_balances(ctx, _args) {
-  const wallets = await db.select().from(userWallets).where(
-    and(
-      eq(userWallets.userId, ctx.userId),
-      eq(userWallets.userType, ctx.userType)
-    )
-  );
-  const totalBalance = wallets.reduce((s3, w) => s3 + Number(w.balance || 0), 0);
-  return {
-    total_balance: totalBalance,
-    wallets: wallets.map((w) => ({
-      name: w.name,
-      provider: w.provider,
-      balance: Number(w.balance || 0),
-      last_four: w.lastFourDigits
-    }))
-  };
-}
-async function get_financial_goals(ctx, _args) {
-  const goals = await db.select().from(financialGoals).where(
-    and(
-      eq(financialGoals.userId, ctx.userId),
-      eq(financialGoals.userType, ctx.userType)
-    )
-  );
-  return {
-    goals: goals.map((g) => ({
-      title: g.title,
-      target_amount: Number(g.targetAmount || 0),
-      status: g.status,
-      description: g.description
-    }))
-  };
-}
-async function get_previous_month_comparison(ctx, _args) {
-  const now = /* @__PURE__ */ new Date();
-  const currentMonth = now.toISOString().slice(0, 7);
-  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const prevMonth = prevDate.toISOString().slice(0, 7);
-  const [currentRows, prevRows] = await Promise.all([
-    db.select().from(expenses).where(
-      and(
-        eq(expenses.userId, ctx.userId),
-        eq(expenses.userType, ctx.userType),
-        eq(expenses.type, "expense"),
-        gte(expenses.date, startOfMonth(currentMonth)),
-        lte(expenses.date, endOfMonth(currentMonth))
-      )
-    ),
-    db.select().from(expenses).where(
-      and(
-        eq(expenses.userId, ctx.userId),
-        eq(expenses.userType, ctx.userType),
-        eq(expenses.type, "expense"),
-        gte(expenses.date, startOfMonth(prevMonth)),
-        lte(expenses.date, endOfMonth(prevMonth))
-      )
-    )
-  ]);
-  const currentTotal = currentRows.reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  const prevTotal = prevRows.reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  const changePercent = prevTotal > 0 ? Math.round((currentTotal - prevTotal) / prevTotal * 100) : 0;
-  return {
-    current_month: currentMonth,
-    current_total: currentTotal,
-    previous_month: prevMonth,
-    previous_total: prevTotal,
-    change_percent: changePercent,
-    direction: changePercent > 0 ? "\u0632\u064A\u0627\u062F\u0629" : changePercent < 0 ? "\u0646\u0642\u0635\u0627\u0646" : "\u062B\u0627\u0628\u062A"
-  };
-}
-async function get_daily_average(ctx, _args) {
-  const month = (/* @__PURE__ */ new Date()).toISOString().slice(0, 7);
-  const rows = await db.select().from(expenses).where(
-    and(
-      eq(expenses.userId, ctx.userId),
-      eq(expenses.userType, ctx.userType),
-      eq(expenses.type, "expense"),
-      gte(expenses.date, startOfMonth(month)),
-      lte(expenses.date, endOfMonth(month))
-    )
-  );
-  const total = rows.reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  const daysPassed = Math.max(1, (/* @__PURE__ */ new Date()).getDate());
-  const daysInMonth2 = endOfMonth(month).getDate();
-  const projected = Math.round(total / daysPassed * daysInMonth2);
-  return {
-    daily_average: Math.round(total / daysPassed),
-    total_so_far: total,
-    days_passed: daysPassed,
-    projected_monthly_total: projected
-  };
-}
-async function get_spending_by_date_range(ctx, args) {
-  const startDate = args.start_date ? new Date(args.start_date) : startOfMonth();
-  const endDate = args.end_date ? new Date(args.end_date) : endOfToday();
-  const rows = await db.select().from(expenses).where(
-    and(
-      eq(expenses.userId, ctx.userId),
-      eq(expenses.userType, ctx.userType),
-      gte(expenses.date, startDate),
-      lte(expenses.date, endDate)
-    )
-  );
-  const totalExpense = rows.filter((r2) => r2.type === "expense").reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  const totalIncome = rows.filter((r2) => r2.type === "income").reduce((s3, r2) => s3 + Number(r2.amount), 0);
-  return {
-    start_date: startDate.toLocaleDateString("ar-EG"),
-    end_date: endDate.toLocaleDateString("ar-EG"),
-    total_expense: totalExpense,
-    total_income: totalIncome,
-    transaction_count: rows.length
-  };
-}
-async function search_transactions(ctx, args) {
-  const query = args.query || "";
-  if (!query) return { error: "\u0645\u062D\u062A\u0627\u062C \u0643\u0644\u0645\u0629 \u0644\u0644\u0628\u062D\u062B" };
-  const rows = await db.select().from(expenses).where(
-    and(
-      eq(expenses.userId, ctx.userId),
-      eq(expenses.userType, ctx.userType),
-      like(expenses.description, `%${query}%`)
-    )
-  ).orderBy(desc(expenses.date)).limit(15);
-  return {
-    query,
-    results_count: rows.length,
-    results: rows.map((r2) => ({
-      description: r2.description,
-      amount: Number(r2.amount),
-      category: r2.category,
-      type: r2.type,
-      date: r2.date ? new Date(r2.date).toLocaleDateString("ar-EG") : ""
-    }))
-  };
-}
-async function analyze_finances(ctx, args) {
-  let conditions = [
-    eq(expenses.userId, ctx.userId),
-    eq(expenses.userType, ctx.userType)
-  ];
-  if (args.start_date) conditions.push(gte(expenses.date, new Date(args.start_date)));
-  if (args.end_date) {
-    const ed = new Date(args.end_date);
-    ed.setHours(23, 59, 59, 999);
-    conditions.push(lte(expenses.date, ed));
-  }
-  if (args.type) conditions.push(eq(expenses.type, args.type));
-  if (args.category) conditions.push(like(expenses.category, `%${args.category}%`));
-  if (args.search_query) conditions.push(like(expenses.description, `%${args.search_query}%`));
-  const limit = Math.min(Number(args.limit) || 30, 50);
-  const rows = await db.select().from(expenses).where(and(...conditions)).orderBy(desc(expenses.date));
-  let totalIncome = 0;
-  let totalExpense = 0;
-  rows.forEach((r2) => {
-    if (r2.type === "income") totalIncome += Number(r2.amount);
-    else totalExpense += Number(r2.amount);
-  });
-  const summary = { totalIncome, totalExpense, netFlow: totalIncome - totalExpense };
-  if (args.group_by === "category") {
-    const grouped = {};
-    rows.forEach((r2) => {
-      const cat = r2.category || "\u0623\u062E\u0631\u0649";
-      grouped[cat] = (grouped[cat] || 0) + Number(r2.amount);
-    });
-    return { summary, category_breakdown: grouped };
-  } else if (args.group_by === "month") {
-    const grouped = {};
-    rows.forEach((r2) => {
-      if (!r2.date) return;
-      const m2 = r2.date.toISOString().slice(0, 7);
-      grouped[m2] = (grouped[m2] || 0) + Number(r2.amount);
-    });
-    return { summary, monthly_breakdown: grouped };
-  } else {
-    return { summary, rows: rows.slice(0, limit).map((r2) => ({ date: r2.date, type: r2.type, amount: r2.amount, category: r2.category, description: r2.description })) };
-  }
-}
-async function get_app_guide(_ctx, _args) {
-  return {
-    contract: "site.guide.v1",
-    topic: "smartspend_usage",
-    summary: "\u062F\u0644\u064A\u0644 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 SmartSpend \u0627\u0644\u0633\u0631\u064A\u0639",
-    sections: [
-      {
-        id: "expense_capture",
-        title: "\u0625\u0636\u0627\u0641\u0629 \u0645\u0635\u0631\u0648\u0641 \u0623\u0648 \u062F\u062E\u0644",
-        steps: ["\u0645\u0646 \u0627\u0644\u0635\u0641\u062D\u0629 \u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0629 \u0627\u0636\u063A\u0637 \u0639\u0644\u0649 \u0632\u0631 \u0627\u0644\u0625\u0636\u0627\u0641\u0629 \u0627\u0644\u0639\u0627\u0626\u0645.", "\u0627\u0643\u062A\u0628 \u0627\u0644\u0648\u0635\u0641 \u0648\u0627\u0644\u0645\u0628\u0644\u063A \u0648\u0631\u0627\u062C\u0639 \u0627\u0644\u062A\u0635\u0646\u064A\u0641 \u0642\u0628\u0644 \u0627\u0644\u062D\u0641\u0638."]
-      },
-      {
-        id: "financial_profile",
-        title: "\u062A\u0639\u062F\u064A\u0644 \u0627\u0644\u0645\u064A\u0632\u0627\u0646\u064A\u0629",
-        steps: ["\u0627\u0641\u062A\u062D \u0627\u0644\u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u062C\u0627\u0646\u0628\u064A\u0629 \u0623\u0648 \u0635\u0641\u062D\u0629 \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A.", "\u0627\u062E\u062A\u0631 \u0627\u0644\u0628\u0631\u0648\u0641\u0627\u064A\u0644 \u0627\u0644\u0645\u0627\u0644\u064A \u0648\u0639\u062F\u0644 \u062F\u062E\u0644\u0643 \u0623\u0648 \u0645\u064A\u0632\u0627\u0646\u064A\u062A\u0643."]
-      },
-      {
-        id: "wallets",
-        title: "\u0625\u062F\u0627\u0631\u0629 \u0627\u0644\u0645\u062D\u0627\u0641\u0638",
-        steps: ["\u0627\u0641\u062A\u062D \u0642\u0633\u0645 \u0627\u0644\u0645\u062D\u0627\u0641\u0638.", "\u0623\u0636\u0641 \u0645\u062D\u0641\u0638\u0629 \u0623\u0648 \u062D\u0633\u0627\u0628\u0627 \u0628\u0646\u0643\u064A\u0627 \u0648\u0627\u0643\u062A\u0628 \u0627\u0644\u0631\u0635\u064A\u062F \u0648\u0627\u0633\u0645 \u0627\u0644\u0645\u0632\u0648\u062F."]
-      },
-      {
-        id: "sms_cards",
-        title: "\u0631\u0628\u0637 \u0631\u0633\u0627\u0626\u0644 SMS \u0623\u0648 \u0628\u0637\u0627\u0642\u0629",
-        steps: [
-          "\u0641\u0639\u0651\u0644 \u0625\u0630\u0646 \u0642\u0631\u0627\u0621\u0629 \u0631\u0633\u0627\u0626\u0644 SMS \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0645\u0646 \u0625\u0639\u062F\u0627\u062F\u0627\u062A \u0627\u0644\u0631\u0628\u0637.",
-          "\u0627\u0631\u0628\u0637 \u0627\u0644\u0631\u0633\u0627\u0626\u0644 \u0628\u0627\u0644\u062D\u0633\u0627\u0628 \u0623\u0648 \u0627\u0644\u0645\u062D\u0641\u0638\u0629 \u0627\u0644\u0645\u0646\u0627\u0633\u0628\u0629.",
-          "\u0644\u0644\u0628\u0637\u0627\u0642\u0629\u060C \u0627\u062D\u0641\u0638 \u0627\u0633\u0645 \u0627\u0644\u0628\u0646\u0643 \u0648\u0622\u062E\u0631 \u0623\u0631\u0628\u0639\u0629 \u0623\u0631\u0642\u0627\u0645 \u0641\u0642\u0637 \u0648\u0644\u0627 \u062A\u062F\u062E\u0644 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0628\u0637\u0627\u0642\u0629 \u0627\u0644\u0643\u0627\u0645\u0644\u0629."
-        ]
-      },
-      {
-        id: "contacts_debts",
-        title: "\u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u0623\u0635\u062F\u0642\u0627\u0621 \u0648\u0627\u0644\u062F\u064A\u0648\u0646",
-        steps: [
-          "\u0627\u0643\u062A\u0628 \u0627\u0633\u0645 \u0627\u0644\u0634\u062E\u0635 \u0641\u064A \u0648\u0635\u0641 \u0627\u0644\u0645\u0635\u0631\u0648\u0641 \u0644\u062A\u062A\u0628\u0639\u0647 \u0628\u0633\u0647\u0648\u0644\u0629.",
-          "\u0627\u0633\u062A\u062E\u062F\u0645 \u062C\u0647\u0627\u062A \u0627\u0644\u0627\u062A\u0635\u0627\u0644 \u0625\u0630\u0627 \u0643\u0627\u0646\u062A \u0645\u062A\u0627\u062D\u0629 \u0641\u064A \u062D\u0633\u0627\u0628\u0643."
-        ]
-      },
-      {
-        id: "reports_goals",
-        title: "\u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631 \u0648\u0627\u0644\u0623\u0647\u062F\u0627\u0641",
-        steps: [
-          "\u0627\u0641\u062A\u062D \u0642\u0633\u0645 \u0627\u0644\u062A\u0642\u0627\u0631\u064A\u0631 \u0644\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u0631\u0633\u0648\u0645 \u0648\u0627\u0644\u062A\u062D\u0644\u064A\u0644\u0627\u062A.",
-          "\u0645\u0646 \u0642\u0633\u0645 \u0627\u0644\u0623\u0647\u062F\u0627\u0641 \u064A\u0645\u0643\u0646\u0643 \u0625\u0646\u0634\u0627\u0621 \u0647\u062F\u0641 \u0627\u062F\u062E\u0627\u0631 \u0648\u0645\u062A\u0627\u0628\u0639\u0629 \u0627\u0644\u062E\u0637\u0629."
-        ]
-      }
-    ]
-  };
-}
-var TOOL_EXECUTORS = {
-  finance_query,
-  get_today_expenses,
-  get_month_summary,
-  get_category_breakdown,
-  get_recent_transactions,
-  get_spending_by_person,
-  get_family_spending,
-  get_wallet_balances,
-  get_financial_goals,
-  get_previous_month_comparison,
-  get_daily_average,
-  get_spending_by_date_range,
-  search_transactions,
-  analyze_finances,
-  get_app_guide
-};
-function compactJson2(value) {
-  return JSON.stringify(value, (_key2, item) => {
-    if (typeof item === "bigint") return item.toString();
-    if (item instanceof Date) return item.toISOString();
-    return item;
-  });
-}
-async function executeTool(name2, args, ctx) {
-  const executor = TOOL_EXECUTORS[name2];
-  if (!executor) {
-    return compactJson2({ ok: false, tool: name2, error: `Tool "${name2}" not found` });
-  }
-  try {
-    const result = await executor(ctx, args);
-    return compactJson2({ ok: true, tool: name2, result });
-  } catch (error48) {
-    console.error(`[AI Chat Tool] Error executing ${name2}:`, error48.message);
-    return compactJson2({
-      ok: false,
-      tool: name2,
-      error: error48 instanceof Error ? error48.message : String(error48)
-    });
-  }
-}
-var TOOL_DEFINITIONS = [
-  {
-    type: "function",
-    function: {
-      name: "finance_query",
-      description: "\u0627\u0644\u0623\u062F\u0627\u0629 \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0627\u0644\u0623\u0633\u0627\u0633\u064A\u0629 \u0627\u0644\u0645\u0641\u0636\u0644\u0629. \u062A\u0631\u062C\u0639 JSON \u0645\u0646\u0638\u0645 \u0645\u0646 Finance Semantic Layer \u0628\u0623\u0642\u0644 facts \u0645\u0637\u0644\u0648\u0628\u0629 \u0641\u0642\u0637: \u0645\u0644\u062E\u0635\u060C \u0641\u0626\u0629\u060C \u0645\u0639\u0627\u0645\u0644\u0627\u062A\u060C \u0645\u0642\u0627\u0631\u0646\u0629\u060C \u0623\u0631\u0635\u062F\u0629 \u0645\u062D\u0627\u0641\u0638\u060C \u0623\u0647\u062F\u0627\u0641\u060C \u0623\u0648 \u0628\u064A\u0627\u0646\u0627\u062A \u0631\u0633\u0645.",
-      parameters: {
-        type: "object",
-        properties: {
-          kind: {
-            type: "string",
-            enum: FINANCE_QUERY_KINDS2,
-            description: "summary, wallet_summary, period_comparison, category_total, breakdown, transactions, chart, or goal_progress"
-          },
-          period: {
-            type: "string",
-            enum: PERIOD_HINTS,
-            description: "today, yesterday, current_week, current_month, previous_month, salary_cycle, or custom"
-          },
-          category: { type: "string", description: "Optional canonical category such as food or transport." },
-          query: { type: "string", description: "Optional exact search query for transaction evidence." },
-          start_date: { type: "string", description: "YYYY-MM-DD for custom periods." },
-          end_date: { type: "string", description: "YYYY-MM-DD for custom periods." },
-          granularity: {
-            type: "string",
-            enum: ["day", "week", "month", "category", "merchant"],
-            description: "Grouping for breakdowns or charts."
-          },
-          limit: { type: "number", description: "Maximum rows/points. Keep small." }
-        },
-        required: ["kind"]
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_today_expenses",
-      description: "\u062C\u0644\u0628 \u0645\u0635\u0627\u0631\u064A\u0641 \u0648\u062F\u062E\u0644 \u0627\u0644\u064A\u0648\u0645 \u0628\u0627\u0644\u062A\u0641\u0635\u064A\u0644",
-      parameters: { type: "object", properties: {}, required: [] }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_month_summary",
-      description: "\u0645\u0644\u062E\u0635 \u0627\u0644\u0634\u0647\u0631: \u0625\u062C\u0645\u0627\u0644\u064A \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641 \u0648\u0627\u0644\u062F\u062E\u0644 \u0648\u0627\u0644\u0635\u0627\u0641\u064A \u0648\u0645\u062A\u0648\u0633\u0637 \u0627\u0644\u0635\u0631\u0641 \u0627\u0644\u064A\u0648\u0645\u064A",
-      parameters: {
-        type: "object",
-        properties: {
-          month: { type: "string", description: "\u0627\u0644\u0634\u0647\u0631 \u0628\u0635\u064A\u063A\u0629 YYYY-MM (\u0627\u062E\u062A\u064A\u0627\u0631\u064A\u060C \u0627\u0644\u0627\u0641\u062A\u0631\u0627\u0636\u064A \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062D\u0627\u0644\u064A)" }
-        }
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_category_breakdown",
-      description: "\u062A\u0641\u0635\u064A\u0644 \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641 \u062D\u0633\u0628 \u0627\u0644\u0641\u0626\u0629 \u0645\u0639 \u0627\u0644\u0646\u0633\u0628 \u0627\u0644\u0645\u0626\u0648\u064A\u0629",
-      parameters: {
-        type: "object",
-        properties: {
-          month: { type: "string", description: "\u0627\u0644\u0634\u0647\u0631 \u0628\u0635\u064A\u063A\u0629 YYYY-MM (\u0627\u062E\u062A\u064A\u0627\u0631\u064A)" }
-        }
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_recent_transactions",
-      description: "\u0622\u062E\u0631 \u0627\u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A \u0627\u0644\u0645\u0633\u062C\u0644\u0629 \u0628\u0627\u0644\u062A\u0641\u0635\u064A\u0644",
-      parameters: {
-        type: "object",
-        properties: {
-          count: { type: "number", description: "\u0639\u062F\u062F \u0627\u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A (\u0627\u0644\u0627\u0641\u062A\u0631\u0627\u0636\u064A 10\u060C \u0627\u0644\u0623\u0642\u0635\u0649 30)" }
-        }
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_spending_by_person",
-      description: "\u0627\u0644\u0645\u0628\u0627\u0644\u063A \u0627\u0644\u0645\u062D\u0648\u0651\u0644\u0629 \u0623\u0648 \u0627\u0644\u0645\u0635\u0631\u0648\u0641\u0629 \u0639\u0644\u0649 \u0634\u062E\u0635 \u0645\u0639\u064A\u0651\u0646",
-      parameters: {
-        type: "object",
-        properties: {
-          name: { type: "string", description: "\u0627\u0633\u0645 \u0627\u0644\u0634\u062E\u0635" }
-        },
-        required: ["name"]
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_family_spending",
-      description: "\u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u0623\u0633\u0631\u0629 \u0648\u0627\u0644\u0623\u0648\u0644\u0627\u062F \u0648\u0627\u0644\u062A\u0639\u0644\u064A\u0645 \u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631",
-      parameters: { type: "object", properties: {} }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_wallet_balances",
-      description: "\u0623\u0631\u0635\u062F\u0629 \u0643\u0644 \u0627\u0644\u0645\u062D\u0627\u0641\u0638 \u0648\u0627\u0644\u062D\u0633\u0627\u0628\u0627\u062A",
-      parameters: { type: "object", properties: {} }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_financial_goals",
-      description: "\u0623\u0647\u062F\u0627\u0641 \u0627\u0644\u0627\u062F\u062E\u0627\u0631 \u0627\u0644\u0646\u0634\u0637\u0629 \u0648\u0627\u0644\u062A\u0642\u062F\u0645 \u0641\u064A\u0647\u0627",
-      parameters: { type: "object", properties: {} }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_previous_month_comparison",
-      description: "\u0645\u0642\u0627\u0631\u0646\u0629 \u0645\u0635\u0627\u0631\u064A\u0641 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u062D\u0627\u0644\u064A \u0628\u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0633\u0627\u0628\u0642",
-      parameters: { type: "object", properties: {} }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_daily_average",
-      description: "\u0645\u062A\u0648\u0633\u0637 \u0627\u0644\u0635\u0631\u0641 \u0627\u0644\u064A\u0648\u0645\u064A \u0648\u0627\u0644\u062A\u0648\u0642\u0639\u0627\u062A \u0644\u0646\u0647\u0627\u064A\u0629 \u0627\u0644\u0634\u0647\u0631",
-      parameters: { type: "object", properties: {} }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_spending_by_date_range",
-      description: "\u0645\u0635\u0627\u0631\u064A\u0641 \u0641\u062A\u0631\u0629 \u0632\u0645\u0646\u064A\u0629 \u0645\u062D\u062F\u062F\u0629",
-      parameters: {
-        type: "object",
-        properties: {
-          start_date: { type: "string", description: "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0628\u062F\u0627\u064A\u0629 (YYYY-MM-DD)" },
-          end_date: { type: "string", description: "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0646\u0647\u0627\u064A\u0629 (YYYY-MM-DD)" }
-        },
-        required: ["start_date", "end_date"]
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "search_transactions",
-      description: "\u0628\u062D\u062B \u0641\u064A \u0627\u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062A \u0628\u0643\u0644\u0645\u0629 \u0623\u0648 \u0648\u0635\u0641 \u0645\u0639\u064A\u0651\u0646",
-      parameters: {
-        type: "object",
-        properties: {
-          query: { type: "string", description: "\u0643\u0644\u0645\u0629 \u0627\u0644\u0628\u062D\u062B" }
-        },
-        required: ["query"]
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "analyze_finances",
-      description: "\u0623\u062F\u0627\u0629 \u0625\u0636\u0627\u0641\u064A\u0629 \u0642\u0648\u064A\u0629 \u0644\u0644\u062A\u062D\u0644\u064A\u0644 \u0627\u0644\u0645\u0639\u0642\u062F. \u0627\u0633\u062A\u062E\u062F\u0645\u0647\u0627 \u0644\u0644\u0623\u0633\u0626\u0644\u0629 \u0627\u0644\u0645\u0639\u0642\u062F\u0629 \u0627\u0644\u062A\u064A \u062A\u062D\u062A\u0627\u062C \u0628\u062D\u062B \u0645\u062E\u0635\u0635 \u0644\u0627 \u062A\u063A\u0637\u064A\u0647 \u0627\u0644\u0623\u062F\u0648\u0627\u062A \u0627\u0644\u0633\u0627\u0628\u0642\u0629.",
-      parameters: {
-        type: "object",
-        properties: {
-          start_date: { type: "string", description: "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0628\u062F\u0627\u064A\u0629 (YYYY-MM-DD)" },
-          end_date: { type: "string", description: "\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0646\u0647\u0627\u064A\u0629 (YYYY-MM-DD)" },
-          type: { type: "string", enum: ["income", "expense"] },
-          category: { type: "string" },
-          search_query: { type: "string" },
-          group_by: { type: "string", enum: ["category", "month"] },
-          limit: { type: "number" }
-        }
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_app_guide",
-      description: "\u062F\u0644\u064A\u0644 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0627\u0644\u062A\u0637\u0628\u064A\u0642 \u0648\u0643\u064A\u0641\u064A\u0629 \u0625\u0636\u0627\u0641\u0629 \u0645\u0635\u0627\u0631\u064A\u0641 \u0623\u0648 \u0645\u064A\u0632\u0627\u0646\u064A\u0629 \u0623\u0648 \u0645\u062D\u0641\u0638\u0629\u060C \u0627\u0633\u062A\u062E\u062F\u0645\u0647\u0627 \u0644\u0644\u0631\u062F \u0639\u0644\u0649 \u0623\u0633\u0626\u0644\u0629 \u062D\u0648\u0644 \u0643\u064A\u0641\u064A\u0629 \u0639\u0645\u0644 \u0627\u0644\u062A\u0637\u0628\u064A\u0642",
-      parameters: { type: "object", properties: {} }
-    }
-  }
-];
-
-// api/services/ai-chat-service.ts
-init_user_profile_service();
-function profileString(value, fallback = "") {
-  return typeof value === "string" ? value : fallback;
-}
-function profileNumber(value, fallback) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-function looksLikeToolPreludeOnly(text2) {
-  const normalized = text2.trim();
-  if (!normalized) return true;
-  return normalized.length < 220 && /(خليني اشوف|خليني أشوف|اشوف تفاصيل|أشوف تفاصيل|هراجع|هشيك)/i.test(
-    normalized
-  );
-}
-function buildGoalFallback(toolResult) {
-  if (!toolResult) return void 0;
-  try {
-    const parsed2 = JSON.parse(toolResult);
-    const goals = parsed2.result?.goals ?? [];
-    if (Array.isArray(goals) && goals.length > 0) {
-      const normalizedGoals = goals.map((goal) => ({
-        title: profileString(goal.title, ""),
-        targetAmount: profileNumber(goal.target_amount ?? goal.targetAmount, 0),
-        status: profileString(goal.status, "")
-      })).filter((goal) => goal.title || goal.targetAmount > 0);
-      const preferred2 = normalizedGoals.find((goal) => /عربي|سيار|car/i.test(goal.title) && goal.targetAmount > 0) ?? normalizedGoals.find((goal) => goal.targetAmount > 0) ?? normalizedGoals[0];
-      if (preferred2) {
-        const amountText2 = preferred2.targetAmount > 0 ? `${preferred2.targetAmount.toLocaleString("ar-EG")} \u062C\u0646\u064A\u0647` : "\u0645\u0628\u0644\u063A \u063A\u064A\u0631 \u0645\u062D\u062F\u062F";
-        return `\u0623\u064A\u0648\u0647\u060C \u062D\u0633\u0628 \u0623\u0647\u062F\u0627\u0641\u0643 \u0627\u0644\u0645\u0633\u062C\u0644\u0629 \u0647\u062F\u0641 \u0627\u0644\u0639\u0631\u0628\u064A\u0629 \u0647\u0648 ${amountText2}. \u0627\u0644\u0647\u062F\u0641 \u0638\u0627\u0647\u0631 \u0639\u0646\u062F\u0643 \u0628\u0627\u0633\u0645 "${preferred2.title}" \u0648\u062D\u0627\u0644\u062A\u0647 ${preferred2.status || "\u0646\u0634\u0637"}.`;
-      }
-    }
-  } catch {
-  }
-  const rows = toolResult.split("\n").map((line) => line.trim()).filter((line) => line.includes("|") && !line.startsWith("title |"));
-  const parsed = rows.map((line) => {
-    const [title = "", amount = "", status = ""] = line.split("|").map((part) => part.trim());
-    const targetAmount = Number(amount);
-    return {
-      title,
-      targetAmount: Number.isFinite(targetAmount) ? targetAmount : 0,
-      status
-    };
-  }).filter((goal) => goal.title || goal.targetAmount > 0);
-  if (parsed.length === 0) return void 0;
-  const preferred = parsed.find((goal) => /عربي|سيار|car/i.test(goal.title) && goal.targetAmount > 0) ?? parsed.find((goal) => goal.targetAmount > 0) ?? parsed[0];
-  const amountText = preferred.targetAmount > 0 ? `${preferred.targetAmount.toLocaleString("ar-EG")} \u062C\u0646\u064A\u0647` : "\u0645\u0628\u0644\u063A \u063A\u064A\u0631 \u0645\u062D\u062F\u062F";
-  return `\u0623\u064A\u0648\u0647\u060C \u062D\u0633\u0628 \u0623\u0647\u062F\u0627\u0641\u0643 \u0627\u0644\u0645\u0633\u062C\u0644\u0629 \u0647\u062F\u0641 \u0627\u0644\u0639\u0631\u0628\u064A\u0629 \u0647\u0648 ${amountText}. \u0627\u0644\u0647\u062F\u0641 \u0638\u0627\u0647\u0631 \u0639\u0646\u062F\u0643 \u0628\u0627\u0633\u0645 "${preferred.title}" \u0648\u062D\u0627\u0644\u062A\u0647 ${preferred.status || "\u0646\u0634\u0637"}.`;
-}
-async function buildSystemPrompt(userId, userType) {
-  let userName = "\u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645";
-  let profession = "";
-  let goal = "";
-  let personality = "";
-  let salaryDay = 1;
-  let createdAtAr = "";
-  try {
-    const profile = await getSmartProfile(userId, userType);
-    userName = profileString(profile.basicInfo.name, userName);
-    profession = profileString(profile.basicInfo.profession);
-    salaryDay = profileNumber(profile.financialInfo.salaryDay, 1);
-    goal = {
-      organize_expenses: "\u062A\u0646\u0638\u064A\u0645 \u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641",
-      reduce_spending: "\u062A\u0642\u0644\u064A\u0644 \u0627\u0644\u0635\u0631\u0641",
-      track_income: "\u062A\u062A\u0628\u0639 \u0627\u0644\u062F\u062E\u0644",
-      save_money: "\u0627\u062F\u062E\u0627\u0631 \u0627\u0644\u0645\u0627\u0644",
-      manage_business: "\u0625\u062F\u0627\u0631\u0629 \u0645\u0634\u0631\u0648\u0639",
-      pay_debt: "\u0633\u062F\u0627\u062F \u0627\u0644\u062F\u064A\u0648\u0646"
-    }[String(profile.financialInfo.primaryGoal)] || "";
-    personality = String(
-      profile.aiInferredAttributes?.spendingBehavior || ""
-    );
-    const { users: users2, localUsers: localUsers2 } = await Promise.resolve().then(() => (init_schema2(), schema_exports));
-    const { eq: eq2 } = await Promise.resolve().then(() => (init_drizzle_orm(), drizzle_orm_exports));
-    let userRecord;
-    if (userType === "local") {
-      userRecord = await db.query.localUsers.findFirst({ where: eq2(localUsers2.id, userId) });
-    } else {
-      userRecord = await db.query.users.findFirst({ where: eq2(users2.id, userId) });
-    }
-    if (userRecord && userRecord.createdAt) {
-      createdAtAr = new Date(userRecord.createdAt).toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
-    }
-  } catch {
-  }
-  const profileLine = [
-    profession ? `\u0627\u0644\u0645\u0647\u0646\u0629: ${profession}` : "",
-    goal ? `\u0627\u0644\u0647\u062F\u0641: ${goal}` : "",
-    personality ? `\u0623\u0633\u0644\u0648\u0628 \u0627\u0644\u0625\u0646\u0641\u0627\u0642: ${personality}` : ""
-  ].filter(Boolean).join(" | ");
-  const now = /* @__PURE__ */ new Date();
-  const todayAr = now.toLocaleDateString("ar-EG", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-  const prompt = `\u0623\u0646\u062A "\u0633\u0645\u0627\u0631\u062A" \u2014 \u0645\u0633\u062A\u0634\u0627\u0631 \u0645\u0627\u0644\u064A \u0627\u062D\u062A\u0631\u0627\u0641\u064A \u0648\u0634\u0627\u062A \u0628\u0648\u062A \u0645\u062A\u0637\u0648\u0631 \u062C\u062F\u0627\u064B \u0641\u064A \u062A\u0637\u0628\u064A\u0642 SmartSpend. 
-\u0627\u0633\u0645 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645: ${userName}
-${profileLine ? "\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645: " + profileLine : ""}
-
-[\u0645\u0639\u0644\u0648\u0645\u0627\u062A \u0632\u0645\u0646\u064A\u0629 \u0647\u0627\u0645\u0629 - \u062F\u0642\u064A\u0642\u0629 \u062C\u062F\u0627\u064B \u0644\u0644\u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0641\u064A \u0627\u0644\u0623\u062F\u0648\u0627\u062A]:
-- \u0627\u0644\u064A\u0648\u0645 \u0647\u0648: ${todayAr}
-- \u064A\u0648\u0645 \u0646\u0632\u0648\u0644 \u0627\u0644\u0631\u0627\u062A\u0628 (\u0628\u062F\u0627\u064A\u0629 \u0627\u0644\u0634\u0647\u0631 \u0627\u0644\u0645\u0627\u0644\u064A): \u064A\u0648\u0645 ${salaryDay} \u0645\u0646 \u0643\u0644 \u0634\u0647\u0631.
-${createdAtAr ? `- \u062A\u0627\u0631\u064A\u062E \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0641\u064A \u0627\u0644\u062A\u0637\u0628\u064A\u0642: ${createdAtAr}.
-(\u0642\u0627\u0639\u062F\u0629 \u0635\u0627\u0631\u0645\u0629: \u0644\u0627 \u062A\u062D\u0627\u0648\u0644 \u062C\u0644\u0628 \u0623\u0648 \u062A\u062D\u0644\u064A\u0644 \u0628\u064A\u0627\u0646\u0627\u062A \u0644\u0634\u0647\u0648\u0631 \u0623\u0648 \u0641\u062A\u0631\u0627\u062A \u062A\u0633\u0628\u0642 \u0647\u0630\u0627 \u0627\u0644\u062A\u0627\u0631\u064A\u062E. \u0625\u0630\u0627 \u0637\u0644\u0628 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0645\u0642\u0627\u0631\u0646\u0629 \u0628\u0634\u0647\u0648\u0631 \u0642\u062F\u064A\u0645\u0629 \u0642\u0628\u0644 \u0627\u0634\u062A\u0631\u0627\u0643\u0647\u060C \u0623\u062E\u0628\u0631\u0647 \u0628\u0643\u0644 \u0648\u0636\u0648\u062D \u0648\u0644\u0628\u0627\u0642\u0629 \u0623\u0646 \u062D\u0633\u0627\u0628\u0647 \u0644\u0645 \u064A\u0643\u0646 \u0645\u0648\u062C\u0648\u062F\u0627\u064B \u0648\u0642\u062A\u0647\u0627 \u0648\u0644\u0627 \u062A\u0648\u062C\u062F \u062A\u0641\u0627\u0635\u064A\u0644 \u0644\u062A\u0644\u0643 \u0627\u0644\u0641\u062A\u0631\u0629\u060C \u0648\u0644\u0627 \u062A\u0633\u062A\u063A\u0631\u0628 \u0645\u0646 \u063A\u064A\u0627\u0628 \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0648\u0644\u0627 \u062A\u062E\u062A\u0631\u0639 \u0623\u0631\u0642\u0627\u0645\u0627\u064B).` : ""}
-\u0627\u0633\u062A\u062E\u062F\u0645 \u0647\u0630\u0647 \u0627\u0644\u062A\u0648\u0627\u0631\u064A\u062E \u0628\u062F\u0642\u0629 \u0625\u0630\u0627 \u0637\u0644\u0628 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u062A\u0642\u0627\u0631\u064A\u0631 \u0639\u0646 "\u0627\u0644\u064A\u0648\u0645"\u060C "\u0623\u0645\u0633"\u060C "\u0647\u0630\u0627 \u0627\u0644\u0634\u0647\u0631"\u060C \u0625\u0644\u062E.
-
-[\u0642\u0648\u0627\u0639\u062F \u0627\u0644\u0627\u0633\u062A\u062C\u0627\u0628\u0629 \u0627\u0644\u0627\u062D\u062A\u0631\u0627\u0641\u064A\u0629]:
-1. \u062A\u062D\u062F\u062B \u0643\u062E\u0628\u064A\u0631 \u0645\u0627\u0644\u064A \u0645\u062A\u0645\u0631\u0633 (\u0645\u062B\u0644 ChatGPT)\u060C \u0648\u0642\u062F\u0645 \u0625\u062C\u0627\u0628\u0627\u062A \u0645\u0641\u0635\u0644\u0629\u060C \u0648\u0627\u0636\u062D\u0629\u060C \u0648\u063A\u0646\u064A\u0629 \u0628\u0627\u0644\u0645\u0639\u0644\u0648\u0645\u0627\u062A (\u0644\u0627 \u062A\u0642\u062A\u0635\u0631 \u0639\u0644\u0649 \u0627\u0644\u0631\u062F\u0648\u062F \u0627\u0644\u0642\u0635\u064A\u0631\u0629).
-2. \u0627\u0633\u062A\u062E\u062F\u0645 \u062C\u062F\u0627\u0648\u0644 Markdown (Markdown Tables) \u0644\u062A\u0646\u0633\u064A\u0642 \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0648\u0627\u0644\u0645\u0642\u0627\u0631\u0646\u0627\u062A \u0628\u0634\u0643\u0644 \u062C\u0645\u0627\u0644\u064A \u0648\u0645\u0642\u0631\u0648\u0621 \u0625\u0630\u0627 \u0643\u0627\u0646\u062A \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A \u0643\u062B\u064A\u0631\u0629.
-3. \u0627\u0633\u062A\u062F\u0639\u0650 \u0627\u0644\u0623\u062F\u0648\u0627\u062A \u0627\u0644\u0645\u0646\u0627\u0633\u0628\u0629 \u0628\u062F\u0642\u0629:
-   - \u0641\u064A \u0627\u0644\u0623\u0633\u0626\u0644\u0629 \u0627\u0644\u0645\u0627\u0644\u064A\u0629 \u0627\u0633\u062A\u062E\u062F\u0645 finance_query \u0643\u062E\u064A\u0627\u0631 \u0623\u0648\u0644 \u062F\u0627\u0626\u0645\u0627\u064B \u0644\u0623\u0646\u0647\u0627 \u062A\u0631\u062C\u0639 JSON facts \u0635\u063A\u064A\u0631 \u0645\u0646 Finance Semantic Layer.
-   - \u0625\u0630\u0627 \u0633\u0623\u0644 \u0639\u0646 \u0641\u0626\u0629 \u0645\u0639\u064A\u0646\u0629 (\u0645\u062B\u0644 \u0627\u0644\u0623\u0643\u0644)\u060C \u0627\u0633\u062A\u062E\u062F\u0645 finance_query \u0628\u0646\u0648\u0639 category_total \u0648\u0645\u0639 category \u0645\u0646\u0627\u0633\u0628\u0629.
-   - \u0625\u0630\u0627 \u0633\u0623\u0644 \u0639\u0646 \u0643\u064A\u0641\u064A\u0629 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0627\u0644\u062A\u0637\u0628\u064A\u0642\u060C \u0627\u0633\u062A\u062E\u062F\u0645 \u0623\u062F\u0627\u0629 get_app_guide.
-   - \u0625\u0630\u0627 \u0637\u0644\u0628 \u0625\u0646\u0634\u0627\u0621 \u0647\u062F\u0641/\u0645\u064A\u0632\u0627\u0646\u064A\u0629/\u0645\u062D\u0641\u0638\u0629 \u0623\u0648 \u062A\u0646\u0641\u064A\u0630 \u0639\u0645\u0644\u064A\u0629 \u062F\u0627\u062E\u0644 \u0627\u0644\u062A\u0637\u0628\u064A\u0642\u060C \u0627\u0634\u0631\u062D \u0625\u0646\u0643 \u0633\u062A\u062C\u0647\u0632 \u0627\u0644\u0639\u0645\u0644\u064A\u0629 \u0644\u0644\u0645\u0631\u0627\u062C\u0639\u0629 \u0648\u0623\u0646 \u0627\u0644\u062A\u0646\u0641\u064A\u0630 \u0627\u0644\u0646\u0647\u0627\u0626\u064A \u064A\u062D\u062A\u0627\u062C \u062A\u0623\u0643\u064A\u062F \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645. \u0644\u0627 \u062A\u0642\u0644 \u0625\u0646\u0643 \u0644\u0627 \u062A\u0633\u062A\u0637\u064A\u0639 \u062A\u0646\u0641\u064A\u0630\u0647\u0627 \u0623\u0648 \u0625\u0646 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0644\u0627\u0632\u0645 \u064A\u0639\u0645\u0644\u0647\u0627 \u064A\u062F\u0648\u064A\u0627\u064B \u0625\u0630\u0627 \u0643\u0627\u0646 \u0637\u0644\u0628\u0647 \u0648\u0627\u0636\u062D\u0627\u064B.
-4. \u062F\u0644\u064A\u0644 \u0627\u0644\u062A\u0637\u0628\u064A\u0642 \u0627\u0644\u0646\u0627\u062A\u062C \u0645\u0646 get_app_guide \u0647\u0648 \u0627\u0644\u0645\u0635\u062F\u0631 \u0627\u0644\u062D\u0627\u0633\u0645 \u0641\u064A \u0623\u0633\u0626\u0644\u0629 \u0627\u0633\u062A\u062E\u062F\u0627\u0645 SmartSpend. \u0644\u0627 \u062A\u0642\u0644 \u0625\u0646 \u062E\u0627\u0635\u064A\u0629 \u063A\u064A\u0631 \u0645\u062F\u0639\u0648\u0645\u0629 \u0625\u0630\u0627 \u0630\u0643\u0631\u0647\u0627 \u0627\u0644\u062F\u0644\u064A\u0644.
-5. \u0646\u062A\u0627\u0626\u062C \u0627\u0644\u0623\u062F\u0648\u0627\u062A \u062A\u0623\u062A\u064A \u0641\u064A JSON envelope. \u0627\u0642\u0631\u0623 result/facts/artifacts \u0641\u0642\u0637\u060C \u0648\u0644\u0627 \u062A\u062E\u062A\u0631\u0639 \u0623\u0631\u0642\u0627\u0645\u0627\u064B \u0623\u0628\u062F\u0627\u064B \u0645\u0646 \u062E\u064A\u0627\u0644\u0643.
-6. \u0642\u062F\u0645 \u062F\u0627\u0626\u0645\u0627\u064B \u062A\u062D\u0644\u064A\u0644\u0627\u064B \u0623\u0648 \u0646\u0635\u064A\u062D\u0629 \u0645\u0627\u0644\u064A\u0629 \u0639\u0645\u064A\u0642\u0629 \u0628\u0639\u062F \u0633\u0631\u062F \u0627\u0644\u0628\u064A\u0627\u0646\u0627\u062A\u060C \u0648\u0644\u0627 \u062A\u0643\u062A\u0641\u0650 \u0628\u0633\u0631\u062F \u0627\u0644\u0623\u0631\u0642\u0627\u0645 \u0641\u0642\u0637.
-7. \u0628\u0639\u062F \u0627\u0633\u062A\u062E\u062F\u0627\u0645 \u0623\u064A \u0623\u062F\u0627\u0629\u060C \u0644\u0627 \u062A\u0631\u062F \u0628\u062C\u0645\u0644\u0629 \u062A\u0645\u0647\u064A\u062F\u064A\u0629 \u0641\u0642\u0637 \u0645\u062B\u0644 "\u062E\u0644\u064A\u0646\u064A \u0623\u0634\u0648\u0641". \u0644\u0627\u0632\u0645 \u062A\u0631\u062C\u0639 \u0627\u0644\u0646\u062A\u064A\u062C\u0629 \u0627\u0644\u0646\u0647\u0627\u0626\u064A\u0629 \u0645\u0646 \u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0623\u062F\u0627\u0629 \u0641\u064A \u0646\u0641\u0633 \u0627\u0644\u0631\u062F.
-8. \u062A\u062D\u062F\u062B \u0628\u0627\u0644\u0644\u0647\u062C\u0629 \u0627\u0644\u0645\u0635\u0631\u064A\u0629 \u0627\u0644\u0631\u0627\u0642\u064A\u0629 \u0648\u0627\u0644\u0648\u062F\u064A\u0629.`;
-  return { prompt, salaryDay };
-}
-async function processAIChatMessage(input) {
-  const { userId, userType, message, conversationHistory, config: config3 } = input;
-  const { prompt: systemPrompt, salaryDay } = await buildSystemPrompt(userId, userType);
-  const messages = [
-    { role: "system", content: systemPrompt }
-  ];
-  const historyWindow = conversationHistory.slice(-6);
-  for (const msg of historyWindow) {
-    if (msg.role === "user" || msg.role === "assistant") {
-      messages.push({ role: msg.role, content: msg.content });
-    }
-  }
-  messages.push({ role: "user", content: message });
-  let totalTokens = 0;
-  const toolsUsed = [];
-  const toolResults = [];
-  const maxToolRounds = Math.max(0, Math.min(input.config.maxToolRounds ?? 1, 2));
-  let response = await callChatCompletionAPI(config3.baseUrl, config3.apiKey, {
-    model: config3.model,
-    messages,
-    tools: TOOL_DEFINITIONS,
-    tool_choice: "auto",
-    max_tokens: config3.maxTokens,
-    temperature: 0.7
-  });
-  totalTokens += response.tokensUsed;
-  let round2 = 0;
-  while (response.toolCalls && round2 < maxToolRounds) {
-    round2++;
-    messages.push({
-      role: "assistant",
-      content: response.text || "",
-      tool_calls: response.toolCalls
-    });
-    for (const tc of response.toolCalls) {
-      const toolName = tc.function.name;
-      toolsUsed.push(toolName);
-      let args = {};
-      try {
-        args = JSON.parse(tc.function.arguments || "{}");
-      } catch {
-        args = {};
-      }
-      console.log(`[AI Chat] Executing tool: ${toolName}(${JSON.stringify(args)})`);
-      const result = await executeTool(toolName, args, { userId, userType, salaryDay });
-      toolResults.push({ name: toolName, content: result });
-      messages.push({
-        role: "tool",
-        content: result,
-        tool_call_id: tc.id
-      });
-    }
-    response = await callChatCompletionAPI(config3.baseUrl, config3.apiKey, {
-      model: config3.model,
-      messages,
-      tools: TOOL_DEFINITIONS,
-      tool_choice: "auto",
-      max_tokens: config3.maxTokens,
-      temperature: 0.7
-    });
-    totalTokens += response.tokensUsed;
-  }
-  const goalFallback = toolsUsed.includes("get_financial_goals") && looksLikeToolPreludeOnly(response.text || "") ? buildGoalFallback(toolResults.find((item) => item.name === "get_financial_goals")?.content) : void 0;
-  return {
-    response: goalFallback || response.text || "\u0639\u0630\u0631\u0627\u064B\u060C \u0645\u0634 \u0642\u0627\u062F\u0631 \u0623\u0631\u062F \u062F\u0644\u0648\u0642\u062A\u064A. \u062C\u0631\u0628 \u062A\u0627\u0646\u064A.",
-    tokensUsed: totalTokens,
-    model: response.model,
-    toolsUsed: [...new Set(toolsUsed)]
-  };
-}
-
-// api/chat-router.ts
 init_ai_kernel();
 init_intent_router();
 init_ai_memory();
@@ -374273,8 +373973,9 @@ async function loadChatConfig() {
       pro: s3.chatbot_enabled_pro !== "false",
       ultra: s3.chatbot_enabled_ultra !== "false"
     },
-    aiKernelEnabled: s3.ai_kernel_enabled === "true",
-    aiKernelPrimaryEnabled: s3.ai_kernel_primary_enabled !== "false",
+    // The kernel serves local financial answers, memories, and structured actions
+    // without an LLM call. Keep it on unless an operator explicitly disables it.
+    aiKernelEnabled: s3.ai_kernel_enabled !== "false",
     settings: s3
   };
 }
@@ -374321,6 +374022,22 @@ function minimalStructuredResponse(content, artifacts, actions) {
       responseSchemaVersion: AI_RESPONSE_SCHEMA_VERSION
     }
   };
+}
+async function requireOwnedConversation(conversationId, userId, userType) {
+  const [conversation] = await db.select({ id: chatConversations.id }).from(chatConversations).where(
+    and(
+      eq(chatConversations.id, conversationId),
+      eq(chatConversations.userId, userId),
+      eq(chatConversations.userType, userType)
+    )
+  ).limit(1);
+  if (!conversation) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "\u0627\u0644\u0645\u062D\u0627\u062F\u062B\u0629 \u0645\u0634 \u0645\u0648\u062C\u0648\u062F\u0629."
+    });
+  }
+  return conversation;
 }
 function factNumber(facts, label, source) {
   const value = facts?.find((fact3) => fact3.label === label && (!source || fact3.source === source))?.value;
@@ -374465,7 +374182,8 @@ async function resolveTextActionReply(ctx, message, conversationId) {
   return {
     response,
     structured: minimalStructuredResponse(response, artifacts, []),
-    tokensUsed: Math.ceil((message.length + response.length) / 3.5),
+    // This confirmation is entirely server-side; never charge an LLM budget for it.
+    tokensUsed: 0,
     model: "server-action-runtime",
     toolsUsed: [`action.${kind}`]
   };
@@ -374500,16 +374218,15 @@ var chatRouter = router({
       settings: config3.settings,
       flagPrefix: "ai_kernel"
     });
-    const aiKernelActive = config3.aiKernelEnabled && rollout.enabled;
-    const legacyFallbackAllowed = !aiKernelActive || config3.settings.ai_kernel_legacy_fallback_enabled === "true";
+    const aiKernelActive = config3.aiKernelEnabled;
     if (!config3.enabled[plan]) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "FORBIDDEN",
         message: "\u0627\u0644\u0634\u0627\u062A \u0628\u0648\u062A \u0645\u0634 \u0645\u062A\u0627\u062D \u0641\u064A \u062E\u0637\u062A\u0643 \u0627\u0644\u062D\u0627\u0644\u064A\u0629. \u062A\u0631\u0642\u064A \u0644\u0644\u0628\u0631\u0648 \u0639\u0634\u0627\u0646 \u062A\u0633\u062A\u062E\u062F\u0645\u0647! \u{1F680}"
       });
     }
-    if (!config3.apiKey) {
-      throw new TRPCError2({
+    if (!config3.apiKey && !aiKernelActive) {
+      throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "\u0627\u0644\u0634\u0627\u062A \u0628\u0648\u062A \u0645\u0634 \u0645\u0641\u0639\u0651\u0644 \u062D\u0627\u0644\u064A\u0627\u064B. \u062A\u0648\u0627\u0635\u0644 \u0645\u0639 \u0627\u0644\u062F\u0639\u0645."
       });
@@ -374518,7 +374235,7 @@ var chatRouter = router({
     const dailyLimit = config3.dailyLimits[plan] || 20;
     const devQaBypassDailyLimit = input.devQaBypassDailyLimit === true && process.env.NODE_ENV !== "production";
     if (!devQaBypassDailyLimit && todayCount >= dailyLimit) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "TOO_MANY_REQUESTS",
         message: `\u0648\u0635\u0644\u062A \u0627\u0644\u062D\u062F \u0627\u0644\u064A\u0648\u0645\u064A (${dailyLimit} \u0631\u0633\u0627\u0644\u0629). \u062C\u0631\u0628 \u0628\u0643\u0631\u0647 \u0623\u0648 \u062A\u0631\u0642\u064A \u062E\u0637\u062A\u0643! \u{1F48E}`
       });
@@ -374535,15 +374252,18 @@ var chatRouter = router({
       });
       conversationId = Number(inserted?.insertId);
       if (!Number.isInteger(conversationId) || conversationId <= 0) {
-        throw new TRPCError2({
+        throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "\u062A\u0639\u0630\u0631 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u0645\u062D\u0627\u062F\u062B\u0629. \u062C\u0631\u0651\u0628 \u062A\u0627\u0646\u064A."
         });
       }
+    } else {
+      await requireOwnedConversation(conversationId, user.id, user.type);
     }
     const activeConversationId = conversationId;
-    const existingMessages = await db.select({ role: chatMessages.role, content: chatMessages.content }).from(chatMessages).where(eq(chatMessages.conversationId, activeConversationId)).orderBy(chatMessages.createdAt);
-    const conversationHistory = existingMessages.filter((m2) => m2.role === "user" || m2.role === "assistant").map((m2) => ({
+    const historyLimit = Math.min(Math.max(config3.maxHistory, 2), 12);
+    const existingMessages = await db.select({ role: chatMessages.role, content: chatMessages.content }).from(chatMessages).where(eq(chatMessages.conversationId, activeConversationId)).orderBy(desc(chatMessages.createdAt)).limit(historyLimit);
+    const conversationHistory = existingMessages.reverse().filter((m2) => m2.role === "user" || m2.role === "assistant").map((m2) => ({
       role: m2.role,
       content: m2.content
     }));
@@ -374563,10 +374283,7 @@ var chatRouter = router({
       conversationId: activeConversationId,
       conversationHistory: conversationHistory.slice(-config3.maxHistory),
       metadata: {
-        legacyPath: legacyFallbackAllowed ? "processAIChatMessage" : "disabled",
-        legacyModel: config3.model,
-        legacyFallbackAllowed,
-        deprecatedPrimaryFlag: config3.aiKernelPrimaryEnabled,
+        agentRuntime: "plan_first_v1",
         rollout,
         devQaBypassDailyLimit
       }
@@ -374634,7 +374351,7 @@ var chatRouter = router({
         structured: textActionResult.structured
       };
     }
-    const kernelPrimaryCandidate = aiKernelActive ? await runAIKernelActive(kernelRequest, {
+    const kernelPrimary = aiKernelActive ? await runAIKernelActive(kernelRequest, {
       apiKey: config3.apiKey,
       baseUrl: config3.baseUrl,
       model: config3.model,
@@ -374644,42 +374361,21 @@ var chatRouter = router({
       console.warn("[AI Kernel Active] failed", message);
       return void 0;
     }) : void 0;
-    const kernelPrimary = kernelPrimaryCandidate;
-    const kernelShadowPromise = legacyFallbackAllowed && config3.aiKernelEnabled && !kernelPrimary ? runAIKernelShadow(kernelRequest).catch((error48) => {
-      const message = error48 instanceof Error ? error48.message : String(error48);
-      console.warn("[AI Kernel Shadow] failed", message);
-      return void 0;
-    }) : void 0;
-    const maxTokens = Math.min(config3.maxTokens[plan] || 1e3, chatPolicy.maxOutputTokens);
     let result = kernelPrimary ? {
       response: kernelPrimary.content,
-      tokensUsed: kernelPrimary.tokensUsed ?? Math.ceil(kernelPrimary.content.length / 3.5),
+      tokensUsed: kernelPrimary.tokensUsed ?? 0,
       model: kernelPrimary.model ?? config3.model,
       toolsUsed: dataNeedKinds(kernelPrimary)
-    } : legacyFallbackAllowed ? await processAIChatMessage({
-      userId: user.id,
-      userType: user.type,
-      userPlan: plan,
-      message: input.message,
-      conversationHistory,
-      config: {
-        apiKey: config3.apiKey,
-        baseUrl: config3.baseUrl,
-        model: config3.model,
-        maxTokens,
-        maxHistory: config3.maxHistory,
-        maxToolRounds: chatPolicy.maxToolRounds
-      }
-    }) : {
-      response: "\u0645\u0634 \u0642\u0627\u062F\u0631 \u0623\u0648\u0635\u0644 \u0644\u0639\u0642\u0644 \u0627\u0644\u0634\u0627\u062A \u0627\u0644\u0645\u0631\u0643\u0632\u064A \u062F\u0644\u0648\u0642\u062A\u064A. \u062C\u0631\u0651\u0628 \u062A\u0627\u0646\u064A \u0628\u0639\u062F \u0644\u062D\u0638\u0629.",
-      tokensUsed: Math.ceil(input.message.length / 3.5) + 18,
-      model: "ai-kernel-unavailable",
+    } : {
+      response: "\u0627\u0644\u0645\u0633\u0627\u0639\u062F \u0627\u0644\u0630\u0643\u064A \u0645\u062A\u0648\u0642\u0641 \u0645\u0624\u0642\u062A\u0627\u064B \u0645\u0646 \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A. \u062C\u0631\u0651\u0628 \u062A\u0627\u0646\u064A \u0628\u0639\u062F \u0645\u0627 \u064A\u062A\u0645 \u062A\u0641\u0639\u064A\u0644\u0647.",
+      tokensUsed: 0,
+      model: "ai-kernel-disabled",
       toolsUsed: []
     };
-    const shadow = kernelPrimary ?? (kernelShadowPromise ? await kernelShadowPromise : void 0);
+    const shadow = kernelPrimary;
     if (shadow) {
       console.info(
-        "[AI Kernel Comparison]",
+        "[AI Kernel Execution]",
         JSON.stringify({
           traceId: shadow.traceId,
           conversationId: activeConversationId,
@@ -374726,7 +374422,9 @@ var chatRouter = router({
       result = {
         ...result,
         response: actionAwareResponse,
-        tokensUsed: result.tokensUsed + Math.ceil(Math.max(0, actionAwareResponse.length - result.response.length) / 3.5)
+        // Server-side action wording is not provider usage and must never
+        // consume a user's token quota.
+        tokensUsed: result.tokensUsed
       };
     }
     const mergedActions = mergeActionArtifacts(shadow?.artifacts ?? [], actionDraft);
@@ -374748,7 +374446,7 @@ var chatRouter = router({
     });
     if (aiKernelActive) {
       const memoryMessages = [
-        ...conversationHistory.map((message) => ({
+        ...conversationHistory.slice(-6).map((message) => ({
           role: message.role,
           content: message.content
         })),
@@ -374773,7 +374471,7 @@ var chatRouter = router({
       }
     }
     const estimatedInputTokens = typeof shadow?.debug?.estimatedInputTokens === "number" ? shadow.debug.estimatedInputTokens : Math.ceil(input.message.length / 3.5);
-    const measuredLlmCalls = kernelPrimary ? Number(kernelPrimary.debug?.llmCalls ?? 0) : 1 + result.toolsUsed.length;
+    const measuredLlmCalls = Number(kernelPrimary?.debug?.llmCalls ?? 0);
     const measuredToolCalls = result.toolsUsed.length;
     const measuredEmbeddingCalls = embeddingCallsFromStructured(structured);
     const numericAccuracy = structured?.facts?.length ? validateNumbersAgainstFacts(result.response, structured.facts) : void 0;
@@ -374786,8 +374484,10 @@ var chatRouter = router({
       plan,
       intentKind: routedIntent.kind,
       model: result.model,
-      inputTokens: estimatedInputTokens,
-      outputTokens: Math.max(0, result.tokensUsed - estimatedInputTokens),
+      // For deterministic replies, estimated context size is telemetry only,
+      // not provider usage or a user charge.
+      inputTokens: measuredLlmCalls > 0 ? estimatedInputTokens : 0,
+      outputTokens: measuredLlmCalls > 0 ? Math.max(0, result.tokensUsed - estimatedInputTokens) : 0,
       totalTokens: result.tokensUsed,
       embeddingCalls: measuredEmbeddingCalls,
       llmCalls: measuredLlmCalls,
@@ -374811,8 +374511,8 @@ var chatRouter = router({
         resolvedFacts: structured?.facts?.length ?? 0,
         maxOutputTokens: chatPolicy.maxOutputTokens,
         maxToolRounds: chatPolicy.maxToolRounds,
-        kernelMode: kernelPrimary ? "active" : shadow ? "legacy_with_shadow" : legacyFallbackAllowed ? "legacy_explicit" : "kernel_unavailable",
-        legacyFallbackAllowed,
+        kernelMode: kernelPrimary ? "plan_first_active" : "kernel_disabled",
+        agentRuntime: "plan_first_v1",
         actionDraftError,
         rollout,
         numericAccuracy: numericAccuracy ? {
@@ -374894,7 +374594,7 @@ var chatRouter = router({
       )
     ).limit(1);
     if (!conv) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "NOT_FOUND",
         message: "\u0627\u0644\u0645\u062D\u0627\u062F\u062B\u0629 \u0645\u0634 \u0645\u0648\u062C\u0648\u062F\u0629."
       });
@@ -374927,7 +374627,7 @@ var chatRouter = router({
       )
     ).limit(1);
     if (!conv) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "NOT_FOUND",
         message: "\u0627\u0644\u0645\u062D\u0627\u062F\u062B\u0629 \u0645\u0634 \u0645\u0648\u062C\u0648\u062F\u0629."
       });
@@ -375058,7 +374758,7 @@ var businessRouter = router({
   })).mutation(async ({ ctx, input }) => {
     const apiKey = await getApiKey();
     if (!apiKey) {
-      throw new TRPCError2({ code: "INTERNAL_SERVER_ERROR", message: "\u0645\u0641\u062A\u0627\u062D AI \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "\u0645\u0641\u062A\u0627\u062D AI \u063A\u064A\u0631 \u0645\u062A\u0627\u062D" });
     }
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
@@ -375095,7 +374795,7 @@ var businessRouter = router({
         }))
       };
     } catch (err) {
-      throw new TRPCError2({
+      throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "\u0641\u0634\u0644 \u0641\u064A \u062A\u0648\u0644\u064A\u062F \u0627\u0644\u0641\u0626\u0627\u062A. \u062D\u0627\u0648\u0644 \u0645\u0631\u0629 \u0623\u062E\u0631\u0649."
       });
@@ -375124,7 +374824,7 @@ var businessRouter = router({
       eq(userBusinesses.isActive, true)
     )).limit(1);
     if (existing.length > 0) {
-      throw new TRPCError2({ code: "CONFLICT", message: "\u0644\u062F\u064A\u0643 \u0645\u0634\u0631\u0648\u0639 \u0646\u0634\u0637 \u0628\u0627\u0644\u0641\u0639\u0644" });
+      throw new TRPCError({ code: "CONFLICT", message: "\u0644\u062F\u064A\u0643 \u0645\u0634\u0631\u0648\u0639 \u0646\u0634\u0637 \u0628\u0627\u0644\u0641\u0639\u0644" });
     }
     const [business] = await db.insert(userBusinesses).values({
       userId: ctx.user.id,
@@ -375167,7 +374867,7 @@ var businessRouter = router({
       eq(userBusinesses.userType, ctx.user.type)
     )).limit(1);
     if (existing.length === 0) {
-      throw new TRPCError2({ code: "NOT_FOUND", message: "\u0644\u0627 \u064A\u0648\u062C\u062F \u0645\u0634\u0631\u0648\u0639" });
+      throw new TRPCError({ code: "NOT_FOUND", message: "\u0644\u0627 \u064A\u0648\u062C\u062F \u0645\u0634\u0631\u0648\u0639" });
     }
     const updates = {};
     if (input.name !== void 0) updates.name = input.name;
@@ -375186,7 +374886,7 @@ var businessRouter = router({
       eq(userBusinesses.userType, ctx.user.type)
     )).limit(1);
     if (existing.length === 0) {
-      throw new TRPCError2({ code: "NOT_FOUND", message: "\u0644\u0627 \u064A\u0648\u062C\u062F \u0645\u0634\u0631\u0648\u0639" });
+      throw new TRPCError({ code: "NOT_FOUND", message: "\u0644\u0627 \u064A\u0648\u062C\u062F \u0645\u0634\u0631\u0648\u0639" });
     }
     const businessId = existing[0].id;
     await db.delete(businessCategories).where(eq(businessCategories.businessId, businessId));
@@ -375212,7 +374912,7 @@ var businessRouter = router({
       eq(userBusinesses.isActive, true)
     )).limit(1);
     if (business.length === 0) {
-      throw new TRPCError2({ code: "NOT_FOUND", message: "\u0644\u0627 \u064A\u0648\u062C\u062F \u0645\u0634\u0631\u0648\u0639 \u0646\u0634\u0637" });
+      throw new TRPCError({ code: "NOT_FOUND", message: "\u0644\u0627 \u064A\u0648\u062C\u062F \u0645\u0634\u0631\u0648\u0639 \u0646\u0634\u0637" });
     }
     const [cat] = await db.insert(businessCategories).values({
       businessId: business[0].id,
@@ -375265,7 +374965,7 @@ var businessRouter = router({
       eq(userBusinesses.isActive, true)
     )).limit(1);
     if (business.length === 0) {
-      throw new TRPCError2({ code: "NOT_FOUND", message: "\u0644\u0627 \u064A\u0648\u062C\u062F \u0645\u0634\u0631\u0648\u0639 \u0646\u0634\u0637" });
+      throw new TRPCError({ code: "NOT_FOUND", message: "\u0644\u0627 \u064A\u0648\u062C\u062F \u0645\u0634\u0631\u0648\u0639 \u0646\u0634\u0637" });
     }
     await db.update(userContacts).set({ businessId: business[0].id, contactType: input.contactType }).where(eq(userContacts.id, input.contactId));
     invalidateUserClassificationCache(ctx.user.id);

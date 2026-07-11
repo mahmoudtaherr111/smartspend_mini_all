@@ -113,6 +113,11 @@ function goalTargetAmountFromQuery(query?: string): number | undefined {
   return amount;
 }
 
+function mayReferencePerson(intent: IntentResult): boolean {
+  const query = intent.slots.query ?? "";
+  return /(?:\b(?:على|ل|مع)\s+[\p{L}\u0600-\u06FF]{2,}|ماما|بابا|أخويا|أختي|صاحبي|صاحبتي|friend|with|for)/iu.test(query);
+}
+
 export function compileDataNeeds(intent: IntentResult): DataNeed[] {
   const needs: DataNeed[] = [];
   const add = (
@@ -141,6 +146,15 @@ export function compileDataNeeds(intent: IntentResult): DataNeed[] {
       } else {
         add("finance.summary", "hot", "small_finance_question_needs_only_summary", { period }, 1);
       }
+      if (mayReferencePerson(intent)) {
+        add(
+          "finance.person_total",
+          "hot",
+          "person_spending_question_needs_canonical_contact_lookup",
+          { period, personQuery: intent.slots.query },
+          1,
+        );
+      }
       if (intent.slots.needsEvidence) {
         add(
           "finance.transactions",
@@ -167,6 +181,13 @@ export function compileDataNeeds(intent: IntentResult): DataNeed[] {
       const isCompositeDrivers = intent.reason === "composite_comparison_drivers_match";
       const isBusiness = intent.reason === "business_cashflow_match";
       if (intent.reason === "classification_explanation_match") {
+        add(
+          "finance.classification_trace",
+          "hot",
+          "exact_classification_question_needs_saved_decision_trace",
+          { period, query: intent.slots.query, transactionTypes: ["expense"] },
+          1,
+        );
         add(
           "finance.transactions",
           "hot",

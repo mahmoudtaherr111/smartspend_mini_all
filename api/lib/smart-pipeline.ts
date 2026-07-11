@@ -11,9 +11,9 @@ import { mapModelName } from "./model-mapper";
 import type { ParsedTransaction } from "./rule-engine";
 import { matchArabicPhrase, stripArabicPrefix } from "./fuzzy-match";
 import { extractPeople, extractAmounts } from "./entity-extractor";
-import { decomposeHeuristic, type DecompositionResult } from "./narrative-decomposer";
+import { decomposeHeuristic, ALL_FINANCIAL_VERBS, type DecompositionResult } from "./narrative-decomposer";
 import { verifyClassifiedItems } from "./post-classifier-verifier";
-import { pickPersonCandidate, pickAllPersonCandidates, resolvePersonForTransaction } from "./person-resolver";
+import { pickPersonCandidate, pickAllPersonCandidates, resolvePersonForTransaction, compactArabic } from "./person-resolver";
 import { muscleMemoryLookup } from "./muscle-memory";
 import { matchSegment } from "./embedding-engine";
 import { db } from "../queries/connection";
@@ -33,6 +33,45 @@ const classificationCache = new LRUCache<string, PipelineResult>({
 function makeCacheKey(text: string, userPlan: string, userId: number, businessMode?: boolean): string {
   const normalized = text.trim().replace(/\s+/g, " ").toLowerCase();
   return `cls:${userId}:${userPlan}:${businessMode ? "biz" : "std"}:${normalized}`;
+}
+
+const PERSONAL_KEYWORDS = [
+  "فطرت", "اتعشيت", "اتغديت", "اكلت", "شربت", "قهوة", "كافيه",
+  "اوبر", "كريم", "مترو", "تاكسي", "بنزين", "مواصلات",
+  "كهرباء", "مياه", "غاز", "نت", "انترنت", "تليفون", "شحن",
+  "ايجار", "إيجار", "سكن",
+  "دكتور", "صيدلية", "دوا", "علاج",
+  "ملابس", "هاتف", "موبايل",
+  "سينما", "جيم", "نادي",
+  "مرتب", "راتب", "بونص", "جالي", "قبضت",
+];
+
+const SALARY_PATTERN = /(?:مرتب|راتب|دفع\s+مرتب|اديت\s+مرتب|صرفت\s+مرتب)/;
+
+function isStructuralOrConjunction(text: string, candidates: string[] = []): boolean {
+  if (!/\s+(?:او|أو)\s+/.test(text)) return false;
+
+  // 1. If there are multiple candidates, check if 'أو' sits between any two of them
+  if (candidates.length > 1) {
+    for (let i = 0; i < candidates.length; i++) {
+      for (let j = i + 1; j < candidates.length; j++) {
+        const c1 = compactArabic(candidates[i]);
+        const c2 = compactArabic(candidates[j]);
+        const normText = compactArabic(text);
+        const reg = new RegExp(`${c1}.*?\\s+(?:او|أو)\\s+.*?${c2}|${c2}.*?\\s+(?:او|أو)\\s+.*?${c1}`);
+        if (reg.test(normText)) return true;
+      }
+    }
+  }
+
+  // 2. Or if 'أو' connects two alternative financial verbs / actions in this text
+  const parts = text.split(/\s+(?:او|أو)\s+/);
+  if (parts.length >= 2) {
+    const verbsFound = parts.filter(p => ALL_FINANCIAL_VERBS.some(v => p.includes(v)));
+    if (verbsFound.length >= 2) return true;
+  }
+
+  return false;
 }
 
 /**
@@ -75,6 +114,8 @@ export interface PipelineInput {
     keywords: string[];
     matchExamples: string[];
   }>;
+  /** The actual userBusinesses.id — NOT the category row ID */
+  businessId?: number | null;
   businessMode?: boolean;
 }
 
@@ -437,6 +478,11 @@ export async function runSmartPipeline(
   const provider = input.provider || "gemini";
   const modelUsed = mapModelName(input.modelName);
   const fireworksKey = input.fireworksApiKey || "";
+  const knownPeople: KnownPersonContext[] = Array.isArray(
+    input.userProfileContext?.knownPeople,
+  )
+    ? input.userProfileContext.knownPeople
+    : [];
 
   // 0. Check classification cache first (40-60% hit rate for repeated queries)
   const cacheKey = makeCacheKey(input.text, input.userPlan, input.userId, input.businessMode);
@@ -476,12 +522,7 @@ export async function runSmartPipeline(
         ambiguityFlags: ["muscle_memory_hit"],
       };
 
-      const memKnownPeople: KnownPersonContext[] = Array.isArray(
-        input.userProfileContext?.knownPeople,
-      )
-        ? input.userProfileContext.knownPeople
-        : [];
-      const memKnownNames = memKnownPeople.map((p) => p.name).filter(Boolean);
+      const memKnownNames = knownPeople.map((p) => p.name).filter(Boolean);
 
       const memCandidates = pickAllPersonCandidates(
         null,
@@ -500,7 +541,7 @@ export async function runSmartPipeline(
             candidateName,
             input.text,
             input.text,
-            memKnownPeople,
+            knownPeople,
           );
           if (personApplied.needsClarification) {
             memNeedsClarification = true;
@@ -613,17 +654,7 @@ export async function runSmartPipeline(
 
     // --- Compute personal score ---
     // Check against the main category dictionary for personal keywords
-    const personalKeywords = [
-      "فطرت", "اتعشيت", "اتغديت", "اكلت", "شربت", "قهوة", "كافيه",
-      "اوبر", "كريم", "مترو", "تاكسي", "بنزين", "مواصلات",
-      "كهرباء", "مياه", "غاز", "نت", "انترنت", "تليفون", "شحن",
-      "ايجار", "إيجار", "سكن",
-      "دكتور", "صيدلية", "دوا", "علاج",
-      "ملابس", "هاتف", "موبايل",
-      "سينما", "جيم", "نادي",
-      "مرتب", "راتب", "بونص", "جالي", "قبضت",
-    ];
-    for (const pk of personalKeywords) {
+    for (const pk of PERSONAL_KEYWORDS) {
       if (scoringNormalized.includes(pk)) {
         personalScoreTotal += 10;
       }
@@ -631,8 +662,7 @@ export async function runSmartPipeline(
 
     // --- Salary detection in business mode ---
     // "دفعت مرتب فلان" or "اديت مرتب" → business salary expense
-    const salaryPattern = /(?:مرتب|راتب|دفع\s+مرتب|اديت\s+مرتب|صرفت\s+مرتب)/;
-    const hasSalaryKeyword = salaryPattern.test(scoringNormalized);
+    const hasSalaryKeyword = SALARY_PATTERN.test(scoringNormalized);
     if (hasSalaryKeyword && input.businessCategories.some(c => c.nameAr.includes("مرتب") || c.nameAr.includes("رواتب") || c.nameAr.includes("عمال"))) {
       businessScoreTotal += 25;
       if (businessMatchResult) {
@@ -681,7 +711,7 @@ export async function runSmartPipeline(
           parsedBy: "rule_engine",
           inferenceSource: "dictionary",
           ambiguityFlags: ["business_scoring_match"],
-          businessId: businessMatchResult.categoryId,
+          businessId: input.businessId ?? undefined,
           person_mentioned: bizPerson,
           person_relationship: bizPersonRel,
         };
@@ -729,11 +759,6 @@ export async function runSmartPipeline(
   let decision: "auto_save" | "review" | "clarify" | "unknown" = "unknown";
   let firstAlertMessage: string | undefined = undefined;
   let overallConfidence = 100;
-  const knownPeople: KnownPersonContext[] = Array.isArray(
-    input.userProfileContext?.knownPeople,
-  )
-    ? input.userProfileContext.knownPeople
-    : [];
   const pipelineSettings = input.pipelineSettings || {};
   const decompositionEnabled = settingBoolean(
     pipelineSettings,
@@ -832,11 +857,13 @@ export async function runSmartPipeline(
     }
   }
 
+  const knownNames = knownPeople.map((p) => p.name).filter(Boolean);
+
   // 2. Try Rule Engine for simple cases (1 amount, short sentence)
   let ruleResult: Awaited<ReturnType<typeof runRuleEngine>> | null = null;
   let ruleSucceeded = false;
   const decomposition: DecompositionResult = decompositionEnabled
-    ? decomposeHeuristic(input.text)
+    ? decomposeHeuristic(input.text, knownNames)
     : { segments: [], method: "simple", isComplex: false };
 
   const localSucceededItems: ParsedTransaction[] = [];
@@ -846,7 +873,6 @@ export async function runSmartPipeline(
   if (decomposition.segments.length > 1) {
     let localClarification: string | undefined;
     const localUnknownNames: string[] = [];
-    const knownNames = knownPeople.map((p) => p.name).filter(Boolean);
 
     for (const segment of decomposition.segments) {
       const segmentText = segment.text.trim();
@@ -878,12 +904,18 @@ export async function runSmartPipeline(
           );
 
           if (candidates.length > 0) {
-            const splitAmount = numAmounts === 1 && candidates.length > 1 && segmentRule.items.length === 1
+            const hasOrConjunction = isStructuralOrConjunction(segmentTextWithVerb, candidates);
+            const splitAmount = numAmounts === 1 && candidates.length > 1 && segmentRule.items.length === 1 && !hasOrConjunction
               ? Number((item.amount / candidates.length).toFixed(2)) 
               : item.amount;
 
             for (const candidateName of candidates) {
-              const clonedItem = { ...item, amount: splitAmount };
+              const clonedItem = { 
+                ...item, 
+                amount: splitAmount,
+                needsReview: hasOrConjunction ? true : item.needsReview,
+                confidence: hasOrConjunction ? Math.min(item.confidence, 50) : item.confidence
+              };
               const personApplied = personMemoryEnabled
                 ? applyPersonResolution(
                     clonedItem,
@@ -957,7 +989,6 @@ export async function runSmartPipeline(
       const segmentResolvedItems: ParsedTransaction[] = [];
       let anyNeedsClarification = false;
       const localUnknownNames: string[] = [];
-      const knownNames = knownPeople.map((p) => p.name).filter(Boolean);
 
       for (const item of ruleResult.items) {
           const candidates = pickAllPersonCandidates(
@@ -969,12 +1000,18 @@ export async function runSmartPipeline(
           if (candidates.length > 0) {
             // Only split amount if there's exactly 1 amount detected overall BUT multiple candidates 
             // AND we only found 1 item from rule engine (to avoid double splitting)
-            const splitAmount = numAmounts === 1 && candidates.length > 1 && ruleResult.items.length === 1
+            const hasOrConjunction = isStructuralOrConjunction(input.text, candidates);
+            const splitAmount = numAmounts === 1 && candidates.length > 1 && ruleResult.items.length === 1 && !hasOrConjunction
               ? Number((item.amount / candidates.length).toFixed(2)) 
               : item.amount;
 
             for (const candidateName of candidates) {
-              const clonedItem = { ...item, amount: splitAmount };
+              const clonedItem = { 
+                ...item, 
+                amount: splitAmount,
+                needsReview: hasOrConjunction ? true : item.needsReview,
+                confidence: hasOrConjunction ? Math.min(item.confidence, 50) : item.confidence
+              };
               const personApplied = personMemoryEnabled
                 ? applyPersonResolution(
                     clonedItem,
@@ -1059,6 +1096,10 @@ export async function runSmartPipeline(
     }
     decision = "review"; // Always review massive inputs forced locally
   }
+
+  const allKnownNames = knownPeople.map((p) => p.name).filter(Boolean);
+  const personCandidates = pickAllPersonCandidates(null, input.text, allKnownNames);
+  const hasPersonContext = personCandidates.length > 0 || isDirectedPersonPayment(input.text);
 
   // 3. Fireworks Embedding Layer (92% accuracy, 1 API call, cached)
   // Runs when rule engine failed or returned low confidence, before falling back to AI.

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { router, authedProcedure } from "./middleware";
 import { db } from "./queries/connection";
 import {
@@ -14,7 +15,7 @@ import {
   pushSubscriptions,
   userContacts,
 } from "../db/schema";
-import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
+import { eq, and, gte, lte, desc, sql, isNotNull } from "drizzle-orm";
 
 import { randomBytes } from "crypto";
 import {
@@ -551,14 +552,36 @@ export const profileRouter = router({
         ));
 
       const rows = await query;
+      // `transactionCount` is a cache for sorting and offline display, never
+      // the source of truth. Calculate it from the canonical expense relation
+      // so old stale counters cannot mislead the user.
+      const counts = await db
+        .select({
+          contactId: expenses.contactId,
+          total: sql<number>`COUNT(*)`,
+        })
+        .from(expenses)
+        .where(and(
+          eq(expenses.userId, ctx.user.id as number),
+          eq(expenses.userType, ctx.user.type),
+          isNotNull(expenses.contactId),
+        ))
+        .groupBy(expenses.contactId);
+      const countByContactId = new Map(
+        counts.map((row) => [row.contactId, Number(row.total || 0)]),
+      );
+      const rowsWithCounts = rows.map((row) => ({
+        ...row,
+        transactionCount: countByContactId.get(row.id) || 0,
+      }));
 
-      let filtered = rows;
+      let filtered = rowsWithCounts;
       if (filter === "personal") {
-        filtered = rows.filter(r => r.contactType === "personal" && !r.isSilenced);
+        filtered = rowsWithCounts.filter(r => r.contactType === "personal" && !r.isSilenced);
       } else if (filter === "business") {
-        filtered = rows.filter(r => r.contactType !== "personal");
+        filtered = rowsWithCounts.filter(r => r.contactType !== "personal");
       } else if (filter === "silenced") {
-        filtered = rows.filter(r => r.isSilenced);
+        filtered = rowsWithCounts.filter(r => r.isSilenced);
       }
 
       if (search && search.trim().length > 0) {
@@ -643,6 +666,69 @@ export const profileRouter = router({
   deleteContact: authedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
+      const [contactToDelete] = await db
+        .select()
+        .from(userContacts)
+        .where(and(
+          eq(userContacts.id, input.id),
+          eq(userContacts.userId, ctx.user.id as number),
+          eq(userContacts.userType, ctx.user.type),
+        ));
+
+      if (contactToDelete?.name) {
+        try {
+          const [userProfile] = await db
+            .select()
+            .from(userProfiles)
+            .where(and(
+              eq(userProfiles.userId, ctx.user.id as number),
+              eq(userProfiles.userType, ctx.user.type),
+            ));
+          if (userProfile && userProfile.lifestyleInfo) {
+            const lifestyle = userProfile.lifestyleInfo as Record<string, any>;
+            const target = contactToDelete.name.trim();
+            let changed = false;
+            const scrubArray = (arr: any) => {
+              if (!Array.isArray(arr)) return arr;
+              const filtered = arr.filter(item => {
+                if (typeof item === "string") return item.trim() !== target;
+                if (item && typeof item === "object" && item.name) return item.name.trim() !== target;
+                return true;
+              });
+              if (filtered.length !== arr.length) changed = true;
+              return filtered;
+            };
+            lifestyle.dynamicContacts = scrubArray(lifestyle.dynamicContacts);
+            lifestyle.regularContacts = scrubArray(lifestyle.regularContacts);
+            lifestyle.childrenNames = scrubArray(lifestyle.childrenNames);
+            lifestyle.siblingsNames = scrubArray(lifestyle.siblingsNames);
+            lifestyle.parentsNames = scrubArray(lifestyle.parentsNames);
+            lifestyle.petNames = scrubArray(lifestyle.petNames);
+            if (lifestyle.partnerName && typeof lifestyle.partnerName === "string" && lifestyle.partnerName.trim() === target) {
+              lifestyle.partnerName = undefined;
+              changed = true;
+            }
+            if (changed) {
+              await db
+                .update(userProfiles)
+                .set({ lifestyleInfo: lifestyle as any })
+                .where(eq(userProfiles.id, userProfile.id));
+            }
+          }
+        } catch (err) {
+          console.error("[deleteContact] Profile scrub error:", err);
+        }
+      }
+
+      await db
+        .update(expenses)
+        .set({ contactId: null })
+        .where(and(
+          eq(expenses.contactId, input.id),
+          eq(expenses.userId, ctx.user.id as number),
+          eq(expenses.userType, ctx.user.type),
+        ));
+
       await db
         .delete(userContacts)
         .where(and(
@@ -681,17 +767,79 @@ export const profileRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "شخص غير موجود" });
       }
 
+      if (secondary.name) {
+        try {
+          const [userProfile] = await db
+            .select()
+            .from(userProfiles)
+            .where(and(
+              eq(userProfiles.userId, ctx.user.id as number),
+              eq(userProfiles.userType, ctx.user.type),
+            ));
+          if (userProfile && userProfile.lifestyleInfo) {
+            const lifestyle = userProfile.lifestyleInfo as Record<string, any>;
+            const target = secondary.name.trim();
+            let changed = false;
+            const scrubArray = (arr: any) => {
+              if (!Array.isArray(arr)) return arr;
+              const filtered = arr.filter(item => {
+                if (typeof item === "string") return item.trim() !== target;
+                if (item && typeof item === "object" && item.name) return item.name.trim() !== target;
+                return true;
+              });
+              if (filtered.length !== arr.length) changed = true;
+              return filtered;
+            };
+            lifestyle.dynamicContacts = scrubArray(lifestyle.dynamicContacts);
+            lifestyle.regularContacts = scrubArray(lifestyle.regularContacts);
+            lifestyle.childrenNames = scrubArray(lifestyle.childrenNames);
+            lifestyle.siblingsNames = scrubArray(lifestyle.siblingsNames);
+            lifestyle.parentsNames = scrubArray(lifestyle.parentsNames);
+            lifestyle.petNames = scrubArray(lifestyle.petNames);
+            if (lifestyle.partnerName && typeof lifestyle.partnerName === "string" && lifestyle.partnerName.trim() === target) {
+              lifestyle.partnerName = undefined;
+              changed = true;
+            }
+            if (changed) {
+              await db
+                .update(userProfiles)
+                .set({ lifestyleInfo: lifestyle as any })
+                .where(eq(userProfiles.id, userProfile.id));
+            }
+          }
+        } catch (err) {
+          console.error("[mergeContacts] Profile scrub error:", err);
+        }
+      }
+
       const mergedRelation = primary.relation || secondary.relation;
-      const mergedTransactionCount = (primary.transactionCount || 0) + (secondary.transactionCount || 0);
       const mergedIsSilenced = primary.isSilenced || secondary.isSilenced;
       const mergedContactType = primary.contactType !== "personal" ? primary.contactType : secondary.contactType;
       const mergedBusinessId = primary.businessId || secondary.businessId;
 
       await db
+        .update(expenses)
+        .set({ contactId: primary.id })
+        .where(and(
+          eq(expenses.contactId, secondary.id),
+          eq(expenses.userId, ctx.user.id as number),
+          eq(expenses.userType, ctx.user.type),
+        ));
+
+      const [canonicalCount] = await db
+        .select({ total: sql<number>`COUNT(*)` })
+        .from(expenses)
+        .where(and(
+          eq(expenses.contactId, primary.id),
+          eq(expenses.userId, ctx.user.id as number),
+          eq(expenses.userType, ctx.user.type),
+        ));
+
+      await db
         .update(userContacts)
         .set({
           relation: mergedRelation,
-          transactionCount: mergedTransactionCount,
+          transactionCount: Number(canonicalCount?.total || 0),
           isSilenced: mergedIsSilenced,
           contactType: mergedContactType,
           businessId: mergedBusinessId,

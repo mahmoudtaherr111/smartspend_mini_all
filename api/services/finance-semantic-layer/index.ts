@@ -27,6 +27,7 @@ export { financePeriodTestUtils, resolveFinancePeriod } from "./period-resolver"
 export {
   getBusinessCashflow,
   getCategoryInclusion,
+  getClassificationTrace,
   getCategoryTotal,
   getChartData,
   getComparisonDrivers,
@@ -34,6 +35,7 @@ export {
   getFinanceSummary,
   getFinanceTransactions,
   getGoalFeasibility,
+  getPersonTotal,
   getGoalProgress,
   getProfileSnapshot,
   getTransactionLookup,

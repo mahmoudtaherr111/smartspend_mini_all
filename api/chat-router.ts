@@ -22,12 +22,10 @@ import {
   localUsers,
 } from "../db/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { processAIChatMessage } from "./services/ai-chat-service";
 import {
   AI_RESPONSE_SCHEMA_VERSION,
   embeddingApiCallsFromCacheHits,
   runAIKernelActive,
-  runAIKernelShadow,
   type AIRequest,
   type AIResponse,
 } from "./services/ai-kernel";
@@ -61,7 +59,6 @@ async function loadChatConfig(): Promise<{
   maxHistory: number;
   enabled: Record<string, boolean>;
   aiKernelEnabled: boolean;
-  aiKernelPrimaryEnabled: boolean;
   settings: Record<string, string>;
 }> {
   const rows = await db.select().from(systemSettings);
@@ -90,8 +87,9 @@ async function loadChatConfig(): Promise<{
       pro: s.chatbot_enabled_pro !== "false",
       ultra: s.chatbot_enabled_ultra !== "false",
     },
-    aiKernelEnabled: s.ai_kernel_enabled === "true",
-    aiKernelPrimaryEnabled: s.ai_kernel_primary_enabled !== "false",
+    // The kernel serves local financial answers, memories, and structured actions
+    // without an LLM call. Keep it on unless an operator explicitly disables it.
+    aiKernelEnabled: s.ai_kernel_enabled !== "false",
     settings: s,
   };
 }
@@ -153,6 +151,33 @@ function minimalStructuredResponse(
       responseSchemaVersion: AI_RESPONSE_SCHEMA_VERSION,
     },
   };
+}
+
+async function requireOwnedConversation(
+  conversationId: number,
+  userId: number,
+  userType: string,
+) {
+  const [conversation] = await db
+    .select({ id: chatConversations.id })
+    .from(chatConversations)
+    .where(
+      and(
+        eq(chatConversations.id, conversationId),
+        eq(chatConversations.userId, userId),
+        eq(chatConversations.userType, userType),
+      ),
+    )
+    .limit(1);
+
+  if (!conversation) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "المحادثة مش موجودة.",
+    });
+  }
+
+  return conversation;
 }
 
 function factNumber(
@@ -376,7 +401,8 @@ async function resolveTextActionReply(
   return {
     response,
     structured: minimalStructuredResponse(response, artifacts, []),
-    tokensUsed: Math.ceil((message.length + response.length) / 3.5),
+    // This confirmation is entirely server-side; never charge an LLM budget for it.
+    tokensUsed: 0,
     model: "server-action-runtime",
     toolsUsed: [`action.${kind}`],
   };
@@ -418,9 +444,9 @@ export const chatRouter = router({
         settings: config.settings,
         flagPrefix: "ai_kernel",
       });
-      const aiKernelActive = config.aiKernelEnabled && rollout.enabled;
-      const legacyFallbackAllowed =
-        !aiKernelActive || config.settings.ai_kernel_legacy_fallback_enabled === "true";
+      // The plan-first kernel is the sole runtime. Rollout is retained for
+      // telemetry, never as a switch back to the retired provider/tool loop.
+      const aiKernelActive = config.aiKernelEnabled;
 
       // Check if chatbot is enabled for this plan
       if (!config.enabled[plan]) {
@@ -430,7 +456,10 @@ export const chatRouter = router({
         });
       }
 
-      if (!config.apiKey) {
+      // Deterministic kernel routes (finance, memory, actions) remain useful even
+      // when a generative provider is unavailable. Only the explicit legacy path
+      // needs an API key.
+      if (!config.apiKey && !aiKernelActive) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "الشات بوت مش مفعّل حالياً. تواصل مع الدعم.",
@@ -469,17 +498,24 @@ export const chatRouter = router({
             message: "تعذر إنشاء المحادثة. جرّب تاني.",
           });
         }
+      } else {
+        await requireOwnedConversation(conversationId, user.id, user.type);
       }
       const activeConversationId: number = conversationId;
 
-      // 4. Load conversation history from DB
+      // 4. Only load the recent context that can affect the next answer. The old
+      // implementation loaded the entire thread on every turn, making both token
+      // usage and memory writes grow with conversation length.
+      const historyLimit = Math.min(Math.max(config.maxHistory, 2), 12);
       const existingMessages = await db
         .select({ role: chatMessages.role, content: chatMessages.content })
         .from(chatMessages)
         .where(eq(chatMessages.conversationId, activeConversationId))
-        .orderBy(chatMessages.createdAt);
+        .orderBy(desc(chatMessages.createdAt))
+        .limit(historyLimit);
 
       const conversationHistory = existingMessages
+        .reverse()
         .filter((m) => m.role === "user" || m.role === "assistant")
         .map((m): { role: "user" | "assistant"; content: string } => ({
           role: m.role as "user" | "assistant",
@@ -504,10 +540,7 @@ export const chatRouter = router({
         conversationId: activeConversationId,
         conversationHistory: conversationHistory.slice(-config.maxHistory),
         metadata: {
-          legacyPath: legacyFallbackAllowed ? "processAIChatMessage" : "disabled",
-          legacyModel: config.model,
-          legacyFallbackAllowed,
-          deprecatedPrimaryFlag: config.aiKernelPrimaryEnabled,
+          agentRuntime: "plan_first_v1",
           rollout,
           devQaBypassDailyLimit,
         },
@@ -593,7 +626,7 @@ export const chatRouter = router({
         };
       }
 
-      const kernelPrimaryCandidate = aiKernelActive
+      const kernelPrimary = aiKernelActive
         ? await runAIKernelActive(kernelRequest, {
             apiKey: config.apiKey,
             baseUrl: config.baseUrl,
@@ -605,53 +638,26 @@ export const chatRouter = router({
             return undefined;
           })
         : undefined;
-      const kernelPrimary = kernelPrimaryCandidate;
-
-      const kernelShadowPromise =
-        legacyFallbackAllowed && config.aiKernelEnabled && !kernelPrimary
-          ? runAIKernelShadow(kernelRequest).catch((error: unknown) => {
-              const message = error instanceof Error ? error.message : String(error);
-              console.warn("[AI Kernel Shadow] failed", message);
-              return undefined;
-            })
-          : undefined;
-
-      // 6. Process through AI
-      const maxTokens = Math.min(config.maxTokens[plan] || 1000, chatPolicy.maxOutputTokens);
+      // 6. Plan-first kernel is the only execution path. No provider/tool loop
+      // can be reached from this router.
       let result = kernelPrimary
         ? {
             response: kernelPrimary.content,
-            tokensUsed: kernelPrimary.tokensUsed ?? Math.ceil(kernelPrimary.content.length / 3.5),
+            tokensUsed: kernelPrimary.tokensUsed ?? 0,
             model: kernelPrimary.model ?? config.model,
             toolsUsed: dataNeedKinds(kernelPrimary),
           }
-        : legacyFallbackAllowed
-          ? await processAIChatMessage({
-            userId: user.id,
-            userType: user.type,
-            userPlan: plan,
-            message: input.message,
-            conversationHistory,
-            config: {
-              apiKey: config.apiKey,
-              baseUrl: config.baseUrl,
-              model: config.model,
-              maxTokens,
-              maxHistory: config.maxHistory,
-              maxToolRounds: chatPolicy.maxToolRounds,
-            },
-          })
-          : {
-              response: "مش قادر أوصل لعقل الشات المركزي دلوقتي. جرّب تاني بعد لحظة.",
-              tokensUsed: Math.ceil(input.message.length / 3.5) + 18,
-              model: "ai-kernel-unavailable",
-              toolsUsed: [] as string[],
-            };
+        : {
+            response: "المساعد الذكي متوقف مؤقتاً من الإعدادات. جرّب تاني بعد ما يتم تفعيله.",
+            tokensUsed: 0,
+            model: "ai-kernel-disabled",
+            toolsUsed: [] as string[],
+          };
 
-      const shadow = kernelPrimary ?? (kernelShadowPromise ? await kernelShadowPromise : undefined);
+      const shadow = kernelPrimary;
       if (shadow) {
         console.info(
-          "[AI Kernel Comparison]",
+            "[AI Kernel Execution]",
           JSON.stringify({
             traceId: shadow.traceId,
             conversationId: activeConversationId,
@@ -706,7 +712,9 @@ export const chatRouter = router({
         result = {
           ...result,
           response: actionAwareResponse,
-          tokensUsed: result.tokensUsed + Math.ceil(Math.max(0, actionAwareResponse.length - result.response.length) / 3.5),
+          // Server-side action wording is not provider usage and must never
+          // consume a user's token quota.
+          tokensUsed: result.tokensUsed,
         };
       }
       const mergedActions = mergeActionArtifacts(shadow?.artifacts ?? [], actionDraft);
@@ -735,7 +743,7 @@ export const chatRouter = router({
 
       if (aiKernelActive) {
         const memoryMessages: MemoryMessage[] = [
-          ...conversationHistory.map((message) => ({
+          ...conversationHistory.slice(-6).map((message) => ({
             role: message.role as MemoryMessage["role"],
             content: message.content,
           })),
@@ -764,9 +772,9 @@ export const chatRouter = router({
         typeof shadow?.debug?.estimatedInputTokens === "number"
           ? shadow.debug.estimatedInputTokens
           : Math.ceil(input.message.length / 3.5);
-      const measuredLlmCalls = kernelPrimary
-        ? Number(kernelPrimary.debug?.llmCalls ?? 0)
-        : 1 + result.toolsUsed.length;
+      // Never infer a provider call from a fallback or from a local tool name.
+      // Metrics and quota decisions must reflect an actual kernel-reported call.
+      const measuredLlmCalls = Number(kernelPrimary?.debug?.llmCalls ?? 0);
       const measuredToolCalls = result.toolsUsed.length;
       const measuredEmbeddingCalls = embeddingCallsFromStructured(structured);
       const numericAccuracy = structured?.facts?.length
@@ -781,8 +789,10 @@ export const chatRouter = router({
         plan,
         intentKind: routedIntent.kind,
         model: result.model,
-        inputTokens: estimatedInputTokens,
-        outputTokens: Math.max(0, result.tokensUsed - estimatedInputTokens),
+        // For deterministic replies, estimated context size is telemetry only,
+        // not provider usage or a user charge.
+        inputTokens: measuredLlmCalls > 0 ? estimatedInputTokens : 0,
+        outputTokens: measuredLlmCalls > 0 ? Math.max(0, result.tokensUsed - estimatedInputTokens) : 0,
         totalTokens: result.tokensUsed,
         embeddingCalls: measuredEmbeddingCalls,
         llmCalls: measuredLlmCalls,
@@ -806,14 +816,8 @@ export const chatRouter = router({
           resolvedFacts: structured?.facts?.length ?? 0,
           maxOutputTokens: chatPolicy.maxOutputTokens,
           maxToolRounds: chatPolicy.maxToolRounds,
-          kernelMode: kernelPrimary
-            ? "active"
-            : shadow
-              ? "legacy_with_shadow"
-              : legacyFallbackAllowed
-                ? "legacy_explicit"
-                : "kernel_unavailable",
-          legacyFallbackAllowed,
+          kernelMode: kernelPrimary ? "plan_first_active" : "kernel_disabled",
+          agentRuntime: "plan_first_v1",
           actionDraftError,
           rollout,
           numericAccuracy: numericAccuracy

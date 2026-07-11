@@ -854,8 +854,13 @@ export const aiRouter = router({
         id: number; name: string; nameAr: string; type: string;
         keywords: string[]; matchExamples: string[];
       }> | undefined;
+      // Lift `biz` outside the try block so its length/id can be referenced
+      // when constructing the pipeline input below. Previously `biz` was
+      // declared with `const` inside the try, leaking the reference and
+      // producing TS2304 "Cannot find name 'biz'" at the call site.
+      let biz: { id: number }[] = [];
       try {
-        const biz = await db
+        biz = await db
           .select({ id: userBusinesses.id })
           .from(userBusinesses)
           .where(and(
@@ -924,6 +929,7 @@ export const aiRouter = router({
             enable_rag: String(cfgFull.enable_rag !== "false"),
           },
         businessCategories: bizCategoriesForPipeline,
+        businessId: biz.length > 0 ? biz[0].id : null,
         businessMode: input.businessMode || false,
       });
       const financeContextSource = currentMonthSummary ? "finance.summary" : "fallback_zero";
@@ -976,27 +982,11 @@ export const aiRouter = router({
         },
       });
 
-      // ── Auto-learn dynamic contacts ──
-      for (const item of result.items) {
-        if (item.person_mentioned && item.person_relationship) {
-          const pName = item.person_mentioned.trim();
-          const pRel = item.person_relationship.trim();
-          if (pName && pName !== "عام" && pName !== "شخص") {
-            const { addDynamicContact } =
-              await import("./services/user-profile-service");
-            await addDynamicContact(
-              ctx.user.id,
-              ctx.user.type,
-              pName,
-              pRel,
-            );
-          }
-        }
-      }
-
       // ── Log classification ──
       const isV2 = false;
-      await db
+      let classificationLogId: number | undefined;
+      try {
+      const [classificationLog] = await db
         .insert(classificationLogs)
         .values({
           userId: ctx.user.id,
@@ -1033,8 +1023,11 @@ export const aiRouter = router({
           modelUsed: input.voiceModelUsed ? `STT: ${input.voiceModelUsed} | Parse: ${result.modelUsed}` : result.modelUsed,
           tokensUsed: result.tokensUsed + (input.sttTokensUsed || 0),
           processingTimeMs: result.processingTimeMs,
-        })
-        .catch(() => {});
+        });
+      classificationLogId = Number(classificationLog.insertId) || undefined;
+      } catch {
+        // A trace-storage outage must not block a user from reviewing a parse.
+      }
 
       // Cache usage
       await db
@@ -1110,6 +1103,7 @@ export const aiRouter = router({
             status: "pending",
             contextData: {
               items: result.items,
+              classificationLogId,
               decision: result.decision,
               confidence: result.overallConfidence,
               log: result.log,
@@ -1151,6 +1145,7 @@ export const aiRouter = router({
         clarificationId,
         processingTimeMs: result.processingTimeMs,
         trace: parseTrace,
+        classificationLogId,
       };
     }),
 
@@ -1694,8 +1689,11 @@ export const aiRouter = router({
         id: number; name: string; nameAr: string; type: string;
         keywords: string[]; matchExamples: string[];
       }> | undefined;
+      // Lift `biz` outside the try so its length/id remain accessible when
+      // constructing the pipeline input below (fixes TS2304 at line 1764).
+      let biz: { id: number }[] = [];
       try {
-        const biz = await db
+        biz = await db
           .select({ id: userBusinesses.id })
           .from(userBusinesses)
           .where(and(
@@ -1757,8 +1755,29 @@ export const aiRouter = router({
             enable_rag: String(cfg.enable_rag !== "false"),
           },
         businessCategories: voiceBizCats,
+        businessId: biz.length > 0 ? biz[0].id : null,
         businessMode: false,
       });
+
+      let newlyAddedContact: { isNew: boolean; name: string; totalContacts: number } | null = null;
+      for (const item of parseResult.items) {
+        if (item.person_mentioned && item.person_relationship) {
+          const pName = item.person_mentioned.trim();
+          const pRel = item.person_relationship.trim();
+          if (pName && pName !== "عام" && pName !== "شخص") {
+            const { addDynamicContact } =
+              await import("./services/user-profile-service");
+            const res = await addDynamicContact(
+              ctx.user.id,
+              ctx.user.type,
+              pName,
+              pRel,
+            );
+            if (res && res.isNew) newlyAddedContact = res;
+          }
+        }
+      }
+
       const financeContextSource = currentMonthSummary ? "finance.summary" : "fallback_zero";
       const parseTrace = buildParserTrace({
         route: "voice_expense_parse",
@@ -1829,7 +1848,9 @@ export const aiRouter = router({
       });
 
       const isV2 = false;
-      await db.insert(classificationLogs).values({
+      let classificationLogId: number | undefined;
+      try {
+      const [classificationLog] = await db.insert(classificationLogs).values({
           userId: ctx.user.id,
           userType: ctx.user.type,
           originalText: transcribedText,
@@ -1854,7 +1875,11 @@ export const aiRouter = router({
           modelUsed: `STT: ${sttResult!.modelUsed} | Parse: ${parseResult.modelUsed}`,
           tokensUsed: parseResult.tokensUsed + sttResult!.tokensUsed,
           processingTimeMs: Date.now() - startTime,
-        }).catch(() => {});
+        });
+      classificationLogId = Number(classificationLog.insertId) || undefined;
+      } catch {
+        // A trace-storage outage must not block a user from reviewing a parse.
+      }
 
       let clarificationId: number | undefined;
       if (parseResult.decision === "clarify") {
@@ -1903,6 +1928,7 @@ export const aiRouter = router({
             status: "pending",
             contextData: {
               items: parseResult.items,
+              classificationLogId,
               decision: parseResult.decision,
               confidence: parseResult.overallConfidence,
               log: parseResult.log,
@@ -1942,6 +1968,7 @@ export const aiRouter = router({
         clarificationId,
         processingTimeMs: Date.now() - startTime,
         trace: parseTrace,
+        classificationLogId,
       };
     }),
 

@@ -88,6 +88,7 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     server: {
+      host: true,
       allowedHosts: true,
       port: isFrontendOnly ? 5173 : 3000,
       // When frontend is standalone, proxy /api/* to the backend server

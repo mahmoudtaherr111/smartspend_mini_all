@@ -215,6 +215,38 @@ export function extractAmounts(rawText: string): ExtractedAmount[] {
 /**
  * Extract people names from text with profile context and dictionary
  */
+/**
+ * If a candidate starts with "عبد" but is NOT followed by an inline "ال"-prefixed
+ * theophoric component (e.g. "عبدالرحمن" already in the dictionary), try to
+ * greedily consume the next word from the source text when it begins with "ال",
+ * forming the canonical multi-word name "عبد الرحمن".
+ *
+ * This preserves the most common Arabic name pattern without fragmenting it
+ * into "عبد" + "الرحمن" (the latter of which would be rejected by `ال` prefix guard).
+ *
+ * Returns the (possibly extended) candidate or the original if no extension applies.
+ */
+function tryExtendTheophoric(
+  candidate: string,
+  words: string[],
+  candidateIndex: number,
+): string {
+  if (!candidate) return candidate;
+  // Only extend bare "عبد" tokens that aren't already recognised as a name on their own.
+  if (candidate !== "عبد" && candidate !== "عبده") return candidate;
+  // Look at the next word in the SOURCE text (candidateIndex points to the token
+  // in `words` from which `candidate` was derived).
+  const nextRaw = words[candidateIndex + 1];
+  if (!nextRaw) return candidate;
+  const nextClean = nextRaw.replace(/[^\u0600-\u06FF]/g, "");
+  if (!nextClean) return candidate;
+  if (nextClean.startsWith("ال") && nextClean.length > 3) {
+    const combined = `${candidate} ${nextClean}`;
+    return combined;
+  }
+  return candidate;
+}
+
 export function extractPeople(
   text: string,
   knownNames: string[] = [],
@@ -267,7 +299,12 @@ export function extractPeople(
                 continue;
             }
 
-            if (isLikelyPersonName(candidate) || knownNames.includes(candidate)) {
+            // Multi-word theophoric names: "عبد الرحمن", "عبد الله", " عبد الكريم"
+            // recognised via greedy extension of bare "عبد".
+            candidate = tryExtendTheophoric(candidate, words, i + j);
+
+            const isKnownName = knownNames.includes(candidate) || knownNames.some((kn) => kn === candidate || matchArabicPhrase(kn, candidate));
+            if (isLikelyPersonName(candidate) || isLikelyPersonName(candidate.replace(/\s+/g, "")) || isKnownName) {
               people.add(candidate);
               break; // Found a valid person for THIS candidate string, but we want to process other words
             }
@@ -284,6 +321,7 @@ export function extractPeople(
     if (!rawWord) continue;
     
     let candidate = "";
+    let candidateSourceIndex = i; // index in `words` that produced `candidate`
     if (rawWord.startsWith("لـ") && rawWord.length > 2) {
       candidate = rawWord.substring(2);
     } else if (rawWord.startsWith("لل") && rawWord.length > 3) {
@@ -297,6 +335,7 @@ export function extractPeople(
     } else if (rawWord === "من" || rawWord === "مع") {
       if (i + 1 < words.length) {
         candidate = words[i + 1].replace(/[^\u0600-\u06FF]/g, "");
+        candidateSourceIndex = i + 1;
       }
     }
     
@@ -308,9 +347,19 @@ export function extractPeople(
           if (c.startsWith("ال") && !knownNames.includes(c)) {
             continue;
           }
-          if (isLikelyPersonName(c) || knownNames.includes(c)) {
-            people.add(c);
-            break;
+
+          // Multi-word theophoric names — extend bare "عبد" with next "ال"-prefixed token.
+          const extended = tryExtendTheophoric(c, words, candidateSourceIndex);
+          const variants = extended === c ? [c] : [extended, c];
+
+          for (const v of variants) {
+            if (v.length < 2 || /^[\d\u0660-\u0669\u06F0-\u06F9]+$/.test(v)) continue;
+            if (v.startsWith("ال") && !knownNames.includes(v)) continue;
+            const isKnownName = knownNames.includes(v) || knownNames.some((kn) => kn === v || matchArabicPhrase(kn, v));
+            if (isLikelyPersonName(v) || isLikelyPersonName(v.replace(/\s+/g, "")) || isKnownName) {
+              people.add(v);
+              break;
+            }
           }
         }
       }

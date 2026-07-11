@@ -191,6 +191,13 @@ function isClassificationExplanation(text: string): boolean {
   return (categories.length > 0 && (hasDirectClassificationLanguage || hasCalculatedClassificationLanguage)) || hasCategoryChoice;
 }
 
+function asksForCategoryBreakdown(text: string): boolean {
+  const mentionsCategories = hasAny(text, ["فئه", "فئات", "تصنيف", "تصنيفات", "بند", "بنود", "تقسيم", "توزيع"]);
+  const asksForList = hasAny(text, ["ايه", "اي", "ما هي", "وريني", "اعرض", "قائمه", "قائمة", "كل", "اعلى", "اكثر", "ترتيب", "تقسيم", "توزيع"]);
+  const asksForExplanation = hasAny(text, ["ليه", "سبب", "اتصنف", "مصنف", "غلط", "صح"]);
+  return mentionsCategories && asksForList && !asksForExplanation;
+}
+
 function lastMentionedCategory(text: string, categories = detectCategories(text)): string | undefined {
   let best: { category: string; index: number } | undefined;
   const aliasesByCategory: Record<string, string[]> = {
@@ -392,6 +399,10 @@ export function routeIntent(message: string): IntentResult {
       text,
       ["finance_query"],
     );
+  }
+
+  if (hasFinance && asksForCategoryBreakdown(text)) {
+    return baseIntent("finance_analysis", 0.86, "category_breakdown_match", text, ["finance_query"]);
   }
 
   if (hasAdvice || (hasLifestyle && (hasAnalysis || hasAny(text, ["خطة", "اقلل", "نظم", "ظبط"])))) {

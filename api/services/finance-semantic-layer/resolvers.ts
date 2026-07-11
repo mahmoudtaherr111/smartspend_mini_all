@@ -1,6 +1,6 @@
 import type { InferSelectModel } from "drizzle-orm";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
-import { financialGoals, expenses, userProfiles, userWallets } from "../../../db/schema";
+import { classificationLogs, financialGoals, expenses, userContacts, userProfiles, userWallets } from "../../../db/schema";
 import { db } from "../../queries/connection";
 import type { Artifact, DataNeed, DataNeedKind, ResolvedFact } from "../ai-kernel/types";
 import { collectFinanceCacheTrace, financeCacheKey, financeCacheTtl, withFinanceCache } from "./cache";
@@ -18,9 +18,11 @@ import type {
   FinanceBreakdown,
   FinanceCategoryTotal,
   FinanceChartData,
+  FinanceClassificationTrace,
   FinanceContext,
   FinanceGranularity,
   FinanceGoalProgress,
+  FinancePersonTotal,
   FinancePeriodComparison,
   FinancePeriodInput,
   FinanceProfileSnapshot,
@@ -134,9 +136,23 @@ async function loadRowsForPeriod(
 function resolveInputFromNeed(need: DataNeed): FinancePeriodInput {
   return {
     period: need.scope?.period,
+    comparePeriod: need.scope?.comparePeriod,
     startDate: need.scope?.startDate,
     endDate: need.scope?.endDate,
   };
+}
+
+function normalizePersonLookup(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFKC")
+    .replace(/[\u064B-\u065F\u0670]/g, "")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/[ى]/g, "ي")
+    .replace(/[ة]/g, "ه")
+    .replace(/[^\u0600-\u06FFa-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export async function getFinanceSummary(
@@ -165,6 +181,7 @@ export async function getFinancePeriodComparison(
 ): Promise<FinancePeriodComparison> {
   const currentInput: FinancePeriodInput = {
     period: input.period ?? "current_month",
+    comparePeriod: input.comparePeriod,
     startDate: input.startDate,
     endDate: input.endDate,
   };
@@ -173,6 +190,7 @@ export async function getFinancePeriodComparison(
     ctx.userType,
     "period_comparison",
     currentInput.period ?? "current_month",
+    currentInput.comparePeriod ?? "previous_month",
     input.startDate ? String(input.startDate) : "",
     input.endDate ? String(input.endDate) : "",
   );
@@ -180,7 +198,7 @@ export async function getFinancePeriodComparison(
   return withFinanceCache(key, financeCacheTtl(currentInput.period ?? "current_month"), async () => {
     const [current, previous] = await Promise.all([
       getFinanceSummary(ctx, currentInput),
-      getFinanceSummary(ctx, { period: "previous_month" }),
+      getFinanceSummary(ctx, { period: currentInput.comparePeriod ?? "previous_month" }),
     ]);
 
     return {
@@ -261,6 +279,51 @@ export async function getCategoryTotal(
         .map(([name, item]) => ({ name, amount: item.amount, count: item.count }))
         .sort((a, b) => b.amount - a.amount)
         .slice(0, 5),
+    };
+  });
+}
+
+/**
+ * Finds a named contact from the user's message, then aggregates only expenses
+ * linked to that canonical contact id. We deliberately do not fall back to raw
+ * text matching: that would reintroduce the ambiguity this relation removes.
+ */
+export async function getPersonTotal(
+  ctx: FinanceContext,
+  personQuery: string,
+  input: FinancePeriodInput = {},
+): Promise<FinancePersonTotal | null> {
+  const period = resolveFinancePeriod(input, ctx);
+  const normalizedQuery = normalizePersonLookup(personQuery);
+  if (!normalizedQuery) return null;
+
+  const contacts = await db
+    .select({ id: userContacts.id, name: userContacts.name, relation: userContacts.relation })
+    .from(userContacts)
+    .where(and(
+      eq(userContacts.userId, ctx.userId),
+      eq(userContacts.userType, ctx.userType),
+      eq(userContacts.isSilenced, false),
+    ));
+
+  const contact = contacts
+    .map((item) => ({ ...item, normalizedName: normalizePersonLookup(item.name) }))
+    .filter((item) => item.normalizedName.length >= 2 && normalizedQuery.includes(item.normalizedName))
+    .sort((left, right) => right.normalizedName.length - left.normalizedName.length)[0];
+  if (!contact) return null;
+
+  const key = financeCacheKey(ctx.userId, ctx.userType, "person_total", period.key, contact.id);
+  return withFinanceCache(key, financeCacheTtl(period.key), async () => {
+    const rows = (await loadRowsForPeriod(ctx, period)).filter(
+      (row) => row.contactId === contact.id && row.type === "expense",
+    );
+    return {
+      period,
+      contactId: contact.id,
+      name: contact.name,
+      relation: contact.relation,
+      totalExpense: rows.reduce((sum, row) => sum + amountOf(row), 0),
+      transactionCount: rows.length,
     };
   });
 }
@@ -479,6 +542,17 @@ function categoryFacts(need: DataNeed, category: FinanceCategoryTotal): Resolved
     makeFact(need.id, need.kind, "category_total_expense", category.totalExpense),
     makeFact(need.id, need.kind, "category_total_income", category.totalIncome),
     makeFact(need.id, need.kind, "transaction_count", category.transactionCount),
+  ];
+}
+
+function personTotalFacts(need: DataNeed, total: FinancePersonTotal | null): ResolvedFact[] {
+  if (!total) return [];
+  return [
+    makeFact(need.id, need.kind, "person_name", total.name),
+    makeFact(need.id, need.kind, "person_relation", total.relation ?? null),
+    makeFact(need.id, need.kind, "period", total.period.label),
+    makeFact(need.id, need.kind, "person_total_expense", total.totalExpense),
+    makeFact(need.id, need.kind, "transaction_count", total.transactionCount),
   ];
 }
 
@@ -884,6 +958,57 @@ export async function getTransactionLookup(
   return null;
 }
 
+/**
+ * Looks up the saved transaction first, then its immutable classification log.
+ * The log may be absent for legacy rows; callers receive that fact explicitly
+ * instead of a fabricated explanation.
+ */
+export async function getClassificationTrace(
+  ctx: FinanceContext,
+  query: string,
+  input: FinancePeriodInput = {},
+): Promise<FinanceClassificationTrace | null> {
+  const transaction = await getTransactionLookup(ctx, query, undefined, ["expense"], input);
+  if (!transaction) return null;
+
+  const [expense] = await db
+    .select({ classificationLogId: expenses.classificationLogId })
+    .from(expenses)
+    .where(and(
+      eq(expenses.id, transaction.id),
+      eq(expenses.userId, ctx.userId),
+      eq(expenses.userType, ctx.userType),
+    ))
+    .limit(1);
+
+  if (!expense?.classificationLogId) return { transaction, classificationLogId: null };
+
+  const [log] = await db
+    .select({
+      id: classificationLogs.id,
+      parsedBy: classificationLogs.parsedBy,
+      decision: classificationLogs.decision,
+      confidence: classificationLogs.confidence,
+      modelUsed: classificationLogs.modelUsed,
+    })
+    .from(classificationLogs)
+    .where(and(
+      eq(classificationLogs.id, expense.classificationLogId),
+      eq(classificationLogs.userId, ctx.userId),
+      eq(classificationLogs.userType, ctx.userType),
+    ))
+    .limit(1);
+
+  return {
+    transaction,
+    classificationLogId: expense.classificationLogId,
+    parsedBy: log?.parsedBy ?? null,
+    decision: log?.decision ?? null,
+    confidence: log?.confidence == null ? null : numeric(log.confidence),
+    modelUsed: log?.modelUsed ?? null,
+  };
+}
+
 function transactionLookupFacts(need: DataNeed, transaction: FinanceTransactionFact): ResolvedFact[] {
   const facts: ResolvedFact[] = [
     makeFact(need.id, need.kind, "expense_id", transaction.id),
@@ -903,6 +1028,23 @@ function transactionLookupFacts(need: DataNeed, transaction: FinanceTransactionF
     facts.push(makeFact(need.id, need.kind, "lookup_query", need.scope.query));
   }
   return facts;
+}
+
+function classificationTraceFacts(
+  need: DataNeed,
+  trace: FinanceClassificationTrace | null,
+): ResolvedFact[] {
+  if (!trace) return [];
+  return [
+    makeFact(need.id, need.kind, "expense_id", trace.transaction.id),
+    makeFact(need.id, need.kind, "description", trace.transaction.description ?? trace.transaction.subCategory ?? "عملية"),
+    makeFact(need.id, need.kind, "stored_category", trace.transaction.category),
+    makeFact(need.id, need.kind, "date", trace.transaction.date),
+    makeFact(need.id, need.kind, "trace_available", Boolean(trace.parsedBy)),
+    makeFact(need.id, need.kind, "parsed_by", trace.parsedBy ?? null),
+    makeFact(need.id, need.kind, "decision", trace.decision ?? null),
+    makeFact(need.id, need.kind, "confidence", trace.confidence ?? null),
+  ];
 }
 
 export async function resolveKernelDataNeeds(
@@ -940,6 +1082,28 @@ export async function resolveKernelDataNeeds(
             ...categoryFacts(
               need,
               await getCategoryTotal(ctx, need.scope?.category ?? "uncategorized", resolveInputFromNeed(need)),
+            ),
+          );
+        } else if (need.kind === "finance.person_total") {
+          facts.push(
+            ...personTotalFacts(
+              need,
+              await getPersonTotal(
+                ctx,
+                need.scope?.personQuery ?? need.scope?.query ?? "",
+                resolveInputFromNeed(need),
+              ),
+            ),
+          );
+        } else if (need.kind === "finance.classification_trace") {
+          facts.push(
+            ...classificationTraceFacts(
+              need,
+              await getClassificationTrace(
+                ctx,
+                need.scope?.query ?? "",
+                resolveInputFromNeed(need),
+              ),
             ),
           );
         } else if (need.kind === "finance.breakdown") {

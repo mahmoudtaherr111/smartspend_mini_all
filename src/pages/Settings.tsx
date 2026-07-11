@@ -10,6 +10,7 @@ import { PeopleSettingsView } from "@/components/settings/PeopleSettingsView";
 import { BusinessSettingsView } from "@/components/settings/BusinessSettingsView";
 import { Button } from "@/components/ui/button";
 import { usePushNotifications } from "../hooks/usePushNotifications";
+import { useHistoryBound } from "@/hooks/useHistoryBound";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Card,
@@ -39,13 +40,70 @@ import {
 
 type SettingsView = "main" | "profile" | "notifications" | "passkeys" | "theme" | "ai_report" | "people" | "business";
 
+interface SettingsMenuItemProps {
+  icon: React.ReactNode;
+  title: string;
+  description?: string;
+  onClick: () => void;
+  badge?: React.ReactNode;
+  iconClass?: string;
+  danger?: boolean;
+}
+
+function SettingsMenuItem({
+  icon,
+  title,
+  description,
+  onClick,
+  badge,
+  iconClass = "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400",
+  danger = false,
+}: SettingsMenuItemProps) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileHover={{ scale: 1.01, y: -1 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+      className={`w-full flex items-center justify-between p-4 rounded-2xl border cursor-pointer text-end select-none outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition-colors min-h-[76px] ${
+        danger
+          ? "border-rose-200 dark:border-rose-950/40 bg-rose-50/10 dark:bg-rose-950/5 hover:bg-rose-50/20 dark:hover:bg-rose-950/10 text-rose-600 dark:text-rose-400"
+          : "border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md hover:bg-slate-100/50 dark:hover:bg-slate-900/50"
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 ${iconClass}`}>
+          {icon}
+        </div>
+        <div className="text-end">
+          <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">{title}</h4>
+          {description && (
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">{description}</p>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        {badge}
+        {!danger && <ChevronLeft className="w-4 h-4 text-slate-400" />}
+      </div>
+    </motion.button>
+  );
+}
+
 export default function Settings() {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const [currentView, setCurrentView] = useState<SettingsView>("main");
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  // On mobile, a settings sub-view behaves like a native screen: the back
+  // gesture closes it first instead of unexpectedly leaving Settings.
+  useHistoryBound(currentView !== "main", () => setCurrentView("main"));
 
   const profileQuery = trpc.profile.getSmartProfile.useQuery();
+  const trpcContext = trpc.useContext();
+  const updateProfileMut = trpc.profile.updateSmartProfile.useMutation();
+  
   const isProfileComplete = profileQuery.data?.profileCompleted;
 
   const { isSupported, isSubscribed, subscribeToPush } = usePushNotifications();
@@ -113,12 +171,15 @@ export default function Settings() {
               </div>
 
               {/* User Profile Summary Card */}
-              <div
+              <motion.div
                 onClick={() => {
                   setIsEditingProfile(false);
                   setCurrentView("profile");
                 }}
-                className="active-press flex items-center justify-between p-4 sm:p-5 rounded-3xl bg-slate-900 dark:bg-slate-950 text-white border border-slate-800 shadow-xl cursor-pointer relative group overflow-hidden"
+                whileHover={{ scale: 1.005 }}
+                whileTap={{ scale: 0.99 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                className="flex items-center justify-between p-4 sm:p-5 rounded-3xl bg-slate-900 dark:bg-slate-950 text-white border border-slate-800 shadow-xl cursor-pointer relative group overflow-hidden"
               >
                 {/* Glow decor */}
                 <div className="absolute top-0 end-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
@@ -156,7 +217,7 @@ export default function Settings() {
                   </div>
                   <ChevronLeft className="w-5 h-5 text-slate-400 group-hover:-translate-x-1 transition-transform" />
                 </div>
-              </div>
+              </motion.div>
 
               {/* Menu Groups */}
               <div className="space-y-5 text-end">
@@ -165,24 +226,12 @@ export default function Settings() {
                 <div className="space-y-2">
                   <h4 className="text-xs font-black text-slate-400 dark:text-slate-600 uppercase tracking-wider px-2">إدارة الحساب</h4>
                   <div className="grid gap-2">
-                    {/* Row: Passkeys */}
-                    <div
+                    <SettingsMenuItem
+                      icon={<Fingerprint className="w-5 h-5" />}
+                      title="الأمان والدخول بالبصمة"
+                      description="تفعيل الدخول السريع ببصمة الوجه أو الأصبع"
                       onClick={() => setCurrentView("passkeys")}
-                      className="tap-target active-press flex items-center justify-between p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md cursor-pointer hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-all group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-sm">
-                          <Fingerprint className="w-5 h-5" />
-                        </div>
-                        <div className="text-end">
-                          <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">الأمان والدخول بالبصمة</h4>
-                          <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">تفعيل الدخول السريع ببصمة الوجه أو الأصبع</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:-translate-x-0.5 transition-transform" />
-                      </div>
-                    </div>
+                    />
                   </div>
                 </div>
 
@@ -190,43 +239,18 @@ export default function Settings() {
                 <div className="space-y-2">
                   <h4 className="text-xs font-black text-slate-400 dark:text-slate-600 uppercase tracking-wider px-2">إدارة العلاقات</h4>
                   <div className="grid gap-2">
-                    {/* Row: People Hub */}
-                    <div
+                    <SettingsMenuItem
+                      icon={<Users className="w-5 h-5" />}
+                      title="الأشخاص والعلاقات"
+                      description="إدارة الأسماء، العلاقات، والدمج"
                       onClick={() => setCurrentView("people")}
-                      className="tap-target active-press flex items-center justify-between p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md cursor-pointer hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-all group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-sm">
-                          <Users className="w-5 h-5" />
-                        </div>
-                        <div className="text-end">
-                          <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">الأشخاص والعلاقات</h4>
-                          <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">إدارة الأسماء، العلاقات، والدمج</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:-translate-x-0.5 transition-transform" />
-                      </div>
-                    </div>
-
-                    {/* Row: Business Mode */}
-                    <div
+                    />
+                    <SettingsMenuItem
+                      icon={<Store className="w-5 h-5" />}
+                      title="مشروعك التجاري"
+                      description="فئات مخصصة وتصنيف تلقائي للمشروع"
                       onClick={() => setCurrentView("business")}
-                      className="tap-target active-press flex items-center justify-between p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md cursor-pointer hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-all group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-sm">
-                          <Store className="w-5 h-5" />
-                        </div>
-                        <div className="text-end">
-                          <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">مشروعك التجاري</h4>
-                          <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">فئات مخصصة وتصنيف تلقائي للمشروع</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:-translate-x-0.5 transition-transform" />
-                      </div>
-                    </div>
+                    />
                   </div>
                 </div>
 
@@ -234,84 +258,47 @@ export default function Settings() {
                 <div className="space-y-2">
                   <h4 className="text-xs font-black text-slate-400 dark:text-slate-600 uppercase tracking-wider px-2">تفضيلات التطبيق</h4>
                   <div className="grid gap-2">
-                    {/* Row: Notifications */}
-                    <div
+                    <SettingsMenuItem
+                      icon={<BellRing className="w-5 h-5" />}
+                      title="إشعارات المتصفح والموبايل"
+                      description="التحكم بتنبيهات السقف المالي الفورية"
                       onClick={() => setCurrentView("notifications")}
-                      className="tap-target active-press flex items-center justify-between p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md cursor-pointer hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-all group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-sm">
-                          <BellRing className="w-5 h-5" />
-                        </div>
-                        <div className="text-end">
-                          <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">إشعارات المتصفح والموبايل</h4>
-                          <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">التحكم بتنبيهات السقف المالي الفورية</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
+                      badge={
                         <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${isSubscribed ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50" : "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"}`}>
                           {isSubscribed ? "مفعلة" : "غير مفعلة"}
                         </span>
-                        <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:-translate-x-0.5 transition-transform" />
-                      </div>
-                    </div>
-
-                    {/* Row: Theme */}
-                    <div
+                      }
+                    />
+                    <SettingsMenuItem
+                      icon={theme === "dark" ? <Moon className="w-5 h-5" /> : theme === "light" ? <Sun className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
+                      title="مظهر التطبيق"
+                      description="التحويل بين المظهر الفاتح والداكن والتلقائي"
                       onClick={() => setCurrentView("theme")}
-                      className="tap-target active-press flex items-center justify-between p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md cursor-pointer hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-all group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-sm">
-                          {theme === "dark" ? <Moon className="w-5 h-5" /> : theme === "light" ? <Sun className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
-                        </div>
-                        <div className="text-end">
-                          <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">مظهر التطبيق</h4>
-                          <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">التحويل بين المظهر الفاتح والداكن والتلقائي</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
+                      badge={
                         <span className="text-[10px] font-black bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 px-2.5 py-0.5 rounded-full border border-indigo-100 dark:border-indigo-800/50">
                           {theme === "dark" ? "داكن" : theme === "light" ? "فاتح" : "تلقائي"}
                         </span>
-                        <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:-translate-x-0.5 transition-transform" />
-                      </div>
-                    </div>
-
-                    {/* Row: AI Report Settings */}
-                    <div
+                      }
+                    />
+                    <SettingsMenuItem
+                      icon={<Sparkles className="w-5 h-5" />}
+                      title="التحليل الشهري بالذكاء الاصطناعي"
+                      description="إعدادات تقرير الواتساب وموعد الإرسال"
                       onClick={() => setCurrentView("ai_report")}
-                      className="tap-target active-press flex items-center justify-between p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md cursor-pointer hover:bg-slate-100/50 dark:hover:bg-slate-900/50 transition-all group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-sm">
-                          <Sparkles className="w-5 h-5" />
-                        </div>
-                        <div className="text-end">
-                          <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">التحليل الشهري بالذكاء الاصطناعي</h4>
-                          <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">إعدادات تقرير الواتساب وموعد الإرسال</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <ChevronLeft className="w-4 h-4 text-slate-400 group-hover:-translate-x-0.5 transition-transform" />
-                      </div>
-                    </div>
+                      iconClass="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400"
+                    />
                   </div>
                 </div>
 
                 {/* Group 3: Log out button */}
                 <div className="pt-4">
-                  <button
+                  <SettingsMenuItem
+                    icon={<LogOut className="w-5 h-5" />}
+                    title="تسجيل الخروج"
                     onClick={logout}
-                    className="w-full tap-target active-press flex items-center justify-between p-4 rounded-2xl border border-rose-200 dark:border-rose-950/40 bg-rose-50/20 dark:bg-rose-950/10 cursor-pointer hover:bg-rose-50/50 dark:hover:bg-rose-950/20 text-rose-600 dark:text-rose-400 transition-all duration-300"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/40 flex items-center justify-center">
-                        <LogOut className="w-5 h-5" />
-                      </div>
-                      <h4 className="font-black text-sm">تسجيل الخروج</h4>
-                    </div>
-                  </button>
+                    iconClass="bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400"
+                    danger={true}
+                  />
                 </div>
               </div>
             </motion.div>
@@ -495,7 +482,29 @@ export default function Settings() {
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">استلام تحليل مصاريفك شهرياً على الواتس</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" defaultChecked />
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={profileQuery.data?.preferences?.whatsappReportsEnabled !== false} 
+                        onChange={(e) => {
+                          trpcContext.profile.getSmartProfile.setData(undefined, (old: any) => {
+                            if (!old) return old;
+                            return {
+                              ...old,
+                              preferences: {
+                                ...old.preferences,
+                                whatsappReportsEnabled: e.target.checked
+                              }
+                            };
+                          });
+                          updateProfileMut.mutate({
+                            preferences: {
+                              ...profileQuery.data?.preferences,
+                              whatsappReportsEnabled: e.target.checked
+                            }
+                          });
+                        }}
+                      />
                       <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-emerald-500"></div>
                     </label>
                   </div>
@@ -507,14 +516,62 @@ export default function Settings() {
                     <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">موعد استلام التقرير</h4>
                     <div className="grid gap-3">
                       <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <input type="radio" name="report_timing" value="end_of_month" className="w-4 h-4 text-emerald-600 bg-slate-100 border-slate-300 focus:ring-emerald-500" defaultChecked />
+                        <input 
+                          type="radio" 
+                          name="report_timing" 
+                          value="end_of_month" 
+                          className="w-4 h-4 text-emerald-600 bg-slate-100 border-slate-300 focus:ring-emerald-500" 
+                          checked={profileQuery.data?.preferences?.reportTiming !== "salary_day"}
+                          onChange={() => {
+                            trpcContext.profile.getSmartProfile.setData(undefined, (old: any) => {
+                              if (!old) return old;
+                              return {
+                                ...old,
+                                preferences: {
+                                  ...old.preferences,
+                                  reportTiming: "end_of_month"
+                                }
+                              };
+                            });
+                            updateProfileMut.mutate({
+                              preferences: {
+                                ...profileQuery.data?.preferences,
+                                reportTiming: "end_of_month"
+                              }
+                            });
+                          }}
+                        />
                         <div>
                           <span className="block text-sm font-bold text-slate-800 dark:text-slate-200">نهاية الشهر الميلادي</span>
                           <span className="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">يوم 1 من كل شهر جديد</span>
                         </div>
                       </label>
                       <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                        <input type="radio" name="report_timing" value="salary_day" className="w-4 h-4 text-emerald-600 bg-slate-100 border-slate-300 focus:ring-emerald-500" />
+                        <input 
+                          type="radio" 
+                          name="report_timing" 
+                          value="salary_day" 
+                          className="w-4 h-4 text-emerald-600 bg-slate-100 border-slate-300 focus:ring-emerald-500" 
+                          checked={profileQuery.data?.preferences?.reportTiming === "salary_day"}
+                          onChange={() => {
+                            trpcContext.profile.getSmartProfile.setData(undefined, (old: any) => {
+                              if (!old) return old;
+                              return {
+                                ...old,
+                                preferences: {
+                                  ...old.preferences,
+                                  reportTiming: "salary_day"
+                                }
+                              };
+                            });
+                            updateProfileMut.mutate({
+                              preferences: {
+                                ...profileQuery.data?.preferences,
+                                reportTiming: "salary_day"
+                              }
+                            });
+                          }}
+                        />
                         <div>
                           <span className="block text-sm font-bold text-slate-800 dark:text-slate-200">يوم استلام الراتب</span>
                           <span className="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">يبدأ التحليل مع دورة راتبك (حسب ما حددت في ملفك)</span>

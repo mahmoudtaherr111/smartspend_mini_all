@@ -26,6 +26,8 @@
     "frontend:build": "vite build --mode frontend"
   },
   "dependencies": {
+    "@capacitor/core": "^8.4.1",
+    "@capacitor/haptics": "^8.0.2",
     "@google/generative-ai": "^0.24.1",
     "@hono/node-server": "^1.14.3",
     "@hono/trpc-server": "^0.4.2",

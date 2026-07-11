@@ -281,16 +281,16 @@ function BusinessSetupWizard({ onBack, onSuccess }: { onBack: () => void; onSucc
           <motion.div key="details" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-3">
             <div>
               <label className="text-xs font-semibold text-slate-500 mb-1.5 block text-right">اسم المشروع</label>
-              <Input value={bizName} onChange={(e) => setBizName(e.target.value)} placeholder="مثال: مطعم السمكة الذهبية" className="rounded-xl text-right" />
+              <Input value={bizName} onChange={(e) => setBizName(e.target.value)} placeholder={bizType === "freelance" ? "مثال: شغل الجرافيك والتسويق" : "مثال: مطعم السمكة الذهبية"} className="rounded-xl text-right" />
             </div>
             <div>
               <label className="text-xs font-semibold text-slate-500 mb-1.5 block text-right">
-                وصف المشروع <span className="text-slate-400">(هيستخدم لتوليد فئات مخصصة)</span>
+                وصف {bizType === "freelance" ? "العمل" : "المشروع"} <span className="text-slate-400">(هيستخدم لتوليد فئات مخصصة)</span>
               </label>
               <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="اوصف مشروعك... مثال: مطعم سمك وبنشتري بضاعة يومياً من سوق العبور وبنصرف على ثلاجات وعمال وتوصيل"
+                placeholder={bizType === "freelance" ? "اوصف شغلك... مثال: بشتغل مصمم جرافيك حر، بقبض بالدولار أو المصري، وبصرف على إعلانات فيسبوك واشتراكات برامج التصميم وكهرباء." : "اوصف مشروعك... مثال: مطعم سمك وبنشتري بضاعة يومياً من سوق العبور وبنصرف على ثلاجات وعمال وتوصيل"}
                 className="rounded-xl text-right min-h-[100px] resize-none"
               />
               <p className="text-[10px] text-slate-400 mt-1 text-right">كل ما كان الوصف أدق، كل ما كانت الفئات أنسب</p>
@@ -466,6 +466,9 @@ function BusinessDashboard({ business, categories, onBack, refetch }: {
   const { toast } = useToast();
   const utils = trpc.useUtils();
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const [showEditBusiness, setShowEditBusiness] = useState(false);
+  const [editName, setEditName] = useState(business.name);
+  const [editDesc, setEditDesc] = useState(business.description || "");
 
   const deleteMutation = trpc.business.delete.useMutation({
     onSuccess: () => {
@@ -490,6 +493,15 @@ function BusinessDashboard({ business, categories, onBack, refetch }: {
     },
   });
 
+  const updateMutation = trpc.business.update.useMutation({
+    onSuccess: () => {
+      utils.business.get.invalidate();
+      refetch();
+      setShowEditBusiness(false);
+      toast({ title: "تم التحديث بنجاح" });
+    },
+  });
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -506,7 +518,13 @@ function BusinessDashboard({ business, categories, onBack, refetch }: {
       </div>
 
       {/* Business Info Card */}
-      <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20">
+      <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 relative">
+        <button
+          onClick={() => setShowEditBusiness(true)}
+          className="absolute top-4 left-4 p-2 rounded-lg bg-white/50 dark:bg-slate-900/50 hover:bg-white dark:hover:bg-slate-800 text-indigo-600 dark:text-indigo-400 transition-colors"
+        >
+          <Pencil className="w-4 h-4" />
+        </button>
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
             <Store className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
@@ -515,6 +533,8 @@ function BusinessDashboard({ business, categories, onBack, refetch }: {
             <h3 className="font-bold text-base text-slate-800 dark:text-slate-200">{business.name}</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">{business.typeLabel}</p>
           </div>
+        </div>
+        <div className="flex items-center justify-between mt-4">
           <button
             onClick={() => toggleActiveMutation.mutate({ isActive: !business.isActive })}
             className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
@@ -565,9 +585,9 @@ function BusinessDashboard({ business, categories, onBack, refetch }: {
               </div>
               <button
                 onClick={() => { if (confirm(`حذف فئة "${cat.nameAr}"؟`)) removeCategoryMutation.mutate({ id: cat.id }); }}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors opacity-0 group-hover:opacity-100"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors sm:opacity-0 group-hover:opacity-100"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-4 h-4" />
               </button>
             </div>
           ))}
@@ -590,6 +610,46 @@ function BusinessDashboard({ business, categories, onBack, refetch }: {
       </div>
 
       <AddCategoryDialog open={showAddCategory} onOpenChange={setShowAddCategory} onAdd={() => { refetch(); setShowAddCategory(false); }} />
+
+      {/* Edit Business Dialog */}
+      <Dialog open={showEditBusiness} onOpenChange={setShowEditBusiness}>
+        <DialogContent className="sm:max-w-[425px]" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-right text-lg">تعديل بيانات المشروع</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">اسم المشروع</label>
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="اسم المشروع"
+                className="text-right"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">وصف المشروع</label>
+              <Textarea
+                value={editDesc}
+                onChange={(e) => setEditDesc(e.target.value)}
+                placeholder="تفاصيل الشغل أو المشروع"
+                className="text-right resize-none min-h-[100px]"
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="outline" onClick={() => setShowEditBusiness(false)}>
+                إلغاء
+              </Button>
+              <Button
+                disabled={!editName.trim() || updateMutation.isPending}
+                onClick={() => updateMutation.mutate({ name: editName, description: editDesc })}
+              >
+                {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "حفظ التعديلات"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }

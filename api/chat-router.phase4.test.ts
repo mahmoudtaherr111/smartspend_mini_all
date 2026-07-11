@@ -1,6 +1,5 @@
 import { chatRouter } from "./chat-router";
 import { runAIKernelActive } from "./services/ai-kernel";
-import { processAIChatMessage } from "./services/ai-chat-service";
 import { cancelAction, confirmAction, maybeCreateActionDraftFromMessage } from "./services/action-runtime";
 
 const { dbMock, dbState } = vi.hoisted(() => {
@@ -22,9 +21,19 @@ const { dbMock, dbState } = vi.hoisted(() => {
         const historyChain: any = {
           from: vi.fn(() => historyChain),
           where: vi.fn(() => historyChain),
-          orderBy: vi.fn(() => Promise.resolve([])),
+          orderBy: vi.fn(() => historyChain),
+          limit: vi.fn(() => Promise.resolve([])),
         };
         return historyChain;
+      }
+
+      if (fields?.id && !fields?.conversationId) {
+        const ownedConversationChain: any = {
+          from: vi.fn(() => ownedConversationChain),
+          where: vi.fn(() => ownedConversationChain),
+          limit: vi.fn(() => Promise.resolve([{ id: 88 }])),
+        };
+        return ownedConversationChain;
       }
 
       if (fields?.id && fields?.conversationId) {
@@ -67,17 +76,6 @@ const { dbMock, dbState } = vi.hoisted(() => {
 
 vi.mock("./queries/connection", () => ({
   db: dbMock,
-}));
-
-vi.mock("./services/ai-chat-service", () => ({
-  processAIChatMessage: vi.fn(() =>
-    Promise.resolve({
-      response: "تمام، حضرت لك هدف محتاج تأكيد.",
-      tokensUsed: 25,
-      model: "legacy-model",
-      toolsUsed: [],
-    }),
-  ),
 }));
 
 vi.mock("./services/ai-kernel", async (importOriginal) => {
@@ -186,7 +184,6 @@ vi.mock("./services/action-runtime", async (importOriginal) => {
 describe("chat router phase 4 structured actions", () => {
   beforeEach(() => {
     dbState.pendingActionRows = [{ id: 123, conversationId: 88 }];
-    vi.mocked(processAIChatMessage).mockClear();
     vi.mocked(runAIKernelActive).mockClear();
     vi.mocked(confirmAction).mockClear();
     vi.mocked(cancelAction).mockClear();
@@ -286,7 +283,6 @@ describe("chat router phase 4 structured actions", () => {
     );
     expect(cancelAction).not.toHaveBeenCalled();
     expect(runAIKernelActive).not.toHaveBeenCalled();
-    expect(processAIChatMessage).not.toHaveBeenCalled();
     expect(maybeCreateActionDraftFromMessage).not.toHaveBeenCalled();
   });
 
@@ -318,7 +314,6 @@ describe("chat router phase 4 structured actions", () => {
     );
     expect(confirmAction).not.toHaveBeenCalled();
     expect(runAIKernelActive).not.toHaveBeenCalled();
-    expect(processAIChatMessage).not.toHaveBeenCalled();
     expect(maybeCreateActionDraftFromMessage).not.toHaveBeenCalled();
   });
 

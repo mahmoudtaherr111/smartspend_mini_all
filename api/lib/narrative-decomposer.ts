@@ -160,7 +160,7 @@ const INVESTMENT_VERBS = [
 ];
 
 /** All financial verbs (for splitting detection) */
-const ALL_FINANCIAL_VERBS = [
+export const ALL_FINANCIAL_VERBS = [
   ...EXPENSE_VERBS,
   ...INCOME_VERBS,
   ...TRANSFER_VERBS,
@@ -661,6 +661,38 @@ function decomposeVerbAnchored(
   for (let i = 0; i < words.length; i++) {
     const w = words[i].replace(/^[وف]/, "");
     if (ALL_FINANCIAL_VERBS.includes(w) || ALL_FINANCIAL_VERBS.includes(words[i])) {
+      // Check if we should merge this verb with the previous one
+      if (verbIndices.length > 0) {
+        const prevIdx = verbIndices[verbIndices.length - 1];
+        let hasOrConjunctionBetween = false;
+        for (let j = prevIdx + 1; j < i; j++) {
+          if (words[j] === "أو" || words[j] === "او") {
+            hasOrConjunctionBetween = true;
+            break;
+          }
+        }
+        if (hasOrConjunctionBetween) {
+          continue; // Do not split verbs connected by "أو" (e.g. "دفعت لأحمد أو وديت لمحمد")
+        }
+
+        let hasSubstantialContent = false;
+        for (let j = prevIdx + 1; j < i; j++) {
+          const wordInGap = words[j];
+          const cleanW = wordInGap.replace(/[^\u0600-\u06FFa-zA-Z]/g, "").replace(/^[وفبل]/, "").replace(/^ال/, "");
+          const isNumber = /^\d+$/.test(wordInGap) || ["مية", "ميه", "الف", "ألف", "مليون", "مائة", "ثلاثين", "اربعين", "خمسين"].includes(cleanW);
+          const isNounOrName = isLikelyPersonName(wordInGap) || knownNames.includes(wordInGap) || 
+                               (cleanW.length >= 3 && !["بعدين", "ثم", "بعد", "بعدهم", "تحت", "فوق", "قبل", "مع", "من", "عن"].includes(cleanW));
+          
+          if (isNumber || isNounOrName) {
+            hasSubstantialContent = true;
+            break;
+          }
+        }
+        
+        if (!hasSubstantialContent) {
+          continue;
+        }
+      }
       verbIndices.push(i);
     }
   }
@@ -720,7 +752,12 @@ export function decomposeHeuristic(
 ): DecompositionResult {
   let segments = decomposeAmountAnchored(text, knownNames);
   
-  if (!segments || segments.length === 0) {
+  if (segments && segments.length === 1) {
+    const verbSegments = decomposeVerbAnchored(text, knownNames);
+    if (verbSegments && verbSegments.length > 1) {
+      segments = verbSegments;
+    }
+  } else if (!segments || segments.length === 0) {
     segments = decomposeVerbAnchored(text, knownNames);
   }
 

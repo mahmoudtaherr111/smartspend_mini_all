@@ -275,6 +275,24 @@ smsApp.post("/ingest", async (c) => {
     );
   }
 
+  // Prevent duplicate SMS submissions (same user, exact message within last 24h)
+  const duplicateCheck = await db
+    .select({ id: rawSmsEvents.id })
+    .from(rawSmsEvents)
+    .where(
+      and(
+        eq(rawSmsEvents.userId, userId),
+        eq(rawSmsEvents.userType, userType),
+        eq(rawSmsEvents.message, message.trim()),
+        gte(rawSmsEvents.createdAt, new Date(Date.now() - 24 * 60 * 60 * 1000)),
+      )
+    )
+    .limit(1);
+
+  if (duplicateCheck.length > 0) {
+    return c.json({ success: true, message: "Duplicate SMS detected, ignored." });
+  }
+
   // ── Step 1: Store raw SMS event (Original raw text stored for admin visibility) ──
   const [insertedSms] = await db
     .insert(rawSmsEvents)
