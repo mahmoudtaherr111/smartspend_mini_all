@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { router, publicProcedure, strictPublicProcedure } from "./middleware";
+import { router, publicProcedure, strictPublicProcedure, authedProcedure } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
 import { users } from "../db/schema";
 import { eq } from "drizzle-orm";
-import { sign } from "hono/jwt";
 import { env } from "./lib/env";
+import { generateToken, createSession, invalidateSession } from "./local-auth-utils";
 
 // Google OAuth helpers
 async function getGoogleTokens(code: string) {
@@ -102,10 +102,9 @@ export const authRouter = router({
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "حصل خطأ في إنشاء الحساب" });
       }
 
-      const token = await sign(
-        { userId: user.id, type: "oauth", exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 },
-        env.JWT_SECRET
-      );
+      // Create a proper DB session (matching local auth flow) so token can be revoked
+      const token = await generateToken(user.id, "oauth");
+      await createSession(user.id, "oauth", token);
 
       return {
         success: true,
@@ -132,7 +131,41 @@ export const authRouter = router({
     return user;
   }),
 
-  logout: publicProcedure.mutation(() => {
+  logout: authedProcedure.mutation(async ({ ctx }) => {
+    // Extract the raw token from the request to invalidate the DB session
+    const req = ctx.req;
+    let rawToken: string | undefined;
+
+    // Check cookie first (Google OAuth flow)
+    let cookieHeader: string | null | undefined;
+    if ("header" in req && typeof req.header === "function") {
+      cookieHeader = (req as any).header("cookie");
+    } else {
+      cookieHeader = (req as Request).headers.get("cookie");
+    }
+    if (cookieHeader) {
+      const match = cookieHeader.match(/(?:^|;\s*)google_session=([^;]*)/);
+      if (match) rawToken = match[1];
+    }
+
+    // Check Bearer token (local auth flow)
+    if (!rawToken) {
+      let authHeader: string | undefined;
+      if ("header" in req && typeof req.header === "function") {
+        authHeader = (req as any).header("Authorization");
+      } else {
+        authHeader = (req as Request).headers.get("Authorization") ?? undefined;
+      }
+      if (authHeader?.startsWith("Bearer ")) {
+        rawToken = authHeader.slice(7);
+      }
+    }
+
+    // Invalidate the session in DB
+    if (rawToken) {
+      await invalidateSession(rawToken);
+    }
+
     return { success: true };
   }),
 });

@@ -270,10 +270,19 @@ export async function confirmAction(
   actionId: number,
 ): Promise<ActionExecutionResult> {
   const action = await loadPendingAction(ctx, actionId);
-  await db
+  const [updateResult] = await db
     .update(aiPendingActions)
     .set({ status: "confirmed", confirmedAt: new Date() })
-    .where(eq(aiPendingActions.id, actionId));
+    .where(
+      and(
+        eq(aiPendingActions.id, actionId),
+        eq(aiPendingActions.status, "pending_confirmation")
+      )
+    );
+
+  if (!updateResult || (updateResult as any).affectedRows === 0) {
+    throw new Error("العملية دي اتنفذت أو اتلغت بالفعل من قبل.");
+  }
   await audit(ctx, actionId, action.actionName, "confirmed", "confirmed");
   void recordAICostMetric({
     userId: ctx.userId,
@@ -309,7 +318,12 @@ export async function confirmAction(
         executedAt: new Date(),
         result: output,
       })
-      .where(eq(aiPendingActions.id, actionId));
+      .where(
+        and(
+          eq(aiPendingActions.id, actionId),
+          eq(aiPendingActions.status, "confirmed")
+        )
+      );
     await db.insert(aiActionMemory).values({
       userId: ctx.userId,
       userType: ctx.userType,

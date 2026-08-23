@@ -172,6 +172,8 @@ async function loadVectorMemories(
       and(
         eq(aiMemoryEmbeddings.userId, ctx.userId),
         eq(aiMemoryEmbeddings.userType, ctx.userType),
+        eq(aiMemoryItems.userId, ctx.userId),
+        eq(aiMemoryItems.userType, ctx.userType),
         eq(aiMemoryEmbeddings.model, config.model),
         eq(aiMemoryEmbeddings.dimensions, embedded.dimensions),
         eq(aiMemoryItems.status, "active"),

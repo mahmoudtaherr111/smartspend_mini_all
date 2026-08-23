@@ -2,25 +2,28 @@
  * SmartSpend PWA Service Worker (Workbox InjectManifest mode).
  * Provides 100% offline coverage for compiled chunks and dynamic caching for assets.
  */
-importScripts(
-  "https://storage.googleapis.com/workbox-cdn/releases/7.0.0/workbox-sw.js",
-);
+import { clientsClaim } from "workbox-core";
+import { ExpirationPlugin } from "workbox-expiration";
+import {
+  cleanupOutdatedCaches,
+  createHandlerBoundToURL,
+  precacheAndRoute,
+} from "workbox-precaching";
+import { registerRoute, setCatchHandler } from "workbox-routing";
+import { NetworkFirst, StaleWhileRevalidate } from "workbox-strategies";
 
 const RUNTIME_CACHE = "smartspend-runtime-v4";
 const IMAGE_CACHE = "smartspend-images-v4";
 const MAX_IMAGE_ENTRIES = 64;
 
-// Enable Workbox debugging if needed (will output to console in dev mode)
-if (self.workbox) {
-  self.workbox.setConfig({ debug: false });
-}
-
 // 1. Precaching: VitePWA compiles all assets and injects them here.
 // Note: self.__WB_MANIFEST must appear EXACTLY ONCE in the source file.
 const precachedAssets = self.__WB_MANIFEST;
 if (precachedAssets) {
-  self.workbox.precaching.precacheAndRoute(precachedAssets);
+  precacheAndRoute(precachedAssets);
+  cleanupOutdatedCaches();
 }
+clientsClaim();
 
 // Helper to identify API and server transactions
 function isApiRequest(url) {
@@ -34,8 +37,8 @@ function isSameOrigin(url) {
 
 // 2. Never replay arbitrary mutations from a service worker. Replaying a stale
 // POST/DELETE can duplicate a transaction or apply a later-unwanted settings,
-// billing, or deletion action. ExpenseForm owns a visible, idempotent local
-// outbox and asks the user to review it before it is synchronized.
+// billing, or deletion action. ExpenseForm owns a visible outbox; its expense
+// writes carry a server-enforced idempotency key and remain reviewable.
 
 // 3. Workbox routing for GET requests
 // FIX: Replaced the custom `fetch` event listener with Workbox registerRoute calls.
@@ -47,26 +50,28 @@ function isSameOrigin(url) {
 // the in-app cache for the active session.
 
 // 3b. Navigation requests — NetworkFirst, falling back to cached app shell
-self.workbox.routing.registerRoute(
+registerRoute(
   ({ request }) => request.mode === "navigate",
-  new self.workbox.strategies.NetworkFirst({
+  new NetworkFirst({
     cacheName: RUNTIME_CACHE,
     networkTimeoutSeconds: 5,
-    plugins: [
-      new self.workbox.precaching.PrecacheFallbackPlugin({
-        fallbackURL: "/index.html",
-      }),
-    ],
   }),
 );
 
+setCatchHandler(async ({ event }) => {
+  if (event.request.mode === "navigate") {
+    return createHandlerBoundToURL("/index.html")({ event });
+  }
+  return Response.error();
+});
+
 // 3c. Image caching — StaleWhileRevalidate with max entries
-self.workbox.routing.registerRoute(
+registerRoute(
   ({ request }) => request.destination === "image",
-  new self.workbox.strategies.StaleWhileRevalidate({
+  new StaleWhileRevalidate({
     cacheName: IMAGE_CACHE,
     plugins: [
-      new self.workbox.expiration.ExpirationPlugin({
+      new ExpirationPlugin({
         maxEntries: MAX_IMAGE_ENTRIES,
         maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
       }),
@@ -75,13 +80,13 @@ self.workbox.routing.registerRoute(
 );
 
 // 3d. Other same-origin static assets — StaleWhileRevalidate
-self.workbox.routing.registerRoute(
+registerRoute(
   ({ url, request }) =>
     isSameOrigin(url) &&
     !isApiRequest(url) &&
     request.destination !== "image" &&
     request.mode !== "navigate",
-  new self.workbox.strategies.StaleWhileRevalidate({
+  new StaleWhileRevalidate({
     cacheName: RUNTIME_CACHE,
   }),
 );
@@ -125,8 +130,8 @@ self.addEventListener("push", (event) => {
     const title = data.title || "SmartSpend AI";
     const options = {
       body: data.body || "",
-      icon: data.icon || "/pwa-192x192.png",
-      badge: data.badge || "/pwa-192x192.png",
+      icon: data.icon || "/icon.png",
+      badge: data.badge || "/icon.png",
       vibrate: [100, 50, 100],
       data: data.url || "/", // Default URL to open when clicked
     };

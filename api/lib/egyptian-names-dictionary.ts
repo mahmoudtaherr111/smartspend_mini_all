@@ -862,7 +862,7 @@ export function isMerchantOrPlace(word: string): boolean {
  * @returns true إذا كان المعنى هو شخص، false إذا كان المعنى تطبيق أو غير محدد
  */
 export function isKareemPersonContext(text: string): boolean {
-  const isPersonContext = /(سلفت|اديت|اعطيت|عطيت|حولت|دفعت|دفعتل|اخدت|استلفت|خدت|بعت|من|لـ|مع)/.test(text);
+  const isPersonContext = /(سلفت|اديت|اعطيت|عطيت|حولت|دفعت|دفعتل|اخدت|استلفت|خدت|بعت|من|لـ|مع|سلكت|صفيت|صفّيت|طلعت|بعتت|رديت|وديت|رجعت|فكيت)/.test(text);
   const isTransportContext = /(ركبت|اخدت|مشيت|طلبت|توصيله|توصيل|مشوار|تطبيق)/.test(text);
   const hasRelationship = /(صاحب|زميل|اخو|عم|خال|ابن|ابو|حساب)/.test(text);
   

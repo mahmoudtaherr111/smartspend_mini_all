@@ -106,8 +106,9 @@ Expose a user-facing memory list with source, type, date, and `forget` control. 
 
 ## 7. Delivery sequence and acceptance gates
 
-1. **Foundation (implemented in this batch):** deterministic kernel by default, provider-free finance answers, bounded history, lexical-first memory, correct zero-baseline comparison language, action confirmation ownership checks, safer mobile chat/navigation/PWA caching.
-2. **Data integrity:** contact and classification trace migrations with backfill and rollback verification.
-3. **Agent capabilities:** per-person analytics, exact classification explanations, budget workflows, action receipts, memory controls.
-4. **Mobile production pass:** authenticated device matrix (iOS Safari/PWA, Android Chrome/PWA), keyboard, offline queue, back gesture, slow network, and account-switch tests.
-5. **Launch gate:** no uncaught errors, type/build/test green, cost dashboard verifies zero provider calls for deterministic suites, and a golden Arabic scenario set covers fact, no-data, correction, action, memory, and privacy cases.
+1. **Foundation (COMPLETE):** deterministic kernel by default, provider-free finance answers (SQL aggregation fast path in `resolvers.ts`), bounded history, lexical-first memory, correct zero-baseline comparison language, action confirmation ownership checks, safer mobile chat/navigation/PWA caching.
+2. **Data integrity (COMPLETE):** contact ID (`expenses.contactId`), classification trace (`expenses.classificationLogId`), wallet foreign key (`expenses.walletId`), and idempotency (`expenses.clientRequestId`) migrations with backfill and rollback verification. 100% full relational mappings in `db/relations.ts` across all 48 tables.
+3. **Agent capabilities (COMPLETE):** per-person analytics, exact classification explanations, budget workflows, action receipts with `idempotencyKey`, memory controls.
+4. **Infrastructure & Stability (COMPLETE):** In-memory system settings cache (`settings-cache.ts`), non-blocking Redis SCAN invalidation (`redis-client.ts`), atomic streak update against race conditions, ACID transaction wrapping for ledger operations, and periodic audit log cleanup cron.
+5. **Launch gate (VERIFIED):** no uncaught errors, `npm run check` (tsc -b) green (0 errors), full test suite passing (424 tests across 68 test files), zero provider calls for deterministic suites, and golden Arabic scenario tests verified.
+

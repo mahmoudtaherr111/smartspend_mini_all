@@ -16,6 +16,8 @@ import { classificationLogs, userDictionaries } from "../../db/schema";
 import { eq, and, gte, desc } from "drizzle-orm";
 import { LRUCache } from "lru-cache";
 import damerauPkg from "damerau-levenshtein";
+import { arabicToEnglishNumbers } from "./text-normalizer";
+import { parseArabicNumbers } from "./arabic-number-parser";
 const damerauLevenshtein = (a: string, b: string): number => {
   const result = (damerauPkg as any)(a, b);
   return typeof result === "number" ? result : result.steps;
@@ -27,7 +29,7 @@ export interface MemoryPattern {
   template: string;
   category: string;
   subCategory: string;
-  type: "income" | "expense";
+  type: "income" | "expense" | "transfer" | "investment";
   confidence: number;
   usageCount: number;
   lastUsed: Date;
@@ -56,15 +58,34 @@ export function invalidateUserMemory(userId: number, userType: string): void {
 
 // ─── Template Extraction ───
 
+/**
+ * "مية" is deliberately not a global Arabic-number token because it commonly
+ * means water in Egyptian Arabic. In a money expression, however, it is a
+ * number and should share a memory template with 100/١٠٠.
+ */
+function normalizeMemoryAmountText(text: string): string {
+  const numberFollower =
+    "اتنين|اثنين|تلاتين|ثلاثين|اربعين|أربعين|خمسين|ستين|سبعين|تمانين|ثمانين|تسعين|جنيه|جنية|ج\.م|ج";
+  const disambiguated = arabicToEnglishNumbers(text).replace(
+    new RegExp(`(^|\\s)(?:مية|ميه)(?=\\s+(?:و\\s*)?(?:${numberFollower})(?:\\s|$))`, "g"),
+    "$1100",
+  );
+  return parseArabicNumbers(disambiguated);
+}
+
 export function textToTemplate(text: string): string {
-  return text
+  // Keep the template independent from the way a user writes the amount.
+  // Without this, "١٥٠", "150", and "مية وخمسين" train three different
+  // patterns even though they are the same recurring transaction.
+  return normalizeMemoryAmountText(text)
     .replace(/\d+(\.\d+)?/g, "{X}")
     .replace(/\s+/g, " ")
     .trim();
 }
 
 function extractAmountFromText(text: string): number {
-  const match = text.match(/(\d+(?:\.\d+)?)/);
+  const normalized = normalizeMemoryAmountText(text);
+  const match = normalized.match(/(\d+(?:\.\d+)?)/);
   return match ? parseFloat(match[1]) : 0;
 }
 
@@ -122,7 +143,17 @@ async function loadUserPatterns(
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
     const logs = await db
-      .select()
+      .select({
+        id: classificationLogs.id,
+        originalText: classificationLogs.originalText,
+        normalizedText: classificationLogs.normalizedText,
+        finalResult: classificationLogs.finalResult,
+        confidence: classificationLogs.confidence,
+        wasCorrected: classificationLogs.wasCorrected,
+        decision: classificationLogs.decision,
+        parsedBy: classificationLogs.parsedBy,
+        createdAt: classificationLogs.createdAt,
+      })
       .from(classificationLogs)
       .where(
         and(
@@ -143,7 +174,7 @@ async function loadUserPatterns(
         confidence: number;
         count: number;
         lastUsed: Date;
-        wasCorrected: boolean;
+        hasConflictingOutcome: boolean;
       }
     >();
 
@@ -156,19 +187,34 @@ async function loadUserPatterns(
       if (
         !finalResult ||
         !Array.isArray(finalResult) ||
-        finalResult.length === 0
+        // A recurring template is safe only when it always represents one
+        // transaction. Learning the first item from a multi-item sentence
+        // silently drops the other transactions on the next cache hit.
+        finalResult.length !== 1
       )
         continue;
 
       const first = finalResult[0];
       const confidence = log.confidence || 0;
+      const type = first.type;
 
       if (confidence < 85) continue;
       if (log.wasCorrected) continue;
+      if (log.decision !== "auto_save") continue;
       if (log.parsedBy !== "ai" && log.parsedBy !== "rule_engine" && log.parsedBy !== "hybrid") continue;
+      if (!first.category || !["income", "expense", "transfer", "investment"].includes(type)) continue;
 
       const existing = templateMap.get(template);
       if (existing) {
+        if (
+          existing.category !== first.category ||
+          existing.subCategory !== (first.subCategory || "عام") ||
+          existing.type !== type
+        ) {
+          // Conflicting historical outcomes are ambiguity, not evidence.
+          existing.hasConflictingOutcome = true;
+          continue;
+        }
         existing.count++;
         existing.confidence = Math.max(existing.confidence, confidence);
         if (log.createdAt && log.createdAt > existing.lastUsed) {
@@ -182,19 +228,19 @@ async function loadUserPatterns(
           confidence,
           count: 1,
           lastUsed: log.createdAt || new Date(),
-          wasCorrected: log.wasCorrected || false,
+          hasConflictingOutcome: false,
         });
       }
     }
 
     const patterns: MemoryPattern[] = [];
     for (const [template, data] of templateMap) {
-      if (data.count >= 2) {
+      if (data.count >= 2 && !data.hasConflictingOutcome) {
         patterns.push({
           template,
           category: data.category,
           subCategory: data.subCategory,
-          type: data.type as "income" | "expense",
+          type: data.type as MemoryPattern["type"],
           confidence: Math.min(100, data.confidence + data.count * 2),
           usageCount: data.count,
           lastUsed: data.lastUsed,
@@ -226,7 +272,16 @@ export async function muscleMemoryLookup(
   if (patterns.length === 0) return null;
 
   const inputTemplate = textToTemplate(text);
-  if (inputTemplate.length < 3) return null;
+  // Memory is intentionally limited to a single amount / single transaction.
+  // Complex narration must still go through the decomposer.
+  if (
+    inputTemplate.length < 3 ||
+    (inputTemplate.match(/\{X\}/g) || []).length !== 1
+  )
+    return null;
+
+  const extractedAmount = extractAmountFromText(text);
+  if (extractedAmount <= 0) return null;
 
   let bestMatch: MemoryMatch | null = null;
   let bestScore = 0;
@@ -238,7 +293,7 @@ export async function muscleMemoryLookup(
       bestScore = score;
       bestMatch = {
         pattern,
-        amount: extractAmountFromText(text),
+        amount: extractedAmount,
         matchScore: score,
       };
     }

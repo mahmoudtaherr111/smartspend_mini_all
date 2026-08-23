@@ -113,32 +113,6 @@ export const supportRouter = router({
         .limit(limit)
         .offset(offset);
 
-      const enriched = await Promise.all(
-        list.map(async (t) => {
-          let name = "مجهول";
-          let avatarUrl = "";
-          if (t.userType === "oauth") {
-            const u = await db
-              .select({ name: users.name, avatar: users.avatar })
-              .from(users)
-              .where(eq(users.id, t.userId))
-              .limit(1);
-            if (u[0]) {
-              name = u[0].name;
-              avatarUrl = u[0].avatar || "";
-            }
-          } else {
-            const u = await db
-              .select({ name: localUsers.name })
-              .from(localUsers)
-              .where(eq(localUsers.id, t.userId))
-              .limit(1);
-            if (u[0]) name = u[0].name;
-          }
-          return { ...t, userName: name, userAvatar: avatarUrl };
-        }),
-      );
-
       const oauthIds = [...new Set(list.filter((t) => t.userType === "oauth").map((t) => t.userId))];
       const localIds = [...new Set(list.filter((t) => t.userType === "local").map((t) => t.userId))];
 
@@ -163,7 +137,9 @@ export const supportRouter = router({
         return { ...t, userName: info?.name || "مجهول", userAvatar: info?.avatar || "" };
       });
 
-      const total = await db.select({ count: count() }).from(supportTickets);
+      let totalQuery = db.select({ count: count() }).from(supportTickets).$dynamic();
+      if (filters.length > 0) totalQuery = totalQuery.where(and(...filters));
+      const total = await totalQuery;
       return { list: enrichedList, total: total[0]?.count ?? 0, page, limit };
     }),
 

@@ -52,6 +52,8 @@ async function processBroadcastQueue() {
   isBroadcasting = false;
 }
 
+import { getSystemSettings, invalidateSettingsCache } from "./lib/settings-cache";
+
 export const adminWhatsappRouter = router({
   getStatus: adminProcedure.query(async () => {
     const statusInfo = whatsappService.getStatus();
@@ -79,18 +81,15 @@ export const adminWhatsappRouter = router({
       return { otpEnabled: false, temporarilyDisabled: true };
     }
 
-    const setting = await db.query.systemSettings.findFirst({
-      where: eq(systemSettings.key, "whatsapp_otp_enabled"),
-    });
-    return { otpEnabled: setting?.value === "true" };
+    const settings = await getSystemSettings();
+    return { otpEnabled: settings["whatsapp_otp_enabled"] === "true" };
   }),
 
   toggleOtpVerification: adminProcedure
     .input(z.object({ enabled: z.boolean() }))
     .mutation(async ({ input }) => {
-      const existing = await db.query.systemSettings.findFirst({
-        where: eq(systemSettings.key, "whatsapp_otp_enabled"),
-      });
+      const settings = await getSystemSettings();
+      const existing = settings["whatsapp_otp_enabled"] !== undefined;
 
       if (existing) {
         await db.update(systemSettings)
@@ -102,6 +101,7 @@ export const adminWhatsappRouter = router({
           value: input.enabled ? "true" : "false",
         });
       }
+      invalidateSettingsCache();
       return { success: true };
     }),
 

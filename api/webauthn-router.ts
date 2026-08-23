@@ -25,11 +25,11 @@ import {
   users,
 } from "../db/schema";
 import { eq, and } from "drizzle-orm";
-import jwt from "jsonwebtoken";
+import { generateToken, createSession } from "./local-auth-utils";
 
 // Ideally from env:
 const rpName = "SmartSpend";
-const rpID = "smartspend.ai"; // Should be the domain name
+const rpID = process.env.NODE_ENV === "production" ? "smartspend.ai" : "localhost";
 const origin =
   process.env.NODE_ENV === "production"
     ? "https://smartspend.ai"
@@ -288,11 +288,17 @@ export const webauthnRouter = router({
         .delete(authChallenges)
         .where(eq(authChallenges.id, input.sessionId));
 
-      // Issue JWT
-      const token = jwt.sign(
-        { id: credentialRecord.userId, type: credentialRecord.userType },
-        process.env.JWT_SECRET || "fallback_secret",
-        { expiresIn: "30d" },
+      // Issue JWT — use the same token format as local-auth so context.ts can validate it
+      const token = await generateToken(
+        credentialRecord.userId,
+        credentialRecord.userType as "oauth" | "local",
+      );
+
+      // Create a session record — context.ts requires this to validate Bearer tokens
+      await createSession(
+        credentialRecord.userId,
+        credentialRecord.userType as "oauth" | "local",
+        token,
       );
 
       return { success: true, token };

@@ -250,6 +250,7 @@ function RoutingRangesEditor({
                       <SelectItem value="gemini">Google</SelectItem>
                       <SelectItem value="groq">Groq</SelectItem>
                       <SelectItem value="fireworks">Fireworks</SelectItem>
+                      <SelectItem value="nvidia">NVIDIA NIM</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -271,7 +272,9 @@ function RoutingRangesEditor({
                             ? m.provider === "groq"
                             : r.provider === "fireworks"
                               ? m.provider === "fireworks"
-                              : m.provider === "gemini",
+                              : r.provider === "nvidia"
+                                ? m.provider === "nvidia"
+                                : m.provider === "gemini",
                         )
                         .map((m) => (
                           <SelectItem key={m.id} value={m.id}>
@@ -297,6 +300,7 @@ function RoutingRangesEditor({
                       <SelectItem value="key2">🔑 Gemini Backup</SelectItem>
                       <SelectItem value="groq">🔑 Groq Key</SelectItem>
                       <SelectItem value="fireworks">🔑 Fireworks Key</SelectItem>
+                      <SelectItem value="nvidia">🔑 NVIDIA Key</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1354,6 +1358,15 @@ export function AdminSettingsTab() {
                     badge: "للاستجابة الفائقة",
                     color: "purple",
                     hint: "مفتاح Fireworks.ai للموديلات مثل DeepSeek V4. يُستخدم عند اختيار fireworks",
+                  },
+                  {
+                    label: "NVIDIA NIM AI Key",
+                    id: "nvidia",
+                    field: "nvidia_api_key",
+                    placeholder: "nvapi-...",
+                    badge: "أداء نيفيديا المسرّع",
+                    color: "emerald",
+                    hint: "مفتاح NVIDIA NIM المسرّع للموديلات مثل DeepSeek V4 Flash و Llama 3.3 70B",
                   },
                   {
                     label: "Custom STT Primary Key",

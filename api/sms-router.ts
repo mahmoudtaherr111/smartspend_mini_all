@@ -234,14 +234,11 @@ smsApp.post("/ingest", async (c) => {
   // Get configurable limit from system_settings (admin dashboard), default: free=5, pro/ultra=unlimited
   let smsMonthlyLimit = userPlan === "free" ? 5 : 999999;
   try {
-    const { systemSettings } = await import("../db/schema");
-    const [setting] = await db
-      .select()
-      .from(systemSettings)
-      .where(eq(systemSettings.key, `sms_limit_${userPlan}`))
-      .limit(1);
-    if (setting?.value)
-      smsMonthlyLimit = parseInt(setting.value) || smsMonthlyLimit;
+    const { getSystemSettings } = await import("./lib/settings-cache");
+    const settings = await getSystemSettings();
+    const val = settings[`sms_limit_${userPlan}`];
+    if (val)
+      smsMonthlyLimit = parseInt(val) || smsMonthlyLimit;
   } catch {
     /* use default */
   }

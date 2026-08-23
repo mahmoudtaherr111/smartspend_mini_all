@@ -19,52 +19,29 @@ export const walletRouter = router({
   }),
 
   getWalletTransactions: authedProcedure
-    .input(z.object({ walletId: z.number() }))
+    .input(
+      z.object({
+        walletId: z.number(),
+        limit: z.number().min(1).max(200).default(50),
+        offset: z.number().min(0).default(0),
+      }),
+    )
     .query(async ({ ctx, input }) => {
-      // 1. Fetch the wallet
-      const [wallet] = await db
-        .select()
-        .from(userWallets)
-        .where(
-          and(
-            eq(userWallets.id, input.walletId),
-            eq(userWallets.userId, ctx.user.id as number),
-            eq(userWallets.userType, ctx.user.type),
-          ),
-        )
-        .limit(1);
-
-      if (!wallet) {
-        return [];
-      }
-
-      const qProvider = `%${wallet.provider}%`;
-      const qName = `%${wallet.name}%`;
-
-      const conditions = or(
-        eq(expenses.paymentMethod, wallet.name),
-        eq(expenses.paymentMethod, wallet.provider),
-        like(sql`LOWER(${expenses.parsedMetadata})`, qProvider.toLowerCase()),
-        like(sql`LOWER(${expenses.description})`, qProvider.toLowerCase()),
-        like(sql`LOWER(${expenses.description})`, qName.toLowerCase()),
-        like(sql`LOWER(${expenses.rawText})`, qProvider.toLowerCase()),
-        like(sql`LOWER(${expenses.rawText})`, qName.toLowerCase())
-      );
-
-      const filtered = await db
+      const walletExpenses = await db
         .select()
         .from(expenses)
         .where(
           and(
             eq(expenses.userId, ctx.user.id as number),
             eq(expenses.userType, ctx.user.type),
-            conditions
-          )
+            eq(expenses.walletId, input.walletId),
+          ),
         )
         .orderBy(desc(expenses.date))
-        .limit(100);
+        .limit(input.limit)
+        .offset(input.offset);
 
-      return filtered;
+      return walletExpenses;
     }),
 
   createWallet: authedProcedure

@@ -3,6 +3,7 @@ import { useAuth } from "../hooks/useAuth";
 import { trpc } from "../providers/trpc";
 import { SEOMeta } from "../components/seo/SEOMeta";
 import { useTheme } from "next-themes";
+import { toast } from "sonner";
 import { SmartProfileSettings } from "@/components/profile/SmartProfileSettings";
 import { SmartProfileView } from "@/components/profile/SmartProfileView";
 import { PasskeySettings } from "@/components/auth/PasskeySettings";

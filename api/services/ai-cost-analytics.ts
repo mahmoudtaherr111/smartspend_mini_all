@@ -28,6 +28,7 @@ export interface AICostAnalyticsEvent {
   cacheHit: boolean | null;
   fallback: boolean;
   createdAt?: Date | null;
+  model: string;
 }
 
 export interface AICostAggregate {
@@ -123,6 +124,7 @@ export function normalizeAICostAnalyticsEvent(row: {
     cacheHit: cacheHitFromMetadata(metadata),
     fallback: hasFallbackSignal(metadata),
     createdAt: row.createdAt,
+    model: stringValue(metadata.model, "—"),
   };
 }
 

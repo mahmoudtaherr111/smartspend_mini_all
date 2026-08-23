@@ -41,4 +41,8 @@
 
 ### C. WebAuthn Ephemeral Challenges (`authChallenges`)
 * **Gotcha:** In-flight biometric logins fail if challenge entries are cleared too fast.
-* **Rule:** WebAuthn requires active challenge strings stored in `authChallenges`. Ensure background cleanup crons allow a minimum 5-minute TTL to prevent "Challenge mismatch" errors on user devices.
+* **Rule:** WebAuthn requires active challenge strings stored in `authChallenges` (indexed by `(userId, userType)`). Background cleanup crons run at midnight daily, allowing sufficient challenge TTL while preventing orphaned records.
+
+### D. Idempotency & Financial Safety (`clientRequestId`)
+* **Rule:** Critical financial mutations accept a `clientRequestId` unique constraint per user, guaranteeing that network timeouts and client retries never double-charge or create phantom duplicate expenses.
+

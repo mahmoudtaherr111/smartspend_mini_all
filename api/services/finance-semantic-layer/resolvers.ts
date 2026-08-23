@@ -163,8 +163,34 @@ export async function getFinanceSummary(
   const key = financeCacheKey(ctx.userId, ctx.userType, "summary", period.key);
 
   return withFinanceCache(key, financeCacheTtl(period.key), async () => {
+    // SQL Aggregation Fast Path: compute totals in MySQL for precision
+    const { sql } = await import("drizzle-orm");
+    const [sqlTotals] = await db
+      .select({
+        totalIncome: sql<string>`COALESCE(SUM(CASE WHEN ${expenses.type} = 'income' THEN ${expenses.amount} ELSE 0 END), 0)`,
+        totalExpense: sql<string>`COALESCE(SUM(CASE WHEN ${expenses.type} = 'expense' THEN ${expenses.amount} ELSE 0 END), 0)`,
+        count: sql<number>`COUNT(*)`,
+      })
+      .from(expenses)
+      .where(
+        and(
+          eq(expenses.userId, ctx.userId),
+          eq(expenses.userType, ctx.userType),
+          gte(expenses.date, period.startDate),
+          lte(expenses.date, period.endDate),
+        ),
+      );
+
+    // Load rows for category breakdown (needs per-row normalization)
     const rows = await loadRowsForPeriod(ctx, period);
-    return aggregateFinanceSummary(rows, period);
+    const fullSummary = aggregateFinanceSummary(rows, period);
+
+    // Override totals with precise SQL-computed values
+    fullSummary.totalIncome = numeric(sqlTotals.totalIncome);
+    fullSummary.totalExpense = numeric(sqlTotals.totalExpense);
+    fullSummary.transactionCount = Number(sqlTotals.count);
+
+    return fullSummary;
   });
 }
 

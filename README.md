@@ -28,21 +28,23 @@
 
 ## 📚 الدليل البرمجي الموحد والشروحات التخصصية (`docs/`)
 
-> **ملاحظة هامة للمطورين ولموديولات الذكاء الاصطناعي (AI Single Source of Truth):**
-> تم بناء وتصميم شروحات المشروع وفق أحدث معايير هندسة السياق البرمجي للذكاء الاصطناعي (AI Context Packing). بدلاً من حشو آلاف السطور في ملف واحد، تم تقسيم المعمارية وقاعدة البيانات إلى **6 ملفات مرجعية متخصصة في مجلد `docs/`**.
+> **ملاحظة هامة للمطورين ولأنظمة الذكاء الاصطناعي (AI Single Source of Truth):**
+> تم بناء وتصميم شروحات المشروع وفق أحدث معايير هندسة السياق البرمجي للذكاء الاصطناعي (AI Context Packing). بدلاً من حشو آلاف السطور في ملف واحد، تم تقسيم المعمارية وقاعدة البيانات إلى **9 ملفات مرجعية متخصصة في مجلد `docs/`**.
 > 
 > **يرجى قراءة الملف المعني مباشرة بمهمتك:**
 
 | الموضوع / النطاق البرمجي | الملف المرجعي المعتمد (SSoT) | محتويات الملف ومحاوره الرئيسية |
 | :--- | :--- | :--- |
 | **هوية الذكاء الاصطناعي والدستور البرمجي** | [`AGENTS.md`](file:///e:/smartspend_V1_fixed/AGENTS.md) | **الدستور الإجباري لأي AI Agent** يدخل المشروع: التقنيات، القيود الصارمة (tRPC v11, Drizzle)، والأوامر السريعة. |
-| **المعمارية الشاملة وهيكل المدخلات** | [`docs/01-ARCHITECTURE.md`](file:///e:/smartspend_V1_fixed/docs/01-ARCHITECTURE.md) | شجرة الملفات الرسمية، دور الفرونت إند والباك إند، وتدفق البيانات من المتصفح وقاعدة البيانات (`Request Lifecycle`). |
-| **قاعدة البيانات والجداول (48 جدول)** | [`docs/02-DATABASE_SCHEMA.md`](file:///e:/smartspend_V1_fixed/docs/02-DATABASE_SCHEMA.md) | المرجع الكامل لـ 48 جدولاً في `db/schema.ts` مقسمة في 6 مجموعات وظيفية مع قواعد استخدام Drizzle ORM. |
-| **محرك التصنيف الهجين والذكاء الاصطناعي** | [`docs/03-AI_CLASSIFICATION_ENGINE.md`](file:///e:/smartspend_V1_fixed/docs/03-AI_CLASSIFICATION_ENGINE.md) | شرح الطبقات الخمس لمحرك التصنيف، مفكك النُصوص المالية المصرية (`NLP Narrative Decomposer`)، وسياسات التكلفة. |
-| **نقاط الـ API والـ Routers والعقود** | [`docs/04-API_AND_TRPC_ROUTERS.md`](file:///e:/smartspend_V1_fixed/docs/04-API_AND_TRPC_ROUTERS.md) | فهرس الـ 21 Sub-router المسجلة في `api/router.ts` وكيفية الالتزام بالعقود المشتركة في `contracts/`. |
+| **المعمارية الشاملة وهيكل المدخلات** | [`docs/01-ARCHITECTURE.md`](file:///e:/smartspend_V1_fixed/docs/01-ARCHITECTURE.md) | شجرة الملفات الرسمية، دور الفرونت إند والباك إند، وتدفق البيانات، كاش الإعدادات، والـ Cron jobs. |
+| **قاعدة البيانات والجداول (48 جدول)** | [`docs/02-DATABASE_SCHEMA.md`](file:///e:/smartspend_V1_fixed/docs/02-DATABASE_SCHEMA.md) | المرجع الكامل لـ 48 جدولاً في `db/schema.ts` مع 100% تغطية للعلاقات في `db/relations.ts` والفهارس الـ 15. |
+| **محرك التصنيف الهجين والذكاء الاصطناعي** | [`docs/03-AI_CLASSIFICATION_ENGINE.md`](file:///e:/smartspend_V1_fixed/docs/03-AI_CLASSIFICATION_ENGINE.md) | شرح الطبقات الخمس لمحرك التصنيف، ذاكرة العضلات، مفكك النصوص المصرية، وتكامل النماذج (Gemini, Groq, NVIDIA). |
+| **نقاط الـ API والـ Routers والعقود** | [`docs/04-API_AND_TRPC_ROUTERS.md`](file:///e:/smartspend_V1_fixed/docs/04-API_AND_TRPC_ROUTERS.md) | فهرس الـ 21 Sub-router، المعاملات المالية الذرية (ACID Transactions)، والتقسيم المصفح (Pagination). |
 | **نظام المصادقة والصلاحيات والأمان** | [`docs/05-AUTH_AND_SECURITY.md`](file:///e:/smartspend_V1_fixed/docs/05-AUTH_AND_SECURITY.md) | نظام الدخول المزدوج (Google OAuth + Passkeys)، إدارة الجلسات (`google_session`)، وصلاحيات الـ RBAC. |
 | **الرسائل التلقائية و Apple Pay و WhatsApp** | [`docs/06-SMS_AND_APPLE_PAY.md`](file:///e:/smartspend_V1_fixed/docs/06-SMS_AND_APPLE_PAY.md) | التكامل مع تطبيق الأندرويد، التقاط إشعارات Apple Pay، بوت الـ WhatsApp، وإشعارات Firebase Push. |
-| **مركز الذكاء الاصطناعي والشات الذكي** | [`docs/07-AI_CENTER_AGENT.md`](file:///e:/smartspend_V1_fixed/docs/07-AI_CENTER_AGENT.md) | معمارية شات البوت الذكي، تحليل وتفكيك Intents، نظام الـ RAG، والذاكرة الدلالية وعقود تشغيل الأدوات. |
+| **مركز الذكاء الاصطناعي والشات الذكي** | [`docs/07-AI_CENTER_AGENT.md`](file:///e:/smartspend_V1_fixed/docs/07-AI_CENTER_AGENT.md) | معمارية شات البوت الذكي، مسار تجميع SQL الفائق السرعة، نظام الـ RAG، والذاكرة الدلالية. |
+| **عقد بناء المنتج وخريطة التطوير** | [`docs/08-AI_AGENT_PRODUCT_AND_REBUILD_PLAN.md`](file:///e:/smartspend_V1_fixed/docs/08-AI_AGENT_PRODUCT_AND_REBUILD_PLAN.md) | خريطة الطريق، ربط جهات الاتصال، وتتبع سجلات التصنيف، وسياسات استهلاك الـ Tokens. |
+| **دليل النشر والاستجابة للحوادث** | [`docs/09-RELEASE_AND_PLAYBOOK.md`](file:///e:/smartspend_V1_fixed/docs/09-RELEASE_AND_PLAYBOOK.md) | بوابات ما قبل الإطلاق، خطوات النشر، تشخيص واسترجاع قواعد البيانات وحوادث مزودي الـ AI. |
 
 ---
 

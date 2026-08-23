@@ -14,21 +14,22 @@
        │
        ├─────────────────────────────────┐
        ▼ (if finance_query)              ▼ (if advice/action)
-[Local Semantic Layer]             [RAG Context Pipeline]
-- Wipes LLM Token Cost to $0       - Loads User Profile Settings
-- Direct MySQL Queries             - Reformulates query (`reformulateMemoryQuery`)
-- Fast JSON response in <15ms      - Hybrid Lexical-Semantic retrieval from Memory
-                                   - Pre-run Anonymizer (`redactSensitiveData`)
-                                         │
-                                         ▼
-                               [Fireworks / Gemini LLM]
-                               - Executes chat + function calling loop
-                               - Runs groundings (`validateNumbersAgainstFacts`)
-                                         │
-                                         ▼
-                               [Memory Writer Pipeline]
-                               - Extracts memories (`extractSemanticMemories`)
-                               - Generates 768-dim embeddings in background
+[Finance Semantic Layer (resolvers.ts)]  [RAG Context Pipeline]
+- SQL Aggregation Fast Path              - Loads User Profile Settings
+- Direct MySQL SUM/COUNT                 - Reformulates query (`reformulateMemoryQuery`)
+- Wipes LLM Token Cost to $0             - Hybrid Lexical-Semantic retrieval from Memory
+- Instant JSON response in <15ms         - Pre-run Anonymizer (`redactSensitiveData`)
+                                               │
+                                               ▼
+                                     [LLM Agent Kernel (Gemini/Groq/NVIDIA)]
+                                     - Executes grounded chat + tool calls
+                                     - Validates numbers (`validateNumbersAgainstFacts`)
+                                     - Generates pending action drafts with `idempotencyKey`
+                                               │
+                                               ▼
+                                     [Memory Writer Pipeline]
+                                     - Extracts memories (`extractSemanticMemories`)
+                                     - Generates 768-dim embeddings in background
 ```
 
 ---
@@ -37,10 +38,10 @@
 
 | Intent Kind | Matching Heuristics | Target Execution Path | LLM Cost |
 | :--- | :--- | :--- | :--- |
-| `finance_query` | Simple spending queries (e.g. *"صرفت كام الشهر ده؟"*) | Local Query Engine (MySQL direct) | **0 LLM Tokens** |
-| `action_request` | Intents to create budget/goals/transfers | suggestion drafts (`aiPendingActions`) | Yes (Structured output) |
+| `finance_query` | Simple spending queries (e.g. *"صرفت كام الشهر ده؟"*) | SQL Aggregation in `resolvers.ts` | **0 LLM Tokens** |
+| `action_request` | Intents to create budget/goals/transfers | Action proposal drafts (`aiPendingActions` + `idempotencyKey`) | Yes (Structured output) |
 | `advice_request` | Lifestyle and saving optimization requests | Chat completions + RAG Memory context | Yes (Generative text) |
-| `general_chat` | Greetings and non-financial chit-chat | Simple OpenAI-compatible prompt | Yes (Low priority) |
+| `general_chat` | Greetings and non-financial chit-chat | Simple prompt loop | Yes (Low priority) |
 
 ---
 
@@ -90,13 +91,13 @@ During retrieval (`memory-retriever.ts`), candidates are queried from `aiMemoryI
 
 | Tool Name | Key Parameters | Return Format | Core Purpose |
 | :--- | :--- | :--- | :--- |
-| `finance_query` | `kind` (breakdown, summary, etc.), `period` | structured JSON | Main financial data retriever. |
+| `finance_query` | `kind` (breakdown, summary, etc.), `period` | structured JSON | Main financial data retriever (SQL fast path). |
 | `get_today_expenses` | None | JSON array | List of today's logs. |
 | `get_month_summary` | `month` (optional, YYYY-MM) | JSON object | Net, average, income, expense totals. |
 | `get_category_breakdown`| `month` (optional) | JSON object | Percentage spends by category. |
 | `get_recent_transactions`| `count` (1 to 30) | JSON array | Historical logs list. |
 | `get_spending_by_person`| `name` (required) | JSON object | Money transferred/spent on contact. |
-| `get_wallet_balances` | None | JSON array | Lists Cash, Bank, and e-wallets. |
+| `get_wallet_balances` | None | JSON array | Lists Cash, Bank, and e-wallets (via `walletId`). |
 | `get_financial_goals` | None | JSON array | Active goals and progress percentages. |
 | `get_app_guide` | None | JSON array | FAQ on linking bank cards, PWA etc. |
 
@@ -107,9 +108,10 @@ During retrieval (`memory-retriever.ts`), candidates are queried from `aiMemoryI
 ### What the Chat Agent CAN Do:
 1. **Direct Data Retrieval:** Can read transactions, wallets, goals, and contacts via Drizzle schemas inside tools.
 2. **Offline Local Processing:** Can resolve simple math stats locally without invoking external LLMs.
-3. **Action Suggestion:** Drafts proposed actions (`aiPendingActions`) for user UI approval.
+3. **Action Suggestion:** Drafts proposed actions (`aiPendingActions`) with unique `idempotencyKey` for user UI approval.
 
 ### What the Chat Agent CANNOT Do:
 1. **Direct Database Write Mutations:** The chatbot cannot delete expenses or modify wallet balances directly. It can only generate proposed suggestion drafts (`aiPendingActions`) that the user must explicitly approve in the UI.
 2. **Execute Raw CLI/System Scripts:** Tool executions are restricted to helper queries and guides.
 3. **Exceed Cost Budgets:** Governed by `ai-usage-policy.ts` rate limits (100 requests per minute). If a user exceeds token thresholds, requests are clamped.
+

@@ -221,7 +221,8 @@ export async function handleVoiceCallWebSocket(ws: WebSocket, request: any) {
   console.log(`[Voice Call] User connected: ${user.name} (${user.plan})`);
 
   // Load current settings
-  const settings = await db.select().from(systemSettings);
+  const { getSystemSettings } = await import("../lib/settings-cache");
+  const settings = await getSystemSettings();
   const config: Record<string, string> = {
     voice_call_model: "gemini-2.5-flash-native-audio-latest",
     voice_call_enabled_free: "true",
@@ -239,9 +240,9 @@ export async function handleVoiceCallWebSocket(ws: WebSocket, request: any) {
       "[Persona] مستشار مالي مصري ذكي ومتعاطف. لغتك عامية مصرية راقية ومبسطة، وتتحدث وكأنك إنسان حقيقي.",
   };
 
-  settings.forEach((s) => {
-    if (s.value) config[s.key] = s.value;
-  });
+  for (const [key, value] of Object.entries(settings)) {
+    if (value) config[key] = value;
+  }
 
   const plan = user.plan || "free";
   const voicePolicy = resolveAICostPolicy({

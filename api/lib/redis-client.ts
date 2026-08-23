@@ -206,11 +206,12 @@ export async function deleteCacheByPattern(pattern: string): Promise<number> {
   if (!client) return memoryDeleted;
 
   try {
-    const keys = await client.keys(pattern);
-    if (keys.length > 0) {
-      await client.del(keys);
+    let redisDeleted = 0;
+    for await (const key of client.scanIterator({ MATCH: pattern, COUNT: 100 })) {
+      await client.del(key);
+      redisDeleted++;
     }
-    return memoryDeleted + keys.length;
+    return memoryDeleted + redisDeleted;
   } catch (err) {
     console.warn(`Redis delete pattern error for ${pattern}:`, err);
     return memoryDeleted;

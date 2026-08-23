@@ -27,7 +27,11 @@ import {
   rawSmsEvents,
   expenseCategories,
   whatsappOtpCodes,
-  systemSettings,
+  financialGoals,
+  userBudgets,
+  userBusinesses,
+  userContacts,
+  adClicks,
 } from "../db/schema";
 import { eq, count, sum, sql, like, desc, and } from "drizzle-orm";
 import {
@@ -43,7 +47,7 @@ import { getIncomingHeader } from "./lib/get-client-ip";
 import { whatsappService } from "./services/whatsapp-service";
 import { otpCache, checkRateLimit } from "./services/otp-cache";
 
-const WHATSAPP_AUTH_TEMPORARILY_DISABLED = true;
+import { getSystemSettings } from "./lib/settings-cache";
 
 export const localAuthRouter = router({
   register: strictPublicProcedure
@@ -79,11 +83,10 @@ export const localAuthRouter = router({
       }
 
       // Check if OTP verification is globally enabled
-      const otpSetting = await db.query.systemSettings.findFirst({
-        where: eq(systemSettings.key, "whatsapp_otp_enabled"),
-      });
+      const settings = await getSystemSettings();
+      const otpEnabled = settings["whatsapp_otp_enabled"];
 
-      if (!WHATSAPP_AUTH_TEMPORARILY_DISABLED && otpSetting?.value === "true") {
+      if (otpEnabled === "true") {
         // Check if phone is verified in our in-memory cache
         const verificationRecord = otpCache.get(cleanPhone);
 
@@ -149,7 +152,8 @@ export const localAuthRouter = router({
   generateVerificationCode: strictPublicProcedure
     .input(z.object({ phone: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      if (WHATSAPP_AUTH_TEMPORARILY_DISABLED) {
+      const settings = await getSystemSettings();
+      if (settings["whatsapp_otp_enabled"] !== "true") {
         throw new TRPCError({
           code: "SERVICE_UNAVAILABLE",
           message: "توثيق واتساب متوقف مؤقتاً. استخدم التسجيل العادي حالياً.",
@@ -184,14 +188,8 @@ export const localAuthRouter = router({
     }),
 
   getVerificationSettings: publicProcedure.query(async () => {
-    if (WHATSAPP_AUTH_TEMPORARILY_DISABLED) {
-      return { enabled: false, temporarilyDisabled: true };
-    }
-
-    const setting = await db.query.systemSettings.findFirst({
-      where: eq(systemSettings.key, "whatsapp_otp_enabled"),
-    });
-    return { enabled: setting?.value === "true" };
+    const settings = await getSystemSettings();
+    return { enabled: settings["whatsapp_otp_enabled"] === "true" };
   }),
 
   checkVerificationStatus: strictPublicProcedure
@@ -365,6 +363,11 @@ export const localAuthRouter = router({
         await tx.delete(webhookTokens).where(and(eq(webhookTokens.userId, userId), eq(webhookTokens.userType, userType)));
         await tx.delete(rawSmsEvents).where(and(eq(rawSmsEvents.userId, userId), eq(rawSmsEvents.userType, userType)));
         await tx.delete(expenseCategories).where(and(eq(expenseCategories.userId, userId), eq(expenseCategories.userType, userType)));
+        await tx.delete(financialGoals).where(and(eq(financialGoals.userId, userId), eq(financialGoals.userType, userType)));
+        await tx.delete(userBudgets).where(and(eq(userBudgets.userId, userId), eq(userBudgets.userType, userType)));
+        await tx.delete(userBusinesses).where(and(eq(userBusinesses.userId, userId), eq(userBusinesses.userType, userType)));
+        await tx.delete(userContacts).where(and(eq(userContacts.userId, userId), eq(userContacts.userType, userType)));
+        await tx.delete(adClicks).where(and(eq(adClicks.userId, userId), eq(adClicks.userType, userType)));
         await tx.delete(localUsers).where(eq(localUsers.id, userId));
       });
 

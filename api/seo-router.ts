@@ -58,7 +58,7 @@ export const seoRouter = router({
 
   // ─── List All SEO Pages ───
   list: adminProcedure.query(async () => {
-    return await db.select().from(seoPages).orderBy(seoPages.path);
+    return await db.select().from(seoPages).orderBy(seoPages.path).limit(100);
   }),
 
   // ─── Delete SEO Page ───

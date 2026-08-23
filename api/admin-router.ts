@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, adminProcedure, moderatorProcedure } from "./middleware";
 import { db } from "./queries/connection";
+import { getSystemSettings, invalidateSettingsCache } from "./lib/settings-cache";
 import {
   users,
   localUsers,
@@ -472,7 +473,7 @@ export const adminRouter = router({
 
   // ─── AI System Settings (Professional) ───
   getSettings: adminProcedure.query(async () => {
-    const settings = await db.select().from(systemSettings);
+    const settings = await getSystemSettings();
     const config: Record<string, string> = {
       // ── Gemini API Keys ──
       ai_api_key: env.GEMINI_API_KEY || "",
@@ -638,9 +639,9 @@ export const adminRouter = router({
       pipeline_version: "v1",
     };
 
-    settings.forEach((s) => {
-      if (s.value) config[s.key] = s.value;
-    });
+    for (const [key, value] of Object.entries(settings)) {
+      if (value) config[key] = value;
+    }
 
     return config;
   }),
@@ -697,6 +698,7 @@ export const adminRouter = router({
             .onDuplicateKeyUpdate({ set: { value } });
         }
       }
+      invalidateSettingsCache();
       return { success: true, message: "تم تحديث الإعدادات بنجاح" };
     }),
 
@@ -739,11 +741,7 @@ export const adminRouter = router({
     // 1. Fetch configured API key from database or env
     let apiKey = env.GEMINI_API_KEY || "";
     try {
-      const settings = await db.select().from(systemSettings);
-      const cfg: Record<string, string> = {};
-      settings.forEach((s) => {
-        if (s.value) cfg[s.key] = s.value;
-      });
+      const cfg = await getSystemSettings();
       if (cfg.ai_api_key && cfg.ai_api_key !== "YOUR_GEMINI_API_KEY") {
         apiKey = cfg.ai_api_key;
       } else if (cfg.ai_api_key_2) {
@@ -1840,7 +1838,8 @@ export const adminRouter = router({
 
   // ─── Trigger Database Backup Demo ───
   triggerBackupDemo: adminProcedure.mutation(async () => {
-    const settings = await db.select().from(systemSettings);
+    const settingsRecord = await getSystemSettings();
+    const settings = Object.entries(settingsRecord).map(([key, value]) => ({ key, value }));
     const codes = await db.select().from(discountCodes);
     const questions = await db.select().from(onboardingQuestions);
     const activeAds = await db.select().from(ads);

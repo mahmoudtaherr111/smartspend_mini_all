@@ -53,7 +53,11 @@ const FinancialGoalsPanel = lazy(() =>
     default: m.FinancialGoalsPanel,
   })),
 );
-import { MonthlyCalendar } from "@/components/dashboard/MonthlyCalendar";
+const MonthlyCalendar = lazy(() =>
+  import("@/components/dashboard/MonthlyCalendar").then((m) => ({
+    default: m.MonthlyCalendar,
+  })),
+);
 import { PlanUsageStrip } from "@/components/layout/PlanUsageStrip";
 import { StreakCounter } from "@/components/dashboard/StreakCounter";
 import { GlobalSearch } from "@/components/dashboard/GlobalSearch";
@@ -69,7 +73,8 @@ function money(value: unknown) {
 }
 
 function currentMonthValue() {
-  return new Date().toISOString().slice(0, 7);
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
 function normalizeTab(value: string | null): HomeTab {
@@ -263,16 +268,31 @@ export default function Home() {
       if (Math.abs(deltaX) >= SWIPE_THRESHOLD) {
         const tabOrder: HomeTab[] = ["record", "stats", "calendar"];
         const currentIndex = tabOrder.indexOf(activeTab);
+        const isRtl = document.dir === 'rtl' || document.documentElement.dir === 'rtl';
 
-        if (deltaX < 0) {
-          // RTL Next Tab (Right-to-Left drag = move to right tab)
-          if (currentIndex < tabOrder.length - 1) {
-            updateView(tabOrder[currentIndex + 1]);
+        if (isRtl) {
+          if (deltaX < 0) {
+            // Swipe left in RTL -> previous tab
+            if (currentIndex > 0) {
+              updateView(tabOrder[currentIndex - 1]);
+            }
+          } else {
+            // Swipe right in RTL -> next tab
+            if (currentIndex < tabOrder.length - 1) {
+              updateView(tabOrder[currentIndex + 1]);
+            }
           }
         } else {
-          // RTL Previous Tab (Left-to-Right drag = move to left tab)
-          if (currentIndex > 0) {
-            updateView(tabOrder[currentIndex - 1]);
+          if (deltaX < 0) {
+            // Swipe left in LTR -> next tab
+            if (currentIndex < tabOrder.length - 1) {
+              updateView(tabOrder[currentIndex + 1]);
+            }
+          } else {
+            // Swipe right in LTR -> previous tab
+            if (currentIndex > 0) {
+              updateView(tabOrder[currentIndex - 1]);
+            }
           }
         }
       }
@@ -409,11 +429,11 @@ export default function Home() {
 
       const now = new Date();
       const currentDay = now.getDate();
-      let activeFinancialMonth = now.toISOString().slice(0, 7);
+      let activeFinancialMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       
       if (salaryDayVal && salaryDayVal > 1 && currentDay < salaryDayVal) {
         const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        activeFinancialMonth = prevMonthDate.toISOString().slice(0, 7);
+        activeFinancialMonth = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
       }
 
       if (!sessionInitialized) {
@@ -660,6 +680,7 @@ export default function Home() {
                 <ExpenseForm
                   initialText={sharedText}
                   businessMode={businessMode}
+                  businessId={activeBusinessId}
                   onSuccess={() => {
                     utils.expense.getMonthSummary.invalidate({ month, salaryDay });
                     utils.expense.getMonthlyStats.invalidate({ month, salaryDay });
@@ -770,11 +791,13 @@ export default function Home() {
                       جاري تحميل التقويم...
                     </div>
                   ) : (
-                    <MonthlyCalendar
-                      month={month}
-                      dayTrend={calendarStats?.dayTrend || []}
-                      salaryDay={salaryDay}
-                    />
+                    <Suspense fallback={<div className="py-10 text-center text-sm text-muted-foreground">جاري تحميل التقويم...</div>}>
+                      <MonthlyCalendar
+                        month={month}
+                        dayTrend={calendarStats?.dayTrend || []}
+                        salaryDay={salaryDay}
+                      />
+                    </Suspense>
                   )}
                 </CardContent>
               </Card>

@@ -12,7 +12,6 @@ import {
   expenses,
   monthlyReports,
   aiSummaries,
-  systemSettings,
   users,
   localUsers,
   userProfiles,
@@ -24,6 +23,7 @@ import {
   userBusinesses,
   businessCategories as bizCategoriesTable,
 } from "../db/schema";
+import { getSystemSettings } from "./lib/settings-cache";
 import { eq, sql, desc, count, and, gte, lte, sum } from "drizzle-orm";
 import { env } from "./lib/env";
 import { getCacheRuntimeStatus } from "./lib/redis-client";
@@ -515,11 +515,7 @@ async function getAiClient(
   taskType: "parse" | "report",
   userPlan: string = "free",
 ) {
-  const settings = await db.select().from(systemSettings);
-  const cfg: Record<string, string> = {};
-  settings.forEach((s) => {
-    if (s.value) cfg[s.key] = s.value;
-  });
+  const cfg = await getSystemSettings();
 
   let apiKey = cfg.ai_api_key || env.GEMINI_API_KEY;
   let apiKey2 = cfg.ai_api_key_2 || ""; // Loaded from admin settings only
@@ -788,16 +784,13 @@ export const aiRouter = router({
         userDictRows,
         smartProfile
       ] = await Promise.all([
-        db.select().from(systemSettings),
+        getSystemSettings(),
         db.select().from(userDictionaries)
           .where(and(eq(userDictionaries.userId, ctx.user.id), eq(userDictionaries.userType, ctx.user.type))),
         getSmartProfile(ctx.user.id, ctx.user.type)
       ]);
 
-      const cfgFull: Record<string, string> = {};
-      settings.forEach((s) => {
-        if (s.value) cfgFull[s.key] = s.value;
-      });
+      const cfgFull = settings;
 
       try {
         const routing = await resolveRoutingConfig(
@@ -1151,11 +1144,7 @@ export const aiRouter = router({
 
   // ─── Get User Limits (Voice, AI) ───
   getUserLimits: authedProcedure.query(async ({ ctx }) => {
-    const settings = await db.select().from(systemSettings);
-    const cfg: Record<string, string> = {};
-    settings.forEach((s) => {
-      if (s.value) cfg[s.key] = s.value;
-    });
+    const cfg = await getSystemSettings();
 
     const voiceLimits: Record<string, number> = {
       free: parseInt(cfg.voice_limit_free || "300"),
@@ -1341,11 +1330,7 @@ export const aiRouter = router({
       );
 
       // Get voice limits from settings
-      const settings = await db.select().from(systemSettings);
-      const cfg: Record<string, string> = {};
-      settings.forEach((s) => {
-        if (s.value) cfg[s.key] = s.value;
-      });
+      const cfg = await getSystemSettings();
 
       const voiceLimits: Record<string, number> = {
         free: parseInt(cfg.voice_limit_free || "300"), // 5 min
@@ -1560,9 +1545,7 @@ export const aiRouter = router({
       let cycleStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const usedSeconds = await getVoiceSecondsSince(ctx.user.id, ctx.user.type, cycleStart);
       
-      const settings = await db.select().from(systemSettings);
-      const cfg: Record<string, string> = {};
-      settings.forEach((s) => { if (s.value) cfg[s.key] = s.value; });
+      const cfg = await getSystemSettings();
 
       const voiceLimit = parseInt(cfg.voice_limit_free || "300");
       const maxPerRequest = parseInt(cfg.voice_per_req_free || "60");
@@ -2056,16 +2039,11 @@ export const aiRouter = router({
         .limit(1);
 
       if (lastSummary[0] && !(input.forceRefresh && existingSummary[0])) {
-        const sysSettings = await db.select().from(systemSettings);
+        const sysSettings = await getSystemSettings();
         const limits: Record<string, number> = { free: 30, pro: 14, ultra: 1 };
-        sysSettings.forEach((s) => {
-          if (s.key === "report_limit_free" && s.value)
-            limits.free = parseInt(s.value);
-          if (s.key === "report_limit_pro" && s.value)
-            limits.pro = parseInt(s.value);
-          if (s.key === "report_limit_ultra" && s.value)
-            limits.ultra = parseInt(s.value);
-        });
+        if (sysSettings.report_limit_free) limits.free = parseInt(sysSettings.report_limit_free);
+        if (sysSettings.report_limit_pro) limits.pro = parseInt(sysSettings.report_limit_pro);
+        if (sysSettings.report_limit_ultra) limits.ultra = parseInt(sysSettings.report_limit_ultra);
 
         const plan = ctx.user.plan || "free";
         const allowedDays = limits[plan] || 30;
@@ -2432,17 +2410,12 @@ export const aiRouter = router({
         reportSubcatsLimit = client.reportSubcatsLimit;
         reportTopItemsLimit = client.reportTopItemsLimit;
 
-        const settings = await db.select().from(systemSettings);
-        settings.forEach((s) => {
-          if (s.key === "ai_response_length" && s.value)
-            aiResponseLength = s.value;
-          if (s.key === "ai_focus" && s.value) aiFocus = s.value;
-          if (s.key === "ai_system_prompt" && s.value) aiSystemPrompt = s.value;
-          if (s.key === "ai_advanced_instructions" && s.value)
-            aiAdvancedInstructions = s.value;
-          if (s.key === "ai_report_structure_override" && s.value)
-            aiReportStructureOverride = s.value;
-        });
+        const settings = await getSystemSettings();
+        if (settings.ai_response_length) aiResponseLength = settings.ai_response_length;
+        if (settings.ai_focus) aiFocus = settings.ai_focus;
+        if (settings.ai_system_prompt) aiSystemPrompt = settings.ai_system_prompt;
+        if (settings.ai_advanced_instructions) aiAdvancedInstructions = settings.ai_advanced_instructions;
+        if (settings.ai_report_structure_override) aiReportStructureOverride = settings.ai_report_structure_override;
 
         if (semanticReportFacts) {
           reportTargetWords = Math.min(Math.max(reportTargetWords, 220), 420);
@@ -2994,13 +2967,7 @@ ${personalizedSummaryForAI}
     )
     .mutation(async ({ ctx, input }) => {
       const startedAt = Date.now();
-      const settingsRows = await db.select().from(systemSettings);
-      const settings: Record<string, string> = {};
-      settingsRows.forEach((setting) => {
-        if (setting.value !== undefined && setting.value !== null) {
-          settings[setting.key] = setting.value;
-        }
-      });
+      const settings = await getSystemSettings();
 
       const plan = asPlan(ctx.user.plan);
       if (settings[`${plan}_ai_analysis`] === "false") {
@@ -3174,13 +3141,7 @@ ${personalizedSummaryForAI}
         });
       }
 
-      const settingsRows = await db.select().from(systemSettings);
-      const settings: Record<string, string> = {};
-      settingsRows.forEach((setting) => {
-        if (setting.value !== undefined && setting.value !== null) {
-          settings[setting.key] = setting.value;
-        }
-      });
+      const settings = await getSystemSettings();
 
       const plan = asPlan(ctx.user.plan);
       if (settings[`${plan}_ai_analysis`] === "false") {

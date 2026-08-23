@@ -17,10 +17,12 @@ import {
   chatConversations,
   chatMessages,
   aiPendingActions,
-  systemSettings,
+  aiMemoryItems,
+  aiMemoryEmbeddings,
   users,
   localUsers,
 } from "../db/schema";
+import { getSystemSettings, invalidateSettingsCache } from "./lib/settings-cache";
 import { eq, and, desc, sql } from "drizzle-orm";
 import {
   AI_RESPONSE_SCHEMA_VERSION,
@@ -30,7 +32,18 @@ import {
   type AIResponse,
 } from "./services/ai-kernel";
 import { routeIntent } from "./services/ai-kernel/intent-router";
-import { hasSemanticMemoryCandidate, writeConversationMemory, type MemoryMessage } from "./services/ai-memory";
+import {
+  createClarificationState,
+  isClarificationExpired,
+  isClarificationCancelled,
+  processClarificationReply,
+  mergeSlotsIntoIntent,
+  buildClarificationResponse,
+} from "./services/ai-kernel/clarification-machine";
+import { findCapability, getCapabilityById } from "./services/ai-kernel/capability-registry";
+import { type IntentResult } from "./services/ai-kernel/types";
+import { hasSemanticMemoryCandidate, writeConversationMemory, invalidateMemoryUserCache, type MemoryMessage } from "./services/ai-memory";
+import { invalidateUserMemory } from "./lib/muscle-memory";
 import {
   recordAICostMetric,
   resolveAICostPolicy,
@@ -61,11 +74,7 @@ async function loadChatConfig(): Promise<{
   aiKernelEnabled: boolean;
   settings: Record<string, string>;
 }> {
-  const rows = await db.select().from(systemSettings);
-  const s: Record<string, string> = {};
-  rows.forEach((r) => {
-    if (r.key && r.value) s[r.key] = r.value;
-  });
+  const s = await getSystemSettings();
 
   return {
     apiKey: s.chatbot_api_key || s.fireworks_api_key || "",
@@ -481,6 +490,7 @@ export const chatRouter = router({
 
       // 3. Get or create conversation
       let conversationId = input.conversationId;
+      let activeConv: any = null;
       if (!conversationId) {
         // Create new conversation
         const [inserted] = await db.insert(chatConversations).values({
@@ -498,8 +508,9 @@ export const chatRouter = router({
             message: "تعذر إنشاء المحادثة. جرّب تاني.",
           });
         }
+        activeConv = { id: conversationId, metadata: null };
       } else {
-        await requireOwnedConversation(conversationId, user.id, user.type);
+        activeConv = await requireOwnedConversation(conversationId, user.id, user.type);
       }
       const activeConversationId: number = conversationId;
 
@@ -531,6 +542,123 @@ export const chatRouter = router({
         createdAt: new Date(),
       });
 
+      // Check for active clarification state
+      let prePlannedIntent: IntentResult | undefined;
+      const clarificationState = activeConv?.metadata ? (activeConv.metadata as any).clarificationState : null;
+
+      if (clarificationState && !isClarificationExpired(clarificationState)) {
+        if (isClarificationCancelled(input.message)) {
+          // Cancel clarification
+          await db
+            .update(chatConversations)
+            .set({
+              metadata: {
+                ...((activeConv.metadata as any) || {}),
+                clarificationState: null,
+              },
+            })
+            .where(eq(chatConversations.id, activeConversationId));
+
+          const cancelMsg = "تمام، لغيت العملية دي. قولي تحب نعمل إيه تاني؟";
+          await db.insert(chatMessages).values({
+            conversationId: activeConversationId,
+            role: "assistant",
+            content: cancelMsg,
+            tokensUsed: 0,
+            createdAt: new Date(),
+          });
+
+          await db
+            .update(chatConversations)
+            .set({
+              messageCount: sql`message_count + 2`,
+              lastMessageAt: new Date(),
+            })
+            .where(eq(chatConversations.id, activeConversationId));
+
+          return {
+            response: cancelMsg,
+            conversationId: activeConversationId,
+            tokensUsed: 0,
+            model: "local",
+            toolsUsed: [],
+            structured: undefined,
+          };
+        }
+
+        // Process reply
+        const replyResult = processClarificationReply(clarificationState, input.message);
+        if (replyResult.complete) {
+          // Clarification completed! Clear state and set prePlannedIntent
+          await db
+            .update(chatConversations)
+            .set({
+              metadata: {
+                ...((activeConv.metadata as any) || {}),
+                clarificationState: null,
+              },
+            })
+            .where(eq(chatConversations.id, activeConversationId));
+
+          const capDef = getCapabilityById(clarificationState.capabilityId);
+          const reconstructedIntent: IntentResult = {
+            kind: capDef?.intentKind ?? "finance_query",
+            confidence: 1.0,
+            reason: "clarification_resolved",
+            slots: {
+              ...clarificationState.collectedSlots,
+              ...replyResult.extractedSlots,
+              query: clarificationState.originalMessage,
+            },
+          };
+          prePlannedIntent = reconstructedIntent;
+        } else {
+          // Update clarification state and return question
+          await db
+            .update(chatConversations)
+            .set({
+              metadata: {
+                ...((activeConv.metadata as any) || {}),
+                clarificationState: replyResult.updatedState,
+              },
+            })
+            .where(eq(chatConversations.id, activeConversationId));
+
+          const { question, quickReplies } = buildClarificationResponse(replyResult.updatedState);
+
+          await db.insert(chatMessages).values({
+            conversationId: activeConversationId,
+            role: "assistant",
+            content: question,
+            tokensUsed: 0,
+            createdAt: new Date(),
+          });
+
+          await db
+            .update(chatConversations)
+            .set({
+              messageCount: sql`message_count + 2`,
+              lastMessageAt: new Date(),
+            })
+            .where(eq(chatConversations.id, activeConversationId));
+
+          return {
+            response: question,
+            conversationId: activeConversationId,
+            tokensUsed: 0,
+            model: "local",
+            toolsUsed: [],
+            structured: {
+              clarification: {
+                question,
+                replies: quickReplies,
+                missing: replyResult.updatedState.missingSlots,
+              },
+            },
+          };
+        }
+      }
+
       const kernelRequest: AIRequest = {
         channel: "chat",
         userId: user.id,
@@ -543,6 +671,7 @@ export const chatRouter = router({
           agentRuntime: "plan_first_v1",
           rollout,
           devQaBypassDailyLimit,
+          prePlannedIntent,
         },
       };
 
@@ -638,6 +767,35 @@ export const chatRouter = router({
             return undefined;
           })
         : undefined;
+
+      if (kernelPrimary) {
+        const clarificationArtifact = kernelPrimary.artifacts.find(
+          (art) => art.type === "quick_replies" && art.id.startsWith("clarification:")
+        );
+        if (clarificationArtifact) {
+          const payload = clarificationArtifact.payload as { question: string; replies: string[]; missing: string[] };
+          const capability = findCapability(kernelPrimary.intent);
+          const capabilityId = capability?.id ?? "unknown";
+          
+          const newClarificationState = createClarificationState(
+            capabilityId,
+            kernelPrimary.intent.slots,
+            payload.missing,
+            input.message
+          );
+
+          await db
+            .update(chatConversations)
+            .set({
+              metadata: {
+                ...((activeConv?.metadata as any) || {}),
+                clarificationState: newClarificationState
+              }
+            })
+            .where(eq(chatConversations.id, activeConversationId));
+        }
+      }
+
       // 6. Plan-first kernel is the only execution path. No provider/tool loop
       // can be reached from this router.
       let result = kernelPrimary
@@ -1004,6 +1162,127 @@ export const chatRouter = router({
 
       return { success: true };
     }),
+
+  /**
+   * List active user memories (for memory management UI).
+   */
+  listMemories: authedProcedure.query(async ({ ctx }) => {
+    const items = await db
+      .select({
+        id: aiMemoryItems.id,
+        memoryType: aiMemoryItems.memoryType,
+        content: aiMemoryItems.content,
+        importance: aiMemoryItems.importance,
+        createdAt: aiMemoryItems.createdAt,
+        updatedAt: aiMemoryItems.updatedAt,
+      })
+      .from(aiMemoryItems)
+      .where(
+        and(
+          eq(aiMemoryItems.userId, ctx.user.id),
+          eq(aiMemoryItems.userType, ctx.user.type),
+          eq(aiMemoryItems.status, "active"),
+        ),
+      )
+      .orderBy(desc(aiMemoryItems.updatedAt))
+      .limit(100);
+
+    return items;
+  }),
+
+  /**
+   * Forget/delete a specific user memory item.
+   */
+  forgetMemory: authedProcedure
+    .input(z.object({ memoryId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const [item] = await db
+        .select({ id: aiMemoryItems.id })
+        .from(aiMemoryItems)
+        .where(
+          and(
+            eq(aiMemoryItems.id, input.memoryId),
+            eq(aiMemoryItems.userId, ctx.user.id),
+            eq(aiMemoryItems.userType, ctx.user.type),
+          ),
+        )
+        .limit(1);
+
+      if (!item) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "الذاكرة مش موجودة أو تم حذفها بالفعل.",
+        });
+      }
+
+      await db
+        .update(aiMemoryItems)
+        .set({ status: "forgotten" })
+        .where(
+          and(
+            eq(aiMemoryItems.id, input.memoryId),
+            eq(aiMemoryItems.userId, ctx.user.id),
+            eq(aiMemoryItems.userType, ctx.user.type),
+          ),
+        );
+
+      await db
+        .delete(aiMemoryEmbeddings)
+        .where(
+          and(
+            eq(aiMemoryEmbeddings.memoryItemId, input.memoryId),
+            eq(aiMemoryEmbeddings.userId, ctx.user.id),
+            eq(aiMemoryEmbeddings.userType, ctx.user.type),
+          ),
+        );
+
+      invalidateUserMemory(ctx.user.id, ctx.user.type);
+      await invalidateMemoryUserCache(ctx.user.id, ctx.user.type).catch(() => {});
+
+      return { success: true };
+    }),
+
+  /**
+   * Clear/forget all active user memories.
+   */
+  clearAllMemories: authedProcedure.mutation(async ({ ctx }) => {
+    const items = await db
+      .select({ id: aiMemoryItems.id })
+      .from(aiMemoryItems)
+      .where(
+        and(
+          eq(aiMemoryItems.userId, ctx.user.id),
+          eq(aiMemoryItems.userType, ctx.user.type),
+          eq(aiMemoryItems.status, "active"),
+        ),
+      );
+
+    if (items.length > 0) {
+      await db
+        .update(aiMemoryItems)
+        .set({ status: "forgotten" })
+        .where(
+          and(
+            eq(aiMemoryItems.userId, ctx.user.id),
+            eq(aiMemoryItems.userType, ctx.user.type),
+          ),
+        );
+
+      await db
+        .delete(aiMemoryEmbeddings)
+        .where(
+          and(
+            eq(aiMemoryEmbeddings.userId, ctx.user.id),
+            eq(aiMemoryEmbeddings.userType, ctx.user.type),
+          ),
+        );
+
+      invalidateUserMemory(ctx.user.id, ctx.user.type);
+      await invalidateMemoryUserCache(ctx.user.id, ctx.user.type).catch(() => {});
+    }
+
+    return { success: true, count: items.length };
+  }),
 
   /**
    * Get available quick action prompts.

@@ -114,10 +114,12 @@ function goalTargetAmountFromQuery(query?: string): number | undefined {
 }
 
 function mayReferencePerson(intent: IntentResult): boolean {
+  if (intent.slots.contactId !== undefined || intent.slots.personQuery) {
+    return true;
+  }
   const query = intent.slots.query ?? "";
   return /(?:\b(?:على|ل|مع)\s+[\p{L}\u0600-\u06FF]{2,}|ماما|بابا|أخويا|أختي|صاحبي|صاحبتي|friend|with|for)/iu.test(query);
 }
-
 export function compileDataNeeds(intent: IntentResult): DataNeed[] {
   const needs: DataNeed[] = [];
   const add = (
@@ -127,6 +129,11 @@ export function compileDataNeeds(intent: IntentResult): DataNeed[] {
     scope: DataNeed["scope"] = {},
     maxRows?: number,
   ) => {
+    if (scope.period === "custom" || (scope.period === undefined && intent.slots.period === "custom")) {
+      scope.period = "custom";
+      scope.startDate = scope.startDate ?? intent.slots.startDate;
+      scope.endDate = scope.endDate ?? intent.slots.endDate;
+    }
     needs.push(makeNeed(needs.length + 1, kind, priority, reason, scope, maxRows));
   };
 
@@ -151,7 +158,11 @@ export function compileDataNeeds(intent: IntentResult): DataNeed[] {
           "finance.person_total",
           "hot",
           "person_spending_question_needs_canonical_contact_lookup",
-          { period, personQuery: intent.slots.query },
+          { 
+            period, 
+            personQuery: intent.slots.personQuery ?? intent.slots.query,
+            contactId: intent.slots.contactId
+          },
           1,
         );
       }

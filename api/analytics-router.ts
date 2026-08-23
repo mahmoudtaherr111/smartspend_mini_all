@@ -2,7 +2,7 @@ import { z } from "zod";
 import { router, authedProcedure, moderatorProcedure } from "./middleware";
 import { getDb } from "./queries/connection";
 import { userAnalytics, expenses, localUsers, users } from "../db/schema";
-import { eq, and, gte, sql, desc } from "drizzle-orm";
+import { eq, and, gte, sql, desc, or } from "drizzle-orm";
 
 export const analyticsRouter = router({
   trackEvent: authedProcedure
@@ -39,8 +39,21 @@ export const analyticsRouter = router({
     return result;
   }),
 
-  getAllUserStats: moderatorProcedure.query(async () => {
+  getAllUserStats: moderatorProcedure
+    .input(
+      z.object({
+        limit: z.number().default(50),
+        offset: z.number().default(0),
+      }).optional()
+    )
+    .query(async ({ input }) => {
     const db = getDb();
+    const limit = input?.limit ?? 50;
+    const offset = input?.offset ?? 0;
+
+    const [localCountResult] = await db.select({ count: sql`count(*)` }).from(localUsers);
+    const [oauthCountResult] = await db.select({ count: sql`count(*)` }).from(users);
+    const totalUsers = Number(localCountResult.count) + Number(oauthCountResult.count);
 
     const local = await db
       .select({
@@ -52,32 +65,51 @@ export const analyticsRouter = router({
         createdAt: localUsers.createdAt,
         lastSignInAt: localUsers.lastSignInAt,
       })
-      .from(localUsers);
+      .from(localUsers)
+      .limit(limit)
+      .offset(offset);
 
-    const oauth = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        email: users.email,
-        role: users.role,
-        plan: users.plan,
-        createdAt: users.createdAt,
-        lastSignInAt: users.lastSignInAt,
-      })
-      .from(users);
+    // If offset > local.length, we need to adjust offset for oauth users
+    const oauthLimit = Math.max(0, limit - local.length);
+    const oauthOffset = Math.max(0, offset - Number(localCountResult.count));
+
+    let oauth: any[] = [];
+    if (oauthLimit > 0) {
+      oauth = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          role: users.role,
+          plan: users.plan,
+          createdAt: users.createdAt,
+          lastSignInAt: users.lastSignInAt,
+        })
+        .from(users)
+        .limit(oauthLimit)
+        .offset(oauthOffset);
+    }
 
     const allUsers = [
       ...local.map((u) => ({ ...u, userType: "local" as const })),
       ...oauth.map((u) => ({ ...u, userType: "oauth" as const })),
     ];
 
-    const stats = await db.select({
-      userId: expenses.userId,
-      userType: expenses.userType,
-      expenseCount: sql`count(*)`,
-      totalSpent: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'expense' THEN ${expenses.amount} ELSE 0 END), 0)`,
-      totalIncome: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'income' THEN ${expenses.amount} ELSE 0 END), 0)`,
-    }).from(expenses).groupBy(expenses.userId, expenses.userType);
+    const stats = allUsers.length > 0 
+      ? await db.select({
+          userId: expenses.userId,
+          userType: expenses.userType,
+          expenseCount: sql`count(*)`,
+          totalSpent: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'expense' THEN ${expenses.amount} ELSE 0 END), 0)`,
+          totalIncome: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'income' THEN ${expenses.amount} ELSE 0 END), 0)`,
+        }).from(expenses)
+        .where(
+          or(
+            ...allUsers.map(u => and(eq(expenses.userId, u.id), eq(expenses.userType, u.userType)))
+          )
+        )
+        .groupBy(expenses.userId, expenses.userType)
+      : [];
 
     const statsMap = new Map();
     for (const stat of stats) {
@@ -88,62 +120,52 @@ export const analyticsRouter = router({
       });
     }
 
-    return allUsers.map((user) => {
-      const userStats = statsMap.get(`${user.userType}-${user.id}`) || {
-        expenseCount: 0,
-        totalSpent: 0,
-        totalIncome: 0,
-      };
+    return {
+      total: totalUsers,
+      users: allUsers.map((user) => {
+        const userStats = statsMap.get(`${user.userType}-${user.id}`) || {
+          expenseCount: 0,
+          totalSpent: 0,
+          totalIncome: 0,
+        };
 
-      return {
-        ...user,
-        expenseCount: userStats.expenseCount,
-        totalSpent: userStats.totalSpent,
-        totalIncome: userStats.totalIncome,
-      };
-    });
+        return {
+          ...user,
+          expenseCount: userStats.expenseCount,
+          totalSpent: userStats.totalSpent,
+          totalIncome: userStats.totalIncome,
+        };
+      })
+    };
   }),
 
   getDashboardStats: moderatorProcedure.query(async () => {
     const db = getDb();
 
-    const totalLocalUsers = await db
-      .select({ count: sql`count(*)` })
-      .from(localUsers);
-    const totalOAuthUsers = await db
-      .select({ count: sql`count(*)` })
-      .from(users);
-    const totalExpenses = await db
-      .select({ count: sql`count(*)` })
-      .from(expenses);
-    const totalAmount = await db
-      .select({ total: sql`COALESCE(SUM(${expenses.amount}), 0)` })
-      .from(expenses)
-      .where(eq(expenses.type, "expense"));
-    const totalIncome = await db
-      .select({ total: sql`COALESCE(SUM(${expenses.amount}), 0)` })
-      .from(expenses)
-      .where(eq(expenses.type, "income"));
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const todayExpenses = await db
-      .select({ count: sql`count(*)` })
-      .from(expenses)
-      .where(and(gte(expenses.createdAt, today), eq(expenses.type, "expense")));
 
-    const adminCount = await db
-      .select({ count: sql`count(*)` })
-      .from(localUsers)
-      .where(eq(localUsers.role, "admin"));
-    const moderatorCount = await db
-      .select({ count: sql`count(*)` })
-      .from(localUsers)
-      .where(eq(localUsers.role, "moderator"));
-    const proCount = await db
-      .select({ count: sql`count(*)` })
-      .from(localUsers)
-      .where(eq(localUsers.plan, "pro"));
+    const [
+      totalLocalUsers,
+      totalOAuthUsers,
+      totalExpenses,
+      totalAmount,
+      totalIncome,
+      todayExpenses,
+      adminCount,
+      moderatorCount,
+      proCount,
+    ] = await Promise.all([
+      db.select({ count: sql`count(*)` }).from(localUsers),
+      db.select({ count: sql`count(*)` }).from(users),
+      db.select({ count: sql`count(*)` }).from(expenses),
+      db.select({ total: sql`COALESCE(SUM(${expenses.amount}), 0)` }).from(expenses).where(eq(expenses.type, "expense")),
+      db.select({ total: sql`COALESCE(SUM(${expenses.amount}), 0)` }).from(expenses).where(eq(expenses.type, "income")),
+      db.select({ count: sql`count(*)` }).from(expenses).where(and(gte(expenses.createdAt, today), eq(expenses.type, "expense"))),
+      db.select({ count: sql`count(*)` }).from(localUsers).where(eq(localUsers.role, "admin")),
+      db.select({ count: sql`count(*)` }).from(localUsers).where(eq(localUsers.role, "moderator")),
+      db.select({ count: sql`count(*)` }).from(localUsers).where(eq(localUsers.plan, "pro")),
+    ]);
 
     return {
       totalUsers:

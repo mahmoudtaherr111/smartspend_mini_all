@@ -46,7 +46,7 @@ export class BatchAIService {
       // Gemini batch format (simplified):
       const jsonLine = JSON.stringify({
         request: {
-          model: "models/gemini-1.5-flash",
+          model: "models/gemini-3.1-flash-lite",
           contents: [{ parts: [{ text: req.prompt }] }],
         },
         id: req.customId,
@@ -77,7 +77,7 @@ export class BatchAIService {
     console.log(
       `[BatchAIService] Simulating batch job submission for file ${fileUri}...`,
     );
-    // POST https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:batchPredict
+    // POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:batchPredict
 
     return "simulated_batch_job_id_999";
   }

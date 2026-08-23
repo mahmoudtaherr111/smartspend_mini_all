@@ -54,25 +54,37 @@ export async function createContext(
 ): Promise<Context> {
   let user: UnifiedUser | null = null;
 
-  // 1. Try Google OAuth (cookie)
+  // 1. Try Google OAuth (cookie) — now validates against sessions DB
   const googleToken = parseCookie(req, "google_session");
   if (googleToken) {
     try {
       const payload = await verify(googleToken, env.JWT_SECRET, "HS256");
       if (payload && payload.userId) {
-        const dbUser = await db.query.users.findFirst({
-          where: eq(users.id, Number(payload.userId)),
+        // Verify session exists and is not expired in DB (prevents use of revoked tokens)
+        const session = await db.query.sessions.findFirst({
+          where: and(
+            eq(sessions.token, googleToken),
+            eq(sessions.userId, Number(payload.userId)),
+            eq(sessions.userType, "oauth"),
+            gt(sessions.expiresAt, new Date()),
+          ),
         });
-        if (dbUser) {
-          user = {
-            id: dbUser.id,
-            name: dbUser.name,
-            email: dbUser.email,
-            avatar: dbUser.avatar,
-            role: dbUser.role as "user" | "moderator" | "admin",
-            plan: dbUser.plan as "free" | "pro" | "ultra",
-            type: "oauth",
-          };
+
+        if (session) {
+          const dbUser = await db.query.users.findFirst({
+            where: eq(users.id, Number(payload.userId)),
+          });
+          if (dbUser) {
+            user = {
+              id: dbUser.id,
+              name: dbUser.name,
+              email: dbUser.email,
+              avatar: dbUser.avatar,
+              role: dbUser.role as "user" | "moderator" | "admin",
+              plan: dbUser.plan as "free" | "pro" | "ultra",
+              type: "oauth",
+            };
+          }
         }
       }
     } catch {
@@ -80,7 +92,7 @@ export async function createContext(
     }
   }
 
-  // 2. Try Local Auth (Bearer token)
+  // 2. Try Local/WebAuthn Auth (Bearer token — supports both local and oauth users)
   if (!user) {
     const authHeader = getAuthHeader(req);
     if (authHeader?.startsWith("Bearer ")) {
@@ -88,30 +100,51 @@ export async function createContext(
       try {
         const payload = await verify(token, env.JWT_SECRET, "HS256");
         if (payload && payload.userId) {
+          const tokenUserType = (payload.userType as string) || "local";
+
           // Verify session exists and not expired
           const session = await db.query.sessions.findFirst({
             where: and(
               eq(sessions.token, token),
               eq(sessions.userId, Number(payload.userId)),
-              eq(sessions.userType, "local"),
+              eq(sessions.userType, tokenUserType),
               gt(sessions.expiresAt, new Date()),
             ),
           });
 
           if (session) {
-            const dbUser = await db.query.localUsers.findFirst({
-              where: eq(localUsers.id, Number(payload.userId)),
-            });
-            if (dbUser) {
-              user = {
-                id: dbUser.id,
-                name: dbUser.name,
-                email: dbUser.email,
-                role: dbUser.role as "user" | "moderator" | "admin",
-                plan: dbUser.plan as "free" | "pro" | "ultra",
-                type: "local",
-                phone: dbUser.phone,
-              };
+            if (tokenUserType === "oauth") {
+              // Resolve from Google OAuth users table
+              const dbUser = await db.query.users.findFirst({
+                where: eq(users.id, Number(payload.userId)),
+              });
+              if (dbUser) {
+                user = {
+                  id: dbUser.id,
+                  name: dbUser.name,
+                  email: dbUser.email,
+                  avatar: dbUser.avatar,
+                  role: dbUser.role as "user" | "moderator" | "admin",
+                  plan: dbUser.plan as "free" | "pro" | "ultra",
+                  type: "oauth",
+                };
+              }
+            } else {
+              // Resolve from local users table
+              const dbUser = await db.query.localUsers.findFirst({
+                where: eq(localUsers.id, Number(payload.userId)),
+              });
+              if (dbUser) {
+                user = {
+                  id: dbUser.id,
+                  name: dbUser.name,
+                  email: dbUser.email,
+                  role: dbUser.role as "user" | "moderator" | "admin",
+                  plan: dbUser.plan as "free" | "pro" | "ultra",
+                  type: "local",
+                  phone: dbUser.phone,
+                };
+              }
             }
           }
         }

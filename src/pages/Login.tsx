@@ -31,7 +31,6 @@ import { useTheme } from "next-themes";
 import darkModeLogo from "../../photos/dark_mode_logo-removebg-preview.png";
 import whiteModeLogo from "../../photos/white_mode_logo-removebg-preview.png";
 
-const WHATSAPP_AUTH_TEMPORARILY_DISABLED = true;
 
 export default function Login() {
   const [activeTab, setActiveTab] = useState("login");
@@ -92,8 +91,7 @@ export default function Login() {
   });
 
   const { data: verificationSettings } = trpc.localAuth.getVerificationSettings.useQuery();
-  const isWhatsAppVerificationEnabled =
-    Boolean(verificationSettings?.enabled) && !WHATSAPP_AUTH_TEMPORARILY_DISABLED;
+  const isWhatsAppVerificationEnabled = Boolean(verificationSettings?.enabled);
 
   const generateCodeMutation = trpc.localAuth.generateVerificationCode.useMutation({
     onSuccess: () => {
@@ -119,7 +117,7 @@ export default function Login() {
   }, [isVerifying, timeLeft]);
 
   useEffect(() => {
-    if (!isVerifying || !regPhone || WHATSAPP_AUTH_TEMPORARILY_DISABLED) return;
+    if (!isVerifying || !regPhone || !isWhatsAppVerificationEnabled) return;
 
     // Open zero-polling, instantaneous SSE connection
     const eventSource = new EventSource(`/api/sse/otp?phone=${regPhone}`);

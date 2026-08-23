@@ -18,9 +18,11 @@
 
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { isLikelyPersonName } from "./egyptian-names-dictionary";
-import { extractAmounts } from "./entity-extractor";
+import { isWawWhitelisted } from "./egyptian-dictionary";
+import { extractAmounts, isFinancialContext } from "./entity-extractor";
 import { SUB_CATEGORY_MAP } from "./rule-engine";
 import { CATEGORY_DICTIONARY } from "./egyptian-dictionary";
+import { mapModelName } from "./model-mapper";
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -123,6 +125,10 @@ const EXPENSE_VERBS = [
   "اتفسحت",
   "اتفسحنا",
   "ضربنا",
+  "رميت",
+  "فرتكنا",
+  "دفعتهم",
+  "ضيعنا",
 ];
 
 const INCOME_VERBS = [
@@ -143,14 +149,18 @@ const INCOME_VERBS = [
   "رجعلي",
   "رجعولي",
   "نزل",
+  "نزلتلي",
+  "نزلت لي",
   "اتحولتلي",
   "خدت",
   "اخدت",
   "كسبت",
+  "كسبنا",
+  "ربحت",
   "دخللي",
 ];
 
-const TRANSFER_VERBS = ["حولت", "سحبت", "شلت", "سلت", "حطيت", "سلفت", "ودعت", "بعت", "بعتت", "رجعت", "فكيت"];
+const TRANSFER_VERBS = ["حولت", "حولتهم", "سحبت", "شلت", "سلت", "حطيت", "سلفت", "ودعت", "بعت", "بعتت", "رجعت", "فكيت", "قسمت"];
 
 const INVESTMENT_VERBS = [
   "اشتريت ذهب",
@@ -196,6 +206,12 @@ const STRONG_CONNECTORS = [
   "كمان",
   "وكمان كنت",
   "غير كده",
+  "فوقيهم",
+  "وقسمت",
+  "على كده",
+  "ومعاهم",
+  "وبالباقي",
+  "خصمت منهم",
 ];
 
 /** Sentence boundary characters */
@@ -382,8 +398,10 @@ function decomposeAmountAnchored(
     currentPos = end;
   }
 
-  // Find all valid amount-anchor indices using extractAmounts on preprocessed text
-  const extractedAmounts = extractAmounts(preprocessed);
+  // Find all valid amount-anchor indices using extractAmounts filtered by isFinancialContext
+  const extractedAmounts = extractAmounts(preprocessed).filter((a) =>
+    isFinancialContext(preprocessed, a.index, a.length)
+  );
   const anchorIndices: number[] = [];
 
   for (const a of extractedAmounts) {
@@ -429,10 +447,10 @@ function decomposeAmountAnchored(
       let splitIdx = -1;
       
       // 1. Look for connectors in the gap from right to left
-      for (let i = anchorIdx - 1; i > prevAnchorIdx; i--) {
+      for (let i = anchorIdx; i > prevAnchorIdx; i--) {
         const w = words[i];
         const isConnector = w === "و" || w === "ف" || w === "،" || w === "," || w === "ثم" || w === "بعدين" || STRONG_CONNECTORS.includes(w);
-        const startsWithConnector = (w.startsWith("و") && w.length > 1 && !isLikelyPersonName(w) && !knownNames.includes(w));
+        const startsWithConnector = (w.startsWith("و") && w.length > 1 && !isWawWhitelisted(w) && !isLikelyPersonName(w) && !knownNames.includes(w));
         
         if (isConnector) {
           splitIdx = i + 1; // Split after the connector
@@ -507,10 +525,10 @@ function decomposeAmountAnchored(
       let splitIdx = -1;
       
       // Look for split point between anchorIdx and nextAnchorIdx
-      for (let i = nextAnchorIdx - 1; i > anchorIdx; i--) {
+      for (let i = nextAnchorIdx; i > anchorIdx; i--) {
         const w = words[i];
         const isConnector = w === "و" || w === "ف" || w === "،" || w === "," || w === "ثم" || w === "بعدين" || STRONG_CONNECTORS.includes(w);
-        const startsWithConnector = (w.startsWith("و") && w.length > 1 && !isLikelyPersonName(w) && !knownNames.includes(w));
+        const startsWithConnector = (w.startsWith("و") && w.length > 1 && !isWawWhitelisted(w) && !isLikelyPersonName(w) && !knownNames.includes(w));
         
         if (isConnector) {
           splitIdx = i + 1;
@@ -604,6 +622,25 @@ function decomposeAmountAnchored(
       if (idx > maxVerbIndex) {
         maxVerbIndex = idx;
         nearestPrecedingVerb = verb;
+      }
+    }
+
+    // If no preceding verb was found in textUpToAmount, check post-amount words within segment
+    if (!nearestPrecedingVerb && anchorIdx < endIdx) {
+      const textAfterAmount = words.slice(anchorIdx + 1, Math.min(endIdx + 1, anchorIdx + 4)).join(" ");
+      let nearestFollowingVerb: string | null = null;
+      let minVerbIndex = Infinity;
+
+      for (const verb of ALL_FINANCIAL_VERBS) {
+        const idx = textAfterAmount.indexOf(verb);
+        if (idx !== -1 && idx < minVerbIndex) {
+          minVerbIndex = idx;
+          nearestFollowingVerb = verb;
+        }
+      }
+
+      if (nearestFollowingVerb) {
+        nearestPrecedingVerb = nearestFollowingVerb;
       }
     }
 
@@ -848,8 +885,9 @@ export async function decomposeWithAI(
 ): Promise<DecompositionResult> {
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
+    const targetModel = mapModelName("flash");
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: targetModel,
       systemInstruction: DECOMP_SYSTEM_PROMPT,
       generationConfig: {
         temperature: 0.1,

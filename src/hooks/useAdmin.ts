@@ -3,21 +3,28 @@ import { trpc } from "../providers/trpc";
 type AdminQueryScope = {
   dashboard?: boolean;
   users?: boolean;
+  userFilters?: {
+    search?: string;
+    role?: "user" | "moderator" | "admin";
+    plan?: "free" | "pro" | "ultra";
+  };
   activity?: boolean;
   classification?: boolean;
   voice?: boolean;
 };
 
+type EnabledScopeKey = Exclude<keyof AdminQueryScope, "userFilters">;
+
 export function useAdmin(scope?: AdminQueryScope) {
   const utils = trpc.useUtils();
   const scoped = scope !== undefined;
-  const enabled = (key: keyof AdminQueryScope) => scope?.[key] ?? !scoped;
+  const enabled = (key: EnabledScopeKey) => scope?.[key] ?? !scoped;
 
   const stats = trpc.admin.getDashboardStats.useQuery(undefined, {
     enabled: enabled("dashboard"),
   });
   const users = trpc.admin.listAllUsers.useQuery(
-    { page: 1, limit: 50 },
+    { page: 1, limit: 50, ...scope?.userFilters },
     { enabled: enabled("users") },
   );
   const sessions = trpc.admin.getUserSessions.useQuery(

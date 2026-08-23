@@ -45,6 +45,14 @@ interface ExpenseFormProps {
   onSuccess?: () => void;
   initialText?: string;
   businessMode?: boolean;
+  businessId?: number;
+}
+
+function createOfflineItemId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `offline-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 type ParserTraceRecord = Record<string, unknown>;
@@ -128,7 +136,7 @@ function ParserTracePanel({ trace }: { trace: ParserTraceRecord | null }) {
   );
 }
 
-export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFormProps) {
+export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }: ExpenseFormProps) {
   const [text, setText] = useState(initialText || "");
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
@@ -156,10 +164,33 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
   );
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncRemaining, setSyncRemaining] = useState(0);
+  const [pendingOfflineTextId, setPendingOfflineTextId] = useState<string | null>(null);
   const [latestParserTrace, setLatestParserTrace] =
     useState<ParserTraceRecord | null>(null);
   const syncInProgressRef = useRef(false);
+  const lastAutoSaveSucceededRef = useRef(true);
+  const activeOutboxRequestIdRef = useRef<string | null>(null);
   const expenseQaTextSentRef = useRef<string | null>(null);
+
+  const removeQueuedText = (id: string | null) => {
+    if (!id) return;
+    try {
+      const offlineTexts = JSON.parse(
+        localStorage.getItem("smartspend_offline_texts") || "[]",
+      );
+      localStorage.setItem(
+        "smartspend_offline_texts",
+        JSON.stringify(
+          offlineTexts.filter((item: { id?: string }) => item.id !== id),
+        ),
+      );
+      window.dispatchEvent(new Event("smartspend-offline-queue-changed"));
+    } catch {
+      // Keep the queue intact if storage is unavailable; the idempotency key
+      // still prevents a retry from duplicating an expense on the server.
+    }
+    setPendingOfflineTextId(null);
+  };
 
   useEffect(() => {
     if (initialText) {
@@ -232,6 +263,7 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
         setFlowStage("idle");
         setShowSuccessAnim(true);
         setTimeout(() => setShowSuccessAnim(false), 2000);
+        removeQueuedText(pendingOfflineTextId);
         if ((data as any).newlyAddedContact) {
           showNewContactToast((data as any).newlyAddedContact);
         } else {
@@ -375,7 +407,7 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
 
   // ─── Parsing Mutation ───
   const parseMutation = trpc.ai.parseExpense.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       const traceLogId = (data as { classificationLogId?: number }).classificationLogId ?? null;
       setClassificationLogId(traceLogId);
       setLatestParserTrace(asParserTrace((data as { trace?: unknown }).trace));
@@ -389,7 +421,18 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
         data.items &&
         data.items.length > 0
       ) {
-        saveItems(data.items, true, data.text, traceLogId);
+        lastAutoSaveSucceededRef.current = await saveItems(
+          data.items,
+          true,
+          data.text,
+          traceLogId,
+          activeOutboxRequestIdRef.current,
+        );
+        if (!lastAutoSaveSucceededRef.current) {
+          setParsedItems(data.items);
+          setDecision("review");
+          setFlowStage("review");
+        }
       } else if (data.decision === "review") {
         hapticSuccess();
         setFlowStage("review");
@@ -690,7 +733,9 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
     isAuto: boolean = false,
     overrideText?: string,
     traceLogId: number | null = classificationLogId,
-  ) => {
+    clientRequestId: string | null = null,
+  ): Promise<boolean> => {
+    const effectiveClientRequestId = clientRequestId || pendingOfflineTextId;
     const normalizedItems = items
       .map((item) => ({
         ...item,
@@ -704,12 +749,12 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
 
     if (normalizedItems.length === 0) {
       toast.error("لا توجد عملية صالحة للحفظ.");
-      return;
+      return false;
     }
 
     try {
       if (normalizedItems.length > 1) {
-        const payload = normalizedItems.map((item) => ({
+        const payload = normalizedItems.map((item, index) => ({
           amount: item.amount,
           type: item.type,
           category: item.category,
@@ -719,6 +764,10 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
           source: (inputSource === "voice" ? "voice" : "ai_parsed") as any,
           date: item.date,
           classificationLogId: traceLogId || undefined,
+          businessId,
+          clientRequestId: effectiveClientRequestId
+            ? `${effectiveClientRequestId}:${index}`
+            : undefined,
         }));
         await batchCreateMutation.mutateAsync(payload);
       } else {
@@ -733,6 +782,8 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
           source: inputSource === "voice" ? "voice" : "ai_parsed",
           date: item.date,
           classificationLogId: traceLogId || undefined,
+          businessId,
+          clientRequestId: effectiveClientRequestId || undefined,
         });
       }
       setParsedItems(null);
@@ -750,8 +801,12 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
           ? `تم الحفظ تلقائياً (${normalizedItems.length} عملية)`
           : "تم الحفظ بنجاح.",
       );
+      removeQueuedText(pendingOfflineTextId);
+      return true;
     } catch {
       setFlowStage("review");
+      toast.error("تعذر حفظ العملية. راجعها ثم أعد المحاولة.");
+      return false;
     }
   };
 
@@ -797,8 +852,14 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
       toast.info(
         "تم حفظ العملية محلياً (أوفلاين) بأمان. سيتم تحليلها وتصنيفها تلقائياً فور عودة الإنترنت."
       );
-      offline.push({ text, timestamp: Date.now() });
+      offline.push({
+        id: createOfflineItemId(),
+        text,
+        timestamp: Date.now(),
+        status: "pending",
+      });
       localStorage.setItem("smartspend_offline_texts", JSON.stringify(offline));
+      window.dispatchEvent(new Event("smartspend-offline-queue-changed"));
       setText("");
       return;
     }
@@ -841,15 +902,48 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
         try {
           toast.loading(`جاري تحليل عملية أوفلاين: "${item.text.slice(0, 20)}..."`, { id: "sync-toast" });
 
-          await parseMutation.mutateAsync({
-            text: item.text,
-            inputChannel: "text",
-            businessMode: businessMode || false,
-          });
+          lastAutoSaveSucceededRef.current = true;
+          activeOutboxRequestIdRef.current = item.id || createOfflineItemId();
+          item.id = activeOutboxRequestIdRef.current;
+          let parseResult;
+          try {
+            parseResult = await parseMutation.mutateAsync({
+              text: item.text,
+              inputChannel: "text",
+              businessMode: businessMode || false,
+            });
+          } finally {
+            activeOutboxRequestIdRef.current = null;
+          }
+
+          if (
+            parseResult.decision !== "auto_save" ||
+            !lastAutoSaveSucceededRef.current
+          ) {
+            item.id ||= createOfflineItemId();
+            item.status =
+              parseResult.decision === "clarify"
+                ? "needs_clarification"
+                : "needs_review";
+            localStorage.setItem(
+              "smartspend_offline_texts",
+              JSON.stringify(offlineTexts),
+            );
+            setPendingOfflineTextId(item.id);
+            window.dispatchEvent(new Event("smartspend-offline-queue-changed"));
+            toast.info(
+              "هذه العملية تحتاج مراجعتك قبل الحفظ، لذلك لم نحذفها من صندوق الأوفلاين.",
+              { id: "sync-toast" },
+            );
+            syncInProgressRef.current = false;
+            setIsSyncing(false);
+            return;
+          }
 
           // Success: pop from queue and update storage
           offlineTexts.shift();
           localStorage.setItem("smartspend_offline_texts", JSON.stringify(offlineTexts));
+          window.dispatchEvent(new Event("smartspend-offline-queue-changed"));
           setSyncRemaining(offlineTexts.length + offlineManual.length);
 
           // Wait 1.5 seconds throttle delay
@@ -873,6 +967,7 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
           // Success: pop from queue and update storage
           offlineManual.shift();
           localStorage.setItem("smartspend_offline_manual", JSON.stringify(offlineManual));
+          window.dispatchEvent(new Event("smartspend-offline-queue-changed"));
           setSyncRemaining(offlineManual.length);
 
           // Wait 1.5 seconds throttle delay
@@ -900,10 +995,14 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
     };
 
     window.addEventListener("online", handleOnline);
+    window.addEventListener("smartspend-offline-sync", handleOnline);
     if (navigator.onLine) {
       syncOfflineData();
     }
-    return () => window.removeEventListener("online", handleOnline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("smartspend-offline-sync", handleOnline);
+    };
   }, [isOnline]);
 
   useEffect(() => {
@@ -1569,6 +1668,7 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
             isOnline={isOnline}
             userLimits={userLimits}
             plan={planQuery.data?.plan}
+            businessId={businessId}
           />
         )}
       </CardContent>
@@ -1687,17 +1787,24 @@ export function ExpenseForm({ onSuccess, initialText, businessMode }: ExpenseFor
   );
 }
 
-function ManualForm({ onSuccess, categories, createMutation, isOnline, userLimits, plan }: any) {
+function ManualForm({ onSuccess, categories, createMutation, isOnline, userLimits, plan, businessId }: any) {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
   const [subCategory, setSubCategory] = useState("عام");
   const [description, setDescription] = useState("");
   const [type, setType] = useState("expense");
+  const submissionRef = useRef<{ fingerprint: string; id: string } | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || !category) return;
 
+    const fingerprint = [amount, type, category, subCategory, description, businessId ?? ""].join("|");
+    const clientRequestId =
+      submissionRef.current?.fingerprint === fingerprint
+        ? submissionRef.current.id
+        : createOfflineItemId();
+    submissionRef.current = { fingerprint, id: clientRequestId };
     const payload = {
       amount: parseFloat(amount),
       type,
@@ -1706,6 +1813,8 @@ function ManualForm({ onSuccess, categories, createMutation, isOnline, userLimit
       description,
       rawText: `${amount} جنيه - ${category}`,
       source: "manual",
+      businessId,
+      clientRequestId,
     };
 
     if (!isOnline) {
@@ -1724,20 +1833,27 @@ function ManualForm({ onSuccess, categories, createMutation, isOnline, userLimit
       }
 
       toast.info("تم حفظ العملية محلياً (أوفلاين) بأمان. سيتم مزامنتها لاحقاً.");
-      offlineManual.push({ ...payload, timestamp: Date.now() });
+      offlineManual.push({
+        ...payload,
+        id: clientRequestId,
+        timestamp: Date.now(),
+      });
       localStorage.setItem(
         "smartspend_offline_manual",
         JSON.stringify(offlineManual),
       );
+      window.dispatchEvent(new Event("smartspend-offline-queue-changed"));
       setAmount("");
       setCategory("");
       setSubCategory("عام");
       setDescription("");
+      submissionRef.current = null;
       return;
     }
 
     createMutation.mutate(payload, {
       onSuccess: (data: any) => {
+        submissionRef.current = null;
         setAmount("");
         setCategory("");
         setSubCategory("عام");

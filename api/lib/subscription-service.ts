@@ -17,6 +17,15 @@ export async function grantProSubscription(input: {
   paymentMethod: string;
   transactionId: string;
 }) {
+  const existing = await db
+    .select({ id: proSubscriptions.id, endDate: proSubscriptions.endDate })
+    .from(proSubscriptions)
+    .where(eq(proSubscriptions.transactionId, input.transactionId))
+    .limit(1);
+  if (existing.length > 0) {
+    return { endDate: existing[0].endDate ?? new Date(), alreadyProcessed: true };
+  }
+
   const endDate = new Date();
   if (input.plan === "pro_monthly") endDate.setMonth(endDate.getMonth() + 1);
   else endDate.setFullYear(endDate.getFullYear() + 1);

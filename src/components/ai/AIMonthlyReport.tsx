@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { useHaptics } from "@/hooks/useHaptics";
 
 function currentMonthValue() {
-  return new Date().toISOString().slice(0, 7);
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
 function queryMonthValue(key: string): string | null {
@@ -32,14 +33,14 @@ export default function AIMonthlyReport() {
     lightTap();
     const [y, m] = month.split("-").map(Number);
     const d = new Date(y, m - 2, 1);
-    setMonth(d.toISOString().slice(0, 7));
+    setMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   };
 
   const nextMonth = () => {
     lightTap();
     const [y, m] = month.split("-").map(Number);
     const d = new Date(y, m, 1);
-    const next = d.toISOString().slice(0, 7);
+    const next = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     if (next <= currentMonthValue()) {
       setMonth(next);
     }

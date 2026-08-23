@@ -1137,3 +1137,81 @@ export {
   STRONG_INCOME,
   STRONG_EXPENSE,
 } from "./intent-detector";
+
+/**
+ * Stop words and common financial terms that should NEVER be added to custom user dictionaries.
+ * Prevents "poison learning" where broad prepositions or currency units hijack classification.
+ */
+export const POISON_STOP_WORDS = new Set([
+  "جنيه", "جنية", "جنيهات", "قرش", "دفعت", "صرفت", "حولت", "سجل", "من", "في", "على", "إلى", "هو", "هي",
+  "عن", "مع", "هذا", "الذي", "التي", "لـ", "بـ", "فـ", "عند", "بتاع", "بتاعة", "egp", "le", "pound", "pounds", "cash", "money",
+  "pay", "paid", "مصروف", "ايراد", "دخل", "رصيد", "حساب", "محفظة", "محفظه", "فودافون", "اتصالات", "اورنج", "انستاباي",
+  "عشان", "كده", "كدا", "كذا", "يعني", "بسبب", "عشانها", "عشانه", "معاه", "معاها", "منه", "منها", "عليه", "عليها",
+  "بتاعي", "بتاعتي", "خلاص", "بقى", "برضو", "طبعا", "اصلا", "خالص", "لحد", "لغاية", "كمان", "بردو", "عادي"
+]);
+
+/**
+ * Verifies if a proposed word or phrase is considered "poisonous" (too short, or composed solely of stop words).
+ */
+export function isPoisonWord(text: string): boolean {
+  const clean = text.trim().toLowerCase();
+  if (clean.length < 3) return true;
+  if (POISON_STOP_WORDS.has(clean)) return true;
+  const tokens = clean.split(/\s+/);
+  return tokens.every(token => POISON_STOP_WORDS.has(token));
+}
+
+/**
+ * Cleans a raw transaction phrase by stripping out numbers, currency terms, and common financial stop words
+ * (like "صرفت", "دفعت", "جنيه", "في", "على"), returning the core compound noun or entity (e.g., "سوبر ماركت", "خضار").
+ */
+export function extractCleanDictionaryPhrase(rawText: string): string {
+  const normalized = rawText
+    .replace(/\d+(\.\d+)?/g, " ") // Remove numbers
+    .replace(/[^\u0600-\u06FFa-zA-Z\s]/g, " ") // Keep Arabic + English only
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+
+  const tokens = normalized.split(/\s+/).filter(token => {
+    return token.length > 0 && !POISON_STOP_WORDS.has(token);
+  });
+
+  const cleanPhrase = tokens.join(" ").trim();
+  if (!cleanPhrase || isPoisonWord(cleanPhrase)) {
+    return "";
+  }
+  return cleanPhrase.substring(0, 100);
+}
+
+/**
+ * Whitelist of Egyptian Arabic words/names starting with "و" that should NEVER be treated as a conjunction prefix.
+ * Prevents context bleeding fixes from breaking words like "وجبة", "وقود", "وليد", etc.
+ */
+export const WAW_WHITELIST = new Set([
+  // Nouns / Common financial words
+  "وجبة", "وجبه", "وجبات", "وقود", "ورق", "ورقه", "ورقة", "ورشة", "ورشه", "ورش", "ولد", "ولاد", "وقت", "أوقات", "اوقات", "وجه", "وجوه", "وسط", "وعد", "وعود", "وطن", "وزن", "وحدة", "وحدات", "وحده", "وفاة", "وفاه", "وفيات", "وظيفة", "وظائف", "وظيفه", "ولاية", "ولايه", "ولايات", "وكيل", "وكلاء", "وريث", "ورثة", "ورثه", "وداع", "وضوء", "وجع", "أوجاع", "اوجاع", "وحش", "وحوش", "وصفة", "وصفه", "وصفات", "وفد", "وفود", "وعاء", "أوعية", "اوعية", "وهم", "أوهام", "اوهام", "وارد", "واردات", "واجب", "واجبات", "واحد", "واحدة", "واحده", "وادي", "وديعة", "وديعة", "ودائع", "وقار", "وقاية", "وقايه", "وقيعة", "وقيعه", "ولا", "ولكن", "ولو", "وهبة", "وهبه", "وفق", "وفقا",
+  // Names starting with Waw
+  "وليد", "وفاء", "وئام", "وجدي", "وسام", "وحيد", "ولاء", "وداد", "وسيم", "وائل", "وجيه", "وئام"
+]);
+
+/**
+ * Helper to check if a word is whitelisted as starting with "و" naturally.
+ */
+export function isWawWhitelisted(word: string): boolean {
+  if (!word) return false;
+  const clean = word.toLowerCase().trim();
+  if (!clean.startsWith("و")) return false;
+  const normalized = normalizeArabic(clean).toLowerCase();
+  
+  if (WAW_WHITELIST.has(clean) || WAW_WHITELIST.has(normalized)) return true;
+  
+  // If it starts with a single waw, check the core word too (e.g. "وجبة" is whitelisted, we check it)
+  if (clean.startsWith("و") && !clean.startsWith("وو")) {
+    const core = clean.slice(1);
+    const coreNorm = normalizeArabic(core).toLowerCase();
+    if (WAW_WHITELIST.has(core) || WAW_WHITELIST.has(coreNorm)) return true;
+  }
+  
+  return false;
+}

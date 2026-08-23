@@ -10,11 +10,11 @@ import {
   localUsers,
   classificationLogs,
   pendingClarifications,
-  systemSettings,
   userContacts,
   userBusinesses,
   businessCategories as bizCategoriesTable,
 } from "../db/schema";
+import { getSystemSettings } from "./lib/settings-cache";
 import { parseNameAndRelationship } from "./lib/relationship-normalizer";
 import { eq, and, gte, lte, desc, sql, lt } from "drizzle-orm";
 import Decimal from "decimal.js";
@@ -235,7 +235,7 @@ function enrichTextWithNameRelation(
 }
 
 async function updateStreak(
-  dbInstance: ReturnType<typeof getDb>,
+  dbInstance: any,
   userId: number,
   userType: string,
 ): Promise<void> {
@@ -245,41 +245,32 @@ async function updateStreak(
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayStr = yesterday.toISOString().split("T")[0];
 
-  if (userType === "oauth") {
-    const [u] = await dbInstance
-      .select()
-      .from(users)
-      .where(eq(users.id, Number(userId)));
-    if (u) {
-      const lastDate = u.lastStreakAt ? new Date(u.lastStreakAt) : null;
-      const lastStr = lastDate ? lastDate.toISOString().split("T")[0] : null;
-      if (lastStr !== todayStr) {
-        const newStreak = lastStr === yesterdayStr ? (u.currentStreak || 0) + 1 : 1;
-        const highestStreak = Math.max(u.highestStreak || 0, newStreak);
-        await dbInstance
-          .update(users)
-          .set({ currentStreak: newStreak, highestStreak, lastStreakAt: now })
-          .where(eq(users.id, Number(userId)));
-      }
-    }
-  } else {
-    const [u] = await dbInstance
-      .select()
-      .from(localUsers)
-      .where(eq(localUsers.id, userId));
-    if (u) {
-      const lastDate = u.lastStreakAt ? new Date(u.lastStreakAt) : null;
-      const lastStr = lastDate ? lastDate.toISOString().split("T")[0] : null;
-      if (lastStr !== todayStr) {
-        const newStreak = lastStr === yesterdayStr ? (u.currentStreak || 0) + 1 : 1;
-        const highestStreak = Math.max(u.highestStreak || 0, newStreak);
-        await dbInstance
-          .update(localUsers)
-          .set({ currentStreak: newStreak, highestStreak, lastStreakAt: now })
-          .where(eq(localUsers.id, userId));
-      }
-    }
-  }
+  // Atomic SQL update — avoids the Read-Modify-Write race condition.
+  // Uses a single UPDATE with CASE expression so concurrent requests
+  // cannot read stale streak values.
+  const table = userType === "oauth" ? users : localUsers;
+  await dbInstance
+    .update(table)
+    .set({
+      currentStreak: sql`CASE
+        WHEN DATE(${table.lastStreakAt}) = ${todayStr} THEN ${table.currentStreak}
+        WHEN DATE(${table.lastStreakAt}) = ${yesterdayStr} THEN COALESCE(${table.currentStreak}, 0) + 1
+        ELSE 1
+      END`,
+      highestStreak: sql`GREATEST(
+        COALESCE(${table.highestStreak}, 0),
+        CASE
+          WHEN DATE(${table.lastStreakAt}) = ${todayStr} THEN COALESCE(${table.currentStreak}, 0)
+          WHEN DATE(${table.lastStreakAt}) = ${yesterdayStr} THEN COALESCE(${table.currentStreak}, 0) + 1
+          ELSE 1
+        END
+      )`,
+      lastStreakAt: sql`CASE
+        WHEN DATE(${table.lastStreakAt}) = ${todayStr} THEN ${table.lastStreakAt}
+        ELSE ${now}
+      END`,
+    })
+    .where(eq(table.id, userId));
 }
 
 const statsCategoryDisplayNames: Record<string, string> = {
@@ -321,6 +312,9 @@ export const expenseRouter = router({
         date: z.string().optional(),
         contactId: z.number().int().positive().optional(),
         classificationLogId: z.number().int().positive().optional(),
+        businessId: z.number().int().positive().optional(),
+        walletId: z.number().int().positive().optional(),
+        clientRequestId: z.string().min(1).max(64).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -338,39 +332,39 @@ export const expenseRouter = router({
 
       const references = await resolveExpenseReferences(input, userId, requestUserType);
 
-      await db.insert(expenses).values({
-        userId,
-        userType: requestUserType,
-        type: input.type,
-        amount: input.amount.toString(),
-        category: input.category,
-        subCategory: input.subCategory || "عام",
-        description: input.description || "",
-        rawText: input.rawText,
-        source: input.source,
-        contactId: references.contactId,
-        classificationLogId: references.classificationLogId,
-        date: expenseDate,
-        businessId: (input as any).businessId || null,
+      // ─── ACID Transaction: expense insert + contact count + streak ───
+      await db.transaction(async (tx) => {
+        await tx.insert(expenses).values({
+          userId,
+          userType: requestUserType,
+          type: input.type,
+          amount: input.amount.toString(),
+          category: input.category,
+          subCategory: input.subCategory || "عام",
+          description: input.description || "",
+          rawText: input.rawText,
+          source: input.source,
+          contactId: references.contactId,
+          classificationLogId: references.classificationLogId,
+          businessId: input.businessId || null,
+          walletId: input.walletId || null,
+          clientRequestId: input.clientRequestId || null,
+          date: expenseDate,
+        });
+
+        if (references.contactId) {
+          await tx
+            .update(userContacts)
+            .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
+            .where(eq(userContacts.id, references.contactId));
+        }
+
+        // Gamification: Update Streaks (atomic, inside transaction)
+        await updateStreak(tx, userId as number, requestUserType);
       });
 
-      // Phase 2: Invalidate muscle memory cache so it learns this new confirmed pattern
+      // Phase 2: Non-critical side effects (outside transaction)
       invalidateUserMemory(userId, requestUserType);
-
-      if (references.contactId) {
-        await db
-          .update(userContacts)
-          .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
-          .where(eq(userContacts.id, references.contactId));
-      }
-
-      // ─── Gamification: Update Streaks ───
-      try {
-        await updateStreak(db, userId as number, requestUserType);
-      } catch (err) {
-        console.error("Streak logic error:", err);
-      }
-
       await invalidateExpenseCache(userId, requestUserType);
       
       if (input.type === "expense") {
@@ -396,6 +390,9 @@ export const expenseRouter = router({
           date: z.string().optional(),
           contactId: z.number().int().positive().optional(),
           classificationLogId: z.number().int().positive().optional(),
+          businessId: z.number().int().positive().optional(),
+          walletId: z.number().int().positive().optional(),
+          clientRequestId: z.string().min(1).max(64).optional(),
         })
       ).max(100, "حد أقصى 100 عملية في الطلب الواحد")
     )
@@ -423,30 +420,31 @@ export const expenseRouter = router({
         source: item.source,
         contactId: references[index].contactId,
         classificationLogId: references[index].classificationLogId,
+        businessId: item.businessId || null,
+        walletId: item.walletId || null,
+        clientRequestId: item.clientRequestId || null,
         date: item.date ? new Date(item.date) : new Date(),
-        businessId: (item as any).businessId || null,
       }));
 
-      await db.insert(expenses).values(valuesToInsert);
+      // ─── ACID Transaction: batch insert + contact counts + streak ───
+      await db.transaction(async (tx) => {
+        await tx.insert(expenses).values(valuesToInsert);
 
+        const linkedContactIds = references
+          .map((reference) => reference.contactId)
+          .filter((id): id is number => Boolean(id));
+        for (const contactId of linkedContactIds) {
+          await tx
+            .update(userContacts)
+            .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
+            .where(eq(userContacts.id, contactId));
+        }
+
+        await updateStreak(tx, userId as number, requestUserType);
+      });
+
+      // Non-critical side effects (outside transaction)
       invalidateUserMemory(userId, requestUserType);
-
-      const linkedContactIds = references
-        .map((reference) => reference.contactId)
-        .filter((id): id is number => Boolean(id));
-      for (const contactId of linkedContactIds) {
-        await db
-          .update(userContacts)
-          .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
-          .where(eq(userContacts.id, contactId));
-      }
-
-      try {
-        await updateStreak(db, userId as number, requestUserType);
-      } catch (err) {
-        console.error("Streak logic error:", err);
-      }
-
       await invalidateExpenseCache(userId, requestUserType);
       
       const hasExpenses = input.some(item => item.type === "expense");
@@ -751,15 +749,38 @@ export const expenseRouter = router({
       const db = getDb();
       const userId = ctx.user!.id;
       const userType = ctx.user!.type;
-      await db
-        .delete(expenses)
+
+      // Read the expense first to get contactId for counter decrement
+      const [expense] = await db
+        .select({ id: expenses.id, contactId: expenses.contactId })
+        .from(expenses)
         .where(
           and(
             eq(expenses.id, input.id),
             eq(expenses.userId, userId),
             eq(expenses.userType, userType),
           ),
-        );
+        )
+        .limit(1);
+
+      if (!expense) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "المصروف غير موجود" });
+      }
+
+      // ─── ACID Transaction: delete expense + decrement contact count ───
+      await db.transaction(async (tx) => {
+        await tx
+          .delete(expenses)
+          .where(eq(expenses.id, expense.id));
+
+        if (expense.contactId) {
+          await tx
+            .update(userContacts)
+            .set({ transactionCount: sql`GREATEST(COALESCE(${userContacts.transactionCount}, 1) - 1, 0)` })
+            .where(eq(userContacts.id, expense.contactId));
+        }
+      });
+
       await invalidateExpenseCache(userId, userType);
       return { success: true };
     }),
@@ -1575,16 +1596,12 @@ export const expenseRouter = router({
           const { getSmartProfile, summarizeProfileForAI } = await import("./services/user-profile-service");
           const { buildPersonalContext, buildPersonalContextPrompt } = await import("./services/personal-context-builder");
 
-          const [userDictRows, smartProfile, settingRows] = await Promise.all([
+          const [userDictRows, smartProfile, cfg] = await Promise.all([
             db.select().from(userDictionaries)
               .where(and(eq(userDictionaries.userId, userId), eq(userDictionaries.userType, userType))),
             getSmartProfile(userId as number, userType as string),
-            db.select().from(systemSettings),
+            getSystemSettings(),
           ]);
-          const cfg: Record<string, string> = {};
-          settingRows.forEach((s) => {
-            if (s.value) cfg[s.key] = s.value;
-          });
 
           const routing = await resolveRoutingConfig(ctx.user!.plan ?? "free", 0, cfg);
           const userDict = userDictRows.map((row) => ({ word: row.word, category: row.category, subCategory: row.subCategory ?? undefined }));
@@ -1737,16 +1754,12 @@ export const expenseRouter = router({
 
         const enrichedText = clarification.originalText + " (" + input.answer + ")";
         
-        const [userDictRows, smartProfile, settingRows] = await Promise.all([
+        const [userDictRows, smartProfile, cfg] = await Promise.all([
           db.select().from(userDictionaries)
             .where(and(eq(userDictionaries.userId, userId), eq(userDictionaries.userType, userType))),
           getSmartProfile(userId as number, userType as string),
-          db.select().from(systemSettings),
+          getSystemSettings(),
         ]);
-        const cfg: Record<string, string> = {};
-        settingRows.forEach((s) => {
-          if (s.value) cfg[s.key] = s.value;
-        });
 
         const routing = await resolveRoutingConfig(
           ctx.user!.plan ?? "free",

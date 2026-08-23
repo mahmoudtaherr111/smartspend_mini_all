@@ -5,8 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SEOMeta } from "@/components/seo/SEOMeta";
 import { Brain, Mic, LineChart, ShieldCheck, Sparkles } from "lucide-react";
 import { useTheme } from "next-themes";
-import darkModeLogo from "../../photos/dark_mode_logo-removebg-preview.png";
-import whiteModeLogo from "../../photos/white_mode_logo-removebg-preview.png";
+const darkModeLogo = "/photos/dark_mode_logo-removebg-preview.png";
+const whiteModeLogo = "/photos/white_mode_logo-removebg-preview.png";
 
 export default function Landing() {
   const { theme } = useTheme();

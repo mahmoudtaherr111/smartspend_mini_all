@@ -33,4 +33,30 @@ describe("plan-first agent runtime", () => {
       maxProviderCalls: 1,
     });
   });
+
+  it("resolves contactId synchronously from context contacts", () => {
+    const contacts = [
+      { id: 42, name: "أحمد" },
+      { id: 100, name: "ماما" },
+    ];
+    const plan = planAgentTurn("صرفت كام على ماما الشهر ده؟", undefined, { contacts });
+
+    expect(plan.intent.slots.contactId).toBe(100);
+    expect(plan.intent.slots.personQuery).toBe("ماما");
+    expect(plan.mode).toBe("deterministic");
+  });
+
+  it("clarifies which contact if contact name is not found in context contacts", () => {
+    const contacts = [
+      { id: 42, name: "أحمد" },
+      { id: 100, name: "ماما" },
+    ];
+    const plan = planAgentTurn("صرفت كام على عمر الشهر ده؟", undefined, { contacts });
+
+    expect(plan.mode).toBe("clarification");
+    expect(plan.clarification).toMatchObject({
+      missing: ["contactId"],
+      quickReplies: ["أحمد", "ماما"],
+    });
+  });
 });

@@ -14,7 +14,7 @@ if (isStandalonePwa()) {
   document.documentElement.classList.add("pwa-standalone");
 }
 
-window.onerror = function (msg, url, line, col, error) {
+if (import.meta.env.DEV) window.onerror = function (msg, url, line, col, error) {
   const div = document.createElement("div");
   div.style.color = "#b91c1c";
   div.style.padding = "20px";

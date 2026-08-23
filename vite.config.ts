@@ -23,13 +23,19 @@ export default defineConfig(({ mode }) => {
         strategies: "injectManifest",
         srcDir: "src",
         filename: "sw.js",
+        // register-sw.ts owns update UX; emitting VitePWA's second registrar
+        // caused the same worker to be registered twice in production.
+        injectRegister: false,
         registerType: "autoUpdate",
         devOptions: {
           enabled: false,
           type: "module",
         },
-        includeAssets: ["favicon.ico", "apple-touch-icon.png", "mask-icon.svg"],
+        includeAssets: ["icon.png"],
         manifest: {
+          id: "/",
+          start_url: "/",
+          scope: "/",
           name: "SmartSpend AI",
           share_target: {
             action: "/dashboard?tab=record",
@@ -45,25 +51,23 @@ export default defineConfig(({ mode }) => {
           theme_color: "#10b981",
           background_color: "#0f172a",
           display: "standalone",
+          display_override: ["standalone", "minimal-ui"],
+          orientation: "portrait-primary",
           dir: "rtl",
           lang: "ar",
           categories: ["finance", "productivity"],
           icons: [
             {
               src: "icon.png",
-              sizes: "192x192",
+              // The source image is 274×268. Declaring a fictional 192/512
+              // size made install surfaces reject or blur it unpredictably.
+              sizes: "274x268",
               type: "image/png",
               purpose: "any",
             },
             {
               src: "icon.png",
-              sizes: "512x512",
-              type: "image/png",
-              purpose: "any",
-            },
-            {
-              src: "icon.png",
-              sizes: "512x512",
+              sizes: "274x268",
               type: "image/png",
               purpose: "maskable",
             },

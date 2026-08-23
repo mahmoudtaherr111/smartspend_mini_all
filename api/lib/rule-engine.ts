@@ -3,7 +3,7 @@
  * Fast classification without AI for simple/clear transactions
  */
 
-import { CATEGORY_DICTIONARY } from "./egyptian-dictionary";
+import { CATEGORY_DICTIONARY, isWawWhitelisted } from "./egyptian-dictionary";
 import { fuzzyFindCategory, normalizeArabic, matchArabicPhrase, stripArabicPrefix } from "./fuzzy-match";
 import { detectIntent, type TransactionIntent } from "./intent-detector";
 import { extractAmounts, type ExtractedAmount } from "./entity-extractor";
@@ -771,10 +771,10 @@ const DISAMBIGUATION_RULES: Record<string, Array<{
     { contextPattern: /طفل|بيبي|حضان[ةه]|عربان[ةه]/, category: "تسوق", subCategory: "عام" },
   ],
   "نور": [
-    { contextPattern: /(?:اديت|أديت|حولت|بعت|سلفت|عطيت)\s+(?:ل(?:ـ)?)?\s*(?:نور|\S{0,5}نور)/, category: "تحويل", subCategory: "أشخاص" },
+    { contextPattern: /^(?!.*(?:كهربا|نور\s+القطع|قطع\s+النور|سداد|فاتورة|عداد|شركة|فواتير|دفع)).*(?:(?:سلفت|اديت|أديت|حولت|بعت|سلفت|عطيت|سلكت|صفيت|صفّيت|طلعت|بعتت|رديت|وديت|رجعت|فكيت|خدت|اخدت).*(?:نور)|(?:نور).*(?:سلفت|اديت|أديت|حولت|بعت|سلفت|عطيت|سلكت|صفيت|صفّيت|طلعت|بعتت|رديت|وديت|رجعت|فكيت|خدت|اخدت))/, category: "تحويل", subCategory: "أشخاص" },
   ],
   "سيف": [
-    { contextPattern: /(?:اديت|أديت|حولت|بعت|سلفت|عطيت)\s+(?:ل(?:ـ)?)?\s*(?:سيف|صيدلي[ةه])/, category: "تحويل", subCategory: "أشخاص" },
+    { contextPattern: /^(?!.*(?:صيدلي[ةه]|صيدليات|دوا|علاج|روشت[ةه]|روشته)).*(?:(?:سلفت|اديت|أديت|حولت|بعت|سلفت|عطيت|سلكت|صفيت|صفّيت|طلعت|بعتت|رديت|وديت|رجعت|فكيت|خدت|اخدت).*(?:سيف)|(?:سيف).*(?:سلفت|اديت|أديت|حولت|بعت|سلفت|عطيت|سلكت|صفيت|صفّيت|طلعت|بعتت|رديت|وديت|رجعت|فكيت|خدت|اخدت))/, category: "تحويل", subCategory: "أشخاص" },
   ],
   "تذكرة": [
     { contextPattern: /سينما|فيلم/, category: "ترفيه", subCategory: "سينما" },
@@ -817,6 +817,63 @@ function disambiguateContext(
     }
   }
   return null;
+}
+
+/**
+ * Split a financial text segment on explicit conjunctions (و, ف, etc.)
+ * as well as attached "و" prefixes, guarding against naturally waw-starting words
+ * (like وجبة, وليد) via the WAW_WHITELIST.
+ */
+function splitEgyptianConjunctions(text: string): string[] {
+  if (!text) return [];
+  
+  // 1. Initial split on standard explicit separators: ، , + زائد and spaced "و"
+  const initialParts = text.split(/\s+و\s+|،|,|\+| زائد /);
+  const finalParts: string[] = [];
+  
+  for (const part of initialParts) {
+    const words = part.trim().split(/\s+/);
+    if (words.length === 0 || (words.length === 1 && words[0] === "")) continue;
+    
+    let currentSegment: string[] = [];
+    
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      
+      const startsWithWaw = word.startsWith("و") && word.length > 1;
+      
+      if (startsWithWaw && i > 0) { // Only split if there is context before it (i > 0)
+        const isDoubleWaw = word.startsWith("وو") && word.length > 2;
+        const coreWord = word.slice(1);
+        
+        let shouldSplit = false;
+        if (isDoubleWaw) {
+          shouldSplit = true;
+        } else {
+          // If the word itself is NOT naturally starting with waw, split it
+          if (!isWawWhitelisted(word)) {
+            shouldSplit = true;
+          }
+        }
+        
+        if (shouldSplit) {
+          if (currentSegment.length > 0) {
+            finalParts.push(currentSegment.join(" "));
+          }
+          currentSegment = [coreWord];
+          continue;
+        }
+      }
+      
+      currentSegment.push(word);
+    }
+    
+    if (currentSegment.length > 0) {
+      finalParts.push(currentSegment.join(" "));
+    }
+  }
+  
+  return finalParts;
 }
 
 /**
@@ -879,12 +936,12 @@ export async function runRuleEngine(
 
     // Prevent context bleeding by splitting shared text using separators
     if (i > 0) {
-      const parts = beforeAmount.split(/\s+و\s+|،|,|\+| زائد /);
-      beforeAmount = parts[parts.length - 1].trim();
+      const parts = splitEgyptianConjunctions(beforeAmount);
+      beforeAmount = parts.length > 0 ? parts[parts.length - 1].trim() : "";
     }
     if (i < amounts.length - 1) {
-      const parts = afterAmount.split(/\s+و\s+|،|,|\+| زائد /);
-      afterAmount = parts[0].trim();
+      const parts = splitEgyptianConjunctions(afterAmount);
+      afterAmount = parts.length > 0 ? parts[0].trim() : "";
     }
     const allContext = (beforeAmount + " " + afterAmount).trim();
     const allContextNorm = normalizeArabic(allContext).toLowerCase();
