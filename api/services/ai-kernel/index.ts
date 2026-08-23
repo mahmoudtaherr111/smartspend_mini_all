@@ -11,6 +11,10 @@ import { normalizeAIResponse } from "./response-normalizer";
 import { displayFinanceCategory } from "../finance-semantic-layer/category-matcher";
 import { isLowSignalMemoryText, normalizeMemoryText, truncateWords } from "../ai-memory/text-utils";
 import type { ActionDraft, AIRequest, AIResponse, Artifact, DataNeed, IntentResult, ResolvedFact, ResponseRecipe } from "./types";
+import { db } from "../../queries/connection";
+import { userContacts } from "../../../db/schema";
+import { eq, and } from "drizzle-orm";
+import { normalizePersonLookup } from "../../lib/fuzzy-match";
 
 export * from "./types";
 export { buildContextPack, estimateTokens, getTokenBudget } from "./context-packer";
@@ -1135,7 +1139,22 @@ export async function runAIKernelActive(
   const traceId = request.requestId ?? createTraceId();
 
   try {
-    const plan = planAgentTurn(request.message);
+    let contacts: Array<{ id: number; name: string }> = [];
+    try {
+      contacts = await db
+        .select({ id: userContacts.id, name: userContacts.name })
+        .from(userContacts)
+        .where(and(
+          eq(userContacts.userId, request.userId),
+          eq(userContacts.userType, request.userType),
+          eq(userContacts.isSilenced, false)
+        ));
+    } catch (e) {
+      contacts = [];
+    }
+
+    const prePlanned = request.metadata?.prePlannedIntent as IntentResult | undefined;
+    const plan = planAgentTurn(request.message, prePlanned, { contacts });
     const intent = plan.intent;
     const dataNeeds = plan.dataNeeds;
     const plannedRequest: AIRequest = {
@@ -1389,7 +1408,37 @@ export async function runAIKernelShadow(request: AIRequest): Promise<AIResponse>
   const traceId = request.requestId ?? createTraceId();
 
   try {
+    let contacts: Array<{ id: number; name: string }> = [];
+    try {
+      contacts = await db
+        .select({ id: userContacts.id, name: userContacts.name })
+        .from(userContacts)
+        .where(and(
+          eq(userContacts.userId, request.userId),
+          eq(userContacts.userType, request.userType),
+          eq(userContacts.isSilenced, false)
+        ));
+    } catch (e) {
+      contacts = [];
+    }
+
     const intent = routeIntent(request.message);
+
+    // Resolve contactId from context contacts inside shadow mode
+    if (intent.slots.personQuery && !intent.slots.contactId) {
+      const normalizedQuery = normalizePersonLookup(intent.slots.personQuery);
+      if (normalizedQuery) {
+        const matched = contacts
+          .map((item) => ({ ...item, normalizedName: normalizePersonLookup(item.name) }))
+          .filter((item) => item.normalizedName.length >= 2 && (normalizedQuery.includes(item.normalizedName) || item.normalizedName.includes(normalizedQuery)))
+          .sort((left, right) => right.normalizedName.length - left.normalizedName.length)[0];
+        if (matched) {
+          intent.slots.contactId = matched.id;
+          intent.slots.personQuery = matched.name;
+        }
+      }
+    }
+
     const dataNeeds = compileDataNeeds(intent);
     const contextPack = buildContextPack(request, intent, dataNeeds);
     const resolved = await resolveShadowFacts(request, dataNeeds);

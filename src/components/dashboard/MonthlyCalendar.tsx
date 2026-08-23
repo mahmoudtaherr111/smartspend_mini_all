@@ -9,6 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Calendar, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useHistoryBound } from "@/hooks/useHistoryBound";
 
 function compactMoney(value: unknown) {
   const num = Number(value || 0);
@@ -26,6 +27,7 @@ function DayTransactionsDialog({
   onClose: () => void;
   dateStr: string | null;
 }) {
+  useHistoryBound(isOpen, onClose);
   if (!dateStr) return null;
 
   // Use local timezone boundaries (no Z suffix) to prevent day-boundary shifts

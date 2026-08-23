@@ -69,14 +69,15 @@ function embeddingRows(cacheHits: string[]): number {
   return hit ? asNumber(hit.split(":").at(-1)) : 0;
 }
 
+import { getSystemSettings } from "../lib/settings-cache";
+
 async function loadKernelConfig(): Promise<{
   apiKey: string;
   baseUrl: string;
   model: string;
   maxTokens: number;
 }> {
-  const rows = await db.select().from(systemSettings);
-  const settings = Object.fromEntries(rows.map((row) => [row.key, row.value]));
+  const settings = await getSystemSettings();
   return {
     apiKey: settings.chatbot_api_key || settings.fireworks_api_key || process.env.FIREWORKS_API_KEY || "",
     baseUrl: settings.chatbot_base_url || "https://api.fireworks.ai/inference/v1",

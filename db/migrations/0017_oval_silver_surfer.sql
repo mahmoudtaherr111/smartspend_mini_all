@@ -1,0 +1,21 @@
+ALTER TABLE `expenses` ADD `wallet_id` int;--> statement-breakpoint
+CREATE INDEX `ad_clicks_ad_idx` ON `ad_clicks` (`ad_id`);--> statement-breakpoint
+CREATE INDEX `ad_clicks_user_idx` ON `ad_clicks` (`user_id`,`user_type`);--> statement-breakpoint
+CREATE INDEX `ads_creator_idx` ON `ads` (`created_by`);--> statement-breakpoint
+CREATE INDEX `ads_active_idx` ON `ads` (`is_active`);--> statement-breakpoint
+CREATE INDEX `ai_action_memory_conv_idx` ON `ai_action_memory` (`source_conversation_id`);--> statement-breakpoint
+CREATE INDEX `ai_memory_source_conv_idx` ON `ai_memory_items` (`source_conversation_id`);--> statement-breakpoint
+CREATE INDEX `ai_memory_source_msg_idx` ON `ai_memory_items` (`source_message_id`);--> statement-breakpoint
+CREATE INDEX `api_key_errors_user_idx` ON `api_key_errors` (`user_id`);--> statement-breakpoint
+CREATE INDEX `auth_challenges_user_idx` ON `auth_challenges` (`user_id`,`user_type`);--> statement-breakpoint
+CREATE INDEX `discount_codes_creator_idx` ON `discount_codes` (`created_by`);--> statement-breakpoint
+CREATE INDEX `categories_user_idx` ON `expense_categories` (`user_id`,`user_type`);--> statement-breakpoint
+CREATE INDEX `expenses_wallet_idx` ON `expenses` (`wallet_id`);--> statement-breakpoint
+CREATE INDEX `local_users_referred_by_idx` ON `local_users` (`referred_by`);--> statement-breakpoint
+CREATE INDEX `reports_user_idx` ON `monthly_reports` (`user_id`,`user_type`);--> statement-breakpoint
+CREATE INDEX `reports_month_idx` ON `monthly_reports` (`month`);--> statement-breakpoint
+CREATE INDEX `notif_templates_creator_idx` ON `notification_templates` (`created_by`);--> statement-breakpoint
+CREATE INDEX `notif_templates_event_idx` ON `notification_templates` (`event_type`);--> statement-breakpoint
+CREATE INDEX `clarifications_expense_idx` ON `pending_clarifications` (`expense_id`);--> statement-breakpoint
+CREATE INDEX `users_referred_by_idx` ON `users` (`referred_by`);--> statement-breakpoint
+ALTER TABLE `expenses` DROP COLUMN `version`;

@@ -94,10 +94,7 @@ export const aiProcedure = authedProcedure.use(async ({ ctx, next }) => {
 });
 
 // Moderator: can view everything except delete users/remove admin
-export const moderatorProcedure = t.procedure.use(async ({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "يجب تسجيل الدخول أولاً" });
-  }
+export const moderatorProcedure = authedProcedure.use(async ({ ctx, next }) => {
   if (ctx.user.role !== "admin" && ctx.user.role !== "moderator") {
     throw new TRPCError({ code: "FORBIDDEN", message: "ليس لديك صلاحية الوصول" });
   }
@@ -105,10 +102,7 @@ export const moderatorProcedure = t.procedure.use(async ({ ctx, next }) => {
 });
 
 // Admin: full access
-export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "يجب تسجيل الدخول أولاً" });
-  }
+export const adminProcedure = authedProcedure.use(async ({ ctx, next }) => {
   if (ctx.user.role !== "admin") {
     throw new TRPCError({ code: "FORBIDDEN", message: "ليس لديك صلاحية الأدمن" });
   }
@@ -116,10 +110,7 @@ export const adminProcedure = t.procedure.use(async ({ ctx, next }) => {
 });
 
 // Pro: for premium features (Pro + Ultra + Admin)
-export const proProcedure = t.procedure.use(async ({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "يجب تسجيل الدخول أولاً" });
-  }
+export const proProcedure = authedProcedure.use(async ({ ctx, next }) => {
   if (ctx.user.plan !== "pro" && ctx.user.plan !== "ultra" && ctx.user.role !== "admin") {
     throw new TRPCError({ code: "FORBIDDEN", message: "هذه الميزة متاحة فقط للبرو" });
   }
@@ -127,10 +118,7 @@ export const proProcedure = t.procedure.use(async ({ ctx, next }) => {
 });
 
 // Ultra: for top-tier features (Ultra + Admin)
-export const ultraProcedure = t.procedure.use(async ({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "يجب تسجيل الدخول أولاً" });
-  }
+export const ultraProcedure = authedProcedure.use(async ({ ctx, next }) => {
   if (ctx.user.plan !== "ultra" && ctx.user.role !== "admin") {
     throw new TRPCError({ code: "FORBIDDEN", message: "هذه الميزة متاحة فقط لمشتركي الألترا 💎" });
   }

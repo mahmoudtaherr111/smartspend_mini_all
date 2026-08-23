@@ -16,9 +16,9 @@ const envSchema = z.object({
 
   // AI
   GEMINI_API_KEY: z.string().min(1),
-  GEMINI_MODEL_FREE: z.string().default("gemini-2.0-flash"),
-  GEMINI_MODEL_PRO: z.string().default("gemini-2.5-flash"),
-  GEMINI_MODEL_REPORTS: z.string().default("gemini-2.5-pro"),
+  GEMINI_MODEL_FREE: z.string().default("gemini-3.1-flash-lite"),
+  GEMINI_MODEL_PRO: z.string().default("gemini-3.5-flash"),
+  GEMINI_MODEL_REPORTS: z.string().default("gemini-3.1-pro"),
   GROQ_API_KEY: z.string().optional(),
   FIREWORKS_API_KEY: z.string().optional(),
 

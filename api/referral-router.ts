@@ -6,8 +6,8 @@ import {
   localUsers,
   referrals,
   discountCodes,
-  systemSettings,
 } from "../db/schema";
+import { getSystemSettings } from "./lib/settings-cache";
 import { eq, and, sql, count, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
@@ -30,7 +30,9 @@ export const referralRouter = router({
       code = generateCode();
       // Ensure unique
       let exists = true;
-      while (exists) {
+      let attempts = 0;
+      while (exists && attempts < 10) {
+        attempts++;
         const check = await db
           .select()
           .from(table)
@@ -41,8 +43,11 @@ export const referralRouter = router({
           .from(discountCodes)
           .where(eq(discountCodes.code, code!))
           .limit(1);
-        if (check.length === 0 && check2.length === 0) exists = false;
-        else code = generateCode();
+        if (check.length === 0 && check2.length === 0) {
+          exists = false;
+        } else {
+          code = generateCode() + Math.floor(Math.random() * 100);
+        }
       }
       await db
         .update(table)
@@ -70,12 +75,8 @@ export const referralRouter = router({
         ),
       );
 
-    const settings = await db
-      .select()
-      .from(systemSettings)
-      .where(eq(systemSettings.key, "promo_code_discount"))
-      .limit(1);
-    const discount = settings[0]?.value || "20";
+    const settings = await getSystemSettings();
+    const discount = settings["promo_code_discount"] || "20";
 
     return {
       code,

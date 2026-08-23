@@ -73,8 +73,8 @@ export default function AICenter() {
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Header */}
-      <div className="shrink-0 px-3 pt-3 pb-2 sm:px-6 sm:pt-6">
-        <div className="flex items-center gap-2 mb-3 sm:mb-4">
+      <div className="shrink-0 px-3 pt-2 pb-2 sm:px-6 sm:pt-6">
+        <div className="hidden sm:flex items-center gap-2 mb-3 sm:mb-4">
           <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg">
             <Sparkles className="w-5 h-5" />
           </div>

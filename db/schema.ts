@@ -40,6 +40,7 @@ export const users = mysqlTable(
     index("users_role_idx").on(t.role),
     index("users_plan_idx").on(t.plan),
     index("users_referral_idx").on(t.referralCode),
+    index("users_referred_by_idx").on(t.referredBy),
   ],
 );
 
@@ -70,6 +71,7 @@ export const localUsers = mysqlTable(
   (t) => [
     index("local_users_role_idx").on(t.role),
     index("local_users_plan_idx").on(t.plan),
+    index("local_users_referred_by_idx").on(t.referredBy),
   ],
 );
 
@@ -95,6 +97,8 @@ export const expenses = mysqlTable(
     contactId: int("contact_id"),
     classificationLogId: int("classification_log_id"),
     businessId: int("business_id"), // null = personal, non-null = business expense
+    walletId: int("wallet_id"), // FK to userWallets — replaces LIKE-based wallet matching
+    clientRequestId: varchar("client_request_id", { length: 64 }), // Idempotency key for retry safety
     date: datetime("date").notNull(),
     status: varchar("status", { length: 50 }).notNull().default("confirmed"), // confirmed | pending_clarification
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
@@ -112,6 +116,12 @@ export const expenses = mysqlTable(
     index("expenses_business_idx").on(t.businessId),
     index("expenses_contact_idx").on(t.contactId),
     index("expenses_classification_log_idx").on(t.classificationLogId),
+    index("expenses_wallet_idx").on(t.walletId),
+    uniqueIndex("expenses_user_client_request_unique").on(
+      t.userId,
+      t.userType,
+      t.clientRequestId,
+    ),
   ],
 );
 
@@ -207,6 +217,7 @@ export const pendingClarifications = mysqlTable(
   (t) => [
     index("clarifications_user_idx").on(t.userId, t.userType),
     index("clarifications_status_idx").on(t.status),
+    index("clarifications_expense_idx").on(t.expenseId),
   ]
 );
 
@@ -220,7 +231,10 @@ export const expenseCategories = mysqlTable("expense_categories", {
   color: varchar("color", { length: 50 }),
   isDefault: boolean("is_default").default(false),
   createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-});
+},
+(t) => [
+  index("categories_user_idx").on(t.userId, t.userType)
+]);
 
 // ─── User Wallets (3D Cards) ───
 export const userWallets = mysqlTable(
@@ -258,7 +272,11 @@ export const monthlyReports = mysqlTable("monthly_reports", {
   updatedAt: datetime("updated_at").default(
     sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
   ),
-});
+},
+(t) => [
+  index("reports_user_idx").on(t.userId, t.userType),
+  index("reports_month_idx").on(t.month)
+]);
 
 // ─── Sessions ───
 export const sessions = mysqlTable(
@@ -333,7 +351,10 @@ export const discountCodes = mysqlTable("discount_codes", {
   createdBy: int("created_by"),
   expiresAt: datetime("expires_at"),
   createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-});
+},
+(t) => [
+  index("discount_codes_creator_idx").on(t.createdBy)
+]);
 
 // ─── AI Summaries ───
 export const aiSummaries = mysqlTable(
@@ -375,7 +396,11 @@ export const ads = mysqlTable("ads", {
   isActive: boolean("is_active").default(true),
   createdBy: int("created_by"),
   createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-});
+},
+(t) => [
+  index("ads_creator_idx").on(t.createdBy),
+  index("ads_active_idx").on(t.isActive)
+]);
 
 // ─── Ad Clicks ───
 export const adClicks = mysqlTable("ad_clicks", {
@@ -385,7 +410,11 @@ export const adClicks = mysqlTable("ad_clicks", {
   userType: varchar("user_type", { length: 50 }),
   ipAddress: varchar("ip_address", { length: 100 }),
   createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-});
+},
+(t) => [
+  index("ad_clicks_ad_idx").on(t.adId),
+  index("ad_clicks_user_idx").on(t.userId, t.userType)
+]);
 
 // ─── Referrals ───
 export const referrals = mysqlTable(
@@ -745,6 +774,7 @@ export const apiKeyErrors = mysqlTable(
     index("api_key_errors_type_idx").on(t.errorType),
     index("api_key_errors_resolved_idx").on(t.resolved),
     index("api_key_errors_date_idx").on(t.createdAt),
+    index("api_key_errors_user_idx").on(t.userId),
   ],
 );
 
@@ -794,7 +824,10 @@ export const authChallenges = mysqlTable("auth_challenges", {
   userId: int("user_id"),
   userType: varchar("user_type", { length: 50 }),
   expiresAt: datetime("expires_at").notNull(),
-});
+},
+(t) => [
+  index("auth_challenges_user_idx").on(t.userId, t.userType)
+]);
 
 // ─── Notification Templates (Smart Engine) ───
 export const notificationTemplates = mysqlTable("notification_templates", {
@@ -813,7 +846,11 @@ export const notificationTemplates = mysqlTable("notification_templates", {
   createdBy: int("created_by"),
   createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: datetime("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
-});
+},
+(t) => [
+  index("notif_templates_creator_idx").on(t.createdBy),
+  index("notif_templates_event_idx").on(t.eventType)
+]);
 
 // ─── In-App Notifications (The Bell) ───
 export const inAppNotifications = mysqlTable(
@@ -864,6 +901,7 @@ export const chatConversations = mysqlTable(
     messageCount: int("message_count").default(0),
     totalTokens: int("total_tokens").default(0),
     lastMessageAt: datetime("last_message_at"),
+    metadata: json("metadata"),
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (t) => [
@@ -940,6 +978,8 @@ export const aiMemoryItems = mysqlTable(
     uniqueIndex("ai_memory_hash_unique_idx").on(t.userId, t.userType, t.contentHash),
     index("ai_memory_type_idx").on(t.memoryType),
     index("ai_memory_updated_idx").on(t.updatedAt),
+    index("ai_memory_source_conv_idx").on(t.sourceConversationId),
+    index("ai_memory_source_msg_idx").on(t.sourceMessageId),
   ],
 );
 
@@ -989,6 +1029,7 @@ export const aiActionMemory = mysqlTable(
     index("ai_action_memory_user_idx").on(t.userId, t.userType),
     index("ai_action_memory_action_idx").on(t.actionName, t.status),
     index("ai_action_memory_updated_idx").on(t.updatedAt),
+    index("ai_action_memory_conv_idx").on(t.sourceConversationId),
   ],
 );
 
@@ -1009,6 +1050,7 @@ export const aiPendingActions = mysqlTable(
     confirmedAt: datetime("confirmed_at"),
     executedAt: datetime("executed_at"),
     cancelledAt: datetime("cancelled_at"),
+    idempotencyKey: varchar("idempotency_key", { length: 255 }),
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
     updatedAt: datetime("updated_at").default(
       sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
@@ -1018,6 +1060,7 @@ export const aiPendingActions = mysqlTable(
     index("ai_pending_action_user_idx").on(t.userId, t.userType, t.status),
     index("ai_pending_action_expiry_idx").on(t.expiresAt),
     index("ai_pending_action_conversation_idx").on(t.conversationId),
+    index("ai_pending_action_idempotency_idx").on(t.idempotencyKey),
   ],
 );
 

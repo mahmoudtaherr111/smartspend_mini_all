@@ -63,9 +63,9 @@ const HARD_REQUEST_TOKEN_CAP: Record<PlanId, Record<AiUsageChannel, number>> = {
 
 /** Max AI channel events per user per minute (abuse guard) */
 const BURST_LIMIT_PER_MINUTE: Record<PlanId, number> = {
-  free: 1000,
-  pro: 1000,
-  ultra: 1000,
+  free: 20,
+  pro: 60,
+  ultra: 100,
 };
 
 export function asPlan(plan: string | undefined): PlanId {
@@ -80,23 +80,22 @@ export function parseSafeInt(
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
+import { getSystemSettings } from "./settings-cache";
+
 export async function loadSystemConfig(): Promise<Record<string, string>> {
-  const settings = await db.select().from(systemSettings);
-  const cfg: Record<string, string> = {};
-  for (const setting of settings) {
-    if (setting.value !== undefined && setting.value !== null)
-      cfg[setting.key] = setting.value;
-  }
-  return cfg;
+  return await getSystemSettings();
 }
 
 export function estimateTokensFromText(text: string): number {
   const compact = String(text || "").trim();
   if (!compact) return 0;
-  return (
-    Math.ceil(compact.length / 3) +
-    Math.ceil(compact.split(/\s+/).length * 0.35)
-  );
+  // Arabic text uses ~1.5 chars per token (vs English ~4 chars per token)
+  // due to multibyte Unicode encoding in LLM tokenizers.
+  const arabicCharCount = (compact.match(/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/g) || []).length;
+  const nonArabicCharCount = compact.length - arabicCharCount;
+  const arabicTokens = Math.ceil(arabicCharCount * 0.65);
+  const nonArabicTokens = Math.ceil(nonArabicCharCount / 4);
+  return arabicTokens + nonArabicTokens + Math.ceil(compact.split(/\s+/).length * 0.35);
 }
 
 function userLimitKey(user: AiUsageUser): string {

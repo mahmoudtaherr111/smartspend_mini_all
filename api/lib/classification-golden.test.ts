@@ -317,6 +317,37 @@ const goldenCases: GoldenCase[] = [
       { amount: 450, category: "فواتير", subCategory: "كهرباء" },
     ],
   },
+  {
+    name: "transfer to known person Seif",
+    text: "حولت لسيف 500 جنيه",
+    knownPeople: [
+      {
+        name: "سيف",
+        relationship: "صديق",
+        category: "أصدقاء",
+        subCategory: "سيف صديقك",
+      },
+    ],
+    expectedItems: [{ amount: 500, category: "أصدقاء", subCategory: "سيف صديقك" }],
+  },
+  {
+    name: "medicine from Seif Pharmacy",
+    text: "علاج من صيدلية سيف 100 جنيه",
+    expectedItems: [{ amount: 100, category: "صحة", subCategory: "صيدلية" }],
+  },
+  {
+    name: "conjunction prefix without spaces",
+    text: "100 جنيه مواصلات وب50 جنيه أكل",
+    expectedItems: [
+      { amount: 100, category: "مواصلات" },
+      { amount: 50, category: "أكل وشرب" },
+    ],
+  },
+  {
+    name: "waw-starting word وجبة should not split",
+    text: "دفعت 100 جنيه وجبة كشري",
+    expectedItems: [{ amount: 100, category: "أكل وشرب" }],
+  },
 ];
 
 function assertItem(actual: any, expected: ExpectedItem) {

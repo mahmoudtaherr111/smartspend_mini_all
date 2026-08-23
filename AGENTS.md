@@ -61,9 +61,17 @@ You are the Senior Full-Stack & AI Architecture Engineer for SmartSpend AI. Your
 - `mapModelName(modelName)` automatically intercepts and routes:
   - `flash` / `1.5-flash` / `2.0-flash` $\rightarrow$ `gemini-3.1-flash-lite`
   - `pro` / `ultra` / `1.5-pro` $\rightarrow$ `gemini-3.5-pro`
-  - External models starting with `llama-`, `deepseek-`, `mixtral` $\rightarrow$ automatically routed via `Groq` or `Fireworks` APIs (`callFireworksAPI`).
+  - External models starting with `llama-`, `deepseek-`, `mixtral` $\rightarrow$ automatically routed via `Groq`, `Fireworks`, or `NVIDIA` APIs (`api/lib/ai-provider-registry.ts`).
 
-### Gotcha #5: Zero-Polling SSE & Paymob HMAC Webhooks (`api/boot.ts`)
+### Gotcha #5: System Settings In-Memory Cache (`api/lib/settings-cache.ts`)
+- **NEVER run direct `db.select().from(systemSettings)`:** Always use `getSystemSettings()` which caches settings in-process with a 5-minute TTL.
+- After any admin update to `system_settings`, call `invalidateSettingsCache()` to immediately clear the cached state.
+
+### Gotcha #6: Complete Drizzle Relations Coverage (`db/relations.ts`)
+- **All 48 tables** have defined relations in `db/relations.ts`.
+- Every dual-user table features `localUser` and `oauthUser` relations. Always use relational queries `db.query.X.findMany({ with: { ... } })` with full type safety.
+
+### Gotcha #7: Zero-Polling SSE & Paymob HMAC Webhooks (`api/boot.ts`)
 - **WhatsApp OTP:** Verification uses zero-polling Server-Sent Events mounted at `GET /api/sse/otp?phone=X`. Do not invent polling loops in the frontend.
 - **Paymob Webhooks:** Mounted at `POST /api/webhooks/paymob`. Requires exact HMAC string concatenation validation (`hmacParam` vs `PAYMOB_HMAC_SECRET`).
 
@@ -81,6 +89,9 @@ npm run backend:dev
 # Run TypeScript type validation across the entire monorepo (MANDATORY BEFORE EVERY COMMIT)
 npm run check
 
+# Run full Vitest test suite (424 tests across 68 test suites)
+npm run test
+
 # Run Drizzle schema generation & push changes to MySQL 8
 npm run db:generate && npm run db:push
 ```
@@ -93,13 +104,14 @@ To conserve tokens and eliminate context confusion, all authoritative domain spe
 
 | Task / Domain Area | Authoritative SSoT File | Key Tricky Topics & Gotchas Documented |
 | :--- | :--- | :--- |
-| **System Architecture & Data Flow** | [`docs/01-ARCHITECTURE.md`](file:///e:/smartspend_V1_fixed/docs/01-ARCHITECTURE.md) | Monorepo folder tree, Vite Hono plugin setup (`boot.ts` vs `server.ts`), CORS/CSRF dev tunnel origins (`.loca.lt`, `.serveousercontent`), and SPA fallback. |
-| **Database Schema (All 48 Tables)** | [`docs/02-DATABASE_SCHEMA.md`](file:///e:/smartspend_V1_fixed/docs/02-DATABASE_SCHEMA.md) | Drizzle ORM exports, 6 logical table groups, relationships (`db/relations.ts`), `isSilenced` bypass flags, and vector column indices. |
-| **Hybrid AI Classification Engine** | [`docs/03-AI_CLASSIFICATION_ENGINE.md`](file:///e:/smartspend_V1_fixed/docs/03-AI_CLASSIFICATION_ENGINE.md) | 5-Layer waterfall (`Zero-Token Cache` $\rightarrow$ `Rules` $\rightarrow$ `Vector` $\rightarrow$ `Gemini` $\rightarrow$ `Dispute Resolver`), `egyptian-dictionary.ts` slang safeguards, and `ai-usage-policy.ts` token capping. |
-| **tRPC Routers & Shared Contracts** | [`docs/04-API_AND_TRPC_ROUTERS.md`](file:///e:/smartspend_V1_fixed/docs/04-API_AND_TRPC_ROUTERS.md) | Master `appRouter` map (21 sub-routers), `contracts/constants.ts` input limits (`ExpenseInputLimits`), and standardized error throwing (`contracts/errors.ts`). |
-| **Dual Auth, Passkeys & RBAC** | [`docs/05-AUTH_AND_SECURITY.md`](file:///e:/smartspend_V1_fixed/docs/05-AUTH_AND_SECURITY.md) | Google OAuth cookie flow, WebAuthn Passkeys (`userCredentials` + `authChallenges`), local OTP login, and `middleware.ts` procedure rules. |
+| **System Architecture & Data Flow** | [`docs/01-ARCHITECTURE.md`](file:///e:/smartspend_V1_fixed/docs/01-ARCHITECTURE.md) | Monorepo folder tree, Vite Hono plugin setup (`boot.ts` vs `server.ts`), Redis non-blocking SCAN, Settings Cache, and Cron schedules. |
+| **Database Schema (All 48 Tables)** | [`docs/02-DATABASE_SCHEMA.md`](file:///e:/smartspend_V1_fixed/docs/02-DATABASE_SCHEMA.md) | Drizzle ORM exports, 6 logical table groups, 100% full relationships (`db/relations.ts`), 15 indexes, `walletId` & `clientRequestId`, and vector indices. |
+| **Hybrid AI Classification Engine** | [`docs/03-AI_CLASSIFICATION_ENGINE.md`](file:///e:/smartspend_V1_fixed/docs/03-AI_CLASSIFICATION_ENGINE.md) | 5-Layer waterfall (`Muscle Memory selective projection` $\rightarrow$ `Rules` $\rightarrow$ `Vector` $\rightarrow$ `Gemini/DeepSeek` $\rightarrow$ `Dispute Resolver`), `taxonomy-ssot.ts`, and token capping. |
+| **tRPC Routers & Shared Contracts** | [`docs/04-API_AND_TRPC_ROUTERS.md`](file:///e:/smartspend_V1_fixed/docs/04-API_AND_TRPC_ROUTERS.md) | Master `appRouter` map (21 sub-routers), ACID transactions in `expenseRouter`, pagination in `analyticsRouter`, `constants.ts` input limits, and standardized error throwing. |
+| **Dual Auth, Passkeys & RBAC** | [`docs/05-AUTH_AND_SECURITY.md`](file:///e:/smartspend_V1_fixed/docs/05-AUTH_AND_SECURITY.md) | Google OAuth cookie flow, WebAuthn Passkeys (`userCredentials` + `authChallenges`), local OTP login, idempotent transactions, and `middleware.ts` procedure rules. |
 | **SMS Ingestion, Apple Pay & WhatsApp** | [`docs/06-SMS_AND_APPLE_PAY.md`](file:///e:/smartspend_V1_fixed/docs/06-SMS_AND_APPLE_PAY.md) | Android companion app (`webhookTokens` auth), Apple Pay iOS capture, WhatsApp bot (`otpEvents` SSE), and Firebase Cloud Messaging (`pushSubscriptions`). |
-| **AI Chatbot Agent & RAG System** | [`docs/07-AI_CENTER_AGENT.md`](file:///e:/smartspend_V1_fixed/docs/07-AI_CENTER_AGENT.md) | Chatbot intent routing, short-term RAG conversation summaries, persistent semantic memory signals, vector scoring formula, and capabilities vs constraints. |
-| **AI Product & Rebuild Contract** | [`docs/08-AI_AGENT_PRODUCT_AND_REBUILD_PLAN.md`](file:///e:/smartspend_V1_fixed/docs/08-AI_AGENT_PRODUCT_AND_REBUILD_PLAN.md) | Production goals, user jobs, cost policy, data migrations for contacts/classification traces, and PWA safety gates. |
+| **AI Chatbot Agent & RAG System** | [`docs/07-AI_CENTER_AGENT.md`](file:///e:/smartspend_V1_fixed/docs/07-AI_CENTER_AGENT.md) | Chatbot intent routing, SQL Aggregation fast path in finance resolvers, short-term RAG summaries, persistent semantic memory signals, and function calling tools. |
+| **AI Product & Rebuild Contract** | [`docs/08-AI_AGENT_PRODUCT_AND_REBUILD_PLAN.md`](file:///e:/smartspend_V1_fixed/docs/08-AI_AGENT_PRODUCT_AND_REBUILD_PLAN.md) | Production goals, user jobs, cost policy, canonical contacts, classification traces, taxonomy SSoT, and PWA safety gates. |
+| **Release & Incident Playbook** | [`docs/09-RELEASE_AND_PLAYBOOK.md`](file:///e:/smartspend_V1_fixed/docs/09-RELEASE_AND_PLAYBOOK.md) | Pre-release checklist, deployment steps, outage mitigation, database recovery, and observability playbooks. |
 
 > ⚠️ **ARCHIVE NOTICE:** Any documentation or plan inside `docs/archive/` (`old-architecture-plans/` and `reports-2026/`) is **deprecated historical reference**. Do not use archived reports to guide architectural decisions or code syntax.

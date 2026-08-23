@@ -78,8 +78,8 @@ import { Textarea } from "@/components/ui/textarea";
 export default function Admin() {
   const { user } = useAuth();
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
-  const [planFilter, setPlanFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState<"all" | "user" | "moderator" | "admin">("all");
+  const [planFilter, setPlanFilter] = useState<"all" | "free" | "pro" | "ultra">("all");
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showSessions, setShowSessions] = useState(false);
   const [showExports, setShowExports] = useState(false);
@@ -91,6 +91,14 @@ export default function Admin() {
   const [messageUser, setMessageUser] = useState<any>(null);
   const [messageChannel, setMessageChannel] = useState<"whatsapp" | "email">("whatsapp");
   const [messageText, setMessageText] = useState("");
+
+  // Moderators can work with users and support tickets, but the overview is
+  // intentionally admin-only. Avoid an initial forbidden dashboard request.
+  useEffect(() => {
+    if (user?.role === "moderator" && activeTab === "overview") {
+      setActiveTab("tickets");
+    }
+  }, [activeTab, user?.role]);
 
   const sendWhatsappMutation = trpc.adminWhatsapp.sendDirectMessage.useMutation({
     onSuccess: (res) => {
@@ -112,8 +120,13 @@ export default function Admin() {
     revokeSession,
     voiceUsage,
   } = useAdmin({
-    dashboard: activeTab === "overview",
+    dashboard: activeTab === "overview" && user?.role === "admin",
     users: activeTab === "users",
+    userFilters: {
+      search: search.trim() || undefined,
+      role: roleFilter === "all" ? undefined : roleFilter,
+      plan: planFilter === "all" ? undefined : planFilter,
+    },
     activity: false,
     classification: activeTab === "ai",
     voice: activeTab === "ai",
@@ -142,6 +155,11 @@ export default function Admin() {
   const subsQuery = trpc.admin.listSubscriptionsAdmin.useQuery(
     { page: 1, limit: 20 },
     { enabled: activeTab === "billing" && user?.role === "admin" },
+  );
+
+  const aiCostQuery = trpc.admin.getAICostOverview.useQuery(
+    { limit: 250 },
+    { enabled: activeTab === "ai" && user?.role === "admin" },
   );
 
   const closeTicket = trpc.support.close.useMutation({
@@ -192,17 +210,7 @@ export default function Admin() {
 
   const handlePrint = () => window.print();
 
-  const filteredUsers =
-    users.data?.users?.filter((u: any) => {
-      const matchSearch =
-        !search ||
-        u.name?.includes(search) ||
-        u.email?.includes(search) ||
-        u.phone?.includes(search);
-      const matchRole = roleFilter === "all" || u.role === roleFilter;
-      const matchPlan = planFilter === "all" || u.plan === planFilter;
-      return matchSearch && matchRole && matchPlan;
-    }) || [];
+  const filteredUsers = users.data?.users || [];
 
   if (user?.role !== "admin" && user?.role !== "moderator") {
     return (
@@ -274,12 +282,14 @@ export default function Admin() {
           className="no-print"
         >
           <TabsList className="mb-8 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md p-1.5 rounded-2xl shadow-sm border border-white/50 dark:border-slate-800 flex-wrap h-auto justify-start gap-1 w-full max-w-full">
-            <TabsTrigger
-              value="overview"
-              className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:data-[state=active]:bg-indigo-900/30 transition-all"
-            >
-              <LayoutDashboard className="w-4 h-4 shrink-0" /> نظرة عامة
-            </TabsTrigger>
+            {user?.role === "admin" && (
+              <TabsTrigger
+                value="overview"
+                className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:data-[state=active]:bg-indigo-900/30 transition-all"
+              >
+                <LayoutDashboard className="w-4 h-4 shrink-0" /> نظرة عامة
+              </TabsTrigger>
+            )}
             <TabsTrigger
               value="users"
               className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/30 transition-all"
@@ -473,7 +483,7 @@ export default function Admin() {
                       قاعدة بيانات المستخدمين
                     </CardTitle>
                     <CardDescription>
-                      إدارة {filteredUsers.length} حساب مسجل بالنظام
+                      عرض {filteredUsers.length} من {users.data?.total ?? filteredUsers.length} حساب مسجل بالنظام
                     </CardDescription>
                   </div>
                   <div className="flex flex-wrap gap-3 w-full md:w-auto">
@@ -486,7 +496,12 @@ export default function Admin() {
                         className="pe-10 bg-white dark:bg-slate-950"
                       />
                     </div>
-                    <Select value={roleFilter} onValueChange={setRoleFilter}>
+                    <Select
+                      value={roleFilter}
+                      onValueChange={(value) =>
+                        setRoleFilter(value as typeof roleFilter)
+                      }
+                    >
                       <SelectTrigger className="w-32 bg-white dark:bg-slate-950">
                         <SelectValue placeholder="الصلاحية" />
                       </SelectTrigger>
@@ -497,7 +512,12 @@ export default function Admin() {
                         <SelectItem value="admin">إدارة عليا</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Select value={planFilter} onValueChange={setPlanFilter}>
+                    <Select
+                      value={planFilter}
+                      onValueChange={(value) =>
+                        setPlanFilter(value as typeof planFilter)
+                      }
+                    >
                       <SelectTrigger className="w-32 bg-white dark:bg-slate-950">
                         <SelectValue placeholder="الباقة" />
                       </SelectTrigger>
@@ -883,6 +903,13 @@ export default function Admin() {
                         </p>
                       )}
                     </div>
+                  </section>
+                  <section className="border-t pt-6 border-slate-100 dark:border-slate-800">
+                    <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+                      <Brain className="w-5 h-5 text-indigo-600" />
+                      مراقبة جودة وتكلفة الـ AI (AI Cost & Quality Observability)
+                    </h2>
+                    <AICostDashboard query={aiCostQuery} />
                   </section>
                 </TabsContent>
 
@@ -1801,6 +1828,9 @@ function ClassificationDashboard() {
                           const parts = l.modelUsed.split(" | Parse: ");
                           parseModel = parts[1] || parseModel;
                         }
+                        if (parseModel === "rule_engine") {
+                          parseModel = null;
+                        }
 
                         return parseModel ? (
                           <div
@@ -1887,4 +1917,182 @@ function ClassificationDashboard() {
   );
 }
 
+function AICostDashboard({ query }: { query: any }) {
+  if (query.isLoading) {
+    return <div className="text-center py-8 text-sm text-slate-500">جاري تحميل بيانات التكلفة والاتصال...</div>;
+  }
+  if (query.isError) {
+    return <div className="text-center py-8 text-sm text-red-500 font-medium">فشل تحميل إحصائيات التكلفة: {query.error?.message || String(query.error)}</div>;
+  }
 
+  const data = query.data;
+  if (!data || !data.totals) {
+    return <div className="text-center py-8 text-sm text-slate-500">لا توجد بيانات تكلفة متاحة حالياً.</div>;
+  }
+
+  const { totals, byChannel, byRoute, recent } = data;
+
+  return (
+    <div className="space-y-6">
+      {/* 1. Totals Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          icon={<Brain className="w-5 h-5 text-indigo-500" />}
+          label="إجمالي Tokens المستخدمة"
+          value={totals.totalTokens.toLocaleString("ar-EG")}
+          color="indigo"
+        />
+        <StatCard
+          icon={<Activity className="w-5 h-5 text-pink-500" />}
+          label="التكلفة التقريبية للـ AI"
+          value={`${(totals.totalCostUnits / 1000).toFixed(3)} EGP`}
+          color="pink"
+        />
+        <StatCard
+          icon={<Clock className="w-5 h-5 text-amber-500" />}
+          label="متوسط زمن الاستجابة"
+          value={`${(totals.avgLatencyMs / 1000).toFixed(2)} ثانية`}
+          color="amber"
+        />
+        <StatCard
+          icon={<AlertCircle className="w-5 h-5 text-emerald-500" />}
+          label="توفير الكاش (Cache Hit)"
+          value={`${Math.round((totals.cacheHitRate ?? 0) * 100)}%`}
+          color="emerald"
+        />
+      </div>
+
+      {/* 2. Channels Breakdown & Route stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Channels */}
+        <Card className="border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm overflow-hidden">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-bold flex items-center gap-2">
+              <Activity className="w-4 h-4 text-emerald-500" />
+              توزيع العمليات حسب القنوات (Channels)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <table className="w-full text-xs text-end">
+              <thead className="text-muted-foreground border-b pb-2">
+                <tr>
+                  <th className="py-2 px-1 text-end">القناة</th>
+                  <th className="py-2 px-1 text-end">العدد</th>
+                  <th className="py-2 px-1 text-end">الـ Tokens</th>
+                  <th className="py-2 px-1 text-end">متوسط الاستجابة</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(byChannel).map(([channel, metrics]: [string, any]) => (
+                  <tr key={channel} className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
+                    <td className="py-2.5 px-1 font-semibold text-slate-800 dark:text-slate-200 text-end">{channel === "whatsapp" ? "واتساب" : channel === "telegram" ? "تليجرام" : "ويب / تطبيق"}</td>
+                    <td className="py-2.5 px-1 text-end">{metrics.count}</td>
+                    <td className="py-2.5 px-1 text-end">{metrics.totalTokens.toLocaleString("ar-EG")}</td>
+                    <td className="py-2.5 px-1 text-end">{(metrics.avgLatencyMs / 1000).toFixed(2)}s</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+
+        {/* Routes */}
+        <Card className="border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm overflow-hidden">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-bold flex items-center gap-2">
+              <Brain className="w-4 h-4 text-purple-500" />
+              الـ Routes الأكثر طلباً بالذكاء الاصطناعي
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <table className="w-full text-xs text-end">
+              <thead className="text-muted-foreground border-b pb-2">
+                <tr>
+                  <th className="py-2 px-1 text-end">الـ Intent / Route</th>
+                  <th className="py-2 px-1 text-end">العدد</th>
+                  <th className="py-2 px-1 text-end">نسبة الـ Fallback</th>
+                  <th className="py-2 px-1 text-end">متوسط الاستجابة</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(byRoute).slice(0, 5).map(([route, metrics]: [string, any]) => (
+                  <tr key={route} className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
+                    <td className="py-2.5 px-1 font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[120px] text-end" title={route}>{route}</td>
+                    <td className="py-2.5 px-1 text-end">{metrics.count}</td>
+                    <td className="py-2.5 px-1 text-end">{Math.round(metrics.fallbackRate * 100)}%</td>
+                    <td className="py-2.5 px-1 text-end">{(metrics.avgLatencyMs / 1000).toFixed(2)}s</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 3. Recent cost events log */}
+      <Card className="border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm overflow-hidden">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-bold flex items-center gap-2">
+            <Clock className="w-4 h-4 text-amber-500" />
+            سجل تكلفة وموثوقية عمليات الـ AI الأخيرة
+          </CardTitle>
+          <CardDescription className="text-xs">آخر 15 عملية تمت مراقبتها وتحليل جودتها</CardDescription>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <table className="w-full text-xs text-end">
+            <thead className="text-muted-foreground border-b pb-2">
+              <tr>
+                <th className="py-2 px-2 text-right">المسار / Intent</th>
+                <th className="py-2 px-2 text-end">الموديل</th>
+                <th className="py-2 px-2 text-end">نوع العميل</th>
+                <th className="py-2 px-2 text-end">عدد الـ Tokens</th>
+                <th className="py-2 px-2 text-end">الزمن (ثانية)</th>
+                <th className="py-2 px-2 text-end">حالة الـ Cache</th>
+                <th className="py-2 px-2 text-end">استدعاء بديل (Fallback)</th>
+                <th className="py-2 px-2 text-end">الوقت</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recent.slice(0, 15).map((event: any, i: number) => (
+                <tr key={event.id ?? i} className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
+                  <td className="py-2.5 px-2 text-right font-medium text-slate-700 dark:text-slate-300">{event.route}</td>
+                  <td className="py-2.5 px-2 text-end">
+                    <span className="font-mono text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300">
+                      {event.model || "—"}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-2 text-end">
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] ${event.userType === "oauth" ? "bg-blue-500/10 text-blue-500" : "bg-teal-500/10 text-teal-500"}`}>
+                      {event.userType === "oauth" ? "OAuth" : "OTP محلي"}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-2 text-end">{event.totalTokens}</td>
+                  <td className="py-2.5 px-2 text-end">{(event.latencyMs / 1000).toFixed(2)}s</td>
+                  <td className="py-2.5 px-2 text-end">
+                    {event.cacheHit === true ? (
+                      <span className="text-emerald-500 font-semibold">Hit 🎯</span>
+                    ) : event.cacheHit === false ? (
+                      <span className="text-slate-400">Miss ❌</span>
+                    ) : (
+                      <span className="text-slate-400">-</span>
+                    )}
+                  </td>
+                  <td className="py-2.5 px-2 text-end">
+                    {event.fallback ? (
+                      <span className="text-amber-500 font-semibold">نعم ⚠️</span>
+                    ) : (
+                      <span className="text-slate-400">لا</span>
+                    )}
+                  </td>
+                  <td className="py-2.5 px-2 text-slate-400 text-end">
+                    {event.createdAt ? new Date(event.createdAt).toLocaleTimeString("ar-EG", { hour: "numeric", minute: "2-digit" }) : "-"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

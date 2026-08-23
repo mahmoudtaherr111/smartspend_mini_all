@@ -8,7 +8,15 @@ export const sessionRouter = router({
   // ─── My Sessions ───
   listMine: authedProcedure.query(async ({ ctx }) => {
     return await db
-      .select()
+      .select({
+        id: sessions.id,
+        userId: sessions.userId,
+        userType: sessions.userType,
+        ipAddress: sessions.ipAddress,
+        userAgent: sessions.userAgent,
+        expiresAt: sessions.expiresAt,
+        createdAt: sessions.createdAt,
+      })
       .from(sessions)
       .where(
         and(
@@ -88,11 +96,21 @@ export const sessionRouter = router({
         }
       }
       if (activeOnly) conditions.push(gte(sessions.expiresAt, new Date()));
-      let query = db.select().from(sessions).$dynamic();
+      let query = db.select({
+        id: sessions.id,
+        userId: sessions.userId,
+        userType: sessions.userType,
+        ipAddress: sessions.ipAddress,
+        userAgent: sessions.userAgent,
+        expiresAt: sessions.expiresAt,
+        createdAt: sessions.createdAt,
+      }).from(sessions).$dynamic();
       if (conditions.length > 0) query = query.where(and(...conditions));
       query = query.orderBy(desc(sessions.createdAt));
       const list = await query.limit(limit).offset(offset);
-      const total = await db.select({ count: count() }).from(sessions);
+      let totalQuery = db.select({ count: count() }).from(sessions).$dynamic();
+      if (conditions.length > 0) totalQuery = totalQuery.where(and(...conditions));
+      const total = await totalQuery;
       return { list, total: total[0]?.count ?? 0, page, limit };
     }),
 

@@ -6,6 +6,7 @@ import { trpcServer } from "@hono/trpc-server";
 import { appRouter } from "./router";
 import { createContext } from "./context";
 import { env } from "./lib/env";
+import { getClientIp } from "./lib/get-client-ip";
 import { smsApp } from "./sms-router";
 import { createHmac } from "crypto";
 import { grantProSubscription } from "./lib/subscription-service";
@@ -16,7 +17,7 @@ import { csrf } from "hono/csrf";
 import { streamSSE } from "hono/streaming";
 import { otpEvents } from "./services/whatsapp-service";
 import { db } from "./queries/connection";
-import { sessions } from "../db/schema";
+import { sessions, classificationLogs } from "../db/schema";
 import { lt } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
@@ -40,6 +41,20 @@ cron.schedule("0 0 * * *", async () => {
     console.log(`[Cron] Cleaned up expired sessions`);
   } catch (error) {
     console.error("[Cron] Failed to clean up expired sessions:", error);
+  }
+});
+
+// Cron job to clean up classification logs older than 180 days (Sundays at 3 AM)
+cron.schedule("0 3 * * 0", async () => {
+  try {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 180);
+    const result = await db.delete(classificationLogs).where(
+      lt(classificationLogs.createdAt, cutoff)
+    );
+    console.log(`[CRON] Cleaned up old classification logs, cutoff: ${cutoff.toISOString()}`);
+  } catch (err) {
+    console.error("[CRON] Classification logs cleanup failed:", err);
   }
 });
 
@@ -198,12 +213,29 @@ app.use(
   }),
 );
 
+const sseRateLimit = new Map<string, { count: number; resetAt: number }>();
+
 // ─── SSE Endpoint for Zero-Polling OTP Verification ───
 app.get("/api/sse/otp", (c) => {
   const phone = c.req.query("phone");
   if (!phone) return c.text("Phone required", 400);
 
+  const clientIp = getClientIp(c.req.raw) || 'unknown';
+  const now = Date.now();
+  const sseEntry = sseRateLimit.get(clientIp);
+  if (sseEntry && sseEntry.resetAt > now && sseEntry.count >= 5) {
+    return c.text('Too many SSE connections', 429);
+  }
+  if (!sseEntry || sseEntry.resetAt <= now) {
+    sseRateLimit.set(clientIp, { count: 1, resetAt: now + 5 * 60 * 1000 });
+  } else {
+    sseEntry.count++;
+  }
+
   return streamSSE(c, async (stream) => {
+    const MAX_SSE_DURATION = 5 * 60 * 1000; // 5 minutes max to prevent memory leaks
+    const startTime = Date.now();
+
     const listener = async (data: any) => {
       await stream.writeSSE({ data: JSON.stringify(data) });
     };
@@ -214,12 +246,18 @@ app.get("/api/sse/otp", (c) => {
       otpEvents.off(`otp:${phone}`, listener);
     });
 
-    // Keep alive to prevent connection closure
-    while (!c.req.raw.signal.aborted) {
+    // Keep alive with max duration guard
+    while (!c.req.raw.signal.aborted && (Date.now() - startTime) < MAX_SSE_DURATION) {
       await stream.sleep(15000);
       if (!c.req.raw.signal.aborted) {
         await stream.writeSSE({ event: "ping", data: "ping" });
       }
+    }
+
+    // Clean up listener on timeout (abort handler covers client disconnect)
+    otpEvents.off(`otp:${phone}`, listener);
+    if (!c.req.raw.signal.aborted) {
+      await stream.writeSSE({ event: "timeout", data: JSON.stringify({ message: "SSE connection timed out. Reconnect if needed." }) });
     }
   });
 });
@@ -359,7 +397,8 @@ app.get("/health", (c) =>
 );
 
 // Serve frontend static assets & run server in production mode
-if (env.NODE_ENV === "production") {
+const isDirectBootEntry = !process.argv[1] || process.argv[1].includes("boot");
+if (env.NODE_ENV === "production" && isDirectBootEntry) {
   const { serve } = await import("@hono/node-server");
   const { serveStatic } = await import("@hono/node-server/serve-static");
 
@@ -399,6 +438,7 @@ if (fs.existsSync(path.join(sessionDir, "creds.json"))) {
   });
 }
 
+export { app };
 export default {
   port: parseInt(env.PORT),
   fetch: app.fetch,

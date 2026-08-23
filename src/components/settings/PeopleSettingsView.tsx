@@ -34,6 +34,7 @@ import {
 import { useToast } from "@/components/ui/sonner";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useHistoryBound } from "@/hooks/useHistoryBound";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -642,6 +643,7 @@ function EditContactDialog({
   onSave: (data: { name?: string; relation?: string; contactType?: ContactTypeValue }) => void;
   isLoading: boolean;
 }) {
+  useHistoryBound(!!contact, onClose);
   const isMobile = useIsMobile();
   const [name, setName] = useState("");
   const [relation, setRelation] = useState("");
@@ -718,6 +720,7 @@ function MergeDialog({
   onOpenChange: (open: boolean) => void;
   contacts: Contact[];
 }) {
+  useHistoryBound(open, () => onOpenChange(false));
   const { toast } = useToast();
   const utils = trpc.useUtils();
   const isMobile = useIsMobile();

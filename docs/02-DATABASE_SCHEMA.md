@@ -1,108 +1,114 @@
-# SmartSpend AI — Database Schema Reference (48 Tables)
+# SmartSpend AI — Database Schema Reference (All 48 Tables)
 
-> **AI AGENT SSOT:** This document defines the MySQL database groups, relationships, and schema-specific development gotchas.
+> **AI AGENT SSOT:** This document defines the MySQL database groups, 100% Drizzle ORM relationships (`db/relations.ts`), indexes, and schema-specific development gotchas.
 
 ---
 
 ## 1. 🗄️ Database Logical Groups (48 Tables)
 
 ### Group A: Identity & Sessions (6 Tables)
-| Table Variable | SQL Table Name | Key Columns & Pointers |
+| Table Variable | SQL Table Name | Key Columns & Indexes |
 | :--- | :--- | :--- |
-| `users` | `users` | `id`, `name`, `email`, `avatar`, `role`, `plan` (OAuth). |
-| `localUsers` | `local_users` | `id`, `name`, `password_hash`, `phone`, `role`, `plan` (Local). |
-| `sessions` | `sessions` | `id`, `token`, `userId`, `userType` (OAuth vs Local). |
-| `userCredentials`| `user_credentials` | WebAuthn credentials, public key strings, device counters. |
-| `authChallenges` | `auth_challenges` | Ephemeral challenge tokens used during biometric sign-ins. |
-| `webhookTokens` | `webhook_tokens` | Secure user tokens for third-party Android/iOS SMS ingest. |
+| `users` | `users` | `id`, `name`, `email`, `avatar`, `role`, `plan`, `referralCode`, `referredBy`, `currentStreak`, `highestStreak`, `lastStreakAt`. <br> *Indexes:* `role`, `plan`, `referralCode`, `referredBy`. |
+| `localUsers` | `local_users` | `id`, `name`, `phone`, `password`, `email`, `avatar`, `role`, `plan`, `referralCode`, `referredBy`, `aiTokensUsed`, `currentStreak`, `highestStreak`, `lastStreakAt`. <br> *Indexes:* `role`, `plan`, `referredBy`. |
+| `sessions` | `sessions` | `id`, `token`, `userId`, `userType`, `expiresAt`. <br> *Indexes:* `(userId, userType)`, `token`, `expiresAt`. |
+| `userCredentials`| `user_credentials` | WebAuthn credentials (`id`, `userId`, `userType`, `publicKey`, `counter`, `deviceType`, `backedUp`, `transports`, `lastUsedAt`). <br> *Indexes:* `(userId, userType)`. |
+| `authChallenges` | `auth_challenges` | Ephemeral challenge tokens used during biometric sign-ins (`id`, `challenge`, `userId`, `userType`, `expiresAt`). <br> *Indexes:* `(userId, userType)`. |
+| `webhookTokens` | `webhook_tokens` | Secure user tokens for Android/iOS companion apps (`token`, `userId`, `userType`, `name`). <br> *Indexes:* `(userId, userType)`, `token`. |
 
 ---
 
 ### Group B: Financial Core Ledger (6 Tables)
-| Table Variable | SQL Table Name | Key Columns & Pointers |
+| Table Variable | SQL Table Name | Key Columns & Indexes |
 | :--- | :--- | :--- |
-| `expenses` | `expenses` | `id`, `amount`, `currency`, `categoryId`, `merchant`, `walletId`. |
-| `expenseCategories`| `expense_categories` | User-defined or global system expense categories. |
-| `userWallets` | `user_wallets` | Accounts (Cash, Bank, Vodafone Cash, InstaPay, Credit Card). |
-| `financialGoals` | `financial_goals` | Savings/debt goals, targets, dates, current savings. |
-| `userBudgets` | `user_budgets` | Budget limits mapped per category or user wallet. |
-| `monthlyReports` | `monthly_reports` | Compiled monthly spending data, averages, and fact metrics. |
+| `expenses` | `expenses` | `id`, `userId`, `userType`, `type`, `amount`, `category`, `subCategory`, `description`, `rawText`, `source`, `placeHint`, `parsedMetadata`, `contactId`, `classificationLogId`, `businessId`, `walletId`, `clientRequestId`, `date`, `status`. <br> *Indexes:* `(userId, userType)`, `date`, `(userId, userType, date)`, `type`, `category`, `status`, `businessId`, `contactId`, `classificationLogId`, `walletId`, unique `(userId, userType, clientRequestId)`. |
+| `expenseCategories`| `expense_categories` | User-defined and system categories (`id`, `userId`, `userType`, `name`, `icon`, `color`, `isDefault`). <br> *Indexes:* `(userId, userType)`. |
+| `userWallets` | `user_wallets` | Accounts (`id`, `userId`, `userType`, `name`, `provider`, `lastFourDigits`, `balance`). <br> *Indexes:* `(userId, userType)`. |
+| `financialGoals` | `financial_goals` | Savings/debt goals (`id`, `userId`, `userType`, `title`, `targetAmount`, `targetDate`, `status`, `aiPlan`, `aiAlerts`). <br> *Indexes:* `(userId, userType)`, `status`. |
+| `userBudgets` | `user_budgets` | Budget limits (`id`, `userId`, `userType`, `title`, `category`, `monthlyLimit`, `linkedGoalId`, `status`, `alertThresholdPercent`). <br> *Indexes:* `(userId, userType, status)`, `category`, `linkedGoalId`. |
+| `monthlyReports` | `monthly_reports` | Compiled monthly spending summaries (`id`, `userId`, `userType`, `month`, `totalAmount`, `totalIncome`, `categoryBreakdown`, `insights`, `aiReport`). <br> *Indexes:* `(userId, userType)`, `month`. |
 
 ---
 
 ### Group C: Freelance & Contact Relationships (4 Tables)
-| Table Variable | SQL Table Name | Key Columns & Pointers |
+| Table Variable | SQL Table Name | Key Columns & Indexes |
 | :--- | :--- | :--- |
-| `userBusinesses` | `user_businesses` | Business mode ledgers for freelancers and entrepreneurs. |
-| `businessCategories`| `business_categories`| Tax deduction codes and business categorizations. |
-| `userContacts` | `user_contacts` | Directory of people, friends, clients, debtors, creditors. |
-| `pendingClarifications`| `pending_clarifications`| Incomplete transactions waiting for user categorization reviews. |
+| `userBusinesses` | `user_businesses` | Freelancer/business mode ledger (`id`, `userId`, `userType`, `name`, `type`, `isActive`). <br> *Indexes:* `(userId, userType)`, `isActive`. |
+| `businessCategories`| `business_categories`| Tax deduction codes & business classifications (`businessId`, `name`, `nameAr`, `type`, `keywords`). <br> *Indexes:* `businessId`. |
+| `userContacts` | `user_contacts` | Directory of contacts (`id`, `userId`, `userType`, `name`, `relationship`, `isSilenced`, `transactionCount`). <br> *Indexes:* `(userId, userType)`. |
+| `pendingClarifications`| `pending_clarifications`| Incomplete transactions waiting for user review (`id`, `userId`, `userType`, `expenseId`, `question`, `originalText`, `status`, `contextData`). <br> *Indexes:* `(userId, userType)`, `status`, `expenseId`. |
 
 ---
 
 ### Group D: AI Layer & Behavioral Memory (12 Tables)
-| Table Variable | SQL Table Name | Key Columns & Pointers |
+| Table Variable | SQL Table Name | Key Columns & Indexes |
 | :--- | :--- | :--- |
-| `aiSummaries` | `ai_summaries` | Daily/weekly AI generated spending trend analyses. |
-| `aiConversationSummaries`| `ai_conversation_summaries`| Preserves LLM token budget by summarizing chat histories. |
-| `aiMemoryItems` | `ai_memory_items` | AI behavioral memory slots for personalized financial recommendations. |
-| `aiMemoryEmbeddings`| `ai_memory_embeddings`| Vector embeddings mapped to user memories for semantic checks. |
-| `aiActionMemory` | `ai_action_memory` | Tracks autonomous actions taken by the AI. |
-| `aiPendingActions`| `ai_pending_actions` | Actions that must be approved by the user (e.g. transfers). |
-| `aiActionAuditLogs`| `ai_action_audit_logs`| Audit logs for compliance of AI transaction changes. |
-| `classificationLogs`| `classification_logs` | Performance statistics and logs for the 5-layer pipeline. |
-| `onboardingQuestions`| `onboarding_questions`| Setup questionnaire records for model calibration. |
-| `userDictionaries`| `user_dictionaries` | Custom Egyptian/Arabic names mapped per user. |
-| `profileLearningEvents`| `profile_learning_events`| Events recorded when users correct AI predictions. |
-| `monthlyBehaviorSnapshots`| `monthly_behavior_snapshots`| Longitudinal user behavior vector snapshots. |
+| `aiSummaries` | `ai_summaries` | AI generated spending trend analyses (`userId`, `userType`, `period`, `periodValue`, `content`). <br> *Indexes:* `(userId, userType)`, unique `(userId, userType, period, periodValue)`. |
+| `aiConversationSummaries`| `ai_conversation_summaries`| Preserves LLM token budget (`conversationId`, `userId`, `userType`, `capsule`, `runningSummary`, `messageCount`). <br> *Indexes:* unique `conversationId`, `(userId, userType)`, `updatedAt`. |
+| `aiMemoryItems` | `ai_memory_items` | Persistent preferences (`userId`, `userType`, `memoryType`, `content`, `contentHash`, `importance`, `sourceConversationId`, `sourceMessageId`, `status`). <br> *Indexes:* `(userId, userType, status)`, unique `(userId, userType, contentHash)`, `memoryType`, `updatedAt`, `sourceConversationId`, `sourceMessageId`. |
+| `aiMemoryEmbeddings`| `ai_memory_embeddings`| 768-dim Fireworks vector embeddings (`memoryItemId`, `userId`, `userType`, `provider`, `model`, `dimensions`, `vector`). <br> *Indexes:* `memoryItemId`, `(userId, userType)`, unique `(memoryItemId, provider, model, dimensions)`. |
+| `aiActionMemory` | `ai_action_memory` | Autonomous agent memory (`userId`, `userType`, `actionName`, `status`, `summary`, `payload`, `sourceConversationId`). <br> *Indexes:* `(userId, userType)`, `(actionName, status)`, `updatedAt`, `sourceConversationId`. |
+| `aiPendingActions`| `ai_pending_actions` | Action proposal drafts awaiting user confirmation (`id`, `userId`, `userType`, `conversationId`, `actionName`, `status`, `risk`, `payload`, `idempotencyKey`, `expiresAt`). <br> *Indexes:* `(userId, userType, status)`, `expiresAt`, `conversationId`, `idempotencyKey`. |
+| `aiActionAuditLogs`| `ai_action_audit_logs`| AI compliance logs (`actionId`, `userId`, `userType`, `actionName`, `event`, `status`). <br> *Indexes:* `actionId`, `(userId, userType)`, `event`. |
+| `classificationLogs`| `classification_logs` | Audit trail for the 5-layer pipeline (`originalText`, `parsedBy`, `finalResult`, `confidence`, `wasCorrected`, `tokensUsed`, `createdAt`). <br> *Indexes:* `(userId, userType)`, `parsedBy`, `createdAt`. |
+| `onboardingQuestions`| `onboarding_questions`| Setup questionnaire records (`questionKey`, `questionText`, `inputType`, `options`, `isActive`). |
+| `userDictionaries`| `user_dictionaries` | Custom user vocabulary overrides (`userId`, `userType`, `word`, `category`, `subCategory`). <br> *Indexes:* `(userId, userType)`, unique `(userId, userType, word)`. |
+| `profileLearningEvents`| `profile_learning_events`| Events recorded when users correct AI predictions (`userId`, `userType`, `eventType`, `previousAttributes`, `newAttributes`). <br> *Indexes:* `(userId, userType)`, `eventType`. |
+| `monthlyBehaviorSnapshots`| `monthly_behavior_snapshots`| Longitudinal user behavior vector snapshots (`userId`, `userType`, `month`, `totalIncome`, `totalExpense`, `behaviorFlags`). <br> *Indexes:* unique `(userId, userType, month)`, `month`. |
 
 ---
 
 ### Group E: Conversational AI & Logs (5 Tables)
-| Table Variable | SQL Table Name | Key Columns & Pointers |
+| Table Variable | SQL Table Name | Key Columns & Indexes |
 | :--- | :--- | :--- |
-| `chatConversations`| `chat_conversations`| AI chat threads. |
-| `chatMessages` | `chat_messages` | Chat queries and assistant responses (with tool metadata). |
-| `rawSmsEvents` | `raw_sms_events` | Captured bank SMS payloads before classification. |
-| `whatsappOtpCodes`| `whatsapp_otp_codes`| Phone pairing verification challenges. |
-| `voiceUsage` | `voice_usage` | Duration and costs of voice STT operations. |
+| `chatConversations`| `chat_conversations`| AI chat threads (`id`, `userId`, `userType`, `title`, `messageCount`, `totalTokens`, `metadata`, `lastMessageAt`). <br> *Indexes:* `(userId, userType)`, `lastMessageAt`. |
+| `chatMessages` | `chat_messages` | Chat message turns (`conversationId`, `role`, `content`, `toolCalls`, `toolResults`, `tokensUsed`, `model`). <br> *Indexes:* `conversationId`, `(conversationId, createdAt)`. |
+| `rawSmsEvents` | `raw_sms_events` | Captured bank SMS payloads (`userId`, `userType`, `message`, `sender`, `status`). <br> *Indexes:* `(userId, userType)`, `status`. |
+| `whatsappOtpCodes`| `whatsapp_otp_codes`| Phone pairing verification challenges (`phone`, `code`, `verified`, `expiresAt`). <br> *Indexes:* `phone`. |
+| `voiceUsage` | `voice_usage` | Duration and costs of voice STT operations (`userId`, `userType`, `durationSeconds`, `month`, `source`). <br> *Indexes:* `(userId, userType, month)`. |
 
 ---
 
 ### Group F: System Operations & Notifications (15 Tables)
-| Table Variable | SQL Table Name | Key Columns & Pointers |
+| Table Variable | SQL Table Name | Key Columns & Indexes |
 | :--- | :--- | :--- |
 | `systemSettings` | `system_settings` | Global configurations: models, base URLs, and API keys. |
-| `userProfiles` | `user_profiles` | Additional demographic profile data. |
-| `userAnalytics` | `user_analytics` | UI clickstream metrics. |
-| `supportTickets` | `support_tickets` | User issues. |
-| `discountCodes` | `discount_codes` | Promo codes. |
-| `ads`, `adClicks` | `ads`, `ad_clicks` | Native sponsorships. |
-| `referrals` | `referrals` | Referral tracking. |
-| `proSubscriptions`| `pro_subscriptions` | Plan state. |
-| `seoPages` | `seo_pages` | Landing page details. |
-| `apiKeyErrors` | `api_key_errors` | External API errors. |
-| `pushSubscriptions`| `push_subscriptions`| Firebase push tokens. |
-| `notificationTemplates`| `notification_templates`| Alert templates. |
-| `inAppNotifications`| `in_app_notifications`| Bell alerts. |
-| `notificationLogs`| `notification_logs` | Send history logs. |
+| `userProfiles` | `user_profiles` | Demographic and behavioral profile data (`userId`, `userType`, `lifestyleInfo`, `financialInfo`). <br> *Indexes:* unique `(userId, userType)`. |
+| `userAnalytics` | `user_analytics` | UI clickstream metrics (`userId`, `userType`, `eventName`, `eventData`). <br> *Indexes:* `(userId, userType)`, `eventName`, `createdAt`. |
+| `supportTickets` | `support_tickets` | User issues & support cases (`userId`, `userType`, `subject`, `status`, `assignedTo`). <br> *Indexes:* `(userId, userType)`, `status`, `assignedTo`. |
+| `discountCodes` | `discount_codes` | Promo and referral discounts (`code`, `type`, `discountPercent`, `createdBy`). <br> *Indexes:* `createdBy`. |
+| `ads`, `adClicks` | `ads`, `ad_clicks` | Native sponsorships and click logs (`createdBy`, `isActive`, `adId`). <br> *Indexes:* `ads(createdBy, isActive)`, `adClicks(adId, userId, userType)`. |
+| `referrals` | `referrals` | Referral tracking (`referrerId`, `referrerType`, `referredId`, `referredType`, `rewardStatus`). <br> *Indexes:* `(referrerId, referrerType)`, `(referredId, referredType)`. |
+| `proSubscriptions`| `pro_subscriptions` | Subscription state (`userId`, `userType`, `plan`, `provider`, `status`, `currentPeriodEnd`). <br> *Indexes:* `(userId, userType)`, `status`. |
+| `seoPages` | `seo_pages` | Landing page details & dynamic slugs (`slug`, `title`, `metaDescription`). <br> *Indexes:* unique `slug`. |
+| `apiKeyErrors` | `api_key_errors` | External API errors (`provider`, `keyLabel`, `errorType`, `userId`, `resolved`). <br> *Indexes:* `provider`, `errorType`, `resolved`, `createdAt`, `userId`. |
+| `pushSubscriptions`| `push_subscriptions`| WebPush & Firebase push tokens (`userId`, `userType`, `endpoint`, `fcmToken`). <br> *Indexes:* `(userId, userType)`. |
+| `notificationTemplates`| `notification_templates`| Notification templates (`name`, `eventType`, `targetSegment`, `createdBy`). <br> *Indexes:* `createdBy`, `eventType`. |
+| `inAppNotifications`| `in_app_notifications`| User bell alerts (`userId`, `userType`, `title`, `body`, `isRead`). <br> *Indexes:* `(userId, userType)`, `isRead`. |
+| `notificationLogs`| `notification_logs` | Notification send history logs (`templateId`, `userId`, `userType`, `sentVia`, `status`). <br> *Indexes:* `(userId, userType)`, `templateId`. |
 
 ---
 
 ## 2. 🚨 Critical Gotchas & Execution Pointers (MUST READ)
 
-### A. Dual User Joins (`users` vs `localUsers`)
-* **Gotcha:** Do not join/query only `users` for system-wide user counts.
-* **Rule:** You must query both `users` and `localUsers` tables and normalize results using the `UnifiedUser` type schema.
+### A. 100% Relational Coverage (`db/relations.ts`)
+* **Rule:** All 48 tables have full relations mapped in `db/relations.ts`.
+* **Dual User Mapping:** Every table with `userId` and `userType` exports both `localUser` and `oauthUser` relations:
+  ```typescript
+  export const expensesRelations = relations(expenses, ({ one }) => ({
+    localUser: one(localUsers, { fields: [expenses.userId], references: [localUsers.id] }),
+    oauthUser: one(users, { fields: [expenses.userId], references: [users.id] }),
+    contact: one(userContacts, { fields: [expenses.contactId], references: [userContacts.id] }),
+    wallet: one(userWallets, { fields: [expenses.walletId], references: [userWallets.id] }),
+  }));
+  ```
 
-### B. `isSilenced` Bypass Flag (`pendingClarifications`)
-* **Gotcha:** Ambiguous name matches will spam the user with clarifications unless suppressed.
-* **Rule:** If resolving an entity (`narrative-decomposer.ts`) and the target contact has `userContacts.isSilenced === true`, skip inserting into `pendingClarifications`.
+### B. Wallet Foreign Key & Index (`walletId`)
+* **Rule:** Always query wallet transactions via `eq(expenses.walletId, walletId)` utilizing the `expenses_wallet_idx` index. Never use text `LIKE` matching across descriptions.
 
-### C. Relational Query Joins (`db/relations.ts`)
-* **Gotcha:** Adding a foreign key relation in `db/schema.ts` is not enough for `db.query` relational helper calls.
-* **Rule:** You must add the matching `relations` definitions inside `db/relations.ts`. Otherwise, queries using `with:` will fail at runtime.
+### C. Idempotency & Network Safety (`clientRequestId`)
+* **Rule:** All mobile/web clients generate a unique `clientRequestId` (UUID) per expense mutation. The `expenses_user_client_request_unique` index ensures network retries never create duplicate ledger entries.
 
-### D. Vector Embeddings (`aiMemoryEmbeddings`)
-* **Gotcha:** Do not write raw array inserts into vector columns.
-* **Rule:** Always format vector values using `embedding-engine.ts` (expects Fireworks `qwen3-embedding-8b` 768-dimension vectors).
+### D. ACID Financial Mutations (`db.transaction()`)
+* **Rule:** Ledger mutations (`create`, `batchCreate`, `delete`) must run inside `db.transaction()`. If an expense is deleted, the contact's `transactionCount` is automatically decremented atomically.
+

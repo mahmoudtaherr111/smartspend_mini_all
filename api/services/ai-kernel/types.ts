@@ -80,6 +80,9 @@ export interface IntentResult {
     period?: PeriodHint;
     category?: string;
     personQuery?: string;
+    contactId?: number;
+    amount?: number;
+    target_amount?: number;
     categories?: string[];
     metric?: "total" | "count" | "average" | "comparison" | "trend";
     actionName?: string;
@@ -90,6 +93,13 @@ export interface IntentResult {
     wallet?: boolean;
     needsEvidence?: boolean;
     needsChart?: boolean;
+    startDate?: string;
+    endDate?: string;
+    slotConfidence?: Record<string, number>;
+    clarificationState?: {
+      pendingSlots: string[];
+      draftPayload: Record<string, unknown>;
+    };
   };
   secondaryIntents?: AIIntentKind[];
 }
@@ -104,6 +114,7 @@ export interface DataNeed {
     comparePeriod?: PeriodHint;
     category?: string;
     personQuery?: string;
+    contactId?: number;
     categories?: string[];
     sourceCategory?: string;
     targetCategory?: string;

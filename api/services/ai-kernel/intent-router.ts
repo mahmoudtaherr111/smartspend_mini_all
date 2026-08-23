@@ -1,4 +1,5 @@
 import type { AIIntentKind, IntentResult, PeriodHint } from "./types";
+import { CATEGORIES as TAXONOMY_CATEGORIES } from "../../lib/taxonomy-ssot";
 
 const PATTERNS = {
   greetings: ["اهلا", "اهلين", "هاي", "hi", "hello", "ازيك", "صباح الخير", "مساء الخير"],
@@ -161,15 +162,13 @@ function detectCategory(text: string): string | undefined {
 }
 
 function detectCategories(text: string): string[] {
-  const categories: string[] = [];
-  if (hasAny(text, PATTERNS.food)) categories.push("food");
-  if (hasAny(text, PATTERNS.transport)) categories.push("transport");
-  if (hasAny(text, PATTERNS.shopping)) categories.push("shopping");
-  if (hasAny(text, PATTERNS.health)) categories.push("health");
-  if (hasAny(text, PATTERNS.bills)) categories.push("bills");
-  if (hasAny(text, PATTERNS.income)) categories.push("income");
-  if (hasAny(text, PATTERNS.saving)) categories.push("saving");
-  return [...new Set(categories)];
+  const categories = new Set<string>();
+  for (const cat of TAXONOMY_CATEGORIES) {
+    if (hasAny(text, cat.aliases)) {
+      categories.add(cat.id);
+    }
+  }
+  return [...categories];
 }
 
 function isClassificationExplanation(text: string): boolean {
@@ -200,22 +199,15 @@ function asksForCategoryBreakdown(text: string): boolean {
 
 function lastMentionedCategory(text: string, categories = detectCategories(text)): string | undefined {
   let best: { category: string; index: number } | undefined;
-  const aliasesByCategory: Record<string, string[]> = {
-    food: PATTERNS.food,
-    transport: PATTERNS.transport,
-    shopping: PATTERNS.shopping,
-    health: PATTERNS.health,
-    bills: PATTERNS.bills,
-    income: PATTERNS.income,
-    saving: PATTERNS.saving,
-  };
 
-  for (const category of categories) {
-    for (const alias of aliasesByCategory[category] ?? []) {
+  for (const categoryId of categories) {
+    const cat = TAXONOMY_CATEGORIES.find(c => c.id === categoryId);
+    if (!cat) continue;
+    for (const alias of cat.aliases) {
       const normalized = normalizeForIntent(alias);
       const index = normalized ? text.lastIndexOf(normalized) : -1;
       if (index >= 0 && (!best || index > best.index)) {
-        best = { category, index };
+        best = { category: categoryId, index };
       }
     }
   }
@@ -265,6 +257,125 @@ function detectMetric(text: string): IntentResult["slots"]["metric"] {
   return "total";
 }
 
+function toLocalYYYYMMDD(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function extractPersonQuery(text: string): string | undefined {
+  const relations = ["ماما", "بابا", "اخويا", "اختي", "زوجتي", "ابني", "بنتي", "امي", "ابويا", "والدتي", "والدي", "صاحبي", "صاحبتي", "علاء", "مروان", "احمد", "عمر"];
+  const tokens = text.split(/\s+/);
+  for (const rel of relations) {
+    if (tokens.includes(rel)) {
+      return rel;
+    }
+  }
+
+  const match = text.match(/(?:\bعلي|\bمع)\s+([\u0600-\u06FF]{2,})/iu);
+  if (match) {
+    const candidate = match[1].trim();
+    const skipWords = ["طول", "فكره", "الاقل", "الاكثر", "العموم", "حسب", "علشان", "عشان", "الشهر", "الاسبوع", "اليوم", "امبارح"];
+    if (!skipWords.includes(candidate)) {
+      return candidate;
+    }
+  }
+
+  for (const token of tokens) {
+    if (token.startsWith("ل") && token.length >= 3) {
+      const potentialName = token.slice(1);
+      if (relations.includes(potentialName)) {
+        return potentialName;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function detectCustomPeriod(text: string): { period: PeriodHint; startDate?: string; endDate?: string } | undefined {
+  const normalized = text.replace(/[٠-٩]/g, (digit) => {
+    const arabic = "٠١٢٣٤٥٦٧٨٩";
+    return String(arabic.indexOf(digit));
+  });
+
+  const lastMonthsMatch = normalized.match(/اخر\s+(\d+)\s*(?:شهور|اشهر|شهر|months?)/i);
+  if (lastMonthsMatch) {
+    const months = parseInt(lastMonthsMatch[1], 10);
+    if (months > 0 && months <= 12) {
+      const end = new Date();
+      const start = new Date(end);
+      start.setMonth(start.getMonth() - (months - 1));
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+      return {
+        period: "custom",
+        startDate: toLocalYYYYMMDD(start),
+        endDate: toLocalYYYYMMDD(end),
+      };
+    }
+  }
+
+  if (normalized.includes("شهرين")) {
+    const end = new Date();
+    const start = new Date(end);
+    start.setMonth(start.getMonth() - 1);
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+    return {
+      period: "custom",
+      startDate: toLocalYYYYMMDD(start),
+      endDate: toLocalYYYYMMDD(end),
+    };
+  }
+
+  const lastDaysMatch = normalized.match(/اخر\s+(\d+)\s*(?:ايام|يوم|days?)/i);
+  if (lastDaysMatch) {
+    const days = parseInt(lastDaysMatch[1], 10);
+    if (days > 0 && days <= 365) {
+      const end = new Date();
+      const start = new Date(end);
+      start.setDate(start.getDate() - (days - 1));
+      start.setHours(0, 0, 0, 0);
+      return {
+        period: "custom",
+        startDate: toLocalYYYYMMDD(start),
+        endDate: toLocalYYYYMMDD(end),
+      };
+    }
+  }
+
+  if (normalized.includes("يومين")) {
+    const end = new Date();
+    const start = new Date(end);
+    start.setDate(start.getDate() - 1);
+    start.setHours(0, 0, 0, 0);
+    return {
+      period: "custom",
+      startDate: toLocalYYYYMMDD(start),
+      endDate: toLocalYYYYMMDD(end),
+    };
+  }
+
+  const monthNumberMatch = normalized.match(/شهر\s+(\d+)/i);
+  if (monthNumberMatch) {
+    const monthNum = parseInt(monthNumberMatch[1], 10);
+    if (monthNum >= 1 && monthNum <= 12) {
+      const year = new Date().getFullYear();
+      const start = new Date(year, monthNum - 1, 1);
+      const end = new Date(year, monthNum, 0, 23, 59, 59, 999);
+      return {
+        period: "custom",
+        startDate: toLocalYYYYMMDD(start),
+        endDate: toLocalYYYYMMDD(end),
+      };
+    }
+  }
+
+  return undefined;
+}
+
 function baseIntent(
   kind: AIIntentKind,
   confidence: number,
@@ -272,9 +383,11 @@ function baseIntent(
   text: string,
   secondaryIntents: AIIntentKind[] = [],
 ): IntentResult {
-  const period = detectPeriod(text);
+  const customPeriod = detectCustomPeriod(text);
+  const period = customPeriod ? customPeriod.period : detectPeriod(text);
   const categories = detectCategories(text);
   const category = categories[0];
+  const personQuery = extractPersonQuery(text);
 
   return {
     kind,
@@ -284,6 +397,9 @@ function baseIntent(
       period,
       category,
       categories: categories.length > 1 ? categories : undefined,
+      personQuery,
+      startDate: customPeriod?.startDate,
+      endDate: customPeriod?.endDate,
       metric: detectMetric(text),
       wallet: hasAny(text, PATTERNS.wallet),
       needsEvidence: hasAny(text, PATTERNS.evidence),

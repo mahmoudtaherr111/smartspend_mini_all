@@ -107,25 +107,46 @@ export const exportRouter = router({
   allUsers: moderatorProcedure
     .input(z.object({ format: z.enum(["json", "csv", "xlsx"]) }))
     .mutation(async ({ input }) => {
-      const oauthUsers = await db.select().from(users);
-      const localUsersList = await db.select().from(localUsers);
+      const oauthUsers = await db
+        .select({
+          name: users.name,
+          email: users.email,
+          role: users.role,
+          plan: users.plan,
+          lastSignInAt: users.lastSignInAt,
+        })
+        .from(users)
+        .limit(5000);
+
+      const localUsersList = await db
+        .select({
+          name: localUsers.name,
+          phone: localUsers.phone,
+          email: localUsers.email,
+          role: localUsers.role,
+          plan: localUsers.plan,
+          lastSignInAt: localUsers.lastSignInAt,
+        })
+        .from(localUsers)
+        .limit(5000);
 
       const formatted = [
         ...oauthUsers.map((u) => ({
           النوع: "OAuth",
           الاسم: u.name,
-          الايميل: u.email,
+          الايميل: u.email || "",
           الدور: u.role,
           الخطة: u.plan,
-          "آخر دخول": u.lastSignInAt?.toISOString(),
+          "آخر دخول": u.lastSignInAt ? new Date(u.lastSignInAt).toISOString() : "",
         })),
         ...localUsersList.map((u) => ({
           النوع: "Local",
           الاسم: u.name,
           التليفون: u.phone,
+          الايميل: u.email || "",
           الدور: u.role,
           الخطة: u.plan,
-          "آخر دخول": u.lastSignInAt?.toISOString(),
+          "آخر دخول": u.lastSignInAt ? new Date(u.lastSignInAt).toISOString() : "",
         })),
       ];
 

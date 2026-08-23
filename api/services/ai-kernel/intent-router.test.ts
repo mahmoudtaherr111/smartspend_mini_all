@@ -162,4 +162,15 @@ describe("AI kernel intent routing", () => {
     expect(intent.kind).toBe("advice_request");
     expect(needs.map((need) => need.kind)).toContain("memory.search");
   });
+
+  it("detects custom periods from user message", () => {
+    const intent3Months = routeIntent("صرفت كام اخر ٣ شهور؟");
+    expect(intent3Months.slots.period).toBe("custom");
+    expect(intent3Months.slots.startDate).toBeDefined();
+    expect(intent3Months.slots.endDate).toBeDefined();
+
+    const intentMonth5 = routeIntent("صرفت كام في شهر ٥؟");
+    expect(intentMonth5.slots.period).toBe("custom");
+    expect(intentMonth5.slots.startDate).toContain("-05-01");
+  });
 });

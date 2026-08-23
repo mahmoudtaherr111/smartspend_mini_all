@@ -8,7 +8,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { clearPersistedQueryCache } from "@/lib/queryPersister";
 import { trpc, trpcClient } from "@/providers/trpc";
 import { Toaster } from "@/components/ui/sonner";
@@ -31,8 +31,10 @@ import { PullToRefreshWrapper } from "@/components/pwa/PullToRefreshWrapper";
 import "./3d-effects.css";
 import "./print.css";
 
-import darkModeLogo from "../photos/dark_mode_logo-removebg-preview.png";
-import whiteModeLogo from "../photos/white_mode_logo-removebg-preview.png";
+// Public URLs keep the app shell logo available in both Vite development and
+// the deployed PWA (the old root-level asset imports resolved to stale hashes).
+const darkModeLogo = "/photos/dark_mode_logo-removebg-preview.png";
+const whiteModeLogo = "/photos/white_mode_logo-removebg-preview.png";
 
 const Landing = lazy(() => import("@/pages/Landing"));
 const Login = lazy(() => import("@/pages/Login"));
@@ -461,16 +463,18 @@ export default function App() {
   return (
     <ErrorBoundary>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <BrowserRouter>
-            <Layout>
-              <Suspense fallback={<PageLoadingSkeleton />}>
-                <AnimatedRoutes />
-              </Suspense>
-            </Layout>
-            <Toaster position="top-center" richColors className="pt-safe" />
-          </BrowserRouter>
-        </ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <BrowserRouter>
+              <Layout>
+                <Suspense fallback={<PageLoadingSkeleton />}>
+                  <AnimatedRoutes />
+                </Suspense>
+              </Layout>
+              <Toaster position="top-center" richColors className="pt-safe" />
+            </BrowserRouter>
+          </ThemeProvider>
+        </QueryClientProvider>
       </trpc.Provider>
     </ErrorBoundary>
   );

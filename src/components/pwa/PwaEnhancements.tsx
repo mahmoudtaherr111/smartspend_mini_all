@@ -56,16 +56,24 @@ export function PwaEnhancements() {
       setTimeout(loadQueues, 1000);
     };
     window.addEventListener("online", handleSyncFinished);
+    window.addEventListener("smartspend-offline-queue-changed", loadQueues);
     return () => {
       window.removeEventListener("storage", loadQueues);
       window.removeEventListener("online", handleSyncFinished);
+      window.removeEventListener("smartspend-offline-queue-changed", loadQueues);
     };
   }, []);
 
   const handleManualSync = () => {
     setIsRetrying(true);
-    window.dispatchEvent(new Event("online"));
-    toast.info("جاري محاولة مزامنة العمليات المعلقة...");
+    // ExpenseForm owns the authenticated, visible outbox. Open that screen
+    // before asking it to sync; dispatching a synthetic `online` event from a
+    // random route previously did nothing when the form was not mounted.
+    navigate("/dashboard?tab=record");
+    window.setTimeout(() => {
+      window.dispatchEvent(new Event("smartspend-offline-sync"));
+    }, 150);
+    toast.info("جاري فتح صندوق المزامنة ومراجعة العمليات المعلقة...");
     setTimeout(() => {
       loadQueues();
       setIsRetrying(false);
@@ -77,6 +85,7 @@ export function PwaEnhancements() {
       const texts = JSON.parse(localStorage.getItem("smartspend_offline_texts") || "[]");
       texts.splice(index, 1);
       localStorage.setItem("smartspend_offline_texts", JSON.stringify(texts));
+      window.dispatchEvent(new Event("smartspend-offline-queue-changed"));
       loadQueues();
       toast.success("تم حذف العملية المعلقة.");
     } catch (e) {}
@@ -87,6 +96,7 @@ export function PwaEnhancements() {
       const manual = JSON.parse(localStorage.getItem("smartspend_offline_manual") || "[]");
       manual.splice(index, 1);
       localStorage.setItem("smartspend_offline_manual", JSON.stringify(manual));
+      window.dispatchEvent(new Event("smartspend-offline-queue-changed"));
       loadQueues();
       toast.success("تم حذف العملية المعلقة.");
     } catch (e) {}
@@ -121,22 +131,6 @@ export function PwaEnhancements() {
         navigator.clearAppBadge().catch(() => {});
       } catch (e) {}
     }
-  }, []);
-
-  // Disable Pinch-to-Zoom in iOS Standalone PWA
-  useEffect(() => {
-    if (!isIosSafari() || !isStandalonePwa()) return;
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length > 1) {
-        e.preventDefault();
-      }
-    };
-
-    document.addEventListener("touchmove", handleTouchMove, { passive: false });
-    return () => {
-      document.removeEventListener("touchmove", handleTouchMove);
-    };
   }, []);
 
   // Sync PWA status bar style and theme-color meta tags with next-themes dynamically
@@ -259,16 +253,13 @@ export function PwaEnhancements() {
     };
   }, []);
 
-  // Background Sync and Notification Navigation listener
+  // Notification navigation listener. Transaction synchronization is owned by
+  // the visible expense outbox, not by the service worker.
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
 
     const handleMessage = (event: MessageEvent) => {
-      if (event.data && event.data.type === "OFFLINE_SYNC_SUCCESS") {
-        toast.success("تمت مزامنة العمليات بنجاح", {
-          description: "تم رفع المصاريف اللي سجلتها بدون إنترنت.",
-        });
-      } else if (event.data && event.data.type === "NAVIGATE_TO") {
+      if (event.data && event.data.type === "NAVIGATE_TO") {
         try {
           const urlObj = new URL(event.data.url, window.location.origin);
           navigate(urlObj.pathname + urlObj.search + urlObj.hash);

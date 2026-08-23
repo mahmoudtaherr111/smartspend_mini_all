@@ -7,6 +7,7 @@ import { normalizeTransactionTaxonomyList } from "./category-registry";
 import { CATEGORIES } from "./category-registry";
 import { callGroqAPI } from "./groq-client";
 import { callFireworksAPI } from "./fireworks-client";
+import { callNvidiaAPI } from "./nvidia-client";
 import { mapModelName } from "./model-mapper";
 import type { ParsedTransaction } from "./rule-engine";
 import { matchArabicPhrase, stripArabicPrefix } from "./fuzzy-match";
@@ -30,9 +31,15 @@ const classificationCache = new LRUCache<string, PipelineResult>({
   ttl: 1000 * 60 * 60 * 24 * 7, // 7 days
 });
 
-function makeCacheKey(text: string, userPlan: string, userId: number, businessMode?: boolean): string {
-  const normalized = text.trim().replace(/\s+/g, " ").toLowerCase();
-  return `cls:${userId}:${userPlan}:${businessMode ? "biz" : "std"}:${normalized}`;
+/** Persisted alongside classification logs so observability reflects the active pipeline. */
+export const SMART_PIPELINE_VERSION = "v3.0";
+
+function makeCacheKey(text: string, userPlan: string, userId: number, userType: string, businessMode?: boolean): string {
+  // Treat harmless Arabic orthographic variants and spacing consistently; a
+  // cache miss here previously made equivalent Egyptian input pay the full
+  // pipeline cost again.
+  const normalized = normalizeArabicString(text);
+  return `cls:${userType}:${userId}:${userPlan}:${businessMode ? "biz" : "std"}:${normalized}`;
 }
 
 const PERSONAL_KEYWORDS = [
@@ -78,12 +85,16 @@ function isStructuralOrConjunction(text: string, candidates: string[] = []): boo
  * Invalidate all cached classifications for a user (e.g., when their
  * dictionary changes or they correct a transaction).
  */
-export function invalidateUserClassificationCache(userId: number): void {
+export function invalidateUserClassificationCache(userId: number, userType?: string): void {
   // lru-cache doesn't support prefix-based deletion natively,
   // but we can iterate and purge entries matching the user.
   // For production scale, consider Redis with pattern-based deletion.
   for (const key of classificationCache.keys()) {
-    if (key.includes(`:${userId}:`)) {
+    if (
+      userType
+        ? key.startsWith(`cls:${userType}:${userId}:`)
+        : key.includes(`:${userId}:`)
+    ) {
       classificationCache.delete(key);
     }
   }
@@ -141,6 +152,8 @@ export interface PipelineResult {
   cachedTokens?: number;
   parsedBy: string;
   modelUsed: string;
+  /** The model that was actually invoked for classification. null when rule_engine/cache handled it without LLM. */
+  actualModelUsed?: string | null;
   processingTimeMs: number;
   alertMessage?: string;
   log: PipelineLog;
@@ -485,7 +498,7 @@ export async function runSmartPipeline(
     : [];
 
   // 0. Check classification cache first (40-60% hit rate for repeated queries)
-  const cacheKey = makeCacheKey(input.text, input.userPlan, input.userId, input.businessMode);
+  const cacheKey = makeCacheKey(input.text, input.userPlan, input.userId, input.userType, input.businessMode);
   const cachedResult = classificationCache.get(cacheKey);
   if (cachedResult) {
     return {
@@ -561,6 +574,7 @@ export async function runSmartPipeline(
             cachedTokens: 0,
             parsedBy: "rule_engine",
             modelUsed,
+            actualModelUsed: null,
             processingTimeMs: Date.now() - startTime,
             log: {
               originalText: input.text,
@@ -580,6 +594,7 @@ export async function runSmartPipeline(
           cachedTokens: 0,
           parsedBy: "rule_engine",
           modelUsed,
+          actualModelUsed: null,
           processingTimeMs: Date.now() - startTime,
           log: {
             originalText: input.text,
@@ -600,6 +615,7 @@ export async function runSmartPipeline(
         cachedTokens: 0,
         parsedBy: "rule_engine",
         modelUsed,
+        actualModelUsed: null,
         processingTimeMs: Date.now() - startTime,
         log: {
           originalText: input.text,
@@ -724,6 +740,7 @@ export async function runSmartPipeline(
           cachedTokens: 0,
           parsedBy: "rule_engine",
           modelUsed,
+          actualModelUsed: null,
           processingTimeMs: Date.now() - startTime,
           log: {
             originalText: input.text,
@@ -845,6 +862,7 @@ export async function runSmartPipeline(
           tokensUsed: 0,
           parsedBy: "system",
           modelUsed,
+          actualModelUsed: null,
           processingTimeMs: Date.now() - startTime,
           log: {
             originalText: input.text,
@@ -881,6 +899,7 @@ export async function runSmartPipeline(
         : segmentText;
         
       const segmentNormalized = normalizeV2(segmentTextWithVerb).forRules;
+      const segmentAmountCount = countAmounts(segmentNormalized);
       const segmentRule = await runRuleEngine(
         segmentNormalized,
         input.userDict,
@@ -905,7 +924,7 @@ export async function runSmartPipeline(
 
           if (candidates.length > 0) {
             const hasOrConjunction = isStructuralOrConjunction(segmentTextWithVerb, candidates);
-            const splitAmount = numAmounts === 1 && candidates.length > 1 && segmentRule.items.length === 1 && !hasOrConjunction
+            const splitAmount = segmentAmountCount === 1 && candidates.length > 1 && segmentRule.items.length === 1 && !hasOrConjunction
               ? Number((item.amount / candidates.length).toFixed(2)) 
               : item.amount;
 
@@ -945,12 +964,15 @@ export async function runSmartPipeline(
         anyNeedsClarification
       );
       
-      if (passedItems.length === 0) {
+      // Never accept only the high-confidence portion of a sentence. A review
+      // must contain every extracted transaction, otherwise a weak sibling is
+      // silently lost when the strong item is auto-saved.
+      if (passedItems.length !== segmentResolvedItems.length) {
         failedSegments.push(segment);
         continue;
       }
       
-      localSucceededItems.push(...segmentResolvedItems);
+      localSucceededItems.push(...passedItems);
 
       if (anyNeedsClarification) {
         const uniqueUnknowns = Array.from(new Set(localUnknownNames));
@@ -1077,24 +1099,6 @@ export async function runSmartPipeline(
         }
       }
     }
-  }
-
-  // Force local acceptance for massive inputs to avoid 429 rate limit death
-  if (!ruleSucceeded && (numAmounts > 5 || numWords > 30)) {
-    // If we have failed segments but the text is massive, we MUST NOT use AI.
-    // Re-run the rule engine on the whole thing and just accept whatever it gives, or accept the failed segments.
-    // For simplicity, we just dump localSucceededItems + whatever we can get from failed.
-    ruleSucceeded = true;
-    for (const seg of failedSegments) {
-      const segRule = await runRuleEngine(seg.text, input.userDict, input.userProfileContext, undefined, fireworksKey);
-      for (const item of segRule.items) {
-          if (item.confidence < autoSaveThreshold || item.category === "متنوعات") {
-              item.needsReview = true;
-          }
-          finalItems.push(item);
-      }
-    }
-    decision = "review"; // Always review massive inputs forced locally
   }
 
   const allKnownNames = knownPeople.map((p) => p.name).filter(Boolean);
@@ -1271,6 +1275,17 @@ export async function runSmartPipeline(
       } else if (provider === "fireworks") {
         const result = await callFireworksAPI(
           input.fireworksApiKey || input.apiKey,
+          modelUsed,
+          finalSystemPrompt,
+          finalUserPrompt,
+          input.maxTokens || 4096
+        );
+        totalTokens += result.tokensUsed;
+        cachedTokens = result.cachedTokens || 0;
+        classItems = safeExtractItems(robustJsonParse(result.text));
+      } else if (provider === "nvidia") {
+        const result = await callNvidiaAPI(
+          (input as any).nvidiaApiKey || input.apiKey,
           modelUsed,
           finalSystemPrompt,
           finalUserPrompt,
@@ -1710,6 +1725,7 @@ export async function runSmartPipeline(
     items: verifiedFinalItems,
     parsedBy: requiresAI ? "hybrid" : "rule_engine",
     modelUsed,
+    actualModelUsed: requiresAI ? modelUsed : null,
     overallConfidence,
     decision,
     clarificationQuestion,

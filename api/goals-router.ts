@@ -72,6 +72,12 @@ async function trackGoalTokens(
   });
 }
 
+function parseSafeDate(dateStr?: string | null): Date | null {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 export const goalsRouter = router({
   list: authedProcedure.query(async ({ ctx }) => {
     const isPro =
@@ -153,7 +159,7 @@ export const goalsRouter = router({
         title: input.title.trim(),
         description: description || null,
         targetAmount: input.targetAmount?.toString(),
-        targetDate: input.targetDate ? new Date(input.targetDate) : null,
+        targetDate: parseSafeDate(input.targetDate),
         status: "active",
       });
       await invalidateFinanceUserCache(ctx.user.id, ctx.user.type);

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
   BarChart3,
+  Brain,
   Check,
   ChevronDown,
   History,
@@ -13,6 +14,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { AIMemoryManager } from "./AIMemoryManager";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bar,
@@ -65,6 +67,11 @@ interface StructuredResponse {
     confidence?: number;
     reason?: string;
   };
+  clarification?: {
+    question?: string;
+    replies?: string[];
+    missing?: string[];
+  };
   dataNeeds?: StructuredDataNeed[];
   facts?: StructuredFact[];
   artifacts?: StructuredArtifact[];
@@ -114,6 +121,7 @@ export default function AIChatbot() {
   const [conversationId, setConversationId] = useState<number | undefined>();
   const [isTyping, setIsTyping] = useState(false);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [showMemoryManager, setShowMemoryManager] = useState(false);
   const [actionStatuses, setActionStatuses] = useState<Record<string, string>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -195,6 +203,16 @@ export default function AIChatbot() {
     return () => el.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Listen to visualViewport changes for iOS/PWA virtual keyboard stability
+  useEffect(() => {
+    if (!window.visualViewport) return;
+    const handleViewportResize = () => {
+      scrollToBottom();
+    };
+    window.visualViewport.addEventListener("resize", handleViewportResize);
+    return () => window.visualViewport?.removeEventListener("resize", handleViewportResize);
+  }, [scrollToBottom]);
+
   // Send message handler
   const handleSend = useCallback(async (
     text?: string,
@@ -242,8 +260,8 @@ export default function AIChatbot() {
         role: "assistant",
         content: result.response,
         createdAt: new Date(),
-        artifacts: result.structured?.artifacts ?? [],
-        actions: result.structured?.actions ?? [],
+        artifacts: (result.structured as StructuredResponse)?.artifacts ?? [],
+        actions: (result.structured as StructuredResponse)?.actions ?? [],
         structured: result.structured as StructuredResponse | undefined,
       };
       setMessages((prev) => [...prev, aiMsg]);
@@ -380,6 +398,16 @@ export default function AIChatbot() {
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8 text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 transition-colors"
+            onClick={() => setShowMemoryManager(true)}
+            title="إدارة الذاكرة الذكية"
+            aria-label="إدارة الذاكرة الذكية"
+          >
+            <Brain className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             className="h-8 w-8 text-muted-foreground"
             onClick={handleNewConversation}
             title="محادثة جديدة"
@@ -495,7 +523,7 @@ export default function AIChatbot() {
               transition={{ duration: 0.2 }}
               className={cn(
                 "flex",
-                msg.role === "user" ? "justify-start" : "justify-end",
+                msg.role === "user" ? "justify-end" : "justify-start",
               )}
             >
               <div
@@ -536,7 +564,7 @@ export default function AIChatbot() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex justify-end"
+            className="flex justify-start"
           >
             <div className="chat-bubble-ai">
               <div className="typing-dots text-indigo-500">
@@ -574,6 +602,7 @@ export default function AIChatbot() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
+              onFocus={() => setTimeout(scrollToBottom, 150)}
               placeholder="اكتب رسالتك..."
               aria-label="اكتب رسالتك إلى سمارت"
               rows={1}
@@ -603,6 +632,10 @@ export default function AIChatbot() {
           </Button>
         </div>
       </div>
+      <AIMemoryManager
+        isOpen={showMemoryManager}
+        onClose={() => setShowMemoryManager(false)}
+      />
     </div>
   );
 }

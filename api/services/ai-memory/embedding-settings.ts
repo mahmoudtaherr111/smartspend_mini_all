@@ -24,11 +24,12 @@ export function embeddingSettingsKeys(): Record<string, string> {
   };
 }
 
+import { getSystemSettings } from "../../lib/settings-cache";
+
 export async function loadEmbeddingConfig(
   useCase: "short" | "memory" | "deep" = "memory",
 ): Promise<EmbeddingConfig> {
-  const rows = await db.select().from(systemSettings);
-  const settings = Object.fromEntries(rows.map((row) => [row.key, row.value]));
+  const settings = await getSystemSettings();
   const keys = embeddingSettingsKeys();
   const dimensionKey =
     useCase === "short"

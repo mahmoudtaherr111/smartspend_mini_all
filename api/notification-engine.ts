@@ -381,59 +381,58 @@ export async function processScheduledNotifications() {
 
   if (templates.length === 0) return;
 
-  // Fetch count of expenses per user for minUsage check
-  const usageCounts = await db.select({
-    userId: expenses.userId,
-    userType: expenses.userType,
-    count: sql<number>`count(*)`
-  })
-  .from(expenses)
-  .groupBy(expenses.userId, expenses.userType);
-
-  const usageMap = new Map<string, number>();
-  for (const r of usageCounts) {
-    usageMap.set(`${r.userType}:${r.userId}`, Number(r.count || 0));
-  }
-
-  const oauthUsers = await db.select({ id: users.id, plan: users.plan }).from(users);
-  const localUsersList = await db.select({ id: localUsers.id, plan: localUsers.plan }).from(localUsers);
-
-  const allUsers = [
-    ...oauthUsers.map((u: any) => ({ id: u.id, type: "oauth", plan: u.plan })),
-    ...localUsersList.map((u: any) => ({ id: u.id, type: "local", plan: u.plan }))
-  ];
-
   for (const template of templates) {
     const segment = parseSegment(template.targetSegment);
 
-    const targetUsers = allUsers.filter((u: any) => {
-      // 1. Specific User target
-      if (segment.userId && segment.userType) {
-        return u.id === Number(segment.userId) && u.type === segment.userType;
-      }
-
-      // 2. Plan filter
-      if (segment.plan && segment.plan !== "all") {
-        if (segment.plan === "free" && u.plan !== "free") return false;
-        if (segment.plan === "pro" && u.plan !== "pro" && !u.plan.startsWith("pro")) return false;
-        if (segment.plan === "ultra" && u.plan !== "ultra") return false;
-      }
-
-      // 3. Usage filter (logged expense count)
-      const usage = usageMap.get(`${u.type}:${u.id}`) || 0;
-      if (segment.minUsage !== undefined && segment.minUsage > 0 && usage < segment.minUsage) {
-        return false;
-      }
-
-      return true;
-    });
-
-    if (targetUsers.length > 0) {
+    if (segment.userId && segment.userType) {
       await triggerTemplateNotificationsBatch(
         template,
-        targetUsers.map(u => ({ id: u.id, type: u.type })),
+        [{ id: Number(segment.userId), type: segment.userType }],
         () => ({})
       );
+    } else {
+      let offset = 0;
+      const limit = 1000;
+      
+      while (true) {
+        let oauthQuery = db.select({ id: users.id, plan: users.plan }).from(users);
+        let localQuery = db.select({ id: localUsers.id, plan: localUsers.plan }).from(localUsers);
+
+        const applyFilters = (query: any, table: any, isOauth: boolean) => {
+          const conds = [];
+          if (segment.plan && segment.plan !== "all") {
+             if (segment.plan === "free") conds.push(eq(table.plan, "free"));
+             if (segment.plan === "pro") conds.push(or(eq(table.plan, "pro"), sql`${table.plan} LIKE 'pro%'`));
+             if (segment.plan === "ultra") conds.push(eq(table.plan, "ultra"));
+          }
+          if (segment.minUsage !== undefined && segment.minUsage > 0) {
+             conds.push(sql`(SELECT count(*) FROM ${expenses} WHERE ${expenses.userId} = ${table.id} AND ${expenses.userType} = ${isOauth ? 'oauth' : 'local'}) >= ${segment.minUsage}`);
+          }
+          if (conds.length > 0) return query.where(and(...conds));
+          return query;
+        };
+
+        const oauthRes = await applyFilters(oauthQuery, users, true).limit(limit).offset(offset);
+        const localRes = await applyFilters(localQuery, localUsers, false).limit(limit).offset(offset);
+
+        if (oauthRes.length === 0 && localRes.length === 0) break;
+
+        const batchUsers = [
+           ...oauthRes.map((u: any) => ({ ...u, type: "oauth" })),
+           ...localRes.map((u: any) => ({ ...u, type: "local" }))
+        ];
+
+        if (batchUsers.length > 0) {
+           await triggerTemplateNotificationsBatch(
+             template,
+             batchUsers.map(u => ({ id: u.id, type: u.type })),
+             () => ({})
+           );
+        }
+
+        if (oauthRes.length < limit && localRes.length < limit) break;
+        offset += limit;
+      }
     }
 
     await db.update(notificationTemplates).set({ isActive: false }).where(eq(notificationTemplates.id, template.id));
@@ -508,7 +507,7 @@ export async function checkUserBudgetExceeded(userId: number, userType: string) 
 
     const endOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    const userExpenses = await db.select({ amount: expenses.amount })
+    const [{ totalSpent }] = await db.select({ totalSpent: sql<number>`COALESCE(SUM(${expenses.amount}), 0)` })
       .from(expenses)
       .where(
         and(
@@ -518,8 +517,6 @@ export async function checkUserBudgetExceeded(userId: number, userType: string) 
           lte(expenses.date, endOfMonth)
         )
       );
-
-    const totalSpent = userExpenses.reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
 
     // 3. If totalSpent exceeds budgetLimit, check if we already warned them this month
     if (totalSpent > budgetLimit) {
@@ -666,7 +663,7 @@ export async function checkAndTriggerSmartActivityNotifications() {
         gte(users.lastStreakAt, thirtySixHoursAgo),
         lte(users.lastStreakAt, twelveHoursAgo),
         isNull(notificationLogs.id)
-      ));
+      )).limit(1000);
 
       const matchingLocal = await db.select({
         id: localUsers.id,
@@ -686,7 +683,7 @@ export async function checkAndTriggerSmartActivityNotifications() {
         gte(localUsers.lastStreakAt, thirtySixHoursAgo),
         lte(localUsers.lastStreakAt, twelveHoursAgo),
         isNull(notificationLogs.id)
-      ));
+      )).limit(1000);
 
       const targets = [
         ...matchingOauth.map(u => ({ ...u, type: "oauth" })),
@@ -734,7 +731,7 @@ export async function checkAndTriggerSmartActivityNotifications() {
         gte(users.currentStreak, minStreak),
         gte(users.lastStreakAt, thirtySixHoursAgo),
         isNull(notificationLogs.id)
-      ));
+      )).limit(1000);
 
       const matchingLocal = await db.select({
         id: localUsers.id,
@@ -754,7 +751,7 @@ export async function checkAndTriggerSmartActivityNotifications() {
         gte(localUsers.currentStreak, minStreak),
         gte(localUsers.lastStreakAt, thirtySixHoursAgo),
         isNull(notificationLogs.id)
-      ));
+      )).limit(1000);
 
       const targets = [
         ...matchingOauth.map(u => ({ ...u, type: "oauth" })),
@@ -804,7 +801,7 @@ export async function checkAndTriggerSmartActivityNotifications() {
         gte(users.lastStreakAt, startRange),
         lte(users.lastStreakAt, endRange),
         isNull(notificationLogs.id)
-      ));
+      )).limit(1000);
 
       const matchingLocal = await db.select({
         id: localUsers.id,
@@ -823,7 +820,7 @@ export async function checkAndTriggerSmartActivityNotifications() {
         gte(localUsers.lastStreakAt, startRange),
         lte(localUsers.lastStreakAt, endRange),
         isNull(notificationLogs.id)
-      ));
+      )).limit(1000);
 
       const targets = [
         ...matchingOauth.map(u => ({ ...u, type: "oauth" })),

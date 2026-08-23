@@ -29,6 +29,23 @@ import { normalizeArabic } from "./unified-normalizer";
 export { normalizeArabic };
 
 /**
+ * Normalize person lookup strings (names and queries) by stripping diacritics,
+ * unifying Alif/Ya/Ta Marbuta, and removing non-alphanumeric Arabic characters.
+ */
+export function normalizePersonLookup(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFKC")
+    .replace(/[\u064B-\u065F\u0670]/g, "")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/[ى]/g, "ي")
+    .replace(/[ة]/g, "ه")
+    .replace(/[^\u0600-\u06FFa-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
  * Find best matching keyword from dictionary using Damerau-Levenshtein.
  * Returns category if match found within threshold, null otherwise.
  *

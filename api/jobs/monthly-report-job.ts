@@ -143,11 +143,12 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
 
   try {
     // 1. Fetch system config for the AI
-    const settingsRows = await db.select().from(systemSettings);
+    const { getSystemSettings } = await import("../lib/settings-cache");
+    const settings = await getSystemSettings();
     const s: Record<string, string> = {};
-    settingsRows.forEach((r) => {
-      if (r.key && r.value) s[r.key] = r.value;
-    });
+    for (const [key, value] of Object.entries(settings)) {
+      if (value) s[key] = value;
+    }
     const reportPolicy = resolveAICostPolicy({
       channel: "report",
       plan: "pro",

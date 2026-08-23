@@ -44,6 +44,23 @@ function notifyWaitingWorker(registration: ServiceWorkerRegistration) {
   registration.waiting?.postMessage({ type: "SKIP_WAITING" });
 }
 
+function applyWaitingUpdate(registration: ServiceWorkerRegistration) {
+  let reloaded = false;
+  const reload = () => {
+    if (reloaded) return;
+    reloaded = true;
+    window.location.reload();
+  };
+
+  // Do not reload before the replacement worker takes control, otherwise the
+  // user can land back on the old shell and think the update failed.
+  navigator.serviceWorker.addEventListener("controllerchange", reload, {
+    once: true,
+  });
+  notifyWaitingWorker(registration);
+  window.setTimeout(reload, 2_000);
+}
+
 export function registerAppServiceWorker(): void {
   if (!("serviceWorker" in navigator)) return;
   if (!import.meta.env.PROD) return;
@@ -77,8 +94,7 @@ export function registerAppServiceWorker(): void {
                 action: {
                   label: "تحديث الآن",
                   onClick: () => {
-                    notifyWaitingWorker(registration);
-                    window.location.reload();
+                    applyWaitingUpdate(registration);
                   },
                 },
               });
@@ -91,8 +107,7 @@ export function registerAppServiceWorker(): void {
             action: {
               label: "تطبيق",
               onClick: () => {
-                notifyWaitingWorker(registration);
-                window.location.reload();
+                applyWaitingUpdate(registration);
               },
             },
           });

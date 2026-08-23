@@ -25,9 +25,9 @@ import {
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { NotificationBell } from "@/components/NotificationBell";
-import darkModeLogo from "../../photos/dark_mode_logo-removebg-preview.png";
-import whiteModeLogo from "../../photos/white_mode_logo-removebg-preview.png";
-import defaultProfile from "../../photos/profile.png";
+const darkModeLogo = "/photos/dark_mode_logo-removebg-preview.png";
+const whiteModeLogo = "/photos/white_mode_logo-removebg-preview.png";
+const defaultProfile = "/photos/profile.png";
 
 interface SidebarProps {
   isOpen: boolean;

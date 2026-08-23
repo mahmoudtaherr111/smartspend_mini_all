@@ -73,7 +73,7 @@ export const imageRouter = router({
       const apiKey = cfg.ai_api_key || env.GEMINI_API_KEY;
       const apiKey2 = cfg.ai_api_key_2 || "";
       const modelName = mapModelName(
-        cfg.ai_model_pro || env.GEMINI_MODEL_PRO || "gemini-2.5-pro",
+        cfg.ai_model_pro || env.GEMINI_MODEL_PRO || "gemini-3.1-pro",
       );
       const maxTokens = clampOutputTokens(
         budget.perRequestMax,

@@ -324,7 +324,7 @@ function validateTaxonomy(items: ParsedTransaction[]): VerificationFlag[] {
         } else {
             flags.push({
               type: "taxonomy_invalid",
-              severity: "info",
+              severity: "warning",
               message: `الفئة الفرعية "${item.subCategory}" مش موجودة في "${item.category}" — هيتم استخدام "عام"`,
               affectedItems: [idx],
             });
@@ -477,7 +477,7 @@ function adjustConfidence(
       // Previously: blocked for ALL items if any item had a flag — unfair penalty.
       const hasNoPersonalFlag = !errorIndices.has(idx) && !warningIndices.has(idx);
       if (hasNoPersonalFlag) {
-        adjustedConfidence = Math.min(adjustedConfidence + 5, 100);
+        adjustedConfidence = Math.min(adjustedConfidence + 5, 95);
       }
     }
 

@@ -27,3 +27,15 @@ whatsapp_auth_info/
 *.txt
 *.jar
 
+
+# Build audit artifacts
+.audit-pwa-build*/
+.audit-server-build/
+
+# Server logs
+*.log
+
+# Temporary files
+diff.txt
+diff_utf8.txt
+*.jar

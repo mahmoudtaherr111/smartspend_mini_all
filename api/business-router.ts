@@ -123,7 +123,7 @@ export const businessRouter = router({
 
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
+        model: "gemini-3.1-flash-lite",
         systemInstruction: SUGGESTION_PROMPT,
         generationConfig: {
           temperature: 0.3,
@@ -132,7 +132,15 @@ export const businessRouter = router({
         },
       });
 
-      const userPrompt = `اسم المشروع: ${input.businessName}\nنوع المشروع: ${input.businessType}\nوصف المشروع: ${input.description}\n\nاقترح الفئات المناسبة:`;
+      const sanitizeForPrompt = (input: string): string => {
+        return input
+          .replace(/[\n\r]/g, ' ')          // Remove newlines
+          .replace(/```/g, '')               // Remove code blocks  
+          .replace(/system:|assistant:|user:/gi, '') // Remove role markers
+          .slice(0, 500);                    // Hard limit length
+      };
+
+      const userPrompt = `اسم المشروع: ${sanitizeForPrompt(input.businessName)}\nنوع المشروع: ${sanitizeForPrompt(input.businessType)}\nوصف المشروع: ${sanitizeForPrompt(input.description)}\n\nاقترح الفئات المناسبة:`;
 
       try {
         const result = await model.generateContent(userPrompt);

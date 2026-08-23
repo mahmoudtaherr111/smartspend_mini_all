@@ -26,7 +26,7 @@ import { format } from "date-fns";
 import { arEG } from "date-fns/locale";
 
 const SHORTCUT_ICLOUD_LINK =
-  "https://www.icloud.com/shortcuts/9a210238a50b48ddac17a8d546878927";
+  "https://www.icloud.com/shortcuts/c3fbc31dbd6e41cc94fa25b0a9480675";
 
 interface Props {
   onBack: () => void;

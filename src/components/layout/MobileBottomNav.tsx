@@ -64,8 +64,9 @@ export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
   const isMoreActive = ["/settings", "/support", "/pro", "/bank-sync"].includes(location.pathname);
   const isAiPage = location.pathname === "/ai";
   const activeTab = isAiPage ? "ai" : isMoreActive ? "" : (searchParams.get("tab") || "record");
-  const month =
-    searchParams.get("month") || new Date().toISOString().slice(0, 7);
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const month = searchParams.get("month") || currentMonth;
 
   return (
     <AnimatePresence>

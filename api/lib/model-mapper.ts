@@ -1,7 +1,9 @@
+import { DEPRECATED_MODEL_MAP } from "./ai-provider-registry";
+
 /**
  * SmartSpend AI Model Mapper
  * Intercepts unsupported / development models (like gemini-3.1-flash-lite, gemma-4)
- * and safely maps them to standard, stable, supported Gemini API models.
+ * and safely maps them using ai-provider-registry.
  */
 
 export function mapModelName(modelName: string): string {
@@ -20,15 +22,14 @@ export function mapModelName(modelName: string): string {
     return "gemini-3.1-flash-lite";
   }
   if (normalized === "pro" || normalized === "ultra") {
-    return "gemini-3.5-pro";
+    return "gemini-3.1-pro";
   }
 
-  // Redirect legacy / deprecated models to the modern standard gemini-3.1-flash-lite / gemini-3.5-pro
-  if (normalized.includes("1.5-flash") || normalized.includes("2.0-flash") || normalized.includes("2.5-flash")) {
-    return "gemini-3.1-flash-lite";
-  }
-  if (normalized.includes("1.5-pro") || normalized.includes("2.0-pro") || normalized.includes("2.5-pro")) {
-    return "gemini-3.5-pro";
+  // Check deprecated model map and log warning
+  const deprecatedMatch = DEPRECATED_MODEL_MAP[normalized];
+  if (deprecatedMatch) {
+    console.warn(`[model-mapper] ⚠️ Deprecated model "${normalized}" → mapped to "${deprecatedMatch}"`);
+    return deprecatedMatch;
   }
 
   // Pure passthrough: Let the requested model string pass to the API exactly as is.
@@ -64,8 +65,24 @@ export function isFireworksModel(modelName: string): boolean {
   );
 }
 
+export function isNvidiaModel(modelName: string): boolean {
+  const normalized = mapModelName(modelName);
+  return (
+    normalized.startsWith("meta/llama") ||
+    normalized.startsWith("deepseek-ai/") ||
+    normalized.startsWith("nvidia/") ||
+    normalized.startsWith("google/gemma") ||
+    normalized.startsWith("mistralai/")
+  );
+}
+
+export function defaultNvidiaModelForPlan(plan: AiPlanName): string {
+  if (plan === "ultra" || plan === "pro") return "meta/llama-3.3-70b-instruct";
+  return "deepseek-ai/deepseek-v4-flash";
+}
+
 export function defaultGeminiModelForPlan(plan: AiPlanName): string {
-  if (plan === "ultra") return "gemini-3.5-pro";
+  if (plan === "ultra") return "gemini-3.1-pro";
   if (plan === "pro") return "gemini-3.1-flash-lite";
   return "gemini-3.1-flash-lite";
 }

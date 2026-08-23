@@ -2,12 +2,14 @@ import React, { useEffect, useRef } from "react";
 import { useVoiceCall, CallStatus } from "@/hooks/useVoiceCall";
 import { Mic, MicOff, PhoneOff, Volume2, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useHistoryBound } from "@/hooks/useHistoryBound";
 
 interface VoiceCallOverlayProps {
   onClose: () => void;
 }
 
 export function VoiceCallOverlay({ onClose }: VoiceCallOverlayProps) {
+  useHistoryBound(true, onClose);
   const {
     status,
     errorMessage,

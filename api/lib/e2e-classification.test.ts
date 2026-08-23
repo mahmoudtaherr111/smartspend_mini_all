@@ -24,7 +24,9 @@ import { matchSegment } from "./embedding-engine";
 import { normalizeArabicString } from "./smart-pipeline";
 import { LRUCache } from "lru-cache";
 
-const FIREWORKS_KEY = "fw_VhH1Bo2oNNd8bjxGEwSXjP";
+// Live-provider coverage is opt-in. Secrets must come from the test environment,
+// never from source control.
+const FIREWORKS_KEY = process.env.FIREWORKS_API_KEY ?? "";
 
 const baseInput: PipelineInput = {
   text: "",

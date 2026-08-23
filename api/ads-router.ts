@@ -7,7 +7,9 @@ import {
 } from "./middleware";
 import { db } from "./queries/connection";
 import { ads, adClicks } from "../db/schema";
-import { eq, and, sql, count, desc } from "drizzle-orm";
+import { eq, and, or, sql, count, desc } from "drizzle-orm";
+
+const safeUrlSchema = z.string().url().optional().or(z.literal(""));
 
 export const adsRouter = router({
   // ─── Get Active Ads ───
@@ -22,10 +24,13 @@ export const adsRouter = router({
     )
     .query(async ({ input }) => {
       const now = new Date();
+      const plan = input?.userPlan ?? "free";
+
       const conditions = [
         eq(ads.isActive, true),
         sql`${ads.startDate} IS NULL OR ${ads.startDate} <= ${now}`,
         sql`${ads.endDate} IS NULL OR ${ads.endDate} >= ${now}`,
+        or(eq(ads.targetPlan, "all"), eq(ads.targetPlan, plan)),
       ];
 
       if (input?.placement) {
@@ -35,14 +40,10 @@ export const adsRouter = router({
       const list = await db
         .select()
         .from(ads)
-        .where(and(...conditions));
-      // Filter by target plan
-      return list.filter(
-        (ad) =>
-          ad.targetPlan === "all" ||
-          ad.targetPlan === input?.userPlan ||
-          input?.userPlan === "pro",
-      );
+        .where(and(...conditions))
+        .limit(20);
+
+      return list;
     }),
 
   // ─── Track Impression ───
@@ -78,8 +79,8 @@ export const adsRouter = router({
       z.object({
         title: z.string().min(1),
         content: z.string().min(1),
-        imageUrl: z.string().optional(),
-        linkUrl: z.string().optional(),
+        imageUrl: safeUrlSchema,
+        linkUrl: safeUrlSchema,
         placement: z.enum(["sidebar", "banner", "popup"]).default("sidebar"),
         targetPlan: z.enum(["free", "all"]).default("free"),
         startDate: z.string().optional(),
@@ -103,8 +104,8 @@ export const adsRouter = router({
         id: z.number(),
         title: z.string().optional(),
         content: z.string().optional(),
-        imageUrl: z.string().optional(),
-        linkUrl: z.string().optional(),
+        imageUrl: safeUrlSchema,
+        linkUrl: safeUrlSchema,
         isActive: z.boolean().optional(),
       }),
     )
