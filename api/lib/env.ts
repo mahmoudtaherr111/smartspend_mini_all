@@ -26,6 +26,8 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.string().default("3000"),
   APP_URL: z.string().default("http://localhost:5173"),
+  /** Business-calendar timezone; persistence remains UTC. */
+  APP_TIMEZONE: z.string().default("Africa/Cairo"),
   // FRONTEND_URL: when frontend is deployed separately (e.g. https://app.smartspend.app)
   // If not set, falls back to APP_URL for backward-compat monorepo mode
   FRONTEND_URL: z.string().optional(),
@@ -41,6 +43,10 @@ const envSchema = z.object({
   /** When "true", allows demo transaction ids in `pro.upgrade` (never enable in production). */
   BILLING_SIMULATE: z.enum(["true", "false"]).optional(),
   TRUST_PROXY: z.string().optional(),
+  /** Background jobs are opt-in in development and explicit in production. */
+  ENABLE_CRONS: z.enum(["true", "false"]).optional(),
+  /** Baileys must not connect merely because credentials happen to be on disk. */
+  ENABLE_WHATSAPP: z.enum(["true", "false"]).optional(),
   REDIS_URL: z.string().optional(),
   AI_ALLOW_MEMORY_CACHE_IN_PRODUCTION: z.enum(["true", "false"]).optional(),
   SENTRY_DSN: z.string().optional(),

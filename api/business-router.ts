@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, authedProcedure } from "./middleware";
+import { router, proProcedure, proAiProcedure } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
 import {
@@ -12,6 +12,8 @@ import { eq, and, sql } from "drizzle-orm";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { invalidateUserClassificationCache } from "./lib/smart-pipeline";
 import { invalidateUserMemory } from "./lib/muscle-memory";
+import { getSystemSettings } from "./lib/settings-cache";
+import { env } from "./lib/env";
 
 const BUSINESS_TYPES = [
   { id: "restaurant", label: "مطاعم ومأكولات", icon: "🍤" },
@@ -35,21 +37,12 @@ const SUGGESTION_PROMPT = `أنت مساعد ذكي لتصنيف مصاريف ا
 {"categories":[{"name":"...","type":"expense","keywords":["...","..."],"matchExamples":["...","..."],"icon":"...","color":"#..."}]}`;
 
 async function getApiKey(): Promise<string> {
-  try {
-    const rows = await db
-      .select()
-      .from(
-        sql.raw("(SELECT value FROM system_settings WHERE `key` = 'gemini_api_key' LIMIT 1) as ss"),
-      );
-    if (rows.length > 0 && (rows[0] as any).value) {
-      return (rows[0] as any).value;
-    }
-  } catch {}
-  return process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || "";
+  const settings = await getSystemSettings();
+  return settings.gemini_api_key || env.GEMINI_API_KEY || "";
 }
 
 export const businessRouter = router({
-  get: authedProcedure
+  get: proProcedure
     .input(z.object({}).optional())
     .query(async ({ ctx }) => {
       const businesses = await db
@@ -106,10 +99,10 @@ export const businessRouter = router({
       };
     }),
 
-  types: authedProcedure
+  types: proProcedure
     .query(() => BUSINESS_TYPES),
 
-  suggestCategories: authedProcedure
+  suggestCategories: proAiProcedure
     .input(z.object({
       description: z.string().min(10).max(2000),
       businessName: z.string().min(1).max(255),
@@ -171,7 +164,7 @@ export const businessRouter = router({
       }
     }),
 
-  create: authedProcedure
+  create: proProcedure
     .input(z.object({
       name: z.string().min(1).max(255),
       type: z.string().min(1).max(100),
@@ -240,7 +233,7 @@ export const businessRouter = router({
       return { id: business.insertId, success: true };
     }),
 
-  update: authedProcedure
+  update: proProcedure
     .input(z.object({
       name: z.string().min(1).max(255).optional(),
       description: z.string().max(2000).optional(),
@@ -278,7 +271,7 @@ export const businessRouter = router({
       return { success: true };
     }),
 
-  delete: authedProcedure
+  delete: proProcedure
     .mutation(async ({ ctx }) => {
       const existing = await db
         .select()
@@ -295,26 +288,27 @@ export const businessRouter = router({
 
       const businessId = existing[0].id;
 
-      await db.delete(businessCategories).where(eq(businessCategories.businessId, businessId));
-
-      await db
-        .update(userContacts)
-        .set({ businessId: null, contactType: "personal" })
-        .where(eq(userContacts.businessId, businessId));
-
-      await db
-        .update(expenses)
-        .set({ businessId: null })
-        .where(eq(expenses.businessId, businessId));
-
-      await db.delete(userBusinesses).where(eq(userBusinesses.id, businessId));
+      await db.transaction(async (tx) => {
+        await tx.delete(businessCategories).where(eq(businessCategories.businessId, businessId));
+        await tx
+          .update(userContacts)
+          .set({ businessId: null, contactType: "personal" })
+          .where(and(eq(userContacts.businessId, businessId), eq(userContacts.userId, ctx.user.id), eq(userContacts.userType, ctx.user.type)));
+        await tx
+          .update(expenses)
+          .set({ businessId: null })
+          .where(and(eq(expenses.businessId, businessId), eq(expenses.userId, ctx.user.id), eq(expenses.userType, ctx.user.type)));
+        await tx
+          .delete(userBusinesses)
+          .where(and(eq(userBusinesses.id, businessId), eq(userBusinesses.userId, ctx.user.id), eq(userBusinesses.userType, ctx.user.type)));
+      });
 
       invalidateUserClassificationCache(ctx.user.id);
       invalidateUserMemory(ctx.user.id, ctx.user.type);
       return { success: true };
     }),
 
-  addCategory: authedProcedure
+  addCategory: proProcedure
     .input(z.object({
       name: z.string().min(1).max(100),
       nameAr: z.string().min(1).max(100),
@@ -356,7 +350,7 @@ export const businessRouter = router({
       return { id: cat.insertId, success: true };
     }),
 
-  updateCategory: authedProcedure
+  updateCategory: proProcedure
     .input(z.object({
       id: z.number(),
       name: z.string().min(1).max(100).optional(),
@@ -385,7 +379,7 @@ export const businessRouter = router({
       return { success: true };
     }),
 
-  removeCategory: authedProcedure
+  removeCategory: proProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       await db
@@ -397,7 +391,7 @@ export const businessRouter = router({
       return { success: true };
     }),
 
-  linkContact: authedProcedure
+  linkContact: proProcedure
     .input(z.object({
       contactId: z.number(),
       contactType: z.enum(["business_supplier", "business_customer", "business_employee"]),

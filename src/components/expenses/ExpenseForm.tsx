@@ -1,24 +1,22 @@
 import { useState, useRef, useEffect, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { HapticButton } from "@/components/ui/haptic-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/providers/trpc";
 import { toast } from "sonner";
 import {
   Mic,
-  MicOff,
   Plus,
   Loader2,
   Sparkles,
   ChevronDown,
   ChevronUp,
-  AlertCircle,
   HelpCircle,
   Save,
   CheckCircle2,
-  RefreshCw,
   Square,
   Camera,
   X,
@@ -171,6 +169,7 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
   const lastAutoSaveSucceededRef = useRef(true);
   const activeOutboxRequestIdRef = useRef<string | null>(null);
   const expenseQaTextSentRef = useRef<string | null>(null);
+
 
   const removeQueuedText = (id: string | null) => {
     if (!id) return;
@@ -1117,14 +1116,18 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
     <Card className="border-0 shadow-xl relative overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
       <div className="absolute top-0 end-0 w-32 h-32 bg-emerald-500/5 rounded-bl-full -z-10" />
 
-      <CardHeader className="pb-4">
-        <CardTitle className="text-xl flex items-center justify-center gap-2 text-center">
-          <Sparkles className="w-5 h-5 text-emerald-500 animate-pulse" />
-          سجل بحرية.. والذكاء الاصطناعي هيفهمك
-        </CardTitle>
-      </CardHeader>
+      {/* ─── AI Header Badge (Static, Minimal, Non-Clickable) ─── */}
+      <div className="px-4 sm:px-6 pt-4 sm:pt-5">
+        <div className="flex items-center justify-between pb-1 select-none">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
+            <span>تسجيل ذكي</span>
+          </div>
+          <span className="text-[11px] text-muted-foreground">صوت أو نص أو صورة</span>
+        </div>
+      </div>
 
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4 sm:space-y-5 p-4 sm:p-6 pt-2 sm:pt-3">
         {isSyncing && (
           <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs flex items-center justify-between gap-3 animate-pulse" dir="rtl">
             <span className="flex items-center gap-2 font-semibold">
@@ -1133,22 +1136,9 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
             </span>
           </div>
         )}
-        <div className="text-xs text-muted-foreground text-center">
-          الحالة:{" "}
-          {flowStage === "idle"
-            ? "جاهز"
-            : flowStage === "recording"
-              ? "تسجيل"
-              : flowStage === "processing"
-                ? "معالجة"
-                : flowStage === "parsed"
-                  ? "تم استخراج النص"
-                  : flowStage === "clarify"
-                    ? "توضيح"
-                    : "مراجعة"}
-        </div>
-        {/* ─── Main Input Area (Professional UI) ─── */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+
+        {/* ─── Main Input Area (Thumb-Zone Optimized UI) ─── */}
+        <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
           <div className="relative group">
             <Label htmlFor="expense-input" className="sr-only">سجل مصاريفك أو دخلك</Label>
             <textarea
@@ -1158,12 +1148,12 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
               maxLength={ExpenseInputLimits.rawTextMax}
               placeholder={
                 isRecording
-                  ? "جاري الاستماع... يمكنك التحدث الآن"
-                  : "سجل مصاريفك أو دخلك هنا... (مثال: صرفت 150 جنيه مطعم)"
+                  ? "جاري الاستماع لصوتك.. اتكلم براحتك"
+                  : "سجل مصاريفك بصوتك أو اكتب هنا.. (مثال: غدا 120 جنيه كاش، أو بنزين 300 فودافون كاش)"
               }
               aria-label="إدخال نص المصروف أو الدخل"
               className={cn(
-                "w-full min-h-[140px] p-5 text-lg rounded-xl border transition-all resize-none shadow-sm focus:outline-none focus:ring-1",
+                "w-full min-h-[96px] sm:min-h-[120px] p-3.5 sm:p-5 text-base sm:text-lg rounded-xl border transition-all resize-none shadow-xs focus:outline-none focus:ring-1",
                 isRecording
                   ? "border-primary/50 bg-primary/5 text-primary placeholder:text-primary/70 ring-1 ring-primary/30"
                   : "border-slate-300 dark:border-slate-800 bg-white dark:bg-[#0c0e12] focus:border-slate-400 focus:ring-slate-400",
@@ -1179,23 +1169,6 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
                 <span className="text-emerald-700 dark:text-emerald-300 font-bold text-lg drop-shadow-sm">
                   تم الحفظ بنجاح
                 </span>
-              </div>
-            )}
-            {isRecording && (
-              <div
-                className="flex items-end justify-center gap-1 h-8 mt-2"
-                aria-hidden
-              >
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <span
-                    key={i}
-                    className="w-1.5 rounded-full bg-primary recording-pulse"
-                    style={{
-                      height: `${12 + (i % 3) * 8}px`,
-                      animationDelay: `${i * 0.12}s`,
-                    }}
-                  />
-                ))}
               </div>
             )}
 
@@ -1265,7 +1238,7 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
                   variant="outline"
                   aria-label={isRecording ? "إيقاف التسجيل الصوتي" : "بدء التسجيل الصوتي"}
                   className={cn(
-                    "relative z-10 h-14 w-14 rounded-xl transition-all duration-300 flex items-center justify-center border-2 focus-visible:ring-2 focus-visible:ring-offset-2",
+                    "relative z-10 h-12 w-12 sm:h-14 sm:w-14 rounded-xl transition-all duration-300 flex items-center justify-center border-2 focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-95",
                     isRecording
                       ? "border-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-900/50"
                       : !isOnline
@@ -1298,7 +1271,7 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
                   !isOnline
                 }
                 className={cn(
-                  "h-14 w-14 rounded-xl transition-all duration-300 flex items-center justify-center border-2 focus-visible:ring-2 focus-visible:ring-offset-2",
+                  "h-12 w-12 sm:h-14 sm:w-14 rounded-xl transition-all duration-300 flex items-center justify-center border-2 focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-95",
                   !isOnline
                     ? "border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900/50 opacity-50 cursor-not-allowed"
                     : "border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c0e12] hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700",
@@ -1314,31 +1287,37 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
               </Button>
             </div>
 
-            {/* Submit Text Button - Professional Dark */}
+            {/* Submit Text / Recording Button - Unified Single State */}
             <HapticButton
-              type="submit"
+              type={isRecording ? "button" : "submit"}
+              onClick={(e) => {
+                if (isRecording) {
+                  e.preventDefault();
+                  stopRecording();
+                }
+              }}
               disabled={isSubmitting || (!text.trim() && !isRecording)}
               className={cn(
-                "flex-1 w-full h-14 text-base rounded-xl transition-all shadow-none gap-3 font-medium",
+                "flex-1 w-full h-12 sm:h-14 text-sm sm:text-base rounded-xl transition-all shadow-none gap-2 sm:gap-3 font-medium",
                 isRecording
-                  ? "bg-slate-100 text-slate-500 dark:bg-slate-900/50 dark:text-slate-500 cursor-not-allowed"
+                  ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-2 border-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/50 cursor-pointer active:scale-98"
                   : "bg-black text-white hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-slate-200",
               )}
             >
               {isRecording ? (
-                <div className="flex items-center justify-center w-full">
-                  <span className="flex h-2 w-2 relative me-3">
+                <div className="flex items-center justify-center w-full gap-2">
+                  <span className="flex h-2.5 w-2.5 relative shrink-0">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-600"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-600"></span>
                   </span>
-                  <span>
-                    جاري الاستماع... ({Math.floor(recordingDuration / 60)}:
-                    {String(recordingDuration % 60).padStart(2, "0")})
+                  <span className="font-mono font-bold tracking-wider">
+                    {Math.floor(recordingDuration / 60)}:{String(recordingDuration % 60).padStart(2, "0")}
                   </span>
+                  <span className="font-bold">إنهاء التسجيل</span>
                 </div>
               ) : isSubmitting ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" /> {loadingMessage}
+                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" /> <span className="truncate">{loadingMessage}</span>
                 </>
               ) : !isOnline ? (
                 <>
@@ -1421,8 +1400,6 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
                   variant="outline"
                   className="flex-1 h-12 border-rose-200 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-all text-base font-bold gap-2"
                   onClick={() => {
-                     // Reject, fallback to review mode or just cancel?
-                     // If rejected, maybe let them edit it manually
                      setDecision("review");
                      setFlowStage("review");
                   }}
@@ -1600,7 +1577,7 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
                         }
                         className="w-full h-9 text-xs rounded-lg bg-white/50 dark:bg-black/20 border-0 px-2 outline-none focus:ring-1 ring-emerald-500"
                       >
-                        {getSubCategoryOptions(item.category).map((sub) => (
+                        {getSubCategoryOptions(item.category).map((sub: string) => (
                           <option key={sub} value={sub}>
                             {sub}
                           </option>
@@ -1865,8 +1842,6 @@ function ManualForm({ onSuccess, categories, createMutation, isOnline, userLimit
     });
   };
 
-
-
   return (
     <form
       onSubmit={handleSubmit}
@@ -1934,7 +1909,7 @@ function ManualForm({ onSuccess, categories, createMutation, isOnline, userLimit
           className="w-full h-11 rounded-md border text-sm px-2 bg-white dark:bg-slate-900"
           disabled={!category}
         >
-          {getSubCategoryOptions(category).map((sub) => (
+          {getSubCategoryOptions(category).map((sub: string) => (
             <option key={sub} value={sub}>
               {sub}
             </option>

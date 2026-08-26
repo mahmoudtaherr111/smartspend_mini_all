@@ -231,13 +231,13 @@ export default function Admin() {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50/50 dark:from-slate-950 dark:to-indigo-950/20 pb-20 font-sans"
+      className="min-h-full min-h-screen-safe bg-gradient-to-br from-slate-50 to-indigo-50/50 dark:from-slate-950 dark:to-indigo-950/20 pb-20 pb-safe font-sans"
       dir="rtl"
     >
       <SEOMeta path="/admin" title="لوحة التحكم الإدارية | SmartSpend" />
 
       {/* Top Navigation Bar */}
-      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-white/20 dark:border-slate-800 shadow-sm sticky top-0 z-30 no-print">
+      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-white/20 dark:border-slate-800 shadow-sm sticky top-0 z-30 pt-safe no-print">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">

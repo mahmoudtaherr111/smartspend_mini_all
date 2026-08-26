@@ -1,0 +1,37 @@
+- generic [ref=f4e1]:
+  - generic:
+    - main [ref=f4e3]:
+      - generic [ref=f4e12]:
+        - generic [ref=f4e13]:
+          - img "SmartSpend" [ref=f4e15]
+          - generic [ref=f4e16]:
+            - generic [ref=f4e17]: SmartSpend AI
+            - generic [ref=f4e18]: مساعدك المالي الذكي - حلل مصاريفك بالعامية المصرية
+        - generic [ref=f4e19]:
+          - button "الدخول السريع (بالبصمة / Passkey)" [ref=f4e20] [cursor=pointer]
+          - button "تسجيل الدخول بـ Google" [ref=f4e22] [cursor=pointer]
+          - generic [ref=f4e24]: أو استخدم رقم التليفون
+          - generic [ref=f4e26]:
+            - tablist [ref=f4e27]:
+              - tab "دخول" [ref=f4e28] [cursor=pointer]
+              - tab "حساب جديد" [active] [selected] [ref=f4e29] [cursor=pointer]
+            - tabpanel "حساب جديد" [ref=f4e44]:
+              - generic [ref=f4e45]:
+                - generic [ref=f4e46]:
+                  - generic [ref=f4e47]: الاسم الكامل *
+                  - 'textbox "مثال: أحمد محمد" [ref=f4e51]'
+                - generic [ref=f4e52]:
+                  - generic [ref=f4e53]: رقم التليفون *
+                  - textbox "01xxxxxxxxx" [ref=f4e56]
+                  - paragraph [ref=f4e57]: لازم يبدأ بـ 010 أو 011 أو 012 أو 015
+                - generic [ref=f4e58]:
+                  - generic [ref=f4e59]: الإيميل (اختياري)
+                  - textbox "example@email.com" [ref=f4e63]
+                - generic [ref=f4e64]:
+                  - generic [ref=f4e65]: الباسورد * (6 أحرف على الأقل)
+                  - textbox "••••••" [ref=f4e69]
+                - generic [ref=f4e70]:
+                  - generic [ref=f4e71]: كود الدعوة (اختياري)
+                  - textbox "SSXXXXXX" [ref=f4e72]
+                - button "إنشاء حساب" [ref=f4e73] [cursor=pointer]
+    - region "Notifications alt+T"

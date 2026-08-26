@@ -1,8 +1,8 @@
 import { db } from "../queries/connection";
-import { systemSettings, voiceUsage, apiKeyErrors, users, localUsers, sessions } from "../../db/schema";
-import { eq, and, gt, sum } from "drizzle-orm";
-import jwt from "jsonwebtoken";
+import { systemSettings, voiceUsage, apiKeyErrors, users, localUsers } from "../../db/schema";
+import { eq, and, sum } from "drizzle-orm";
 import { env } from "../lib/env";
+import { validateActiveSessionToken } from "../lib/session-validation";
 import { getCacheRuntimeStatus } from "../lib/redis-client";
 import WebSocket from "ws";
 import {
@@ -35,41 +35,25 @@ async function authenticateUser(request: any, tokenParam: string | null): Promis
 
   if (!token) return null;
 
-  try {
-    const payload = jwt.verify(token, env.JWT_SECRET) as any;
-    if (!payload || !payload.userId) return null;
+  const activeSession = await validateActiveSessionToken(
+    token,
+    cookieToken && token === cookieToken ? "oauth" : undefined,
+  );
+  if (!activeSession) return null;
 
-    const userId = Number(payload.userId);
-
-    if (cookieToken && token === cookieToken) {
-      const dbUser = await db.query.users.findFirst({
-        where: eq(users.id, userId),
-      });
-      if (dbUser) {
-        return { user: dbUser, userType: "oauth", tokenUsed: token };
-      }
-    }
-
-    const session = await db.query.sessions.findFirst({
-      where: and(
-        eq(sessions.token, token),
-        eq(sessions.userId, userId),
-        eq(sessions.userType, "local"),
-        gt(sessions.expiresAt, new Date())
-      ),
+  if (activeSession.userType === "oauth") {
+    const dbUser = await db.query.users.findFirst({
+      where: eq(users.id, activeSession.userId),
     });
-
-    if (session) {
-      const dbUser = await db.query.localUsers.findFirst({
-        where: eq(localUsers.id, userId),
-      });
-      if (dbUser) {
-        return { user: dbUser, userType: "local", tokenUsed: token };
-      }
+    if (dbUser) {
+      return { user: dbUser, userType: "oauth", tokenUsed: token };
     }
-  } catch (err) {
-    console.error("[Voice Auth] JWT Verification failed:", err);
   }
+
+  const dbUser = await db.query.localUsers.findFirst({
+    where: eq(localUsers.id, activeSession.userId),
+  });
+  if (dbUser) return { user: dbUser, userType: "local", tokenUsed: token };
 
   return null;
 }

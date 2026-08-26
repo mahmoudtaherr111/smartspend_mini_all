@@ -101,6 +101,19 @@ function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+export const BOTTOM_NAV_ROUTES = [
+  "/dashboard",
+  "/ai",
+  "/settings",
+  "/support",
+  "/pro",
+  "/bank-sync",
+];
+
+export function hasBottomNav(pathname: string): boolean {
+  return BOTTOM_NAV_ROUTES.some((route) => pathname.startsWith(route));
+}
+
 function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user } = useAuth();
@@ -143,11 +156,17 @@ function Layout({ children }: { children: React.ReactNode }) {
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchEnd.current = null;
-    touchStart.current = e.targetTouches[0].clientX;
+    const touch = e.targetTouches?.[0] || e.touches?.[0];
+    if (touch) {
+      touchStart.current = touch.clientX;
+    }
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
-    touchEnd.current = e.targetTouches[0].clientX;
+    const touch = e.targetTouches?.[0] || e.touches?.[0];
+    if (touch) {
+      touchEnd.current = touch.clientX;
+    }
   };
 
   const handleTouchEnd = () => {
@@ -170,7 +189,8 @@ function Layout({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const isDashboard = location.pathname === "/dashboard";
+  const isBottomNavActive = hasBottomNav(location.pathname);
+  const shouldPadBottomNav = Boolean(user && isBottomNavActive && !isKeyboardOpen);
 
   return (
     <div
@@ -241,7 +261,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         className={cn(
           "app-content hide-scrollbar transition-all duration-500",
           user ? "lg:ms-72 lg:pb-0" : "",
-          user ? (isDashboard && !isKeyboardOpen ? "pb-nav-safe" : "pb-safe") : "",
+          user ? (shouldPadBottomNav ? "pb-nav-safe" : "pb-safe") : "",
         )}
       >
         <PullToRefreshWrapper scrollRef={scrollRef}>
@@ -322,8 +342,7 @@ function AnimatedRoutes() {
   const location = useLocation();
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <Routes location={location} key={location.pathname}>
+    <Routes location={location}>
         <Route
           path="/"
           element={
@@ -447,7 +466,6 @@ function AnimatedRoutes() {
           }
         />
       </Routes>
-    </AnimatePresence>
   );
 }
 

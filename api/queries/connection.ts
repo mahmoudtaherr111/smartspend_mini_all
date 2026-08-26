@@ -4,7 +4,7 @@ import * as schema from "../../db/schema";
 import * as relations from "../../db/relations";
 import { env } from "../lib/env";
 
-const pool = mysql.createPool({
+export const mysqlPool = mysql.createPool({
   uri: env.DATABASE_URL,
   charset: "utf8mb4",
   waitForConnections: true,
@@ -15,7 +15,7 @@ const pool = mysql.createPool({
   keepAliveInitialDelay: 10000,
 });
 
-export const db = drizzle(pool, {
+export const db = drizzle(mysqlPool, {
   schema: { ...schema, ...relations },
   mode: "default",
 });

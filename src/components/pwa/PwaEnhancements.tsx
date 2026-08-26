@@ -395,44 +395,44 @@ export function PwaEnhancements() {
       {showInstallCard && (
         <div
           className={cn(
-            "lg:hidden fixed start-3 end-3 z-[100]",
-            // Positioned right above the mobile bottom nav with smooth entry
-            "bottom-[calc(5rem+env(safe-area-inset-bottom))]",
-            "animate-in slide-in-from-bottom-8 fade-in duration-700 ease-out",
+            "lg:hidden fixed start-3 end-3 z-40",
+            // Positioned safely above the mobile bottom nav with smooth entry
+            "bottom-[calc(5.5rem+env(safe-area-inset-bottom))]",
+            "animate-in slide-in-from-bottom-8 fade-in duration-500 ease-out",
           )}
           role="region"
           aria-label="تثبيت التطبيق"
           dir="rtl"
         >
           {canInstall && (
-            <div className="relative overflow-hidden rounded-3xl border border-white/40 dark:border-slate-700/50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl shadow-[0_24px_60px_rgba(0,0,0,0.15)] dark:shadow-[0_24px_60px_rgba(0,0,0,0.5)] p-4 transition-all">
+            <div className="relative overflow-hidden rounded-2xl border border-white/30 dark:border-slate-700/50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-2xl p-3 sm:p-3.5 transition-all">
               {/* Premium Gradient Top Border */}
-              <div className="absolute top-0 inset-x-0 h-[3px] bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 opacity-80" />
+              <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 opacity-90" />
 
-              <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 text-white shadow-lg shadow-emerald-500/30">
-                  <Download className="w-7 h-7" />
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 text-white shadow-md shadow-emerald-500/20">
+                  <Download className="w-5 h-5" />
                 </div>
 
-                <div className="flex-1 min-w-0 pt-0.5">
+                <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-wide">
+                    <h3 className="text-xs font-bold text-slate-900 dark:text-white tracking-wide">
                       تطبيق SmartSpend
                     </h3>
                     <button
                       type="button"
                       onClick={dismiss}
-                      className="tap-target -mt-1 -me-2 h-8 w-8 shrink-0 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 rounded-full text-slate-400 transition-colors"
+                      className="tap-target -mt-1 -me-1 h-7 w-7 shrink-0 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 rounded-full text-slate-400 transition-colors"
                       aria-label="إغلاق"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
-                  <p className="text-[13px] font-medium text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+                  <p className="text-[11px] font-medium text-slate-600 dark:text-slate-300 mt-0.5 leading-snug">
                     تجربة أسرع بدون إنترنت، وتنبيهات ذكية فورية.
                   </p>
                   <Button
-                    className="w-full mt-3 h-11 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 font-bold text-[15px] shadow-md transition-transform active:scale-[0.98]"
+                    className="w-full mt-2 h-8 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 font-bold text-xs shadow-sm transition-transform active:scale-[0.98]"
                     onClick={() =>
                       void triggerInstallPrompt().then((ok) => ok && dismiss())
                     }
@@ -445,39 +445,35 @@ export function PwaEnhancements() {
           )}
 
           {showIosHint && !canInstall && (
-            <div className="relative overflow-hidden rounded-3xl border border-white/40 dark:border-slate-700/50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl shadow-[0_24px_60px_rgba(0,0,0,0.15)] dark:shadow-[0_24px_60px_rgba(0,0,0,0.5)] p-4 transition-all">
-              <div className="absolute top-0 inset-x-0 h-[3px] bg-gradient-to-r from-blue-500 to-indigo-500 opacity-80" />
+            <div className="relative overflow-hidden rounded-2xl border border-white/30 dark:border-slate-700/50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-2xl p-3 sm:p-3.5 transition-all">
+              <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-blue-500 to-indigo-500 opacity-90" />
 
-              <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30">
-                  <Share className="w-7 h-7" />
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-md shadow-blue-500/20">
+                  <Share className="w-5 h-5" />
                 </div>
 
-                <div className="flex-1 min-w-0 pt-0.5">
+                <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-wide">
+                    <h3 className="text-xs font-bold text-slate-900 dark:text-white tracking-wide">
                       أضف لشاشتك الرئيسية
                     </h3>
                     <button
                       type="button"
                       onClick={dismiss}
-                      className="tap-target -mt-1 -me-2 h-8 w-8 shrink-0 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 rounded-full text-slate-400 transition-colors"
+                      className="tap-target -mt-1 -me-1 h-7 w-7 shrink-0 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 rounded-full text-slate-400 transition-colors"
                       aria-label="إغلاق"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
-                  <p className="text-[13px] font-medium text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
-                    اضغط على زر{" "}
-                    <strong className="text-slate-900 dark:text-white">
-                      المشاركة
-                    </strong>{" "}
-                    في متصفح Safari بالأسفل لاستمتاع بتجربة التطبيق الكاملة.
+                  <p className="text-[11px] font-medium text-slate-600 dark:text-slate-300 mt-0.5 leading-snug">
+                    اضغط على <strong className="text-slate-900 dark:text-white">المشاركة</strong> في Safari بالأسفل لاكتمال التجربة.
                   </p>
-                  <div className="w-full mt-3 h-11 rounded-xl bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 flex items-center justify-center gap-2 text-blue-700 dark:text-blue-300 font-semibold text-sm">
+                  <div className="w-full mt-2 h-8 rounded-lg bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-800/40 flex items-center justify-center gap-1.5 text-blue-700 dark:text-blue-300 font-semibold text-xs">
                     <span>ثم اختر إضافة للشاشة</span>
                     <svg
-                      className="w-4 h-4"
+                      className="w-3.5 h-3.5"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"

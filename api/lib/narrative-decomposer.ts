@@ -792,7 +792,10 @@ export function decomposeHeuristic(
   if (segments && segments.length === 1) {
     const verbSegments = decomposeVerbAnchored(text, knownNames);
     if (verbSegments && verbSegments.length > 1) {
-      segments = verbSegments;
+      const segmentsWithAmounts = verbSegments.filter(s => s.amount !== null && s.amount !== undefined);
+      if (segmentsWithAmounts.length > 1) {
+        segments = verbSegments;
+      }
     }
   } else if (!segments || segments.length === 0) {
     segments = decomposeVerbAnchored(text, knownNames);

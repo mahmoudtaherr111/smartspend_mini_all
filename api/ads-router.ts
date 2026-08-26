@@ -119,7 +119,10 @@ export const adsRouter = router({
   delete: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      await db.delete(ads).where(eq(ads.id, input.id));
+      await db.transaction(async (tx) => {
+        await tx.delete(adClicks).where(eq(adClicks.adId, input.id));
+        await tx.delete(ads).where(eq(ads.id, input.id));
+      });
       return { success: true };
     }),
 

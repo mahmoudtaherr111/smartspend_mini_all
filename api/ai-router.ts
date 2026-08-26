@@ -428,12 +428,12 @@ async function trackTokens(
     if (userType === "oauth") {
       await db
         .update(users)
-        .set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` })
+        .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokens}` })
         .where(eq(users.id, userId));
     } else {
       await db
         .update(localUsers)
-        .set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` })
+        .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokens}` })
         .where(eq(localUsers.id, userId));
     }
     await recordAiUsageEvent({
@@ -1985,7 +1985,7 @@ export const aiRouter = router({
     }),
 
   // ─── Financial Copilot: Monthly Insights ───
-  generateMonthlyInsights: authedProcedure
+  generateMonthlyInsights: aiProcedure
     .input(
       z.object({
         month: z.string(),
@@ -2957,7 +2957,7 @@ ${personalizedSummaryForAI}
     }),
 
   // ─── Compare Months ───
-  compareMonths: authedProcedure
+  compareMonths: aiProcedure
     .input(
       z.object({
         month1: z.string(),
@@ -3124,7 +3124,7 @@ ${personalizedSummaryForAI}
     }),
 
   // ─── Generate Yearly Insights ───
-  generateYearlyInsights: authedProcedure
+  generateYearlyInsights: aiProcedure
     .input(
       z.object({
         year: z.string(),

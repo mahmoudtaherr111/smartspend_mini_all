@@ -132,38 +132,47 @@ export const referralRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "الكود غير موجود" });
       }
 
-      // Check if already referred
-      const existing = await db
-        .select()
-        .from(referrals)
-        .where(
-          and(
-            eq(referrals.referredId, ctx.user.id),
-            eq(referrals.referredType, ctx.user.type),
-          ),
-        )
-        .limit(1);
-      if (existing.length > 0) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "أنت مسجل بالفعل بكود إحالة",
+      try {
+        await db.transaction(async (tx) => {
+          // The unique index below is the final concurrency guard. Rechecking
+          // within the transaction keeps ordinary retries user-friendly.
+          const existing = await tx
+            .select({ id: referrals.id })
+            .from(referrals)
+            .where(
+              and(
+                eq(referrals.referredId, ctx.user.id),
+                eq(referrals.referredType, ctx.user.type),
+              ),
+            )
+            .limit(1);
+          if (existing.length) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "أنت مسجل بالفعل بكود إحالة",
+            });
+          }
+
+          await tx.insert(referrals).values({
+            referrerId,
+            referrerType,
+            referredId: ctx.user.id,
+            referredType: ctx.user.type,
+            codeUsed: input.code,
+            status: "completed",
+          });
+          await tx
+            .update(myTable)
+            .set({ referredBy: referrerId, referredByType: referrerType })
+            .where(eq(myTable.id, ctx.user.id));
         });
+      } catch (error: any) {
+        if (error instanceof TRPCError) throw error;
+        if (error?.code === "ER_DUP_ENTRY" || String(error?.message || "").includes("referral_referred_unique_idx")) {
+          throw new TRPCError({ code: "CONFLICT", message: "أنت مسجل بالفعل بكود إحالة" });
+        }
+        throw error;
       }
-
-      await db.insert(referrals).values({
-        referrerId: referrerId,
-        referrerType,
-        referredId: ctx.user.id,
-        referredType: ctx.user.type,
-        codeUsed: input.code,
-        status: "completed",
-      });
-
-      // Update referredBy
-      await db
-        .update(myTable)
-        .set({ referredBy: referrerId })
-        .where(eq(myTable.id, ctx.user.id));
 
       return { success: true, message: "تم تطبيق الكود بنجاح!" };
     }),

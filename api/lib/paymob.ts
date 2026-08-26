@@ -1,12 +1,12 @@
 import { TRPCError } from "@trpc/server";
 import { env } from "./env";
+import {
+  BILLING_PLANS,
+  getBillingPlan,
+  type BillingPlan,
+} from "../../contracts/plans";
 
 const PAYMOB_API = "https://accept.paymob.com/api";
-
-const PLAN_AMOUNT_CENTS: Record<"pro_monthly" | "pro_yearly", number> = {
-  pro_monthly: 99_00,
-  pro_yearly: 990_00,
-};
 
 export function isPaymobConfigured(): boolean {
   return !!(
@@ -14,6 +14,10 @@ export function isPaymobConfigured(): boolean {
     env.PAYMOB_INTEGRATION_ID &&
     env.PAYMOB_IFRAME_ID
   );
+}
+
+export function isPaymobWebhookVerificationConfigured(): boolean {
+  return Boolean(env.PAYMOB_HMAC_SECRET);
 }
 
 async function paymobPost<T>(
@@ -52,7 +56,7 @@ async function getAuthToken(): Promise<string> {
  * Hosted iframe checkout — extra metadata flows to webhook via payment_key `extras`.
  */
 export async function createPaymobHostedCheckoutUrl(params: {
-  plan: "pro_monthly" | "pro_yearly";
+  plan: BillingPlan;
   clientEmail?: string | null;
   userId: number;
   userType: "oauth" | "local";
@@ -65,7 +69,8 @@ export async function createPaymobHostedCheckoutUrl(params: {
   }
 
   const authToken = await getAuthToken();
-  const amountCents = PLAN_AMOUNT_CENTS[params.plan];
+  const billingPlan = getBillingPlan(params.plan);
+  const amountCents = billingPlan.amountCents;
 
   const order = await paymobPost<{ id: number }>("/ecommerce/orders", {
     auth_token: authToken,
@@ -74,10 +79,7 @@ export async function createPaymobHostedCheckoutUrl(params: {
     currency: "EGP",
     items: [
       {
-        name:
-          params.plan === "pro_yearly"
-            ? "SmartSpend Pro Yearly"
-            : "SmartSpend Pro Monthly",
+        name: billingPlan.displayName,
         amount_cents: amountCents,
         quantity: 1,
       },
@@ -131,3 +133,5 @@ export async function createPaymobHostedCheckoutUrl(params: {
 
   return `https://accept.paymob.com/api/acceptance/iframes/${env.PAYMOB_IFRAME_ID}?payment_token=${paymentKey.token}`;
 }
+
+export { BILLING_PLANS };

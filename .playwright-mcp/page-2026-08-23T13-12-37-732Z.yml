@@ -1,0 +1,155 @@
+- generic [active] [ref=f5e1]:
+  - generic:
+    - generic [ref=f5e9]:
+      - generic [ref=f5e10]:
+        - generic [ref=f5e11]:
+          - img "SmartSpend"
+        - generic [ref=f5e12]:
+          - button [ref=f5e13] [cursor=pointer]
+          - button "فتح القائمة" [ref=f5e14] [cursor=pointer]
+      - complementary [ref=f5e16]:
+        - generic [ref=f5e17]:
+          - generic [ref=f5e18]:
+            - img "SmartSpend"
+          - generic [ref=f5e19]:
+            - button [ref=f5e20] [cursor=pointer]
+            - button [ref=f5e21] [cursor=pointer]
+            - button [ref=f5e22] [cursor=pointer]
+        - generic [ref=f5e24]:
+          - paragraph [ref=f5e25]: فحص الجودة
+          - paragraph [ref=f5e27]: مجاني
+        - navigation [ref=f5e28]:
+          - link "الرئيسية" [ref=f5e29] [cursor=pointer]:
+            - /url: /dashboard
+          - link "إحصائيات" [ref=f5e36] [cursor=pointer]:
+            - /url: /dashboard?tab=stats
+          - link "مركز AI" [ref=f5e40] [cursor=pointer]:
+            - /url: /ai
+          - link "التقويم" [ref=f5e45] [cursor=pointer]:
+            - /url: /dashboard?tab=calendar
+          - link "البرو والأسعار" [ref=f5e49] [cursor=pointer]:
+            - /url: /pro
+          - link "الربط البنكي" [ref=f5e53] [cursor=pointer]:
+            - /url: /bank-sync
+        - generic [ref=f5e57]:
+          - link "الدعم" [ref=f5e58] [cursor=pointer]:
+            - /url: /support
+          - link "الإعدادات" [ref=f5e63] [cursor=pointer]:
+            - /url: /settings
+          - button "خروج" [ref=f5e68] [cursor=pointer]
+      - navigation "التنقل الرئيسي" [ref=f5e208]:
+        - generic [ref=f5e209]:
+          - link "تسجيل" [ref=f5e210] [cursor=pointer]:
+            - /url: /dashboard?tab=record&month=2026-08
+          - link "إحصائيات" [ref=f5e218] [cursor=pointer]:
+            - /url: /dashboard?tab=stats&month=2026-08
+          - link "مركز AI" [ref=f5e222] [cursor=pointer]:
+            - /url: /ai
+          - link "تقويم" [ref=f5e227] [cursor=pointer]:
+            - /url: /dashboard?tab=calendar&month=2026-08
+          - button "فتح القائمة" [ref=f5e231] [cursor=pointer]:
+            - generic [ref=f5e233]: المزيد
+      - main [ref=f5e99]:
+        - generic [ref=f5e101]:
+          - generic [ref=f5e104]:
+            - button "كمل بياناتك عشان نعرفك أكتر" [ref=f5e105] [cursor=pointer]
+            - generic [ref=f5e106]:
+              - generic [ref=f5e107]:
+                - generic [ref=f5e108]:
+                  - generic [ref=f5e109]:
+                    - heading "تسجيل العمليات" [level=1] [ref=f5e110]
+                    - generic [ref=f5e111]: أضف الدخل لقراءة أدق
+                  - generic [ref=f5e112]: "1"
+                - paragraph [ref=f5e117]: أهلاً فحص الجودة، ابدأ بتسجيل العملية بسرعة واترك التحليلات لقسم الإحصائيات.
+              - tablist [ref=f5e119]:
+                - tab "تسجيل" [selected] [ref=f5e120] [cursor=pointer]
+                - tab "إحصائيات" [ref=f5e121] [cursor=pointer]
+                - tab "تقويم" [ref=f5e122] [cursor=pointer]
+            - generic [ref=f5e123]:
+              - generic [ref=f5e131]:
+                - paragraph [ref=f5e132]: دخل الشهر
+                - paragraph [ref=f5e133]: 0 ج.م
+              - generic [ref=f5e140]:
+                - paragraph [ref=f5e141]: مصروف الشهر
+                - paragraph [ref=f5e142]: 150 ج.م
+            - generic [ref=f5e143]:
+              - generic [ref=f5e144]:
+                - generic [ref=f5e145]:
+                  - generic [ref=f5e147]: سجل بحرية.. والذكاء الاصطناعي هيفهمك
+                  - generic [ref=f5e152]:
+                    - generic [ref=f5e153]: "الحالة: جاهز"
+                    - generic [ref=f5e154]:
+                      - generic [ref=f5e155]:
+                        - generic [ref=f5e156]: سجل مصاريفك أو دخلك
+                        - textbox "إدخال نص المصروف أو الدخل" [disabled] [ref=f5e157]:
+                          - /placeholder: "سجل مصاريفك أو دخلك هنا... (مثال: صرفت 150 جنيه مطعم)"
+                        - generic [ref=f5e234]: تم الحفظ بنجاح
+                      - generic [ref=f5e158]:
+                        - generic [ref=f5e159]:
+                          - generic [ref=f5e160]:
+                            - button "بدء التسجيل الصوتي" [disabled]
+                          - button "مسح إيصال أو فاتورة بالكاميرا" [disabled]
+                        - button "سجل وحلل" [disabled]
+                    - generic "parser-trace route=expense_parse engine=classification_engine.v1 boundary=independent_classification_engine tools=classification_engine.v1, smart_pipeline, rule_engine parsedBy=rule_engine decision=auto_save llm=0 embedding=0 tokens=0 context=finance.summary dataNeeds=finance.summary, classification.expense risk=low" [ref=f5e240]:
+                      - generic [ref=f5e241]:
+                        - generic [ref=f5e242]: parser trace
+                        - generic [ref=f5e243]: expense_parse
+                      - generic [ref=f5e244]:
+                        - generic [ref=f5e245]: tools classification_engine.v1, smart_pipeline, rule_engine
+                        - generic [ref=f5e246]: engine classification_engine.v1
+                        - generic [ref=f5e247]: by rule_engine
+                        - generic [ref=f5e248]: decision auto_save
+                        - generic [ref=f5e249]: confidence 90%
+                        - generic [ref=f5e250]: boundary independent_classification_engine
+                        - generic [ref=f5e251]: provider groq
+                        - generic [ref=f5e252]: LLM 0
+                        - generic [ref=f5e253]: embed 0
+                        - generic [ref=f5e254]: tokens 0
+                        - generic [ref=f5e255]: input 0
+                        - generic [ref=f5e256]: context finance.summary
+                        - generic [ref=f5e257]: needs finance.summary, classification.expense
+                        - generic [ref=f5e258]: risk low
+                    - button "إدخال يدوي تقليدي" [ref=f5e164] [cursor=pointer]
+                - generic [ref=f5e165]:
+                  - generic [ref=f5e166]:
+                    - generic [ref=f5e260]:
+                      - generic [ref=f5e261]:
+                        - text: آخر العمليات
+                        - generic [ref=f5e265]: 1 عملية
+                      - button [ref=f5e266] [cursor=pointer]
+                    - generic [ref=f5e274]:
+                      - generic [ref=f5e276]:
+                        - generic [ref=f5e277]: "-150 جنيه"
+                        - generic [ref=f5e278]: ٢٣ أغسطس ٢٠٢٦
+                      - generic [ref=f5e281]:
+                        - generic [ref=f5e282]:
+                          - generic [ref=f5e283]: مصروف
+                          - generic [ref=f5e284]: أكل وشرب
+                          - generic [ref=f5e285]: مطعم
+                        - button "تفاصيل العملية" [ref=f5e286] [cursor=pointer]
+                  - generic [ref=f5e178]:
+                    - button [ref=f5e179] [cursor=pointer]
+                    - generic [ref=f5e180]: الأهداف المالية والأحلام 🎯
+                    - generic [ref=f5e188]:
+                      - generic [ref=f5e189]:
+                        - heading "حدد أهدافك المالية وهنساعدك تحقق حلمك! 🚀" [level=4] [ref=f5e190]
+                        - paragraph [ref=f5e191]: هنعملك نظام مالي مخصص يمشي مع دخلك ومصروفاتك عشان تتبع الفائض وتحوله لمدخرات حقيقية تقربك من أحلامك خطوة بخطوة.
+                      - generic [ref=f5e192]:
+                        - generic [ref=f5e193]:
+                          - generic [ref=f5e194]: إيه هو حلمك المالي الجاي؟ 🌟
+                          - 'textbox "اكتب حلمك هنا (مثال: شراء سيارة، تكاليف الجواز، رحلة عمرة...)" [ref=f5e195]'
+                        - generic [ref=f5e196]:
+                          - generic [ref=f5e197]:
+                            - generic [ref=f5e198]: الهدف ده بكام؟ (ج.م) 💰
+                            - generic [ref=f5e199]: ممكن تديني شوية تفاصيل؟ (اختياري)
+                            - spinbutton "التكلفة بالجنيه" [ref=f5e200]
+                            - 'textbox "مثلاً: 6 شهور" [ref=f5e201]'
+                          - paragraph [ref=f5e202]: "💡 مثال للتفاصيل: شايف إنك ممكن توصل لهدفك ده بعد قد إيه؟ (مثلاً: 6 شهور)"
+                        - button "ابدأ رحلتك للادخار وحقق حلمك 🚀" [disabled]
+                      - generic [ref=f5e203]: 🎯 مفيش أهداف مسجلة لسه.. حدد حلمك فوق وابدأ!
+              - button "عرض الإحصائيات الكاملة" [ref=f5e206] [cursor=pointer]
+          - button [ref=f5e207] [cursor=pointer]
+    - region "Notifications alt+T":
+      - list:
+        - listitem [ref=f5e289]:
+          - generic [ref=f5e294]: تم الحفظ تلقائياً (1 عملية)

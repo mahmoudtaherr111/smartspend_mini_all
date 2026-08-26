@@ -25,8 +25,8 @@ import {
 } from "./lib/sms-ai-parser";
 import { parseSmsByRules } from "./lib/sms-rule-parser";
 import { randomBytes } from "crypto";
-import { verify } from "hono/jwt";
 import { env } from "./lib/env";
+import { validateActiveSessionToken } from "./lib/session-validation";
 import { getCookie } from "hono/cookie";
 
 export const smsApp = new Hono();
@@ -137,14 +137,8 @@ async function getUserFromSession(c: any): Promise<{
   // 1. Try Google OAuth cookie first
   const googleToken = getCookie(c, "google_session");
   if (googleToken) {
-    try {
-      const payload = (await verify(googleToken, env.JWT_SECRET, "HS256")) as any;
-      if (payload?.userId) {
-        return { id: Number(payload.userId), type: "oauth" };
-      }
-    } catch {
-      // ignore and try header
-    }
+    const activeSession = await validateActiveSessionToken(googleToken, "oauth");
+    if (activeSession) return { id: activeSession.userId, type: activeSession.userType };
   }
 
   // 2. Try Bearer token in Authorization header
@@ -152,14 +146,8 @@ async function getUserFromSession(c: any): Promise<{
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.slice(7).trim();
     if (token) {
-      try {
-        const payload = (await verify(token, env.JWT_SECRET, "HS256")) as any;
-        if (payload?.userId && payload?.userType) {
-          return { id: Number(payload.userId), type: payload.userType as "local" | "oauth" };
-        }
-      } catch {
-        return null;
-      }
+      const activeSession = await validateActiveSessionToken(token);
+      if (activeSession) return { id: activeSession.userId, type: activeSession.userType };
     }
   }
   return null;
@@ -447,7 +435,8 @@ smsApp.post("/ingest", async (c) => {
 
   const transactionDate = timestamp ? new Date(timestamp) : new Date();
 
-  await db.insert(expenses).values({
+  await db.transaction(async (tx) => {
+  await tx.insert(expenses).values({
     userId,
     userType,
     type,
@@ -472,7 +461,7 @@ smsApp.post("/ingest", async (c) => {
 
   // ── Step 5: Update SMS status ──
   if (smsId) {
-    await db
+    await tx
       .update(rawSmsEvents)
       .set({
         status: "processed",
@@ -485,8 +474,9 @@ smsApp.post("/ingest", async (c) => {
           parsed_by: parsedBy,
         },
       })
-      .where(eq(rawSmsEvents.id, smsId));
+      .where(and(eq(rawSmsEvents.id, smsId), eq(rawSmsEvents.userId, userId), eq(rawSmsEvents.userType, userType)));
   }
+  });
 
   console.log(
     `✅ [SMS Ingest] User ${userId} | ${type} | ${parseResult.amount} EGP | ${category} | ${parseResult.provider}`,

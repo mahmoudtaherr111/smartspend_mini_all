@@ -7,6 +7,7 @@ const { dbMock, selectQueries, updateQueries, deleteQueries } = vi.hoisted(() =>
   const deleteQueries: Array<Record<string, unknown>> = [];
 
   const dbMock: any = {
+    transaction: vi.fn(async (callback: (tx: any) => Promise<unknown>) => callback(dbMock)),
     select: vi.fn((fields?: Record<string, unknown>) => {
       selectQueries.push(fields ?? {});
       const selectChain: any = {
@@ -111,11 +112,11 @@ describe("chat router phase 6 memory controls & privacy", () => {
     expect(deleteQueries.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("clearConversation deletes conversation and messages but preserves active memories in aiMemoryItems", async () => {
+  it("clearConversation deletes conversation, messages, and summaries but preserves active memories", async () => {
     const result = await caller.clearConversation({ conversationId: 555 });
 
     expect(result).toEqual({ success: true });
-    expect(deleteQueries.length).toBe(2); // chatMessages and chatConversations
+    expect(deleteQueries.length).toBe(3); // chatMessages, summaries, and chatConversations
     // Check that updateQueries or deleteQueries do not target aiMemoryItems for deletion
     const touchedMemory = updateQueries.some((q) => "status" in q);
     expect(touchedMemory).toBe(false);

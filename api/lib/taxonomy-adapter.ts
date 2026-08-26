@@ -146,9 +146,34 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
     subCategory: "كهرباء",
     confidence: 98,
   },
+  "فاتورة الكهرباء": {
+    category: "فواتير",
+    subCategory: "كهرباء",
+    confidence: 98,
+  },
+  "فاتورة كهربا": {
+    category: "فواتير",
+    subCategory: "كهرباء",
+    confidence: 98,
+  },
+  "فاتورة كهرباء": {
+    category: "فواتير",
+    subCategory: "كهرباء",
+    confidence: 98,
+  },
   "كارت الكهربا": {
     category: "فواتير",
     subCategory: "كهرباء",
+    confidence: 98,
+  },
+  "فاتورة المياه": {
+    category: "فواتير",
+    subCategory: "مياه",
+    confidence: 98,
+  },
+  "فاتورة مياه": {
+    category: "فواتير",
+    subCategory: "مياه",
     confidence: 98,
   },
   "فاتورة المية": {
@@ -156,7 +181,17 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
     subCategory: "مياه",
     confidence: 98,
   },
+  "فاتورة مية": {
+    category: "فواتير",
+    subCategory: "مياه",
+    confidence: 98,
+  },
   "فاتورة الغاز": {
+    category: "فواتير",
+    subCategory: "غاز",
+    confidence: 98,
+  },
+  "فاتورة غاز": {
     category: "فواتير",
     subCategory: "غاز",
     confidence: 98,
@@ -235,6 +270,15 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
   "جبت جزمة": { category: "تسوق", subCategory: "أحذية", confidence: 97 },
   "قصيت شعري": { category: "تسوق", subCategory: "عناية شخصية", confidence: 95 },
   حلقت: { category: "تسوق", subCategory: "عناية شخصية", confidence: 95 },
+  حلاق: { category: "تسوق", subCategory: "عناية شخصية", confidence: 96 },
+  الحلاق: { category: "تسوق", subCategory: "عناية شخصية", confidence: 96 },
+  كوافير: { category: "تسوق", subCategory: "عناية شخصية", confidence: 96 },
+  الكوافير: { category: "تسوق", subCategory: "عناية شخصية", confidence: 96 },
+  صالون: { category: "تسوق", subCategory: "عناية شخصية", confidence: 96 },
+  الصالون: { category: "تسوق", subCategory: "عناية شخصية", confidence: 96 },
+  "صالون حلاقة": { category: "تسوق", subCategory: "عناية شخصية", confidence: 98 },
+  "صالون تجميل": { category: "تسوق", subCategory: "عناية شخصية", confidence: 98 },
+  حلاقة: { category: "تسوق", subCategory: "عناية شخصية", confidence: 96 },
   "شامبو ومعجون": {
     category: "تسوق",
     subCategory: "عناية شخصية",
@@ -410,6 +454,30 @@ const SYNONYM_GRAPH: Record<string, SynonymEntry> = {
     confidence: 72,
     ambiguityFlags: ["target_unknown"],
   },
+
+  // ─── Relationships & Family (العائلة / أصدقاء / موظفين) ───
+  اخويا: { category: "العائلة", subCategory: "عام", confidence: 95 },
+  أخويا: { category: "العائلة", subCategory: "عام", confidence: 95 },
+  اخي: { category: "العائلة", subCategory: "عام", confidence: 95 },
+  أخي: { category: "العائلة", subCategory: "عام", confidence: 95 },
+  اختي: { category: "العائلة", subCategory: "عام", confidence: 95 },
+  أختي: { category: "العائلة", subCategory: "عام", confidence: 95 },
+  ابويا: { category: "العائلة", subCategory: "عام", confidence: 95 },
+  أبويا: { category: "العائلة", subCategory: "عام", confidence: 95 },
+  امي: { category: "العائلة", subCategory: "عام", confidence: 95 },
+  أمي: { category: "العائلة", subCategory: "عام", confidence: 95 },
+  ماما: { category: "العائلة", subCategory: "عام", confidence: 95 },
+  بابا: { category: "العائلة", subCategory: "عام", confidence: 95 },
+  ابني: { category: "العائلة", subCategory: "عام", confidence: 95 },
+  بنتي: { category: "العائلة", subCategory: "عام", confidence: 95 },
+  مراتي: { category: "العائلة", subCategory: "عام", confidence: 95 },
+  زوجتي: { category: "العائلة", subCategory: "عام", confidence: 95 },
+  جوزي: { category: "العائلة", subCategory: "عام", confidence: 95 },
+  زوجي: { category: "العائلة", subCategory: "عام", confidence: 95 },
+  صاحبي: { category: "أصدقاء", subCategory: "عام", confidence: 95 },
+  صاحبتي: { category: "أصدقاء", subCategory: "عام", confidence: 95 },
+  صديقي: { category: "أصدقاء", subCategory: "عام", confidence: 95 },
+  صديقتي: { category: "أصدقاء", subCategory: "عام", confidence: 95 },
 };
 
 const LEGACY_CATEGORY_ALIASES: Record<string, string> = {

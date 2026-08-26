@@ -306,8 +306,6 @@ export const SUB_CATEGORY_MAP: Record<
   لبن: { category: "أكل وشرب", subCategory: "بقالة" },
   مناديل: { category: "سكن", subCategory: "منظفات" },
   مسحوق: { category: "سكن", subCategory: "منظفات" },
-
-  صالون: { category: "تسوق", subCategory: "عناية شخصية" },
   مكواه: { category: "تسوق", subCategory: "ملابس" },
   مكواة: { category: "تسوق", subCategory: "ملابس" },
   "دراي كلين": { category: "تسوق", subCategory: "ملابس" },

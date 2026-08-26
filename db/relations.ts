@@ -78,6 +78,14 @@ export const usersRelations = relations(users, ({ many }) => ({
   aiActionAuditLogs: many(aiActionAuditLogs),
   pendingClarifications: many(pendingClarifications),
   notificationLogs: many(notificationLogs),
+  adClicks: many(adClicks),
+  aiMemoryEmbeddings: many(aiMemoryEmbeddings),
+  authChallenges: many(authChallenges),
+  classificationLogs: many(classificationLogs),
+  discountCodes: many(discountCodes),
+  apiKeyErrors: many(apiKeyErrors),
+  referralsMade: many(referrals, { relationName: "referrerOauthUser" }),
+  referralsReceived: many(referrals, { relationName: "referredOauthUser" }),
 }));
 
 export const localUsersRelations = relations(localUsers, ({ many }) => ({
@@ -112,6 +120,14 @@ export const localUsersRelations = relations(localUsers, ({ many }) => ({
   aiActionAuditLogs: many(aiActionAuditLogs),
   pendingClarifications: many(pendingClarifications),
   notificationLogs: many(notificationLogs),
+  adClicks: many(adClicks),
+  aiMemoryEmbeddings: many(aiMemoryEmbeddings),
+  authChallenges: many(authChallenges),
+  classificationLogs: many(classificationLogs),
+  discountCodes: many(discountCodes),
+  apiKeyErrors: many(apiKeyErrors),
+  referralsMade: many(referrals, { relationName: "referrerLocalUser" }),
+  referralsReceived: many(referrals, { relationName: "referredLocalUser" }),
 }));
 
 export const expensesRelations = relations(expenses, ({ one, many }) => ({
@@ -134,6 +150,10 @@ export const expensesRelations = relations(expenses, ({ one, many }) => ({
   classificationLog: one(classificationLogs, {
     fields: [expenses.classificationLogId],
     references: [classificationLogs.id],
+  }),
+  wallet: one(userWallets, {
+    fields: [expenses.walletId],
+    references: [userWallets.id],
   }),
   clarifications: many(pendingClarifications),
 }));
@@ -160,7 +180,7 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
   }),
 }));
 
-export const userWalletsRelations = relations(userWallets, ({ one }) => ({
+export const userWalletsRelations = relations(userWallets, ({ one, many }) => ({
   localUser: one(localUsers, {
     fields: [userWallets.userId],
     references: [localUsers.id],
@@ -169,6 +189,7 @@ export const userWalletsRelations = relations(userWallets, ({ one }) => ({
     fields: [userWallets.userId],
     references: [users.id],
   }),
+  expenses: many(expenses),
 }));
 
 export const financialGoalsRelations = relations(financialGoals, ({ one, many }) => ({
@@ -396,4 +417,49 @@ export const aiActionAuditLogsRelations = relations(aiActionAuditLogs, ({ one })
   localUser: one(localUsers, { fields: [aiActionAuditLogs.userId], references: [localUsers.id] }),
   oauthUser: one(users, { fields: [aiActionAuditLogs.userId], references: [users.id] }),
   action: one(aiPendingActions, { fields: [aiActionAuditLogs.actionId], references: [aiPendingActions.id] }),
+}));
+
+export const discountCodesRelations = relations(discountCodes, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [discountCodes.createdBy],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [discountCodes.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const referralsRelations = relations(referrals, ({ one }) => ({
+  referrerLocalUser: one(localUsers, {
+    fields: [referrals.referrerId],
+    references: [localUsers.id],
+    relationName: "referrerLocalUser",
+  }),
+  referrerOauthUser: one(users, {
+    fields: [referrals.referrerId],
+    references: [users.id],
+    relationName: "referrerOauthUser",
+  }),
+  referredLocalUser: one(localUsers, {
+    fields: [referrals.referredId],
+    references: [localUsers.id],
+    relationName: "referredLocalUser",
+  }),
+  referredOauthUser: one(users, {
+    fields: [referrals.referredId],
+    references: [users.id],
+    relationName: "referredOauthUser",
+  }),
+}));
+
+export const apiKeyErrorsRelations = relations(apiKeyErrors, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [apiKeyErrors.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [apiKeyErrors.userId],
+    references: [users.id],
+  }),
 }));

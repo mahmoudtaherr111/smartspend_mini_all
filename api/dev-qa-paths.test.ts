@@ -34,7 +34,7 @@ describe("dev-only browser QA paths", () => {
     expect(router).toContain("clearVoiceSessionState");
   });
 
-  it("keeps expense, report, and local-token QA helpers development-only", () => {
+  it("keeps expense and report QA helpers development-only while OAuth never consumes URL tokens", () => {
     const expenseForm = source("src/components/expenses/ExpenseForm.tsx");
     const insights = source("src/components/insights/AIInsights.tsx");
     const authCallback = source("src/pages/AuthCallback.tsx");
@@ -49,11 +49,9 @@ describe("dev-only browser QA paths", () => {
       insights.indexOf('params.get("report_qa_compare_month")'),
     );
 
-    expect(authCallback).toContain("import.meta.env.DEV");
-    expect(authCallback).toContain('searchParams.get("local") === "1"');
-    expect(authCallback.indexOf("import.meta.env.DEV")).toBeLessThan(
-      authCallback.indexOf('localStorage.setItem("local_auth_token", token)'),
-    );
+    expect(authCallback).toContain("HttpOnly cookie");
+    expect(authCallback).not.toContain('searchParams.get("token")');
+    expect(authCallback).not.toContain('localStorage.setItem("local_auth_token", token)');
   });
 
   it("keeps AI Center QA seed and runner reproducible and secret-free", () => {

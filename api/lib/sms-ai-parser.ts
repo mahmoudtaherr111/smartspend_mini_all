@@ -5,6 +5,15 @@
  */
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { env } from "./env";
+import { mapModelName } from "./model-mapper";
+import {
+  condenseSmsNotification,
+  cleanSmsText,
+  normalizeSmsText,
+} from "./sms-rule-parser";
+
+// Re-export shared cleaners for external consumers
+export { condenseSmsNotification, cleanSmsText, normalizeSmsText };
 
 export interface SmsParseResult {
   transaction_detected: boolean;
@@ -98,16 +107,20 @@ export async function parseSmsFinancialData(
   message: string,
 ): Promise<SmsParseResult | null> {
   const apiKey = env.GEMINI_API_KEY;
-  const modelName = "gemini-2.0-flash"; // Fast & cheap for simple extraction
+  const modelName = mapModelName("flash"); // Maps dynamically to active fast model (e.g. gemini-3.1-flash-lite)
 
   const trimmedMessage = message.trim();
+  if (!trimmedMessage) return null;
 
-  // 1. Check the in-memory cache first to avoid duplicate token costs
+  // 1. Condense the SMS to strip non-financial boilerplate and save 40–70% input tokens
+  const condensedMessage = condenseSmsNotification(trimmedMessage);
+
+  // 2. Check the in-memory cache first to avoid duplicate token costs
   const now = Date.now();
-  const cached = aiParseCache.get(trimmedMessage);
+  const cached = aiParseCache.get(trimmedMessage) || aiParseCache.get(condensedMessage);
   if (cached && cached.expiresAt > now) {
     console.log(
-      `[SMS AI Parser] Cache HIT for message: "${trimmedMessage.slice(0, 50)}..."`,
+      `[SMS AI Parser] Cache HIT for message: "${condensedMessage.slice(0, 50)}..."`,
     );
     return cached.result;
   }
@@ -126,7 +139,7 @@ export async function parseSmsFinancialData(
     });
 
     const result = await model.generateContent(
-      `رسالة SMS:\n"${trimmedMessage}"`,
+      `رسالة SMS:\n"${condensedMessage}"`,
     );
     const responseText = result.response.text().trim();
 
@@ -146,14 +159,16 @@ export async function parseSmsFinancialData(
       raw_extracted: parsed as unknown as Record<string, unknown>,
     };
 
-    // 2. Cache the parsed result if a valid transaction is detected
+    // 3. Cache the parsed result if a valid transaction is detected
     if (finalResult.transaction_detected) {
-      aiParseCache.set(trimmedMessage, {
+      const cacheEntry = {
         result: finalResult,
         expiresAt: Date.now() + CACHE_TTL,
-      });
+      };
+      aiParseCache.set(trimmedMessage, cacheEntry);
+      aiParseCache.set(condensedMessage, cacheEntry);
       console.log(
-        `[SMS AI Parser] Cache SET for message: "${trimmedMessage.slice(0, 50)}..."`,
+        `[SMS AI Parser] Cache SET for message: "${condensedMessage.slice(0, 50)}..."`,
       );
     }
 

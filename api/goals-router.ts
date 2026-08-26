@@ -2,8 +2,8 @@ import { z } from "zod";
 import { router, authedProcedure, proProcedure } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
-import { financialGoals, expenses, users, localUsers } from "../db/schema";
-import { eq, and, desc, gte, sql } from "drizzle-orm";
+import { financialGoals, expenses, users, localUsers, userBudgets } from "../db/schema";
+import { eq, and, desc, gte, lt, sql } from "drizzle-orm";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { env } from "./lib/env";
 import {
@@ -21,6 +21,7 @@ import {
   summarizeProfileForAI,
 } from "./services/user-profile-service";
 import { invalidateFinanceUserCache } from "./services/finance-semantic-layer";
+import { businessMonthRange } from "./lib/app-time";
 
 const FREE_DESCRIPTION_MAX = 120;
 const FREE_GOALS_LIMIT = 3;
@@ -55,12 +56,12 @@ async function trackGoalTokens(
   if (userType === "oauth") {
     await db
       .update(users)
-      .set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` })
+      .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokens}` })
       .where(eq(users.id, userId));
   } else {
     await db
       .update(localUsers)
-      .set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` })
+      .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokens}` })
       .where(eq(localUsers.id, userId));
   }
   await recordAiUsageEvent({
@@ -192,8 +193,7 @@ export const goalsRouter = router({
       }
 
       const profile = await getSmartProfile(ctx.user.id, ctx.user.type);
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
+      const monthRange = businessMonthRange();
       const monthExpense = await db
         .select({ total: sql<number>`COALESCE(SUM(amount),0)` })
         .from(expenses)
@@ -202,7 +202,8 @@ export const goalsRouter = router({
             eq(expenses.userId, ctx.user.id),
             eq(expenses.userType, ctx.user.type),
             eq(expenses.type, "expense"),
-            gte(expenses.date, startOfMonth),
+            gte(expenses.date, monthRange.start),
+            lt(expenses.date, monthRange.endExclusive),
           ),
         );
 
@@ -287,6 +288,28 @@ export const goalsRouter = router({
             eq(financialGoals.userType, ctx.user.type),
           ),
         );
+      await invalidateFinanceUserCache(ctx.user.id, ctx.user.type);
+      return { success: true };
+    }),
+
+  delete: authedProcedure
+    .input(z.object({ goalId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      await db.transaction(async (tx) => {
+        await tx
+          .update(userBudgets)
+          .set({ linkedGoalId: null })
+          .where(and(eq(userBudgets.linkedGoalId, input.goalId), eq(userBudgets.userId, ctx.user.id), eq(userBudgets.userType, ctx.user.type)));
+        await tx
+          .delete(financialGoals)
+          .where(
+            and(
+              eq(financialGoals.id, input.goalId),
+              eq(financialGoals.userId, ctx.user.id),
+              eq(financialGoals.userType, ctx.user.type),
+            ),
+          );
+      });
       await invalidateFinanceUserCache(ctx.user.id, ctx.user.type);
       return { success: true };
     }),

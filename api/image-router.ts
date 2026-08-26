@@ -3,7 +3,7 @@ import { router, proProcedure } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
 import { expenses, userDictionaries, users, localUsers } from "../db/schema";
-import { eq, and, gte, sql } from "drizzle-orm";
+import { eq, and, gte, lt, sql } from "drizzle-orm";
 import { env } from "./lib/env";
 import {
   loadSystemConfig,
@@ -20,6 +20,7 @@ import {
   summarizeProfileForAI,
 } from "./services/user-profile-service";
 import { invalidateUserMemory } from "./lib/muscle-memory";
+import { businessMonthRange } from "./lib/app-time";
 
 async function trackImageTokens(
   userId: number,
@@ -31,12 +32,12 @@ async function trackImageTokens(
   if (userType === "oauth") {
     await db
       .update(users)
-      .set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` })
+      .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokens}` })
       .where(eq(users.id, userId));
   } else {
     await db
       .update(localUsers)
-      .set({ aiTokensUsed: sql`ai_tokens_used + ${tokens}` })
+      .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokens}` })
       .where(eq(localUsers.id, userId));
   }
   await recordAiUsageEvent({
@@ -81,9 +82,7 @@ export const imageRouter = router({
         estimated,
       );
 
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
+      const monthRange = businessMonthRange();
       const monthRows = await db
         .select({ amount: expenses.amount, type: expenses.type })
         .from(expenses)
@@ -91,7 +90,8 @@ export const imageRouter = router({
           and(
             eq(expenses.userId, ctx.user.id),
             eq(expenses.userType, ctx.user.type),
-            gte(expenses.date, startOfMonth),
+            gte(expenses.date, monthRange.start),
+            lt(expenses.date, monthRange.endExclusive),
           ),
         );
       const totalIncome = monthRows
@@ -153,7 +153,7 @@ export const imageRouter = router({
 
       let expenseId: number | null = null;
       if (input.saveExpense) {
-        await db.insert(expenses).values({
+        const [createdExpense] = await db.insert(expenses).values({
           userId: ctx.user.id,
           userType: ctx.user.type,
           type: parsed.type,
@@ -169,7 +169,8 @@ export const imageRouter = router({
             merchant: parsed.merchant,
             confidence: parsed.confidence,
           },
-        });
+        }).$returningId();
+        expenseId = createdExpense.id;
         invalidateUserMemory(ctx.user.id, ctx.user.type);
       }
 

@@ -1,0 +1,5 @@
+- generic [active] [ref=f3e1]:
+  - generic:
+    - main [ref=f3e3]:
+      - generic [ref=f3e4]: جاري التحميل...
+    - region "Notifications alt+T"

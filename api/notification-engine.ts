@@ -1,9 +1,10 @@
 import { db } from "./queries/connection";
 import { notificationTemplates, inAppNotifications, notificationLogs, pushSubscriptions, users, localUsers, userProfiles, expenses } from "../db/schema";
-import { eq, and, or, lte, gte, sql, isNull, inArray } from "drizzle-orm";
+import { eq, and, or, lte, gte, lt, sql, isNull, inArray } from "drizzle-orm";
 import webpush from "web-push";
 import { messaging, isFirebaseInitialized } from "./services/firebase";
 import { env } from "./lib/env";
+import { businessDayRange, businessMonthRange } from "./lib/app-time";
 
 const appUrl = env.APP_URL || "http://localhost:3000";
 const logoUrl = `${appUrl}/photos/white_mode_logo-removebg-preview.png`;
@@ -501,11 +502,7 @@ export async function checkUserBudgetExceeded(userId: number, userType: string) 
     if (budgetLimit <= 0) return;
 
     // 2. Calculate sum of expenses for this month
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-
-    const endOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0, 23, 59, 59, 999);
+    const monthRange = businessMonthRange();
 
     const [{ totalSpent }] = await db.select({ totalSpent: sql<number>`COALESCE(SUM(${expenses.amount}), 0)` })
       .from(expenses)
@@ -513,8 +510,9 @@ export async function checkUserBudgetExceeded(userId: number, userType: string) 
         and(
           eq(expenses.userId, userId),
           eq(expenses.userType, userType),
-          gte(expenses.date, startOfMonth),
-          lte(expenses.date, endOfMonth)
+          eq(expenses.type, "expense"),
+          gte(expenses.date, monthRange.start),
+          lt(expenses.date, monthRange.endExclusive)
         )
       );
 
@@ -535,8 +533,8 @@ export async function checkUserBudgetExceeded(userId: number, userType: string) 
             eq(notificationLogs.templateId, template.id),
             eq(notificationLogs.userId, userId),
             eq(notificationLogs.userType, userType),
-            gte(notificationLogs.sentAt, startOfMonth),
-            lte(notificationLogs.sentAt, endOfMonth)
+            gte(notificationLogs.sentAt, monthRange.start),
+            lt(notificationLogs.sentAt, monthRange.endExclusive)
           )
         )
         .limit(1);
@@ -639,8 +637,7 @@ export async function checkAndTriggerSmartActivityNotifications() {
       const segment = parseSegment(template.targetSegment);
       const minStreak = segment.minStreak !== undefined ? Number(segment.minStreak) : 2;
 
-      const startOfToday = new Date();
-      startOfToday.setHours(0, 0, 0, 0);
+      const startOfToday = businessDayRange().start;
 
       const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
       const thirtySixHoursAgo = new Date(now.getTime() - 36 * 60 * 60 * 1000);

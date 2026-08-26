@@ -12,11 +12,11 @@ export default function Landing() {
   const { theme } = useTheme();
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-emerald-50/40 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950/30"
+      className="min-h-full min-h-screen-safe bg-gradient-to-b from-slate-50 via-white to-emerald-50/40 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950/30"
       dir="rtl"
     >
       <SEOMeta path="/" title="SmartSpend AI — إدارة مصاريفك بالعامية" />
-      <header className="border-b border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md sticky top-0 z-20">
+      <header className="border-b border-slate-200/80 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md sticky top-0 z-20 pt-safe">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 font-bold text-lg">
             <img
@@ -145,7 +145,7 @@ export default function Landing() {
           </Card>
         </section>
 
-        <footer className="text-center text-sm text-muted-foreground pb-10 space-x-4 space-x-reverse">
+        <footer className="text-center text-sm text-muted-foreground pb-10 pb-safe space-x-4 space-x-reverse">
           <Link to="/privacy" className="hover:underline">
             سياسة الخصوصية
           </Link>

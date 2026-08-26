@@ -160,6 +160,7 @@ async function seedProfile(userId: number): Promise<void> {
         city: "Cairo",
       },
       financialInfo: {
+        hasFixedSalary: true,
         salaryDay: 1,
         primaryCurrency: "EGP",
         monthlyIncome: 18000,
@@ -180,6 +181,7 @@ async function seedProfile(userId: number): Promise<void> {
         financialGoal: "saving",
         financialPersonality: "balanced",
         financialInfo: {
+          hasFixedSalary: true,
           salaryDay: 1,
           primaryCurrency: "EGP",
           monthlyIncome: 18000,

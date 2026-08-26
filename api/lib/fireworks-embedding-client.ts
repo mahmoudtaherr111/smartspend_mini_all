@@ -39,6 +39,28 @@ const descriptorEmbeddingCache = new LRUCache<string, number[]>({
   ttl: 1000 * 60 * 60 * 24 * 7,
 });
 
+// A suspended/unauthorized provider will not recover on the next request.
+// Keep the local classifier available and avoid turning each user action into a
+// failing upstream call. Cached vectors remain usable while the circuit is open.
+let providerUnavailableUntil = 0;
+let lastUnavailableStatus: number | null = null;
+
+function isProviderUnavailable(): boolean {
+  return Date.now() < providerUnavailableUntil;
+}
+
+function markProviderUnavailable(status: number): void {
+  const cooldownMs = status === 429 ? 60_000 : [401, 402, 403].includes(status) ? 15 * 60_000 : 0;
+  if (!cooldownMs) return;
+
+  const nextUnavailableUntil = Date.now() + cooldownMs;
+  if (nextUnavailableUntil > providerUnavailableUntil || lastUnavailableStatus !== status) {
+    providerUnavailableUntil = nextUnavailableUntil;
+    lastUnavailableStatus = status;
+    console.warn(`[Fireworks Embedding] Circuit opened after HTTP ${status} for ${Math.round(cooldownMs / 60_000)} minute(s)`);
+  }
+}
+
 export interface FireworksEmbeddingResult {
   embedding: number[];
   cached: boolean;
@@ -59,6 +81,7 @@ export async function getFireworksEmbedding(
   if (cached) {
     return { embedding: cached, cached: true };
   }
+  if (isProviderUnavailable()) return null;
 
   try {
     const controller = new AbortController();
@@ -81,6 +104,7 @@ export async function getFireworksEmbedding(
 
     if (!resp.ok) {
       const errText = await resp.text().catch(() => "");
+      markProviderUnavailable(resp.status);
       console.warn(
         `[Fireworks Embedding] HTTP ${resp.status}: ${errText.slice(0, 200)}`,
       );
@@ -138,6 +162,7 @@ export async function getFireworksEmbeddingsBatch(
   if (uncachedTexts.length === 0) {
     return results;
   }
+  if (isProviderUnavailable()) return results;
 
   try {
     const controller = new AbortController();
@@ -160,6 +185,7 @@ export async function getFireworksEmbeddingsBatch(
 
     if (!resp.ok) {
       const errText = await resp.text().catch(() => "");
+      markProviderUnavailable(resp.status);
       console.warn(
         `[Fireworks Embedding Batch] HTTP ${resp.status}: ${errText.slice(0, 200)}`,
       );
@@ -267,4 +293,6 @@ export function resetFireworksCache() {
   queryEmbeddingCache.clear();
   descriptorEmbeddingCache.clear();
   descriptorIndex = null;
+  providerUnavailableUntil = 0;
+  lastUnavailableStatus = null;
 }
