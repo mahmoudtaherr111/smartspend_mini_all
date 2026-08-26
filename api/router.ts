@@ -20,6 +20,7 @@ import { goalsRouter } from "./goals-router";
 import { webauthnRouter } from "./webauthn-router";
 import { chatRouter } from "./chat-router";
 import { businessRouter } from "./business-router";
+import { budgetRouter } from "./budget-router";
 
 export const appRouter = router({
   auth: authRouter,
@@ -40,6 +41,7 @@ export const appRouter = router({
   wallet: walletRouter,
   image: imageRouter,
   goals: goalsRouter,
+  budget: budgetRouter,
   webauthn: webauthnRouter,
   chat: chatRouter,
   business: businessRouter,

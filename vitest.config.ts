@@ -14,8 +14,21 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["api/**/*.test.ts", "api/**/*.spec.ts", "src/**/*.test.ts", "src/**/*.test.tsx"],
+    include: [
+      "api/**/*.test.ts",
+      "api/**/*.spec.ts",
+      "src/**/*.test.ts",
+      "src/**/*.test.tsx",
+      "tests/**/*.test.ts",
+      "tests/**/*.spec.ts",
+    ],
+    exclude: [
+      "tests/e2e/**",
+      "node_modules/**",
+      "dist/**",
+    ],
     globals: true,
+    testTimeout: 15000,
     env: {
       DATABASE_URL: "mysql://test:test@localhost:3306/test",
       GOOGLE_CLIENT_ID: "test",

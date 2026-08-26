@@ -1,117 +1,103 @@
 # SmartSpend AI — AI Center & Chatbot Agent Architecture (مركز الذكاء الاصطناعي)
 
-> **AI AGENT SSOT:** This document defines the intent routing, RAG semantic memory writer/retriever, tool schemas, and capabilities/constraints of the AI Chatbot Agent.
+> **AI AGENT SSOT:** This document defines intent routing, SQL aggregation fast paths, RAG semantic memory, tool catalogs, and execution constraints of the AI Chatbot Agent.
 
 ---
 
 ## 1. 🧠 High-Level Agent Execution Flow
 
 ```
-[User Input Text] 
-       │
-       ▼
-[Intent Routing & Intent Classifier] (finance_query / action_request / chat)
-       │
-       ├─────────────────────────────────┐
-       ▼ (if finance_query)              ▼ (if advice/action)
-[Finance Semantic Layer (resolvers.ts)]  [RAG Context Pipeline]
-- SQL Aggregation Fast Path              - Loads User Profile Settings
-- Direct MySQL SUM/COUNT                 - Reformulates query (`reformulateMemoryQuery`)
-- Wipes LLM Token Cost to $0             - Hybrid Lexical-Semantic retrieval from Memory
-- Instant JSON response in <15ms         - Pre-run Anonymizer (`redactSensitiveData`)
-                                               │
-                                               ▼
-                                     [LLM Agent Kernel (Gemini/Groq/NVIDIA)]
-                                     - Executes grounded chat + tool calls
-                                     - Validates numbers (`validateNumbersAgainstFacts`)
-                                     - Generates pending action drafts with `idempotencyKey`
-                                               │
-                                               ▼
-                                     [Memory Writer Pipeline]
-                                     - Extracts memories (`extractSemanticMemories`)
-                                     - Generates 768-dim embeddings in background
+[User Input Text in Egyptian Arabic] 
+               │
+               ▼
+[Intent Routing & Heuristic Classifier] (finance_query / action_request / advice_request / chat)
+               │
+               ├─────────────────────────────────────────┐
+               ▼ (if deterministic finance query)        ▼ (if advice/action/chat)
+[Finance Semantic Layer (resolvers.ts)]       [RAG Context Pipeline]
+- SQL Aggregation Fast Path                   - Loads User Profile & Active Wallets
+- Direct MySQL SUM/COUNT/GROUP BY             - Reformulates query (reformulateMemoryQuery)
+- Wipes LLM Token Cost to $0.00               - Hybrid Lexical-Semantic Memory Retrieval
+- Instant JSON response in <15ms              - Pre-run Anonymizer (redactSensitiveData)
+                                                         │
+                                                         ▼
+                                              [LLM Agent Kernel (Gemini/Groq/Fireworks)]
+                                              - Executes grounded chat + tool invocations
+                                              - Validates numbers (validateNumbersAgainstFacts)
+                                              - Generates pending action drafts with idempotencyKey
+                                                         │
+                                                         ▼
+                                              [Memory Writer Pipeline]
+                                              - Extracts durable facts (extractSemanticMemories)
+                                              - Generates 768-dim embeddings in background
 ```
 
 ---
 
 ## 2. 🔀 Chatbot Intent Routing Map (`api/services/ai-kernel/`)
 
-| Intent Kind | Matching Heuristics | Target Execution Path | LLM Cost |
+| Intent Kind | Matching Heuristics | Target Execution Path | LLM Token Cost |
 | :--- | :--- | :--- | :--- |
-| `finance_query` | Simple spending queries (e.g. *"صرفت كام الشهر ده؟"*) | SQL Aggregation in `resolvers.ts` | **0 LLM Tokens** |
-| `action_request` | Intents to create budget/goals/transfers | Action proposal drafts (`aiPendingActions` + `idempotencyKey`) | Yes (Structured output) |
-| `advice_request` | Lifestyle and saving optimization requests | Chat completions + RAG Memory context | Yes (Generative text) |
-| `general_chat` | Greetings and non-financial chit-chat | Simple prompt loop | Yes (Low priority) |
+| `finance_query` | Simple spending queries (e.g. *"صرفت كام الشهر ده؟"*, *"كام رصيدي؟"*) | SQL Aggregation in `resolvers.ts` | **$0.00 (0 Tokens)** |
+| `action_request` | Intents to create budget, goals, or transfer records | Action proposal drafts (`aiPendingActions` + `idempotencyKey`) | Yes (Structured JSON) |
+| `advice_request` | Lifestyle optimization, budget planning, savings ideas | Chat completions + RAG Memory context | Yes (Generative Text) |
+| `general_chat` | Greetings, app guide, and non-financial conversation | Direct prompt loop with safety filters | Yes (Low Priority) |
 
 ---
 
 ## 3. 💾 Short-Term vs Long-Term Memory (RAG) Subsystem
 
 ### Short-Term Memory (Session Context)
-* **Table:** `aiConversationSummaries` (`schema.ts`).
-* **Mechanism:** Saves the last 8 turns of context, auto-collapsing old chats into running summaries (`buildRunningSummary`) to preserve the LLM token budget.
+* **Table:** `aiConversationSummaries` (`db/schema.ts`).
+* **Mechanism:** Retains recent conversation turns and automatically collapses older messages into running summary capsules (`buildRunningSummary`), preventing LLM context window overflow and conserving token budgets.
 
 ### Long-Term Memory (Persistent Preferences)
-* **Tables:** `aiMemoryItems` (textual preferences) + `aiMemoryEmbeddings` (vector embeddings).
+* **Tables:** `aiMemoryItems` (textual facts & preferences) + `aiMemoryEmbeddings` (vector embeddings).
 * **Embedding Model:** Fireworks `accounts/fireworks/models/qwen3-embedding-8b` (768 dimensions).
-* **Storage Trigger:** If a user says commit keywords, `writeConversationMemory` is invoked.
+* **Storage Trigger:** Detected automatically via `extractSemanticMemories` on commitment keywords (`اتفقنا`, `موافق`, `بحب`, `بكره`, `مش هلمس`).
 
 ---
 
-## 4. 📝 Deterministic Memory Extraction Signals (`api/services/ai-memory/`)
+## 4. 🔍 Hybrid Lexical-Semantic Retrieval Scoring
 
-The writer (`memory-writer.ts`) uses keyword triggers to parse memories before vector indexing:
-
-| Memory Type | Signal Keywords (Egyptian Slang) | Reason/Category |
-| :--- | :--- | :--- |
-| **`preference`** | `بحب`, `بكره`, `افضل`, `مفضل`, `prefer`, `like`, `avoid` | User spending likes/dislikes |
-| **`plan`** | `مش هلمس`, `ما تلمسش`, `حد اقصي`, `ميزانيه`, `budget`, `limit` | Commitment / constraints |
-| **`fact`** | `ازاي اربط`, `اربط الفيزا`, `اربط الكارت`, `sms`, `bank`, `visa` | Application help/interest |
-| **`agreement`** | `اتفقنا`, `موافق`, `تمام افتكر`, `خزن`, `save this`, `remember` | Commits suggestions from previous assistant turn |
-
----
-
-## 5. 🔍 Hybrid Lexical-Semantic Retrieval Scoring
-
-During retrieval (`memory-retriever.ts`), candidates are queried from `aiMemoryItems` and ranked using a custom scoring formula:
+During memory retrieval (`memory-retriever.ts`), candidate preferences are queried from `aiMemoryItems` and ranked using a multi-signal scoring formula:
 
 \[\text{Total Score} = \text{Cosine Similarity} + \text{Lexical Score} + \text{Specific Token Boost} + \text{Recency Boost} + \text{Importance Bonus}\]
 
-| Variable | Implementation Details | Weight / Range |
+| Scoring Factor | Implementation Details | Weight / Range |
 | :--- | :--- | :--- |
-| **Cosine Similarity** | Angular proximity between Fireworks embeddings. | `[0.0, 1.0]` |
-| **Lexical Score** | Keyword token overlaps (`lexicalScore`). | `[0.0, 0.3]` |
-| **Specific Token Boost** | Exact matching of key noun tokens (`specificTokenScore`). | `[0.0, 0.4]` |
-| **Recency Boost** | Timestamps boost (`recencyBoost`). Ages days degrade. | `[0.0, 0.15]` |
-| **Importance Bonus** | Extracted signal importance divided by 1000. | `[0.0, 0.1]` |
+| **Cosine Similarity** | Angular proximity between 768-dim Fireworks vectors. | `[0.0, 1.0]` |
+| **Lexical Score** | Keyword token overlap between query and memory content. | `[0.0, 0.3]` |
+| **Specific Token Boost** | Exact matching of key financial nouns (e.g. `قهوة`, `مطعم`, `بنزين`). | `[0.0, 0.4]` |
+| **Recency Boost** | Recency decay boosting memories created/updated recently. | `[0.0, 0.15]` |
+| **Importance Bonus** | Assigned memory importance scaled down (`importance / 1000`). | `[0.0, 0.1]` |
 
 ---
 
-## 6. 🛠️ Chatbot Function Calling Tool Catalog (`api/services/ai-chat-tools.ts`)
+## 5. 🛠️ Chatbot Function Calling Tool Catalog (`api/services/ai-chat-tools.ts`)
 
 | Tool Name | Key Parameters | Return Format | Core Purpose |
 | :--- | :--- | :--- | :--- |
 | `finance_query` | `kind` (breakdown, summary, etc.), `period` | structured JSON | Main financial data retriever (SQL fast path). |
-| `get_today_expenses` | None | JSON array | List of today's logs. |
-| `get_month_summary` | `month` (optional, YYYY-MM) | JSON object | Net, average, income, expense totals. |
-| `get_category_breakdown`| `month` (optional) | JSON object | Percentage spends by category. |
-| `get_recent_transactions`| `count` (1 to 30) | JSON array | Historical logs list. |
-| `get_spending_by_person`| `name` (required) | JSON object | Money transferred/spent on contact. |
-| `get_wallet_balances` | None | JSON array | Lists Cash, Bank, and e-wallets (via `walletId`). |
-| `get_financial_goals` | None | JSON array | Active goals and progress percentages. |
-| `get_app_guide` | None | JSON array | FAQ on linking bank cards, PWA etc. |
+| `get_today_expenses` | None | JSON array | List of today's expense records. |
+| `get_month_summary` | `month` (optional, YYYY-MM) | JSON object | Net spending, average, income, and expense totals. |
+| `get_category_breakdown`| `month` (optional) | JSON object | Percentage and amount spends by category. |
+| `get_recent_transactions`| `count` (1 to 30) | JSON array | Recent ledger transaction logs. |
+| `get_spending_by_person`| `name` (required) | JSON object | Money transferred or spent with a specific contact. |
+| `get_wallet_balances` | None | JSON array | Balances across Cash, Bank, and e-wallets (via `walletId`). |
+| `get_financial_goals` | None | JSON array | Active financial goals and progress percentages. |
+| `get_app_guide` | None | JSON array | Frequently asked questions, SMS linking guide, PWA tips. |
 
 ---
 
-## 7. 🚨 Agent Capabilities vs Constraints
+## 6. 🚨 Agent Capabilities vs Constraints
 
 ### What the Chat Agent CAN Do:
-1. **Direct Data Retrieval:** Can read transactions, wallets, goals, and contacts via Drizzle schemas inside tools.
-2. **Offline Local Processing:** Can resolve simple math stats locally without invoking external LLMs.
+1. **Direct Data Retrieval:** Can read transactions, wallets, goals, budgets, and contacts via Drizzle schemas inside tools.
+2. **Offline Local Processing:** Can resolve math stats and totals locally without invoking external LLMs.
 3. **Action Suggestion:** Drafts proposed actions (`aiPendingActions`) with unique `idempotencyKey` for user UI approval.
 
 ### What the Chat Agent CANNOT Do:
 1. **Direct Database Write Mutations:** The chatbot cannot delete expenses or modify wallet balances directly. It can only generate proposed suggestion drafts (`aiPendingActions`) that the user must explicitly approve in the UI.
-2. **Execute Raw CLI/System Scripts:** Tool executions are restricted to helper queries and guides.
-3. **Exceed Cost Budgets:** Governed by `ai-usage-policy.ts` rate limits (100 requests per minute). If a user exceeds token thresholds, requests are clamped.
-
+2. **Execute Raw System Commands:** Tool executions are strictly restricted to registered helper queries and guides.
+3. **Exceed Token Budgets:** Governed by `aiProcedure` rate limits (100 requests per minute) and tier allowances.

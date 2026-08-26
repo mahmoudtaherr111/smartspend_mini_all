@@ -2,7 +2,8 @@ import { z } from "zod";
 import { router, authedProcedure, moderatorProcedure } from "./middleware";
 import { getDb } from "./queries/connection";
 import { userAnalytics, expenses, localUsers, users } from "../db/schema";
-import { eq, and, gte, sql, desc, or } from "drizzle-orm";
+import { eq, and, gte, sql, desc, or, inArray } from "drizzle-orm";
+import { businessDayRange } from "./lib/app-time";
 
 export const analyticsRouter = router({
   trackEvent: authedProcedure
@@ -142,8 +143,7 @@ export const analyticsRouter = router({
   getDashboardStats: moderatorProcedure.query(async () => {
     const db = getDb();
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = businessDayRange().start;
 
     const [
       totalLocalUsers,
@@ -155,6 +155,9 @@ export const analyticsRouter = router({
       adminCount,
       moderatorCount,
       proCount,
+      oauthAdminCount,
+      oauthModeratorCount,
+      oauthProCount,
     ] = await Promise.all([
       db.select({ count: sql`count(*)` }).from(localUsers),
       db.select({ count: sql`count(*)` }).from(users),
@@ -164,7 +167,10 @@ export const analyticsRouter = router({
       db.select({ count: sql`count(*)` }).from(expenses).where(and(gte(expenses.createdAt, today), eq(expenses.type, "expense"))),
       db.select({ count: sql`count(*)` }).from(localUsers).where(eq(localUsers.role, "admin")),
       db.select({ count: sql`count(*)` }).from(localUsers).where(eq(localUsers.role, "moderator")),
-      db.select({ count: sql`count(*)` }).from(localUsers).where(eq(localUsers.plan, "pro")),
+      db.select({ count: sql`count(*)` }).from(localUsers).where(inArray(localUsers.plan, ["pro", "ultra"])),
+      db.select({ count: sql`count(*)` }).from(users).where(eq(users.role, "admin")),
+      db.select({ count: sql`count(*)` }).from(users).where(eq(users.role, "moderator")),
+      db.select({ count: sql`count(*)` }).from(users).where(inArray(users.plan, ["pro", "ultra"])),
     ]);
 
     return {
@@ -177,9 +183,9 @@ export const analyticsRouter = router({
       totalAmount: Number(totalAmount[0]?.total || 0),
       totalIncome: Number(totalIncome[0]?.total || 0),
       todayExpenses: Number(todayExpenses[0]?.count || 0),
-      adminCount: Number(adminCount[0]?.count || 0),
-      moderatorCount: Number(moderatorCount[0]?.count || 0),
-      proCount: Number(proCount[0]?.count || 0),
+      adminCount: Number(adminCount[0]?.count || 0) + Number(oauthAdminCount[0]?.count || 0),
+      moderatorCount: Number(moderatorCount[0]?.count || 0) + Number(oauthModeratorCount[0]?.count || 0),
+      proCount: Number(proCount[0]?.count || 0) + Number(oauthProCount[0]?.count || 0),
     };
   }),
 });

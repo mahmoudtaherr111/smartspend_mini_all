@@ -117,6 +117,14 @@ export const proProcedure = authedProcedure.use(async ({ ctx, next }) => {
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
 
+/** AI endpoints that also require a paid plan. */
+export const proAiProcedure = aiProcedure.use(async ({ ctx, next }) => {
+  if (ctx.user.plan !== "pro" && ctx.user.plan !== "ultra" && ctx.user.role !== "admin") {
+    throw new TRPCError({ code: "FORBIDDEN", message: "هذه الميزة متاحة فقط للبرو" });
+  }
+  return next({ ctx: { ...ctx, user: ctx.user } });
+});
+
 // Ultra: for top-tier features (Ultra + Admin)
 export const ultraProcedure = authedProcedure.use(async ({ ctx, next }) => {
   if (ctx.user.plan !== "ultra" && ctx.user.role !== "admin") {

@@ -4,6 +4,7 @@ import {
   aiActionMemory,
   expenses,
   financialGoals,
+  userBudgets,
   userWallets,
 } from "../../../db/schema";
 import { db } from "../../queries/connection";
@@ -923,7 +924,62 @@ async function executeUndo(
     return { undoneActionMemoryId: target.id, undoneActionName: target.actionName, section };
   }
 
+  if (target.actionName === "budget.create") {
+    const budgetId = Number(targetPayload.budgetId);
+    if (!budgetId) throw new Error("Budget action has no budgetId to undo");
+    await db
+      .delete(userBudgets)
+      .where(
+        and(
+          eq(userBudgets.id, budgetId),
+          eq(userBudgets.userId, ctx.userId),
+          eq(userBudgets.userType, ctx.userType),
+        ),
+      );
+    await invalidateFinanceUserCache(ctx.userId, ctx.userType);
+    return { undoneActionMemoryId: target.id, undoneActionName: target.actionName, budgetId };
+  }
+
+  if (target.actionName === "expense.create") {
+    const expenseId = Number(targetPayload.expenseId);
+    if (!expenseId) throw new Error("Expense action has no expenseId to undo");
+    await db
+      .delete(expenses)
+      .where(
+        and(
+          eq(expenses.id, expenseId),
+          eq(expenses.userId, ctx.userId),
+          eq(expenses.userType, ctx.userType),
+        ),
+      );
+    invalidateUserMemory(ctx.userId, ctx.userType);
+    await invalidateFinanceUserCache(ctx.userId, ctx.userType);
+    return { undoneActionMemoryId: target.id, undoneActionName: target.actionName, expenseId };
+  }
+
   throw new Error(`Action ${target.actionName} is not reversible`);
+}
+
+async function executeBudgetCreate(
+  ctx: ActionRuntimeContext,
+  payload: BudgetCreatePayload,
+): Promise<Record<string, unknown>> {
+  const budget = budgetCreatePayloadSchema.parse(payload);
+  const [inserted] = await db.insert(userBudgets).values({
+    userId: ctx.userId,
+    userType: ctx.userType,
+    title: budget.title.trim(),
+    category: budget.category?.trim() || null,
+    monthlyLimit: String(budget.monthlyLimit),
+    linkedGoalId: budget.linkedGoalId || null,
+    status: "active",
+  });
+  await invalidateFinanceUserCache(ctx.userId, ctx.userType);
+
+  return {
+    budgetId: Number((inserted as any)?.insertId || 0),
+    ...budget,
+  };
 }
 
 export async function executeRuntimeAction(
@@ -944,12 +1000,7 @@ export async function executeRuntimeAction(
     return executeExpenseRecategorize(ctx, expenseRecategorizePayloadSchema.parse(payload));
   }
   if (actionName === "budget.create") {
-    const budget = budgetCreatePayloadSchema.parse(payload);
-    return {
-      budgetPlanId: `budget:${Date.now()}`,
-      ...budget,
-      storage: "ai_action_memory",
-    };
+    return executeBudgetCreate(ctx, budgetCreatePayloadSchema.parse(payload));
   }
   if (actionName === "profile.update") {
     return executeProfileUpdate(ctx, profileUpdatePayloadSchema.parse(payload));

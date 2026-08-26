@@ -5,7 +5,28 @@ import { db } from "./queries/connection";
 import { users } from "../db/schema";
 import { eq } from "drizzle-orm";
 import { env } from "./lib/env";
-import { generateToken, createSession, invalidateSession } from "./local-auth-utils";
+import { generateToken, createSession, getSessionMetadata, invalidateSession } from "./local-auth-utils";
+import { randomBytes } from "crypto";
+
+export function buildGoogleAuthorizationUrl(state: string): string | null {
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.GOOGLE_REDIRECT_URI) {
+    return null;
+  }
+  const params = new URLSearchParams({
+    client_id: env.GOOGLE_CLIENT_ID,
+    redirect_uri: env.GOOGLE_REDIRECT_URI,
+    response_type: "code",
+    scope: "openid email profile",
+    access_type: "offline",
+    prompt: "consent",
+    state,
+  });
+  return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+}
+
+export function createOAuthState(): string {
+  return randomBytes(32).toString("base64url");
+}
 
 // Google OAuth helpers
 async function getGoogleTokens(code: string) {
@@ -41,26 +62,17 @@ async function getGoogleUserInfo(accessToken: string) {
 }
 
 export const authRouter = router({
-  googleUrl: publicProcedure.query(() => {
-    // If Google OAuth is not configured, return null so the frontend can hide the button
-    if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.GOOGLE_REDIRECT_URI) {
-      return null;
-    }
-
-    const params = new URLSearchParams({
-      client_id: env.GOOGLE_CLIENT_ID,
-      redirect_uri: env.GOOGLE_REDIRECT_URI,
-      response_type: "code",
-      scope: "openid email profile",
-      access_type: "offline",
-      prompt: "consent",
-    });
-    return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-  }),
+  // State is created by the dedicated Hono start route, which can set its
+  // HttpOnly correlation cookie before redirecting to Google.
+  googleUrl: publicProcedure.query(() =>
+    env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.GOOGLE_REDIRECT_URI
+      ? "/api/auth/google/start"
+      : null,
+  ),
 
   googleCallback: strictPublicProcedure
     .input(z.object({ code: z.string() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const tokens = await getGoogleTokens(input.code);
       if (!tokens.access_token) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "فشل في المصادقة مع Google" });
@@ -104,7 +116,7 @@ export const authRouter = router({
 
       // Create a proper DB session (matching local auth flow) so token can be revoked
       const token = await generateToken(user.id, "oauth");
-      await createSession(user.id, "oauth", token);
+      await createSession(user.id, "oauth", token, getSessionMetadata(ctx.req));
 
       return {
         success: true,

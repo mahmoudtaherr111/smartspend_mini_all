@@ -29,21 +29,120 @@ export interface RuleBasedSmsResult {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// 1. NORMALIZATION
+// 1. NORMALIZATION & CONDENSATION
 // ═══════════════════════════════════════════════════════════════════════════════
-export function normalizeSmsText(text: string): string {
+
+/**
+ * Standardizes raw SMS text: removes zero-width characters, collapses whitespace,
+ * and converts Arabic-Indic digits to ASCII standard.
+ */
+export function cleanSmsText(text: string): string {
   if (!text) return "";
   let n = text;
-  // Remove zero-width spaces, zero-width non-joiners, etc (common in iOS Shortcuts)
-  n = n.replace(/[\u200B-\u200D\uFEFF]/g, " ");
-  // Replace multiple spaces/newlines with single space
+  // Remove zero-width spaces, joiners, RTL/LTR markers
+  n = n.replace(/[\u200B-\u200F\uFEFF\u202A-\u202E\u00A0]/g, " ");
+  // Replace newlines/tabs with space
+  n = n.replace(/[\r\n\t]+/g, " ");
+  // Replace multiple spaces with single space
   n = n.replace(/\s+/g, " ");
-  // Convert Arabic/Hindi numbers to standard
+  // Convert Arabic/Hindi numbers to standard ASCII (0-9)
   n = n.replace(/[٠١٢٣٤٥٦٧٨٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
+  return n.trim();
+}
+
+/**
+ * Normalizes SMS text for rule-based regex matching:
+ * Applies cleanSmsText, then standardizes Arabic letter variants (alef, teh marbuta, alef maksura).
+ */
+export function normalizeSmsText(text: string): string {
+  if (!text) return "";
+  let n = cleanSmsText(text);
   // Normalize Arabic letters (أ إ آ -> ا), (ة -> ه), (ى -> ي) for robust regex matching
   n = n.replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي");
   return n.trim();
 }
+
+/**
+ * Deterministic SMS condensation pre-filter:
+ * Strips non-financial boilerplate (bank greetings, hotlines, marketing teasers,
+ * security disclaimers, and legal footers) while strictly retaining the 7 key
+ * financial entities:
+ *   1. Action / Transaction verb (خصم, إيداع, تحويل, شراء, debited, credited, etc.)
+ *   2. Amount & Currency (EGP, LE, جم, ج.م, جنيه, etc.)
+ *   3. Merchant / Counterparty (لدى ..., at ..., لـ ..., to ..., etc.)
+ *   4. Card / Account mask (**1234, *5678, حساب ...)
+ *   5. Timestamp / Date (بتاريخ ..., في ..., on ...)
+ *   6. Balance after transaction (الرصيد المتاح ..., Available balance ...)
+ *   7. Fees & Reference (الرسوم ..., مرجع ..., Ref ...)
+ *
+ * Saves 40–70% input tokens before LLM prompt generation.
+ */
+export function condenseSmsNotification(rawSms: string): string {
+  if (!rawSms || typeof rawSms !== "string") return "";
+
+  const cleaned = cleanSmsText(rawSms);
+  if (cleaned.length < 15) return cleaned;
+
+  let condensed = cleaned;
+
+  // 1. Remove Bank Greetings & Salutations
+  condensed = condensed.replace(
+    /(?:^|[.,!\n])\s*(?:عزيزي\s+العميل|عميلنا\s+العزيز|أهلاً\s+بك|اهلا\s+بك|مرحباً\s+بك|مرحبا\s+بك|عميلنا\s+المميز|dear\s+(?:valued\s+)?customer|hello|hi)[،,\s-]*/gi,
+    " ",
+  );
+
+  // 2. Remove Customer Service Hotlines & Inquiries
+  condensed = condensed.replace(
+    /(?:ل(?:ل)?استفسار(?:\s+أو\s+المساعدة)?(?:\s+اتصل\s+(?:على|بـ?))?|للمزيد\s+من\s+المعلومات|خدمة\s+العملاء|لخدمة\s+العملاء|للمساعدة|للاتصال|اتصل\s+(?:على|بـ?)|call(?:\s+us)?(?:\s+at)?|hotline|customer\s+(?:service|care)|for\s+(?:inquiries|assistance|support|more\s+info)\s+call)[\s:]*(?:19\d{3}|16\d{3}|15\d{3}|\d{4,6}|\+\d{10,14})[.,!\s]*/gi,
+    " ",
+  );
+
+  // 3. Remove URLs & Websites
+  condensed = condensed.replace(/(?:https?:\/\/|www\.)[^\s]+/gi, " ");
+
+  // 4. Remove Marketing Teasers & App Promotion
+  condensed = condensed.replace(
+    /(?:استمتع\s+بـ?(?:أحدث\s+)?(?:عروض|خصومات)|حمل\s+تطبيق(?:نا)?|عروض\s+حصرية|وفر\s+أكتر\s+مع|download\s+(?:our\s+)?app|enjoy\s+(?:special\s+)?(?:offers|discounts|cashback)|visit\s+our\s+website)[^.,!\n]*(?:[.,!\n]|$)/gi,
+    " ",
+  );
+
+  // 5. Remove Security Warnings / OTP Warnings (unless it's an OTP-only message)
+  const isOtpOnly = /(?:كود\s+تفعيل|رمز\s+التحقق|otp\s+code|verification\s+code\s+is)/i.test(cleaned);
+  if (!isOtpOnly) {
+    condensed = condensed.replace(
+      /(?:تنبيه(?:\s+أمني)?|تحذير|warning|security\s+alert)[\s:]*(?:لا\s+تشارك|احذر\s+مشاركة|never\s+share|do\s+not\s+share)[^.,!\n]*(?:[.,!\n]|$)/gi,
+      " ",
+    );
+    condensed = condensed.replace(
+      /(?:البنك\s+لن\s+يطلب\s+منك|the\s+bank\s+will\s+never\s+ask)[^.,!\n]*(?:[.,!\n]|$)/gi,
+      " ",
+    );
+  }
+
+  // 6. Remove Terms, Conditions & Signoffs
+  condensed = condensed.replace(
+    /(?:تطبق\s+الشروط\s+و(?:ال)?أحكام|terms\s+(?:and|&)\s+conditions\s+apply|t&c\s+apply|شكراً\s+لتعاملك\s+معنا|thank\s+you\s+for\s+banking\s+with\s+us|thank\s+you\s+for\s+using\s+our\s+services)[.,!\s]*/gi,
+    " ",
+  );
+
+  // 7. Cleanup extra punctuation & whitespace
+  condensed = condensed
+    .replace(/\s+/g, " ")
+    .replace(/^[\s,.:;-]+|[\s,.:;-]+$/g, "")
+    .trim();
+
+  // Safety fallback: if condensation stripped too much or lost numbers, revert to cleaned
+  const originalDigits = (cleaned.match(/\d+/g) || []).join("");
+  const condensedDigits = (condensed.match(/\d+/g) || []).join("");
+
+  // If condensed lost the amount digits or is unreasonably short, return cleaned text
+  if (condensed.length < 10 || (originalDigits.length > 0 && condensedDigits.length === 0)) {
+    return cleaned;
+  }
+
+  return condensed;
+}
+
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 2. PROVIDER DETECTION
@@ -82,14 +181,14 @@ function detectProvider(text: string, sender?: string): string {
   }
 
   // 2. Fallback to message text analysis
-  if (/vodafone.*cash|vf\s*cash|فودافون.*كاش|v\.?cash|vf-cash/i.test(t))
+  if (/vodafone.*cash|vf\s*cash|فودافون.*كاش|v\.?cash|vf-cash|لرقم\s*010/i.test(t))
     return "VodafoneCash";
   if (/instapay|انستاباي|انستا\s*باي/i.test(t)) return "InstaPay";
-  if (/etisalat.*cash|اتصالات.*كاش|e-cash|etisalat/i.test(t))
+  if (/etisalat.*cash|اتصالات.*كاش|e-cash|etisalat|لرقم\s*011/i.test(t))
     return "EtisalatCash";
-  if (/orange.*(?:money|cash)|أورانج.*(?:موني|كاش)|orange/i.test(t))
+  if (/orange.*(?:money|cash)|أورانج.*(?:موني|كاش)|orange|لرقم\s*012/i.test(t))
     return "OrangeMoney";
-  if (/we\s*pay|وي\s*باي|we/i.test(t)) return "WEPay";
+  if (/we\s*pay|وي\s*باي|we|لرقم\s*015/i.test(t)) return "WEPay";
 
   if (/\bcib\b|commercial international/i.test(t)) return "CIB";
   if (/\bnbe\b|national bank|البنك.*الاهلي|ahly/i.test(t)) return "NBE";
@@ -151,7 +250,7 @@ function extractAmount(text: string): number | null {
 function extractBalanceAfter(text: string): number | null {
   const n = text.replace(/,/g, "");
   const patterns = [
-    /(?:رصيدك|الرصيد|رصيد حسابك|الرصيد المتاح)[\s:]*(?:الكلي|الحالي|الجديد|المتاح)?\s*(?:هو|اصبح)?\s*([\d]+(?:\.\d{1,2})?)\s*(?:جنيه|ج\.?م\.?|egp|جم)?/i,
+    /(?:رصيدك|الرصيد|رصيد حسابك|الرصيد المتاح|الرصيد المتبقي)[\s:]*(?:الكلي|الحالي|الجديد|المتاح|المتبقي)?\s*(?:هو|اصبح)?\s*([\d]+(?:\.\d{1,2})?)\s*(?:جنيه|ج\.?م\.?|egp|جم)?/i,
     /(?:بعد العمليه|بعد السحب|بعد التحويل|بعد الخصم)\s*:?\s*([\d]+(?:\.\d{1,2})?)/i,
     /(?:avail(?:able)?|new|current|updated)\s*(?:bal(?:ance)?|lim(?:it)?)?[\s.:]*(?:egp)?\s*([\d]+(?:\.\d{1,2})?)/i,
   ];

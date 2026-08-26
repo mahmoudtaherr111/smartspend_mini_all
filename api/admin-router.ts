@@ -58,6 +58,7 @@ import { getSmartProfile } from "./services/user-profile-service";
 import { loadAICostOverview } from "./services/ai-cost-analytics";
 import webpush from "web-push";
 import { sendPush, checkAndTriggerSmartActivityNotifications } from "./notification-engine";
+import { purgeUserData } from "./services/user-purge-service";
 
 // Setup Web Push
 // In a real app these should be in env vars, but we'll use the ones generated earlier
@@ -358,28 +359,7 @@ export const adminRouter = router({
       const { userId, userType } = input;
 
       await db.transaction(async (tx) => {
-        await tx.delete(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType)));
-        await tx.delete(sessions).where(and(eq(sessions.userId, userId), eq(sessions.userType, userType)));
-        await tx.delete(userAnalytics).where(and(eq(userAnalytics.userId, userId), eq(userAnalytics.userType, userType)));
-        await tx.delete(supportTickets).where(and(eq(supportTickets.userId, userId), eq(supportTickets.userType, userType)));
-        await tx.delete(userWallets).where(and(eq(userWallets.userId, userId), eq(userWallets.userType, userType)));
-        await tx.delete(proSubscriptions).where(and(eq(proSubscriptions.userId, userId), eq(proSubscriptions.userType, userType)));
-        await tx.delete(monthlyReports).where(and(eq(monthlyReports.userId, userId), eq(monthlyReports.userType, userType)));
-        await tx.delete(aiSummaries).where(and(eq(aiSummaries.userId, userId), eq(aiSummaries.userType, userType)));
-        await tx.delete(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)));
-        await tx.delete(profileLearningEvents).where(and(eq(profileLearningEvents.userId, userId), eq(profileLearningEvents.userType, userType)));
-        await tx.delete(monthlyBehaviorSnapshots).where(and(eq(monthlyBehaviorSnapshots.userId, userId), eq(monthlyBehaviorSnapshots.userType, userType)));
-        await tx.delete(userDictionaries).where(and(eq(userDictionaries.userId, userId), eq(userDictionaries.userType, userType)));
-        await tx.delete(classificationLogs).where(and(eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType)));
-        await tx.delete(voiceUsage).where(and(eq(voiceUsage.userId, userId), eq(voiceUsage.userType, userType)));
-        await tx.delete(webhookTokens).where(and(eq(webhookTokens.userId, userId), eq(webhookTokens.userType, userType)));
-        await tx.delete(rawSmsEvents).where(and(eq(rawSmsEvents.userId, userId), eq(rawSmsEvents.userType, userType)));
-        await tx.delete(expenseCategories).where(and(eq(expenseCategories.userId, userId), eq(expenseCategories.userType, userType)));
-        await tx.delete(pushSubscriptions).where(and(eq(pushSubscriptions.userId, userId), eq(pushSubscriptions.userType, userType)));
-        await tx.delete(pendingClarifications).where(and(eq(pendingClarifications.userId, userId), eq(pendingClarifications.userType, userType)));
-
-        const table = userType === "oauth" ? users : localUsers;
-        await tx.delete(table).where(eq(table.id, userId));
+        await purgeUserData(tx, userId, userType);
       });
 
       return { success: true, message: "تم حذف المستخدم بنجاح" };
@@ -1377,6 +1357,7 @@ export const adminRouter = router({
           .insert(systemSettings)
           .values({ key, value: String(input.monthlyTokenLimit) });
       }
+      invalidateSettingsCache();
       return { success: true, key, limit: input.monthlyTokenLimit };
     }),
 

@@ -19,11 +19,13 @@ import {
   aiPendingActions,
   aiMemoryItems,
   aiMemoryEmbeddings,
+  aiConversationSummaries,
   users,
   localUsers,
 } from "../db/schema";
 import { getSystemSettings, invalidateSettingsCache } from "./lib/settings-cache";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, gte, lt } from "drizzle-orm";
+import { businessDayRange } from "./lib/app-time";
 import {
   AI_RESPONSE_SCHEMA_VERSION,
   embeddingApiCallsFromCacheHits,
@@ -107,8 +109,7 @@ async function getTodayMessageCount(
   userId: number,
   userType: string,
 ): Promise<number> {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = businessDayRange();
 
   const result = await db
     .select({ count: sql<number>`COUNT(*)` })
@@ -122,7 +123,8 @@ async function getTodayMessageCount(
         eq(chatConversations.userId, userId),
         eq(chatConversations.userType, userType),
         eq(chatMessages.role, "user"),
-        sql`${chatMessages.createdAt} >= ${today}`,
+        gte(chatMessages.createdAt, today.start),
+        lt(chatMessages.createdAt, today.endExclusive),
       ),
     );
 
@@ -716,12 +718,12 @@ export const chatRouter = router({
         if (user.type === "oauth") {
           await db
             .update(users)
-            .set({ aiTokensUsed: sql`ai_tokens_used + ${textActionResult.tokensUsed}` })
+            .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${textActionResult.tokensUsed}` })
             .where(eq(users.id, user.id));
         } else {
           await db
             .update(localUsers)
-            .set({ aiTokensUsed: sql`ai_tokens_used + ${textActionResult.tokensUsed}` })
+            .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${textActionResult.tokensUsed}` })
             .where(eq(localUsers.id, user.id));
         }
 
@@ -1005,12 +1007,12 @@ export const chatRouter = router({
       if (user.type === "oauth") {
         await db
           .update(users)
-          .set({ aiTokensUsed: sql`ai_tokens_used + ${tokensToAdd}` })
+          .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokensToAdd}` })
           .where(eq(users.id, user.id));
       } else {
         await db
           .update(localUsers)
-          .set({ aiTokensUsed: sql`ai_tokens_used + ${tokensToAdd}` })
+          .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokensToAdd}` })
           .where(eq(localUsers.id, user.id));
       }
 
@@ -1153,12 +1155,13 @@ export const chatRouter = router({
         });
       }
 
-      await db
-        .delete(chatMessages)
-        .where(eq(chatMessages.conversationId, input.conversationId));
-      await db
-        .delete(chatConversations)
-        .where(eq(chatConversations.id, input.conversationId));
+      await db.transaction(async (tx) => {
+        await tx.delete(chatMessages).where(eq(chatMessages.conversationId, input.conversationId));
+        await tx.delete(aiConversationSummaries).where(eq(aiConversationSummaries.conversationId, input.conversationId));
+        await tx
+          .delete(chatConversations)
+          .where(and(eq(chatConversations.id, input.conversationId), eq(chatConversations.userId, ctx.user.id), eq(chatConversations.userType, ctx.user.type)));
+      });
 
       return { success: true };
     }),

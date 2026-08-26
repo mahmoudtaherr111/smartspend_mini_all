@@ -1,48 +1,67 @@
 # SmartSpend AI — Dual Authentication, Passkeys & Security Architecture
 
-> **AI AGENT SSOT:** This document defines the authentication flows, role-based access controls, and session validation parameters.
+> **AI AGENT SSOT:** This document defines the dual identity system, WebAuthn Level 3 passkeys, role-based access controls, active session verification, and account purge cascades.
 
 ---
 
 ## 1. 🔑 Triple-Tier Authentication Resolvers
 
-| Auth Type | Trigger/Target | Session Cookie / Token | User Table |
+The architecture supports three distinct authentication mechanisms normalized into a single `UnifiedUser` context:
+
+| Auth Type | Trigger / Source | Session Transport | Identity Table |
 | :--- | :--- | :--- | :--- |
-| **Google OAuth 2.0** | Web Onboarding | `google_session` (Cookie) | `users` (`type: oauth`) |
-| **Local Password/OTP**| WhatsApp bot pairing / registration | `Authorization: Bearer <token>` | `localUsers` (`type: local`) |
-| **WebAuthn Passkeys** | TouchID / FaceID / biometric keys | `Authorization: Bearer <token>` | `users` / `localUsers` |
+| **Google OAuth 2.0** | Web Onboarding | `google_session` (HTTP-Only Cookie) | `users` (`type: "oauth"`) |
+| **Local Password / OTP**| WhatsApp OTP / Email Registration | `Authorization: Bearer <token>` | `localUsers` (`type: "local"`) |
+| **WebAuthn Passkeys** | TouchID / FaceID / Biometric Hardware | `Authorization: Bearer <token>` | `users` / `localUsers` via `userCredentials` |
+
+### Unified User Context (`api/context.ts`)
+```typescript
+export type UnifiedUser = {
+  id: number;
+  name: string;
+  email?: string | null;
+  avatar?: string | null;
+  role: "user" | "moderator" | "admin";
+  plan: "free" | "pro" | "ultra";
+  type: "oauth" | "local";
+  phone?: string | null;
+};
+```
 
 ---
 
-## 2. 🛡️ Role-Based Access Control procedures (`api/middleware.ts`)
+## 2. 🛡️ Role-Based Access Control Procedures (`api/middleware.ts`)
 
 | tRPC Procedure | Checks Enforced | Rate Limit | Target Usage Scope |
 | :--- | :--- | :--- | :--- |
-| `publicProcedure` | None (Anonymous) | 400 req/min (IP) | SEO pages, public ads, assets, configs. |
-| `strictPublicProcedure` | None (Anonymous) | 25 req/15min (IP) | Authentication endpoints, register, logins. |
+| `publicProcedure` | None (Anonymous) | 400 req/min (IP) | SEO pages, public ads, assets, healthcheck. |
+| `strictPublicProcedure` | None (Anonymous) | 25 req/15min (IP) | Auth endpoints, registration, login attempts. |
 | `authedProcedure` | `ctx.user != null` | 100 req/min (User) | Core ledger endpoints, wallets, analytics. |
-| `aiProcedure` | `ctx.user != null` | 100 req/min (AI-specific) | Heavy NLP decomposes and Gemini chat. |
-| `proProcedure` | `plan === "pro" \|\| plan === "ultra" \|\| role === "admin"` | 100 req/min (User) | Business mode ledger, export tools. |
-| `ultraProcedure` | `plan === "ultra" \|\| role === "admin"` | 100 req/min (User) | Premium analytics, voice call access. |
-| `moderatorProcedure`| `role === "admin" \|\| role === "moderator"` | 100 req/min (User) | Support tickets audit, moderation feeds. |
-| `adminProcedure` | `role === "admin"` | 100 req/min (User) | Global settings write, WhatsApp connection. |
+| `aiProcedure` | `ctx.user != null` | 100 req/min (AI Budget) | Heavy NLP decomposes, monthly insights, and Gemini chat. |
+| `proProcedure` | `plan === "pro" \|\| plan === "ultra" \|\| role === "admin"` | 100 req/min (User) | Business mode ledger, advanced export tools. |
+| `ultraProcedure` | `plan === "ultra" \|\| role === "admin"` | 100 req/min (User) | Premium analytics, live voice call access. |
+| `moderatorProcedure`| `role === "admin" \|\| role === "moderator"` | 100 req/min (User) | Support tickets audit, community moderation. |
+| `adminProcedure` | `role === "admin"` | 100 req/min (User) | System settings updates, WhatsApp broadcast. |
 
 ---
 
 ## 3. 🚨 Critical Gotchas & Execution Pointers (MUST READ)
 
-### A. Context Resolver Logic (`api/context.ts`)
-* **Gotcha:** Do not check `kimi_sid` cookie for Google OAuth.
-* **Rule:** `createContext` reads `google_session` HTTP-only cookie first against `users`. If missing, it checks `Authorization: Bearer <token>` in headers against `sessions` table (where `userType == 'local'`), resolving to `localUsers`. Both are normalized to `UnifiedUser` under `ctx.user`.
+### A. `user.role` vs `user.plan` Distinction
+* **Gotcha:** Checking `user.role === "pro"` will cause subscription features to lock out valid paying users.
+* **Rule:** Administrative privileges use `user.role` (`"user" | "moderator" | "admin"`). Subscription tiers use `user.plan` (`"free" | "pro" | "ultra"`). Never mix these properties.
 
-### B. `user.role` vs `user.plan` Distinction
-* **Gotcha:** Checking `user.role === "pro"` will cause features to lock out standard users.
-* **Rule:** Administrative access uses `user.role` (`"user" | "moderator" | "admin"`). Feature subscription levels use `user.plan` (`"free" | "pro" | "ultra"`). Never mix these up.
+### B. Active Database Session Token Validation (`api/lib/session-validation.ts`)
+* **Gotcha:** Checking JWT signature alone without verifying database session state allows revoked or expired tokens to access APIs.
+* **Rule:** All authentication endpoints (`createContext` in `context.ts`, `sms-router.ts`, `voice-call-service.ts`) execute `validateActiveSessionToken(token, expectedUserType)`. This verifies that the JWT is signed with `JWT_SECRET` **AND** exists in the `sessions` table with `expiresAt > NOW()`.
 
-### C. WebAuthn Ephemeral Challenges (`authChallenges`)
-* **Gotcha:** In-flight biometric logins fail if challenge entries are cleared too fast.
-* **Rule:** WebAuthn requires active challenge strings stored in `authChallenges` (indexed by `(userId, userType)`). Background cleanup crons run at midnight daily, allowing sufficient challenge TTL while preventing orphaned records.
+### C. WebAuthn Dynamic Relying Party ID (`webauthn-router.ts`)
+* **Gotcha:** Hardcoding the WebAuthn RP ID causes biometric sign-ins to fail in development tunnels, staging, and multi-domain environments.
+* **Rule:** `webauthnRouter` dynamically resolves `rpID` and `expectedOrigin` from the incoming request `Host` header, supporting `localhost`, local network IPs, development tunnels (`.loca.lt`), and production domains.
 
-### D. Idempotency & Financial Safety (`clientRequestId`)
-* **Rule:** Critical financial mutations accept a `clientRequestId` unique constraint per user, guaranteeing that network timeouts and client retries never double-charge or create phantom duplicate expenses.
+### D. Universal 35-Table User Purge Cascade (`api/services/user-purge-service.ts`)
+* **Rule:** Account deletion requests (from user profile or admin dashboard) must call `purgeUserData(tx, userId, userType)`.
+* **Execution:** Wraps all 35 user-scoped tables, chat message hierarchies, business categories, and identity records in a single atomic database transaction, ensuring GDPR compliance and eliminating orphaned ledger records.
 
+### E. Phone Number Normalization (`cleanPhone`)
+* **Rule:** Registration and WhatsApp pairing normalize phone numbers using `cleanPhone()` (stripping leading zeros, whitespace, and international `+20` prefixes) before database insertion, preventing duplicate account fragmentation.

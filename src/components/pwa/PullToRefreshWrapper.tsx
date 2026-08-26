@@ -144,7 +144,7 @@ export function PullToRefreshWrapper({
         revealing the spinner underneath, matching native iOS behavior.
       */}
       <div
-        className="w-full flex justify-center items-end overflow-hidden z-0 bg-background shrink-0"
+        className="w-full flex justify-center items-end overflow-hidden z-0 bg-transparent shrink-0"
         style={{
           height: `${Math.max(0, pullProgress)}px`,
           transition: transitionStyle,
@@ -175,7 +175,7 @@ export function PullToRefreshWrapper({
       </div>
 
       {/* Scrollable Content */}
-      <div className="w-full relative z-10 bg-background">
+      <div className="w-full relative z-10 bg-transparent">
         {children}
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { db } from "../queries/connection";
+import { businessDayRange } from "./app-time";
 import {
   classificationLogs,
   localUsers,
@@ -285,8 +286,7 @@ export async function countDailyAiRequests(
   user: AiUsageUser,
   channel?: AiUsageChannel,
 ): Promise<number> {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = businessDayRange().start;
 
   if (!channel || channel === "parse") {
     const [row] = await db

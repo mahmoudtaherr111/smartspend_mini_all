@@ -1,0 +1,36 @@
+- generic [active] [ref=e1]:
+  - generic:
+    - generic [ref=e2]:
+      - complementary [ref=e3]:
+        - generic [ref=e4]:
+          - generic [ref=e5]:
+            - img "SmartSpend"
+            - generic [ref=e6]: مزامنة...
+          - generic [ref=e8]:
+            - button [ref=e9] [cursor=pointer]
+            - button [ref=e10] [cursor=pointer]
+        - generic [ref=e12]:
+          - paragraph [ref=e13]: فحص الجودة
+          - paragraph [ref=e15]: مجاني
+        - navigation [ref=e16]:
+          - link "الرئيسية" [ref=e17] [cursor=pointer]:
+            - /url: /dashboard
+          - link "إحصائيات" [ref=e24] [cursor=pointer]:
+            - /url: /dashboard?tab=stats
+          - link "مركز AI" [ref=e28] [cursor=pointer]:
+            - /url: /ai
+          - link "التقويم" [ref=e33] [cursor=pointer]:
+            - /url: /dashboard?tab=calendar
+          - link "البرو والأسعار" [ref=e37] [cursor=pointer]:
+            - /url: /pro
+          - link "الربط البنكي" [ref=e41] [cursor=pointer]:
+            - /url: /bank-sync
+        - generic [ref=e45]:
+          - link "الدعم" [ref=e46] [cursor=pointer]:
+            - /url: /support
+          - link "الإعدادات" [ref=e51] [cursor=pointer]:
+            - /url: /settings
+          - button "خروج" [ref=e56] [cursor=pointer]
+      - main [ref=e61]:
+        - button [ref=e62] [cursor=pointer]
+    - region "Notifications alt+T"

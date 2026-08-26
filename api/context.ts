@@ -1,10 +1,9 @@
 import { HonoRequest } from "hono";
-import { verify } from "hono/jwt";
 import { db } from "./queries/connection";
-import { localUsers, users, sessions } from "../db/schema";
-import { eq, and, gt } from "drizzle-orm";
-import { env } from "./lib/env";
+import { localUsers, users } from "../db/schema";
+import { eq } from "drizzle-orm";
 import { getClientIp } from "./lib/get-client-ip";
+import { validateActiveSessionToken } from "./lib/session-validation";
 
 export type UnifiedUser = {
   id: number;
@@ -57,38 +56,22 @@ export async function createContext(
   // 1. Try Google OAuth (cookie) — now validates against sessions DB
   const googleToken = parseCookie(req, "google_session");
   if (googleToken) {
-    try {
-      const payload = await verify(googleToken, env.JWT_SECRET, "HS256");
-      if (payload && payload.userId) {
-        // Verify session exists and is not expired in DB (prevents use of revoked tokens)
-        const session = await db.query.sessions.findFirst({
-          where: and(
-            eq(sessions.token, googleToken),
-            eq(sessions.userId, Number(payload.userId)),
-            eq(sessions.userType, "oauth"),
-            gt(sessions.expiresAt, new Date()),
-          ),
-        });
-
-        if (session) {
-          const dbUser = await db.query.users.findFirst({
-            where: eq(users.id, Number(payload.userId)),
-          });
-          if (dbUser) {
-            user = {
-              id: dbUser.id,
-              name: dbUser.name,
-              email: dbUser.email,
-              avatar: dbUser.avatar,
-              role: dbUser.role as "user" | "moderator" | "admin",
-              plan: dbUser.plan as "free" | "pro" | "ultra",
-              type: "oauth",
-            };
-          }
-        }
+    const activeSession = await validateActiveSessionToken(googleToken, "oauth");
+    if (activeSession) {
+      const dbUser = await db.query.users.findFirst({
+        where: eq(users.id, activeSession.userId),
+      });
+      if (dbUser) {
+        user = {
+          id: dbUser.id,
+          name: dbUser.name,
+          email: dbUser.email,
+          avatar: dbUser.avatar,
+          role: dbUser.role as "user" | "moderator" | "admin",
+          plan: dbUser.plan as "free" | "pro" | "ultra",
+          type: "oauth",
+        };
       }
-    } catch {
-      // Invalid token, continue to local auth
     }
   }
 
@@ -97,26 +80,12 @@ export async function createContext(
     const authHeader = getAuthHeader(req);
     if (authHeader?.startsWith("Bearer ")) {
       const token = authHeader.slice(7);
-      try {
-        const payload = await verify(token, env.JWT_SECRET, "HS256");
-        if (payload && payload.userId) {
-          const tokenUserType = (payload.userType as string) || "local";
-
-          // Verify session exists and not expired
-          const session = await db.query.sessions.findFirst({
-            where: and(
-              eq(sessions.token, token),
-              eq(sessions.userId, Number(payload.userId)),
-              eq(sessions.userType, tokenUserType),
-              gt(sessions.expiresAt, new Date()),
-            ),
-          });
-
-          if (session) {
-            if (tokenUserType === "oauth") {
+      const activeSession = await validateActiveSessionToken(token);
+      if (activeSession) {
+            if (activeSession.userType === "oauth") {
               // Resolve from Google OAuth users table
               const dbUser = await db.query.users.findFirst({
-                where: eq(users.id, Number(payload.userId)),
+                where: eq(users.id, activeSession.userId),
               });
               if (dbUser) {
                 user = {
@@ -132,13 +101,14 @@ export async function createContext(
             } else {
               // Resolve from local users table
               const dbUser = await db.query.localUsers.findFirst({
-                where: eq(localUsers.id, Number(payload.userId)),
+                where: eq(localUsers.id, activeSession.userId),
               });
               if (dbUser) {
                 user = {
                   id: dbUser.id,
                   name: dbUser.name,
                   email: dbUser.email,
+                  avatar: dbUser.avatar,
                   role: dbUser.role as "user" | "moderator" | "admin",
                   plan: dbUser.plan as "free" | "pro" | "ultra",
                   type: "local",
@@ -146,10 +116,6 @@ export async function createContext(
                 };
               }
             }
-          }
-        }
-      } catch {
-        // Invalid token
       }
     }
   }

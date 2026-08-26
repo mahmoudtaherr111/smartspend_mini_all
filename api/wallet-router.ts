@@ -97,15 +97,29 @@ export const walletRouter = router({
   deleteWallet: authedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await db
-        .delete(userWallets)
-        .where(
-          and(
-            eq(userWallets.id, input.id),
-            eq(userWallets.userId, ctx.user.id as number),
-            eq(userWallets.userType, ctx.user.type),
-          ),
-        );
+      await db.transaction(async (tx) => {
+        // Nullify foreign keys on linked expenses first to prevent orphaned references
+        await tx
+          .update(expenses)
+          .set({ walletId: null })
+          .where(
+            and(
+              eq(expenses.walletId, input.id),
+              eq(expenses.userId, ctx.user.id as number),
+              eq(expenses.userType, ctx.user.type),
+            ),
+          );
+
+        await tx
+          .delete(userWallets)
+          .where(
+            and(
+              eq(userWallets.id, input.id),
+              eq(userWallets.userId, ctx.user.id as number),
+              eq(userWallets.userType, ctx.user.type),
+            ),
+          );
+      });
       return { success: true };
     }),
 });

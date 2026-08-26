@@ -3,6 +3,17 @@ import { buildDeterministicFallbackEmbedding } from "../ai-cost-policy";
 import { contentHash } from "./text-utils";
 import type { EmbedTextInput, EmbedTextResult, EmbeddingConfig, EmbeddingDimensions } from "./types";
 
+let providerUnavailableUntil = 0;
+
+function isProviderUnavailable(): boolean {
+  return Date.now() < providerUnavailableUntil;
+}
+
+function markProviderUnavailable(status: number): void {
+  const cooldownMs = status === 429 ? 60_000 : [401, 402, 403].includes(status) ? 15 * 60_000 : 0;
+  if (cooldownMs) providerUnavailableUntil = Math.max(providerUnavailableUntil, Date.now() + cooldownMs);
+}
+
 function clampDimensions(value: EmbeddingDimensions | undefined, fallback: EmbeddingDimensions): EmbeddingDimensions {
   return value === 256 || value === 768 || value === 1024 ? value : fallback;
 }
@@ -86,6 +97,9 @@ export class FireworksEmbeddingClient {
         };
       }
     }
+    if (isProviderUnavailable()) {
+      return fallbackResult(input, this.config, dimensions, "fireworks_embedding_circuit_open");
+    }
 
     try {
       const failures: string[] = [];
@@ -114,6 +128,7 @@ export class FireworksEmbeddingClient {
         }
 
         failures.push(`${candidate}:${response.status}`);
+        markProviderUnavailable(response.status);
         if (![400, 404, 422].includes(response.status)) {
           break;
         }

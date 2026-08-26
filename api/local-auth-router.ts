@@ -42,12 +42,14 @@ import {
   validatePhone,
   generateReferralCode,
   cleanPhoneNumber,
+  getSessionMetadata,
 } from "./local-auth-utils";
 import { getIncomingHeader } from "./lib/get-client-ip";
 import { whatsappService } from "./services/whatsapp-service";
 import { otpCache, checkRateLimit } from "./services/otp-cache";
 
 import { getSystemSettings } from "./lib/settings-cache";
+import { purgeUserData } from "./services/user-purge-service";
 
 export const localAuthRouter = router({
   register: strictPublicProcedure
@@ -60,7 +62,7 @@ export const localAuthRouter = router({
         referralCode: z.string().optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const phoneValidation = validatePhone(input.phone);
       if (!phoneValidation.valid) {
         throw new TRPCError({
@@ -125,16 +127,17 @@ export const localAuthRouter = router({
         .insert(localUsers)
         .values({
           name: input.name,
-          phone: input.phone,
+          phone: cleanPhone,
           email: input.email || null,
           password: hashedPassword,
           referralCode: referral,
           referredBy: referredBy,
+          referredByType: referredBy ? "local" : null,
         })
         .$returningId();
 
       const token = await generateToken(newUser.id, "local");
-      await createSession(newUser.id, "local", token);
+      await createSession(newUser.id, "local", token, getSessionMetadata(ctx.req));
 
       return {
         success: true,
@@ -221,7 +224,7 @@ export const localAuthRouter = router({
         password: z.string(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const cleanPhone = cleanPhoneNumber(input.phone);
       const user = await db.query.localUsers.findFirst({
         where: eq(localUsers.phone, cleanPhone),
@@ -249,7 +252,7 @@ export const localAuthRouter = router({
         .where(eq(localUsers.id, user.id));
 
       const token = await generateToken(user.id, "local");
-      await createSession(user.id, "local", token);
+      await createSession(user.id, "local", token, getSessionMetadata(ctx.req));
 
       return {
         success: true,
@@ -346,29 +349,7 @@ export const localAuthRouter = router({
       const userType = "local" as const;
 
       await db.transaction(async (tx) => {
-        await tx.delete(expenses).where(and(eq(expenses.userId, userId), eq(expenses.userType, userType)));
-        await tx.delete(sessions).where(and(eq(sessions.userId, userId), eq(sessions.userType, userType)));
-        await tx.delete(userAnalytics).where(and(eq(userAnalytics.userId, userId), eq(userAnalytics.userType, userType)));
-        await tx.delete(supportTickets).where(and(eq(supportTickets.userId, userId), eq(supportTickets.userType, userType)));
-        await tx.delete(userWallets).where(and(eq(userWallets.userId, userId), eq(userWallets.userType, userType)));
-        await tx.delete(proSubscriptions).where(and(eq(proSubscriptions.userId, userId), eq(proSubscriptions.userType, userType)));
-        await tx.delete(monthlyReports).where(and(eq(monthlyReports.userId, userId), eq(monthlyReports.userType, userType)));
-        await tx.delete(aiSummaries).where(and(eq(aiSummaries.userId, userId), eq(aiSummaries.userType, userType)));
-        await tx.delete(userProfiles).where(and(eq(userProfiles.userId, userId), eq(userProfiles.userType, userType)));
-        await tx.delete(profileLearningEvents).where(and(eq(profileLearningEvents.userId, userId), eq(profileLearningEvents.userType, userType)));
-        await tx.delete(monthlyBehaviorSnapshots).where(and(eq(monthlyBehaviorSnapshots.userId, userId), eq(monthlyBehaviorSnapshots.userType, userType)));
-        await tx.delete(userDictionaries).where(and(eq(userDictionaries.userId, userId), eq(userDictionaries.userType, userType)));
-        await tx.delete(classificationLogs).where(and(eq(classificationLogs.userId, userId), eq(classificationLogs.userType, userType)));
-        await tx.delete(voiceUsage).where(and(eq(voiceUsage.userId, userId), eq(voiceUsage.userType, userType)));
-        await tx.delete(webhookTokens).where(and(eq(webhookTokens.userId, userId), eq(webhookTokens.userType, userType)));
-        await tx.delete(rawSmsEvents).where(and(eq(rawSmsEvents.userId, userId), eq(rawSmsEvents.userType, userType)));
-        await tx.delete(expenseCategories).where(and(eq(expenseCategories.userId, userId), eq(expenseCategories.userType, userType)));
-        await tx.delete(financialGoals).where(and(eq(financialGoals.userId, userId), eq(financialGoals.userType, userType)));
-        await tx.delete(userBudgets).where(and(eq(userBudgets.userId, userId), eq(userBudgets.userType, userType)));
-        await tx.delete(userBusinesses).where(and(eq(userBusinesses.userId, userId), eq(userBusinesses.userType, userType)));
-        await tx.delete(userContacts).where(and(eq(userContacts.userId, userId), eq(userContacts.userType, userType)));
-        await tx.delete(adClicks).where(and(eq(adClicks.userId, userId), eq(adClicks.userType, userType)));
-        await tx.delete(localUsers).where(eq(localUsers.id, userId));
+        await purgeUserData(tx, userId, userType);
       });
 
       return { success: true };

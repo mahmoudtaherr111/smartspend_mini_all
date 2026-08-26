@@ -417,7 +417,10 @@ export const profileRouter = router({
       .limit(1);
 
     if (!record) {
-      throw new Error("لازم تعمل Token الأول قبل ما تستخدم Magic Link.");
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "يجب إنشاء رمز ربط أولاً قبل استخدام الرابط السريع",
+      });
     }
 
     const { storeMagicCode } = await import("./sms-router");
@@ -720,22 +723,24 @@ export const profileRouter = router({
         }
       }
 
-      await db
-        .update(expenses)
-        .set({ contactId: null })
-        .where(and(
-          eq(expenses.contactId, input.id),
-          eq(expenses.userId, ctx.user.id as number),
-          eq(expenses.userType, ctx.user.type),
-        ));
+      await db.transaction(async (tx) => {
+        await tx
+          .update(expenses)
+          .set({ contactId: null })
+          .where(and(
+            eq(expenses.contactId, input.id),
+            eq(expenses.userId, ctx.user.id as number),
+            eq(expenses.userType, ctx.user.type),
+          ));
 
-      await db
-        .delete(userContacts)
-        .where(and(
-          eq(userContacts.id, input.id),
-          eq(userContacts.userId, ctx.user.id as number),
-          eq(userContacts.userType, ctx.user.type),
-        ));
+        await tx
+          .delete(userContacts)
+          .where(and(
+            eq(userContacts.id, input.id),
+            eq(userContacts.userId, ctx.user.id as number),
+            eq(userContacts.userType, ctx.user.type),
+          ));
+      });
 
       invalidateUserClassificationCache(ctx.user.id as number);
       invalidateUserMemory(ctx.user.id as number, ctx.user.type);
@@ -817,38 +822,48 @@ export const profileRouter = router({
       const mergedContactType = primary.contactType !== "personal" ? primary.contactType : secondary.contactType;
       const mergedBusinessId = primary.businessId || secondary.businessId;
 
-      await db
-        .update(expenses)
-        .set({ contactId: primary.id })
-        .where(and(
-          eq(expenses.contactId, secondary.id),
-          eq(expenses.userId, ctx.user.id as number),
-          eq(expenses.userType, ctx.user.type),
-        ));
+      await db.transaction(async (tx) => {
+        await tx
+          .update(expenses)
+          .set({ contactId: primary.id })
+          .where(and(
+            eq(expenses.contactId, secondary.id),
+            eq(expenses.userId, ctx.user.id as number),
+            eq(expenses.userType, ctx.user.type),
+          ));
 
-      const [canonicalCount] = await db
-        .select({ total: sql<number>`COUNT(*)` })
-        .from(expenses)
-        .where(and(
-          eq(expenses.contactId, primary.id),
-          eq(expenses.userId, ctx.user.id as number),
-          eq(expenses.userType, ctx.user.type),
-        ));
+        const [canonicalCount] = await tx
+          .select({ total: sql<number>`COUNT(*)` })
+          .from(expenses)
+          .where(and(
+            eq(expenses.contactId, primary.id),
+            eq(expenses.userId, ctx.user.id as number),
+            eq(expenses.userType, ctx.user.type),
+          ));
 
-      await db
-        .update(userContacts)
-        .set({
-          relation: mergedRelation,
-          transactionCount: Number(canonicalCount?.total || 0),
-          isSilenced: mergedIsSilenced,
-          contactType: mergedContactType,
-          businessId: mergedBusinessId,
-        })
-        .where(eq(userContacts.id, primary.id));
+        await tx
+          .update(userContacts)
+          .set({
+            relation: mergedRelation,
+            transactionCount: Number(canonicalCount?.total || 0),
+            isSilenced: mergedIsSilenced,
+            contactType: mergedContactType,
+            businessId: mergedBusinessId,
+          })
+          .where(and(
+            eq(userContacts.id, primary.id),
+            eq(userContacts.userId, ctx.user.id as number),
+            eq(userContacts.userType, ctx.user.type),
+          ));
 
-      await db
-        .delete(userContacts)
-        .where(eq(userContacts.id, secondary.id));
+        await tx
+          .delete(userContacts)
+          .where(and(
+            eq(userContacts.id, secondary.id),
+            eq(userContacts.userId, ctx.user.id as number),
+            eq(userContacts.userType, ctx.user.type),
+          ));
+      });
 
       invalidateUserClassificationCache(ctx.user.id as number);
       invalidateUserMemory(ctx.user.id as number, ctx.user.type);

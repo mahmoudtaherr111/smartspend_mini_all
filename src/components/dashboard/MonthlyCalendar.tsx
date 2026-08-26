@@ -28,17 +28,18 @@ function DayTransactionsDialog({
   dateStr: string | null;
 }) {
   useHistoryBound(isOpen, onClose);
-  if (!dateStr) return null;
 
   // Use local timezone boundaries (no Z suffix) to prevent day-boundary shifts
   // e.g., for UTC+2 (Egypt), "2026-01-15T00:00:00.000Z" would actually be 2am local time
-  const startDate = `${dateStr}T00:00:00.000`;
-  const endDate = `${dateStr}T23:59:59.999`;
+  const startDate = dateStr ? `${dateStr}T00:00:00.000` : "";
+  const endDate = dateStr ? `${dateStr}T23:59:59.999` : "";
 
   const { data, isLoading, isFetching } = trpc.expense.list.useQuery(
     { startDate, endDate, limit: 100 },
-    { enabled: isOpen }
+    { enabled: Boolean(isOpen && dateStr) }
   );
+
+  if (!dateStr) return null;
 
   const formattedDate = new Date(dateStr).toLocaleDateString("ar-EG", {
     weekday: "long",
@@ -253,7 +254,7 @@ export const MonthlyCalendar = memo(function MonthlyCalendar({
               return (
                 <div
                   key={cell.key}
-                  className="min-h-[3.75rem] xs:min-h-[4.5rem] sm:min-h-[5rem] border border-transparent"
+                  className="min-h-[4.25rem] xs:min-h-[4.75rem] sm:min-h-[5.25rem] border border-transparent"
                 />
               );
             }
@@ -267,25 +268,25 @@ export const MonthlyCalendar = memo(function MonthlyCalendar({
                 type="button"
                 onClick={() => setSelectedDate(fullDateStr)}
                 className={cn(
-                  "min-h-[3.75rem] xs:min-h-[4.5rem] sm:min-h-[5rem] rounded-lg border text-end transition-all overflow-hidden flex flex-col justify-between p-0.5 xs:p-1 sm:p-2 cursor-pointer active-press select-none",
-                  amount === 0 && income === 0 && "bg-white dark:bg-slate-950 hover:bg-slate-50 dark:hover:bg-slate-900/50 border-slate-200 dark:border-slate-800",
-                  amount > 0 && "bg-rose-500/5 border-rose-500/10 hover:bg-rose-500/10 dark:bg-rose-500/10 dark:border-rose-500/20",
-                  income > 0 && amount === 0 && "bg-emerald-500/5 border-emerald-500/10 hover:bg-emerald-500/10 dark:bg-emerald-500/10 dark:border-emerald-500/20",
-                  isSalaryDay && "border-amber-400 dark:border-amber-600/80 shadow-md shadow-amber-500/5 bg-amber-50/10 dark:bg-amber-950/5 ring-1 ring-amber-400/30"
+                  "min-h-[4.25rem] xs:min-h-[4.75rem] sm:min-h-[5.25rem] rounded-xl border text-end transition-all overflow-hidden flex flex-col justify-between p-1 sm:p-2 cursor-pointer active-press select-none",
+                  amount === 0 && income === 0 && "bg-white/80 dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-900 border-slate-200/80 dark:border-slate-800",
+                  amount > 0 && "bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/15 dark:bg-rose-500/15 dark:border-rose-500/30",
+                  income > 0 && amount === 0 && "bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/15 dark:bg-emerald-500/15 dark:border-emerald-500/30",
+                  isSalaryDay && "border-amber-400 dark:border-amber-500 shadow-md shadow-amber-500/10 bg-amber-50/20 dark:bg-amber-950/20 ring-1 ring-amber-400/40"
                 )}
                 style={
-                  amount > 0 ? { opacity: 0.65 + intensity * 0.35 } : undefined
+                  amount > 0 ? { opacity: 0.7 + intensity * 0.3 } : undefined
                 }
               >
                 <div className="flex justify-between items-center w-full">
                   <span className={cn(
-                    "font-extrabold text-[10px] xs:text-xs sm:text-sm",
-                    isSalaryDay ? "text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/50 px-1 rounded font-black" : "text-slate-800 dark:text-slate-200"
+                    "font-extrabold text-[11px] sm:text-sm",
+                    isSalaryDay ? "text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-950/70 px-1.5 py-0.5 rounded font-black" : "text-slate-800 dark:text-slate-200"
                   )}>
                     {Number(cell.day)}
                   </span>
                   {isSalaryDay ? (
-                    <span className="text-[10px] sm:text-xs" title="يوم القبض">💰</span>
+                    <span className="text-xs" title="يوم القبض">💰</span>
                   ) : hasData ? (
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 dark:bg-indigo-400 sm:hidden animate-pulse" />
                   ) : null}
@@ -293,16 +294,16 @@ export const MonthlyCalendar = memo(function MonthlyCalendar({
                 <div className="w-full mt-auto space-y-0.5 text-start" dir="ltr">
                   {amount > 0 && (
                     <div
-                      className="text-[8px] xs:text-[9px] sm:text-[11px] font-black text-rose-600 dark:text-rose-400 truncate leading-tight"
+                      className="text-[9px] xs:text-[10px] sm:text-xs font-black text-rose-600 dark:text-rose-400 truncate leading-tight"
                       title={`${amount} ج.م`}
                     >
                       {compactMoney(amount)}
-                      <span className="hidden xs:inline"> ج</span>
+                      <span className="text-[8px] xs:text-[9px] text-rose-500/80"> ج</span>
                     </div>
                   )}
                   {income > 0 && (
                     <div
-                      className="text-[8px] xs:text-[9px] sm:text-[11px] font-black text-emerald-600 dark:text-emerald-400 truncate leading-tight"
+                      className="text-[9px] xs:text-[10px] sm:text-xs font-black text-emerald-600 dark:text-emerald-400 truncate leading-tight"
                       title={`دخل ${income}`}
                     >
                       +{compactMoney(income)}

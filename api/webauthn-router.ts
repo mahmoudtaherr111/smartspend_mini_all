@@ -25,15 +25,32 @@ import {
   users,
 } from "../db/schema";
 import { eq, and } from "drizzle-orm";
-import { generateToken, createSession } from "./local-auth-utils";
+import { generateToken, createSession, getSessionMetadata } from "./local-auth-utils";
+import { env } from "./lib/env";
+import { getIncomingHeader } from "./lib/get-client-ip";
 
-// Ideally from env:
 const rpName = "SmartSpend";
-const rpID = process.env.NODE_ENV === "production" ? "smartspend.ai" : "localhost";
-const origin =
-  process.env.NODE_ENV === "production"
-    ? "https://smartspend.ai"
-    : "http://localhost:5173";
+
+function isDevelopmentOrigin(origin: string): boolean {
+  try {
+    const host = new URL(origin).hostname;
+    return host === "localhost" || host === "127.0.0.1" || host.endsWith(".loca.lt") || host.endsWith(".serveousercontent.com") || host.endsWith(".lhr.life");
+  } catch {
+    return false;
+  }
+}
+
+function getWebAuthnConfig(request?: Parameters<typeof getIncomingHeader>[0]) {
+  const configuredOrigins = [env.APP_URL, env.FRONTEND_URL].filter(Boolean) as string[];
+  const requestOrigin = request ? getIncomingHeader(request, "origin") : undefined;
+  const origin =
+    requestOrigin &&
+    (configuredOrigins.includes(requestOrigin) || (env.NODE_ENV !== "production" && isDevelopmentOrigin(requestOrigin)))
+      ? requestOrigin
+      : env.APP_URL;
+  const url = new URL(origin);
+  return { rpID: url.hostname, origin: `${url.protocol}//${url.host}` };
+}
 
 export const webauthnRouter = router({
   checkHasPasskey: authedProcedure.query(async ({ ctx }) => {
@@ -54,6 +71,7 @@ export const webauthnRouter = router({
   // 1. Generate Registration Options (Requires Auth to tie passkey to an existing account)
   generateRegistrationOptions: authedProcedure.mutation(async ({ ctx }) => {
     const db = getDb();
+    const { rpID } = getWebAuthnConfig(ctx.req);
     const userId = ctx.user.id;
     const userType = ctx.user.type; // "local" | "oauth"
 
@@ -122,6 +140,7 @@ export const webauthnRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const db = getDb();
+      const { rpID, origin } = getWebAuthnConfig(ctx.req);
       const userId = ctx.user.id;
       const userType = ctx.user.type;
 
@@ -187,8 +206,9 @@ export const webauthnRouter = router({
         phoneOrEmail: z.string().optional(), // For autofill, this is optional
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = getDb();
+      const { rpID } = getWebAuthnConfig(ctx.req);
       // For a full implementation, we could look up the user by phoneOrEmail to restrict to their credentials
       // However, passkey autofill usually doesn't require prior identification.
 
@@ -216,8 +236,9 @@ export const webauthnRouter = router({
         sessionId: z.string(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = getDb();
+      const { rpID, origin } = getWebAuthnConfig(ctx.req);
       const response = input.response as AuthenticationResponseJSON;
 
       const challengeRecord = await db.query.authChallenges.findFirst({
@@ -299,6 +320,7 @@ export const webauthnRouter = router({
         credentialRecord.userId,
         credentialRecord.userType as "oauth" | "local",
         token,
+        getSessionMetadata(ctx.req),
       );
 
       return { success: true, token };

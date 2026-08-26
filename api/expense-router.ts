@@ -16,13 +16,14 @@ import {
 } from "../db/schema";
 import { getSystemSettings } from "./lib/settings-cache";
 import { parseNameAndRelationship } from "./lib/relationship-normalizer";
-import { eq, and, gte, lte, desc, sql, lt } from "drizzle-orm";
+import { eq, and, gte, lte, desc, sql, lt, inArray } from "drizzle-orm";
 import Decimal from "decimal.js";
 import { ExpenseInputLimits } from "../contracts/constants";
 import { invalidateUserMemory } from "./lib/muscle-memory";
 import { deleteCacheByPattern, withCache } from "./lib/redis-client";
 import { checkUserBudgetExceeded } from "./notification-engine";
 import { invalidateFinanceUserCache } from "./services/finance-semantic-layer";
+import { businessDayRange } from "./lib/app-time";
 
 async function invalidateExpenseCache(userId: number | string, userType: string) {
   try {
@@ -36,23 +37,28 @@ async function invalidateExpenseCache(userId: number | string, userType: string)
 async function loadBusinessCategoriesForUser(
   userId: number,
   userType: string,
-): Promise<Array<{
-  id: number;
-  name: string;
-  nameAr: string;
-  type: string;
-  keywords: string[];
-  matchExamples: string[];
-}> | undefined> {
+): Promise<
+  | Array<{
+      id: number;
+      name: string;
+      nameAr: string;
+      type: string;
+      keywords: string[];
+      matchExamples: string[];
+    }>
+  | undefined
+> {
   try {
     const biz = await db
       .select({ id: userBusinesses.id })
       .from(userBusinesses)
-      .where(and(
-        eq(userBusinesses.userId, userId),
-        eq(userBusinesses.userType, userType),
-        eq(userBusinesses.isActive, true),
-      ))
+      .where(
+        and(
+          eq(userBusinesses.userId, userId),
+          eq(userBusinesses.userType, userType),
+          eq(userBusinesses.isActive, true),
+        ),
+      )
       .limit(1);
 
     if (biz.length === 0) return undefined;
@@ -60,18 +66,22 @@ async function loadBusinessCategoriesForUser(
     const cats = await db
       .select()
       .from(bizCategoriesTable)
-      .where(and(
-        eq(bizCategoriesTable.businessId, biz[0].id),
-        eq(bizCategoriesTable.isActive, true),
-      ));
+      .where(
+        and(
+          eq(bizCategoriesTable.businessId, biz[0].id),
+          eq(bizCategoriesTable.isActive, true),
+        ),
+      );
 
     return cats.map((c) => ({
       id: c.id,
       name: c.name,
       nameAr: c.nameAr,
       type: c.type,
-      keywords: Array.isArray(c.keywords) ? c.keywords as string[] : [],
-      matchExamples: Array.isArray(c.matchExamples) ? c.matchExamples as string[] : [],
+      keywords: Array.isArray(c.keywords) ? (c.keywords as string[]) : [],
+      matchExamples: Array.isArray(c.matchExamples)
+        ? (c.matchExamples as string[])
+        : [],
     }));
   } catch {
     return undefined;
@@ -104,11 +114,7 @@ type ExpenseReferenceInput = {
   classificationLogId?: number;
 };
 
-async function resolveExpenseReferences(
-  input: ExpenseReferenceInput,
-  userId: number,
-  userType: string,
-): Promise<{
+type ExpenseReferenceResult = {
   contactId: number | null;
   classificationLogId: number | null;
   newlyAddedContact: {
@@ -116,62 +122,170 @@ async function resolveExpenseReferences(
     name: string;
     totalContacts: number;
   } | null;
-}> {
-  const database = getDb();
-  let contactId = input.contactId || null;
-  let newlyAddedContact: {
-    isNew: boolean;
-    name: string;
-    totalContacts: number;
-  } | null = null;
+};
 
-  if (contactId) {
-    const [contact] = await database
+async function resolveBatchExpenseReferences(
+  items: ExpenseReferenceInput[],
+  userId: number,
+  userType: string,
+): Promise<ExpenseReferenceResult[]> {
+  if (items.length === 0) return [];
+  const database = getDb();
+
+  // 1. Batched Contact Validation
+  const explicitContactIds = [
+    ...new Set(
+      items
+        .map((item) => item.contactId)
+        .filter((id): id is number => typeof id === "number" && id > 0),
+    ),
+  ];
+
+  const validContactIds = new Set<number>();
+  if (explicitContactIds.length > 0) {
+    const foundContacts = await database
       .select({ id: userContacts.id })
       .from(userContacts)
-      .where(and(
-        eq(userContacts.id, contactId),
-        eq(userContacts.userId, userId),
-        eq(userContacts.userType, userType),
-      ))
-      .limit(1);
-    if (!contact) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "الشخص المختار غير موجود" });
+      .where(
+        and(
+          inArray(userContacts.id, explicitContactIds),
+          eq(userContacts.userId, userId),
+          eq(userContacts.userType, userType),
+        ),
+      );
+    for (const c of foundContacts) {
+      validContactIds.add(c.id);
     }
-  } else if (
-    PERSON_EXPENSE_CATEGORIES.has(input.category) &&
-    input.subCategory &&
-    input.subCategory !== "عام"
-  ) {
-    const { name, relationship } = parseNameAndRelationship(
-      input.subCategory,
-      input.category,
-    );
-    if (name && name !== "عام" && name !== "شخص") {
-      const { addDynamicContact } = await import("./services/user-profile-service");
-      const result = await addDynamicContact(userId, userType, name, relationship);
-      if (result?.contactId) contactId = result.contactId;
-      if (result?.isNew) newlyAddedContact = result;
+    for (const requestedId of explicitContactIds) {
+      if (!validContactIds.has(requestedId)) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "الشخص المختار غير موجود",
+        });
+      }
     }
   }
 
-  let classificationLogId = input.classificationLogId || null;
-  if (classificationLogId) {
-    const [log] = await database
+  // 2. Batched Classification Log Validation
+  const explicitLogIds = [
+    ...new Set(
+      items
+        .map((item) => item.classificationLogId)
+        .filter((id): id is number => typeof id === "number" && id > 0),
+    ),
+  ];
+
+  const validLogIds = new Set<number>();
+  if (explicitLogIds.length > 0) {
+    const foundLogs = await database
       .select({ id: classificationLogs.id })
       .from(classificationLogs)
-      .where(and(
-        eq(classificationLogs.id, classificationLogId),
-        eq(classificationLogs.userId, userId),
-        eq(classificationLogs.userType, userType),
-      ))
-      .limit(1);
-    if (!log) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "سجل التحليل غير موجود" });
+      .where(
+        and(
+          inArray(classificationLogs.id, explicitLogIds),
+          eq(classificationLogs.userId, userId),
+          eq(classificationLogs.userType, userType),
+        ),
+      );
+    for (const l of foundLogs) {
+      validLogIds.add(l.id);
+    }
+    for (const requestedId of explicitLogIds) {
+      if (!validLogIds.has(requestedId)) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "سجل التحليل غير موجود",
+        });
+      }
     }
   }
 
-  return { contactId, classificationLogId, newlyAddedContact };
+  // 3. Dynamic Contact Resolution (memoized per batch to avoid redundant insertions)
+  const dynamicContactCache = new Map<
+    string,
+    {
+      contactId: number | null;
+      newlyAddedContact: ExpenseReferenceResult["newlyAddedContact"];
+    }
+  >();
+
+  const results: ExpenseReferenceResult[] = [];
+
+  for (const item of items) {
+    let contactId = item.contactId || null;
+    let newlyAddedContact: ExpenseReferenceResult["newlyAddedContact"] = null;
+
+    if (contactId) {
+      contactId = item.contactId!;
+    } else if (
+      PERSON_EXPENSE_CATEGORIES.has(item.category) &&
+      item.subCategory &&
+      item.subCategory !== "عام"
+    ) {
+      const { name, relationship } = parseNameAndRelationship(
+        item.subCategory,
+        item.category,
+      );
+      if (name && name !== "عام" && name !== "شخص") {
+        const cacheKey = `${name}:::${relationship || ""}`;
+        if (dynamicContactCache.has(cacheKey)) {
+          const cached = dynamicContactCache.get(cacheKey)!;
+          contactId = cached.contactId;
+          newlyAddedContact = cached.newlyAddedContact;
+        } else {
+          const { addDynamicContact } = await import(
+            "./services/user-profile-service"
+          );
+          const result = await addDynamicContact(
+            userId,
+            userType,
+            name,
+            relationship,
+          );
+          contactId = result?.contactId || null;
+          if (result?.isNew) {
+            newlyAddedContact = result;
+          }
+          dynamicContactCache.set(cacheKey, { contactId, newlyAddedContact });
+        }
+      }
+    }
+
+    const classificationLogId = item.classificationLogId || null;
+    results.push({
+      contactId,
+      classificationLogId,
+      newlyAddedContact,
+    });
+  }
+
+  return results;
+}
+
+async function resolveExpenseReferences(
+  input: ExpenseReferenceInput,
+  userId: number,
+  userType: string,
+): Promise<ExpenseReferenceResult>;
+async function resolveExpenseReferences(
+  inputs: ExpenseReferenceInput[],
+  userId: number,
+  userType: string,
+): Promise<ExpenseReferenceResult[]>;
+async function resolveExpenseReferences(
+  inputOrInputs: ExpenseReferenceInput | ExpenseReferenceInput[],
+  userId: number,
+  userType: string,
+): Promise<ExpenseReferenceResult | ExpenseReferenceResult[]> {
+  if (Array.isArray(inputOrInputs)) {
+    return await resolveBatchExpenseReferences(inputOrInputs, userId, userType);
+  }
+  const [res] = await resolveBatchExpenseReferences(
+    [inputOrInputs],
+    userId,
+    userType,
+  );
+  return res;
 }
 
 function isValidDate(value: unknown): value is Date {
@@ -240,10 +354,8 @@ async function updateStreak(
   userType: string,
 ): Promise<void> {
   const now = new Date();
-  const todayStr = now.toISOString().split("T")[0];
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split("T")[0];
+  const today = businessDayRange(now);
+  const yesterday = businessDayRange(new Date(today.start.getTime() - 1));
 
   // Atomic SQL update — avoids the Read-Modify-Write race condition.
   // Uses a single UPDATE with CASE expression so concurrent requests
@@ -253,20 +365,20 @@ async function updateStreak(
     .update(table)
     .set({
       currentStreak: sql`CASE
-        WHEN DATE(${table.lastStreakAt}) = ${todayStr} THEN ${table.currentStreak}
-        WHEN DATE(${table.lastStreakAt}) = ${yesterdayStr} THEN COALESCE(${table.currentStreak}, 0) + 1
+        WHEN ${table.lastStreakAt} >= ${today.start} AND ${table.lastStreakAt} < ${today.endExclusive} THEN ${table.currentStreak}
+        WHEN ${table.lastStreakAt} >= ${yesterday.start} AND ${table.lastStreakAt} < ${today.start} THEN COALESCE(${table.currentStreak}, 0) + 1
         ELSE 1
       END`,
       highestStreak: sql`GREATEST(
         COALESCE(${table.highestStreak}, 0),
         CASE
-          WHEN DATE(${table.lastStreakAt}) = ${todayStr} THEN COALESCE(${table.currentStreak}, 0)
-          WHEN DATE(${table.lastStreakAt}) = ${yesterdayStr} THEN COALESCE(${table.currentStreak}, 0) + 1
+          WHEN ${table.lastStreakAt} >= ${today.start} AND ${table.lastStreakAt} < ${today.endExclusive} THEN COALESCE(${table.currentStreak}, 0)
+          WHEN ${table.lastStreakAt} >= ${yesterday.start} AND ${table.lastStreakAt} < ${today.start} THEN COALESCE(${table.currentStreak}, 0) + 1
           ELSE 1
         END
       )`,
       lastStreakAt: sql`CASE
-        WHEN DATE(${table.lastStreakAt}) = ${todayStr} THEN ${table.lastStreakAt}
+        WHEN ${table.lastStreakAt} >= ${today.start} AND ${table.lastStreakAt} < ${today.endExclusive} THEN ${table.lastStreakAt}
         ELSE ${now}
       END`,
     })
@@ -403,10 +515,7 @@ export const expenseRouter = router({
 
       if (input.length === 0) return { success: true };
 
-      const references = [] as Awaited<ReturnType<typeof resolveExpenseReferences>>[];
-      for (const item of input) {
-        references.push(await resolveExpenseReferences(item, userId, requestUserType));
-      }
+      const references = await resolveExpenseReferences(input, userId, requestUserType);
 
       const valuesToInsert = input.map((item, index) => ({
         userId,
@@ -430,13 +539,19 @@ export const expenseRouter = router({
       await db.transaction(async (tx) => {
         await tx.insert(expenses).values(valuesToInsert);
 
-        const linkedContactIds = references
-          .map((reference) => reference.contactId)
-          .filter((id): id is number => Boolean(id));
-        for (const contactId of linkedContactIds) {
+        const contactCounts = new Map<number, number>();
+        for (const ref of references) {
+          if (ref.contactId) {
+            contactCounts.set(
+              ref.contactId,
+              (contactCounts.get(ref.contactId) || 0) + 1,
+            );
+          }
+        }
+        for (const [contactId, count] of contactCounts.entries()) {
           await tx
             .update(userContacts)
-            .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
+            .set({ transactionCount: sql`${userContacts.transactionCount} + ${count}` })
             .where(eq(userContacts.id, contactId));
         }
 
@@ -896,16 +1011,12 @@ export const expenseRouter = router({
             ),
           );
 
-        // Calculate previous month's dates based on financial month logic
-        const prevMonthDate = safeDate(`${input.month}-01`, startDate);
-        prevMonthDate.setMonth(prevMonthDate.getMonth() - 1);
-        const prevMonthStr = prevMonthDate.toISOString().slice(0, 7);
-        const prevMonthDates = getFinancialMonthDates(
-          prevMonthStr,
-          input.salaryDay,
-        );
-        const prevStartDate = prevMonthDates.startDate;
-        const prevEndDate = prevMonthDates.endDate;
+        // Calculate previous period for trends
+        const prevMonth = new Date(startDate);
+        prevMonth.setMonth(prevMonth.getMonth() - 1);
+        const prevMonthStr = prevMonth.toISOString().slice(0, 7);
+        const { startDate: prevStartDate, endDate: prevEndDate } =
+          getFinancialMonthDates(prevMonthStr, input.salaryDay);
 
         const previousItems = await db
           .select()
@@ -1484,7 +1595,10 @@ export const expenseRouter = router({
         );
 
       if (!clarification) {
-        throw new Error("Clarification not found");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "طلب التوضيح غير موجود أو تمت معالجته بالفعل",
+        });
       }
 
       let newlyAddedContact: { isNew: boolean; name: string; totalContacts: number } | null = null;
@@ -1528,7 +1642,7 @@ export const expenseRouter = router({
                  } catch {}
                  resolvedAnswers[name] = "جهة اتصال عامة";
                } else {
-                 const finalAnswer = trimmedAnswer.replace(new RegExp(`(?:^|\\s)${name}(?:\\s|$)`), " ").trim() || trimmedAnswer;
+                 const finalAnswer = trimmedAnswer.replace(new RegExp(`(?:^|\\s)$${name}(?:\\s|$)`), " ").trim() || trimmedAnswer;
                  resolvedAnswers[name] = finalAnswer || "معروف";
                }
                anyResolved = true;
@@ -1658,53 +1772,61 @@ export const expenseRouter = router({
             ? pipeline.items
             : Array.isArray(ctxData.items) ? ctxData.items : [];
 
-          for (const item of itemsToSave) {
-            const references = await resolveExpenseReferences(
-              {
+          await db.transaction(async (tx) => {
+            for (const item of itemsToSave) {
+              const references = await resolveExpenseReferences(
+                {
+                  category: item.category,
+                  subCategory: item.subCategory,
+                  classificationLogId:
+                    typeof ctxData.classificationLogId === "number"
+                      ? ctxData.classificationLogId
+                      : undefined,
+                },
+                userId,
+                userType,
+              );
+              await tx.insert(expenses).values({
+                userId: userId as number,
+                userType: userType as string,
+                amount: item.amount.toString(),
+                description: item.description || enrichedText,
                 category: item.category,
                 subCategory: item.subCategory,
-                classificationLogId:
-                  typeof ctxData.classificationLogId === "number"
-                    ? ctxData.classificationLogId
-                    : undefined,
-              },
-              userId,
-              userType,
-            );
-            await db.insert(expenses).values({
-              userId: userId as number,
-              userType: userType as string,
-              amount: item.amount.toString(),
-              description: item.description || enrichedText,
-              category: item.category,
-              subCategory: item.subCategory,
-              type: item.type,
-              date: new Date(),
-              source: "manual",
-              rawText: enrichedText,
-              contactId: references.contactId,
-              classificationLogId: references.classificationLogId,
-              businessId: (item as any).businessId || null,
-            });
+                type: item.type,
+                date: new Date(),
+                source: "manual",
+                rawText: enrichedText,
+                contactId: references.contactId,
+                classificationLogId: references.classificationLogId,
+                businessId: (item as any).businessId || null,
+              });
 
-            if (references.contactId) {
-              await db
-                .update(userContacts)
-                .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
-                .where(eq(userContacts.id, references.contactId));
-            }
-
-            if (item.person_mentioned && item.person_relationship) {
-              const pName = item.person_mentioned.trim();
-              const pRel = item.person_relationship.trim();
-              if (pName && pName !== "عام" && pName !== "شخص") {
-                const { addDynamicContact } = await import("./services/user-profile-service");
-                const res = await addDynamicContact(userId as number, userType as string, pName, pRel);
-                if (res && res.isNew) newlyAddedContact = res;
+              if (references.contactId) {
+                await tx
+                  .update(userContacts)
+                  .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
+                  .where(eq(userContacts.id, references.contactId));
               }
+
+              if (item.person_mentioned && item.person_relationship) {
+                const pName = item.person_mentioned.trim();
+                const pRel = item.person_relationship.trim();
+                if (pName && pName !== "عام" && pName !== "شخص") {
+                  const { addDynamicContact } = await import("./services/user-profile-service");
+                  const res = await addDynamicContact(userId as number, userType as string, pName, pRel);
+                  if (res && res.isNew) newlyAddedContact = res;
+                }
+              }
+              savedCount += 1;
             }
-            savedCount += 1;
-          }
+
+            await tx
+              .update(pendingClarifications)
+              .set({ status: "resolved" })
+              .where(eq(pendingClarifications.id, input.clarificationId));
+          });
+
           await invalidateExpenseCache(userId as number, userType as string);
           
           const hasExpenses = itemsToSave.some((item: any) => item.type === "expense");
@@ -1715,13 +1837,13 @@ export const expenseRouter = router({
           }
         } catch (err) {
           console.error("Failed to save after queue clarification:", err);
-          throw new Error(err instanceof Error ? err.message : "تعذر حفظ العمليات بعد التوضيح.");
+          if (err instanceof TRPCError) throw err;
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: err instanceof Error ? err.message : "تعذر حفظ العمليات بعد التوضيح.",
+            cause: err,
+          });
         }
-
-        await db
-          .update(pendingClarifications)
-          .set({ status: "resolved" })
-          .where(eq(pendingClarifications.id, input.clarificationId));
 
         return {
           success: true,
@@ -1843,7 +1965,10 @@ export const expenseRouter = router({
           pipeline.items.length === 0 ||
           pipeline.overallConfidence < 70
         ) {
-          throw new Error("التوضيح لسه مش كافي لتسجيل العملية بدقة.");
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "التوضيح لسه مش كافي لتسجيل العملية بدقة.",
+          });
         }
 
         if (pipeline.items && pipeline.items.length > 0) {
@@ -1894,11 +2019,15 @@ export const expenseRouter = router({
           .where(eq(pendingClarifications.id, input.clarificationId));
       } catch (err) {
         console.error("Failed to re-run pipeline on clarification answer:", err);
-        throw new Error(
-          err instanceof Error
-            ? err.message
-            : "تعذر حفظ التوضيح. جرّب توضيح العلاقة بشكل أبسط.",
-        );
+        if (err instanceof TRPCError) throw err;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            err instanceof Error
+              ? err.message
+              : "تعذر حفظ التوضيح. جرّب توضيح العلاقة بشكل أبسط.",
+          cause: err,
+        });
       }
 
       return {

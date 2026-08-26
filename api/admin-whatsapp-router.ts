@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { router, adminProcedure } from "./middleware";
 import { whatsappService } from "./services/whatsapp-service";
 import { db } from "./queries/connection";
@@ -117,7 +118,10 @@ export const adminWhatsappRouter = router({
         await whatsappService.sendMessage(input.phone, input.text);
         return { success: true, message: "تم إرسال الرسالة بنجاح" };
       } catch (err: any) {
-        throw new Error(err.message || "فشل إرسال الرسالة");
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: err.message || "فشل إرسال الرسالة",
+        });
       }
     }),
 
@@ -164,7 +168,10 @@ export const adminWhatsappRouter = router({
         .where(and(isNotNull(localUsers.phone), ne(localUsers.phone, "")));
 
       if (users.length === 0) {
-        throw new Error("لا يوجد مستخدمين بأرقام هواتف مسجلة");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "لا يوجد مستخدمين بأرقام هواتف مسجلة",
+        });
       }
 
       // Add to queue

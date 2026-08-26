@@ -4,23 +4,30 @@ const DB_NAME = "smartspend_query_cache";
 const STORE_NAME = "queries";
 const KEY = "cache";
 
-const dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
-  if (typeof window === "undefined") {
-    reject(new Error("IndexedDB is only available in the browser"));
-    return;
+let dbPromise: Promise<IDBDatabase> | null = null;
+
+function getDb(): Promise<IDBDatabase> | null {
+  if (typeof window === "undefined" || !window.indexedDB) {
+    return null;
   }
-  const request = window.indexedDB.open(DB_NAME, 1);
-  request.onupgradeneeded = () => {
-    request.result.createObjectStore(STORE_NAME);
-  };
-  request.onsuccess = () => resolve(request.result);
-  request.onerror = () => reject(request.error);
-});
+  if (!dbPromise) {
+    dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
+      const request = window.indexedDB.open(DB_NAME, 1);
+      request.onupgradeneeded = () => {
+        request.result.createObjectStore(STORE_NAME);
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+  return dbPromise;
+}
 
 export const idbPersister: Persister = {
   persistClient: async (client: PersistedClient) => {
     try {
-      const db = await dbPromise;
+      const db = await getDb();
+      if (!db) return;
       await new Promise<void>((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, "readwrite");
         const store = tx.objectStore(STORE_NAME);
@@ -34,7 +41,8 @@ export const idbPersister: Persister = {
   },
   restoreClient: async () => {
     try {
-      const db = await dbPromise;
+      const db = await getDb();
+      if (!db) return undefined;
       return await new Promise<PersistedClient | undefined>((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, "readonly");
         const store = tx.objectStore(STORE_NAME);
@@ -49,7 +57,8 @@ export const idbPersister: Persister = {
   },
   removeClient: async () => {
     try {
-      const db = await dbPromise;
+      const db = await getDb();
+      if (!db) return;
       await new Promise<void>((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, "readwrite");
         const store = tx.objectStore(STORE_NAME);

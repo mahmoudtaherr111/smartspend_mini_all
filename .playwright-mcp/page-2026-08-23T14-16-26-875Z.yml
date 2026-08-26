@@ -1,0 +1,69 @@
+- generic [active] [ref=f16e1]:
+  - generic:
+    - generic [ref=f16e2]:
+      - complementary [ref=f16e10]:
+        - generic [ref=f16e11]:
+          - generic [ref=f16e12]:
+            - img "SmartSpend"
+          - generic [ref=f16e13]:
+            - button [ref=f16e14] [cursor=pointer]
+            - button [ref=f16e15] [cursor=pointer]
+        - generic [ref=f16e17]:
+          - paragraph [ref=f16e18]: فحص الجودة
+          - paragraph [ref=f16e20]: مجاني
+        - navigation [ref=f16e21]:
+          - link "الرئيسية" [ref=f16e22] [cursor=pointer]:
+            - /url: /dashboard
+          - link "إحصائيات" [ref=f16e29] [cursor=pointer]:
+            - /url: /dashboard?tab=stats
+          - link "مركز AI" [ref=f16e33] [cursor=pointer]:
+            - /url: /ai
+          - link "التقويم" [ref=f16e38] [cursor=pointer]:
+            - /url: /dashboard?tab=calendar
+          - link "البرو والأسعار" [ref=f16e42] [cursor=pointer]:
+            - /url: /pro
+          - link "الربط البنكي" [ref=f16e46] [cursor=pointer]:
+            - /url: /bank-sync
+        - generic [ref=f16e50]:
+          - link "الدعم" [ref=f16e51] [cursor=pointer]:
+            - /url: /support
+          - link "الإعدادات" [ref=f16e56] [cursor=pointer]:
+            - /url: /settings
+          - button "خروج" [ref=f16e61] [cursor=pointer]
+      - main [ref=f16e3]:
+        - generic [ref=f16e5]:
+          - generic [ref=f16e67]:
+            - generic [ref=f16e68]:
+              - generic [ref=f16e74]:
+                - heading "مركز الذكاء الاصطناعي" [level=1] [ref=f16e75]
+                - paragraph [ref=f16e76]: مستشارك المالي الذكي
+              - generic [ref=f16e77]:
+                - button "شات ذكي" [ref=f16e78] [cursor=pointer]
+                - button "مكالمة صوتية" [ref=f16e83] [cursor=pointer]
+                - button "تحليل شهري" [ref=f16e87] [cursor=pointer]
+            - generic [ref=f16e93]:
+              - generic [ref=f16e94]:
+                - generic [ref=f16e100]:
+                  - paragraph [ref=f16e101]: سمارت
+                  - paragraph [ref=f16e102]: ● متصل
+                - generic [ref=f16e103]:
+                  - button "إدارة الذاكرة الذكية" [ref=f16e104] [cursor=pointer]
+                  - button "محادثة جديدة" [ref=f16e105] [cursor=pointer]
+                  - button "مسح المحادثة" [ref=f16e106] [cursor=pointer]
+              - generic [ref=f16e129]:
+                - generic [ref=f16e130]: المحادثات
+                - button "كم صرفت النهاردة؟ 2 رسالة - ٢٣ أغسطس، ٠٣:١٦ م" [ref=f16e136] [cursor=pointer]:
+                  - generic [ref=f16e137]: كم صرفت النهاردة؟
+                  - generic [ref=f16e138]: 2 رسالة - ٢٣ أغسطس، ٠٣:١٦ م
+              - generic [ref=f16e107]:
+                - paragraph [ref=f16e141]: كم صرفت النهاردة؟
+                - generic [ref=f16e143]:
+                  - paragraph [ref=f16e144]: في اليوم، صرفت ١٥٠ جنيه من ١ عملية. الدخل المسجل ٠ جنيه، والصافي ؜-١٥٠ جنيه.
+                  - group "ai-trace route=finance_query tools=finance.summary retrieval=skipped embedding=none embeddingCalls=0 embeddingApiStatus=skipped cache=redis risk=low schema=٢" [ref=f16e145]:
+                    - 'generic "Trace: finance_query · tools 1 · LLM 0 · embed 0" [ref=f16e146] [cursor=pointer]'
+              - generic [ref=f16e124]:
+                - textbox "اكتب رسالتك إلى سمارت" [ref=f16e126]:
+                  - /placeholder: اكتب رسالتك...
+                - button "إرسال الرسالة" [disabled]
+          - button [ref=f16e127] [cursor=pointer]
+    - region "Notifications alt+T"

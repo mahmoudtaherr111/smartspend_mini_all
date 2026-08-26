@@ -79,7 +79,10 @@ export const supportRouter = router({
         ticket[0].userType !== ctx.user.type
       ) {
         if (ctx.user.role !== "moderator" && ctx.user.role !== "admin") {
-          throw new Error("غير مصرح");
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "غير مصرح لك بالوصول لهذه التذكرة",
+          });
         }
       }
       return ticket[0];
@@ -198,7 +201,10 @@ export const supportRouter = router({
         ticket[0].userType !== ctx.user.type
       ) {
         if (ctx.user.role !== "moderator" && ctx.user.role !== "admin") {
-          throw new Error("غير مصرح");
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "غير مصرح لك بالوصول لهذه التذكرة",
+          });
         }
       }
       await db

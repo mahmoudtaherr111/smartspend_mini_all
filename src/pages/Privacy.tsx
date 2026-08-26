@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 export default function Privacy() {
   return (
-    <div className="min-h-screen bg-background p-4 md:p-10" dir="rtl">
+    <div className="min-h-full min-h-screen-safe bg-background p-4 md:p-10 pt-safe pb-safe" dir="rtl">
       <SEOMeta path="/privacy" title="سياسة الخصوصية - SmartSpend AI" />
       <div className="max-w-3xl mx-auto space-y-6">
         <Button variant="ghost" asChild className="mb-2">

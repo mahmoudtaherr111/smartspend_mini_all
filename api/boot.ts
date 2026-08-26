@@ -8,8 +8,11 @@ import { createContext } from "./context";
 import { env } from "./lib/env";
 import { getClientIp } from "./lib/get-client-ip";
 import { smsApp } from "./sms-router";
-import { createHmac } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import { grantProSubscription } from "./lib/subscription-service";
+import { buildGoogleAuthorizationUrl, createOAuthState } from "./auth-router";
+import { getBillingPlan, hasExactPlanAmount, isBillingPlan } from "../contracts/plans";
+import { isPaymobWebhookVerificationConfigured } from "./lib/paymob";
 import * as Sentry from "@sentry/node";
 import { nodeProfilingIntegration } from "@sentry/profiling-node";
 import cron from "node-cron";
@@ -17,13 +20,14 @@ import { csrf } from "hono/csrf";
 import { streamSSE } from "hono/streaming";
 import { otpEvents } from "./services/whatsapp-service";
 import { db } from "./queries/connection";
-import { sessions, classificationLogs } from "../db/schema";
+import { sessions, classificationLogs, authChallenges } from "../db/schema";
 import { lt } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
 import { whatsappService } from "./services/whatsapp-service";
 import { processScheduledNotifications, seedDefaultTemplates, checkAndTriggerSmartActivityNotifications } from "./notification-engine";
 import { warmupEmbeddingEngine } from "./lib/embedding-engine";
+import { withScheduledJobLock } from "./services/scheduler-lock";
 
 if (env.SENTRY_DSN) {
   Sentry.init({
@@ -34,33 +38,47 @@ if (env.SENTRY_DSN) {
   });
 }
 
-// Cron job to clean up expired sessions daily at midnight
-cron.schedule("0 0 * * *", async () => {
-  try {
-    await db.delete(sessions).where(lt(sessions.expiresAt, new Date()));
-    console.log(`[Cron] Cleaned up expired sessions`);
-  } catch (error) {
-    console.error("[Cron] Failed to clean up expired sessions:", error);
-  }
+const cronsEnabled = env.ENABLE_CRONS === "true";
+
+function scheduleProtectedJob(
+  expression: string,
+  jobName: string,
+  task: () => Promise<void>,
+) {
+  if (!cronsEnabled) return;
+  cron.schedule(expression, () =>
+    withScheduledJobLock(jobName, task).catch((error) => {
+      console.error(`[Cron] ${jobName} failed:`, error);
+    }),
+  );
+}
+
+if (cronsEnabled) {
+  // A seed can write data, so it must follow the same explicit scheduler flag
+  // and cross-replica lock as periodic work.
+  void withScheduledJobLock("seed-default-templates", async () => {
+    await seedDefaultTemplates();
+  }).catch((err) => console.error("[Boot] Failed to seed notification templates:", err));
+} else {
+  console.info("[Boot] Background jobs disabled; set ENABLE_CRONS=true on one or more replicas.");
+}
+
+// Cron job to clean up sessions and expiring WebAuthn challenges daily.
+scheduleProtectedJob("0 0 * * *", "daily-auth-cleanup", async () => {
+  const now = new Date();
+  await Promise.all([
+    db.delete(sessions).where(lt(sessions.expiresAt, now)),
+    db.delete(authChallenges).where(lt(authChallenges.expiresAt, now)),
+  ]);
+  console.log("[Cron] Cleaned expired sessions and WebAuthn challenges");
 });
 
 // Cron job to clean up classification logs older than 180 days (Sundays at 3 AM)
-cron.schedule("0 3 * * 0", async () => {
-  try {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 180);
-    const result = await db.delete(classificationLogs).where(
-      lt(classificationLogs.createdAt, cutoff)
-    );
-    console.log(`[CRON] Cleaned up old classification logs, cutoff: ${cutoff.toISOString()}`);
-  } catch (err) {
-    console.error("[CRON] Classification logs cleanup failed:", err);
-  }
-});
-
-// Seed default templates on server boot
-seedDefaultTemplates().catch((err) => {
-  console.error("[Boot] Failed to seed default notification templates:", err);
+scheduleProtectedJob("0 3 * * 0", "classification-log-cleanup", async () => {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 180);
+  await db.delete(classificationLogs).where(lt(classificationLogs.createdAt, cutoff));
+  console.log(`[Cron] Cleaned old classification logs, cutoff: ${cutoff.toISOString()}`);
 });
 
 // Warmup embedding engine (local index + Fireworks descriptor index)
@@ -68,22 +86,12 @@ seedDefaultTemplates().catch((err) => {
 warmupEmbeddingEngine(undefined, process.env.FIREWORKS_API_KEY || "");
 
 // Cron job for processing scheduled and event-based notifications
-cron.schedule("* * * * *", async () => {
-  try {
-    await processScheduledNotifications();
-  } catch (error) {
-    console.error("[Cron] Failed to process scheduled notifications:", error);
-  }
-});
+scheduleProtectedJob("* * * * *", "scheduled-notifications", processScheduledNotifications);
 
 // Daily smart inactivity and conversion notifications cron at 8:00 PM (20:00)
-cron.schedule("0 20 * * *", async () => {
-  try {
-    console.log("[Cron] Running daily smart activity notifications check...");
-    await checkAndTriggerSmartActivityNotifications();
-  } catch (error) {
-    console.error("[Cron] Failed to process smart activity notifications:", error);
-  }
+scheduleProtectedJob("0 20 * * *", "smart-activity-notifications", async () => {
+  console.log("[Cron] Running daily smart activity notifications check...");
+  await checkAndTriggerSmartActivityNotifications();
 });
 
 // Boot-time Redis health check (non-blocking — logs warning if unavailable)
@@ -107,6 +115,27 @@ import { getRedisClient, getCacheRuntimeStatus } from "./lib/redis-client";
 const app = new Hono();
 
 app.use("*", logger());
+
+let warnedAboutUntrustedProxy = false;
+if (env.NODE_ENV === "production" && env.TRUST_PROXY !== "true") {
+  console.warn(
+    "[Boot] TRUST_PROXY is disabled. If this deployment is behind nginx/Cloudflare, set TRUST_PROXY=true or IP rate limits will see the proxy address.",
+  );
+}
+app.use("*", async (c, next) => {
+  if (
+    env.NODE_ENV === "production" &&
+    env.TRUST_PROXY !== "true" &&
+    !warnedAboutUntrustedProxy &&
+    (c.req.header("x-forwarded-for") || c.req.header("x-real-ip") || c.req.header("cf-connecting-ip"))
+  ) {
+    warnedAboutUntrustedProxy = true;
+    console.error(
+      "[Security] Forwarded client-IP headers detected while TRUST_PROXY is disabled. Configure trusted proxy forwarding before relying on per-IP limits.",
+    );
+  }
+  await next();
+});
 
 // ─── CORS: supports monorepo mode (APP_URL) and separate-deploy mode (FRONTEND_URL) ───
 const allowedOrigins = Array.from(
@@ -184,10 +213,48 @@ app.notFound(async (c) => {
   return c.json({ error: "Not Found" }, 404);
 });
 
+function readCookie(cookieHeader: string | undefined, name: string): string | undefined {
+  if (!cookieHeader) return undefined;
+  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : undefined;
+}
+
+function secureCookieSuffix() {
+  return env.NODE_ENV === "production" ? "; Secure" : "";
+}
+
+function stateMatches(expected: string | undefined, received: string | undefined): boolean {
+  if (!expected || !received) return false;
+  const expectedBuffer = Buffer.from(expected);
+  const receivedBuffer = Buffer.from(received);
+  return (
+    expectedBuffer.length === receivedBuffer.length &&
+    timingSafeEqual(expectedBuffer, receivedBuffer)
+  );
+}
+
+// State is established in a browser navigation so its HttpOnly cookie is
+// present on the callback. This prevents OAuth login-CSRF account swapping.
+app.get("/api/auth/google/start", (c) => {
+  const state = createOAuthState();
+  const googleUrl = buildGoogleAuthorizationUrl(state);
+  if (!googleUrl) return c.json({ error: "Google OAuth is not configured" }, 503);
+  c.header(
+    "Set-Cookie",
+    `oauth_state=${encodeURIComponent(state)}; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=600${secureCookieSuffix()}`,
+  );
+  return c.redirect(googleUrl);
+});
+
 // Google OAuth callback (server-side redirect)
 app.get("/api/auth/google/callback", async (c) => {
   const code = c.req.query("code");
   if (!code) return c.json({ error: "No code provided" }, 400);
+  const stateCookie = readCookie(c.req.header("cookie"), "oauth_state");
+  if (!stateMatches(stateCookie, c.req.query("state"))) {
+    console.warn("Google OAuth callback rejected due to invalid state");
+    return c.redirect(`${env.APP_URL}/login?error=auth_failed`);
+  }
 
   try {
     const caller = appRouter.createCaller(await createContext(c.req));
@@ -198,7 +265,12 @@ app.get("/api/auth/google/callback", async (c) => {
       "Set-Cookie",
       `google_session=${result.token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800${env.NODE_ENV === "production" ? "; Secure" : ""}`,
     );
-    return c.redirect(`${env.APP_URL}/auth/callback?token=${result.token}`);
+    c.header(
+      "Set-Cookie",
+      `oauth_state=; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=0${secureCookieSuffix()}`,
+      { append: true },
+    );
+    return c.redirect(`${env.APP_URL}/dashboard`);
   } catch (error) {
     return c.redirect(`${env.APP_URL}/login?error=auth_failed`);
   }
@@ -277,6 +349,10 @@ app.post("/api/webhooks/paymob", async (c) => {
   console.info("[paymob webhook]", JSON.stringify(parsed));
 
   const secret = env.PAYMOB_HMAC_SECRET;
+  if (env.NODE_ENV === "production" && !isPaymobWebhookVerificationConfigured()) {
+    console.error("Paymob webhook rejected: PAYMOB_HMAC_SECRET is not configured");
+    return c.json({ error: "Webhook verification is unavailable" }, 503);
+  }
   if (secret) {
     if (!hmacParam) {
       console.warn(
@@ -323,7 +399,12 @@ app.post("/api/webhooks/paymob", async (c) => {
     const calculatedHmac = createHmac("sha512", secret)
       .update(hmacSource)
       .digest("hex");
-    if (calculatedHmac !== hmacParam) {
+    const calculatedBuffer = Buffer.from(calculatedHmac, "hex");
+    const receivedBuffer = Buffer.from(hmacParam, "hex");
+    if (
+      calculatedBuffer.length !== receivedBuffer.length ||
+      !timingSafeEqual(calculatedBuffer, receivedBuffer)
+    ) {
       console.warn("Paymob webhook verification failed: signature mismatch");
       return c.json({ error: "Invalid signature" }, 401);
     }
@@ -340,29 +421,19 @@ app.post("/api/webhooks/paymob", async (c) => {
       {};
     const userId = Number(extraData.userId);
     const userType = extraData.userType;
-    const plan = (extraData.plan || "pro_monthly") as
-      | "pro_monthly"
-      | "pro_yearly";
-
-    const PLAN_PRICES_EGP: Record<string, number> = {
-      pro_monthly: 49,
-      pro_yearly: 499,
-    };
-
-    const expectedAmountCents = PLAN_PRICES_EGP[plan]
-      ? PLAN_PRICES_EGP[plan] * 100
+    const plan = extraData.plan;
+    const expectedAmountCents = isBillingPlan(plan)
+      ? getBillingPlan(plan).amountCents
       : null;
+    const paidCents = Number(obj.amount_cents);
 
-    if (userId && (userType === "oauth" || userType === "local")) {
-      if (expectedAmountCents !== null && obj.amount_cents) {
-        const paidCents = Number(obj.amount_cents);
-        if (paidCents < expectedAmountCents) {
+    if (userId && (userType === "oauth" || userType === "local") && isBillingPlan(plan)) {
+      if (!hasExactPlanAmount(plan, obj.amount_cents)) {
           console.warn(
             `Paymob webhook: amount mismatch — expected ${expectedAmountCents} cents for ${plan}, got ${paidCents}. Rejecting.`,
           );
           return c.json({ error: "Amount mismatch" }, 400);
         }
-      }
 
       console.info(
         `Granting Pro subscription to user ${userId} (${userType}) via Paymob webhook`,
@@ -385,6 +456,7 @@ app.post("/api/webhooks/paymob", async (c) => {
         "Paymob webhook: missing or invalid user metadata in extra_data",
         extraData,
       );
+      return c.json({ error: "Invalid payment metadata" }, 400);
     }
   }
 
@@ -429,13 +501,16 @@ if (env.NODE_ENV === "production" && isDirectBootEntry) {
   });
 }
 
-// Auto-start WhatsApp service if credentials exist
+// WhatsApp is explicit because a stale credential file must not create an
+// outbound Baileys connection during local development or every replica boot.
 const sessionDir = path.join(process.cwd(), "whatsapp_auth_info");
-if (fs.existsSync(path.join(sessionDir, "creds.json"))) {
-  console.log("[WhatsApp] Found existing credentials, auto-starting service...");
+if (env.ENABLE_WHATSAPP === "true" && fs.existsSync(path.join(sessionDir, "creds.json"))) {
+  console.log("[WhatsApp] Starting explicitly enabled service...");
   whatsappService.start().catch((err) => {
     console.error("[WhatsApp] Failed to auto-start WhatsApp service:", err);
   });
+} else if (fs.existsSync(path.join(sessionDir, "creds.json"))) {
+  console.info("[WhatsApp] Credentials found but service is disabled; set ENABLE_WHATSAPP=true to start it.");
 }
 
 export { app };

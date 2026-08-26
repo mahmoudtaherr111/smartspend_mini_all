@@ -1,94 +1,109 @@
 # 🚀 SmartSpend AI — Release Checklist & Incident Playbook
 
-This document is the authoritative Single Source of Truth (SSoS) for deploying SmartSpend AI to production and resolving runtime incidents.
+> **AI AGENT SSOT:** This document is the authoritative Single Source of Truth for deploying SmartSpend AI to production and resolving runtime incidents.
 
 ---
 
 ## 📋 1. Pre-Release Checklist (Deploy Gate)
 
-Before deploying any changes to production, the engineer must execute and verify the following gates:
+Before deploying any changes to production, the engineering team must execute and verify the following release gates:
 
-### Step 1: Type Validation & Core Compilation
-Ensure there are no compilation errors in shared types, frontend components, or Hono procedures:
+### Step 1: Type Safety & Monorepo Compilation
+Ensure there are zero TypeScript compilation errors in frontend components, Hono backend procedures, or shared contracts:
 ```bash
 npm run check
 ```
-*   **Gate:** Must output `tsc -b` success with zero compile errors.
+*   **Gate Requirement:** `tsc -b` must exit with code 0 and zero type errors.
 
-### Step 2: Complete Test Suite Run
-Execute the full Vitest suite to verify classification waterfalls, capability routing, and memory scopes:
+### Step 2: Comprehensive Test Suite Execution
+Execute the Vitest test suite to verify classification waterfalls, capability routing, memory scopes, and router procedures:
 ```bash
 npm test
 ```
-*   **Gate:** All 424 tests across 68 test suites must pass. Zero regressions allowed.
+*   **Gate Requirement:** All unit, integration, and semantic test suites must pass cleanly with zero regressions.
 
-### Step 3: Environment Variable Audit
-Verify that production environment variables are configured correctly in the deployment environment:
-*   `DATABASE_URL`: Must target production MySQL (port 3306 or cluster endpoint).
-*   `GOOGLE_CLIENT_ID` & `GOOGLE_CLIENT_SECRET`: Configured for oauth callback.
-*   `JWT_SECRET`: High-entropy production key.
-*   `GEMINI_API_KEY`: Active Google Generative AI key.
+### Step 3: Production Environment Variable Audit
+Verify that production environment variables are configured correctly in the hosting container / environment:
+*   `DATABASE_URL`: Must target production MySQL 8 instance (default port `3306`).
+*   `GOOGLE_CLIENT_ID` & `GOOGLE_CLIENT_SECRET`: Configured for live OAuth redirect URLs.
+*   `JWT_SECRET`: High-entropy production key (minimum 32 characters).
+*   `GEMINI_API_KEY`: Active Google Generative AI API key.
 *   `BILLING_SIMULATE`: Must be set to `"false"` in production.
-*   `REDIS_URL`: Target Redis cache for production speedups.
+*   `REDIS_URL`: Target production Redis cache instance (`redis://...`).
+*   `APP_TIMEZONE`: Production business timezone (must be `Africa/Cairo`).
+*   `ENABLE_CRONS`: Set to `"true"` on scheduler-enabled replicas (MySQL advisory locks via `scheduler-lock.ts` prevent duplicate executions).
+*   `ENABLE_WHATSAPP`: Set to `"true"` on the replica hosting the WhatsApp web client instance.
+*   `PAYMOB_HMAC_SECRET`: Required for live Paymob webhook signature validation.
+
+### Local Dependency Stack (Docker Compose)
+For local development and integration testing, reproducible MySQL 8 and Redis 7 services are defined in `docker-compose.yml`:
+```bash
+docker compose up -d mysql redis
+npm run db:push
+npm run dev
+```
+*Local ports:* MySQL runs on `3308` (to avoid conflicting with default MySQL on 3306), Redis on `6379`.
 
 ---
 
-## 🚀 2. Production Deployment Steps
+## 🚀 2. Production Deployment Sequence
 
-Follow this order during release windows (prefer low-traffic hours: 2:00 AM - 4:00 AM EET):
+Follow this order during scheduled release windows (prefer low-traffic hours: 2:00 AM – 4:00 AM EET):
 
-1.  **Backup Database:** Run a production database dump before running migrations:
+1.  **Backup Database:** Run a production database dump before executing schema migrations:
     ```bash
     mysqldump -h <host> -u <user> -p smartspend > backup_before_release.sql
     ```
-2.  **Apply Migrations:** Run Drizzle push to update MySQL schema:
+2.  **Generate & Apply Drizzle Schema Migrations:**
     ```bash
-    npm run db:push
+    npm run db:generate
+    npm run db:migrate
     ```
-3.  **Deploy Backend:** Rebuild and deploy Hono standalone production bundle:
+    *(Note: `npm run db:push` is restricted to disposable local development databases).*
+3.  **Build & Launch Backend Service:**
     ```bash
     npm run backend:build
     npm run backend:start
     ```
-4.  **Deploy Frontend:** Build and bundle Vite PWA static assets:
+4.  **Build & Bundle Frontend PWA Static Assets:**
     ```bash
     npm run frontend:build
     ```
-5.  **Audit Service Worker:** Verify the generated `/sw.js` matches the Workbox configuration and does not cache API routes.
+5.  **Audit Service Worker & Caching:** Verify the generated `/sw.js` matches the Workbox configuration and excludes all dynamic `/api/` routes.
 
 ---
 
-## 🚨 3. Incident Response Playbook
+## 🚨 3. Incident Response Playbooks
 
 ### Incident A: LLM Provider Outage or Rate Limit (Gemini/Fireworks 429/500)
-*   **Symptoms:** User sends chat message, gets a long delay followed by a generic fallback reply, or logs show `API_OUTAGE` or `RATE_LIMIT` errors.
+*   **Symptoms:** Chat requests experience high latency followed by generic fallback responses, or logs record `API_OUTAGE` / `RATE_LIMIT` errors.
 *   **Mitigation Actions:**
-    1.  **Validate local fallback:** The system automatically falls back to deterministic rule engines (`rule-engine.ts`) and lexical local memory search if the LLM fails. Verify user queries still classify correctly.
-    2.  **Adjust Coercion:** If Fireworks is down, change the model provider mappings in `api/lib/model-mapper.ts` to route requests through Google Gemini API.
-    3.  **Rate-limit tuning:** Lower the maximum daily tokens allowed for free users under `chatbot_daily_limit_free` in the `systemSettings` table.
+    1.  **Validate Local Fallback:** The system automatically falls back to Layer 1 (Muscle Memory), Layer 2 (Deterministic Rule Engine), and Layer 3 (Local TF-IDF Vector Search). Verify that standard transaction logging continues uninterrupted.
+    2.  **Model Coercion / Provider Switch:** Update provider mappings in `api/lib/model-mapper.ts` or set dynamic model overrides in the `systemSettings` table.
+    3.  **Circuit Breaker Recovery:** Suspended Fireworks accounts trigger a local 15-minute circuit breaker; once provider billing is restored, restart affected backend replicas or allow the circuit breaker to close.
 
-### Incident B: Cost Runaway (Sudden spike in LLM token charges)
-*   **Symptoms:** Dashboard shows abnormal token usage or extreme cost units on specific routes.
+### Incident B: Cost Runaway (Spike in LLM Token Consumption)
+*   **Symptoms:** Dashboard alerts show abnormal external token consumption rates.
 *   **Mitigation Actions:**
-    1.  Go to the **Admin Cost & Quality Dashboard** in `/admin` (AI tab).
-    2.  Locate the offending route or user ID from the "AI Cost & Quality Observability" panel.
-    3.  If a single user is spamming, block their sessions or downgrade their plan.
-    4.  Enable stricter token caps in `api/services/ai-cost-policy.ts` by lowering `ExpenseInputLimits` thresholds.
+    1.  Open the **AI Cost & Quality Observability Dashboard** in `/admin`.
+    2.  Identify the offending route, procedure, or user account.
+    3.  If an individual user is abusing endpoints, revoke active sessions via `api/session-router.ts` or downgrade their tier.
+    4.  Tighten input constraints in `contracts/constants.ts` by lowering `ExpenseInputLimits` thresholds.
 
 ### Incident C: Database Connection Loss / High Latency
-*   **Symptoms:** tRPC errors outputting `ER_ACCESS_DENIED` or `pool connection timeout`.
+*   **Symptoms:** tRPC procedures return `ER_ACCESS_DENIED` or connection pool timeouts.
 *   **Mitigation Actions:**
-    1.  Verify the connection port. SmartSpend local Docker uses `3308`, while production server must bind to `3306`.
-    2.  Check the thread pool usage of the MySQL instance. Restart connection pools if threads are hanging due to unclosed statements.
-    3.  Ensure Redis cache is active (`REDIS_URL` is parsed). If Redis is down, the system falls back to RAM cache, which is safe but increases database read latency for summaries.
+    1.  Verify the connection port: local Docker binds to `3308`, whereas production binds to `3306`.
+    2.  Inspect MySQL thread pool utilization; restart stale connection pools if connections are leaked by unclosed statements.
+    3.  Verify Redis connectivity (`REDIS_URL`). If Redis is unavailable, the in-process LRU cache provides safe fallback.
 
-### Incident D: Failed Schema Migration (Drizzle mismatch)
-*   **Symptoms:** Server crashes on boot with `DrizzleQueryError` or queries fail due to missing columns.
+### Incident D: Failed Schema Migration
+*   **Symptoms:** Server crashes on startup with `DrizzleQueryError` due to mismatched column definitions.
 *   **Mitigation Actions:**
-    1.  Immediately stop the backend server.
-    2.  Restore the database backup dump:
+    1.  Immediately stop the backend server process.
+    2.  Restore the database from the pre-release backup:
         ```bash
         mysql -h <host> -u <user> -p smartspend < backup_before_release.sql
         ```
-    3.  Roll back frontend assets to the previous git tag.
-    4.  Investigate the schema drift using `npx drizzle-kit drop` and re-generate migrations.
+    3.  Roll back frontend assets to the previous release tag.
+    4.  Investigate schema diffs using `npx drizzle-kit drop` and re-generate migrations.

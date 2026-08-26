@@ -9,6 +9,7 @@ import {
   useRef,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation, useSearchParams } from "react-router-dom";
@@ -105,25 +106,24 @@ const SummaryChip = memo(function SummaryChip({
 }) {
   const toneClass =
     tone === "income"
-      ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300 shadow-sm"
+      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300"
       : tone === "expense"
-        ? "border-rose-500/20 bg-rose-500/5 text-rose-700 dark:text-rose-300 shadow-sm"
-        : "border-slate-200/50 bg-white/70 dark:bg-slate-900/40 text-slate-800 dark:text-slate-200 shadow-sm";
+        ? "border-rose-500/20 bg-rose-500/10 text-rose-800 dark:text-rose-300"
+        : "border-slate-200/60 bg-white/70 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200";
 
   return (
     <div
-      className={`premium-card px-2 xs:px-3 py-2.5 transition-all duration-300 hover:scale-[1.02] hover:translate-y-0 ${toneClass}`}
-    >
-      <div className="flex items-center gap-1.5 xs:gap-2">
-        <div className="shrink-0 p-1 xs:p-1.5 rounded-md bg-background/50">{icon}</div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[9px] xs:text-[10px] text-muted-foreground">{label}</p>
-          <p className="text-xs xs:text-sm font-bold break-words">{value}</p>
-        </div>
-      </div>
-      {helper && (
-        <p className="mt-1 text-[9px] xs:text-[10px] text-muted-foreground">{helper}</p>
+      className={cn(
+        "flex items-center justify-between gap-2 px-3 py-2 rounded-xl border backdrop-blur-md transition-all duration-200 shadow-xs",
+        toneClass,
       )}
+    >
+      <div className="flex items-center gap-1.5 min-w-0">
+        <span className="shrink-0 opacity-75">{icon}</span>
+        <span className="text-[11px] font-medium text-muted-foreground truncate">{label}</span>
+      </div>
+      <span className="text-xs sm:text-sm font-bold tabular-nums shrink-0">{value}</span>
+      {helper && <span className="sr-only">{helper}</span>}
     </div>
   );
 });
@@ -543,13 +543,13 @@ export default function Home() {
   return (
     <div ref={containerRef} className="min-h-full bg-slate-50/70 dark:bg-slate-950/40">
       <OnboardingFlow />
-      <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-5">
+      <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto space-y-3 sm:space-y-4">
         <OnboardingCard />
-        <header className="flex flex-col gap-3 -mx-1 px-1 py-2">
-          <div className="space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
+        <header className="flex flex-col gap-2 -mx-1 px-1 py-1 sm:py-2">
+          <div className="space-y-1.5 sm:space-y-2">
+            <div className="flex items-center justify-between gap-2 w-full">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <h1 className="text-lg sm:text-2xl md:text-3xl font-bold truncate">
                   {businessMode && hasBusiness ? businessQuery.data!.business!.name : pageTitle}
                 </h1>
                 <HealthBadge
@@ -567,69 +567,69 @@ export default function Home() {
                 {hasBusiness && (
                   <button
                     onClick={toggleBusinessMode}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-300 shadow-sm ${
+                    className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] sm:text-xs font-bold transition-all duration-200 shrink-0 ${
                       businessMode
                         ? "bg-indigo-500 text-white border border-indigo-400"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                     }`}
                     title={businessMode ? "ارجع للحساب الشخصي" : "لوضع المشروع"}
                   >
                     {businessMode ? (
-                      <><Store className="w-3.5 h-3.5" /> {businessQuery.data!.business!.name}</>
+                      <><Store className="w-3 h-3" /> <span className="max-w-[70px] truncate">{businessQuery.data!.business!.name}</span></>
                     ) : (
-                      <><UserIcon className="w-3.5 h-3.5" /> شخصي</>
+                      <><UserIcon className="w-3 h-3" /> شخصي</>
                     )}
                   </button>
                 )}
               </div>
 
-              {/* Month Navigation Control */}
-              {(activeTab === "stats" || activeTab === "calendar") && (
-                <div className="flex items-center gap-0.5 self-start sm:self-auto bg-slate-100/55 dark:bg-slate-800/30 backdrop-blur-md border border-slate-200/30 dark:border-slate-800/20 rounded-lg p-0.5 shadow-sm">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-7 h-7 rounded-md hover:bg-slate-200/50 dark:hover:bg-slate-700/40 active-press"
-                    onClick={() => handleMonthChange(getPreviousMonthString(month))}
-                    title="الشهر السابق"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </Button>
-                  
-                  <div className="relative flex items-center min-w-[105px] justify-center px-1.5 py-1 text-[11px] font-bold select-none text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-200/30 dark:hover:bg-slate-700/20 transition-colors duration-200">
-                    <input
-                      type="month"
-                      value={month}
-                      onChange={(e) => handleMonthChange(e.target.value)}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
-                    />
-                    <span className="flex items-center gap-1 cursor-pointer">
-                      <CalendarDays className="w-3 h-3 text-sky-600 shrink-0" />
-                      {getMonthLabelAr(month)}
-                    </span>
+              {/* Left: Actions & StreakCounter (RTL end) */}
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                {/* Month Navigation Control */}
+                {(activeTab === "stats" || activeTab === "calendar") && (
+                  <div className="flex items-center gap-0.5 bg-slate-100/55 dark:bg-slate-800/30 backdrop-blur-md border border-slate-200/30 dark:border-slate-800/20 rounded-lg p-0.5 shadow-xs">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-6 h-6 rounded-md hover:bg-slate-200/50 dark:hover:bg-slate-700/40 active-press"
+                      onClick={() => handleMonthChange(getPreviousMonthString(month))}
+                      title="الشهر السابق"
+                    >
+                      <ChevronRight className="w-3 h-3" />
+                    </Button>
+                    
+                    <div className="relative flex items-center min-w-[85px] justify-center px-1 py-0.5 text-[10px] sm:text-[11px] font-bold select-none text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-200/30 dark:hover:bg-slate-700/20 transition-colors duration-200">
+                      <input
+                        type="month"
+                        value={month}
+                        onChange={(e) => handleMonthChange(e.target.value)}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                      />
+                      <span className="flex items-center gap-1 cursor-pointer">
+                        <CalendarDays className="w-2.5 h-2.5 text-sky-600 shrink-0" />
+                        {getMonthLabelAr(month)}
+                      </span>
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-6 h-6 rounded-md hover:bg-slate-200/50 dark:hover:bg-slate-700/40 active-press"
+                      onClick={() => handleMonthChange(getNextMonthString(month))}
+                      title="الشهر التالي"
+                    >
+                      <ChevronLeft className="w-3 h-3" />
+                    </Button>
                   </div>
+                )}
 
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-7 h-7 rounded-md hover:bg-slate-200/50 dark:hover:bg-slate-700/40 active-press"
-                    onClick={() => handleMonthChange(getNextMonthString(month))}
-                    title="الشهر التالي"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              )}
-
-              <div className="flex items-center gap-3">
                 <StreakCounter
                   currentStreak={profile?.gamification?.currentStreak || 0}
                 />
               </div>
             </div>
-            <p className="text-muted-foreground text-sm">
-              أهلاً {user?.name || "صديقي"}، ابدأ بتسجيل العملية بسرعة واترك
-              التحليلات لقسم الإحصائيات.
+            <p className="text-xs text-muted-foreground truncate">
+              أهلاً {user?.name?.split(" ")[0] || "صديقي"} 👋 • سجل عملياتك اليومية بالذكاء الاصطناعي
             </p>
           </div>
           <Tabs
@@ -651,209 +651,201 @@ export default function Home() {
           </Tabs>
         </header>
 
-        <section className="grid grid-cols-2 gap-3">
+        <section className="grid grid-cols-2 gap-2">
           <SummaryChip
             label="دخل الشهر"
             value={`${money(summary?.totalIncome)} ج.م`}
             tone="income"
-            icon={<WalletCards className="w-4 h-4" />}
+            icon={<WalletCards className="w-3.5 h-3.5" />}
           />
           <SummaryChip
             label="مصروف الشهر"
             value={`${money(summary?.totalExpense)} ج.م`}
             tone="expense"
-            icon={<TrendingDown className="w-4 h-4" />}
+            icon={<TrendingDown className="w-3.5 h-3.5" />}
           />
         </section>
 
-        <AnimatePresence mode="wait">
-          {activeTab === "record" && (
-            <motion.div
-              key="record"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              className="space-y-5"
-            >
-              <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)] gap-5 items-start">
-                <ExpenseForm
-                  initialText={sharedText}
-                  businessMode={businessMode}
-                  businessId={activeBusinessId}
-                  onSuccess={() => {
-                    utils.expense.getMonthSummary.invalidate({ month, salaryDay });
-                    utils.expense.getMonthlyStats.invalidate({ month, salaryDay });
-                    utils.expense.getMonthlyStats.invalidate({ month, salaryDay: null });
-                    utils.profile.getSmartProfile.invalidate();
-                    setSharedText("");
-                  }}
-                />
-                <div className="space-y-4">
-                  <RecentExpenses
-                    limit={7}
-                    month={month}
-                    salaryDay={salaryDay}
-                    onRefresh={() =>
-                      utils.expense.getMonthSummary.invalidate({ month, salaryDay })
-                    }
-                  />
-                  <Suspense
-                    fallback={
-                      <Card>
-                        <CardContent className="py-8">
-                          <Skeleton className="h-24 w-full" />
-                        </CardContent>
-                      </Card>
-                    }
-                  >
-                    <div id="goals-panel-widget" className="no-swipe">
-                      <FinancialGoalsPanel />
-                    </div>
-                  </Suspense>
-                </div>
-              </div>
-
-              <div className="pt-6 pb-2 border-t flex justify-center">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="w-full sm:w-auto gap-2 min-h-[48px] active-press"
-                  onClick={() => updateView("stats")}
-                >
-                  <BarChart3 className="w-5 h-5" />
-                  عرض الإحصائيات الكاملة
-                </Button>
-              </div>
-            </motion.div>
-          )}
-
-          {activeTab === "stats" && (
-            <motion.div
-              key="stats"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-            >
-              {statsError ? (
-                <Card className="border-destructive/30">
-                  <CardContent className="py-8 text-center space-y-3">
-                    <p className="text-sm font-medium text-destructive">
-                      تعذّر تحميل الإحصائيات
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {statsQueryError?.message ||
-                        "تحقق من الاتصال بقاعدة البيانات ثم أعد المحاولة."}
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="active-press"
-                      onClick={() => refetchStats()}
-                    >
-                      إعادة المحاولة
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <StatsView
+        <div className="relative">
+          {/* Record Tab View (Keep-Alive) */}
+          <div
+            className={cn(
+              "space-y-5 transition-opacity duration-150",
+              activeTab === "record" ? "block opacity-100" : "hidden opacity-0",
+            )}
+          >
+            <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)] gap-5 items-start">
+              <ExpenseForm
+                initialText={sharedText}
+                businessMode={businessMode}
+                businessId={activeBusinessId}
+                onSuccess={() => {
+                  utils.expense.getMonthSummary.invalidate({ month, salaryDay });
+                  utils.expense.getMonthlyStats.invalidate({ month, salaryDay });
+                  utils.expense.getMonthlyStats.invalidate({ month, salaryDay: null });
+                  utils.profile.getSmartProfile.invalidate();
+                  setSharedText("");
+                }}
+              />
+              <div className="space-y-4">
+                <RecentExpenses
+                  limit={7}
                   month={month}
-                  stats={stats}
-                  loading={statsFetching}
-                  refreshInferences={handleRefreshInferences}
-                  refreshingInferences={refreshInferences.isPending}
+                  salaryDay={salaryDay}
+                  onRefresh={() =>
+                    utils.expense.getMonthSummary.invalidate({ month, salaryDay })
+                  }
                 />
-              )}
-            </motion.div>
-          )}
+                <Suspense
+                  fallback={
+                    <Card>
+                      <CardContent className="py-8">
+                        <Skeleton className="h-24 w-full" />
+                      </CardContent>
+                    </Card>
+                  }
+                >
+                  <div id="goals-panel-widget" className="no-swipe">
+                    <FinancialGoalsPanel />
+                  </div>
+                </Suspense>
+              </div>
+            </div>
 
+            <div className="pt-6 pb-2 border-t flex justify-center">
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto gap-2 min-h-[48px] active-press"
+                onClick={() => updateView("stats")}
+              >
+                <BarChart3 className="w-5 h-5" />
+                عرض الإحصائيات الكاملة
+              </Button>
+            </div>
+          </div>
 
-
-          {activeTab === "calendar" && (
-            <motion.div
-              key="calendar"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <CalendarDays className="w-5 h-5 text-sky-600" />
-                    تقويم الشهر
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="no-swipe">
-                  {calendarFetching && !calendarStats ? (
-                    <div className="py-10 text-center text-sm text-muted-foreground">
-                      جاري تحميل التقويم...
-                    </div>
-                  ) : (
-                    <Suspense fallback={<div className="py-10 text-center text-sm text-muted-foreground">جاري تحميل التقويم...</div>}>
-                      <MonthlyCalendar
-                        month={month}
-                        dayTrend={calendarStats?.dayTrend || []}
-                        salaryDay={salaryDay}
-                      />
-                    </Suspense>
-                  )}
+          {/* Stats Tab View (Keep-Alive) */}
+          <div
+            className={cn(
+              "transition-opacity duration-150",
+              activeTab === "stats" ? "block opacity-100" : "hidden opacity-0",
+            )}
+          >
+            {statsError ? (
+              <Card className="border-destructive/30">
+                <CardContent className="py-8 text-center space-y-3">
+                  <p className="text-sm font-medium text-destructive">
+                    تعذّر تحميل الإحصائيات
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {statsQueryError?.message ||
+                      "تحقق من الاتصال بقاعدة البيانات ثم أعد المحاولة."}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="active-press"
+                    onClick={() => refetchStats()}
+                  >
+                    إعادة المحاولة
+                  </Button>
                 </CardContent>
               </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            ) : (
+              <StatsView
+                month={month}
+                stats={stats}
+                loading={statsFetching}
+                refreshInferences={handleRefreshInferences}
+                refreshingInferences={refreshInferences.isPending}
+              />
+            )}
+          </div>
+
+          {/* Calendar Tab View (Keep-Alive) */}
+          <div
+            className={cn(
+              "transition-opacity duration-150",
+              activeTab === "calendar" ? "block opacity-100" : "hidden opacity-0",
+            )}
+          >
+            <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+              <CardContent className="p-3 sm:p-4 no-swipe">
+                {calendarFetching && !calendarStats ? (
+                  <div className="py-12 text-center text-sm text-muted-foreground">
+                    جاري تحميل التقويم...
+                  </div>
+                ) : (
+                  <Suspense fallback={<div className="py-12 text-center text-sm text-muted-foreground">جاري تحميل التقويم...</div>}>
+                    <MonthlyCalendar
+                      month={month}
+                      dayTrend={calendarStats?.dayTrend || []}
+                      salaryDay={salaryDay}
+                    />
+                  </Suspense>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
 
-      {/* Double-Prompt Push Notification Modal */}
-      {showPushPrompt && (
-        <div className="fixed inset-0 z-[100000] flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-300" dir="rtl">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 shadow-2xl p-6 space-y-4 animate-in slide-in-from-bottom sm:zoom-in-95 duration-350 ease-out">
-            <div className="flex flex-col items-center text-center space-y-3">
-              <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-inner">
+      {/* Double-Prompt Push Notification Modal via React Portal */}
+      {showPushPrompt && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200"
+          dir="rtl"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) handleDismissPush();
+          }}
+        >
+          <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200 ease-out">
+            <div className="flex flex-col items-center text-center space-y-2">
+              <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-inner">
                 <span className="text-2xl">🔔</span>
               </div>
-              <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100">فَعّل التنبيهات المالية الذكية</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm">
+              <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">فَعّل التنبيهات المالية الذكية</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 تابع مصاريفك أسبوعياً، واحصل على نصائح تحليلات الذكاء الاصطناعي لميزانيتك وتذكير يومي لتسجيل مصاريفك بصوتك.
               </p>
             </div>
 
-            <div className="space-y-2.5">
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 text-xs text-slate-700 dark:text-slate-300">
+            <div className="space-y-2">
+              <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/40 text-xs text-slate-700 dark:text-slate-300">
                 <span className="text-base">🎯</span>
                 <div className="text-right">
-                  <p className="font-bold">تذكير التسجيل اليومي</p>
+                  <p className="font-bold text-xs">تذكير التسجيل اليومي</p>
                   <p className="text-[10px] text-slate-400">تذكيرك في نهاية اليوم لتسجيل معاملاتك بصوتك في ثوانٍ.</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 text-xs text-slate-700 dark:text-slate-300">
+              <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950/40 text-xs text-slate-700 dark:text-slate-300">
                 <span className="text-base">💡</span>
                 <div className="text-right">
-                  <p className="font-bold">تحليلات وتنبيهات فورية</p>
+                  <p className="font-bold text-xs">تحليلات وتنبيهات فورية</p>
                   <p className="text-[10px] text-slate-400">تنبيه فوري عند تخطي ميزانية الفئات أو حدوث نمط صرف شاذ.</p>
                 </div>
               </div>
             </div>
 
-            <div className="pt-2 flex flex-col gap-2">
+            <div className="pt-1 flex flex-col gap-2">
               <Button
                 onClick={handleEnablePush}
-                className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 rounded-xl py-3 font-bold text-sm shadow-md active-press"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-600 rounded-xl py-2.5 font-bold text-xs shadow-md active-press"
               >
                 تفعيل التنبيهات الآن
               </Button>
               <button
                 onClick={handleDismissPush}
-                className="w-full text-center py-2 text-xs font-semibold text-slate-400 hover:text-slate-650 dark:hover:text-slate-350 transition-colors"
+                className="w-full text-center py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
               >
                 ليس الآن، تذكيري لاحقاً
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

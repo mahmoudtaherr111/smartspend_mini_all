@@ -10,6 +10,7 @@ import {
   isPaymobConfigured,
   createPaymobHostedCheckoutUrl,
 } from "./lib/paymob";
+import { BILLING_PLAN_IDS } from "../contracts/plans";
 
 function hasPaidFeatures(plan: string, role: string) {
   return plan === "pro" || plan === "ultra" || role === "admin";
@@ -77,7 +78,7 @@ export const proRouter = router({
 
   /** Starts hosted checkout when Paymob is configured; otherwise signals client to use simulate upgrade. */
   createCheckoutSession: authedProcedure
-    .input(z.object({ plan: z.enum(["pro_monthly", "pro_yearly"]) }))
+    .input(z.object({ plan: z.enum(BILLING_PLAN_IDS) }))
     .mutation(async ({ ctx, input }) => {
       if (isPaymobConfigured()) {
         const redirectUrl = await createPaymobHostedCheckoutUrl({
@@ -100,7 +101,7 @@ export const proRouter = router({
   upgrade: authedProcedure
     .input(
       z.object({
-        plan: z.enum(["pro_monthly", "pro_yearly"]),
+        plan: z.enum(BILLING_PLAN_IDS),
         paymentMethod: z.string(),
         transactionId: z.string(),
       }),
@@ -178,7 +179,10 @@ export const proRouter = router({
         query = query.where(eq(proSubscriptions.status, status));
       }
       const list = await query.limit(limit).offset(offset);
-      const total = await db.select({ count: count() }).from(proSubscriptions);
+      const totalQuery = db.select({ count: count() }).from(proSubscriptions).$dynamic();
+      const total = status
+        ? await totalQuery.where(eq(proSubscriptions.status, status))
+        : await totalQuery;
       return { list, total: total[0]?.count ?? 0, page, limit };
     }),
 });

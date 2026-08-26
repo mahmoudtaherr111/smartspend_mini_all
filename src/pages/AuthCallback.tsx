@@ -8,7 +8,6 @@ export default function AuthCallback() {
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    const token = searchParams.get("token");
     const error = searchParams.get("error");
 
     if (error) {
@@ -17,17 +16,9 @@ export default function AuthCallback() {
       return;
     }
 
-    if (token) {
-      if (import.meta.env.DEV && searchParams.get("local") === "1") {
-        localStorage.setItem("local_auth_token", token);
-      }
-      // Token is already set in cookie by the server
-      toast.success("تم تسجيل الدخول بنجاح!");
-      navigate("/dashboard");
-    } else {
-      toast.error("مفيش توكن. جرب تاني.");
-      navigate("/login");
-    }
+    // Google OAuth session is established via secure HttpOnly cookie
+    toast.success("تم تسجيل الدخول بنجاح!");
+    navigate("/dashboard");
   }, [searchParams, navigate]);
 
   return (

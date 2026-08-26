@@ -25,7 +25,7 @@
     />
     <meta
       name="theme-color"
-      content="#0f172a"
+      content="#090d16"
       media="(prefers-color-scheme: dark)"
     />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -83,6 +83,23 @@
          referenced anywhere in CSS or components — saves ~120KB download) -->
     <link rel="icon" href="/icon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/icon.png" />
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('theme');
+          var isDark = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.backgroundColor = '#020617';
+            document.documentElement.style.colorScheme = 'dark';
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.style.backgroundColor = '#f8fafc';
+            document.documentElement.style.colorScheme = 'light';
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root">

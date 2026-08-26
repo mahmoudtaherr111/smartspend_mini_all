@@ -3,6 +3,22 @@ import { eq } from "drizzle-orm";
 import { db } from "./queries/connection";
 import { sessions } from "../db/schema";
 import { env } from "./lib/env";
+import { getClientIp, getIncomingHeader } from "./lib/get-client-ip";
+import type { HonoRequest } from "hono";
+
+type SessionRequest = HonoRequest | Request;
+
+export type SessionMetadata = {
+  ipAddress?: string;
+  userAgent?: string;
+};
+
+export function getSessionMetadata(req: SessionRequest): SessionMetadata {
+  return {
+    ipAddress: getClientIp(req),
+    userAgent: getIncomingHeader(req, "user-agent")?.slice(0, 2_000),
+  };
+}
 
 export async function hashPassword(password: string): Promise<string> {
   const bcrypt = await import("bcryptjs");
@@ -31,6 +47,7 @@ export async function createSession(
   userId: number,
   userType: "oauth" | "local",
   token: string,
+  metadata: SessionMetadata = {},
 ) {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
@@ -40,6 +57,8 @@ export async function createSession(
     userType,
     token,
     expiresAt,
+    ipAddress: metadata.ipAddress || null,
+    userAgent: metadata.userAgent || null,
   });
 }
 

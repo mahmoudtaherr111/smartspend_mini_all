@@ -49,7 +49,7 @@ export default defineConfig(({ mode }) => {
           short_name: "SmartSpend",
           description: "المساعد المالي الذكي وتتبع المصاريف بالصوت والذكاء الاصطناعي",
           theme_color: "#10b981",
-          background_color: "#0f172a",
+          background_color: "#090d16",
           display: "standalone",
           display_override: ["standalone", "minimal-ui"],
           orientation: "portrait-primary",

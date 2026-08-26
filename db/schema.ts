@@ -26,6 +26,7 @@ export const users = mysqlTable(
     plan: varchar("plan", { length: 50 }).notNull().default("free"), // free | pro | ultra
     referralCode: varchar("referral_code", { length: 50 }).unique(),
     referredBy: int("referred_by"),
+    referredByType: varchar("referred_by_type", { length: 50 }), // oauth | local; keeps polymorphic referral unambiguous
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
     updatedAt: datetime("updated_at").default(
       sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
@@ -39,7 +40,6 @@ export const users = mysqlTable(
   (t) => [
     index("users_role_idx").on(t.role),
     index("users_plan_idx").on(t.plan),
-    index("users_referral_idx").on(t.referralCode),
     index("users_referred_by_idx").on(t.referredBy),
   ],
 );
@@ -58,6 +58,7 @@ export const localUsers = mysqlTable(
     plan: varchar("plan", { length: 50 }).notNull().default("free"), // free | pro | ultra
     referralCode: varchar("referral_code", { length: 50 }).unique(),
     referredBy: int("referred_by"),
+    referredByType: varchar("referred_by_type", { length: 50 }), // oauth | local; keeps polymorphic referral unambiguous
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
     updatedAt: datetime("updated_at").default(
       sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
@@ -107,7 +108,6 @@ export const expenses = mysqlTable(
     ),
   },
   (t) => [
-    index("expenses_user_idx").on(t.userId, t.userType),
     index("expenses_date_idx").on(t.date),
     index("expenses_user_date_idx").on(t.userId, t.userType, t.date),
     index("expenses_type_idx").on(t.type),
@@ -167,7 +167,6 @@ export const businessCategories = mysqlTable(
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (t) => [
-    index("business_cat_idx").on(t.businessId),
     index("business_cat_active_idx").on(t.businessId, t.isActive),
   ],
 );
@@ -274,8 +273,8 @@ export const monthlyReports = mysqlTable("monthly_reports", {
   ),
 },
 (t) => [
-  index("reports_user_idx").on(t.userId, t.userType),
-  index("reports_month_idx").on(t.month)
+  index("reports_month_idx").on(t.month),
+  uniqueIndex("reports_user_month_unique").on(t.userId, t.userType, t.month),
 ]);
 
 // ─── Sessions ───
@@ -294,6 +293,7 @@ export const sessions = mysqlTable(
   (t) => [
     index("sessions_user_idx").on(t.userId, t.userType),
     index("sessions_token_idx").on(t.token),
+    index("sessions_expires_idx").on(t.expiresAt),
   ],
 );
 
@@ -370,7 +370,6 @@ export const aiSummaries = mysqlTable(
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (t) => [
-    index("ai_summary_user_idx").on(t.userId, t.userType),
     uniqueIndex("ai_summary_period_idx").on(
       t.userId,
       t.userType,
@@ -437,6 +436,7 @@ export const referrals = mysqlTable(
       t.referredId,
       t.referredType,
     ),
+    uniqueIndex("referral_referred_unique_idx").on(t.referredId, t.referredType),
   ],
 );
 
@@ -447,7 +447,7 @@ export const proSubscriptions = mysqlTable(
     id: int("id").primaryKey().autoincrement(),
     userId: int("user_id").notNull(),
     userType: varchar("user_type", { length: 50 }).notNull(),
-    plan: varchar("plan", { length: 50 }).notNull().default("pro_monthly"), // pro_monthly | pro_yearly
+    plan: varchar("plan", { length: 50 }).notNull().default("pro_monthly"), // pro_monthly | pro_yearly | ultra_monthly
     status: varchar("status", { length: 50 }).notNull().default("active"), // active | cancelled | expired
     autoRenew: boolean("auto_renew").notNull().default(true),
     startDate: datetime("start_date").notNull(),
@@ -512,7 +512,7 @@ export const userProfiles = mysqlTable(
   (t) => [uniqueIndex("profile_user_idx").on(t.userId, t.userType)],
 );
 
-// â”€â”€â”€ Profile Learning Events (AI Learning Audit Trail) â”€â”€â”€
+// ─── Profile Learning Events (AI Learning Audit Trail) ───
 export const profileLearningEvents = mysqlTable(
   "profile_learning_events",
   {
@@ -532,7 +532,7 @@ export const profileLearningEvents = mysqlTable(
   ],
 );
 
-// â”€â”€â”€ Monthly Behavior Snapshots â”€â”€â”€
+// ─── Monthly Behavior Snapshots ───
 export const monthlyBehaviorSnapshots = mysqlTable(
   "monthly_behavior_snapshots",
   {
@@ -593,7 +593,6 @@ export const userDictionaries = mysqlTable(
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (t) => [
-    index("user_dict_user_idx").on(t.userId, t.userType),
     uniqueIndex("user_dict_word_unique").on(t.userId, t.userType, t.word),
   ],
 );
@@ -662,7 +661,6 @@ export const webhookTokens = mysqlTable(
   },
   (t) => [
     index("webhook_tokens_user_idx").on(t.userId, t.userType),
-    index("webhook_tokens_token_idx").on(t.token),
   ],
 );
 
@@ -925,7 +923,6 @@ export const chatMessages = mysqlTable(
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (t) => [
-    index("chat_msg_conv_idx").on(t.conversationId),
     index("chat_msg_created_idx").on(t.conversationId, t.createdAt),
   ]
 );
@@ -998,7 +995,6 @@ export const aiMemoryEmbeddings = mysqlTable(
     createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   },
   (t) => [
-    index("ai_memory_embedding_item_idx").on(t.memoryItemId),
     index("ai_memory_embedding_user_idx").on(t.userId, t.userType),
     uniqueIndex("ai_memory_embedding_unique_idx").on(
       t.memoryItemId,

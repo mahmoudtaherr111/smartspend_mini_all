@@ -71,7 +71,7 @@ const TRANSFER_VERBS = [
   "اديت", "أديت", "إديت", "حولت", "بعت", "سلفت", "بعتت", 
   "عطيت", "عطي", "حولي", "حولولي", "بعتلي", 
   "اداني", "إداني", "جابلي", "عزمت", "دعيت",
-  "خدت", "اخدت", "أخدت", "استلمت", "قبضت", "استلفت"
+  "خدت", "اخدت", "أخدت", "خد", "اخد", "أخد", "استلمت", "قبضت", "استلفت"
 ];
 
 const PLACE_PATTERNS = [
@@ -295,7 +295,7 @@ export function extractPeople(
             }
 
             const NON_PEOPLE = ["الجمعية", "الجمعيه", "جمعية", "جمعيه", "مقاول", "سباك", "كهربائي", "صنايعي", "دكتور"];
-            if (NON_PEOPLE.includes(candidate)) {
+            if (NON_PEOPLE.includes(candidate) || (NON_PERSON_TERMS.has(candidate) && !knownNames.includes(candidate))) {
                 continue;
             }
 
@@ -373,7 +373,7 @@ export function extractPeople(
 
     // If it's a known merchant, it's NOT a person
     if (
-      Object.keys(MERCHANT_PATTERNS).some((k) => k === name || name.includes(k))
+      Object.keys(MERCHANT_PATTERNS).some((k) => k === name || (name.includes(k) && !name.startsWith("عبد ")))
     ) {
       // Context-aware disambiguation for "كريم"
       if (name === "كريم" || name === "كرييم") {

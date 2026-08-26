@@ -45,7 +45,7 @@ export const NON_PERSON_TERMS = new Set([
   "لحظة", "لاحقاً", "لما", "به", "بي", "في", "على", "علي", "علاقة", "التوضيح",
   // ضمائر
   "انا", "انت", "هو", "هي", "احنا", "هما", "هم", "هن", "نفسي",
-  "منه", "منها", "منهم", "معاه", "معاها", "معاهم", "ليها", "ليهم", "لينا", "فيها", "فيهم", "بيها", "بيهم",
+  "منه", "منها", "منهم", "مني", "منى", "عني", "عنه", "عنها", "عنهم", "معاه", "معاها", "معاهم", "ليها", "ليهم", "لينا", "فيها", "فيهم", "بيها", "بيهم",
   // كلمات عامة وأفعال شائعة
   "اديت", "أديت", "خدت", "اخدت", "أخدت", "استلمت", "قبضت", "بعت", "بعتت", "حولت", "صرفت", "جبت", "دفعت", "عطيت", "أعطيت", "عطي", "أعطي",
   "لعبت", "لبست", "عشان", "عشانك", "علشان", "بتاع", "بتاعتي", "بتاعتك", "بتاعته", "بتاعتنا",
@@ -366,6 +366,12 @@ export function pickAllPersonCandidates(
          candidates.push(cleanedMatch);
       }
     }
+  }
+
+  // If we have specific person names, filter out generic descriptors that describe them
+  const hasSpecificNames = candidates.some((c) => !isGenericPersonDescription(c));
+  if (hasSpecificNames) {
+    return candidates.filter((c) => !isGenericPersonDescription(c));
   }
 
   return candidates;
