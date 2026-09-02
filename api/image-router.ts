@@ -14,6 +14,7 @@ import {
   asPlan,
 } from "./lib/ai-usage-policy";
 import { parseReceiptImage } from "./lib/receipt-image-parser";
+import { normalizeTransactionTaxonomy } from "./lib/category-registry";
 import { mapModelName } from "./lib/model-mapper";
 import {
   getSmartProfile,
@@ -153,13 +154,25 @@ export const imageRouter = router({
 
       let expenseId: number | null = null;
       if (input.saveExpense) {
+        // The receipt parser returns the model's raw `main_category` string
+        // (receipt-image-parser.ts), so without this it is the one write path that
+        // can put a category the registry does not know into expenses.category.
+        const normalized = normalizeTransactionTaxonomy(
+          {
+            category: parsed.category,
+            subCategory: parsed.subCategory,
+            type: parsed.type,
+            description: parsed.description,
+          },
+          `${parsed.ocrText || ""} ${parsed.description || ""}`,
+        );
         const [createdExpense] = await db.insert(expenses).values({
           userId: ctx.user.id,
           userType: ctx.user.type,
-          type: parsed.type,
+          type: normalized.type,
           amount: parsed.amount.toString(),
-          category: parsed.category,
-          subCategory: parsed.subCategory,
+          category: normalized.category,
+          subCategory: normalized.subCategory,
           description: parsed.description,
           rawText: parsed.ocrText || `[image] ${parsed.description}`,
           source: "image",

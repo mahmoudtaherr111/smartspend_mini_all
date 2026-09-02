@@ -171,7 +171,11 @@ describe("action runtime goal.create flow", () => {
       expect.arrayContaining([
         expect.objectContaining({
           amount: "45",
-          category: "food",
+          // expenses.category stores the Arabic name_ar. This path used to write the
+          // English canonical id, which made the row invisible to every reader that
+          // compares by exact string — budget matching, category filters, the person
+          // -category set, and the CSV export.
+          category: "أكل وشرب",
           source: "ai_parsed",
           placeHint: "ستاربكس",
         }),

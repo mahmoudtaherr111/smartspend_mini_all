@@ -976,7 +976,7 @@ const CATEGORY_BY_NORMALIZED_EN = new Map<string, MainCategory>(
   CATEGORIES.map((c) => [c.name.toLowerCase(), c]),
 );
 
-const EXTRA_ALIASES_TO_ID: Array<[string, string]> = [
+export const EXTRA_ALIASES_TO_ID: Array<[string, string]> = [
   ["كارفور", "food"],
   ["خضار", "food"],
   ["خضه", "food"],
@@ -1090,8 +1090,12 @@ const EXTRA_ALIASES_TO_ID: Array<[string, string]> = [
   ["نقاش", "home"],
   ["منظفات", "home"],
   ["سينما", "entertainment"],
-  ["كافيهات", "outings"],
-  ["بلايستيشن", "outings"],
+  // NOTE: "كافيهات" is already mapped to `food` above. It used to be re-mapped here to
+  // "outings", an id that no longer exists in CATEGORIES (خروجات was merged into ترفيه),
+  // and because buildAliasMap() writes in array order that later entry silently won.
+  // Every كافيهات row therefore canonicalized to a dangling id that arabicDisplayName()
+  // rendered as the literal string "outings" in Arabic UI.
+  ["بلايستيشن", "entertainment"],
   ["جيم", "entertainment"],
   ["رياضه", "entertainment"],
   ["رياضة", "entertainment"],
@@ -1138,8 +1142,10 @@ const EXTRA_ALIASES_TO_ID: Array<[string, string]> = [
   ["كلاود", "digital_services"],
   ["دومين", "digital_services"],
   ["domain", "digital_services"],
+  // "hosting" was declared twice; buildAliasMap() writes in array order, so the later
+  // `work` entry silently won. Both categories happen to declare an استضافة
+  // subcategory, but hosting belongs with domains and cloud under digital_services.
   ["hosting", "digital_services"],
-  ["hosting", "work"],
   ["استضافه", "work"],
   ["استضافة", "work"],
   ["api", "work"],
@@ -1161,6 +1167,141 @@ const EXTRA_ALIASES_TO_ID: Array<[string, string]> = [
   ["جمعية", "liabilities_and_gam3eyat"],
   ["فاليو", "liabilities_and_gam3eyat"],
   ["تمويل", "liabilities_and_gam3eyat"],
+
+  // ── Migrated from taxonomy-ssot.ts ──────────────────────────────────────────
+  // taxonomy-ssot.ts carried a richer Egyptian alias set than this table but was
+  // consumed by exactly one module, and five of its ids (housing, personal_care,
+  // charity, debt_payment, other) do not exist here — so those aliases resolved to
+  // nothing and AI-Center questions about سكن / تبرعات / سداد ديون matched no rows.
+  // The aliases are migrated here so the whole system gains them and the ssot can
+  // become a derived view.
+  //
+  // Only aliases that resolved to NOTHING before are added: where the ssot and this
+  // table disagreed the existing mapping wins, because it is generally the better one
+  // (ركنة is car_services, netflix is subscriptions, جيم is entertainment).
+  //
+  // Deliberately NOT migrated, because canonicalCategoryId() falls back to an
+  // unanchored substring scan over aliases of length >= 3, so a common word here
+  // hijacks any sentence containing it: تاني · رسالة · شعر · مهر (inside مهرجان) ·
+  // gym · شراء · جهاز · مشتريات · اشتراك.
+  ["شرب", "food"],
+  ["لحوم", "food"],
+  ["جزار", "food"],
+  ["مخبز", "food"],
+  ["فرن", "food"],
+  ["kfc", "food"],
+  ["mcdonalds", "food"],
+  ["ماكدونالدز", "food"],
+  ["كوك دور", "food"],
+  ["قهوجي", "food"],
+
+  ["careem", "transport"],
+  ["قطار", "transport"],
+  ["قطارات", "transport"],
+  ["سولار", "transport"],
+  ["ميكانيكي", "transport"],
+  ["سايس", "transport"],
+  ["توك توك", "transport"],
+  ["سويفل", "transport"],
+  ["swvl", "transport"],
+
+  ["ميه", "bills"],
+  ["ارضي", "bills"],
+  ["موبايل", "bills"],
+  ["وي", "bills"],
+  ["اورنج", "bills"],
+  ["فودافون", "bills"],
+  ["اتصالات", "bills"],
+  ["نتفليكس", "subscriptions"],
+
+  ["بواب", "home"],
+  ["حارس", "home"],
+
+  ["شوبنج", "shopping"],
+  ["قميص", "shopping"],
+  ["بنطلون", "shopping"],
+  ["فستان", "shopping"],
+  ["حذاء", "shopping"],
+  ["امازون", "shopping"],
+  ["amazon", "shopping"],
+  ["جوميا", "shopping"],
+  ["نون", "shopping"],
+  ["noon", "shopping"],
+  ["نظارة", "shopping"],
+  ["ساعة", "shopping"],
+  ["حلاق", "shopping"],
+  ["حلاقة", "shopping"],
+  ["دقن", "shopping"],
+  ["كوافير", "shopping"],
+  ["بيوتي سنتر", "shopping"],
+  ["برفيوم", "shopping"],
+  ["مكياج", "shopping"],
+  ["مناديل", "shopping"],
+  ["شامبو", "shopping"],
+  ["معجون سنان", "shopping"],
+
+  ["طبيب", "health"],
+  ["كشف", "health"],
+  ["عيادة", "health"],
+  ["اشعة", "health"],
+  ["أشعة", "health"],
+  ["روشتة", "health"],
+
+  ["كلية", "education"],
+  ["كليه", "education"],
+  ["كشكول", "education"],
+  ["دبلومة", "education"],
+
+  ["خروج", "entertainment"],
+  ["فسحة", "entertainment"],
+  ["فسحه", "entertainment"],
+  ["مسرح", "entertainment"],
+  ["ملاهي", "entertainment"],
+  ["مصيف", "entertainment"],
+  ["بحر", "entertainment"],
+  ["اوتيل", "entertainment"],
+  ["فندق", "entertainment"],
+  ["ماتش", "entertainment"],
+
+  ["هدية", "gifts"],
+  ["هديه", "gifts"],
+  ["سبوع", "gifts"],
+  ["شبكة", "gifts"],
+  ["جامع", "gifts"],
+  ["كنيسة", "gifts"],
+  ["اورمان", "gifts"],
+  ["٥٧٣٥٧", "gifts"],
+  ["مساعدة محتاج", "gifts"],
+
+  ["سبائك", "investment"],
+  ["ثاندر", "investment"],
+  ["thndr", "investment"],
+  ["ربح", "investment_income"],
+  ["مبيعات", "freelance"],
+  ["حوالة واردة", "salary"],
+
+  ["ديون", "liabilities_and_gam3eyat"],
+  ["سداد", "liabilities_and_gam3eyat"],
+  ["تسديد", "liabilities_and_gam3eyat"],
+  ["ارجاع فلوس", "liabilities_and_gam3eyat"],
+
+  ["غير مصنف", "miscellaneous"],
+  ["نثرية", "miscellaneous"],
+  ["نثريات", "miscellaneous"],
+
+  // ── Collision repairs (must stay last: buildAliasMap applies this table AFTER the
+  //    auto-generated subcategory names, so these entries win) ──────────────────
+  //
+  // "أكل" is the single most common Egyptian food word, but `pets` declares a
+  // subcategory literally named "أكل" (pet food), so the auto-generated alias sent
+  // every "الاكل" query to حيوانات أليفة.
+  ["أكل", "food"],
+  ["اكل", "food"],
+  // "طعام" was worse: it is not a direct alias, so canonicalCategoryId fell through to
+  // its unanchored substring scan, where "طعام" contains "عام" — the generic
+  // subcategory name every category declares — and resolved to whichever category
+  // happened to own the last "عام" entry.
+  ["طعام", "food"],
 ];
 
 const ALIAS_TO_ID = new Map<string, string>();
@@ -1251,6 +1392,30 @@ export function categoryTypeOf(id: string | null | undefined): string {
 
 export function normalizeCategoryFromUserText(text: string): string {
   return canonicalCategoryId(text);
+}
+
+/**
+ * The ONLY function permitted to produce a value for `expenses.category` or
+ * `user_budgets.category`.
+ *
+ * `expenses.category` is a varchar holding the ARABIC `name_ar`, and historical rows
+ * already hold it. Readers compare it by exact string equality in the places users
+ * actually look — budget-router.ts matches budgets to spend, expense-router filters
+ * and the person-category set, export-router writes it straight into the export file —
+ * so a row written with an English canonical id is invisible to all of them.
+ *
+ * Accepts an English id, an Arabic name_ar, an alias, or free text; always returns a
+ * real CATEGORIES[].name_ar. Virtual aggregate ids are report buckets, never storage,
+ * so they are resolved to the concrete category that represents them.
+ */
+export function storageCategoryName(input: string | null | undefined): string {
+  const id = canonicalCategoryId(input);
+  if (VIRTUAL_AGGREGATE_IDS[id]) {
+    if (id === "saving") return "تحويل";
+    if (id === "income") return "مرتب";
+    return "متنوعات";
+  }
+  return CATEGORY_ID_MAP.get(id)?.name_ar ?? "متنوعات";
 }
 
 export function normalizeStoredCategory(stored: string | null | undefined): string {
