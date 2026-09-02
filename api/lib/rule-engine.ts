@@ -220,6 +220,13 @@ export const SUB_CATEGORY_MAP: Record<
   صيدليه: { category: "صحة", subCategory: "صيدلية" },
   صيدلية: { category: "صحة", subCategory: "صيدلية" },
   دوا: { category: "صحة", subCategory: "صيدلية" },
+  // stt-corrections rewrites "دوا" and "علاج" to "أدوية", which normalizes to "ادويه" —
+  // a form no dictionary listed, so a correction was turning a word the system knew
+  // into one it did not. Every surface form is now covered directly.
+  دواء: { category: "صحة", subCategory: "صيدلية" },
+  ادويه: { category: "صحة", subCategory: "صيدلية" },
+  ادوية: { category: "صحة", subCategory: "صيدلية" },
+  أدوية: { category: "صحة", subCategory: "صيدلية" },
   تحاليل: { category: "صحة", subCategory: "تحاليل" },
   تحليل: { category: "صحة", subCategory: "تحاليل" },
   مستشفى: { category: "صحة", subCategory: "مستشفى" },
@@ -794,7 +801,51 @@ const DISAMBIGUATION_RULES: Record<string, Array<{
   "المنصوره": [
     { contextPattern: /سافرت|روحت|خروج[ةه]|مصيف|رحل[ةه]/, category: "ترفيه", subCategory: "سفر" },
   ],
+  "مشروع": [
+    { contextPattern: /ركبت|نزلت|موقف|سواق|ميكروباص|اجرة|أجرة/, category: "مواصلات", subCategory: "أتوبيس" },
+    { contextPattern: /بزنس|شغل|استثمار|شراكة|ارباح|أرباح|افتتاح/, category: "استثمار", subCategory: "عام" },
+  ],
+  "حساب": [
+    { contextPattern: /مطعم|كافيه|قهوة|اكل|شرب|سوبر|ماركت|دكان|محل/, category: "أكل وشرب", subCategory: "مطعم" },
+    { contextPattern: /بنك|فيزا|كارت|تحويل|سحب|ايداع|إيداع/, category: "تحويل", subCategory: "بنك" },
+  ],
 };
+
+/**
+ * Detects negation, non-payment, invitations, and cancelled transactions in Egyptian Arabic.
+ */
+export function detectPolarityAndNegation(text: string): {
+  isNegated: boolean;
+  polarityMultiplier: number;
+  reason?: string;
+} {
+  const norm = normalizeArabic(text).toLowerCase();
+
+  // Explicit non-payment / invitations (e.g. "صاحبي عزمني ومادفعتش مليم", "على حسابه")
+  if (
+    /(?:عزمني|عزمتني|عزمنا|على\s*حساب|ع\s*حساب|مادفعتش|ما\s*دفعتش|مادفعناش|ما\s*دفعناش|ولا\s*مليم|ولا\s*قرش|ببلاش|مجانا)/.test(
+      norm,
+    )
+  ) {
+    return { isNegated: true, polarityMultiplier: 0.0, reason: "invitation_or_zero_payment" };
+  }
+
+  // Cancelled or aborted transactions (e.g. "كنت هطلب بس لغيت", "كنت هركب بس مالحقتش")
+  if (
+    /(?:كنت\s*ه|كنت\s*عايز|كنت\s*ناوي|فكرت\s*اشتري|بس\s*لغيت|بس\s*ملحقتش|بس\s*مالحقتش|لغيت\s*الاوردر|كنسلت|مركبتش|ماشتريتش|ماجبتش)/.test(
+      norm,
+    )
+  ) {
+    return { isNegated: true, polarityMultiplier: 0.0, reason: "aborted_or_cancelled_transaction" };
+  }
+
+  // Borrowing / Loans
+  if (/(?:استلفت|سلفني|سلّفني|دين|قرض|سلف)/.test(norm)) {
+    return { isNegated: false, polarityMultiplier: 0.6, reason: "debt_or_loan_context" };
+  }
+
+  return { isNegated: false, polarityMultiplier: 1.0 };
+}
 
 function disambiguateContext(
   matchedWord: string,
@@ -816,6 +867,7 @@ function disambiguateContext(
   }
   return null;
 }
+
 
 /**
  * Split a financial text segment on explicit conjunctions (و, ف, etc.)
@@ -1424,11 +1476,20 @@ export async function runRuleEngine(
       finalConfidence = Math.max(finalConfidence, 82);
     }
 
+    // ─── Polarity & Negation Filter ───
+    const polarity = detectPolarityAndNegation(allContext);
+    if (polarity.isNegated) {
+      finalConfidence = 0; // Failsafe: zero confidence for negated / zero-payment / cancelled transactions
+      ambiguityFlags = [...(ambiguityFlags || []), `negated_${polarity.reason}`];
+    } else if (polarity.polarityMultiplier < 1.0) {
+      finalConfidence = Math.round(finalConfidence * polarity.polarityMultiplier);
+      ambiguityFlags = [...(ambiguityFlags || []), `polarity_${polarity.reason}`];
+    }
+
     // Context-Aware Ambiguity Scorer: Only penalize when ambiguous words appear
-    // WITHOUT a clear disambiguating context. Previously, words like "باقة" or "شحن"
-    // would nuke confidence to 10% even when the text clearly said "باقة النت" (internet bill).
+    // WITHOUT a clear disambiguating context.
     const ambiguityRegex = /(حساب|باقة|باقه|كارت|شحن|رصيد)/;
-    if (ambiguityRegex.test(allContextNorm) && finalConfidence < 90) {
+    if (ambiguityRegex.test(allContextNorm) && finalConfidence > 0 && finalConfidence < 90) {
       // Check if context already disambiguates the ambiguous word
       const hasClearContext =
         /(?:نت|انترنت|إنترنت|راوتر|واي\s*فاي|wifi|وي)/i.test(allContextNorm) ||  // internet bill
@@ -1437,6 +1498,7 @@ export async function runRuleEngine(
         /(?:فواتير|فاتوره|فاتورة)/.test(allContextNorm) ||                        // explicit bill context
         /(?:بنزين|تفويل[ةه]|محط[ةه])/i.test(allContextNorm) ||                     // fuel context for "شحن"
         /(?:شحن\s*رصيد|رصيد\s*شحن)/.test(allContextNorm) ||                        // "شحن رصيد" together = clear
+        /(?:حساب|حاسبت|حاسبنا)\s+(?:المطعم|الكافيه|القهوة|السوبر|الدكتور|المستشفى|الصيدلية|الاوبر|التاكسي|الفاتورة|النت|الكهربا|الاكل|الأكل)/i.test(allContextNorm) || // clear merchant account payment
         ambiguityFlags?.includes("merchant_registry_hit") ||                        // merchant already matched
         ambiguityFlags?.includes("context_disambiguated");                          // disambiguation already resolved
       if (!hasClearContext) {
@@ -1444,6 +1506,7 @@ export async function runRuleEngine(
         ambiguityFlags = [...(ambiguityFlags || []), "ambiguity_scorer_penalty"];
       }
     }
+
 
     let registeredType = CATEGORIES.find(
       (registeredCategory) => registeredCategory.name_ar === category,
