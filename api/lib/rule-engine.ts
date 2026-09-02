@@ -11,6 +11,7 @@ import { normalizeText } from "./text-normalizer";
 import { CATEGORIES } from "./category-registry";
 import { findTaxonomyMatch } from "./taxonomy-adapter";
 import { resolveGovernedTaxonomy } from "./direction-governed-taxonomy";
+import { detectNegation } from "./negation-detector";
 import { matchSegment } from "./embedding-engine";
 import { isKareemPersonContext } from "./egyptian-names-dictionary";
 
@@ -1478,10 +1479,19 @@ export async function runRuleEngine(
     }
 
     // ─── Polarity & Negation Filter ───
+    //
+    // A negated or cancelled transaction is not a low-confidence transaction — it did
+    // not happen. Zeroing the score still let it reach the review screen and, through
+    // a confident sibling item, an auto-save: "كنت هروح الجيم وادفع 500 بس مروحتش"
+    // used to persist a 500 EGP gym expense. It is dropped instead.
+    const negation = detectNegation(allContext);
+    if (negation.negated) {
+      continue;
+    }
+
     const polarity = detectPolarityAndNegation(allContext);
     if (polarity.isNegated) {
-      finalConfidence = 0; // Failsafe: zero confidence for negated / zero-payment / cancelled transactions
-      ambiguityFlags = [...(ambiguityFlags || []), `negated_${polarity.reason}`];
+      continue;
     } else if (polarity.polarityMultiplier < 1.0) {
       finalConfidence = Math.round(finalConfidence * polarity.polarityMultiplier);
       ambiguityFlags = [...(ambiguityFlags || []), `polarity_${polarity.reason}`];
