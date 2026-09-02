@@ -5,6 +5,7 @@
  */
 
 import { applySttCorrections } from "./stt-corrections";
+import { parseArabicNumbers } from "./arabic-number-parser";
 
 /**
  * Franco-Arab (Arabizi) Converter
@@ -74,69 +75,6 @@ export function arabicToEnglishNumbers(str: string): string {
 }
 
 /** Word-based number mappings (Egyptian Arabic) */
-const WORD_NUMBERS: Record<string, number> = {
-  // Units
-  واحد: 1,
-  اتنين: 2,
-  تلاته: 3,
-  تلاتة: 3,
-  اربعة: 4,
-  أربعة: 4,
-  خمسة: 5,
-  خمسه: 5,
-  ستة: 6,
-  سته: 6,
-  سبعة: 7,
-  سبعه: 7,
-  تمانية: 8,
-  تمنية: 8,
-  تمانيه: 8,
-  تسعة: 9,
-  تسعه: 9,
-  // Tens
-  عشرة: 10,
-  عشره: 10,
-  عشرين: 20,
-  تلاتين: 30,
-  ثلاثين: 30,
-  اربعين: 40,
-  أربعين: 40,
-  خمسين: 50,
-  ستين: 60,
-  سبعين: 70,
-  تمانين: 80,
-  ثمانين: 80,
-  تسعين: 90,
-  // Hundreds
-  مية: 100,
-  مائة: 100,
-  ميه: 100,
-  ميتين: 200,
-  متين: 200,
-  تلتمية: 300,
-  تلتميه: 300,
-  ربعمية: 400,
-  ربعميه: 400,
-  خمسمية: 500,
-  خمسميه: 500,
-  ستمية: 600,
-  ستميه: 600,
-  سبعمية: 700,
-  سبعميه: 700,
-  تمنمية: 800,
-  تمنميه: 800,
-  تسعمية: 900,
-  تسعميه: 900,
-  // Thousands
-  الف: 1000,
-  ألف: 1000,
-  الفين: 2000,
-  ألفين: 2000,
-  // Colloquial
-  نص: 0.5,
-  ربع: 0.25,
-  تلت: 0.333,
-};
 
 /** Multiplier keywords */
 const MULTIPLIERS: Record<string, number> = {
@@ -148,20 +86,6 @@ const MULTIPLIERS: Record<string, number> = {
 };
 
 /** Colloquial number expressions */
-const COLLOQUIAL_NUMBERS: Record<string, number> = {
-  "نص ألف": 500,
-  "نص الف": 500,
-  "نصف ألف": 500,
-  "ربع ألف": 250,
-  "ربع الف": 250,
-  "خمس تلاف": 5000,
-  "عشر تلاف": 10000,
-  عشرتلاف: 10000,
-  خمستلاف: 5000,
-  خمستالاف: 5000,
-  تلاتلاف: 3000,
-  اربعتلاف: 4000,
-};
 
 /**
  * Metaphorical slang normalizer (Strategy 4: Negative Keywords Engine)
@@ -348,33 +272,16 @@ export function normalizeText(text: string): string {
     .replace(/ؤ/g, "و") // Waw hamza
     .replace(/ئ/g, "ي"); // Ya hamza
 
-  // 5. Replace colloquial number expressions first (before word numbers)
-  for (const [expr, num] of Object.entries(COLLOQUIAL_NUMBERS)) {
-    const regex = new RegExp(`(?:^|\\s)(ب|بـ|و)?${expr}(?=\\s|$)`, "g");
-    result = result.replace(regex, (_, prefix) => {
-      return (prefix ? ` ${prefix} ` : " ") + num.toString() + " ";
-    });
-  }
+  // 5. Spoken numbers -> digits, via the compositional engine.
+  //
+  // This was a second copy of the word-number tables applied one word at a time, which
+  // split compound numerals ("ميتين وخمسين" -> "200 و 50"). arabic-number-parser is now
+  // the single place that logic lives, and it composes rather than substitutes.
+  result = parseArabicNumbers(result);
 
-  // 6. Replace word numbers (spaced and attached colloquial forms like "بعشرين")
-  for (const [word, num] of Object.entries(WORD_NUMBERS)) {
-    const attached = new RegExp(`ب${word}(?=\\s|جنيه|ج\\.م|ج|$)`, "g");
-    result = result.replace(attached, ` ${num} `);
-    const regex = new RegExp(`(?:^|\\s)(ب|بـ|و)?${word}(?=\\s|$)`, "g");
-    result = result.replace(regex, (_, prefix) => {
-      return (prefix ? ` ${prefix} ` : " ") + num.toString() + " ";
-    });
-  }
-
-  // 7. Handle "X ألف" patterns (e.g., "5 ألف" → "5000")
-  result = result.replace(/(\d+)\s*(الف|ألف)/g, (_, num) => {
-    return (parseFloat(num) * 1000).toString();
-  });
-
-  // 8. Handle "X k" patterns
-  result = result.replace(/(\d+)\s*[kK]/g, (_, num) => {
-    return (parseFloat(num) * 1000).toString();
-  });
+  // 6. "X ألف" / "X k" shorthand that follows a digit rather than a word.
+  result = result.replace(/(\d+)\s*(الف|ألف)/g, (_, num) => String(parseFloat(num) * 1000));
+  result = result.replace(/(\d+)\s*[kK](?=\s|$)/g, (_, num) => String(parseFloat(num) * 1000));
 
   return result.trim();
 }
@@ -391,4 +298,6 @@ export function extractCurrency(text: string): string {
   return "EGP";
 }
 
-export { WORD_NUMBERS, MULTIPLIERS, COLLOQUIAL_NUMBERS };
+// The word-number tables moved to arabic-number-parser.ts, which composes numerals
+// instead of substituting them word by word. Nothing outside this file imported them.
+export { MULTIPLIERS };
