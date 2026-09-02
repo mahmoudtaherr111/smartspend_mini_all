@@ -149,6 +149,14 @@ export function isFinancialContext(text: string, matchIndex: number, matchLength
     "minute", "minutes", "min", "mins", "month", "months", "mo", "mos", "week", "weeks", "wk", "wks", "second", "seconds", "sec", "secs"
   ].map(w => w.replace(/[إأآٱ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").toLowerCase());
 
+  // "الساعة خمسة" is a clock time, not five pounds. Requires the definite article and a
+  // plausible clock value, so a wristwatch — "اشتريت ساعة بـ 500" — is still an amount.
+  const rawPreceding = lastPrecedingWord.replace(/[^؀-ۿ]/g, "");
+  if (/^(?:و|ف)?ال(?:ساعة|ساعه)$/.test(rawPreceding)) {
+    const value = parseFloat(text.substr(matchIndex, matchLength).replace(/[^\d.]/g, ""));
+    if (Number.isFinite(value) && value >= 1 && value <= 24) return false;
+  }
+
   if (PRECEDING_NON_FINANCIAL.includes(normPreceding)) {
     return false;
   }
@@ -198,6 +206,10 @@ export function extractAmounts(rawText: string): ExtractedAmount[] {
     const suffix = match[2]?.trim();
     if (suffix === "الف" || suffix === "ألف") amount *= 1000;
     if (amount <= 0 || amount > 10000000) continue;
+    // The pattern captures digits only, so a leading minus sign is invisible to it and
+    // "صرفت -50" used to become a 50 EGP expense. A negative amount is malformed input,
+    // not a transaction.
+    if (/-\s*$/.test(text.slice(0, match.index))) continue;
     if (amount < 100 && !suffix && !isFinancialContext(text, match.index, match[0].length)) continue;
     amounts.push({
       amount,
