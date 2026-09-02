@@ -9,7 +9,11 @@ import {
 } from "../../../db/schema";
 import { db } from "../../queries/connection";
 import { invalidateUserMemory } from "../../lib/muscle-memory";
-import { arabicDisplayName, normalizeCategoryFromUserText } from "../../lib/category-registry";
+import {
+  arabicDisplayName,
+  normalizeCategoryFromUserText,
+  storageCategoryName,
+} from "../../lib/category-registry";
 import { invalidateFinanceUserCache } from "../finance-semantic-layer";
 import { getSmartProfile, saveSmartProfile } from "../user-profile-service";
 import type {
@@ -164,6 +168,8 @@ function categoryFromMessage(message: string): string | undefined {
     compact.split(/\s+/).length <= 4 &&
     !/(حط|سجل|ضيف|اضف|أضف|اعمل|غير|صحح|خليه|ميزانية|مصروف)/i.test(compact);
   if (looksLikeBareCategory) {
+    // Payload builders speak canonical English ids; the translation to the stored
+    // Arabic name happens once, at the validateRuntimeAction boundary below.
     const canonical = normalizeCategoryFromUserText(compact);
     if (canonical !== "uncategorized") return canonical;
   }
@@ -429,15 +435,15 @@ export async function validateRuntimeAction(
   if (actionName === "goal.stop") return goalStopPayloadSchema.parse(payload);
   if (actionName === "expense.create") {
     const parsed = expenseCreatePayloadSchema.parse(payload);
-    return { ...parsed, category: normalizeCategoryFromUserText(parsed.category) };
+    return { ...parsed, category: storageCategoryName(parsed.category) };
   }
   if (actionName === "expense.recategorize") {
     const parsed = expenseRecategorizePayloadSchema.parse(payload);
-    return { ...parsed, category: normalizeCategoryFromUserText(parsed.category) };
+    return { ...parsed, category: storageCategoryName(parsed.category) };
   }
   if (actionName === "budget.create") {
     const parsed = budgetCreatePayloadSchema.parse(payload);
-    return parsed.category ? { ...parsed, category: normalizeCategoryFromUserText(parsed.category) } : parsed;
+    return parsed.category ? { ...parsed, category: storageCategoryName(parsed.category) } : parsed;
   }
   if (actionName === "profile.update") return profileUpdatePayloadSchema.parse(payload);
   if (actionName === "wallet.create") return walletCreatePayloadSchema.parse(payload);

@@ -161,10 +161,30 @@ function detectCategory(text: string): string | undefined {
   return detectCategories(text)[0];
 }
 
+/**
+ * Category aliases must match on token boundaries, not as raw substrings.
+ *
+ * `hasAny` uses `text.includes(alias)`, which is right for the phrase patterns it was
+ * written for but wrong for a one-word category alias: "أعمل إيه؟" contains "عمل" and
+ * so claimed the عمل category, and any word ending in "عام" claimed whichever category
+ * owned the generic "عام" subcategory.
+ *
+ * Arabic clitics are handled by expandIntentToken, which already strips ال / بال / لل
+ * and a leading و ب ف ل — so "الاكل" still matches the alias "اكل".
+ * Multi-word aliases ("كوك دور") keep substring matching, since they cannot collide.
+ */
+function matchesCategoryAlias(tokens: Set<string>, text: string, alias: string): boolean {
+  const normalized = normalizeForIntent(alias);
+  if (!normalized) return false;
+  if (normalized.includes(" ")) return text.includes(normalized);
+  return tokens.has(normalized);
+}
+
 function detectCategories(text: string): string[] {
+  const tokens = new Set(text.split(/\s+/).flatMap(expandIntentToken));
   const categories = new Set<string>();
   for (const cat of TAXONOMY_CATEGORIES) {
-    if (hasAny(text, cat.aliases)) {
+    if (cat.aliases.some((alias) => matchesCategoryAlias(tokens, text, alias))) {
       categories.add(cat.id);
     }
   }

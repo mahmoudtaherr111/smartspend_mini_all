@@ -5,12 +5,19 @@
  * Display = Arabic name (e.g., "أكل وشرب").
  */
 import {
+  CATEGORIES,
   canonicalCategoryId,
   arabicDisplayName,
   getCategoryAliasesById,
   comparableArabic,
 } from "../../lib/category-registry";
 
+/**
+ * Query expansion: asking about "فواتير" should also sweep related categories.
+ * This is intentionally NOT an id registry — a member that is only an alias
+ * (daily_commitments) or a retired category (outings) is harmless here because
+ * allCanonicalIds() is derived independently.
+ */
 const AGGREGATE_GROUP_MAP: Record<string, string[]> = {
   income: ["salary", "freelance", "investment_income"],
   saving: ["transfer"],
@@ -98,17 +105,16 @@ function aliasEntries(): Array<[string, string]> {
   return entries;
 }
 
+/**
+ * Derived from the registry rather than hand-listed, so it cannot drift.
+ *
+ * The previous hand-written list had drifted three ways: it omitted
+ * `government_services` (so government-fee rows could never be alias-matched by the
+ * semantic layer at all) and carried two phantoms, `daily_commitments` and `outings`,
+ * which are aliases and a deleted category respectively.
+ */
 function allCanonicalIds(): string[] {
-  const ids = new Set<string>([
-    "food", "transport", "shopping", "health", "bills", "home",
-    "education", "entertainment", "subscriptions", "smoking", "gifts",
-    "pets", "work", "salary", "freelance", "investment_income",
-    "transfer", "investment", "daily_commitments", "digital_services",
-    "car_services", "outings", "family_transactions", "friends_transactions",
-    "employees_transactions", "liabilities_and_gam3eyat", "miscellaneous",
-    "income", "saving", "uncategorized",
-  ]);
-  return [...ids];
+  return [...CATEGORIES.map((c) => c.id), "income", "saving", "uncategorized"];
 }
 
 export function displayFinanceCategory(category: unknown): string {
