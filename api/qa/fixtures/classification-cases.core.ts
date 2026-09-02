@@ -102,13 +102,15 @@ const DIRECTION_TRAPS: BenchmarkCase[] = [
     expectedItems: [
       {
         amount: 2000,
-        type: "expense",
-        category: "العائلة",
-        subCategory: "مروان أخوك",
-        why: "سلفت = المال خارج لشخص معروف",
+        type: "transfer",
+        category: "تحويل",
+        subCategory: "دين/سلفة",
+        personMentioned: "مروان",
+        why: "سلفت = قرض، لا مصروف: فلوس متوقّع رجوعها، والتصنيف فيه فرعية مخصصة للدين",
       },
     ],
     tags: ["debt_out", "known_person", "word_number"],
+    note: "التوقّع الأول كان expense/العائلة وهو غلط — الإقراض تحويل وليس إنفاقاً، والشخص يُلتقط في person_mentioned",
   },
   {
     id: "DIR-005",

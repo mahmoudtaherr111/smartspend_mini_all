@@ -10,6 +10,7 @@ import { extractAmounts, type ExtractedAmount } from "./entity-extractor";
 import { normalizeText } from "./text-normalizer";
 import { CATEGORIES } from "./category-registry";
 import { findTaxonomyMatch } from "./taxonomy-adapter";
+import { resolveGovernedTaxonomy } from "./direction-governed-taxonomy";
 import { matchSegment } from "./embedding-engine";
 import { isKareemPersonContext } from "./egyptian-names-dictionary";
 
@@ -1508,13 +1509,29 @@ export async function runRuleEngine(
     }
 
 
+    // ── Direction-governed nouns ──────────────────────────────────────────────
+    // The verb governs direction, the noun governs category. Without this the generic
+    // verb keyword wins the category outright: "قبضت الجمعية" matched قبض → مرتب and
+    // "دفعت قسط الجمعية" matched قسط → فواتير, leaving the registry's own قبض جمعية and
+    // قسط جمعية subcategories unreachable and filing a gam3eya payout as salary.
+    const governed = resolveGovernedTaxonomy(allContextNorm);
+    if (governed) {
+      ambiguityFlags = [
+        ...(ambiguityFlags || []),
+        `direction_governed:${governed.matchedNoun}:${governed.direction}`,
+      ];
+    }
+
+    const effectiveIntent = governed ? governed.type : intentResult.intent;
+    const governedCategory = governed ? governed.category : category;
+
     let registeredType = CATEGORIES.find(
-      (registeredCategory) => registeredCategory.name_ar === category,
+      (registeredCategory) => registeredCategory.name_ar === governedCategory,
     )?.type;
 
-    let finalCategory = category;
-    let finalSubCategory = refinedSubCategory;
-    if (intentResult.intent === "income" && registeredType === "expense") {
+    let finalCategory = governedCategory;
+    let finalSubCategory = governed ? governed.subCategory : refinedSubCategory;
+    if (!governed && effectiveIntent === "income" && registeredType === "expense") {
       if (/(رجع|استرد|استرجع|باقي|بقيت)/.test(allContextNorm)) {
         finalCategory = "مرتب";
         finalSubCategory = "استرداد نقدي";
@@ -1531,10 +1548,13 @@ export async function runRuleEngine(
     }
 
     const isNeutralCategory = ["متنوعات", "العائلة", "أصدقاء", "موظفين"].includes(finalCategory);
-    let finalType = isNeutralCategory ? intentResult.intent : (registeredType || intentResult.intent);
-    if (intentResult.intent === "income") {
+    let finalType = isNeutralCategory ? effectiveIntent : (registeredType || effectiveIntent);
+    if (effectiveIntent === "income") {
       finalType = "income";
     }
+    // A governed noun decided the direction from its verb; nothing downstream may
+    // override it, otherwise "قبضت الجمعية" reverts to the category's default type.
+    if (governed) finalType = governed.type;
 
     items.push(
       applyProfileHints(

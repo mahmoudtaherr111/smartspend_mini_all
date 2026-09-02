@@ -3,6 +3,8 @@
  * Central registry for all financial categories and subcategories
  */
 
+import { governedNouns } from "./direction-governed-taxonomy";
+
 export interface SubCategory {
   id: string;
   name: string;
@@ -594,6 +596,9 @@ function findSubCategoryByAnyName(
   );
 }
 
+/** Nouns whose category is decided by the noun, not by the verb around it. */
+const GOVERNED_NOUNS = governedNouns();
+
 function inferCategoryFromEvidence(
   rawCategory: string,
   evidence: string,
@@ -635,7 +640,12 @@ function inferCategoryFromEvidence(
       "بونص",
       "مكافأة",
     ]) &&
-    !hasAny(categoryText, ["دفعت", "صرفت", "اشتريت", "قسط"])
+    !hasAny(categoryText, ["دفعت", "صرفت", "اشتريت", "قسط"]) &&
+    // A direction-governed noun is more specific than the income verb beside it.
+    // "قبضت الجمعية" contains قبضت, but it is a gam3eya payout, not salary — and the
+    // rule engine has already resolved it to التزامات وجمعيات/قبض جمعية. Without this
+    // guard the evidence scan overwrote that correct answer on the way to storage.
+    !hasAny(categoryText, GOVERNED_NOUNS)
   ) {
     return "مرتب";
   }
