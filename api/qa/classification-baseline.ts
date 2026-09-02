@@ -34,6 +34,7 @@ export interface Baseline {
     unsafeAutoSaveRate: number;
     expectedCalibrationError: number;
     confidenceSeparation: number;
+    confidentlyWrongRate: number;
     numberCompositionErrors: number;
     crashRate: number;
     spuriousOnNonFinancial: number;
@@ -49,7 +50,8 @@ export interface Baseline {
 interface Gate {
   key: string;
   label: string;
-  read: (b: Baseline) => number;
+  /** null when the run predates this metric — such a gate is skipped, not failed. */
+  read: (b: Baseline) => number | null;
   higherIsBetter: boolean;
   tolerance: number;
   absoluteMax?: number;
@@ -62,10 +64,23 @@ const GATES: Gate[] = [
   { key: "hallucinationRate", label: "معدل الهلوسة", read: (b) => b.overall.hallucinationRate, higherIsBetter: false, tolerance: 0.005 },
   { key: "miscFallbackRate", label: "السقوط في متنوعات", read: (b) => b.overall.miscFallbackRate, higherIsBetter: false, tolerance: 0.01 },
   { key: "taxonomyViolationRate", label: "تصنيفات غير شرعية", read: (b) => b.overall.taxonomyViolationRate, higherIsBetter: false, tolerance: 0, absoluteMax: 0 },
-  { key: "unsafeAutoSaveRate", label: "حفظ تلقائي رغم خطأ", read: (b) => b.system?.unsafeAutoSaveRate ?? 0, higherIsBetter: false, tolerance: 0.01 },
-  { key: "crashRate", label: "انهيارات", read: (b) => b.system?.crashRate ?? 0, higherIsBetter: false, tolerance: 0, absoluteMax: 0 },
-  { key: "expectedCalibrationError", label: "خطأ معايرة الثقة", read: (b) => b.system?.expectedCalibrationError ?? 0, higherIsBetter: false, tolerance: 0.02 },
-  { key: "confidenceSeparation", label: "فصل الثقة", read: (b) => b.system?.confidenceSeparation ?? 0, higherIsBetter: true, tolerance: 1 },
+  { key: "unsafeAutoSaveRate", label: "حفظ تلقائي رغم خطأ", read: (b) => b.system?.unsafeAutoSaveRate ?? null, higherIsBetter: false, tolerance: 0.01 },
+  { key: "crashRate", label: "انهيارات", read: (b) => b.system?.crashRate ?? null, higherIsBetter: false, tolerance: 0, absoluteMax: 0 },
+  { key: "expectedCalibrationError", label: "خطأ معايرة الثقة", read: (b) => b.system?.expectedCalibrationError ?? null, higherIsBetter: false, tolerance: 0.02 },
+  { key: "confidentlyWrongRate", label: "واثق وغلط", read: (b) => b.system?.confidentlyWrongRate ?? null, higherIsBetter: false, tolerance: 0.01 },
+];
+
+/**
+ * Reported but never gated.
+ *
+ * `confidenceSeparation` (mean confidence when right minus when wrong) shrinks as
+ * accuracy improves: fixing the easy errors leaves a smaller, harder residue that the
+ * classifier is legitimately more confident about. Gating on it would penalise real
+ * progress. ECE and the confidently-wrong rate are the calibration metrics that stay
+ * meaningful in both directions, so those gate instead.
+ */
+const OBSERVED_ONLY: Gate[] = [
+  { key: "confidenceSeparation", label: "فصل الثقة (مراقَب فقط)", read: (b) => b.system?.confidenceSeparation ?? null, higherIsBetter: true, tolerance: Number.POSITIVE_INFINITY },
 ];
 
 function latestRunPath(mode = "offline"): string {
@@ -102,6 +117,7 @@ export function toBaseline(run: BenchmarkRun): Baseline {
           unsafeAutoSaveRate: run.system.unsafeAutoSaveRate,
           expectedCalibrationError: run.system.expectedCalibrationError,
           confidenceSeparation: run.system.confidenceSeparation,
+          confidentlyWrongRate: run.system.confidentlyWrongRate,
           numberCompositionErrors: run.system.segmentation.numberCompositionErrors,
           crashRate: run.system.crashRate,
           spuriousOnNonFinancial: run.system.spuriousOnNonFinancial,
@@ -125,10 +141,12 @@ export function loadBaseline(): Baseline | null {
 
 export interface GateResult {
   label: string;
-  baseline: number;
-  current: number;
-  delta: number;
+  baseline: number | null;
+  current: number | null;
+  delta: number | null;
   passed: boolean;
+  /** True when the baseline predates this metric, so there is nothing to compare against. */
+  skipped?: boolean;
   reason?: string;
 }
 
@@ -141,9 +159,23 @@ export interface ComparisonResult {
 }
 
 export function compare(current: Baseline, baseline: Baseline): ComparisonResult {
-  const gates: GateResult[] = GATES.map((g) => {
+  const gates: GateResult[] = [...GATES, ...OBSERVED_ONLY].map((g) => {
     const b = g.read(baseline);
     const c = g.read(current);
+
+    // A metric the frozen baseline never recorded cannot be regressed against.
+    if (b === null || c === null) {
+      return {
+        label: g.label,
+        baseline: b,
+        current: c,
+        delta: null,
+        passed: true,
+        skipped: true,
+        reason: "غير موجود في خط الأساس",
+      };
+    }
+
     const delta = c - b;
 
     if (g.absoluteMax !== undefined) {
@@ -208,10 +240,13 @@ function formatComparison(r: ComparisonResult): string {
     "|---|---|---|---|---|",
   ];
   for (const g of r.gates) {
-    const sign = g.delta >= 0 ? "+" : "";
+    const status = g.skipped ? "—" : g.passed ? "ok" : "FAIL";
+    const base = g.baseline === null ? "—" : g.baseline.toFixed(4);
+    const cur = g.current === null ? "—" : g.current.toFixed(4);
+    const delta =
+      g.delta === null ? "—" : `${g.delta >= 0 ? "+" : ""}${g.delta.toFixed(4)}`;
     lines.push(
-      `| ${g.passed ? "ok" : "FAIL"} | ${g.label} | ${g.baseline.toFixed(4)} | ` +
-        `${g.current.toFixed(4)} | ${sign}${g.delta.toFixed(4)}` +
+      `| ${status} | ${g.label} | ${base} | ${cur} | ${delta}` +
         `${g.reason ? ` — ${g.reason}` : ""} |`,
     );
   }

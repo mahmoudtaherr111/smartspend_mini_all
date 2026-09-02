@@ -78,6 +78,8 @@ export interface SystemMetrics {
   bins: ConfidenceBin[];
   /** Items the pipeline was >=90 sure about and got wrong — the worst quadrant. */
   confidentlyWrong: number;
+  /** confidentlyWrong as a share of all scored items, so it survives dataset growth. */
+  confidentlyWrongRate: number;
 
   // ── segmentation depth ──
   segmentation: SegmentationDiagnosis;
@@ -339,6 +341,7 @@ export function computeSystemMetrics(rows: SystemMetricInput[]): SystemMetrics {
     expectedCalibrationError,
     bins,
     confidentlyWrong,
+    confidentlyWrongRate: totalBinned === 0 ? 0 : confidentlyWrong / totalBinned,
 
     segmentation: seg,
 

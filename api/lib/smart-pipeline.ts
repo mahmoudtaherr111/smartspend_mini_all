@@ -116,6 +116,7 @@ export interface PipelineInput {
   provider?: string;
   groqApiKey?: string;
   fireworksApiKey?: string;
+  nvidiaApiKey?: string;
   pipelineSettings?: Record<string, string>;
   businessCategories?: Array<{
     id: number;
@@ -880,8 +881,19 @@ export async function runSmartPipeline(
   // 2. Try Rule Engine for simple cases (1 amount, short sentence)
   let ruleResult: Awaited<ReturnType<typeof runRuleEngine>> | null = null;
   let ruleSucceeded = false;
+  // Segment the NORMALIZED text, not the raw utterance.
+  //
+  // Splitting used to run on input.text while normalization was applied afterwards,
+  // per segment — so the most fragile stage in the pipeline was the only one reading
+  // the messiest text. Arabic-Indic digits were invisible to it (JS \d is ASCII-only),
+  // and spoken amounts were still words, so "دفعت ٥٠٠ بنزين وركبت ٣٠ أوبر" produced no
+  // anchors at all and collapsed into a single segment.
+  //
+  // forAI is the right input rather than forRules: it resolves numbers and STT noise
+  // while preserving the Arabic orthography and person names that the decomposer needs
+  // for name detection and that later stages surface back to the user.
   const decomposition: DecompositionResult = decompositionEnabled
-    ? decomposeHeuristic(input.text, knownNames)
+    ? decomposeHeuristic(normalized.forAI, knownNames)
     : { segments: [], method: "simple", isComplex: false };
 
   const localSucceededItems: ParsedTransaction[] = [];
