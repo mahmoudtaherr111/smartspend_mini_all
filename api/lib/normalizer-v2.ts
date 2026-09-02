@@ -15,6 +15,7 @@ import {
   arabicToEnglishNumbers,
   normalizeText as normalizeTextV1,
 } from "./text-normalizer";
+import { parseArabicNumbers } from "./arabic-number-parser";
 
 // ─── Franco-Arab (Arabizi) Light Converter for AI ────────────────
 const FRANCO_DIGIT_MAP: Record<string, string> = {
@@ -84,89 +85,7 @@ const NARRATIVE_CONNECTORS = [
   "غير كده",
 ];
 
-// ─── Word-to-Number Maps (for forAI conversion) ──────────────────
 
-const WORD_NUMBERS: Record<string, number> = {
-  // واحد: 1, // Commented out to prevent "واحد صاحبي" -> amount 1
-  اتنين: 2,
-  تلاته: 3,
-  تلاتة: 3,
-  اربعة: 4,
-  أربعة: 4,
-  خمسة: 5,
-  خمسه: 5,
-  ستة: 6,
-  سته: 6,
-  سبعة: 7,
-  سبعه: 7,
-  تمانية: 8,
-  تمنية: 8,
-  تمانيه: 8,
-  تسعة: 9,
-  تسعه: 9,
-  عشرة: 10,
-  عشره: 10,
-  عشرين: 20,
-  تلاتين: 30,
-  ثلاثين: 30,
-  اربعين: 40,
-  أربعين: 40,
-  خمسين: 50,
-  ستين: 60,
-  سبعين: 70,
-  تمانين: 80,
-  ثمانين: 80,
-  تسعين: 90,
-  مائة: 100,
-  ميتين: 200,
-  متين: 200,
-  تلتمية: 300,
-  تلتميه: 300,
-  ربعمية: 400,
-  ربعميه: 400,
-  خمسمية: 500,
-  خمسميه: 500,
-  ستمية: 600,
-  ستميه: 600,
-  سبعمية: 700,
-  سبعميه: 700,
-  تمنمية: 800,
-  تمنميه: 800,
-  تسعمية: 900,
-  تسعميه: 900,
-  الف: 1000,
-  ألف: 1000,
-  الفين: 2000,
-  ألفين: 2000,
-};
-
-const COLLOQUIAL_NUMBERS: Record<string, number> = {
-  "نص ألف": 500,
-  "نص الف": 500,
-  "نصف ألف": 500,
-  "ربع ألف": 250,
-  "ربع الف": 250,
-  "خمس تلاف": 5000,
-  "عشر تلاف": 10000,
-  "عشرتلاف": 10000,
-  "خمستلاف": 5000,
-  "خمستالاف": 5000,
-  "تلاتلاف": 3000,
-  "اربعتلاف": 4000,
-  "باكو ونص": 1500,
-  "أرنب ونص": 1500000,
-  "ارنب ونص": 1500000,
-  "نص باكو": 500,
-  "نص أرنب": 500000,
-  "نص ارنب": 500000,
-  "ربع باكو": 250,
-  "ربع أرنب": 250000,
-  "ربع ارنب": 250000,
-  "باكوين": 2000,
-  "باكو": 1000,
-  "أرنب": 1000000,
-  "ارنب": 1000000,
-};
 
 // ─── Amount Counting ──────────────────────────────────────────────
 
@@ -230,48 +149,21 @@ function normalizeLightForAI(text: string): string {
   // 3. Remove extra whitespace
   result = result.replace(/\s+/g, " ");
 
-  // 4. Convert colloquial number expressions to digits
-  for (const [expr, num] of Object.entries(COLLOQUIAL_NUMBERS)) {
-    const regex = new RegExp(`(?:^|\\s)(ب|بـ|و)?${expr}(?=\\s|$)`, "g");
-    result = result.replace(regex, (_, prefix) => {
-      return (prefix ? ` ${prefix} ` : " ") + num.toString() + " ";
-    });
-  }
+  // 4. Spoken numbers -> digits, via the compositional engine.
+  //
+  // This used to be two local substitution tables applied word by word, which tore
+  // compound numerals apart: "ميتين وخمسين" became "200 و 50" and "خمستاشر الف وخمسمية"
+  // became "خمستاشر 1000 و 500". The decomposer then read each fragment as its own
+  // transaction, so a single spoken amount produced several phantom rows.
+  // arabic-number-parser composes instead of substituting, and is now the only place
+  // this logic lives.
+  result = parseArabicNumbers(result);
 
-  // 6. Handle "X ألف" patterns
-  result = result.replace(/(\d+)\s*(الف|ألف)/g, (_, num) => {
-    return (parseFloat(num) * 1000).toString();
-  });
+  // 5. "X ألف" / "X k" shorthand that follows a digit rather than a word.
+  result = result.replace(/(\d+)\s*(الف|ألف)/g, (_, num) => String(parseFloat(num) * 1000));
+  result = result.replace(/(\d+)\s*[kK](?=\s|$)/g, (_, num) => String(parseFloat(num) * 1000));
 
-  // 7. Handle "X k" patterns
-  result = result.replace(/(\d+)\s*[kK]/g, (_, num) => {
-    return (parseFloat(num) * 1000).toString();
-  });
-
-  // 5. Convert word numbers to digits
-  for (const [word, num] of Object.entries(WORD_NUMBERS)) {
-    // Handle attached forms like "بعشرين"
-    const attached = new RegExp(`ب${word}(?=\\s|جنيه|ج\\.م|ج|$)`, "g");
-    result = result.replace(attached, ` ${num} `);
-    
-    // Bypass converting "واحد" to "1" if it is followed by common people/relation terms (indefinite pronoun usage)
-    if (word === "واحد") {
-      const regex = new RegExp(`(?:^|\\s)(ب|بـ|و)?واحد(?=\\s+(?:صاحب|صديق|زميل|أخ|اخ|أخت|اخت|قريب|سواق|بواب|شغال|موظف|مدير|حد|شخص|راجل|ست))`, "g");
-      result = result.replace(regex, (match) => match.replace("واحد", "___واحد___"));
-    }
-
-    // Handle standalone
-    const regex = new RegExp(`(?:^|\\s)(ب|بـ|و)?${word}(?=\\s|$)`, "g");
-    result = result.replace(regex, (_, prefix) => {
-      return (prefix ? ` ${prefix} ` : " ") + num.toString() + " ";
-    });
-
-    if (word === "واحد") {
-      result = result.replace(/___واحد___/g, "واحد");
-    }
-  }
-
-  // 8. Remove weird symbols but keep Arabic text as-is (NO character normalization)
+  // 6. Remove weird symbols but keep Arabic text as-is (NO character normalization)
   result = result.replace(
     /[^\u0600-\u06FF\u0750-\u077Fa-zA-Z0-9\s.,،؟?!٪%\-\/]/g,
     "",
