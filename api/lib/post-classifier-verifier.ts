@@ -472,14 +472,13 @@ function adjustConfidence(
       adjustedConfidence = Math.max(adjustedConfidence - 15, 20);
     } else if (warningIndices.has(idx)) {
       adjustedConfidence = Math.max(adjustedConfidence - 5, 30);
-    } else {
-      // Bug #18 fix: Only boost items with ZERO flags affecting THEM specifically.
-      // Previously: blocked for ALL items if any item had a flag — unfair penalty.
-      const hasNoPersonalFlag = !errorIndices.has(idx) && !warningIndices.has(idx);
-      if (hasNoPersonalFlag) {
-        adjustedConfidence = Math.min(adjustedConfidence + 5, 95);
-      }
     }
+    // An unflagged item used to receive an unconditional +5 capped at 95. That single
+    // line did two harmful things: it pushed an 82 over the 85 auto-save line purely
+    // because nothing objected, and it capped clean items below a flagged-and-penalised
+    // dictionary hit at 90 — inverting the ordering. Absence of an objection is not
+    // evidence of correctness, and the confidence is now a calibrated probability, so
+    // nothing downstream may nudge it.
 
     return {
       ...item,

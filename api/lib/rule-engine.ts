@@ -12,6 +12,7 @@ import { CATEGORIES } from "./category-registry";
 import { findTaxonomyMatch } from "./taxonomy-adapter";
 import { resolveGovernedTaxonomy } from "./direction-governed-taxonomy";
 import { detectNegation } from "./negation-detector";
+import type { Evidence, MatchKind } from "./classification-evidence";
 import { matchSegment } from "./embedding-engine";
 import { isKareemPersonContext } from "./egyptian-names-dictionary";
 
@@ -44,6 +45,12 @@ export interface ParsedTransaction {
     taxonomy: number;
     heuristics: number;
   };
+  /**
+   * How this answer was reached. Provenance is recorded at the point of decision rather
+   * than inferred from the score afterwards — the routing layer currently reverse-engineers
+   * it by testing for the magic values 100 and 98, which is exactly what this replaces.
+   */
+  evidence?: Evidence;
 }
 
 export interface ClassificationProfileContext {
@@ -1070,6 +1077,15 @@ export async function runRuleEngine(
             : "متنوعات";
     let subCategory = "عام";
     let confidence = 30;
+    // Provenance travels WITH the number. Every write goes through setMatch so a score
+    // can never appear without a record of how it was reached — the whole point of the
+    // evidence model is that a 90 from a dictionary hit and a 90 from a fuzzy match are
+    // different facts, and the value alone cannot tell them apart.
+    let matchKind: MatchKind = "fallback";
+    const setMatch = (value: number, kind: MatchKind): number => {
+      matchKind = kind;
+      return value;
+    };
     let inferenceSource: ParsedTransaction["inferenceSource"] = "rule";
     let ambiguityFlags: string[] | undefined;
     const words = allContext.split(/\s+/).filter((w) => w.length >= 2);
@@ -1087,7 +1103,7 @@ export async function runRuleEngine(
       ) {
         category = "أكل وشرب";
         subCategory = "قهوة وكافيه";
-        confidence = 93;
+        confidence = setMatch(93, "verb_noun_regex");
         inferenceSource = "rule";
         ambiguityFlags = ["voice_colloquial_drink"];
         found = true;
@@ -1098,7 +1114,7 @@ export async function runRuleEngine(
       ) {
         category = "أكل وشرب";
         subCategory = /بيتزا|برجر/.test(allContext) ? "وجبات سريعة" : "مطعم";
-        confidence = 91;
+        confidence = setMatch(91, "verb_noun_regex");
         inferenceSource = "rule";
         found = true;
       } else if (/(?:شحنت|شحنة)\s*(?:رصيد|موبايل|نت)/.test(allContext)) {
@@ -1109,7 +1125,7 @@ export async function runRuleEngine(
             allContext,
           );
         subCategory = hasInternetWord ? "إنترنت" : "شحن رصيد";
-        confidence = 92;
+        confidence = setMatch(92, "verb_noun_regex");
         inferenceSource = "rule";
         found = true;
       } else if (
@@ -1121,7 +1137,7 @@ export async function runRuleEngine(
           : /مترو/.test(allContext)
             ? "مترو"
             : "تاكسي";
-        confidence = 91;
+        confidence = setMatch(91, "verb_noun_regex");
         inferenceSource = "rule";
         found = true;
       }
@@ -1139,7 +1155,7 @@ export async function runRuleEngine(
       if (userMatch) {
         category = userMatch.category;
         subCategory = userMatch.subCategory || "عام";
-        confidence = 100;
+        confidence = setMatch(100, "user_dictionary");
         inferenceSource = "dictionary";
         found = true;
         
@@ -1161,7 +1177,7 @@ export async function runRuleEngine(
         if (matchArabicPhrase(allContext, merchant)) {
           category = MERCHANT_REGISTRY[merchant].category;
           subCategory = MERCHANT_REGISTRY[merchant].subCategory;
-          confidence = 100;
+          confidence = setMatch(100, "merchant_registry");
           inferenceSource = "dictionary";
           ambiguityFlags = ["merchant_registry_hit"];
           // Context-aware disambiguation for merchant names that are also person names
@@ -1169,7 +1185,7 @@ export async function runRuleEngine(
           if (disambiguated) {
             category = disambiguated.category;
             subCategory = disambiguated.subCategory;
-            confidence = 85;
+            confidence = setMatch(85, "merchant_disambiguated");
             ambiguityFlags = [...(ambiguityFlags || []), "disambiguated_from_merchant"];
           }
           found = true;
@@ -1183,7 +1199,7 @@ export async function runRuleEngine(
       if (synonymMatch) {
         category = synonymMatch.category;
         subCategory = synonymMatch.subCategory;
-        confidence = synonymMatch.confidence;
+        confidence = setMatch(synonymMatch.confidence, "synonym_graph");
         inferenceSource = "synonym";
         ambiguityFlags = synonymMatch.ambiguityFlags;
         found = true;
@@ -1204,10 +1220,10 @@ export async function runRuleEngine(
             SUB_CATEGORY_MAP[phrase] || SUB_CATEGORY_MAP[phraseNorm];
           if (phraseSubHit) {
             subCategory = phraseSubHit.subCategory;
-            confidence = 87;
+            confidence = setMatch(87, "dict_trigram");
           } else {
             subCategory = "عام";
-            confidence = 85;
+            confidence = setMatch(85, "dict_trigram");
           }
           inferenceSource = "dictionary";
           found = true;
@@ -1228,10 +1244,10 @@ export async function runRuleEngine(
               SUB_CATEGORY_MAP[phrase] || SUB_CATEGORY_MAP[phraseNorm];
             if (phraseSubHit) {
               subCategory = phraseSubHit.subCategory;
-              confidence = 85;
+              confidence = setMatch(85, "dict_bigram");
             } else {
               subCategory = "عام";
-              confidence = 82;
+              confidence = setMatch(82, "dict_bigram");
             }
             inferenceSource = "dictionary";
             found = true;
@@ -1252,7 +1268,7 @@ export async function runRuleEngine(
           const disambiguated = disambiguateContext(phrase, allContext, hit.category, hit.subCategory);
           category = disambiguated ? disambiguated.category : hit.category;
           subCategory = disambiguated ? disambiguated.subCategory : hit.subCategory;
-          confidence = 92; // Trigram: high confidence (auto-save threshold)
+          confidence = setMatch(92, "subcat_trigram"); // Trigram: high confidence (auto-save threshold)
           inferenceSource = "rule";
           if (disambiguated) ambiguityFlags = [...(ambiguityFlags || []), "context_disambiguated"];
           found = true;
@@ -1269,7 +1285,7 @@ export async function runRuleEngine(
             const disambiguated = disambiguateContext(phrase, allContext, hit.category, hit.subCategory);
             category = disambiguated ? disambiguated.category : hit.category;
             subCategory = disambiguated ? disambiguated.subCategory : hit.subCategory;
-            confidence = 88; // Bigram: above auto-save threshold
+            confidence = setMatch(88, "subcat_bigram"); // Bigram: above auto-save threshold
             inferenceSource = "rule";
             if (disambiguated) ambiguityFlags = [...(ambiguityFlags || []), "context_disambiguated"];
             found = true;
@@ -1323,7 +1339,7 @@ export async function runRuleEngine(
         }
         category = bestHit.category;
         subCategory = bestHit.subCategory;
-        confidence = bestHit.confidence;
+        confidence = setMatch(bestHit.confidence, "subcat_unigram");
         inferenceSource = "rule";
         found = true;
       }
@@ -1379,10 +1395,10 @@ export async function runRuleEngine(
             (strippedWord !== normalizedWord ? SUB_CATEGORY_MAP[strippedWord] : undefined);
           if (subHit) {
             subCategory = subHit.subCategory;
-            confidence = 85; // Single-word + subcat: auto-save borderline
+            confidence = setMatch(85, "dict_unigram"); // Single-word + subcat: auto-save borderline
           } else {
             subCategory = "عام";
-            confidence = 78; // Single-word only: needs review
+            confidence = setMatch(78, "dict_unigram"); // Single-word only: needs review
           }
           inferenceSource = "dictionary";
           found = true;
@@ -1402,7 +1418,7 @@ export async function runRuleEngine(
           if (fuzzyResult && typeof fuzzyResult === "string") {
             category = fuzzyResult;
             subCategory = "عام";
-            confidence = 55;
+            confidence = setMatch(55, "fuzzy");
             inferenceSource = "dictionary";
             found = true;
             break;
@@ -1418,7 +1434,7 @@ export async function runRuleEngine(
         if (semanticMatch && semanticMatch.score >= 80 && semanticMatch.score > confidence) {
           category = semanticMatch.category;
           subCategory = semanticMatch.subCategory;
-          confidence = semanticMatch.score;
+          confidence = setMatch(semanticMatch.score, "embedding");
           inferenceSource = "ai";
           ambiguityFlags = ["semantic_embedding_match"];
           found = true;
@@ -1436,14 +1452,14 @@ export async function runRuleEngine(
     if (intentResult.intent === "income" && !found) {
       category = "مرتب";
       subCategory = "عام";
-      confidence = intentResult.confidence;
+      confidence = setMatch(intentResult.confidence, "intent_only");
     }
 
     // Expense with no specific category — low confidence so AI fallback can engage
     if (intentResult.intent === "expense" && !found) {
       category = "متنوعات";
       subCategory = "عام";
-      confidence = Math.min(intentResult.confidence, 40); // Low confidence → triggers AI fallback
+      confidence = setMatch(Math.min(intentResult.confidence, 40), "intent_only"); // Low confidence → triggers AI fallback
       found = true;
     }
 
@@ -1462,7 +1478,7 @@ export async function runRuleEngine(
     if (!description || description.length < 2) {
       // Bug #13 fix: Multi-word matches should score HIGHER than single-word.
       // Previously: bigram=84-86, unigram=85-88 (inverted — fixed to 89/87).
-      confidence = intentResult.intent === "income" ? 75 : 70;
+      confidence = setMatch(intentResult.intent === "income" ? 75 : 70, "fallback");
       description = intentResult.intent === "income" ? "دخل" : category;
     }
 
@@ -1526,6 +1542,7 @@ export async function runRuleEngine(
     // قسط جمعية subcategories unreachable and filing a gam3eya payout as salary.
     const governed = resolveGovernedTaxonomy(allContextNorm);
     if (governed) {
+      matchKind = "governed_noun";
       ambiguityFlags = [
         ...(ambiguityFlags || []),
         `direction_governed:${governed.matchedNoun}:${governed.direction}`,
@@ -1590,6 +1607,19 @@ export async function runRuleEngine(
                 Math.round((intentResult.confidence + finalConfidence) / 2),
               ),
             ),
+          },
+          evidence: {
+            matchKind,
+            rawStrength: finalConfidence,
+            // Agreement is filled in by the pipeline, which is the only layer that sees
+            // more than one resolver's opinion of the same segment.
+            agreement: 0,
+            disagreement: 0,
+            anchorConsumed: true,
+            categoryIsFallback: finalCategory === "متنوعات",
+            personResolved: "none",
+            hasAmbiguityPenalty: (ambiguityFlags || []).includes("ambiguity_scorer_penalty"),
+            ambiguityFlagCount: (ambiguityFlags || []).length,
           },
         },
         allContext,

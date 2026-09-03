@@ -89,6 +89,11 @@ import {
   computeSystemMetrics,
   type SystemMetricInput,
 } from "../qa/classification-system-metrics";
+import {
+  collectObservations,
+  writeCalibrationTable,
+  describeTable,
+} from "../qa/classification-calibration";
 
 /**
  * Each case gets its own synthetic user id so the pipeline's own 7-day LRU
@@ -177,6 +182,18 @@ describe("Egyptian dialect classification benchmark (offline, local pass)", () =
     const byTier = groupScoresBy(scores, (s) => s.tier);
     const byTag = aggregateByTag(scores, [...ALL_BENCHMARK_CASES]);
     const system = computeSystemMetrics(systemRows);
+
+    // The labelled run is also the calibration corpus. Writing the table is opt-in so a
+    // plain test run never mutates a committed artefact.
+    if (process.env.CLASSIFY_BENCH_CALIBRATE === "1") {
+      const observations = collectObservations(systemRows);
+      const table = writeCalibrationTable(observations, {
+        source: `benchmark:${ALL_BENCHMARK_CASES.length} cases`,
+        gitSha: SMART_PIPELINE_VERSION,
+        generatedAt: new Date().toISOString(),
+      });
+      console.log(describeTable(table));
+    }
 
     await writeBenchmarkReport({
       system,

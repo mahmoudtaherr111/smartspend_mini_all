@@ -215,6 +215,27 @@ function systemSection(doc: Doc, m: SystemMetrics): void {
   );
 
   const s = m.segmentation;
+  if (m.byResolver.length > 0) {
+    doc.heading(3, "دقة كل محلّل — الرقم اللي كان مستحيل يتحسب");
+    doc.table(
+      ["المحلّل", "عناصر", "صح", "الدقة الفعلية", "متوسط ما ادّعاه", "الفجوة"],
+      m.byResolver.map((r) => [
+        r.matchKind,
+        r.items,
+        r.correct,
+        pct(r.accuracy),
+        pct(r.meanRawStrength / 100),
+        `${r.overconfidence >= 0 ? "+" : ""}${(r.overconfidence * 100).toFixed(1)}`,
+      ]),
+      ["left", "right", "right", "right", "right", "right"],
+    );
+    doc.quote(
+      "الفجوة الموجبة تعني أن المحلّل يبالغ في تقدير نفسه. لوحة الأدمن تحسب اليوم\n" +
+        "`AVG(confidence) GROUP BY parsedBy` — وهو سؤال بلا إجابة، لأن كل مجموعة تسحب من\n" +
+        "مولّد مختلف. هذا الجدول هو الإجابة الفعلية، وهو مصدر جدول المعايرة.",
+    );
+  }
+
   doc.heading(3, "3) عمق التقطيع (مش مجرد عدد)");
   doc.table(
     ["نوع الخطأ", "العدد"],
