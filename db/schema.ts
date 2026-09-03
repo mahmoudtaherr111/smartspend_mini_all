@@ -1179,3 +1179,51 @@ export const aiTokenLedgers = mysqlTable(
     index("idx_ledger_created").on(t.createdAt),
   ],
 );
+
+// ─── User Correction Rules ───
+//
+// What the user explicitly told us the answer is.
+//
+// Muscle memory learns from AGGREGATE history and excludes corrected rows outright
+// (`wasCorrected` was a skip condition), which inverted the value of the signal: the one
+// case where the user handed us the right answer was the one case we refused to learn
+// from. It also required two occurrences and an `auto_save` decision, so after
+// calibration moved most items to review, it was being starved as well.
+//
+// A correction is different in kind from a pattern, so it is stored differently:
+// explicit rather than inferred, keyed on the SEGMENT so one fix applies inside every
+// future narrative, effective on the FIRST occurrence, and bounded by an amount band so
+// "coffee 35" cannot answer for "coffee 3500".
+export const userCorrectionRules = mysqlTable(
+  "user_correction_rules",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(), // oauth | local
+    /** Normalized token signature of the corrected segment, not the whole message. */
+    pattern: varchar("pattern", { length: 255 }).notNull(),
+    /** Arabic display name, matching the storage convention of `expenses.category`. */
+    category: varchar("category", { length: 100 }).notNull(),
+    subCategory: varchar("sub_category", { length: 100 }).notNull().default("عام"),
+    type: varchar("type", { length: 20 }).notNull(), // income | expense | transfer | investment
+    /**
+     * The order of magnitude the correction was made at. A rule learned at 35 EGP is
+     * evidence about coffee, not about a 3500 EGP payment that happens to mention it.
+     */
+    amountMin: decimal("amount_min", { precision: 12, scale: 2 }),
+    amountMax: decimal("amount_max", { precision: 12, scale: 2 }),
+    timesApplied: int("times_applied").notNull().default(0),
+    /** Corrected again after this rule fired. Two strikes and the rule retires itself. */
+    timesOverridden: int("times_overridden").notNull().default(0),
+    isActive: boolean("is_active").notNull().default(true),
+    sourceLogId: int("source_log_id"),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").default(
+      sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
+    ),
+  },
+  (t) => [
+    uniqueIndex("ucr_user_pattern_uq").on(t.userId, t.userType, t.pattern),
+    index("ucr_user_active_idx").on(t.userId, t.userType, t.isActive),
+  ],
+);

@@ -11,6 +11,7 @@ import {
   userBusinesses,
   businessCategories,
   classificationLogs,
+  userCorrectionRules,
   pendingClarifications,
   monthlyReports,
   userAnalytics,
@@ -498,6 +499,25 @@ export const aiTokenLedgersRelations = relations(aiTokenLedgers, ({ one }) => ({
   }),
   classificationLog: one(classificationLogs, {
     fields: [aiTokenLedgers.classificationLogId],
+    references: [classificationLogs.id],
+  }),
+}));
+
+/**
+ * A correction rule belongs to one user, and points back at the classification it was
+ * born from so the admin funnel can show which wrong answer taught it.
+ */
+export const userCorrectionRulesRelations = relations(userCorrectionRules, ({ one }) => ({
+  localUser: one(localUsers, {
+    fields: [userCorrectionRules.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [userCorrectionRules.userId],
+    references: [users.id],
+  }),
+  sourceLog: one(classificationLogs, {
+    fields: [userCorrectionRules.sourceLogId],
     references: [classificationLogs.id],
   }),
 }));
