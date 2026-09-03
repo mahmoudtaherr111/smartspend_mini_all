@@ -20,6 +20,7 @@ import { eq, and, gte, lte, desc, sql, lt, inArray } from "drizzle-orm";
 import Decimal from "decimal.js";
 import { ExpenseInputLimits } from "../contracts/constants";
 import { invalidateUserMemory } from "./lib/muscle-memory";
+import { invalidateUserClassificationCache } from "./lib/smart-pipeline";
 import { deleteCacheByPattern, withCache } from "./lib/redis-client";
 import { checkUserBudgetExceeded } from "./notification-engine";
 import { invalidateFinanceUserCache } from "./services/finance-semantic-layer";
@@ -32,6 +33,23 @@ async function invalidateExpenseCache(userId: number | string, userType: string)
   } catch (err) {
     console.warn("Failed to invalidate expense cache", err);
   }
+}
+
+function isDuplicateEntryError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const errorObj = err as Record<string, unknown>;
+  const code = errorObj.code || (errorObj.cause as any)?.code;
+  const errno = errorObj.errno || (errorObj.cause as any)?.errno;
+  const sqlState = String(errorObj.sqlState || (errorObj.cause as any)?.sqlState || "");
+  const message = String(errorObj.message || (errorObj.cause as any)?.message || "");
+  return (
+    code === "ER_DUP_ENTRY" ||
+    errno === 1062 ||
+    sqlState === "23000" ||
+    message.includes("ER_DUP_ENTRY") ||
+    message.includes("Duplicate entry") ||
+    message.includes("expenses_user_client_request_unique")
+  );
 }
 
 async function loadBusinessCategoriesForUser(
@@ -434,6 +452,31 @@ export const expenseRouter = router({
       const userId = ctx.user!.id;
       const requestUserType = ctx.user!.type;
 
+      // 1. Idempotency Pre-Check: if clientRequestId already exists, return existing expense
+      if (input.clientRequestId) {
+        const existing = await db
+          .select()
+          .from(expenses)
+          .where(
+            and(
+              eq(expenses.userId, userId),
+              eq(expenses.userType, requestUserType),
+              eq(expenses.clientRequestId, input.clientRequestId),
+            ),
+          )
+          .limit(1);
+
+        if (existing.length > 0) {
+          return {
+            success: true,
+            id: existing[0].id,
+            duplicate: true,
+            expense: existing[0],
+            newlyAddedContact: null,
+          };
+        }
+      }
+
       const expenseDate = input.date ? new Date(input.date) : new Date();
       if (isNaN(expenseDate.getTime())) {
         throw new TRPCError({
@@ -443,40 +486,71 @@ export const expenseRouter = router({
       }
 
       const references = await resolveExpenseReferences(input, userId, requestUserType);
+      let insertId: number | undefined;
 
       // ─── ACID Transaction: expense insert + contact count + streak ───
-      await db.transaction(async (tx) => {
-        await tx.insert(expenses).values({
-          userId,
-          userType: requestUserType,
-          type: input.type,
-          amount: input.amount.toString(),
-          category: input.category,
-          subCategory: input.subCategory || "عام",
-          description: input.description || "",
-          rawText: input.rawText,
-          source: input.source,
-          contactId: references.contactId,
-          classificationLogId: references.classificationLogId,
-          businessId: input.businessId || null,
-          walletId: input.walletId || null,
-          clientRequestId: input.clientRequestId || null,
-          date: expenseDate,
+      try {
+        await db.transaction(async (tx) => {
+          const [result] = await tx.insert(expenses).values({
+            userId,
+            userType: requestUserType,
+            type: input.type,
+            amount: input.amount.toString(),
+            category: input.category,
+            subCategory: input.subCategory || "عام",
+            description: input.description || "",
+            rawText: input.rawText,
+            source: input.source,
+            contactId: references.contactId,
+            classificationLogId: references.classificationLogId,
+            businessId: input.businessId || null,
+            walletId: input.walletId || null,
+            clientRequestId: input.clientRequestId || null,
+            date: expenseDate,
+          });
+
+          insertId = result?.insertId;
+
+          if (references.contactId) {
+            await tx
+              .update(userContacts)
+              .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
+              .where(eq(userContacts.id, references.contactId));
+          }
+
+          // Gamification: Update Streaks (atomic, inside transaction)
+          await updateStreak(tx, userId as number, requestUserType);
         });
+      } catch (err: unknown) {
+        if (input.clientRequestId && isDuplicateEntryError(err)) {
+          const existing = await db
+            .select()
+            .from(expenses)
+            .where(
+              and(
+                eq(expenses.userId, userId),
+                eq(expenses.userType, requestUserType),
+                eq(expenses.clientRequestId, input.clientRequestId),
+              ),
+            )
+            .limit(1);
 
-        if (references.contactId) {
-          await tx
-            .update(userContacts)
-            .set({ transactionCount: sql`${userContacts.transactionCount} + 1` })
-            .where(eq(userContacts.id, references.contactId));
+          if (existing.length > 0) {
+            return {
+              success: true,
+              id: existing[0].id,
+              duplicate: true,
+              expense: existing[0],
+              newlyAddedContact: references.newlyAddedContact,
+            };
+          }
         }
-
-        // Gamification: Update Streaks (atomic, inside transaction)
-        await updateStreak(tx, userId as number, requestUserType);
-      });
+        throw err;
+      }
 
       // Phase 2: Non-critical side effects (outside transaction)
       invalidateUserMemory(userId, requestUserType);
+      invalidateUserClassificationCache(userId, requestUserType);
       await invalidateExpenseCache(userId, requestUserType);
       
       if (input.type === "expense") {
@@ -485,7 +559,7 @@ export const expenseRouter = router({
         });
       }
 
-      return { success: true, newlyAddedContact: references.newlyAddedContact };
+      return { success: true, id: insertId, newlyAddedContact: references.newlyAddedContact };
     }),
 
   batchCreate: authedProcedure
@@ -513,11 +587,49 @@ export const expenseRouter = router({
       const userId = ctx.user!.id;
       const requestUserType = ctx.user!.type;
 
-      if (input.length === 0) return { success: true };
+      if (input.length === 0) return { success: true, count: 0, newlyAddedContact: null };
 
-      const references = await resolveExpenseReferences(input, userId, requestUserType);
+      // Deduplicate clientRequestIds if any already exist
+      const clientRequestIds = input
+        .map((i) => i.clientRequestId)
+        .filter((id): id is string => typeof id === "string" && id.length > 0);
 
-      const valuesToInsert = input.map((item, index) => ({
+      const existingClientMap = new Map<string, typeof expenses.$inferSelect>();
+      if (clientRequestIds.length > 0) {
+        const existingList = await db
+          .select()
+          .from(expenses)
+          .where(
+            and(
+              eq(expenses.userId, userId),
+              eq(expenses.userType, requestUserType),
+              inArray(expenses.clientRequestId, clientRequestIds),
+            ),
+          );
+        for (const row of existingList) {
+          if (row.clientRequestId) {
+            existingClientMap.set(row.clientRequestId, row);
+          }
+        }
+      }
+
+      // Filter out already existing items to ensure idempotency
+      const itemsToInsert = input.filter(
+        (item) => !item.clientRequestId || !existingClientMap.has(item.clientRequestId),
+      );
+
+      if (itemsToInsert.length === 0) {
+        return {
+          success: true,
+          count: existingClientMap.size,
+          duplicate: true,
+          newlyAddedContact: null,
+        };
+      }
+
+      const references = await resolveExpenseReferences(itemsToInsert, userId, requestUserType);
+
+      const valuesToInsert = itemsToInsert.map((item, index) => ({
         userId,
         userType: requestUserType,
         type: item.type,
@@ -536,30 +648,53 @@ export const expenseRouter = router({
       }));
 
       // ─── ACID Transaction: batch insert + contact counts + streak ───
-      await db.transaction(async (tx) => {
-        await tx.insert(expenses).values(valuesToInsert);
+      try {
+        await db.transaction(async (tx) => {
+          await tx.insert(expenses).values(valuesToInsert);
 
-        const contactCounts = new Map<number, number>();
-        for (const ref of references) {
-          if (ref.contactId) {
-            contactCounts.set(
-              ref.contactId,
-              (contactCounts.get(ref.contactId) || 0) + 1,
-            );
+          const contactCounts = new Map<number, number>();
+          for (const ref of references) {
+            if (ref.contactId) {
+              contactCounts.set(
+                ref.contactId,
+                (contactCounts.get(ref.contactId) || 0) + 1,
+              );
+            }
           }
-        }
-        for (const [contactId, count] of contactCounts.entries()) {
-          await tx
-            .update(userContacts)
-            .set({ transactionCount: sql`${userContacts.transactionCount} + ${count}` })
-            .where(eq(userContacts.id, contactId));
-        }
+          for (const [contactId, count] of contactCounts.entries()) {
+            await tx
+              .update(userContacts)
+              .set({ transactionCount: sql`${userContacts.transactionCount} + ${count}` })
+              .where(eq(userContacts.id, contactId));
+          }
 
-        await updateStreak(tx, userId as number, requestUserType);
-      });
+          await updateStreak(tx, userId as number, requestUserType);
+        });
+      } catch (err: unknown) {
+        if (clientRequestIds.length > 0 && isDuplicateEntryError(err)) {
+          const allExisting = await db
+            .select()
+            .from(expenses)
+            .where(
+              and(
+                eq(expenses.userId, userId),
+                eq(expenses.userType, requestUserType),
+                inArray(expenses.clientRequestId, clientRequestIds),
+              ),
+            );
+          return {
+            success: true,
+            count: allExisting.length,
+            duplicate: true,
+            newlyAddedContact: references[0]?.newlyAddedContact ?? null,
+          };
+        }
+        throw err;
+      }
 
       // Non-critical side effects (outside transaction)
       invalidateUserMemory(userId, requestUserType);
+      invalidateUserClassificationCache(userId, requestUserType);
       await invalidateExpenseCache(userId, requestUserType);
       
       const hasExpenses = input.some(item => item.type === "expense");
@@ -571,6 +706,7 @@ export const expenseRouter = router({
 
       return {
         success: true,
+        count: valuesToInsert.length + existingClientMap.size,
         newlyAddedContact: references.find((reference) => reference.newlyAddedContact)?.newlyAddedContact || null,
       };
     }),
@@ -735,8 +871,16 @@ export const expenseRouter = router({
           ),
         );
 
-      // Phase 2: Invalidate muscle memory cache so it learns this correction
+      // Phase 2: Forget everything that could still serve the answer we just corrected.
+      //
+      // Only muscle memory was cleared here, and the classification cache holds results
+      // for SEVEN DAYS keyed on the normalized text. So the user fixed a category, said
+      // the same sentence again, and got the same wrong answer back from cache — which
+      // reads exactly like "I corrected it and it ignored me", the complaint this is
+      // the mechanical cause of. Correcting a classification has to invalidate every
+      // layer that can replay it, not the one that learns from it.
       invalidateUserMemory(userId, userType);
+      invalidateUserClassificationCache(userId, userType);
 
       let newlyAddedContact: { isNew: boolean; name: string; totalContacts: number } | null = null;
       // Phase 2.5: Auto-learn dynamic contacts from manually edited expenses
@@ -896,6 +1040,11 @@ export const expenseRouter = router({
         }
       });
 
+      // A deleted transaction must stop teaching. Neither cache was cleared here, so a
+      // row the user removed kept shaping future classifications from muscle memory and
+      // kept being replayed from the classification cache.
+      invalidateUserMemory(userId, userType);
+      invalidateUserClassificationCache(userId, userType);
       await invalidateExpenseCache(userId, userType);
       return { success: true };
     }),
