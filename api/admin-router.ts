@@ -30,8 +30,18 @@ import {
   onboardingQuestions,
   ads,
   notificationTemplates,
-  notificationLogs
+  notificationLogs,
+  aiProviders,
+  aiModels,
+  aiTokenLedgers,
 } from "../db/schema";
+import {
+  encryptApiKey,
+  decryptApiKey,
+  discoverRemoteModels,
+  refreshGatewayCache,
+  resolveBillingPeriod,
+} from "./lib/ai-gateway";
 import {
   eq,
   sql,
@@ -54,6 +64,13 @@ import {
 } from "./lib/error-logger";
 import { TRPCError } from "@trpc/server";
 import { env } from "./lib/env";
+import {
+  SETTING_KEYS,
+  isMaskedValue,
+  maskSettingsForClient,
+  settingDefaults,
+} from "./lib/system-settings-registry";
+import { BUILTIN_BASE_URLS } from "./lib/llm-provider-chain";
 import { getSmartProfile } from "./services/user-profile-service";
 import { loadAICostOverview } from "./services/ai-cost-analytics";
 import webpush from "web-push";
@@ -454,221 +471,37 @@ export const adminRouter = router({
   // ─── AI System Settings (Professional) ───
   getSettings: adminProcedure.query(async () => {
     const settings = await getSystemSettings();
-    const config: Record<string, string> = {
-      // ── Gemini API Keys ──
-      ai_api_key: env.GEMINI_API_KEY || "",
-      ai_api_key_2: "",
-      // ── AI Voice Call Settings ──
-      voice_call_model: "gemini-2.5-flash",
-      voice_call_enabled_free: "true",
-      voice_call_limit_free: "2",
-      voice_call_duration_free: "60",
-      voice_call_enabled_pro: "true",
-      voice_call_limit_pro: "30",
-      voice_call_duration_pro: "300",
-      voice_call_enabled_ultra: "true",
-      voice_call_limit_ultra: "999999",
-      voice_call_duration_ultra: "1200",
-      // ── Groq API Key (جديد) ──
-      groq_api_key: "",
-      // ── Fireworks API Key ──
-      fireworks_api_key: env.FIREWORKS_API_KEY || "",
-      // ── Legacy model selectors (used for reports + ultra fallback) ──
-      ai_model_free: env.GEMINI_MODEL_FREE || "gemini-2.0-flash",
-      ai_model_pro: env.GEMINI_MODEL_PRO || "gemini-1.5-flash",
-      ai_model_ultra: "gemini-1.5-pro",
-      ai_model_reports: env.GEMINI_MODEL_REPORTS || "gemini-1.5-flash",
-      // ── Dynamic Token Routing Ranges (JSON arrays) ──
-      // Each range: { from, to, provider, key_slot, model } or { from, to, action, message }
-      free_routing_ranges: JSON.stringify([
-        {
-          from: 0,
-          to: 20000,
-          provider: "groq",
-          key_slot: "groq",
-          model: "llama-3.1-8b-instant",
-        },
-        {
-          from: 20000,
-          to: 50000,
-          provider: "gemini",
-          key_slot: "key1",
-          model: "gemini-2.0-flash",
-        },
-        {
-          from: 50000,
-          to: null,
-          action: "block",
-          message:
-            "استهلكت رصيدك الشهري من الذكاء الاصطناعي 🔒\nيتجدد تلقائياً في بداية الشهر الجاي، أو رقّي لباقة Pro للحصول على حد أعلى!",
-        },
-      ]),
-      pro_routing_ranges: JSON.stringify([
-        {
-          from: 0,
-          to: 150000,
-          provider: "groq",
-          key_slot: "groq",
-          model: "llama-3.3-70b-versatile",
-        },
-        {
-          from: 150000,
-          to: 500000,
-          provider: "gemini",
-          key_slot: "key1",
-          model: "gemini-1.5-pro",
-        },
-        {
-          from: 500000,
-          to: null,
-          action: "block",
-          message:
-            "وصلت لحد باقة Pro الشهري 🔒\nيتجدد تلقائياً في بداية الشهر الجاي.",
-        },
-      ]),
-      // ── Token Limits (total monthly per plan) ──
-      free_token_limit: "50000",
-      pro_token_limit: "500000",
-      ultra_token_limit: "2000000",
-      // ── Daily limits (requests per day) ──
-      free_daily_limit: "10",
-      pro_daily_limit: "100",
-      ultra_daily_limit: "500",
-      // ── Per-request max tokens ──
-      free_max_per_request: "256",
-      pro_max_per_request: "512",
-      ultra_max_per_request: "1024",
-      // ── Feature toggles ──
-      free_ai_analysis: "false",
-      pro_ai_analysis: "true",
-      ultra_ai_analysis: "true",
-      free_ai_parse: "true",
-      pro_ai_parse: "true",
-      ultra_ai_parse: "true",
-      // ── Voice / STT limits ──
-      voice_limit_free: "300",
-      voice_limit_pro: "1800",
-      voice_limit_ultra: "0",
-      voice_per_req_free: "60",
-      voice_per_req_pro: "180",
-      voice_per_req_ultra: "300",
-      // ── Per-plan STT Configuration (جديد) ──
-      free_stt_provider: "gemini",
-      free_stt_model: "gemini-3.5-flash",
-      free_stt_key_slot: "key1",
-      pro_stt_provider: "gemini",
-      pro_stt_model: "gemini-2.5-flash",
-      pro_stt_key_slot: "key1",
-      // ── Legacy STT fields (kept for backward compat) ──
-      stt_api_key: "",
-      stt_api_key_2: "",
-      stt_model: "gemini-1.5-flash",
-      stt_fallback_model: "gemini-2.0-flash",
-      stt_processing_mode: "standard",
-      // ── Per-plan Report Configuration ──
-      report_provider_free: "gemini",
-      report_model_free: "gemini-1.5-flash",
-      report_key_slot_free: "key1",
-      report_provider_pro: "gemini",
-      report_model_pro: "gemini-1.5-pro",
-      report_key_slot_pro: "key1",
-      // ── Confidence Thresholds ──
-      confidence_auto_save: "85",
-      confidence_review: "60",
-      // ── Parser Accuracy Engine ──
-      parser_fast_decomposition_enabled: "true",
-      parser_person_memory_enabled: "true",
-      parser_local_verifier_enabled: "true",
-      parser_auto_save_threshold: "85",
-      parser_review_threshold: "60",
-      // ── AI Response / Prompt Settings ──
-      ai_response_length: "medium",
-      ai_focus: "balanced",
-      ai_system_prompt:
-        "[Persona] مستشار مالي مصري ذكي ومتعاطف. لغتك عامية مصرية راقية ومبسطة، وتتحدث وكأنك إنسان حقيقي.\n[Rules]\n1. لا تستخدم العناوين الآلية (مثل التطبيع أو السببية).\n2. واجه المستخدم بالأرقام الحقيقية.\n3. قدم نصائح عملية مصممة خصيصاً للمستخدم بناءً على سلوكه المالي.",
-      ai_advanced_instructions: "",
-      ai_report_structure_override: "",
-      // ── Report Frequency (days between reports) ──
-      report_limit_free: "30",
-      report_limit_pro: "14",
-      report_limit_ultra: "1",
-      // ── Report Word Counts ──
-      report_words_free: "550",
-      report_words_pro: "850",
-      report_words_ultra: "1500",
-      // ── Report Max Output Tokens ──
-      report_max_tokens_free: "1800",
-      report_max_tokens_pro: "3500",
-      report_max_tokens_ultra: "8192",
-      // ── Report Data Saturation ──
-      report_subcats_free: "15",
-      report_subcats_pro: "20",
-      report_subcats_ultra: "20",
-      report_top_items_pro: "10",
-      report_top_items_ultra: "10",
-      // ── SMS Limits ──
-      sms_limit_free: "5",
-      sms_limit_pro: "999999",
-      sms_limit_ultra: "999999",
-      // ── Referrals ──
-      promo_code_discount: "20",
-      // ── Offline Limits ──
-      offline_limit_free: "3",
-      offline_limit_pro: "30",
-      // ── Pipeline Version (v1 or v2) ──
-      pipeline_version: "v1",
-    };
+    // Defaults come from the registry, so a key the UI can edit is a key the server
+    // knows about — the two lists cannot drift apart because there is only one.
+    const config: Record<string, string> = settingDefaults();
 
     for (const [key, value] of Object.entries(settings)) {
       if (value) config[key] = value;
     }
 
-    return config;
+    // Secrets leave as dots plus the last four characters. This response used to carry
+    // every production API key in cleartext to the browser.
+    return maskSettingsForClient(config);
   }),
 
   updateSettings: adminProcedure
     .input(z.record(z.string(), z.string()))
     .mutation(async ({ input }) => {
-      const allowedKeys = new Set([
-        "ai_api_key", "ai_api_key_2", "voice_call_model",
-        "voice_call_enabled_free", "voice_call_limit_free", "voice_call_duration_free",
-        "voice_call_enabled_pro", "voice_call_limit_pro", "voice_call_duration_pro",
-        "voice_call_enabled_ultra", "voice_call_limit_ultra", "voice_call_duration_ultra",
-        "groq_api_key", "fireworks_api_key",
-        "ai_model_free", "ai_model_pro", "ai_model_ultra", "ai_model_reports",
-        "free_routing_ranges", "pro_routing_ranges",
-        "free_token_limit", "pro_token_limit", "ultra_token_limit",
-        "free_daily_limit", "pro_daily_limit", "ultra_daily_limit",
-        "free_max_per_request", "pro_max_per_request", "ultra_max_per_request",
-        "free_ai_analysis", "pro_ai_analysis", "ultra_ai_analysis",
-        "free_ai_parse", "pro_ai_parse", "ultra_ai_parse",
-        "voice_limit_free", "voice_limit_pro", "voice_limit_ultra",
-        "voice_per_req_free", "voice_per_req_pro", "voice_per_req_ultra",
-        "free_stt_provider", "free_stt_model", "free_stt_key_slot",
-        "pro_stt_provider", "pro_stt_model", "pro_stt_key_slot",
-        "stt_api_key", "stt_api_key_2", "stt_model", "stt_fallback_model", "stt_processing_mode",
-        "report_provider_free", "report_model_free", "report_key_slot_free",
-        "report_provider_pro", "report_model_pro", "report_key_slot_pro",
-        "confidence_auto_save", "confidence_review",
-        "parser_fast_decomposition_enabled", "parser_person_memory_enabled",
-        "parser_local_verifier_enabled", "parser_auto_save_threshold", "parser_review_threshold",
-        "ai_response_length", "ai_focus", "ai_system_prompt", "ai_advanced_instructions",
-        "ai_report_structure_override",
-        "report_limit_free", "report_limit_pro", "report_limit_ultra",
-        "report_words_free", "report_words_pro", "report_words_ultra",
-        "report_max_tokens_free", "report_max_tokens_pro", "report_max_tokens_ultra",
-        "report_subcats_free", "report_subcats_pro", "report_subcats_ultra",
-        "report_top_items_pro", "report_top_items_ultra",
-        "sms_limit_free", "sms_limit_pro", "sms_limit_ultra",
-        "promo_code_discount",
-        "offline_limit_free", "offline_limit_pro",
-        "pipeline_version",
-        "whatsapp_otp_enabled",
-      ]);
+      // The allowlist IS the registry. Eight keys the UI renders (nvidia_api_key,
+      // chatbot_*, rag_*, enable_rag) were absent from the hand-written set this
+      // replaces: the admin saw "saved" and the value was dropped on the floor.
+      const allowedKeys = SETTING_KEYS;
 
       for (const [key, value] of Object.entries(input)) {
         if (!allowedKeys.has(key)) {
           console.warn(`[Admin] Rejected unknown setting key: ${key}`);
+          continue;
+        }
+        // The client was sent dots for this key and has sent the dots back, which means
+        // the admin did not touch the field. Writing it would replace a working API key
+        // with the literal string "••••••••" — masking the response would otherwise turn
+        // "edit one unrelated setting and save" into a site-wide outage.
+        if (isMaskedValue(value)) {
           continue;
         }
         if (value !== undefined && value !== null) {
@@ -1437,94 +1270,134 @@ export const adminRouter = router({
   }),
 
   // ─── Test/Validate API Key ───
+  /**
+   * Check a key against any provider, not a fixed list of four.
+   *
+   * This replaces four branches that were identical apart from a URL - and whose
+   * enum made it impossible to test a key for OpenRouter, DeepSeek, or anything else
+   * the admin adds, even though `ai_providers` accepts arbitrary providers and the
+   * default base URL in the provider manager is OpenRouter's.
+   *
+   * It also returns the models the key can actually reach, so the model dropdowns stop
+   * being hand-maintained lists that go stale the week a provider ships something new.
+   */
   validateApiKey: adminProcedure
     .input(
       z.object({
-        provider: z.enum(["gemini", "groq", "fireworks"]),
+        provider: z.string().min(1),
         apiKey: z.string().min(1),
+        /** Required only for a provider the product does not ship a URL for. */
+        baseUrl: z.string().optional(),
+        protocol: z.enum(["openai", "gemini"]).optional(),
       }),
     )
     .mutation(async ({ input }) => {
-      try {
-        if (input.provider === "gemini") {
-          // Light validation: call Gemini list models endpoint
-          const res = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models?key=${input.apiKey}`,
-            { method: "GET", signal: AbortSignal.timeout(10000) },
-          );
-          if (!res.ok) {
-            const body = await res.text().catch(() => "");
-            const errorType = classifyApiError(res.status, body);
-            return {
-              valid: false,
-              status: res.status,
-              errorType,
-              message: body.substring(0, 300),
-            };
-          }
-          return {
-            valid: true,
-            status: 200,
-            errorType: null,
-            message: "المفتاح يعمل بشكل سليم ✅",
-          };
-        } else if (input.provider === "groq") {
-          // Groq: call /v1/models
-          const res = await fetch("https://api.groq.com/openai/v1/models", {
-            method: "GET",
-            headers: { Authorization: `Bearer ${input.apiKey}` },
-            signal: AbortSignal.timeout(10000),
-          });
-          if (!res.ok) {
-            const body = await res.text().catch(() => "");
-            const errorType = classifyApiError(res.status, body);
-            return {
-              valid: false,
-              status: res.status,
-              errorType,
-              message: body.substring(0, 300),
-            };
-          }
-          return {
-            valid: true,
-            status: 200,
-            errorType: null,
-            message: "المفتاح يعمل بشكل سليم ✅",
-          };
-        } else {
-          // Fireworks: call /inference/v1/models
-          const res = await fetch("https://api.fireworks.ai/inference/v1/models", {
-            method: "GET",
-            headers: { Authorization: `Bearer ${input.apiKey}` },
-            signal: AbortSignal.timeout(10000),
-          });
-          if (!res.ok) {
-            const body = await res.text().catch(() => "");
-            const errorType = classifyApiError(res.status, body);
-            return {
-              valid: false,
-              status: res.status,
-              errorType,
-              message: body.substring(0, 300),
-            };
-          }
-          return {
-            valid: true,
-            status: 200,
-            errorType: null,
-            message: "المفتاح يعمل بشكل سليم ✅",
-          };
-        }
-      } catch (err: any) {
-        const errorType = classifyApiError(undefined, err?.message || "");
+      const protocol =
+        input.protocol || (input.provider === "gemini" ? "gemini" : "openai");
+      const baseUrl = input.baseUrl || BUILTIN_BASE_URLS[input.provider] || "";
+
+      if (protocol !== "gemini" && !baseUrl) {
         return {
           valid: false,
           status: 0,
-          errorType,
-          message: err?.message?.substring(0, 300) || "خطأ غير متوقع",
+          errorType: "config" as const,
+          message: "مزود غير معروف: أضف عنوان الـ API (baseUrl) أولاً",
+          models: [] as string[],
+        };
+      }
+
+      try {
+        // Listing models is the cheapest call that proves a key works, and it is the
+        // one piece of information the admin needs next anyway.
+        const discovered = await discoverRemoteModels(baseUrl, input.apiKey, protocol);
+        return {
+          valid: true,
+          status: 200,
+          errorType: null,
+          message: `المفتاح يعمل بشكل سليم ✅ (${discovered.length} موديل متاح)`,
+          models: discovered.map((m) => m.id),
+        };
+      } catch (err: any) {
+        const raw = String(err?.message || "");
+        const status = Number(raw.match(/\((\d{3})\)/)?.[1] || 0);
+        return {
+          valid: false,
+          status,
+          errorType: classifyApiError(status || undefined, raw),
+          message: raw.substring(0, 300) || "خطأ غير متوقع",
+          models: [] as string[],
         };
       }
     }),
+
+  /**
+   * Live health for every configured provider, replacing a dot that was always green.
+   *
+   * `ai_providers.healthStatus` now has two writers: the classification circuit breaker
+   * records what it learns during real traffic, and this records a deliberate check.
+   */
+  checkProviderHealth: adminProcedure.mutation(async () => {
+    const providers = await db
+      .select()
+      .from(aiProviders)
+      .where(eq(aiProviders.isActive, true))
+      .orderBy(aiProviders.priority);
+
+    const results = await Promise.all(
+      providers.map(async (provider) => {
+        const startedAt = Date.now();
+        const apiKey = decryptApiKey(provider.apiKeyEncrypted);
+        if (!apiKey) {
+          return {
+            slug: provider.slug,
+            displayName: provider.displayName,
+            status: "down" as const,
+            latencyMs: 0,
+            modelCount: 0,
+            message: "لا يوجد مفتاح صالح (قد يحتاج إعادة إدخال)",
+          };
+        }
+
+        try {
+          const models = await discoverRemoteModels(
+            provider.baseUrl,
+            apiKey,
+            provider.protocol,
+          );
+          return {
+            slug: provider.slug,
+            displayName: provider.displayName,
+            status: "healthy" as const,
+            latencyMs: Date.now() - startedAt,
+            modelCount: models.length,
+            message: "يعمل",
+          };
+        } catch (err: any) {
+          return {
+            slug: provider.slug,
+            displayName: provider.displayName,
+            status: "down" as const,
+            latencyMs: Date.now() - startedAt,
+            modelCount: 0,
+            message: String(err?.message || "").substring(0, 200),
+          };
+        }
+      }),
+    );
+
+    // One write per provider, reflecting what was just observed rather than a default.
+    await Promise.all(
+      results.map((r) =>
+        db
+          .update(aiProviders)
+          .set({ healthStatus: r.status, lastHealthCheck: new Date() })
+          .where(eq(aiProviders.slug, r.slug)),
+      ),
+    );
+
+    return { checkedAt: new Date().toISOString(), providers: results };
+  }),
+
 
   // ─── Get Learned Rules (Muscle Memory / Auto-Learning) ───
   getLearnedRules: moderatorProcedure
@@ -1820,7 +1693,19 @@ export const adminRouter = router({
   // ─── Trigger Database Backup Demo ───
   triggerBackupDemo: adminProcedure.mutation(async () => {
     const settingsRecord = await getSystemSettings();
-    const settings = Object.entries(settingsRecord).map(([key, value]) => ({ key, value }));
+    const isSensitiveKey = (key: string): boolean =>
+      /(?:api[_-]?key|secret|password|token|hmac|private|database[_-]?url|jwt)/i.test(key);
+
+    const maskSecret = (val: string): string => {
+      if (!val) return "";
+      if (val.length > 8) return "••••••••" + val.slice(-4);
+      return "••••••••";
+    };
+
+    const settings = Object.entries(settingsRecord).map(([key, value]) => ({
+      key,
+      value: isSensitiveKey(key) && typeof value === "string" ? maskSecret(value) : value,
+    }));
     const codes = await db.select().from(discountCodes);
     const questions = await db.select().from(onboardingQuestions);
     const activeAds = await db.select().from(ads);
@@ -1849,4 +1734,489 @@ export const adminRouter = router({
       backupData,
     };
   }),
+
+  // ─── Universal AI Provider & Model Management ───
+  getAiProviders: adminProcedure.query(async () => {
+    const list = await db.select().from(aiProviders).orderBy(aiProviders.priority);
+    return list.map((p) => {
+      let mask = "••••••••";
+      if (p.apiKeyEncrypted) {
+        try {
+          const dec = decryptApiKey(p.apiKeyEncrypted);
+          if (dec && dec.length >= 4) {
+            mask = "••••••••" + dec.slice(-4);
+          }
+        } catch {
+          mask = "••••••••";
+        }
+      }
+      return {
+        id: p.id,
+        slug: p.slug,
+        displayName: p.displayName,
+        protocol: p.protocol,
+        baseUrl: p.baseUrl,
+        apiKeyMasked: mask,
+        supportsModelDiscovery: p.supportsModelDiscovery,
+        isActive: p.isActive,
+        priority: p.priority,
+        healthStatus: p.healthStatus,
+        lastHealthCheck: p.lastHealthCheck,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+      };
+    });
+  }),
+
+  addAiProvider: adminProcedure
+    .input(
+      z.object({
+        slug: z.string().min(2).max(50),
+        displayName: z.string().min(2).max(100),
+        protocol: z.enum(["openai", "gemini", "anthropic"]).default("openai"),
+        baseUrl: z.string().url(),
+        apiKey: z.string().min(1),
+        priority: z.number().int().default(10),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const encrypted = encryptApiKey(input.apiKey);
+      const [newRow] = await db.insert(aiProviders).values({
+        slug: input.slug.toLowerCase().trim(),
+        displayName: input.displayName.trim(),
+        protocol: input.protocol,
+        baseUrl: input.baseUrl.trim(),
+        apiKeyEncrypted: encrypted,
+        priority: input.priority,
+        isActive: true,
+      });
+      await refreshGatewayCache();
+      return { success: true, id: newRow.insertId };
+    }),
+
+  updateAiProvider: adminProcedure
+    .input(
+      z.object({
+        id: z.number().int(),
+        displayName: z.string().min(2).max(100).optional(),
+        protocol: z.enum(["openai", "gemini", "anthropic"]).optional(),
+        baseUrl: z.string().url().optional(),
+        apiKey: z.string().min(1).optional(),
+        priority: z.number().int().optional(),
+        isActive: z.boolean().optional(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const updateData: Record<string, any> = {};
+      if (input.displayName !== undefined) updateData.displayName = input.displayName.trim();
+      if (input.protocol !== undefined) updateData.protocol = input.protocol;
+      if (input.baseUrl !== undefined) updateData.baseUrl = input.baseUrl.trim();
+      if (input.apiKey !== undefined) updateData.apiKeyEncrypted = encryptApiKey(input.apiKey);
+      if (input.priority !== undefined) updateData.priority = input.priority;
+      if (input.isActive !== undefined) updateData.isActive = input.isActive;
+
+      if (Object.keys(updateData).length === 0) {
+        return { success: true };
+      }
+
+      await db.update(aiProviders).set(updateData).where(eq(aiProviders.id, input.id));
+      await refreshGatewayCache();
+      return { success: true };
+    }),
+
+  deleteAiProvider: adminProcedure
+    .input(z.object({ id: z.number().int() }))
+    .mutation(async ({ input }) => {
+      await db.transaction(async (tx) => {
+        await tx.delete(aiModels).where(eq(aiModels.providerId, input.id));
+        await tx.delete(aiProviders).where(eq(aiProviders.id, input.id));
+      });
+      await refreshGatewayCache();
+      return { success: true };
+    }),
+
+  discoverProviderModels: adminProcedure
+    .input(
+      z.object({
+        baseUrl: z.string().url(),
+        apiKey: z.string(),
+        protocol: z.enum(["openai", "gemini", "anthropic"]).default("openai"),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const models = await discoverRemoteModels(input.baseUrl, input.apiKey, input.protocol);
+        return { models };
+      } catch (err: any) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: err?.message || "فشل الاتصال بالمزود لجلب قائمة الموديلات",
+        });
+      }
+    }),
+
+  saveAiModels: adminProcedure
+    .input(
+      z.object({
+        providerId: z.number().int(),
+        models: z.array(
+          z.object({
+            modelId: z.string().min(1),
+            displayName: z.string().min(1),
+            descriptionAr: z.string().optional(),
+            purposes: z.array(z.string()).min(1),
+            allowedTiers: z.array(z.string()).min(1),
+            isDefaultForPurpose: z.boolean().default(false),
+            inputPricePer1M: z.number().min(0).default(0.14),
+            outputPricePer1M: z.number().min(0).default(0.56),
+            cachedPricePer1M: z.number().min(0).default(0.014),
+            maxContextTokens: z.number().int().default(128000),
+            supportsVision: z.boolean().default(false),
+            supportsReasoning: z.boolean().default(false),
+            isActive: z.boolean().default(true),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      await db.transaction(async (tx) => {
+        for (const m of input.models) {
+          const existing = await tx
+            .select({ id: aiModels.id })
+            .from(aiModels)
+            .where(and(eq(aiModels.providerId, input.providerId), eq(aiModels.modelId, m.modelId)))
+            .limit(1);
+
+          const payload = {
+            providerId: input.providerId,
+            modelId: m.modelId,
+            displayName: m.displayName,
+            descriptionAr: m.descriptionAr || null,
+            purposes: m.purposes,
+            allowedTiers: m.allowedTiers,
+            isDefaultForPurpose: m.isDefaultForPurpose,
+            inputPricePer1M: sql`${m.inputPricePer1M.toFixed(6)}`,
+            outputPricePer1M: sql`${m.outputPricePer1M.toFixed(6)}`,
+            cachedPricePer1M: sql`${m.cachedPricePer1M.toFixed(6)}`,
+            maxContextTokens: m.maxContextTokens,
+            supportsVision: m.supportsVision,
+            supportsReasoning: m.supportsReasoning,
+            isActive: m.isActive,
+          };
+
+          if (existing[0]) {
+            await tx.update(aiModels).set(payload).where(eq(aiModels.id, existing[0].id));
+          } else {
+            await tx.insert(aiModels).values(payload);
+          }
+        }
+      });
+      await refreshGatewayCache();
+      return { success: true };
+    }),
+
+  getAiModels: adminProcedure.query(async () => {
+    return await db.select().from(aiModels).orderBy(desc(aiModels.createdAt));
+  }),
+
+  // ─── Token Ledgers & Quota Inspector ───
+  getAiTokenLedger: moderatorProcedure
+    .input(
+      z.object({
+        userId: z.number().int().optional(),
+        userType: z.enum(["oauth", "local"]).optional(),
+        channel: z.string().optional(),
+        provider: z.string().optional(),
+        billingPeriod: z.string().optional(),
+        page: z.number().int().default(1),
+        limit: z.number().int().default(50),
+      }),
+    )
+    .query(async ({ input }) => {
+      const offset = (input.page - 1) * input.limit;
+      const conditions: any[] = [];
+
+      if (input.userId && input.userType) {
+        conditions.push(and(eq(aiTokenLedgers.userId, input.userId), eq(aiTokenLedgers.userType, input.userType)));
+      }
+      if (input.channel) conditions.push(eq(aiTokenLedgers.channel, input.channel));
+      if (input.provider) conditions.push(eq(aiTokenLedgers.providerSlug, input.provider));
+      if (input.billingPeriod) conditions.push(eq(aiTokenLedgers.billingPeriod, input.billingPeriod));
+
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+      const rowsQuery = db.select().from(aiTokenLedgers);
+      const rows = whereClause
+        ? await rowsQuery.where(whereClause).orderBy(desc(aiTokenLedgers.createdAt)).limit(input.limit).offset(offset)
+        : await rowsQuery.orderBy(desc(aiTokenLedgers.createdAt)).limit(input.limit).offset(offset);
+
+      const totalQuery = db.select({ count: count() }).from(aiTokenLedgers);
+      const total = whereClause ? await totalQuery.where(whereClause) : await totalQuery;
+
+      return {
+        rows,
+        total: total[0]?.count ?? 0,
+        page: input.page,
+        limit: input.limit,
+      };
+    }),
+
+  getUserAiQuota: moderatorProcedure
+    .input(
+      z.object({
+        search: z.string().min(1),
+        selectedUserId: z.number().optional(),
+        selectedUserType: z.enum(["oauth", "local"]).optional(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const searchClean = input.search.trim();
+      const currentPeriod = resolveBillingPeriod();
+
+      let matchedUser: {
+        id: number;
+        type: "oauth" | "local";
+        name: string;
+        email?: string | null;
+        phone?: string | null;
+        plan: string;
+      } | null = null;
+
+      // 1. Explicit user selection
+      if (input.selectedUserId && input.selectedUserType) {
+        if (input.selectedUserType === "local") {
+          const [local] = await db.select().from(localUsers).where(eq(localUsers.id, input.selectedUserId)).limit(1);
+          if (local) {
+            matchedUser = { id: local.id, type: "local", name: local.name, phone: local.phone, email: local.email, plan: local.plan || "free" };
+          }
+        } else {
+          const [oauth] = await db.select().from(users).where(eq(users.id, input.selectedUserId)).limit(1);
+          if (oauth) {
+            matchedUser = { id: oauth.id, type: "oauth", name: oauth.name, email: oauth.email, plan: oauth.plan || "free" };
+          }
+        }
+      }
+
+      // 2. Search by exact ID
+      if (!matchedUser) {
+        const numId = Number.parseInt(searchClean, 10);
+        if (!Number.isNaN(numId) && numId > 0) {
+          const [local] = await db.select().from(localUsers).where(eq(localUsers.id, numId)).limit(1);
+          if (local) {
+            matchedUser = { id: local.id, type: "local", name: local.name, phone: local.phone, email: local.email, plan: local.plan || "free" };
+          } else {
+            const [oauth] = await db.select().from(users).where(eq(users.id, numId)).limit(1);
+            if (oauth) {
+              matchedUser = { id: oauth.id, type: "oauth", name: oauth.name, email: oauth.email, plan: oauth.plan || "free" };
+            }
+          }
+        }
+      }
+
+      // 3. Search by Name, Email, Phone with pattern matching (Fuzzy & Multi-criteria)
+      const searchPattern = `%${searchClean}%`;
+      const [localsMatched, oauthsMatched] = await Promise.all([
+        db
+          .select({
+            id: localUsers.id,
+            name: localUsers.name,
+            phone: localUsers.phone,
+            email: localUsers.email,
+            plan: localUsers.plan,
+          })
+          .from(localUsers)
+          .where(
+            or(
+              like(localUsers.name, searchPattern),
+              like(localUsers.phone, searchPattern),
+              like(localUsers.email, searchPattern),
+            ),
+          )
+          .limit(10),
+        db
+          .select({
+            id: users.id,
+            name: users.name,
+            email: users.email,
+            plan: users.plan,
+          })
+          .from(users)
+          .where(
+            or(
+              like(users.name, searchPattern),
+              like(users.email, searchPattern),
+            ),
+          )
+          .limit(10),
+      ]);
+
+      const candidateUsers = [
+        ...localsMatched.map((u) => ({ id: u.id, type: "local" as const, name: u.name, phone: u.phone, email: u.email, plan: u.plan || "free" })),
+        ...oauthsMatched.map((u) => ({ id: u.id, type: "oauth" as const, name: u.name, email: u.email, phone: null, plan: u.plan || "free" })),
+      ];
+
+      if (!matchedUser && candidateUsers.length > 0) {
+        matchedUser = candidateUsers[0];
+      }
+
+      if (!matchedUser) {
+        return {
+          user: null,
+          candidateUsers: candidateUsers as Array<{ id: number; type: "oauth" | "local"; name: string; email: string | null; phone: string | null; plan: string }>,
+          billingPeriod: currentPeriod,
+          quotaLimit: 50_000,
+          totalTokens: 0,
+          totalCostEgp: 0,
+          totalCostUsd: 0,
+          percentUsed: 0,
+          byChannel: {} as Record<string, number>,
+          recentRequests: [],
+        };
+      }
+
+      // Aggregate token ledgers using SQL SUM (No truncation bug!)
+      const [statsRow] = await db
+        .select({
+          totalTokens: sql<number>`COALESCE(SUM(${aiTokenLedgers.totalTokens}), 0)`,
+          totalCostEgp: sql<number>`COALESCE(SUM(${aiTokenLedgers.costEgp}), 0)`,
+          totalCostUsd: sql<number>`COALESCE(SUM(${aiTokenLedgers.costUsd}), 0)`,
+        })
+        .from(aiTokenLedgers)
+        .where(
+          and(
+            eq(aiTokenLedgers.userId, matchedUser.id),
+            eq(aiTokenLedgers.userType, matchedUser.type),
+            eq(aiTokenLedgers.billingPeriod, currentPeriod),
+          ),
+        );
+
+      const channelRows = await db
+        .select({
+          channel: aiTokenLedgers.channel,
+          tokens: sql<number>`COALESCE(SUM(${aiTokenLedgers.totalTokens}), 0)`,
+        })
+        .from(aiTokenLedgers)
+        .where(
+          and(
+            eq(aiTokenLedgers.userId, matchedUser.id),
+            eq(aiTokenLedgers.userType, matchedUser.type),
+            eq(aiTokenLedgers.billingPeriod, currentPeriod),
+          ),
+        )
+        .groupBy(aiTokenLedgers.channel);
+
+      const byChannel: Record<string, number> = {};
+      for (const cr of channelRows) {
+        byChannel[cr.channel] = Number(cr.tokens || 0);
+      }
+
+      // Fetch the latest 20 receipts for inspector preview
+      const recentRequests = await db
+        .select()
+        .from(aiTokenLedgers)
+        .where(
+          and(
+            eq(aiTokenLedgers.userId, matchedUser.id),
+            eq(aiTokenLedgers.userType, matchedUser.type),
+            eq(aiTokenLedgers.billingPeriod, currentPeriod),
+          ),
+        )
+        .orderBy(desc(aiTokenLedgers.createdAt))
+        .limit(20);
+
+      const totalTokens = Number(statsRow?.totalTokens || 0);
+      const totalCostEgp = Number(statsRow?.totalCostEgp || 0);
+      const totalCostUsd = Number(statsRow?.totalCostUsd || 0);
+
+      const planLimits: Record<string, number> = {
+        free: 50_000,
+        pro: 500_000,
+        ultra: 2_000_000,
+      };
+      const quotaLimit = planLimits[matchedUser.plan] || 50_000;
+
+      return {
+        user: matchedUser,
+        candidateUsers,
+        billingPeriod: currentPeriod,
+        quotaLimit,
+        totalTokens,
+        totalCostEgp,
+        totalCostUsd,
+        percentUsed: Math.min(100, Math.round((totalTokens / quotaLimit) * 100)),
+        byChannel,
+        recentRequests,
+      };
+    }),
+
+  getAiTelemetryOverview: adminProcedure.query(async () => {
+    const currentPeriod = resolveBillingPeriod();
+    const rows = await db
+      .select({
+        totalTokens: sql<number>`COALESCE(SUM(${aiTokenLedgers.totalTokens}), 0)`,
+        promptTokens: sql<number>`COALESCE(SUM(${aiTokenLedgers.promptTokens}), 0)`,
+        completionTokens: sql<number>`COALESCE(SUM(${aiTokenLedgers.completionTokens}), 0)`,
+        cachedTokens: sql<number>`COALESCE(SUM(${aiTokenLedgers.cachedTokens}), 0)`,
+        costEgp: sql<number>`COALESCE(SUM(${aiTokenLedgers.costEgp}), 0)`,
+        costUsd: sql<number>`COALESCE(SUM(${aiTokenLedgers.costUsd}), 0)`,
+        avgLatencyMs: sql<number>`COALESCE(AVG(${aiTokenLedgers.latencyMs}), 0)`,
+        totalRequests: count(),
+      })
+      .from(aiTokenLedgers)
+      .where(eq(aiTokenLedgers.billingPeriod, currentPeriod));
+
+    const stats = rows[0] || {
+      totalTokens: 0,
+      promptTokens: 0,
+      completionTokens: 0,
+      cachedTokens: 0,
+      costEgp: 0,
+      costUsd: 0,
+      avgLatencyMs: 0,
+      totalRequests: 0,
+    };
+
+    const providerDistribution = await db
+      .select({
+        providerSlug: aiTokenLedgers.providerSlug,
+        totalTokens: sql<number>`COALESCE(SUM(${aiTokenLedgers.totalTokens}), 0)`,
+        costEgp: sql<number>`COALESCE(SUM(${aiTokenLedgers.costEgp}), 0)`,
+      })
+      .from(aiTokenLedgers)
+      .where(eq(aiTokenLedgers.billingPeriod, currentPeriod))
+      .groupBy(aiTokenLedgers.providerSlug);
+
+    const channelBreakdown = await db
+      .select({
+        channel: aiTokenLedgers.channel,
+        totalTokens: sql<number>`COALESCE(SUM(${aiTokenLedgers.totalTokens}), 0)`,
+        costEgp: sql<number>`COALESCE(SUM(${aiTokenLedgers.costEgp}), 0)`,
+        avgLatency: sql<number>`COALESCE(AVG(${aiTokenLedgers.latencyMs}), 0)`,
+        requestCount: count(),
+      })
+      .from(aiTokenLedgers)
+      .where(eq(aiTokenLedgers.billingPeriod, currentPeriod))
+      .groupBy(aiTokenLedgers.channel);
+
+    return {
+      currentPeriod,
+      totals: {
+        totalTokens: Number(stats.totalTokens),
+        promptTokens: Number(stats.promptTokens),
+        completionTokens: Number(stats.completionTokens),
+        cachedTokens: Number(stats.cachedTokens),
+        costEgp: Number(stats.costEgp),
+        costUsd: Number(stats.costUsd),
+        avgLatencyMs: Number(stats.avgLatencyMs),
+        totalRequests: Number(stats.totalRequests),
+        cacheSavingsRate:
+          Number(stats.promptTokens) > 0
+            ? Math.round((Number(stats.cachedTokens) / Number(stats.promptTokens)) * 100)
+            : 0,
+      },
+      providerDistribution,
+      channelBreakdown,
+    };
+  }),
 });
+
