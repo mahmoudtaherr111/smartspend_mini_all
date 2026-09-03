@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { Hono } from "hono";
+import { compress } from "hono/compress";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { trpcServer } from "@hono/trpc-server";
@@ -22,6 +23,7 @@ import { otpEvents } from "./services/whatsapp-service";
 import { db } from "./queries/connection";
 import { sessions, classificationLogs, authChallenges } from "../db/schema";
 import { lt } from "drizzle-orm";
+import { installProviderHealthReporter } from "./lib/provider-health";
 import fs from "fs";
 import path from "path";
 import { whatsappService } from "./services/whatsapp-service";
@@ -112,9 +114,15 @@ import { getRedisClient, getCacheRuntimeStatus } from "./lib/redis-client";
   }
 })();
 
+// Give the classification failover a place to record what it learns. Installed here
+// rather than as an import side effect so unit tests can import the router without
+// opening a database connection.
+installProviderHealthReporter();
+
 const app = new Hono();
 
 app.use("*", logger());
+app.use("*", compress());
 
 let warnedAboutUntrustedProxy = false;
 if (env.NODE_ENV === "production" && env.TRUST_PROXY !== "true") {
@@ -138,9 +146,68 @@ app.use("*", async (c, next) => {
 });
 
 // ─── CORS: supports monorepo mode (APP_URL) and separate-deploy mode (FRONTEND_URL) ───
-const allowedOrigins = Array.from(
+export const allowedOrigins = Array.from(
   new Set([env.APP_URL, env.FRONTEND_URL].filter(Boolean) as string[]),
 );
+
+/**
+ * Validates WebSocket upgrade request origins to prevent Cross-Site WebSocket Hijacking (CSWSH).
+ */
+export function isAllowedWebSocketOrigin(origin: string | undefined, hostHeader?: string): boolean {
+  // If no origin header is provided (e.g. non-browser clients, native apps, cURL), allow it.
+  // Browsers ALWAYS send the Origin header on cross-origin WebSocket upgrade requests.
+  if (!origin) {
+    return true;
+  }
+
+  // Capacitor / Native mobile origins
+  if (
+    origin === "capacitor://localhost" ||
+    origin === "ionic://localhost" ||
+    origin === "http://localhost" ||
+    origin === "https://localhost" ||
+    origin.startsWith("capacitor://") ||
+    origin.startsWith("ionic://")
+  ) {
+    return true;
+  }
+
+  // Configured allowed origins
+  if (allowedOrigins.includes(origin)) {
+    return true;
+  }
+
+  // Same-origin check against Host header
+  if (hostHeader) {
+    try {
+      const originUrl = new URL(origin);
+      if (originUrl.host === hostHeader) {
+        return true;
+      }
+    } catch {}
+  }
+
+  // Development tunnel & local dev origins
+  if (env.NODE_ENV === "development") {
+    if (
+      origin.includes("localhost") ||
+      origin.includes("127.0.0.1") ||
+      origin.endsWith(".loca.lt") ||
+      origin.endsWith(".serveousercontent.com") ||
+      origin.endsWith(".lhr.life") ||
+      origin.endsWith(".trycloudflare.com") ||
+      origin.endsWith(".ngrok-free.dev") ||
+      origin.endsWith(".ngrok-free.app") ||
+      origin.endsWith(".ngrok.app") ||
+      origin.endsWith(".ngrok.io")
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 app.use(
   "*",
   cors({
@@ -152,7 +219,12 @@ app.use(
           origin.includes("127.0.0.1") ||
           origin.endsWith(".loca.lt") ||
           origin.endsWith(".serveousercontent.com") ||
-          origin.endsWith(".lhr.life")
+          origin.endsWith(".lhr.life") ||
+          origin.endsWith(".trycloudflare.com") ||
+          origin.endsWith(".ngrok-free.dev") ||
+          origin.endsWith(".ngrok-free.app") ||
+          origin.endsWith(".ngrok.app") ||
+          origin.endsWith(".ngrok.io")
         ) {
           return origin;
         }
@@ -175,7 +247,12 @@ app.use(
           origin.includes("127.0.0.1") ||
           origin.endsWith(".loca.lt") ||
           origin.endsWith(".serveousercontent.com") ||
-          origin.endsWith(".lhr.life")
+          origin.endsWith(".lhr.life") ||
+          origin.endsWith(".trycloudflare.com") ||
+          origin.endsWith(".ngrok-free.dev") ||
+          origin.endsWith(".ngrok-free.app") ||
+          origin.endsWith(".ngrok.app") ||
+          origin.endsWith(".ngrok.io")
         ) {
           return true;
         }
@@ -204,6 +281,7 @@ app.notFound(async (c) => {
         path.resolve("./dist/public/index.html"),
         "utf-8",
       );
+      c.header("Cache-Control", "public, max-age=0, must-revalidate");
       return c.html(html);
     } catch (e) {
       console.error("Failed to serve index.html fallback", e);
@@ -237,12 +315,22 @@ function stateMatches(expected: string | undefined, received: string | undefined
 // present on the callback. This prevents OAuth login-CSRF account swapping.
 app.get("/api/auth/google/start", (c) => {
   const state = createOAuthState();
-  const googleUrl = buildGoogleAuthorizationUrl(state);
+  const host = c.req.header("x-forwarded-host") || c.req.header("host");
+  const proto = c.req.header("x-forwarded-proto") || (host?.includes("ngrok") ? "https" : "http");
+  const dynamicRedirectUri = host ? `${proto}://${host}/api/auth/google/callback` : undefined;
+  const googleUrl = buildGoogleAuthorizationUrl(state, dynamicRedirectUri);
   if (!googleUrl) return c.json({ error: "Google OAuth is not configured" }, 503);
   c.header(
     "Set-Cookie",
     `oauth_state=${encodeURIComponent(state)}; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=600${secureCookieSuffix()}`,
   );
+  if (dynamicRedirectUri) {
+    c.header(
+      "Set-Cookie",
+      `oauth_redirect_uri=${encodeURIComponent(dynamicRedirectUri)}; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=600${secureCookieSuffix()}`,
+      { append: true },
+    );
+  }
   return c.redirect(googleUrl);
 });
 
@@ -253,12 +341,14 @@ app.get("/api/auth/google/callback", async (c) => {
   const stateCookie = readCookie(c.req.header("cookie"), "oauth_state");
   if (!stateMatches(stateCookie, c.req.query("state"))) {
     console.warn("Google OAuth callback rejected due to invalid state");
-    return c.redirect(`${env.APP_URL}/login?error=auth_failed`);
+    return c.redirect(`/login?error=auth_failed`);
   }
+
+  const redirectUriCookie = readCookie(c.req.header("cookie"), "oauth_redirect_uri");
 
   try {
     const caller = appRouter.createCaller(await createContext(c.req));
-    const result = await caller.auth.googleCallback({ code });
+    const result = await caller.auth.googleCallback({ code, redirectUri: redirectUriCookie });
 
     // Set cookie and redirect to frontend
     c.header(
@@ -270,9 +360,14 @@ app.get("/api/auth/google/callback", async (c) => {
       `oauth_state=; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=0${secureCookieSuffix()}`,
       { append: true },
     );
-    return c.redirect(`${env.APP_URL}/dashboard`);
+    c.header(
+      "Set-Cookie",
+      `oauth_redirect_uri=; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=0${secureCookieSuffix()}`,
+      { append: true },
+    );
+    return c.redirect(`/dashboard`);
   } catch (error) {
-    return c.redirect(`${env.APP_URL}/login?error=auth_failed`);
+    return c.redirect(`/login?error=auth_failed`);
   }
 });
 
@@ -474,7 +569,35 @@ if (env.NODE_ENV === "production" && isDirectBootEntry) {
   const { serve } = await import("@hono/node-server");
   const { serveStatic } = await import("@hono/node-server/serve-static");
 
-  app.use("/*", serveStatic({ root: "./dist/public" }));
+  app.use(
+    "/*",
+    serveStatic({
+      root: "./dist/public",
+      precompressed: true,
+      onFound: (filePath, c) => {
+        const reqPath = c.req.path;
+        const isHtmlOrWorkerOrManifest =
+          filePath.endsWith(".html") ||
+          filePath.endsWith(".webmanifest") ||
+          filePath.endsWith("sw.js") ||
+          reqPath === "/" ||
+          reqPath === "/manifest.webmanifest" ||
+          reqPath === "/sw.js" ||
+          reqPath === "/index.html";
+
+        const cc = reqPath.startsWith("/assets/")
+          ? "public, max-age=31536000, immutable"
+          : isHtmlOrWorkerOrManifest
+          ? "public, max-age=0, must-revalidate"
+          : "public, max-age=86400";
+
+        c.header("Cache-Control", cc);
+        if (c.res) {
+          c.res.headers.set("Cache-Control", cc);
+        }
+      },
+    }),
+  );
 
   const port = parseInt(env.PORT) || 3000;
   console.log(
@@ -490,6 +613,17 @@ if (env.NODE_ENV === "production" && isDirectBootEntry) {
   server.on("upgrade", (request, socket, head) => {
     const url = new URL(request.url || "", "http://localhost");
     if (url.pathname.startsWith("/api/voice/live")) {
+      const rawOrigin = request.headers.origin;
+      const origin = Array.isArray(rawOrigin) ? rawOrigin[0] : rawOrigin;
+      const rawHost = request.headers.host;
+      const host = Array.isArray(rawHost) ? rawHost[0] : rawHost;
+
+      if (!isAllowedWebSocketOrigin(origin, host)) {
+        socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
+        socket.destroy();
+        return;
+      }
+
       wss.handleUpgrade(request, socket, head, (ws) => {
         wss.emit("connection", ws, request);
       });

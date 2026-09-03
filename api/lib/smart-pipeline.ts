@@ -1,13 +1,19 @@
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { SchemaType } from "@google/generative-ai";
 import { normalizeV2 } from "./normalizer-v2";
 import { runRuleEngine, SUB_CATEGORY_MAP } from "./rule-engine";
 import { CATEGORY_DICTIONARY } from "./egyptian-dictionary";
 import { buildSmartSystemPrompt, buildFireworksPrompts } from "./dynamic-prompt-builder";
 import { normalizeTransactionTaxonomyList } from "./category-registry";
 import { CATEGORIES } from "./category-registry";
-import { callGroqAPI } from "./groq-client";
-import { callFireworksAPI } from "./fireworks-client";
-import { callNvidiaAPI } from "./nvidia-client";
+import {
+  executeLlmChain,
+  LlmChainError,
+  type LlmAttempt,
+  type LlmRoute,
+  type StructuredSchema,
+} from "./llm-router";
+import { buildProviderChain } from "./llm-provider-chain";
+import type { AiPlanName } from "./ai-provider-registry";
 import { mapModelName } from "./model-mapper";
 import type { ParsedTransaction } from "./rule-engine";
 import { matchArabicPhrase, stripArabicPrefix } from "./fuzzy-match";
@@ -145,6 +151,20 @@ export interface PipelineLog {
   finalConfidence?: number;
   finalDecision?: string;
   cachedTokens?: number;
+  /**
+   * Which provider answered, and everything that failed on the way there.
+   *
+   * The admin dashboard could previously report the model name it *intended* to use and
+   * nothing about whether that is what happened. A silent fallback, a provider that
+   * dropped the response schema, a chain that burned three timeouts before answering —
+   * all of it looked identical to a clean first-try success.
+   */
+  providerRoute?: {
+    servedBy: string | null;
+    attempts: LlmAttempt[];
+    schemaDegraded: boolean;
+    failedOver: boolean;
+  };
 }
 
 export interface PipelineResult {
@@ -501,6 +521,11 @@ export async function runSmartPipeline(
   const startTime = Date.now();
   let totalTokens = 0;
   let cachedTokens = 0;
+  // Which providers were tried and what each of them did. Previously unknowable: a
+  // fallback that fired left no trace, so "why was this slow" had no answer.
+  let llmAttempts: LlmAttempt[] = [];
+  let servedByRoute: string | null = null;
+  let schemaWasDegraded = false;
   const provider = input.provider || "gemini";
   const modelUsed = mapModelName(input.modelName);
   const fireworksKey = input.fireworksApiKey || "";
@@ -1287,123 +1312,110 @@ export async function runSmartPipeline(
       filteredDecomp,
     );
 
-    let finalSystemPrompt: string;
-    let finalUserPrompt: string;
+    // Prompt shape follows whoever actually serves the request, not whoever we hoped
+    // would. Built lazily so the fallback's prompt costs nothing on the happy path.
+    const promptCache = new Map<string, { systemPrompt: string; userPrompt: string }>();
+    const peopleForPrompt = knownPeople.map((p) => ({
+      name: p.name,
+      relationship: p.relationship || "شخص معروف",
+      category: p.category || "تحويل",
+      subCategory: p.subCategory || "تحويلات شخصية",
+    }));
+    const businessForPrompt = input.businessCategories?.map((c) => ({
+      nameAr: c.nameAr,
+      type: c.type,
+      keywords: c.keywords || [],
+    }));
 
-    if (provider === "fireworks") {
-        const fireworksPrompts = buildFireworksPrompts(
+    const promptFor = (route: LlmRoute) => {
+      const shape = route.slug === "fireworks" ? "fireworks" : "standard";
+      const cached = promptCache.get(shape);
+      if (cached) return cached;
+
+      let built: { systemPrompt: string; userPrompt: string };
+      if (shape === "fireworks") {
+        const fw = buildFireworksPrompts(
           textToClassify,
-          knownPeople.map((p) => ({
-            name: p.name,
-            relationship: p.relationship || "شخص معروف",
-            category: p.category || "تحويل",
-            subCategory: p.subCategory || "تحويلات شخصية",
-          })),
+          peopleForPrompt,
           useSimpleSchema,
           userHistoryContext,
           userHistoryCategories,
           numAmountsToClassify,
           classifierUserPrompt,
-          input.businessCategories?.map((c) => ({
-            nameAr: c.nameAr,
-            type: c.type,
-            keywords: c.keywords || [],
-          })),
+          businessForPrompt,
         );
-        finalSystemPrompt = fireworksPrompts.systemPrompt;
-        finalUserPrompt = fireworksPrompts.userPrompt;
-    } else {
-        finalSystemPrompt = buildSmartSystemPrompt(
-          textToClassify,
-          knownPeople.map((p) => ({
-            name: p.name,
-            relationship: p.relationship || "شخص معروف",
-            category: p.category || "تحويل",
-            subCategory: p.subCategory || "تحويلات شخصية",
-          })),
-          undefined,
-          useSimpleSchema,
-          userHistoryContext,
-          userHistoryCategories,
-          numAmountsToClassify,
-          input.businessCategories?.map((c) => ({
-            nameAr: c.nameAr,
-            type: c.type,
-            keywords: c.keywords || [],
-          })),
-        );
-        finalUserPrompt = classifierUserPrompt;
-    }
+        built = { systemPrompt: fw.systemPrompt, userPrompt: fw.userPrompt };
+      } else {
+        built = {
+          systemPrompt: buildSmartSystemPrompt(
+            textToClassify,
+            peopleForPrompt,
+            undefined,
+            useSimpleSchema,
+            userHistoryContext,
+            userHistoryCategories,
+            numAmountsToClassify,
+            businessForPrompt,
+          ),
+          userPrompt: classifierUserPrompt,
+        };
+      }
+      promptCache.set(shape, built);
+      return built;
+    };
 
     let classItems: any[] = [];
     try {
-      if (provider === "groq") {
-        const result = await callGroqAPI(
-          input.groqApiKey || input.apiKey,
-          modelUsed,
-          finalSystemPrompt,
-          finalUserPrompt,
-          input.maxTokens || 4096
-        );
-        totalTokens += result.tokensUsed;
-        classItems = safeExtractItems(robustJsonParse(result.text));
-      } else if (provider === "fireworks") {
-        const result = await callFireworksAPI(
-          input.fireworksApiKey || input.apiKey,
-          modelUsed,
-          finalSystemPrompt,
-          finalUserPrompt,
-          input.maxTokens || 4096
-        );
-        totalTokens += result.tokensUsed;
-        cachedTokens = result.cachedTokens || 0;
-        classItems = safeExtractItems(robustJsonParse(result.text));
-      } else if (provider === "nvidia") {
-        const result = await callNvidiaAPI(
-          (input as any).nvidiaApiKey || input.apiKey,
-          modelUsed,
-          finalSystemPrompt,
-          finalUserPrompt,
-          input.maxTokens || 4096
-        );
-        totalTokens += result.tokensUsed;
-        cachedTokens = result.cachedTokens || 0;
-        classItems = safeExtractItems(robustJsonParse(result.text));
-      } else {
-        const genAI = new GoogleGenerativeAI(input.apiKey);
-        const geminiModel = genAI.getGenerativeModel({
-          model: modelUsed,
-          systemInstruction: finalSystemPrompt,
-          generationConfig: {
-            temperature: 0.1,
-            responseMimeType: "application/json",
-            responseSchema,
-          },
-        });
+      // One call site for every provider, with a chain behind it.
+      //
+      // This replaces four `if (provider === ...)` branches that each duplicated the same
+      // request in a slightly different dialect and shared one property: when the chosen
+      // provider failed, classification gave up on the model entirely - while the keys
+      // for the other three sat unused in this very request. A 429 on Gemini dropped a
+      // paying user's minute of speech to the rule engine with Groq idle.
+      const chain = buildProviderChain({
+        preferred: provider,
+        preferredModel: modelUsed,
+        plan: (input.userPlan as AiPlanName) || "free",
+        keys: {
+          gemini: input.apiKey,
+          // Threaded through this function's input for years and never read once.
+          geminiSecondary: input.apiKey2,
+          groq: input.groqApiKey,
+          fireworks: input.fireworksApiKey,
+          nvidia: input.nvidiaApiKey,
+        },
+      });
 
-        let dRes;
-        let retries = 3;
-        while (retries > 0) {
-          try {
-            dRes = await geminiModel.generateContent(finalUserPrompt);
-            break;
-          } catch (e: any) {
-            const isRateLimit = e.status === 429 || (e.message && e.message.includes("429")) || (e.message && e.message.includes("quota"));
-            if (isRateLimit && retries > 1) {
-              console.warn(`[Gemini API] 429 Rate Limit hit. Retrying in 2500ms... (${retries - 1} retries left)`);
-              await new Promise(resolve => setTimeout(resolve, 2500));
-              retries--;
-            } else {
-              throw e;
-            }
-          }
-        }
-        if (!dRes) {
-          throw new Error("Gemini API returned no response after retries.");
-        }
-        totalTokens += dRes.response.usageMetadata?.totalTokenCount || 0;
-        classItems = safeExtractItems(robustJsonParse(dRes.response.text()));
+      const llm = await executeLlmChain(chain, {
+        systemPrompt: "",
+        userPrompt: "",
+        promptFor,
+        maxOutputTokens: input.maxTokens || 4096,
+        temperature: 0.1,
+        schema: responseSchema as unknown as StructuredSchema,
+        // Long enough for a full narrative, short enough that a hung provider still
+        // leaves room in the 8-second budget for the next one in the chain.
+        timeoutMs: 25_000,
+      });
+
+      totalTokens += llm.totalTokens;
+      cachedTokens = llm.cachedTokens;
+      llmAttempts = llm.attempts;
+      servedByRoute = llm.route.slug;
+      schemaWasDegraded = llm.degradedSchema;
+      if (llm.attempts.length > 1) {
+        console.warn(
+          `[Smart Pipeline] Served by fallback ${llm.route.slug} after ` +
+            llm.attempts
+              .filter((a) => !a.ok)
+              .map((a) => `${a.slug}(${a.failure})`)
+              .join(", "),
+        );
       }
+
+      classItems = safeExtractItems(robustJsonParse(llm.text));
+
 
       if (classItems.length === 0) {
          if (numAmounts <= 3 && numWords <= 15) {
@@ -1526,7 +1538,15 @@ export async function runSmartPipeline(
       }
     } catch (err) {
       const errMsg = (err as any)?.message || String(err);
-      if (errMsg.includes("403") || errMsg.includes("429")) {
+      if (err instanceof LlmChainError) {
+        // Every configured provider failed. That is a different fact from "the request
+        // errored" and the only one worth paging about: the user's answer now depends
+        // entirely on what the local path already worked out.
+        llmAttempts = err.attempts;
+        console.error(
+          `[Smart Pipeline] Whole provider chain exhausted (${err.attempts.length} attempts): ${errMsg}`,
+        );
+      } else if (errMsg.includes("403") || errMsg.includes("429")) {
         console.warn("[Smart Pipeline] AI API unavailable (rate limit/auth). Using local fallback.");
       } else {
         console.error("[Smart Pipeline] AI Error:", errMsg);
@@ -1812,13 +1832,26 @@ export async function runSmartPipeline(
     finalConfidence: overallConfidence,
     finalDecision: decision,
     cachedTokens,
+    providerRoute: llmAttempts.length
+      ? {
+          servedBy: servedByRoute,
+          attempts: llmAttempts,
+          schemaDegraded: schemaWasDegraded,
+          failedOver: llmAttempts.filter((a) => !a.ok).length > 0,
+        }
+      : undefined,
   };
 
   const result: PipelineResult = {
     items: verifiedFinalItems,
     parsedBy: requiresAI ? "hybrid" : "rule_engine",
     modelUsed,
-    actualModelUsed: requiresAI ? modelUsed : null,
+    // The model that actually produced the answer, which is not always the one we asked
+    // for. Reporting the requested model after a failover would put a name in the admin
+    // dashboard that never ran.
+    actualModelUsed: requiresAI
+      ? llmAttempts.find((a) => a.ok)?.model || (servedByRoute ? modelUsed : null)
+      : null,
     overallConfidence,
     decision,
     clarificationQuestion,
