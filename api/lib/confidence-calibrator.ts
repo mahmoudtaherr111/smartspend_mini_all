@@ -23,6 +23,9 @@ export interface CalibrationOutcome {
   uncalibrated: number;
 }
 
+/** Marker so a second pass cannot recalibrate an already-calibrated item. */
+const CALIBRATED_FLAG = "calibrated";
+
 export function applyCalibration(items: ParsedTransaction[]): CalibrationOutcome {
   let calibrated = 0;
   let uncalibrated = 0;
@@ -31,6 +34,15 @@ export function applyCalibration(items: ParsedTransaction[]): CalibrationOutcome
     const evidence = item.evidence as Evidence | undefined;
     if (!evidence) {
       uncalibrated++;
+      return item;
+    }
+
+    // Calibration runs once per segment and once over the finished result. Without this
+    // guard the second pass would overwrite rawStrength with the already-calibrated
+    // value, destroying the record of what the resolver originally claimed — the exact
+    // number the reliability table is built from.
+    if ((item.ambiguityFlags || []).some((f) => f.startsWith(`${CALIBRATED_FLAG}:`))) {
+      calibrated++;
       return item;
     }
 
@@ -46,7 +58,7 @@ export function applyCalibration(items: ParsedTransaction[]): CalibrationOutcome
       evidence: { ...evidence, rawStrength: item.confidence },
       ambiguityFlags: [
         ...(item.ambiguityFlags || []),
-        `calibrated:${result.bucket}:n=${result.support}`,
+        `${CALIBRATED_FLAG}:${result.bucket}:n=${result.support}`,
       ],
     };
   });
