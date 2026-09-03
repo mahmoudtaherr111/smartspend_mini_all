@@ -14,6 +14,7 @@ import { matchArabicPhrase, stripArabicPrefix } from "./fuzzy-match";
 import { extractPeople, extractAmounts } from "./entity-extractor";
 import { decomposeHeuristic, ALL_FINANCIAL_VERBS, type DecompositionResult } from "./narrative-decomposer";
 import { verifyClassifiedItems } from "./post-classifier-verifier";
+import { checkAdmissibility } from "./admissibility-gate";
 import { pickPersonCandidate, pickAllPersonCandidates, resolvePersonForTransaction, compactArabic } from "./person-resolver";
 import { muscleMemoryLookup } from "./muscle-memory";
 import { matchSegment } from "./embedding-engine";
@@ -804,44 +805,14 @@ export async function runSmartPipeline(
     settingNumber(pipelineSettings, "confidence_review", 60),
   );
 
-  // Helper to count amounts
-  const countAmounts = (text: string): number => {
-    const digitMatches = text.match(/\d+(?:[.,]\d+)?/g);
-    const textualAmountWords = new Set([
-      "عشرين",
-      "تلاتين",
-      "ثلاثين",
-      "اربعين",
-      "أربعين",
-      "خمسين",
-      "ستين",
-      "سبعين",
-      "تمانين",
-      "ثمانين",
-      "تسعين",
-      "ميه",
-      "مية",
-      "ميتين",
-      "ألف",
-      "الف",
-      "آلاف",
-      "تلاف",
-      "مليون",
-      "ارنب",
-      "أرنب",
-      "باكو",
-      "باكوين",
-      "نص",
-      "ربع",
-      "تلت",
-    ]);
-    const textualMatches = text
-      .split(/\s+/)
-      .map((word) => word.replace(/[^\u0600-\u06FF]/g, ""))
-      .filter((word) => textualAmountWords.has(word));
-    return (digitMatches ? digitMatches.length : 0) + textualMatches.length;
-  };
-  
+  // Counting amounts is the amount extractor's job, not a private list.
+  //
+  // This used to be a fourth copy of the spoken-number vocabulary, and it double-counted
+  // by construction: "ميتين وخمسين" is one amount of 250, but the digit regex and the word
+  // list each matched it, returning 2 and inflating the count that drives every routing
+  // threshold below. extractAmounts already composes numerals correctly.
+  const countAmounts = (text: string): number => extractAmounts(text).length;
+
   const countWords = (text: string): number => {
     return text.split(/\s+/).filter(w => w.length > 0).length;
   };
@@ -849,31 +820,40 @@ export async function runSmartPipeline(
   const numAmounts = countAmounts(normalizedText);
   const numWords = countWords(normalizedText);
 
-  // 1.5 Pre-filtering logic (Prevent AI Hallucination & Token Waste)
-  if (numAmounts === 0) {
-    const strongFinancialKeywords = ["صرفت", "حولت", "بعت", "خدت", "قبضت", "دفعت", "اشتريت", "جبت", "سلف", "دين", "حساب", "اديت", "شحنت", "شلت", "رجعلي", "رجعولي", "وفرت", "حوشت", "نزلت", "طلعت", "خلصت", "سددت", "فطرت", "اتعشيت", "اتغديت", "فرتكت", "طيرت", "خرشت", "قعدت", "لعبت", "سافرت", "حجزت", "ركبت", "اكلت", "شربت", "عزمت", "وزعت", "جددت", "استلمت", "جالي", "وصلني", "بونص", "مرتب", "عموله", "سبوبه"];
-    const hasFinancialKeyword = strongFinancialKeywords.some(kw => normalizedText.includes(kw));
-    
-    if (!hasFinancialKeyword && numWords > 2) {
-       return {
-          items: [],
-          overallConfidence: 0,
-          clarificationQuestion: "عذراً، لم أتمكن من العثور على معاملة مالية واضحة (مبلغ أو عملية) في كلامك.",
-          decision: "clarify",
-          tokensUsed: 0,
-          parsedBy: "system",
-          modelUsed,
-          actualModelUsed: null,
-          processingTimeMs: Date.now() - startTime,
-          log: {
-            originalText: input.text,
-            normalizedText,
-            finalConfidence: 0,
-            finalDecision: "clarify",
-            routing: { route: "system_prefilter", reason: "no_amounts_found" },
-          },
-       };
-    }
+  // 1.5 Admissibility gate — the last point before anything can cost money, and the
+  // only place allowed to end a request with "I did not understand".
+  //
+  // The filter this replaces only fired when the amount count was zero, so a clock time
+  // ("الساعة خمسة") sailed through on its number, and it matched its keyword list by
+  // substring. checkAdmissibility reuses the real amount extractor, the real verb
+  // lexicon and word-boundary matching, and distinguishes three rejections that deserve
+  // different answers: chatter, a question about spending, and a transaction that did
+  // not happen.
+  const admissibility = checkAdmissibility(normalizedText);
+  if (admissibility.verdict !== "financial") {
+    return {
+      items: [],
+      overallConfidence: 0,
+      clarificationQuestion: admissibility.userMessage,
+      decision: "clarify",
+      tokensUsed: 0,
+      parsedBy: "system",
+      modelUsed,
+      actualModelUsed: null,
+      processingTimeMs: Date.now() - startTime,
+      log: {
+        originalText: input.text,
+        normalizedText,
+        finalConfidence: 0,
+        finalDecision: "clarify",
+        routing: {
+          route: "admissibility_gate",
+          verdict: admissibility.verdict,
+          reason: admissibility.reason,
+          signals: admissibility.signals,
+        },
+      },
+    };
   }
 
   const knownNames = knownPeople.map((p) => p.name).filter(Boolean);
