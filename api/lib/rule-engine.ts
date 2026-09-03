@@ -1490,8 +1490,13 @@ export async function runRuleEngine(
     );
 
     let finalConfidence = confidence;
+    // A refined subcategory used to floor the score at 82, which promoted a fuzzy
+    // string match (55) to just under the auto-save line on the strength of a
+    // SUBCATEGORY guess. Finding a better subcategory says nothing about whether the
+    // CATEGORY is right, and the calibration layer already knows how often each match
+    // kind is correct. The refinement is recorded as evidence instead of as a bonus.
     if (subCategory === "عام" && refinedSubCategory !== "عام") {
-      finalConfidence = Math.max(finalConfidence, 82);
+      ambiguityFlags = [...(ambiguityFlags || []), "subcategory_refined"];
     }
 
     // ─── Polarity & Negation Filter ───
@@ -1529,7 +1534,12 @@ export async function runRuleEngine(
         ambiguityFlags?.includes("merchant_registry_hit") ||                        // merchant already matched
         ambiguityFlags?.includes("context_disambiguated");                          // disambiguation already resolved
       if (!hasClearContext) {
-        finalConfidence = Math.min(finalConfidence, 45); // Penalize but not to 10%
+        // The flag is the signal; the number is not. This used to clamp to 45 inside a
+        // `< 90` window, so a trigram (92) escaped the penalty entirely while a bigram
+        // (88) carrying the same ambiguous word was slammed to 45 — a 43-point swing
+        // decided by n-gram length rather than by how ambiguous the text was. The flag
+        // now routes the item to its own calibration bucket, where its real accuracy is
+        // measured rather than guessed.
         ambiguityFlags = [...(ambiguityFlags || []), "ambiguity_scorer_penalty"];
       }
     }

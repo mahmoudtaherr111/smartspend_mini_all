@@ -16,6 +16,7 @@ import { decomposeHeuristic, ALL_FINANCIAL_VERBS, type DecompositionResult } fro
 import { verifyClassifiedItems } from "./post-classifier-verifier";
 import { checkAdmissibility } from "./admissibility-gate";
 import { applyCalibration } from "./confidence-calibrator";
+import { shouldEscalate, decide } from "./classification-decision";
 import { pickPersonCandidate, pickAllPersonCandidates, resolvePersonForTransaction, compactArabic } from "./person-resolver";
 import { muscleMemoryLookup } from "./muscle-memory";
 import { matchSegment } from "./embedding-engine";
@@ -420,8 +421,17 @@ function applyPersonResolution(
     } else if (next.type !== "income" && ["العائلة", "أصدقاء", "موظفين"].includes(next.category || "")) {
       next.type = "expense";
     }
-    next.confidence = Math.max(next.confidence, resolution.isKnown ? 96 : 90);
-    next.needsReview = false;
+    // Resolving WHO the money went to says nothing about whether the CATEGORY is right,
+    // yet this used to lift any item with a recognised name to 96 — enough for a fuzzy
+    // typo match on a person's name to auto-save. The resolution is recorded as
+    // evidence so calibration can price it, and it no longer forces needsReview off.
+    next.evidence = next.evidence
+      ? { ...next.evidence, personResolved: resolution.isKnown ? "known" : "unknown" }
+      : next.evidence;
+    next.ambiguityFlags = [
+      ...(next.ambiguityFlags || []),
+      resolution.isKnown ? "person_resolved_known" : "person_resolved_unknown",
+    ];
   }
 
   return { item: next, needsClarification: false };
@@ -800,6 +810,12 @@ export async function runSmartPipeline(
     "parser_auto_save_threshold",
     settingNumber(pipelineSettings, "confidence_auto_save", 85),
   );
+  const decisionThresholds = {
+    autoSave: settingNumber(pipelineSettings, "parser_auto_save_threshold", 90) / 100,
+    review: settingNumber(pipelineSettings, "parser_review_threshold", 50) / 100,
+    escalate: settingNumber(pipelineSettings, "parser_escalate_threshold", 85) / 100,
+  };
+
   const reviewThreshold = settingNumber(
     pipelineSettings,
     "parser_review_threshold",
@@ -878,6 +894,23 @@ export async function runSmartPipeline(
     : { segments: [], method: "simple", isComplex: false };
 
   const localSucceededItems: ParsedTransaction[] = [];
+  /**
+   * What the local path resolved for segments that were escalated to the model.
+   *
+   * Escalating means "the model could probably do better", not "throw this away". When
+   * the model is unavailable — no key, rate limited, every provider down — the fallback
+   * used to re-run the rule engine over the rejoined text, which loses per-segment
+   * person resolution and turns "حولت لمروان" back into a generic transfer. Keeping the
+   * resolved items means an outage degrades quality by a little instead of a lot.
+   */
+  const escalatedSegmentItems: ParsedTransaction[] = [];
+  /**
+   * Every locally-resolved item in narrative order, whether its segment was accepted or
+   * escalated. Combining two separate lists at salvage time reordered the result —
+   * "100 مواصلات وب50 أكل" came back as 50 then 100 — because escalated segments were
+   * appended after accepted ones rather than interleaved where they belong.
+   */
+  const orderedLocalItems: ParsedTransaction[] = [];
   const failedSegments: typeof decomposition.segments = [];
 
   // Fast path for long/multi-transaction narratives: classify each segment locally.
@@ -949,23 +982,43 @@ export async function runSmartPipeline(
           }
       }
 
-      const isPro = input.userPlan === "pro" || input.userPlan === "ultra";
-      const threshold = isPro ? Math.max(autoSaveThreshold, 90) : autoSaveThreshold;
+      // Does this segment need the model?
+      //
+      // This is a question about EVIDENCE COMPLETENESS, not about a score. It used to be
+      // `confidence >= threshold`, which conflated "worth paying a model for" with "safe
+      // to write to the database" — two different questions with different right answers.
+      // A category the classifier could not name has to escalate however sure it feels;
+      // an answer the user taught us must never escalate however unsure it feels.
+      const calibratedSegment = applyCalibration(segmentResolvedItems);
+      const segmentItems = calibratedSegment.items;
+      const amountsFullyConsumed = segmentItems.length >= segmentAmountCount;
 
-      const passedItems = segmentResolvedItems.filter(it => 
-        (it.confidence >= threshold && it.category !== "متنوعات") || 
-        anyNeedsClarification
+      const escalations = segmentItems.map((it) =>
+        shouldEscalate(
+          {
+            evidence: it.evidence,
+            category: it.category,
+            probability: it.confidence / 100,
+            hasUnknownPerson: anyNeedsClarification,
+            amountsFullyConsumed,
+          },
+          decisionThresholds,
+        ),
       );
-      
-      // Never accept only the high-confidence portion of a sentence. A review
-      // must contain every extracted transaction, otherwise a weak sibling is
-      // silently lost when the strong item is auto-saved.
-      if (passedItems.length !== segmentResolvedItems.length) {
+
+      // Never accept only the resolved portion of a sentence. A review must contain
+      // every extracted transaction, otherwise a weak sibling is silently lost when its
+      // confident neighbour is auto-saved.
+      if (escalations.some((e) => e.escalate) && !anyNeedsClarification) {
         failedSegments.push(segment);
+        escalatedSegmentItems.push(...segmentItems);
+        orderedLocalItems.push(...segmentItems);
         continue;
       }
+      const passedItems = segmentItems;
       
       localSucceededItems.push(...passedItems);
+      orderedLocalItems.push(...passedItems);
 
       if (anyNeedsClarification) {
         const uniqueUnknowns = Array.from(new Set(localUnknownNames));
@@ -1066,27 +1119,56 @@ export async function runSmartPipeline(
       if (ruleSucceeded) {
         // Handled by needsClarification above
       } else {
+        // Same separation as the segment path: escalation is a question about evidence
+        // completeness, the decision is a question about probability, and the two are
+        // no longer answered by one comparison.
+        const calibratedWhole = applyCalibration(segmentResolvedItems);
+        const wholeItems = calibratedWhole.items;
+
         let lowestConfidence = 100;
         let hasMutaNawi3at = false;
-        
-        for (const item of segmentResolvedItems) {
+        for (const item of wholeItems) {
             if ((item.confidence || 0) < lowestConfidence) lowestConfidence = item.confidence || 0;
             if (item.category === "متنوعات") hasMutaNawi3at = true;
         }
 
-        const effectiveAutoSaveThresh = isPro ? Math.max(autoSaveThreshold, 90) : autoSaveThreshold;
+        const wholeEscalations = wholeItems.map((it) =>
+          shouldEscalate(
+            {
+              evidence: it.evidence,
+              category: it.category,
+              probability: (it.confidence || 0) / 100,
+              hasUnknownPerson: false,
+              amountsFullyConsumed: wholeItems.length >= numAmounts,
+            },
+            decisionThresholds,
+          ),
+        );
+        const mustEscalate = wholeEscalations.some((e) => e.escalate);
 
-        if (lowestConfidence >= effectiveAutoSaveThresh && !hasMutaNawi3at) {
-            finalItems.push(...segmentResolvedItems);
+        if (!mustEscalate) {
+            finalItems.push(...wholeItems);
             ruleSucceeded = true;
-            decision = "auto_save";
+            const outcome = decide(
+              {
+                probability: lowestConfidence / 100,
+                amountsFullyConsumed: wholeItems.length >= numAmounts,
+                hasBlockingFlag: false,
+                needsAnswer: false,
+              },
+              decisionThresholds,
+            );
+            decision = outcome.decision;
             overallConfidence = lowestConfidence;
-        } else if (!isPro && lowestConfidence >= reviewThreshold && lowestConfidence < autoSaveThreshold && !hasMutaNawi3at) {
-            finalItems.push(...segmentResolvedItems);
-            ruleSucceeded = true;
-            decision = "review";
-            overallConfidence = lowestConfidence;
-        } else if (hasMutaNawi3at || lowestConfidence < reviewThreshold) {
+        } else {
+          // Escalating: keep what the whole-text pass already resolved so an unavailable
+          // model degrades the answer instead of erasing it. Without this, a single-clause
+          // "دفعت لعماد 1200" loses its person resolution on the way to the fallback and
+          // reverts to a generic bank transfer.
+          escalatedSegmentItems.push(...wholeItems);
+          orderedLocalItems.push(...wholeItems);
+        }
+        if (hasMutaNawi3at || lowestConfidence < reviewThreshold) {
             // If any item is mutanawi3at or very low confidence, we should NOT accept it locally.
             // Leave ruleSucceeded = false so it falls back to AI!
         }
@@ -1449,33 +1531,41 @@ export async function runSmartPipeline(
       } else {
         console.error("[Smart Pipeline] AI Error:", errMsg);
       }
-      if (numAmounts <= 3 && numWords <= 15) {
-          const fallbackRuleResult = await runRuleEngine(textToClassify, input.userDict, input.userProfileContext, undefined, fireworksKey);
-          if (fallbackRuleResult.items.length > 0) {
-             finalItems.push(...fallbackRuleResult.items);
-          }
+      // Degrade, do not discard.
+      //
+      // Escalating to the model means "it could probably do better", not "the local
+      // answer is worthless". This used to re-run the rule engine over the rejoined
+      // text, which loses everything the per-segment pass had already resolved —
+      // "حولت لمروان" reverts from العائلة/مروان أخوك to a generic bank transfer. The
+      // items the local path produced for those segments are kept instead, marked for
+      // review so the user sees them rather than having them silently saved.
+      const salvaged = orderedLocalItems.length > 0
+        ? orderedLocalItems
+        : [...localSucceededItems, ...escalatedSegmentItems];
+      if (salvaged.length > 0) {
+        // Replace rather than append: the accepted segments were already pushed into
+        // finalItems before the model was called, so appending the ordered list would
+        // duplicate them and destroy narrative order. This list is the whole answer.
+        finalItems.length = 0;
+        finalItems.push(...salvaged.map((it) => ({ ...it, needsReview: true })));
+        if (decision === "unknown") decision = "review";
+      } else if (numAmounts <= 3 && numWords <= 15) {
+        // Nothing was segmented — a short single-clause input. One clean pass is the
+        // best available answer.
+        const fallbackRuleResult = await runRuleEngine(
+          textToClassify,
+          input.userDict,
+          input.userProfileContext,
+          undefined,
+          fireworksKey,
+        );
+        if (fallbackRuleResult.items.length > 0) {
+          finalItems.push(...fallbackRuleResult.items);
+        }
       } else {
-          // For longer texts: try to salvage what we can from local rule engine results
-          // instead of just returning an error. Accept items with review status.
-          if (localSucceededItems.length > 0) {
-            finalItems.push(...localSucceededItems.map(it => ({
-              ...it,
-              needsReview: true,
-            })));
-            // Also try failed segments
-            for (const seg of failedSegments) {
-              const segRule = await runRuleEngine(seg.text, input.userDict, input.userProfileContext, undefined, fireworksKey);
-              for (const item of segRule.items) {
-                finalItems.push({ ...item, needsReview: true });
-              }
-            }
-            if (finalItems.length > 0 && decision === "unknown") {
-              decision = "review";
-            }
-          } else {
-            decision = "clarify";
-            clarificationQuestion = "عذراً، حدث خطأ في السيرفر أثناء معالجة الجملة الطويلة. يرجى تقسيمها أو المحاولة لاحقاً.";
-          }
+        decision = "clarify";
+        clarificationQuestion =
+          "عذراً، حدث خطأ في السيرفر أثناء معالجة الجملة الطويلة. يرجى تقسيمها أو المحاولة لاحقاً.";
       }
     }
   }

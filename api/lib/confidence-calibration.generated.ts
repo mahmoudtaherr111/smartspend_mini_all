@@ -10,33 +10,33 @@ import type { ReliabilityTable } from "./classification-evidence";
 export const CONFIDENCE_CALIBRATION: ReliabilityTable =
   {
   "version": "v3.0",
-  "generatedAt": "2026-09-03T00:18:45.389Z",
+  "generatedAt": "2026-09-03T00:48:41.015Z",
   "source": "benchmark:87 cases",
-  "prior": 0.8333333333333334,
+  "prior": 0.8226950354609929,
   "buckets": {
     "exact:single": {
       "n": 25,
       "hits": 21
     },
     "weak:single": {
-      "n": 16,
-      "hits": 7
+      "n": 20,
+      "hits": 8
     },
     "weak_rule:single": {
-      "n": 59,
-      "hits": 51
+      "n": 60,
+      "hits": 53
     },
     "strong_rule:single": {
-      "n": 34,
-      "hits": 33
+      "n": 33,
+      "hits": 32
     },
     "weak_rule:ambiguous": {
       "n": 2,
       "hits": 1
     },
     "semantic:single": {
-      "n": 2,
-      "hits": 2
+      "n": 1,
+      "hits": 1
     }
   }
 };

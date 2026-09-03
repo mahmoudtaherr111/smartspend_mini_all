@@ -44,9 +44,20 @@ describe("smart pipeline person memory", () => {
     });
 
     expect(result.parsedBy).toBe("rule_engine");
-    expect(result.decision).toBe("auto_save");
     expect(result.items[0]?.category).toBe("أصدقاء");
     expect(result.items[0]?.subCategory).toBe("مروان صاحبك");
+
+    // Resolved locally and correctly — but shown for review rather than written silently.
+    //
+    // This used to assert auto_save, which it earned by being lifted to a confidence of
+    // 96 for the sole reason that a known name matched. Recognising WHO the money went
+    // to says nothing about whether the CATEGORY is right, and calibration puts this
+    // evidence at roughly 86% accurate — auto-saving it means one wrong row in seven,
+    // written without the user ever seeing it.
+    //
+    // Auto-save is still reachable; it has to be earned by corroboration between
+    // independent resolvers rather than granted by a name lookup.
+    expect(result.decision).toBe("review");
   });
 
   it("keeps multi-transaction narratives local and clarifies only the unknown person segment", async () => {
