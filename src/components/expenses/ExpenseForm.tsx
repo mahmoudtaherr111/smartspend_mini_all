@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { HapticButton } from "@/components/ui/haptic-button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,10 @@ import {
   X,
   Lock,
 } from "lucide-react";
-import { suggestExpenseItems, validateOfflineInput } from "@/lib/clientRulesEngine";
+import {
+  suggestExpenseItems,
+  validateOfflineInput,
+} from "@/lib/clientRulesEngine";
 import { ExpenseInputLimits } from "@contracts/constants";
 import { cn } from "@/lib/utils";
 import {
@@ -33,17 +36,45 @@ import { Badge } from "@/components/ui/badge";
 import { useHaptics } from "@/hooks/useHaptics";
 import { compressImageFile } from "@/lib/compress-image";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  AdaptiveDialog,
+  AdaptiveDialogContent,
+  AdaptiveDialogHeader,
+  AdaptiveDialogTitle,
+} from "@/components/ui/adaptive-dialog";
 
 interface ExpenseFormProps {
   onSuccess?: () => void;
   initialText?: string;
   businessMode?: boolean;
   businessId?: number;
+  draftKey?: string;
+}
+
+function readExpenseDraft(draftKey?: string): string {
+  if (!draftKey || typeof window === "undefined") return "";
+  try {
+    return window.sessionStorage.getItem(draftKey) || "";
+  } catch {
+    return "";
+  }
+}
+
+function probeAudioCodec(): string | undefined {
+  if (typeof MediaRecorder === "undefined" || !MediaRecorder.isTypeSupported) {
+    return undefined;
+  }
+  const hierarchy = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/mp4",
+    "audio/aac",
+  ];
+  for (const mime of hierarchy) {
+    if (MediaRecorder.isTypeSupported(mime)) {
+      return mime;
+    }
+  }
+  return undefined;
 }
 
 function createOfflineItemId(): string {
@@ -61,7 +92,11 @@ function asParserTrace(value: unknown): ParserTraceRecord | null {
     : null;
 }
 
-function traceString(trace: ParserTraceRecord, key: string, fallback = "-"): string {
+function traceString(
+  trace: ParserTraceRecord,
+  key: string,
+  fallback = "-",
+): string {
   const value = trace[key];
   return typeof value === "string" && value.trim() ? value : fallback;
 }
@@ -134,8 +169,16 @@ function ParserTracePanel({ trace }: { trace: ParserTraceRecord | null }) {
   );
 }
 
-export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }: ExpenseFormProps) {
-  const [text, setText] = useState(initialText || "");
+export function ExpenseForm({
+  onSuccess,
+  initialText,
+  businessMode,
+  businessId,
+  draftKey,
+}: ExpenseFormProps) {
+  const [text, setText] = useState(
+    () => initialText || readExpenseDraft(draftKey),
+  );
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [showManual, setShowManual] = useState(false);
@@ -147,29 +190,39 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
     string | null
   >(null);
   const [clarificationId, setClarificationId] = useState<number | null>(null);
-  const [classificationLogId, setClassificationLogId] = useState<number | null>(null);
+  const [classificationLogId, setClassificationLogId] = useState<number | null>(
+    null,
+  );
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
   const [isSkipping, setIsSkipping] = useState(false);
   const [flowStage, setFlowStage] = useState<
-    "idle" | "recording" | "processing" | "parsed" | "clarify" | "review"
+    | "idle"
+    | "acquiring"
+    | "recording"
+    | "processing"
+    | "parsed"
+    | "clarify"
+    | "review"
+    | "error"
   >("idle");
   const [inputSource, setInputSource] = useState<"text" | "voice">("text");
   const [showSuccessAnim, setShowSuccessAnim] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("المعالجة الذكية...");
   const [localSuggestion, setLocalSuggestion] = useState<any>(null);
   const [isOnline, setIsOnline] = useState(
-    typeof navigator !== "undefined" ? navigator.onLine : true
+    typeof navigator !== "undefined" ? navigator.onLine : true,
   );
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncRemaining, setSyncRemaining] = useState(0);
-  const [pendingOfflineTextId, setPendingOfflineTextId] = useState<string | null>(null);
+  const [pendingOfflineTextId, setPendingOfflineTextId] = useState<
+    string | null
+  >(null);
   const [latestParserTrace, setLatestParserTrace] =
     useState<ParserTraceRecord | null>(null);
   const syncInProgressRef = useRef(false);
   const lastAutoSaveSucceededRef = useRef(true);
   const activeOutboxRequestIdRef = useRef<string | null>(null);
   const expenseQaTextSentRef = useRef<string | null>(null);
-
 
   const removeQueuedText = (id: string | null) => {
     if (!id) return;
@@ -198,6 +251,16 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
   }, [initialText]);
 
   useEffect(() => {
+    if (!draftKey) return;
+    try {
+      if (text.trim()) window.sessionStorage.setItem(draftKey, text);
+      else window.sessionStorage.removeItem(draftKey);
+    } catch {
+      // Draft persistence is a convenience; storage denial must not block input.
+    }
+  }, [draftKey, text]);
+
+  useEffect(() => {
     const handleOnlineStatus = () => setIsOnline(navigator.onLine);
     window.addEventListener("online", handleOnlineStatus);
     window.addEventListener("offline", handleOnlineStatus);
@@ -215,69 +278,87 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
   } = useHaptics();
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const durationRef = useRef<number>(0);
+  const isCancelledRef = useRef<boolean>(false);
+  const activeAudioSessionIdRef = useRef<number>(0);
+  const lastAudioToggleRef = useRef<number>(0);
+  const isSubmittingMutationRef = useRef<boolean>(false);
 
   const utilsTrpc = trpc.useUtils();
   const learnMutation = trpc.ai.learnWord.useMutation();
 
-  const showNewContactToast = (c?: { name?: string; totalContacts?: number } | null) => {
+  const showNewContactToast = (
+    c?: { name?: string; totalContacts?: number } | null,
+  ) => {
     if (!c || !c.name) return;
     toast.success(
       <div className="flex flex-col gap-1 text-right">
-        <span className="font-bold text-sm text-emerald-400">✨ تم التعرف على شخص جديد!</span>
-        <span className="text-xs text-white/90">تم حفظ "{c.name}" في قائمة الأشخاص والعلاقات عشان ما نسألكش عليه تاني.</span>
+        <span className="font-bold text-sm text-emerald-400">
+          ✨ تم التعرف على شخص جديد!
+        </span>
+        <span className="text-xs text-white/90">
+          تم حفظ "{c.name}" في قائمة الأشخاص والعلاقات عشان ما نسألكش عليه تاني.
+        </span>
       </div>,
-      { duration: 6000 }
+      { duration: 6000 },
     );
   };
 
-  const answerClarificationMutation = trpc.expense.answerClarification.useMutation({
-    onSuccess: (data) => {
-      setIsSkipping(false);
-      hapticSuccess();
-      utilsTrpc.expense.getPendingClarifications.invalidate();
+  const answerClarificationMutation =
+    trpc.expense.answerClarification.useMutation({
+      onSuccess: (data) => {
+        setIsSkipping(false);
+        hapticSuccess();
+        utilsTrpc.expense.getPendingClarifications.invalidate();
 
-      if (data.needsClarification) {
-        const clarified = data as { clarificationQuestion?: string; clarificationId?: number; enrichedText?: string };
-        setClarificationQuestion(clarified.clarificationQuestion || "ممكن توضح أكتر؟");
-        setClarificationId(clarified.clarificationId ?? null);
-        if (clarified.enrichedText) {
-          setText(clarified.enrichedText);
-        }
-        setFlowStage("clarify");
-        setDecision("clarify" as any);
-        toast.info("تم حفظ التوضيح، يرجى إدخال التوضيح التالي.");
-      } else {
-        utilsTrpc.expense.list.invalidate();
-        utilsTrpc.expense.getMonthlyStats.invalidate();
-        utilsTrpc.expense.getMonthSummary.invalidate();
-        setParsedItems(null);
-        setDecision(null);
-        setClarificationQuestion(null);
-        setClarificationId(null);
-        setText("");
-        setInputSource("text");
-        setFlowStage("idle");
-        setShowSuccessAnim(true);
-        setTimeout(() => setShowSuccessAnim(false), 2000);
-        removeQueuedText(pendingOfflineTextId);
-        if ((data as any).newlyAddedContact) {
-          showNewContactToast((data as any).newlyAddedContact);
+        if (data.needsClarification) {
+          const clarified = data as {
+            clarificationQuestion?: string;
+            clarificationId?: number;
+            enrichedText?: string;
+          };
+          setClarificationQuestion(
+            clarified.clarificationQuestion || "ممكن توضح أكتر؟",
+          );
+          setClarificationId(clarified.clarificationId ?? null);
+          if (clarified.enrichedText) {
+            setText(clarified.enrichedText);
+          }
+          setFlowStage("clarify");
+          setDecision("clarify" as any);
+          toast.info("تم حفظ التوضيح، يرجى إدخال التوضيح التالي.");
         } else {
-          toast.success("تم حفظ التوضيح وتسجيل العملية.");
+          utilsTrpc.expense.list.invalidate();
+          utilsTrpc.expense.getMonthlyStats.invalidate();
+          utilsTrpc.expense.getMonthSummary.invalidate();
+          setParsedItems(null);
+          setDecision(null);
+          setClarificationQuestion(null);
+          setClarificationId(null);
+          setText("");
+          setInputSource("text");
+          setFlowStage("idle");
+          setShowSuccessAnim(true);
+          setTimeout(() => setShowSuccessAnim(false), 2000);
+          removeQueuedText(pendingOfflineTextId);
+          if ((data as any).newlyAddedContact) {
+            showNewContactToast((data as any).newlyAddedContact);
+          } else {
+            toast.success("تم حفظ التوضيح وتسجيل العملية.");
+          }
+          if (onSuccess) onSuccess();
         }
-        if (onSuccess) onSuccess();
-      }
-    },
-    onError: (err) => {
-      setIsSkipping(false);
-      hapticError();
-      toast.error(err.message || "تعذر حفظ التوضيح.");
-      setFlowStage("clarify");
-    },
-  });
+      },
+      onError: (err) => {
+        setIsSkipping(false);
+        hapticError();
+        toast.error(err.message || "تعذر حفظ التوضيح.");
+        setFlowStage("clarify");
+      },
+    });
 
   // Camera & Image processing states
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -357,7 +438,8 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
   // ─── Voice Parsing (Combined STT + Parse) ───
   const parseVoiceMutation = trpc.ai.parseVoiceExpense.useMutation({
     onSuccess: (data) => {
-      const traceLogId = (data as { classificationLogId?: number }).classificationLogId ?? null;
+      const traceLogId =
+        (data as { classificationLogId?: number }).classificationLogId ?? null;
       setClassificationLogId(traceLogId);
       setLatestParserTrace(asParserTrace((data as { trace?: unknown }).trace));
       setIsProcessingVoice(false);
@@ -369,7 +451,11 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
       setFlowStage("parsed");
       toast.success("تم فهم التسجيل!");
 
-      if (data.decision === "auto_save" && data.items && data.items.length > 0) {
+      if (
+        data.decision === "auto_save" &&
+        data.items &&
+        data.items.length > 0
+      ) {
         saveItems(data.items, true, data.text, traceLogId);
       } else if (data.decision === "review") {
         hapticSuccess();
@@ -377,7 +463,9 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
         setParsedItems(data.items || []);
       } else if (data.decision === "clarify") {
         mediumTap();
-        setClarificationQuestion(data.clarificationQuestion || "ممكن توضح أكتر؟");
+        setClarificationQuestion(
+          data.clarificationQuestion || "ممكن توضح أكتر؟",
+        );
         setClarificationId(data.clarificationId ?? null);
         setFlowStage("clarify");
         setParsedItems(data.items && data.items.length > 0 ? data.items : null);
@@ -407,7 +495,8 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
   // ─── Parsing Mutation ───
   const parseMutation = trpc.ai.parseExpense.useMutation({
     onSuccess: async (data) => {
-      const traceLogId = (data as { classificationLogId?: number }).classificationLogId ?? null;
+      const traceLogId =
+        (data as { classificationLogId?: number }).classificationLogId ?? null;
       setClassificationLogId(traceLogId);
       setLatestParserTrace(asParserTrace((data as { trace?: unknown }).trace));
       setIsProcessingVoice(false);
@@ -471,12 +560,16 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
   // ─── Dynamic Loading Messages ───
   useEffect(() => {
     let interval: any;
-    if (isProcessingVoice || parseVoiceMutation.isPending || parseMutation.isPending) {
+    if (
+      isProcessingVoice ||
+      parseVoiceMutation.isPending ||
+      parseMutation.isPending
+    ) {
       const messages = [
         "جاري استيعاب التفاصيل...",
         "بنستخرج الأرقام والمصروفات...",
         "بنظبط تصنيف الميزانية...",
-        "لحظات وبتكون جاهزة..."
+        "لحظات وبتكون جاهزة...",
       ];
       let i = 0;
       setLoadingMessage(messages[0]);
@@ -488,7 +581,11 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
       setLoadingMessage("المعالجة الذكية...");
     }
     return () => clearInterval(interval);
-  }, [isProcessingVoice, parseVoiceMutation.isPending, parseMutation.isPending]);
+  }, [
+    isProcessingVoice,
+    parseVoiceMutation.isPending,
+    parseMutation.isPending,
+  ]);
 
   // ─── Voice Limit Effect ───
   useEffect(() => {
@@ -575,15 +672,23 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
   const batchCreateMutation = trpc.expense.batchCreate.useMutation({
     onMutate: async () => {
       await utilsTrpc.expense.list.cancel();
-      const previousExpenses = utilsTrpc.expense.list.getData({ limit: 10, offset: 0 });
+      const previousExpenses = utilsTrpc.expense.list.getData({
+        limit: 10,
+        offset: 0,
+      });
       return { previousExpenses };
     },
     onError: (err, newExpenses, context) => {
       hapticError();
       if (context?.previousExpenses) {
-        utilsTrpc.expense.list.setData({ limit: 10, offset: 0 }, context.previousExpenses);
+        utilsTrpc.expense.list.setData(
+          { limit: 10, offset: 0 },
+          context.previousExpenses,
+        );
       }
-      toast.error(err.message || "تعذر حفظ العمليات. راجع البيانات وحاول مرة أخرى.");
+      toast.error(
+        err.message || "تعذر حفظ العمليات. راجع البيانات وحاول مرة أخرى.",
+      );
     },
     onSettled: () => {
       utilsTrpc.expense.list.invalidate();
@@ -599,8 +704,52 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
     },
   });
 
-  // ─── Recording Logic ───
+  // ─── Recording Logic & Audio State-Machine ───
+  const isDebounced = (cooldownMs = 400): boolean => {
+    const now = Date.now();
+    if (now - lastAudioToggleRef.current < cooldownMs) {
+      return true;
+    }
+    lastAudioToggleRef.current = now;
+    return false;
+  };
+
+  const cancelRecording = () => {
+    // Cancel is an immediate abort safety valve — NEVER debounce cancel
+    isCancelledRef.current = true;
+    activeAudioSessionIdRef.current += 1;
+
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch {}
+    }
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch {}
+      });
+      mediaStreamRef.current = null;
+    }
+    audioChunksRef.current = [];
+    durationRef.current = 0;
+    setRecordingDuration(0);
+    setIsRecording(false);
+    setIsProcessingVoice(false);
+    setFlowStage("idle");
+    toast.info("تم إلغاء التسجيل الصوتي.");
+  };
+
   const startRecording = async () => {
+    if (isDebounced()) return;
     if (!isOnline) {
       toast.error("التسجيل الصوتي يتطلب اتصالاً بالإنترنت.");
       return;
@@ -621,18 +770,46 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
       return;
     }
 
+    isCancelledRef.current = false;
+    const currentSessionId = ++activeAudioSessionIdRef.current;
+    setFlowStage("acquiring");
+
     try {
       setLatestParserTrace(null);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      let mimeType = "";
-      if (MediaRecorder.isTypeSupported("audio/webm")) {
-        mimeType = "audio/webm";
-      } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
-        mimeType = "audio/mp4";
-      } else if (MediaRecorder.isTypeSupported("audio/aac")) {
-        mimeType = "audio/aac";
+
+      // Check if user cancelled while permission prompt was pending
+      if (
+        isCancelledRef.current ||
+        currentSessionId !== activeAudioSessionIdRef.current
+      ) {
+        stream.getTracks().forEach((track) => {
+          try {
+            track.stop();
+          } catch {}
+        });
+        setFlowStage("idle");
+        return;
       }
 
+      mediaStreamRef.current = stream;
+
+      // Hardware lifecycle guard: handle unexpected track ended (e.g. headset unplugged, OS permission revoked)
+      const audioTrack = stream.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.addEventListener("ended", () => {
+          if (
+            mediaRecorderRef.current &&
+            mediaRecorderRef.current.state === "recording"
+          ) {
+            try {
+              mediaRecorderRef.current.stop();
+            } catch {}
+          }
+        });
+      }
+
+      const mimeType = probeAudioCodec();
       const options = mimeType ? { mimeType } : undefined;
       const mediaRecorder = new MediaRecorder(stream, options);
       const actualMimeType = mediaRecorder.mimeType || mimeType || "audio/webm";
@@ -640,25 +817,96 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: actualMimeType });
+        const streamToStop = mediaStreamRef.current || stream;
+        streamToStop.getTracks().forEach((track) => {
+          try {
+            track.stop();
+          } catch {}
+        });
+        mediaStreamRef.current = null;
+
+        if (
+          isCancelledRef.current ||
+          currentSessionId !== activeAudioSessionIdRef.current
+        ) {
+          setIsRecording(false);
+          setIsProcessingVoice(false);
+          setFlowStage("idle");
+          audioChunksRef.current = [];
+          return;
+        }
+
+        const totalBytes = audioChunksRef.current.reduce(
+          (acc, c) => acc + c.size,
+          0,
+        );
+        if (
+          audioChunksRef.current.length === 0 ||
+          totalBytes === 0 ||
+          durationRef.current === 0
+        ) {
+          setIsRecording(false);
+          setIsProcessingVoice(false);
+          setFlowStage("idle");
+          audioChunksRef.current = [];
+          toast.info("التسجيل الصوتي قصير جداً أو لم يتم التقاط صوت.");
+          return;
+        }
+
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: actualMimeType,
+        });
+        if (audioBlob.size === 0) {
+          setIsRecording(false);
+          setIsProcessingVoice(false);
+          setFlowStage("idle");
+          audioChunksRef.current = [];
+          toast.info("لم يتم تسجيل أي بيانات صوتية صالحة.");
+          return;
+        }
+
         const reader = new FileReader();
-        reader.readAsDataURL(audioBlob);
         reader.onloadend = () => {
-          const base64Audio = (reader.result as string).split(",")[1];
-          setIsProcessingVoice(true);
-          setFlowStage("processing");
-          setLatestParserTrace(null);
-          parseVoiceMutation.mutate({
-            audioBase64: base64Audio,
-            mimeType: actualMimeType,
-            durationSeconds: durationRef.current,
-          });
+          try {
+            const result = reader.result;
+            if (typeof result !== "string" || !result.includes(",")) {
+              throw new Error("Invalid audio data format");
+            }
+            const base64Audio = result.split(",")[1];
+            if (!base64Audio || base64Audio.trim().length === 0) {
+              throw new Error("Empty audio base64 payload");
+            }
+            setIsProcessingVoice(true);
+            setFlowStage("processing");
+            setLatestParserTrace(null);
+            parseVoiceMutation.mutate({
+              audioBase64: base64Audio,
+              mimeType: actualMimeType,
+              durationSeconds: Math.max(1, durationRef.current),
+            });
+          } catch (readErr) {
+            console.error("Audio FileReader error:", readErr);
+            setIsProcessingVoice(false);
+            setFlowStage("idle");
+            toast.error("فشل قراءة الملف الصوتي المسجل.");
+          }
         };
-        stream.getTracks().forEach((track) => track.stop());
+        reader.onerror = () => {
+          setIsProcessingVoice(false);
+          setFlowStage("idle");
+          toast.error("فشل تحويل البيانات الصوتية.");
+        };
+        reader.onabort = () => {
+          setIsProcessingVoice(false);
+          setFlowStage("idle");
+        };
+        reader.readAsDataURL(audioBlob);
       };
 
       mediaRecorder.start();
@@ -679,33 +927,84 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
         }
       }, 1000);
     } catch (err: unknown) {
+      if (
+        isCancelledRef.current ||
+        currentSessionId !== activeAudioSessionIdRef.current
+      ) {
+        return;
+      }
       const name =
         err && typeof err === "object" && "name" in err
           ? String((err as { name?: string }).name)
           : "";
-      if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+      const msg =
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message?: string }).message)
+          : "";
+      if (
+        name === "NotAllowedError" ||
+        name === "PermissionDeniedError" ||
+        msg.toLowerCase().includes("permission") ||
+        msg.toLowerCase().includes("not allowed")
+      ) {
         toast.error(
-          "لقد قمت برفض صلاحية الميكروفون. يرجى تفعيلها من إعدادات المتصفح.",
+          "تم رفض إذن الميكروفون. يرجى تفعيل الصلاحية من إعدادات المتصفح للتسجيل الصوتي.",
+          { duration: 6000 },
         );
+      } else if (
+        name === "NotFoundError" ||
+        msg.toLowerCase().includes("not found")
+      ) {
+        toast.error("لم يتم العثور على ميكروفون متصل بالجهاز.");
+      } else if (
+        name === "NotReadableError" ||
+        msg.toLowerCase().includes("in use")
+      ) {
+        toast.error("الميكروفون قيد الاستخدام في تطبيق آخر.");
       } else {
         toast.error(
           "مقدرناش نسجّل الصوت، جرّب تاني أو تحقق من إعدادات الميكروفون.",
         );
       }
+      setIsRecording(false);
+      setIsProcessingVoice(false);
+      setFlowStage("error");
+      setTimeout(() => setFlowStage("idle"), 100);
     }
   };
 
   const stopRecording = () => {
+    // Decoupled from debounce lockout: stopping an active recording must never be blocked
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
     setIsRecording(false);
 
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch {}
     }
   };
+
+  // Safely stop recording on visibility change / tab switch
+  useEffect(() => {
+    if (!isRecording) return;
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        toast.info("تم إيقاف التسجيل الصوتي لمغادرة الصفحة.");
+        stopRecording();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isRecording]);
 
   useEffect(() => {
     return () => {
@@ -714,7 +1013,17 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
         mediaRecorderRef.current &&
         mediaRecorderRef.current.state === "recording"
       ) {
-        mediaRecorderRef.current.stop();
+        try {
+          mediaRecorderRef.current.stop();
+        } catch {}
+      }
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => {
+          try {
+            track.stop();
+          } catch {}
+        });
+        mediaStreamRef.current = null;
       }
     };
   }, []);
@@ -734,6 +1043,7 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
     traceLogId: number | null = classificationLogId,
     clientRequestId: string | null = null,
   ): Promise<boolean> => {
+    if (isSubmittingMutationRef.current) return false;
     const effectiveClientRequestId = clientRequestId || pendingOfflineTextId;
     const normalizedItems = items
       .map((item) => ({
@@ -743,14 +1053,22 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
       }))
       .filter(
         (item) =>
-          Number.isFinite(item.amount) && item.amount > 0 && item.category,
+          Number.isFinite(item.amount) &&
+          !isNaN(item.amount) &&
+          item.amount > 0 &&
+          item.amount <= ExpenseInputLimits.amountMax &&
+          item.category &&
+          String(item.category).trim().length > 0,
       );
 
     if (normalizedItems.length === 0) {
-      toast.error("لا توجد عملية صالحة للحفظ.");
+      toast.error(
+        `لا توجد عملية صالحة للحفظ (المبلغ يجب أن يكون رقماً موجباً أكبر من 0 ولا يتجاوز ${ExpenseInputLimits.amountMax.toLocaleString()} ج.م).`,
+      );
       return false;
     }
 
+    isSubmittingMutationRef.current = true;
     try {
       if (normalizedItems.length > 1) {
         const payload = normalizedItems.map((item, index) => ({
@@ -806,6 +1124,8 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
       setFlowStage("review");
       toast.error("تعذر حفظ العملية. راجعها ثم أعد المحاولة.");
       return false;
+    } finally {
+      isSubmittingMutationRef.current = false;
     }
   };
 
@@ -814,6 +1134,23 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
     const newItems = [...parsedItems];
     newItems[index] = { ...newItems[index], ...updates };
     setParsedItems(newItems);
+  };
+
+  // Remove one transaction from the review without discarding the rest.
+  //
+  // The only way out of a wrong extraction used to be "تعديل النص" — retype the whole
+  // sentence. On a minute-long narrative holding a dozen transactions, one invented or
+  // double-counted row meant redoing all twelve, so the realistic choice was to save the
+  // wrong one and fix it later. That is how bad rows reach the wallet.
+  const handleRemoveParsedItem = (index: number) => {
+    if (!parsedItems) return;
+    const remaining = parsedItems.filter((_, i) => i !== index);
+    if (remaining.length === 0) {
+      setParsedItems(null);
+      setDecision(null);
+      return;
+    }
+    setParsedItems(remaining);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -842,14 +1179,16 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
       if (offline.length >= currentLimit) {
         toast.warning(
           `عفواً، لقد وصلت للحد الأقصى للمصاريف المحفوظة أوفلاين (${currentLimit} عمليات) لباقة ${
-            planQuery.data?.plan === "pro" || planQuery.data?.plan === "ultra" ? "PRO" : "FREE"
-          } الحالية.`
+            planQuery.data?.plan === "pro" || planQuery.data?.plan === "ultra"
+              ? "PRO"
+              : "FREE"
+          } الحالية.`,
         );
         return;
       }
 
       toast.info(
-        "تم حفظ العملية محلياً (أوفلاين) بأمان. سيتم تحليلها وتصنيفها تلقائياً فور عودة الإنترنت."
+        "تم حفظ العملية محلياً (أوفلاين) بأمان. سيتم تحليلها وتصنيفها تلقائياً فور عودة الإنترنت.",
       );
       offline.push({
         id: createOfflineItemId(),
@@ -867,7 +1206,11 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
     setFlowStage("processing");
     setInputSource("text");
     setLatestParserTrace(null);
-    parseMutation.mutate({ text, inputChannel: "text", businessMode: businessMode || false });
+    parseMutation.mutate({
+      text,
+      inputChannel: "text",
+      businessMode: businessMode || false,
+    });
   };
 
   // Sync offline data when coming back online or on mount
@@ -876,10 +1219,10 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
       if (syncInProgressRef.current) return;
 
       const offlineTexts = JSON.parse(
-        localStorage.getItem("smartspend_offline_texts") || "[]"
+        localStorage.getItem("smartspend_offline_texts") || "[]",
       );
       const offlineManual = JSON.parse(
-        localStorage.getItem("smartspend_offline_manual") || "[]"
+        localStorage.getItem("smartspend_offline_manual") || "[]",
       );
 
       const totalToSync = offlineTexts.length + offlineManual.length;
@@ -899,7 +1242,10 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
       while (offlineTexts.length > 0) {
         const item = offlineTexts[0];
         try {
-          toast.loading(`جاري تحليل عملية أوفلاين: "${item.text.slice(0, 20)}..."`, { id: "sync-toast" });
+          toast.loading(
+            `جاري تحليل عملية أوفلاين: "${item.text.slice(0, 20)}..."`,
+            { id: "sync-toast" },
+          );
 
           lastAutoSaveSucceededRef.current = true;
           activeOutboxRequestIdRef.current = item.id || createOfflineItemId();
@@ -941,14 +1287,19 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
 
           // Success: pop from queue and update storage
           offlineTexts.shift();
-          localStorage.setItem("smartspend_offline_texts", JSON.stringify(offlineTexts));
+          localStorage.setItem(
+            "smartspend_offline_texts",
+            JSON.stringify(offlineTexts),
+          );
           window.dispatchEvent(new Event("smartspend-offline-queue-changed"));
           setSyncRemaining(offlineTexts.length + offlineManual.length);
 
           // Wait 1.5 seconds throttle delay
           await new Promise((resolve) => setTimeout(resolve, 1500));
         } catch (err) {
-          toast.error("فشلت مزامنة العمليات المعلقة. سنحاول مجدداً لاحقاً.", { id: "sync-toast" });
+          toast.error("فشلت مزامنة العمليات المعلقة. سنحاول مجدداً لاحقاً.", {
+            id: "sync-toast",
+          });
           syncInProgressRef.current = false;
           setIsSyncing(false);
           return; // Halt queue processing
@@ -959,20 +1310,28 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
       while (offlineManual.length > 0) {
         const item = offlineManual[0];
         try {
-          toast.loading(`جاري حفظ المعاملة اليدوية: "${item.amount} ج.م - ${item.category}"`, { id: "sync-toast" });
+          toast.loading(
+            `جاري حفظ المعاملة اليدوية: "${item.amount} ج.م - ${item.category}"`,
+            { id: "sync-toast" },
+          );
 
           await createMutation.mutateAsync(item);
 
           // Success: pop from queue and update storage
           offlineManual.shift();
-          localStorage.setItem("smartspend_offline_manual", JSON.stringify(offlineManual));
+          localStorage.setItem(
+            "smartspend_offline_manual",
+            JSON.stringify(offlineManual),
+          );
           window.dispatchEvent(new Event("smartspend-offline-queue-changed"));
           setSyncRemaining(offlineManual.length);
 
           // Wait 1.5 seconds throttle delay
           await new Promise((resolve) => setTimeout(resolve, 1500));
         } catch (err) {
-          toast.error("فشلت مزامنة العمليات المعلقة. سنحاول مجدداً لاحقاً.", { id: "sync-toast" });
+          toast.error("فشلت مزامنة العمليات المعلقة. سنحاول مجدداً لاحقاً.", {
+            id: "sync-toast",
+          });
           syncInProgressRef.current = false;
           setIsSyncing(false);
           return; // Halt queue processing
@@ -1021,9 +1380,15 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
     if (!qaText) return;
 
     const prompt = qaText.slice(0, ExpenseInputLimits.rawTextMax);
-    const skipClarification = params.get("expense_qa_skip_clarification") === "1";
+    const skipClarification =
+      params.get("expense_qa_skip_clarification") === "1";
     const qaKey = `${skipClarification ? "skip" : "normal"}:${prompt}`;
-    if (expenseQaTextSentRef.current === qaKey || parseMutation.isPending || createMutation.isPending) return;
+    if (
+      expenseQaTextSentRef.current === qaKey ||
+      parseMutation.isPending ||
+      createMutation.isPending
+    )
+      return;
 
     expenseQaTextSentRef.current = qaKey;
     setText(prompt);
@@ -1113,23 +1478,34 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
   };
 
   return (
-    <Card className="border-0 shadow-xl relative overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+    <Card
+      className="border-0 shadow-xl relative overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm"
+      data-testid="smart-capture-surface"
+    >
       <div className="absolute top-0 end-0 w-32 h-32 bg-emerald-500/5 rounded-bl-full -z-10" />
 
       {/* ─── AI Header Badge (Static, Minimal, Non-Clickable) ─── */}
       <div className="px-4 sm:px-6 pt-4 sm:pt-5">
         <div className="flex items-center justify-between pb-1 select-none">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
+          <div
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-xs"
+            data-testid="smart-capture-badge"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
             <span>تسجيل ذكي</span>
           </div>
-          <span className="text-[11px] text-muted-foreground">صوت أو نص أو صورة</span>
+          <span className="text-[11px] text-muted-foreground">
+            صوت أو نص أو صورة
+          </span>
         </div>
       </div>
 
       <CardContent className="space-y-4 sm:space-y-5 p-4 sm:p-6 pt-2 sm:pt-3">
         {isSyncing && (
-          <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs flex items-center justify-between gap-3 animate-pulse" dir="rtl">
+          <div
+            className="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs flex items-center justify-between gap-3 animate-pulse"
+            dir="rtl"
+          >
             <span className="flex items-center gap-2 font-semibold">
               <Loader2 className="w-4 h-4 animate-spin text-indigo-500 shrink-0" />
               جاري تحليل ومزامنة المعاملات أوفلاين... (المتبقي: {syncRemaining})
@@ -1140,7 +1516,9 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
         {/* ─── Main Input Area (Thumb-Zone Optimized UI) ─── */}
         <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
           <div className="relative group">
-            <Label htmlFor="expense-input" className="sr-only">سجل مصاريفك أو دخلك</Label>
+            <Label htmlFor="expense-input" className="sr-only">
+              سجل مصاريفك أو دخلك
+            </Label>
             <textarea
               id="expense-input"
               value={text}
@@ -1173,11 +1551,21 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
             )}
 
             {localSuggestion && (
-              <div className="mt-2.5 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between gap-3 animate-in fade-in duration-300" dir="rtl">
+              <div
+                className="mt-2.5 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between gap-3 animate-in fade-in duration-300"
+                dir="rtl"
+              >
                 <div className="flex items-center gap-2 min-w-0">
                   <Sparkles className="w-4 h-4 text-emerald-500 shrink-0 animate-pulse" />
                   <span className="text-xs text-slate-700 dark:text-slate-300 font-semibold truncate">
-                    💡 تسجيل سريع: <strong className="text-emerald-600 dark:text-emerald-400 font-bold">{localSuggestion.amount} ج.م</strong> كـ <strong className="text-slate-900 dark:text-white font-bold">{localSuggestion.category}</strong>
+                    💡 تسجيل سريع:{" "}
+                    <strong className="text-emerald-600 dark:text-emerald-400 font-bold">
+                      {localSuggestion.amount} ج.م
+                    </strong>{" "}
+                    كـ{" "}
+                    <strong className="text-slate-900 dark:text-white font-bold">
+                      {localSuggestion.category}
+                    </strong>
                   </span>
                 </div>
                 <Button
@@ -1187,7 +1575,9 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
                     mediumTap();
                     if (!text.trim()) return;
                     if (!isOnline) {
-                      toast.info("احفظها من زر الإضافة العادي عشان تدخل في Queue الأوفلاين بأمان.");
+                      toast.info(
+                        "احفظها من زر الإضافة العادي عشان تدخل في Queue الأوفلاين بأمان.",
+                      );
                       return;
                     }
                     setIsProcessingVoice(true);
@@ -1236,7 +1626,9 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
                   type="button"
                   onClick={isRecording ? stopRecording : startRecording}
                   variant="outline"
-                  aria-label={isRecording ? "إيقاف التسجيل الصوتي" : "بدء التسجيل الصوتي"}
+                  aria-label={
+                    isRecording ? "إيقاف التسجيل الصوتي" : "بدء التسجيل الصوتي"
+                  }
                   className={cn(
                     "relative z-10 h-12 w-12 sm:h-14 sm:w-14 rounded-xl transition-all duration-300 flex items-center justify-center border-2 focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-95",
                     isRecording
@@ -1248,14 +1640,36 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
                   disabled={showSuccessAnim || !isOnline}
                 >
                   {isRecording ? (
-                    <Square className="w-4 h-4 text-rose-600 dark:text-rose-400 fill-rose-600 dark:fill-rose-400" aria-hidden="true" />
+                    <Square
+                      className="w-4 h-4 text-rose-600 dark:text-rose-400 fill-rose-600 dark:fill-rose-400"
+                      aria-hidden="true"
+                    />
                   ) : !isOnline ? (
-                    <Lock className="w-4 h-4 text-slate-400" aria-hidden="true" />
+                    <Lock
+                      className="w-4 h-4 text-slate-400"
+                      aria-hidden="true"
+                    />
                   ) : (
-                    <Mic className="w-4 h-4 text-slate-700 dark:text-slate-300" aria-hidden="true" />
+                    <Mic
+                      className="w-4 h-4 text-slate-700 dark:text-slate-300"
+                      aria-hidden="true"
+                    />
                   )}
                 </Button>
               </div>
+
+              {/* Cancel Recording Button when active */}
+              {isRecording && (
+                <Button
+                  type="button"
+                  onClick={cancelRecording}
+                  variant="outline"
+                  aria-label="إلغاء التسجيل الصوتي"
+                  className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl transition-all duration-300 flex items-center justify-center border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c0e12] hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-500 active:scale-95"
+                >
+                  <X className="w-4 h-4" aria-hidden="true" />
+                </Button>
+              )}
 
               {/* Camera Button - Sleek & Premium */}
               <Button
@@ -1278,11 +1692,17 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
                 )}
               >
                 {isCompressing || parseReceiptMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-slate-500" aria-hidden="true" />
+                  <Loader2
+                    className="w-4 h-4 animate-spin text-slate-500"
+                    aria-hidden="true"
+                  />
                 ) : !isOnline ? (
                   <Lock className="w-4 h-4 text-slate-400" aria-hidden="true" />
                 ) : (
-                  <Camera className="w-4 h-4 text-slate-700 dark:text-slate-300" aria-hidden="true" />
+                  <Camera
+                    className="w-4 h-4 text-slate-700 dark:text-slate-300"
+                    aria-hidden="true"
+                  />
                 )}
               </Button>
             </div>
@@ -1311,17 +1731,20 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-600"></span>
                   </span>
                   <span className="font-mono font-bold tracking-wider">
-                    {Math.floor(recordingDuration / 60)}:{String(recordingDuration % 60).padStart(2, "0")}
+                    {Math.floor(recordingDuration / 60)}:
+                    {String(recordingDuration % 60).padStart(2, "0")}
                   </span>
                   <span className="font-bold">إنهاء التسجيل</span>
                 </div>
               ) : isSubmitting ? (
                 <>
-                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" /> <span className="truncate">{loadingMessage}</span>
+                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />{" "}
+                  <span className="truncate">{loadingMessage}</span>
                 </>
               ) : !isOnline ? (
                 <>
-                  حفظ محلي (أوفلاين) <Save className="w-4 h-4 ms-1 opacity-70" />
+                  حفظ محلي (أوفلاين){" "}
+                  <Save className="w-4 h-4 ms-1 opacity-70" />
                 </>
               ) : (
                 <>
@@ -1339,22 +1762,22 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
           <div className="p-4 rounded-2xl bg-white dark:bg-[#0c0e12] border border-slate-200 dark:border-slate-800 space-y-4 animate-pulse relative overflow-hidden">
             <div className="absolute top-0 end-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl -me-10 -mt-10 pointer-events-none"></div>
             <div className="flex justify-between items-center mb-2">
-               <div className="h-6 w-1/3 bg-slate-200 dark:bg-slate-800 rounded"></div>
-               <div className="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+              <div className="h-6 w-1/3 bg-slate-200 dark:bg-slate-800 rounded"></div>
+              <div className="h-6 w-16 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
             </div>
             <div className="flex items-center gap-3">
-               <div className="h-12 w-12 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
-               <div className="space-y-2 flex-1">
-                 <div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                 <div className="h-3 w-1/2 bg-slate-200 dark:bg-slate-800 rounded"></div>
-               </div>
+              <div className="h-12 w-12 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+              <div className="space-y-2 flex-1">
+                <div className="h-4 w-3/4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                <div className="h-3 w-1/2 bg-slate-200 dark:bg-slate-800 rounded"></div>
+              </div>
             </div>
             <div className="flex items-center gap-3 mt-4">
-               <div className="h-12 w-12 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
-               <div className="space-y-2 flex-1">
-                 <div className="h-4 w-2/3 bg-slate-200 dark:bg-slate-800 rounded"></div>
-                 <div className="h-3 w-1/3 bg-slate-200 dark:bg-slate-800 rounded"></div>
-               </div>
+              <div className="h-12 w-12 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+              <div className="space-y-2 flex-1">
+                <div className="h-4 w-2/3 bg-slate-200 dark:bg-slate-800 rounded"></div>
+                <div className="h-3 w-1/3 bg-slate-200 dark:bg-slate-800 rounded"></div>
+              </div>
             </div>
           </div>
         )}
@@ -1400,8 +1823,8 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
                   variant="outline"
                   className="flex-1 h-12 border-rose-200 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-all text-base font-bold gap-2"
                   onClick={() => {
-                     setDecision("review");
-                     setFlowStage("review");
+                    setDecision("review");
+                    setFlowStage("review");
                   }}
                 >
                   <X className="w-5 h-5" /> لا، تعديل
@@ -1444,7 +1867,9 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
                     variant="outline"
                     className="border-slate-200 dark:border-slate-800 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all h-12 rounded-xl px-6 font-bold"
                     onClick={handleSkip}
-                    disabled={isSkipping || answerClarificationMutation.isPending}
+                    disabled={
+                      isSkipping || answerClarificationMutation.isPending
+                    }
                   >
                     {isSkipping || answerClarificationMutation.isPending ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -1459,24 +1884,24 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
             {clarificationQuestion?.includes("مين") &&
               !clarificationQuestion?.startsWith("هل تقصد") &&
               !isMultiPersonClarification && (
-              <div className="flex flex-wrap gap-2 mt-2 relative z-10">
-                {["أبويا", "أمي", "أخويا", "أختي", "صاحبي", "موظف عندي"].map(
-                  (rel) => (
-                    <Button
-                      key={rel}
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      className="text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border-0 h-8 rounded-lg"
-                      disabled={answerClarificationMutation.isPending}
-                      onClick={() => submitClarificationAnswer(rel)}
-                    >
-                      {rel}
-                    </Button>
-                  ),
-                )}
-              </div>
-            )}
+                <div className="flex flex-wrap gap-2 mt-2 relative z-10">
+                  {["أبويا", "أمي", "أخويا", "أختي", "صاحبي", "موظف عندي"].map(
+                    (rel) => (
+                      <Button
+                        key={rel}
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        className="text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border-0 h-8 rounded-lg"
+                        disabled={answerClarificationMutation.isPending}
+                        onClick={() => submitClarificationAnswer(rel)}
+                      >
+                        {rel}
+                      </Button>
+                    ),
+                  )}
+                </div>
+              )}
           </div>
         )}
 
@@ -1492,6 +1917,52 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
                 دقة {Math.round(parseMutation.data?.overallConfidence || 0)}%
               </Badge>
             </div>
+
+            {/*
+              The arithmetic, visible.
+
+              The user just said a set of numbers out loud. Until now the only way to
+              check the system heard them all was to add up the cards by eye — so the
+              realistic behaviour was to trust it, which is exactly what a review screen
+              exists to prevent. Totals are split by direction because a mixed narrative
+              ("قبضت ٥٠٠٠ وصرفت ٣٠٠") has no single meaningful sum.
+            */}
+            {(() => {
+              const totals = parsedItems.reduce(
+                (acc, it) => {
+                  const amount = Number(it.amount) || 0;
+                  if (it.type === "income") acc.income += amount;
+                  else if (it.type === "expense") acc.expense += amount;
+                  else acc.other += amount;
+                  return acc;
+                },
+                { income: 0, expense: 0, other: 0 },
+              );
+              const fmt = (n: number) => n.toLocaleString("ar-EG", { maximumFractionDigits: 2 });
+
+              return (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-muted/50 px-3 py-2 text-xs">
+                  <span className="font-medium opacity-70">
+                    {parsedItems.length} عملية
+                  </span>
+                  {totals.expense > 0 && (
+                    <span className="text-rose-600 dark:text-rose-400">
+                      مصروف {fmt(totals.expense)}
+                    </span>
+                  )}
+                  {totals.income > 0 && (
+                    <span className="text-emerald-600 dark:text-emerald-400">
+                      دخل {fmt(totals.income)}
+                    </span>
+                  )}
+                  {totals.other > 0 && (
+                    <span className="text-sky-600 dark:text-sky-400">
+                      تحويل/استثمار {fmt(totals.other)}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
 
             <div className="space-y-3">
               {parsedItems.map((item, idx) => (
@@ -1516,7 +1987,23 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
                         className="w-24 h-8 text-lg font-bold bg-white/50 dark:bg-black/20 border-0"
                       />
                       <span className="text-sm font-medium">جنيه</span>
+                      {/*
+                        `confidence` is now a calibrated probability rather than a rank,
+                        so it finally means something specific to show: below 70 this
+                        row is wrong roughly one time in three. Showing it on every card
+                        would be noise; showing it only where it matters directs the
+                        user's attention to the row most likely to need them.
+                      */}
+                      {Number(item.confidence) > 0 && Number(item.confidence) < 70 && (
+                        <Badge
+                          variant="outline"
+                          className="h-5 border-amber-500/50 px-1.5 text-[9px] text-amber-600 dark:text-amber-400"
+                        >
+                          راجعها كويس
+                        </Badge>
+                      )}
                     </div>
+                    <div className="flex items-center gap-1.5">
                     <Badge
                       className={cn(
                         "capitalize",
@@ -1537,6 +2024,15 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
                             ? "استثمار"
                             : "مصروف"}
                     </Badge>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveParsedItem(idx)}
+                      aria-label="استبعاد العملية دي"
+                      className="rounded-full p-1 opacity-50 transition hover:bg-rose-500/10 hover:text-rose-600 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
@@ -1577,11 +2073,13 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
                         }
                         className="w-full h-9 text-xs rounded-lg bg-white/50 dark:bg-black/20 border-0 px-2 outline-none focus:ring-1 ring-emerald-500"
                       >
-                        {getSubCategoryOptions(item.category).map((sub: string) => (
-                          <option key={sub} value={sub}>
-                            {sub}
-                          </option>
-                        ))}
+                        {getSubCategoryOptions(item.category).map(
+                          (sub: string) => (
+                            <option key={sub} value={sub}>
+                              {sub}
+                            </option>
+                          ),
+                        )}
                       </select>
                     </div>
                   </div>
@@ -1651,17 +2149,17 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
       </CardContent>
 
       {/* ─── Camera First-Time Tip Dialog ─── */}
-      <Dialog open={showCameraTip} onOpenChange={setShowCameraTip}>
-        <DialogContent
-          className="sm:max-w-md bg-white dark:bg-slate-900 border rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200"
+      <AdaptiveDialog open={showCameraTip} onOpenChange={setShowCameraTip}>
+        <AdaptiveDialogContent
+          className="sm:max-w-md bg-white dark:bg-slate-900 border rounded-2xl shadow-2xl p-6"
           dir="rtl"
         >
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2 border-b pb-2 text-foreground">
+          <AdaptiveDialogHeader>
+            <AdaptiveDialogTitle className="text-xl font-bold flex items-center gap-2 border-b pb-2 text-foreground">
               <Camera className="w-5 h-5 text-indigo-500 animate-pulse" />
               نصائح للتصوير الذكي 📸
-            </DialogTitle>
-          </DialogHeader>
+            </AdaptiveDialogTitle>
+          </AdaptiveDialogHeader>
           <div className="space-y-4 py-3 text-sm leading-relaxed text-end text-slate-600 dark:text-slate-300">
             <p className="font-medium text-slate-800 dark:text-slate-100">
               للحصول على تصنيف دقيق وقراءة صحيحة للفاتورة بالذكاء الاصطناعي،
@@ -1714,21 +2212,21 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
               إلغاء
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </AdaptiveDialogContent>
+      </AdaptiveDialog>
 
       {/* ─── Pro Upgrade Recommendation Dialog ─── */}
-      <Dialog open={showProUpgrade} onOpenChange={setShowProUpgrade}>
-        <DialogContent
-          className="sm:max-w-md bg-white dark:bg-slate-900 border rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200"
+      <AdaptiveDialog open={showProUpgrade} onOpenChange={setShowProUpgrade}>
+        <AdaptiveDialogContent
+          className="sm:max-w-md bg-white dark:bg-slate-900 border rounded-2xl shadow-2xl p-6"
           dir="rtl"
         >
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2 border-b pb-2 text-foreground">
+          <AdaptiveDialogHeader>
+            <AdaptiveDialogTitle className="text-xl font-bold flex items-center gap-2 border-b pb-2 text-foreground">
               <Sparkles className="w-5 h-5 text-amber-500 animate-pulse" />
               ميزة ذكية للمشتركين المميزين 💎
-            </DialogTitle>
-          </DialogHeader>
+            </AdaptiveDialogTitle>
+          </AdaptiveDialogHeader>
           <div className="space-y-4 py-3 text-sm leading-relaxed text-end text-slate-600 dark:text-slate-300">
             <p className="font-medium text-slate-800 dark:text-slate-100">
               خاصية قراءة الفواتير وتصوير الإيصالات متاحة حصرياً لمشتركي باقة
@@ -1758,37 +2256,87 @@ export function ExpenseForm({ onSuccess, initialText, businessMode, businessId }
               إلغاء
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </AdaptiveDialogContent>
+      </AdaptiveDialog>
     </Card>
   );
 }
 
-function ManualForm({ onSuccess, categories, createMutation, isOnline, userLimits, plan, businessId }: any) {
+function ManualForm({
+  onSuccess,
+  categories,
+  createMutation,
+  isOnline,
+  userLimits,
+  plan,
+  businessId,
+}: any) {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
   const [subCategory, setSubCategory] = useState("عام");
   const [description, setDescription] = useState("");
   const [type, setType] = useState("expense");
-  const submissionRef = useRef<{ fingerprint: string; id: string } | null>(null);
+  const submissionRef = useRef<{ fingerprint: string; id: string } | null>(
+    null,
+  );
+  const isSubmittingManualRef = useRef(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || !category) return;
+    if (isSubmittingManualRef.current || createMutation.isPending) return;
 
-    const fingerprint = [amount, type, category, subCategory, description, businessId ?? ""].join("|");
+    const trimmedAmount = amount.trim();
+    if (!trimmedAmount) {
+      toast.error("يرجى إدخال المبلغ.");
+      return;
+    }
+
+    const parsedAmount = parseFloat(trimmedAmount);
+    if (
+      isNaN(parsedAmount) ||
+      !Number.isFinite(parsedAmount) ||
+      parsedAmount <= 0 ||
+      parsedAmount > ExpenseInputLimits.amountMax
+    ) {
+      toast.error(
+        `المبلغ غير صالح — يجب أن يكون رقماً أكبر من 0 ولا يتجاوز ${ExpenseInputLimits.amountMax.toLocaleString()} ج.م.`,
+      );
+      return;
+    }
+
+    if (!category || !category.trim()) {
+      toast.error("يرجى اختيار الفئة الرئيسية.");
+      return;
+    }
+
+    if (description && description.length > ExpenseInputLimits.descriptionMax) {
+      toast.error(
+        `الوصف طويل جداً — الحد الأقصى ${ExpenseInputLimits.descriptionMax} حرف.`,
+      );
+      return;
+    }
+
+    isSubmittingManualRef.current = true;
+    const fingerprint = [
+      parsedAmount,
+      type,
+      category,
+      subCategory,
+      description,
+      businessId ?? "",
+    ].join("|");
     const clientRequestId =
       submissionRef.current?.fingerprint === fingerprint
         ? submissionRef.current.id
         : createOfflineItemId();
     submissionRef.current = { fingerprint, id: clientRequestId };
     const payload = {
-      amount: parseFloat(amount),
+      amount: parsedAmount,
       type,
       category,
       subCategory: subCategory || "عام",
-      description,
-      rawText: `${amount} جنيه - ${category}`,
+      description: description || undefined,
+      rawText: `${parsedAmount} جنيه - ${category}`,
       source: "manual",
       businessId,
       clientRequestId,
@@ -1804,12 +2352,15 @@ function ManualForm({ onSuccess, categories, createMutation, isOnline, userLimit
         toast.warning(
           `عفواً، لقد وصلت للحد الأقصى للمصاريف المحفوظة أوفلاين (${currentLimit} عمليات) لباقة ${
             plan === "pro" || plan === "ultra" ? "PRO" : "FREE"
-          } الحالية.`
+          } الحالية.`,
         );
+        isSubmittingManualRef.current = false;
         return;
       }
 
-      toast.info("تم حفظ العملية محلياً (أوفلاين) بأمان. سيتم مزامنتها لاحقاً.");
+      toast.info(
+        "تم حفظ العملية محلياً (أوفلاين) بأمان. سيتم مزامنتها لاحقاً.",
+      );
       offlineManual.push({
         ...payload,
         id: clientRequestId,
@@ -1825,12 +2376,14 @@ function ManualForm({ onSuccess, categories, createMutation, isOnline, userLimit
       setSubCategory("عام");
       setDescription("");
       submissionRef.current = null;
+      isSubmittingManualRef.current = false;
       return;
     }
 
     createMutation.mutate(payload, {
       onSuccess: (data: any) => {
         submissionRef.current = null;
+        isSubmittingManualRef.current = false;
         setAmount("");
         setCategory("");
         setSubCategory("عام");
@@ -1838,6 +2391,9 @@ function ManualForm({ onSuccess, categories, createMutation, isOnline, userLimit
         if (!data?.newlyAddedContact) {
           toast.success("تم التسجيل يدوياً!");
         }
+      },
+      onError: () => {
+        isSubmittingManualRef.current = false;
       },
     });
   };
@@ -1930,7 +2486,7 @@ function ManualForm({ onSuccess, categories, createMutation, isOnline, userLimit
         disabled={createMutation.isPending}
         className="w-full h-11 bg-slate-900 dark:bg-slate-100 dark:text-slate-900 rounded-xl font-bold"
       >
-        حفظ العملية
+        {createMutation.isPending ? "جاري الحفظ..." : "حفظ العملية"}
       </Button>
     </form>
   );
