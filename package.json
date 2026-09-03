@@ -20,6 +20,7 @@
     "qa:seed": "tsx api/qa/ai-center-qa-seed.ts",
     "qa:ai-center": "tsx api/qa/ai-center-qa-runner.ts",
     "bench:classify": "cross-env CLASSIFY_BENCH_REPORT=1 vitest run api/lib/classification-benchmark.test.ts",
+    "bench:classify:calibrate": "cross-env CLASSIFY_BENCH_CALIBRATE=1 vitest run api/lib/classification-benchmark.test.ts",
     "bench:classify:live": "tsx api/qa/classification-benchmark-runner.ts --mode=live",
     "bench:classify:freeze": "tsx api/qa/classification-baseline.ts --freeze",
     "bench:classify:compare": "tsx api/qa/classification-baseline.ts --compare",
@@ -32,7 +33,8 @@
     "backend:start": "NODE_ENV=production node dist/server/server.js",
     "frontend:dev": "vite --mode frontend",
     "frontend:build": "cross-env NODE_ENV=production vite build --mode frontend",
-    "cap:sync": "tsx scripts/sync-capacitor-assets.ts"
+    "cap:sync": "tsx scripts/sync-capacitor-assets.ts",
+    "assets:splash": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-pwa-splashes.ps1"
   },
   "dependencies": {
     "@capacitor/app": "^8.0.0",

@@ -47,8 +47,25 @@ export interface SegmentationDiagnosis {
   unexplainedSpurious: number;
 }
 
+/**
+ * Accuracy per resolver. This is the measurement the calibration table is built from —
+ * and the answer to a question the admin dashboard has never been able to answer,
+ * because AVG(confidence) GROUP BY parsedBy averages numbers from different generators.
+ */
+export interface ResolverAccuracy {
+  matchKind: string;
+  items: number;
+  correct: number;
+  accuracy: number;
+  meanRawStrength: number;
+  /** Gap between what the resolver claimed and what it delivered. */
+  overconfidence: number;
+}
+
 export interface SystemMetrics {
   cases: number;
+  /** Empty until the classifier records provenance on its items. */
+  byResolver: ResolverAccuracy[];
 
   // ── objective 2: never break ──
   crashes: number;
@@ -323,8 +340,38 @@ export function computeSystemMetrics(rows: SystemMetricInput[]): SystemMetrics {
   const mc = mean(confCorrect);
   const mw = mean(confWrong);
 
+  const resolverStats = new Map<string, { items: number; correct: number; strength: number[] }>();
+  for (const row of rows) {
+    for (const m of row.score.matches) {
+      if (m.actualIndex === null) continue;
+      const item = row.result.items[m.actualIndex];
+      const kind = item?.evidence?.matchKind;
+      if (!kind) continue;
+      const st = resolverStats.get(kind) ?? { items: 0, correct: 0, strength: [] };
+      st.items++;
+      if (m.amountOk && m.typeOk && m.categoryOk) st.correct++;
+      st.strength.push(Number(item.evidence?.rawStrength ?? 0));
+      resolverStats.set(kind, st);
+    }
+  }
+  const byResolver: ResolverAccuracy[] = [...resolverStats.entries()]
+    .map(([matchKind, st]) => {
+      const accuracy = st.items === 0 ? 0 : st.correct / st.items;
+      const meanRawStrength = mean(st.strength);
+      return {
+        matchKind,
+        items: st.items,
+        correct: st.correct,
+        accuracy,
+        meanRawStrength,
+        overconfidence: meanRawStrength / 100 - accuracy,
+      };
+    })
+    .sort((a, b) => b.overconfidence - a.overconfidence);
+
   return {
     cases: rows.length,
+    byResolver,
 
     crashes,
     crashRate: rows.length === 0 ? 0 : crashes / rows.length,

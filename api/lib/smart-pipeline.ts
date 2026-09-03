@@ -15,6 +15,7 @@ import { extractPeople, extractAmounts } from "./entity-extractor";
 import { decomposeHeuristic, ALL_FINANCIAL_VERBS, type DecompositionResult } from "./narrative-decomposer";
 import { verifyClassifiedItems } from "./post-classifier-verifier";
 import { checkAdmissibility } from "./admissibility-gate";
+import { applyCalibration } from "./confidence-calibrator";
 import { pickPersonCandidate, pickAllPersonCandidates, resolvePersonForTransaction, compactArabic } from "./person-resolver";
 import { muscleMemoryLookup } from "./muscle-memory";
 import { matchSegment } from "./embedding-engine";
@@ -1618,9 +1619,19 @@ export async function runSmartPipeline(
       }
   }
 
+  // Evidence becomes a probability here, and only here.
+  //
+  // Every resolver above wrote a number on its own scale — the merchant registry writes
+  // 100 and is right 80% of the time; a trigram writes 92 and is right 97%. Comparing
+  // those against one threshold is what produced a 90-100 band that was only 63%
+  // accurate. From this line on, `confidence` is the measured probability that the
+  // answer is correct, so a single threshold finally means something.
+  const calibration = applyCalibration(normalizedFinalItems);
+  const calibratedItems = calibration.items;
+
   const verification = verifierEnabled
     ? verifyClassifiedItems(
-        normalizedFinalItems,
+        calibratedItems,
         input.text,
         input.monthlyContext
           ? {
@@ -1630,7 +1641,7 @@ export async function runSmartPipeline(
           : undefined,
       )
     : {
-        items: normalizedFinalItems,
+        items: calibratedItems,
         flags: [],
         overallConfidence:
           normalizedFinalItems.length > 0

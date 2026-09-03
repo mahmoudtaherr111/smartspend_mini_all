@@ -34,6 +34,15 @@ export interface ScorableItem {
   type?: string;
   person_mentioned?: string | null;
   confidence?: number;
+  /** Provenance recorded by the classifier — see api/lib/classification-evidence.ts. */
+  evidence?: {
+    matchKind: string;
+    rawStrength: number;
+    agreement: number;
+    disagreement: number;
+    hasAmbiguityPenalty: boolean;
+    categoryIsFallback: boolean;
+  };
 }
 
 export interface ScorableResult {
