@@ -21,6 +21,7 @@ import Decimal from "decimal.js";
 import { ExpenseInputLimits } from "../contracts/constants";
 import { invalidateUserMemory } from "./lib/muscle-memory";
 import { invalidateUserClassificationCache } from "./lib/smart-pipeline";
+import { recordCorrection } from "./lib/correction-rules";
 import { deleteCacheByPattern, withCache } from "./lib/redis-client";
 import { checkUserBudgetExceeded } from "./notification-engine";
 import { invalidateFinanceUserCache } from "./services/finance-semantic-layer";
@@ -957,42 +958,24 @@ export const expenseRouter = router({
               .where(eq(classificationLogs.id, latestClassificationLog.id));
           }
 
-          // Instead of extracting single words, save the exact phrase normalized
-          let exactPhrase = rawText
-            .replace(/\d+(\.\d+)?/g, "") // Remove numbers
-            .replace(/[^\u0600-\u06FFa-zA-Z\s]/g, "") // Keep Arabic + English only
-            .replace(/\s+/g, " ") // Normalize spaces
-            .trim()
-            .toLowerCase();
-
-          // If the phrase is meaningful (at least 3 chars)
-          if (exactPhrase.length >= 3) {
-            // Trim to fit database column (max 255 chars for 'word' column if updated, safely keeping 100 or less)
-            exactPhrase = exactPhrase.substring(0, 100);
-
-            await db
-              .insert(userDictionaries)
-              .values({
-                userId,
-                userType,
-                word: exactPhrase,
-                category: newCategory,
-                subCategory: newSubCategory,
-              })
-              .onDuplicateKeyUpdate({
-                set: {
-                  category: newCategory,
-                  subCategory: newSubCategory,
-                },
-              })
-              .catch(() => {
-                /* ignore duplicate/constraint errors */
-              });
-
-            console.log(
-              `🧠 Auto-learned phrase for user ${userId}: ["${exactPhrase}"] → ${newCategory}/${newSubCategory}`,
-            );
-          }
+          // Store what the user told us as an explicit correction rule.
+          //
+          // This replaces a write into `userDictionaries.word` that could never be read:
+          // it stored a MULTI-WORD phrase ("دفعت على القهوة"), while `rule-engine.ts`
+          // looks the dictionary up one token at a time. Any key containing a space was
+          // guaranteed to miss, so every correction made here vanished on write — which,
+          // together with muscle memory skipping corrected rows outright, is why
+          // correcting a category never changed anything.
+          await recordCorrection({
+            userId,
+            userType,
+            originalText: rawText,
+            category: newCategory,
+            subCategory: newSubCategory,
+            type: input.type ?? originalExpense.type,
+            amount: Number(input.amount ?? originalExpense.amount) || 0,
+            sourceLogId: latestClassificationLog?.id ?? null,
+          });
         } catch (learnErr) {
           console.warn("Auto-learning failed (non-fatal):", learnErr);
         }

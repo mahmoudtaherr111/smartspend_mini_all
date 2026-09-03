@@ -13,6 +13,12 @@ import {
   type StructuredSchema,
 } from "./llm-router";
 import { buildProviderChain } from "./llm-provider-chain";
+import {
+  applyCorrectionRules,
+  loadCorrectionRules,
+  noteRuleApplied,
+  type CorrectionRule,
+} from "./correction-rules";
 import type { AiPlanName } from "./ai-provider-registry";
 import { mapModelName } from "./model-mapper";
 import type { ParsedTransaction } from "./rule-engine";
@@ -521,6 +527,9 @@ export async function runSmartPipeline(
   const startTime = Date.now();
   let totalTokens = 0;
   let cachedTokens = 0;
+  // What this user has already corrected. Loaded once per run; an empty list on any
+  // failure, so the learning layer can never be the reason a classification fails.
+  let correctionRules: CorrectionRule[] = [];
   // Which providers were tried and what each of them did. Previously unknowable: a
   // fallback that fired left no trace, so "why was this slow" had no answer.
   let llmAttempts: LlmAttempt[] = [];
@@ -900,6 +909,10 @@ export async function runSmartPipeline(
 
   const knownNames = knownPeople.map((p) => p.name).filter(Boolean);
 
+  // Load what this user has corrected before, after the admissibility gate and the
+  // cheap caches so nothing is queried for text that will never be classified.
+  correctionRules = await loadCorrectionRules(input.userId, input.userType);
+
   // 2. Try Rule Engine for simple cases (1 amount, short sentence)
   let ruleResult: Awaited<ReturnType<typeof runRuleEngine>> | null = null;
   let ruleSucceeded = false;
@@ -1014,7 +1027,17 @@ export async function runSmartPipeline(
       // to write to the database" — two different questions with different right answers.
       // A category the classifier could not name has to escalate however sure it feels;
       // an answer the user taught us must never escalate however unsure it feels.
-      const calibratedSegment = applyCalibration(segmentResolvedItems);
+      // What the user already told us wins over what the classifier just worked out —
+      // before calibration, so the correction is priced as user-taught rather than by
+      // the score of the guess it replaced.
+      const corrected = applyCorrectionRules(
+        segmentResolvedItems,
+        segmentTextWithVerb,
+        correctionRules,
+      );
+      corrected.appliedRuleIds.forEach(noteRuleApplied);
+
+      const calibratedSegment = applyCalibration(corrected.items);
       const segmentItems = calibratedSegment.items;
       const amountsFullyConsumed = segmentItems.length >= segmentAmountCount;
 
@@ -1147,7 +1170,15 @@ export async function runSmartPipeline(
         // Same separation as the segment path: escalation is a question about evidence
         // completeness, the decision is a question about probability, and the two are
         // no longer answered by one comparison.
-        const calibratedWhole = applyCalibration(segmentResolvedItems);
+        // Same precedence as the segment path: a stored correction outranks a fresh guess.
+        const correctedWhole = applyCorrectionRules(
+          segmentResolvedItems,
+          input.text,
+          correctionRules,
+        );
+        correctedWhole.appliedRuleIds.forEach(noteRuleApplied);
+
+        const calibratedWhole = applyCalibration(correctedWhole.items);
         const wholeItems = calibratedWhole.items;
 
         let lowestConfidence = 100;
