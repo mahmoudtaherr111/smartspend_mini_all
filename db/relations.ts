@@ -43,7 +43,10 @@ import {
   aiMemoryEmbeddings,
   aiActionMemory,
   aiPendingActions,
-  aiActionAuditLogs
+  aiActionAuditLogs,
+  aiProviders,
+  aiModels,
+  aiTokenLedgers
 } from "./schema";
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -461,5 +464,40 @@ export const apiKeyErrorsRelations = relations(apiKeyErrors, ({ one }) => ({
   oauthUser: one(users, {
     fields: [apiKeyErrors.userId],
     references: [users.id],
+  }),
+}));
+
+export const aiProvidersRelations = relations(aiProviders, ({ many }) => ({
+  models: many(aiModels),
+  ledgers: many(aiTokenLedgers),
+}));
+
+export const aiModelsRelations = relations(aiModels, ({ one }) => ({
+  provider: one(aiProviders, {
+    fields: [aiModels.providerId],
+    references: [aiProviders.id],
+  }),
+}));
+
+export const aiTokenLedgersRelations = relations(aiTokenLedgers, ({ one }) => ({
+  provider: one(aiProviders, {
+    fields: [aiTokenLedgers.providerId],
+    references: [aiProviders.id],
+  }),
+  localUser: one(localUsers, {
+    fields: [aiTokenLedgers.userId],
+    references: [localUsers.id],
+  }),
+  oauthUser: one(users, {
+    fields: [aiTokenLedgers.userId],
+    references: [users.id],
+  }),
+  conversation: one(chatConversations, {
+    fields: [aiTokenLedgers.conversationId],
+    references: [chatConversations.id],
+  }),
+  classificationLog: one(classificationLogs, {
+    fields: [aiTokenLedgers.classificationLogId],
+    references: [classificationLogs.id],
   }),
 }));

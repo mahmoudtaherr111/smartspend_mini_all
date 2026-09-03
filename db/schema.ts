@@ -459,7 +459,10 @@ export const proSubscriptions = mysqlTable(
       sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
     ),
   },
-  (t) => [index("pro_sub_user_idx").on(t.userId, t.userType)],
+  (t) => [
+    index("pro_sub_user_idx").on(t.userId, t.userType),
+    uniqueIndex("pro_sub_transaction_unique_idx").on(t.transactionId),
+  ],
 );
 
 // ─── SEO Pages ───
@@ -1077,5 +1080,102 @@ export const aiActionAuditLogs = mysqlTable(
     index("ai_action_audit_action_idx").on(t.actionId),
     index("ai_action_audit_user_idx").on(t.userId, t.userType),
     index("ai_action_audit_event_idx").on(t.event),
+  ],
+);
+
+// ─── Dynamic AI Providers ───
+export const aiProviders = mysqlTable(
+  "ai_providers",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    slug: varchar("slug", { length: 50 }).notNull().unique(),
+    displayName: varchar("display_name", { length: 100 }).notNull(),
+    protocol: varchar("protocol", { length: 30 }).notNull().default("openai"), // openai | gemini | anthropic
+    baseUrl: varchar("base_url", { length: 500 }).notNull(),
+    apiKeyEncrypted: text("api_key_encrypted").notNull(),
+    supportsModelDiscovery: boolean("supports_model_discovery").notNull().default(true),
+    isActive: boolean("is_active").notNull().default(true),
+    priority: int("priority").notNull().default(10), // Lower = higher priority in failover
+    healthStatus: varchar("health_status", { length: 20 }).notNull().default("unknown"),
+    lastHealthCheck: datetime("last_health_check"),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: datetime("updated_at").default(
+      sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`,
+    ),
+  },
+  (t) => [
+    index("ai_providers_active_idx").on(t.isActive, t.priority),
+    index("ai_providers_slug_idx").on(t.slug),
+  ],
+);
+
+// ─── Dynamic AI Models ───
+export const aiModels = mysqlTable(
+  "ai_models",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    providerId: int("provider_id").notNull(),
+    modelId: varchar("model_id", { length: 200 }).notNull(),
+    displayName: varchar("display_name", { length: 200 }).notNull(),
+    descriptionAr: text("description_ar"),
+    purposes: json("purposes").notNull(), // string[]: ["chat", "classification", "ocr", "voice_stt", "report", "goal"]
+    allowedTiers: json("allowed_tiers").notNull(), // string[]: ["free", "pro", "ultra"]
+    isDefaultForPurpose: boolean("is_default_for_purpose").notNull().default(false),
+    inputPricePer1M: decimal("input_price_per_1m", { precision: 10, scale: 6 }).notNull().default("0.140000"),
+    outputPricePer1M: decimal("output_price_per_1m", { precision: 10, scale: 6 }).notNull().default("0.560000"),
+    cachedPricePer1M: decimal("cached_price_per_1m", { precision: 10, scale: 6 }).notNull().default("0.014000"),
+    maxContextTokens: int("max_context_tokens").notNull().default(128000),
+    supportsVision: boolean("supports_vision").notNull().default(false),
+    supportsReasoning: boolean("supports_reasoning").notNull().default(false),
+    supportsFunctionCalling: boolean("supports_function_calling").notNull().default(false),
+    isActive: boolean("is_active").notNull().default(true),
+    sortOrder: int("sort_order").notNull().default(0),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("ai_models_provider_idx").on(t.providerId),
+    index("ai_models_active_idx").on(t.isActive),
+    uniqueIndex("ai_models_provider_model_idx").on(t.providerId, t.modelId),
+  ],
+);
+
+// ─── Immutable AI Token Ledgers ───
+export const aiTokenLedgers = mysqlTable(
+  "ai_token_ledgers",
+  {
+    id: int("id").primaryKey().autoincrement(),
+    traceId: varchar("trace_id", { length: 64 }).notNull().unique(),
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 20 }).notNull(),
+    billingPeriod: varchar("billing_period", { length: 7 }).notNull(), // "YYYY-MM"
+    channel: varchar("channel", { length: 30 }).notNull(),
+    providerId: int("provider_id"),
+    providerSlug: varchar("provider_slug", { length: 50 }).notNull(),
+    modelId: varchar("model_id", { length: 200 }).notNull(),
+    promptTokens: int("prompt_tokens").notNull().default(0),
+    completionTokens: int("completion_tokens").notNull().default(0),
+    cachedTokens: int("cached_tokens").notNull().default(0),
+    reasoningTokens: int("reasoning_tokens").notNull().default(0),
+    totalTokens: int("total_tokens").notNull().default(0),
+    systemPromptTokens: int("system_prompt_tokens").notNull().default(0),
+    memoryRagTokens: int("memory_rag_tokens").notNull().default(0),
+    historyTokens: int("history_tokens").notNull().default(0),
+    userInputTokens: int("user_input_tokens").notNull().default(0),
+    toolSchemaTokens: int("tool_schema_tokens").notNull().default(0),
+    costUsd: decimal("cost_usd", { precision: 12, scale: 8 }).notNull().default("0.00000000"),
+    costEgp: decimal("cost_egp", { precision: 12, scale: 6 }).notNull().default("0.000000"),
+    latencyMs: int("latency_ms").notNull().default(0),
+    httpStatus: int("http_status").notNull().default(200),
+    finishReason: varchar("finish_reason", { length: 30 }).default("stop"),
+    conversationId: int("conversation_id"),
+    classificationLogId: int("classification_log_id"),
+    metadata: json("metadata"),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    index("idx_ledger_user_period").on(t.userId, t.userType, t.billingPeriod),
+    index("idx_ledger_channel").on(t.channel, t.createdAt),
+    index("idx_ledger_provider").on(t.providerSlug, t.modelId, t.createdAt),
+    index("idx_ledger_created").on(t.createdAt),
   ],
 );
