@@ -14,6 +14,12 @@ import {
 } from "./llm-router";
 import { buildProviderChain } from "./llm-provider-chain";
 import {
+  buildAnchors,
+  describeUnconsumed,
+  reconcileAmounts,
+  toCents,
+} from "./amount-ledger";
+import {
   applyCorrectionRules,
   loadCorrectionRules,
   noteRuleApplied,
@@ -170,6 +176,14 @@ export interface PipelineLog {
     attempts: LlmAttempt[];
     schemaDegraded: boolean;
     failedOver: boolean;
+  };
+  /** Whether every amount the user said was accounted for, and which were not. */
+  amountLedger?: {
+    anchorCount: number;
+    balanced: boolean;
+    unconsumed: number[];
+    splitCount: number;
+    unanchoredItemCount: number;
   };
 }
 
@@ -534,6 +548,9 @@ export async function runSmartPipeline(
   // fallback that fired left no trace, so "why was this slow" had no answer.
   let llmAttempts: LlmAttempt[] = [];
   let servedByRoute: string | null = null;
+  // What happened to every amount the user said. Surfaced to the admin dashboard so
+  // "the total does not match what I said" becomes a measurable rate instead of a report.
+  let amountLedger: PipelineLog["amountLedger"];
   let schemaWasDegraded = false;
   const provider = input.provider || "gemini";
   const modelUsed = mapModelName(input.modelName);
@@ -1621,32 +1638,62 @@ export async function runSmartPipeline(
     }
   }
 
-  // --- DEEP FIX: Reconciliation Layer (Amount Matching) ---
+  // Reconciliation: account for every amount the user said.
+  //
+  // Rewritten onto an integer-cents ledger. The float comparison this replaces reported
+  // correct arithmetic as a loss (0.1 + 0.2 never equalled 0.3, and a three-way split of
+  // 400 never equalled 400), had no concept of a split so "٤٠٠ لمروان وعلاء" recorded as
+  // 200 + 200 looked exactly like a vanished 400, and asked about the FIRST missing
+  // amount before `break` — say three numbers, lose three, get asked about one.
   if (finalItems.length > 0 && decision === "unknown") {
-      const deterministicAmounts = extractAmounts(input.text).map(a => a.amount);
-      const aiAmounts = finalItems.map(i => i.amount);
-      
-      const missingAmounts = deterministicAmounts.filter(da => !aiAmounts.includes(da));
-      
-      if (missingAmounts.length > 0) {
-          console.warn(`[Reconciliation] AI/Rules missed amounts: ${missingAmounts.join(", ")}. Attempting recovery...`);
-          if (!ruleResult) {
-              ruleResult = await runRuleEngine(normalizedText, input.userDict, input.userProfileContext, undefined, fireworksKey);
-          }
-          
-          for (const missing of missingAmounts) {
-              const recoveredItem = ruleResult.items.find(ri => ri.amount === missing);
-              if (recoveredItem) {
-                  finalItems.push(recoveredItem);
-                  console.warn(`[Reconciliation] Successfully recovered amount ${missing} using deterministic rules!`);
-              } else if (!input.skipClarification) {
-                  decision = "clarify";
-                  clarificationQuestion = `لقد ذكرت مبلغ ${missing} ولكن السياق غير واضح لتصنيفه. في إيه صرفته؟`;
-                  overallConfidence = 0;
-                  break;
-              }
-          }
+    const anchors = buildAnchors(extractAmounts(input.text).map((a) => a.amount));
+    let ledger = reconcileAmounts(anchors, finalItems);
+
+    if (ledger.unconsumed.length > 0) {
+      console.warn(
+        `[Reconciliation] Unaccounted amounts: ${ledger.unconsumed
+          .map((a) => a.raw)
+          .join(", ")}. Attempting recovery...`,
+      );
+
+      if (!ruleResult) {
+        ruleResult = await runRuleEngine(
+          normalizedText,
+          input.userDict,
+          input.userProfileContext,
+          undefined,
+          fireworksKey,
+        );
       }
+
+      // Recover what the deterministic pass can account for, then re-reconcile rather
+      // than assuming each recovery consumed exactly one anchor.
+      for (const anchor of ledger.unconsumed) {
+        const recovered = ruleResult.items.find(
+          (ri) => toCents(ri.amount) === anchor.cents,
+        );
+        if (recovered) {
+          finalItems.push(recovered);
+          console.warn(`[Reconciliation] Recovered ${anchor.raw} from deterministic rules.`);
+        }
+      }
+      ledger = reconcileAmounts(anchors, finalItems);
+
+      // Whatever is still missing is asked about in ONE question naming all of it.
+      if (ledger.unconsumed.length > 0 && !input.skipClarification) {
+        decision = "clarify";
+        clarificationQuestion = describeUnconsumed(ledger.unconsumed);
+        overallConfidence = 0;
+      }
+    }
+
+    amountLedger = {
+      anchorCount: anchors.length,
+      balanced: ledger.balanced,
+      unconsumed: ledger.unconsumed.map((a) => a.raw),
+      splitCount: ledger.outcomes.filter((o) => o.kind === "split").length,
+      unanchoredItemCount: ledger.unanchoredItemIndexes.length,
+    };
   }
 
   // --- DEEP FIX: Deduplicate Items ---
@@ -1863,6 +1910,7 @@ export async function runSmartPipeline(
     finalConfidence: overallConfidence,
     finalDecision: decision,
     cachedTokens,
+    amountLedger,
     providerRoute: llmAttempts.length
       ? {
           servedBy: servedByRoute,
