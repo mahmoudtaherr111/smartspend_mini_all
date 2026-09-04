@@ -1,4 +1,8 @@
 import { normalizeArabic } from "./fuzzy-match";
+import {
+  STRONG_EXPENSE as STRONG_EXPENSE_VERBS,
+  STRONG_INCOME as STRONG_INCOME_VERBS,
+} from "./intent-detector";
 
 export interface CategoryInfo {
   category: string;
@@ -159,6 +163,23 @@ function buildDictionary(): Record<string, CategoryName> {
       "لحمه",
       "لحمة",
       "لحم",
+      // Slaughter vocabulary — عيد الأضحى and ordinary butcher spending. Without these
+      // "دبحت عجل بـ تسعتاشر ألف" had no noun at all, and the typo layer answered for it.
+      "عجل",
+      "عجول",
+      "خروف",
+      "خرفان",
+      "جزار",
+      "جزاره",
+      "جزارة",
+      "ذبيحه",
+      "ذبيحة",
+      "اضحيه",
+      "اضحية",
+      "أضحية",
+      "كندوز",
+      "ضاني",
+      "بتلو",
       "فراخ",
       "دواجن",
       "سمك",
@@ -187,6 +208,16 @@ function buildDictionary(): Record<string, CategoryName> {
       "جاتوه",
       "بسكوت",
       "بسكويت",
+      // Snacks the typo layer used to cover for by accident: "فشار" only ever reached
+      // أكل وشرب because it sat two edits from another word, and the same budget sent
+      // "سواق" there too. Real words belong in the lexicon, not in the typo budget.
+      "فشار",
+      "بوشار",
+      "بوب كورن",
+      "شيبسي",
+      "لب",
+      "سوداني",
+      "ترمس",
       "حلو",
       "ايسكريم",
       "ايس كريم",
@@ -279,6 +310,9 @@ function buildDictionary(): Record<string, CategoryName> {
       "ركنه",
       "ركنة",
       "سايس",
+      "سواق",
+      "سواقين",
+      "سائق",
     ],
     "مواصلات",
   );
@@ -1138,6 +1172,9 @@ function buildDictionary(): Record<string, CategoryName> {
       "رخصة", "رخصه", "جواز", "جواز سفر", "رقم قومي", "بطاقة رقم قومي",
       "مخالفة", "مخالفه", "مخالفة مرور", "توثيق", "توثيق عقد",
       "تجديد رخصة", "تجديد رخصه", "مرور", "traffic",
+      // Egyptian paperwork fees people actually name out loud
+      "دمغة", "دمغه", "دمغات", "شهر عقاري", "الشهر العقاري", "تصديق", "شهادة ميلاد",
+      "شهاده ميلاد", "صحيفة جنائية", "صحيفه جنائيه", "فيش وتشبيه",
     ],
     "خدمات حكومية",
   );
@@ -1167,6 +1204,40 @@ export const POISON_STOP_WORDS = new Set([
   "عشان", "كده", "كدا", "كذا", "يعني", "بسبب", "عشانها", "عشانه", "معاه", "معاها", "منه", "منها", "عليه", "عليها",
   "بتاعي", "بتاعتي", "خلاص", "بقى", "برضو", "طبعا", "اصلا", "خالص", "لحد", "لغاية", "كمان", "بردو", "عادي"
 ]);
+
+/**
+ * Words the lexicon already knows: currency units, grammar words, and the verbs intent
+ * detection keys on. Fuzzy matching is typo correction, and a correctly spelled word is
+ * not a typo of a different word — so these must never be "corrected" into a category.
+ *
+ * Without this guard the typo layer produced a category for tokens that carry none.
+ * `دفعت` — the commonest expense verb in the dialect — sits two edits from `بعت` (sold),
+ * so "دفعت 100 و100 و100 و100" came back as تحويل and the direction of the whole
+ * transaction flipped from expense to transfer. Same for `جنيه` → أكل وشرب and
+ * `حجزت` → تحويل. A verb governs direction; only a noun governs category.
+ */
+const KNOWN_LEXEMES: ReadonlySet<string> = (() => {
+  const known = new Set<string>();
+  const add = (word: string): void => {
+    const normalized = normalizeArabic(word).toLowerCase().trim();
+    // Multi-word entries ("شحنت رصيد") are phrases, not tokens — the fuzzy layer
+    // only ever looks at single tokens, so they cannot collide with it.
+    if (normalized.length >= 3 && !normalized.includes(" ")) known.add(normalized);
+  };
+  for (const word of POISON_STOP_WORDS) add(word);
+  for (const verb of STRONG_EXPENSE_VERBS) add(verb);
+  for (const verb of STRONG_INCOME_VERBS) add(verb);
+  return known;
+})();
+
+/**
+ * True when the token is a word we already recognise rather than a possible misspelling.
+ * Used to keep the fuzzy layer from rewriting known verbs and currency units.
+ */
+export function isKnownLexeme(word: string): boolean {
+  const normalized = normalizeArabic(String(word || "")).toLowerCase().trim();
+  return normalized.length > 0 && KNOWN_LEXEMES.has(normalized);
+}
 
 /**
  * Verifies if a proposed word or phrase is considered "poisonous" (too short, or composed solely of stop words).
