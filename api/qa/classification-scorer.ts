@@ -10,6 +10,7 @@
 import type {
   BenchmarkCase,
   BenchBucket,
+  BenchSplit,
   BenchTier,
   ExpectedItem,
   TxType,
@@ -91,6 +92,8 @@ export interface CaseScore {
   id: string;
   bucket: BenchBucket;
   tier: BenchTier;
+  /** Which pool the case came from. Dev scores are fitted; frozen scores are not. */
+  split: BenchSplit;
   pass: ScorePass;
   expectedCount: number;
   actualCount: number;
@@ -401,6 +404,7 @@ export function scoreCase(
     id: c.id,
     bucket: c.bucket,
     tier: c.tier,
+    split: c.split || "dev",
     pass,
     expectedCount,
     actualCount: actual.length,

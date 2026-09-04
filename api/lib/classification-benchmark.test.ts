@@ -176,8 +176,16 @@ describe("Egyptian dialect classification benchmark (offline, local pass)", () =
       invalidateUserClassificationCache(BENCH_USER_BASE + i, "local");
     }
 
-    const locked = scores.filter((s) => s.tier === "locked");
+    // The headline aggregate — and therefore the frozen baseline the ratchet compares
+    // against — is the DEV pool. The held-out pool is reported beside it, never mixed in:
+    // an aggregate that blends the cases we tuned on with the cases we did not is a
+    // number that answers neither question.
+    const locked = scores.filter((s) => s.tier === "locked" && s.split === "dev");
     const overall = aggregate(locked);
+    const bySplit = groupScoresBy(
+      scores.filter((s) => s.tier === "locked"),
+      (s) => s.split,
+    );
     const byBucket = groupScoresBy(scores, (s) => s.bucket);
     const byTier = groupScoresBy(scores, (s) => s.tier);
     const byTag = aggregateByTag(scores, [...ALL_BENCHMARK_CASES]);
@@ -205,6 +213,7 @@ describe("Egyptian dialect classification benchmark (offline, local pass)", () =
       overall,
       byBucket,
       byTier,
+      bySplit,
       byTag,
       cases: scores,
     });

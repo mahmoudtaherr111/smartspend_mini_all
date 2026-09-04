@@ -1506,6 +1506,7 @@ export async function runSmartPipeline(
           model: route.model,
           priority: route.priority,
           providerId: route.providerId,
+          suppressReasoning: route.suppressReasoning,
         })),
       });
 
@@ -1533,8 +1534,10 @@ export async function runSmartPipeline(
         temperature: 0.1,
         schema: CATEGORY_CLASSIFIER_SCHEMA as unknown as StructuredSchema,
         // Long enough for a full narrative, short enough that a hung provider still
-        // leaves room in the 8-second budget for the next one in the chain.
-        timeoutMs: 25_000,
+        // leaves room in the 8-second budget for the next one in the chain. Settable so a
+        // benchmark can measure a slow endpoint's ACCURACY without that endpoint's speed
+        // silently becoming the result — production keeps the 25 seconds.
+        timeoutMs: settingNumber(input.pipelineSettings || {}, "llm_timeout_ms", 25_000),
       });
 
       totalTokens += llm.totalTokens;

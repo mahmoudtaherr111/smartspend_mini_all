@@ -96,7 +96,11 @@ export function loadLatestRun(mode = "offline"): BenchmarkRun {
 }
 
 export function toBaseline(run: BenchmarkRun): Baseline {
-  const locked = run.cases.filter((c) => c.tier === "locked");
+  // The ratchet watches the DEV pool only. The frozen pool is measured, never tuned
+  // against, so folding it into the same aggregate would turn "we added held-out cases"
+  // into "we regressed" — and, worse, create a standing incentive to edit held-out cases
+  // until the ratchet goes green, which is precisely what holding them out prevents.
+  const locked = run.cases.filter((c) => c.tier === "locked" && (c.split || "dev") === "dev");
   return {
     gitSha: run.gitSha,
     pipelineVersion: run.pipelineVersion,
