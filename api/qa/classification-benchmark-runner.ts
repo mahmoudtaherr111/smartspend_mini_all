@@ -94,6 +94,8 @@ interface Options {
   provider: string;
   bucket?: string;
   model?: string;
+  /** Per-request deadline override, for measuring a slow endpoint's accuracy. */
+  timeoutMs: number;
 }
 
 function parseArgs(argv: string[]): Options {
@@ -111,6 +113,10 @@ function parseArgs(argv: string[]): Options {
     provider: get("provider") || "gemini",
     bucket: get("bucket"),
     model: get("model"),
+    // A slow endpoint would otherwise report as an accuracy collapse: every case times
+    // out and scores zero. Raising this measures what the MODEL knows; the latency it
+    // needed is reported separately, and production keeps its own 25-second deadline.
+    timeoutMs: Number(get("timeout-ms") || 0),
   };
 }
 
@@ -168,14 +174,18 @@ function inputFor(
     userPlan: opts.plan,
     userDict: [],
     provider: opts.provider,
-    apiKey,
+    // Each provider gets ITS OWN key. This slot used to receive whichever key the
+    // chosen provider needed, so `--provider=nvidia` handed the NVIDIA key to Gemini:
+    // every fallback attempt in the chain then failed on a bogus key, and a run meant to
+    // measure one provider quietly measured a broken failover instead.
+    apiKey: opts.provider === "gemini" ? apiKey : process.env.GEMINI_API_KEY || "",
     apiKey2: process.env.GEMINI_API_KEY_2 || "",
     groqApiKey: process.env.GROQ_API_KEY || "",
     fireworksApiKey: process.env.FIREWORKS_API_KEY || "",
     nvidiaApiKey: process.env.NVIDIA_API_KEY || "",
     modelName: model,
     maxTokens: 1024,
-    pipelineSettings: {},
+    pipelineSettings: opts.timeoutMs > 0 ? { llm_timeout_ms: String(opts.timeoutMs) } : {},
     userProfileContext: { knownPeople: c.knownPeople || [] },
   } as PipelineInput;
 }
@@ -294,7 +304,9 @@ async function main(): Promise<void> {
 
   console.log("\n");
 
-  const locked = scores.filter((sc) => sc.tier === "locked");
+  // Dev only, for the same reason the offline suite does it: the ratchet compares
+  // against a baseline frozen on these cases, and the held-out pool is a separate number.
+  const locked = scores.filter((sc) => sc.tier === "locked" && sc.split === "dev");
   const overall = aggregate(locked);
   const system = computeSystemMetrics(systemRows);
 
@@ -337,6 +349,7 @@ async function main(): Promise<void> {
     overall,
     byBucket: groupScoresBy(scores, (sc) => sc.bucket),
     byTier: groupScoresBy(scores, (sc) => sc.tier),
+    bySplit: groupScoresBy(scores.filter((sc) => sc.tier === "locked"), (sc) => sc.split),
     byTag: aggregateByTag(scores, cases),
     cases: scores,
     system,

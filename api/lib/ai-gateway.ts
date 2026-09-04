@@ -323,6 +323,8 @@ export interface AdminRoute {
   model: string;
   priority: number;
   providerId: number;
+  /** From `ai_models.supports_reasoning`: ask the provider to skip visible thinking. */
+  suppressReasoning: boolean;
 }
 
 export async function resolveAdminRoutes(
@@ -341,6 +343,7 @@ export async function resolveAdminRoutes(
     model: entry.model.modelId,
     priority,
     providerId: entry.provider.id,
+    suppressReasoning: entry.model.supportsReasoning,
   });
 
   const seen = new Set<string>();

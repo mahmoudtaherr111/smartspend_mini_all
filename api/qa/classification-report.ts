@@ -30,6 +30,8 @@ export interface BenchmarkRun {
   overall: AggregateScore;
   byBucket: Partial<Record<BenchBucket, AggregateScore>>;
   byTier: Partial<Record<BenchTier, AggregateScore>>;
+  /** dev is fitted, frozen is held out — reported apart so the two are never confused. */
+  bySplit?: Record<string, AggregateScore>;
   byTag: Record<string, AggregateScore>;
   cases: CaseScore[];
   system?: SystemMetrics;
@@ -49,6 +51,7 @@ export interface ReportInput {
   overall: AggregateScore;
   byBucket: Partial<Record<BenchBucket, AggregateScore>>;
   byTier: Partial<Record<BenchTier, AggregateScore>>;
+  bySplit?: Record<string, AggregateScore>;
   byTag: Record<string, AggregateScore>;
   cases: CaseScore[];
   system?: SystemMetrics;
@@ -317,6 +320,13 @@ export function buildMarkdown(run: BenchmarkRun): string {
   headline(doc, run.overall);
   slices(doc, "حسب المجموعة", run.byBucket as Record<string, AggregateScore>);
   slices(doc, "حسب الطبقة", run.byTier as Record<string, AggregateScore>);
+  if (run.bySplit && Object.keys(run.bySplit).length > 1) {
+    doc.quote(
+      "**dev** = حالات كانت مفتوحة أثناء الإصلاح، فالرقم عليها مُلائَم (fitted). " +
+        "**frozen** = محجوزة، اتكتبت من الـbrief وما اتفتحتش أثناء الضبط — دي الرقم الصادق.",
+    );
+    slices(doc, "حسب المجموعة (dev مقابل frozen)", run.bySplit);
+  }
 
   doc.heading(2, "حسب الظاهرة اللغوية");
   doc.table(
@@ -359,6 +369,7 @@ export async function writeBenchmarkReport(
     overall: input.overall,
     byBucket: input.byBucket,
     byTier: input.byTier,
+    bySplit: input.bySplit,
     byTag: input.byTag,
     cases: input.cases,
     system: input.system,

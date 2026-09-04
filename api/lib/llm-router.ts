@@ -38,6 +38,14 @@ export interface LlmRoute {
   priority: number;
   /** `ai_providers.id`, when the route came from the database. */
   providerId?: number;
+  /**
+   * Ask the provider to skip visible reasoning. Set for models the admin marked as
+   * reasoning-capable: they answer into `reasoning_content` and leave `content` null,
+   * which reads downstream as a provider that returned nothing.
+   */
+  suppressReasoning?: boolean;
+  /** Per-route deadline. Some hosted endpoints are an order of magnitude slower. */
+  timeoutMs?: number;
 }
 
 /**
@@ -297,8 +305,17 @@ async function callOpenAICompatible(
     body.response_format = { type: "json_object" };
   }
 
+  // Reasoning models answer into `reasoning_content` and leave `content` null, so a
+  // classification request comes back empty however well the model understood it —
+  // DeepSeek V4 Flash on NVIDIA spent its entire output budget thinking out loud and
+  // returned nothing. Asking for the thinking to be off is ignored by providers that
+  // do not implement it, so it is safe to send everywhere.
+  if (route.suppressReasoning) {
+    body.chat_template_kwargs = { thinking: false };
+  }
+
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), req.timeoutMs ?? 30_000);
+  const timer = setTimeout(() => controller.abort(), route.timeoutMs ?? req.timeoutMs ?? 30_000);
 
   let res: Response;
   try {
@@ -377,7 +394,7 @@ async function callGemini(
   try {
     result = await withTimeout(
       model.generateContent(req.userPrompt),
-      req.timeoutMs ?? 30_000,
+      route.timeoutMs ?? req.timeoutMs ?? 30_000,
       route.slug,
     );
   } catch (err) {

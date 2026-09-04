@@ -47,6 +47,19 @@ export interface ChainKeys {
   openrouter?: string;
 }
 
+/**
+ * Models that think out loud before answering.
+ *
+ * They return the answer in `reasoning_content` and leave `content` null, so a request
+ * that the model understood perfectly reads downstream as a provider that returned
+ * nothing — which is exactly what DeepSeek V4 Flash did on every case of a benchmark
+ * run. The router asks these to skip the visible reasoning; providers that do not
+ * implement the flag ignore it.
+ */
+export function looksLikeReasoningModel(modelId: string): boolean {
+  return /deepseek-(?:v4|r1)|(?:^|\/)o[13](?:-|$)|reasoner|thinking|qwq/i.test(modelId);
+}
+
 export interface ChainRequest {
   /** The provider the caller picked; it leads the chain. */
   preferred: string;
@@ -175,6 +188,14 @@ export function buildProviderChain(req: ChainRequest): LlmRoute[] {
       model: "",
       priority: rank++,
     });
+  }
+
+  // A reasoning model answers into a field the OpenAI shape does not have, so mark
+  // every route that looks like one and let the router ask for the thinking to be off.
+  for (const route of routes) {
+    if (route.suppressReasoning === undefined && looksLikeReasoningModel(route.model)) {
+      route.suppressReasoning = true;
+    }
   }
 
   // Sorted before returning, not just relied on downstream: a function that promises

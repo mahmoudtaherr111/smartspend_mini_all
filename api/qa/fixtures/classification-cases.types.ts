@@ -35,6 +35,20 @@ export type BenchBucket =
  */
 export type BenchTier = "locked" | "aspirational" | "legacy";
 
+/**
+ * Which pool a case belongs to. Development happened against `dev`, so a number measured
+ * there says how well the system fits the cases it was tuned on — which is not the same
+ * question as how it behaves on speech it has never seen.
+ *
+ * dev        → written or inspected while fixing things. Every score here is fitted.
+ * frozen     → held out. Written from the product brief, never opened while tuning, and
+ *              measured once. This is the honest number.
+ * robustness → generated systematically (number forms, spelling noise, Franco,
+ *              punctuation) from labelled seeds, so the label is derived rather than
+ *              hand-written. Measures surface variation, not semantics.
+ */
+export type BenchSplit = "dev" | "frozen" | "robustness";
+
 export interface ExpectedItem {
   /** EXACT EGP amount. Matched with |actual - expected| <= 0.005. */
   amount: number;
@@ -68,6 +82,8 @@ export interface BenchmarkCase {
   id: string;
   bucket: BenchBucket;
   tier: BenchTier;
+  /** Defaults to "dev" — anything without an explicit split was tuned against. */
+  split?: BenchSplit;
   /** The raw utterance exactly as STT or the keyboard would deliver it. */
   text: string;
   /** In narrative order. `[]` means the pipeline MUST return zero items. */
