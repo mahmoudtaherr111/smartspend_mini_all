@@ -14,6 +14,16 @@ import {
 } from "./llm-router";
 import { buildProviderChain } from "./llm-provider-chain";
 import {
+  CATEGORY_CLASSIFIER_SCHEMA,
+  validateClassifierReply,
+} from "./classifier-contract";
+import {
+  CLASSIFICATION_SYSTEM_PROMPT,
+  buildClassificationUserPrompt,
+  type ClauseForModel,
+} from "./classification-prompt";
+import { mergeCategoryDecisions } from "./classification-merge";
+import {
   buildAnchors,
   describeUnconsumed,
   reconcileAmounts,
@@ -1009,6 +1019,19 @@ export async function runSmartPipeline(
    */
   const orderedLocalItems: ParsedTransaction[] = [];
   const failedSegments: typeof decomposition.segments = [];
+  /**
+   * Failed segments paired with whatever the local pass did manage to work out.
+   *
+   * The model is asked only for the category, so the amount, direction and person that
+   * the local pass already resolved have to survive the round trip. Keeping them
+   * alongside the clause is what makes that possible — the previous flow rejoined the
+   * segments into a string and rebuilt every item from the model's reply, discarding
+   * work that measured more accurate than the reply itself.
+   */
+  const escalationClauses: Array<{
+    segment: (typeof decomposition.segments)[number];
+    localItems: ParsedTransaction[];
+  }> = [];
 
   // Fast path for long/multi-transaction narratives: classify each segment locally.
   if (decomposition.segments.length > 1) {
@@ -1032,6 +1055,7 @@ export async function runSmartPipeline(
       );
       if (segmentRule.items.length === 0) {
         failedSegments.push(segment);
+        escalationClauses.push({ segment, localItems: [] });
         continue;
       }
 
@@ -1119,6 +1143,7 @@ export async function runSmartPipeline(
       if (escalations.some((e) => e.escalate) && !anyNeedsClarification) {
         failedSegments.push(segment);
         escalatedSegmentItems.push(...segmentItems);
+        escalationClauses.push({ segment, localItems: segmentItems });
         orderedLocalItems.push(...segmentItems);
         continue;
       }
@@ -1388,74 +1413,27 @@ export async function runSmartPipeline(
       console.warn("RAG DB Fetch Failed:", e);
     }
 
-    const filteredDecomp = failedSegments.length > 0
-      ? {
-          segments: failedSegments.map((s, idx) => ({ ...s, segmentIndex: idx })),
-          method: decomposition.method,
-          isComplex: failedSegments.length > 1,
-        }
-      : decomposition;
-
-    const numAmountsToClassify = failedSegments.length > 0 ? countAmounts(textToClassify) : numAmounts;
-    const useSimpleSchema = numAmountsToClassify <= 1 && !filteredDecomp.isComplex;
-    const responseSchema = useSimpleSchema ? SIMPLE_CLASSIFIER_SCHEMA : SMART_CLASSIFIER_SCHEMA;
-
-    const classifierUserPrompt = buildGlobalVerifierPrompt(
-      textToClassify,
-      filteredDecomp,
-    );
-
-    // Prompt shape follows whoever actually serves the request, not whoever we hoped
-    // would. Built lazily so the fallback's prompt costs nothing on the happy path.
-    const promptCache = new Map<string, { systemPrompt: string; userPrompt: string }>();
-    const peopleForPrompt = knownPeople.map((p) => ({
-      name: p.name,
-      relationship: p.relationship || "شخص معروف",
-      category: p.category || "تحويل",
-      subCategory: p.subCategory || "تحويلات شخصية",
-    }));
-    const businessForPrompt = input.businessCategories?.map((c) => ({
-      nameAr: c.nameAr,
-      type: c.type,
-      keywords: c.keywords || [],
-    }));
-
-    const promptFor = (route: LlmRoute) => {
-      const shape = route.slug === "fireworks" ? "fireworks" : "standard";
-      const cached = promptCache.get(shape);
-      if (cached) return cached;
-
-      let built: { systemPrompt: string; userPrompt: string };
-      if (shape === "fireworks") {
-        const fw = buildFireworksPrompts(
-          textToClassify,
-          peopleForPrompt,
-          useSimpleSchema,
-          userHistoryContext,
-          userHistoryCategories,
-          numAmountsToClassify,
-          classifierUserPrompt,
-          businessForPrompt,
-        );
-        built = { systemPrompt: fw.systemPrompt, userPrompt: fw.userPrompt };
-      } else {
-        built = {
-          systemPrompt: buildSmartSystemPrompt(
-            textToClassify,
-            peopleForPrompt,
-            undefined,
-            useSimpleSchema,
-            userHistoryContext,
-            userHistoryCategories,
-            numAmountsToClassify,
-            businessForPrompt,
-          ),
-          userPrompt: classifierUserPrompt,
-        };
-      }
-      promptCache.set(shape, built);
-      return built;
-    };
+    // Build the clause list the model will answer against.
+    //
+    // Amount comes from the SHARED extractor, never from `segment.amount`: the
+    // decomposer fills that with its own `/(\d+)/`, which is ASCII-only and takes the
+    // first match, so it is null for ٥٠٠, null for خمسميت and 5 for "الساعة 5 دفعت 200".
+    // Telling the model a wrong amount as a settled fact would be worse than not
+    // telling it one.
+    const clauses: ClauseForModel[] = escalationClauses.map((entry, i) => {
+      const local = entry.localItems[0];
+      const segAmounts = extractAmounts(entry.segment.text).map((a) => a.amount);
+      return {
+        index: i + 1,
+        text: entry.segment.text,
+        amount: local?.amount ?? segAmounts[0] ?? null,
+        direction: (local?.type ||
+          entry.segment.direction ||
+          "expense") as ClauseForModel["direction"],
+        localGuess:
+          local && local.category !== "متنوعات" ? local.category : undefined,
+      };
+    });
 
     let classItems: any[] = [];
     try {
@@ -1481,12 +1459,28 @@ export async function runSmartPipeline(
       });
 
       const llm = await executeLlmChain(chain, {
-        systemPrompt: "",
-        userPrompt: "",
-        promptFor,
-        maxOutputTokens: input.maxTokens || 4096,
+        // Static, so a provider that caches prompt prefixes caches all of it. The
+        // prompt this replaces embedded a taxonomy computed from the user's own
+        // sentence, so it changed on every request and nothing could be cached.
+        systemPrompt: CLASSIFICATION_SYSTEM_PROMPT,
+        userPrompt: buildClassificationUserPrompt({
+          clauses,
+          knownPeople: knownPeople.map((p) => ({
+            name: p.name,
+            relationship: p.relationship,
+          })),
+          frequentCategories: userHistoryCategories.map((c) => c.category),
+          businessCategories: input.businessCategories?.map((c) => ({
+            nameAr: c.nameAr,
+            type: c.type,
+          })),
+        }),
+        // One category per clause is a handful of tokens, not the 1024 the old contract
+        // needed for reasoning, decomposed_sentences, amounts and self-assessed
+        // confidence — none of which we keep.
+        maxOutputTokens: Math.min(input.maxTokens || 512, 60 + clauses.length * 40),
         temperature: 0.1,
-        schema: responseSchema as unknown as StructuredSchema,
+        schema: CATEGORY_CLASSIFIER_SCHEMA as unknown as StructuredSchema,
         // Long enough for a full narrative, short enough that a hung provider still
         // leaves room in the 8-second budget for the next one in the chain.
         timeoutMs: 25_000,
@@ -1507,7 +1501,18 @@ export async function runSmartPipeline(
         );
       }
 
-      classItems = safeExtractItems(robustJsonParse(llm.text));
+      // Validate before trusting. Only Gemini enforces the enum; NVIDIA strips
+      // response_format on a 400 and answers anyway, so structure is checked, never
+      // assumed — and `degradedSchema` says when it was not even requested.
+      const reply = validateClassifierReply(robustJsonParse(llm.text), clauses.length);
+      if (reply.problems.length > 0) {
+        console.warn(`[Smart Pipeline] classifier reply: ${reply.problems.join("; ")}`);
+      }
+
+      // Merge the ONE thing the model was asked for back onto the items the local pass
+      // built. The amount, direction and person never left this process, so a wrong or
+      // missing answer costs a category, not a transaction.
+      classItems = mergeCategoryDecisions(escalationClauses, reply.items);
 
 
       if (classItems.length === 0) {
@@ -1523,141 +1528,15 @@ export async function runSmartPipeline(
               clarificationQuestion = "عذراً، الجملة طويلة ومفصلة ولم أتمكن من استخراج العمليات. يرجى تقسيمها أو إعادة المحاولة.";
          }
       } else {
-        const allKnownNames = knownPeople.map(p => p.name);
-        const deterministicPeople = extractPeople(textToClassify, allKnownNames);
-
-        for (const item of classItems) {
-            let itemClarify = Boolean(item.needsClarification);
-            let itemClarifyQ = item.clarificationQuestion || "ممكن توضح أكتر؟";
-            
-            const conf = item.confidence || 0;
-            if (item.is_valid_transaction === false) {
-                  itemClarify = true;
-                  itemClarifyQ = "عفواً، لم أتمكن من العثور على معاملة مالية صحيحة أو منطقية في كلامك.";
-            } else if (conf < 60 && !input.skipClarification) {
-                  itemClarify = true;
-                  itemClarifyQ = "عفواً، كلامك مش واضح بالنسبالي أو ناقص، ممكن تعيد صياغته بشكل أوضح؟";
-            }
-
-            let detectedPersonName = item.person_mentioned && typeof item.person_mentioned === "string" ? item.person_mentioned.trim() : null;
-            const itemContext = item.item_name || item.description || item.name || textToClassify;
-            
-            let namesList = detectedPersonName ? detectedPersonName.split(/\s+و\s+|،|,|and/).map((n: string) => n.trim()).filter(Boolean) : [];
-            let unknownNames: string[] = [];
-            
-            if (namesList.length === 0) {
-               for (const dp of deterministicPeople) {
-                  if (matchArabicPhrase(itemContext, dp) || (classItems.length === 1 && matchArabicPhrase(textToClassify, dp))) { 
-                      namesList.push(dp);
-                      item.person_mentioned = dp;
-                  }
-               }
-            }
-
-            let bestPersonCandidate: string | null = null;
-            
-            if (namesList.length > 0 && personMemoryEnabled) {
-               for (const n of namesList) {
-                   const candidate = pickPersonCandidate(n, itemContext, allKnownNames);
-                   if (candidate) {
-                       const res = resolvePersonForTransaction({
-                           candidateName: candidate,
-                           transactionText: itemContext,
-                           originalText: textToClassify,
-                           knownPeople,
-                           aiRelationship: item.person_relationship,
-                       });
-                       if (res.needsClarification) {
-                           unknownNames.push(n);
-                       } else if (!bestPersonCandidate) {
-                           bestPersonCandidate = res.name || candidate;
-                       }
-                   }
-               }
-            } else if (namesList.length > 0) {
-               bestPersonCandidate = pickPersonCandidate(namesList[0], itemContext, allKnownNames);
-            }
-
-            if (unknownNames.length > 0) {
-               itemClarify = true;
-               itemClarifyQ = "مين " + unknownNames.join(" و ") + "؟";
-            }
-            detectedPersonName = bestPersonCandidate || namesList[0] || null;
-
-            if (item.alertMessage && item.alertMessage.toLowerCase() !== "ok" && !firstAlertMessage) {
-                firstAlertMessage = item.alertMessage;
-            }
-
-            let parsedItem: ParsedTransaction = {
-                amount: Number(item.amount) || Number(item.price) || Number(item.value) || 0,
-                category: item.main_category || item.category || item.mainCategory || "متنوعات",
-                subCategory: item.sub_category || item.subCategory || "عام",
-                description: item.item_name || item.description || item.name || "عملية",
-                type: item.type === "income" ? "income" : item.type === "transfer" ? "transfer" : item.type === "investment" ? "investment" : "expense",
-                confidence: item.confidence || 0,
-                needsReview: (item.confidence || 0) < 85,
-                parsedBy: "ai",
-                inferenceSource: "ai",
-                // Record the model as a resolver like any other.
-                //
-                // Without this the item carries no evidence, `applyCalibration` skips
-                // it, and the model's SELF-REPORTED confidence goes straight to the
-                // decision layer. The live benchmark measured what that costs: the
-                // 90-100 band claims 95.9% and is right 83.3%, and unsafe auto-saves
-                // were 10.3% against 1.1% on the offline run — the gap is precisely the
-                // path the offline run cannot exercise.
-                evidence: {
-                  matchKind: "llm",
-                  rawStrength: item.confidence || 0,
-                  // Does the local pass, which already ran on exactly these segments,
-                  // independently agree? This was hardcoded to 0 — the strongest feature
-                  // in the record, declared and never once computed. It is free: the
-                  // second opinion is already in memory.
-                  ...crossCheck(
-                    {
-                      amount: Number(item.amount) || Number(item.price) || 0,
-                      category: item.main_category || item.category,
-                      type: item.type,
-                    },
-                    escalatedSegmentItems,
-                  ),
-                  anchorConsumed: false,
-                  personResolved: "none",
-                  hasAmbiguityPenalty: false,
-                  ambiguityFlagCount: 0,
-                  categoryIsFallback:
-                    (item.main_category || item.category) === "متنوعات",
-                },
-                currency: "EGP",
-                person_mentioned: item.person_mentioned,
-                person_relationship: item.person_relationship,
-            };
-
-            if (personMemoryEnabled && unknownNames.length === 0) {
-               const personApplied = applyPersonResolution(
-                  parsedItem,
-                  detectedPersonName || parsedItem.person_mentioned || null,
-                  itemContext,
-                  textToClassify,
-                  knownPeople,
-                );
-               parsedItem = personApplied.item;
-            } else if (unknownNames.length > 0) {
-               parsedItem.subCategory = "أشخاص";
-               parsedItem.confidence = 60;
-               parsedItem.needsReview = true;
-            }
-
-            if (itemClarify && !input.skipClarification) {
-                if (decision !== "clarify") {
-                    decision = "clarify";
-                    clarificationQuestion = itemClarifyQ;
-                    overallConfidence = 0;
-                }
-            }
-
-            finalItems.push(parsedItem);
-        }
+        // The merge already produced finished transactions: the local pass supplied the
+        // amount, direction and person, and the model supplied only the category.
+        //
+        // What used to stand here was 130 lines that rebuilt each item from the model's
+        // reply — re-reading its amount, its type, its self-assessed confidence, and
+        // re-running person extraction over the rejoined text. Every one of those fields
+        // measured better locally, and rebuilding them is what let a model answer lose a
+        // transaction the rule engine had already found.
+        finalItems.push(...classItems);
       }
     } catch (err) {
       const errMsg = (err as any)?.message || String(err);
