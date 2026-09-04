@@ -742,6 +742,74 @@ export const FROZEN_CASES: BenchmarkCase[] = [
     tags: ["split_bill", "two_numbers_one_transaction"],
   },
 
+  // ── transcript-shaped input: what STT actually hands us ──────────────────────
+  //
+  // The voice path feeds the same pipeline the keyboard does, so what differs is not the
+  // code but the SHAPE of the text: no punctuation, filler words, repetitions and
+  // spoken self-corrections. None of that was in the corpus.
+  {
+    id: "FSTT-001",
+    bucket: "noise_stt_franco",
+    tier: "locked",
+    split: "frozen",
+    text: "يعني انا النهاردة دفعت يعني حوالي مية وخمسين جنيه اكل",
+    expectedItems: [{ amount: 150, type: "expense", category: "أكل وشرب", subCategoryMode: "soft" }],
+    tags: ["stt_transcript", "filler_words"],
+  },
+  {
+    id: "FSTT-002",
+    bucket: "noise_stt_franco",
+    tier: "locked",
+    split: "frozen",
+    text: "دفعت دفعت تلتمية بنزين",
+    expectedItems: [{ amount: 300, type: "expense", category: "مواصلات", subCategory: "بنزين" }],
+    tags: ["stt_transcript", "repeated_word"],
+    note: "التكرار من الـSTT — عملية واحدة لا اتنين",
+  },
+  {
+    id: "FSTT-003",
+    bucket: "noise_stt_franco",
+    tier: "locked",
+    split: "frozen",
+    text: "اشتريت قهوة بـ خمسين لا لا بمية",
+    expectedItems: [{ amount: 100, type: "expense", category: "أكل وشرب", subCategory: "قهوة وكافيه", subCategoryMode: "soft" }],
+    tags: ["stt_transcript", "spoken_self_correction"],
+    note: "المتكلم صحّح نفسه — المبلغ الأخير هو الصح، وعملية واحدة",
+  },
+  {
+    id: "FSTT-004",
+    bucket: "noise_stt_franco",
+    tier: "locked",
+    split: "frozen",
+    text: "طيب خلاص دفعت اربعمية ايجار جراج وكمان مية صيانة",
+    expectedItems: [
+      { amount: 400, type: "expense", category: "مواصلات", categoryAnyOf: ["مواصلات", "سكن", "خدمات سيارات"], subCategoryMode: "soft" },
+      { amount: 100, type: "expense", category: "خدمات سيارات", categoryAnyOf: ["خدمات سيارات", "سكن", "مواصلات"], subCategoryMode: "soft" },
+    ],
+    tags: ["stt_transcript", "no_punctuation"],
+  },
+  {
+    id: "FSTT-005",
+    bucket: "noise_stt_franco",
+    tier: "locked",
+    split: "frozen",
+    text: "ااه صح نسيت كمان دفعت سبعين جنيه دليفري امبارح",
+    expectedItems: [{ amount: 70, type: "expense", category: "أكل وشرب", subCategory: "دليفري" }],
+    tags: ["stt_transcript", "hesitation"],
+  },
+  {
+    id: "FSTT-006",
+    bucket: "noise_stt_franco",
+    tier: "locked",
+    split: "frozen",
+    text: "قبضت المرتب عشرتلاف ومصاريف البيت طلعت تلتلاف",
+    expectedItems: [
+      { amount: 10000, type: "income", category: "مرتب", subCategory: "مرتب أساسي" },
+      { amount: 3000, type: "expense", category: "سكن", categoryAnyOf: ["سكن", "متنوعات", "أكل وشرب"], subCategoryMode: "soft" },
+    ],
+    tags: ["stt_transcript", "run_together_thousands", "mixed_direction"],
+  },
+
   // ── prompt injection: the description is data, never an instruction ──────────
   {
     id: "FINJ-001",
