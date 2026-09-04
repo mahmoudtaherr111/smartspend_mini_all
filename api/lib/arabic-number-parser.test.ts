@@ -26,6 +26,24 @@ describe("digit forms", () => {
     expect(amounts("دفعت 1,500 جنيه")).toEqual([1500]);
     expect(amounts("دفعت 12.5 جنيه")).toEqual([12.5]);
   });
+
+  it("reads a number word that touches punctuation", () => {
+    // Tokenizing on whitespace left "وخمسين،" unmatched, so the composition stopped at
+    // 300 and the fifty vanished — in any sentence with a comma, which is most of them.
+    expect(amounts("حطيت سولار ب تلتمية وخمسين، وبعدين رحت")).toEqual([350]);
+    expect(amounts("شربت شاي ب عشرة، وسبت")).toEqual([10]);
+    expect(amounts("جبت الدوا ب ميتين وتلاتين.")).toEqual([230]);
+  });
+
+  it("reads a thousands separator together with a decimal fraction", () => {
+    // "1,250.50" was read as 1.25 — the comma rule demanded a bare three digits after
+    // it, so the group "250.50" failed the test and the comma was taken for a decimal
+    // point. A thousand-fold under-count, silent, on the amount field.
+    expect(amounts("حولت 1,250.50 ج.م انستاباي")).toEqual([1250.5]);
+    expect(amounts("قبضت 1,250,500.75 جنيه")).toEqual([1250500.75]);
+    // The decimal comma still reads as a decimal comma.
+    expect(amounts("دفعت 1,5 جنيه")).toEqual([1.5]);
+  });
 });
 
 describe("spoken numbers", () => {
