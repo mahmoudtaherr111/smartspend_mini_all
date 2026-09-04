@@ -1,11 +1,16 @@
 import { z } from "zod";
+import { SMART_PIPELINE_VERSION } from "./lib/smart-pipeline";
 import { router, adminProcedure, moderatorProcedure } from "./middleware";
-import { db } from "./queries/connection";
+import { db, getPoolMetrics } from "./queries/connection";
 import { getSystemSettings, invalidateSettingsCache } from "./lib/settings-cache";
+import { getCacheRuntimeStatus } from "./lib/redis-client";
+import { businessDateKey } from "./lib/app-time";
+import { bumpAuthVersion } from "./lib/session-validation";
 import {
   users,
   localUsers,
   expenses,
+  expenseDailyRollups,
   sessions,
   supportTickets,
   userAnalytics,
@@ -124,14 +129,23 @@ export const adminRouter = router({
     const totalLocalUsers = await db
       .select({ count: count() })
       .from(localUsers);
-    const totalExpenses = await db.select({ count: count() }).from(expenses);
-    const totalAmount = await db
-      .select({ sum: sql`SUM(amount)` })
-      .from(expenses);
-    const todayExpenses = await db
-      .select({ sum: sql`SUM(amount)` })
-      .from(expenses)
-      .where(sql`DATE(date) = CURDATE()`);
+
+    // Optimized from expenseDailyRollups (§P8 / STORAGE_OVERHAUL_REPORT)
+    const todayKey = businessDateKey();
+    const [rollupTotals] = await db
+      .select({
+        totalCount: sql<number>`COALESCE(SUM(${expenseDailyRollups.txnCount}), 0)`,
+        totalAmount: sql<string>`COALESCE(SUM(${expenseDailyRollups.expense}), 0)`,
+      })
+      .from(expenseDailyRollups);
+
+    const [todayTotals] = await db
+      .select({
+        todayAmount: sql<string>`COALESCE(SUM(${expenseDailyRollups.expense}), 0)`,
+      })
+      .from(expenseDailyRollups)
+      .where(eq(expenseDailyRollups.day, todayKey));
+
     const activeSessions = await db
       .select({ count: count() })
       .from(sessions)
@@ -156,12 +170,23 @@ export const adminRouter = router({
       totalLocalUsers: totalLocalUsers[0]?.count ?? 0,
       totalUsers:
         (totalUsers[0]?.count ?? 0) + (totalLocalUsers[0]?.count ?? 0),
-      totalExpenses: totalExpenses[0]?.count ?? 0,
-      totalAmount: totalAmount[0]?.sum ?? "0",
-      todayExpenses: todayExpenses[0]?.sum ?? "0",
+      totalExpenses: Number(rollupTotals?.totalCount ?? 0),
+      totalAmount: String(rollupTotals?.totalAmount ?? "0"),
+      todayExpenses: String(todayTotals?.todayAmount ?? "0"),
       activeSessions: activeSessions[0]?.count ?? 0,
       openTickets: openTickets[0]?.count ?? 0,
       proUsers: (proUsers[0]?.count ?? 0) + (proLocalUsers[0]?.count ?? 0),
+    };
+  }),
+
+  // ─── Storage Runtime Metrics (§P8) ───
+  getStorageRuntimeMetrics: adminProcedure.query(async () => {
+    const cache = getCacheRuntimeStatus();
+    const pool = getPoolMetrics();
+    return {
+      cache,
+      pool,
+      timestamp: new Date().toISOString(),
     };
   }),
 
@@ -343,6 +368,7 @@ export const adminRouter = router({
         .update(table)
         .set({ role: input.role })
         .where(eq(table.id, input.userId));
+      await bumpAuthVersion(input.userType, input.userId);
       return { success: true, message: "تم تحديث الدور بنجاح" };
     }),
 
@@ -361,6 +387,7 @@ export const adminRouter = router({
         .update(table)
         .set({ plan: input.plan })
         .where(eq(table.id, input.userId));
+      await bumpAuthVersion(input.userType, input.userId);
       return { success: true, message: "تم تحديث الخطة بنجاح" };
     }),
 
@@ -530,6 +557,7 @@ export const adminRouter = router({
         .update(table)
         .set({ plan: input.plan })
         .where(eq(table.id, input.userId));
+      await bumpAuthVersion(input.userType, input.userId);
       return { success: true, message: "تم تحديث الخطة بنجاح" };
     }),
 
@@ -790,112 +818,70 @@ export const adminRouter = router({
     };
   }),
 
-  // ─── V2 Pipeline Accuracy Comparison ───
-  getV2PipelineStats: adminProcedure.query(async () => {
+  // ─── Pipeline Version Comparison ───
+  //
+  // This filtered on the literals "v2.1" and "v2.2" while the pipeline had been writing
+  // v3.0 for weeks, so both halves of the comparison were empty and the dashboard was
+  // reporting on versions that no longer run. Grouping by whatever the column actually
+  // contains means the next version needs no code change here at all.
+  getPipelineVersionStats: adminProcedure.query(async () => {
+    const empty = { currentPipelineVersion: SMART_PIPELINE_VERSION, versions: [], byMethod: [] };
     try {
-      // v1 stats (classificationVersion = 'v2.1')
-      const v1Stats = await db
+      const rows = await db
         .select({
+          version: classificationLogs.classificationVersion,
           count: count(),
           avgConfidence: sql`ROUND(AVG(${classificationLogs.confidence}), 1)`,
           avgTokens: sql`ROUND(AVG(${classificationLogs.tokensUsed}), 0)`,
           avgTimeMs: sql`ROUND(AVG(${classificationLogs.processingTimeMs}), 0)`,
           totalTokens: sql`COALESCE(SUM(${classificationLogs.tokensUsed}), 0)`,
           needsFollowupCount: sql`SUM(CASE WHEN ${classificationLogs.needsFollowup} = true THEN 1 ELSE 0 END)`,
+          correctedCount: sql`SUM(CASE WHEN ${classificationLogs.wasCorrected} = true THEN 1 ELSE 0 END)`,
+          lastSeen: sql`MAX(${classificationLogs.createdAt})`,
         })
         .from(classificationLogs)
-        .where(eq(classificationLogs.classificationVersion, "v2.1"));
+        .groupBy(classificationLogs.classificationVersion);
 
-      // v2 stats (classificationVersion = 'v2.2')
-      const v2Stats = await db
+      const byMethod = await db
         .select({
-          count: count(),
-          avgConfidence: sql`ROUND(AVG(${classificationLogs.confidence}), 1)`,
-          avgTokens: sql`ROUND(AVG(${classificationLogs.tokensUsed}), 0)`,
-          avgTimeMs: sql`ROUND(AVG(${classificationLogs.processingTimeMs}), 0)`,
-          totalTokens: sql`COALESCE(SUM(${classificationLogs.tokensUsed}), 0)`,
-          needsFollowupCount: sql`SUM(CASE WHEN ${classificationLogs.needsFollowup} = true THEN 1 ELSE 0 END)`,
-        })
-        .from(classificationLogs)
-        .where(eq(classificationLogs.classificationVersion, "v2.2"));
-
-      // v2 breakdown by parsedBy
-      const v2ByMethod = await db
-        .select({
+          version: classificationLogs.classificationVersion,
           parsedBy: classificationLogs.parsedBy,
           count: count(),
           avgConfidence: sql`ROUND(AVG(${classificationLogs.confidence}), 1)`,
         })
         .from(classificationLogs)
-        .where(eq(classificationLogs.classificationVersion, "v2.2"))
-        .groupBy(classificationLogs.parsedBy);
+        .groupBy(classificationLogs.classificationVersion, classificationLogs.parsedBy);
 
-      // Current pipeline version
-      const pvRow = await db
-        .select()
-        .from(systemSettings)
-        .where(eq(systemSettings.key, "pipeline_version"))
-        .limit(1);
-      const currentVersion = pvRow[0]?.value || "v1";
+      const rate = (part: unknown, whole: unknown): number =>
+        Number(whole) ? Math.round((Number(part) / Number(whole)) * 100) : 0;
 
       return {
-        currentPipelineVersion: currentVersion,
-        v1: {
-          totalClassifications: Number(v1Stats[0]?.count ?? 0),
-          avgConfidence: Number(v1Stats[0]?.avgConfidence ?? 0),
-          avgTokensPerCall: Number(v1Stats[0]?.avgTokens ?? 0),
-          avgProcessingTimeMs: Number(v1Stats[0]?.avgTimeMs ?? 0),
-          totalTokensUsed: Number(v1Stats[0]?.totalTokens ?? 0),
-          needsFollowupRate: v1Stats[0]?.count
-            ? Math.round(
-                (Number(v1Stats[0]?.needsFollowupCount ?? 0) /
-                  Number(v1Stats[0]?.count)) *
-                  100,
-              )
-            : 0,
-        },
-        v2: {
-          totalClassifications: Number(v2Stats[0]?.count ?? 0),
-          avgConfidence: Number(v2Stats[0]?.avgConfidence ?? 0),
-          avgTokensPerCall: Number(v2Stats[0]?.avgTokens ?? 0),
-          avgProcessingTimeMs: Number(v2Stats[0]?.avgTimeMs ?? 0),
-          totalTokensUsed: Number(v2Stats[0]?.totalTokens ?? 0),
-          needsFollowupRate: v2Stats[0]?.count
-            ? Math.round(
-                (Number(v2Stats[0]?.needsFollowupCount ?? 0) /
-                  Number(v2Stats[0]?.count)) *
-                  100,
-              )
-            : 0,
-          byMethod: v2ByMethod.map((m) => ({
-            method: m.parsedBy,
-            count: Number(m.count),
-            avgConfidence: Number(m.avgConfidence),
-          })),
-        },
+        currentPipelineVersion: SMART_PIPELINE_VERSION,
+        versions: rows
+          .map((r) => ({
+            version: r.version || "unknown",
+            totalClassifications: Number(r.count),
+            avgConfidence: Number(r.avgConfidence ?? 0),
+            avgTokensPerCall: Number(r.avgTokens ?? 0),
+            avgProcessingTimeMs: Number(r.avgTimeMs ?? 0),
+            totalTokensUsed: Number(r.totalTokens ?? 0),
+            // The share of classifications the user came back and changed is the only
+            // accuracy signal that does not come from the classifier's own opinion.
+            correctionRate: rate(r.correctedCount, r.count),
+            needsFollowupRate: rate(r.needsFollowupCount, r.count),
+            lastSeen: r.lastSeen ? String(r.lastSeen) : null,
+          }))
+          .sort((a, b) => b.totalClassifications - a.totalClassifications),
+        byMethod: byMethod.map((m) => ({
+          version: m.version || "unknown",
+          method: m.parsedBy,
+          count: Number(m.count),
+          avgConfidence: Number(m.avgConfidence ?? 0),
+        })),
       };
     } catch (err) {
       if (!isMissingTableError(err, "classification_logs")) throw err;
-      return {
-        currentPipelineVersion: "v1",
-        v1: {
-          totalClassifications: 0,
-          avgConfidence: 0,
-          avgTokensPerCall: 0,
-          avgProcessingTimeMs: 0,
-          totalTokensUsed: 0,
-          needsFollowupRate: 0,
-        },
-        v2: {
-          totalClassifications: 0,
-          avgConfidence: 0,
-          avgTokensPerCall: 0,
-          avgProcessingTimeMs: 0,
-          totalTokensUsed: 0,
-          needsFollowupRate: 0,
-          byMethod: [],
-        },
-      };
+      return empty;
     }
   }),
 

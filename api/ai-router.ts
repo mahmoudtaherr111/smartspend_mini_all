@@ -22,12 +22,15 @@ import {
   pendingClarifications,
   userBusinesses,
   businessCategories as bizCategoriesTable,
+  aiTokenLedgers,
 } from "../db/schema";
+import { resolveBillingPeriod } from "./lib/ai-gateway";
+import { randomUUID } from "node:crypto";
 import { getSystemSettings } from "./lib/settings-cache";
 import { eq, sql, desc, count, and, gte, lte, sum } from "drizzle-orm";
 import { env } from "./lib/env";
 import { getCacheRuntimeStatus } from "./lib/redis-client";
-import { runSmartPipeline } from "./lib/smart-pipeline";
+import { runSmartPipeline, SMART_PIPELINE_VERSION } from "./lib/smart-pipeline";
 import { CATEGORIES } from "./lib/category-registry";
 import {
   CATEGORY_DICTIONARY,
@@ -62,10 +65,12 @@ import {
   mapModelName,
   isGroqModel,
   isFireworksModel,
+  isNvidiaModel,
   type AiPlanName,
   type AiProviderName,
 } from "./lib/model-mapper";
 import { callFireworksAPI } from "./lib/fireworks-client";
+import { callNvidiaAPI } from "./lib/nvidia-client";
 import {
   assertAiBudget,
   asPlan,
@@ -298,7 +303,7 @@ export interface RoutingRange {
   action?: "block";
   message?: string;
   provider?: AiProviderName;
-  key_slot?: "key1" | "key2" | "groq" | "fireworks";
+  key_slot?: "key1" | "key2" | "groq" | "fireworks" | "nvidia";
   model?: string;
 }
 
@@ -334,8 +339,9 @@ export async function resolveRoutingConfig(
     provider: string,
     keySlot?: string,
   ) => {
-    if (provider === "groq") return cfg.groq_api_key || "";
-    if (provider === "fireworks") return cfg.fireworks_api_key || env.FIREWORKS_API_KEY || "";
+    if (provider === "groq" || keySlot === "groq") return cfg.groq_api_key || env.GROQ_API_KEY || "";
+    if (provider === "fireworks" || keySlot === "fireworks") return cfg.fireworks_api_key || env.FIREWORKS_API_KEY || "";
+    if (provider === "nvidia" || keySlot === "nvidia") return cfg.nvidia_api_key || env.NVIDIA_API_KEY || "";
     if (keySlot === "key2") {
       return cfg.ai_api_key_2 || cfg.ai_api_key || env.GEMINI_API_KEY || "";
     }
@@ -395,9 +401,22 @@ export async function resolveRoutingConfig(
   // Resolve API key from the selected provider. Provider wins over a mismatched slot.
   const provider: AiProviderName =
     matchedRange.provider ??
-    (matchedRange.key_slot === "groq" ? "groq" : matchedRange.key_slot === "fireworks" ? "fireworks" : "gemini");
+    (matchedRange.key_slot === "groq"
+      ? "groq"
+      : matchedRange.key_slot === "fireworks"
+        ? "fireworks"
+        : matchedRange.key_slot === "nvidia"
+          ? "nvidia"
+          : "gemini");
   const keySlot =
-    matchedRange.key_slot ?? (provider === "groq" ? "groq" : provider === "fireworks" ? "fireworks" : "key1");
+    matchedRange.key_slot ??
+    (provider === "groq"
+      ? "groq"
+      : provider === "fireworks"
+        ? "fireworks"
+        : provider === "nvidia"
+          ? "nvidia"
+          : "key1");
   const resolvedKey = resolveKey(provider, keySlot);
 
   if (!resolvedKey) {
@@ -422,9 +441,22 @@ async function trackTokens(
   tokens: number,
   channel: AiUsageChannel = "parse",
   model?: string,
+  extra?: {
+    promptTokens?: number;
+    completionTokens?: number;
+    cachedTokens?: number;
+    reasoningTokens?: number;
+    providerSlug?: string;
+    latencyMs?: number;
+    costUsd?: number;
+    costEgp?: number;
+    conversationId?: number;
+    classificationLogId?: number;
+  },
 ) {
   if (!tokens || tokens <= 0) return;
   try {
+    // 1. Legacy running-sum counter (backward compat)
     if (userType === "oauth") {
       await db
         .update(users)
@@ -436,6 +468,8 @@ async function trackTokens(
         .set({ aiTokensUsed: sql`COALESCE(ai_tokens_used, 0) + ${tokens}` })
         .where(eq(localUsers.id, userId));
     }
+
+    // 2. Legacy usage event
     await recordAiUsageEvent({
       userId,
       userType: userType as "oauth" | "local",
@@ -443,6 +477,54 @@ async function trackTokens(
       model,
       tokens,
     });
+
+    // 3. NEW: Immutable ledger write (fire-and-forget, non-blocking)
+    const promptTokens = extra?.promptTokens ?? tokens;
+    const completionTokens = extra?.completionTokens ?? 0;
+    const providerSlug = extra?.providerSlug ?? "gemini";
+    const modelId = model ?? "unknown";
+    const latencyMs = extra?.latencyMs ?? 0;
+
+    // Simple cost estimation when not provided:
+    // gemini-flash-lite ~$0.14/1M input, $0.56/1M output
+    const costUsd = extra?.costUsd ?? (tokens * 0.14) / 1_000_000;
+    const costEgp = extra?.costEgp ?? costUsd * 50.5;
+
+    void (async () => {
+      try {
+        await db.insert(aiTokenLedgers).values({
+          traceId: randomUUID(),
+          userId,
+          userType: userType as "oauth" | "local",
+          billingPeriod: resolveBillingPeriod(),
+          channel: channel || "parse",
+          providerId: null,
+          providerSlug,
+          modelId,
+          promptTokens,
+          completionTokens,
+          cachedTokens: extra?.cachedTokens ?? 0,
+          reasoningTokens: extra?.reasoningTokens ?? 0,
+          totalTokens: tokens,
+          systemPromptTokens: 0,
+          memoryRagTokens: 0,
+          historyTokens: 0,
+          userInputTokens: promptTokens,
+          toolSchemaTokens: 0,
+          costUsd: sql`${costUsd.toFixed(8)}`,
+          costEgp: sql`${costEgp.toFixed(6)}`,
+          latencyMs,
+          httpStatus: 200,
+          finishReason: "stop",
+          conversationId: extra?.conversationId ?? null,
+          classificationLogId: extra?.classificationLogId ?? null,
+          metadata: { channel, model: modelId, provider: providerSlug },
+        });
+      } catch (ledgerErr) {
+        // Silently fail ledger write — never block user request
+        console.warn("[TokenLedger] Failed to write ledger entry:", ledgerErr);
+      }
+    })();
   } catch (err) {
     console.error("Failed to track tokens:", err);
   }
@@ -630,6 +712,7 @@ async function getAiClient(
 
   const groqApiKey = cfg.groq_api_key || "";
   const fireworksApiKey = cfg.fireworks_api_key || env.FIREWORKS_API_KEY || "";
+  const nvidiaApiKey = cfg.nvidia_api_key || env.NVIDIA_API_KEY || "";
 
   return {
     aiModel,
@@ -638,6 +721,7 @@ async function getAiClient(
     apiKey2,
     groqApiKey,
     fireworksApiKey,
+    nvidiaApiKey,
     reportProvider,
     reportKeySlot,
     tokenLimit: tokenLimits[plan] || 50000,
@@ -773,9 +857,10 @@ export const aiRouter = router({
       );
 
       // ── Dynamic Routing: resolve correct provider/key/model based on tokens used ──
-      let resolvedProvider: "gemini" | "groq" | "fireworks" = "gemini";
+      let resolvedProvider: "gemini" | "groq" | "fireworks" | "nvidia" = "gemini";
       let resolvedGroqKey = "";
       let resolvedFireworksKey = "";
+      let resolvedNvidiaKey = "";
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
       // ── Run independent queries in parallel to speed up ──
@@ -801,6 +886,7 @@ export const aiRouter = router({
         resolvedProvider = routing.provider;
         resolvedGroqKey = routing.provider === "groq" ? routing.apiKey : "";
         resolvedFireworksKey = routing.provider === "fireworks" ? routing.apiKey : "";
+        resolvedNvidiaKey = routing.provider === "nvidia" ? routing.apiKey : "";
         apiKey = routing.apiKey;
         modelName = routing.model;
       } catch (routingErr) {
@@ -915,6 +1001,7 @@ export const aiRouter = router({
         provider: resolvedProvider,
         groqApiKey: resolvedGroqKey,
         fireworksApiKey: resolvedFireworksKey,
+        nvidiaApiKey: resolvedNvidiaKey,
         pipelineSettings: {
             ...cfgFull,
             rag_api_key: cfgFull.rag_api_key || apiKey,
@@ -992,7 +1079,10 @@ export const aiRouter = router({
           finalResult: result.items,
           confidence: result.overallConfidence,
           decision: result.decision,
-          classificationVersion: isV2 ? "v2.2" : "v2.1",
+          // What actually ran. This column read "v2.1" while the pipeline had been v3.0
+          // for weeks, so the admin's version comparison was filtering on a string
+          // nothing writes and reporting on a pipeline that no longer exists.
+          classificationVersion: SMART_PIPELINE_VERSION,
           reasoningTraceLight: {
             entities: result.log.entitiesFound,
             ruleEngine: result.log.ruleEngineResult,
@@ -1642,9 +1732,10 @@ export const aiRouter = router({
       }
 
       // ── Dynamic Routing for Voice Classification ──
-      let resolvedProvider: "gemini" | "groq" | "fireworks" = "gemini";
+      let resolvedProvider: "gemini" | "groq" | "fireworks" | "nvidia" = "gemini";
       let resolvedGroqKey = "";
       let resolvedFireworksKey = "";
+      let resolvedNvidiaKey = "";
       let apiKey = client.apiKey;
       let modelName = client.modelName;
 
@@ -1657,6 +1748,7 @@ export const aiRouter = router({
         resolvedProvider = routing.provider;
         resolvedGroqKey = routing.provider === "groq" ? routing.apiKey : "";
         resolvedFireworksKey = routing.provider === "fireworks" ? routing.apiKey : "";
+        resolvedNvidiaKey = routing.provider === "nvidia" ? routing.apiKey : "";
         apiKey = routing.apiKey;
         modelName = routing.model;
       } catch (routingErr) {
@@ -1731,6 +1823,7 @@ export const aiRouter = router({
         provider: resolvedProvider,
         groqApiKey: resolvedGroqKey,
         fireworksApiKey: resolvedFireworksKey,
+        nvidiaApiKey: resolvedNvidiaKey,
         pipelineSettings: {
             ...cfg,
             rag_api_key: cfg.rag_api_key || apiKey,
@@ -1844,7 +1937,7 @@ export const aiRouter = router({
           finalResult: parseResult.items,
           confidence: parseResult.overallConfidence,
           decision: parseResult.decision,
-          classificationVersion: "v2.1",
+          classificationVersion: SMART_PIPELINE_VERSION,
           reasoningTraceLight: {
             entities: parseResult.log.entitiesFound,
             ruleEngine: parseResult.log.ruleEngineResult,
@@ -2383,6 +2476,7 @@ export const aiRouter = router({
       let reportApiKey = env.GEMINI_API_KEY;
       let groqApiKey = "";
       let fireworksApiKey = "";
+      let nvidiaApiKey = "";
       let modelName = "backend";
       let aiResponseLength = "medium";
       let aiFocus = "balanced";
@@ -2406,6 +2500,7 @@ export const aiRouter = router({
         reportApiKey = client.apiKey;
         groqApiKey = client.groqApiKey;
         fireworksApiKey = client.fireworksApiKey;
+        nvidiaApiKey = client.nvidiaApiKey;
         reportTargetWords = client.reportTargetWords;
         reportSubcatsLimit = client.reportSubcatsLimit;
         reportTopItemsLimit = client.reportTopItemsLimit;
@@ -2663,7 +2758,21 @@ ${personalizedSummaryForAI}
 
             let raw = "";
             let tokens = 0;
-            if (reportProvider === "fireworks" || isFireworksModel(modelName)) {
+            if (reportProvider === "nvidia" || isNvidiaModel(modelName)) {
+              const res = await callNvidiaAPI(
+                nvidiaApiKey || reportApiKey,
+                modelName,
+                aiSystemPrompt,
+                prompt,
+                capRequestOutputTokens(
+                  ctx.user.plan,
+                  "report",
+                  Math.min(reportTargetWords * 4, reportCostPolicy.maxOutputTokens),
+                ),
+              );
+              raw = res.text;
+              tokens = res.tokensUsed;
+            } else if (reportProvider === "fireworks" || isFireworksModel(modelName)) {
               const res = await callFireworksAPI(
                 fireworksApiKey || reportApiKey,
                 modelName,
