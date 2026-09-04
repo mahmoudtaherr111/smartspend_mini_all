@@ -72,4 +72,41 @@ describe("dev-only browser QA paths", () => {
     expect(runner).toContain('retrievalPolicy.embedding === "fireworks_qwen"');
     expect(runner).toContain("docs/AI_CENTER_QA_RUNNER_LAST_RESULT.md");
   });
+
+  it("keeps the classification benchmark runnable and its live pass gated", () => {
+    // This guard exists because its absence already cost something: `bench:classify:live`
+    // was registered in package.json in stage 0 and the file it points at was written
+    // five stages later. The script looked present and did nothing.
+    const pkg = JSON.parse(source("package.json")) as { scripts: Record<string, string> };
+
+    expect(pkg.scripts["bench:classify"]).toContain("classification-benchmark.test.ts");
+    expect(pkg.scripts["bench:classify:live"]).toBe(
+      "tsx api/qa/classification-benchmark-runner.ts --mode=live",
+    );
+    expect(pkg.scripts["bench:classify:freeze"]).toContain("--freeze");
+    expect(pkg.scripts["bench:classify:compare"]).toContain("--compare");
+
+    // Every script must point at a file that exists. `source()` throws if it does not,
+    // which is the whole point of reading them here.
+    const runner = source("api/qa/classification-benchmark-runner.ts");
+    source("api/qa/classification-baseline.ts");
+    source("api/lib/classification-benchmark.test.ts");
+
+    // The live pass spends real money, so each gate is named explicitly. Deleting one
+    // should fail a test rather than quietly widen who can spend.
+    expect(runner).toContain('process.env.CLASSIFY_BENCH_LIVE !== "1"');
+    expect(runner).toContain("process.env.VITEST");
+    expect(runner).toContain("--confirm-spend");
+    expect(runner).toContain("maxTokens");
+    expect(runner).toContain("ESTIMATED COST");
+    // The ceiling has to be checked before the call; a limit enforced afterwards has
+    // not limited anything.
+    expect(runner).toContain("spentTokens >= opts.maxTokens");
+
+    // The offline report path is asserted elsewhere in the pipeline; the live one is
+    // separate on purpose so a live run cannot overwrite the committed baseline report.
+    const report = source("api/qa/classification-report.ts");
+    expect(report).toContain("docs/CLASSIFICATION_BENCHMARK_LAST_RESULT.md");
+    expect(report).toContain("docs/CLASSIFICATION_BENCHMARK_LIVE_RESULT.md");
+  });
 });
