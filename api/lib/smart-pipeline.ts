@@ -2,7 +2,6 @@ import { SchemaType } from "@google/generative-ai";
 import { normalizeV2 } from "./normalizer-v2";
 import { runRuleEngine, SUB_CATEGORY_MAP } from "./rule-engine";
 import { CATEGORY_DICTIONARY } from "./egyptian-dictionary";
-import { buildSmartSystemPrompt, buildFireworksPrompts } from "./dynamic-prompt-builder";
 import { normalizeTransactionTaxonomyList } from "./category-registry";
 import { CATEGORIES } from "./category-registry";
 import {
