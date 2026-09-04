@@ -245,3 +245,47 @@ export function buildReliabilityTable(
     buckets,
   };
 }
+
+/**
+ * Does an independent resolver agree with this answer?
+ *
+ * The strongest feature available, and until now the only one never computed: `agreement`
+ * was declared on `Evidence`, threaded through the bucket key, and hardcoded to 0 at
+ * every site that produced evidence. The live benchmark shows what that cost — the model
+ * path is 60.5% accurate while claiming 94.6%, and nothing in the record distinguished
+ * "the model and the rule engine independently reached the same answer" from "the model
+ * overruled a local answer that disagreed".
+ *
+ * It is free. The local pass has already run on exactly the segments that were escalated,
+ * so the second opinion is sitting in memory; it was simply never consulted.
+ *
+ * Matching is by amount, because that is the one field both resolvers anchor to the same
+ * spoken number. Comparing by description would compare two different writing styles.
+ */
+export function crossCheck(
+  item: { amount: number; category?: string; type?: string },
+  others: ReadonlyArray<{ amount: number; category?: string; type?: string }>,
+): { agreement: number; disagreement: number } {
+  const cents = Math.round((Number(item.amount) || 0) * 100);
+  if (cents === 0) return { agreement: 0, disagreement: 0 };
+
+  let agreement = 0;
+  let disagreement = 0;
+
+  for (const other of others) {
+    if (Math.round((Number(other.amount) || 0) * 100) !== cents) continue;
+
+    // A second opinion that also gave up is not corroboration. Counting "متنوعات"
+    // as agreement would make the fallback category look like the most reliable
+    // answer in the system, because it is the one two resolvers most often share.
+    if (other.category === "متنوعات" || item.category === "متنوعات") continue;
+
+    if (other.category === item.category && other.type === item.type) {
+      agreement++;
+    } else {
+      disagreement++;
+    }
+  }
+
+  return { agreement, disagreement };
+}

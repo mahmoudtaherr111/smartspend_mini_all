@@ -34,6 +34,7 @@ import { decomposeHeuristic, ALL_FINANCIAL_VERBS, type DecompositionResult } fro
 import { verifyClassifiedItems } from "./post-classifier-verifier";
 import { checkAdmissibility } from "./admissibility-gate";
 import { applyCalibration } from "./confidence-calibrator";
+import { crossCheck } from "./classification-evidence";
 import { shouldEscalate, decide } from "./classification-decision";
 import { pickPersonCandidate, pickAllPersonCandidates, resolvePersonForTransaction, compactArabic } from "./person-resolver";
 import { muscleMemoryLookup } from "./muscle-memory";
@@ -1228,6 +1229,7 @@ export async function runSmartPipeline(
                 amountsFullyConsumed: wholeItems.length >= numAmounts,
                 hasBlockingFlag: false,
                 needsAnswer: false,
+                hasUnpricedItem: calibratedWhole.unpriced > 0,
               },
               decisionThresholds,
             );
@@ -1553,6 +1555,36 @@ export async function runSmartPipeline(
                 needsReview: (item.confidence || 0) < 85,
                 parsedBy: "ai",
                 inferenceSource: "ai",
+                // Record the model as a resolver like any other.
+                //
+                // Without this the item carries no evidence, `applyCalibration` skips
+                // it, and the model's SELF-REPORTED confidence goes straight to the
+                // decision layer. The live benchmark measured what that costs: the
+                // 90-100 band claims 95.9% and is right 83.3%, and unsafe auto-saves
+                // were 10.3% against 1.1% on the offline run — the gap is precisely the
+                // path the offline run cannot exercise.
+                evidence: {
+                  matchKind: "llm",
+                  rawStrength: item.confidence || 0,
+                  // Does the local pass, which already ran on exactly these segments,
+                  // independently agree? This was hardcoded to 0 — the strongest feature
+                  // in the record, declared and never once computed. It is free: the
+                  // second opinion is already in memory.
+                  ...crossCheck(
+                    {
+                      amount: Number(item.amount) || Number(item.price) || 0,
+                      category: item.main_category || item.category,
+                      type: item.type,
+                    },
+                    escalatedSegmentItems,
+                  ),
+                  anchorConsumed: false,
+                  personResolved: "none",
+                  hasAmbiguityPenalty: false,
+                  ambiguityFlagCount: 0,
+                  categoryIsFallback:
+                    (item.main_category || item.category) === "متنوعات",
+                },
                 currency: "EGP",
                 person_mentioned: item.person_mentioned,
                 person_relationship: item.person_relationship,
@@ -1841,7 +1873,14 @@ export async function runSmartPipeline(
               )
             : 0,
       };
-  const verifiedFinalItems = verification.items;
+  // Calibrate whatever reached the end, whoever produced it.
+  //
+  // The segment and whole-text gates calibrate their own items, but the MODEL path did
+  // not pass through either — it arrived here with the model's self-reported score and
+  // no evidence at all, which is how a number nobody measured came to authorise silent
+  // writes. `applyCalibration` is idempotent, so items already priced are untouched.
+  const finalCalibration = applyCalibration(verification.items);
+  const verifiedFinalItems = finalCalibration.items;
   const hasVerifierErrors = verification.flags.some(
     (flag) => flag.severity === "error",
   );
@@ -1853,7 +1892,14 @@ export async function runSmartPipeline(
       if (verifiedFinalItems.length > 0) {
           overallConfidence = verification.overallConfidence;
           decision =
-            overallConfidence >= autoSaveThreshold && !hasVerifierErrors && !hasVerifierWarnings
+            overallConfidence >= autoSaveThreshold &&
+            !hasVerifierErrors &&
+            !hasVerifierWarnings &&
+            // An item whose probability is the corpus prior rather than a measurement
+            // of its own path is shown to the user. The live benchmark put a number on
+            // what skipping this costs: 10.3% unsafe auto-saves against 1.1% offline,
+            // entirely from the model path this gate is the only one to see.
+            finalCalibration.unpriced === 0
               ? "auto_save"
               : "review";
       } else {
@@ -1863,7 +1909,12 @@ export async function runSmartPipeline(
       }
   } else if (decision === "auto_save") {
       overallConfidence = verification.overallConfidence || overallConfidence;
-      if (hasVerifierErrors || hasVerifierWarnings || overallConfidence < autoSaveThreshold) {
+      if (
+        hasVerifierErrors ||
+        hasVerifierWarnings ||
+        overallConfidence < autoSaveThreshold ||
+        finalCalibration.unpriced > 0
+      ) {
           decision = "review";
       }
   }

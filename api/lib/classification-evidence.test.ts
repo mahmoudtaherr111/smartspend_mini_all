@@ -3,6 +3,7 @@ import {
   bucketKey,
   buildReliabilityTable,
   calibrate,
+  crossCheck,
   emptyEvidence,
   matchFamily,
   type Evidence,
@@ -122,5 +123,59 @@ describe("classification evidence and calibration", () => {
     expect(unseen.support).toBe(0);
     expect(unseen.fellBackToPrior).toBe(true);
     expect(unseen.probability).toBeCloseTo(table.prior, 5);
+  });
+});
+
+describe("cross-checking against an independent resolver", () => {
+  const llm = { amount: 120, category: "أكل وشرب", type: "expense" };
+
+  it("counts agreement when a second resolver reached the same answer", () => {
+    const r = crossCheck(llm, [{ amount: 120, category: "أكل وشرب", type: "expense" }]);
+    expect(r.agreement).toBe(1);
+    expect(r.disagreement).toBe(0);
+  });
+
+  it("counts disagreement when the two resolvers differ on the same amount", () => {
+    const r = crossCheck(llm, [{ amount: 120, category: "مواصلات", type: "expense" }]);
+    expect(r.disagreement).toBe(1);
+    expect(r.agreement).toBe(0);
+  });
+
+  it("counts a direction conflict as disagreement even when the category matches", () => {
+    const r = crossCheck(llm, [{ amount: 120, category: "أكل وشرب", type: "income" }]);
+    expect(r.disagreement).toBe(1);
+  });
+
+  it("reports nothing when no second resolver saw this amount", () => {
+    // Silence is not agreement. Treating it as agreement would make every unexamined
+    // answer look corroborated.
+    const r = crossCheck(llm, [{ amount: 90, category: "أكل وشرب", type: "expense" }]);
+    expect(r).toEqual({ agreement: 0, disagreement: 0 });
+  });
+
+  it("refuses to treat two fallbacks as corroboration", () => {
+    // "متنوعات" is what both resolvers say when neither knows. Counting it as agreement
+    // would make giving up look like the most reliable answer in the system.
+    expect(
+      crossCheck({ amount: 120, category: "متنوعات", type: "expense" }, [
+        { amount: 120, category: "متنوعات", type: "expense" },
+      ]),
+    ).toEqual({ agreement: 0, disagreement: 0 });
+  });
+
+  it("ignores an item with no amount to anchor on", () => {
+    expect(crossCheck({ amount: 0, category: "أكل وشرب" }, [])).toEqual({
+      agreement: 0,
+      disagreement: 0,
+    });
+  });
+
+  it("moves the calibrated probability when resolvers agree or disagree", () => {
+    // The point of the feature: corroborated and disputed answers must not land in the
+    // same bucket, which is what a hardcoded 0 guaranteed.
+    const corroborated = bucketKey(ev({ matchKind: "llm", agreement: 1 }));
+    const disputed = bucketKey(ev({ matchKind: "llm", disagreement: 1 }));
+    const alone = bucketKey(ev({ matchKind: "llm" }));
+    expect(new Set([corroborated, disputed, alone]).size).toBe(3);
   });
 });
