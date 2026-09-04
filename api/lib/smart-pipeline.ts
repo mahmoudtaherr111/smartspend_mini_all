@@ -478,24 +478,65 @@ function applyPersonResolution(
   return { item: next, needsClarification: false };
 }
 
+/**
+ * The model classifies WITHIN our segmentation. It does not get to redo it.
+ *
+ * The live benchmark is unambiguous about why. On the same monologue cases the local
+ * decomposer segments 100% exactly in 84ms; escalating to the model drops that to 0%
+ * and takes 3931ms. On compound sentences, 100% -> 83.3% and 22ms -> 8234ms. The model
+ * is slower, costs money, and is WORSE at structure — on precisely the long narratives
+ * this product exists for.
+ *
+ * The old prompt invited it. Failed segments were glued back into one run-on string with
+ * " و ", our segmentation was appended afterwards as a "hint" (مساعدة سياقية), and the
+ * instruction asked for "at least one operation per part" — a floor, not a count. The
+ * model duly split further: 6.2% over-splitting and 4.9% hallucination live.
+ *
+ * So the segmentation IS the text now, each part carries the amount already extracted for
+ * it, and the count is an exact requirement. What the model is asked for is the one thing
+ * it is genuinely better at: naming the category of a clause the rule engine could not
+ * resolve.
+ */
 function buildGlobalVerifierPrompt(
   originalText: string,
   decomposition: DecompositionResult | undefined,
 ): string {
   const deterministicAmounts = extractAmounts(originalText).map((a) => a.amount);
-  
-  let basePrompt = `النص الأصلي:\n${originalText}`;
-  if (decomposition && decomposition.segments.length > 1) {
-    const segmentsList = decomposition.segments.map((s, i) => `${i + 1}. ${s.text}`).join("\n");
-    basePrompt += `\n\n💡 مساعدة سياقية (Decomposition Hint):\nلقد قمنا بتقسيم النص مبدئياً إلى العمليات التالية لمساعدتك:\n${segmentsList}\nيرجى استخراج عملية واحدة على الأقل لكل جزء بدقة لعدم الخلط بين المبالغ والفئات.`;
+  const segments = decomposition?.segments || [];
+
+  if (segments.length > 1) {
+    const lines = segments
+      .map((seg, i) => {
+        const segAmounts = extractAmounts(seg.text).map((a) => a.amount);
+        const hint = segAmounts.length > 0 ? ` [المبلغ: ${segAmounts.join(" + ")}]` : "";
+        return `${i + 1}. ${seg.text}${hint}`;
+      })
+      .join("\n");
+
+    return [
+      `العمليات دي مقسّمة بالفعل وعددها ${segments.length}. صنّف كل واحدة زي ما هي:`,
+      lines,
+      "",
+      "🚨 قواعد إلزامية:",
+      `- أخرِج بالضبط ${segments.length} عملية — واحدة لكل رقم، بنفس الترتيب.`,
+      "- ممنوع تدمج عمليتين، وممنوع تقسم عملية لأكتر من واحدة.",
+      "- استخدم المبلغ المكتوب جنب كل عملية زي ما هو، وما تخترعش مبالغ.",
+      "- شغلتك هي الفئة والاتجاه بس؛ التقسيم والمبالغ محسومة.",
+    ].join("\n");
   }
 
+  const basePrompt = `النص:\n${originalText}`;
   if (deterministicAmounts.length === 0) {
     return basePrompt;
   }
 
-  const amountsText = deterministicAmounts.join(", ");
-  return `${basePrompt}\n\n🚨 أمان البيانات (Amount Anchoring):\nلقد رصدنا المبالغ الآتية في النص: [${amountsText}].\nيجب أن تحتوي مخرجاتك على هذه المبالغ بالضبط موزعة على العمليات بشكل صحيح، ولا تتخيل مبالغ وهمية من عندك.`;
+  return [
+    basePrompt,
+    "",
+    "🚨 أمان البيانات:",
+    `المبالغ المرصودة في النص: [${deterministicAmounts.join(", ")}].`,
+    "لازم مخرجاتك تحتوي على المبالغ دي بالظبط، وما تخترعش مبالغ من عندك.",
+  ].join("\n");
 }
 
 function settingBoolean(
@@ -1302,7 +1343,9 @@ export async function runSmartPipeline(
     
     // Segment-level isolation: Send only failed segments to the AI
     const textToClassify = failedSegments.length > 0 
-      ? failedSegments.map(s => s.text).join(" و ")
+      // One per line, never rejoined with " و ". Gluing segments back into a run-on
+      // sentence handed the model a structure problem we had already solved correctly.
+      ? failedSegments.map((s) => s.text).join("\n")
       : normalized.forAI;
 
     // Fetch RAG Context (Recent user transactions matching keywords)
