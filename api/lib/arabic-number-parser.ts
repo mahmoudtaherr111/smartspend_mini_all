@@ -12,6 +12,8 @@
  * street units باكو (1,000) and أرنب (1,000,000).
  */
 
+import { normalizeArabic } from "./unified-normalizer";
+
 // ─── Lexicon ───────────────────────────────────────────────────────
 
 export const numMap: Record<string, number> = {
@@ -114,6 +116,39 @@ const UNIT_PHRASES: Array<[RegExp, string]> = [
  */
 const WATER_CONTEXT = /(فاتور|عداد|شرب|كوباي|ازاز|زجاج|عبو|مياه|سخان|فلتر|خرطوم|حنفي|معدني|معدنيه|معدنية)/;
 
+/**
+ * The rules path normalizes Arabic letters before this parser runs (أ→ا, ة→ه, ئ→ي), so
+ * the classical spellings in the lexicon arrive folded: "سبعمائة" reaches us as
+ * "سبعمايه", which no key matched. The same sentence then produced two different
+ * amounts — "خمسة آلاف وسبعمائة وعشرة" was 5710 on the AI path and 5000 + 10 on the
+ * rules path, which the decomposer read as two separate transactions. Folding the keys
+ * once keeps one lexicon answering for every spelling of the same word.
+ */
+function foldKeys(map: Record<string, number>): Record<string, number> {
+  const folded: Record<string, number> = {};
+  for (const [key, value] of Object.entries(map)) {
+    const normalized = normalizeArabic(key);
+    if (!(normalized in folded)) folded[normalized] = value;
+  }
+  return folded;
+}
+
+const FOLDED_NUM = foldKeys(numMap);
+const FOLDED_MULTIPLIER = foldKeys(multiplierMap);
+const FOLDED_RUN_TOGETHER = foldKeys(RUN_TOGETHER);
+const FOLDED_FRACTION = foldKeys(FRACTION_MAP);
+
+/** Looks a word up by its literal spelling first, then by its letter-folded form. */
+function lookupNumberWord(
+  map: Record<string, number>,
+  folded: Record<string, number>,
+  word: string,
+): number | undefined {
+  const direct = map[word];
+  if (direct !== undefined) return direct;
+  return folded[normalizeArabic(word)];
+}
+
 const ARABIC_INDIC_DIGITS = /[٠-٩۰-۹]/g;
 
 /** Converts ٠-٩ and ۰-۹ to ASCII. JS \d is ASCII-only, so nothing downstream sees them otherwise. */
@@ -127,10 +162,10 @@ export function arabicIndicToAscii(text: string): string {
 
 function isKnownNumberWord(word: string): boolean {
   return (
-    numMap[word] !== undefined ||
-    multiplierMap[word] !== undefined ||
-    RUN_TOGETHER[word] !== undefined ||
-    FRACTION_MAP[word] !== undefined ||
+    lookupNumberWord(numMap, FOLDED_NUM, word) !== undefined ||
+    lookupNumberWord(multiplierMap, FOLDED_MULTIPLIER, word) !== undefined ||
+    lookupNumberWord(RUN_TOGETHER, FOLDED_RUN_TOGETHER, word) !== undefined ||
+    lookupNumberWord(FRACTION_MAP, FOLDED_FRACTION, word) !== undefined ||
     isDigitLiteral(word)
   );
 }
@@ -167,8 +202,16 @@ function isDigitLiteral(word: string): boolean {
 export function parseNumericLiteral(word: string): number {
   const trimmed = word.trim();
   const parts = trimmed.split(",");
+  const groups = parts.slice(1);
+  // Every group after a thousands comma is three digits — and the last one may carry the
+  // decimal fraction: "1,250.50". Requiring a bare three digits everywhere read that as
+  // a decimal comma and returned 1.25, losing a factor of a thousand on the one field
+  // that must never be wrong.
   const isThousands =
-    parts.length > 1 && parts.slice(1).every((group) => /^\d{3}$/.test(group));
+    groups.length > 0 &&
+    groups.every((group, i) =>
+      i === groups.length - 1 ? /^\d{3}(?:\.\d+)?$/.test(group) : /^\d{3}$/.test(group),
+    );
   return parseFloat(isThousands ? trimmed.replace(/,/g, "") : trimmed.replace(",", "."));
 }
 
@@ -259,6 +302,16 @@ export function parseArabicNumbers(text: string): string {
   if (!text) return text;
 
   let processed = arabicIndicToAscii(text);
+
+  // Punctuation must not hide a number word. Tokenizing on whitespace alone left
+  // "وخمسين،" as one token that matched nothing, so "تلتمية وخمسين،" composed to 300 and
+  // dropped the fifty — in any sentence with a comma, which is most spoken narratives.
+  // The digit guards keep a thousands comma ("1,250") and a decimal inside a literal.
+  processed = processed.replace(/(?<!\d)([،؛,;:!؟?…])(?!\d)/g, " $1 ");
+  // A full stop is spaced out unless it sits between two digits, so "ميتين وتلاتين."
+  // and "500." are read while "50.75" keeps its decimal point.
+  processed = processed.replace(/(?<!\d)\.|\.(?!\d)/g, " . ");
+
   for (const [pattern, replacement] of UNIT_PHRASES) {
     processed = processed.replace(pattern, replacement);
   }
@@ -326,7 +379,7 @@ export function parseArabicNumbers(text: string): string {
       continue;
     }
 
-    const multiplier = multiplierMap[core];
+    const multiplier = lookupNumberWord(multiplierMap, FOLDED_MULTIPLIER, core);
     if (multiplier !== undefined) {
       acc.addMultiplier(multiplier);
       continue;
@@ -337,7 +390,7 @@ export function parseArabicNumbers(text: string): string {
       continue;
     }
 
-    const word_ = numMap[core];
+    const word_ = lookupNumberWord(numMap, FOLDED_NUM, core);
     if (word_ !== undefined) {
       acc.addWord(word_);
       continue;
@@ -349,8 +402,8 @@ export function parseArabicNumbers(text: string): string {
       if (next) {
         const { core: nextCore } = stripClitic(next);
         const continues =
-          numMap[nextCore] !== undefined ||
-          multiplierMap[nextCore] !== undefined ||
+          lookupNumberWord(numMap, FOLDED_NUM, nextCore) !== undefined ||
+          lookupNumberWord(multiplierMap, FOLDED_MULTIPLIER, nextCore) !== undefined ||
           RUN_TOGETHER[nextCore] !== undefined ||
           FRACTION_MAP[nextCore] !== undefined;
         if (continues && acc.isActive) continue;
@@ -362,5 +415,6 @@ export function parseArabicNumbers(text: string): string {
   }
 
   flushInto();
-  return out.join(" ");
+  // Re-attach the punctuation that was spaced out for tokenizing.
+  return out.join(" ").replace(/ +([،؛,;:!؟?….])/g, "$1");
 }
