@@ -13,6 +13,7 @@ import {
   type StructuredSchema,
 } from "./llm-router";
 import { buildProviderChain } from "./llm-provider-chain";
+import { resolveAdminRoutes, type AiTier } from "./ai-gateway";
 import {
   CATEGORY_CLASSIFIER_SCHEMA,
   validateClassifierReply,
@@ -1465,9 +1466,29 @@ export async function runSmartPipeline(
       // provider failed, classification gave up on the model entirely - while the keys
       // for the other three sat unused in this very request. A 429 on Gemini dropped a
       // paying user's minute of speech to the rule engine with Groq idle.
+      // What the admin configured leads the chain, when they configured anything.
+      //
+      // The dashboard's provider and model tables were written, encrypted, cached and
+      // never read: classification resolved its provider from environment keys alone, so
+      // adding OpenRouter or switching the model from the admin UI changed nothing at
+      // runtime. Now the model marked default for classification at this plan answers
+      // first, its siblings queue behind it, and the built-in keys remain the floor —
+      // an install with an empty table behaves exactly as before.
+      const adminRoutes = await resolveAdminRoutes(
+        "classification",
+        (input.userPlan as AiTier) === "ultra"
+          ? "ultra"
+          : (input.userPlan as AiTier) === "pro"
+            ? "pro"
+            : "free",
+      ).catch((err) => {
+        console.warn("[Smart Pipeline] admin routes unavailable:", err);
+        return { preferred: null, routes: [] as never[] };
+      });
+
       const chain = buildProviderChain({
-        preferred: provider,
-        preferredModel: modelUsed,
+        preferred: adminRoutes.preferred?.slug || provider,
+        preferredModel: adminRoutes.preferred?.model || modelUsed,
         plan: (input.userPlan as AiPlanName) || "free",
         keys: {
           gemini: input.apiKey,
@@ -1477,6 +1498,15 @@ export async function runSmartPipeline(
           fireworks: input.fireworksApiKey,
           nvidia: input.nvidiaApiKey,
         },
+        dbRoutes: adminRoutes.routes.map((route) => ({
+          slug: route.slug,
+          protocol: route.protocol === "gemini" ? ("gemini" as const) : ("openai" as const),
+          baseUrl: route.baseUrl,
+          apiKey: route.apiKey,
+          model: route.model,
+          priority: route.priority,
+          providerId: route.providerId,
+        })),
       });
 
       const llm = await executeLlmChain(chain, {
