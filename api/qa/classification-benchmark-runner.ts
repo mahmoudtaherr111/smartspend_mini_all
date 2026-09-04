@@ -49,7 +49,12 @@ import {
   describeTable,
   writeCalibrationTable,
 } from "./classification-calibration";
-import { defaultGeminiModelForPlan } from "../lib/model-mapper";
+import {
+  defaultFireworksModelForPlan,
+  defaultGeminiModelForPlan,
+  defaultGroqModelForPlan,
+  defaultNvidiaModelForPlan,
+} from "../lib/model-mapper";
 
 // ─── Cost model ─────────────────────────────────────────────────────────────
 
@@ -62,6 +67,9 @@ const PRICES: Record<string, { input: number; output: number }> = {
   "gemini-3.1-flash-lite": { input: 0.1, output: 0.4 },
   "gemini-3.5-flash": { input: 0.3, output: 2.5 },
   "gemini-3.1-pro": { input: 1.25, output: 10.0 },
+  // NVIDIA NIM, DeepSeek V4 class. Rounded up from published rates.
+  "deepseek-ai/deepseek-v4-flash-0731": { input: 0.3, output: 1.2 },
+  "deepseek-ai/deepseek-v4-pro-0813": { input: 0.6, output: 2.5 },
 };
 
 function priceFor(model: string) {
@@ -82,6 +90,8 @@ interface Options {
   confirmSpend: boolean;
   /** Rebuild the reliability table from THIS run's labelled results. */
   calibrate: boolean;
+  /** Which provider serves the run. The comparison this exists for. */
+  provider: string;
   bucket?: string;
   model?: string;
 }
@@ -98,6 +108,7 @@ function parseArgs(argv: string[]): Options {
     maxTokens: Number(get("max-tokens") || 400_000),
     confirmSpend: argv.includes("--confirm-spend"),
     calibrate: argv.includes("--calibrate"),
+    provider: get("provider") || "gemini",
     bucket: get("bucket"),
     model: get("model"),
   };
@@ -105,8 +116,14 @@ function parseArgs(argv: string[]): Options {
 
 // ─── Gates ──────────────────────────────────────────────────────────────────
 
-function resolveApiKey(): string {
-  const key = process.env.GEMINI_API_KEY || "";
+function resolveApiKey(provider = "gemini"): string {
+  const byProvider: Record<string, string | undefined> = {
+    gemini: process.env.GEMINI_API_KEY,
+    groq: process.env.GROQ_API_KEY,
+    fireworks: process.env.FIREWORKS_API_KEY,
+    nvidia: process.env.NVIDIA_API_KEY,
+  };
+  const key = byProvider[provider] || process.env.GEMINI_API_KEY || "";
   // The unit suite injects the literal "test"; running against it would burn the whole
   // corpus producing 401s and look like a catastrophic accuracy regression.
   if (!key || key === "test" || key.length < 20) return "";
@@ -119,7 +136,7 @@ function checkGates(opts: Options, apiKey: string): string[] {
     blocked.push("CLASSIFY_BENCH_LIVE=1 is not set");
   }
   if (!apiKey) {
-    blocked.push("no usable GEMINI_API_KEY (missing, too short, or the test placeholder)");
+    blocked.push(`no usable API key for ${opts.provider} (missing, too short, or the test placeholder)`);
   }
   if (process.env.VITEST) {
     blocked.push("running inside VITEST — the live benchmark must never spend from a test run");
@@ -150,6 +167,7 @@ function inputFor(
     userType: "local",
     userPlan: opts.plan,
     userDict: [],
+    provider: opts.provider,
     apiKey,
     apiKey2: process.env.GEMINI_API_KEY_2 || "",
     groqApiKey: process.env.GROQ_API_KEY || "",
@@ -164,8 +182,16 @@ function inputFor(
 
 async function main(): Promise<void> {
   const opts = parseArgs(process.argv.slice(2));
-  const apiKey = resolveApiKey();
-  const model = opts.model || defaultGeminiModelForPlan(opts.plan);
+  const apiKey = resolveApiKey(opts.provider);
+  const model =
+    opts.model ||
+    (opts.provider === "nvidia"
+      ? defaultNvidiaModelForPlan(opts.plan)
+      : opts.provider === "groq"
+        ? defaultGroqModelForPlan(opts.plan)
+        : opts.provider === "fireworks"
+          ? defaultFireworksModelForPlan(opts.plan)
+          : defaultGeminiModelForPlan(opts.plan));
 
   assertFixtureIntegrity();
   const all = opts.bucket
@@ -188,6 +214,7 @@ async function main(): Promise<void> {
   console.log("─".repeat(64));
   console.log("Live classification benchmark");
   console.log(`  cases            ${cases.length} of ${s.total}`);
+  console.log(`  provider         ${opts.provider}`);
   console.log(`  plan / model     ${opts.plan} / ${model}`);
   console.log(`  est. prompt      ~${promptTokens.toLocaleString()} tokens`);
   console.log(`  est. output      ~${outputTokens.toLocaleString()} tokens`);
