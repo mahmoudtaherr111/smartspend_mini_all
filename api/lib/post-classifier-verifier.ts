@@ -345,18 +345,15 @@ function checkAmountSanity(
 ): VerificationFlag[] {
   const flags: VerificationFlag[] = [];
 
-  // Extract all numbers from original text (handling thousands separators)
-  const textNumbers = (originalText.match(/\d+(?:[.,]\d+)?(?:[.,]\d+)?/g) || [])
-    .map((n) => {
-      // Remove commas used as thousands separators
-      let cleanNum = n;
-      if (n.includes(",") && n.split(",")[1].length === 3) {
-        cleanNum = n.replace(/,/g, "");
-      } else {
-        cleanNum = n.replace(",", "."); // Assume decimal if it doesn't look like a thousands separator
-      }
-      return parseFloat(cleanNum);
-    })
+  // The shared extractor, not a seventh private regex.
+  //
+  // This used to match /\d+/ — ASCII digits only — and carried its own third copy of
+  // the comma-versus-thousands rule. So for any utterance whose amounts were Arabic-
+  // Indic (٥٠٠), spoken (خمسميت), or slang (باكو), `textNumbers` came back empty and
+  // this function returned no flags at all. The guard against double-counting was
+  // silently absent for exactly the inputs a voice-first Egyptian app receives most.
+  const textNumbers = extractAmounts(originalText)
+    .map((a) => a.amount)
     .filter((n) => !isNaN(n) && n > 0);
 
   if (textNumbers.length === 0 || items.length === 0) return flags;
