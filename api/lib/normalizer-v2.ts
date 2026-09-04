@@ -39,18 +39,68 @@ const FRANCO_LIGHT_DICT: Record<string, string> = {
   "gneh": "جنيه", "geneh": "جنيه",
 };
 
+/**
+ * Brands, in the Latin spelling people type, mapped to the Arabic the classifier knows.
+ *
+ * These are the most classification-relevant Latin words a user can write, and
+ * letter-by-letter transliteration destroyed every one of them: Uber became "وبير",
+ * Vodafone Cash became "فودافوني كاسه", Talabat "تالابات", Carrefour "كارريفوور". None
+ * of those match anything in the merchant registry, whose keys are Arabic — so typing a
+ * brand name, which is the most natural way to write one, guaranteed a miss.
+ */
+const LATIN_BRANDS: Record<string, string> = {
+  uber: "أوبر", careem: "كريم", swvl: "سويفل", didi: "ديدي", indrive: "إن درايف",
+  talabat: "طلبات", elmenus: "المنيوز", breadfast: "بريدفاست", instashop: "إنستاشوب",
+  carrefour: "كارفور", spinneys: "سبينس", metro: "مترو", seoudi: "سعودي",
+  hyperone: "هايبر وان", kazyon: "كازيون", gourmet: "جورميه",
+  vodafone: "فودافون", orange: "أورنج", etisalat: "اتصالات", we: "وي",
+  instapay: "انستاباي", fawry: "فوري", valu: "فاليو", aman: "أمان",
+  netflix: "نتفليكس", shahid: "شاهد", spotify: "سبوتيفاي", anghami: "أنغامي",
+  amazon: "أمازون", noon: "نون", jumia: "جوميا", shein: "شي إن",
+  starbucks: "ستاربكس", costa: "كوستا", cilantro: "سيلانترو", dunkin: "دانكن",
+  mcdonalds: "ماكدونالدز", kfc: "كنتاكي", buffalo: "بافلو", hardees: "هارديز",
+  seif: "سيف", ezaby: "العزبي", roshdy: "رشدي",
+  cash: "كاش", pay: "دفع", wallet: "محفظة",
+};
+
+/** Franco-Arabic uses digits for sounds Latin letters lack. Their presence is the signal. */
+const FRANCO_MARKERS = /[235789]/;
+
+/**
+ * Converts Franco-Arabic to Arabic, and ONLY Franco-Arabic.
+ *
+ * This used to transliterate every Latin word of two or more letters, on the assumption
+ * that all Latin text is Arabic written in Latin script. That assumption is false for
+ * exactly the words that matter most to classification — brand names — and it mangled
+ * all of them.
+ *
+ * A word is now treated as Franco only when it says so: it is a known Franco spelling,
+ * or it carries the digit-letters (2, 3, 5, 7, 8, 9) that Franco uses for sounds the
+ * Latin alphabet has no letter for. Anything else is left exactly as written, because a
+ * brand the registry does not know is still more useful to the model as "Klarna" than as
+ * "كلارنا".
+ */
 function convertFrancoArabLight(text: string): string {
-  return text.replace(/[a-zA-Z][a-zA-Z0-9']*[0-9][a-zA-Z0-9']*|[0-9][a-zA-Z0-9']*[a-zA-Z][a-zA-Z0-9']*|[a-zA-Z]{2,}/g, (word) => {
-    const lower = word.toLowerCase();
-    if (FRANCO_LIGHT_DICT[lower]) return FRANCO_LIGHT_DICT[lower];
-    let result = "";
-    for (const char of lower) {
-      if (FRANCO_DIGIT_MAP[char]) result += FRANCO_DIGIT_MAP[char];
-      else if (FRANCO_LETTER_MAP[char]) result += FRANCO_LETTER_MAP[char];
-      else result += char;
-    }
-    return result;
-  });
+  return text.replace(
+    /[a-zA-Z][a-zA-Z0-9']*[0-9][a-zA-Z0-9']*|[0-9][a-zA-Z0-9']*[a-zA-Z][a-zA-Z0-9']*|[a-zA-Z]{2,}/g,
+    (word) => {
+      const lower = word.toLowerCase();
+
+      if (LATIN_BRANDS[lower]) return LATIN_BRANDS[lower];
+      if (FRANCO_LIGHT_DICT[lower]) return FRANCO_LIGHT_DICT[lower];
+
+      // No Franco marker means this is ordinary Latin text, not Arabic in disguise.
+      if (!FRANCO_MARKERS.test(lower)) return word;
+
+      let result = "";
+      for (const char of lower) {
+        if (FRANCO_DIGIT_MAP[char]) result += FRANCO_DIGIT_MAP[char];
+        else if (FRANCO_LETTER_MAP[char]) result += FRANCO_LETTER_MAP[char];
+        else result += char;
+      }
+      return result;
+    },
+  );
 }
 
 // ─── Types ────────────────────────────────────────────────────────
