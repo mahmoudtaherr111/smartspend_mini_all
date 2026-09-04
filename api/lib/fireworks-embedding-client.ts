@@ -50,7 +50,17 @@ function isProviderUnavailable(): boolean {
 }
 
 function markProviderUnavailable(status: number): void {
-  const cooldownMs = status === 429 ? 60_000 : [401, 402, 403].includes(status) ? 15 * 60_000 : 0;
+  // Any 4xx that is not a rate limit or a timeout is a problem with the account or the
+  // request, and neither fixes itself in a minute. The list used to be enumerated, and
+  // it did not include 412 — which is precisely what Fireworks answers when the account
+  // is suspended for an unpaid invoice. Every classification then paid for a call that
+  // could not succeed: in one live benchmark run, all 87 of them.
+  const cooldownMs =
+    status === 429 || status === 408
+      ? 60_000
+      : status >= 400 && status < 500
+        ? 15 * 60_000
+        : 0;
   if (!cooldownMs) return;
 
   const nextUnavailableUntil = Date.now() + cooldownMs;
