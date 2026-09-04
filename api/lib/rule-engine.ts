@@ -3,7 +3,7 @@
  * Fast classification without AI for simple/clear transactions
  */
 
-import { CATEGORY_DICTIONARY, isWawWhitelisted } from "./egyptian-dictionary";
+import { CATEGORY_DICTIONARY, isKnownLexeme, isWawWhitelisted } from "./egyptian-dictionary";
 import { fuzzyFindCategory, normalizeArabic, matchArabicPhrase, stripArabicPrefix } from "./fuzzy-match";
 import { detectIntent, type TransactionIntent } from "./intent-detector";
 import { extractAmounts, type ExtractedAmount } from "./entity-extractor";
@@ -96,8 +96,18 @@ export const SUB_CATEGORY_MAP: Record<
   بقال: { category: "أكل وشرب", subCategory: "بقالة" },
   سمك: { category: "أكل وشرب", subCategory: "سي فود" },
   جمبري: { category: "أكل وشرب", subCategory: "سي فود" },
+  فشار: { category: "أكل وشرب", subCategory: "سناكس" },
+  سواق: { category: "مواصلات", subCategory: "تاكسي" },
+  سائق: { category: "مواصلات", subCategory: "تاكسي" },
   فراخ: { category: "أكل وشرب", subCategory: "لحوم ودواجن" },
   لحمه: { category: "أكل وشرب", subCategory: "لحوم ودواجن" },
+  عجل: { category: "أكل وشرب", subCategory: "لحوم ودواجن" },
+  خروف: { category: "أكل وشرب", subCategory: "لحوم ودواجن" },
+  خرفان: { category: "أكل وشرب", subCategory: "لحوم ودواجن" },
+  جزار: { category: "أكل وشرب", subCategory: "لحوم ودواجن" },
+  ذبيحه: { category: "أكل وشرب", subCategory: "لحوم ودواجن" },
+  اضحيه: { category: "أكل وشرب", subCategory: "لحوم ودواجن" },
+  كندوز: { category: "أكل وشرب", subCategory: "لحوم ودواجن" },
   فرن: { category: "أكل وشرب", subCategory: "مخبوزات" },
   مخبز: { category: "أكل وشرب", subCategory: "مخبوزات" },
   عيش: { category: "أكل وشرب", subCategory: "مخبوزات" },
@@ -649,7 +659,7 @@ function refineSubCategory(
       if (/(بقاله|سوبر|خضار|فاكهه|بيض|لبن)/.test(context)) return "بقالة";
       if (/(شيبسي|شوكولاته|حلويات|ايس كريم|بسبوسه)/.test(context))
         return "سناكس";
-      if (/(لحمه|فراخ|سمك|جمبري)/.test(context)) return "لحوم ودواجن";
+      if (/(لحمه|فراخ|سمك|جمبري|عجل|خروف|خرفان|جزار|ذبيح|اضحي|كندوز|ضاني)/.test(context)) return "لحوم ودواجن";
       if (/(عيش|مخبز|فرن)/.test(context)) return "مخبوزات";
       return "عام";
     case "هدايا وصدقات":
@@ -769,6 +779,13 @@ export function isSimpleText(text: string): boolean {
  * the category fits the surrounding context. Only overrides when the
  * context provides a clear signal — otherwise keeps the default mapping.
  */
+/**
+ * Categories that name a person rather than a kind of spending. Their direction comes
+ * from the sentence, never from the category itself — money can flow either way with
+ * the same person — so they are the categories a governed verb is allowed to keep.
+ */
+export const PERSON_CATEGORIES = ["العائلة", "أصدقاء", "موظفين"];
+
 const DISAMBIGUATION_RULES: Record<string, Array<{
   contextPattern: RegExp;
   category: string;
@@ -800,6 +817,31 @@ const DISAMBIGUATION_RULES: Record<string, Array<{
   ],
   "شراب": [
     { contextPattern: /شربت|مشروب|عصير|عصاير/, category: "أكل وشرب", subCategory: "مشروبات" },
+  ],
+  // "أكل" is a category anchor in the subcategory map, so it answered before anything
+  // more specific could: "جبت أكل للقطة" was filed as أكل وشرب because the generic food
+  // word sits in an earlier layer than القطة does. The animal is the specific noun here.
+  "اكل": [
+    {
+      // The prefix group is what keeps "نقطه" from reading as a cat: a word boundary
+      // written as \b does not work between Arabic letters, since JS \w is ASCII-only.
+      contextPattern:
+        /(?:^|[^؀-ۿ])(?:ال|لل|ل|و|ب)*(?:قط[هة]|قطط|قطتي|كلب|كلاب|كلبي|هر[هة]|عصفور|عصافير|بيطري)/,
+      category: "حيوانات أليفة",
+      subCategory: "أكل",
+    },
+  ],
+  // A bare "كارت" in the dialect is phone credit far more often than a bank card:
+  // "جبت كارت بـ ٢٥" is a recharge card, while the payment sense is spoken as
+  // "كارت فيزا" (caught by the bigram layer) or "بالكارت" (the instrument, not the thing
+  // bought) — both excluded here so they keep their تحويل meaning.
+  "كارت": [
+    {
+      contextPattern:
+        /^(?!.*(?:بالكارت|بالفيزا|بالبطاق|فيزا|ماستر|ائتمان|بنكي))(?=.*(?:شحن|رصيد|موبايل|تليفون|فون|خط|فودافون|اورنج|اتصالات|باقه|جبت|اشتريت|شريت|خدت|طلبت)).*/,
+      category: "فواتير",
+      subCategory: "شحن رصيد",
+    },
   ],
   "كفر": [
     { contextPattern: /عربي?[ةه]|كاوتش|إطار|اطار|تاير|tire/i, category: "خدمات سيارات", subCategory: "إطارات" },
@@ -1400,6 +1442,20 @@ export async function runRuleEngine(
             subCategory = "عام";
             confidence = setMatch(78, "dict_unigram"); // Single-word only: needs review
           }
+          // The merchant, trigram, bigram and subcategory sites all disambiguate by
+          // context; this one did not, so a multi-meaning single word (كارت) kept the
+          // first sense the dictionary happened to list.
+          const disambiguated =
+            disambiguateContext(word, allContext, category, subCategory) ||
+            disambiguateContext(normalizedWord, allContext, category, subCategory) ||
+            (strippedWord !== normalizedWord
+              ? disambiguateContext(strippedWord, allContext, category, subCategory)
+              : null);
+          if (disambiguated) {
+            category = disambiguated.category;
+            subCategory = disambiguated.subCategory;
+            ambiguityFlags = [...(ambiguityFlags || []), "context_disambiguated"];
+          }
           inferenceSource = "dictionary";
           found = true;
           break;
@@ -1410,10 +1466,17 @@ export async function runRuleEngine(
     // 6. Fuzzy match (Damerau-Levenshtein — handles transpositions)
     if (!found) {
       for (const word of words) {
+        // A word we already know is not a misspelling of a different word. Skipping
+        // known verbs and currency units here is what keeps the typo layer from
+        // answering with a category — and a direction — for a token that carries none.
+        if (isKnownLexeme(word)) continue;
         if (word.length >= 3) {
           // Damerau handles transpositions (e.g. "كهارب" ↔ "كهربا" = distance 2, not 3)
-          // Short words (≤3 chars) need strict matching to avoid false positives
-          const limit = word.length <= 3 ? 0 : (word.length <= 6 ? 2 : 2);
+          // The budget has to scale with the word: two edits on a four-letter word means
+          // half its letters changed, which is a different word, not a typo. That is how
+          // `دبحت` was "corrected" into سكن and `خروف` into تعليم — categories invented
+          // for words the dictionary simply does not contain.
+          const limit = word.length <= 3 ? 0 : word.length <= 5 ? 1 : 2;
           const fuzzyResult = fuzzyFindCategory(word, CATEGORY_DICTIONARY, limit);
           if (fuzzyResult && typeof fuzzyResult === "string") {
             category = fuzzyResult;
@@ -1568,11 +1631,21 @@ export async function runRuleEngine(
 
     let finalCategory = governedCategory;
     let finalSubCategory = governed ? governed.subCategory : refinedSubCategory;
+
+    // A loan to someone we know is filed under that person, not under the generic
+    // تحويل bucket: "سلفت سيف تلتمية" belongs in أصدقاء/سيف صاحبك, which is the whole
+    // point of resolving the person. The verb still governs direction — only the
+    // category comes from the more specific noun. Limited to the debt family, because
+    // a gam3eya installment stays التزامات وجمعيات no matter who was handed the money.
+    if (governed?.id === "debt" && PERSON_CATEGORIES.includes(category)) {
+      finalCategory = category;
+      finalSubCategory = refinedSubCategory;
+    }
     if (!governed && effectiveIntent === "income" && registeredType === "expense") {
       if (/(رجع|استرد|استرجع|باقي|بقيت)/.test(allContextNorm)) {
         finalCategory = "مرتب";
         finalSubCategory = "استرداد نقدي";
-      } else if (["العائلة", "أصدقاء", "موظفين"].includes(category)) {
+      } else if (PERSON_CATEGORIES.includes(category)) {
         // Preserve person subcategory — e.g., "استلمت من أحمد" stays as أصدقاء/عام
         // instead of being overridden to مرتب. The person category is meaningful here.
         finalCategory = category;
@@ -1584,7 +1657,7 @@ export async function runRuleEngine(
       registeredType = "income";
     }
 
-    const isNeutralCategory = ["متنوعات", "العائلة", "أصدقاء", "موظفين"].includes(finalCategory);
+    const isNeutralCategory = ["متنوعات", ...PERSON_CATEGORIES].includes(finalCategory);
     let finalType = isNeutralCategory ? effectiveIntent : (registeredType || effectiveIntent);
     if (effectiveIntent === "income") {
       finalType = "income";
