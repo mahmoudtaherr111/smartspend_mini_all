@@ -1,6 +1,7 @@
 import { SchemaType } from "@google/generative-ai";
 import { normalizeV2 } from "./normalizer-v2";
-import { runRuleEngine, SUB_CATEGORY_MAP } from "./rule-engine";
+import { runRuleEngine, PERSON_CATEGORIES, SUB_CATEGORY_MAP } from "./rule-engine";
+import { resolveGovernedTaxonomy } from "./direction-governed-taxonomy";
 import { CATEGORY_DICTIONARY } from "./egyptian-dictionary";
 import { normalizeTransactionTaxonomyList } from "./category-registry";
 import { CATEGORIES } from "./category-registry";
@@ -380,7 +381,7 @@ function shouldResolvePerson(
   knownPeople?: KnownPersonContext[],
 ): boolean {
   if (!candidateName) return false;
-  if (["العائلة", "أصدقاء", "موظفين"].includes(String(category || ""))) {
+  if (PERSON_CATEGORIES.includes(String(category || ""))) {
     return true;
   }
   
@@ -426,10 +427,12 @@ function applyPersonResolution(
 
   if (resolution.needsClarification) {
     if (hasLoanIntent(transactionText)) {
+      // Who the money went to is still unknown, so the category stays neutral — but the
+      // verb already said which way it moved, and not knowing the person is no reason to
+      // forget that.
       return {
         item: {
           ...next,
-          type: "transfer",
           category: "تحويل",
           subCategory: "دين/سلفة",
           needsReview: true,
@@ -455,20 +458,34 @@ function applyPersonResolution(
     const genericCategories = ["تحويل", "متنوعات", "أخرى", "غير محدد", "عام"];
     const isGenericCategory = !item.category || genericCategories.includes(item.category);
     const isWeakRuleMatch = item.confidence < 85;
-    if (isGenericCategory || (resolution.isKnown && isWeakRuleMatch)) {
+    // A name the user actually has in their contacts, next to a verb that hands money to
+    // a person, outranks a global merchant list that happens to share the name.
+    // "اديت كريم 100" was filed as مواصلات/أوبر because the merchant registry answers
+    // with 100 confidence and this only yielded to a weak match — so the user's own
+    // friend lost to a ride-hailing brand. "ركبت كريم 100" has no directed verb and
+    // still reads as the ride.
+    // ...but not over a direction-governed noun: "قبضت 5000 من مروان الجمعية" is a
+    // gam3eya payout that happened to name a brother, and التزامات وجمعيات is the more
+    // specific answer than العائلة. The debt family is the exception — there the person
+    // IS the category, which is why it is allowed through.
+    const governedHere = resolveGovernedTaxonomy(transactionText);
+    // A kinship word counts here even though it is in nobody's contact list: "حولت لأمي
+    // ألفين على فودافون كاش" is money to family, and فودافون كاش is the rail it travelled
+    // on, not what it was spent on — that sentence was filed under فواتير.
+    const paidThePersonDirectly =
+      PERSON_CATEGORIES.includes(resolution.category || "") &&
+      isDirectedPersonPayment(transactionText, resolution.name) &&
+      (!governedHere || governedHere.id === "debt");
+    if (isGenericCategory || (resolution.isKnown && isWeakRuleMatch) || paidThePersonDirectly) {
       next.category = resolution.category;
     }
     next.subCategory = resolution.subCategory;
-    if (hasLoanIntent(transactionText)) {
-      if (next.type !== "income") {
-        next.type = "transfer";
-        next.category = "تحويل";
-        next.subCategory = "دين/سلفة";
-      } else {
-        next.category = "مرتب";
-        next.subCategory = "سلف/قروض";
-      }
-    } else if (next.type !== "income" && ["العائلة", "أصدقاء", "موظفين"].includes(next.category || "")) {
+    // This layer knows WHO, not WHICH WAY. It used to decide both for a loan, and got
+    // both wrong: "سلفت سيف تلتمية" was overwritten back to a generic تحويل — losing the
+    // person it had just resolved — and "استلفت من محمود خمسمية" was filed as مرتب, so
+    // borrowed money showed up as salary in the reports and the admin analytics. The
+    // verb governs direction upstream; the resolved person governs the category.
+    if (next.type !== "income" && PERSON_CATEGORIES.includes(next.category || "")) {
       next.type = "expense";
     }
     // Resolving WHO the money went to says nothing about whether the CATEGORY is right,
@@ -1190,9 +1207,14 @@ export async function runSmartPipeline(
       const localUnknownNames: string[] = [];
 
       for (const item of ruleResult.items) {
+          // Names are looked for in the normalized text, not the raw utterance: Franco
+          // becomes Arabic during normalization, so "7awalt 500 gneh l Ahmed" carried no
+          // Arabic name at all here and the friend was never resolved — while the same
+          // sentence inside a longer narrative resolved fine, because that path already
+          // passed the normalized segment.
           const candidates = pickAllPersonCandidates(
             item.person_mentioned,
-            input.text,
+            normalizedText,
             knownNames,
           );
 
@@ -1215,7 +1237,7 @@ export async function runSmartPipeline(
                 ? applyPersonResolution(
                     clonedItem,
                     candidateName,
-                    input.text,
+                    normalizedText,
                     input.text,
                     knownPeople,
                   )

@@ -48,11 +48,55 @@ const FRANCO_ARAB_DICT: Record<string, string> = {
   "akl": "أكل", "akel": "أكل",
   "atm": "ATM", "ATM": "ATM",
   "3": "ع", "7": "ح", "5": "خ", "6": "ط", "8": "غ", "9": "ق",
+
+  // Names and brands, which letter-by-letter transliteration mangles beyond recognition:
+  // "Ahmed" came out "اهميد" and "instapay" came out "ينستاباي", so the person was never
+  // resolved and the wallet was never recognised — "7awalt 500 gneh l Ahmed 3ala
+  // instapay" lost both the friend and the rail it went over.
+  "ahmed": "أحمد", "a7med": "أحمد", "ahmad": "أحمد",
+  "mohamed": "محمد", "mohammed": "محمد", "m7amed": "محمد", "mo7amed": "محمد",
+  "mahmoud": "محمود", "ma7moud": "محمود", "mahmod": "محمود",
+  "mostafa": "مصطفى", "mustafa": "مصطفى", "mos6afa": "مصطفى",
+  "ali": "علي", "3ali": "علي", "omar": "عمر", "3omar": "عمر",
+  "khaled": "خالد", "5aled": "خالد", "hassan": "حسن", "7assan": "حسن",
+  "hussein": "حسين", "7ussein": "حسين", "7osseen": "حسين",
+  "youssef": "يوسف", "yousef": "يوسف", "yusuf": "يوسف",
+  "ibrahim": "إبراهيم", "3abdo": "عبده", "abdo": "عبده",
+  "amr": "عمرو", "3amr": "عمرو", "tarek": "طارق", "6arek": "طارق",
+  "sherif": "شريف", "cherif": "شريف", "ashraf": "أشرف",
+  "sameh": "سامح", "wael": "وائل", "yasser": "ياسر", "ayman": "أيمن",
+  "ehab": "إيهاب", "magdy": "مجدي", "nader": "نادر", "sami": "سامي",
+  "tamer": "تامر", "walid": "وليد", "waleed": "وليد", "ziad": "زياد",
+  "marwan": "مروان", "seif": "سيف", "saif": "سيف", "hamza": "حمزة",
+  "emad": "عماد", "3emad": "عماد", "adel": "عادل", "karim": "كريم",
+  "sara": "سارة", "sarah": "سارة", "mariam": "مريم", "maryam": "مريم",
+  "nour": "نور", "menna": "منة", "salma": "سلمى", "hana": "هنا",
+  "mona": "منى", "heba": "هبة", "dina": "دينا", "aya": "آية",
+  "esraa": "إسراء", "asmaa": "أسماء", "fatma": "فاطمة", "zeinab": "زينب",
+  "amira": "أميرة", "hoda": "هدى", "nada": "ندى", "rana": "رنا", "rania": "رانيا",
+
+  "instapay": "انستاباي", "insta pay": "انستاباي",
+  "fawry": "فوري", "fawri": "فوري",
+  "telda": "تيلدا", "valu": "فاليو", "aman": "أمان", "meeza": "ميزة",
+  "vodafone": "فودافون", "vf": "فودافون", "orange": "اورنج",
+  "etisalat": "اتصالات", "we": "وي",
+  "uber": "اوبر", "careem": "كريم", "swvl": "سويفل", "didi": "ديدي",
+  "indrive": "اندرايف", "talabat": "طلبات", "breadfast": "بريدفاست",
+  "halan": "هالان", "rabbit": "رابت",
+};
+
+/**
+ * Single-letter franco particles. The word pattern deliberately requires two letters, so
+ * these were left as Latin text in the middle of an Arabic sentence — "l Ahmed" kept an
+ * "l" that no downstream layer could read.
+ */
+const FRANCO_PARTICLES: Record<string, string> = {
+  l: "ل", w: "و", b: "بـ",
 };
 
 function convertFrancoArab(text: string): string {
   // Match: (1) words with digits (7awalte), (2) known Franco words without digits (el, kahraba)
-  return text.replace(/[a-zA-Z][a-zA-Z0-9']*[0-9][a-zA-Z0-9']*|[0-9][a-zA-Z0-9']*[a-zA-Z][a-zA-Z0-9']*|[a-zA-Z]{2,}/g, (word) => {
+  const converted = text.replace(/[a-zA-Z][a-zA-Z0-9']*[0-9][a-zA-Z0-9']*|[0-9][a-zA-Z0-9']*[a-zA-Z][a-zA-Z0-9']*|[a-zA-Z]{2,}/g, (word) => {
     const lower = word.toLowerCase();
     if (FRANCO_ARAB_DICT[lower]) return FRANCO_ARAB_DICT[lower];
     let result = "";
@@ -67,6 +111,14 @@ function convertFrancoArab(text: string): string {
     }
     return result;
   });
+
+  // Only once the sentence is already Arabic — so a stray "a" or "I" in an English note
+  // is never rewritten. The particle attaches to the word after it, the way it is written.
+  if (!/[؀-ۿ]/.test(converted)) return converted;
+  return converted.replace(
+    /(^|\s)([lwb])\s+(?=[؀-ۿ])/gi,
+    (_match, space: string, letter: string) => space + FRANCO_PARTICLES[letter.toLowerCase()],
+  );
 }
 
 /** Convert Arabic-Indic numerals (٠١٢...) to Western Arabic (012...) */
