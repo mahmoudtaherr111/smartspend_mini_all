@@ -296,6 +296,83 @@ export async function refreshGatewayCache(): Promise<void> {
   }
 }
 
+/**
+ * What the admin configured, in the shape the classification router consumes.
+ *
+ * The dashboard has been writing `ai_providers` / `ai_models` — encrypting keys,
+ * discovering models, refreshing this very cache — while nothing outside this file ever
+ * read any of it: `executeAiGateway` had no callers, so real traffic still resolved
+ * through `system_settings` and a provider list written into the code. Adding OpenRouter
+ * or DeepSeek from the dashboard changed rows in a table and nothing else.
+ *
+ * The routes come back ordered by provider priority, and `preferred` is the model the
+ * admin marked as the default for that purpose and tier — so choosing a model in the
+ * dashboard chooses the model that actually answers, and the cache TTL (or an admin
+ * write, which calls `refreshGatewayCache`) is the only delay.
+ */
+export interface AdminRouteSet {
+  preferred: AdminRoute | null;
+  routes: AdminRoute[];
+}
+
+export interface AdminRoute {
+  slug: string;
+  protocol: string;
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+  priority: number;
+  providerId: number;
+}
+
+export async function resolveAdminRoutes(
+  purpose: AiPurpose,
+  tier: AiTier,
+): Promise<AdminRouteSet> {
+  if (Date.now() - _lastCacheUpdate > CACHE_TTL_MS || !_gatewayRouteCache.size) {
+    await refreshGatewayCache();
+  }
+
+  const toRoute = (entry: CachedModelRoute, priority: number): AdminRoute => ({
+    slug: entry.provider.slug,
+    protocol: entry.provider.protocol,
+    baseUrl: entry.provider.baseUrl,
+    apiKey: entry.provider.apiKey,
+    model: entry.model.modelId,
+    priority,
+    providerId: entry.provider.id,
+  });
+
+  const seen = new Set<string>();
+  const routes: AdminRoute[] = [];
+  const preferredEntry = _gatewayRouteCache.get(`route:${purpose}:${tier}`);
+  // A route with no usable key is not a route. `decryptApiKey` returns "" when the
+  // ciphertext no longer matches the secret, and offering that provider anyway spends a
+  // request to learn what we already know — while pushing the working provider down the
+  // queue behind it.
+  const preferred =
+    preferredEntry && preferredEntry.provider.apiKey ? toRoute(preferredEntry, 0) : null;
+  if (preferred) {
+    routes.push(preferred);
+    seen.add(`${preferred.slug}:${preferred.model}`);
+  }
+
+  // Every other model the admin allowed for THIS purpose becomes a fallback, in cache
+  // order — which refreshGatewayCache built from `ai_providers.priority`. Models scoped
+  // to other purposes stay out: an OCR model is not a spare classifier.
+  let priority = 1;
+  for (const [key, entry] of _gatewayRouteCache) {
+    if (!key.startsWith(`route:${purpose}:`)) continue;
+    const dedupeKey = `${entry.provider.slug}:${entry.model.modelId}`;
+    if (seen.has(dedupeKey)) continue;
+    if (!entry.provider.apiKey) continue;
+    seen.add(dedupeKey);
+    routes.push(toRoute(entry, priority++));
+  }
+
+  return { preferred, routes };
+}
+
 // ─── Dynamic Remote Model Discovery ─────────────────────────────────
 
 export async function discoverRemoteModels(
