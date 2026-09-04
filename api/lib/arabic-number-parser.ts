@@ -52,10 +52,21 @@ export const numMap: Record<string, number> = {
   سبعمية: 700, سبعميه: 700, سبعمائة: 700, سبعمائه: 700,
   تمنمية: 800, تمنميه: 800, ثمانمائة: 800, ثمانمائه: 800,
   تسعمية: 900, تسعميه: 900, تسعمائة: 900, تسعمائه: 900,
+
+  // The "-ميت" hundreds, which this table was missing entirely.
+  //
+  // Egyptians say "خمسميت جنيه" far more often than "خمسمية جنيه" — the ta is the
+  // spoken form before a counted noun. Without these, "اديت مروان خمسميت جنيه" parsed
+  // to NO amount at all: the transaction reached the user with an empty figure, from a
+  // sentence a person would read without hesitating. Found by running the parser
+  // against ordinary speech rather than against the table's own vocabulary.
+  ميت: 100,
+  تلتميت: 300, ربعميت: 400, اربعميت: 400,
+  خمسميت: 500, ستميت: 600, سبعميت: 700, تمنميت: 800, تسعميت: 900,
 };
 
 export const multiplierMap: Record<string, number> = {
-  الف: 1000, ألف: 1000, آلاف: 1000, الاف: 1000, ألاف: 1000,
+  الف: 1000, ألف: 1000, آلاف: 1000, الاف: 1000, ألاف: 1000, تلاف: 1000, تلآف: 1000,
   الفين: 2000, ألفين: 2000,
   مليون: 1000000, مليونين: 2000000, ملايين: 1000000,
   // Egyptian street units.
@@ -142,8 +153,27 @@ function isDigitLiteral(word: string): boolean {
   return /^\d+(?:[.,]\d+)?$/.test(word);
 }
 
+/**
+ * Reads a written number, deciding what a comma means.
+ *
+ * `replace(",", ".")` was a thousand-fold error on money: "دفعت 1,500" recorded as
+ * 1.5 EGP. Egyptian writing uses the comma as a thousands separator, and it is
+ * distinguishable — a decimal comma is never followed by exactly three digits, and a
+ * thousands comma always is.
+ *
+ * Exported because `entity-extractor` had already worked this out and implemented it
+ * separately. Two implementations of one rule is how the wrong one wins.
+ */
+export function parseNumericLiteral(word: string): number {
+  const trimmed = word.trim();
+  const parts = trimmed.split(",");
+  const isThousands =
+    parts.length > 1 && parts.slice(1).every((group) => /^\d{3}$/.test(group));
+  return parseFloat(isThousands ? trimmed.replace(/,/g, "") : trimmed.replace(",", "."));
+}
+
 function digitValue(word: string): number {
-  return parseFloat(word.replace(",", "."));
+  return parseNumericLiteral(word);
 }
 
 // ─── Accumulator ───────────────────────────────────────────────────
