@@ -274,10 +274,33 @@ export interface IntentResult {
   confidence: number;
 }
 
+/**
+ * Word-boundary patterns, compiled once.
+ *
+ * This built a fresh RegExp on every call, and it is called once per keyword per
+ * invocation — 209 keywords across the six lists. `detectIntent` runs once per AMOUNT,
+ * so a narrative with fourteen transactions compiled 2,926 regular expressions for
+ * intent detection alone, every time it was classified. That is a large part of why p95
+ * latency on compound sentences measured 8-10 seconds against an 8-second budget.
+ *
+ * The patterns are fixed; only the text varies.
+ */
+const WORD_PATTERNS = new Map<string, RegExp>();
+
+function wordPattern(word: string): RegExp {
+  let cached = WORD_PATTERNS.get(word);
+  if (!cached) {
+    const escapedWord = word.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    cached = new RegExp(
+      `(?:^|\\s|[.,،؛؟?!\\(\\)])` + escapedWord + `(?:$|\\s|[.,،؛؟?!\\(\\)])`,
+    );
+    WORD_PATTERNS.set(word, cached);
+  }
+  return cached;
+}
+
 function includesWord(text: string, word: string): boolean {
-  const escapedWord = word.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-  const regex = new RegExp(`(?:^|\\s|[.,،؛؟?!\\(\\)])` + escapedWord + `(?:$|\\s|[.,،؛؟?!\\(\\)])`);
-  return regex.test(text);
+  return wordPattern(word).test(text);
 }
 
 /**
