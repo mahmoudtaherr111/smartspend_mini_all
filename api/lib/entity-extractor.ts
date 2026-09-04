@@ -6,7 +6,7 @@
 import { extractCurrency } from "./text-normalizer";
 import { isLikelyPersonName, isKareemPersonContext } from "./egyptian-names-dictionary";
 import { matchArabicPhrase } from "./fuzzy-match";
-import { parseArabicNumbers } from "./arabic-number-parser";
+import { parseNumericLiteral, parseArabicNumbers } from "./arabic-number-parser";
 import { NON_PERSON_TERMS } from "./person-resolver";
 
 export interface ExtractedAmount {
@@ -58,14 +58,6 @@ export const MERCHANT_PATTERNS: Record<string, string> = {
   سبينيس: "Spinneys",
 };
 
-const TEXT_AMOUNTS_MAP: Record<string, number> = {
-  "ألفين ونص": 2500,
-  "الفين ونص": 2500,
-  "ألفين": 2000,
-  "الفين": 2000,
-  "ميتين": 200,
-  "مائتين": 200,
-};
 
 const TRANSFER_VERBS = [
   "اديت", "أديت", "إديت", "حولت", "بعت", "سلفت", "بعتت", 
@@ -175,34 +167,26 @@ export function extractAmounts(rawText: string): ExtractedAmount[] {
   let text = rawText;
   const amounts: ExtractedAmount[] = [];
 
-  for (const [key, val] of Object.entries(TEXT_AMOUNTS_MAP)) {
-    let index = text.indexOf(key);
-    while (index !== -1) {
-      if (val >= 100 || isFinancialContext(rawText, index, key.length)) {
-        amounts.push({
-          amount: val,
-          index,
-          length: key.length,
-          rawMatch: key,
-        });
-      }
-      text = text.substring(0, index) + " ".repeat(key.length) + text.substring(index + key.length);
-      index = text.indexOf(key, index + key.length);
-    }
-  }
-
+  // The compositional engine sees the text FIRST, and whole.
+  //
+  // A six-entry substitution table used to run before it: "ألفين" and "خمسمية" were
+  // each found by `indexOf`, recorded as separate amounts, and blanked out — so
+  // "الفين وخمسمية" reached the engine as an empty string and produced 2000 and 500,
+  // two transactions from one. Every entry in that table (ألفين, ميتين, مائتين,
+  // ألفين ونص) is something the engine already composes correctly on its own; the
+  // table's only effect was to pre-empt it.
+  //
+  // This is the third such table. An earlier commit claimed to have replaced "three
+  // substitution tables" with one engine and removed two — this one survived, and
+  // being first in the pipeline it overrode the engine that replaced it.
   text = parseArabicNumbers(text);
   const amountPattern = /(\d+(?:[.,]\d{3})*(?:[.,]\d+)?)\s*(جنيه|ج\.م|ج|الف|ألف)?/g;
   let match;
 
   while ((match = amountPattern.exec(text)) !== null) {
-    let cleanNum = match[1];
-    if (cleanNum.includes(",") && cleanNum.split(",")[1].length === 3) {
-      cleanNum = cleanNum.replace(/,/g, "");
-    } else {
-      cleanNum = cleanNum.replace(",", ".");
-    }
-    let amount = parseFloat(cleanNum);
+    // One implementation of "what does a comma mean", shared with the number engine.
+    // Keeping a second copy here is what let the two drift apart.
+    let amount = parseNumericLiteral(match[1]);
     const suffix = match[2]?.trim();
     if (suffix === "الف" || suffix === "ألف") amount *= 1000;
     if (amount <= 0 || amount > 10000000) continue;
