@@ -94,6 +94,11 @@ export function cleanPersonName(value: string | null | undefined, text?: string)
   // corrupted to "ريدة" by the conjunction stripper below (legitimate names
   // starting with و/ف/ب should be preserved when they ARE known names).
   if (raw && isLikelyPersonName(raw)) {
+    // NOTE: "حولت لأمي" reaches us as "لأمي", so the user sees "لامي والدتك" — the lam is
+    // the preposition, not part of the name. Stripping it here looks obvious and is not:
+    // the kinship resolver keys on the prefixed form, and removing the lam loses the
+    // relationship entirely (the transaction fell back to فواتير/شحن رصيد). The fix
+    // belongs where the relationship is matched, not here.
     return compactArabic(raw);
   }
   const cleaned = compactArabic(raw)

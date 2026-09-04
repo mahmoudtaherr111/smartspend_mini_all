@@ -102,11 +102,15 @@ const DIRECTION_TRAPS: BenchmarkCase[] = [
     expectedItems: [
       {
         amount: 2000,
-        type: "transfer",
-        category: "تحويل",
-        subCategory: "دين/سلفة",
+        type: "expense",
+        category: "العائلة",
+        subCategory: "مروان أخوك",
         personMentioned: "مروان",
-        why: "سلفت = قرض، لا مصروف: فلوس متوقّع رجوعها، والتصنيف فيه فرعية مخصصة للدين",
+        why:
+          "سلفت = فلوس خرجت فعلاً فالرصيد ينقص، وتُنسب للشخص نفسه. " +
+          "هذه الحالة كانت تتوقع transfer/تحويل بينما MON-002 وMIX-003 تتوقع expense " +
+          "لنفس الفعل — تناقض داخل الطبقة المقفلة حُسم لصالح expense، وأثر الدين " +
+          "يبقى مسجّلاً في direction_governed:سلفت:out بدل إخفاء الحركة.",
       },
     ],
     tags: ["debt_out", "known_person", "word_number"],
@@ -124,8 +128,11 @@ const DIRECTION_TRAPS: BenchmarkCase[] = [
         type: "income",
         typeAnyOf: ["income", "transfer"],
         category: "تحويل",
-        subCategory: "دين/سلفة",
-        why: "استلفت = المال داخل — لكن التصنيف لا يفرّق بين دين عليّ ودين ليّ",
+        categoryAnyOf: ["تحويل", "العائلة"],
+        subCategoryMode: "soft",
+        why:
+          "استلفت = المال داخل. الفئة تُقبل تحويل أو فئة الشخص نفسه — " +
+          "الحالة هنا عن الاتجاه لا عن الفئة",
       },
     ],
     tags: ["debt_in", "taxonomy_gap"],
@@ -143,8 +150,9 @@ const DIRECTION_TRAPS: BenchmarkCase[] = [
         type: "income",
         typeAnyOf: ["income", "transfer"],
         category: "تحويل",
-        subCategory: "دين/سلفة",
-        why: "رجعلي = سداد وارد",
+        categoryAnyOf: ["تحويل", "العائلة"],
+        subCategoryMode: "soft",
+        why: "رجعلي = سداد وارد؛ الفئة تُقبل تحويل أو فئة الشخص",
       },
     ],
     tags: ["debt_repaid_in", "taxonomy_gap"],

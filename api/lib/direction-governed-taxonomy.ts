@@ -20,6 +20,8 @@ import { buildTokenSet, findMatchingWord } from "./arabic-token-match";
 export type GovernedDirection = "in" | "out";
 
 export interface GovernedResolution {
+  /** Which family matched — callers treat the debt family differently from gam3eya. */
+  id: string;
   category: string;
   subCategory: string;
   type: TransactionIntent;
@@ -72,16 +74,21 @@ const ENTRIES: GovernedEntry[] = [
     category: "تحويل",
     inVerbs: ["استلفت", "اتسلفت", "اقترضت", "خدت", "اخدت", "أخدت", "رجعلي", "رجعولي", "سددلي", "صفالي"],
     outVerbs: ["سلفت", "سلفته", "اديت", "أديت", "وديت", "سددت", "رجعت", "صفيت", "دفعت"],
-    // Both directions are the same taxonomy slot; the registry has one debt subcategory.
-    // Direction is carried by `type` and by the verb recorded in the trace.
+    // Both directions share one taxonomy slot — the registry has a single debt
+    // subcategory — but they are opposite money movements, so they cannot share a type.
+    // They used to: both resolved to `transfer`, which made "سلفت سيف" (money out) and
+    // "استلفت من محمود" (money in) indistinguishable to the wallet, the charts and the
+    // benchmark alike. The comment claimed direction was "carried by type" while type
+    // was the one field that did not carry it.
     resolve: {
-      in: { subCategory: "دين/سلفة", type: "transfer" },
-      out: { subCategory: "دين/سلفة", type: "transfer" },
+      in: { subCategory: "دين/سلفة", type: "income" },
+      out: { subCategory: "دين/سلفة", type: "expense" },
     },
     defaultDirection: "out",
     promptRule:
-      '"سلفت فلان" = transfer صادر, "استلفت من فلان" = transfer وارد, ' +
-      '"فلان رجعلي" = وارد, "رجعت لفلان" = صادر — كلها تحويل/دين/سلفة.',
+      '"سلفت فلان" = صادر (expense), "استلفت من فلان" = وارد (income), ' +
+      '"فلان رجعلي" = وارد, "رجعت لفلان" = صادر — الفئة تحويل/دين/سلفة، ' +
+      "أو فئة الشخص نفسه لو كان معروفاً.",
   },
 ];
 
@@ -130,6 +137,7 @@ export function resolveGovernedTaxonomy(text: string): GovernedResolution | null
 
     const resolved = entry.resolve[direction];
     return {
+      id: entry.id,
       category: entry.category,
       subCategory: resolved.subCategory,
       type: resolved.type,

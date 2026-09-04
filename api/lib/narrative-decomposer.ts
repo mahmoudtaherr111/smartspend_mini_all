@@ -446,20 +446,38 @@ function decomposeAmountAnchored(
       // Find the best boundary between prevAnchorIdx and anchorIdx
       let splitIdx = -1;
       
-      // 1. Look for connectors in the gap from right to left
-      for (let i = anchorIdx; i > prevAnchorIdx; i--) {
+      // 1. Look for the clause boundary in the gap, left to right, preferring a real one.
+      //
+      // Scanning right to left took the connector nearest the NEXT amount, which cut
+      // mid-clause: in "…فودافون كاش، وبعدين نزلت السوبر ماركت جبت خضار ولحمه بـ 800"
+      // it split at "ولحمه" — a bare waw joining two items of one purchase — so the
+      // 2,000 transfer kept "وبعدين نزلت السوبر ماركت جبت خضار" and the 800 lost its
+      // own nouns. Each item was then classified by the neighbouring clause's words.
+      // A comma or a narrative connector ends a clause; an attached waw usually does
+      // not, so it is only used when the gap offers nothing better.
+      let weakSplitIdx = -1;
+      for (let i = prevAnchorIdx + 1; i <= anchorIdx; i++) {
         const w = words[i];
-        const isConnector = w === "و" || w === "ف" || w === "،" || w === "," || w === "ثم" || w === "بعدين" || STRONG_CONNECTORS.includes(w);
-        const startsWithConnector = (w.startsWith("و") && w.length > 1 && !isWawWhitelisted(w) && !isLikelyPersonName(w) && !knownNames.includes(w));
-        
-        if (isConnector) {
+        const isStrongBoundary =
+          w === "،" || w === "," || w === "ثم" || w === "بعدين" || STRONG_CONNECTORS.includes(w);
+        if (isStrongBoundary) {
           splitIdx = i + 1; // Split after the connector
           break;
-        } else if (startsWithConnector) {
-          splitIdx = i; // Split before the word starting with "و"
-          break;
+        }
+        if (weakSplitIdx !== -1) continue;
+        if (w === "و" || w === "ف") {
+          weakSplitIdx = i + 1;
+        } else if (
+          w.startsWith("و") &&
+          w.length > 1 &&
+          !isWawWhitelisted(w) &&
+          !isLikelyPersonName(w) &&
+          !knownNames.includes(w)
+        ) {
+          weakSplitIdx = i; // Split before the word starting with "و"
         }
       }
+      if (splitIdx === -1) splitIdx = weakSplitIdx;
       
       // 2. Look for verbs in the gap from left to right
       if (splitIdx === -1) {
@@ -524,20 +542,31 @@ function decomposeAmountAnchored(
       const nextAnchorIdx = anchorIndices[a + 1];
       let splitIdx = -1;
       
-      // Look for split point between anchorIdx and nextAnchorIdx
-      for (let i = nextAnchorIdx; i > anchorIdx; i--) {
+      // Where this segment ends — the same clause boundary the next segment starts at,
+      // so it is found the same way: left to right, a real boundary before a bare waw.
+      let weakSplitIdx = -1;
+      for (let i = anchorIdx + 1; i <= nextAnchorIdx; i++) {
         const w = words[i];
-        const isConnector = w === "و" || w === "ف" || w === "،" || w === "," || w === "ثم" || w === "بعدين" || STRONG_CONNECTORS.includes(w);
-        const startsWithConnector = (w.startsWith("و") && w.length > 1 && !isWawWhitelisted(w) && !isLikelyPersonName(w) && !knownNames.includes(w));
-        
-        if (isConnector) {
+        const isStrongBoundary =
+          w === "،" || w === "," || w === "ثم" || w === "بعدين" || STRONG_CONNECTORS.includes(w);
+        if (isStrongBoundary) {
           splitIdx = i + 1;
           break;
-        } else if (startsWithConnector) {
-          splitIdx = i;
-          break;
+        }
+        if (weakSplitIdx !== -1) continue;
+        if (w === "و" || w === "ف") {
+          weakSplitIdx = i + 1;
+        } else if (
+          w.startsWith("و") &&
+          w.length > 1 &&
+          !isWawWhitelisted(w) &&
+          !isLikelyPersonName(w) &&
+          !knownNames.includes(w)
+        ) {
+          weakSplitIdx = i;
         }
       }
+      if (splitIdx === -1) splitIdx = weakSplitIdx;
       
       if (splitIdx === -1) {
         for (let i = anchorIdx + 1; i < nextAnchorIdx; i++) {

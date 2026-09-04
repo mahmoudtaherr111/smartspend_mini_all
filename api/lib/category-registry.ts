@@ -599,6 +599,16 @@ function findSubCategoryByAnyName(
 /** Nouns whose category is decided by the noun, not by the verb around it. */
 const GOVERNED_NOUNS = governedNouns();
 
+/**
+ * Nouns that name the source of the income outright. Like the governed nouns above they
+ * outrank the generic income verb standing next to them: "خلصت مشروع فريلانس وقبضت 6000"
+ * contains قبضت, but it is freelance work, not salary — and the rule engine had already
+ * resolved it to عمل حر/مشروع with 98 confidence before this scan overwrote it on the
+ * way to storage. Only the unambiguous ones belong here; مشروع and عمولة are left out
+ * because "قبضت مرتب المشروع" is still salary.
+ */
+const FREELANCE_NOUNS = ["فريلانس", "عمل حر", "سبوبة", "سبوبه", "كلاينت", "freelance"];
+
 function inferCategoryFromEvidence(
   rawCategory: string,
   evidence: string,
@@ -645,7 +655,8 @@ function inferCategoryFromEvidence(
     // "قبضت الجمعية" contains قبضت, but it is a gam3eya payout, not salary — and the
     // rule engine has already resolved it to التزامات وجمعيات/قبض جمعية. Without this
     // guard the evidence scan overwrote that correct answer on the way to storage.
-    !hasAny(categoryText, GOVERNED_NOUNS)
+    !hasAny(categoryText, GOVERNED_NOUNS) &&
+    !hasAny(categoryText, FREELANCE_NOUNS)
   ) {
     return "مرتب";
   }
