@@ -1,40 +1,42 @@
-# BRIEFING — 2026-08-25T03:15:00Z
+# BRIEFING — 2026-08-28T15:52:00Z
 
 ## Mission
-Comprehensive survey and concrete implementation plan for R3 (Performance Optimization), R4 (Database Architecture & Schema Review), and R5 (Code Logic, Security & Quality Hardening).
+Deeply investigate the SmartSpend AI codebase for backend AI streaming, error handlers, rate-limits, and financial mutation resilience across backend routers, services, contracts, and frontend forms.
 
 ## 🔒 My Identity
 - Archetype: explorer
-- Roles: [investigator, synthesizer]
-- Working directory: E:\smartspend_V1_fixed\.agents\survey_backend_r3_r4_r5
-- Original parent: 86b14a76-5a22-4ebf-aa5e-129902592eb8
-- Milestone: Survey & Architectural Analysis (R3, R4, R5)
+- Roles: investigator, synthesizer
+- Working directory: e:\smartspend_V1_fixed\.agents\survey_backend_r3_r4_r5
+- Original parent: 55abd75b-094b-4611-9e83-295fbad74ab0
+- Milestone: backend-financial-ai-survey
 
 ## 🔒 Key Constraints
-- Read-only investigation — do NOT implement directly in source files.
-- Write metadata/reports only to .agents/survey_backend_r3_r4_r5/.
-- Produce concrete before/after code proposals and evidence-based handoff report.
+- Read-only investigation — do NOT implement changes to codebase (produce handoff report)
+- Keep .agents/ metadata compliant (only metadata in .agents/)
 
 ## Current Parent
-- Conversation ID: 86b14a76-5a22-4ebf-aa5e-129902592eb8
-- Updated: 2026-08-25T03:15:00Z
+- Conversation ID: 55abd75b-094b-4611-9e83-295fbad74ab0
+- Updated: 2026-08-28T15:52:00Z
 
 ## Investigation State
-- **Explored paths**: `db/schema.ts`, `db/relations.ts`, `api/context.ts`, `api/middleware.ts`, `api/router.ts`, `api/expense-router.ts`, `api/services/scheduler-lock.ts`, `api/lib/settings-cache.ts`, `api/lib/app-time.ts`, `api/lib/session-validation.ts`, `api/services/user-purge-service.ts`, `api/analytics-router.ts`, `api/local-auth-router.ts`, `api/sms-router.ts`, `api/services/voice-call-service.ts`, `api/support-router.ts`, `api/business-router.ts`, `api/budget-router.ts`, `api/goals-router.ts`, `api/ads-router.ts`, `api/referral-router.ts`, `api/image-router.ts`, `api/chat-router.ts`, `api/session-router.ts`, `api/wallet-router.ts`, `api/webauthn-router.ts`, `api/ai-router.ts`.
+- **Explored paths**:
+  - `api/chat-router.ts`, `api/ai-router.ts`, `api/expense-router.ts`, `api/budget-router.ts`, `api/goals-router.ts`, `api/wallet-router.ts`, `api/business-router.ts`, `api/sms-router.ts`, `api/pro-router.ts`, `api/profile-router.ts`, `api/support-router.ts`, `api/ads-router.ts`, `api/analytics-router.ts`, `api/referral-router.ts`
+  - `api/lib/ai-gateway.ts`, `api/lib/deepseek-client.ts`, `api/lib/fireworks-client.ts`, `api/lib/groq-client.ts`, `api/lib/nvidia-client.ts`, `api/middleware.ts`, `api/boot.ts`
+  - `api/services/ai-kernel/index.ts`, `api/services/ai-kernel/clarification-machine.ts`
+  - `contracts/constants.ts`, `contracts/errors.ts`, `contracts/plans.ts`, `contracts/types.ts`
+  - `src/components/ai/AIChatbot.tsx`, `src/components/ai/AIVoiceCall.tsx`, `src/components/insights/AIInsights.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/goals/FinancialGoalsPanel.tsx`, `src/pages/Settings.tsx`
+  - `db/schema.ts`
 - **Key findings**:
-  1. All 48 tables and relations verified in `db/schema.ts` & `db/relations.ts`. Identified redundant left-prefix index in `monthlyReports` (`reports_user_idx`).
-  2. Batch expense creation N+1 elimination confirmed with `inArray` queries in `resolveBatchExpenseReferences`.
-  3. Formulated clean TypeScript typing fix for advisory lock in `scheduler-lock.ts` to prevent TS2344.
-  4. Standardized TRPCError throwing identified for support-router, profile-router, and admin-whatsapp-router.
-  5. Found dual-auth metric omission in `analytics-router.ts` where admin/moderator/pro stats omitted OAuth users.
-  6. Identified missing `aiProcedure` middleware protection on 3 heavy AI insight generation procedures in `ai-router.ts`.
-- **Unexplored areas**: None. Full scope of R3, R4, and R5 surveyed.
+  1. AI chat uses unary mutation without abortable client controller or streaming; Groq/Gemini calls lack uniform timeouts.
+  2. Idempotency keys (`clientRequestId`) exist only in `expenses` schema, but duplicate key errors (ER_DUP_ENTRY) are unhandled. Other financial tables lack idempotency keys.
+  3. Boundary validations in budgets, goals, wallets, and support lack upper bounds (`amountMax`, `.finite()`), numeric regex, or string length constraints.
+  4. Optimistic updates in React Query are isolated to exact cache query keys without multi-view propagation; wallet mutations lack cache invalidation.
+- **Unexplored areas**: None for this milestone.
 
 ## Key Decisions Made
-- Structured complete before/after diff specifications for all recommendations in `handoff.md`.
+- Structured the survey into 3 comprehensive pillars: (1) AI Streaming & Services, (2) Financial Mutations & Form Resilience, (3) Type Safety, Contracts & Boundary Validations.
 
 ## Artifact Index
-- DISPATCH.md — Initial dispatch instructions
-- BRIEFING.md — Persistent working memory
-- progress.md — Progress log & liveness heartbeat
-- handoff.md — Final comprehensive 5-component handoff report
+- e:\smartspend_V1_fixed\.agents\survey_backend_r3_r4_r5\DISPATCH.md — Dispatch log
+- e:\smartspend_V1_fixed\.agents\survey_backend_r3_r4_r5\progress.md — Progress tracker
+- e:\smartspend_V1_fixed\.agents\survey_backend_r3_r4_r5\handoff.md — Final handoff report

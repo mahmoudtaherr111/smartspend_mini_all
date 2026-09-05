@@ -1,97 +1,94 @@
-# Handoff Report — Explorer 2: Requirements R3 & R4
+# Handoff Report: User-Aware Cache Isolation & Multi-Account Offline Safety
 
-> **Agent:** `explorer_2` (Teamwork Explorer)  
-> **Milestone:** Remediation Phase 1 Exploration (R3 & R4)  
-> **Date:** August 23, 2026  
-> **Status:** Complete (Hard Handoff)  
+**Agent**: Explorer 2  
+**Date**: 2026-08-26  
+**Working Directory**: `e:/smartspend_V1_fixed/.agents/explorer_2`  
+**Report Reference**: `e:/smartspend_V1_fixed/.agents/explorer_2/report.md`  
 
 ---
 
 ## 1. Observation
 
-### R3: Relational Database Integrity & Schema Optimization
-1. **Table Definitions (`db/schema.ts`):**
-   - Exactly 48 tables are defined using `mysqlTable` across 1,091 lines.
-   - 4 tables are non-relational or stateless admin pools (`systemSettings` line 485, `onboardingQuestions` line 577, `seoPages` line 471, `whatsappOtpCodes` line 747).
-   - 44 tables are relational and associate with users, businesses, chats, or other records.
-2. **Relational Coverage (`db/relations.ts`):**
-   - Exactly 41 relation blocks are exported across 405 lines.
-   - Three relational tables (`discountCodes` imported line 18, `referrals` imported line 22, `apiKeyErrors` imported line 32) have **zero exported relations blocks**.
-   - `usersRelations` (lines 49-81) and `localUsersRelations` (lines 83-115) currently omit inverse `many(...)` relations for: `adClicks`, `aiMemoryEmbeddings`, `authChallenges`, `classificationLogs`, `discountCodes`, `apiKeyErrors`, `referralsMade`, `referralsReceived`.
-3. **Index Topology in `db/schema.ts`:**
-   - Production critical indexes are present:
-     * `sessions.expiresAt`: `index("sessions_expires_idx").on(t.expiresAt)` at line 300.
-     * `monthlyReports(userId, userType, month)`: `uniqueIndex("reports_user_month_unique").on(t.userId, t.userType, t.month)` at line 281.
-     * `referrals(referredId, referredType)`: `uniqueIndex("referral_referred_unique_idx").on(t.referredId, t.referredType)` at line 444.
-   - Exactly 8 redundant / left-prefix duplicate secondary indexes are present:
-     * `expenses_user_idx` (`db/schema.ts:112`) on `(userId, userType)` [left prefix of `expenses_user_date_idx` at line 114].
-     * `users_referral_idx` (`db/schema.ts:43`) on `(referralCode)` [duplicates column `.unique()` at line 27].
-     * `webhook_tokens_token_idx` (`db/schema.ts:670`) on `(token)` [duplicates column `.unique()` at line 664].
-     * `user_dict_user_idx` (`db/schema.ts:601`) on `(userId, userType)` [left prefix of `user_dict_word_unique` at line 602].
-     * `ai_summary_user_idx` (`db/schema.ts:377`) on `(userId, userType)` [left prefix of `ai_summary_period_idx` at line 378].
-     * `chat_msg_conv_idx` (`db/schema.ts:933`) on `(conversationId)` [left prefix of `chat_msg_created_idx` at line 934].
-     * `business_cat_idx` (`db/schema.ts:172`) on `(businessId)` [left prefix of `business_cat_active_idx` at line 173].
-     * `ai_memory_embedding_item_idx` (`db/schema.ts:1006`) on `(memoryItemId)` [left prefix of `ai_memory_embedding_unique_idx` at line 1008].
-4. **Referral Code Concurrency & Atomicity:**
-   - In `api/referral-router.ts:90-178` (`applyCode`), redemption runs inside `db.transaction(async (tx) => { ... })`.
-   - Double redemption is prevented at the schema level by `uniqueIndex("referral_referred_unique_idx").on(t.referredId, t.referredType)` (`db/schema.ts:444`).
-   - Duplicate entry errors (`ER_DUP_ENTRY` / `referral_referred_unique_idx`) are caught at lines 171-173 and returned as `TRPCError({ code: "CONFLICT", message: "أنت مسجل بالفعل بكود إحالة" })`.
-
-### R4: Timezone & Egyptian Business-Day Consistency
-1. **Core Timezone Primitives (`api/lib/app-time.ts`):**
-   - Configured with `APP_TIMEZONE` (`"Africa/Cairo"`, `api/lib/env.ts:30`).
-   - `businessDateKey`: Formats `YYYY-MM-DD` via `Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Cairo" })`.
-   - `startOfBusinessDay`: Computes UTC instant for Cairo `00:00:00.000`, iteratively compensating for Egyptian DST shifts (UTC+2 / UTC+3).
-   - `businessDayRange`: Resolves half-open `[start, endExclusive)` by stepping 36h from `start`, preventing 23:59:59 day-skip bugs.
-   - `businessMonthRange`: Resolves half-open `[start, endExclusive)` for the Cairo calendar month.
-   - Tested in `api/lib/app-time.test.ts` (covers midnight transitions `21:59:59.999Z` vs `22:00:00.000Z`, 23:59 boundaries, and month ranges).
-2. **Subsystem Implementations:**
-   - Daily Chat Messages: `api/chat-router.ts:108-132` queries `gte(chatMessages.createdAt, today.start)` & `lt(chatMessages.createdAt, today.endExclusive)` using `businessDayRange()`.
-   - Daily Streaks: `api/expense-router.ts:238-273` uses `businessDayRange(now)` and `businessDayRange(today.start - 1ms)` in atomic SQL `CASE` expressions.
-   - Budget Salary Cycles: `api/budget-router.ts:9-33, 51-85` calculates spending periods from `userBudgets.periodStartDay` (e.g., 25th of month) anchored to Cairo midnight via `businessDateKey` and `startOfBusinessDay`.
-   - Minor non-standardized host date call sites: `api/lib/ai-usage-policy.ts:289`, `api/analytics-router.ts:145-146`, and `api/notification-engine.ts:641` use `setHours(0, 0, 0, 0)` instead of `businessDayRange().start`.
+1. **Dual Auth Separation & Numeric ID Collision**:
+   - In `api/context.ts` lines 8–17 and 51–124, `UnifiedUser` normalizes user identity from two separate MySQL tables: `users` (Google OAuth) and `localUsers` (phone, password, passkeys).
+   - In `src/hooks/useAuth.ts` lines 21–34, `useAuth` runs parallel queries `trpc.auth.me.useQuery()` and `trpc.localAuth.me.useQuery()`.
+   - Numeric `id` is an auto-increment integer in both tables (`db/schema.ts`), meaning User A (OAuth `id: 1`) and User B (Local `id: 1`) share the exact same numeric ID.
+2. **Global Static Query Client & Single-Key IndexedDB Persister**:
+   - In `src/lib/queryPersister.ts` lines 3–5:
+     ```typescript
+     const DB_NAME = "smartspend_query_cache";
+     const STORE_NAME = "queries";
+     const KEY = "cache";
+     ```
+   - In `src/App.tsx` lines 53–60 and 476–479:
+     ```typescript
+     const queryClient = new QueryClient({
+       defaultOptions: {
+         queries: {
+           staleTime: 10_000,
+           gcTime: 24 * 60 * 60_000,
+         },
+       },
+     });
+     ...
+     // Older releases persisted every financial tRPC response under one device
+     // key. Purge that legacy cache rather than hydrating another user's data.
+     void clearPersistedQueryCache();
+     ```
+     Because the cache lacked user isolation, the legacy cache is cleared on every app mount, disabling offline data hydration for legitimate users to avoid multi-user data leakage.
+3. **Un-Scoped LocalStorage Outbox & State Keys**:
+   - In `src/components/expenses/ExpenseForm.tsx` lines 838, 860, 879, 1799, 1820 and `src/components/pwa/PwaEnhancements.tsx` lines 45, 87, 98:
+     - `smartspend_offline_texts`
+     - `smartspend_offline_manual`
+     Both are stored globally in `localStorage` without a user identifier.
+   - In `src/components/OnboardingCard.tsx` line 177: `onboarding_answers_${profile.data.basicInfo?.name || "user"}` scopes answers by user display name, which collides across users.
+   - In `src/pages/Home.tsx` line 405: `smartspend_business_mode` is a global flag.
+   - In `src/components/bank-sync/AndroidSetupFlow.tsx` line 54: uses `auth_token` instead of standard `local_auth_token`.
+4. **Idempotency & Safe Mutation Patterns**:
+   - In `src/components/expenses/ExpenseForm.tsx` lines 514–573, `createMutation` uses `clientRequestId` and optimistic updates on `utilsTrpc.expense.list` with rollback in `onError`.
+   - In `src/sw.js` lines 38–41: Service Worker explicitly avoids replaying mutations automatically, delegating sync control to the authenticated user-visible outbox.
 
 ---
 
 ## 2. Logic Chain
 
-1. From observation (R3.2), `db/relations.ts` imports `discountCodes`, `referrals`, and `apiKeyErrors` but does not export `relations()` for them. Therefore, Drizzle relational queries (`db.query.discountCodes...`, `db.query.referrals...`, `db.query.apiKeyErrors...`) cannot resolve these relationships, resulting in type errors and relational query failures.
-2. From observation (R3.3), MySQL composite B-Tree indexes automatically support lookups on any leftmost subset of indexed columns. Secondary indexes that index only a left prefix of an existing composite index (or duplicate an existing `.unique()` column index) consume write I/O and memory without providing index lookup benefit. Dropping the 8 identified indexes optimizes database insert/update throughput.
-3. From observation (R3.4), wrapping referral application in `db.transaction()` combined with the unique index `(referredId, referredType)` guarantees ACID isolation. Concurrent attempts to redeem a code will result in exactly one insert succeeding and all others failing with unique constraint violations mapped cleanly to `CONFLICT`.
-4. From observation (R4.1 & R4.2), Egyptian business operations (salary dates, daily expense counts, chat quota resets, streaks) must align strictly with Cairo local calendar days. Using `Intl.DateTimeFormat` with `Africa/Cairo` and computing UTC instant boundaries in `app-time.ts` guarantees host UTC invariance. Replacing the remaining 3 legacy `setHours(0, 0, 0, 0)` call sites guarantees 100% codebase consistency.
+1. **Step 1 (Identity Scoping)**: From Observation 1, because `users` (OAuth) and `localUsers` (Local) are distinct tables with independent auto-increment sequences, identifying an account solely by `id` leads to catastrophic collisions between OAuth and Local users with matching numeric IDs. Therefore, all cache scopes, storage keys, and outbox partitions must use the composite key `${user.type}:${user.id}` (e.g. `oauth:1` vs `local:1`).
+2. **Step 2 (Cache Isolation)**: From Observation 2, storing all queries under a single IndexedDB key `"cache"` without user validation means any user opening the app offline or switching accounts restores the previous user's sensitive financial data. The existing startup purge (`void clearPersistedQueryCache()`) was a stopgap that destroyed offline PWA capabilities. Implementing a user-scoped persister (`smartspend_cache_${userType}_${userId}`) with strict envelope validation enables safe offline data persistence while guaranteeing zero cross-account leakage.
+3. **Step 3 (Lifecycle Transitions)**: From Observations 2 and 3, when a user logs out, switches accounts, or experiences session expiration (401), the in-memory React Query cache (`queryClient.clear()`) must be purged immediately, and the persister must be disconnected or switched to prevent stale DOM hydration.
+4. **Step 4 (Outbox Safety)**: From Observation 3, un-scoped offline transaction queues (`smartspend_offline_texts` and `smartspend_offline_manual`) pose a severe privacy risk: if User A records an expense offline and logs out, logging in as User B will cause the background sync manager to commit User A's expenses to User B's account. Scoping outbox queues by `${userKey}` and adding an active user verification check before syncing eliminates this vulnerability.
 
 ---
 
 ## 3. Caveats
 
-1. **MySQL Migration Execution:** Dropping redundant indexes and updating relations requires schema synchronization via `npm run db:generate` or SQL migrations.
-2. **Registration Referral Flow:** In `api/local-auth-router.ts:118-124`, when a referral code is passed during registration, it checks `localUsers` and records `referredBy` on `localUsers`. It does not insert a row into the `referrals` table at registration time; `referrals` rows are populated via `referralRouter.applyCode`.
-3. **Database Client Mode:** `api/queries/connection.ts` passes `{ ...schema, ...relations }` into Drizzle ORM `drizzle()`. Once `db/relations.ts` exports all missing relations, Drizzle schema types refresh automatically on `npm run check`.
+- **Anonymous Browsing Mode**: Landing page (`/`), Login page (`/login`), Privacy policy (`/privacy`), and Terms (`/terms`) do not have an authenticated user. For these routes, query persistence must remain disabled (no-op) so unauthenticated browsing leaves no persisted cache.
+- **Biometric Passkey Auto-Login**: `localStorage.getItem("smartspend_has_passkey")` indicates device-level biometric registration. This is device-specific and does not store user financial data.
+- **Multi-Tab Synchronization**: If a user switches accounts in Tab 1 while Tab 2 is open, Tab 2's `window.addEventListener("storage")` should detect auth token removal and trigger `queryClient.clear()` / navigation to `/login`.
 
 ---
 
 ## 4. Conclusion
 
-- **Requirement R3 Status:** Ready for implementation. Add 3 missing relation blocks (`discountCodesRelations`, `referralsRelations`, `apiKeyErrorsRelations`) and inverse mappings to `db/relations.ts`. Remove 8 redundant left-prefix duplicate indexes from `db/schema.ts`. Referral application is fully verified as atomic and concurrency-safe.
-- **Requirement R4 Status:** Core timezone architecture in `api/lib/app-time.ts` is fully compliant and tested for Egyptian midnight transitions. Daily chat limits, streaks, and `periodStartDay` salary cycles correctly use `Africa/Cairo`. Standardize the remaining 3 legacy `setHours(0, 0, 0, 0)` call sites to use `businessDayRange().start`.
+1. **Root Cause of Disabled Offline Persistence**: The existing persister stored all queries under a single un-scoped key `cache`, forcing developers to purge it on boot.
+2. **Architectural Remedy**:
+   - Implement `createUserScopedPersister(getUserKey)` in `src/lib/queryPersister.ts` targeting `smartspend_cache_${userType}_${userId}` with envelope validation and dehydrate filtering.
+   - Wire `PersistQueryClientProvider` in `src/App.tsx` and eliminate the indiscriminate `clearPersistedQueryCache()` boot purge.
+   - Enforce explicit `queryClient.clear()` on logout, user switch, and 401 interceptors.
+   - Scope offline outboxes (`smartspend_offline_texts_${userKey}`) and UI preferences by composite user key.
 
 ---
 
 ## 5. Verification Method
 
-To independently verify the findings and code state:
-1. **Schema & Relations Typecheck:**
-   ```bash
-   npm run check
-   ```
-2. **Timezone & Time Boundaries Test Suite:**
-   ```bash
-   npx vitest run api/lib/app-time.test.ts
-   npx vitest run api/services/finance-semantic-layer/period-resolver.test.ts
-   ```
-3. **Inspect Target Files:**
-   - `db/schema.ts`: Check lines 43, 112, 172, 377, 444, 601, 670, 933, 1006.
-   - `db/relations.ts`: Check lines 18, 22, 32, 49-115, 400-405.
-   - `api/referral-router.ts`: Check lines 90-178.
-   - `api/lib/app-time.ts` & `api/lib/app-time.test.ts`.
-   - `api/budget-router.ts`: Check lines 9-33, 51-85.
+1. **Independent Inspection**:
+   - Inspect `src/lib/queryPersister.ts` and `src/App.tsx:476-479` to verify existing static key and boot purge.
+   - Inspect `src/components/expenses/ExpenseForm.tsx:838,879` and `src/components/pwa/PwaEnhancements.tsx:45` to verify un-scoped outbox arrays.
+   - Inspect `api/context.ts:8-17` to verify dual-auth user structure.
+2. **Automated Monorepo Validation**:
+   - Run `npm run check` to verify TypeScript type conformity across the monorepo.
+   - Run `npm run test` to verify Vitest test suites.
+3. **Manual Simulation / E2E Verification Scenario**:
+   - Login as User 1 (`local:1`). Record expense "غداء 150 جنيه". Turn network offline.
+   - Confirm expense is visible in offline cache.
+   - Clear session/switch to User 2 (`oauth:2`).
+   - Confirm User 2 cannot access or see User 1's "غداء 150 جنيه" transaction in cache or outbox.

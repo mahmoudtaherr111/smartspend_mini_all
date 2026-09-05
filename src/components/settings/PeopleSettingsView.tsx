@@ -1,13 +1,15 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { trpc } from "../../providers/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  AdaptiveDialog,
+  AdaptiveDialogContent,
+  AdaptiveDialogHeader,
+  AdaptiveDialogTitle,
+  AdaptiveDialogDescription,
+  AdaptiveDialogFooter,
+} from "@/components/ui/adaptive-dialog";
 import {
   Select,
   SelectContent,
@@ -36,16 +38,6 @@ import { useHaptics } from "@/hooks/useHaptics";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useHistoryBound } from "@/hooks/useHistoryBound";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   Drawer,
   DrawerClose,
   DrawerContent,
@@ -69,43 +61,89 @@ interface Contact {
   createdAt: string;
 }
 
-type ContactTypeValue = "personal" | "business_supplier" | "business_customer" | "business_employee";
+type ContactTypeValue =
+  | "personal"
+  | "business_supplier"
+  | "business_customer"
+  | "business_employee";
+
+const CONTACT_SHEET_CLASS =
+  "max-w-none rounded-t-[28px] rounded-b-none border-slate-200 bg-white p-0 dark:border-slate-800 dark:bg-slate-950 sm:max-w-md sm:rounded-2xl sm:p-6";
 
 // ─── Constants ───
 const RELATION_OPTIONS = [
-  "أخ", "أخت", "أب", "أم", "ابن", "ابنة", "زوج", "زوجة",
-  "صديق", "صديقة", "زميل", "زميلة", "مدير", "موظف",
-  "قريب", "قريبة", "عم", "خال", "عمة", "خالة",
-  "جد", "جدة", "حارس", "سائق", "مورد", "عميل",
+  "أخ",
+  "أخت",
+  "أب",
+  "أم",
+  "ابن",
+  "ابنة",
+  "زوج",
+  "زوجة",
+  "صديق",
+  "صديقة",
+  "زميل",
+  "زميلة",
+  "مدير",
+  "موظف",
+  "قريب",
+  "قريبة",
+  "عم",
+  "خال",
+  "عمة",
+  "خالة",
+  "جد",
+  "جدة",
+  "حارس",
+  "سائق",
+  "مورد",
+  "عميل",
   "جهة اتصال عامة",
 ];
 
-const TYPE_LABELS: Record<string, { label: string; dot: string }> = {
-  personal: { label: "شخصي", dot: "bg-sky-500" },
-  business_supplier: { label: "مورد", dot: "bg-amber-500" },
-  business_customer: { label: "عميل", dot: "bg-emerald-500" },
-  business_employee: { label: "موظف", dot: "bg-violet-500" },
+const TYPE_LABELS: Record<
+  string,
+  { label: string; dot: string; avatar: string; chip: string }
+> = {
+  personal: {
+    label: "شخصي",
+    dot: "bg-sky-500",
+    avatar: "bg-sky-500/15 text-sky-700 dark:bg-sky-400/15 dark:text-sky-300",
+    chip: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
+  },
+  business_supplier: {
+    label: "مورد",
+    dot: "bg-amber-500",
+    avatar:
+      "bg-amber-500/15 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300",
+    chip: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  },
+  business_customer: {
+    label: "عميل",
+    dot: "bg-emerald-500",
+    avatar:
+      "bg-emerald-500/15 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300",
+    chip: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  },
+  business_employee: {
+    label: "موظف",
+    dot: "bg-violet-500",
+    avatar:
+      "bg-violet-500/15 text-violet-700 dark:bg-violet-400/15 dark:text-violet-300",
+    chip: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
+  },
 };
-
-// Simple initials color — muted, professional palette
-const INITIALS_COLORS = [
-  "bg-slate-700 text-slate-100",
-  "bg-zinc-600 text-zinc-100",
-  "bg-stone-600 text-stone-100",
-  "bg-neutral-700 text-neutral-100",
-  "bg-gray-600 text-gray-100",
-  "bg-slate-600 text-slate-200",
-];
-
-function initialsColor(name: string) {
-  return INITIALS_COLORS[(name.charCodeAt(0) || 0) % INITIALS_COLORS.length];
-}
 
 // ─── Main Component ───
 export function PeopleSettingsView({ onBack }: { onBack: () => void }) {
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const { lightTap, mediumTap, success: successHaptic, error: errorHaptic } = useHaptics();
+  const {
+    lightTap,
+    mediumTap,
+    success: successHaptic,
+    error: errorHaptic,
+  } = useHaptics();
 
   const [filter, setFilter] = useState<ContactFilter>("all");
   const [search, setSearch] = useState("");
@@ -113,7 +151,8 @@ export function PeopleSettingsView({ onBack }: { onBack: () => void }) {
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [showMergeDialog, setShowMergeDialog] = useState(false);
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
-  const [selectedContactActions, setSelectedContactActions] = useState<Contact | null>(null);
+  const [selectedContactActions, setSelectedContactActions] =
+    useState<Contact | null>(null);
 
   const contactsQuery = trpc.profile.listContacts.useQuery({
     filter,
@@ -125,16 +164,18 @@ export function PeopleSettingsView({ onBack }: { onBack: () => void }) {
   const filteredContacts = useMemo(() => {
     let result = contacts as Contact[];
     if (filter === "personal")
-      result = result.filter((c) => c.contactType === "personal" && !c.isSilenced);
+      result = result.filter(
+        (c) => c.contactType === "personal" && !c.isSilenced,
+      );
     else if (filter === "business")
       result = result.filter((c) => c.contactType !== "personal");
-    else if (filter === "silenced")
-      result = result.filter((c) => c.isSilenced);
+    else if (filter === "silenced") result = result.filter((c) => c.isSilenced);
     if (search.trim()) {
       const q = search.trim().toLowerCase();
-      result = result.filter((c) =>
-        c.name.toLowerCase().includes(q) ||
-        (c.relation || "").toLowerCase().includes(q)
+      result = result.filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          (c.relation || "").toLowerCase().includes(q),
       );
     }
     return result;
@@ -176,117 +217,149 @@ export function PeopleSettingsView({ onBack }: { onBack: () => void }) {
     },
   });
 
-  const tabs: Array<{ key: ContactFilter; label: string; icon: typeof Users }> = [
-    { key: "all", label: "الكل", icon: Users },
-    { key: "personal", label: "عائلة", icon: Users },
-    { key: "business", label: "عمل", icon: Store },
-    { key: "silenced", label: "مُسكَت", icon: VolumeX },
-  ];
+  const tabs: Array<{ key: ContactFilter; label: string; icon: typeof Users }> =
+    [
+      { key: "all", label: "الكل", icon: Users },
+      { key: "personal", label: "عائلة", icon: Users },
+      { key: "business", label: "عمل", icon: Store },
+      { key: "silenced", label: "مُسكَت", icon: VolumeX },
+    ];
 
-  const counts = useMemo(() => ({
-    all: (contacts as Contact[]).length,
-    personal: (contacts as Contact[]).filter(c => c.contactType === "personal" && !c.isSilenced).length,
-    business: (contacts as Contact[]).filter(c => c.contactType !== "personal").length,
-    silenced: (contacts as Contact[]).filter(c => c.isSilenced).length,
-  }), [contacts]);
+  const counts = useMemo(
+    () => ({
+      all: (contacts as Contact[]).length,
+      personal: (contacts as Contact[]).filter(
+        (c) => c.contactType === "personal" && !c.isSilenced,
+      ).length,
+      business: (contacts as Contact[]).filter(
+        (c) => c.contactType !== "personal",
+      ).length,
+      silenced: (contacts as Contact[]).filter((c) => c.isSilenced).length,
+    }),
+    [contacts],
+  );
 
   return (
-    <div className="space-y-0">
+    <div className="mx-auto max-w-2xl pb-10" data-testid="people-settings-view">
       {/* ─── Header ─── */}
-      <div className="flex items-center justify-between pb-5">
+      <div className="flex items-center justify-between gap-3 pb-5 pt-1 sm:pt-0">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="flex items-center justify-center w-9 h-9 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors"
+            className="tap-target active-press flex size-11 items-center justify-center rounded-2xl border border-slate-200/70 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 dark:border-white/10 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            aria-label="الرجوع إلى الإعدادات"
           >
-            <ArrowRight className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+            <ArrowRight className="size-5" />
           </button>
           <div>
-            <h1 className="text-lg font-semibold text-slate-900 dark:text-white leading-tight">
+            <h1 className="text-xl font-black leading-tight text-slate-950 dark:text-white sm:text-2xl">
               الأشخاص والعلاقات
             </h1>
-            <p className="text-[11px] text-slate-400 mt-0.5">
-              {counts.all} شخص مسجل
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              {counts.all} شخص محفوظ لتصنيف معاملاتك بدقة
             </p>
           </div>
         </div>
         <Button
           size="sm"
           onClick={() => setShowAddDialog(true)}
-          className="h-8 px-3 text-xs rounded-lg gap-1.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-medium shadow-none"
+          className="active-press h-11 shrink-0 gap-1.5 rounded-2xl bg-emerald-600 px-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/15 hover:bg-emerald-700 dark:bg-emerald-500 dark:text-slate-950"
         >
           <UserPlus className="w-3.5 h-3.5" />
           إضافة
         </Button>
       </div>
 
-      {/* ─── Search ─── */}
-      <div className="relative pb-3">
-        <Search className="absolute right-3 top-[calc(50%-6px)] -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-        <Input
-          placeholder="بحث..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pr-9 h-9 text-sm rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 placeholder:text-slate-400"
-        />
-        {search && (
-          <button
-            onClick={() => setSearch("")}
-            className="absolute left-3 top-[calc(50%-6px)] -translate-y-1/2 text-slate-400 hover:text-slate-600"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        )}
-      </div>
-
-      {/* ─── Filter Tabs ─── */}
-      <div className="flex w-full bg-slate-100 dark:bg-slate-800/60 rounded-lg p-0.5 mb-4">
-        {tabs.map((tab) => {
-          const isActive = filter === tab.key;
-          const count = counts[tab.key];
-          return (
+      <section className="mb-4 space-y-3 rounded-[24px] border border-slate-200/70 bg-white/85 p-3 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
+        {/* ─── Search ─── */}
+        <div className="relative">
+          <Search className="pointer-events-none absolute end-3.5 top-1/2 size-[18px] -translate-y-1/2 text-slate-400" />
+          <Input
+            placeholder="ابحث بالاسم أو صلة القرابة"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-12 rounded-2xl border-slate-200 bg-slate-50/80 pe-10 ps-10 text-sm placeholder:text-slate-400 dark:border-white/10 dark:bg-slate-950/60"
+          />
+          {search && (
             <button
-              key={tab.key}
-              onClick={() => {
-                lightTap();
-                setFilter(tab.key);
-              }}
-              className={`relative flex-1 flex items-center justify-center gap-1 py-2 text-[11px] font-medium rounded-md transition-all duration-200 outline-none ${
-                isActive
-                  ? "text-slate-900 dark:text-white"
-                  : "text-slate-500 dark:text-slate-400"
-              }`}
+              onClick={() => setSearch("")}
+              className="tap-target absolute start-1 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-xl text-slate-400 hover:text-slate-600"
+              aria-label="مسح البحث"
             >
-              {isActive && (
-                <motion.div
-                  layoutId="peopleTabBg"
-                  className="absolute inset-0 bg-white dark:bg-slate-700 rounded-md shadow-sm"
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                />
-              )}
-              <span className="relative z-10 flex items-center gap-1">
-                {tab.label}
-                {count > 0 && (
-                  <span className={`text-[10px] tabular-nums ${isActive ? "text-slate-500 dark:text-slate-300" : "text-slate-400"}`}>
-                    {count}
-                  </span>
-                )}
-              </span>
+              <X className="w-3.5 h-3.5" />
             </button>
-          );
-        })}
-      </div>
+          )}
+        </div>
+
+        {/* ─── Filter Tabs ─── */}
+        <div className="grid w-full grid-cols-4 rounded-2xl bg-slate-100/90 p-1 dark:bg-slate-950/70">
+          {tabs.map((tab) => {
+            const isActive = filter === tab.key;
+            const count = counts[tab.key];
+            return (
+              <button
+                key={tab.key}
+                onClick={() => {
+                  lightTap();
+                  setFilter(tab.key);
+                }}
+                className={`relative flex min-h-10 items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-bold outline-none transition-all duration-200 ${
+                  isActive
+                    ? "text-slate-900 dark:text-white"
+                    : "text-slate-500 dark:text-slate-400"
+                }`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="peopleTabBg"
+                    className="absolute inset-0 rounded-xl border border-slate-200/80 bg-white shadow-sm dark:border-white/10 dark:bg-slate-800"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-1">
+                  {tab.label}
+                  {count > 0 && (
+                    <span
+                      className={`text-[10px] tabular-nums ${isActive ? "text-slate-500 dark:text-slate-300" : "text-slate-400"}`}
+                    >
+                      {count}
+                    </span>
+                  )}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       {/* ─── Contact List ─── */}
-      <div className="min-h-[200px]">
+      <div className="min-h-[200px] overflow-hidden rounded-[24px] border border-slate-200/70 bg-white/90 shadow-sm dark:border-white/10 dark:bg-slate-900/65">
         <AnimatePresence mode="popLayout">
-          {filteredContacts.length === 0 ? (
+          {contactsQuery.isLoading ? (
+            <div
+              className="divide-y divide-slate-100 dark:divide-white/5"
+              aria-label="جاري تحميل الأشخاص"
+            >
+              {[0, 1, 2, 3].map((item) => (
+                <div
+                  key={item}
+                  className="flex min-h-[68px] items-center gap-3 px-4 py-3"
+                >
+                  <div className="size-11 shrink-0 animate-pulse rounded-2xl bg-slate-100 dark:bg-white/5" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3.5 w-28 animate-pulse rounded bg-slate-100 dark:bg-white/5" />
+                    <div className="h-2.5 w-16 animate-pulse rounded bg-slate-100 dark:bg-white/5" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredContacts.length === 0 ? (
             <motion.div
               key="empty"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-16"
+              className="flex min-h-[280px] flex-col items-center justify-center px-5 py-12"
             >
               <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
                 {search ? (
@@ -305,10 +378,11 @@ export function PeopleSettingsView({ onBack }: { onBack: () => void }) {
               </p>
             </motion.div>
           ) : (
-            <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+            <div className="divide-y divide-slate-100 dark:divide-white/5">
               <AnimatePresence>
                 {filteredContacts.map((contact, idx) => {
-                  const typeMeta = TYPE_LABELS[contact.contactType] || TYPE_LABELS.personal;
+                  const typeMeta =
+                    TYPE_LABELS[contact.contactType] || TYPE_LABELS.personal;
                   return (
                     <motion.div
                       key={contact.id}
@@ -323,46 +397,53 @@ export function PeopleSettingsView({ onBack }: { onBack: () => void }) {
                           setSelectedContactActions(contact);
                         }
                       }}
-                      className={`group flex items-center gap-3 py-3 px-1 transition-colors ${
+                      className={`group flex min-h-[68px] items-center gap-3 px-4 py-3 transition-colors ${
                         isMobile
                           ? "active:bg-slate-50 dark:active:bg-slate-800/40 cursor-pointer"
                           : "hover:bg-slate-50/50 dark:hover:bg-slate-800/20"
                       }`}
                     >
                       {/* Avatar */}
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${
-                        contact.isSilenced ? "opacity-35 grayscale" : ""
-                      } ${initialsColor(contact.name)}`}>
+                      <div
+                        className={`flex size-11 shrink-0 items-center justify-center rounded-2xl text-sm font-black ${
+                          contact.isSilenced ? "opacity-35 grayscale" : ""
+                        } ${typeMeta.avatar}`}
+                      >
                         {contact.name.charAt(0)}
                       </div>
 
                       {/* Info */}
                       <div className="flex-1 min-w-0 text-end">
                         <div className="flex items-center gap-1.5 justify-end">
-                          <span className="font-medium text-[13px] text-slate-800 dark:text-slate-100 truncate">
+                          <span className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">
                             {contact.name}
                           </span>
                           {contact.isSilenced && (
                             <VolumeX className="w-3 h-3 text-slate-400 shrink-0" />
                           )}
                         </div>
-                        <div className="flex items-center gap-1.5 mt-0.5 justify-end text-[11px]">
+                        <div className="mt-1 flex items-center justify-end gap-1.5 text-[11px]">
                           {contact.relation && (
                             <span className="text-slate-400">
                               {contact.relation}
                             </span>
                           )}
                           {contact.contactType !== "personal" && (
-                            <span className="flex items-center gap-1 text-slate-500">
-                              <span className={`w-1.5 h-1.5 rounded-full ${typeMeta.dot}`} />
+                            <span
+                              className={`flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold ${typeMeta.chip}`}
+                            >
+                              <span
+                                className={`size-1.5 rounded-full ${typeMeta.dot}`}
+                              />
                               {typeMeta.label}
                             </span>
                           )}
-                          {contact.transactionCount !== null && contact.transactionCount > 0 && (
-                            <span className="text-slate-400">
-                              {contact.transactionCount} معاملة
-                            </span>
-                          )}
+                          {contact.transactionCount !== null &&
+                            contact.transactionCount > 0 && (
+                              <span className="text-slate-400">
+                                {contact.transactionCount} معاملة
+                              </span>
+                            )}
                         </div>
                       </div>
 
@@ -394,7 +475,7 @@ export function PeopleSettingsView({ onBack }: { onBack: () => void }) {
 
                       {/* Mobile chevron */}
                       {isMobile && (
-                        <ChevronLeft className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" />
+                        <ChevronLeft className="size-4 shrink-0 text-slate-300 dark:text-slate-600" />
                       )}
                     </motion.div>
                   );
@@ -407,10 +488,10 @@ export function PeopleSettingsView({ onBack }: { onBack: () => void }) {
 
       {/* ─── Merge Button ─── */}
       {(contacts as Contact[]).length >= 2 && (
-        <div className="pt-4 border-t border-slate-100 dark:border-slate-800/60 mt-2">
+        <div className="mt-4">
           <button
             onClick={() => setShowMergeDialog(true)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+            className="active-press flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-slate-200/70 bg-white text-xs font-bold text-slate-600 shadow-sm transition-colors hover:text-slate-900 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-300"
           >
             <GitMerge className="w-3.5 h-3.5" />
             دمج شخصين مكررين
@@ -430,7 +511,9 @@ export function PeopleSettingsView({ onBack }: { onBack: () => void }) {
       <EditContactDialog
         contact={editingContact}
         onClose={() => setEditingContact(null)}
-        onSave={(data) => updateMutation.mutate({ id: editingContact!.id, ...data })}
+        onSave={(data) =>
+          updateMutation.mutate({ id: editingContact!.id, ...data })
+        }
         isLoading={updateMutation.isPending}
       />
 
@@ -442,17 +525,21 @@ export function PeopleSettingsView({ onBack }: { onBack: () => void }) {
       />
 
       {/* ─── Mobile Actions Drawer ─── */}
-      <Drawer open={!!selectedContactActions} onOpenChange={(open) => !open && setSelectedContactActions(null)}>
-        <DrawerContent className="pb-8">
-          <DrawerHeader className="text-right px-5 pt-4 pb-3">
-            <DrawerTitle className="text-right text-sm font-semibold text-slate-900 dark:text-white">
+      <Drawer
+        open={!!selectedContactActions}
+        onOpenChange={(open) => !open && setSelectedContactActions(null)}
+      >
+        <DrawerContent className="rounded-t-[28px] pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <DrawerHeader className="px-4 pb-3 pt-2 text-right">
+            <DrawerTitle className="text-right text-lg font-black text-slate-900 dark:text-white">
               {selectedContactActions?.name}
             </DrawerTitle>
-            <DrawerDescription className="text-right text-[11px] text-slate-400 mt-0.5">
-              {selectedContactActions?.relation || "بدون علاقة"} · {selectedContactActions?.transactionCount || 0} معاملة
+            <DrawerDescription className="mt-1 text-right text-xs text-slate-500 dark:text-slate-400">
+              {selectedContactActions?.relation || "بدون علاقة"} ·{" "}
+              {selectedContactActions?.transactionCount || 0} معاملة
             </DrawerDescription>
           </DrawerHeader>
-          <div className="px-5 space-y-1.5 pb-2">
+          <div className="space-y-2 px-4 pb-2">
             <button
               onClick={() => {
                 if (selectedContactActions) {
@@ -460,7 +547,7 @@ export function PeopleSettingsView({ onBack }: { onBack: () => void }) {
                   setSelectedContactActions(null);
                 }
               }}
-              className="w-full flex items-center gap-3 p-3 rounded-lg text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+              className="active-press flex min-h-12 w-full items-center gap-3 rounded-2xl bg-slate-100/80 px-4 text-sm font-bold text-slate-800 transition-colors hover:bg-slate-200 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10"
             >
               <Pencil className="w-4 h-4 text-slate-400" />
               <span className="font-medium text-[13px]">تعديل البيانات</span>
@@ -472,7 +559,7 @@ export function PeopleSettingsView({ onBack }: { onBack: () => void }) {
                   setSelectedContactActions(null);
                 }
               }}
-              className="w-full flex items-center gap-3 p-3 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+              className="active-press flex min-h-12 w-full items-center gap-3 rounded-2xl bg-red-50 px-4 text-sm font-bold text-red-600 transition-colors hover:bg-red-100 dark:bg-red-950/30 dark:text-red-400"
             >
               <Trash2 className="w-4 h-4" />
               <span className="font-medium text-[13px]">حذف</span>
@@ -482,45 +569,60 @@ export function PeopleSettingsView({ onBack }: { onBack: () => void }) {
       </Drawer>
 
       {/* ─── Delete Confirmation ─── */}
-      <AlertDialog open={!!contactToDelete} onOpenChange={(open) => !open && setContactToDelete(null)}>
-        <AlertDialogContent className="max-w-sm rounded-xl p-5 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-          <AlertDialogHeader className="text-right">
-            <AlertDialogTitle className="text-right text-sm font-semibold text-slate-900 dark:text-white">
+      <AdaptiveDialog
+        open={!!contactToDelete}
+        onOpenChange={(open) => !open && setContactToDelete(null)}
+      >
+        <AdaptiveDialogContent
+          showGrabber={false}
+          className={CONTACT_SHEET_CLASS}
+          dir="rtl"
+        >
+          <AdaptiveDialogHeader className="text-right">
+            <AdaptiveDialogTitle className="text-right text-lg font-black text-slate-900 dark:text-white">
               حذف "{contactToDelete?.name}"
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-right text-[12px] text-slate-500 dark:text-slate-400 leading-relaxed mt-1.5">
-              سيتم إزالة جهة الاتصال من القائمة. المعاملات المالية السابقة لن تتأثر.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex gap-2 mt-4 sm:flex-row-reverse">
-            <AlertDialogCancel
+            </AdaptiveDialogTitle>
+            <AdaptiveDialogDescription className="mt-1.5 text-right text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+              سيتم إزالة جهة الاتصال من القائمة. المعاملات المالية السابقة لن
+              تتأثر.
+            </AdaptiveDialogDescription>
+          </AdaptiveDialogHeader>
+          <AdaptiveDialogFooter className="mt-4 flex flex-row gap-2 sm:flex-row-reverse">
+            <Button
+              variant="outline"
               onClick={() => setContactToDelete(null)}
-              className="flex-1 rounded-lg border-slate-200 dark:border-slate-800 text-xs h-9 font-medium"
+              className="active-press h-12 flex-1 rounded-2xl border-slate-200 text-sm font-bold dark:border-slate-800"
             >
               إلغاء
-            </AlertDialogCancel>
-            <AlertDialogAction
+            </Button>
+            <Button
               onClick={() => {
                 if (contactToDelete) {
                   deleteMutation.mutate({ id: contactToDelete.id });
                   setContactToDelete(null);
                 }
               }}
-              className="flex-1 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs h-9 font-medium"
+              className="active-press h-12 flex-1 rounded-2xl bg-red-600 text-sm font-bold text-white hover:bg-red-700"
             >
               حذف
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </AdaptiveDialogFooter>
+        </AdaptiveDialogContent>
+      </AdaptiveDialog>
     </div>
   );
 }
 
 // ─── Shared Form Component ───
 function ContactForm({
-  name, setName, relation, setRelation, contactType, setContactType,
-  isMobile, autoFocus,
+  name,
+  setName,
+  relation,
+  setRelation,
+  contactType,
+  setContactType,
+  isMobile,
+  autoFocus,
 }: {
   name: string;
   setName: (v: string) => void;
@@ -532,39 +634,70 @@ function ContactForm({
   autoFocus?: boolean;
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
-        <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5 block text-right">الاسم</label>
+        <label className="mb-2 block text-right text-sm font-bold text-slate-700 dark:text-slate-200">
+          الاسم
+        </label>
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="مثال: أحمد، مريم..."
-          className="h-10 text-sm rounded-lg text-right border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60"
+          className="h-12 w-full rounded-2xl border-slate-200 bg-slate-50/80 px-4 text-right text-base dark:border-white/10 dark:bg-slate-900/70"
           autoFocus={autoFocus && !isMobile}
         />
       </div>
       <div>
-        <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5 block text-right">العلاقة</label>
+        <label className="mb-2 block text-right text-sm font-bold text-slate-700 dark:text-slate-200">
+          صلة العلاقة{" "}
+          <span className="font-normal text-slate-400">(اختياري)</span>
+        </label>
         <Select value={relation} onValueChange={setRelation}>
-          <SelectTrigger className="h-10 text-sm rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60"><SelectValue placeholder="اختر..." /></SelectTrigger>
+          <SelectTrigger className="!h-12 w-full rounded-2xl border-slate-200 bg-slate-50/80 px-4 text-sm dark:border-white/10 dark:bg-slate-900/70">
+            <SelectValue placeholder="اختر صلة العلاقة" />
+          </SelectTrigger>
           <SelectContent>
             {RELATION_OPTIONS.map((r) => (
-              <SelectItem key={r} value={r}>{r}</SelectItem>
+              <SelectItem key={r} value={r}>
+                {r}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
       <div>
-        <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5 block text-right">النوع</label>
-        <Select value={contactType} onValueChange={(v) => setContactType(v as ContactTypeValue)}>
-          <SelectTrigger className="h-10 text-sm rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="personal">شخصي</SelectItem>
-            <SelectItem value="business_supplier">مورد</SelectItem>
-            <SelectItem value="business_customer">عميل</SelectItem>
-            <SelectItem value="business_employee">موظف</SelectItem>
-          </SelectContent>
-        </Select>
+        <label className="mb-2 block text-right text-sm font-bold text-slate-700 dark:text-slate-200">
+          نوع الشخص
+        </label>
+        <div
+          className="grid grid-cols-2 gap-2"
+          role="group"
+          aria-label="نوع الشخص"
+        >
+          {(
+            Object.entries(TYPE_LABELS) as Array<
+              [ContactTypeValue, (typeof TYPE_LABELS)[string]]
+            >
+          ).map(([value, meta]) => {
+            const isSelected = contactType === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={isSelected}
+                onClick={() => setContactType(value)}
+                className={`active-press flex min-h-12 items-center justify-center gap-2 rounded-2xl border px-3 text-sm font-bold transition-colors ${
+                  isSelected
+                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-300"
+                    : "border-slate-200 bg-slate-50/70 text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-300"
+                }`}
+              >
+                <span className={`size-2 rounded-full ${meta.dot}`} />
+                {meta.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -572,11 +705,18 @@ function ContactForm({
 
 // ─── Add Contact Dialog ───
 function AddContactDialog({
-  open, onOpenChange, onAdd, isLoading,
+  open,
+  onOpenChange,
+  onAdd,
+  isLoading,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAdd: (data: { name: string; relation: string; contactType: ContactTypeValue }) => void;
+  onAdd: (data: {
+    name: string;
+    relation: string;
+    contactType: ContactTypeValue;
+  }) => void;
   isLoading: boolean;
 }) {
   const isMobile = useIsMobile();
@@ -587,19 +727,25 @@ function AddContactDialog({
   const handleAdd = () => {
     if (!name.trim()) return;
     onAdd({ name: name.trim(), relation, contactType });
-    setName(""); setRelation(""); setContactType("personal");
+    setName("");
+    setRelation("");
+    setContactType("personal");
   };
 
   const formBody = (
-    <div className="space-y-5 pt-1">
+    <div className="space-y-6 pt-1">
       <ContactForm
-        name={name} setName={setName}
-        relation={relation} setRelation={setRelation}
-        contactType={contactType} setContactType={setContactType}
-        isMobile={isMobile} autoFocus
+        name={name}
+        setName={setName}
+        relation={relation}
+        setRelation={setRelation}
+        contactType={contactType}
+        setContactType={setContactType}
+        isMobile={isMobile}
+        autoFocus
       />
       <Button
-        className="w-full rounded-lg h-10 text-sm font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 shadow-none"
+        className="active-press h-12 w-full rounded-2xl bg-emerald-600 text-sm font-bold text-white shadow-lg shadow-emerald-500/15 hover:bg-emerald-700 dark:bg-emerald-500 dark:text-slate-950"
         disabled={!name.trim() || isLoading}
         onClick={handleAdd}
       >
@@ -609,47 +755,49 @@ function AddContactDialog({
     </div>
   );
 
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="pb-8">
-          <DrawerHeader className="text-right px-5 pt-4 pb-2">
-            <DrawerTitle className="text-right text-sm font-semibold text-slate-900 dark:text-white">إضافة شخص</DrawerTitle>
-          </DrawerHeader>
-          <div className="px-5">{formBody}</div>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm rounded-xl p-5 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-        <DialogHeader>
-          <DialogTitle className="text-right text-sm font-semibold text-slate-900 dark:text-white">إضافة شخص</DialogTitle>
-        </DialogHeader>
+    <AdaptiveDialog open={open} onOpenChange={onOpenChange}>
+      <AdaptiveDialogContent
+        showGrabber={false}
+        className={CONTACT_SHEET_CLASS}
+        dir="rtl"
+      >
+        <AdaptiveDialogHeader className="pb-3 text-right">
+          <AdaptiveDialogTitle className="text-right text-lg font-black text-slate-900 dark:text-white">
+            إضافة شخص
+          </AdaptiveDialogTitle>
+          <AdaptiveDialogDescription className="mt-1 text-right text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+            احفظ الاسم مرة واحدة، وSmartSpend هيتعرّف عليه في معاملاتك الجاية.
+          </AdaptiveDialogDescription>
+        </AdaptiveDialogHeader>
         {formBody}
-      </DialogContent>
-    </Dialog>
+      </AdaptiveDialogContent>
+    </AdaptiveDialog>
   );
 }
 
 // ─── Edit Contact Dialog ───
 function EditContactDialog({
-  contact, onClose, onSave, isLoading,
+  contact,
+  onClose,
+  onSave,
+  isLoading,
 }: {
   contact: Contact | null;
   onClose: () => void;
-  onSave: (data: { name?: string; relation?: string; contactType?: ContactTypeValue }) => void;
+  onSave: (data: {
+    name?: string;
+    relation?: string;
+    contactType?: ContactTypeValue;
+  }) => void;
   isLoading: boolean;
 }) {
-  useHistoryBound(!!contact, onClose);
   const isMobile = useIsMobile();
   const [name, setName] = useState("");
   const [relation, setRelation] = useState("");
   const [contactType, setContactType] = useState<ContactTypeValue>("personal");
 
-  useMemo(() => {
+  useEffect(() => {
     if (contact) {
       setName(contact.name);
       setRelation(contact.relation || "");
@@ -660,23 +808,26 @@ function EditContactDialog({
   if (!contact) return null;
 
   const formBody = (
-    <div className="space-y-5 pt-1">
+    <div className="space-y-6 pt-1">
       <ContactForm
-        name={name} setName={setName}
-        relation={relation} setRelation={setRelation}
-        contactType={contactType} setContactType={setContactType}
+        name={name}
+        setName={setName}
+        relation={relation}
+        setRelation={setRelation}
+        contactType={contactType}
+        setContactType={setContactType}
         isMobile={isMobile}
       />
       <div className="flex gap-2">
         <Button
           variant="outline"
-          className="flex-1 rounded-lg h-10 text-xs border-slate-200 dark:border-slate-800 font-medium"
+          className="active-press h-12 flex-1 rounded-2xl border-slate-200 text-sm font-bold dark:border-slate-800"
           onClick={onClose}
         >
           إلغاء
         </Button>
         <Button
-          className="flex-1 rounded-lg h-10 text-xs font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 shadow-none"
+          className="active-press h-12 flex-1 rounded-2xl bg-emerald-600 text-sm font-bold text-white shadow-lg shadow-emerald-500/15 hover:bg-emerald-700 dark:bg-emerald-500 dark:text-slate-950"
           disabled={!name.trim() || isLoading}
           onClick={() => onSave({ name: name.trim(), relation, contactType })}
         >
@@ -687,43 +838,42 @@ function EditContactDialog({
     </div>
   );
 
-  if (isMobile) {
-    return (
-      <Drawer open={!!contact} onOpenChange={(open) => !open && onClose()}>
-        <DrawerContent className="pb-8">
-          <DrawerHeader className="text-right px-5 pt-4 pb-2">
-            <DrawerTitle className="text-right text-sm font-semibold text-slate-900 dark:text-white">تعديل {contact.name}</DrawerTitle>
-          </DrawerHeader>
-          <div className="px-5">{formBody}</div>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Dialog open={!!contact} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-sm rounded-xl p-5 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-        <DialogHeader>
-          <DialogTitle className="text-right text-sm font-semibold text-slate-900 dark:text-white">تعديل البيانات</DialogTitle>
-        </DialogHeader>
+    <AdaptiveDialog
+      open={!!contact}
+      onOpenChange={(open) => !open && onClose()}
+    >
+      <AdaptiveDialogContent
+        showGrabber={false}
+        className={CONTACT_SHEET_CLASS}
+        dir="rtl"
+      >
+        <AdaptiveDialogHeader className="pb-3 text-right">
+          <AdaptiveDialogTitle className="text-right text-lg font-black text-slate-900 dark:text-white">
+            تعديل {contact.name}
+          </AdaptiveDialogTitle>
+          <AdaptiveDialogDescription className="mt-1 text-right text-sm text-slate-500 dark:text-slate-400">
+            عدّل الاسم أو العلاقة أو نوع الشخص.
+          </AdaptiveDialogDescription>
+        </AdaptiveDialogHeader>
         {formBody}
-      </DialogContent>
-    </Dialog>
+      </AdaptiveDialogContent>
+    </AdaptiveDialog>
   );
 }
 
 // ─── Merge Dialog ───
 function MergeDialog({
-  open, onOpenChange, contacts,
+  open,
+  onOpenChange,
+  contacts,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   contacts: Contact[];
 }) {
-  useHistoryBound(open, () => onOpenChange(false));
   const { toast } = useToast();
   const utils = trpc.useUtils();
-  const isMobile = useIsMobile();
   const { success: successHaptic, error: errorHaptic } = useHaptics();
   const [primaryId, setPrimaryId] = useState<number | null>(null);
   const [secondaryId, setSecondaryId] = useState<number | null>(null);
@@ -739,65 +889,98 @@ function MergeDialog({
     },
     onError: () => {
       errorHaptic();
-    }
+    },
   });
 
-  const primaryName = contacts.find(c => c.id === primaryId)?.name;
-  const secondaryName = contacts.find(c => c.id === secondaryId)?.name;
+  const primaryName = contacts.find((c) => c.id === primaryId)?.name;
+  const secondaryName = contacts.find((c) => c.id === secondaryId)?.name;
 
   const formBody = (
-    <div className="space-y-4 pt-1">
-      <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/15 border border-amber-200/40 dark:border-amber-900/20">
-        <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-        <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed text-right">
+    <div className="space-y-5 pt-1">
+      <div className="flex items-start gap-3 rounded-2xl border border-amber-200/60 bg-amber-50 p-3.5 dark:border-amber-900/30 dark:bg-amber-950/20">
+        <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-500" />
+        <p className="text-right text-sm leading-relaxed text-amber-800 dark:text-amber-300">
           الشخص الأساسي سيبقى وتنتقل إليه جميع المعاملات. المكرر سيُحذف نهائياً.
         </p>
       </div>
 
       <div>
-        <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5 block text-right">الأساسي (سيبقى)</label>
-        <Select value={primaryId?.toString()} onValueChange={(v) => setPrimaryId(Number(v))}>
-          <SelectTrigger className="h-10 text-sm rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60"><SelectValue placeholder="اختر..." /></SelectTrigger>
+        <label className="mb-2 block text-right text-sm font-bold text-slate-700 dark:text-slate-200">
+          الأساسي (سيبقى)
+        </label>
+        <Select
+          value={primaryId?.toString()}
+          onValueChange={(v) => setPrimaryId(Number(v))}
+        >
+          <SelectTrigger className="!h-12 w-full rounded-2xl border-slate-200 bg-slate-50/80 px-4 text-sm dark:border-white/10 dark:bg-slate-900/70">
+            <SelectValue placeholder="اختر الشخص الأساسي" />
+          </SelectTrigger>
           <SelectContent>
             {contacts.map((c) => (
-              <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
+              <SelectItem key={c.id} value={c.id.toString()}>
+                {c.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
       <div>
-        <label className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5 block text-right">المكرر (سيُحذف)</label>
-        <Select value={secondaryId?.toString()} onValueChange={(v) => setSecondaryId(Number(v))}>
-          <SelectTrigger className="h-10 text-sm rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60"><SelectValue placeholder="اختر..." /></SelectTrigger>
+        <label className="mb-2 block text-right text-sm font-bold text-slate-700 dark:text-slate-200">
+          المكرر (سيُحذف)
+        </label>
+        <Select
+          value={secondaryId?.toString()}
+          onValueChange={(v) => setSecondaryId(Number(v))}
+        >
+          <SelectTrigger className="!h-12 w-full rounded-2xl border-slate-200 bg-slate-50/80 px-4 text-sm dark:border-white/10 dark:bg-slate-900/70">
+            <SelectValue placeholder="اختر الشخص المكرر" />
+          </SelectTrigger>
           <SelectContent>
-            {contacts.filter(c => c.id !== primaryId).map((c) => (
-              <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
-            ))}
+            {contacts
+              .filter((c) => c.id !== primaryId)
+              .map((c) => (
+                <SelectItem key={c.id} value={c.id.toString()}>
+                  {c.name}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
       </div>
 
       {primaryId && secondaryId && (
-        <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200/60 dark:border-slate-800/60 text-xs">
+        <div className="flex items-center justify-between rounded-2xl border border-slate-200/60 bg-slate-50 p-3.5 text-xs dark:border-slate-800/60 dark:bg-slate-800/30">
           <div className="text-center flex-1">
-            <p className="font-medium text-slate-800 dark:text-slate-200 truncate max-w-[90px] mx-auto">{primaryName}</p>
+            <p className="font-medium text-slate-800 dark:text-slate-200 truncate max-w-[90px] mx-auto">
+              {primaryName}
+            </p>
             <p className="text-[10px] text-slate-400 mt-0.5">سيبقى</p>
           </div>
           <div className="flex flex-col items-center px-3 shrink-0">
             <GitMerge className="w-4 h-4 text-slate-400 rotate-180" />
           </div>
           <div className="text-center flex-1">
-            <p className="font-medium text-red-500 dark:text-red-400 line-through truncate max-w-[90px] mx-auto">{secondaryName}</p>
+            <p className="font-medium text-red-500 dark:text-red-400 line-through truncate max-w-[90px] mx-auto">
+              {secondaryName}
+            </p>
             <p className="text-[10px] text-slate-400 mt-0.5">سيُحذف</p>
           </div>
         </div>
       )}
 
       <Button
-        className="w-full rounded-lg h-10 text-xs font-medium bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 shadow-none"
-        disabled={!primaryId || !secondaryId || primaryId === secondaryId || mergeMutation.isPending}
-        onClick={() => primaryId && secondaryId && mergeMutation.mutate({ primaryId, secondaryId })}
+        className="active-press h-12 w-full rounded-2xl bg-emerald-600 text-sm font-bold text-white shadow-lg shadow-emerald-500/15 hover:bg-emerald-700 dark:bg-emerald-500 dark:text-slate-950"
+        disabled={
+          !primaryId ||
+          !secondaryId ||
+          primaryId === secondaryId ||
+          mergeMutation.isPending
+        }
+        onClick={() =>
+          primaryId &&
+          secondaryId &&
+          mergeMutation.mutate({ primaryId, secondaryId })
+        }
       >
         <GitMerge className="w-3.5 h-3.5 mr-1.5" />
         تأكيد الدمج
@@ -805,27 +988,23 @@ function MergeDialog({
     </div>
   );
 
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="pb-8">
-          <DrawerHeader className="text-right px-5 pt-4 pb-2">
-            <DrawerTitle className="text-right text-sm font-semibold text-slate-900 dark:text-white">دمج أشخاص مكررين</DrawerTitle>
-          </DrawerHeader>
-          <div className="px-5">{formBody}</div>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm rounded-xl p-5 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-        <DialogHeader>
-          <DialogTitle className="text-right text-sm font-semibold text-slate-900 dark:text-white">دمج أشخاص مكررين</DialogTitle>
-        </DialogHeader>
+    <AdaptiveDialog open={open} onOpenChange={onOpenChange}>
+      <AdaptiveDialogContent
+        showGrabber={false}
+        className={CONTACT_SHEET_CLASS}
+        dir="rtl"
+      >
+        <AdaptiveDialogHeader className="pb-3 text-right">
+          <AdaptiveDialogTitle className="text-right text-lg font-black text-slate-900 dark:text-white">
+            دمج أشخاص مكررين
+          </AdaptiveDialogTitle>
+          <AdaptiveDialogDescription className="mt-1 text-right text-sm text-slate-500 dark:text-slate-400">
+            اجمع المعاملات تحت اسم واحد وتخلّص من التكرار.
+          </AdaptiveDialogDescription>
+        </AdaptiveDialogHeader>
         {formBody}
-      </DialogContent>
-    </Dialog>
+      </AdaptiveDialogContent>
+    </AdaptiveDialog>
   );
 }

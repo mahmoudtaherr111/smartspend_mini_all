@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAdmin } from "../hooks/useAdmin";
 import { useAuth } from "../hooks/useAuth";
 import { trpc } from "../providers/trpc";
 import { SEOMeta } from "../components/seo/SEOMeta";
+import { AiCommandCenter } from "../components/admin/ai-center/AiCommandCenter";
 import {
   Users,
   Shield,
@@ -38,6 +40,8 @@ import {
   FileText,
   History,
   Send,
+  ArrowRight,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,44 +76,162 @@ import { AdminAdsTab } from "@/components/admin/AdminAdsTab";
 import { AdminRulesTab } from "@/components/admin/AdminRulesTab";
 import { AdminRawSmsTab } from "@/components/admin/AdminRawSmsTab";
 import { AdminAuditTab } from "@/components/admin/AdminAuditTab";
+import { AdminUserMobileCard } from "@/components/admin/AdminUserMobileCard";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+
+const ADMIN_SECTIONS = [
+  {
+    value: "overview",
+    label: "نظرة عامة",
+    description: "ملخص الأداء والنشاط",
+    icon: LayoutDashboard,
+    activeClass:
+      "data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:data-[state=active]:bg-indigo-900/30",
+  },
+  {
+    value: "users",
+    label: "المستخدمون",
+    description: "الحسابات والصلاحيات",
+    icon: Users,
+    activeClass:
+      "data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/30",
+  },
+  {
+    value: "tickets",
+    label: "الدعم",
+    description: "التذاكر والردود",
+    icon: Ticket,
+    activeClass:
+      "data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 dark:data-[state=active]:bg-amber-900/30",
+  },
+  {
+    value: "ai",
+    label: "الذكاء الاصطناعي",
+    description: "الجودة والتكلفة والنماذج",
+    icon: Brain,
+    activeClass:
+      "data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 dark:data-[state=active]:bg-purple-900/30",
+  },
+  {
+    value: "billing",
+    label: "الاشتراكات",
+    description: "الباقات وحالة الدفع",
+    icon: Crown,
+    activeClass:
+      "data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-900/30",
+  },
+  {
+    value: "clarifications",
+    label: "التوضيحات المعلقة",
+    description: "مراجعة الحالات غير الواضحة",
+    icon: AlertCircle,
+    activeClass:
+      "data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700 dark:data-[state=active]:bg-orange-900/30",
+  },
+  {
+    value: "whatsapp",
+    label: "واتساب",
+    description: "الخدمة والرسائل",
+    icon: MessageCircle,
+    activeClass:
+      "data-[state=active]:bg-green-50 data-[state=active]:text-green-700 dark:data-[state=active]:bg-green-900/30",
+  },
+  {
+    value: "ads",
+    label: "الحملات الإعلانية",
+    description: "الحملات والاستهداف",
+    icon: Megaphone,
+    activeClass:
+      "data-[state=active]:bg-pink-50 data-[state=active]:text-pink-700 dark:data-[state=active]:bg-pink-900/30",
+  },
+  {
+    value: "rules",
+    label: "القاموس والقواعد",
+    description: "قواعد التصنيف المتعلمة",
+    icon: BookOpen,
+    activeClass:
+      "data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 dark:data-[state=active]:bg-teal-900/30",
+  },
+  {
+    value: "raw-sms",
+    label: "سجل SMS",
+    description: "الرسائل الخام والمعالجة",
+    icon: FileText,
+    activeClass:
+      "data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700 dark:data-[state=active]:bg-violet-900/30",
+  },
+  {
+    value: "audit",
+    label: "سجل الرقابة",
+    description: "الجلسات والنشاط الإداري",
+    icon: History,
+    activeClass:
+      "data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 dark:data-[state=active]:bg-slate-800",
+  },
+  {
+    value: "notifications",
+    label: "الإشعارات",
+    description: "القوالب وسجل الإرسال",
+    icon: Bell,
+    activeClass:
+      "data-[state=active]:bg-sky-50 data-[state=active]:text-sky-700 dark:data-[state=active]:bg-sky-900/30",
+  },
+  {
+    value: "settings",
+    label: "الحدود والإعدادات",
+    description: "الخطط والمفاتيح والحدود",
+    icon: Settings2,
+    activeClass:
+      "data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 dark:data-[state=active]:bg-slate-800",
+  },
+] as const;
+
+type AdminSection = (typeof ADMIN_SECTIONS)[number]["value"];
 
 export default function Admin() {
   const { user } = useAuth();
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"all" | "user" | "moderator" | "admin">("all");
-  const [planFilter, setPlanFilter] = useState<"all" | "free" | "pro" | "ultra">("all");
+  const [roleFilter, setRoleFilter] = useState<
+    "all" | "user" | "moderator" | "admin"
+  >("all");
+  const [planFilter, setPlanFilter] = useState<
+    "all" | "free" | "pro" | "ultra"
+  >("all");
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showSessions, setShowSessions] = useState(false);
   const [showExports, setShowExports] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState<AdminSection>("overview");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any | null>(null);
 
   // Modal states for user-specific message popup
   const [messageUser, setMessageUser] = useState<any>(null);
-  const [messageChannel, setMessageChannel] = useState<"whatsapp" | "email">("whatsapp");
+  const [messageChannel, setMessageChannel] = useState<"whatsapp" | "email">(
+    "whatsapp",
+  );
   const [messageText, setMessageText] = useState("");
 
-  // Moderators can work with users and support tickets, but the overview is
-  // intentionally admin-only. Avoid an initial forbidden dashboard request.
-  useEffect(() => {
-    if (user?.role === "moderator" && activeTab === "overview") {
-      setActiveTab("tickets");
-    }
-  }, [activeTab, user?.role]);
-
-  const sendWhatsappMutation = trpc.adminWhatsapp.sendDirectMessage.useMutation({
-    onSuccess: (res) => {
-      toast.success(res.message || "تم إرسال رسالة الواتساب بنجاح! 🎉");
-      setMessageUser(null);
-      setMessageText("");
+  const sendWhatsappMutation = trpc.adminWhatsapp.sendDirectMessage.useMutation(
+    {
+      onSuccess: (res) => {
+        toast.success(res.message || "تم إرسال رسالة الواتساب بنجاح! 🎉");
+        setMessageUser(null);
+        setMessageText("");
+      },
+      onError: (err) => {
+        toast.error(`فشل الإرسال: ${err.message}`);
+      },
     },
-    onError: (err) => {
-      toast.error(`فشل الإرسال: ${err.message}`);
-    },
-  });
+  );
 
   const {
     stats,
@@ -212,7 +334,25 @@ export default function Admin() {
 
   const filteredUsers = users.data?.users || [];
 
-  if (user?.role !== "admin" && user?.role !== "moderator") {
+  const activeSection =
+    ADMIN_SECTIONS.find((section) => section.value === activeTab) ??
+    ADMIN_SECTIONS[0];
+  const ActiveSectionIcon = activeSection.icon;
+
+  const selectMobileSection = (section: AdminSection) => {
+    setActiveTab(section);
+    setMobileNavOpen(false);
+    window.requestAnimationFrame(() => {
+      document.getElementById("admin-content")?.scrollIntoView({
+        block: "start",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+      });
+    });
+  };
+
+  if (user?.role !== "admin") {
     return (
       <div className="flex items-center justify-center h-screen bg-slate-50 dark:bg-slate-950">
         <Card className="p-10 text-center max-w-md border-rose-100 shadow-xl shadow-rose-100/50">
@@ -221,8 +361,7 @@ export default function Admin() {
             وصول غير مصرح
           </h2>
           <p className="text-slate-500">
-            هذه المنطقة مخصصة للإدارة العليا والمشرفين فقط. سيتم تسجيل محاولة
-            الدخول الخاصة بك.
+            هذه المنطقة مخصصة لحسابات الإدارة العليا فقط.
           </p>
         </Card>
       </div>
@@ -231,29 +370,36 @@ export default function Admin() {
 
   return (
     <div
-      className="min-h-full min-h-screen-safe bg-gradient-to-br from-slate-50 to-indigo-50/50 dark:from-slate-950 dark:to-indigo-950/20 pb-20 pb-safe font-sans"
+      className="min-h-full min-h-screen-safe overflow-x-clip bg-gradient-to-br from-slate-50 to-indigo-50/50 pb-8 pb-safe font-sans dark:from-slate-950 dark:to-indigo-950/20 sm:pb-12"
       dir="rtl"
     >
       <SEOMeta path="/admin" title="لوحة التحكم الإدارية | SmartSpend" />
 
       {/* Top Navigation Bar */}
-      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-white/20 dark:border-slate-800 shadow-sm sticky top-0 z-30 pt-safe no-print">
+      <div className="sticky top-0 z-30 border-b border-white/20 bg-white/90 pt-safe shadow-sm backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/90 no-print">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
+          <div className="flex min-h-16 items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+              <Link
+                to="/more"
+                aria-label="العودة إلى المزيد"
+                className="active-press flex size-11 shrink-0 items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-300 dark:hover:bg-slate-800 lg:hidden"
+              >
+                <ArrowRight className="size-5" />
+              </Link>
               <div className="bg-indigo-600 text-white p-2 rounded-lg">
                 <Server className="w-5 h-5" />
               </div>
-              <div>
-                <h1 className="font-bold text-lg leading-tight">
+              <div className="min-w-0">
+                <h1 className="truncate text-base font-bold leading-tight sm:text-lg">
                   مركز القيادة
                 </h1>
-                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-mono">
+                <p className="truncate text-[10px] font-mono uppercase tracking-widest text-slate-500">
                   SmartSpend OS
                 </p>
               </div>
             </div>
-            <div className="flex gap-3">
+            <div className="flex shrink-0 gap-2 sm:gap-3">
               <Button
                 variant="outline"
                 size="sm"
@@ -266,110 +412,129 @@ export default function Admin() {
                 variant="default"
                 size="sm"
                 onClick={() => setShowExports(true)}
-                className="gap-2 bg-slate-800 hover:bg-slate-700"
+                aria-label="تصدير البيانات"
+                className="size-10 gap-2 bg-slate-800 p-0 hover:bg-slate-700 sm:h-9 sm:w-auto sm:px-3"
               >
-                <Download className="w-4 h-4" /> تصدير
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">تصدير</span>
               </Button>
             </div>
+          </div>
+
+          <div className="pb-3 lg:hidden">
+            <button
+              type="button"
+              data-testid="admin-mobile-section-trigger"
+              aria-haspopup="dialog"
+              aria-expanded={mobileNavOpen}
+              onClick={() => setMobileNavOpen(true)}
+              className="active-press flex min-h-14 w-full items-center gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/90 px-3 py-2 text-start shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800/80"
+            >
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600/10 text-indigo-700 dark:bg-indigo-400/10 dark:text-indigo-300">
+                <ActiveSectionIcon className="size-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-black">
+                  {activeSection.label}
+                </span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {activeSection.description}
+                </span>
+              </span>
+              <span className="flex shrink-0 items-center gap-1 text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                الأقسام
+                <ChevronDown className="size-4" />
+              </span>
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="no-print"
+      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+        <SheetContent
+          side="bottom"
+          dir="rtl"
+          className="max-h-[82dvh] gap-0 rounded-t-[28px] border-slate-200 bg-white px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 data-[state=open]:duration-200 data-[state=closed]:duration-150 motion-reduce:animate-none dark:border-slate-800 dark:bg-slate-950 lg:hidden"
         >
-          <TabsList className="mb-8 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md p-1.5 rounded-2xl shadow-sm border border-white/50 dark:border-slate-800 flex-wrap h-auto justify-start gap-1 w-full max-w-full">
-            {user?.role === "admin" && (
-              <TabsTrigger
-                value="overview"
-                className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 dark:data-[state=active]:bg-indigo-900/30 transition-all"
-              >
-                <LayoutDashboard className="w-4 h-4 shrink-0" /> نظرة عامة
-              </TabsTrigger>
-            )}
-            <TabsTrigger
-              value="users"
-              className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 dark:data-[state=active]:bg-blue-900/30 transition-all"
-            >
-              <Users className="w-4 h-4 shrink-0" /> المستخدمين
-            </TabsTrigger>
-            <TabsTrigger
-              value="tickets"
-              className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 dark:data-[state=active]:bg-amber-900/30 transition-all"
-            >
-              <Ticket className="w-4 h-4 shrink-0" /> الدعم
-            </TabsTrigger>
-            {user?.role === "admin" && (
-              <>
-                <TabsTrigger
-                  value="ai"
-                  className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 dark:data-[state=active]:bg-purple-900/30 transition-all"
+          <div
+            aria-hidden="true"
+            className="mx-auto mb-1 h-1.5 w-11 rounded-full bg-slate-300 dark:bg-slate-700"
+          />
+          <SheetHeader className="px-2 pb-3 pt-4 text-start">
+            <SheetTitle className="text-lg font-black">
+              أقسام لوحة الإدارة
+            </SheetTitle>
+            <SheetDescription>
+              اختر القسم المطلوب؛ سيُغلق التنقل وتظهر أدواته مباشرة.
+            </SheetDescription>
+          </SheetHeader>
+          <nav
+            aria-label="أقسام لوحة الإدارة"
+            className="hide-scrollbar grid min-h-0 auto-rows-max grid-cols-2 gap-2 overflow-y-auto overscroll-contain px-1 pb-2"
+          >
+            {ADMIN_SECTIONS.map((section) => {
+              const Icon = section.icon;
+              const isActive = section.value === activeTab;
+              return (
+                <button
+                  key={section.value}
+                  type="button"
+                  data-testid={`admin-mobile-section-${section.value}`}
+                  aria-current={isActive ? "page" : undefined}
+                  onClick={() => selectMobileSection(section.value)}
+                  className={`active-press flex h-auto min-h-[76px] min-w-0 items-center gap-2 rounded-2xl border p-3 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                    isActive
+                      ? "border-indigo-300 bg-indigo-50 text-indigo-800 shadow-sm dark:border-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-200"
+                      : "border-slate-200 bg-slate-50/70 text-slate-800 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-100"
+                  }`}
                 >
-                  <Brain className="w-4 h-4 shrink-0" /> الذكاء الاصطناعي
-                </TabsTrigger>
+                  <span
+                    className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${
+                      isActive
+                        ? "bg-indigo-600 text-white"
+                        : "bg-white text-slate-600 shadow-xs dark:bg-slate-800 dark:text-slate-300"
+                    }`}
+                  >
+                    <Icon className="size-4.5" />
+                  </span>
+                  <span className="min-w-0 pt-0.5">
+                    <span className="block text-xs font-black leading-5">
+                      {section.label}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+        </SheetContent>
+      </Sheet>
 
+      <div
+        id="admin-content"
+        className="mx-auto mt-4 min-w-0 max-w-[1400px] scroll-mt-36 px-3 sm:mt-8 sm:px-6 lg:scroll-mt-20 lg:px-8"
+      >
+        <Tabs
+          dir="rtl"
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as AdminSection)}
+          className="min-w-0 no-print"
+        >
+          <TabsList className="mb-8 hidden h-auto w-full max-w-full flex-wrap justify-start gap-1 rounded-2xl border border-white/50 bg-white/60 p-1.5 shadow-sm backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/60 lg:flex">
+            {ADMIN_SECTIONS.map((section) => {
+              const Icon = section.icon;
+              return (
                 <TabsTrigger
-                  value="billing"
-                  className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-900/30 transition-all"
+                  key={section.value}
+                  value={section.value}
+                  className={`gap-2 rounded-xl px-3 py-2.5 transition-all sm:px-4 ${section.activeClass}`}
                 >
-                  <Crown className="w-4 h-4 shrink-0" /> الاشتراكات
+                  <Icon className="w-4 h-4 shrink-0" /> {section.label}
                 </TabsTrigger>
-                <TabsTrigger
-                  value="clarifications"
-                  className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700 dark:data-[state=active]:bg-orange-900/30 transition-all"
-                >
-                  <AlertCircle className="w-4 h-4 shrink-0" /> التوضيحات المعلقة
-                </TabsTrigger>
-                <TabsTrigger
-                  value="whatsapp"
-                  className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-green-50 data-[state=active]:text-green-700 dark:data-[state=active]:bg-green-900/30 transition-all"
-                >
-                  <MessageCircle className="w-4 h-4 shrink-0" /> الواتساب
-                </TabsTrigger>
-                <TabsTrigger
-                  value="ads"
-                  className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-pink-50 data-[state=active]:text-pink-700 dark:data-[state=active]:bg-pink-900/30 transition-all"
-                >
-                  <Megaphone className="w-4 h-4 shrink-0" /> الحملات الإعلانية
-                </TabsTrigger>
-                <TabsTrigger
-                  value="rules"
-                  className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 dark:data-[state=active]:bg-teal-900/30 transition-all"
-                >
-                  <BookOpen className="w-4 h-4 shrink-0" /> القاموس والقواعد
-                </TabsTrigger>
-                <TabsTrigger
-                  value="raw-sms"
-                  className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700 dark:data-[state=active]:bg-violet-900/30 transition-all"
-                >
-                  <FileText className="w-4 h-4 shrink-0" /> سجل الـ SMS
-                </TabsTrigger>
-                <TabsTrigger
-                  value="audit"
-                  className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 dark:data-[state=active]:bg-slate-800 transition-all"
-                >
-                  <History className="w-4 h-4 shrink-0" /> سجل الرقابة
-                </TabsTrigger>
-                <TabsTrigger
-                  value="notifications"
-                  className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-sky-50 data-[state=active]:text-sky-700 dark:data-[state=active]:bg-sky-900/30 transition-all"
-                >
-                  <Bell className="w-4 h-4 shrink-0" /> الإشعارات
-                </TabsTrigger>
-                <TabsTrigger
-                  value="settings"
-                  className="gap-2 py-2.5 px-3 sm:px-4 rounded-xl data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 dark:data-[state=active]:bg-slate-800 transition-all"
-                >
-                  <Settings2 className="w-4 h-4 shrink-0" /> الحدود والإعدادات
-                </TabsTrigger>
-              </>
-            )}
+              );
+            })}
           </TabsList>
 
-          <div className="animate-in fade-in-50 duration-500 slide-in-from-bottom-4">
+          <div className="min-w-0 animate-in fade-in-50 duration-300 slide-in-from-bottom-2">
             {/* 1. Overview */}
             <TabsContent value="overview">
               {stats.isError && (
@@ -379,7 +544,7 @@ export default function Admin() {
                   </CardContent>
                 </Card>
               )}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-6">
                 <StatCard
                   icon={<Users className="w-6 h-6" />}
                   label="إجمالي المسجلين"
@@ -433,7 +598,7 @@ export default function Admin() {
               </div>
 
               {user?.role === "admin" && founderQuery.data && (
-                <div className="mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div className="mt-5 grid grid-cols-2 gap-3 sm:mt-8 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
                   <StatCard
                     icon={<Activity className="w-5 h-5" />}
                     label="DAU"
@@ -483,11 +648,13 @@ export default function Admin() {
                       قاعدة بيانات المستخدمين
                     </CardTitle>
                     <CardDescription>
-                      عرض {filteredUsers.length} من {users.data?.total ?? filteredUsers.length} حساب مسجل بالنظام
+                      عرض {filteredUsers.length} من{" "}
+                      {users.data?.total ?? filteredUsers.length} حساب مسجل
+                      بالنظام
                     </CardDescription>
                   </div>
-                  <div className="flex flex-wrap gap-3 w-full md:w-auto">
-                    <div className="relative flex-1 md:w-64 min-w-[200px]">
+                  <div className="grid w-full grid-cols-2 gap-3 md:flex md:w-auto md:flex-wrap">
+                    <div className="relative col-span-2 min-w-0 md:w-64 md:flex-1">
                       <Search className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <Input
                         placeholder="بحث بالاسم، الإيميل، رقم الهاتف..."
@@ -502,7 +669,7 @@ export default function Admin() {
                         setRoleFilter(value as typeof roleFilter)
                       }
                     >
-                      <SelectTrigger className="w-32 bg-white dark:bg-slate-950">
+                      <SelectTrigger className="w-full bg-white dark:bg-slate-950 md:w-32">
                         <SelectValue placeholder="الصلاحية" />
                       </SelectTrigger>
                       <SelectContent>
@@ -518,7 +685,7 @@ export default function Admin() {
                         setPlanFilter(value as typeof planFilter)
                       }
                     >
-                      <SelectTrigger className="w-32 bg-white dark:bg-slate-950">
+                      <SelectTrigger className="w-full bg-white dark:bg-slate-950 md:w-32">
                         <SelectValue placeholder="الباقة" />
                       </SelectTrigger>
                       <SelectContent>
@@ -531,7 +698,58 @@ export default function Admin() {
                   </div>
                 </div>
 
-                <div className="overflow-x-auto">
+                <div className="space-y-3 p-3 md:hidden">
+                  {filteredUsers.map((account) => (
+                    <AdminUserMobileCard
+                      key={`${account.userType}-${account.id}`}
+                      user={account}
+                      disabled={updateRole.isPending || updatePlan.isPending}
+                      onRole={(role) =>
+                        updateRole.mutate({
+                          userId: account.id,
+                          userType: account.userType,
+                          role,
+                        })
+                      }
+                      onPlan={(plan) =>
+                        updatePlan.mutate({
+                          userId: account.id,
+                          userType: account.userType,
+                          plan,
+                        })
+                      }
+                      onProfile={() => {
+                        setSelectedUser(account);
+                        setShowProfile(true);
+                      }}
+                      onSessions={() => {
+                        setSelectedUser(account);
+                        setShowSessions(true);
+                      }}
+                      onMessage={() => {
+                        setMessageUser(account);
+                        setMessageChannel(
+                          "phone" in account && account.phone
+                            ? "whatsapp"
+                            : "email",
+                        );
+                      }}
+                      onDelete={() => setUserToDelete(account)}
+                    />
+                  ))}
+                  {filteredUsers.length === 0 && (
+                    <p className="py-8 text-center text-sm text-muted-foreground">
+                      {users.isLoading
+                        ? "جاري تحميل المستخدمين..."
+                        : "لا يوجد مستخدمون يطابقون بحثك."}
+                    </p>
+                  )}
+                </div>
+                <div
+                  className="hidden overflow-x-auto overscroll-x-contain md:block"
+                  aria-label="جدول المستخدمين؛ اسحب أفقيًا لعرض كل الأعمدة"
+                  tabIndex={0}
+                >
                   <table className="w-full text-sm text-end">
                     <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 font-medium border-b">
                       <tr>
@@ -685,18 +903,20 @@ export default function Admin() {
                           {user?.role === "admin" && (
                             <td className="py-4 px-6">
                               <div className="flex gap-2 justify-center">
-                                 <Button
-                                   size="icon"
-                                   variant="outline"
-                                   className="h-8 w-8 hover:bg-blue-50 hover:text-blue-600 border-blue-100 text-blue-500"
-                                   onClick={() => {
-                                     setMessageUser(u);
-                                     setMessageChannel(u.phone ? "whatsapp" : "email");
-                                   }}
-                                   title="إرسال رسالة"
-                                 >
-                                   <MessageCircle className="w-4 h-4" />
-                                 </Button>
+                                <Button
+                                  size="icon"
+                                  variant="outline"
+                                  className="h-8 w-8 hover:bg-blue-50 hover:text-blue-600 border-blue-100 text-blue-500"
+                                  onClick={() => {
+                                    setMessageUser(u);
+                                    setMessageChannel(
+                                      u.phone ? "whatsapp" : "email",
+                                    );
+                                  }}
+                                  title="إرسال رسالة"
+                                >
+                                  <MessageCircle className="w-4 h-4" />
+                                </Button>
                                 <Button
                                   size="icon"
                                   variant="outline"
@@ -756,14 +976,14 @@ export default function Admin() {
             {/* 3. Tickets Tab */}
             <TabsContent value="tickets">
               <Card className="border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl shadow-sm overflow-hidden">
-                <div className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-white/20 dark:border-slate-800 p-6">
+                <div className="border-b border-white/20 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/50 sm:p-6">
                   <CardTitle>مركز الدعم الفني والمساعدة</CardTitle>
                   <CardDescription>
                     متابعة والرد على استفسارات ومشكلات المستخدمين (
                     {ticketsQuery.data?.total ?? 0})
                   </CardDescription>
                 </div>
-                <div className="p-6 space-y-4 bg-slate-50/30">
+                <div className="space-y-4 bg-slate-50/30 p-3 sm:p-6">
                   {ticketsQuery.data?.list?.map((t: any) => (
                     <div
                       key={t.id}
@@ -874,43 +1094,9 @@ export default function Admin() {
                   <AdminWhatsAppTab />
                 </TabsContent>
 
-                <TabsContent value="ai" className="space-y-8">
+                <TabsContent value="ai" className="space-y-6">
                   <ApiKeyErrorsPanel />
-                  <section>
-                    <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                      <Brain className="w-5 h-5 text-purple-600" />
-                      تصنيف المصروفات (Free / Pro)
-                    </h2>
-                    <ClassificationDashboard />
-                  </section>
-                  <section>
-                    <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                      <Mic className="w-5 h-5 text-emerald-600" />
-                      استخدام الصوت
-                    </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {voiceUsage.data?.usage?.map((row: any) => (
-                        <StatCard
-                          key={row.userType}
-                          icon={<Mic className="w-5 h-5" />}
-                          label={row.userType === "oauth" ? "OAuth" : "محلي"}
-                          value={`${Math.round(Number(row.totalSeconds || 0) / 60)} دقيقة`}
-                          color="teal"
-                        />
-                      )) ?? (
-                        <p className="text-sm text-muted-foreground col-span-2">
-                          لا توجد بيانات صوت لهذا الشهر.
-                        </p>
-                      )}
-                    </div>
-                  </section>
-                  <section className="border-t pt-6 border-slate-100 dark:border-slate-800">
-                    <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                      <Brain className="w-5 h-5 text-indigo-600" />
-                      مراقبة جودة وتكلفة الـ AI (AI Cost & Quality Observability)
-                    </h2>
-                    <AICostDashboard query={aiCostQuery} />
-                  </section>
+                  <AiCommandCenter />
                 </TabsContent>
 
                 <TabsContent value="billing">
@@ -958,7 +1144,6 @@ export default function Admin() {
                   </Card>
                 </TabsContent>
 
-
                 <TabsContent value="notifications">
                   <NotificationsTab />
                 </TabsContent>
@@ -992,8 +1177,14 @@ export default function Admin() {
       </div>
 
       {/* Premium Delete User Dialog */}
-      <Dialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
-        <DialogContent className="max-w-sm p-6 rounded-3xl" dir="rtl">
+      <Dialog
+        open={!!userToDelete}
+        onOpenChange={(open) => !open && setUserToDelete(null)}
+      >
+        <DialogContent
+          className="w-[calc(100%-1.5rem)] max-w-sm rounded-3xl p-4 motion-reduce:animate-none sm:p-6"
+          dir="rtl"
+        >
           <div className="flex flex-col items-center text-center space-y-4">
             <div className="p-4 bg-rose-50 dark:bg-rose-950/30 text-rose-500 rounded-full">
               <ShieldAlert className="w-8 h-8" />
@@ -1003,7 +1194,12 @@ export default function Admin() {
                 حذف حساب المستخدم نهائياً؟
               </h3>
               <p className="text-sm text-slate-500 leading-relaxed">
-                تحذير: سيتم حذف بيانات المستخدم <span className="font-bold text-rose-600">"{userToDelete?.name}"</span> بالكامل بما في ذلك المصروفات والملف الذكي والجلسات. هذا الإجراء غير قابل للتراجع.
+                تحذير: سيتم حذف بيانات المستخدم{" "}
+                <span className="font-bold text-rose-600">
+                  "{userToDelete?.name}"
+                </span>{" "}
+                بالكامل بما في ذلك المصروفات والملف الذكي والجلسات. هذا الإجراء
+                غير قابل للتراجع.
               </p>
             </div>
             <div className="flex gap-3 w-full pt-2">
@@ -1036,10 +1232,13 @@ export default function Admin() {
 
       {/* Dialogs */}
       <Dialog open={showSessions} onOpenChange={setShowSessions}>
-        <DialogContent className="max-w-3xl p-0 overflow-hidden">
-          <DialogHeader className="p-6 bg-slate-50 border-b">
-            <DialogTitle className="flex items-center gap-2">
-              <Activity className="w-5 h-5 text-indigo-500" />
+        <DialogContent
+          className="w-[calc(100%-1.5rem)] max-w-3xl p-0 overflow-hidden motion-reduce:animate-none"
+          dir="rtl"
+        >
+          <DialogHeader className="border-b bg-slate-50 p-4 pe-10 text-start dark:bg-slate-900 sm:p-6 sm:pe-10">
+            <DialogTitle className="flex items-center gap-2 text-slate-900 dark:text-slate-100">
+              <Activity className="w-5 h-5 shrink-0 text-indigo-500" />
               سجل الجلسات والأمان - {selectedUser?.name}
             </DialogTitle>
           </DialogHeader>
@@ -1047,9 +1246,9 @@ export default function Admin() {
             {sessionsQuery.data?.map((s: any) => (
               <div
                 key={s.id}
-                className="flex items-center justify-between p-4 bg-white dark:bg-slate-950 border dark:border-slate-800 rounded-xl shadow-sm"
+                className="flex flex-col items-start justify-between gap-3 p-4 bg-white dark:bg-slate-950 border dark:border-slate-800 rounded-xl shadow-sm sm:flex-row sm:items-center"
               >
-                <div>
+                <div className="min-w-0 max-w-full">
                   <p className="font-mono font-bold text-slate-700 dark:text-slate-300">
                     {s.ipAddress || "Unknown IP"}
                   </p>
@@ -1082,7 +1281,10 @@ export default function Admin() {
 
       {/* User Profile Dialog */}
       <Dialog open={showProfile} onOpenChange={setShowProfile}>
-        <DialogContent className="max-w-2xl p-0 overflow-hidden max-h-[85vh]">
+        <DialogContent
+          className="w-[calc(100%-1.5rem)] max-w-2xl p-0 overflow-hidden max-h-[85dvh] motion-reduce:animate-none"
+          dir="rtl"
+        >
           <DialogHeader className="p-6 bg-gradient-to-r from-emerald-50 to-sky-50 dark:from-emerald-950/30 dark:to-sky-950/30 border-b">
             <DialogTitle className="flex items-center gap-2">
               <UserCheck className="w-5 h-5 text-emerald-600" />
@@ -1322,7 +1524,7 @@ export default function Admin() {
       </Dialog>
 
       <Dialog open={showExports} onOpenChange={setShowExports}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="motion-reduce:animate-none sm:max-w-md">
           <DialogHeader>
             <DialogTitle>تصدير قاعدة البيانات</DialogTitle>
           </DialogHeader>
@@ -1355,8 +1557,14 @@ export default function Admin() {
       </Dialog>
 
       {/* Message User Dialog */}
-      <Dialog open={!!messageUser} onOpenChange={(open) => !open && setMessageUser(null)}>
-        <DialogContent className="max-w-md p-6 overflow-hidden rounded-3xl" dir="rtl">
+      <Dialog
+        open={!!messageUser}
+        onOpenChange={(open) => !open && setMessageUser(null)}
+      >
+        <DialogContent
+          className="w-[calc(100%-1.5rem)] max-w-md p-4 overflow-hidden rounded-3xl motion-reduce:animate-none sm:p-6"
+          dir="rtl"
+        >
           <DialogHeader className="mb-4">
             <DialogTitle className="flex items-center gap-2 text-xl font-bold text-slate-800 dark:text-slate-100">
               <MessageCircle className="w-6 h-6 text-green-500" />
@@ -1369,7 +1577,9 @@ export default function Admin() {
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   type="button"
-                  variant={messageChannel === "whatsapp" ? "default" : "outline"}
+                  variant={
+                    messageChannel === "whatsapp" ? "default" : "outline"
+                  }
                   onClick={() => setMessageChannel("whatsapp")}
                   disabled={!messageUser?.phone}
                   className="rounded-xl flex items-center justify-center gap-2"
@@ -1389,10 +1599,14 @@ export default function Admin() {
                 </Button>
               </div>
               {!messageUser?.phone && messageChannel === "whatsapp" && (
-                <p className="text-xs text-rose-500 mt-1">هذا الحساب لا يملك رقم هاتف مسجل</p>
+                <p className="text-xs text-rose-500 mt-1">
+                  هذا الحساب لا يملك رقم هاتف مسجل
+                </p>
               )}
               {!messageUser?.email && messageChannel === "email" && (
-                <p className="text-xs text-rose-500 mt-1">هذا الحساب لا يملك بريد إلكتروني مسجل</p>
+                <p className="text-xs text-rose-500 mt-1">
+                  هذا الحساب لا يملك بريد إلكتروني مسجل
+                </p>
               )}
             </div>
 
@@ -1427,13 +1641,17 @@ export default function Admin() {
                     window.open(mailtoUrl, "_blank");
                     setMessageUser(null);
                     setMessageText("");
-                    toast.success("تم فتح عميل البريد الإلكتروني الخاص بك لإرسال الرسالة.");
+                    toast.success(
+                      "تم فتح عميل البريد الإلكتروني الخاص بك لإرسال الرسالة.",
+                    );
                   }
                 }}
                 disabled={!messageText.trim() || sendWhatsappMutation.isPending}
                 className="rounded-xl bg-green-600 hover:bg-green-700 text-white"
               >
-                {sendWhatsappMutation.isPending ? "جاري الإرسال..." : "إرسال الآن"}
+                {sendWhatsappMutation.isPending
+                  ? "جاري الإرسال..."
+                  : "إرسال الآن"}
               </Button>
             </div>
           </div>
@@ -1502,13 +1720,13 @@ function StatCard({
     <Card
       className={`border-white/40 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${theme.shadow}`}
     >
-      <CardContent className="p-6">
+      <CardContent className="p-4 sm:p-6">
         <div className="flex items-start justify-between mb-4">
           <div className={`p-3 rounded-2xl ${theme.bg} ${theme.text}`}>
             {icon}
           </div>
         </div>
-        <p className="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
+        <p className="break-words text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight sm:text-3xl">
           {value}
         </p>
         <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
@@ -1808,7 +2026,7 @@ function ClassificationDashboard() {
                           const parts = l.modelUsed.split(" | Parse: ");
                           sttModel = parts[0].replace("STT: ", "");
                         }
-                        
+
                         return sttModel ? (
                           <div
                             className="font-mono text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-slate-600 dark:text-slate-300 truncate"
@@ -1919,15 +2137,28 @@ function ClassificationDashboard() {
 
 function AICostDashboard({ query }: { query: any }) {
   if (query.isLoading) {
-    return <div className="text-center py-8 text-sm text-slate-500">جاري تحميل بيانات التكلفة والاتصال...</div>;
+    return (
+      <div className="text-center py-8 text-sm text-slate-500">
+        جاري تحميل بيانات التكلفة والاتصال...
+      </div>
+    );
   }
   if (query.isError) {
-    return <div className="text-center py-8 text-sm text-red-500 font-medium">فشل تحميل إحصائيات التكلفة: {query.error?.message || String(query.error)}</div>;
+    return (
+      <div className="text-center py-8 text-sm text-red-500 font-medium">
+        فشل تحميل إحصائيات التكلفة:{" "}
+        {query.error?.message || String(query.error)}
+      </div>
+    );
   }
 
   const data = query.data;
   if (!data || !data.totals) {
-    return <div className="text-center py-8 text-sm text-slate-500">لا توجد بيانات تكلفة متاحة حالياً.</div>;
+    return (
+      <div className="text-center py-8 text-sm text-slate-500">
+        لا توجد بيانات تكلفة متاحة حالياً.
+      </div>
+    );
   }
 
   const { totals, byChannel, byRoute, recent } = data;
@@ -1983,14 +2214,29 @@ function AICostDashboard({ query }: { query: any }) {
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(byChannel).map(([channel, metrics]: [string, any]) => (
-                  <tr key={channel} className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
-                    <td className="py-2.5 px-1 font-semibold text-slate-800 dark:text-slate-200 text-end">{channel === "whatsapp" ? "واتساب" : channel === "telegram" ? "تليجرام" : "ويب / تطبيق"}</td>
-                    <td className="py-2.5 px-1 text-end">{metrics.count}</td>
-                    <td className="py-2.5 px-1 text-end">{metrics.totalTokens.toLocaleString("ar-EG")}</td>
-                    <td className="py-2.5 px-1 text-end">{(metrics.avgLatencyMs / 1000).toFixed(2)}s</td>
-                  </tr>
-                ))}
+                {Object.entries(byChannel).map(
+                  ([channel, metrics]: [string, any]) => (
+                    <tr
+                      key={channel}
+                      className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-900/30"
+                    >
+                      <td className="py-2.5 px-1 font-semibold text-slate-800 dark:text-slate-200 text-end">
+                        {channel === "whatsapp"
+                          ? "واتساب"
+                          : channel === "telegram"
+                            ? "تليجرام"
+                            : "ويب / تطبيق"}
+                      </td>
+                      <td className="py-2.5 px-1 text-end">{metrics.count}</td>
+                      <td className="py-2.5 px-1 text-end">
+                        {metrics.totalTokens.toLocaleString("ar-EG")}
+                      </td>
+                      <td className="py-2.5 px-1 text-end">
+                        {(metrics.avgLatencyMs / 1000).toFixed(2)}s
+                      </td>
+                    </tr>
+                  ),
+                )}
               </tbody>
             </table>
           </CardContent>
@@ -2015,14 +2261,28 @@ function AICostDashboard({ query }: { query: any }) {
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(byRoute).slice(0, 5).map(([route, metrics]: [string, any]) => (
-                  <tr key={route} className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
-                    <td className="py-2.5 px-1 font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[120px] text-end" title={route}>{route}</td>
-                    <td className="py-2.5 px-1 text-end">{metrics.count}</td>
-                    <td className="py-2.5 px-1 text-end">{Math.round(metrics.fallbackRate * 100)}%</td>
-                    <td className="py-2.5 px-1 text-end">{(metrics.avgLatencyMs / 1000).toFixed(2)}s</td>
-                  </tr>
-                ))}
+                {Object.entries(byRoute)
+                  .slice(0, 5)
+                  .map(([route, metrics]: [string, any]) => (
+                    <tr
+                      key={route}
+                      className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-900/30"
+                    >
+                      <td
+                        className="py-2.5 px-1 font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[120px] text-end"
+                        title={route}
+                      >
+                        {route}
+                      </td>
+                      <td className="py-2.5 px-1 text-end">{metrics.count}</td>
+                      <td className="py-2.5 px-1 text-end">
+                        {Math.round(metrics.fallbackRate * 100)}%
+                      </td>
+                      <td className="py-2.5 px-1 text-end">
+                        {(metrics.avgLatencyMs / 1000).toFixed(2)}s
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </CardContent>
@@ -2036,7 +2296,9 @@ function AICostDashboard({ query }: { query: any }) {
             <Clock className="w-4 h-4 text-amber-500" />
             سجل تكلفة وموثوقية عمليات الـ AI الأخيرة
           </CardTitle>
-          <CardDescription className="text-xs">آخر 15 عملية تمت مراقبتها وتحليل جودتها</CardDescription>
+          <CardDescription className="text-xs">
+            آخر 15 عملية تمت مراقبتها وتحليل جودتها
+          </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <table className="w-full text-xs text-end">
@@ -2054,23 +2316,34 @@ function AICostDashboard({ query }: { query: any }) {
             </thead>
             <tbody>
               {recent.slice(0, 15).map((event: any, i: number) => (
-                <tr key={event.id ?? i} className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
-                  <td className="py-2.5 px-2 text-right font-medium text-slate-700 dark:text-slate-300">{event.route}</td>
+                <tr
+                  key={event.id ?? i}
+                  className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-900/30"
+                >
+                  <td className="py-2.5 px-2 text-right font-medium text-slate-700 dark:text-slate-300">
+                    {event.route}
+                  </td>
                   <td className="py-2.5 px-2 text-end">
                     <span className="font-mono text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300">
                       {event.model || "—"}
                     </span>
                   </td>
                   <td className="py-2.5 px-2 text-end">
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] ${event.userType === "oauth" ? "bg-blue-500/10 text-blue-500" : "bg-teal-500/10 text-teal-500"}`}>
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[10px] ${event.userType === "oauth" ? "bg-blue-500/10 text-blue-500" : "bg-teal-500/10 text-teal-500"}`}
+                    >
                       {event.userType === "oauth" ? "OAuth" : "OTP محلي"}
                     </span>
                   </td>
                   <td className="py-2.5 px-2 text-end">{event.totalTokens}</td>
-                  <td className="py-2.5 px-2 text-end">{(event.latencyMs / 1000).toFixed(2)}s</td>
+                  <td className="py-2.5 px-2 text-end">
+                    {(event.latencyMs / 1000).toFixed(2)}s
+                  </td>
                   <td className="py-2.5 px-2 text-end">
                     {event.cacheHit === true ? (
-                      <span className="text-emerald-500 font-semibold">Hit 🎯</span>
+                      <span className="text-emerald-500 font-semibold">
+                        Hit 🎯
+                      </span>
                     ) : event.cacheHit === false ? (
                       <span className="text-slate-400">Miss ❌</span>
                     ) : (
@@ -2079,13 +2352,20 @@ function AICostDashboard({ query }: { query: any }) {
                   </td>
                   <td className="py-2.5 px-2 text-end">
                     {event.fallback ? (
-                      <span className="text-amber-500 font-semibold">نعم ⚠️</span>
+                      <span className="text-amber-500 font-semibold">
+                        نعم ⚠️
+                      </span>
                     ) : (
                       <span className="text-slate-400">لا</span>
                     )}
                   </td>
                   <td className="py-2.5 px-2 text-slate-400 text-end">
-                    {event.createdAt ? new Date(event.createdAt).toLocaleTimeString("ar-EG", { hour: "numeric", minute: "2-digit" }) : "-"}
+                    {event.createdAt
+                      ? new Date(event.createdAt).toLocaleTimeString("ar-EG", {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })
+                      : "-"}
                   </td>
                 </tr>
               ))}

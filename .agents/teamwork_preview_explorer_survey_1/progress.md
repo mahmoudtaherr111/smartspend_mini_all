@@ -1,15 +1,19 @@
-# Progress Log - teamwork_preview_explorer_survey_1
+# Progress — Voice & Audio Recording Subsystem Investigation
 
-- **Current Status**: Complete
-- **Last visited**: 2026-08-25T09:10:00Z
-- **Active Step**: Survey completed, reports generated and submitted to parent.
+- Last visited: 2026-08-30T02:00:30+01:00
+- Status: Investigation and Handoff Complete
 
-## Checklist
-- [x] Initialized DISPATCH.md and BRIEFING.md
-- [x] Survey Viewport & display configuration in `index.html` & meta tags
-- [x] Survey PWA Manifest configuration & Vite PWA plugin in `vite.config.ts`
-- [x] Survey Root styling, CSS layout, `100dvh`, background mesh in `src/index.css` & `tailwind.config.js`
-- [x] Survey Safe area insets handling across layout components, headers, bottom bars, pages
-- [x] Identify visual gaps, letterboxing, clipping, and seam risks
-- [x] Synthesize findings and write `survey_pwa_shell.md`
-- [x] Write `handoff.md` and send completion message to parent
+## Tasks
+- [x] 1. Discover all voice and audio-related files across frontend and backend.
+- [x] 2. Investigate `useVoiceCall.ts` and related voice hooks.
+- [x] 3. Investigate `ExpenseForm.tsx` voice interaction flows.
+- [x] 4. Investigate `AIVoiceCall.tsx` and real-time audio/live WebSocket calls.
+- [x] 5. Investigate `api/voice-router.ts`, `api/services/voice-call-service.ts`, `api/ai-router.ts`, `api/boot.ts`, and `api/server.ts`.
+- [x] 6. Audit 6 investigation matrices:
+  - Zero-length / short / silent audio
+  - Permission denial & dismissals
+  - Backgrounding & tab lifecycle (`visibilitychange`, `pagehide`, `beforeunload`)
+  - Codec selection and fallback hierarchy
+  - Rapid toggles & race condition prevention
+  - Network failure, timeout handling & abort controllers
+- [x] 7. Compile `report.md` and `handoff.md`.

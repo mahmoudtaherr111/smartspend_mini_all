@@ -1,119 +1,103 @@
-/**
- * Puts the model's answer back where it belongs: on the category, and nowhere else.
- *
- * The flow this replaces rebuilt every transaction from the model's reply — amount,
- * direction, description, person, confidence, all of it — discarding what the local pass
- * had already resolved. Measured against the same 87 cases, that trade was a loss on
- * every field it touched: amounts 96.8% locally, direction 96.3%, segmentation 100%
- * against the model's 0%. The only field where the model wins is the category.
- *
- * So the local item survives and receives one edit. The consequence that matters: a
- * wrong or missing answer from the model now costs a category, not a transaction. It
- * cannot lose an amount it was never given.
- */
+/** Merge category suggestions onto admitted events; never manufacture an event. */
 import type { CategoryDecision } from "./classifier-contract";
 import { resolveSubcategory } from "./classifier-contract";
 import { arabicDisplayName } from "./category-registry";
 import type { ParsedTransaction } from "./rule-engine";
 import type { DecomposedSegment } from "./narrative-decomposer";
-import { extractAmounts } from "./entity-extractor";
 import { emptyEvidence } from "./classification-evidence";
+import { BlockerReason, withBlocker } from "./final-acceptance";
 
 export interface EscalationClause {
   segment: DecomposedSegment;
   localItems: ParsedTransaction[];
+  /**
+   * Identity of this clause within the request. Answers are matched to it, and the item
+   * carries it out as `sourceEventId`, so a reordered reply cannot move an amount from
+   * one event to another.
+   */
+  clauseId?: number;
 }
 
-/** Person categories keep the person in `subCategory`; a category answer must not erase it. */
+export interface MergeOutcome {
+  items: ParsedTransaction[];
+  /**
+   * Clauses the model answered for but that the local pass produced no event for.
+   *
+   * The category is not the missing piece here — the amount is, and the model is not
+   * asked for amounts precisely because it is bad at them. Naming these separately is
+   * what keeps "I could not extract this" from being reported as "there was nothing
+   * here": the caller turns them into a question or a draft, never into a row.
+   */
+  unresolvedClauseIds: number[];
+  /** Clauses that got no usable answer, for the trace and the review reasons. */
+  unansweredClauseIds: number[];
+}
+
 const PERSON_CATEGORIES = new Set(["العائلة", "أصدقاء", "موظفين"]);
 
 export function mergeCategoryDecisions(
   clauses: EscalationClause[],
   decisions: CategoryDecision[],
-): ParsedTransaction[] {
+): MergeOutcome {
   const byIndex = new Map(decisions.map((d) => [d.i, d]));
-  const out: ParsedTransaction[] = [];
+  const items: ParsedTransaction[] = [];
+  const unresolvedClauseIds: number[] = [];
+  const unansweredClauseIds: number[] = [];
 
   clauses.forEach((clause, i) => {
+    const clauseId = clause.clauseId ?? i + 1;
     const decision = byIndex.get(i + 1);
+    const category = decision && arabicDisplayName(decision.category);
 
-    if (clause.localItems.length > 0) {
-      for (const item of clause.localItems) {
-        if (!decision) {
-          // The model declined to answer this clause. The local answer stands — which
-          // is a real answer, not a placeholder.
-          out.push({ ...item, needsReview: true });
-          continue;
-        }
-
-        const categoryAr = arabicDisplayName(decision.category);
-        if (!categoryAr || PERSON_CATEGORIES.has(item.category)) {
-          // A resolved person outranks a category guess: `subCategory` holds an
-          // individual's name there, and overwriting it replaces the person with a
-          // taxonomy value.
-          out.push({ ...item, needsReview: true });
-          continue;
-        }
-
-        out.push({
-          ...item,
-          category: categoryAr,
-          subCategory: resolveSubcategory(decision.category, decision.sub),
-          // Provenance is the model's now, because the category is. Everything else on
-          // this item still came from the local pass.
-          inferenceSource: "ai",
-          parsedBy: "ai",
-          // Keep the local pass's evidence and record that the model overruled its
-          // category. `agreement` survives from the cross-check, which is what lets
-          // calibration price "the model and the rule engine agreed" apart from "the
-          // model overruled a local answer that said something else".
-          evidence: {
-            ...emptyEvidence(),
-            ...((item.evidence as object) || {}),
-            matchKind: "llm" as const,
-            categoryIsFallback: decision.category === "miscellaneous",
-          },
-          person_mentioned: item.person_mentioned || decision.person || undefined,
-          needsReview: true,
-        });
-      }
+    if (clause.localItems.length === 0) {
+      // The local pass found no event in this fragment. A category answer cannot supply
+      // the amount, the direction or the date it is missing, and inferring them from the
+      // fact that the model was willing to name a category is exactly how a negated
+      // "ماشتريتش جزمة ب500" came back as a 500 shopping expense.
+      if (decision) unresolvedClauseIds.push(clauseId);
       return;
     }
 
-    // No local item: the rule engine found nothing in this clause at all. The amount
-    // still comes from the shared extractor rather than from the model, so even a
-    // fabricated category cannot fabricate a figure.
-    const amounts = extractAmounts(clause.segment.text);
-    if (amounts.length === 0 || !decision) return;
+    if (!decision || !category) {
+      unansweredClauseIds.push(clauseId);
+    }
 
-    const categoryAr = arabicDisplayName(decision.category);
-    if (!categoryAr) return;
+    for (const item of clause.localItems) {
+      const carried = { ...item, sourceEventId: item.sourceEventId ?? clauseId };
 
-    out.push({
-      amount: amounts[0].amount,
-      category: categoryAr,
-      subCategory: resolveSubcategory(decision.category, decision.sub),
-      description: clause.segment.text.slice(0, 80),
-      type: (clause.segment.direction || "expense") as ParsedTransaction["type"],
-      confidence: 60,
-      needsReview: true,
-      parsedBy: "ai",
-      inferenceSource: "ai",
-      currency: "EGP",
-      person_mentioned: decision.person || undefined,
-      evidence: {
-        matchKind: "llm",
-        rawStrength: 60,
-        agreement: 0,
-        disagreement: 0,
-        anchorConsumed: true,
-        personResolved: "none",
-        hasAmbiguityPenalty: false,
-        ambiguityFlagCount: 0,
-        categoryIsFallback: decision.category === "miscellaneous",
-      },
-    } as ParsedTransaction);
+      // An empty/rejected clause stays empty; category answers cannot invent identities.
+      if (!decision || !category || PERSON_CATEGORIES.has(item.category) || PERSON_CATEGORIES.has(category)) {
+        items.push(withBlocker(carried, BlockerReason.CATEGORY_REPLY_UNRESOLVED));
+        continue;
+      }
+
+      items.push({
+        ...carried,
+        category,
+        subCategory: resolveSubcategory(decision.category, decision.sub),
+        inferenceSource: "ai" as const,
+        parsedBy: "ai" as const,
+        // The category changed, so the calibration that priced the OLD category is no
+        // longer a statement about this item. Clearing it forces a fresh estimate rather
+        // than carrying a strong_rule 95 onto an answer the strong rule never gave: the
+        // audit found exactly that, a food item recalled as health that kept both the
+        // score and the `calibrated:strong_rule` marker of the resolver it replaced.
+        calibration: undefined,
+        ambiguityFlags: (item.ambiguityFlags || []).filter((f) => !f.startsWith("calibrated:")),
+        evidence: {
+          ...emptyEvidence("llm"),
+          ...item.evidence,
+          matchKind: "llm" as const,
+          // A prompted local guess makes agreement dependent, not a second observation.
+          agreement: 0,
+          disagreement: item.category !== "متنوعات" && item.category !== category ? 1 : 0,
+          categoryIsFallback: decision.category === "miscellaneous",
+        },
+        needsReview: true,
+        reviewReasons: item.reviewReasons,
+      });
+    }
   });
 
-  return out;
+  return { items, unresolvedClauseIds, unansweredClauseIds };
 }

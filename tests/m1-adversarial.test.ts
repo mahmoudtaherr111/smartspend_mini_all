@@ -100,7 +100,7 @@ describe("Milestone 1 Adversarial Stress Test: Safe-Area Insets & CSS Calculatio
 });
 
 describe("Milestone 1 Adversarial Stress Test: Route Matching Logic in src/App.tsx", () => {
-  it("exports BOTTOM_NAV_ROUTES with all 6 required bottom nav routes", () => {
+  it("exports every route represented by the mobile navigation", () => {
     expect(BOTTOM_NAV_ROUTES).toEqual([
       "/dashboard",
       "/ai",
@@ -108,6 +108,7 @@ describe("Milestone 1 Adversarial Stress Test: Route Matching Logic in src/App.t
       "/support",
       "/pro",
       "/bank-sync",
+      "/more",
     ]);
   });
 
@@ -133,8 +134,8 @@ describe("Milestone 1 Adversarial Stress Test: Route Matching Logic in src/App.t
 
   it("handles nested sub-routes correctly", () => {
     expect(hasBottomNav("/dashboard/export")).toBe(true);
-    expect(hasBottomNav("/settings/profile")).toBe(true);
-    expect(hasBottomNav("/settings/security")).toBe(true);
+    expect(hasBottomNav("/settings/profile")).toBe(false);
+    expect(hasBottomNav("/settings/security")).toBe(false);
     expect(hasBottomNav("/support/faq")).toBe(true);
     expect(hasBottomNav("/pro/checkout")).toBe(true);
     expect(hasBottomNav("/bank-sync/manual")).toBe(true);
@@ -205,7 +206,7 @@ describe("Milestone 1 Adversarial Stress Test: HTML Meta & Viewport Integrity", 
   });
 });
 
-describe("Milestone 1 Adversarial Stress Test: PullToRefresh Background Mesh Flow", () => {
+describe("Milestone 1 Adversarial Stress Test: PullToRefresh Background Mesh Flow & Performance", () => {
   const pullToRefreshSource = readFileSync(
     resolve(process.cwd(), "src/components/pwa/PullToRefreshWrapper.tsx"),
     "utf8"
@@ -214,5 +215,26 @@ describe("Milestone 1 Adversarial Stress Test: PullToRefresh Background Mesh Flo
   it("ensures PullToRefreshWrapper does not render opaque bg-background blocking ambient glow", () => {
     expect(pullToRefreshSource).toContain("bg-transparent");
     expect(pullToRefreshSource).not.toMatch(/className="[^"]*bg-background[^"]*ptr-indicator/);
+  });
+
+  it("rejects horizontal swipes (|dx| > |dy|) to prevent conflicts with drawer/swipe gestures", () => {
+    expect(pullToRefreshSource).toContain("absX > absY");
+    expect(pullToRefreshSource).toContain("cancelPull()");
+  });
+
+  it("ignores multi-touch gestures (e.touches.length !== 1)", () => {
+    expect(pullToRefreshSource).toContain("e.touches.length !== 1");
+  });
+
+  it("enforces reduced minimum refresh duration of 450ms instead of 1200ms", () => {
+    expect(pullToRefreshSource).toContain("PTR_MIN_REFRESH_DELAY_MS = 450");
+    expect(pullToRefreshSource).not.toContain("1200");
+  });
+
+  it("writes pull indicator directly via refs and requestAnimationFrame (no setState on touchmove)", () => {
+    expect(pullToRefreshSource).toContain("requestAnimationFrame");
+    expect(pullToRefreshSource).toContain("indicatorContainerRef");
+    expect(pullToRefreshSource).toContain("spinnerContainerRef");
+    expect(pullToRefreshSource).not.toContain("setPullProgress");
   });
 });

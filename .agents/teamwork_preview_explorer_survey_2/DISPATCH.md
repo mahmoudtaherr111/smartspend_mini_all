@@ -1,9 +1,22 @@
-## 2026-08-25T08:54:45Z
-Objective: Survey the codebase for Requirement R2 (Floating Liquid Glass Capsule with Continuous Touch-Slide Drag & Haptics).
-Scope of Investigation:
-1. Current bottom navigation component: Find where the mobile bottom navigation bar is defined and rendered (e.g. `src/components/layout/`, `src/components/navigation/`, `src/App.tsx`, etc.).
-2. The 5 primary tabs: Verify the 5 tabs (`تسجيل` / Record, `إحصائيات` / Analytics, `مركز AI` / AI Center, `تقويم` / Calendar, `المزيد` / More), their icons, routing/activation logic, and visual states.
-3. Liquid Glass styling: Analyze current styling vs requirement (`backdrop-filter: blur(24px) saturate(190%)`, `border-white/10` specular rim, responsive dark glow, floating capsule elevation above home indicator).
-4. Continuous touch-slide gesture physics: Inspect existing touch/pointer event handlers. Analyze how to implement real-time horizontal drag tracking (`onTouchStart`, `onTouchMove`, `onTouchEnd`) with bounding rect tab calculation and fluid animated pill gliding.
-5. Haptic feedback: Inspect existing haptic hooks/utilities (e.g. `useHaptics`, `navigator.vibrate`) and how vibration feedback is triggered upon crossing tab boundaries.
-6. Provide concrete file paths, component structures, state models, and recommendations.
+## 2026-08-30T00:44:09Z
+You are Explorer 2: AI Streaming & Agent Interaction Specialist.
+Working Directory: e:/smartspend_V1_fixed/.agents/teamwork_preview_explorer_survey_2/
+Authoritative Request: e:/smartspend_V1_fixed/.agents/ORIGINAL_REQUEST.md (READ THIS FIRST).
+
+Investigate the AI streaming and chatbot interaction subsystem in SmartSpend AI:
+1. Target files:
+   - `src/components/ai/AIChatbot.tsx`
+   - `src/pages/AICenter.tsx`
+   - `src/hooks/useAIChat.ts` or related hooks
+   - `api/chat-router.ts`, `api/ai-router.ts`
+   - `api/services/ai-kernel/`, `api/services/action-runtime/`
+
+2. Detailed Investigation Matrix:
+   - AbortController lifecycle (cancelling active streams on user stop button, navigating away, unmounting, preventing memory leaks).
+   - Rate limit exponential backoff & quota error handling (handling 429/RESOURCE_EXHAUSTED with user-friendly Arabic messaging, countdown timer).
+   - Network stall & timeout recovery (mid-stream drops, SSE disconnections, partial message retention).
+   - Markdown & RTL stream rendering (Arabic bidirectional text, markdown stream unclosed tags/code blocks, smooth autoscroll).
+   - Action runtime & pending action cards (transaction proposal cards, confirmation transitions, double-execution prevention).
+
+3. Create your working directory if needed, write `report.md` and `handoff.md` with line-by-line code citations, root causes, and concrete remediation recommendations.
+Send a completion message when done.

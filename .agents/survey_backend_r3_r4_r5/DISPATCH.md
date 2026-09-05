@@ -1,10 +1,8 @@
-## 2026-08-25T03:01:56Z
-Mission: Comprehensive survey of R3 (Performance Optimization), R4 (Database Architecture & Schema Review), and R5 (Code Logic, Security & Quality Hardening).
+## 2026-08-28T15:32:32+01:00
 
-Objectives:
-1. R4 Database Architecture & Schema:
-   - Inspect all 48 tables in `db/schema.ts` and `db/relations.ts`. Identify missing relation exports (`discountCodes`, `referrals`, `apiKeyErrors`), missing inverse relations, redundant left-prefix duplicate indexes in `db/schema.ts`, and index coverage for high-frequency queries.
-2. R3 Performance & R5 Backend Hardening:
-   - Audit the 21+ tRPC sub-routers in `api/`, `api/middleware.ts`, `api/context.ts`, `api/lib/settings-cache.ts`, `api/services/scheduler-lock.ts`, and `api/expense-router.ts`.
-   - Identify batch expense creation N+1 query optimization (`inArray` queries), advisory locks TS2344 type fix, TRPCError standardization, active session database checks in `sessions` table, local user avatar context resolution, phone number sanitization lockout, and Cairo timezone standardization in `app-time.ts`.
-3. Formulate concrete implementation diffs, file boundaries, and verification commands (`npm run check`, `npm test`).
+Deeply investigate the SmartSpend AI codebase for backend AI streaming, error handlers, rate-limits, and financial mutation resilience:
+1. Backend AI Streaming & Services: Examine api/, api/lib/, api/services/, api/chat-router.ts, api/ai-router.ts. Analyze error recovery, abort handling, timeout management, rate-limit backoff, and localized Arabic error messaging.
+2. Financial Mutations & Forms: Examine all tRPC mutation procedures in api/expense-router.ts, api/budget-router.ts, api/goal-router.ts, etc., plus frontend forms in src/components/ and src/pages/. Check for idempotency keys / deduplication, double-tap prevention, boundary validation (negative amounts, extreme values, invalid currency inputs, decimal precision), offline optimistic update rollback & React Query cache synchronization.
+3. Type Safety & Contracts: Check Zod input schemas in contracts/ and routers for input sanitization and boundary constraints.
+
+Deliver a comprehensive handoff report to e:/smartspend_V1_fixed/.agents/survey_backend_r3_r4_r5/handoff.md with concrete file paths, line numbers, root cause analyses, and detailed remediation specifications. Notify orchestrator via send_message when done.

@@ -1,26 +1,25 @@
-# Progress Tracking — teamwork_preview_orchestrator_1
+# Orchestrator Progress
 
 ## Current Status
-Last visited: 2026-08-25T09:40:15Z
+Last visited: 2026-08-26T10:48:21Z
+
+- [x] Initialized DISPATCH.md and BRIEFING.md
+- [x] Scheduled heartbeat cron (task-13)
+- [x] Dispatched Survey Phase: Explorers 1, 3, and replacement 2b
+- [x] Received Survey Report from Explorer 1 (B2, B6, B7)
+- [x] Received Survey Report from Explorer 3 (B4, B5, B8)
+- [x] Explorer 2b confirmed discovery of all 27 raw `type="number"` instances across 6 files (AdminSettingsTab: 13, SmartProfileSettings: 7, NotificationsTab: 3, ExpenseForm: 2, FinancialGoalsPanel: 1, DigitalBankingSuite: 1)
+- [ ] Awaiting complete handoff.md from Explorer 2b
+- [ ] Synthesize Survey findings into PROJECT.md
+- [ ] Decompose milestones and launch parallel Implementation & Testing tracks
+- [ ] Milestone execution & verification
+- [ ] Final E2E Test Pass & Adversarial Hardening (Tier 5)
+- [ ] Final verification (`npm run check`, `npm run test`, `npm run build`) & report to sentinel
 
 ## Iteration Status
-Current iteration: 1 / 32
+Current iteration: 0 / 32
 
-## Checklist
-- [x] Initialized workspace briefing, dispatch log, and progress tracker
-- [x] Phase 0: Survey codebase and requirements (3 parallel Explorers completed)
-- [x] Phase 1: Synthesize Survey Findings & Author `PROJECT.md` and `TEST_INFRA.md`
-- [/] Phase 2: Implementation Track & E2E Testing Track
-  - [/] Milestone 1: Edge-to-Edge Standalone PWA Architecture (R1)
-    - [x] Worker: Complete
-    - [x] Reviewer 1: APPROVE
-    - [x] Reviewer 2: APPROVE
-    - [x] Auditor: CLEAN
-    - [/] Challenger 1: Running
-    - [/] Challenger 2: Running
-  - [x] E2E Testing Track: Multi-Viewport Touch-Screen Auditing Harness (R4) (`TEST_READY.md` published)
-  - [ ] Milestone 2: Floating Liquid Glass Capsule with Touch-Slide Drag & Haptics (R2)
-  - [ ] Milestone 3: Zero-Latency Instant Tab Switching & Warm View Pre-Rendering (R3)
-  - [ ] Final Milestone 4: 100% E2E Pass & Adversarial Hardening
-- [ ] Phase 3: Final Forensic Audit & Verification
-- [ ] Phase 4: Final Reporting & Handoff
+## Active Subagents
+- `explorer_survey_1` (8f01dfcd-8e4b-4fb5-8ace-901028843461): Completed (Survey B2, B6, B7)
+- `explorer_survey_3` (86427e6f-d668-41fb-a2b0-0f57cbe48d10): Completed (Survey B4, B5, B8)
+- `explorer_survey_2b` (c8aa90e0-80e1-4365-be30-9199ee588758): Active (Survey B3 - writing handoff report)

@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from "async_hooks";
-import { deleteCacheByPattern, withCacheStatus } from "../../lib/redis-client";
+import { withCacheStatus, cacheGet, cacheIncr } from "../../lib/redis-client";
 import { taxonomyVersion } from "../../lib/category-registry";
 
 const PREFIX = "finance_ai";
@@ -11,6 +11,14 @@ function sanitizePart(value: unknown): string {
     .replace(/\s+/g, "_")
     .replace(/[^a-zA-Z0-9_.:-]/g, "_")
     .slice(0, 80);
+}
+
+export async function getFinanceCacheGen(
+  userId: number | string,
+  userType: string,
+): Promise<number> {
+  const raw = await cacheGet(`finance_cachegen:${sanitizePart(userId)}:${sanitizePart(userType)}`);
+  return raw ? parseInt(raw, 10) : 0;
 }
 
 export function financeCacheKey(
@@ -40,7 +48,18 @@ export async function withFinanceCache<T>(
   ttlSeconds: number,
   compute: () => Promise<T>,
 ): Promise<T> {
-  const result = await withCacheStatus(key, ttlSeconds, compute);
+  const parts = key.split(":");
+  let versionedKey = key;
+  // Key format: PREFIX:CACHE_SCHEMA_VERSION:userId:userType:capability:...
+  if (parts.length >= 4) {
+    const userId = parts[2];
+    const userType = parts[3];
+    const gen = await getFinanceCacheGen(userId, userType);
+    if (gen > 0) {
+      versionedKey = `${parts.slice(0, 2).join(":")}:g${gen}:${parts.slice(2).join(":")}`;
+    }
+  }
+  const result = await withCacheStatus(versionedKey, ttlSeconds, compute);
   financeCacheTrace.getStore()?.push(
     `finance_cache:${result.hit ? "hit" : "miss"}:${result.backend}:${cacheTraceLabel(key)}`,
   );
@@ -63,9 +82,23 @@ export async function collectFinanceCacheTrace<T>(
   };
 }
 
+/**
+ * O(1) cache invalidation via generation counter (§3.5 Decision 4).
+ * Replaces O(N) keyspace scan.
+ * Also invalidates expense router cachegen so dashboard queries refresh.
+ */
 export async function invalidateFinanceUserCache(
   userId: number | string,
   userType: string,
 ): Promise<number> {
-  return deleteCacheByPattern(`${PREFIX}:*:${sanitizePart(userId)}:${sanitizePart(userType)}:*`);
+  await cacheIncr(`finance_cachegen:${sanitizePart(userId)}:${sanitizePart(userType)}`);
+  try {
+    const { CacheKeys } = await import("../../lib/cache-keys");
+    await cacheIncr(CacheKeys.cacheGen(userType, userId));
+  } catch {
+    // Non-blocking
+  }
+  return 1;
 }
+
+export const bumpFinanceCacheGen = invalidateFinanceUserCache;

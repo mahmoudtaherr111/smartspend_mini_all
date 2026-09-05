@@ -1,15 +1,17 @@
-## 2026-08-26T02:06:30Z
-You are the E2E Test Writer for the SmartSpend AI Mobile Dashboard & AI Recording Input Re-architecture project.
-Your working directory is: E:\smartspend_V1_fixed\.agents\test_writer_t1
+## 2026-08-28T14:55:04Z
 
-## Scope & Instructions:
-1. Read E:\smartspend_V1_fixed\.agents\ORIGINAL_REQUEST.md, E:\smartspend_V1_fixed\PROJECT.md, E:\smartspend_V1_fixed\TEST_INFRA.md, and E:\smartspend_V1_fixed\AGENTS.md.
-2. Review the findings in E:\smartspend_V1_fixed\.agents\explorer_survey_3\report.md and `tests/fixtures/mobile-fixtures.ts`.
-3. Create `tests/e2e/mobile-dashboard-ai-recording.spec.ts` implementing multi-viewport autonomous mobile audit tests for both `"iPhone 14"` (390x844) and `"Android Chrome Pixel 7"` (412x915):
-   - Tier 1: Feature Coverage (Banner collapse/expand with `✨ تسجيل ذكي` badge, dynamic recording waveform pill, title bar streak counter, compact summary chips, elevated textarea & action buttons).
-   - Tier 2: Boundary & Corner Cases (Very long Arabic business titles, quick toggle collapse/expand without layout jitter, zero recording duration vs active duration, empty textarea vs rich placeholder).
-   - Tier 3: Cross-Feature Combinations (Recording active while banner is collapsed, theme toggle dark/light mode preservation, viewport resize / orientation robustness).
-   - Tier 4: Real-World Scenarios (Audit for 0 layout shifts via PerformanceObserver CLS < 0.05, 0 console errors/pageerrors, 0 horizontal clipping, and `RecentExpenses` cards visible above the fold on both 390x844 and 412x915).
-4. Run/verify your test file or type-check via `npm run check` to ensure zero compilation or syntax errors.
-5. Create `E:\smartspend_V1_fixed\TEST_READY.md` summarizing the test runner command and coverage.
-6. Write a complete handoff report to `E:\smartspend_V1_fixed\.agents\test_writer_t1\handoff.md` and send a message to the orchestrator.
+<USER_REQUEST>
+Read e:/smartspend_V1_fixed/.agents/ORIGINAL_REQUEST.md and e:/smartspend_V1_fixed/AGENTS.md before starting.
+Your working directory is e:/smartspend_V1_fixed/.agents/test_writer_t1/. Maintain progress.md and BRIEFING.md there.
+
+Your Assigned Tasks:
+1. Author comprehensive automated unit and integration edge-case test suites in `tests/edge-cases-lifecycle.test.ts` using Vitest covering:
+   - Audio state-machine edge cases (zero-length audio handling, permission rejection, stream track disposal).
+   - AI stream cancellation and timeout recovery.
+   - Financial form double-tap prevention, idempotency key collisions, boundary amount checks.
+   - Multi-tab auth synchronization (`BroadcastChannel` / `storage` events) and Bearer vs. HttpOnly cookie precedence.
+   - Visual viewport and safe-area layout logic.
+2. Author the exhaustive technical audit and changelog document in `docs/LOGICAL_EDGE_CASES_AUDIT.md` covering all 7 core domains with root causes, failure modes, code diff explanations, and architectural protections.
+
+Verify tests with `npm test` and typecheck with `npm run check`. Deliver your complete report to `e:/smartspend_V1_fixed/.agents/test_writer_t1/handoff.md` and notify orchestrator via send_message.
+</USER_REQUEST>

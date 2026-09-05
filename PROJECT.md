@@ -1,45 +1,74 @@
-# Project: SmartSpend AI Mobile Dashboard & AI Recording Input Re-architecture
+# Project: SmartSpend AI — Mobile Fidelity Implementation (iOS Swift & Flutter Grade)
 
 ## Architecture
-- **Framework & Libraries**: React 18, Vite 7, TypeScript 5.9, Tailwind CSS v3.4, `framer-motion`, shadcn/ui components, Lucide icons, tRPC v11.
-- **Affected Components**:
-  - `src/components/expenses/ExpenseForm.tsx`: AI discovery banner morphing (`framer-motion`), dynamic recording state pill (7-bar waveform + timer), textarea dimensions (`min-h-[96px]`), elevated thumb-zone action bar (`h-12`).
-  - `src/pages/Home.tsx`: StreakCounter title bar integration, single-line dynamic subtitle, SummaryChip high-density financial pills (`py-2 px-3`), above-the-fold vertical space budgeting (~120px saved in header/metrics + ~198px across form = ~318px total).
-  - `tests/e2e/mobile-dashboard-ai-recording.spec.ts`: Autonomous multi-viewport Playwright audit across iPhone 14 Pro (`390x844`) and Android Pixel 7 (`412x915`), validating 0 layout shifts (CLS < 0.05), 0 console errors, 0 clipping, and above-the-fold transaction visibility.
-- **State Flow**:
-  - Recording State Machine: `flowStage` (`idle` | `recording` | `processing` | `parsed` | `clarify` | `review`), `isRecording`, `recordingDuration`.
-  - Banner State: `isBannerCollapsed` (persisted in localStorage `smartspend_ai_banner_collapsed`, toggleable via `✨ تسجيل ذكي` badge / minimize chevron).
-  - Financial Metrics: `currentMonthSummary`, `monthlyStats` formatted into compact financial pills with responsive grid.
+- **Monorepo Topology**: Full-stack TypeScript monorepo with React 18 frontend (`src/`), Hono v4 + tRPC v11 backend (`api/`), Drizzle ORM (`db/`), and shared contracts (`contracts/`).
+- **Mobile-First UX Engine**:
+  - **Polymorphic Adaptive Dialogs**: Seamless breakpoint switching between Vaul bottom sheets on mobile (<768px) and Radix centered dialogs on desktop (>=768px) with LIFO hardware back button management.
+  - **Native Touch Physics**: 1:1 finger tracking, momentum scrolling, and spring settling via `embla-carousel-react` configured with strict RTL alignment and nested gesture isolation (`.no-swipe`).
+  - **Spatial Hierarchy**: Direction-aware, hardware-accelerated RTL slide transitions with persistent per-route scroll offset restoration and offscreen tab keep-alive memory.
+  - **GPU Compositing Pipeline**: Hardware compositing (`transform-gpu`, `contain-paint`), zero live backdrop-filter blur on scroll items (60–120fps locked), FOUT-free typography, and Cairo font bounding-box preservation.
+  - **Micro-Haptics Subsystem**: Multi-tier tactile feedback (`selection`, `lightTap`, `mediumTap`, `heavyTap`, `warning`, `success`, `error`) wired across all interactive touchpoints.
 
 ## Feature Inventory
-| # | Feature | Description | Milestone | Status | Source |
-|---|---------|-------------|-----------|--------|--------|
-| 1 | Fluid Morphing AI Discovery Banner | `framer-motion` collapsible banner in `ExpenseForm.tsx` (0 <-> auto height with 0 dead whitespace, leaving minimal inline badge `✨ تسجيل ذكي` and chevron toggle) | M2 | DONE | Request §1 |
-| 2 | Contextual Dynamic Recording State | Remove static "الحالة: جاهز", dynamic waveform / processing pill during active recording/parsing, seamless return to compact idle 0px height | M2 | DONE | Request §2 |
-| 3 | Top Financial Metrics & Streak Header Compaction | In `Home.tsx`, integrate StreakCounter directly into title bar, streamline 2-line subtitle into single-line greeting, refactor SummaryChip into compact financial pills `py-2 px-3` saving ~120px | M1 | DONE | Request §3 |
-| 4 | Thumb-Zone Textarea & Action Bar Elevation | Elevated 60-90px on mobile (`min-h-[96px]`), rich placeholder prompt, recent transactions visible above the fold on 390x844 & 412x915 | M1/M2 | DONE | Request §4 |
-| 5 | Multi-Viewport In-Browser Mobile Auditing | Autonomous Playwright test suite (`tests/e2e/mobile-dashboard-ai-recording.spec.ts`) across iPhone 14 Pro (390x844) & Pixel 7 (412x915), verifying CLS < 0.05, 0 console errors, 0 clipping, 100% type & test pass | Test Track | DONE | Request §5 |
+| # | Feature | Description | Milestone | Source |
+|---|---------|-------------|-----------|--------|
+| 1 | Polymorphic `AdaptiveDialog` Primitive | Universal adaptive wrapper (`src/components/ui/adaptive-dialog.tsx`) that renders `vaul` Drawer with grabber handle, snap detents, and input repositioning on `<768px` and Radix Dialog on desktop. | M1 | Survey 2 |
+| 2 | LIFO `BackButtonManager` & Sheet Stack | Centralized hardware back button manager (`src/lib/backButtonManager.ts` & `src/hooks/useSheetManager.ts`) for Android Capacitor shell and web popstate coordination. | M1 | Survey 2 & 3 |
+| 3 | High-Frequency Expense & Calendar Sheet Migration | Migrate transaction details, delete confirmations, receipt scan tips, pro upgrade, day calendar dialogs, and chart modal breakdowns to `AdaptiveDialog`. | M1 | Survey 2 |
+| 4 | Settings, Auth & Profile Sheet Migration | Migrate goal creation, business settings, contact editor, passkey PIN setup, biometric onboarding, and feedback modals to `AdaptiveDialog`. | M1 | Survey 2 |
+| 5 | Continuous 1:1 Interactive Tab Pager | Implement `src/components/dashboard/InteractiveTabPager.tsx` using `embla-carousel-react` with RTL calibration, momentum physics, and spring settling. | M2 | Survey 1 |
+| 6 | Home Dashboard Pager Integration | Replace discrete `opacity-0/100` and `hidden/block` classes in `src/pages/Home.tsx` with `InteractiveTabPager` synchronized with `HomeHeader` and `MobileBottomNav`. | M2 | Survey 1 |
+| 7 | Pointer & Gesture Isolation (`.no-swipe`) | Configure Embla `watchDrag` filter to isolate nested interactive elements (charts, sliders, calendars, swipe-to-delete cards, inputs). | M2 | Survey 1 |
+| 8 | Directional Spatial Route Transitions | Implement RTL-aware hardware-accelerated slide transitions in `src/components/layout/PageTransition.tsx` using `useNavigationDirection.ts`. | M3 | Survey 2 |
+| 9 | Per-Route Scroll Offset Restoration | Implement `useScrollRestoration.ts` caching `<main>` container scroll positions across tab navigation. | M3 | Survey 2 |
+| 10 | AICenter & Settings Offscreen Keep-Alive | Implement offscreen tab state preservation in `AICenter.tsx` (Chat, Voice, Report) and `Settings.tsx` to prevent component unmounting and data loss. | M3 | Survey 2 |
+| 11 | GPU Compositing Optimization in Cards & Lists | Eliminate `backdrop-blur-xl` from `src/components/ui/card.tsx` and scrollable items; apply `contain-paint` and solid/translucent styling for 60–120fps scrolling. | M4 | Survey 3 |
+| 12 | Instant Button Active Press Physics | Asymmetric CSS active press (0–40ms press, spring recovery) and scroll cancellation (`touch-action: pan-y`) in `src/index.css` and `3d-effects.css`. | M4 | Survey 1 |
+| 13 | Multi-Tier Micro-Haptics Engine | Expand `useHaptics.ts` with `selection`, `heavyTap`, `warning`; wire into `Switch`, `TabsTrigger`, `Slider`, `ToggleGroup`, `Drawer` snap detents, and swipe-to-delete live threshold crossing. | M4 | Survey 1 |
+| 14 | Viewport Hardening & Pinch-to-Zoom Prevention | Update `index.html` viewport meta tag (`user-scalable=no, maximum-scale=1.0`) and suppress Safari multi-touch gestures in `src/main.tsx`. | M4 | Survey 1 & 3 |
+| 15 | FOUT Elimination & Splash Lifecycle | Coordinate `dismissAppLoader()` in `src/pwa/register-sw.ts` with `document.fonts.ready` and `@capacitor/splash-screen`. | M4 | Survey 3 |
+| 16 | Arabic Cairo Font Bounding-Box Preservation | Fix `leading-none`, `overflow-hidden`, and tight vertical padding in `DialogTitle`, `CardTitle`, `Label`, `Badge`, and `TabsTrigger`. | M4 | Survey 3 |
+| 17 | Capacitor Shell & Native Lifecycle Plugins | Add root `capacitor.config.ts`, `useNativeThemeSync.ts`, and unified `useVirtualKeyboard.ts` using `@capacitor/keyboard`, `@capacitor/status-bar`, and `@capacitor/app`. | M4 | Survey 3 |
+| 18 | Monorepo Type Check & Lint Integrity | Run `npm run check` across the monorepo ensuring 0 type errors. | M5 | Synthesis |
+| 19 | Vitest Unit & Component Verification Suite | Unit tests for `useHaptics`, `adaptive-dialog`, `useNavigationDirection`, `InteractiveTabPager`, `useScrollRestoration`, and `backButtonManager`. | M5 | Synthesis |
+| 20 | Mobile E2E & Touch Interaction Verification | Comprehensive Playwright mobile test suite verifying sheets, drag paging, scroll restoration, and gesture isolation. | M5 | Synthesis |
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| T1 | E2E Testing Track | Design & implement autonomous Playwright mobile audit suite (`tests/e2e/mobile-dashboard-ai-recording.spec.ts`) and `TEST_INFRA.md` | Survey | DONE |
-| M1 | Home Header & Metrics Compaction | Update `src/pages/Home.tsx` to integrate StreakCounter into title bar, streamline subtitle, and refactor SummaryChip into high-density `py-2 px-3` pills | Survey | DONE |
-| M2 | AI Discovery Banner & Dynamic Recording Input | Update `src/components/expenses/ExpenseForm.tsx` with framer-motion collapsible banner, active recording waveform pill, elevated thumb-zone action bar | Survey | DONE |
-| M3 | Final Verification & Forensic Audit | Run 100% E2E Playwright tests, Vitest test suites, `npm run check`, Challenger stress verification, and Forensic Integrity Audit | M1, M2, T1 | DONE |
+| M1 | Universal Polymorphic AdaptiveDialog & Bottom Sheet Architecture | Features 1, 2, 3, 4 | none | PLANNED |
+| M2 | Continuous 1:1 Interactive Tab Pager with Gesture Isolation | Features 5, 6, 7 | none | PLANNED |
+| M3 | Directional Spatial Transitions & Tab State Keep-Alive | Features 8, 9, 10 | none | PLANNED |
+| M4 | GPU Compositing Optimization, Haptics & Performance Hardening | Features 11, 12, 13, 14, 15, 16, 17 | none | PLANNED |
+| M5 | Comprehensive Zero-Regression Test Suite & Final Verification | Features 18, 19, 20 | M1, M2, M3, M4 | PLANNED |
+
+## E2E Testing Track
+- Parallel E2E Testing Track Orchestrator derives opaque-box test suites from requirements (Tiers 1–4: Feature Coverage, Boundary/Corner, Cross-Feature, Real-World Workload). Publishes `TEST_READY.md`.
+- Implementation Track Final Milestone executes Tier 1–4 verification followed by Phase 2 Adversarial Coverage Hardening (Tier 5).
 
 ## Code Layout
-- `src/pages/Home.tsx`: Exclusive write ownership for Milestone 1.
-- `src/components/expenses/ExpenseForm.tsx`: Exclusive write ownership for Milestone 2.
-- `tests/e2e/mobile-dashboard-ai-recording.spec.ts`: Exclusive write ownership for E2E Testing Track (T1).
-- `TEST_INFRA.md`, `TEST_READY.md`: Test track coordination artifacts at project root.
+- `src/components/ui/`: UI primitives (`adaptive-dialog.tsx`, `dialog.tsx`, `drawer.tsx`, `card.tsx`, `button.tsx`, `switch.tsx`, `tabs.tsx`, `slider.tsx`, `badge.tsx`, `label.tsx`).
+- `src/components/dashboard/`: Dashboard components (`InteractiveTabPager.tsx`, `HomeHeader.tsx`, `MonthlyCalendar.tsx`, `ExpenseChart.tsx`).
+- `src/components/layout/`: Layout components (`PageTransition.tsx`, `MobileBottomNav.tsx`).
+- `src/components/expenses/`: (`RecentExpenses.tsx`, `ExpenseForm.tsx`).
+- `src/components/settings/`: (`PeopleSettingsView.tsx`, `BusinessSettingsView.tsx`).
+- `src/components/auth/`: (`PasskeySettings.tsx`, `BiometricOnboardingModal.tsx`).
+- `src/hooks/`: (`useHaptics.ts`, `useNavigationDirection.ts`, `useScrollRestoration.ts`, `useSheetManager.ts`, `useVirtualKeyboard.ts`, `useNativeThemeSync.ts`, `useMediaQuery.ts`).
+- `src/lib/`: (`backButtonManager.ts`, `utils.ts`).
+- `src/pages/`: (`Home.tsx`, `AICenter.tsx`, `Settings.tsx`).
+- `tests/`: Automated Vitest & Playwright test suites.
 
 ## Interface Contracts
-### `ExpenseForm.tsx` ↔ `Home.tsx`
-- `ExpenseForm` rendered inside `Home.tsx` receiving props:
-  - `onExpenseCreated`: `() => void`
-  - `onEditExpense`: `(expense: any) => void`
-  - `editingExpense`: `any | null`
-  - `onCancelEdit`: `() => void`
-- Header / Streak counter inside `Home.tsx` operates independently of `ExpenseForm` state.
-- All AST tokens required by `src/components/expenses/ExpenseForm.quick-save.test.ts` (`handleSubmit`, `syncOfflineData`, `ParserTracePanel`, `inputChannel: "text"`) preserved 100%.
+### AdaptiveDialog Contract
+- Props: Extends `DialogProps` + `snapPoints?: (number|string)[]`, `activeSnapPoint?: number|string|null`, `setActiveSnapPoint?: (snapPoint: number|string|null) => void`, `showGrabber?: boolean`.
+- Behavior: Renders Vaul `Drawer` when viewport < 768px; Radix `Dialog` when >= 768px.
+- Back Button: Automatically registers with `BackButtonManager` when `open === true`.
+
+### InteractiveTabPager Contract
+- Props: `activeTab: HomeTab`, `onTabChange: (tab: HomeTab) => void`, `tabOrder?: HomeTab[]`, `children: Record<HomeTab, React.ReactNode>`.
+- Touch Physics: Embla Carousel with `direction: "rtl"`, `loop: false`, `duration: 25`, `inViewThreshold: 0.7`.
+- Gesture Isolation: Ignores drag events originating from `.no-swipe, .recharts-wrapper, input, textarea, select, [data-no-swipe]`.
+
+### Spatial Navigation Contract
+- RTL Forward navigation: enters from LEFT (`x: "-100%"` -> `0%`), pops back to LEFT (`0%` -> `"-100%"`).
+- Background screen receives 20% parallax shift and subtle opacity dimming.

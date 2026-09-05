@@ -68,13 +68,27 @@ export const adminWhatsappRouter = router({
   }),
 
   startService: adminProcedure.mutation(async () => {
-    await whatsappService.start();
-    return { success: true, message: "جاري تشغيل الخدمة..." };
+    try {
+      await whatsappService.start();
+      return { success: true, message: "جاري تشغيل الخدمة..." };
+    } catch (err: any) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: err?.message || "فشل تشغيل الخدمة",
+      });
+    }
   }),
 
   stopService: adminProcedure.mutation(async () => {
-    await whatsappService.stop();
-    return { success: true, message: "تم إيقاف الخدمة" };
+    try {
+      await whatsappService.stop();
+      return { success: true, message: "تم إيقاف الخدمة" };
+    } catch (err: any) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: err?.message || "فشل إيقاف الخدمة",
+      });
+    }
   }),
 
   getSettings: adminProcedure.query(async () => {

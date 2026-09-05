@@ -9,6 +9,15 @@
 import { CATEGORIES, getCategoryByArabicName } from "./category-registry";
 import type { ParsedTransaction } from "./rule-engine";
 import { extractAmounts } from "./entity-extractor";
+import { mergeReviewState } from "./final-acceptance";
+import { DEFAULT_THRESHOLDS } from "./classification-decision";
+
+/**
+ * Below this calibrated probability the verifier asks for a look, independently of
+ * whatever else the item carries. Reads the shared default rather than a local 85, so
+ * the verifier and the decision layer cannot disagree about where the line is.
+ */
+const AUTO_SAVE_REVIEW_FLOOR = DEFAULT_THRESHOLDS.autoSave * 100;
 
 // ─── Types ────────────────────────────────────────────────────────
 
@@ -477,13 +486,22 @@ function adjustConfidence(
     // evidence of correctness, and the confidence is now a calibrated probability, so
     // nothing downstream may nudge it.
 
-    return {
-      ...item,
-      confidence: adjustedConfidence,
-      needsReview:
-        adjustedConfidence < 85 ||
-        errorIndices.has(idx) ||
-        warningIndices.has(idx),
-    };
+    // `needsReview` is a disjunction, not an assignment.
+    //
+    // This used to overwrite: an item that arrived already flagged — by the model merge
+    // as `category_reply_unresolved`, or by the person resolver as an unidentified name —
+    // scoring 90 and drawing no verifier objection came out of here with the flag gone
+    // and became eligible for a silent write. The verifier knows about the six things it
+    // checks; it knows nothing about the reasons other layers raised, and finding no
+    // fault of its own is not evidence that theirs was mistaken.
+    const verifierObjects =
+      adjustedConfidence < AUTO_SAVE_REVIEW_FLOOR ||
+      errorIndices.has(idx) ||
+      warningIndices.has(idx);
+
+    return mergeReviewState(
+      { ...item, confidence: adjustedConfidence, needsReview: verifierObjects },
+      item,
+    );
   });
 }

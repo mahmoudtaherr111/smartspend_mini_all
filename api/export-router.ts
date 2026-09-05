@@ -2,7 +2,7 @@ import { z } from "zod";
 import {
   router,
   authedProcedure,
-  moderatorProcedure,
+  adminProcedure,
   proProcedure,
 } from "./middleware";
 import { wrapReportAsPrintableHtml } from "./services/pro-report-engine";
@@ -103,8 +103,8 @@ export const exportRouter = router({
       };
     }),
 
-  // ─── Export All Users (Moderator+) ───
-  allUsers: moderatorProcedure
+  // ─── Export All Users (Admin only) ───
+  allUsers: adminProcedure
     .input(z.object({ format: z.enum(["json", "csv", "xlsx"]) }))
     .mutation(async ({ input }) => {
       const oauthUsers = await db

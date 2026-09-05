@@ -104,6 +104,11 @@ export interface DecisionInput {
   hasBlockingFlag: boolean;
   /** There is a question we genuinely need answered before we can record anything. */
   needsAnswer: boolean;
+  /**
+   * At least one item's probability is the corpus prior, not a measurement of the path
+   * that produced it — because that evidence bucket has no observed data yet.
+   */
+  hasUnpricedItem?: boolean;
 }
 
 export interface DecisionOutcome {
@@ -131,6 +136,20 @@ export function decide(
   if (input.hasBlockingFlag) {
     return { decision: "review", reason: "verifier_flag" };
   }
+
+  // A number we did not measure cannot authorise a silent write.
+  //
+  // The live benchmark found this the hard way: model-produced items carried no
+  // evidence, so calibration skipped them and the model's SELF-REPORTED confidence
+  // reached this comparison unchallenged. Its 90-100 band claims 95.9% and is right
+  // 83.3%, which turned into a 10.3% unsafe auto-save rate — against 1.1% offline,
+  // where the model never runs. Auto-save now requires a probability backed by
+  // observations of that specific path; everything else is shown to the user, which
+  // is also how the observations get collected.
+  if (input.hasUnpricedItem) {
+    return { decision: "review", reason: "unpriced_evidence" };
+  }
+
   if (input.probability >= thresholds.autoSave) {
     return { decision: "auto_save", reason: "high_probability" };
   }

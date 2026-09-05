@@ -4,6 +4,7 @@ import { db } from "./queries/connection";
 import { sessions } from "../db/schema";
 import { env } from "./lib/env";
 import { getClientIp, getIncomingHeader } from "./lib/get-client-ip";
+import { randomBytes } from "crypto";
 import type { HonoRequest } from "hono";
 
 type SessionRequest = HonoRequest | Request;
@@ -13,9 +14,12 @@ export type SessionMetadata = {
   userAgent?: string;
 };
 
-export function getSessionMetadata(req: SessionRequest): SessionMetadata {
+export function getSessionMetadata(
+  req: SessionRequest,
+  resolvedIp?: string,
+): SessionMetadata {
   return {
-    ipAddress: getClientIp(req),
+    ipAddress: resolvedIp || getClientIp(req),
     userAgent: getIncomingHeader(req, "user-agent")?.slice(0, 2_000),
   };
 }
@@ -43,6 +47,12 @@ export async function generateToken(
   );
 }
 
+import {
+  hashSessionToken,
+  invalidateCachedSession,
+} from "./lib/session-validation";
+import { or } from "drizzle-orm";
+
 export async function createSession(
   userId: number,
   userType: "oauth" | "local",
@@ -52,10 +62,13 @@ export async function createSession(
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
 
+  const { hex: tokenHash } = hashSessionToken(token);
+
   await db.insert(sessions).values({
     userId,
     userType,
     token,
+    tokenHash,
     expiresAt,
     ipAddress: metadata.ipAddress || null,
     userAgent: metadata.userAgent || null,
@@ -63,7 +76,11 @@ export async function createSession(
 }
 
 export async function invalidateSession(token: string) {
-  await db.delete(sessions).where(eq(sessions.token, token));
+  await invalidateCachedSession(token);
+  const { hex: tokenHash } = hashSessionToken(token);
+  await db
+    .delete(sessions)
+    .where(or(eq(sessions.tokenHash, tokenHash), eq(sessions.token, token)));
 }
 
 // Smart phone validation for Egyptian numbers
@@ -72,7 +89,7 @@ export function cleanPhoneNumber(phone: string): string {
   const englishPhone = phone.replace(/[٠١٢٣٤٥٦٧٨٩]/g, function (d) {
     return (d.charCodeAt(0) - 1632).toString();
   });
-  
+
   return englishPhone.replace(/\s/g, "").replace(/^\+?2/, "");
 }
 
@@ -102,5 +119,5 @@ export function validatePhone(phone: string): {
 }
 
 export function generateReferralCode(): string {
-  return "SS" + Math.random().toString(36).substring(2, 8).toUpperCase();
+  return "SS" + randomBytes(4).toString("hex").toUpperCase().slice(0, 6);
 }

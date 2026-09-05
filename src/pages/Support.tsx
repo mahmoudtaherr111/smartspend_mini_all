@@ -65,10 +65,7 @@ export default function Support() {
   };
 
   return (
-    <div
-      className="min-h-screen bg-background p-4 md:p-8"
-      dir="rtl"
-    >
+    <div className="min-h-screen bg-background p-4 md:p-8" dir="rtl">
       <SEOMeta path="/support" title="مركز الدعم - SmartSpend AI" />
 
       <div className="max-w-4xl mx-auto space-y-6">
@@ -86,12 +83,14 @@ export default function Support() {
             title="تليفون"
             value="0100-123-4567"
             color="green"
+            href="tel:+201001234567"
           />
           <ContactCard
             icon={<Mail className="w-6 h-6" />}
             title="إيميل"
             value="support@smartspend.app"
             color="blue"
+            href="mailto:support@smartspend.app"
           />
           <ContactCard
             icon={<Clock className="w-6 h-6" />}
@@ -320,30 +319,45 @@ function ContactCard({
   title,
   value,
   color,
+  href,
 }: {
   icon: React.ReactNode;
   title: string;
   value: string;
   color: string;
+  href?: string;
 }) {
   const colors: Record<string, string> = {
     green: "bg-green-500/10 text-green-600",
     blue: "bg-blue-500/10 text-blue-600",
     purple: "bg-purple-500/10 text-purple-600",
   };
-  return (
-    <Card className="text-center hover:shadow-md transition-shadow">
-      <CardContent className="p-4 sm:p-6">
+  const content = (
+    <Card className="h-full gap-0 py-0 transition-shadow hover:shadow-md">
+      <CardContent className="flex min-h-[72px] items-center gap-3 p-3 sm:flex-col sm:justify-center sm:p-5 sm:text-center">
         <div
-          className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl ${colors[color]} flex items-center justify-center mx-auto mb-2 sm:mb-3`}
+          className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl ${colors[color]} flex shrink-0 items-center justify-center sm:mx-auto`}
         >
           {icon}
         </div>
-        <h3 className="font-bold mb-1 text-sm sm:text-base">{title}</h3>
-        <p className="text-xs sm:text-sm text-muted-foreground break-all">
-          {value}
-        </p>
+        <div className="min-w-0">
+          <h3 className="font-bold text-sm sm:text-base">{title}</h3>
+          <p className="text-xs sm:text-sm text-muted-foreground break-all">
+            {value}
+          </p>
+        </div>
       </CardContent>
     </Card>
+  );
+
+  return href ? (
+    <a
+      href={href}
+      className="active-press block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+    >
+      {content}
+    </a>
+  ) : (
+    content
   );
 }

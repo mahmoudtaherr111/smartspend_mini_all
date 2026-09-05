@@ -1,74 +1,60 @@
 /* 3D Effects & Micro-interactions for SmartSpend AI */
 
-/* Glassmorphism cards */
+/* GPU-Optimized Cards */
 .glass-card {
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.68) 0%,
-    rgba(255, 255, 255, 0.4) 100%
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.8) 100%
   );
-  backdrop-filter: blur(24px) saturate(190%);
-  -webkit-backdrop-filter: blur(24px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   box-shadow:
     0 8px 32px 0 rgba(31, 38, 135, 0.04),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
   border-radius: 1.25rem;
+  contain: paint;
 }
 
 .dark .glass-card {
   background: linear-gradient(
     135deg,
-    rgba(15, 23, 42, 0.45) 0%,
-    rgba(9, 13, 22, 0.25) 100%
+    rgba(15, 23, 42, 0.95) 0%,
+    rgba(9, 13, 22, 0.9) 100%
   );
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
     0 8px 32px 0 rgba(0, 0, 0, 0.25),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
+  contain: paint;
 }
 
-/* Premium Card (Frosted glass + ambient occlusion shadow) */
+/* Premium Card (Frosted appearance + ambient occlusion shadow) */
 .premium-card {
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.72) 0%,
-    rgba(255, 255, 255, 0.45) 100%
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0.85) 100%
   );
-  backdrop-filter: blur(24px) saturate(190%);
-  -webkit-backdrop-filter: blur(24px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 1.25rem;
   box-shadow:
     0 8px 32px 0 rgba(31, 38, 135, 0.04),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  contain: paint;
 }
 
 .dark .premium-card {
   background: linear-gradient(
     135deg,
-    rgba(15, 23, 42, 0.5) 0%,
-    rgba(9, 13, 22, 0.3) 100%
+    rgba(15, 23, 42, 0.96) 0%,
+    rgba(9, 13, 22, 0.92) 100%
   );
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
     0 8px 32px 0 rgba(0, 0, 0, 0.25),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
-}
-
-/* Fallback for browsers that do not support backdrop-filter */
-@supports not (backdrop-filter: blur(24px)) {
-  .glass-card, .premium-card {
-    background: rgba(255, 255, 255, 0.95);
-  }
-  .dark .glass-card, .dark .premium-card {
-    background: rgba(15, 23, 42, 0.95);
-  }
+  contain: paint;
 }
 
 /* Premium radial glows for background */
@@ -238,8 +224,18 @@
 }
 
 /* Button press effect */
-.btn-press:active {
-  transform: scale(0.95);
+.btn-press,
+.active-press {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  will-change: transform;
+}
+
+.btn-press:active,
+.active-press:active {
+  transform: scale(0.96) translateZ(0);
+  transition: transform 0.04s cubic-bezier(0, 0, 0.2, 1);
 }
 
 /* Card hover lift */

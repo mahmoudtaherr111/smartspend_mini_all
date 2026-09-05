@@ -18,37 +18,43 @@ Independent Review and Adversarial Stress-Test of Milestone 1 (HTML, Manifest, a
 - Verdict must be APPROVE or REQUEST_CHANGES
 
 ## Current Parent
-- Conversation ID: ad9d4b5b-06ab-4df9-a386-5dd5442c5772
-- Updated: 2026-08-25T09:36:10Z
+- Conversation ID: cacd9dc6-f7a7-488d-bea7-a95c193ae218
+- Updated: 2026-08-30T11:45:00Z
 
 ## Review Scope
-- **Files to review**: `index.html`, `vite.config.ts`, `src/pages/Landing.tsx`, `src/pages/Login.tsx`, `src/pages/Privacy.tsx`, `src/pages/Terms.tsx`, `src/pages/Admin.tsx`, `src/components/Sidebar.tsx`, `src/components/pwa/PullToRefreshWrapper.tsx`, `src/index.css`, `src/App.tsx`
+- **Files to review**: `contracts/`, `api/`, `src/`, `db/`, `docs/LOGICAL_EDGE_CASES_AUDIT.md`, `tests/`
 - **Interface contracts**: `PROJECT.md`, `ORIGINAL_REQUEST.md`, `AGENTS.md`
-- **Review criteria**: Correctness, completeness, quality, safe-area inset mechanics, cold-boot darkness synchronization, adversarial robustness, build/test pass.
+- **Review criteria**: TypeScript strict type-safety, Zod bounds, async resource teardown, audit documentation completeness, automated test execution.
 
 ## Review Checklist
 - **Items reviewed**:
-  - `index.html`: `viewport-fit=cover`, `theme-color: #090d16`, `black-translucent`, inline app-loader `#090d16`
-  - `vite.config.ts`: Manifest `background_color: #090d16`, standalone display mode
-  - `src/index.css`: Consolidated `.pt-safe`, `.pb-safe`, `.px-safe`, `.pb-nav-safe`, `--background: 224 25% 4.5%`
-  - `src/App.tsx`: `BOTTOM_NAV_ROUTES` route-aware padding calculation
-  - Target Pages (`Landing.tsx`, `Login.tsx`, `Privacy.tsx`, `Terms.tsx`, `Admin.tsx`, `Sidebar.tsx`, `PullToRefreshWrapper.tsx`): Correct safe area inset classes
-- **Verdict**: APPROVE
-- **Unverified claims**: None remaining.
+  - Monorepo Type Safety: `npm run check` (Exit Code 0, 0 type errors across monorepo)
+  - Zod Runtime Boundaries: `contracts/constants.ts`, `api/expense-router.ts`, `api/budget-router.ts`, `api/goals-router.ts`, `api/wallet-router.ts`, `api/profile-router.ts`, `api/ai-router.ts`, `api/chat-router.ts`
+  - Asynchronous Resource Teardown: `src/hooks/useVoiceCall.ts`, `src/components/expenses/ExpenseForm.tsx`, `src/components/ai/AIChatbot.tsx`, `src/hooks/useVirtualKeyboard.ts`, `src/hooks/useAuth.ts`, `src/providers/trpc.ts`
+  - Audit Documentation: `docs/LOGICAL_EDGE_CASES_AUDIT.md` (E1-E20 master catalog, architecture state diagrams, test verification)
+  - Test Suite: `npm run test` (102 passed, 1 failed: `tests/touch-physics-active-press.test.ts` JSX syntax in `.ts` file, 818 tests passed)
+- **Verdict**: REQUEST_CHANGES
+- **Unverified claims**: None.
 
 ## Attack Surface
 - **Hypotheses tested**:
-  1. Safe-area insets evaluate to zero on legacy/desktop browsers -> Resilient with `max(0.5rem, env(...))` fallbacks.
-  2. Cold-boot visual flashing -> Color `#090d16` (HSL 224 25% 4.5%) perfectly uniform across manifest, HTML loader, and CSS variables.
-  3. Dynamic Island occlusion on sticky headers -> Checked `pt-safe` applied on all sticky top bars.
-  4. Build/typecheck regressions -> Clean exit code 0 on `npm run check` and `npm run frontend:build`.
-- **Vulnerabilities found**: None.
-- **Untested angles**: None within M1 scope.
+  1. AudioContext/Mic leak on cancel during permissions prompt: Protected via monotonic `activeCallIdRef` and prompt-cancel track stop.
+  2. Multi-tab logout stale session exposure: Protected via `BroadcastChannel` and storage event synchronization.
+  3. Form data loss on 401 unauthenticated session expiry: Protected via `sessionStorage` draft envelopes and active draft registry.
+  4. In-flight AI streaming memory leak on route unmount: Protected via `AbortController` unmount trigger and backend SSE abort propagation.
+  5. Vitest esbuild JSX transform on `.test.ts`: Fails if React components are rendered inside `.ts` extension instead of `.tsx`.
+- **Vulnerabilities found**:
+  - [Major Finding]: `tests/touch-physics-active-press.test.ts` uses JSX tokens on line 109 without `.tsx` extension, causing test runner failure.
+- **Untested angles**: None.
 
 ## Key Decisions Made
-- Confirmed full compliance with Milestone 1 requirements (R1)
-- Formulated HARD handoff report approving Milestone 1
+- Confirmed full architectural integrity across all edge case state machines and asynchronous teardowns.
+- Confirmed zero type errors across the monorepo (`npm run check` passed cleanly).
+- Identified the exact root cause of the test suite transform failure and provided explicit remediation instructions.
+- Issued verdict: REQUEST_CHANGES pending the renaming of `touch-physics-active-press.test.ts` to `.tsx`.
 
 ## Artifact Index
-- `handoff.md` — Final review and challenge report
+- `handoff.md` — Authoritative Review & Adversarial Critic Report
 - `progress.md` — Liveness and execution tracker
+- `DISPATCH.md` — Inbound dispatch log
+

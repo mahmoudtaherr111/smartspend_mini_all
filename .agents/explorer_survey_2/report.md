@@ -1,565 +1,756 @@
-# Mobile Dashboard Header & Top Metrics Compaction Survey Report
+# Technical Investigation & Architectural Report: R2 & R3 Mobile Native UX
 
-**Author:** Explorer 2 (Senior Full-Stack & UI Architecture Specialist)  
-**Date:** 2026-08-26  
-**Target Files:** `src/pages/Home.tsx`, `src/components/dashboard/StreakCounter.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/RecentExpenses.tsx`  
-**Target Viewports:** iPhone 14 Pro (`390x844`), Android Pixel 7 / Samsung Galaxy (`412x915`)
+**Date**: 2026-08-28  
+**Author**: Explorer Survey 2  
+**Target Repository**: `smartspend_V1_fixed`  
+**Focus Areas**:
+- **R2: Spatial Navigation Transitions & Tab State Preservation** (hardware-accelerated slide transitions, directional awareness, scroll offset & sub-component state retention across switches)
+- **R3: Universal Native Bottom Sheet Architecture** (gesture-dismissible Vaul/native bottom sheets for mobile dialogs/modals with grabber handles, snap detents, flick-to-dismiss)
 
 ---
 
 ## 1. Executive Summary
 
-SmartSpend AI's mobile landing experience is critically compromised by excessive vertical padding, stacked header elements, multi-line greeting descriptions, and bulky financial summary cards. Currently on mobile viewports:
-- `StreakCounter` occupies an isolated full-width row beneath the title.
-- The two-line subtitle consumes ~52px of vertical space for repetitive static text.
-- `SummaryChip` cards are tall, multi-line frosted glass cards (`py-2.5`, height ~62px).
-- Combined with `ExpenseForm`'s uncollapsed discovery banner, **`RecentExpenses` starts 614px below the content top**.
+SmartSpend AI is an Arabic-first behavioral financial platform targeting the Egyptian mobile market. While the backend and business logic are mature (Hono v4, tRPC v11, Drizzle ORM, dual-auth, SQLite/MySQL), the frontend client currently retains web-first patterns that hinder its native mobile app experience:
 
-On standard mobile devices (iPhone 14 Pro: 637px usable scroll viewport; Android Pixel 7: 734px usable scroll viewport), **recent transactions are pushed completely below the fold or show only ~23px of the card header**, requiring immediate downward scrolling to view any financial activity.
+1. **Spatial Navigation & Transitions (R2)**:
+   - Page transitions in `src/components/layout/PageTransition.tsx` are a bare pass-through `<div>` without slide animations, directional awareness, or backdrop parallax.
+   - Tab switching in `src/pages/Home.tsx` relies on toggling `display: none` (`hidden` / `block`), causing abrupt visual jumps without 1:1 finger tracking, rubber-banding, or per-tab scroll offset preservation.
+   - In `src/pages/AICenter.tsx`, tabs unmount completely on switch via `AnimatePresence mode="wait"` with conditional rendering, destroying active chat messages, uncommitted drafts, voice call state, and scroll position.
+   - Route-level navigation (e.g. `/dashboard` <-> `/ai` <-> `/settings`) unmounts views without recording `<main>` scroll offsets, resetting the user to the top (0px) whenever they navigate back.
 
-By re-architecting `src/pages/Home.tsx` to:
-1. **Integrate `StreakCounter` into the Title Bar flex row** (saving ~46px).
-2. **Streamline the Subtitle into a single compact greeting line** (saving ~24px).
-3. **Refactor `SummaryChip` into high-density Financial Metric Pills (`py-2 px-3`)** (saving ~38px).
-4. **Tighten container padding and section gaps (`p-3`, `space-y-3`)** (saving ~12px).
+2. **Dialogs & Bottom Sheets (R3)**:
+   - Modals across the application (transaction details in `RecentExpenses.tsx`, camera tips and upgrade recommendations in `ExpenseForm.tsx`, calendar day views in `MonthlyCalendar.tsx`, chart breakdowns in `ExpenseChart.tsx`, settings dialogs, passkey PIN setups, and onboarding prompts) render as desktop-centered `@radix-ui/react-dialog` popups.
+   - These centered dialogs on mobile phones are ergonomically awkward (cannot be reached with one thumb), lack grabber handles, do not support downward flick-to-dismiss gestures, and clip against virtual keyboards.
+   - Although `vaul` (`^1.1.2`) and `src/components/ui/drawer.tsx` are installed, only `PeopleSettingsView.tsx` attempted a manual `isMobile ? <Drawer> : <Dialog>` pattern, leaving over 17 other dialog call sites as desktop popups.
 
-We achieve **~120px of direct height savings in `Home.tsx` alone**, and **~318px of cumulative vertical lift** when combined with the `ExpenseForm` input card compaction. This brings the top of `RecentExpenses` up to **296px**, guaranteeing **4 full transaction rows above the fold on iPhone 14 Pro** and **5+ rows on Android Pixel 7**.
-
----
-
-## 2. Current State Analysis
-
-### 2.1 Top Header & StreakCounter Layout
-- **Source Location:** `src/pages/Home.tsx:548-652` & `src/components/dashboard/StreakCounter.tsx`
-- **Current Component Tree:**
-  ```tsx
-  <header className="flex flex-col gap-3 -mx-1 px-1 py-2">
-    <div className="space-y-3">
-      {/* Container row/col */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
-        {/* Title Group */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">{pageTitle}</h1>
-          <HealthBadge ratio={...} />
-          {hasBusiness && <button ... />}
-        </div>
-        
-        {/* Month Navigation (Stats/Calendar only) */}
-        {(activeTab === "stats" || activeTab === "calendar") && ( ... )}
-
-        {/* Streak Counter Wrapper */}
-        <div className="flex items-center gap-3">
-          <StreakCounter currentStreak={profile?.gamification?.currentStreak || 0} />
-        </div>
-      </div>
-      ...
-  ```
-- **Mobile vs Desktop Behavior:**
-  - **Desktop (`>=640px` / `sm:`):** `sm:flex-row sm:items-center justify-between` renders the Title on the right (RTL start) and `StreakCounter` on the left (RTL end) on a single horizontal plane.
-  - **Mobile (`<640px`):** The parent defaults to `flex-col`. Because `StreakCounter` is placed in a separate child `<div>`, it breaks into its own distinct row below the title.
-  - **StreakCounter Internal Dimensions:** In `StreakCounter.tsx:11-46`, the pill has `px-3 py-1.5 rounded-full text-sm font-medium border` (~34px height) plus parent `gap-3` (12px), wasting **46px of vertical screen real estate** on mobile.
+This report provides an exhaustive inventory of the codebase, technical gap analysis, and a unified architectural blueprint for implementing R2 and R3 with zero regressions and native iOS/Android fidelity.
 
 ---
 
-### 2.2 Subtitle Styling & Layout
-- **Source Location:** `src/pages/Home.tsx:630-633`
-- **Current Implementation:**
-  ```tsx
-  <p className="text-muted-foreground text-sm">
-    أهلاً {user?.name || "صديقي"}، ابدأ بتسجيل العملية بسرعة واترك
-    التحليلات لقسم الإحصائيات.
-  </p>
-  ```
-- **Mobile Behavior:**
-  - At `text-sm` (14px font, 20px line-height), on 390px / 412px screens with container padding `p-4`, this 74-character Arabic string wraps across **2 full lines**.
-  - Total vertical footprint = 40px text height + 12px margin from `space-y-3` = **52px**.
-  - The message is instructional and static; showing it continuously introduces unnecessary cognitive clutter and dead vertical space for frequent daily loggers.
+## 2. Codebase Inventory & Current State Analysis
+
+### 2.1 Navigation & Routing Topology
+
+| File | Exact Lines | Current Implementation & Behavior |
+| :--- | :--- | :--- |
+| `src/App.tsx` | Lines 4–9, 352–481 | Uses React Router v7 (`react-router-dom` 7.6.1). `AnimatedRoutes` wraps each `<Route>` element inside `<PageTransition>`. |
+| `src/components/layout/PageTransition.tsx` | Lines 1–18 | **Pass-through wrapper**: Returns `<div className="w-full min-h-full flex flex-col flex-1">{children}</div>`. No animation, no slide, no directional awareness. |
+| `src/components/layout/MobileBottomNav.tsx` | Lines 24–30, 126–223 | Floating glass capsule navigation bar for mobile (`lg:hidden`). Supports 5 tabs (`record`, `stats`, `ai`, `calendar`, `more`). Uses `framer-motion` for active glass pill indicator, but navigates via `navigate(item.href)`. |
+| `src/App.tsx` (Layout) | Lines 270–285 | Main scroll container `<main ref={scrollRef} className="app-content hide-scrollbar transition-all duration-500 ...">`. Does not track or restore scroll position across route changes. |
+| `src/hooks/useHistoryBound.ts` | Lines 1–40 | Manages `window.history.pushState` on modal open. Lacks integration with Capacitor native Android back button event listener. |
+
+### 2.2 Tab State Management & View Switching
+
+| Component / Page | Location | Current View Switching Mechanism | State & Scroll Preservation Status |
+| :--- | :--- | :--- | :--- |
+| **Home (Dashboard)** | `src/pages/Home.tsx`<br>Lines 56–70, 260–399 | Uses `activeTab === "record" ? "block opacity-100" : "hidden opacity-0"` on 3 separate `<div>` containers. URL synced via `?tab=record\|stats\|calendar`. | **Partial / Flawed**: DOM elements remain mounted, but `display: none` resets container layout metrics. Parent scroll position in `<main>` jumps because heights vary between Record (tall), Stats (medium), and Calendar (short). No swipe carousel or spring physics. |
+| **AI Center** | `src/pages/AICenter.tsx`<br>Lines 126–141 | Uses `<AnimatePresence mode="wait">` with conditional rendering `{activeTab === "chat" && <AIChatbot />}`. | **Severe Data Loss**: Inactive tab components are completely unmounted. Chat scroll position, in-progress voice calls, monthly report state, and input drafts are erased on tab switch. |
+| **Settings** | `src/pages/Settings.tsx`<br>Lines 182–192 | Uses `<AnimatePresence mode="wait">` with conditional rendering `{currentView === "main" && ...}`. | **Unmounted**: Sub-views (`profile`, `notifications`, `passkeys`, `theme`, `ai_report`, `people`, `business`) are unmounted when returning to `main`. Sub-view form drafts and scroll offsets are not preserved. |
+| **Global Route Switching** | `src/App.tsx`<br>Lines 352–481 | `<Routes>` unmounts previous page component on route change. | **Reset to Top**: Navigating from `/dashboard` (scrolled down 800px) to `/ai` and back to `/dashboard` remounts `Home` and resets `<main>` scroll position to `0px`. |
 
 ---
 
-### 2.3 `SummaryChip` and Top Financial Metrics
-- **Source Location:** `src/pages/Home.tsx:93-129` (Definition) & `src/pages/Home.tsx:654-667` (Usage)
-- **Current Implementation:**
-  ```tsx
-  const SummaryChip = memo(function SummaryChip({
-    label,
-    value,
-    icon,
-    tone,
-    helper,
-  }: {
-    label: string;
-    value: string;
-    icon: ReactNode;
-    tone: "income" | "expense" | "neutral";
-    helper?: string;
-  }) {
-    const toneClass =
-      tone === "income"
-        ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300 shadow-sm"
-        : tone === "expense"
-          ? "border-rose-500/20 bg-rose-500/5 text-rose-700 dark:text-rose-300 shadow-sm"
-          : "border-slate-200/50 bg-white/70 dark:bg-slate-900/40 text-slate-800 dark:text-slate-200 shadow-sm";
+### 2.3 Comprehensive Inventory of Dialogs, Modals, Popups & Sheets
 
-    return (
-      <div
-        className={`premium-card px-2 xs:px-3 py-2.5 transition-all duration-300 hover:scale-[1.02] hover:translate-y-0 ${toneClass}`}
+The codebase contains **22 distinct modal/dialog/sheet call sites** across user-facing pages, admin panels, and onboarding flows:
+
+#### A. User-Facing Modal & Dialog Inventory
+
+| # | File Path | Line Range | Current Component | Trigger / Purpose | Mobile Viewport Experience |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | `src/components/expenses/RecentExpenses.tsx` | 624–754 | `<Dialog>`, `<DialogContent>` | Clicking transaction card info icon (`MessageSquare`) to view full details (amount, provider badge, service fee, balance after, category, subcategory, raw SMS text, timestamp). | Centered desktop dialog. Long SMS text requires awkward vertical scroll inside small popup. |
+| 2 | `src/components/expenses/RecentExpenses.tsx` | 452–476 | `<AlertDialog>`, `<AlertDialogContent>` | Clicking delete button on a transaction to confirm deletion. | Centered desktop popup dialog. |
+| 3 | `src/components/expenses/ExpenseForm.tsx` | 1654–1718 | `<Dialog>`, `<DialogContent>` | First-time receipt camera scan tips modal (`showCameraTip`). | Centered popup with receipt illustration. |
+| 4 | `src/components/expenses/ExpenseForm.tsx` | 1721–1762 | `<Dialog>`, `<DialogContent>` | AI quota limit reached prompt / Pro upgrade recommendation (`showProUpgrade`). | Centered popup with tier feature list. |
+| 5 | `src/components/dashboard/MonthlyCalendar.tsx` | 52–120 | `<Dialog>`, `<DialogContent>` (`DayTransactionsDialog`) | Clicking a day cell in the monthly calendar grid to view all transactions for that date. | Centered modal list (`sm:max-w-md max-w-[92vw]`). |
+| 6 | `src/components/dashboard/ExpenseChart.tsx` | 904–1031 | `<Dialog>`, `<DialogContent>` | Clicking a category pie slice or bar in chart to view detailed breakdown & transactions (`isModalOpen`). | Centered popup dialog with nested transaction list. |
+| 7 | `src/components/dashboard/ExpenseChart.tsx` | 1034–1119 | `<Dialog>`, `<DialogContent>` | Clicking a wallet / e-wallet provider card to inspect balance and provider-specific transactions (`isWalletModalOpen`). | Centered popup dialog. |
+| 8 | `src/components/profile/SmartProfileView.tsx` | 510–535 | `<Dialog>`, `<DialogContent>` | Clicking "إضافة هدف جديد" button to open `FinancialGoalsPanel mode="dialog"`. | Centered modal dialog containing goal creation form. |
+| 9 | `src/components/settings/BusinessSettingsView.tsx` | 615–652 | `<Dialog>`, `<DialogContent>` | Clicking "تعديل بيانات المشروع" (Edit business name, currency, capital). | Centered popup form. |
+| 10 | `src/components/settings/BusinessSettingsView.tsx` | 717–784 | `<Dialog>`, `<DialogContent>` (`AddCategoryDialog`) | Clicking "إضافة فئة جديدة" to add custom business expense/income category. | Centered popup dialog with color picker and icon selection. |
+| 11 | `src/components/settings/PeopleSettingsView.tsx` | 612–635 | Manual `if (isMobile) <Drawer> else <Dialog>` (`AddContactDialog`) | Adding a person / debtor / creditor. | Bottom sheet on mobile, dialog on desktop. (Proof of concept implementation). |
+| 12 | `src/components/settings/PeopleSettingsView.tsx` | 690–710 | Manual `if (isMobile) <Drawer> else <Dialog>` (`EditContactDialog`) | Editing person details. | Bottom sheet on mobile, dialog on desktop. |
+| 13 | `src/components/settings/PeopleSettingsView.tsx` | 808–830 | Manual `if (isMobile) <Drawer> else <Dialog>` (`MergeDialog`) | Merging duplicate contacts. | Bottom sheet on mobile, dialog on desktop. |
+| 14 | `src/components/settings/PeopleSettingsView.tsx` | 445–482 | `<Drawer>`, `<DrawerContent>` | Tapping contact row actions on mobile (call, edit, delete, silence). | Native bottom sheet via Vaul. |
+| 15 | `src/components/settings/PeopleSettingsView.tsx` | 485–505 | `<AlertDialog>` | Confirming contact deletion. | Centered popup. |
+| 16 | `src/components/auth/PasskeySettings.tsx` | 360–410 | `<Dialog>`, `<DialogContent>` | Setting up or updating 4-digit Biometric Security PIN (`isPinDialogOpen`). | Centered popup with PIN keypad. |
+| 17 | `src/components/auth/BiometricOnboardingModal.tsx` | 33–128 | Custom Portal + `motion.div` | First-time prompt inviting user to enable Face ID / Touch ID passkey. | Bottom-anchored on mobile (`items-end`) but lacks drag-down dismissal and snap points. |
+| 18 | `src/components/notifications/PushNotificationPrompt.tsx` | 52–113 | Custom Portal (`createPortal`) | Prompt inviting user to enable web/mobile push notifications. | Centered popup dialog (`animate-in zoom-in-95`). |
+| 19 | `src/components/onboarding/OnboardingFlow.tsx` | 82–155 | Custom Portal | 4-step interactive app walkthrough tour for new users. | Centered card modal. |
+| 20 | `src/components/FeedbackButton.tsx` | 41–80 | `<Dialog>`, `<DialogContent>` | Floating support & feedback ticket submission button. | Centered popup form. |
+| 21 | `src/components/Sidebar.tsx` | 280–310 | `<AlertDialog>` | Confirming user account sign out. | Centered popup. |
+
+#### B. Admin-Facing Modal & Dialog Inventory
+
+| # | File Path | Line Range | Current Component | Trigger / Purpose |
+| :--- | :--- | :--- | :--- | :--- |
+| 22 | `src/pages/Admin.tsx` | 962–1002 | `<Dialog>` | Admin user deletion confirmation (`userToDelete`). |
+| 23 | `src/pages/Admin.tsx` | 1005–1048 | `<Dialog>` | Active user sessions inspector (`showSessions`). |
+| 24 | `src/pages/Admin.tsx` | 1051–1289 | `<Dialog>` | Comprehensive User Profile & Financial Audit Inspector (`showProfile`). |
+| 25 | `src/pages/Admin.tsx` | 1291–1322 | `<Dialog>` | Database export options modal (`showExports`). |
+| 26 | `src/pages/Admin.tsx` | 1325–1408 | `<Dialog>` | Send direct WhatsApp / Push message to user (`messageUser`). |
+| 27 | `src/components/admin/AdminAdsTab.tsx` | 267–374 | `<Dialog>` | Create new in-app advertisement banner (`isCreateOpen`). |
+| 28 | `src/components/admin/AdminAdsTab.tsx` | 377–410 | `<Dialog>` | Delete ad confirmation (`adToDelete`). |
+| 29 | `src/components/admin/AdminRulesTab.tsx` | 180–213 | `<Dialog>` | Delete categorization rule confirmation (`ruleToDelete`). |
+| 30 | `src/components/admin/AdminWhatsAppTab.tsx` | 473–556 | `<Dialog>` | Send WhatsApp template message modal (`messageUser`). |
+| 31 | `src/components/admin/NotificationsTab.tsx` | 810–880 | `<Dialog>` | Edit notification template modal (`editingTemplate`). |
+| 32 | `src/components/admin/ai-center/modals/TokenAnatomyModal.tsx` | 8–80 | `<Dialog>` | AI Token Usage Anatomy breakdown modal. |
+| 33 | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` | 15–120 | `<Dialog>` | Add / Edit AI Provider configuration. |
+
+---
+
+## 3. Technical Gap Analysis
+
+### 3.1 Gaps in R2 (Spatial Navigation Transitions & Tab State Preservation)
+
+1. **No Directional Route Transitions**:
+   - `PageTransition.tsx` contains no CSS or Framer Motion transforms.
+   - When navigating from `/dashboard` (index 0) to `/settings` (index 2), the screen flashes immediately without slide animation.
+   - In Arabic RTL layout, moving deeper into the application hierarchy (forward) should slide in from the left (`x: "-100%"` -> `0%`), while popping back should slide out to the left (`0%` -> `"-100%"`), with the underlying screen receiving a 20% parallax shift and subtle dimming.
+2. **Missing Scroll Restoration**:
+   - `<main ref={scrollRef}>` in `src/App.tsx` handles all page-level scrolling.
+   - React Router v7 does not automatically record or restore `scrollTop` across dynamic routes or tabs.
+   - Tapping between tabs in `MobileBottomNav` unmounts and remounts components, resetting scroll to 0px.
+3. **Tab Unmounting in `AICenter.tsx`**:
+   - `AnimatePresence mode="wait"` unmounts `<AIChatbot />`, `<AIVoiceCall />`, and `<AIMonthlyReport />`.
+   - When a user initiates a conversation or speech session and switches to Monthly Report to check data, switching back destroys their active conversation draft and resets scroll.
+4. **Instant Opacity Jumps in `Home.tsx`**:
+   - `Home.tsx` uses `hidden` vs `block` with `transition-opacity duration-150`.
+   - Lacks authentic 1:1 finger tracking, rubber-band resistance, and momentum spring physics matching iOS UIKit and Flutter.
+
+---
+
+### 3.2 Gaps in R3 (Universal Native Bottom Sheet Architecture)
+
+1. **Desktop-Centric Dialog Experience on Mobile**:
+   - When tapping a transaction in `RecentExpenses.tsx` or an expense slice in `ExpenseChart.tsx`, a centered white rectangle appears in the middle of the screen.
+   - Users cannot swipe or flick the dialog downward to dismiss it; they must tap a tiny "X" button at the top-right corner.
+2. **Lack of Snap Detents & Dynamic Expansion**:
+   - Modals containing variable content (e.g. `MonthlyCalendar.tsx` day transactions, which may have 1 transaction or 20 transactions) cannot snap between compact preview (50% height) and full scroll view (90% height).
+3. **Duplicated Boilerplate across Files**:
+   - `PeopleSettingsView.tsx` duplicated 100+ lines of JSX to render `<Drawer>` on mobile and `<Dialog>` on desktop across 3 separate dialogs.
+   - Without a centralized **Adaptive Dialog Primitive**, every developer must manually write `isMobile ? <Drawer> : <Dialog>` in dozens of files.
+4. **Android Hardware Back Button Unawareness**:
+   - On Android devices (Capacitor shell), pressing the hardware back button when a bottom sheet is open triggers `window.history.back()` or exits the route instead of closing the sheet first.
+
+---
+
+## 4. Architectural Design & Implementation Blueprints
+
+### 4.1 Architecture for R2: Spatial Navigation Transitions & Tab State Preservation
+
+```
+                    ┌────────────────────────────────────────────────────────┐
+                    │               App Navigation Root                     │
+                    │               (React Router v7)                        │
+                    └──────────────────────────┬─────────────────────────────┘
+                                               │
+                                 ┌─────────────▼─────────────┐
+                                 │ useNavigationDirection()  │
+                                 │ Tracks PUSH/POP & Index   │
+                                 └─────────────┬─────────────┘
+                                               │
+                        ┌──────────────────────▼──────────────────────┐
+                        │        DirectionalPageTransition            │
+                        │  - RTL-Aware Hardware Accelerated Slides   │
+                        │  - GPU translate3d() + will-change         │
+                        │  - Backdrop Parallax & Scale Dimming       │
+                        └──────────────────────┬──────────────────────┘
+                                               │
+                    ┌──────────────────────────┴──────────────────────────┐
+                    │                                                     │
+         ┌──────────▼──────────┐                               ┌──────────▼──────────┐
+         │     Home Screen     │                               │   AI Center Screen  │
+         │  Interactive Tab    │                               │  Keep-Alive Pager   │
+         │  Carousel (Embla /  │                               │  (Chat, Voice,      │
+         │  Framer Touch Pager)│                               │   Report Retained)  │
+         │  - 1:1 Finger Track │                               │  - Scroll Memory    │
+         │  - Scroll Memory    │                               │  - No Unmounting    │
+         └─────────────────────┘                               └─────────────────────┘
+```
+
+#### Blueprint 1: `useNavigationDirection` Hook & Navigation Hierarchy Matrix
+Determines whether navigation is moving forward (entering deeper) or backward (popping), and calculates the exact spatial offset in RTL:
+
+```ts
+// src/hooks/useNavigationDirection.ts
+import { useLocation, useNavigationType } from "react-router-dom";
+import { useRef, useEffect } from "react";
+
+const ROUTE_DEPTH: Record<string, number> = {
+  "/dashboard": 0,
+  "/ai": 1,
+  "/calendar": 2,
+  "/bank-sync": 3,
+  "/pro": 4,
+  "/settings": 5,
+  "/support": 6,
+  "/admin": 7,
+};
+
+export type NavigationDirection = "forward" | "backward" | "none";
+
+export function useNavigationDirection(): { direction: NavigationDirection; delta: number } {
+  const location = useLocation();
+  const navType = useNavigationType();
+  const prevPathRef = useRef(location.pathname);
+  const directionRef = useRef<NavigationDirection>("none");
+  const deltaRef = useRef(0);
+
+  const prevDepth = ROUTE_DEPTH[prevPathRef.current] ?? 0;
+  const currentDepth = ROUTE_DEPTH[location.pathname] ?? 0;
+
+  if (prevPathRef.current !== location.pathname) {
+    if (navType === "POP") {
+      directionRef.current = "backward";
+      deltaRef.current = -1;
+    } else if (currentDepth > prevDepth) {
+      directionRef.current = "forward";
+      deltaRef.current = 1;
+    } else if (currentDepth < prevDepth) {
+      directionRef.current = "backward";
+      deltaRef.current = -1;
+    } else {
+      directionRef.current = "forward";
+      deltaRef.current = 1;
+    }
+    prevPathRef.current = location.pathname;
+  }
+
+  return { direction: directionRef.current, delta: deltaRef.current };
+}
+```
+
+#### Blueprint 2: Directional Page Transition Wrapper (`src/components/layout/PageTransition.tsx`)
+Features hardware-accelerated CSS 3D transforms (`translate3d`), spring physics, and subtle backdrop parallax:
+
+```tsx
+// Proposed src/components/layout/PageTransition.tsx
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useLocation } from "react-router-dom";
+import { useNavigationDirection } from "@/hooks/useNavigationDirection";
+
+interface PageTransitionProps {
+  children: React.ReactNode;
+}
+
+// In RTL (Arabic), "forward" slides in from the LEFT (-100%), "backward" slides in from the RIGHT (100%)
+const rtlSlideVariants = {
+  initial: (direction: "forward" | "backward") => ({
+    x: direction === "forward" ? "-100%" : "100%",
+    opacity: 0.85,
+    scale: 0.98,
+  }),
+  animate: {
+    x: "0%",
+    opacity: 1,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 380,
+      damping: 34,
+      mass: 0.8,
+    },
+  },
+  exit: (direction: "forward" | "backward") => ({
+    x: direction === "forward" ? "30%" : "-30%",
+    opacity: 0.4,
+    scale: 0.96,
+    transition: {
+      duration: 0.28,
+      ease: [0.32, 0.72, 0, 1], // Apple iOS cubic-bezier
+    },
+  }),
+};
+
+export function PageTransition({ children }: PageTransitionProps) {
+  const location = useLocation();
+  const { direction } = useNavigationDirection();
+
+  return (
+    <AnimatePresence mode="popLayout" custom={direction} initial={false}>
+      <motion.div
+        key={location.pathname}
+        custom={direction}
+        variants={rtlSlideVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        className="w-full min-h-full flex flex-col flex-1 will-change-transform transform-gpu"
+        style={{
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
+        }}
       >
-        <div className="flex items-center gap-1.5 xs:gap-2">
-          <div className="shrink-0 p-1 xs:p-1.5 rounded-md bg-background/50">{icon}</div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[9px] xs:text-[10px] text-muted-foreground">{label}</p>
-            <p className="text-xs xs:text-sm font-bold break-words">{value}</p>
-          </div>
-        </div>
-        {helper && (
-          <p className="mt-1 text-[9px] xs:text-[10px] text-muted-foreground">{helper}</p>
-        )}
-      </div>
+        {children}
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+```
+
+#### Blueprint 3: Persistent Scroll Restoration & Tab State Retention (`src/hooks/useScrollRestoration.ts`)
+Records and smoothly restores scroll offsets for any scroll container keyed by path:
+
+```ts
+// src/hooks/useScrollRestoration.ts
+import { useEffect, useLayoutEffect, type RefObject } from "react";
+import { useLocation } from "react-router-dom";
+
+const scrollCache = new Map<string, number>();
+
+export function useScrollRestoration(
+  containerRef: RefObject<HTMLElement | null>,
+  customKey?: string
+) {
+  const location = useLocation();
+  const key = customKey || `${location.pathname}${location.search}`;
+
+  // Restore scroll before paint
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const saved = scrollCache.get(key);
+    if (typeof saved === "number") {
+      el.scrollTop = saved;
+    }
+  }, [key, containerRef]);
+
+  // Save scroll on scroll/unmount
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const handleScroll = () => {
+      scrollCache.set(key, el.scrollTop);
+    };
+
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      handleScroll();
+      el.removeEventListener("scroll", handleScroll);
+    };
+  }, [key, containerRef]);
+}
+```
+
+#### Blueprint 4: Tab Keep-Alive Container for `AICenter.tsx`
+Prevents unmounting of AI Chat, Voice Call, and Monthly Report:
+
+```tsx
+// In src/pages/AICenter.tsx (Keep-Alive implementation pattern)
+<div className="flex-1 min-h-0 relative overflow-hidden">
+  <div
+    className={cn(
+      "h-full w-full absolute inset-0 transition-opacity duration-200",
+      activeTab === "chat" ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none invisible"
+    )}
+  >
+    <Suspense fallback={<TabSkeleton />}>
+      <AIChatbot />
+    </Suspense>
+  </div>
+
+  <div
+    className={cn(
+      "h-full w-full absolute inset-0 transition-opacity duration-200",
+      activeTab === "voice" ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none invisible"
+    )}
+  >
+    <Suspense fallback={<TabSkeleton />}>
+      <AIVoiceCall />
+    </Suspense>
+  </div>
+
+  <div
+    className={cn(
+      "h-full w-full absolute inset-0 transition-opacity duration-200",
+      activeTab === "report" ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none invisible"
+    )}
+  >
+    <Suspense fallback={<TabSkeleton />}>
+      <AIMonthlyReport />
+    </Suspense>
+  </div>
+</div>
+```
+
+---
+
+### 4.2 Architecture for R3: Universal Native Bottom Sheet Architecture
+
+```
+                    ┌────────────────────────────────────────────────────────┐
+                    │               ResponsiveDialog / Modal                 │
+                    │               (src/components/ui/adaptive-dialog.tsx)  │
+                    └──────────────────────────┬─────────────────────────────┘
+                                               │
+                                 ┌─────────────▼─────────────┐
+                                 │       useIsMobile()       │
+                                 │     (breakpoint < 768px)  │
+                                 └─────────────┬─────────────┘
+                                               │
+                     ┌─────────────────────────┴─────────────────────────┐
+                     │                                                   │
+          ┌──────────▼──────────┐                             ┌──────────▼──────────┐
+          │   Desktop (>= 768px)│                             │   Mobile (< 768px)  │
+          │   Radix UI Dialog   │                             │   Vaul Bottom Sheet │
+          │ - Centered Modal    │                             │ - Grabber Handle    │
+          │ - Backdrop Fade     │                             │ - Snap Detents      │
+          │ - Keyboard Esc Close│                             │ - Flick-to-Dismiss  │
+          │ - Desktop Formats   │                             │ - Bottom Safe Area  │
+          └─────────────────────┘                             │ - Reposition Inputs │
+                                                              │ - Haptic Snap Detent│
+                                                              │ - HW Back Button    │
+                                                              └─────────────────────┘
+```
+
+#### Blueprint 1: Universal `AdaptiveDialog` Primitive (`src/components/ui/adaptive-dialog.tsx`)
+A 100% drop-in responsive component that automatically maps to Radix Dialog on desktop and Vaul Drawer on mobile:
+
+```tsx
+// src/components/ui/adaptive-dialog.tsx
+import * as React from "react";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerTrigger,
+  DrawerContent,
+  DrawerHeader,
+  DrawerFooter,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerClose,
+} from "@/components/ui/drawer";
+import { cn } from "@/lib/utils";
+import { useSheetManager } from "@/hooks/useSheetManager";
+
+interface AdaptiveDialogProps extends React.ComponentProps<typeof Dialog> {
+  snapPoints?: (string | number)[];
+  activeSnapPoint?: string | number | null;
+  setActiveSnapPoint?: (snapPoint: string | number | null) => void;
+  showGrabber?: boolean;
+}
+
+const AdaptiveDialogContext = React.createContext<{ isMobile: boolean }>({
+  isMobile: false,
+});
+
+export function AdaptiveDialog({
+  children,
+  open,
+  onOpenChange,
+  snapPoints,
+  activeSnapPoint,
+  setActiveSnapPoint,
+  ...props
+}: AdaptiveDialogProps) {
+  const isMobile = useMediaQuery("(max-width: 768px)");
+
+  // Register with Sheet Stack for Android Hardware Back Button
+  useSheetManager(Boolean(open), () => onOpenChange?.(false));
+
+  if (isMobile) {
+    return (
+      <AdaptiveDialogContext.Provider value={{ isMobile: true }}>
+        <Drawer
+          open={open}
+          onOpenChange={onOpenChange}
+          snapPoints={snapPoints}
+          activeSnapPoint={activeSnapPoint}
+          setActiveSnapPoint={setActiveSnapPoint}
+          shouldScaleBackground
+          repositionInputs
+          {...props}
+        >
+          {children}
+        </Drawer>
+      </AdaptiveDialogContext.Provider>
     );
+  }
+
+  return (
+    <AdaptiveDialogContext.Provider value={{ isMobile: false }}>
+      <Dialog open={open} onOpenChange={onOpenChange} {...props}>
+        {children}
+      </Dialog>
+    </AdaptiveDialogContext.Provider>
+  );
+}
+
+export function AdaptiveDialogTrigger(
+  props: React.ComponentProps<typeof DialogTrigger>
+) {
+  const { isMobile } = React.useContext(AdaptiveDialogContext);
+  return isMobile ? <DrawerTrigger {...props} /> : <DialogTrigger {...props} />;
+}
+
+export function AdaptiveDialogClose(
+  props: React.ComponentProps<typeof DialogClose>
+) {
+  const { isMobile } = React.useContext(AdaptiveDialogContext);
+  return isMobile ? <DrawerClose {...props} /> : <DialogClose {...props} />;
+}
+
+export function AdaptiveDialogContent({
+  className,
+  children,
+  showGrabber = true,
+  ...props
+}: React.ComponentProps<typeof DialogContent> & { showGrabber?: boolean }) {
+  const { isMobile } = React.useContext(AdaptiveDialogContext);
+
+  if (isMobile) {
+    return (
+      <DrawerContent
+        className={cn(
+          "max-h-[92vh] pb-safe rounded-t-3xl border-t border-slate-200 dark:border-slate-800 bg-background shadow-2xl focus:outline-hidden",
+          className
+        )}
+        {...props}
+      >
+        {showGrabber && (
+          <div className="mx-auto w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 my-3 shrink-0" />
+        )}
+        <div className="overflow-y-auto px-4 pb-6">{children}</div>
+      </DrawerContent>
+    );
+  }
+
+  return (
+    <DialogContent className={cn("rounded-2xl sm:max-w-lg", className)} {...props}>
+      {children}
+    </DialogContent>
+  );
+}
+
+export function AdaptiveDialogHeader({
+  className,
+  ...props
+}: React.ComponentProps<typeof DialogHeader>) {
+  const { isMobile } = React.useContext(AdaptiveDialogContext);
+  return isMobile ? (
+    <DrawerHeader className={cn("text-right px-1 pt-1 pb-3", className)} {...props} />
+  ) : (
+    <DialogHeader className={cn("text-right pb-3", className)} {...props} />
+  );
+}
+
+export function AdaptiveDialogFooter({
+  className,
+  ...props
+}: React.ComponentProps<typeof DialogFooter>) {
+  const { isMobile } = React.useContext(AdaptiveDialogContext);
+  return isMobile ? (
+    <DrawerFooter className={cn("px-1 pt-2 gap-2", className)} {...props} />
+  ) : (
+    <DialogFooter className={cn("pt-4 gap-2", className)} {...props} />
+  );
+}
+
+export function AdaptiveDialogTitle({
+  className,
+  ...props
+}: React.ComponentProps<typeof DialogTitle>) {
+  const { isMobile } = React.useContext(AdaptiveDialogContext);
+  return isMobile ? (
+    <DrawerTitle className={cn("text-right text-base font-bold text-foreground", className)} {...props} />
+  ) : (
+    <DialogTitle className={cn("text-right text-lg font-bold text-foreground", className)} {...props} />
+  );
+}
+
+export function AdaptiveDialogDescription({
+  className,
+  ...props
+}: React.ComponentProps<typeof DialogDescription>) {
+  const { isMobile } = React.useContext(AdaptiveDialogContext);
+  return isMobile ? (
+    <DrawerDescription className={cn("text-right text-xs text-muted-foreground", className)} {...props} />
+  ) : (
+    <DialogDescription className={cn("text-right text-sm text-muted-foreground", className)} {...props} />
+  );
+}
+```
+
+#### Blueprint 2: Global Sheet Stack & Capacitor Android Back Button Manager
+Ensures any open bottom sheet or dialog receives the hardware back button event before the route changes:
+
+```ts
+// src/hooks/useSheetManager.ts
+import { useEffect } from "react";
+import { Capacitor } from "@capacitor/core";
+import { App as CapacitorApp } from "@capacitor/app";
+
+type CloseHandler = () => void;
+const sheetStack: CloseHandler[] = [];
+let isCapacitorListenerAttached = false;
+
+function initCapacitorBackButton() {
+  if (isCapacitorListenerAttached || !Capacitor.isNativePlatform()) return;
+  isCapacitorListenerAttached = true;
+
+  CapacitorApp.addListener("backButton", ({ canGoBack }) => {
+    if (sheetStack.length > 0) {
+      const closeTopSheet = sheetStack.pop();
+      closeTopSheet?.();
+      return;
+    }
+
+    if (canGoBack) {
+      window.history.back();
+    } else {
+      CapacitorApp.exitApp();
+    }
   });
-  ```
-- **Current Dimension & Visual Breakdown:**
-  - Uses `.premium-card` (`border-radius: 1.25rem` / 20px).
-  - Vertical padding: `py-2.5` (10px top + 10px bottom = 20px).
-  - Text layout: Vertical stack of label (`text-[10px]`, 14px height) over value (`text-sm`, 20px height).
-  - Total Chip Height: 20px (padding) + 14px (label) + 20px (value) + 4px (internal gap/border) + 4px shadow/border = **~62px**.
-  - Section Spacing: `grid grid-cols-2 gap-3` (12px gap) with parent `space-y-4` (16px top + 16px bottom).
-  - Total Section Vertical Footprint = 16px (top space) + 62px (chip height) + 16px (bottom space) = **94px**.
+}
 
----
+export function useSheetManager(isOpen: boolean, onClose: CloseHandler) {
+  useEffect(() => {
+    initCapacitorBackButton();
 
-### 2.4 Recent Transactions Relative to Mobile Viewport Fold
-- **Source Location:** `src/pages/Home.tsx:691-698` & `src/components/expenses/RecentExpenses.tsx:406-451`
-- **Current Cumulative Height Calculation (Top-of-Content to `RecentExpenses`):**
+    if (!isOpen) return;
 
-```
-┌────────────────────────────────────────────────────────┐
-│ App Shell Top Navbar (pt-safe + py-3 + logo h-12)      │ ~119px (iOS) / 96px (Android)
-├────────────────────────────────────────────────────────┤
-│ Page Content Container Padding (p-4 top)               │ 16px
-│ Header Title (h1 + HealthBadge)                        │ 32px
-│ Header Gap + StreakCounter Row                         │ 46px (34px pill + 12px gap)
-│ Header Gap + Subtitle (2 lines)                        │ 52px (40px text + 12px gap)
-│ Header py-2 padding                                    │ 16px
-│ space-y-4 margin                                       │ 16px
-│ SummaryChip Row (Income & Expense)                     │ 62px
-│ space-y-4 margin                                       │ 16px
-│ ExpenseForm Discovery Banner (CardHeader + Title)      │ 68px
-│ ExpenseForm Status Indicator ("الحالة: جاهز")          │ 28px
-│ ExpenseForm CardContent space-y-6                      │ 24px
-│ ExpenseForm Textarea (min-h-[140px] + p-5)             │ 142px
-│ ExpenseForm form space-y-4                             │ 16px
-│ ExpenseForm Action Bar (h-14 buttons)                  │ 56px
-│ ExpenseForm Card bottom padding                        │ 24px
-├────────────────────────────────────────────────────────┤
-│ START OF RECENT TRANSACTIONS (RecentExpenses Card)     │ = 614px Cumulative
-└────────────────────────────────────────────────────────┘
-```
-
-#### Viewport Fold Comparison (Current vs Usable Screen):
-- **iPhone 14 Pro (`390 x 844 px`):**
-  - Physical height: 844px.
-  - Safe Area Top + App Bar: 119px.
-  - Bottom Floating Nav (`MobileBottomNav` + safe area): 88px.
-  - **Usable Scroll Viewport Height: 637px**.
-  - `RecentExpenses` starts at **614px**.
-  - **Visible portion above fold: 23px** (Only the topmost border of the card; **0 transactions visible**).
-- **Android Pixel 7 (`412 x 915 px`):**
-  - Physical height: 915px.
-  - Status Bar + App Bar: 96px.
-  - Bottom Floating Nav: 85px.
-  - **Usable Scroll Viewport Height: 734px**.
-  - `RecentExpenses` starts at **614px**.
-  - **Visible portion above fold: 120px** (Card title + half of 1 transaction item).
-
----
-
-## 3. Quantitative Vertical Budget & Compaction Model
-
-### 3.1 Itemized Height Savings Table
-
-| Section / Element | Current Classes / Height | Proposed Optimization | New Height | Absolute Height Saved |
-|:---|:---|:---|:---|:---|
-| **Page Outer Padding** | `p-4` (16px top) | `p-3 sm:p-4 md:p-6` (12px top) | 12px | **+4px** |
-| **Title & Streak Header** | `flex-col` with separate Streak row (78px) | Unified horizontal flex row `flex items-center justify-between` | 36px | **+42px** |
-| **StreakCounter Pill** | `px-3 py-1.5 text-sm` (34px) | `px-2.5 py-1 text-xs sm:text-sm` (28px inline) | 0px (inline in title) | **+4px** |
-| **Subtitle Description** | 2-line text `text-sm` (52px with gap) | Single-line compact greeting `text-xs truncate` | 16px | **+36px** |
-| **Header Spacing** | `py-2 gap-3 space-y-3` (28px total overhead) | `py-1 gap-2 space-y-2` (10px overhead) | 10px | **+18px** |
-| **Financial Metrics Pills** | `premium-card py-2.5 px-3` (62px) | Compact inline pill `py-2 px-3 rounded-xl` (36px) | 36px | **+26px** |
-| **Metrics Grid Spacing** | `gap-3 space-y-4` (28px overhead) | `gap-2 space-y-3` (16px overhead) | 16px | **+12px** |
-| **Subtotal (Home.tsx Header + Metrics)** | **280px total** | **138px total** | **138px** | **+142px SAVED** |
-| **ExpenseForm Banner** | `CardHeader` title banner (68px) | Fluid inline badge `✨ تسجيل ذكي` (0px) | 0px | **+68px** |
-| **ExpenseForm Status** | Static `"الحالة: جاهز"` (28px) | Dynamic recording pill / 0 idle (0px) | 0px | **+28px** |
-| **ExpenseForm Textarea** | `min-h-[140px] p-5` (142px) | `min-h-[88px] p-3 text-base` (90px) | 90px | **+52px** |
-| **ExpenseForm Action Bar** | `h-14` buttons (56px) | Compact elevated `h-11 sm:h-12` (46px) | 46px | **+10px** |
-| **ExpenseForm Card Spacing** | `space-y-6 p-6` (40px overhead) | `space-y-3 p-3` (22px overhead) | 22px | **+18px** |
-| **GRAND TOTAL CUMULATIVE** | **614px (from top of page)** | **296px (from top of page)** | **296px** | **+318px SAVED** |
-
----
-
-### 3.2 Viewport Fold Real-Estate Comparison
-
-```
-IPHONE 14 PRO (390 x 844) VIEWPORT FOLD ANALYSIS:
-
-CURRENT (Uncompacted):
-0px ──────────────────────────────── Top of Content
-    │ Header & Streak (146px)
-    │ Summary Chips (62px)
-    │ ExpenseForm (358px)
-614px ────────────────────────────── RecentExpenses Starts
-637px ────────────────────────────── VIEWPORT FOLD (Bottom of Screen)
-      [Only 23px visible - NO transactions!]
-
-AFTER FULL COMPACTION:
-0px ──────────────────────────────── Top of Content
-    │ Compact Integrated Header (74px)
-    │ Financial Metric Pills (52px)
-    │ Compact AI Input Card (170px)
-296px ────────────────────────────── RecentExpenses Starts
-    │ [Header: "آخر العمليات"] (48px)
-    │ [Transaction 1: 150 ج.م كوفي] (60px)
-    │ [Transaction 2: 450 ج.م سوبرماركت] (60px)
-    │ [Transaction 3: 200 ج.م بنزين] (60px)
-    │ [Transaction 4: 85 ج.م صيدلية] (60px)
-637px ────────────────────────────── VIEWPORT FOLD (Bottom of Screen)
-      [341px visible - 4 FULL TRANSACTIONS ABOVE THE FOLD! 🚀]
-```
-
----
-
-## 4. Concrete Architectural Recommendations
-
-### 4.1 Recommendation 1: Header Bar & StreakCounter Integration
-Unify the top title row into a single persistent flex container that handles Title, HealthBadge, Business Mode, Month Navigation, and StreakCounter in one horizontal line on all viewport sizes.
-
-#### Before (`src/pages/Home.tsx:550-629`):
-```tsx
-<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
-  <div className="flex items-center gap-2 flex-wrap">
-    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
-      {businessMode && hasBusiness ? businessQuery.data!.business!.name : pageTitle}
-    </h1>
-    <HealthBadge
-      ratio={
-        (summary?.totalIncome ?? 0) > 0
-          ? Math.round(
-              ((summary?.totalExpense ?? 0) /
-                (summary?.totalIncome ?? 1)) *
-                100,
-            )
-          : null
+    sheetStack.push(onClose);
+    return () => {
+      const idx = sheetStack.indexOf(onClose);
+      if (idx !== -1) {
+        sheetStack.splice(idx, 1);
       }
-    />
-    {hasBusiness && (
-      <button
-        onClick={toggleBusinessMode}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-300 shadow-sm ${
-          businessMode
-            ? "bg-indigo-500 text-white border border-indigo-400"
-            : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
-        }`}
-      >
-        {businessMode ? (
-          <><Store className="w-3.5 h-3.5" /> {businessQuery.data!.business!.name}</>
-        ) : (
-          <><UserIcon className="w-3.5 h-3.5" /> شخصي</>
-        )}
-      </button>
-    )}
-  </div>
-
-  {(activeTab === "stats" || activeTab === "calendar") && (
-    <div className="flex items-center gap-0.5 self-start sm:self-auto ...">
-      ...
-    </div>
-  )}
-
-  <div className="flex items-center gap-3">
-    <StreakCounter
-      currentStreak={profile?.gamification?.currentStreak || 0}
-    />
-  </div>
-</div>
-```
-
-#### After (High-Density Integrated Header):
-```tsx
-<div className="flex items-center justify-between gap-2 w-full">
-  {/* Right: Title & Badges (RTL start) */}
-  <div className="flex items-center gap-2 min-w-0 flex-1">
-    <h1 className="text-lg sm:text-2xl font-bold truncate">
-      {businessMode && hasBusiness ? businessQuery.data!.business!.name : pageTitle}
-    </h1>
-    <HealthBadge
-      ratio={
-        (summary?.totalIncome ?? 0) > 0
-          ? Math.round(
-              ((summary?.totalExpense ?? 0) /
-                (summary?.totalIncome ?? 1)) *
-                100,
-            )
-          : null
-      }
-    />
-    {hasBusiness && (
-      <button
-        onClick={toggleBusinessMode}
-        className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] sm:text-xs font-bold transition-all duration-200 shrink-0 ${
-          businessMode
-            ? "bg-indigo-500 text-white border border-indigo-400"
-            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-        }`}
-        title={businessMode ? "ارجع للحساب الشخصي" : "لوضع المشروع"}
-      >
-        {businessMode ? (
-          <><Store className="w-3 h-3" /> <span className="max-w-[70px] truncate">{businessQuery.data!.business!.name}</span></>
-        ) : (
-          <><UserIcon className="w-3 h-3" /> شخصي</>
-        )}
-      </button>
-    )}
-  </div>
-
-  {/* Left: Actions & StreakCounter (RTL end) */}
-  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-    {(activeTab === "stats" || activeTab === "calendar") && (
-      <div className="flex items-center gap-0.5 bg-slate-100/55 dark:bg-slate-800/30 backdrop-blur-md border border-slate-200/30 dark:border-slate-800/20 rounded-lg p-0.5 shadow-xs">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="w-6 h-6 rounded-md hover:bg-slate-200/50 dark:hover:bg-slate-700/40 active-press"
-          onClick={() => handleMonthChange(getPreviousMonthString(month))}
-          title="الشهر السابق"
-        >
-          <ChevronRight className="w-3 h-3" />
-        </Button>
-        <div className="relative flex items-center min-w-[85px] justify-center px-1 py-0.5 text-[10px] font-bold select-none text-slate-700 dark:text-slate-200">
-          <input
-            type="month"
-            value={month}
-            onChange={(e) => handleMonthChange(e.target.value)}
-            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
-          />
-          <span className="flex items-center gap-1 cursor-pointer">
-            <CalendarDays className="w-2.5 h-2.5 text-sky-600 shrink-0" />
-            {getMonthLabelAr(month)}
-          </span>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="w-6 h-6 rounded-md hover:bg-slate-200/50 dark:hover:bg-slate-700/40 active-press"
-          onClick={() => handleMonthChange(getNextMonthString(month))}
-          title="الشهر التالي"
-        >
-          <ChevronLeft className="w-3 h-3" />
-        </Button>
-      </div>
-    )}
-    <StreakCounter
-      currentStreak={profile?.gamification?.currentStreak || 0}
-    />
-  </div>
-</div>
-```
-
----
-
-### 4.2 Recommendation 2: Subtitle Streamlining
-Replace the multi-line verbose paragraph with a concise single-line greeting on mobile that preserves personal warmth while eliminating dead whitespace.
-
-#### Before (`src/pages/Home.tsx:630-633`):
-```tsx
-<p className="text-muted-foreground text-sm">
-  أهلاً {user?.name || "صديقي"}، ابدأ بتسجيل العملية بسرعة واترك
-  التحليلات لقسم الإحصائيات.
-</p>
-```
-
-#### After:
-```tsx
-<p className="text-xs text-muted-foreground truncate">
-  أهلاً {user?.name?.split(" ")[0] || "صديقي"} 👋 • سجل عملياتك اليومية بالذكاء الاصطناعي
-</p>
-```
-
----
-
-### 4.3 Recommendation 3: High-Density Financial Metric Pills (`SummaryChip`)
-Refactor `SummaryChip` into a streamlined single-line horizontal pill with `py-2 px-3`.
-
-#### Before (`src/pages/Home.tsx:93-129`):
-```tsx
-const SummaryChip = memo(function SummaryChip({
-  label,
-  value,
-  icon,
-  tone,
-  helper,
-}: {
-  label: string;
-  value: string;
-  icon: ReactNode;
-  tone: "income" | "expense" | "neutral";
-  helper?: string;
-}) {
-  const toneClass =
-    tone === "income"
-      ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300 shadow-sm"
-      : tone === "expense"
-        ? "border-rose-500/20 bg-rose-500/5 text-rose-700 dark:text-rose-300 shadow-sm"
-        : "border-slate-200/50 bg-white/70 dark:bg-slate-900/40 text-slate-800 dark:text-slate-200 shadow-sm";
-
-  return (
-    <div
-      className={`premium-card px-2 xs:px-3 py-2.5 transition-all duration-300 hover:scale-[1.02] hover:translate-y-0 ${toneClass}`}
-    >
-      <div className="flex items-center gap-1.5 xs:gap-2">
-        <div className="shrink-0 p-1 xs:p-1.5 rounded-md bg-background/50">{icon}</div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[9px] xs:text-[10px] text-muted-foreground">{label}</p>
-          <p className="text-xs xs:text-sm font-bold break-words">{value}</p>
-        </div>
-      </div>
-      {helper && (
-        <p className="mt-1 text-[9px] xs:text-[10px] text-muted-foreground">{helper}</p>
-      )}
-    </div>
-  );
-});
-```
-
-#### After (Compact High-Density Financial Pill):
-```tsx
-const SummaryChip = memo(function SummaryChip({
-  label,
-  value,
-  icon,
-  tone,
-}: {
-  label: string;
-  value: string;
-  icon: ReactNode;
-  tone: "income" | "expense" | "neutral";
-}) {
-  const toneClass =
-    tone === "income"
-      ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300"
-      : tone === "expense"
-        ? "border-rose-500/20 bg-rose-500/10 text-rose-800 dark:text-rose-300"
-        : "border-slate-200/60 bg-white/70 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200";
-
-  return (
-    <div
-      className={cn(
-        "flex items-center justify-between gap-2 px-3 py-2 rounded-xl border backdrop-blur-md transition-all duration-200 shadow-xs",
-        toneClass
-      )}
-    >
-      <div className="flex items-center gap-1.5 min-w-0">
-        <span className="shrink-0 opacity-75">{icon}</span>
-        <span className="text-[11px] font-medium text-muted-foreground truncate">{label}</span>
-      </div>
-      <span className="text-xs sm:text-sm font-bold tabular-nums shrink-0">{value}</span>
-    </div>
-  );
-});
-```
-
-Rendered in `Home.tsx:654-667`:
-```tsx
-<section className="grid grid-cols-2 gap-2">
-  <SummaryChip
-    label="دخل الشهر"
-    value={`${money(summary?.totalIncome)} ج.م`}
-    tone="income"
-    icon={<WalletCards className="w-3.5 h-3.5" />}
-  />
-  <SummaryChip
-    label="مصروف الشهر"
-    value={`${money(summary?.totalExpense)} ج.م`}
-    tone="expense"
-    icon={<TrendingDown className="w-3.5 h-3.5" />}
-  />
-</section>
-```
-
----
-
-### 4.4 Recommendation 4: StreakCounter Micro-Compaction
-In `src/components/dashboard/StreakCounter.tsx`, ensure the pill is naturally compact on mobile without losing visual vibrancy:
-
-```tsx
-export function StreakCounter({ currentStreak }: StreakCounterProps) {
-  if (currentStreak === 0) {
-    return (
-      <div className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-full text-xs font-medium border border-slate-200 dark:border-slate-700">
-        <Flame className="w-3.5 h-3.5 opacity-50" />
-        <span>0 يوم</span>
-      </div>
-    );
-  }
-
-  let flameColor = "text-orange-500 fill-orange-500";
-  let bgClass = "bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-900";
-  let textClass = "text-orange-600 dark:text-orange-400";
-
-  if (currentStreak >= 30) {
-    flameColor = "text-purple-500 fill-purple-500 animate-pulse";
-    bgClass = "bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-900 shadow-[0_0_10px_rgba(168,85,247,0.3)]";
-    textClass = "text-purple-600 dark:text-purple-400 font-bold";
-  } else if (currentStreak >= 10) {
-    flameColor = "text-blue-500 fill-blue-500";
-    bgClass = "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900";
-    textClass = "text-blue-600 dark:text-blue-400 font-bold";
-  }
-
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all duration-300",
-        bgClass,
-        textClass,
-      )}
-    >
-      <Flame className={cn("w-3.5 h-3.5", flameColor)} />
-      <span className="tabular-nums font-bold">{currentStreak}</span>
-    </div>
-  );
+    };
+  }, [isOpen, onClose]);
 }
 ```
 
 ---
 
-## 5. Edge Cases & Resilience Analysis
+## 5. Step-by-Step Implementation Roadmap for R2 & R3
 
-1. **Business Mode Toggle:**
-   - In business mode, the business name could be longer (e.g. "شركة الأمل للتجارة").
-   - By applying `truncate` on `h1` and `max-w-[70px] truncate` on the business button badge, horizontal overflow on 390px screens is 100% prevented.
-
-2. **Month Navigation in Stats/Calendar Tabs:**
-   - In the "record" tab (default), month navigation is not rendered, maximizing title space.
-   - In "stats" and "calendar" tabs, month navigation renders inline adjacent to `StreakCounter`.
-
-3. **Arabic RTL Text Direction & Number Formatting:**
-   - All numbers have `tabular-nums` to prevent layout jank during counter increments or dynamic currency updates.
-   - Currency suffixes (`ج.م`) remain correctly aligned with RTL formatting.
-
-4. **HealthBadge Extreme Labels:**
-   - HealthBadge (`ratio <= 60` $\rightarrow$ "مستقر", `ratio <= 90` $\rightarrow$ "تحت المتابعة", `ratio > 90` $\rightarrow$ "ضغط مالي", `ratio === null` $\rightarrow$ "أضف الدخل لقراءة أدق").
-   - Compact styling (`text-[10px] px-2 py-0.5 whitespace-nowrap`) prevents the badge from pushing StreakCounter off-screen.
+```
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                           IMPLEMENTATION PHASES                                │
+├────────────────────────────────────────────────────────────────────────────────┤
+│ Phase 1: Core Primitives & Hooks                                               │
+│ ├── 1.1 Create `src/hooks/useMediaQuery.ts` (if not present)                   │
+│ ├── 1.2 Create `src/hooks/useNavigationDirection.ts` (RTL direction detector)  │
+│ ├── 1.3 Create `src/hooks/useScrollRestoration.ts` (Per-route scroll cache)    │
+│ ├── 1.4 Create `src/hooks/useSheetManager.ts` (HW back button & stack)         │
+│ └── 1.5 Create `src/components/ui/adaptive-dialog.tsx` (Universal Sheet/Dialog)│
+├────────────────────────────────────────────────────────────────────────────────┤
+│ Phase 2: Spatial Page Transitions & Tab State Preservation (R2)                │
+│ ├── 2.1 Update `src/components/layout/PageTransition.tsx` with hardware slide  │
+│ ├── 2.2 Wire scroll restoration into `src/App.tsx` `<main>` layout             │
+│ ├── 2.3 Refactor `src/pages/Home.tsx` tab switcher to continuous touch pager   │
+│ ├── 2.4 Refactor `src/pages/AICenter.tsx` to keep-alive offscreen tab views    │
+│ └── 2.5 Refactor `src/pages/Settings.tsx` sub-views with spatial slide         │
+├────────────────────────────────────────────────────────────────────────────────┤
+│ Phase 3: Universal Bottom Sheet Migration (R3 - Part 1: High Frequency Views) │
+│ ├── 3.1 `RecentExpenses.tsx` — Transaction Details -> AdaptiveDialog           │
+│ ├── 3.2 `RecentExpenses.tsx` — Delete Confirmation -> AdaptiveDialog           │
+│ ├── 3.3 `ExpenseForm.tsx` — Camera Tips & Pro Upgrade -> AdaptiveDialog       │
+│ ├── 3.4 `MonthlyCalendar.tsx` — Day Transactions -> AdaptiveDialog with Snaps  │
+│ └── 3.5 `ExpenseChart.tsx` — Category & Wallet Modals -> AdaptiveDialog       │
+├────────────────────────────────────────────────────────────────────────────────┤
+│ Phase 4: Universal Bottom Sheet Migration (R3 - Part 2: Settings & Onboarding) │
+│ ├── 4.1 `SmartProfileView.tsx` — Financial Goal Creation Modal                 │
+│ ├── 4.2 `BusinessSettingsView.tsx` — Edit Business & Add Category Modals       │
+│ ├── 4.3 `PeopleSettingsView.tsx` — Clean up redundant manual Drawer boilerplate│
+│ ├── 4.4 `PasskeySettings.tsx` — PIN Setup Dialog                               │
+│ ├── 4.5 `BiometricOnboardingModal.tsx` & `PushNotificationPrompt.tsx`          │
+│ └── 4.6 `FeedbackButton.tsx` — Support Ticket Submission                       │
+├────────────────────────────────────────────────────────────────────────────────┤
+│ Phase 5: Verification & Automated Tests                                        │
+│ ├── 5.1 Run TypeScript type check (`npm run check`)                            │
+│ ├── 5.2 Run Vitest test suites (`npm run test`)                                │
+│ ├── 5.3 Add unit tests for `useNavigationDirection` and `AdaptiveDialog`       │
+│ └── 5.4 Verify touch gestures, keyboard avoidance, and transitions in browser  │
+└────────────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## 6. Implementation Checklist for Builders
+## 6. Migration Code Snippets & Concrete Examples
 
-- [ ] Modify `src/components/dashboard/StreakCounter.tsx`: Update padding to `px-2.5 py-1`, text to `text-xs`, icon to `w-3.5 h-3.5`.
-- [ ] Modify `src/pages/Home.tsx`:
-  - [ ] Refactor `SummaryChip` (lines 93-129) into single-line horizontal pill layout.
-  - [ ] Replace `space-y-4` container padding with `p-3 sm:p-4 md:p-6 space-y-3`.
-  - [ ] Replace header title & streak layout (lines 550-629) with unified horizontal flex row.
-  - [ ] Streamline subtitle (lines 630-633) to single-line greeting `text-xs truncate`.
-  - [ ] Update `SummaryChip` section (lines 654-667) to `grid grid-cols-2 gap-2` with `w-3.5 h-3.5` icons.
-- [ ] Run `npm run check` and `npm run test` to guarantee 100% type-safety and 0 regression.
+### Example 1: Migrating Transaction Details in `RecentExpenses.tsx`
+
+**Before (Lines 624–754)**:
+```tsx
+<Dialog>
+  <DialogTrigger aria-label="تفاصيل العملية" ...>
+    <MessageSquare className="w-5 h-5" />
+  </DialogTrigger>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>تفاصيل العملية</DialogTitle>
+    </DialogHeader>
+    <div className="space-y-3" dir="rtl">...</div>
+  </DialogContent>
+</Dialog>
+```
+
+**After (Using `AdaptiveDialog`)**:
+```tsx
+<AdaptiveDialog snapPoints={[0.6, 0.95]}>
+  <AdaptiveDialogTrigger aria-label="تفاصيل العملية" ...>
+    <MessageSquare className="w-5 h-5" />
+  </AdaptiveDialogTrigger>
+  <AdaptiveDialogContent>
+    <AdaptiveDialogHeader>
+      <AdaptiveDialogTitle>تفاصيل العملية</AdaptiveDialogTitle>
+    </AdaptiveDialogHeader>
+    <div className="space-y-3" dir="rtl">...</div>
+  </AdaptiveDialogContent>
+</AdaptiveDialog>
+```
+
+### Example 2: Migrating Calendar Day View in `MonthlyCalendar.tsx`
+
+**Before (Lines 52–65)**:
+```tsx
+<Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+  <DialogContent className="sm:max-w-md max-w-[92vw] rounded-2xl" dir="rtl">
+    <DialogHeader className="text-end pb-3 border-b ...">
+      <DialogTitle className="text-base sm:text-lg font-black ...">
+        معاملات {formattedDate}
+      </DialogTitle>
+    </DialogHeader>
+    {/* List */}
+  </DialogContent>
+</Dialog>
+```
+
+**After (Using `AdaptiveDialog` with Snap Detents)**:
+```tsx
+<AdaptiveDialog
+  open={isOpen}
+  onOpenChange={(open) => !open && onClose()}
+  snapPoints={[0.5, 0.9]}
+>
+  <AdaptiveDialogContent dir="rtl">
+    <AdaptiveDialogHeader className="text-end pb-3 border-b ...">
+      <AdaptiveDialogTitle className="text-base sm:text-lg font-black ...">
+        معاملات {formattedDate}
+      </AdaptiveDialogTitle>
+    </AdaptiveDialogHeader>
+    {/* List with native momentum scrolling and grabber handle */}
+  </AdaptiveDialogContent>
+</AdaptiveDialog>
+```
+
+---
+
+## 7. Conclusion
+
+By implementing the **Adaptive Dialog System** and **Hardware-Accelerated Directional Spatial Transitions**, SmartSpend AI will eliminate all desktop modal friction, preserve critical tab state and scroll offsets across user navigation, and achieve a 100% native iOS/Android fluidity.

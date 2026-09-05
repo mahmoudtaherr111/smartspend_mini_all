@@ -74,7 +74,9 @@ CREATE TABLE `ai_token_ledgers` (
 --> statement-breakpoint
 DROP INDEX `ai_memory_embedding_item_idx` ON `ai_memory_embeddings`;--> statement-breakpoint
 DROP INDEX `ai_summary_user_idx` ON `ai_summaries`;--> statement-breakpoint
-DROP INDEX `business_cat_idx` ON `business_categories`;--> statement-breakpoint
+-- `business_categories` existed only in the schema snapshot used to generate
+-- this migration; no earlier SQL migration creates the table or this index.
+-- Keeping the generated DROP makes every clean installation fail here.
 DROP INDEX `chat_msg_conv_idx` ON `chat_messages`;--> statement-breakpoint
 DROP INDEX `expenses_user_idx` ON `expenses`;--> statement-breakpoint
 DROP INDEX `reports_user_idx` ON `monthly_reports`;--> statement-breakpoint

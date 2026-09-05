@@ -5,7 +5,7 @@ import {
   aiMemoryEmbeddings,
   aiMemoryItems,
 } from "../../../db/schema";
-import { deleteCacheByPattern, withCacheStatus } from "../../lib/redis-client";
+import { withCacheStatus, cacheIncr, cacheGet } from "../../lib/redis-client";
 import { db } from "../../queries/connection";
 import type { DataNeed, ResolvedFact } from "../ai-kernel/types";
 import { FireworksEmbeddingClient } from "./embedding-client";
@@ -27,12 +27,12 @@ import type {
   RetrievedMemory,
 } from "./types";
 
-function cacheKey(ctx: MemoryRetrievalContext): string {
-  return `ai_memory:${ctx.userId}:${ctx.userType}:${ctx.limit ?? 6}:${Buffer.from(ctx.query).toString("base64url").slice(0, 80)}`;
-}
-
-export function invalidateMemoryUserCache(userId: number | string, userType: string): Promise<number> {
-  return deleteCacheByPattern(`ai_memory:${userId}:${userType}:*`);
+export async function invalidateMemoryUserCache(
+  userId: number | string,
+  userType: string,
+): Promise<number> {
+  await cacheIncr(`ai_memgen:${userId}:${userType}`);
+  return 1;
 }
 
 function recencyBoost(date: Date | null | undefined): number {
@@ -339,6 +339,17 @@ async function computeMemoryContext(
   return result;
 }
 
+function cacheKey(ctx: {
+  userId: number | string;
+  userType: string;
+  query: string;
+  limit: number;
+  gen?: number;
+}): string {
+  const normQuery = ctx.query.trim().toLowerCase().replace(/\s+/g, "_").slice(0, 120);
+  return `ai_mem:v1:g${ctx.gen ?? 0}:${ctx.userType}:${ctx.userId}:${ctx.limit}:${normQuery}`;
+}
+
 export async function retrieveMemoryContext(
   ctx: MemoryRetrievalContext,
 ): Promise<MemoryRetrievalResult> {
@@ -346,7 +357,10 @@ export async function retrieveMemoryContext(
   const candidateLimit = Math.min(12, Math.max(limit * 2, limit));
   const reformulated = reformulateMemoryQuery(ctx.query);
   const scoringQuery = reformulated.expanded;
-  const key = cacheKey({ ...ctx, limit });
+  const gen = await cacheGet(`ai_memgen:${ctx.userId}:${ctx.userType}`)
+    .then((v) => (v ? parseInt(v, 10) : 0))
+    .catch(() => 0);
+  const key = cacheKey({ ...ctx, limit, gen });
   const cached = await withCacheStatus(key, 5 * 60, () =>
     computeMemoryContext(ctx, limit, candidateLimit, scoringQuery, reformulated),
   );

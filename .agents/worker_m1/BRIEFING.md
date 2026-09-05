@@ -1,53 +1,55 @@
-# BRIEFING — 2026-08-26T02:15:00Z
+# BRIEFING — 2026-08-29T10:24:25Z
 
 ## Mission
-Implement Milestone M1: Home Header & Top Financial Metrics Compaction in `src/pages/Home.tsx`.
+Implement the 6 Phase 1 P0 security hotfixes across the codebase with 100% backward compatibility.
 
 ## 🔒 My Identity
-- Archetype: worker
-- Roles: implementer, qa, specialist
-- Working directory: E:\smartspend_V1_fixed\.agents\worker_m1
-- Original parent: d16277a4-100b-4a65-83db-42dcb8d09629
-- Milestone: M1 (Home Header & Top Financial Metrics Compaction)
+- Archetype: implementer
+- Roles: [implementer, qa, specialist]
+- Working directory: e:\smartspend_V1_fixed\.agents\worker_m1
+- Original parent: 35a6b3ae-9426-4ef9-afa2-ac347e84b92e
+- Milestone: Phase 1 P0 Hotfixes
 
 ## 🔒 Key Constraints
-- Exclusive write ownership: `src/pages/Home.tsx`
-- Do not edit outside of `src/pages/Home.tsx` and `.agents/worker_m1/`
-- Zero TypeScript errors (`npm run check`)
-- 100% tests pass (`npm run test`)
-- Maintain all existing functionality, month selector in stats/calendar views, business mode toggling, dark mode styling
+- Genuine implementation only (no mocks/cheating/hardcoding expected outputs).
+- 100% backward compatibility.
+- Ensure `npm run check` and vitest tests pass.
+- Write changes.md and handoff.md in `.agents/worker_m1/`.
 
 ## Current Parent
-- Conversation ID: d16277a4-100b-4a65-83db-42dcb8d09629
-- Updated: 2026-08-26T02:15:00Z
+- Conversation ID: 35a6b3ae-9426-4ef9-afa2-ac347e84b92e
+- Updated: 2026-08-29T10:24:25Z
 
 ## Task Summary
-- **What to build**: Integrated Title Bar & StreakCounter on single row, streamlined single-line subtitle, high-density SummaryChip financial pills in Home.tsx.
-- **Success criteria**: Vertical space recovered (~120px in Home.tsx), clean responsive layout across mobile and desktop, 0 TS errors, 100% test pass.
-- **Interface contracts**: PROJECT.md / AGENTS.md
-- **Code layout**: `src/pages/Home.tsx`
+- **What to build**: 6 P0 hotfixes:
+  1. Business multi-tenant authorization (BOLA/IDOR) in `api/business-router.ts`.
+  2. Subscription lifecycle & expiry in `api/pro-router.ts` and `api/context.ts`.
+  3. Cryptographic security & OTP generation in `api/local-auth-router.ts`.
+  4. Admin secret redaction in `api/admin-router.ts`.
+  5. Cross-tenant SMS cache isolation in `api/lib/sms-ai-parser.ts`.
+  6. Paymob webhook fail-closed HMAC verification in `api/boot.ts` and `api/lib/paymob.ts`.
+- **Success criteria**: All 6 hotfixes implemented, TypeScript check passes, new unit tests written and passing, no regressions.
+- **Interface contracts**: `contracts/` and `AGENTS.md`.
+- **Code layout**: `api/`, `db/`, `contracts/`.
+
+## Key Decisions Made
+- [TBD]
 
 ## Change Tracker
-- **Files modified**: `src/pages/Home.tsx` (compact header, integrated StreakCounter, single-line greeting, high-density SummaryChip pills, optimized spacing)
-- **Build status**: Pass (`npm run check` 0 errors, `npm run test` 73/73 passed)
-- **Pending issues**: None
+- **Files modified**: none yet
+- **Build status**: untried
+- **Pending issues**: none
 
 ## Quality Status
-- **Build/test result**: Pass (0 errors, 458 tests passed)
-- **Lint status**: Clean
-- **Tests added/modified**: Verified against all existing tests
+- **Build/test result**: untried
+- **Lint status**: untried
+- **Tests added/modified**: none yet
 
 ## Loaded Skills
 - None
 
-## Key Decisions Made
-- Implemented single horizontal flex row for title, HealthBadge, business toggle, month selector, and StreakCounter with min-w-0 and truncation.
-- Refactored SummaryChip into single-line horizontal pills with `px-3 py-2 rounded-xl border backdrop-blur-md` and `grid-cols-2 gap-2`.
-- Streamlined subtitle to dynamic single-line greeting with truncate.
-
 ## Artifact Index
-- E:\smartspend_V1_fixed\.agents\worker_m1\DISPATCH.md — Dispatch instructions
-- E:\smartspend_V1_fixed\.agents\worker_m1\BRIEFING.md — Persistent memory briefing
-- E:\smartspend_V1_fixed\.agents\worker_m1\progress.md — Liveness & progress tracker
-- E:\smartspend_V1_fixed\.agents\worker_m1\report.md — Implementation report
-- E:\smartspend_V1_fixed\.agents\worker_m1\handoff.md — 5-component handoff report
+- `.agents/worker_m1/DISPATCH.md` — Assignment instructions
+- `.agents/worker_m1/progress.md` — Liveness & progress tracking
+- `.agents/worker_m1/changes.md` — Details of changes made
+- `.agents/worker_m1/handoff.md` — Final handoff report

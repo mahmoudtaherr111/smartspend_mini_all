@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Crown,
   Zap,
-  Infinity,
+  Infinity as InfinityIcon,
   Download,
   Headphones,
   Sparkles,
@@ -38,12 +38,14 @@ export default function Pro() {
   const isPaid = tier === "pro" || tier === "ultra";
   const isProTier = tier === "pro";
   const isUltraTier = tier === "ultra";
+  const referralDiscount = referral.data?.discount;
 
   const features = [
     {
-      icon: <Infinity className="w-5 h-5" />,
-      title: "طلبات AI غير محدودة",
-      free: "10/يوم",
+      icon: <InfinityIcon className="w-5 h-5" />,
+      title: "المساعد الذكي",
+      free: "10 طلبات/يوم",
+      paidTitle: "استخدام AI غير محدود",
       pro: true,
     },
     {
@@ -51,24 +53,28 @@ export default function Pro() {
       title: "تصدير Excel & CSV",
       free: false,
       pro: true,
+      paidTitle: undefined,
     },
     {
       icon: <Sparkles className="w-5 h-5" />,
       title: "تحليلات متقدمة",
       free: false,
       pro: true,
+      paidTitle: undefined,
     },
     {
       icon: <Headphones className="w-5 h-5" />,
       title: "دعم أولوي",
       free: false,
       pro: true,
+      paidTitle: undefined,
     },
     {
       icon: <Zap className="w-5 h-5" />,
       title: "بدون إعلانات",
       free: false,
       pro: true,
+      paidTitle: undefined,
     },
     {
       icon: <Crown className="w-5 h-5" />,
@@ -133,33 +139,38 @@ export default function Pro() {
       <SEOMeta path="/pro" title="الخطط - SmartSpend AI" />
 
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-4xl font-bold mb-4">اختار خطتك</h1>
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-4xl font-bold mb-3 sm:mb-4">
+            {isPaid ? "خطتك ومزايا الاشتراك" : "اختار خطتك"}
+          </h1>
           <p className="text-muted-foreground text-sm sm:text-lg">
             حول تجربتك المالية للمستوى اللي بعده
           </p>
         </div>
 
-        {isProTier && sub && (
-          <Card className="mb-8 border-emerald-200 bg-emerald-50/80 dark:bg-emerald-950/30">
-            <CardContent className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {isPaid && (
+          <Card className="mb-8 gap-0 border-emerald-200 bg-emerald-50/80 py-0 dark:bg-emerald-950/30">
+            <CardContent className="flex items-center justify-between gap-3 py-4">
               <div>
                 <p className="font-semibold text-emerald-800 dark:text-emerald-200">
-                  اشتراك Pro نشط
+                  خطة {isUltraTier ? "Ultra" : "Pro"} مفعلة
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  الحالة: {sub.status === "active" ? "فعّال" : sub.status} —
-                  ينتهي: {subEnd || "—"}
+                  {sub
+                    ? `الحالة: ${sub.status === "active" ? "فعّال" : sub.status} — ينتهي: ${subEnd || "—"}`
+                    : "مفعلة على حسابك وتشمل مزايا الخطة الأساسية"}
                 </p>
               </div>
-              <Badge className="w-fit bg-emerald-600">PRO</Badge>
+              <Badge className="w-fit bg-emerald-600">
+                {isUltraTier ? "ULTRA" : "PRO"}
+              </Badge>
             </CardContent>
           </Card>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <div className="grid grid-cols-1 gap-5 mb-10 md:grid-cols-3 md:gap-8 md:mb-12">
           <Card
-            className={`relative ${!isPaid ? "border-primary ring-2 ring-primary/20" : ""}`}
+            className={`relative ${isPaid ? "order-3" : "order-1"} md:order-1 ${!isPaid ? "border-primary ring-2 ring-primary/20" : ""}`}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -196,7 +207,7 @@ export default function Pro() {
                 </Button>
               ) : isUltraTier ? (
                 <Button className="w-full" variant="outline" disabled>
-                  مدمج ضمن ألترا
+                  الخطة الأساسية مشمولة
                 </Button>
               ) : (
                 <Button
@@ -211,16 +222,16 @@ export default function Pro() {
           </Card>
 
           <Card
-            className={`relative ${isProTier ? "border-primary ring-2 ring-primary/20" : "border-yellow-500/50"}`}
+            className={`relative ${isProTier ? "order-1" : "order-2"} md:order-2 ${isProTier ? "border-primary ring-2 ring-primary/20" : "border-yellow-500/50"}`}
           >
-            <div className="absolute -top-3 start-1/2 -translate-x-1/2">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
               <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold">
                 <Crown className="w-3 h-3 ms-1" /> الأفضل قيمة
               </Badge>
             </div>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Crown className="w-6 h-6 text-yellow-500" /> Premium (برو)
+                <Crown className="w-6 h-6 text-yellow-500" /> SmartSpend Pro
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -234,7 +245,7 @@ export default function Pro() {
                 {features.map((f, i) => (
                   <li key={i} className="flex items-center gap-3 text-sm">
                     <Check className="w-4 h-4 text-green-500" />
-                    <span>{f.title}</span>
+                    <span>{f.paidTitle || f.title}</span>
                   </li>
                 ))}
               </ul>
@@ -263,9 +274,9 @@ export default function Pro() {
 
           {/* Ultra Card */}
           <Card
-            className={`relative ${isUltraTier ? "border-primary ring-2 ring-primary/20 bg-slate-950 text-white" : "border-slate-800 bg-slate-900 text-white"}`}
+            className={`relative ${isUltraTier ? "order-1" : "order-3"} md:order-3 ${isUltraTier ? "border-primary ring-2 ring-primary/20 bg-slate-950 text-white" : "border-slate-800 bg-slate-900 text-white"}`}
           >
-            <div className="absolute -top-3 start-1/2 -translate-x-1/2">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
               <Badge className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-bold">
                 <Sparkles className="w-3 h-3 ms-1" /> أقصى أداء
               </Badge>
@@ -284,7 +295,7 @@ export default function Pro() {
                 {features.map((f, i) => (
                   <li key={i} className="flex items-center gap-3 text-sm">
                     <Check className="w-4 h-4 text-cyan-400" />
-                    <span>{f.title}</span>
+                    <span>{f.paidTitle || f.title}</span>
                   </li>
                 ))}
                 <li className="flex items-center gap-3 text-sm text-cyan-300 font-medium">
@@ -342,7 +353,10 @@ export default function Pro() {
                       if (referral.data?.code) {
                         void navigator.share({
                           title: "SmartSpend AI",
-                          text: `استخدم كود ${referral.data.code} للحصول على خصم ${referral.data?.discount}% في SmartSpend!`,
+                          text:
+                            referralDiscount != null
+                              ? `استخدم كود ${referral.data.code} للحصول على خصم ${referralDiscount}% في SmartSpend!`
+                              : `استخدم كود ${referral.data.code} في SmartSpend!`,
                         });
                       }
                     }}
@@ -353,14 +367,18 @@ export default function Pro() {
                 <p className="text-xs text-muted-foreground mt-2">
                   دعوة {referral.data?.completed ?? 0} من{" "}
                   {referral.data?.totalReferrals ?? 0} صديق
-                  <span className="block mt-1 text-emerald-500 font-medium">
-                    كودك يمنح خصم {referral.data?.discount}% لأصدقائك!
-                  </span>
+                  {referralDiscount != null && (
+                    <span className="block mt-1 text-emerald-500 font-medium">
+                      كودك يمنح خصم {referralDiscount}% لأصدقائك!
+                    </span>
+                  )}
                 </p>
               </div>
               <div className="flex-1 w-full">
                 <p className="text-sm text-muted-foreground mb-2">
-                  عندك كود إحالة؟ (احصل على خصم {referral.data?.discount}%)
+                  {referralDiscount != null
+                    ? `عندك كود إحالة؟ (احصل على خصم ${referralDiscount}%)`
+                    : "عندك كود إحالة؟"}
                 </p>
                 <div className="flex gap-2">
                   <input

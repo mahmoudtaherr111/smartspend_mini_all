@@ -1,7 +1,9 @@
 import "dotenv/config";
-import { Hono } from "hono";
+import { Hono, type Context as HonoContext } from "hono";
+import { getConnInfo } from "@hono/node-server/conninfo";
 import { compress } from "hono/compress";
-import { cors } from "hono/cors";
+import { HTTPException } from "hono/http-exception";
+import { secureHeaders } from "hono/secure-headers";
 import { logger } from "hono/logger";
 import { trpcServer } from "@hono/trpc-server";
 import { appRouter } from "./router";
@@ -12,12 +14,17 @@ import { smsApp } from "./sms-router";
 import { createHmac, timingSafeEqual } from "crypto";
 import { grantProSubscription } from "./lib/subscription-service";
 import { buildGoogleAuthorizationUrl, createOAuthState } from "./auth-router";
-import { getBillingPlan, hasExactPlanAmount, isBillingPlan } from "../contracts/plans";
+import {
+  getBillingPlan,
+  hasExactPlanAmount,
+  isBillingPlan,
+} from "../contracts/plans";
 import { isPaymobWebhookVerificationConfigured } from "./lib/paymob";
 import * as Sentry from "@sentry/node";
 import { nodeProfilingIntegration } from "@sentry/profiling-node";
 import cron from "node-cron";
-import { csrf } from "hono/csrf";
+import { createOriginPolicy } from "./lib/origin-policy";
+import { applyOriginSecurity } from "./lib/http-origin-security";
 import { streamSSE } from "hono/streaming";
 import { otpEvents } from "./services/whatsapp-service";
 import { db } from "./queries/connection";
@@ -27,9 +34,28 @@ import { installProviderHealthReporter } from "./lib/provider-health";
 import fs from "fs";
 import path from "path";
 import { whatsappService } from "./services/whatsapp-service";
-import { processScheduledNotifications, seedDefaultTemplates, checkAndTriggerSmartActivityNotifications } from "./notification-engine";
+import {
+  processScheduledNotifications,
+  seedDefaultTemplates,
+  checkAndTriggerSmartActivityNotifications,
+} from "./notification-engine";
 import { warmupEmbeddingEngine } from "./lib/embedding-engine";
 import { withScheduledJobLock } from "./services/scheduler-lock";
+import { runMonthlyReportJob } from "./jobs/monthly-report-job";
+import { runMonthlyBehaviorJob } from "./jobs/monthly-behavior-job";
+import { runRollupReconciliationJob } from "./jobs/rollup-reconciliation-job";
+import { runDataRetentionJob } from "./jobs/data-retention-job";
+import { runSubscriptionExpiryJob } from "./jobs/subscription-expiry-job";
+
+function directPeerAddress(c: HonoContext): string | undefined {
+  try {
+    return getConnInfo(c).remote.address;
+  } catch {
+    // Non-Node adapters may not expose connection metadata. In that case
+    // getClientIp refuses forwarded headers and uses its safe fallback.
+    return undefined;
+  }
+}
 
 if (env.SENTRY_DSN) {
   Sentry.init({
@@ -56,13 +82,15 @@ function scheduleProtectedJob(
 }
 
 if (cronsEnabled) {
-  // A seed can write data, so it must follow the same explicit scheduler flag
-  // and cross-replica lock as periodic work.
   void withScheduledJobLock("seed-default-templates", async () => {
     await seedDefaultTemplates();
-  }).catch((err) => console.error("[Boot] Failed to seed notification templates:", err));
+  }).catch((err) =>
+    console.error("[Boot] Failed to seed notification templates:", err),
+  );
 } else {
-  console.info("[Boot] Background jobs disabled; set ENABLE_CRONS=true on one or more replicas.");
+  console.info(
+    "[Boot] Background jobs disabled; set ENABLE_CRONS=true on one or more replicas.",
+  );
 }
 
 // Cron job to clean up sessions and expiring WebAuthn challenges daily.
@@ -79,8 +107,12 @@ scheduleProtectedJob("0 0 * * *", "daily-auth-cleanup", async () => {
 scheduleProtectedJob("0 3 * * 0", "classification-log-cleanup", async () => {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 180);
-  await db.delete(classificationLogs).where(lt(classificationLogs.createdAt, cutoff));
-  console.log(`[Cron] Cleaned old classification logs, cutoff: ${cutoff.toISOString()}`);
+  await db
+    .delete(classificationLogs)
+    .where(lt(classificationLogs.createdAt, cutoff));
+  console.log(
+    `[Cron] Cleaned old classification logs, cutoff: ${cutoff.toISOString()}`,
+  );
 });
 
 // Warmup embedding engine (local index + Fireworks descriptor index)
@@ -88,12 +120,48 @@ scheduleProtectedJob("0 3 * * 0", "classification-log-cleanup", async () => {
 warmupEmbeddingEngine(undefined, process.env.FIREWORKS_API_KEY || "");
 
 // Cron job for processing scheduled and event-based notifications
-scheduleProtectedJob("* * * * *", "scheduled-notifications", processScheduledNotifications);
+scheduleProtectedJob(
+  "* * * * *",
+  "scheduled-notifications",
+  processScheduledNotifications,
+);
 
 // Daily smart inactivity and conversion notifications cron at 8:00 PM (20:00)
 scheduleProtectedJob("0 20 * * *", "smart-activity-notifications", async () => {
   console.log("[Cron] Running daily smart activity notifications check...");
   await checkAndTriggerSmartActivityNotifications();
+});
+
+// 1. Monthly report generation (1st of month at 2:00 AM) - §3.8
+scheduleProtectedJob("0 2 1 * *", "monthly-report-generation", async () => {
+  console.log("[Cron] Starting scheduled monthly report generation...");
+  await runMonthlyReportJob();
+});
+
+// 2. Monthly behavior snapshot generation (1st of month at 1:00 AM) - §3.8
+scheduleProtectedJob("0 1 1 * *", "monthly-behavior-snapshots", async () => {
+  console.log(
+    "[Cron] Starting scheduled monthly behavior snapshot generation...",
+  );
+  await runMonthlyBehaviorJob();
+});
+
+// 3. Nightly Rollup Reconciliation (Nightly at 4:00 AM) - §3.2 & §3.8
+scheduleProtectedJob("0 4 * * *", "nightly-rollup-reconciliation", async () => {
+  console.log("[Cron] Starting nightly rollup reconciliation...");
+  await runRollupReconciliationJob();
+});
+
+// 4. Declarative Data Retention & Pruning Lifecycle (Daily at 5:00 AM) - §3.7 & §3.8
+scheduleProtectedJob("0 5 * * *", "data-retention-lifecycle", async () => {
+  console.log("[Cron] Starting declarative data retention job...");
+  await runDataRetentionJob();
+});
+
+// 5. Subscription Expiry & Downgrade (Daily at 6:00 AM) - §3.4 & §3.8
+scheduleProtectedJob("0 6 * * *", "daily-subscription-expiry", async () => {
+  console.log("[Cron] Starting daily subscription expiry check...");
+  await runSubscriptionExpiryJob();
 });
 
 // Boot-time Redis health check (non-blocking — logs warning if unavailable)
@@ -105,24 +173,38 @@ import { getRedisClient, getCacheRuntimeStatus } from "./lib/redis-client";
     if (client) {
       console.log(`✅ [Boot] Redis connected (backend: ${status.backend})`);
     } else if (status.memoryFallbackAllowed) {
-      console.warn(`⚠️ [Boot] Redis unavailable — using in-memory cache fallback (backend: ${status.backend})`);
+      console.warn(
+        `⚠️ [Boot] Redis unavailable — using in-memory cache fallback (backend: ${status.backend})`,
+      );
     } else {
-      console.warn(`❌ [Boot] Redis unavailable and memory fallback disabled. Voice calls will NOT work.`);
+      console.warn(
+        `❌ [Boot] Redis unavailable and memory fallback disabled. Voice calls will NOT work.`,
+      );
     }
   } catch (err) {
-    console.warn(`❌ [Boot] Redis health check failed:`, err instanceof Error ? err.message : err);
+    console.warn(
+      `❌ [Boot] Redis health check failed:`,
+      err instanceof Error ? err.message : err,
+    );
   }
 })();
 
-// Give the classification failover a place to record what it learns. Installed here
-// rather than as an import side effect so unit tests can import the router without
-// opening a database connection.
 installProviderHealthReporter();
 
 const app = new Hono();
 
 app.use("*", logger());
 app.use("*", compress());
+app.use(
+  "*",
+  secureHeaders({
+    permissionsPolicy: {
+      camera: [],
+      geolocation: [],
+      microphone: ["self"],
+    },
+  }),
+);
 
 let warnedAboutUntrustedProxy = false;
 if (env.NODE_ENV === "production" && env.TRUST_PROXY !== "true") {
@@ -135,7 +217,9 @@ app.use("*", async (c, next) => {
     env.NODE_ENV === "production" &&
     env.TRUST_PROXY !== "true" &&
     !warnedAboutUntrustedProxy &&
-    (c.req.header("x-forwarded-for") || c.req.header("x-real-ip") || c.req.header("cf-connecting-ip"))
+    (c.req.header("x-forwarded-for") ||
+      c.req.header("x-real-ip") ||
+      c.req.header("cf-connecting-ip"))
   ) {
     warnedAboutUntrustedProxy = true;
     console.error(
@@ -146,124 +230,14 @@ app.use("*", async (c, next) => {
 });
 
 // ─── CORS: supports monorepo mode (APP_URL) and separate-deploy mode (FRONTEND_URL) ───
-export const allowedOrigins = Array.from(
-  new Set([env.APP_URL, env.FRONTEND_URL].filter(Boolean) as string[]),
-);
-
-/**
- * Validates WebSocket upgrade request origins to prevent Cross-Site WebSocket Hijacking (CSWSH).
- */
-export function isAllowedWebSocketOrigin(origin: string | undefined, hostHeader?: string): boolean {
-  // If no origin header is provided (e.g. non-browser clients, native apps, cURL), allow it.
-  // Browsers ALWAYS send the Origin header on cross-origin WebSocket upgrade requests.
-  if (!origin) {
-    return true;
-  }
-
-  // Capacitor / Native mobile origins
-  if (
-    origin === "capacitor://localhost" ||
-    origin === "ionic://localhost" ||
-    origin === "http://localhost" ||
-    origin === "https://localhost" ||
-    origin.startsWith("capacitor://") ||
-    origin.startsWith("ionic://")
-  ) {
-    return true;
-  }
-
-  // Configured allowed origins
-  if (allowedOrigins.includes(origin)) {
-    return true;
-  }
-
-  // Same-origin check against Host header
-  if (hostHeader) {
-    try {
-      const originUrl = new URL(origin);
-      if (originUrl.host === hostHeader) {
-        return true;
-      }
-    } catch {}
-  }
-
-  // Development tunnel & local dev origins
-  if (env.NODE_ENV === "development") {
-    if (
-      origin.includes("localhost") ||
-      origin.includes("127.0.0.1") ||
-      origin.endsWith(".loca.lt") ||
-      origin.endsWith(".serveousercontent.com") ||
-      origin.endsWith(".lhr.life") ||
-      origin.endsWith(".trycloudflare.com") ||
-      origin.endsWith(".ngrok-free.dev") ||
-      origin.endsWith(".ngrok-free.app") ||
-      origin.endsWith(".ngrok.app") ||
-      origin.endsWith(".ngrok.io")
-    ) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-app.use(
-  "*",
-  cors({
-    origin: (origin) => {
-      if (!origin) return allowedOrigins[0];
-      if (env.NODE_ENV === "development") {
-        if (
-          origin.includes("localhost") ||
-          origin.includes("127.0.0.1") ||
-          origin.endsWith(".loca.lt") ||
-          origin.endsWith(".serveousercontent.com") ||
-          origin.endsWith(".lhr.life") ||
-          origin.endsWith(".trycloudflare.com") ||
-          origin.endsWith(".ngrok-free.dev") ||
-          origin.endsWith(".ngrok-free.app") ||
-          origin.endsWith(".ngrok.app") ||
-          origin.endsWith(".ngrok.io")
-        ) {
-          return origin;
-        }
-      }
-      return allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
-    },
-    credentials: true,
-  }),
-);
-
-// CSRF Protection
-app.use(
-  "*",
-  csrf({
-    origin: (origin) => {
-      if (!origin) return false;
-      if (env.NODE_ENV === "development") {
-        if (
-          origin.includes("localhost") ||
-          origin.includes("127.0.0.1") ||
-          origin.endsWith(".loca.lt") ||
-          origin.endsWith(".serveousercontent.com") ||
-          origin.endsWith(".lhr.life") ||
-          origin.endsWith(".trycloudflare.com") ||
-          origin.endsWith(".ngrok-free.dev") ||
-          origin.endsWith(".ngrok-free.app") ||
-          origin.endsWith(".ngrok.app") ||
-          origin.endsWith(".ngrok.io")
-        ) {
-          return true;
-        }
-      }
-      return allowedOrigins.includes(origin);
-    },
-  }),
-);
+const originPolicy = createOriginPolicy(env);
+export const allowedOrigins = originPolicy.webOrigins;
+export const isAllowedWebSocketOrigin = originPolicy.isAllowedWebSocketOrigin;
+applyOriginSecurity(app, originPolicy);
 
 // Error handling
 app.onError((err, c) => {
+  if (err instanceof HTTPException) return err.getResponse();
   console.error("Hono Error:", err);
   const isProd = env.NODE_ENV === "production";
   const message = isProd
@@ -291,17 +265,25 @@ app.notFound(async (c) => {
   return c.json({ error: "Not Found" }, 404);
 });
 
-function readCookie(cookieHeader: string | undefined, name: string): string | undefined {
+function readCookie(
+  cookieHeader: string | undefined,
+  name: string,
+): string | undefined {
   if (!cookieHeader) return undefined;
   const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
   return match ? decodeURIComponent(match[1]) : undefined;
 }
 
-function secureCookieSuffix() {
-  return env.NODE_ENV === "production" ? "; Secure" : "";
+function secureCookieSuffix(origin?: string) {
+  return env.NODE_ENV === "production" || origin?.startsWith("https://")
+    ? "; Secure"
+    : "";
 }
 
-function stateMatches(expected: string | undefined, received: string | undefined): boolean {
+function stateMatches(
+  expected: string | undefined,
+  received: string | undefined,
+): boolean {
   if (!expected || !received) return false;
   const expectedBuffer = Buffer.from(expected);
   const receivedBuffer = Buffer.from(received);
@@ -316,18 +298,25 @@ function stateMatches(expected: string | undefined, received: string | undefined
 app.get("/api/auth/google/start", (c) => {
   const state = createOAuthState();
   const host = c.req.header("x-forwarded-host") || c.req.header("host");
-  const proto = c.req.header("x-forwarded-proto") || (host?.includes("ngrok") ? "https" : "http");
-  const dynamicRedirectUri = host ? `${proto}://${host}/api/auth/google/callback` : undefined;
+  const proto =
+    c.req.header("x-forwarded-proto") ||
+    new URL(c.req.url).protocol.slice(0, -1);
+  const requestOrigin = `${proto}://${host}`;
+  if (!originPolicy.isAllowedWebOrigin(requestOrigin)) {
+    return c.json({ error: "عنوان تسجيل الدخول غير مسموح به" }, 403);
+  }
+  const dynamicRedirectUri = `${requestOrigin}/api/auth/google/callback`;
   const googleUrl = buildGoogleAuthorizationUrl(state, dynamicRedirectUri);
-  if (!googleUrl) return c.json({ error: "Google OAuth is not configured" }, 503);
+  if (!googleUrl)
+    return c.json({ error: "Google OAuth is not configured" }, 503);
   c.header(
     "Set-Cookie",
-    `oauth_state=${encodeURIComponent(state)}; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=600${secureCookieSuffix()}`,
+    `oauth_state=${encodeURIComponent(state)}; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=600${secureCookieSuffix(requestOrigin)}`,
   );
   if (dynamicRedirectUri) {
     c.header(
       "Set-Cookie",
-      `oauth_redirect_uri=${encodeURIComponent(dynamicRedirectUri)}; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=600${secureCookieSuffix()}`,
+      `oauth_redirect_uri=${encodeURIComponent(dynamicRedirectUri)}; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=600${secureCookieSuffix(requestOrigin)}`,
       { append: true },
     );
   }
@@ -344,25 +333,34 @@ app.get("/api/auth/google/callback", async (c) => {
     return c.redirect(`/login?error=auth_failed`);
   }
 
-  const redirectUriCookie = readCookie(c.req.header("cookie"), "oauth_redirect_uri");
+  const redirectUriCookie = readCookie(
+    c.req.header("cookie"),
+    "oauth_redirect_uri",
+  );
 
   try {
-    const caller = appRouter.createCaller(await createContext(c.req));
-    const result = await caller.auth.googleCallback({ code, redirectUri: redirectUriCookie });
+    const caller = appRouter.createCaller(
+      await createContext({ req: c.req, directIp: directPeerAddress(c) }),
+    );
+    const result = await caller.auth.googleCallback({
+      code,
+      redirectUri: redirectUriCookie,
+      state: c.req.query("state"),
+    });
 
     // Set cookie and redirect to frontend
     c.header(
       "Set-Cookie",
-      `google_session=${result.token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800${env.NODE_ENV === "production" ? "; Secure" : ""}`,
+      `google_session=${result.token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800${secureCookieSuffix(redirectUriCookie)}`,
     );
     c.header(
       "Set-Cookie",
-      `oauth_state=; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=0${secureCookieSuffix()}`,
+      `oauth_state=; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=0${secureCookieSuffix(redirectUriCookie)}`,
       { append: true },
     );
     c.header(
       "Set-Cookie",
-      `oauth_redirect_uri=; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=0${secureCookieSuffix()}`,
+      `oauth_redirect_uri=; HttpOnly; SameSite=Lax; Path=/api/auth/google; Max-Age=0${secureCookieSuffix(redirectUriCookie)}`,
       { append: true },
     );
     return c.redirect(`/dashboard`);
@@ -376,7 +374,8 @@ app.use(
   "/api/trpc/*",
   trpcServer({
     router: appRouter,
-    createContext: async ({ req }) => createContext(req),
+    createContext: async (opts, c) =>
+      createContext({ ...opts, directIp: directPeerAddress(c) }),
   }),
 );
 
@@ -387,11 +386,11 @@ app.get("/api/sse/otp", (c) => {
   const phone = c.req.query("phone");
   if (!phone) return c.text("Phone required", 400);
 
-  const clientIp = getClientIp(c.req.raw) || 'unknown';
+  const clientIp = getClientIp(c.req.raw, directPeerAddress(c)) || "unknown";
   const now = Date.now();
   const sseEntry = sseRateLimit.get(clientIp);
   if (sseEntry && sseEntry.resetAt > now && sseEntry.count >= 5) {
-    return c.text('Too many SSE connections', 429);
+    return c.text("Too many SSE connections", 429);
   }
   if (!sseEntry || sseEntry.resetAt <= now) {
     sseRateLimit.set(clientIp, { count: 1, resetAt: now + 5 * 60 * 1000 });
@@ -406,7 +405,7 @@ app.get("/api/sse/otp", (c) => {
     const listener = async (data: any) => {
       await stream.writeSSE({ data: JSON.stringify(data) });
     };
-    
+
     otpEvents.on(`otp:${phone}`, listener);
 
     c.req.raw.signal.addEventListener("abort", () => {
@@ -414,7 +413,10 @@ app.get("/api/sse/otp", (c) => {
     });
 
     // Keep alive with max duration guard
-    while (!c.req.raw.signal.aborted && (Date.now() - startTime) < MAX_SSE_DURATION) {
+    while (
+      !c.req.raw.signal.aborted &&
+      Date.now() - startTime < MAX_SSE_DURATION
+    ) {
       await stream.sleep(15000);
       if (!c.req.raw.signal.aborted) {
         await stream.writeSSE({ event: "ping", data: "ping" });
@@ -424,7 +426,12 @@ app.get("/api/sse/otp", (c) => {
     // Clean up listener on timeout (abort handler covers client disconnect)
     otpEvents.off(`otp:${phone}`, listener);
     if (!c.req.raw.signal.aborted) {
-      await stream.writeSSE({ event: "timeout", data: JSON.stringify({ message: "SSE connection timed out. Reconnect if needed." }) });
+      await stream.writeSSE({
+        event: "timeout",
+        data: JSON.stringify({
+          message: "SSE connection timed out. Reconnect if needed.",
+        }),
+      });
     }
   });
 });
@@ -444,8 +451,13 @@ app.post("/api/webhooks/paymob", async (c) => {
   console.info("[paymob webhook]", JSON.stringify(parsed));
 
   const secret = env.PAYMOB_HMAC_SECRET;
-  if (env.NODE_ENV === "production" && !isPaymobWebhookVerificationConfigured()) {
-    console.error("Paymob webhook rejected: PAYMOB_HMAC_SECRET is not configured");
+  if (
+    env.NODE_ENV === "production" &&
+    !isPaymobWebhookVerificationConfigured()
+  ) {
+    console.error(
+      "Paymob webhook rejected: PAYMOB_HMAC_SECRET is not configured",
+    );
     return c.json({ error: "Webhook verification is unavailable" }, 503);
   }
   if (secret) {
@@ -522,13 +534,17 @@ app.post("/api/webhooks/paymob", async (c) => {
       : null;
     const paidCents = Number(obj.amount_cents);
 
-    if (userId && (userType === "oauth" || userType === "local") && isBillingPlan(plan)) {
+    if (
+      userId &&
+      (userType === "oauth" || userType === "local") &&
+      isBillingPlan(plan)
+    ) {
       if (!hasExactPlanAmount(plan, obj.amount_cents)) {
-          console.warn(
-            `Paymob webhook: amount mismatch — expected ${expectedAmountCents} cents for ${plan}, got ${paidCents}. Rejecting.`,
-          );
-          return c.json({ error: "Amount mismatch" }, 400);
-        }
+        console.warn(
+          `Paymob webhook: amount mismatch — expected ${expectedAmountCents} cents for ${plan}, got ${paidCents}. Rejecting.`,
+        );
+        return c.json({ error: "Amount mismatch" }, 400);
+      }
 
       console.info(
         `Granting Pro subscription to user ${userId} (${userType}) via Paymob webhook`,
@@ -588,8 +604,8 @@ if (env.NODE_ENV === "production" && isDirectBootEntry) {
         const cc = reqPath.startsWith("/assets/")
           ? "public, max-age=31536000, immutable"
           : isHtmlOrWorkerOrManifest
-          ? "public, max-age=0, must-revalidate"
-          : "public, max-age=86400";
+            ? "public, max-age=0, must-revalidate"
+            : "public, max-age=86400";
 
         c.header("Cache-Control", cc);
         if (c.res) {
@@ -607,7 +623,8 @@ if (env.NODE_ENV === "production" && isDirectBootEntry) {
 
   // Bind WebSocket Server for Live Voice Calls in production mode
   const { WebSocketServer } = await import("ws");
-  const { handleVoiceCallWebSocket } = await import("./services/voice-call-service");
+  const { handleVoiceCallWebSocket } =
+    await import("./services/voice-call-service");
   const wss = new WebSocketServer({ noServer: true });
 
   server.on("upgrade", (request, socket, head) => {
@@ -615,10 +632,7 @@ if (env.NODE_ENV === "production" && isDirectBootEntry) {
     if (url.pathname.startsWith("/api/voice/live")) {
       const rawOrigin = request.headers.origin;
       const origin = Array.isArray(rawOrigin) ? rawOrigin[0] : rawOrigin;
-      const rawHost = request.headers.host;
-      const host = Array.isArray(rawHost) ? rawHost[0] : rawHost;
-
-      if (!isAllowedWebSocketOrigin(origin, host)) {
+      if (!isAllowedWebSocketOrigin(origin)) {
         socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
         socket.destroy();
         return;
@@ -638,13 +652,18 @@ if (env.NODE_ENV === "production" && isDirectBootEntry) {
 // WhatsApp is explicit because a stale credential file must not create an
 // outbound Baileys connection during local development or every replica boot.
 const sessionDir = path.join(process.cwd(), "whatsapp_auth_info");
-if (env.ENABLE_WHATSAPP === "true" && fs.existsSync(path.join(sessionDir, "creds.json"))) {
+if (
+  env.ENABLE_WHATSAPP === "true" &&
+  fs.existsSync(path.join(sessionDir, "creds.json"))
+) {
   console.log("[WhatsApp] Starting explicitly enabled service...");
   whatsappService.start().catch((err) => {
     console.error("[WhatsApp] Failed to auto-start WhatsApp service:", err);
   });
 } else if (fs.existsSync(path.join(sessionDir, "creds.json"))) {
-  console.info("[WhatsApp] Credentials found but service is disabled; set ENABLE_WHATSAPP=true to start it.");
+  console.info(
+    "[WhatsApp] Credentials found but service is disabled; set ENABLE_WHATSAPP=true to start it.",
+  );
 }
 
 export { app };

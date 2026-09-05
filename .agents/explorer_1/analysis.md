@@ -1,53 +1,375 @@
-# Comprehensive Forensic Investigation Report — Requirements R1 & R2
+# Forensic Investigation Report: React Query, Provider Tree & IndexedDB Cache Architecture
+
 **Project:** SmartSpend AI  
-**Investigator:** Explorer 1 (`teamwork_preview_worker`)  
-**Scope:** Requirement R1 (Canonical Billing & Subscription Architecture) & Requirement R2 (Security, Authentication & Session Revocation)  
-**Date:** 2026-08-23  
+**Investigator:** Explorer 1  
+**Target Subsystems:** TanStack React Query v5, tRPC v11 React Client, `@tanstack/react-query-persist-client`, IndexedDB Cache (`smartspend_query_cache`), PWA Offline Outbox & Hydration Lifecycle  
+**Date:** 2026-08-26  
 
 ---
 
 ## 1. Executive Summary
 
-A comprehensive, read-only architectural investigation was conducted across the SmartSpend AI codebase to evaluate the state of **Requirement R1 (Canonical Billing & Subscription Architecture)** and **Requirement R2 (Security, Authentication & Session Revocation)**.
+A deep architectural investigation was performed on the SmartSpend AI client-side data fetching, caching, persistence, and offline lifecycle infrastructure.
 
-All relevant source code files, database schemas, router handlers, middleware procedures, background services, and test suites were audited.
-
-### Summary of Audit Status
-| Requirement Area | Target Component | Verified Status | Key Architectural Findings |
-|---|---|---|---|
-| **R1: Billing Contract** | `contracts/plans.ts` | **CONVERGED** | Canonical single source of truth (`BILLING_PLANS`, `BILLING_PLAN_IDS`, `hasExactPlanAmount`) defining `pro_monthly` (99 EGP), `pro_yearly` (990 EGP), and `ultra_monthly` (250 EGP). |
-| **R1: Paymob Webhook** | `api/boot.ts` (`/api/webhooks/paymob`) | **CONVERGED** | 18-field canonical HMAC SHA-512 verification with `timingSafeEqual`, exact integer cents validation (`hasExactPlanAmount`), and transaction ID idempotency. |
-| **R1: Pro Router & Service** | `api/pro-router.ts`, `api/lib/subscription-service.ts` | **CONVERGED** | Role vs. plan separation strictly enforced, checkout URL generation, simulation bypass in non-production with `BILLING_SIMULATE="true"`, and non-destructive cancellation. |
-| **R1: Frontend Alignment** | `src/pages/Pro.tsx` | **CONVERGED** | UI dynamically derives prices from `contracts/plans.ts` (`getBillingPlan`), handling redirect vs simulate flows. |
-| **R2: Active Session Revocation** | `api/lib/session-validation.ts`, `api/context.ts`, `api/sms-router.ts`, `api/services/voice-call-service.ts` | **CONVERGED** | Centralized `validateActiveSessionToken` verifies cryptographic signature AND queries `sessions` table (`expiresAt > NOW()`). Revoked tokens are immediately rejected across tRPC, SMS ingestion, and Voice WebSockets. |
-| **R2: Dynamic WebAuthn** | `api/webauthn-router.ts` | **CONVERGED** | Dynamic `getWebAuthnConfig(ctx.req)` dynamically parses request origin and hostname for RP ID, supporting dev tunnels (`.loca.lt`, `localhost`) and production domains without hardcoding. |
-| **R2: Transactional Purge Cascade** | `api/services/user-purge-service.ts` | **CONVERGED** | `purgeUserData(tx, userId, userType)` provides atomic transactional deletion cascading across all 35+ user-scoped tables and is integrated in `adminRouter.deleteUser` and `localAuthRouter.deleteUser`. |
-| **R2: Avatar & Egyptian Phone Sanitization** | `api/context.ts`, `api/local-auth-utils.ts`, `api/local-auth-router.ts` | **CONVERGED** | Local user avatar passed in `createContext`, `cleanPhoneNumber` converts Eastern Arabic digits, strips `+2`, validates Egyptian prefixes (010, 011, 012, 015), and stores sanitized numbers. |
+### Core Discoveries:
+1. **Provider Tree Hierarchy:** `App.tsx` establishes a standard in-memory `QueryClientProvider` wrapped by `trpc.Provider`. The `QueryClient` is initialized with `staleTime: 10_000` (10s) and `gcTime: 24 * 60 * 60_000` (24 hours).
+2. **Orphaned `idbPersister` & Unconnected Persistence:** While `src/lib/queryPersister.ts` defines an `idbPersister` adhering to `@tanstack/react-query-persist-client`'s `Persister` interface using raw `window.indexedDB`, **neither `PersistQueryClientProvider` nor `persistQueryClient()` is used anywhere in the codebase**. React Query operates strictly in-memory.
+3. **Startup & Logout Cache Purging:** `src/App.tsx` (`lines 473-479`) explicitly executes `void clearPersistedQueryCache()` on application mount, and `src/hooks/useAuth.ts` (`lines 74-83`) executes it upon logout. This was introduced intentionally to prevent cross-user data leakage on shared devices resulting from older legacy releases that persisted sensitive tRPC responses under an un-scoped device key.
+4. **Offline Resilience Mechanism:** PWA offline capability for data entry is decoupled from React Query persistence. It is handled via a dedicated, authenticated **Offline Outbox** in `ExpenseForm.tsx` (`localStorage` keys: `smartspend_offline_texts` and `smartspend_offline_manual`), monitored by `PwaEnhancements.tsx`, and synced with server-enforced idempotency keys upon network restoration.
+5. **Dependency Overhead:** `@tanstack/react-query-persist-client` (`^5.101.0`) in `package.json` is only used for two TypeScript types (`PersistedClient`, `Persister`) in `src/lib/queryPersister.ts`.
 
 ---
 
-## 2. Requirement R1: Canonical Billing & Subscription Architecture
+## 2. React Query & tRPC Provider Tree Audit
 
-### 2.1 Canonical Plans Contract (`contracts/plans.ts`)
-- **Single Source of Truth:** `contracts/plans.ts` serves as the authoritative definition for all commercial tiers.
-- **Contract Structure:**
+### 2.1 tRPC Client Setup (`src/providers/trpc.ts`)
+- **File Path:** `src/providers/trpc.ts`
+- **Component / Binding:**
+  - `Line 5`: `export const trpc = createTRPCReact<AppRouter>();`
+  - `Lines 26-90`: `trpcClient` instantiation with `httpBatchLink`.
+
+```typescript
+// src/providers/trpc.ts:26-90
+export const trpcClient = trpc.createClient({
+  links: [
+    httpBatchLink({
+      url: API_BASE_URL,
+      fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+        let requestUrl: string =
+          typeof input === "string" ? input : (input as Request).url;
+        try {
+          const base =
+            typeof window !== "undefined"
+              ? window.location.origin
+              : "http://localhost:3000";
+          const u = new URL(requestUrl, base);
+          requestUrl = u.toString();
+        } catch (e) {
+          console.error("tRPC fetch: invalid URL", input);
+        }
+
+        let response: Response;
+        try {
+          response = await fetch(requestUrl as RequestInfo, {
+            ...(init ?? {}),
+            credentials: "include", // Supports Google OAuth session cookies
+          });
+        } catch (error) {
+          console.error("tRPC fetch: network failure", error);
+          throw new Error(
+            "تعذر الاتصال بالخادم. تأكد أن التطبيق يعمل ثم حاول مرة أخرى.",
+          );
+        }
+
+        const text = await response.text();
+        try {
+          JSON.parse(text);
+          return new Response(text, {
+            status: response.status,
+            headers: new Headers(response.headers as any),
+          });
+        } catch {
+          if (!response.ok) {
+            throw new Error(friendlyHttpError(response.status));
+          }
+          throw new Error("وصل رد غير متوقع من الخادم. حاول تحديث الصفحة.");
+        }
+      },
+      headers() {
+        const token = localStorage.getItem("local_auth_token");
+        return {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          "bypass-tunnel-reminder": "true",
+          "ngrok-skip-browser-warning": "true",
+        };
+      },
+    }),
+  ],
+});
+```
+
+### 2.2 Provider Hierarchy (`src/App.tsx`)
+- **File Path:** `src/App.tsx`
+- **QueryClient Instance (`lines 53-60`):**
   ```typescript
-  export const BILLING_PLANS = {
-    pro_monthly: {
-      id: "pro_monthly",
-      entitlement: "pro",
-      amountCents: 9_900,       // 99.00 EGP
-      duration: "month",
-      displayName: "SmartSpend Pro Monthly",
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 10_000,           // 10 seconds before queries are considered stale
+        gcTime: 24 * 60 * 60_000,    // 24 hours in-memory garbage collection
+      },
     },
-    pro_yearly: {
-      id: "pro_yearly",
-      entitlement: "pro",
-      amountCents: 99_000,      // 990.00 EGP (10 months price = 2 months free)
-      duration: "year",
-      displayName: "SmartSpend Pro Yearly",
-    },
-    ultra_monthly: {
+  });
+  ```
+- **Provider Nesting (`lines 481-498`):**
+  ```tsx
+  export default function App() {
+    React.useEffect(() => {
+      sessionStorage.removeItem("chunk_error_reloaded");
+      void clearPersistedQueryCache();
+    }, []);
+
+    return (
+      <ErrorBoundary>
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+              <BrowserRouter>
+                <Layout>
+                  <Suspense fallback={<PageLoadingSkeleton />}>
+                    <AnimatedRoutes />
+                  </Suspense>
+                </Layout>
+                <Toaster position="top-center" richColors className="pt-safe" />
+              </BrowserRouter>
+            </ThemeProvider>
+          </QueryClientProvider>
+        </trpc.Provider>
+      </ErrorBoundary>
+    );
+  }
+  ```
+
+---
+
+## 3. Persister & IndexedDB Implementation Audit
+
+### 3.1 `src/lib/queryPersister.ts` Code Walkthrough
+- **File Path:** `src/lib/queryPersister.ts` (Total Lines: 78)
+
+```typescript
+// src/lib/queryPersister.ts:1-78
+import type { PersistedClient, Persister } from "@tanstack/react-query-persist-client";
+
+const DB_NAME = "smartspend_query_cache";
+const STORE_NAME = "queries";
+const KEY = "cache";
+
+let dbPromise: Promise<IDBDatabase> | null = null;
+
+function getDb(): Promise<IDBDatabase> | null {
+  if (typeof window === "undefined" || !window.indexedDB) {
+    return null;
+  }
+  if (!dbPromise) {
+    dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
+      const request = window.indexedDB.open(DB_NAME, 1);
+      request.onupgradeneeded = () => {
+        request.result.createObjectStore(STORE_NAME);
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+  return dbPromise;
+}
+
+export const idbPersister: Persister = {
+  persistClient: async (client: PersistedClient) => {
+    try {
+      const db = await getDb();
+      if (!db) return;
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.put(client, KEY);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    } catch (e) {
+      console.error("Failed to persist query cache to IndexedDB", e);
+    }
+  },
+  restoreClient: async () => {
+    try {
+      const db = await getDb();
+      if (!db) return undefined;
+      return await new Promise<PersistedClient | undefined>((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readonly");
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.get(KEY);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    } catch (e) {
+      console.error("Failed to restore query cache from IndexedDB", e);
+      return undefined;
+    }
+  },
+  removeClient: async () => {
+    try {
+      const db = await getDb();
+      if (!db) return;
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.delete(KEY);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    } catch (e) {
+      console.error("Failed to remove query cache from IndexedDB", e);
+    }
+  },
+};
+
+export async function clearPersistedQueryCache(): Promise<void> {
+  await idbPersister.removeClient();
+}
+```
+
+### 3.2 Key Findings:
+- **No external helper libraries used:** Neither `idb-keyval` nor `@tanstack/query-async-storage-persister` is used. Raw `window.indexedDB` transactions are used directly.
+- **Orphaned Status:** `idbPersister` is exported at line 26 but is **never passed to any provider, plugin, or client**. The only external consumer of `queryPersister.ts` is `clearPersistedQueryCache()`, which is called by `src/App.tsx:478` and `src/hooks/useAuth.ts:80`.
+- **Single Global Key Security Vulnerability in Legacy Design:** The old schema stored all cached queries under `KEY = "cache"` in database `"smartspend_query_cache"`. Without user ID scoping, restoring this cache on startup on a multi-user device risked exposing User A's balances, transactions, and settings to User B before authentication completed.
+
+---
+
+## 4. `smartspend_query_cache` Configuration & Filtering Rules
+
+| Parameter | Configuration in Code | Location | Status & Behavior |
+|---|---|---|---|
+| **Database Name** | `"smartspend_query_cache"` (v1) | `src/lib/queryPersister.ts:3` | Native IndexedDB database |
+| **Object Store** | `"queries"` | `src/lib/queryPersister.ts:4` | Object store holding serialized query cache |
+| **Storage Key** | `"cache"` | `src/lib/queryPersister.ts:5` | Static single device key (Unscoped) |
+| **`staleTime`** | `10_000` (10 seconds) | `src/App.tsx:56` | In-memory query freshness threshold |
+| **`gcTime`** | `86_400_000` (24 hours) | `src/App.tsx:57` | In-memory cache retention duration |
+| **`maxAge`** | None (N/A) | N/A | Not configured on persister |
+| **`buster`** | None (N/A) | N/A | Not configured on persister |
+| **Query Filters** | None (`shouldDehydrateQuery` absent) | N/A | Persistence currently disconnected |
+
+---
+
+## 5. Startup & Logout Cache Purging Analysis
+
+### 5.1 Invocation Points
+
+1. **Startup Clearance (`src/App.tsx:473-479`):**
+   ```typescript
+   export default function App() {
+     React.useEffect(() => {
+       // Clear chunk error reload flag if application successfully loaded
+       sessionStorage.removeItem("chunk_error_reloaded");
+       // Older releases persisted every financial tRPC response under one device
+       // key. Purge that legacy cache rather than hydrating another user's data.
+       void clearPersistedQueryCache();
+     }, []);
+   ```
+
+2. **Logout Clearance (`src/hooks/useAuth.ts:74-83`):**
+   ```typescript
+   const logout = useCallback(async () => {
+     localStorage.removeItem("local_auth_token");
+     // Queued data and hydrated query results belong to the previous user. Never
+     // carry either into the next account on a shared phone.
+     localStorage.removeItem("smartspend_offline_texts");
+     localStorage.removeItem("smartspend_offline_manual");
+     await clearPersistedQueryCache();
+     document.cookie =
+       "google_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+     // ...
+   ```
+
+### 5.2 Rationale & Safety Assessment
+- **Why it was placed there:** To purge legacy persistent client caches from users' devices following a security refactor that deactivated global un-scoped cache persistence.
+- **Is it safe to refactor/simplify?** **YES.**
+  - `src/lib/queryPersister.ts` can be refactored to use native `window.indexedDB.deleteDatabase("smartspend_query_cache")` without relying on `idbPersister` or `@tanstack/react-query-persist-client`.
+  - This allows removing `@tanstack/react-query-persist-client` from `package.json` with **zero regression**.
+
+---
+
+## 6. Hydration Lifecycle & Offline Mechanics
+
+### 6.1 Application Boot Sequence
+```
+[Browser Request]
+       │
+       ▼
+[Service Worker (sw.js)] ───► Serves /index.html from Workbox precache (NetworkFirst)
+       │
+       ▼
+[React Bundle Evaluates]
+       │
+       ▼
+[App.tsx Mounts]
+  ├── useEffect: clearPersistedQueryCache() & clear chunk_error_reloaded
+  ├── Providers Mounted: ErrorBoundary ──► trpc.Provider ──► QueryClientProvider
+  └── Router Evaluates Route (e.g. /dashboard)
+       │
+       ▼
+[ProtectedRoute & useAuth Hook]
+  ├── Initiates parallel queries: trpc.auth.me.useQuery() + trpc.localAuth.me.useQuery()
+  ├── While isLoading === true ──► Displays <PageLoadingSkeleton />
+  └── When queries resolve:
+        ├── If user detected (OAuth or Local JWT) ──► Sets UnifiedUser, renders page
+        └── If user null ──► Redirects to /login
+```
+
+### 6.2 Offline Behavior Breakdown
+
+1. **App Shell & Static Assets:**
+   - Managed by Workbox (`src/sw.js`).
+   - `sw.js` precaches all compiled JS/CSS chunks.
+   - Navigation requests (`request.mode === "navigate"`) use `NetworkFirst(5s timeout)` falling back to cached `/index.html`.
+   - Images and static assets use `StaleWhileRevalidate`.
+
+2. **tRPC API Requests:**
+   - In `src/sw.js:29-32, 85`, `isApiRequest(url)` explicitly excludes all `/api/*` and `/trpc/*` routes from Service Worker caching.
+   - When offline, network calls fail immediately with friendly Arabic network failure messages (`src/providers/trpc.ts:54-56`).
+
+3. **Offline Mutation Outbox (`ExpenseForm.tsx` & `PwaEnhancements.tsx`):**
+   - Offline expense creation is caught in `src/components/expenses/ExpenseForm.tsx:837-863` and `1799-1825`.
+   - Items are queued in `localStorage`:
+     - `smartspend_offline_texts`: AI voice/text raw transcriptions pending backend NLP classification.
+     - `smartspend_offline_manual`: Structured manual expense records with category, amount, wallet, and date.
+   - Each item is assigned an idempotent client request ID (`createOfflineItemId()`).
+   - Custom event `smartspend-offline-queue-changed` triggers UI badges in `PwaEnhancements.tsx`.
+   - When connectivity returns (`window.addEventListener("online")` or manual sync in `PwaEnhancements.tsx`), `ExpenseForm.tsx` replays queued items sequentially with rate-limit cooldowns.
+
+---
+
+## 7. Package.json Dependencies Audit
+
+| Package | Version in `package.json` | Active Usage in Codebase | Recommendation |
+|---|---|---|---|
+| `@tanstack/react-query` | `^5.90.16` | **Active** — Core React Query state engine used throughout app. | **Keep** |
+| `@tanstack/react-query-persist-client` | `^5.101.0` | **Unused runtime** — Only type import in `queryPersister.ts:1`. Persister not connected. | **Prune** after simplifying `queryPersister.ts` |
+| `@trpc/react-query` | `^11.8.1` | **Active** — tRPC React bindings. | **Keep** |
+| `@trpc/client` | `^11.8.1` | **Active** — tRPC client and HTTP batch link. | **Keep** |
+| `@trpc/server` | `^11.8.1` | **Active** — Backend tRPC router framework. | **Keep** |
+| `idb-keyval` | Not installed | N/A | **Do not add** |
+| `@tanstack/query-async-storage-persister` | Not installed | N/A | **Do not add** |
+
+---
+
+## 8. Recommendations & Next Steps
+
+### Recommendation 1: Dead Code & Dependency Elimination (Clean Architecture)
+- Refactor `src/lib/queryPersister.ts` to:
+  ```typescript
+  export async function clearPersistedQueryCache(): Promise<void> {
+    if (typeof window === "undefined" || !window.indexedDB) return;
+    try {
+      window.indexedDB.deleteDatabase("smartspend_query_cache");
+    } catch (e) {
+      console.error("Failed to delete legacy query cache", e);
+    }
+  }
+  ```
+- Remove `idbPersister` and the type import `import type { PersistedClient, Persister } from "@tanstack/react-query-persist-client"`.
+- Remove `"@tanstack/react-query-persist-client": "^5.101.0"` from `package.json`.
+- Run `npm run check` and `npm run test` to verify 100% zero regression.
+
+### Recommendation 2: If Offline Query Persistence is Desired in Future Releases
+- If full read-offline caching (viewing past transactions without internet) is implemented in a future milestone:
+  1. Scope IndexedDB database or keys by `user.id` (`smartspend_query_cache_${userId}`) to eliminate cross-tenant data leakage.
+  2. Implement `shouldDehydrateQuery` filter to explicitly exclude:
+     - Auth endpoints (`auth.me`, `localAuth.me`)
+     - AI budget and rate-limit counters
+     - Admin/moderator settings
+  3. Set a strict `maxAge: 1000 * 60 * 60 * 24` (24h) and version `buster`.
+  4. Continue invoking `clearPersistedQueryCache()` during logout.
+
       id: "ultra_monthly",
       entitlement: "ultra",
       amountCents: 25_000,      // 250.00 EGP

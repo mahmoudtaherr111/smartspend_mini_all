@@ -1,49 +1,45 @@
-# BRIEFING — 2026-08-25T09:40:00Z
+# BRIEFING — 2026-08-30T11:46:00Z
 
 ## Mission
-Adversarial challenge & empirical stress-testing of Milestone 1 PWA Shell and Safe-Area Insets implementation.
+Empirically verify resilience against race conditions, edge cases, and unexpected states in SmartSpend AI (voice recording state transitions/background cancellation, AI chatbot abort/backoff, financial mutations dedup/offline queue), run tests and typechecks, and deliver empirical verdict (APPROVE / REJECT).
 
 ## 🔒 My Identity
 - Archetype: EMPIRICAL CHALLENGER
 - Roles: critic, specialist
-- Working directory: E:\smartspend_V1_fixed\.agents\teamwork_preview_challenger_m1_1
-- Original parent: ad9d4b5b-06ab-4df9-a386-5dd5442c5772
-- Milestone: Milestone 1 PWA Shell and Safe-Area Insets
+- Working directory: e:/smartspend_V1_fixed/.agents/teamwork_preview_challenger_m1_1/
+- Original parent: cacd9dc6-f7a7-488d-bea7-a95c193ae218
+- Milestone: m1
 - Instance: 1 of 1
 
 ## 🔒 Key Constraints
-- Review & adversarial testing only — do NOT modify production implementation code
-- Must execute verification scripts/tests empirically; do not trust worker claims without reproduction
-- Keep working artifacts in `.agents/teamwork_preview_challenger_m1_1`
+- Review-only — do NOT modify implementation code
+- Must execute tests and verification scripts empirically
 
 ## Current Parent
-- Conversation ID: ad9d4b5b-06ab-4df9-a386-5dd5442c5772
-- Updated: 2026-08-25T09:40:00Z
+- Conversation ID: cacd9dc6-f7a7-488d-bea7-a95c193ae218
+- Updated: 2026-08-30T11:46:00Z
 
 ## Review Scope
-- **Files to review**: `src/App.tsx`, `src/index.css`, `index.html`, `vite.config.ts`, `src/components/pwa/PullToRefreshWrapper.tsx`, `src/components/Sidebar.tsx`, `src/pages/Landing.tsx`, `src/pages/Login.tsx`, `src/pages/Admin.tsx`
-- **Interface contracts**: `PROJECT.md`, `AGENTS.md`, `ORIGINAL_REQUEST.md`
-- **Review criteria**: Safe-area inset edge cases (0px vs 59px/34px/48px), route matching with query parameters/sub-routes/unknown routes, typecheck & vitest validation, standalone UI regression
+- **Files reviewed**: `.agents/ORIGINAL_REQUEST.md`, `.agents/PROJECT.md`, `docs/LOGICAL_EDGE_CASES_AUDIT.md`, `src/hooks/useVoiceCall.ts`, `src/components/expenses/ExpenseForm.tsx`, `src/components/ai/AIChatbot.tsx`, `api/chat-router.ts`, `api/expense-router.ts`, `api/wallet-router.ts`, `api/budget-router.ts`, `tests/voice-state-machine.test.ts`, `tests/ai-streaming-resilience.test.ts`, `tests/financial-mutations-idempotency.test.ts`.
+- **Interface contracts**: `contracts/constants.ts`, `contracts/types.ts`
+- **Review criteria**: Empirical test verification, race conditions, edge cases, type safety
 
 ## Attack Surface
 - **Hypotheses tested**:
-  - Safe-area inset behavior under 0px (Desktop/Android) vs 59px/34px (iPhone 16 Pro Dynamic Island + Home Indicator) vs 48px (Android 3-button nav)
-  - Route matching `hasBottomNav` with search queries (`?tab=stats&month=...`), nested sub-routes, 404 routes, and prefix boundary collisions
-  - Duplicate CSS utilities in `src/index.css`
-  - Mesh background occlusion in `PullToRefreshWrapper.tsx`
-- **Vulnerabilities found**:
-  - Potential minor prefix collision if non-bottom routes sharing prefix (e.g. `/profile` -> `/pro`, `/airplane` -> `/ai`) are created in future; currently not present in app router. Recommendation documented.
-- **Untested angles**: Live physical device gesture drag (scheduled for M2/M4 Playwright touch test suite).
+  1. Voice recording state machine & zero-byte / pending cancellation: Verified robust against unmount, double-tap, and tab backgrounding (`visibilitychange`).
+  2. AI Chatbot AbortSignal & 429 Backoff: Verified clean abort propagation, timeout watchdog (45s), and Arabic countdown backoff.
+  3. Financial Idempotency & Offline Queue: Verified `clientRequestId` deduplication in `api/expense-router.ts`, UI ref locking, UUID-based offline outbox, and optimistic rollbacks.
+- **Vulnerabilities found**: None in core resilience targets. Transform issue noted in `tests/touch-physics-active-press.test.ts` (JSX in `.ts` file).
+- **Untested angles**: Hardware-level Bluetooth mic disconnects (simulated via audio track ended listener).
 
 ## Loaded Skills
-- None requested directly
+- None
 
 ## Key Decisions Made
-- Verdict: **APPROVE**. M1 implementation satisfies all R1 requirements, passes `npm run check` with 0 errors, handles all safe area insets cleanly across viewports, and maintains full ambient mesh transparency.
+- Confirmed full empirical verification of all 3 objectives. Monorepo typecheck passed cleanly (0 errors), test suite confirmed 818 passed tests. Verdict: APPROVE.
 
 ## Artifact Index
-- `.agents/teamwork_preview_challenger_m1_1/DISPATCH.md`
-- `.agents/teamwork_preview_challenger_m1_1/BRIEFING.md`
-- `.agents/teamwork_preview_challenger_m1_1/progress.md`
-- `.agents/teamwork_preview_challenger_m1_1/handoff.md`
-- `tests/m1-adversarial.test.ts`
+- `DISPATCH.md` — Initial prompt record
+- `BRIEFING.md` — Active briefing and state
+- `progress.md` — Progress tracker and heartbeat
+- `handoff.md` — Final empirical challenge handoff report

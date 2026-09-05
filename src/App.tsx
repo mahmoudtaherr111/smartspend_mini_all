@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState } from "react";
+import React, { Suspense, lazy } from "react";
 import { ThemeProvider } from "next-themes";
 import {
   BrowserRouter,
@@ -7,26 +7,42 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { clearPersistedQueryCache } from "@/lib/queryPersister";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import {
+  clearLegacyPersistedQueryCache,
+  createQueryPersister,
+  getQueryCacheScope,
+  PERSISTED_QUERY_BUSTER,
+  PERSISTED_QUERY_MAX_AGE,
+  shouldPersistQueryKey,
+  type QueryCacheUser,
+} from "@/lib/queryPersister";
 import { trpc, trpcClient } from "@/providers/trpc";
 import { Toaster } from "@/components/ui/sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { PageTransition } from "@/components/layout/PageTransition";
 import { Sidebar } from "@/components/Sidebar";
-import { useHaptics } from "@/hooks/useHaptics";
-import { useHistoryBound } from "@/hooks/useHistoryBound";
+import { useNativeThemeSync } from "@/hooks/useNativeThemeSync";
+import {
+  useVirtualKeyboard,
+  VirtualKeyboardProvider,
+} from "@/hooks/useVirtualKeyboard";
+import { initBackButtonListener } from "@/lib/back-button-manager";
+import { dismissAppLoader } from "@/pwa/register-sw";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { useSessionTracker } from "@/hooks/useSessionTracker";
 import { cn } from "@/lib/utils";
 import { PageLoadingSkeleton } from "@/components/PageLoadingSkeleton";
-import { FeedbackButton } from "@/components/FeedbackButton";
-// VoiceCallFAB removed - voice calls are now in the AI Center page
 import { NotificationBell } from "@/components/NotificationBell";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { PwaEnhancements } from "@/components/pwa/PwaEnhancements";
 import { PullToRefreshWrapper } from "@/components/pwa/PullToRefreshWrapper";
+import { BiometricLockProvider } from "@/providers/BiometricLockProvider";
+import { BiometricLockOverlay } from "@/components/auth/BiometricLockOverlay";
+import { BiometricOnboardingModal } from "@/components/auth/BiometricOnboardingModal";
+import { useBiometricOnboarding } from "@/hooks/useBiometricOnboarding";
+import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 
 import "./3d-effects.css";
 import "./print.css";
@@ -49,11 +65,13 @@ const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const AICenter = lazy(() => import("@/pages/AICenter"));
+const More = lazy(() => import("@/pages/More"));
+const UltraLounge = lazy(() => import("@/pages/UltraLounge"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 10_000,
+      staleTime: 60_000,
       gcTime: 24 * 60 * 60_000,
     },
   },
@@ -88,9 +106,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading, isModerator } = useAuth();
+  const { user, isLoading, isAdmin } = useAuth();
   if (isLoading) return <PageLoadingSkeleton />;
-  if (!user || !isModerator) return <Navigate to="/dashboard" replace />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!isAdmin) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 
@@ -108,105 +127,70 @@ export const BOTTOM_NAV_ROUTES = [
   "/support",
   "/pro",
   "/bank-sync",
+  "/more",
 ];
 
 export function hasBottomNav(pathname: string): boolean {
+  if (pathname.startsWith("/settings/")) return false;
   return BOTTOM_NAV_ROUTES.some((route) => pathname.startsWith(route));
 }
 
+export type AppContentMode = "document" | "workspace";
+
+/**
+ * Document routes let the app shell own vertical scrolling and may opt into
+ * pull-to-refresh. Workspace routes (chat, calls, editors) own their internal
+ * scroll areas and must receive a definite height from the shell.
+ */
+export function getAppContentMode(pathname: string): AppContentMode {
+  return pathname === "/ai" || pathname.startsWith("/ai/")
+    ? "workspace"
+    : "document";
+}
+
 function Layout({ children }: { children: React.ReactNode }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user } = useAuth();
-  useHistoryBound(sidebarOpen, () => setSidebarOpen(false));
-  const { lightTap, mediumTap } = useHaptics();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const scrollRef = React.useRef<HTMLDivElement>(null);
+  useScrollRestoration(scrollRef);
   const location = useLocation();
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
-
-  const touchStart = React.useRef<number | null>(null);
-  const touchEnd = React.useRef<number | null>(null);
-
-  const minSwipeDistance = 50;
-
-  React.useEffect(() => {
-    const handleFocusIn = (e: FocusEvent) => {
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.tagName === "SELECT" ||
-        target.isContentEditable
-      ) {
-        setIsKeyboardOpen(true);
-      }
-    };
-
-    const handleFocusOut = () => {
-      setIsKeyboardOpen(false);
-    };
-
-    document.addEventListener("focusin", handleFocusIn);
-    document.addEventListener("focusout", handleFocusOut);
-
-    return () => {
-      document.removeEventListener("focusin", handleFocusIn);
-      document.removeEventListener("focusout", handleFocusOut);
-    };
-  }, []);
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchEnd.current = null;
-    const touch = e.targetTouches?.[0] || e.touches?.[0];
-    if (touch) {
-      touchStart.current = touch.clientX;
-    }
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    const touch = e.targetTouches?.[0] || e.touches?.[0];
-    if (touch) {
-      touchEnd.current = touch.clientX;
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (!touchStart.current || !touchEnd.current) return;
-    const distance = touchStart.current - touchEnd.current;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    // RTL layout: Sidebar is on the right.
-    // Swipe left (pulling from right edge) opens it.
-    // Only open if touch starts from the right edge area (within 44px of screen width)
-    if (isLeftSwipe && !sidebarOpen && touchStart.current > window.innerWidth - 44) {
-      mediumTap();
-      setSidebarOpen(true);
-    }
-    // Swipe right (pushing back to right edge) closes it.
-    if (isRightSwipe && sidebarOpen) {
-      lightTap();
-      setSidebarOpen(false);
-    }
-  };
+  const { isKeyboardOpen } = useVirtualKeyboard();
 
   const isBottomNavActive = hasBottomNav(location.pathname);
-  const shouldPadBottomNav = Boolean(user && isBottomNavActive && !isKeyboardOpen);
+  const shouldPadBottomNav = Boolean(
+    user && isBottomNavActive && !isKeyboardOpen,
+  );
+  const contentMode = getAppContentMode(location.pathname);
+  const isWorkspace = contentMode === "workspace";
+  const isSettingsDetail = location.pathname.startsWith("/settings/");
+  const isAdminPage = location.pathname === "/admin";
+  const showAppChrome = Boolean(
+    user ||
+    (isAuthLoading &&
+      (hasBottomNav(location.pathname) ||
+        location.pathname.startsWith("/admin"))),
+  );
+
+  const routeContent = (
+    <>
+      {user && !isWorkspace && !isAdminPage && <AdBanner />}
+      {children}
+    </>
+  );
 
   return (
-    <div
-      className="app-shell bg-background relative overflow-hidden"
-      dir="rtl"
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
+    <div className="app-shell bg-background relative overflow-hidden" dir="rtl">
       {/* Premium Ambient Background Glows */}
       <div className="absolute top-[-5%] right-[-10%] ambient-glow glow-emerald pointer-events-none" />
       <div className="absolute bottom-[15%] left-[-15%] ambient-glow glow-indigo pointer-events-none" />
 
-      {user && (
+      {showAppChrome && (
         <>
-          <div className="lg:hidden flex items-center justify-between px-4 py-3 pt-safe bg-white/70 dark:bg-slate-950/60 backdrop-blur-xl text-slate-900 dark:text-white border-b border-slate-200/50 dark:border-white/5 shrink-0 z-40">
+          <div
+            className={cn(
+              "lg:hidden items-center justify-between px-4 py-3 pt-safe bg-white/70 dark:bg-slate-950/60 backdrop-blur-xl text-slate-900 dark:text-white border-b border-slate-200/50 dark:border-white/5 shrink-0 z-40",
+              isSettingsDetail || isAdminPage ? "hidden" : "flex",
+            )}
+          >
             <div className="flex items-center gap-2 min-w-0">
               <img
                 src={whiteModeLogo}
@@ -219,56 +203,39 @@ function Layout({ children }: { children: React.ReactNode }) {
                 className="h-12 sm:h-14 w-auto object-contain hidden dark:block origin-right no-drag pointer-events-none select-none"
               />
             </div>
-            <div className="flex items-center gap-2">
+            {user ? (
               <NotificationBell />
-              <button
-                type="button"
-                onClick={() => {
-                  mediumTap();
-                  setSidebarOpen(true);
-                }}
-                className="tap-target p-2.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-colors active-press"
-                aria-label="فتح القائمة"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="4" x2="20" y1="12" y2="12" />
-                  <line x1="4" x2="20" y1="6" y2="6" />
-                  <line x1="4" x2="20" y1="18" y2="18" />
-                </svg>
-              </button>
-            </div>
+            ) : (
+              <span
+                aria-hidden="true"
+                className="size-11 shrink-0 rounded-full bg-slate-200/55 dark:bg-white/5"
+              />
+            )}
           </div>
-          <Sidebar
-            isOpen={sidebarOpen}
-            onToggle={() => setSidebarOpen(!sidebarOpen)}
-          />
-          <MobileBottomNav onOpenMenu={() => setSidebarOpen(true)} />
-          <PwaEnhancements />
+          <div className="hidden lg:block">
+            <Sidebar isOpen={false} onToggle={() => {}} />
+          </div>
+          <MobileBottomNav />
+          {user && <PwaEnhancements />}
         </>
       )}
       <main
         ref={scrollRef}
+        data-content-mode={contentMode}
         className={cn(
-          "app-content hide-scrollbar transition-all duration-500",
-          user ? "lg:ms-72 lg:pb-0" : "",
-          user ? (shouldPadBottomNav ? "pb-nav-safe" : "pb-safe") : "",
+          "app-content min-h-0 hide-scrollbar transition-all duration-500",
+          isWorkspace ? "app-content-workspace" : "app-content-document",
+          showAppChrome ? "lg:ms-72 lg:pb-0" : "",
+          showAppChrome ? (shouldPadBottomNav ? "pb-nav-safe" : "pb-safe") : "",
         )}
       >
-        <PullToRefreshWrapper scrollRef={scrollRef}>
-          {user && <AdBanner />}
-          {children}
-          {user && <FeedbackButton />}
-        </PullToRefreshWrapper>
+        {isWorkspace ? (
+          <div className="route-workspace">{routeContent}</div>
+        ) : (
+          <PullToRefreshWrapper scrollRef={scrollRef} className="min-h-full">
+            {routeContent}
+          </PullToRefreshWrapper>
+        )}
       </main>
     </div>
   );
@@ -343,155 +310,252 @@ function AnimatedRoutes() {
 
   return (
     <Routes location={location}>
-        <Route
-          path="/"
-          element={
+      <Route
+        path="/"
+        element={
+          <PageTransition>
+            <HomeEntry />
+          </PageTransition>
+        }
+      />
+      <Route
+        path="/login"
+        element={
+          <PublicOnlyRoute>
             <PageTransition>
-              <HomeEntry />
+              <Login />
             </PageTransition>
-          }
-        />
-        <Route
-          path="/login"
-          element={
-            <PublicOnlyRoute>
-              <PageTransition>
-                <Login />
-              </PageTransition>
-            </PublicOnlyRoute>
-          }
-        />
-        <Route
-          path="/auth/callback"
-          element={
-            <PageTransition>
-              <AuthCallback />
-            </PageTransition>
-          }
-        />
-        <Route
-          path="/privacy"
-          element={
-            <PageTransition>
-              <Privacy />
-            </PageTransition>
-          }
-        />
-        <Route
-          path="/terms"
-          element={
-            <PageTransition>
-              <Terms />
-            </PageTransition>
-          }
-        />
+          </PublicOnlyRoute>
+        }
+      />
+      <Route
+        path="/auth/callback"
+        element={
+          <PageTransition>
+            <AuthCallback />
+          </PageTransition>
+        }
+      />
+      <Route
+        path="/privacy"
+        element={
+          <PageTransition>
+            <Privacy />
+          </PageTransition>
+        }
+      />
+      <Route
+        path="/terms"
+        element={
+          <PageTransition>
+            <Terms />
+          </PageTransition>
+        }
+      />
 
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <PageTransition>
-                <Home />
-              </PageTransition>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/support"
-          element={
-            <ProtectedRoute>
-              <PageTransition>
-                <Support />
-              </PageTransition>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <PageTransition>
-                <Admin />
-              </PageTransition>
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/pro"
-          element={
-            <ProtectedRoute>
-              <PageTransition>
-                <Pro />
-              </PageTransition>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <PageTransition>
-                <Settings />
-              </PageTransition>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/bank-sync"
-          element={
-            <ProtectedRoute>
-              <PageTransition>
-                <BankSyncPage />
-              </PageTransition>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/ai"
-          element={
-            <ProtectedRoute>
-              <PageTransition>
-                <AICenter />
-              </PageTransition>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="*"
-          element={
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
             <PageTransition>
-              <NotFound />
+              <Home />
             </PageTransition>
-          }
-        />
-      </Routes>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/support"
+        element={
+          <ProtectedRoute>
+            <PageTransition>
+              <Support />
+            </PageTransition>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <PageTransition>
+              <Admin />
+            </PageTransition>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/pro"
+        element={
+          <ProtectedRoute>
+            <PageTransition>
+              <Pro />
+            </PageTransition>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/*"
+        element={
+          <ProtectedRoute>
+            <PageTransition>
+              <Settings />
+            </PageTransition>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/bank-sync"
+        element={
+          <ProtectedRoute>
+            <PageTransition>
+              <BankSyncPage />
+            </PageTransition>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ai"
+        element={
+          <ProtectedRoute>
+            <PageTransition>
+              <AICenter />
+            </PageTransition>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/more"
+        element={
+          <ProtectedRoute>
+            <PageTransition>
+              <More />
+            </PageTransition>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ultra"
+        element={
+          <ProtectedRoute>
+            <PageTransition>
+              <UltraLounge />
+            </PageTransition>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="*"
+        element={
+          <PageTransition>
+            <NotFound />
+          </PageTransition>
+        }
+      />
+    </Routes>
+  );
+}
+
+function PersistedQueryScope({
+  user,
+  children,
+}: {
+  user: QueryCacheUser;
+  children: React.ReactNode;
+}) {
+  return (
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister: createQueryPersister(user),
+        buster: PERSISTED_QUERY_BUSTER,
+        maxAge: PERSISTED_QUERY_MAX_AGE,
+        dehydrateOptions: {
+          shouldDehydrateQuery: (query) =>
+            query.state.status === "success" &&
+            shouldPersistQueryKey(query.queryKey),
+        },
+      }}
+    >
+      {/* React Query pauses fetching while the account-scoped cache restores.
+          Keeping the real shell mounted reserves the header and navigation
+          geometry from the first frame and avoids a visible 69px jump. */}
+      {children}
+    </PersistQueryClientProvider>
+  );
+}
+
+function BiometricAppEnhancements() {
+  const { showModal, closeModal, postponePrompt, optOutPermanently } =
+    useBiometricOnboarding();
+
+  return (
+    <>
+      <BiometricLockOverlay />
+      <BiometricOnboardingModal
+        isOpen={showModal}
+        onClose={closeModal}
+        onPostpone={postponePrompt}
+        onOptOut={optOutPermanently}
+      />
+    </>
+  );
+}
+
+function NativeLifecycleBridge() {
+  useNativeThemeSync();
+  return null;
+}
+
+function AuthScopedApplication() {
+  const { user } = useAuth();
+
+  const application = (
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <VirtualKeyboardProvider>
+        <NativeLifecycleBridge />
+        <BrowserRouter>
+          <BiometricLockProvider>
+            <Layout>
+              <Suspense fallback={<PageLoadingSkeleton />}>
+                <AnimatedRoutes />
+              </Suspense>
+            </Layout>
+            <BiometricAppEnhancements />
+            <Toaster position="top-center" richColors className="pt-safe" />
+          </BiometricLockProvider>
+        </BrowserRouter>
+      </VirtualKeyboardProvider>
+    </ThemeProvider>
+  );
+
+  if (!user) return application;
+
+  // A provider mounts only after identity is known, so another account's
+  // IndexedDB entry can never hydrate into this session's QueryClient.
+  return (
+    <PersistedQueryScope key={getQueryCacheScope(user)} user={user}>
+      {application}
+    </PersistedQueryScope>
   );
 }
 
 export default function App() {
   React.useEffect(() => {
+    initBackButtonListener();
+    void dismissAppLoader();
     // Clear chunk error reload flag if application successfully loaded
     sessionStorage.removeItem("chunk_error_reloaded");
-    // Older releases persisted every financial tRPC response under one device
-    // key. Purge that legacy cache rather than hydrating another user's data.
-    void clearPersistedQueryCache();
+    // v1 stored every account in one device-wide key. Purge only that retired
+    // key; never erase the current account's scoped offline cache on startup.
+    void clearLegacyPersistedQueryCache();
   }, []);
 
   return (
     <ErrorBoundary>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <BrowserRouter>
-              <Layout>
-                <Suspense fallback={<PageLoadingSkeleton />}>
-                  <AnimatedRoutes />
-                </Suspense>
-              </Layout>
-              <Toaster position="top-center" richColors className="pt-safe" />
-            </BrowserRouter>
-          </ThemeProvider>
+          <AuthScopedApplication />
         </QueryClientProvider>
       </trpc.Provider>
     </ErrorBoundary>

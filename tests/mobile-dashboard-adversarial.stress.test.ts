@@ -4,9 +4,14 @@ import * as path from "node:path";
 
 describe("Adversarial Stress Testing — SmartSpend AI Mobile Dashboard & AI Recording Input", () => {
   const homePath = path.resolve(process.cwd(), "src/pages/Home.tsx");
+  const homeHeaderPath = path.resolve(process.cwd(), "src/components/dashboard/HomeHeader.tsx");
+  const homeSummaryCardsPath = path.resolve(process.cwd(), "src/components/dashboard/HomeSummaryCards.tsx");
   const expenseFormPath = path.resolve(process.cwd(), "src/components/expenses/ExpenseForm.tsx");
 
   const homeSource = fs.readFileSync(homePath, "utf-8");
+  const homeHeaderSource = fs.readFileSync(homeHeaderPath, "utf-8");
+  const homeSummaryCardsSource = fs.readFileSync(homeSummaryCardsPath, "utf-8");
+  const dashboardSource = `${homeSource}\n${homeHeaderSource}\n${homeSummaryCardsSource}`;
   const expenseFormSource = fs.readFileSync(expenseFormPath, "utf-8");
 
   // =========================================================================
@@ -15,28 +20,28 @@ describe("Adversarial Stress Testing — SmartSpend AI Mobile Dashboard & AI Rec
   describe("1. Ultra-long Business Titles & String Edge Cases", () => {
     it("guarantees truncation and flex-shrink protection on Business Title and Page Title in Home.tsx", () => {
       // The header title must have truncate and be in a flex-1 min-w-0 container
-      expect(homeSource).toMatch(/<h1[^>]*truncate[^>]*>/);
-      expect(homeSource).toMatch(/min-w-0 flex-1/);
+      expect(dashboardSource).toMatch(/<h1[^>]*truncate[^>]*>/);
+      expect(dashboardSource).toMatch(/min-w-0 flex-1/);
 
       // Business mode toggle button must have max-w constraint and truncate on the business name
-      expect(homeSource).toMatch(/max-w-\[\d+px\] truncate/);
+      expect(dashboardSource).toMatch(/max-w-\[\d+px\] truncate/);
     });
 
     it("prevents header action buttons (StreakCounter, MonthPicker) from shrinking when title is long", () => {
       // StreakCounter and actions container must have shrink-0
-      expect(homeSource).toContain("shrink-0");
-      expect(homeSource).toMatch(/flex items-center gap-1\.5 sm:gap-2 shrink-0/);
+      expect(dashboardSource).toContain("shrink-0");
+      expect(dashboardSource).toMatch(/flex items-center gap-1\.5 sm:gap-2 shrink-0/);
     });
 
     it("verifies subtitle handles ultra-long user names without overflowing", () => {
       // Subtitle uses truncate to prevent line-wrapping overflow
-      expect(homeSource).toMatch(/<p[^>]*truncate[^>]*>\s*أهلاً/);
+      expect(dashboardSource).toMatch(/<p[^>]*truncate[^>]*>\s*أهلاً/);
     });
 
     it("verifies SummaryChip truncates labels while keeping tabular-nums values shrink-0", () => {
       // In SummaryChip:
-      expect(homeSource).toMatch(/<span[^>]*truncate[^>]*>\{label\}<\/span>/);
-      expect(homeSource).toMatch(/tabular-nums shrink-0/);
+      expect(dashboardSource).toMatch(/<span[^>]*truncate[^>]*>\s*\{label\}\s*<\/span>/);
+      expect(dashboardSource).toMatch(/tabular-nums shrink-0/);
     });
   });
 
@@ -60,7 +65,7 @@ describe("Adversarial Stress Testing — SmartSpend AI Mobile Dashboard & AI Rec
 
     it("verifies SummaryChip 2-column grid fits within 320px viewport", () => {
       // Grid is grid grid-cols-2 gap-2 with px-3 py-2
-      expect(homeSource).toMatch(/section className="grid grid-cols-2 gap-2"/);
+      expect(dashboardSource).toMatch(/grid grid-cols-2 gap-2/);
       // In a 320px screen: (320px - 24px padding - 8px gap) / 2 = 144px per chip.
       // With icon (14px) + label + compact value, 144px is sufficient with truncate & tabular-nums shrink-0.
     });
@@ -105,12 +110,12 @@ describe("Adversarial Stress Testing — SmartSpend AI Mobile Dashboard & AI Rec
   describe("4. Above-the-Fold Space Budgeting & Ergonomics", () => {
     it("verifies Header & Subtitle compaction delivers under 75px vertical footprint on mobile", () => {
       // Header uses py-1 sm:py-2, single-line greeting with text-xs, eliminating multi-line sprawl
-      expect(homeSource).toMatch(/header className="flex flex-col gap-2 -mx-1 px-1 py-1 sm:py-2"/);
-      expect(homeSource).toMatch(/text-xs text-muted-foreground truncate/);
+      expect(dashboardSource).toMatch(/header className="flex flex-col gap-2 -mx-1 px-1 py-1 sm:py-2"/);
+      expect(dashboardSource).toMatch(/text-xs text-muted-foreground truncate/);
     });
 
     it("verifies Financial Summary Pills use high-density py-2 px-3 padding", () => {
-      expect(homeSource).toMatch(/px-3 py-2 rounded-xl/);
+      expect(dashboardSource).toMatch(/px-3 py-2 rounded-xl/);
     });
 
     it("verifies Textarea elevation is calibrated (min-h-[96px] on mobile) for thumb-zone ergonomics", () => {
@@ -172,13 +177,13 @@ describe("Adversarial Stress Testing — SmartSpend AI Mobile Dashboard & AI Rec
 
     it("provides complete light/dark token pairing on SummaryChip in Home.tsx", () => {
       // Income tone
-      expect(homeSource).toContain("border-emerald-500/20 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300");
+      expect(dashboardSource).toContain("border-emerald-500/20 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300");
 
       // Expense tone
-      expect(homeSource).toContain("border-rose-500/20 bg-rose-500/10 text-rose-800 dark:text-rose-300");
+      expect(dashboardSource).toContain("border-rose-500/20 bg-rose-500/10 text-rose-800 dark:text-rose-300");
 
       // Neutral tone
-      expect(homeSource).toContain("border-slate-200/60 bg-white/70 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200");
+      expect(dashboardSource).toContain("border-slate-200/60 bg-white/70 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200");
     });
   });
 
@@ -197,9 +202,9 @@ describe("Adversarial Stress Testing — SmartSpend AI Mobile Dashboard & AI Rec
     it("preserves all required props and sub-components in Home.tsx", () => {
       expect(homeSource).toContain("<ExpenseForm");
       expect(homeSource).toContain("<RecentExpenses");
-      expect(homeSource).toContain("<StreakCounter");
-      expect(homeSource).toContain("<HealthBadge");
-      expect(homeSource).toContain("<SummaryChip");
+      expect(dashboardSource).toContain("<StreakCounter");
+      expect(dashboardSource).toContain("<HealthBadge");
+      expect(dashboardSource).toContain("<SummaryChip");
     });
   });
 });

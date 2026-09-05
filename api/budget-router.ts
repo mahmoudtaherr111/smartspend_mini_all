@@ -5,6 +5,7 @@ import { userBudgets, expenses } from "../db/schema";
 import { eq, and, desc, gte, lt } from "drizzle-orm";
 import { invalidateFinanceUserCache } from "./services/finance-semantic-layer";
 import { businessDateKey, startOfBusinessDay } from "./lib/app-time";
+import { ExpenseInputLimits } from "../contracts/constants";
 
 function getFinancialMonthDates(reference: Date, periodStartDay: number) {
   const [year, month] = businessDateKey(reference).split("-").map(Number);
@@ -108,7 +109,7 @@ export const budgetRouter = router({
       z.object({
         title: z.string().min(2).max(200),
         category: z.string().max(100).optional(),
-        monthlyLimit: z.number().positive(),
+        monthlyLimit: z.number().positive().max(ExpenseInputLimits.amountMax),
         periodStartDay: z.number().int().min(1).max(31).default(1),
         linkedGoalId: z.number().int().positive().optional(),
         alertThresholdPercent: z.number().int().min(1).max(100).default(80),
@@ -137,7 +138,7 @@ export const budgetRouter = router({
         budgetId: z.number().int().positive(),
         title: z.string().min(2).max(200).optional(),
         category: z.string().max(100).optional(),
-        monthlyLimit: z.number().positive().optional(),
+        monthlyLimit: z.number().positive().max(ExpenseInputLimits.amountMax).optional(),
         periodStartDay: z.number().int().min(1).max(31).optional(),
         alertThresholdPercent: z.number().int().min(1).max(100).optional(),
         status: z.enum(["active", "paused"]).optional(),

@@ -19,7 +19,7 @@ import "dotenv/config";
 import { serve } from "@hono/node-server";
 import { WebSocketServer } from "ws";
 import { handleVoiceCallWebSocket } from "./services/voice-call-service";
-import { app } from "./boot";
+import { app, isAllowedWebSocketOrigin } from "./boot";
 import { env } from "./lib/env";
 
 // Prevent DoS from unhandled promise rejections / uncaught exceptions crashing the process
@@ -41,6 +41,14 @@ const wss = new WebSocketServer({ noServer: true });
 server.on("upgrade", (request, socket, head) => {
   const url = new URL(request.url || "", "http://localhost");
   if (url.pathname.startsWith("/api/voice/live")) {
+    const rawOrigin = request.headers.origin;
+    const origin = Array.isArray(rawOrigin) ? rawOrigin[0] : rawOrigin;
+    if (!isAllowedWebSocketOrigin(origin)) {
+      socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
+      socket.destroy();
+      return;
+    }
+
     wss.handleUpgrade(request, socket, head, (ws) => {
       wss.emit("connection", ws, request);
     });

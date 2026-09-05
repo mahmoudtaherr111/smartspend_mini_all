@@ -1,35 +1,39 @@
-# BRIEFING — 2026-08-25T10:04:00Z
+# BRIEFING — 2026-08-30T00:57:00Z
 
 ## Mission
-Survey the codebase for Requirement R2: Floating Liquid Glass Capsule with Continuous Touch-Slide Drag & Haptics for the mobile bottom navigation bar.
+Investigate AI streaming and chatbot interaction subsystem in SmartSpend AI across frontend streaming hooks/components and backend routers/services.
 
 ## 🔒 My Identity
-- Archetype: explorer
-- Roles: investigation, synthesis
-- Working directory: E:\smartspend_V1_fixed\.agents\teamwork_preview_explorer_survey_2
-- Original parent: ad9d4b5b-06ab-4df9-a386-5dd5442c5772
-- Milestone: preview_survey
+- Archetype: Explorer
+- Roles: AI Streaming & Agent Interaction Specialist
+- Working directory: e:/smartspend_V1_fixed/.agents/teamwork_preview_explorer_survey_2
+- Original parent: cacd9dc6-f7a7-488d-bea7-a95c193ae218
+- Milestone: Explorer Survey 2 Complete
 
 ## 🔒 Key Constraints
-- Read-only investigation — do NOT implement
-- Monorepo rules in AGENTS.md
+- Read-only investigation — do NOT implement modifications in source code
+- Produce detailed report.md and 5-component handoff.md with line-by-line code citations, root causes, and concrete remediation recommendations
 
 ## Current Parent
-- Conversation ID: ad9d4b5b-06ab-4df9-a386-5dd5442c5772
-- Updated: 2026-08-25T10:04:00Z
+- Conversation ID: cacd9dc6-f7a7-488d-bea7-a95c193ae218
+- Updated: 2026-08-30T00:57:00Z
 
 ## Investigation State
-- **Explored paths**: `src/components/layout/MobileBottomNav.tsx`, `src/App.tsx`, `src/hooks/useHaptics.ts`, `src/pages/Home.tsx`, `src/pages/AICenter.tsx`, `src/3d-effects.css`, `src/index.css`, `tailwind.config.js`, `package.json`.
+- **Explored paths**: `src/components/ai/AIChatbot.tsx`, `src/pages/AICenter.tsx`, `src/components/ai/AIMonthlyReport.tsx`, `src/components/ai/AIVoiceCall.tsx`, `src/hooks/useVoiceCall.ts`, `src/providers/trpc.ts`, `api/chat-router.ts`, `api/ai-router.ts`, `api/middleware.ts`, `api/services/ai-kernel/`, `api/services/action-runtime/`, `api/lib/deepseek-client.ts`, `api/lib/ai-gateway.ts`.
 - **Key findings**:
-  - `MobileBottomNav.tsx` currently renders as a docked bottom bar with discrete click handlers and separate 5th tab.
-  - Bounding rect hit-testing across a unified 5-tab array provides RTL-immune touch-slide tracking.
-  - Liquid glass styling requires `backdrop-filter: blur(24px) saturate(190%)`, specular rim reflections, and dark ambient glow.
-  - Haptic integration via `useHaptics.lightTap()` on boundary crossings and `mediumTap()` on release.
-- **Unexplored areas**: None for R2 survey scope.
+  1. AbortController lifecycle is active in `AIChatbot.tsx`, but missing post-await `controller.signal.aborted` check after `sendMessage.mutateAsync(...)` causes stopped generations to populate UI on completion.
+  2. Cooldown timer in `AIChatbot.tsx` hardcodes 10s backoff, ignoring server's `retryAfterSeconds` returned in tRPC error data.
+  3. Network stall & timeout recovery preserves user drafts in `input` state with a single-tap `RotateCcw` retry banner.
+  4. Markdown & RTL rendering uses `<bdi>` currency tag isolation and unclosed code block recovery.
+  5. Action runtime uses atomic CAS updates (`WHERE status = 'pending_confirmation'`) preventing double execution, but frontend `actionStatuses` lacks historical hydration across reloads.
+- **Unexplored areas**: None. Full matrix covered.
 
 ## Key Decisions Made
-- Fully documented architecture, physics calculations, haptics state machine, and proposed component replacement in `survey_nav_gestures.md` and `handoff.md`.
+- Generated comprehensive `report.md` and 5-component `handoff.md`.
 
 ## Artifact Index
-- `E:\smartspend_V1_fixed\.agents\teamwork_preview_explorer_survey_2\survey_nav_gestures.md` — Detailed survey report
-- `E:\smartspend_V1_fixed\.agents\teamwork_preview_explorer_survey_2\handoff.md` — 5-component handoff report
+- DISPATCH.md — record of incoming dispatch messages
+- BRIEFING.md — persistent working memory
+- progress.md — liveness heartbeat
+- report.md — comprehensive technical investigation report
+- handoff.md — 5-component handoff document

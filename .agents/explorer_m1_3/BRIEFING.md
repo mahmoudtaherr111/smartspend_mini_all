@@ -1,43 +1,31 @@
-# BRIEFING — 2026-08-23T17:05:00Z
+# BRIEFING — 2026-08-28T14:59:00Z
 
 ## Mission
-Audit RBAC middleware, WebAuthn Passkeys flow, and dual-user account cascading deletion logic across all dependent tables to identify security vulnerabilities, permission elevations, orphan data leaks, and edge cases.
+Analyze exact implementation for FOUT elimination (SplashScreen hide with document.fonts.ready) and Cairo Arabic typography bounding-box clipping fix across UI primitives.
 
 ## 🔒 My Identity
-- Archetype: Explorer
-- Roles: Security Auditor, Code Analyst
-- Working directory: E:/smartspend_V1_fixed/.agents/explorer_m1_3/
-- Original parent: 70ea30a5-7bed-4540-a3b8-0c456845ba06
-- Milestone: Milestone 1 (RBAC, Passkeys & Cascading Deletion Security Audit)
+- Archetype: explorer
+- Roles: [explorer, analyst, investigator]
+- Working directory: e:/smartspend_V1_fixed/.agents/explorer_m1_3
+- Original parent: 48fa826e-9a96-4e89-be77-3c45db8b459e
+- Milestone: M1 (M1.3 - Typography, FOUT Elimination & Cairo Arabic Font Metrics)
 
 ## 🔒 Key Constraints
 - Read-only investigation — do NOT implement
-- Verify exact file paths, line numbers, and logic chains
-- Output report to audit_rbac_cascades.md and handoff to handoff.md
+- Focus on F5: Typography & FOUT Elimination (SplashScreen.hide coordination, document.fonts.ready, Arabic Cairo font metrics clipping fixes)
 
 ## Current Parent
-- Conversation ID: 70ea30a5-7bed-4540-a3b8-0c456845ba06
+- Conversation ID: 48fa826e-9a96-4e89-be77-3c45db8b459e
 - Updated: not yet
 
 ## Investigation State
-- **Explored paths**: `api/middleware.ts`, `api/webauthn-router.ts`, `api/profile-router.ts`, `api/admin-router.ts`, `api/local-auth-router.ts`, `api/context.ts`, `api/business-router.ts`, `api/chat-router.ts`, `api/goals-router.ts`, `api/ads-router.ts`, `api/support-router.ts`, `api/sms-router.ts`, `db/schema.ts`, `db/relations.ts`.
-- **Key findings**:
-  1. Deletion cascades miss 18 tables in `adminRouter` and 17 tables in `localAuthRouter`, leaking chat messages, AI memories, passkeys, and contacts.
-  2. `businessRouter` exposes Pro features and Gemini AI (`suggestCategories`) under `authedProcedure` without Pro checks or AI rate limits.
-  3. `ultraProcedure` is exported but unused across the codebase.
-  4. WebAuthn origin/RP ID are hardcoded to localhost/smartspend.ai; no passkey revocation procedures exist.
-  5. Entity deletions across contacts, businesses, chats lack `db.transaction()` wrapper.
-  6. `profileRouter` has no user self-deletion endpoint.
-- **Unexplored areas**: None for M1 scope.
+- **Explored paths**: Initial dispatch and survey reports
+- **Key findings**: FOUT occurs due to uncoordinated splash hide & font loading; Cairo font has high ascenders/diacritics and descenders clipped by leading-none / overflow-hidden
+- **Unexplored areas**: Detailed audit of all UI primitives (`src/components/ui/*`), `index.html`, `src/index.css`, `src/pwa/register-sw.ts`, `src/App.tsx`, and fonts pipeline
 
 ## Key Decisions Made
-- Cataloged all 48 tables and 35 user-scoped tables with exact line-by-line deletion comparison.
-- Formulated 17 discrete vulnerability catalog entries (`SEC-M1-01` through `SEC-M1-17`).
-- Designed unified `purgeUserAccount` ACID transaction service specification.
+- Systematic audit of font loading mechanics and every UI component affected by Arabic clipping.
 
 ## Artifact Index
-- E:/smartspend_V1_fixed/.agents/explorer_m1_3/DISPATCH.md — Initial dispatch log
-- E:/smartspend_V1_fixed/.agents/explorer_m1_3/BRIEFING.md — Situational awareness
-- E:/smartspend_V1_fixed/.agents/explorer_m1_3/progress.md — Liveness heartbeat
-- E:/smartspend_V1_fixed/.agents/explorer_m1_3/audit_rbac_cascades.md — Full audit report
-- E:/smartspend_V1_fixed/.agents/explorer_m1_3/handoff.md — 5-component handoff report
+- e:/smartspend_V1_fixed/.agents/explorer_m1_3/report.md — Technical Analysis Report
+- e:/smartspend_V1_fixed/.agents/explorer_m1_3/handoff.md — Handoff Report

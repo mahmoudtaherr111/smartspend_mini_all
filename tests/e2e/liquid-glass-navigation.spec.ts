@@ -8,7 +8,9 @@ test.describe("R2: Floating Liquid Glass Navigation Capsule & Touch Gesture Phys
     await page.addInitScript(() => {
       (window as unknown as { __hapticCalls: unknown[] }).__hapticCalls = [];
       navigator.vibrate = (pattern: number | number[]) => {
-        (window as unknown as { __hapticCalls: unknown[] }).__hapticCalls.push(pattern);
+        (window as unknown as { __hapticCalls: unknown[] }).__hapticCalls.push(
+          pattern,
+        );
         return true;
       };
     });
@@ -20,14 +22,22 @@ test.describe("R2: Floating Liquid Glass Navigation Capsule & Touch Gesture Phys
     await page.goto("/dashboard");
     await page.waitForLoadState("domcontentloaded");
 
-    const nav = page.locator("nav.mobile-bottom-nav, [data-testid='mobile-bottom-nav'], nav[aria-label*='التنقل']").first();
+    const nav = page
+      .locator(
+        "nav.mobile-bottom-nav, [data-testid='mobile-bottom-nav'], nav[aria-label*='التنقل']",
+      )
+      .first();
     await expect(nav).toBeVisible();
 
     // Verify backdrop-filter styling (blur and saturation)
     const navComputed = await nav.evaluate((el) => {
-      const style = window.getComputedStyle(el) as unknown as Record<string, string>;
+      const style = window.getComputedStyle(el) as unknown as Record<
+        string,
+        string
+      >;
       return {
-        backdropFilter: style.backdropFilter || style.webkitBackdropFilter || "",
+        backdropFilter:
+          style.backdropFilter || style.webkitBackdropFilter || "",
         position: style.position,
         zIndex: style.zIndex,
       };
@@ -44,9 +54,10 @@ test.describe("R2: Floating Liquid Glass Navigation Capsule & Touch Gesture Phys
     await page.waitForLoadState("domcontentloaded");
 
     const expectedLabels = ["تسجيل", "إحصائيات", "مركز AI", "تقويم", "المزيد"];
+    const nav = page.getByTestId("mobile-bottom-nav");
 
     for (const label of expectedLabels) {
-      const tabElement = page.locator(`nav`).getByText(label, { exact: false }).first();
+      const tabElement = nav.getByText(label, { exact: false });
       await expect(tabElement).toBeVisible();
     }
   });
@@ -58,15 +69,17 @@ test.describe("R2: Floating Liquid Glass Navigation Capsule & Touch Gesture Phys
     await page.goto("/dashboard?tab=stats");
     await page.waitForLoadState("domcontentloaded");
 
-    const statsTab = page.locator("nav a[href*='tab=stats'], [data-testid='nav-tab-stats'], nav").getByText("إحصائيات").first();
+    const statsTab = page.getByTestId("nav-tab-stats");
     await expect(statsTab).toBeVisible();
+    await expect(statsTab).toHaveAttribute("aria-current", "page");
 
     // 2. Visit calendar tab directly
     await page.goto("/dashboard?tab=calendar");
     await page.waitForLoadState("domcontentloaded");
 
-    const calendarTab = page.locator("nav a[href*='tab=calendar'], [data-testid='nav-tab-calendar'], nav").getByText("تقويم").first();
+    const calendarTab = page.getByTestId("nav-tab-calendar");
     await expect(calendarTab).toBeVisible();
+    await expect(calendarTab).toHaveAttribute("aria-current", "page");
   });
 
   test("Tier 1 (F6): Tap navigation activates tabs and updates URL query parameters", async ({
@@ -76,13 +89,13 @@ test.describe("R2: Floating Liquid Glass Navigation Capsule & Touch Gesture Phys
     await page.waitForLoadState("domcontentloaded");
 
     // Click stats tab
-    const statsTab = page.locator("nav a[href*='tab=stats'], nav").getByText("إحصائيات").first();
+    const statsTab = page.getByTestId("nav-tab-stats");
     await statsTab.click();
 
     await expect(page).toHaveURL(/tab=stats/);
 
     // Click calendar tab
-    const calendarTab = page.locator("nav a[href*='tab=calendar'], nav").getByText("تقويم").first();
+    const calendarTab = page.getByTestId("nav-tab-calendar");
     await calendarTab.click();
 
     await expect(page).toHaveURL(/tab=calendar/);
@@ -95,7 +108,7 @@ test.describe("R2: Floating Liquid Glass Navigation Capsule & Touch Gesture Phys
     await page.waitForLoadState("domcontentloaded");
 
     // Click stats tab
-    const statsTab = page.locator("nav a[href*='tab=stats'], nav").getByText("إحصائيات").first();
+    const statsTab = page.getByTestId("nav-tab-stats");
     await statsTab.click();
 
     const hapticCount = await page.evaluate(() => {
@@ -122,7 +135,11 @@ test.describe("R2: Floating Liquid Glass Navigation Capsule & Touch Gesture Phys
     await page.waitForTimeout(150);
 
     // Nav bar should remain visible and functional
-    const nav = page.locator("nav.mobile-bottom-nav, [data-testid='mobile-bottom-nav'], nav[aria-label*='التنقل']").first();
+    const nav = page
+      .locator(
+        "nav.mobile-bottom-nav, [data-testid='mobile-bottom-nav'], nav[aria-label*='التنقل']",
+      )
+      .first();
     await expect(nav).toBeVisible();
   });
 
@@ -132,15 +149,11 @@ test.describe("R2: Floating Liquid Glass Navigation Capsule & Touch Gesture Phys
     await page.goto("/dashboard?tab=record");
     await page.waitForLoadState("domcontentloaded");
 
-    const recordTab = page.locator("nav").getByText("تسجيل").first();
-    const statsTab = page.locator("nav").getByText("إحصائيات").first();
-    const calendarTab = page.locator("nav").getByText("تقويم").first();
-
     // Rapid burst clicks
-    await statsTab.click();
-    await calendarTab.click();
-    await recordTab.click();
-    await statsTab.click();
+    await page.getByTestId("nav-tab-stats").click();
+    await page.getByTestId("nav-tab-calendar").click();
+    await page.getByTestId("nav-tab-record").click();
+    await page.getByTestId("nav-tab-stats").click();
 
     await page.waitForTimeout(100);
 
@@ -167,7 +180,11 @@ test.describe("R2: Floating Liquid Glass Navigation Capsule & Touch Gesture Phys
     await dragTouchCoordinates(startX, startY, endX, endY, 8);
     await page.waitForTimeout(100);
 
-    const nav = page.locator("nav.mobile-bottom-nav, [data-testid='mobile-bottom-nav'], nav[aria-label*='التنقل']").first();
+    const nav = page
+      .locator(
+        "nav.mobile-bottom-nav, [data-testid='mobile-bottom-nav'], nav[aria-label*='التنقل']",
+      )
+      .first();
     await expect(nav).toBeVisible();
   });
 
@@ -181,7 +198,11 @@ test.describe("R2: Floating Liquid Glass Navigation Capsule & Touch Gesture Phys
     await page.evaluate(() => window.scrollTo(0, 300));
     await page.waitForTimeout(100);
 
-    const nav = page.locator("nav.mobile-bottom-nav, [data-testid='mobile-bottom-nav'], nav[aria-label*='التنقل']").first();
+    const nav = page
+      .locator(
+        "nav.mobile-bottom-nav, [data-testid='mobile-bottom-nav'], nav[aria-label*='التنقل']",
+      )
+      .first();
     await expect(nav).toBeVisible();
 
     const isAboveBottom = await nav.evaluate((el) => {

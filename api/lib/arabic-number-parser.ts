@@ -185,7 +185,7 @@ function stripClitic(word: string): { core: string; hadClitic: boolean } {
 const CURRENCY_UNIT = /^[وبل]?(?:ـ)?(?:ال)?(?:جنيه|جنية|جنيهات|ج)$/;
 
 function isDigitLiteral(word: string): boolean {
-  return /^\d+(?:[.,]\d+)?$/.test(word);
+  return /^\d+(?:[.,]\d+)*$/.test(word) && Number.isFinite(parseNumericLiteral(word));
 }
 
 /**
@@ -200,19 +200,11 @@ function isDigitLiteral(word: string): boolean {
  * separately. Two implementations of one rule is how the wrong one wins.
  */
 export function parseNumericLiteral(word: string): number {
-  const trimmed = word.trim();
-  const parts = trimmed.split(",");
-  const groups = parts.slice(1);
-  // Every group after a thousands comma is three digits — and the last one may carry the
-  // decimal fraction: "1,250.50". Requiring a bare three digits everywhere read that as
-  // a decimal comma and returned 1.25, losing a factor of a thousand on the one field
-  // that must never be wrong.
-  const isThousands =
-    groups.length > 0 &&
-    groups.every((group, i) =>
-      i === groups.length - 1 ? /^\d{3}(?:\.\d+)?$/.test(group) : /^\d{3}$/.test(group),
-    );
-  return parseFloat(isThousands ? trimmed.replace(/,/g, "") : trimmed.replace(",", "."));
+  const value = arabicIndicToAscii(word.trim()).replace(/٫/g, ".").replace(/٬/g, ",");
+  if (/^\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(value)) return Number(value.replace(/,/g, ""));
+  if (/^\d{1,3}(?:\.\d{3})+,\d{1,2}$/.test(value)) return Number(value.replace(/\./g, "").replace(",", "."));
+  if (/^\d+(?:[.,]\d+)?$/.test(value)) return Number(value.replace(",", "."));
+  return Number.NaN;
 }
 
 function digitValue(word: string): number {
@@ -301,7 +293,7 @@ function formatNumber(value: number): string {
 export function parseArabicNumbers(text: string): string {
   if (!text) return text;
 
-  let processed = arabicIndicToAscii(text);
+  let processed = arabicIndicToAscii(text).replace(/٫/g, ".").replace(/٬/g, ",");
 
   // Punctuation must not hide a number word. Tokenizing on whitespace alone left
   // "وخمسين،" as one token that matched nothing, so "تلتمية وخمسين،" composed to 300 and
@@ -416,5 +408,9 @@ export function parseArabicNumbers(text: string): string {
 
   flushInto();
   // Re-attach the punctuation that was spaced out for tokenizing.
-  return out.join(" ").replace(/ +([،؛,;:!؟?….])/g, "$1");
+  return out.join(" ")
+    .replace(/\b(\d+(?:\.\d+)?)\s+(?:إلا|الا)\s+(\d+(?:\.\d+)?)\b/g,
+      (whole, base: string, deduction: string) => Number(base) > Number(deduction)
+        ? formatNumber(Number(base) - Number(deduction)) : whole)
+    .replace(/ +([،؛,;:!؟?….])/g, "$1");
 }

@@ -6,12 +6,39 @@ test.describe("SmartSpend AI Mobile Dashboard & AI Recording Input Re-architectu
     await page.addInitScript(() => {
       // Mock CLS Observer
       (window as any).__cumulativeLayoutShift = 0;
+      (window as any).__layoutShiftEntries = [];
       try {
         const observer = new PerformanceObserver((entryList) => {
           for (const entry of entryList.getEntries()) {
-            const shiftEntry = entry as unknown as { value: number; hadRecentInput: boolean };
+            const shiftEntry = entry as unknown as {
+              value: number;
+              hadRecentInput: boolean;
+              sources?: Array<{
+                node?: Node | null;
+                previousRect?: DOMRectReadOnly;
+                currentRect?: DOMRectReadOnly;
+              }>;
+            };
             if (!shiftEntry.hadRecentInput) {
               (window as any).__cumulativeLayoutShift += shiftEntry.value;
+              (window as any).__layoutShiftEntries.push({
+                value: shiftEntry.value,
+                sources: (shiftEntry.sources ?? []).map(
+                  ({ node, previousRect, currentRect }) => {
+                    if (!(node instanceof Element)) return { node: "unknown" };
+                    const testId = node.getAttribute("data-testid");
+                    return {
+                      node: testId
+                        ? `[data-testid="${testId}"]`
+                        : node.id
+                          ? `#${node.id}`
+                          : node.tagName.toLowerCase(),
+                      previousRect,
+                      currentRect,
+                    };
+                  },
+                ),
+              });
             }
           }
         });
@@ -26,7 +53,8 @@ test.describe("SmartSpend AI Mobile Dashboard & AI Recording Input Re-architectu
       }
       navigator.mediaDevices.getUserMedia = async () => {
         try {
-          const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+          const AudioContextClass =
+            window.AudioContext || (window as any).webkitAudioContext;
           if (AudioContextClass) {
             const ctx = new AudioContextClass();
             const osc = ctx.createOscillator();
@@ -50,35 +78,22 @@ test.describe("SmartSpend AI Mobile Dashboard & AI Recording Input Re-architectu
   // TIER 1: FEATURE COVERAGE
   // ==========================================
   test.describe("Tier 1: Feature Coverage", () => {
-    test("T1.1: Fluid Morphing AI Discovery Banner supports collapse/expand with ✨ تسجيل ذكي badge", async ({
+    test("T1.1: Focused smart-capture surface exposes a stable, non-interactive AI label", async ({
       page,
       consoleErrors,
     }) => {
       await page.goto("/dashboard?tab=record");
       await page.waitForLoadState("domcontentloaded");
 
-      // Verify presence of discovery banner or compact inline badge
-      const bannerContainer = page
-        .locator(
-          "[data-testid='ai-discovery-banner'], text='سجل بحرية.. والذكاء الاصطناعي هيفهمك', [data-testid='banner-compact-badge'], button:has-text('تسجيل ذكي')",
-        )
-        .first();
-      await expect(bannerContainer).toBeAttached();
-
-      // Check if banner toggle / badge is interactive
-      const bannerToggle = page
-        .locator(
-          "[data-testid='banner-toggle'], button:has-text('تسجيل ذكي'), [data-testid='banner-compact-badge'], [aria-label*='طي'], [aria-label*='توسيع']",
-        )
-        .first();
-
-      if ((await bannerToggle.count()) > 0) {
-        await bannerToggle.click();
-        await page.waitForTimeout(200);
-
-        // Verify badge or banner toggles cleanly without throwing errors
-        expect(consoleErrors).toHaveLength(0);
-      }
+      await expect(page.getByTestId("smart-capture-surface")).toBeVisible();
+      await expect(page.getByTestId("smart-capture-badge")).toHaveText(
+        "تسجيل ذكي",
+      );
+      await expect(page.getByTestId("smart-capture-badge")).not.toHaveAttribute(
+        "role",
+        "button",
+      );
+      expect(consoleErrors).toHaveLength(0);
     });
 
     test("T1.2: Contextual Dynamic Recording State eliminates static 'الحالة: جاهز' and renders dynamic waveform pill", async ({
@@ -103,8 +118,9 @@ test.describe("SmartSpend AI Mobile Dashboard & AI Recording Input Re-architectu
         // Verify active recording waveform pill / listening state is rendered
         const recordingFeedback = page
           .locator(
-            "[data-testid='recording-waveform'], [data-testid='recording-pill'], .recording-pulse, text='جاري الاستماع', text='تسجيل'",
+            "[data-testid='recording-waveform'], [data-testid='recording-pill'], .recording-pulse",
           )
+          .or(page.getByText(/جاري الاستماع|تسجيل/))
           .first();
 
         if ((await recordingFeedback.count()) > 0) {
@@ -132,15 +148,18 @@ test.describe("SmartSpend AI Mobile Dashboard & AI Recording Input Re-architectu
 
       // StreakCounter should be rendered in header area
       const streakCounter = header
-        .locator("[data-testid='streak-counter'], .streak-counter, text*='يوم', [class*='StreakCounter']")
+        .locator(
+          "[data-testid='streak-counter'], .streak-counter, [class*='StreakCounter']",
+        )
+        .or(header.getByText(/يوم/))
         .first();
       if ((await streakCounter.count()) > 0) {
         await expect(streakCounter).toBeVisible();
       }
 
       // Verify compact financial summary chips
-      const incomeChip = page.locator("text='دخل الشهر'").first();
-      const expenseChip = page.locator("text='مصروف الشهر'").first();
+      const incomeChip = page.getByText("دخل الشهر").first();
+      const expenseChip = page.getByText("مصروف الشهر").first();
       await expect(incomeChip).toBeVisible();
       await expect(expenseChip).toBeVisible();
 
@@ -154,11 +173,15 @@ test.describe("SmartSpend AI Mobile Dashboard & AI Recording Input Re-architectu
       await page.goto("/dashboard?tab=record");
       await page.waitForLoadState("domcontentloaded");
 
-      const textarea = page.locator("#expense-input, textarea[placeholder*='سجل']").first();
+      const textarea = page
+        .locator("#expense-input, textarea[placeholder*='سجل']")
+        .first();
       await expect(textarea).toBeVisible();
 
       const actionButtons = page
-        .locator("button[type='submit'], button[aria-label*='تسجيل'], button:has(.lucide-mic)")
+        .locator(
+          "button[type='submit'], button[aria-label*='تسجيل'], button:has(.lucide-mic)",
+        )
         .first();
       await expect(actionButtons).toBeVisible();
 
@@ -187,8 +210,12 @@ test.describe("SmartSpend AI Mobile Dashboard & AI Recording Input Re-architectu
           const userStr = window.localStorage.getItem("smartspend_user");
           if (userStr) {
             const user = JSON.parse(userStr);
-            user.name = "مؤسسة الأهرام للتجارة العامة والمقاولات والتوريدات العمومية ذ.م.م";
-            window.localStorage.setItem("smartspend_user", JSON.stringify(user));
+            user.name =
+              "مؤسسة الأهرام للتجارة العامة والمقاولات والتوريدات العمومية ذ.م.م";
+            window.localStorage.setItem(
+              "smartspend_user",
+              JSON.stringify(user),
+            );
           }
         } catch {
           // ignore
@@ -273,7 +300,9 @@ test.describe("SmartSpend AI Mobile Dashboard & AI Recording Input Re-architectu
       await page.goto("/dashboard?tab=record");
       await page.waitForLoadState("domcontentloaded");
 
-      const textarea = page.locator("#expense-input, textarea[placeholder*='سجل']").first();
+      const textarea = page
+        .locator("#expense-input, textarea[placeholder*='سجل']")
+        .first();
       await expect(textarea).toBeVisible();
 
       // Enter multi-line verbose expense text
@@ -285,7 +314,9 @@ test.describe("SmartSpend AI Mobile Dashboard & AI Recording Input Re-architectu
 
       // Verify submit button is reachable
       const submitBtn = page
-        .locator("button[type='submit'], button:has-text('سجل'), button:has-text('حفظ')")
+        .locator(
+          "button[type='submit'], button:has-text('سجل'), button:has-text('حفظ')",
+        )
         .first();
       await expect(submitBtn).toBeVisible();
 
@@ -338,7 +369,7 @@ test.describe("SmartSpend AI Mobile Dashboard & AI Recording Input Re-architectu
       page,
       consoleErrors,
     }) => {
-      await page.goto("/dashboard?tab=record");
+      await page.goto("/settings/appearance");
       await page.waitForLoadState("domcontentloaded");
 
       // 1. Dark Mode verification
@@ -348,11 +379,7 @@ test.describe("SmartSpend AI Mobile Dashboard & AI Recording Input Re-architectu
       expect(typeof isDark).toBe("boolean");
 
       // 2. Switch to Light Mode
-      await page.evaluate(() => {
-        document.documentElement.classList.remove("dark");
-        window.localStorage.setItem("smartspend_theme", "light");
-      });
-      await page.waitForTimeout(100);
+      await page.getByRole("button", { name: /فاتح/ }).click();
 
       const isLight = await page.evaluate(
         () => !document.documentElement.classList.contains("dark"),
@@ -360,15 +387,15 @@ test.describe("SmartSpend AI Mobile Dashboard & AI Recording Input Re-architectu
       expect(isLight).toBe(true);
 
       // Verify elements remain visible in light mode
-      const summaryChip = page.locator("text='دخل الشهر'").first();
-      await expect(summaryChip).toBeVisible();
+      await expect(page.getByText("مظهر التطبيق")).toBeVisible();
 
       // Switch back to Dark Mode
-      await page.evaluate(() => {
-        document.documentElement.classList.add("dark");
-        window.localStorage.setItem("smartspend_theme", "dark");
-      });
-      await page.waitForTimeout(100);
+      await page.getByRole("button", { name: /داكن/ }).click();
+
+      const restoredDark = await page.evaluate(() =>
+        document.documentElement.classList.contains("dark"),
+      );
+      expect(restoredDark).toBe(true);
 
       expect(consoleErrors).toHaveLength(0);
     });
@@ -413,7 +440,9 @@ test.describe("SmartSpend AI Mobile Dashboard & AI Recording Input Re-architectu
       await page.waitForTimeout(300);
 
       // Interact with form
-      const textarea = page.locator("#expense-input, textarea[placeholder*='سجل']").first();
+      const textarea = page
+        .locator("#expense-input, textarea[placeholder*='سجل']")
+        .first();
       if ((await textarea.count()) > 0) {
         await textarea.focus();
         await textarea.fill("150 جنيه قهوة ومشروبات");
@@ -432,8 +461,16 @@ test.describe("SmartSpend AI Mobile Dashboard & AI Recording Input Re-architectu
       }
 
       // Measure CLS score
-      const clsScore = await page.evaluate(() => (window as any).__cumulativeLayoutShift || 0);
-      expect(clsScore).toBeLessThanOrEqual(0.05);
+      const clsScore = await page.evaluate(
+        () => (window as any).__cumulativeLayoutShift || 0,
+      );
+      const layoutShiftEntries = await page.evaluate(
+        () => (window as any).__layoutShiftEntries ?? [],
+      );
+      expect(
+        clsScore,
+        `layout shifts: ${JSON.stringify(layoutShiftEntries)}`,
+      ).toBeLessThanOrEqual(0.05);
 
       expect(consoleErrors).toHaveLength(0);
     });
@@ -447,9 +484,8 @@ test.describe("SmartSpend AI Mobile Dashboard & AI Recording Input Re-architectu
       await page.waitForTimeout(200);
 
       const recentExpenses = page
-        .locator(
-          "[data-testid='recent-expenses'], text='أحدث العمليات', text='أحدث المعاملات', text='أحدث المصروفات'",
-        )
+        .locator("[data-testid='recent-expenses']")
+        .or(page.getByText(/أحدث العمليات|أحدث المعاملات|أحدث المصروفات/))
         .first();
 
       if ((await recentExpenses.count()) > 0) {

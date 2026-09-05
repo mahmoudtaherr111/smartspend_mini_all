@@ -180,21 +180,28 @@ export function extractAmounts(rawText: string): ExtractedAmount[] {
   // substitution tables" with one engine and removed two — this one survived, and
   // being first in the pipeline it overrode the engine that replaced it.
   text = parseArabicNumbers(text);
+  // Dates, clock times and percentages are not money, even when they contain a
+  // four-digit year. Keep their positions so neighbouring price anchors stay bound.
+  const excludedSpans = [...text.matchAll(/\d{1,4}[\/:-]\d{1,2}(?:[\/-]\d{1,4})?|\d+(?:[.,]\d+)?\s*[%٪]/g)]
+    .map((m) => ({ start: m.index, end: m.index + m[0].length }));
   const amountPattern = /(\d+(?:[.,]\d{3})*(?:[.,]\d+)?)\s*(جنيه|ج\.م|ج|الف|ألف)?/g;
   let match;
 
   while ((match = amountPattern.exec(text)) !== null) {
+    if (excludedSpans.some((span) => match.index >= span.start && match.index < span.end)) continue;
     // One implementation of "what does a comma mean", shared with the number engine.
     // Keeping a second copy here is what let the two drift apart.
     let amount = parseNumericLiteral(match[1]);
     const suffix = match[2]?.trim();
     if (suffix === "الف" || suffix === "ألف") amount *= 1000;
-    if (amount <= 0 || amount > 10000000) continue;
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 10000000) continue;
     // The pattern captures digits only, so a leading minus sign is invisible to it and
     // "صرفت -50" used to become a 50 EGP expense. A negative amount is malformed input,
     // not a transaction.
     if (/-\s*$/.test(text.slice(0, match.index))) continue;
-    if (amount < 100 && !suffix && !isFinancialContext(text, match.index, match[0].length)) continue;
+    if (!suffix && !isFinancialContext(text, match.index, match[0].length)) continue;
+    const afterNumber = text.slice(match.index + match[1].length).trimStart();
+    if (!suffix && /^(?:لتر|كيلو|كيلوجرام|جرام|كجم|قطعة|قطعه|قطع|سندوتشات|سندوتش|عبوات|زجاجات|علب|أفراد|افراد|اشخاص|أشخاص)(?=\s|$)/.test(afterNumber)) continue;
     amounts.push({
       amount,
       index: match.index,

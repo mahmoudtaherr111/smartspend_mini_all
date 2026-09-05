@@ -36,7 +36,7 @@ export function mapModelName(modelName: string): string {
   return normalized;
 }
 
-export type AiProviderName = "gemini" | "groq" | "fireworks";
+export type AiProviderName = "gemini" | "groq" | "fireworks" | "nvidia";
 export type AiPlanName = "free" | "pro" | "ultra";
 
 export function isGroqModel(modelName: string): boolean {
@@ -72,13 +72,16 @@ export function isNvidiaModel(modelName: string): boolean {
     normalized.startsWith("deepseek-ai/") ||
     normalized.startsWith("nvidia/") ||
     normalized.startsWith("google/gemma") ||
-    normalized.startsWith("mistralai/")
+    normalized.startsWith("mistralai/") ||
+    normalized.startsWith("openai/gpt-oss") ||
+    normalized.startsWith("moonshotai/") ||
+    normalized.startsWith("stepfun-ai/")
   );
 }
 
 export function defaultNvidiaModelForPlan(plan: AiPlanName): string {
-  if (plan === "ultra" || plan === "pro") return "meta/llama-3.3-70b-instruct";
-  return "deepseek-ai/deepseek-v4-flash";
+  if (plan === "ultra") return "nvidia/nemotron-3-super-120b-a12b";
+  return "meta/llama-3.2-11b-vision-instruct";
 }
 
 export function defaultGeminiModelForPlan(plan: AiPlanName): string {
@@ -101,6 +104,9 @@ export function defaultModelForProvider(
   provider: AiProviderName,
   plan: AiPlanName,
 ): string {
+  if (provider === "nvidia") {
+    return defaultNvidiaModelForPlan(plan);
+  }
   if (provider === "fireworks") {
     return defaultFireworksModelForPlan(plan);
   }
@@ -117,6 +123,9 @@ export function coerceModelForProvider(
   const mapped = mapModelName(
     modelName || defaultModelForProvider(provider, plan),
   );
+  if (provider === "nvidia" && !isNvidiaModel(mapped)) {
+    return defaultNvidiaModelForPlan(plan);
+  }
   if (provider === "groq" && isGeminiModel(mapped)) {
     return defaultGroqModelForPlan(plan);
   }

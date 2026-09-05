@@ -45,7 +45,7 @@ export const proRouter = router({
     if (
       sub &&
       plan !== "free" &&
-      sub.status === "active" &&
+      (sub.status === "active" || sub.status === "cancelled") &&
       sub.endDate < new Date()
     ) {
       await db

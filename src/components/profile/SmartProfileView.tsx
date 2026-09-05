@@ -4,12 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { PlanUsageStrip } from "@/components/layout/PlanUsageStrip";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  AdaptiveDialog,
+  AdaptiveDialogContent,
+  AdaptiveDialogHeader,
+  AdaptiveDialogTitle,
+  AdaptiveDialogTrigger,
+} from "@/components/ui/adaptive-dialog";
 import { FinancialGoalsPanel } from "@/components/goals/FinancialGoalsPanel";
 import { cn } from "@/lib/utils";
 import {
@@ -507,8 +507,8 @@ export function SmartProfileView({ onEdit, onBack }: { onEdit: () => void; onBac
               </h3>
 
               {/* Premium [+] Button to trigger Goal Creation Modal */}
-              <Dialog>
-                <DialogTrigger asChild>
+              <AdaptiveDialog snapPoints={[0.6, 0.95]}>
+                <AdaptiveDialogTrigger asChild>
                   <Button
                     size="sm"
                     variant="outline"
@@ -517,22 +517,22 @@ export function SmartProfileView({ onEdit, onBack }: { onEdit: () => void; onBac
                     <Plus className="w-3.5 h-3.5" />
                     إضافة هدف جديد
                   </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-lg" dir="rtl">
-                  <DialogHeader className="text-end pb-3 border-b border-slate-100 dark:border-slate-800">
-                    <DialogTitle className="text-base sm:text-lg font-extrabold flex items-center gap-2">
+                </AdaptiveDialogTrigger>
+                <AdaptiveDialogContent className="sm:max-w-lg" dir="rtl">
+                  <AdaptiveDialogHeader className="text-end pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <AdaptiveDialogTitle className="text-base sm:text-lg font-extrabold flex items-center gap-2">
                       <Target className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                       <span>إضافة هدف مالي جديد 🚀</span>
-                    </DialogTitle>
-                  </DialogHeader>
+                    </AdaptiveDialogTitle>
+                  </AdaptiveDialogHeader>
                   <div className="py-2">
                     <FinancialGoalsPanel
                       mode="dialog"
                       onSuccess={() => refetchGoals()}
                     />
                   </div>
-                </DialogContent>
-              </Dialog>
+                </AdaptiveDialogContent>
+              </AdaptiveDialog>
             </div>
 
             {goalsData?.goals && goalsData.goals.length > 0 ? (

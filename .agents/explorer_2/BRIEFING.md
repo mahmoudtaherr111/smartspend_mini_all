@@ -1,49 +1,56 @@
-# BRIEFING — 2026-08-23T19:20:15Z
+# BRIEFING — 2026-08-26T10:45:00Z
 
 ## Mission
-Investigate and report on R3 (Relational Database Integrity & Schema Optimization) and R4 (Timezone & Egyptian Business-Day Consistency) for the SmartSpend AI remediation project.
+Investigate user-aware cache isolation, multi-account safety, and cache lifecycle management for PWA offline data persistence in SmartSpend AI.
 
 ## 🔒 My Identity
 - Archetype: Explorer
-- Roles: Teamwork explorer, read-only investigation, schema & timezone domain analysis
+- Roles: Teamwork explorer, read-only investigation, frontend auth & cache architecture analysis
 - Working directory: E:\smartspend_V1_fixed\.agents\explorer_2
-- Original parent: 60c11ee2-eb2f-44a7-b9b8-7dfcf3cdeefa
-- Milestone: Remediation Phase 1 Exploration (R3 & R4)
+- Original parent: 47f2f9b1-6eb4-478f-978d-ee8dfeeb872d
+- Milestone: PWA Offline Data Persistence & Multi-Account Cache Isolation Exploration
 
 ## 🔒 Key Constraints
 - Read-only investigation — do NOT implement changes in source code
 - Full evidence chain with file paths and line numbers
-- Write comprehensive findings to analysis.md and handoff.md in own directory
+- Address all 5 investigation areas:
+  1. Frontend user identity & session state management
+  2. User-isolated cache scoping (cross-user data isolation offline & online)
+  3. Cache lifecycle management (login, logout, switch, expiry, purge)
+  4. Query keys and IndexedDB storage keys scoping per user
+  5. Offline mutation safety & optimistic updates
+- Write comprehensive report to `.agents/explorer_2/report.md` and handoff report to `handoff.md`.
 
 ## Current Parent
-- Conversation ID: 60c11ee2-eb2f-44a7-b9b8-7dfcf3cdeefa
-- Updated: 2026-08-23T19:20:15Z
+- Conversation ID: 47f2f9b1-6eb4-478f-978d-ee8dfeeb872d
+- Updated: 2026-08-26T10:45:00Z
 
 ## Investigation State
 - **Explored paths**:
-  - `db/schema.ts` (all 48 tables, indexes, constraints)
-  - `db/relations.ts` (41 exported relations, missing 3 relations blocks, missing inverse relations)
-  - `api/referral-router.ts` (atomic transaction, concurrency protection, unique constraints)
-  - `api/lib/app-time.ts` and `api/lib/app-time.test.ts` (Africa/Cairo timezone math, DST handling, day/month ranges)
-  - `api/budget-router.ts` (salary cycles, `periodStartDay`, `getFinancialMonthDates`)
-  - `api/chat-router.ts` (daily message limit with `businessDayRange()`)
-  - `api/expense-router.ts` (daily streaks with `businessDayRange()`)
-  - `api/goals-router.ts`, `api/image-router.ts`, `api/notification-engine.ts`
-  - `api/services/finance-semantic-layer/period-resolver.ts` and `period-resolver.test.ts`
+  - `src/hooks/useAuth.ts` (dual-auth queries, logout flow, token deletion, cookie expiry)
+  - `api/context.ts` (UnifiedUser model, dual user tables `users` vs `localUsers`, Bearer vs cookie)
+  - `src/lib/queryPersister.ts` (static DB_NAME, STORE_NAME, and global single KEY="cache")
+  - `src/App.tsx` (static QueryClient, legacy boot purge `clearPersistedQueryCache()`)
+  - `src/components/pwa/PwaEnhancements.tsx` (un-scoped offline outbox queues, sync manager, install banners)
+  - `src/components/expenses/ExpenseForm.tsx` (un-scoped `smartspend_offline_texts` and `smartspend_offline_manual`, clientRequestId idempotency, optimistic list updates)
+  - `src/components/expenses/RecentExpenses.tsx` (optimistic delete updates)
+  - `src/sw.js` (Workbox caching, mutation replay policy, push notifications)
+  - `src/pages/Login.tsx`, `src/pages/AuthCallback.tsx`, `src/pages/Settings.tsx`
 - **Key findings**:
-  - `db/relations.ts` needs 3 missing relation blocks (`discountCodes`, `referrals`, `apiKeyErrors`) and inverse relations on `usersRelations`/`localUsersRelations`.
-  - Exactly 8 redundant left-prefix duplicate secondary indexes identified in `db/schema.ts` to be dropped.
-  - Referral redemption in `api/referral-router.ts` is verified to be atomic and protected against double redemption via `uniqueIndex("referral_referred_unique_idx")`.
-  - `app-time.ts` provides complete, tested `Africa/Cairo` business-day primitives used by chat limits, streaks, and salary cycles. 3 legacy call sites using `setHours(0,0,0,0)` identified for alignment.
-- **Unexplored areas**: None within R3 and R4 scope.
+  - Identified numeric ID collision risk between `users` (OAuth) and `localUsers` (Local), necessitating compound key `${user.type}:${user.id}`.
+  - Identified root cause of disabled query persistence (un-scoped `idbPersister` forced dev to wipe cache on startup).
+  - Defined complete 5-stage lifecycle state machine (Login, Logout, Switch, 401 Expiry, Purge).
+  - Designed `createUserScopedPersister` architecture and query dehydrate filters.
+  - Formulated user-isolated outbox and optimistic mutation safety guards.
+- **Unexplored areas**: None within scope. Investigation complete.
 
 ## Key Decisions Made
-- Fully documented all 48 tables and relational mappings in `analysis.md`.
-- Documented the exact diffs and specifications for missing relations, redundant index removal, and timezone standardization in `handoff.md`.
+- Authored full report at `.agents/explorer_2/report.md`.
+- Authored 5-component handoff report at `.agents/explorer_2/handoff.md`.
 
 ## Artifact Index
 - E:\smartspend_V1_fixed\.agents\explorer_2\DISPATCH.md — Dispatch log
 - E:\smartspend_V1_fixed\.agents\explorer_2\BRIEFING.md — Persistent situational awareness
 - E:\smartspend_V1_fixed\.agents\explorer_2\progress.md — Liveness & step tracker
-- E:\smartspend_V1_fixed\.agents\explorer_2\analysis.md — Comprehensive findings
+- E:\smartspend_V1_fixed\.agents\explorer_2\report.md — Comprehensive investigation report
 - E:\smartspend_V1_fixed\.agents\explorer_2\handoff.md — 5-component handoff report

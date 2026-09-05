@@ -55,13 +55,24 @@ describe("classifier contract", () => {
 
 describe("validating what comes back", () => {
   it("accepts a well-formed reply", () => {
-    const r = validateClassifierReply(
-      { items: [{ i: 1, category: "food", sub: "مطعم" }] },
-      3,
-    );
+    const r = validateClassifierReply({ items: [{ i: 1, category: "food", sub: "مطعم" }] }, 1);
     expect(r.items).toHaveLength(1);
     expect(r.items[0].category).toBe("food");
     expect(r.problems).toHaveLength(0);
+  });
+
+  it("reports the clauses a partial reply did not answer", () => {
+    // Written when the validator only checked the rows it was given, so a reply covering
+    // one clause of three was indistinguishable from a complete one and the two
+    // unanswered clauses kept a guess nobody had looked at. Incompleteness is now a
+    // reported problem, which is what lets the pipeline mark those clauses for review
+    // instead of treating a truncated answer as a model success.
+    const r = validateClassifierReply({ items: [{ i: 1, category: "food" }] }, 3);
+    expect(r.items).toHaveLength(1);
+    expect(r.problems).toEqual([
+      "missing answer for clause 2",
+      "missing answer for clause 3",
+    ]);
   });
 
   it("repairs a category named in Arabic instead of by id", () => {
@@ -87,7 +98,12 @@ describe("validating what comes back", () => {
     expect(r.problems[0]).toContain("out-of-range");
   });
 
-  it("keeps only the first answer when the model splits one clause into two", () => {
+  it("keeps neither answer when the model contradicts itself about one clause", () => {
+    // This asserted "keep the first" — which is a coin toss dressed as a policy: the
+    // model gave two incompatible categories for one clause and there is no evidence
+    // that the earlier row is the better one. Dropping both costs nothing, because a
+    // clause with no answer keeps its local category and is marked for review; keeping
+    // one records a category the model itself was not sure of.
     const r = validateClassifierReply(
       {
         items: [
@@ -97,9 +113,8 @@ describe("validating what comes back", () => {
       },
       1,
     );
-    expect(r.items).toHaveLength(1);
-    expect(r.items[0].category).toBe("food");
-    expect(r.problems[0]).toContain("duplicate");
+    expect(r.items).toHaveLength(0);
+    expect(r.problems.join(" ")).toContain("duplicate");
   });
 
   it("survives a reply that is not the shape we asked for", () => {

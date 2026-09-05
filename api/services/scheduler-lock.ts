@@ -1,7 +1,7 @@
 import type { RowDataPacket } from "mysql2/promise";
 import { mysqlPool } from "../queries/connection";
 
-interface LockAcquiredRow extends RowDataPacket {
+export interface LockAcquiredRow extends RowDataPacket {
   acquired: number | null;
 }
 

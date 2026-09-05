@@ -14,8 +14,18 @@ import {
 
 type Device = "ios" | "android" | null;
 
+export function detectMobileDevice(userAgent: string): Device {
+  if (/iPad|iPhone|iPod/i.test(userAgent)) return "ios";
+  if (/Android/i.test(userAgent)) return "android";
+  return null;
+}
+
 export default function BankSyncPage() {
-  const [device, setDevice] = useState<Device>(null);
+  const [device, setDevice] = useState<Device>(() =>
+    typeof navigator === "undefined"
+      ? null
+      : detectMobileDevice(navigator.userAgent),
+  );
   const [forceShowInstructions, setForceShowInstructions] = useState(false);
 
   // Check connection status (whether user has a webhook token)

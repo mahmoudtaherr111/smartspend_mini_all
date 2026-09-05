@@ -1,24 +1,26 @@
-# DISPATCH RECORD
+# DISPATCH LOG
 
-## 2026-08-23T18:03:15Z
-You are the Project Orchestrator for SmartSpend AI remediation and forensic verification.
+## 2026-08-28T05:32:08Z
 
-Your working directory is: `E:/smartspend_V1_fixed/.agents/orchestrator`
-The authoritative user request is in: `E:/smartspend_V1_fixed/ORIGINAL_REQUEST.md`
-The root cause catalog is in: `E:/smartspend_V1_fixed/MASTER_ROOT_CAUSE_CATALOG.md`
-SSoT rules: `E:/smartspend_V1_fixed/AGENTS.md` and `E:/smartspend_V1_fixed/docs/`
+From Parent (9c49fc05-485e-4afd-a05b-442463e0fed0):
+You are the Project Orchestrator for SmartSpend AI re-architecture.
 
-Execute all requirements (R1 through R6) thoroughly:
-1. Canonical Billing & Subscription Architecture (contracts/plans.ts, Paymob webhook exact amount verification, pro-router, frontend Pro.tsx)
-2. Security, Authentication & Session Revocation (sessions table validation in SMS/Voice WS endpoints, dynamic WebAuthn RP ID/origin, transactional user purge service api/services/user-purge-service.ts across all 35+ user-scoped tables, local user avatar & phone sanitization)
-3. Relational Database Integrity & Schema Optimization (db/relations.ts covering all 48 tables, discountCodes/referrals/apiKeyErrors relations, inverse relations on users/localUsers, missing indexes, drop redundant left-prefix duplicate indexes, atomic referral code application in db.transaction)
-4. Timezone & Egyptian Business-Day Consistency (Africa/Cairo timezone for day boundaries, daily message counters, streaks, periodStartDay salary cycles, deterministic midnight transitions)
-5. Server Performance, Advisory Locks & Provider Resilience (batchCreate batched IN queries in expense-router.ts, MySQL advisory locks in api/services/scheduler-lock.ts, ENABLE_CRONS/ENABLE_WHATSAPP flags defaulting to false in dev, circuit breakers for AI providers)
-6. Error Standardization & UI Resilience (replace generic Error with TRPCError across sub-routers, fix Radix Dialog/Alert-Dialog warnings, reliable document title synchronization, clean repository hygiene)
+Your task is to orchestrate the complete implementation of:
+1. Dynamic AI Provider & Automatic Model Discovery Engine (OpenRouter, DeepSeek, Together, Ollama, etc. via Admin UI, ai_providers/ai_models tables, live connection testing, remote model discovery GET /v1/models, purpose & tier mapping, pricing overrides).
+2. Universal AI Gateway & Prompt Anatomy Deconstruction (100% route interception across all 17 AI paths, granular input & execution token anatomy, cost computation in USD/EGP, immutable ai_token_ledgers, monthly billing period quota enforcement).
+3. Context & Polarity-Aware Rule Confidence Engine (3-factor probabilistic scoring formula: Confidence = ((S_semantic * 0.50) + (S_context * 0.30) + (S_category * 0.20)) * PolarityMultiplier, negation handling, Egyptian dialect disambiguation).
+4. Admin AI Command Center & Token Inspector Frontend (modular src/components/admin/ai-center/ with 4 tabs + inspector modal + NLP sandbox).
 
-Acceptance Criteria:
-- `npm run check` passes with 0 TypeScript compiler errors.
-- `npm test` passes with 100% passing tests (all 72+ suites, 430+ tests) with zero regressions.
-- All verification test files pass (`api/lib/billing-plans.test.ts`, `api/lib/app-time.test.ts`, `api/lib/fireworks-embedding-client.test.ts`, etc.).
-- Maintain detailed `progress.md`, `plan.md`, and `BRIEFING.md` in your working directory.
-- When finished with complete verification and all tests passing, provide a full handoff and notify the Sentinel.
+PRIMARY REFERENCE SPECIFICATIONS (MANDATORY TO READ FIRST):
+1. Detailed Architecture & Implementation Specification: C:/Users/hp/.gemini/antigravity/brain/9de0ffb3-09f5-4fd3-8336-f6eef5a741a9/engineering_specification.md
+2. Repo Architecture & Invariants: e:/smartspend_V1_fixed/AGENTS.md
+3. Authoritative User Request: C:/Users/hp/.gemini/antigravity/brain/9c49fc05-485e-4afd-a05b-442463e0fed0/ORIGINAL_REQUEST.md
+
+CRITICAL INVARIANTS:
+- Strictly follow AGENTS.md (UnifiedUser, dual users/localUsers, RBAC procedure factories, Drizzle relations, settings-cache, model-mapper, error handling).
+- Maintain 100% strict TypeScript type safety (`npm run check` must pass cleanly).
+- Ensure all unit/integration tests pass (`npm run test`).
+- Maintain your working directory at `e:/smartspend_V1_fixed/.agents/orchestrator/` with `plan.md`, `progress.md`, and `BRIEFING.md`.
+- Spawn specialists/workers/reviewers as needed according to Teamwork protocols.
+
+When finished, deliver your final handoff and report victory to the Sentinel.
