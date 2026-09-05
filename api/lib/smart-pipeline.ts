@@ -42,7 +42,6 @@ import type { ParsedTransaction } from "./rule-engine";
 import { matchArabicPhrase, stripArabicPrefix } from "./fuzzy-match";
 import { extractPeople, extractAmounts } from "./entity-extractor";
 import {
-  decomposeHeuristic,
   ALL_FINANCIAL_VERBS,
   type DecompositionResult,
   type DecomposedSegment,
@@ -51,10 +50,10 @@ import { verifyClassifiedItems } from "./post-classifier-verifier";
 import { checkAdmissibility } from "./admissibility-gate";
 import { detectIntent } from "./intent-detector";
 import { applyCalibration } from "./confidence-calibrator";
+import { CONFIDENCE_CALIBRATION } from "./confidence-calibration.generated";
 import { crossCheck } from "./classification-evidence";
 import {
   shouldEscalate,
-  decide,
   DEFAULT_THRESHOLDS,
   type DecisionThresholds,
 } from "./classification-decision";
@@ -62,7 +61,6 @@ import {
   BlockerReason,
   decidePerItem,
   gateShortcutResult,
-  mergeReviewState,
   withBlocker,
 } from "./final-acceptance";
 import { pickPersonCandidate, pickAllPersonCandidates, resolvePersonForTransaction, compactArabic } from "./person-resolver";
@@ -72,6 +70,7 @@ import { db } from "../queries/connection";
 import { expenses } from "../../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { LRUCache } from "lru-cache";
+import { planFinancialEvents, type FinancialEventPlan } from "./financial-event-plan";
 
 // ─── Classification Result Cache ───────────────────────────────────
 // Caches full pipeline results for repeated queries. 40-60% hit rate
@@ -85,12 +84,49 @@ const classificationCache = new LRUCache<string, PipelineResult>({
 /** Persisted alongside classification logs so observability reflects the active pipeline. */
 export const SMART_PIPELINE_VERSION = "v3.0";
 
-function makeCacheKey(text: string, userPlan: string, userId: number, userType: string, businessMode?: boolean): string {
+/**
+ * The tenant segment of a cache key, in one place.
+ *
+ * The key builder and the invalidator each spelled this out independently, so adding a
+ * version prefix to the key silently stopped every invalidation from matching: a user
+ * correcting a category kept being served the answer they had just corrected. Both sides
+ * call this now, so the layout can change again without the two drifting apart.
+ */
+function tenantScope(userType: string, userId: number): string {
+  return `u:${userType}:${userId}`;
+}
+
+/**
+ * Everything the answer depends on, or the key is wrong.
+ *
+ * The key used to be text + user + plan + businessMode, which left out the model, the
+ * thresholds, the calibration version and the business the entry belongs to. So an admin
+ * raising the auto-save threshold, switching the classification model, or a rebuilt
+ * calibration table changed nothing for any phrase already in the cache — for seven days.
+ * The setting was saved, the dashboard showed it, and the pipeline went on answering
+ * from a result computed under the old one.
+ *
+ * `businessId` matters for the same reason `businessMode` does: the same sentence in two
+ * different businesses is two different transactions.
+ */
+function makeCacheKey(input: {
+  text: string;
+  userPlan: string;
+  userId: number;
+  userType: string;
+  businessMode?: boolean;
+  businessId?: number | null;
+  model: string;
+  thresholds: DecisionThresholds;
+}): string {
   // Treat harmless Arabic orthographic variants and spacing consistently; a
   // cache miss here previously made equivalent Egyptian input pay the full
   // pipeline cost again.
-  const normalized = normalizeArabicString(text);
-  return `cls:${userType}:${userId}:${userPlan}:${businessMode ? "biz" : "std"}:${normalized}`;
+  const normalized = normalizeArabicString(input.text);
+  const scope = `${input.businessMode ? "biz" : "std"}${input.businessId ?? ""}`;
+  const decision = `${input.thresholds.autoSave}/${input.thresholds.review}/${input.thresholds.escalate}`;
+  const version = `${SMART_PIPELINE_VERSION}+${CONFIDENCE_CALIBRATION.version}`;
+  return `cls:${version}:${tenantScope(input.userType, input.userId)}:${input.userPlan}:${scope}:${input.model}:${decision}:${normalized}`;
 }
 
 const PERSONAL_KEYWORDS = [
@@ -143,7 +179,7 @@ export function invalidateUserClassificationCache(userId: number, userType?: str
   for (const key of classificationCache.keys()) {
     if (
       userType
-        ? key.startsWith(`cls:${userType}:${userId}:`)
+        ? key.includes(`:${tenantScope(userType, userId)}:`)
         : key.includes(`:${userId}:`)
     ) {
       classificationCache.delete(key);
@@ -643,6 +679,69 @@ function extractKeywords(text: string): string[] {
 export async function runSmartPipeline(
   input: PipelineInput
 ): Promise<PipelineResult> {
+  const started = Date.now();
+  const knownPeople = Array.isArray(input.userProfileContext?.knownPeople)
+    ? input.userProfileContext.knownPeople as KnownPersonContext[] : [];
+  const plan = planFinancialEvents(input.text, knownPeople.map((person) => person.name));
+  if (plan.admitted.length === 0) {
+    const admissibility = checkAdmissibility(input.text);
+    const question = plan.pending.length > 0 && admissibility.verdict === "financial"
+      ? `المبلغ كام للعملية: «${plan.pending[0].text}»؟`
+      : plan.events.some((event) => event.status === "rejected")
+        ? "الكلام فيه عملية منفية أو لسه مخططة أو سؤال، فما سجلتش مصروف. وضّح العملية اللي تمت فعلاً."
+        : admissibility.userMessage || "ممكن توضح المبلغ والحاجة اللي دفعت فيها؟";
+    return { items: [], decision: "clarify", overallConfidence: 0, tokensUsed: 0,
+      parsedBy: "system", modelUsed: mapModelName(input.modelName), actualModelUsed: null,
+      processingTimeMs: Date.now() - started, clarificationQuestion: question,
+      log: { originalText: input.text, finalDecision: "clarify", finalConfidence: 0,
+        routing: { route: "financial_event_gate", events: plan.events } } };
+  }
+  // Rejected amounts never re-enter recovery or the category prompt.
+  const result = await classifyAdmittedEvents({ ...input,
+    text: plan.admitted.map((event) => event.text).join(" و ") }, plan);
+  let items: ParsedTransaction[] = result.items.map((item) => {
+    const event = plan.admitted.find((event) => event.segmentIndex === item.sourceEventId) ||
+      (plan.admitted.length === 1 ? plan.admitted[0] : undefined);
+    return { ...item, sourceEventId: event?.segmentIndex ?? item.sourceEventId,
+      reviewReasons: [...new Set([...(item.reviewReasons || []), ...(event?.reviewReasons || [])])],
+      needsReview: item.needsReview || Boolean(event?.reviewReasons.length) };
+  });
+  // Reconcile within each event, not by a bag of amounts across the message.
+  const missing = plan.admitted.filter((event) => !reconcileAmounts(
+    buildAnchors(extractAmounts(event.text).map((amount) => amount.amount)),
+    items.filter((item) => item.sourceEventId === event.segmentIndex),
+  ).balanced);
+  const unbound = items.some((item) => !plan.admitted.some((event) => event.segmentIndex === item.sourceEventId));
+  let decision = result.decision;
+  let clarificationQuestion = result.clarificationQuestion;
+  const totalMismatch = plan.totals.some((total) => toCents(total) !== items.reduce((sum, item) => sum + toCents(item.amount), 0));
+  if (totalMismatch) {
+    decision = "clarify";
+    clarificationQuestion = "الإجمالي اللي ذكرته مختلف عن مجموع العمليات. ممكن تأكد المبالغ؟";
+    items = items.map((item) => withBlocker(item, "stated_total_mismatch"));
+  } else if (plan.pending.length > 0 || missing.length > 0 || unbound) {
+    decision = "clarify";
+    const pendingText = [...plan.pending, ...missing].map((event) => `«${event.text}»`).join("، ");
+    clarificationQuestion = `محتاج توضح المبلغ وتوزيعه للعملية: ${pendingText || "العمليات المذكورة"}؟`;
+    items = items.map((item) => withBlocker(item, "event_incomplete"));
+  } else if (items.some((item) => (item.reviewReasons || []).length > 0) && decision === "auto_save") {
+    decision = "review";
+  }
+  const finalConfidence = decision === "clarify" || items.length === 0 ? 0
+    : Math.min(...items.map((item) => Number.isFinite(item.confidence) ? item.confidence : 0));
+  return { ...result, items, decision, clarificationQuestion,
+    overallConfidence: finalConfidence,
+    processingTimeMs: Date.now() - started,
+    log: { ...result.log, originalText: input.text, finalDecision: decision,
+      finalConfidence,
+      routing: { ...result.log.routing, events: plan.events, statedTotals: plan.totals,
+        eventLedgerBalanced: missing.length === 0 && !unbound && !totalMismatch } } };
+}
+
+async function classifyAdmittedEvents(
+  input: PipelineInput,
+  eventPlan: FinancialEventPlan,
+): Promise<PipelineResult> {
   const startTime = Date.now();
   let totalTokens = 0;
   let cachedTokens = 0;
@@ -668,22 +767,6 @@ export async function runSmartPipeline(
     ? input.userProfileContext.knownPeople
     : [];
 
-  // 0. Check classification cache first (40-60% hit rate for repeated queries)
-  const cacheKey = makeCacheKey(input.text, input.userPlan, input.userId, input.userType, input.businessMode);
-  const cachedResult = classificationCache.get(cacheKey);
-  if (cachedResult) {
-    return {
-      ...cachedResult,
-      processingTimeMs: Date.now() - startTime,
-      log: {
-        ...cachedResult.log,
-        routing: {
-          ...(cachedResult.log.routing || {}),
-          route: "classification_cache_hit",
-        },
-      },
-    };
-  }
 
   // 1. Normalize (Light Normalization for AI, aggressive for rules)
   const normalized = normalizeV2(input.text);
@@ -696,7 +779,7 @@ export async function runSmartPipeline(
   let firstAlertMessage: string | undefined = undefined;
   let overallConfidence = 100;
   const pipelineSettings = input.pipelineSettings || {};
-  const decompositionEnabled = settingBoolean(
+  const legacyDecompositionEnabled = settingBoolean(
     pipelineSettings,
     "parser_fast_decomposition_enabled",
     true,
@@ -748,6 +831,45 @@ export async function runSmartPipeline(
         DEFAULT_THRESHOLDS.escalate * 100,
       ) / 100,
   };
+  // 0. Check the classification cache (40-60% hit rate for repeated phrases).
+  //
+  // Deliberately AFTER the thresholds are resolved, because they are part of the key
+  // now. This costs a settings read on a hit and buys the property that a configuration
+  // change takes effect on the next request rather than in seven days.
+  const cacheKey = makeCacheKey({
+    text: eventPlan.text,
+    userPlan: input.userPlan,
+    userId: input.userId,
+    userType: input.userType,
+    businessMode: input.businessMode,
+    businessId: input.businessId,
+    model: modelUsed,
+    thresholds: decisionThresholds,
+  });
+  const cachedResult = classificationCache.get(cacheKey);
+  if (cachedResult) {
+    return {
+      ...cachedResult,
+      // A cache hit spends nothing.
+      //
+      // The stored result carried the token count of the call that first produced it,
+      // and the caller billed it again on every hit — so a phrase answered once from a
+      // 120-token model call was charged 120 tokens every time it recurred, against a
+      // request that made no call at all. The counts move to `cachedTokens`, which is
+      // what "served without new spend" is called everywhere else in this file.
+      tokensUsed: 0,
+      cachedTokens: cachedResult.tokensUsed || cachedResult.cachedTokens || 0,
+      processingTimeMs: Date.now() - startTime,
+      log: {
+        ...cachedResult.log,
+        cachedTokens: cachedResult.tokensUsed || cachedResult.cachedTokens || 0,
+        routing: {
+          ...(cachedResult.log.routing || {}),
+          route: "classification_cache_hit",
+        },
+      },
+    };
+  }
 
   // Counting amounts is the amount extractor's job, not a private list.
   //
@@ -842,7 +964,8 @@ export async function runSmartPipeline(
   // to attach the correct person info. If the person is known → auto_save.
   // If unknown → clarify (don't auto-save an unknown person).
   try {
-    const memoryMatch = await muscleMemoryLookup(input.text, input.userId, input.userType);
+    const memoryMatch = eventPlan.events.length === 1 && eventPlan.admitted[0].reviewReasons.length === 0
+      ? await muscleMemoryLookup(input.text, input.userId, input.userType) : null;
     if (memoryMatch && memoryMatch.matchScore >= 90 && memoryMatch.amount > 0) {
       const memItem: ParsedTransaction = {
         amount: memoryMatch.amount,
@@ -1148,9 +1271,11 @@ export async function runSmartPipeline(
   // forAI is the right input rather than forRules: it resolves numbers and STT noise
   // while preserving the Arabic orthography and person names that the decomposer needs
   // for name detection and that later stages surface back to the user.
-  const decomposition: DecompositionResult = decompositionEnabled
-    ? decomposeHeuristic(normalized.forAI, knownNames)
-    : { segments: [], method: "simple", isComplex: false };
+  const decomposition: DecompositionResult = {
+    segments: eventPlan.admitted,
+    method: "heuristic",
+    isComplex: eventPlan.events.length > 1,
+  };
 
   const localSucceededItems: ParsedTransaction[] = [];
   /**
@@ -1242,7 +1367,7 @@ export async function runSmartPipeline(
   };
 
   // Fast path for long/multi-transaction narratives: classify each segment locally.
-  if (decomposition.segments.length > 1) {
+  if (decomposition.segments.length > 0) {
     let localClarification: string | undefined;
     const localUnknownNames: string[] = [];
 
@@ -1261,6 +1386,11 @@ export async function runSmartPipeline(
         undefined,
         fireworksKey,
       );
+      segmentRule.items = segmentRule.items.map((item) => ({ ...item,
+        sourceEventId: segment.segmentIndex,
+        reviewReasons: [...new Set([...(item.reviewReasons || []),
+          ...(eventPlan.admitted.find((event) => event.segmentIndex === segment.segmentIndex)?.reviewReasons || [])])],
+      }));
       if (segmentRule.items.length === 0) {
         // Nothing extracted here. Before paying a model to look at it, ask whether it is
         // a transaction at all — a clause the local pass rejected is not the same as a
@@ -1356,7 +1486,9 @@ export async function runSmartPipeline(
 
       const calibratedSegment = applyCalibration(corrected.items);
       const segmentItems = calibratedSegment.items;
-      const amountsFullyConsumed = segmentItems.length >= segmentAmountCount;
+      const amountsFullyConsumed = reconcileAmounts(
+        buildAnchors(extractAmounts(segmentNormalized).map((amount) => amount.amount)), segmentItems,
+      ).balanced;
 
       const escalations = segmentItems.map((it) =>
         shouldEscalate(
@@ -1801,10 +1933,26 @@ export async function runSmartPipeline(
         // benchmark can measure a slow endpoint's ACCURACY without that endpoint's speed
         // silently becoming the result — production keeps the 25 seconds.
         timeoutMs: settingNumber(input.pipelineSettings || {}, "llm_timeout_ms", 25_000),
+        // A ceiling for the whole chain, not just for each provider in it.
+        //
+        // Five routes at 25 seconds each bounded nothing the user experiences. Whatever
+        // the per-route timeout is, the trip ends here — and the chain will not start a
+        // route it cannot finish inside what remains, because a request the client has
+        // already abandoned still costs tokens on the way to being ignored.
+        deadlineMs: settingNumber(
+          input.pipelineSettings || {},
+          "llm_trip_deadline_ms",
+          45_000,
+        ),
       });
 
-      totalTokens += llm.totalTokens;
-      cachedTokens = llm.cachedTokens;
+      // What the REQUEST cost, not what the winning call cost.
+      //
+      // A failover means the earlier attempts also consumed their input tokens; billing
+      // that reads only the answer under-reports by exactly the price of the failover,
+      // and "our cost telemetry disagrees with the invoice" is how that surfaced.
+      totalTokens += llm.attemptTotals?.totalTokens || llm.totalTokens;
+      cachedTokens = llm.attemptTotals?.cachedTokens ?? llm.cachedTokens;
       llmAttempts = llm.attempts;
       servedByRoute = llm.route.slug;
       schemaWasDegraded = llm.degradedSchema;
@@ -2027,6 +2175,9 @@ export async function runSmartPipeline(
       
       for (let i = 0; i < uniqueItems.length; i++) {
           const existing = uniqueItems[i];
+          // Parser choice cannot turn two separately anchored events into one payment.
+          if (item.sourceEventId !== undefined && existing.sourceEventId !== undefined &&
+              item.sourceEventId !== existing.sourceEventId) continue;
           if (item.amount === existing.amount && item.category === existing.category) {
               const existingDesc = String(existing.description || (existing as ParsedTransaction & { item_name?: string }).item_name || "").toLowerCase();
               const existingWords = new Set(existingDesc.split(/\s+/).filter(w => w.length > 2));
@@ -2272,9 +2423,11 @@ export async function runSmartPipeline(
       route: "smart_hybrid",
       reason: "v3_architecture",
       segmentCount: decomposition.segments.length,
+      modelReplyProblems,
       verifierFlags: verification.flags,
       settings: {
-        decompositionEnabled,
+        decompositionEnabled: true,
+        legacyDecompositionEnabled,
         personMemoryEnabled,
         verifierEnabled,
         autoSaveThreshold,

@@ -14,6 +14,8 @@ import { applySttCorrections } from "./stt-corrections";
 import {
   arabicToEnglishNumbers,
   normalizeText as normalizeTextV1,
+  FRANCO_ARAB_DICT,
+  FRANCO_PARTICLES,
 } from "./text-normalizer";
 import { parseArabicNumbers } from "./arabic-number-parser";
 
@@ -29,6 +31,7 @@ const FRANCO_LETTER_MAP: Record<string, string> = {
 };
 const FRANCO_LIGHT_DICT: Record<string, string> = {
   "dafa3t": "دفعت", "dafaat": "دفعت",
+  "7awalt": "حولت", "7awelt": "حولت", "3ala": "على",
   "kahraba": "كهربا", "kahriba": "كهربا",
   "el": "ال", "3la": "على", "ala": "على",
   "benzin": "بنزين", "banzeen": "بنزين",
@@ -81,13 +84,14 @@ const FRANCO_MARKERS = /[235789]/;
  * "كلارنا".
  */
 function convertFrancoArabLight(text: string): string {
-  return text.replace(
+  const converted = text.replace(
     /[a-zA-Z][a-zA-Z0-9']*[0-9][a-zA-Z0-9']*|[0-9][a-zA-Z0-9']*[a-zA-Z][a-zA-Z0-9']*|[a-zA-Z]{2,}/g,
     (word) => {
       const lower = word.toLowerCase();
 
       if (LATIN_BRANDS[lower]) return LATIN_BRANDS[lower];
       if (FRANCO_LIGHT_DICT[lower]) return FRANCO_LIGHT_DICT[lower];
+      if (FRANCO_ARAB_DICT[lower]) return FRANCO_ARAB_DICT[lower];
 
       // No Franco marker means this is ordinary Latin text, not Arabic in disguise.
       if (!FRANCO_MARKERS.test(lower)) return word;
@@ -101,6 +105,8 @@ function convertFrancoArabLight(text: string): string {
       return result;
     },
   );
+  return converted.replace(/(^|\s)([lwb])\s+(?=[\u0621-\u064A])/gi,
+    (_match, space: string, letter: string) => space + FRANCO_PARTICLES[letter.toLowerCase()]);
 }
 
 // ─── Types ────────────────────────────────────────────────────────

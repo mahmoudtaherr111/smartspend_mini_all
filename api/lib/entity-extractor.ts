@@ -149,11 +149,13 @@ export function isFinancialContext(text: string, matchIndex: number, matchLength
     if (Number.isFinite(value) && value >= 1 && value <= 24) return false;
   }
 
-  if (PRECEDING_NON_FINANCIAL.includes(normPreceding)) {
+  const pricedObject = /(?:فاتور[ةه]|شحن|رصيد|ايجار|إيجار|تمن|ثمن|سعر|اشتريت|جبت)\s+(?:ال)?(?:تليفون|موبايل|هاتف|شق[ةه]|عربي[ةه])\s*$/.test(precedingStr);
+  if (PRECEDING_NON_FINANCIAL.includes(normPreceding) && !pricedObject) {
     return false;
   }
 
-  if (FOLLOWING_NON_FINANCIAL.includes(normFollowing)) {
+  // "5000 الشهر ده" is money in a month, while "5 شهور" is a duration.
+  if (FOLLOWING_NON_FINANCIAL.includes(normFollowing) && !/^ال/.test(firstFollowingWord)) {
     return false;
   }
 
@@ -182,13 +184,14 @@ export function extractAmounts(rawText: string): ExtractedAmount[] {
   text = parseArabicNumbers(text);
   // Dates, clock times and percentages are not money, even when they contain a
   // four-digit year. Keep their positions so neighbouring price anchors stay bound.
-  const excludedSpans = [...text.matchAll(/\d{1,4}[\/:-]\d{1,2}(?:[\/-]\d{1,4})?|\d+(?:[.,]\d+)?\s*[%٪]/g)]
+  const excludedSpans = [...text.matchAll(/\d{1,4}[/:-]\d{1,2}(?:[/-]\d{1,4})?|\d+(?:[.,]\d+)?\s*[%٪]/g)]
     .map((m) => ({ start: m.index, end: m.index + m[0].length }));
   const amountPattern = /(\d+(?:[.,]\d{3})*(?:[.,]\d+)?)\s*(جنيه|ج\.م|ج|الف|ألف)?/g;
-  let match;
+  let match: RegExpExecArray | null;
 
   while ((match = amountPattern.exec(text)) !== null) {
-    if (excludedSpans.some((span) => match.index >= span.start && match.index < span.end)) continue;
+    const matchIndex = match.index;
+    if (excludedSpans.some((span) => matchIndex >= span.start && matchIndex < span.end)) continue;
     // One implementation of "what does a comma mean", shared with the number engine.
     // Keeping a second copy here is what let the two drift apart.
     let amount = parseNumericLiteral(match[1]);

@@ -24,6 +24,10 @@ import {
   defaultGeminiModelForPlan,
   defaultGroqModelForPlan,
   defaultNvidiaModelForPlan,
+  isFireworksModel,
+  isGeminiModel,
+  isGroqModel,
+  isNvidiaModel,
 } from "./model-mapper";
 import type { AiPlanName } from "./ai-provider-registry";
 
@@ -56,6 +60,43 @@ export interface ChainKeys {
  * run. The router asks these to skip the visible reasoning; providers that do not
  * implement the flag ignore it.
  */
+/**
+ * Owners of a model name, most specific test first.
+ *
+ * `isNvidiaModel` is checked before `isGroqModel` because Groq claims the bare
+ * `deepseek-` prefix while NVIDIA publishes `deepseek-ai/`, and the more specific one
+ * has to win. This ordering is also the reason the audit is right that a prefix alone
+ * must not be allowed to CHOOSE a provider — it is only good enough to rule one out.
+ */
+const MODEL_OWNERS: Array<[string, (model: string) => boolean]> = [
+  ["gemini", isGeminiModel],
+  ["fireworks", isFireworksModel],
+  ["nvidia", isNvidiaModel],
+  ["groq", isGroqModel],
+];
+
+/**
+ * Does this model name demonstrably belong to a DIFFERENT provider?
+ *
+ * The caller supplies a provider and a model from two different settings, and nothing
+ * required them to agree: an install with `provider=groq` and the default
+ * `model=gemini-3.1-flash-lite` produced a Groq route asking Groq for a Gemini model.
+ * That request cannot succeed, and it was the FIRST one tried on every classification.
+ *
+ * Deliberately asymmetric. A name we recognise as another vendor's is evidence, and the
+ * provider wins because it is the thing holding a key and an endpoint. A name we do not
+ * recognise is NOT evidence — new models appear faster than these predicates are
+ * updated, and silently replacing an operator's configured model with a default is a
+ * worse failure than passing through a name we have not heard of.
+ */
+export function modelConflictsWithProvider(model: string, slug: string): boolean {
+  if (!model) return true;
+  const provider = slug === "gemini-secondary" ? "gemini" : slug;
+  const owner = MODEL_OWNERS.find(([, belongsTo]) => belongsTo(model));
+  if (!owner) return false;
+  return owner[0] !== provider;
+}
+
 export function looksLikeReasoningModel(modelId: string): boolean {
   return /deepseek-(?:v4|r1)|(?:^|\/)o[13](?:-|$)|reasoner|thinking|qwq/i.test(modelId);
 }
@@ -119,51 +160,92 @@ export function buildProviderChain(req: ChainRequest): LlmRoute[] {
   ];
 
   const routes: LlmRoute[] = [];
+  /**
+   * Claimed by provider AND model, not by provider alone.
+   *
+   * A gateway like OpenRouter is one slug in front of many models, and the admin
+   * configures them as separate rows precisely so one can back up another. Deduplicating
+   * on the slug meant the second row was silently dropped: the fallback the operator
+   * configured existed in the database, was read, and never ran.
+   */
   const claimed = new Set<string>();
+  const key = (slug: string, model: string) => `${slug}::${model}`;
 
-  // 1. The requested provider, at priority 0, with the model the caller resolved.
-  const preferredSpec = builtins.find((b) => b.slug === req.preferred);
-  const preferredKey =
-    preferredSpec?.key ||
-    (req.preferred === "gemini" ? keys.gemini : undefined) ||
-    keys.gemini;
+  const dbRoutes = req.dbRoutes || [];
 
-  if (preferredKey) {
-    routes.push({
-      slug: req.preferred,
-      protocol: preferredSpec?.protocol ?? "gemini",
-      baseUrl: preferredSpec?.baseUrl ?? BUILTIN_BASE_URLS[req.preferred] ?? "",
-      apiKey: preferredKey,
-      model: req.preferredModel,
-      priority: 0,
+  // 1. The requested provider leads, at priority 0 — but only as itself.
+  //
+  // This used to synthesise a route for ANY preferred slug: with no builtin spec it fell
+  // through to `keys.gemini` for the key and `?? "gemini"` for the protocol, so asking
+  // for DeepSeek produced a route that spoke the Gemini protocol, carried the Gemini key,
+  // and pointed at DeepSeek's base URL. It then claimed the slug, which dropped the
+  // correctly configured DeepSeek row waiting in `dbRoutes` two lines below. The admin
+  // had set it up correctly; the chain threw it away and sent a request that could only
+  // fail — while recording the failure against DeepSeek's health.
+  //
+  // A route is provider, protocol, base URL, key and model together. Assembling one out
+  // of parts from different providers does not produce a usable route, so the honest
+  // answer when the parts are missing is that this provider is not available.
+  const preferredDbRoutes = dbRoutes
+    .filter((r) => r.slug === req.preferred)
+    .sort((a, b) => a.priority - b.priority);
+
+  if (preferredDbRoutes.length > 0) {
+    // What the admin configured for this provider, in their own priority order.
+    preferredDbRoutes.forEach((dbRoute, index) => {
+      routes.push({ ...dbRoute, priority: index });
+      claimed.add(key(dbRoute.slug, dbRoute.model));
     });
-    claimed.add(req.preferred);
+  } else {
+    const preferredSpec = builtins.find((b) => b.slug === req.preferred);
+    if (preferredSpec?.key) {
+      // The caller's model only travels with the route if it is that provider's model.
+      const model = modelConflictsWithProvider(req.preferredModel, preferredSpec.slug)
+        ? preferredSpec.model
+        : req.preferredModel;
+      routes.push({
+        slug: preferredSpec.slug,
+        protocol: preferredSpec.protocol,
+        baseUrl: preferredSpec.baseUrl,
+        apiKey: preferredSpec.key,
+        model,
+        priority: 0,
+      });
+      claimed.add(key(preferredSpec.slug, model));
+    }
+    // No key for the requested provider: it simply does not lead. The rest of the chain
+    // below still runs, so a configured fallback answers instead of a fabricated route
+    // failing first.
   }
 
   // 2. Admin-configured providers, honouring the `priority` column the schema has always
   //    had a comment for ("Lower = higher priority in failover") and no code behind.
-  for (const dbRoute of req.dbRoutes || []) {
-    if (claimed.has(dbRoute.slug)) continue;
+  for (const dbRoute of dbRoutes) {
+    if (claimed.has(key(dbRoute.slug, dbRoute.model))) continue;
     routes.push({ ...dbRoute, priority: 10 + dbRoute.priority });
-    claimed.add(dbRoute.slug);
+    claimed.add(key(dbRoute.slug, dbRoute.model));
   }
 
   // 3. Whatever else has a key. A second Gemini key is a genuinely independent quota,
   //    so it ranks above a different vendor's model: same behaviour, different bucket.
   if (keys.geminiSecondary && keys.geminiSecondary !== keys.gemini) {
+    const secondaryModel = modelConflictsWithProvider(req.preferredModel, "gemini")
+      ? defaultGeminiModelForPlan(plan)
+      : req.preferredModel;
     routes.push({
       slug: "gemini-secondary",
       protocol: "gemini",
       baseUrl: "",
       apiKey: keys.geminiSecondary,
-      model: req.preferred === "gemini" ? req.preferredModel : defaultGeminiModelForPlan(plan),
+      model: secondaryModel,
       priority: 100,
     });
+    claimed.add(key("gemini-secondary", secondaryModel));
   }
 
   let rank = 200;
   for (const spec of builtins) {
-    if (claimed.has(spec.slug) || !spec.key) continue;
+    if (!spec.key || claimed.has(key(spec.slug, spec.model))) continue;
     routes.push({
       slug: spec.slug,
       protocol: spec.protocol,
@@ -172,22 +254,24 @@ export function buildProviderChain(req: ChainRequest): LlmRoute[] {
       model: spec.model,
       priority: rank++,
     });
-    claimed.add(spec.slug);
+    claimed.add(key(spec.slug, spec.model));
   }
 
   for (const slug of ["deepseek", "openrouter"] as const) {
-    const key = keys[slug];
-    if (!key || claimed.has(slug)) continue;
+    const apiKey = keys[slug];
+    // These are admin-supplied gateways; without a configured model there is nothing
+    // sensible to guess, so the row in `ai_models` is what makes them reachable. A route
+    // with no model is filtered out below rather than sent.
+    if (!apiKey || claimed.has(key(slug, ""))) continue;
     routes.push({
       slug,
       protocol: "openai",
       baseUrl: BUILTIN_BASE_URLS[slug],
-      apiKey: key,
-      // These are admin-supplied gateways; without a configured model there is nothing
-      // sensible to guess, so the row in `ai_models` is what makes them reachable.
+      apiKey,
       model: "",
       priority: rank++,
     });
+    claimed.add(key(slug, ""));
   }
 
   // A reasoning model answers into a field the OpenAI shape does not have, so mark

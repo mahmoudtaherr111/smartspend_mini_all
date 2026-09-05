@@ -1,0 +1,2443 @@
+diff --git a/api/ai-router.ts b/api/ai-router.ts
+index 18872c4..7c88c38 100644
+--- a/api/ai-router.ts
++++ b/api/ai-router.ts
+@@ -82,6 +82,11 @@ import {
+   recordAiUsageEvent,
+   type AiUsageChannel,
+ } from "./lib/ai-usage-policy";
++import {
++  checkVoiceIntake,
++  estimateSpeechTokens,
++  resolveVoiceLimits,
++} from "./lib/voice-intake-gate";
+ import {
+   buildMonthlyReportFactsPack,
+   getChartData,
+@@ -1349,20 +1354,10 @@ export const aiRouter = router({
+       }),
+     )
+     .mutation(async ({ ctx, input }) => {
+-      if (input.audioBase64.length > 13333333) {
+-        throw new TRPCError({
+-          code: "BAD_REQUEST",
+-          message:
+-            "حجم الملف الصوتي كبير جداً. يرجى إرسال تسجيل أصغر من 10 ميجابايت.",
+-        });
+-      }
+-
+-      const estimatedAudioTokens = Math.max(
+-        80,
+-        Math.ceil(input.durationSeconds * 14) +
+-          Math.ceil(input.audioBase64.length / 18_000),
+-      );
+-      await assertAiBudget(ctx.user, "speech", estimatedAudioTokens);
++      // Size, media type and duration are settled by the shared gate below, which runs
++      // once the cycle's usage is known. Everything this endpoint used to do inline is
++      // still done — the point of moving it is that `parseVoiceExpense` now does the
++      // same things, in the same order, from the same source.
+ 
+       // Get cycle start
+       const now = new Date();
+@@ -1421,42 +1416,36 @@ export const aiRouter = router({
+ 
+       // Get voice limits from settings
+       const cfg = await getSystemSettings();
++      const voiceLimits = resolveVoiceLimits(cfg, ctx.user.plan || "free");
++      const limit = voiceLimits.monthly;
+ 
+-      const voiceLimits: Record<string, number> = {
+-        free: parseInt(cfg.voice_limit_free || "300"), // 5 min
+-        pro: parseInt(cfg.voice_limit_pro || "1800"), // 30 min
+-        ultra: parseInt(cfg.voice_limit_ultra || "0"), // unlimited
+-      };
+-
+-      const voicePerReq: Record<string, number> = {
+-        free: parseInt(cfg.voice_per_req_free || "60"),
+-        pro: parseInt(cfg.voice_per_req_pro || "180"),
+-        ultra: parseInt(cfg.voice_per_req_ultra || "300"),
+-      };
+-
+-      const limit = planValue(voiceLimits, ctx.user.plan, 300);
+-      const maxPerRequest = planValue(voicePerReq, ctx.user.plan, 60);
+-
+-      if (input.durationSeconds > maxPerRequest) {
+-        throw new TRPCError({
+-          code: "FORBIDDEN",
+-          message: `مدة التسجيل الواحد لا يمكن أن تتجاوز ${maxPerRequest} ثانية في خطتك الحالية.`,
+-        });
+-      }
++      const voiceVerdict = checkVoiceIntake({
++        plan: ctx.user.plan || "free",
++        mimeType: input.mimeType,
++        audioBase64: input.audioBase64,
++        claimedDurationSeconds: input.durationSeconds,
++        usedSeconds,
++        limits: voiceLimits,
++      });
+ 
+-      if (limit > 0 && usedSeconds >= limit) {
++      if (!voiceVerdict.allowed) {
+         throw new TRPCError({
+-          code: "FORBIDDEN",
+-          message: `وقت التسجيل الصوتي المتاح ليك خلص (${limit} ثانية/شهر). يرجى الترقية لـ Pro للحصول على المزيد!`,
++          code:
++            voiceVerdict.reason === "payload_too_large" ||
++            voiceVerdict.reason === "unsupported_media_type"
++              ? "BAD_REQUEST"
++              : "FORBIDDEN",
++          message: voiceVerdict.message || "لا يمكن معالجة هذا التسجيل الآن.",
+         });
+       }
+ 
+-      if (limit > 0 && usedSeconds + input.durationSeconds > limit) {
+-        throw new TRPCError({
+-          code: "FORBIDDEN",
+-          message: `مدة هذا التسجيل تتجاوز الرصيد المتبقي لك هذا الشهر. المتاح الآن ${Math.max(0, limit - usedSeconds)} ثانية فقط.`,
+-        });
+-      }
++      // Reserved before the network call. The estimate is shared, so the two endpoints
++      // cannot charge different amounts for the same recording.
++      await assertAiBudget(
++        ctx.user,
++        "speech",
++        estimateSpeechTokens(input.audioBase64, voiceVerdict.billableSeconds),
++      );
+ 
+       // STT Plan Configuration
+       const plan = ctx.user.plan === "ultra" ? "pro" : ctx.user.plan || "free";
+@@ -1574,7 +1563,9 @@ export const aiRouter = router({
+         await db.insert(voiceUsage).values({
+           userId: ctx.user.id,
+           userType: ctx.user.type,
+-          durationSeconds: input.durationSeconds,
++          // Charged on what the gate measured, not on the client's claim, so the quota
++          // is consumed in the same units it is enforced in.
++          durationSeconds: voiceVerdict.billableSeconds,
+           month: currentMonthStr,
+           source: "gemini_stt",
+         });
+@@ -1622,28 +1613,48 @@ export const aiRouter = router({
+     .mutation(async ({ ctx, input }) => {
+       const startTime = Date.now();
+       
+-      // 1. Run STT Logic (Simplified for performance)
+-      if (input.audioBase64.length > 13333333) {
+-        throw new TRPCError({
+-          code: "BAD_REQUEST",
+-          message: "حجم الملف الصوتي كبير جداً.",
+-        });
+-      }
+-
+-      // Voice Limits Check
++      // Everything that can refuse this request runs BEFORE anything is bought.
++      //
++      // What stood here checked the payload size, computed `usedSeconds`, and then never
++      // compared it to anything; read `voice_limit_free` for every plan, so a Pro
++      // subscription bought no extra seconds on the endpoint the app actually calls;
++      // trusted `durationSeconds` from the client, so sending 0 made the quota free; and
++      // asserted the AI budget only after the transcription had already been paid for.
++      //
++      // `speechToText` did all four correctly. There is now one policy instead of two
++      // — see api/lib/voice-intake-gate.ts.
+       const now = new Date();
+-      let cycleStart = new Date(now.getFullYear(), now.getMonth(), 1);
++      const cycleStart = new Date(now.getFullYear(), now.getMonth(), 1);
+       const usedSeconds = await getVoiceSecondsSince(ctx.user.id, ctx.user.type, cycleStart);
+-      
+-      const cfg = await getSystemSettings();
+ 
+-      const voiceLimit = parseInt(cfg.voice_limit_free || "300");
+-      const maxPerRequest = parseInt(cfg.voice_per_req_free || "60");
++      const cfg = await getSystemSettings();
++      const voiceVerdict = checkVoiceIntake({
++        plan: ctx.user.plan || "free",
++        mimeType: input.mimeType,
++        audioBase64: input.audioBase64,
++        claimedDurationSeconds: input.durationSeconds,
++        usedSeconds,
++        limits: resolveVoiceLimits(cfg, ctx.user.plan || "free"),
++      });
+ 
+-      if (input.durationSeconds > maxPerRequest) {
+-        throw new TRPCError({ code: "FORBIDDEN", message: `مدة التسجيل تجاوزت ${maxPerRequest} ثانية.` });
++      if (!voiceVerdict.allowed) {
++        throw new TRPCError({
++          code:
++            voiceVerdict.reason === "payload_too_large" ||
++            voiceVerdict.reason === "unsupported_media_type"
++              ? "BAD_REQUEST"
++              : "FORBIDDEN",
++          message: voiceVerdict.message || "لا يمكن معالجة هذا التسجيل الآن.",
++        });
+       }
+ 
++      // The spend is reserved before the network call, not reconciled after it.
++      await assertAiBudget(
++        ctx.user,
++        "speech",
++        estimateSpeechTokens(input.audioBase64, voiceVerdict.billableSeconds),
++      );
++
+       const plan = ctx.user.plan === "ultra" ? "pro" : ctx.user.plan || "free";
+       const sttModelSetting = cfg[`${plan}_stt_model`] || cfg.stt_model || "gemini-1.5-flash";
+       const sttModel = mapModelName(sttModelSetting);
+@@ -1688,7 +1699,10 @@ export const aiRouter = router({
+         await db.insert(voiceUsage).values({
+           userId: ctx.user.id,
+           userType: ctx.user.type,
+-          durationSeconds: input.durationSeconds,
++          // The duration the gate CHARGED, not the one the client claimed — enforcing
++          // the quota on one number and consuming it with another is how a client
++          // sending 0 transcribed for free indefinitely.
++          durationSeconds: voiceVerdict.billableSeconds,
+           month: new Date().toISOString().slice(0, 7),
+           source: "gemini_stt",
+         });
+@@ -1866,7 +1880,7 @@ export const aiRouter = router({
+         stt: {
+           model: sttResult.modelUsed,
+           tokensUsed: sttResult.tokensUsed,
+-          durationSeconds: input.durationSeconds,
++          durationSeconds: voiceVerdict.billableSeconds,
+         },
+       });
+ 
+@@ -1888,7 +1902,8 @@ export const aiRouter = router({
+         toolCalls: 0,
+         latencyMs: Date.now() - startTime,
+         metadata: {
+-          durationSeconds: input.durationSeconds,
++          durationSeconds: voiceVerdict.billableSeconds,
++          claimedDurationSeconds: input.durationSeconds,
+           mimeType: cleanMimeType,
+           provider: isGroqModel(sttResult.modelUsed) ? "groq" : "gemini",
+         },
+diff --git a/api/lib/classification-cache-scope.test.ts b/api/lib/classification-cache-scope.test.ts
+new file mode 100644
+index 0000000..980124a
+--- /dev/null
++++ b/api/lib/classification-cache-scope.test.ts
+@@ -0,0 +1,140 @@
++/**
++ * A2 acceptance for M11 and the billing half of M10.
++ *
++ * The result cache stored a finished financial answer, together with the token count of
++ * the call that produced it, under a key that named neither the model nor the thresholds
++ * nor the calibration version — for seven days. Two consequences, both measurable:
++ * changing a setting changed nothing for any phrase already cached, and every subsequent
++ * hit re-billed tokens for a request that made no call.
++ */
++import { beforeEach, describe, expect, it, vi } from "vitest";
++import { runSmartPipeline, type PipelineInput } from "./smart-pipeline";
++import { mapModelName } from "./model-mapper";
++
++const io = vi.hoisted(() => ({ llm: vi.fn(), memory: vi.fn() }));
++
++vi.mock("../queries/connection", () => {
++  const chain: Record<string, unknown> = {};
++  const self = () => chain;
++  Object.assign(chain, {
++    from: self, where: self, orderBy: self, values: self, set: self,
++    limit: async () => [],
++    then: (resolve: (rows: unknown[]) => unknown) => Promise.resolve([]).then(resolve),
++  });
++  return { db: { select: self, insert: self, update: self, query: {} }, pool: {} };
++});
++vi.mock("./muscle-memory", () => ({ muscleMemoryLookup: io.memory }));
++vi.mock("./ai-gateway", () => ({
++  resolveAdminRoutes: async () => ({ preferred: null, routes: [] }),
++}));
++vi.mock("./llm-router", async (original) => ({
++  ...(await original<object>()),
++  executeLlmChain: io.llm,
++}));
++
++/** One fixed user, because the cache is scoped per user and we want hits. */
++const USER = { userId: 975_100, userType: "local" as const };
++
++function classify(text: string, overrides: Partial<PipelineInput> = {}) {
++  return runSmartPipeline({
++    text,
++    ...USER,
++    userPlan: "pro",
++    userDict: [],
++    apiKey: "synthetic-key",
++    modelName: mapModelName("flash"),
++    maxTokens: 512,
++    ...overrides,
++  });
++}
++
++beforeEach(() => {
++  io.memory.mockReset().mockResolvedValue(null);
++  io.llm.mockReset().mockRejectedValue(new Error("no provider in this test"));
++});
++
++describe("M11 — the cache key names everything the answer depends on", () => {
++  it("does not serve an answer computed under a different auto-save threshold", async () => {
++    const text = "دفعت 200 بنزين";
++    const strict = await classify(text, {
++      pipelineSettings: { parser_auto_save_threshold: "99" },
++    });
++    const lenient = await classify(text, {
++      pipelineSettings: { parser_auto_save_threshold: "50" },
++    });
++
++    // The admin saved a new threshold, the dashboard showed it, and every phrase already
++    // in the cache went on answering under the old one for the rest of the week.
++    expect(strict.decision).not.toBe(lenient.decision);
++  });
++
++  it("does not serve an answer computed for a different model", async () => {
++    const text = "دفعت 200 بنزين";
++    const first = await classify(text, { modelName: mapModelName("flash") });
++    const second = await classify(text, { modelName: mapModelName("pro") });
++
++    expect(first.modelUsed).not.toBe(second.modelUsed);
++    expect(second.log.routing?.route).not.toBe("classification_cache_hit");
++  });
++
++  it("keeps two businesses apart even in business mode", async () => {
++    const settings = {
++      businessMode: true,
++      businessCategories: [
++        { id: 1, name: "materials", nameAr: "خامات", type: "expense", keywords: ["خامات"], matchExamples: [] },
++      ],
++    };
++    const shopA = await classify("دفعت 500 خامات", { ...settings, businessId: 7 });
++    const shopB = await classify("دفعت 500 خامات", { ...settings, businessId: 9 });
++
++    // The same sentence in two businesses is two different transactions.
++    expect(shopA.items[0]?.businessId).toBe(7);
++    expect(shopB.items[0]?.businessId).toBe(9);
++  });
++
++  it("still hits the cache for a genuinely identical request (positive control)", async () => {
++    const text = "دفعت 150 أكل";
++    const first = await classify(text);
++    const second = await classify(text);
++
++    expect(first.log.routing?.route).not.toBe("classification_cache_hit");
++    expect(second.log.routing?.route).toBe("classification_cache_hit");
++    expect(second.items.map((x) => x.amount)).toEqual(first.items.map((x) => x.amount));
++  });
++});
++
++describe("M10 — a cache hit spends nothing", () => {
++  it("bills zero new tokens when the answer came from the cache", async () => {
++    io.llm.mockResolvedValue({
++      text: JSON.stringify({ items: [{ i: 1, category: "shopping", sub: "عام" }] }),
++      totalTokens: 120,
++      cachedTokens: 0,
++      attempts: [{ slug: "test", model: mapModelName("flash"), ok: true, latencyMs: 4 }],
++      route: { slug: "test", model: mapModelName("flash") },
++      degradedSchema: false,
++      attemptTotals: { promptTokens: 100, completionTokens: 20, cachedTokens: 0, totalTokens: 120 },
++    });
++
++    const text = "دفعت 250 لحاجة مجهولة جدا";
++    const first = await classify(text);
++    expect(first.tokensUsed).toBeGreaterThan(0);
++
++    io.llm.mockClear();
++    const second = await classify(text);
++
++    expect(second.log.routing?.route).toBe("classification_cache_hit");
++    expect(io.llm).not.toHaveBeenCalled();
++    // The stored result carried 120 tokens and the caller billed them again on every hit.
++    expect(second.tokensUsed).toBe(0);
++    // Reported as cached rather than erased, so the saving stays visible.
++    expect(second.cachedTokens).toBe(first.tokensUsed);
++  });
++
++  it("reports zero for a locally-answered phrase too (positive control)", async () => {
++    const text = "دفعت 90 قهوة";
++    await classify(text);
++    const second = await classify(text);
++    expect(second.log.routing?.route).toBe("classification_cache_hit");
++    expect(second.tokensUsed).toBe(0);
++  });
++});
+diff --git a/api/lib/entity-extractor.ts b/api/lib/entity-extractor.ts
+index 04c27f6..90a565d 100644
+--- a/api/lib/entity-extractor.ts
++++ b/api/lib/entity-extractor.ts
+@@ -185,10 +185,13 @@ export function extractAmounts(rawText: string): ExtractedAmount[] {
+   const excludedSpans = [...text.matchAll(/\d{1,4}[\/:-]\d{1,2}(?:[\/-]\d{1,4})?|\d+(?:[.,]\d+)?\s*[%٪]/g)]
+     .map((m) => ({ start: m.index, end: m.index + m[0].length }));
+   const amountPattern = /(\d+(?:[.,]\d{3})*(?:[.,]\d+)?)\s*(جنيه|ج\.م|ج|الف|ألف)?/g;
+-  let match;
++  // Annotated because the closure below narrows it: without a declared type, `match`
++  // is an implicit `any` under noImplicitAny and `tsc -b` fails on the whole project.
++  let match: RegExpExecArray | null;
+ 
+   while ((match = amountPattern.exec(text)) !== null) {
+-    if (excludedSpans.some((span) => match.index >= span.start && match.index < span.end)) continue;
++    const found = match;
++    if (excludedSpans.some((span) => found.index >= span.start && found.index < span.end)) continue;
+     // One implementation of "what does a comma mean", shared with the number engine.
+     // Keeping a second copy here is what let the two drift apart.
+     let amount = parseNumericLiteral(match[1]);
+diff --git a/api/lib/llm-provider-chain.ts b/api/lib/llm-provider-chain.ts
+index 61fd3c7..15f9314 100644
+--- a/api/lib/llm-provider-chain.ts
++++ b/api/lib/llm-provider-chain.ts
+@@ -24,6 +24,10 @@ import {
+   defaultGeminiModelForPlan,
+   defaultGroqModelForPlan,
+   defaultNvidiaModelForPlan,
++  isFireworksModel,
++  isGeminiModel,
++  isGroqModel,
++  isNvidiaModel,
+ } from "./model-mapper";
+ import type { AiPlanName } from "./ai-provider-registry";
+ 
+@@ -56,6 +60,43 @@ export interface ChainKeys {
+  * run. The router asks these to skip the visible reasoning; providers that do not
+  * implement the flag ignore it.
+  */
++/**
++ * Owners of a model name, most specific test first.
++ *
++ * `isNvidiaModel` is checked before `isGroqModel` because Groq claims the bare
++ * `deepseek-` prefix while NVIDIA publishes `deepseek-ai/`, and the more specific one
++ * has to win. This ordering is also the reason the audit is right that a prefix alone
++ * must not be allowed to CHOOSE a provider — it is only good enough to rule one out.
++ */
++const MODEL_OWNERS: Array<[string, (model: string) => boolean]> = [
++  ["gemini", isGeminiModel],
++  ["fireworks", isFireworksModel],
++  ["nvidia", isNvidiaModel],
++  ["groq", isGroqModel],
++];
++
++/**
++ * Does this model name demonstrably belong to a DIFFERENT provider?
++ *
++ * The caller supplies a provider and a model from two different settings, and nothing
++ * required them to agree: an install with `provider=groq` and the default
++ * `model=gemini-3.1-flash-lite` produced a Groq route asking Groq for a Gemini model.
++ * That request cannot succeed, and it was the FIRST one tried on every classification.
++ *
++ * Deliberately asymmetric. A name we recognise as another vendor's is evidence, and the
++ * provider wins because it is the thing holding a key and an endpoint. A name we do not
++ * recognise is NOT evidence — new models appear faster than these predicates are
++ * updated, and silently replacing an operator's configured model with a default is a
++ * worse failure than passing through a name we have not heard of.
++ */
++export function modelConflictsWithProvider(model: string, slug: string): boolean {
++  if (!model) return true;
++  const provider = slug === "gemini-secondary" ? "gemini" : slug;
++  const owner = MODEL_OWNERS.find(([, belongsTo]) => belongsTo(model));
++  if (!owner) return false;
++  return owner[0] !== provider;
++}
++
+ export function looksLikeReasoningModel(modelId: string): boolean {
+   return /deepseek-(?:v4|r1)|(?:^|\/)o[13](?:-|$)|reasoner|thinking|qwq/i.test(modelId);
+ }
+@@ -119,51 +160,92 @@ export function buildProviderChain(req: ChainRequest): LlmRoute[] {
+   ];
+ 
+   const routes: LlmRoute[] = [];
++  /**
++   * Claimed by provider AND model, not by provider alone.
++   *
++   * A gateway like OpenRouter is one slug in front of many models, and the admin
++   * configures them as separate rows precisely so one can back up another. Deduplicating
++   * on the slug meant the second row was silently dropped: the fallback the operator
++   * configured existed in the database, was read, and never ran.
++   */
+   const claimed = new Set<string>();
++  const key = (slug: string, model: string) => `${slug}::${model}`;
+ 
+-  // 1. The requested provider, at priority 0, with the model the caller resolved.
+-  const preferredSpec = builtins.find((b) => b.slug === req.preferred);
+-  const preferredKey =
+-    preferredSpec?.key ||
+-    (req.preferred === "gemini" ? keys.gemini : undefined) ||
+-    keys.gemini;
++  const dbRoutes = req.dbRoutes || [];
+ 
+-  if (preferredKey) {
+-    routes.push({
+-      slug: req.preferred,
+-      protocol: preferredSpec?.protocol ?? "gemini",
+-      baseUrl: preferredSpec?.baseUrl ?? BUILTIN_BASE_URLS[req.preferred] ?? "",
+-      apiKey: preferredKey,
+-      model: req.preferredModel,
+-      priority: 0,
++  // 1. The requested provider leads, at priority 0 — but only as itself.
++  //
++  // This used to synthesise a route for ANY preferred slug: with no builtin spec it fell
++  // through to `keys.gemini` for the key and `?? "gemini"` for the protocol, so asking
++  // for DeepSeek produced a route that spoke the Gemini protocol, carried the Gemini key,
++  // and pointed at DeepSeek's base URL. It then claimed the slug, which dropped the
++  // correctly configured DeepSeek row waiting in `dbRoutes` two lines below. The admin
++  // had set it up correctly; the chain threw it away and sent a request that could only
++  // fail — while recording the failure against DeepSeek's health.
++  //
++  // A route is provider, protocol, base URL, key and model together. Assembling one out
++  // of parts from different providers does not produce a usable route, so the honest
++  // answer when the parts are missing is that this provider is not available.
++  const preferredDbRoutes = dbRoutes
++    .filter((r) => r.slug === req.preferred)
++    .sort((a, b) => a.priority - b.priority);
++
++  if (preferredDbRoutes.length > 0) {
++    // What the admin configured for this provider, in their own priority order.
++    preferredDbRoutes.forEach((dbRoute, index) => {
++      routes.push({ ...dbRoute, priority: index });
++      claimed.add(key(dbRoute.slug, dbRoute.model));
+     });
+-    claimed.add(req.preferred);
++  } else {
++    const preferredSpec = builtins.find((b) => b.slug === req.preferred);
++    if (preferredSpec?.key) {
++      // The caller's model only travels with the route if it is that provider's model.
++      const model = modelConflictsWithProvider(req.preferredModel, preferredSpec.slug)
++        ? preferredSpec.model
++        : req.preferredModel;
++      routes.push({
++        slug: preferredSpec.slug,
++        protocol: preferredSpec.protocol,
++        baseUrl: preferredSpec.baseUrl,
++        apiKey: preferredSpec.key,
++        model,
++        priority: 0,
++      });
++      claimed.add(key(preferredSpec.slug, model));
++    }
++    // No key for the requested provider: it simply does not lead. The rest of the chain
++    // below still runs, so a configured fallback answers instead of a fabricated route
++    // failing first.
+   }
+ 
+   // 2. Admin-configured providers, honouring the `priority` column the schema has always
+   //    had a comment for ("Lower = higher priority in failover") and no code behind.
+-  for (const dbRoute of req.dbRoutes || []) {
+-    if (claimed.has(dbRoute.slug)) continue;
++  for (const dbRoute of dbRoutes) {
++    if (claimed.has(key(dbRoute.slug, dbRoute.model))) continue;
+     routes.push({ ...dbRoute, priority: 10 + dbRoute.priority });
+-    claimed.add(dbRoute.slug);
++    claimed.add(key(dbRoute.slug, dbRoute.model));
+   }
+ 
+   // 3. Whatever else has a key. A second Gemini key is a genuinely independent quota,
+   //    so it ranks above a different vendor's model: same behaviour, different bucket.
+   if (keys.geminiSecondary && keys.geminiSecondary !== keys.gemini) {
++    const secondaryModel = modelConflictsWithProvider(req.preferredModel, "gemini")
++      ? defaultGeminiModelForPlan(plan)
++      : req.preferredModel;
+     routes.push({
+       slug: "gemini-secondary",
+       protocol: "gemini",
+       baseUrl: "",
+       apiKey: keys.geminiSecondary,
+-      model: req.preferred === "gemini" ? req.preferredModel : defaultGeminiModelForPlan(plan),
++      model: secondaryModel,
+       priority: 100,
+     });
++    claimed.add(key("gemini-secondary", secondaryModel));
+   }
+ 
+   let rank = 200;
+   for (const spec of builtins) {
+-    if (claimed.has(spec.slug) || !spec.key) continue;
++    if (!spec.key || claimed.has(key(spec.slug, spec.model))) continue;
+     routes.push({
+       slug: spec.slug,
+       protocol: spec.protocol,
+@@ -172,22 +254,24 @@ export function buildProviderChain(req: ChainRequest): LlmRoute[] {
+       model: spec.model,
+       priority: rank++,
+     });
+-    claimed.add(spec.slug);
++    claimed.add(key(spec.slug, spec.model));
+   }
+ 
+   for (const slug of ["deepseek", "openrouter"] as const) {
+-    const key = keys[slug];
+-    if (!key || claimed.has(slug)) continue;
++    const apiKey = keys[slug];
++    // These are admin-supplied gateways; without a configured model there is nothing
++    // sensible to guess, so the row in `ai_models` is what makes them reachable. A route
++    // with no model is filtered out below rather than sent.
++    if (!apiKey || claimed.has(key(slug, ""))) continue;
+     routes.push({
+       slug,
+       protocol: "openai",
+       baseUrl: BUILTIN_BASE_URLS[slug],
+-      apiKey: key,
+-      // These are admin-supplied gateways; without a configured model there is nothing
+-      // sensible to guess, so the row in `ai_models` is what makes them reachable.
++      apiKey,
+       model: "",
+       priority: rank++,
+     });
++    claimed.add(key(slug, ""));
+   }
+ 
+   // A reasoning model answers into a field the OpenAI shape does not have, so mark
+diff --git a/api/lib/llm-router.ts b/api/lib/llm-router.ts
+index d490d2f..cb2c459 100644
+--- a/api/lib/llm-router.ts
++++ b/api/lib/llm-router.ts
+@@ -69,7 +69,18 @@ export interface LlmRequest {
+   temperature?: number;
+   /** Asked for, never assumed: `degradedSchema` reports whether it survived. */
+   schema?: StructuredSchema;
++  /** Per-attempt ceiling. */
+   timeoutMs?: number;
++  /**
++   * Ceiling for the WHOLE chain, measured from the first attempt.
++   *
++   * `timeoutMs` bounds one provider; five providers at 25 seconds each bounded nothing
++   * that the user experiences, and the client had usually given up long before the last
++   * one was tried — while every request after the abandonment kept running and kept
++   * costing. With a deadline, a route is only started if there is time left in which its
++   * answer could still be useful.
++   */
++  deadlineMs?: number;
+   /**
+    * Lets the caller shape the prompt for whoever actually serves the request.
+    *
+@@ -88,7 +99,16 @@ export type FailureKind =
+   | "server"
+   | "timeout"
+   | "network"
+-  | "empty_response";
++  | "empty_response"
++  /**
++   * The provider answered 200 with a reply it had to cut short.
++   *
++   * Transport success and semantic success are different facts, and conflating them is
++   * how a JSON object severed mid-key reached the parser as a successful classification.
++   * A truncated answer is worth trying somewhere else; a parse error after the fact is
++   * not, because by then the chain has already returned.
++   */
++  | "truncated";
+ 
+ export interface LlmAttempt {
+   slug: string;
+@@ -98,6 +118,23 @@ export interface LlmAttempt {
+   failure?: FailureKind;
+   status?: number;
+   message?: string;
++  /**
++   * What THIS attempt cost, whether or not it produced the answer.
++   *
++   * Accounting used to read the winning call only, so a first provider that consumed
++   * 90 input tokens and returned an empty body was billed as free. Every failed attempt
++   * past the request boundary spent real input tokens; a ledger that cannot see them
++   * under-reports by exactly the amount the failover cost.
++   */
++  promptTokens?: number;
++  completionTokens?: number;
++  /** Prompt tokens the provider served from its own cache. Not new spend. */
++  cachedTokens?: number;
++  totalTokens?: number;
++  /** Verbatim from the provider: "stop", "length", "content_filter", … */
++  finishReason?: string;
++  /** Milliseconds the provider asked us to wait, from `Retry-After`. */
++  retryAfterMs?: number;
+ }
+ 
+ export interface LlmResponse {
+@@ -110,6 +147,21 @@ export interface LlmResponse {
+   latencyMs: number;
+   /** Every route tried, in order — the audit trail for the admin funnel. */
+   attempts: LlmAttempt[];
++  /**
++   * Summed over every attempt, including the ones that failed.
++   *
++   * The top-level `promptTokens`/`completionTokens` describe the call that answered,
++   * which is what the caller wants to reason about. This is what the request actually
++   * cost, which is what billing wants. They are different numbers whenever a failover
++   * happened, and reporting only the first is why cost telemetry disagreed with the
++   * provider invoices.
++   */
++  attemptTotals: {
++    promptTokens: number;
++    completionTokens: number;
++    cachedTokens: number;
++    totalTokens: number;
++  };
+   /** True when the provider would not honour the schema and we sent the request anyway. */
+   degradedSchema: boolean;
+ }
+@@ -137,6 +189,8 @@ export class LlmChainError extends Error {
+ interface BreakerState {
+   consecutiveFailures: number;
+   openedAt: number;
++  /** Wall-clock instant the route may be tried again. Honours `Retry-After`. */
++  openUntil: number;
+   lastFailure?: FailureKind;
+   lastMessage?: string;
+ }
+@@ -145,9 +199,22 @@ const OPEN_AFTER_FAILURES = 3;
+ const COOLDOWN_MS = 60_000;
+ /** A bad key does not fix itself in a minute, and each retry is a wasted round trip. */
+ const AUTH_COOLDOWN_MS = 10 * 60_000;
++/** However long a provider asks us to wait, stop believing it after this. */
++const MAX_COOLDOWN_MS = 30 * 60_000;
+ 
+ const breakers = new Map<string, BreakerState>();
+ 
++/**
++ * Health is per ROUTE, not per provider name.
++ *
++ * A gateway is one slug in front of many models. Keying on the slug meant a 401 on a
++ * model whose key had been revoked condemned every sibling model behind the same
++ * gateway — including the ones the admin had configured precisely as its backup.
++ */
++export function routeKey(slug: string, model: string): string {
++  return `${slug}::${model}`;
++}
++
+ /** Called when the health of a route changes. Wired to the DB by the caller. */
+ export type HealthReporter = (
+   slug: string,
+@@ -161,30 +228,56 @@ export function setHealthReporter(fn: HealthReporter): void {
+   reportHealth = fn;
+ }
+ 
+-export function isCircuitOpen(slug: string, now = Date.now()): boolean {
+-  const state = breakers.get(slug);
++function stateIsOpen(state: BreakerState | undefined, now: number): boolean {
+   if (!state || state.consecutiveFailures < OPEN_AFTER_FAILURES) return false;
+-  const cooldown = state.lastFailure === "auth" ? AUTH_COOLDOWN_MS : COOLDOWN_MS;
+-  if (now - state.openedAt >= cooldown) {
+-    // Half-open: let exactly one request through to find out. Reset to one below the
+-    // threshold so a single failure re-opens it immediately rather than granting three
+-    // more free attempts against a provider we already believe is down.
+-    state.consecutiveFailures = OPEN_AFTER_FAILURES - 1;
+-    return false;
++  return now < state.openUntil;
++}
++
++/**
++ * Is this route currently shut out? A PURE question.
++ *
++ * It used to answer by mutating: past the cooldown it decremented the failure count and
++ * returned false, so asking about the breaker was how the breaker half-opened. Three
++ * things read this — the chain (twice per request, once for each partition) and the
++ * admin dashboard's polling — and every one of them silently consumed the single probe
++ * the design intended to grant. A dashboard left open on a broken provider handed it a
++ * free attempt every refresh.
++ *
++ * Half-open now falls out of the arithmetic instead: past `openUntil` this returns false,
++ * the route is tried once like any other, and a failure sets a fresh `openUntil`.
++ */
++export function isCircuitOpen(slug: string, now = Date.now(), model?: string): boolean {
++  if (model !== undefined) return stateIsOpen(breakers.get(routeKey(slug, model)), now);
++
++  // No model named: the question is about the provider. It is shut out only if every
++  // route we know of for it is.
++  const prefix = `${slug}::`;
++  let seen = false;
++  for (const [key, state] of breakers) {
++    if (!key.startsWith(prefix)) continue;
++    seen = true;
++    if (!stateIsOpen(state, now)) return false;
+   }
+-  return true;
++  return seen;
+ }
+ 
+-function recordSuccess(slug: string): void {
+-  const had = breakers.get(slug);
+-  breakers.delete(slug);
++function recordSuccess(route: LlmRoute): void {
++  const key = routeKey(route.slug, route.model);
++  const had = breakers.get(key);
++  breakers.delete(key);
+   if (had && had.consecutiveFailures >= OPEN_AFTER_FAILURES) {
+-    reportHealth(slug, "healthy");
++    reportHealth(route.slug, "healthy");
+   }
+ }
+ 
+-function recordFailure(slug: string, kind: FailureKind, message: string): void {
+-  const state = breakers.get(slug) || { consecutiveFailures: 0, openedAt: 0 };
++function recordFailure(
++  route: LlmRoute,
++  kind: FailureKind,
++  message: string,
++  retryAfterMs?: number,
++): void {
++  const key = routeKey(route.slug, route.model);
++  const state = breakers.get(key) || { consecutiveFailures: 0, openedAt: 0, openUntil: 0 };
+   state.consecutiveFailures++;
+   state.lastFailure = kind;
+   state.lastMessage = message;
+@@ -194,14 +287,21 @@ function recordFailure(slug: string, kind: FailureKind, message: string): void {
+   const trip = kind === "auth" || state.consecutiveFailures >= OPEN_AFTER_FAILURES;
+   if (trip) {
+     if (kind === "auth") state.consecutiveFailures = OPEN_AFTER_FAILURES;
+-    if (!state.openedAt || Date.now() - state.openedAt > COOLDOWN_MS) {
+-      state.openedAt = Date.now();
+-    }
+-    reportHealth(slug, "down", `${kind}: ${message.slice(0, 180)}`);
++    const now = Date.now();
++    // The provider knows better than our constant when it will serve us again. A 429
++    // that names 600 seconds means 600 seconds; retrying at 60 is how a rate limit
++    // becomes a rate limit plus ten wasted round trips.
++    const cooldown = Math.min(
++      MAX_COOLDOWN_MS,
++      retryAfterMs ?? (kind === "auth" ? AUTH_COOLDOWN_MS : COOLDOWN_MS),
++    );
++    state.openedAt = now;
++    state.openUntil = now + cooldown;
++    reportHealth(route.slug, "down", `${kind}: ${message.slice(0, 180)}`);
+   } else {
+-    reportHealth(slug, "degraded", `${kind}: ${message.slice(0, 180)}`);
++    reportHealth(route.slug, "degraded", `${kind}: ${message.slice(0, 180)}`);
+   }
+-  breakers.set(slug, state);
++  breakers.set(key, state);
+ }
+ 
+ /** Test seam. */
+@@ -209,18 +309,38 @@ export function resetCircuitBreakers(): void {
+   breakers.clear();
+ }
+ 
+-export function circuitSnapshot(): Array<{
++export function circuitSnapshot(now = Date.now()): Array<{
+   slug: string;
++  model: string;
+   failures: number;
+   open: boolean;
++  openUntil: number;
+   lastFailure?: FailureKind;
+ }> {
+-  return [...breakers.entries()].map(([slug, s]) => ({
+-    slug,
+-    failures: s.consecutiveFailures,
+-    open: isCircuitOpen(slug),
+-    lastFailure: s.lastFailure,
+-  }));
++  return [...breakers.entries()].map(([key, s]) => {
++    const [slug, model = ""] = key.split("::");
++    return {
++      slug,
++      model,
++      failures: s.consecutiveFailures,
++      open: stateIsOpen(s, now),
++      openUntil: s.openUntil,
++      lastFailure: s.lastFailure,
++    };
++  });
++}
++
++/**
++ * Seconds or an HTTP-date, per RFC 9110. Returns undefined for anything else rather
++ * than guessing, because a wrong cooldown is worse than the default one.
++ */
++export function parseRetryAfter(header: string | null, now = Date.now()): number | undefined {
++  if (!header) return undefined;
++  const trimmed = header.trim();
++  if (/^\d+$/.test(trimmed)) return Number(trimmed) * 1000;
++  const at = Date.parse(trimmed);
++  if (Number.isNaN(at)) return undefined;
++  return Math.max(0, at - now);
+ }
+ 
+ // ─── Failure classification ─────────────────────────────────────────────────
+@@ -257,24 +377,72 @@ export function classifyThrownError(err: unknown): { kind: FailureKind; message:
+ 
+ // ─── Adapters ───────────────────────────────────────────────────────────────
+ 
+-interface AdapterResult {
+-  text: string;
++interface Usage {
+   promptTokens: number;
+   completionTokens: number;
+   cachedTokens: number;
+   totalTokens: number;
+ }
+ 
++const NO_USAGE: Usage = {
++  promptTokens: 0,
++  completionTokens: 0,
++  cachedTokens: 0,
++  totalTokens: 0,
++};
++
++interface AdapterResult extends Usage {
++  text: string;
++  finishReason?: string;
++}
++
+ class ProviderError extends Error {
+   constructor(
+     readonly kind: FailureKind,
+     message: string,
+     readonly status?: number,
++    /**
++     * What the failed call still cost. A 200 with an empty body, or one cut off at the
++     * token limit, consumed its whole input; only a request that never reached the
++     * provider is free.
++     */
++    readonly usage?: Usage,
++    readonly retryAfterMs?: number,
++    readonly finishReason?: string,
+   ) {
+     super(message);
+   }
+ }
+ 
++/**
++ * How to ask a provider not to think out loud.
++ *
++ * There is no standard for this, and sending one vendor's extension to another is not
++ * harmless: DeepSeek's own API documents `thinking: { type: "disabled" }` and has
++ * thinking ON by default, so the vLLM-style `chat_template_kwargs.thinking=false` was
++ * ignored and the model spent its entire output budget reasoning into a field the
++ * OpenAI shape does not have — returning, as far as the caller could tell, nothing.
++ *
++ * Keyed on the base URL rather than the slug, because the slug is admin-chosen text and
++ * the endpoint is what determines the dialect.
++ */
++function applyThinkingSuppression(body: Record<string, unknown>, route: LlmRoute): void {
++  if (!route.suppressReasoning) return;
++  if (/(^|\.)deepseek\.com/i.test(hostOf(route.baseUrl))) {
++    body.thinking = { type: "disabled" };
++    return;
++  }
++  body.chat_template_kwargs = { thinking: false };
++}
++
++function hostOf(baseUrl: string): string {
++  try {
++    return new URL(baseUrl).hostname;
++  } catch {
++    return "";
++  }
++}
++
+ /**
+  * OpenAI-compatible: OpenRouter, DeepSeek, Groq, Fireworks, NVIDIA, Together, Ollama,
+  * and whatever the admin adds next — the protocol is the same and only `baseUrl` differs.
+@@ -308,18 +476,29 @@ async function callOpenAICompatible(
+   // Reasoning models answer into `reasoning_content` and leave `content` null, so a
+   // classification request comes back empty however well the model understood it —
+   // DeepSeek V4 Flash on NVIDIA spent its entire output budget thinking out loud and
+-  // returned nothing. Asking for the thinking to be off is ignored by providers that
+-  // do not implement it, so it is safe to send everywhere.
+-  if (route.suppressReasoning) {
+-    body.chat_template_kwargs = { thinking: false };
+-  }
++  // returned nothing. Each provider is asked in the dialect it actually implements.
++  applyThinkingSuppression(body, route);
+ 
++  const timeoutMs = route.timeoutMs ?? req.timeoutMs ?? 30_000;
+   const controller = new AbortController();
+-  const timer = setTimeout(() => controller.abort(), route.timeoutMs ?? req.timeoutMs ?? 30_000);
++  const timer = setTimeout(() => controller.abort(), timeoutMs);
++  const callDeadline = Date.now() + timeoutMs;
++
++  // The deadline has to cover the BODY, and it has to be ours.
++  //
++  // Two separate holes. First, the timer used to be cleared in the `finally` of the
++  // fetch — which is when the response HEADERS arrive — so a provider that answered 200
++  // and then stalled mid-body left `await res.json()` waiting with nothing watching it.
++  // Second, even with the timer alive, cancellation would depend on the fetch
++  // implementation wiring the body stream to the signal. It does, and that is still
++  // worth not depending on: the timeout is the one thing in this file whose whole
++  // purpose is to hold when something else does not behave. So the abort fires AND the
++  // read is raced against the same instant.
++  const bounded = <T>(work: Promise<T>): Promise<T> =>
++    withTimeout(work, Math.max(1, callDeadline - Date.now()), route.slug);
+ 
+-  let res: Response;
+   try {
+-    res = await fetch(url, {
++    const res = await fetch(url, {
+       method: "POST",
+       headers: {
+         "Content-Type": "application/json",
+@@ -329,44 +508,74 @@ async function callOpenAICompatible(
+       body: JSON.stringify(body),
+       signal: controller.signal,
+     });
++
++    if (!res.ok) {
++      const detail = await bounded(res.text()).catch(() => "");
++      throw new ProviderError(
++        classifyHttpStatus(res.status),
++        `${route.slug} ${res.status}: ${detail.slice(0, 300)}`,
++        res.status,
++        undefined,
++        parseRetryAfter(res.headers.get("retry-after")),
++      );
++    }
++
++    const data = (await bounded(res.json())) as {
++      choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
++      usage?: {
++        prompt_tokens?: number;
++        completion_tokens?: number;
++        total_tokens?: number;
++        prompt_tokens_details?: { cached_tokens?: number };
++      };
++    };
++
++    const promptTokens = data.usage?.prompt_tokens || 0;
++    const completionTokens = data.usage?.completion_tokens || 0;
++    const usage: Usage = {
++      promptTokens,
++      completionTokens,
++      cachedTokens: data.usage?.prompt_tokens_details?.cached_tokens || 0,
++      totalTokens: data.usage?.total_tokens || promptTokens + completionTokens,
++    };
++
++    const choice = data.choices?.[0];
++    const finishReason = choice?.finish_reason;
++    const text = choice?.message?.content || "";
++
++    // A reply the provider had to cut short is not an answer, and the caller cannot tell
++    // the difference from a syntactically invalid one until it has already returned. It
++    // costs the same either way, so the usage travels with the error.
++    if (finishReason === "length") {
++      throw new ProviderError(
++        "truncated",
++        `${route.slug} stopped at the output limit after ${completionTokens} tokens`,
++        undefined,
++        usage,
++        undefined,
++        finishReason,
++      );
++    }
++
++    if (!text.trim()) {
++      throw new ProviderError(
++        "empty_response",
++        `${route.slug} returned no content`,
++        undefined,
++        usage,
++        undefined,
++        finishReason,
++      );
++    }
++
++    return { text, finishReason, ...usage };
+   } catch (err) {
++    if (err instanceof ProviderError) throw err;
+     const { kind, message } = classifyThrownError(err);
+     throw new ProviderError(kind, message);
+   } finally {
+     clearTimeout(timer);
+   }
+-
+-  if (!res.ok) {
+-    const detail = await res.text().catch(() => "");
+-    throw new ProviderError(
+-      classifyHttpStatus(res.status),
+-      `${route.slug} ${res.status}: ${detail.slice(0, 300)}`,
+-      res.status,
+-    );
+-  }
+-
+-  const data = (await res.json()) as {
+-    choices?: Array<{ message?: { content?: string } }>;
+-    usage?: {
+-      prompt_tokens?: number;
+-      completion_tokens?: number;
+-      total_tokens?: number;
+-      prompt_tokens_details?: { cached_tokens?: number };
+-    };
+-  };
+-
+-  const text = data.choices?.[0]?.message?.content || "";
+-  if (!text.trim()) throw new ProviderError("empty_response", `${route.slug} returned no content`);
+-
+-  const promptTokens = data.usage?.prompt_tokens || 0;
+-  const completionTokens = data.usage?.completion_tokens || 0;
+-  return {
+-    text,
+-    promptTokens,
+-    completionTokens,
+-    cachedTokens: data.usage?.prompt_tokens_details?.cached_tokens || 0,
+-    totalTokens: data.usage?.total_tokens || promptTokens + completionTokens,
+-  };
+ }
+ 
+ /** Gemini speaks its own protocol and enforces `responseSchema` properly, unlike most. */
+@@ -394,7 +603,9 @@ async function callGemini(
+   try {
+     result = await withTimeout(
+       model.generateContent(req.userPrompt),
+-      route.timeoutMs ?? req.timeoutMs ?? 30_000,
++      // `req.timeoutMs` first: the chain narrows it to whatever is left of the trip
++      // budget, and a per-route ceiling that outlives the trip is not a ceiling.
++      Math.min(route.timeoutMs ?? Infinity, req.timeoutMs ?? 30_000),
+       route.slug,
+     );
+   } catch (err) {
+@@ -402,17 +613,56 @@ async function callGemini(
+     throw new ProviderError(kind, message);
+   }
+ 
+-  const text = result.response.text();
+-  if (!text.trim()) throw new ProviderError("empty_response", "gemini returned no content");
+-
+-  const usage = result.response.usageMetadata;
+-  return {
+-    text,
+-    promptTokens: usage?.promptTokenCount || 0,
+-    completionTokens: usage?.candidatesTokenCount || 0,
+-    cachedTokens: (usage as { cachedContentTokenCount?: number })?.cachedContentTokenCount || 0,
+-    totalTokens: usage?.totalTokenCount || 0,
++  const meta = result.response.usageMetadata;
++  const usage: Usage = {
++    promptTokens: meta?.promptTokenCount || 0,
++    completionTokens: meta?.candidatesTokenCount || 0,
++    cachedTokens: (meta as { cachedContentTokenCount?: number })?.cachedContentTokenCount || 0,
++    totalTokens: meta?.totalTokenCount || 0,
+   };
++
++  // Gemini spells it MAX_TOKENS; the meaning is the OpenAI shape's `finish_reason:
++  // "length"`, and so is the consequence — a JSON object cut mid-key that the caller
++  // would otherwise receive as a successful classification.
++  const finishReason = result.response.candidates?.[0]?.finishReason;
++  if (finishReason === "MAX_TOKENS") {
++    throw new ProviderError(
++      "truncated",
++      `gemini stopped at the output limit after ${usage.completionTokens} tokens`,
++      undefined,
++      usage,
++      undefined,
++      finishReason,
++    );
++  }
++
++  // `.text()` throws on a blocked or empty candidate rather than returning "", and that
++  // throw used to escape the adapter as an unclassified error.
++  let text = "";
++  try {
++    text = result.response.text();
++  } catch (err) {
++    throw new ProviderError(
++      "empty_response",
++      `gemini returned no usable content: ${(err as Error)?.message || String(err)}`,
++      undefined,
++      usage,
++      undefined,
++      finishReason,
++    );
++  }
++  if (!text.trim()) {
++    throw new ProviderError(
++      "empty_response",
++      "gemini returned no content",
++      undefined,
++      usage,
++      undefined,
++      finishReason,
++    );
++  }
++
++  return { text, finishReason, ...usage };
+ }
+ 
+ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+@@ -469,8 +719,23 @@ const MOVES_ON: ReadonlySet<FailureKind> = new Set<FailureKind>([
+   "timeout",
+   "network",
+   "empty_response",
++  // A model that ran out of output budget will do it again on the same prompt. Another
++  // provider, with a different tokenizer and a different verbosity, might not.
++  "truncated",
+ ]);
+ 
++/**
++ * Below this, a further provider attempt is not worth starting.
++ *
++ * "There is time left" and "there is enough time left to be useful" are different
++ * questions. Starting a 25-second route with 200ms of budget guarantees an abort, and
++ * bills for the tokens the provider processed before hearing about it.
++ */
++const MIN_VIABLE_REMAINING_MS = 250;
++
++/** At most one probe into the shut-out set per request. */
++const MAX_OPEN_PROBES = 1;
++
+ /**
+  * Try each route in order until one answers.
+  *
+@@ -488,18 +753,55 @@ export async function executeLlmChain(
+     throw new LlmChainError("No provider has both a key and a model configured", []);
+   }
+ 
++  const chainStartedAt = Date.now();
++  const deadlineAt = req.deadlineMs ? chainStartedAt + req.deadlineMs : Infinity;
++
+   const attempts: LlmAttempt[] = [];
+-  const ordered = [...usable].sort((a, b) => a.priority - b.priority);
++  const totals = { promptTokens: 0, completionTokens: 0, cachedTokens: 0, totalTokens: 0 };
++  const bill = (usage?: Usage): void => {
++    if (!usage) return;
++    totals.promptTokens += usage.promptTokens;
++    totals.completionTokens += usage.completionTokens;
++    totals.cachedTokens += usage.cachedTokens;
++    totals.totalTokens += usage.totalTokens;
++  };
+ 
+-  // Skipping every open breaker would mean answering nothing at all during a broad
+-  // outage. They go last instead: a route we believe is down is still better than
+-  // failing the request outright.
+-  const closed = ordered.filter((r) => !isCircuitOpen(r.slug));
+-  const open = ordered.filter((r) => isCircuitOpen(r.slug));
++  const ordered = [...usable].sort((a, b) => a.priority - b.priority);
++  const now = Date.now();
++  const closed = ordered.filter((r) => !isCircuitOpen(r.slug, now, r.model));
++  const open = ordered.filter((r) => isCircuitOpen(r.slug, now, r.model));
++
++  // A shut-out route is tried at most ONCE per request, and only behind everything we
++  // still believe in.
++  //
++  // They used to be appended in full: during a broad outage — the moment the extra
++  // round trips hurt most — every request paid for every dead provider before failing.
++  // Refusing them outright would be worse, because then nothing would ever discover a
++  // recovery and a blip would become a permanent outage. One probe buys the recovery
++  // signal at a bounded price.
++  const queue = [...closed, ...open.slice(0, MAX_OPEN_PROBES)];
++
++  for (const route of queue) {
++    const remaining = deadlineAt - Date.now();
++    if (remaining < MIN_VIABLE_REMAINING_MS) {
++      attempts.push({
++        slug: route.slug,
++        model: route.model,
++        ok: false,
++        latencyMs: 0,
++        failure: "timeout",
++        message: `skipped: ${Math.max(0, remaining)}ms left of the ${req.deadlineMs}ms budget`,
++      });
++      break;
++    }
+ 
+-  for (const route of [...closed, ...open]) {
+     const startedAt = Date.now();
+     let degradedSchema = false;
++    // Never let one route outlive the trip budget, whatever its own timeout says.
++    const shaped: LlmRequest = {
++      ...req,
++      timeoutMs: Math.min(route.timeoutMs ?? req.timeoutMs ?? 30_000, remaining),
++    };
+ 
+     for (let pass = 0; pass < 2; pass++) {
+       const withSchema = pass === 0;
+@@ -507,22 +809,36 @@ export async function executeLlmChain(
+ 
+       try {
+         const call = route.protocol === "gemini" ? callGemini : callOpenAICompatible;
+-        const shaped = req.promptFor ? { ...req, ...req.promptFor(route) } : req;
+-        const result = await call(route, shaped, withSchema);
+-
+-        recordSuccess(route.slug);
++        const prompted = req.promptFor ? { ...shaped, ...req.promptFor(route) } : shaped;
++        const result = await call(route, prompted, withSchema);
++
++        recordSuccess(route);
++        const usage: Usage = {
++          promptTokens: result.promptTokens,
++          completionTokens: result.completionTokens,
++          cachedTokens: result.cachedTokens,
++          totalTokens: result.totalTokens,
++        };
++        bill(usage);
+         attempts.push({
+           slug: route.slug,
+           model: route.model,
+           ok: true,
+           latencyMs: Date.now() - startedAt,
++          finishReason: result.finishReason,
++          ...usage,
+         });
+ 
+         return {
+-          ...result,
++          text: result.text,
++          promptTokens: result.promptTokens,
++          completionTokens: result.completionTokens,
++          cachedTokens: result.cachedTokens,
++          totalTokens: result.totalTokens,
+           route,
+           latencyMs: Date.now() - startedAt,
+           attempts,
++          attemptTotals: { ...totals },
+           degradedSchema,
+         };
+       } catch (err) {
+@@ -531,6 +847,7 @@ export async function executeLlmChain(
+             ? err
+             : new ProviderError(classifyThrownError(err).kind, classifyThrownError(err).message);
+ 
++        bill(pe.usage);
+         attempts.push({
+           slug: route.slug,
+           model: route.model,
+@@ -539,6 +856,9 @@ export async function executeLlmChain(
+           failure: pe.kind,
+           status: pe.status,
+           message: pe.message.slice(0, 300),
++          finishReason: pe.finishReason,
++          retryAfterMs: pe.retryAfterMs,
++          ...(pe.usage ?? {}),
+         });
+ 
+         // NVIDIA answers 400 to a `response_format` it does not implement, and the
+@@ -547,7 +867,7 @@ export async function executeLlmChain(
+         // something we were entitled to assume.
+         if (pe.kind === "unsupported_schema" && withSchema) continue;
+ 
+-        if (MOVES_ON.has(pe.kind)) recordFailure(route.slug, pe.kind, pe.message);
++        if (MOVES_ON.has(pe.kind)) recordFailure(route, pe.kind, pe.message, pe.retryAfterMs);
+         break;
+       }
+     }
+@@ -555,6 +875,6 @@ export async function executeLlmChain(
+ 
+   const summary = attempts
+     .map((a) => `${a.slug}(${a.failure || "?"}${a.status ? ` ${a.status}` : ""})`)
+-    .join(" → ");
++    .join(" \u2192 ");
+   throw new LlmChainError(`All ${attempts.length} attempt(s) failed: ${summary}`, attempts);
+ }
+diff --git a/api/lib/provider-route-acceptance.test.ts b/api/lib/provider-route-acceptance.test.ts
+new file mode 100644
+index 0000000..3395dd5
+--- /dev/null
++++ b/api/lib/provider-route-acceptance.test.ts
+@@ -0,0 +1,497 @@
++/**
++ * A2 acceptance: a route is a unit, a deadline is real, and a breaker isolates.
++ *
++ * The defects reproduced here all share one shape — a value that travels between layers
++ * loses part of itself on the way. A provider slug arrives without its protocol and gets
++ * one guessed for it; a timeout covers the headers and not the body; a breaker records
++ * that a provider is down and then tries it anyway.
++ *
++ * From docs/reviews/2026-09-05-expense-classification-audit.md: H11, M07, M08, M09, M10.
++ */
++import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
++import {
++  executeLlmChain,
++  isCircuitOpen,
++  circuitSnapshot,
++  resetCircuitBreakers,
++  LlmChainError,
++  type LlmRoute,
++} from "./llm-router";
++import { buildProviderChain } from "./llm-provider-chain";
++
++const req = {
++  systemPrompt: "s",
++  userPrompt: "u",
++  maxOutputTokens: 128,
++  timeoutMs: 150,
++};
++
++const route = (over: Partial<LlmRoute> = {}): LlmRoute => ({
++  slug: "groq",
++  protocol: "openai",
++  baseUrl: "https://api.groq.com/openai/v1",
++  apiKey: "k",
++  model: "m",
++  priority: 0,
++  ...over,
++});
++
++/** A complete OpenAI-compatible answer. */
++function ok(content = '{"items":[]}', usage: Record<string, unknown> = {}) {
++  return new Response(
++    JSON.stringify({
++      choices: [{ message: { content }, finish_reason: "stop" }],
++      usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15, ...usage },
++    }),
++    { status: 200, headers: { "Content-Type": "application/json" } },
++  );
++}
++
++function err(status: number, headers: Record<string, string> = {}) {
++  return new Response(JSON.stringify({ error: "nope" }), { status, headers });
++}
++
++beforeEach(() => resetCircuitBreakers());
++afterEach(() => vi.restoreAllMocks());
++
++// ───────────────────── H11. A route is one coherent unit ─────────────────────
++
++describe("H11 — the preferred provider keeps its own identity", () => {
++  const dbDeepseek: LlmRoute = {
++    slug: "deepseek",
++    protocol: "openai",
++    baseUrl: "https://api.deepseek.com/v1",
++    apiKey: "deepseek-real-key",
++    model: "deepseek-v4-flash",
++    priority: 0,
++    providerId: 7,
++  };
++
++  it("does not build a preferred route out of another provider's key and protocol", () => {
++    const chain = buildProviderChain({
++      preferred: "deepseek",
++      preferredModel: "deepseek-v4-flash",
++      plan: "pro",
++      keys: { gemini: "gemini-key" },
++      dbRoutes: [dbDeepseek],
++    });
++
++    const deepseek = chain.find((r) => r.slug === "deepseek");
++    expect(deepseek, "the configured DeepSeek route must survive").toBeDefined();
++    // The defect: with no builtin spec for "deepseek", the preferred branch fell through
++    // to `keys.gemini` and `protocol ?? "gemini"`, producing a route that talks the Gemini
++    // protocol with a Gemini key against DeepSeek's base URL — and then claimed the slug,
++    // so the correct row above was skipped.
++    expect(deepseek?.apiKey).toBe("deepseek-real-key");
++    expect(deepseek?.protocol).toBe("openai");
++    expect(deepseek?.providerId).toBe(7);
++  });
++
++  it("puts the admin's configured route first when it is the one asked for", () => {
++    const chain = buildProviderChain({
++      preferred: "deepseek",
++      preferredModel: "deepseek-v4-flash",
++      plan: "pro",
++      keys: { gemini: "gemini-key" },
++      dbRoutes: [dbDeepseek],
++    });
++    expect(chain[0].slug).toBe("deepseek");
++  });
++
++  it("still reaches Gemini as a fallback behind it", () => {
++    const chain = buildProviderChain({
++      preferred: "deepseek",
++      preferredModel: "deepseek-v4-flash",
++      plan: "pro",
++      keys: { gemini: "gemini-key" },
++      dbRoutes: [dbDeepseek],
++    });
++    const gemini = chain.find((r) => r.protocol === "gemini");
++    expect(gemini, "a valid Gemini key must remain a fallback").toBeDefined();
++    expect(gemini?.apiKey).toBe("gemini-key");
++  });
++
++  it("does not invent a route for a provider it has no key for", () => {
++    const chain = buildProviderChain({
++      preferred: "openrouter",
++      preferredModel: "some/model",
++      plan: "free",
++      keys: { gemini: "gemini-key" },
++    });
++    // Previously this produced slug=openrouter carrying the Gemini key: a request
++    // guaranteed to 401, charged to the wrong provider's health record.
++    expect(chain.some((r) => r.slug === "openrouter")).toBe(false);
++    expect(chain.some((r) => r.slug === "gemini")).toBe(true);
++  });
++
++  it("does not ask a provider for another vendor's model", () => {
++    // `provider` and `model` come from two different settings and nothing made them
++    // agree, so an install left on the default model produced a Groq route requesting
++    // "gemini-3.1-flash-lite" — the first attempt of every classification, guaranteed
++    // to fail, with the failure recorded against Groq.
++    const chain = buildProviderChain({
++      preferred: "groq",
++      preferredModel: "gemini-3.1-flash-lite",
++      plan: "pro",
++      keys: { gemini: "g", groq: "groq-key" },
++    });
++    const groq = chain.find((r) => r.slug === "groq");
++    expect(groq?.model).not.toBe("gemini-3.1-flash-lite");
++    expect(groq?.apiKey).toBe("groq-key");
++  });
++
++  it("passes through a model name it does not recognise rather than overriding the operator", () => {
++    // New models ship faster than the prefix predicates are updated. Substituting a
++    // default for an unfamiliar name would silently undo an admin's configuration.
++    const chain = buildProviderChain({
++      preferred: "fireworks",
++      preferredModel: "some-brand-new-model",
++      plan: "pro",
++      keys: { gemini: "g", fireworks: "fw" },
++    });
++    expect(chain[0]).toMatchObject({ slug: "fireworks", model: "some-brand-new-model" });
++  });
++
++  it("keeps a builtin preferred provider working exactly as before (positive control)", () => {
++    const chain = buildProviderChain({
++      preferred: "groq",
++      preferredModel: "llama-3.3-70b-versatile",
++      plan: "pro",
++      keys: { gemini: "g", groq: "groq-key" },
++    });
++    expect(chain[0]).toMatchObject({
++      slug: "groq",
++      protocol: "openai",
++      apiKey: "groq-key",
++      model: "llama-3.3-70b-versatile",
++    });
++  });
++
++  it("lets a provider offer more than one model instead of deduplicating by slug", () => {
++    const chain = buildProviderChain({
++      preferred: "gemini",
++      preferredModel: "gemini-3.1-pro",
++      plan: "pro",
++      keys: { gemini: "g" },
++      dbRoutes: [
++        { slug: "openrouter", protocol: "openai", baseUrl: "https://openrouter.ai/api/v1",
++          apiKey: "or", model: "model-a", priority: 1, providerId: 1 },
++        { slug: "openrouter", protocol: "openai", baseUrl: "https://openrouter.ai/api/v1",
++          apiKey: "or", model: "model-b", priority: 2, providerId: 2 },
++      ],
++    });
++    const models = chain.filter((r) => r.slug === "openrouter").map((r) => r.model);
++    expect(models).toEqual(["model-a", "model-b"]);
++  });
++});
++
++// ───────────────────── M07. Deadlines that actually bound ─────────────────────
++
++describe("M07 — the timeout covers the whole call, not just the headers", () => {
++  it("gives up on a response whose body never arrives", async () => {
++    // Headers land immediately; the body stalls. The timer used to be cleared in the
++    // fetch's `finally`, so `await res.json()` had no deadline at all and the request
++    // hung for as long as the provider kept the socket open.
++    vi.spyOn(globalThis, "fetch").mockImplementation(
++      () =>
++        Promise.resolve(
++          new Response(
++            new ReadableStream({ start() { /* never enqueues, never closes */ } }),
++            { status: 200, headers: { "Content-Type": "application/json" } },
++          ),
++        ) as Promise<Response>,
++    );
++
++    const started = Date.now();
++    await expect(
++      executeLlmChain([route({ timeoutMs: 120 })], { ...req, timeoutMs: 120 }),
++    ).rejects.toBeInstanceOf(LlmChainError);
++    expect(Date.now() - started).toBeLessThan(3000);
++  });
++
++  it("stops trying providers once the trip budget is spent", async () => {
++    vi.spyOn(globalThis, "fetch").mockImplementation(
++      () => new Promise<Response>((resolve) => setTimeout(() => resolve(err(500)), 200)),
++    );
++
++    const routes = Array.from({ length: 6 }, (_, i) =>
++      route({ slug: `p${i}`, priority: i, timeoutMs: 150 }),
++    );
++
++    const started = Date.now();
++    await expect(
++      executeLlmChain(routes, { ...req, timeoutMs: 150, deadlineMs: 400 }),
++    ).rejects.toBeInstanceOf(LlmChainError);
++    const elapsed = Date.now() - started;
++
++    // Six routes at 150ms each is 900ms of sequential waiting with no ceiling.
++    expect(elapsed).toBeLessThan(900);
++  });
++
++  it("does not start a route it cannot finish inside the remaining budget", async () => {
++    const fetchMock = vi
++      .spyOn(globalThis, "fetch")
++      .mockImplementation(
++        () => new Promise<Response>((resolve) => setTimeout(() => resolve(err(500)), 250)),
++      );
++
++    const routes = Array.from({ length: 4 }, (_, i) =>
++      route({ slug: `q${i}`, priority: i, timeoutMs: 300 }),
++    );
++
++    await expect(
++      executeLlmChain(routes, { ...req, timeoutMs: 300, deadlineMs: 350 }),
++    ).rejects.toBeInstanceOf(LlmChainError);
++
++    expect(fetchMock.mock.calls.length).toBeLessThan(4);
++  });
++
++  it("answers normally when the budget is ample (positive control)", async () => {
++    vi.spyOn(globalThis, "fetch").mockResolvedValue(ok());
++    const res = await executeLlmChain([route()], { ...req, deadlineMs: 5_000 });
++    expect(res.text).toBe('{"items":[]}');
++    expect(res.attempts).toHaveLength(1);
++  });
++});
++
++// ───────────────────── M08. A breaker that isolates ─────────────────────
++
++describe("M08 — an open circuit stops costing requests", () => {
++  it("does not re-try every dead provider on every request during a broad outage", async () => {
++    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(err(500));
++
++    const routes = ["a", "b", "c"].map((slug, i) =>
++      route({ slug, baseUrl: `https://${slug}.example/v1`, priority: i }),
++    );
++
++    for (let i = 0; i < 3; i++) {
++      await executeLlmChain(routes, req).catch(() => {});
++    }
++    expect(routes.every((r) => isCircuitOpen(r.slug))).toBe(true);
++
++    fetchMock.mockClear();
++    await executeLlmChain(routes, req).catch(() => {});
++
++    // The defect: open routes were only moved to the BACK of the queue, so with every
++    // provider down each subsequent request still paid for all three round trips —
++    // exactly when the system is least able to afford them. One probe is enough to
++    // learn whether anything recovered.
++    expect(fetchMock.mock.calls.length).toBeLessThan(3);
++    expect(fetchMock.mock.calls.length).toBeGreaterThan(0);
++  });
++
++  it("prefers a healthy provider over an open one", async () => {
++    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation((url) =>
++      Promise.resolve(String(url).includes("bad.example") ? err(500) : ok()),
++    );
++
++    const bad = route({ slug: "bad", baseUrl: "https://bad.example/v1", priority: 0 });
++    const good = route({ slug: "good", baseUrl: "https://good.example/v1", priority: 1 });
++
++    for (let i = 0; i < 3; i++) await executeLlmChain([bad, good], req);
++    expect(isCircuitOpen("bad")).toBe(true);
++
++    fetchMock.mockClear();
++    const res = await executeLlmChain([bad, good], req);
++
++    expect(res.route.slug).toBe("good");
++    expect(fetchMock.mock.calls.some((c) => String(c[0]).includes("bad.example"))).toBe(false);
++  });
++
++  it("still probes an open route when it is the only one left", async () => {
++    vi.spyOn(globalThis, "fetch").mockResolvedValue(err(500));
++    const bad = route({ slug: "bad" });
++
++    for (let i = 0; i < 3; i++) await executeLlmChain([bad], req).catch(() => {});
++    expect(isCircuitOpen("bad")).toBe(true);
++
++    // Refusing outright would turn a degraded provider into a total outage, and the
++    // recovery probe is how the breaker ever closes again.
++    await expect(executeLlmChain([bad], req)).rejects.toBeInstanceOf(LlmChainError);
++  });
++
++  it("does not consume the half-open probe just by reading the breaker state", async () => {
++    vi.spyOn(globalThis, "fetch").mockResolvedValue(err(500));
++    const bad = route({ slug: "bad" });
++    for (let i = 0; i < 3; i++) await executeLlmChain([bad], req).catch(() => {});
++
++    const past = Date.now() + 61_000;
++    const nowSpy = vi.spyOn(Date, "now").mockReturnValue(past);
++    try {
++      const first = circuitSnapshot().find((s) => s.slug === "bad");
++      circuitSnapshot();
++      circuitSnapshot();
++      const later = circuitSnapshot().find((s) => s.slug === "bad");
++
++      // The admin dashboard polls this. Reading the state used to DECREMENT the failure
++      // count as a side effect, so watching a broken provider quietly reset its own
++      // breaker — and three dashboard refreshes granted three free attempts.
++      expect(later?.failures).toBe(first?.failures);
++    } finally {
++      nowSpy.mockRestore();
++    }
++  });
++
++  it("keeps health per route, not per provider name", async () => {
++    vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) => {
++      const body = JSON.parse(String((init as RequestInit).body));
++      return Promise.resolve(body.model === "broken-model" ? err(401) : ok());
++    });
++
++    const broken = route({ slug: "openrouter", model: "broken-model", baseUrl: "https://openrouter.ai/api/v1", priority: 0 });
++    const working = route({ slug: "openrouter", model: "working-model", baseUrl: "https://openrouter.ai/api/v1", priority: 1 });
++
++    const res = await executeLlmChain([broken, working], req);
++
++    // A 401 on one model of a gateway says nothing about a sibling model behind a
++    // different row. Keying the breaker on the slug alone condemned both.
++    expect(res.route.model).toBe("working-model");
++  });
++
++  it("records what the provider asked us to wait when it sends Retry-After", async () => {
++    vi.spyOn(globalThis, "fetch").mockImplementation((url) =>
++      Promise.resolve(
++        String(url).includes("limited.example") ? err(429, { "Retry-After": "120" }) : ok(),
++      ),
++    );
++
++    const limited = route({ slug: "limited", baseUrl: "https://limited.example/v1", priority: 0 });
++    const spare = route({ slug: "spare", baseUrl: "https://spare.example/v1", priority: 1 });
++
++    const res = await executeLlmChain([limited, spare], req);
++    expect(res.route.slug).toBe("spare");
++    const rateLimited = res.attempts.find((a) => a.slug === "limited");
++    expect(rateLimited?.failure).toBe("rate_limited");
++    expect(rateLimited?.retryAfterMs).toBe(120_000);
++  });
++
++  it("honours a Retry-After longer than the default cooldown", async () => {
++    vi.spyOn(globalThis, "fetch").mockResolvedValue(err(429, { "Retry-After": "600" }));
++    const limited = route({ slug: "limited" });
++    for (let i = 0; i < 3; i++) await executeLlmChain([limited], req).catch(() => {});
++
++    // Past the 60s default cooldown but well inside the 600s the provider named.
++    expect(isCircuitOpen("limited", Date.now() + 120_000)).toBe(true);
++  });
++});
++
++describe("M09 — a truncated answer is not a successful one", () => {
++  it("reports a length-truncated reply as a failure worth failing over", async () => {
++    let call = 0;
++    vi.spyOn(globalThis, "fetch").mockImplementation(() => {
++      call++;
++      return Promise.resolve(
++        call === 1
++          ? new Response(
++              JSON.stringify({
++                choices: [{ message: { content: '{"items":[{"i":1,' }, finish_reason: "length" }],
++                usage: { prompt_tokens: 10, completion_tokens: 128, total_tokens: 138 },
++              }),
++              { status: 200, headers: { "Content-Type": "application/json" } },
++            )
++          : ok(),
++      );
++    });
++
++    const res = await executeLlmChain(
++      [route({ slug: "truncating", priority: 0 }), route({ slug: "complete", priority: 1 })],
++      req,
++    );
++
++    // Transport said 200. The answer was cut off mid-object, which is a semantic
++    // failure the caller used to receive as a success and then fail to parse alone.
++    expect(res.route.slug).toBe("complete");
++    expect(res.attempts[0]).toMatchObject({ slug: "truncating", ok: false, failure: "truncated" });
++  });
++
++  it("asks a reasoning provider to stop thinking in the dialect that provider understands", async () => {
++    const bodies: Array<Record<string, unknown>> = [];
++    vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) => {
++      bodies.push(JSON.parse(String((init as RequestInit).body)));
++      return Promise.resolve(ok());
++    });
++
++    await executeLlmChain(
++      [route({ slug: "deepseek", baseUrl: "https://api.deepseek.com/v1", suppressReasoning: true })],
++      req,
++    );
++
++    // `chat_template_kwargs.thinking=false` is a vLLM/NVIDIA extension. DeepSeek's own
++    // API documents `thinking: { type: "disabled" }`, and thinking is on by default.
++    expect(bodies[0]).toMatchObject({ thinking: { type: "disabled" } });
++  });
++
++  it("keeps sending the vLLM form to providers that use it", async () => {
++    const bodies: Array<Record<string, unknown>> = [];
++    vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) => {
++      bodies.push(JSON.parse(String((init as RequestInit).body)));
++      return Promise.resolve(ok());
++    });
++
++    await executeLlmChain(
++      [route({ slug: "nvidia", baseUrl: "https://integrate.api.nvidia.com/v1", suppressReasoning: true })],
++      req,
++    );
++    expect(bodies[0]).toMatchObject({ chat_template_kwargs: { thinking: false } });
++  });
++
++  it("does not send a thinking flag to a model that does not reason", async () => {
++    const bodies: Array<Record<string, unknown>> = [];
++    vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) => {
++      bodies.push(JSON.parse(String((init as RequestInit).body)));
++      return Promise.resolve(ok());
++    });
++    await executeLlmChain([route()], req);
++    expect(bodies[0].thinking).toBeUndefined();
++    expect(bodies[0].chat_template_kwargs).toBeUndefined();
++  });
++});
++
++describe("M10 — every attempt reports what it actually spent", () => {
++  it("records tokens on the attempt that spent them, not only on the winner", async () => {
++    let call = 0;
++    vi.spyOn(globalThis, "fetch").mockImplementation(() => {
++      call++;
++      return Promise.resolve(
++        call === 1
++          ? new Response(
++              JSON.stringify({
++                choices: [{ message: { content: "" }, finish_reason: "stop" }],
++                usage: { prompt_tokens: 90, completion_tokens: 0, total_tokens: 90 },
++              }),
++              { status: 200, headers: { "Content-Type": "application/json" } },
++            )
++          : ok('{"items":[]}', { prompt_tokens: 40, completion_tokens: 12, total_tokens: 52 }),
++      );
++    });
++
++    const res = await executeLlmChain(
++      [route({ slug: "wasteful", priority: 0 }), route({ slug: "useful", priority: 1 })],
++      req,
++    );
++
++    const wasteful = res.attempts.find((a) => a.slug === "wasteful");
++    const useful = res.attempts.find((a) => a.slug === "useful");
++
++    // An empty answer still consumed the input tokens. Billing that reads only the
++    // winning call under-reports the request by exactly the failed attempts.
++    expect(wasteful?.promptTokens).toBe(90);
++    expect(useful?.promptTokens).toBe(40);
++    expect(useful?.completionTokens).toBe(12);
++    expect(res.attemptTotals?.promptTokens).toBe(130);
++  });
++
++  it("reports cached prompt tokens separately from fresh ones", async () => {
++    vi.spyOn(globalThis, "fetch").mockResolvedValue(
++      ok('{"items":[]}', {
++        prompt_tokens: 100,
++        completion_tokens: 10,
++        total_tokens: 110,
++        prompt_tokens_details: { cached_tokens: 80 },
++      }),
++    );
++    const res = await executeLlmChain([route()], req);
++    expect(res.cachedTokens).toBe(80);
++    expect(res.attempts[0].cachedTokens).toBe(80);
++  });
++});
+diff --git a/api/lib/smart-pipeline.ts b/api/lib/smart-pipeline.ts
+index 132b597..b603e8f 100644
+--- a/api/lib/smart-pipeline.ts
++++ b/api/lib/smart-pipeline.ts
+@@ -51,6 +51,7 @@ import { verifyClassifiedItems } from "./post-classifier-verifier";
+ import { checkAdmissibility } from "./admissibility-gate";
+ import { detectIntent } from "./intent-detector";
+ import { applyCalibration } from "./confidence-calibrator";
++import { CONFIDENCE_CALIBRATION } from "./confidence-calibration.generated";
+ import { crossCheck } from "./classification-evidence";
+ import {
+   shouldEscalate,
+@@ -85,12 +86,49 @@ const classificationCache = new LRUCache<string, PipelineResult>({
+ /** Persisted alongside classification logs so observability reflects the active pipeline. */
+ export const SMART_PIPELINE_VERSION = "v3.0";
+ 
+-function makeCacheKey(text: string, userPlan: string, userId: number, userType: string, businessMode?: boolean): string {
++/**
++ * The tenant segment of a cache key, in one place.
++ *
++ * The key builder and the invalidator each spelled this out independently, so adding a
++ * version prefix to the key silently stopped every invalidation from matching: a user
++ * correcting a category kept being served the answer they had just corrected. Both sides
++ * call this now, so the layout can change again without the two drifting apart.
++ */
++function tenantScope(userType: string, userId: number): string {
++  return `u:${userType}:${userId}`;
++}
++
++/**
++ * Everything the answer depends on, or the key is wrong.
++ *
++ * The key used to be text + user + plan + businessMode, which left out the model, the
++ * thresholds, the calibration version and the business the entry belongs to. So an admin
++ * raising the auto-save threshold, switching the classification model, or a rebuilt
++ * calibration table changed nothing for any phrase already in the cache — for seven days.
++ * The setting was saved, the dashboard showed it, and the pipeline went on answering
++ * from a result computed under the old one.
++ *
++ * `businessId` matters for the same reason `businessMode` does: the same sentence in two
++ * different businesses is two different transactions.
++ */
++function makeCacheKey(input: {
++  text: string;
++  userPlan: string;
++  userId: number;
++  userType: string;
++  businessMode?: boolean;
++  businessId?: number | null;
++  model: string;
++  thresholds: DecisionThresholds;
++}): string {
+   // Treat harmless Arabic orthographic variants and spacing consistently; a
+   // cache miss here previously made equivalent Egyptian input pay the full
+   // pipeline cost again.
+-  const normalized = normalizeArabicString(text);
+-  return `cls:${userType}:${userId}:${userPlan}:${businessMode ? "biz" : "std"}:${normalized}`;
++  const normalized = normalizeArabicString(input.text);
++  const scope = `${input.businessMode ? "biz" : "std"}${input.businessId ?? ""}`;
++  const decision = `${input.thresholds.autoSave}/${input.thresholds.review}/${input.thresholds.escalate}`;
++  const version = `${SMART_PIPELINE_VERSION}+${CONFIDENCE_CALIBRATION.version}`;
++  return `cls:${version}:${tenantScope(input.userType, input.userId)}:${input.userPlan}:${scope}:${input.model}:${decision}:${normalized}`;
+ }
+ 
+ const PERSONAL_KEYWORDS = [
+@@ -143,7 +181,7 @@ export function invalidateUserClassificationCache(userId: number, userType?: str
+   for (const key of classificationCache.keys()) {
+     if (
+       userType
+-        ? key.startsWith(`cls:${userType}:${userId}:`)
++        ? key.includes(`:${tenantScope(userType, userId)}:`)
+         : key.includes(`:${userId}:`)
+     ) {
+       classificationCache.delete(key);
+@@ -668,22 +706,6 @@ export async function runSmartPipeline(
+     ? input.userProfileContext.knownPeople
+     : [];
+ 
+-  // 0. Check classification cache first (40-60% hit rate for repeated queries)
+-  const cacheKey = makeCacheKey(input.text, input.userPlan, input.userId, input.userType, input.businessMode);
+-  const cachedResult = classificationCache.get(cacheKey);
+-  if (cachedResult) {
+-    return {
+-      ...cachedResult,
+-      processingTimeMs: Date.now() - startTime,
+-      log: {
+-        ...cachedResult.log,
+-        routing: {
+-          ...(cachedResult.log.routing || {}),
+-          route: "classification_cache_hit",
+-        },
+-      },
+-    };
+-  }
+ 
+   // 1. Normalize (Light Normalization for AI, aggressive for rules)
+   const normalized = normalizeV2(input.text);
+@@ -748,6 +770,45 @@ export async function runSmartPipeline(
+         DEFAULT_THRESHOLDS.escalate * 100,
+       ) / 100,
+   };
++  // 0. Check the classification cache (40-60% hit rate for repeated phrases).
++  //
++  // Deliberately AFTER the thresholds are resolved, because they are part of the key
++  // now. This costs a settings read on a hit and buys the property that a configuration
++  // change takes effect on the next request rather than in seven days.
++  const cacheKey = makeCacheKey({
++    text: input.text,
++    userPlan: input.userPlan,
++    userId: input.userId,
++    userType: input.userType,
++    businessMode: input.businessMode,
++    businessId: input.businessId,
++    model: modelUsed,
++    thresholds: decisionThresholds,
++  });
++  const cachedResult = classificationCache.get(cacheKey);
++  if (cachedResult) {
++    return {
++      ...cachedResult,
++      // A cache hit spends nothing.
++      //
++      // The stored result carried the token count of the call that first produced it,
++      // and the caller billed it again on every hit — so a phrase answered once from a
++      // 120-token model call was charged 120 tokens every time it recurred, against a
++      // request that made no call at all. The counts move to `cachedTokens`, which is
++      // what "served without new spend" is called everywhere else in this file.
++      tokensUsed: 0,
++      cachedTokens: cachedResult.tokensUsed || cachedResult.cachedTokens || 0,
++      processingTimeMs: Date.now() - startTime,
++      log: {
++        ...cachedResult.log,
++        cachedTokens: cachedResult.tokensUsed || cachedResult.cachedTokens || 0,
++        routing: {
++          ...(cachedResult.log.routing || {}),
++          route: "classification_cache_hit",
++        },
++      },
++    };
++  }
+ 
+   // Counting amounts is the amount extractor's job, not a private list.
+   //
+@@ -1801,10 +1862,26 @@ export async function runSmartPipeline(
+         // benchmark can measure a slow endpoint's ACCURACY without that endpoint's speed
+         // silently becoming the result — production keeps the 25 seconds.
+         timeoutMs: settingNumber(input.pipelineSettings || {}, "llm_timeout_ms", 25_000),
++        // A ceiling for the whole chain, not just for each provider in it.
++        //
++        // Five routes at 25 seconds each bounded nothing the user experiences. Whatever
++        // the per-route timeout is, the trip ends here — and the chain will not start a
++        // route it cannot finish inside what remains, because a request the client has
++        // already abandoned still costs tokens on the way to being ignored.
++        deadlineMs: settingNumber(
++          input.pipelineSettings || {},
++          "llm_trip_deadline_ms",
++          45_000,
++        ),
+       });
+ 
+-      totalTokens += llm.totalTokens;
+-      cachedTokens = llm.cachedTokens;
++      // What the REQUEST cost, not what the winning call cost.
++      //
++      // A failover means the earlier attempts also consumed their input tokens; billing
++      // that reads only the answer under-reports by exactly the price of the failover,
++      // and "our cost telemetry disagrees with the invoice" is how that surfaced.
++      totalTokens += llm.attemptTotals?.totalTokens || llm.totalTokens;
++      cachedTokens = llm.attemptTotals?.cachedTokens ?? llm.cachedTokens;
+       llmAttempts = llm.attempts;
+       servedByRoute = llm.route.slug;
+       schemaWasDegraded = llm.degradedSchema;
+diff --git a/api/lib/voice-intake-gate.test.ts b/api/lib/voice-intake-gate.test.ts
+new file mode 100644
+index 0000000..89acc43
+--- /dev/null
++++ b/api/lib/voice-intake-gate.test.ts
+@@ -0,0 +1,225 @@
++/**
++ * A2 acceptance for H12: the voice quota is enforced before the transcription is bought.
++ *
++ * The audit's finding was not that one check was weaker on `parseVoiceExpense`. It was
++ * that the endpoint the app actually calls when you hold the microphone computed the
++ * month's used seconds and then never compared them to anything, read the free-plan
++ * limit for every plan, believed the client's duration, and asserted the AI budget only
++ * after the STT provider had already been paid.
++ *
++ * These test the policy directly, because the policy is now one function rather than two
++ * inline copies — which is the property that made the drift possible in the first place.
++ */
++import { describe, it, expect } from "vitest";
++import {
++  billableDurationSeconds,
++  checkVoiceIntake,
++  estimateSpeechTokens,
++  normalizeAudioMime,
++  resolveVoiceLimits,
++  MAX_AUDIO_BASE64_LENGTH,
++} from "./voice-intake-gate";
++
++/** Base64 of roughly `seconds` worth of the app's own recording bitrate. */
++function audioOf(seconds: number, bytesPerSecond = 4_096): string {
++  const bytes = Math.max(1, Math.round(seconds * bytesPerSecond));
++  return "A".repeat(Math.ceil((bytes * 4) / 3));
++}
++
++const FREE = { monthly: 300, perRequest: 60 };
++
++describe("H12 — per-plan limits are read per plan", () => {
++  const settings = {
++    voice_limit_free: "300",
++    voice_limit_pro: "1800",
++    voice_limit_ultra: "0",
++    voice_per_req_free: "60",
++    voice_per_req_pro: "180",
++    voice_per_req_ultra: "300",
++  };
++
++  it.each([
++    ["free", 300, 60],
++    ["pro", 1800, 180],
++    ["ultra", 0, 300],
++  ])("gives %s its own numbers", (plan, monthly, perRequest) => {
++    // `parseVoiceExpense` read `voice_limit_free` unconditionally, so a Pro subscription
++    // bought no extra seconds on the endpoint that consumes them.
++    expect(resolveVoiceLimits(settings, plan)).toEqual({ monthly, perRequest });
++  });
++
++  it("falls back to the free row for a plan nobody configured", () => {
++    expect(resolveVoiceLimits(settings, "enterprise")).toEqual({ monthly: 300, perRequest: 60 });
++  });
++
++  it("survives a settings row that is not a number", () => {
++    expect(resolveVoiceLimits({ voice_limit_free: "abc" }, "free").monthly).toBe(300);
++  });
++});
++
++describe("H12 — the duration is measured, not accepted", () => {
++  it("does not let a client claim zero seconds for real audio", () => {
++    // The whole quota is denominated in this number, and it arrived from the caller.
++    const seconds = billableDurationSeconds(audioOf(30), 0);
++    expect(seconds).toBeGreaterThan(1);
++  });
++
++  it("refuses a recording that claims to fit but cannot", () => {
++    const verdict = checkVoiceIntake({
++      plan: "free",
++      mimeType: "audio/webm",
++      audioBase64: audioOf(600),
++      claimedDurationSeconds: 0,
++      usedSeconds: 0,
++      limits: FREE,
++    });
++    expect(verdict.allowed).toBe(false);
++    expect(verdict.reason).toBe("per_request_limit");
++  });
++
++  it("takes the client's number when it is the larger one", () => {
++    // Over-reporting only spends the caller's own quota faster, so it is believed.
++    expect(billableDurationSeconds(audioOf(5), 45)).toBe(45);
++  });
++
++  it("charges a plausible duration for an ordinary clip", () => {
++    const seconds = billableDurationSeconds(audioOf(20), 20);
++    expect(seconds).toBeGreaterThanOrEqual(20);
++    expect(seconds).toBeLessThanOrEqual(45);
++  });
++});
++
++describe("H12 — the monthly balance is actually compared", () => {
++  it("refuses a user who has already spent the month", () => {
++    const verdict = checkVoiceIntake({
++      plan: "free",
++      mimeType: "audio/webm",
++      audioBase64: audioOf(10),
++      claimedDurationSeconds: 10,
++      usedSeconds: 300,
++      limits: FREE,
++    });
++    expect(verdict.allowed).toBe(false);
++    expect(verdict.reason).toBe("monthly_limit_reached");
++  });
++
++  it("refuses a recording that would overrun what is left", () => {
++    const verdict = checkVoiceIntake({
++      plan: "free",
++      mimeType: "audio/webm",
++      audioBase64: audioOf(40),
++      claimedDurationSeconds: 40,
++      usedSeconds: 280,
++      limits: FREE,
++    });
++    expect(verdict.allowed).toBe(false);
++    expect(verdict.reason).toBe("monthly_limit_exceeded");
++    expect(verdict.message).toContain("20");
++  });
++
++  it("lets an unlimited plan through and reports no remaining figure", () => {
++    const verdict = checkVoiceIntake({
++      plan: "ultra",
++      mimeType: "audio/webm",
++      audioBase64: audioOf(120),
++      claimedDurationSeconds: 120,
++      usedSeconds: 100_000,
++      limits: { monthly: 0, perRequest: 300 },
++    });
++    expect(verdict.allowed).toBe(true);
++    expect(verdict.remainingAfter).toBe(-1);
++  });
++
++  it("accepts an ordinary recording well inside the budget (positive control)", () => {
++    const verdict = checkVoiceIntake({
++      plan: "free",
++      mimeType: "audio/webm",
++      audioBase64: audioOf(8),
++      claimedDurationSeconds: 8,
++      usedSeconds: 30,
++      limits: FREE,
++    });
++    expect(verdict.allowed).toBe(true);
++    expect(verdict.reason).toBeUndefined();
++    expect(verdict.remainingAfter).toBeGreaterThan(0);
++  });
++});
++
++describe("H12 — content type and size are policy, not decoration", () => {
++  it.each([
++    "audio/webm",
++    "audio/webm;codecs=opus",
++    "audio/mp4",
++    "audio/mpeg",
++    "audio/wav",
++    "AUDIO/M4A",
++  ])("accepts %s", (mimeType) => {
++    const verdict = checkVoiceIntake({
++      plan: "free", mimeType, audioBase64: audioOf(5),
++      claimedDurationSeconds: 5, usedSeconds: 0, limits: FREE,
++    });
++    expect(verdict.allowed).toBe(true);
++  });
++
++  it.each(["video/mp4", "application/octet-stream", "text/plain", "", "image/png"])(
++    "refuses %s",
++    (mimeType) => {
++      const verdict = checkVoiceIntake({
++        plan: "free", mimeType, audioBase64: audioOf(5),
++        claimedDurationSeconds: 5, usedSeconds: 0, limits: FREE,
++      });
++      expect(verdict.allowed).toBe(false);
++      expect(verdict.reason).toBe("unsupported_media_type");
++    },
++  );
++
++  it("normalises a codec parameter rather than rejecting on it", () => {
++    expect(normalizeAudioMime("audio/webm;codecs=opus")).toBe("audio/webm");
++  });
++
++  it("measures size on the payload, not on the data: header", () => {
++    const payload = "A".repeat(MAX_AUDIO_BASE64_LENGTH + 10);
++    const verdict = checkVoiceIntake({
++      plan: "ultra",
++      mimeType: "audio/webm",
++      audioBase64: `data:audio/webm;base64,${payload}`,
++      claimedDurationSeconds: 10,
++      usedSeconds: 0,
++      limits: { monthly: 0, perRequest: 100_000 },
++    });
++    expect(verdict.allowed).toBe(false);
++    expect(verdict.reason).toBe("payload_too_large");
++  });
++});
++
++describe("H12 — both endpoints price the same audio identically", () => {
++  it("still reserves for real audio when the client claims nothing", () => {
++    // Not "the same as claiming 30" — a larger claim is believed, because over-reporting
++    // only spends the caller's own quota. What must not happen is a claim of 0 reserving
++    // as though the recording were empty.
++    const audio = audioOf(30);
++    const reserved = estimateSpeechTokens(audio, billableDurationSeconds(audio, 0));
++    const emptyClip = estimateSpeechTokens("", 0);
++    expect(reserved).toBeGreaterThan(emptyClip);
++    expect(billableDurationSeconds(audio, 0)).toBeGreaterThan(0);
++  });
++
++  it("gives the same answer to both endpoints for the same recording", () => {
++    // The property that was missing: two inline copies of this arithmetic charged
++    // differently for identical audio. One function cannot.
++    const audio = audioOf(25);
++    const a = estimateSpeechTokens(audio, billableDurationSeconds(audio, 25));
++    const b = estimateSpeechTokens(audio, billableDurationSeconds(audio, 25));
++    expect(a).toBe(b);
++  });
++
++  it("never reserves less than the floor", () => {
++    expect(estimateSpeechTokens("", 0)).toBeGreaterThanOrEqual(80);
++  });
++
++  it("grows with the recording", () => {
++    const short = estimateSpeechTokens(audioOf(5), 5);
++    const long = estimateSpeechTokens(audioOf(50), 50);
++    expect(long).toBeGreaterThan(short);
++  });
++});
+diff --git a/api/lib/voice-intake-gate.ts b/api/lib/voice-intake-gate.ts
+new file mode 100644
+index 0000000..d31e0e8
+--- /dev/null
++++ b/api/lib/voice-intake-gate.ts
+@@ -0,0 +1,219 @@
++/**
++ * One policy for accepting audio, applied before anything is paid for.
++ *
++ * There were two implementations of this and they disagreed on everything that mattered.
++ * `speechToText` read per-plan limits, compared the month's used seconds against them,
++ * and asserted the AI budget before transcribing. `parseVoiceExpense` — the endpoint the
++ * app actually calls when you hold the microphone — computed the used seconds and then
++ * never compared them to anything, read `voice_limit_free` for every plan including the
++ * ones that paid for more, and asserted the budget AFTER the transcription had already
++ * been bought.
++ *
++ * The result was not a smaller check on one path. It was no check: a user who had spent
++ * their monthly seconds kept transcribing, and a client sending `durationSeconds: 0`
++ * kept transcribing for free forever, because the number the quota is measured in
++ * arrived from the caller and was believed.
++ *
++ * This module is deliberately pure — it takes the settings and the usage, and returns a
++ * verdict. The router does the I/O. That is what makes the policy testable without a
++ * database, and what makes "both endpoints agree" checkable rather than hoped for.
++ */
++
++/** Container formats the transcription providers actually accept. */
++const ALLOWED_AUDIO_TYPES = new Set([
++  "audio/webm",
++  "audio/ogg",
++  "audio/mpeg",
++  "audio/mp3",
++  "audio/mp4",
++  "audio/m4a",
++  "audio/x-m4a",
++  "audio/wav",
++  "audio/x-wav",
++  "audio/flac",
++  "audio/aac",
++]);
++
++/** ~10MB of base64. Kept here so both endpoints cannot drift apart on it. */
++export const MAX_AUDIO_BASE64_LENGTH = 13_333_333;
++
++/**
++ * The HIGHEST bitrate the recorder could plausibly produce, in bytes per second.
++ *
++ * Dividing the payload by this yields a LOWER BOUND on how long the audio must be: at
++ * 64 kbps — comfortably above the Opus/WebM settings the app records at — a 160 KB clip
++ * cannot be shorter than 20 seconds however short the client says it is.
++ *
++ * The direction matters. Dividing by a low bitrate would produce a floor above the true
++ * duration and over-charge every honest recording; dividing by a high one can only
++ * under-charge, which costs a little quota accuracy and closes the hole that made the
++ * quota optional. Real container parsing is the eventual answer and belongs with the STT
++ * work; this is the part that stops `durationSeconds: 0` being free.
++ */
++const MAX_BYTES_PER_SECOND = 8_192;
++
++export interface VoicePlanLimits {
++  /** Seconds per calendar cycle. 0 means unlimited. */
++  monthly: number;
++  /** Seconds in a single recording. */
++  perRequest: number;
++}
++
++export interface VoiceIntakeInput {
++  plan: string;
++  mimeType: string;
++  /** Base64 payload, with or without a data: prefix. */
++  audioBase64: string;
++  /** What the client claims. Treated as a claim, not a measurement. */
++  claimedDurationSeconds: number;
++  /** Seconds already spent in this cycle. */
++  usedSeconds: number;
++  limits: VoicePlanLimits;
++}
++
++export type VoiceRejection =
++  | "payload_too_large"
++  | "unsupported_media_type"
++  | "per_request_limit"
++  | "monthly_limit_reached"
++  | "monthly_limit_exceeded";
++
++export interface VoiceIntakeVerdict {
++  allowed: boolean;
++  reason?: VoiceRejection;
++  /** Arabic, user-facing. Present only on a rejection. */
++  message?: string;
++  /**
++   * The duration this request is charged and checked against — the larger of what the
++   * client claimed and what the payload cannot have been shorter than.
++   */
++  billableSeconds: number;
++  /** Seconds left after this request, or -1 when the plan is unlimited. */
++  remainingAfter: number;
++}
++
++/** Strips a `data:` prefix so length is measured on the payload, not the header. */
++export function base64Payload(audioBase64: string): string {
++  const comma = audioBase64.indexOf(",");
++  return comma >= 0 ? audioBase64.slice(comma + 1) : audioBase64;
++}
++
++/** `audio/webm;codecs=opus` → `audio/webm`. */
++export function normalizeAudioMime(mimeType: string): string {
++  return (mimeType || "").split(";")[0].trim().toLowerCase();
++}
++
++/**
++ * The duration the quota is measured in.
++ *
++ * `Math.max` of the claim and the size-derived floor, because the two failure modes are
++ * asymmetric: a client under-reporting gets free transcription forever, while a client
++ * over-reporting only spends its own quota faster.
++ */
++export function billableDurationSeconds(
++  audioBase64: string,
++  claimedDurationSeconds: number,
++): number {
++  const bytes = Math.floor((base64Payload(audioBase64).length * 3) / 4);
++  const floor = Math.floor(bytes / MAX_BYTES_PER_SECOND);
++  const claimed = Number.isFinite(claimedDurationSeconds)
++    ? Math.max(0, Math.floor(claimedDurationSeconds))
++    : 0;
++  return Math.max(claimed, floor, bytes > 0 ? 1 : 0);
++}
++
++export function resolveVoiceLimits(
++  settings: Record<string, string | undefined>,
++  plan: string,
++): VoicePlanLimits {
++  const read = (key: string, fallback: number): number => {
++    const parsed = parseInt(settings[key] ?? "", 10);
++    return Number.isFinite(parsed) ? parsed : fallback;
++  };
++  const monthly: Record<string, number> = {
++    free: read("voice_limit_free", 300),
++    pro: read("voice_limit_pro", 1800),
++    ultra: read("voice_limit_ultra", 0),
++  };
++  const perRequest: Record<string, number> = {
++    free: read("voice_per_req_free", 60),
++    pro: read("voice_per_req_pro", 180),
++    ultra: read("voice_per_req_ultra", 300),
++  };
++  // Reading `voice_limit_free` for every plan is what made a Pro subscription buy no
++  // extra seconds on the endpoint the app uses. The plan selects the row.
++  const key = Object.prototype.hasOwnProperty.call(monthly, plan) ? plan : "free";
++  return { monthly: monthly[key], perRequest: perRequest[key] };
++}
++
++export function checkVoiceIntake(input: VoiceIntakeInput): VoiceIntakeVerdict {
++  const payload = base64Payload(input.audioBase64);
++  const billableSeconds = billableDurationSeconds(input.audioBase64, input.claimedDurationSeconds);
++  const unlimited = input.limits.monthly <= 0;
++  const remainingAfter = unlimited
++    ? -1
++    : Math.max(0, input.limits.monthly - input.usedSeconds - billableSeconds);
++
++  const reject = (reason: VoiceRejection, message: string): VoiceIntakeVerdict => ({
++    allowed: false,
++    reason,
++    message,
++    billableSeconds,
++    remainingAfter,
++  });
++
++  if (payload.length > MAX_AUDIO_BASE64_LENGTH) {
++    return reject(
++      "payload_too_large",
++      "حجم الملف الصوتي كبير جداً. يرجى إرسال تسجيل أصغر من 10 ميجابايت.",
++    );
++  }
++
++  const mime = normalizeAudioMime(input.mimeType);
++  if (!ALLOWED_AUDIO_TYPES.has(mime)) {
++    return reject(
++      "unsupported_media_type",
++      "صيغة الملف الصوتي دي مش مدعومة. سجّل من التطبيق أو ابعت ملف WebM أو MP3 أو M4A.",
++    );
++  }
++
++  if (billableSeconds > input.limits.perRequest) {
++    return reject(
++      "per_request_limit",
++      `مدة التسجيل الواحد لا يمكن أن تتجاوز ${input.limits.perRequest} ثانية في خطتك الحالية.`,
++    );
++  }
++
++  if (!unlimited && input.usedSeconds >= input.limits.monthly) {
++    return reject(
++      "monthly_limit_reached",
++      `وقت التسجيل الصوتي المتاح ليك خلص (${input.limits.monthly} ثانية/شهر). يرجى الترقية لـ Pro للحصول على المزيد!`,
++    );
++  }
++
++  if (!unlimited && input.usedSeconds + billableSeconds > input.limits.monthly) {
++    return reject(
++      "monthly_limit_exceeded",
++      `مدة هذا التسجيل تتجاوز الرصيد المتبقي لك هذا الشهر. المتاح الآن ${Math.max(
++        0,
++        input.limits.monthly - input.usedSeconds,
++      )} ثانية فقط.`,
++    );
++  }
++
++  return { allowed: true, billableSeconds, remainingAfter };
++}
++
++/**
++ * Tokens to reserve for a transcription of this length.
++ *
++ * Shared so the two endpoints cannot charge differently for the same audio, which they
++ * did: one estimated from the claimed duration and the payload size, the other did not
++ * estimate at all before spending.
++ */
++export function estimateSpeechTokens(audioBase64: string, billableSeconds: number): number {
++  return Math.max(
++    80,
++    Math.ceil(billableSeconds * 14) + Math.ceil(base64Payload(audioBase64).length / 18_000),
++  );
++}

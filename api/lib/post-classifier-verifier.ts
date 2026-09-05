@@ -107,18 +107,8 @@ export function verifyClassifiedItems(
     const dupFlags = detectDuplicates(verifiedItems);
     if (dupFlags.length > 0) {
       flags.push(...dupFlags);
-      // Remove the lower-confidence duplicate
-      const toRemove = new Set<number>();
-      for (const flag of dupFlags) {
-        if (flag.affectedItems.length >= 2) {
-          const [a, b] = flag.affectedItems;
-          // Keep the one with higher confidence
-          const remove =
-            verifiedItems[a].confidence >= verifiedItems[b].confidence ? b : a;
-          toRemove.add(remove);
-        }
-      }
-      verifiedItems = verifiedItems.filter((_, idx) => !toRemove.has(idx));
+      // Similar descriptions do not prove duplicate financial events. Keep the drafts
+      // for review instead of silently deleting a possibly separate purchase.
     }
   }
 
@@ -162,14 +152,15 @@ export function verifyClassifiedItems(
 // ─── Step 1: Normalize Amounts ──────────────────────────────────
 
 /**
- * Ensure all amounts are positive, rounded to 2 decimals, and capped.
+ * Round valid amounts. Preserve invalid values so validation can reject them.
  */
 export function normalizeAmounts(
   items: ParsedTransaction[],
 ): ParsedTransaction[] {
   return items.map((item) => ({
     ...item,
-    amount: Math.min(MAX_AMOUNT, Math.round(Math.abs(item.amount) * 100) / 100),
+    amount: Number.isFinite(item.amount) && item.amount > 0 && item.amount <= MAX_AMOUNT
+      ? Math.round(item.amount * 100) / 100 : item.amount,
   }));
 }
 
@@ -182,6 +173,7 @@ function detectDuplicates(items: ParsedTransaction[]): VerificationFlag[] {
     for (let j = i + 1; j < items.length; j++) {
       const a = items[i];
       const b = items[j];
+      if (a.sourceEventId !== undefined && b.sourceEventId !== undefined && a.sourceEventId !== b.sourceEventId) continue;
 
       // Same amount AND same category → possible duplicate
       if (
@@ -199,7 +191,7 @@ function detectDuplicates(items: ParsedTransaction[]): VerificationFlag[] {
           flags.push({
             type: "duplicate",
             severity: "warning",
-            message: `عملية مكررة محتملة: ${a.amount} جنيه في "${a.category}" — هيتم حذف المكرر`,
+            message: `عملية مكررة محتملة: ${a.amount} جنيه في "${a.category}" — راجع إن كانوا عمليتين منفصلتين`,
             affectedItems: [i, j],
           });
         }
@@ -238,7 +230,7 @@ function checkIntentTaxonomyConflicts(
 
   items.forEach((item, idx) => {
     // Bug #14 fix: متنوعات is now neutral — don't auto-flip income→expense for it.
-    // Only correct genuine expense-only categories (food, transport, bills, etc.).
+    // Report category/direction conflicts without changing the financial direction.
     if (item.type === "income" && EXPENSE_ONLY_CATEGORIES.has(item.category)) {
       if (item.category === "متنوعات") {
         // متنوعات = unclassified, not inherently expense.
@@ -251,15 +243,14 @@ function checkIntentTaxonomyConflicts(
           affectedItems: [idx],
         });
       } else {
-        // Genuine expense-only category with income intent → correct it
+        // An expense-only category cannot override the extracted income direction.
         flags.push({
           type: "intent_conflict",
           severity: "warning",
-          message: `تعارض: نوع العملية "دخل" لكن الفئة "${item.category}" فئة مصروفات — هيتم تصحيحها تلقائي`,
+          message: `تعارض بين نوع العملية "دخل" والفئة "${item.category}" — محتاج مراجعتك`,
           affectedItems: [idx],
         });
-        item.type = "expense";
-        item.confidence = Math.max(item.confidence - 10, 30);
+        item.reviewReasons = [...new Set([...(item.reviewReasons || []), "direction_category_conflict"])];
       }
     }
 
@@ -268,11 +259,10 @@ function checkIntentTaxonomyConflicts(
       flags.push({
         type: "intent_conflict",
         severity: "warning",
-        message: `تعارض: نوع العملية "مصروف" لكن الفئة "${item.category}" فئة دخل — هيتم تصحيحها تلقائي`,
+        message: `تعارض بين نوع العملية "مصروف" والفئة "${item.category}" — محتاج مراجعتك`,
         affectedItems: [idx],
       });
-      item.type = "income";
-      item.confidence = Math.max(item.confidence - 10, 30);
+      item.reviewReasons = [...new Set([...(item.reviewReasons || []), "direction_category_conflict"])];
     }
   });
 
@@ -365,7 +355,7 @@ function checkAmountSanity(
     .map((a) => a.amount)
     .filter((n) => !isNaN(n) && n > 0);
 
-  if (textNumbers.length === 0 || items.length === 0) return flags;
+  if (items.length === 0) return flags;
 
   // Sum of classified amounts
   const classifiedSum = items.reduce((sum, it) => sum + it.amount, 0);
@@ -393,11 +383,11 @@ function checkAmountSanity(
       });
     }
 
-    if (item.amount === 0) {
+    if (!Number.isFinite(item.amount) || item.amount <= 0) {
       flags.push({
         type: "amount_sanity",
         severity: "error",
-        message: `المبلغ صفر — لازم يكون أكبر من صفر`,
+        message: "المبلغ غير صالح — لازم يكون رقمًا موجبًا",
         affectedItems: [idx],
       });
     }

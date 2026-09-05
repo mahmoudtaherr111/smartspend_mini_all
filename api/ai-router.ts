@@ -83,6 +83,11 @@ import {
   type AiUsageChannel,
 } from "./lib/ai-usage-policy";
 import {
+  checkVoiceIntake,
+  estimateSpeechTokens,
+  resolveVoiceLimits,
+} from "./lib/voice-intake-gate";
+import {
   buildMonthlyReportFactsPack,
   getChartData,
   getFinanceBreakdown,
@@ -1349,20 +1354,10 @@ export const aiRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (input.audioBase64.length > 13333333) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            "حجم الملف الصوتي كبير جداً. يرجى إرسال تسجيل أصغر من 10 ميجابايت.",
-        });
-      }
-
-      const estimatedAudioTokens = Math.max(
-        80,
-        Math.ceil(input.durationSeconds * 14) +
-          Math.ceil(input.audioBase64.length / 18_000),
-      );
-      await assertAiBudget(ctx.user, "speech", estimatedAudioTokens);
+      // Size, media type and duration are settled by the shared gate below, which runs
+      // once the cycle's usage is known. Everything this endpoint used to do inline is
+      // still done — the point of moving it is that `parseVoiceExpense` now does the
+      // same things, in the same order, from the same source.
 
       // Get cycle start
       const now = new Date();
@@ -1421,42 +1416,36 @@ export const aiRouter = router({
 
       // Get voice limits from settings
       const cfg = await getSystemSettings();
+      const voiceLimits = resolveVoiceLimits(cfg, ctx.user.plan || "free");
+      const limit = voiceLimits.monthly;
 
-      const voiceLimits: Record<string, number> = {
-        free: parseInt(cfg.voice_limit_free || "300"), // 5 min
-        pro: parseInt(cfg.voice_limit_pro || "1800"), // 30 min
-        ultra: parseInt(cfg.voice_limit_ultra || "0"), // unlimited
-      };
+      const voiceVerdict = checkVoiceIntake({
+        plan: ctx.user.plan || "free",
+        mimeType: input.mimeType,
+        audioBase64: input.audioBase64,
+        claimedDurationSeconds: input.durationSeconds,
+        usedSeconds,
+        limits: voiceLimits,
+      });
 
-      const voicePerReq: Record<string, number> = {
-        free: parseInt(cfg.voice_per_req_free || "60"),
-        pro: parseInt(cfg.voice_per_req_pro || "180"),
-        ultra: parseInt(cfg.voice_per_req_ultra || "300"),
-      };
-
-      const limit = planValue(voiceLimits, ctx.user.plan, 300);
-      const maxPerRequest = planValue(voicePerReq, ctx.user.plan, 60);
-
-      if (input.durationSeconds > maxPerRequest) {
+      if (!voiceVerdict.allowed) {
         throw new TRPCError({
-          code: "FORBIDDEN",
-          message: `مدة التسجيل الواحد لا يمكن أن تتجاوز ${maxPerRequest} ثانية في خطتك الحالية.`,
+          code:
+            voiceVerdict.reason === "payload_too_large" ||
+            voiceVerdict.reason === "unsupported_media_type"
+              ? "BAD_REQUEST"
+              : "FORBIDDEN",
+          message: voiceVerdict.message || "لا يمكن معالجة هذا التسجيل الآن.",
         });
       }
 
-      if (limit > 0 && usedSeconds >= limit) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: `وقت التسجيل الصوتي المتاح ليك خلص (${limit} ثانية/شهر). يرجى الترقية لـ Pro للحصول على المزيد!`,
-        });
-      }
-
-      if (limit > 0 && usedSeconds + input.durationSeconds > limit) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: `مدة هذا التسجيل تتجاوز الرصيد المتبقي لك هذا الشهر. المتاح الآن ${Math.max(0, limit - usedSeconds)} ثانية فقط.`,
-        });
-      }
+      // Reserved before the network call. The estimate is shared, so the two endpoints
+      // cannot charge different amounts for the same recording.
+      await assertAiBudget(
+        ctx.user,
+        "speech",
+        estimateSpeechTokens(input.audioBase64, voiceVerdict.billableSeconds),
+      );
 
       // STT Plan Configuration
       const plan = ctx.user.plan === "ultra" ? "pro" : ctx.user.plan || "free";
@@ -1574,7 +1563,9 @@ export const aiRouter = router({
         await db.insert(voiceUsage).values({
           userId: ctx.user.id,
           userType: ctx.user.type,
-          durationSeconds: input.durationSeconds,
+          // Charged on what the gate measured, not on the client's claim, so the quota
+          // is consumed in the same units it is enforced in.
+          durationSeconds: voiceVerdict.billableSeconds,
           month: currentMonthStr,
           source: "gemini_stt",
         });
@@ -1622,27 +1613,47 @@ export const aiRouter = router({
     .mutation(async ({ ctx, input }) => {
       const startTime = Date.now();
       
-      // 1. Run STT Logic (Simplified for performance)
-      if (input.audioBase64.length > 13333333) {
+      // Everything that can refuse this request runs BEFORE anything is bought.
+      //
+      // What stood here checked the payload size, computed `usedSeconds`, and then never
+      // compared it to anything; read `voice_limit_free` for every plan, so a Pro
+      // subscription bought no extra seconds on the endpoint the app actually calls;
+      // trusted `durationSeconds` from the client, so sending 0 made the quota free; and
+      // asserted the AI budget only after the transcription had already been paid for.
+      //
+      // `speechToText` did all four correctly. There is now one policy instead of two
+      // — see api/lib/voice-intake-gate.ts.
+      const now = new Date();
+      const cycleStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const usedSeconds = await getVoiceSecondsSince(ctx.user.id, ctx.user.type, cycleStart);
+
+      const cfg = await getSystemSettings();
+      const voiceVerdict = checkVoiceIntake({
+        plan: ctx.user.plan || "free",
+        mimeType: input.mimeType,
+        audioBase64: input.audioBase64,
+        claimedDurationSeconds: input.durationSeconds,
+        usedSeconds,
+        limits: resolveVoiceLimits(cfg, ctx.user.plan || "free"),
+      });
+
+      if (!voiceVerdict.allowed) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "حجم الملف الصوتي كبير جداً.",
+          code:
+            voiceVerdict.reason === "payload_too_large" ||
+            voiceVerdict.reason === "unsupported_media_type"
+              ? "BAD_REQUEST"
+              : "FORBIDDEN",
+          message: voiceVerdict.message || "لا يمكن معالجة هذا التسجيل الآن.",
         });
       }
 
-      // Voice Limits Check
-      const now = new Date();
-      let cycleStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const usedSeconds = await getVoiceSecondsSince(ctx.user.id, ctx.user.type, cycleStart);
-      
-      const cfg = await getSystemSettings();
-
-      const voiceLimit = parseInt(cfg.voice_limit_free || "300");
-      const maxPerRequest = parseInt(cfg.voice_per_req_free || "60");
-
-      if (input.durationSeconds > maxPerRequest) {
-        throw new TRPCError({ code: "FORBIDDEN", message: `مدة التسجيل تجاوزت ${maxPerRequest} ثانية.` });
-      }
+      // The spend is reserved before the network call, not reconciled after it.
+      await assertAiBudget(
+        ctx.user,
+        "speech",
+        estimateSpeechTokens(input.audioBase64, voiceVerdict.billableSeconds),
+      );
 
       const plan = ctx.user.plan === "ultra" ? "pro" : ctx.user.plan || "free";
       const sttModelSetting = cfg[`${plan}_stt_model`] || cfg.stt_model || "gemini-1.5-flash";
@@ -1688,7 +1699,10 @@ export const aiRouter = router({
         await db.insert(voiceUsage).values({
           userId: ctx.user.id,
           userType: ctx.user.type,
-          durationSeconds: input.durationSeconds,
+          // The duration the gate CHARGED, not the one the client claimed — enforcing
+          // the quota on one number and consuming it with another is how a client
+          // sending 0 transcribed for free indefinitely.
+          durationSeconds: voiceVerdict.billableSeconds,
           month: new Date().toISOString().slice(0, 7),
           source: "gemini_stt",
         });
@@ -1866,7 +1880,7 @@ export const aiRouter = router({
         stt: {
           model: sttResult.modelUsed,
           tokensUsed: sttResult.tokensUsed,
-          durationSeconds: input.durationSeconds,
+          durationSeconds: voiceVerdict.billableSeconds,
         },
       });
 
@@ -1888,7 +1902,8 @@ export const aiRouter = router({
         toolCalls: 0,
         latencyMs: Date.now() - startTime,
         metadata: {
-          durationSeconds: input.durationSeconds,
+          durationSeconds: voiceVerdict.billableSeconds,
+          claimedDurationSeconds: input.durationSeconds,
           mimeType: cleanMimeType,
           provider: isGroqModel(sttResult.modelUsed) ? "groq" : "gemini",
         },
