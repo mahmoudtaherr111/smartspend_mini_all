@@ -188,6 +188,8 @@ export function buildFinancialMonthPrompt(
   return lines.join("\n");
 }
 
+import { startOfBusinessDay } from "../lib/app-time";
+
 /**
  * Get the date range for expenses query based on financial month.
  * Returns { startDate, endDate } that can be used in SQL WHERE clauses.
@@ -212,3 +214,51 @@ export function getFinancialMonthDates(
 
   return { startDate: range.start, endDate };
 }
+
+export interface FinancialMonthDayRange {
+  startDay: string; // "YYYY-MM-DD"
+  endDay: string;   // "YYYY-MM-DD"
+  startUtc: Date;   // Start boundary in UTC for expenses.date query (inclusive)
+  endUtc: Date;     // End boundary in UTC for expenses.date query (exclusive)
+}
+
+/**
+ * Returns exact Cairo business day boundaries for a financial month cycle.
+ * Guarantees 1:1 parity between day-grain rollups (expenseDailyRollups.day)
+ * and raw ledger timestamps (expenses.date).
+ */
+export function getFinancialMonthDayRange(
+  calendarMonth: string,
+  salaryDay: number | null | undefined,
+): FinancialMonthDayRange {
+  const [year, month] = calendarMonth.split("-").map(Number);
+  let startDay: string;
+  let endDay: string;
+
+  if (!salaryDay || salaryDay <= 1) {
+    const daysInMonth = new Date(year, month, 0).getDate();
+    startDay = `${calendarMonth}-01`;
+    endDay = `${calendarMonth}-${String(daysInMonth).padStart(2, "0")}`;
+  } else {
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const clampedStart = Math.min(salaryDay, daysInMonth);
+    startDay = `${year}-${String(month).padStart(2, "0")}-${String(clampedStart).padStart(2, "0")}`;
+
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextYear = month === 12 ? year + 1 : year;
+    const daysInNextMonth = new Date(nextYear, nextMonth, 0).getDate();
+    const clampedNextSalary = Math.min(salaryDay, daysInNextMonth);
+    endDay = `${nextYear}-${String(nextMonth).padStart(2, "0")}-${String(clampedNextSalary - 1).padStart(2, "0")}`;
+  }
+
+  // Exact Cairo business day boundaries in UTC for raw ledger datetime queries
+  const [sY, sM, sD] = startDay.split("-").map(Number);
+  const startUtc = startOfBusinessDay(new Date(Date.UTC(sY, sM - 1, sD, 12)));
+
+  const [eY, eM, eD] = endDay.split("-").map(Number);
+  const nextDayNoon = new Date(Date.UTC(eY, eM - 1, eD + 1, 12));
+  const endUtc = startOfBusinessDay(nextDayNoon);
+
+  return { startDay, endDay, startUtc, endUtc };
+}
+

@@ -25,29 +25,32 @@ import {
   users,
 } from "../db/schema";
 import { eq, and } from "drizzle-orm";
-import { generateToken, createSession, getSessionMetadata } from "./local-auth-utils";
+import {
+  generateToken,
+  createSession,
+  getSessionMetadata,
+} from "./local-auth-utils";
 import { env } from "./lib/env";
 import { getIncomingHeader } from "./lib/get-client-ip";
+import { createOriginPolicy } from "./lib/origin-policy";
 
 const rpName = "SmartSpend";
 
-function isDevelopmentOrigin(origin: string): boolean {
-  try {
-    const host = new URL(origin).hostname;
-    return host === "localhost" || host === "127.0.0.1" || host.endsWith(".loca.lt") || host.endsWith(".serveousercontent.com") || host.endsWith(".lhr.life");
-  } catch {
-    return false;
-  }
-}
+const originPolicy = createOriginPolicy(env);
 
 function getWebAuthnConfig(request?: Parameters<typeof getIncomingHeader>[0]) {
-  const configuredOrigins = [env.APP_URL, env.FRONTEND_URL].filter(Boolean) as string[];
-  const requestOrigin = request ? getIncomingHeader(request, "origin") : undefined;
-  const origin =
-    requestOrigin &&
-    (configuredOrigins.includes(requestOrigin) || (env.NODE_ENV !== "production" && isDevelopmentOrigin(requestOrigin)))
-      ? requestOrigin
-      : env.APP_URL;
+  const requestOrigin = request
+    ? getIncomingHeader(request, "origin")
+    : undefined;
+  if (requestOrigin && !originPolicy.isAllowedOrigin(requestOrigin)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "مصدر الطلب غير مسموح به",
+    });
+  }
+  const origin = originPolicy.isAllowedWebOrigin(requestOrigin)
+    ? requestOrigin!
+    : env.APP_URL;
   const url = new URL(origin);
   return { rpID: url.hostname, origin: `${url.protocol}//${url.host}` };
 }
@@ -320,7 +323,7 @@ export const webauthnRouter = router({
         credentialRecord.userId,
         credentialRecord.userType as "oauth" | "local",
         token,
-        getSessionMetadata(ctx.req),
+        getSessionMetadata(ctx.req, ctx.ip),
       );
 
       return { success: true, token };

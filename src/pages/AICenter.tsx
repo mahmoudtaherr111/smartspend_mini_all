@@ -1,6 +1,6 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { MessageSquare, Phone, BarChart3, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHaptics } from "@/hooks/useHaptics";
@@ -61,12 +61,25 @@ export default function AICenter() {
   const activeTab = normalizeAiTab(searchParams.get("ai_tab"));
   const { lightTap } = useHaptics();
 
+  // Keep-alive tracker: once a tab has been activated, keep it mounted to preserve
+  // chat message history, voice streams, uncommitted drafts, and scroll positions.
+  const [mountedTabs, setMountedTabs] = useState<Record<AITab, boolean>>(() => ({
+    chat: true,
+    voice: activeTab === "voice",
+    report: activeTab === "report",
+  }));
+
+  useEffect(() => {
+    if (!mountedTabs[activeTab]) {
+      setMountedTabs((prev) => ({ ...prev, [activeTab]: true }));
+    }
+  }, [activeTab, mountedTabs]);
+
   const selectTab = (tab: AITab) => {
     if (tab === activeTab) return;
+    setMountedTabs((prev) => (prev[tab] ? prev : { ...prev, [tab]: true }));
     const next = new URLSearchParams(searchParams);
     next.set("ai_tab", tab);
-    // Let the native back gesture return to the prior AI section instead of
-    // silently overwriting browser history.
     setSearchParams(next);
   };
 
@@ -121,24 +134,58 @@ export default function AICenter() {
         </div>
       </div>
 
-      {/* Content Area */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="h-full"
+      {/* Content Area with Offscreen Keep-Alive */}
+      <div className="flex-1 min-h-0 relative overflow-hidden">
+        {/* Chat Tab Keep-Alive */}
+        {mountedTabs.chat && (
+          <div
+            className={cn(
+              "h-full w-full absolute inset-0 transition-opacity duration-200",
+              activeTab === "chat"
+                ? "opacity-100 z-10 pointer-events-auto"
+                : "opacity-0 z-0 pointer-events-none invisible"
+            )}
+            aria-hidden={activeTab !== "chat"}
           >
             <Suspense fallback={<TabSkeleton />}>
-              {activeTab === "chat" && <AIChatbot />}
-              {activeTab === "voice" && <AIVoiceCall />}
-              {activeTab === "report" && <AIMonthlyReport />}
+              <AIChatbot />
             </Suspense>
-          </motion.div>
-        </AnimatePresence>
+          </div>
+        )}
+
+        {/* Voice Call Tab Keep-Alive */}
+        {mountedTabs.voice && (
+          <div
+            className={cn(
+              "h-full w-full absolute inset-0 transition-opacity duration-200",
+              activeTab === "voice"
+                ? "opacity-100 z-10 pointer-events-auto"
+                : "opacity-0 z-0 pointer-events-none invisible"
+            )}
+            aria-hidden={activeTab !== "voice"}
+          >
+            <Suspense fallback={<TabSkeleton />}>
+              <AIVoiceCall />
+            </Suspense>
+          </div>
+        )}
+
+        {/* Monthly Report Tab Keep-Alive */}
+        {mountedTabs.report && (
+          <div
+            className={cn(
+              "h-full w-full absolute inset-0 transition-opacity duration-200 overflow-y-auto",
+              activeTab === "report"
+                ? "opacity-100 z-10 pointer-events-auto"
+                : "opacity-0 z-0 pointer-events-none invisible"
+            )}
+            aria-hidden={activeTab !== "report"}
+          >
+            <Suspense fallback={<TabSkeleton />}>
+              <AIMonthlyReport />
+            </Suspense>
+          </div>
+        )}
       </div>
     </div>
   );

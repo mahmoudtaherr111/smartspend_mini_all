@@ -484,9 +484,15 @@ export const chatRouter = router({
         input.devQaBypassDailyLimit === true && process.env.NODE_ENV !== "production";
 
       if (!devQaBypassDailyLimit && todayCount >= dailyLimit) {
+        const now = new Date();
+        const midnight = new Date(now);
+        midnight.setHours(24, 0, 0, 0);
+        const retryAfterSeconds = Math.max(60, Math.floor((midnight.getTime() - now.getTime()) / 1000));
+
         throw new TRPCError({
           code: "TOO_MANY_REQUESTS",
           message: `وصلت الحد اليومي (${dailyLimit} رسالة). جرب بكره أو ترقي خطتك! 💎`,
+          cause: { retryAfterSeconds, isDailyLimit: true },
         });
       }
 
@@ -1083,7 +1089,12 @@ export const chatRouter = router({
    * Get messages for a specific conversation.
    */
   getConversation: authedProcedure
-    .input(z.object({ conversationId: z.number() }))
+    .input(
+      z.object({
+        conversationId: z.number(),
+        limit: z.number().int().min(1).max(200).default(100).optional(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       // Verify ownership
       const [conv] = await db
@@ -1105,11 +1116,13 @@ export const chatRouter = router({
         });
       }
 
+      const limit = input.limit ?? 100;
       const messages = await db
         .select()
         .from(chatMessages)
         .where(eq(chatMessages.conversationId, input.conversationId))
-        .orderBy(chatMessages.createdAt);
+        .orderBy(chatMessages.createdAt)
+        .limit(limit);
 
       return {
         conversation: {

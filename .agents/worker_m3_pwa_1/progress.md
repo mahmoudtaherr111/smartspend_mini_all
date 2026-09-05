@@ -1,13 +1,15 @@
-# Progress — worker_m3_pwa_1
+# Progress — M4 (PWA & Mobile-First UX)
 
-Last visited: 2026-08-25T03:31:30Z
-Status: Completed
+Last visited: 2026-08-28T14:55:04Z
+Status: Investigating owned files and existing implementations.
 
-## Checklist
-- [x] Investigate target files (`src/App.tsx`, `src/index.css`, `src/hooks/use-mobile.ts`, `src/pages/Home.tsx`) and context reports.
-- [x] Task 1: `src/App.tsx` - Fix main container safe padding condition across visible routes (`["/dashboard", "/settings", "/support", "/pro", "/bank-sync", "/ai"]`) and maintain single clean keyboard listener.
-- [x] Task 2: `src/index.css` - Deduplicate safe area rules (.pb-safe / .pt-safe consolidated to 0.75rem), add .pl-safe, .pr-safe, .px-safe, .min-h-screen-safe, define iOS 26 Liquid Glass utility classes (.liquid-glass-sheet, .liquid-glass-card, .specular-rim) and remove duplicate utilities block.
-- [x] Task 3: `src/hooks/use-mobile.ts` - Update MOBILE_BREAKPOINT to 1024 (`lg`) to synchronize with application shell layout.
-- [x] Task 4: `src/pages/Home.tsx` - Correct RTL swipe gesture directionality (swipe-left advances tabs, swipe-right recedes tabs).
-- [x] Verification: Run `npm run check` (TypeScript typecheck 100% passing with 0 errors).
-- [x] Finalize handoff report and notify parent.
+## Steps
+- [ ] 1. Inspect existing implementations in `src/App.tsx`, `src/index.css`, `src/pages/Home.tsx`, `src/hooks/use-mobile.ts`, and `src/components/layout/MobileBottomNav.tsx`.
+- [ ] 2. Consolidate safe-area utilities in `src/index.css` (`.pb-safe`, `.pt-safe`, `.pl-safe`, `.pr-safe`, `.px-safe`, `.pb-nav-safe`).
+- [ ] 3. Audit and update route wrappers / `src/App.tsx` and layout to ensure `pb-nav-safe` is applied to all routes rendering `MobileBottomNav`.
+- [ ] 4. Unify virtual keyboard avoidance event listeners & viewport shift prevention in `src/App.tsx` or styling/hooks.
+- [ ] 5. Fix RTL swipe navigation and pull-to-refresh conflicts in `src/pages/Home.tsx`.
+- [ ] 6. Synchronize `useIsMobile()` breakpoint in `src/hooks/use-mobile.ts` (and any related usage) to `1024px` (`lg`).
+- [ ] 7. Update `src/components/layout/MobileBottomNav.tsx` if needed for safe-area / keyboard avoidance.
+- [ ] 8. Verify with `npm run check` and vitest tests.
+- [ ] 9. Write `handoff.md` and notify parent.

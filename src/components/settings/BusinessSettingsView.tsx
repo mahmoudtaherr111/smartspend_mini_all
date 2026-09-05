@@ -5,11 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  AdaptiveDialog,
+  AdaptiveDialogContent,
+  AdaptiveDialogHeader,
+  AdaptiveDialogTitle,
+} from "@/components/ui/adaptive-dialog";
 import {
   Select,
   SelectContent,
@@ -612,11 +612,11 @@ function BusinessDashboard({ business, categories, onBack, refetch }: {
       <AddCategoryDialog open={showAddCategory} onOpenChange={setShowAddCategory} onAdd={() => { refetch(); setShowAddCategory(false); }} />
 
       {/* Edit Business Dialog */}
-      <Dialog open={showEditBusiness} onOpenChange={setShowEditBusiness}>
-        <DialogContent className="sm:max-w-[425px]" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="text-right text-lg">تعديل بيانات المشروع</DialogTitle>
-          </DialogHeader>
+      <AdaptiveDialog open={showEditBusiness} onOpenChange={setShowEditBusiness}>
+        <AdaptiveDialogContent className="sm:max-w-[425px]" dir="rtl">
+          <AdaptiveDialogHeader>
+            <AdaptiveDialogTitle className="text-right text-lg">تعديل بيانات المشروع</AdaptiveDialogTitle>
+          </AdaptiveDialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700 dark:text-slate-300">اسم المشروع</label>
@@ -648,8 +648,8 @@ function BusinessDashboard({ business, categories, onBack, refetch }: {
               </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </AdaptiveDialogContent>
+      </AdaptiveDialog>
     </motion.div>
   );
 }
@@ -714,9 +714,9 @@ function AddCategoryDialog({ open, onOpenChange, onAdd }: {
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm rounded-2xl">
-        <DialogHeader><DialogTitle className="text-right text-lg">إضافة فئة</DialogTitle></DialogHeader>
+    <AdaptiveDialog open={open} onOpenChange={onOpenChange} snapPoints={[0.7, 0.95]}>
+      <AdaptiveDialogContent className="max-w-sm rounded-2xl" dir="rtl">
+        <AdaptiveDialogHeader><AdaptiveDialogTitle className="text-right text-lg">إضافة فئة</AdaptiveDialogTitle></AdaptiveDialogHeader>
         <div className="space-y-3 pt-2">
           <div>
             <label className="text-xs font-semibold text-slate-500 mb-1.5 block text-right">اسم الفئة</label>
@@ -780,8 +780,8 @@ function AddCategoryDialog({ open, onOpenChange, onAdd }: {
             <Plus className="w-4 h-4 mr-1.5" /> إضافة
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </AdaptiveDialogContent>
+    </AdaptiveDialog>
   );
 }
 

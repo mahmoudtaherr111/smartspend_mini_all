@@ -1,73 +1,62 @@
-# BRIEFING — 2026-08-25T09:29:30Z
+# BRIEFING — 2026-08-30T00:58:00Z
 
 ## Mission
-Implement the E2E Mobile Testing Infrastructure and Test Suites (Requirement R4) for SmartSpend AI preview mobile tabs & PWA shell.
+Design, implement, and verify the comprehensive 4-Tier opaque-box E2E test infrastructure and test suites for SmartSpend AI Native Mobile Transformation per PROJECT.md and ORIGINAL_REQUEST.md.
 
 ## 🔒 My Identity
 - Archetype: test_writer
 - Roles: specialist, qa
 - Working directory: E:\smartspend_V1_fixed\.agents\teamwork_preview_test_writer_e2e
-- Original parent: ad9d4b5b-06ab-4df9-a386-5dd5442c5772
-- Milestone: E2E Mobile Testing Infrastructure and Test Suites (R4)
+- Original parent: 48fa826e-9a96-4e89-be77-3c45db8b459e
+- Milestone: Native Mobile Transformation E2E Test Suite & Test Infrastructure
 
 ## 🔒 Key Constraints
 - Exclusive File Ownership:
-  - `playwright.config.ts`
-  - `tests/e2e/**` (and any new E2E test files)
-  - `tests/fixtures/**`
-  - `vitest.config.ts`
+  - `TEST_INFRA.md` (at project root)
   - `TEST_READY.md` (at project root)
-- Write test code and test infra only — never implementation code.
-- No facade or dummy tests; full genuine testing across 4 mobile/tablet viewports.
-- Support dark mode and `ar-EG` locale.
-- Vitest config must include `tests/**/*.test.ts`.
+  - `tests/e2e/**` (Playwright specifications)
+  - `tests/fixtures/**`
+  - `tests/native-mobile-ux-adversarial.test.ts`
+- Write test code and test infra only — never modify implementation code.
+- No facade or dummy tests; full genuine testing across 4 mobile/tablet viewports and Vitest runners.
+- Support dark mode and `ar-EG` locale (Africa/Cairo timezone).
+- Progressive testability & strict isolation across all test cases.
 
 ## Current Parent
-- Conversation ID: ad9d4b5b-06ab-4df9-a386-5dd5442c5772
-- Updated: 2026-08-25T09:29:30Z
+- Conversation ID: 48fa826e-9a96-4e89-be77-3c45db8b459e
+- Updated: 2026-08-30T00:58:00Z
 
 ## Task Summary
 - **What to build**:
-  1. `playwright.config.ts` configured for 4 device viewports (iPhone 16 Pro, iPhone 14, Android Chrome Pixel 7, iPad Air Tablet) with dark mode and `ar-EG` locale.
-  2. E2E test suites in `tests/e2e/`:
-     - `pwa-shell-viewport.spec.ts`
-     - `liquid-glass-navigation.spec.ts`
-     - `instant-tab-switching.spec.ts`
-     - `mobile-customer-journeys.spec.ts`
-  3. Mock fixtures and helpers in `tests/fixtures/mobile-fixtures.ts`.
-  4. `vitest.config.ts` integration ensuring `tests/**/*.test.ts` are picked up while excluding `tests/e2e/**`.
-  5. `TEST_READY.md` at workspace root.
+  1. Updated `TEST_INFRA.md` at project root covering test philosophy, 4-tier methodology, comprehensive feature inventory matrix, and runner commands.
+  2. Implemented automated E2E & integration test suites:
+     - `tests/e2e/native-mobile-ux.spec.ts` (Playwright 4-tier mobile UX spec)
+     - `tests/native-mobile-ux-adversarial.test.ts` (Vitest integration & architecture invariant suite)
+     - Existing suites (`instant-tab-switching.spec.ts`, `liquid-glass-navigation.spec.ts`, `mobile-customer-journeys.spec.ts`, `pwa-shell-viewport.spec.ts`, `mobile-dashboard-ai-recording.spec.ts`).
+  3. Published `TEST_READY.md` at project root with full 4-tier coverage checklist.
 - **Success criteria**:
   - `npm run check` passes with 0 errors.
-  - `npm run test` runs cleanly.
-  - All E2E test suites are syntactically sound, typecheck cleanly, and cover all required tiers and behaviors.
+  - `npx vitest run tests/` passes with 100% test success (14 test files, 221 tests passing).
+  - All 9 Native Mobile Transformation areas covered across Tiers 1-4.
 
 ## Loaded Skills
 - None.
 
 ## Quality Status
-- **Build/test result**: `npm run check` passed (0 errors), `vitest` passed (70 suites / 432 tests passed).
-- **Lint status**: 0 violations.
+- **Build/test result**: `npm run check` passed (0 errors), `vitest` passed (14 test files, 221 tests passing).
+- **Lint status**: Clean, 0 violations.
 - **Tests added/modified**:
-  - `tests/fixtures/mobile-fixtures.ts` (new fixture helper)
-  - `tests/e2e/pwa-shell-viewport.spec.ts` (new E2E suite)
-  - `tests/e2e/liquid-glass-navigation.spec.ts` (new E2E suite)
-  - `tests/e2e/instant-tab-switching.spec.ts` (new E2E suite)
-  - `tests/e2e/mobile-customer-journeys.spec.ts` (new E2E suite)
-  - `vitest.config.ts` (updated include/exclude globs)
-  - `TEST_READY.md` (authored test readiness matrix)
+  - `tests/e2e/native-mobile-ux.spec.ts` (new E2E spec)
+  - `tests/native-mobile-ux-adversarial.test.ts` (new Vitest adversarial suite)
+  - `TEST_INFRA.md` (updated comprehensive test infrastructure)
+  - `TEST_READY.md` (updated test readiness summary & matrix)
 
 ## Key Decisions Made
-- Playwright configured with 4 mobile/tablet device profiles, dark mode, `ar-EG` locale, and `Africa/Cairo` timezone.
-- Created standalone mock environment with tRPC route-level fulfillments and TouchEvent interpolation helpers for accurate continuous touch drag gesture simulation in RTL layout.
-- Separated Playwright E2E suites from Vitest unit tests via explicit exclusion in `vitest.config.ts`.
+- Multi-framework strategy: Authored full Playwright E2E suites for true browser viewport emulation and Vitest adversarial integration suites for fast, deterministic CI execution.
+- 4-Tier test partitioning: Tier 1 (Feature Coverage), Tier 2 (Boundary & Corner Cases), Tier 3 (Cross-Feature Combinations), Tier 4 (Real-World Application Workloads).
 
 ## Artifact Index
-- `E:\smartspend_V1_fixed\playwright.config.ts` — Playwright test configuration
-- `E:\smartspend_V1_fixed\tests/fixtures/mobile-fixtures.ts` — Mock and gesture fixtures
-- `E:\smartspend_V1_fixed\tests/e2e/pwa-shell-viewport.spec.ts` — PWA viewport & safe area spec
-- `E:\smartspend_V1_fixed\tests/e2e/liquid-glass-navigation.spec.ts` — Liquid glass & touch gesture spec
-- `E:\smartspend_V1_fixed\tests/e2e/instant-tab-switching.spec.ts` — 0ms warm view tab switching spec
-- `E:\smartspend_V1_fixed\tests/e2e/mobile-customer-journeys.spec.ts` — Customer journeys & console error audit spec
-- `E:\smartspend_V1_fixed\vitest.config.ts` — Vitest test runner configuration
-- `E:\smartspend_V1_fixed\TEST_READY.md` — Project test readiness matrix
+- `E:\smartspend_V1_fixed\TEST_INFRA.md` — Project test infrastructure & 4-tier methodology
+- `E:\smartspend_V1_fixed\TEST_READY.md` — Test readiness certification & coverage matrix
+- `E:\smartspend_V1_fixed\tests/e2e/native-mobile-ux.spec.ts` — 4-Tier native mobile E2E spec
+- `E:\smartspend_V1_fixed\tests/native-mobile-ux-adversarial.test.ts` — Native mobile adversarial Vitest suite

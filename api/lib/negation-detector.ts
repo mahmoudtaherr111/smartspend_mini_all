@@ -88,7 +88,7 @@ const CANCELLED = normalizeMarkers([
 ]);
 
 const PAID_BY_OTHERS = normalizeMarkers([
-  "عزمني", "عزمتني", "عزمنا", "على حساب", "ع حساب", "ببلاش", "مجانا",
+  "عزمني", "عزمتني", "عزمنا", "ببلاش", "مجانا",
   "ولا مليم", "ولا قرش", "الحساب عليه", "هو اللي دفع",
 ]);
 
@@ -100,6 +100,10 @@ const PAID_BY_OTHERS = normalizeMarkers([
 export function detectNegation(text: string): NegationResult {
   if (!text) return { negated: false };
   const norm = normalizeArabic(text).toLowerCase();
+
+  if (/(?:^|\s)(?:علي|ع) حساب (?:صاحبي|اخويا|ابويا|الشركه|حد تاني)(?=\s|$)/.test(norm)) {
+    return { negated: true, kind: "paid_by_someone_else", marker: "على حساب شخص آخر" };
+  }
 
   for (const marker of PAID_BY_OTHERS) {
     if (norm.includes(marker)) {
@@ -114,7 +118,7 @@ export function detectNegation(text: string): NegationResult {
   // Generated circumfix negation on a financial verb.
   for (const token of norm.split(/[\s،,.؟?!؛;:()]+/)) {
     if (!token) continue;
-    const stem = stripNegationCircumfix(token);
+    const stem = stripNegationCircumfix(token.replace(/^[وف](?=ما?)/, ""));
     if (stem && isFinancialStem(stem)) {
       return { negated: true, kind: "negated_verb", marker: token };
     }

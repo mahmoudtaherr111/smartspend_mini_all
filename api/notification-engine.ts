@@ -1,10 +1,10 @@
 import { db } from "./queries/connection";
-import { notificationTemplates, inAppNotifications, notificationLogs, pushSubscriptions, users, localUsers, userProfiles, expenses } from "../db/schema";
+import { notificationTemplates, inAppNotifications, notificationLogs, pushSubscriptions, users, localUsers, userProfiles, expenses, expenseDailyRollups } from "../db/schema";
 import { eq, and, or, lte, gte, lt, sql, isNull, inArray } from "drizzle-orm";
 import webpush from "web-push";
 import { messaging, isFirebaseInitialized } from "./services/firebase";
 import { env } from "./lib/env";
-import { businessDayRange, businessMonthRange } from "./lib/app-time";
+import { businessDateKey, businessDayRange, businessMonthRange } from "./lib/app-time";
 
 const appUrl = env.APP_URL || "http://localhost:3000";
 const logoUrl = `${appUrl}/photos/white_mode_logo-removebg-preview.png`;
@@ -394,7 +394,7 @@ export async function processScheduledNotifications() {
     } else {
       let offset = 0;
       const limit = 1000;
-      
+
       while (true) {
         let oauthQuery = db.select({ id: users.id, plan: users.plan }).from(users);
         let localQuery = db.select({ id: localUsers.id, plan: localUsers.plan }).from(localUsers);
@@ -407,7 +407,7 @@ export async function processScheduledNotifications() {
              if (segment.plan === "ultra") conds.push(eq(table.plan, "ultra"));
           }
           if (segment.minUsage !== undefined && segment.minUsage > 0) {
-             conds.push(sql`(SELECT count(*) FROM ${expenses} WHERE ${expenses.userId} = ${table.id} AND ${expenses.userType} = ${isOauth ? 'oauth' : 'local'}) >= ${segment.minUsage}`);
+             conds.push(sql`(SELECT COALESCE(SUM(${expenseDailyRollups.txnCount}), 0) FROM ${expenseDailyRollups} WHERE ${expenseDailyRollups.userId} = ${table.id} AND ${expenseDailyRollups.userType} = ${isOauth ? 'oauth' : 'local'}) >= ${segment.minUsage}`);
           }
           if (conds.length > 0) return query.where(and(...conds));
           return query;
@@ -501,19 +501,23 @@ export async function checkUserBudgetExceeded(userId: number, userType: string) 
     const budgetLimit = parseFloat(profile[0].monthlyIncome);
     if (budgetLimit <= 0) return;
 
-    // 2. Calculate sum of expenses for this month
+    // 2. Calculate sum of expenses for this month from rollups (§3.2 & §3.14)
     const monthRange = businessMonthRange();
+    const startDay = businessDateKey(monthRange.start);
+    const endDay = businessDateKey(monthRange.endExclusive);
 
-    const [{ totalSpent }] = await db.select({ totalSpent: sql<number>`COALESCE(SUM(${expenses.amount}), 0)` })
-      .from(expenses)
+    const [{ totalSpent }] = await db
+      .select({
+        totalSpent: sql<number>`COALESCE(SUM(${expenseDailyRollups.expense}), 0)`,
+      })
+      .from(expenseDailyRollups)
       .where(
         and(
-          eq(expenses.userId, userId),
-          eq(expenses.userType, userType),
-          eq(expenses.type, "expense"),
-          gte(expenses.date, monthRange.start),
-          lt(expenses.date, monthRange.endExclusive)
-        )
+          eq(expenseDailyRollups.userId, userId),
+          eq(expenseDailyRollups.userType, userType),
+          gte(expenseDailyRollups.day, startDay),
+          lt(expenseDailyRollups.day, endDay),
+        ),
       );
 
     // 3. If totalSpent exceeds budgetLimit, check if we already warned them this month

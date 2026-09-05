@@ -35,12 +35,50 @@ export interface SmsParseResult {
   raw_extracted: Record<string, unknown>;
 }
 
-// Simple in-memory cache to store parsed results and avoid duplicate external AI calls for identical notifications
+export type SmsUserContext = {
+  userId?: number | null;
+  userType?: string | null;
+};
+
+// In-memory LRU cache to store parsed results partitioned by tenant
 const aiParseCache = new Map<
   string,
   { result: SmsParseResult; expiresAt: number }
 >();
 const CACHE_TTL = 15 * 60 * 1000; // 15 minutes TTL
+const MAX_CACHE_ENTRIES = 500;
+
+function getCacheKey(
+  message: string,
+  userContext?: SmsUserContext,
+): string {
+  const prefix = `${userContext?.userType ?? "anon"}:${userContext?.userId ?? 0}`;
+  return `${prefix}:${message}`;
+}
+
+function setCacheEntry(
+  key: string,
+  result: SmsParseResult,
+): void {
+  if (aiParseCache.size >= MAX_CACHE_ENTRIES) {
+    const oldestKey = aiParseCache.keys().next().value;
+    if (oldestKey !== undefined) {
+      aiParseCache.delete(oldestKey);
+    }
+  }
+  aiParseCache.set(key, {
+    result,
+    expiresAt: Date.now() + CACHE_TTL,
+  });
+}
+
+export function clearSmsAiCache(): void {
+  aiParseCache.clear();
+}
+
+export function getSmsAiCacheSize(): number {
+  return aiParseCache.size;
+}
 
 const SMS_RESPONSE_SCHEMA = {
   type: SchemaType.OBJECT,
@@ -105,6 +143,7 @@ const SMS_SYSTEM_PROMPT = `أنت نظام خبير في استخراج البي
 
 export async function parseSmsFinancialData(
   message: string,
+  userContext?: SmsUserContext,
 ): Promise<SmsParseResult | null> {
   const apiKey = env.GEMINI_API_KEY;
   const modelName = mapModelName("flash"); // Maps dynamically to active fast model (e.g. gemini-3.1-flash-lite)
@@ -115,9 +154,11 @@ export async function parseSmsFinancialData(
   // 1. Condense the SMS to strip non-financial boilerplate and save 40–70% input tokens
   const condensedMessage = condenseSmsNotification(trimmedMessage);
 
-  // 2. Check the in-memory cache first to avoid duplicate token costs
+  // 2. Check the tenant-isolated in-memory cache first to avoid duplicate token costs
   const now = Date.now();
-  const cached = aiParseCache.get(trimmedMessage) || aiParseCache.get(condensedMessage);
+  const rawKey = getCacheKey(trimmedMessage, userContext);
+  const condensedKey = getCacheKey(condensedMessage, userContext);
+  const cached = aiParseCache.get(rawKey) || aiParseCache.get(condensedKey);
   if (cached && cached.expiresAt > now) {
     console.log(
       `[SMS AI Parser] Cache HIT for message: "${condensedMessage.slice(0, 50)}..."`,
@@ -161,12 +202,8 @@ export async function parseSmsFinancialData(
 
     // 3. Cache the parsed result if a valid transaction is detected
     if (finalResult.transaction_detected) {
-      const cacheEntry = {
-        result: finalResult,
-        expiresAt: Date.now() + CACHE_TTL,
-      };
-      aiParseCache.set(trimmedMessage, cacheEntry);
-      aiParseCache.set(condensedMessage, cacheEntry);
+      setCacheEntry(rawKey, finalResult);
+      setCacheEntry(condensedKey, finalResult);
       console.log(
         `[SMS AI Parser] Cache SET for message: "${condensedMessage.slice(0, 50)}..."`,
       );

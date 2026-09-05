@@ -1,46 +1,43 @@
-# BRIEFING — 2026-08-25T09:06:00Z
+# BRIEFING — 2026-08-30T02:08:00Z
 
 ## Mission
-Survey codebase for Requirement R3 (Zero-Latency Instant Tab Switching & Warm View Pre-Rendering) and Requirement R4 (Multi-Viewport In-Browser Mobile Auditing & Adversarial Testing).
+Investigate Financial Mutations, PWA UX, Multi-Tab Auth Synchronization, and Test/Audit Infrastructure in SmartSpend AI.
 
 ## 🔒 My Identity
 - Archetype: explorer
-- Roles: Teamwork explorer, read-only investigation & synthesis
-- Working directory: E:\smartspend_V1_fixed\.agents\teamwork_preview_explorer_survey_3
-- Original parent: ad9d4b5b-06ab-4df9-a386-5dd5442c5772
-- Milestone: survey-r3-r4
+- Roles: Financial Mutations, PWA UX, Auth Sync & Test Infra Specialist
+- Working directory: e:/smartspend_V1_fixed/.agents/teamwork_preview_explorer_survey_3
+- Original parent: cacd9dc6-f7a7-488d-bea7-a95c193ae218
+- Milestone: teamwork_preview_survey
 
 ## 🔒 Key Constraints
-- Read-only investigation — do NOT implement
-- Follow AGENTS.md rules and monorepo standards
-- Produce structured 5-component handoff report
-- Deliver findings in survey_tabs_testing.md and handoff.md
+- Read-only investigation — do NOT implement / modify source code directly
+- Focus on financial mutation idempotency, PWA/mobile UX, multi-tab auth sync, test/audit infrastructure
+- Output line-by-line code citations, root causes, and concrete remediation blueprints
 
 ## Current Parent
-- Conversation ID: ad9d4b5b-06ab-4df9-a386-5dd5442c5772
-- Updated: 2026-08-25T09:06:00Z
+- Conversation ID: cacd9dc6-f7a7-488d-bea7-a95c193ae218
+- Updated: not yet
 
 ## Investigation State
-- **Explored paths**:
-  - `src/App.tsx`, `src/pages/Home.tsx`, `src/pages/AICenter.tsx`
-  - `src/components/layout/MobileBottomNav.tsx`, `src/components/layout/PageTransition.tsx`
-  - `src/components/dashboard/ExpenseChart.tsx`, `MonthlyCalendar.tsx`, `MonthlyStats.tsx`
-  - `src/components/expenses/ExpenseForm.tsx`, `RecentExpenses.tsx`
-  - `vitest.config.ts`, `package.json`, `index.html`, `src/index.css`, `tests/adversarial-challenger-2.test.ts`
+- **Explored paths**: `src/providers/` (`trpc.ts`, `queryPersister.ts`), `src/hooks/` (`useAuth.ts`, `useVirtualKeyboard.ts`, `usePwaLifecycle.ts`, `useHaptics.ts`), `src/components/` (`ExpenseForm.tsx`, `PwaOfflineSyncDialog.tsx`, `PullToRefreshWrapper.tsx`, `MobileBottomNav.tsx`), `api/` (`expense-router.ts`, `wallet-router.ts`, `budget-router.ts`, `goals-router.ts`, `pro-router.ts`), `db/schema.ts`, `tests/` (`financial-mutations-idempotency.test.ts`, `multi-tab-auth-sync.test.ts`, `pwa-mobile-ux.test.ts`).
 - **Key findings**:
-  - Found root causes of tab switching latency in `AnimatePresence mode="wait"` and dynamic component unmounting in `Home.tsx` and `App.tsx`.
-  - Designed Keep-Alive Warm View Stack architecture with GPU-accelerated CSS visibility toggling (`.warm-view-layer`) and query prefetching.
-  - Audited test suite (431 tests, 72 suites; `npm run check` 100% pass; discovered `tests/` directory omitted from `vitest.config.ts`).
-  - Outlined complete Playwright E2E configuration and 4 mobile device profiles (iPhone 16/15 Pro, iPhone 14, Android Chrome, iPad Air) with gesture physics and safe-area auditing.
-- **Unexplored areas**: None. All 4 investigation scopes are fully answered and documented.
+  1. `expenseRouter` implements two-tier idempotency (`clientRequestId` pre-check + ACID transaction rescue on `expenses_user_client_request_unique`).
+  2. `walletRouter`, `budgetRouter`, `goalsRouter` lack `clientRequestId` and unique constraints.
+  3. Offline sync in `ExpenseForm.tsx` has head-of-line blocking on permanent 4xx validation errors.
+  4. PWA visual viewport has threshold mismatch between `useVirtualKeyboard` (80px) and `usePwaLifecycle` (60px).
+  5. Multi-tab auth sync is robust via `BroadcastChannel("smartspend_auth")`, storage events, 401 form draft preservation (`sessionStorage`), and per-account IndexedDB cache partitioning (`${user.type}:${user.id}`).
+  6. `npm run check` (`tsc -b`) passes with 0 type errors.
+  7. Designed authoritative 7-section blueprint for `docs/LOGICAL_EDGE_CASES_AUDIT.md`.
+- **Unexplored areas**: None within scope.
 
 ## Key Decisions Made
-- Authored detailed survey in `survey_tabs_testing.md`.
-- Authored 5-component hard handoff in `handoff.md`.
+- Authored comprehensive technical report (`report.md`) with concrete code citations and remediation blueprints.
+- Authored self-contained 5-component handoff report (`handoff.md`).
 
 ## Artifact Index
-- DISPATCH.md — Incoming instruction log
-- BRIEFING.md — Persistent context & identity
-- progress.md — Liveness & heartbeat
-- survey_tabs_testing.md — Detailed survey analysis
-- handoff.md — 5-component final handoff
+- e:/smartspend_V1_fixed/.agents/teamwork_preview_explorer_survey_3/DISPATCH.md — Incoming dispatch record
+- e:/smartspend_V1_fixed/.agents/teamwork_preview_explorer_survey_3/BRIEFING.md — Persistent working memory
+- e:/smartspend_V1_fixed/.agents/teamwork_preview_explorer_survey_3/progress.md — Liveness and progress heartbeat
+- e:/smartspend_V1_fixed/.agents/teamwork_preview_explorer_survey_3/report.md — Comprehensive technical report
+- e:/smartspend_V1_fixed/.agents/teamwork_preview_explorer_survey_3/handoff.md — 5-component handoff report

@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { router, authedProcedure, moderatorProcedure } from "./middleware";
+import { router, authedProcedure, adminProcedure } from "./middleware";
+import { sessionMetadataFields } from "./lib/admin-safe-fields";
 import { db } from "./queries/connection";
 import { sessions, userAnalytics } from "../db/schema";
 import { eq, desc, and, sql, count, gte } from "drizzle-orm";
@@ -8,15 +9,7 @@ export const sessionRouter = router({
   // ─── My Sessions ───
   listMine: authedProcedure.query(async ({ ctx }) => {
     return await db
-      .select({
-        id: sessions.id,
-        userId: sessions.userId,
-        userType: sessions.userType,
-        ipAddress: sessions.ipAddress,
-        userAgent: sessions.userAgent,
-        expiresAt: sessions.expiresAt,
-        createdAt: sessions.createdAt,
-      })
+      .select(sessionMetadataFields)
       .from(sessions)
       .where(
         and(
@@ -31,20 +24,38 @@ export const sessionRouter = router({
   revokeMine: authedProcedure
     .input(z.object({ sessionId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await db
-        .delete(sessions)
-        .where(
-          and(
-            eq(sessions.id, input.sessionId),
-            eq(sessions.userId, ctx.user.id),
-            eq(sessions.userType, ctx.user.type),
-          ),
+      const session = await db.query.sessions.findFirst({
+        where: and(
+          eq(sessions.id, input.sessionId),
+          eq(sessions.userId, ctx.user.id),
+          eq(sessions.userType, ctx.user.type),
+        ),
+      });
+
+      if (session) {
+        await db
+          .delete(sessions)
+          .where(eq(sessions.id, session.id));
+
+        const { bumpAuthVersion, hashSessionToken } = await import(
+          "./lib/session-validation"
         );
+        const { cacheDel } = await import("./lib/redis-client");
+        const { CacheKeys } = await import("./lib/cache-keys");
+
+        if (session.tokenHash) {
+          await cacheDel(CacheKeys.session(session.tokenHash));
+        } else if (session.token) {
+          await cacheDel(CacheKeys.session(hashSessionToken(session.token).hex));
+        }
+        await bumpAuthVersion(ctx.user.type, ctx.user.id);
+      }
+
       return { success: true };
     }),
 
-  // ─── Session Stats (Moderator+) ───
-  stats: moderatorProcedure.query(async () => {
+  // ─── Session Stats (Admin only) ───
+  stats: adminProcedure.query(async () => {
     const total = await db.select({ count: count() }).from(sessions);
     const active = await db
       .select({ count: count() })
@@ -72,8 +83,8 @@ export const sessionRouter = router({
     };
   }),
 
-  // ─── All Sessions (Moderator+) ───
-  listAll: moderatorProcedure
+  // ─── All Sessions (Admin only) ───
+  listAll: adminProcedure
     .input(
       z
         .object({
@@ -96,15 +107,7 @@ export const sessionRouter = router({
         }
       }
       if (activeOnly) conditions.push(gte(sessions.expiresAt, new Date()));
-      let query = db.select({
-        id: sessions.id,
-        userId: sessions.userId,
-        userType: sessions.userType,
-        ipAddress: sessions.ipAddress,
-        userAgent: sessions.userAgent,
-        expiresAt: sessions.expiresAt,
-        createdAt: sessions.createdAt,
-      }).from(sessions).$dynamic();
+      let query = db.select(sessionMetadataFields).from(sessions).$dynamic();
       if (conditions.length > 0) query = query.where(and(...conditions));
       query = query.orderBy(desc(sessions.createdAt));
       const list = await query.limit(limit).offset(offset);

@@ -1,13 +1,17 @@
 import devServer from "@hono/vite-dev-server";
 import path from "path";
+import zlib from "zlib";
 const __dirname = import.meta.dirname;
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
+import { compression, defineAlgorithm } from "vite-plugin-compression2";
+import { createOriginPolicy } from "./api/lib/origin-policy";
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
+  const originPolicy = createOriginPolicy({ ...env, NODE_ENV: "development" });
   // "frontend" mode = frontend deployed separately; skip Hono dev-server plugin
   const isFrontendOnly = mode === "frontend" || !!env.VITE_API_URL;
 
@@ -19,6 +23,20 @@ export default defineConfig(({ mode }) => {
         ? [devServer({ entry: "api/boot.ts", exclude: [/^\/(?!api\/).*/] })]
         : []),
       react(),
+      compression({
+        algorithms: [
+          defineAlgorithm("gzip", { level: 9 }),
+          defineAlgorithm("brotliCompress", {
+            params: {
+              [zlib.constants.BROTLI_PARAM_QUALITY]: 11,
+            },
+          }),
+        ],
+        threshold: 1024,
+        deleteOriginalAssets: false,
+        skipIfLargerOrEqual: true,
+        exclude: [/\.(png|jpg|jpeg|gif|webp|ico|woff|woff2|zip|gz|br|zst)$/],
+      }),
       VitePWA({
         strategies: "injectManifest",
         srcDir: "src",
@@ -31,7 +49,19 @@ export default defineConfig(({ mode }) => {
           enabled: false,
           type: "module",
         },
-        includeAssets: ["icon.png"],
+        includeAssets: ["icon-192.png", "icon-512.png", "apple-touch-icon.png"],
+        injectManifest: {
+          // Precache only the executable shell. Lazy routes, screenshots and
+          // dozens of device splash images enter the runtime cache after use.
+          globPatterns: [
+            "index.html",
+            "assets/index-*.{js,css}",
+            "assets/vendor-*.js",
+            "assets/*cairo*.woff2",
+            "assets/*inter-latin*.woff2",
+          ],
+          globIgnores: ["**/*.{gz,br}"],
+        },
         manifest: {
           id: "/",
           start_url: "/",
@@ -48,7 +78,7 @@ export default defineConfig(({ mode }) => {
           },
           short_name: "SmartSpend",
           description: "المساعد المالي الذكي وتتبع المصاريف بالصوت والذكاء الاصطناعي",
-          theme_color: "#10b981",
+          theme_color: "#f8fafc",
           background_color: "#090d16",
           display: "standalone",
           display_override: ["standalone", "minimal-ui"],
@@ -58,16 +88,20 @@ export default defineConfig(({ mode }) => {
           categories: ["finance", "productivity"],
           icons: [
             {
-              src: "icon.png",
-              // The source image is 274×268. Declaring a fictional 192/512
-              // size made install surfaces reject or blur it unpredictably.
-              sizes: "274x268",
+              src: "icon-192.png",
+              sizes: "192x192",
               type: "image/png",
               purpose: "any",
             },
             {
-              src: "icon.png",
-              sizes: "274x268",
+              src: "icon-512.png",
+              sizes: "512x512",
+              type: "image/png",
+              purpose: "any",
+            },
+            {
+              src: "icon-512.png",
+              sizes: "512x512",
               type: "image/png",
               purpose: "maskable",
             },
@@ -93,7 +127,7 @@ export default defineConfig(({ mode }) => {
     ],
     server: {
       host: true,
-      allowedHosts: true,
+      allowedHosts: originPolicy.allowedHosts,
       port: isFrontendOnly ? 5173 : 3000,
       // When frontend is standalone, proxy /api/* to the backend server
       ...(isFrontendOnly && env.VITE_API_URL

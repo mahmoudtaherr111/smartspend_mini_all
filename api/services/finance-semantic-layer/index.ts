@@ -1,5 +1,6 @@
 export * from "./types";
 export {
+  bumpFinanceCacheGen,
   financeCacheKey,
   financeCacheTtl,
   invalidateFinanceUserCache,

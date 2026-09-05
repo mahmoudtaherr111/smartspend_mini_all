@@ -1,17 +1,14 @@
-## 2026-08-25T09:30:12Z
-You are teamwork_preview_challenger_m1_1.
-Your working directory is: E:\smartspend_V1_fixed\.agents\teamwork_preview_challenger_m1_1
+## 2026-08-30T11:36:21Z
+You are Challenger 1 (teamwork_preview_challenger).
+Working Directory: e:/smartspend_V1_fixed/.agents/teamwork_preview_challenger_m1_1/
+Authoritative Request: e:/smartspend_V1_fixed/.agents/ORIGINAL_REQUEST.md (READ THIS FIRST).
+Master Plan: e:/smartspend_V1_fixed/.agents/PROJECT.md
+Audit Doc: e:/smartspend_V1_fixed/docs/LOGICAL_EDGE_CASES_AUDIT.md
 
-MANDATORY: Read E:\smartspend_V1_fixed\.agents\ORIGINAL_REQUEST.md before starting your challenge.
-Read E:\smartspend_V1_fixed\PROJECT.md.
-Read the Worker handoff report: E:\smartspend_V1_fixed\.agents\teamwork_preview_worker_m1\handoff.md.
-
-Objective: Adversarial stress-testing of Milestone 1 PWA Shell and Safe-Area Insets.
-
-Challenge Tasks:
-1. Verify edge cases of safe-area inset calculations: What happens when `env(safe-area-inset-top)` is 0px (standard desktop/Android without cutout) vs 59px (iPhone 16 Pro Dynamic Island)?
-2. Test route matching logic in `src/App.tsx`: Test routes with query parameters (e.g. `/dashboard?tab=stats&month=2026-08`, `/ai?query=test`, `/settings?section=profile`), sub-routes, and unknown routes.
-3. Run `npm run check` and targeted Vitest tests to confirm zero regressions.
-4. Record your verdict: APPROVE or REQUEST_CHANGES with empirical test evidence.
-5. Write your handoff report to: `E:\smartspend_V1_fixed\.agents\teamwork_preview_challenger_m1_1\handoff.md`.
-6. Send a message to parent.
+Challenger Objectives:
+1. Empirically verify the resilience of the system against race conditions, edge cases, and unexpected states:
+   - Voice audio recording state transitions and backgrounding cancellation.
+   - AI Chatbot abort signal propagation and rate limit backoff calculation.
+   - Financial mutations deduplication and offline queue sync resilience.
+2. Execute automated test suites via `npm run test` and verify monorepo type check via `npm run check`.
+3. Deliver your empirical verdict: APPROVE or REJECT in `handoff.md` and send a message when done.

@@ -1,385 +1,661 @@
-# SmartSpend AI Mobile Dashboard & AI Recording Input Re-architecture
-## Comprehensive Architectural Survey & Technical Specification Report
+# Comprehensive Technical Survey Report: R1 (Native Touch Physics & Tab Pager) and R5 (Multi-Tier Micro-Haptics Engine)
 
-**Author**: Explorer Survey 1 (`explorer_survey_1`)  
-**Target Workspace**: `E:\smartspend_V1_fixed`  
-**Date**: 2026-08-26  
-**Status**: COMPLETE / READY FOR IMPLEMENTATION
-
----
-
-## 1. Executive Summary & Problem Space
-
-SmartSpend AI's mobile experience on modern smartphones (specifically targeting standard mobile viewports: **iPhone 14 Pro — 390×844 px** and **Android Pixel 7 — 412×915 px**) currently suffers from vertical bloat in the top dashboard and expense recording card. 
-
-### Root Causes of Viewport Inefficiency:
-1. **Static Non-Collapsible AI Banner**: A permanent card header (`CardHeader` + `CardTitle` "سجل بحرية.. والذكاء الاصطناعي هيفهمك") consumes ~70px of vertical space with no toggle or collapse mechanism.
-2. **Static Status Label**: A hardcoded label `"الحالة: جاهز"` occupies ~25px above the input textarea even when the system is in idle state.
-3. **Overly Tall Input Textarea & Form Margins**: The textarea has `min-h-[140px] p-5 text-lg`, plus generous container gaps (`space-y-6` in `CardContent`, `space-y-4` in `form`), pushing the primary CTA action bar down to ~620px from the screen top.
-4. **Fragmented Voice Recording Feedback**: Audio recording visualizers are split across three separate DOM locations: static bars inside the textarea, pulsing waves around the mic button, and timer text inside the submit button.
-5. **Secondary Information Pushed Below the Fold**: On 390×844 viewports, the `RecentExpenses` transaction list and quick financial metrics are completely invisible without scrolling past the fold.
-
-### Architectural Objectives:
-- **Save ~120px–150px of vertical viewport height** across `ExpenseForm.tsx` and `Home.tsx`.
-- Elevate the **thumb-zone action bar by 60–90px**, positioning the voice recording and submission controls in the natural ergonomic sweep area.
-- Expose the top items of `RecentExpenses` **above the fold** on both 390×844 and 412×915 screens.
-- Introduce a **Fluid Morphing AI Discovery Banner** (`framer-motion`) with 0 dead whitespace and compact badge fallback (`✨ تسجيل ذكي`).
-- Introduce a **Contextual Dynamic Recording Pill** that expands smoothly only during active voice recording or AI parsing, returning to 0 height in idle mode.
-- Maintain **100% adherence** to all existing tRPC contracts, offline sync pipelines, and the strict regression AST test in `src/components/expenses/ExpenseForm.quick-save.test.ts`.
+**Surveyor**: Survey Explorer 1  
+**Project**: SmartSpend AI (Web & PWA / Capacitor Monorepo)  
+**Target Milestones**:
+- **R1: Native Touch Physics & Interactive Tab Pager**
+- **R5: Multi-Tier Micro-Haptics Engine**  
+**Date**: 2026-08-28
 
 ---
 
-## 2. Deep-Dive Codebase Inventory & Current Implementation Analysis
+## 1. Executive Summary
 
-### 2.1 Component Structure: `src/components/expenses/ExpenseForm.tsx` (1963 lines)
+SmartSpend AI aims to achieve 100% native-grade tactile fidelity matching iOS Swift (UIKit/SwiftUI) and Flutter. A comprehensive architectural audit of the current frontend UI and interaction layers was conducted, focusing on **R1** (touch physics, continuous tab carousel, button active response, viewport stability) and **R5** (tactile feedback across switches, segmented controls, tabs, sheets, pull-to-refresh, swipe-to-delete).
 
-| Component Section | Exact Line Numbers | Description & Current Behavior |
+### Key Findings Overview:
+1. **Dashboard Tab Pager (R1)**: Currently in `src/pages/Home.tsx`, tabs (`record`, `stats`, `calendar`) are rendered using discrete conditional classes (`hidden opacity-0` vs `block opacity-100`). The swipe navigation (`src/hooks/useSwipeNavigation.ts`) only performs a static threshold check (75px) on touch end without any continuous 1:1 finger tracking, momentum scrolling, rubber-band resistance, or spring settling physics.
+2. **Button Active States & Scroll Stickiness (R1)**: Button styles (`src/components/ui/button.tsx`, `src/index.css`, `src/3d-effects.css`) suffer from two major issues: (a) a sluggish 200ms transition curve on touch-down (`transition: transform 0.2s`), and (b) persistent `:active` lock / stickiness during scrolling on mobile WebKit/Chromium browsers.
+3. **Viewport & Pinch-to-Zoom (R1)**: `index.html` specifies `maximum-scale=5`, allowing accidental double-tap and pinch-to-zoom gestures that distort the fixed native app shell layout.
+4. **Micro-Haptics Engine (R5)**: The current `src/hooks/useHaptics.ts` supports only 4 basic calls (`lightTap`, `mediumTap`, `success`, `error`). Key tactile tiers (`selection` for segmented controls / tab switches / slider steps, `heavyTap` for high-impact actions, and `warning`) are missing.
+5. **Interactive UI Touchpoints (R5)**: Key interactive controls (`src/components/ui/switch.tsx`, `src/components/ui/tabs.tsx`, `src/components/ui/slider.tsx`, `src/components/ui/toggle-group.tsx`, `src/components/ui/drawer.tsx`, `src/components/expenses/RecentExpenses.tsx`) lack integrated haptic feedback on state change, snap detent, and real-time swipe threshold crossing.
+
+---
+
+## 2. Problem Boundary & Codebase Inventory
+
+| Area | Key Files Involved | Current Behavior / Limitations |
 | :--- | :--- | :--- |
-| **Imports & Types** | Lines 1–49 | React hooks (`useState`, `useRef`, `useEffect`, `useMemo`), Lucide icons, tRPC client, haptics, dialogs, badges. |
-| **ParserTracePanel** | Lines 58–137 | Developer/Diagnostic trace widget inspected by Vitest regression tests (`aria-label` with route, tools, engine, etc.). |
-| **Core State Variables** | Lines 140–174 | `text`, `isRecording`, `recordingDuration`, `flowStage`, `inputSource`, `decision`, `parsedItems`, `latestParserTrace`, etc. |
-| **Voice MediaRecorder** | Lines 218–222, 604–721 | `navigator.mediaDevices.getUserMedia`, `MediaRecorder` audio chunk collector, MIME type negotiation (`webm`/`mp4`/`aac`), base64 encoder. |
-| **AI Parse Mutations** | Lines 359–470 | `parseVoiceMutation` (STT + LLM classification), `parseMutation` (text classification), `answerClarificationMutation`. |
-| **Offline Sync Outbox** | Lines 874–1006 | Queue processing for `smartspend_offline_texts` and `smartspend_offline_manual` with network listeners. |
-| **AI Discovery Banner** | Lines 1117–1126 | Card container and static `<CardHeader className="pb-4"><CardTitle ...>سجل بحرية.. والذكاء الاصطناعي هيفهمك</CardTitle></CardHeader>`. |
-| **Static Status Label** | Lines 1136–1149 | `<div className="text-xs text-muted-foreground text-center">الحالة: جاهز</div>`. |
-| **Input Textarea** | Lines 1152–1201 | `<textarea className="w-full min-h-[140px] p-5 text-lg ...">` with child static wave bars (lines 1184–1200). |
-| **Local Suggestion Strip** | Lines 1202–1237 | Fast-save suggestion card shown when regex client rules match text (`suggestExpenseItems`). |
-| **Thumb Action Bar** | Lines 1240–1353 | Flex row with Mic Button (56×56px), Camera Button (56×56px), and Submit/Listen Button (h-14 flex-1). |
-| **Review & Clarification Views** | Lines 1384–1644 | Multi-person clarification chips, yes/no buttons, and editable parsed expense cards. |
-| **Manual Form Fallback** | Lines 1646–1962 | Collapsible traditional category/amount dropdown inputs (`ManualForm`). |
-
-### 2.2 Audio Waveform & Recording State Analysis
-
-Current recording flow:
-```
-User clicks Mic Button (Line 1264)
-  │
-  ├──> navigator.mediaDevices.getUserMedia({ audio: true })
-  ├──> isRecording = true, flowStage = "recording", recordingDuration starts ticking (1s interval)
-  │
-  ├──> UI Displays 3 Disjointed Indicators:
-  │      1. Textarea wave: 5 spans with .recording-pulse (Lines 1184-1200) inside the textarea container
-  │      2. Mic button aura: 3 absolute divs (.voice-glow-wave-1/2/3 in src/3d-effects.css)
-  │      3. Submit button text: Red ping dot + "جاري الاستماع... (0:05)" (Lines 1328-1338)
-  │      4. Status text above textarea: "الحالة: تسجيل" (Line 1141)
-  │
-User clicks Stop or timer reaches maxPerReq (Line 674)
-  │
-  ├──> mediaRecorder.stop() -> converts Blob to base64 -> isProcessingVoice = true, flowStage = "processing"
-  ├──> Loading message ticker begins (400ms cycle: "جاري استيعاب التفاصيل...", "بنستخرج الأرقام والمصروفات...", etc.)
-  ├──> UI Displays:
-  │      1. Skeleton loader (Lines 1359-1381)
-  │      2. Submit button: <Loader2 className="animate-spin" /> {loadingMessage}
-  │      3. Status text: "الحالة: معالجة"
-```
-
-### 2.3 Regression Safety Contract (`ExpenseForm.quick-save.test.ts`)
-
-The test suite contains strict structural assertions inspecting `ExpenseForm.tsx` source code directly via AST string search:
-1. `handleSubmit` MUST contain:
-   - `parseMutation.mutate`
-   - `inputChannel: "text"`
-   - `setLatestParserTrace(null)`
-   - Must NOT contain direct `createMutation.mutate` or `batchCreateMutation.mutate`.
-2. `syncOfflineData` MUST retain exact comment markers:
-   - `// 1. Sync Text (AI) Transactions`
-   - `// 2. Sync Manual Transactions`
-   - Text sync MUST call `parseMutation.mutateAsync` with `inputChannel: "text"`.
-3. `ParserTracePanel` MUST be rendered:
-   - `function ParserTracePanel` definition present.
-   - `<ParserTracePanel trace={latestParserTrace} />` present in JSX.
-   - `parser-trace route=` attribute present.
-   - `setLatestParserTrace(asParserTrace((data as { trace?: unknown }).trace))` present in mutation callbacks.
-4. Dev QA URL Parameter Path MUST remain intact:
-   - `params.get("expense_qa_text")`
-   - `expenseQaTextSentRef`
-   - `skipClarification`
-5. `submitClarificationAnswer` MUST contain `setLatestParserTrace(null)`.
+| **Home Tab Pager** | `src/pages/Home.tsx`<br>`src/hooks/useSwipeNavigation.ts`<br>`src/components/dashboard/HomeHeader.tsx`<br>`src/components/layout/MobileBottomNav.tsx` | Discrete CSS `opacity-0`/`100` and `hidden`/`block` toggle; threshold-only touch detection on touch end; no 1:1 finger tracking during gesture; no momentum scrolling or spring physics. |
+| **Button Active States** | `src/components/ui/button.tsx`<br>`src/index.css` (lines 180-188)<br>`src/3d-effects.css` (lines 240-243)<br>`src/components/ui/haptic-button.tsx` | CSS `:active` with 200ms transition delay; no scroll cancellation; buttons remain pressed while scrolling (stickiness); inconsistent styling across `.btn-press`, `.active-press`, `active:scale-95`. |
+| **Viewport & Zoom** | `index.html` (lines 5-8) | `<meta name="viewport" content="... maximum-scale=5 ...">` allows accidental viewport zooming and layout distortion on mobile devices. |
+| **Haptics Subsystem** | `src/hooks/useHaptics.ts`<br>`src/hooks/useHaptics.test.ts` | Limited to 4 feedback types; lacks `selection()`, `heavyTap()`, `warning()`, and continuous selection session methods (`selectionStart`, `selectionEnd`). |
+| **UI Control Touchpoints** | `src/components/ui/switch.tsx`<br>`src/components/ui/tabs.tsx`<br>`src/components/ui/slider.tsx`<br>`src/components/ui/toggle.tsx`<br>`src/components/ui/toggle-group.tsx`<br>`src/components/ui/drawer.tsx`<br>`src/components/expenses/RecentExpenses.tsx`<br>`src/components/pwa/PullToRefreshWrapper.tsx` | Switches, tabs, sliders, segmented toggles, and drawer snap detents have zero tactile feedback on state change; swipe-to-delete only vibrates upon release instead of upon crossing the deletion threshold. |
 
 ---
 
-## 3. Concrete Architectural Recommendations
+## 3. Deep Investigation: R1 — Native Touch Physics & Interactive Tab Pager
 
-### Recommendation 1: Fluid Morphing AI Discovery Banner (`framer-motion`)
+### 3.1 Home Dashboard Tab Pager Audit
 
-#### Problem:
-The current `<CardHeader>` (lines 1120–1126) is always mounted and fixed in size. Once a user has onboarded, this banner serves solely as decorative visual weight, pushing the interactive controls down.
-
-#### Proposed Architecture:
-Replace the static `CardHeader` with a dual-state morphing header:
-1. **Expanded Mode (Hero Guidance)**:
-   - Displays gradient background with icon, welcoming title, and brief dialect tips.
-   - Includes a subtle collapse toggle button (chevron or minimize icon).
-2. **Collapsed Mode (Minimal Inline Badge)**:
-   - Collapses to `height: 0, opacity: 0` with `overflow-hidden` via `framer-motion`'s `AnimatePresence`.
-   - Leaves a minimal, glowing inline badge `✨ تسجيل ذكي` (or `Badge`) placed seamlessly at the top corner of the textarea or in the card header.
-   - Clicking the badge smoothly re-expands the discovery guidance.
-3. **Zero Dead Whitespace Protocol**:
-   - When collapsed, remove all vertical padding (`pb-0`, `mb-0`) and margins so that the card begins immediately with the input area.
-   - Persist user preference in `localStorage.getItem("smartspend_banner_collapsed")` with default `true` on mobile viewports for returning users.
-
-#### Framer-Motion Implementation Blueprint:
-```tsx
-const [isBannerCollapsed, setIsBannerCollapsed] = useState(() => {
-  if (typeof window !== "undefined") {
-    const saved = localStorage.getItem("smartspend_banner_collapsed");
-    if (saved !== null) return saved === "true";
-    return window.innerWidth < 640; // Auto-compact on mobile
-  }
-  return false;
-});
-
-const toggleBanner = () => {
-  setIsBannerCollapsed((prev) => {
-    const next = !prev;
-    localStorage.setItem("smartspend_banner_collapsed", String(next));
-    return next;
-  });
-};
-```
-
+#### Current Implementation Analysis
+In `src/pages/Home.tsx` (lines 259–399), the tab views are structured as:
 ```tsx
 <div className="relative">
-  {/* Minimal inline badge visible when collapsed */}
-  {isBannerCollapsed && (
-    <div className="flex items-center justify-between px-1 mb-2">
-      <button
-        type="button"
-        onClick={toggleBanner}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15 transition-all"
-      >
-        <Sparkles className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
-        <span>تسجيل ذكي</span>
-      </button>
-      <span className="text-[11px] text-muted-foreground">صوت أو نص أو صورة</span>
-    </div>
-  )}
+  {/* Record Tab View */}
+  <div className={cn("space-y-5 transition-opacity duration-150", activeTab === "record" ? "block opacity-100" : "hidden opacity-0")}>
+    ...
+  </div>
 
-  <AnimatePresence initial={false}>
-    {!isBannerCollapsed && (
-      <motion.div
-        key="ai-discovery-banner"
-        initial={{ height: 0, opacity: 0 }}
-        animate={{ height: "auto", opacity: 1 }}
-        exit={{ height: 0, opacity: 0 }}
-        transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
-        className="overflow-hidden"
-      >
-        <div className="pb-3 mb-2 border-b border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-emerald-500 animate-pulse" />
-            </div>
-            <div>
-              <h2 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">
-                سجل بحرية.. والذكاء الاصطناعي هيفهمك
-              </h2>
-              <p className="text-[11px] text-muted-foreground">
-                اكتب أو سجل صوتك بالمصري وهنصنفها فوراً
-              </p>
-            </div>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={toggleBanner}
-            className="h-7 w-7 p-0 rounded-full text-muted-foreground hover:text-foreground"
-            title="تصغير الإرشاد"
-          >
-            <ChevronUp className="w-4 h-4" />
-          </Button>
-        </div>
-      </motion.div>
-    )}
-  </AnimatePresence>
+  {/* Stats Tab View */}
+  <div className={cn("transition-opacity duration-150", activeTab === "stats" ? "block opacity-100" : "hidden opacity-0")}>
+    ...
+  </div>
+
+  {/* Calendar Tab View */}
+  <div className={cn("transition-opacity duration-150", activeTab === "calendar" ? "block opacity-100" : "hidden opacity-0")}>
+    ...
+  </div>
 </div>
 ```
 
----
+The gesture layer is managed by `useSwipeNavigation` (`src/hooks/useSwipeNavigation.ts`):
+- Listens to `touchstart`, `touchmove`, `touchend` on the outer container.
+- On `touchmove`, locks vertical scrolling if `absX > absY && absX > 10`.
+- On `touchend`, computes `deltaX = endX - startX`. If `Math.abs(deltaX) >= 75` (threshold), it invokes `onSwipeNext` or `onSwipePrev`.
+- The callback updates state via `updateView(nextTab)` which changes URL query parameters (`?tab=...`).
 
-### Recommendation 2: Contextual Dynamic Recording State & Unified Audio Pill
+#### Gaps & Limitations Against Native iOS/Flutter UX:
+1. **No 1:1 Finger Tracking**: The screen does not move at all while the user's finger is dragging horizontally. The user sees a completely static screen until they release their finger.
+2. **Abrupt Opacity Swap**: When the gesture completes, the old tab disappears and the new tab fades in abruptly via a 150ms opacity transition.
+3. **No Elastic Edge Resistance (Rubber-Banding)**: Dragging beyond the bounds (e.g. dragging right on Record tab in RTL or left on Calendar tab) has zero visual or physical resistance feedback.
+4. **No Momentum Scrolling / Velocity Recognition**: Fast flick gestures that cover less than 75px distance fail to trigger a tab switch, even if the user flicked at high velocity.
+5. **No Spring Physics Settling**: The transition has no spring mass, damping, or stiffness characteristics.
 
-#### Problem:
-1. Static `"الحالة: جاهز"` text (line 1137) is permanently visible, taking up vertical space even when idle.
-2. In-textarea wave bars (lines 1184–1200) occupy vertical space inside the textarea box and look disconnected from the mic button.
-3. Multiple competing indicators (glowing mic button, in-textarea wave, red ping in submit button, status text) create fragmented visual feedback.
+#### Architectural Recommendation: Native Interactive Tab Pager
+To deliver authentic 1:1 finger tracking with momentum and spring physics, we utilize `embla-carousel-react` (already present in `package.json` v8.6.0) or a hardware-accelerated Framer Motion gesture viewport. 
 
-#### Proposed Architecture:
-1. **Idle State (0px Height)**:
-   - When `flowStage === "idle"` and not recording/processing, collapse the status container to `0px` height.
-2. **Active Recording State (Dynamic Waveform Pill)**:
-   - Smoothly slide/expand a unified **Floating Dynamic Recording Pill** directly above or attached to the top edge of the textarea.
-   - Contains:
-     - Live pulsing red/emerald status indicator (`animate-pulse`).
-     - Animated 7-bar audio frequency visualizer with staggered delays (`h-3` to `h-6`).
-     - Live elapsed timer countdown/up (`0:05 / 1:00`).
-     - Quick "إلغاء" (Cancel) button or "تم" (Stop & Parse) action.
-3. **Processing State (Dynamic Shimmer Pill)**:
-   - When `flowStage === "processing"`, morph the pill smoothly into a processing state with a rotating spinner and cycling helper message (`loadingMessage`).
-   - Seamlessly dismounts when parsed/saved, returning instantly to compact idle height.
+`embla-carousel-react` provides superior advantages:
+- Built-in native RTL support (`direction: 'rtl'`).
+- Authentically calibrated momentum physics, flick gesture recognition, and boundary rubber-band resistance.
+- Zero layout shifts and direct GPU compositing (`transform: translate3d`).
+- Clean separation from vertical scrolling (enables natural vertical scrolling of tab contents while allowing horizontal page dragging).
+- Event callbacks (`select`, `scroll`, `settle`) for synchronizing tab headers (`HomeHeader`) and bottom navigation bar (`MobileBottomNav`).
 
-#### Dynamic Recording Pill Blueprint:
 ```tsx
-<AnimatePresence>
-  {(isRecording || isProcessingVoice || flowStage === "processing") && (
-    <motion.div
-      key="dynamic-recording-pill"
-      initial={{ height: 0, opacity: 0, scale: 0.96 }}
-      animate={{ height: "auto", opacity: 1, scale: 1 }}
-      exit={{ height: 0, opacity: 0, scale: 0.96 }}
-      transition={{ duration: 0.22, ease: "easeOut" }}
-      className="overflow-hidden mb-3"
-    >
-      <div className={cn(
-        "flex items-center justify-between px-4 py-2.5 rounded-2xl border transition-colors shadow-sm",
-        isRecording
-          ? "bg-rose-500/10 border-rose-500/20 text-rose-700 dark:text-rose-300"
-          : "bg-indigo-500/10 border-indigo-500/20 text-indigo-700 dark:text-indigo-300"
-      )}>
-        {isRecording ? (
-          <>
-            <div className="flex items-center gap-3">
-              <span className="flex h-2.5 w-2.5 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-600"></span>
-              </span>
-              {/* Dynamic Waveform Visualizer */}
-              <div className="flex items-center gap-0.5 h-5" aria-hidden="true">
-                {[4, 12, 8, 16, 10, 14, 6].map((h, i) => (
-                  <span
-                    key={i}
-                    className="w-1 bg-rose-500 rounded-full animate-pulse"
-                    style={{
-                      height: `${h}px`,
-                      animationDuration: `${0.6 + (i % 3) * 0.2}s`,
-                      animationDelay: `${i * 0.08}s`,
-                    }}
-                  />
-                ))}
-              </div>
-              <span className="text-xs font-bold font-mono">
-                {Math.floor(recordingDuration / 60)}:{String(recordingDuration % 60).padStart(2, "0")}
-              </span>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={stopRecording}
-              className="h-7 px-2.5 text-xs font-bold text-rose-600 hover:bg-rose-500/20 rounded-lg"
-            >
-              إنهاء التسجيل
-            </Button>
-          </>
-        ) : (
-          <div className="flex items-center gap-2.5 w-full justify-center">
-            <Loader2 className="w-4 h-4 animate-spin text-indigo-500 shrink-0" />
-            <span className="text-xs font-bold animate-pulse text-indigo-700 dark:text-indigo-300">
-              {loadingMessage}
-            </span>
-          </div>
-        )}
-      </div>
-    </motion.div>
-  )}
-</AnimatePresence>
-```
+// Architectural Sketch: InteractiveTabPager.tsx
+import useEmblaCarousel from "embla-carousel-react";
 
----
+export function InteractiveTabPager({
+  activeTab,
+  onTabChange,
+  children,
+}: {
+  activeTab: "record" | "stats" | "calendar";
+  onTabChange: (tab: "record" | "stats" | "calendar") => void;
+  children: [React.ReactNode, React.ReactNode, React.ReactNode];
+}) {
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    direction: "rtl",
+    loop: false,
+    skipSnaps: false,
+    duration: 25,
+    inViewThreshold: 0.7,
+    watchDrag: (emblaApi, event) => {
+      // Exclude nested interactive elements (charts, sliders, swipe-to-delete cards)
+      const target = event.target as HTMLElement | null;
+      if (target?.closest(".no-swipe, .recharts-wrapper, input, textarea, [data-no-swipe]")) {
+        return false;
+      }
+      return true;
+    },
+  });
 
-### Recommendation 3: Textarea Compaction & Thumb-Zone Action Bar Elevation
-
-#### Problem:
-On a 390×844 display:
-- Home header + streak + month nav: ~110px
-- Summary Chips: ~85px
-- ExpenseForm Card Header: ~70px
-- Status label + margins: ~40px
-- Textarea `min-h-[140px]`: ~150px with padding
-- Action bar: ~65px
-- **Total distance to CTA button bottom**: **~620px–650px**, consuming >75% of screen height before accounting for browser UI / navigation bars.
-
-#### Viewport Budget Comparison (Before vs After):
-
-| Layout Element | Current Height (Mobile) | Re-architected Height (Mobile) | Pixel Savings |
-| :--- | :--- | :--- | :--- |
-| **Top Subtitle & Streak** | ~60px (two lines + separate streak row) | ~35px (streamlined single line + inline streak) | **~25px** |
-| **Summary Chips Grid** | ~85px (`py-2.5`, large card borders) | ~48px (compact financial pills `py-2 px-3`) | **~37px** |
-| **AI Discovery Banner** | ~70px (fixed card header) | ~24px (collapsed inline badge `✨ تسجيل ذكي`) | **~46px** |
-| **Static Status Label** | ~25px (`"الحالة: جاهز"`) | 0px (idle collapsed) | **~25px** |
-| **Textarea Container** | ~150px (`min-h-[140px] p-5`) | ~105px (`min-h-[96px] p-3.5`) | **~45px** |
-| **Form Container Gaps** | ~48px (`space-y-6`) | ~28px (`space-y-3.5`) | **~20px** |
-| **Total Cumulative Elevation** | — | — | **~198px saved!** |
-
-#### Direct Viewport Result:
-- The Thumb-Zone Action Bar moves up from **y ≈ 620px** to **y ≈ 425px–450px**, placing it squarely within the natural thumb arc for one-handed operation.
-- The top 2–3 cards of `RecentExpenses` become **instantly visible above the fold** on both iPhone 14 Pro (390×844) and Pixel 7 (412×915).
-
-#### Rich Textarea Placeholder Specification:
-Update the textarea placeholder from the generic text to an intuitive, dialect-aware Egyptian prompt:
-```tsx
-placeholder={
-  isRecording
-    ? "جاري الاستماع لصوتك.. اتكلم براحتك"
-    : "سجل مصاريفك بصوتك أو اكتب هنا.. (مثال: غدا 120 جنيه كاش، أو بنزين 300 فودافون كاش)"
+  // Bidirectional synchronization: URL/State -> Embla, and Embla -> URL/State
+  ...
 }
 ```
 
-#### Action Bar Ergonomics:
-- Keep the touch targets compliant with mobile WCAG / Apple HIG standards (minimum 48×48px tap target):
-  - Mic Button: `h-12 w-12 sm:h-14 sm:w-14 rounded-xl` (48px mobile, 56px desktop).
-  - Camera Button: `h-12 w-12 sm:h-14 sm:w-14 rounded-xl` (48px mobile, 56px desktop).
-  - Submit Button: `h-12 sm:h-14 flex-1 rounded-xl font-bold` (48px mobile, 56px desktop).
+---
+
+### 3.2 Button Active States & Scroll Stickiness Audit
+
+#### Current Implementation Analysis
+- In `src/index.css` (lines 180-188):
+```css
+.active-press {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.active-press:active {
+  transform: scale(0.95);
+}
+```
+- In `src/3d-effects.css` (lines 240-243):
+```css
+.btn-press:active {
+  transform: scale(0.95);
+}
+```
+- In `src/components/ui/button.tsx` (line 8): `buttonVariants` specifies `transition-all btn-press`.
+
+#### Root Causes of Tactile Sluggishness and Scroll Stickiness:
+1. **Slow Touch-Down Curve**: `transition: transform 0.2s` applies equally to touch-down and touch-up. When touching a button, it takes a full 200ms to compress to `scale(0.95)`. Native iOS UIButtons depress immediately (0ms touch-down) and bounce back with a spring curve upon release.
+2. **Scroll Gesture Stickiness**: When a user begins a scroll gesture starting on a button or card, WebKit and Blink maintain the `:active` state until the gesture ends or the finger leaves the element boundary. This causes buttons in lists to remain shrunk/highlighted while the user scrolls down the page.
+3. **Inconsistent Class Usage**: The codebase uses `.btn-press`, `.active-press`, `active:scale-95`, and inline classes across different components with disparate transition durations.
+
+#### Architectural Recommendation: Native Active Press Engine
+1. **Asymmetric CSS Transitions**: Fast/instant compression on `:active` (0ms to 40ms) and elastic spring recovery on release (250ms cubic-bezier):
+```css
+/* Native Instant Active Press with Spring Release */
+.native-active,
+.btn-press,
+.active-press {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  will-change: transform;
+}
+
+.native-active:active,
+.btn-press:active,
+.active-press:active {
+  transform: scale(0.96) translateZ(0);
+  transition: transform 0.04s cubic-bezier(0, 0, 0.2, 1); /* Instant 0ms-40ms press */
+}
+```
+2. **Touch-Cancel on Scroll Protocol**:
+Ensure container scroll views have `touch-action: pan-y` so that the browser's touch pipeline immediately aborts tap gestures and drops `:active` states when vertical scroll displacement exceeds 4px.
 
 ---
 
-## 4. Implementation Blueprint for Downstream Agents
+### 3.3 Viewport Configuration & Pinch-to-Zoom Prevention
 
-### Phase 1: `src/components/expenses/ExpenseForm.tsx`
-1. Import `motion, AnimatePresence` from `framer-motion`.
-2. Add `isBannerCollapsed` state with `localStorage` persistence and mobile viewport detection.
-3. Replace `<CardHeader>` lines 1120–1126 with the AnimatePresence collapsible banner + minimal inline badge.
-4. Remove static `"الحالة: جاهز"` div at line 1136–1149.
-5. Insert the Contextual Dynamic Recording Pill directly above the textarea with `AnimatePresence`.
-6. Refactor textarea styling to `min-h-[96px] sm:min-h-[120px] p-3.5 sm:p-5 text-base sm:text-lg`.
-7. Adjust button heights in the action bar to `h-12 sm:h-14` (keeping `tap-target active-press` classes).
-8. Remove redundant in-textarea wave spans (lines 1184–1200) since the Dynamic Recording Pill now hosts the primary live visualizer.
-9. **CRITICAL**: Verify `ExpenseForm.quick-save.test.ts` invariants:
-   - `handleSubmit` maintains `parseMutation.mutate`, `inputChannel: "text"`, and `setLatestParserTrace(null)`.
-   - `// 1. Sync Text (AI) Transactions` and `// 2. Sync Manual Transactions` comments remain intact in `syncOfflineData`.
-   - `ParserTracePanel` remains rendered with `parser-trace route=`.
-   - Dev QA search parameters (`expense_qa_text`) remain intact.
+#### Current Implementation Analysis
+In `index.html` (lines 5-8):
+```html
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5, interactive-widget=resizes-visual"
+/>
+```
 
-### Phase 2: `src/pages/Home.tsx`
-1. Compaction of Header:
-   - Move `StreakCounter` into the primary title bar flex row.
-   - Streamline subtitle from 2 lines to a concise single line on mobile: `<p className="text-muted-foreground text-xs sm:text-sm">أهلاً {user?.name || "صديقي"}، سجل عمليتك بسرعة وتابع تحليلاتك.</p>`.
-2. Compaction of `SummaryChip`:
-   - Reduce padding to `py-2 px-3` (saving ~35px).
-   - Ensure clean horizontal layout with icon + label + currency.
+#### Flaw:
+`maximum-scale=5` permits pinch-to-zoom gestures. In a native-grade mobile PWA/app shell, pinch-to-zoom causes accidental screen distortion, breaking fixed headers, floating navigation bars, and modals.
 
-### Phase 3: Playwright In-Browser Multi-Viewport Auditing
-1. Test across **iPhone 14 Pro (390×844)** and **Android Pixel 7 (412×915)**.
-2. Assert zero horizontal overflow (`scrollWidth === clientWidth`).
-3. Assert action bar elevation (verifying top bounds < 500px on 390×844).
-4. Assert `RecentExpenses` cards visible above the fold on initial render.
-5. Assert recording and processing state animations expand and collapse with 0 layout jumps or clipping.
-6. Verify `npm run check` (TypeScript) and `npm run test` (Vitest 424 tests) pass 100%.
+#### Architectural Recommendation:
+1. Update `index.html` viewport meta tag to strictly disable zooming while maintaining `viewport-fit=cover` and `interactive-widget=resizes-visual`:
+```html
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-visual"
+/>
+```
+2. Add defensive iOS WebKit gesture event suppression in `src/main.tsx` (as Safari standalone PWAs occasionally ignore `user-scalable=no` on multi-touch gestures):
+```ts
+// Suppress multi-touch pinch zoom gestures in Safari PWA
+if (typeof window !== "undefined") {
+  document.addEventListener("gesturestart", (e) => e.preventDefault(), { passive: false });
+  document.addEventListener("gesturechange", (e) => e.preventDefault(), { passive: false });
+  document.addEventListener("gestureend", (e) => e.preventDefault(), { passive: false });
+}
+```
 
 ---
 
-## 5. Verification Checklist for Downstream Implementer
+## 4. Deep Investigation: R5 — Multi-Tier Micro-Haptics Engine
 
-- [ ] `ExpenseForm.tsx` uses `AnimatePresence` and `motion.div` from `framer-motion`.
-- [ ] AI banner collapses smoothly to 0 height with 0 leftover margin/padding.
-- [ ] Inline badge `✨ تسجيل ذكي` is interactive and re-expands guidance if clicked.
-- [ ] Static `"الحالة: جاهز"` is completely gone when idle.
-- [ ] Active voice recording displays live frequency wave, timer, and cancel action in Dynamic Recording Pill.
-- [ ] Processing state displays spinner and cycling helper messages seamlessly.
-- [ ] Textarea height is optimized (`min-h-[96px] sm:min-h-[120px]`).
-- [ ] Action bar touch targets are minimum 48px (`h-12 sm:h-14`).
-- [ ] `ExpenseForm.quick-save.test.ts` passes without any edits needed to the test file.
-- [ ] `npm run check` passes with 0 TypeScript errors.
-- [ ] `npm run test` passes all test suites.
+### 4.1 Current Subsystem State (`useHaptics.ts`)
+
+`src/hooks/useHaptics.ts` currently provides:
+- `lightTap()`: `ImpactStyle.Light` (Capacitor) / `10ms` (Web)
+- `mediumTap()`: `ImpactStyle.Medium` (Capacitor) / `30ms` (Web)
+- `success()`: `NotificationType.Success` (Capacitor) / `[30, 50, 40]` (Web)
+- `error()`: `NotificationType.Error` (Capacitor) / `[50, 100, 50, 100, 50]` (Web)
+
+### 4.2 Gaps in Haptic Taxonomy
+
+| Haptic Tier | Capacitor API | Web API Fallback | Intended UI Use Cases |
+| :--- | :--- | :--- | :--- |
+| **`selection`** *(Missing)* | `Haptics.selectionChanged()` | `navigator.vibrate(5)` | Tab selection, segmented controls, slider ticks, bottom sheet snap detents, date picker wheel. |
+| **`lightTap`** *(Present)* | `Haptics.impact({ style: Light })` | `navigator.vibrate(12)` | Standard button presses, pill clicks, link taps. |
+| **`mediumTap`** *(Present)* | `Haptics.impact({ style: Medium })` | `navigator.vibrate(28)` | Switch toggles, bottom sheet open/close, pull-to-refresh trigger snap. |
+| **`heavyTap`** *(Missing)* | `Haptics.impact({ style: Heavy })` | `navigator.vibrate(45)` | Destructive deletions, high-value transaction commits. |
+| **`warning`** *(Missing)* | `Haptics.notification({ type: Warning })` | `navigator.vibrate([40, 60, 40])` | Over-budget alerts, destructive confirmation dialogs. |
+| **`success`** *(Present)* | `Haptics.notification({ type: Success })` | `navigator.vibrate([30, 50, 40])` | Operation successfully saved, sync completed. |
+| **`error`** *(Present)* | `Haptics.notification({ type: Error })` | `navigator.vibrate([50, 100, 50, 100, 50])` | Network failure, invalid input, auth rejection. |
+| **`selectionSession`** *(Missing)* | `Haptics.selectionStart()`, `selectionEnd()` | No-op | Continuous scrubbing (bottom nav scrubber, slider drag). |
+
+### 4.3 UI Control Touchpoint Audit
+
+#### 1. Switch Component (`src/components/ui/switch.tsx`)
+- **Current**: Direct wrapper around `@radix-ui/react-switch`. Zero haptic feedback when toggled.
+- **Fix**: Intercept `onCheckedChange` to invoke `mediumTap()` or `lightTap()` upon toggling.
+
+#### 2. Tabs Component (`src/components/ui/tabs.tsx`)
+- **Current**: Direct wrapper around `@radix-ui/react-tabs`. Clicking `TabsTrigger` triggers zero haptics.
+- **Fix**: Attach `selection()` to `TabsTrigger` click/press events.
+
+#### 3. Slider Component (`src/components/ui/slider.tsx`)
+- **Current**: Direct wrapper around `@radix-ui/react-slider`. Moving thumb produces no tactile feedback.
+- **Fix**: Trigger `selection()` when value steps increment/decrement during dragging.
+
+#### 4. Toggle & ToggleGroup (`src/components/ui/toggle.tsx`, `toggle-group.tsx`)
+- **Current**: Radix primitives with zero haptics.
+- **Fix**: Trigger `selection()` on item click / state toggle.
+
+#### 5. Drawer / Bottom Sheet Detents (`src/components/ui/drawer.tsx` / `vaul`)
+- **Current**: Vaul drawer without snap detent haptic integration.
+- **Fix**: Hook into `onSnapPointChange` to invoke `selection()` whenever the sheet locks into a snap detent (e.g. 50% vs 90%).
+
+#### 6. Pull-To-Refresh (`src/components/pwa/PullToRefreshWrapper.tsx`)
+- **Current**: Has `lightTap()` at threshold and `mediumTap()` on trigger.
+- **Refinement**: Ensure `selection()` fires exactly once when crossing the pull threshold, `mediumTap()` fires on snap to refreshing, and `success()` fires upon query resolution.
+
+#### 7. Swipe-To-Delete in Recent Expenses (`src/components/expenses/RecentExpenses.tsx`)
+- **Current**: Lines 534–545:
+```tsx
+const handleDragEnd = async (e: any, info: PanInfo) => {
+  const threshold = 60;
+  const hasDraggedPastThreshold = isRTL ? info.offset.x < -threshold : info.offset.x > threshold;
+  if (hasDraggedPastThreshold) {
+    mediumTap();
+    onRequestDelete(expense.id);
+  }
+};
+```
+- **Flaw**: Haptics only fire on release (`onDragEnd`)! While dragging, there is zero tactile feedback when the finger passes the 60px deletion threshold.
+- **Fix**: Track motion value `x` or `onDrag` displacement and trigger `selection()` / `lightTap()` the moment the threshold is crossed during the active drag, giving the user immediate tactile awareness that releasing will delete.
+
+---
+
+## 5. Architectural Design & Code Proposals
+
+### 5.1 Enhanced Micro-Haptics Engine (`src/hooks/useHaptics.ts`)
+
+```ts
+import { useCallback } from "react";
+import { Haptics, ImpactStyle, NotificationType } from "@capacitor/haptics";
+import { Capacitor } from "@capacitor/core";
+
+export function useHaptics() {
+  const isSupportedWeb =
+    typeof window !== "undefined" && "vibrate" in navigator;
+  const isCapacitor = Capacitor.isNativePlatform();
+
+  // Subtle tick for discrete item selection, tab switches, slider increments, snap detents
+  const selection = useCallback(async () => {
+    if (isCapacitor) {
+      try {
+        await Haptics.selectionChanged();
+      } catch {}
+    } else if (isSupportedWeb) {
+      try {
+        navigator.vibrate(6);
+      } catch {}
+    }
+  }, [isCapacitor, isSupportedWeb]);
+
+  const lightTap = useCallback(async () => {
+    if (isCapacitor) {
+      try {
+        await Haptics.impact({ style: ImpactStyle.Light });
+      } catch {}
+    } else if (isSupportedWeb) {
+      try {
+        navigator.vibrate(12);
+      } catch {}
+    }
+  }, [isCapacitor, isSupportedWeb]);
+
+  const mediumTap = useCallback(async () => {
+    if (isCapacitor) {
+      try {
+        await Haptics.impact({ style: ImpactStyle.Medium });
+      } catch {}
+    } else if (isSupportedWeb) {
+      try {
+        navigator.vibrate(28);
+      } catch {}
+    }
+  }, [isCapacitor, isSupportedWeb]);
+
+  const heavyTap = useCallback(async () => {
+    if (isCapacitor) {
+      try {
+        await Haptics.impact({ style: ImpactStyle.Heavy });
+      } catch {}
+    } else if (isSupportedWeb) {
+      try {
+        navigator.vibrate(45);
+      } catch {}
+    }
+  }, [isCapacitor, isSupportedWeb]);
+
+  const success = useCallback(async () => {
+    if (isCapacitor) {
+      try {
+        await Haptics.notification({ type: NotificationType.Success });
+      } catch {}
+    } else if (isSupportedWeb) {
+      try {
+        navigator.vibrate([30, 50, 40]);
+      } catch {}
+    }
+  }, [isCapacitor, isSupportedWeb]);
+
+  const warning = useCallback(async () => {
+    if (isCapacitor) {
+      try {
+        await Haptics.notification({ type: NotificationType.Warning });
+      } catch {}
+    } else if (isSupportedWeb) {
+      try {
+        navigator.vibrate([40, 60, 40]);
+      } catch {}
+    }
+  }, [isCapacitor, isSupportedWeb]);
+
+  const error = useCallback(async () => {
+    if (isCapacitor) {
+      try {
+        await Haptics.notification({ type: NotificationType.Error });
+      } catch {}
+    } else if (isSupportedWeb) {
+      try {
+        navigator.vibrate([50, 100, 50, 100, 50]);
+      } catch {}
+    }
+  }, [isCapacitor, isSupportedWeb]);
+
+  return {
+    selection,
+    lightTap,
+    mediumTap,
+    heavyTap,
+    success,
+    warning,
+    error,
+    isSupported: isCapacitor || isSupportedWeb,
+  };
+}
+```
+
+---
+
+### 5.2 Interactive Tab Pager Architecture (`src/components/dashboard/InteractiveTabPager.tsx`)
+
+```tsx
+import React, { useEffect, useCallback, useRef } from "react";
+import useEmblaCarousel from "embla-carousel-react";
+import { useHaptics } from "@/hooks/useHaptics";
+import type { HomeTab } from "./HomeHeader";
+
+interface InteractiveTabPagerProps {
+  activeTab: HomeTab;
+  onTabChange: (tab: HomeTab) => void;
+  tabOrder?: HomeTab[];
+  children: {
+    record: React.ReactNode;
+    stats: React.ReactNode;
+    calendar: React.ReactNode;
+  };
+}
+
+const DEFAULT_TAB_ORDER: HomeTab[] = ["record", "stats", "calendar"];
+
+export function InteractiveTabPager({
+  activeTab,
+  onTabChange,
+  tabOrder = DEFAULT_TAB_ORDER,
+  children,
+}: InteractiveTabPagerProps) {
+  const { selection } = useHaptics();
+  const activeIndex = tabOrder.indexOf(activeTab);
+  const isInternalChangeRef = useRef(false);
+
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    direction: "rtl",
+    loop: false,
+    skipSnaps: false,
+    duration: 25,
+    inViewThreshold: 0.7,
+    watchDrag: (_api, event) => {
+      // Isolate drag from nested horizontal interactive widgets
+      const target = event.target as HTMLElement | null;
+      if (
+        target?.closest(
+          ".no-swipe, .recharts-wrapper, input, textarea, select, [data-no-swipe]"
+        )
+      ) {
+        return false;
+      }
+      return true;
+    },
+  });
+
+  // Sync external activeTab prop -> Embla Carousel
+  useEffect(() => {
+    if (!emblaApi) return;
+    const currentSelected = emblaApi.selectedScrollSnap();
+    if (currentSelected !== activeIndex && activeIndex >= 0) {
+      if (!isInternalChangeRef.current) {
+        emblaApi.scrollTo(activeIndex, false);
+      }
+    }
+    isInternalChangeRef.current = false;
+  }, [activeIndex, emblaApi]);
+
+  // Handle slide selection changes from user drag gesture
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    const index = emblaApi.selectedScrollSnap();
+    const nextTab = tabOrder[index];
+    if (nextTab && nextTab !== activeTab) {
+      isInternalChangeRef.current = true;
+      selection();
+      onTabChange(nextTab);
+    }
+  }, [emblaApi, activeTab, onTabChange, tabOrder, selection]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    emblaApi.on("select", onSelect);
+    return () => {
+      emblaApi.off("select", onSelect);
+    };
+  }, [emblaApi, onSelect]);
+
+  return (
+    <div className="overflow-hidden w-full select-none" ref={emblaRef}>
+      <div className="flex touch-pan-y w-full">
+        {tabOrder.map((tabKey) => (
+          <div
+            key={tabKey}
+            className="min-w-0 shrink-0 grow-0 basis-full w-full select-text"
+          >
+            {children[tabKey]}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+### 5.3 Switch Haptic Integration (`src/components/ui/switch.tsx`)
+
+```tsx
+"use client";
+
+import * as React from "react";
+import * as SwitchPrimitive from "@radix-ui/react-switch";
+import { cn } from "@/lib/utils";
+import { useHaptics } from "@/hooks/useHaptics";
+
+function Switch({
+  className,
+  onCheckedChange,
+  ...props
+}: React.ComponentProps<typeof SwitchPrimitive.Root>) {
+  const { selection } = useHaptics();
+
+  const handleCheckedChange = (checked: boolean) => {
+    selection();
+    if (onCheckedChange) {
+      onCheckedChange(checked);
+    }
+  };
+
+  return (
+    <SwitchPrimitive.Root
+      data-slot="switch"
+      onCheckedChange={handleCheckedChange}
+      className={cn(
+        "peer data-[state=checked]:bg-primary data-[state=unchecked]:bg-input focus-visible:border-ring focus-visible:ring-ring/50 dark:data-[state=unchecked]:bg-input/80 inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 active-press",
+        className,
+      )}
+      {...props}
+    >
+      <SwitchPrimitive.Thumb
+        data-slot="switch-thumb"
+        className={cn(
+          "bg-background dark:data-[state=unchecked]:bg-foreground dark:data-[state=checked]:bg-primary-foreground pointer-events-none block size-4 rounded-full ring-0 transition-transform data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0",
+        )}
+      />
+    </SwitchPrimitive.Root>
+  );
+}
+
+export { Switch };
+```
+
+---
+
+### 5.4 TabsTrigger Haptic Integration (`src/components/ui/tabs.tsx`)
+
+```tsx
+function TabsTrigger({
+  className,
+  onClick,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
+  const { selection } = useHaptics();
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    selection();
+    if (onClick) onClick(e);
+  };
+
+  return (
+    <TabsPrimitive.Trigger
+      data-slot="tabs-trigger"
+      onClick={handleClick}
+      className={cn(
+        "data-[state=active]:bg-background dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow,transform] active:scale-[0.97] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+```
+
+---
+
+### 5.5 Live Threshold Haptics in Swipe-To-Delete (`src/components/expenses/RecentExpenses.tsx`)
+
+```tsx
+// Inside ExpenseItem in RecentExpenses.tsx:
+const { selection, heavyTap } = useHaptics();
+const thresholdPassedRef = useRef(false);
+
+const handleDrag = (_e: any, info: PanInfo) => {
+  const threshold = 60;
+  const passed = isRTL ? info.offset.x < -threshold : info.offset.x > threshold;
+  if (passed && !thresholdPassedRef.current) {
+    thresholdPassedRef.current = true;
+    selection(); // Fire tactile tick the instant deletion threshold is crossed
+  } else if (!passed && thresholdPassedRef.current) {
+    thresholdPassedRef.current = false;
+  }
+};
+
+const handleDragEnd = async (_e: any, info: PanInfo) => {
+  const threshold = 60;
+  const hasDraggedPastThreshold = isRTL ? info.offset.x < -threshold : info.offset.x > threshold;
+  thresholdPassedRef.current = false;
+
+  if (hasDraggedPastThreshold) {
+    heavyTap();
+    onRequestDelete(expense.id);
+  }
+  controls.start({ x: 0 });
+};
+```
+
+---
+
+## 6. Step-by-Step Implementation Roadmap
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ Phase 1: Viewport Hardening & Instant Button Active Physics            │
+│ 1. Update index.html meta viewport tag to disable pinch-to-zoom.      │
+│ 2. Add gesture event suppression in src/main.tsx.                      │
+│ 3. Refactor CSS active press curves in index.css & 3d-effects.css.     │
+└────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│ Phase 2: Multi-Tier Micro-Haptics Engine (R5)                          │
+│ 1. Expand useHaptics.ts with selection, heavyTap, warning tiers.       │
+│ 2. Update unit tests in useHaptics.test.ts to verify all tiers.        │
+│ 3. Wire haptics into Switch, TabsTrigger, Slider, ToggleGroup.         │
+│ 4. Wire detent haptics into Vaul Bottom Sheet (Drawer).                │
+└────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│ Phase 3: Interactive Tab Pager Carousel (R1)                           │
+│ 1. Create src/components/dashboard/InteractiveTabPager.tsx.           │
+│ 2. Configure Embla Carousel with RTL direction, momentum, spring.      │
+│ 3. Integrate into src/pages/Home.tsx, replacing opacity conditionals.  │
+│ 4. Ensure bidirectional sync with HomeHeader and MobileBottomNav.      │
+└────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│ Phase 4: Live Threshold Haptics & Swipe-To-Delete                      │
+│ 1. Add real-time drag threshold crossing haptics to RecentExpenses.   │
+│ 2. Refine PullToRefreshWrapper haptic timings.                         │
+└────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│ Phase 5: Verification & Quality Assurance                              │
+│ 1. Run `npm run check` across the monorepo.                           │
+│ 2. Run unit tests (`npm run test`) for useHaptics and components.      │
+│ 3. Verify RTL gesture alignment and gesture isolation on mobile.       │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 7. Risk Analysis & Invariants
+
+1. **RTL Direction Coordinates in Carousel**:
+   - *Risk*: In Arabic RTL, slide 0 is on the physical right, and dragging right-to-left moves to slide 1 (Stats). If direction is not set to `rtl`, swipe gestures will be inverted.
+   - *Mitigation*: Ensure `direction: "rtl"` is explicitly passed to `useEmblaCarousel` and verify container layout bounds.
+
+2. **Gesture Conflicts with Nested Sliders / Charts**:
+   - *Risk*: Horizontal drag gestures on charts (Recharts) or swipe-to-delete cards could trigger parent tab paging.
+   - *Mitigation*: Configure `watchDrag` filter in Embla to ignore touches on `.no-swipe`, `.recharts-wrapper`, `[data-no-swipe]`, and input elements.
+
+3. **Silent Degradation Invariant**:
+   - *Risk*: Invoking haptics on unsupported desktop browsers or Safari web could throw errors or cause performance overhead.
+   - *Mitigation*: Wrap all haptic invocations in `try/catch` and maintain strict platform detection (`Capacitor.isNativePlatform()` and `"vibrate" in navigator`).

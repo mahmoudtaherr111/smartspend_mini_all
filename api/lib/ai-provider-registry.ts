@@ -215,22 +215,85 @@ export const MODEL_CATALOG: ModelEntry[] = [
 
   // ── NVIDIA NIM ──
   {
-    id: "deepseek-ai/deepseek-v4-flash",
+    id: "meta/llama-3.2-11b-vision-instruct",
+    provider: "nvidia",
+    displayName: "Llama 3.2 11B Vision (NVIDIA NIM)",
+    tiers: ["free", "pro", "ultra"],
+    purposes: ["classification", "chat", "image"],
+    pricingHint: "NVIDIA NIM / فائق السرعة (~480ms)",
+    descriptionAr: "النموذج الموصى به لنيفيديا — فائق السرعة ومثالي للتصنيف الفوري واستخراج البيانات",
+  },
+  {
+    id: "nvidia/nemotron-3-nano-30b-a3b",
+    provider: "nvidia",
+    displayName: "Nemotron 3 Nano 30B (NVIDIA NIM)",
+    tiers: ["free", "pro", "ultra"],
+    purposes: ["classification", "chat"],
+    pricingHint: "NVIDIA NIM / استجابة لحظية (~420ms)",
+    descriptionAr: "موديل نموترون النانوي المسرّع من إنفيديا — استجابة فورية وخفيف جداً للتصنيف",
+  },
+  {
+    id: "nvidia/nemotron-3-super-120b-a12b",
+    provider: "nvidia",
+    displayName: "Nemotron 3 Super 120B (NVIDIA NIM)",
+    tiers: ["pro", "ultra"],
+    purposes: ["classification", "chat", "report"],
+    pricingHint: "NVIDIA NIM / ذكاء متقدم (~470ms)",
+    descriptionAr: "موديل قوي جداً وعالي الدقة للتقارير والتحليلات المالية المتقدمة",
+  },
+  {
+    id: "openai/gpt-oss-20b",
+    provider: "nvidia",
+    displayName: "GPT-OSS 20B (NVIDIA NIM)",
+    tiers: ["free", "pro", "ultra"],
+    purposes: ["classification", "chat"],
+    pricingHint: "NVIDIA NIM / مفتوح المصدر (~450ms)",
+    descriptionAr: "موديل GPT-OSS مفتوح المصدر على بنية إنفيديا المسرّعة للتصنيف السريع",
+  },
+  {
+    id: "moonshotai/kimi-k3",
+    provider: "nvidia",
+    displayName: "Kimi K3 (NVIDIA NIM)",
+    tiers: ["pro", "ultra"],
+    purposes: ["classification", "chat", "report"],
+    pricingHint: "NVIDIA NIM / ذكاء فائق (Kimi)",
+    descriptionAr: "موديل كيمي K3 للتحليل المالي المعقد والتخطيط المالي الاستراتيجي",
+  },
+  {
+    id: "stepfun-ai/step-3.7-flash",
+    provider: "nvidia",
+    displayName: "Step 3.7 Flash (NVIDIA NIM)",
+    tiers: ["free", "pro"],
+    purposes: ["classification", "chat"],
+    pricingHint: "NVIDIA NIM / سريع",
+    descriptionAr: "موديل Step 3.7 السريع للتصنيف والمعالجة السريعة",
+  },
+  {
+    id: "nvidia/nemotron-3-ultra-550b-a55b",
+    provider: "nvidia",
+    displayName: "Nemotron 3 Ultra 550B (NVIDIA NIM)",
+    tiers: ["ultra"],
+    purposes: ["report", "chat"],
+    pricingHint: "NVIDIA NIM / النطاق الأقوى",
+    descriptionAr: "العملاق الأكبر 550B لمهام التحليل الشاملة والمعقدة لباقة ألترا",
+  },
+  {
+    id: "deepseek-ai/deepseek-v4-flash-0731",
     provider: "nvidia",
     displayName: "DeepSeek V4 Flash (NVIDIA NIM)",
     tiers: ["free", "pro", "ultra"],
     purposes: ["classification", "chat"],
-    pricingHint: "NVIDIA NIM / Ultra Fast",
-    descriptionAr: "موديل DeepSeek V4 Flash الفائق السرعة عبر بنية إنفيديا المسرّعة للتصنيف والتحليل المالي",
+    pricingHint: "NVIDIA NIM / متاح",
+    descriptionAr: "موديل DeepSeek V4 Flash الرسمي على إنفيديا (ملاحظة: قد يشهد بطء في الاستجابة أحياناً)",
   },
   {
-    id: "meta/llama-3.3-70b-instruct",
+    id: "deepseek-ai/deepseek-v4-pro-0813",
     provider: "nvidia",
-    displayName: "Llama 3.3 70B Instruct (NVIDIA NIM)",
+    displayName: "DeepSeek V4 Pro (NVIDIA NIM)",
     tiers: ["pro", "ultra"],
     purposes: ["classification", "chat", "report"],
-    pricingHint: "NVIDIA NIM / SOTA 70B",
-    descriptionAr: "موديل Llama 3.3 70B الفائق الدقة والسرعة على سيرفرات إنفيديا للتقارير والتصنيف المتقدم",
+    pricingHint: "NVIDIA NIM / متقدم",
+    descriptionAr: "موديل DeepSeek V4 Pro الرسمي على إنفيديا للمهام المتقدمة",
   },
 ];
 
@@ -254,6 +317,9 @@ export const DEPRECATED_MODEL_MAP: Record<string, string> = {
   "gemini-2.5-pro":         "gemini-3.1-pro",
   // Phantom model that was never released
   "gemini-3.5-pro":         "gemini-3.1-pro",
+  // Deprecated Nvidia alias
+  "deepseek-ai/deepseek-v4-flash": "deepseek-ai/deepseek-v4-flash-0731",
+  "meta/llama-3.3-70b-instruct": "meta/llama-3.2-11b-vision-instruct",
 };
 
 // ─── Default Model Selection ───────────────────────────────────────
@@ -282,12 +348,20 @@ export function defaultFireworksModel(plan: AiPlanName): string {
   return "accounts/fireworks/models/deepseek-v4-flash";
 }
 
+/** Default NVIDIA model for a given plan */
+export function defaultNvidiaModel(plan: AiPlanName): string {
+  if (plan === "ultra") return "nvidia/nemotron-3-super-120b-a12b";
+  if (plan === "pro") return "meta/llama-3.2-11b-vision-instruct";
+  return "meta/llama-3.2-11b-vision-instruct";
+}
+
 /** Universal default model resolver */
 export function defaultModelForProvider(
   provider: AiProviderName,
   plan: AiPlanName,
   purpose: AiPurpose = "classification",
 ): string {
+  if (provider === "nvidia") return defaultNvidiaModel(plan);
   if (provider === "fireworks") return defaultFireworksModel(plan);
   if (provider === "groq") return defaultGroqModel(plan);
   return defaultGeminiModel(plan, purpose);

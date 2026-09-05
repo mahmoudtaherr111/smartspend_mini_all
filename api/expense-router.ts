@@ -13,6 +13,7 @@ import {
   userContacts,
   userBusinesses,
   businessCategories as bizCategoriesTable,
+  expenseDailyRollups,
 } from "../db/schema";
 import { getSystemSettings } from "./lib/settings-cache";
 import { parseNameAndRelationship } from "./lib/relationship-normalizer";
@@ -22,14 +23,22 @@ import { ExpenseInputLimits } from "../contracts/constants";
 import { invalidateUserMemory } from "./lib/muscle-memory";
 import { invalidateUserClassificationCache } from "./lib/smart-pipeline";
 import { recordCorrection } from "./lib/correction-rules";
-import { deleteCacheByPattern, withCache } from "./lib/redis-client";
+import { cacheIncr, cacheGet, withCache } from "./lib/redis-client";
+import { CacheKeys } from "./lib/cache-keys";
 import { checkUserBudgetExceeded } from "./notification-engine";
 import { invalidateFinanceUserCache } from "./services/finance-semantic-layer";
+import {
+  applyExpenseRollupDelta,
+  expenseToRollupDelta,
+  syncExpenseDetails,
+  deleteExpenseDetails,
+  toDayString,
+} from "./services/expense-rollups";
 import { businessDayRange } from "./lib/app-time";
 
 async function invalidateExpenseCache(userId: number | string, userType: string) {
   try {
-    await deleteCacheByPattern(`expense_stats:${userId}:${userType}:*`);
+    await cacheIncr(CacheKeys.cacheGen(userType, userId));
     await invalidateFinanceUserCache(userId, userType);
   } catch (err) {
     console.warn("Failed to invalidate expense cache", err);
@@ -329,6 +338,18 @@ function safeDayDiff(start: Date, end: Date): number {
   return Number.isFinite(diff) && diff > 0 ? diff : 1;
 }
 
+const CAIRO_HOUR_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Africa/Cairo",
+  hour: "numeric",
+  hourCycle: "h23",
+});
+
+function getCairoHour(d: Date): number {
+  const parts = CAIRO_HOUR_FORMATTER.formatToParts(d);
+  const hourPart = parts.find((p) => p.type === "hour");
+  return hourPart ? parseInt(hourPart.value, 10) % 24 : d.getUTCHours();
+}
+
 function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -512,6 +533,24 @@ export const expenseRouter = router({
 
           insertId = result?.insertId;
 
+          if (insertId) {
+            await syncExpenseDetails(tx, insertId, input.rawText, (input as any).parsedMetadata);
+          }
+
+          const delta = expenseToRollupDelta(
+            {
+              userId: userId as number,
+              userType: requestUserType,
+              businessId: input.businessId,
+              date: expenseDate,
+              type: input.type,
+              amount: input.amount,
+              source: input.source,
+            },
+            1,
+          );
+          await applyExpenseRollupDelta(tx, delta);
+
           if (references.contactId) {
             await tx
               .update(userContacts)
@@ -651,7 +690,34 @@ export const expenseRouter = router({
       // ─── ACID Transaction: batch insert + contact counts + streak ───
       try {
         await db.transaction(async (tx) => {
-          await tx.insert(expenses).values(valuesToInsert);
+          const [insertResult] = await tx.insert(expenses).values(valuesToInsert);
+          const rawResult: any = insertResult;
+          const firstInsertId = Number(rawResult?.insertId || rawResult?.[0]?.insertId || 0);
+
+          if (firstInsertId) {
+            const insertedExpenses = valuesToInsert.map((v, i) => ({
+              id: firstInsertId + i,
+              rawText: v.rawText,
+              parsedMetadata: (v as any).parsedMetadata,
+            }));
+            await syncExpenseDetails(tx, insertedExpenses);
+          }
+
+          for (const val of valuesToInsert) {
+            const delta = expenseToRollupDelta(
+              {
+                userId: userId as number,
+                userType: requestUserType,
+                businessId: val.businessId,
+                date: val.date,
+                type: val.type,
+                amount: val.amount,
+                source: val.source,
+              },
+              1,
+            );
+            await applyExpenseRollupDelta(tx, delta);
+          }
 
           const contactCounts = new Map<number, number>();
           for (const ref of references) {
@@ -837,18 +903,6 @@ export const expenseRouter = router({
       const userId = ctx.user!.id;
       const userType = ctx.user!.type;
 
-      // Fetch the original expense BEFORE updating (needed for auto-learning)
-      const [originalExpense] = await db
-        .select()
-        .from(expenses)
-        .where(
-          and(
-            eq(expenses.id, input.id),
-            eq(expenses.userId, userId),
-            eq(expenses.userType, userType),
-          ),
-        );
-
       const updateData: Record<string, any> = {};
       if (input.amount !== undefined)
         updateData.amount = input.amount.toString();
@@ -861,16 +915,54 @@ export const expenseRouter = router({
       if (input.rawText !== undefined) updateData.rawText = input.rawText;
       if (input.date !== undefined) updateData.date = new Date(input.date);
 
-      await db
-        .update(expenses)
-        .set(updateData)
-        .where(
-          and(
-            eq(expenses.id, input.id),
-            eq(expenses.userId, userId),
-            eq(expenses.userType, userType),
-          ),
-        );
+      let originalExpense: typeof expenses.$inferSelect | undefined;
+      await db.transaction(async (tx) => {
+        const [row] = await tx
+          .select()
+          .from(expenses)
+          .where(
+            and(
+              eq(expenses.id, input.id),
+              eq(expenses.userId, userId),
+              eq(expenses.userType, userType),
+            ),
+          )
+          .limit(1)
+          .for("update");
+
+        if (!row) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "المصروف غير موجود" });
+        }
+        originalExpense = row;
+
+        await tx
+          .update(expenses)
+          .set(updateData)
+          .where(
+            and(
+              eq(expenses.id, input.id),
+              eq(expenses.userId, userId),
+              eq(expenses.userType, userType),
+            ),
+          );
+
+        const oldDelta = expenseToRollupDelta(originalExpense, -1);
+        await applyExpenseRollupDelta(tx, oldDelta);
+
+        const updatedExpenseObj = {
+          ...originalExpense,
+          ...updateData,
+          amount: updateData.amount ?? originalExpense.amount,
+          date: updateData.date ?? originalExpense.date,
+          type: updateData.type ?? originalExpense.type,
+        };
+        const newDelta = expenseToRollupDelta(updatedExpenseObj, 1);
+        await applyExpenseRollupDelta(tx, newDelta);
+
+        if (input.rawText !== undefined) {
+          await syncExpenseDetails(tx, input.id, input.rawText);
+        }
+      });
 
       // Phase 2: Forget everything that could still serve the answer we just corrected.
       //
@@ -992,28 +1084,33 @@ export const expenseRouter = router({
       const userId = ctx.user!.id;
       const userType = ctx.user!.type;
 
-      // Read the expense first to get contactId for counter decrement
-      const [expense] = await db
-        .select({ id: expenses.id, contactId: expenses.contactId })
-        .from(expenses)
-        .where(
-          and(
-            eq(expenses.id, input.id),
-            eq(expenses.userId, userId),
-            eq(expenses.userType, userType),
-          ),
-        )
-        .limit(1);
-
-      if (!expense) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "المصروف غير موجود" });
-      }
-
-      // ─── ACID Transaction: delete expense + decrement contact count ───
+      // ─── ACID Transaction: fetch with lock + delete expense + decrement contact count + rollup delta ───
       await db.transaction(async (tx) => {
+        const [expense] = await tx
+          .select()
+          .from(expenses)
+          .where(
+            and(
+              eq(expenses.id, input.id),
+              eq(expenses.userId, userId),
+              eq(expenses.userType, userType),
+            ),
+          )
+          .limit(1)
+          .for("update");
+
+        if (!expense) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "المصروف غير موجود" });
+        }
+
         await tx
           .delete(expenses)
           .where(eq(expenses.id, expense.id));
+
+        await deleteExpenseDetails(tx, expense.id);
+
+        const delta = expenseToRollupDelta(expense, -1);
+        await applyExpenseRollupDelta(tx, delta);
 
         if (expense.contactId) {
           await tx
@@ -1044,31 +1141,34 @@ export const expenseRouter = router({
       const userId = ctx.user!.id;
       const userType = ctx.user!.type;
       
-      const cacheKey = `expense_stats:${userId}:${userType}:summary:${input.month}:${input.salaryDay || 0}`;
-      
+      const genRaw = await cacheGet(CacheKeys.cacheGen(userType, userId));
+      const gen = genRaw ? parseInt(genRaw, 10) : 0;
+      const cacheKey = `v2:summary:g${gen}:${userId}:${userType}:${input.month}:${input.salaryDay || 0}`;
+
       return withCache(cacheKey, 60 * 60 * 24, async () => {
-        const { getFinancialMonthDates } =
+        const { getFinancialMonthDayRange } =
           await import("./services/financial-month");
-        const { startDate, endDate } = getFinancialMonthDates(
+        const period = getFinancialMonthDayRange(
           input.month,
           input.salaryDay,
         );
 
         const [summary] = await db
           .select({
-            totalIncome: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'income' THEN ${expenses.amount} ELSE 0 END), 0)`,
-            totalExpense: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'expense' THEN ${expenses.amount} ELSE 0 END), 0)`,
-            totalTransfers: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'transfer' THEN ${expenses.amount} ELSE 0 END), 0)`,
-            totalInvestments: sql`COALESCE(SUM(CASE WHEN ${expenses.type} = 'investment' THEN ${expenses.amount} ELSE 0 END), 0)`,
-            count: sql`COUNT(*)`,
+            totalIncome: sql<string>`COALESCE(SUM(${expenseDailyRollups.income}), 0)`,
+            totalExpense: sql<string>`COALESCE(SUM(${expenseDailyRollups.expense}), 0)`,
+            totalTransfers: sql<string>`COALESCE(SUM(${expenseDailyRollups.transfer}), 0)`,
+            totalInvestments: sql<string>`COALESCE(SUM(${expenseDailyRollups.investment}), 0)`,
+            count: sql<number>`COALESCE(SUM(${expenseDailyRollups.txnCount}), 0)`,
           })
-          .from(expenses)
+          .from(expenseDailyRollups)
           .where(
             and(
-              eq(expenses.userId, userId),
-              eq(expenses.userType, userType),
-              gte(expenses.date, startDate),
-              lte(expenses.date, endDate),
+              eq(expenseDailyRollups.userId, userId),
+              eq(expenseDailyRollups.userType, userType),
+              eq(expenseDailyRollups.businessId, 0),
+              gte(expenseDailyRollups.day, period.startDay),
+              lte(expenseDailyRollups.day, period.endDay),
             ),
           );
 
@@ -1100,15 +1200,26 @@ export const expenseRouter = router({
       const userType = ctx.user!.type;
       
       const bizFilter = input.businessId !== undefined ? input.businessId : null;
-      const cacheKey = `expense_stats:${userId}:${userType}:stats:${input.month}:${input.salaryDay || 0}:biz:${bizFilter ?? "all"}`;
+      const genRaw = await cacheGet(CacheKeys.cacheGen(userType, userId));
+      const gen = genRaw ? parseInt(genRaw, 10) : 0;
+      const cacheKey = CacheKeys.expenseStats(
+        gen,
+        userType,
+        userId,
+        input.month,
+        input.salaryDay || 0,
+        bizFilter ?? "all",
+      );
       
       return withCache(cacheKey, 60 * 60 * 24, async () => {
-        const { getFinancialMonthDates } =
+        const { getFinancialMonthDayRange } =
           await import("./services/financial-month");
-        const { startDate, endDate } = getFinancialMonthDates(
+        const currentPeriod = getFinancialMonthDayRange(
           input.month,
           input.salaryDay,
         );
+        const startDate = currentPeriod.startUtc;
+        const endDate = currentPeriod.endUtc;
 
         // Get user's first expense ever for date-aware analytics
         const firstExpense = await db
@@ -1119,15 +1230,170 @@ export const expenseRouter = router({
               eq(expenses.userId, userId),
               eq(expenses.userType, userType),
               bizFilter === null
-                ? sql`${expenses.businessId} IS NULL`
+                ? sql`(${expenses.businessId} IS NULL OR ${expenses.businessId} = 0)`
                 : eq(expenses.businessId, bizFilter),
             ),
           )
           .orderBy(expenses.date)
           .limit(1);
 
-        const userStartDate = safeDate(firstExpense[0]?.date, startDate);
+        const userStartDate = safeDate(firstExpense[0]?.date, currentPeriod.startUtc);
 
+        const startDay = currentPeriod.startDay;
+        const endDay = currentPeriod.endDay;
+
+        // 1. Rollups for current month
+        const currentRollups = await db
+          .select({
+            day: expenseDailyRollups.day,
+            income: expenseDailyRollups.income,
+            expense: expenseDailyRollups.expense,
+            automatedIncome: expenseDailyRollups.automatedIncome,
+            automatedExpense: expenseDailyRollups.automatedExpense,
+            txnCount: expenseDailyRollups.txnCount,
+          })
+          .from(expenseDailyRollups)
+          .where(
+            and(
+              eq(expenseDailyRollups.userId, userId),
+              eq(expenseDailyRollups.userType, userType),
+              bizFilter === null
+                ? eq(expenseDailyRollups.businessId, 0)
+                : eq(expenseDailyRollups.businessId, bizFilter),
+              gte(expenseDailyRollups.day, startDay),
+              lte(expenseDailyRollups.day, endDay),
+            ),
+          );
+
+        // Calculate previous period for trends
+        const [currY, currM] = input.month.split("-").map(Number);
+        const prevYear = currM === 1 ? currY - 1 : currY;
+        const prevMonthNum = currM === 1 ? 12 : currM - 1;
+        const prevMonthStr = `${prevYear}-${String(prevMonthNum).padStart(2, "0")}`;
+        const prevPeriod = getFinancialMonthDayRange(prevMonthStr, input.salaryDay);
+        const prevStartDate = prevPeriod.startUtc;
+        const prevEndDate = prevPeriod.endUtc;
+
+        // 2. Rollups for previous month
+        const [prevSummary] = await db
+          .select({
+            prevIncome: sql<string>`COALESCE(SUM(${expenseDailyRollups.income}), 0)`,
+            prevExpense: sql<string>`COALESCE(SUM(${expenseDailyRollups.expense}), 0)`,
+          })
+          .from(expenseDailyRollups)
+          .where(
+            and(
+              eq(expenseDailyRollups.userId, userId),
+              eq(expenseDailyRollups.userType, userType),
+              bizFilter === null
+                ? eq(expenseDailyRollups.businessId, 0)
+                : eq(expenseDailyRollups.businessId, bizFilter),
+              gte(expenseDailyRollups.day, prevPeriod.startDay),
+              lte(expenseDailyRollups.day, prevPeriod.endDay),
+            ),
+          );
+
+        let totalExpense = 0;
+        let totalIncome = 0;
+        let automatedExpense = 0;
+        let automatedIncome = 0;
+        let totalTxnCount = 0;
+
+        const dayMap: Record<string, number> = {};
+        const weekMap: Record<string, number> = {};
+        const hourMap: Record<number, number> = {};
+        const dayOfWeekMap: Record<string, number> = {};
+
+        const dayNames = [
+          "الأحد",
+          "الإثنين",
+          "الثلاثاء",
+          "الأربعاء",
+          "الخميس",
+          "الجمعة",
+          "السبت",
+        ];
+
+        for (const row of currentRollups) {
+          const exp = Number(row.expense || 0);
+          const inc = Number(row.income || 0);
+          const aExp = Number(row.automatedExpense || 0);
+          const aInc = Number(row.automatedIncome || 0);
+          const cnt = Number(row.txnCount || 0);
+
+          totalExpense += exp;
+          totalIncome += inc;
+          automatedExpense += aExp;
+          automatedIncome += aInc;
+          totalTxnCount += cnt;
+
+          const dayStr = String(row.day);
+          dayMap[dayStr] = (dayMap[dayStr] || 0) + exp;
+
+          const d = new Date(dayStr);
+          if (isValidDate(d)) {
+            const weekNum = Math.ceil(d.getDate() / 7);
+            const weekKey = `الأسبوع ${weekNum}`;
+            weekMap[weekKey] = (weekMap[weekKey] || 0) + exp;
+
+            const dow = dayNames[d.getDay()];
+            dayOfWeekMap[dow] = (dayOfWeekMap[dow] || 0) + exp;
+          }
+        }
+
+        const previousTotalExpense = Number(prevSummary?.prevExpense || 0);
+        const previousTotalIncome = Number(prevSummary?.prevIncome || 0);
+
+        const highestDay = Object.entries(dayMap).sort((a, b) => b[1] - a[1])[0];
+
+        // 3. Category & subCategory breakdown using covering composite index
+        const categoryRows = await db
+          .select({
+            category: expenses.category,
+            subCategory: expenses.subCategory,
+            totalAmount: sql<string>`COALESCE(SUM(${expenses.amount}), 0)`,
+            count: sql<number>`COUNT(*)`,
+          })
+          .from(expenses)
+          .where(
+            and(
+              eq(expenses.userId, userId),
+              eq(expenses.userType, userType),
+              gte(expenses.date, currentPeriod.startUtc),
+              lt(expenses.date, currentPeriod.endUtc),
+              bizFilter === null
+                ? sql`(${expenses.businessId} IS NULL OR ${expenses.businessId} = 0)`
+                : eq(expenses.businessId, bizFilter),
+              sql`(${expenses.status} IS NULL OR ${expenses.status} = 'confirmed')`,
+              eq(expenses.type, "expense"),
+            ),
+          )
+          .groupBy(expenses.category, expenses.subCategory);
+
+        const categoryMap: Record<string, { value: number; count: number }> = {};
+        const subCategoryMap: Record<string, { value: number; count: number }> = {};
+
+        for (const row of categoryRows) {
+          const amt = Number(row.totalAmount || 0);
+          const count = Number(row.count || 0);
+          const categoryName = normalizeStatsCategory(row.category);
+
+          if (!categoryMap[categoryName]) {
+            categoryMap[categoryName] = { value: 0, count: 0 };
+          }
+          categoryMap[categoryName].value += amt;
+          categoryMap[categoryName].count += count;
+
+          if (row.subCategory && row.subCategory !== "عام") {
+            if (!subCategoryMap[row.subCategory]) {
+              subCategoryMap[row.subCategory] = { value: 0, count: 0 };
+            }
+            subCategoryMap[row.subCategory].value += amt;
+            subCategoryMap[row.subCategory].count += count;
+          }
+        }
+
+        // Capped recent items for consumer compatibility
         const items = await db
           .select()
           .from(expenses)
@@ -1135,121 +1401,22 @@ export const expenseRouter = router({
             and(
               eq(expenses.userId, userId),
               eq(expenses.userType, userType),
-              gte(expenses.date, startDate),
-              lte(expenses.date, endDate),
+              gte(expenses.date, currentPeriod.startUtc),
+              lt(expenses.date, currentPeriod.endUtc),
               bizFilter === null
-                ? sql`${expenses.businessId} IS NULL`
+                ? sql`(${expenses.businessId} IS NULL OR ${expenses.businessId} = 0)`
                 : eq(expenses.businessId, bizFilter),
+              sql`(${expenses.status} IS NULL OR ${expenses.status} = 'confirmed')`,
             ),
-          );
+          )
+          .orderBy(desc(expenses.date))
+          .limit(200);
 
-        // Calculate previous period for trends
-        const prevMonth = new Date(startDate);
-        prevMonth.setMonth(prevMonth.getMonth() - 1);
-        const prevMonthStr = prevMonth.toISOString().slice(0, 7);
-        const { startDate: prevStartDate, endDate: prevEndDate } =
-          getFinancialMonthDates(prevMonthStr, input.salaryDay);
-
-        const previousItems = await db
-          .select()
-          .from(expenses)
-          .where(
-            and(
-              eq(expenses.userId, userId),
-              eq(expenses.userType, userType),
-              gte(expenses.date, prevStartDate),
-              lte(expenses.date, prevEndDate),
-              bizFilter === null
-                ? sql`${expenses.businessId} IS NULL`
-                : eq(expenses.businessId, bizFilter),
-            ),
-          );
-
-        const totalExpense = items
-          .filter((i) => i.type === "expense")
-          .reduce((sum, item) => sum.plus(new Decimal(item.amount)), new Decimal(0)).toNumber();
-        const totalIncome = items
-          .filter((i) => i.type === "income")
-          .reduce((sum, item) => sum.plus(new Decimal(item.amount)), new Decimal(0)).toNumber();
-
-      const automatedExpense = items
-        .filter((i) => i.type === "expense" && i.source === "sms")
-        .reduce((sum, item) => sum.plus(new Decimal(item.amount)), new Decimal(0)).toNumber();
-      const automatedIncome = items
-        .filter((i) => i.type === "income" && i.source === "sms")
-        .reduce((sum, item) => sum.plus(new Decimal(item.amount)), new Decimal(0)).toNumber();
-
-      const previousTotalExpense = previousItems
-        .filter((i) => i.type === "expense")
-        .reduce((sum, item) => sum.plus(new Decimal(item.amount)), new Decimal(0)).toNumber();
-      const previousTotalIncome = previousItems
-        .filter((i) => i.type === "income")
-        .reduce((sum, item) => sum.plus(new Decimal(item.amount)), new Decimal(0)).toNumber();
-
-      // Day map (expenses only)
-      // Day map, Week map, Hour map, Day of week map
-      const dayMap: Record<string, number> = {};
-      const weekMap: Record<string, number> = {};
-      const hourMap: Record<number, number> = {};
-      const dayOfWeekMap: Record<string, number> = {};
-
-      const dayNames = [
-        "الأحد",
-        "الإثنين",
-        "الثلاثاء",
-        "الأربعاء",
-        "الخميس",
-        "الجمعة",
-        "السبت",
-      ];
-
-      items
-        .filter((i) => i.type === "expense")
-        .forEach((item) => {
-          const date = safeDate(item.date, startDate);
-          if (!isValidDate(date)) return;
-
-          // Day Map
-          const dayStr = safeDateString(date);
-          if (!dayStr) return;
-          dayMap[dayStr] = (dayMap[dayStr] || 0) + Number(item.amount);
-
-          // Week Map
-          const weekNum = Math.ceil(date.getDate() / 7);
-          const weekKey = `الأسبوع ${weekNum}`;
-          weekMap[weekKey] = (weekMap[weekKey] || 0) + Number(item.amount);
-
-          // Hour Map
-          const hour = date.getHours();
-          hourMap[hour] = (hourMap[hour] || 0) + Number(item.amount);
-
-          // Day of Week Map
-          const dow = dayNames[date.getDay()];
-          dayOfWeekMap[dow] = (dayOfWeekMap[dow] || 0) + Number(item.amount);
-        });
-
-      const highestDay = Object.entries(dayMap).sort((a, b) => b[1] - a[1])[0];
-
-      // Category map (expenses only)
-      const categoryMap: Record<string, { value: number; count: number }> = {};
-      const subCategoryMap: Record<string, { value: number; count: number }> =
-        {};
-
-      items
-        .filter((i) => i.type === "expense")
-        .forEach((item) => {
-          const amt = Number(item.amount);
-          const categoryName = normalizeStatsCategory(item.category);
-          if (!categoryMap[categoryName])
-            categoryMap[categoryName] = { value: 0, count: 0 };
-          categoryMap[categoryName].value += amt;
-          categoryMap[categoryName].count += 1;
-
-          if (item.subCategory && item.subCategory !== "عام") {
-            if (!subCategoryMap[item.subCategory])
-              subCategoryMap[item.subCategory] = { value: 0, count: 0 };
-            subCategoryMap[item.subCategory].value += amt;
-            subCategoryMap[item.subCategory].count += 1;
+        items.forEach((item) => {
+          const d = safeDate(item.date, currentPeriod.startUtc);
+          if (isValidDate(d)) {
+            const hour = getCairoHour(d);
+            hourMap[hour] = (hourMap[hour] || 0) + Number(item.amount);
           }
         });
 
@@ -1279,6 +1446,35 @@ export const expenseRouter = router({
         }))
         .sort((a, b) => b.value - a.value);
 
+      // Build children directly from SQL-aggregated categoryRows (§3.2 / Requirement 7)
+      const categoryToChildren = new Map<
+        string,
+        Array<{ name: string; value: number; count: number; avg: number; percentage: number }>
+      >();
+      for (const row of categoryRows) {
+        if (!row.subCategory || row.subCategory === "عام") continue;
+        const catName = normalizeStatsCategory(row.category);
+        if (!categoryToChildren.has(catName)) {
+          categoryToChildren.set(catName, []);
+        }
+        const val = Number(row.totalAmount || 0);
+        const cnt = Number(row.count || 0);
+        categoryToChildren.get(catName)!.push({
+          name: row.subCategory,
+          value: val,
+          count: cnt,
+          avg: cnt > 0 ? Math.round(val / cnt) : 0,
+          percentage:
+            totalExpense > 0
+              ? Math.round((val / totalExpense) * 100)
+              : 0,
+        });
+      }
+
+      for (const children of categoryToChildren.values()) {
+        children.sort((a, b) => b.value - a.value);
+      }
+
       const sortedCategories = [...categoryBreakdown].sort(
         (a, b) => b.value - a.value,
       );
@@ -1286,11 +1482,7 @@ export const expenseRouter = router({
         name: main.name,
         value: main.value,
         count: main.count,
-        children: subCategoryBreakdown.filter((s) =>
-          items.some(
-            (it) => normalizeStatsCategory(it.category) === main.name && it.subCategory === s.name,
-          ),
-        ),
+        children: categoryToChildren.get(main.name) || [],
       }));
 
       const recurringHints = subCategoryBreakdown
@@ -1303,19 +1495,15 @@ export const expenseRouter = router({
         )
         .slice(0, 8);
 
-      // Day trend (Income vs Expense)
-      const cashFlowMap: Record<string, { expense: number; income: number }> =
-        {};
-      items.forEach((item) => {
-        const dateStr = safeDateString(item.date);
-        if (!dateStr) return;
-        if (!cashFlowMap[dateStr])
-          cashFlowMap[dateStr] = { expense: 0, income: 0 };
-        if (item.type === "expense")
-          cashFlowMap[dateStr].expense += Number(item.amount);
-        if (item.type === "income")
-          cashFlowMap[dateStr].income += Number(item.amount);
-      });
+      // Day trend (Income vs Expense) from daily rollups
+      const cashFlowMap: Record<string, { expense: number; income: number }> = {};
+      for (const row of currentRollups) {
+        const dateStr = String(row.day);
+        cashFlowMap[dateStr] = {
+          expense: Number(row.expense || 0),
+          income: Number(row.income || 0),
+        };
+      }
 
       const dayTrend = Object.entries(cashFlowMap)
         .sort(([a], [b]) => a.localeCompare(b))
@@ -1374,20 +1562,44 @@ export const expenseRouter = router({
           endDay = 7;
         }
 
-        const currentWeekExpenses = items.filter((i) => {
-          if (i.type !== "expense") return false;
-          const itemDay = getDayOfFinancialMonth(new Date(i.date), startDate);
-          return itemDay >= startDay && itemDay <= Math.min(endDay, currentDayNumber);
-        });
+        const currWeekStart = new Date(startDate);
+        currWeekStart.setDate(currWeekStart.getDate() + (startDay - 1));
+        const currWeekEnd = new Date(startDate);
+        currWeekEnd.setDate(currWeekEnd.getDate() + (Math.min(endDay, currentDayNumber) - 1));
+        const currWeekStartDay = toDayString(currWeekStart);
+        const currWeekEndDay = toDayString(currWeekEnd);
 
-        const prevWeekExpenses = previousItems.filter((i) => {
-          if (i.type !== "expense") return false;
-          const itemDay = getDayOfFinancialMonth(new Date(i.date), prevStartDate);
-          return itemDay >= startDay && itemDay <= Math.min(endDay, currentDayNumber);
-        });
+        const currentWeekSum = currentRollups
+          .filter((r) => {
+            const dayStr = toDayString(r.day);
+            return dayStr >= currWeekStartDay && dayStr <= currWeekEndDay;
+          })
+          .reduce((sum, r) => sum + Number(r.expense || 0), 0);
 
-        const currentWeekSum = currentWeekExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
-        const prevWeekSum = prevWeekExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
+        // Previous week sum from rollups
+        const prevWeekStart = new Date(prevStartDate);
+        prevWeekStart.setDate(prevWeekStart.getDate() + (startDay - 1));
+        const prevWeekEnd = new Date(prevStartDate);
+        prevWeekEnd.setDate(prevWeekEnd.getDate() + (Math.min(endDay, currentDayNumber) - 1));
+
+        const [prevWeekRollup] = await db
+          .select({
+            expense: sql<string>`COALESCE(SUM(${expenseDailyRollups.expense}), 0)`,
+          })
+          .from(expenseDailyRollups)
+          .where(
+            and(
+              eq(expenseDailyRollups.userId, userId),
+              eq(expenseDailyRollups.userType, userType),
+              bizFilter === null
+                ? eq(expenseDailyRollups.businessId, 0)
+                : eq(expenseDailyRollups.businessId, bizFilter),
+              gte(expenseDailyRollups.day, toDayString(prevWeekStart)),
+              lte(expenseDailyRollups.day, toDayString(prevWeekEnd)),
+            ),
+          );
+
+        const prevWeekSum = Number(prevWeekRollup?.expense || 0);
 
         expenseChangePercent = prevWeekSum > 0 ? Math.round(((currentWeekSum - prevWeekSum) / prevWeekSum) * 100) : null;
       }
@@ -1397,19 +1609,41 @@ export const expenseRouter = router({
               ((totalIncome - previousTotalIncome) / previousTotalIncome) * 100,
             )
           : null;
+
+      const prevCategoryRows = await db
+        .select({
+          category: expenses.category,
+          subCategory: expenses.subCategory,
+          totalAmount: sql<string>`COALESCE(SUM(${expenses.amount}), 0)`,
+        })
+        .from(expenses)
+        .where(
+          and(
+            eq(expenses.userId, userId),
+            eq(expenses.userType, userType),
+            gte(expenses.date, prevStartDate),
+            lt(expenses.date, prevEndDate),
+            bizFilter === null
+              ? sql`(${expenses.businessId} IS NULL OR ${expenses.businessId} = 0)`
+              : eq(expenses.businessId, bizFilter),
+            sql`(${expenses.status} IS NULL OR ${expenses.status} = 'confirmed')`,
+            eq(expenses.type, "expense"),
+          ),
+        )
+        .groupBy(expenses.category, expenses.subCategory);
+
       const previousCategoryMap: Record<string, number> = {};
       const previousSubCategoryMap: Record<string, number> = {};
-      previousItems
-        .filter((i) => i.type === "expense")
-        .forEach((item) => {
-          const categoryName = normalizeStatsCategory(item.category);
-          previousCategoryMap[categoryName] =
-            (previousCategoryMap[categoryName] || 0) + Number(item.amount);
-          if (item.subCategory)
-            previousSubCategoryMap[item.subCategory] =
-              (previousSubCategoryMap[item.subCategory] || 0) +
-              Number(item.amount);
-        });
+      for (const row of prevCategoryRows) {
+        const amt = Number(row.totalAmount || 0);
+        const categoryName = normalizeStatsCategory(row.category);
+        previousCategoryMap[categoryName] =
+          (previousCategoryMap[categoryName] || 0) + amt;
+        if (row.subCategory) {
+          previousSubCategoryMap[row.subCategory] =
+            (previousSubCategoryMap[row.subCategory] || 0) + amt;
+        }
+      }
       const categoryChanges = sortedCategories.map((cat) => {
         const previous = previousCategoryMap[cat.name] || 0;
         return {
@@ -1439,28 +1673,44 @@ export const expenseRouter = router({
         null;
 
       // Calculate family/friends peer-to-peer tracking (both incoming and outgoing)
+      const familyItems = await db
+        .select()
+        .from(expenses)
+        .where(
+          and(
+            eq(expenses.userId, userId),
+            eq(expenses.userType, userType),
+            gte(expenses.date, currentPeriod.startUtc),
+            lt(expenses.date, currentPeriod.endUtc),
+            bizFilter === null
+              ? sql`(${expenses.businessId} IS NULL OR ${expenses.businessId} = 0)`
+              : eq(expenses.businessId, bizFilter),
+            sql`(${expenses.status} IS NULL OR ${expenses.status} = 'confirmed')`,
+            eq(expenses.category, "العائلة"),
+          ),
+        )
+        .orderBy(desc(expenses.date));
+
       const familyMap: Record<
         string,
         { spent: number; received: number; transactions: any[] }
       > = {};
-      items
-        .filter((i) => i.category === "العائلة")
-        .forEach((item) => {
-          const person =
-            item.subCategory && item.subCategory !== "عام"
-              ? item.subCategory
-              : "شخص آخر";
-          if (!familyMap[person])
-            familyMap[person] = { spent: 0, received: 0, transactions: [] };
+      familyItems.forEach((item) => {
+        const person =
+          item.subCategory && item.subCategory !== "عام"
+            ? item.subCategory
+            : "شخص آخر";
+        if (!familyMap[person])
+          familyMap[person] = { spent: 0, received: 0, transactions: [] };
 
-          const amt = Number(item.amount);
-          if (item.type === "expense") {
-            familyMap[person].spent += amt;
-          } else if (item.type === "income") {
-            familyMap[person].received += amt;
-          }
-          familyMap[person].transactions.push(item);
-        });
+        const amt = Number(item.amount);
+        if (item.type === "expense") {
+          familyMap[person].spent += amt;
+        } else if (item.type === "income") {
+          familyMap[person].received += amt;
+        }
+        familyMap[person].transactions.push(item);
+      });
 
       const familyBreakdown = Object.entries(familyMap)
         .map(([person, data]) => ({
@@ -1513,6 +1763,7 @@ export const expenseRouter = router({
         automatedExpense,
         automatedIncome,
         netFlow: totalIncome - totalExpense,
+        totalTxnCount,
         count: items.length,
         dailyAverage,
         categoryBreakdown: sortedCategories,
@@ -1578,71 +1829,83 @@ export const expenseRouter = router({
       const userId = ctx.user!.id;
       const userType = ctx.user!.type;
 
-      const startDate = new Date(input.year + "-01-01");
-      const endDate = new Date(input.year + "-12-31");
+      const genRaw = await cacheGet(CacheKeys.cacheGen(userType, userId));
+      const gen = genRaw ? parseInt(genRaw, 10) : 0;
+      const cacheKey = `v2:yearly:g${gen}:${userType}:${userId}:${input.year}`;
 
-      const items = await db
-        .select()
-        .from(expenses)
-        .where(
-          and(
-            eq(expenses.userId, userId),
-            eq(expenses.userType, userType),
-            gte(expenses.date, startDate),
-            lte(expenses.date, endDate),
-          ),
-        );
+      return withCache(cacheKey, 60 * 60 * 24, async () => {
+        const startDay = `${input.year}-01-01`;
+        const endDay = `${input.year}-12-31`;
 
-      const totalExpense = items
-        .filter((i) => i.type === "expense")
-        .reduce((sum, item) => sum.plus(new Decimal(item.amount)), new Decimal(0)).toNumber();
-      const totalIncome = items
-        .filter((i) => i.type === "income")
-        .reduce((sum, item) => sum.plus(new Decimal(item.amount)), new Decimal(0)).toNumber();
-
-      const monthMap: Record<string, number> = {};
-      for (let i = 1; i <= 12; i++) {
-        monthMap[`${input.year}-${String(i).padStart(2, "0")}`] = 0;
-      }
-      items
-        .filter((i) => i.type === "expense")
-        .forEach((item) => {
-          const month = safeDateString(
-            item.date,
-            input.year ? `${input.year}-01` : "",
+        const rollups = await db
+          .select({
+            day: expenseDailyRollups.day,
+            income: expenseDailyRollups.income,
+            expense: expenseDailyRollups.expense,
+            txnCount: expenseDailyRollups.txnCount,
+          })
+          .from(expenseDailyRollups)
+          .where(
+            and(
+              eq(expenseDailyRollups.userId, userId),
+              eq(expenseDailyRollups.userType, userType),
+              eq(expenseDailyRollups.businessId, 0),
+              gte(expenseDailyRollups.day, startDay),
+              lte(expenseDailyRollups.day, endDay),
+            ),
           );
-          if (!month) return;
-          monthMap[month] = (monthMap[month] || 0) + Number(item.amount);
-        });
 
-      const monthNames = [
-        "يناير",
-        "فبراير",
-        "مارس",
-        "إبريل",
-        "مايو",
-        "يونيو",
-        "يوليو",
-        "أغسطس",
-        "سبتمبر",
-        "أكتوبر",
-        "نوفمبر",
-        "ديسمبر",
-      ];
-      const monthlyData = Object.entries(monthMap)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([month, amount]) => {
-          const monthIdx = parseInt(month.split("-")[1]) - 1;
-          return { month: monthNames[monthIdx], amount };
-        });
+        let totalExpense = new Decimal(0);
+        let totalIncome = new Decimal(0);
+        let count = 0;
 
-      return {
-        totalExpense,
-        totalIncome,
-        netFlow: totalIncome - totalExpense,
-        count: items.length,
-        monthlyData,
-      };
+        const monthMap: Record<string, Decimal> = {};
+        for (let i = 1; i <= 12; i++) {
+          monthMap[`${input.year}-${String(i).padStart(2, "0")}`] = new Decimal(0);
+        }
+
+        for (const row of rollups) {
+          const exp = new Decimal(row.expense || 0);
+          const inc = new Decimal(row.income || 0);
+          totalExpense = totalExpense.plus(exp);
+          totalIncome = totalIncome.plus(inc);
+          count += Number(row.txnCount || 0);
+
+          const mKey = String(row.day).slice(0, 7);
+          if (monthMap[mKey]) {
+            monthMap[mKey] = monthMap[mKey].plus(exp);
+          }
+        }
+
+        const monthNames = [
+          "يناير",
+          "فبراير",
+          "مارس",
+          "إبريل",
+          "مايو",
+          "يونيو",
+          "يوليو",
+          "أغسطس",
+          "سبتمبر",
+          "أكتوبر",
+          "نوفمبر",
+          "ديسمبر",
+        ];
+        const monthlyData = Object.entries(monthMap)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([month, amount]) => {
+            const monthIdx = parseInt(month.split("-")[1]) - 1;
+            return { month: monthNames[monthIdx], amount: amount.toNumber() };
+          });
+
+        return {
+          totalExpense: totalExpense.toNumber(),
+          totalIncome: totalIncome.toNumber(),
+          netFlow: totalIncome.minus(totalExpense).toNumber(),
+          count,
+          monthlyData,
+        };
+      });
     }),
 
   getCategoryList: authedProcedure.query(async ({ ctx }) => {
@@ -1918,7 +2181,7 @@ export const expenseRouter = router({
                 userId,
                 userType,
               );
-              await tx.insert(expenses).values({
+              const [insertedRow] = await tx.insert(expenses).values({
                 userId: userId as number,
                 userType: userType as string,
                 amount: item.amount.toString(),
@@ -1933,6 +2196,24 @@ export const expenseRouter = router({
                 classificationLogId: references.classificationLogId,
                 businessId: (item as any).businessId || null,
               });
+
+              if (insertedRow?.insertId) {
+                await syncExpenseDetails(tx, insertedRow.insertId, enrichedText);
+              }
+
+              const delta = expenseToRollupDelta(
+                {
+                  userId: userId as number,
+                  userType: userType as string,
+                  businessId: (item as any).businessId || null,
+                  date: new Date(),
+                  type: item.type,
+                  amount: item.amount,
+                  source: "manual",
+                },
+                1,
+              );
+              await applyExpenseRollupDelta(tx, delta);
 
               if (references.contactId) {
                 await tx
@@ -2104,37 +2385,57 @@ export const expenseRouter = router({
         }
 
         if (pipeline.items && pipeline.items.length > 0) {
-          for (const item of pipeline.items) {
-             await db.insert(expenses).values({
-               userId: userId as number,
-               userType: userType as string,
-               amount: item.amount.toString(),
-               description: item.description || enrichedText,
-               category: item.category,
-               subCategory: item.subCategory,
-               type: item.type,
-               date: new Date(),
-               source: "manual",
-               rawText: enrichedText,
-               businessId: (item as any).businessId || null,
-             });
-             
-             if (item.person_mentioned && item.person_relationship) {
-               const pName = item.person_mentioned.trim();
-               const pRel = item.person_relationship.trim();
-               if (pName && pName !== "عام" && pName !== "شخص") {
-                 const { addDynamicContact } = await import("./services/user-profile-service");
-                 const res = await addDynamicContact(
-                   userId as number,
-                   userType as string,
-                   pName,
-                   pRel
-                 );
-                 if (res && res.isNew) newlyAddedContact = res;
+          await db.transaction(async (tx) => {
+            for (const item of pipeline.items) {
+               const [insertedRow] = await tx.insert(expenses).values({
+                 userId: userId as number,
+                 userType: userType as string,
+                 amount: item.amount.toString(),
+                 description: item.description || enrichedText,
+                 category: item.category,
+                 subCategory: item.subCategory,
+                 type: item.type,
+                 date: new Date(),
+                 source: "manual",
+                 rawText: enrichedText,
+                 businessId: (item as any).businessId || null,
+               });
+
+               if (insertedRow?.insertId) {
+                 await syncExpenseDetails(tx, insertedRow.insertId, enrichedText);
                }
-             }
-             savedCount += 1;
-          }
+
+               const delta = expenseToRollupDelta(
+                 {
+                   userId: userId as number,
+                   userType: userType as string,
+                   businessId: (item as any).businessId || null,
+                   date: new Date(),
+                   type: item.type,
+                   amount: item.amount,
+                   source: "manual",
+                 },
+                 1,
+               );
+               await applyExpenseRollupDelta(tx, delta);
+               
+               if (item.person_mentioned && item.person_relationship) {
+                 const pName = item.person_mentioned.trim();
+                 const pRel = item.person_relationship.trim();
+                 if (pName && pName !== "عام" && pName !== "شخص") {
+                   const { addDynamicContact } = await import("./services/user-profile-service");
+                   const res = await addDynamicContact(
+                     userId as number,
+                     userType as string,
+                     pName,
+                     pRel
+                   );
+                   if (res && res.isNew) newlyAddedContact = res;
+                 }
+               }
+               savedCount += 1;
+            }
+          });
           await invalidateExpenseCache(userId as number, userType as string);
           
           const hasExpenses = pipeline.items && pipeline.items.some((item: any) => item.type === "expense");

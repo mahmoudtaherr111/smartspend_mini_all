@@ -1,42 +1,32 @@
-# BRIEFING — 2026-08-26T01:58:30Z
+# BRIEFING — 2026-08-30T12:09:21Z
 
 ## Mission
-Investigate `src/pages/Home.tsx` and all related header, subtitle, StreakCounter, SummaryChip, and financial metric card components for mobile dashboard compaction and viewport fold optimization.
+Investigate Continuous 1:1 Interactive Tab Pager, Gesture Isolation, Directional Spatial Transitions & Tab State Keep-Alive for Arabic RTL SmartSpend AI.
 
 ## 🔒 My Identity
-- Archetype: explorer
-- Roles: investigation, synthesis
-- Working directory: E:\smartspend_V1_fixed\.agents\explorer_survey_2
-- Original parent: d16277a4-100b-4a65-83db-42dcb8d09629
-- Milestone: Mobile Dashboard & AI Recording Input Survey
+- Archetype: Explorer
+- Roles: Investigation, Synthesis
+- Working directory: e:/smartspend_V1_fixed/.agents/explorer_survey_2/
+- Original parent: 3f2a1bc9-617e-488e-9d72-53d534cdc196
+- Milestone: Explorer Survey 2 (Tab Pager, Gesture Isolation, Spatial Transitions & Keep-Alive)
 
 ## 🔒 Key Constraints
-- Read-only investigation — do NOT implement changes in source code
-- Follow AGENTS.md single source of truth
-- Self-contained 5-component handoff report
-- Deliver comprehensive findings and metrics height calculations
+- Read-only investigation — do NOT implement in source code
+- Full alignment with RTL Arabic UI, Embla Carousel / Framer Motion, and tRPC React architecture
+- Write reports to `.agents/explorer_survey_2/` only
 
 ## Current Parent
-- Conversation ID: d16277a4-100b-4a65-83db-42dcb8d09629
-- Updated: 2026-08-26T01:58:30Z
+- Conversation ID: 3f2a1bc9-617e-488e-9d72-53d534cdc196
+- Updated: not yet
 
 ## Investigation State
-- **Explored paths**: `src/pages/Home.tsx`, `src/components/dashboard/StreakCounter.tsx`, `src/components/expenses/ExpenseForm.tsx`, `src/components/expenses/RecentExpenses.tsx`, `src/3d-effects.css`, `src/App.tsx`, `src/components/layout/MobileBottomNav.tsx`
-- **Key findings**:
-  - StreakCounter on separate row on mobile consumes ~46px (34px pill + 12px gap).
-  - Two-line subtitle consumes ~52px (40px text + 12px margin).
-  - SummaryChip cards consume ~62px height + 32px spacing = 94px.
-  - RecentExpenses currently starts 614px below top of content, hidden below 637px fold on iPhone 14 Pro.
-  - Integrating StreakCounter in title bar saves ~46px; streamlining subtitle saves ~24px; compacting SummaryChip to `py-2 px-3` pills saves ~38px; container spacing saves ~12px $\rightarrow$ ~120px saved in Home.tsx.
-  - Cumulative savings with ExpenseForm compaction is ~318px, placing RecentExpenses at 296px and revealing 4 full transaction rows above the fold.
-- **Unexplored areas**: None for this survey scope.
+- **Explored paths**: [Starting]
+- **Key findings**: [TBD]
+- **Unexplored areas**: Tab systems, RTL swipe physics, gesture isolation, keep-alive architecture, route transitions
 
 ## Key Decisions Made
-- Fully measured iPhone 14 Pro (`390x844`) and Android Pixel 7 (`412x915`) viewport budgets.
-- Authored detailed architectural recommendations with exact before/after code snippets in report.md and handoff.md.
+- Initiated survey according to protocol.
 
 ## Artifact Index
-- `E:\smartspend_V1_fixed\.agents\explorer_survey_2\report.md` — Full detailed survey report
-- `E:\smartspend_V1_fixed\.agents\explorer_survey_2\handoff.md` — 5-component handoff report
-- `E:\smartspend_V1_fixed\.agents\explorer_survey_2\progress.md` — Progress tracker
-- `E:\smartspend_V1_fixed\.agents\explorer_survey_2\DISPATCH.md` — Incoming dispatch log
+- e:/smartspend_V1_fixed/.agents/explorer_survey_2/survey_report.md — Comprehensive findings
+- e:/smartspend_V1_fixed/.agents/explorer_survey_2/handoff.md — 5-component handoff report

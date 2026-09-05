@@ -287,6 +287,7 @@ export const businessRouter = router({
       }
 
       const businessId = existing[0].id;
+      const { transferBusinessRollupsToPersonal } = await import("./services/expense-rollups");
 
       await db.transaction(async (tx) => {
         await tx.delete(businessCategories).where(eq(businessCategories.businessId, businessId));
@@ -294,6 +295,7 @@ export const businessRouter = router({
           .update(userContacts)
           .set({ businessId: null, contactType: "personal" })
           .where(and(eq(userContacts.businessId, businessId), eq(userContacts.userId, ctx.user.id), eq(userContacts.userType, ctx.user.type)));
+        await transferBusinessRollupsToPersonal(tx, ctx.user.id, ctx.user.type, businessId);
         await tx
           .update(expenses)
           .set({ businessId: null })
@@ -305,6 +307,15 @@ export const businessRouter = router({
 
       invalidateUserClassificationCache(ctx.user.id);
       invalidateUserMemory(ctx.user.id, ctx.user.type);
+      try {
+        const { cacheIncr } = await import("./lib/redis-client");
+        const { CacheKeys } = await import("./lib/cache-keys");
+        const { invalidateFinanceUserCache } = await import("./services/finance-semantic-layer");
+        await cacheIncr(CacheKeys.cacheGen(ctx.user.type, ctx.user.id));
+        await invalidateFinanceUserCache(ctx.user.id, ctx.user.type);
+      } catch (err) {
+        console.warn("Failed to invalidate expense cache on business delete", err);
+      }
       return { success: true };
     }),
 
@@ -368,11 +379,41 @@ export const businessRouter = router({
         Object.entries(updates).filter(([, v]) => v !== undefined),
       );
 
+      const business = await db
+        .select({ id: userBusinesses.id })
+        .from(userBusinesses)
+        .where(and(
+          eq(userBusinesses.userId, ctx.user.id),
+          eq(userBusinesses.userType, ctx.user.type),
+          eq(userBusinesses.isActive, true),
+        ))
+        .limit(1);
+
+      if (business.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "لا يوجد مشروع نشط" });
+      }
+
+      const existingCat = await db
+        .select({ id: businessCategories.id })
+        .from(businessCategories)
+        .where(and(
+          eq(businessCategories.id, id),
+          eq(businessCategories.businessId, business[0].id),
+        ))
+        .limit(1);
+
+      if (existingCat.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "الفئة غير موجودة" });
+      }
+
       if (Object.keys(cleanUpdates).length > 0) {
         await db
           .update(businessCategories)
           .set(cleanUpdates)
-          .where(eq(businessCategories.id, id));
+          .where(and(
+            eq(businessCategories.id, id),
+            eq(businessCategories.businessId, business[0].id),
+          ));
       }
 
       invalidateUserClassificationCache(ctx.user.id);
@@ -382,10 +423,40 @@ export const businessRouter = router({
   removeCategory: proProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
+      const business = await db
+        .select({ id: userBusinesses.id })
+        .from(userBusinesses)
+        .where(and(
+          eq(userBusinesses.userId, ctx.user.id),
+          eq(userBusinesses.userType, ctx.user.type),
+          eq(userBusinesses.isActive, true),
+        ))
+        .limit(1);
+
+      if (business.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "لا يوجد مشروع نشط" });
+      }
+
+      const existingCat = await db
+        .select({ id: businessCategories.id })
+        .from(businessCategories)
+        .where(and(
+          eq(businessCategories.id, input.id),
+          eq(businessCategories.businessId, business[0].id),
+        ))
+        .limit(1);
+
+      if (existingCat.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "الفئة غير موجودة" });
+      }
+
       await db
         .update(businessCategories)
         .set({ isActive: false })
-        .where(eq(businessCategories.id, input.id));
+        .where(and(
+          eq(businessCategories.id, input.id),
+          eq(businessCategories.businessId, business[0].id),
+        ));
 
       invalidateUserClassificationCache(ctx.user.id);
       return { success: true };
@@ -411,10 +482,28 @@ export const businessRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "لا يوجد مشروع نشط" });
       }
 
+      const existingContact = await db
+        .select({ id: userContacts.id })
+        .from(userContacts)
+        .where(and(
+          eq(userContacts.id, input.contactId),
+          eq(userContacts.userId, ctx.user.id),
+          eq(userContacts.userType, ctx.user.type),
+        ))
+        .limit(1);
+
+      if (existingContact.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "جهة الاتصال غير موجودة" });
+      }
+
       await db
         .update(userContacts)
         .set({ businessId: business[0].id, contactType: input.contactType })
-        .where(eq(userContacts.id, input.contactId));
+        .where(and(
+          eq(userContacts.id, input.contactId),
+          eq(userContacts.userId, ctx.user.id),
+          eq(userContacts.userType, ctx.user.type),
+        ));
 
       invalidateUserClassificationCache(ctx.user.id);
       return { success: true };

@@ -1,100 +1,139 @@
-# Handoff Report — Explorer Survey 2: Home.tsx Mobile Header & Metrics Compaction
-
-**Author:** Explorer 2  
-**Date:** 2026-08-26  
-**Type:** Hard Handoff (Investigation & Architecture Survey Complete)  
-**Report Reference:** `E:\smartspend_V1_fixed\.agents\explorer_survey_2\report.md`
-
----
+# Handoff Report — Phase 2 Architectural Hardening & Infrastructure Security
 
 ## 1. Observation
 
-1. **Top Header & StreakCounter Layout:**
-   - In `src/pages/Home.tsx:550-629`, the header wrapper is `<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">`.
-   - On mobile (`<640px`), `flex-col` forces `StreakCounter` (lines 624-628) onto a separate row beneath the title block (`h1` + `HealthBadge` + business toggle), separated by `gap-3` (12px).
-   - In `src/components/dashboard/StreakCounter.tsx:11-46`, the pill is styled with `px-3 py-1.5 rounded-full text-sm font-medium border` (~34px height). Total vertical space consumed on mobile = 34px + 12px gap = **46px**.
+Direct observations from codebase inspection, line references, and tool executions:
 
-2. **Two-Line Subtitle Styling & Rendering:**
-   - In `src/pages/Home.tsx:630-633`:
-     ```tsx
-     <p className="text-muted-foreground text-sm">
-       أهلاً {user?.name || "صديقي"}، ابدأ بتسجيل العملية بسرعة واترك
-       التحليلات لقسم الإحصائيات.
-     </p>
+1. **OAuth State CSRF in tRPC Callback**:
+   - In `api/auth-router.ts:74-76`:
+     ```typescript
+     googleCallback: strictPublicProcedure
+       .input(z.object({ code: z.string(), redirectUri: z.string().optional() }))
+       .mutation(async ({ input, ctx }) => { ... })
      ```
-   - On 390px (iPhone 14 Pro) and 412px (Android Pixel 7) viewports, this 74-character Arabic text wraps across 2 full lines at `text-sm` (14px font, 20px line-height), consuming 40px text height + 12px parent margin = **52px**.
+     `googleCallback` is exposed as a public tRPC mutation on `/api/trpc/auth.googleCallback`. It accepts only `code` and `redirectUri`, without accepting `state` or reading/verifying the `oauth_state` cookie.
+   - In `api/boot.ts:251-270`, `/api/auth/google/start` creates `state = createOAuthState()` and sets `oauth_state` HttpOnly cookie. `/api/auth/google/callback` (lines 273–307) checks `stateMatches(stateCookie, c.req.query("state"))`, but an external client can bypass this endpoint entirely by posting directly to `/api/trpc/auth.googleCallback`.
+   - In `api/boot.ts:253-255`, `dynamicRedirectUri` is constructed directly from unvalidated `c.req.header("x-forwarded-host") || c.req.header("host")`.
 
-3. **`SummaryChip` and Top Financial Metrics Layout:**
-   - In `src/pages/Home.tsx:93-129` (definition) and `src/pages/Home.tsx:654-667` (usage):
-     - `SummaryChip` uses `.premium-card` with `px-2 xs:px-3 py-2.5` (`3d-effects.css:34-48`).
-     - Layout stacks label (`text-[10px]`) over value (`text-sm font-bold`) inside an icon container (`p-1.5 rounded-md`).
-     - Rendered height of each chip: **~62px**.
-     - Rendered inside `<section className="grid grid-cols-2 gap-3">` with `space-y-4` (16px) margins. Total section footprint = **94px**.
+2. **Client IP Spoofing & Global Lockout in `get-client-ip.ts`**:
+   - In `api/lib/get-client-ip.ts:20-25`:
+     ```typescript
+     if (trustProxy) {
+       const xff = getIncomingHeader(req, "x-forwarded-for");
+       if (xff) {
+         const first = xff.split(",")[0]?.trim();
+         if (first) return first;
+       }
+       const realIp = getIncomingHeader(req, "x-real-ip");
+       if (realIp) return realIp.trim();
+       const cfConnecting = getIncomingHeader(req, "cf-connecting-ip");
+       if (cfConnecting) return cfConnecting.trim();
+     }
+     ```
+     Leftmost element of `X-Forwarded-For` is extracted first, trusting user-supplied headers over proxy-appended IPs. `cf-connecting-ip` is evaluated last.
+   - In `api/lib/get-client-ip.ts:33-40`, when `TRUST_PROXY !== "true"` or `req.socket` is undefined (standard Fetch `Request`), IP defaults to `"127.0.0.1"`.
+   - In `api/middleware.ts:20-26`, `strictPublicProcedure` invokes `strictPublicIpLimiter.hit("strict:127.0.0.1")`. When 25 requests are made, all users sharing `"127.0.0.1"` are blocked globally.
 
-4. **Recent Expenses Viewport Fold Position:**
-   - Usable scrollable screen height:
-     - iPhone 14 Pro (`390x844`): 844px - 119px (top app bar + safe area) - 88px (floating bottom nav + safe area) = **637px**.
-     - Android Pixel 7 (`412x915`): 915px - 96px (top app bar + status bar) - 85px (bottom nav) = **734px**.
-   - Current content height from top of page to `RecentExpenses` (`src/pages/Home.tsx:691`):
-     - Page top padding: 16px
-     - Header title + separate Streak row: 78px
-     - Subtitle (2 lines) + header padding: 68px
-     - Spacing to metrics: 16px
-     - SummaryChip cards: 62px
-     - Spacing to ExpenseForm: 16px
-     - ExpenseForm (Discovery banner 68px + status 28px + textarea 142px + actions 56px + padding 64px): 358px
-     - **Cumulative starting position of `RecentExpenses` = 614px**.
-   - On iPhone 14 Pro (637px fold), only 23px of `RecentExpenses` is visible above the fold (0 transactions visible).
-   - On Android Pixel 7 (734px fold), only 120px is visible (title + half of 1 transaction item).
+3. **HTTP Security Headers & CORS**:
+   - In `api/boot.ts` and `api/server.ts`, zero HTTP security headers (`Content-Security-Policy`, `Strict-Transport-Security`, `X-Frame-Options`, `X-Content-Type-Options`) are set.
+   - In `api/boot.ts:153-154`:
+     ```typescript
+     if (origin.includes("localhost") || origin.includes("127.0.0.1") || ...) return origin;
+     ```
+     Loose substring matching permits origins such as `https://localhost.attacker.com` with `credentials: true`.
+   - In `api/boot.ts:167`, non-matching origins in production return `allowedOrigins[0]` rather than `undefined` / `null`.
+
+4. **TOCTOU Subscription Race Condition & Duration Truncation**:
+   - In `db/schema.ts:444-463`, `proSubscriptions` table has only `index("pro_sub_user_idx").on(t.userId, t.userType)`. No unique index or constraint exists on `transactionId`.
+   - In `api/lib/subscription-service.ts:21-28`:
+     ```typescript
+     const existing = await db
+       .select({ id: proSubscriptions.id, endDate: proSubscriptions.endDate })
+       .from(proSubscriptions)
+       .where(eq(proSubscriptions.transactionId, input.transactionId))
+       .limit(1);
+     if (existing.length > 0) return { endDate: existing[0].endDate ?? new Date(), alreadyProcessed: true };
+     ```
+     `SELECT` before `INSERT` without unique constraint allows concurrent webhook retries to pass check simultaneously and insert duplicate rows.
+   - In `api/lib/subscription-service.ts:31-33`:
+     ```typescript
+     const endDate = new Date();
+     if (billingPlan.duration === "month") endDate.setMonth(endDate.getMonth() + 1);
+     ```
+     Early renewal always begins from `new Date()` (now), truncating any active remaining days on the user's prior subscription.
+   - `grantProSubscription` operations (`db.insert`, `db.update`, `db.insert`) are not wrapped in a database transaction (`db.transaction()`).
+
+5. **AI Rate Limiting & Prompt Injection Guards**:
+   - In `api/middleware.ts:33-36, 79-94`: `aiProcedure` applies a flat rate limit of 100 req/min (`AI_MAX_REQUESTS = 100`) for all users regardless of plan (`free`, `pro`, `ultra`).
+   - In `api/services/ai-kernel/index.ts:1102-1114`, `buildActiveMessages` concatenates `request.message` directly into `user` content alongside internal tokens (`intent=`, `recipe=`, `Facts:`, `Artifacts:`) without XML/structural boundary encapsulation.
+   - In `api/lib/smart-pipeline.ts:434`, `buildGlobalVerifierPrompt` interpolates raw text directly into `النص الأصلي:\n${originalText}` without boundary encapsulation.
+
+6. **Monorepo Build Status**:
+   - `npm run check` failed with syntax errors in `api/goals-router.ts` (lines 69–190) and `api/sms-router.ts` (lines 321–396). The Phase 2 files are syntactically intact.
 
 ---
 
 ## 2. Logic Chain
 
-1. **Inference from Observation 1:** By converting the header wrapper from `flex-col sm:flex-row` to a unified horizontal flex row `flex items-center justify-between gap-2` and placing `StreakCounter` on the trailing side of the title bar, the dedicated StreakCounter row is eliminated on mobile.
-   - **Height Saved:** 34px (pill) + 12px (gap) = **~46px**.
+1. **OAuth CSRF Logic**:
+   - *From Observation 1*: Because `auth.googleCallback` is exposed on `/api/trpc/auth.googleCallback` as a public tRPC mutation without verifying `state` or correlation cookies, any client can initiate token exchange directly.
+   - *Inference*: The anti-CSRF check in `api/boot.ts` is ineffective against direct API clients or CSRF exploits targeting the tRPC route.
 
-2. **Inference from Observation 2:** By replacing the 74-character 2-line subtitle with a single-line dynamic greeting (`أهلاً {name} 👋 • سجل عملياتك اليومية بالذكاء الاصطناعي` with `text-xs truncate`), the subtitle height is reduced from 40px to 16px.
-   - **Height Saved:** 40px - 16px = **~24px**.
+2. **IP Spoofing & DoS Logic**:
+   - *From Observation 2*: When proxies append client IPs to `X-Forwarded-For`, index 0 contains user-provided data.
+   - *Inference*: Attackers can rotate `X-Forwarded-For: <random_ip>` to bypass the 25-request rate limiter on login/register.
+   - *From Observation 2*: When `TRUST_PROXY !== "true"`, all requests resolve to `"127.0.0.1"`.
+   - *Inference*: 25 failed attempts lock out all users on the instance from registering or logging in.
 
-3. **Inference from Observation 3:** By refactoring `SummaryChip` into a compact single-line horizontal pill (`py-2 px-3 rounded-xl border backdrop-blur-md flex items-center justify-between`), the height of the financial metrics cards drops from 62px to 36px, and grid gap drops from 12px (`gap-3`) to 8px (`gap-2`).
-   - **Height Saved:** (62px - 36px) + 4px (gap) + 8px (section spacing) = **~38px**.
+3. **HTTP Headers & CORS Logic**:
+   - *From Observation 3*: Without CSP, HSTS, X-Frame-Options, and nosniff headers, the application is susceptible to Clickjacking (CWE-1021) and MIME sniffing.
+   - *From Observation 3*: `origin.includes("localhost")` evaluates to `true` for `https://localhost.attacker.com`, allowing cross-origin credentialed requests in development.
 
-4. **Inference from Observations 1-4 + Form Compaction:** 
-   - `Home.tsx` Header + Metrics optimizations save **~120px**.
-   - `ExpenseForm` Discovery banner collapse + status indicator removal + textarea optimization save **~198px**.
-   - Total cumulative height reduction = 120px + 198px = **~318px**.
-   - New `RecentExpenses` starting position = 614px - 318px = **296px**.
-   - Available above-the-fold space for `RecentExpenses`:
-     - iPhone 14 Pro: 637px - 296px = **341px** $\rightarrow$ fits Card Header (48px) + **4 FULL transaction rows** (4 x ~60px = 240px).
-     - Android Pixel 7: 734px - 296px = **438px** $\rightarrow$ fits Card Header (48px) + **5+ FULL transaction rows** (5 x ~60px = 300px) + Goals panel teaser.
+4. **TOCTOU Subscription Race Condition Logic**:
+   - *From Observation 4*: Because `transactionId` lacks a `UNIQUE` constraint and `SELECT` precedes `INSERT` without a transaction lock, parallel webhook delivery races into duplicate active subscriptions and duplicate analytics events.
+   - *From Observation 4*: Computing `endDate` from `new Date()` discards unexpired subscription days on active renewals.
+
+5. **AI Rate Limiting & Prompt Injection Logic**:
+   - *From Observation 5*: A 100 req/min limit on `free` users permits excessive token drainage on expensive AI providers.
+   - *From Observation 5*: Flat prompt string interpolation allows malicious user text containing `Facts: [...]` or control tokens to confuse LLMs regarding verified data vs. untrusted user input.
 
 ---
 
 ## 3. Caveats
 
-1. **Business Mode Title Length:** If a user has a long business name (e.g. "مؤسسة الأهرام للتجارة والاستيراد"), `truncate` on `h1` and `max-w-[70px] truncate` on the business toggle button are required to prevent horizontal overflow on 390px screens.
-2. **Tab State Navigation:** On "stats" and "calendar" tabs, month navigation controls (`handleMonthChange`) are displayed. They must be rendered adjacent to `StreakCounter` in the trailing actions flex group to preserve single-line alignment.
-3. **PWA Safe Areas:** In standalone PWA mode, `env(safe-area-inset-top)` and `env(safe-area-inset-bottom)` vary between browsers; measurements above account for standard Safari/Chrome PWA standalone insets.
+- **Active Database Migrations**: Adding a `uniqueIndex` to `pro_subscriptions.transaction_id` requires running `npm run db:generate` or ensuring null/empty `transaction_id` values in legacy records are handled appropriately.
+- **Goals Router & SMS Router Syntax Errors**: Monorepo typecheck is currently failing due to unrelated syntax issues in `api/goals-router.ts` and `api/sms-router.ts` being worked on by parallel tasks.
+- **Read-Only Scope**: This investigation did not alter any application source files.
 
 ---
 
 ## 4. Conclusion
 
-The visual compaction of `src/pages/Home.tsx` is structurally sound, localized (zero external dependencies on `SummaryChip`), and highly impactful. Integrating `StreakCounter` into the title bar, streamlining the subtitle, and transforming `SummaryChip` into high-density `py-2 px-3` pills directly recovers **~120px of vertical height**. When paired with `ExpenseForm`'s banner collapse, it achieves the primary project objective: **bringing 4-5 recent transaction items above the fold on mobile viewports without breaking desktop layout or TypeScript types**.
+Phase 2 architectural and infrastructure security surfaces contain 5 high-impact vulnerabilities that can be remediated with targeted patches:
+1. **OAuth State Verification**: Enforce state validation in `auth.googleCallback` and validate host headers in `boot.ts`.
+2. **Client IP Extraction**: Prioritize `cf-connecting-ip`, use rightmost `X-Forwarded-For` hop, and eliminate global `"127.0.0.1"` lockout.
+3. **HTTP Security Headers & CORS**: Register Hono `secureHeaders` (CSP, HSTS, X-Frame-Options: DENY, nosniff) and enforce strict regex origin matching.
+4. **Subscription Integrity**: Add `uniqueIndex` on `pro_subscriptions.transaction_id`, wrap `grantProSubscription` in `db.transaction()`, and preserve remaining subscription time on early renewals.
+5. **AI Protection**: Implement tiered AI rate limits in `middleware.ts` (`free: 15`, `pro: 60`, `ultra: 120`) and enforce XML delimiter encapsulation in `ai-kernel/index.ts` and `smart-pipeline.ts`.
 
 ---
 
 ## 5. Verification Method
 
-1. **TypeScript Type Safety & Monorepo Validation:**
-   ```bash
-   npm run check
-   ```
-2. **Vitest Unit & Integration Test Suite:**
-   ```bash
-   npm run test
-   ```
-3. **Playwright Mobile Viewport Audits:**
-   - iPhone 14 Pro: `390 x 844` viewport (verify 0 horizontal scrolling, 0 clipping, `RecentExpenses` visible above 637px).
-   - Android Pixel 7: `412 x 915` viewport (verify 5 transactions visible above fold).
+To independently verify these findings and subsequent fixes:
+
+1. **OAuth CSRF**:
+   - Inspect `api/auth-router.ts:74-76`. Confirm whether `state` is present in `input` schema and whether cookie comparison is performed.
+2. **Client IP Extraction**:
+   - Inspect `api/lib/get-client-ip.ts:20-31`. Verify header evaluation order and `X-Forwarded-For` split index.
+3. **HTTP Security Headers & CORS**:
+   - Inspect `api/boot.ts:140-198`. Verify presence of `secureHeaders` middleware and strict regex in `cors`.
+4. **Subscription TOCTOU & Uniqueness**:
+   - Inspect `db/schema.ts:460-463` for `uniqueIndex("pro_sub_transaction_unique_idx").on(t.transactionId)`.
+   - Inspect `api/lib/subscription-service.ts:14-63` for `db.transaction()` and `existing.endDate` duration preservation.
+5. **AI Rate Limiting & Delimiters**:
+   - Inspect `api/middleware.ts:79-94` for tiered plan checks (`ctx.user.plan`).
+   - Inspect `api/services/ai-kernel/index.ts:1102-1114` for `<user_query>` / `<verified_facts>` XML boundary tags.
+6. **Automated Verification**:
+   - Fix pending syntax errors in `api/goals-router.ts` / `api/sms-router.ts` and run `npm run check`.
+   - Run `npx vitest run api/lib/get-client-ip.test.ts api/lib/rate-limit.test.ts api/middleware.test.ts`.

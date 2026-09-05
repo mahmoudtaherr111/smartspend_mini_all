@@ -41,12 +41,30 @@ import { mapModelName } from "./model-mapper";
 import type { ParsedTransaction } from "./rule-engine";
 import { matchArabicPhrase, stripArabicPrefix } from "./fuzzy-match";
 import { extractPeople, extractAmounts } from "./entity-extractor";
-import { decomposeHeuristic, ALL_FINANCIAL_VERBS, type DecompositionResult } from "./narrative-decomposer";
+import {
+  decomposeHeuristic,
+  ALL_FINANCIAL_VERBS,
+  type DecompositionResult,
+  type DecomposedSegment,
+} from "./narrative-decomposer";
 import { verifyClassifiedItems } from "./post-classifier-verifier";
 import { checkAdmissibility } from "./admissibility-gate";
+import { detectIntent } from "./intent-detector";
 import { applyCalibration } from "./confidence-calibrator";
 import { crossCheck } from "./classification-evidence";
-import { shouldEscalate, decide } from "./classification-decision";
+import {
+  shouldEscalate,
+  decide,
+  DEFAULT_THRESHOLDS,
+  type DecisionThresholds,
+} from "./classification-decision";
+import {
+  BlockerReason,
+  decidePerItem,
+  gateShortcutResult,
+  mergeReviewState,
+  withBlocker,
+} from "./final-acceptance";
 import { pickPersonCandidate, pickAllPersonCandidates, resolvePersonForTransaction, compactArabic } from "./person-resolver";
 import { muscleMemoryLookup } from "./muscle-memory";
 import { matchSegment } from "./embedding-engine";
@@ -309,6 +327,24 @@ import { normalizeArabicCompact as normalizeArabicString } from "./unified-norma
 
 // Re-export for backward compatibility (other files import from smart-pipeline)
 export { normalizeArabicString };
+
+/**
+ * Narrative order, by event identity rather than array position.
+ *
+ * Stable for items that share an id (a split across several people) and for items that
+ * have none — those keep their relative position at the end rather than being reordered
+ * into an arbitrary one.
+ */
+function orderByEvent(items: ParsedTransaction[]): ParsedTransaction[] {
+  return items
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => {
+      const aId = a.item.sourceEventId ?? Number.MAX_SAFE_INTEGER;
+      const bId = b.item.sourceEventId ?? Number.MAX_SAFE_INTEGER;
+      return aId === bId ? a.index - b.index : aId - bId;
+    })
+    .map((entry) => entry.item);
+}
 
 function safeExtractItems(data: any): any[] {
   if (!data) return [];
@@ -621,6 +657,8 @@ export async function runSmartPipeline(
   // "the total does not match what I said" becomes a measurable rate instead of a report.
   let amountLedger: PipelineLog["amountLedger"];
   let schemaWasDegraded = false;
+  /** Why the model's reply was not a complete semantic success, if it was not. */
+  let modelReplyProblems: string[] = [];
   const provider = input.provider || "gemini";
   const modelUsed = mapModelName(input.modelName);
   const fireworksKey = input.fireworksApiKey || "";
@@ -646,6 +684,158 @@ export async function runSmartPipeline(
       },
     };
   }
+
+  // 1. Normalize (Light Normalization for AI, aggressive for rules)
+  const normalized = normalizeV2(input.text);
+  const normalizedText = normalized.forRules;
+
+  const finalItems: ParsedTransaction[] = [];
+  let requiresAI = false;
+  let clarificationQuestion: string | undefined = undefined;
+  let decision: "auto_save" | "review" | "clarify" | "unknown" = "unknown";
+  let firstAlertMessage: string | undefined = undefined;
+  let overallConfidence = 100;
+  const pipelineSettings = input.pipelineSettings || {};
+  const decompositionEnabled = settingBoolean(
+    pipelineSettings,
+    "parser_fast_decomposition_enabled",
+    true,
+  );
+  const personMemoryEnabled = settingBoolean(
+    pipelineSettings,
+    "parser_person_memory_enabled",
+    true,
+  );
+  const verifierEnabled = settingBoolean(
+    pipelineSettings,
+    "parser_local_verifier_enabled",
+    true,
+  );
+  // One reading of each threshold, one default for each.
+  //
+  // `parser_auto_save_threshold` used to be read twice with two different fallbacks — 90
+  // for the per-segment gate and 85 (via `confidence_auto_save`) for the final decision —
+  // so on an install that had never touched the setting, an item scoring 87 was refused
+  // by one gate and accepted by the other, and which one it met depended on whether the
+  // sentence had been segmented. The admin's explicit value was honoured by both, which
+  // is exactly why the split went unnoticed: it only misbehaved at the default.
+  //
+  // The legacy `confidence_*` keys still win when set, because installs configured
+  // through the older settings screen wrote those and their operators meant them.
+  const resolveThreshold = (
+    key: string,
+    legacyKey: string,
+    fallback: number,
+  ): number => settingNumber(pipelineSettings, key, settingNumber(pipelineSettings, legacyKey, fallback));
+
+  const autoSaveThreshold = resolveThreshold(
+    "parser_auto_save_threshold",
+    "confidence_auto_save",
+    DEFAULT_THRESHOLDS.autoSave * 100,
+  );
+  const reviewThreshold = resolveThreshold(
+    "parser_review_threshold",
+    "confidence_review",
+    DEFAULT_THRESHOLDS.review * 100,
+  );
+  const decisionThresholds: DecisionThresholds = {
+    autoSave: autoSaveThreshold / 100,
+    review: reviewThreshold / 100,
+    escalate:
+      settingNumber(
+        pipelineSettings,
+        "parser_escalate_threshold",
+        DEFAULT_THRESHOLDS.escalate * 100,
+      ) / 100,
+  };
+
+  // Counting amounts is the amount extractor's job, not a private list.
+  //
+  // This used to be a fourth copy of the spoken-number vocabulary, and it double-counted
+  // by construction: "ميتين وخمسين" is one amount of 250, but the digit regex and the word
+  // list each matched it, returning 2 and inflating the count that drives every routing
+  // threshold below. extractAmounts already composes numerals correctly.
+  const countAmounts = (text: string): number => extractAmounts(text).length;
+
+  const countWords = (text: string): number => {
+    return text.split(/\s+/).filter(w => w.length > 0).length;
+  };
+  
+  const numAmounts = countAmounts(normalizedText);
+  const numWords = countWords(normalizedText);
+
+  // 1.5 Admissibility gate — the last point before anything can cost money, and the
+  // only place allowed to end a request with "I did not understand".
+  //
+  // The filter this replaces only fired when the amount count was zero, so a clock time
+  // ("الساعة خمسة") sailed through on its number, and it matched its keyword list by
+  // substring. checkAdmissibility reuses the real amount extractor, the real verb
+  // lexicon and word-boundary matching, and distinguishes three rejections that deserve
+  // different answers: chatter, a question about spending, and a transaction that did
+  // not happen.
+  const admissibility = checkAdmissibility(normalizedText);
+  if (admissibility.verdict !== "financial") {
+    return {
+      items: [],
+      overallConfidence: 0,
+      clarificationQuestion: admissibility.userMessage,
+      decision: "clarify",
+      tokensUsed: 0,
+      parsedBy: "system",
+      modelUsed,
+      actualModelUsed: null,
+      processingTimeMs: Date.now() - startTime,
+      log: {
+        originalText: input.text,
+        normalizedText,
+        finalConfidence: 0,
+        finalDecision: "clarify",
+        routing: {
+          route: "admissibility_gate",
+          verdict: admissibility.verdict,
+          reason: admissibility.reason,
+          signals: admissibility.signals,
+        },
+      },
+    };
+  }
+
+  // Everything below this line has already been established as a financial statement:
+  // the shortcuts that follow answer `which transaction`, never `is there one`. The
+  // gate used to sit after them, so a business keyword match on "ماشتريتش خامات ب500"
+  // returned an auto-saved expense without the negation ever being looked at.
+
+  /**
+   * Builds the pipeline result for a shortcut, from the gate's verdict rather than the
+   * shortcut's own opinion of itself.
+   *
+   * Every field a shortcut used to fill in by hand — `decision`, `overallConfidence`,
+   * `finalDecision` — now comes from `gateShortcutResult`, so there is no way to write a
+   * branch that returns `auto_save` without having earned it.
+   */
+  const shortcutResult = (
+    gate: ReturnType<typeof gateShortcutResult>,
+    route: string,
+    routing: Record<string, unknown>,
+  ): PipelineResult => ({
+    items: gate.items,
+    decision: gate.decision,
+    clarificationQuestion: gate.clarificationQuestion,
+    overallConfidence: gate.overallConfidence,
+    tokensUsed: 0,
+    cachedTokens: 0,
+    parsedBy: "rule_engine",
+    modelUsed,
+    actualModelUsed: null,
+    processingTimeMs: Date.now() - startTime,
+    log: {
+      originalText: input.text,
+      normalizedText,
+      routing: { route, ...routing, gateReason: gate.reason, blockers: gate.blockers },
+      finalConfidence: gate.overallConfidence,
+      finalDecision: gate.decision,
+    },
+  });
 
   // 0.5. Muscle Memory — instant match for recurring user patterns (0 tokens, 0 API)
   // Person transactions are now allowed: after a hit, we run person resolution
@@ -719,46 +909,43 @@ export async function runSmartPipeline(
           return memResult;
         }
 
-        const memResult: PipelineResult = {
+        const memGate = gateShortcutResult({
           items: memResolvedItems.length > 0 ? memResolvedItems : [memItem],
-          decision: "auto_save",
-          overallConfidence: memItem.confidence,
-          tokensUsed: 0,
-          cachedTokens: 0,
-          parsedBy: "rule_engine",
-          modelUsed,
-          actualModelUsed: null,
-          processingTimeMs: Date.now() - startTime,
-          log: {
-            originalText: input.text,
-            routing: { route: "muscle_memory", reason: "pattern_match_with_person", matchScore: memoryMatch.matchScore },
-            finalConfidence: memItem.confidence,
-            finalDecision: "auto_save",
-          },
-        };
-        classificationCache.set(cacheKey, memResult);
-        return memResult;
+          text: input.text,
+          normalizedText,
+          thresholds: decisionThresholds,
+        });
+        if (memGate.admitted && memGate.coversUtterance) {
+          const memResult = shortcutResult(memGate, "muscle_memory", {
+            reason: "pattern_match_with_person",
+            matchScore: memoryMatch.matchScore,
+          });
+          classificationCache.set(cacheKey, memResult);
+          return memResult;
+        }
+      } else {
+        const memGate = gateShortcutResult({
+          items: [memItem],
+          text: input.text,
+          normalizedText,
+          thresholds: decisionThresholds,
+        });
+        if (memGate.admitted && memGate.coversUtterance) {
+          const memResult = shortcutResult(memGate, "muscle_memory", {
+            reason: "pattern_match",
+            matchScore: memoryMatch.matchScore,
+          });
+          classificationCache.set(cacheKey, memResult);
+          return memResult;
+        }
       }
 
-      const memResult: PipelineResult = {
-        items: [memItem],
-        decision: "auto_save",
-        overallConfidence: memItem.confidence,
-        tokensUsed: 0,
-        cachedTokens: 0,
-        parsedBy: "rule_engine",
-        modelUsed,
-        actualModelUsed: null,
-        processingTimeMs: Date.now() - startTime,
-        log: {
-          originalText: input.text,
-          routing: { route: "muscle_memory", reason: "pattern_match", matchScore: memoryMatch.matchScore },
-          finalConfidence: memItem.confidence,
-          finalDecision: "auto_save",
-        },
-      };
-      classificationCache.set(cacheKey, memResult);
-      return memResult;
+      // Fell through on purpose. Either the remembered pattern matched text that is not
+      // a recordable event, or it accounts for only part of what was said — and a
+      // learned shortcut is a suggestion about WHICH transaction, never evidence that
+      // there IS one, nor that it is the only one. "ماشتريتش جزمة 500 ودفعت 200
+      // بنزين" matched a stored 500-shopping pattern and returned it alone: it
+      // invented the purchase that did not happen and lost the petrol that did.
     }
   } catch (e) {
     // Muscle memory DB query might fail — don't block the pipeline
@@ -773,8 +960,20 @@ export async function runSmartPipeline(
   let businessScoreTotal = 0;
   let personalScoreTotal = 0;
 
-  if (input.businessCategories && input.businessCategories.length > 0) {
-    const scoringNormalized = normalizeV2(input.text).forRules;
+  // Business scoring only speaks for a user who is recording business activity.
+  //
+  // It used to run whenever the account HAD business categories, so a shop owner saying
+  // "دفعت 200 بنزين" from the personal tab had it filed under مشروع/بنزين with a
+  // businessId attached, purely because a keyword matched. Owning a business is not a
+  // statement about the sentence in front of us; `businessMode` is, and the UI already
+  // sends it.
+  const businessScopeActive =
+    input.businessMode === true &&
+    Array.isArray(input.businessCategories) &&
+    input.businessCategories.length > 0;
+
+  if (businessScopeActive && input.businessCategories) {
+    const scoringNormalized = normalizedText;
 
     // --- Compute business score ---
     for (const bizCat of input.businessCategories) {
@@ -833,8 +1032,37 @@ export async function runSmartPipeline(
       const bizAmounts = extractAmounts(input.text);
       const bizAmount = bizAmounts.length > 0 ? bizAmounts[0].amount : 0;
 
-      if (bizAmount > 0) {
-        const bizType = businessMatchResult.type === "income" ? "income" : "expense";
+      // One amount, or no shortcut.
+      //
+      // `bizAmounts[0]` was the whole extraction: "دفعت 500 خامات و300 معدات" returned a
+      // single 500 item, auto-saved, and the 300 was not merely unclassified — it was
+      // gone, with `balanced: true` in the ledger because the ledger never ran on this
+      // path. A sentence with more than one amount is a segmentation problem, and the
+      // normal pipeline is the thing that solves segmentation.
+      const bizShortcutEligible = bizAmount > 0 && bizAmounts.length === 1;
+
+      if (bizShortcutEligible) {
+        // Direction comes from what the user DID, not from how the category is filed.
+        //
+        // `businessMatchResult.type` is a property of the category row: "خامات" is
+        // configured as an expense category, so "قبضت 500 خامات" — money received —
+        // was recorded as money spent. The verb governs direction; the noun governs
+        // category. Where the two disagree, the shortcut declines and lets the full
+        // intent detector settle it.
+        const bizIntent = detectIntent(normalizedText);
+        // A "strong" keyword scores 50; anything below that is not a verb speaking, it
+        // is a noun leaking. Only a strong, unambiguous reading is allowed to override.
+        const spokenDirection: "income" | "expense" | null =
+          bizIntent.incomeScore >= 50 && bizIntent.incomeScore > bizIntent.expenseScore
+            ? "income"
+            : bizIntent.expenseScore >= 50 && bizIntent.expenseScore > bizIntent.incomeScore
+              ? "expense"
+              : null;
+        const categoryType: "income" | "expense" =
+          businessMatchResult.type === "income" ? "income" : "expense";
+        const bizType = spokenDirection ?? categoryType;
+        const bizDirectionConflict =
+          spokenDirection !== null && spokenDirection !== categoryType;
 
         // Extract person for salary transactions
         let bizPerson: string | undefined;
@@ -865,132 +1093,39 @@ export async function runSmartPipeline(
           person_relationship: bizPersonRel,
         };
 
-        const bizResult: PipelineResult = {
-          items: [bizItem],
-          decision: "auto_save",
-          overallConfidence: bizItem.confidence,
-          tokensUsed: 0,
-          cachedTokens: 0,
-          parsedBy: "rule_engine",
-          modelUsed,
-          actualModelUsed: null,
-          processingTimeMs: Date.now() - startTime,
-          log: {
-            originalText: input.text,
-            routing: {
-              route: "business_scoring",
-              reason: "business_score_dominant",
-              businessScore: businessScoreTotal,
-              personalScore: personalScoreTotal,
-              scoreDiff,
-              category: businessMatchResult.nameAr,
-              hasSalary: hasSalaryKeyword,
-            },
-            finalConfidence: bizItem.confidence,
-            finalDecision: "auto_save",
-          },
-        };
-        classificationCache.set(cacheKey, bizResult);
-        return bizResult;
+        const bizGate = gateShortcutResult({
+          items: [
+            bizDirectionConflict
+              ? withBlocker(bizItem, BlockerReason.RESOLVERS_DISAGREE)
+              : bizItem,
+          ],
+          text: input.text,
+          normalizedText,
+          thresholds: decisionThresholds,
+        });
+
+        if (bizGate.admitted && bizGate.coversUtterance) {
+          const bizResult = shortcutResult(bizGate, "business_scoring", {
+            reason: "business_score_dominant",
+            businessScore: businessScoreTotal,
+            personalScore: personalScoreTotal,
+            scoreDiff,
+            category: businessMatchResult.nameAr,
+            hasSalary: hasSalaryKeyword,
+            spokenDirection,
+            categoryType,
+          });
+          classificationCache.set(cacheKey, bizResult);
+          return bizResult;
+        }
+        // Not admissible — negated, hypothetical, or a question. Fall through to the
+        // pipeline, which will return the same rejection with the right explanation
+        // rather than an auto-saved expense at confidence 100.
       }
     }
     // If personal_score >= business_score + 10 → don't interfere, let normal pipeline handle it.
     // If |diff| < 10 → ambiguous, let normal pipeline + AI decide (the pipeline will tag it).
     // The businessMatchResult is kept for later use if AI needs context.
-  }
-
-  // 1. Normalize (Light Normalization for AI, aggressive for rules)
-  const normalized = normalizeV2(input.text);
-  const normalizedText = normalized.forRules;
-
-  const finalItems: ParsedTransaction[] = [];
-  let requiresAI = false;
-  let clarificationQuestion: string | undefined = undefined;
-  let decision: "auto_save" | "review" | "clarify" | "unknown" = "unknown";
-  let firstAlertMessage: string | undefined = undefined;
-  let overallConfidence = 100;
-  const pipelineSettings = input.pipelineSettings || {};
-  const decompositionEnabled = settingBoolean(
-    pipelineSettings,
-    "parser_fast_decomposition_enabled",
-    true,
-  );
-  const personMemoryEnabled = settingBoolean(
-    pipelineSettings,
-    "parser_person_memory_enabled",
-    true,
-  );
-  const verifierEnabled = settingBoolean(
-    pipelineSettings,
-    "parser_local_verifier_enabled",
-    true,
-  );
-  const autoSaveThreshold = settingNumber(
-    pipelineSettings,
-    "parser_auto_save_threshold",
-    settingNumber(pipelineSettings, "confidence_auto_save", 85),
-  );
-  const decisionThresholds = {
-    autoSave: settingNumber(pipelineSettings, "parser_auto_save_threshold", 90) / 100,
-    review: settingNumber(pipelineSettings, "parser_review_threshold", 50) / 100,
-    escalate: settingNumber(pipelineSettings, "parser_escalate_threshold", 85) / 100,
-  };
-
-  const reviewThreshold = settingNumber(
-    pipelineSettings,
-    "parser_review_threshold",
-    settingNumber(pipelineSettings, "confidence_review", 60),
-  );
-
-  // Counting amounts is the amount extractor's job, not a private list.
-  //
-  // This used to be a fourth copy of the spoken-number vocabulary, and it double-counted
-  // by construction: "ميتين وخمسين" is one amount of 250, but the digit regex and the word
-  // list each matched it, returning 2 and inflating the count that drives every routing
-  // threshold below. extractAmounts already composes numerals correctly.
-  const countAmounts = (text: string): number => extractAmounts(text).length;
-
-  const countWords = (text: string): number => {
-    return text.split(/\s+/).filter(w => w.length > 0).length;
-  };
-  
-  const numAmounts = countAmounts(normalizedText);
-  const numWords = countWords(normalizedText);
-
-  // 1.5 Admissibility gate — the last point before anything can cost money, and the
-  // only place allowed to end a request with "I did not understand".
-  //
-  // The filter this replaces only fired when the amount count was zero, so a clock time
-  // ("الساعة خمسة") sailed through on its number, and it matched its keyword list by
-  // substring. checkAdmissibility reuses the real amount extractor, the real verb
-  // lexicon and word-boundary matching, and distinguishes three rejections that deserve
-  // different answers: chatter, a question about spending, and a transaction that did
-  // not happen.
-  const admissibility = checkAdmissibility(normalizedText);
-  if (admissibility.verdict !== "financial") {
-    return {
-      items: [],
-      overallConfidence: 0,
-      clarificationQuestion: admissibility.userMessage,
-      decision: "clarify",
-      tokensUsed: 0,
-      parsedBy: "system",
-      modelUsed,
-      actualModelUsed: null,
-      processingTimeMs: Date.now() - startTime,
-      log: {
-        originalText: input.text,
-        normalizedText,
-        finalConfidence: 0,
-        finalDecision: "clarify",
-        routing: {
-          route: "admissibility_gate",
-          verdict: admissibility.verdict,
-          reason: admissibility.reason,
-          signals: admissibility.signals,
-        },
-      },
-    };
   }
 
   const knownNames = knownPeople.map((p) => p.name).filter(Boolean);
@@ -1048,7 +1183,63 @@ export async function runSmartPipeline(
   const escalationClauses: Array<{
     segment: (typeof decomposition.segments)[number];
     localItems: ParsedTransaction[];
+    /** Stable within this request; survives merge, salvage and reordering. */
+    clauseId: number;
   }> = [];
+
+  /**
+   * One registration point for everything that escalates, because there were four lists
+   * and nothing kept them in step.
+   *
+   * `escalationClauses` is what the prompt is built from; `failedSegments` is what the
+   * text is built from; `escalatedSegmentItems` and `orderedLocalItems` are what an
+   * outage falls back to. The whole-text branch pushed to the last two and neither of
+   * the first two, which is how "دفعت 120 عمل غريب" reached a live provider carrying the
+   * prompt "صنّف 0 جملة:" and a 60-token budget — a paid request that could not have
+   * produced a usable answer, and whose reply was then discarded for referencing clause
+   * 1 of zero.
+   *
+   * The clause id is the item's financial identity for the rest of the request. A merge
+   * that reorders, an index that shifts, a salvage that replaces the list — none of them
+   * may change which amount belongs to which event, and an array position cannot carry
+   * that guarantee.
+   */
+  /**
+   * Clauses the local pass ruled out as non-events, with the amounts they mentioned.
+   *
+   * Kept so the reconciliation ledger does not ask "what about the 500?" for money that
+   * was explicitly not spent, and so the trace can show why a number in the utterance
+   * produced no row.
+   */
+  const rejectedClauses: Array<{
+    text: string;
+    verdict: string;
+    reason: string;
+    amounts: number[];
+  }> = [];
+
+  let nextClauseId = 0;
+  const registerEscalation = (
+    segment: (typeof decomposition.segments)[number],
+    localItems: ParsedTransaction[],
+  ): ParsedTransaction[] => {
+    const clauseId = ++nextClauseId;
+    const stamped = localItems.map((item) => ({
+      ...item,
+      sourceEventId: item.sourceEventId ?? clauseId,
+    }));
+    failedSegments.push(segment);
+    escalationClauses.push({ segment, localItems: stamped, clauseId });
+    escalatedSegmentItems.push(...stamped);
+    orderedLocalItems.push(...stamped);
+    return stamped;
+  };
+
+  /** Locally accepted items also get an identity, so narrative order is reconstructable. */
+  const registerAccepted = (items: ParsedTransaction[]): ParsedTransaction[] => {
+    const clauseId = ++nextClauseId;
+    return items.map((item) => ({ ...item, sourceEventId: item.sourceEventId ?? clauseId }));
+  };
 
   // Fast path for long/multi-transaction narratives: classify each segment locally.
   if (decomposition.segments.length > 1) {
@@ -1071,8 +1262,34 @@ export async function runSmartPipeline(
         fireworksKey,
       );
       if (segmentRule.items.length === 0) {
-        failedSegments.push(segment);
-        escalationClauses.push({ segment, localItems: [] });
+        // Nothing extracted here. Before paying a model to look at it, ask whether it is
+        // a transaction at all — a clause the local pass rejected is not the same as a
+        // clause the local pass could not read.
+        //
+        // "ماشتريتش جزمة 500 ودفعت 200 بنزين" was escalated as clause 1 with its 500
+        // printed in the prompt as a settled fact, and a model answering "shopping"
+        // turned a purchase that did not happen into a row. Rejection is a result, and
+        // it has to survive the fallback that comes after it.
+        // Only `negated` rejects a SEGMENT.
+        //
+        // The admissibility gate is calibrated for whole utterances, where a missing verb
+        // or a missing noun really does mean "this is not a transaction". A fragment is
+        // allowed to be missing both — its verb may live in the previous clause — so
+        // `not_financial` here is usually the decomposer's cut, not the user's meaning:
+        // applying the full verdict cost the benchmark its "بواب" case, which has no verb
+        // of its own and is a real payment. Negation is different: it is positive evidence
+        // that the thing did not happen, and it is evidence the fragment carries itself.
+        const segmentAdmissibility = checkAdmissibility(segmentNormalized);
+        if (segmentAdmissibility.verdict === "negated") {
+          rejectedClauses.push({
+            text: segment.text,
+            verdict: segmentAdmissibility.verdict,
+            reason: segmentAdmissibility.reason,
+            amounts: extractAmounts(segmentNormalized).map((a) => a.amount),
+          });
+          continue;
+        }
+        registerEscalation(segment, []);
         continue;
       }
 
@@ -1158,14 +1375,11 @@ export async function runSmartPipeline(
       // every extracted transaction, otherwise a weak sibling is silently lost when its
       // confident neighbour is auto-saved.
       if (escalations.some((e) => e.escalate) && !anyNeedsClarification) {
-        failedSegments.push(segment);
-        escalatedSegmentItems.push(...segmentItems);
-        escalationClauses.push({ segment, localItems: segmentItems });
-        orderedLocalItems.push(...segmentItems);
+        registerEscalation(segment, segmentItems);
         continue;
       }
-      const passedItems = segmentItems;
-      
+      const passedItems = registerAccepted(segmentItems);
+
       localSucceededItems.push(...passedItems);
       orderedLocalItems.push(...passedItems);
 
@@ -1309,27 +1523,40 @@ export async function runSmartPipeline(
         const mustEscalate = wholeEscalations.some((e) => e.escalate);
 
         if (!mustEscalate) {
-            finalItems.push(...wholeItems);
+            const acceptedWhole = registerAccepted(wholeItems);
+            finalItems.push(...acceptedWhole);
             ruleSucceeded = true;
-            const outcome = decide(
-              {
-                probability: lowestConfidence / 100,
-                amountsFullyConsumed: wholeItems.length >= numAmounts,
-                hasBlockingFlag: false,
-                needsAnswer: false,
-                hasUnpricedItem: calibratedWhole.unpriced > 0,
-              },
-              decisionThresholds,
-            );
+            // Per item, not on the group's weakest score alone: `hasBlockingFlag` and
+            // `hasUnpricedItem` are properties of individual items, and folding them into
+            // one call let a clean sibling's numbers answer for a flagged one.
+            const outcome = decidePerItem(acceptedWhole, {
+              amountsFullyConsumed: acceptedWhole.length >= numAmounts,
+              needsAnswer: false,
+              thresholds: decisionThresholds,
+            });
             decision = outcome.decision;
-            overallConfidence = lowestConfidence;
+            overallConfidence = outcome.weakestConfidence;
         } else {
           // Escalating: keep what the whole-text pass already resolved so an unavailable
           // model degrades the answer instead of erasing it. Without this, a single-clause
           // "دفعت لعماد 1200" loses its person resolution on the way to the fallback and
           // reverts to a generic bank transfer.
-          escalatedSegmentItems.push(...wholeItems);
-          orderedLocalItems.push(...wholeItems);
+          //
+          // Registered as a clause, not just stashed in the salvage lists. This branch
+          // handles the un-segmented sentence — one clause, by definition — and it is the
+          // branch that produced "صنّف 0 جملة:" because it never told the prompt builder
+          // that a clause existed.
+          registerEscalation(
+            {
+              text: input.text,
+              amount: null,
+              direction: (wholeItems[0]?.type as DecomposedSegment["direction"]) || "unknown",
+              linkedVerb: null,
+              personMentioned: wholeItems[0]?.person_mentioned || null,
+              segmentIndex: 0,
+            },
+            wholeItems,
+          );
         }
         if (hasMutaNawi3at || lowestConfidence < reviewThreshold) {
             // If any item is mutanawi3at or very low confidence, we should NOT accept it locally.
@@ -1371,9 +1598,13 @@ export async function runSmartPipeline(
               inferenceSource: "ai",
               ambiguityFlags: ["fireworks_embedding"],
             };
-            finalItems.push(embItem);
+            finalItems.push(...registerAccepted([embItem]));
             ruleSucceeded = true;
-            decision = embMatch.score >= 85 ? "auto_save" : "review";
+            // Deliberately leaves `decision` unknown so the embedding answer meets the
+            // same reconciliation and per-item eligibility as every other path. It used
+            // to grant itself `auto_save` on `embMatch.score >= 85` — a raw cosine
+            // similarity compared against a threshold meant for calibrated
+            // probabilities, on an item that reached the end carrying no evidence at all.
             overallConfidence = embMatch.score;
           }
         }
@@ -1385,9 +1616,41 @@ export async function runSmartPipeline(
   }
 
   // 4. Single-Pass Semantic Extraction (AI — fallback of last resort)
-  if (!ruleSucceeded) {
+  //
+  // `escalationClauses.length > 0` is a precondition, not an optimisation. The model is
+  // asked "what category is clause N", so with no clauses there is no question to ask:
+  // the request costs a token budget, a round trip and a provider attempt, and any answer
+  // it returns is dropped by the index check. A provider call that cannot succeed is not
+  // a fallback, it is a bill.
+  if (!ruleSucceeded && escalationClauses.length === 0 && finalItems.length === 0) {
+    // One more deterministic pass, over the LIGHTLY normalized text.
+    //
+    // The aggressive normalization the rule engine ran on above rewrites more than the
+    // AI form does, and some sentences only survive the lighter one — "دفعت للبواب 150
+    // بتاع الشهر" resolves here and nowhere else.
+    //
+    // It used to be reached only by accident: the code called a provider with zero
+    // clauses, the call failed, and this pass ran in the error handler. So the recovery
+    // existed, cost a provider attempt every time, and would have been skipped entirely
+    // if the empty request had ever succeeded. It is a deterministic fallback; it belongs
+    // on the deterministic path.
+    console.warn(
+      "[Smart Pipeline] Nothing to escalate — deterministic retry instead of an empty provider call.",
+    );
+    const lastPass = await runRuleEngine(
+      normalized.forAI,
+      input.userDict,
+      input.userProfileContext,
+      undefined,
+      fireworksKey,
+    );
+    if (lastPass.items.length > 0) {
+      finalItems.push(...registerAccepted(lastPass.items));
+    }
+  }
+  if (!ruleSucceeded && escalationClauses.length > 0) {
     requiresAI = true;
-    
+
     // Segment-level isolation: Send only failed segments to the AI
     const textToClassify = failedSegments.length > 0 
       // One per line, never rejoined with " و ". Gluing segments back into a run-on
@@ -1566,18 +1829,57 @@ export async function runSmartPipeline(
       // Merge the ONE thing the model was asked for back onto the items the local pass
       // built. The amount, direction and person never left this process, so a wrong or
       // missing answer costs a category, not a transaction.
-      classItems = mergeCategoryDecisions(escalationClauses, reply.items);
+      const merged = mergeCategoryDecisions(escalationClauses, reply.items);
+      classItems = merged.items;
 
+      // A reply that arrived is not a reply that answered.
+      //
+      // `llm.text` parsing succeeding is a transport fact. Whether the model answered
+      // every clause, with categories that exist, is a semantic one — and the two were
+      // conflated, so a truncated reply covering one clause of three was reported as a
+      // model success and the other two silently kept a guess nobody looked at.
+      const semanticProblems =
+        reply.problems.length > 0 ||
+        merged.unansweredClauseIds.length > 0 ||
+        merged.unresolvedClauseIds.length > 0;
+      if (semanticProblems) {
+        modelReplyProblems = [
+          ...reply.problems,
+          ...merged.unansweredClauseIds.map((id) => `clause ${id} unanswered`),
+          ...merged.unresolvedClauseIds.map((id) => `clause ${id} has no extracted event`),
+        ];
+        classItems = classItems.map((item) =>
+          withBlocker(item, BlockerReason.MODEL_REPLY_INVALID),
+        );
+      }
+
+      // A clause the model was willing to categorise but that produced no event is a
+      // gap in EXTRACTION, not a transaction we may write. Ask rather than invent: the
+      // amount is the missing field, and asking the model for it is the one thing this
+      // contract deliberately does not do.
+      if (merged.unresolvedClauseIds.length > 0 && !input.skipClarification) {
+        decision = "clarify";
+        clarificationQuestion =
+          clarificationQuestion ||
+          "فيه حاجة في كلامك مش واضح مبلغها. ممكن تقولي المبلغ؟";
+      }
 
       if (classItems.length === 0) {
-         if (numAmounts <= 3 && numWords <= 15) {
+         // A last deterministic pass, but only when the local side found nothing at all.
+         //
+         // This used to run whenever the MERGE produced nothing, which is a different
+         // condition: with one escalated clause and one accepted segment, the merge
+         // returning nothing for the escalated clause re-ran the rule engine over the
+         // WHOLE utterance and appended its output to items that were already there —
+         // "ماشتريتش جزمة 500 ودفعت 200 بنزين" came back with the petrol recorded twice.
+         if (finalItems.length === 0 && numAmounts <= 3 && numWords <= 15) {
               if (!ruleResult) {
                  ruleResult = await runRuleEngine(normalizedText, input.userDict, input.userProfileContext, undefined, fireworksKey);
               }
               if (ruleResult.items.length > 0) {
-                 finalItems.push(...ruleResult.items);
+                 finalItems.push(...registerAccepted(ruleResult.items));
               }
-         } else {
+         } else if (finalItems.length === 0) {
               decision = "clarify";
               clarificationQuestion = "عذراً، الجملة طويلة ومفصلة ولم أتمكن من استخراج العمليات. يرجى تقسيمها أو إعادة المحاولة.";
          }
@@ -1590,7 +1892,17 @@ export async function runSmartPipeline(
         // re-running person extraction over the rejoined text. Every one of those fields
         // measured better locally, and rebuilding them is what let a model answer lose a
         // transaction the rule engine had already found.
-        finalItems.push(...classItems);
+        //
+        // Rebuilt in narrative order rather than appended. Accepted segments were pushed
+        // into `finalItems` before the model was called, so appending the model's clauses
+        // afterwards put them last regardless of where they occur in the sentence:
+        // "دفعت 250 لحاجة مجهولة وبعدين دفعت 200 بنزين" came back 200 then 250, and the review
+        // screen shows rows in the order it receives them. `sourceEventId` is assigned in
+        // narrative order at registration, so it is the thing to sort by — an array
+        // position is not an identity.
+        const rebuilt = [...finalItems, ...classItems];
+        finalItems.length = 0;
+        finalItems.push(...orderByEvent(rebuilt));
       }
     } catch (err) {
       const errMsg = (err as any)?.message || String(err);
@@ -1769,6 +2081,12 @@ export async function runSmartPipeline(
   );
 
   // --- DEEP FIX: Content-Based Recovery (Reverse Mapping) ---
+  //
+  // Recovering a category is not the same as clearing a blocker. This used to set
+  // `needsReview = false` on every rescue, so an item the model merge had flagged
+  // `category_reply_unresolved` became silently saveable because one of its words
+  // happened to be in the subcategory map. A rescue answers "which category"; it says
+  // nothing about the person we could not identify or the amount nobody claimed.
   for (const item of normalizedFinalItems) {
       if (item.category === "متنوعات" && item.description) {
           // Use item.description directly to prevent context leakage (e.g. gym shoes)
@@ -1795,7 +2113,9 @@ export async function runSmartPipeline(
               if (SUB_CATEGORY_MAP[bigram]) {
                   item.category = SUB_CATEGORY_MAP[bigram].category;
                   item.subCategory = SUB_CATEGORY_MAP[bigram].subCategory;
-                    item.needsReview = false;
+                    if (!(item.reviewReasons && item.reviewReasons.length > 0)) {
+                      item.needsReview = false;
+                    }
                     rescued = true;
                     break;
               }
@@ -1806,7 +2126,9 @@ export async function runSmartPipeline(
                   if (word && SUB_CATEGORY_MAP[word]) {
                       item.category = SUB_CATEGORY_MAP[word].category;
                       item.subCategory = SUB_CATEGORY_MAP[word].subCategory;
-                    item.needsReview = false;
+                    if (!(item.reviewReasons && item.reviewReasons.length > 0)) {
+                      item.needsReview = false;
+                    }
                     rescued = true;
                     break;
                   }
@@ -1864,11 +2186,29 @@ export async function runSmartPipeline(
     (flag) => flag.severity === "warning",
   );
 
+  // Eligibility is per item, and the group is as saveable as its weakest member.
+  //
+  // `verification.overallConfidence` is a MEAN. The audit reproduced what that costs:
+  // items scoring 82, 87 and 90 auto-saved as a group against an 85 line, because 86.3
+  // clears it and the 82 has nowhere to appear. It also cannot express a blocker — an
+  // item flagged `category_reply_unresolved` at 95 raises the average.
+  //
+  // `decidePerItem` reduces by precedence instead: clarify beats review beats auto_save,
+  // each item judged on its own probability, its own blockers and its own calibration
+  // support. Verifier flags stay a whole-result veto, because several of them
+  // (double-counted totals, expense exceeding monthly income) are statements about the
+  // set rather than about one row.
+  const finalItemDecision = decidePerItem(verifiedFinalItems, {
+    amountsFullyConsumed: !amountLedger || amountLedger.balanced,
+    needsAnswer: false,
+    thresholds: decisionThresholds,
+  });
+
   if (decision === "unknown") {
       if (verifiedFinalItems.length > 0) {
-          overallConfidence = verification.overallConfidence;
+          overallConfidence = finalItemDecision.weakestConfidence;
           decision =
-            overallConfidence >= autoSaveThreshold &&
+            finalItemDecision.decision === "auto_save" &&
             !hasVerifierErrors &&
             !hasVerifierWarnings &&
             // An item whose probability is the corpus prior rather than a measurement
@@ -1877,21 +2217,28 @@ export async function runSmartPipeline(
             // entirely from the model path this gate is the only one to see.
             finalCalibration.unpriced === 0
               ? "auto_save"
-              : "review";
+              : finalItemDecision.decision === "clarify"
+                ? "clarify"
+                : "review";
+          if (decision === "clarify" && !clarificationQuestion) {
+            clarificationQuestion = "محتاج أتأكد من تفاصيل العملية دي. ممكن توضح؟";
+          }
       } else {
           decision = "clarify";
           clarificationQuestion = "عذراً، لم أتمكن من استخراج عملية مالية واضحة. ممكن توضح؟";
           overallConfidence = 0;
       }
   } else if (decision === "auto_save") {
-      overallConfidence = verification.overallConfidence || overallConfidence;
+      // An earlier layer said auto_save. It may be overruled here, never confirmed here:
+      // this is the last gate, so everything it knows has to be able to say no.
+      overallConfidence = finalItemDecision.weakestConfidence || overallConfidence;
       if (
         hasVerifierErrors ||
         hasVerifierWarnings ||
-        overallConfidence < autoSaveThreshold ||
+        finalItemDecision.decision !== "auto_save" ||
         finalCalibration.unpriced > 0
       ) {
-          decision = "review";
+          decision = finalItemDecision.decision === "clarify" ? "clarify" : "review";
       }
   }
 

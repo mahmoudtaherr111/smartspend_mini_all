@@ -1,4 +1,6 @@
 import { toast } from "sonner";
+import { SplashScreen } from "@capacitor/splash-screen";
+import { Capacitor } from "@capacitor/core";
 
 let deferredInstall: BeforeInstallPromptEvent | null = null;
 
@@ -62,9 +64,6 @@ function applyWaitingUpdate(registration: ServiceWorkerRegistration) {
 }
 
 export function registerAppServiceWorker(): void {
-  if (!("serviceWorker" in navigator)) return;
-  if (!import.meta.env.PROD) return;
-
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     deferredInstall = e as BeforeInstallPromptEvent;
@@ -75,6 +74,9 @@ export function registerAppServiceWorker(): void {
     deferredInstall = null;
     toast.success("تم تثبيت SmartSpend على جهازك");
   });
+
+  if (!("serviceWorker" in navigator)) return;
+  if (!import.meta.env.PROD) return;
 
   const onLoad = () => {
     navigator.serviceWorker
@@ -120,12 +122,22 @@ export function registerAppServiceWorker(): void {
   else window.addEventListener("load", onLoad, { once: true });
 }
 
-/** Fade out the inline HTML splash after React hydrates */
-export function dismissAppLoader(): void {
+/** Hand off from the launch surface as soon as React has painted its first frame. */
+export async function dismissAppLoader(): Promise<void> {
+  // Font loading must never keep a launch screen over an already interactive
+  // application. Cairo is self-hosted and can settle after this hand-off.
+  if (Capacitor.isNativePlatform()) {
+    try {
+      await SplashScreen.hide({ fadeOutDuration: 120 });
+    } catch {
+      // Native splash control is unavailable when this code runs as a web PWA.
+    }
+  }
+
   const root = document.getElementById("root");
   const loader = root?.querySelector(".app-loader") as HTMLElement | null;
   if (!loader) return;
-  loader.style.transition = "opacity 0.35s ease";
+  loader.style.transition = "opacity 0.16s ease-out";
   loader.style.opacity = "0";
-  window.setTimeout(() => loader.remove(), 380);
+  window.setTimeout(() => loader.remove(), 180);
 }

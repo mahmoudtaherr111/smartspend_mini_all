@@ -1,15 +1,12 @@
-# Progress Tracking
+# Progress Heartbeat
 
-- Current Status: Survey complete. All artifacts generated.
-- Last visited: 2026-08-25T09:07:00Z
+Last visited: 2026-08-30T02:08:50Z
+Status: Completed
 
-## Tasks
-- [x] Workspace initialized & Dispatch logged
-- [x] Read ORIGINAL_REQUEST.md and AGENTS.md
-- [x] Scope 1: Tab switching & view rendering architecture (`src/App.tsx`, navigation, mount/unmount lifecycle, tRPC query hooks)
-- [x] Scope 2: Warm View Pre-Rendering strategy for 5 primary views (تسجيل, إحصائيات, تقويم, مركز AI, المزيد)
-- [x] Scope 3: Test Infrastructure (`vitest.config.ts`, `package.json`, test scripts, existing test suites)
-- [x] Scope 4: Mobile touch & viewport auditing (Playwright status, mobile emulations, touch interaction tests, CI/local command)
-- [x] Author `survey_tabs_testing.md`
-- [x] Author `handoff.md`
-- [x] Send completion message to parent
+## Completed Tasks
+1. Financial Mutations Idempotency & Reconciliation: Fully investigated `api/expense-router.ts`, `api/wallet-router.ts`, `api/budget-router.ts`, `api/goals-router.ts`, `api/lib/subscription-service.ts`, `ExpenseForm.tsx`, and `PwaOfflineSyncDialog.tsx`.
+2. PWA & Mobile-First UX: Fully investigated `useVirtualKeyboard.ts`, `usePwaLifecycle.ts`, `PullToRefreshWrapper.tsx`, `MobileBottomNav.tsx`, `useHaptics.ts`, `vite.config.ts`, and `src/sw.js`.
+3. Auth & Multi-Tab Synchronization: Fully investigated `useAuth.ts`, `trpc.ts`, `queryPersister.ts`, `api/context.ts`, and `tests/multi-tab-auth-sync.test.ts`.
+4. Monorepo Build and Test Health: Verified `npm run check` (`tsc -b` with 0 errors) and Vitest test suite status.
+5. Authoritative Blueprint: Authored blueprint and structure for `docs/LOGICAL_EDGE_CASES_AUDIT.md`.
+6. Reports: Produced `report.md` and `handoff.md` with complete citations, root causes, and remediation blueprints.

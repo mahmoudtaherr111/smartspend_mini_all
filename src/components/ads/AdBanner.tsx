@@ -4,15 +4,16 @@ import { useAuth } from "../../hooks/useAuth";
 export function AdBanner() {
   const { user } = useAuth();
   const { ads, clickAd } = useAds();
+  const adItems = Array.isArray(ads.data) ? ads.data : [];
 
-  if (user?.plan === "pro" || !ads.data || ads.data.length === 0) return null;
+  if (user?.plan === "pro" || adItems.length === 0) return null;
 
-  const ad = ads.data[0];
+  const ad = adItems[0];
 
   return (
-    <div 
-      role="region" 
-      aria-label="إعلان ممول" 
+    <div
+      role="region"
+      aria-label="إعلان ممول"
       className="rounded-xl border border-dashed border-yellow-500/50 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 p-4 mb-4"
     >
       <div className="flex items-center gap-3">

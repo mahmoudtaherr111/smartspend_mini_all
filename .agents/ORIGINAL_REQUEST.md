@@ -1,23 +1,21 @@
 # Original User Request
 
-## Initial Request — 2026-08-26T01:50:17Z
+## Initial Request — 2026-08-30T12:06:53Z
 
-You are the Project Orchestrator (teamwork_preview_orchestrator).
+You are the Project Orchestrator for SmartSpend AI mobile fidelity implementation.
 
-## Identity & Workspace
-- Archetype: orchestrator
-- Working directory: E:\smartspend_V1_fixed\.agents\orchestrator_1
-- Original Request path: E:\smartspend_V1_fixed\.agents\ORIGINAL_REQUEST.md
-- Project Root: E:\smartspend_V1_fixed
+Working directory: e:/smartspend_V1_fixed/.agents/orchestrator_1
+Project root: e:/smartspend_V1_fixed
+Original request file: e:/smartspend_V1_fixed/.agents/ORIGINAL_REQUEST.md
 
-## Task & Scope
-You must lead the end-to-end execution of the Mobile Dashboard visual hierarchy and AI Recording Input card re-architecture for SmartSpend AI.
+Your mission:
+Execute the remaining core mobile pillars of SmartSpend AI to deliver 100% native fidelity (iOS Swift / Flutter grade) with deep architectural rigor, zero regressions, and robust handling of all edge cases (gesture conflicts, keyboard collisions, scroll trapping, and memory persistence).
 
-### Requirements:
-1. Fluid Morphing AI Discovery Banner (`framer-motion`) in `src/components/expenses/ExpenseForm.tsx` (smooth expansion & collapse to 0 height with zero dead whitespace, leaving minimal inline badge `✨ تسجيل ذكي`).
-2. Contextual Dynamic Recording State (remove static "الحالة: جاهز", dynamic waveform / processing pill during active recording/parsing, seamless return to compact idle height).
-3. Top Financial Metrics & Streak Header Compaction in `src/pages/Home.tsx` (StreakCounter integrated directly into title bar, mobile two-line subtitle streamlined, SummaryChip refactored into compact financial pills `py-2 px-3` saving ~40px).
-4. Thumb-Zone Textarea & Action Bar Elevation (elevated 60-90px on mobile, rich placeholder prompt, recent transactions visible above fold on 390x844 & 412x915 viewports).
-5. Autonomous Multi-Viewport In-Browser Mobile Auditing (Playwright) across iPhone 14 Pro (390x844) and Android Pixel 7 (412x915), verifying 0 layout shifts, 0 console errors, 0 clipping, and ensuring `npm run check` and `npm run test` pass 100%.
+Key Requirements to execute and coordinate:
+1. Universal Polymorphic AdaptiveDialog & Bottom Sheet Architecture (vaul on mobile <768px, Radix Dialog on desktop, BackButtonManager integration, form/focus preservation).
+2. Continuous 1:1 Interactive Tab Pager with Gesture Isolation (embla-carousel-react, RTL calibration, iOS momentum/spring settling, pointer-capture isolation .no-swipe for charts/calendars/sliders).
+3. Directional Spatial Transitions & Tab State Keep-Alive (hardware-accelerated slide transitions, scroll offset retention across bottom nav routes, offscreen keep-alive for intensive views like AICenter tabs).
+4. GPU Compositing Optimization & Performance Hardening (eliminate heavy backdrop-filter blur in scrolling lists, will-change: transform, composite layering, 60-120fps fluidity).
+5. Comprehensive Zero-Regression Test Suite & Verification (npm run check, npm run test, mobile test coverage, zero type errors, zero regressions).
 
-Please initialize your working directory, create your plan.md and progress.md, dispatch specialized subagents as appropriate, drive the implementation and verification to completion, and report when victory is ready for audit.
+Please initialize your working directory, maintain your BRIEFING.md and progress.md, dispatch specialized subagents to implement and verify, and report back when finished.

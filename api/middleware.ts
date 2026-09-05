@@ -2,7 +2,28 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import { Context } from "./context";
 import { createRateLimiter } from "./lib/rate-limit";
 
-const t = initTRPC.context<Context>().create();
+const t = initTRPC.context<Context>().create({
+  errorFormatter({ shape, error }) {
+    const isProduction = process.env.NODE_ENV === "production";
+    const retryAfterSeconds =
+      error.cause && typeof (error.cause as any).retryAfterSeconds === "number"
+        ? (error.cause as any).retryAfterSeconds
+        : undefined;
+
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        retryAfterSeconds,
+        stack: isProduction ? undefined : shape.data.stack,
+      },
+      message:
+        isProduction && shape.data.code === "INTERNAL_SERVER_ERROR"
+          ? "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى."
+          : shape.message,
+    };
+  },
+});
 
 export const router = t.router;
 
@@ -10,49 +31,24 @@ export const router = t.router;
 const publicIpLimiter = createRateLimiter(400, 60_000);
 /** Sensitive auth endpoints — stricter per-IP cap. */
 const strictPublicIpLimiter = createRateLimiter(25, 15 * 60_000);
+/** Authed general user traffic */
+const userRateLimiter = createRateLimiter(100, 60_000);
+/** AI Rate Limiter (expensive operations) */
+const aiRateLimiter = createRateLimiter(100, 60_000);
 
 export const publicProcedure = t.procedure.use(async ({ ctx, next }) => {
-  publicIpLimiter.hit(`pub:${ctx.ip}`, "طلبات كتير جداً من نفس الشبكة. جرب بعد دقيقة.");
+  await publicIpLimiter.hit(`pub:${ctx.ip}`, "طلبات كتير جداً من نفس الشبكة. جرب بعد دقيقة.");
   return next();
 });
 
 /** Use for register / login / OAuth token exchange — anti brute-force per IP. */
 export const strictPublicProcedure = t.procedure.use(async ({ ctx, next }) => {
-  strictPublicIpLimiter.hit(
+  await strictPublicIpLimiter.hit(
     `strict:${ctx.ip}`,
     "محاولات كتيرة لتسجيل الدخول أو التسجيل من نفس الشبكة. استنى شوية وحاول تاني."
   );
   return next();
 });
-
-// Simple in-memory rate limiter (per authenticated user)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const MAX_REQUESTS = 100; // 100 requests per minute
-
-// AI Rate Limiter (Stricter for expensive operations)
-const aiRateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const AI_RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const AI_MAX_REQUESTS = 100;
-
-// Auto-cleanup expired rate limiter and AI rate limiter entries every 5 minutes to prevent memory leaks
-const cleanupInterval = setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitMap) {
-    if (entry.resetAt < now) {
-      rateLimitMap.delete(key);
-    }
-  }
-  for (const [key, entry] of aiRateLimitMap) {
-    if (entry.resetAt < now) {
-      aiRateLimitMap.delete(key);
-    }
-  }
-}, 5 * 60 * 1000);
-
-if (cleanupInterval.unref) {
-  cleanupInterval.unref();
-}
 
 // Authed: any logged in user
 export const authedProcedure = t.procedure.use(async ({ ctx, next }) => {
@@ -60,35 +56,19 @@ export const authedProcedure = t.procedure.use(async ({ ctx, next }) => {
     throw new TRPCError({ code: "UNAUTHORIZED", message: "يجب تسجيل الدخول أولاً" });
   }
 
-  const key = `${ctx.user.type}:${ctx.user.id}`;
-  const now = Date.now();
-  const limit = rateLimitMap.get(key);
-
-  if (!limit || now > limit.resetAt) {
-    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
-  } else {
-    limit.count++;
-    if (limit.count > MAX_REQUESTS) {
-      throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "طلبات كتير جداً! اهدى شوية." });
-    }
-  }
+  await userRateLimiter.hit(
+    `usr:${ctx.user.type}:${ctx.user.id}`,
+    "طلبات كتير جداً! اهدى شوية واستنى شوية.",
+  );
 
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
 
 export const aiProcedure = authedProcedure.use(async ({ ctx, next }) => {
-  const key = `${ctx.user.type}:${ctx.user.id}`;
-  const now = Date.now();
-  const limit = aiRateLimitMap.get(key);
-
-  if (!limit || now > limit.resetAt) {
-    aiRateLimitMap.set(key, { count: 1, resetAt: now + AI_RATE_LIMIT_WINDOW });
-  } else {
-    limit.count++;
-    if (limit.count > AI_MAX_REQUESTS) {
-      throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "طلبات الذكاء الاصطناعي كتير جداً! استنى دقيقة وحاول تاني." });
-    }
-  }
+  await aiRateLimiter.hit(
+    `ai:${ctx.user.type}:${ctx.user.id}`,
+    "طلبات الذكاء الاصطناعي كتير جداً! استنى شوية وحاول تاني.",
+  );
 
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
@@ -109,26 +89,43 @@ export const adminProcedure = authedProcedure.use(async ({ ctx, next }) => {
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
 
-// Pro: for premium features (Pro + Ultra + Admin)
+// Pro subscription required (pro, ultra, or admin bypass)
 export const proProcedure = authedProcedure.use(async ({ ctx, next }) => {
-  if (ctx.user.plan !== "pro" && ctx.user.plan !== "ultra" && ctx.user.role !== "admin") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "هذه الميزة متاحة فقط للبرو" });
+  const isPrivileged =
+    ctx.user.plan === "pro" ||
+    ctx.user.plan === "ultra" ||
+    ctx.user.role === "admin";
+
+  if (!isPrivileged) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "هذه الميزة متاحة فقط لمشتركي باقة برو أو ألترا",
+    });
   }
+
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
 
-/** AI endpoints that also require a paid plan. */
-export const proAiProcedure = aiProcedure.use(async ({ ctx, next }) => {
-  if (ctx.user.plan !== "pro" && ctx.user.plan !== "ultra" && ctx.user.role !== "admin") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "هذه الميزة متاحة فقط للبرو" });
-  }
+// Pro AI Procedure: requires Pro subscription + AI rate limit
+export const proAiProcedure = proProcedure.use(async ({ ctx, next }) => {
+  await aiRateLimiter.hit(
+    `ai:${ctx.user.type}:${ctx.user.id}`,
+    "طلبات الذكاء الاصطناعي كتير جداً! استنى شوية وحاول تاني.",
+  );
+
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
 
-// Ultra: for top-tier features (Ultra + Admin)
+// Ultra subscription required (ultra, or admin bypass)
 export const ultraProcedure = authedProcedure.use(async ({ ctx, next }) => {
-  if (ctx.user.plan !== "ultra" && ctx.user.role !== "admin") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "هذه الميزة متاحة فقط لمشتركي الألترا 💎" });
+  const isPrivileged = ctx.user.plan === "ultra" || ctx.user.role === "admin";
+
+  if (!isPrivileged) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "هذه الميزة متاحة فقط لمشتركي باقة ألترا",
+    });
   }
+
   return next({ ctx: { ...ctx, user: ctx.user } });
 });

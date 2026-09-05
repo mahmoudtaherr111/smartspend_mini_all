@@ -1,19 +1,24 @@
 import { and, eq, inArray, or } from "drizzle-orm";
 import {
   adClicks,
+  adStatsDaily,
   aiActionAuditLogs,
   aiActionMemory,
+  aiCostMonthly,
   aiConversationSummaries,
   aiMemoryEmbeddings,
   aiMemoryItems,
   aiPendingActions,
   aiSummaries,
+  aiTokenLedgers,
   authChallenges,
   businessCategories,
   chatConversations,
   chatMessages,
   classificationLogs,
   expenseCategories,
+  expenseDailyRollups,
+  expenseDetails,
   expenses,
   financialGoals,
   inAppNotifications,
@@ -33,6 +38,7 @@ import {
   userBudgets,
   userBusinesses,
   userContacts,
+  userCorrectionRules,
   userCredentials,
   userDictionaries,
   userProfiles,
@@ -77,9 +83,21 @@ export async function purgeUserData(tx: any, userId: number, userType: PurgeUser
   await tx.delete(aiActionAuditLogs).where(userScope(aiActionAuditLogs, userId, userType));
   await tx.delete(aiPendingActions).where(userScope(aiPendingActions, userId, userType));
   await tx.delete(aiActionMemory).where(userScope(aiActionMemory, userId, userType));
-
   await tx.delete(pendingClarifications).where(userScope(pendingClarifications, userId, userType));
+
+  const userExpenses = await tx
+    .select({ id: expenses.id })
+    .from(expenses)
+    .where(userScope(expenses, userId, userType));
+  const expenseIds = userExpenses.map((row: { id: number }) => row.id);
+  if (expenseIds.length) {
+    await tx.delete(expenseDetails).where(inArray(expenseDetails.expenseId, expenseIds));
+  }
   await tx.delete(expenses).where(userScope(expenses, userId, userType));
+  await tx.delete(expenseDailyRollups).where(userScope(expenseDailyRollups, userId, userType));
+  await tx.delete(aiCostMonthly).where(userScope(aiCostMonthly, userId, userType));
+  await tx.delete(aiTokenLedgers).where(userScope(aiTokenLedgers, userId, userType));
+  await tx.delete(userCorrectionRules).where(userScope(userCorrectionRules, userId, userType));
   await tx.delete(expenseCategories).where(userScope(expenseCategories, userId, userType));
   await tx.delete(userBudgets).where(userScope(userBudgets, userId, userType));
   await tx.delete(financialGoals).where(userScope(financialGoals, userId, userType));

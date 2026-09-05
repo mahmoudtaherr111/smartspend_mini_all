@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, authedProcedure, moderatorProcedure } from "./middleware";
+import { router, authedProcedure, adminProcedure } from "./middleware";
 import { getDb } from "./queries/connection";
 import { userAnalytics, expenses, localUsers, users } from "../db/schema";
 import { eq, and, gte, sql, desc, or, inArray } from "drizzle-orm";
@@ -40,7 +40,7 @@ export const analyticsRouter = router({
     return result;
   }),
 
-  getAllUserStats: moderatorProcedure
+  getAllUserStats: adminProcedure
     .input(
       z.object({
         limit: z.number().default(50),
@@ -56,26 +56,43 @@ export const analyticsRouter = router({
     const [oauthCountResult] = await db.select({ count: sql`count(*)` }).from(users);
     const totalUsers = Number(localCountResult.count) + Number(oauthCountResult.count);
 
-    const local = await db
-      .select({
-        id: localUsers.id,
-        name: localUsers.name,
-        email: localUsers.email,
-        role: localUsers.role,
-        plan: localUsers.plan,
-        createdAt: localUsers.createdAt,
-        lastSignInAt: localUsers.lastSignInAt,
-      })
-      .from(localUsers)
-      .limit(limit)
-      .offset(offset);
-
-    // If offset > local.length, we need to adjust offset for oauth users
-    const oauthLimit = Math.max(0, limit - local.length);
-    const oauthOffset = Math.max(0, offset - Number(localCountResult.count));
-
+    const localCount = Number(localCountResult?.count || 0);
+    let local: any[] = [];
     let oauth: any[] = [];
-    if (oauthLimit > 0) {
+
+    if (offset < localCount) {
+      local = await db
+        .select({
+          id: localUsers.id,
+          name: localUsers.name,
+          email: localUsers.email,
+          role: localUsers.role,
+          plan: localUsers.plan,
+          createdAt: localUsers.createdAt,
+          lastSignInAt: localUsers.lastSignInAt,
+        })
+        .from(localUsers)
+        .limit(limit)
+        .offset(offset);
+
+      const remainingLimit = limit - local.length;
+      if (remainingLimit > 0) {
+        oauth = await db
+          .select({
+            id: users.id,
+            name: users.name,
+            email: users.email,
+            role: users.role,
+            plan: users.plan,
+            createdAt: users.createdAt,
+            lastSignInAt: users.lastSignInAt,
+          })
+          .from(users)
+          .limit(remainingLimit)
+          .offset(0);
+      }
+    } else {
+      const oauthOffset = offset - localCount;
       oauth = await db
         .select({
           id: users.id,
@@ -87,7 +104,7 @@ export const analyticsRouter = router({
           lastSignInAt: users.lastSignInAt,
         })
         .from(users)
-        .limit(oauthLimit)
+        .limit(limit)
         .offset(oauthOffset);
     }
 
@@ -140,7 +157,7 @@ export const analyticsRouter = router({
     };
   }),
 
-  getDashboardStats: moderatorProcedure.query(async () => {
+  getDashboardStats: adminProcedure.query(async () => {
     const db = getDb();
 
     const today = businessDayRange().start;

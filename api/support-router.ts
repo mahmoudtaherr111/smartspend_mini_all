@@ -2,7 +2,6 @@ import { z } from "zod";
 import {
   router,
   authedProcedure,
-  moderatorProcedure,
   adminProcedure,
 } from "./middleware";
 import { TRPCError } from "@trpc/server";
@@ -73,12 +72,12 @@ export const supportRouter = router({
         .where(eq(supportTickets.id, input.id))
         .limit(1);
       if (!ticket[0]) throw new TRPCError({ code: "NOT_FOUND", message: "التذكرة غير موجودة" });
-      // Allow if owner or moderator/admin
+      // Users (including moderators) can access only their own tickets.
       if (
         ticket[0].userId !== ctx.user.id ||
         ticket[0].userType !== ctx.user.type
       ) {
-        if (ctx.user.role !== "moderator" && ctx.user.role !== "admin") {
+        if (ctx.user.role !== "admin") {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "غير مصرح لك بالوصول لهذه التذكرة",
@@ -88,8 +87,8 @@ export const supportRouter = router({
       return ticket[0];
     }),
 
-  // ─── List All Tickets (Moderator+) ───
-  listAll: moderatorProcedure
+  // ─── List All Tickets (Admin only) ───
+  listAll: adminProcedure
     .input(
       z
         .object({
@@ -147,7 +146,7 @@ export const supportRouter = router({
     }),
 
   // ─── Respond to Ticket ───
-  respond: moderatorProcedure
+  respond: adminProcedure
     .input(
       z.object({
         id: z.number(),
@@ -158,6 +157,18 @@ export const supportRouter = router({
       }),
     )
     .mutation(async ({ input }) => {
+      const ticket = await db
+        .select()
+        .from(supportTickets)
+        .where(eq(supportTickets.id, input.id))
+        .limit(1);
+      if (!ticket[0]) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "التذكرة غير موجودة",
+        });
+      }
+
       const updates: any = {
         response: input.response,
         respondedAt: new Date(),
@@ -179,6 +190,18 @@ export const supportRouter = router({
       }),
     )
     .mutation(async ({ input }) => {
+      const ticket = await db
+        .select()
+        .from(supportTickets)
+        .where(eq(supportTickets.id, input.id))
+        .limit(1);
+      if (!ticket[0]) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "التذكرة غير موجودة",
+        });
+      }
+
       await db
         .update(supportTickets)
         .set({ assignedTo: input.moderatorId, status: "in_progress" })
@@ -195,12 +218,17 @@ export const supportRouter = router({
         .from(supportTickets)
         .where(eq(supportTickets.id, input.id))
         .limit(1);
-      if (!ticket[0]) throw new TRPCError({ code: "NOT_FOUND", message: "غير موجود" });
+      if (!ticket[0]) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "التذكرة غير موجودة",
+        });
+      }
       if (
         ticket[0].userId !== ctx.user.id ||
         ticket[0].userType !== ctx.user.type
       ) {
-        if (ctx.user.role !== "moderator" && ctx.user.role !== "admin") {
+        if (ctx.user.role !== "admin") {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "غير مصرح لك بالوصول لهذه التذكرة",

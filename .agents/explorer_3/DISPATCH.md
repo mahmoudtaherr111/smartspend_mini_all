@@ -9,18 +9,25 @@ Read the following authoritative files first:
 - Relevant docs in E:/smartspend_V1_fixed/docs/
 
 Your investigation scope:
-1. R5: Server Performance, Advisory Locks & Provider Resilience:
-   - Inspect `expense-router.ts`: Does `batchCreate` use batched `IN` queries and bulk operations rather than N+1 queries?
-   - Inspect `api/services/scheduler-lock.ts`: Are MySQL advisory locks (`GET_LOCK` / `RELEASE_LOCK`) implemented for cron job coordination across instances?
-   - Check background workers / schedulers (`ENABLE_CRONS`, `ENABLE_WHATSAPP` flags defaulting to `false` in development/test mode).
-   - Inspect AI provider clients (`api/lib/fireworks-embedding-client.ts`, Groq, Gemini, etc.): Are circuit breakers and fallback strategies properly implemented and tested (`api/lib/fireworks-embedding-client.test.ts`)?
+1. R5: Server Performance, Advisory Locks & Provider Resilience
+2. R6: Error Standardization & UI Resilience
+3. Full Baseline Diagnostics
 
-2. R6: Error Standardization & UI Resilience:
-   - Inspect tRPC sub-routers (`api/routers/*.ts`): Are generic `Error` throws replaced with typed `TRPCError` with proper code/message?
-   - Inspect UI components (`src/components/ui/dialog.tsx`, `alert-dialog.tsx`, etc.): Are Radix Dialog / Alert-Dialog accessibility warnings (DialogTitle, Description) resolved?
-   - Inspect document title synchronization across views.
-   - Inspect repository cleanliness and unused code/imports.
+## 2026-08-26T10:12:58Z
+You are Explorer 3 on the SmartSpend AI project.
+Mission: Investigate Service Worker configuration, offline PWA app-shell caching, navigation fallbacks, offline UI behavior, and existing test suites.
 
-3. Full Baseline Diagnostics:
-   - Run `npm run check` and report all TypeScript errors (if any).
-   - Run `npm test` and report total test suites, test counts, passing/failing tests, and failing details.
+Read the authoritative requirements in `e:/smartspend_V1_fixed/.agents/ORIGINAL_REQUEST.md` and `e:/smartspend_V1_fixed/AGENTS.md`.
+
+Investigate the codebase for:
+1. Service Worker implementation (`src/sw.js`, `public/`, `vite.config.ts`, `vite-plugin-pwa` or Workbox setup).
+2. Cache strategies for App Shell (HTML, JS, CSS, icons, fonts) vs API calls (tRPC endpoints).
+3. Navigation fallbacks when offline (ensuring opening any route offline serves the cached `index.html` without network errors).
+4. UI graceful degradation and offline state indicators across dashboard, expenses, and queries (preventing blank screens or unhandled promise rejections when network fails).
+5. Existing test setup (Vitest in `vitest.config.ts`, `tests/`, `npm run test`, `npm run check`) and how to build automated unit/integration tests for offline caching and persister behavior.
+
+Write your findings report to `.agents/explorer_3/report.md` (or your assigned working directory) with complete file paths, line numbers, code snippets, and clear recommendations. Then send a summary message back to parent.
+
+## 2026-08-26T10:46:08Z
+Explorer 3 (Replacement) activated for investigation into SW config, offline PWA app shell caching, navigation fallbacks, offline UI behavior, and test suites.
+

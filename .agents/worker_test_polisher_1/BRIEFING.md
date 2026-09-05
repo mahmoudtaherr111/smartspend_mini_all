@@ -1,57 +1,51 @@
-# BRIEFING — 2026-08-25T06:06:00Z
+# BRIEFING — 2026-08-30T12:00:00Z
 
 ## Mission
-Resolve the 5 benchmark unit test assertion failures identified in Challenger 2 report across smart-pipeline, rule-engine, taxonomy-adapter, and narrative-decomposer.
+Fix/verify `tests/touch-physics-active-press.test.tsx` JSX extension remediation, run full type-check (`npm run check`) and test runner (`npm run test`), and ensure 100% clean passes with zero errors.
 
 ## 🔒 My Identity
-- Archetype: implementer
+- Archetype: worker_test_polisher
 - Roles: implementer, qa, specialist
-- Working directory: E:\smartspend_V1_fixed\.agents\worker_test_polisher_1
-- Original parent: 86b14a76-5a22-4ebf-aa5e-129902592eb8
-- Milestone: Benchmark Unit Test Polish & 100% Pass Rate
+- Working directory: e:/smartspend_V1_fixed/.agents/worker_test_polisher_1
+- Original parent: cacd9dc6-f7a7-488d-bea7-a95c193ae218
+- Milestone: forensic audit test suite remediation
 
 ## 🔒 Key Constraints
-- Genuine fixes only, no cheating / hardcoded test mocks.
-- Follow minimal-change principle.
-- Full verification: all 72 test suites pass with 100% success and 0 TypeScript compiler errors.
-- Never write source code to .agents directory.
+- Genuine implementations only — no dummy test results or facade shortcuts
+- All test suites must execute cleanly and exit code 0
+- Type safety verified with `npm run check` (0 errors)
 
 ## Current Parent
-- Conversation ID: 86b14a76-5a22-4ebf-aa5e-129902592eb8
-- Updated: 2026-08-25T06:06:00Z
+- Conversation ID: cacd9dc6-f7a7-488d-bea7-a95c193ae218
+- Updated: 2026-08-30T12:00:00Z
 
 ## Task Summary
-- **What to build**: Fix 4 specific areas causing 5 assertion failures:
-  1. Batched clarification questions in `smart-pipeline.ts` for multiple unknown persons joined with " و ".
-  2. Utility bill patterns in `rule-engine.ts` for "فاتورة المياه" / "فاتورة مية" prioritized over transfers.
-  3. Grooming keywords ("حلاق", "كوافير", "صالون") mapping to "تسوق" / "عناية شخصية".
-  4. Inline relationship category resolution ("أخويا" mapping to "العائلة").
-- **Success criteria**: All 72 test suites pass (100%), `npm run check` passes with 0 errors.
-- **Interface contracts**: PROJECT.md / AGENTS.md
-- **Code layout**: Standard monorepo layout.
+- **What to build**: Ensure test file `tests/touch-physics-active-press.test.tsx` is properly configured with `.tsx` extension for React JSX transformation, and verify that the full test suite and TypeScript check pass cleanly.
+- **Success criteria**:
+  1. `tests/touch-physics-active-press.test.tsx` executes with 0 syntax/transform errors.
+  2. `npm run check` passes with 0 type errors.
+  3. `npm run test` passes with all test suites passing and exit code 0.
+- **Interface contracts**: `contracts/`
+- **Code layout**: `PROJECT.md` / `AGENTS.md`
 
 ## Change Tracker
-- **Files modified**:
-  - `api/lib/smart-pipeline.ts`: Added multi-person clarification batching joined with " و ", imported `inferRelationshipFromText`, extended `isDirectedPersonPayment` with "خد"/"اخد"/"أخد", and enhanced `shouldResolvePerson`.
-  - `api/lib/rule-engine.ts`: Added utility bill phrases, grooming keywords, and family/friend relationships to `SUB_CATEGORY_MAP`.
-  - `api/lib/taxonomy-adapter.ts`: Added utility bills, grooming keywords, and relationships to `SYNONYM_GRAPH`.
-  - `api/lib/narrative-decomposer.ts`: Prevented breaking single-amount transactions into amountless fragments in `decomposeHeuristic`.
-  - `api/lib/egyptian-dictionary.ts`: Added utility bill variations and missing family relation terms.
-- **Build status**: Verified clean TypeScript & genuine deterministic logic.
-- **Pending issues**: None.
+- **Files modified**: `tests/touch-physics-active-press.test.tsx` (verified `.tsx` extension, no `.ts` file remaining)
+- **Build status**: `npm run check` PASS (exit code 0), `npm run test` PASS (103 passed test files, 837 passed tests, exit code 0)
+- **Pending issues**: None
 
 ## Quality Status
-- **Build/test result**: All 5 benchmark test failures resolved.
-- **Lint status**: Clean.
-- **Tests added/modified**: Golden benchmark suites verified.
+- **Build/test result**: PASS (103 test files passed, 837 tests passed)
+- **Lint status**: Clean
+- **Tests added/modified**: `tests/touch-physics-active-press.test.tsx`
+
+## Loaded Skills
+- None required
 
 ## Key Decisions Made
-- Multi-unknown person clarification questions are deduplicated with `Array.from(new Set(...))` and joined with `" و "`.
-- Single-amount narratives preserve contextual terms by checking `segmentsWithAmounts.length > 1` before splitting with `decomposeVerbAnchored`.
-- Relationship terms like `"أخويا"` and `"صاحبي"` are recognized across `SUB_CATEGORY_MAP`, `SYNONYM_GRAPH`, and `shouldResolvePerson`.
+- Confirmed test file is named `.tsx` so esbuild transforms JSX cleanly.
 
 ## Artifact Index
-- E:\smartspend_V1_fixed\.agents\worker_test_polisher_1\DISPATCH.md
-- E:\smartspend_V1_fixed\.agents\worker_test_polisher_1\BRIEFING.md
-- E:\smartspend_V1_fixed\.agents\worker_test_polisher_1\progress.md
-- E:\smartspend_V1_fixed\.agents\worker_test_polisher_1\handoff.md
+- `.agents/worker_test_polisher_1/DISPATCH.md` — Assignment instructions
+- `.agents/worker_test_polisher_1/BRIEFING.md` — Agent state and situational awareness
+- `.agents/worker_test_polisher_1/progress.md` — Heartbeat and progress log
+- `.agents/worker_test_polisher_1/handoff.md` — Final handoff report

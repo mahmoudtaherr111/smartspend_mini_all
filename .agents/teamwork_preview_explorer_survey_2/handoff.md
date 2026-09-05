@@ -1,123 +1,74 @@
-# Handoff Report: Requirement R2 (Floating Liquid Glass Bottom Nav with Continuous Touch-Slide Drag & Haptics)
+# Handoff Report — AI Streaming & Chatbot Interaction Subsystem
 
-**Agent ID:** `teamwork_preview_explorer_survey_2`  
-**Date:** August 25, 2026  
-**Status:** Hard Handoff (Investigation & Synthesis Complete)  
-**Detailed Report:** `E:\smartspend_V1_fixed\.agents\teamwork_preview_explorer_survey_2\survey_nav_gestures.md`
+**Agent**: Explorer 2 (AI Streaming & Agent Interaction Specialist)  
+**Date**: 2026-08-30  
+**Status**: Complete (Hard Handoff)
 
 ---
 
 ## 1. Observation
 
-Direct inspection of the codebase across navigation, layout, gesture, and styling systems revealed the following exact facts:
-
-1. **Current Bottom Navigation Implementation:**
-   - **File:** `src/components/layout/MobileBottomNav.tsx:15-20`
-     ```tsx
-     const tabs = [
-       { id: "record", label: "تسجيل", icon: LayoutDashboard, tab: "record", href: "/dashboard?tab=record" },
-       { id: "stats", label: "إحصائيات", icon: BarChart3, tab: "stats", href: "/dashboard?tab=stats" },
-       { id: "ai", label: "مركز AI", icon: Sparkles, tab: "ai", href: "/ai" },
-       { id: "calendar", label: "تقويم", icon: CalendarDays, tab: "calendar", href: "/dashboard?tab=calendar" },
-     ] as const;
-     ```
-   - **File:** `src/components/layout/MobileBottomNav.tsx:79`
-     ```tsx
-     className="lg:hidden fixed bottom-0 inset-x-0 z-50 border-t border-slate-200/50 dark:border-white/10 bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl pb-[env(safe-area-inset-bottom)] pt-2 mobile-bottom-nav"
-     ```
-   - **File:** `src/components/layout/MobileBottomNav.tsx:123-150`
-     - The 5th tab (`المزيد`) is rendered outside the `tabs` array as a separate `<button>` with a duplicate `layoutId="activeTabIndicator"`.
-
-2. **Mounting and Route Rendering in App Shell:**
-   - **File:** `src/App.tsx:235`
-     ```tsx
-     <Sidebar
-       isOpen={sidebarOpen}
-       onToggle={() => setSidebarOpen(!sidebarOpen)}
-     />
-     <MobileBottomNav onOpenMenu={() => setSidebarOpen(true)} />
-     <PwaEnhancements />
-     ```
-   - **File:** `src/App.tsx:244`
-     ```tsx
-     user ? (isDashboard && !isKeyboardOpen ? "pb-nav-safe" : "pb-safe") : "",
-     ```
-     - Non-dashboard routes (`/ai`, `/settings`, `/pro`, `/bank-sync`, `/support`) do not receive `pb-nav-safe`, which will require alignment when the floating capsule is elevated.
-
-3. **Touch and Gesture Handling:**
-   - Currently, `MobileBottomNav.tsx` lacks any `onTouchStart`, `onTouchMove`, `onTouchEnd`, or `onPointerMove` event handlers.
-   - It only handles discrete click events on `<Link>` / `<button>`. Dragging across tabs produces no live highlighting or tab boundary triggers.
-
-4. **Haptic Feedback Infrastructure:**
-   - **File:** `src/hooks/useHaptics.ts:61-122`
-     - Exports `lightTap`, `mediumTap`, `success`, `error`.
-     - Supports `@capacitor/haptics` for native apps, `navigator.vibrate` for Android web, and visual feedback for iOS web.
-
-5. **Type Safety & Build Status:**
-   - `npm run check` (`tsc -b`) completed with exit code 0.
-   - Vitest suite passed 69 test files (424 tests passed).
+1. **AbortController Lifecycle & Race Conditions**:
+   - `src/components/ai/AIChatbot.tsx:615`: `const abortControllerRef = useRef<AbortController | null>(null);`
+   - `src/components/ai/AIChatbot.tsx:662-669`: Unmount cleanup calls `abortControllerRef.current.abort("unmount")`.
+   - `src/components/ai/AIChatbot.tsx:731-739`: Stop button calls `abortControllerRef.current.abort("user_stop")` and sets `setIsTyping(false)`.
+   - `src/components/ai/AIChatbot.tsx:785-812`: When `sendMessage.mutateAsync` resolves, execution proceeds immediately to `setMessages((prev) => [...prev, aiMsg])` without checking `if (controller.signal.aborted) return;`.
+2. **Rate Limit Exponential Backoff & Dynamic Cooldown**:
+   - `api/middleware.ts:8-19`: Backend `errorFormatter` extracts `retryAfterSeconds` from `error.cause.retryAfterSeconds` into `shape.data.retryAfterSeconds`.
+   - `api/middleware.ts:93-98, 115-120`: Sliding window rate limiters (100 req/min) attach `cause: { retryAfterSeconds }`.
+   - `api/chat-router.ts:486-497`: Chat daily quota check calculates seconds until midnight and returns `TOO_MANY_REQUESTS` with `cause: { retryAfterSeconds, isDailyLimit: true }`.
+   - `src/components/ai/AIChatbot.tsx:839`: Frontend hardcodes `setRateLimitCooldown(10)`, completely ignoring the server-supplied `retryAfterSeconds`.
+3. **Network Stall, Timeout & Draft Recovery**:
+   - `src/components/ai/AIChatbot.tsx:778-782`: Client 45s watchdog timer calls `controller.abort("timeout")`.
+   - `src/components/ai/AIChatbot.tsx:842-846`: Catch block removes optimistic message bubble and restores draft via `setInput(messageText)` and `setLastFailedPrompt(messageText)`.
+   - `src/components/ai/AIChatbot.tsx:1215-1233`: Retry banner with `RotateCcw` button appears above composer.
+   - `api/lib/deepseek-client.ts:78-80`: Backend fetch call has 45s timeout guard with `AbortController`.
+4. **Markdown & RTL Stream Rendering**:
+   - `src/components/ai/AIChatbot.tsx:492-599`: `BidiMarkdownRenderer` with `dir="auto"`.
+   - `src/components/ai/AIChatbot.tsx:280, 328-334`: Special regex `^[\d,.]+\s*(?:ج\.م|EGP|LE|\$|€|%)$` is wrapped in `<bdi className="font-semibold text-foreground px-0.5 inline-block">` preventing RTL numeral and currency flip.
+   - `src/components/ai/AIChatbot.tsx:366-372`: Resilient unclosed code block parser handles incomplete markdown chunks gracefully.
+   - `src/components/ai/AIChatbot.tsx:721-728`: `visualViewport` listener handles mobile virtual keyboard layout shifts.
+5. **Action Runtime & Pending Action Cards**:
+   - `src/components/ai/AIChatbot.tsx:1603-1670`: `StructuredArtifactRenderer` for `action_confirmation` artifact with confirming state spinner.
+   - `api/services/action-runtime/index.ts:268-286`: Atomic conditional DB update `WHERE id = actionId AND status = 'pending_confirmation'` provides CAS concurrency control against double executions.
+   - `src/components/ai/AIChatbot.tsx:608`: `actionStatuses` is stored only in local React state, causing historical action cards on reloaded conversations to show active buttons.
 
 ---
 
 ## 2. Logic Chain
 
-1. **Floating Capsule vs. Fixed Sheet:**
-   - *Premise:* Requirement R2 demands an elevated floating Liquid Glass capsule hovering above the Home Indicator.
-   - *Step 1:* Replace `fixed bottom-0 inset-x-0 border-t` with a centered floating capsule container `fixed bottom-0 inset-x-0 flex justify-center pointer-events-none pb-[env(safe-area-inset-bottom,0px)] px-3 mb-2 sm:mb-3` containing an inner `pointer-events-auto w-full max-w-[420px] h-[64px] rounded-full`.
-   - *Step 2:* Apply liquid glass material: `backdrop-filter: blur(24px) saturate(190%)`, `border-white/60` (light) / `border-white/10` (dark) with specular inset luminance rim highlights and dark ambient green glow (`shadow-[0_0_24px_rgba(16,185,129,0.08)]`).
-
-2. **Unified 5-Tab Architecture:**
-   - *Premise:* To enable fluid gliding physics across all 5 tabs (`تسجيل`, `إحصائيات`, `مركز AI`, `تقويم`, `المزيد`), all tabs must exist in a single unified array.
-   - *Step 1:* Consolidate `record`, `stats`, `ai`, `calendar`, and `more` into `NAV_TABS` array.
-   - *Step 2:* Assign ref callbacks `tabElementsRef.current[index] = el` to all 5 items.
-
-3. **Continuous Touch-Slide Drag Physics:**
-   - *Premise:* When a user glides their finger horizontally, the active highlight pill must track their finger and latch the target tab.
-   - *Step 1:* Implement `onTouchStart` / `onTouchMove` / `onTouchEnd` on the capsule container.
-   - *Step 2:* Inside `onTouchMove`, evaluate touch `(clientX, clientY)` against `tabElementsRef.current[i].getBoundingClientRect()`.
-   - *Step 3:* Because bounding rectangles use physical screen pixel coordinates, hit testing works accurately in both RTL and LTR modes without index inversion bugs.
-   - *Step 4:* When the finger moves into a new tab boundary, fire `lightTap()` haptic vibration and update `dragHoverTabId`.
-   - *Step 5:* On `onTouchEnd`, if `dragHoverTabId !== activeTabId`, fire `mediumTap()` and execute the tab navigation / action (`onOpenMenu` for `more`, `navigate('/ai')` for `ai`, and `navigate('/dashboard?tab=...&month=...')` for dashboard tabs).
-
-4. **Spring Animation:**
-   - *Step 1:* Animate the active/preview pill via Framer Motion `layoutId="liquidGlassActivePill"` with spring parameters (`stiffness: 450, damping: 32, mass: 0.55`).
+1. **Step 1 (Abort Signal Propagation)**: Observation 1 shows that `abortControllerRef` is properly created and aborted on unmount, stop generation, new prompt, or conversation switch. However, because `sendMessage.mutateAsync` does not reject when the client controller aborts, execution resumes at line 791 upon completion. Without a guard checking `controller.signal.aborted`, the resolved AI message is inserted into state and invalidates queries even after the user cancelled the generation.
+2. **Step 2 (Rate Limit Desynchronization)**: Observation 2 shows that the backend middleware and chat router accurately calculate exact seconds until rate limit or daily quota reset (`retryAfterSeconds`), but the frontend hardcodes `setRateLimitCooldown(10)`. When a user encounters a rate limit longer than 10 seconds, the client countdown reaches 0 prematurely, prompting the user to send another message and causing an immediate second failure.
+3. **Step 3 (Network Stall Resilience)**: Observation 3 shows that error and timeout recovery reliably protects against data loss by restoring user drafts to the composer and displaying a single-tap retry banner.
+4. **Step 4 (RTL & Number Rendering Stability)**: Observation 4 confirms that BiDi rendering correctly isolates Egyptian Pound numbers and currencies with `<bdi>` tags and prevents markdown parser crashes on partial code blocks.
+5. **Step 5 (Action Concurrency & State Hydration)**: Observation 5 proves that backend execution is safe from race conditions and double-executions via atomic CAS updates, but frontend card buttons do not reflect historical execution statuses across page reloads because `actionStatuses` is not hydrated from the conversation history.
 
 ---
 
 ## 3. Caveats
 
-1. **iOS Safari Web Vibration Limitation:** `navigator.vibrate` is not supported in iOS Safari Web; `useHaptics` provides fallback on web iOS while `@capacitor/haptics` operates fully on native iOS wrappers.
-2. **Page Content Padding Coordination:** When `MobileBottomNav` is transformed into a floating capsule, `pb-nav-safe` in `src/index.css` and route-conditional padding in `src/App.tsx` must be synchronized so content on `/ai` and `/dashboard` scrolls above the floating capsule.
-3. **Investigation Boundary:** As an explorer agent, no source code was directly modified in `src/`. All proposals and replacement blueprints are documented in `survey_nav_gestures.md`.
+- Voice call WebSockets (`/api/voice/live` and `useVoiceCall.ts`) use binary PCM streams via `AudioWorklet` rather than tRPC/SSE text streaming.
+- Chat streaming in the current release is structured request/response over tRPC HTTP rather than chunk-by-chunk SSE streaming.
+- No other caveats.
 
 ---
 
 ## 4. Conclusion
 
-Requirement R2 is fully analyzed and structurally specified:
-1. `MobileBottomNav.tsx` is the single source of truth for the mobile bottom navigation capsule.
-2. Unifying the 5 tabs into a single array with element ref tracking enables continuous touch-slide drag physics (`onTouchStart`, `onTouchMove`, `onTouchEnd`) with bounding rect calculation.
-3. Combining `backdrop-filter: blur(24px) saturate(190%)`, specular rim borders, dark ambient glow, and Framer Motion spring pill transitions achieves the iOS 16+ Liquid Glass experience.
-4. Integrating `lightTap()` upon crossing tab boundaries and `mediumTap()` upon selection release provides crisp tactile feedback.
+The SmartSpend AI interaction architecture is robust, deterministic, and securely protected against duplicate action executions and Arabic RTL layout glitches. To reach production-grade resilience:
+1. Insert a post-await `if (controller.signal.aborted) return;` guard in `AIChatbot.tsx:790` to eliminate abort race conditions.
+2. Extract `error?.data?.retryAfterSeconds` in `AIChatbot.tsx:839` to synchronize the rate limit countdown timer with server reality.
+3. Hydrate historical action confirmation statuses in `getConversation` to disable buttons on previously executed actions upon page reload.
 
 ---
 
 ## 5. Verification Method
 
-To verify the implementation of R2 independently:
-
-1. **Type Safety & Build:**
-   ```bash
-   npm run check
-   npm run build
-   ```
-2. **Test Suites:**
-   ```bash
-   npm run test
-   ```
-3. **Interactive Mobile Gesture Verification (Touch Emulation in Browser/Playwright):**
-   - Emulate mobile touch screen (e.g., iPhone 15 Pro, 393x852).
-   - Press down on `تسجيل` and drag horizontally to `مركز AI` and `المزيد`.
-   - Verify that the active glowing pill glides smoothly with spring dynamics.
-   - Verify that haptic pulses trigger on boundary crossover and releasing finger navigates to the targeted tab.
-   - Verify that the capsule floats cleanly above the Home Indicator bar with translucent Liquid Glass refraction.
+1. **Static Analysis & Type Checking**:
+   - Run `npm run check` across the monorepo to verify full type safety.
+2. **Unit & Integration Testing**:
+   - Run `npm run test` or `npx vitest run api/chat-router.phase0.test.ts api/services/action-runtime/index.test.ts` to verify action runtime and chat router behavior.
+3. **Files to Inspect**:
+   - `src/components/ai/AIChatbot.tsx` (lines 785–850, 835–845, 1603–1670).
+   - `api/chat-router.ts` (lines 485–498, 1091–1136).
+   - `api/services/action-runtime/index.ts` (lines 268–286).

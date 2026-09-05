@@ -10,8 +10,25 @@ import {
   timestamp,
   index,
   uniqueIndex,
+  date,
+  customType,
 } from "drizzle-orm/mysql-core";
 import { sql } from "drizzle-orm";
+
+export const binary32 = customType<{ data: string; driverData: Buffer }>({
+  dataType() {
+    return "binary(32)";
+  },
+  toDriver(val: string): Buffer {
+    return Buffer.from(val, "hex");
+  },
+  fromDriver(val: unknown): string {
+    if (Buffer.isBuffer(val)) {
+      return val.toString("hex");
+    }
+    return String(val);
+  },
+});
 
 // ─── Users (OAuth) ───
 export const users = mysqlTable(
@@ -121,6 +138,16 @@ export const expenses = mysqlTable(
       t.userId,
       t.userType,
       t.clientRequestId,
+    ),
+    index("expenses_covering_rollup_idx").on(
+      t.userId,
+      t.userType,
+      t.businessId,
+      t.date,
+      t.type,
+      t.category,
+      t.subCategory,
+      t.amount,
     ),
   ],
 );
@@ -284,7 +311,8 @@ export const sessions = mysqlTable(
     id: int("id").primaryKey().autoincrement(),
     userId: int("user_id").notNull(),
     userType: varchar("user_type", { length: 50 }).notNull(),
-    token: varchar("token", { length: 500 }).notNull(),
+    token: varchar("token", { length: 500 }),
+    tokenHash: binary32("token_hash"),
     ipAddress: varchar("ip_address", { length: 100 }),
     userAgent: text("user_agent"),
     expiresAt: datetime("expires_at").notNull(),
@@ -293,6 +321,7 @@ export const sessions = mysqlTable(
   (t) => [
     index("sessions_user_idx").on(t.userId, t.userType),
     index("sessions_token_idx").on(t.token),
+    uniqueIndex("sessions_token_hash_idx").on(t.tokenHash),
     index("sessions_expires_idx").on(t.expiresAt),
   ],
 );
@@ -1227,3 +1256,86 @@ export const userCorrectionRules = mysqlTable(
     index("ucr_user_active_idx").on(t.userId, t.userType, t.isActive),
   ],
 );
+
+// ─── Expense Details (Side Table for Hot Table Diet - §3.9) ───
+export const expenseDetails = mysqlTable(
+  "expense_details",
+  {
+    expenseId: int("expense_id").primaryKey(),
+    rawText: text("raw_text"),
+    parsedMetadata: json("parsed_metadata"),
+    createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  },
+);
+
+// ─── Expense Daily Rollups (Day-grain Aggregates - §3.2) ───
+export const expenseDailyRollups = mysqlTable(
+  "expense_daily_rollups",
+  {
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    businessId: int("business_id").notNull().default(0),
+    day: date("day", { mode: "string" }).notNull(),
+    income: decimal("income", { precision: 14, scale: 2 }).notNull().default("0.00"),
+    expense: decimal("expense", { precision: 14, scale: 2 }).notNull().default("0.00"),
+    transfer: decimal("transfer", { precision: 14, scale: 2 }).notNull().default("0.00"),
+    investment: decimal("investment", { precision: 14, scale: 2 }).notNull().default("0.00"),
+    automatedIncome: decimal("automated_income", { precision: 14, scale: 2 }).notNull().default("0.00"),
+    automatedExpense: decimal("automated_expense", { precision: 14, scale: 2 }).notNull().default("0.00"),
+    txnCount: int("txn_count").notNull().default(0),
+    updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    uniqueIndex("expense_daily_rollups_user_day_idx").on(
+      t.userId,
+      t.userType,
+      t.businessId,
+      t.day,
+    ),
+    index("expense_daily_rollups_day_idx").on(t.day),
+  ],
+);
+
+// ─── AI Cost Monthly Rollup (§3.7) ───
+export const aiCostMonthly = mysqlTable(
+  "ai_cost_monthly",
+  {
+    userId: int("user_id").notNull(),
+    userType: varchar("user_type", { length: 50 }).notNull(),
+    billingPeriod: varchar("billing_period", { length: 7 }).notNull(), // "YYYY-MM"
+    providerSlug: varchar("provider_slug", { length: 50 }).notNull(),
+    modelId: varchar("model_id", { length: 200 }).notNull(),
+    totalTokens: int("total_tokens").notNull().default(0),
+    promptTokens: int("prompt_tokens").notNull().default(0),
+    completionTokens: int("completion_tokens").notNull().default(0),
+    costUsd: decimal("cost_usd", { precision: 12, scale: 8 }).notNull().default("0.00000000"),
+    costEgp: decimal("cost_egp", { precision: 12, scale: 6 }).notNull().default("0.000000"),
+    callCount: int("call_count").notNull().default(0),
+    updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    uniqueIndex("ai_cost_monthly_idx").on(
+      t.userId,
+      t.userType,
+      t.billingPeriod,
+      t.providerSlug,
+      t.modelId,
+    ),
+  ],
+);
+
+// ─── Ad Stats Daily Rollup (§3.7) ───
+export const adStatsDaily = mysqlTable(
+  "ad_stats_daily",
+  {
+    adId: int("ad_id").notNull(),
+    day: date("day", { mode: "string" }).notNull(),
+    clicks: int("clicks").notNull().default(0),
+    impressions: int("impressions").notNull().default(0),
+    updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`),
+  },
+  (t) => [
+    uniqueIndex("ad_stats_daily_idx").on(t.adId, t.day),
+  ],
+);
+

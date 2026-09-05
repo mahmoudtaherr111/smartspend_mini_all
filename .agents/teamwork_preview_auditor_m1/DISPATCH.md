@@ -1,21 +1,18 @@
-## 2026-08-25T09:30:12Z
-You are teamwork_preview_auditor_m1.
-Your working directory is: E:\smartspend_V1_fixed\.agents\teamwork_preview_auditor_m1
+# Dispatch — Forensic Auditor
 
-MANDATORY: Read E:\smartspend_V1_fixed\.agents\ORIGINAL_REQUEST.md before starting your audit.
-Read E:\smartspend_V1_fixed\PROJECT.md.
-Read the Worker handoff report: E:\smartspend_V1_fixed\.agents\teamwork_preview_worker_m1\handoff.md.
+## 2026-08-30T11:36:21Z
 
-Objective: Forensic Integrity Audit of Milestone 1 (Requirement R1: True Edge-to-Edge Standalone PWA).
+You are the Forensic Integrity Auditor (teamwork_preview_auditor).
+Working Directory: e:/smartspend_V1_fixed/.agents/teamwork_preview_auditor_m1/
+Authoritative Request: e:/smartspend_V1_fixed/.agents/ORIGINAL_REQUEST.md (READ THIS FIRST).
+Master Plan: e:/smartspend_V1_fixed/.agents/PROJECT.md
+Audit Doc: e:/smartspend_V1_fixed/docs/LOGICAL_EDGE_CASES_AUDIT.md
 
-Integrity Forensics Checks:
-1. Static Analysis: Inspect all git diffs / file modifications made by Worker M1 (`index.html`, `vite.config.ts`, `src/index.css`, `src/App.tsx`, `src/components/layout/PullToRefreshWrapper.tsx`, `Landing.tsx`, `Login.tsx`, `Privacy.tsx`, `Terms.tsx`, `Admin.tsx`, `Sidebar.tsx`).
-2. Verify that all implementations are GENUINE:
-   - Check that no test results, assertions, or viewport values are hardcoded or bypassed.
-   - Check that safe area utilities use genuine CSS `env(safe-area-inset-*)` functions.
-   - Check that `App.tsx` uses genuine route matching logic.
-   - Check that manifest and HTML meta tags are correctly structured.
-3. Verify type-check (`npm run check`) and test runner integrity.
-4. Issue a binary verdict: CLEAN or INTEGRITY VIOLATION with full forensic evidence.
-5. Write your handoff report to: `E:\smartspend_V1_fixed\.agents\teamwork_preview_auditor_m1\handoff.md`.
-6. Send a message to parent with your verdict and report path.
+Forensic Audit Objectives:
+1. Perform exhaustive forensic integrity analysis across all modified files in the codebase:
+   - Verify that all implementations are genuine with authentic business and algorithmic logic.
+   - Verify that there are NO hardcoded test results, fake mocks in production code, dummy facades, or shortcuts bypassing core logic.
+   - Verify that all edge-case protections (voice state machine, AI stream aborts, financial idempotency, PWA viewport, auth multi-tab sync) are authentic.
+   - Verify `docs/LOGICAL_EDGE_CASES_AUDIT.md` represents a true, accurate, and comprehensive audit of the system.
+2. Run static analysis and verify test suites via `npm run check` and `npm run test`.
+3. Provide your binary audit verdict: CLEAN or INTEGRITY VIOLATION in `handoff.md` and send a message when done.

@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Check, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 // Arabic question texts matching the new adaptive-question-engine
 const questionMeta: Record<
@@ -110,6 +111,7 @@ function initValue(type: string | undefined) {
 }
 
 export function OnboardingCard() {
+  const { user } = useAuth();
   const utils = trpc.useUtils();
   const [show, setShow] = useState(false);
   const [value, setValue] = useState<any>("");
@@ -118,6 +120,9 @@ export function OnboardingCard() {
   const isUsingLocal = useRef(false);
   // CRITICAL: Accumulate ALL answers locally so we never lose them even if DB save fails
   const accumulatedAnswers = useRef<Record<string, any>>({});
+  const storageScope = user ? `${user.type}_${user.id}` : "anonymous";
+  const answersStorageKey = `onboarding_answers_${storageScope}`;
+  const dismissedStorageKey = `onboarding_last_dismissed_${storageScope}`;
 
   const profile = trpc.profile.getSmartProfile.useQuery(undefined, {
     retry: false,
@@ -146,8 +151,8 @@ export function OnboardingCard() {
         isUsingLocal.current = false;
         accumulatedAnswers.current = {};
         try {
-          localStorage.removeItem(`onboarding_answers_${profile.data?.basicInfo?.name || "user"}`);
-          localStorage.removeItem("onboarding_last_dismissed");
+          localStorage.removeItem(answersStorageKey);
+          localStorage.removeItem(dismissedStorageKey);
         } catch (e) {}
       } else {
         // Use local question state to avoid race condition with server refetch
@@ -174,7 +179,7 @@ export function OnboardingCard() {
       
       // Local Storage fallback to reconstruct lost DB state
       try {
-        const local = localStorage.getItem(`onboarding_answers_${profile.data.basicInfo?.name || "user"}`);
+        const local = localStorage.getItem(answersStorageKey);
         if (local) {
           const parsed = JSON.parse(local);
           accumulatedAnswers.current = { ...parsed, ...accumulatedAnswers.current };
@@ -188,7 +193,7 @@ export function OnboardingCard() {
     if (Object.keys(accumulatedAnswers.current).length > 0 && profile.data) {
       try {
         localStorage.setItem(
-          `onboarding_answers_${profile.data.basicInfo?.name || "user"}`,
+          answersStorageKey,
           JSON.stringify(accumulatedAnswers.current)
         );
       } catch (e) {}
@@ -232,7 +237,7 @@ export function OnboardingCard() {
       
       // Check local dismiss cooldown (CRITICAL: because server doesn't save dismissals)
       try {
-        const localDismissed = localStorage.getItem('onboarding_last_dismissed');
+        const localDismissed = localStorage.getItem(dismissedStorageKey);
         if (localDismissed) {
           const hoursSinceDismiss = (now - parseInt(localDismissed, 10)) / (1000 * 3600);
           if (hoursSinceDismiss < 48) inCooldown = true;
@@ -480,7 +485,7 @@ export function OnboardingCard() {
               className="shrink-0 -mt-1"
               onClick={() => {
                 setShow(false);
-                try { localStorage.setItem('onboarding_last_dismissed', Date.now().toString()); } catch(e) {}
+                try { localStorage.setItem(dismissedStorageKey, Date.now().toString()); } catch(e) {}
                 dismissMutation.mutate();
               }}
             >
@@ -535,7 +540,7 @@ export function OnboardingCard() {
               variant="ghost"
               onClick={() => {
                 setShow(false);
-                try { localStorage.setItem('onboarding_last_dismissed', Date.now().toString()); } catch(e) {}
+                try { localStorage.setItem(dismissedStorageKey, Date.now().toString()); } catch(e) {}
                 dismissMutation.mutate();
               }}
               className="sm:w-24 h-11 text-sm text-muted-foreground"

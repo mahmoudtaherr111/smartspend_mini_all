@@ -1,12 +1,16 @@
-# Progress Tracker
+# Progress Tracking - Explorer 2
 
-Last visited: 2026-08-25T10:04:00Z
+**Last visited**: 2026-08-30T00:57:00Z
+**Status**: Investigation Complete
 
-- [x] Initialized workspace and tracking files (DISPATCH.md, BRIEFING.md, progress.md)
-- [x] Read ORIGINAL_REQUEST.md & AGENTS.md
-- [x] Search and analyze bottom navigation components & tabs
-- [x] Analyze Liquid Glass CSS & Tailwind styling
-- [x] Analyze touch & pointer gestures / framer-motion physics
-- [x] Analyze haptic feedback implementation
-- [x] Synthesize findings into `survey_nav_gestures.md`
-- [x] Write 5-component `handoff.md` and notify parent
+## Milestones
+- [x] Initialized workspace and briefing
+- [x] Locate and inspect target files across frontend and backend
+- [x] Pillar 1: AbortController lifecycle analysis
+- [x] Pillar 2: Rate limit & quota error handling (429 / RESOURCE_EXHAUSTED)
+- [x] Pillar 3: Network stall & timeout recovery (SSE / streaming drops)
+- [x] Pillar 4: Markdown & RTL stream rendering
+- [x] Pillar 5: Action runtime & pending action cards
+- [x] Synthesize findings in `report.md`
+- [x] Produce `handoff.md`
+- [x] Notify parent agent

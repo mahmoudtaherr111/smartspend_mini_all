@@ -1,13 +1,24 @@
-## 2026-08-25T08:54:45Z
-Objective: Survey the codebase for Requirement R1 (True Edge-to-Edge Standalone PWA on iOS & Android).
-Scope of Investigation:
-1. Viewport & display configuration: `index.html`, meta tags (`viewport`, `viewport-fit=cover`, `mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style: black-translucent`, theme colors).
-2. PWA Manifest (`manifest.json` / `manifest.webmanifest`, icons, display: standalone, background_color, theme_color).
-3. Root styling & CSS layout: `src/index.css`, Tailwind configuration, root containers, body/html styling for `100dvh` / `100vh`, mesh background styling and continuous flow behind cutouts (Dynamic Island / Notch and Home Indicator).
-4. Safe area insets handling: inspect how `env(safe-area-inset-top)` and `env(safe-area-inset-bottom)` are currently handled across headers, main views, and bottom bars. Identify any places where content clips or where artificial black letterbox bands or white gaps exist.
-5. Provide concrete file paths, line numbers, current implementations, and recommended architectural enhancements to achieve 100% true full-bleed edge-to-edge layout.
+## 2026-08-30T00:44:09Z
 
-Output requirements:
-- Write your detailed analysis to: `E:\smartspend_V1_fixed\.agents\teamwork_preview_explorer_survey_1\survey_pwa_shell.md`
-- Write your final handoff report to: `E:\smartspend_V1_fixed\.agents\teamwork_preview_explorer_survey_1\handoff.md`
-- Send a message back to parent when complete referencing your report paths.
+You are Explorer 1: Voice & Audio Recording State Machine Specialist.
+Working Directory: e:/smartspend_V1_fixed/.agents/teamwork_preview_explorer_survey_1/
+Authoritative Request: e:/smartspend_V1_fixed/.agents/ORIGINAL_REQUEST.md (READ THIS FIRST).
+
+Investigate the audio and voice recording subsystem in SmartSpend AI:
+1. Target files:
+   - `src/hooks/useVoiceRecorder.ts` (or any voice hooks)
+   - `src/components/expenses/ExpenseForm.tsx`
+   - `src/components/ai/AIVoiceCall.tsx`
+   - `src/lib/` (audio visualizer, voice utilities)
+   - `api/voice-router.ts`, `api/services/voice-call-service.ts`
+
+2. Detailed Investigation Matrix:
+   - Zero-length / silent audio handling (under 0.5s or empty blobs: does it error gracefully without calling backend or hanging?).
+   - Permission denial & dismissal states (NotAllowedError, NotFoundError: does UI show actionable Arabic error, reset state, and prevent stuck loading?).
+   - Backgrounding / Tab switch (`visibilitychange`, `pagehide`, `beforeunload`: are tracks stopped, AudioContext closed, timers reset?).
+   - Codec fallback hierarchy (Safari MP4/AAC, Chrome WebM/Opus, OGG, WAV).
+   - Rapid toggle & race condition prevention (rapid start/stop, aborting while permission prompt is open).
+   - Network failure & timeout handling during audio upload/transcription (abort controller, timeout, eliminate infinite spinner).
+
+3. Create your working directory if needed, write `report.md` and `handoff.md` with line-by-line evidence, root causes, and concrete remediation recommendations.
+Send a completion message when done.

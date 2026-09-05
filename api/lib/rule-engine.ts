@@ -51,6 +51,15 @@ export interface ParsedTransaction {
    * it by testing for the magic values 100 and 98, which is exactly what this replaces.
    */
   evidence?: Evidence;
+  /** Request-local event identity; category changes must not change amount ownership. */
+  sourceEventId?: number;
+  /** Unresolved facts that a category-only resolver cannot clear. */
+  reviewReasons?: string[];
+  calibration?: {
+    signature: string;
+    support: number;
+    probability: number;
+  };
 }
 
 export interface ClassificationProfileContext {

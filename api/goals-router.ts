@@ -22,6 +22,7 @@ import {
 } from "./services/user-profile-service";
 import { invalidateFinanceUserCache } from "./services/finance-semantic-layer";
 import { businessMonthRange } from "./lib/app-time";
+import { ExpenseInputLimits } from "../contracts/constants";
 
 const FREE_DESCRIPTION_MAX = 120;
 const FREE_GOALS_LIMIT = 3;
@@ -68,25 +69,15 @@ async function trackGoalTokens(
     userId,
     userType,
     channel: "goal",
-    model,
     tokens,
+    model,
   });
-}
-
-function parseSafeDate(dateStr?: string | null): Date | null {
-  if (!dateStr) return null;
-  const d = new Date(dateStr);
-  return isNaN(d.getTime()) ? null : d;
 }
 
 export const goalsRouter = router({
   list: authedProcedure.query(async ({ ctx }) => {
-    const isPro =
-      ctx.user.plan === "pro" ||
-      ctx.user.plan === "ultra" ||
-      ctx.user.role === "admin";
     try {
-      const rows = await db
+      const goals = await db
         .select()
         .from(financialGoals)
         .where(
@@ -95,21 +86,28 @@ export const goalsRouter = router({
             eq(financialGoals.userType, ctx.user.type),
           ),
         )
-        .orderBy(desc(financialGoals.createdAt))
-        .limit(20);
+        .orderBy(desc(financialGoals.createdAt));
+
+      const isPro =
+        ctx.user.plan === "pro" ||
+        ctx.user.plan === "ultra" ||
+        ctx.user.role === "admin";
+
       return {
-        goals: rows,
+        goals,
         isPro,
-        proUpsell: isPro ? null : PRO_UPSELL,
-        dbReady: true as const,
+        upsell: isPro ? null : PRO_UPSELL,
       };
     } catch (err) {
       if (isMissingGoalsTable(err)) {
+        const isPro =
+          ctx.user.plan === "pro" ||
+          ctx.user.plan === "ultra" ||
+          ctx.user.role === "admin";
         return {
           goals: [],
           isPro,
-          proUpsell: isPro ? null : PRO_UPSELL,
-          dbReady: false as const,
+          upsell: isPro ? null : PRO_UPSELL,
         };
       }
       throw err;
@@ -119,10 +117,14 @@ export const goalsRouter = router({
   create: authedProcedure
     .input(
       z.object({
-        title: z.string().min(2).max(200),
-        description: z.string().max(2000).optional(),
-        targetAmount: z.number().positive().optional(),
-        targetDate: z.string().optional(),
+        title: z.string().min(1).max(200),
+        description: z.string().max(FREE_DESCRIPTION_MAX).optional(),
+        targetAmount: z
+          .number()
+          .positive()
+          .max(ExpenseInputLimits.amountMax)
+          .optional(),
+        targetDate: z.string().or(z.date()).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -131,45 +133,41 @@ export const goalsRouter = router({
         ctx.user.plan === "ultra" ||
         ctx.user.role === "admin";
 
-      const existing = await db
-        .select({ count: sql<number>`COUNT(*)` })
-        .from(financialGoals)
-        .where(
-          and(
-            eq(financialGoals.userId, ctx.user.id),
-            eq(financialGoals.userType, ctx.user.type),
-            eq(financialGoals.status, "active"),
-          ),
-        );
-      const count = Number(existing[0]?.count || 0);
-      if (!isPro && count >= FREE_GOALS_LIMIT) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: `الخطة المجانية تدعم ${FREE_GOALS_LIMIT} أهداف نشطة. رقّي لـ Pro لأهداف غير محدودة مع تحليل ذكي.`,
-        });
+      if (!isPro) {
+        const existing = await db
+          .select({ count: sql<number>`COUNT(*)` })
+          .from(financialGoals)
+          .where(
+            and(
+              eq(financialGoals.userId, ctx.user.id),
+              eq(financialGoals.userType, ctx.user.type),
+              eq(financialGoals.status, "active"),
+            ),
+          );
+        const count = Number(existing[0]?.count || 0);
+        if (count >= FREE_GOALS_LIMIT) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: `يمكنك إنشاء حتى ${FREE_GOALS_LIMIT} أهداف نشطة في الخطة المجانية. رقّي لـ Pro لإنشاء أهداف غير محدودة.`,
+          });
+        }
       }
 
-      let description = input.description?.trim() || "";
-      if (!isPro && description.length > FREE_DESCRIPTION_MAX) {
-        description = description.slice(0, FREE_DESCRIPTION_MAX);
-      }
-
-      await db.insert(financialGoals).values({
+      const [inserted] = await db.insert(financialGoals).values({
         userId: ctx.user.id,
         userType: ctx.user.type,
         title: input.title.trim(),
-        description: description || null,
-        targetAmount: input.targetAmount?.toString(),
-        targetDate: parseSafeDate(input.targetDate),
+        description: input.description?.trim() || null,
+        targetAmount: input.targetAmount ? String(input.targetAmount) : null,
+        targetDate: input.targetDate ? new Date(input.targetDate) : null,
         status: "active",
       });
+
       await invalidateFinanceUserCache(ctx.user.id, ctx.user.type);
 
       return {
+        id: Number((inserted as any)?.insertId || 0),
         success: true,
-        proUpsell: isPro ? null : PRO_UPSELL,
-        descriptionTruncated:
-          !isPro && (input.description?.length || 0) > FREE_DESCRIPTION_MAX,
       };
     }),
 
@@ -189,7 +187,10 @@ export const goalsRouter = router({
         .limit(1);
 
       if (!goal) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "الهدف غير موجود" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "الهدف غير موجود",
+        });
       }
 
       const profile = await getSmartProfile(ctx.user.id, ctx.user.type);
@@ -299,7 +300,13 @@ export const goalsRouter = router({
         await tx
           .update(userBudgets)
           .set({ linkedGoalId: null })
-          .where(and(eq(userBudgets.linkedGoalId, input.goalId), eq(userBudgets.userId, ctx.user.id), eq(userBudgets.userType, ctx.user.type)));
+          .where(
+            and(
+              eq(userBudgets.linkedGoalId, input.goalId),
+              eq(userBudgets.userId, ctx.user.id),
+              eq(userBudgets.userType, ctx.user.type),
+            ),
+          );
         await tx
           .delete(financialGoals)
           .where(

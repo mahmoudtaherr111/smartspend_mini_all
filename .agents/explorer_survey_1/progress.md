@@ -1,18 +1,16 @@
-# Progress - Explorer Survey 1
+# Progress — Explorer 1 (AdaptiveDialog & Bottom Sheet Architecture)
 
-**Task**: Mobile Dashboard & AI Recording Input Investigation
-**Status**: COMPLETED
-**Last visited**: 2026-08-26T02:04:30Z
+- **Status**: IN_PROGRESS
+- **Last visited**: 2026-08-30T13:11:00Z
+- **Current Step**: Beginning code search and architectural investigation
 
-- [x] Initialized workspace and briefing
-- [x] Examined `src/components/expenses/ExpenseForm.tsx` in its entirety (1963 lines)
-- [x] Cataloged AI discovery banner, status indicator, voice recording pipeline, media recorder, waveform animations, textarea, and action bar
-- [x] Examined `src/components/expenses/ExpenseForm.quick-save.test.ts` to identify strict regression invariants
-- [x] Analyzed `src/pages/Home.tsx`, StreakCounter, SummaryChips, and mobile viewport fold metrics
-- [x] Verified baseline with `npm run check` (0 errors) and `npm run test` (73 test files passed, 458 tests passed)
-- [x] Designed Framer-Motion Morphing Banner architecture
-- [x] Designed Contextual Dynamic Recording State architecture
-- [x] Designed Thumb-Zone Action Bar Elevation & Viewport Optimization plan
-- [x] Written comprehensive `report.md` at `E:\smartspend_V1_fixed\.agents\explorer_survey_1\report.md`
-- [x] Written 5-component `handoff.md` at `E:\smartspend_V1_fixed\.agents\explorer_survey_1\handoff.md`
-- [x] Ready to send completion message to parent orchestrator
+## Steps
+1. [x] Initialize environment (DISPATCH.md, BRIEFING.md, progress.md)
+2. [ ] Investigate existing dialogs, sheets, vaul drawer, Radix dialogs across `src/components/`, `src/pages/`, `src/hooks/`
+3. [ ] Investigate responsive breakpoint detection hooks (`useMediaQuery`, Tailwind screens, window width)
+4. [ ] Investigate hardware/software BackButtonManager / Capacitor App back button handling & modal stacking order
+5. [ ] Investigate keyboard collision, input focus preservation, and scroll trapping in drawers/dialogs on iOS/Android
+6. [ ] Survey all existing modal dialog call sites in the application
+7. [ ] Design comprehensive architectural blueprint for polymorphic AdaptiveDialog
+8. [ ] Generate `survey_report.md` and `handoff.md`
+9. [ ] Send message to orchestrator

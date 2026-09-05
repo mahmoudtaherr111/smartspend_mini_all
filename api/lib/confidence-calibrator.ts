@@ -21,6 +21,14 @@ export interface CalibrationOutcome {
   calibrated: number;
   /** How many fell through on raw score because no resolver recorded provenance. */
   uncalibrated: number;
+  /**
+   * Items whose evidence bucket has NO observed data, so the probability written back
+   * is the corpus prior rather than a measurement of this path.
+   *
+   * The decision layer needs this separately from the number itself: a 95 we measured
+   * and a 95 we inherited from the prior are the same value and not the same claim.
+   */
+  unpriced: number;
 }
 
 /** Marker so a second pass cannot recalibrate an already-calibrated item. */
@@ -29,20 +37,23 @@ const CALIBRATED_FLAG = "calibrated";
 export function applyCalibration(items: ParsedTransaction[]): CalibrationOutcome {
   let calibrated = 0;
   let uncalibrated = 0;
+  let unpriced = 0;
 
   const out = items.map((item) => {
     const evidence = item.evidence as Evidence | undefined;
     if (!evidence) {
       uncalibrated++;
+      unpriced++;
       return item;
     }
 
-    // Calibration runs once per segment and once over the finished result. Without this
-    // guard the second pass would overwrite rawStrength with the already-calibrated
-    // value, destroying the record of what the resolver originally claimed — the exact
-    // number the reliability table is built from.
-    if ((item.ambiguityFlags || []).some((f) => f.startsWith(`${CALIBRATED_FLAG}:`))) {
+    // A marker alone is insufficient: the category/evidence can change after the
+    // first pass. Bind the estimate to the actual answer and calibration version.
+    const signature = JSON.stringify([CONFIDENCE_CALIBRATION.version, item.amount,
+      item.category, item.subCategory, item.type, item.currency, evidence]);
+    if (item.calibration?.signature === signature) {
       calibrated++;
+      if (item.calibration.support === 0) unpriced++;
       return item;
     }
 
@@ -51,17 +62,19 @@ export function applyCalibration(items: ParsedTransaction[]): CalibrationOutcome
       CONFIDENCE_CALIBRATION,
     );
     calibrated++;
+    if (result.support === 0) unpriced++;
 
     return {
       ...item,
       confidence: Math.round(result.probability * 100),
-      evidence: { ...evidence, rawStrength: item.confidence },
+      evidence,
+      calibration: { signature, support: result.support, probability: result.probability },
       ambiguityFlags: [
-        ...(item.ambiguityFlags || []),
+        ...(item.ambiguityFlags || []).filter((flag) => !flag.startsWith(`${CALIBRATED_FLAG}:`)),
         `${CALIBRATED_FLAG}:${result.bucket}:n=${result.support}`,
       ],
     };
   });
 
-  return { items: out, calibrated, uncalibrated };
+  return { items: out, calibrated, uncalibrated, unpriced };
 }

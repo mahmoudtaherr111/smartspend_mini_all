@@ -1,20 +1,16 @@
-## 2026-08-25T04:43:44Z
-Mission: Resolve the 5 benchmark unit test assertion failures identified in Challenger 2 report:
+## 2026-08-30T11:49:05Z
+You are Worker: Test Polisher & Remediation Specialist.
+Working Directory: e:/smartspend_V1_fixed/.agents/worker_test_polisher_1/
+Authoritative Request: e:/smartspend_V1_fixed/.agents/ORIGINAL_REQUEST.md (READ THIS FIRST).
 
-Specific issues to fix:
-1. Unknown Person Batched Clarification Formatting in `api/lib/smart-pipeline.ts`:
-   - In `smart-pipeline.ts`, when multiple unknown persons are identified in a transaction/batch (e.g. `["خالد", "محمود"]` or `["مروان", "علاء"]`), format the batched clarification question by joining the unknown names with ` و ` (e.g. `"مين خالد و محمود؟ (أحد الأقارب، الأصدقاء، أو العمل؟)"`) rather than overwriting with only the single last name. This will fix `classification-golden.test.ts:376` and `smart-pipeline.test.ts:76`.
-2. Utility Bill Pattern in `api/lib/rule-engine.ts`:
-   - Ensure `"فاتورة المياه"` / `"فاتورة مية"` is matched to `"فواتير"` (or `"فواتير / مرافق"`) before generic transfer patterns, fixing `comprehensive-classification.test.ts:381`.
-3. Barber / Grooming Keyword in `api/lib/rule-engine.ts` / `api/lib/taxonomy-adapter.ts`:
-   - Ensure `"حلاق"`, `"كوافير"`, `"صالون"` resolves to `category: "تسوق"`, `subCategory: "عناية شخصية"`, fixing `comprehensive-classification.test.ts:525`.
-4. Inline Relationship Category Resolution:
-   - Ensure `"أخويا"` sets category to `"العائلة"`, fixing `comprehensive-classification.test.ts:252`.
+MANDATORY INTEGRITY WARNING:
+DO NOT CHEAT. All implementations must be genuine. DO NOT hardcode test results, create dummy/facade implementations, or circumvent the intended task. A teamwork_preview_auditor will independently verify your work. Integrity violations WILL be detected and your work WILL be rejected.
 
-Verification:
-- Run `npm test` to verify all 72 test suites pass with 100% success.
-- Run `npm run check` to verify 0 TypeScript compiler errors.
+FORENSIC AUDIT FAILURE REMEDIATION:
+The Forensic Integrity Auditor flagged that `tests/touch-physics-active-press.test.ts` contains React JSX (`<Button ...>`) but uses the `.ts` extension, causing an esbuild JSX transform error when running `npm run test`.
 
-Output:
-Write a comprehensive handoff report to E:\smartspend_V1_fixed\.agents\worker_test_polisher_1\handoff.md.
-Send a completion message back to parent when finished.
+Assigned Tasks:
+1. Rename or fix `tests/touch-physics-active-press.test.ts` to `tests/touch-physics-active-press.test.tsx` so that React JSX transforms properly.
+2. Run `npm run check` (`tsc -b`) to verify 0 type errors.
+3. Run `npm run test` (`vitest run`) to verify that all test suites execute cleanly and the test runner exits with code 0.
+4. Write your completion report in `e:/smartspend_V1_fixed/.agents/worker_test_polisher_1/handoff.md` and send a message when done.

@@ -15,7 +15,7 @@ import {
   pushSubscriptions,
   userContacts,
 } from "../db/schema";
-import { eq, and, gte, lte, desc, sql, isNotNull } from "drizzle-orm";
+import { eq, and, gte, lte, desc, sql, isNotNull, like } from "drizzle-orm";
 
 import { randomBytes } from "crypto";
 import {
@@ -52,7 +52,7 @@ function monthRange(month: string) {
   return { start, end };
 }
 
-async function refreshMonthlyInferences(
+export async function refreshMonthlyInferences(
   userId: number,
   userType: string,
   month: string,
@@ -526,6 +526,30 @@ export const profileRouter = router({
       return { success: true };
     }),
 
+  sendBiometricPromptNotification: authedProcedure
+    .mutation(async ({ ctx }) => {
+      const existing = await db.select()
+        .from(inAppNotifications)
+        .where(and(
+          eq(inAppNotifications.userId, ctx.user.id as number),
+          eq(inAppNotifications.userType, ctx.user.type),
+          like(inAppNotifications.actionUrl, "%passkeys%")
+        ))
+        .limit(1);
+
+      if (existing.length === 0) {
+        await db.insert(inAppNotifications).values({
+          userId: ctx.user.id as number,
+          userType: ctx.user.type,
+          title: "تفعيل الدخول السريع بالبصمة ⚡",
+          body: "احمِ حسابك وسجل دخولك بلمسة واحدة باستخدام Face ID أو بصمة الأصبع بدون الحاجة لكلمة سر.",
+          actionUrl: "/settings?tab=passkeys&highlight=1",
+          isRead: false,
+        });
+      }
+      return { success: true };
+    }),
+
   // ─── People Management (People Hub) ───
 
   listContacts: authedProcedure
@@ -645,6 +669,23 @@ export const profileRouter = router({
       isSilenced: z.boolean().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
+      const [existing] = await db
+        .select({ id: userContacts.id })
+        .from(userContacts)
+        .where(and(
+          eq(userContacts.id, input.id),
+          eq(userContacts.userId, ctx.user.id as number),
+          eq(userContacts.userType, ctx.user.type),
+        ))
+        .limit(1);
+
+      if (!existing) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "جهة الاتصال غير موجودة",
+        });
+      }
+
       const { id, ...updates } = input;
       const cleanUpdates = Object.fromEntries(
         Object.entries(updates).filter(([, v]) => v !== undefined),
@@ -677,6 +718,13 @@ export const profileRouter = router({
           eq(userContacts.userId, ctx.user.id as number),
           eq(userContacts.userType, ctx.user.type),
         ));
+
+      if (!contactToDelete) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "جهة الاتصال غير موجودة",
+        });
+      }
 
       if (contactToDelete?.name) {
         try {
@@ -769,7 +817,7 @@ export const profileRouter = router({
       const secondary = contacts.find(c => c.id === input.secondaryId);
 
       if (!primary || !secondary) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "شخص غير موجود" });
+        throw new TRPCError({ code: "NOT_FOUND", message: "جهة الاتصال غير موجودة" });
       }
 
       if (secondary.name) {

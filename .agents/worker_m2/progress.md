@@ -1,13 +1,12 @@
-# Progress Log - Worker M2
+# Progress — Worker M2: Micro-Haptics Engine & Touch Physics
 
-Last visited: 2026-08-26T02:27:00Z
+Last visited: 2026-08-30T02:11:00Z
 
 ## Status
 - [x] Initialized workspace and briefing
-- [x] Reviewed context, survey report, and existing ExpenseForm.tsx & test files
-- [x] Designed implementation for Banner, Recording Pill, Thumb-zone Textarea & Action Bar
-- [x] Applied changes to `src/components/expenses/ExpenseForm.tsx`
-- [x] Ran TypeScript typecheck (`npm run check`) - PASSED (0 errors)
-- [x] Ran Vitest test suite (`npm run test`) - PASSED (73 files, 458 tests passed)
-- [x] Documented implementation report and 5-component handoff report
-- [x] Sent completion message to parent orchestrator
+- [x] Phase 1: Review existing `useHaptics.ts`, `button.tsx`, `index.css`, `3d-effects.css`, `switch.tsx`, `tabs.tsx`, `slider.tsx`, `toggle.tsx`, `toggle-group.tsx`, `PullToRefreshWrapper.tsx`, `RecentExpenses.tsx`
+- [x] Phase 2: Implement full 7-tier `useHaptics.ts` + session methods + web/native fallbacks & unit tests in `src/hooks/useHaptics.test.ts`
+- [x] Phase 3: Refine 0-40ms down, 250ms spring up button physics in `index.css`, `3d-effects.css`, and `button.tsx`
+- [x] Phase 4: Wire haptics into Switch, TabsTrigger, Slider, Toggle, ToggleGroup, PullToRefreshWrapper, RecentExpenses
+- [x] Phase 5: Run `npm run check` and `npm run test` (0 type errors, 101/101 test files passed, 812 tests passed)
+- [x] Phase 6: Write handoff report and send completion message to parent

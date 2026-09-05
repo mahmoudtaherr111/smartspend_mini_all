@@ -1,41 +1,43 @@
 import { TRPCError } from "@trpc/server";
-
-type Bucket = { count: number; resetAt: number };
+import { executeSlidingWindowRateLimit } from "./redis-client";
 
 export type RateLimiter = {
-  hit: (key: string, message?: string) => void;
+  hit: (key: string, message?: string) => Promise<void> | void;
 };
 
-/** Fixed-window counter rate limiter (in-memory; reset on process restart). */
+/**
+ * Sliding-window rate limiter (Decision 5 / P2).
+ * Uses Redis Lua script for distributed multi-process atomic enforcement,
+ * with an in-memory sliding-window fallback for single-process/testing.
+ */
 export function createRateLimiter(max: number, windowMs: number): RateLimiter {
-  const map = new Map<string, Bucket>();
+  const inMemoryWindows = new Map<string, number[]>();
 
-  // Periodically clean up expired keys to prevent memory leaks
-  const interval = setInterval(() => {
+  function localCheck(key: string, message: string) {
     const now = Date.now();
-    for (const [key, limit] of map) {
-      if (now > limit.resetAt) {
-        map.delete(key);
-      }
+    const clearBefore = now - windowMs;
+    const timestamps = (inMemoryWindows.get(key) || []).filter((ts) => ts > clearBefore);
+    if (timestamps.length >= max) {
+      throw new TRPCError({ code: "TOO_MANY_REQUESTS", message });
     }
-  }, Math.max(windowMs, 5 * 60 * 1000));
-  
-  if (interval.unref) interval.unref();
+    timestamps.push(now);
+    inMemoryWindows.set(key, timestamps);
+  }
 
   return {
     hit(key: string, message = "طلبات كتير جداً من نفس المصدر. جرب بعد شوية.") {
-      const now = Date.now();
-      const limit = map.get(key);
+      localCheck(key, message);
 
-      if (!limit || now > limit.resetAt) {
-        map.set(key, { count: 1, resetAt: now + windowMs });
-        return;
-      }
+      const redisPromise = executeSlidingWindowRateLimit(`rl:${key}`, max, windowMs).then(
+        ({ allowed }) => {
+          if (!allowed) {
+            throw new TRPCError({ code: "TOO_MANY_REQUESTS", message });
+          }
+        },
+      );
 
-      limit.count++;
-      if (limit.count > max) {
-        throw new TRPCError({ code: "TOO_MANY_REQUESTS", message });
-      }
+      // Return promise for async callers that await it
+      return redisPromise;
     },
   };
 }

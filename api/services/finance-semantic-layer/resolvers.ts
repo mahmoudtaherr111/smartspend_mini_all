@@ -130,7 +130,8 @@ async function loadRowsForPeriod(
         lte(expenses.date, period.endDate),
       ),
     )
-    .orderBy(desc(expenses.date));
+    .orderBy(desc(expenses.date))
+    .limit(2000);
 }
 
 function resolveInputFromNeed(need: DataNeed): FinancePeriodInput {

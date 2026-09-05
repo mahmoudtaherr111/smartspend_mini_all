@@ -1,45 +1,33 @@
-# BRIEFING — 2026-08-26T02:04:00Z
+# BRIEFING — 2026-08-30T12:09:21Z
 
 ## Mission
-Investigate test setup, Playwright config, mobile viewports, Vitest tests, type checking, and verification infrastructure for Mobile Dashboard & AI Recording Input Re-architecture.
+Investigate the codebase for GPU Compositing Optimization, Performance Hardening (backdrop-filter bottlenecks, 60-120fps mobile fluidity, paint flashing, layout thrashing), and Test Infrastructure (Vitest, DOM testing, mobile pillar regression strategy).
 
 ## 🔒 My Identity
-- Archetype: explorer
-- Roles: [investigator, synthesizer]
-- Working directory: E:\smartspend_V1_fixed\.agents\explorer_survey_3
-- Original parent: d16277a4-100b-4a65-83db-42dcb8d09629
-- Milestone: Mobile Dashboard & AI Recording Input - Survey Phase Complete
+- Archetype: Explorer
+- Roles: explorer, analyst, tester
+- Working directory: e:/smartspend_V1_fixed/.agents/explorer_survey_3/
+- Original parent: 3f2a1bc9-617e-488e-9d72-53d534cdc196
+- Milestone: Explorer Survey Phase
 
 ## 🔒 Key Constraints
-- Read-only investigation — do NOT implement changes to application source code
-- Write only to .agents/explorer_survey_3/
-- Adhere strictly to AGENTS.md rules and project layout
+- Read-only investigation — do NOT implement / modify source code
+- Produce structured survey report (`survey_report.md`) and handoff report (`handoff.md`)
+- All outputs in `e:/smartspend_V1_fixed/.agents/explorer_survey_3/`
 
 ## Current Parent
-- Conversation ID: d16277a4-100b-4a65-83db-42dcb8d09629
-- Updated: 2026-08-26T02:04:00Z
+- Conversation ID: 3f2a1bc9-617e-488e-9d72-53d534cdc196
+- Updated: 2026-08-30T12:09:21Z
 
 ## Investigation State
-- **Explored paths**:
-  - `playwright.config.ts` (projects, viewports, webServer, locale/timezone)
-  - `tests/fixtures/mobile-fixtures.ts` (mock auth, tRPC interceptors, touch helpers, console trap)
-  - `tests/e2e/` (`pwa-shell-viewport.spec.ts`, `liquid-glass-navigation.spec.ts`, `mobile-customer-journeys.spec.ts`, `instant-tab-switching.spec.ts`)
-  - `vitest.config.ts`, `src/components/expenses/ExpenseForm.quick-save.test.ts`, `tests/m1-adversarial.test.ts`
-  - `src/components/expenses/ExpenseForm.tsx` & `src/pages/Home.tsx`
-  - `src/index.css` (safe-area utilities, app-shell, tap targets)
-- **Key findings**:
-  - Playwright already configures iPhone 14 (390x844) and Android Pixel 7 (412x915).
-  - Vitest test suite includes AST invariant testing for `ExpenseForm.quick-save.test.ts`.
-  - Type checking `npm run check` is 100% clean.
-  - Comprehensive methodology for automated CLS, console error, and element clipping / above-the-fold geometry auditing formulated.
-  - Full implementation plan for `tests/e2e/mobile-dashboard-ai-recording.spec.ts` designed.
-- **Unexplored areas**: None for this survey task.
+- **Explored paths**: [TBD]
+- **Key findings**: [TBD]
+- **Unexplored areas**: Styling system, backdrop-filter usages, CSS animations/transitions, Vitest configs, test setup & mocks
 
 ## Key Decisions Made
-- Authored full report `report.md` and structured 5-component `handoff.md` in `.agents/explorer_survey_3/`.
+- Initiating thorough investigation across styling/rendering pipeline and testing infrastructure.
 
 ## Artifact Index
-- `E:\smartspend_V1_fixed\.agents\explorer_survey_3\DISPATCH.md` — Initial dispatch instructions
-- `E:\smartspend_V1_fixed\.agents\explorer_survey_3\BRIEFING.md` — Situational awareness and persistent memory
-- `E:\smartspend_V1_fixed\.agents\explorer_survey_3\report.md` — Detailed investigation & multi-viewport auditing report
-- `E:\smartspend_V1_fixed\.agents\explorer_survey_3\handoff.md` — Structured 5-component handoff report
+- `survey_report.md` — Comprehensive GPU compositing, performance hardening & test infrastructure blueprint
+- `handoff.md` — 5-component handoff report
+- `progress.md` — Liveness heartbeat

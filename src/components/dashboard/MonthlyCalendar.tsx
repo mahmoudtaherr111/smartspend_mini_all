@@ -1,11 +1,11 @@
 import { memo, useState } from "react";
 import { trpc } from "@/providers/trpc";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  AdaptiveDialog,
+  AdaptiveDialogContent,
+  AdaptiveDialogHeader,
+  AdaptiveDialogTitle,
+} from "@/components/ui/adaptive-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -49,15 +49,19 @@ function DayTransactionsDialog({
   });
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md max-w-[92vw] rounded-2xl" dir="rtl">
-        <DialogHeader className="text-end pb-3 border-b border-slate-100 dark:border-slate-800">
-          <DialogTitle className="text-base sm:text-lg font-black flex items-center gap-2">
+    <AdaptiveDialog
+      open={isOpen}
+      onOpenChange={(open) => !open && onClose()}
+      snapPoints={[0.5, 0.9]}
+    >
+      <AdaptiveDialogContent className="sm:max-w-md max-w-[92vw] rounded-2xl" dir="rtl">
+        <AdaptiveDialogHeader className="text-end pb-3 border-b border-slate-100 dark:border-slate-800">
+          <AdaptiveDialogTitle className="text-base sm:text-lg font-black flex items-center gap-2">
             <Calendar className="w-5 h-5 text-indigo-600" />
             <span>معاملات {formattedDate}</span>
             {isFetching && <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground" />}
-          </DialogTitle>
-        </DialogHeader>
+          </AdaptiveDialogTitle>
+        </AdaptiveDialogHeader>
 
         <div className="py-4 max-h-[60vh] overflow-y-auto space-y-3 pe-1 hide-scrollbar">
           {isLoading ? (
@@ -138,8 +142,8 @@ function DayTransactionsDialog({
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </AdaptiveDialogContent>
+    </AdaptiveDialog>
   );
 }
 
@@ -225,7 +229,7 @@ export const MonthlyCalendar = memo(function MonthlyCalendar({
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 no-swipe" data-no-swipe="true">
       {salaryDay && salaryDay > 0 && (
         <div className="text-xs text-muted-foreground bg-muted/50 border rounded-md p-2">
           💡 <strong>ملاحظة:</strong> مرتبك ينزل يوم {salaryDay} من كل شهر.

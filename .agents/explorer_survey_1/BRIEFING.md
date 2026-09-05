@@ -1,45 +1,33 @@
-# BRIEFING — 2026-08-26T02:00:00Z
+# BRIEFING — 2026-08-30T13:10:00Z
 
 ## Mission
-Deep survey and architectural recommendations for SmartSpend AI Mobile Dashboard visual hierarchy and AI Recording Input card re-architecture.
+Investigate the codebase for Universal Polymorphic AdaptiveDialog & Bottom Sheet Architecture (vaul on mobile <768px with snap points, handle, momentum drag, Radix Dialog on desktop >=768px, BackButtonManager integration, form/focus preservation, keyboard collision handling, scroll trapping).
 
 ## 🔒 My Identity
 - Archetype: explorer
-- Roles: explorer_survey_1
-- Working directory: E:\smartspend_V1_fixed\.agents\explorer_survey_1
-- Original parent: d16277a4-100b-4a65-83db-42dcb8d09629
-- Milestone: mobile-ai-input-rearchitecture-survey
+- Roles: [investigation, synthesis]
+- Working directory: e:/smartspend_V1_fixed/.agents/explorer_survey_1/
+- Original parent: 3f2a1bc9-617e-488e-9d72-53d534cdc196
+- Milestone: mobile_fidelity_adaptive_dialog_survey
 
 ## 🔒 Key Constraints
-- Read-only investigation — do NOT implement
-- Monorepo architectural integrity, TypeScript strict typing
-- Preserve all parser invariants and tests in ExpenseForm.quick-save.test.ts
+- Read-only investigation — do NOT implement in source code
+- Follow 5-component handoff structure (Observation, Logic Chain, Caveats, Conclusion, Verification Method)
+- Output detailed survey to survey_report.md and handoff.md
 
 ## Current Parent
-- Conversation ID: d16277a4-100b-4a65-83db-42dcb8d09629
-- Updated: 2026-08-26T02:00:00Z
+- Conversation ID: 3f2a1bc9-617e-488e-9d72-53d534cdc196
+- Updated: 2026-08-30T13:10:00Z
 
 ## Investigation State
-- **Explored paths**:
-  - `src/components/expenses/ExpenseForm.tsx` (all 1963 lines examined)
-  - `src/components/expenses/ExpenseForm.quick-save.test.ts` (test invariants cataloged)
-  - `src/components/expenses/RecentExpenses.tsx` (placement and fold analysis)
-  - `src/pages/Home.tsx` (header, streak, summary chips, layout grid)
-  - `src/components/dashboard/StreakCounter.tsx` (streak UI component)
-  - `src/components/ai/AIVoiceCall.tsx` & `src/3d-effects.css` (framer-motion & CSS animations)
-- **Key findings**:
-  1. ExpenseForm AI discovery banner (lines 1120-1126) is static and non-collapsible, taking up 60-80px.
-  2. Static "الحالة: جاهز" label (line 1137) creates visual clutter when idle and disconnects from active recording state.
-  3. Recording animation is fragmented (in-textarea wave, mic button ring, submit button timer).
-  4. Textarea min-h-[140px] combined with headers pushes action bar and RecentExpenses below fold on 390x844.
-  5. Vitest test `ExpenseForm.quick-save.test.ts` enforces exact string AST patterns that must be respected during refactoring.
-- **Unexplored areas**: None, scope fully surveyed.
+- **Explored paths**: [TBD]
+- **Key findings**: [TBD]
+- **Unexplored areas**: [Dialog components, vaul drawer, Radix UI, BackButtonManager, keyboard/scroll handling, modal usages]
 
 ## Key Decisions Made
-- Recommend framer-motion collapsible AI Discovery Banner morphing into `✨ تسجيل ذكي` badge.
-- Recommend Contextual Dynamic Recording Pill that animates on active recording/processing and collapses to 0 height on idle.
-- Recommend compacting textarea to `min-h-[96px] sm:min-h-[120px]` and elevating thumb-zone action bar by ~100-140px total across Home.tsx and ExpenseForm.tsx.
+- Initiated survey on Universal Polymorphic AdaptiveDialog & Bottom Sheet Architecture.
 
 ## Artifact Index
-- `E:\smartspend_V1_fixed\.agents\explorer_survey_1\report.md` — Comprehensive architectural investigation report
-- `E:\smartspend_V1_fixed\.agents\explorer_survey_1\handoff.md` — Self-contained 5-component handoff report
+- e:/smartspend_V1_fixed/.agents/explorer_survey_1/survey_report.md — Comprehensive Survey Report
+- e:/smartspend_V1_fixed/.agents/explorer_survey_1/handoff.md — Soft Handoff Report
+- e:/smartspend_V1_fixed/.agents/explorer_survey_1/progress.md — Progress and Liveness

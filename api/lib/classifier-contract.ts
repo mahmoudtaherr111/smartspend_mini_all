@@ -24,7 +24,8 @@
  *   - it cannot inflate confidence: there is no confidence field
  */
 import { SchemaType } from "@google/generative-ai";
-import { CATEGORIES, canonicalCategoryId, getSubcategoriesFor } from "./category-registry";
+import { CATEGORIES, exactCategoryId, getSubcategoriesFor } from "./category-registry";
+import { z } from "zod";
 
 /** The 26 real category ids. English, because they are identifiers, not display text. */
 export const CATEGORY_IDS: readonly string[] = CATEGORIES.map((c) => c.id);
@@ -82,6 +83,13 @@ export interface ValidationResult {
   problems: string[];
 }
 
+const categoryReplyRow = z.object({
+  i: z.number().int().positive(),
+  category: z.string().trim().min(1).max(100),
+  sub: z.string().trim().max(120).optional(),
+  person: z.string().trim().max(120).nullable().optional(),
+});
+
 /**
  * The real guard.
  *
@@ -108,21 +116,27 @@ export function validateClassifierReply(
   }
 
   const seen = new Set<number>();
+  const duplicates = new Set<number>();
 
   for (const entry of rawItems) {
-    const row = entry as Record<string, unknown>;
-    const i = Number(row.i ?? row.index);
+    const parsed = categoryReplyRow.safeParse(entry);
+    if (!parsed.success) {
+      problems.push("dropped malformed classifier item");
+      continue;
+    }
+    const row = parsed.data;
+    const i = row.i;
 
     if (!Number.isInteger(i) || i < 1 || i > clauseCount) {
       problems.push(`dropped item with out-of-range index ${String(row.i)}`);
       continue;
     }
     if (seen.has(i)) {
-      // Two answers for one clause is the re-segmentation instinct leaking through a
-      // schema that has no room for it. The first stands.
-      problems.push(`dropped duplicate answer for clause ${i}`);
+      duplicates.add(i);
+      problems.push(`dropped conflicting duplicate answers for clause ${i}`);
       continue;
     }
+    seen.add(i);
 
     const claimed = String(row.category ?? "").trim();
     if (!claimed) {
@@ -131,8 +145,13 @@ export function validateClassifierReply(
     }
 
     // A model that ignored the enum often still names a real category, just in Arabic
-    // or with different spacing. Resolving it is a repair, not a guess.
-    const id = CATEGORY_IDS.includes(claimed) ? claimed : canonicalCategoryId(claimed);
+    // or with different spacing. Resolving THAT is a repair. Resolving anything else is
+    // a guess, and `canonicalCategoryId` — which this used to call — guesses by
+    // substring: it answered "transport" for the invented category "business", because
+    // "bus" is a transport alias, and the wrong category was then recorded as the
+    // model's answer. Exact aliases only; everything else is dropped and the clause
+    // keeps its local answer.
+    const id = CATEGORY_IDS.includes(claimed) ? claimed : exactCategoryId(claimed);
     if (!id || !CATEGORY_IDS.includes(id)) {
       problems.push(`dropped item ${i}: "${claimed}" is not a category`);
       continue;
@@ -141,7 +160,6 @@ export function validateClassifierReply(
       problems.push(`repaired item ${i}: "${claimed}" -> "${id}"`);
     }
 
-    seen.add(i);
     out.push({
       i,
       category: id,
@@ -151,7 +169,11 @@ export function validateClassifierReply(
     });
   }
 
-  return { items: out.sort((a, b) => a.i - b.i), problems };
+  const items = out.filter((item) => !duplicates.has(item.i)).sort((a, b) => a.i - b.i);
+  for (let i = 1; i <= clauseCount; i++) {
+    if (!items.some((item) => item.i === i)) problems.push(`missing answer for clause ${i}`);
+  }
+  return { items, problems };
 }
 
 /**
@@ -182,14 +204,11 @@ export function resolveSubcategory(categoryId: string, sub: string | undefined):
     // A person's name belongs here verbatim; it is not a taxonomy value to match.
     return sub || "عام";
   }
-  if (!sub) return category.subcategories[0]?.name_ar || "عام";
+  if (!sub) return "عام";
 
   const options = getSubcategoriesFor(category.name_ar);
   const exact = options.find((s) => s.name_ar === sub);
   if (exact) return exact.name_ar;
 
-  const loose = options.find(
-    (s) => s.name_ar.includes(sub) || sub.includes(s.name_ar),
-  );
-  return loose?.name_ar || options.find((s) => s.name_ar === "عام")?.name_ar || "عام";
+  return "عام";
 }

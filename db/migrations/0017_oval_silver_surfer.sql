@@ -17,5 +17,4 @@ CREATE INDEX `reports_month_idx` ON `monthly_reports` (`month`);--> statement-br
 CREATE INDEX `notif_templates_creator_idx` ON `notification_templates` (`created_by`);--> statement-breakpoint
 CREATE INDEX `notif_templates_event_idx` ON `notification_templates` (`event_type`);--> statement-breakpoint
 CREATE INDEX `clarifications_expense_idx` ON `pending_clarifications` (`expense_id`);--> statement-breakpoint
-CREATE INDEX `users_referred_by_idx` ON `users` (`referred_by`);--> statement-breakpoint
-ALTER TABLE `expenses` DROP COLUMN `version`;
+CREATE INDEX `users_referred_by_idx` ON `users` (`referred_by`);

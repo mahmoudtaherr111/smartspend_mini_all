@@ -1,13 +1,14 @@
-# Progress — Milestone 1 Independent Review
+# Progress — Edge-Case Hardening & Master Audit Review
 
-- **Last visited**: 2026-08-25T09:36:00Z
-- **Current status**: Independent review & stress-testing complete. Generating handoff report.
+- **Last visited**: 2026-08-30T11:50:00Z
+- **Current status**: Review & Adversarial Stress-Test complete. Handoff report prepared with verdict.
 
 ## Checklist
 - [x] Initialized DISPATCH.md, BRIEFING.md, progress.md
-- [x] Read ORIGINAL_REQUEST.md, PROJECT.md, AGENTS.md, worker handoff.md
-- [x] Inspect index.html, vite.config.ts, and safe-area inset implementations in all target pages
-- [x] Run build and typecheck verification commands (`npm run check` -> 0 errors, `npm run frontend:build` -> built in 21.86s)
-- [x] Adversarial stress test of safe-area mechanics, viewport configs, CSS utility definitions
-- [x] Compile comprehensive findings and handoff report
-- [ ] Notify parent with verdict
+- [x] Read ORIGINAL_REQUEST.md, PROJECT.md, AGENTS.md, docs/LOGICAL_EDGE_CASES_AUDIT.md
+- [x] Inspect contracts/, api/, src/, db/, tests/
+- [x] Run typecheck & test suite (`npm run check`, `npm run test`)
+- [x] Adversarial stress-test: Zod boundaries, AudioContext lifecycle, WebSockets CSWSH, PWA visualViewport, BroadcastChannel auth sync, 401 form draft preservation
+- [x] Compile comprehensive findings and handoff report in handoff.md
+- [x] Notify parent with verdict REQUEST_CHANGES (due to 1 failed test file syntax transform)
+

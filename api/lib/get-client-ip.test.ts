@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { env } from "./env";
 import { getClientIp, getIncomingHeader } from "./get-client-ip";
 
 describe("getIncomingHeader", () => {
@@ -27,26 +28,54 @@ describe("getIncomingHeader", () => {
 });
 
 describe("getClientIp", () => {
-  it("uses the first IP from x-forwarded-for on Fetch Request", () => {
+  beforeEach(() => {
+    env.TRUSTED_PROXY_HEADER = "x-forwarded-for";
+  });
+
+  it("uses the rightmost trusted IP from x-forwarded-for to prevent spoofing", () => {
     const req = new Request("http://localhost", {
-      headers: { "x-forwarded-for": "203.0.113.5, 10.0.0.2" },
+      headers: { "x-forwarded-for": "203.0.113.5, 198.51.100.22" },
     });
-    expect(getClientIp(req)).toBe("203.0.113.5");
+    expect(getClientIp(req, "127.0.0.1")).toBe("198.51.100.22");
   });
 
-  it("falls back to cf-connecting-ip and x-real-ip", () => {
-    const cfReq = new Request("http://localhost", {
-      headers: { "cf-connecting-ip": "198.51.100.9" },
+  it("ignores forwarded headers when the immediate peer is not trusted", () => {
+    const req = new Request("http://localhost", {
+      headers: {
+        "cf-connecting-ip": "198.51.100.9",
+        "x-real-ip": "192.0.2.1",
+        "x-forwarded-for": "203.0.113.1, 10.0.0.1",
+      },
     });
-    expect(getClientIp(cfReq)).toBe("198.51.100.9");
-
-    const realReq = new Request("http://localhost", {
-      headers: { "x-real-ip": "192.0.2.1" },
-    });
-    expect(getClientIp(realReq)).toBe("192.0.2.1");
+    expect(getClientIp(req, "203.0.113.200")).toBe("203.0.113.200");
   });
 
-  it("returns 127.0.0.1 when no proxy headers exist", () => {
+  it("uses only the explicitly configured proxy header", () => {
+    const req = new Request("http://localhost", {
+      headers: {
+        "cf-connecting-ip": "198.51.100.9",
+        "x-real-ip": "192.0.2.1",
+        "x-forwarded-for": "203.0.113.1, 10.0.0.1",
+      },
+    });
+    expect(getClientIp(req, "::1")).toBe("10.0.0.1");
+  });
+
+  it("normalizes IPv6-mapped IPv4 addresses", () => {
+    const req = new Request("http://localhost", {
+      headers: { "x-forwarded-for": "::ffff:203.0.113.199" },
+    });
+    expect(getClientIp(req, "127.0.0.1")).toBe("203.0.113.199");
+  });
+
+  it("rejects malformed forwarded values instead of using them as limiter keys", () => {
+    const req = new Request("http://localhost", {
+      headers: { "x-forwarded-for": "attacker-controlled-value" },
+    });
+    expect(getClientIp(req, "127.0.0.1")).toBe("127.0.0.1");
+  });
+
+  it("returns 127.0.0.1 when no proxy headers exist and no socket IP", () => {
     const req = new Request("http://localhost");
     expect(getClientIp(req)).toBe("127.0.0.1");
   });

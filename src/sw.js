@@ -10,7 +10,7 @@ import {
   precacheAndRoute,
 } from "workbox-precaching";
 import { registerRoute, setCatchHandler } from "workbox-routing";
-import { NetworkFirst, StaleWhileRevalidate } from "workbox-strategies";
+import { StaleWhileRevalidate } from "workbox-strategies";
 
 const RUNTIME_CACHE = "smartspend-runtime-v4";
 const IMAGE_CACHE = "smartspend-images-v4";
@@ -49,13 +49,12 @@ function isSameOrigin(url) {
 // reliably isolate responses by authenticated user, while React Query handles
 // the in-app cache for the active session.
 
-// 3b. Navigation requests — NetworkFirst, falling back to cached app shell
+// 3b. Navigation requests — serve the versioned precached app shell
+// immediately. The registration flow updates the worker out of band, so an
+// offline/cold launch never waits on a network timeout before showing UI.
 registerRoute(
   ({ request }) => request.mode === "navigate",
-  new NetworkFirst({
-    cacheName: RUNTIME_CACHE,
-    networkTimeoutSeconds: 5,
-  }),
+  createHandlerBoundToURL("/index.html"),
 );
 
 setCatchHandler(async ({ event }) => {
@@ -130,8 +129,8 @@ self.addEventListener("push", (event) => {
     const title = data.title || "SmartSpend AI";
     const options = {
       body: data.body || "",
-      icon: data.icon || "/icon.png",
-      badge: data.badge || "/icon.png",
+      icon: data.icon || "/icon-192.png",
+      badge: data.badge || "/icon-192.png",
       vibrate: [100, 50, 100],
       data: data.url || "/", // Default URL to open when clicked
     };
@@ -154,16 +153,17 @@ self.addEventListener("notificationclick", (event) => {
 
   let targetUrl = "/";
   const notificationData = event.notification.data;
-  
+
   if (notificationData) {
     if (typeof notificationData === "string") {
       targetUrl = notificationData;
     } else if (typeof notificationData === "object") {
       // Support FCM payload formats, webpush format, and data object format
-      targetUrl = notificationData.url || 
-                  notificationData.FCM_MSG?.data?.url || 
-                  notificationData.FCM_MSG?.notification?.click_action || 
-                  "/";
+      targetUrl =
+        notificationData.url ||
+        notificationData.FCM_MSG?.data?.url ||
+        notificationData.FCM_MSG?.notification?.click_action ||
+        "/";
     }
   }
 
@@ -177,22 +177,25 @@ self.addEventListener("notificationclick", (event) => {
         let matchingClient = null;
         for (let i = 0; i < windowClients.length; i++) {
           const client = windowClients[i];
-          if (client.url.startsWith(self.location.origin) && "focus" in client) {
+          if (
+            client.url.startsWith(self.location.origin) &&
+            "focus" in client
+          ) {
             matchingClient = client;
             break;
           }
         }
-        
+
         if (matchingClient) {
           // Focus the existing window and send a navigation postMessage to avoid page reload
           return matchingClient.focus().then((client) => {
-             client.postMessage({
-               type: "NAVIGATE_TO",
-               url: urlToOpen
-             });
+            client.postMessage({
+              type: "NAVIGATE_TO",
+              url: urlToOpen,
+            });
           });
         }
-        
+
         // If no window is open, open a new one
         if (self.clients.openWindow) {
           return self.clients.openWindow(urlToOpen);

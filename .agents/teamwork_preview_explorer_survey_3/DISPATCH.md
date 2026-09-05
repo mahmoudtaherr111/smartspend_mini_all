@@ -1,18 +1,23 @@
-## 2026-08-25T08:54:45Z
-You are teamwork_preview_explorer_survey_3.
-Your working directory is: E:\smartspend_V1_fixed\.agents\teamwork_preview_explorer_survey_3
+## 2026-08-30T00:44:09Z
+You are Explorer 3: Financial Mutations, PWA UX, Auth Sync & Test Infra Specialist.
+Working Directory: e:/smartspend_V1_fixed/.agents/teamwork_preview_explorer_survey_3/
+Authoritative Request: e:/smartspend_V1_fixed/.agents/ORIGINAL_REQUEST.md (READ THIS FIRST).
 
-MANDATORY: Read E:\smartspend_V1_fixed\.agents\ORIGINAL_REQUEST.md before starting your investigation.
-Also read AGENTS.md in the workspace root for codebase rules and architecture overview.
+Investigate Financial Mutations, PWA UX, Multi-Tab Auth Synchronization, and Test/Audit Infrastructure in SmartSpend AI:
+1. Target files:
+   - `src/providers/` (`trpc.ts`, auth providers, query client)
+   - `src/hooks/useAuth.ts`, `src/hooks/useOfflineSync.ts`, `src/hooks/usePWA.ts`
+   - `api/expense-router.ts`, `api/auth-router.ts`, `api/local-auth-router.ts`
+   - `contracts/`, `db/schema.ts`
+   - Test suites in `tests/`, `src/**/*.test.ts`, `api/**/*.test.ts`
+   - `docs/` for audit documentation prep
 
-Objective: Survey the codebase for Requirement R3 (Zero-Latency Instant Tab Switching & Warm View Pre-Rendering) and Requirement R4 (Multi-Viewport In-Browser Mobile Auditing & Adversarial Testing).
-Scope of Investigation:
-1. Tab switching and view rendering architecture: Check how tabs/views are rendered in `src/App.tsx` or main view containers. Are components unmounting and remounting on tab change? Are React Query queries refetching or showing skeleton flickers?
-2. Warm View Pre-Rendering strategy: Analyze how to keep primary views (`تسجيل`, `إحصائيات`, `تقويم`, `مركز AI`, `المزيد`) warm in memory with CSS visibility/opacity/display transitions and cached query data to guarantee instant (0ms) 60fps/120Hz switching.
-3. Test Infrastructure: Examine existing test configuration (`vitest.config.ts`, `package.json`, test scripts `npm run test`, `npm run check`), test file locations (`tests/`, `src/`), and existing mobile or integration tests.
-4. Mobile Touch & Viewport Auditing Setup: Check if Playwright is installed or configured (`playwright.config.ts`), touch emulation support, viewports (iPhone 14/15/16 Pro 390x844/393x852, Android Chrome 412x915, iPad 820x1180), and how to set up automated mobile touch auditing with 0 console errors and 0 layout regressions.
+2. Detailed Investigation Matrix:
+   - Financial mutations idempotency (`clientRequestId`, double-tap prevention, optimistic rollback on mutation failure, offline queue reconciliation).
+   - PWA & Mobile-First UX (virtual keyboard `visualViewport` resize handling, pull-to-refresh overscroll isolation in bottom sheets, haptic feedback triggers, service worker offline caching).
+   - Auth & Multi-Tab Synchronization (`BroadcastChannel` / `storage` event token sync, handling token expiration mid-session, dual `users`/`localUsers` consistency).
+   - Monorepo build and test health (`npm run check` and vitest suite status).
+   - Blueprint & structure for `docs/LOGICAL_EDGE_CASES_AUDIT.md`.
 
-Output requirements:
-- Write your detailed analysis to: `E:\smartspend_V1_fixed\.agents\teamwork_preview_explorer_survey_3\survey_tabs_testing.md`
-- Write your final handoff report to: `E:\smartspend_V1_fixed\.agents\teamwork_preview_explorer_survey_3\handoff.md`
-- Send a message back to parent when complete referencing your report paths.
+3. Create your working directory if needed, write `report.md` and `handoff.md` with line-by-line code citations, root causes, and concrete remediation blueprints.
+Send a completion message when done.

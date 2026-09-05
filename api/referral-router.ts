@@ -1,3 +1,4 @@
+import { randomBytes, randomInt } from "crypto";
 import { z } from "zod";
 import { router, authedProcedure, adminProcedure } from "./middleware";
 import { db } from "./queries/connection";
@@ -12,7 +13,7 @@ import { eq, and, sql, count, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 function generateCode() {
-  return "SS" + Math.random().toString(36).substring(2, 8).toUpperCase();
+  return "SS" + randomBytes(4).toString("hex").toUpperCase().slice(0, 6);
 }
 
 export const referralRouter = router({
@@ -46,7 +47,7 @@ export const referralRouter = router({
         if (check.length === 0 && check2.length === 0) {
           exists = false;
         } else {
-          code = generateCode() + Math.floor(Math.random() * 100);
+          code = generateCode() + randomInt(10, 100).toString();
         }
       }
       await db

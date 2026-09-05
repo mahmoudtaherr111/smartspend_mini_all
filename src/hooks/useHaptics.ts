@@ -2,121 +2,160 @@ import { useCallback } from "react";
 import { Haptics, ImpactStyle, NotificationType } from "@capacitor/haptics";
 import { Capacitor } from "@capacitor/core";
 
+export type UseHapticsReturn = {
+  selection: () => Promise<void>;
+  selectionStart: () => Promise<void>;
+  selectionChanged: () => Promise<void>;
+  selectionEnd: () => Promise<void>;
+  lightTap: () => Promise<void>;
+  mediumTap: () => Promise<void>;
+  heavyTap: () => Promise<void>;
+  success: () => Promise<void>;
+  warning: () => Promise<void>;
+  error: () => Promise<void>;
+  isSupported: boolean;
+};
+
+export { ImpactStyle, NotificationType };
+
 /**
  * A hook to trigger native device haptic feedback (vibrations) on supported devices.
- * Uses @capacitor/haptics natively, navigator.vibrate for web Android, and visual fallbacks for web iOS.
+ * Uses @capacitor/haptics natively and navigator.vibrate for supported web browsers (e.g. Android Web).
+ * Silently degrades to a no-op on unsupported platforms (e.g. iOS Safari / iOS Web PWA).
  */
-const isIOS = () => {
-  if (typeof window === "undefined") return false;
-  return (
-    [
-      "iPad Simulator",
-      "iPhone Simulator",
-      "iPod Simulator",
-      "iPad",
-      "iPhone",
-      "iPod",
-    ].includes(navigator.platform) ||
-    // iPad on iOS 13 detection
-    (navigator.userAgent.includes("Mac") && "ontouchend" in document)
-  );
-};
-
-const triggerVisualFallback = (
-  type: "light" | "medium" | "success" | "error"
-) => {
-  if (typeof document === "undefined") return;
-
-  const overlay = document.createElement("div");
-  overlay.style.position = "fixed";
-  overlay.style.top = "0";
-  overlay.style.left = "0";
-  overlay.style.width = "100vw";
-  overlay.style.height = "100vh";
-  overlay.style.pointerEvents = "none";
-  overlay.style.zIndex = "9999";
-
-  if (type === "error") {
-    overlay.style.backgroundColor = "rgba(255, 0, 0, 0.15)";
-  } else if (type === "success") {
-    overlay.style.backgroundColor = "rgba(0, 255, 0, 0.15)";
-  } else {
-    // light / medium tap
-    overlay.style.backgroundColor = "rgba(128, 128, 128, 0.1)";
-  }
-
-  overlay.style.transition = "opacity 0.2s ease-out";
-  document.body.appendChild(overlay);
-
-  // force reflow to ensure the transition applies
-  void overlay.offsetWidth;
-
-  overlay.style.opacity = "0";
-
-  setTimeout(() => {
-    overlay.remove();
-  }, 200);
-};
-
-export function useHaptics() {
+export function useHaptics(): UseHapticsReturn {
   const isSupportedWeb =
     typeof window !== "undefined" && "vibrate" in navigator;
   const isCapacitor = Capacitor.isNativePlatform();
-  const needsFallback = isIOS() && !isCapacitor && !isSupportedWeb;
+
+  // Subtle tick for discrete item selection, tab switches, slider increments, snap detents
+  const selection = useCallback(async () => {
+    if (isCapacitor) {
+      try {
+        await Haptics.selectionChanged();
+      } catch {}
+    } else if (isSupportedWeb) {
+      try {
+        navigator.vibrate(5);
+      } catch {}
+    }
+  }, [isCapacitor, isSupportedWeb]);
+
+  const selectionStart = useCallback(async () => {
+    if (isCapacitor) {
+      try {
+        await Haptics.selectionStart();
+      } catch {}
+    } else if (isSupportedWeb) {
+      try {
+        navigator.vibrate(5);
+      } catch {}
+    }
+  }, [isCapacitor, isSupportedWeb]);
+
+  const selectionChanged = useCallback(async () => {
+    if (isCapacitor) {
+      try {
+        await Haptics.selectionChanged();
+      } catch {}
+    } else if (isSupportedWeb) {
+      try {
+        navigator.vibrate(5);
+      } catch {}
+    }
+  }, [isCapacitor, isSupportedWeb]);
+
+  const selectionEnd = useCallback(async () => {
+    if (isCapacitor) {
+      try {
+        await Haptics.selectionEnd();
+      } catch {}
+    }
+  }, [isCapacitor]);
 
   const lightTap = useCallback(async () => {
     if (isCapacitor) {
-      await Haptics.impact({ style: ImpactStyle.Light });
+      try {
+        await Haptics.impact({ style: ImpactStyle.Light });
+      } catch {}
     } else if (isSupportedWeb) {
       try {
         navigator.vibrate(10);
-      } catch (e) {}
-    } else if (needsFallback) {
-      triggerVisualFallback("light");
+      } catch {}
     }
-  }, [isCapacitor, isSupportedWeb, needsFallback]);
+  }, [isCapacitor, isSupportedWeb]);
 
   const mediumTap = useCallback(async () => {
     if (isCapacitor) {
-      await Haptics.impact({ style: ImpactStyle.Medium });
+      try {
+        await Haptics.impact({ style: ImpactStyle.Medium });
+      } catch {}
     } else if (isSupportedWeb) {
       try {
         navigator.vibrate(30);
-      } catch (e) {}
-    } else if (needsFallback) {
-      triggerVisualFallback("medium");
+      } catch {}
     }
-  }, [isCapacitor, isSupportedWeb, needsFallback]);
+  }, [isCapacitor, isSupportedWeb]);
+
+  const heavyTap = useCallback(async () => {
+    if (isCapacitor) {
+      try {
+        await Haptics.impact({ style: ImpactStyle.Heavy });
+      } catch {}
+    } else if (isSupportedWeb) {
+      try {
+        navigator.vibrate(50);
+      } catch {}
+    }
+  }, [isCapacitor, isSupportedWeb]);
 
   const success = useCallback(async () => {
     if (isCapacitor) {
-      await Haptics.notification({ type: NotificationType.Success });
+      try {
+        await Haptics.notification({ type: NotificationType.Success });
+      } catch {}
     } else if (isSupportedWeb) {
       try {
         navigator.vibrate([30, 50, 40]);
-      } catch (e) {}
-    } else if (needsFallback) {
-      triggerVisualFallback("success");
+      } catch {}
     }
-  }, [isCapacitor, isSupportedWeb, needsFallback]);
+  }, [isCapacitor, isSupportedWeb]);
+
+  const warning = useCallback(async () => {
+    if (isCapacitor) {
+      try {
+        await Haptics.notification({ type: NotificationType.Warning });
+      } catch {}
+    } else if (isSupportedWeb) {
+      try {
+        navigator.vibrate([40, 60, 40]);
+      } catch {}
+    }
+  }, [isCapacitor, isSupportedWeb]);
 
   const error = useCallback(async () => {
     if (isCapacitor) {
-      await Haptics.notification({ type: NotificationType.Error });
+      try {
+        await Haptics.notification({ type: NotificationType.Error });
+      } catch {}
     } else if (isSupportedWeb) {
       try {
         navigator.vibrate([50, 100, 50, 100, 50]);
-      } catch (e) {}
-    } else if (needsFallback) {
-      triggerVisualFallback("error");
+      } catch {}
     }
-  }, [isCapacitor, isSupportedWeb, needsFallback]);
+  }, [isCapacitor, isSupportedWeb]);
 
   return {
+    selection,
+    selectionStart,
+    selectionChanged,
+    selectionEnd,
     lightTap,
     mediumTap,
+    heavyTap,
     success,
+    warning,
     error,
-    isSupported: isCapacitor || isSupportedWeb || needsFallback,
+    isSupported: isCapacitor || isSupportedWeb,
   };
 }

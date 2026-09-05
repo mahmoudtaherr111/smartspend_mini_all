@@ -1,3 +1,4 @@
+import { randomInt, randomUUID } from "crypto";
 import { z } from "zod";
 import {
   router,
@@ -50,6 +51,27 @@ import { otpCache, checkRateLimit } from "./services/otp-cache";
 
 import { getSystemSettings } from "./lib/settings-cache";
 import { purgeUserData } from "./services/user-purge-service";
+import {
+  beginLoginAttempt,
+  completeSuccessfulLogin,
+  loginRateLimitError,
+  recordLoginFailure,
+  releaseLoginAttempt,
+  setLoginRateLimitHeaders,
+} from "./lib/login-protection";
+
+// A fixed cost-12 hash keeps nonexistent-account failures on the same bcrypt
+// path as incorrect passwords without deriving a hash during each request.
+const INVALID_ACCOUNT_PASSWORD_HASH =
+  "$2b$12$0cGyfKa.Hcq3FAwq/CUhju/iICgm1cM2vbhjNwwRs.yfpJyoek6ya";
+const INVALID_LOGIN_MESSAGE = "رقم التليفون أو الباسورد غلط";
+
+function loginRequestId(req: Parameters<typeof getIncomingHeader>[0]): string {
+  const incoming = getIncomingHeader(req, "x-request-id")?.trim();
+  return incoming && /^[a-zA-Z0-9._:-]{1,128}$/.test(incoming)
+    ? incoming
+    : randomUUID();
+}
 
 export const localAuthRouter = router({
   register: strictPublicProcedure
@@ -107,7 +129,7 @@ export const localAuthRouter = router({
             message: "انتهت صلاحية توثيق الرقم، برجاء المحاولة مرة أخرى",
           });
         }
-        
+
         // Clean up the verification code from cache
         otpCache.delete(cleanPhone);
       }
@@ -130,6 +152,7 @@ export const localAuthRouter = router({
           phone: cleanPhone,
           email: input.email || null,
           password: hashedPassword,
+
           referralCode: referral,
           referredBy: referredBy,
           referredByType: referredBy ? "local" : null,
@@ -137,7 +160,12 @@ export const localAuthRouter = router({
         .$returningId();
 
       const token = await generateToken(newUser.id, "local");
-      await createSession(newUser.id, "local", token, getSessionMetadata(ctx.req));
+      await createSession(
+        newUser.id,
+        "local",
+        token,
+        getSessionMetadata(ctx.req, ctx.ip),
+      );
 
       return {
         success: true,
@@ -165,18 +193,24 @@ export const localAuthRouter = router({
 
       const phoneValidation = validatePhone(input.phone);
       if (!phoneValidation.valid) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: phoneValidation.message });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: phoneValidation.message,
+        });
       }
-      
+
       const cleanPhone = cleanPhoneNumber(input.phone);
 
       // Check In-Memory Rate Limiting
       const rateLimit = checkRateLimit(ctx.ip, cleanPhone);
       if (!rateLimit.allowed) {
-        throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: rateLimit.message });
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: rateLimit.message,
+        });
       }
 
-      const code = "SS-" + Math.floor(100000 + Math.random() * 900000).toString();
+      const code = "SS-" + randomInt(100000, 1000000).toString();
       const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes from now
 
       // Store in memory cache (0 database writes!)
@@ -202,7 +236,7 @@ export const localAuthRouter = router({
       const record = otpCache.get(cleanPhone);
 
       if (!record) return { verified: false };
-      
+
       // Check expiration
       if (record.expiresAt < Date.now()) {
         otpCache.delete(cleanPhone);
@@ -217,54 +251,86 @@ export const localAuthRouter = router({
     return status.phoneNumber || "201000000000"; // Fallback if not connected yet
   }),
 
-  login: strictPublicProcedure
+  login: publicProcedure
     .input(
       z.object({
-        phone: z.string(),
-        password: z.string(),
+        phone: z.string().min(1).max(64),
+        password: z.string().min(1).max(1_024),
       }),
     )
     .mutation(async ({ input, ctx }) => {
       const cleanPhone = cleanPhoneNumber(input.phone);
-      const user = await db.query.localUsers.findFirst({
-        where: eq(localUsers.phone, cleanPhone),
+      const attempt = await beginLoginAttempt({
+        ip: ctx.ip,
+        accountIdentifier: cleanPhone,
+        requestId: loginRequestId(ctx.req),
+        userAgent: getIncomingHeader(ctx.req, "user-agent")?.slice(0, 512),
       });
+      setLoginRateLimitHeaders(ctx.resHeaders, attempt);
 
-      if (!user) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "رقم التليفون أو الباسورد غلط",
-        });
+      if (!attempt.allowed) {
+        throw loginRateLimitError(attempt.retryAfterMs);
       }
 
-      const valid = await comparePassword(input.password, user.password);
-      if (!valid) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "رقم التليفون أو الباسورد غلط",
+      let protectionFinalized = false;
+      try {
+        const user = await db.query.localUsers.findFirst({
+          where: eq(localUsers.phone, cleanPhone),
         });
+
+        // Always execute one cost-equivalent comparison to prevent timing-based
+        // account enumeration. The response code and message are identical too.
+        const valid = await comparePassword(
+          input.password,
+          user?.password || INVALID_ACCOUNT_PASSWORD_HASH,
+        );
+        if (!user || !valid) {
+          const failureState = await recordLoginFailure(attempt);
+          protectionFinalized = true;
+          setLoginRateLimitHeaders(ctx.resHeaders, failureState);
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: INVALID_LOGIN_MESSAGE,
+          });
+        }
+
+        await completeSuccessfulLogin(attempt);
+        protectionFinalized = true;
+        setLoginRateLimitHeaders(ctx.resHeaders, {
+          limit: attempt.limit,
+          remaining: attempt.limit,
+          retryAfterMs: 0,
+        });
+
+        // Update last sign in only after the credential has been verified.
+        await db
+          .update(localUsers)
+          .set({ lastSignInAt: new Date() })
+          .where(eq(localUsers.id, user.id));
+
+        const token = await generateToken(user.id, "local");
+        await createSession(
+          user.id,
+          "local",
+          token,
+          getSessionMetadata(ctx.req, ctx.ip),
+        );
+
+        return {
+          success: true,
+          token,
+          user: {
+            id: user.id,
+            name: user.name,
+            phone: user.phone,
+            role: user.role,
+            plan: user.plan,
+          },
+        };
+      } catch (error) {
+        if (!protectionFinalized) await releaseLoginAttempt(attempt);
+        throw error;
       }
-
-      // Update last sign in
-      await db
-        .update(localUsers)
-        .set({ lastSignInAt: new Date() })
-        .where(eq(localUsers.id, user.id));
-
-      const token = await generateToken(user.id, "local");
-      await createSession(user.id, "local", token, getSessionMetadata(ctx.req));
-
-      return {
-        success: true,
-        token,
-        user: {
-          id: user.id,
-          name: user.name,
-          phone: user.phone,
-          role: user.role,
-          plan: user.plan,
-        },
-      };
     }),
 
   me: publicProcedure.query(async ({ ctx }) => {
@@ -279,6 +345,14 @@ export const localAuthRouter = router({
   }),
 
   logout: publicProcedure.mutation(async ({ ctx }) => {
+    // Clear Google OAuth cookie on server side to avoid stale session shadow
+    if (ctx.resHeaders) {
+      ctx.resHeaders.append(
+        "Set-Cookie",
+        "google_session=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax",
+      );
+    }
+
     const authHeader = getIncomingHeader(ctx.req, "Authorization");
     if (authHeader?.startsWith("Bearer ")) {
       const token = authHeader.slice(7);
@@ -294,11 +368,15 @@ export const localAuthRouter = router({
       orderBy: desc(localUsers.createdAt),
     });
 
-    const stats = await db.select({
-      userId: expenses.userId,
-      expenseCount: sql`count(*)`,
-      totalSpent: sql`COALESCE(SUM(${expenses.amount}), 0)`,
-    }).from(expenses).where(eq(expenses.userType, 'local')).groupBy(expenses.userId);
+    const stats = await db
+      .select({
+        userId: expenses.userId,
+        expenseCount: sql`count(*)`,
+        totalSpent: sql`COALESCE(SUM(${expenses.amount}), 0)`,
+      })
+      .from(expenses)
+      .where(eq(expenses.userType, "local"))
+      .groupBy(expenses.userId);
 
     const statsMap = new Map();
     for (const stat of stats) {
@@ -309,7 +387,10 @@ export const localAuthRouter = router({
     }
 
     return allUsers.map((user) => {
-      const userStats = statsMap.get(user.id) || { expenseCount: 0, totalSpent: 0 };
+      const userStats = statsMap.get(user.id) || {
+        expenseCount: 0,
+        totalSpent: 0,
+      };
       return {
         ...user,
         expenseCount: userStats.expenseCount,

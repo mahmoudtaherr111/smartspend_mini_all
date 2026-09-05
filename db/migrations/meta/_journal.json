@@ -148,6 +148,13 @@
       "when": 1788399930247,
       "tag": "0020_pink_shen",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "5",
+      "when": 1788400000000,
+      "tag": "0021_storage_lifecycle_overhaul",
+      "breakpoints": true
     }
   ]
 }

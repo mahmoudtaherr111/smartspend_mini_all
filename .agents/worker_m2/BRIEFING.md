@@ -1,53 +1,56 @@
-# BRIEFING — 2026-08-26T02:27:00Z
+# BRIEFING — 2026-08-30T02:11:00Z
 
 ## Mission
-Implement Milestone M2: ExpenseForm AI Discovery Banner & Dynamic Recording Input in `src/components/expenses/ExpenseForm.tsx`.
+Implement Milestone 2: Micro-Haptics Engine & Touch Physics across SmartSpend AI frontend components and hooks with comprehensive tests.
 
 ## 🔒 My Identity
-- Archetype: worker
+- Archetype: worker_m2
 - Roles: implementer, qa, specialist
-- Working directory: E:\smartspend_V1_fixed\.agents\worker_m2
-- Original parent: d16277a4-100b-4a65-83db-42dcb8d09629
-- Milestone: M2
+- Working directory: e:/smartspend_V1_fixed/.agents/worker_m2
+- Original parent: 48fa826e-9a96-4e89-be77-3c45db8b459e
+- Milestone: M2 - Micro-Haptics Engine & Touch Physics
 
 ## 🔒 Key Constraints
-- Exclusive write ownership: `src/components/expenses/ExpenseForm.tsx` (and agent folder files).
-- Fluid Morphing AI Discovery Banner: Framer-motion AnimatePresence/motion.div, 0 dead whitespace when collapsed, persist in localStorage (`smartspend_ai_banner_collapsed`).
-- Contextual Dynamic Recording Pill: Remove static "الحالة: جاهز", expand dynamic waveform/processing pill when recording or processing, collapse to 0 height when idle.
-- Thumb-Zone Textarea & Action Bar: Save ~90px on mobile, optimize min-h, elevate action buttons to h-12/h-14.
-- PRESERVE ALL AST INVARIANTS in `ExpenseForm.quick-save.test.ts` (handleSubmit calling parseMutation.mutate, inputChannel: "text", setLatestParserTrace(null), syncOfflineData comments, ParserTracePanel rendering).
-- Run `npm run check` and `npm run test` to guarantee 0 TS errors and 100% test pass.
+- Genuine implementation with no hardcoded mocks/shortcuts.
+- Type safety: 0 errors in `npm run check`.
+- Vitest suite: 100% passing tests in `npm run test`.
+- Co-located unit tests in `src/hooks/useHaptics.test.ts` and `src/components/ui/haptics-components.test.tsx`.
+- Asymmetric 0-40ms down, 250ms spring up button physics in css and Button component.
+- Comprehensive haptic wiring across Switch, TabsTrigger, Slider, ToggleGroup, PullToRefreshWrapper, RecentExpenses.
 
 ## Current Parent
-- Conversation ID: d16277a4-100b-4a65-83db-42dcb8d09629
-- Updated: 2026-08-26T02:27:00Z
+- Conversation ID: 48fa826e-9a96-4e89-be77-3c45db8b459e
+- Updated: 2026-08-30T02:11:00Z
 
 ## Task Summary
-- **What to build**: Modernized, responsive, zero-whitespace AI Discovery Banner & Dynamic Recording Pill in ExpenseForm.tsx.
-- **Success criteria**: TypeScript check passes, all tests pass (especially quick-save AST test), smooth transitions, responsive mobile UI.
-- **Interface contracts**: PROJECT.md & AGENTS.md
+- **What to build**: Full 7-tier useHaptics hook with session methods & fallbacks, instant button active physics, haptics wiring across UI primitives and interactive expense list, comprehensive Vitest tests.
+- **Success criteria**: TypeScript typecheck passes with 0 errors, Vitest test suite passes with 100% success (101 test files, 812 tests).
+- **Interface contracts**: `PROJECT.md`, `DISPATCH.md`.
+- **Code layout**: `src/hooks/`, `src/components/ui/`, `src/components/pwa/`, `src/components/expenses/`, `src/index.css`, `src/3d-effects.css`.
+
+## Key Decisions Made
+- Exported typed interface `UseHapticsReturn`, `ImpactStyle`, and `NotificationType` from `useHaptics.ts`.
+- Standardized UI primitives (`Switch`, `TabsTrigger`, `Slider`, `Toggle`, `ToggleGroup`, `ToggleGroupItem`) with `React.forwardRef` and explicit `displayName` for robust ref forwarding and haptic event handling.
+- Polyfilled `ResizeObserver` in test environment for Radix Slider testing.
+- Verified asymmetric touch physics transitions (`0.04s` down scale `0.96`, `0.25s cubic-bezier(0.34, 1.56, 0.64, 1)` spring release) in `src/index.css` and `src/3d-effects.css`.
 
 ## Change Tracker
-- **Files modified**: `src/components/expenses/ExpenseForm.tsx`
-- **Build status**: `npm run check` (tsc -b) PASSED (0 errors); `npm run test` (vitest) PASSED (73 test files, 458 tests passed).
+- **Files modified**:
+  - `src/hooks/useHaptics.ts` — Added `UseHapticsReturn` type export and re-exports
+  - `src/components/ui/switch.tsx` — Wrapped in forwardRef with selection() haptics
+  - `src/components/ui/tabs.tsx` — Wrapped in forwardRef with selection() haptics on TabsTrigger
+  - `src/components/ui/slider.tsx` — Wrapped in forwardRef with selection() haptics on value change
+  - `src/components/ui/toggle.tsx` — Wrapped in forwardRef with selection() haptics
+  - `src/components/ui/toggle-group.tsx` — Wrapped in forwardRef with selection() haptics
+  - `src/components/pwa/PullToRefreshWrapper.test.ts` — Added `@vitest-environment jsdom`
+  - `src/components/ui/haptics-components.test.tsx` — Added comprehensive unit tests for UI haptics wiring
+- **Build status**: Pass (`npm run check` exited 0)
 - **Pending issues**: None
 
 ## Quality Status
-- **Build/test result**: Passed 100%
-- **Lint status**: Clean
-- **Tests added/modified**: Verified all AST invariants and vitest regression suites
-
-## Loaded Skills
-- None required
-
-## Key Decisions Made
-- Used Framer Motion `AnimatePresence` and `motion.div` with height/opacity transitions for seamless expansion/collapse of both the AI Discovery Banner and the Dynamic Recording Pill.
-- Persisted banner collapse preference under `smartspend_ai_banner_collapsed` with automatic mobile viewport detection default.
-- Unified recording and processing audio feedback into a single contextual pill with live animated frequency bars and timer countdown, removing static wave clutter from inside the textarea and removing static "الحالة: جاهز".
-- Elevated thumb-zone action bar touch targets to `h-12 w-12 sm:h-14 sm:w-14` (Mic/Camera) and `h-12 sm:h-14` (Submit button), saving ~90px of vertical space on mobile.
+- **Build/test result**: 101/101 test files passed, 812/812 unit/integration tests passed.
+- **Lint status**: clean
+- **Tests added/modified**: `src/hooks/useHaptics.test.ts`, `src/components/ui/haptics-components.test.tsx`, `src/components/pwa/PullToRefreshWrapper.test.ts`.
 
 ## Artifact Index
-- E:\smartspend_V1_fixed\.agents\worker_m2\DISPATCH.md
-- E:\smartspend_V1_fixed\.agents\worker_m2\progress.md
-- E:\smartspend_V1_fixed\.agents\worker_m2\report.md
-- E:\smartspend_V1_fixed\.agents\worker_m2\handoff.md
+- `.agents/worker_m2/handoff.md` — Final handoff report

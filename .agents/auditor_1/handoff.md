@@ -1,206 +1,140 @@
-# Forensic Integrity Audit Report
+# Forensic Audit Report: Build-Time Pre-compression & Static Serving Cache Headers
 
-**Work Product**: SmartSpend AI Mobile Dashboard & AI Recording Input Re-architecture  
-- `src/pages/Home.tsx`  
-- `src/components/expenses/ExpenseForm.tsx`  
-- `tests/e2e/mobile-dashboard-ai-recording.spec.ts`  
-
-**Profile**: General Project  
-**Integrity Mode**: Development (from `ORIGINAL_REQUEST.md`)  
-**Auditor Archetype**: forensic_auditor (`auditor_1`)  
-**Verdict**: **CLEAN** (Zero Integrity Violations)  
+**Work Product**: Static file pre-compression (`vite.config.ts`, `api/boot.ts`, `package.json`, `tests/static-compression.test.ts`, and build outputs)  
+**Integrity Mode**: Development (with strict behavioral and test verification standard)  
+**Verdict**: **INTEGRITY VIOLATION**
 
 ---
 
-## Executive Forensic Summary
+## 1. Observation
 
-An independent, empirical forensic integrity audit was conducted across all modified code and newly added tests for the SmartSpend AI Mobile Dashboard & AI Recording Input Re-architecture project.
+### 1.1 Source Code and Configuration Analysis
 
-Every component and test specification was audited against the anti-cheating rules, prohibited patterns (hardcoded test results, facade implementations, fabricated verification artifacts, self-certifying tests, task circumvention), and the ground truth requirements in `ORIGINAL_REQUEST.md` and `PROJECT.md`.
+1. **`package.json` (`package.json:150`)**:
+   - `vite-plugin-compression2` version `^2.5.3` is installed in `devDependencies`.
+   - `node_modules/vite-plugin-compression2/package.json` was verified on disk (v2.5.3, MIT license).
 
-All checks passed completely. The implementation is authentic, performant, and fully compliant with project standards.
+2. **`vite.config.ts` (`vite.config.ts:8, 24–37`)**:
+   - Legitimately imports and invokes `compression({...})` using `defineAlgorithm("gzip", { level: 9 })` and `defineAlgorithm("brotliCompress", { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 } })`.
+   - Filters: `threshold: 1024`, `skipIfLargerOrEqual: true`, `deleteOriginalAssets: false`, and `exclude: [/\.(png|jpg|jpeg|gif|webp|ico|woff|woff2|zip|gz|br|zst)$/]`.
+   - No hardcoded test stubs or mock facades exist in `vite.config.ts`.
 
----
-
-## Forensic Check Results Matrix
-
-| Phase / Check Category | Target Artifacts | Verification Method | Status | Verdict |
-| :--- | :--- | :--- | :--- | :--- |
-| **Check 1: Fluid Morphing AI Discovery Banner** | `src/components/expenses/ExpenseForm.tsx` | Verified `framer-motion` `<AnimatePresence>` & `<motion.div>` animating `height: 0` / `opacity: 0` to `height: "auto"` / `opacity: 1` with `overflow-hidden`. Minimal inline badge `✨ تسجيل ذكي` with `localStorage` persistence (`smartspend_ai_banner_collapsed`). | Verified authentic | **PASS** |
-| **Check 2: Contextual Dynamic Recording Pill** | `src/components/expenses/ExpenseForm.tsx` | Verified dynamic pill rendering during `isRecording \|\| isProcessingVoice \|\| flowStage === "processing"`. Dynamic waveform frequency bars (`[4, 12, 8, 16, 10, 14, 6]`), live timer (`recordingDuration`), stop action, and processing loader are genuinely bound to Web Audio / MediaRecorder and tRPC states. Static "الحالة: جاهز" eliminated. | Verified authentic | **PASS** |
-| **Check 3: Header Compaction & Streak Integration** | `src/pages/Home.tsx` | Verified `StreakCounter` component integrated directly into title bar next to month navigation. Single-line streamlined subtitle greeting. | Verified authentic | **PASS** |
-| **Check 4: High-Density SummaryChip Refactor** | `src/pages/Home.tsx` | Verified `SummaryChip` refactored into compact financial pills (`py-2 px-3 rounded-xl border backdrop-blur-md shadow-xs`), saving ~120px on mobile viewports. | Verified authentic | **PASS** |
-| **Check 5: Thumb-Zone Textarea & Elevation** | `src/components/expenses/ExpenseForm.tsx` | Verified `min-h-[96px] sm:min-h-[120px]` textarea, dynamic placeholder prompts, elevated action buttons within mobile thumb zone. AST tokens (`handleSubmit`, `syncOfflineData`, `ParserTracePanel`, `inputChannel: "text"`) preserved 100%. | Verified authentic | **PASS** |
-| **Check 6: Autonomous Mobile E2E Test Suite** | `tests/e2e/mobile-dashboard-ai-recording.spec.ts` | Complete 4-Tier Playwright test suite across iPhone 14 Pro (390x844) & Pixel 7 (412x915). Asserts genuine DOM visibility, reachability, CLS score (< 0.05 via `PerformanceObserver`), zero horizontal overflow (`scrollWidth > innerWidth == false`), and zero console errors. | Verified authentic | **PASS** |
-| **Check 7: Anti-Cheating & Prohibited Patterns** | `src/`, `tests/` | Verified zero hardcoded mock values, zero facade stubs, zero dummy returns, zero fabricated logs. | Zero violations | **PASS** |
-| **Check 8: Monorepo Typecheck & Vitest Suite** | Full Monorepo | `npm run check` (`tsc -b`) passed with 0 errors. `npm run test` passed 68/68 test suites and 457 tests including `ExpenseForm.quick-save.test.ts`. | Verified authentic | **PASS** |
-
----
-
-## 5-Component Forensic Handoff Report
-
-### 1. Observation
-
-Direct empirical observations from source code inspection and test execution:
-
-1. **Fluid Morphing AI Banner (`src/components/expenses/ExpenseForm.tsx`):**
-   - Lines 1141–1198:
-     ```tsx
-     <AnimatePresence initial={false}>
-       {!isBannerCollapsed ? (
-         <motion.div
-           key="ai-discovery-banner-expanded"
-           initial={{ height: 0, opacity: 0 }}
-           animate={{ height: "auto", opacity: 1 }}
-           exit={{ height: 0, opacity: 0 }}
-           transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
-           className="overflow-hidden"
-         >
-           <div className="pb-3 mb-1 border-b border-slate-100 dark:border-slate-800/60 flex items-center justify-between gap-3">
-             ...
-             <Button type="button" variant="ghost" size="sm" onClick={toggleBanner} className="h-7 w-7 p-0 rounded-full ...">
-               <ChevronUp className="w-4 h-4" />
-             </Button>
-           </div>
-         </motion.div>
-       ) : (
-         <motion.div
-           key="ai-discovery-banner-collapsed"
-           initial={{ opacity: 0, y: -2 }}
-           animate={{ opacity: 1, y: 0 }}
-           exit={{ opacity: 0, y: -2 }}
-           transition={{ duration: 0.2 }}
-           className="flex items-center justify-between pb-1"
-         >
-           <button type="button" onClick={toggleBanner} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15 transition-all shadow-xs">
-             <Sparkles className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
-             <span>تسجيل ذكي</span>
-           </button>
-           <span className="text-[11px] text-muted-foreground">صوت أو نص أو صورة</span>
-         </motion.div>
-       )}
-     </AnimatePresence>
+3. **`api/boot.ts` (`api/boot.ts:482–503`)**:
+   - Configures `@hono/node-server/serve-static` with:
+     ```typescript
+     app.use(
+       "/*",
+       serveStatic({
+         root: "./dist/public",
+         precompressed: true,
+         onFound: (_path, c) => {
+           const reqPath = c.req.path;
+           if (reqPath.startsWith("/assets/")) {
+             c.header("Cache-Control", "public, max-age=31536000, immutable");
+           } else if (
+             reqPath === "/sw.js" ||
+             reqPath === "/manifest.webmanifest" ||
+             reqPath === "/index.html" ||
+             reqPath === "/"
+           ) {
+             c.header("Cache-Control", "public, max-age=0, must-revalidate");
+           } else {
+             c.header("Cache-Control", "public, max-age=86400");
+           }
+         },
+       }),
+     );
      ```
-   - Persisted across reloads via `localStorage.getItem("smartspend_ai_banner_collapsed")` with safe default on mobile (`window.innerWidth < 640`).
+   - **Flaw Detected in `@hono/node-server/dist/serve-static.js:154, 170–171`**:
+     Inside `@hono/node-server`, `result = c.body(...)` creates and snapshots the HTTP `Response` object on line 154 *before* invoking `await options.onFound?.(path, c)` on line 170. Calling `c.header("Cache-Control", ...)` inside `onFound` mutates the context header bag, but does NOT modify `result.headers`. As a result, static asset responses are served with `Cache-Control: null`.
 
-2. **Contextual Dynamic Recording Pill (`src/components/expenses/ExpenseForm.tsx`):**
-   - Lines 1212–1277:
-     ```tsx
-     <AnimatePresence>
-       {(isRecording || isProcessingVoice || flowStage === "processing") && (
-         <motion.div
-           key="dynamic-recording-pill"
-           initial={{ height: 0, opacity: 0, scale: 0.96 }}
-           animate={{ height: "auto", opacity: 1, scale: 1 }}
-           exit={{ height: 0, opacity: 0, scale: 0.96 }}
-           transition={{ duration: 0.22, ease: "easeOut" }}
-           className="overflow-hidden"
-         >
-           <div className={cn("flex items-center justify-between px-3.5 py-2.5 rounded-2xl border ...", isRecording ? "bg-rose-500/10 border-rose-500/20 text-rose-700 dark:text-rose-300" : "bg-indigo-500/10 border-indigo-500/20 text-indigo-700 dark:text-indigo-300")}>
-             {isRecording ? (
-               <>
-                 <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                   <span className="flex h-2.5 w-2.5 relative shrink-0">
-                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-75"></span>
-                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-600"></span>
-                   </span>
-                   <div className="flex items-center gap-0.5 sm:gap-1 h-5" aria-hidden="true">
-                     {[4, 12, 8, 16, 10, 14, 6].map((h, i) => (
-                       <span key={i} className="w-1 bg-rose-500 dark:bg-rose-400 rounded-full animate-pulse" style={{ height: `${h}px`, animationDuration: `${0.6 + (i % 3) * 0.2}s`, animationDelay: `${i * 0.08}s` }} />
-                     ))}
-                   </div>
-                   <span className="text-xs font-bold font-mono tracking-wider">
-                     {Math.floor(recordingDuration / 60)}:{String(recordingDuration % 60).padStart(2, "0")}
-                   </span>
-                 </div>
-                 <Button type="button" variant="ghost" size="sm" onClick={stopRecording} className="h-7 px-2.5 text-xs font-bold text-rose-600 ...">
-                   إنهاء التسجيل
-                 </Button>
-               </>
-             ) : (
-               <div className="flex items-center gap-2.5 w-full justify-center py-0.5">
-                 <Loader2 className="w-4 h-4 animate-spin text-indigo-500 shrink-0" />
-                 <span className="text-xs font-bold animate-pulse text-indigo-700 dark:text-indigo-300">
-                   {loadingMessage}
-                 </span>
-               </div>
-             )}
-           </div>
-         </motion.div>
-       )}
-     </AnimatePresence>
-     ```
+### 1.2 Build Outputs & Companion File Generation
 
-3. **Compacted Header & SummaryChip Pills (`src/pages/Home.tsx`):**
-   - Lines 93–128: `SummaryChip` component renders high-density layout with `px-3 py-2 rounded-xl border backdrop-blur-md shadow-xs`.
-   - Lines 547–633: `StreakCounter` component is integrated directly into title bar next to the month selector:
-     ```tsx
-     <StreakCounter currentStreak={profile?.gamification?.currentStreak || 0} />
-     ```
-   - Streamlined single-line subtitle:
-     ```tsx
-     <p className="text-xs text-muted-foreground truncate">
-       أهلاً {user?.name?.split(" ")[0] || "صديقي"} 👋 • سجل عملياتك اليومية بالذكاء الاصطناعي
-     </p>
-     ```
+- `npm run build` executed successfully (exit code 0).
+- `dist/public/` contains genuine `.br` and `.gz` companions for assets $\ge 1024$ bytes:
+  - `index.html` (15,991 B) $\rightarrow$ `index.html.br` (2,379 B), `index.html.gz` (3,000 B)
+  - `manifest.webmanifest` (1,100 B) $\rightarrow$ `manifest.webmanifest.br` (432 B), `manifest.webmanifest.gz` (561 B)
+  - Bundled JS (e.g. `index-CdCaOD_g.js` 529 KB $\rightarrow$ `.br` 131 KB, `.gz` 158 KB; `vendor-B77QgKtm.js` 351 KB $\rightarrow$ `.br` 93 KB, `.gz` 109 KB)
+  - Bundled CSS (`index-BzN62tvf.css` 235 KB $\rightarrow$ `.br` 26 KB, `.gz` 35 KB)
+- Sub-1KB assets (e.g. `check-DHGx9O-t.js` 120 B, `apple-By5jhh1v.js` 320 B) and binary files (`icon.png`, `.woff2` font files) correctly omit `.br` and `.gz` companions.
 
-4. **Multi-Viewport Playwright Mobile Audit (`tests/e2e/mobile-dashboard-ai-recording.spec.ts`):**
-   - 4-Tier test suite covering 12 comprehensive test cases across iPhone 14 Pro (`390x844`), Android Pixel 7 (`412x915`), and iPad Air (`820x1180`).
-   - Asserts CLS score `< 0.05` via `PerformanceObserver`, zero horizontal overflow (`document.documentElement.scrollWidth <= window.innerWidth`), interactive state toggles, and zero console error captures.
+### 1.3 Test Suite Execution & Failure Logs
 
-5. **AST Token & Test Execution:**
-   - `src/components/expenses/ExpenseForm.quick-save.test.ts` passed 5/5 assertions confirming `handleSubmit`, `syncOfflineData`, `ParserTracePanel`, and `inputChannel: "text"` integrity.
-   - `npm run check` completed cleanly with exit code 0.
-   - `npm run test` passed 68 test suites and 457 tests.
+1. **`npm run check`**:
+   - Result: **PASS** (exit code 0, 0 TypeScript errors).
+
+2. **`npm run build`**:
+   - Result: **PASS** (exit code 0, all chunks and companions compiled).
+
+3. **`npm test`**:
+   - Result: **FAIL** (exit code 1, 5 failed test files, 14 failed tests out of 567 total tests).
+   - Verbatim breakdown of test failures:
+     - **`tests/static-compression.test.ts` (9 failed tests)**:
+       - `Tier 3 > serves JavaScript assets with proper Content-Type and 1-year immutable Cache-Control`: `AssertionError: expected null to be 'public, max-age=31536000, immutable'`
+       - `Tier 3 > serves CSS assets with proper Content-Type and 1-year immutable Cache-Control`: `AssertionError: expected null to be 'public, max-age=31536000, immutable'`
+       - `Tier 3 > serves WOFF2 fonts with font/woff2 and 1-year immutable Cache-Control`: `AssertionError: expected null to be 'public, max-age=31536000, immutable'`
+       - `Tier 3 > serves index.html with text/html and must-revalidate Cache-Control`: `AssertionError: expected null to be 'public, max-age=0, must-revalidate'`
+       - `Tier 3 > serves manifest.webmanifest with application/manifest+json and must-revalidate Cache-Control`: `AssertionError: expected null to be 'public, max-age=0, must-revalidate'`
+       - `Tier 3 > serves sw.js service worker with must-revalidate Cache-Control`: `AssertionError: expected null to be 'public, max-age=0, must-revalidate'`
+       - `Tier 4 > falls back to index.html for client-side SPA routes (e.g. /dashboard)`: `AssertionError: expected '<!doctype html>...' to contain '<!DOCTYPE html>'` (case sensitivity mismatch)
+       - `Tier 4 > falls back to index.html for deep nested client routes`: `AssertionError: expected '<!doctype html>...' to contain '<!DOCTYPE html>'`
+       - `Adversarial > prevents directory traversal attempts and returns 404`: `AssertionError: expected 200 to be 404`
+     - **`tests/fonts-self-hosted.test.ts` (1 failed test)**:
+       - `verifies service worker (sw.js) precaches variable font assets for 100% offline access`: expected `dist/public/sw.js` to precache variable fonts (`cairo-arabic-`).
+     - **`src/components/pwa/PullToRefreshWrapper.test.ts` (1 failed test)**:
+       - `guards rubberband dimension against 0 or undefined window.innerHeight`: regex formatting mismatch.
+     - **`api/lib/e2e-classification.test.ts` & `api/lib/comprehensive-classification.test.ts` (3 failed tests)**:
+       - MySQL database connection refused / test timeout (30s / 15s).
 
 ---
 
-### 2. Logic Chain
+## 2. Logic Chain
 
-1. Ground truth constraints from `ORIGINAL_REQUEST.md` define the development integrity standard for the mobile dashboard and AI recording input card.
-2. In Phase 1 source inspection, all UI animations and transitions were verified to use genuine `framer-motion` APIs (`AnimatePresence`, `motion.div`) with zero whitespace hacks.
-3. Audio recording and processing feedback elements were verified to be directly hooked into runtime state (`isRecording`, `recordingDuration`, `isProcessingVoice`, `flowStage`) and Web Audio / MediaRecorder.
-4. Header and metric chips in `Home.tsx` were verified to save vertical space (~120px) while maintaining full data fidelity, responsiveness, and dark/light mode themes.
-5. All AST contracts tested by `ExpenseForm.quick-save.test.ts` were confirmed preserved and passing.
-6. The test suite in `tests/e2e/mobile-dashboard-ai-recording.spec.ts` was audited and confirmed to test genuine browser behavior without hardcoded cheats or facade assertions.
-7. TypeScript compilation (`npm run check`) and Vitest execution (`npm run test`) verified system-wide health and absence of regressions.
-8. Therefore, the implementation is authentic, complete, and verified clean.
+1. **Premise 1**: The project requirements in `PROJECT.md` (Features 3, 5, 6) mandate that static file serving delivers fine-grained `Cache-Control` response headers (`public, max-age=31536000, immutable` for `/assets/*` and `public, max-age=0, must-revalidate` for HTML/PWA entrypoints) and that the test suite passes with 0 regressions.
+2. **Premise 2**: In `api/boot.ts`, the implementation attempted to set `Cache-Control` via `onFound` in `serveStatic`.
+3. **Premise 3**: Inspection of `@hono/node-server/dist/serve-static.js:154, 170` proves that `onFound` is executed after the response body and headers are constructed (`result = c.body(...)`). Calling `c.header(...)` inside `onFound` does not populate `result.headers`.
+4. **Premise 4**: Direct empirical execution of `npm test` failed with 14 test errors across 5 test suites, with 6 tests directly failing because `res.headers.get("cache-control")` is `null`.
+5. **Premise 5**: Under Integrity Forensics standard: "The build must succeed and tests must execute — a project that doesn't build or whose tests don't run is automatically flagged. If ANY check fails, your verdict is INTEGRITY VIOLATION and you MUST reject the work product."
+6. **Inference**: Because the target deliverables fail behavioral test assertions and the claimed `Cache-Control` header policy is not functioning in the HTTP responses, the work product cannot be approved as clean.
 
 ---
 
-### 3. Caveats
+## 3. Caveats
 
-- **Audio Hardware in Headless CI**: In headless browser test runners without physical audio hardware, `getUserMedia` is mocked at the browser context level in `mobile-fixtures.ts` to allow testing the UI state machine without permission dialog blocks. This is standard testing practice and does not alter production runtime logic.
-- **No other caveats**: The codebase is completely sound and free of regressions.
-
----
-
-### 4. Conclusion
-
-**Verdict: CLEAN**
-
-The SmartSpend AI Mobile Dashboard & AI Recording Input Re-architecture deliverables are authentic, complete, and fully compliant with project standards and user specifications. Zero integrity violations were detected.
+- The build pipeline (`vite.config.ts`, `vite-plugin-compression2`) is genuinely installed and emits valid, authentic Brotli quality 11 and Gzip level 9 binary streams without facade or mock implementations.
+- No tests were maliciously deleted, skipped, or altered to fabricate passing marks.
+- The root cause of the `Cache-Control` header failure is an architectural mismatch between `@hono/node-server/serve-static`'s execution order and `c.header()` context mutation. To fix it, static caching headers should be applied via a preceding middleware handler (e.g. `app.use('/assets/*', async (c, next) => { await next(); c.header('Cache-Control', 'public, max-age=31536000, immutable'); })`) or by adjusting the response in an outer middleware wrapper.
 
 ---
 
-### 5. Verification Method
+## 4. Conclusion
 
-To independently reproduce the forensic verification:
+- **Verdict**: **INTEGRITY VIOLATION**
+- **Reason**:
+  1. `npm test` fails with 14 errors (including 9 in the new `tests/static-compression.test.ts` suite).
+  2. `Cache-Control` header policy claimed in `api/boot.ts` does not attach to HTTP responses returned by `@hono/node-server/serve-static`.
+  3. Case sensitivity in SPA fallback HTML assertions (`<!doctype html>` vs `<!DOCTYPE html>`) causes route tests to fail.
 
-1. **Typecheck Monorepo**:
+---
+
+## 5. Verification Method
+
+To independently reproduce the audit findings:
+
+1. **Verify TypeScript Compilation**:
    ```bash
    npm run check
    ```
-   *Expected Result*: Exits with code 0 (zero TypeScript errors).
+   *Result*: Passes with 0 errors.
 
-2. **Run Unit & AST Test Suites**:
+2. **Verify Production Build & Companion Generation**:
    ```bash
-   npm run test
+   npm run build
    ```
-   *Expected Result*: 68 test suites pass, 457 tests pass, including `ExpenseForm.quick-save.test.ts`.
+   *Result*: Passes with 0 errors; `.br` and `.gz` files appear in `dist/public/` and `dist/public/assets/`.
 
-3. **Inspect Component Sources**:
-   - `src/components/expenses/ExpenseForm.tsx`: Verify `AnimatePresence`, `motion.div`, `isBannerCollapsed`, `isRecording`, `recordingDuration`.
-   - `src/pages/Home.tsx`: Verify `StreakCounter` in header, single-line subtitle, and `SummaryChip` `py-2 px-3`.
-   - `tests/e2e/mobile-dashboard-ai-recording.spec.ts`: Verify 4-Tier test coverage across mobile viewports.
-
+3. **Verify Test Suite Failures**:
+   ```bash
+   npm test
+   ```
+   *Result*: Fails with 14 test failures across 5 test suites, demonstrating `res.headers.get("cache-control") === null`.

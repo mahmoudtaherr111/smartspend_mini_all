@@ -7,7 +7,6 @@ test.describe("R4: Mobile Customer Journeys & Multi-Viewport Auditing", () => {
 
   test("Tier 4 (Scenario 1): Daily Mobile Expense Logging Journey across tabs with zero console errors", async ({
     page,
-    dragBetweenTabs,
     consoleErrors,
   }) => {
     // 1. User launches app in standalone mobile mode
@@ -15,35 +14,32 @@ test.describe("R4: Mobile Customer Journeys & Multi-Viewport Auditing", () => {
     await page.waitForLoadState("domcontentloaded");
 
     // 2. Fill expense form
-    const amountInput = page.locator("input[placeholder*='0.00'], input[placeholder*='مبلغ'], input[type='number']").first();
-    if ((await amountInput.count()) > 0) {
-      await amountInput.fill("120");
-    }
+    const expenseDraft = page.locator("#expense-input");
+    await expect(expenseDraft).toBeVisible();
+    await expenseDraft.fill("120 جنيه غدا");
 
-    // 3. Touch glide to Stats tab
-    await dragBetweenTabs("record", "stats");
-    await page.waitForTimeout(100);
+    // 3. Root destinations switch with a deliberate tab tap, matching native
+    // tab-bar semantics instead of treating the app as a horizontal carousel.
+    await page.getByTestId("nav-tab-stats").click();
 
     // Verify stats content
-    const statsIndicator = page.locator("text='إحصائيات', text='تحليل', text='طعام ومشروبات'").first();
-    await expect(statsIndicator).toBeVisible();
+    await expect(
+      page.locator("#home-panel-stats[data-state='active']"),
+    ).toBeVisible();
 
-    // 4. Touch glide to Calendar tab
-    await dragBetweenTabs("stats", "calendar");
-    await page.waitForTimeout(100);
+    // 4. Tap Calendar
+    await page.getByTestId("nav-tab-calendar").click();
 
     // Verify calendar ledger
-    const calendarView = page.locator("text='تقويم', text='أغسطس', [class*='calendar']").first();
-    await expect(calendarView).toBeVisible();
+    await expect(
+      page.locator("#home-panel-calendar[data-state='active']"),
+    ).toBeVisible();
 
-    // 5. Touch glide back to Record tab
-    await dragBetweenTabs("calendar", "record");
-    await page.waitForTimeout(100);
+    // 5. Tap back to Record
+    await page.getByTestId("nav-tab-record").click();
 
     // Form value remains preserved
-    if ((await amountInput.count()) > 0) {
-      await expect(amountInput).toHaveValue("120");
-    }
+    await expect(expenseDraft).toHaveValue("120 جنيه غدا");
 
     // 6. Assert zero console errors occurred during the journey
     expect(consoleErrors).toHaveLength(0);
@@ -58,11 +54,18 @@ test.describe("R4: Mobile Customer Journeys & Multi-Viewport Auditing", () => {
     await page.waitForLoadState("domcontentloaded");
 
     // Verify AI Center container is rendered
-    const aiCenter = page.locator("main, [data-testid='ai-center'], text='المساعد المالي', text='SmartSpend AI'").first();
+    const aiCenter = page
+      .locator("main, [data-testid='ai-center']")
+      .or(page.getByText(/المساعد المالي|SmartSpend AI/))
+      .first();
     await expect(aiCenter).toBeVisible();
 
     // Verify chat input composer exists and is not occluded by floating bottom nav
-    const chatInput = page.locator("input[placeholder*='اسأل'], textarea[placeholder*='اسأل'], [data-testid='chat-input']").first();
+    const chatInput = page
+      .locator(
+        "input[placeholder*='اسأل'], textarea[placeholder*='اسأل'], [data-testid='chat-input']",
+      )
+      .first();
     if ((await chatInput.count()) > 0) {
       await expect(chatInput).toBeVisible();
 
@@ -72,7 +75,9 @@ test.describe("R4: Mobile Customer Journeys & Multi-Viewport Auditing", () => {
 
       if (inputRect && viewport) {
         // Chat input should be above the bottom edge safe area
-        expect(inputRect.y + inputRect.height).toBeLessThanOrEqual(viewport.height);
+        expect(inputRect.y + inputRect.height).toBeLessThanOrEqual(
+          viewport.height,
+        );
       }
     }
 
@@ -80,46 +85,50 @@ test.describe("R4: Mobile Customer Journeys & Multi-Viewport Auditing", () => {
     expect(consoleErrors).toHaveLength(0);
   });
 
-  test("Tier 4 (Scenario 3): Tablet & Large Mobile Screen Geometry & Menu Drawer audit", async ({
+  test("Tier 4 (Scenario 3): Tablet & Large Mobile Screen Geometry & More destination audit", async ({
     page,
     consoleErrors,
   }) => {
     await page.goto("/dashboard");
     await page.waitForLoadState("domcontentloaded");
 
-    // Open More drawer / sidebar
-    const moreTabOrMenu = page.locator("nav button[aria-label*='المزيد'], nav button[aria-label*='فتح القائمة'], nav").getByText("المزيد").first();
-    if ((await moreTabOrMenu.count()) > 0) {
-      await moreTabOrMenu.click();
-      await page.waitForTimeout(150);
-
-      // Verify sidebar drawer or menu overlay opens
-      const drawerOrSidebar = page.locator("[role='dialog'], [data-state='open'], aside, nav").first();
-      await expect(drawerOrSidebar).toBeVisible();
-    }
+    // "More" is a stable root destination. Native tab bars should navigate to
+    // a full screen instead of opening an unrelated sidebar drawer.
+    await page.getByTestId("nav-tab-more").click();
+    await expect(page).toHaveURL(/\/more$/);
+    await expect(page.getByRole("heading", { name: "المزيد" })).toBeVisible();
 
     // Assert zero console errors
     expect(consoleErrors).toHaveLength(0);
   });
 
-  test("Tier 2 (BVA): Rapid full-loop touch gestures across all 5 navigation tabs", async ({
+  test("Tier 2 (BVA): Rapid full-loop taps across all 5 root navigation tabs", async ({
     page,
-    dragBetweenTabs,
     consoleErrors,
   }) => {
     await page.goto("/dashboard?tab=record");
     await page.waitForLoadState("domcontentloaded");
 
-    // Sequence of touch glides across tabs
-    await dragBetweenTabs("record", "stats");
-    await dragBetweenTabs("stats", "ai");
-    await dragBetweenTabs("ai", "calendar");
-    await dragBetweenTabs("calendar", "more");
-
-    await page.waitForTimeout(100);
+    const destinations = [
+      { tab: "stats", url: /tab=stats/ },
+      { tab: "ai", url: /\/ai$/ },
+      { tab: "calendar", url: /tab=calendar/ },
+      { tab: "more", url: /\/more$/ },
+    ];
+    for (const destination of destinations) {
+      const tab = page.getByTestId(`nav-tab-${destination.tab}`);
+      await expect(tab).toBeVisible();
+      await tab.click();
+      await expect(page).toHaveURL(destination.url);
+      await page.waitForTimeout(180);
+    }
 
     // Nav container should remain firmly visible
-    const nav = page.locator("nav.mobile-bottom-nav, [data-testid='mobile-bottom-nav'], nav[aria-label*='التنقل']").first();
+    const nav = page
+      .locator(
+        "nav.mobile-bottom-nav, [data-testid='mobile-bottom-nav'], nav[aria-label*='التنقل']",
+      )
+      .first();
     await expect(nav).toBeVisible();
 
     expect(consoleErrors).toHaveLength(0);

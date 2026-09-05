@@ -1357,6 +1357,22 @@ const VIRTUAL_AGGREGATE_IDS: Record<string, { id: string; arabicName: string; ty
   uncategorized: { id: "uncategorized", arabicName: "غير مصنف", type: "expense" },
 };
 
+/**
+ * Exact-alias resolution only, for callers that must not guess.
+ *
+ * `canonicalCategoryId` deliberately falls through to an unanchored substring scan so it
+ * can pull a category out of free-form user text. That is the right behaviour there and
+ * the wrong behaviour when the input is a MODEL answering an enum: "business" contains
+ * "bus", so an invalid category was silently "repaired" into مواصلات and written down as
+ * if the model had said it. Returns null instead of a guess.
+ */
+export function exactCategoryId(input: string | null | undefined): string | null {
+  if (!input) return null;
+  const normalized = comparableArabic(input);
+  if (!normalized) return null;
+  return ALIAS_TO_ID.get(normalized) ?? findCategoryByAnyName(input)?.id ?? null;
+}
+
 export function canonicalCategoryId(input: string | null | undefined): string {
   if (!input) return "uncategorized";
   const normalized = comparableArabic(input);

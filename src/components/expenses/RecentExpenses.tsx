@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { trpc } from "@/providers/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,22 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  AdaptiveDialog,
+  AdaptiveDialogContent,
+  AdaptiveDialogHeader,
+  AdaptiveDialogTitle,
+  AdaptiveDialogDescription,
+  AdaptiveDialogFooter,
+  AdaptiveDialogTrigger,
+} from "@/components/ui/adaptive-dialog";
 import { toast } from "sonner";
 import {
   Receipt,
@@ -35,7 +27,13 @@ import {
   ChevronUp,
   Wallet,
 } from "lucide-react";
-import { motion, useAnimation, PanInfo, useMotionValue, useTransform } from "framer-motion";
+import {
+  motion,
+  useAnimation,
+  PanInfo,
+  useMotionValue,
+  useTransform,
+} from "framer-motion";
 import { useHaptics } from "@/hooks/useHaptics";
 
 interface RecentExpensesProps {
@@ -74,20 +72,29 @@ const categoryColors: Record<string, string> = {
   متنوعات:
     "bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-200",
   العائلة: "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-200",
-  أصدقاء: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200",
-  موظفين: "bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-200",
-  "التزامات وجمعيات": "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-200",
-  خروجات: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-200",
-  "حيوانات أليفة": "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-200",
+  أصدقاء:
+    "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200",
+  موظفين:
+    "bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-200",
+  "التزامات وجمعيات":
+    "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-200",
+  خروجات:
+    "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-200",
+  "حيوانات أليفة":
+    "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-200",
   عمل: "bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-200",
   مرتب: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200",
   "عمل حر": "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-200",
-  "عوائد استثمار": "bg-lime-100 text-lime-700 dark:bg-lime-950/40 dark:text-lime-200",
+  "عوائد استثمار":
+    "bg-lime-100 text-lime-700 dark:bg-lime-950/40 dark:text-lime-200",
   تحويل: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-200",
-  استثمار: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-200",
-  "التزامات يومية": "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-200",
+  استثمار:
+    "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-200",
+  "التزامات يومية":
+    "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-200",
   "خدمات رقمية": "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-200",
-  "خدمات سيارات": "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-200",
+  "خدمات سيارات":
+    "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-200",
 };
 
 const providerMeta: Record<
@@ -245,7 +252,12 @@ function getTypeMeta(type: string | null | undefined) {
   };
 }
 
-export function RecentExpenses({ onRefresh, limit = 100, month, salaryDay }: RecentExpensesProps) {
+export function RecentExpenses({
+  onRefresh,
+  limit = 100,
+  month,
+  salaryDay,
+}: RecentExpensesProps) {
   const [page, setPage] = useState(0);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
@@ -307,9 +319,12 @@ export function RecentExpenses({ onRefresh, limit = 100, month, salaryDay }: Rec
     ...dateRange,
   };
 
-  const { data, isLoading, isFetching, refetch } = trpc.expense.list.useQuery(queryInput, {
-    placeholderData: (prev) => prev,
-  });
+  const { data, isLoading, isFetching, refetch } = trpc.expense.list.useQuery(
+    queryInput,
+    {
+      placeholderData: (prev) => prev,
+    },
+  );
 
   const { success: hapticSuccess, error: hapticError } = useHaptics();
 
@@ -351,22 +366,13 @@ export function RecentExpenses({ onRefresh, limit = 100, month, salaryDay }: Rec
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Receipt className="w-5 h-5 text-blue-500" />
-              آخر العمليات
-              <Skeleton className="w-16 h-5 rounded-full" />
-            </CardTitle>
-            <Skeleton className="w-8 h-8 rounded-md" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <ExpenseItemSkeleton key={i} />
-            ))}
+      <Card data-testid="recent-expenses">
+        <CardContent className="flex min-h-[106px] items-center gap-4 p-5 sm:p-6">
+          <Skeleton className="h-14 w-14 shrink-0 rounded-2xl" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <Skeleton className="h-5 w-28 rounded-md" />
+            <Skeleton className="h-4 w-full max-w-64 rounded-md" />
+            <Skeleton className="h-4 w-2/3 max-w-48 rounded-md" />
           </div>
         </CardContent>
       </Card>
@@ -375,26 +381,23 @@ export function RecentExpenses({ onRefresh, limit = 100, month, salaryDay }: Rec
 
   if (!data || data.items.length === 0) {
     return (
-      <Card className="border-dashed border-2 bg-slate-50/50 dark:bg-slate-900/50">
-        <CardContent className="p-10 text-center text-muted-foreground space-y-6">
-          <div className="relative mx-auto w-32 h-32 rounded-full bg-emerald-100 dark:bg-emerald-900/20 flex items-center justify-center animate-in zoom-in duration-500">
-            <Wallet
-              className="w-16 h-16 text-emerald-500 animate-bounce"
-              style={{ animationDuration: "3s" }}
-            />
-            <div className="absolute top-0 end-0 w-8 h-8 rounded-full bg-amber-200 dark:bg-amber-700/50 flex items-center justify-center -translate-y-2 translate-x-2 animate-pulse">
-              <span className="text-amber-700 dark:text-amber-200 text-lg">
+      <Card
+        className="border-dashed border-2 bg-slate-50/50 dark:bg-slate-900/50"
+        data-testid="recent-expenses"
+      >
+        <CardContent className="flex items-center gap-4 p-5 text-muted-foreground sm:p-6">
+          <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-900/20">
+            <Wallet className="h-7 w-7 text-emerald-500" aria-hidden="true" />
+            <div className="absolute -end-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-amber-200 dark:bg-amber-700/50">
+              <span className="text-xs" aria-hidden="true">
                 💡
               </span>
             </div>
           </div>
-          <div className="space-y-2">
-            <h3 className="text-xl font-bold text-foreground">
-              يلا نبدأ الرحلة! 🚀
-            </h3>
-            <p className="text-sm max-w-sm mx-auto">
-              مفيش مصاريف متسجلة هنا لسه. دوس على أيقونة المايك وسجل أول مصروف
-              بصوتك في ثواني!
+          <div className="min-w-0 space-y-1">
+            <h3 className="font-bold text-foreground">سجّل أول عملية</h3>
+            <p className="text-sm leading-6">
+              استخدم النص أو المايك أو الصورة، وهتظهر عملياتك هنا تلقائيًا.
             </p>
           </div>
         </CardContent>
@@ -404,17 +407,28 @@ export function RecentExpenses({ onRefresh, limit = 100, month, salaryDay }: Rec
 
   return (
     <>
-      <Card>
+      <Card data-testid="recent-expenses">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
               <Receipt className="w-5 h-5 text-blue-500" />
               آخر العمليات
-              <Badge variant="secondary">{data ? Number(data.total) : 0} عملية</Badge>
-              {isFetching && <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground ms-2" />}
+              <Badge variant="secondary">
+                {data ? Number(data.total) : 0} عملية
+              </Badge>
+              {isFetching && (
+                <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground ms-2" />
+              )}
             </CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isFetching}>
-              <RefreshCw className={cn("w-4 h-4", isFetching && "animate-spin")} />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => refetch()}
+              disabled={isFetching}
+            >
+              <RefreshCw
+                className={cn("w-4 h-4", isFetching && "animate-spin")}
+              />
             </Button>
           </div>
         </CardHeader>
@@ -449,31 +463,38 @@ export function RecentExpenses({ onRefresh, limit = 100, month, salaryDay }: Rec
         </CardContent>
       </Card>
 
-      <AlertDialog
+      <AdaptiveDialog
         open={pendingDeleteId !== null}
         onOpenChange={(open) => !open && setPendingDeleteId(null)}
       >
-        <AlertDialogContent dir="rtl">
-          <AlertDialogHeader>
-            <AlertDialogTitle>متأكد من الحذف؟</AlertDialogTitle>
-            <AlertDialogDescription>
+        <AdaptiveDialogContent dir="rtl">
+          <AdaptiveDialogHeader>
+            <AdaptiveDialogTitle>متأكد من الحذف؟</AdaptiveDialogTitle>
+            <AdaptiveDialogDescription>
               هتتمسح العملية من السجل ومش هتقدر ترجعها.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 sm:gap-0">
-            <AlertDialogCancel>رجوع</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            </AdaptiveDialogDescription>
+          </AdaptiveDialogHeader>
+          <AdaptiveDialogFooter className="gap-2 sm:gap-0 flex-row">
+            <Button
+              variant="outline"
+              onClick={() => setPendingDeleteId(null)}
+              className="flex-1 rounded-xl"
+            >
+              رجوع
+            </Button>
+            <Button
+              className="flex-1 rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
                 if (pendingDeleteId != null)
                   deleteMutation.mutate({ id: pendingDeleteId });
+                setPendingDeleteId(null);
               }}
             >
               امسح
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </AdaptiveDialogFooter>
+        </AdaptiveDialogContent>
+      </AdaptiveDialog>
     </>
   );
 }
@@ -518,11 +539,15 @@ function ExpenseItem({
   });
 
   const controls = useAnimation();
-  const { mediumTap } = useHaptics();
-  const isRTL = typeof document !== "undefined" && document.documentElement.dir === "rtl";
-  const dragConstraints = isRTL ? { left: -80, right: 0 } : { right: 80, left: 0 };
+  const { lightTap, heavyTap } = useHaptics();
+  const isRTL =
+    typeof document !== "undefined" && document.documentElement.dir === "rtl";
+  const dragConstraints = isRTL
+    ? { left: -80, right: 0 }
+    : { right: 80, left: 0 };
   const isSms = expense.source === "sms";
   const x = useMotionValue(0);
+  const thresholdPassedRef = useRef(false);
 
   // Smoothly fade in the background action as card is dragged, preventing it from showing through translucent cards
   const bgOpacity = useTransform(x, (val) => {
@@ -531,12 +556,28 @@ function ExpenseItem({
     return Math.min(1, (absVal - 5) / 35); // fully opaque after dragging 40px
   });
 
-  const handleDragEnd = async (e: any, info: PanInfo) => {
+  const handleDrag = (_e: any, info: PanInfo) => {
     const threshold = 60;
-    const hasDraggedPastThreshold = isRTL ? info.offset.x < -threshold : info.offset.x > threshold;
+    const passed = isRTL
+      ? info.offset.x < -threshold
+      : info.offset.x > threshold;
+    if (passed && !thresholdPassedRef.current) {
+      thresholdPassedRef.current = true;
+      lightTap();
+    } else if (!passed && thresholdPassedRef.current) {
+      thresholdPassedRef.current = false;
+    }
+  };
+
+  const handleDragEnd = async (_e: any, info: PanInfo) => {
+    const threshold = 60;
+    const hasDraggedPastThreshold = isRTL
+      ? info.offset.x < -threshold
+      : info.offset.x > threshold;
+    thresholdPassedRef.current = false;
 
     if (hasDraggedPastThreshold) {
-      mediumTap();
+      heavyTap();
       onRequestDelete(expense.id);
       controls.start({ x: 0 });
     } else {
@@ -547,7 +588,7 @@ function ExpenseItem({
   return (
     <div className="relative overflow-hidden rounded-lg border shadow-sm touch-pan-y">
       {/* Background Actions (Delete) */}
-      <motion.div 
+      <motion.div
         style={{ opacity: bgOpacity }}
         className="absolute inset-y-0 start-0 w-20 bg-red-500 flex items-center justify-center"
       >
@@ -559,14 +600,18 @@ function ExpenseItem({
         drag="x"
         dragConstraints={dragConstraints}
         dragElastic={0.1}
+        onDrag={handleDrag}
         onDragEnd={handleDragEnd}
         animate={controls}
         style={{ x }}
-        className="relative bg-white dark:bg-slate-900/90 p-3 flex items-center justify-between z-10 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors gap-3"
+        data-no-swipe="true"
+        className="no-swipe relative bg-white dark:bg-slate-900/90 p-3 flex items-center justify-between z-10 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors gap-3"
       >
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className="text-end min-w-0 flex-1">
-            <div className={cn("font-bold text-lg truncate", typeMeta.amountClass)}>
+            <div
+              className={cn("font-bold text-lg truncate", typeMeta.amountClass)}
+            >
               {typeMeta.sign}
               {Number(expense.amount).toFixed(0)} جنيه
             </div>
@@ -621,17 +666,17 @@ function ExpenseItem({
               </span>
             )}
           </div>
-          <Dialog>
-            <DialogTrigger
+          <AdaptiveDialog snapPoints={[0.6, 0.95]}>
+            <AdaptiveDialogTrigger
               aria-label="تفاصيل العملية"
               className="inline-flex h-11 w-11 items-center justify-center rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground border shadow-sm bg-white dark:bg-slate-800"
             >
               <MessageSquare className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>تفاصيل العملية</DialogTitle>
-              </DialogHeader>
+            </AdaptiveDialogTrigger>
+            <AdaptiveDialogContent>
+              <AdaptiveDialogHeader>
+                <AdaptiveDialogTitle>تفاصيل العملية</AdaptiveDialogTitle>
+              </AdaptiveDialogHeader>
               <div className="space-y-3" dir="rtl">
                 <div className="flex justify-between border-b pb-2">
                   <span className="text-sm text-muted-foreground">المبلغ:</span>
@@ -750,27 +795,10 @@ function ExpenseItem({
                   <span>{date.toLocaleString("ar-EG")}</span>
                 </div>
               </div>
-            </DialogContent>
-          </Dialog>
+            </AdaptiveDialogContent>
+          </AdaptiveDialog>
         </div>
       </motion.div>
-    </div>
-  );
-}
-
-function ExpenseItemSkeleton() {
-  return (
-    <div className="relative overflow-hidden rounded-lg border shadow-sm p-3 flex items-center justify-between bg-white dark:bg-slate-900/90">
-      <div className="flex items-center gap-3">
-        <div className="text-end space-y-2">
-          <Skeleton className="h-6 w-20" />
-          <Skeleton className="h-3 w-16" />
-        </div>
-      </div>
-      <div className="flex flex-col items-end gap-1.5">
-        <Skeleton className="h-5 w-16 rounded-full" />
-        <Skeleton className="h-4 w-12 rounded-full" />
-      </div>
     </div>
   );
 }

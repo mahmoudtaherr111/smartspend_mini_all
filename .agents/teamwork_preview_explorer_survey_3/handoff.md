@@ -1,114 +1,108 @@
-# Handoff Report: Survey of R3 (Warm Tab Pre-Rendering) & R4 (Mobile Touch Auditing)
+# Handoff Report: Financial Mutations, PWA UX, Auth Sync & Test Infra
 
-**Agent:** `teamwork_preview_explorer_survey_3`  
-**Working Directory:** `E:\smartspend_V1_fixed\.agents\teamwork_preview_explorer_survey_3`  
-**Date:** 2026-08-25  
-**Handoff Type:** Hard (Survey Task Complete)
+**Agent**: Explorer 3 (Financial Mutations, PWA UX, Auth Sync & Test Infra Specialist)  
+**Date**: 2026-08-30  
+**Status**: Completed (Hard Handoff)
 
 ---
 
 ## 1. Observation
 
-1. **Route-Level Unmounting in `src/App.tsx`:**
-   - Lines 325–379:
-     ```tsx
-     <AnimatePresence mode="wait" initial={false}>
-       <Routes location={location} key={location.pathname}>
-         <Route path="/dashboard" element={<ProtectedRoute><PageTransition><Home /></PageTransition></ProtectedRoute>} />
-         <Route path="/ai" element={<ProtectedRoute><PageTransition><AICenter /></PageTransition></ProtectedRoute>} />
-         ...
-       </Routes>
-     </AnimatePresence>
-     ```
-   - In `src/components/layout/PageTransition.tsx` (lines 19–26), `transition` has `duration: 0.35`. Navigating between `/dashboard` and `/ai` blocks the incoming view for 350ms while the outgoing view exits.
+1. **Expense Mutation Idempotency**:
+   - `db/schema.ts` lines 102, 120–124 define `clientRequestId: varchar("client_request_id", { length: 64 })` and `uniqueIndex("expenses_user_client_request_unique").on(t.userId, t.userType, t.clientRequestId)`.
+   - `api/expense-router.ts` lines 423–620: `create` and `batchCreate` mutations execute a pre-check (`db.select().from(expenses).where(...)`) and an ACID transaction with `catch (err: unknown)` executing `if (input.clientRequestId && isDuplicateEntryError(err))` (lines 524–547) to safely return the duplicate record.
+   - `src/components/expenses/ExpenseForm.tsx` lines 2027–2044 generates `clientRequestId` and caches `submissionRef.current` with fingerprinting over `[parsedAmount, type, category, subCategory, description, businessId]`.
+   - `src/components/expenses/ExpenseForm.tsx` lines 536–588 implements React Query optimistic updates with snapshot capture in `onMutate`, cache rollback in `onError`, and query invalidation in `onSettled`.
 
-2. **Tab-Level Unmounting in `src/pages/Home.tsx`:**
-   - Lines 669–738:
-     ```tsx
-     <AnimatePresence mode="wait">
-       {activeTab === "record" && <motion.div key="record" ...><ExpenseForm ... /><RecentExpenses ... /><FinancialGoalsPanel ... /></motion.div>}
-       {activeTab === "stats" && <motion.div key="stats" ...><ExpenseChart ... /><BehaviorInsights ... /><AIInsights ... /></motion.div>}
-       {activeTab === "calendar" && <motion.div key="calendar" ...><MonthlyCalendar ... /></motion.div>}
-     </AnimatePresence>
-     ```
-   - Line 701: `FinancialGoalsPanel` is wrapped in `<Suspense fallback={<Card><Skeleton className="h-24 w-full" /></Card>}>`.
-   - Line 492: `trpc.expense.getMonthlyStats.useQuery(..., { enabled: shouldLoadStats, staleTime: 30_000 })` disables stats fetching when not on `stats`.
+2. **Gaps in Wallet, Budget, and Goals Idempotency**:
+   - `api/wallet-router.ts` lines 47–66 (`createWallet`), `api/budget-router.ts` lines 107–133 (`create`), and `api/goals-router.ts` lines 112–150 (`create`) do NOT accept a `clientRequestId` parameter, and lack unique composite constraints on retry keys.
 
-3. **Sub-Tab Unmounting in `src/pages/AICenter.tsx`:**
-   - Lines 126–142: `<AnimatePresence mode="wait">` dynamically unmounts `<AIChatbot />`, `<AIVoiceCall />`, and `<AIMonthlyReport />` on tab change.
+3. **Offline Queue Head-of-Line Blocking**:
+   - `src/components/expenses/ExpenseForm.tsx` lines 1140–1185: `syncOfflineData` loops over `offlineTexts` and `offlineManual`. If `createMutation.mutateAsync(item)` throws an unrecoverable validation error, the `catch` block calls `toast.error(...)` and immediately executes `return; // Halt queue processing`. Because `offlineManual.shift()` is only invoked after a successful mutation, the corrupt record remains at index 0, blocking all remaining valid offline transactions from syncing.
 
-4. **Test Runner & Config Observations:**
-   - `package.json` contains `"@playwright/test": "^1.61.1"`, `"vitest": "^4.0.16"`, `"typescript": "~5.9.3"`.
-   - `vitest.config.ts` line 17:
-     ```ts
-     include: ["api/**/*.test.ts", "api/**/*.spec.ts", "src/**/*.test.ts", "src/**/*.test.tsx"]
-     ```
-     `tests/` is omitted, skipping `tests/adversarial-challenger-2.test.ts`.
-   - `npm run check` (`tsc -b`) completed cleanly with exit code 0.
-   - `npm run test` (`vitest run`) passed 68 test files (421 tests passed, 3 files failed due to offline database/API mock timeouts).
-   - No `playwright.config.ts` exists in the workspace root.
+4. **Virtual Keyboard & Viewport Synchronization**:
+   - `src/hooks/useVirtualKeyboard.ts` lines 36–60 listens to `window.visualViewport.addEventListener("resize", ...)` with an 80px threshold, while `src/hooks/usePwaLifecycle.ts` lines 40–112 attaches duplicate resize/scroll/focus listeners with a 60px threshold.
+   - `src/components/layout/MobileBottomNav.tsx` lines 128–137 hides the bottom navigation bar using `AnimatePresence` and `{!isKeyboardOpen && (<motion.nav ...>)}`.
+
+5. **Pull-to-Refresh Overscroll Isolation**:
+   - `src/components/pwa/PullToRefreshWrapper.tsx` lines 12–46 defines `hasScrollableAncestor(target, root, event)` inspecting `event.composedPath()`. Lines 194–202 & 224–232 cancel pull gestures if `el.scrollTop > 0` or if the touch occurred within a scrolled descendant.
+
+6. **Haptics and Service Worker Caching**:
+   - `src/hooks/useHaptics.ts` lines 26–161 bridges Capacitor `@capacitor/haptics` and Web `navigator.vibrate`.
+   - `src/sw.js` lines 28–32 & 48–50 explicitly excludes `/api` and `/trpc` endpoints from service worker caching, while precaching static bundles via `precacheAndRoute(precachedAssets)`.
+
+7. **Auth Sync & Session Expiration**:
+   - `src/hooks/useAuth.ts` lines 114–217 manages multi-tab session synchronization via `BroadcastChannel("smartspend_auth")` and `window.addEventListener("storage", ...)`.
+   - `src/providers/trpc.ts` lines 189–246 handles 401 unauthenticated errors by saving in-progress form drafts to `sessionStorage` (`preserveActiveFormDrafts`), broadcasting `SESSION_EXPIRED`, and showing a throttled toast.
+   - `src/lib/queryPersister.ts` lines 49–55 partitions IndexedDB caches by `${user.type}:${user.id}` and purges account data on logout.
+
+8. **Build and Test Health**:
+   - Running `npm run check` (`tsc -b`) completes with exit code 0 and 0 errors.
+   - Vitest test suite (`npm run test`) runs 100 test files: 96 passing, with key suites (`tests/financial-mutations-idempotency.test.ts`, `tests/multi-tab-auth-sync.test.ts`, `tests/pwa-mobile-ux.test.ts`, `api/business-router.security.test.ts`) passing.
 
 ---
 
 ## 2. Logic Chain
 
-1. **Root Cause of Tab Switching Latency (Observation 1 & 2):**
-   - When the user taps between `تسجيل`, `إحصائيات`, and `تقويم`, `AnimatePresence mode="wait"` unmounts the previous view, executes an exit animation, and only then mounts the target view.
-   - Because `ExpenseChart` and `MonthlyCalendar` are lazy-loaded and Recharts must rebuild its SVG DOM on every mount, switching experiences a 200–500ms delay and frame drops.
-   - `Suspense` around `FinancialGoalsPanel` causes a skeleton flash every time the user returns to `تسجيل`.
-   
-2. **Warm Pre-Rendering Solution (Observation 2):**
-   - Keeping all 5 primary views (`تسجيل`, `إحصائيات`, `مركز AI`, `تقويم`, `المزيد`) continuously mounted in the DOM via a Keep-Alive tab stack with CSS display/visibility toggling eliminates all JavaScript unmount/remount overhead.
-   - Toggling visibility via CSS (`hidden` or `.warm-view-layer` classes) executes in 0ms on the GPU compositor, achieving 60fps/120Hz switching without re-triggering React Query loading states or resetting form/scroll state.
+1. **Financial Integrity Logic**:
+   - *Premise*: Flaky mobile networks in Egypt often trigger automatic HTTP retries or rapid repeated user taps.
+   - *Observation*: `expenses` table enforces `expenses_user_client_request_unique`, and `expenseRouter.create` checks existing records before insertion and rescues `ER_DUP_ENTRY`.
+   - *Deduction*: Expense creation is resilient against duplicate insertions. However, `walletRouter.createWallet`, `budgetRouter.create`, and `goalsRouter.create` lack `clientRequestId` support, creating a vulnerability where double taps generate duplicate wallet or budget records.
+   - *Remediation*: Extend the `clientRequestId` pattern from `expenseRouter` to `walletRouter`, `budgetRouter`, and `goalsRouter`.
 
-3. **Test Infrastructure & Mobile Auditing Readiness (Observation 4):**
-   - Adding `tests/**/*.test.ts` to `vitest.config.ts` ensures all unit/integration tests run in CI.
-   - Creating `playwright.config.ts` with device profiles for iPhone 16/15 Pro (393x852), iPhone 14 (390x844), Android Chrome (412x915), and iPad Air (820x1180) enables automated touch-gesture, tab switching, safe-area, and adversarial stress auditing.
+2. **Offline Sync Resilience Logic**:
+   - *Premise*: Offline queues must guarantee eventual consistency and fault tolerance without permanent deadlocks.
+   - *Observation*: `syncOfflineData` halts on any error without advancing past the failing item.
+   - *Deduction*: A client-side validation error (e.g. malformed date or amount) on a single item causes permanent head-of-line blocking, trapping all valid transactions behind it.
+   - *Remediation*: Isolate item failures: if an item fails with a permanent 4xx status, pop it from the active queue and move it to a dead-letter storage key (`smartspend_offline_deadletter`).
+
+3. **PWA Gesture & Viewport Stability Logic**:
+   - *Premise*: Mobile web apps must avoid keyboard occlusion and touch gesture conflicts.
+   - *Observation*: Bottom navigation successfully hides during keyboard appearance, and `hasScrollableAncestor` isolates pull-to-refresh from inner scroll containers. However, duplicate `visualViewport` listeners with conflicting thresholds (60px vs 80px) in `usePwaLifecycle` and `useVirtualKeyboard` create class toggling race conditions.
+   - *Remediation*: Unify viewport resizing logic into `useVirtualKeyboard.ts`.
+
+4. **Multi-Tab Auth Isolation Logic**:
+   - *Premise*: Shared devices and multi-tab workflows must prevent privilege escalation and cache bleeding across user switches.
+   - *Observation*: `BroadcastChannel` instantly synchronizes login/logout states, `trpc.ts` auto-preserves form drafts on 401, and `queryPersister.ts` partitions IndexedDB caches by `${user.type}:${user.id}`.
+   - *Deduction*: Auth and multi-tab synchronization meet production security and resilience standards.
 
 ---
 
 ## 3. Caveats
 
-- **Memory Overhead of Keep-Alive Stack:** Keeping all 5 primary views warm in memory increases memory consumption slightly (~15–25MB RAM). For modern mobile devices (iOS 15+, Android 10+ with 3GB+ RAM), this is negligible and far superior to CPU spikes from frequent remounting.
-- **Background Query Activity:** When views remain mounted, background refetches could occur if queries become stale. Setting `staleTime: 60_000` or `120_000` prevents unnecessary network traffic while keeping financial data fresh.
+1. Native Capacitor push notifications and native biometric WebAuthn flows rely on physical mobile device hardware for full hardware-level validation; web-level emulation in JSDOM was verified.
+2. No caveats regarding local monorepo source code, contracts, database schema, or router logic.
 
 ---
 
 ## 4. Conclusion
 
-- **Requirement R3** can be fully realized by:
-  1. Refactoring `src/pages/Home.tsx` and `src/App.tsx` from `<AnimatePresence mode="wait">` unmounting to a Keep-Alive Warm View Stack with GPU-accelerated CSS visibility toggling.
-  2. Eagerly importing primary sub-components (`ExpenseChart`, `MonthlyCalendar`, `FinancialGoalsPanel`, `AIChatbot`) to eliminate Suspense skeleton flickers.
-  3. Configuring `staleTime: 60_000` and removing `enabled` gating on monthly statistics queries.
-- **Requirement R4** can be fully realized by:
-  1. Creating `playwright.config.ts` with 4 mobile viewports (iPhone 16/15 Pro, iPhone 14, Android Chrome 412x915, iPad 820x1180), touch support, RTL (`ar-EG`), and dark mode.
-  2. Authoring E2E test specs in `tests/e2e/` for zero-latency warm switching, continuous touch-drag navigation, edge-to-edge full-bleed verification, and console error trapping.
-  3. Adding `tests/**/*.test.ts` to `vitest.config.ts` and `"test:e2e"` script to `package.json`.
+The SmartSpend AI architecture possesses solid financial idempotency primitives in its core transaction and subscription engines, a well-engineered multi-tab auth synchronization layer, and strong PWA gesture isolation. Implementing `clientRequestId` across remaining financial routers (`wallet`, `budget`, `goals`), adding dead-letter queue fault-tolerance to offline reconciliation, and publishing `docs/LOGICAL_EDGE_CASES_AUDIT.md` will achieve complete end-to-end resilience.
 
 ---
 
 ## 5. Verification Method
 
-To independently verify the survey findings:
+To independently verify all findings and test suite health:
 
-1. **Verify TypeScript typecheck:**
+1. **TypeScript Type Safety**:
    ```bash
    npm run check
    ```
-   *Expected result: 0 errors (Exit code 0).*
+   *Expected result*: `tsc -b` exits with code 0 (0 type errors).
 
-2. **Verify Vitest test suite:**
+2. **Target Domain Test Suites**:
    ```bash
-   npm run test
+   npx vitest run tests/financial-mutations-idempotency.test.ts
+   npx vitest run tests/multi-tab-auth-sync.test.ts
+   npx vitest run tests/pwa-mobile-ux.test.ts
+   npx vitest run api/business-router.security.test.ts
    ```
-   *Expected result: Runs 72 test suites; 68 suites pass, 421 tests pass.*
+   *Expected result*: All 4 test suites pass with 100% success rate.
 
-3. **Verify Omitted Test File in Vitest Config:**
-   - Inspect `vitest.config.ts` line 17: Notice `tests/` is not listed in `include`.
-   - Run targeted test directly: `npx vitest run tests/adversarial-challenger-2.test.ts`.
-
-4. **Verify Tab Unmounting Code:**
-   - Inspect `src/App.tsx` (lines 325–380) and `src/pages/Home.tsx` (lines 669–740) to confirm `<AnimatePresence mode="wait">` conditional rendering.
-
-5. **Reference Detailed Survey Document:**
-   - Review `E:\smartspend_V1_fixed\.agents\teamwork_preview_explorer_survey_3\survey_tabs_testing.md`.
+3. **Inspect Key Source Files**:
+   - `api/expense-router.ts` (lines 454–477, 523–548)
+   - `src/components/expenses/ExpenseForm.tsx` (lines 536–588, 1140–1185, 2027–2044)
+   - `src/hooks/useAuth.ts` (lines 114–217)
+   - `src/providers/trpc.ts` (lines 189–246)
+   - `src/lib/queryPersister.ts` (lines 49–55)

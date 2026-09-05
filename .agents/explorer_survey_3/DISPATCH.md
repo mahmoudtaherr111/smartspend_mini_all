@@ -1,15 +1,16 @@
-## 2026-08-26T01:51:32Z
-You are Explorer 3 for the SmartSpend AI Mobile Dashboard & AI Recording Input Re-architecture project.
-Your working directory is: E:\smartspend_V1_fixed\.agents\explorer_survey_3
+## 2026-08-30T12:09:21Z
+You are Explorer 3 investigating the codebase for GPU Compositing Optimization, Performance Hardening, and Test Infrastructure.
 
-## Task:
-1. Read E:\smartspend_V1_fixed\.agents\ORIGINAL_REQUEST.md and E:\smartspend_V1_fixed\AGENTS.md.
-2. Investigate the project test setup, Playwright config, and verification infrastructure:
-   - Check existing Playwright setup, test directories (e.g., `e2e/`, `tests/`), configs (`playwright.config.ts`), and browser dependencies.
-   - Check how mobile viewports (iPhone 14 Pro 390x844 and Android Pixel 7 412x915) are or can be configured in Playwright.
-   - Check how layout shifts (CLS), console errors, and element clipping can be audited and asserted automatically in Playwright tests.
-   - Check the existing Vitest suite (`npm run test`) and TypeScript type checker (`npm run check`) for any current test files touching `ExpenseForm.tsx` and `Home.tsx`.
-   - Identify what test infrastructure, test runner scripts, and test cases are required for the E2E Testing Track.
-3. Formulate concrete recommendations for autonomous multi-viewport in-browser mobile auditing.
-4. Write your full detailed investigation report to `E:\smartspend_V1_fixed\.agents\explorer_survey_3\report.md` and a summary `handoff.md`.
-5. Send a completion message to the parent orchestrator with the paths and key findings.
+Working Directory: e:/smartspend_V1_fixed/.agents/explorer_survey_3/
+Project Root: e:/smartspend_V1_fixed
+Original Request File: e:/smartspend_V1_fixed/.agents/ORIGINAL_REQUEST.md
+
+Your Mission:
+1. Read e:/smartspend_V1_fixed/.agents/ORIGINAL_REQUEST.md and e:/smartspend_V1_fixed/AGENTS.md.
+2. Investigate the styling system (`tailwind.config.js` / `.ts`, `src/index.css`, component styles) for heavy `backdrop-filter: blur()`, `backdrop-blur-*` usage in scrolling lists, cards, headers, bottom bars, and modals.
+3. Identify GPU compositing bottlenecks, paint flashing, layout thrashing, and formulate concrete rules (`will-change: transform`, composite layering, static solid/subtle alpha backgrounds for high-frequency scrolling items, 60-120fps mobile fluidity).
+4. Investigate the existing test suite and configuration (`vitest.config.ts`, `tsconfig.json`, `package.json`, `tests/`, `src/**/*.test.ts`). Determine testing capabilities (DOM testing library, user-event, test utilities, mocks).
+5. Design the test strategy and test infrastructure needed to verify all 4 mobile pillars with zero regressions (unit tests, integration tests, visual/gesture mocking, type safety).
+6. Detail the precise technical requirements, file paths, and architectural blueprint for performance optimization and test infrastructure.
+7. Write your comprehensive findings to `e:/smartspend_V1_fixed/.agents/explorer_survey_3/survey_report.md` and a soft `handoff.md`.
+8. Send a message back to the parent orchestrator with your summary.

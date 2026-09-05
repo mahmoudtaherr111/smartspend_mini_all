@@ -2,6 +2,14 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useIsFetching } from "@tanstack/react-query";
 import {
   LayoutDashboard,
@@ -27,7 +35,6 @@ import { cn } from "@/lib/utils";
 import { NotificationBell } from "@/components/NotificationBell";
 const darkModeLogo = "/photos/dark_mode_logo-removebg-preview.png";
 const whiteModeLogo = "/photos/white_mode_logo-removebg-preview.png";
-const defaultProfile = "/photos/profile.png";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -47,11 +54,11 @@ const bottomItems = [
 ];
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
-  const { user, isAdmin, isModerator, isPro, hasUltraAccess, logout } =
-    useAuth();
+  const { user, isAdmin, isPro, hasUltraAccess, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const isFetching = useIsFetching();
 
   return (
@@ -168,9 +175,11 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
               new URLSearchParams(location.search).get("tab") || "record";
             const itemUrl = new URL(item.href, "http://localhost");
             const targetTab = itemUrl.searchParams.get("tab") || "";
-            const isActive = item.href === "/ai"
-              ? location.pathname === "/ai"
-              : location.pathname === "/dashboard" && (targetTab ? tab === targetTab : tab === "record");
+            const isActive =
+              item.href === "/ai"
+                ? location.pathname === "/ai"
+                : location.pathname === "/dashboard" &&
+                  (targetTab ? tab === targetTab : tab === "record");
             const Icon = item.icon;
 
             return (
@@ -235,8 +244,8 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
             </span>
           </Link>
 
-          {/* Admin/Moderator links */}
-          {(isAdmin || isModerator) && (
+          {/* Administrator-only link */}
+          {isAdmin && (
             <>
               <div className="pt-3 pb-1">
                 <p className="text-[10px] font-bold text-white/40 px-3 uppercase tracking-wider">
@@ -255,9 +264,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                 )}
               >
                 <Shield className="w-4 h-4 shrink-0 text-amber-400" />
-                <span className="text-xs font-semibold">
-                  {isAdmin ? "لوحة الأدمن" : "لوحة المدير"}
-                </span>
+                <span className="text-xs font-semibold">لوحة الأدمن</span>
               </Link>
             </>
           )}
@@ -281,9 +288,10 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
           })}
 
           <button
+            type="button"
             onClick={() => {
-              onToggle();
-              logout();
+              if (isOpen) onToggle();
+              setShowLogoutConfirm(true);
             }}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-rose-400/80 hover:bg-rose-500/10 hover:text-rose-400 transition-all duration-200 text-xs font-bold active:scale-98 select-none"
           >
@@ -292,6 +300,46 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
           </button>
         </div>
       </aside>
+
+      {/* Calm & Professional Logout Confirmation Dialog */}
+      <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+        <AlertDialogContent
+          className="z-[100005] max-w-sm rounded-2xl border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl shadow-2xl p-6 text-end"
+          dir="rtl"
+        >
+          <AlertDialogHeader className="text-end space-y-2">
+            <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 mb-1">
+              <LogOut className="w-5 h-5" />
+            </div>
+            <AlertDialogTitle className="text-base font-black text-slate-900 dark:text-white">
+              تسجيل الخروج
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              هل تريد تسجيل الخروج من حسابك؟ سيتوجب عليك تسجيل الدخول مجدداً
+              للمتابعة.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-row-reverse justify-start gap-2 mt-4 sm:space-x-0">
+            <Button
+              variant="destructive"
+              className="rounded-xl font-bold text-xs h-9 px-4 bg-rose-600 hover:bg-rose-700 text-white shadow-sm"
+              onClick={() => {
+                setShowLogoutConfirm(false);
+                logout();
+              }}
+            >
+              تسجيل الخروج
+            </Button>
+            <Button
+              variant="outline"
+              className="rounded-xl font-semibold text-xs h-9 px-4 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
+              onClick={() => setShowLogoutConfirm(false)}
+            >
+              إلغاء
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

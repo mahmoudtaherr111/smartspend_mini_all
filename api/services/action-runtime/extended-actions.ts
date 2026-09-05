@@ -14,7 +14,7 @@ import {
   normalizeCategoryFromUserText,
   storageCategoryName,
 } from "../../lib/category-registry";
-import { invalidateFinanceUserCache } from "../finance-semantic-layer";
+import { bumpFinanceCacheGen, invalidateFinanceUserCache } from "../finance-semantic-layer";
 import { getSmartProfile, saveSmartProfile } from "../user-profile-service";
 import type {
   ActionRuntimeContext,
@@ -458,24 +458,54 @@ async function executeExpenseCreate(
 ): Promise<Record<string, unknown>> {
   const expense = expenseCreatePayloadSchema.parse(payload);
   const expenseDate = expense.date ? new Date(expense.date) : new Date();
-  const [inserted] = await db.insert(expenses).values({
-    userId: ctx.userId,
-    userType: ctx.userType,
-    type: expense.type ?? "expense",
-    amount: expense.amount.toString(),
-    category: expense.category,
-    subCategory: expense.subCategory || "عام",
-    description: expense.description || "",
-    rawText: expense.rawText,
-    source: "ai_parsed",
-    placeHint: expense.placeHint || null,
-    date: Number.isNaN(expenseDate.getTime()) ? new Date() : expenseDate,
+  const finalDate = Number.isNaN(expenseDate.getTime()) ? new Date() : expenseDate;
+  const {
+    applyExpenseRollupDelta,
+    expenseToRollupDelta,
+    syncExpenseDetails,
+  } = await import("../expense-rollups");
+
+  let insertedId = 0;
+  await db.transaction(async (tx) => {
+    const [inserted] = await tx.insert(expenses).values({
+      userId: ctx.userId,
+      userType: ctx.userType,
+      type: expense.type ?? "expense",
+      amount: expense.amount.toString(),
+      category: expense.category,
+      subCategory: expense.subCategory || "عام",
+      description: expense.description || "",
+      rawText: expense.rawText,
+      source: "ai_parsed",
+      placeHint: expense.placeHint || null,
+      date: finalDate,
+    });
+
+    insertedId = Number((inserted as any)?.insertId || 0);
+
+    if (insertedId) {
+      await syncExpenseDetails(tx, insertedId, expense.rawText);
+    }
+
+    const delta = expenseToRollupDelta(
+      {
+        userId: ctx.userId,
+        userType: ctx.userType,
+        date: finalDate,
+        type: expense.type ?? "expense",
+        amount: expense.amount,
+        source: "ai_parsed",
+      },
+      1,
+    );
+    await applyExpenseRollupDelta(tx, delta);
   });
+
   invalidateUserMemory(ctx.userId, ctx.userType);
-  await invalidateFinanceUserCache(ctx.userId, ctx.userType);
+  await bumpFinanceCacheGen(ctx.userId, ctx.userType);
 
   return {
-    expenseId: Number((inserted as any)?.insertId || 0),
+    expenseId: insertedId,
     amount: expense.amount,
     category: expense.category,
     description: expense.description || "",
@@ -633,7 +663,7 @@ async function executeExpenseRecategorize(
       ),
     );
   invalidateUserMemory(ctx.userId, ctx.userType);
-  await invalidateFinanceUserCache(ctx.userId, ctx.userType);
+  await bumpFinanceCacheGen(ctx.userId, ctx.userType);
 
   return {
     expenseId: recategorize.expenseId,
@@ -894,7 +924,7 @@ async function executeUndo(
         ),
       );
     invalidateUserMemory(ctx.userId, ctx.userType);
-    await invalidateFinanceUserCache(ctx.userId, ctx.userType);
+    await bumpFinanceCacheGen(ctx.userId, ctx.userType);
     return { undoneActionMemoryId: target.id, undoneActionName: target.actionName, expenseId };
   }
 
@@ -949,17 +979,46 @@ async function executeUndo(
   if (target.actionName === "expense.create") {
     const expenseId = Number(targetPayload.expenseId);
     if (!expenseId) throw new Error("Expense action has no expenseId to undo");
-    await db
-      .delete(expenses)
-      .where(
-        and(
-          eq(expenses.id, expenseId),
-          eq(expenses.userId, ctx.userId),
-          eq(expenses.userType, ctx.userType),
-        ),
-      );
+
+    const {
+      applyExpenseRollupDelta,
+      expenseToRollupDelta,
+      deleteExpenseDetails,
+    } = await import("../expense-rollups");
+
+    await db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(expenses)
+        .where(
+          and(
+            eq(expenses.id, expenseId),
+            eq(expenses.userId, ctx.userId),
+            eq(expenses.userType, ctx.userType),
+          ),
+        )
+        .for("update");
+
+      if (!existing) {
+        throw new Error(`Expense ${expenseId} not found to undo`);
+      }
+
+      await deleteExpenseDetails(tx, expenseId);
+      const delta = expenseToRollupDelta(existing, -1);
+      await applyExpenseRollupDelta(tx, delta);
+
+      await tx
+        .delete(expenses)
+        .where(
+          and(
+            eq(expenses.id, expenseId),
+            eq(expenses.userId, ctx.userId),
+            eq(expenses.userType, ctx.userType),
+          ),
+        );
+    });
     invalidateUserMemory(ctx.userId, ctx.userType);
-    await invalidateFinanceUserCache(ctx.userId, ctx.userType);
+    await bumpFinanceCacheGen(ctx.userId, ctx.userType);
     return { undoneActionMemoryId: target.id, undoneActionName: target.actionName, expenseId };
   }
 

@@ -22,6 +22,7 @@ import {
 } from "./services/user-profile-service";
 import { invalidateUserMemory } from "./lib/muscle-memory";
 import { businessMonthRange } from "./lib/app-time";
+import { bumpFinanceCacheGen } from "./services/finance-semantic-layer";
 
 async function trackImageTokens(
   userId: number,
@@ -166,25 +167,61 @@ export const imageRouter = router({
           },
           `${parsed.ocrText || ""} ${parsed.description || ""}`,
         );
-        const [createdExpense] = await db.insert(expenses).values({
-          userId: ctx.user.id,
-          userType: ctx.user.type,
-          type: normalized.type,
-          amount: parsed.amount.toString(),
-          category: normalized.category,
-          subCategory: normalized.subCategory,
-          description: parsed.description,
-          rawText: parsed.ocrText || `[image] ${parsed.description}`,
-          source: "image",
-          date: new Date(),
-          parsedMetadata: {
-            parsedBy: parsed.parsedBy,
-            merchant: parsed.merchant,
-            confidence: parsed.confidence,
-          },
-        }).$returningId();
-        expenseId = createdExpense.id;
+        const {
+          applyExpenseRollupDelta,
+          expenseToRollupDelta,
+          syncExpenseDetails,
+        } = await import("./services/expense-rollups");
+
+        await db.transaction(async (tx) => {
+          const [createdExpense] = await tx.insert(expenses).values({
+            userId: ctx.user.id,
+            userType: ctx.user.type,
+            type: normalized.type,
+            amount: parsed.amount.toString(),
+            category: normalized.category,
+            subCategory: normalized.subCategory,
+            description: parsed.description,
+            rawText: parsed.ocrText || `[image] ${parsed.description}`,
+            source: "image",
+            date: new Date(),
+            parsedMetadata: {
+              parsedBy: parsed.parsedBy,
+              merchant: parsed.merchant,
+              confidence: parsed.confidence,
+            },
+          }).$returningId();
+          expenseId = createdExpense.id;
+
+          if (expenseId) {
+            await syncExpenseDetails(
+              tx,
+              expenseId,
+              parsed.ocrText || `[image] ${parsed.description}`,
+              {
+                parsedBy: parsed.parsedBy,
+                merchant: parsed.merchant,
+                confidence: parsed.confidence,
+              },
+            );
+          }
+
+          const delta = expenseToRollupDelta(
+            {
+              userId: ctx.user.id,
+              userType: ctx.user.type,
+              date: new Date(),
+              type: normalized.type,
+              amount: parsed.amount,
+              source: "image",
+            },
+            1,
+          );
+          await applyExpenseRollupDelta(tx, delta);
+        });
+
         invalidateUserMemory(ctx.user.id, ctx.user.type);
+        await bumpFinanceCacheGen(ctx.user.id, ctx.user.type);
       }
 
       return {

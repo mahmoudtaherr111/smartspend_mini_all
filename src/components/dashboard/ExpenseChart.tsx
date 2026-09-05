@@ -18,11 +18,11 @@ import {
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  AdaptiveDialog,
+  AdaptiveDialogContent,
+  AdaptiveDialogHeader,
+  AdaptiveDialogTitle,
+} from "@/components/ui/adaptive-dialog";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { getCategoryColor } from "@/lib/utils";
@@ -286,7 +286,7 @@ export function ExpenseChart({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 no-swipe" data-no-swipe="true">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-5 h-12 bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-1">
           <TabsTrigger
@@ -901,16 +901,16 @@ export function ExpenseChart({
         </div>
       </Tabs>
 
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent
-          className="sm:max-w-md max-h-[80vh] overflow-y-auto"
+      <AdaptiveDialog open={isModalOpen} onOpenChange={setIsModalOpen} snapPoints={[0.6, 0.95]}>
+        <AdaptiveDialogContent
+          className="sm:max-w-md max-h-[80vh]"
           dir="rtl"
         >
-          <DialogHeader>
-            <DialogTitle className="text-xl">
+          <AdaptiveDialogHeader>
+            <AdaptiveDialogTitle className="text-xl">
               تفاصيل الفئة: {selectedCategory || selectedSubCategory}
-            </DialogTitle>
-          </DialogHeader>
+            </AdaptiveDialogTitle>
+          </AdaptiveDialogHeader>
           <div
             className="max-h-[350px] overflow-y-auto pe-1 ps-1 space-y-4 py-2 mt-4"
             dir="rtl"
@@ -1027,17 +1027,17 @@ export function ExpenseChart({
               ));
             })()}
           </div>
-        </DialogContent>
-      </Dialog>
+        </AdaptiveDialogContent>
+      </AdaptiveDialog>
 
       {/* Wallet Specific Transactions Modal */}
-      <Dialog open={isWalletModalOpen} onOpenChange={setIsWalletModalOpen}>
-        <DialogContent
-          className="sm:max-w-md max-h-[80vh] overflow-y-auto"
+      <AdaptiveDialog open={isWalletModalOpen} onOpenChange={setIsWalletModalOpen} snapPoints={[0.6, 0.95]}>
+        <AdaptiveDialogContent
+          className="sm:max-w-md max-h-[80vh]"
           dir="rtl"
         >
-          <DialogHeader>
-            <DialogTitle className="text-lg flex items-center gap-2">
+          <AdaptiveDialogHeader>
+            <AdaptiveDialogTitle className="text-lg flex items-center gap-2">
               <span>
                 {selectedProviderWallet
                   ? getProviderMeta(selectedProviderWallet).icon
@@ -1049,9 +1049,9 @@ export function ExpenseChart({
                   ? getProviderMeta(selectedProviderWallet).nameAr
                   : "الحساب البنكي"}
               </span>
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 py-4">
+            </AdaptiveDialogTitle>
+          </AdaptiveDialogHeader>
+          <div className="space-y-3 py-4 overflow-y-auto">
             {selectedProviderWallet &&
               electronicStats[selectedProviderWallet]?.transactions.map(
                 (item, idx) => {
@@ -1115,8 +1115,8 @@ export function ExpenseChart({
                 </p>
               )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </AdaptiveDialogContent>
+      </AdaptiveDialog>
     </div>
   );
 }

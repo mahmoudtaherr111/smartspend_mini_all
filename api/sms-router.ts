@@ -22,12 +22,14 @@ import { eq, and, desc, gte } from "drizzle-orm";
 import {
   parseSmsFinancialData,
   mapSmsToExpenseCategory,
+  type SmsParseResult,
 } from "./lib/sms-ai-parser";
 import { parseSmsByRules } from "./lib/sms-rule-parser";
 import { randomBytes } from "crypto";
 import { env } from "./lib/env";
 import { validateActiveSessionToken } from "./lib/session-validation";
 import { getCookie } from "hono/cookie";
+import { bumpFinanceCacheGen } from "./services/finance-semantic-layer";
 
 export const smsApp = new Hono();
 
@@ -270,114 +272,100 @@ smsApp.post("/ingest", async (c) => {
         eq(rawSmsEvents.userType, userType),
         eq(rawSmsEvents.message, message.trim()),
         gte(rawSmsEvents.createdAt, new Date(Date.now() - 24 * 60 * 60 * 1000)),
-      )
+      ),
     )
     .limit(1);
 
   if (duplicateCheck.length > 0) {
-    return c.json({ success: true, message: "Duplicate SMS detected, ignored." });
+    return c.json(
+      {
+        error: "Duplicate SMS: this message was already received recently.",
+        duplicate: true,
+      },
+      409,
+    );
   }
 
-  // ── Step 1: Store raw SMS event (Original raw text stored for admin visibility) ──
-  const [insertedSms] = await db
-    .insert(rawSmsEvents)
-    .values({
+  // ── Step 1: Save Raw SMS Event (Audit Log) ──
+  let smsId: number | null = null;
+  try {
+    const [inserted] = await db.insert(rawSmsEvents).values({
       userId,
       userType,
       message: message.trim(),
-      sender: sender || null,
-      smsTimestamp: timestamp || new Date().toISOString(),
+      sender: sender?.trim() || null,
+      smsTimestamp: timestamp?.trim() || null,
       status: "pending",
-    })
-    .$returningId();
+    });
+    smsId = (inserted as any)?.insertId || null;
+  } catch (err) {
+    console.error("[SMS Ingest] Failed to record raw SMS event:", err);
+  }
 
-  const smsId = insertedSms?.id;
+  // ── Step 2: Run Rule-Based Parser (Fast Path) ──
+  const ruleResult = parseSmsByRules(message);
 
-  // ── Step 2: Try Rule-Based Parser first (zero cost) ──
-  let parseResult: any = null;
-  let parsedBy = "rules";
+  // ── Step 3: Hybrid Engine Selection (Rules vs AI) ──
+  let parseResult: SmsParseResult | null = null;
+  let parsedBy: "rules" | "ai" | "rules_fallback" = "rules";
 
-  const ruleResult = parseSmsByRules(message.trim(), sender?.trim());
-  console.log(
-    `[SMS Ingest] Rule parser: detected=${ruleResult.transaction_detected}, amount=${ruleResult.amount}, dir=${ruleResult.direction}, conf=${ruleResult.confidence.toFixed(2)}, rule=${ruleResult.matched_rule}`,
-  );
-
-  if (
-    ruleResult.transaction_detected &&
-    ruleResult.confidence >= 0.85 &&
-    ruleResult.amount &&
-    ruleResult.direction
-  ) {
-    // High confidence rule match (Amount & Direction detected by specific rule) — no AI needed
+  // Fast path: high-confidence rule match (>= 0.85) bypasses AI call
+  if (ruleResult.transaction_detected && ruleResult.confidence >= 0.85 && ruleResult.amount) {
     parseResult = {
       transaction_detected: true,
       amount: ruleResult.amount,
-      currency: ruleResult.currency,
+      currency: ruleResult.currency || "EGP",
       direction: ruleResult.direction,
-      provider: ruleResult.provider,
-      category: ruleResult.category,
+      provider: (ruleResult.provider as any) || "Unknown",
+      category: (ruleResult.category as any) || "unknown",
       fee: ruleResult.fee,
+      merchant: ruleResult.merchant,
       balance_after: ruleResult.balance_after,
       confidence: ruleResult.confidence,
+      raw_extracted: { rule_result: ruleResult },
     };
     parsedBy = "rules";
   } else {
-    // Fallback to AI for edge cases or if direction is missing
-    console.log(
-      `[SMS Ingest] Rule confidence low or missing data (${ruleResult.confidence.toFixed(2)}, rule=${ruleResult.matched_rule}), falling back to AI...`,
-    );
-    try {
-      const aiResult = await parseSmsFinancialData(message.trim());
-      if (aiResult && aiResult.transaction_detected) {
-        parseResult = aiResult;
-        parsedBy = "ai";
-      } else if (ruleResult.transaction_detected) {
-        // If AI says no transaction but rules said yes (rare), trust AI but log it
-        parseResult = aiResult;
-      }
-    } catch (aiErr) {
-      console.error("[SMS Ingest] AI parsing error:", aiErr);
-      // Absolute fallback if AI fails but rules had *something*
-      if (ruleResult.transaction_detected && ruleResult.amount) {
-        parseResult = ruleResult;
-        parsedBy = "rules_fallback";
-      }
-    }
-  }
-
-  if (!parseResult) {
-    if (smsId) {
-      await db
-        .update(rawSmsEvents)
-        .set({
-          status: "ignored",
-          metadata: {
-            reason: "AI returned null",
-            rule_result: {
-              transaction_detected: ruleResult.transaction_detected,
-              amount: ruleResult.amount,
-              direction: ruleResult.direction,
-              confidence: ruleResult.confidence,
-              matched_rule: ruleResult.matched_rule,
-              provider: ruleResult.provider,
-            },
-          },
-        })
-        .where(eq(rawSmsEvents.id, smsId));
-    }
-    return c.json(
-      {
-        success: true,
+    // Fall back to Gemini AI parser with tenant-isolated user context
+    const aiResult = await parseSmsFinancialData(message, { userId, userType });
+    if (aiResult && aiResult.transaction_detected && aiResult.confidence >= 0.6 && aiResult.amount) {
+      parseResult = aiResult;
+      parsedBy = "ai";
+    } else if (ruleResult.transaction_detected && ruleResult.amount) {
+      // Secondary fallback to rule result if AI was inconclusive or returned null
+      parseResult = {
+        transaction_detected: true,
+        amount: ruleResult.amount,
+        currency: ruleResult.currency || "EGP",
+        direction: ruleResult.direction,
+        provider: (ruleResult.provider as any) || "Unknown",
+        category: (ruleResult.category as any) || "unknown",
+        fee: ruleResult.fee,
+        merchant: ruleResult.merchant,
+        balance_after: ruleResult.balance_after,
+        confidence: ruleResult.confidence,
+        raw_extracted: { rule_result: ruleResult, ai_result: aiResult },
+      };
+      parsedBy = "rules_fallback";
+    } else {
+      parseResult = aiResult || {
         transaction_detected: false,
-        reason: "Could not parse SMS",
-      },
-      200,
-    );
+        amount: null,
+        currency: "EGP",
+        direction: null,
+        provider: "Unknown",
+        category: "unknown",
+        fee: null,
+        merchant: null,
+        balance_after: null,
+        confidence: 0,
+        raw_extracted: {},
+      };
+    }
   }
 
-  // ── Step 3: Business Logic ──
-  if (!parseResult.transaction_detected || parseResult.confidence < 0.6) {
-    // Not financial or low confidence → ignore
+  // If no financial transaction detected or invalid amount/low confidence -> ignore and return
+  if (!parseResult.transaction_detected || !parseResult.amount || parseResult.confidence < 0.5) {
     if (smsId) {
       await db
         .update(rawSmsEvents)
@@ -433,50 +421,86 @@ smsApp.post("/ingest", async (c) => {
 
   const description = descriptionParts.join(" — ") || "SMS تلقائي";
 
-  const transactionDate = timestamp ? new Date(timestamp) : new Date();
+  let transactionDate = timestamp ? new Date(timestamp) : new Date();
+  if (isNaN(transactionDate.getTime())) {
+    transactionDate = new Date();
+  }
 
   await db.transaction(async (tx) => {
-  await tx.insert(expenses).values({
-    userId,
-    userType,
-    type,
-    amount: parseResult.amount!.toString(),
-    category,
-    subCategory,
-    description,
-    rawText: message.trim(),
-    source: "sms",
-    date: transactionDate,
-    parsedMetadata: {
+    const metadataObj = {
       sms_id: smsId,
-      provider: parseResult.provider,
-      direction: parseResult.direction,
-      sms_category: parseResult.category,
-      confidence: parseResult.confidence,
-      fee: parseResult.fee,
-      balance_after: parseResult.balance_after,
+      provider: parseResult!.provider,
+      direction: parseResult!.direction,
+      sms_category: parseResult!.category,
+      confidence: parseResult!.confidence,
+      fee: parseResult!.fee,
+      balance_after: parseResult!.balance_after,
       parsed_by: parsedBy,
-    },
+    };
+
+    const [insertResult] = await tx.insert(expenses).values({
+      userId,
+      userType,
+      type,
+      amount: parseResult!.amount!.toString(),
+      category,
+      subCategory,
+      description,
+      rawText: message.trim(),
+      source: "sms",
+      date: transactionDate,
+      parsedMetadata: metadataObj,
+    });
+
+    const {
+      applyExpenseRollupDelta,
+      expenseToRollupDelta,
+      syncExpenseDetails,
+    } = await import("./services/expense-rollups");
+
+    if (insertResult?.insertId) {
+      await syncExpenseDetails(tx, insertResult.insertId, message.trim(), metadataObj);
+    }
+
+    const delta = expenseToRollupDelta(
+      {
+        userId,
+        userType,
+        date: transactionDate,
+        type,
+        amount: parseResult!.amount!,
+        source: "sms",
+      },
+      1,
+    );
+    await applyExpenseRollupDelta(tx, delta);
+
+    // ── Step 5: Update SMS status ──
+    if (smsId) {
+      await tx
+        .update(rawSmsEvents)
+        .set({
+          status: "processed",
+          metadata: {
+            transaction_saved: true,
+            amount: parseResult!.amount,
+            category,
+            type,
+            confidence: parseResult!.confidence,
+            parsed_by: parsedBy,
+          },
+        })
+        .where(
+          and(
+            eq(rawSmsEvents.id, smsId),
+            eq(rawSmsEvents.userId, userId),
+            eq(rawSmsEvents.userType, userType),
+          ),
+        );
+    }
   });
 
-  // ── Step 5: Update SMS status ──
-  if (smsId) {
-    await tx
-      .update(rawSmsEvents)
-      .set({
-        status: "processed",
-        metadata: {
-          transaction_saved: true,
-          amount: parseResult.amount,
-          category,
-          type,
-          confidence: parseResult.confidence,
-          parsed_by: parsedBy,
-        },
-      })
-      .where(and(eq(rawSmsEvents.id, smsId), eq(rawSmsEvents.userId, userId), eq(rawSmsEvents.userType, userType)));
-  }
-  });
+  await bumpFinanceCacheGen(userId, userType);
 
   console.log(
     `✅ [SMS Ingest] User ${userId} | ${type} | ${parseResult.amount} EGP | ${category} | ${parseResult.provider}`,
