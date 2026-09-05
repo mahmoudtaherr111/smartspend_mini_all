@@ -25,7 +25,7 @@ const FRANCO_LETTER_TO_ARABIC: Record<string, string> = {
   y: "ي", z: "ز",
 };
 
-const FRANCO_ARAB_DICT: Record<string, string> = {
+export const FRANCO_ARAB_DICT: Readonly<Record<string, string>> = {
   "7awalte": "حولت", "7awalt": "حولت", "7awalteh": "حولت",
   "dafa3t": "دفعت", "dafaat": "دفعت", "dafa't": "دفعت",
   "kahraba": "كهربا", "kahrb": "كهربا", "kahriba": "كهربا",
@@ -90,7 +90,7 @@ const FRANCO_ARAB_DICT: Record<string, string> = {
  * these were left as Latin text in the middle of an Arabic sentence — "l Ahmed" kept an
  * "l" that no downstream layer could read.
  */
-const FRANCO_PARTICLES: Record<string, string> = {
+export const FRANCO_PARTICLES: Readonly<Record<string, string>> = {
   l: "ل", w: "و", b: "بـ",
 };
 

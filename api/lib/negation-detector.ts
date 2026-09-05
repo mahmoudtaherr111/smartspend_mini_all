@@ -99,9 +99,13 @@ const PAID_BY_OTHERS = normalizeMarkers([
  */
 export function detectNegation(text: string): NegationResult {
   if (!text) return { negated: false };
-  const norm = normalizeArabic(text).toLowerCase();
+  const norm = normalizeArabic(text).toLowerCase().replace(
+    /(?:^|\s)(?:مادفعتش|مدفعتش|ما دفعتش|مادفعناش|مدفعناش)\s+(?:غير|الا)\s+/g,
+    " دفعت ",
+  );
 
-  if (/(?:^|\s)(?:علي|ع) حساب (?:صاحبي|اخويا|ابويا|الشركه|حد تاني)(?=\s|$)/.test(norm)) {
+  if (/(?:^|\s)(?:علي|ع) حساب(?:ه|ها|هم)(?=\s|$|[،,.؟?!])/.test(norm) ||
+      /(?:^|\s)(?:علي|ع) حساب (?:صاحبي|اخويا|ابويا|الشركه|حد تاني)(?=\s|$)/.test(norm)) {
     return { negated: true, kind: "paid_by_someone_else", marker: "على حساب شخص آخر" };
   }
 

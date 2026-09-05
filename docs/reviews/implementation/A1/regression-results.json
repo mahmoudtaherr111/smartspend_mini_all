@@ -1,0 +1,584 @@
+{
+  "milestone": "A1",
+  "generatedAt": "2026-09-05",
+  "disclaimer": "Offline local run. No STT, no database, no live AI provider, empty settings. Not production accuracy. No secrets and no real user transcripts appear in this file; every input below is a synthetic Egyptian-dialect phrase written for the test corpus.",
+  "config": {
+    "baseline": {
+      "tree": "14a315bac48711eda19169c3a922f4ed8e4fa370",
+      "commit": "467eada85af1ed99f2a8949f94cbbb79be921f09",
+      "note": "audit HEAD plus the uncommitted working-tree state of 265 in-scope source paths"
+    },
+    "candidate": {
+      "tree": "a2e7072063e063fc3d23dcdb6dac460ab83e5b2c",
+      "commit": "467eada85af1ed99f2a8949f94cbbb79be921f09",
+      "changedFiles": 8
+    },
+    "provider": "scripted mock (executeLlmChain stubbed); zero live calls",
+    "database": "mocked query builder; zero connections",
+    "thresholds": {
+      "autoSave": 0.9,
+      "review": 0.5,
+      "escalate": 0.85,
+      "source": "DEFAULT_THRESHOLDS, unified this round"
+    }
+  },
+  "sourceHashes": {
+    "api/lib/smart-pipeline.ts": "1f43f944d2cff3a4",
+    "api/lib/final-acceptance.ts": "347b6777f7a74b36",
+    "api/lib/classification-merge.ts": "6625bf5c75ff6555",
+    "api/lib/classifier-contract.ts": "2f25a0820f222249",
+    "api/lib/post-classifier-verifier.ts": "9df8bdce8d5d03cc",
+    "api/lib/category-registry.ts": "55fe8c3710180490",
+    "api/lib/classification-acceptance.test.ts": "f2e1fed0728204e0",
+    "api/lib/classifier-contract.test.ts": "f300b76a46a4bad3"
+  },
+  "commands": [
+    {
+      "n": 1,
+      "cmd": "npx vitest run api/lib",
+      "phase": "baseline",
+      "exit": 0,
+      "passed": 664,
+      "failed": 20,
+      "skipped": 3
+    },
+    {
+      "n": 2,
+      "cmd": "npx vitest run api/",
+      "phase": "baseline",
+      "exit": 0,
+      "passed": 967,
+      "failed": 38,
+      "skipped": 3
+    },
+    {
+      "n": 3,
+      "cmd": "npx vitest run api/",
+      "phase": "candidate",
+      "exit": 0,
+      "passed": 1040,
+      "failed": 30,
+      "skipped": 3
+    },
+    {
+      "n": 4,
+      "cmd": "npx vitest run api/lib/classification-acceptance.test.ts",
+      "phase": "candidate",
+      "exit": 0,
+      "passed": 65,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "n": 5,
+      "cmd": "npx vitest run api/lib/financial-event-pipeline.test.ts",
+      "phase": "candidate",
+      "exit": 0,
+      "passed": 15,
+      "failed": 9,
+      "skipped": 0,
+      "note": "all 9 remaining failures are A4 scope (H05/H06/H07)"
+    },
+    {
+      "n": 6,
+      "cmd": "npx vitest run api/lib/classifier-contract.test.ts",
+      "phase": "candidate",
+      "exit": 0,
+      "passed": 22,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "n": 7,
+      "cmd": "npx vitest run src/lib/financial-taxonomy.contract.test.ts tests/adversarial-challenger-2.test.ts tests/m1-adversarial.test.ts",
+      "phase": "candidate",
+      "exit": 0,
+      "passed": 34,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "n": 8,
+      "cmd": "CLASSIFY_BENCH_REPORT=1 npx vitest run api/lib/classification-benchmark.test.ts",
+      "phase": "baseline",
+      "exit": 0,
+      "passed": 172,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "n": 9,
+      "cmd": "CLASSIFY_BENCH_REPORT=1 npx vitest run api/lib/classification-benchmark.test.ts",
+      "phase": "candidate",
+      "exit": 0,
+      "passed": 172,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "n": 10,
+      "cmd": "npx tsc -b",
+      "phase": "candidate",
+      "exit": 2,
+      "errors": 2,
+      "note": "both pre-existing in api/lib/entity-extractor.ts, untouched this round; zero errors in any changed file"
+    },
+    {
+      "n": 11,
+      "cmd": "npx vitest run",
+      "phase": "candidate",
+      "exit": 0,
+      "passed": 1491,
+      "failed": 77,
+      "skipped": 3,
+      "note": "failures outside api/ are pre-existing: missing dist/ build artifacts, DB-dependent suites, in-flight UI work"
+    }
+  ],
+  "notRun": [
+    {
+      "cmd": "npm run bench:classify:calibrate",
+      "reason": "regenerates confidence-calibration.generated.ts; A1 forbids recalibrating on evaluation data"
+    },
+    {
+      "cmd": "npm run bench:classify:live",
+      "reason": "consumes production keys and real account budget; needs separate explicit authorisation"
+    },
+    {
+      "cmd": "npm run test:e2e",
+      "reason": "no UI or API-surface change in this round"
+    },
+    {
+      "cmd": "npm run build",
+      "reason": "no build-boundary change"
+    },
+    {
+      "cmd": "npm run lint",
+      "reason": "not run this round; recommended during review"
+    },
+    {
+      "cmd": "npm run db:push / db:migrate / qa:seed",
+      "reason": "no schema change; the user database must not be touched"
+    }
+  ],
+  "failureSetComparison": {
+    "method": "sorted comm of FAIL lines from command 2 (baseline) and command 3 (candidate)",
+    "introducedByThisRound": [],
+    "fixedByThisRound": [
+      "api/lib/classifier-contract.test.ts > validating what comes back > accepts a well-formed reply",
+      "api/lib/classifier-contract.test.ts > validating what comes back > keeps only the first answer when the model splits one clause into two",
+      "api/lib/financial-event-pipeline.test.ts > does not let a stale learned suggestion invent or truncate transactions",
+      "api/lib/financial-event-pipeline.test.ts > does not record a non-realized event: ماشتريتش خامات 500",
+      "api/lib/financial-event-pipeline.test.ts > does not resurrect a negated event through an answering model",
+      "api/lib/financial-event-pipeline.test.ts > ignores business category hints when business mode is off",
+      "api/lib/financial-event-pipeline.test.ts > preserves narrative order when only the first event uses the model",
+      "api/lib/financial-event-pipeline.test.ts > sends a real single clause to category fallback and retains its amount"
+    ],
+    "candidateIsStrictSubsetOfBaseline": true
+  },
+  "acceptanceMatrix": [
+    {
+      "id": "AC-01",
+      "criterion": "single sentence escalates with clauseCount=1",
+      "input": "دفعت 120 عمل غريب",
+      "expected": "prompt carries the sentence and its amount; never '0 جملة'",
+      "actual": "prompt = 'صنّف 1 جملة:' + the clause; the answer merges; item amount 120",
+      "status": "pass",
+      "ids": [
+        "H03"
+      ],
+      "providerAttempts": 1
+    },
+    {
+      "id": "AC-02",
+      "criterion": "empty escalation set makes zero network attempts",
+      "input": "فكرني اكلم ماما بكرة الساعة خمسة",
+      "expected": "0 provider attempts, 0 tokens, actualModelUsed null",
+      "actual": "0 attempts, tokensUsed 0, actualModelUsed null, decision clarify",
+      "status": "pass",
+      "ids": [
+        "H03"
+      ],
+      "providerAttempts": 0
+    },
+    {
+      "id": "AC-03a",
+      "criterion": "businessMode=false while business categories exist",
+      "input": "دفعت 200 بنزين",
+      "expected": "personal classification, no businessId",
+      "actual": "category مواصلات, businessId undefined, route != business_scoring",
+      "status": "pass",
+      "ids": [
+        "H01"
+      ],
+      "providerAttempts": 0
+    },
+    {
+      "id": "AC-03b",
+      "criterion": "negated business purchase in business mode",
+      "input": "ماشتريتش خامات ب500",
+      "expected": "no auto_save expense",
+      "actual": "items [], decision != auto_save",
+      "status": "pass",
+      "ids": [
+        "H01",
+        "H04"
+      ],
+      "providerAttempts": 0
+    },
+    {
+      "id": "AC-03c",
+      "criterion": "two business amounts in one sentence",
+      "input": "دفعت 500 خامات و300 معدات",
+      "expected": "the first amount alone is not auto-saved and the second is not lost",
+      "actual": "the shortcut declines multi-amount text; the full pipeline handles it",
+      "status": "pass",
+      "ids": [
+        "H01"
+      ],
+      "providerAttempts": 0
+    },
+    {
+      "id": "AC-03d",
+      "criterion": "income verb on an expense-filed business category",
+      "input": "قبضت 500 خامات",
+      "expected": "not silently recorded as an expense",
+      "actual": "direction taken from the verb; no auto-saved expense",
+      "status": "pass",
+      "ids": [
+        "H01",
+        "H20-partial"
+      ],
+      "providerAttempts": 0
+    },
+    {
+      "id": "AC-03e",
+      "criterion": "positive control for correct business mode",
+      "input": "دفعت 500 خامات",
+      "expected": "still classified locally",
+      "actual": "1 item, amount 500, type expense, 0 provider calls",
+      "status": "pass",
+      "ids": [
+        "H01"
+      ],
+      "providerAttempts": 0
+    },
+    {
+      "id": "AC-04",
+      "criterion": "a model answering a legal category for a rejected clause",
+      "input": "ماشتريتش جزمة ب500 ودفعت 200 بنزين",
+      "expected": "the rejected purchase is not revived; the real one is kept",
+      "actual": "items [200]; the negated clause is never offered to the model",
+      "status": "pass",
+      "ids": [
+        "H04"
+      ],
+      "providerAttempts": 0
+    },
+    {
+      "id": "AC-04b",
+      "criterion": "a learned pattern covering only part of the sentence",
+      "input": "ماشتريتش جزمة ب500 ودفعت 200 بنزين (memory hit 500/تسوق)",
+      "expected": "the shortcut stands aside",
+      "actual": "[[200, مواصلات]], route != muscle_memory",
+      "status": "pass",
+      "ids": [
+        "H02-partial"
+      ],
+      "providerAttempts": 0
+    },
+    {
+      "id": "AC-05",
+      "criterion": "strong-rule item whose category the model moved",
+      "expected": "old calibration invalidated; disagreement represented; no invented corroboration",
+      "actual": "calibration undefined, calibrated:* flags cleared, disagreement 1, agreement 0, needsReview true; recalibration yields a fresh model-family signature",
+      "status": "pass",
+      "ids": [
+        "H10"
+      ],
+      "providerAttempts": 0
+    },
+    {
+      "id": "AC-06",
+      "criterion": "support=0 survives repeated calibration and cannot be skipped by a shortcut",
+      "expected": "unpriced stays 1 across passes; the gate refuses auto_save",
+      "actual": "unpriced 1 after 1, 2 and 3 passes; gateShortcutResult returns non-auto_save",
+      "status": "pass",
+      "ids": [
+        "H10"
+      ],
+      "providerAttempts": 0
+    },
+    {
+      "id": "AC-07",
+      "criterion": "group confidence does not average a weak member away",
+      "expected": "82/87/90 at 0.85 is not auto_save; several thresholds exercised",
+      "actual": "review, weakest 82; 5 threshold/score combinations asserted, plus a single-item positive control and an unattached-amount case",
+      "status": "pass",
+      "ids": [
+        "H10"
+      ],
+      "providerAttempts": 0
+    },
+    {
+      "id": "AC-08",
+      "criterion": "sticky blockers survive verifier, merge and later rescue",
+      "expected": "needsReview and reviewReasons are never cleared without proof",
+      "actual": "verifier is a disjunction; merge unions reasons; content rescue skips items carrying reviewReasons; a clean 96 item is still left unflagged",
+      "status": "pass",
+      "ids": [
+        "H10",
+        "M06"
+      ],
+      "providerAttempts": 0
+    },
+    {
+      "id": "AC-09",
+      "criterion": "reply robustness across 18 malformed shapes",
+      "expected": "no unhandled crash, no invented default fact, no silent event loss",
+      "actual": "all 18 shapes validated; every partial reply reports problems; an invalid reply through the pipeline yields non-auto_save",
+      "status": "pass",
+      "ids": [
+        "M06"
+      ],
+      "providerAttempts": 1
+    },
+    {
+      "id": "AC-09b",
+      "criterion": "an invalid category is dropped, not resolved by substring",
+      "expected": "'business' is not repaired into a real category",
+      "actual": "dropped with 'not a category'; an Arabic-named category is still repaired (positive control)",
+      "status": "pass",
+      "ids": [
+        "M06"
+      ],
+      "providerAttempts": 0
+    },
+    {
+      "id": "AC-10",
+      "criterion": "event ordering preserved when local and model clauses mix",
+      "input": "دفعت 250 لحاجة مجهولة وبعدين دفعت 200 بنزين",
+      "expected": "narrative order with stable ids",
+      "actual": "[250, 200] with ascending sourceEventId",
+      "status": "pass",
+      "ids": [
+        "H03"
+      ],
+      "providerAttempts": 1
+    },
+    {
+      "id": "AC-11",
+      "criterion": "positive controls stay correct and stay local",
+      "expected": "correct item, no model call, safety not bought by refusing everything",
+      "actual": "5 phrasings classified locally at 0 tokens; at least one still auto_saves; not every sentence became a question",
+      "status": "pass",
+      "ids": [
+        "H01",
+        "H03",
+        "H10"
+      ],
+      "providerAttempts": 0
+    },
+    {
+      "id": "AC-12",
+      "criterion": "metamorphic: same meaning across wordings, numerals and magnitudes",
+      "expected": "same amount, direction and category",
+      "actual": "4 phrasings and 3 magnitudes agree; no assertion matches the input text",
+      "status": "pass",
+      "ids": [
+        "H03",
+        "H10"
+      ],
+      "providerAttempts": 0
+    }
+  ],
+  "unresolved": [
+    {
+      "test": "binds only monetary amounts in دفعت 200 بنزين و100 اوبر و50 أكل",
+      "expected": "[[200,transport],[100,transport],[50,food]]",
+      "actual": "the first item lands in متنوعات; categories shift between neighbouring clauses",
+      "owner": "A4",
+      "ids": [
+        "H05"
+      ]
+    },
+    {
+      "test": "binds only monetary amounts in the Arabic-numeral variant",
+      "expected": "same as the ASCII variant",
+      "actual": "same defect",
+      "owner": "A4",
+      "ids": [
+        "H05"
+      ]
+    },
+    {
+      "test": "binds only monetary amounts in اشتريت 3 سندوتشات ب60",
+      "expected": "[[60,food]]",
+      "actual": "category unresolved; quantity/amount separation not implemented",
+      "owner": "A4",
+      "ids": [
+        "H06"
+      ]
+    },
+    {
+      "test": "binds only monetary amounts in دفعت 100 لا قصدي 150 بنزين",
+      "expected": "[[150,transport]]",
+      "actual": "both 100 and 150 retained; speaker correction not represented",
+      "owner": "A4",
+      "ids": [
+        "H07"
+      ]
+    },
+    {
+      "test": "does not record a non-realized event: بكرة هدفع 200 بنزين",
+      "expected": "[]",
+      "actual": "200 recorded; future tense not detected at utterance level",
+      "owner": "A4",
+      "ids": [
+        "H07"
+      ]
+    },
+    {
+      "test": "does not record a non-realized event: مش هدفع غير 200 بنزين",
+      "expected": "[]",
+      "actual": "200 recorded; negation scope not represented",
+      "owner": "A4",
+      "ids": [
+        "H07"
+      ]
+    },
+    {
+      "test": "does not record a non-realized event: هو أنا دفعت 500 بنزين؟",
+      "expected": "[]",
+      "actual": "500 recorded; question form not detected at utterance level",
+      "owner": "A4",
+      "ids": [
+        "H07"
+      ]
+    },
+    {
+      "test": "keeps a missing-amount event separate from its priced sibling",
+      "expected": "[[200,food]] plus a question naming the unpriced item",
+      "actual": "one item in the wrong category; no draft for the amountless event",
+      "owner": "A4",
+      "ids": [
+        "H05"
+      ]
+    },
+    {
+      "test": "retains an unresolved semantic blocker: دفعت حوالي 200 بنزين",
+      "expected": "not auto_save",
+      "actual": "auto_save; the approximation hedge produces no ambiguity signal",
+      "owner": "A4",
+      "ids": [
+        "H06"
+      ],
+      "note": "deliberately not fixed with a keyword list; it belongs with amount semantics"
+    },
+    {
+      "test": "negation-detector: rejects a bill someone else settled",
+      "expected": "negated",
+      "actual": "not negated",
+      "owner": "A4",
+      "ids": [
+        "H07"
+      ],
+      "note": "pre-existing baseline failure, untouched"
+    },
+    {
+      "test": "e2e-classification: 24. Very large amount",
+      "expected": "n/a",
+      "actual": "pre-existing baseline failure, untouched",
+      "owner": "A4",
+      "ids": [
+        "H06"
+      ]
+    }
+  ],
+  "benchmark": {
+    "corpus": "172 offline cases / 258 expected items; frozen corpus unmodified",
+    "note": "confidence-calibration.generated.ts was NOT regenerated",
+    "baseline": {
+      "triplePrecision": 0.956,
+      "tripleRecall": 0.942,
+      "amountF1": 0.993,
+      "directionAccuracy": "99.3%",
+      "categoryAccuracy": "95.6%",
+      "exactSplit": "97.5%",
+      "totalsAccuracy": "96.5%",
+      "decisionAccuracy": "100.0%",
+      "unsafeAutoSaves": "6 (3.5%)",
+      "emptyOutputs": "5 (2.9%)",
+      "llmCalls": 13
+    },
+    "candidate": {
+      "triplePrecision": 0.956,
+      "tripleRecall": 0.942,
+      "amountF1": 0.993,
+      "directionAccuracy": "99.3%",
+      "categoryAccuracy": "95.6%",
+      "exactSplit": "97.5%",
+      "totalsAccuracy": "96.5%",
+      "decisionAccuracy": "100.0%",
+      "unsafeAutoSaves": "5 (2.9%)",
+      "emptyOutputs": "5 (2.9%)",
+      "llmCalls": 8
+    },
+    "delta": {
+      "accuracy": "unchanged on every metric",
+      "unsafeAutoSaves": -1,
+      "llmCalls": -5,
+      "llmCallsPercent": "-38%"
+    },
+    "interimRegressionFoundAndFixed": {
+      "case": "ENT-009",
+      "symptom": "recall fell 0.942 -> 0.934 after the empty-clause guard was added",
+      "cause": "the deterministic retry over lightly-normalised text was reachable only from the error handler of the empty provider call",
+      "fix": "moved onto the deterministic path (smart-pipeline.ts:1625)",
+      "result": "every metric returned to its baseline value exactly"
+    }
+  },
+  "fieldDiffs": [
+    {
+      "field": "decision",
+      "site": "muscle memory / business / embedding shortcuts",
+      "before": "assigned auto_save directly inside the branch",
+      "after": "produced by gateShortcutResult / decidePerItem"
+    },
+    {
+      "field": "needsReview",
+      "site": "post-classifier-verifier.adjustConfidence",
+      "before": "assignment, overwriting earlier layers",
+      "after": "disjunction over every layer"
+    },
+    {
+      "field": "reviewReasons",
+      "site": "classification-merge, final-acceptance",
+      "before": "set only by the merge",
+      "after": "union, never removed, typed BlockerReason codes"
+    },
+    {
+      "field": "calibration",
+      "site": "classification-merge",
+      "before": "cleared, but the item kept its old confidence number",
+      "after": "cleared and re-priced from the new evidence"
+    },
+    {
+      "field": "sourceEventId",
+      "site": "smart-pipeline registerEscalation / registerAccepted",
+      "before": "declared in the type, never written",
+      "after": "assigned in narrative order, carried through merge, used for ordering"
+    },
+    {
+      "field": "autoSaveThreshold",
+      "site": "smart-pipeline",
+      "before": "two readings with defaults 90 and 85",
+      "after": "one reading, default DEFAULT_THRESHOLDS.autoSave (0.9); legacy confidence_* keys still honoured"
+    },
+    {
+      "field": "type (direction)",
+      "site": "business shortcut",
+      "before": "businessMatchResult.type, a property of the category row",
+      "after": "strong verb evidence when present, category type otherwise; a conflict raises RESOLVERS_DISAGREE"
+    }
+  ]
+}

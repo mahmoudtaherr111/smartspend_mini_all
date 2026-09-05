@@ -1,0 +1,2231 @@
+diff --git a/api/lib/category-registry.ts b/api/lib/category-registry.ts
+index d499b14..b35566b 100644
+--- a/api/lib/category-registry.ts
++++ b/api/lib/category-registry.ts
+@@ -1357,6 +1357,22 @@ const VIRTUAL_AGGREGATE_IDS: Record<string, { id: string; arabicName: string; ty
+   uncategorized: { id: "uncategorized", arabicName: "غير مصنف", type: "expense" },
+ };
+ 
++/**
++ * Exact-alias resolution only, for callers that must not guess.
++ *
++ * `canonicalCategoryId` deliberately falls through to an unanchored substring scan so it
++ * can pull a category out of free-form user text. That is the right behaviour there and
++ * the wrong behaviour when the input is a MODEL answering an enum: "business" contains
++ * "bus", so an invalid category was silently "repaired" into مواصلات and written down as
++ * if the model had said it. Returns null instead of a guess.
++ */
++export function exactCategoryId(input: string | null | undefined): string | null {
++  if (!input) return null;
++  const normalized = comparableArabic(input);
++  if (!normalized) return null;
++  return ALIAS_TO_ID.get(normalized) ?? findCategoryByAnyName(input)?.id ?? null;
++}
++
+ export function canonicalCategoryId(input: string | null | undefined): string {
+   if (!input) return "uncategorized";
+   const normalized = comparableArabic(input);
+diff --git a/api/lib/classification-acceptance.test.ts b/api/lib/classification-acceptance.test.ts
+new file mode 100644
+index 0000000..ac7828e
+--- /dev/null
++++ b/api/lib/classification-acceptance.test.ts
+@@ -0,0 +1,672 @@
++/**
++ * A1 acceptance: nothing writes to the ledger without earning it.
++ *
++ * Every case here is an artefact of the classification audit
++ * (docs/reviews/2026-09-05-expense-classification-audit.md, section 8) reproduced
++ * against the real entry point. They are grouped by the claim they defend, not by the
++ * module they touch, because each of these bugs was invisible in its own module and
++ * only appeared where two layers met.
++ *
++ * The rules this file follows, so a green run means something:
++ *   - The pipeline is driven through `runSmartPipeline`, never through a helper. A fix
++ *     in an uncalled function is not a fix.
++ *   - Only the process boundary is mocked — the provider, the database, the learned
++ *     patterns. The decision, merge and calibration logic under test always runs.
++ *   - No assertion matches the input text. A regex tuned to these sentences would pass
++ *     while the system stayed broken for the next one.
++ */
++import { beforeEach, describe, expect, it, vi } from "vitest";
++import { runSmartPipeline, type PipelineInput } from "./smart-pipeline";
++import { mapModelName } from "./model-mapper";
++import { validateClassifierReply } from "./classifier-contract";
++import { mergeCategoryDecisions } from "./classification-merge";
++import { applyCalibration } from "./confidence-calibrator";
++import { verifyClassifiedItems } from "./post-classifier-verifier";
++import { decidePerItem, gateShortcutResult } from "./final-acceptance";
++import { emptyEvidence } from "./classification-evidence";
++import type { ParsedTransaction } from "./rule-engine";
++import type { DecomposedSegment } from "./narrative-decomposer";
++
++const io = vi.hoisted(() => ({ llm: vi.fn(), memory: vi.fn() }));
++
++vi.mock("../queries/connection", () => {
++  const chain: Record<string, unknown> = {};
++  const self = () => chain;
++  Object.assign(chain, {
++    from: self,
++    where: self,
++    orderBy: self,
++    values: self,
++    set: self,
++    limit: async () => [],
++    then: (resolve: (rows: unknown[]) => unknown) => Promise.resolve([]).then(resolve),
++  });
++  return { db: { select: self, insert: self, update: self, query: {} }, pool: {} };
++});
++vi.mock("./muscle-memory", () => ({ muscleMemoryLookup: io.memory }));
++vi.mock("./ai-gateway", () => ({
++  resolveAdminRoutes: async () => ({ preferred: null, routes: [] }),
++}));
++vi.mock("./llm-router", async (original) => ({
++  ...(await original<object>()),
++  executeLlmChain: io.llm,
++}));
++
++/** Fresh user id per call so the in-process result cache cannot answer for us. */
++let userId = 960_000;
++function classify(text: string, overrides: Partial<PipelineInput> = {}) {
++  return runSmartPipeline({
++    text,
++    userId: ++userId,
++    userType: "local",
++    userPlan: "pro",
++    userDict: [],
++    apiKey: "synthetic-key",
++    modelName: mapModelName("flash"),
++    maxTokens: 512,
++    ...overrides,
++  });
++}
++
++function modelAnswers(items: unknown[]) {
++  return {
++    text: JSON.stringify({ items }),
++    totalTokens: 80,
++    cachedTokens: 0,
++    attempts: [{ slug: "test", model: mapModelName("flash"), ok: true, latencyMs: 3 }],
++    route: { slug: "test", model: mapModelName("flash") },
++    degradedSchema: false,
++  };
++}
++
++/** The prompt actually sent to a provider on the Nth call. */
++function promptOf(call = 0): string {
++  return String(io.llm.mock.calls[call]?.[1]?.userPrompt ?? "");
++}
++
++const BUSINESS_MATERIALS = [
++  {
++    id: 1,
++    name: "materials",
++    nameAr: "خامات",
++    type: "expense",
++    keywords: ["خامات"],
++    matchExamples: [],
++  },
++];
++
++function item(overrides: Partial<ParsedTransaction> = {}): ParsedTransaction {
++  return {
++    amount: 100,
++    category: "أكل وشرب",
++    subCategory: "مطعم",
++    description: "أكل",
++    type: "expense",
++    confidence: 95,
++    currency: "EGP",
++    needsReview: false,
++    parsedBy: "rule_engine",
++    ...overrides,
++  };
++}
++
++function clause(text: string, localItems: ParsedTransaction[], clauseId: number) {
++  const segment: DecomposedSegment = {
++    text,
++    amount: null,
++    direction: "expense",
++    linkedVerb: null,
++    personMentioned: null,
++    segmentIndex: clauseId - 1,
++  };
++  return { segment, localItems, clauseId };
++}
++
++beforeEach(() => {
++  io.memory.mockReset().mockResolvedValue(null);
++  io.llm.mockReset().mockRejectedValue(new Error("no provider configured for this test"));
++});
++
++// ───────────────────────── 1 & 2. The clause flow ─────────────────────────
++
++describe("A1.3 — what reaches the provider", () => {
++  it("escalates a single sentence with its own content, not an empty clause list", async () => {
++    io.llm.mockResolvedValue(modelAnswers([{ i: 1, category: "shopping", sub: "عام" }]));
++
++    const result = await classify("دفعت 120 عمل غريب");
++
++    expect(io.llm).toHaveBeenCalledTimes(1);
++    const prompt = promptOf();
++    // The defect: the un-segmented branch filled the salvage lists and never the clause
++    // list, so the prompt asked the model to categorise nothing.
++    expect(prompt).not.toContain("0 جملة");
++    expect(prompt).toContain("1 جملة");
++    expect(prompt).toContain("120");
++    expect(prompt).toContain("عمل غريب");
++    // And the answer is usable: index 1 of 1 clause is in range, so it lands.
++    expect(result.items).toHaveLength(1);
++    expect(result.items[0].amount).toBe(120);
++  });
++
++  it("makes zero provider attempts when there is nothing to ask about", async () => {
++    io.llm.mockResolvedValue(modelAnswers([{ i: 1, category: "food" }]));
++
++    // Non-financial: the admissibility gate ends the request before any clause exists.
++    const result = await classify("فكرني اكلم ماما بكرة الساعة خمسة");
++
++    expect(io.llm).not.toHaveBeenCalled();
++    expect(result.tokensUsed).toBe(0);
++    expect(result.actualModelUsed).toBeNull();
++    expect(result.decision).toBe("clarify");
++  });
++
++  it("never sends a request whose clause count is zero", async () => {
++    io.llm.mockResolvedValue(modelAnswers([]));
++
++    const texts = [
++      "دفعت 120 عمل غريب",
++      "صرفت 250 على حاجة مش عارف اسمها",
++      "دفعت 200 بنزين",
++    ];
++    for (const text of texts) {
++      io.llm.mockClear();
++      await classify(text);
++      for (let i = 0; i < io.llm.mock.calls.length; i++) {
++        expect(promptOf(i), `"${text}" must not ask for 0 clauses`).not.toContain("0 جملة");
++      }
++    }
++  });
++
++  it("keeps narrative order when only part of the sentence used the model", async () => {
++    io.llm.mockResolvedValue(modelAnswers([{ i: 1, category: "shopping", sub: "عام" }]));
++
++    const result = await classify("دفعت 250 لحاجة مجهولة وبعدين دفعت 200 بنزين");
++
++    // Model-answered clauses used to be appended after locally-accepted ones, so the
++    // review screen showed the second transaction first.
++    expect(result.items.map((x) => x.amount)).toEqual([250, 200]);
++    const ids = result.items.map((x) => x.sourceEventId);
++    expect(ids[0]).toBeLessThan(ids[1] as number);
++  });
++});
++
++// ───────────────────────── 3. Business scope ─────────────────────────
++
++describe("A1.2 — business scoring may not hijack a personal entry", () => {
++  it("ignores business categories when business mode is off", async () => {
++    const result = await classify("دفعت 200 بنزين", {
++      businessMode: false,
++      businessId: 7,
++      businessCategories: [
++        { id: 1, name: "fuel", nameAr: "بنزين", type: "expense", keywords: ["بنزين"], matchExamples: [] },
++      ],
++    });
++
++    expect(result.items[0].category).toBe("مواصلات");
++    expect(result.items[0].businessId).toBeUndefined();
++    expect(result.log.routing?.route).not.toBe("business_scoring");
++  });
++
++  it("does not auto-save a negated business purchase", async () => {
++    const result = await classify("ماشتريتش خامات ب500", {
++      businessMode: true,
++      businessId: 7,
++      businessCategories: BUSINESS_MATERIALS,
++    });
++
++    expect(result.decision).not.toBe("auto_save");
++    expect(result.items).toEqual([]);
++  });
++
++  it("does not answer for a two-transaction sentence with the first amount only", async () => {
++    io.llm.mockResolvedValue(modelAnswers([{ i: 1, category: "business" }]));
++
++    const result = await classify("دفعت 500 خامات و300 معدات", {
++      businessMode: true,
++      businessId: 7,
++      businessCategories: [
++        ...BUSINESS_MATERIALS,
++        { id: 2, name: "equipment", nameAr: "معدات", type: "expense", keywords: ["معدات"], matchExamples: [] },
++      ],
++    });
++
++    // The shortcut used to return one 500 item at confidence 100 and lose the 300
++    // entirely, with the ledger never consulted.
++    expect(result.log.routing?.route).not.toBe("business_scoring");
++    const accounted = result.items.reduce((sum, x) => sum + x.amount, 0);
++    if (result.decision === "auto_save") {
++      expect(accounted).toBe(800);
++    } else {
++      expect(result.decision).not.toBe("auto_save");
++    }
++  });
++
++  it("does not turn money received into money spent because the category is filed as an expense", async () => {
++    const result = await classify("قبضت 500 خامات", {
++      businessMode: true,
++      businessId: 7,
++      businessCategories: BUSINESS_MATERIALS,
++    });
++
++    // Direction is governed by the verb. It may end up in review, but it may never be
++    // silently recorded as an expense.
++    const recordedAsExpense =
++      result.decision === "auto_save" && result.items.some((x) => x.type === "expense");
++    expect(recordedAsExpense).toBe(false);
++  });
++
++  it("still recognises a plain business expense in business mode (positive control)", async () => {
++    const result = await classify("دفعت 500 خامات", {
++      businessMode: true,
++      businessId: 7,
++      businessCategories: BUSINESS_MATERIALS,
++    });
++
++    expect(result.items).toHaveLength(1);
++    expect(result.items[0]).toMatchObject({ amount: 500, type: "expense" });
++    expect(io.llm).not.toHaveBeenCalled();
++    expect(result.tokensUsed).toBe(0);
++  });
++});
++
++// ───────────────────────── 4. No resurrection ─────────────────────────
++
++describe("A1.2 — a transaction that did not happen stays gone", () => {
++  it("does not let a category answer revive a negated purchase", async () => {
++    io.llm.mockResolvedValue(modelAnswers([{ i: 1, category: "shopping", sub: "عام" }]));
++
++    const result = await classify("ماشتريتش جزمة ب500 ودفعت 200 بنزين");
++
++    expect(result.items.map((x) => x.amount)).toEqual([200]);
++    // The rejected clause is not a clause: it is never offered to the model at all.
++    expect(io.llm).not.toHaveBeenCalled();
++  });
++
++  it("does not let a remembered pattern speak for a sentence it only partly matches", async () => {
++    io.memory.mockResolvedValue({
++      matchScore: 100,
++      amount: 500,
++      pattern: { category: "تسوق", subCategory: "عام", type: "expense", confidence: 100 },
++    });
++
++    const result = await classify("ماشتريتش جزمة ب500 ودفعت 200 بنزين");
++
++    expect(result.items.map((x) => [x.amount, x.category])).toEqual([[200, "مواصلات"]]);
++    expect(result.log.routing?.route).not.toBe("muscle_memory");
++  });
++
++  it("keeps a learned pattern that does account for the whole sentence (positive control)", async () => {
++    io.memory.mockResolvedValue({
++      matchScore: 100,
++      amount: 200,
++      pattern: { category: "مواصلات", subCategory: "بنزين", type: "expense", confidence: 96 },
++    });
++
++    const result = await classify("دفعت 200 بنزين");
++
++    expect(result.items).toHaveLength(1);
++    expect(result.items[0].amount).toBe(200);
++    expect(io.llm).not.toHaveBeenCalled();
++  });
++});
++
++// ───────────────────────── 5 & 6. Calibration ─────────────────────────
++
++describe("A1.4 — confidence follows the answer it is about", () => {
++  it("drops the calibration of a category the model replaced", () => {
++    const strongRule = item({
++      confidence: 95,
++      evidence: { ...emptyEvidence("verb_noun_regex", 95), anchorConsumed: true },
++      calibration: { signature: "stale-signature", support: 33, probability: 0.95 },
++      ambiguityFlags: ["calibrated:strong_rule:single:n=33"],
++    });
++
++    const merged = mergeCategoryDecisions(
++      [clause("دفعت 100 أكل", [strongRule], 1)],
++      [{ i: 1, category: "health", sub: "عام" }],
++    );
++
++    const moved = merged.items[0];
++    expect(moved.category).not.toBe("أكل وشرب");
++    // The old estimate priced the OLD category. Carrying it forward is how a 95 from a
++    // strong rule ended up authorising an answer the strong rule never gave.
++    expect(moved.calibration).toBeUndefined();
++    expect(moved.ambiguityFlags?.some((f) => f.startsWith("calibrated:"))).toBe(false);
++    // Layers disagreed, and that disagreement is recorded rather than smoothed away.
++    expect(moved.evidence?.disagreement).toBe(1);
++    expect(moved.evidence?.agreement).toBe(0);
++    expect(moved.needsReview).toBe(true);
++  });
++
++  it("prices the replacement from its own evidence, not the old score", () => {
++    const strongRule = item({
++      confidence: 95,
++      evidence: { ...emptyEvidence("verb_noun_regex", 95), anchorConsumed: true },
++      calibration: { signature: "stale-signature", support: 33, probability: 0.95 },
++    });
++    const merged = mergeCategoryDecisions(
++      [clause("دفعت 100 أكل", [strongRule], 1)],
++      [{ i: 1, category: "health", sub: "عام" }],
++    );
++
++    const recalibrated = applyCalibration(merged.items);
++    expect(recalibrated.items[0].calibration?.signature).toBeDefined();
++    expect(recalibrated.items[0].calibration?.signature).not.toBe("stale-signature");
++    expect(recalibrated.items[0].ambiguityFlags?.join(" ")).toContain("calibrated:model:");
++  });
++
++  it("keeps an unpriced item unpriced however many times calibration runs", () => {
++    // `exact:single` has no observations in the shipped table, so its probability is the
++    // corpus prior. Running calibration twice used to report unpriced 1 then 0, which
++    // turned an unmeasured path into an auto-saveable one on the second pass.
++    const unpriced = item({
++      evidence: { ...emptyEvidence("user_dictionary", 95), anchorConsumed: true },
++    });
++
++    const first = applyCalibration([unpriced]);
++    expect(first.unpriced).toBe(1);
++
++    const second = applyCalibration(first.items);
++    expect(second.unpriced).toBe(1);
++
++    const third = applyCalibration(second.items);
++    expect(third.unpriced).toBe(1);
++  });
++
++  it("refuses auto-save for an item whose probability was never measured", () => {
++    const unpriced = applyCalibration([
++      item({ evidence: { ...emptyEvidence("user_dictionary", 95), anchorConsumed: true } }),
++    ]);
++
++    const outcome = decidePerItem(unpriced.items, {
++      amountsFullyConsumed: true,
++      needsAnswer: false,
++    });
++    expect(outcome.decision).not.toBe("auto_save");
++  });
++
++  it("does not let a shortcut skip the unpriced condition", () => {
++    const gate = gateShortcutResult({
++      items: [
++        item({
++          amount: 200,
++          confidence: 100,
++          evidence: { ...emptyEvidence("user_dictionary", 100), anchorConsumed: true },
++        }),
++      ],
++      text: "دفعت 200 أكل",
++    });
++
++    expect(gate.admitted).toBe(true);
++    expect(gate.decision).not.toBe("auto_save");
++  });
++});
++
++// ───────────────────────── 7. Group confidence ─────────────────────────
++
++describe("A1.4 — a group is as saveable as its weakest member", () => {
++  const priced = (confidence: number) =>
++    item({
++      confidence,
++      calibration: { signature: `sig-${confidence}`, support: 40, probability: confidence / 100 },
++    });
++
++  it("does not auto-save a group because the mean clears the line", () => {
++    // 82, 87, 90 → mean 86.3, which cleared an 85 threshold while an item at 82 did not.
++    const outcome = decidePerItem([priced(82), priced(87), priced(90)], {
++      amountsFullyConsumed: true,
++      needsAnswer: false,
++      thresholds: { autoSave: 0.85, review: 0.5, escalate: 0.85 },
++    });
++
++    expect(outcome.decision).toBe("review");
++    expect(outcome.weakestConfidence).toBe(82);
++  });
++
++  it.each([
++    [{ autoSave: 0.85, review: 0.5, escalate: 0.85 }, [90, 92, 95], "auto_save"],
++    [{ autoSave: 0.85, review: 0.5, escalate: 0.85 }, [84, 99, 99], "review"],
++    [{ autoSave: 0.9, review: 0.5, escalate: 0.85 }, [88, 95, 97], "review"],
++    [{ autoSave: 0.9, review: 0.5, escalate: 0.85 }, [91, 95, 97], "auto_save"],
++    [{ autoSave: 0.7, review: 0.5, escalate: 0.7 }, [72, 99, 99], "auto_save"],
++  ])("holds at threshold %o for scores %o", (thresholds, scores, expected) => {
++    const outcome = decidePerItem(scores.map(priced), {
++      amountsFullyConsumed: true,
++      needsAnswer: false,
++      thresholds,
++    });
++    expect(outcome.decision).toBe(expected);
++  });
++
++  it("saves a single confident item on its own merits (positive control)", () => {
++    const outcome = decidePerItem([priced(96)], {
++      amountsFullyConsumed: true,
++      needsAnswer: false,
++      thresholds: { autoSave: 0.9, review: 0.5, escalate: 0.85 },
++    });
++    expect(outcome.decision).toBe("auto_save");
++  });
++
++  it("blocks the whole group when one amount found no owner", () => {
++    const outcome = decidePerItem([priced(99), priced(99)], {
++      amountsFullyConsumed: false,
++      needsAnswer: false,
++    });
++    expect(outcome.decision).toBe("clarify");
++  });
++});
++
++// ───────────────────────── 8. Sticky blockers ─────────────────────────
++
++describe("A1.4 — a blocker survives every later layer", () => {
++  it("is not cleared by a verifier that has no objection of its own", () => {
++    const blocked = item({
++      confidence: 95,
++      needsReview: true,
++      reviewReasons: ["category_reply_unresolved"],
++    });
++
++    const verified = verifyClassifiedItems([blocked], "دفعت 100 أكل");
++
++    expect(verified.items[0].needsReview).toBe(true);
++    expect(verified.items[0].reviewReasons).toContain("category_reply_unresolved");
++  });
++
++  it("still lets the verifier raise a blocker of its own", () => {
++    const clean = item({ confidence: 40 });
++    const verified = verifyClassifiedItems([clean], "دفعت 100 أكل");
++    expect(verified.items[0].needsReview).toBe(true);
++  });
++
++  it("leaves a clean, confident item alone (positive control)", () => {
++    const clean = item({ confidence: 96 });
++    const verified = verifyClassifiedItems([clean], "دفعت 100 أكل");
++    expect(verified.items[0].needsReview).toBe(false);
++  });
++
++  it("is not cleared by the merge losing an answer", () => {
++    const blocked = item({ needsReview: true, reviewReasons: ["amount_unattached"] });
++    const merged = mergeCategoryDecisions([clause("حاجة", [blocked], 1)], []);
++    expect(merged.items[0].reviewReasons).toEqual(
++      expect.arrayContaining(["amount_unattached", "category_reply_unresolved"]),
++    );
++  });
++
++  it("is not cleared by a later category rescue", async () => {
++    io.llm.mockResolvedValue(modelAnswers([]));
++    const result = await classify("صرفت 250 على حاجة غريبة مش عارف اسمها");
++    for (const row of result.items) {
++      if (row.reviewReasons && row.reviewReasons.length > 0) {
++        expect(row.needsReview).toBe(true);
++      }
++    }
++    expect(result.decision).not.toBe("auto_save");
++  });
++});
++
++// ───────────────────────── 9. Reply robustness ─────────────────────────
++
++describe("A1.5 — the model reply contract", () => {
++  it.each([
++    ["null", null],
++    ["an empty object", {}],
++    ["an empty array", []],
++    ["items: null", { items: null }],
++    ["items: a string", { items: "nope" }],
++    ["a null row", { items: [null] }],
++    ["a string row", { items: ["food"] }],
++    ["a number row", { items: [7] }],
++    ["a row with no index", { items: [{ category: "food" }] }],
++    ["a row with no category", { items: [{ i: 1 }] }],
++    ["an invented category", { items: [{ i: 1, category: "zzz_not_a_thing" }] }],
++    ["an out-of-range index", { items: [{ i: 9, category: "food" }] }],
++    ["a zero index", { items: [{ i: 0, category: "food" }] }],
++    ["a negative index", { items: [{ i: -1, category: "food" }] }],
++    ["a fractional index", { items: [{ i: 1.5, category: "food" }] }],
++    ["duplicate indices", { items: [{ i: 1, category: "food" }, { i: 1, category: "transport" }] }],
++    ["an unexpected person field", { items: [{ i: 1, category: "food", person: "مروان" }] }],
++    ["an incompatible subcategory", { items: [{ i: 1, category: "food", sub: "بنزين" }] }],
++  ])("survives %s without inventing a fact", (_label, raw) => {
++    const result = validateClassifierReply(raw, 2);
++
++    expect(Array.isArray(result.items)).toBe(true);
++    for (const row of result.items) {
++      expect(Number.isInteger(row.i)).toBe(true);
++      expect(row.i).toBeGreaterThanOrEqual(1);
++      expect(row.i).toBeLessThanOrEqual(2);
++      expect(typeof row.category).toBe("string");
++    }
++    // Every incomplete reply says so; nothing is silently treated as complete.
++    if (result.items.length < 2) expect(result.problems.length).toBeGreaterThan(0);
++  });
++
++  it("drops an invalid category instead of resolving it by substring", () => {
++    // "business" is not a category. It contains "bus", which is an alias of transport,
++    // so the free-text resolver answered مواصلات and the invented category became a
++    // real one nobody chose.
++    const result = validateClassifierReply({ items: [{ i: 1, category: "business" }] }, 1);
++    expect(result.items).toHaveLength(0);
++    expect(result.problems[0]).toContain("not a category");
++  });
++
++  it("still repairs a category the model named in Arabic (positive control)", () => {
++    const result = validateClassifierReply({ items: [{ i: 1, category: "أكل وشرب" }] }, 1);
++    expect(result.items[0].category).toBe("food");
++    expect(result.problems[0]).toContain("repaired");
++  });
++
++  it("does not promote a model-named person into a recorded fact", () => {
++    const validated = validateClassifierReply(
++      { items: [{ i: 1, category: "family", sub: "أخي", person: "شخص مخترع" }] },
++      1,
++    );
++    const merged = mergeCategoryDecisions(
++      [clause("حولت 500 لحد", [item({ amount: 500, category: "أصدقاء" })], 1)],
++      validated.items,
++    );
++
++    expect(merged.items[0].person_mentioned).toBeUndefined();
++    expect(merged.items[0].needsReview).toBe(true);
++  });
++
++  it("falls back to the neutral subcategory rather than the first plausible one", () => {
++    const merged = mergeCategoryDecisions(
++      [clause("دفعت 100 حاجة", [item({ category: "متنوعات" })], 1)],
++      [{ i: 1, category: "food" }],
++    );
++    expect(merged.items[0].subCategory).toBe("عام");
++  });
++
++  it("does not drop the other clauses when one answer is missing", () => {
++    const merged = mergeCategoryDecisions(
++      [
++        clause("حاجة أولى", [item({ amount: 100 })], 1),
++        clause("حاجة تانية", [item({ amount: 200 })], 2),
++      ],
++      [{ i: 2, category: "transport" }],
++    );
++
++    expect(merged.items.map((x) => x.amount)).toEqual([100, 200]);
++    expect(merged.unansweredClauseIds).toEqual([1]);
++    expect(merged.items[0].reviewReasons).toContain("category_reply_unresolved");
++  });
++
++  it("reports a clause with no extracted event instead of fabricating one", () => {
++    const merged = mergeCategoryDecisions(
++      [clause("حاجة مالهاش مبلغ", [], 1)],
++      [{ i: 1, category: "food" }],
++    );
++
++    expect(merged.items).toEqual([]);
++    expect(merged.unresolvedClauseIds).toEqual([1]);
++  });
++
++  it("does not let an invalid reply become a silent save through the pipeline", async () => {
++    io.llm.mockResolvedValue({
++      text: "this is not json at all",
++      totalTokens: 40,
++      cachedTokens: 0,
++      attempts: [{ slug: "test", model: mapModelName("flash"), ok: true, latencyMs: 2 }],
++      route: { slug: "test", model: mapModelName("flash") },
++      degradedSchema: true,
++    });
++
++    const result = await classify("دفعت 250 لحاجة مجهولة");
++    expect(result.decision).not.toBe("auto_save");
++  });
++});
++
++// ───────────────────────── 11 & 12. Controls ─────────────────────────
++
++describe("A1 — safety was not bought by refusing everything", () => {
++  it.each([
++    ["دفعت ٢٠٠ جنيه بنزين", 200, "مواصلات"],
++    ["دفعت 200 جنيه بنزين", 200, "مواصلات"],
++    ["بنزين ب 200 جنيه", 200, "مواصلات"],
++    ["جبت أكل للبيت بمية وخمسين", 150, "أكل وشرب"],
++    ["اشتريت أكل للبيت ب150", 150, "أكل وشرب"],
++  ])("classifies %s locally and completely", async (text, amount, category) => {
++    const result = await classify(text);
++
++    expect(result.items).toHaveLength(1);
++    expect(result.items[0]).toMatchObject({ amount, category, type: "expense" });
++    // Local evidence is sufficient here — paying a model for it is a cost regression.
++    expect(io.llm).not.toHaveBeenCalled();
++    expect(result.tokensUsed).toBe(0);
++  });
++
++  it("still auto-saves at least one ordinary transaction", async () => {
++    const outcomes = await Promise.all(
++      ["دفعت 200 بنزين", "دفعت 150 أكل", "دفعت 100 مواصلات"].map((t) => classify(t)),
++    );
++    expect(outcomes.some((r) => r.decision === "auto_save")).toBe(true);
++  });
++
++  it("does not answer every sentence with a question", async () => {
++    const outcomes = await Promise.all(
++      ["دفعت 200 بنزين", "دفعت 150 أكل", "دفعت 80 قهوة"].map((t) => classify(t)),
++    );
++    expect(outcomes.every((r) => r.decision === "clarify")).toBe(false);
++  });
++
++  it("gives the same answer for the same meaning across wordings and numerals", async () => {
++    const variants = ["دفعت 200 بنزين", "دفعت ٢٠٠ بنزين", "بنزين 200", "صرفت 200 على بنزين"];
++    const results = await Promise.all(variants.map((t) => classify(t)));
++
++    for (const [index, result] of results.entries()) {
++      expect(result.items, variants[index]).toHaveLength(1);
++      expect(result.items[0].amount, variants[index]).toBe(200);
++      expect(result.items[0].type, variants[index]).toBe("expense");
++    }
++    const categories = new Set(results.map((r) => r.items[0].category));
++    expect(categories.size, `categories diverged: ${[...categories].join(", ")}`).toBe(1);
++  });
++
++  it("scales with the value rather than matching it", async () => {
++    for (const amount of [50, 200, 1250]) {
++      const result = await classify(`دفعت ${amount} بنزين`);
++      expect(result.items[0].amount).toBe(amount);
++      expect(result.items[0].category).toBe("مواصلات");
++    }
++  });
++});
+diff --git a/api/lib/classification-merge.ts b/api/lib/classification-merge.ts
+index b1d4abb..cd94c80 100644
+--- a/api/lib/classification-merge.ts
++++ b/api/lib/classification-merge.ts
+@@ -5,10 +5,32 @@ import { arabicDisplayName } from "./category-registry";
+ import type { ParsedTransaction } from "./rule-engine";
+ import type { DecomposedSegment } from "./narrative-decomposer";
+ import { emptyEvidence } from "./classification-evidence";
++import { BlockerReason, withBlocker } from "./final-acceptance";
+ 
+ export interface EscalationClause {
+   segment: DecomposedSegment;
+   localItems: ParsedTransaction[];
++  /**
++   * Identity of this clause within the request. Answers are matched to it, and the item
++   * carries it out as `sourceEventId`, so a reordered reply cannot move an amount from
++   * one event to another.
++   */
++  clauseId?: number;
++}
++
++export interface MergeOutcome {
++  items: ParsedTransaction[];
++  /**
++   * Clauses the model answered for but that the local pass produced no event for.
++   *
++   * The category is not the missing piece here — the amount is, and the model is not
++   * asked for amounts precisely because it is bad at them. Naming these separately is
++   * what keeps "I could not extract this" from being reported as "there was nothing
++   * here": the caller turns them into a question or a draft, never into a row.
++   */
++  unresolvedClauseIds: number[];
++  /** Clauses that got no usable answer, for the trace and the review reasons. */
++  unansweredClauseIds: number[];
+ }
+ 
+ const PERSON_CATEGORIES = new Set(["العائلة", "أصدقاء", "موظفين"]);
+@@ -16,34 +38,66 @@ const PERSON_CATEGORIES = new Set(["العائلة", "أصدقاء", "موظفي
+ export function mergeCategoryDecisions(
+   clauses: EscalationClause[],
+   decisions: CategoryDecision[],
+-): ParsedTransaction[] {
++): MergeOutcome {
+   const byIndex = new Map(decisions.map((d) => [d.i, d]));
+-  return clauses.flatMap((clause, i) => clause.localItems.map((item) => {
++  const items: ParsedTransaction[] = [];
++  const unresolvedClauseIds: number[] = [];
++  const unansweredClauseIds: number[] = [];
++
++  clauses.forEach((clause, i) => {
++    const clauseId = clause.clauseId ?? i + 1;
+     const decision = byIndex.get(i + 1);
+     const category = decision && arabicDisplayName(decision.category);
+-    // An empty/rejected clause stays empty; category answers cannot invent identities.
+-    if (!decision || !category || PERSON_CATEGORIES.has(item.category) || PERSON_CATEGORIES.has(category)) {
+-      return { ...item, needsReview: true,
+-        reviewReasons: [...new Set([...(item.reviewReasons || []), "category_reply_unresolved"])] };
++
++    if (clause.localItems.length === 0) {
++      // The local pass found no event in this fragment. A category answer cannot supply
++      // the amount, the direction or the date it is missing, and inferring them from the
++      // fact that the model was willing to name a category is exactly how a negated
++      // "ماشتريتش جزمة ب500" came back as a 500 shopping expense.
++      if (decision) unresolvedClauseIds.push(clauseId);
++      return;
++    }
++
++    if (!decision || !category) {
++      unansweredClauseIds.push(clauseId);
+     }
+-    return {
+-      ...item,
+-      category,
+-      subCategory: resolveSubcategory(decision.category, decision.sub),
+-      inferenceSource: "ai" as const,
+-      parsedBy: "ai" as const,
+-      calibration: undefined,
+-      ambiguityFlags: (item.ambiguityFlags || []).filter((f) => !f.startsWith("calibrated:")),
+-      evidence: {
+-        ...emptyEvidence("llm"),
+-        ...item.evidence,
+-        matchKind: "llm" as const,
+-        // A prompted local guess makes agreement dependent, not a second observation.
+-        agreement: 0,
+-        disagreement: item.category !== "متنوعات" && item.category !== category ? 1 : 0,
+-        categoryIsFallback: decision.category === "miscellaneous",
+-      },
+-      needsReview: true,
+-    };
+-  }));
++
++    for (const item of clause.localItems) {
++      const carried = { ...item, sourceEventId: item.sourceEventId ?? clauseId };
++
++      // An empty/rejected clause stays empty; category answers cannot invent identities.
++      if (!decision || !category || PERSON_CATEGORIES.has(item.category) || PERSON_CATEGORIES.has(category)) {
++        items.push(withBlocker(carried, BlockerReason.CATEGORY_REPLY_UNRESOLVED));
++        continue;
++      }
++
++      items.push({
++        ...carried,
++        category,
++        subCategory: resolveSubcategory(decision.category, decision.sub),
++        inferenceSource: "ai" as const,
++        parsedBy: "ai" as const,
++        // The category changed, so the calibration that priced the OLD category is no
++        // longer a statement about this item. Clearing it forces a fresh estimate rather
++        // than carrying a strong_rule 95 onto an answer the strong rule never gave: the
++        // audit found exactly that, a food item recalled as health that kept both the
++        // score and the `calibrated:strong_rule` marker of the resolver it replaced.
++        calibration: undefined,
++        ambiguityFlags: (item.ambiguityFlags || []).filter((f) => !f.startsWith("calibrated:")),
++        evidence: {
++          ...emptyEvidence("llm"),
++          ...item.evidence,
++          matchKind: "llm" as const,
++          // A prompted local guess makes agreement dependent, not a second observation.
++          agreement: 0,
++          disagreement: item.category !== "متنوعات" && item.category !== category ? 1 : 0,
++          categoryIsFallback: decision.category === "miscellaneous",
++        },
++        needsReview: true,
++        reviewReasons: item.reviewReasons,
++      });
++    }
++  });
++
++  return { items, unresolvedClauseIds, unansweredClauseIds };
+ }
+diff --git a/api/lib/classifier-contract.test.ts b/api/lib/classifier-contract.test.ts
+index cd2f2ed..f693d0b 100644
+--- a/api/lib/classifier-contract.test.ts
++++ b/api/lib/classifier-contract.test.ts
+@@ -55,15 +55,26 @@ describe("classifier contract", () => {
+ 
+ describe("validating what comes back", () => {
+   it("accepts a well-formed reply", () => {
+-    const r = validateClassifierReply(
+-      { items: [{ i: 1, category: "food", sub: "مطعم" }] },
+-      3,
+-    );
++    const r = validateClassifierReply({ items: [{ i: 1, category: "food", sub: "مطعم" }] }, 1);
+     expect(r.items).toHaveLength(1);
+     expect(r.items[0].category).toBe("food");
+     expect(r.problems).toHaveLength(0);
+   });
+ 
++  it("reports the clauses a partial reply did not answer", () => {
++    // Written when the validator only checked the rows it was given, so a reply covering
++    // one clause of three was indistinguishable from a complete one and the two
++    // unanswered clauses kept a guess nobody had looked at. Incompleteness is now a
++    // reported problem, which is what lets the pipeline mark those clauses for review
++    // instead of treating a truncated answer as a model success.
++    const r = validateClassifierReply({ items: [{ i: 1, category: "food" }] }, 3);
++    expect(r.items).toHaveLength(1);
++    expect(r.problems).toEqual([
++      "missing answer for clause 2",
++      "missing answer for clause 3",
++    ]);
++  });
++
+   it("repairs a category named in Arabic instead of by id", () => {
+     // Only Gemini enforces the enum. NVIDIA strips response_format on a 400 and answers
+     // anyway, so a valid answer in the wrong notation has to be recovered, not discarded.
+@@ -87,7 +98,12 @@ describe("validating what comes back", () => {
+     expect(r.problems[0]).toContain("out-of-range");
+   });
+ 
+-  it("keeps only the first answer when the model splits one clause into two", () => {
++  it("keeps neither answer when the model contradicts itself about one clause", () => {
++    // This asserted "keep the first" — which is a coin toss dressed as a policy: the
++    // model gave two incompatible categories for one clause and there is no evidence
++    // that the earlier row is the better one. Dropping both costs nothing, because a
++    // clause with no answer keeps its local category and is marked for review; keeping
++    // one records a category the model itself was not sure of.
+     const r = validateClassifierReply(
+       {
+         items: [
+@@ -97,9 +113,8 @@ describe("validating what comes back", () => {
+       },
+       1,
+     );
+-    expect(r.items).toHaveLength(1);
+-    expect(r.items[0].category).toBe("food");
+-    expect(r.problems[0]).toContain("duplicate");
++    expect(r.items).toHaveLength(0);
++    expect(r.problems.join(" ")).toContain("duplicate");
+   });
+ 
+   it("survives a reply that is not the shape we asked for", () => {
+diff --git a/api/lib/classifier-contract.ts b/api/lib/classifier-contract.ts
+index 87f16af..669ddbe 100644
+--- a/api/lib/classifier-contract.ts
++++ b/api/lib/classifier-contract.ts
+@@ -24,7 +24,7 @@
+  *   - it cannot inflate confidence: there is no confidence field
+  */
+ import { SchemaType } from "@google/generative-ai";
+-import { CATEGORIES, canonicalCategoryId, getSubcategoriesFor } from "./category-registry";
++import { CATEGORIES, exactCategoryId, getSubcategoriesFor } from "./category-registry";
+ import { z } from "zod";
+ 
+ /** The 26 real category ids. English, because they are identifiers, not display text. */
+@@ -145,8 +145,13 @@ export function validateClassifierReply(
+     }
+ 
+     // A model that ignored the enum often still names a real category, just in Arabic
+-    // or with different spacing. Resolving it is a repair, not a guess.
+-    const id = CATEGORY_IDS.includes(claimed) ? claimed : canonicalCategoryId(claimed);
++    // or with different spacing. Resolving THAT is a repair. Resolving anything else is
++    // a guess, and `canonicalCategoryId` — which this used to call — guesses by
++    // substring: it answered "transport" for the invented category "business", because
++    // "bus" is a transport alias, and the wrong category was then recorded as the
++    // model's answer. Exact aliases only; everything else is dropped and the clause
++    // keeps its local answer.
++    const id = CATEGORY_IDS.includes(claimed) ? claimed : exactCategoryId(claimed);
+     if (!id || !CATEGORY_IDS.includes(id)) {
+       problems.push(`dropped item ${i}: "${claimed}" is not a category`);
+       continue;
+diff --git a/api/lib/final-acceptance.ts b/api/lib/final-acceptance.ts
+new file mode 100644
+index 0000000..5e8ae2c
+--- /dev/null
++++ b/api/lib/final-acceptance.ts
+@@ -0,0 +1,296 @@
++/**
++ * The one gate a classification has to pass before it may be written without review.
++ *
++ * Three layers used to grant themselves that permission directly — the result cache, the
++ * muscle-memory shortcut and the business-scoring shortcut each returned
++ * `decision: "auto_save"` from their own branch, having answered none of the questions
++ * the slow path answers. The consequences were not theoretical: a business keyword match
++ * auto-saved "ماشتريتش خامات ب500" as a 500 expense at confidence 100, took only the
++ * FIRST amount out of "دفعت 500 خامات و300 معدات", and read its direction off the
++ * category's type so "قبضت 500 خامات" became an expense.
++ *
++ * Being fast is not the same as being sure. A shortcut may skip the work; it may not
++ * skip the conclusion. Everything that can reach the database now converges here:
++ *
++ *   1. Is this a financial statement at all?  — the admissibility gate, not a keyword hit
++ *   2. Did every amount the user said find an owner?  — the ledger, not a count
++ *   3. Is each item individually safe to write?  — `decide` per item, never an average
++ *
++ * Blockers are sticky by construction. `needsReview` and `reviewReasons` only ever gain
++ * entries here; a later layer that thinks an item looks fine cannot un-flag it, which is
++ * what let the verifier clear a `category_reply_unresolved` it knew nothing about.
++ */
++import { checkAdmissibility } from "./admissibility-gate";
++import { buildAnchors, reconcileAmounts, describeUnconsumed } from "./amount-ledger";
++import { applyCalibration } from "./confidence-calibrator";
++import {
++  decide,
++  DEFAULT_THRESHOLDS,
++  type Decision,
++  type DecisionThresholds,
++} from "./classification-decision";
++import { extractAmounts } from "./entity-extractor";
++import type { ParsedTransaction } from "./rule-engine";
++
++/**
++ * Stable machine codes for why an item cannot be saved silently.
++ *
++ * Strings, not booleans, because "needs review" without a reason is untriageable: the
++ * admin funnel cannot tell a model that returned nothing from a person we could not
++ * identify, and the user gets the same blank prompt for both.
++ */
++export const BlockerReason = {
++  /** The model was asked for a category and did not usably answer for this clause. */
++  CATEGORY_REPLY_UNRESOLVED: "category_reply_unresolved",
++  /** The model's reply was structurally invalid or incomplete. */
++  MODEL_REPLY_INVALID: "model_reply_invalid",
++  /** An amount the user said is not owned by any item. */
++  AMOUNT_UNATTACHED: "amount_unattached",
++  /** The calibration bucket for this item's evidence has no observations behind it. */
++  UNPRICED_EVIDENCE: "unpriced_evidence",
++  /** A shortcut produced this and the slow path never saw it. */
++  SHORTCUT_UNVERIFIED: "shortcut_unverified",
++  /** Local layers disagreed about the category. */
++  RESOLVERS_DISAGREE: "resolvers_disagree",
++} as const;
++
++export type BlockerReasonCode = (typeof BlockerReason)[keyof typeof BlockerReason];
++
++/**
++ * Adds a blocker without ever removing one.
++ *
++ * Returns a new item — the pipeline mutates items in several places and a shared
++ * reference that silently gains flags is how a blocker ended up on the wrong row.
++ */
++export function withBlocker(
++  item: ParsedTransaction,
++  ...reasons: string[]
++): ParsedTransaction {
++  if (reasons.length === 0) return item;
++  return {
++    ...item,
++    needsReview: true,
++    reviewReasons: [...new Set([...(item.reviewReasons || []), ...reasons])],
++  };
++}
++
++/**
++ * Applies a later layer's opinion of an item without letting it clear an earlier one.
++ *
++ * `needsReview` is a disjunction over every layer that looked at the item, so a verifier
++ * that finds nothing wrong leaves an existing flag exactly where it was. It used to
++ * assign `needsReview: adjustedConfidence < 85 || flagged`, which overwrote — an item
++ * arriving from the model merge already flagged, scoring 90 and drawing no verifier
++ * objection, came out clean and auto-saveable.
++ */
++export function mergeReviewState(
++  next: ParsedTransaction,
++  previous: Pick<ParsedTransaction, "needsReview" | "reviewReasons">,
++  ...addedReasons: string[]
++): ParsedTransaction {
++  const reasons = [
++    ...new Set([...(previous.reviewReasons || []), ...(next.reviewReasons || []), ...addedReasons]),
++  ];
++  return {
++    ...next,
++    needsReview: Boolean(previous.needsReview) || Boolean(next.needsReview) || reasons.length > 0,
++    reviewReasons: reasons.length > 0 ? reasons : undefined,
++  };
++}
++
++/** True when this item carries a blocker that no confidence score may override. */
++export function hasBlockingReason(item: ParsedTransaction): boolean {
++  return Boolean(item.reviewReasons && item.reviewReasons.length > 0);
++}
++
++export interface AcceptanceInput {
++  /** Items a layer proposes to save. */
++  items: ParsedTransaction[];
++  /** The raw utterance, for admissibility and the amount ledger. */
++  text: string;
++  /** Normalized form the local layers matched against, if the caller has one. */
++  normalizedText?: string;
++  thresholds?: DecisionThresholds;
++  /**
++   * Skip the "ask about the missing amount" branch. Set by callers that have already
++   * asked a question this turn, so the user is not asked two things at once.
++   */
++  skipClarification?: boolean;
++}
++
++export interface AcceptanceOutcome {
++  /**
++   * False when the utterance is not a recordable financial event at all. The caller must
++   * not fall through to its own answer: there is nothing to classify.
++   */
++  admitted: boolean;
++  /**
++   * True when these items account for every amount in the utterance.
++   *
++   * A shortcut may only ANSWER when this holds. A learned 500-shopping pattern matching
++   * "ماشتريتش جزمة 500 ودفعت 200 بنزين" covers one number out of two, and the full
++   * pipeline reads that sentence correctly — so a partial shortcut should stand aside,
++   * not ask the user a question the pipeline would not have needed to ask.
++   */
++  coversUtterance: boolean;
++  items: ParsedTransaction[];
++  decision: Decision;
++  /** Machine-readable, mirrors `DecisionOutcome.reason` plus the gate's own codes. */
++  reason: string;
++  overallConfidence: number;
++  clarificationQuestion?: string;
++  /** Every blocker the gate raised, for the trace. */
++  blockers: string[];
++}
++
++/**
++ * The strictest of the per-item decisions, never the average.
++ *
++ * An average is the specific arithmetic that let a 3-item narrative auto-save on 82/87/90
++ * against an 85 line: the mean is 86.3 and the 82 disappears into it. A group is exactly
++ * as saveable as its weakest member, so this reduces by precedence — clarify beats
++ * review beats auto_save — rather than by summing.
++ */
++export function decidePerItem(
++  items: ParsedTransaction[],
++  context: {
++    amountsFullyConsumed: boolean;
++    needsAnswer: boolean;
++    thresholds?: DecisionThresholds;
++  },
++): { decision: Decision; reason: string; weakestConfidence: number } {
++  const thresholds = context.thresholds || DEFAULT_THRESHOLDS;
++  const rank: Record<Decision, number> = { auto_save: 0, review: 1, clarify: 2 };
++
++  let worst: { decision: Decision; reason: string } = {
++    decision: "auto_save",
++    reason: "high_probability",
++  };
++  let weakest = items.length > 0 ? 100 : 0;
++
++  for (const item of items) {
++    const confidence = item.confidence || 0;
++    if (confidence < weakest) weakest = confidence;
++
++    const outcome = decide(
++      {
++        probability: confidence / 100,
++        amountsFullyConsumed: context.amountsFullyConsumed,
++        // A blocker on THIS item, not a flag somewhere in the batch.
++        hasBlockingFlag: hasBlockingReason(item) || Boolean(item.needsReview),
++        needsAnswer: context.needsAnswer,
++        // `calibration.support === 0` means the probability written on this item is the
++        // corpus prior, not a measurement of the path that produced it. An item with no
++        // calibration record at all has never been priced either.
++        hasUnpricedItem: !item.calibration || item.calibration.support === 0,
++      },
++      thresholds,
++    );
++
++    if (rank[outcome.decision] > rank[worst.decision]) {
++      worst = outcome;
++    }
++  }
++
++  return { ...worst, weakestConfidence: weakest };
++}
++
++/**
++ * The gate every zero-token shortcut must pass before it may claim `auto_save`.
++ *
++ * Deliberately does NOT re-run classification: a shortcut is allowed to be the source of
++ * the answer. What it is not allowed to do is skip the checks that decide whether an
++ * answer may be written without a human seeing it.
++ */
++export function gateShortcutResult(input: AcceptanceInput): AcceptanceOutcome {
++  const thresholds = input.thresholds || DEFAULT_THRESHOLDS;
++  const blockers: string[] = [];
++
++  // 1. Is this a financial statement at all?
++  //
++  // A keyword match is not an event. "ماشتريتش خامات ب500" matches the business category
++  // "خامات" exactly as strongly as "اشتريت خامات ب500" does, and the difference between
++  // them is the whole point.
++  const admissibility = checkAdmissibility(input.normalizedText || input.text);
++  if (admissibility.verdict !== "financial") {
++    return {
++      admitted: false,
++      coversUtterance: false,
++      items: [],
++      decision: "clarify",
++      reason: `not_admissible:${admissibility.verdict}`,
++      overallConfidence: 0,
++      clarificationQuestion: admissibility.userMessage,
++      blockers: [`not_admissible:${admissibility.reason}`],
++    };
++  }
++
++  if (input.items.length === 0) {
++    return {
++      admitted: true,
++      coversUtterance: false,
++      items: [],
++      decision: "clarify",
++      reason: "no_items",
++      overallConfidence: 0,
++      blockers: ["no_items"],
++    };
++  }
++
++  // 2. Price the evidence before judging it.
++  //
++  // Shortcut items historically arrived carrying a hand-written 100. Calibration turns
++  // whatever a layer wrote into the measured probability that it is right, so the
++  // comparison below means the same thing for every layer.
++  const calibration = applyCalibration(input.items);
++  let items = calibration.items;
++
++  // 3. Did every amount the user said find an owner?
++  //
++  // Counting items against amounts is not this check — "دفعت 500 خامات و300 معدات"
++  // produced one item for two amounts and the count comparison it replaced never looked.
++  const anchors = buildAnchors(extractAmounts(input.text).map((a) => a.amount));
++  const ledger = reconcileAmounts(anchors, items);
++  const amountsFullyConsumed = ledger.unconsumed.length === 0;
++
++  if (!amountsFullyConsumed) {
++    blockers.push(BlockerReason.AMOUNT_UNATTACHED);
++    items = items.map((item) => withBlocker(item, BlockerReason.AMOUNT_UNATTACHED));
++    if (!input.skipClarification) {
++      return {
++        admitted: true,
++        coversUtterance: false,
++        items,
++        decision: "clarify",
++        reason: "amount_unattached",
++        overallConfidence: 0,
++        clarificationQuestion: describeUnconsumed(ledger.unconsumed),
++        blockers,
++      };
++    }
++  }
++
++  // 4. Per item, never averaged.
++  const outcome = decidePerItem(items, {
++    amountsFullyConsumed,
++    needsAnswer: false,
++    thresholds,
++  });
++
++  if (outcome.decision !== "auto_save") {
++    items = items.map((item) =>
++      item.needsReview ? item : { ...item, needsReview: true },
++    );
++    if (calibration.unpriced > 0) blockers.push(BlockerReason.UNPRICED_EVIDENCE);
++  }
++
++  return {
++    admitted: true,
++    coversUtterance: amountsFullyConsumed,
++    items,
++    decision: outcome.decision,
++    reason: outcome.reason,
++    overallConfidence: outcome.weakestConfidence,
++    blockers,
++  };
++}
+diff --git a/api/lib/post-classifier-verifier.ts b/api/lib/post-classifier-verifier.ts
+index ca450de..3aa9345 100644
+--- a/api/lib/post-classifier-verifier.ts
++++ b/api/lib/post-classifier-verifier.ts
+@@ -9,6 +9,15 @@
+ import { CATEGORIES, getCategoryByArabicName } from "./category-registry";
+ import type { ParsedTransaction } from "./rule-engine";
+ import { extractAmounts } from "./entity-extractor";
++import { mergeReviewState } from "./final-acceptance";
++import { DEFAULT_THRESHOLDS } from "./classification-decision";
++
++/**
++ * Below this calibrated probability the verifier asks for a look, independently of
++ * whatever else the item carries. Reads the shared default rather than a local 85, so
++ * the verifier and the decision layer cannot disagree about where the line is.
++ */
++const AUTO_SAVE_REVIEW_FLOOR = DEFAULT_THRESHOLDS.autoSave * 100;
+ 
+ // ─── Types ────────────────────────────────────────────────────────
+ 
+@@ -477,13 +486,22 @@ function adjustConfidence(
+     // evidence of correctness, and the confidence is now a calibrated probability, so
+     // nothing downstream may nudge it.
+ 
+-    return {
+-      ...item,
+-      confidence: adjustedConfidence,
+-      needsReview:
+-        adjustedConfidence < 85 ||
+-        errorIndices.has(idx) ||
+-        warningIndices.has(idx),
+-    };
++    // `needsReview` is a disjunction, not an assignment.
++    //
++    // This used to overwrite: an item that arrived already flagged — by the model merge
++    // as `category_reply_unresolved`, or by the person resolver as an unidentified name —
++    // scoring 90 and drawing no verifier objection came out of here with the flag gone
++    // and became eligible for a silent write. The verifier knows about the six things it
++    // checks; it knows nothing about the reasons other layers raised, and finding no
++    // fault of its own is not evidence that theirs was mistaken.
++    const verifierObjects =
++      adjustedConfidence < AUTO_SAVE_REVIEW_FLOOR ||
++      errorIndices.has(idx) ||
++      warningIndices.has(idx);
++
++    return mergeReviewState(
++      { ...item, confidence: adjustedConfidence, needsReview: verifierObjects },
++      item,
++    );
+   });
+ }
+diff --git a/api/lib/smart-pipeline.ts b/api/lib/smart-pipeline.ts
+index 2545ca1..132b597 100644
+--- a/api/lib/smart-pipeline.ts
++++ b/api/lib/smart-pipeline.ts
+@@ -41,12 +41,30 @@ import { mapModelName } from "./model-mapper";
+ import type { ParsedTransaction } from "./rule-engine";
+ import { matchArabicPhrase, stripArabicPrefix } from "./fuzzy-match";
+ import { extractPeople, extractAmounts } from "./entity-extractor";
+-import { decomposeHeuristic, ALL_FINANCIAL_VERBS, type DecompositionResult } from "./narrative-decomposer";
++import {
++  decomposeHeuristic,
++  ALL_FINANCIAL_VERBS,
++  type DecompositionResult,
++  type DecomposedSegment,
++} from "./narrative-decomposer";
+ import { verifyClassifiedItems } from "./post-classifier-verifier";
+ import { checkAdmissibility } from "./admissibility-gate";
++import { detectIntent } from "./intent-detector";
+ import { applyCalibration } from "./confidence-calibrator";
+ import { crossCheck } from "./classification-evidence";
+-import { shouldEscalate, decide } from "./classification-decision";
++import {
++  shouldEscalate,
++  decide,
++  DEFAULT_THRESHOLDS,
++  type DecisionThresholds,
++} from "./classification-decision";
++import {
++  BlockerReason,
++  decidePerItem,
++  gateShortcutResult,
++  mergeReviewState,
++  withBlocker,
++} from "./final-acceptance";
+ import { pickPersonCandidate, pickAllPersonCandidates, resolvePersonForTransaction, compactArabic } from "./person-resolver";
+ import { muscleMemoryLookup } from "./muscle-memory";
+ import { matchSegment } from "./embedding-engine";
+@@ -310,6 +328,24 @@ import { normalizeArabicCompact as normalizeArabicString } from "./unified-norma
+ // Re-export for backward compatibility (other files import from smart-pipeline)
+ export { normalizeArabicString };
+ 
++/**
++ * Narrative order, by event identity rather than array position.
++ *
++ * Stable for items that share an id (a split across several people) and for items that
++ * have none — those keep their relative position at the end rather than being reordered
++ * into an arbitrary one.
++ */
++function orderByEvent(items: ParsedTransaction[]): ParsedTransaction[] {
++  return items
++    .map((item, index) => ({ item, index }))
++    .sort((a, b) => {
++      const aId = a.item.sourceEventId ?? Number.MAX_SAFE_INTEGER;
++      const bId = b.item.sourceEventId ?? Number.MAX_SAFE_INTEGER;
++      return aId === bId ? a.index - b.index : aId - bId;
++    })
++    .map((entry) => entry.item);
++}
++
+ function safeExtractItems(data: any): any[] {
+   if (!data) return [];
+   if (Array.isArray(data)) return data;
+@@ -621,6 +657,8 @@ export async function runSmartPipeline(
+   // "the total does not match what I said" becomes a measurable rate instead of a report.
+   let amountLedger: PipelineLog["amountLedger"];
+   let schemaWasDegraded = false;
++  /** Why the model's reply was not a complete semantic success, if it was not. */
++  let modelReplyProblems: string[] = [];
+   const provider = input.provider || "gemini";
+   const modelUsed = mapModelName(input.modelName);
+   const fireworksKey = input.fireworksApiKey || "";
+@@ -647,6 +685,158 @@ export async function runSmartPipeline(
+     };
+   }
+ 
++  // 1. Normalize (Light Normalization for AI, aggressive for rules)
++  const normalized = normalizeV2(input.text);
++  const normalizedText = normalized.forRules;
++
++  const finalItems: ParsedTransaction[] = [];
++  let requiresAI = false;
++  let clarificationQuestion: string | undefined = undefined;
++  let decision: "auto_save" | "review" | "clarify" | "unknown" = "unknown";
++  let firstAlertMessage: string | undefined = undefined;
++  let overallConfidence = 100;
++  const pipelineSettings = input.pipelineSettings || {};
++  const decompositionEnabled = settingBoolean(
++    pipelineSettings,
++    "parser_fast_decomposition_enabled",
++    true,
++  );
++  const personMemoryEnabled = settingBoolean(
++    pipelineSettings,
++    "parser_person_memory_enabled",
++    true,
++  );
++  const verifierEnabled = settingBoolean(
++    pipelineSettings,
++    "parser_local_verifier_enabled",
++    true,
++  );
++  // One reading of each threshold, one default for each.
++  //
++  // `parser_auto_save_threshold` used to be read twice with two different fallbacks — 90
++  // for the per-segment gate and 85 (via `confidence_auto_save`) for the final decision —
++  // so on an install that had never touched the setting, an item scoring 87 was refused
++  // by one gate and accepted by the other, and which one it met depended on whether the
++  // sentence had been segmented. The admin's explicit value was honoured by both, which
++  // is exactly why the split went unnoticed: it only misbehaved at the default.
++  //
++  // The legacy `confidence_*` keys still win when set, because installs configured
++  // through the older settings screen wrote those and their operators meant them.
++  const resolveThreshold = (
++    key: string,
++    legacyKey: string,
++    fallback: number,
++  ): number => settingNumber(pipelineSettings, key, settingNumber(pipelineSettings, legacyKey, fallback));
++
++  const autoSaveThreshold = resolveThreshold(
++    "parser_auto_save_threshold",
++    "confidence_auto_save",
++    DEFAULT_THRESHOLDS.autoSave * 100,
++  );
++  const reviewThreshold = resolveThreshold(
++    "parser_review_threshold",
++    "confidence_review",
++    DEFAULT_THRESHOLDS.review * 100,
++  );
++  const decisionThresholds: DecisionThresholds = {
++    autoSave: autoSaveThreshold / 100,
++    review: reviewThreshold / 100,
++    escalate:
++      settingNumber(
++        pipelineSettings,
++        "parser_escalate_threshold",
++        DEFAULT_THRESHOLDS.escalate * 100,
++      ) / 100,
++  };
++
++  // Counting amounts is the amount extractor's job, not a private list.
++  //
++  // This used to be a fourth copy of the spoken-number vocabulary, and it double-counted
++  // by construction: "ميتين وخمسين" is one amount of 250, but the digit regex and the word
++  // list each matched it, returning 2 and inflating the count that drives every routing
++  // threshold below. extractAmounts already composes numerals correctly.
++  const countAmounts = (text: string): number => extractAmounts(text).length;
++
++  const countWords = (text: string): number => {
++    return text.split(/\s+/).filter(w => w.length > 0).length;
++  };
++  
++  const numAmounts = countAmounts(normalizedText);
++  const numWords = countWords(normalizedText);
++
++  // 1.5 Admissibility gate — the last point before anything can cost money, and the
++  // only place allowed to end a request with "I did not understand".
++  //
++  // The filter this replaces only fired when the amount count was zero, so a clock time
++  // ("الساعة خمسة") sailed through on its number, and it matched its keyword list by
++  // substring. checkAdmissibility reuses the real amount extractor, the real verb
++  // lexicon and word-boundary matching, and distinguishes three rejections that deserve
++  // different answers: chatter, a question about spending, and a transaction that did
++  // not happen.
++  const admissibility = checkAdmissibility(normalizedText);
++  if (admissibility.verdict !== "financial") {
++    return {
++      items: [],
++      overallConfidence: 0,
++      clarificationQuestion: admissibility.userMessage,
++      decision: "clarify",
++      tokensUsed: 0,
++      parsedBy: "system",
++      modelUsed,
++      actualModelUsed: null,
++      processingTimeMs: Date.now() - startTime,
++      log: {
++        originalText: input.text,
++        normalizedText,
++        finalConfidence: 0,
++        finalDecision: "clarify",
++        routing: {
++          route: "admissibility_gate",
++          verdict: admissibility.verdict,
++          reason: admissibility.reason,
++          signals: admissibility.signals,
++        },
++      },
++    };
++  }
++
++  // Everything below this line has already been established as a financial statement:
++  // the shortcuts that follow answer `which transaction`, never `is there one`. The
++  // gate used to sit after them, so a business keyword match on "ماشتريتش خامات ب500"
++  // returned an auto-saved expense without the negation ever being looked at.
++
++  /**
++   * Builds the pipeline result for a shortcut, from the gate's verdict rather than the
++   * shortcut's own opinion of itself.
++   *
++   * Every field a shortcut used to fill in by hand — `decision`, `overallConfidence`,
++   * `finalDecision` — now comes from `gateShortcutResult`, so there is no way to write a
++   * branch that returns `auto_save` without having earned it.
++   */
++  const shortcutResult = (
++    gate: ReturnType<typeof gateShortcutResult>,
++    route: string,
++    routing: Record<string, unknown>,
++  ): PipelineResult => ({
++    items: gate.items,
++    decision: gate.decision,
++    clarificationQuestion: gate.clarificationQuestion,
++    overallConfidence: gate.overallConfidence,
++    tokensUsed: 0,
++    cachedTokens: 0,
++    parsedBy: "rule_engine",
++    modelUsed,
++    actualModelUsed: null,
++    processingTimeMs: Date.now() - startTime,
++    log: {
++      originalText: input.text,
++      normalizedText,
++      routing: { route, ...routing, gateReason: gate.reason, blockers: gate.blockers },
++      finalConfidence: gate.overallConfidence,
++      finalDecision: gate.decision,
++    },
++  });
++
+   // 0.5. Muscle Memory — instant match for recurring user patterns (0 tokens, 0 API)
+   // Person transactions are now allowed: after a hit, we run person resolution
+   // to attach the correct person info. If the person is known → auto_save.
+@@ -719,46 +909,43 @@ export async function runSmartPipeline(
+           return memResult;
+         }
+ 
+-        const memResult: PipelineResult = {
++        const memGate = gateShortcutResult({
+           items: memResolvedItems.length > 0 ? memResolvedItems : [memItem],
+-          decision: "auto_save",
+-          overallConfidence: memItem.confidence,
+-          tokensUsed: 0,
+-          cachedTokens: 0,
+-          parsedBy: "rule_engine",
+-          modelUsed,
+-          actualModelUsed: null,
+-          processingTimeMs: Date.now() - startTime,
+-          log: {
+-            originalText: input.text,
+-            routing: { route: "muscle_memory", reason: "pattern_match_with_person", matchScore: memoryMatch.matchScore },
+-            finalConfidence: memItem.confidence,
+-            finalDecision: "auto_save",
+-          },
+-        };
+-        classificationCache.set(cacheKey, memResult);
+-        return memResult;
++          text: input.text,
++          normalizedText,
++          thresholds: decisionThresholds,
++        });
++        if (memGate.admitted && memGate.coversUtterance) {
++          const memResult = shortcutResult(memGate, "muscle_memory", {
++            reason: "pattern_match_with_person",
++            matchScore: memoryMatch.matchScore,
++          });
++          classificationCache.set(cacheKey, memResult);
++          return memResult;
++        }
++      } else {
++        const memGate = gateShortcutResult({
++          items: [memItem],
++          text: input.text,
++          normalizedText,
++          thresholds: decisionThresholds,
++        });
++        if (memGate.admitted && memGate.coversUtterance) {
++          const memResult = shortcutResult(memGate, "muscle_memory", {
++            reason: "pattern_match",
++            matchScore: memoryMatch.matchScore,
++          });
++          classificationCache.set(cacheKey, memResult);
++          return memResult;
++        }
+       }
+ 
+-      const memResult: PipelineResult = {
+-        items: [memItem],
+-        decision: "auto_save",
+-        overallConfidence: memItem.confidence,
+-        tokensUsed: 0,
+-        cachedTokens: 0,
+-        parsedBy: "rule_engine",
+-        modelUsed,
+-        actualModelUsed: null,
+-        processingTimeMs: Date.now() - startTime,
+-        log: {
+-          originalText: input.text,
+-          routing: { route: "muscle_memory", reason: "pattern_match", matchScore: memoryMatch.matchScore },
+-          finalConfidence: memItem.confidence,
+-          finalDecision: "auto_save",
+-        },
+-      };
+-      classificationCache.set(cacheKey, memResult);
+-      return memResult;
++      // Fell through on purpose. Either the remembered pattern matched text that is not
++      // a recordable event, or it accounts for only part of what was said — and a
++      // learned shortcut is a suggestion about WHICH transaction, never evidence that
++      // there IS one, nor that it is the only one. "ماشتريتش جزمة 500 ودفعت 200
++      // بنزين" matched a stored 500-shopping pattern and returned it alone: it
++      // invented the purchase that did not happen and lost the petrol that did.
+     }
+   } catch (e) {
+     // Muscle memory DB query might fail — don't block the pipeline
+@@ -773,8 +960,20 @@ export async function runSmartPipeline(
+   let businessScoreTotal = 0;
+   let personalScoreTotal = 0;
+ 
+-  if (input.businessCategories && input.businessCategories.length > 0) {
+-    const scoringNormalized = normalizeV2(input.text).forRules;
++  // Business scoring only speaks for a user who is recording business activity.
++  //
++  // It used to run whenever the account HAD business categories, so a shop owner saying
++  // "دفعت 200 بنزين" from the personal tab had it filed under مشروع/بنزين with a
++  // businessId attached, purely because a keyword matched. Owning a business is not a
++  // statement about the sentence in front of us; `businessMode` is, and the UI already
++  // sends it.
++  const businessScopeActive =
++    input.businessMode === true &&
++    Array.isArray(input.businessCategories) &&
++    input.businessCategories.length > 0;
++
++  if (businessScopeActive && input.businessCategories) {
++    const scoringNormalized = normalizedText;
+ 
+     // --- Compute business score ---
+     for (const bizCat of input.businessCategories) {
+@@ -833,8 +1032,37 @@ export async function runSmartPipeline(
+       const bizAmounts = extractAmounts(input.text);
+       const bizAmount = bizAmounts.length > 0 ? bizAmounts[0].amount : 0;
+ 
+-      if (bizAmount > 0) {
+-        const bizType = businessMatchResult.type === "income" ? "income" : "expense";
++      // One amount, or no shortcut.
++      //
++      // `bizAmounts[0]` was the whole extraction: "دفعت 500 خامات و300 معدات" returned a
++      // single 500 item, auto-saved, and the 300 was not merely unclassified — it was
++      // gone, with `balanced: true` in the ledger because the ledger never ran on this
++      // path. A sentence with more than one amount is a segmentation problem, and the
++      // normal pipeline is the thing that solves segmentation.
++      const bizShortcutEligible = bizAmount > 0 && bizAmounts.length === 1;
++
++      if (bizShortcutEligible) {
++        // Direction comes from what the user DID, not from how the category is filed.
++        //
++        // `businessMatchResult.type` is a property of the category row: "خامات" is
++        // configured as an expense category, so "قبضت 500 خامات" — money received —
++        // was recorded as money spent. The verb governs direction; the noun governs
++        // category. Where the two disagree, the shortcut declines and lets the full
++        // intent detector settle it.
++        const bizIntent = detectIntent(normalizedText);
++        // A "strong" keyword scores 50; anything below that is not a verb speaking, it
++        // is a noun leaking. Only a strong, unambiguous reading is allowed to override.
++        const spokenDirection: "income" | "expense" | null =
++          bizIntent.incomeScore >= 50 && bizIntent.incomeScore > bizIntent.expenseScore
++            ? "income"
++            : bizIntent.expenseScore >= 50 && bizIntent.expenseScore > bizIntent.incomeScore
++              ? "expense"
++              : null;
++        const categoryType: "income" | "expense" =
++          businessMatchResult.type === "income" ? "income" : "expense";
++        const bizType = spokenDirection ?? categoryType;
++        const bizDirectionConflict =
++          spokenDirection !== null && spokenDirection !== categoryType;
+ 
+         // Extract person for salary transactions
+         let bizPerson: string | undefined;
+@@ -865,33 +1093,34 @@ export async function runSmartPipeline(
+           person_relationship: bizPersonRel,
+         };
+ 
+-        const bizResult: PipelineResult = {
+-          items: [bizItem],
+-          decision: "auto_save",
+-          overallConfidence: bizItem.confidence,
+-          tokensUsed: 0,
+-          cachedTokens: 0,
+-          parsedBy: "rule_engine",
+-          modelUsed,
+-          actualModelUsed: null,
+-          processingTimeMs: Date.now() - startTime,
+-          log: {
+-            originalText: input.text,
+-            routing: {
+-              route: "business_scoring",
+-              reason: "business_score_dominant",
+-              businessScore: businessScoreTotal,
+-              personalScore: personalScoreTotal,
+-              scoreDiff,
+-              category: businessMatchResult.nameAr,
+-              hasSalary: hasSalaryKeyword,
+-            },
+-            finalConfidence: bizItem.confidence,
+-            finalDecision: "auto_save",
+-          },
+-        };
+-        classificationCache.set(cacheKey, bizResult);
+-        return bizResult;
++        const bizGate = gateShortcutResult({
++          items: [
++            bizDirectionConflict
++              ? withBlocker(bizItem, BlockerReason.RESOLVERS_DISAGREE)
++              : bizItem,
++          ],
++          text: input.text,
++          normalizedText,
++          thresholds: decisionThresholds,
++        });
++
++        if (bizGate.admitted && bizGate.coversUtterance) {
++          const bizResult = shortcutResult(bizGate, "business_scoring", {
++            reason: "business_score_dominant",
++            businessScore: businessScoreTotal,
++            personalScore: personalScoreTotal,
++            scoreDiff,
++            category: businessMatchResult.nameAr,
++            hasSalary: hasSalaryKeyword,
++            spokenDirection,
++            categoryType,
++          });
++          classificationCache.set(cacheKey, bizResult);
++          return bizResult;
++        }
++        // Not admissible — negated, hypothetical, or a question. Fall through to the
++        // pipeline, which will return the same rejection with the right explanation
++        // rather than an auto-saved expense at confidence 100.
+       }
+     }
+     // If personal_score >= business_score + 10 → don't interfere, let normal pipeline handle it.
+@@ -899,100 +1128,6 @@ export async function runSmartPipeline(
+     // The businessMatchResult is kept for later use if AI needs context.
+   }
+ 
+-  // 1. Normalize (Light Normalization for AI, aggressive for rules)
+-  const normalized = normalizeV2(input.text);
+-  const normalizedText = normalized.forRules;
+-
+-  const finalItems: ParsedTransaction[] = [];
+-  let requiresAI = false;
+-  let clarificationQuestion: string | undefined = undefined;
+-  let decision: "auto_save" | "review" | "clarify" | "unknown" = "unknown";
+-  let firstAlertMessage: string | undefined = undefined;
+-  let overallConfidence = 100;
+-  const pipelineSettings = input.pipelineSettings || {};
+-  const decompositionEnabled = settingBoolean(
+-    pipelineSettings,
+-    "parser_fast_decomposition_enabled",
+-    true,
+-  );
+-  const personMemoryEnabled = settingBoolean(
+-    pipelineSettings,
+-    "parser_person_memory_enabled",
+-    true,
+-  );
+-  const verifierEnabled = settingBoolean(
+-    pipelineSettings,
+-    "parser_local_verifier_enabled",
+-    true,
+-  );
+-  const autoSaveThreshold = settingNumber(
+-    pipelineSettings,
+-    "parser_auto_save_threshold",
+-    settingNumber(pipelineSettings, "confidence_auto_save", 85),
+-  );
+-  const decisionThresholds = {
+-    autoSave: settingNumber(pipelineSettings, "parser_auto_save_threshold", 90) / 100,
+-    review: settingNumber(pipelineSettings, "parser_review_threshold", 50) / 100,
+-    escalate: settingNumber(pipelineSettings, "parser_escalate_threshold", 85) / 100,
+-  };
+-
+-  const reviewThreshold = settingNumber(
+-    pipelineSettings,
+-    "parser_review_threshold",
+-    settingNumber(pipelineSettings, "confidence_review", 60),
+-  );
+-
+-  // Counting amounts is the amount extractor's job, not a private list.
+-  //
+-  // This used to be a fourth copy of the spoken-number vocabulary, and it double-counted
+-  // by construction: "ميتين وخمسين" is one amount of 250, but the digit regex and the word
+-  // list each matched it, returning 2 and inflating the count that drives every routing
+-  // threshold below. extractAmounts already composes numerals correctly.
+-  const countAmounts = (text: string): number => extractAmounts(text).length;
+-
+-  const countWords = (text: string): number => {
+-    return text.split(/\s+/).filter(w => w.length > 0).length;
+-  };
+-  
+-  const numAmounts = countAmounts(normalizedText);
+-  const numWords = countWords(normalizedText);
+-
+-  // 1.5 Admissibility gate — the last point before anything can cost money, and the
+-  // only place allowed to end a request with "I did not understand".
+-  //
+-  // The filter this replaces only fired when the amount count was zero, so a clock time
+-  // ("الساعة خمسة") sailed through on its number, and it matched its keyword list by
+-  // substring. checkAdmissibility reuses the real amount extractor, the real verb
+-  // lexicon and word-boundary matching, and distinguishes three rejections that deserve
+-  // different answers: chatter, a question about spending, and a transaction that did
+-  // not happen.
+-  const admissibility = checkAdmissibility(normalizedText);
+-  if (admissibility.verdict !== "financial") {
+-    return {
+-      items: [],
+-      overallConfidence: 0,
+-      clarificationQuestion: admissibility.userMessage,
+-      decision: "clarify",
+-      tokensUsed: 0,
+-      parsedBy: "system",
+-      modelUsed,
+-      actualModelUsed: null,
+-      processingTimeMs: Date.now() - startTime,
+-      log: {
+-        originalText: input.text,
+-        normalizedText,
+-        finalConfidence: 0,
+-        finalDecision: "clarify",
+-        routing: {
+-          route: "admissibility_gate",
+-          verdict: admissibility.verdict,
+-          reason: admissibility.reason,
+-          signals: admissibility.signals,
+-        },
+-      },
+-    };
+-  }
+-
+   const knownNames = knownPeople.map((p) => p.name).filter(Boolean);
+ 
+   // Load what this user has corrected before, after the admissibility gate and the
+@@ -1048,8 +1183,64 @@ export async function runSmartPipeline(
+   const escalationClauses: Array<{
+     segment: (typeof decomposition.segments)[number];
+     localItems: ParsedTransaction[];
++    /** Stable within this request; survives merge, salvage and reordering. */
++    clauseId: number;
++  }> = [];
++
++  /**
++   * One registration point for everything that escalates, because there were four lists
++   * and nothing kept them in step.
++   *
++   * `escalationClauses` is what the prompt is built from; `failedSegments` is what the
++   * text is built from; `escalatedSegmentItems` and `orderedLocalItems` are what an
++   * outage falls back to. The whole-text branch pushed to the last two and neither of
++   * the first two, which is how "دفعت 120 عمل غريب" reached a live provider carrying the
++   * prompt "صنّف 0 جملة:" and a 60-token budget — a paid request that could not have
++   * produced a usable answer, and whose reply was then discarded for referencing clause
++   * 1 of zero.
++   *
++   * The clause id is the item's financial identity for the rest of the request. A merge
++   * that reorders, an index that shifts, a salvage that replaces the list — none of them
++   * may change which amount belongs to which event, and an array position cannot carry
++   * that guarantee.
++   */
++  /**
++   * Clauses the local pass ruled out as non-events, with the amounts they mentioned.
++   *
++   * Kept so the reconciliation ledger does not ask "what about the 500?" for money that
++   * was explicitly not spent, and so the trace can show why a number in the utterance
++   * produced no row.
++   */
++  const rejectedClauses: Array<{
++    text: string;
++    verdict: string;
++    reason: string;
++    amounts: number[];
+   }> = [];
+ 
++  let nextClauseId = 0;
++  const registerEscalation = (
++    segment: (typeof decomposition.segments)[number],
++    localItems: ParsedTransaction[],
++  ): ParsedTransaction[] => {
++    const clauseId = ++nextClauseId;
++    const stamped = localItems.map((item) => ({
++      ...item,
++      sourceEventId: item.sourceEventId ?? clauseId,
++    }));
++    failedSegments.push(segment);
++    escalationClauses.push({ segment, localItems: stamped, clauseId });
++    escalatedSegmentItems.push(...stamped);
++    orderedLocalItems.push(...stamped);
++    return stamped;
++  };
++
++  /** Locally accepted items also get an identity, so narrative order is reconstructable. */
++  const registerAccepted = (items: ParsedTransaction[]): ParsedTransaction[] => {
++    const clauseId = ++nextClauseId;
++    return items.map((item) => ({ ...item, sourceEventId: item.sourceEventId ?? clauseId }));
++  };
++
+   // Fast path for long/multi-transaction narratives: classify each segment locally.
+   if (decomposition.segments.length > 1) {
+     let localClarification: string | undefined;
+@@ -1071,8 +1262,34 @@ export async function runSmartPipeline(
+         fireworksKey,
+       );
+       if (segmentRule.items.length === 0) {
+-        failedSegments.push(segment);
+-        escalationClauses.push({ segment, localItems: [] });
++        // Nothing extracted here. Before paying a model to look at it, ask whether it is
++        // a transaction at all — a clause the local pass rejected is not the same as a
++        // clause the local pass could not read.
++        //
++        // "ماشتريتش جزمة 500 ودفعت 200 بنزين" was escalated as clause 1 with its 500
++        // printed in the prompt as a settled fact, and a model answering "shopping"
++        // turned a purchase that did not happen into a row. Rejection is a result, and
++        // it has to survive the fallback that comes after it.
++        // Only `negated` rejects a SEGMENT.
++        //
++        // The admissibility gate is calibrated for whole utterances, where a missing verb
++        // or a missing noun really does mean "this is not a transaction". A fragment is
++        // allowed to be missing both — its verb may live in the previous clause — so
++        // `not_financial` here is usually the decomposer's cut, not the user's meaning:
++        // applying the full verdict cost the benchmark its "بواب" case, which has no verb
++        // of its own and is a real payment. Negation is different: it is positive evidence
++        // that the thing did not happen, and it is evidence the fragment carries itself.
++        const segmentAdmissibility = checkAdmissibility(segmentNormalized);
++        if (segmentAdmissibility.verdict === "negated") {
++          rejectedClauses.push({
++            text: segment.text,
++            verdict: segmentAdmissibility.verdict,
++            reason: segmentAdmissibility.reason,
++            amounts: extractAmounts(segmentNormalized).map((a) => a.amount),
++          });
++          continue;
++        }
++        registerEscalation(segment, []);
+         continue;
+       }
+ 
+@@ -1158,14 +1375,11 @@ export async function runSmartPipeline(
+       // every extracted transaction, otherwise a weak sibling is silently lost when its
+       // confident neighbour is auto-saved.
+       if (escalations.some((e) => e.escalate) && !anyNeedsClarification) {
+-        failedSegments.push(segment);
+-        escalatedSegmentItems.push(...segmentItems);
+-        escalationClauses.push({ segment, localItems: segmentItems });
+-        orderedLocalItems.push(...segmentItems);
++        registerEscalation(segment, segmentItems);
+         continue;
+       }
+-      const passedItems = segmentItems;
+-      
++      const passedItems = registerAccepted(segmentItems);
++
+       localSucceededItems.push(...passedItems);
+       orderedLocalItems.push(...passedItems);
+ 
+@@ -1309,27 +1523,40 @@ export async function runSmartPipeline(
+         const mustEscalate = wholeEscalations.some((e) => e.escalate);
+ 
+         if (!mustEscalate) {
+-            finalItems.push(...wholeItems);
++            const acceptedWhole = registerAccepted(wholeItems);
++            finalItems.push(...acceptedWhole);
+             ruleSucceeded = true;
+-            const outcome = decide(
+-              {
+-                probability: lowestConfidence / 100,
+-                amountsFullyConsumed: wholeItems.length >= numAmounts,
+-                hasBlockingFlag: false,
+-                needsAnswer: false,
+-                hasUnpricedItem: calibratedWhole.unpriced > 0,
+-              },
+-              decisionThresholds,
+-            );
++            // Per item, not on the group's weakest score alone: `hasBlockingFlag` and
++            // `hasUnpricedItem` are properties of individual items, and folding them into
++            // one call let a clean sibling's numbers answer for a flagged one.
++            const outcome = decidePerItem(acceptedWhole, {
++              amountsFullyConsumed: acceptedWhole.length >= numAmounts,
++              needsAnswer: false,
++              thresholds: decisionThresholds,
++            });
+             decision = outcome.decision;
+-            overallConfidence = lowestConfidence;
++            overallConfidence = outcome.weakestConfidence;
+         } else {
+           // Escalating: keep what the whole-text pass already resolved so an unavailable
+           // model degrades the answer instead of erasing it. Without this, a single-clause
+           // "دفعت لعماد 1200" loses its person resolution on the way to the fallback and
+           // reverts to a generic bank transfer.
+-          escalatedSegmentItems.push(...wholeItems);
+-          orderedLocalItems.push(...wholeItems);
++          //
++          // Registered as a clause, not just stashed in the salvage lists. This branch
++          // handles the un-segmented sentence — one clause, by definition — and it is the
++          // branch that produced "صنّف 0 جملة:" because it never told the prompt builder
++          // that a clause existed.
++          registerEscalation(
++            {
++              text: input.text,
++              amount: null,
++              direction: (wholeItems[0]?.type as DecomposedSegment["direction"]) || "unknown",
++              linkedVerb: null,
++              personMentioned: wholeItems[0]?.person_mentioned || null,
++              segmentIndex: 0,
++            },
++            wholeItems,
++          );
+         }
+         if (hasMutaNawi3at || lowestConfidence < reviewThreshold) {
+             // If any item is mutanawi3at or very low confidence, we should NOT accept it locally.
+@@ -1371,9 +1598,13 @@ export async function runSmartPipeline(
+               inferenceSource: "ai",
+               ambiguityFlags: ["fireworks_embedding"],
+             };
+-            finalItems.push(embItem);
++            finalItems.push(...registerAccepted([embItem]));
+             ruleSucceeded = true;
+-            decision = embMatch.score >= 85 ? "auto_save" : "review";
++            // Deliberately leaves `decision` unknown so the embedding answer meets the
++            // same reconciliation and per-item eligibility as every other path. It used
++            // to grant itself `auto_save` on `embMatch.score >= 85` — a raw cosine
++            // similarity compared against a threshold meant for calibrated
++            // probabilities, on an item that reached the end carrying no evidence at all.
+             overallConfidence = embMatch.score;
+           }
+         }
+@@ -1385,9 +1616,41 @@ export async function runSmartPipeline(
+   }
+ 
+   // 4. Single-Pass Semantic Extraction (AI — fallback of last resort)
+-  if (!ruleSucceeded) {
++  //
++  // `escalationClauses.length > 0` is a precondition, not an optimisation. The model is
++  // asked "what category is clause N", so with no clauses there is no question to ask:
++  // the request costs a token budget, a round trip and a provider attempt, and any answer
++  // it returns is dropped by the index check. A provider call that cannot succeed is not
++  // a fallback, it is a bill.
++  if (!ruleSucceeded && escalationClauses.length === 0 && finalItems.length === 0) {
++    // One more deterministic pass, over the LIGHTLY normalized text.
++    //
++    // The aggressive normalization the rule engine ran on above rewrites more than the
++    // AI form does, and some sentences only survive the lighter one — "دفعت للبواب 150
++    // بتاع الشهر" resolves here and nowhere else.
++    //
++    // It used to be reached only by accident: the code called a provider with zero
++    // clauses, the call failed, and this pass ran in the error handler. So the recovery
++    // existed, cost a provider attempt every time, and would have been skipped entirely
++    // if the empty request had ever succeeded. It is a deterministic fallback; it belongs
++    // on the deterministic path.
++    console.warn(
++      "[Smart Pipeline] Nothing to escalate — deterministic retry instead of an empty provider call.",
++    );
++    const lastPass = await runRuleEngine(
++      normalized.forAI,
++      input.userDict,
++      input.userProfileContext,
++      undefined,
++      fireworksKey,
++    );
++    if (lastPass.items.length > 0) {
++      finalItems.push(...registerAccepted(lastPass.items));
++    }
++  }
++  if (!ruleSucceeded && escalationClauses.length > 0) {
+     requiresAI = true;
+-    
++
+     // Segment-level isolation: Send only failed segments to the AI
+     const textToClassify = failedSegments.length > 0 
+       // One per line, never rejoined with " و ". Gluing segments back into a run-on
+@@ -1566,18 +1829,57 @@ export async function runSmartPipeline(
+       // Merge the ONE thing the model was asked for back onto the items the local pass
+       // built. The amount, direction and person never left this process, so a wrong or
+       // missing answer costs a category, not a transaction.
+-      classItems = mergeCategoryDecisions(escalationClauses, reply.items);
++      const merged = mergeCategoryDecisions(escalationClauses, reply.items);
++      classItems = merged.items;
++
++      // A reply that arrived is not a reply that answered.
++      //
++      // `llm.text` parsing succeeding is a transport fact. Whether the model answered
++      // every clause, with categories that exist, is a semantic one — and the two were
++      // conflated, so a truncated reply covering one clause of three was reported as a
++      // model success and the other two silently kept a guess nobody looked at.
++      const semanticProblems =
++        reply.problems.length > 0 ||
++        merged.unansweredClauseIds.length > 0 ||
++        merged.unresolvedClauseIds.length > 0;
++      if (semanticProblems) {
++        modelReplyProblems = [
++          ...reply.problems,
++          ...merged.unansweredClauseIds.map((id) => `clause ${id} unanswered`),
++          ...merged.unresolvedClauseIds.map((id) => `clause ${id} has no extracted event`),
++        ];
++        classItems = classItems.map((item) =>
++          withBlocker(item, BlockerReason.MODEL_REPLY_INVALID),
++        );
++      }
+ 
++      // A clause the model was willing to categorise but that produced no event is a
++      // gap in EXTRACTION, not a transaction we may write. Ask rather than invent: the
++      // amount is the missing field, and asking the model for it is the one thing this
++      // contract deliberately does not do.
++      if (merged.unresolvedClauseIds.length > 0 && !input.skipClarification) {
++        decision = "clarify";
++        clarificationQuestion =
++          clarificationQuestion ||
++          "فيه حاجة في كلامك مش واضح مبلغها. ممكن تقولي المبلغ؟";
++      }
+ 
+       if (classItems.length === 0) {
+-         if (numAmounts <= 3 && numWords <= 15) {
++         // A last deterministic pass, but only when the local side found nothing at all.
++         //
++         // This used to run whenever the MERGE produced nothing, which is a different
++         // condition: with one escalated clause and one accepted segment, the merge
++         // returning nothing for the escalated clause re-ran the rule engine over the
++         // WHOLE utterance and appended its output to items that were already there —
++         // "ماشتريتش جزمة 500 ودفعت 200 بنزين" came back with the petrol recorded twice.
++         if (finalItems.length === 0 && numAmounts <= 3 && numWords <= 15) {
+               if (!ruleResult) {
+                  ruleResult = await runRuleEngine(normalizedText, input.userDict, input.userProfileContext, undefined, fireworksKey);
+               }
+               if (ruleResult.items.length > 0) {
+-                 finalItems.push(...ruleResult.items);
++                 finalItems.push(...registerAccepted(ruleResult.items));
+               }
+-         } else {
++         } else if (finalItems.length === 0) {
+               decision = "clarify";
+               clarificationQuestion = "عذراً، الجملة طويلة ومفصلة ولم أتمكن من استخراج العمليات. يرجى تقسيمها أو إعادة المحاولة.";
+          }
+@@ -1590,7 +1892,17 @@ export async function runSmartPipeline(
+         // re-running person extraction over the rejoined text. Every one of those fields
+         // measured better locally, and rebuilding them is what let a model answer lose a
+         // transaction the rule engine had already found.
+-        finalItems.push(...classItems);
++        //
++        // Rebuilt in narrative order rather than appended. Accepted segments were pushed
++        // into `finalItems` before the model was called, so appending the model's clauses
++        // afterwards put them last regardless of where they occur in the sentence:
++        // "دفعت 250 لحاجة مجهولة وبعدين دفعت 200 بنزين" came back 200 then 250, and the review
++        // screen shows rows in the order it receives them. `sourceEventId` is assigned in
++        // narrative order at registration, so it is the thing to sort by — an array
++        // position is not an identity.
++        const rebuilt = [...finalItems, ...classItems];
++        finalItems.length = 0;
++        finalItems.push(...orderByEvent(rebuilt));
+       }
+     } catch (err) {
+       const errMsg = (err as any)?.message || String(err);
+@@ -1769,6 +2081,12 @@ export async function runSmartPipeline(
+   );
+ 
+   // --- DEEP FIX: Content-Based Recovery (Reverse Mapping) ---
++  //
++  // Recovering a category is not the same as clearing a blocker. This used to set
++  // `needsReview = false` on every rescue, so an item the model merge had flagged
++  // `category_reply_unresolved` became silently saveable because one of its words
++  // happened to be in the subcategory map. A rescue answers "which category"; it says
++  // nothing about the person we could not identify or the amount nobody claimed.
+   for (const item of normalizedFinalItems) {
+       if (item.category === "متنوعات" && item.description) {
+           // Use item.description directly to prevent context leakage (e.g. gym shoes)
+@@ -1795,7 +2113,9 @@ export async function runSmartPipeline(
+               if (SUB_CATEGORY_MAP[bigram]) {
+                   item.category = SUB_CATEGORY_MAP[bigram].category;
+                   item.subCategory = SUB_CATEGORY_MAP[bigram].subCategory;
+-                    item.needsReview = false;
++                    if (!(item.reviewReasons && item.reviewReasons.length > 0)) {
++                      item.needsReview = false;
++                    }
+                     rescued = true;
+                     break;
+               }
+@@ -1806,7 +2126,9 @@ export async function runSmartPipeline(
+                   if (word && SUB_CATEGORY_MAP[word]) {
+                       item.category = SUB_CATEGORY_MAP[word].category;
+                       item.subCategory = SUB_CATEGORY_MAP[word].subCategory;
+-                    item.needsReview = false;
++                    if (!(item.reviewReasons && item.reviewReasons.length > 0)) {
++                      item.needsReview = false;
++                    }
+                     rescued = true;
+                     break;
+                   }
+@@ -1864,11 +2186,29 @@ export async function runSmartPipeline(
+     (flag) => flag.severity === "warning",
+   );
+ 
++  // Eligibility is per item, and the group is as saveable as its weakest member.
++  //
++  // `verification.overallConfidence` is a MEAN. The audit reproduced what that costs:
++  // items scoring 82, 87 and 90 auto-saved as a group against an 85 line, because 86.3
++  // clears it and the 82 has nowhere to appear. It also cannot express a blocker — an
++  // item flagged `category_reply_unresolved` at 95 raises the average.
++  //
++  // `decidePerItem` reduces by precedence instead: clarify beats review beats auto_save,
++  // each item judged on its own probability, its own blockers and its own calibration
++  // support. Verifier flags stay a whole-result veto, because several of them
++  // (double-counted totals, expense exceeding monthly income) are statements about the
++  // set rather than about one row.
++  const finalItemDecision = decidePerItem(verifiedFinalItems, {
++    amountsFullyConsumed: !amountLedger || amountLedger.balanced,
++    needsAnswer: false,
++    thresholds: decisionThresholds,
++  });
++
+   if (decision === "unknown") {
+       if (verifiedFinalItems.length > 0) {
+-          overallConfidence = verification.overallConfidence;
++          overallConfidence = finalItemDecision.weakestConfidence;
+           decision =
+-            overallConfidence >= autoSaveThreshold &&
++            finalItemDecision.decision === "auto_save" &&
+             !hasVerifierErrors &&
+             !hasVerifierWarnings &&
+             // An item whose probability is the corpus prior rather than a measurement
+@@ -1877,21 +2217,28 @@ export async function runSmartPipeline(
+             // entirely from the model path this gate is the only one to see.
+             finalCalibration.unpriced === 0
+               ? "auto_save"
+-              : "review";
++              : finalItemDecision.decision === "clarify"
++                ? "clarify"
++                : "review";
++          if (decision === "clarify" && !clarificationQuestion) {
++            clarificationQuestion = "محتاج أتأكد من تفاصيل العملية دي. ممكن توضح؟";
++          }
+       } else {
+           decision = "clarify";
+           clarificationQuestion = "عذراً، لم أتمكن من استخراج عملية مالية واضحة. ممكن توضح؟";
+           overallConfidence = 0;
+       }
+   } else if (decision === "auto_save") {
+-      overallConfidence = verification.overallConfidence || overallConfidence;
++      // An earlier layer said auto_save. It may be overruled here, never confirmed here:
++      // this is the last gate, so everything it knows has to be able to say no.
++      overallConfidence = finalItemDecision.weakestConfidence || overallConfidence;
+       if (
+         hasVerifierErrors ||
+         hasVerifierWarnings ||
+-        overallConfidence < autoSaveThreshold ||
++        finalItemDecision.decision !== "auto_save" ||
+         finalCalibration.unpriced > 0
+       ) {
+-          decision = "review";
++          decision = finalItemDecision.decision === "clarify" ? "clarify" : "review";
+       }
+   }
+ 

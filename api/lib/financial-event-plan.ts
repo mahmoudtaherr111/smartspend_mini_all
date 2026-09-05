@@ -22,6 +22,7 @@ export interface FinancialEventPlan {
   events: FinancialEvent[];
   admitted: FinancialEvent[];
   pending: FinancialEvent[];
+  totals: number[];
 }
 
 const verbs = new Set(ALL_FINANCIAL_VERBS.map(normalizeArabic));
@@ -56,22 +57,30 @@ function explicitClauses(text: string): string[] {
     const candidate = attached && !separate ? word.slice(1) : words[i + 1]?.[0] || "";
     const hasPrice = extractAmounts(before).length > 0;
     const nextText = text.slice(separate ? (words[i + 1]?.index ?? text.length) : current.index);
+    const rightHasPrice = extractAmounts(nextText).length > 0;
+    const leftUnpricedPurchase = /(?:^|\s)(?:دفعت|اشتريت|جبت|صرفت|ركبت|اكلت|أكلت|شربت|شحنت|طلبت)(?=\s)/.test(before);
+    const leftRejected = detectNegation(before).negated || future.test(normalizeArabic(before));
     const explicitBoundary = (attached || separate) && (
-      action(candidate) ||
+      action(candidate) || planned.test(normalizeArabic(candidate)) ||
       (hasPrice && /^\d/.test(candidate)) ||
       (hasPrice && financialNoun(candidate) && extractAmounts(nextText).length > 0)
     );
     // A comma separates clauses only if it is not inside a numeric literal.
     const punctuation = /[،؛;.!]$/.test(words[i - 1][0]) && hasPrice;
-    if ((explicitBoundary && (hasPrice || extractAmounts(nextText).length > 0)) || punctuation) {
+    const retrospectiveNegation = !rightHasPrice && detectNegation(nextText).negated;
+    if ((explicitBoundary && !retrospectiveNegation && (hasPrice || (rightHasPrice && (leftUnpricedPurchase || leftRejected)))) || punctuation) {
       cuts.push(current.index);
       start = current.index;
     }
   }
-  return cuts.map((cut, i) => text.slice(cut, cuts[i + 1] ?? text.length)
-    .replace(/^(?:وبعدين|بعدين|وكمان|بعدها|ثم|بس|و)(?:\s+)/, "")
-    .replace(/^و(?=[\u0621-\u064A\d])/, "")
-    .trim()).filter(Boolean);
+  return cuts.map((cut, i) => {
+    const clause = text.slice(cut, cuts[i + 1] ?? text.length)
+      .replace(/^(?:وبعدين|بعدين|وكمان|بعدها|ثم|بس|و)(?:\s+)/, "").trim();
+    const first = clause.split(/\s+/)[0];
+    return first.startsWith("و") && !verbs.has(normalizeArabic(first)) &&
+      (action(first.slice(1)) || financialNoun(first.slice(1)) || /^و\d/.test(first))
+      ? clause.slice(1) : clause;
+  }).filter(Boolean);
 }
 
 export function planFinancialEvents(rawText: string, knownNames: string[] = []): FinancialEventPlan {
@@ -79,9 +88,27 @@ export function planFinancialEvents(rawText: string, knownNames: string[] = []):
   const light = normalizeV2(rawText.replace(/و(?=[0-9٠-٩۰-۹])/g, " و ")).forAI;
   // Only an adjacent explicit replacement is locally resolvable. More complex repairs
   // retain a blocker; never keep both the superseded and the corrected amount.
-  const text = light.replace(/(\d+(?:\.\d+)?)\s+(?:لا\s+)?(?:قصدي|اقصد|أقصد)\s+(\d+(?:\.\d+)?)/g, "$2");
+  let text = light.replace(/(\d+(?:\.\d+)?)\s+(?:لا\s+)?(?:قصدي|اقصد|أقصد)\s+(\d+(?:\.\d+)?)/g, "$2");
+  const totals: number[] = [];
+  text = text.replace(/(?:و?الإجمالي|و?الاجمالي|و?المجموع|و?إجمالي|و?اجمالي)\s*:?\s*(\d+(?:\.\d+)?)(?:\s*جنيه)?/g,
+    (match, amount: string, offset: number) => {
+      // A stated total is a check only when there are component prices to check.
+      if (extractAmounts(text.slice(0, offset) + text.slice(offset + match.length)).length < 2) return match;
+      totals.push(Number(amount));
+      return "";
+    });
   const events: FinancialEvent[] = [];
-  for (const clause of explicitClauses(text)) {
+  for (let clause of explicitClauses(text)) {
+    const correction = /(?:لا\s+)?(?:قصدي|اقصد|أقصد)\s+(\d+(?:\.\d+)?)/.exec(clause);
+    if (correction) {
+      const before = clause.slice(0, correction.index);
+      const oldAmounts = extractAmounts(before);
+      if (oldAmounts.length === 1) {
+        const old = oldAmounts[0];
+        clause = before.slice(0, old.index) + old.rawMatch.replace(/\d+(?:\.\d+)?/, correction[1]) +
+          before.slice(old.index + old.length) + clause.slice(correction.index + correction[0].length);
+      }
+    }
     const norm = normalizeArabic(clause);
     const isQuestion = /[؟?]\s*$/.test(clause) || /^(?:هو انا|هل|انا دفعت ولا)/.test(norm);
     const notRealized = future.test(norm) || planned.test(norm);
@@ -108,5 +135,5 @@ export function planFinancialEvents(rawText: string, knownNames: string[] = []):
     }
   }
   return { text, events, admitted: events.filter((e) => e.status === "admitted"),
-    pending: events.filter((e) => e.status === "incomplete") };
+    pending: events.filter((e) => e.status === "incomplete"), totals };
 }

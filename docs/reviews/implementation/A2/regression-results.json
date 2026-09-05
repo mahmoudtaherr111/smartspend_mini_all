@@ -1,0 +1,479 @@
+{
+  "milestone": "A2 (partial)",
+  "generatedAt": "2026-09-05",
+  "disclaimer": "Offline local run. Scripted provider mocks only — no live AI call, no production key, no money spent, no STT, no database. Not production accuracy or production latency. No secrets and no real user audio or transcripts appear in this file.",
+  "independentReview": "none for A1 or A2; A2 is built on unreviewed A1 work",
+  "config": {
+    "baseline": {
+      "tree": "14a315bac48711eda19169c3a922f4ed8e4fa370",
+      "commit": "467eada85af1ed99f2a8949f94cbbb79be921f09",
+      "note": "audit HEAD plus the uncommitted working-tree state of 265 in-scope source paths"
+    },
+    "a1": {
+      "tree": "a2e7072063e063fc3d23dcdb6dac460ab83e5b2c"
+    },
+    "candidate": {
+      "tree": "9c702550b731c3fb5a5f3ea892d9f5ded517a79f",
+      "changedFilesSinceA1": 9
+    },
+    "provider": "executeLlmChain stubbed, or globalThis.fetch stubbed; zero live calls",
+    "database": "mocked query builder; zero connections",
+    "newDefaults": {
+      "llm_trip_deadline_ms": 45000,
+      "MIN_VIABLE_REMAINING_MS": 250,
+      "MAX_OPEN_PROBES": 1,
+      "MAX_COOLDOWN_MS": 1800000,
+      "MAX_BYTES_PER_SECOND": 8192
+    }
+  },
+  "sourceHashes": {
+    "api/lib/llm-router.ts": "ae8237823ac9f499",
+    "api/lib/llm-provider-chain.ts": "fb82931289a2d716",
+    "api/lib/voice-intake-gate.ts": "594c63d33949651c",
+    "api/ai-router.ts": "0ec5bd87e0436574",
+    "api/lib/smart-pipeline.ts": "4a6f67eda858c8f8",
+    "api/lib/entity-extractor.ts": "b69b5c0285ab2a83",
+    "api/lib/provider-route-acceptance.test.ts": "594abde99b324d08",
+    "api/lib/voice-intake-gate.test.ts": "a688fd10c2b09d1f",
+    "api/lib/classification-cache-scope.test.ts": "b8bdb442864dd12c"
+  },
+  "commands": [
+    {
+      "n": 1,
+      "cmd": "npx vitest run api/lib/provider-route-acceptance.test.ts",
+      "phase": "reproduction",
+      "exit": 0,
+      "passed": 9,
+      "failed": 14,
+      "note": "H11/M07/M08/M09/M10 reproduced against the real modules"
+    },
+    {
+      "n": 2,
+      "cmd": "npx vitest run api/lib/provider-route-acceptance.test.ts",
+      "phase": "candidate",
+      "exit": 0,
+      "passed": 25,
+      "failed": 0
+    },
+    {
+      "n": 3,
+      "cmd": "npx vitest run api/lib/voice-intake-gate.test.ts",
+      "phase": "candidate",
+      "exit": 0,
+      "passed": 30,
+      "failed": 0
+    },
+    {
+      "n": 4,
+      "cmd": "npx vitest run api/lib/classification-cache-scope.test.ts",
+      "phase": "candidate",
+      "exit": 0,
+      "passed": 6,
+      "failed": 0
+    },
+    {
+      "n": 5,
+      "cmd": "npx vitest run api/",
+      "phase": "candidate",
+      "exit": 0,
+      "passed": 1101,
+      "failed": 30,
+      "skipped": 3,
+      "note": "the 30 failures are the same set as the A1 baseline; all A4-scope or pre-existing infrastructure"
+    },
+    {
+      "n": 6,
+      "cmd": "npx tsc -b",
+      "phase": "candidate",
+      "exit": 0,
+      "errors": 0,
+      "note": "zero errors for the first time this round; the two pre-existing entity-extractor errors were fixed"
+    },
+    {
+      "n": 7,
+      "cmd": "CLASSIFY_BENCH_REPORT=1 npx vitest run api/lib/classification-benchmark.test.ts",
+      "phase": "candidate",
+      "exit": 0,
+      "passed": 172,
+      "failed": 0
+    }
+  ],
+  "notRun": [
+    {
+      "cmd": "npm run bench:classify:live",
+      "reason": "consumes production keys and real account budget; needs separate explicit authorisation"
+    },
+    {
+      "cmd": "npm run bench:classify:calibrate",
+      "reason": "regenerates the calibration table; forbidden while it is the measurement baseline"
+    },
+    {
+      "cmd": "npm run lint",
+      "reason": "not run in either round; recommended during review"
+    },
+    {
+      "cmd": "npm run test:e2e / build / db:*",
+      "reason": "no change to those boundaries"
+    }
+  ],
+  "failureSetComparison": {
+    "method": "sorted comm of FAIL lines from the A1 baseline run and the A2 candidate run of `npx vitest run api/`",
+    "introducedByA2": [],
+    "totalFixedSinceBaseline": 8,
+    "candidateIsStrictSubsetOfBaseline": true
+  },
+  "acceptanceMatrix": [
+    {
+      "id": "A2-01",
+      "ids": [
+        "H11"
+      ],
+      "criterion": "the preferred provider is not assembled from another provider's parts",
+      "expected": "the configured DeepSeek route survives with its own key, protocol and providerId",
+      "actual": "apiKey=deepseek-real-key, protocol=openai, providerId=7; leads the chain",
+      "before": "apiKey=gemini-key, protocol=gemini, and the configured row was dropped by the slug claim",
+      "status": "pass"
+    },
+    {
+      "id": "A2-02",
+      "ids": [
+        "H11"
+      ],
+      "criterion": "no route is invented for a provider with no key",
+      "expected": "no openrouter route; gemini still reachable",
+      "actual": "openrouter absent, gemini present",
+      "before": "slug=openrouter carrying the Gemini key — a guaranteed 401 charged to the wrong provider",
+      "status": "pass"
+    },
+    {
+      "id": "A2-03",
+      "ids": [
+        "H11"
+      ],
+      "criterion": "a gateway may offer more than one model",
+      "expected": "both configured OpenRouter rows survive, in priority order",
+      "actual": "['model-a','model-b']",
+      "before": "['model-a'] — the configured fallback was silently dropped",
+      "status": "pass"
+    },
+    {
+      "id": "A2-04",
+      "ids": [
+        "H11"
+      ],
+      "criterion": "a provider is not asked for another vendor's model",
+      "expected": "a Groq route does not request gemini-3.1-flash-lite",
+      "actual": "Groq route carries the Groq per-plan default",
+      "before": "the first attempt of every classification asked Groq for a Gemini model",
+      "status": "pass"
+    },
+    {
+      "id": "A2-05",
+      "ids": [
+        "H11"
+      ],
+      "criterion": "an unrecognised model name is not overridden",
+      "expected": "the operator's configured model passes through",
+      "actual": "fireworks route keeps 'some-brand-new-model'",
+      "status": "pass",
+      "note": "deliberate asymmetry; see HANDOFF section 2"
+    },
+    {
+      "id": "A2-06",
+      "ids": [
+        "M07"
+      ],
+      "criterion": "a response whose body never arrives is abandoned",
+      "expected": "rejects inside the timeout",
+      "actual": "rejects in under 3s",
+      "before": "await res.json() waited unbounded; the timer had been cleared when the headers arrived",
+      "status": "pass"
+    },
+    {
+      "id": "A2-07",
+      "ids": [
+        "M07"
+      ],
+      "criterion": "the chain stops when the trip budget is spent",
+      "expected": "well under the sum of the per-route timeouts",
+      "actual": "under 900ms for 6 routes at 150ms",
+      "before": "no whole-trip ceiling existed",
+      "status": "pass"
+    },
+    {
+      "id": "A2-08",
+      "ids": [
+        "M07"
+      ],
+      "criterion": "a route that cannot finish in the remaining budget is not started",
+      "expected": "fewer attempts than routes",
+      "actual": "attempts < 4 of 4",
+      "status": "pass"
+    },
+    {
+      "id": "A2-09",
+      "ids": [
+        "M08"
+      ],
+      "criterion": "a broad outage does not re-try every dead provider on every request",
+      "expected": "at most one probe",
+      "actual": "1 fetch for 3 open routes",
+      "before": "all 3, on every request",
+      "status": "pass"
+    },
+    {
+      "id": "A2-10",
+      "ids": [
+        "M08"
+      ],
+      "criterion": "a healthy provider is preferred over an open one",
+      "expected": "the open route is not called at all",
+      "actual": "no call to the open route",
+      "status": "pass"
+    },
+    {
+      "id": "A2-11",
+      "ids": [
+        "M08"
+      ],
+      "criterion": "an open route is still probed when it is the only one",
+      "expected": "one attempt, then LlmChainError",
+      "actual": "as expected",
+      "status": "pass",
+      "note": "refusing outright would turn a degraded provider into a permanent outage"
+    },
+    {
+      "id": "A2-12",
+      "ids": [
+        "M08"
+      ],
+      "criterion": "reading the breaker state does not consume the probe",
+      "expected": "repeated circuitSnapshot() leaves the failure count unchanged",
+      "actual": "unchanged across 4 reads past the cooldown",
+      "before": "each read decremented the count; a dashboard refresh granted a free attempt",
+      "status": "pass"
+    },
+    {
+      "id": "A2-13",
+      "ids": [
+        "M08"
+      ],
+      "criterion": "health is per route, not per provider name",
+      "expected": "a 401 on one model does not condemn a sibling model",
+      "actual": "the sibling answers",
+      "status": "pass"
+    },
+    {
+      "id": "A2-14",
+      "ids": [
+        "M08"
+      ],
+      "criterion": "Retry-After is recorded and honoured",
+      "expected": "retryAfterMs on the attempt; a 600s Retry-After keeps the breaker open past the 60s default",
+      "actual": "retryAfterMs=120000 recorded; still open at +120s after a 600s header",
+      "status": "pass"
+    },
+    {
+      "id": "A2-15",
+      "ids": [
+        "M09"
+      ],
+      "criterion": "a length-truncated reply fails over instead of being parsed",
+      "expected": "failure kind 'truncated', answer from the next provider",
+      "actual": "as expected",
+      "before": "transport 200 was reported as success and the caller parsed a severed object",
+      "status": "pass"
+    },
+    {
+      "id": "A2-16",
+      "ids": [
+        "M09"
+      ],
+      "criterion": "thinking is disabled in each provider's own dialect",
+      "expected": "DeepSeek receives thinking:{type:'disabled'}; NVIDIA receives chat_template_kwargs",
+      "actual": "as expected; no flag at all for a non-reasoning model",
+      "before": "the vLLM extension was sent to DeepSeek, ignored, and the model spent its budget reasoning",
+      "status": "pass"
+    },
+    {
+      "id": "A2-17",
+      "ids": [
+        "M10"
+      ],
+      "criterion": "every attempt reports what it spent",
+      "expected": "a failed first attempt's 90 prompt tokens are counted",
+      "actual": "wasteful=90, useful=40, attemptTotals=130",
+      "before": "only the winning call was visible; failovers were billed as free",
+      "status": "pass"
+    },
+    {
+      "id": "A2-18",
+      "ids": [
+        "M10"
+      ],
+      "criterion": "cached prompt tokens are reported separately",
+      "expected": "cachedTokens on the response and the attempt",
+      "actual": "80 on both",
+      "status": "pass"
+    },
+    {
+      "id": "A2-19",
+      "ids": [
+        "H12"
+      ],
+      "criterion": "per-plan voice limits are read per plan",
+      "expected": "free 300/60, pro 1800/180, ultra 0/300",
+      "actual": "as expected, plus a free-row fallback for an unknown plan and a non-numeric setting",
+      "before": "parseVoiceExpense read voice_limit_free for every plan",
+      "status": "pass"
+    },
+    {
+      "id": "A2-20",
+      "ids": [
+        "H12"
+      ],
+      "criterion": "the duration is measured, not accepted",
+      "expected": "a claim of 0 on real audio still charges seconds",
+      "actual": "floor derived from payload size at 8KB/s; a 600s clip claiming 0 is refused on the per-request limit",
+      "before": "durationSeconds:0 made transcription free indefinitely",
+      "status": "pass"
+    },
+    {
+      "id": "A2-21",
+      "ids": [
+        "H12"
+      ],
+      "criterion": "the monthly balance is actually compared",
+      "expected": "refuse when spent, and when this recording would overrun the remainder",
+      "actual": "monthly_limit_reached and monthly_limit_exceeded, with the remainder named in the message",
+      "before": "usedSeconds was computed and never compared on parseVoiceExpense",
+      "status": "pass"
+    },
+    {
+      "id": "A2-22",
+      "ids": [
+        "H12"
+      ],
+      "criterion": "content type and size are enforced",
+      "expected": "6 accepted types, 5 rejected; size measured on the payload not the data: header",
+      "actual": "as expected",
+      "status": "pass"
+    },
+    {
+      "id": "A2-23",
+      "ids": [
+        "H12"
+      ],
+      "criterion": "the budget is reserved before the network call",
+      "expected": "assertAiBudget precedes runSTTPipeline on both endpoints",
+      "actual": "both endpoints call the shared gate then assertAiBudget, then transcribe",
+      "before": "parseVoiceExpense asserted the budget after STT had been paid for",
+      "status": "pass",
+      "note": "verified by reading the call order; not exercised end-to-end without a database"
+    },
+    {
+      "id": "A2-24",
+      "ids": [
+        "M11"
+      ],
+      "criterion": "the cache key names the thresholds",
+      "expected": "an auto-save threshold change is not served from a result computed under the old one",
+      "actual": "strict and lenient settings produce different decisions for the same sentence",
+      "before": "a settings change took effect only after the 7-day TTL expired",
+      "status": "pass"
+    },
+    {
+      "id": "A2-25",
+      "ids": [
+        "M11"
+      ],
+      "criterion": "the cache key names the model and the business",
+      "expected": "a model switch misses; two businesses stay apart",
+      "actual": "as expected",
+      "status": "pass"
+    },
+    {
+      "id": "A2-26",
+      "ids": [
+        "M11"
+      ],
+      "criterion": "an identical request still hits (positive control)",
+      "expected": "second call served from cache with the same items",
+      "actual": "route=classification_cache_hit, identical amounts",
+      "status": "pass"
+    },
+    {
+      "id": "A2-27",
+      "ids": [
+        "M10"
+      ],
+      "criterion": "a cache hit spends nothing",
+      "expected": "tokensUsed 0, the saving visible as cachedTokens",
+      "actual": "tokensUsed=0, cachedTokens=the original 120",
+      "before": "the stored token count was re-billed on every hit",
+      "status": "pass"
+    }
+  ],
+  "regressionFoundAndFixedDuringA2": {
+    "symptom": "5 tests failed after the cache key gained a version prefix (classification-cache-invalidation, learning-loop)",
+    "cause": "invalidateUserClassificationCache matched `cls:${userType}:${userId}:` while the key had become `cls:${version}:${userType}:...`; a user correcting a category kept being served the answer they had just corrected",
+    "fix": "one shared `tenantScope()` helper called by both the key builder and the invalidator",
+    "note": "the same class of defect this whole round is about — two places deriving one string independently"
+  },
+  "benchmark": {
+    "corpus": "172 offline cases; frozen corpus and calibration table unmodified",
+    "accuracyVsBaseline": "identical on every metric (triple P/R 0.956/0.942, amount F1 0.993, direction 99.3%, category 95.6%, totals 96.5%, decision 100%)",
+    "unsafeAutoSaves": {
+      "baseline": "6 (3.5%)",
+      "candidate": "5 (2.9%)"
+    },
+    "llmCalls": {
+      "baseline": 13,
+      "candidate": 8
+    },
+    "note": "both deltas were earned in A1; A2 held them without regressing accuracy"
+  },
+  "remainingInA2": [
+    {
+      "item": "DeepSeek V4 Flash real availability for this account, registry and capabilities",
+      "status": "not started"
+    },
+    {
+      "item": "explicit capabilities per provider for category classification and structured refinement",
+      "status": "not started"
+    },
+    {
+      "item": "managed retry with a known reason and an attempt/time budget",
+      "status": "not started",
+      "note": "the chain moves to the next provider; it does not retry the same one"
+    },
+    {
+      "item": "M02 STT quality metadata, silence/clipping detection, selective re-transcription",
+      "status": "not started"
+    },
+    {
+      "item": "M10 ledger side in ai-router.ts (trackTokens defaults, atomic reserve-and-settle)",
+      "status": "not started"
+    },
+    {
+      "item": "M14 minimum-necessary context and injection defence",
+      "status": "not started"
+    },
+    {
+      "item": "M17 budget races, Redis fallback, load",
+      "status": "not started"
+    },
+    {
+      "item": "M09 capabilities contract and a real Arabic tokenizer for the output budget",
+      "status": "partial"
+    }
+  ],
+  "openProductQuestions": [
+    "llm_trip_deadline_ms default of 45s: a request that used to succeed at 60s on a slow provider now fails",
+    "the audio MIME allow-list: should it be wider?",
+    "MAX_BYTES_PER_SECOND 8192 as the duration floor divisor",
+    "MAX_COOLDOWN_MS 30 minutes as the ceiling on honouring Retry-After",
+    "one probe per request during a broad outage: slower recovery, cheaper outage",
+    "the five A1 questions remain open — see ../A1/HANDOFF.md section 10"
+  ]
+}

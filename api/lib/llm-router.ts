@@ -69,7 +69,18 @@ export interface LlmRequest {
   temperature?: number;
   /** Asked for, never assumed: `degradedSchema` reports whether it survived. */
   schema?: StructuredSchema;
+  /** Per-attempt ceiling. */
   timeoutMs?: number;
+  /**
+   * Ceiling for the WHOLE chain, measured from the first attempt.
+   *
+   * `timeoutMs` bounds one provider; five providers at 25 seconds each bounded nothing
+   * that the user experiences, and the client had usually given up long before the last
+   * one was tried — while every request after the abandonment kept running and kept
+   * costing. With a deadline, a route is only started if there is time left in which its
+   * answer could still be useful.
+   */
+  deadlineMs?: number;
   /**
    * Lets the caller shape the prompt for whoever actually serves the request.
    *
@@ -88,7 +99,16 @@ export type FailureKind =
   | "server"
   | "timeout"
   | "network"
-  | "empty_response";
+  | "empty_response"
+  /**
+   * The provider answered 200 with a reply it had to cut short.
+   *
+   * Transport success and semantic success are different facts, and conflating them is
+   * how a JSON object severed mid-key reached the parser as a successful classification.
+   * A truncated answer is worth trying somewhere else; a parse error after the fact is
+   * not, because by then the chain has already returned.
+   */
+  | "truncated";
 
 export interface LlmAttempt {
   slug: string;
@@ -98,6 +118,23 @@ export interface LlmAttempt {
   failure?: FailureKind;
   status?: number;
   message?: string;
+  /**
+   * What THIS attempt cost, whether or not it produced the answer.
+   *
+   * Accounting used to read the winning call only, so a first provider that consumed
+   * 90 input tokens and returned an empty body was billed as free. Every failed attempt
+   * past the request boundary spent real input tokens; a ledger that cannot see them
+   * under-reports by exactly the amount the failover cost.
+   */
+  promptTokens?: number;
+  completionTokens?: number;
+  /** Prompt tokens the provider served from its own cache. Not new spend. */
+  cachedTokens?: number;
+  totalTokens?: number;
+  /** Verbatim from the provider: "stop", "length", "content_filter", … */
+  finishReason?: string;
+  /** Milliseconds the provider asked us to wait, from `Retry-After`. */
+  retryAfterMs?: number;
 }
 
 export interface LlmResponse {
@@ -110,6 +147,21 @@ export interface LlmResponse {
   latencyMs: number;
   /** Every route tried, in order — the audit trail for the admin funnel. */
   attempts: LlmAttempt[];
+  /**
+   * Summed over every attempt, including the ones that failed.
+   *
+   * The top-level `promptTokens`/`completionTokens` describe the call that answered,
+   * which is what the caller wants to reason about. This is what the request actually
+   * cost, which is what billing wants. They are different numbers whenever a failover
+   * happened, and reporting only the first is why cost telemetry disagreed with the
+   * provider invoices.
+   */
+  attemptTotals: {
+    promptTokens: number;
+    completionTokens: number;
+    cachedTokens: number;
+    totalTokens: number;
+  };
   /** True when the provider would not honour the schema and we sent the request anyway. */
   degradedSchema: boolean;
 }
@@ -137,6 +189,8 @@ export class LlmChainError extends Error {
 interface BreakerState {
   consecutiveFailures: number;
   openedAt: number;
+  /** Wall-clock instant the route may be tried again. Honours `Retry-After`. */
+  openUntil: number;
   lastFailure?: FailureKind;
   lastMessage?: string;
 }
@@ -145,8 +199,21 @@ const OPEN_AFTER_FAILURES = 3;
 const COOLDOWN_MS = 60_000;
 /** A bad key does not fix itself in a minute, and each retry is a wasted round trip. */
 const AUTH_COOLDOWN_MS = 10 * 60_000;
+/** However long a provider asks us to wait, stop believing it after this. */
+const MAX_COOLDOWN_MS = 30 * 60_000;
 
 const breakers = new Map<string, BreakerState>();
+
+/**
+ * Health is per ROUTE, not per provider name.
+ *
+ * A gateway is one slug in front of many models. Keying on the slug meant a 401 on a
+ * model whose key had been revoked condemned every sibling model behind the same
+ * gateway — including the ones the admin had configured precisely as its backup.
+ */
+export function routeKey(slug: string, model: string): string {
+  return `${slug}::${model}`;
+}
 
 /** Called when the health of a route changes. Wired to the DB by the caller. */
 export type HealthReporter = (
@@ -161,30 +228,56 @@ export function setHealthReporter(fn: HealthReporter): void {
   reportHealth = fn;
 }
 
-export function isCircuitOpen(slug: string, now = Date.now()): boolean {
-  const state = breakers.get(slug);
+function stateIsOpen(state: BreakerState | undefined, now: number): boolean {
   if (!state || state.consecutiveFailures < OPEN_AFTER_FAILURES) return false;
-  const cooldown = state.lastFailure === "auth" ? AUTH_COOLDOWN_MS : COOLDOWN_MS;
-  if (now - state.openedAt >= cooldown) {
-    // Half-open: let exactly one request through to find out. Reset to one below the
-    // threshold so a single failure re-opens it immediately rather than granting three
-    // more free attempts against a provider we already believe is down.
-    state.consecutiveFailures = OPEN_AFTER_FAILURES - 1;
-    return false;
-  }
-  return true;
+  return now < state.openUntil;
 }
 
-function recordSuccess(slug: string): void {
-  const had = breakers.get(slug);
-  breakers.delete(slug);
+/**
+ * Is this route currently shut out? A PURE question.
+ *
+ * It used to answer by mutating: past the cooldown it decremented the failure count and
+ * returned false, so asking about the breaker was how the breaker half-opened. Three
+ * things read this — the chain (twice per request, once for each partition) and the
+ * admin dashboard's polling — and every one of them silently consumed the single probe
+ * the design intended to grant. A dashboard left open on a broken provider handed it a
+ * free attempt every refresh.
+ *
+ * Half-open now falls out of the arithmetic instead: past `openUntil` this returns false,
+ * the route is tried once like any other, and a failure sets a fresh `openUntil`.
+ */
+export function isCircuitOpen(slug: string, now = Date.now(), model?: string): boolean {
+  if (model !== undefined) return stateIsOpen(breakers.get(routeKey(slug, model)), now);
+
+  // No model named: the question is about the provider. It is shut out only if every
+  // route we know of for it is.
+  const prefix = `${slug}::`;
+  let seen = false;
+  for (const [key, state] of breakers) {
+    if (!key.startsWith(prefix)) continue;
+    seen = true;
+    if (!stateIsOpen(state, now)) return false;
+  }
+  return seen;
+}
+
+function recordSuccess(route: LlmRoute): void {
+  const key = routeKey(route.slug, route.model);
+  const had = breakers.get(key);
+  breakers.delete(key);
   if (had && had.consecutiveFailures >= OPEN_AFTER_FAILURES) {
-    reportHealth(slug, "healthy");
+    reportHealth(route.slug, "healthy");
   }
 }
 
-function recordFailure(slug: string, kind: FailureKind, message: string): void {
-  const state = breakers.get(slug) || { consecutiveFailures: 0, openedAt: 0 };
+function recordFailure(
+  route: LlmRoute,
+  kind: FailureKind,
+  message: string,
+  retryAfterMs?: number,
+): void {
+  const key = routeKey(route.slug, route.model);
+  const state = breakers.get(key) || { consecutiveFailures: 0, openedAt: 0, openUntil: 0 };
   state.consecutiveFailures++;
   state.lastFailure = kind;
   state.lastMessage = message;
@@ -194,14 +287,21 @@ function recordFailure(slug: string, kind: FailureKind, message: string): void {
   const trip = kind === "auth" || state.consecutiveFailures >= OPEN_AFTER_FAILURES;
   if (trip) {
     if (kind === "auth") state.consecutiveFailures = OPEN_AFTER_FAILURES;
-    if (!state.openedAt || Date.now() - state.openedAt > COOLDOWN_MS) {
-      state.openedAt = Date.now();
-    }
-    reportHealth(slug, "down", `${kind}: ${message.slice(0, 180)}`);
+    const now = Date.now();
+    // The provider knows better than our constant when it will serve us again. A 429
+    // that names 600 seconds means 600 seconds; retrying at 60 is how a rate limit
+    // becomes a rate limit plus ten wasted round trips.
+    const cooldown = Math.min(
+      MAX_COOLDOWN_MS,
+      retryAfterMs ?? (kind === "auth" ? AUTH_COOLDOWN_MS : COOLDOWN_MS),
+    );
+    state.openedAt = now;
+    state.openUntil = now + cooldown;
+    reportHealth(route.slug, "down", `${kind}: ${message.slice(0, 180)}`);
   } else {
-    reportHealth(slug, "degraded", `${kind}: ${message.slice(0, 180)}`);
+    reportHealth(route.slug, "degraded", `${kind}: ${message.slice(0, 180)}`);
   }
-  breakers.set(slug, state);
+  breakers.set(key, state);
 }
 
 /** Test seam. */
@@ -209,18 +309,38 @@ export function resetCircuitBreakers(): void {
   breakers.clear();
 }
 
-export function circuitSnapshot(): Array<{
+export function circuitSnapshot(now = Date.now()): Array<{
   slug: string;
+  model: string;
   failures: number;
   open: boolean;
+  openUntil: number;
   lastFailure?: FailureKind;
 }> {
-  return [...breakers.entries()].map(([slug, s]) => ({
-    slug,
-    failures: s.consecutiveFailures,
-    open: isCircuitOpen(slug),
-    lastFailure: s.lastFailure,
-  }));
+  return [...breakers.entries()].map(([key, s]) => {
+    const [slug, model = ""] = key.split("::");
+    return {
+      slug,
+      model,
+      failures: s.consecutiveFailures,
+      open: stateIsOpen(s, now),
+      openUntil: s.openUntil,
+      lastFailure: s.lastFailure,
+    };
+  });
+}
+
+/**
+ * Seconds or an HTTP-date, per RFC 9110. Returns undefined for anything else rather
+ * than guessing, because a wrong cooldown is worse than the default one.
+ */
+export function parseRetryAfter(header: string | null, now = Date.now()): number | undefined {
+  if (!header) return undefined;
+  const trimmed = header.trim();
+  if (/^\d+$/.test(trimmed)) return Number(trimmed) * 1000;
+  const at = Date.parse(trimmed);
+  if (Number.isNaN(at)) return undefined;
+  return Math.max(0, at - now);
 }
 
 // ─── Failure classification ─────────────────────────────────────────────────
@@ -257,12 +377,23 @@ export function classifyThrownError(err: unknown): { kind: FailureKind; message:
 
 // ─── Adapters ───────────────────────────────────────────────────────────────
 
-interface AdapterResult {
-  text: string;
+interface Usage {
   promptTokens: number;
   completionTokens: number;
   cachedTokens: number;
   totalTokens: number;
+}
+
+const NO_USAGE: Usage = {
+  promptTokens: 0,
+  completionTokens: 0,
+  cachedTokens: 0,
+  totalTokens: 0,
+};
+
+interface AdapterResult extends Usage {
+  text: string;
+  finishReason?: string;
 }
 
 class ProviderError extends Error {
@@ -270,8 +401,45 @@ class ProviderError extends Error {
     readonly kind: FailureKind,
     message: string,
     readonly status?: number,
+    /**
+     * What the failed call still cost. A 200 with an empty body, or one cut off at the
+     * token limit, consumed its whole input; only a request that never reached the
+     * provider is free.
+     */
+    readonly usage?: Usage,
+    readonly retryAfterMs?: number,
+    readonly finishReason?: string,
   ) {
     super(message);
+  }
+}
+
+/**
+ * How to ask a provider not to think out loud.
+ *
+ * There is no standard for this, and sending one vendor's extension to another is not
+ * harmless: DeepSeek's own API documents `thinking: { type: "disabled" }` and has
+ * thinking ON by default, so the vLLM-style `chat_template_kwargs.thinking=false` was
+ * ignored and the model spent its entire output budget reasoning into a field the
+ * OpenAI shape does not have — returning, as far as the caller could tell, nothing.
+ *
+ * Keyed on the base URL rather than the slug, because the slug is admin-chosen text and
+ * the endpoint is what determines the dialect.
+ */
+function applyThinkingSuppression(body: Record<string, unknown>, route: LlmRoute): void {
+  if (!route.suppressReasoning) return;
+  if (/(^|\.)deepseek\.com/i.test(hostOf(route.baseUrl))) {
+    body.thinking = { type: "disabled" };
+    return;
+  }
+  body.chat_template_kwargs = { thinking: false };
+}
+
+function hostOf(baseUrl: string): string {
+  try {
+    return new URL(baseUrl).hostname;
+  } catch {
+    return "";
   }
 }
 
@@ -308,18 +476,29 @@ async function callOpenAICompatible(
   // Reasoning models answer into `reasoning_content` and leave `content` null, so a
   // classification request comes back empty however well the model understood it —
   // DeepSeek V4 Flash on NVIDIA spent its entire output budget thinking out loud and
-  // returned nothing. Asking for the thinking to be off is ignored by providers that
-  // do not implement it, so it is safe to send everywhere.
-  if (route.suppressReasoning) {
-    body.chat_template_kwargs = { thinking: false };
-  }
+  // returned nothing. Each provider is asked in the dialect it actually implements.
+  applyThinkingSuppression(body, route);
 
+  const timeoutMs = route.timeoutMs ?? req.timeoutMs ?? 30_000;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), route.timeoutMs ?? req.timeoutMs ?? 30_000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const callDeadline = Date.now() + timeoutMs;
 
-  let res: Response;
+  // The deadline has to cover the BODY, and it has to be ours.
+  //
+  // Two separate holes. First, the timer used to be cleared in the `finally` of the
+  // fetch — which is when the response HEADERS arrive — so a provider that answered 200
+  // and then stalled mid-body left `await res.json()` waiting with nothing watching it.
+  // Second, even with the timer alive, cancellation would depend on the fetch
+  // implementation wiring the body stream to the signal. It does, and that is still
+  // worth not depending on: the timeout is the one thing in this file whose whole
+  // purpose is to hold when something else does not behave. So the abort fires AND the
+  // read is raced against the same instant.
+  const bounded = <T>(work: Promise<T>): Promise<T> =>
+    withTimeout(work, Math.max(1, callDeadline - Date.now()), route.slug);
+
   try {
-    res = await fetch(url, {
+    const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -329,44 +508,74 @@ async function callOpenAICompatible(
       body: JSON.stringify(body),
       signal: controller.signal,
     });
+
+    if (!res.ok) {
+      const detail = await bounded(res.text()).catch(() => "");
+      throw new ProviderError(
+        classifyHttpStatus(res.status),
+        `${route.slug} ${res.status}: ${detail.slice(0, 300)}`,
+        res.status,
+        undefined,
+        parseRetryAfter(res.headers.get("retry-after")),
+      );
+    }
+
+    const data = (await bounded(res.json())) as {
+      choices?: Array<{ message?: { content?: string }; finish_reason?: string }>;
+      usage?: {
+        prompt_tokens?: number;
+        completion_tokens?: number;
+        total_tokens?: number;
+        prompt_tokens_details?: { cached_tokens?: number };
+      };
+    };
+
+    const promptTokens = data.usage?.prompt_tokens || 0;
+    const completionTokens = data.usage?.completion_tokens || 0;
+    const usage: Usage = {
+      promptTokens,
+      completionTokens,
+      cachedTokens: data.usage?.prompt_tokens_details?.cached_tokens || 0,
+      totalTokens: data.usage?.total_tokens || promptTokens + completionTokens,
+    };
+
+    const choice = data.choices?.[0];
+    const finishReason = choice?.finish_reason;
+    const text = choice?.message?.content || "";
+
+    // A reply the provider had to cut short is not an answer, and the caller cannot tell
+    // the difference from a syntactically invalid one until it has already returned. It
+    // costs the same either way, so the usage travels with the error.
+    if (finishReason === "length") {
+      throw new ProviderError(
+        "truncated",
+        `${route.slug} stopped at the output limit after ${completionTokens} tokens`,
+        undefined,
+        usage,
+        undefined,
+        finishReason,
+      );
+    }
+
+    if (!text.trim()) {
+      throw new ProviderError(
+        "empty_response",
+        `${route.slug} returned no content`,
+        undefined,
+        usage,
+        undefined,
+        finishReason,
+      );
+    }
+
+    return { text, finishReason, ...usage };
   } catch (err) {
+    if (err instanceof ProviderError) throw err;
     const { kind, message } = classifyThrownError(err);
     throw new ProviderError(kind, message);
   } finally {
     clearTimeout(timer);
   }
-
-  if (!res.ok) {
-    const detail = await res.text().catch(() => "");
-    throw new ProviderError(
-      classifyHttpStatus(res.status),
-      `${route.slug} ${res.status}: ${detail.slice(0, 300)}`,
-      res.status,
-    );
-  }
-
-  const data = (await res.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
-    usage?: {
-      prompt_tokens?: number;
-      completion_tokens?: number;
-      total_tokens?: number;
-      prompt_tokens_details?: { cached_tokens?: number };
-    };
-  };
-
-  const text = data.choices?.[0]?.message?.content || "";
-  if (!text.trim()) throw new ProviderError("empty_response", `${route.slug} returned no content`);
-
-  const promptTokens = data.usage?.prompt_tokens || 0;
-  const completionTokens = data.usage?.completion_tokens || 0;
-  return {
-    text,
-    promptTokens,
-    completionTokens,
-    cachedTokens: data.usage?.prompt_tokens_details?.cached_tokens || 0,
-    totalTokens: data.usage?.total_tokens || promptTokens + completionTokens,
-  };
 }
 
 /** Gemini speaks its own protocol and enforces `responseSchema` properly, unlike most. */
@@ -394,7 +603,9 @@ async function callGemini(
   try {
     result = await withTimeout(
       model.generateContent(req.userPrompt),
-      route.timeoutMs ?? req.timeoutMs ?? 30_000,
+      // `req.timeoutMs` first: the chain narrows it to whatever is left of the trip
+      // budget, and a per-route ceiling that outlives the trip is not a ceiling.
+      Math.min(route.timeoutMs ?? Infinity, req.timeoutMs ?? 30_000),
       route.slug,
     );
   } catch (err) {
@@ -402,17 +613,56 @@ async function callGemini(
     throw new ProviderError(kind, message);
   }
 
-  const text = result.response.text();
-  if (!text.trim()) throw new ProviderError("empty_response", "gemini returned no content");
-
-  const usage = result.response.usageMetadata;
-  return {
-    text,
-    promptTokens: usage?.promptTokenCount || 0,
-    completionTokens: usage?.candidatesTokenCount || 0,
-    cachedTokens: (usage as { cachedContentTokenCount?: number })?.cachedContentTokenCount || 0,
-    totalTokens: usage?.totalTokenCount || 0,
+  const meta = result.response.usageMetadata;
+  const usage: Usage = {
+    promptTokens: meta?.promptTokenCount || 0,
+    completionTokens: meta?.candidatesTokenCount || 0,
+    cachedTokens: (meta as { cachedContentTokenCount?: number })?.cachedContentTokenCount || 0,
+    totalTokens: meta?.totalTokenCount || 0,
   };
+
+  // Gemini spells it MAX_TOKENS; the meaning is the OpenAI shape's `finish_reason:
+  // "length"`, and so is the consequence — a JSON object cut mid-key that the caller
+  // would otherwise receive as a successful classification.
+  const finishReason = result.response.candidates?.[0]?.finishReason;
+  if (finishReason === "MAX_TOKENS") {
+    throw new ProviderError(
+      "truncated",
+      `gemini stopped at the output limit after ${usage.completionTokens} tokens`,
+      undefined,
+      usage,
+      undefined,
+      finishReason,
+    );
+  }
+
+  // `.text()` throws on a blocked or empty candidate rather than returning "", and that
+  // throw used to escape the adapter as an unclassified error.
+  let text = "";
+  try {
+    text = result.response.text();
+  } catch (err) {
+    throw new ProviderError(
+      "empty_response",
+      `gemini returned no usable content: ${(err as Error)?.message || String(err)}`,
+      undefined,
+      usage,
+      undefined,
+      finishReason,
+    );
+  }
+  if (!text.trim()) {
+    throw new ProviderError(
+      "empty_response",
+      "gemini returned no content",
+      undefined,
+      usage,
+      undefined,
+      finishReason,
+    );
+  }
+
+  return { text, finishReason, ...usage };
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
@@ -469,7 +719,22 @@ const MOVES_ON: ReadonlySet<FailureKind> = new Set<FailureKind>([
   "timeout",
   "network",
   "empty_response",
+  // A model that ran out of output budget will do it again on the same prompt. Another
+  // provider, with a different tokenizer and a different verbosity, might not.
+  "truncated",
 ]);
+
+/**
+ * Below this, a further provider attempt is not worth starting.
+ *
+ * "There is time left" and "there is enough time left to be useful" are different
+ * questions. Starting a 25-second route with 200ms of budget guarantees an abort, and
+ * bills for the tokens the provider processed before hearing about it.
+ */
+const MIN_VIABLE_REMAINING_MS = 250;
+
+/** At most one probe into the shut-out set per request. */
+const MAX_OPEN_PROBES = 1;
 
 /**
  * Try each route in order until one answers.
@@ -488,18 +753,55 @@ export async function executeLlmChain(
     throw new LlmChainError("No provider has both a key and a model configured", []);
   }
 
+  const chainStartedAt = Date.now();
+  const deadlineAt = req.deadlineMs ? chainStartedAt + req.deadlineMs : Infinity;
+
   const attempts: LlmAttempt[] = [];
+  const totals = { promptTokens: 0, completionTokens: 0, cachedTokens: 0, totalTokens: 0 };
+  const bill = (usage?: Usage): void => {
+    if (!usage) return;
+    totals.promptTokens += usage.promptTokens;
+    totals.completionTokens += usage.completionTokens;
+    totals.cachedTokens += usage.cachedTokens;
+    totals.totalTokens += usage.totalTokens;
+  };
+
   const ordered = [...usable].sort((a, b) => a.priority - b.priority);
+  const now = Date.now();
+  const closed = ordered.filter((r) => !isCircuitOpen(r.slug, now, r.model));
+  const open = ordered.filter((r) => isCircuitOpen(r.slug, now, r.model));
 
-  // Skipping every open breaker would mean answering nothing at all during a broad
-  // outage. They go last instead: a route we believe is down is still better than
-  // failing the request outright.
-  const closed = ordered.filter((r) => !isCircuitOpen(r.slug));
-  const open = ordered.filter((r) => isCircuitOpen(r.slug));
+  // A shut-out route is tried at most ONCE per request, and only behind everything we
+  // still believe in.
+  //
+  // They used to be appended in full: during a broad outage — the moment the extra
+  // round trips hurt most — every request paid for every dead provider before failing.
+  // Refusing them outright would be worse, because then nothing would ever discover a
+  // recovery and a blip would become a permanent outage. One probe buys the recovery
+  // signal at a bounded price.
+  const queue = [...closed, ...open.slice(0, MAX_OPEN_PROBES)];
 
-  for (const route of [...closed, ...open]) {
+  for (const route of queue) {
+    const remaining = deadlineAt - Date.now();
+    if (remaining < MIN_VIABLE_REMAINING_MS) {
+      attempts.push({
+        slug: route.slug,
+        model: route.model,
+        ok: false,
+        latencyMs: 0,
+        failure: "timeout",
+        message: `skipped: ${Math.max(0, remaining)}ms left of the ${req.deadlineMs}ms budget`,
+      });
+      break;
+    }
+
     const startedAt = Date.now();
     let degradedSchema = false;
+    // Never let one route outlive the trip budget, whatever its own timeout says.
+    const shaped: LlmRequest = {
+      ...req,
+      timeoutMs: Math.min(route.timeoutMs ?? req.timeoutMs ?? 30_000, remaining),
+    };
 
     for (let pass = 0; pass < 2; pass++) {
       const withSchema = pass === 0;
@@ -507,22 +809,36 @@ export async function executeLlmChain(
 
       try {
         const call = route.protocol === "gemini" ? callGemini : callOpenAICompatible;
-        const shaped = req.promptFor ? { ...req, ...req.promptFor(route) } : req;
-        const result = await call(route, shaped, withSchema);
+        const prompted = req.promptFor ? { ...shaped, ...req.promptFor(route) } : shaped;
+        const result = await call(route, prompted, withSchema);
 
-        recordSuccess(route.slug);
+        recordSuccess(route);
+        const usage: Usage = {
+          promptTokens: result.promptTokens,
+          completionTokens: result.completionTokens,
+          cachedTokens: result.cachedTokens,
+          totalTokens: result.totalTokens,
+        };
+        bill(usage);
         attempts.push({
           slug: route.slug,
           model: route.model,
           ok: true,
           latencyMs: Date.now() - startedAt,
+          finishReason: result.finishReason,
+          ...usage,
         });
 
         return {
-          ...result,
+          text: result.text,
+          promptTokens: result.promptTokens,
+          completionTokens: result.completionTokens,
+          cachedTokens: result.cachedTokens,
+          totalTokens: result.totalTokens,
           route,
           latencyMs: Date.now() - startedAt,
           attempts,
+          attemptTotals: { ...totals },
           degradedSchema,
         };
       } catch (err) {
@@ -531,6 +847,7 @@ export async function executeLlmChain(
             ? err
             : new ProviderError(classifyThrownError(err).kind, classifyThrownError(err).message);
 
+        bill(pe.usage);
         attempts.push({
           slug: route.slug,
           model: route.model,
@@ -539,6 +856,9 @@ export async function executeLlmChain(
           failure: pe.kind,
           status: pe.status,
           message: pe.message.slice(0, 300),
+          finishReason: pe.finishReason,
+          retryAfterMs: pe.retryAfterMs,
+          ...(pe.usage ?? {}),
         });
 
         // NVIDIA answers 400 to a `response_format` it does not implement, and the
@@ -547,7 +867,7 @@ export async function executeLlmChain(
         // something we were entitled to assume.
         if (pe.kind === "unsupported_schema" && withSchema) continue;
 
-        if (MOVES_ON.has(pe.kind)) recordFailure(route.slug, pe.kind, pe.message);
+        if (MOVES_ON.has(pe.kind)) recordFailure(route, pe.kind, pe.message, pe.retryAfterMs);
         break;
       }
     }
@@ -555,6 +875,6 @@ export async function executeLlmChain(
 
   const summary = attempts
     .map((a) => `${a.slug}(${a.failure || "?"}${a.status ? ` ${a.status}` : ""})`)
-    .join(" → ");
+    .join(" \u2192 ");
   throw new LlmChainError(`All ${attempts.length} attempt(s) failed: ${summary}`, attempts);
 }

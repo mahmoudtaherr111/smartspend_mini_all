@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { SMART_PIPELINE_VERSION } from "./lib/smart-pipeline";
-import { router, adminProcedure, moderatorProcedure } from "./middleware";
+import { router, adminProcedure } from "./middleware";
 import { db, getPoolMetrics } from "./queries/connection";
 import { getSystemSettings, invalidateSettingsCache } from "./lib/settings-cache";
 import { getCacheRuntimeStatus } from "./lib/redis-client";
@@ -213,15 +213,15 @@ export const adminRouter = router({
       }),
     ),
 
-  listAllUsers: moderatorProcedure
+  listAllUsers: adminProcedure
     .input(
       z
         .object({
           search: z.string().optional(),
           role: z.string().optional(),
           plan: z.string().optional(),
-          page: z.number().default(1),
-          limit: z.number().default(20),
+          page: z.number().int().min(1).default(1),
+          limit: z.number().int().min(1).max(100).default(20),
         })
         .optional(),
     )
@@ -234,7 +234,22 @@ export const adminRouter = router({
       if (plan) oauthFilters.push(eq(users.plan, plan));
       if (search) oauthFilters.push(searchUsersConditionOAuth(search));
 
-      let oauthQuery = db.select().from(users).$dynamic();
+      // Keep identity credentials and referral internals in the database. The
+      // admin list only needs operational account fields.
+      let oauthQuery = db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          avatar: users.avatar,
+          role: users.role,
+          plan: users.plan,
+          createdAt: users.createdAt,
+          lastSignInAt: users.lastSignInAt,
+          aiTokensUsed: users.aiTokensUsed,
+        })
+        .from(users)
+        .$dynamic();
       if (oauthFilters.length)
         oauthQuery = oauthQuery.where(and(...oauthFilters));
 
@@ -243,7 +258,21 @@ export const adminRouter = router({
       if (plan) localFilters.push(eq(localUsers.plan, plan));
       if (search) localFilters.push(searchUsersConditionLocal(search));
 
-      let localQuery = db.select().from(localUsers).$dynamic();
+      let localQuery = db
+        .select({
+          id: localUsers.id,
+          name: localUsers.name,
+          email: localUsers.email,
+          phone: localUsers.phone,
+          avatar: localUsers.avatar,
+          role: localUsers.role,
+          plan: localUsers.plan,
+          createdAt: localUsers.createdAt,
+          lastSignInAt: localUsers.lastSignInAt,
+          aiTokensUsed: localUsers.aiTokensUsed,
+        })
+        .from(localUsers)
+        .$dynamic();
       if (localFilters.length)
         localQuery = localQuery.where(and(...localFilters));
 
@@ -410,7 +439,7 @@ export const adminRouter = router({
     }),
 
   // ─── Get User Sessions ───
-  getUserSessions: moderatorProcedure
+  getUserSessions: adminProcedure
     .input(
       z.object({
         userId: z.number(),
@@ -419,7 +448,15 @@ export const adminRouter = router({
     )
     .query(async ({ input }) => {
       const list = await db
-        .select()
+        .select({
+          id: sessions.id,
+          userId: sessions.userId,
+          userType: sessions.userType,
+          ipAddress: sessions.ipAddress,
+          userAgent: sessions.userAgent,
+          expiresAt: sessions.expiresAt,
+          createdAt: sessions.createdAt,
+        })
         .from(sessions)
         .where(
           and(
@@ -440,12 +477,20 @@ export const adminRouter = router({
     }),
 
   // ─── Get Activity Log ───
-  getActivityLog: moderatorProcedure
+  getActivityLog: adminProcedure
     .input(z.object({ limit: z.number().default(50) }).optional())
     .query(async ({ input }) => {
       const { limit = 50 } = input ?? {};
       const activeSessions = await db
-        .select()
+        .select({
+          id: sessions.id,
+          userId: sessions.userId,
+          userType: sessions.userType,
+          ipAddress: sessions.ipAddress,
+          userAgent: sessions.userAgent,
+          expiresAt: sessions.expiresAt,
+          createdAt: sessions.createdAt,
+        })
         .from(sessions)
         .orderBy(desc(sessions.createdAt))
         .limit(limit);
@@ -886,7 +931,7 @@ export const adminRouter = router({
   }),
 
   // ─── Get Classification Logs ───
-  getClassificationLogs: moderatorProcedure
+  getClassificationLogs: adminProcedure
     .input(
       z
         .object({
@@ -1205,7 +1250,7 @@ export const adminRouter = router({
     }),
 
   // ─── API Key Error Monitoring ───
-  getApiKeyErrors: moderatorProcedure
+  getApiKeyErrors: adminProcedure
     .input(
       z
         .object({
@@ -1386,7 +1431,7 @@ export const adminRouter = router({
 
 
   // ─── Get Learned Rules (Muscle Memory / Auto-Learning) ───
-  getLearnedRules: moderatorProcedure
+  getLearnedRules: adminProcedure
     .input(
       z
         .object({
@@ -1906,7 +1951,7 @@ export const adminRouter = router({
   }),
 
   // ─── Token Ledgers & Quota Inspector ───
-  getAiTokenLedger: moderatorProcedure
+  getAiTokenLedger: adminProcedure
     .input(
       z.object({
         userId: z.number().int().optional(),
@@ -1947,7 +1992,7 @@ export const adminRouter = router({
       };
     }),
 
-  getUserAiQuota: moderatorProcedure
+  getUserAiQuota: adminProcedure
     .input(
       z.object({
         search: z.string().min(1),

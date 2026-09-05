@@ -2,10 +2,9 @@
  * Turns each item's recorded evidence into a calibrated probability, and writes that
  * back as `confidence`.
  *
- * After this runs, `confidence` means one thing for the first time: the measured
- * probability that the answer is correct, on a single scale, whatever produced it.
- * Before it, a 90 from the merchant registry (observed 80% accurate) and a 90 from a
- * trigram (observed 97%) were the same number and the same decision.
+ * This is a resolver estimate fitted to the calibration corpus. It is not a measured
+ * probability that every financial field is correct in production. Semantic blockers
+ * and unobserved evidence buckets must still be checked by the acceptance gate.
  *
  * Items with no recorded evidence — the model path, muscle memory — keep their raw
  * score rather than being guessed at. They are the next resolvers to instrument.
@@ -31,7 +30,7 @@ export interface CalibrationOutcome {
   unpriced: number;
 }
 
-/** Marker so a second pass cannot recalibrate an already-calibrated item. */
+/** Human-readable trace marker; the signature below controls estimate reuse. */
 const CALIBRATED_FLAG = "calibrated";
 
 export function applyCalibration(items: ParsedTransaction[]): CalibrationOutcome {
@@ -63,10 +62,19 @@ export function applyCalibration(items: ParsedTransaction[]): CalibrationOutcome
     );
     calibrated++;
     if (result.support === 0) unpriced++;
+    // Only the resolver's raw-score uncertainty is replaced by calibration. Semantic
+    // blockers and unexplained needsReview flags are never cleared by a category score.
+    const resolvesRawScore = result.support > 0 &&
+      item.reviewReasons?.includes("raw_category_confidence") &&
+      !evidence.hasAmbiguityPenalty && evidence.personResolved !== "unknown";
+    const reviewReasons = resolvesRawScore
+      ? item.reviewReasons?.filter((reason) => reason !== "raw_category_confidence") : item.reviewReasons;
 
     return {
       ...item,
       confidence: Math.round(result.probability * 100),
+      reviewReasons,
+      needsReview: resolvesRawScore ? Boolean(reviewReasons?.length) : item.needsReview,
       evidence,
       calibration: { signature, support: result.support, probability: result.probability },
       ambiguityFlags: [

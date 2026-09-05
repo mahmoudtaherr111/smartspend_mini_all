@@ -1,0 +1,214 @@
+{
+  "generatedAt": "2026-09-05T14:08:55.790Z",
+  "workspace": "E:\\smartspend-financial-event-core",
+  "branch": "codex/financial-event-core",
+  "head": "7c9d32324ecb59cd15ce587282683752fd8f6df0",
+  "originalAuditHead": "467eada85af1ed99f2a8949f94cbbb79be921f09",
+  "snapshot": "C:/Users/hp/AppData/Local/Temp/smartspend-core-OnnBUG",
+  "note": "HEAD includes an external mid-turn commit with part of A1/core. Full scope patch compares to the pre-turn file snapshot; continuation patch compares to 7c9d323. Neither applies to old main as a complete standalone feature.",
+  "files": [
+    {
+      "file": "api/lib/arabic-number-parser.ts",
+      "baselineSha256": "e9e2ecc65702eabbf23c24db00b4895731664eae9e11a4ce16b746216b5c52c8",
+      "candidateSha256": "cf2342189d149e5012576c2255a73370db9bff67c968f8a2ef35df54ea261065",
+      "baselineTextSha256": "4340515dba218dc668644fed71b73f234075f477891c29e95d3886c13641ef95",
+      "candidateTextSha256": "22600e26dfd468f3a3d50f0a1a5949314f3213ca778ff2e14a877fc2869e6679",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": false
+    },
+    {
+      "file": "api/lib/entity-extractor.ts",
+      "baselineSha256": "e9a8a767aba3fbf7e13bdd3667601c9746bf89066e0838e4e0f0de34fb8d9991",
+      "candidateSha256": "29292c919b9498c141f76e408d4aa3d6eeac0f2ee06f92ded78f6c4bdcfa59a9",
+      "baselineTextSha256": "fb8262d06ba1c1df0eb3df187e4d16c5ddfe72e7f723b00a8f7af885184ce5a8",
+      "candidateTextSha256": "5b33e8047c1c9d36982651c1b4bae8a1fa1e2794f7ff79d3c80c894967eff279",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": true
+    },
+    {
+      "file": "api/lib/negation-detector.ts",
+      "baselineSha256": "f22dde2b5b0111a6db3d6ee66e314d905879a431bf2f92d0c24b03a5e39d7791",
+      "candidateSha256": "7ae399a8f3c7070a634aabace0e43dc55be9d271d083b8d1f220c44dc0a6651c",
+      "baselineTextSha256": "f22dde2b5b0111a6db3d6ee66e314d905879a431bf2f92d0c24b03a5e39d7791",
+      "candidateTextSha256": "e877998f27b00e6c457d33866de228067bf444a93665feb21a19d439453aab5b",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": true
+    },
+    {
+      "file": "api/lib/rule-engine.ts",
+      "baselineSha256": "474066e0ac89231ecf58aa233cd9458a3a61fea2ce777c39324d90cce71d64c1",
+      "candidateSha256": "51bbe6bf3b1cb57301491003c10043a31e30226b316467806f519bf4d05d17d9",
+      "baselineTextSha256": "c52469e7bc9b4803434dad55ae6c568c9748809bf5eed22db95ba98dcb0ab2b0",
+      "candidateTextSha256": "9a6e710333497acf0c52a9d684d42ca425c143c2489d0748bf40eecc82315bc4",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": true
+    },
+    {
+      "file": "api/lib/confidence-calibrator.ts",
+      "baselineSha256": "2944219d4bd75d3ba5e28f2c3e22738904cd15b91b320b5f202df1c8dc0b2a21",
+      "candidateSha256": "3f4bdb1c34473599ef099085873e0b628ab038c8b31358f57dc2e36e81532eaa",
+      "baselineTextSha256": "d3c73c1345dc1c94c88558e95c32682a536567b6c725a44c54c64699d5e3631e",
+      "candidateTextSha256": "58da107f111a23f40df50ba6f742a68f8d9991058e5dae26ca53abf01b9e243a",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": true
+    },
+    {
+      "file": "api/lib/classifier-contract.ts",
+      "baselineSha256": "aa4dc46be2c842ae4a0719eaceae8fd70c67a65d81e58e1d648c99c89f88a6e1",
+      "candidateSha256": "57e43d948402f1bbfac1ee22cde7b8a1fffff0176fda73c8b7441797daa4fafd",
+      "baselineTextSha256": "aa4dc46be2c842ae4a0719eaceae8fd70c67a65d81e58e1d648c99c89f88a6e1",
+      "candidateTextSha256": "2f25a0820f222249e63e99879aae049d6ecdc420421ec0bde5f6d08a4dc6c67f",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": false
+    },
+    {
+      "file": "api/lib/classification-merge.ts",
+      "baselineSha256": "c0784602474dd22d164080131aeebb9569ab6cee060a66a37751e6fcf2c2a6ba",
+      "candidateSha256": "6d7b43de9465756d18c77b3ac639a790f94cb1a47674a0fafb95bd8d125cd193",
+      "baselineTextSha256": "640cebbda92fc6134462097a119e87e98592e047562116b8a70d2bd566bd1bc8",
+      "candidateTextSha256": "6625bf5c75ff6555804a775c21c0c9b7d605facd85bb4f618e2a226e7092d935",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": false
+    },
+    {
+      "file": "api/lib/financial-event-plan.ts",
+      "baselineSha256": null,
+      "candidateSha256": "67371a712f783d1f04ae39db605f0775631420294262cdd07e5bc471d52bc63b",
+      "baselineTextSha256": null,
+      "candidateTextSha256": "e0fe3d7bba5e0c99482c426913f1cc9028f3fe47c3c0052056c9816bafd6caae",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": true
+    },
+    {
+      "file": "api/lib/financial-event-pipeline.test.ts",
+      "baselineSha256": null,
+      "candidateSha256": "1abdddf0257badc1fe0005fceffea519733fb8b1bb05880bf3e4db4ae41aebc7",
+      "baselineTextSha256": null,
+      "candidateTextSha256": "2bd6352c48d0367d01224f7f4a6d171ed2b355d0190e9704cf56b87c9b75fd25",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": true
+    },
+    {
+      "file": "api/lib/category-registry.ts",
+      "baselineSha256": "9dbf8320203a0bd94469cadafa4d75dca0e9fdf923609004e3ec21f8d85ab4e7",
+      "candidateSha256": "c9fee45534c8ffc95aff9ddbc40aad1cdde60309e16f43e61d13771aa59388f6",
+      "baselineTextSha256": "cfa7f84ca129754fd96d708c680d30695cd6bc6e71ac35c5b1a49eda6d372118",
+      "candidateTextSha256": "55fe8c3710180490076dc56341fcba155411e0c9ecc9b8aefbb55c5a6c13044e",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": false
+    },
+    {
+      "file": "api/lib/classification-acceptance.test.ts",
+      "baselineSha256": null,
+      "candidateSha256": "6962e9dbb0bda7f73013da073b7b4e47efe71aa84ee463006337a9ba934283c3",
+      "baselineTextSha256": null,
+      "candidateTextSha256": "f2e1fed0728204e0592a9ab3836e28e7945c5895038059d5ca6b820e20885e9c",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": false
+    },
+    {
+      "file": "api/lib/classifier-contract.test.ts",
+      "baselineSha256": "53543b9a38626b013d801b5c5d9a9c1b087f7c97491f335209c4ad06db216733",
+      "candidateSha256": "cb19df662c9f1e2398079497a68f9f758568fbaf7d6f19fcb8f7926eb6d59723",
+      "baselineTextSha256": "a183529b30d73ff33a6b3c0c3ba5b77082ab89068b60f929b444508ddf782e3a",
+      "candidateTextSha256": "f300b76a46a4bad38e4808824a8ec2d783ac4629fcae358403e0df3fac6e4f9d",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": false
+    },
+    {
+      "file": "api/lib/final-acceptance.ts",
+      "baselineSha256": null,
+      "candidateSha256": "0ef11b4ef6abdf2c9162d611b8febfd056fe499c6d6245abccdb13ba50a9ed59",
+      "baselineTextSha256": null,
+      "candidateTextSha256": "5a0fb202e2d20014248e5478a3cfea28fb89bb91d7a0075e6f5d6360a0dfcfaf",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": true
+    },
+    {
+      "file": "api/lib/post-classifier-verifier.ts",
+      "baselineSha256": "1b80ec342cdc40af98375b365fa1d411bb0e3c3a9817f38ede86635fd5ec7046",
+      "candidateSha256": "553b87b77c41586c7320753b521a32f593fc11e0d9ed4b0f3a652bff319210b7",
+      "baselineTextSha256": "49f918284fb7e439e78be63eda0a60185826a4096f170b7857aef81dda5e9249",
+      "candidateTextSha256": "4f66b5353ff13865823a876bfee85a0dc48b1e82cbd281fa4dc8eeed555553fd",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": true
+    },
+    {
+      "file": "api/lib/smart-pipeline.ts",
+      "baselineSha256": "21d4aeff97bc2c937096aed41b61407fbc9c17552a6ad96d60605e3f9cd33962",
+      "candidateSha256": "1a14e47980d91513f798b21f4c3fe854f0f63dce593024e3c0c076b5a9d68813",
+      "baselineTextSha256": "456a1c024a69ac8a577f3b3935ad7c0c08f006d355c55accafc989617df2c860",
+      "candidateTextSha256": "fb2f6fe4b40e4581ac53e2cea7e699f2b596b6363100608740bc30d54b4bd77f",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": true
+    },
+    {
+      "file": "api/lib/normalizer-v2.ts",
+      "baselineSha256": "5011f94297001b19e256516de7b28764f4a0633c046d82c68f592598e03eda2b",
+      "candidateSha256": "faa4a66edbd450c10520e253139eb2c2b83ef1879403bff47cf7c036d7c24535",
+      "baselineTextSha256": "8a4a02f479ec416410b20187636be9f55be50d4febc740c9e361b04e4720b50c",
+      "candidateTextSha256": "365f3c855c5c6d5e332123ab8fce89ff4bc9cb0bfe525707644364970bb4f061",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": true
+    },
+    {
+      "file": "api/lib/text-normalizer.ts",
+      "baselineSha256": "0fa31d9d8773bf34c15109e82c1f1bc33d8e17d6a4f4ebdc57ac86c5c23f1f68",
+      "candidateSha256": "54ea486733c54808e170cbdfbc9e9058fbb7aea30d750c3579b83fac561b3b9d",
+      "baselineTextSha256": "a18c8e00877cd41438e2f1aace8a3c3bd0c54ba58c9905c321c2ac21af4e5c0f",
+      "candidateTextSha256": "596494cd1122b256b436c00abe62efd800143c702dbf0b52add524149ec09357",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": true
+    },
+    {
+      "file": "api/lib/financial-event-quality.test.ts",
+      "baselineSha256": null,
+      "candidateSha256": "e1faa44038e8d08fd5fe643e37e8b7a4f9238f8738af9079a81e5ac84b4d4cb6",
+      "baselineTextSha256": null,
+      "candidateTextSha256": "e1faa44038e8d08fd5fe643e37e8b7a4f9238f8738af9079a81e5ac84b4d4cb6",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": true
+    },
+    {
+      "file": "api/lib/financial-event-verification.test.ts",
+      "baselineSha256": null,
+      "candidateSha256": "690df5541e73b7f36e4da91a1302e95c913823f2f264f310605c56b23f995200",
+      "baselineTextSha256": null,
+      "candidateTextSha256": "690df5541e73b7f36e4da91a1302e95c913823f2f264f310605c56b23f995200",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": true
+    },
+    {
+      "file": "docs/reviews/antigravity-classification-implementation-prompt.md",
+      "baselineSha256": "137b03ce53312bd43d5d80b6fb2b37c52f6ac04fd8577b888e18d98b04679ad0",
+      "candidateSha256": "c59ef1ec22052b4898bf92eb164da636ff9ae79445f9174c43b3f2a144beab7b",
+      "baselineTextSha256": "137b03ce53312bd43d5d80b6fb2b37c52f6ac04fd8577b888e18d98b04679ad0",
+      "candidateTextSha256": "c59ef1ec22052b4898bf92eb164da636ff9ae79445f9174c43b3f2a144beab7b",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": true
+    },
+    {
+      "file": "docs/reviews/antigravity-execution-guide.md",
+      "baselineSha256": "70513caf4397d913826d6f283c61edeb0239ff0c9d588ddd5314858e93fba62d",
+      "candidateSha256": "70d4cd1e698a86b4ea032be188d5c4452819117080fd20ea7a3a17d1e66587d0",
+      "baselineTextSha256": "70513caf4397d913826d6f283c61edeb0239ff0c9d588ddd5314858e93fba62d",
+      "candidateTextSha256": "70d4cd1e698a86b4ea032be188d5c4452819117080fd20ea7a3a17d1e66587d0",
+      "changedSinceSnapshot": true,
+      "changedSinceHead": true
+    }
+  ],
+  "patchChecks": [
+    {
+      "patch": "scope-diff.patch",
+      "exitCode": 0,
+      "stderr": "",
+      "reconstructedCandidateText": true
+    },
+    {
+      "patch": "continuation-from-7c9d323.patch",
+      "exitCode": 0,
+      "stderr": "",
+      "reconstructedCandidateText": true
+    }
+  ]
+}

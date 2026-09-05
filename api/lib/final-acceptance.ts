@@ -251,7 +251,7 @@ export function gateShortcutResult(input: AcceptanceInput): AcceptanceOutcome {
   // produced one item for two amounts and the count comparison it replaced never looked.
   const anchors = buildAnchors(extractAmounts(input.text).map((a) => a.amount));
   const ledger = reconcileAmounts(anchors, items);
-  const amountsFullyConsumed = ledger.unconsumed.length === 0;
+  const amountsFullyConsumed = ledger.balanced;
 
   if (!amountsFullyConsumed) {
     blockers.push(BlockerReason.AMOUNT_UNATTACHED);
