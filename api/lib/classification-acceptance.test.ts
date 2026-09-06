@@ -140,7 +140,7 @@ describe("A1.3 — what reaches the provider", () => {
     // The defect: the un-segmented branch filled the salvage lists and never the clause
     // list, so the prompt asked the model to categorise nothing.
     expect(prompt).not.toContain("0 جملة");
-    expect(prompt).toContain("1 جملة");
+    expect(JSON.parse(prompt).clauses).toHaveLength(1);
     expect(prompt).toContain("120");
     expect(prompt).toContain("عمل غريب");
     // And the answer is usable: index 1 of 1 clause is in range, so it lands.

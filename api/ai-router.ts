@@ -447,6 +447,7 @@ async function trackTokens(
   channel: AiUsageChannel = "parse",
   model?: string,
   extra?: {
+    ledgerRecorded?: boolean;
     promptTokens?: number;
     completionTokens?: number;
     cachedTokens?: number;
@@ -483,17 +484,18 @@ async function trackTokens(
       tokens,
     });
 
-    // 3. NEW: Immutable ledger write (fire-and-forget, non-blocking)
+    if (extra?.ledgerRecorded) return;
+
+    // Legacy channels without structured provider usage are explicitly unmeasured.
     const promptTokens = extra?.promptTokens ?? tokens;
     const completionTokens = extra?.completionTokens ?? 0;
     const providerSlug = extra?.providerSlug ?? "gemini";
     const modelId = model ?? "unknown";
     const latencyMs = extra?.latencyMs ?? 0;
 
-    // Simple cost estimation when not provided:
-    // gemini-flash-lite ~$0.14/1M input, $0.56/1M output
-    const costUsd = extra?.costUsd ?? (tokens * 0.14) / 1_000_000;
-    const costEgp = extra?.costEgp ?? costUsd * 50.5;
+    // Missing price data remains unavailable; numeric columns retain their legacy defaults.
+    const costUsd = extra?.costUsd ?? 0;
+    const costEgp = extra?.costEgp ?? 0;
 
     void (async () => {
       try {
@@ -523,7 +525,8 @@ async function trackTokens(
           finishReason: "stop",
           conversationId: extra?.conversationId ?? null,
           classificationLogId: extra?.classificationLogId ?? null,
-          metadata: { channel, model: modelId, provider: providerSlug },
+          metadata: { channel, model: modelId, provider: providerSlug,
+            accounting: { version: 1, usage: { source: "unreported", promptTokens: extra?.promptTokens ?? null, completionTokens: extra?.completionTokens ?? null, cachedTokens: extra?.cachedTokens ?? null }, cost: { usd: extra?.costUsd ?? null, source: extra?.costUsd === undefined ? "unavailable" : "provider" }, exchangeRate: null } },
         });
       } catch (ledgerErr) {
         // Silently fail ledger write — never block user request
@@ -1036,6 +1039,7 @@ export const aiRouter = router({
           result.tokensUsed,
           "parse",
           result.modelUsed,
+          { ledgerRecorded: true },
         );
       }
       void recordAICostMetric({
@@ -1885,7 +1889,7 @@ export const aiRouter = router({
       });
 
       if (parseResult.tokensUsed > 0) {
-        await trackTokens(ctx.user.id, ctx.user.type, parseResult.tokensUsed, "parse", parseResult.modelUsed);
+        await trackTokens(ctx.user.id, ctx.user.type, parseResult.tokensUsed, "parse", parseResult.modelUsed, { ledgerRecorded: true });
       }
       void recordAICostMetric({
         userId: ctx.user.id,

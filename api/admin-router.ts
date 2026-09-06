@@ -1959,8 +1959,8 @@ export const adminRouter = router({
         channel: z.string().optional(),
         provider: z.string().optional(),
         billingPeriod: z.string().optional(),
-        page: z.number().int().default(1),
-        limit: z.number().int().default(50),
+        page: z.number().int().min(1).default(1),
+        limit: z.number().int().min(1).max(100).default(50),
       }),
     )
     .query(async ({ input }) => {
@@ -2108,9 +2108,9 @@ export const adminRouter = router({
       // Aggregate token ledgers using SQL SUM (No truncation bug!)
       const [statsRow] = await db
         .select({
-          totalTokens: sql<number>`COALESCE(SUM(${aiTokenLedgers.totalTokens}), 0)`,
-          totalCostEgp: sql<number>`COALESCE(SUM(${aiTokenLedgers.costEgp}), 0)`,
-          totalCostUsd: sql<number>`COALESCE(SUM(${aiTokenLedgers.costUsd}), 0)`,
+          totalTokens: sql<number>`COALESCE(SUM(CASE WHEN JSON_TYPE(JSON_EXTRACT(${aiTokenLedgers.metadata}, '$.accounting.usage.totalTokens')) IN ('INTEGER', 'DOUBLE') THEN ${aiTokenLedgers.totalTokens} ELSE 0 END), 0)`,
+          totalCostEgp: sql<number>`COALESCE(SUM(CASE WHEN JSON_TYPE(JSON_EXTRACT(${aiTokenLedgers.metadata}, '$.accounting.exchangeRate')) IN ('INTEGER', 'DOUBLE') THEN ${aiTokenLedgers.costEgp} ELSE 0 END), 0)`,
+          totalCostUsd: sql<number>`COALESCE(SUM(CASE WHEN JSON_TYPE(JSON_EXTRACT(${aiTokenLedgers.metadata}, '$.accounting.cost.usd')) IN ('INTEGER', 'DOUBLE') THEN ${aiTokenLedgers.costUsd} ELSE 0 END), 0)`,
         })
         .from(aiTokenLedgers)
         .where(
@@ -2124,7 +2124,7 @@ export const adminRouter = router({
       const channelRows = await db
         .select({
           channel: aiTokenLedgers.channel,
-          tokens: sql<number>`COALESCE(SUM(${aiTokenLedgers.totalTokens}), 0)`,
+          tokens: sql<number>`COALESCE(SUM(CASE WHEN JSON_TYPE(JSON_EXTRACT(${aiTokenLedgers.metadata}, '$.accounting.usage.totalTokens')) IN ('INTEGER', 'DOUBLE') THEN ${aiTokenLedgers.totalTokens} ELSE 0 END), 0)`,
         })
         .from(aiTokenLedgers)
         .where(
@@ -2184,19 +2184,25 @@ export const adminRouter = router({
     const currentPeriod = resolveBillingPeriod();
     const rows = await db
       .select({
-        totalTokens: sql<number>`COALESCE(SUM(${aiTokenLedgers.totalTokens}), 0)`,
-        promptTokens: sql<number>`COALESCE(SUM(${aiTokenLedgers.promptTokens}), 0)`,
-        completionTokens: sql<number>`COALESCE(SUM(${aiTokenLedgers.completionTokens}), 0)`,
-        cachedTokens: sql<number>`COALESCE(SUM(${aiTokenLedgers.cachedTokens}), 0)`,
-        costEgp: sql<number>`COALESCE(SUM(${aiTokenLedgers.costEgp}), 0)`,
-        costUsd: sql<number>`COALESCE(SUM(${aiTokenLedgers.costUsd}), 0)`,
+        totalTokens: sql<number>`COALESCE(SUM(CASE WHEN JSON_TYPE(JSON_EXTRACT(${aiTokenLedgers.metadata}, '$.accounting.usage.totalTokens')) IN ('INTEGER', 'DOUBLE') THEN ${aiTokenLedgers.totalTokens} ELSE 0 END), 0)`,
+        promptTokens: sql<number>`COALESCE(SUM(CASE WHEN JSON_TYPE(JSON_EXTRACT(${aiTokenLedgers.metadata}, '$.accounting.usage.promptTokens')) IN ('INTEGER', 'DOUBLE') THEN ${aiTokenLedgers.promptTokens} ELSE 0 END), 0)`,
+        completionTokens: sql<number>`COALESCE(SUM(CASE WHEN JSON_TYPE(JSON_EXTRACT(${aiTokenLedgers.metadata}, '$.accounting.usage.completionTokens')) IN ('INTEGER', 'DOUBLE') THEN ${aiTokenLedgers.completionTokens} ELSE 0 END), 0)`,
+        cachedTokens: sql<number>`COALESCE(SUM(CASE WHEN JSON_TYPE(JSON_EXTRACT(${aiTokenLedgers.metadata}, '$.accounting.usage.cachedTokens')) IN ('INTEGER', 'DOUBLE') AND JSON_TYPE(JSON_EXTRACT(${aiTokenLedgers.metadata}, '$.accounting.usage.promptTokens')) IN ('INTEGER', 'DOUBLE') THEN ${aiTokenLedgers.cachedTokens} ELSE 0 END), 0)`,
+        costEgp: sql<number>`COALESCE(SUM(CASE WHEN JSON_TYPE(JSON_EXTRACT(${aiTokenLedgers.metadata}, '$.accounting.exchangeRate')) IN ('INTEGER', 'DOUBLE') THEN ${aiTokenLedgers.costEgp} ELSE 0 END), 0)`,
+        costUsd: sql<number>`COALESCE(SUM(CASE WHEN JSON_TYPE(JSON_EXTRACT(${aiTokenLedgers.metadata}, '$.accounting.cost.usd')) IN ('INTEGER', 'DOUBLE') THEN ${aiTokenLedgers.costUsd} ELSE 0 END), 0)`,
         avgLatencyMs: sql<number>`COALESCE(AVG(${aiTokenLedgers.latencyMs}), 0)`,
+        unknownCostRequests: sql<number>`COALESCE(SUM(CASE WHEN JSON_TYPE(JSON_EXTRACT(${aiTokenLedgers.metadata}, '$.accounting.cost.usd')) IN ('INTEGER', 'DOUBLE') THEN 0 ELSE 1 END), 0)`,
+        cacheMeasuredInputTokens: sql<number>`COALESCE(SUM(CASE WHEN JSON_TYPE(JSON_EXTRACT(${aiTokenLedgers.metadata}, '$.accounting.usage.cachedTokens')) IN ('INTEGER', 'DOUBLE') AND JSON_TYPE(JSON_EXTRACT(${aiTokenLedgers.metadata}, '$.accounting.usage.promptTokens')) IN ('INTEGER', 'DOUBLE') THEN ${aiTokenLedgers.promptTokens} ELSE 0 END), 0)`,
+        unknownUsageRequests: sql<number>`COALESCE(SUM(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(${aiTokenLedgers.metadata}, '$.accounting.usage.source')) IN ('provider', 'local') THEN 0 ELSE 1 END), 0)`,
         totalRequests: count(),
       })
       .from(aiTokenLedgers)
       .where(eq(aiTokenLedgers.billingPeriod, currentPeriod));
 
     const stats = rows[0] || {
+      unknownCostRequests: 0,
+      unknownUsageRequests: 0,
+      cacheMeasuredInputTokens: 0,
       totalTokens: 0,
       promptTokens: 0,
       completionTokens: 0,
@@ -2210,8 +2216,8 @@ export const adminRouter = router({
     const providerDistribution = await db
       .select({
         providerSlug: aiTokenLedgers.providerSlug,
-        totalTokens: sql<number>`COALESCE(SUM(${aiTokenLedgers.totalTokens}), 0)`,
-        costEgp: sql<number>`COALESCE(SUM(${aiTokenLedgers.costEgp}), 0)`,
+        totalTokens: sql<number>`COALESCE(SUM(CASE WHEN JSON_TYPE(JSON_EXTRACT(${aiTokenLedgers.metadata}, '$.accounting.usage.totalTokens')) IN ('INTEGER', 'DOUBLE') THEN ${aiTokenLedgers.totalTokens} ELSE 0 END), 0)`,
+        costEgp: sql<number>`COALESCE(SUM(CASE WHEN JSON_TYPE(JSON_EXTRACT(${aiTokenLedgers.metadata}, '$.accounting.exchangeRate')) IN ('INTEGER', 'DOUBLE') THEN ${aiTokenLedgers.costEgp} ELSE 0 END), 0)`,
       })
       .from(aiTokenLedgers)
       .where(eq(aiTokenLedgers.billingPeriod, currentPeriod))
@@ -2220,8 +2226,8 @@ export const adminRouter = router({
     const channelBreakdown = await db
       .select({
         channel: aiTokenLedgers.channel,
-        totalTokens: sql<number>`COALESCE(SUM(${aiTokenLedgers.totalTokens}), 0)`,
-        costEgp: sql<number>`COALESCE(SUM(${aiTokenLedgers.costEgp}), 0)`,
+        totalTokens: sql<number>`COALESCE(SUM(CASE WHEN JSON_TYPE(JSON_EXTRACT(${aiTokenLedgers.metadata}, '$.accounting.usage.totalTokens')) IN ('INTEGER', 'DOUBLE') THEN ${aiTokenLedgers.totalTokens} ELSE 0 END), 0)`,
+        costEgp: sql<number>`COALESCE(SUM(CASE WHEN JSON_TYPE(JSON_EXTRACT(${aiTokenLedgers.metadata}, '$.accounting.exchangeRate')) IN ('INTEGER', 'DOUBLE') THEN ${aiTokenLedgers.costEgp} ELSE 0 END), 0)`,
         avgLatency: sql<number>`COALESCE(AVG(${aiTokenLedgers.latencyMs}), 0)`,
         requestCount: count(),
       })
@@ -2232,6 +2238,9 @@ export const adminRouter = router({
     return {
       currentPeriod,
       totals: {
+        unknownCostRequests: Number(stats.unknownCostRequests),
+        unknownUsageRequests: Number(stats.unknownUsageRequests),
+        cacheMeasuredInputTokens: Number(stats.cacheMeasuredInputTokens),
         totalTokens: Number(stats.totalTokens),
         promptTokens: Number(stats.promptTokens),
         completionTokens: Number(stats.completionTokens),
@@ -2241,9 +2250,9 @@ export const adminRouter = router({
         avgLatencyMs: Number(stats.avgLatencyMs),
         totalRequests: Number(stats.totalRequests),
         cacheSavingsRate:
-          Number(stats.promptTokens) > 0
-            ? Math.round((Number(stats.cachedTokens) / Number(stats.promptTokens)) * 100)
-            : 0,
+          Number(stats.cacheMeasuredInputTokens) > 0
+            ? Math.round((Number(stats.cachedTokens) / Number(stats.cacheMeasuredInputTokens)) * 100)
+            : null,
       },
       providerDistribution,
       channelBreakdown,

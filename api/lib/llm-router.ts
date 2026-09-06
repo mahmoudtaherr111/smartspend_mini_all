@@ -22,11 +22,13 @@
  * a transaction is. This file moves strings to a provider and back.
  */
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { normalizeProviderUsage, priceProviderUsage, type ProviderUsage, type TokenPrices, type UsageCost } from "./provider-usage";
 
 export type LlmProtocol = "openai" | "gemini";
 
 /** One provider+model the router may try. */
 export interface LlmRoute {
+  prices?: TokenPrices;
   /** Provider identity, e.g. "gemini", "groq", "openrouter", or any admin-defined slug. */
   slug: string;
   protocol: LlmProtocol;
@@ -111,6 +113,9 @@ export type FailureKind =
   | "truncated";
 
 export interface LlmAttempt {
+  providerId?: number;
+  usage?: ProviderUsage;
+  cost?: UsageCost;
   slug: string;
   model: string;
   ok: boolean;
@@ -128,7 +133,7 @@ export interface LlmAttempt {
    */
   promptTokens?: number;
   completionTokens?: number;
-  /** Prompt tokens the provider served from its own cache. Not new spend. */
+  /** Prompt tokens read from provider cache; included in input and potentially discounted. */
   cachedTokens?: number;
   totalTokens?: number;
   /** Verbatim from the provider: "stop", "length", "content_filter", … */
@@ -378,18 +383,12 @@ export function classifyThrownError(err: unknown): { kind: FailureKind; message:
 // ─── Adapters ───────────────────────────────────────────────────────────────
 
 interface Usage {
+  usage?: ProviderUsage;
   promptTokens: number;
   completionTokens: number;
   cachedTokens: number;
   totalTokens: number;
 }
-
-const NO_USAGE: Usage = {
-  promptTokens: 0,
-  completionTokens: 0,
-  cachedTokens: 0,
-  totalTokens: 0,
-};
 
 interface AdapterResult extends Usage {
   text: string;
@@ -479,7 +478,7 @@ async function callOpenAICompatible(
   // returned nothing. Each provider is asked in the dialect it actually implements.
   applyThinkingSuppression(body, route);
 
-  const timeoutMs = route.timeoutMs ?? req.timeoutMs ?? 30_000;
+  const timeoutMs = Math.min(route.timeoutMs ?? Infinity, req.timeoutMs ?? 30_000);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   const callDeadline = Date.now() + timeoutMs;
@@ -530,13 +529,15 @@ async function callOpenAICompatible(
       };
     };
 
-    const promptTokens = data.usage?.prompt_tokens || 0;
-    const completionTokens = data.usage?.completion_tokens || 0;
+    const normalized = normalizeProviderUsage(data, "openai", res.headers);
+    const promptTokens = normalized.promptTokens ?? 0;
+    const completionTokens = normalized.completionTokens ?? 0;
     const usage: Usage = {
+      usage: normalized,
       promptTokens,
       completionTokens,
-      cachedTokens: data.usage?.prompt_tokens_details?.cached_tokens || 0,
-      totalTokens: data.usage?.total_tokens || promptTokens + completionTokens,
+      cachedTokens: normalized.cachedTokens ?? 0,
+      totalTokens: normalized.totalTokens ?? promptTokens + completionTokens,
     };
 
     const choice = data.choices?.[0];
@@ -614,11 +615,13 @@ async function callGemini(
   }
 
   const meta = result.response.usageMetadata;
+  const normalized = normalizeProviderUsage(meta, "gemini");
   const usage: Usage = {
-    promptTokens: meta?.promptTokenCount || 0,
-    completionTokens: meta?.candidatesTokenCount || 0,
-    cachedTokens: (meta as { cachedContentTokenCount?: number })?.cachedContentTokenCount || 0,
-    totalTokens: meta?.totalTokenCount || 0,
+    usage: normalized,
+    promptTokens: normalized.promptTokens ?? 0,
+    completionTokens: normalized.completionTokens ?? 0,
+    cachedTokens: normalized.cachedTokens ?? 0,
+    totalTokens: normalized.totalTokens ?? 0,
   };
 
   // Gemini spells it MAX_TOKENS; the meaning is the OpenAI shape's `finish_reason:
@@ -804,16 +807,21 @@ export async function executeLlmChain(
     };
 
     for (let pass = 0; pass < 2; pass++) {
+      const attemptStartedAt = Date.now();
+      const passRemaining = deadlineAt - attemptStartedAt;
+      if (passRemaining < MIN_VIABLE_REMAINING_MS) break;
       const withSchema = pass === 0;
       if (!withSchema) degradedSchema = true;
 
       try {
         const call = route.protocol === "gemini" ? callGemini : callOpenAICompatible;
-        const prompted = req.promptFor ? { ...shaped, ...req.promptFor(route) } : shaped;
+        const prompted = { ...(req.promptFor ? { ...shaped, ...req.promptFor(route) } : shaped),
+          timeoutMs: Math.min(shaped.timeoutMs ?? Infinity, passRemaining) };
         const result = await call(route, prompted, withSchema);
 
         recordSuccess(route);
         const usage: Usage = {
+          usage: result.usage,
           promptTokens: result.promptTokens,
           completionTokens: result.completionTokens,
           cachedTokens: result.cachedTokens,
@@ -823,8 +831,10 @@ export async function executeLlmChain(
         attempts.push({
           slug: route.slug,
           model: route.model,
+          providerId: route.providerId,
+          cost: priceProviderUsage(result.usage ?? normalizeProviderUsage(null), route.prices),
           ok: true,
-          latencyMs: Date.now() - startedAt,
+          latencyMs: Date.now() - attemptStartedAt,
           finishReason: result.finishReason,
           ...usage,
         });
@@ -852,13 +862,16 @@ export async function executeLlmChain(
           slug: route.slug,
           model: route.model,
           ok: false,
-          latencyMs: Date.now() - startedAt,
+          latencyMs: Date.now() - attemptStartedAt,
           failure: pe.kind,
           status: pe.status,
           message: pe.message.slice(0, 300),
           finishReason: pe.finishReason,
           retryAfterMs: pe.retryAfterMs,
           ...(pe.usage ?? {}),
+          providerId: route.providerId,
+          usage: pe.usage?.usage ?? normalizeProviderUsage(null),
+          cost: priceProviderUsage(pe.usage?.usage ?? normalizeProviderUsage(null), route.prices),
         });
 
         // NVIDIA answers 400 to a `response_format` it does not implement, and the

@@ -127,7 +127,10 @@ describe("M10 — a cache hit spends nothing", () => {
     // The stored result carried 120 tokens and the caller billed them again on every hit.
     expect(second.tokensUsed).toBe(0);
     // Reported as cached rather than erased, so the saving stays visible.
-    expect(second.cachedTokens).toBe(first.tokensUsed);
+    expect(second.cachedTokens).toBe(0);
+    expect(second.resultCacheSavedTokens).toBe(first.tokensUsed);
+    expect(second.actualModelUsed).toBeNull();
+    expect(second.log.providerRoute).toBeUndefined();
   });
 
   it("reports zero for a locally-answered phrase too (positive control)", async () => {

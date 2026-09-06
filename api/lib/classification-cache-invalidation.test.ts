@@ -71,7 +71,8 @@ describe("classification cache invalidation", () => {
 
   it("clears a user's entries across every sentence they cached, not just one", async () => {
     const a = { ...input(960_004), text: "دفعت 120 على القهوة" };
-    const b = { ...input(960_004), text: "اتغديت بـ 90" };
+    // A provider failure is deliberately not cacheable; use a locally resolved phrase.
+    const b = { ...input(960_004), text: "دفعت 200 بنزين" };
     await runSmartPipeline(a as never);
     await runSmartPipeline(b as never);
     expect(routeOf(await runSmartPipeline(b as never))).toBe("classification_cache_hit");

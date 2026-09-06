@@ -1,16 +1,17 @@
+import { readUsageDisplay, formatUsageCount, formatUsageUsd } from "@/lib/ai-usage-display";
 import React, { useState } from "react";
 import { trpc } from "@/providers/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, UserCheck, Brain, Coins, ShieldAlert, Eye, Clock, Layers } from "lucide-react";
-import { TokenAnatomyModal } from "../modals/TokenAnatomyModal";
+import { Search, UserCheck, Eye, Layers } from "lucide-react";
+import { TokenAnatomyModal, type LedgerItemData } from "../modals/TokenAnatomyModal";
 
 export function AiUserQuotaInspectorTab() {
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState<{ id: number; type: "oauth" | "local" } | null>(null);
-  const [selectedLedger, setSelectedLedger] = useState<any | null>(null);
+  const [selectedLedger, setSelectedLedger] = useState<LedgerItemData | null>(null);
 
   const quotaQuery = trpc.admin.getUserAiQuota.useQuery(
     {
@@ -123,7 +124,7 @@ export function AiUserQuotaInspectorTab() {
                 </div>
                 <div className="flex justify-between">
                   <span>تكلفة المستخدم للمنصة:</span>
-                  <span className="font-mono text-amber-400 font-bold">{Number(data.totalCostEgp || 0).toFixed(3)} ج.م</span>
+                  <span className="font-mono text-amber-400 font-bold">${Number(data.totalCostUsd || 0).toFixed(6)} USD (المعروف فقط)</span>
                 </div>
               </CardContent>
             </Card>
@@ -200,7 +201,7 @@ export function AiUserQuotaInspectorTab() {
                         </td>
                       </tr>
                     ) : (
-                      data.recentRequests.map((req: any) => (
+                      data.recentRequests.map((req) => (
                         <tr key={req.id} className="hover:bg-slate-800/30 transition-colors">
                           <td className="py-3 text-slate-400">
                             {new Date(req.createdAt).toLocaleTimeString("ar-EG")}
@@ -216,11 +217,11 @@ export function AiUserQuotaInspectorTab() {
                               {req.modelId}
                             </span>
                           </td>
-                          <td className="py-3 text-slate-300">{Number(req.promptTokens).toLocaleString()}</td>
-                          <td className="py-3 text-sky-400 font-bold">{Number(req.completionTokens).toLocaleString()}</td>
-                          <td className="py-3 text-emerald-400">{Number(req.cachedTokens).toLocaleString()}</td>
+                          <td className="py-3 text-slate-300">{formatUsageCount(readUsageDisplay(req).input)}</td>
+                          <td className="py-3 text-sky-400 font-bold">{formatUsageCount(readUsageDisplay(req).output)}</td>
+                          <td className="py-3 text-emerald-400">{formatUsageCount(readUsageDisplay(req).cache)}</td>
                           <td className="py-3 text-amber-400 font-bold">
-                            {Number(req.costEgp).toFixed(4)} ج.م
+                            {formatUsageUsd(readUsageDisplay(req).usd)}
                           </td>
                           <td className="py-3 text-center">
                             <Button

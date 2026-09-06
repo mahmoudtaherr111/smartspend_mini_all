@@ -1,4 +1,5 @@
 import React from "react";
+import { AiUsageLedgerTable } from "./AiUsageLedgerTable";
 import { trpc } from "@/providers/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,9 @@ export function AiTelemetryTab() {
 
   const data = telemetryQuery.data;
   const totals = data?.totals || {
+    unknownCostRequests: 0,
+    unknownUsageRequests: 0,
+    cacheMeasuredInputTokens: 0,
     totalTokens: 0,
     promptTokens: 0,
     completionTokens: 0,
@@ -20,7 +24,7 @@ export function AiTelemetryTab() {
     costUsd: 0,
     avgLatencyMs: 0,
     totalRequests: 0,
-    cacheSavingsRate: 0,
+    cacheSavingsRate: null,
   };
 
   const providers = data?.providerDistribution || [];
@@ -36,7 +40,7 @@ export function AiTelemetryTab() {
             مرصد استهلاك وتكلفة الذكاء الاصطناعي
           </h2>
           <p className="text-xs text-slate-400">
-            بيانات استهلاك حقيقية ومحسوبة بالقرش والمليم للشهر المالي الحالي ({data?.currentPeriod || "الحالي"})
+            القياسات المتاحة للشهر المالي الحالي؛ التكلفة تقديرية إلا عندما يبلغ بها المزوّد ({data?.currentPeriod || "الحالي"})
           </p>
         </div>
         <Button
@@ -64,37 +68,37 @@ export function AiTelemetryTab() {
             </CardTitle>
           </CardHeader>
           <CardContent className="text-[11px] text-slate-500">
-            {totals.totalRequests.toLocaleString()} طلب ذكاء اصطناعي مكتمل
+            {totals.totalRequests.toLocaleString()} محاولة / نتيجة محلية مسجلة
           </CardContent>
         </Card>
 
         <Card className="bg-slate-900/70 border-slate-800 shadow-lg">
           <CardHeader className="pb-2">
             <CardDescription className="text-xs text-slate-400 flex items-center justify-between">
-              <span>التكلفة الفعلية للمنصة</span>
+              <span>إجمالي التكلفة المعروفة</span>
               <Coins className="w-4 h-4 text-amber-400" />
             </CardDescription>
             <CardTitle className="text-2xl font-black text-amber-400 font-mono">
-              {Number(totals.costEgp || 0).toFixed(2)} ج.م
+              ${Number(totals.costUsd || 0).toFixed(6)} USD
             </CardTitle>
           </CardHeader>
           <CardContent className="text-[11px] text-slate-500 font-mono">
-            ≈ ${Number(totals.costUsd || 0).toFixed(3)} USD
+            {totals.unknownCostRequests} سجل تكلفته غير متاحة
           </CardContent>
         </Card>
 
         <Card className="bg-slate-900/70 border-slate-800 shadow-lg">
           <CardHeader className="pb-2">
             <CardDescription className="text-xs text-slate-400 flex items-center justify-between">
-              <span>نسبة توفير الكاش (Cache Rate)</span>
+              <span>نسبة الإدخال المقروء من الكاش</span>
               <Zap className="w-4 h-4 text-emerald-400" />
             </CardDescription>
             <CardTitle className="text-2xl font-black text-emerald-400 font-mono">
-              {totals.cacheSavingsRate}%
+              {totals.cacheSavingsRate === null ? "غير متاح" : `${totals.cacheSavingsRate}%`}
             </CardTitle>
           </CardHeader>
           <CardContent className="text-[11px] text-emerald-500/80">
-            {Number(totals.cachedTokens).toLocaleString()} توكن كاش تم توفيرها
+            {Number(totals.cachedTokens).toLocaleString()} توكن من الكاش ضمن {Number(totals.cacheMeasuredInputTokens).toLocaleString()} توكن إدخال بقياس كاش متاح؛ ليست نسبة توفير مالي
           </CardContent>
         </Card>
 
@@ -114,6 +118,8 @@ export function AiTelemetryTab() {
         </Card>
       </div>
 
+      <p className="text-xs text-slate-400">Input: {Number(totals.promptTokens).toLocaleString()} · Output: {Number(totals.completionTokens).toLocaleString()} · {totals.unknownUsageRequests} سجل بقياسات ناقصة أو قديمة. المجاميع تخص القيم المعروفة فقط.</p>
+      <AiUsageLedgerTable period={data?.currentPeriod} />
       {/* 2. Provider Distribution & Channels Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Provider Distribution Card */}

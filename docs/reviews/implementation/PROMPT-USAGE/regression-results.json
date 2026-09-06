@@ -1,0 +1,488 @@
+{
+  "generatedAt": "2026-09-06T01:33:17.284Z",
+  "baseCommit": "6f17a263088ab55c6cc34965ae7591c72d1ea946",
+  "branch": "codex/classification-prompt-usage-20260905",
+  "otherAgentCommit": "5633beb",
+  "mode": "offline; provider fetch and DB insert mocked; no paid calls",
+  "tests": {
+    "passed": 654,
+    "failed": 0,
+    "files": [
+      {
+        "file": "api/services/classification-usage-ledger.test.ts",
+        "tests": 1,
+        "status": "passed"
+      },
+      {
+        "file": "api/services/parser-trace.test.ts",
+        "tests": 2,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/admin-model-switch.test.ts",
+        "tests": 5,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/amount-ledger.test.ts",
+        "tests": 13,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/arabic-number-parser.test.ts",
+        "tests": 17,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/classification-acceptance.test.ts",
+        "tests": 64,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/classification-benchmark.test.ts",
+        "tests": 172,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/classification-cache-invalidation.test.ts",
+        "tests": 3,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/classification-cache-scope.test.ts",
+        "tests": 6,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/classification-evidence.test.ts",
+        "tests": 14,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/classification-golden.test.ts",
+        "tests": 49,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/classification-prompt-context.test.ts",
+        "tests": 8,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/classification-prompt-injection.test.ts",
+        "tests": 8,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/classification-usage-integration.test.ts",
+        "tests": 10,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/classifier-contract.test.ts",
+        "tests": 22,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/comprehensive-classification.test.ts",
+        "tests": 72,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/e2e-classification.test.ts",
+        "tests": 31,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/financial-event-pipeline.test.ts",
+        "tests": 45,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/financial-event-quality.test.ts",
+        "tests": 5,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/financial-event-verification.test.ts",
+        "tests": 11,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/llm-router.test.ts",
+        "tests": 22,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/negation-detector.test.ts",
+        "tests": 8,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/normalizer-v2.test.ts",
+        "tests": 12,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/provider-route-acceptance.test.ts",
+        "tests": 25,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/provider-usage.test.ts",
+        "tests": 16,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/smart-pipeline-failover.test.ts",
+        "tests": 4,
+        "status": "passed"
+      },
+      {
+        "file": "api/lib/smart-pipeline.test.ts",
+        "tests": 4,
+        "status": "passed"
+      },
+      {
+        "file": "src/lib/ai-usage-display.test.ts",
+        "tests": 3,
+        "status": "passed"
+      },
+      {
+        "file": "src/components/admin/ai-center/tabs/AiUsageLedgerTable.test.tsx",
+        "tests": 2,
+        "status": "passed"
+      }
+    ]
+  },
+  "quality": {
+    "overall": {
+      "cases": 172,
+      "expectedItems": 258,
+      "actualItems": 262,
+      "amountPrecision": 0.9732824427480916,
+      "amountRecall": 0.9883720930232558,
+      "amountF1": 0.9807692307692307,
+      "triplePrecision": 0.8816793893129771,
+      "tripleRecall": 0.8953488372093024,
+      "tripleF1": 0.8884615384615385,
+      "typeAccuracy": 0.996078431372549,
+      "categoryAccuracy": 0.9058823529411765,
+      "subCategoryAccuracy": 0.9263803680981595,
+      "personAccuracy": 0.5,
+      "segmentationExact": 0.9767441860465116,
+      "countMae": 0.03488372093023256,
+      "overSegmentRate": 0.01744186046511628,
+      "underSegmentRate": 0.005813953488372093,
+      "hallucinationRate": 0.026717557251908396,
+      "taxonomyViolationRate": 0,
+      "miscFallbackRate": 0.03529411764705882,
+      "decisionAccuracy": 1,
+      "sumAccuracyMean": 0.9561310782241016,
+      "totalSumErrorEgp": 70068.45,
+      "cost": {
+        "totalTokens": 0,
+        "totalCachedTokens": 0,
+        "cachedTokenRatio": 0,
+        "llmCalls": 36,
+        "tokensPerCaseMean": 0,
+        "tokensPerItemMean": 0,
+        "latencyP50": 8,
+        "latencyP95": 34,
+        "latencyMax": 157,
+        "parsedByDistribution": {
+          "rule_engine": 121,
+          "hybrid": 36,
+          "system": 15
+        },
+        "truncationSuspectedCount": 0
+      }
+    },
+    "dev": {
+      "cases": 81,
+      "expectedItems": 137,
+      "actualItems": 137,
+      "amountPrecision": 1,
+      "amountRecall": 1,
+      "amountF1": 1,
+      "triplePrecision": 0.9708029197080292,
+      "tripleRecall": 0.9708029197080292,
+      "tripleF1": 0.9708029197080292,
+      "typeAccuracy": 1,
+      "categoryAccuracy": 0.9708029197080292,
+      "subCategoryAccuracy": 0.9279279279279279,
+      "personAccuracy": 0.5,
+      "segmentationExact": 1,
+      "countMae": 0,
+      "overSegmentRate": 0,
+      "underSegmentRate": 0,
+      "hallucinationRate": 0,
+      "taxonomyViolationRate": 0,
+      "miscFallbackRate": 0.014598540145985401,
+      "decisionAccuracy": 1,
+      "sumAccuracyMean": 0.9876543209876543,
+      "totalSumErrorEgp": 15000,
+      "cost": {
+        "totalTokens": 0,
+        "totalCachedTokens": 0,
+        "cachedTokenRatio": 0,
+        "llmCalls": 8,
+        "tokensPerCaseMean": 0,
+        "tokensPerItemMean": 0,
+        "latencyP50": 9,
+        "latencyP95": 70,
+        "latencyMax": 157,
+        "parsedByDistribution": {
+          "rule_engine": 64,
+          "hybrid": 8,
+          "system": 9
+        },
+        "truncationSuspectedCount": 0
+      }
+    },
+    "frozen": {
+      "cases": 84,
+      "expectedItems": 113,
+      "actualItems": 117,
+      "amountPrecision": 0.9572649572649573,
+      "amountRecall": 0.9911504424778761,
+      "amountF1": 0.9739130434782609,
+      "triplePrecision": 0.7948717948717948,
+      "tripleRecall": 0.8230088495575221,
+      "tripleF1": 0.8086956521739128,
+      "typeAccuracy": 0.9910714285714286,
+      "categoryAccuracy": 0.8303571428571429,
+      "subCategoryAccuracy": 0.9215686274509803,
+      "personAccuracy": 0,
+      "segmentationExact": 0.9523809523809523,
+      "countMae": 0.07142857142857142,
+      "overSegmentRate": 0.03571428571428571,
+      "underSegmentRate": 0.011904761904761904,
+      "hallucinationRate": 0.042735042735042736,
+      "taxonomyViolationRate": 0,
+      "miscFallbackRate": 0.0625,
+      "decisionAccuracy": 1,
+      "sumAccuracyMean": 0.9458874458874459,
+      "totalSumErrorEgp": 55014,
+      "cost": {
+        "totalTokens": 0,
+        "totalCachedTokens": 0,
+        "cachedTokenRatio": 0,
+        "llmCalls": 22,
+        "tokensPerCaseMean": 0,
+        "tokensPerItemMean": 0,
+        "latencyP50": 7,
+        "latencyP95": 19,
+        "latencyMax": 48,
+        "parsedByDistribution": {
+          "rule_engine": 56,
+          "hybrid": 22,
+          "system": 6
+        },
+        "truncationSuspectedCount": 0
+      }
+    },
+    "system": {
+      "cases": 172,
+      "byResolver": [
+        {
+          "matchKind": "intent_only",
+          "items": 18,
+          "correct": 9,
+          "accuracy": 0.5,
+          "meanRawStrength": 61.666666666666664,
+          "overconfidence": 0.1166666666666667
+        },
+        {
+          "matchKind": "fuzzy",
+          "items": 18,
+          "correct": 8,
+          "accuracy": 0.4444444444444444,
+          "meanRawStrength": 55,
+          "overconfidence": 0.10555555555555562
+        },
+        {
+          "matchKind": "synonym_graph",
+          "items": 50,
+          "correct": 47,
+          "accuracy": 0.94,
+          "meanRawStrength": 96.64,
+          "overconfidence": 0.02640000000000009
+        },
+        {
+          "matchKind": "merchant_registry",
+          "items": 17,
+          "correct": 17,
+          "accuracy": 1,
+          "meanRawStrength": 100,
+          "overconfidence": 0
+        },
+        {
+          "matchKind": "embedding",
+          "items": 4,
+          "correct": 4,
+          "accuracy": 1,
+          "meanRawStrength": 95,
+          "overconfidence": -0.050000000000000044
+        },
+        {
+          "matchKind": "verb_noun_regex",
+          "items": 9,
+          "correct": 9,
+          "accuracy": 1,
+          "meanRawStrength": 91.33333333333333,
+          "overconfidence": -0.08666666666666667
+        },
+        {
+          "matchKind": "dict_unigram",
+          "items": 34,
+          "correct": 30,
+          "accuracy": 0.8823529411764706,
+          "meanRawStrength": 78,
+          "overconfidence": -0.10235294117647054
+        },
+        {
+          "matchKind": "subcat_unigram",
+          "items": 83,
+          "correct": 79,
+          "accuracy": 0.9518072289156626,
+          "meanRawStrength": 83.97590361445783,
+          "overconfidence": -0.11204819277108424
+        },
+        {
+          "matchKind": "dict_bigram",
+          "items": 7,
+          "correct": 7,
+          "accuracy": 1,
+          "meanRawStrength": 83.28571428571429,
+          "overconfidence": -0.16714285714285704
+        },
+        {
+          "matchKind": "fallback",
+          "items": 5,
+          "correct": 4,
+          "accuracy": 0.8,
+          "meanRawStrength": 62,
+          "overconfidence": -0.18000000000000005
+        },
+        {
+          "matchKind": "governed_noun",
+          "items": 17,
+          "correct": 17,
+          "accuracy": 1,
+          "meanRawStrength": 65.94117647058823,
+          "overconfidence": -0.34058823529411764
+        }
+      ],
+      "crashes": 0,
+      "crashRate": 0,
+      "emptyOnValidInput": 0,
+      "emptyOnValidInputRate": 0,
+      "spuriousOnNonFinancial": 0,
+      "unsafeAutoSaves": 4,
+      "unsafeAutoSaveRate": 0.023255813953488372,
+      "needlessClarifications": 22,
+      "meanConfidenceWhenCorrect": 90,
+      "meanConfidenceWhenWrong": 85.48387096774194,
+      "confidenceSeparation": 4.516129032258064,
+      "expectedCalibrationError": 0.04465648854961833,
+      "bins": [
+        {
+          "lower": 0.8,
+          "count": 81,
+          "meanConfidence": 0.8462962962962963,
+          "accuracy": 0.7530864197530864
+        },
+        {
+          "lower": 0.9,
+          "count": 181,
+          "meanConfidence": 0.9162983425414365,
+          "accuracy": 0.9392265193370166
+        }
+      ],
+      "confidentlyWrong": 11,
+      "confidentlyWrongRate": 0.04198473282442748,
+      "segmentation": {
+        "mergeErrors": 0,
+        "splitErrors": 0,
+        "numberCompositionErrors": 0,
+        "unexplainedMissing": 3,
+        "unexplainedSpurious": 7
+      },
+      "latencyByLength": [
+        {
+          "bucket": "قصير (<40 حرف)",
+          "cases": 130,
+          "p50": 7,
+          "p95": 26
+        },
+        {
+          "bucket": "متوسط (40-150)",
+          "cases": 36,
+          "p50": 11,
+          "p95": 25
+        },
+        {
+          "bucket": "طويل (150-400)",
+          "cases": 3,
+          "p50": 39,
+          "p95": 48
+        },
+        {
+          "bucket": "سرد (>400)",
+          "cases": 3,
+          "p50": 128,
+          "p95": 136
+        }
+      ],
+      "admin": {
+        "parsedByValues": {
+          "rule_engine": 121,
+          "hybrid": 36,
+          "system": 15
+        },
+        "missingDecision": 0,
+        "invalidConfidence": 0,
+        "missingModelAttribution": 36
+      }
+    },
+    "decisions": {
+      "review": 64,
+      "clarify": 23,
+      "auto_save": 85
+    }
+  },
+  "tripleF1Comparison": {
+    "overall": {
+      "before": 0.8884615384615385,
+      "after": 0.8884615384615385,
+      "delta": 0.0
+    },
+    "dev": {
+      "before": 0.9708029197080292,
+      "after": 0.9708029197080292,
+      "delta": 0.0
+    },
+    "frozen": {
+      "before": 0.8086956521739128,
+      "after": 0.8086956521739128,
+      "delta": 0.0
+    }
+  },
+  "fixtureSha256": "9a77efc63018f7240993dcb811cbcef4d761244e23ae2076fb2c9fb128f5b86e",
+  "fixtureIdentity": "No fixtures or scorer changed from base commit; hash copied from baseline manifest, not independently recomputed.",
+  "lint": {
+    "baselineFindingsOnChangedFiles": 134,
+    "currentFindings": 123,
+    "newFindings": []
+  },
+  "typecheck": "npm run check: passed",
+  "frontendBuild": "npm run frontend:build: passed",
+  "limitations": [
+    "Live provider cache hit rate and LLM category accuracy not measured.",
+    "Admin SQL not exercised against a live MySQL database.",
+    "UI rows rendered in tests; interactive browser verification unavailable because native pipe bootstrap failed.",
+    "Ledger is bounded telemetry; not a durable billing outbox.",
+    "STT/OCR/chat legacy adapters without normalized usage remain explicitly unavailable in admin accounting."
+  ]
+}

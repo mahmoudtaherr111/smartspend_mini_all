@@ -166,16 +166,15 @@ describe("the prompt itself", () => {
 
   it("states amount and direction as settled, so they are not re-derived", () => {
     const user = buildClassificationUserPrompt(ctx);
-    expect(user).toContain("50 جنيه · مصروف");
-    expect(user).toContain("5000 جنيه · دخل");
-    expect(CLASSIFICATION_SYSTEM_PROMPT).toContain("محسومة");
+    expect(JSON.parse(user).clauses.map((c: { amount: number; direction: string; currency: string | null }) => [c.amount, c.direction, c.currency])).toEqual([[50, "expense", null], [5000, "income", null]]);
+    expect(CLASSIFICATION_SYSTEM_PROMPT).toContain("issue=conflict");
   });
 
   it("never asks the model to segment", () => {
     // The instruction that cost the most: our decomposer is 100% exact on monologues,
     // the model 0%, and we were paying to be told the wrong answer.
     expect(CLASSIFICATION_SYSTEM_PROMPT).not.toContain("decomposed_sentences");
-    expect(CLASSIFICATION_SYSTEM_PROMPT).toContain("لا تحسبها ولا تراجعها");
+    expect(CLASSIFICATION_SYSTEM_PROMPT).toContain("لا تعيد تقسيم النص");
   });
 
   it("demands exactly one answer per clause", () => {
@@ -195,8 +194,8 @@ describe("the prompt itself", () => {
       ...ctx,
       frequentCategories: ["أكل وشرب", "مواصلات"],
     });
-    expect(user).toContain("ترجيح عند التساوي");
-    expect(user).toContain("كل الفئات متاحة");
+    expect(JSON.parse(user)).not.toHaveProperty("frequentCategories");
+    expect(user).not.toContain("أكل وشرب");
   });
 
   it("costs less than the prompt it replaces while showing more categories", () => {

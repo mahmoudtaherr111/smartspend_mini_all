@@ -6,6 +6,7 @@ import type { ParsedTransaction } from "./rule-engine";
 import type { DecomposedSegment } from "./narrative-decomposer";
 import { emptyEvidence } from "./classification-evidence";
 import { BlockerReason, withBlocker } from "./final-acceptance";
+import { normalizeRelationship } from "./relationship-normalizer";
 
 export interface EscalationClause {
   segment: DecomposedSegment;
@@ -38,6 +39,8 @@ const PERSON_CATEGORIES = new Set(["العائلة", "أصدقاء", "موظفي
 export function mergeCategoryDecisions(
   clauses: EscalationClause[],
   decisions: CategoryDecision[],
+  context: { businessMode?: boolean; businessId?: number | null;
+    businessCategories?: Array<{ nameAr: string; type: string }> } = {},
 ): MergeOutcome {
   const byIndex = new Map(decisions.map((d) => [d.i, d]));
   const items: ParsedTransaction[] = [];
@@ -66,15 +69,38 @@ export function mergeCategoryDecisions(
       const carried = { ...item, sourceEventId: item.sourceEventId ?? clauseId };
 
       // An empty/rejected clause stays empty; category answers cannot invent identities.
-      if (!decision || !category || PERSON_CATEGORIES.has(item.category) || PERSON_CATEGORIES.has(category)) {
+      if (!decision || !category) {
         items.push(withBlocker(carried, BlockerReason.CATEGORY_REPLY_UNRESOLVED));
         continue;
       }
 
+      if (decision.issue) {
+        items.push(withBlocker(carried, `model_${decision.issue}`));
+        continue;
+      }
+      // The model may suggest a relationship category, but never an identity. A locally
+      // resolved name and relationship must corroborate it; otherwise ask for review.
+      if (PERSON_CATEGORIES.has(category)) {
+        const supported = item.person_mentioned && item.person_relationship &&
+          normalizeRelationship(item.person_relationship).category === category;
+        if (!supported || item.category !== category) {
+          items.push(withBlocker(carried, BlockerReason.CATEGORY_REPLY_UNRESOLVED));
+          continue;
+        }
+      }
+      const businessSub = context.businessMode && context.businessId && decision.category === "work"
+        ? context.businessCategories?.find((c) => c.nameAr === decision.sub && c.type === item.type)
+        : undefined;
+      const subCategory = PERSON_CATEGORIES.has(category) ? item.subCategory
+        : businessSub?.nameAr ?? resolveSubcategory(decision.category, decision.sub);
+      const invalidSub = Boolean(decision.sub && !PERSON_CATEGORIES.has(category) &&
+        !businessSub && subCategory !== decision.sub);
+
       items.push({
         ...carried,
         category,
-        subCategory: resolveSubcategory(decision.category, decision.sub),
+        subCategory,
+        ...(businessSub ? { businessId: context.businessId! } : {}),
         inferenceSource: "ai" as const,
         parsedBy: "ai" as const,
         // The category changed, so the calibration that priced the OLD category is no
@@ -94,7 +120,9 @@ export function mergeCategoryDecisions(
           categoryIsFallback: decision.category === "miscellaneous",
         },
         needsReview: true,
-        reviewReasons: item.reviewReasons,
+        reviewReasons: invalidSub
+          ? [...new Set([...(item.reviewReasons || []), "model_subcategory_invalid"])]
+          : item.reviewReasons,
       });
     }
   });

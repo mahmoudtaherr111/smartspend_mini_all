@@ -30,7 +30,11 @@ function parseRisk(
 }
 
 export function buildParserTrace(input: ParserTraceInput) {
-  const llmCalls = input.result.log.aiResult?.attempted ? 1 : 0;
+  const attempts = input.result.log.providerRoute?.attempts?.filter((a) => !a.message?.startsWith("skipped:"));
+  const cacheHit = input.result.log.routing?.route === "classification_cache_hit";
+  const llmCalls = cacheHit ? 0 : attempts?.length ?? (input.result.log.aiResult?.attempted ? 1 : 0);
+  const measuredInput = attempts?.reduce((sum, a) => sum + (a.usage?.promptTokens ?? a.promptTokens ?? 0), 0);
+  const measuredOutput = attempts?.reduce((sum, a) => sum + (a.usage?.completionTokens ?? a.completionTokens ?? 0), 0);
   const embeddingCalls = input.result.log.embeddingResult?.attempted ? 1 : 0;
   const classifierTool = input.result.parsedBy === "rule_engine" ? "rule_engine" : "classifier.ai";
   const dataNeeds = [
@@ -54,15 +58,19 @@ export function buildParserTrace(input: ParserTraceInput) {
       usesFinanceSummaryOnly: input.financeContextSource === "finance.summary",
     },
     inputChannel: input.inputChannel,
-    provider: input.provider,
-    model: input.result.modelUsed,
+    provider: input.result.log.providerRoute?.servedBy ?? (llmCalls ? input.provider : "local"),
+    model: input.result.actualModelUsed ?? (llmCalls ? input.result.modelUsed : "local"),
     parsedBy: input.result.parsedBy,
     decision: input.result.decision,
     confidence: input.result.overallConfidence,
     itemCount: input.result.items.length,
     llmCalls,
     embeddingCalls,
-    inputTokens: llmCalls > 0 ? input.estimatedInputTokens : 0,
+    inputTokens: llmCalls > 0 ? measuredInput ?? input.estimatedInputTokens : 0,
+    outputTokens: llmCalls > 0 ? measuredOutput ?? null : 0,
+    usageSource: attempts ? "provider_attempts" : llmCalls ? "estimate" : "local",
+    operationId: input.result.usageOperationId,
+    resultCacheSavedTokens: input.result.resultCacheSavedTokens ?? 0,
     totalTokens: input.result.tokensUsed,
     cachedTokens: input.result.cachedTokens ?? 0,
     latencyMs: input.latencyMs,

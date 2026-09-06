@@ -121,6 +121,30 @@ describe("llm router", () => {
     expect(circuitSnapshot().find((c) => c.slug === "groq")?.lastFailure).toBe("auth");
   });
 
+  it("does not restart the trip budget for a schema downgrade", async () => {
+    let now = 10_000;
+    vi.spyOn(Date, "now").mockImplementation(() => now);
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async () => {
+      now += 950;
+      return reply(400, { error: "response_format unsupported" });
+    });
+    await expect(executeLlmChain([route({ timeoutMs: 30_000 })], {
+      ...req, timeoutMs: 30_000, deadlineMs: 1000,
+    })).rejects.toThrow(LlmChainError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("measures each billed attempt independently after a schema downgrade", async () => {
+    let now = 10_000;
+    vi.spyOn(Date, "now").mockImplementation(() => now);
+    vi.spyOn(globalThis, "fetch")
+      .mockImplementationOnce(async () => { now += 100; return reply(400, { error: "unsupported schema" }); })
+      .mockImplementationOnce(async () => { now += 50; return reply(200, okBody); });
+    const result = await executeLlmChain([route()], req);
+    expect(result.attempts.map((a) => a.latencyMs)).toEqual([100, 50]);
+    expect(result.latencyMs).toBe(150);
+  });
+
   it("needs repeated failures before tripping on a merely flaky provider", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(() => Promise.resolve(reply(503, { error: "unavailable" })));
 

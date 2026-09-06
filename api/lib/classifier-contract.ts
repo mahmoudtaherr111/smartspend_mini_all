@@ -35,10 +35,12 @@ export interface CategoryDecision {
   i: number;
   /** One of CATEGORY_IDS. */
   category: string;
-  /** Arabic subcategory name, or a person's name for person categories. Free text. */
+  /** Taxonomy/business subcategory. Person identity is resolved locally by the merger. */
   sub?: string;
-  /** Only when the clause names a person we did not recognise. */
+  /** Legacy reply compatibility only; never promoted to a trusted identity. */
   person?: string | null;
+  /** An abstention cannot change financial facts or clear a local review blocker. */
+  issue?: "ambiguous" | "conflict";
 }
 
 export interface ClassifierReply {
@@ -68,7 +70,7 @@ export const CATEGORY_CLASSIFIER_SCHEMA = {
             enum: [...CATEGORY_IDS],
           },
           sub: { type: SchemaType.STRING },
-          person: { type: SchemaType.STRING, nullable: true },
+          issue: { type: SchemaType.STRING, enum: ["ambiguous", "conflict"] },
         },
         required: ["i", "category"],
       },
@@ -88,6 +90,7 @@ const categoryReplyRow = z.object({
   category: z.string().trim().min(1).max(100),
   sub: z.string().trim().max(120).optional(),
   person: z.string().trim().max(120).nullable().optional(),
+  issue: z.enum(["ambiguous", "conflict"]).optional(),
 });
 
 /**
@@ -163,6 +166,7 @@ export function validateClassifierReply(
     out.push({
       i,
       category: id,
+      ...(row.issue ? { issue: row.issue } : {}),
       sub: typeof row.sub === "string" && row.sub.trim() ? row.sub.trim() : undefined,
       person:
         typeof row.person === "string" && row.person.trim() ? row.person.trim() : null,
@@ -190,7 +194,7 @@ export function validateClassifierReply(
 export function buildFullTaxonomy(): string {
   return CATEGORIES.map((c) => {
     const subs = ["العائلة", "أصدقاء", "موظفين"].includes(c.name_ar)
-      ? "اسم_الشخص"
+      ? "العلاقة والهوية يتحقق منهما التطبيق"
       : c.subcategories.map((s) => s.name_ar).join(",");
     return `${c.id}=${c.name_ar}:${subs}`;
   }).join("\n");

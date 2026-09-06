@@ -6,7 +6,7 @@
  * confidence. 100% local processing, 0 tokens.
  */
 
-import { CATEGORIES, getCategoryByArabicName } from "./category-registry";
+import { getCategoryByArabicName } from "./category-registry";
 import type { ParsedTransaction } from "./rule-engine";
 import { extractAmounts } from "./entity-extractor";
 import { mergeReviewState } from "./final-acceptance";
@@ -88,6 +88,7 @@ export function verifyClassifiedItems(
   items: ParsedTransaction[],
   originalText: string,
   monthlyContext?: MonthlyContext,
+  businessContext?: { businessId: number; categories: Array<{ nameAr: string; type: string }> },
 ): VerificationResult {
   if (items.length === 0) {
     return { items: [], flags: [], overallConfidence: 0 };
@@ -117,7 +118,7 @@ export function verifyClassifiedItems(
   flags.push(...intentFlags);
 
   // Step 4: Validate taxonomy
-  const taxFlags = validateTaxonomy(verifiedItems);
+  const taxFlags = validateTaxonomy(verifiedItems, businessContext);
   flags.push(...taxFlags);
 
   // Step 5: Amount sanity check
@@ -271,7 +272,9 @@ function checkIntentTaxonomyConflicts(
 
 // ─── Step 4: Taxonomy Validation ─────────────────────────────────
 
-function validateTaxonomy(items: ParsedTransaction[]): VerificationFlag[] {
+function validateTaxonomy(items: ParsedTransaction[], businessContext?: {
+  businessId: number; categories: Array<{ nameAr: string; type: string }>;
+}): VerificationFlag[] {
   const flags: VerificationFlag[] = [];
 
   items.forEach((item, idx) => {
@@ -287,6 +290,8 @@ function validateTaxonomy(items: ParsedTransaction[]): VerificationFlag[] {
     }
 
     const subExists = cat.subcategories.some((s) => s.name_ar === item.subCategory);
+    if (businessContext && item.businessId === businessContext.businessId && cat.id === "work" &&
+      businessContext.categories.some((c) => c.nameAr === item.subCategory && c.type === item.type)) return;
     if (!subExists && item.subCategory !== "عام") {
       // EXCEPTION: person-name subcategories for relationship categories
       if (["العائلة", "أصدقاء", "موظفين"].includes(item.category)) {

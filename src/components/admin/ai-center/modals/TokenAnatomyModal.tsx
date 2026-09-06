@@ -1,4 +1,5 @@
 import React from "react";
+import { readUsageDisplay, formatUsageCount, formatUsageUsd } from "@/lib/ai-usage-display";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Brain, Clock, Coins, Layers, Zap, ChevronDown, Sparkles } from "lucide-react";
 
 export interface LedgerItemData {
+  metadata?: unknown;
   id?: number;
   traceId?: string;
   channel?: string;
@@ -29,7 +31,6 @@ export interface LedgerItemData {
   costUsd?: number | string;
   latencyMs?: number;
   createdAt?: string | Date;
-  [key: string]: any;
 }
 
 interface TokenAnatomyModalProps {
@@ -43,17 +44,20 @@ export function TokenAnatomyModal({ isOpen, onClose, ledgerItem }: TokenAnatomyM
 
   if (!ledgerItem) return null;
 
-  const totalTokens = Number(ledgerItem.totalTokens || 0);
-  const promptTokens = Number(ledgerItem.promptTokens || 0);
-  const completionTokens = Number(ledgerItem.completionTokens || 0);
-  const cachedTokens = Number(ledgerItem.cachedTokens || 0);
-  const reasoningTokens = Number(ledgerItem.reasoningTokens || 0);
+  const measured = readUsageDisplay(ledgerItem);
+  const totalTokens = measured.total ?? 0;
+  const promptTokens = measured.input ?? 0;
+  const completionTokens = measured.output ?? 0;
+  const cachedTokens = measured.cache ?? 0;
+  const reasoningTokens = measured.reasoning ?? 0;
 
   const systemTokens = Number(ledgerItem.systemPromptTokens || 0);
   const memoryTokens = Number(ledgerItem.memoryRagTokens || 0);
   const historyTokens = Number(ledgerItem.historyTokens || 0);
   const userTokens = Number(ledgerItem.userInputTokens || 0);
   const outTokens = Math.max(0, completionTokens - reasoningTokens);
+
+  const hasBreakdown = promptTokens > 0 && systemTokens + memoryTokens + historyTokens + userTokens === promptTokens;
 
   // Proportions
   const sysPct = totalTokens > 0 ? Math.round((systemTokens / totalTokens) * 100) : 0;
@@ -98,10 +102,10 @@ export function TokenAnatomyModal({ isOpen, onClose, ledgerItem }: TokenAnatomyM
           </div>
         </DialogHeader>
 
-        {/* 1. Stacked Proportional Breakdown Bar */}
-        <div className="space-y-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800/60">
+        {/* 1. Breakdown only when its input components reconcile to measured input. */}
+        {hasBreakdown ? <div className="space-y-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800/60">
           <div className="flex justify-between items-center text-xs font-semibold text-slate-300">
-            <span>توزيع أجزاء الحمولة (Payload Anatomy Breakdown)</span>
+            <span>توزيع تقديري لأجزاء الحمولة؛ الصفر قد يعني عدم توفر التفصيل</span>
             <span className="font-mono text-indigo-400 font-bold">{totalTokens.toLocaleString()} Total Tokens</span>
           </div>
 
@@ -190,20 +194,20 @@ export function TokenAnatomyModal({ isOpen, onClose, ledgerItem }: TokenAnatomyM
               <span>الرد النهائي ({outTokens})</span>
             </div>
           </div>
-        </div>
+        </div> : <p className="text-xs text-slate-400">تفصيل أجزاء البرومبت غير متاح. إجمالي التوكنز: {formatUsageCount(measured.total)}</p>}
 
         {/* 2. Key Metrics Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800">
             <div className="text-xs text-slate-400 flex items-center gap-1.5 mb-1">
               <Coins className="w-3.5 h-3.5 text-amber-400" />
-              التكلفة الفعلية
+              التكلفة ومصدرها
             </div>
             <div className="text-base font-bold text-amber-400 font-mono">
-              {Number(ledgerItem.costEgp || 0).toFixed(4)} ج.م
+              {formatUsageUsd(measured.usd)}
             </div>
             <div className="text-[10px] text-slate-500 font-mono">
-              ${Number(ledgerItem.costUsd || 0).toFixed(6)} USD
+              {measured.costLabel}
             </div>
           </div>
 
@@ -213,10 +217,10 @@ export function TokenAnatomyModal({ isOpen, onClose, ledgerItem }: TokenAnatomyM
               كاش البرومبت
             </div>
             <div className="text-base font-bold text-emerald-400 font-mono">
-              {cachedTokens.toLocaleString()} tok
+              {formatUsageCount(measured.cache)} tok
             </div>
             <div className="text-[10px] text-emerald-500/80 font-medium">
-              وفرت {cacheSavingsPct}% من المدخلات
+              {measured.cacheLabel} · {measured.cache === null || !promptTokens ? "غير متاح" : `${cacheSavingsPct}% من الإدخال`}
             </div>
           </div>
 
@@ -239,10 +243,10 @@ export function TokenAnatomyModal({ isOpen, onClose, ledgerItem }: TokenAnatomyM
               نسبة الإدخال / الإخراج
             </div>
             <div className="text-base font-bold text-indigo-300 font-mono">
-              {promptTokens} / {completionTokens}
+              {formatUsageCount(measured.input)} / {formatUsageCount(measured.output)}
             </div>
             <div className="text-[10px] text-slate-500">
-              In: {Math.round((promptTokens / totalTokens) * 100)}% | Out: {Math.round((completionTokens / totalTokens) * 100)}%
+              الكاش جزء من Input، والتفكير جزء من Output
             </div>
           </div>
         </div>
@@ -254,19 +258,11 @@ export function TokenAnatomyModal({ isOpen, onClose, ledgerItem }: TokenAnatomyM
             تحليل كفاءة الطلب (Token Efficiency Diagnosis)
           </div>
           <p className="text-slate-300 leading-relaxed">
-            {sysPct > 50 ? (
-              <span className="text-amber-300 font-medium">
-                ⚠️ تعليمات النظام (System Rules) تستهلك أكثر من نصف حمولة التوكنز ({sysPct}%). يُنصح بتمكين الـ Prompt Caching لخفض التكلفة بـ 90%.
-              </span>
-            ) : cachedTokens > 0 ? (
-              <span className="text-emerald-300 font-medium">
-                ✅ تم استخدام كاش المزود بنجاح وتوفير {cachedTokens.toLocaleString()} توكن إدخال بتخفيض مالي فوري.
-              </span>
-            ) : (
-              <span>
-                الطلب متوازن: استهلك سؤال المستخدم وسياق الذاكرة والرد النهائي أحجاماً مناسبة دون تضخم.
-              </span>
-            )}
+            {measured.cacheLabel === "نتيجة محلية"
+              ? "أعيد استخدام نتيجة سابقة دون استدعاء المزوّد. تكلفة التوكنز الجديدة صفر."
+              : measured.cache === null ? "المزوّد لم يبلغ عن الكاش لهذا الطلب؛ لا نفترض أنه صفر أو مجاني."
+              : "توكنز الكاش جزء من الإدخال وتُسعّر حسب الموديل. حجم الكاش وحده لا يحدد نسبة التوفير المالي."}
+
           </p>
         </div>
 

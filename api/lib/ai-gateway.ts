@@ -17,6 +17,7 @@ import { getSystemSettings } from "./settings-cache";
 import { TRPCError } from "@trpc/server";
 import { createCipheriv, createDecipheriv, randomBytes, createHash } from "node:crypto";
 import { businessDateKey } from "./app-time";
+import { normalizeProviderUsage, priceProviderUsage, type ProviderUsage, type TokenPrices } from "./provider-usage";
 
 // ─── Types & Interfaces ─────────────────────────────────────────────
 
@@ -65,6 +66,8 @@ export interface NormalizedUsage {
   totalTokens: number;
   costUsd: number;
   costEgp: number;
+  providerUsage?: ProviderUsage;
+  costSource?: string;
 }
 
 export interface GatewayExecutionParams {
@@ -316,6 +319,7 @@ export interface AdminRouteSet {
 }
 
 export interface AdminRoute {
+  prices?: TokenPrices;
   slug: string;
   protocol: string;
   baseUrl: string;
@@ -331,7 +335,7 @@ export async function resolveAdminRoutes(
   purpose: AiPurpose,
   tier: AiTier,
 ): Promise<AdminRouteSet> {
-  if (Date.now() - _lastCacheUpdate > CACHE_TTL_MS || !_gatewayRouteCache.size) {
+  if (Date.now() - _lastCacheUpdate > CACHE_TTL_MS || !_lastCacheUpdate) {
     await refreshGatewayCache();
   }
 
@@ -344,6 +348,9 @@ export async function resolveAdminRoutes(
     priority,
     providerId: entry.provider.id,
     suppressReasoning: entry.model.supportsReasoning,
+    prices: { inputPricePer1M: entry.model.inputPricePer1M,
+      outputPricePer1M: entry.model.outputPricePer1M,
+      cachedPricePer1M: entry.model.cachedPricePer1M },
   });
 
   const seen = new Set<string>();
@@ -435,7 +442,7 @@ export async function executeAiGateway(params: GatewayExecutionParams): Promise<
   const tier: AiTier = (params.user.plan === "ultra" ? "ultra" : params.user.plan === "pro" ? "pro" : "free");
 
   // Ensure route cache is loaded
-  if (Date.now() - _lastCacheUpdate > CACHE_TTL_MS || !_gatewayRouteCache.size) {
+  if (Date.now() - _lastCacheUpdate > CACHE_TTL_MS || !_lastCacheUpdate) {
     await refreshGatewayCache();
   }
 
@@ -450,7 +457,6 @@ export async function executeAiGateway(params: GatewayExecutionParams): Promise<
 
   // Fallback to legacy System Settings if dynamic DB tables have not been populated yet
   const sysSettings = await getSystemSettings();
-  const exchangeRate = Number(sysSettings.usd_to_egp_rate || 48.5);
 
   let providerSlug = route?.provider.slug || "gemini";
   let modelId = route?.model.modelId || (tier === "ultra" ? "gemini-3.1-pro" : "gemini-3.1-flash-lite");
@@ -475,6 +481,7 @@ export async function executeAiGateway(params: GatewayExecutionParams): Promise<
   let cachedTokens = 0;
   let reasoningTokens = 0;
   let finishReason = "stop";
+  let providerUsage = normalizeProviderUsage(null);
 
   if (protocol === "gemini" || (!route && providerSlug === "gemini")) {
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -495,9 +502,11 @@ export async function executeAiGateway(params: GatewayExecutionParams): Promise<
 
     const result = await geminiModel.generateContent(userPromptContent || params.userQuery || "تحليل البيانات");
     text = result.response.text();
-    promptTokens = result.response.usageMetadata?.promptTokenCount || anatomy.systemPromptTokens + anatomy.userInputTokens;
-    completionTokens = result.response.usageMetadata?.candidatesTokenCount || estimateTokens(text);
-    cachedTokens = (result.response.usageMetadata as any)?.cachedContentTokenCount || 0;
+    providerUsage = normalizeProviderUsage(result.response.usageMetadata, "gemini");
+    promptTokens = providerUsage.promptTokens ?? 0;
+    completionTokens = providerUsage.completionTokens ?? 0;
+    cachedTokens = providerUsage.cachedTokens ?? 0;
+    reasoningTokens = providerUsage.reasoningTokens ?? 0;
   } else {
     // OpenAI Compatible standard (OpenRouter, DeepSeek, Groq, Fireworks, NVIDIA, Together, Ollama)
     const url = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
@@ -553,28 +562,25 @@ export async function executeAiGateway(params: GatewayExecutionParams): Promise<
       toolCalls = choice.message.tool_calls;
     }
 
-    promptTokens = data.usage?.prompt_tokens || anatomy.systemPromptTokens + anatomy.userInputTokens;
-    completionTokens = data.usage?.completion_tokens || estimateTokens(text);
-    cachedTokens = data.usage?.prompt_tokens_details?.cached_tokens || 0;
-    reasoningTokens = data.usage?.completion_tokens_details?.reasoning_tokens || 0;
+    providerUsage = normalizeProviderUsage(data, "openai", res.headers);
+    promptTokens = providerUsage.promptTokens ?? 0;
+    completionTokens = providerUsage.completionTokens ?? 0;
+    cachedTokens = providerUsage.cachedTokens ?? 0;
+    reasoningTokens = providerUsage.reasoningTokens ?? 0;
   }
 
   const totalTokens = promptTokens + completionTokens;
   const latencyMs = Date.now() - startedAt;
 
-  // 4. Real Money Cost Calculation
-  const inputPrice = route?.model.inputPricePer1M ?? 0.14;
-  const outputPrice = route?.model.outputPricePer1M ?? 0.56;
-  const cachedPrice = route?.model.cachedPricePer1M ?? 0.014;
-
-  const billableInput = Math.max(0, promptTokens - cachedTokens);
-  const costUsd =
-    (billableInput * inputPrice) / 1_000_000 +
-    (cachedTokens * cachedPrice) / 1_000_000 +
-    (completionTokens * outputPrice) / 1_000_000;
-  const costEgp = costUsd * exchangeRate;
+  // Reported cost wins; otherwise snapshot the actual route's configured prices.
+  const cost = priceProviderUsage(providerUsage, route?.model);
+  const costUsd = cost.usd ?? 0;
+  const configuredFx = Number(sysSettings.usd_to_egp_rate);
+  const fx = Number.isFinite(configuredFx) && configuredFx > 0 ? configuredFx : null;
+  const costEgp = cost.usd !== null && fx !== null ? cost.usd * fx : 0;
 
   const usage: NormalizedUsage = {
+    providerUsage, costSource: cost.source,
     promptTokens,
     completionTokens,
     cachedTokens,
@@ -617,6 +623,7 @@ export async function executeAiGateway(params: GatewayExecutionParams): Promise<
         metadata: {
           purpose: params.purpose,
           tier,
+          accounting: { version: 1, operationId: traceId, usage: providerUsage, cost, exchangeRate: fx, cacheKind: "provider", status: "success" },
           cachedTokensRatio: promptTokens > 0 ? (cachedTokens / promptTokens).toFixed(2) : "0",
         },
       });

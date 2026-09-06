@@ -20,6 +20,7 @@ import {
 } from "./classifier-contract";
 import {
   CLASSIFICATION_SYSTEM_PROMPT,
+  CLASSIFICATION_PROMPT_VERSION,
   buildClassificationUserPrompt,
   type ClauseForModel,
 } from "./classification-prompt";
@@ -66,10 +67,10 @@ import {
 import { pickPersonCandidate, pickAllPersonCandidates, resolvePersonForTransaction, compactArabic } from "./person-resolver";
 import { muscleMemoryLookup } from "./muscle-memory";
 import { matchSegment } from "./embedding-engine";
-import { db } from "../queries/connection";
-import { expenses } from "../../db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { businessDateKey } from "./app-time";
 import { LRUCache } from "lru-cache";
+import { createHash } from "node:crypto";
+import { recordClassificationUsage } from "../services/classification-usage-ledger";
 import { planFinancialEvents, type FinancialEventPlan } from "./financial-event-plan";
 
 // ─── Classification Result Cache ───────────────────────────────────
@@ -118,6 +119,7 @@ function makeCacheKey(input: {
   businessId?: number | null;
   model: string;
   thresholds: DecisionThresholds;
+  context: unknown;
 }): string {
   // Treat harmless Arabic orthographic variants and spacing consistently; a
   // cache miss here previously made equivalent Egyptian input pay the full
@@ -125,7 +127,8 @@ function makeCacheKey(input: {
   const normalized = normalizeArabicString(input.text);
   const scope = `${input.businessMode ? "biz" : "std"}${input.businessId ?? ""}`;
   const decision = `${input.thresholds.autoSave}/${input.thresholds.review}/${input.thresholds.escalate}`;
-  const version = `${SMART_PIPELINE_VERSION}+${CONFIDENCE_CALIBRATION.version}`;
+  const contextHash = createHash("sha256").update(JSON.stringify(input.context)).digest("hex").slice(0, 20);
+  const version = `${SMART_PIPELINE_VERSION}+${CONFIDENCE_CALIBRATION.version}+${CLASSIFICATION_PROMPT_VERSION}+${contextHash}`;
   return `cls:${version}:${tenantScope(input.userType, input.userId)}:${input.userPlan}:${scope}:${input.model}:${decision}:${normalized}`;
 }
 
@@ -254,6 +257,8 @@ export interface PipelineLog {
 }
 
 export interface PipelineResult {
+  usageOperationId?: string;
+  resultCacheSavedTokens?: number;
   items: ParsedTransaction[];
   decision: "auto_save" | "review" | "clarify";
   clarificationQuestion?: string;
@@ -657,26 +662,16 @@ function settingNumber(
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function extractKeywords(text: string): string[] {
-  const words = text
-    .replace(/[^\u0600-\u06FFa-zA-Z0-9\s]/g, " ")
-    .split(/\s+/)
-    .map(w => w.trim())
-    .filter(w => w.length >= 3);
-  
-  const stopWords = new Set([
-    "دفعت", "صرفت", "اشتريت", "جبت", "ركبت", "اكلت", "شربت", "حولت", "بعت", "سلفت", "دفعتل",
-    "جنيه", "الف", "مليون", "مبلغ", "فلوس", "حساب", "طريق", "طريقه", "طريقة", "عشان", "علشان",
-    "بتاع", "بتاعتي", "بتاعته", "بتاعتنا", "معاها", "معاه", "معاهم"
-  ]);
-  
-  return words.filter(w => !stopWords.has(w));
-}
-
 /**
  * Smart Pipeline (v3) - Hybrid Intelligence
  */
-export async function runSmartPipeline(
+export async function runSmartPipeline(input: PipelineInput): Promise<PipelineResult> {
+  const result = await runSmartPipelineInternal(input);
+  await recordClassificationUsage(input, result);
+  return result;
+}
+
+async function runSmartPipelineInternal(
   input: PipelineInput
 ): Promise<PipelineResult> {
   const started = Date.now();
@@ -831,11 +826,22 @@ async function classifyAdmittedEvents(
         DEFAULT_THRESHOLDS.escalate * 100,
       ) / 100,
   };
-  // 0. Check the classification cache (40-60% hit rate for repeated phrases).
+  // 0. Reuse classifications only within the same decision context.
   //
   // Deliberately AFTER the thresholds are resolved, because they are part of the key
   // now. This costs a settings read on a hit and buys the property that a configuration
   // change takes effect on the next request rather than in seven days.
+      const adminRoutes = await resolveAdminRoutes(
+        "classification",
+        (input.userPlan as AiTier) === "ultra"
+          ? "ultra"
+          : (input.userPlan as AiTier) === "pro"
+            ? "pro"
+            : "free",
+      ).catch((err) => {
+        console.warn("[Smart Pipeline] admin routes unavailable:", err);
+        return { preferred: null, routes: [] as never[] };
+      });
   const cacheKey = makeCacheKey({
     text: eventPlan.text,
     userPlan: input.userPlan,
@@ -844,25 +850,28 @@ async function classifyAdmittedEvents(
     businessMode: input.businessMode,
     businessId: input.businessId,
     model: modelUsed,
+    context: { day: businessDateKey(new Date()), profile: input.userProfileContext, dict: input.userDict, corrections: correctionRules,
+      businessCategories: input.businessMode ? input.businessCategories : [],
+      provider, routes: adminRoutes.routes.map((r) => [r.slug, r.model]),
+      settings: pipelineSettings, monthlyContext: input.monthlyContext,
+      skipClarification: Boolean(input.skipClarification), maxTokens: input.maxTokens },
     thresholds: decisionThresholds,
   });
   const cachedResult = classificationCache.get(cacheKey);
   if (cachedResult) {
     return {
       ...cachedResult,
-      // A cache hit spends nothing.
-      //
-      // The stored result carried the token count of the call that first produced it,
-      // and the caller billed it again on every hit — so a phrase answered once from a
-      // 120-token model call was charged 120 tokens every time it recurred, against a
-      // request that made no call at all. The counts move to `cachedTokens`, which is
-      // what "served without new spend" is called everywhere else in this file.
+      // Result reuse makes no provider call; savings are separate from prompt-cache reads.
       tokensUsed: 0,
-      cachedTokens: cachedResult.tokensUsed || cachedResult.cachedTokens || 0,
+      cachedTokens: 0,
+      resultCacheSavedTokens: cachedResult.tokensUsed || 0,
+      actualModelUsed: null,
       processingTimeMs: Date.now() - startTime,
       log: {
         ...cachedResult.log,
-        cachedTokens: cachedResult.tokensUsed || cachedResult.cachedTokens || 0,
+        cachedTokens: 0,
+        providerRoute: undefined,
+        aiResult: { attempted: false, succeeded: true, routeReason: "result_cache" },
         routing: {
           ...(cachedResult.log.routing || {}),
           route: "classification_cache_hit",
@@ -1790,46 +1799,6 @@ async function classifyAdmittedEvents(
       ? failedSegments.map((s) => s.text).join("\n")
       : normalized.forAI;
 
-    // Fetch RAG Context (Recent user transactions matching keywords)
-    let userHistoryContext = "";
-    let userHistoryCategories: Array<{ category: string; count: number }> = [];
-    try {
-      const recentTx = await db.select({
-        item_name: expenses.description,
-        main_category: expenses.category,
-        sub_category: expenses.subCategory
-      })
-      .from(expenses)
-      .where(and(eq(expenses.userId, input.userId), eq(expenses.userType, input.userType)))
-      .orderBy(desc(expenses.createdAt))
-      .limit(30);
-      
-      if (recentTx.length > 0) {
-        const keywords = extractKeywords(textToClassify);
-        const matchedTx = keywords.length > 0 
-          ? recentTx.filter(tx => {
-              const descClean = normalizeArabicString(tx.item_name || "").toLowerCase();
-              return keywords.some(kw => descClean.includes(normalizeArabicString(kw).toLowerCase()));
-            }).slice(0, 3)
-          : [];
-
-        if (matchedTx.length > 0) {
-          userHistoryContext = matchedTx.map(tx => {
-            const words = (tx.item_name || "").split(/\s+/);
-            const truncated = words.slice(0, 5).join(" ") + (words.length > 5 ? "..." : "");
-            return `- "${truncated}" -> ${tx.main_category}/${tx.sub_category || "عام"}`;
-          }).join("\n");
-          const categoryCounts = new Map<string, number>();
-          for (const tx of matchedTx) {
-            categoryCounts.set(tx.main_category, (categoryCounts.get(tx.main_category) || 0) + 1);
-          }
-          userHistoryCategories = Array.from(categoryCounts.entries()).map(([category, count]) => ({ category, count }));
-        }
-      }
-    } catch (e) {
-      console.warn("RAG DB Fetch Failed:", e);
-    }
-
     // Build the clause list the model will answer against.
     //
     // Amount comes from the SHARED extractor, never from `segment.amount`: the
@@ -1844,6 +1813,9 @@ async function classifyAdmittedEvents(
         index: i + 1,
         text: entry.segment.text,
         amount: local?.amount ?? segAmounts[0] ?? null,
+        // Local drafts default to EGP without currency provenance. Let the model
+        // read the original text instead of presenting that default as evidence.
+        currency: null,
         direction: (local?.type ||
           entry.segment.direction ||
           "expense") as ClauseForModel["direction"],
@@ -1869,17 +1841,7 @@ async function classifyAdmittedEvents(
       // runtime. Now the model marked default for classification at this plan answers
       // first, its siblings queue behind it, and the built-in keys remain the floor —
       // an install with an empty table behaves exactly as before.
-      const adminRoutes = await resolveAdminRoutes(
-        "classification",
-        (input.userPlan as AiTier) === "ultra"
-          ? "ultra"
-          : (input.userPlan as AiTier) === "pro"
-            ? "pro"
-            : "free",
-      ).catch((err) => {
-        console.warn("[Smart Pipeline] admin routes unavailable:", err);
-        return { preferred: null, routes: [] as never[] };
-      });
+
 
       const chain = buildProviderChain({
         preferred: adminRoutes.preferred?.slug || provider,
@@ -1902,6 +1864,7 @@ async function classifyAdmittedEvents(
           priority: route.priority,
           providerId: route.providerId,
           suppressReasoning: route.suppressReasoning,
+          prices: route.prices,
         })),
       });
 
@@ -1916,7 +1879,7 @@ async function classifyAdmittedEvents(
             name: p.name,
             relationship: p.relationship,
           })),
-          frequentCategories: userHistoryCategories.map((c) => c.category),
+          businessMode: Boolean(input.businessMode && input.businessId),
           businessCategories: input.businessCategories?.map((c) => ({
             nameAr: c.nameAr,
             type: c.type,
@@ -1925,7 +1888,7 @@ async function classifyAdmittedEvents(
         // One category per clause is a handful of tokens, not the 1024 the old contract
         // needed for reasoning, decomposed_sentences, amounts and self-assessed
         // confidence — none of which we keep.
-        maxOutputTokens: Math.min(input.maxTokens || 512, 60 + clauses.length * 40),
+        maxOutputTokens: Math.min(input.maxTokens || 512, 96 + clauses.length * 96),
         temperature: 0.1,
         schema: CATEGORY_CLASSIFIER_SCHEMA as unknown as StructuredSchema,
         // Long enough for a full narrative, short enough that a hung provider still
@@ -1977,7 +1940,7 @@ async function classifyAdmittedEvents(
       // Merge the ONE thing the model was asked for back onto the items the local pass
       // built. The amount, direction and person never left this process, so a wrong or
       // missing answer costs a category, not a transaction.
-      const merged = mergeCategoryDecisions(escalationClauses, reply.items);
+      const merged = mergeCategoryDecisions(escalationClauses, reply.items, input);
       classItems = merged.items;
 
       // A reply that arrived is not a reply that answered.
@@ -2059,6 +2022,8 @@ async function classifyAdmittedEvents(
         // errored" and the only one worth paging about: the user's answer now depends
         // entirely on what the local path already worked out.
         llmAttempts = err.attempts;
+        totalTokens += err.attempts.reduce((sum, a) => sum + (a.totalTokens ?? 0), 0);
+        cachedTokens = err.attempts.reduce((sum, a) => sum + (a.cachedTokens ?? 0), 0);
         console.error(
           `[Smart Pipeline] Whole provider chain exhausted (${err.attempts.length} attempts): ${errMsg}`,
         );
@@ -2230,6 +2195,16 @@ async function classifyAdmittedEvents(
     finalItems,
     decomposition.isComplex ? "" : input.text,
   );
+  // Generic taxonomy normalization has no access to this tenant's business allowlist.
+  // Restore only an exact, type-matched custom value from the admitted item.
+  normalizedFinalItems.forEach((normalizedItem, index) => {
+    const original = finalItems[index];
+    if (input.businessMode && input.businessId && original.businessId === input.businessId &&
+      original.category === "عمل" && normalizedItem.category === "عمل" &&
+      input.businessCategories?.some((c) => c.nameAr === original.subCategory && c.type === original.type)) {
+      normalizedItem.subCategory = original.subCategory;
+    }
+  });
 
   // --- DEEP FIX: Content-Based Recovery (Reverse Mapping) ---
   //
@@ -2308,6 +2283,9 @@ async function classifyAdmittedEvents(
               totalExpense: Number(input.monthlyContext.totalExpense || 0),
             }
           : undefined,
+        input.businessMode && input.businessId ? {
+          businessId: input.businessId, categories: input.businessCategories || [],
+        } : undefined,
       )
     : {
         items: calibratedItems,
@@ -2470,7 +2448,9 @@ async function classifyAdmittedEvents(
 
   // Cache successful classifications (auto_save and review only — don't cache clarify
   // because the user hasn't answered yet)
-  if (decision === "auto_save" || decision === "review") {
+  if ((decision === "auto_save" || decision === "review") &&
+      (!requiresAI || (llmAttempts.some((a) => a.ok) && modelReplyProblems.length === 0)) &&
+      !verifiedFinalItems.some((item) => item.reviewReasons?.some((r) => r === "model_ambiguous" || r === "model_conflict"))) {
     classificationCache.set(cacheKey, result);
   }
 
