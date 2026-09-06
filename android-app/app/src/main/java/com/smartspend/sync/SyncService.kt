@@ -1,7 +1,6 @@
 package com.smartspend.sync
 
 import android.app.Notification
-import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
@@ -13,18 +12,10 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-/**
- * SyncService — NotificationListenerService
- *
- * Listens to ALL system notifications.
- * Filters for Egyptian bank / wallet senders.
- * POSTs matching notifications to SmartSpend /api/sms/ingest.
- *
- * This approach is:
- *  ✅ Allowed by Google Play policies (NotificationListenerService is a standard API)
- *  ✅ Used by millions of legitimate apps (Wear OS, Mi Band, notification managers)
- *  ✅ Does NOT read SMS inbox (only on-screen notification text)
- *  ✅ Works for InstaPay, Vodafone Cash, Bank SMS, and all wallet apps
+/** Receives notification text from explicitly allowed packages, not the SMS inbox.
+ * Availability depends on device settings, app notification contents, OS restrictions and permissions.
+ * Package IDs and sender coverage require device verification; this is not a claim of all-bank coverage.
+ * Persists a bounded owner/endpoint-scoped outbox before delivery and removes only acknowledged items.
  */
 class SyncService : NotificationListenerService() {
 
@@ -116,252 +107,115 @@ class SyncService : NotificationListenerService() {
             "سحب نقدي", "شراء من تاجر", "تحويل من", "تحويل إلى", "تحويل الى"
         )
 
-        /** Helper to identify personal phone numbers and avoid importing private chats */
-        fun isPersonalPhoneNumber(title: String): Boolean {
-            val clean = title.replace("\\s".toRegex(), "")
-            return clean.matches("^(\\+?20)?0?1[0125]\\d{8}$".toRegex()) || 
-      override fun onNotificationPosted(sbn: StatusBarNotification) {
+        fun isPersonalPhoneNumber(title: String): Boolean = title.replace(" ", "").matches("^(\\+?20)?0?1[0125]\\d{8}$".toRegex())
+        private val queueLock = Any()
+    }
+
+    private val client = OkHttpClient.Builder().followRedirects(false).followSslRedirects(false).connectTimeout(10, TimeUnit.SECONDS).readTimeout(30, TimeUnit.SECONDS).callTimeout(40, TimeUnit.SECONDS).build()
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var flushing = false
+    @Volatile private var destroyed = false
+    private val prefs get() = getSharedPreferences("smartspend", MODE_PRIVATE)
+    private fun hash(value: String) = java.security.MessageDigest.getInstance("SHA-256").digest(value.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+    private fun scope(token: String, url: String) = "capture_queue_" + hash(token + "|" + url)
+    private val networkCallback = object : android.net.ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: android.net.Network) { flushQueue() }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        try { (getSystemService(CONNECTIVITY_SERVICE) as android.net.ConnectivityManager).registerDefaultNetworkCallback(networkCallback) } catch (_: Exception) { }
+    }
+    override fun onListenerConnected() { super.onListenerConnected(); flushQueue() }
+    override fun onDestroy() {
+        destroyed = true
+        handler.removeCallbacksAndMessages(null)
+        try { (getSystemService(CONNECTIVITY_SERVICE) as android.net.ConnectivityManager).unregisterNetworkCallback(networkCallback) } catch (_: Exception) { }
+        super.onDestroy()
+    }
+    override fun onNotificationPosted(sbn: StatusBarNotification) {
         try {
-            val pkg = (sbn.packageName ?: "").lowercase()
-
-            // 0. Exclude social and chat packages immediately to protect private communications
-            if (SOCIAL_CHAT_PACKAGES.contains(pkg) || pkg.contains("messenger") || pkg.contains("chat") || pkg.contains("telegram")) {
-                Log.d(TAG, "Ignoring chat/social notification from package: $pkg")
-                return
+            val pkg = sbn.packageName.lowercase()
+            if (pkg !in SMS_PACKAGES && pkg !in FINANCIAL_PACKAGES) return
+            if ((sbn.notification.flags and Notification.FLAG_GROUP_SUMMARY) != 0) return
+            val extras = sbn.notification.extras ?: return
+            val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim() ?: ""
+            if (pkg in SMS_PACKAGES && (isPersonalPhoneNumber(title) || BANK_SENDER_KEYWORDS.none { word ->
+                Regex("(?:^|[^a-z])" + Regex.escape(word) + "(?:$|[^a-z])",RegexOption.IGNORE_CASE).containsMatchIn(title)
+            })) return
+            val message = (extras.getCharSequence(Notification.EXTRA_BIG_TEXT) ?: extras.getCharSequence(Notification.EXTRA_TEXT))?.toString()?.trim() ?: return
+            if (message.length < 5 || message.length > 12000) return
+            val content = message.lowercase()
+            // Never exempt OTP because it also has a transaction reference.
+            if (SENSITIVE_IGNORED_KEYWORDS.any { content.contains(it) } || OTP_PATTERNS.any { it.containsMatchIn(content) }) return
+            if (TRANSACTION_KEYWORDS.none { content.contains(it) } || message.none { it.isDigit() }) return
+            val token = prefs.getString("webhook_token",null) ?: return
+            val url = prefs.getString("ingest_url",null) ?: return
+            if (!url.startsWith("https://")) return
+            val time = if (sbn.notification.`when` > 0) sbn.notification.`when` else sbn.postTime
+            val item = JSONObject().apply {
+                put("eventId",hash(pkg + "|" + sbn.key + "|" + time + "|" + message))
+                put("message",message);put("sender",title.take(100));put("packageName",pkg)
+                put("timestamp",java.time.Instant.ofEpochMilli(time).toString());put("source","android_notification")
             }
-
-            val extras   = sbn.notification?.extras ?: return
-            // Support formatted Spannable titles properly using getCharSequence instead of getString
-            val title    = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim() ?: ""
-            val text     = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim() ?: ""
-            val bigText  = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()?.trim() ?: text
-
-            if (title.isBlank() && text.isBlank()) return
-
-            // 1. If it is an SMS app and the sender is a personal phone number, ignore it immediately
-            val isSmsApp = SMS_PACKAGES.any { pkg == it }
-            if (isSmsApp && isPersonalPhoneNumber(title)) {
-                Log.d(TAG, "Ignoring SMS notification from personal phone number: $title")
-                return
-            }
-
-            val fullContent = "$title $text $bigText"
-            val contentLower = fullContent.lowercase()
-
-            // 2. Ignore pure text promotional notifications that don't have any digits
-            val hasDigits = fullContent.any { it.isDigit() }
-            if (!hasDigits) {
-                Log.d(TAG, "Ignoring notification without any digits (cannot contain transaction amount)")
-                return
-            }
-
-            // 3. Filter out OTP / sensitive non-financial messages using regex to avoid false positives on reference/transaction numbers
-            val isOtp = OTP_PATTERNS.any { it.containsMatchIn(contentLower) } || 
-                        (SENSITIVE_IGNORED_KEYWORDS.any { contentLower.contains(it) } && 
-                         !contentLower.contains("ref") && 
-                         !contentLower.contains("txn") && 
-                         !contentLower.contains("رقم العمليه") && 
-                         !contentLower.contains("المرجع"))
-            if (isOtp) {
-                Log.d(TAG, "Ignoring sensitive OTP or verification notification")
-                return
-            }
-
-            // 4. Extract transaction & financial marker presence
-            val hasTxKeyword = TRANSACTION_KEYWORDS.any { contentLower.contains(it) }
-            val hasFinancialMarker = FINANCIAL_MARKERS.any { contentLower.contains(it) }
-
-            // 5. Package categorization
-            val isFinancialApp = FINANCIAL_PACKAGES.any { pkg == it } ||
-                                 pkg.startsWith("com.cib.") ||
-                                 pkg.startsWith("com.nbe.") ||
-                                 pkg.startsWith("com.qnb.") ||
-                                 pkg.startsWith("com.banquemisr.") ||
-                                 pkg.startsWith("com.ofss.fcdb.") ||
-                                 pkg.contains("wallet", ignoreCase = true) ||
-                                 pkg.contains("pay", ignoreCase = true) ||
-                                 pkg.contains("bank", ignoreCase = true) ||
-                                 pkg.contains("cash", ignoreCase = true)
-
-            // 6. Greedy-but-Smart transaction detection heuristic
-            var isTransactional = false
-
-            if (isFinancialApp) {
-                // If it is a known/suspected financial application, any transaction keyword is sufficient
-                if (hasTxKeyword) {
-                    isTransactional = true
-                }
-            } else if (isSmsApp) {
-                val sender = title.lowercase()
-                val hasBankKeyword = BANK_SENDER_KEYWORDS.any { sender.contains(it) }
-
-                if (hasBankKeyword && hasTxKeyword) {
-                    isTransactional = true
-                } else if (hasTxKeyword && hasFinancialMarker) {
-                    // Extremely important: If the SMS is from an unexpected number format (like a normal mobile phone number
-                    // for P2P local wallet transfers), we let it pass ONLY if it has both a transaction keyword AND a financial marker.
-                    isTransactional = true
-                }
-            } else {
-                // Greedy fallback: If the notification is from an unexpected package (e.g. customized browser, instant messaging app,
-                // or unlisted service), but contains a strong transactional signature, pass it to the backend parser.
-                if (hasTxKeyword && hasFinancialMarker) {
-                    isTransactional = true
+            synchronized(queueLock) {
+                val key = scope(token,url)
+                val queue = JSONArray(prefs.getString(key,"[]") ?: "[]")
+                if ((0 until queue.length()).none { queue.getJSONObject(it).optString("eventId") == item.getString("eventId") }) {
+                    if (queue.length() >= 500) {
+                        prefs.edit().putString("capture_sync_error","queue_full").apply()
+                        return
+                    }
+                    queue.put(item)
+                    // Commit before networking; an OS kill after receipt cannot erase an unacknowledged event.
+                    if (!prefs.edit().putString(key,queue.toString()).commit()) return
                 }
             }
-
-            if (!isTransactional) {
-                Log.d(TAG, "Ignoring non-transactional notification | title=$title | pkg=$pkg")
-                return
-            }
-
-            Log.d(TAG, "🏦 Bank/Wallet notification detected | title=$title | pkg=$pkg")
-
-            // Format notification postTime as ISO-8601 string to preserve original timestamp
-            val postTime = sbn.postTime
-            val timestamp = try {
-                val df = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US)
-                df.timeZone = java.util.TimeZone.getTimeZone("UTC")
-                df.format(java.util.Date(postTime))
-            } catch (e: Exception) {
-                java.time.Instant.ofEpochMilli(postTime).toString()
-            }
-
-            // ── Send to SmartSpend ────────────────────────────────────────────
-            sendToSmartSpend(
-                sender    = title.ifBlank { pkg },
-                message   = bigText.ifBlank { text },
-                timestamp = timestamp
-            )
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error processing notification", e)
-        }
+            flushQueue()
+        } catch (_: Exception) { Log.w(TAG,"Notification could not be retained") }
     }
 
-    private fun saveToQueue(sender: String, message: String, timestamp: String) {
-        val prefs = getSharedPreferences("smartspend", MODE_PRIVATE)
-        val queueStr = prefs.getString("pending_notifications_queue", "[]") ?: "[]"
-        try {
-            val array = JSONArray(queueStr)
-            val obj = JSONObject().apply {
-                put("sender", sender)
-                put("message", message)
-                put("timestamp", timestamp)
-            }
-            array.put(obj)
-            prefs.edit().putString("pending_notifications_queue", array.toString()).apply()
-            Log.d(TAG, "Notification saved to offline queue. Total items in queue: ${array.length()}")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error saving to offline queue", e)
-        }
+    private fun flushQueue() {
+        synchronized(queueLock) { if (flushing || destroyed) return; flushing = true }
+        val token = prefs.getString("webhook_token",null)
+        val url = prefs.getString("ingest_url",null)
+        if (token == null || url == null || !url.startsWith("https://")) { synchronized(queueLock) {flushing = false};return }
+        sendHead(token,url,scope(token,url))
     }
-
-    private fun tryFlushQueue() {
-        val prefs = getSharedPreferences("smartspend", MODE_PRIVATE)
-        val queueStr = prefs.getString("pending_notifications_queue", "[]") ?: "[]"
-        if (queueStr == "[]") return
-
-        val token = prefs.getString("webhook_token", null) ?: return
-        val ingestUrl = prefs.getString("ingest_url", null) ?: return
-
-        try {
-            val array = JSONArray(queueStr)
-            if (array.length() == 0) return
-
-            Log.d(TAG, "Attempting to flush ${array.length()} offline notifications")
-            val remaining = JSONArray()
-            sendNextInQueue(0, array, token, ingestUrl, remaining)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error flushing queue", e)
+    private fun sendHead(token: String,url: String,key: String) {
+        if (destroyed || token != prefs.getString("webhook_token",null) || url != prefs.getString("ingest_url",null)) {synchronized(queueLock){flushing=false};return}
+        val item = synchronized(queueLock) {
+            val queue = JSONArray(prefs.getString(key,"[]") ?: "[]")
+            if (queue.length() == 0) {flushing=false;return}
+            queue.getJSONObject(0)
         }
-    }
-
-    private fun sendNextInQueue(index: Int, array: JSONArray, token: String, ingestUrl: String, remaining: JSONArray) {
-        if (index >= array.length()) {
-            getSharedPreferences("smartspend", MODE_PRIVATE)
-                .edit()
-                .putString("pending_notifications_queue", remaining.toString())
-                .apply()
-            Log.d(TAG, "Offline queue flush completed. Remaining items: ${remaining.length()}")
-            return
-        }
-
-        val item = array.getJSONObject(index)
-        val sender = item.getString("sender")
-        val message = item.getString("message")
-        val timestamp = item.getString("timestamp")
-
-        val body = JSONObject().apply {
-            put("message",   message)
-            put("sender",    sender)
-            put("timestamp", timestamp)
-            put("source",    "android_notification_retry")
-        }.toString()
-
-        val request = Request.Builder()
-            .url(ingestUrl)
-            .addHeader("Authorization", "Bearer $token")
-            .addHeader("Content-Type",  "application/json")
-            .post(body.toRequestBody("application/json".toMediaType()))
-            .build()
-
-        httpClient.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                Log.e(TAG, "Failed to send queued notification: ${e.message}")
-                remaining.put(item)
-                sendNextInQueue(index + 1, array, token, ingestUrl, remaining)
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                if (response.isSuccessful) {
-                    Log.d(TAG, "Successfully sent queued notification: HTTP ${response.code}")
-                } else {
-                    Log.w(TAG, "Server rejected queued notification: HTTP ${response.code}. Discarding.")
-                }
-                response.close()
-                sendNextInQueue(index + 1, array, token, ingestUrl, remaining)
-            }
-        })
-    }
-
-    private fun sendToSmartSpend(sender: String, message: String, timestamp: String) {
-        val prefs     = getSharedPreferences("smartspend", MODE_PRIVATE)
-        val token     = prefs.getString("webhook_token", null) ?: run {
-            Log.w(TAG, "No token configured — skipping")
-            return
-        }
-        val ingestUrl = prefs.getString("ingest_url", null) ?: run {
-            Log.w(TAG, "No ingest URL configured — skipping")
-            return
-        }
-
-        val body = JSONObject().apply {
-            put("message",   message)
-            put("sender",    sender)
-            put("timestamp", timestamp)
-            put("source",    "android_notification")
-        }.toString()
-
-        val request = Request.Builder()
-            .url(ingestUrl)
-            .addHeader("Authorization", "Bearer $token")
-            .addHeader("Content-Type",  "application/json")
-            .post(body.toRequestBody("application/json".toMediaType()))
-            .build()
-
-        httpClient.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                Log.e(TAG, "Failed to send notification to SmartSpend: ${e.message}. Saving to offline queue.")
-                saveToQueue(sender, message, timestamp)
-            }
-            override fun onResponse(call: Call, response: Response) {
+        val request = Request.Builder().url(url).header("Authorization","Bearer $token")
+            .post(item.toString().toRequestBody("application/json".toMediaType())).build()
+        client.newCall(request).enqueue(object: Callback {
+            override fun onFailure(call: Call,e: IOException) { retryLater("network") }
+            override fun onResponse(call: Call,response: Response) {
                 val code = response.code
-                val respBody = response.body?.string()
-                Log.d(TAG, "✅ Sent to SmartSpend | HTTP $code | $respBody")
-                response.close()
-                tryFlushQueue()
+                val body = try { response.use { it.body?.string() } } catch (_: IOException) { retryLater("response_body"); return }
+                val acknowledgement = try {JSONObject(body ?: "{}")} catch (_: Exception) {JSONObject()}
+                if (code in 200..299 && acknowledgement.optBoolean("received",false)) {
+                    synchronized(queueLock) {
+                        val queue=JSONArray(prefs.getString(key,"[]") ?: "[]")
+                        val remaining=JSONArray()
+                        for (i in 0 until queue.length()) if (queue.getJSONObject(i).optString("eventId") != item.optString("eventId")) remaining.put(queue.getJSONObject(i))
+                        prefs.edit().putString(key,remaining.toString()).remove("capture_sync_error").commit()
+                    }
+                    sendHead(token,url,key)
+                } else {
+                    // 401/403/409 need attention; 429/5xx retry later. None is silently discarded.
+                    prefs.edit().putString("capture_sync_error","http_$code").apply()
+                    if (code == 429 || code >= 500) retryLater("http_$code") else synchronized(queueLock){flushing=false}
+                }
             }
         })
+    }
+    private fun retryLater(reason: String) {
+        synchronized(queueLock){flushing=false}
+        prefs.edit().putString("capture_sync_error",reason).apply()
+        if (!destroyed) handler.postDelayed({flushQueue()},60_000)
     }
 }

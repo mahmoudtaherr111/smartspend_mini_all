@@ -43,7 +43,7 @@ const FINANCIAL_VERB_STEMS = [
 ];
 
 /** Object pronouns that attach after the verb and before the negation ش. */
-const OBJECT_SUFFIXES = ["هاش", "هوش", "همش", "هش", "نيش", "ناش", "ها", "هم", "ه", "ني", "نا"];
+const OBJECT_SUFFIXES = ["ها", "هو", "هم", "ني", "نا", "ه"];
 
 /**
  * Peels the Egyptian negation circumfix off a token and returns the bare verb, or null.
@@ -100,7 +100,7 @@ const PAID_BY_OTHERS = normalizeMarkers([
 export function detectNegation(text: string): NegationResult {
   if (!text) return { negated: false };
   const norm = normalizeArabic(text).toLowerCase().replace(
-    /(?:^|\s)(?:مادفعتش|مدفعتش|ما دفعتش|مادفعناش|مدفعناش)\s+(?:غير|الا)\s+/g,
+    /(?:^|\s)(?:مادفعتش|مدفعتش|ما دفعتش|مادفعناش|مدفعناش)\s+(?:غير|الا)(?=\s|[0-9٠-٩۰-۹])\s*/g,
     " دفعت ",
   );
 
@@ -120,8 +120,13 @@ export function detectNegation(text: string): NegationResult {
   }
 
   // Generated circumfix negation on a financial verb.
-  for (const token of norm.split(/[\s،,.؟?!؛;:()]+/)) {
+  const tokens = norm.split(/[\s،,.؟?!؛;:()]+/);
+  for (const [index, token] of tokens.entries()) {
     if (!token) continue;
+    if (token === "ما" && tokens[index + 1]) {
+      const separated = stripNegationCircumfix(`ما${tokens[index + 1]}`);
+      if (separated && isFinancialStem(separated)) return {negated: true,kind:"negated_verb",marker:`ما ${tokens[index + 1]}`};
+    }
     const stem = stripNegationCircumfix(token.replace(/^[وف](?=ما?)/, ""));
     if (stem && isFinancialStem(stem)) {
       return { negated: true, kind: "negated_verb", marker: token };

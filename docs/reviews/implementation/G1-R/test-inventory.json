@@ -1,0 +1,557 @@
+{
+  "generatedAt": "2026-09-05",
+  "milestone": "G1-R",
+  "source": "api/qa/classification-test-manifest.ts — this file is derived from it, not the other way round",
+  "howScopeIsDecided": "a test file is in scope when it imports one of SCOPE_MODULES. By import, never by filename.",
+  "scopeModules": [
+    "admissibility-gate",
+    "ai-gateway",
+    "ai-provider-registry",
+    "amount-ledger",
+    "arabic-number-parser",
+    "arabic-token-match",
+    "category-registry",
+    "classification-baseline",
+    "classification-cases",
+    "classification-core-report",
+    "classification-decision",
+    "classification-evidence",
+    "classification-merge",
+    "classification-prompt",
+    "classification-scorer",
+    "classification-system-metrics",
+    "classifier-contract",
+    "confidence-calibration.generated",
+    "confidence-calibrator",
+    "correction-rules",
+    "direction-governed-taxonomy",
+    "egyptian-dictionary",
+    "embedding-engine",
+    "entity-extractor",
+    "final-acceptance",
+    "financial-event-plan",
+    "fireworks-embedding-client",
+    "fuzzy-match",
+    "intent-detector",
+    "llm-provider-chain",
+    "llm-router",
+    "model-mapper",
+    "muscle-memory",
+    "narrative-decomposer",
+    "negation-detector",
+    "normalizer-v2",
+    "person-resolver",
+    "post-classifier-verifier",
+    "provider-health",
+    "qa/fixtures",
+    "rule-engine",
+    "smart-pipeline",
+    "system-settings-registry",
+    "taxonomy-ssot",
+    "text-normalizer",
+    "voice-intake-gate"
+  ],
+  "neutralisedProviderKeys": [
+    "DEEPSEEK_API_KEY",
+    "FIREWORKS_API_KEY",
+    "GEMINI_API_KEY",
+    "GROQ_API_KEY",
+    "NVIDIA_API_KEY",
+    "OPENAI_API_KEY",
+    "OPENROUTER_API_KEY"
+  ],
+  "included": [
+    {
+      "file": "api/lib/admin-model-switch.test.ts",
+      "sha256": "7183d3709d13cba5",
+      "touches": [
+        "ai-gateway",
+        "llm-provider-chain"
+      ],
+      "mocksDatabase": true,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/admissibility-gate.test.ts",
+      "sha256": "894e2e73667dc9e6",
+      "touches": [
+        "admissibility-gate",
+        "normalizer-v2"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/ai-routing.test.ts",
+      "sha256": "d5bdfbd5805f56a0",
+      "touches": [
+        "rule-engine"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/amount-ledger.test.ts",
+      "sha256": "4abcc39e3d31b4ee",
+      "touches": [
+        "amount-ledger"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/arabic-number-parser.test.ts",
+      "sha256": "0b8d337e58032838",
+      "touches": [
+        "entity-extractor"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/arabic-token-match.test.ts",
+      "sha256": "b02a6073453d07a1",
+      "touches": [
+        "arabic-token-match"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/category-registry.integrity.test.ts",
+      "sha256": "17de8811aed6c355",
+      "touches": [
+        "category-registry",
+        "taxonomy-ssot"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/classification-acceptance.test.ts",
+      "sha256": "6962e9dbb0bda7f7",
+      "touches": [
+        "classification-evidence",
+        "classification-merge",
+        "classifier-contract",
+        "confidence-calibrator",
+        "final-acceptance",
+        "model-mapper",
+        "narrative-decomposer",
+        "post-classifier-verifier",
+        "rule-engine",
+        "smart-pipeline"
+      ],
+      "mocksDatabase": true,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/classification-benchmark.test.ts",
+      "sha256": "41a608d581e7b80b",
+      "touches": [
+        "classification-scorer",
+        "classification-system-metrics",
+        "qa/fixtures",
+        "smart-pipeline"
+      ],
+      "mocksDatabase": true,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/classification-cache-invalidation.test.ts",
+      "sha256": "166e565f91496926",
+      "touches": [
+        "smart-pipeline"
+      ],
+      "mocksDatabase": true,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/classification-cache-scope.test.ts",
+      "sha256": "20835c7d0ab735cf",
+      "touches": [
+        "model-mapper",
+        "smart-pipeline"
+      ],
+      "mocksDatabase": true,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/classification-evidence.test.ts",
+      "sha256": "9da214c002423529",
+      "touches": [
+        "classification-evidence"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/classification-golden.test.ts",
+      "sha256": "4960da71c19330b3",
+      "touches": [
+        "smart-pipeline"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/classification-prompt-injection.test.ts",
+      "sha256": "b18ecfbe28ac0f18",
+      "touches": [
+        "classification-prompt"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/classifier-contract.test.ts",
+      "sha256": "cb19df662c9f1e23",
+      "touches": [
+        "category-registry",
+        "classification-prompt",
+        "classifier-contract"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/complex-sentences.test.ts",
+      "sha256": "aec81ff1f5fa63e6",
+      "touches": [
+        "narrative-decomposer",
+        "person-resolver"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/comprehensive-classification.test.ts",
+      "sha256": "a17898d3f517587d",
+      "touches": [
+        "rule-engine",
+        "smart-pipeline"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/correction-rules.test.ts",
+      "sha256": "2aa6b129dfb1543a",
+      "touches": [
+        "correction-rules"
+      ],
+      "mocksDatabase": true,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/debug-atm.test.ts",
+      "sha256": "2a4dda3127bf42e6",
+      "touches": [
+        "intent-detector"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/debug-atm2.test.ts",
+      "sha256": "6ac8f7465ea2e94f",
+      "touches": [
+        "rule-engine"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/direction-governed-taxonomy.test.ts",
+      "sha256": "6d2418fca6f3075e",
+      "touches": [
+        "direction-governed-taxonomy"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/e2e-classification.test.ts",
+      "sha256": "faaa8cfa5f88e8a0",
+      "touches": [
+        "embedding-engine",
+        "rule-engine",
+        "smart-pipeline"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": true
+    },
+    {
+      "file": "api/lib/embedding-engine.test.ts",
+      "sha256": "99d9c21734a63c22",
+      "touches": [
+        "embedding-engine"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/financial-event-pipeline.test.ts",
+      "sha256": "848e1092087ed705",
+      "touches": [
+        "model-mapper",
+        "smart-pipeline"
+      ],
+      "mocksDatabase": true,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/financial-event-quality.test.ts",
+      "sha256": "782a6b1a4b541f58",
+      "touches": [
+        "classification-scorer",
+        "classification-system-metrics",
+        "model-mapper",
+        "qa/fixtures",
+        "smart-pipeline"
+      ],
+      "mocksDatabase": true,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/financial-event-verification.test.ts",
+      "sha256": "25b1de704ebe8a4c",
+      "touches": [
+        "classification-evidence",
+        "confidence-calibrator",
+        "final-acceptance",
+        "post-classifier-verifier",
+        "rule-engine"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/fireworks-embedding-client.test.ts",
+      "sha256": "61c5130e97f1653c",
+      "touches": [
+        "fireworks-embedding-client"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/learning-loop.test.ts",
+      "sha256": "4ee7d4f2a758623c",
+      "touches": [
+        "correction-rules",
+        "smart-pipeline"
+      ],
+      "mocksDatabase": true,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/llm-router.test.ts",
+      "sha256": "e66ad12def6c3676",
+      "touches": [
+        "llm-provider-chain",
+        "llm-router"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/model-mapper.test.ts",
+      "sha256": "fd222a8748f60769",
+      "touches": [
+        "model-mapper"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/muscle-memory.regression.test.ts",
+      "sha256": "6d42428430b9a298",
+      "touches": [
+        "muscle-memory"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/negation-detector.test.ts",
+      "sha256": "fb58090c10d2681a",
+      "touches": [
+        "negation-detector"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/normalizer-v2.test.ts",
+      "sha256": "dd39fd91812ff69f",
+      "touches": [
+        "normalizer-v2"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/person-resolver.test.ts",
+      "sha256": "5ccf17c50fb38bc7",
+      "touches": [
+        "person-resolver"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/provider-route-acceptance.test.ts",
+      "sha256": "f18568ab0a802ab8",
+      "touches": [
+        "llm-provider-chain",
+        "llm-router"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/r1-acceptance.test.ts",
+      "sha256": "c0393844a958077a",
+      "touches": [
+        "entity-extractor",
+        "person-resolver"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/receipt-image-parser.test.ts",
+      "sha256": "eef3a1334a7b3479",
+      "touches": [],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/rule-engine-lexical.test.ts",
+      "sha256": "007049543ed8968c",
+      "touches": [
+        "egyptian-dictionary",
+        "fuzzy-match",
+        "rule-engine"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/smart-pipeline-failover.test.ts",
+      "sha256": "3d1887c0b24ad619",
+      "touches": [
+        "llm-router",
+        "smart-pipeline"
+      ],
+      "mocksDatabase": true,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/smart-pipeline.test.ts",
+      "sha256": "d1f8bc007cbc1c33",
+      "touches": [
+        "smart-pipeline"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/system-settings-registry.test.ts",
+      "sha256": "104f5a6eee316007",
+      "touches": [
+        "system-settings-registry"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/lib/voice-intake-gate.test.ts",
+      "sha256": "1979d75f92105837",
+      "touches": [
+        "voice-intake-gate"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/qa/classification-core-report.test.ts",
+      "sha256": "193e9edf6b2c5134",
+      "touches": [
+        "classification-cases",
+        "classification-core-report",
+        "classification-scorer"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/services/action-runtime/extended-actions.test.ts",
+      "sha256": "8c48cda15259d5da",
+      "touches": [],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "api/services/parser-trace.test.ts",
+      "sha256": "f93b808ff1e6e8d6",
+      "touches": [
+        "smart-pipeline"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "src/lib/financial-taxonomy.contract.test.ts",
+      "sha256": "1b747f31db5fa65b",
+      "touches": [
+        "category-registry"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    },
+    {
+      "file": "tests/adversarial-challenger-2.test.ts",
+      "sha256": "59dff45aaedabac0",
+      "touches": [
+        "entity-extractor",
+        "smart-pipeline"
+      ],
+      "mocksDatabase": false,
+      "readsProviderKey": false
+    }
+  ],
+  "excluded": [],
+  "excludedNote": "Empty. Every in-scope test file is currently run; the list exists so a future exclusion must be written down with a reason instead of made by omission.",
+  "repositoryTestFileCount": 170,
+  "inCommand": 47,
+  "notInCommand": 123,
+  "notInCommandOwners": [
+    {
+      "pattern": "tests/e2e/**",
+      "owner": "the e2e-tests job (Playwright)"
+    },
+    {
+      "pattern": "api/*-router.security.test.ts",
+      "owner": "the unit-tests job"
+    },
+    {
+      "pattern": "api/services/ai-kernel/**",
+      "owner": "the chat agent, a different pipeline"
+    },
+    {
+      "pattern": "api/services/voice-kernel/**",
+      "owner": "the live-call path, a different pipeline"
+    },
+    {
+      "pattern": "**/*.integration.test.ts",
+      "owner": "npm run test:redis, opt-in, needs a server"
+    },
+    {
+      "pattern": "src/** (except the taxonomy contract test)",
+      "owner": "the unit-tests job"
+    }
+  ],
+  "guard": "api/qa/classification-test-manifest.test.ts fails when an in-scope file is in neither INCLUDED nor EXCLUDED. Demonstrated: adding api/lib/zz-new-guard.test.ts made it exit 1; removing it restored green."
+}

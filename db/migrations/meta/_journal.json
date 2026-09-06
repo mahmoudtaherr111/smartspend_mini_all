@@ -155,6 +155,13 @@
       "when": 1788400000000,
       "tag": "0021_storage_lifecycle_overhaul",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "5",
+      "when": 1788652800000,
+      "tag": "0022_financial_capture_loop",
+      "breakpoints": true
     }
   ]
 }

@@ -38,6 +38,17 @@ jobs:
   unit-tests:
     name: Vitest Unit Tests
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: capture_test_only
+          MYSQL_DATABASE: capture_test
+        ports:
+          - 33071:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -pcapture_test_only"
+          --health-interval=10s --health-timeout=5s --health-retries=12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -45,8 +56,44 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # The existing suite contains real auth/rollup/storage tests, not only mocks.
+      - run: npx drizzle-kit push --force
+        env:
+          DATABASE_URL: "mysql://root:capture_test_only@127.0.0.1:33071/capture_test"
       - run: npm run test
         env:
+          DATABASE_URL: "mysql://root:capture_test_only@127.0.0.1:33071/capture_test"
+          GOOGLE_CLIENT_ID: test
+          GOOGLE_CLIENT_SECRET: test
+          JWT_SECRET: test-secret-for-ci
+          GEMINI_API_KEY: test
+          NODE_ENV: test
+          TRUST_PROXY: "true"
+          REDIS_URL: ""
+
+  classification-core:
+    name: Classification Core + Quality Gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # The corpus, the event core, the quality gates, and the guards the first version
+      # of this job left out — model mapping, corrections, muscle memory, taxonomy, the
+      # LLM router and the A2 acceptance suites. `npm run test` runs a fixed list that
+      # includes none of them, so until this job a classification regression could land
+      # on a green build.
+      #
+      # Offline by construction: the quality test makes executeLlmChain throw and mocks
+      # the database, and `classification-test-manifest.test.ts` fails if any listed file
+      # reaches a live provider, a real database or a real key. The env below is the same
+      # synthetic set the other jobs use.
+      - name: Classification test suite
+        run: npm run test:classification:core
+        env: &synthetic_env
           DATABASE_URL: "mysql://test:test@localhost:3306/test"
           GOOGLE_CLIENT_ID: test
           GOOGLE_CLIENT_SECRET: test
@@ -55,6 +102,78 @@ jobs:
           NODE_ENV: test
           TRUST_PROXY: "true"
           REDIS_URL: ""
+      - name: Classification test inventory guard
+        run: npm run test:classification:manifest
+        env: *synthetic_env
+      # Writes to an untracked, per-attempt path. Nothing lives in the repository for a
+      # checkout to resurrect, and the report carries the run id, the attempt, the commit
+      # and a status — so an artifact that does not belong to this attempt says so.
+      #
+      # On failure the wrapper replaces whatever is at that path with a `status: failed`
+      # diagnostic carrying NO metrics. That is why the upload below can be `always()`:
+      # a red attempt cannot publish a green attempt's numbers.
+      - name: Classification report
+        id: report
+        run: npm run report:classification:core -- --out "$REPORT_PATH"
+        env:
+          <<: *synthetic_env
+          REPORT_PATH: .artifacts/classification-core/report-${{ github.run_id }}-${{ github.run_attempt }}.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: classification-core-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/classification-core/report-${{ github.run_id }}-${{ github.run_attempt }}.json
+          if-no-files-found: warn
+
+  classification-capture-mysql:
+    name: Financial Capture Transactions (MySQL 8)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: capture_test_only
+          MYSQL_DATABASE: capture_test
+        ports:
+          - 33071:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -pcapture_test_only"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    env:
+      DATABASE_URL: mysql://root:capture_test_only@127.0.0.1:33071/capture_test
+      RUN_CAPTURE_MYSQL_INTEGRATION: "1"
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # This job owns a disposable database, never a deployed database URL.
+      - run: npx drizzle-kit push --force
+      - run: npm run test:capture:mysql
+
+  classification-journey-challenge:
+    name: Unresolved Journey Challenge (release blocker)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Known failures stay visible; do not turn this into continue-on-error or weaken labels.
+      - run: npm run qa:classification:journey
+        env:
+          JOURNEY_REPORT_PATH: .artifacts/journey/report-${{ github.run_id }}-${{ github.run_attempt }}.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: journey-challenge-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/journey/report-${{ github.run_id }}-${{ github.run_attempt }}.json
+          if-no-files-found: warn
 
   e2e-tests:
     name: Playwright E2E Tests

@@ -89,17 +89,10 @@ export function classificationLedgerRows(
   });
 }
 
-export async function recordClassificationUsage(
-  input: PipelineInput,
-  result: PipelineResult,
+/** Shared bounded telemetry writer. This is not a durable billing outbox. */
+export async function persistUsageRows(
+  makeRows: () => Promise<Array<typeof aiTokenLedgers.$inferInsert>>,
 ): Promise<void> {
-  // Never persist anonymous/malformed identities; both real user tables use positive ids.
-  if (
-    !Number.isSafeInteger(input.userId) ||
-    input.userId <= 0 ||
-    !["oauth", "local"].includes(input.userType)
-  )
-    return;
   if (pendingWrites >= MAX_PENDING_WRITES) {
     console.warn(
       "[ClassificationUsage] Ledger backlog full; measurement not persisted",
@@ -107,24 +100,10 @@ export async function recordClassificationUsage(
     return;
   }
   pendingWrites++;
-  const operationId = randomUUID();
-  result.usageOperationId = operationId;
   const persist = async () => {
     try {
-      const settings = await getSystemSettings();
-      const fx = Number(settings.usd_to_egp_rate);
-      await db
-        .insert(aiTokenLedgers)
-        .values(
-          classificationLedgerRows(
-            input,
-            result,
-            operationId,
-            Number.isFinite(fx) && fx > 0 ? fx : null,
-          ),
-        );
+      await db.insert(aiTokenLedgers).values(await makeRows());
     } catch {
-      // Metering failures must be visible without logging a database payload or user text.
       console.warn("[ClassificationUsage] Ledger write failed");
     } finally {
       pendingWrites--;
@@ -132,8 +111,6 @@ export async function recordClassificationUsage(
   };
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    // One insert continues after the response budget; never retry it blindly.
-    // A process exit can lose it. This is bounded telemetry, not a durable billing outbox.
     await Promise.race([
       persist(),
       new Promise<void>((resolve) => {
@@ -148,4 +125,28 @@ export async function recordClassificationUsage(
   } finally {
     if (timer) clearTimeout(timer);
   }
+}
+
+export async function recordClassificationUsage(
+  input: PipelineInput,
+  result: PipelineResult,
+): Promise<void> {
+  if (
+    !Number.isSafeInteger(input.userId) ||
+    input.userId <= 0 ||
+    !["oauth", "local"].includes(input.userType)
+  )
+    return;
+  const operationId = randomUUID();
+  result.usageOperationId = operationId;
+  await persistUsageRows(async () => {
+    const settings = await getSystemSettings();
+    const fx = Number(settings.usd_to_egp_rate);
+    return classificationLedgerRows(
+      input,
+      result,
+      operationId,
+      Number.isFinite(fx) && fx > 0 ? fx : null,
+    );
+  });
 }

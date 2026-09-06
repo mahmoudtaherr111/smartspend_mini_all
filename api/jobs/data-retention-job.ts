@@ -111,6 +111,8 @@ async function rollupAdClicksBeforePrune(cutoffDateStr: string): Promise<void> {
  * Declarative Retention Policies for Ephemeral and Telemetry Tables (§3.7 / Phase 4)
  */
 export const RETENTION_POLICIES: RetentionPolicy[] = [
+  {tableName: "financial_captures", class: "D", retainDays: 7, dateColumn: "expires_at", whereClause: "state != 'saved'",
+    description: "Capture sources expire after the review window. Saved expenses retain their own evidence and idempotency key."},
   {
     tableName: "classification_logs",
     class: "E",

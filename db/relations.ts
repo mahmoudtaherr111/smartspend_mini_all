@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import {
   users,
+  financialCaptures,
   localUsers,
   expenses,
   expenseCategories,
@@ -49,6 +50,11 @@ import {
   aiModels,
   aiTokenLedgers
 } from "./schema";
+
+export const financialCapturesRelations = relations(financialCaptures, ({ one }) => ({
+  oauthUser: one(users, { fields: [financialCaptures.userId], references: [users.id] }),
+  localUser: one(localUsers, { fields: [financialCaptures.userId], references: [localUsers.id] }),
+}));
 
 export const usersRelations = relations(users, ({ many }) => ({
   expenses: many(expenses),

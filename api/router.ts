@@ -1,4 +1,5 @@
 import { router } from "./middleware";
+import { captureRouter } from "./capture-router";
 import { authRouter } from "./auth-router";
 import { localAuthRouter } from "./local-auth-router";
 import { expenseRouter } from "./expense-router";
@@ -23,6 +24,7 @@ import { businessRouter } from "./business-router";
 import { budgetRouter } from "./budget-router";
 
 export const appRouter = router({
+  capture: captureRouter,
   auth: authRouter,
   localAuth: localAuthRouter,
   expense: expenseRouter,

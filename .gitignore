@@ -39,3 +39,4 @@ whatsapp_auth_info/
 diff.txt
 diff_utf8.txt
 *.jar
+.artifacts/

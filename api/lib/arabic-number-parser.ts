@@ -329,6 +329,13 @@ export function parseArabicNumbers(text: string): string {
     if (!word) continue;
 
     const { core, hadClitic } = stripClitic(word);
+    // Egyptian "تمن الجزمة" is the price of an object, not the digit eight added
+    // to the preceding amount. Keep explicit numerals/units and waw composition working.
+    const nextWord = words[i + 1];
+    if (core === "تمن" && !hadClitic && nextWord && !CURRENCY_UNIT.test(nextWord)
+      && !isKnownNumberWord(stripClitic(nextWord).core) && nextWord !== "و") {
+      flushInto(); out.push("ثمن"); continue;
+    }
 
     // A fraction joined by waw continues the number: "ألفين ونص" is 2,500.
     if (hadClitic && word.startsWith("و") && FRACTION_MAP[core] !== undefined) {

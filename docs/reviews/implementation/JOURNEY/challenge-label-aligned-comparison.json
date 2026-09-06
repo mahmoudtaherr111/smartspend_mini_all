@@ -1,0 +1,9 @@
+{
+  "method": "Re-score stored actual results under v2 labels, not a fresh baseline run and not end-to-end accuracy.",
+  "fixtureSha256": "174beb1f202a6018d80e4465e89c224b12637d0d9231d2c40dd5fc4966223790",
+  "initialStoredResultsRescored": 70,
+  "latestStoredResultsRescored": 89,
+  "total": 100,
+  "firstFixtureBytesRecovered": true,
+  "limitation": "If firstFixtureBytesRecovered is false, initial input bytes are not preserved separately: do not claim a fully reproducible before-after classifier improvement."
+}

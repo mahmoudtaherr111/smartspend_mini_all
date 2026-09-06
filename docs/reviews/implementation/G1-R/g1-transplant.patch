@@ -1,0 +1,1168 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 762aa50..6b1d773 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -56,6 +56,53 @@ jobs:
+           TRUST_PROXY: "true"
+           REDIS_URL: ""
+ 
++  classification-core:
++    name: Classification Core + Quality Gates
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-node@v4
++        with:
++          node-version: 22
++          cache: npm
++      - run: npm ci
++      # The corpus, the event core and the quality gates. `npm run test` runs a fixed
++      # list that does not include any of them, so until now a classification regression
++      # could land on a green build.
++      #
++      # Offline by construction: the quality test makes executeLlmChain throw and mocks
++      # the database, so this job reaches no provider and spends nothing. The env below
++      # is the same synthetic set the other jobs use.
++      - run: npm run test:classification:core
++        env:
++          DATABASE_URL: "mysql://test:test@localhost:3306/test"
++          GOOGLE_CLIENT_ID: test
++          GOOGLE_CLIENT_SECRET: test
++          JWT_SECRET: test-secret-for-ci
++          GEMINI_API_KEY: test
++          NODE_ENV: test
++          TRUST_PROXY: "true"
++          REDIS_URL: ""
++      # Runs the same corpus once more and writes the comparable summary. It refuses to
++      # write anything if the gate above did not pass, so a red run cannot leave numbers
++      # behind for someone to quote.
++      - run: npm run report:classification:core
++        env:
++          DATABASE_URL: "mysql://test:test@localhost:3306/test"
++          GOOGLE_CLIENT_ID: test
++          GOOGLE_CLIENT_SECRET: test
++          JWT_SECRET: test-secret-for-ci
++          GEMINI_API_KEY: test
++          NODE_ENV: test
++          TRUST_PROXY: "true"
++          REDIS_URL: ""
++      - uses: actions/upload-artifact@v4
++        if: always()
++        with:
++          name: classification-core-report
++          path: docs/reviews/implementation/G1/classification-core-report.json
++          if-no-files-found: warn
++
+   e2e-tests:
+     name: Playwright E2E Tests
+     runs-on: ubuntu-latest
+diff --git a/api/qa/classification-core-report.test.ts b/api/qa/classification-core-report.test.ts
+new file mode 100644
+index 0000000..791592e
+--- /dev/null
++++ b/api/qa/classification-core-report.test.ts
+@@ -0,0 +1,293 @@
++/**
++ * A report you cannot check is a report you cannot trust.
++ *
++ * These run the builder over a corpus small enough to work out by hand, so every number
++ * in the assertions was computed on paper first. That is the point: the reporting layer
++ * is what everyone will quote, and the two failure modes it has to be immune to are a
++ * rate quoted without its denominator and a delta computed across two different corpora.
++ */
++import { describe, expect, it } from "vitest";
++import {
++  buildCoreReport,
++  type CoreEvidence,
++  type CoreEvidenceRow,
++  type CoreReportMetrics,
++} from "./classification-core-report";
++import type { AggregateScore, CaseScore, ItemMatch } from "./classification-scorer";
++
++function match(over: Partial<ItemMatch> = {}): ItemMatch {
++  return {
++    expectedIndex: 0,
++    actualIndex: 0,
++    amountOk: true,
++    typeOk: true,
++    categoryOk: true,
++    subCategoryOk: null,
++    personOk: null,
++    taxonomyLegal: true,
++    ...over,
++  };
++}
++
++function score(over: Partial<CaseScore> = {}): CaseScore {
++  return {
++    id: "X", bucket: "single_clause" as CaseScore["bucket"], tier: "locked" as CaseScore["tier"],
++    split: "dev" as CaseScore["split"], pass: "local", expectedCount: 1, actualCount: 1,
++    countExact: true, countDelta: 0, matched: 1, spurious: 0, missed: 0,
++    typeHits: 1, categoryHits: 1, tripleHits: 1, subScored: 0, subHits: 0,
++    personScored: 0, personHits: 0, taxonomyViolations: 0, miscFallbacks: 0,
++    expectedExpenseSum: 0, actualExpenseSum: 0, expectedIncomeSum: 0, actualIncomeSum: 0,
++    sumErrorEgp: 0, sumAccuracy: 1, decisionOk: true, questionOk: null,
++    matches: [match()],
++    cost: { processingTimeMs: 1, tokensUsed: 0, cachedTokens: 0, llmCalls: 0,
++      parsedBy: "rule_engine", actualModelUsed: null, truncationSuspected: false },
++    failures: [],
++    ...over,
++  };
++}
++
++function aggregate(over: Partial<AggregateScore> = {}): AggregateScore {
++  return {
++    cases: 4, expectedItems: 4, actualItems: 4,
++    amountPrecision: 1, amountRecall: 1, amountF1: 1,
++    triplePrecision: 0.75, tripleRecall: 0.75, tripleF1: 0.75,
++    typeAccuracy: 1, categoryAccuracy: 0.75, subCategoryAccuracy: 1, personAccuracy: 1,
++    segmentationExact: 1, countMae: 0, overSegmentRate: 0, underSegmentRate: 0,
++    hallucinationRate: 0, taxonomyViolationRate: 0, miscFallbackRate: 0, decisionAccuracy: 1,
++    sumAccuracyMean: 1, totalSumErrorEgp: 0,
++    cost: { totalTokens: 0, totalCachedTokens: 0, cachedTokenRatio: 0, llmCalls: 3,
++      tokensPerCaseMean: 0, tokensPerItemMean: 0, latencyP50: 2, latencyP95: 9, latencyMax: 12,
++      parsedByDistribution: { rule_engine: 3, hybrid: 1 }, truncationSuspectedCount: 0 },
++    ...over,
++  };
++}
++
++/**
++ * Four cases, worked out by hand:
++ *
++ *   1  fuel-ok    expected [200 مواصلات]         actual [200 مواصلات]     matched, category ok
++ *   2  food-wrong expected [50 أكل وشرب]          actual [50 مواصلات]      matched, category WRONG
++ *   3  anyof-ok   expected [150 سكن|موظفين]       actual [150 موظفين]      matched via categoryAnyOf
++ *   4  missing    expected [90 صحة]               actual []                MISSED, no counterpart
++ *
++ * So for مواصلات: 2 actual items, 1 accepted → precision 1/2. 1 expected item, 1 accepted
++ * → recall 1/1. For أكل وشرب: 0 actual, 1 expected → precision null, recall 0/1.
++ */
++const ROWS: CoreEvidenceRow[] = [
++  {
++    case: { id: "fuel-ok", text: "دفعت 200 بنزين", expectedItems: [{ amount: 200, category: "مواصلات" }] },
++    result: { decision: "auto_save", items: [{ amount: 200, category: "مواصلات" }] },
++    score: score({ id: "fuel-ok" }),
++  },
++  {
++    case: { id: "food-wrong", text: "دفعت 50 أكل", expectedItems: [{ amount: 50, category: "أكل وشرب" }] },
++    result: { decision: "auto_save", items: [{ amount: 50, category: "مواصلات" }] },
++    score: score({
++      id: "food-wrong", categoryHits: 0, tripleHits: 0,
++      matches: [match({ categoryOk: false })],
++      failures: ["#1 (50) فئة: متوقع أكل وشرب — الناتج مواصلات"],
++    }),
++  },
++  {
++    case: {
++      id: "anyof-ok", text: "دفعت 150 للبواب",
++      expectedItems: [{ amount: 150, category: "سكن", categoryAnyOf: ["سكن", "موظفين"] }],
++    },
++    result: { decision: "review", items: [{ amount: 150, category: "موظفين" }] },
++    score: score({ id: "anyof-ok", split: "frozen" as CaseScore["split"] }),
++  },
++  {
++    case: { id: "missing", text: "دفعت 90 دوا", expectedItems: [{ amount: 90, category: "صحة" }] },
++    result: { decision: "clarify", items: [] },
++    score: score({
++      id: "missing", actualCount: 0, matched: 0, missed: 1, countExact: false, countDelta: -1,
++      typeHits: 0, categoryHits: 0, tripleHits: 0, decisionOk: false,
++      matches: [match({ actualIndex: null, amountOk: false, typeOk: false, categoryOk: false })],
++      failures: ["#1 (90) مفقود"],
++    }),
++  },
++];
++
++const EVIDENCE: CoreEvidence = {
++  mode: "offline",
++  overall: aggregate(),
++  dev: aggregate({ cases: 3 }),
++  frozen: aggregate({ cases: 1 }),
++  system: { unsafeAutoSaves: 1, spuriousOnNonFinancial: 0 },
++  decisions: { auto_save: 2, review: 1, clarify: 1 },
++  rows: ROWS,
++};
++
++const PROVENANCE = {
++  fixtureSha256: "a".repeat(64),
++  sourceSha256: { "api/lib/smart-pipeline.ts": "b".repeat(64) },
++  mode: "offline",
++  generatedAt: "2026-09-05T00:00:00.000Z",
++  runtimeMs: 1234,
++  node: "v22.0.0",
++  settings: { plan: "free", autoSaveThreshold: 90 },
++};
++
++const BASELINE: CoreReportMetrics = {
++  cases: 4, expectedItems: 4, actualItems: 4,
++  tripleF1: 0.5, triplePrecision: 0.5, tripleRecall: 0.5,
++  amountF1: 0.9, typeAccuracy: 1, categoryAccuracy: 0.5,
++  segmentationExact: 1, decisionAccuracy: 1, taxonomyViolationRate: 0,
++};
++
++describe("per-category precision and recall, with their denominators", () => {
++  const report = buildCoreReport({ evidence: EVIDENCE, provenance: PROVENANCE });
++  const byName = (name: string) => report.categories.find((c) => c.category === name);
++
++  it("counts a wrong category against the precision of the category it produced", () => {
++    const transport = byName("مواصلات");
++    // Two actual مواصلات items; one of them was a food expense filed as transport.
++    expect(transport).toMatchObject({
++      acceptedAsProduced: 1,
++      falsePositives: 1,
++      precisionDenominator: 2,
++      precision: 0.5,
++    });
++  });
++
++  it("counts it against the recall of the category that was expected", () => {
++    const food = byName("أكل وشرب");
++    expect(food).toMatchObject({
++      acceptedAsExpected: 0,
++      falseNegatives: 1,
++      recallDenominator: 1,
++      recall: 0,
++    });
++    // Nothing was ever produced as أكل وشرب, so precision has no denominator and is not
++    // reported as zero — an undefined rate and a rate of zero are different claims.
++    expect(food?.precisionDenominator).toBe(0);
++    expect(food?.precision).toBeNull();
++  });
++
++  it("accepts an answer allowed by categoryAnyOf and credits the category produced", () => {
++    // Precision is credited to what was PRODUCED...
++    expect(byName("موظفين")).toMatchObject({
++      acceptedAsProduced: 1, precision: 1, recallDenominator: 0, recall: null,
++    });
++    // ...and recall to what was EXPECTED. One correct answer, two categories, two
++    // numerators. Sharing one made recall exceed 1 on the real corpus.
++    expect(byName("سكن")).toMatchObject({
++      acceptedAsExpected: 1, recallDenominator: 1, recall: 1, precisionDenominator: 0,
++    });
++  });
++
++  it("puts a missing amount in missedByCategory rather than in the matrix", () => {
++    expect(report.confusion.missedByCategory).toEqual({ "صحة": 1 });
++    expect(report.confusion.matrix["صحة"]).toBeUndefined();
++    expect(byName("صحة")).toMatchObject({ recallDenominator: 1, recall: 0, precisionDenominator: 0 });
++  });
++
++  it("records the confusion the wrong answer created", () => {
++    expect(report.confusion.matrix["أكل وشرب"]).toEqual({ "مواصلات": 1 });
++    expect(report.confusion.matrix["مواصلات"]).toEqual({ "مواصلات": 1 });
++  });
++
++  it("never reports a rate outside [0,1]", () => {
++    // The invariant the first implementation broke: it credited one numerator to both
++    // denominators, and أصدقاء came back with recall 1.25 and -3 false negatives.
++    for (const entry of report.categories) {
++      if (entry.precision !== null) {
++        expect(entry.precision, `${entry.category} precision`).toBeGreaterThanOrEqual(0);
++        expect(entry.precision, `${entry.category} precision`).toBeLessThanOrEqual(1);
++      }
++      if (entry.recall !== null) {
++        expect(entry.recall, `${entry.category} recall`).toBeGreaterThanOrEqual(0);
++        expect(entry.recall, `${entry.category} recall`).toBeLessThanOrEqual(1);
++      }
++      expect(entry.falsePositives, `${entry.category} FP`).toBeGreaterThanOrEqual(0);
++      expect(entry.falseNegatives, `${entry.category} FN`).toBeGreaterThanOrEqual(0);
++    }
++  });
++
++  it("computes f1 only where both rates exist", () => {
++    expect(byName("مواصلات")?.f1).toBeCloseTo((2 * 0.5 * 1) / 1.5, 10);
++    expect(byName("موظفين")?.f1).toBeNull();
++    expect(byName("سكن")?.f1).toBeNull();
++  });
++});
++
++describe("decisions carry their own denominators", () => {
++  const report = buildCoreReport({ evidence: EVIDENCE, provenance: PROVENANCE });
++
++  it("reports unsafe auto-saves against both denominators, named", () => {
++    // The same single incident is 25% of the corpus and 50% of the auto-saves. Quoting
++    // one without saying which is how two reports on this system disagreed by 2x.
++    expect(report.decisions.unsafeAutoSaves).toEqual({
++      count: 1,
++      ofAllCases: { denominator: 4, rate: 0.25 },
++      ofAutoSavedCases: { denominator: 2, rate: 0.5 },
++    });
++  });
++
++  it("reports the error rate inside each decision", () => {
++    const autoSave = report.decisions.breakdown.find((d) => d.decision === "auto_save");
++    expect(autoSave).toMatchObject({ cases: 2, casesWithError: 1, errorRateWithinDecision: 0.5 });
++    const review = report.decisions.breakdown.find((d) => d.decision === "review");
++    expect(review).toMatchObject({ cases: 1, casesWithError: 0, errorRateWithinDecision: 0 });
++  });
++});
++
++describe("deltas are only computed against the same corpus", () => {
++  it("reports a delta when the fixture hash matches", () => {
++    const report = buildCoreReport({
++      evidence: EVIDENCE,
++      provenance: PROVENANCE,
++      baseline: { metrics: BASELINE, fixtureSha256: PROVENANCE.fixtureSha256 },
++    });
++    expect(report.headline.delta?.tripleF1).toBeCloseTo(0.25, 10);
++    expect(report.headline.delta?.categoryAccuracy).toBeCloseTo(0.25, 10);
++    expect(report.headline.baseline).toEqual(BASELINE);
++  });
++
++  it("withholds the delta and warns when the corpus differs", () => {
++    const report = buildCoreReport({
++      evidence: EVIDENCE,
++      provenance: PROVENANCE,
++      baseline: { metrics: BASELINE, fixtureSha256: "c".repeat(64) },
++    });
++    expect(report.headline.delta).toBeNull();
++    expect(report.headline.baseline).toBeNull();
++    expect(report.warnings.join(" ")).toContain("FIXTURES DIFFER");
++  });
++
++  it("says so when there is no baseline at all", () => {
++    const report = buildCoreReport({ evidence: EVIDENCE, provenance: PROVENANCE });
++    expect(report.headline.delta).toBeNull();
++    expect(report.warnings.join(" ")).toContain("No baseline");
++  });
++});
++
++describe("the report does not overstate what it measured", () => {
++  const report = buildCoreReport({ evidence: EVIDENCE, provenance: PROVENANCE });
++
++  it("renames the derived route count and keeps the old field working", () => {
++    expect(report.cost.derivedLlmRoutes).toBe(3);
++    expect(report.cost.llmCalls).toBe(3);
++    expect(report.cost.note).toContain("Not a request counter");
++  });
++
++  it("warns that offline zero-token figures are not a production cost", () => {
++    expect(report.warnings.join(" ")).toContain("no provider is reached");
++  });
++
++  it("carries provenance so two reports can be told apart", () => {
++    expect(report.provenance.fixtureSha256).toBe(PROVENANCE.fixtureSha256);
++    expect(report.provenance.sourceSha256["api/lib/smart-pipeline.ts"]).toBeDefined();
++    expect(report.provenance.mode).toBe("offline");
++    expect(report.provenance.runtimeMs).toBe(1234);
++  });
++
++  it("contains no transaction text, by construction", () => {
++    // Every fixture sentence above is present in the INPUT. None may reach the output.
++    const serialised = JSON.stringify(report);
++    for (const row of ROWS) {
++      expect(serialised, `"${row.case.text}" leaked into the report`).not.toContain(row.case.text!);
++    }
++    expect(serialised).not.toContain("fuel-ok");
++  });
++});
+diff --git a/api/qa/classification-core-report.ts b/api/qa/classification-core-report.ts
+new file mode 100644
+index 0000000..1280f74
+--- /dev/null
++++ b/api/qa/classification-core-report.ts
+@@ -0,0 +1,431 @@
++/**
++ * Turns a scored corpus run into a report you can compare against another one.
++ *
++ * Safe to paste into a ticket by construction: nothing below copies a fixture sentence,
++ * an item description, a person name or a key into the output. The report is metric
++ * names, category names and integers. That is a property of what this builds, not a
++ * scrubbing pass over it afterwards — a redaction step you have to remember to call is
++ * one you eventually forget, and `classification-core-report.test.ts` asserts it holds.
++ *
++ * Deliberately a PURE function over rows that `classification-scorer` already produced.
++ * It classifies nothing, re-aligns nothing, and re-scores nothing — every number below
++ * is derived from `CaseScore.matches`, which is the alignment the scorer committed to.
++ * A reporting layer that did its own matching would be a second classifier with no
++ * tests, and the first disagreement between the two would be invisible.
++ *
++ * Two habits this exists to break:
++ *
++ *   1. Numbers quoted without a denominator. "6 unsafe auto-saves" is not a rate until
++ *      you say out of what — all 172 cases, or the 96 that auto-saved. Those are 3.5%
++ *      and 6.25%, and the audit and the implementation reports quoted different ones.
++ *   2. Names that promise more than they measure. `llmCalls` is inferred from `parsedBy`
++ *      after the fact; it is not a request counter and never sees a retry. It is carried
++ *      through here as `derivedLlmRoutes`, with the original name kept beside it so no
++ *      existing consumer breaks.
++ */
++import type { AggregateScore, CaseScore } from "./classification-scorer";
++
++/** The shape `financial-event-quality.test.ts` writes when given an evidence path. */
++export interface CoreEvidenceRow {
++  case: {
++    id: string;
++    text?: string;
++    expectedItems?: Array<{
++      amount: number;
++      type?: string;
++      category?: string;
++      categoryAnyOf?: string[];
++    }>;
++    expectedDecision?: string | string[];
++  };
++  result: {
++    decision: string;
++    items: Array<{ amount: number; type?: string; category?: string }>;
++  };
++  score: CaseScore;
++  crashed?: boolean;
++}
++
++export interface CoreEvidence {
++  generatedAt?: string;
++  mode?: string;
++  overall: AggregateScore;
++  dev: AggregateScore;
++  frozen: AggregateScore;
++  system: {
++    unsafeAutoSaves: number;
++    spuriousOnNonFinancial: number;
++    [key: string]: unknown;
++  };
++  decisions: Record<string, number>;
++  rows: CoreEvidenceRow[];
++}
++
++export interface CoreReportProvenance {
++  /** sha256 over the fixture objects, so two reports can be compared honestly. */
++  fixtureSha256: string;
++  /** sha256 per in-scope source file, so a metric change can be attributed. */
++  sourceSha256: Record<string, string>;
++  /** "offline" | "scripted" | "live". Anything but offline costs money. */
++  mode: string;
++  generatedAt: string;
++  runtimeMs: number;
++  node: string;
++  /** Free-form: thresholds, model, plan — whatever the run was configured with. */
++  settings: Record<string, unknown>;
++}
++
++export interface CategoryScore {
++  category: string;
++  /**
++   * Accepted answers the classifier PRODUCED as this category. Numerator of precision.
++   */
++  acceptedAsProduced: number;
++  /**
++   * Accepted answers this category was EXPECTED for. Numerator of recall.
++   *
++   * Differs from `acceptedAsProduced` wherever a fixture allows several categories: the
++   * same correct answer is a produced-س credit for one and an expected-س credit for
++   * another. Sharing one numerator between the two denominators produces rates above 1.
++   */
++  acceptedAsExpected: number;
++  /** Actual items in this category that were not accepted. */
++  falsePositives: number;
++  /** Expected items in this category that were missed or mis-categorised. */
++  falseNegatives: number;
++  precision: number | null;
++  recall: number | null;
++  f1: number | null;
++  /** Spelled out, because a rate without one is not a measurement. */
++  precisionDenominator: number;
++  recallDenominator: number;
++}
++
++export interface DecisionBreakdown {
++  decision: string;
++  cases: number;
++  /** Cases with at least one scoring failure while sitting in this decision. */
++  casesWithError: number;
++  errorRateWithinDecision: number | null;
++  denominator: number;
++}
++
++export interface CoreReportMetrics {
++  cases: number;
++  expectedItems: number;
++  actualItems: number;
++  tripleF1: number;
++  triplePrecision: number;
++  tripleRecall: number;
++  amountF1: number;
++  typeAccuracy: number;
++  categoryAccuracy: number;
++  segmentationExact: number;
++  decisionAccuracy: number;
++  taxonomyViolationRate: number;
++}
++
++export interface CoreReport {
++  provenance: CoreReportProvenance;
++  definitions: Record<string, string>;
++  warnings: string[];
++  headline: {
++    baseline: CoreReportMetrics | null;
++    candidate: CoreReportMetrics;
++    delta: Partial<Record<keyof CoreReportMetrics, number>> | null;
++  };
++  splits: {
++    dev: CoreReportMetrics;
++    frozen: CoreReportMetrics;
++  };
++  decisions: {
++    counts: Record<string, number>;
++    breakdown: DecisionBreakdown[];
++    /** Errors that were auto-saved: numerator, and BOTH denominators, named. */
++    unsafeAutoSaves: {
++      count: number;
++      ofAllCases: { denominator: number; rate: number };
++      ofAutoSavedCases: { denominator: number; rate: number | null };
++    };
++  };
++  categories: CategoryScore[];
++  confusion: {
++    /** expected category → actual category → count, for matched pairs only. */
++    matrix: Record<string, Record<string, number>>;
++    /** Expected items with no actual counterpart. */
++    missedByCategory: Record<string, number>;
++    /** Actual items with no expected counterpart. */
++    spuriousByCategory: Record<string, number>;
++    convention: string;
++  };
++  cost: {
++    totalTokens: number;
++    totalCachedTokens: number;
++    /** Renamed. Derived from parsedBy; NOT a network request counter. */
++    derivedLlmRoutes: number;
++    /** Kept under the old name so existing consumers keep working. */
++    llmCalls: number;
++    latencyP50: number;
++    latencyP95: number;
++    note: string;
++  };
++}
++
++/** The fallback category an unresolved classification collapses into. */
++const UNRESOLVED = "متنوعات";
++const UNCATEGORISED = "(none)";
++
++const DEFINITIONS: Record<string, string> = {
++  match:
++    "Pairs come from CaseScore.matches, which the scorer built by greedy first-fit on amount in narrative order. Reporting does not re-align.",
++  categoryOk:
++    "An actual category is accepted when it equals the expected category, or is any member of the fixture's categoryAnyOf.",
++  categoryPrecision:
++    "acceptedAsProduced / every actual item of this category. Asks: when the classifier said this category, how often was that accepted?",
++  categoryRecall:
++    "acceptedAsExpected / every expected item of this category. Asks: when this category was expected, how often did the answer satisfy it?",
++  categoryTwoNumerators:
++    "precision and recall use DIFFERENT numerators because categoryAnyOf lets one correct answer belong to two categories. Sharing a numerator makes recall exceed 1, which is how this was found.",
++  tripleF1:
++    "Amount AND direction AND category correct on the same item. The headline unit; it does NOT measure currency, date, or whether the row saved correctly.",
++  unsafeAutoSave:
++    "A case that produced a scoring failure while its decision was auto_save. Reported against two denominators because both are quoted in the literature on this system and they differ by roughly a factor of two.",
++  derivedLlmRoutes:
++    "Inferred from parsedBy after the run. Not a request counter: it cannot see retries, provider failover, or a chain that tried three routes for one logical call.",
++  zeroTokensOffline:
++    "In offline mode no provider is reached, so token and cost figures are zero by construction. They are not a production cost estimate.",
++};
++
++function metricsOf(aggregate: AggregateScore): CoreReportMetrics {
++  return {
++    cases: aggregate.cases,
++    expectedItems: aggregate.expectedItems,
++    actualItems: aggregate.actualItems,
++    tripleF1: aggregate.tripleF1,
++    triplePrecision: aggregate.triplePrecision,
++    tripleRecall: aggregate.tripleRecall,
++    amountF1: aggregate.amountF1,
++    typeAccuracy: aggregate.typeAccuracy,
++    categoryAccuracy: aggregate.categoryAccuracy,
++    segmentationExact: aggregate.segmentationExact,
++    decisionAccuracy: aggregate.decisionAccuracy,
++    taxonomyViolationRate: aggregate.taxonomyViolationRate,
++  };
++}
++
++function ratio(numerator: number, denominator: number): number | null {
++  return denominator > 0 ? numerator / denominator : null;
++}
++
++function bump(target: Record<string, number>, key: string): void {
++  target[key] = (target[key] || 0) + 1;
++}
++
++/**
++ * Per-category precision and recall, plus the confusion between them.
++ *
++ * TWO numerators, not one. An accepted answer credits precision to the category it
++ * PRODUCED and recall to the category that was EXPECTED, and with `categoryAnyOf` those
++ * are not always the same category — an item expected as سكن and legitimately answered
++ * موظفين is correct, and it is correct for both of them, differently.
++ *
++ * Counting one numerator against both denominators is not a rounding problem, it is an
++ * invalid statistic: the first run of this report gave أصدقاء a recall of 1.25 and three
++ * negative false negatives, because fifteen items had been accepted as أصدقاء while only
++ * twelve were ever expected to be. A rate above one is the arithmetic saying the
++ * numerator does not belong to that denominator.
++ */
++function scoreCategoriesFromMatches(rows: CoreEvidenceRow[]): {
++  categories: CategoryScore[];
++  confusion: CoreReport["confusion"];
++} {
++  const actualTotals: Record<string, number> = {};
++  const expectedTotals: Record<string, number> = {};
++  /** Accepted answers, credited to the category the classifier produced. */
++  const precisionHits: Record<string, number> = {};
++  /** The same accepted answers, credited to the category the fixture expected. */
++  const recallHits: Record<string, number> = {};
++  const matrix: Record<string, Record<string, number>> = {};
++  const missedByCategory: Record<string, number> = {};
++  const spuriousByCategory: Record<string, number> = {};
++
++  for (const row of rows) {
++    const expected = row.case.expectedItems || [];
++    const actual = row.result.items || [];
++
++    for (const item of actual) bump(actualTotals, item.category || UNCATEGORISED);
++    for (const item of expected) bump(expectedTotals, item.category || UNCATEGORISED);
++
++    for (const match of row.score.matches || []) {
++      const expectedItem =
++        match.expectedIndex === null ? undefined : expected[match.expectedIndex];
++      const actualItem = match.actualIndex === null ? undefined : actual[match.actualIndex];
++
++      if (expectedItem && actualItem) {
++        const expectedCategory = expectedItem.category || UNCATEGORISED;
++        const actualCategory = actualItem.category || UNCATEGORISED;
++        matrix[expectedCategory] = matrix[expectedCategory] || {};
++        matrix[expectedCategory][actualCategory] =
++          (matrix[expectedCategory][actualCategory] || 0) + 1;
++        if (match.categoryOk) {
++          bump(precisionHits, actualCategory);
++          bump(recallHits, expectedCategory);
++        }
++        continue;
++      }
++      if (expectedItem) bump(missedByCategory, expectedItem.category || UNCATEGORISED);
++      if (actualItem) bump(spuriousByCategory, actualItem.category || UNCATEGORISED);
++    }
++  }
++
++  const names = [...new Set([...Object.keys(actualTotals), ...Object.keys(expectedTotals)])].sort();
++  const categories = names.map((category) => {
++    const produced = precisionHits[category] || 0;
++    const recovered = recallHits[category] || 0;
++    const precisionDenominator = actualTotals[category] || 0;
++    const recallDenominator = expectedTotals[category] || 0;
++    const precision = ratio(produced, precisionDenominator);
++    const recall = ratio(recovered, recallDenominator);
++    const f1 =
++      precision !== null && recall !== null && precision + recall > 0
++        ? (2 * precision * recall) / (precision + recall)
++        : null;
++    return {
++      category,
++      acceptedAsProduced: produced,
++      acceptedAsExpected: recovered,
++      falsePositives: precisionDenominator - produced,
++      falseNegatives: recallDenominator - recovered,
++      precision,
++      recall,
++      f1,
++      precisionDenominator,
++      recallDenominator,
++    };
++  });
++
++  return {
++    categories,
++    confusion: {
++      matrix,
++      missedByCategory,
++      spuriousByCategory,
++      convention:
++        "matrix[expected][actual] counts matched pairs only. An expected item with no counterpart appears in missedByCategory; an actual item with no counterpart appears in spuriousByCategory. The three together account for every item on both sides.",
++    },
++  };
++}
++
++function scoreDecisions(rows: CoreEvidenceRow[]): DecisionBreakdown[] {
++  const byDecision = new Map<string, { cases: number; casesWithError: number }>();
++  for (const row of rows) {
++    const decision = row.result.decision;
++    const entry = byDecision.get(decision) || { cases: 0, casesWithError: 0 };
++    entry.cases++;
++    if ((row.score.failures || []).length > 0) entry.casesWithError++;
++    byDecision.set(decision, entry);
++  }
++  return [...byDecision.entries()]
++    .sort(([a], [b]) => a.localeCompare(b))
++    .map(([decision, entry]) => ({
++      decision,
++      cases: entry.cases,
++      casesWithError: entry.casesWithError,
++      errorRateWithinDecision: ratio(entry.casesWithError, entry.cases),
++      denominator: entry.cases,
++    }));
++}
++
++export interface BuildCoreReportInput {
++  evidence: CoreEvidence;
++  provenance: CoreReportProvenance;
++  /**
++   * A previous report's `headline.candidate`, or null on a first run.
++   * Compared only when the fixture hash matches; otherwise the delta is withheld and a
++   * warning is raised, because two different corpora produce two incomparable numbers.
++   */
++  baseline?: { metrics: CoreReportMetrics; fixtureSha256: string } | null;
++}
++
++export function buildCoreReport(input: BuildCoreReportInput): CoreReport {
++  const { evidence, provenance } = input;
++  const rows = evidence.rows || [];
++  const warnings: string[] = [];
++
++  const candidate = metricsOf(evidence.overall);
++
++  let baselineMetrics: CoreReportMetrics | null = null;
++  let delta: CoreReport["headline"]["delta"] = null;
++
++  if (input.baseline) {
++    if (input.baseline.fixtureSha256 !== provenance.fixtureSha256) {
++      warnings.push(
++        `FIXTURES DIFFER: baseline ${input.baseline.fixtureSha256.slice(0, 12)} vs candidate ` +
++          `${provenance.fixtureSha256.slice(0, 12)}. Delta withheld — the two runs did not answer the same questions.`,
++      );
++    } else {
++      baselineMetrics = input.baseline.metrics;
++      delta = {};
++      for (const key of Object.keys(candidate) as Array<keyof CoreReportMetrics>) {
++        delta[key] = candidate[key] - input.baseline.metrics[key];
++      }
++    }
++  } else {
++    warnings.push("No baseline supplied; this run establishes one and reports no delta.");
++  }
++
++  if (provenance.mode === "offline") {
++    warnings.push(DEFINITIONS.zeroTokensOffline);
++  }
++
++  const unresolvedSpurious = rows.reduce(
++    (sum, row) =>
++      sum +
++      (row.result.items || []).filter((item) => item.category === UNRESOLVED).length,
++    0,
++  );
++  if (unresolvedSpurious > 0) {
++    warnings.push(
++      `${unresolvedSpurious} produced item(s) landed on the unresolved category "${UNRESOLVED}". They count against precision for that category, not as a separate failure mode.`,
++    );
++  }
++
++  const autoSaved = rows.filter((row) => row.result.decision === "auto_save").length;
++  const unsafe = evidence.system.unsafeAutoSaves;
++
++  const { categories, confusion } = scoreCategoriesFromMatches(rows);
++
++  return {
++    provenance,
++    definitions: DEFINITIONS,
++    warnings,
++    headline: { baseline: baselineMetrics, candidate, delta },
++    splits: { dev: metricsOf(evidence.dev), frozen: metricsOf(evidence.frozen) },
++    decisions: {
++      counts: evidence.decisions || {},
++      breakdown: scoreDecisions(rows),
++      unsafeAutoSaves: {
++        count: unsafe,
++        ofAllCases: {
++          denominator: rows.length,
++          rate: rows.length > 0 ? unsafe / rows.length : 0,
++        },
++        ofAutoSavedCases: {
++          denominator: autoSaved,
++          rate: ratio(unsafe, autoSaved),
++        },
++      },
++    },
++    categories,
++    confusion,
++    cost: {
++      totalTokens: evidence.overall.cost.totalTokens,
++      totalCachedTokens: evidence.overall.cost.totalCachedTokens,
++      derivedLlmRoutes: evidence.overall.cost.llmCalls,
++      llmCalls: evidence.overall.cost.llmCalls,
++      latencyP50: evidence.overall.cost.latencyP50,
++      latencyP95: evidence.overall.cost.latencyP95,
++      note: DEFINITIONS.derivedLlmRoutes,
++    },
++  };
++}
+diff --git a/docs/03-AI_CLASSIFICATION_ENGINE.md b/docs/03-AI_CLASSIFICATION_ENGINE.md
+index fccfba2..b5021be 100644
+--- a/docs/03-AI_CLASSIFICATION_ENGINE.md
++++ b/docs/03-AI_CLASSIFICATION_ENGINE.md
+@@ -4,47 +4,107 @@
+ 
+ ---
+ 
+-## 1. 🧠 Hybrid Classification Pipeline Waterfall (0ms to 600ms)
++## 1. 🧠 Classification pipeline — the order the code actually runs
+ 
+-The classification pipeline uses a 5-layer waterfall architecture to maximize accuracy, minimize latency, and eliminate unnecessary external token costs:
++Verified against `runSmartPipeline` in `api/lib/smart-pipeline.ts`, not from memory.
++The entry point answers **"what happened financially"** before it answers
++**"what category is it"**, and the first question can end the request on its own.
+ 
+ ```
+-[Raw User Input / Bank SMS / Audio STT]
++[Raw user input / bank SMS / audio STT]
+                │
+                ▼
+-   [Layer 1: Muscle Memory Selective Cache] (<1ms, $0.00)
+-   ├── In-process LRU cache (500 entries, 30 min TTL) + historical classificationLogs
+-   ├── Template normalization ({X}) & multi-factor similarity (Jaccard + Word Order + Levenshtein)
+-   └── Person resolution integration (auto-saves known contacts, clarifies unknown)
+-               │ (if no cache hit)
+-               ▼
+-   [Layer 2: Deterministic Rule Engine & Slang Map] (<2ms, $0.00)
+-   ├── Dual normalization: forRules (aggressive) & forAI (semantic-preserving)
+-   ├── Narrative decomposition (decomposeHeuristic) for compound multi-item sentences
+-   ├── Egyptian dialect dictionary (200+ mappings: كشري, قهوجي, اوبر, فودافون كاش, كارت فكة)
+-   ├── Zero-API Local RAG engine (3 JSON knowledge bases: fintech, merchants, slang)
+-   └── Business vs Personal scoring (freelance mode salary & project detection)
+-               │ (if rule confidence < 0.85)
++   planFinancialEvents(text, knownNames)        api/lib/financial-event-plan.ts
++   ├── Splits the utterance into events and gives each one a segmentIndex
++   ├── Binds amounts to the event that mentioned them
++   └── Labels every event: admitted · rejected · incomplete
++               │
++               ├── admitted.length === 0 ──▶ return decision "clarify"
++               │                             route = "financial_event_gate"
++               │                             No classification. No provider call.
+                ▼
+-   [Layer 3: Vector Semantic Search] (Hybrid V4 Engine) (<15ms, $0.00)
+-   ├── Primary: 385 local category descriptors pre-indexed via character n-gram TF-IDF vectors
+-   └── Fallback: Fireworks Qwen3-8B 768-dim embeddings with Egyptian Arabic instruction prefix
+-               │ (if semantic ambiguity persists)
++   classifyAdmittedEvents(input, plan)          api/lib/smart-pipeline.ts
++   │   Runs over the ADMITTED text only. A rejected clause is not re-joined here,
++   │   so it cannot re-enter recovery or the category prompt.
++   │
++   ├── Result cache            in-process LRU, keyed per user/plan/scope
++   ├── Muscle memory           api/lib/muscle-memory.ts — recurring user patterns
++   ├── Business scoring        business vs personal, gated on businessMode
++   ├── Normalization           normalizer-v2 · forRules (aggressive) / forAI (semantic)
++   ├── Rule engine             api/lib/rule-engine.ts + egyptian-dictionary.ts
++   ├── Correction rules        what this user already corrected outranks a fresh guess
++   ├── Calibration             api/lib/confidence-calibrator.ts — evidence → probability
++   ├── Per-item acceptance     api/lib/final-acceptance.ts — the weakest item decides
++   ├── Embedding layer         api/lib/embedding-engine.ts — local descriptors, then Fireworks
++   ├── LLM category fallback   only for clauses the local pass could not categorise
++   │     ├── classification-prompt.ts   numbered clauses, static prefix
++   │     ├── llm-provider-chain.ts      ordered routes
++   │     ├── llm-router.ts              one call site, circuit breaker, failover
++   │     ├── classifier-contract.ts     validates the reply; the model is asked for a
++   │     │                              CATEGORY only — no amount, no person, no confidence
++   │     └── classification-merge.ts    merges the category onto the local item
++   └── Verifier                api/lib/post-classifier-verifier.ts
++               │
+                ▼
+-   [Layer 4: Multi-Intent LLM Decomposition] (400–600ms, API Cost)
+-   ├── Dynamic taxonomy category pruning (scoreCategories filters candidate pool, saving ~60% tokens)
+-   ├── Adaptive reasoning schema: Chain-of-Thought (CoT) vs Direct JSON extraction
+-   ├── Strict JSON sanitization (robustJsonParse with thought tag stripping)
+-   └── Model routing via model-mapper.ts (Gemini / Groq / Fireworks / NVIDIA)
++   Result gates, back in runSmartPipeline
++   ├── Per-event amount reconciliation — each event balances on its own amounts,
++   │     so a missing event cannot be hidden by another event's matching total
++   ├── Stated-total check — a spoken total that disagrees with the sum asks, and is
++   │     never itself recorded as a transaction
++   ├── Pending / unbound events force "clarify"
++   └── Any surviving reviewReason downgrades "auto_save" to "review"
+                │
+                ▼
+-   [Layer 5: Post-Classifier Verifier & Action Runtime] (<5ms, $0.00)
+-   ├── verifyClassifiedItems: Amount bounds (max 10M EGP), duplicate checks, intent conflict checks
+-   ├── Content-based reverse recovery for unclassified 'متنوعات'
+-   ├── Amount reconciliation recovery for missing items
+-   └── Two-Phase Action Runtime (aiPendingActions table + idempotencyKey for UI confirmation)
++   auto_save · review · clarify
++```
++
++### What the log records, and what it means
++
++| Field | Meaning |
++| :--- | :--- |
++| `routing.route` | `financial_event_gate` when the plan admitted nothing; otherwise `smart_hybrid`. |
++| `routing.events` | Every event from the plan with its status, including the rejected ones. Rejection is a **result**, kept for diagnosis — not an erased clause. |
++| `routing.eventLedgerBalanced` | Every admitted event's amounts were accounted for, no unbound item, no total mismatch. |
++| `routing.statedTotals` | Totals the user spoke aloud. Checked against the sum; never recorded. |
++
++### `sourceEventId` is request-scoped
++
++It is the plan's `segmentIndex` — an identity **within one request**, used to keep an
++amount attached to the event that produced it through merge, reordering and salvage.
++
++It is **not** an idempotency key, **not** a database id, and **not** stable across
++retries. Reusing it as any of those would tie two independent requests together.
++
++### `parser_fast_decomposition_enabled` no longer disables the safety gate
++
++The event gate runs unconditionally. An install that still has this setting stored as
++`false` gets the gate anyway, because it is what stops a negated or unpriced clause from
++being recorded — that is a correctness property, not a feature flag.
++
++The log keeps both facts apart rather than pretending the setting is gone:
++
++- `settings.decompositionEnabled: true` — what the pipeline actually did.
++- `settings.legacyDecompositionEnabled` — the stored value, still reported.
++
++The setting's description in the admin UI and in `docs/` still reads as though it can
++turn decomposition off. **That text is now wrong and is not corrected here** — changing
++the setting's meaning is a product decision, outside this round.
++
++### Running the corpus and the quality gates
++
++```bash
++npm run test:classification:core      # 19 files, 566 tests, includes the quality gates
++npm run report:classification:core    # same corpus, writes a comparable summary
+ ```
+ 
++Both are offline: the quality run makes `executeLlmChain` throw and mocks the database,
++so no provider is reached and nothing is spent. **Token and latency figures from these
++runs are therefore zero or local-only, and are not production numbers.** The report says
++so in its own `warnings`.
++
++`npm run test` does **not** include any of this — it runs a fixed list that predates the
++classification work. The CI job `classification-core` is what enforces it.
++
+ ---
+ 
+ ## 2. 📱 Deterministic SMS Input Condensation (`api/lib/sms-rule-parser.ts`, `sms-ai-parser.ts`)
+diff --git a/package.json b/package.json
+index 540ccee..8598aef 100644
+--- a/package.json
++++ b/package.json
+@@ -12,7 +12,9 @@
+     "check": "tsc -b",
+     "format": "prettier --write .",
+     "test": "vitest run tests/table-classes.test.ts api/lib/rate-limit.test.ts api/lib/get-client-ip.test.ts api/lib/login-protection.test.ts api/local-auth-router.security.test.ts api/middleware.test.ts tests/migration-0021.test.ts tests/auth-hot-path.test.ts tests/data-retention-job.test.ts tests/storage-driver.test.ts tests/expense-rollups.test.ts tests/storage-baseline.test.ts",
+-    "test:redis": "cross-env RUN_REDIS_INTEGRATION=1 vitest run api/lib/redis-client.integration.test.ts api/lib/login-protection.integration.test.ts",
++    "test:classification:core": "vitest run api/lib/amount-ledger.test.ts api/lib/arabic-number-parser.test.ts api/lib/classification-acceptance.test.ts api/lib/classification-benchmark.test.ts api/lib/classification-cache-invalidation.test.ts api/lib/classification-evidence.test.ts api/lib/classification-golden.test.ts api/lib/classification-prompt-injection.test.ts api/lib/classifier-contract.test.ts api/lib/comprehensive-classification.test.ts api/lib/e2e-classification.test.ts api/lib/financial-event-pipeline.test.ts api/lib/financial-event-quality.test.ts api/lib/financial-event-verification.test.ts api/lib/negation-detector.test.ts api/lib/normalizer-v2.test.ts api/lib/smart-pipeline-failover.test.ts api/lib/smart-pipeline.test.ts api/qa/classification-core-report.test.ts",
++  "report:classification:core": "tsx scripts/classification-core-report.ts",
++  "test:redis": "cross-env RUN_REDIS_INTEGRATION=1 vitest run api/lib/redis-client.integration.test.ts api/lib/login-protection.integration.test.ts",
+     "test:e2e": "playwright test",
+     "test:e2e:ui": "playwright test --ui",
+     "test:e2e:mobile": "playwright test --project='iPhone 14' --project='Android Chrome Pixel 7'",
+diff --git a/scripts/classification-core-report.ts b/scripts/classification-core-report.ts
+new file mode 100644
+index 0000000..689b1f5
+--- /dev/null
++++ b/scripts/classification-core-report.ts
+@@ -0,0 +1,211 @@
++/**
++ * Runs the offline quality corpus and writes a comparable report.
++ *
++ *   npx tsx scripts/classification-core-report.ts [--out <path>] [--baseline <path>] [--details <path>]
++ *
++ * The classifier is not touched. This spawns the existing quality test with
++ * `CLASSIFY_CORE_EVIDENCE_PATH` set — the same run the gate performs — then hands the
++ * evidence it writes to `buildCoreReport`. Nothing here re-scores or re-aligns anything;
++ * a reporting layer that disagrees with the gate is worse than no report.
++ *
++ * Two artefacts, deliberately separate:
++ *
++ *   --out      the summary. Metric names, category names, integers. No transaction text,
++ *              no person names, no keys. This is the one that is safe to paste anywhere,
++ *              and it is the default.
++ *   --details  the raw evidence, opt-in. It contains every fixture sentence and every
++ *              produced row. These fixtures are synthetic, but the same generator points
++ *              at real corpora, so it is never written unless asked for.
++ */
++import { createHash } from "node:crypto";
++import { spawnSync } from "node:child_process";
++import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
++import { dirname, resolve } from "node:path";
++import { tmpdir } from "node:os";
++import {
++  buildCoreReport,
++  type CoreEvidence,
++  type CoreReportMetrics,
++} from "../api/qa/classification-core-report";
++
++/** In-scope files whose content can move a metric. Hashed so a change is attributable. */
++const SCOPE_FILES = [
++  "api/lib/smart-pipeline.ts",
++  "api/lib/financial-event-plan.ts",
++  "api/lib/final-acceptance.ts",
++  "api/lib/classification-merge.ts",
++  "api/lib/classifier-contract.ts",
++  "api/lib/confidence-calibrator.ts",
++  "api/lib/confidence-calibration.generated.ts",
++  "api/lib/post-classifier-verifier.ts",
++  "api/lib/rule-engine.ts",
++  "api/lib/entity-extractor.ts",
++  "api/lib/arabic-number-parser.ts",
++  "api/lib/negation-detector.ts",
++  "api/lib/normalizer-v2.ts",
++  "api/lib/text-normalizer.ts",
++  "api/qa/classification-scorer.ts",
++  "api/qa/classification-system-metrics.ts",
++];
++
++const QUALITY_TEST = "api/lib/financial-event-quality.test.ts";
++
++function sha256(input: string): string {
++  return createHash("sha256").update(input).digest("hex");
++}
++
++function arg(name: string): string | undefined {
++  const index = process.argv.indexOf(`--${name}`);
++  return index >= 0 ? process.argv[index + 1] : undefined;
++}
++
++function hashScopeFiles(root: string): Record<string, string> {
++  const out: Record<string, string> = {};
++  for (const file of SCOPE_FILES) {
++    try {
++      out[file] = sha256(readFileSync(resolve(root, file), "utf8"));
++    } catch {
++      // A file that does not exist in this checkout is reported as absent rather than
++      // silently omitted: which files were hashed is part of the provenance.
++      out[file] = "absent";
++    }
++  }
++  return out;
++}
++
++function writeJson(path: string, value: unknown): void {
++  mkdirSync(dirname(resolve(path)), { recursive: true });
++  writeFileSync(resolve(path), `${JSON.stringify(value, null, 2)}\n`, "utf8");
++}
++
++function main(): number {
++  const root = resolve(import.meta.dirname, "..");
++  const outPath = arg("out") || "docs/reviews/implementation/G1/classification-core-report.json";
++  const detailsPath = arg("details");
++  const baselinePath = arg("baseline");
++
++  const scratch = mkdtempSync(resolve(tmpdir(), "classify-core-"));
++  const evidencePath = resolve(scratch, "evidence.json");
++
++  // Resolved from node_modules rather than through `npx`.
++  //
++  // The npx shim is a .cmd on Windows, which spawnSync cannot execute without a shell,
++  // and the failure surfaces as `status: null` — indistinguishable, from the caller's
++  // side, from the gate itself failing. Pointing at vitest's own entry point removes
++  // both the shell dependency and the ambiguity.
++  const vitestBin = resolve(root, "node_modules/vitest/vitest.mjs");
++  const startedAt = Date.now();
++  const run = spawnSync(
++    process.execPath,
++    [vitestBin, "run", QUALITY_TEST, "--reporter=dot"],
++    {
++      cwd: root,
++      stdio: "inherit",
++      env: { ...process.env, CLASSIFY_CORE_EVIDENCE_PATH: evidencePath },
++    },
++  );
++  const runtimeMs = Date.now() - startedAt;
++
++  if (run.error) {
++    console.error(`[core-report] could not start vitest: ${run.error.message}`);
++    rmSync(scratch, { recursive: true, force: true });
++    return 1;
++  }
++
++  if (run.status !== 0) {
++    // The gate failing is the answer. Reporting over a failed run would put numbers
++    // next to a red build and invite someone to quote them.
++    //
++    // `status` is null when the child was killed by a signal rather than exiting, so it
++    // says so instead of printing "exit null" at someone.
++    const how =
++      run.status === null ? `killed by ${run.signal || "a signal"}` : `exit ${run.status}`;
++    console.error(`\n[core-report] quality gate failed (${how}). No report written.`);
++    rmSync(scratch, { recursive: true, force: true });
++    return run.status ?? 1;
++  }
++
++  let evidence: CoreEvidence;
++  try {
++    evidence = JSON.parse(readFileSync(evidencePath, "utf8")) as CoreEvidence;
++  } catch (err) {
++    console.error(
++      `[core-report] the quality run passed but wrote no evidence to ${evidencePath}: ${
++        (err as Error).message
++      }`,
++    );
++    rmSync(scratch, { recursive: true, force: true });
++    return 1;
++  }
++
++  const fixtureSha256 = sha256(
++    JSON.stringify(evidence.rows.map((row) => row.case)),
++  );
++
++  let baseline: { metrics: CoreReportMetrics; fixtureSha256: string } | null = null;
++  if (baselinePath) {
++    try {
++      const previous = JSON.parse(readFileSync(resolve(baselinePath), "utf8")) as {
++        headline?: { candidate?: CoreReportMetrics };
++        provenance?: { fixtureSha256?: string };
++      };
++      if (previous.headline?.candidate && previous.provenance?.fixtureSha256) {
++        baseline = {
++          metrics: previous.headline.candidate,
++          fixtureSha256: previous.provenance.fixtureSha256,
++        };
++      } else {
++        console.warn(`[core-report] ${baselinePath} is not a report; ignoring it.`);
++      }
++    } catch (err) {
++      console.warn(`[core-report] could not read baseline: ${(err as Error).message}`);
++    }
++  }
++
++  const report = buildCoreReport({
++    evidence,
++    baseline,
++    provenance: {
++      fixtureSha256,
++      sourceSha256: hashScopeFiles(root),
++      mode: evidence.mode || "offline",
++      generatedAt: new Date().toISOString(),
++      runtimeMs,
++      node: process.version,
++      settings: {
++        command: `vitest run ${QUALITY_TEST}`,
++        provider: "none — executeLlmChain throws in this run",
++        database: "mocked",
++        userPlan: "free",
++      },
++    },
++  });
++
++  writeJson(outPath, report);
++  if (detailsPath) writeJson(detailsPath, evidence);
++  rmSync(scratch, { recursive: true, force: true });
++
++  const { candidate, delta } = report.headline;
++  const unsafe = report.decisions.unsafeAutoSaves;
++  console.log(`\n[core-report] ${outPath}`);
++  console.log(`  cases                ${candidate.cases}`);
++  console.log(
++    `  record triple F1     ${candidate.tripleF1.toFixed(4)}${
++      delta ? ` (${delta.tripleF1! >= 0 ? "+" : ""}${delta.tripleF1!.toFixed(4)})` : " (no baseline)"
++    }`,
++  );
++  console.log(`  amount F1            ${candidate.amountF1.toFixed(4)}`);
++  console.log(
++    `  unsafe auto-saves    ${unsafe.count} — ${(unsafe.ofAllCases.rate * 100).toFixed(2)}% of ` +
++      `${unsafe.ofAllCases.denominator} cases, ${
++        unsafe.ofAutoSavedCases.rate === null
++          ? "n/a"
++          : `${(unsafe.ofAutoSavedCases.rate * 100).toFixed(2)}%`
++      } of ${unsafe.ofAutoSavedCases.denominator} auto-saved`,
++  );
++  for (const warning of report.warnings) console.log(`  ! ${warning}`);
++  if (detailsPath) console.log(`  details (synthetic fixtures) -> ${detailsPath}`);
++  return 0;
++}
++
++process.exit(main());

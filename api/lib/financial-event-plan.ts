@@ -127,6 +127,11 @@ export function planFinancialEvents(rawText: string, knownNames: string[] = []):
       if (dateHint.test(piece.text)) reasons.push("date_requires_confirmation");
       if (/(?:قصدي|اقصد|أقصد)/.test(piece.text)) reasons.push("correction_unresolved");
       if (amounts.length > 1) reasons.push("amount_binding_ambiguous");
+      // Event structure that a category-only model cannot repair. Keep the source and
+      // force review until a semantic extraction contract accounts for the whole group.
+      if (/(?:مرتين|مره تانيه|اتكرر|مكرر)/.test(normalizeArabic(clause))) reasons.push("repeated_event_requires_reconciliation");
+      if (/(?:مقدم|الباقي اقساط|سعر الوحده|للواحد|اللتر|الكيلو)/.test(normalizeArabic(clause))) reasons.push("price_or_commitment_requires_binding");
+      if (/(?:استلفت|سلفت|استرجعت|استرداد|رجعلي|رجعولي|رد المبلغ)/.test(normalizeArabic(clause))) reasons.push("financial_kind_requires_confirmation");
       const status = rejected ? "rejected" : amounts.length === 0 ? "incomplete" : "admitted";
       events.push({ ...piece, amount: amounts.length === 1 ? amounts[0].amount : null,
         segmentIndex: events.length, status, reviewReasons: reasons,

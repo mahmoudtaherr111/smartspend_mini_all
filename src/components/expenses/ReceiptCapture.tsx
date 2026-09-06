@@ -1,3 +1,4 @@
+import { FinancialCaptureInbox } from "./FinancialCaptureInbox";
 import { useRef, useState } from "react";
 import { trpc } from "@/providers/trpc";
 import { compressImageFile } from "@/lib/compress-image";
@@ -11,11 +12,12 @@ interface ReceiptCaptureProps {
 }
 
 export function ReceiptCapture({ onSaved }: ReceiptCaptureProps) {
+  const utils = trpc.useUtils();
   const planQuery = trpc.pro.myPlan.useQuery();
   const parseMutation = trpc.image.parseReceipt.useMutation({
     onSuccess: (data) => {
-      toast.success(`تم حفظ ${data.amount} ج.م — ${data.category}`);
-      onSaved?.();
+      toast.info(data.saved ? "العملية محفوظة بالفعل." : "الصورة جاهزة للمراجعة قبل الحفظ.");
+      void utils.capture.list.invalidate();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -39,8 +41,8 @@ export function ReceiptCapture({ onSaved }: ReceiptCaptureProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          التقط صورة للفاتورة أو سكرين شوت البنك — متاح في باقة Pro مع تصنيف
-          تلقائي.
+          التقط صورة للفاتورة أو سكرين شوت البنك — متاح في باقة Pro مع استخراج
+          التفاصيل ومراجعتها قبل الحفظ.
         </CardContent>
       </Card>
     );
@@ -59,7 +61,8 @@ export function ReceiptCapture({ onSaved }: ReceiptCaptureProps) {
       parseMutation.mutate({
         imageBase64: base64,
         mimeType: "image/jpeg",
-        saveExpense: true,
+        saveExpense: false,
+        clientRequestId: crypto.randomUUID(),
       });
     } catch (err: any) {
       toast.error(err.message || "حدث خطأ أثناء معالجة وتصغير الصورة");
@@ -77,6 +80,7 @@ export function ReceiptCapture({ onSaved }: ReceiptCaptureProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        <FinancialCaptureInbox onSaved={onSaved} />
         <input
           ref={inputRef}
           type="file"
@@ -112,8 +116,7 @@ export function ReceiptCapture({ onSaved }: ReceiptCaptureProps) {
           </div>
         )}
         <p className="text-xs text-muted-foreground">
-          يعمل مع فواتير، سكرين شوتات البنك، وإنستاباي. يُفضّل OCR على الجهاز ثم
-          الإرسال لتوفير التوكنز.
+          يعمل مع فواتير، سكرين شوتات البنك، وإنستاباي. تُراجع التفاصيل المستخرجة قبل تسجيلها.
         </p>
       </CardContent>
     </Card>

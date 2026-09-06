@@ -1,0 +1,3938 @@
+diff --git a/package.json b/package.json
+index 6bef8f2..0e80371 100644
+--- a/package.json
++++ b/package.json
+@@ -12,9 +12,9 @@
+     "check": "tsc -b",
+     "format": "prettier --write .",
+     "test": "vitest run tests/table-classes.test.ts api/lib/rate-limit.test.ts api/lib/get-client-ip.test.ts api/lib/login-protection.test.ts api/local-auth-router.security.test.ts api/middleware.test.ts tests/migration-0021.test.ts tests/auth-hot-path.test.ts tests/data-retention-job.test.ts tests/storage-driver.test.ts tests/expense-rollups.test.ts tests/storage-baseline.test.ts",
+-    "test:classification:core": "vitest run api/lib/amount-ledger.test.ts api/lib/arabic-number-parser.test.ts api/lib/classification-acceptance.test.ts api/lib/classification-benchmark.test.ts api/lib/classification-cache-invalidation.test.ts api/lib/classification-evidence.test.ts api/lib/classification-golden.test.ts api/lib/classification-prompt-injection.test.ts api/lib/classifier-contract.test.ts api/lib/comprehensive-classification.test.ts api/lib/e2e-classification.test.ts api/lib/financial-event-pipeline.test.ts api/lib/financial-event-quality.test.ts api/lib/financial-event-verification.test.ts api/lib/negation-detector.test.ts api/lib/normalizer-v2.test.ts api/lib/smart-pipeline-failover.test.ts api/lib/smart-pipeline.test.ts api/qa/classification-core-report.test.ts",
+-  "report:classification:core": "tsx scripts/classification-core-report.ts",
+-  "test:redis": "cross-env RUN_REDIS_INTEGRATION=1 vitest run api/lib/redis-client.integration.test.ts api/lib/login-protection.integration.test.ts",
++    "test:classification:core": "cross-env FIREWORKS_API_KEY= GEMINI_API_KEY= GROQ_API_KEY= NVIDIA_API_KEY= DEEPSEEK_API_KEY= OPENAI_API_KEY= OPENROUTER_API_KEY= vitest run api/lib/admin-model-switch.test.ts api/lib/admissibility-gate.test.ts api/lib/ai-routing.test.ts api/lib/amount-ledger.test.ts api/lib/arabic-number-parser.test.ts api/lib/arabic-token-match.test.ts api/lib/category-registry.integrity.test.ts api/lib/classification-acceptance.test.ts api/lib/classification-benchmark.test.ts api/lib/classification-cache-invalidation.test.ts api/lib/classification-cache-scope.test.ts api/lib/classification-evidence.test.ts api/lib/classification-golden.test.ts api/lib/classification-prompt-injection.test.ts api/lib/classifier-contract.test.ts api/lib/complex-sentences.test.ts api/lib/comprehensive-classification.test.ts api/lib/correction-rules.test.ts api/lib/debug-atm.test.ts api/lib/debug-atm2.test.ts api/lib/direction-governed-taxonomy.test.ts api/lib/e2e-classification.test.ts api/lib/embedding-engine.test.ts api/lib/financial-event-pipeline.test.ts api/lib/financial-event-quality.test.ts api/lib/financial-event-verification.test.ts api/lib/fireworks-embedding-client.test.ts api/lib/learning-loop.test.ts api/lib/llm-router.test.ts api/lib/model-mapper.test.ts api/lib/muscle-memory.regression.test.ts api/lib/negation-detector.test.ts api/lib/normalizer-v2.test.ts api/lib/person-resolver.test.ts api/lib/provider-route-acceptance.test.ts api/lib/r1-acceptance.test.ts api/lib/receipt-image-parser.test.ts api/lib/rule-engine-lexical.test.ts api/lib/smart-pipeline-failover.test.ts api/lib/smart-pipeline.test.ts api/lib/system-settings-registry.test.ts api/lib/voice-intake-gate.test.ts api/qa/classification-core-report.test.ts api/services/action-runtime/extended-actions.test.ts api/services/parser-trace.test.ts src/lib/financial-taxonomy.contract.test.ts tests/adversarial-challenger-2.test.ts",
++    "report:classification:core": "tsx scripts/classification-core-report.ts",
++    "test:redis": "cross-env RUN_REDIS_INTEGRATION=1 vitest run api/lib/redis-client.integration.test.ts api/lib/login-protection.integration.test.ts",
+     "test:e2e": "playwright test",
+     "test:e2e:ui": "playwright test --ui",
+     "test:e2e:mobile": "playwright test --project='iPhone 14' --project='Android Chrome Pixel 7'",
+diff --git a/package-lock.json b/package-lock.json
+index 566b63f..9532e3f 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -106,6 +106,7 @@
+         "zod": "^4.3.5"
+       },
+       "devDependencies": {
++        "@capacitor/cli": "^8.0.0",
+         "@eslint/js": "^9.39.1",
+         "@hono/vite-dev-server": "^0.19.1",
+         "@playwright/test": "^1.61.1",
+@@ -1887,6 +1888,155 @@
+         "@capacitor/core": ">=8.0.0"
+       }
+     },
++    "node_modules/@capacitor/cli": {
++      "version": "8.5.1",
++      "resolved": "https://registry.npmjs.org/@capacitor/cli/-/cli-8.5.1.tgz",
++      "integrity": "sha512-LKQFSyLg1QbTN6CGDoFqeRtAlj8C3c9OymP8OuhwlmkbSQwh9i1HQjwUCaNyVem2XkY9rv0v2UOfVlgoxH5pAw==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@ionic/cli-framework-output": "^2.2.8",
++        "@ionic/utils-subprocess": "^3.0.1",
++        "@ionic/utils-terminal": "^2.3.5",
++        "commander": "^12.1.0",
++        "debug": "^4.4.0",
++        "env-paths": "^2.2.0",
++        "fs-extra": "^11.2.0",
++        "kleur": "^4.1.5",
++        "native-run": "^2.0.3",
++        "open": "^8.4.0",
++        "plist": "^3.1.0",
++        "prompts": "^2.4.2",
++        "rimraf": "^6.0.1",
++        "semver": "^7.6.3",
++        "tar": "^7.5.3",
++        "tslib": "^2.8.1",
++        "xcode": "^3.0.1",
++        "xml2js": "^0.6.2"
++      },
++      "bin": {
++        "cap": "bin/capacitor",
++        "capacitor": "bin/capacitor"
++      },
++      "engines": {
++        "node": ">=22.0.0"
++      }
++    },
++    "node_modules/@capacitor/cli/node_modules/balanced-match": {
++      "version": "4.0.4",
++      "resolved": "https://registry.npmjs.org/balanced-match/-/balanced-match-4.0.4.tgz",
++      "integrity": "sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": "18 || 20 || >=22"
++      }
++    },
++    "node_modules/@capacitor/cli/node_modules/brace-expansion": {
++      "version": "5.0.9",
++      "resolved": "https://registry.npmjs.org/brace-expansion/-/brace-expansion-5.0.9.tgz",
++      "integrity": "sha512-ScQ4IuvIEF1TMlP7Zt+vjJ//9zlPb2SDcxWxM3bk8s6t6GGdJ7KO1dCcTidOPJKePW30LE/2cT7wCyPho9/Wxg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "balanced-match": "^4.0.2"
++      },
++      "engines": {
++        "node": "20 || >=22"
++      }
++    },
++    "node_modules/@capacitor/cli/node_modules/commander": {
++      "version": "12.1.0",
++      "resolved": "https://registry.npmjs.org/commander/-/commander-12.1.0.tgz",
++      "integrity": "sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@capacitor/cli/node_modules/fs-extra": {
++      "version": "11.4.0",
++      "resolved": "https://registry.npmjs.org/fs-extra/-/fs-extra-11.4.0.tgz",
++      "integrity": "sha512-EQsFzMUJkCKGr1ePqlYADkIUmHW1s3ZXr5Yqy6wbGrfUCphpl2maM/kyOIRA2HpP3AaFQTZXD4ldjek+nccddA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "graceful-fs": "^4.2.0",
++        "jsonfile": "^6.0.1",
++        "universalify": "^2.0.0"
++      },
++      "engines": {
++        "node": ">=14.14"
++      }
++    },
++    "node_modules/@capacitor/cli/node_modules/glob": {
++      "version": "13.0.6",
++      "resolved": "https://registry.npmjs.org/glob/-/glob-13.0.6.tgz",
++      "integrity": "sha512-Wjlyrolmm8uDpm/ogGyXZXb1Z+Ca2B8NbJwqBVg0axK9GbBeoS7yGV6vjXnYdGm6X53iehEuxxbyiKp8QmN4Vw==",
++      "dev": true,
++      "license": "BlueOak-1.0.0",
++      "dependencies": {
++        "minimatch": "^10.2.2",
++        "minipass": "^7.1.3",
++        "path-scurry": "^2.0.2"
++      },
++      "engines": {
++        "node": "18 || 20 || >=22"
++      },
++      "funding": {
++        "url": "https://github.com/sponsors/isaacs"
++      }
++    },
++    "node_modules/@capacitor/cli/node_modules/minimatch": {
++      "version": "10.2.6",
++      "resolved": "https://registry.npmjs.org/minimatch/-/minimatch-10.2.6.tgz",
++      "integrity": "sha512-vpLQEs+VLCr1nU0BXS07maYoFwlDAH0gngQuuttxIwutDFEMHq2blX+8vpgxDdK3J1PwjCJiep77OitTZ4Ll1A==",
++      "dev": true,
++      "license": "BlueOak-1.0.0",
++      "dependencies": {
++        "brace-expansion": "^5.0.8"
++      },
++      "engines": {
++        "node": "18 || 20 || >=22"
++      },
++      "funding": {
++        "url": "https://github.com/sponsors/isaacs"
++      }
++    },
++    "node_modules/@capacitor/cli/node_modules/rimraf": {
++      "version": "6.1.3",
++      "resolved": "https://registry.npmjs.org/rimraf/-/rimraf-6.1.3.tgz",
++      "integrity": "sha512-LKg+Cr2ZF61fkcaK1UdkH2yEBBKnYjTyWzTJT6KNPcSPaiT7HSdhtMXQuN5wkTX0Xu72KQ1l8S42rlmexS2hSA==",
++      "dev": true,
++      "license": "BlueOak-1.0.0",
++      "dependencies": {
++        "glob": "^13.0.3",
++        "package-json-from-dist": "^1.0.1"
++      },
++      "bin": {
++        "rimraf": "dist/esm/bin.mjs"
++      },
++      "engines": {
++        "node": "20 || >=22"
++      },
++      "funding": {
++        "url": "https://github.com/sponsors/isaacs"
++      }
++    },
++    "node_modules/@capacitor/cli/node_modules/semver": {
++      "version": "7.8.5",
++      "resolved": "https://registry.npmjs.org/semver/-/semver-7.8.5.tgz",
++      "integrity": "sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==",
++      "dev": true,
++      "license": "ISC",
++      "bin": {
++        "semver": "bin/semver.js"
++      },
++      "engines": {
++        "node": ">=10"
++      }
++    },
+     "node_modules/@capacitor/core": {
+       "version": "8.4.1",
+       "resolved": "https://registry.npmjs.org/@capacitor/core/-/core-8.4.1.tgz",
+@@ -4712,6 +4862,170 @@
+         "url": "https://opencollective.com/libvips"
+       }
+     },
++    "node_modules/@ionic/cli-framework-output": {
++      "version": "2.2.8",
++      "resolved": "https://registry.npmjs.org/@ionic/cli-framework-output/-/cli-framework-output-2.2.8.tgz",
++      "integrity": "sha512-TshtaFQsovB4NWRBydbNFawql6yul7d5bMiW1WYYf17hd99V6xdDdk3vtF51bw6sLkxON3bDQpWsnUc9/hVo3g==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@ionic/utils-terminal": "2.3.5",
++        "debug": "^4.0.0",
++        "tslib": "^2.0.1"
++      },
++      "engines": {
++        "node": ">=16.0.0"
++      }
++    },
++    "node_modules/@ionic/utils-array": {
++      "version": "2.1.6",
++      "resolved": "https://registry.npmjs.org/@ionic/utils-array/-/utils-array-2.1.6.tgz",
++      "integrity": "sha512-0JZ1Zkp3wURnv8oq6Qt7fMPo5MpjbLoUoa9Bu2Q4PJuSDWM8H8gwF3dQO7VTeUj3/0o1IB1wGkFWZZYgUXZMUg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "debug": "^4.0.0",
++        "tslib": "^2.0.1"
++      },
++      "engines": {
++        "node": ">=16.0.0"
++      }
++    },
++    "node_modules/@ionic/utils-fs": {
++      "version": "3.1.7",
++      "resolved": "https://registry.npmjs.org/@ionic/utils-fs/-/utils-fs-3.1.7.tgz",
++      "integrity": "sha512-2EknRvMVfhnyhL1VhFkSLa5gOcycK91VnjfrTB0kbqkTFCOXyXgVLI5whzq7SLrgD9t1aqos3lMMQyVzaQ5gVA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@types/fs-extra": "^8.0.0",
++        "debug": "^4.0.0",
++        "fs-extra": "^9.0.0",
++        "tslib": "^2.0.1"
++      },
++      "engines": {
++        "node": ">=16.0.0"
++      }
++    },
++    "node_modules/@ionic/utils-object": {
++      "version": "2.1.6",
++      "resolved": "https://registry.npmjs.org/@ionic/utils-object/-/utils-object-2.1.6.tgz",
++      "integrity": "sha512-vCl7sl6JjBHFw99CuAqHljYJpcE88YaH2ZW4ELiC/Zwxl5tiwn4kbdP/gxi2OT3MQb1vOtgAmSNRtusvgxI8ww==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "debug": "^4.0.0",
++        "tslib": "^2.0.1"
++      },
++      "engines": {
++        "node": ">=16.0.0"
++      }
++    },
++    "node_modules/@ionic/utils-process": {
++      "version": "2.1.12",
++      "resolved": "https://registry.npmjs.org/@ionic/utils-process/-/utils-process-2.1.12.tgz",
++      "integrity": "sha512-Jqkgyq7zBs/v/J3YvKtQQiIcxfJyplPgECMWgdO0E1fKrrH8EF0QGHNJ9mJCn6PYe2UtHNS8JJf5G21e09DfYg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@ionic/utils-object": "2.1.6",
++        "@ionic/utils-terminal": "2.3.5",
++        "debug": "^4.0.0",
++        "signal-exit": "^3.0.3",
++        "tree-kill": "^1.2.2",
++        "tslib": "^2.0.1"
++      },
++      "engines": {
++        "node": ">=16.0.0"
++      }
++    },
++    "node_modules/@ionic/utils-process/node_modules/signal-exit": {
++      "version": "3.0.7",
++      "resolved": "https://registry.npmjs.org/signal-exit/-/signal-exit-3.0.7.tgz",
++      "integrity": "sha512-wnD2ZE+l+SPC/uoS0vXeE9L1+0wuaMqKlfz9AMUo38JsyLSBWSFcHR1Rri62LZc12vLr1gb3jl7iwQhgwpAbGQ==",
++      "dev": true,
++      "license": "ISC"
++    },
++    "node_modules/@ionic/utils-stream": {
++      "version": "3.1.7",
++      "resolved": "https://registry.npmjs.org/@ionic/utils-stream/-/utils-stream-3.1.7.tgz",
++      "integrity": "sha512-eSELBE7NWNFIHTbTC2jiMvh1ABKGIpGdUIvARsNPMNQhxJB3wpwdiVnoBoTYp+5a6UUIww4Kpg7v6S7iTctH1w==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "debug": "^4.0.0",
++        "tslib": "^2.0.1"
++      },
++      "engines": {
++        "node": ">=16.0.0"
++      }
++    },
++    "node_modules/@ionic/utils-subprocess": {
++      "version": "3.0.1",
++      "resolved": "https://registry.npmjs.org/@ionic/utils-subprocess/-/utils-subprocess-3.0.1.tgz",
++      "integrity": "sha512-cT4te3AQQPeIM9WCwIg8ohroJ8TjsYaMb2G4ZEgv9YzeDqHZ4JpeIKqG2SoaA3GmVQ3sOfhPM6Ox9sxphV/d1A==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@ionic/utils-array": "2.1.6",
++        "@ionic/utils-fs": "3.1.7",
++        "@ionic/utils-process": "2.1.12",
++        "@ionic/utils-stream": "3.1.7",
++        "@ionic/utils-terminal": "2.3.5",
++        "cross-spawn": "^7.0.3",
++        "debug": "^4.0.0",
++        "tslib": "^2.0.1"
++      },
++      "engines": {
++        "node": ">=16.0.0"
++      }
++    },
++    "node_modules/@ionic/utils-terminal": {
++      "version": "2.3.5",
++      "resolved": "https://registry.npmjs.org/@ionic/utils-terminal/-/utils-terminal-2.3.5.tgz",
++      "integrity": "sha512-3cKScz9Jx2/Pr9ijj1OzGlBDfcmx7OMVBt4+P1uRR0SSW4cm1/y3Mo4OY3lfkuaYifMNBW8Wz6lQHbs1bihr7A==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@types/slice-ansi": "^4.0.0",
++        "debug": "^4.0.0",
++        "signal-exit": "^3.0.3",
++        "slice-ansi": "^4.0.0",
++        "string-width": "^4.1.0",
++        "strip-ansi": "^6.0.0",
++        "tslib": "^2.0.1",
++        "untildify": "^4.0.0",
++        "wrap-ansi": "^7.0.0"
++      },
++      "engines": {
++        "node": ">=16.0.0"
++      }
++    },
++    "node_modules/@ionic/utils-terminal/node_modules/signal-exit": {
++      "version": "3.0.7",
++      "resolved": "https://registry.npmjs.org/signal-exit/-/signal-exit-3.0.7.tgz",
++      "integrity": "sha512-wnD2ZE+l+SPC/uoS0vXeE9L1+0wuaMqKlfz9AMUo38JsyLSBWSFcHR1Rri62LZc12vLr1gb3jl7iwQhgwpAbGQ==",
++      "dev": true,
++      "license": "ISC"
++    },
++    "node_modules/@ionic/utils-terminal/node_modules/wrap-ansi": {
++      "version": "7.0.0",
++      "resolved": "https://registry.npmjs.org/wrap-ansi/-/wrap-ansi-7.0.0.tgz",
++      "integrity": "sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "ansi-styles": "^4.0.0",
++        "string-width": "^4.1.0",
++        "strip-ansi": "^6.0.0"
++      },
++      "engines": {
++        "node": ">=10"
++      },
++      "funding": {
++        "url": "https://github.com/chalk/wrap-ansi?sponsor=1"
++      }
++    },
+     "node_modules/@isaacs/cliui": {
+       "version": "9.0.0",
+       "resolved": "https://registry.npmjs.org/@isaacs/cliui/-/cliui-9.0.0.tgz",
+@@ -4722,6 +5036,19 @@
+         "node": ">=18"
+       }
+     },
++    "node_modules/@isaacs/fs-minipass": {
++      "version": "4.0.1",
++      "resolved": "https://registry.npmjs.org/@isaacs/fs-minipass/-/fs-minipass-4.0.1.tgz",
++      "integrity": "sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==",
++      "dev": true,
++      "license": "ISC",
++      "dependencies": {
++        "minipass": "^7.0.4"
++      },
++      "engines": {
++        "node": ">=18.0.0"
++      }
++    },
+     "node_modules/@jridgewell/gen-mapping": {
+       "version": "0.3.13",
+       "resolved": "https://registry.npmjs.org/@jridgewell/gen-mapping/-/gen-mapping-0.3.13.tgz",
+@@ -8227,6 +8554,16 @@
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/@types/fs-extra": {
++      "version": "8.1.5",
++      "resolved": "https://registry.npmjs.org/@types/fs-extra/-/fs-extra-8.1.5.tgz",
++      "integrity": "sha512-0dzKcwO+S8s2kuF5Z9oUWatQJj5Uq/iqphEtE3GQJVRRYm/tD1LglU2UnXi2A8jLq5umkGouOXOR9y0n613ZwQ==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@types/node": "*"
++      }
++    },
+     "node_modules/@types/json-schema": {
+       "version": "7.0.15",
+       "resolved": "https://registry.npmjs.org/@types/json-schema/-/json-schema-7.0.15.tgz",
+@@ -8317,6 +8654,13 @@
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/@types/slice-ansi": {
++      "version": "4.0.0",
++      "resolved": "https://registry.npmjs.org/@types/slice-ansi/-/slice-ansi-4.0.0.tgz",
++      "integrity": "sha512-+OpjSaq85gvlZAYINyzKpLeiFkSC4EsC6IIiT6v6TLSU5k5U83fHGj9Lel8oKEXM0HqgrMVCjXPDPVICtxF7EQ==",
++      "dev": true,
++      "license": "MIT"
++    },
+     "node_modules/@types/tough-cookie": {
+       "version": "4.0.5",
+       "resolved": "https://registry.npmjs.org/@types/tough-cookie/-/tough-cookie-4.0.5.tgz",
+@@ -8833,6 +9177,16 @@
+         "real-require": "^0.2.0"
+       }
+     },
++    "node_modules/@xmldom/xmldom": {
++      "version": "0.9.12",
++      "resolved": "https://registry.npmjs.org/@xmldom/xmldom/-/xmldom-0.9.12.tgz",
++      "integrity": "sha512-5AXjrcMClTryPe9LgZrygpB1lj7s0S9E0+W+AHaVKAVyHanafK86iPSvG5xHVSp/jC+VH1UXu0TAEmY279xH7A==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=14.6"
++      }
++    },
+     "node_modules/abort-controller": {
+       "version": "3.0.0",
+       "resolved": "https://registry.npmjs.org/abort-controller/-/abort-controller-3.0.0.tgz",
+@@ -9104,6 +9458,16 @@
+         "node": ">=12"
+       }
+     },
++    "node_modules/astral-regex": {
++      "version": "2.0.0",
++      "resolved": "https://registry.npmjs.org/astral-regex/-/astral-regex-2.0.0.tgz",
++      "integrity": "sha512-Z7tMw1ytTXt5jqMcOP+OQteU1VuNK9Y02uuJtKQ1Sv69jXQKKg5cibLwGJow8yzZP+eAc18EmLGPal0bp36rvQ==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=8"
++      }
++    },
+     "node_modules/async": {
+       "version": "3.2.6",
+       "resolved": "https://registry.npmjs.org/async/-/async-3.2.6.tgz",
+@@ -9329,6 +9693,16 @@
+         "require-from-string": "^2.0.2"
+       }
+     },
++    "node_modules/big-integer": {
++      "version": "1.6.52",
++      "resolved": "https://registry.npmjs.org/big-integer/-/big-integer-1.6.52.tgz",
++      "integrity": "sha512-QxD8cf2eVqJOOz63z6JIN9BzvVs/dlySa5HGSBH5xtR8dPteIRQnBxxKqkNTiT6jbDTF6jAfrd4oMcND9RGbQg==",
++      "dev": true,
++      "license": "Unlicense",
++      "engines": {
++        "node": ">=0.6"
++      }
++    },
+     "node_modules/bignumber.js": {
+       "version": "9.3.1",
+       "resolved": "https://registry.npmjs.org/bignumber.js/-/bignumber.js-9.3.1.tgz",
+@@ -9357,6 +9731,29 @@
+       "integrity": "sha512-fGTi3gxV/23FTYdAoUtLYp6qySe2KE3teyZitipKNRuVYcBkoP/bB3guXN/XVKUe9mxCHXnc9C4ocyz8OmgN0g==",
+       "license": "MIT"
+     },
++    "node_modules/bplist-creator": {
++      "version": "0.1.0",
++      "resolved": "https://registry.npmjs.org/bplist-creator/-/bplist-creator-0.1.0.tgz",
++      "integrity": "sha512-sXaHZicyEEmY86WyueLTQesbeoH/mquvarJaQNbjuOQO+7gbFcDEWqKmcWA4cOTLzFlfgvkiVxolk1k5bBIpmg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "stream-buffers": "2.2.x"
++      }
++    },
++    "node_modules/bplist-parser": {
++      "version": "0.3.2",
++      "resolved": "https://registry.npmjs.org/bplist-parser/-/bplist-parser-0.3.2.tgz",
++      "integrity": "sha512-apC2+fspHGI3mMKj+dGevkGo/tCqVB8jMb6i+OX+E29p0Iposz07fABkRIfVUPNd5A5VbuOz1bZbnmkKLYF+wQ==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "big-integer": "1.6.x"
++      },
++      "engines": {
++        "node": ">= 5.10.0"
++      }
++    },
+     "node_modules/brace-expansion": {
+       "version": "1.1.12",
+       "resolved": "https://registry.npmjs.org/brace-expansion/-/brace-expansion-1.1.12.tgz",
+@@ -9415,6 +9812,16 @@
+         "node": "^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7"
+       }
+     },
++    "node_modules/buffer-crc32": {
++      "version": "0.2.13",
++      "resolved": "https://registry.npmjs.org/buffer-crc32/-/buffer-crc32-0.2.13.tgz",
++      "integrity": "sha512-VO9Ht/+p3SN7SKWqcrgEzjGbRSJYTx+Q1pTQC0wrWqHx0vpJraQ6GtHx8tvcg1rlK1byhU5gccxgOgj7B0TDkQ==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": "*"
++      }
++    },
+     "node_modules/buffer-equal-constant-time": {
+       "version": "1.0.1",
+       "resolved": "https://registry.npmmirror.com/buffer-equal-constant-time/-/buffer-equal-constant-time-1.0.1.tgz",
+@@ -9628,6 +10035,16 @@
+         "node": ">= 6"
+       }
+     },
++    "node_modules/chownr": {
++      "version": "3.0.0",
++      "resolved": "https://registry.npmjs.org/chownr/-/chownr-3.0.0.tgz",
++      "integrity": "sha512-+IxzY9BZOQd/XuYPRmrvEVjF/nqj5kgT4kEq7VofrDoM1MxoRjEWkrCC3EtLi59TVawxTAn+orJwFQcrqEN1+g==",
++      "dev": true,
++      "license": "BlueOak-1.0.0",
++      "engines": {
++        "node": ">=18"
++      }
++    },
+     "node_modules/cjs-module-lexer": {
+       "version": "2.2.0",
+       "resolved": "https://registry.npmjs.org/cjs-module-lexer/-/cjs-module-lexer-2.2.0.tgz",
+@@ -10248,6 +10665,16 @@
+         "url": "https://github.com/sponsors/ljharb"
+       }
+     },
++    "node_modules/define-lazy-prop": {
++      "version": "2.0.0",
++      "resolved": "https://registry.npmjs.org/define-lazy-prop/-/define-lazy-prop-2.0.0.tgz",
++      "integrity": "sha512-Ds09qNh8yw3khSjiJjiUInaGX9xlqZDY7JVryGxdxV7NPeuqQfplOpQ66yJFZut3jLa5zOwkXw1g9EI2uKh4Og==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=8"
++      }
++    },
+     "node_modules/define-properties": {
+       "version": "1.2.1",
+       "resolved": "https://registry.npmjs.org/define-properties/-/define-properties-1.2.1.tgz",
+@@ -11052,6 +11479,19 @@
+       "dev": true,
+       "license": "ISC"
+     },
++    "node_modules/elementtree": {
++      "version": "0.1.7",
++      "resolved": "https://registry.npmjs.org/elementtree/-/elementtree-0.1.7.tgz",
++      "integrity": "sha512-wkgGT6kugeQk/P6VZ/f4T+4HB41BVgNBq5CDIZVbQ02nvTVqAiVTbskxxu3eA/X96lMlfYOwnLQpN2v5E1zDEg==",
++      "dev": true,
++      "license": "Apache-2.0",
++      "dependencies": {
++        "sax": "1.1.4"
++      },
++      "engines": {
++        "node": ">= 0.4.0"
++      }
++    },
+     "node_modules/embla-carousel": {
+       "version": "8.6.0",
+       "resolved": "https://registry.npmjs.org/embla-carousel/-/embla-carousel-8.6.0.tgz",
+@@ -11109,6 +11549,16 @@
+         "url": "https://github.com/fb55/entities?sponsor=1"
+       }
+     },
++    "node_modules/env-paths": {
++      "version": "2.2.1",
++      "resolved": "https://registry.npmjs.org/env-paths/-/env-paths-2.2.1.tgz",
++      "integrity": "sha512-+h1lkLKhZMTYjog1VEpJNG7NZJWcuc2DDk/qsqSTRRCOXiLjeQ1d1/udrUGhqMxUgAlwKNZ0cf2uqan5GLuS2A==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=6"
++      }
++    },
+     "node_modules/es-abstract": {
+       "version": "1.24.2",
+       "resolved": "https://registry.npmjs.org/es-abstract/-/es-abstract-1.24.2.tgz",
+@@ -11702,6 +12152,16 @@
+         "node": ">=0.8.0"
+       }
+     },
++    "node_modules/fd-slicer": {
++      "version": "1.1.0",
++      "resolved": "https://registry.npmjs.org/fd-slicer/-/fd-slicer-1.1.0.tgz",
++      "integrity": "sha512-cE1qsB/VwyQozZ+q1dGxR8LBYNZeofhEdUNGSMbQD3Gw2lAzX9Zb3uIU6Ebc/Fmyjo9AWWfnn0AUCHqtevs/8g==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "pend": "~1.2.0"
++      }
++    },
+     "node_modules/fdir": {
+       "version": "6.5.0",
+       "resolved": "https://registry.npmjs.org/fdir/-/fdir-6.5.0.tgz",
+@@ -13101,6 +13561,16 @@
+       "integrity": "sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==",
+       "license": "ISC"
+     },
++    "node_modules/ini": {
++      "version": "4.1.3",
++      "resolved": "https://registry.npmjs.org/ini/-/ini-4.1.3.tgz",
++      "integrity": "sha512-X7rqawQBvfdjS10YU1y1YVreA3SsLrW9dX2CewP2EbBJM4ypVNLDkO5y04gejPwKIY9lR+7r9gn3rFPt/kmWFg==",
++      "dev": true,
++      "license": "ISC",
++      "engines": {
++        "node": "^14.17.0 || ^16.13.0 || >=18.0.0"
++      }
++    },
+     "node_modules/input-otp": {
+       "version": "1.4.2",
+       "resolved": "https://registry.npmjs.org/input-otp/-/input-otp-1.4.2.tgz",
+@@ -13283,6 +13753,22 @@
+         "url": "https://github.com/sponsors/ljharb"
+       }
+     },
++    "node_modules/is-docker": {
++      "version": "2.2.1",
++      "resolved": "https://registry.npmjs.org/is-docker/-/is-docker-2.2.1.tgz",
++      "integrity": "sha512-F+i2BKsFrH66iaUFc0woD8sLy8getkwTwtOBjvs56Cx4CgJDeKQeqfz8wAYiSb8JOprWhHH5p77PbmYCvvUuXQ==",
++      "dev": true,
++      "license": "MIT",
++      "bin": {
++        "is-docker": "cli.js"
++      },
++      "engines": {
++        "node": ">=8"
++      },
++      "funding": {
++        "url": "https://github.com/sponsors/sindresorhus"
++      }
++    },
+     "node_modules/is-extglob": {
+       "version": "2.1.1",
+       "resolved": "https://registry.npmjs.org/is-extglob/-/is-extglob-2.1.1.tgz",
+@@ -13614,6 +14100,19 @@
+         "url": "https://github.com/sponsors/mesqueeb"
+       }
+     },
++    "node_modules/is-wsl": {
++      "version": "2.2.0",
++      "resolved": "https://registry.npmjs.org/is-wsl/-/is-wsl-2.2.0.tgz",
++      "integrity": "sha512-fKzAra0rGJUUBwGBgNkHZuToZcn+TtXHpeCgmkMJMMYx1sQDYaCSyjJBSCa2nH1DGm7s3n1oBnohoVTBaN7Lww==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "is-docker": "^2.0.0"
++      },
++      "engines": {
++        "node": ">=8"
++      }
++    },
+     "node_modules/isarray": {
+       "version": "2.0.5",
+       "resolved": "https://registry.npmjs.org/isarray/-/isarray-2.0.5.tgz",
+@@ -13939,6 +14438,16 @@
+         "json-buffer": "3.0.1"
+       }
+     },
++    "node_modules/kleur": {
++      "version": "4.1.5",
++      "resolved": "https://registry.npmjs.org/kleur/-/kleur-4.1.5.tgz",
++      "integrity": "sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=6"
++      }
++    },
+     "node_modules/leven": {
+       "version": "3.1.0",
+       "resolved": "https://registry.npmjs.org/leven/-/leven-3.1.0.tgz",
+@@ -14324,6 +14833,19 @@
+         "node": ">=16 || 14 >=14.17"
+       }
+     },
++    "node_modules/minizlib": {
++      "version": "3.1.0",
++      "resolved": "https://registry.npmjs.org/minizlib/-/minizlib-3.1.0.tgz",
++      "integrity": "sha512-KZxYo1BUkWD2TVFLr0MQoM8vUUigWD3LlD83a/75BqC+4qE0Hb1Vo5v1FgcfaNXvfXzr+5EhQ6ing/CaBijTlw==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "minipass": "^7.1.2"
++      },
++      "engines": {
++        "node": ">= 18"
++      }
++    },
+     "node_modules/module-details-from-path": {
+       "version": "1.0.4",
+       "resolved": "https://registry.npmjs.org/module-details-from-path/-/module-details-from-path-1.0.4.tgz",
+@@ -14447,6 +14969,32 @@
+         "node": "^10 || ^12 || ^13.7 || ^14 || >=15.0.1"
+       }
+     },
++    "node_modules/native-run": {
++      "version": "2.0.3",
++      "resolved": "https://registry.npmjs.org/native-run/-/native-run-2.0.3.tgz",
++      "integrity": "sha512-U1PllBuzW5d1gfan+88L+Hky2eZx+9gv3Pf6rNBxKbORxi7boHzqiA6QFGSnqMem4j0A9tZ08NMIs5+0m/VS1Q==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@ionic/utils-fs": "^3.1.7",
++        "@ionic/utils-terminal": "^2.3.4",
++        "bplist-parser": "^0.3.2",
++        "debug": "^4.3.4",
++        "elementtree": "^0.1.7",
++        "ini": "^4.1.1",
++        "plist": "^3.1.0",
++        "split2": "^4.2.0",
++        "through2": "^4.0.2",
++        "tslib": "^2.6.2",
++        "yauzl": "^2.10.0"
++      },
++      "bin": {
++        "native-run": "bin/native-run"
++      },
++      "engines": {
++        "node": ">=16.0.0"
++      }
++    },
+     "node_modules/natural-compare": {
+       "version": "1.4.0",
+       "resolved": "https://registry.npmjs.org/natural-compare/-/natural-compare-1.4.0.tgz",
+@@ -14673,6 +15221,24 @@
+         "wrappy": "1"
+       }
+     },
++    "node_modules/open": {
++      "version": "8.4.2",
++      "resolved": "https://registry.npmjs.org/open/-/open-8.4.2.tgz",
++      "integrity": "sha512-7x81NCL719oNbsq/3mh+hVrAWmFuEYUqrq/Iw3kUzH8ReypT9QQ0BLoJS7/G9k6N81XjW4qHWtjWwe/9eLy1EQ==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "define-lazy-prop": "^2.0.0",
++        "is-docker": "^2.1.1",
++        "is-wsl": "^2.2.0"
++      },
++      "engines": {
++        "node": ">=12"
++      },
++      "funding": {
++        "url": "https://github.com/sponsors/sindresorhus"
++      }
++    },
+     "node_modules/optionator": {
+       "version": "0.9.4",
+       "resolved": "https://registry.npmjs.org/optionator/-/optionator-0.9.4.tgz",
+@@ -14883,6 +15449,13 @@
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/pend": {
++      "version": "1.2.0",
++      "resolved": "https://registry.npmjs.org/pend/-/pend-1.2.0.tgz",
++      "integrity": "sha512-F3asv42UuXchdzt+xXqfW1OGlVBe+mxa2mqI0pg5yAHZPvFmY3Y6drSf/GQ1A86WgWEN9Kzh/WrgKa6iGcHXLg==",
++      "dev": true,
++      "license": "MIT"
++    },
+     "node_modules/picocolors": {
+       "version": "1.1.1",
+       "resolved": "https://registry.npmjs.org/picocolors/-/picocolors-1.1.1.tgz",
+@@ -15007,6 +15580,21 @@
+         "node": "^8.16.0 || ^10.6.0 || >=11.0.0"
+       }
+     },
++    "node_modules/plist": {
++      "version": "3.1.1",
++      "resolved": "https://registry.npmjs.org/plist/-/plist-3.1.1.tgz",
++      "integrity": "sha512-ZIfcLJC+7E7FBFnDxm9MPmt7D+DidyQ26lewieO75AdhA2ayMtsJSES0iWzqJQbcVRSrTufQoy0DR94xHue0oA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@xmldom/xmldom": "^0.9.10",
++        "base64-js": "^1.5.1",
++        "xmlbuilder": "^15.1.1"
++      },
++      "engines": {
++        "node": ">=10.4.0"
++      }
++    },
+     "node_modules/pngjs": {
+       "version": "5.0.0",
+       "resolved": "https://registry.npmjs.org/pngjs/-/pngjs-5.0.0.tgz",
+@@ -15282,6 +15870,30 @@
+       ],
+       "license": "MIT"
+     },
++    "node_modules/prompts": {
++      "version": "2.4.2",
++      "resolved": "https://registry.npmjs.org/prompts/-/prompts-2.4.2.tgz",
++      "integrity": "sha512-NxNv/kLguCA7p3jE8oL2aEBsrJWgAakBpgmgK6lpPWV+WuOmY6r2/zbAVnP+T8bQlA0nzHXSJSJW0Hq7ylaD2Q==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "kleur": "^3.0.3",
++        "sisteransi": "^1.0.5"
++      },
++      "engines": {
++        "node": ">= 6"
++      }
++    },
++    "node_modules/prompts/node_modules/kleur": {
++      "version": "3.0.3",
++      "resolved": "https://registry.npmjs.org/kleur/-/kleur-3.0.3.tgz",
++      "integrity": "sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=6"
++      }
++    },
+     "node_modules/prop-types": {
+       "version": "15.8.1",
+       "resolved": "https://registry.npmjs.org/prop-types/-/prop-types-15.8.1.tgz",
+@@ -15666,8 +16278,8 @@
+       "version": "3.6.2",
+       "resolved": "https://registry.npmjs.org/readable-stream/-/readable-stream-3.6.2.tgz",
+       "integrity": "sha512-9u/sniCrY3D5WdsERHzHE4G2YCXqoG5FTHUiCC4SIbr6XcLZBY05ya9EKjYek9O5xOAwjGq+1JdGBAS7Q9ScoA==",
++      "devOptional": true,
+       "license": "MIT",
+-      "optional": true,
+       "dependencies": {
+         "inherits": "^2.0.3",
+         "string_decoder": "^1.1.1",
+@@ -16363,6 +16975,13 @@
+       "integrity": "sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==",
+       "license": "MIT"
+     },
++    "node_modules/sax": {
++      "version": "1.1.4",
++      "resolved": "https://registry.npmjs.org/sax/-/sax-1.1.4.tgz",
++      "integrity": "sha512-5f3k2PbGGp+YtKJjOItpg3P99IMD84E4HOvcfleTb5joCHNXYLsR9yWFPOYGgaeMPDubQILTCMdsFb2OMeOjtg==",
++      "dev": true,
++      "license": "ISC"
++    },
+     "node_modules/saxes": {
+       "version": "6.0.0",
+       "resolved": "https://registry.npmjs.org/saxes/-/saxes-6.0.0.tgz",
+@@ -16643,6 +17262,56 @@
+         "url": "https://github.com/sponsors/isaacs"
+       }
+     },
++    "node_modules/simple-plist": {
++      "version": "1.3.1",
++      "resolved": "https://registry.npmjs.org/simple-plist/-/simple-plist-1.3.1.tgz",
++      "integrity": "sha512-iMSw5i0XseMnrhtIzRb7XpQEXepa9xhWxGUojHBL43SIpQuDQkh3Wpy67ZbDzZVr6EKxvwVChnVpdl8hEVLDiw==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "bplist-creator": "0.1.0",
++        "bplist-parser": "0.3.1",
++        "plist": "^3.0.5"
++      }
++    },
++    "node_modules/simple-plist/node_modules/bplist-parser": {
++      "version": "0.3.1",
++      "resolved": "https://registry.npmjs.org/bplist-parser/-/bplist-parser-0.3.1.tgz",
++      "integrity": "sha512-PyJxiNtA5T2PlLIeBot4lbp7rj4OadzjnMZD/G5zuBNt8ei/yCU7+wW0h2bag9vr8c+/WuRWmSxbqAl9hL1rBA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "big-integer": "1.6.x"
++      },
++      "engines": {
++        "node": ">= 5.10.0"
++      }
++    },
++    "node_modules/sisteransi": {
++      "version": "1.0.5",
++      "resolved": "https://registry.npmjs.org/sisteransi/-/sisteransi-1.0.5.tgz",
++      "integrity": "sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==",
++      "dev": true,
++      "license": "MIT"
++    },
++    "node_modules/slice-ansi": {
++      "version": "4.0.0",
++      "resolved": "https://registry.npmjs.org/slice-ansi/-/slice-ansi-4.0.0.tgz",
++      "integrity": "sha512-qMCMfhY040cVHT43K9BFygqYbUPFZKHOg7K73mtTWJRb8pyP3fzf4Ixd5SzdEJQ6MRUg/WBnOLxghZtKKurENQ==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "ansi-styles": "^4.0.0",
++        "astral-regex": "^2.0.0",
++        "is-fullwidth-code-point": "^3.0.0"
++      },
++      "engines": {
++        "node": ">=10"
++      },
++      "funding": {
++        "url": "https://github.com/chalk/slice-ansi?sponsor=1"
++      }
++    },
+     "node_modules/smob": {
+       "version": "1.6.2",
+       "resolved": "https://registry.npmjs.org/smob/-/smob-1.6.2.tgz",
+@@ -16767,6 +17436,16 @@
+         "node": ">= 0.4"
+       }
+     },
++    "node_modules/stream-buffers": {
++      "version": "2.2.0",
++      "resolved": "https://registry.npmjs.org/stream-buffers/-/stream-buffers-2.2.0.tgz",
++      "integrity": "sha512-uyQK/mx5QjHun80FLJTfaWE7JtwfRMKBLkMne6udYOmvH0CawotVa7TfgYHzAnpphn4+TweIx1QKMnRIbipmUg==",
++      "dev": true,
++      "license": "Unlicense",
++      "engines": {
++        "node": ">= 0.10.0"
++      }
++    },
+     "node_modules/stream-events": {
+       "version": "1.0.5",
+       "resolved": "https://registry.npmjs.org/stream-events/-/stream-events-1.0.5.tgz",
+@@ -16788,8 +17467,8 @@
+       "version": "1.3.0",
+       "resolved": "https://registry.npmjs.org/string_decoder/-/string_decoder-1.3.0.tgz",
+       "integrity": "sha512-hkRX8U1WjJFd8LsDJ2yQ/wWWxaopEsABU1XfkM8A+j0+85JAGppt16cr1Whg6KIbb4okU6Mql6BOj+uup/wKeA==",
++      "devOptional": true,
+       "license": "MIT",
+-      "optional": true,
+       "dependencies": {
+         "safe-buffer": "~5.2.0"
+       }
+@@ -17153,6 +17832,23 @@
+         "tailwindcss": ">=3.0.0 || insiders"
+       }
+     },
++    "node_modules/tar": {
++      "version": "7.5.22",
++      "resolved": "https://registry.npmjs.org/tar/-/tar-7.5.22.tgz",
++      "integrity": "sha512-MFO/QzvtAOmJbkhOaCTvbGcFN9L9b+JunIsDwaKljSOdcLMea3NJ1k9Usz/rjdfSXTq4dfzfeS7W4p4YOAAHeA==",
++      "dev": true,
++      "license": "BlueOak-1.0.0",
++      "dependencies": {
++        "@isaacs/fs-minipass": "^4.0.0",
++        "chownr": "^3.0.0",
++        "minipass": "^7.1.2",
++        "minizlib": "^3.1.0",
++        "yallist": "^5.0.0"
++      },
++      "engines": {
++        "node": ">=18"
++      }
++    },
+     "node_modules/tar-mini": {
+       "version": "0.2.0",
+       "resolved": "https://registry.npmjs.org/tar-mini/-/tar-mini-0.2.0.tgz",
+@@ -17160,6 +17856,16 @@
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/tar/node_modules/yallist": {
++      "version": "5.0.0",
++      "resolved": "https://registry.npmjs.org/yallist/-/yallist-5.0.0.tgz",
++      "integrity": "sha512-YgvUTfwqyc7UXVMrB+SImsVYSmTS8X/tSrtdNZMImM+n7+QTriRXyXim0mBrTXNeqzVF0KWGgHPeiyViFFrNDw==",
++      "dev": true,
++      "license": "BlueOak-1.0.0",
++      "engines": {
++        "node": ">=18"
++      }
++    },
+     "node_modules/teeny-request": {
+       "version": "9.0.0",
+       "resolved": "https://registry.npmjs.org/teeny-request/-/teeny-request-9.0.0.tgz",
+@@ -17300,6 +18006,16 @@
+       "integrity": "sha512-P4nbQYQfePJxRSmY+v/KINxVucm4NF3p3s7pJveMTtom52FR4YGltUQLB8idDXwDDWW+eYrWDFbuzUnjoWHF7g==",
+       "license": "MIT"
+     },
++    "node_modules/through2": {
++      "version": "4.0.2",
++      "resolved": "https://registry.npmjs.org/through2/-/through2-4.0.2.tgz",
++      "integrity": "sha512-iOqSav00cVxEEICeD7TjLB1sueEL+81Wpzp2bY17uZjZN0pWZPuo4suZ/61VujxmqSGFfgOcNuTZ85QJwNZQpw==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "readable-stream": "3"
++      }
++    },
+     "node_modules/tiny-invariant": {
+       "version": "1.3.3",
+       "resolved": "https://registry.npmjs.org/tiny-invariant/-/tiny-invariant-1.3.3.tgz",
+@@ -17424,6 +18140,16 @@
+         "punycode": "^2.1.0"
+       }
+     },
++    "node_modules/tree-kill": {
++      "version": "1.2.2",
++      "resolved": "https://registry.npmjs.org/tree-kill/-/tree-kill-1.2.2.tgz",
++      "integrity": "sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==",
++      "dev": true,
++      "license": "MIT",
++      "bin": {
++        "tree-kill": "cli.js"
++      }
++    },
+     "node_modules/ts-api-utils": {
+       "version": "2.4.0",
+       "resolved": "https://registry.npmjs.org/ts-api-utils/-/ts-api-utils-2.4.0.tgz",
+@@ -17753,6 +18479,16 @@
+         "node": ">= 10.0.0"
+       }
+     },
++    "node_modules/untildify": {
++      "version": "4.0.0",
++      "resolved": "https://registry.npmjs.org/untildify/-/untildify-4.0.0.tgz",
++      "integrity": "sha512-KK8xQ1mkzZeg9inewmFVDNkg3l5LUhoq9kN6iWYB/CC9YMG8HA+c1Q8HwDe6dEX7kErrEVNVBO3fWsVq5iDgtw==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=8"
++      }
++    },
+     "node_modules/upath": {
+       "version": "1.2.0",
+       "resolved": "https://registry.npmjs.org/upath/-/upath-1.2.0.tgz",
+@@ -18724,6 +19460,31 @@
+         }
+       }
+     },
++    "node_modules/xcode": {
++      "version": "3.0.1",
++      "resolved": "https://registry.npmjs.org/xcode/-/xcode-3.0.1.tgz",
++      "integrity": "sha512-kCz5k7J7XbJtjABOvkc5lJmkiDh8VhjVCGNiqdKCscmVpdVUpEAyXv1xmCLkQJ5dsHqx3IPO4XW+NTDhU/fatA==",
++      "dev": true,
++      "license": "Apache-2.0",
++      "dependencies": {
++        "simple-plist": "^1.1.0",
++        "uuid": "^7.0.3"
++      },
++      "engines": {
++        "node": ">=10.0.0"
++      }
++    },
++    "node_modules/xcode/node_modules/uuid": {
++      "version": "7.0.3",
++      "resolved": "https://registry.npmjs.org/uuid/-/uuid-7.0.3.tgz",
++      "integrity": "sha512-DPSke0pXhTZgoF/d+WSt2QaKMCFSfx7QegxEWT+JOuHF5aWrKEn0G+ztjuJg/gG8/ItK+rbPCD/yNv8yyih6Cg==",
++      "deprecated": "uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).",
++      "dev": true,
++      "license": "MIT",
++      "bin": {
++        "uuid": "dist/bin/uuid"
++      }
++    },
+     "node_modules/xlsx": {
+       "version": "0.18.5",
+       "resolved": "https://registry.npmjs.org/xlsx/-/xlsx-0.18.5.tgz",
+@@ -18771,6 +19532,40 @@
+         "node": ">=16.0.0"
+       }
+     },
++    "node_modules/xml2js": {
++      "version": "0.6.2",
++      "resolved": "https://registry.npmjs.org/xml2js/-/xml2js-0.6.2.tgz",
++      "integrity": "sha512-T4rieHaC1EXcES0Kxxj4JWgaUQHDk+qwHcYOCFHfiwKz7tOVPLq7Hjq9dM1WCMhylqMEfP7hMcOIChvotiZegA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "sax": ">=0.6.0",
++        "xmlbuilder": "~11.0.0"
++      },
++      "engines": {
++        "node": ">=4.0.0"
++      }
++    },
++    "node_modules/xml2js/node_modules/xmlbuilder": {
++      "version": "11.0.1",
++      "resolved": "https://registry.npmjs.org/xmlbuilder/-/xmlbuilder-11.0.1.tgz",
++      "integrity": "sha512-fDlsI/kFEx7gLvbecc0/ohLG50fugQp8ryHzMTuW9vSa1GJ0XYWKnhsUx7oie3G98+r56aTQIUB4kht42R3JvA==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=4.0"
++      }
++    },
++    "node_modules/xmlbuilder": {
++      "version": "15.1.1",
++      "resolved": "https://registry.npmjs.org/xmlbuilder/-/xmlbuilder-15.1.1.tgz",
++      "integrity": "sha512-yMqGBqtXyeN1e3TGYvgNgDVZ3j84W4cwkOXQswghol6APgZWaff9lnbvN7MHYJOiXsvGPXtjTYJEiC9J2wv9Eg==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=8.0"
++      }
++    },
+     "node_modules/xmlchars": {
+       "version": "2.2.0",
+       "resolved": "https://registry.npmjs.org/xmlchars/-/xmlchars-2.2.0.tgz",
+@@ -18878,6 +19673,17 @@
+         "node": ">=8"
+       }
+     },
++    "node_modules/yauzl": {
++      "version": "2.10.0",
++      "resolved": "https://registry.npmjs.org/yauzl/-/yauzl-2.10.0.tgz",
++      "integrity": "sha512-p4a9I6X6nu6IhoGmBqAcbJy1mlC4j27vEPZX9F4L4/vZT3Lyq1VkFHw/V/PUcB9Buo+DG3iHkT0x3Qya58zc3g==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "buffer-crc32": "~0.2.3",
++        "fd-slicer": "~1.1.0"
++      }
++    },
+     "node_modules/yocto-queue": {
+       "version": "0.1.0",
+       "resolved": "https://registry.npmjs.org/yocto-queue/-/yocto-queue-0.1.0.tgz",
+diff --git a/tsconfig.json b/tsconfig.json
+index 12269a2..c867416 100644
+--- a/tsconfig.json
++++ b/tsconfig.json
+@@ -9,6 +9,9 @@
+     },
+     {
+       "path": "./tsconfig.server.json"
++    },
++    {
++      "path": "./tsconfig.qa.json"
+     }
+   ],
+   "compilerOptions": {
+diff --git a/tsconfig.qa.json b/tsconfig.qa.json
+new file mode 100644
+index 0000000..819939e
+--- /dev/null
++++ b/tsconfig.qa.json
+@@ -0,0 +1,43 @@
++{
++  /*
++   * Type-checks the QA tooling that no other project covers.
++   *
++   * `tsconfig.server.json` includes `api` but EXCLUDES `api/**\/*.test.ts`, and
++   * `tsconfig.node.json` includes only `vite.config.ts`. So the report wrapper in
++   * `scripts/` and every QA test file fell outside `npm run check` entirely: the command
++   * exited 0 while the code added alongside it was never type-checked. Running the
++   * wrapper successfully proved some of its paths at runtime and nothing about the rest.
++   *
++   * Deliberately narrow. Pulling all of `scripts/` in would drag long-standing helpers
++   * into a check they have never passed, which is a different piece of work and would
++   * bury the signal this project exists to give.
++   */
++  "compilerOptions": {
++    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.qa.tsbuildinfo",
++    "target": "ES2022",
++    "lib": ["ES2022"],
++    "module": "ESNext",
++    "types": ["node", "vitest/globals"],
++    "skipLibCheck": true,
++    "moduleResolution": "bundler",
++    "allowImportingTsExtensions": true,
++    "moduleDetection": "force",
++    "noEmit": true,
++    "strict": true,
++    "esModuleInterop": true,
++    "noFallthroughCasesInSwitch": true,
++    "baseUrl": ".",
++    "paths": {
++      "@/*": ["./src/*"],
++      "@contracts/*": ["./contracts/*"],
++      "@db/*": ["./db/*"]
++    }
++  },
++  "include": [
++    "scripts/classification-core-report.ts",
++    "api/qa/classification-core-report.ts",
++    "api/qa/classification-core-report.test.ts",
++    "api/qa/classification-test-manifest.ts",
++    "api/qa/classification-test-manifest.test.ts"
++  ]
++}
+diff --git a/.gitignore b/.gitignore
+index 013cb88..9abeeab 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -39,3 +39,4 @@ whatsapp_auth_info/
+ diff.txt
+ diff_utf8.txt
+ *.jar
++.artifacts/
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 6b1d773..37c735a 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -66,15 +66,19 @@ jobs:
+           node-version: 22
+           cache: npm
+       - run: npm ci
+-      # The corpus, the event core and the quality gates. `npm run test` runs a fixed
+-      # list that does not include any of them, so until now a classification regression
+-      # could land on a green build.
++      # The corpus, the event core, the quality gates, and the guards the first version
++      # of this job left out — model mapping, corrections, muscle memory, taxonomy, the
++      # LLM router and the A2 acceptance suites. `npm run test` runs a fixed list that
++      # includes none of them, so until this job a classification regression could land
++      # on a green build.
+       #
+       # Offline by construction: the quality test makes executeLlmChain throw and mocks
+-      # the database, so this job reaches no provider and spends nothing. The env below
+-      # is the same synthetic set the other jobs use.
+-      - run: npm run test:classification:core
+-        env:
++      # the database, and `classification-test-manifest.test.ts` fails if any listed file
++      # reaches a live provider, a real database or a real key. The env below is the same
++      # synthetic set the other jobs use.
++      - name: Classification test suite
++        run: npm run test:classification:core
++        env: &synthetic_env
+           DATABASE_URL: "mysql://test:test@localhost:3306/test"
+           GOOGLE_CLIENT_ID: test
+           GOOGLE_CLIENT_SECRET: test
+@@ -83,24 +87,24 @@ jobs:
+           NODE_ENV: test
+           TRUST_PROXY: "true"
+           REDIS_URL: ""
+-      # Runs the same corpus once more and writes the comparable summary. It refuses to
+-      # write anything if the gate above did not pass, so a red run cannot leave numbers
+-      # behind for someone to quote.
+-      - run: npm run report:classification:core
++      # Writes to an untracked, per-attempt path. Nothing lives in the repository for a
++      # checkout to resurrect, and the report carries the run id, the attempt, the commit
++      # and a status — so an artifact that does not belong to this attempt says so.
++      #
++      # On failure the wrapper replaces whatever is at that path with a `status: failed`
++      # diagnostic carrying NO metrics. That is why the upload below can be `always()`:
++      # a red attempt cannot publish a green attempt's numbers.
++      - name: Classification report
++        id: report
++        run: npm run report:classification:core -- --out "$REPORT_PATH"
+         env:
+-          DATABASE_URL: "mysql://test:test@localhost:3306/test"
+-          GOOGLE_CLIENT_ID: test
+-          GOOGLE_CLIENT_SECRET: test
+-          JWT_SECRET: test-secret-for-ci
+-          GEMINI_API_KEY: test
+-          NODE_ENV: test
+-          TRUST_PROXY: "true"
+-          REDIS_URL: ""
++          <<: *synthetic_env
++          REPORT_PATH: .artifacts/classification-core/report-${{ github.run_id }}-${{ github.run_attempt }}.json
+       - uses: actions/upload-artifact@v4
+         if: always()
+         with:
+-          name: classification-core-report
+-          path: docs/reviews/implementation/G1/classification-core-report.json
++          name: classification-core-report-${{ github.run_id }}-${{ github.run_attempt }}
++          path: .artifacts/classification-core/report-${{ github.run_id }}-${{ github.run_attempt }}.json
+           if-no-files-found: warn
+ 
+   e2e-tests:
+diff --git a/docs/03-AI_CLASSIFICATION_ENGINE.md b/docs/03-AI_CLASSIFICATION_ENGINE.md
+index b5021be..8d57452 100644
+--- a/docs/03-AI_CLASSIFICATION_ENGINE.md
++++ b/docs/03-AI_CLASSIFICATION_ENGINE.md
+@@ -93,18 +93,48 @@ the setting's meaning is a product decision, outside this round.
+ ### Running the corpus and the quality gates
+ 
+ ```bash
+-npm run test:classification:core      # 19 files, 566 tests, includes the quality gates
++npm run test:classification:core      # every classification guard, including the quality gates
+ npm run report:classification:core    # same corpus, writes a comparable summary
+ ```
+ 
+-Both are offline: the quality run makes `executeLlmChain` throw and mocks the database,
+-so no provider is reached and nothing is spent. **Token and latency figures from these
+-runs are therefore zero or local-only, and are not production numbers.** The report says
+-so in its own `warnings`.
+-
+-`npm run test` does **not** include any of this — it runs a fixed list that predates the
++The file list is not written by hand. It comes from
++`api/qa/classification-test-manifest.ts`, and `classification-test-manifest.test.ts`
++fails when a test file imports the classification surface and is in neither `INCLUDED`
++nor `EXCLUDED` — so a new guard forces a decision instead of quietly falling outside the
++command. The first version of this list was hand-copied and missed seventeen files that
++exercised the same modules, including model mapping, corrections, muscle memory,
++taxonomy, the LLM router and the voice intake gate. **No count is quoted here on
++purpose:** a number in a document is stale the moment a guard is added, and the manifest
++is the answer.
++
++Both commands are offline. The quality run makes `executeLlmChain` throw and mocks the
++database, and the manifest test asserts that no listed file imports a live connection,
++reads a real provider key, or is an opt-in integration suite. **Token and latency figures
++from these runs are therefore zero or local-only, and are not production numbers** — the
++report repeats that in its own `warnings`.
++
++`npm run test` does **not** include any of this; it runs a fixed list that predates the
+ classification work. The CI job `classification-core` is what enforces it.
+ 
++### What the report does and does not tell you
++
++`npm run report:classification:core` writes to an untracked, per-attempt path and carries
++the commit, the tree, whether the tree was dirty, and the CI run and attempt. Two runs are
++subtracted only when their `evaluationFingerprint` matches — same fixtures, count, mode,
++scorer and experiment settings. A classifier change is deliberately **not** part of that
++fingerprint, because measuring one is the reason to compare at all.
++
++Two auto-save safety figures are reported, never one:
++
++| Field | Counts |
++| :--- | :--- |
++| `tripleUnsafeAutoSaveCases` | auto-saved cases with a wrong amount, direction, category or item count |
++| `autoSaveCasesWithAnyScoredError` | the same, plus subcategory errors — a strict superset |
++
++They differ, and quoting either without its denominator is how two reports on this system
++came to disagree by roughly a factor of two. Neither figure says anything about currency,
++about the transaction date, or about whether the row was written correctly to the database.
++
+ ---
+ 
+ ## 2. 📱 Deterministic SMS Input Condensation (`api/lib/sms-rule-parser.ts`, `sms-ai-parser.ts`)
+diff --git a/api/qa/classification-core-report.ts b/api/qa/classification-core-report.ts
+index 1280f74..0ab5422 100644
+--- a/api/qa/classification-core-report.ts
++++ b/api/qa/classification-core-report.ts
+@@ -3,100 +3,224 @@
+  *
+  * Safe to paste into a ticket by construction: nothing below copies a fixture sentence,
+  * an item description, a person name or a key into the output. The report is metric
+- * names, category names and integers. That is a property of what this builds, not a
+- * scrubbing pass over it afterwards — a redaction step you have to remember to call is
+- * one you eventually forget, and `classification-core-report.test.ts` asserts it holds.
++ * names, category names and numbers. That is a property of what this builds, not a
++ * scrubbing pass afterwards — and `classification-core-report.test.ts` asserts it holds.
+  *
+- * Deliberately a PURE function over rows that `classification-scorer` already produced.
+- * It classifies nothing, re-aligns nothing, and re-scores nothing — every number below
+- * is derived from `CaseScore.matches`, which is the alignment the scorer committed to.
+- * A reporting layer that did its own matching would be a second classifier with no
+- * tests, and the first disagreement between the two would be invisible.
++ * A PURE function over rows that `classification-scorer` already produced. It classifies
++ * nothing, re-aligns nothing, re-scores nothing; every number is derived from
++ * `CaseScore.matches`, the alignment the scorer committed to. A reporting layer that did
++ * its own matching would be a second classifier with no tests, and the first
++ * disagreement between the two would be invisible.
+  *
+- * Two habits this exists to break:
++ * ── What the independent review of the first version found, and what changed ──
+  *
+- *   1. Numbers quoted without a denominator. "6 unsafe auto-saves" is not a rate until
+- *      you say out of what — all 172 cases, or the 96 that auto-saved. Those are 3.5%
+- *      and 6.25%, and the audit and the implementation reports quoted different ones.
+- *   2. Names that promise more than they measure. `llmCalls` is inferred from `parsedBy`
+- *      after the fact; it is not a request counter and never sees a retry. It is carried
+- *      through here as `derivedLlmRoutes`, with the original name kept beside it so no
+- *      existing consumer breaks.
++ * R3  A baseline missing almost every field was accepted, subtracted, and printed `NaN`
++ *     beside a green run. Everything crossing this boundary — evidence, baseline, and
++ *     the report itself — now passes a Zod contract, and a baseline that was ASKED for
++ *     and is unusable is an error rather than a shrug.
++ * R4  Two runs were compared on a matching fixture hash alone, so an offline/free run
++ *     was diffed against a live/ultra one under a different scorer and produced a
++ *     confident delta. Comparability is now an `evaluationFingerprint` over everything
++ *     that defines the measurement — and the classifier is deliberately NOT in it,
++ *     because changing the classifier is the thing a comparison exists to measure.
++ * R5  `unsafeAutoSaves` was documented as "any scoring failure" but populated from a
++ *     counter that looks only at amount/direction/category/count. Both are reported now,
++ *     separately, each with its denominator. On the current corpus they are 4 and 7.
++ * R6  F1 returned null when precision and recall were both 0 with positive support,
++ *     reporting a measured total failure as missing data. Zero is zero; null is unmeasured.
++ * R7  Only the headline was compared. Categories, decisions and cost are compared too,
++ *     because a flat average is exactly how a per-category regression hides.
+  */
+-import type { AggregateScore, CaseScore } from "./classification-scorer";
+-
+-/** The shape `financial-event-quality.test.ts` writes when given an evidence path. */
+-export interface CoreEvidenceRow {
+-  case: {
+-    id: string;
+-    text?: string;
+-    expectedItems?: Array<{
+-      amount: number;
+-      type?: string;
+-      category?: string;
+-      categoryAnyOf?: string[];
+-    }>;
+-    expectedDecision?: string | string[];
+-  };
+-  result: {
+-    decision: string;
+-    items: Array<{ amount: number; type?: string; category?: string }>;
+-  };
+-  score: CaseScore;
+-  crashed?: boolean;
+-}
++import { z } from "zod";
+ 
+-export interface CoreEvidence {
+-  generatedAt?: string;
+-  mode?: string;
+-  overall: AggregateScore;
+-  dev: AggregateScore;
+-  frozen: AggregateScore;
+-  system: {
+-    unsafeAutoSaves: number;
+-    spuriousOnNonFinancial: number;
+-    [key: string]: unknown;
+-  };
+-  decisions: Record<string, number>;
+-  rows: CoreEvidenceRow[];
+-}
++/** Bumped when the shape or the meaning of a field changes. Part of comparability. */
++export const REPORT_SCHEMA_VERSION = "2.0.0";
++
++// ─── Contracts ──────────────────────────────────────────────────────────────
++//
++// Narrow on purpose: only the fields this module reads. Validating the scorer's whole
++// output here would duplicate its type and drift from it.
+ 
+-export interface CoreReportProvenance {
+-  /** sha256 over the fixture objects, so two reports can be compared honestly. */
+-  fixtureSha256: string;
++const finite = z.number().finite();
++const rate = finite.min(0).max(1);
++const count = z.number().int().min(0);
++
++const itemMatchSchema = z.object({
++  expectedIndex: z.number().int().nullable(),
++  actualIndex: z.number().int().nullable(),
++  categoryOk: z.boolean(),
++});
++
++const caseScoreSchema = z.object({
++  id: z.string(),
++  expectedCount: count,
++  actualCount: count,
++  tripleHits: count,
++  spurious: count,
++  countExact: z.boolean(),
++  matches: z.array(itemMatchSchema),
++  failures: z.array(z.string()),
++});
++
++const aggregateSchema = z.object({
++  cases: count,
++  expectedItems: count,
++  actualItems: count,
++  tripleF1: rate,
++  triplePrecision: rate,
++  tripleRecall: rate,
++  amountF1: rate,
++  typeAccuracy: rate,
++  categoryAccuracy: rate,
++  segmentationExact: rate,
++  decisionAccuracy: rate,
++  taxonomyViolationRate: rate,
++  cost: z.object({
++    totalTokens: finite.min(0),
++    totalCachedTokens: finite.min(0),
++    llmCalls: finite.min(0),
++    latencyP50: finite.min(0),
++    latencyP95: finite.min(0),
++  }),
++});
++
++const evidenceRowSchema = z.object({
++  case: z
++    .object({
++      id: z.string(),
++      expectedItems: z.array(z.looseObject({ category: z.string().optional() })).optional(),
++    })
++    .loose(),
++  result: z
++    .object({
++      decision: z.string(),
++      items: z.array(z.looseObject({ category: z.string().optional() })),
++    })
++    .loose(),
++  score: caseScoreSchema,
++  crashed: z.boolean().optional(),
++});
++
++export const coreEvidenceSchema = z.object({
++  generatedAt: z.string().optional(),
++  mode: z.string().optional(),
++  overall: aggregateSchema,
++  dev: aggregateSchema,
++  frozen: aggregateSchema,
++  system: z
++    .object({ unsafeAutoSaves: count, spuriousOnNonFinancial: count })
++    .loose(),
++  decisions: z.record(z.string(), count),
++  rows: z.array(evidenceRowSchema),
++});
++
++export type CoreEvidence = z.infer<typeof coreEvidenceSchema>;
++export type CoreEvidenceRow = z.infer<typeof evidenceRowSchema>;
++
++/**
++ * Everything that has to match before two runs may be subtracted from each other.
++ *
++ * Deliberately EXCLUDES the classifier's own source. Changing the classifier is what a
++ * comparison measures; refusing to compare across it would make the report useless.
++ * What must not change is how the measurement was taken.
++ */
++export const evaluationFingerprintSchema = z.object({
++  /** sha256 over the fixture objects, in order. */
++  fixtureSha256: z.string().length(64),
++  /** Case count, so a truncated corpus is caught even if a hash somehow matched. */
++  caseCount: count,
++  /** offline | scripted | live. An offline number is not a live number. */
++  mode: z.string(),
++  /** sha256 of the scorer and metric modules — the ruler itself. */
++  scorerSha256: z.string(),
++  /**
++   * Version of the confidence calibration table.
++   *
++   * Moved INTO the fingerprint after the first version of this file left it out.
++   * Regenerating the table changes the probability written on every item, and therefore
++   * the decision each one receives — so a rebuilt table is a change in how the system is
++   * measured, not a change in the classifier. Left outside, it would show up as a
++   * classifier improvement that nobody made.
++   */
++  calibrationVersion: z.string(),
++  /** Shape and meaning of the fields below. */
++  schemaVersion: z.string(),
++  /** Plan, model, thresholds — the experiment's own settings. */
++  experiment: z.record(
++    z.string(),
++    z.union([z.string(), z.number(), z.boolean(), z.null()]),
++  ),
++});
++
++export type EvaluationFingerprint = z.infer<typeof evaluationFingerprintSchema>;
++
++export const provenanceSchema = z.object({
++  fingerprint: evaluationFingerprintSchema,
+   /** sha256 per in-scope source file, so a metric change can be attributed. */
+-  sourceSha256: Record<string, string>;
+-  /** "offline" | "scripted" | "live". Anything but offline costs money. */
+-  mode: string;
+-  generatedAt: string;
+-  runtimeMs: number;
+-  node: string;
+-  /** Free-form: thresholds, model, plan — whatever the run was configured with. */
+-  settings: Record<string, unknown>;
+-}
++  sourceSha256: z.record(z.string(), z.string()),
++  git: z.object({
++    commit: z.string(),
++    tree: z.string(),
++    dirty: z.boolean(),
++    dirtyFiles: z.array(z.string()),
++  }),
++  generatedAt: z.string(),
++  runtimeMs: finite.min(0),
++  node: z.string(),
++  platform: z.string(),
++  /** Present in CI. Ties an artifact to the attempt that produced it. */
++  ci: z
++    .object({ runId: z.string(), attempt: z.string(), workflow: z.string() })
++    .nullable(),
++  status: z.enum(["success", "failed"]),
++});
++
++export type CoreReportProvenance = z.infer<typeof provenanceSchema>;
++
++// ─── Metrics ────────────────────────────────────────────────────────────────
++
++const metricsSchema = z.object({
++  cases: count,
++  expectedItems: count,
++  actualItems: count,
++  tripleF1: rate,
++  triplePrecision: rate,
++  tripleRecall: rate,
++  amountF1: rate,
++  typeAccuracy: rate,
++  categoryAccuracy: rate,
++  segmentationExact: rate,
++  decisionAccuracy: rate,
++  taxonomyViolationRate: rate,
++});
++
++export type CoreReportMetrics = z.infer<typeof metricsSchema>;
+ 
+ export interface CategoryScore {
+   category: string;
+-  /**
+-   * Accepted answers the classifier PRODUCED as this category. Numerator of precision.
+-   */
++  /** Accepted answers the classifier PRODUCED as this category. Numerator of precision. */
+   acceptedAsProduced: number;
+   /**
+    * Accepted answers this category was EXPECTED for. Numerator of recall.
+    *
+-   * Differs from `acceptedAsProduced` wherever a fixture allows several categories: the
+-   * same correct answer is a produced-س credit for one and an expected-س credit for
+-   * another. Sharing one numerator between the two denominators produces rates above 1.
++   * Differs from `acceptedAsProduced` wherever a fixture accepts several categories
++   * (`categoryAnyOf`, 39 cases in the current corpus): one correct answer is a
++   * produced-credit for the category given and an expected-credit for the category
++   * asked. Sharing a numerator between the two denominators produces rates above 1.
+    */
+   acceptedAsExpected: number;
+-  /** Actual items in this category that were not accepted. */
+   falsePositives: number;
+-  /** Expected items in this category that were missed or mis-categorised. */
+   falseNegatives: number;
+   precision: number | null;
+   recall: number | null;
++  /**
++   * Harmonic mean of the two rates above.
++   *
++   * NOT textbook F1 wherever `categoryAnyOf` applies, because the two rates have
++   * different numerators there. Called `lenientF1` in `definitions` for that reason;
++   * `strictCategories` carries the conventional figures over the single-target subset.
++   */
+   f1: number | null;
+-  /** Spelled out, because a rate without one is not a measurement. */
+   precisionDenominator: number;
+   recallDenominator: number;
+ }
+@@ -104,57 +228,74 @@ export interface CategoryScore {
+ export interface DecisionBreakdown {
+   decision: string;
+   cases: number;
+-  /** Cases with at least one scoring failure while sitting in this decision. */
+   casesWithError: number;
+   errorRateWithinDecision: number | null;
+   denominator: number;
+ }
+ 
+-export interface CoreReportMetrics {
+-  cases: number;
+-  expectedItems: number;
+-  actualItems: number;
+-  tripleF1: number;
+-  triplePrecision: number;
+-  tripleRecall: number;
+-  amountF1: number;
+-  typeAccuracy: number;
+-  categoryAccuracy: number;
+-  segmentationExact: number;
+-  decisionAccuracy: number;
+-  taxonomyViolationRate: number;
++export interface AutoSaveSafety {
++  /**
++   * Auto-saved cases whose amount, direction, category or item count was wrong.
++   * This is `SystemMetrics.unsafeAutoSaves`, unchanged, kept for continuity.
++   */
++  tripleUnsafeAutoSaveCases: number;
++  /**
++   * Auto-saved cases with ANY scored failure, subcategory included. Strictly a superset.
++   * On the current corpus: 7 against the 4 above, the difference being three
++   * subcategory mistakes — real, and not the same severity as a wrong amount.
++   */
++  autoSaveCasesWithAnyScoredError: number;
++  autoSavedCases: number;
++  totalCases: number;
++  tripleUnsafeRateOfAutoSaved: number | null;
++  tripleUnsafeRateOfAllCases: number | null;
++  anyErrorRateOfAutoSaved: number | null;
++  /** Neither figure says anything about currency, date, or a correct database write. */
++  doesNotCover: string[];
++}
++
++export interface CategoryDelta {
++  category: string;
++  precisionDelta: number | null;
++  recallDelta: number | null;
++  f1Delta: number | null;
++}
++
++export interface ComparedMetrics {
++  baseline: CoreReportMetrics | null;
++  candidate: CoreReportMetrics;
++  delta: Record<string, number> | null;
+ }
+ 
+ export interface CoreReport {
++  schemaVersion: string;
+   provenance: CoreReportProvenance;
+   definitions: Record<string, string>;
+   warnings: string[];
+-  headline: {
+-    baseline: CoreReportMetrics | null;
+-    candidate: CoreReportMetrics;
+-    delta: Partial<Record<keyof CoreReportMetrics, number>> | null;
+-  };
+-  splits: {
+-    dev: CoreReportMetrics;
+-    frozen: CoreReportMetrics;
++  comparability: {
++    compared: boolean;
++    reason: string;
++    /** Fingerprint fields that differ, when a comparison was refused. */
++    mismatched: string[];
+   };
++  headline: ComparedMetrics;
++  splits: { dev: ComparedMetrics; frozen: ComparedMetrics };
+   decisions: {
+     counts: Record<string, number>;
++    baselineCounts: Record<string, number> | null;
++    countsDelta: Record<string, number> | null;
+     breakdown: DecisionBreakdown[];
+-    /** Errors that were auto-saved: numerator, and BOTH denominators, named. */
+-    unsafeAutoSaves: {
+-      count: number;
+-      ofAllCases: { denominator: number; rate: number };
+-      ofAutoSavedCases: { denominator: number; rate: number | null };
+-    };
++    baselineBreakdown: DecisionBreakdown[] | null;
++    autoSaveSafety: AutoSaveSafety;
++    baselineAutoSaveSafety: AutoSaveSafety | null;
+   };
+   categories: CategoryScore[];
++  categoryDelta: CategoryDelta[] | null;
++  /** Conventional precision/recall over cases with a single acceptable category. */
++  strictCategories: CategoryScore[];
+   confusion: {
+-    /** expected category → actual category → count, for matched pairs only. */
+     matrix: Record<string, Record<string, number>>;
+-    /** Expected items with no actual counterpart. */
+     missedByCategory: Record<string, number>;
+-    /** Actual items with no expected counterpart. */
+     spuriousByCategory: Record<string, number>;
+     convention: string;
+   };
+@@ -167,36 +308,49 @@ export interface CoreReport {
+     llmCalls: number;
+     latencyP50: number;
+     latencyP95: number;
++    baselineDerivedLlmRoutes: number | null;
+     note: string;
+   };
+ }
+ 
+-/** The fallback category an unresolved classification collapses into. */
+ const UNRESOLVED = "متنوعات";
+ const UNCATEGORISED = "(none)";
+ 
+ const DEFINITIONS: Record<string, string> = {
+   match:
+-    "Pairs come from CaseScore.matches, which the scorer built by greedy first-fit on amount in narrative order. Reporting does not re-align.",
++    "Pairs come from CaseScore.matches, which the scorer built by greedy first-fit on amount in narrative order. Reporting does not re-align. Where a case contains two equal amounts the alignment is positional, so a swap between them is invisible to every category figure here — BND-006, MON-002, MON-003 and FBND-002 are the cases in the current corpus with that property.",
+   categoryOk:
+     "An actual category is accepted when it equals the expected category, or is any member of the fixture's categoryAnyOf.",
+   categoryPrecision:
+     "acceptedAsProduced / every actual item of this category. Asks: when the classifier said this category, how often was that accepted?",
+   categoryRecall:
+     "acceptedAsExpected / every expected item of this category. Asks: when this category was expected, how often did the answer satisfy it?",
+-  categoryTwoNumerators:
+-    "precision and recall use DIFFERENT numerators because categoryAnyOf lets one correct answer belong to two categories. Sharing a numerator makes recall exceed 1, which is how this was found.",
+-  tripleF1:
+-    "Amount AND direction AND category correct on the same item. The headline unit; it does NOT measure currency, date, or whether the row saved correctly.",
+-  unsafeAutoSave:
+-    "A case that produced a scoring failure while its decision was auto_save. Reported against two denominators because both are quoted in the literature on this system and they differ by roughly a factor of two.",
++  lenientF1:
++    "The harmonic mean of those two rates. Where categoryAnyOf applies they have different numerators, so this is an acceptance figure, not textbook F1. strictCategories reports the conventional numbers over cases with exactly one acceptable category.",
++  nullVsZero:
++    "null means the rate was not measurable — no denominator. 0 means it was measured and nothing was right. The first version of this report returned null for a measured total failure.",
++  tripleUnsafeAutoSaveCases:
++    "Auto-saved cases where amount, direction, category or item count was wrong. Unchanged from SystemMetrics.unsafeAutoSaves.",
++  autoSaveCasesWithAnyScoredError:
++    "Auto-saved cases with any scored failure, subcategory included. A superset of the above; the two differ by three subcategory errors on the current corpus.",
+   derivedLlmRoutes:
+     "Inferred from parsedBy after the run. Not a request counter: it cannot see retries, provider failover, or a chain that tried three routes for one logical call.",
+   zeroTokensOffline:
+-    "In offline mode no provider is reached, so token and cost figures are zero by construction. They are not a production cost estimate.",
++    "In offline mode no provider is reached, so token and cost figures are zero by construction. They are not a production cost estimate, and local latency is not a production p95.",
++  comparability:
++    "Two runs are subtracted only when their evaluationFingerprint matches: same fixtures, count, mode, scorer, calibration table version, schema version and experiment settings. The classifier's own source is deliberately excluded — changing it is what a comparison measures. The calibration table is NOT: rebuilding it changes the probability on every item and so changes the measurement, which is why it sits inside the fingerprint and not beside it.",
+ };
+ 
+-function metricsOf(aggregate: AggregateScore): CoreReportMetrics {
++/**
++ * Takes the CONTRACT-parsed aggregate, not the scorer's own type.
++ *
++ * The schema above is narrow on purpose — only the fields this module reads — so
++ * validating an evidence file does not require the scorer's full `AggregateScore`
++ * to be reproduced here, where it would drift.
++ */
++type ParsedAggregate = z.infer<typeof aggregateSchema>;
++
++function metricsOf(aggregate: ParsedAggregate): CoreReportMetrics {
+   return {
+     cases: aggregate.cases,
+     expectedItems: aggregate.expectedItems,
+@@ -217,46 +371,52 @@ function ratio(numerator: number, denominator: number): number | null {
+   return denominator > 0 ? numerator / denominator : null;
+ }
+ 
++/**
++ * Harmonic mean, with zero distinguished from unmeasured.
++ *
++ * Both rates measured and both zero is a MEASURED total failure, and the answer is 0.
++ * Returning null there — as the first version did — reports a category that got
++ * everything wrong as a category nobody looked at.
++ */
++function harmonic(precision: number | null, recall: number | null): number | null {
++  if (precision === null || recall === null) return null;
++  if (precision + recall === 0) return 0;
++  return (2 * precision * recall) / (precision + recall);
++}
++
+ function bump(target: Record<string, number>, key: string): void {
+   target[key] = (target[key] || 0) + 1;
+ }
+ 
+-/**
+- * Per-category precision and recall, plus the confusion between them.
+- *
+- * TWO numerators, not one. An accepted answer credits precision to the category it
+- * PRODUCED and recall to the category that was EXPECTED, and with `categoryAnyOf` those
+- * are not always the same category — an item expected as سكن and legitimately answered
+- * موظفين is correct, and it is correct for both of them, differently.
+- *
+- * Counting one numerator against both denominators is not a rounding problem, it is an
+- * invalid statistic: the first run of this report gave أصدقاء a recall of 1.25 and three
+- * negative false negatives, because fifteen items had been accepted as أصدقاء while only
+- * twelve were ever expected to be. A rate above one is the arithmetic saying the
+- * numerator does not belong to that denominator.
+- */
+-function scoreCategoriesFromMatches(rows: CoreEvidenceRow[]): {
+-  categories: CategoryScore[];
+-  confusion: CoreReport["confusion"];
+-} {
++function scoreCategoriesFromMatches(
++  rows: CoreEvidenceRow[],
++  onlySingleTarget: boolean,
++): { categories: CategoryScore[]; confusion: CoreReport["confusion"] } {
+   const actualTotals: Record<string, number> = {};
+   const expectedTotals: Record<string, number> = {};
+-  /** Accepted answers, credited to the category the classifier produced. */
+   const precisionHits: Record<string, number> = {};
+-  /** The same accepted answers, credited to the category the fixture expected. */
+   const recallHits: Record<string, number> = {};
+   const matrix: Record<string, Record<string, number>> = {};
+   const missedByCategory: Record<string, number> = {};
+   const spuriousByCategory: Record<string, number> = {};
+ 
+   for (const row of rows) {
+-    const expected = row.case.expectedItems || [];
+-    const actual = row.result.items || [];
++    const expected = (row.case.expectedItems || []) as Array<{
++      category?: string;
++      categoryAnyOf?: string[];
++    }>;
++    const actual = row.result.items as Array<{ category?: string }>;
++
++    // The strict view drops cases whose fixture accepts more than one category, which is
++    // exactly where precision and recall stop sharing a numerator.
++    if (onlySingleTarget && expected.some((item) => (item.categoryAnyOf || []).length > 1)) {
++      continue;
++    }
+ 
+     for (const item of actual) bump(actualTotals, item.category || UNCATEGORISED);
+     for (const item of expected) bump(expectedTotals, item.category || UNCATEGORISED);
+ 
+-    for (const match of row.score.matches || []) {
++    for (const match of row.score.matches) {
+       const expectedItem =
+         match.expectedIndex === null ? undefined : expected[match.expectedIndex];
+       const actualItem = match.actualIndex === null ? undefined : actual[match.actualIndex];
+@@ -278,7 +438,10 @@ function scoreCategoriesFromMatches(rows: CoreEvidenceRow[]): {
+     }
+   }
+ 
+-  const names = [...new Set([...Object.keys(actualTotals), ...Object.keys(expectedTotals)])].sort();
++  const names = [
++    ...new Set([...Object.keys(actualTotals), ...Object.keys(expectedTotals)]),
++  ].sort();
++
+   const categories = names.map((category) => {
+     const produced = precisionHits[category] || 0;
+     const recovered = recallHits[category] || 0;
+@@ -286,10 +449,6 @@ function scoreCategoriesFromMatches(rows: CoreEvidenceRow[]): {
+     const recallDenominator = expectedTotals[category] || 0;
+     const precision = ratio(produced, precisionDenominator);
+     const recall = ratio(recovered, recallDenominator);
+-    const f1 =
+-      precision !== null && recall !== null && precision + recall > 0
+-        ? (2 * precision * recall) / (precision + recall)
+-        : null;
+     return {
+       category,
+       acceptedAsProduced: produced,
+@@ -298,7 +457,7 @@ function scoreCategoriesFromMatches(rows: CoreEvidenceRow[]): {
+       falseNegatives: recallDenominator - recovered,
+       precision,
+       recall,
+-      f1,
++      f1: harmonic(precision, recall),
+       precisionDenominator,
+       recallDenominator,
+     };
+@@ -319,11 +478,10 @@ function scoreCategoriesFromMatches(rows: CoreEvidenceRow[]): {
+ function scoreDecisions(rows: CoreEvidenceRow[]): DecisionBreakdown[] {
+   const byDecision = new Map<string, { cases: number; casesWithError: number }>();
+   for (const row of rows) {
+-    const decision = row.result.decision;
+-    const entry = byDecision.get(decision) || { cases: 0, casesWithError: 0 };
++    const entry = byDecision.get(row.result.decision) || { cases: 0, casesWithError: 0 };
+     entry.cases++;
+-    if ((row.score.failures || []).length > 0) entry.casesWithError++;
+-    byDecision.set(decision, entry);
++    if (row.score.failures.length > 0) entry.casesWithError++;
++    byDecision.set(row.result.decision, entry);
+   }
+   return [...byDecision.entries()]
+     .sort(([a], [b]) => a.localeCompare(b))
+@@ -336,88 +494,271 @@ function scoreDecisions(rows: CoreEvidenceRow[]): DecisionBreakdown[] {
+     }));
+ }
+ 
++function autoSaveSafety(evidence: CoreEvidence): AutoSaveSafety {
++  const rows = evidence.rows;
++  const autoSaved = rows.filter((row) => row.result.decision === "auto_save");
++  const anyError = autoSaved.filter((row) => row.score.failures.length > 0).length;
++  const triple = evidence.system.unsafeAutoSaves;
++
++  return {
++    tripleUnsafeAutoSaveCases: triple,
++    autoSaveCasesWithAnyScoredError: anyError,
++    autoSavedCases: autoSaved.length,
++    totalCases: rows.length,
++    tripleUnsafeRateOfAutoSaved: ratio(triple, autoSaved.length),
++    tripleUnsafeRateOfAllCases: ratio(triple, rows.length),
++    anyErrorRateOfAutoSaved: ratio(anyError, autoSaved.length),
++    doesNotCover: [
++      "currency",
++      "transaction date",
++      "whether the row was written correctly to the database",
++      "whether the user would have accepted it",
++    ],
++  };
++}
++
++function deltaOf(candidate: CoreReportMetrics, baseline: CoreReportMetrics): Record<string, number> {
++  const out: Record<string, number> = {};
++  for (const key of Object.keys(candidate) as Array<keyof CoreReportMetrics>) {
++    out[key] = candidate[key] - baseline[key];
++  }
++  return out;
++}
++
++/** Which fingerprint fields differ. Empty means the two runs are comparable. */
++export function fingerprintMismatch(
++  candidate: EvaluationFingerprint,
++  baseline: EvaluationFingerprint,
++): string[] {
++  const out: string[] = [];
++  const simple: Array<keyof EvaluationFingerprint> = [
++    "fixtureSha256",
++    "caseCount",
++    "mode",
++    "scorerSha256",
++    "calibrationVersion",
++    "schemaVersion",
++  ];
++  for (const key of simple) {
++    if (candidate[key] !== baseline[key]) {
++      out.push(`${key}: ${String(baseline[key])} → ${String(candidate[key])}`);
++    }
++  }
++  const keys = [
++    ...new Set([...Object.keys(candidate.experiment), ...Object.keys(baseline.experiment)]),
++  ].sort();
++  for (const key of keys) {
++    if (candidate.experiment[key] !== baseline.experiment[key]) {
++      out.push(
++        `experiment.${key}: ${String(baseline.experiment[key])} → ${String(candidate.experiment[key])}`,
++      );
++    }
++  }
++  return out;
++}
++
++/** A previous report, reduced to what a comparison needs. */
++export const baselineSchema = z.object({
++  schemaVersion: z.string(),
++  provenance: z.looseObject({ fingerprint: evaluationFingerprintSchema }),
++  headline: z.looseObject({ candidate: metricsSchema }),
++  splits: z.object({
++    dev: z.looseObject({ candidate: metricsSchema }),
++    frozen: z.looseObject({ candidate: metricsSchema }),
++  }),
++  decisions: z.looseObject({
++    counts: z.record(z.string(), count),
++    breakdown: z.array(
++      z.object({
++        decision: z.string(),
++        cases: count,
++        casesWithError: count,
++        errorRateWithinDecision: rate.nullable(),
++        denominator: count,
++      }),
++    ),
++    autoSaveSafety: z.object({
++      tripleUnsafeAutoSaveCases: count,
++      autoSaveCasesWithAnyScoredError: count,
++      autoSavedCases: count,
++      totalCases: count,
++      tripleUnsafeRateOfAutoSaved: rate.nullable(),
++      tripleUnsafeRateOfAllCases: rate.nullable(),
++      anyErrorRateOfAutoSaved: rate.nullable(),
++      doesNotCover: z.array(z.string()),
++    }),
++  }),
++  categories: z.array(
++    z.looseObject({
++      category: z.string(),
++      precision: rate.nullable(),
++      recall: rate.nullable(),
++      f1: rate.nullable(),
++    }),
++  ),
++  cost: z.looseObject({ derivedLlmRoutes: finite.min(0) }),
++});
++
++export type CoreReportBaseline = z.infer<typeof baselineSchema>;
++
+ export interface BuildCoreReportInput {
+-  evidence: CoreEvidence;
++  evidence: unknown;
+   provenance: CoreReportProvenance;
+-  /**
+-   * A previous report's `headline.candidate`, or null on a first run.
+-   * Compared only when the fixture hash matches; otherwise the delta is withheld and a
+-   * warning is raised, because two different corpora produce two incomparable numbers.
+-   */
+-  baseline?: { metrics: CoreReportMetrics; fixtureSha256: string } | null;
++  /** A previous report. Undefined means a first run; that is legitimate. */
++  baseline?: unknown;
++}
++
++/** Thrown for a contract violation the caller must not paper over. */
++export class CoreReportContractError extends Error {
++  constructor(
++    readonly subject: "evidence" | "baseline" | "report",
++    message: string,
++  ) {
++    super(`${subject}: ${message}`);
++    this.name = "CoreReportContractError";
++  }
++}
++
++function describeZodError(error: z.ZodError): string {
++  return error.issues
++    .slice(0, 6)
++    .map((issue) => `${issue.path.join(".") || "(root)"} ${issue.message}`)
++    .join("; ");
+ }
+ 
+ export function buildCoreReport(input: BuildCoreReportInput): CoreReport {
+-  const { evidence, provenance } = input;
+-  const rows = evidence.rows || [];
++  const parsedEvidence = coreEvidenceSchema.safeParse(input.evidence);
++  if (!parsedEvidence.success) {
++    throw new CoreReportContractError("evidence", describeZodError(parsedEvidence.error));
++  }
++  const evidence = parsedEvidence.data;
++  const { provenance } = input;
+   const warnings: string[] = [];
+ 
++  // A baseline that was ASKED for and is unusable is an error.
++  //
++  // The first version type-asserted it, checked two properties existed, and subtracted.
++  // A baseline containing only `{cases: 172}` produced `NaN` deltas beside a green run.
++  let baseline: CoreReportBaseline | null = null;
++  if (input.baseline !== undefined && input.baseline !== null) {
++    const parsed = baselineSchema.safeParse(input.baseline);
++    if (!parsed.success) {
++      throw new CoreReportContractError("baseline", describeZodError(parsed.error));
++    }
++    baseline = parsed.data;
++  }
++
+   const candidate = metricsOf(evidence.overall);
++  const devCandidate = metricsOf(evidence.dev);
++  const frozenCandidate = metricsOf(evidence.frozen);
+ 
+-  let baselineMetrics: CoreReportMetrics | null = null;
+-  let delta: CoreReport["headline"]["delta"] = null;
++  let compared = false;
++  let reason = "no baseline supplied; this run establishes one";
++  let mismatched: string[] = [];
+ 
+-  if (input.baseline) {
+-    if (input.baseline.fixtureSha256 !== provenance.fixtureSha256) {
+-      warnings.push(
+-        `FIXTURES DIFFER: baseline ${input.baseline.fixtureSha256.slice(0, 12)} vs candidate ` +
+-          `${provenance.fixtureSha256.slice(0, 12)}. Delta withheld — the two runs did not answer the same questions.`,
+-      );
++  if (baseline) {
++    mismatched = fingerprintMismatch(provenance.fingerprint, baseline.provenance.fingerprint);
++    if (mismatched.length > 0) {
++      reason = "the two runs did not measure the same thing the same way; delta withheld";
++      warnings.push(`NOT COMPARABLE — ${mismatched.join(" | ")}`);
+     } else {
+-      baselineMetrics = input.baseline.metrics;
+-      delta = {};
+-      for (const key of Object.keys(candidate) as Array<keyof CoreReportMetrics>) {
+-        delta[key] = candidate[key] - input.baseline.metrics[key];
+-      }
++      compared = true;
++      reason = "evaluationFingerprint matches on every field";
+     }
+-  } else {
+-    warnings.push("No baseline supplied; this run establishes one and reports no delta.");
+   }
+ 
+-  if (provenance.mode === "offline") {
+-    warnings.push(DEFINITIONS.zeroTokensOffline);
++  if (provenance.fingerprint.mode === "offline") warnings.push(DEFINITIONS.zeroTokensOffline);
++  if (provenance.git.dirty) {
++    warnings.push(
++      `Working tree was dirty at ${provenance.git.commit.slice(0, 12)} (${provenance.git.dirtyFiles.length} file(s)); this run is not reproducible from the commit alone.`,
++    );
+   }
+ 
+-  const unresolvedSpurious = rows.reduce(
++  const unresolvedProduced = evidence.rows.reduce(
+     (sum, row) =>
+       sum +
+-      (row.result.items || []).filter((item) => item.category === UNRESOLVED).length,
++      (row.result.items as Array<{ category?: string }>).filter(
++        (item) => item.category === UNRESOLVED,
++      ).length,
+     0,
+   );
+-  if (unresolvedSpurious > 0) {
++  if (unresolvedProduced > 0) {
+     warnings.push(
+-      `${unresolvedSpurious} produced item(s) landed on the unresolved category "${UNRESOLVED}". They count against precision for that category, not as a separate failure mode.`,
++      `${unresolvedProduced} produced item(s) landed on the unresolved category "${UNRESOLVED}". They count against precision for that category, not as a separate failure mode.`,
+     );
+   }
+ 
+-  const autoSaved = rows.filter((row) => row.result.decision === "auto_save").length;
+-  const unsafe = evidence.system.unsafeAutoSaves;
++  const lenient = scoreCategoriesFromMatches(evidence.rows, false);
++  const strict = scoreCategoriesFromMatches(evidence.rows, true);
++  const previousCategories =
++    compared && baseline ? new Map(baseline.categories.map((c) => [c.category, c])) : null;
+ 
+-  const { categories, confusion } = scoreCategoriesFromMatches(rows);
+-
+-  return {
++  const report: CoreReport = {
++    schemaVersion: REPORT_SCHEMA_VERSION,
+     provenance,
+     definitions: DEFINITIONS,
+     warnings,
+-    headline: { baseline: baselineMetrics, candidate, delta },
+-    splits: { dev: metricsOf(evidence.dev), frozen: metricsOf(evidence.frozen) },
+-    decisions: {
+-      counts: evidence.decisions || {},
+-      breakdown: scoreDecisions(rows),
+-      unsafeAutoSaves: {
+-        count: unsafe,
+-        ofAllCases: {
+-          denominator: rows.length,
+-          rate: rows.length > 0 ? unsafe / rows.length : 0,
+-        },
+-        ofAutoSavedCases: {
+-          denominator: autoSaved,
+-          rate: ratio(unsafe, autoSaved),
+-        },
++    comparability: { compared, reason, mismatched },
++    headline: {
++      baseline: compared && baseline ? baseline.headline.candidate : null,
++      candidate,
++      delta: compared && baseline ? deltaOf(candidate, baseline.headline.candidate) : null,
++    },
++    splits: {
++      dev: {
++        baseline: compared && baseline ? baseline.splits.dev.candidate : null,
++        candidate: devCandidate,
++        delta: compared && baseline ? deltaOf(devCandidate, baseline.splits.dev.candidate) : null,
++      },
++      frozen: {
++        baseline: compared && baseline ? baseline.splits.frozen.candidate : null,
++        candidate: frozenCandidate,
++        delta:
++          compared && baseline
++            ? deltaOf(frozenCandidate, baseline.splits.frozen.candidate)
++            : null,
+       },
+     },
+-    categories,
+-    confusion,
++    decisions: {
++      counts: evidence.decisions,
++      baselineCounts: compared && baseline ? baseline.decisions.counts : null,
++      countsDelta:
++        compared && baseline
++          ? Object.fromEntries(
++              [
++                ...new Set([
++                  ...Object.keys(evidence.decisions),
++                  ...Object.keys(baseline.decisions.counts),
++                ]),
++              ]
++                .sort()
++                .map((key) => [
++                  key,
++                  (evidence.decisions[key] || 0) - (baseline.decisions.counts[key] || 0),
++                ]),
++            )
++          : null,
++      breakdown: scoreDecisions(evidence.rows),
++      baselineBreakdown: compared && baseline ? baseline.decisions.breakdown : null,
++      autoSaveSafety: autoSaveSafety(evidence),
++      baselineAutoSaveSafety: compared && baseline ? baseline.decisions.autoSaveSafety : null,
++    },
++    categories: lenient.categories,
++    categoryDelta: previousCategories
++      ? lenient.categories.map((current) => {
++          const previous = previousCategories.get(current.category);
++          const diff = (a: number | null, b: number | null | undefined): number | null =>
++            a === null || b === null || b === undefined ? null : a - b;
++          return {
++            category: current.category,
++            precisionDelta: diff(current.precision, previous?.precision),
++            recallDelta: diff(current.recall, previous?.recall),
++            f1Delta: diff(current.f1, previous?.f1),
++          };
++        })
++      : null,
++    strictCategories: strict.categories,
++    confusion: lenient.confusion,
+     cost: {
+       totalTokens: evidence.overall.cost.totalTokens,
+       totalCachedTokens: evidence.overall.cost.totalCachedTokens,
+@@ -425,7 +766,73 @@ export function buildCoreReport(input: BuildCoreReportInput): CoreReport {
+       llmCalls: evidence.overall.cost.llmCalls,
+       latencyP50: evidence.overall.cost.latencyP50,
+       latencyP95: evidence.overall.cost.latencyP95,
++      baselineDerivedLlmRoutes: compared && baseline ? baseline.cost.derivedLlmRoutes : null,
+       note: DEFINITIONS.derivedLlmRoutes,
+     },
+   };
++
++  assertReportSane(report);
++  return report;
++}
++
++/**
++ * Last check before the report leaves this module.
++ *
++ * Every number here gets quoted by someone who will not re-derive it, so a NaN, an
++ * Infinity, a negative count or a rate above one must not reach the file. The first
++ * version shipped `recall: 1.25` and `falseNegatives: -3`.
++ */
++export function assertReportSane(report: CoreReport): void {
++  const problems: string[] = [];
++
++  const walk = (node: unknown, path: string): void => {
++    if (Array.isArray(node)) {
++      node.forEach((child, index) => walk(child, `${path}[${index}]`));
++      return;
++    }
++    if (node && typeof node === "object") {
++      for (const [key, value] of Object.entries(node)) {
++        walk(value, path ? `${path}.${key}` : key);
++      }
++      return;
++    }
++    if (typeof node === "number" && !Number.isFinite(node)) {
++      problems.push(`${path} is ${String(node)}`);
++    }
++  };
++  walk(report, "");
++
++  for (const entry of [...report.categories, ...report.strictCategories]) {
++    for (const [name, value] of [
++      ["precision", entry.precision],
++      ["recall", entry.recall],
++      ["f1", entry.f1],
++    ] as const) {
++      if (value !== null && (value < 0 || value > 1)) {
++        problems.push(`${entry.category}.${name} = ${value} is outside [0,1]`);
++      }
++    }
++    if (entry.falsePositives < 0) problems.push(`${entry.category}.falsePositives is negative`);
++    if (entry.falseNegatives < 0) problems.push(`${entry.category}.falseNegatives is negative`);
++    if (entry.acceptedAsProduced > entry.precisionDenominator) {
++      problems.push(`${entry.category}: precision numerator exceeds its denominator`);
++    }
++    if (entry.acceptedAsExpected > entry.recallDenominator) {
++      problems.push(`${entry.category}: recall numerator exceeds its denominator`);
++    }
++  }
++
++  const safety = report.decisions.autoSaveSafety;
++  if (safety.autoSaveCasesWithAnyScoredError < safety.tripleUnsafeAutoSaveCases) {
++    problems.push(
++      "autoSaveCasesWithAnyScoredError is smaller than tripleUnsafeAutoSaveCases; the wider measure must be a superset",
++    );
++  }
++  if (safety.autoSavedCases > safety.totalCases) {
++    problems.push("more auto-saved cases than cases");
++  }
++
++  if (problems.length > 0) {
++    throw new CoreReportContractError("report", problems.slice(0, 8).join("; "));
++  }
+ }
+diff --git a/api/qa/classification-core-report.test.ts b/api/qa/classification-core-report.test.ts
+index 791592e..a985571 100644
+--- a/api/qa/classification-core-report.test.ts
++++ b/api/qa/classification-core-report.test.ts
+@@ -1,273 +1,491 @@
+ /**
+  * A report you cannot check is a report you cannot trust.
+  *
+- * These run the builder over a corpus small enough to work out by hand, so every number
+- * in the assertions was computed on paper first. That is the point: the reporting layer
+- * is what everyone will quote, and the two failure modes it has to be immune to are a
+- * rate quoted without its denominator and a delta computed across two different corpora.
++ * Two layers, on purpose:
++ *
++ *   1. Cases scored by the REAL `scoreCase`/`aggregate`, so the report is tested against
++ *      the alignment it actually consumes rather than against a hand-written imitation
++ *      of it. Every expected number below was worked out on paper from the fixtures.
++ *   2. Contract cases on the pure builder, for the shapes a real run cannot easily
++ *      produce — a malformed baseline, an empty corpus, a NaN.
++ *
++ * The first version of this file asserted "every rate is inside [0,1]" and treated that
++ * as proof the statistics were right. It was not: the rates were inside [0,1] and the
++ * numerators still belonged to the wrong denominators. These check conservation — that a
++ * numerator is a subset of its own denominator, and that the pieces add up.
+  */
+ import { describe, expect, it } from "vitest";
++import { aggregate, scoreCase, type CaseScore, type ScorableResult } from "./classification-scorer";
++import type { BenchmarkCase } from "./fixtures/classification-cases.types";
+ import {
+   buildCoreReport,
++  CoreReportContractError,
++  fingerprintMismatch,
++  REPORT_SCHEMA_VERSION,
+   type CoreEvidence,
+-  type CoreEvidenceRow,
+-  type CoreReportMetrics,
++  type CoreReport,
++  type CoreReportProvenance,
+ } from "./classification-core-report";
+-import type { AggregateScore, CaseScore, ItemMatch } from "./classification-scorer";
+ 
+-function match(over: Partial<ItemMatch> = {}): ItemMatch {
+-  return {
+-    expectedIndex: 0,
+-    actualIndex: 0,
+-    amountOk: true,
+-    typeOk: true,
+-    categoryOk: true,
+-    subCategoryOk: null,
+-    personOk: null,
+-    taxonomyLegal: true,
+-    ...over,
+-  };
+-}
++// ─── Real-scorer fixtures, hand-computed ────────────────────────────────────
+ 
+-function score(over: Partial<CaseScore> = {}): CaseScore {
++function benchCase(over: Partial<BenchmarkCase> & Pick<BenchmarkCase, "id">): BenchmarkCase {
+   return {
+-    id: "X", bucket: "single_clause" as CaseScore["bucket"], tier: "locked" as CaseScore["tier"],
+-    split: "dev" as CaseScore["split"], pass: "local", expectedCount: 1, actualCount: 1,
+-    countExact: true, countDelta: 0, matched: 1, spurious: 0, missed: 0,
+-    typeHits: 1, categoryHits: 1, tripleHits: 1, subScored: 0, subHits: 0,
+-    personScored: 0, personHits: 0, taxonomyViolations: 0, miscFallbacks: 0,
+-    expectedExpenseSum: 0, actualExpenseSum: 0, expectedIncomeSum: 0, actualIncomeSum: 0,
+-    sumErrorEgp: 0, sumAccuracy: 1, decisionOk: true, questionOk: null,
+-    matches: [match()],
+-    cost: { processingTimeMs: 1, tokensUsed: 0, cachedTokens: 0, llmCalls: 0,
+-      parsedBy: "rule_engine", actualModelUsed: null, truncationSuspected: false },
+-    failures: [],
++    bucket: "single_clause",
++    tier: "locked",
++    split: "dev",
++    text: "",
++    expectedItems: [],
++    tags: [],
+     ...over,
+-  };
++  } as BenchmarkCase;
+ }
+ 
+-function aggregate(over: Partial<AggregateScore> = {}): AggregateScore {
++function result(
++  items: Array<{ amount: number; category: string; type?: string; subCategory?: string }>,
++  decision: "auto_save" | "review" | "clarify" = "auto_save",
++): ScorableResult {
+   return {
+-    cases: 4, expectedItems: 4, actualItems: 4,
+-    amountPrecision: 1, amountRecall: 1, amountF1: 1,
+-    triplePrecision: 0.75, tripleRecall: 0.75, tripleF1: 0.75,
+-    typeAccuracy: 1, categoryAccuracy: 0.75, subCategoryAccuracy: 1, personAccuracy: 1,
+-    segmentationExact: 1, countMae: 0, overSegmentRate: 0, underSegmentRate: 0,
+-    hallucinationRate: 0, taxonomyViolationRate: 0, miscFallbackRate: 0, decisionAccuracy: 1,
+-    sumAccuracyMean: 1, totalSumErrorEgp: 0,
+-    cost: { totalTokens: 0, totalCachedTokens: 0, cachedTokenRatio: 0, llmCalls: 3,
+-      tokensPerCaseMean: 0, tokensPerItemMean: 0, latencyP50: 2, latencyP95: 9, latencyMax: 12,
+-      parsedByDistribution: { rule_engine: 3, hybrid: 1 }, truncationSuspectedCount: 0 },
+-    ...over,
+-  };
++    items: items.map((item) => ({
++      amount: item.amount,
++      category: item.category,
++      subCategory: item.subCategory ?? "عام",
++      type: (item.type ?? "expense") as never,
++      confidence: 95,
++    })),
++    decision,
++    overallConfidence: 95,
++    tokensUsed: 0,
++    cachedTokens: 0,
++    processingTimeMs: 1,
++    parsedBy: "rule_engine",
++    actualModelUsed: null,
++  } as unknown as ScorableResult;
+ }
+ 
+ /**
+- * Four cases, worked out by hand:
++ * Six cases, chosen so every reporting branch is exercised and every figure is derivable
++ * by hand:
+  *
+- *   1  fuel-ok    expected [200 مواصلات]         actual [200 مواصلات]     matched, category ok
+- *   2  food-wrong expected [50 أكل وشرب]          actual [50 مواصلات]      matched, category WRONG
+- *   3  anyof-ok   expected [150 سكن|موظفين]       actual [150 موظفين]      matched via categoryAnyOf
+- *   4  missing    expected [90 صحة]               actual []                MISSED, no counterpart
++ *  fuel-ok      200 مواصلات        → 200 مواصلات        matched, accepted
++ *  food-wrong   50  أكل وشرب       → 50  مواصلات        matched, category WRONG
++ *  anyof-ok     150 سكن|موظفين     → 150 موظفين         matched via categoryAnyOf
++ *  missing      90  صحة            → (nothing)          expected with no production
++ *  spurious     (nothing expected) → 70  ترفيه          production with no reference
++ *  swapped      40 صحة, 40 مواصلات → 40 مواصلات, 40 صحة two EQUAL amounts, positions swapped
+  *
+- * So for مواصلات: 2 actual items, 1 accepted → precision 1/2. 1 expected item, 1 accepted
+- * → recall 1/1. For أكل وشرب: 0 actual, 1 expected → precision null, recall 0/1.
++ * مواصلات: actual items = 3 (fuel-ok, food-wrong, swapped#1); accepted as produced = 1.
++ *          expected items = 2 (fuel-ok, swapped#2);            accepted as expected = 1.
+  */
+-const ROWS: CoreEvidenceRow[] = [
++const CASES: Array<{ case: BenchmarkCase; result: ScorableResult }> = [
+   {
+-    case: { id: "fuel-ok", text: "دفعت 200 بنزين", expectedItems: [{ amount: 200, category: "مواصلات" }] },
+-    result: { decision: "auto_save", items: [{ amount: 200, category: "مواصلات" }] },
+-    score: score({ id: "fuel-ok" }),
++    case: benchCase({
++      id: "fuel-ok",
++      text: "دفعت 200 بنزين",
++      expectedItems: [{ amount: 200, category: "مواصلات", type: "expense" }],
++      expectedDecision: "auto_save",
++    }),
++    result: result([{ amount: 200, category: "مواصلات" }]),
+   },
+   {
+-    case: { id: "food-wrong", text: "دفعت 50 أكل", expectedItems: [{ amount: 50, category: "أكل وشرب" }] },
+-    result: { decision: "auto_save", items: [{ amount: 50, category: "مواصلات" }] },
+-    score: score({
+-      id: "food-wrong", categoryHits: 0, tripleHits: 0,
+-      matches: [match({ categoryOk: false })],
+-      failures: ["#1 (50) فئة: متوقع أكل وشرب — الناتج مواصلات"],
++    case: benchCase({
++      id: "food-wrong",
++      text: "دفعت 50 أكل",
++      expectedItems: [{ amount: 50, category: "أكل وشرب", type: "expense" }],
+     }),
++    result: result([{ amount: 50, category: "مواصلات" }]),
+   },
+   {
+-    case: {
+-      id: "anyof-ok", text: "دفعت 150 للبواب",
+-      expectedItems: [{ amount: 150, category: "سكن", categoryAnyOf: ["سكن", "موظفين"] }],
+-    },
+-    result: { decision: "review", items: [{ amount: 150, category: "موظفين" }] },
+-    score: score({ id: "anyof-ok", split: "frozen" as CaseScore["split"] }),
++    case: benchCase({
++      id: "anyof-ok",
++      split: "frozen",
++      text: "دفعت 150 للبواب",
++      expectedItems: [
++        { amount: 150, category: "سكن", categoryAnyOf: ["سكن", "موظفين"], type: "expense" },
++      ],
++    }),
++    result: result([{ amount: 150, category: "موظفين" }], "review"),
+   },
+   {
+-    case: { id: "missing", text: "دفعت 90 دوا", expectedItems: [{ amount: 90, category: "صحة" }] },
+-    result: { decision: "clarify", items: [] },
+-    score: score({
+-      id: "missing", actualCount: 0, matched: 0, missed: 1, countExact: false, countDelta: -1,
+-      typeHits: 0, categoryHits: 0, tripleHits: 0, decisionOk: false,
+-      matches: [match({ actualIndex: null, amountOk: false, typeOk: false, categoryOk: false })],
+-      failures: ["#1 (90) مفقود"],
++    case: benchCase({
++      id: "missing",
++      text: "دفعت 90 دوا",
++      expectedItems: [{ amount: 90, category: "صحة", type: "expense" }],
+     }),
++    result: result([], "clarify"),
++  },
++  {
++    case: benchCase({ id: "spurious", bucket: "non_financial", text: "ازيك", expectedItems: [] }),
++    result: result([{ amount: 70, category: "ترفيه" }]),
++  },
++  {
++    case: benchCase({
++      id: "swapped",
++      text: "دفعت 40 دوا و40 مواصلات",
++      expectedItems: [
++        { amount: 40, category: "صحة", type: "expense" },
++        { amount: 40, category: "مواصلات", type: "expense" },
++      ],
++    }),
++    result: result([
++      { amount: 40, category: "مواصلات" },
++      { amount: 40, category: "صحة" },
++    ]),
+   },
+ ];
+ 
+-const EVIDENCE: CoreEvidence = {
+-  mode: "offline",
+-  overall: aggregate(),
+-  dev: aggregate({ cases: 3 }),
+-  frozen: aggregate({ cases: 1 }),
+-  system: { unsafeAutoSaves: 1, spuriousOnNonFinancial: 0 },
+-  decisions: { auto_save: 2, review: 1, clarify: 1 },
+-  rows: ROWS,
+-};
++const SCORES: CaseScore[] = CASES.map((entry) => scoreCase(entry.case, entry.result, "local"));
++
++/**
++ * Deep-cloned per call.
++ *
++ * An earlier version handed out references to the module-level fixtures, and one test
++ * that flipped every decision to "review" silently changed the input of every test after
++ * it. The report's own consistency check is what surfaced it — a run with zero
++ * auto-saves still carrying one unsafe auto-save.
++ */
++function evidenceFromRealScorer(): CoreEvidence {
++  const rows = CASES.map((entry, index) => ({
++    case: structuredClone(entry.case),
++    result: structuredClone(entry.result),
++    score: structuredClone(SCORES[index]),
++    crashed: false,
++  }));
++  const decisions: Record<string, number> = {};
++  for (const entry of CASES) {
++    const decision = (entry.result as unknown as { decision: string }).decision;
++    decisions[decision] = (decisions[decision] || 0) + 1;
++  }
++  return {
++    mode: "offline",
++    overall: aggregate(SCORES),
++    dev: aggregate(SCORES.filter((score) => score.split === "dev")),
++    frozen: aggregate(SCORES.filter((score) => score.split === "frozen")),
++    // Hand-counted: `food-wrong` auto-saved with a wrong category.
++    system: { unsafeAutoSaves: 1, spuriousOnNonFinancial: 1 },
++    decisions,
++    rows,
++  } as unknown as CoreEvidence;
++}
+ 
+-const PROVENANCE = {
++const FINGERPRINT = {
+   fixtureSha256: "a".repeat(64),
+-  sourceSha256: { "api/lib/smart-pipeline.ts": "b".repeat(64) },
++  caseCount: 6,
+   mode: "offline",
++  scorerSha256: "b".repeat(64),
++  calibrationVersion: "v3.0",
++  schemaVersion: REPORT_SCHEMA_VERSION,
++  experiment: { userPlan: "free", modelName: "flash" },
++};
++
++const PROVENANCE: CoreReportProvenance = {
++  fingerprint: FINGERPRINT,
++  sourceSha256: { "api/lib/smart-pipeline.ts": "c".repeat(64) },
++  git: { commit: "d".repeat(40), tree: "e".repeat(40), dirty: false, dirtyFiles: [] },
+   generatedAt: "2026-09-05T00:00:00.000Z",
+   runtimeMs: 1234,
+   node: "v22.0.0",
+-  settings: { plan: "free", autoSaveThreshold: 90 },
++  platform: "linux",
++  ci: null,
++  status: "success",
+ };
+ 
+-const BASELINE: CoreReportMetrics = {
+-  cases: 4, expectedItems: 4, actualItems: 4,
+-  tripleF1: 0.5, triplePrecision: 0.5, tripleRecall: 0.5,
+-  amountF1: 0.9, typeAccuracy: 1, categoryAccuracy: 0.5,
+-  segmentationExact: 1, decisionAccuracy: 1, taxonomyViolationRate: 0,
+-};
++function build(over: Partial<Parameters<typeof buildCoreReport>[0]> = {}): CoreReport {
++  return buildCoreReport({ evidence: evidenceFromRealScorer(), provenance: PROVENANCE, ...over });
++}
++
++// ─── Category arithmetic, against the real scorer ───────────────────────────
+ 
+-describe("per-category precision and recall, with their denominators", () => {
+-  const report = buildCoreReport({ evidence: EVIDENCE, provenance: PROVENANCE });
++describe("per-category figures, scored by the real scorer", () => {
++  const report = build();
+   const byName = (name: string) => report.categories.find((c) => c.category === name);
+ 
+-  it("counts a wrong category against the precision of the category it produced", () => {
+-    const transport = byName("مواصلات");
+-    // Two actual مواصلات items; one of them was a food expense filed as transport.
+-    expect(transport).toMatchObject({
++  it("credits precision to the category produced", () => {
++    // Three actual مواصلات items; only the petrol one was accepted.
++    expect(byName("مواصلات")).toMatchObject({
+       acceptedAsProduced: 1,
+-      falsePositives: 1,
+-      precisionDenominator: 2,
+-      precision: 0.5,
++      precisionDenominator: 3,
++      precision: 1 / 3,
+     });
+   });
+ 
+-  it("counts it against the recall of the category that was expected", () => {
+-    const food = byName("أكل وشرب");
+-    expect(food).toMatchObject({
++  it("credits recall to the category expected", () => {
++    expect(byName("أكل وشرب")).toMatchObject({
+       acceptedAsExpected: 0,
+-      falseNegatives: 1,
+       recallDenominator: 1,
+       recall: 0,
++      precisionDenominator: 0,
++      precision: null,
+     });
+-    // Nothing was ever produced as أكل وشرب, so precision has no denominator and is not
+-    // reported as zero — an undefined rate and a rate of zero are different claims.
+-    expect(food?.precisionDenominator).toBe(0);
+-    expect(food?.precision).toBeNull();
+   });
+ 
+-  it("accepts an answer allowed by categoryAnyOf and credits the category produced", () => {
+-    // Precision is credited to what was PRODUCED...
+-    expect(byName("موظفين")).toMatchObject({
+-      acceptedAsProduced: 1, precision: 1, recallDenominator: 0, recall: null,
++  it("splits an anyOf answer between the two categories it satisfies", () => {
++    expect(byName("موظفين")).toMatchObject({ acceptedAsProduced: 1, precision: 1, recall: null });
++    expect(byName("سكن")).toMatchObject({ acceptedAsExpected: 1, recall: 1, precision: null });
++  });
++
++  it("never lets a numerator exceed its own denominator", () => {
++    // The invariant the first version broke: أصدقاء came back with recall 1.25.
++    for (const entry of [...report.categories, ...report.strictCategories]) {
++      expect(entry.acceptedAsProduced, entry.category).toBeLessThanOrEqual(
++        entry.precisionDenominator,
++      );
++      expect(entry.acceptedAsExpected, entry.category).toBeLessThanOrEqual(
++        entry.recallDenominator,
++      );
++      expect(entry.falsePositives, entry.category).toBeGreaterThanOrEqual(0);
++      expect(entry.falseNegatives, entry.category).toBeGreaterThanOrEqual(0);
++    }
++  });
++
++  it("accounts for every produced and every expected item exactly once", () => {
++    const produced = report.categories.reduce((sum, c) => sum + c.precisionDenominator, 0);
++    const expected = report.categories.reduce((sum, c) => sum + c.recallDenominator, 0);
++    // produced: 200, 50, 150, 70, 40, 40 — expected: 200, 50, 150, 90, 40, 40.
++    expect(produced).toBe(6);
++    expect(expected).toBe(6);
++  });
++
++  it("reports a measured total failure as 0, not as missing data", () => {
++    // Both rates measured at zero must give 0. The first version returned null and hid
++    // a category that got everything wrong.
++    const bothZero = buildCoreReport({
++      evidence: {
++        ...evidenceFromRealScorer(),
++        rows: [
++          {
++            case: { id: "z", expectedItems: [{ category: "صحة" }] },
++            result: { decision: "auto_save", items: [{ category: "صحة" }] },
++            score: {
++              id: "z",
++              expectedCount: 1,
++              actualCount: 1,
++              tripleHits: 0,
++              spurious: 0,
++              countExact: true,
++              matches: [{ expectedIndex: 0, actualIndex: 0, categoryOk: false }],
++              failures: ["category"],
++            },
++          },
++        ],
++      },
++      provenance: PROVENANCE,
+     });
+-    // ...and recall to what was EXPECTED. One correct answer, two categories, two
+-    // numerators. Sharing one made recall exceed 1 on the real corpus.
+-    expect(byName("سكن")).toMatchObject({
+-      acceptedAsExpected: 1, recallDenominator: 1, recall: 1, precisionDenominator: 0,
++    expect(bothZero.categories.find((c) => c.category === "صحة")).toMatchObject({
++      precision: 0,
++      recall: 0,
++      f1: 0,
+     });
++
++    // And an unmeasurable rate stays null, which is a different claim.
++    expect(byName("أكل وشرب")?.f1).toBeNull();
+   });
+ 
+-  it("puts a missing amount in missedByCategory rather than in the matrix", () => {
+-    expect(report.confusion.missedByCategory).toEqual({ "صحة": 1 });
+-    expect(report.confusion.matrix["صحة"]).toBeUndefined();
+-    expect(byName("صحة")).toMatchObject({ recallDenominator: 1, recall: 0, precisionDenominator: 0 });
++  it("separates the strict subset from the lenient one", () => {
++    // `anyof-ok` is the only multi-target case, so موظفين vanishes from strict.
++    expect(report.strictCategories.some((c) => c.category === "موظفين")).toBe(false);
++    expect(report.categories.some((c) => c.category === "موظفين")).toBe(true);
+   });
+ 
+-  it("records the confusion the wrong answer created", () => {
++  it("puts an unmatched expectation in missed and an unmatched answer in spurious", () => {
++    expect(report.confusion.missedByCategory["صحة"]).toBe(1);
++    expect(report.confusion.spuriousByCategory["ترفيه"]).toBe(1);
+     expect(report.confusion.matrix["أكل وشرب"]).toEqual({ "مواصلات": 1 });
+-    expect(report.confusion.matrix["مواصلات"]).toEqual({ "مواصلات": 1 });
+   });
+ 
+-  it("never reports a rate outside [0,1]", () => {
+-    // The invariant the first implementation broke: it credited one numerator to both
+-    // denominators, and أصدقاء came back with recall 1.25 and -3 false negatives.
+-    for (const entry of report.categories) {
+-      if (entry.precision !== null) {
+-        expect(entry.precision, `${entry.category} precision`).toBeGreaterThanOrEqual(0);
+-        expect(entry.precision, `${entry.category} precision`).toBeLessThanOrEqual(1);
+-      }
+-      if (entry.recall !== null) {
+-        expect(entry.recall, `${entry.category} recall`).toBeGreaterThanOrEqual(0);
+-        expect(entry.recall, `${entry.category} recall`).toBeLessThanOrEqual(1);
+-      }
+-      expect(entry.falsePositives, `${entry.category} FP`).toBeGreaterThanOrEqual(0);
+-      expect(entry.falseNegatives, `${entry.category} FN`).toBeGreaterThanOrEqual(0);
+-    }
++  it("cannot see a swap between two equal amounts, and says so", () => {
++    // The scorer aligns equal amounts by position, so the swapped case reads as two
++    // category errors rather than as a reordering. Documented rather than papered over.
++    expect(report.confusion.matrix["صحة"]).toMatchObject({ "مواصلات": 1 });
++    expect(report.definitions.match).toContain("two equal amounts");
+   });
++});
+ 
+-  it("computes f1 only where both rates exist", () => {
+-    expect(byName("مواصلات")?.f1).toBeCloseTo((2 * 0.5 * 1) / 1.5, 10);
+-    expect(byName("موظفين")?.f1).toBeNull();
+-    expect(byName("سكن")?.f1).toBeNull();
++// ─── Decision safety: the 4-vs-7 distinction ────────────────────────────────
++
++describe("auto-save safety reports two different questions", () => {
++  const report = build();
++  const safety = report.decisions.autoSaveSafety;
++
++  it("keeps the triple/count measure and the any-error measure apart", () => {
++    // auto_save cases: fuel-ok, food-wrong, spurious, swapped.
++    expect(safety.autoSavedCases).toBe(4);
++    expect(safety.totalCases).toBe(6);
++    expect(safety.tripleUnsafeAutoSaveCases).toBe(1);
++    // The wider measure is a superset by construction, and the report refuses to emit
++    // a state where it is not.
++    expect(safety.autoSaveCasesWithAnyScoredError).toBeGreaterThanOrEqual(
++      safety.tripleUnsafeAutoSaveCases,
++    );
+   });
+-});
+ 
+-describe("decisions carry their own denominators", () => {
+-  const report = buildCoreReport({ evidence: EVIDENCE, provenance: PROVENANCE });
++  it("gives each rate its own named denominator", () => {
++    expect(safety.tripleUnsafeRateOfAutoSaved).toBeCloseTo(1 / 4, 10);
++    expect(safety.tripleUnsafeRateOfAllCases).toBeCloseTo(1 / 6, 10);
++  });
+ 
+-  it("reports unsafe auto-saves against both denominators, named", () => {
+-    // The same single incident is 25% of the corpus and 50% of the auto-saves. Quoting
+-    // one without saying which is how two reports on this system disagreed by 2x.
+-    expect(report.decisions.unsafeAutoSaves).toEqual({
+-      count: 1,
+-      ofAllCases: { denominator: 4, rate: 0.25 },
+-      ofAutoSavedCases: { denominator: 2, rate: 0.5 },
+-    });
++  it("states what neither measure covers", () => {
++    expect(safety.doesNotCover.join(" ")).toContain("currency");
++    expect(safety.doesNotCover.join(" ")).toContain("date");
+   });
+ 
+   it("reports the error rate inside each decision", () => {
+     const autoSave = report.decisions.breakdown.find((d) => d.decision === "auto_save");
+-    expect(autoSave).toMatchObject({ cases: 2, casesWithError: 1, errorRateWithinDecision: 0.5 });
+-    const review = report.decisions.breakdown.find((d) => d.decision === "review");
+-    expect(review).toMatchObject({ cases: 1, casesWithError: 0, errorRateWithinDecision: 0 });
++    expect(autoSave).toMatchObject({ cases: 4, denominator: 4 });
++    expect(autoSave?.errorRateWithinDecision).not.toBeNull();
+   });
+ });
+ 
+-describe("deltas are only computed against the same corpus", () => {
+-  it("reports a delta when the fixture hash matches", () => {
+-    const report = buildCoreReport({
+-      evidence: EVIDENCE,
+-      provenance: PROVENANCE,
+-      baseline: { metrics: BASELINE, fixtureSha256: PROVENANCE.fixtureSha256 },
+-    });
+-    expect(report.headline.delta?.tripleF1).toBeCloseTo(0.25, 10);
+-    expect(report.headline.delta?.categoryAccuracy).toBeCloseTo(0.25, 10);
+-    expect(report.headline.baseline).toEqual(BASELINE);
++// ─── Comparability ──────────────────────────────────────────────────────────
++
++describe("two runs are only subtracted when they measured the same way", () => {
++  const first = build();
++
++  it("compares against a baseline with an identical fingerprint", () => {
++    const second = build({ baseline: first });
++    expect(second.comparability.compared).toBe(true);
++    expect(second.headline.delta?.tripleF1).toBe(0);
++    expect(second.splits.dev.delta).not.toBeNull();
++    expect(second.splits.frozen.delta).not.toBeNull();
++    expect(second.categoryDelta?.length).toBeGreaterThan(0);
++    expect(second.decisions.countsDelta).not.toBeNull();
++    expect(second.decisions.baselineAutoSaveSafety).not.toBeNull();
++    expect(second.cost.baselineDerivedLlmRoutes).not.toBeNull();
++  });
++
++  it.each([
++    ["mode", { mode: "live" }],
++    ["scorerSha256", { scorerSha256: "9".repeat(64) }],
++    ["calibrationVersion", { calibrationVersion: "v3.1" }],
++    ["fixtureSha256", { fixtureSha256: "9".repeat(64) }],
++    ["caseCount", { caseCount: 5 }],
++    ["schemaVersion", { schemaVersion: "0.0.1" }],
++  ])("withholds every delta when %s differs", (field, patch) => {
++    const stale = {
++      ...first,
++      provenance: { ...first.provenance, fingerprint: { ...FINGERPRINT, ...patch } },
++    };
++    const report = build({ baseline: stale });
++    expect(report.comparability.compared).toBe(false);
++    expect(report.headline.delta).toBeNull();
++    expect(report.categoryDelta).toBeNull();
++    expect(report.decisions.countsDelta).toBeNull();
++    expect(report.comparability.mismatched.join(" ")).toContain(field);
++    expect(report.warnings.join(" ")).toContain("NOT COMPARABLE");
++  });
++
++  it("withholds the delta when the experiment settings differ", () => {
++    const stale = {
++      ...first,
++      provenance: {
++        ...first.provenance,
++        fingerprint: { ...FINGERPRINT, experiment: { userPlan: "ultra", modelName: "flash" } },
++      },
++    };
++    const report = build({ baseline: stale });
++    expect(report.comparability.compared).toBe(false);
++    expect(report.comparability.mismatched.join(" ")).toContain("experiment.userPlan");
++  });
++
++  it("does not refuse a comparison merely because the classifier changed", () => {
++    // The whole purpose of comparing. Classifier hashes live outside the fingerprint.
++    const stale = {
++      ...first,
++      provenance: {
++        ...first.provenance,
++        sourceSha256: { "api/lib/smart-pipeline.ts": "9".repeat(64) },
++      },
++    };
++    expect(build({ baseline: stale }).comparability.compared).toBe(true);
++  });
++
++  it("names the fields that differ, baseline → candidate", () => {
++    expect(fingerprintMismatch(FINGERPRINT, { ...FINGERPRINT, mode: "live" })).toEqual([
++      "mode: live → offline",
++    ]);
++  });
++});
++
++// ─── Contracts ──────────────────────────────────────────────────────────────
++
++describe("bad input fails loudly instead of producing NaN", () => {
++  it("rejects a baseline that is missing its fields", () => {
++    // The reviewer's counterexample: `{cases: 172}` produced exit 0 and NaN deltas.
++    expect(() => build({ baseline: { headline: { candidate: { cases: 172 } } } })).toThrow(
++      CoreReportContractError,
++    );
++  });
++
++  it.each([
++    ["null evidence", null],
++    ["evidence with no rows", { mode: "offline" }],
++    ["an empty object", {}],
++  ])("rejects %s", (_label, evidence) => {
++    expect(() => buildCoreReport({ evidence, provenance: PROVENANCE })).toThrow(
++      CoreReportContractError,
++    );
++  });
++
++  it("rejects an aggregate carrying NaN", () => {
++    const broken = evidenceFromRealScorer();
++    (broken.overall as { tripleF1: number }).tripleF1 = Number.NaN;
++    expect(() => buildCoreReport({ evidence: broken, provenance: PROVENANCE })).toThrow(/tripleF1/);
+   });
+ 
+-  it("withholds the delta and warns when the corpus differs", () => {
++  it("treats no baseline as a legitimate first run", () => {
++    const report = build();
++    expect(report.comparability.compared).toBe(false);
++    expect(report.comparability.reason).toContain("establishes one");
++    expect(report.headline.delta).toBeNull();
++  });
++
++  it("handles an empty corpus without inventing rates", () => {
+     const report = buildCoreReport({
+-      evidence: EVIDENCE,
++      evidence: {
++        mode: "offline",
++        overall: aggregate([]),
++        dev: aggregate([]),
++        frozen: aggregate([]),
++        system: { unsafeAutoSaves: 0, spuriousOnNonFinancial: 0 },
++        decisions: {},
++        rows: [],
++      },
+       provenance: PROVENANCE,
+-      baseline: { metrics: BASELINE, fixtureSha256: "c".repeat(64) },
+     });
+-    expect(report.headline.delta).toBeNull();
+-    expect(report.headline.baseline).toBeNull();
+-    expect(report.warnings.join(" ")).toContain("FIXTURES DIFFER");
++    expect(report.categories).toEqual([]);
++    expect(report.decisions.autoSaveSafety.autoSavedCases).toBe(0);
++    expect(report.decisions.autoSaveSafety.tripleUnsafeRateOfAutoSaved).toBeNull();
+   });
+ 
+-  it("says so when there is no baseline at all", () => {
+-    const report = buildCoreReport({ evidence: EVIDENCE, provenance: PROVENANCE });
+-    expect(report.headline.delta).toBeNull();
+-    expect(report.warnings.join(" ")).toContain("No baseline");
++  it("handles a corpus with no auto-saved case", () => {
++    const evidence = evidenceFromRealScorer();
++    for (const row of evidence.rows) (row.result as { decision: string }).decision = "review";
++    // Nothing auto-saved, so nothing can be an unsafe auto-save. Leaving the counter at
++    // 1 would be inconsistent evidence, which the check below covers separately.
++    (evidence.system as { unsafeAutoSaves: number }).unsafeAutoSaves = 0;
++    const report = buildCoreReport({ evidence, provenance: PROVENANCE });
++    expect(report.decisions.autoSaveSafety.autoSavedCases).toBe(0);
++    expect(report.decisions.autoSaveSafety.anyErrorRateOfAutoSaved).toBeNull();
++    expect(report.decisions.autoSaveSafety.tripleUnsafeRateOfAutoSaved).toBeNull();
++  });
++
++  it("refuses evidence claiming more unsafe auto-saves than auto-saves", () => {
++    // The wider measure is computed here and the narrow one is supplied, so they can
++    // disagree if the evidence is wrong. A report that emitted that would invite someone
++    // to quote a rate above 100%.
++    const evidence = evidenceFromRealScorer();
++    for (const row of evidence.rows) (row.result as { decision: string }).decision = "review";
++    expect(() => buildCoreReport({ evidence, provenance: PROVENANCE })).toThrow(/superset/);
+   });
+ });
+ 
++// ─── Provenance and disclosure ──────────────────────────────────────────────
++
+ describe("the report does not overstate what it measured", () => {
+-  const report = buildCoreReport({ evidence: EVIDENCE, provenance: PROVENANCE });
++  const report = build();
+ 
+   it("renames the derived route count and keeps the old field working", () => {
+-    expect(report.cost.derivedLlmRoutes).toBe(3);
+-    expect(report.cost.llmCalls).toBe(3);
++    expect(report.cost.derivedLlmRoutes).toBe(report.cost.llmCalls);
+     expect(report.cost.note).toContain("Not a request counter");
+   });
+ 
+@@ -275,18 +493,27 @@ describe("the report does not overstate what it measured", () => {
+     expect(report.warnings.join(" ")).toContain("no provider is reached");
+   });
+ 
+-  it("carries provenance so two reports can be told apart", () => {
+-    expect(report.provenance.fixtureSha256).toBe(PROVENANCE.fixtureSha256);
+-    expect(report.provenance.sourceSha256["api/lib/smart-pipeline.ts"]).toBeDefined();
+-    expect(report.provenance.mode).toBe("offline");
+-    expect(report.provenance.runtimeMs).toBe(1234);
++  it("warns when the tree was dirty", () => {
++    const dirty = build({
++      provenance: {
++        ...PROVENANCE,
++        git: { ...PROVENANCE.git, dirty: true, dirtyFiles: ["api/lib/rule-engine.ts"] },
++      },
++    });
++    expect(dirty.warnings.join(" ")).toContain("not reproducible from the commit alone");
++  });
++
++  it("carries commit, tree, status and schema version", () => {
++    expect(report.provenance.git.commit).toHaveLength(40);
++    expect(report.provenance.status).toBe("success");
++    expect(report.schemaVersion).toBe(REPORT_SCHEMA_VERSION);
+   });
+ 
+   it("contains no transaction text, by construction", () => {
+-    // Every fixture sentence above is present in the INPUT. None may reach the output.
+     const serialised = JSON.stringify(report);
+-    for (const row of ROWS) {
+-      expect(serialised, `"${row.case.text}" leaked into the report`).not.toContain(row.case.text!);
++    for (const entry of CASES) {
++      if (!entry.case.text) continue;
++      expect(serialised, `"${entry.case.text}" leaked`).not.toContain(entry.case.text);
+     }
+     expect(serialised).not.toContain("fuel-ok");
+   });
+diff --git a/api/qa/classification-test-manifest.ts b/api/qa/classification-test-manifest.ts
+new file mode 100644
+index 0000000..cc96954
+--- /dev/null
++++ b/api/qa/classification-test-manifest.ts
+@@ -0,0 +1,227 @@
++/**
++ * Which tests guard the classification path — one list, derived from imports.
++ *
++ * The first version of the verification command carried a hand-copied list of 19 files
++ * taken from a previous handoff. An independent review found 17 more that exercise the
++ * same modules and were in no CI job at all: the event gate, the number engine,
++ * corrections, muscle memory, taxonomy, model mapping, the LLM router, and the three A2
++ * acceptance suites. Editing model selection or the voice quota could go green.
++ *
++ * A hand list has one failure mode and it is silent: a file appears, nobody adds it, and
++ * the command keeps passing while covering less. So the list below is checked against
++ * the repository by `classification-test-manifest.test.ts`, which fails when a test file
++ * imports the classification surface and appears in neither `INCLUDED` nor `EXCLUDED`.
++ * Adding a guard now forces a decision instead of quietly widening the gap.
++ *
++ * SCOPE_MODULES is the definition of "classification test". Membership is decided by
++ * what a file IMPORTS, not by what it is called — `debug-atm.test.ts` reads like scratch
++ * work and asserts real behaviour of the intent detector.
++ */
++
++/**
++ * The modules that make a test file a classification test.
++ *
++ * Matched as substrings of an import specifier, so `./rule-engine` and
++ * `../lib/rule-engine` both count.
++ */
++export const SCOPE_MODULES: readonly string[] = [
++  // Event understanding and extraction
++  "smart-pipeline",
++  "financial-event-plan",
++  "final-acceptance",
++  "narrative-decomposer",
++  "admissibility-gate",
++  "amount-ledger",
++  "entity-extractor",
++  "arabic-number-parser",
++  "negation-detector",
++  "normalizer-v2",
++  "text-normalizer",
++  "arabic-token-match",
++  "fuzzy-match",
++  // Category resolution
++  "rule-engine",
++  "intent-detector",
++  "egyptian-dictionary",
++  "category-registry",
++  "taxonomy-ssot",
++  "direction-governed-taxonomy",
++  "embedding-engine",
++  "fireworks-embedding-client",
++  "person-resolver",
++  // Decision, confidence, learning
++  "classification-decision",
++  "classification-merge",
++  "classification-evidence",
++  "classification-prompt",
++  "classifier-contract",
++  "confidence-calibrator",
++  "confidence-calibration.generated",
++  "post-classifier-verifier",
++  "correction-rules",
++  "muscle-memory",
++  // Provider routing and the voice gate that feeds the pipeline
++  "llm-router",
++  "llm-provider-chain",
++  "model-mapper",
++  "ai-provider-registry",
++  "ai-gateway",
++  "provider-health",
++  "voice-intake-gate",
++  "system-settings-registry",
++  // The measuring apparatus. Bare names, because a sibling in api/qa imports
++  // "./classification-scorer" while a test in api/lib imports "../qa/classification-scorer",
++  // and a prefix-qualified entry only matches the second.
++  "classification-scorer",
++  "classification-system-metrics",
++  "classification-core-report",
++  "classification-baseline",
++  "classification-cases",
++  "qa/fixtures",
++];
++
++/**
++ * Provider keys the command blanks before running anything.
++ *
++ * `vitest.config.ts` calls `dotenv.config()`, so a developer's real `.env` is loaded into
++ * every test process. `e2e-classification.test.ts` reads `FIREWORKS_API_KEY` and passes
++ * it to the embedding engine — which is a legitimate opt-in pattern, and which means that
++ * on a machine with a real key the "offline" suite would quietly make a paid call.
++ *
++ * Policing the test files is the wrong lever: any of them may legitimately read a key.
++ * The command guarantees the value instead, so being offline is a property of how the
++ * suite is invoked rather than a promise each file has to keep.
++ */
++export const NEUTRALISED_PROVIDER_KEYS: readonly string[] = [
++  "FIREWORKS_API_KEY",
++  "GEMINI_API_KEY",
++  "GROQ_API_KEY",
++  "NVIDIA_API_KEY",
++  "DEEPSEEK_API_KEY",
++  "OPENAI_API_KEY",
++  "OPENROUTER_API_KEY",
++];
++
++/**
++ * Every in-scope test file the verification command runs.
++ *
++ * Offline by construction: each either touches no I/O or mocks the boundary itself, and
++ * the command blanks every provider key listed above before the first test starts.
++ */
++export const INCLUDED: readonly string[] = [
++  "api/lib/admin-model-switch.test.ts",
++  "api/lib/admissibility-gate.test.ts",
++  "api/lib/ai-routing.test.ts",
++  "api/lib/amount-ledger.test.ts",
++  "api/lib/arabic-number-parser.test.ts",
++  "api/lib/arabic-token-match.test.ts",
++  "api/lib/category-registry.integrity.test.ts",
++  "api/lib/classification-acceptance.test.ts",
++  "api/lib/classification-benchmark.test.ts",
++  "api/lib/classification-cache-invalidation.test.ts",
++  "api/lib/classification-cache-scope.test.ts",
++  "api/lib/classification-evidence.test.ts",
++  "api/lib/classification-golden.test.ts",
++  "api/lib/classification-prompt-injection.test.ts",
++  "api/lib/classifier-contract.test.ts",
++  "api/lib/complex-sentences.test.ts",
++  "api/lib/comprehensive-classification.test.ts",
++  "api/lib/correction-rules.test.ts",
++  "api/lib/debug-atm.test.ts",
++  "api/lib/debug-atm2.test.ts",
++  "api/lib/direction-governed-taxonomy.test.ts",
++  "api/lib/e2e-classification.test.ts",
++  "api/lib/embedding-engine.test.ts",
++  "api/lib/financial-event-pipeline.test.ts",
++  "api/lib/financial-event-quality.test.ts",
++  "api/lib/financial-event-verification.test.ts",
++  "api/lib/fireworks-embedding-client.test.ts",
++  "api/lib/learning-loop.test.ts",
++  "api/lib/llm-router.test.ts",
++  "api/lib/model-mapper.test.ts",
++  "api/lib/muscle-memory.regression.test.ts",
++  "api/lib/negation-detector.test.ts",
++  "api/lib/normalizer-v2.test.ts",
++  "api/lib/person-resolver.test.ts",
++  "api/lib/provider-route-acceptance.test.ts",
++  "api/lib/r1-acceptance.test.ts",
++  "api/lib/rule-engine-lexical.test.ts",
++  "api/lib/smart-pipeline-failover.test.ts",
++  "api/lib/smart-pipeline.test.ts",
++  "api/lib/system-settings-registry.test.ts",
++  "api/lib/voice-intake-gate.test.ts",
++  "api/lib/receipt-image-parser.test.ts",
++  "api/qa/classification-core-report.test.ts",
++  "api/services/action-runtime/extended-actions.test.ts",
++  "api/services/parser-trace.test.ts",
++  "src/lib/financial-taxonomy.contract.test.ts",
++  "tests/adversarial-challenger-2.test.ts",
++];
++
++export interface ExclusionRecord {
++  file: string;
++  /** Why this in-scope file is not in the command. Must be a reason, not a shrug. */
++  reason: string;
++}
++
++/**
++ * Files that reach the classification surface and are still left out, each with the
++ * reason that earned it.
++ *
++ * These four came from opening the 114 test files the import scan had put out of scope
++ * and asking a question the scan cannot: does this test ASSERT on classification, or
++ * does it merely reach it through three layers of imports? Thirty-seven reach it
++ * transitively; six assert on it; two of those are real guards and are now in the
++ * command; these four are not, for the reasons below.
++ *
++ * The list exists so an exclusion has to be written down rather than made by omission —
++ * which is how the original nineteen-file list came to cover less than half of what it
++ * claimed.
++ */
++export const EXCLUDED: readonly ExclusionRecord[] = [
++  {
++    file: "api/services/action-runtime/index.test.ts",
++    reason:
++      "Genuinely guards the taxonomy convention at the write boundary — it asserts that expenses.category stores the Arabic name_ar rather than the English id. It is excluded ONLY because one of its three cases fails on main today for an unrelated reason: the test's database mock has no `transaction`, so `executeExpenseCreate` throws `db.transaction is not a function`. Including it would make the classification gate red for a defect G1-R did not cause and is not authorised to fix. Fix the mock, then move this into INCLUDED.",
++  },
++  {
++    file: "api/services/ai-kernel/intent-router.test.ts",
++    reason:
++      "Belongs to the chat agent, not the expense classifier. It routes a question like «صرفت كام النهارده؟» to a data need; the category it asserts is a query slot, not a classification output. Owned by the unit-tests job.",
++  },
++  {
++    file: "api/services/ai-kernel/agent-golden-contract.test.ts",
++    reason:
++      "The chat agent's end-to-end contract — intent to data need to resolver to response. It reaches the surface only through `fuzzy-match`, a shared string utility, and asserts nothing about how a transaction is classified. Owned by the unit-tests job.",
++  },
++  {
++    file: "src/providers/trpc.test.ts",
++    reason:
++      "Tests tRPC client headers and tunnel-bypass removal. A category string appears once as incidental fixture data inside an offline-draft case; nothing in the file would change if the classifier did.",
++  },
++];
++
++/**
++ * Areas outside this command, and the job that owns each.
++ *
++ * Recorded because "not in this list" and "not tested anywhere" look identical from
++ * inside this file, and the difference matters when someone asks what CI covers.
++ */
++export const OUT_OF_SCOPE_AREAS: ReadonlyArray<{ pattern: string; owner: string }> = [
++  { pattern: "tests/e2e/**", owner: "the `e2e-tests` job (Playwright)" },
++  { pattern: "api/*-router.security.test.ts", owner: "the `unit-tests` job" },
++  { pattern: "api/services/ai-kernel/**", owner: "the chat agent, not the expense classifier" },
++  { pattern: "api/services/voice-kernel/**", owner: "the live-call path, a separate pipeline" },
++  { pattern: "src/**", owner: "the `unit-tests` job, except the taxonomy contract test" },
++  { pattern: "**/*.integration.test.ts", owner: "`npm run test:redis`, opt-in, needs a server" },
++];
++
++/** Does an import specifier reach the classification surface? */
++export function importsScope(specifier: string): boolean {
++  return SCOPE_MODULES.some((module) => specifier.includes(module));
++}
++
++/** The command's file list, in a stable order. */
++export function includedFiles(): string[] {
++  return [...INCLUDED].sort();
++}
+diff --git a/api/qa/classification-test-manifest.test.ts b/api/qa/classification-test-manifest.test.ts
+new file mode 100644
+index 0000000..7568ba0
+--- /dev/null
++++ b/api/qa/classification-test-manifest.test.ts
+@@ -0,0 +1,207 @@
++/**
++ * The guard that makes the manifest a decision rather than a snapshot.
++ *
++ * A list of test files copied by hand decays silently: someone adds a guard for the
++ * number engine, nobody adds it here, and the verification command keeps passing while
++ * covering less of the thing it claims to cover. That is exactly what happened to the
++ * first version — 19 files listed, 17 more in the repository exercising the same
++ * modules, none of them in any CI job.
++ *
++ * So this reads the repository, works out which test files import the classification
++ * surface, and fails when one of them is in neither `INCLUDED` nor `EXCLUDED`. Adding a
++ * guard now forces a choice, and the choice is written down.
++ */
++import { readFileSync } from "node:fs";
++import { execFileSync } from "node:child_process";
++import { existsSync } from "node:fs";
++import { resolve } from "node:path";
++import { describe, expect, it } from "vitest";
++import {
++  EXCLUDED,
++  INCLUDED,
++  importsScope,
++  includedFiles,
++  NEUTRALISED_PROVIDER_KEYS,
++  SCOPE_MODULES,
++} from "./classification-test-manifest";
++
++const ROOT = resolve(import.meta.dirname, "..", "..");
++
++/** Every tracked test file, plus any untracked one that already exists on disk. */
++function repositoryTestFiles(): string[] {
++  const tracked = execFileSync(
++    "git",
++    ["ls-files", "*.test.ts", "*.test.tsx", "*.spec.ts"],
++    { cwd: ROOT, encoding: "utf8" },
++  )
++    .split("\n")
++    .map((line) => line.trim())
++    .filter(Boolean);
++
++  // A file added but not yet committed is exactly the case this guard exists for.
++  const untracked = execFileSync(
++    "git",
++    ["ls-files", "--others", "--exclude-standard", "*.test.ts", "*.test.tsx", "*.spec.ts"],
++    { cwd: ROOT, encoding: "utf8" },
++  )
++    .split("\n")
++    .map((line) => line.trim())
++    .filter(Boolean);
++
++  return [...new Set([...tracked, ...untracked])]
++    .filter((file) => !file.startsWith("tests/e2e/"))
++    .sort();
++}
++
++const IMPORT_PATTERN = /from\s+["']([^"']+)["']|import\s*\(\s*["']([^"']+)["']/g;
++
++function importsOf(file: string): string[] {
++  const source = readFileSync(resolve(ROOT, file), "utf8");
++  return [...source.matchAll(IMPORT_PATTERN)].map((match) => match[1] || match[2]);
++}
++
++const REPOSITORY_FILES = repositoryTestFiles();
++const IN_SCOPE = REPOSITORY_FILES.filter((file) => importsOf(file).some(importsScope));
++
++describe("the manifest matches the repository", () => {
++  it("lists every test file that imports the classification surface", () => {
++    const decided = new Set([...INCLUDED, ...EXCLUDED.map((entry) => entry.file)]);
++    const undecided = IN_SCOPE.filter((file) => !decided.has(file));
++
++    expect(
++      undecided,
++      undecided.length === 0
++        ? ""
++        : `These test files exercise the classification surface and are in neither INCLUDED ` +
++          `nor EXCLUDED in api/qa/classification-test-manifest.ts. Add each one to the ` +
++          `command, or exclude it with a written reason:\n  ${undecided.join("\n  ")}`,
++    ).toEqual([]);
++  });
++
++  it("does not list a file that no longer exists", () => {
++    const missing = INCLUDED.filter((file) => !existsSync(resolve(ROOT, file)));
++    expect(missing, `listed but absent: ${missing.join(", ")}`).toEqual([]);
++  });
++
++  it("does not include a file that is out of scope", () => {
++    // Widening the command by adding an unrelated suite would make it slower without
++    // making it a better guard, and would drag its dependencies into an offline job.
++    const strays = INCLUDED.filter((file) => !IN_SCOPE.includes(file));
++    expect(strays, `included but does not import the surface: ${strays.join(", ")}`).toEqual([]);
++  });
++
++  it("gives every exclusion a reason", () => {
++    for (const entry of EXCLUDED) {
++      expect(entry.reason.length, `${entry.file} has no reason`).toBeGreaterThan(20);
++    }
++  });
++
++  it("keeps the npm script in step with the manifest", () => {
++    // Two lists that must agree, one of which is a JSON string — so they are compared
++    // rather than trusted.
++    const pkg = JSON.parse(readFileSync(resolve(ROOT, "package.json"), "utf8")) as {
++      scripts: Record<string, string>;
++    };
++    const script = pkg.scripts["test:classification:core"];
++    expect(script, "test:classification:core is missing from package.json").toBeTruthy();
++
++    const scriptFiles = script
++      .split(/\s+/)
++      .filter((token) => token.endsWith(".test.ts") || token.endsWith(".test.tsx"))
++      .sort();
++    expect(scriptFiles).toEqual(includedFiles());
++  });
++});
++
++describe("the included set stays offline", () => {
++  /**
++   * A file that mocks fetch protects itself. It says nothing about the file beside it,
++   * and the review's warning about broad globs is exactly this: a list that grows by
++   * pattern can pull in a suite that talks to a real service.
++   */
++  it("has no test that reaches a live provider or a real database", () => {
++    const offenders: string[] = [];
++
++    for (const file of INCLUDED) {
++      const source = readFileSync(resolve(ROOT, file), "utf8");
++
++      const usesConnection = /["']\.{1,2}\/.*queries\/connection["']/.test(source);
++      const mocksConnection = /vi\.mock\(\s*["'][^"']*queries\/connection["']/.test(source);
++      if (usesConnection && !mocksConnection) {
++        offenders.push(`${file}: imports queries/connection without mocking it`);
++      }
++
++      // An integration suite is opt-in behind an env flag and belongs to test:redis.
++      if (/RUN_[A-Z_]*INTEGRATION/.test(source)) {
++        offenders.push(`${file}: is an opt-in integration suite`);
++      }
++
++    }
++
++    expect(offenders, offenders.join("\n")).toEqual([]);
++  });
++
++  it("blanks every provider key before the suite starts", () => {
++    // The property that actually keeps the run free. `vitest.config.ts` loads the
++    // developer's `.env`, and `e2e-classification.test.ts` legitimately reads
++    // FIREWORKS_API_KEY and hands it to the embedding engine — so without this the
++    // "offline" suite would make a paid call on any machine that has a real key.
++    const pkg = JSON.parse(readFileSync(resolve(ROOT, "package.json"), "utf8")) as {
++      scripts: Record<string, string>;
++    };
++    const script = pkg.scripts["test:classification:core"];
++    for (const key of NEUTRALISED_PROVIDER_KEYS) {
++      expect(script, `${key} is not blanked by the command`).toContain(`${key}=`);
++    }
++  });
++
++  it("names the files that read a provider key, so the list stays deliberate", () => {
++    const readers = INCLUDED.filter((file) =>
++      /process\.env\.[A-Z_]*API_KEY/.test(readFileSync(resolve(ROOT, file), "utf8")),
++    );
++    // Not forbidden — recorded. A new one appearing is a prompt to check that the key it
++    // reads is in NEUTRALISED_PROVIDER_KEYS.
++    expect(readers).toEqual(["api/lib/e2e-classification.test.ts"]);
++  });
++
++  it("covers the guards the review found missing", () => {
++    // Named explicitly: these are the surfaces whose absence made the first command
++    // weaker than it looked. A refactor that drops one should fail here, loudly.
++    for (const file of [
++      "api/lib/admissibility-gate.test.ts",
++      "api/lib/correction-rules.test.ts",
++      "api/lib/muscle-memory.regression.test.ts",
++      "api/lib/category-registry.integrity.test.ts",
++      "api/lib/model-mapper.test.ts",
++      "api/lib/llm-router.test.ts",
++      "api/lib/learning-loop.test.ts",
++      "api/lib/provider-route-acceptance.test.ts",
++      "api/lib/voice-intake-gate.test.ts",
++      "api/lib/classification-cache-scope.test.ts",
++    ]) {
++      expect(INCLUDED, `${file} must stay in the command`).toContain(file);
++    }
++  });
++});
++
++describe("the scope definition is by import, not by name", () => {
++  it("recognises a module however it is imported", () => {
++    expect(importsScope("./rule-engine")).toBe(true);
++    expect(importsScope("../lib/rule-engine")).toBe(true);
++    expect(importsScope("../qa/fixtures/index")).toBe(true);
++    expect(importsScope("node:fs")).toBe(false);
++    expect(importsScope("vitest")).toBe(false);
++  });
++
++  it("includes a badly-named file that asserts real behaviour", () => {
++    // `debug-atm.test.ts` reads like scratch work and asserts the intent detector's
++    // direction for an ATM withdrawal. Name-based filtering would have dropped it.
++    expect(INCLUDED).toContain("api/lib/debug-atm.test.ts");
++  });
++
++  it("keeps the scope list non-empty and free of duplicates", () => {
++    expect(SCOPE_MODULES.length).toBeGreaterThan(20);
++    expect(new Set(SCOPE_MODULES).size).toBe(SCOPE_MODULES.length);
++    expect(new Set(INCLUDED).size).toBe(INCLUDED.length);
++  });
++});
+diff --git a/scripts/classification-core-report.ts b/scripts/classification-core-report.ts
+index 689b1f5..14005df 100644
+--- a/scripts/classification-core-report.ts
++++ b/scripts/classification-core-report.ts
+@@ -8,32 +8,73 @@
+  * evidence it writes to `buildCoreReport`. Nothing here re-scores or re-aligns anything;
+  * a reporting layer that disagrees with the gate is worse than no report.
+  *
+- * Two artefacts, deliberately separate:
++ * ── R1: a failed run must not leave a previous run's numbers looking current ──
+  *
+- *   --out      the summary. Metric names, category names, integers. No transaction text,
+- *              no person names, no keys. This is the one that is safe to paste anywhere,
+- *              and it is the default.
+- *   --details  the raw evidence, opt-in. It contains every fixture sentence and every
+- *              produced row. These fixtures are synthetic, but the same generator points
+- *              at real corpora, so it is never written unless asked for.
++ * The first version wrote to a TRACKED path and returned non-zero on failure without
++ * touching what was already there. Combined with `if: always()` on the CI upload, a red
++ * attempt could publish an artifact, named after that attempt, containing the previous
++ * attempt's figures — with its own older `generatedAt` buried in the file. The job stayed
++ * red; the evidence beside it lied.
++ *
++ * Three changes, and each is doing separate work:
++ *
++ *   1. The default output is an UNTRACKED per-attempt path. Nothing is in the repo for a
++ *      checkout to resurrect.
++ *   2. Every report carries `status`, the commit, the tree, whether the tree was dirty,
++ *      and the CI run id and attempt. An artifact that does not belong to this attempt is
++ *      now visibly so.
++ *   3. On failure a `status: "failed"` diagnostic is written — carrying the stage that
++ *      failed and NO metrics — and any stale success file at the output path is removed.
++ *      Refusing to write at all was what let the old file pass for the new one.
++ *
++ * Writes are atomic: a temp file in the same directory, then a rename. A process killed
++ * mid-write leaves the previous file or none, never half a JSON document that the next
++ * reader will parse as truth.
+  */
+-import { createHash } from "node:crypto";
++import { createHash, randomUUID } from "node:crypto";
+ import { spawnSync } from "node:child_process";
+-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
++import {
++  existsSync,
++  mkdirSync,
++  mkdtempSync,
++  readFileSync,
++  renameSync,
++  rmSync,
++  unlinkSync,
++  writeFileSync,
++} from "node:fs";
+ import { dirname, resolve } from "node:path";
+ import { tmpdir } from "node:os";
+ import {
+   buildCoreReport,
+-  type CoreEvidence,
+-  type CoreReportMetrics,
++  CoreReportContractError,
++  REPORT_SCHEMA_VERSION,
++  type CoreReportProvenance,
+ } from "../api/qa/classification-core-report";
+ 
+-/** In-scope files whose content can move a metric. Hashed so a change is attributable. */
+-const SCOPE_FILES = [
++/**
++ * Files whose content can move a metric.
++ *
++ * Split in two because they answer different questions. `SCORER_FILES` are the ruler —
++ * a change to them means two runs measured differently and must not be subtracted.
++ * `CLASSIFIER_FILES` are the thing being measured; a change to them is the WHOLE POINT
++ * of a comparison, so it is recorded and never blocks one.
++ */
++const SCORER_FILES = [
++  "api/qa/classification-scorer.ts",
++  "api/qa/classification-system-metrics.ts",
++  "api/qa/classification-core-report.ts",
++  "api/lib/financial-event-quality.test.ts",
++];
++
++const CLASSIFIER_FILES = [
+   "api/lib/smart-pipeline.ts",
+   "api/lib/financial-event-plan.ts",
+   "api/lib/final-acceptance.ts",
++  "api/lib/classification-decision.ts",
+   "api/lib/classification-merge.ts",
++  "api/lib/classification-evidence.ts",
++  "api/lib/classification-prompt.ts",
+   "api/lib/classifier-contract.ts",
+   "api/lib/confidence-calibrator.ts",
+   "api/lib/confidence-calibration.generated.ts",
+@@ -44,12 +85,32 @@ const SCOPE_FILES = [
+   "api/lib/negation-detector.ts",
+   "api/lib/normalizer-v2.ts",
+   "api/lib/text-normalizer.ts",
+-  "api/qa/classification-scorer.ts",
+-  "api/qa/classification-system-metrics.ts",
++  "api/lib/narrative-decomposer.ts",
++  "api/lib/admissibility-gate.ts",
++  "api/lib/amount-ledger.ts",
++  "api/lib/category-registry.ts",
++  "api/lib/taxonomy-ssot.ts",
++  "api/lib/direction-governed-taxonomy.ts",
++  "api/lib/correction-rules.ts",
++  "api/lib/intent-detector.ts",
++  "api/lib/egyptian-dictionary.ts",
++  "api/lib/model-mapper.ts",
++  "api/lib/llm-provider-chain.ts",
++  "api/lib/llm-router.ts",
+ ];
+ 
+ const QUALITY_TEST = "api/lib/financial-event-quality.test.ts";
+ 
++/** Where a per-attempt report goes when the caller does not choose. Untracked. */
++const DEFAULT_OUT_DIR = ".artifacts/classification-core";
++
++type FailureStage =
++  | "spawn"
++  | "quality-gate"
++  | "evidence-missing"
++  | "contract"
++  | "write";
++
+ function sha256(input: string): string {
+   return createHash("sha256").update(input).digest("hex");
+ }
+@@ -59,150 +120,271 @@ function arg(name: string): string | undefined {
+   return index >= 0 ? process.argv[index + 1] : undefined;
+ }
+ 
+-function hashScopeFiles(root: string): Record<string, string> {
++function hashFiles(root: string, files: string[]): Record<string, string> {
+   const out: Record<string, string> = {};
+-  for (const file of SCOPE_FILES) {
++  for (const file of files) {
+     try {
+       out[file] = sha256(readFileSync(resolve(root, file), "utf8"));
+     } catch {
+-      // A file that does not exist in this checkout is reported as absent rather than
+-      // silently omitted: which files were hashed is part of the provenance.
++      // Reported as absent rather than omitted: which files were hashed is provenance.
+       out[file] = "absent";
+     }
+   }
+   return out;
+ }
+ 
+-function writeJson(path: string, value: unknown): void {
+-  mkdirSync(dirname(resolve(path)), { recursive: true });
+-  writeFileSync(resolve(path), `${JSON.stringify(value, null, 2)}\n`, "utf8");
++/**
++ * The calibration table's declared version.
++ *
++ * Parsed out of the generated module rather than imported, because this wrapper runs
++ * under tsx in a plain Node process and importing the classifier's module graph here
++ * would drag the whole pipeline in to read one string.
++ */
++function calibrationVersion(root: string): string {
++  try {
++    const source = readFileSync(
++      resolve(root, "api/lib/confidence-calibration.generated.ts"),
++      "utf8",
++    );
++    return /"version"\s*:\s*"([^"]+)"/.exec(source)?.[1] ?? "unknown";
++  } catch {
++    return "absent";
++  }
++}
++
++function git(root: string, args: string[]): string {
++  const run = spawnSync("git", args, { cwd: root, encoding: "utf8" });
++  return run.status === 0 ? run.stdout.trim() : "";
++}
++
++function gitState(root: string): CoreReportProvenance["git"] {
++  const dirtyFiles = git(root, ["status", "--porcelain=v1", "-uall"])
++    .split("\n")
++    .map((line) => line.slice(3).trim())
++    .filter(Boolean);
++  return {
++    commit: git(root, ["rev-parse", "HEAD"]) || "unknown",
++    tree: git(root, ["rev-parse", "HEAD^{tree}"]) || "unknown",
++    dirty: dirtyFiles.length > 0,
++    dirtyFiles: dirtyFiles.slice(0, 50),
++  };
++}
++
++function ciContext(): CoreReportProvenance["ci"] {
++  const runId = process.env.GITHUB_RUN_ID;
++  if (!runId) return null;
++  return {
++    runId,
++    attempt: process.env.GITHUB_RUN_ATTEMPT || "1",
++    workflow: process.env.GITHUB_WORKFLOW || "unknown",
++  };
++}
++
++/**
++ * Write, or leave what was there untouched — never a partial file.
++ *
++ * `writeFileSync` straight to the destination can be interrupted between truncate and
++ * flush, and the next reader parses whatever landed. A rename within the same directory
++ * is atomic on both platforms this runs on.
++ */
++function writeJsonAtomic(path: string, value: unknown): void {
++  const target = resolve(path);
++  mkdirSync(dirname(target), { recursive: true });
++  const temp = `${target}.${randomUUID()}.tmp`;
++  writeFileSync(temp, `${JSON.stringify(value, null, 2)}\n`, "utf8");
++  renameSync(temp, target);
++}
++
++/**
++ * A failure artifact: says what broke and carries no metrics at all.
++ *
++ * Deliberately not shaped like a report. Anything reading these files for numbers finds
++ * none, which is the correct answer for a run that did not produce any.
++ */
++function writeFailure(
++  outPath: string,
++  stage: FailureStage,
++  detail: string,
++  provenance: Partial<CoreReportProvenance>,
++): void {
++  // A stale SUCCESS file at this path would otherwise be picked up by the artifact
++  // upload and read as this attempt's result.
++  if (existsSync(resolve(outPath))) {
++    try {
++      unlinkSync(resolve(outPath));
++    } catch {
++      /* best effort; the failure file below replaces it anyway */
++    }
++  }
++  writeJsonAtomic(outPath, {
++    schemaVersion: REPORT_SCHEMA_VERSION,
++    status: "failed",
++    failedStage: stage,
++    detail,
++    generatedAt: new Date().toISOString(),
++    git: provenance.git ?? null,
++    ci: provenance.ci ?? null,
++    note: "No metrics are reported for a failed run. Do not compare against this file.",
++  });
+ }
+ 
+ function main(): number {
+   const root = resolve(import.meta.dirname, "..");
+-  const outPath = arg("out") || "docs/reviews/implementation/G1/classification-core-report.json";
++  const outPath =
++    arg("out") ||
++    resolve(
++      root,
++      DEFAULT_OUT_DIR,
++      `report-${process.env.GITHUB_RUN_ID || "local"}-${process.env.GITHUB_RUN_ATTEMPT || Date.now()}.json`,
++    );
+   const detailsPath = arg("details");
+   const baselinePath = arg("baseline");
+ 
++  const git = gitState(root);
++  const ci = ciContext();
++  const partial = { git, ci };
++
+   const scratch = mkdtempSync(resolve(tmpdir(), "classify-core-"));
+   const evidencePath = resolve(scratch, "evidence.json");
++  const cleanup = () => rmSync(scratch, { recursive: true, force: true });
++
++  // A baseline that was ASKED for is required to be usable. Read it BEFORE spending a
++  // corpus run on a comparison that cannot happen.
++  let baseline: unknown;
++  if (baselinePath) {
++    try {
++      baseline = JSON.parse(readFileSync(resolve(baselinePath), "utf8"));
++    } catch (err) {
++      console.error(
++        `[core-report] --baseline ${baselinePath} could not be read: ${(err as Error).message}`,
++      );
++      writeFailure(outPath, "contract", `baseline unreadable: ${(err as Error).message}`, partial);
++      cleanup();
++      return 2;
++    }
++  }
+ 
+-  // Resolved from node_modules rather than through `npx`.
+-  //
+-  // The npx shim is a .cmd on Windows, which spawnSync cannot execute without a shell,
+-  // and the failure surfaces as `status: null` — indistinguishable, from the caller's
+-  // side, from the gate itself failing. Pointing at vitest's own entry point removes
+-  // both the shell dependency and the ambiguity.
++  // Resolved from node_modules rather than through `npx`: the npx shim is a .cmd on
++  // Windows, which spawnSync cannot execute without a shell, and the failure surfaces as
++  // `status: null` — indistinguishable, from the caller's side, from the gate failing.
+   const vitestBin = resolve(root, "node_modules/vitest/vitest.mjs");
+   const startedAt = Date.now();
+-  const run = spawnSync(
+-    process.execPath,
+-    [vitestBin, "run", QUALITY_TEST, "--reporter=dot"],
+-    {
+-      cwd: root,
+-      stdio: "inherit",
+-      env: { ...process.env, CLASSIFY_CORE_EVIDENCE_PATH: evidencePath },
+-    },
+-  );
++  const run = spawnSync(process.execPath, [vitestBin, "run", QUALITY_TEST, "--reporter=dot"], {
++    cwd: root,
++    stdio: "inherit",
++    env: { ...process.env, CLASSIFY_CORE_EVIDENCE_PATH: evidencePath },
++  });
+   const runtimeMs = Date.now() - startedAt;
+ 
+   if (run.error) {
+     console.error(`[core-report] could not start vitest: ${run.error.message}`);
+-    rmSync(scratch, { recursive: true, force: true });
++    writeFailure(outPath, "spawn", run.error.message, partial);
++    cleanup();
+     return 1;
+   }
+ 
+   if (run.status !== 0) {
+-    // The gate failing is the answer. Reporting over a failed run would put numbers
+-    // next to a red build and invite someone to quote them.
+-    //
+-    // `status` is null when the child was killed by a signal rather than exiting, so it
+-    // says so instead of printing "exit null" at someone.
+     const how =
+       run.status === null ? `killed by ${run.signal || "a signal"}` : `exit ${run.status}`;
+-    console.error(`\n[core-report] quality gate failed (${how}). No report written.`);
+-    rmSync(scratch, { recursive: true, force: true });
++    console.error(`\n[core-report] quality gate failed (${how}). No metrics written.`);
++    writeFailure(outPath, "quality-gate", how, partial);
++    cleanup();
+     return run.status ?? 1;
+   }
+ 
+-  let evidence: CoreEvidence;
++  let evidence: unknown;
+   try {
+-    evidence = JSON.parse(readFileSync(evidencePath, "utf8")) as CoreEvidence;
++    evidence = JSON.parse(readFileSync(evidencePath, "utf8"));
+   } catch (err) {
+     console.error(
+-      `[core-report] the quality run passed but wrote no evidence to ${evidencePath}: ${
+-        (err as Error).message
+-      }`,
++      `[core-report] the quality run passed but wrote no usable evidence: ${(err as Error).message}`,
+     );
+-    rmSync(scratch, { recursive: true, force: true });
++    writeFailure(outPath, "evidence-missing", (err as Error).message, partial);
++    cleanup();
+     return 1;
+   }
+ 
+-  const fixtureSha256 = sha256(
+-    JSON.stringify(evidence.rows.map((row) => row.case)),
+-  );
+-
+-  let baseline: { metrics: CoreReportMetrics; fixtureSha256: string } | null = null;
+-  if (baselinePath) {
+-    try {
+-      const previous = JSON.parse(readFileSync(resolve(baselinePath), "utf8")) as {
+-        headline?: { candidate?: CoreReportMetrics };
+-        provenance?: { fixtureSha256?: string };
+-      };
+-      if (previous.headline?.candidate && previous.provenance?.fixtureSha256) {
+-        baseline = {
+-          metrics: previous.headline.candidate,
+-          fixtureSha256: previous.provenance.fixtureSha256,
+-        };
+-      } else {
+-        console.warn(`[core-report] ${baselinePath} is not a report; ignoring it.`);
+-      }
+-    } catch (err) {
+-      console.warn(`[core-report] could not read baseline: ${(err as Error).message}`);
+-    }
+-  }
++  const rows = (evidence as { rows?: Array<{ case: unknown }> }).rows || [];
++  const mode = (evidence as { mode?: string }).mode || "offline";
+ 
+-  const report = buildCoreReport({
+-    evidence,
+-    baseline,
+-    provenance: {
+-      fixtureSha256,
+-      sourceSha256: hashScopeFiles(root),
+-      mode: evidence.mode || "offline",
+-      generatedAt: new Date().toISOString(),
+-      runtimeMs,
+-      node: process.version,
+-      settings: {
++  const provenance: CoreReportProvenance = {
++    fingerprint: {
++      fixtureSha256: sha256(JSON.stringify(rows.map((row) => row.case))),
++      caseCount: rows.length,
++      mode,
++      // The ruler. A change here means the two runs measured differently.
++      scorerSha256: sha256(JSON.stringify(hashFiles(root, SCORER_FILES))),
++      // Read from the generated table itself rather than from its file hash, so the
++      // reason a comparison is refused reads as "v3.0 -> v3.1" instead of two hashes.
++      calibrationVersion: calibrationVersion(root),
++      schemaVersion: REPORT_SCHEMA_VERSION,
++      experiment: {
+         command: `vitest run ${QUALITY_TEST}`,
+-        provider: "none — executeLlmChain throws in this run",
++        provider: "none",
+         database: "mocked",
+         userPlan: "free",
++        modelName: "flash",
++        maxTokens: 512,
+       },
+     },
+-  });
++    // The classifier's own hashes travel with the report but not in the fingerprint:
++    // this is how a metric change gets attributed, not how a comparison gets refused.
++    sourceSha256: hashFiles(root, CLASSIFIER_FILES),
++    git,
++    generatedAt: new Date().toISOString(),
++    runtimeMs,
++    node: process.version,
++    platform: process.platform,
++    ci,
++    status: "success",
++  };
++
++  let report;
++  try {
++    report = buildCoreReport({ evidence, baseline, provenance });
++  } catch (err) {
++    const message =
++      err instanceof CoreReportContractError ? err.message : (err as Error).message;
++    console.error(`[core-report] ${message}`);
++    writeFailure(outPath, "contract", message, partial);
++    cleanup();
++    return 2;
++  }
+ 
+-  writeJson(outPath, report);
+-  if (detailsPath) writeJson(detailsPath, evidence);
+-  rmSync(scratch, { recursive: true, force: true });
++  try {
++    writeJsonAtomic(outPath, report);
++    if (detailsPath) writeJsonAtomic(detailsPath, evidence);
++  } catch (err) {
++    console.error(`[core-report] could not write the report: ${(err as Error).message}`);
++    writeFailure(outPath, "write", (err as Error).message, partial);
++    cleanup();
++    return 1;
++  }
++  cleanup();
+ 
+   const { candidate, delta } = report.headline;
+-  const unsafe = report.decisions.unsafeAutoSaves;
++  const safety = report.decisions.autoSaveSafety;
++  const pct = (value: number | null) => (value === null ? "n/a" : `${(value * 100).toFixed(2)}%`);
++
+   console.log(`\n[core-report] ${outPath}`);
++  console.log(`  status               success  (${git.commit.slice(0, 12)}${git.dirty ? ", dirty" : ""})`);
+   console.log(`  cases                ${candidate.cases}`);
+   console.log(
+     `  record triple F1     ${candidate.tripleF1.toFixed(4)}${
+-      delta ? ` (${delta.tripleF1! >= 0 ? "+" : ""}${delta.tripleF1!.toFixed(4)})` : " (no baseline)"
++      delta ? ` (${delta.tripleF1 >= 0 ? "+" : ""}${delta.tripleF1.toFixed(4)})` : ""
+     }`,
+   );
+   console.log(`  amount F1            ${candidate.amountF1.toFixed(4)}`);
+   console.log(
+-    `  unsafe auto-saves    ${unsafe.count} — ${(unsafe.ofAllCases.rate * 100).toFixed(2)}% of ` +
+-      `${unsafe.ofAllCases.denominator} cases, ${
+-        unsafe.ofAutoSavedCases.rate === null
+-          ? "n/a"
+-          : `${(unsafe.ofAutoSavedCases.rate * 100).toFixed(2)}%`
+-      } of ${unsafe.ofAutoSavedCases.denominator} auto-saved`,
++    `  auto-save, wrong triple/count   ${safety.tripleUnsafeAutoSaveCases} — ` +
++      `${pct(safety.tripleUnsafeRateOfAutoSaved)} of ${safety.autoSavedCases} auto-saved, ` +
++      `${pct(safety.tripleUnsafeRateOfAllCases)} of ${safety.totalCases} cases`,
++  );
++  console.log(
++    `  auto-save, any scored error     ${safety.autoSaveCasesWithAnyScoredError} — ` +
++      `${pct(safety.anyErrorRateOfAutoSaved)} of ${safety.autoSavedCases} auto-saved`,
+   );
++  console.log(`  comparability        ${report.comparability.reason}`);
+   for (const warning of report.warnings) console.log(`  ! ${warning}`);
+   if (detailsPath) console.log(`  details (synthetic fixtures) -> ${detailsPath}`);
+   return 0;

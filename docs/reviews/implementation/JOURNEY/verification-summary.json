@@ -1,0 +1,70 @@
+{
+  "generatedAt": "2026-09-06T15:47:28.455357+00:00",
+  "status": "checkpoint_with_open_release_blockers",
+  "checks": {
+    "classification_core": {
+      "passed": 946,
+      "files": 57,
+      "exitCode": 0,
+      "command": "npm run test:classification:core",
+      "localLogSha256": "cb68c9f3f27edc5e22130f5689f7525c9d6c31ca6bc54d5d11f8e035177032e2"
+    },
+    "manifest": {
+      "passed": 12,
+      "exitCode": 0,
+      "command": "npm run test:classification:manifest"
+    },
+    "mysql_capture": {
+      "passed": 13,
+      "files": 1,
+      "exitCode": 0,
+      "database": "disposable MySQL 8 / 127.0.0.1:33071/capture_test",
+      "includesMigrationParity": true,
+      "localLogSha256": "33b9ddf4905f303072e55943d5bfc9a490fbd5789e76bd0b21e504b31544c888"
+    },
+    "application_with_mysql": {
+      "passed": 46,
+      "files": 12,
+      "exitCode": 0,
+      "localLogSha256": "38fdc4064861ebf165de40cd50ea1385938c90c4b658c018d34a93378ba1ca5c"
+    },
+    "application_without_valid_db": {
+      "passed": 38,
+      "failed": 8,
+      "sameFailuresOnBaseline": true,
+      "resolvedWithDisposableMySql": true
+    },
+    "admin_usage_display": {
+      "passed": 5,
+      "files": 2,
+      "exitCode": 0,
+      "localLogSha256": "b457e4e85d11bfe876a3a94a87a9ddc310f3044a75a3c58702b33cce98d84a68"
+    },
+    "new_challenge": {
+      "matchedCases": 89,
+      "totalCases": 100,
+      "exitCode": 1,
+      "releaseBlocker": true,
+      "productionAccuracy": null,
+      "localLogSha256": "564d9875acb91988fe602c1bbfad92b71a01c90c25bddbe3543d1dfa30832640"
+    },
+    "lint": {
+      "baseline": 67,
+      "current": 55,
+      "introduced": [],
+      "method": "File/rule/message occurrence comparison; line shifts ignored."
+    },
+    "build": {
+      "exitCode": 0,
+      "liveProviderTested": false,
+      "androidApkBuilt": false,
+      "iosShortcutVerified": false,
+      "localLogSha256": "d7c9ac5ebafc598f5778e96cb3b84861920e9a22196ea8084fc6f0ad430e50c5"
+    },
+    "typecheck": {
+      "exitCode": 0,
+      "includesNewTests": true,
+      "localLogSha256": "2a0da3b654a5e9b09464177980c8d4725bda64346519d65cd300f1e2ea84867c"
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { FinancialCaptureInbox } from "./FinancialCaptureInbox";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -375,7 +376,8 @@ export function ExpenseForm({
 
   const parseReceiptMutation = trpc.image.parseReceipt.useMutation({
     onSuccess: (data) => {
-      toast.success(`تم حفظ ${data.amount} ج.م — ${data.category}`);
+      toast.info(data.saved ? "العملية محفوظة بالفعل." : "تم استخراج الصورة كمسودة. راجع تفاصيلها قبل الحفظ.");
+      void utilsTrpc.capture.list.invalidate();
       utilsTrpc.expense.getMonthSummary.invalidate();
       utilsTrpc.expense.getMonthlyStats.invalidate();
       if (onSuccess) onSuccess();
@@ -426,7 +428,8 @@ export function ExpenseForm({
       parseReceiptMutation.mutate({
         imageBase64: base64,
         mimeType: "image/jpeg",
-        saveExpense: true,
+        saveExpense: false,
+        clientRequestId: crypto.randomUUID(),
       });
     } catch (err: any) {
       toast.error(err.message || "حدث خطأ أثناء معالجة وتصغير الصورة");
@@ -1501,6 +1504,7 @@ export function ExpenseForm({
       </div>
 
       <CardContent className="space-y-4 sm:space-y-5 p-4 sm:p-6 pt-2 sm:pt-3">
+        <FinancialCaptureInbox onSaved={onSuccess} />
         {isSyncing && (
           <div
             className="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs flex items-center justify-between gap-3 animate-pulse"

@@ -1,0 +1,10 @@
+{
+  "sha256": "44e273b8e76fafc6054a87fb9f060137faa273faf55f2e67554437b78bf9f4ef",
+  "caseCount": 100,
+  "channels": {
+    "notification": 50,
+    "text": 30,
+    "post_ocr_document": 20
+  },
+  "expectedLabels": "initial hypotheses; errors must be versioned, never silently adjusted"
+}

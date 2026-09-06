@@ -102,8 +102,15 @@ describe("what is NOT an amount", () => {
 });
 
 describe("several amounts in one utterance", () => {
+  it("distinguishes colloquial price تمن from the number eight by its neighbours", () => {
+    expect(amounts("رجعلي 220 تمن جزمة")).toEqual([220]);
+    expect(amounts("دفعت تمن جنيه")).toEqual([8]);
+    expect(amounts("دفعت تمن وتلاتين جنيه")).toEqual([38]);
+  });
   it("keeps them separate and in the order spoken", () => {
-    expect(amounts("فطرت بـ 50 وركبت اوبر 80 ودفعت 2000 قسط")).toEqual([50, 80, 2000]);
+    expect(amounts("فطرت بـ 50 وركبت اوبر 80 ودفعت 2000 قسط")).toEqual([
+      50, 80, 2000,
+    ]);
   });
 
   it("does not split a composed number into its parts", () => {

@@ -2,27 +2,27 @@ import { z } from "zod";
 import { router, proProcedure } from "./middleware";
 import { TRPCError } from "@trpc/server";
 import { db } from "./queries/connection";
-import { expenses, userDictionaries, users, localUsers } from "../db/schema";
-import { eq, and, gte, lt, sql } from "drizzle-orm";
+import { users, localUsers } from "../db/schema";
+import { eq, sql } from "drizzle-orm";
 import { env } from "./lib/env";
 import {
   loadSystemConfig,
   assertAiBudget,
   clampOutputTokens,
-  estimateTokensFromText,
   recordAiUsageEvent,
-  asPlan,
 } from "./lib/ai-usage-policy";
-import { parseReceiptImage } from "./lib/receipt-image-parser";
-import { normalizeTransactionTaxonomy } from "./lib/category-registry";
-import { mapModelName } from "./lib/model-mapper";
 import {
-  getSmartProfile,
-  summarizeProfileForAI,
-} from "./services/user-profile-service";
-import { invalidateUserMemory } from "./lib/muscle-memory";
-import { businessMonthRange } from "./lib/app-time";
-import { bumpFinanceCacheGen } from "./services/finance-semantic-layer";
+  guardImagePayloadSize,
+  parseReceiptImage,
+} from "./lib/receipt-image-parser";
+import { recordImageProviderUsage } from "./services/image-usage-ledger";
+import {
+  createCapture,
+  captureHash,
+  findCaptureForRequest,
+} from "./services/financial-capture-store";
+import { mapModelName } from "./lib/model-mapper";
+import { localUsage } from "./lib/provider-usage";
 
 async function trackImageTokens(
   userId: number,
@@ -55,72 +55,76 @@ export const imageRouter = router({
   parseReceipt: proProcedure
     .input(
       z.object({
-        imageBase64: z.string().min(100),
-        mimeType: z.string().default("image/jpeg"),
+        imageBase64: z.string().min(100).max(4_600_000),
+        mimeType: z
+          .enum(["image/jpeg", "image/png", "image/webp"])
+          .default("image/jpeg"),
         ocrTextHint: z.string().max(2000).optional(),
-        saveExpense: z.boolean().default(true),
+        saveExpense: z.boolean().default(false), // Legacy input retained; extraction always creates a review draft.
+        clientRequestId: z.string().uuid().optional(),
+        businessId: z.number().int().positive().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (input.imageBase64.length > 5_500_000) {
+      try {
+        guardImagePayloadSize(input.imageBase64);
+      } catch {
         throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            "حجم الصورة كبير جداً. استخدم ضغط الصورة من الكاميرا وحاول مرة أخرى.",
+          code: "PAYLOAD_TOO_LARGE",
+          message: "الصورة كبيرة؛ أعد ضغطها أو تصويرها بحجم أصغر.",
         });
       }
-
-      const estimated = estimateTokensFromText(input.ocrTextHint || "") + 900;
+      const fingerprint = captureHash([
+        input.imageBase64,
+        input.businessId || null,
+      ]);
+      const requestKey = input.clientRequestId || fingerprint;
+      const existing = await findCaptureForRequest(
+        ctx.user,
+        requestKey,
+        fingerprint,
+      );
+      if (existing) {
+        await recordImageProviderUsage({
+          userId: ctx.user.id,
+          userType: ctx.user.type,
+          model: "result_cache",
+          usage: localUsage(),
+          finishReason: "local",
+          latencyMs: 0,
+          cacheHit: true,
+        });
+        const first = existing.draft.events[0];
+        return {
+          amount: first?.amount || 0,
+          description: first?.description || "",
+          category: first?.category || "",
+          subCategory: first?.subCategory || "",
+          type: first?.kind === "income" ? "income" : "expense",
+          confidence: 0,
+          merchant: first?.merchant || undefined,
+          tokensUsed: 0,
+          parsedBy: "capture:replay",
+          expenseId: existing.receipt?.events[0]?.expenseId || null,
+          saved: existing.state === "saved",
+          captureId: existing.id,
+          version: existing.version,
+          decision: "review" as const,
+        };
+      }
+      const estimated = 900; // Budget estimate; provider usage is measured separately.
       const budget = await assertAiBudget(ctx.user, "image", estimated);
       const cfg = await loadSystemConfig();
       const apiKey = cfg.ai_api_key || env.GEMINI_API_KEY;
       const apiKey2 = cfg.ai_api_key_2 || "";
       const modelName = mapModelName(
-        cfg.ai_model_pro || env.GEMINI_MODEL_PRO || "gemini-3.1-pro",
+        cfg.ai_model_pro || env.GEMINI_MODEL_PRO || "pro",
       );
       const maxTokens = clampOutputTokens(
         budget.perRequestMax,
         budget.remaining,
         estimated,
       );
-
-      const monthRange = businessMonthRange();
-      const monthRows = await db
-        .select({ amount: expenses.amount, type: expenses.type })
-        .from(expenses)
-        .where(
-          and(
-            eq(expenses.userId, ctx.user.id),
-            eq(expenses.userType, ctx.user.type),
-            gte(expenses.date, monthRange.start),
-            lt(expenses.date, monthRange.endExclusive),
-          ),
-        );
-      const totalIncome = monthRows
-        .filter((r) => r.type === "income")
-        .reduce((s, r) => s + Number(r.amount), 0);
-      const totalExpense = monthRows
-        .filter((r) => r.type === "expense")
-        .reduce((s, r) => s + Number(r.amount), 0);
-
-      const userDict = await db
-        .select()
-        .from(userDictionaries)
-        .where(
-          and(
-            eq(userDictionaries.userId, ctx.user.id),
-            eq(userDictionaries.userType, ctx.user.type),
-          ),
-        )
-        .then((rows) =>
-          rows.map((r) => ({
-            word: r.word,
-            category: r.category,
-            subCategory: r.subCategory ?? undefined,
-          })),
-        );
-
-      const profile = await getSmartProfile(ctx.user.id, ctx.user.type);
 
       const parsed = await parseReceiptImage({
         imageBase64: input.imageBase64,
@@ -129,12 +133,24 @@ export const imageRouter = router({
         apiKey2,
         modelName,
         maxTokens,
+        onUsage: async (usage, finishReason, latencyMs) => {
+          await recordImageProviderUsage({
+            userId: ctx.user.id,
+            userType: ctx.user.type,
+            model: modelName,
+            usage,
+            finishReason,
+            latencyMs,
+          });
+          await trackImageTokens(
+            ctx.user.id,
+            ctx.user.type,
+            usage.totalTokens || 0,
+            modelName,
+          );
+        },
         userId: ctx.user.id,
         userType: ctx.user.type,
-        userPlan: asPlan(ctx.user.plan),
-        userDict,
-        monthlyContext: { totalIncome, totalExpense },
-        profileSummary: summarizeProfileForAI(profile),
         ocrTextHint: input.ocrTextHint,
       });
 
@@ -146,84 +162,18 @@ export const imageRouter = router({
         });
       }
 
-      await trackImageTokens(
-        ctx.user.id,
-        ctx.user.type,
-        parsed.tokensUsed,
-        modelName,
-      );
-
-      let expenseId: number | null = null;
-      if (input.saveExpense) {
-        // The receipt parser returns the model's raw `main_category` string
-        // (receipt-image-parser.ts), so without this it is the one write path that
-        // can put a category the registry does not know into expenses.category.
-        const normalized = normalizeTransactionTaxonomy(
-          {
-            category: parsed.category,
-            subCategory: parsed.subCategory,
-            type: parsed.type,
-            description: parsed.description,
-          },
-          `${parsed.ocrText || ""} ${parsed.description || ""}`,
-        );
-        const {
-          applyExpenseRollupDelta,
-          expenseToRollupDelta,
-          syncExpenseDetails,
-        } = await import("./services/expense-rollups");
-
-        await db.transaction(async (tx) => {
-          const [createdExpense] = await tx.insert(expenses).values({
-            userId: ctx.user.id,
-            userType: ctx.user.type,
-            type: normalized.type,
-            amount: parsed.amount.toString(),
-            category: normalized.category,
-            subCategory: normalized.subCategory,
-            description: parsed.description,
-            rawText: parsed.ocrText || `[image] ${parsed.description}`,
-            source: "image",
-            date: new Date(),
-            parsedMetadata: {
-              parsedBy: parsed.parsedBy,
-              merchant: parsed.merchant,
-              confidence: parsed.confidence,
-            },
-          }).$returningId();
-          expenseId = createdExpense.id;
-
-          if (expenseId) {
-            await syncExpenseDetails(
-              tx,
-              expenseId,
-              parsed.ocrText || `[image] ${parsed.description}`,
-              {
-                parsedBy: parsed.parsedBy,
-                merchant: parsed.merchant,
-                confidence: parsed.confidence,
-              },
-            );
-          }
-
-          const delta = expenseToRollupDelta(
-            {
-              userId: ctx.user.id,
-              userType: ctx.user.type,
-              date: new Date(),
-              type: normalized.type,
-              amount: parsed.amount,
-              source: "image",
-            },
-            1,
-          );
-          await applyExpenseRollupDelta(tx, delta);
+      if (!parsed.draft)
+        throw new TRPCError({
+          code: "UNPROCESSABLE_CONTENT",
+          message: "الصورة لم تنتج مسودة قابلة للمراجعة.",
         });
-
-        invalidateUserMemory(ctx.user.id, ctx.user.type);
-        await bumpFinanceCacheGen(ctx.user.id, ctx.user.type);
-      }
-
+      parsed.draft.businessId = input.businessId || null;
+      const capture = await createCapture(
+        ctx.user,
+        requestKey,
+        parsed.draft,
+        fingerprint,
+      );
       return {
         amount: parsed.amount,
         description: parsed.description,
@@ -234,8 +184,11 @@ export const imageRouter = router({
         merchant: parsed.merchant,
         tokensUsed: parsed.tokensUsed,
         parsedBy: parsed.parsedBy,
-        expenseId,
-        saved: input.saveExpense,
+        expenseId: null,
+        saved: false,
+        captureId: capture.id,
+        version: capture.version,
+        decision: "review" as const,
       };
     }),
 });

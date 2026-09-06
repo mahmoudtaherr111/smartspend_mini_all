@@ -4,6 +4,7 @@
 
     <!-- Internet permission to POST to our server -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Bind notification listener -->
     <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" />
     <!-- Vibrate permission for haptic feedback -->

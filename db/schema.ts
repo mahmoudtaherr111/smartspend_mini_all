@@ -30,6 +30,24 @@ export const binary32 = customType<{ data: string; driverData: Buffer }>({
   },
 });
 
+// Durable capture loop. Every mutation locks the owner-scoped row and checks version.
+export const financialCaptures = mysqlTable("financial_captures", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  userId: int("user_id").notNull(),
+  userType: varchar("user_type", { length: 50 }).notNull(),
+  requestKey: varchar("request_key", { length: 64 }).notNull(),
+  sourceHash: varchar("source_hash", { length: 64 }).notNull(),
+  version: int("version").notNull().default(1),
+  state: varchar("state", { length: 20 }).notNull().default("review"),
+  draft: json("draft").notNull(),
+  receipt: json("receipt"),
+  createdAt: datetime("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: datetime("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  expiresAt: datetime("expires_at").notNull(),
+}, t => [uniqueIndex("capture_owner_request_unique").on(t.userId, t.userType, t.requestKey),
+  index("capture_owner_state_idx").on(t.userId, t.userType, t.state),
+  index("capture_expiry_idx").on(t.expiresAt)]);
+
 // ─── Users (OAuth) ───
 export const users = mysqlTable(
   "users",

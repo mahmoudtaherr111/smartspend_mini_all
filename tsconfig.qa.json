@@ -1,0 +1,53 @@
+{
+  /*
+   * Type-checks the QA tooling that no other project covers.
+   *
+   * `tsconfig.server.json` includes `api` but EXCLUDES `api/**\/*.test.ts`, and
+   * `tsconfig.node.json` includes only `vite.config.ts`. So the report wrapper in
+   * `scripts/` and every QA test file fell outside `npm run check` entirely: the command
+   * exited 0 while the code added alongside it was never type-checked. Running the
+   * wrapper successfully proved some of its paths at runtime and nothing about the rest.
+   *
+   * Deliberately narrow. Pulling all of `scripts/` in would drag long-standing helpers
+   * into a check they have never passed, which is a different piece of work and would
+   * bury the signal this project exists to give.
+   */
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.qa.tsbuildinfo",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "types": ["node", "vitest/globals"],
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@contracts/*": ["./contracts/*"],
+      "@db/*": ["./db/*"]
+    }
+  },
+  "include": [
+    "src/types/damerau-levenshtein.d.ts",
+    "api/sms-ingest.test.ts",
+    "api/lib/financial-capture-state.test.ts",
+    "api/lib/financial-event-scope.test.ts",
+    "api/lib/receipt-image-parser.test.ts",
+    "api/services/financial-capture-store.integration.test.ts",
+    "api/services/image-usage-ledger.test.ts",
+    "api/qa/journey-challenge.test.ts",
+    "src/components/expenses/FinancialCaptureInbox.test.tsx",
+    "scripts/classification-core-report.ts",
+    "api/qa/classification-core-report.ts",
+    "api/qa/classification-core-report.test.ts",
+    "api/qa/classification-test-manifest.ts",
+    "api/qa/classification-test-manifest.test.ts"
+  ]
+}

@@ -58,6 +58,7 @@ export const TABLE_CLASS_DEFINITIONS: Record<TableClass, { name: string; descrip
  * Any table missing here will fail the class-coverage test.
  */
 export const TABLE_CLASSES: Record<string, TableClass> = {
+  financial_captures: "D",
   // Class A: Identity & Config (Forever)
   users: "A",
   local_users: "A",

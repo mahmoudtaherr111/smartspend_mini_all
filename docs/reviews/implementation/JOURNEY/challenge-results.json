@@ -1,0 +1,2302 @@
+{
+  "status": "diagnostic",
+  "generatedAt": "2026-09-06T15:43:17.199Z",
+  "runId": null,
+  "runAttempt": null,
+  "commit": null,
+  "fixtureSha256": "174beb1f202a6018d80e4465e89c224b12637d0d9231d2c40dd5fc4966223790",
+  "provenance": "synthetic development challenge, authored before first run; not bank-certified templates, not hidden holdout, not real audio/image accuracy",
+  "limitations": [
+    "30 text cases are local-only; no live LLM or STT",
+    "20 document cases begin after OCR; no image accuracy claim",
+    "synthetic notifications are not verified bank templates",
+    "pass rate is for the listed facts, not full-record or end-to-end accuracy"
+  ],
+  "total": 100,
+  "passed": 89,
+  "failed": [
+    "SMS-046",
+    "TXT-007",
+    "TXT-009",
+    "TXT-012",
+    "TXT-014",
+    "TXT-015",
+    "TXT-017",
+    "TXT-018",
+    "TXT-021",
+    "TXT-024",
+    "TXT-030"
+  ],
+  "rows": [
+    {
+      "id": "SMS-001",
+      "channel": "notification",
+      "tags": [
+        "credit-card-not-income"
+      ],
+      "expected": {
+        "amount": 179.5,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "NETFLIX.COM"
+      },
+      "actual": {
+        "amount": 179.5,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "NETFLIX.COM",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-002",
+      "channel": "notification",
+      "tags": [
+        "ipn-reference-date"
+      ],
+      "expected": {
+        "amount": 49,
+        "kind": "transfer",
+        "status": "realized",
+        "merchant": null
+      },
+      "actual": {
+        "amount": 49,
+        "kind": "transfer",
+        "status": "realized",
+        "merchant": "7:14 PM",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-003",
+      "channel": "notification",
+      "tags": [
+        "arabic-decimal"
+      ],
+      "expected": {
+        "amount": 279.99,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "NETFLIX"
+      },
+      "actual": {
+        "amount": 279.99,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "NETFLIX",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-004",
+      "channel": "notification",
+      "tags": [
+        "subscription-recurring"
+      ],
+      "expected": {
+        "amount": 1250,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "ANTHROPIC*CLAUDE"
+      },
+      "actual": {
+        "amount": 1250,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "ANTHROPIC*CLAUDE",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-005",
+      "channel": "notification",
+      "tags": [
+        "foreign-renewal"
+      ],
+      "expected": {
+        "amount": 20,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "CLAUDE.AI"
+      },
+      "actual": {
+        "amount": 20,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "CLAUDE.AI",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-006",
+      "channel": "notification",
+      "tags": [
+        "multi-product-merchant"
+      ],
+      "expected": {
+        "amount": 450,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "AMAZON.EG"
+      },
+      "actual": {
+        "amount": 450,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "AMAZON.EG",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-007",
+      "channel": "notification",
+      "tags": [
+        "payment-processor"
+      ],
+      "expected": {
+        "amount": 62.75,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "FAWRY*MERCHANT"
+      },
+      "actual": {
+        "amount": 62.75,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "FAWRY*MERCHANT",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-008",
+      "channel": "notification",
+      "tags": [
+        "utility"
+      ],
+      "expected": {
+        "amount": 320,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "شركه مياه القاهره"
+      },
+      "actual": {
+        "amount": 320,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "شركه مياه القاهره",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-009",
+      "channel": "notification",
+      "tags": [
+        "wallet-fee-balance"
+      ],
+      "expected": {
+        "amount": 750,
+        "kind": "transfer",
+        "status": "realized",
+        "merchant": null
+      },
+      "actual": {
+        "amount": 750,
+        "kind": "transfer",
+        "status": "realized",
+        "merchant": null,
+        "issues": [
+          "fee_requires_reconciliation"
+        ],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-010",
+      "channel": "notification",
+      "tags": [
+        "incoming-not-salary"
+      ],
+      "expected": {
+        "amount": 400,
+        "kind": "transfer",
+        "status": "realized",
+        "merchant": null
+      },
+      "actual": {
+        "amount": 400,
+        "kind": "transfer",
+        "status": "realized",
+        "merchant": null,
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-011",
+      "channel": "notification",
+      "tags": [
+        "unknown-inflow"
+      ],
+      "expected": {
+        "amount": 600,
+        "kind": "unknown",
+        "status": "realized",
+        "merchant": null
+      },
+      "actual": {
+        "amount": 600,
+        "kind": "unknown",
+        "status": "realized",
+        "merchant": null,
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-012",
+      "channel": "notification",
+      "tags": [
+        "salary-explicit"
+      ],
+      "expected": {
+        "amount": 18432.65,
+        "kind": "income",
+        "status": "realized",
+        "merchant": null
+      },
+      "actual": {
+        "amount": 18432.65,
+        "kind": "income",
+        "status": "realized",
+        "merchant": null,
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-013",
+      "channel": "notification",
+      "tags": [
+        "declined"
+      ],
+      "expected": {
+        "amount": 260,
+        "kind": "expense",
+        "status": "rejected",
+        "merchant": null
+      },
+      "actual": {
+        "amount": 260,
+        "kind": "expense",
+        "status": "rejected",
+        "merchant": "STORE",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-014",
+      "channel": "notification",
+      "tags": [
+        "arabic-rejected"
+      ],
+      "expected": {
+        "amount": 250,
+        "kind": "expense",
+        "status": "rejected",
+        "merchant": null
+      },
+      "actual": {
+        "amount": 250,
+        "kind": "expense",
+        "status": "rejected",
+        "merchant": null,
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-015",
+      "channel": "notification",
+      "tags": [
+        "pending-not-settled"
+      ],
+      "expected": {
+        "amount": 3700,
+        "kind": "transfer",
+        "status": "pending",
+        "merchant": null
+      },
+      "actual": {
+        "amount": 3700,
+        "kind": "transfer",
+        "status": "pending",
+        "merchant": null,
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-016",
+      "channel": "notification",
+      "tags": [
+        "request-not-payment"
+      ],
+      "expected": {
+        "amount": 125,
+        "kind": "unknown",
+        "status": "pending",
+        "merchant": null
+      },
+      "actual": {
+        "amount": 125,
+        "kind": "unknown",
+        "status": "pending",
+        "merchant": null,
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-017",
+      "channel": "notification",
+      "tags": [
+        "refund-not-income"
+      ],
+      "expected": {
+        "amount": 290,
+        "kind": "refund",
+        "status": "realized",
+        "merchant": null
+      },
+      "actual": {
+        "amount": 290,
+        "kind": "refund",
+        "status": "realized",
+        "merchant": "AMAZON",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-018",
+      "channel": "notification",
+      "tags": [
+        "refund-cancel-scope"
+      ],
+      "expected": {
+        "amount": 349,
+        "kind": "refund",
+        "status": "realized",
+        "merchant": null
+      },
+      "actual": {
+        "amount": 349,
+        "kind": "refund",
+        "status": "realized",
+        "merchant": null,
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-019",
+      "channel": "notification",
+      "tags": [
+        "reversal-status-conflict"
+      ],
+      "expected": {
+        "amount": 100,
+        "kind": "refund",
+        "status": "realized",
+        "merchant": null
+      },
+      "actual": {
+        "amount": 100,
+        "kind": "refund",
+        "status": "realized",
+        "merchant": null,
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-020",
+      "channel": "notification",
+      "tags": [
+        "cash-withdrawal-not-consumption"
+      ],
+      "expected": {
+        "amount": 800,
+        "kind": "unknown",
+        "status": "realized",
+        "merchant": null
+      },
+      "actual": {
+        "amount": 800,
+        "kind": "unknown",
+        "status": "realized",
+        "merchant": null,
+        "issues": [
+          "fee_requires_reconciliation"
+        ],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-021",
+      "channel": "notification",
+      "tags": [
+        "own-wallet-funding"
+      ],
+      "expected": {
+        "amount": 600,
+        "kind": "unknown",
+        "status": "realized",
+        "merchant": null
+      },
+      "actual": {
+        "amount": 600,
+        "kind": "unknown",
+        "status": "realized",
+        "merchant": null,
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-022",
+      "channel": "notification",
+      "tags": [
+        "balance-only"
+      ],
+      "expected": {
+        "amount": null,
+        "kind": null,
+        "status": null,
+        "merchant": null
+      },
+      "actual": {
+        "amount": null,
+        "kind": null,
+        "status": null,
+        "merchant": null,
+        "issues": [],
+        "ignored": "not_a_payment"
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-023",
+      "channel": "notification",
+      "tags": [
+        "otp-never-store"
+      ],
+      "expected": {
+        "amount": null,
+        "kind": null,
+        "status": null,
+        "merchant": null
+      },
+      "actual": {
+        "amount": null,
+        "kind": null,
+        "status": null,
+        "merchant": null,
+        "issues": [],
+        "ignored": "sensitive_authentication"
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-024",
+      "channel": "notification",
+      "tags": [
+        "arabic-otp"
+      ],
+      "expected": {
+        "amount": null,
+        "kind": null,
+        "status": null,
+        "merchant": null
+      },
+      "actual": {
+        "amount": null,
+        "kind": null,
+        "status": null,
+        "merchant": null,
+        "issues": [],
+        "ignored": "sensitive_authentication"
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-025",
+      "channel": "notification",
+      "tags": [
+        "promotion"
+      ],
+      "expected": {
+        "amount": null,
+        "kind": null,
+        "status": null,
+        "merchant": null
+      },
+      "actual": {
+        "amount": null,
+        "kind": null,
+        "status": null,
+        "merchant": null,
+        "issues": [],
+        "ignored": "promotion"
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-026",
+      "channel": "notification",
+      "tags": [
+        "subscription-not-renewal"
+      ],
+      "expected": {
+        "amount": 75,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "SPOTIFY"
+      },
+      "actual": {
+        "amount": 75,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "SPOTIFY",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-027",
+      "channel": "notification",
+      "tags": [
+        "descriptor"
+      ],
+      "expected": {
+        "amount": 99.9,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "YOUTUBE PREMIUM"
+      },
+      "actual": {
+        "amount": 99.9,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "YOUTUBE PREMIUM",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-028",
+      "channel": "notification",
+      "tags": [
+        "specific-vs-generic-merchant"
+      ],
+      "expected": {
+        "amount": 39,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "AMAZON PRIME"
+      },
+      "actual": {
+        "amount": 39,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "AMAZON PRIME",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-029",
+      "channel": "notification",
+      "tags": [
+        "billing-aggregator"
+      ],
+      "expected": {
+        "amount": 990,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "APPLE.COM/BILL"
+      },
+      "actual": {
+        "amount": 990,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "APPLE.COM/BILL",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-030",
+      "channel": "notification",
+      "tags": [
+        "merchant-lookalike"
+      ],
+      "expected": {
+        "amount": 450,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "NETFLIX STORE CAIRO"
+      },
+      "actual": {
+        "amount": 450,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "NETFLIX STORE CAIRO",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-031",
+      "channel": "notification",
+      "tags": [
+        "health-merchant"
+      ],
+      "expected": {
+        "amount": 85,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "صيدليه الشفاء"
+      },
+      "actual": {
+        "amount": 85,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "صيدليه الشفاء",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-032",
+      "channel": "notification",
+      "tags": [
+        "arabic-merchant"
+      ],
+      "expected": {
+        "amount": 123.45,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "محل الادوات"
+      },
+      "actual": {
+        "amount": 123.45,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "محل الادوات",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-033",
+      "channel": "notification",
+      "tags": [
+        "numbers-not-amounts"
+      ],
+      "expected": {
+        "amount": 11,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": null
+      },
+      "actual": {
+        "amount": 11,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": null,
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-034",
+      "channel": "notification",
+      "tags": [
+        "balance-before-payment"
+      ],
+      "expected": {
+        "amount": 110,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "CAFE"
+      },
+      "actual": {
+        "amount": 110,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "CAFE",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-035",
+      "channel": "notification",
+      "tags": [
+        "newline"
+      ],
+      "expected": {
+        "amount": 18.25,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "KIOSK"
+      },
+      "actual": {
+        "amount": 18.25,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "KIOSK",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-036",
+      "channel": "notification",
+      "tags": [
+        "nbsp"
+      ],
+      "expected": {
+        "amount": 120,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "STORE"
+      },
+      "actual": {
+        "amount": 120,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "STORE",
+        "issues": [
+          "fee_requires_reconciliation"
+        ],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-037",
+      "channel": "notification",
+      "tags": [
+        "persian-digits"
+      ],
+      "expected": {
+        "amount": 123.45,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "SHOP"
+      },
+      "actual": {
+        "amount": 123.45,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "SHOP",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-038",
+      "channel": "notification",
+      "tags": [
+        "conversion-two-amounts"
+      ],
+      "expected": {
+        "amount": null,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": null
+      },
+      "actual": {
+        "amount": null,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": null,
+        "issues": [
+          "multiple_amounts",
+          "fee_requires_reconciliation"
+        ],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-039",
+      "channel": "notification",
+      "tags": [
+        "malformed-grouping"
+      ],
+      "expected": {
+        "amount": null,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "SHOP"
+      },
+      "actual": {
+        "amount": null,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "SHOP",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-040",
+      "channel": "notification",
+      "tags": [
+        "invalid-scale"
+      ],
+      "expected": {
+        "amount": null,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "SHOP"
+      },
+      "actual": {
+        "amount": null,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "SHOP",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-041",
+      "channel": "notification",
+      "tags": [
+        "two-notifications-one-body"
+      ],
+      "expected": {
+        "amount": null,
+        "kind": "transfer",
+        "status": "realized",
+        "merchant": null
+      },
+      "actual": {
+        "amount": null,
+        "kind": "transfer",
+        "status": "realized",
+        "merchant": null,
+        "issues": [
+          "multiple_amounts"
+        ],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-042",
+      "channel": "notification",
+      "tags": [
+        "small-auth-payment"
+      ],
+      "expected": {
+        "amount": 1,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "TEST"
+      },
+      "actual": {
+        "amount": 1,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "TEST",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-043",
+      "channel": "notification",
+      "tags": [
+        "hold"
+      ],
+      "expected": {
+        "amount": 1,
+        "kind": "unknown",
+        "status": "pending",
+        "merchant": "HOTEL"
+      },
+      "actual": {
+        "amount": 1,
+        "kind": "unknown",
+        "status": "pending",
+        "merchant": "HOTEL",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-044",
+      "channel": "notification",
+      "tags": [
+        "zero-fee"
+      ],
+      "expected": {
+        "amount": 100,
+        "kind": "transfer",
+        "status": "realized",
+        "merchant": null
+      },
+      "actual": {
+        "amount": 100,
+        "kind": "transfer",
+        "status": "realized",
+        "merchant": null,
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-045",
+      "channel": "notification",
+      "tags": [
+        "zero-not-expense"
+      ],
+      "expected": {
+        "amount": null,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "CHECK"
+      },
+      "actual": {
+        "amount": null,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "CHECK",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-046",
+      "channel": "notification",
+      "tags": [
+        "truncated-source"
+      ],
+      "expected": {
+        "amount": 230,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "HOTEL... see more"
+      },
+      "actual": {
+        "amount": 230,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "HOTEL",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": false
+    },
+    {
+      "id": "SMS-047",
+      "channel": "notification",
+      "tags": [
+        "two-balances"
+      ],
+      "expected": {
+        "amount": null,
+        "kind": null,
+        "status": null,
+        "merchant": null
+      },
+      "actual": {
+        "amount": null,
+        "kind": null,
+        "status": null,
+        "merchant": null,
+        "issues": [],
+        "ignored": "not_a_payment"
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-048",
+      "channel": "notification",
+      "tags": [
+        "arabic-renewal"
+      ],
+      "expected": {
+        "amount": 165,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "شاهد"
+      },
+      "actual": {
+        "amount": 165,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "شاهد",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-049",
+      "channel": "notification",
+      "tags": [
+        "internal-transfer"
+      ],
+      "expected": {
+        "amount": 300,
+        "kind": "transfer",
+        "status": "realized",
+        "merchant": null
+      },
+      "actual": {
+        "amount": 300,
+        "kind": "transfer",
+        "status": "realized",
+        "merchant": null,
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "SMS-050",
+      "channel": "notification",
+      "tags": [
+        "source-injection"
+      ],
+      "expected": {
+        "amount": 75,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "SHOP"
+      },
+      "actual": {
+        "amount": 75,
+        "kind": "expense",
+        "status": "realized",
+        "merchant": "SHOP",
+        "issues": [],
+        "ignored": null
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-001",
+      "channel": "text",
+      "tags": [
+        "context-work-not-income"
+      ],
+      "expected": {
+        "amounts": [
+          15
+        ],
+        "kind": "expense"
+      },
+      "actual": {
+        "amounts": [
+          15
+        ],
+        "kinds": [
+          "expense"
+        ],
+        "categories": [
+          "مواصلات"
+        ],
+        "decision": "auto_save"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-002",
+      "channel": "text",
+      "tags": [
+        "spoken-fraction"
+      ],
+      "expected": {
+        "amounts": [
+          87.5
+        ],
+        "kind": "expense"
+      },
+      "actual": {
+        "amounts": [
+          87.5
+        ],
+        "kinds": [
+          "expense"
+        ],
+        "categories": [
+          "أكل وشرب"
+        ],
+        "decision": "review"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-003",
+      "channel": "text",
+      "tags": [
+        "labor-materials"
+      ],
+      "expected": {
+        "amounts": [
+          430,
+          170
+        ],
+        "kind": "expense"
+      },
+      "actual": {
+        "amounts": [
+          430,
+          170
+        ],
+        "kinds": [
+          "expense",
+          "expense"
+        ],
+        "categories": [
+          "سكن",
+          "متنوعات"
+        ],
+        "decision": "review"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-004",
+      "channel": "text",
+      "tags": [
+        "counterfactual"
+      ],
+      "expected": {
+        "amounts": [],
+        "kind": "none"
+      },
+      "actual": {
+        "amounts": [],
+        "kinds": [],
+        "categories": [],
+        "decision": "clarify"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-005",
+      "channel": "text",
+      "tags": [
+        "product-brand"
+      ],
+      "expected": {
+        "amounts": [
+          98
+        ],
+        "kind": "expense"
+      },
+      "actual": {
+        "amounts": [
+          98
+        ],
+        "kinds": [
+          "expense"
+        ],
+        "categories": [
+          "متنوعات"
+        ],
+        "decision": "review"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-006",
+      "channel": "text",
+      "tags": [
+        "withdrawal-plus-purchase"
+      ],
+      "expected": {
+        "amounts": [
+          700,
+          120
+        ],
+        "kind": "mixed"
+      },
+      "actual": {
+        "amounts": [
+          700,
+          120
+        ],
+        "kinds": [
+          "transfer",
+          "expense"
+        ],
+        "categories": [
+          "تحويل",
+          "أكل وشرب"
+        ],
+        "decision": "review"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-007",
+      "channel": "text",
+      "tags": [
+        "quarter-exception"
+      ],
+      "expected": {
+        "amounts": [
+          419.75
+        ],
+        "kind": "expense"
+      },
+      "actual": {
+        "amounts": [
+          420
+        ],
+        "kinds": [
+          "expense"
+        ],
+        "categories": [
+          "فواتير"
+        ],
+        "decision": "review"
+      },
+      "passed": false
+    },
+    {
+      "id": "TXT-008",
+      "channel": "text",
+      "tags": [
+        "price-not-event"
+      ],
+      "expected": {
+        "amounts": [],
+        "kind": "none"
+      },
+      "actual": {
+        "amounts": [],
+        "kinds": [],
+        "categories": [],
+        "decision": "clarify"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-009",
+      "channel": "text",
+      "tags": [
+        "date-medical"
+      ],
+      "expected": {
+        "amounts": [
+          63.5
+        ],
+        "kind": "expense"
+      },
+      "actual": {
+        "amounts": [
+          63.5
+        ],
+        "kinds": [
+          "income"
+        ],
+        "categories": [
+          "عوائد استثمار"
+        ],
+        "decision": "review"
+      },
+      "passed": false
+    },
+    {
+      "id": "TXT-010",
+      "channel": "text",
+      "tags": [
+        "correction"
+      ],
+      "expected": {
+        "amounts": [
+          305
+        ],
+        "kind": "expense"
+      },
+      "actual": {
+        "amounts": [
+          305
+        ],
+        "kinds": [
+          "expense"
+        ],
+        "categories": [
+          "متنوعات"
+        ],
+        "decision": "review"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-011",
+      "channel": "text",
+      "tags": [
+        "change-vs-refund-ambiguity"
+      ],
+      "expected": {
+        "amounts": [
+          500,
+          70
+        ],
+        "kind": "mixed"
+      },
+      "actual": {
+        "amounts": [
+          500,
+          70
+        ],
+        "kinds": [
+          "expense",
+          "income"
+        ],
+        "categories": [
+          "أكل وشرب",
+          "مرتب"
+        ],
+        "decision": "clarify"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-012",
+      "channel": "text",
+      "tags": [
+        "commitment-vs-paid"
+      ],
+      "expected": {
+        "amounts": [
+          3000
+        ],
+        "kind": "expense"
+      },
+      "actual": {
+        "amounts": [
+          12000,
+          3000
+        ],
+        "kinds": [
+          "expense",
+          "expense"
+        ],
+        "categories": [
+          "خدمات حكومية",
+          "فواتير"
+        ],
+        "decision": "review"
+      },
+      "passed": false
+    },
+    {
+      "id": "TXT-013",
+      "channel": "text",
+      "tags": [
+        "own-transfer"
+      ],
+      "expected": {
+        "amounts": [
+          2000
+        ],
+        "kind": "transfer"
+      },
+      "actual": {
+        "amounts": [
+          2000
+        ],
+        "kinds": [
+          "transfer"
+        ],
+        "categories": [
+          "تحويل"
+        ],
+        "decision": "auto_save"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-014",
+      "channel": "text",
+      "tags": [
+        "borrowing"
+      ],
+      "expected": {
+        "amounts": [
+          800
+        ],
+        "kind": "debt"
+      },
+      "actual": {
+        "amounts": [
+          800
+        ],
+        "kinds": [
+          "income"
+        ],
+        "categories": [
+          "العائلة"
+        ],
+        "decision": "review"
+      },
+      "passed": false
+    },
+    {
+      "id": "TXT-015",
+      "channel": "text",
+      "tags": [
+        "refund"
+      ],
+      "expected": {
+        "amounts": [
+          220
+        ],
+        "kind": "refund"
+      },
+      "actual": {
+        "amounts": [
+          220
+        ],
+        "kinds": [
+          "income"
+        ],
+        "categories": [
+          "مرتب"
+        ],
+        "decision": "review"
+      },
+      "passed": false
+    },
+    {
+      "id": "TXT-016",
+      "channel": "text",
+      "tags": [
+        "fee-vs-principal"
+      ],
+      "expected": {
+        "amounts": [
+          30,
+          3000
+        ],
+        "kind": "mixed"
+      },
+      "actual": {
+        "amounts": [
+          30,
+          3000
+        ],
+        "kinds": [
+          "expense",
+          "expense"
+        ],
+        "categories": [
+          "متنوعات",
+          "فواتير"
+        ],
+        "decision": "review"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-017",
+      "channel": "text",
+      "tags": [
+        "quantity-unit-total"
+      ],
+      "expected": {
+        "amounts": [
+          105
+        ],
+        "kind": "expense"
+      },
+      "actual": {
+        "amounts": [
+          35,
+          105
+        ],
+        "kinds": [
+          "expense",
+          "expense"
+        ],
+        "categories": [
+          "أكل وشرب",
+          "متنوعات"
+        ],
+        "decision": "review"
+      },
+      "passed": false
+    },
+    {
+      "id": "TXT-018",
+      "channel": "text",
+      "tags": [
+        "negative-exception"
+      ],
+      "expected": {
+        "amounts": [
+          45
+        ],
+        "kind": "expense"
+      },
+      "actual": {
+        "amounts": [],
+        "kinds": [],
+        "categories": [],
+        "decision": "clarify"
+      },
+      "passed": false
+    },
+    {
+      "id": "TXT-019",
+      "channel": "text",
+      "tags": [
+        "typo"
+      ],
+      "expected": {
+        "amounts": [
+          180
+        ],
+        "kind": "expense"
+      },
+      "actual": {
+        "amounts": [
+          180
+        ],
+        "kinds": [
+          "expense"
+        ],
+        "categories": [
+          "مواصلات"
+        ],
+        "decision": "auto_save"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-020",
+      "channel": "text",
+      "tags": [
+        "mixed-brand-typo"
+      ],
+      "expected": {
+        "amounts": [
+          200
+        ],
+        "kind": "expense"
+      },
+      "actual": {
+        "amounts": [
+          200
+        ],
+        "kinds": [
+          "expense"
+        ],
+        "categories": [
+          "اشتراكات"
+        ],
+        "decision": "review"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-021",
+      "channel": "text",
+      "tags": [
+        "mixed-language-quantities"
+      ],
+      "expected": {
+        "amounts": [
+          90,
+          150
+        ],
+        "kind": "expense"
+      },
+      "actual": {
+        "amounts": [
+          2,
+          90,
+          2,
+          150
+        ],
+        "kinds": [
+          "expense",
+          "expense",
+          "expense",
+          "expense"
+        ],
+        "categories": [
+          "أكل وشرب",
+          "متنوعات",
+          "متنوعات",
+          "متنوعات"
+        ],
+        "decision": "review"
+      },
+      "passed": false
+    },
+    {
+      "id": "TXT-022",
+      "channel": "text",
+      "tags": [
+        "shared-total"
+      ],
+      "expected": {
+        "amounts": [],
+        "kind": "ambiguous"
+      },
+      "actual": {
+        "amounts": [
+          600
+        ],
+        "kinds": [
+          "expense"
+        ],
+        "categories": [
+          "مواصلات"
+        ],
+        "decision": "review"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-023",
+      "channel": "text",
+      "tags": [
+        "inferred-difference"
+      ],
+      "expected": {
+        "amounts": [],
+        "kind": "ambiguous"
+      },
+      "actual": {
+        "amounts": [
+          1000,
+          650
+        ],
+        "kinds": [
+          "expense",
+          "expense"
+        ],
+        "categories": [
+          "متنوعات",
+          "أكل وشرب"
+        ],
+        "decision": "review"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-024",
+      "channel": "text",
+      "tags": [
+        "equal-amount-distinct-people"
+      ],
+      "expected": {
+        "amounts": [
+          50,
+          50
+        ],
+        "kind": "expense"
+      },
+      "actual": {
+        "amounts": [
+          50,
+          50
+        ],
+        "kinds": [
+          "expense",
+          "income"
+        ],
+        "categories": [
+          "متنوعات",
+          "هدايا وصدقات"
+        ],
+        "decision": "clarify"
+      },
+      "passed": false
+    },
+    {
+      "id": "TXT-025",
+      "channel": "text",
+      "tags": [
+        "purpose-over-beneficiary"
+      ],
+      "expected": {
+        "amounts": [
+          900,
+          100
+        ],
+        "kind": "expense"
+      },
+      "actual": {
+        "amounts": [
+          900,
+          100
+        ],
+        "kinds": [
+          "expense",
+          "expense"
+        ],
+        "categories": [
+          "تعليم",
+          "العائلة"
+        ],
+        "decision": "review"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-026",
+      "channel": "text",
+      "tags": [
+        "income-expense"
+      ],
+      "expected": {
+        "amounts": [
+          14750,
+          750
+        ],
+        "kind": "mixed"
+      },
+      "actual": {
+        "amounts": [
+          14750,
+          750
+        ],
+        "kinds": [
+          "income",
+          "expense"
+        ],
+        "categories": [
+          "مرتب",
+          "تسوق"
+        ],
+        "decision": "auto_save"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-027",
+      "channel": "text",
+      "tags": [
+        "missing-amount"
+      ],
+      "expected": {
+        "amounts": [],
+        "kind": "ambiguous"
+      },
+      "actual": {
+        "amounts": [],
+        "kinds": [],
+        "categories": [],
+        "decision": "clarify"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-028",
+      "channel": "text",
+      "tags": [
+        "shared-unspecified"
+      ],
+      "expected": {
+        "amounts": [],
+        "kind": "ambiguous"
+      },
+      "actual": {
+        "amounts": [
+          904
+        ],
+        "kinds": [
+          "expense"
+        ],
+        "categories": [
+          "متنوعات"
+        ],
+        "decision": "clarify"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-029",
+      "channel": "text",
+      "tags": [
+        "foreign-currency"
+      ],
+      "expected": {
+        "amounts": [
+          12
+        ],
+        "kind": "expense"
+      },
+      "actual": {
+        "amounts": [
+          12
+        ],
+        "kinds": [
+          "expense"
+        ],
+        "categories": [
+          "عمل"
+        ],
+        "decision": "review"
+      },
+      "passed": true
+    },
+    {
+      "id": "TXT-030",
+      "channel": "text",
+      "tags": [
+        "duplicate-payment-refund"
+      ],
+      "expected": {
+        "amounts": [
+          450,
+          450,
+          450
+        ],
+        "kind": "mixed"
+      },
+      "actual": {
+        "amounts": [
+          450
+        ],
+        "kinds": [
+          "expense"
+        ],
+        "categories": [
+          "فواتير"
+        ],
+        "decision": "review"
+      },
+      "passed": false
+    },
+    {
+      "id": "IMG-001",
+      "channel": "post_ocr_document",
+      "tags": [
+        "tendered-change"
+      ],
+      "expected": {
+        "amount": 100,
+        "blocked": false
+      },
+      "actual": {
+        "amount": 100,
+        "blocked": false,
+        "issues": [],
+        "status": "realized"
+      },
+      "passed": true
+    },
+    {
+      "id": "IMG-002",
+      "channel": "post_ocr_document",
+      "tags": [
+        "invoice-not-paid"
+      ],
+      "expected": {
+        "amount": 114,
+        "blocked": true
+      },
+      "actual": {
+        "amount": 114,
+        "blocked": true,
+        "issues": [],
+        "status": "unknown"
+      },
+      "passed": true
+    },
+    {
+      "id": "IMG-003",
+      "channel": "post_ocr_document",
+      "tags": [
+        "service-tax"
+      ],
+      "expected": {
+        "amount": 255.36,
+        "blocked": false
+      },
+      "actual": {
+        "amount": 255.36,
+        "blocked": false,
+        "issues": [],
+        "status": "realized"
+      },
+      "passed": true
+    },
+    {
+      "id": "IMG-004",
+      "channel": "post_ocr_document",
+      "tags": [
+        "discount-shipping"
+      ],
+      "expected": {
+        "amount": 290,
+        "blocked": false
+      },
+      "actual": {
+        "amount": 290,
+        "blocked": false,
+        "issues": [],
+        "status": "realized"
+      },
+      "passed": true
+    },
+    {
+      "id": "IMG-005",
+      "channel": "post_ocr_document",
+      "tags": [
+        "total-conflict"
+      ],
+      "expected": {
+        "amount": 120,
+        "blocked": true
+      },
+      "actual": {
+        "amount": 120,
+        "blocked": true,
+        "issues": [
+          "document_total_conflict"
+        ],
+        "status": "realized"
+      },
+      "passed": true
+    },
+    {
+      "id": "IMG-006",
+      "channel": "post_ocr_document",
+      "tags": [
+        "pending-request"
+      ],
+      "expected": {
+        "amount": 550,
+        "blocked": true
+      },
+      "actual": {
+        "amount": 550,
+        "blocked": true,
+        "issues": [],
+        "status": "pending"
+      },
+      "passed": true
+    },
+    {
+      "id": "IMG-007",
+      "channel": "post_ocr_document",
+      "tags": [
+        "rejected-screen"
+      ],
+      "expected": {
+        "amount": 760,
+        "blocked": true
+      },
+      "actual": {
+        "amount": 760,
+        "blocked": true,
+        "issues": [],
+        "status": "rejected"
+      },
+      "passed": true
+    },
+    {
+      "id": "IMG-008",
+      "channel": "post_ocr_document",
+      "tags": [
+        "balance-not-total"
+      ],
+      "expected": {
+        "amount": 880,
+        "blocked": false
+      },
+      "actual": {
+        "amount": 880,
+        "blocked": false,
+        "issues": [],
+        "status": "realized"
+      },
+      "passed": true
+    },
+    {
+      "id": "IMG-009",
+      "channel": "post_ocr_document",
+      "tags": [
+        "renewal-screen"
+      ],
+      "expected": {
+        "amount": 165,
+        "blocked": false
+      },
+      "actual": {
+        "amount": 165,
+        "blocked": false,
+        "issues": [],
+        "status": "realized"
+      },
+      "passed": true
+    },
+    {
+      "id": "IMG-010",
+      "channel": "post_ocr_document",
+      "tags": [
+        "foreign-unpaid"
+      ],
+      "expected": {
+        "amount": 20,
+        "blocked": true
+      },
+      "actual": {
+        "amount": 20,
+        "blocked": true,
+        "issues": [],
+        "status": "unknown"
+      },
+      "passed": true
+    },
+    {
+      "id": "IMG-011",
+      "channel": "post_ocr_document",
+      "tags": [
+        "multi-document-no-collapse"
+      ],
+      "expected": {
+        "amount": null,
+        "blocked": true
+      },
+      "actual": {
+        "amount": null,
+        "blocked": true,
+        "issues": [],
+        "status": "unknown"
+      },
+      "passed": true
+    },
+    {
+      "id": "IMG-012",
+      "channel": "post_ocr_document",
+      "tags": [
+        "cropped-total"
+      ],
+      "expected": {
+        "amount": null,
+        "blocked": true
+      },
+      "actual": {
+        "amount": null,
+        "blocked": true,
+        "issues": [
+          "source_truncated"
+        ],
+        "status": "unknown"
+      },
+      "passed": true
+    },
+    {
+      "id": "IMG-013",
+      "channel": "post_ocr_document",
+      "tags": [
+        "unreadable-total"
+      ],
+      "expected": {
+        "amount": null,
+        "blocked": true
+      },
+      "actual": {
+        "amount": null,
+        "blocked": true,
+        "issues": [
+          "source_truncated"
+        ],
+        "status": "unknown"
+      },
+      "passed": true
+    },
+    {
+      "id": "IMG-014",
+      "channel": "post_ocr_document",
+      "tags": [
+        "quantities"
+      ],
+      "expected": {
+        "amount": 150,
+        "blocked": false
+      },
+      "actual": {
+        "amount": 150,
+        "blocked": false,
+        "issues": [],
+        "status": "realized"
+      },
+      "passed": true
+    },
+    {
+      "id": "IMG-015",
+      "channel": "post_ocr_document",
+      "tags": [
+        "discount-vs-amount"
+      ],
+      "expected": {
+        "amount": 750,
+        "blocked": false
+      },
+      "actual": {
+        "amount": 750,
+        "blocked": false,
+        "issues": [],
+        "status": "realized"
+      },
+      "passed": true
+    },
+    {
+      "id": "IMG-016",
+      "channel": "post_ocr_document",
+      "tags": [
+        "balance-screen"
+      ],
+      "expected": {
+        "amount": null,
+        "blocked": true
+      },
+      "actual": {
+        "amount": null,
+        "blocked": true,
+        "issues": [],
+        "status": "unknown"
+      },
+      "passed": true
+    },
+    {
+      "id": "IMG-017",
+      "channel": "post_ocr_document",
+      "tags": [
+        "historical-date"
+      ],
+      "expected": {
+        "amount": 530,
+        "blocked": true
+      },
+      "actual": {
+        "amount": 530,
+        "blocked": true,
+        "issues": [],
+        "status": "unknown"
+      },
+      "passed": true
+    },
+    {
+      "id": "IMG-018",
+      "channel": "post_ocr_document",
+      "tags": [
+        "settlement-overlap"
+      ],
+      "expected": {
+        "amount": null,
+        "blocked": true
+      },
+      "actual": {
+        "amount": null,
+        "blocked": true,
+        "issues": [],
+        "status": "unknown"
+      },
+      "passed": true
+    },
+    {
+      "id": "IMG-019",
+      "channel": "post_ocr_document",
+      "tags": [
+        "image-injection"
+      ],
+      "expected": {
+        "amount": 65,
+        "blocked": false
+      },
+      "actual": {
+        "amount": 65,
+        "blocked": false,
+        "issues": [],
+        "status": "realized"
+      },
+      "passed": true
+    },
+    {
+      "id": "IMG-020",
+      "channel": "post_ocr_document",
+      "tags": [
+        "split-tender"
+      ],
+      "expected": {
+        "amount": 195.25,
+        "blocked": false
+      },
+      "actual": {
+        "amount": 195.25,
+        "blocked": false,
+        "issues": [],
+        "status": "realized"
+      },
+      "passed": true
+    }
+  ]
+}

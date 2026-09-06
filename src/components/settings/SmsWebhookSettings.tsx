@@ -1,3 +1,4 @@
+import { FinancialCaptureInbox } from "@/components/expenses/FinancialCaptureInbox";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -154,8 +155,7 @@ export function SmsWebhookSettings() {
           ربط الآيفون التلقائي (iOS Shortcut)
         </CardTitle>
         <CardDescription>
-          اربط حسابك بخطوتين عشان أي رسالة من البنك تتسجل كمصروف أو دخل
-          تلقائياً.
+          اربط حسابك لتصل إشعارات الدفع المتاحة كمسودات تراجعها قبل الحفظ.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -269,7 +269,7 @@ export function SmsWebhookSettings() {
                 </ol>
                 <div className="mt-4 flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 p-2 rounded-lg border border-emerald-100 dark:border-emerald-900">
                   <Zap className="w-4 h-4" />
-                  كده تمام! أي رسالة فيها الكلمة دي هتتسجل في حسابك فوراً.
+                  الرسائل المطابقة هتوصل كمسودات للمراجعة. راجع الكلمات المستخدمة في رسائل بنكك؛ كلمة واحدة مش هتلتقط كل الصيغ.
                 </div>
               </div>
             </div>
@@ -447,6 +447,7 @@ export function SmsWebhookSettings() {
             </div>
           </div>
         )}
+        <FinancialCaptureInbox />
       </CardContent>
     </Card>
   );

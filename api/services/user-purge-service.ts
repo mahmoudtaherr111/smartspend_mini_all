@@ -31,6 +31,7 @@ import {
   proSubscriptions,
   pushSubscriptions,
   rawSmsEvents,
+  financialCaptures,
   referrals,
   sessions,
   supportTickets,
@@ -127,6 +128,7 @@ export async function purgeUserData(tx: any, userId: number, userType: PurgeUser
   await tx.delete(classificationLogs).where(userScope(classificationLogs, userId, userType));
   await tx.delete(voiceUsage).where(userScope(voiceUsage, userId, userType));
   await tx.delete(rawSmsEvents).where(userScope(rawSmsEvents, userId, userType));
+  await tx.delete(financialCaptures).where(userScope(financialCaptures, userId, userType));
   await tx.delete(adClicks).where(userScope(adClicks, userId, userType));
   await tx.delete(inAppNotifications).where(userScope(inAppNotifications, userId, userType));
   await tx.delete(notificationLogs).where(userScope(notificationLogs, userId, userType));

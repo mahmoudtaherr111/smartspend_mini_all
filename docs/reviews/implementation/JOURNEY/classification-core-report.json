@@ -1,0 +1,1009 @@
+{
+  "schemaVersion": "2.0.0",
+  "provenance": {
+    "fingerprint": {
+      "fixtureSha256": "9a77efc63018f7240993dcb811cbcef4d761244e23ae2076fb2c9fb128f5b86e",
+      "caseCount": 172,
+      "mode": "offline",
+      "scorerSha256": "3907c5c04dbc17f481d49269d4038ffdf9d7cad8cea5101c2bcbff9fb7459e5b",
+      "calibrationVersion": "v3.0",
+      "schemaVersion": "2.0.0",
+      "experiment": {
+        "command": "vitest run api/lib/financial-event-quality.test.ts",
+        "provider": "none",
+        "database": "mocked",
+        "userPlan": "free",
+        "modelName": "flash",
+        "maxTokens": 512
+      }
+    },
+    "sourceSha256": {
+      "api/lib/smart-pipeline.ts": "4cedd8c46dab637900b9efbe9fd87adeb1adefb48494d3051ac4997522dfb0fe",
+      "api/lib/financial-event-plan.ts": "2bfc62874ca9d2a8f6a3f10cf2f17673525269cf2bf2bac8d65aa2256c1039ae",
+      "api/lib/final-acceptance.ts": "916226d751645eb18828e6b0f0649df538cd552ae35616c3de0718584775c6a0",
+      "api/lib/classification-decision.ts": "14ff127d37939ae50039725eb16a43f79cb90c025ba9ededd2816873724101b5",
+      "api/lib/classification-merge.ts": "e7f40fefde54f0edf464a14badc40d94438f1e4ce4d85dcd1422582b387032a1",
+      "api/lib/classification-evidence.ts": "13ed10c5d43d14e99fb2ce93298f9925694cb830a3218393a447c08dcaa65309",
+      "api/lib/classification-prompt.ts": "866fa8ca71d582f4059366d30f8814caf9a5e16092f896dbf6e8c743bab869bf",
+      "api/lib/classifier-contract.ts": "28c9158a3d3d8d04b0815fd21b35dc8286849c6931a4cebba386aad34447a45a",
+      "api/lib/confidence-calibrator.ts": "49baf025c05128974ff286dec2804f07c91f954a3a50ef55c43950905c2bd90d",
+      "api/lib/confidence-calibration.generated.ts": "0d33e6ba6c06bf4b3679532815ff8a04fc3c5e121898b3ed29014dbc9856647d",
+      "api/lib/post-classifier-verifier.ts": "24470ff7a41536dced5e265636a63dfdf439cc425587835d8b3b3f6fda44c6a9",
+      "api/lib/rule-engine.ts": "1e0a8455601f6103a089e10d7e1ba6667c65a5349661f8276be4abaea2ba3c4c",
+      "api/lib/entity-extractor.ts": "cdb4def2355fa907cc8625b9d34d9c1bd87b36405d08800a081d94131de8af06",
+      "api/lib/arabic-number-parser.ts": "d5b9c4d0e7968d358f4ae8cbc0b9aa3ec99ab8f42abc79d8aabbf7bf3bdbd4c4",
+      "api/lib/negation-detector.ts": "fa86a1af1d640813496f70bd9455d7aba8f0bcd86d67bdbd7d7243a12e89509e",
+      "api/lib/normalizer-v2.ts": "2ff63c1790fe0292432942220ecb5141fb6cefd8600b313fb23bc735f0fc1be0",
+      "api/lib/text-normalizer.ts": "9d01ee24a254a1ee5b5205cd9e58bf6ae52ceecdc6283ba06cc4378c346cc2fa",
+      "api/lib/narrative-decomposer.ts": "d3a2f3f8bf861a10922aa58528acfecd01399682b45aea601eea41b3e4adc49c",
+      "api/lib/admissibility-gate.ts": "cd41ff169519382a1e354c51368c17c9fadecefff268050abb9356b1b46cf953",
+      "api/lib/amount-ledger.ts": "2b4b990b95a7b20e2be5032aa9a8246acdb90a07f270b439b2d6e3fc2b09f805",
+      "api/lib/category-registry.ts": "c9fee45534c8ffc95aff9ddbc40aad1cdde60309e16f43e61d13771aa59388f6",
+      "api/lib/taxonomy-ssot.ts": "cd76068eec0b660bcb6e1dea19238f1f1a7b3acaeae9679a1a1336a4b55a6928",
+      "api/lib/direction-governed-taxonomy.ts": "89b64eca3f28c479265181c8c17a141bbf17dc1bd7c9b09d5267c64488355704",
+      "api/lib/correction-rules.ts": "87453f54f8299056b29f495cf70e4541981ff10918b3d707392f17502bc8b25c",
+      "api/lib/intent-detector.ts": "b412a680417916f1534246609c9e43dec566f74f2a9ec09abbdef0beb7ea0b1b",
+      "api/lib/egyptian-dictionary.ts": "0b081db284c255249c0ca475c5e9ad2ad074373f611f660398920aa4edebd18f",
+      "api/lib/model-mapper.ts": "06eed6711bf596b601baf0d4b346d6dc8b059fc3cce1fd4c8aa24ebc45234747",
+      "api/lib/llm-provider-chain.ts": "e2ba1efa2332b6cf3144d7c01cc5fe823f56b9f142afedbc4a261d893ce5369e",
+      "api/lib/llm-router.ts": "4d312cc7bb7490a47de6f711c5334717f94b303dbace807d7cb22e80afb0fcfd"
+    },
+    "git": {
+      "commit": "efd812bb54d7320ee30fd28c38c15cec3a79d1be",
+      "tree": "0558e9039d5c5416fc4ad370047390ce1f1ac3c1",
+      "dirty": true,
+      "dirtyFiles": [
+        ".github/workflows/ci.yml",
+        ".gitignore",
+        "android-app/app/src/main/AndroidManifest.xml",
+        "android-app/app/src/main/java/com/smartspend/sync/DeepLinkActivity.kt",
+        "android-app/app/src/main/java/com/smartspend/sync/SyncService.kt",
+        "api/image-router.ts",
+        "api/jobs/data-retention-job.ts",
+        "api/lib/arabic-number-parser.test.ts",
+        "api/lib/arabic-number-parser.ts",
+        "api/lib/financial-event-plan.ts",
+        "api/lib/negation-detector.ts",
+        "api/lib/receipt-image-parser.test.ts",
+        "api/lib/receipt-image-parser.ts",
+        "api/qa/classification-core-report.test.ts",
+        "api/qa/classification-core-report.ts",
+        "api/qa/classification-test-manifest.test.ts",
+        "api/qa/classification-test-manifest.ts",
+        "api/router.ts",
+        "api/services/classification-usage-ledger.ts",
+        "api/services/user-purge-service.ts",
+        "api/sms-router.ts",
+        "db/migrations/meta/_journal.json",
+        "db/relations.ts",
+        "db/schema.ts",
+        "db/table-classes.ts",
+        "docs/03-AI_CLASSIFICATION_ENGINE.md",
+        "docs/06-SMS_AND_APPLE_PAY.md",
+        "docs/reviews/implementation/G1-R/HANDOFF.md",
+        "docs/reviews/implementation/G1-R/classification-core-report.json",
+        "docs/reviews/implementation/G1-R/example-baseline.json",
+        "docs/reviews/implementation/G1-R/example-comparison.json",
+        "docs/reviews/implementation/G1-R/g1-transplant.patch",
+        "docs/reviews/implementation/G1-R/progress.md",
+        "docs/reviews/implementation/G1-R/results.json",
+        "docs/reviews/implementation/G1-R/review-notes.md",
+        "docs/reviews/implementation/G1-R/scope-diff.patch",
+        "docs/reviews/implementation/G1-R/test-inventory.json",
+        "package-lock.json",
+        "package.json",
+        "scripts/classification-core-report.ts",
+        "src/components/expenses/ExpenseForm.tsx",
+        "src/components/expenses/ReceiptCapture.tsx",
+        "src/components/settings/SmsWebhookSettings.tsx",
+        "tsconfig.json",
+        "tsconfig.qa.json",
+        "android-app/app/proguard-rules.pro",
+        "api/capture-router.ts",
+        "api/lib/financial-capture-state.test.ts",
+        "api/lib/financial-capture-state.ts",
+        "api/lib/financial-event-scope.test.ts"
+      ]
+    },
+    "generatedAt": "2026-09-06T15:38:49.302Z",
+    "runtimeMs": 4467,
+    "node": "v22.22.2",
+    "platform": "win32",
+    "ci": null,
+    "status": "success"
+  },
+  "definitions": {
+    "match": "Pairs come from CaseScore.matches, which the scorer built by greedy first-fit on amount in narrative order. Reporting does not re-align. Where a case contains two equal amounts the alignment is positional, so a swap between them is invisible to every category figure here — BND-006, MON-002, MON-003 and FBND-002 are the cases in the current corpus with that property.",
+    "categoryOk": "An actual category is accepted when it equals the expected category, or is any member of the fixture's categoryAnyOf.",
+    "categoryPrecision": "acceptedAsProduced / every actual item of this category. Asks: when the classifier said this category, how often was that accepted?",
+    "categoryRecall": "acceptedAsExpected / every expected item of this category. Asks: when this category was expected, how often did the answer satisfy it?",
+    "lenientF1": "The harmonic mean of those two rates. Where categoryAnyOf applies they have different numerators, so this is an acceptance figure, not textbook F1. strictCategories reports the conventional numbers over cases with exactly one acceptable category.",
+    "nullVsZero": "null means the rate was not measurable — no denominator. 0 means it was measured and nothing was right. The first version of this report returned null for a measured total failure.",
+    "tripleUnsafeAutoSaveCases": "Auto-saved cases where amount, direction, category or item count was wrong. Unchanged from SystemMetrics.unsafeAutoSaves.",
+    "autoSaveCasesWithAnyScoredError": "Auto-saved cases with any scored failure, subcategory included. A superset of the above; the two differ by three subcategory errors on the current corpus.",
+    "derivedLlmRoutes": "Inferred from parsedBy after the run. Not a request counter: it cannot see retries, provider failover, or a chain that tried three routes for one logical call.",
+    "zeroTokensOffline": "In offline mode no provider is reached, so token and cost figures are zero by construction. They are not a production cost estimate, and local latency is not a production p95.",
+    "comparability": "Two runs are subtracted only when their evaluationFingerprint matches: same fixtures, count, mode, scorer, calibration table version, schema version and experiment settings. The classifier's own source is deliberately excluded — changing it is what a comparison measures. The calibration table is NOT: rebuilding it changes the probability on every item and so changes the measurement, which is why it sits inside the fingerprint and not beside it."
+  },
+  "warnings": [
+    "In offline mode no provider is reached, so token and cost figures are zero by construction. They are not a production cost estimate, and local latency is not a production p95.",
+    "Working tree was dirty at efd812bb54d7 (50 file(s)); this run is not reproducible from the commit alone.",
+    "16 produced item(s) landed on the unresolved category \"متنوعات\". They count against precision for that category, not as a separate failure mode."
+  ],
+  "comparability": {
+    "compared": false,
+    "reason": "no baseline supplied; this run establishes one",
+    "mismatched": []
+  },
+  "headline": {
+    "baseline": null,
+    "candidate": {
+      "cases": 172,
+      "expectedItems": 258,
+      "actualItems": 262,
+      "tripleF1": 0.8884615384615385,
+      "triplePrecision": 0.8816793893129771,
+      "tripleRecall": 0.8953488372093024,
+      "amountF1": 0.9807692307692307,
+      "typeAccuracy": 0.996078431372549,
+      "categoryAccuracy": 0.9058823529411765,
+      "segmentationExact": 0.9767441860465116,
+      "decisionAccuracy": 1,
+      "taxonomyViolationRate": 0
+    },
+    "delta": null
+  },
+  "splits": {
+    "dev": {
+      "baseline": null,
+      "candidate": {
+        "cases": 81,
+        "expectedItems": 137,
+        "actualItems": 137,
+        "tripleF1": 0.9708029197080292,
+        "triplePrecision": 0.9708029197080292,
+        "tripleRecall": 0.9708029197080292,
+        "amountF1": 1,
+        "typeAccuracy": 1,
+        "categoryAccuracy": 0.9708029197080292,
+        "segmentationExact": 1,
+        "decisionAccuracy": 1,
+        "taxonomyViolationRate": 0
+      },
+      "delta": null
+    },
+    "frozen": {
+      "baseline": null,
+      "candidate": {
+        "cases": 84,
+        "expectedItems": 113,
+        "actualItems": 117,
+        "tripleF1": 0.8086956521739128,
+        "triplePrecision": 0.7948717948717948,
+        "tripleRecall": 0.8230088495575221,
+        "amountF1": 0.9739130434782609,
+        "typeAccuracy": 0.9910714285714286,
+        "categoryAccuracy": 0.8303571428571429,
+        "segmentationExact": 0.9523809523809523,
+        "decisionAccuracy": 1,
+        "taxonomyViolationRate": 0
+      },
+      "delta": null
+    }
+  },
+  "decisions": {
+    "counts": {
+      "review": 64,
+      "clarify": 23,
+      "auto_save": 85
+    },
+    "baselineCounts": null,
+    "countsDelta": null,
+    "breakdown": [
+      {
+        "decision": "auto_save",
+        "cases": 85,
+        "casesWithError": 7,
+        "errorRateWithinDecision": 0.08235294117647059,
+        "denominator": 85
+      },
+      {
+        "decision": "clarify",
+        "cases": 23,
+        "casesWithError": 3,
+        "errorRateWithinDecision": 0.13043478260869565,
+        "denominator": 23
+      },
+      {
+        "decision": "review",
+        "cases": 64,
+        "casesWithError": 23,
+        "errorRateWithinDecision": 0.359375,
+        "denominator": 64
+      }
+    ],
+    "baselineBreakdown": null,
+    "autoSaveSafety": {
+      "tripleUnsafeAutoSaveCases": 4,
+      "autoSaveCasesWithAnyScoredError": 7,
+      "autoSavedCases": 85,
+      "totalCases": 172,
+      "tripleUnsafeRateOfAutoSaved": 0.047058823529411764,
+      "tripleUnsafeRateOfAllCases": 0.023255813953488372,
+      "anyErrorRateOfAutoSaved": 0.08235294117647059,
+      "doesNotCover": [
+        "currency",
+        "transaction date",
+        "whether the row was written correctly to the database",
+        "whether the user would have accepted it"
+      ]
+    },
+    "baselineAutoSaveSafety": null
+  },
+  "categories": [
+    {
+      "category": "أصدقاء",
+      "acceptedAsProduced": 15,
+      "acceptedAsExpected": 12,
+      "falsePositives": 1,
+      "falseNegatives": 0,
+      "precision": 0.9375,
+      "recall": 1,
+      "f1": 0.967741935483871,
+      "precisionDenominator": 16,
+      "recallDenominator": 12
+    },
+    {
+      "category": "أكل وشرب",
+      "acceptedAsProduced": 33,
+      "acceptedAsExpected": 34,
+      "falsePositives": 3,
+      "falseNegatives": 8,
+      "precision": 0.9166666666666666,
+      "recall": 0.8095238095238095,
+      "f1": 0.8597701149425288,
+      "precisionDenominator": 36,
+      "recallDenominator": 42
+    },
+    {
+      "category": "استثمار",
+      "acceptedAsProduced": 4,
+      "acceptedAsExpected": 2,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "precisionDenominator": 4,
+      "recallDenominator": 2
+    },
+    {
+      "category": "اشتراكات",
+      "acceptedAsProduced": 3,
+      "acceptedAsExpected": 3,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "precisionDenominator": 3,
+      "recallDenominator": 3
+    },
+    {
+      "category": "التزامات وجمعيات",
+      "acceptedAsProduced": 9,
+      "acceptedAsExpected": 9,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "precisionDenominator": 9,
+      "recallDenominator": 9
+    },
+    {
+      "category": "العائلة",
+      "acceptedAsProduced": 11,
+      "acceptedAsExpected": 6,
+      "falsePositives": 4,
+      "falseNegatives": 0,
+      "precision": 0.7333333333333333,
+      "recall": 1,
+      "f1": 0.846153846153846,
+      "precisionDenominator": 15,
+      "recallDenominator": 6
+    },
+    {
+      "category": "تحويل",
+      "acceptedAsProduced": 7,
+      "acceptedAsExpected": 15,
+      "falsePositives": 0,
+      "falseNegatives": 1,
+      "precision": 1,
+      "recall": 0.9375,
+      "f1": 0.967741935483871,
+      "precisionDenominator": 7,
+      "recallDenominator": 16
+    },
+    {
+      "category": "تدخين",
+      "acceptedAsProduced": 2,
+      "acceptedAsExpected": 2,
+      "falsePositives": 1,
+      "falseNegatives": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "precisionDenominator": 3,
+      "recallDenominator": 2
+    },
+    {
+      "category": "ترفيه",
+      "acceptedAsProduced": 5,
+      "acceptedAsExpected": 5,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "precisionDenominator": 5,
+      "recallDenominator": 5
+    },
+    {
+      "category": "تسوق",
+      "acceptedAsProduced": 10,
+      "acceptedAsExpected": 10,
+      "falsePositives": 1,
+      "falseNegatives": 2,
+      "precision": 0.9090909090909091,
+      "recall": 0.8333333333333334,
+      "f1": 0.8695652173913043,
+      "precisionDenominator": 11,
+      "recallDenominator": 12
+    },
+    {
+      "category": "تعليم",
+      "acceptedAsProduced": 7,
+      "acceptedAsExpected": 7,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "precisionDenominator": 7,
+      "recallDenominator": 7
+    },
+    {
+      "category": "حيوانات أليفة",
+      "acceptedAsProduced": 3,
+      "acceptedAsExpected": 3,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "precisionDenominator": 3,
+      "recallDenominator": 3
+    },
+    {
+      "category": "خدمات حكومية",
+      "acceptedAsProduced": 4,
+      "acceptedAsExpected": 4,
+      "falsePositives": 1,
+      "falseNegatives": 0,
+      "precision": 0.8,
+      "recall": 1,
+      "f1": 0.888888888888889,
+      "precisionDenominator": 5,
+      "recallDenominator": 4
+    },
+    {
+      "category": "خدمات رقمية",
+      "acceptedAsProduced": 0,
+      "acceptedAsExpected": 0,
+      "falsePositives": 0,
+      "falseNegatives": 2,
+      "precision": null,
+      "recall": 0,
+      "f1": null,
+      "precisionDenominator": 0,
+      "recallDenominator": 2
+    },
+    {
+      "category": "خدمات سيارات",
+      "acceptedAsProduced": 8,
+      "acceptedAsExpected": 10,
+      "falsePositives": 0,
+      "falseNegatives": 1,
+      "precision": 1,
+      "recall": 0.9090909090909091,
+      "f1": 0.9523809523809523,
+      "precisionDenominator": 8,
+      "recallDenominator": 11
+    },
+    {
+      "category": "سكن",
+      "acceptedAsProduced": 12,
+      "acceptedAsExpected": 10,
+      "falsePositives": 1,
+      "falseNegatives": 2,
+      "precision": 0.9230769230769231,
+      "recall": 0.8333333333333334,
+      "f1": 0.8759124087591241,
+      "precisionDenominator": 13,
+      "recallDenominator": 12
+    },
+    {
+      "category": "صحة",
+      "acceptedAsProduced": 11,
+      "acceptedAsExpected": 11,
+      "falsePositives": 1,
+      "falseNegatives": 1,
+      "precision": 0.9166666666666666,
+      "recall": 0.9166666666666666,
+      "f1": 0.9166666666666666,
+      "precisionDenominator": 12,
+      "recallDenominator": 12
+    },
+    {
+      "category": "عمل",
+      "acceptedAsProduced": 4,
+      "acceptedAsExpected": 3,
+      "falsePositives": 1,
+      "falseNegatives": 0,
+      "precision": 0.8,
+      "recall": 1,
+      "f1": 0.888888888888889,
+      "precisionDenominator": 5,
+      "recallDenominator": 3
+    },
+    {
+      "category": "عمل حر",
+      "acceptedAsProduced": 4,
+      "acceptedAsExpected": 4,
+      "falsePositives": 0,
+      "falseNegatives": 1,
+      "precision": 1,
+      "recall": 0.8,
+      "f1": 0.888888888888889,
+      "precisionDenominator": 4,
+      "recallDenominator": 5
+    },
+    {
+      "category": "عوائد استثمار",
+      "acceptedAsProduced": 3,
+      "acceptedAsExpected": 8,
+      "falsePositives": 0,
+      "falseNegatives": 2,
+      "precision": 1,
+      "recall": 0.8,
+      "f1": 0.888888888888889,
+      "precisionDenominator": 3,
+      "recallDenominator": 10
+    },
+    {
+      "category": "فواتير",
+      "acceptedAsProduced": 31,
+      "acceptedAsExpected": 30,
+      "falsePositives": 1,
+      "falseNegatives": 1,
+      "precision": 0.96875,
+      "recall": 0.967741935483871,
+      "f1": 0.9682457053617907,
+      "precisionDenominator": 32,
+      "recallDenominator": 31
+    },
+    {
+      "category": "متنوعات",
+      "acceptedAsProduced": 5,
+      "acceptedAsExpected": 5,
+      "falsePositives": 11,
+      "falseNegatives": 2,
+      "precision": 0.3125,
+      "recall": 0.7142857142857143,
+      "f1": 0.43478260869565216,
+      "precisionDenominator": 16,
+      "recallDenominator": 7
+    },
+    {
+      "category": "مرتب",
+      "acceptedAsProduced": 12,
+      "acceptedAsExpected": 9,
+      "falsePositives": 4,
+      "falseNegatives": 0,
+      "precision": 0.75,
+      "recall": 1,
+      "f1": 0.8571428571428571,
+      "precisionDenominator": 16,
+      "recallDenominator": 9
+    },
+    {
+      "category": "مواصلات",
+      "acceptedAsProduced": 21,
+      "acceptedAsExpected": 22,
+      "falsePositives": 1,
+      "falseNegatives": 2,
+      "precision": 0.9545454545454546,
+      "recall": 0.9166666666666666,
+      "f1": 0.9352226720647774,
+      "precisionDenominator": 22,
+      "recallDenominator": 24
+    },
+    {
+      "category": "موظفين",
+      "acceptedAsProduced": 2,
+      "acceptedAsExpected": 1,
+      "falsePositives": 0,
+      "falseNegatives": 1,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "precisionDenominator": 2,
+      "recallDenominator": 2
+    },
+    {
+      "category": "هدايا وصدقات",
+      "acceptedAsProduced": 5,
+      "acceptedAsExpected": 6,
+      "falsePositives": 0,
+      "falseNegatives": 1,
+      "precision": 1,
+      "recall": 0.8571428571428571,
+      "f1": 0.923076923076923,
+      "precisionDenominator": 5,
+      "recallDenominator": 7
+    }
+  ],
+  "categoryDelta": null,
+  "strictCategories": [
+    {
+      "category": "أصدقاء",
+      "acceptedAsProduced": 7,
+      "acceptedAsExpected": 7,
+      "falsePositives": 1,
+      "falseNegatives": 0,
+      "precision": 0.875,
+      "recall": 1,
+      "f1": 0.9333333333333333,
+      "precisionDenominator": 8,
+      "recallDenominator": 7
+    },
+    {
+      "category": "أكل وشرب",
+      "acceptedAsProduced": 26,
+      "acceptedAsExpected": 26,
+      "falsePositives": 3,
+      "falseNegatives": 7,
+      "precision": 0.896551724137931,
+      "recall": 0.7878787878787878,
+      "f1": 0.8387096774193549,
+      "precisionDenominator": 29,
+      "recallDenominator": 33
+    },
+    {
+      "category": "استثمار",
+      "acceptedAsProduced": 1,
+      "acceptedAsExpected": 1,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "precisionDenominator": 1,
+      "recallDenominator": 1
+    },
+    {
+      "category": "اشتراكات",
+      "acceptedAsProduced": 2,
+      "acceptedAsExpected": 2,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "precisionDenominator": 2,
+      "recallDenominator": 2
+    },
+    {
+      "category": "التزامات وجمعيات",
+      "acceptedAsProduced": 8,
+      "acceptedAsExpected": 8,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "precisionDenominator": 8,
+      "recallDenominator": 8
+    },
+    {
+      "category": "العائلة",
+      "acceptedAsProduced": 3,
+      "acceptedAsExpected": 3,
+      "falsePositives": 3,
+      "falseNegatives": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "f1": 0.6666666666666666,
+      "precisionDenominator": 6,
+      "recallDenominator": 3
+    },
+    {
+      "category": "تحويل",
+      "acceptedAsProduced": 6,
+      "acceptedAsExpected": 6,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "precisionDenominator": 6,
+      "recallDenominator": 6
+    },
+    {
+      "category": "تدخين",
+      "acceptedAsProduced": 1,
+      "acceptedAsExpected": 1,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "precisionDenominator": 1,
+      "recallDenominator": 1
+    },
+    {
+      "category": "ترفيه",
+      "acceptedAsProduced": 3,
+      "acceptedAsExpected": 3,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "precisionDenominator": 3,
+      "recallDenominator": 3
+    },
+    {
+      "category": "تسوق",
+      "acceptedAsProduced": 8,
+      "acceptedAsExpected": 8,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "precisionDenominator": 8,
+      "recallDenominator": 8
+    },
+    {
+      "category": "تعليم",
+      "acceptedAsProduced": 6,
+      "acceptedAsExpected": 6,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "precisionDenominator": 6,
+      "recallDenominator": 6
+    },
+    {
+      "category": "حيوانات أليفة",
+      "acceptedAsProduced": 3,
+      "acceptedAsExpected": 3,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "precisionDenominator": 3,
+      "recallDenominator": 3
+    },
+    {
+      "category": "خدمات حكومية",
+      "acceptedAsProduced": 2,
+      "acceptedAsExpected": 2,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "precisionDenominator": 2,
+      "recallDenominator": 2
+    },
+    {
+      "category": "خدمات رقمية",
+      "acceptedAsProduced": 0,
+      "acceptedAsExpected": 0,
+      "falsePositives": 0,
+      "falseNegatives": 1,
+      "precision": null,
+      "recall": 0,
+      "f1": null,
+      "precisionDenominator": 0,
+      "recallDenominator": 1
+    },
+    {
+      "category": "خدمات سيارات",
+      "acceptedAsProduced": 5,
+      "acceptedAsExpected": 5,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "precisionDenominator": 5,
+      "recallDenominator": 5
+    },
+    {
+      "category": "سكن",
+      "acceptedAsProduced": 3,
+      "acceptedAsExpected": 3,
+      "falsePositives": 1,
+      "falseNegatives": 0,
+      "precision": 0.75,
+      "recall": 1,
+      "f1": 0.8571428571428571,
+      "precisionDenominator": 4,
+      "recallDenominator": 3
+    },
+    {
+      "category": "صحة",
+      "acceptedAsProduced": 7,
+      "acceptedAsExpected": 7,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "precisionDenominator": 7,
+      "recallDenominator": 7
+    },
+    {
+      "category": "عمل",
+      "acceptedAsProduced": 3,
+      "acceptedAsExpected": 3,
+      "falsePositives": 1,
+      "falseNegatives": 0,
+      "precision": 0.75,
+      "recall": 1,
+      "f1": 0.8571428571428571,
+      "precisionDenominator": 4,
+      "recallDenominator": 3
+    },
+    {
+      "category": "عمل حر",
+      "acceptedAsProduced": 3,
+      "acceptedAsExpected": 3,
+      "falsePositives": 0,
+      "falseNegatives": 1,
+      "precision": 1,
+      "recall": 0.75,
+      "f1": 0.8571428571428571,
+      "precisionDenominator": 3,
+      "recallDenominator": 4
+    },
+    {
+      "category": "عوائد استثمار",
+      "acceptedAsProduced": 3,
+      "acceptedAsExpected": 3,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "precisionDenominator": 3,
+      "recallDenominator": 3
+    },
+    {
+      "category": "فواتير",
+      "acceptedAsProduced": 20,
+      "acceptedAsExpected": 20,
+      "falsePositives": 0,
+      "falseNegatives": 1,
+      "precision": 1,
+      "recall": 0.9523809523809523,
+      "f1": 0.975609756097561,
+      "precisionDenominator": 20,
+      "recallDenominator": 21
+    },
+    {
+      "category": "متنوعات",
+      "acceptedAsProduced": 5,
+      "acceptedAsExpected": 5,
+      "falsePositives": 8,
+      "falseNegatives": 2,
+      "precision": 0.38461538461538464,
+      "recall": 0.7142857142857143,
+      "f1": 0.5,
+      "precisionDenominator": 13,
+      "recallDenominator": 7
+    },
+    {
+      "category": "مرتب",
+      "acceptedAsProduced": 6,
+      "acceptedAsExpected": 6,
+      "falsePositives": 3,
+      "falseNegatives": 0,
+      "precision": 0.6666666666666666,
+      "recall": 1,
+      "f1": 0.8,
+      "precisionDenominator": 9,
+      "recallDenominator": 6
+    },
+    {
+      "category": "مواصلات",
+      "acceptedAsProduced": 13,
+      "acceptedAsExpected": 13,
+      "falsePositives": 1,
+      "falseNegatives": 2,
+      "precision": 0.9285714285714286,
+      "recall": 0.8666666666666667,
+      "f1": 0.896551724137931,
+      "precisionDenominator": 14,
+      "recallDenominator": 15
+    },
+    {
+      "category": "موظفين",
+      "acceptedAsProduced": 1,
+      "acceptedAsExpected": 1,
+      "falsePositives": 0,
+      "falseNegatives": 1,
+      "precision": 1,
+      "recall": 0.5,
+      "f1": 0.6666666666666666,
+      "precisionDenominator": 1,
+      "recallDenominator": 2
+    },
+    {
+      "category": "هدايا وصدقات",
+      "acceptedAsProduced": 4,
+      "acceptedAsExpected": 4,
+      "falsePositives": 0,
+      "falseNegatives": 1,
+      "precision": 1,
+      "recall": 0.8,
+      "f1": 0.888888888888889,
+      "precisionDenominator": 4,
+      "recallDenominator": 5
+    }
+  ],
+  "confusion": {
+    "matrix": {
+      "التزامات وجمعيات": {
+        "التزامات وجمعيات": 9
+      },
+      "العائلة": {
+        "العائلة": 6
+      },
+      "تحويل": {
+        "العائلة": 4,
+        "تحويل": 6,
+        "مرتب": 1,
+        "موظفين": 1,
+        "أصدقاء": 3,
+        "متنوعات": 1
+      },
+      "استثمار": {
+        "استثمار": 2
+      },
+      "عوائد استثمار": {
+        "استثمار": 2,
+        "مرتب": 3,
+        "عوائد استثمار": 3,
+        "تحويل": 1
+      },
+      "صحة": {
+        "صحة": 11,
+        "العائلة": 1
+      },
+      "مواصلات": {
+        "مواصلات": 19,
+        "مرتب": 1,
+        "خدمات سيارات": 1,
+        "تسوق": 1,
+        "سكن": 1,
+        "متنوعات": 1
+      },
+      "تعليم": {
+        "تعليم": 7
+      },
+      "تسوق": {
+        "تسوق": 9,
+        "تدخين": 1,
+        "عمل": 1,
+        "متنوعات": 1
+      },
+      "أكل وشرب": {
+        "أكل وشرب": 33,
+        "متنوعات": 5,
+        "فواتير": 1,
+        "أصدقاء": 1,
+        "سكن": 1,
+        "صحة": 1
+      },
+      "خدمات سيارات": {
+        "خدمات سيارات": 7,
+        "مواصلات": 2,
+        "سكن": 1,
+        "تسوق": 1
+      },
+      "ترفيه": {
+        "ترفيه": 5
+      },
+      "مرتب": {
+        "مرتب": 9
+      },
+      "خدمات حكومية": {
+        "خدمات حكومية": 3,
+        "فواتير": 1
+      },
+      "فواتير": {
+        "فواتير": 29,
+        "العائلة": 1,
+        "خدمات حكومية": 1
+      },
+      "أصدقاء": {
+        "أصدقاء": 12
+      },
+      "متنوعات": {
+        "متنوعات": 5
+      },
+      "موظفين": {
+        "العائلة": 1,
+        "موظفين": 1
+      },
+      "سكن": {
+        "سكن": 10,
+        "متنوعات": 1,
+        "خدمات حكومية": 1
+      },
+      "حيوانات أليفة": {
+        "حيوانات أليفة": 3
+      },
+      "اشتراكات": {
+        "اشتراكات": 3
+      },
+      "خدمات رقمية": {
+        "عمل": 1,
+        "فواتير": 1
+      },
+      "عمل": {
+        "عمل": 3
+      },
+      "عمل حر": {
+        "عمل حر": 4,
+        "مرتب": 1
+      },
+      "هدايا وصدقات": {
+        "هدايا وصدقات": 5,
+        "العائلة": 2
+      },
+      "تدخين": {
+        "تدخين": 2
+      }
+    },
+    "missedByCategory": {
+      "متنوعات": 2,
+      "عوائد استثمار": 1
+    },
+    "spuriousByCategory": {
+      "أكل وشرب": 3,
+      "متنوعات": 2,
+      "مواصلات": 1,
+      "مرتب": 1
+    },
+    "convention": "matrix[expected][actual] counts matched pairs only. An expected item with no counterpart appears in missedByCategory; an actual item with no counterpart appears in spuriousByCategory. The three together account for every item on both sides."
+  },
+  "cost": {
+    "totalTokens": 0,
+    "totalCachedTokens": 0,
+    "derivedLlmRoutes": 36,
+    "llmCalls": 36,
+    "latencyP50": 6,
+    "latencyP95": 22,
+    "baselineDerivedLlmRoutes": null,
+    "note": "Inferred from parsedBy after the run. Not a request counter: it cannot see retries, provider failover, or a chain that tried three routes for one logical call."
+  }
+}

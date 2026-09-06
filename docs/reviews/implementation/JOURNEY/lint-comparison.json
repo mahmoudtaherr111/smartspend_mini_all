@@ -1,0 +1,6 @@
+{
+  "baseline": 67,
+  "current": 55,
+  "introduced": [],
+  "method": "File/rule/message occurrence comparison; line shifts ignored."
+}

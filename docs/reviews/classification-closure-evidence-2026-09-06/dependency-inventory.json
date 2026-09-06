@@ -1,0 +1,2081 @@
+{
+  "generatedAt": "2026-09-06T02:11:42.291Z",
+  "commit": "efd812bb54d7320ee30fd28c38c15cec3a79d1be",
+  "method": "TypeScript AST: local literal import/export/import()/require(); seeds include ingestion, writes, telemetry, retention. This is a dependency inventory, not a claim that every reachable line was manually reviewed. Excludes runtime-computed imports, external packages, and SQL relations inferred by execution.",
+  "roots": [
+    "src/components/expenses/ExpenseForm.tsx",
+    "src/components/pwa/PwaOfflineSyncDialog.tsx",
+    "src/hooks/useAuth.ts",
+    "api/ai-router.ts",
+    "api/expense-router.ts",
+    "api/image-router.ts",
+    "api/sms-router.ts",
+    "api/chat-router.ts",
+    "api/services/action-runtime/index.ts",
+    "api/services/voice-kernel/index.ts",
+    "api/lib/smart-pipeline.ts",
+    "api/jobs/data-retention-job.ts",
+    "api/services/classification-usage-ledger.ts",
+    "src/components/admin/ai-center/tabs/AiTelemetryTab.tsx",
+    "api/admin-router.ts",
+    "db/schema.ts",
+    "db/relations.ts"
+  ],
+  "count": 196,
+  "files": [
+    {
+      "file": "api/admin-router.ts",
+      "lines": 2263,
+      "sha256": "8a2a0d53715ccf7a0709733659cc03198681a3ccb3676670b6e1f294f76fa5c8",
+      "imports": [
+        "api/lib/ai-gateway.ts",
+        "api/lib/app-time.ts",
+        "api/lib/env.ts",
+        "api/lib/error-logger.ts",
+        "api/lib/llm-provider-chain.ts",
+        "api/lib/redis-client.ts",
+        "api/lib/session-validation.ts",
+        "api/lib/settings-cache.ts",
+        "api/lib/smart-pipeline.ts",
+        "api/lib/system-settings-registry.ts",
+        "api/middleware.ts",
+        "api/notification-engine.ts",
+        "api/queries/connection.ts",
+        "api/services/ai-cost-analytics.ts",
+        "api/services/user-profile-service.ts",
+        "api/services/user-purge-service.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/admin-whatsapp-router.ts",
+      "lines": 216,
+      "sha256": "abd049ad76a9b933f64cae8fa3e75a21a8c78c669fb820e1b914fc984fa35208",
+      "imports": [
+        "api/lib/settings-cache.ts",
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "api/services/whatsapp-service.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/ads-router.ts",
+      "lines": 143,
+      "sha256": "40fe1b2f161dccc4d36dcca921371b2d4b42dbc4de835becf3a408c834e22748",
+      "imports": [
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/ai-router.ts",
+      "lines": 3470,
+      "sha256": "65bff90dedbbb713f1a7b7fa58419542c4f77456be568e41e0917aad8aafb5b5",
+      "imports": [
+        "api/lib/ai-gateway.ts",
+        "api/lib/ai-usage-policy.ts",
+        "api/lib/anonymizer.ts",
+        "api/lib/category-registry.ts",
+        "api/lib/egyptian-dictionary.ts",
+        "api/lib/entity-extractor.ts",
+        "api/lib/env.ts",
+        "api/lib/fireworks-client.ts",
+        "api/lib/fuzzy-match.ts",
+        "api/lib/model-mapper.ts",
+        "api/lib/nvidia-client.ts",
+        "api/lib/person-resolver.ts",
+        "api/lib/redis-client.ts",
+        "api/lib/relationship-normalizer.ts",
+        "api/lib/settings-cache.ts",
+        "api/lib/smart-pipeline.ts",
+        "api/lib/voice-intake-gate.ts",
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "api/services/ai-cost-policy.ts",
+        "api/services/ai-kernel/index.ts",
+        "api/services/finance-semantic-layer/index.ts",
+        "api/services/financial-month.ts",
+        "api/services/lifestyle-inference-engine.ts",
+        "api/services/parser-trace.ts",
+        "api/services/personal-context-builder.ts",
+        "api/services/report-personalization-engine.ts",
+        "api/services/user-profile-service.ts",
+        "api/services/voice-kernel/index.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/analytics-router.ts",
+      "lines": 209,
+      "sha256": "bcee125727a94f9be27154d43652fcac48fd07d0cb3883441942473bac5f6619",
+      "imports": [
+        "api/lib/app-time.ts",
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/auth-router.ts",
+      "lines": 292,
+      "sha256": "20268959b1dacffc3618ab857261d968ad943da3cebe5769b11de71dee2d7b25",
+      "imports": [
+        "api/lib/env.ts",
+        "api/local-auth-utils.ts",
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/budget-router.ts",
+      "lines": 188,
+      "sha256": "3108ffc9881b380b8348deb7f705edf357c28cb1fa7cddf3904013e6ee61da6d",
+      "imports": [
+        "api/lib/app-time.ts",
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "api/services/finance-semantic-layer/index.ts",
+        "contracts/constants.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/business-router.ts",
+      "lines": 512,
+      "sha256": "d2b9efd107bb45f7ce94252053d2a5ac8eb31180d24cc41c683f67f8054a4029",
+      "imports": [
+        "api/lib/cache-keys.ts",
+        "api/lib/env.ts",
+        "api/lib/muscle-memory.ts",
+        "api/lib/redis-client.ts",
+        "api/lib/settings-cache.ts",
+        "api/lib/smart-pipeline.ts",
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "api/services/expense-rollups.ts",
+        "api/services/finance-semantic-layer/index.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/chat-router.ts",
+      "lines": 1334,
+      "sha256": "00a60a9689838ed9a6bef5cf2e1db5c0d344847855cc5ce3e9482f2b5a863bb9",
+      "imports": [
+        "api/lib/app-time.ts",
+        "api/lib/muscle-memory.ts",
+        "api/lib/settings-cache.ts",
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "api/services/action-runtime/index.ts",
+        "api/services/action-runtime/types.ts",
+        "api/services/ai-cost-policy.ts",
+        "api/services/ai-kernel/capability-registry.ts",
+        "api/services/ai-kernel/clarification-machine.ts",
+        "api/services/ai-kernel/index.ts",
+        "api/services/ai-kernel/intent-router.ts",
+        "api/services/ai-kernel/types.ts",
+        "api/services/ai-memory/index.ts",
+        "api/services/finance-semantic-layer/category-matcher.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/context.ts",
+      "lines": 205,
+      "sha256": "0ea3488959bda6ca12f680adbed26af78116dbdcceba6cc508235d3a32433b8f",
+      "imports": [
+        "api/lib/get-client-ip.ts",
+        "api/lib/session-validation.ts",
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/expense-router.ts",
+      "lines": 2477,
+      "sha256": "de01e744db988fe2c91a922fcf9c57077c8788afab38ba9e46d510913c87d842",
+      "imports": [
+        "api/ai-router.ts",
+        "api/lib/app-time.ts",
+        "api/lib/cache-keys.ts",
+        "api/lib/correction-rules.ts",
+        "api/lib/env.ts",
+        "api/lib/muscle-memory.ts",
+        "api/lib/person-resolver.ts",
+        "api/lib/redis-client.ts",
+        "api/lib/relationship-normalizer.ts",
+        "api/lib/settings-cache.ts",
+        "api/lib/smart-pipeline.ts",
+        "api/middleware.ts",
+        "api/notification-engine.ts",
+        "api/queries/connection.ts",
+        "api/services/expense-rollups.ts",
+        "api/services/finance-semantic-layer/index.ts",
+        "api/services/financial-month.ts",
+        "api/services/personal-context-builder.ts",
+        "api/services/user-profile-service.ts",
+        "contracts/constants.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/export-router.ts",
+      "lines": 181,
+      "sha256": "690bc406ecac5a976b6601f0ff5c8bd151e9b8e2a474046a5e1f077d3bef7774",
+      "imports": [
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "api/services/pro-report-engine.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/goals-router.ts",
+      "lines": 324,
+      "sha256": "1da816d547d88460fb6c7c11034a3415a74e18d7a40ce55f6c17481e043dea1b",
+      "imports": [
+        "api/lib/ai-usage-policy.ts",
+        "api/lib/app-time.ts",
+        "api/lib/env.ts",
+        "api/lib/model-mapper.ts",
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "api/services/finance-semantic-layer/index.ts",
+        "api/services/user-profile-service.ts",
+        "contracts/constants.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/image-router.ts",
+      "lines": 242,
+      "sha256": "212785e1acfdfcdd79e286f0de83f5b315137e48ec49153e91231288e638aa58",
+      "imports": [
+        "api/lib/ai-usage-policy.ts",
+        "api/lib/app-time.ts",
+        "api/lib/category-registry.ts",
+        "api/lib/env.ts",
+        "api/lib/model-mapper.ts",
+        "api/lib/muscle-memory.ts",
+        "api/lib/receipt-image-parser.ts",
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "api/services/expense-rollups.ts",
+        "api/services/finance-semantic-layer/index.ts",
+        "api/services/user-profile-service.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/jobs/data-retention-job.ts",
+      "lines": 369,
+      "sha256": "59bbe27cc8e0ce7b3779ae0f278cb157e4044ca6fe4e2803170fc2ba6bfab120",
+      "imports": [
+        "api/queries/connection.ts"
+      ]
+    },
+    {
+      "file": "api/lib/admin-safe-fields.ts",
+      "lines": 40,
+      "sha256": "e83f8bb0375e060eb6d103d54b11686b7daab2bcb9400e116b2ff0ec2893fa56",
+      "imports": [
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/lib/admissibility-gate.ts",
+      "lines": 175,
+      "sha256": "cd41ff169519382a1e354c51368c17c9fadecefff268050abb9356b1b46cf953",
+      "imports": [
+        "api/lib/arabic-token-match.ts",
+        "api/lib/egyptian-dictionary.ts",
+        "api/lib/entity-extractor.ts",
+        "api/lib/narrative-decomposer.ts",
+        "api/lib/negation-detector.ts",
+        "api/lib/rule-engine.ts"
+      ]
+    },
+    {
+      "file": "api/lib/ai-gateway.ts",
+      "lines": 660,
+      "sha256": "8af3b898719398ab263dd53393f7b8f198f1ca81cdd5e0d3b20a08661ad336ef",
+      "imports": [
+        "api/lib/app-time.ts",
+        "api/lib/provider-usage.ts",
+        "api/lib/settings-cache.ts",
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/lib/ai-provider-registry.ts",
+      "lines": 445,
+      "sha256": "a5a585a1a35c2edf1b81669e54840267c77be77bba5beb77c31f3227fff73ada",
+      "imports": []
+    },
+    {
+      "file": "api/lib/ai-usage-policy.ts",
+      "lines": 342,
+      "sha256": "523ec5cbb6a32381aa1f7533dae7ac5b827caef06a0ad5c26b064a9a5398a745",
+      "imports": [
+        "api/lib/app-time.ts",
+        "api/lib/settings-cache.ts",
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/lib/amount-ledger.ts",
+      "lines": 164,
+      "sha256": "2b4b990b95a7b20e2be5032aa9a8246acdb90a07f270b439b2d6e3fc2b09f805",
+      "imports": []
+    },
+    {
+      "file": "api/lib/anonymizer.ts",
+      "lines": 88,
+      "sha256": "9f4ea9b93c4229fc36f1576094e19daf84058e7457aed443c3b8fbb5221c99df",
+      "imports": []
+    },
+    {
+      "file": "api/lib/app-time.ts",
+      "lines": 73,
+      "sha256": "fe9242fee19eb9ead88932683483c3b18cf10b39a7db65ea67ddc2ec92787778",
+      "imports": [
+        "api/lib/env.ts"
+      ]
+    },
+    {
+      "file": "api/lib/arabic-number-parser.ts",
+      "lines": 417,
+      "sha256": "cf2342189d149e5012576c2255a73370db9bff67c968f8a2ef35df54ea261065",
+      "imports": [
+        "api/lib/unified-normalizer.ts"
+      ]
+    },
+    {
+      "file": "api/lib/arabic-token-match.ts",
+      "lines": 77,
+      "sha256": "3241cfd60c0ff1b958d2568abc1a871f4c765748ff9011fa1b62e7c00c59df01",
+      "imports": []
+    },
+    {
+      "file": "api/lib/cache-keys.ts",
+      "lines": 39,
+      "sha256": "c9044f53b07e288cfafb9567c7ef915824301fdf16ec7ef20271a81911f37fdc",
+      "imports": []
+    },
+    {
+      "file": "api/lib/category-registry.ts",
+      "lines": 1467,
+      "sha256": "c9fee45534c8ffc95aff9ddbc40aad1cdde60309e16f43e61d13771aa59388f6",
+      "imports": [
+        "api/lib/direction-governed-taxonomy.ts",
+        "api/lib/unified-normalizer.ts"
+      ]
+    },
+    {
+      "file": "api/lib/classification-decision.ts",
+      "lines": 176,
+      "sha256": "14ff127d37939ae50039725eb16a43f79cb90c025ba9ededd2816873724101b5",
+      "imports": [
+        "api/lib/classification-evidence.ts"
+      ]
+    },
+    {
+      "file": "api/lib/classification-evidence.ts",
+      "lines": 292,
+      "sha256": "13ed10c5d43d14e99fb2ce93298f9925694cb830a3218393a447c08dcaa65309",
+      "imports": []
+    },
+    {
+      "file": "api/lib/classification-merge.ts",
+      "lines": 132,
+      "sha256": "622cf393c49ac69bf2a914c3dea16ddedf7d5323f7dd45ff11539fc9f6f0a0b2",
+      "imports": [
+        "api/lib/category-registry.ts",
+        "api/lib/classification-evidence.ts",
+        "api/lib/classifier-contract.ts",
+        "api/lib/final-acceptance.ts",
+        "api/lib/narrative-decomposer.ts",
+        "api/lib/relationship-normalizer.ts",
+        "api/lib/rule-engine.ts"
+      ]
+    },
+    {
+      "file": "api/lib/classification-prompt.ts",
+      "lines": 72,
+      "sha256": "866fa8ca71d582f4059366d30f8814caf9a5e16092f896dbf6e8c743bab869bf",
+      "imports": [
+        "api/lib/classifier-contract.ts",
+        "api/lib/fuzzy-match.ts"
+      ]
+    },
+    {
+      "file": "api/lib/classifier-contract.ts",
+      "lines": 219,
+      "sha256": "28c9158a3d3d8d04b0815fd21b35dc8286849c6931a4cebba386aad34447a45a",
+      "imports": [
+        "api/lib/category-registry.ts"
+      ]
+    },
+    {
+      "file": "api/lib/confidence-calibration.generated.ts",
+      "lines": 47,
+      "sha256": "0d33e6ba6c06bf4b3679532815ff8a04fc3c5e121898b3ed29014dbc9856647d",
+      "imports": [
+        "api/lib/classification-evidence.ts"
+      ]
+    },
+    {
+      "file": "api/lib/confidence-calibrator.ts",
+      "lines": 89,
+      "sha256": "49baf025c05128974ff286dec2804f07c91f954a3a50ef55c43950905c2bd90d",
+      "imports": [
+        "api/lib/classification-evidence.ts",
+        "api/lib/confidence-calibration.generated.ts",
+        "api/lib/rule-engine.ts"
+      ]
+    },
+    {
+      "file": "api/lib/correction-rules.ts",
+      "lines": 346,
+      "sha256": "87453f54f8299056b29f495cf70e4541981ff10918b3d707392f17502bc8b25c",
+      "imports": [
+        "api/lib/arabic-token-match.ts",
+        "api/lib/unified-normalizer.ts",
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/lib/deepseek-client.ts",
+      "lines": 147,
+      "sha256": "9f964fa62e726c3064f8a6cde4c872439bb723e778258335df2833dabe731f50",
+      "imports": []
+    },
+    {
+      "file": "api/lib/direction-governed-taxonomy.ts",
+      "lines": 165,
+      "sha256": "89b64eca3f28c479265181c8c17a141bbf17dc1bd7c9b09d5267c64488355704",
+      "imports": [
+        "api/lib/arabic-token-match.ts",
+        "api/lib/intent-detector.ts"
+      ]
+    },
+    {
+      "file": "api/lib/egyptian-dictionary.ts",
+      "lines": 1307,
+      "sha256": "0b081db284c255249c0ca475c5e9ad2ad074373f611f660398920aa4edebd18f",
+      "imports": [
+        "api/lib/fuzzy-match.ts",
+        "api/lib/intent-detector.ts"
+      ]
+    },
+    {
+      "file": "api/lib/egyptian-names-dictionary.ts",
+      "lines": 878,
+      "sha256": "174e2ccaceee71ad8b72a91d01848d42f5b164431260024f678b8f95cac217a2",
+      "imports": [
+        "api/lib/category-registry.ts"
+      ]
+    },
+    {
+      "file": "api/lib/embedding-engine.ts",
+      "lines": 1447,
+      "sha256": "f07ee47e9392539bf37976f108215362a8a86d073aa46abbc61279a97d9b8102",
+      "imports": [
+        "api/lib/ai-usage-policy.ts",
+        "api/lib/category-registry.ts",
+        "api/lib/fireworks-embedding-client.ts",
+        "api/lib/fuzzy-match.ts"
+      ]
+    },
+    {
+      "file": "api/lib/entity-extractor.ts",
+      "lines": 476,
+      "sha256": "cdb4def2355fa907cc8625b9d34d9c1bd87b36405d08800a081d94131de8af06",
+      "imports": [
+        "api/lib/arabic-number-parser.ts",
+        "api/lib/egyptian-names-dictionary.ts",
+        "api/lib/fuzzy-match.ts",
+        "api/lib/person-resolver.ts",
+        "api/lib/text-normalizer.ts"
+      ]
+    },
+    {
+      "file": "api/lib/env.ts",
+      "lines": 86,
+      "sha256": "7730bd087ec382712848ecdbd50bd9b5e1e04f01b27a43a0fe155e06ba406f60",
+      "imports": []
+    },
+    {
+      "file": "api/lib/error-logger.ts",
+      "lines": 171,
+      "sha256": "f3d0f8203a67ea1b22cf77da206b863b581997511bd98ac32cc0f956093fa06d",
+      "imports": [
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/lib/final-acceptance.ts",
+      "lines": 297,
+      "sha256": "916226d751645eb18828e6b0f0649df538cd552ae35616c3de0718584775c6a0",
+      "imports": [
+        "api/lib/admissibility-gate.ts",
+        "api/lib/amount-ledger.ts",
+        "api/lib/classification-decision.ts",
+        "api/lib/confidence-calibrator.ts",
+        "api/lib/entity-extractor.ts",
+        "api/lib/rule-engine.ts"
+      ]
+    },
+    {
+      "file": "api/lib/financial-event-plan.ts",
+      "lines": 140,
+      "sha256": "71e57f7d73eb3aeaaa0e6d2bcfb881c59c7d545d5f53f4c3c9952d45769f1197",
+      "imports": [
+        "api/lib/egyptian-dictionary.ts",
+        "api/lib/entity-extractor.ts",
+        "api/lib/narrative-decomposer.ts",
+        "api/lib/negation-detector.ts",
+        "api/lib/normalizer-v2.ts",
+        "api/lib/rule-engine.ts",
+        "api/lib/unified-normalizer.ts"
+      ]
+    },
+    {
+      "file": "api/lib/fireworks-client.ts",
+      "lines": 56,
+      "sha256": "931aedab7e5ddf4ebcb7523ec44359c7036b09b93a83fd34d307855a7bfaaea7",
+      "imports": []
+    },
+    {
+      "file": "api/lib/fireworks-embedding-client.ts",
+      "lines": 309,
+      "sha256": "950d4822474ba2eb27b5e60f5fc9e63ec3efdf4933400c656bd874056d6f9ba7",
+      "imports": []
+    },
+    {
+      "file": "api/lib/fuzzy-match.ts",
+      "lines": 168,
+      "sha256": "f9fa1f3c26a36a9157dff05d88c5c9d675c2a10833bbb5ab6fb878c35e48bb57",
+      "imports": [
+        "api/lib/unified-normalizer.ts"
+      ]
+    },
+    {
+      "file": "api/lib/get-client-ip.ts",
+      "lines": 89,
+      "sha256": "d84bf05a8c7a71823affbf1b099190e3c3d476617718cb7c356a25511c65df09",
+      "imports": [
+        "api/lib/env.ts"
+      ]
+    },
+    {
+      "file": "api/lib/intent-detector.ts",
+      "lines": 436,
+      "sha256": "b412a680417916f1534246609c9e43dec566f74f2a9ec09abbdef0beb7ea0b1b",
+      "imports": [
+        "api/lib/unified-normalizer.ts"
+      ]
+    },
+    {
+      "file": "api/lib/llm-provider-chain.ts",
+      "lines": 292,
+      "sha256": "e2ba1efa2332b6cf3144d7c01cc5fe823f56b9f142afedbc4a261d893ce5369e",
+      "imports": [
+        "api/lib/ai-provider-registry.ts",
+        "api/lib/llm-router.ts",
+        "api/lib/model-mapper.ts"
+      ]
+    },
+    {
+      "file": "api/lib/llm-router.ts",
+      "lines": 894,
+      "sha256": "4d312cc7bb7490a47de6f711c5334717f94b303dbace807d7cb22e80afb0fcfd",
+      "imports": [
+        "api/lib/provider-usage.ts"
+      ]
+    },
+    {
+      "file": "api/lib/login-protection.ts",
+      "lines": 682,
+      "sha256": "dfb47b66c47807dda5fbc487b6c91e445c809409df902c758d0fe2b26625a339",
+      "imports": [
+        "api/lib/env.ts",
+        "api/lib/redis-client.ts",
+        "api/lib/security-logger.ts"
+      ]
+    },
+    {
+      "file": "api/lib/model-mapper.ts",
+      "lines": 140,
+      "sha256": "06eed6711bf596b601baf0d4b346d6dc8b059fc3cce1fd4c8aa24ebc45234747",
+      "imports": [
+        "api/lib/ai-provider-registry.ts"
+      ]
+    },
+    {
+      "file": "api/lib/muscle-memory.ts",
+      "lines": 304,
+      "sha256": "b4831b74233d91ea73a313c95ef4f1f9d03c6513c70942dc07142f8f7060ab49",
+      "imports": [
+        "api/lib/arabic-number-parser.ts",
+        "api/lib/text-normalizer.ts",
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/lib/narrative-decomposer.ts",
+      "lines": 1026,
+      "sha256": "d3a2f3f8bf861a10922aa58528acfecd01399682b45aea601eea41b3e4adc49c",
+      "imports": [
+        "api/lib/egyptian-dictionary.ts",
+        "api/lib/egyptian-names-dictionary.ts",
+        "api/lib/entity-extractor.ts",
+        "api/lib/model-mapper.ts",
+        "api/lib/rule-engine.ts",
+        "api/lib/unified-normalizer.ts"
+      ]
+    },
+    {
+      "file": "api/lib/negation-detector.ts",
+      "lines": 140,
+      "sha256": "707b9414cc84c274270273d14765e29597675673ae7d481420a84a330b9f6200",
+      "imports": [
+        "api/lib/unified-normalizer.ts"
+      ]
+    },
+    {
+      "file": "api/lib/normalizer-v2.ts",
+      "lines": 263,
+      "sha256": "2ff63c1790fe0292432942220ecb5141fb6cefd8600b313fb23bc735f0fc1be0",
+      "imports": [
+        "api/lib/arabic-number-parser.ts",
+        "api/lib/stt-corrections.ts",
+        "api/lib/text-normalizer.ts"
+      ]
+    },
+    {
+      "file": "api/lib/nvidia-client.ts",
+      "lines": 80,
+      "sha256": "85713b58d3f6a01077663d9950694301b84242d74015dd1ced40e782da6c55de",
+      "imports": []
+    },
+    {
+      "file": "api/lib/origin-policy.ts",
+      "lines": 81,
+      "sha256": "35d06a1c689dfdfabe721fe116d646de49093f3686d5b79197513e63827e9789",
+      "imports": []
+    },
+    {
+      "file": "api/lib/paymob.ts",
+      "lines": 138,
+      "sha256": "adf0e0814820db948d202745c204a62f6dad18b9b6c3736678ded4d0138c92cb",
+      "imports": [
+        "api/lib/env.ts",
+        "contracts/plans.ts"
+      ]
+    },
+    {
+      "file": "api/lib/person-resolver.ts",
+      "lines": 689,
+      "sha256": "3c34b913f7223d4043da01abad36f9ca1b6a620bd608aa4637636bdccff3f375",
+      "imports": [
+        "api/lib/egyptian-names-dictionary.ts",
+        "api/lib/entity-extractor.ts",
+        "api/lib/fuzzy-match.ts",
+        "api/lib/relationship-normalizer.ts"
+      ]
+    },
+    {
+      "file": "api/lib/post-classifier-verifier.ts",
+      "lines": 503,
+      "sha256": "24470ff7a41536dced5e265636a63dfdf439cc425587835d8b3b3f6fda44c6a9",
+      "imports": [
+        "api/lib/category-registry.ts",
+        "api/lib/classification-decision.ts",
+        "api/lib/entity-extractor.ts",
+        "api/lib/final-acceptance.ts",
+        "api/lib/rule-engine.ts",
+        "api/lib/unified-normalizer.ts"
+      ]
+    },
+    {
+      "file": "api/lib/provider-usage.ts",
+      "lines": 209,
+      "sha256": "81402379c3a0b6a86ededc29aa7e48b994d26fa6208ebea7a99155541620ae6f",
+      "imports": []
+    },
+    {
+      "file": "api/lib/rate-limit.ts",
+      "lines": 44,
+      "sha256": "d7d086bd5c43ab61b48670b3041d332d6ba9f6d6fe14ffadf3634e476ba23b60",
+      "imports": [
+        "api/lib/redis-client.ts"
+      ]
+    },
+    {
+      "file": "api/lib/receipt-image-parser.ts",
+      "lines": 253,
+      "sha256": "986f4efc9c2ec45710da441b50bfb2fee4e3acdf2ac7612aa99c5d08918330b7",
+      "imports": [
+        "api/lib/ai-usage-policy.ts",
+        "api/lib/entity-extractor.ts",
+        "api/lib/model-mapper.ts",
+        "api/lib/smart-pipeline.ts",
+        "api/lib/text-normalizer.ts"
+      ]
+    },
+    {
+      "file": "api/lib/redis-client.ts",
+      "lines": 521,
+      "sha256": "afefd0ad606ecea09116e54a12dcc4e9cd91c8c4a283d42c72c6d9d79cb29d58",
+      "imports": [
+        "api/lib/env.ts"
+      ]
+    },
+    {
+      "file": "api/lib/relationship-normalizer.ts",
+      "lines": 330,
+      "sha256": "85428185b8c0da2f3f6a28d511d6aab8e1d1b373f9421718276cbce058c7d2d5",
+      "imports": [
+        "api/lib/category-registry.ts",
+        "api/lib/egyptian-names-dictionary.ts"
+      ]
+    },
+    {
+      "file": "api/lib/rule-engine.ts",
+      "lines": 1778,
+      "sha256": "1e0a8455601f6103a089e10d7e1ba6667c65a5349661f8276be4abaea2ba3c4c",
+      "imports": [
+        "api/lib/category-registry.ts",
+        "api/lib/classification-evidence.ts",
+        "api/lib/direction-governed-taxonomy.ts",
+        "api/lib/egyptian-dictionary.ts",
+        "api/lib/egyptian-names-dictionary.ts",
+        "api/lib/embedding-engine.ts",
+        "api/lib/entity-extractor.ts",
+        "api/lib/fuzzy-match.ts",
+        "api/lib/intent-detector.ts",
+        "api/lib/negation-detector.ts",
+        "api/lib/taxonomy-adapter.ts",
+        "api/lib/text-normalizer.ts"
+      ]
+    },
+    {
+      "file": "api/lib/security-logger.ts",
+      "lines": 102,
+      "sha256": "08997aa40cddc75fc6fdd69ee89e58e871cbbd0e41d39305f435fe93c3f772bd",
+      "imports": [
+        "api/lib/env.ts"
+      ]
+    },
+    {
+      "file": "api/lib/session-validation.ts",
+      "lines": 202,
+      "sha256": "c03123429129492f0fcc6ac8acde89a898d9039eb4ed8a9cead2499f6e793ab1",
+      "imports": [
+        "api/context.ts",
+        "api/lib/cache-keys.ts",
+        "api/lib/env.ts",
+        "api/lib/redis-client.ts",
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/lib/settings-cache.ts",
+      "lines": 45,
+      "sha256": "f5fa67590cd62579b466b8835684c637dad7d82f37ed5937547181623482a31f",
+      "imports": [
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/lib/shortcut-generator.ts",
+      "lines": 181,
+      "sha256": "4756bc072a1be22ea5e460949d27e09079eaf98b13625b031b014b7e91bd1c8d",
+      "imports": []
+    },
+    {
+      "file": "api/lib/smart-pipeline.ts",
+      "lines": 2459,
+      "sha256": "4cedd8c46dab637900b9efbe9fd87adeb1adefb48494d3051ac4997522dfb0fe",
+      "imports": [
+        "api/lib/admissibility-gate.ts",
+        "api/lib/ai-gateway.ts",
+        "api/lib/ai-provider-registry.ts",
+        "api/lib/amount-ledger.ts",
+        "api/lib/app-time.ts",
+        "api/lib/category-registry.ts",
+        "api/lib/classification-decision.ts",
+        "api/lib/classification-evidence.ts",
+        "api/lib/classification-merge.ts",
+        "api/lib/classification-prompt.ts",
+        "api/lib/classifier-contract.ts",
+        "api/lib/confidence-calibration.generated.ts",
+        "api/lib/confidence-calibrator.ts",
+        "api/lib/correction-rules.ts",
+        "api/lib/direction-governed-taxonomy.ts",
+        "api/lib/egyptian-dictionary.ts",
+        "api/lib/embedding-engine.ts",
+        "api/lib/entity-extractor.ts",
+        "api/lib/final-acceptance.ts",
+        "api/lib/financial-event-plan.ts",
+        "api/lib/fuzzy-match.ts",
+        "api/lib/intent-detector.ts",
+        "api/lib/llm-provider-chain.ts",
+        "api/lib/llm-router.ts",
+        "api/lib/model-mapper.ts",
+        "api/lib/muscle-memory.ts",
+        "api/lib/narrative-decomposer.ts",
+        "api/lib/normalizer-v2.ts",
+        "api/lib/person-resolver.ts",
+        "api/lib/post-classifier-verifier.ts",
+        "api/lib/rule-engine.ts",
+        "api/lib/unified-normalizer.ts",
+        "api/services/classification-usage-ledger.ts"
+      ]
+    },
+    {
+      "file": "api/lib/sms-ai-parser.ts",
+      "lines": 286,
+      "sha256": "1ef36a78371f136c693b5b38452d849a9a97efa502421b0039f1117775a7e189",
+      "imports": [
+        "api/lib/env.ts",
+        "api/lib/model-mapper.ts",
+        "api/lib/sms-rule-parser.ts"
+      ]
+    },
+    {
+      "file": "api/lib/sms-rule-parser.ts",
+      "lines": 639,
+      "sha256": "342fc1ff1c6aed651fa4140e958789873b216aea058c62e3cb02ee59e4bd9793",
+      "imports": []
+    },
+    {
+      "file": "api/lib/stt-corrections.ts",
+      "lines": 368,
+      "sha256": "228689380172c5a592bd35ada6c3cec04d12a3b1b8fc6268b185374f1a39e962",
+      "imports": []
+    },
+    {
+      "file": "api/lib/subscription-service.ts",
+      "lines": 128,
+      "sha256": "d5eef44f54f43694abf779f60f007d2eca40a492609522de082e1734c1a3a21f",
+      "imports": [
+        "api/lib/session-validation.ts",
+        "api/queries/connection.ts",
+        "contracts/plans.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/lib/system-settings-registry.ts",
+      "lines": 236,
+      "sha256": "29da188bc7cafc28ae10ad9ccc9eeb5df23add528209c3647c238323d7bf2408",
+      "imports": [
+        "api/lib/env.ts"
+      ]
+    },
+    {
+      "file": "api/lib/taxonomy-adapter.ts",
+      "lines": 527,
+      "sha256": "12c926a719c76432b029431e932ce35514bcfda31322764cf9323605f9ce86ae",
+      "imports": [
+        "api/lib/category-registry.ts"
+      ]
+    },
+    {
+      "file": "api/lib/taxonomy-ssot.ts",
+      "lines": 48,
+      "sha256": "cd76068eec0b660bcb6e1dea19238f1f1a7b3acaeae9679a1a1336a4b55a6928",
+      "imports": [
+        "api/lib/category-registry.ts"
+      ]
+    },
+    {
+      "file": "api/lib/text-normalizer.ts",
+      "lines": 356,
+      "sha256": "9d01ee24a254a1ee5b5205cd9e58bf6ae52ceecdc6283ba06cc4378c346cc2fa",
+      "imports": [
+        "api/lib/arabic-number-parser.ts",
+        "api/lib/stt-corrections.ts"
+      ]
+    },
+    {
+      "file": "api/lib/unified-normalizer.ts",
+      "lines": 48,
+      "sha256": "83a5d246787abe34ed056cf8fc2ca3247f2324fff007be9d1399540cc7964190",
+      "imports": []
+    },
+    {
+      "file": "api/lib/voice-intake-gate.ts",
+      "lines": 208,
+      "sha256": "ee0cc434184dedaa2c4ccff6d8399478528b21f03179e614dcfacb40686d8418",
+      "imports": []
+    },
+    {
+      "file": "api/local-auth-router.ts",
+      "lines": 454,
+      "sha256": "f6a3a6c7e475f5fbc41b812bf1ea4d9da62ccda7507814dc4a047a9e1063da57",
+      "imports": [
+        "api/lib/get-client-ip.ts",
+        "api/lib/login-protection.ts",
+        "api/lib/settings-cache.ts",
+        "api/local-auth-utils.ts",
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "api/services/otp-cache.ts",
+        "api/services/user-purge-service.ts",
+        "api/services/whatsapp-service.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/local-auth-utils.ts",
+      "lines": 124,
+      "sha256": "7cb97cbb1d886b9c980a2fd7518d4fd52e1c146d778978e1ebde80e911883812",
+      "imports": [
+        "api/lib/env.ts",
+        "api/lib/get-client-ip.ts",
+        "api/lib/session-validation.ts",
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/middleware.ts",
+      "lines": 132,
+      "sha256": "a76e7eb360ac6d46f0c5bcb0d7a595c649d5033ed0a889ba9b1a53511119bf73",
+      "imports": [
+        "api/context.ts",
+        "api/lib/rate-limit.ts"
+      ]
+    },
+    {
+      "file": "api/notification-engine.ts",
+      "lines": 842,
+      "sha256": "4d62c8c25ed481e23fce7f7c0580c431f93db9a41f0ad9560c97fefff966e63f",
+      "imports": [
+        "api/lib/app-time.ts",
+        "api/lib/env.ts",
+        "api/queries/connection.ts",
+        "api/services/firebase.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/pro-router.ts",
+      "lines": 189,
+      "sha256": "9b4237e081910ad27ac18f683c2c25dbe474317304fc7313b85130cfe6b0315a",
+      "imports": [
+        "api/lib/env.ts",
+        "api/lib/paymob.ts",
+        "api/lib/subscription-service.ts",
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "contracts/plans.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/profile-router.ts",
+      "lines": 921,
+      "sha256": "5f023ba85910aa0ba43fa69742ac627536f87fcb697983ecc43dd1509db4df1f",
+      "imports": [
+        "api/lib/muscle-memory.ts",
+        "api/lib/smart-pipeline.ts",
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "api/services/adaptive-question-engine.ts",
+        "api/services/lifestyle-inference-engine.ts",
+        "api/services/user-profile-service.ts",
+        "api/sms-router.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/queries/connection.ts",
+      "lines": 104,
+      "sha256": "f4343daf8f8adcc45ae955020940dd907bbba6a03938182d3e305f1cf1231445",
+      "imports": [
+        "api/lib/env.ts",
+        "db/relations.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/referral-router.ts",
+      "lines": 218,
+      "sha256": "8388aa40f06877626fe567fa37d3dc91c71ff7ef6d5e4fed5ca5c01a1608159f",
+      "imports": [
+        "api/lib/settings-cache.ts",
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/router.ts",
+      "lines": 51,
+      "sha256": "2a438bd69fe1de6eb3116debfa9b0a87970f94ebd89523ebbad0486015c04a83",
+      "imports": [
+        "api/admin-router.ts",
+        "api/admin-whatsapp-router.ts",
+        "api/ads-router.ts",
+        "api/ai-router.ts",
+        "api/analytics-router.ts",
+        "api/auth-router.ts",
+        "api/budget-router.ts",
+        "api/business-router.ts",
+        "api/chat-router.ts",
+        "api/expense-router.ts",
+        "api/export-router.ts",
+        "api/goals-router.ts",
+        "api/image-router.ts",
+        "api/local-auth-router.ts",
+        "api/middleware.ts",
+        "api/pro-router.ts",
+        "api/profile-router.ts",
+        "api/referral-router.ts",
+        "api/seo-router.ts",
+        "api/session-router.ts",
+        "api/support-router.ts",
+        "api/wallet-router.ts",
+        "api/webauthn-router.ts"
+      ]
+    },
+    {
+      "file": "api/seo-router.ts",
+      "lines": 96,
+      "sha256": "15b605674f2e0318e361d438012908baf0e1af35bbb29b369c0970e692401a04",
+      "imports": [
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/action-runtime/artifacts.ts",
+      "lines": 101,
+      "sha256": "66b19df9a2dd81aeb242817e7a526456f0104505d3be03a99bc6f47ae62c19c2",
+      "imports": [
+        "api/services/action-runtime/types.ts",
+        "api/services/ai-kernel/types.ts",
+        "api/services/finance-semantic-layer/category-matcher.ts"
+      ]
+    },
+    {
+      "file": "api/services/action-runtime/extended-actions.ts",
+      "lines": 1084,
+      "sha256": "e543a7af62c3c62687675b61633ec859c0c7af12cb4d358685fa7360ac65438e",
+      "imports": [
+        "api/lib/category-registry.ts",
+        "api/lib/muscle-memory.ts",
+        "api/queries/connection.ts",
+        "api/services/action-runtime/types.ts",
+        "api/services/expense-rollups.ts",
+        "api/services/finance-semantic-layer/index.ts",
+        "api/services/user-profile-service.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/action-runtime/goal-create.ts",
+      "lines": 178,
+      "sha256": "b106b264eaa15dfea800261013a3c674c76a16a2b32945472c8cdfddb3c4290e",
+      "imports": [
+        "api/queries/connection.ts",
+        "api/services/action-runtime/types.ts",
+        "api/services/finance-semantic-layer/index.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/action-runtime/index.ts",
+      "lines": 469,
+      "sha256": "f04d12613c162b70c2593724b9ea1f7391721dec7677a1e177c75027b1302907",
+      "imports": [
+        "api/queries/connection.ts",
+        "api/services/action-runtime/artifacts.ts",
+        "api/services/action-runtime/extended-actions.ts",
+        "api/services/action-runtime/goal-create.ts",
+        "api/services/action-runtime/types.ts",
+        "api/services/ai-cost-policy.ts",
+        "api/services/ai-kernel/types.ts",
+        "api/services/ai-memory/index.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/action-runtime/types.ts",
+      "lines": 140,
+      "sha256": "9042c64275ebfeeccb90677c266353b9e391ae9c66c1a7f3e4e2a187ebbafdb4",
+      "imports": [
+        "api/services/ai-kernel/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/adaptive-question-engine.ts",
+      "lines": 375,
+      "sha256": "2fc63ab6a7cc7dc96340f2228bbd883fd955dd611be9bdc0e1d83efcc964cd46",
+      "imports": [
+        "api/services/user-profile-service.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-cost-analytics.ts",
+      "lines": 192,
+      "sha256": "fe19c13024a1567bbd8d548e68cd4adb7dc78d99b41d01a90b9ace426f91f9d3",
+      "imports": [
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-cost-policy.ts",
+      "lines": 706,
+      "sha256": "b9a11697c5795a129a37c339ba376484843f90333b7c9b80a5665238948d8510",
+      "imports": [
+        "api/queries/connection.ts",
+        "api/services/ai-kernel/types.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-kernel/agent-planner.ts",
+      "lines": 190,
+      "sha256": "c276e42dd8f7d8a169d29117772b6e94b779cf64f7cd479cacf9f5f3dc0d1525",
+      "imports": [
+        "api/lib/fuzzy-match.ts",
+        "api/services/ai-kernel/capability-registry.ts",
+        "api/services/ai-kernel/data-need-compiler.ts",
+        "api/services/ai-kernel/intent-router.ts",
+        "api/services/ai-kernel/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-kernel/ai-trace-logger.ts",
+      "lines": 43,
+      "sha256": "52ff47a6d20b7224cdab31805ab2983af4d87cace75f2b840a755dde30d23415",
+      "imports": [
+        "api/services/ai-kernel/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-kernel/capability-registry.ts",
+      "lines": 390,
+      "sha256": "1d807dc84499e18fd9b47001ca23c0e9a3836eea953f630086acb5c1f762d2f7",
+      "imports": [
+        "api/services/ai-kernel/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-kernel/clarification-machine.ts",
+      "lines": 215,
+      "sha256": "9350be89cf9c2023e57a3cb17de534368b6bd44d1d8575f4c053d1df0a763d68",
+      "imports": [
+        "api/services/ai-kernel/capability-registry.ts",
+        "api/services/ai-kernel/intent-router.ts",
+        "api/services/ai-kernel/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-kernel/context-packer.ts",
+      "lines": 94,
+      "sha256": "ea1307ab3588db5138b7529ed81ffdf7389c2746d7efebf77fc2e3bd212383ce",
+      "imports": [
+        "api/services/ai-cost-policy.ts",
+        "api/services/ai-kernel/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-kernel/data-need-compiler.ts",
+      "lines": 421,
+      "sha256": "295ca0125ed8941e225fc2de5118dbdb1f6813dcbde8ddefa2a7ec710205c642",
+      "imports": [
+        "api/services/ai-kernel/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-kernel/index.ts",
+      "lines": 1549,
+      "sha256": "66b071f82ae6d3123f7d61a00d2927559685184c57a602c2b26874774978f821",
+      "imports": [
+        "api/lib/deepseek-client.ts",
+        "api/lib/fuzzy-match.ts",
+        "api/lib/redis-client.ts",
+        "api/queries/connection.ts",
+        "api/services/ai-cost-policy.ts",
+        "api/services/ai-kernel/agent-planner.ts",
+        "api/services/ai-kernel/ai-trace-logger.ts",
+        "api/services/ai-kernel/context-packer.ts",
+        "api/services/ai-kernel/data-need-compiler.ts",
+        "api/services/ai-kernel/intent-router.ts",
+        "api/services/ai-kernel/response-normalizer.ts",
+        "api/services/ai-kernel/retrieval-policy.ts",
+        "api/services/ai-kernel/types.ts",
+        "api/services/ai-memory/index.ts",
+        "api/services/ai-memory/text-utils.ts",
+        "api/services/finance-semantic-layer/category-matcher.ts",
+        "api/services/finance-semantic-layer/index.ts",
+        "api/services/site-guide/index.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-kernel/intent-router.ts",
+      "lines": 592,
+      "sha256": "a90b458a87c08dd2f54b2e7617bfa58d4e6f9633989af42ef2c0845488faf8dc",
+      "imports": [
+        "api/lib/taxonomy-ssot.ts",
+        "api/services/ai-kernel/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-kernel/response-normalizer.ts",
+      "lines": 55,
+      "sha256": "e365bca72a22a3e92d7969ca4dea7a7af4e39a1c5ef340c11fed5726f095f502",
+      "imports": [
+        "api/services/ai-kernel/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-kernel/retrieval-policy.ts",
+      "lines": 137,
+      "sha256": "f87fb5bd56de859feb446edc2c696c374f29b1c7739a8c2e1e37675b6d19e627",
+      "imports": [
+        "api/services/ai-kernel/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-kernel/types.ts",
+      "lines": 278,
+      "sha256": "d26bce5af6bab5b37ef9be54c1c329221114d76f597ac4c3f97b0718d37e04d8",
+      "imports": []
+    },
+    {
+      "file": "api/services/ai-memory/embedding-backfill.ts",
+      "lines": 158,
+      "sha256": "e20b4a7471bc6841cd32a921cfa0b1a4f325db19ba1e46a9456df1eb31feaa16",
+      "imports": [
+        "api/queries/connection.ts",
+        "api/services/ai-memory/embedding-client.ts",
+        "api/services/ai-memory/embedding-settings.ts",
+        "api/services/ai-memory/text-utils.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-memory/embedding-client.ts",
+      "lines": 159,
+      "sha256": "3bcb313426fd8c4971c469d287bb1f32287ff5136f331dfd2452fd37c2b376ff",
+      "imports": [
+        "api/lib/redis-client.ts",
+        "api/services/ai-cost-policy.ts",
+        "api/services/ai-memory/text-utils.ts",
+        "api/services/ai-memory/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-memory/embedding-settings.ts",
+      "lines": 50,
+      "sha256": "a3a11316377601661ff9d2e8bc9eb0aacd44c6ac81cb82b7f956fe80c7dc8031",
+      "imports": [
+        "api/lib/env.ts",
+        "api/lib/settings-cache.ts",
+        "api/queries/connection.ts",
+        "api/services/ai-memory/types.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-memory/index.ts",
+      "lines": 52,
+      "sha256": "06c1b9d993646921c4aa2efbd0bae448a3782172bb704acd66988fa58f82ec70",
+      "imports": [
+        "api/services/ai-memory/embedding-backfill.ts",
+        "api/services/ai-memory/embedding-client.ts",
+        "api/services/ai-memory/embedding-settings.ts",
+        "api/services/ai-memory/memory-retriever.ts",
+        "api/services/ai-memory/memory-writer.ts",
+        "api/services/ai-memory/qdrant-vector-store.ts",
+        "api/services/ai-memory/quantized-vector-store.ts",
+        "api/services/ai-memory/retrieval-enhancements.ts",
+        "api/services/ai-memory/text-utils.ts",
+        "api/services/ai-memory/types.ts",
+        "api/services/ai-memory/vector-store.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-memory/memory-retriever.ts",
+      "lines": 414,
+      "sha256": "fff75d5e2544fa1c5401e45a1c21e6fdc2b9bcf25119862395c0d01d256d8408",
+      "imports": [
+        "api/lib/redis-client.ts",
+        "api/queries/connection.ts",
+        "api/services/ai-kernel/types.ts",
+        "api/services/ai-memory/embedding-client.ts",
+        "api/services/ai-memory/embedding-settings.ts",
+        "api/services/ai-memory/retrieval-enhancements.ts",
+        "api/services/ai-memory/text-utils.ts",
+        "api/services/ai-memory/types.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-memory/memory-writer.ts",
+      "lines": 504,
+      "sha256": "e04d5e778b25093a61f5bb09c44f004594bd04618beb62fbcc05bc54e7be9519",
+      "imports": [
+        "api/queries/connection.ts",
+        "api/services/ai-memory/embedding-client.ts",
+        "api/services/ai-memory/embedding-settings.ts",
+        "api/services/ai-memory/memory-retriever.ts",
+        "api/services/ai-memory/text-utils.ts",
+        "api/services/ai-memory/types.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-memory/qdrant-vector-store.ts",
+      "lines": 139,
+      "sha256": "4d335959dec4858bdf05bab58f4bed9cd83bda1bce37f7e0d1db9a57cb6520b9",
+      "imports": [
+        "api/services/ai-memory/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-memory/quantized-vector-store.ts",
+      "lines": 121,
+      "sha256": "44863cd19e6098f6b2f42942b0121f1c78d48adeec452d3d00e35fadc871937c",
+      "imports": [
+        "api/services/ai-memory/text-utils.ts",
+        "api/services/ai-memory/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-memory/retrieval-enhancements.ts",
+      "lines": 115,
+      "sha256": "120d521c3239710c3410a4cd4fcd7db49247403b056fef79ac8fa08655ea41c7",
+      "imports": [
+        "api/services/ai-memory/text-utils.ts",
+        "api/services/ai-memory/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-memory/text-utils.ts",
+      "lines": 282,
+      "sha256": "b78164df9990fa892ae675ef99136a6a3880291bdf52869dcfd596711f3f7e69",
+      "imports": []
+    },
+    {
+      "file": "api/services/ai-memory/types.ts",
+      "lines": 127,
+      "sha256": "c9cb137d6a91c9a544c2bd8f0a6f7f484e7c9a2cd943e52207a85ecb200ac802",
+      "imports": [
+        "api/services/ai-kernel/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/ai-memory/vector-store.ts",
+      "lines": 49,
+      "sha256": "354032de73d7a51945d0e496105fcbee11fa7ad34219f8cc8084dfc7867cd059",
+      "imports": [
+        "api/services/ai-memory/retrieval-enhancements.ts",
+        "api/services/ai-memory/text-utils.ts",
+        "api/services/ai-memory/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/classification-usage-ledger.ts",
+      "lines": 152,
+      "sha256": "31a9e0c600858189ddc1ad306e60eb30e7213be2e9c6abb03481a0f9f0bc508f",
+      "imports": [
+        "api/lib/app-time.ts",
+        "api/lib/provider-usage.ts",
+        "api/lib/settings-cache.ts",
+        "api/lib/smart-pipeline.ts",
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/expense-rollups.ts",
+      "lines": 569,
+      "sha256": "3adf9a1afc29829bd1dfb105023070d774a25f445dab0bc9f9369ae9c12d085b",
+      "imports": [
+        "api/lib/app-time.ts",
+        "api/lib/cache-keys.ts",
+        "api/lib/redis-client.ts",
+        "api/queries/connection.ts",
+        "api/services/finance-semantic-layer/index.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/finance-semantic-layer/cache.ts",
+      "lines": 105,
+      "sha256": "d5a6ab344f331d548de3d29a741149ca569a841a00962c935a67950b037244e3",
+      "imports": [
+        "api/lib/cache-keys.ts",
+        "api/lib/category-registry.ts",
+        "api/lib/redis-client.ts"
+      ]
+    },
+    {
+      "file": "api/services/finance-semantic-layer/category-matcher.ts",
+      "lines": 142,
+      "sha256": "b75dc7eebbae825d2414c07f6d2bb3a0db418eccb2ae2b0c80dd62c3e46a449e",
+      "imports": [
+        "api/lib/category-registry.ts"
+      ]
+    },
+    {
+      "file": "api/services/finance-semantic-layer/chart-artifacts.ts",
+      "lines": 80,
+      "sha256": "8a160824697dc5abfcf0468fff1f3c045e7f18aaba3de912994a559bc5cbbfa9",
+      "imports": [
+        "api/services/ai-kernel/types.ts",
+        "api/services/finance-semantic-layer/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/finance-semantic-layer/index.ts",
+      "lines": 45,
+      "sha256": "677c1f6cbcf2293b0b7f2f018895d707ddb4f5678c08b272fe2d72bcb527b7b4",
+      "imports": [
+        "api/services/finance-semantic-layer/cache.ts",
+        "api/services/finance-semantic-layer/category-matcher.ts",
+        "api/services/finance-semantic-layer/chart-artifacts.ts",
+        "api/services/finance-semantic-layer/monthly-report-facts.ts",
+        "api/services/finance-semantic-layer/period-resolver.ts",
+        "api/services/finance-semantic-layer/proactive-insights.ts",
+        "api/services/finance-semantic-layer/resolvers.ts",
+        "api/services/finance-semantic-layer/row-aggregators.ts",
+        "api/services/finance-semantic-layer/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/finance-semantic-layer/monthly-report-facts.ts",
+      "lines": 181,
+      "sha256": "903a28ca1a6cb8c065775de6f2c0aa37d3146c0c9e97ad770c1d0c9a3b757a73",
+      "imports": [
+        "api/queries/connection.ts",
+        "api/services/ai-kernel/types.ts",
+        "api/services/finance-semantic-layer/cache.ts",
+        "api/services/finance-semantic-layer/chart-artifacts.ts",
+        "api/services/finance-semantic-layer/resolvers.ts",
+        "api/services/finance-semantic-layer/types.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/finance-semantic-layer/period-resolver.ts",
+      "lines": 201,
+      "sha256": "0ba9226e90c790573d85b5ddf824017ea9ce8bff0246eb7461cd03a1564186ef",
+      "imports": [
+        "api/services/finance-semantic-layer/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/finance-semantic-layer/proactive-insights.ts",
+      "lines": 160,
+      "sha256": "c550a64a818b0e8826175d4751e53a54cf3ce56a501122cfbb43ea063939ffb6",
+      "imports": [
+        "api/queries/connection.ts",
+        "api/services/ai-kernel/types.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/finance-semantic-layer/resolvers.ts",
+      "lines": 1220,
+      "sha256": "b9e2b0d8c7da57a5245383e797e0e661693e07151d3fdd079d078dc072f1bd50",
+      "imports": [
+        "api/queries/connection.ts",
+        "api/services/ai-kernel/types.ts",
+        "api/services/finance-semantic-layer/cache.ts",
+        "api/services/finance-semantic-layer/category-matcher.ts",
+        "api/services/finance-semantic-layer/chart-artifacts.ts",
+        "api/services/finance-semantic-layer/period-resolver.ts",
+        "api/services/finance-semantic-layer/row-aggregators.ts",
+        "api/services/finance-semantic-layer/types.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/finance-semantic-layer/row-aggregators.ts",
+      "lines": 278,
+      "sha256": "31639a5f3d8fb7416f7bc7e1ade04d28de67ebf42308d57169522d9cd4b48a11",
+      "imports": [
+        "api/services/finance-semantic-layer/category-matcher.ts",
+        "api/services/finance-semantic-layer/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/finance-semantic-layer/types.ts",
+      "lines": 222,
+      "sha256": "f04e9d624cd62a64ef33254064dca06fc6ecf8a795dd663c6f5fc0b63ba63fe4",
+      "imports": [
+        "api/services/ai-kernel/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/financial-month.ts",
+      "lines": 265,
+      "sha256": "9c2213ae59106f98b6a83ecc0555708685580f82ab31e9741cbb8eff38b43800",
+      "imports": [
+        "api/lib/app-time.ts"
+      ]
+    },
+    {
+      "file": "api/services/firebase.ts",
+      "lines": 35,
+      "sha256": "531de6cb881830fa04507aa70499bfb3a1ba0839a40b8367155e248f3be31554",
+      "imports": [
+        "api/lib/env.ts"
+      ]
+    },
+    {
+      "file": "api/services/lifestyle-inference-engine.ts",
+      "lines": 263,
+      "sha256": "cb1bb56d8a982292a049c8e751cfee24de83b0ee89362364943a4c3ae8af7bd3",
+      "imports": [
+        "api/queries/connection.ts",
+        "api/services/user-profile-service.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/otp-cache.ts",
+      "lines": 92,
+      "sha256": "ac95d7131f9ae18922bc695249de9b871d368bf597e50d3bb8bbd9b24c90cdf1",
+      "imports": [
+        "api/local-auth-utils.ts"
+      ]
+    },
+    {
+      "file": "api/services/parser-trace.ts",
+      "lines": 83,
+      "sha256": "bbdbe64d37e0f21f3ee17246eb42960d7e4283da5a93da8d91610c9806464590",
+      "imports": [
+        "api/lib/smart-pipeline.ts"
+      ]
+    },
+    {
+      "file": "api/services/personal-context-builder.ts",
+      "lines": 297,
+      "sha256": "2a8c27b574dec6f8f4e2e4e0343e5878771f436aa18221de70b157b070240433",
+      "imports": [
+        "api/lib/relationship-normalizer.ts",
+        "api/services/user-profile-service.ts"
+      ]
+    },
+    {
+      "file": "api/services/pro-report-engine.ts",
+      "lines": 140,
+      "sha256": "3626b52b9d3397a5827083f8d07354ddce48aeb4826dc676bb4a946bc3b50f86",
+      "imports": [
+        "api/services/lifestyle-inference-engine.ts",
+        "api/services/report-personalization-engine.ts",
+        "api/services/user-profile-service.ts"
+      ]
+    },
+    {
+      "file": "api/services/report-personalization-engine.ts",
+      "lines": 198,
+      "sha256": "8b54a389ae8464ec7ae8cddf91cbed8ed37a768a9a59bff7358f62fd712fc72e",
+      "imports": [
+        "api/services/lifestyle-inference-engine.ts",
+        "api/services/user-profile-service.ts"
+      ]
+    },
+    {
+      "file": "api/services/site-guide/embedding.ts",
+      "lines": 73,
+      "sha256": "98508b6de7f98bc47518fc552c6d4d9043e15c2995cf2b9b12ff693c719d2e0d",
+      "imports": []
+    },
+    {
+      "file": "api/services/site-guide/index.ts",
+      "lines": 13,
+      "sha256": "a35e883533b770e30b63d2874824e864b5a65022465128eb46bbe4a22b7a4dee",
+      "imports": [
+        "api/services/site-guide/embedding.ts",
+        "api/services/site-guide/knowledge-base.ts",
+        "api/services/site-guide/retriever.ts",
+        "api/services/site-guide/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/site-guide/knowledge-base.ts",
+      "lines": 103,
+      "sha256": "e4fa07331e2ee415037198f9f0e511dbb0c54f133c1454609b440d5431ca850b",
+      "imports": [
+        "api/services/site-guide/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/site-guide/retriever.ts",
+      "lines": 147,
+      "sha256": "2dea4129314e75063928eb90ebbc698021630cf583abf20f942b4f82131c4633",
+      "imports": [
+        "api/services/ai-kernel/types.ts",
+        "api/services/site-guide/embedding.ts",
+        "api/services/site-guide/knowledge-base.ts",
+        "api/services/site-guide/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/site-guide/types.ts",
+      "lines": 28,
+      "sha256": "22e488717eb6e1b31d3da069976da2f9b3529094ccd0e491bb26744d4393b709",
+      "imports": [
+        "api/services/ai-kernel/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/user-profile-service.ts",
+      "lines": 1133,
+      "sha256": "af4c33aea6bf77ef9008ea2b5cf0f1d26e238561306b94f14b0972770d4334ce",
+      "imports": [
+        "api/lib/muscle-memory.ts",
+        "api/lib/person-resolver.ts",
+        "api/lib/relationship-normalizer.ts",
+        "api/lib/smart-pipeline.ts",
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/user-purge-service.ts",
+      "lines": 143,
+      "sha256": "3de2c77cff82a91ea69217c8124b1f0a299bdd67c9757b186e32b59feac4ea78",
+      "imports": [
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/voice-kernel/hot-context.ts",
+      "lines": 204,
+      "sha256": "d48d7a4344b061650e231dc17b153d602d74433b4390d07bb371c7878d22fd47",
+      "imports": [
+        "api/queries/connection.ts",
+        "api/services/finance-semantic-layer/index.ts",
+        "api/services/finance-semantic-layer/types.ts",
+        "api/services/voice-kernel/types.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/voice-kernel/index.ts",
+      "lines": 22,
+      "sha256": "03eb0b5856c777fb1f79f8b7e8ef21e0221bdea8c48d6842f53e34b6b527a9eb",
+      "imports": [
+        "api/services/voice-kernel/hot-context.ts",
+        "api/services/voice-kernel/types.ts",
+        "api/services/voice-kernel/voice-call-archive.ts",
+        "api/services/voice-kernel/voice-prefetch.ts",
+        "api/services/voice-kernel/voice-prompt.ts",
+        "api/services/voice-kernel/voice-session-state.ts",
+        "api/services/voice-kernel/voice-tool-adapter.ts"
+      ]
+    },
+    {
+      "file": "api/services/voice-kernel/types.ts",
+      "lines": 161,
+      "sha256": "6e1b051f82a62fe2ff8ae40177fca1f3f2b607276da91547e29e8a760521ffe6",
+      "imports": [
+        "api/services/action-runtime/types.ts",
+        "api/services/ai-kernel/retrieval-policy.ts",
+        "api/services/ai-kernel/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/voice-kernel/voice-call-archive.ts",
+      "lines": 75,
+      "sha256": "41ecd12ab94d49d57eccd5ffab7a40a9d62e311d9fb482b1f144aa8d5b5dc436",
+      "imports": [
+        "api/queries/connection.ts",
+        "api/services/ai-memory/index.ts",
+        "api/services/voice-kernel/types.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/services/voice-kernel/voice-prefetch.ts",
+      "lines": 87,
+      "sha256": "2e44763bb771573f50bca8e34fee138a1b787035015f347aea0624537134a981",
+      "imports": [
+        "api/services/ai-kernel/index.ts",
+        "api/services/ai-kernel/types.ts",
+        "api/services/finance-semantic-layer/index.ts",
+        "api/services/voice-kernel/types.ts",
+        "api/services/voice-kernel/voice-session-state.ts"
+      ]
+    },
+    {
+      "file": "api/services/voice-kernel/voice-prompt.ts",
+      "lines": 21,
+      "sha256": "cefbbe995b5c13e09a79e0b9ef7b3aae4d08f360e818177c24412a33f06e09ec",
+      "imports": [
+        "api/services/voice-kernel/hot-context.ts",
+        "api/services/voice-kernel/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/voice-kernel/voice-session-state.ts",
+      "lines": 192,
+      "sha256": "5b56c67bb27f9a149c004661085bf6408b71671afba3c0e9d69d1454a23d669e",
+      "imports": [
+        "api/lib/redis-client.ts",
+        "api/services/voice-kernel/types.ts"
+      ]
+    },
+    {
+      "file": "api/services/voice-kernel/voice-tool-adapter.ts",
+      "lines": 626,
+      "sha256": "6313f06c5c471d4b222d3e26942351728fb7352a6cbb1dc518297f8ab04861e3",
+      "imports": [
+        "api/lib/deepseek-client.ts",
+        "api/services/action-runtime/index.ts",
+        "api/services/action-runtime/types.ts",
+        "api/services/ai-kernel/retrieval-policy.ts",
+        "api/services/ai-kernel/types.ts",
+        "api/services/ai-memory/index.ts",
+        "api/services/finance-semantic-layer/index.ts",
+        "api/services/voice-kernel/types.ts",
+        "api/services/voice-kernel/voice-session-state.ts"
+      ]
+    },
+    {
+      "file": "api/services/whatsapp-service.ts",
+      "lines": 349,
+      "sha256": "7ce139e240f6e520c0492ae783eb6399aaa1273f7106171e67dd47e5e71b019c",
+      "imports": [
+        "api/queries/connection.ts",
+        "api/services/otp-cache.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/session-router.ts",
+      "lines": 153,
+      "sha256": "c4936ca8ec9cdb95ff7932d247cc34b3b2285bd711a5592a42848ccaf842632e",
+      "imports": [
+        "api/lib/admin-safe-fields.ts",
+        "api/lib/cache-keys.ts",
+        "api/lib/redis-client.ts",
+        "api/lib/session-validation.ts",
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/sms-router.ts",
+      "lines": 935,
+      "sha256": "804c4eb8d47b61c51d31d2bf3be71caa4510f5acad7a40f7a6031b4fd6db04c7",
+      "imports": [
+        "api/lib/env.ts",
+        "api/lib/session-validation.ts",
+        "api/lib/settings-cache.ts",
+        "api/lib/shortcut-generator.ts",
+        "api/lib/sms-ai-parser.ts",
+        "api/lib/sms-rule-parser.ts",
+        "api/queries/connection.ts",
+        "api/services/expense-rollups.ts",
+        "api/services/finance-semantic-layer/index.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/support-router.ts",
+      "lines": 245,
+      "sha256": "939f844958e97496f2befb5f3dad0497432951252d7495cd81fca0265f50a905",
+      "imports": [
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/wallet-router.ts",
+      "lines": 126,
+      "sha256": "cb55cd124ef18c82be472a878b1ce80203237c9e226ea85e3bd23e84dd80a586",
+      "imports": [
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "api/webauthn-router.ts",
+      "lines": 332,
+      "sha256": "ed5801ae6fe44aa270c2ed3425fe159c75a531f043ae46e55c6651e5d05e6b98",
+      "imports": [
+        "api/lib/env.ts",
+        "api/lib/get-client-ip.ts",
+        "api/lib/origin-policy.ts",
+        "api/local-auth-utils.ts",
+        "api/middleware.ts",
+        "api/queries/connection.ts",
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "contracts/constants.ts",
+      "lines": 20,
+      "sha256": "6f4750124a7c451064d8779aeaaba0fc054689e078f1765ae22800f732eb1de0",
+      "imports": []
+    },
+    {
+      "file": "contracts/plans.ts",
+      "lines": 57,
+      "sha256": "e2c64f7e88fc6b95135f8c1457d70a42f0396e8eb0afd0a91d0014cc5850f999",
+      "imports": []
+    },
+    {
+      "file": "db/relations.ts",
+      "lines": 524,
+      "sha256": "95370e08bdc38cdd3b1e7989cc72090fa849f541d9836187604dfe8205f0701d",
+      "imports": [
+        "db/schema.ts"
+      ]
+    },
+    {
+      "file": "db/schema.ts",
+      "lines": 1342,
+      "sha256": "25f72f069cd56106483d0e1e5026fa994e30055dbe52a5d69f41b74794b47888",
+      "imports": []
+    },
+    {
+      "file": "src/components/admin/ai-center/modals/TokenAnatomyModal.tsx",
+      "lines": 289,
+      "sha256": "05fef047a975eed808a3ff338f2ff57f81d1bb7e48262f955cef1e62c2215e72",
+      "imports": [
+        "src/components/ui/badge.tsx",
+        "src/components/ui/dialog.tsx",
+        "src/lib/ai-usage-display.ts"
+      ]
+    },
+    {
+      "file": "src/components/admin/ai-center/tabs/AiTelemetryTab.tsx",
+      "lines": 224,
+      "sha256": "86d48820f4654b17a67681fc8b447bb97aaf5c0b80ec92fb5192c3eaaeec031b",
+      "imports": [
+        "src/components/admin/ai-center/tabs/AiUsageLedgerTable.tsx",
+        "src/components/ui/badge.tsx",
+        "src/components/ui/button.tsx",
+        "src/components/ui/card.tsx",
+        "src/providers/trpc.ts"
+      ]
+    },
+    {
+      "file": "src/components/admin/ai-center/tabs/AiUsageLedgerTable.tsx",
+      "lines": 148,
+      "sha256": "2eadc1d2754af725a6bc25ee17f43ffe0a84894d919179dd3d3987b850415ee5",
+      "imports": [
+        "src/components/admin/ai-center/modals/TokenAnatomyModal.tsx",
+        "src/lib/ai-usage-display.ts",
+        "src/providers/trpc.ts"
+      ]
+    },
+    {
+      "file": "src/components/expenses/ExpenseForm.tsx",
+      "lines": 2494,
+      "sha256": "8e690281d956192f909e28bf36ba1f92c427085b903c213c4109a085976433f9",
+      "imports": [
+        "contracts/constants.ts",
+        "src/components/ui/adaptive-dialog.tsx",
+        "src/components/ui/badge.tsx",
+        "src/components/ui/button.tsx",
+        "src/components/ui/card.tsx",
+        "src/components/ui/haptic-button.tsx",
+        "src/components/ui/input.tsx",
+        "src/components/ui/label.tsx",
+        "src/hooks/useHaptics.ts",
+        "src/lib/clientRulesEngine.ts",
+        "src/lib/compress-image.ts",
+        "src/lib/financial-taxonomy.ts",
+        "src/lib/utils.ts",
+        "src/providers/trpc.ts"
+      ]
+    },
+    {
+      "file": "src/components/pwa/PwaOfflineSyncDialog.tsx",
+      "lines": 289,
+      "sha256": "ff584e17e6730ec25b638ce9411185811b4416d0bd1b4811a9e01e64c373cf7e",
+      "imports": [
+        "src/components/ui/button.tsx",
+        "src/lib/utils.ts"
+      ]
+    },
+    {
+      "file": "src/components/ui/adaptive-dialog.tsx",
+      "lines": 326,
+      "sha256": "49c2e6255ec15360f0a01d8731672378dcb3266833ba35cccc817a286535cc0f",
+      "imports": [
+        "src/components/ui/dialog.tsx",
+        "src/components/ui/drawer.tsx",
+        "src/hooks/useMediaQuery.ts",
+        "src/hooks/useSheetManager.ts",
+        "src/lib/utils.ts"
+      ]
+    },
+    {
+      "file": "src/components/ui/badge.tsx",
+      "lines": 47,
+      "sha256": "75697a98ec89e6d73d7326268b79e465141d4b23c29f2e5f430158ccd338adfe",
+      "imports": [
+        "src/lib/utils.ts"
+      ]
+    },
+    {
+      "file": "src/components/ui/button.tsx",
+      "lines": 72,
+      "sha256": "5ed8985b8e2f64da33157af13d7fa96eb05a3b4b76b661fd2febc50a19cb85a2",
+      "imports": [
+        "src/lib/utils.ts"
+      ]
+    },
+    {
+      "file": "src/components/ui/card.tsx",
+      "lines": 93,
+      "sha256": "c922064f5ada39f740b67d3c0b5e2fa3a6cef054d4aaaf028f3142980d83412c",
+      "imports": [
+        "src/lib/utils.ts"
+      ]
+    },
+    {
+      "file": "src/components/ui/dialog.tsx",
+      "lines": 140,
+      "sha256": "01619d1028d57d03331a5deef05ba011507db038e41a78b490483c8378cc4188",
+      "imports": [
+        "src/lib/utils.ts"
+      ]
+    },
+    {
+      "file": "src/components/ui/drawer.tsx",
+      "lines": 139,
+      "sha256": "d22e09173ae090829ad231481b5b72d3dfc7edbf5942665dab2087bd2e878e87",
+      "imports": [
+        "src/lib/utils.ts"
+      ]
+    },
+    {
+      "file": "src/components/ui/haptic-button.tsx",
+      "lines": 17,
+      "sha256": "b15ee097953410f0806afa9b47d4924a097d4ef351bdc0b00102bf642c05a13e",
+      "imports": [
+        "src/components/ui/button.tsx",
+        "src/hooks/useHaptics.ts"
+      ]
+    },
+    {
+      "file": "src/components/ui/input.tsx",
+      "lines": 22,
+      "sha256": "55ec98d193a9d68e52e6598bce25249f87678f3078ccfe73ea254366df08c5a8",
+      "imports": [
+        "src/lib/utils.ts"
+      ]
+    },
+    {
+      "file": "src/components/ui/label.tsx",
+      "lines": 25,
+      "sha256": "a5439d0dd3a6672da702f365c95ad958fa0eadfce5988d420466400a47fc9ea5",
+      "imports": [
+        "src/lib/utils.ts"
+      ]
+    },
+    {
+      "file": "src/hooks/useAuth.ts",
+      "lines": 337,
+      "sha256": "19e87f123a7ed8dfd8d5b7ed3e8b004b8fcf779ff15e37a7f33ac050bda92f47",
+      "imports": [
+        "src/lib/queryPersister.ts",
+        "src/providers/trpc.ts"
+      ]
+    },
+    {
+      "file": "src/hooks/useHaptics.ts",
+      "lines": 162,
+      "sha256": "41f044be0c1738d47c2301fb4b16b519a7db31ebdca50b2aca6dd4490a76572f",
+      "imports": []
+    },
+    {
+      "file": "src/hooks/useMediaQuery.ts",
+      "lines": 43,
+      "sha256": "42dc7a64a3e59079aa4f03ea6cee9157799baddfb51dcd9283f5ba50adb61ba0",
+      "imports": []
+    },
+    {
+      "file": "src/hooks/useSheetManager.ts",
+      "lines": 73,
+      "sha256": "fcafa9b94d0a120f4916001965cee76e0ed5eb403c5bbb4eda91c5779284bca7",
+      "imports": [
+        "src/lib/back-button-manager.ts"
+      ]
+    },
+    {
+      "file": "src/lib/ai-usage-display.ts",
+      "lines": 60,
+      "sha256": "f94182f89daa9a6e2ecf00589cda6fd48339f8aa8b5dfd3996a8b7e828cd2bc3",
+      "imports": []
+    },
+    {
+      "file": "src/lib/back-button-manager.ts",
+      "lines": 182,
+      "sha256": "e0c781b7d6be822706ad2da5a52a3007fdfbacdc1cb147f5c98a5b21139f173e",
+      "imports": []
+    },
+    {
+      "file": "src/lib/clientRulesEngine.ts",
+      "lines": 247,
+      "sha256": "bbfe4f5776d06e922159349027573d06693902090ec655118983b3ca9e1c3c94",
+      "imports": []
+    },
+    {
+      "file": "src/lib/compress-image.ts",
+      "lines": 33,
+      "sha256": "c5f902448ceea65a7f420fda00346ca3c5fcd07da3bb77208e110be7de350e0d",
+      "imports": []
+    },
+    {
+      "file": "src/lib/financial-taxonomy.ts",
+      "lines": 160,
+      "sha256": "ae563330be802fa8b6ab2c56639e1d65a0d8e5920203966364cc4cb65880324b",
+      "imports": []
+    },
+    {
+      "file": "src/lib/queryPersister.ts",
+      "lines": 221,
+      "sha256": "e18e0d457fcae9ea19c736ddc0ef842b73a43b423c9f0fe03f27c6d2102b7544",
+      "imports": []
+    },
+    {
+      "file": "src/lib/utils.ts",
+      "lines": 50,
+      "sha256": "6c53dab75ea264e1c8ce54fe5d22d8a2fade2c15fd5542c99dd8bd1e75f3d37d",
+      "imports": []
+    },
+    {
+      "file": "src/providers/trpc.ts",
+      "lines": 347,
+      "sha256": "f98ce703853b8d766add898fb7539b3bbee24ebb6afa33a236ebbd6034e74997",
+      "imports": [
+        "api/router.ts"
+      ]
+    }
+  ]
+}

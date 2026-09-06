@@ -1,7 +1,8 @@
 /**
  * SMS Ingestion Router — SmartSpend
  * Receives financial SMS from iOS Shortcuts (or any automation tool),
- * parses them via AI, and saves them as Transactions.
+ * extracts source evidence and persists owner-scoped review drafts.
+ * A separate authenticated confirmation saves validated financial records.
  *
  * Endpoints:
  *   POST /api/sms/ingest  — Main ingestion endpoint (uses Webhook Token auth)
@@ -9,29 +10,49 @@
  *   GET  /api/sms/token   — Get current token (requires user session)
  *   GET  /api/sms/logs    — Get SMS processing logs (requires user session)
  */
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { getDb } from "./queries/connection";
 import {
   webhookTokens,
   rawSmsEvents,
-  expenses,
+  financialCaptures,
   users,
   localUsers,
 } from "../db/schema";
-import { eq, and, desc, gte } from "drizzle-orm";
+import { eq, and, desc, gte, lt, sql } from "drizzle-orm";
 import {
-  parseSmsFinancialData,
-  mapSmsToExpenseCategory,
-  type SmsParseResult,
-} from "./lib/sms-ai-parser";
-import { parseSmsByRules } from "./lib/sms-rule-parser";
+  notificationInputSchema,
+  notificationToDraft,
+} from "./lib/notification-evidence";
+import {
+  createCapture,
+  captureHash,
+  findCaptureForRequest,
+} from "./services/financial-capture-store";
+import { getSystemSettings } from "./lib/settings-cache";
+import { TRPCError } from "@trpc/server";
 import { randomBytes } from "crypto";
-import { env } from "./lib/env";
 import { validateActiveSessionToken } from "./lib/session-validation";
 import { getCookie } from "hono/cookie";
-import { bumpFinanceCacheGen } from "./services/finance-semantic-layer";
+import { businessMonthRange } from "./lib/app-time";
 
 export const smsApp = new Hono();
+smsApp.onError((_error, c) => {
+  // Database errors can include a webhook credential in bound query parameters.
+  console.warn("[SMS] Request could not be completed; retry is required");
+  return c.json(
+    { error: "تعذر إكمال الطلب. احتفظ بالإشعار وأعد المحاولة." },
+    503,
+  );
+});
+smsApp.use(
+  "/ingest",
+  bodyLimit({
+    maxSize: 80_000,
+    onError: (c) => c.json({ error: "Notification body too large" }, 413),
+  }),
+);
 
 // ─── Rate limit: simple in-memory per-token tracker ───
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -132,15 +153,19 @@ function exchangeMagicCode(code: string): { token: string } | null {
 }
 
 // ─── Helper: resolve user from session JWT (for protected endpoints) ───
-async function getUserFromSession(c: any): Promise<{
+async function getUserFromSession(c: Context): Promise<{
   id: number;
   type: "local" | "oauth";
 } | null> {
   // 1. Try Google OAuth cookie first
   const googleToken = getCookie(c, "google_session");
   if (googleToken) {
-    const activeSession = await validateActiveSessionToken(googleToken, "oauth");
-    if (activeSession) return { id: activeSession.userId, type: activeSession.userType };
+    const activeSession = await validateActiveSessionToken(
+      googleToken,
+      "oauth",
+    );
+    if (activeSession)
+      return { id: activeSession.userId, type: activeSession.userType };
   }
 
   // 2. Try Bearer token in Authorization header
@@ -149,7 +174,8 @@ async function getUserFromSession(c: any): Promise<{
     const token = authHeader.slice(7).trim();
     if (token) {
       const activeSession = await validateActiveSessionToken(token);
-      if (activeSession) return { id: activeSession.userId, type: activeSession.userType };
+      if (activeSession)
+        return { id: activeSession.userId, type: activeSession.userType };
     }
   }
   return null;
@@ -191,344 +217,117 @@ smsApp.post("/ingest", async (c) => {
     return c.json({ error: "Rate limit exceeded. Max 30 SMS per hour." }, 429);
   }
 
-  // Parse request body
-  let body: {
-    message?: string;
-    sender?: string;
-    timestamp?: string;
-  };
+  let rawBody: unknown;
   try {
-    body = await c.req.json();
+    rawBody = await c.req.json();
   } catch {
     return c.json({ error: "Invalid JSON body" }, 400);
   }
-
-  const { message, sender, timestamp } = body;
-
-  if (!message || typeof message !== "string" || message.trim().length < 5) {
-    return c.json({ error: "Missing or too short 'message' field" }, 400);
-  }
-
-  const userId = tokenRecord.userId;
-  const userType = tokenRecord.userType as "local" | "oauth";
-
-  // ── Plan-based limits ──
-  const userTable = userType === "oauth" ? users : localUsers;
-  const [userRecord] = await db
-    .select()
-    .from(userTable)
-    .where(eq(userTable.id, userId as any))
+  const validated = notificationInputSchema.safeParse(rawBody);
+  if (!validated.success)
+    return c.json({ error: "Invalid notification fields" }, 400);
+  const input = validated.data;
+  const owner = {
+    id: tokenRecord.userId,
+    type: tokenRecord.userType as "local" | "oauth",
+  };
+  if (!["local", "oauth"].includes(owner.type))
+    return c.json({ error: "Invalid owner" }, 403);
+  const table = owner.type === "oauth" ? users : localUsers;
+  const [ownerRow] = await db
+    .select({ id: table.id, plan: table.plan })
+    .from(table)
+    .where(eq(table.id, owner.id))
     .limit(1);
-  const userPlan = (userRecord as any)?.plan || "free";
-
-  // Get configurable limit from system_settings (admin dashboard), default: free=5, pro/ultra=unlimited
-  let smsMonthlyLimit = userPlan === "free" ? 5 : 999999;
+  if (!ownerRow) return c.json({ error: "Account unavailable" }, 403);
+  const draft = notificationToDraft(input);
+  // OTP is discarded before durable storage, telemetry or provider calls.
+  if (draft.ignoredReason === "sensitive_authentication")
+    return c.json({ received: true, saved: false, status: "ignored" });
+  const key =
+    input.eventId ||
+    captureHash([input.sender || "", input.message, input.timestamp || ""]);
   try {
-    const { getSystemSettings } = await import("./lib/settings-cache");
-    const settings = await getSystemSettings();
-    const val = settings[`sms_limit_${userPlan}`];
-    if (val)
-      smsMonthlyLimit = parseInt(val) || smsMonthlyLimit;
-  } catch {
-    /* use default */
-  }
-
-  // Count processed SMS this month
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const { sql: sqlFn } = await import("drizzle-orm");
-  const [countResult] = await db
-    .select({ count: sqlFn`COUNT(*)` })
-    .from(rawSmsEvents)
-    .where(
-      and(
-        eq(rawSmsEvents.userId, userId),
-        eq(rawSmsEvents.userType, userType),
-        eq(rawSmsEvents.status, "processed"),
-        gte(rawSmsEvents.createdAt, monthStart),
-      ),
-    );
-  const usedThisMonth = Number((countResult as any)?.count || 0);
-
-  if (usedThisMonth >= smsMonthlyLimit) {
-    return c.json(
-      {
-        error: `الحد الشهري للرسائل (${smsMonthlyLimit}) انتهى. قم بترقية خطتك لزيادة الحد.`,
-        limit: smsMonthlyLimit,
-        used: usedThisMonth,
-        plan: userPlan,
-      },
-      403,
-    );
-  }
-
-  // Prevent duplicate SMS submissions (same user, exact message within last 24h)
-  const duplicateCheck = await db
-    .select({ id: rawSmsEvents.id })
-    .from(rawSmsEvents)
-    .where(
-      and(
-        eq(rawSmsEvents.userId, userId),
-        eq(rawSmsEvents.userType, userType),
-        eq(rawSmsEvents.message, message.trim()),
-        gte(rawSmsEvents.createdAt, new Date(Date.now() - 24 * 60 * 60 * 1000)),
-      ),
-    )
-    .limit(1);
-
-  if (duplicateCheck.length > 0) {
-    return c.json(
-      {
-        error: "Duplicate SMS: this message was already received recently.",
-        duplicate: true,
-      },
-      409,
-    );
-  }
-
-  // ── Step 1: Save Raw SMS Event (Audit Log) ──
-  let smsId: number | null = null;
-  try {
-    const [inserted] = await db.insert(rawSmsEvents).values({
-      userId,
-      userType,
-      message: message.trim(),
-      sender: sender?.trim() || null,
-      smsTimestamp: timestamp?.trim() || null,
-      status: "pending",
-    });
-    smsId = (inserted as any)?.insertId || null;
-  } catch (err) {
-    console.error("[SMS Ingest] Failed to record raw SMS event:", err);
-  }
-
-  // ── Step 2: Run Rule-Based Parser (Fast Path) ──
-  const ruleResult = parseSmsByRules(message);
-
-  // ── Step 3: Hybrid Engine Selection (Rules vs AI) ──
-  let parseResult: SmsParseResult | null = null;
-  let parsedBy: "rules" | "ai" | "rules_fallback" = "rules";
-
-  // Fast path: high-confidence rule match (>= 0.85) bypasses AI call
-  if (ruleResult.transaction_detected && ruleResult.confidence >= 0.85 && ruleResult.amount) {
-    parseResult = {
-      transaction_detected: true,
-      amount: ruleResult.amount,
-      currency: ruleResult.currency || "EGP",
-      direction: ruleResult.direction,
-      provider: (ruleResult.provider as any) || "Unknown",
-      category: (ruleResult.category as any) || "unknown",
-      fee: ruleResult.fee,
-      merchant: ruleResult.merchant,
-      balance_after: ruleResult.balance_after,
-      confidence: ruleResult.confidence,
-      raw_extracted: { rule_result: ruleResult },
-    };
-    parsedBy = "rules";
-  } else {
-    // Fall back to Gemini AI parser with tenant-isolated user context
-    const aiResult = await parseSmsFinancialData(message, { userId, userType });
-    if (aiResult && aiResult.transaction_detected && aiResult.confidence >= 0.6 && aiResult.amount) {
-      parseResult = aiResult;
-      parsedBy = "ai";
-    } else if (ruleResult.transaction_detected && ruleResult.amount) {
-      // Secondary fallback to rule result if AI was inconclusive or returned null
-      parseResult = {
-        transaction_detected: true,
-        amount: ruleResult.amount,
-        currency: ruleResult.currency || "EGP",
-        direction: ruleResult.direction,
-        provider: (ruleResult.provider as any) || "Unknown",
-        category: (ruleResult.category as any) || "unknown",
-        fee: ruleResult.fee,
-        merchant: ruleResult.merchant,
-        balance_after: ruleResult.balance_after,
-        confidence: ruleResult.confidence,
-        raw_extracted: { rule_result: ruleResult, ai_result: aiResult },
-      };
-      parsedBy = "rules_fallback";
-    } else {
-      parseResult = aiResult || {
-        transaction_detected: false,
-        amount: null,
-        currency: "EGP",
-        direction: null,
-        provider: "Unknown",
-        category: "unknown",
-        fee: null,
-        merchant: null,
-        balance_after: null,
-        confidence: 0,
-        raw_extracted: {},
-      };
-    }
-  }
-
-  // If no financial transaction detected or invalid amount/low confidence -> ignore and return
-  if (!parseResult.transaction_detected || !parseResult.amount || parseResult.confidence < 0.5) {
-    if (smsId) {
-      await db
-        .update(rawSmsEvents)
-        .set({
-          status: "ignored",
-          metadata: {
-            reason: !parseResult.transaction_detected
-              ? "not_financial"
-              : "low_confidence",
-            confidence: parseResult.confidence,
-            parsed_by: parsedBy,
-            rule_result: {
-              transaction_detected: ruleResult.transaction_detected,
-              amount: ruleResult.amount,
-              direction: ruleResult.direction,
-              confidence: ruleResult.confidence,
-              matched_rule: ruleResult.matched_rule,
-              provider: ruleResult.provider,
-            },
-          },
-        })
-        .where(eq(rawSmsEvents.id, smsId));
-    }
-    return c.json(
-      {
-        success: true,
-        transaction_detected: false,
-        reason: !parseResult.transaction_detected
-          ? "not_financial"
-          : "low_confidence",
-        confidence: parseResult.confidence,
-        rule_result: {
-          transaction_detected: ruleResult.transaction_detected,
-          amount: ruleResult.amount,
-          direction: ruleResult.direction,
-          confidence: ruleResult.confidence,
-          matched_rule: ruleResult.matched_rule,
-          provider: ruleResult.provider,
-        },
-      },
-      200,
-    );
-  }
-
-  // ── Step 4: Save as Transaction ──
-  const { category, subCategory, type } = mapSmsToExpenseCategory(parseResult);
-
-  const descriptionParts = [
-    parseResult.provider !== "Unknown" ? parseResult.provider : null,
-    parseResult.merchant || null,
-    sender ? `من: ${sender}` : null,
-  ].filter(Boolean);
-
-  const description = descriptionParts.join(" — ") || "SMS تلقائي";
-
-  let transactionDate = timestamp ? new Date(timestamp) : new Date();
-  if (isNaN(transactionDate.getTime())) {
-    transactionDate = new Date();
-  }
-
-  await db.transaction(async (tx) => {
-    const metadataObj = {
-      sms_id: smsId,
-      provider: parseResult!.provider,
-      direction: parseResult!.direction,
-      sms_category: parseResult!.category,
-      confidence: parseResult!.confidence,
-      fee: parseResult!.fee,
-      balance_after: parseResult!.balance_after,
-      parsed_by: parsedBy,
-    };
-
-    const [insertResult] = await tx.insert(expenses).values({
-      userId,
-      userType,
-      type,
-      amount: parseResult!.amount!.toString(),
-      category,
-      subCategory,
-      description,
-      rawText: message.trim(),
-      source: "sms",
-      date: transactionDate,
-      parsedMetadata: metadataObj,
-    });
-
-    const {
-      applyExpenseRollupDelta,
-      expenseToRollupDelta,
-      syncExpenseDetails,
-    } = await import("./services/expense-rollups");
-
-    if (insertResult?.insertId) {
-      await syncExpenseDetails(tx, insertResult.insertId, message.trim(), metadataObj);
-    }
-
-    const delta = expenseToRollupDelta(
-      {
-        userId,
-        userType,
-        date: transactionDate,
-        type,
-        amount: parseResult!.amount!,
-        source: "sms",
-      },
-      1,
-    );
-    await applyExpenseRollupDelta(tx, delta);
-
-    // ── Step 5: Update SMS status ──
-    if (smsId) {
-      await tx
-        .update(rawSmsEvents)
-        .set({
-          status: "processed",
-          metadata: {
-            transaction_saved: true,
-            amount: parseResult!.amount,
-            category,
-            type,
-            confidence: parseResult!.confidence,
-            parsed_by: parsedBy,
-          },
-        })
+    const fingerprint = captureHash([
+      input.sender || "",
+      input.message,
+      input.timestamp || "",
+    ]);
+    const existing = await findCaptureForRequest(owner, key, fingerprint);
+    if (!existing && !draft.ignoredReason) {
+      const plan = ownerRow.plan || "free";
+      const settings = await getSystemSettings();
+      const configured = Number(settings[`sms_limit_${plan}`]);
+      const limit =
+        Number.isFinite(configured) &&
+        configured >= 0 &&
+        settings[`sms_limit_${plan}`] !== undefined
+          ? configured
+          : plan === "free"
+            ? 5
+            : 999999;
+      const month = businessMonthRange();
+      const [used] = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(financialCaptures)
         .where(
           and(
-            eq(rawSmsEvents.id, smsId),
-            eq(rawSmsEvents.userId, userId),
-            eq(rawSmsEvents.userType, userType),
+            eq(financialCaptures.userId, owner.id),
+            eq(financialCaptures.userType, owner.type),
+            gte(financialCaptures.createdAt, month.start),
+            lt(financialCaptures.createdAt, month.endExclusive),
+            sql`${financialCaptures.state} != 'ignored'`,
+            sql`JSON_UNQUOTE(JSON_EXTRACT(${financialCaptures.draft}, '$.channel')) IN ('sms','android_notification','ios_shortcut')`,
           ),
         );
+      const [legacyUsed] = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(rawSmsEvents)
+        .where(
+          and(
+            eq(rawSmsEvents.userId, owner.id),
+            eq(rawSmsEvents.userType, owner.type),
+            eq(rawSmsEvents.status, "processed"),
+            gte(rawSmsEvents.createdAt, month.start),
+            lt(rawSmsEvents.createdAt, month.endExclusive),
+          ),
+        );
+      if (Number(used.count) + Number(legacyUsed.count) >= limit)
+        return c.json(
+          {
+            error:
+              "وصلت للحد الشهري للإشعارات. احتفظ بالرسالة وأعد المحاولة بعد تجديد الحد.",
+            limit,
+          },
+          429,
+        );
     }
-  });
-
-  await bumpFinanceCacheGen(userId, userType);
-
-  console.log(
-    `✅ [SMS Ingest] User ${userId} | ${type} | ${parseResult.amount} EGP | ${category} | ${parseResult.provider}`,
-  );
-
-  return c.json(
-    {
-      success: true,
-      transaction_detected: true,
-      saved: true,
-      amount: parseResult.amount,
-      currency: parseResult.currency,
-      direction: parseResult.direction,
-      provider: parseResult.provider,
-      category,
-      subCategory,
-      type,
-      confidence: parseResult.confidence,
-    },
-    200,
-  );
+    const capture =
+      existing || (await createCapture(owner, key, draft, fingerprint));
+    return c.json(
+      {
+        received: true,
+        saved: capture.state === "saved",
+        status: capture.state,
+        captureId: capture.id,
+        version: capture.version,
+        reviewUrl: "/dashboard",
+        questions: capture.questions,
+        receipt: capture.receipt,
+      },
+      capture.state === "review" ? 202 : 200,
+    );
+  } catch (error) {
+    if (error instanceof TRPCError && error.code === "CONFLICT")
+      return c.json({ error: error.message }, 409);
+    // Client keeps the same request key and retries; never acknowledge a lost draft.
+    return c.json(
+      { error: "Unable to retain notification. Retry with the same eventId." },
+      503,
+    );
+  }
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// POST /api/sms/token/generate
-// Generates a new webhook token for the authenticated user.
-// Requires standard JWT session (same as other tRPC endpoints).
-// ─────────────────────────────────────────────────────────────────────────────
 smsApp.post("/token/generate", async (c) => {
   const db = getDb();
   const user = await getUserFromSession(c);

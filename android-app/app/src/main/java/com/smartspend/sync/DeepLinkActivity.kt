@@ -9,6 +9,7 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AlertDialog
 import androidx.core.text.HtmlCompat
 
 /**
@@ -16,7 +17,7 @@ import androidx.core.text.HtmlCompat
  *
  * Handles two scenarios:
  *   1. Opened via deep link: smartspend://connect?token=TOKEN&url=INGEST_URL
- *      → saves token + url to SharedPreferences, shows "connected" state.
+ *      → validates the HTTPS endpoint and asks the device owner to approve pairing.
  *   2. Opened normally (launcher):
  *      → shows current connection status.
  *
@@ -62,12 +63,22 @@ class DeepLinkActivity : AppCompatActivity() {
             val url   = uri.getQueryParameter("url")
 
             if (!token.isNullOrBlank() && !url.isNullOrBlank()) {
-                val prefs = getSharedPreferences("smartspend", MODE_PRIVATE)
-                prefs.edit()
-                    .putString("webhook_token", token)
-                    .putString("ingest_url", url)
-                    .putLong("connected_at", System.currentTimeMillis())
-                    .apply()
+                val endpoint = Uri.parse(url)
+                if (endpoint.scheme != "https" || endpoint.host.isNullOrBlank() || endpoint.userInfo != null ||
+                    endpoint.path != "/api/sms/ingest" || endpoint.query != null || endpoint.fragment != null || token.length > 512) return
+                // A web link cannot silently replace the destination of financial notifications.
+                AlertDialog.Builder(this)
+                    .setTitle("تأكيد ربط الإشعارات")
+                    .setMessage("سيُرسل نص إشعارات الدفع إلى:\n${endpoint.host}\n\nتأكد أن هذا هو الموقع الذي بدأت منه ربط حسابك. عند تغيير الحساب تبقى الرسائل القديمة في نطاق الربط السابق.")
+                    .setNegativeButton("إلغاء", null)
+                    .setPositiveButton("ربط هذا الحساب") { _, _ ->
+                        getSharedPreferences("smartspend", MODE_PRIVATE).edit()
+                            .putString("webhook_token", token)
+                            .putString("ingest_url", url)
+                            .putLong("connected_at", System.currentTimeMillis())
+                            .commit()
+                        refreshUI()
+                    }.show()
             }
         }
     }
@@ -84,7 +95,9 @@ class DeepLinkActivity : AppCompatActivity() {
             isLinked && hasNotifPerm -> {
                 statusIcon.setImageResource(R.drawable.ic_check_circle)
                 statusTitle.text = "متصل بـ SmartSpend ✅"
-                statusBody.text  = "التطبيق يعمل في الخلفية.\nكل رسائل البنك ستُسجَّل تلقائياً."
+                statusBody.text  = if (prefs.getString("capture_sync_error",null) != null)
+                    "توجد إشعارات تنتظر المزامنة. افتح SmartSpend وراجع الاتصال وحدود الحساب."
+                    else "الإشعارات المتاحة تُرسل للمراجعة في SmartSpend.\nقد لا يعرض الهاتف كل تفاصيل الرسالة."
                 stepIndicator.text = "الحالة: نشط"
                 btnAction.text   = "إغلاق"
                 btnAction.setOnClickListener { finish() }
