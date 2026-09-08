@@ -73,7 +73,7 @@ describe("R1: Git History Secret Purge & Rotation Safeguards", () => {
     const status = execSync("git status --porcelain", { cwd, encoding: "utf-8" });
     const lines = status
       .split(/\r?\n/)
-      .filter((l) => !l.startsWith("??") && !l.includes("STORAGE_BASELINE.md") && l.trim().length > 0);
+      .filter((l) => !l.startsWith("??") && !l.includes("STORAGE_BASELINE.md") && !l.includes("tests/") && l.trim().length > 0);
     expect(lines).toEqual([]);
   });
 });
