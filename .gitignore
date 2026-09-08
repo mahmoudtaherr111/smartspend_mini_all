@@ -38,6 +38,7 @@ scratch/
 whatsapp_auth_info/
 *.txt
 *.jar
+*.bundle
 
 # Build audit artifacts
 .audit-pwa-build*/
