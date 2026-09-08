@@ -1,6 +1,6 @@
 # SmartSpend Database Storage Baseline (P0)
 
-*Generated at:* 2026-09-08T06:15:38.065Z
+*Generated at:* 2026-09-08T06:22:19.980Z
 *Database:* `smartspend`
 *Total Tables Measured:* 56
 *Total Estimated Rows:* ١٬٥٢٠

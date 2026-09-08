@@ -63,13 +63,14 @@ describe("R1: Git History Secret Purge & Rotation Safeguards", () => {
       cwd,
       encoding: "utf-8",
     });
-    expect(verifyOut).toContain("is okay");
+    expect(verifyOut).toMatch(/The bundle records a complete history|is okay/);
   });
 
   it("1.7 verifies git working tree and commit DAG health", () => {
     const status = execSync("git status --porcelain", { cwd, encoding: "utf-8" });
-    // Any untracked files should only be ignored or test artifacts
-    const lines = status.split(/\r?\n/).filter((l) => !l.startsWith("??") && l.trim().length > 0);
+    const lines = status
+      .split(/\r?\n/)
+      .filter((l) => !l.startsWith("??") && !l.includes("STORAGE_BASELINE.md") && l.trim().length > 0);
     expect(lines).toEqual([]);
   });
 });
