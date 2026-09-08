@@ -2,9 +2,21 @@ node_modules
 dist
 
 # Environment files (never commit secrets)
-.env
-.env.local
-.env.*.local
+.env*
+*.env*
+!.env.example
+
+# Credentials & Key Stores
+*.pem
+*.key
+*.cert
+*.pfx
+*.p12
+id_rsa*
+id_ed25519*
+credentials.json
+service-account*.json
+firebase-adminsdk*.json
 
 # Logs
 *.log
@@ -19,23 +31,18 @@ Thumbs.db
 .idea/
 
 # Dev artifacts
+.agents/
 scratch/
 .gemini/
 *.prompt.md
 whatsapp_auth_info/
-*.log
 *.txt
 *.jar
-
 
 # Build audit artifacts
 .audit-pwa-build*/
 .audit-server-build/
 
-# Server logs
-*.log
-
 # Temporary files
 diff.txt
 diff_utf8.txt
-*.jar

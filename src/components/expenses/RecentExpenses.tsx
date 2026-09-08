@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { getTransactionDisplayMeta } from "@/lib/transactionDisplay";
 import {
   AdaptiveDialog,
   AdaptiveDialogContent,
@@ -215,41 +216,16 @@ export function getProviderMeta(provider: string | null | undefined) {
   };
 }
 
-function getTypeMeta(type: string | null | undefined) {
-  if (type === "income") {
-    return {
-      label: "دخل",
-      sign: "+",
-      amountClass: "text-emerald-600",
-      badgeClass:
-        "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200",
-    };
-  }
-  if (type === "transfer") {
-    return {
-      label: "تحويل",
-      sign: "",
-      amountClass: "text-sky-600",
-      badgeClass:
-        "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-200",
-    };
-  }
-  if (type === "investment") {
-    return {
-      label: "استثمار",
-      sign: "",
-      amountClass: "text-amber-600",
-      badgeClass:
-        "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-200",
-    };
-  }
-  return {
-    label: "مصروف",
-    sign: "-",
-    amountClass: "text-rose-600",
-    badgeClass:
-      "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-200",
-  };
+function getTypeMeta(
+  type: string | null | undefined,
+  category?: string | null,
+  parsedMetadata?: any,
+) {
+  return getTransactionDisplayMeta({
+    type,
+    category,
+    parsedMetadata,
+  });
 }
 
 export function RecentExpenses({
@@ -531,7 +507,11 @@ function ExpenseItem({
   isDeleting: boolean;
 }) {
   const date = new Date(expense.date);
-  const typeMeta = getTypeMeta(expense.type);
+  const typeMeta = getTypeMeta(
+    expense.type,
+    expense.category,
+    expense.parsedMetadata,
+  );
   const dateStr = date.toLocaleDateString("ar-EG", {
     day: "numeric",
     month: "short",
@@ -639,12 +619,18 @@ function ExpenseItem({
                     {getProviderMeta(expense.parsedMetadata?.provider).nameAr}
                   </span>
                 </Badge>
-                <Badge
-                  variant="outline"
-                  className="text-[9px] py-0 px-1 bg-indigo-50/50 text-indigo-600 dark:bg-indigo-950/20 dark:text-indigo-300 border-indigo-100 dark:border-indigo-900/40 rounded font-normal"
-                >
-                  مزامنة تلقائية 📱
-                </Badge>
+                {expense.category === "تحويل" ? (
+                  <Badge className={cn("border", typeMeta.badgeClass)}>
+                    {typeMeta.label}
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className="text-[9px] py-0 px-1 bg-indigo-50/50 text-indigo-600 dark:bg-indigo-950/20 dark:text-indigo-300 border-indigo-100 dark:border-indigo-900/40 rounded font-normal"
+                  >
+                    مزامنة تلقائية 📱
+                  </Badge>
+                )}
               </div>
             ) : (
               <Badge className={cn("border-0", typeMeta.badgeClass)}>

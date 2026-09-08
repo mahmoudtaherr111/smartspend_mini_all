@@ -2276,10 +2276,22 @@ function ManualForm({
   const [subCategory, setSubCategory] = useState("عام");
   const [description, setDescription] = useState("");
   const [type, setType] = useState("expense");
+  const [transferDirection, setTransferDirection] = useState<"outgoing" | "incoming">("outgoing");
   const submissionRef = useRef<{ fingerprint: string; id: string } | null>(
     null,
   );
   const isSubmittingManualRef = useRef(false);
+
+  const categoryList = useMemo(() => {
+    const list =
+      Array.isArray(categories) && categories.length > 0
+        ? [...categories]
+        : [...CATEGORY_OPTIONS];
+    if (!list.includes("تحويل")) {
+      list.push("تحويل");
+    }
+    return list;
+  }, [categories]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -2304,8 +2316,16 @@ function ManualForm({
       return;
     }
 
-    if (!category || !category.trim()) {
+    const effectiveCategory = type === "transfer" && !category ? "تحويل" : category;
+    if (!effectiveCategory || !effectiveCategory.trim()) {
       toast.error("يرجى اختيار الفئة الرئيسية.");
+      return;
+    }
+
+    if (subCategory && subCategory.trim().length > ExpenseInputLimits.subCategoryMax) {
+      toast.error(
+        `الفئة الفرعية طويلة جداً — الحد الأقصى ${ExpenseInputLimits.subCategoryMax} حرف.`,
+      );
       return;
     }
 
@@ -2317,11 +2337,13 @@ function ManualForm({
     }
 
     isSubmittingManualRef.current = true;
+    const resolvedSubCategory = subCategory.trim() || "عام";
     const fingerprint = [
       parsedAmount,
       type,
-      category,
-      subCategory,
+      type === "transfer" ? transferDirection : "",
+      effectiveCategory,
+      resolvedSubCategory,
       description,
       businessId ?? "",
     ].join("|");
@@ -2333,13 +2355,15 @@ function ManualForm({
     const payload = {
       amount: parsedAmount,
       type,
-      category,
-      subCategory: subCategory || "عام",
+      category: effectiveCategory,
+      subCategory: resolvedSubCategory,
       description: description || undefined,
-      rawText: `${parsedAmount} جنيه - ${category}`,
+      rawText: `${parsedAmount} جنيه - ${effectiveCategory}`,
       source: "manual",
       businessId,
       clientRequestId,
+      direction: type === "transfer" ? transferDirection : undefined,
+      parsedMetadata: type === "transfer" ? { direction: transferDirection } : undefined,
     };
 
     if (!isOnline) {
@@ -2403,26 +2427,64 @@ function ManualForm({
       onSubmit={handleSubmit}
       className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 space-y-4 animate-in slide-in-from-top-4"
     >
-      <div className="flex gap-2 p-1 bg-white dark:bg-slate-900 rounded-xl border">
-        {["expense", "income", "transfer"].map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setType(t)}
-            className={cn(
-              "flex-1 min-h-[44px] flex items-center justify-center text-xs font-bold rounded-lg transition-all active:scale-[0.97]",
-              type === t
-                ? t === "income"
-                  ? "bg-emerald-500 text-white"
-                  : t === "transfer"
-                    ? "bg-sky-500 text-white"
-                    : "bg-rose-500 text-white"
-                : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800",
-            )}
-          >
-            {t === "income" ? "دخل" : t === "transfer" ? "تحويل" : "مصروف"}
-          </button>
-        ))}
+      <div className="space-y-2">
+        <div className="flex gap-2 p-1 bg-white dark:bg-slate-900 rounded-xl border">
+          {[
+            { id: "expense", label: "صرف", activeClass: "bg-rose-500 text-white" },
+            { id: "income", label: "دخل", activeClass: "bg-emerald-500 text-white" },
+            { id: "transfer", label: "تحويل", activeClass: "bg-sky-500 text-white" },
+          ].map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => {
+                setType(t.id);
+                if (t.id === "transfer" && !category) {
+                  setCategory("تحويل");
+                }
+              }}
+              className={cn(
+                "flex-1 min-h-[44px] flex items-center justify-center text-xs font-bold rounded-lg transition-all active:scale-[0.97] cursor-pointer",
+                type === t.id
+                  ? t.activeClass
+                  : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800",
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {type === "transfer" && (
+          <div className="flex gap-2 p-1 bg-sky-50/50 dark:bg-sky-950/20 rounded-xl border border-sky-200 dark:border-sky-900/50 animate-in fade-in slide-in-from-top-1">
+            {[
+              {
+                id: "outgoing",
+                label: "صادر ↗️ (حولت)",
+                activeClass: "bg-sky-600 text-white font-bold",
+              },
+              {
+                id: "incoming",
+                label: "وارد ↙️ (اتحولي)",
+                activeClass: "bg-emerald-600 text-white font-bold",
+              },
+            ].map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => setTransferDirection(d.id as "outgoing" | "incoming")}
+                className={cn(
+                  "flex-1 min-h-[36px] flex items-center justify-center text-xs rounded-lg transition-all active:scale-[0.97] cursor-pointer",
+                  transferDirection === d.id
+                    ? d.activeClass
+                    : "text-muted-foreground hover:bg-sky-100/50 dark:hover:bg-sky-900/40",
+                )}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -2449,7 +2511,7 @@ function ManualForm({
             className="w-full h-11 rounded-md border text-sm px-2 bg-white dark:bg-slate-900"
           >
             <option value="">اختر...</option>
-            {categories.map((c: string) => (
+            {categoryList.map((c: string) => (
               <option key={c} value={c}>
                 {c}
               </option>
@@ -2458,19 +2520,45 @@ function ManualForm({
         </div>
       </div>
       <div className="space-y-1.5">
-        <Label className="text-xs">الفئة الفرعية</Label>
-        <select
+        <div className="flex items-center justify-between">
+          <Label className="text-xs">الفئة الفرعية</Label>
+          {subCategory && (
+            <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">
+              {subCategory}
+            </span>
+          )}
+        </div>
+        <Input
           value={subCategory}
           onChange={(e) => setSubCategory(e.target.value)}
-          className="w-full h-11 rounded-md border text-sm px-2 bg-white dark:bg-slate-900"
+          maxLength={ExpenseInputLimits.subCategoryMax}
+          placeholder={
+            category
+              ? "اكتب فئة فرعية مخصصة أو اختر من الأسفل..."
+              : "اختر الفئة الرئيسية أولاً"
+          }
           disabled={!category}
-        >
-          {getSubCategoryOptions(category).map((sub: string) => (
-            <option key={sub} value={sub}>
-              {sub}
-            </option>
-          ))}
-        </select>
+          className="h-11 text-sm bg-white dark:bg-slate-900"
+        />
+        {category && (
+          <div className="flex flex-wrap gap-1.5 pt-1 max-h-24 overflow-y-auto">
+            {getSubCategoryOptions(category).map((sub: string) => (
+              <button
+                key={sub}
+                type="button"
+                onClick={() => setSubCategory(sub)}
+                className={cn(
+                  "text-xs px-2.5 py-1 rounded-lg border transition-all cursor-pointer",
+                  subCategory === sub
+                    ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-bold border-transparent shadow-xs"
+                    : "bg-white/80 dark:bg-slate-800/80 text-muted-foreground hover:border-slate-400 border-slate-200 dark:border-slate-700",
+                )}
+              >
+                {sub}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <div className="space-y-1.5">
         <Label className="text-xs">الوصف</Label>

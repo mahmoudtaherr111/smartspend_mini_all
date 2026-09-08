@@ -123,6 +123,7 @@ describe("useScrollRestoration Hook", () => {
       );
 
       // Trigger scroll event
+      mockElement.scrollTop = 520;
       scrollListeners.forEach((l) => l());
       expect(getScrollOffset("/dashboard")).toBe(520);
 

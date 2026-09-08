@@ -108,9 +108,18 @@ export interface DiscoveredModel {
 
 // ─── Key Encryption Helper ──────────────────────────────────────────
 
+let ephemeralAiGatewayKey: Buffer | null = null;
+
 function getEncryptionKey(): Buffer {
-  const secret = process.env.JWT_SECRET || process.env.DATABASE_URL || "smartspend-ai-gateway-secure-vault-key-32";
-  return createHash("sha256").update(secret).digest();
+  const secret = process.env.AI_GATEWAY_SECRET || process.env.JWT_SECRET;
+  if (secret) {
+    return createHash("sha256").update(secret).digest();
+  }
+  if (!ephemeralAiGatewayKey) {
+    console.warn("⚠️ Neither AI_GATEWAY_SECRET nor JWT_SECRET is configured. Using ephemeral cryptographic key for AI gateway encryption.");
+    ephemeralAiGatewayKey = randomBytes(32);
+  }
+  return ephemeralAiGatewayKey;
 }
 
 export function encryptApiKey(plainKey: string): string {

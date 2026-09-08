@@ -35,6 +35,7 @@ import {
   toDayString,
 } from "./services/expense-rollups";
 import { businessDayRange } from "./lib/app-time";
+import { assertEntityOwnership } from "./lib/ownership-guard";
 
 async function invalidateExpenseCache(userId: number | string, userType: string) {
   try {
@@ -467,6 +468,8 @@ export const expenseRouter = router({
         businessId: z.number().int().positive().optional(),
         walletId: z.number().int().positive().optional(),
         clientRequestId: z.string().min(1).max(64).optional(),
+        direction: z.enum(["incoming", "outgoing"]).optional(),
+        parsedMetadata: z.record(z.string(), z.any()).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -507,12 +510,25 @@ export const expenseRouter = router({
         });
       }
 
+      // Enforce BOLA / IDOR ownership validation
+      await assertEntityOwnership({
+        userId,
+        userType: requestUserType,
+        walletId: input.walletId,
+        businessId: input.businessId,
+        contactId: input.contactId,
+      });
+
       const references = await resolveExpenseReferences(input, userId, requestUserType);
       let insertId: number | undefined;
 
       // ─── ACID Transaction: expense insert + contact count + streak ───
       try {
         await db.transaction(async (tx) => {
+          const metadata =
+            input.parsedMetadata ||
+            (input.direction ? { direction: input.direction } : null);
+
           const [result] = await tx.insert(expenses).values({
             userId,
             userType: requestUserType,
@@ -523,6 +539,7 @@ export const expenseRouter = router({
             description: input.description || "",
             rawText: input.rawText,
             source: input.source,
+            parsedMetadata: metadata,
             contactId: references.contactId,
             classificationLogId: references.classificationLogId,
             businessId: input.businessId || null,
@@ -534,7 +551,7 @@ export const expenseRouter = router({
           insertId = result?.insertId;
 
           if (insertId) {
-            await syncExpenseDetails(tx, insertId, input.rawText, (input as any).parsedMetadata);
+            await syncExpenseDetails(tx, insertId, input.rawText, metadata);
           }
 
           const delta = expenseToRollupDelta(
@@ -628,6 +645,17 @@ export const expenseRouter = router({
       const requestUserType = ctx.user!.type;
 
       if (input.length === 0) return { success: true, count: 0, newlyAddedContact: null };
+
+      // Enforce BOLA / IDOR ownership validation across all batch items
+      for (const item of input) {
+        await assertEntityOwnership({
+          userId,
+          userType: requestUserType,
+          walletId: item.walletId,
+          businessId: item.businessId,
+          contactId: item.contactId,
+        });
+      }
 
       // Deduplicate clientRequestIds if any already exist
       const clientRequestIds = input
@@ -896,12 +924,24 @@ export const expenseRouter = router({
           .optional(),
         rawText: expenseRawText.optional(),
         date: z.string().optional(),
+        walletId: z.number().int().positive().nullable().optional(),
+        businessId: z.number().int().positive().nullable().optional(),
+        contactId: z.number().int().positive().nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const db = getDb();
       const userId = ctx.user!.id;
       const userType = ctx.user!.type;
+
+      // Enforce BOLA / IDOR ownership validation on newly supplied entity references
+      await assertEntityOwnership({
+        userId,
+        userType,
+        walletId: input.walletId,
+        businessId: input.businessId,
+        contactId: input.contactId,
+      });
 
       const updateData: Record<string, any> = {};
       if (input.amount !== undefined)
@@ -914,6 +954,9 @@ export const expenseRouter = router({
         updateData.description = input.description;
       if (input.rawText !== undefined) updateData.rawText = input.rawText;
       if (input.date !== undefined) updateData.date = new Date(input.date);
+      if (input.walletId !== undefined) updateData.walletId = input.walletId;
+      if (input.businessId !== undefined) updateData.businessId = input.businessId;
+      if (input.contactId !== undefined) updateData.contactId = input.contactId;
 
       let originalExpense: typeof expenses.$inferSelect | undefined;
       await db.transaction(async (tx) => {

@@ -14,6 +14,7 @@ import {
   asPlan,
 } from "./lib/ai-usage-policy";
 import { parseReceiptImage } from "./lib/receipt-image-parser";
+import { verifyImageMagicBytes } from "./lib/image-magic-bytes";
 import { normalizeTransactionTaxonomy } from "./lib/category-registry";
 import { mapModelName } from "./lib/model-mapper";
 import {
@@ -67,6 +68,20 @@ export const imageRouter = router({
           code: "BAD_REQUEST",
           message:
             "حجم الصورة كبير جداً. استخدم ضغط الصورة من الكاميرا وحاول مرة أخرى.",
+        });
+      }
+
+      // Security Boundary (R8): Binary signature (magic bytes) verification
+      const rawBase64 = input.imageBase64.includes(",")
+        ? input.imageBase64.split(",")[1]!
+        : input.imageBase64;
+      const imageBuffer = Buffer.from(rawBase64, "base64");
+      const magicResult = verifyImageMagicBytes(imageBuffer);
+      if (!magicResult.valid) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Invalid image format: binary signature verification failed. Only JPEG, PNG, and WebP are permitted.",
         });
       }
 
@@ -124,7 +139,7 @@ export const imageRouter = router({
 
       const parsed = await parseReceiptImage({
         imageBase64: input.imageBase64,
-        mimeType: input.mimeType,
+        mimeType: magicResult.mime || input.mimeType,
         apiKey,
         apiKey2,
         modelName,

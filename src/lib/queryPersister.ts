@@ -18,8 +18,19 @@ export type QueryCacheUser = {
 export type OfflineIdentity = QueryCacheUser & {
   name: string;
   avatar?: string | null;
+  /**
+   * Last server-verified subscription tier, replayed so a returning Pro user
+   * does not watch the shell render as free for the length of a mobile round
+   * trip. This is presentation state only: every paid route still runs through
+   * `proProcedure` / `ultraProcedure` on the server, so a tampered snapshot
+   * buys nothing but a redraw. `role` is deliberately NOT stored — the admin
+   * surface stays behind a verified session (see `AdminRoute`).
+   */
+  plan?: "free" | "pro" | "ultra";
   savedAt: number;
 };
+
+const OFFLINE_PLANS = ["free", "pro", "ultra"] as const;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -93,11 +104,18 @@ async function deleteClient(key: string): Promise<void> {
  * Creates a per-account IndexedDB persister. A shared-device browser can hold
  * caches for several accounts, but a cache can only be restored for its owner.
  */
-export function createQueryPersister(user: QueryCacheUser): Persister {
+export function createQueryPersister(
+  user: QueryCacheUser,
+  options?: { canWrite?: boolean | (() => boolean) },
+): Persister {
   const key = storageKey(getQueryCacheScope(user));
+  const canWriteOption = options?.canWrite ?? true;
+  const isWritable =
+    typeof canWriteOption === "function" ? canWriteOption : () => canWriteOption;
 
   return {
     persistClient: async (client) => {
+      if (!isWritable()) return;
       try {
         await writeClient(key, client);
       } catch (error) {
@@ -197,6 +215,10 @@ export function getOfflineIdentity(): OfflineIdentity | null {
       Number.isSafeInteger(value.id) &&
       typeof value.name === "string" &&
       typeof value.savedAt === "number" &&
+      // Snapshots written before the tier was recorded stay usable; the tier is
+      // then simply unknown until the session check answers.
+      (value.plan === undefined ||
+        (OFFLINE_PLANS as readonly string[]).includes(value.plan)) &&
       Date.now() - value.savedAt <= PERSISTED_QUERY_MAX_AGE;
 
     if (!isValid) {

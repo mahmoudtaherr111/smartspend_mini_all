@@ -43,6 +43,8 @@ import { BiometricLockOverlay } from "@/components/auth/BiometricLockOverlay";
 import { BiometricOnboardingModal } from "@/components/auth/BiometricOnboardingModal";
 import { useBiometricOnboarding } from "@/hooks/useBiometricOnboarding";
 import { useScrollRestoration } from "@/hooks/useScrollRestoration";
+import { useAppResume } from "@/hooks/useAppResume";
+import { useLaunchNavigation } from "@/hooks/useLaunchNavigation";
 
 import "./3d-effects.css";
 import "./print.css";
@@ -71,23 +73,25 @@ const UltraLounge = lazy(() => import("@/pages/UltraLounge"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60_000,
+      staleTime: 5 * 60_000,
       gcTime: 24 * 60 * 60_000,
+      // Returning to the app fired a refetch of every mounted query at once.
+      // On a phone that arrives as a stall right when the user is looking at
+      // the screen. `useAppResume` re-syncs deliberately instead: only after a
+      // real absence, and never for a glance at a notification.
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
     },
   },
 });
 
 function HomeEntry() {
-  const { user, isLoading } = useAuth();
-  if (isLoading) {
-    return (
-      <div
-        className="flex items-center justify-center min-h-screen bg-background"
-        dir="rtl"
-      >
-        جاري التحميل...
-      </div>
-    );
+  const { user, isLoading, isVerified } = useAuth();
+  if (
+    isLoading ||
+    (!isVerified && typeof navigator !== "undefined" && navigator.onLine)
+  ) {
+    return <PageLoadingSkeleton />;
   }
   if (user) return <Navigate to="/dashboard" replace />;
   return (
@@ -98,24 +102,36 @@ function HomeEntry() {
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isVerified } = useAuth();
   useSessionTracker();
-  if (isLoading) return <PageLoadingSkeleton />;
-  if (!user) return <Navigate to="/login" />;
+  if (
+    isLoading ||
+    (!isVerified && typeof navigator !== "undefined" && navigator.onLine)
+  ) {
+    return <PageLoadingSkeleton />;
+  }
+  if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading, isAdmin } = useAuth();
-  if (isLoading) return <PageLoadingSkeleton />;
+  const { user, isVerified, isAdmin } = useAuth();
+  // The optimistic identity snapshot never carries a role, so the admin shell
+  // waits for the real session rather than reading a value off the device.
+  if (!isVerified) return <PageLoadingSkeleton />;
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdmin) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
-  if (isLoading) return <PageLoadingSkeleton />;
+  const { user, isLoading, isVerified } = useAuth();
+  if (
+    isLoading ||
+    (!isVerified && typeof navigator !== "undefined" && navigator.onLine)
+  ) {
+    return <PageLoadingSkeleton />;
+  }
   if (user) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
@@ -149,9 +165,10 @@ export function getAppContentMode(pathname: string): AppContentMode {
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, isVerified, isLoading: isAuthLoading } = useAuth();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   useScrollRestoration(scrollRef);
+  useLaunchNavigation();
   const location = useLocation();
   const { isKeyboardOpen } = useVirtualKeyboard();
 
@@ -203,7 +220,7 @@ function Layout({ children }: { children: React.ReactNode }) {
                 className="h-12 sm:h-14 w-auto object-contain hidden dark:block origin-right no-drag pointer-events-none select-none"
               />
             </div>
-            {user ? (
+            {user && isVerified ? (
               <NotificationBell />
             ) : (
               <span
@@ -393,6 +410,7 @@ function AnimatedRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route path="/settings" element={<Navigate to="/more" replace />} />
       <Route
         path="/settings/*"
         element={
@@ -458,20 +476,33 @@ function AnimatedRoutes() {
 
 function PersistedQueryScope({
   user,
+  isVerified,
   children,
 }: {
   user: QueryCacheUser;
+  isVerified: boolean;
   children: React.ReactNode;
 }) {
+  const isVerifiedRef = React.useRef(isVerified);
+  React.useEffect(() => {
+    isVerifiedRef.current = isVerified;
+  }, [isVerified]);
+
+  const persister = React.useMemo(
+    () => createQueryPersister(user, { canWrite: () => isVerifiedRef.current }),
+    [user.id, user.type],
+  );
+
   return (
     <PersistQueryClientProvider
       client={queryClient}
       persistOptions={{
-        persister: createQueryPersister(user),
+        persister,
         buster: PERSISTED_QUERY_BUSTER,
         maxAge: PERSISTED_QUERY_MAX_AGE,
         dehydrateOptions: {
           shouldDehydrateQuery: (query) =>
+            isVerifiedRef.current &&
             query.state.status === "success" &&
             shouldPersistQueryKey(query.queryKey),
         },
@@ -508,7 +539,32 @@ function NativeLifecycleBridge() {
 }
 
 function AuthScopedApplication() {
-  const { user } = useAuth();
+  const { user, isVerified } = useAuth();
+  useAppResume();
+
+  const scope = user ? getQueryCacheScope(user) : null;
+  const [activeScope, setActiveScope] = React.useState<string | null>(scope);
+  const mountedScopeRef = React.useRef(scope);
+
+  React.useEffect(() => {
+    if (scope !== mountedScopeRef.current) {
+      // The device snapshot named one account and the verified session another —
+      // a switched Google session, or a shared phone. The previous scope has
+      // already hydrated into this QueryClient, and restoring the next scope on
+      // top of it would merge, not replace. Drop it cleanly outside render.
+      mountedScopeRef.current = scope;
+      queryClient.clear();
+      setActiveScope(scope);
+    }
+  }, [scope]);
+
+  // If the active scope does not match the current user's scope (e.g., during
+  // a transition from snapshot Account A to verified Account B, or logout),
+  // do NOT render the application with mismatched query cache. Show skeleton
+  // until the cache is cleared and the new scope is mounted cleanly.
+  if (scope !== activeScope) {
+    return <PageLoadingSkeleton />;
+  }
 
   const application = (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
@@ -531,10 +587,11 @@ function AuthScopedApplication() {
 
   if (!user) return application;
 
-  // A provider mounts only after identity is known, so another account's
-  // IndexedDB entry can never hydrate into this session's QueryClient.
+  // The scope is known on the first frame for a returning session, so this
+  // provider mounts once and restores the offline cache in parallel with the
+  // session check. Writes to persistence remain disabled until isVerified is true.
   return (
-    <PersistedQueryScope key={getQueryCacheScope(user)} user={user}>
+    <PersistedQueryScope key={activeScope} user={user} isVerified={isVerified}>
       {application}
     </PersistedQueryScope>
   );

@@ -56,6 +56,19 @@ jobs:
           TRUST_PROXY: "true"
           REDIS_URL: ""
 
+  security-audit:
+    name: Security & Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Run npm dependency audit (Fail on High or Critical)
+        run: npm audit --audit-level=high
+
   e2e-tests:
     name: Playwright E2E Tests
     runs-on: ubuntu-latest

@@ -44,10 +44,12 @@ import {
   generateReferralCode,
   cleanPhoneNumber,
   getSessionMetadata,
+  invalidateSession,
 } from "./local-auth-utils";
 import { getIncomingHeader } from "./lib/get-client-ip";
 import { whatsappService } from "./services/whatsapp-service";
 import { otpCache, checkRateLimit } from "./services/otp-cache";
+import { guardOtpGeneration } from "./services/turnstile-service";
 
 import { getSystemSettings } from "./lib/settings-cache";
 import { purgeUserData } from "./services/user-purge-service";
@@ -167,6 +169,15 @@ export const localAuthRouter = router({
         getSessionMetadata(ctx.req, ctx.ip),
       );
 
+      if (ctx.resHeaders) {
+        const isProd = process.env.NODE_ENV === "production";
+        const secureFlag = isProd ? "; Secure" : "";
+        ctx.resHeaders.append(
+          "Set-Cookie",
+          `smartspend_token=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800${secureFlag}`,
+        );
+      }
+
       return {
         success: true,
         token,
@@ -181,8 +192,16 @@ export const localAuthRouter = router({
     }),
 
   generateVerificationCode: strictPublicProcedure
-    .input(z.object({ phone: z.string() }))
+    .input(
+      z.object({
+        phone: z.string(),
+        turnstileToken: z.string().optional(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
+      const clientIp = ctx.ip;
+      await guardOtpGeneration(input.turnstileToken, clientIp);
+
       const settings = await getSystemSettings();
       if (settings["whatsapp_otp_enabled"] !== "true") {
         throw new TRPCError({
@@ -316,6 +335,15 @@ export const localAuthRouter = router({
           getSessionMetadata(ctx.req, ctx.ip),
         );
 
+        if (ctx.resHeaders) {
+          const isProd = process.env.NODE_ENV === "production";
+          const secureFlag = isProd ? "; Secure" : "";
+          ctx.resHeaders.append(
+            "Set-Cookie",
+            `smartspend_token=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800${secureFlag}`,
+          );
+        }
+
         return {
           success: true,
           token,
@@ -333,6 +361,67 @@ export const localAuthRouter = router({
       }
     }),
 
+  verifyOtp: strictPublicProcedure
+    .input(
+      z.object({
+        phone: z.string().min(10).max(15),
+        code: z.string().min(4).max(12),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const cleanPhone = cleanPhoneNumber(input.phone);
+      const record = otpCache.get(cleanPhone);
+
+      if (!record || record.expiresAt < Date.now() || record.code !== input.code.trim()) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "رمز التأكيد غير صحيح أو منتهي الصلاحية",
+        });
+      }
+
+      otpCache.delete(cleanPhone);
+
+      const user = await db.query.localUsers.findFirst({
+        where: eq(localUsers.phone, cleanPhone),
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "الحساب غير موجود",
+        });
+      }
+
+      const token = await generateToken(user.id, "local");
+      await createSession(
+        user.id,
+        "local",
+        token,
+        getSessionMetadata(ctx.req, ctx.ip),
+      );
+
+      if (ctx.resHeaders) {
+        const isProd = process.env.NODE_ENV === "production";
+        const secureFlag = isProd ? "; Secure" : "";
+        ctx.resHeaders.append(
+          "Set-Cookie",
+          `smartspend_token=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=604800${secureFlag}`,
+        );
+      }
+
+      return {
+        success: true,
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          phone: user.phone,
+          role: user.role,
+          plan: user.plan,
+        },
+      };
+    }),
+
   me: publicProcedure.query(async ({ ctx }) => {
     if (!ctx.user || ctx.user.type !== "local") return null;
 
@@ -345,19 +434,35 @@ export const localAuthRouter = router({
   }),
 
   logout: publicProcedure.mutation(async ({ ctx }) => {
-    // Clear Google OAuth cookie on server side to avoid stale session shadow
+    // Clear Google OAuth and smartspend_token cookies on client side
     if (ctx.resHeaders) {
       ctx.resHeaders.append(
         "Set-Cookie",
         "google_session=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax",
       );
+      ctx.resHeaders.append(
+        "Set-Cookie",
+        "smartspend_token=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax",
+      );
     }
 
+    let token: string | undefined;
     const authHeader = getIncomingHeader(ctx.req, "Authorization");
     if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.slice(7);
-      await db.delete(sessions).where(eq(sessions.token, token));
+      token = authHeader.slice(7).trim();
+    } else {
+      const cookieHeader = getIncomingHeader(ctx.req, "cookie");
+      const match = cookieHeader?.match(/(?:^|;\s*)smartspend_token=([^;]*)/);
+      if (match) {
+        const raw = match[1].trim();
+        token = raw.startsWith('"') && raw.endsWith('"') ? raw.slice(1, -1) : raw;
+      }
     }
+
+    if (token) {
+      await invalidateSession(token);
+    }
+
     return { success: true };
   }),
 

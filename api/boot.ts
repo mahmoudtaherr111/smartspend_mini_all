@@ -193,11 +193,63 @@ installProviderHealthReporter();
 
 const app = new Hono();
 
+// 1. HTTPS Redirection Middleware in Production
+app.use("*", async (c, next) => {
+  if (env.NODE_ENV === "production") {
+    const proto = c.req.header("x-forwarded-proto");
+    const host = c.req.header("host");
+    if (proto === "http" && host) {
+      return c.redirect(
+        `https://${host}${c.req.url.replace(/^http:\/\/[^/]+/, "")}`,
+        301,
+      );
+    }
+  }
+  await next();
+});
+
 app.use("*", logger());
 app.use("*", compress());
+
+// 2. Strict Security Headers Middleware
+const isProduction = env.NODE_ENV === "production";
 app.use(
   "*",
   secureHeaders({
+    contentSecurityPolicy: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://challenges.cloudflare.com",
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://fonts.googleapis.com",
+      ],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "blob:",
+        "https://*.googleusercontent.com",
+      ],
+      connectSrc: [
+        "'self'",
+        "https://challenges.cloudflare.com",
+      ],
+      frameSrc: ["https://challenges.cloudflare.com"],
+      frameAncestors: ["'none'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+    },
+    strictTransportSecurity: isProduction
+      ? "max-age=31536000; includeSubDomains; preload"
+      : false,
+    xContentTypeOptions: "nosniff",
+    xFrameOptions: "DENY",
+    referrerPolicy: "strict-origin-when-cross-origin",
     permissionsPolicy: {
       camera: [],
       geolocation: [],
@@ -664,6 +716,74 @@ if (
   console.info(
     "[WhatsApp] Credentials found but service is disabled; set ENABLE_WHATSAPP=true to start it.",
   );
+}
+
+/**
+ * Production Security Headers Configuration Factory for Hono
+ * Matches target specification in tests/security/r7-security-headers.test.ts
+ */
+export function configureSecurityApp(isProduction: boolean = env.NODE_ENV === "production") {
+  const securityApp = new Hono();
+
+  // 1. HTTPS Redirection Middleware in Production
+  securityApp.use("*", async (c, next) => {
+    if (isProduction) {
+      const proto = c.req.header("x-forwarded-proto");
+      const host = c.req.header("host");
+      if (proto === "http" && host) {
+        return c.redirect(`https://${host}${c.req.url.replace(/^http:\/\/[^/]+/, "")}`, 301);
+      }
+    }
+    await next();
+  });
+
+  // 2. Strict Security Headers Middleware
+  securityApp.use(
+    "*",
+    secureHeaders({
+      contentSecurityPolicy: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://challenges.cloudflare.com",
+        ],
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://fonts.googleapis.com",
+        ],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+        imgSrc: [
+          "'self'",
+          "data:",
+          "blob:",
+          "https://*.googleusercontent.com",
+        ],
+        connectSrc: [
+          "'self'",
+          "https://challenges.cloudflare.com",
+        ],
+        frameSrc: ["https://challenges.cloudflare.com"],
+        frameAncestors: ["'none'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+      },
+      strictTransportSecurity: isProduction
+        ? "max-age=31536000; includeSubDomains; preload"
+        : false,
+      xContentTypeOptions: "nosniff",
+      xFrameOptions: "DENY",
+      referrerPolicy: "strict-origin-when-cross-origin",
+      permissionsPolicy: {
+        camera: [],
+        geolocation: [],
+        microphone: ["self"],
+      },
+    }),
+  );
+
+  return securityApp;
 }
 
 export { app };

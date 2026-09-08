@@ -9,6 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Calendar, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getTransactionDisplayMeta } from "@/lib/transactionDisplay";
 import { useHistoryBound } from "@/hooks/useHistoryBound";
 
 function compactMoney(value: unknown) {
@@ -54,7 +55,10 @@ function DayTransactionsDialog({
       onOpenChange={(open) => !open && onClose()}
       snapPoints={[0.5, 0.9]}
     >
-      <AdaptiveDialogContent className="sm:max-w-md max-w-[92vw] rounded-2xl" dir="rtl">
+      <AdaptiveDialogContent
+        className="w-full sm:max-w-md rounded-t-[28px] sm:rounded-2xl border-0 sm:border"
+        dir="rtl"
+      >
         <AdaptiveDialogHeader className="text-end pb-3 border-b border-slate-100 dark:border-slate-800">
           <AdaptiveDialogTitle className="text-base sm:text-lg font-black flex items-center gap-2">
             <Calendar className="w-5 h-5 text-indigo-600" />
@@ -63,7 +67,7 @@ function DayTransactionsDialog({
           </AdaptiveDialogTitle>
         </AdaptiveDialogHeader>
 
-        <div className="py-4 max-h-[60vh] overflow-y-auto space-y-3 pe-1 hide-scrollbar">
+        <div className="py-4 space-y-3">
           {isLoading ? (
             <div className="py-10 text-center text-sm text-muted-foreground">
               جاري تحميل المعاملات...
@@ -75,25 +79,7 @@ function DayTransactionsDialog({
           ) : (
             <div className="space-y-2">
               {data.items.map((item) => {
-                const isIncome = item.type === "income";
-                const isTransfer = item.type === "transfer";
-                const isInvestment = item.type === "investment";
-                
-                const amountColor = isIncome
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : isTransfer
-                    ? "text-sky-600 dark:text-sky-400"
-                    : isInvestment
-                      ? "text-amber-600 dark:text-amber-400"
-                      : "text-rose-600 dark:text-rose-400";
-
-                const typeLabel = isIncome
-                  ? "دخل"
-                  : isTransfer
-                    ? "تحويل"
-                    : isInvestment
-                      ? "استثمار"
-                      : "مصروف";
+                const meta = getTransactionDisplayMeta(item);
 
                 return (
                   <div
@@ -113,17 +99,11 @@ function DayTransactionsDialog({
                         <Badge
                           variant="outline"
                           className={cn(
-                            "text-[9px] py-0.25 px-1.5 border-0 font-bold",
-                            isIncome
-                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
-                              : isTransfer
-                                ? "bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-300"
-                                : isInvestment
-                                  ? "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300"
-                                  : "bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"
+                            "text-[9px] py-0.25 px-1.5 font-bold",
+                            meta.badgeClass,
                           )}
                         >
-                          {typeLabel}
+                          {meta.label}
                         </Badge>
                       </div>
                       {item.description && item.description !== "?" && (
@@ -132,8 +112,8 @@ function DayTransactionsDialog({
                         </p>
                       )}
                     </div>
-                    <div className={`font-extrabold text-base shrink-0 ${amountColor}`} dir="ltr">
-                      {isIncome ? "+" : isTransfer ? "" : isInvestment ? "" : "-"}
+                    <div className={cn("font-extrabold text-base shrink-0", meta.amountClass)} dir="ltr">
+                      {meta.sign}
                       {Number(item.amount).toLocaleString("en-US", { maximumFractionDigits: 0 })} ج
                     </div>
                   </div>
@@ -238,7 +218,7 @@ export const MonthlyCalendar = memo(function MonthlyCalendar({
         </div>
       )}
       <div>
-        <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-[10px] sm:text-xs text-muted-foreground mb-2">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-2 text-center text-[10px] sm:text-xs text-muted-foreground mb-2">
           {["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"].map(
             (day) => (
               <span key={day} className="truncate">
@@ -247,7 +227,7 @@ export const MonthlyCalendar = memo(function MonthlyCalendar({
             ),
           )}
         </div>
-        <div className="grid grid-cols-7 gap-1 sm:gap-2">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-2">
           {cells.map((cell: any) => {
             const amount = Number(cell.data?.amount || 0);
             const income = Number(cell.data?.income || 0);
@@ -258,7 +238,7 @@ export const MonthlyCalendar = memo(function MonthlyCalendar({
               return (
                 <div
                   key={cell.key}
-                  className="min-h-[4.25rem] xs:min-h-[4.75rem] sm:min-h-[5.25rem] border border-transparent"
+                  className="min-h-[3.25rem] xs:min-h-[3.75rem] sm:min-h-[5.25rem] border border-transparent"
                 />
               );
             }
@@ -272,7 +252,7 @@ export const MonthlyCalendar = memo(function MonthlyCalendar({
                 type="button"
                 onClick={() => setSelectedDate(fullDateStr)}
                 className={cn(
-                  "min-h-[4.25rem] xs:min-h-[4.75rem] sm:min-h-[5.25rem] rounded-xl border text-end transition-all overflow-hidden flex flex-col justify-between p-1 sm:p-2 cursor-pointer active-press select-none",
+                  "min-h-[3.25rem] xs:min-h-[3.75rem] sm:min-h-[5.25rem] rounded-xl border text-end transition-all overflow-hidden flex flex-col justify-between p-1 sm:p-2 cursor-pointer active-press select-none",
                   amount === 0 && income === 0 && "bg-white/80 dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-900 border-slate-200/80 dark:border-slate-800",
                   amount > 0 && "bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/15 dark:bg-rose-500/15 dark:border-rose-500/30",
                   income > 0 && amount === 0 && "bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/15 dark:bg-emerald-500/15 dark:border-emerald-500/30",

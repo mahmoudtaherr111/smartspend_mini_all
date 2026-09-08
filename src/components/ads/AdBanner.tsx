@@ -2,11 +2,13 @@ import { useAds } from "../../hooks/useAds";
 import { useAuth } from "../../hooks/useAuth";
 
 export function AdBanner() {
-  const { user } = useAuth();
+  const { hasProAccess } = useAuth();
   const { ads, clickAd } = useAds();
   const adItems = Array.isArray(ads.data) ? ads.data : [];
 
-  if (user?.plan === "pro" || adItems.length === 0) return null;
+  // Ultra subscribers and admins were being shown ads: the old check tested for
+  // the "pro" tier by name instead of for paid access.
+  if (hasProAccess || adItems.length === 0) return null;
 
   const ad = adItems[0];
 

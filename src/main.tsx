@@ -7,8 +7,11 @@ import {
   isStandalonePwa,
   registerAppServiceWorker,
 } from "./pwa/register-sw";
+import { initLaunchHandler } from "./pwa/launch-handler";
 
 registerAppServiceWorker();
+// Before React mounts: a launch delivered during startup must not be lost.
+initLaunchHandler();
 
 if (isStandalonePwa()) {
   document.documentElement.classList.add("pwa-standalone");

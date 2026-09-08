@@ -349,7 +349,7 @@ export default function Home() {
             calendar: (
               <div>
                 <Card className="rounded-2xl border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
-                  <CardContent className="p-3 sm:p-4 no-swipe" data-no-swipe>
+                  <CardContent className="p-1.5 sm:p-4 no-swipe" data-no-swipe>
                     {calendarFetching && !calendarStats ? (
                       <div className="py-12 text-center text-sm text-muted-foreground">
                         جاري تحميل التقويم...

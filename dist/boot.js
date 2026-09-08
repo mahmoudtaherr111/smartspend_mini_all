@@ -363849,13 +363849,13 @@ var adminRouter = router({
       limit: input?.limit
     })
   ),
-  listAllUsers: moderatorProcedure.input(
+  listAllUsers: adminProcedure.input(
     external_exports.object({
       search: external_exports.string().optional(),
       role: external_exports.string().optional(),
       plan: external_exports.string().optional(),
-      page: external_exports.number().default(1),
-      limit: external_exports.number().default(20)
+      page: external_exports.number().int().min(1).default(1),
+      limit: external_exports.number().int().min(1).max(100).default(20)
     }).optional()
   ).query(async ({ input }) => {
     const { search, role, plan, page = 1, limit = 20 } = input ?? {};
@@ -363864,14 +363864,35 @@ var adminRouter = router({
     if (role) oauthFilters.push(eq(users.role, role));
     if (plan) oauthFilters.push(eq(users.plan, plan));
     if (search) oauthFilters.push(searchUsersConditionOAuth(search));
-    let oauthQuery = db.select().from(users).$dynamic();
+    let oauthQuery = db.select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      avatar: users.avatar,
+      role: users.role,
+      plan: users.plan,
+      createdAt: users.createdAt,
+      lastSignInAt: users.lastSignInAt,
+      aiTokensUsed: users.aiTokensUsed
+    }).from(users).$dynamic();
     if (oauthFilters.length)
       oauthQuery = oauthQuery.where(and(...oauthFilters));
     const localFilters = [];
     if (role) localFilters.push(eq(localUsers.role, role));
     if (plan) localFilters.push(eq(localUsers.plan, plan));
     if (search) localFilters.push(searchUsersConditionLocal(search));
-    let localQuery = db.select().from(localUsers).$dynamic();
+    let localQuery = db.select({
+      id: localUsers.id,
+      name: localUsers.name,
+      email: localUsers.email,
+      phone: localUsers.phone,
+      avatar: localUsers.avatar,
+      role: localUsers.role,
+      plan: localUsers.plan,
+      createdAt: localUsers.createdAt,
+      lastSignInAt: localUsers.lastSignInAt,
+      aiTokensUsed: localUsers.aiTokensUsed
+    }).from(localUsers).$dynamic();
     if (localFilters.length)
       localQuery = localQuery.where(and(...localFilters));
     const [oauthCountResult] = await db.select({ count: count() }).from(users).where(oauthFilters.length ? and(...oauthFilters) : void 0);
@@ -363987,13 +364008,21 @@ var adminRouter = router({
     return { success: true, message: "\u062A\u0645 \u062D\u0630\u0641 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645 \u0628\u0646\u062C\u0627\u062D" };
   }),
   // ─── Get User Sessions ───
-  getUserSessions: moderatorProcedure.input(
+  getUserSessions: adminProcedure.input(
     external_exports.object({
       userId: external_exports.number(),
       userType: external_exports.enum(["oauth", "local"])
     })
   ).query(async ({ input }) => {
-    const list = await db.select().from(sessions).where(
+    const list = await db.select({
+      id: sessions.id,
+      userId: sessions.userId,
+      userType: sessions.userType,
+      ipAddress: sessions.ipAddress,
+      userAgent: sessions.userAgent,
+      expiresAt: sessions.expiresAt,
+      createdAt: sessions.createdAt
+    }).from(sessions).where(
       and(
         eq(sessions.userId, input.userId),
         eq(sessions.userType, input.userType)
@@ -364007,9 +364036,17 @@ var adminRouter = router({
     return { success: true, message: "\u062A\u0645 \u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u062C\u0644\u0633\u0629" };
   }),
   // ─── Get Activity Log ───
-  getActivityLog: moderatorProcedure.input(external_exports.object({ limit: external_exports.number().default(50) }).optional()).query(async ({ input }) => {
+  getActivityLog: adminProcedure.input(external_exports.object({ limit: external_exports.number().default(50) }).optional()).query(async ({ input }) => {
     const { limit = 50 } = input ?? {};
-    const activeSessions = await db.select().from(sessions).orderBy(desc(sessions.createdAt)).limit(limit);
+    const activeSessions = await db.select({
+      id: sessions.id,
+      userId: sessions.userId,
+      userType: sessions.userType,
+      ipAddress: sessions.ipAddress,
+      userAgent: sessions.userAgent,
+      expiresAt: sessions.expiresAt,
+      createdAt: sessions.createdAt
+    }).from(sessions).orderBy(desc(sessions.createdAt)).limit(limit);
     const oauthIds = [
       ...new Set(
         activeSessions.filter((s3) => s3.userType === "oauth").map((s3) => s3.userId)
@@ -364355,7 +364392,7 @@ var adminRouter = router({
     }
   }),
   // ─── Get Classification Logs ───
-  getClassificationLogs: moderatorProcedure.input(
+  getClassificationLogs: adminProcedure.input(
     external_exports.object({
       page: external_exports.number().default(1),
       limit: external_exports.number().default(20),
@@ -364567,7 +364604,7 @@ var adminRouter = router({
     return { list, total: total[0]?.count ?? 0, page, limit };
   }),
   // ─── API Key Error Monitoring ───
-  getApiKeyErrors: moderatorProcedure.input(
+  getApiKeyErrors: adminProcedure.input(
     external_exports.object({
       unresolvedOnly: external_exports.boolean().default(false),
       limit: external_exports.number().default(100)
@@ -364707,7 +364744,7 @@ var adminRouter = router({
     return { checkedAt: (/* @__PURE__ */ new Date()).toISOString(), providers: results };
   }),
   // ─── Get Learned Rules (Muscle Memory / Auto-Learning) ───
-  getLearnedRules: moderatorProcedure.input(
+  getLearnedRules: adminProcedure.input(
     external_exports.object({
       page: external_exports.number().default(1),
       limit: external_exports.number().default(50)
@@ -365112,7 +365149,7 @@ var adminRouter = router({
     return await db.select().from(aiModels).orderBy(desc(aiModels.createdAt));
   }),
   // ─── Token Ledgers & Quota Inspector ───
-  getAiTokenLedger: moderatorProcedure.input(
+  getAiTokenLedger: adminProcedure.input(
     external_exports.object({
       userId: external_exports.number().int().optional(),
       userType: external_exports.enum(["oauth", "local"]).optional(),
@@ -365143,7 +365180,7 @@ var adminRouter = router({
       limit: input.limit
     };
   }),
-  getUserAiQuota: moderatorProcedure.input(
+  getUserAiQuota: adminProcedure.input(
     external_exports.object({
       search: external_exports.string().min(1),
       selectedUserId: external_exports.number().optional(),

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { trpc } from "@/providers/trpc";
 import {
   clearOfflineIdentity,
@@ -6,6 +6,7 @@ import {
   getOfflineIdentity,
   saveOfflineIdentity,
 } from "@/lib/queryPersister";
+import { clearScrollCache } from "@/hooks/useScrollRestoration";
 
 export interface AuthUser {
   id: number;
@@ -33,7 +34,7 @@ export type AuthBroadcastEventType =
 export interface AuthBroadcastEvent {
   type: AuthBroadcastEventType;
   token?: string;
-  user?: AuthUser | null;
+  user?: AuthUser;
   timestamp?: number;
 }
 
@@ -41,20 +42,18 @@ export interface AuthBroadcastEvent {
  * Broadcast an authentication event to all other open tabs via BroadcastChannel.
  */
 export function broadcastAuthEvent(event: AuthBroadcastEvent): void {
-  if (typeof BroadcastChannel === "undefined") return;
   try {
-    const channel = new BroadcastChannel(AUTH_BROADCAST_CHANNEL);
-    channel.postMessage({
-      ...event,
-      timestamp: event.timestamp || Date.now(),
-    });
-    channel.close();
-  } catch (e) {
-    // Gracefully ignore channel errors in restricted environments
+    if (typeof BroadcastChannel !== "undefined") {
+      const channel = new BroadcastChannel(AUTH_BROADCAST_CHANNEL);
+      channel.postMessage({ ...event, timestamp: Date.now() });
+      channel.close();
+    }
+  } catch {
+    // BroadcastChannel unavailable in this environment
   }
 }
 
-export function broadcastLogin(token?: string, user?: AuthUser | null): void {
+export function broadcastLogin(token: string, user?: AuthUser): void {
   broadcastAuthEvent({ type: "AUTH_LOGIN", token, user });
 }
 
@@ -70,9 +69,38 @@ export function broadcastTokenRefresh(token: string): void {
   broadcastAuthEvent({ type: "TOKEN_REFRESH", token });
 }
 
+/**
+ * Replays the device's last verified identity on the very first render, so a
+ * resumed session paints its real shell instead of holding a skeleton for the
+ * length of a mobile round trip. Two deliberate limits keep this safe:
+ *
+ *  - `role` is never replayed. Administrative surfaces stay behind a verified
+ *    session, so a hand-edited snapshot cannot even render the admin shell.
+ *  - `plan` is replayed for presentation only. Every paid route re-checks the
+ *    tier on the server, and the snapshot is corrected the moment `auth.me`
+ *    answers, so a tampered value buys a redraw and nothing else.
+ */
+function hydrateIdentitySnapshot(): AuthUser | null {
+  const snapshot = getOfflineIdentity();
+  if (!snapshot) return null;
+  return {
+    id: snapshot.id,
+    name: snapshot.name,
+    avatar: snapshot.avatar,
+    role: "user",
+    plan: snapshot.plan ?? "free",
+    type: snapshot.type,
+  };
+}
+
 export function useAuth() {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [snapshotUser] = useState(hydrateIdentitySnapshot);
+  const [user, setUser] = useState<AuthUser | null>(snapshotUser);
+  const userRef = useRef(user);
+  userRef.current = user;
+  // Distinct from "loading": the session check has come back from the server.
+  // Anything that revokes access must wait for this, never for a snapshot.
+  const [isVerified, setIsVerified] = useState(false);
   const [isOnline, setIsOnline] = useState(
     () => typeof navigator === "undefined" || navigator.onLine,
   );
@@ -128,6 +156,7 @@ export function useAuth() {
               type: eventData.user.type,
               name: eventData.user.name,
               avatar: eventData.user.avatar,
+              plan: eventData.user.plan,
             });
           }
           // Invalidate and refetch queries to synchronize permissions and session
@@ -150,9 +179,19 @@ export function useAuth() {
         }
 
         case "SESSION_EXPIRED": {
+          const offlineIdentity = getOfflineIdentity();
+          const target = offlineIdentity || userRef.current;
+          if (target) {
+            void clearPersistedQueryCache(target);
+          }
+          clearOfflineIdentity();
+          clearScrollCache();
           setUser(null);
+          setIsVerified(true);
           utils.auth.me.setData(undefined, null);
           utils.localAuth.me.setData(undefined, null);
+          void utils.auth.me.invalidate();
+          void utils.localAuth.me.invalidate();
           break;
         }
       }
@@ -218,7 +257,6 @@ export function useAuth() {
 
   useEffect(() => {
     if (!oauthFetched || !localFetched) {
-      setIsLoading(true);
       return;
     }
 
@@ -239,6 +277,7 @@ export function useAuth() {
           type: authenticatedUser.type,
           name: authenticatedUser.name,
           avatar: authenticatedUser.avatar,
+          plan: authenticatedUser.plan,
         });
         setUser(authenticatedUser);
       } else if (localUser) {
@@ -257,24 +296,14 @@ export function useAuth() {
           type: authenticatedUser.type,
           name: authenticatedUser.name,
           avatar: authenticatedUser.avatar,
+          plan: authenticatedUser.plan,
         });
         setUser(authenticatedUser);
       } else if (!isOnline) {
-        const offlineIdentity = getOfflineIdentity();
-        // This is display-only access to a short-lived, per-user local cache.
-        // Never restore plan or admin privileges without validating the session.
-        setUser(
-          offlineIdentity
-            ? {
-                id: offlineIdentity.id,
-                name: offlineIdentity.name,
-                avatar: offlineIdentity.avatar,
-                role: "user",
-                plan: "free",
-                type: offlineIdentity.type,
-              }
-            : null,
-        );
+        // Display-only access to a short-lived, per-user local cache. Admin
+        // rights are never restored from it; the tier is presentation state
+        // that the server re-checks on every paid route.
+        setUser(hydrateIdentitySnapshot());
       } else {
         // A definite online unauthenticated response invalidates any snapshot
         // that may remain from an expired session on this device.
@@ -285,7 +314,7 @@ export function useAuth() {
         }
         setUser(null);
       }
-      setIsLoading(false);
+      setIsVerified(true);
     }
   }, [oauthUser, localUser, oauthFetched, localFetched, isOnline]);
 
@@ -315,13 +344,25 @@ export function useAuth() {
       await clearPersistedQueryCache(user);
     }
     clearOfflineIdentity();
+    // Restored scroll offsets belong to the account that just left.
+    clearScrollCache();
     setUser(null);
     window.location.href = "/login";
   }, [logoutMutation, localLogoutMutation, user]);
 
+  // Nothing is renderable only when the device has no snapshot to replay and
+  // the server has not answered yet. A resumed session skips this entirely.
+  const isLoading = !isVerified && user === null;
+
   return {
     user,
     isLoading,
+    /**
+     * The server has confirmed this session. Guards that take access away —
+     * a redirect to /login, /pro, or off the admin route — must wait for this,
+     * otherwise an unverified snapshot decides who gets thrown out.
+     */
+    isVerified,
     isAdmin: user?.role === "admin",
     isModerator: user?.role === "moderator" || user?.role === "admin",
     /** Pro or Ultra or Admin — matches premium feature access across the app */

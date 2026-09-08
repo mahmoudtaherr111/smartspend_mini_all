@@ -261,14 +261,20 @@ async function triggerTemplateNotificationsBatch(
   }
 }
 
-try {
-  webpush.setVapidDetails(
-    "mailto:contact@smartspend.com",
-    process.env.VAPID_PUBLIC_KEY || "BBtKP6w97Av5YT6NvKCh3EostLvYiXIHQqM-QGSMlMYRk8fJPalWo3dvXEcghrnlizV1selpCWTOjU4qTjIBb3o",
-    process.env.VAPID_PRIVATE_KEY || "-31rwR0LxanvleE02FotUVGGx3mVno1YJtR7hTaNHrA"
-  );
-} catch (error) {
-  console.warn("⚠️ Failed to set VAPID details for Web Push. Web Push fallback might not function:", error);
+const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+if (vapidPublicKey && vapidPrivateKey) {
+  try {
+    webpush.setVapidDetails(
+      "mailto:contact@smartspend.com",
+      vapidPublicKey,
+      vapidPrivateKey,
+    );
+  } catch (error) {
+    console.warn("⚠️ Failed to set VAPID details for Web Push. Web Push fallback might not function:", error);
+  }
+} else {
+  console.warn("⚠️ VAPID keys not configured in environment. Web Push fallback is disabled.");
 }
 
 /**

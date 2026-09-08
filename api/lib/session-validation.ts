@@ -1,5 +1,5 @@
 import { verify } from "hono/jwt";
-import { and, eq, gt, or } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
 import { createHash } from "crypto";
 import { sessions } from "../../db/schema";
 import { db } from "../queries/connection";
@@ -173,13 +173,10 @@ export async function validateActiveSessionToken(
 
     const { hex: tokenHashHex } = hashSessionToken(token);
 
-    // Primary: lookup by tokenHash; Fallback: lookup by token
+    // Strictly lookup by tokenHash; plaintext fallback eliminated
     const session = await db.query.sessions.findFirst({
       where: and(
-        or(
-          eq(sessions.tokenHash, tokenHashHex),
-          eq(sessions.token, token),
-        ),
+        eq(sessions.tokenHash, tokenHashHex),
         eq(sessions.userId, userId),
         eq(sessions.userType, userType),
         gt(sessions.expiresAt, new Date()),

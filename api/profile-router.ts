@@ -17,7 +17,7 @@ import {
 } from "../db/schema";
 import { eq, and, gte, lte, desc, sql, isNotNull, like } from "drizzle-orm";
 
-import { randomBytes } from "crypto";
+import { randomBytes, randomInt } from "crypto";
 import {
   getSmartProfile,
   recordProfileLearningEvent,
@@ -33,15 +33,98 @@ import {
   getNextOnboardingQuestion,
 } from "./services/adaptive-question-engine";
 import { buildBehaviorSnapshot } from "./services/lifestyle-inference-engine";
+import { cleanPhoneNumber, validatePhone } from "./local-auth-utils";
+import { otpCache } from "./services/otp-cache";
+import { whatsappService } from "./services/whatsapp-service";
+import { getSystemSettings } from "./lib/settings-cache";
+import { bumpAuthVersion } from "./lib/session-validation";
+import { validateBusinessOwnership } from "./lib/ownership-guard";
 
-const smartProfilePatchSchema = z.object({
-  basicInfo: z.record(z.string(), z.any()).optional(),
-  financialInfo: z.record(z.string(), z.any()).optional(),
-  lifestyleInfo: z.record(z.string(), z.any()).optional(),
-  onboardingAnswers: z.record(z.string(), z.any()).optional(),
-  aiInferredAttributes: z.record(z.string(), z.any()).optional(),
-  preferences: z.record(z.string(), z.any()).optional(),
-  avatarId: z.string().nullable().optional(),
+// ─── Strict Profile Validation Schemas (Eliminating z.any() wildcards) ───
+
+export const safePrimitiveSchema = z.union([
+  z.string().max(500),
+  z.number().finite(),
+  z.boolean(),
+]);
+
+export const safeArraySchema = z.array(z.string().max(200)).max(50);
+
+export const safeProfileValueSchema = z.union([
+  safePrimitiveSchema,
+  safeArraySchema,
+]);
+
+export const safeProfileSectionSchema = z
+  .record(
+    z.string().min(1).max(80).regex(/^[a-zA-Z0-9_-]+$/, "مفتاح غير صالح"),
+    safeProfileValueSchema,
+  )
+  .refine((obj) => Object.keys(obj).length <= 100, "تجاوز الحد الأقصى لعدد العناصر");
+
+export const onboardingAnswerSchema = z.object({
+  value: safeProfileValueSchema.optional(),
+  skipped: z.boolean().optional(),
+  answeredAt: z.string().max(50).optional(),
+  updatedAt: z.string().max(50).optional(),
+});
+
+export const StrictBasicInfoSchema = z
+  .object({
+    ageRange: z.enum(["18-24", "25-34", "35-44", "45-54", "55+"]).optional(),
+    occupation: z.string().max(100).optional(),
+    city: z.string().max(50).optional(),
+    maritalStatus: z.enum(["single", "married", "prefer_not_to_say"]).optional(),
+    dependentsCount: z.number().int().min(0).max(20).optional(),
+  })
+  .strict();
+
+export const StrictFinancialInfoSchema = z
+  .object({
+    primaryIncomeSource: z.enum(["salary", "freelance", "business", "investments", "other"]).optional(),
+    incomeBracket: z.string().max(50).optional(),
+    primaryGoal: z.enum([
+      "save_money",
+      "reduce_spending",
+      "pay_debt",
+      "organize_expenses",
+      "track_income",
+      "manage_business",
+    ]).optional(),
+    hasEmergencyFund: z.boolean().optional(),
+    budgetingExperience: z.enum(["beginner", "intermediate", "advanced"]).optional(),
+  })
+  .strict();
+
+export const StrictProfileUpdateSchema = z
+  .object({
+    name: z.string().min(1).max(100).optional(),
+    phone: z.string().regex(/^01[0125]\d{8}$/, "رقم هاتف مصري غير صحيح").optional(),
+    otpToken: z.string().min(6).max(64).optional(),
+    avatar: z.string().max(200).optional(),
+  })
+  .refine(
+    (data) => {
+      // If phone number is being changed, otpToken MUST be supplied
+      if (data.phone !== undefined) {
+        return Boolean(data.otpToken && data.otpToken.trim().length > 0);
+      }
+      return true;
+    },
+    {
+      message: "تغيير رقم الهاتف يتطلب تقديم رمز تأكيد التوثيق (OTP)",
+      path: ["otpToken"],
+    },
+  );
+
+export const smartProfilePatchSchema = z.object({
+  basicInfo: z.union([StrictBasicInfoSchema, safeProfileSectionSchema]).optional(),
+  financialInfo: z.union([StrictFinancialInfoSchema, safeProfileSectionSchema]).optional(),
+  lifestyleInfo: safeProfileSectionSchema.optional(),
+  onboardingAnswers: z.record(z.string().max(80), onboardingAnswerSchema).optional(),
+  aiInferredAttributes: safeProfileSectionSchema.optional(),
+  preferences: safeProfileSectionSchema.optional(),
+  avatarId: z.string().max(100).nullable().optional(),
   profileCompleted: z.boolean().optional(),
 });
 
@@ -263,12 +346,12 @@ export const profileRouter = router({
   submitOnboardingAnswer: authedProcedure
     .input(
       z.object({
-        key: z.string().min(1),
-        value: z.any().optional(),
+        key: z.string().min(1).max(80).regex(/^[a-zA-Z0-9_-]+$/),
+        value: safeProfileValueSchema.optional(),
         skipped: z.boolean().default(false),
         // Frontend sends ALL accumulated answers so far — this is the resilience layer.
         // Even if the DB failed to persist previous answers, these are the source of truth.
-        accumulatedAnswers: z.record(z.string(), z.any()).optional(),
+        accumulatedAnswers: z.record(z.string().max(80), onboardingAnswerSchema).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -333,15 +416,181 @@ export const profileRouter = router({
       return { success: true, ...result };
     }),
 
-  updateUserInfo: authedProcedure
+  requestPhoneChange: authedProcedure
     .input(
       z.object({
-        name: z.string().min(2).optional(),
-        phone: z.string().optional(),
-        avatar: z.string().optional(),
+        newPhone: z.string().regex(/^01[0125]\d{8}$/, "رقم هاتف مصري غير صحيح"),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      if (ctx.user.type !== "local") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "تغيير رقم الهاتف متاح فقط للحسابات المحلية",
+        });
+      }
+
+      const clean = cleanPhoneNumber(input.newPhone);
+      const validation = validatePhone(clean);
+      if (!validation.valid) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: validation.message,
+        });
+      }
+
+      // Check if phone is already registered to another user
+      const existing = await db.query.localUsers.findFirst({
+        where: eq(localUsers.phone, clean),
+      });
+      if (existing && existing.id !== ctx.user.id) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "رقم الهاتف مسجل بالفعل لحساب آخر",
+        });
+      }
+
+      const code = "SS-" + randomInt(100000, 1000000).toString();
+      const cacheKey = `phone-change:${ctx.user.id}:${clean}`;
+      otpCache.set(cacheKey, {
+        phone: clean,
+        code,
+        expiresAt: Date.now() + 10 * 60 * 1000,
+        verified: false,
+      });
+
+      const settings = await getSystemSettings();
+      if (settings["whatsapp_otp_enabled"] === "true") {
+        await whatsappService.sendMessage(
+          clean,
+          `رمز تأكيد تغيير رقم الهاتف في SmartSpend هو: ${code}`,
+        );
+      }
+
+      return {
+        success: true,
+        message: "تم إرسال رمز التأكيد إلى رقم هاتفك الجديد",
+      };
+    }),
+
+  confirmPhoneChange: authedProcedure
+    .input(
+      z.object({
+        newPhone: z.string().regex(/^01[0125]\d{8}$/, "رقم هاتف مصري غير صحيح"),
+        code: z.string().min(4).max(12),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.type !== "local") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "تغيير رقم الهاتف متاح فقط للحسابات المحلية",
+        });
+      }
+
+      const clean = cleanPhoneNumber(input.newPhone);
+      const cacheKey = `phone-change:${ctx.user.id}:${clean}`;
+      const record = otpCache.get(cacheKey);
+
+      if (
+        !record ||
+        record.expiresAt < Date.now() ||
+        record.code !== input.code.trim()
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "رمز التأكيد غير صحيح أو منتهي الصلاحية",
+        });
+      }
+
+      otpCache.delete(cacheKey);
+
+      // Check conflict again before persisting
+      const existing = await db.query.localUsers.findFirst({
+        where: eq(localUsers.phone, clean),
+      });
+      if (existing && existing.id !== ctx.user.id) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "رقم الهاتف مسجل بالفعل لحساب آخر",
+        });
+      }
+
+      // Generate verified OTP grant token (usable if client also calls updateUserInfo)
+      const otpToken = `otp_grant_${randomBytes(16).toString("hex")}`;
+      otpCache.set(`phone-grant:${ctx.user.id}:${clean}:${otpToken}`, {
+        phone: clean,
+        code: otpToken,
+        expiresAt: Date.now() + 15 * 60 * 1000,
+        verified: true,
+      });
+
+      // Update phone in DB
+      await db
+        .update(localUsers)
+        .set({ phone: clean })
+        .where(eq(localUsers.id, ctx.user.id));
+
+      await bumpAuthVersion("local", ctx.user.id);
+
+      return {
+        success: true,
+        otpToken,
+        message: "تم تحديث رقم الهاتف بنجاح",
+      };
+    }),
+
+  updateUserInfo: authedProcedure
+    .input(StrictProfileUpdateSchema)
+    .mutation(async ({ ctx, input }) => {
+      if (input.phone !== undefined) {
+        if (ctx.user.type !== "local") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "تغيير رقم الهاتف متاح فقط للحسابات المحلية",
+          });
+        }
+
+        const clean = cleanPhoneNumber(input.phone);
+        const grantKey = `phone-grant:${ctx.user.id}:${clean}:${input.otpToken}`;
+        const directKey = `phone-change:${ctx.user.id}:${clean}`;
+        const grant = otpCache.get(grantKey);
+        const directRecord = otpCache.get(directKey);
+
+        const isDirectCodeMatch =
+          directRecord &&
+          directRecord.code === input.otpToken?.trim() &&
+          directRecord.expiresAt >= Date.now();
+        const isGrantMatch = grant && grant.expiresAt >= Date.now();
+
+        if (!isDirectCodeMatch && !isGrantMatch) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "رمز تأكيد التوثيق (OTP) غير صحيح أو منتهي الصلاحية",
+          });
+        }
+
+        otpCache.delete(grantKey);
+        otpCache.delete(directKey);
+
+        const existing = await db.query.localUsers.findFirst({
+          where: eq(localUsers.phone, clean),
+        });
+        if (existing && existing.id !== ctx.user.id) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "رقم الهاتف مسجل بالفعل لحساب آخر",
+          });
+        }
+
+        await db
+          .update(localUsers)
+          .set({ phone: clean })
+          .where(eq(localUsers.id, ctx.user.id));
+
+        await bumpAuthVersion("local", ctx.user.id);
+      }
+
       if (ctx.user.type === "oauth") {
         const updates: any = {};
         if (input.name) updates.name = input.name;
@@ -352,7 +601,6 @@ export const profileRouter = router({
       } else {
         const updates: any = {};
         if (input.name) updates.name = input.name;
-        if (input.phone) updates.phone = input.phone;
         if (input.avatar !== undefined) updates.avatar = input.avatar;
         if (Object.keys(updates).length > 0) {
           await db
@@ -644,6 +892,20 @@ export const profileRouter = router({
         throw new TRPCError({ code: "CONFLICT", message: "شخص بنفس الاسم موجود بالفعل" });
       }
 
+      if (input.businessId) {
+        const isOwner = await validateBusinessOwnership(
+          ctx.user.id as number,
+          input.businessId,
+          ctx.user.type,
+        );
+        if (!isOwner) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "المشروع المحدد غير موجود أو لا تملك صلاحية الوصول إليه",
+          });
+        }
+      }
+
       const [result] = await db.insert(userContacts).values({
         userId: ctx.user.id as number,
         userType: ctx.user.type,
@@ -669,6 +931,20 @@ export const profileRouter = router({
       isSilenced: z.boolean().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
+      if (input.businessId) {
+        const isOwner = await validateBusinessOwnership(
+          ctx.user.id as number,
+          input.businessId,
+          ctx.user.type,
+        );
+        if (!isOwner) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "المشروع المحدد غير موجود أو لا تملك صلاحية الوصول إليه",
+          });
+        }
+      }
+
       const [existing] = await db
         .select({ id: userContacts.id })
         .from(userContacts)

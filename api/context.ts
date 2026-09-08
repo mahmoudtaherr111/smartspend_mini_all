@@ -44,7 +44,15 @@ function parseCookie(
   }
   if (!cookieHeader) return undefined;
   const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
-  return match ? match[1] : undefined;
+  if (!match) return undefined;
+  const raw = match[1].trim();
+  const unquoted =
+    raw.startsWith('"') && raw.endsWith('"') ? raw.slice(1, -1) : raw;
+  try {
+    return decodeURIComponent(unquoted);
+  } catch {
+    return unquoted;
+  }
 }
 
 // Get authorization header from either request type
@@ -97,61 +105,71 @@ export async function createContext(
 
   // 1. Try Local/WebAuthn/Bearer Auth FIRST (Authorization header takes precedence over cookie)
   const authHeader = getAuthHeader(req);
+  let token: string | undefined;
   if (authHeader?.startsWith("Bearer ")) {
-    const token = authHeader.slice(7).trim();
-    if (token) {
-      const { hex: tokenHashHex } = hashSessionToken(token);
+    token = authHeader.slice(7).trim();
+  } else {
+    // If Authorization header is missing, check smartspend_token cookie (R8 Secure Cookie Migration)
+    const localCookieToken =
+      parseCookie(req, "smartspend_token") ||
+      parseCookie(req, "local_session");
+    if (localCookieToken) {
+      token = localCookieToken.trim();
+    }
+  }
 
-      // Fast Path (P1): 0 MySQL queries when principal is warm in Redis
-      const cached = await getCachedResolvedSession(tokenHashHex);
-      if (cached) {
-        user = cached.user;
-      } else {
-        // Fallback: Verify active database session
-        const activeSession = await validateActiveSessionToken(token);
-        if (activeSession) {
-          if (activeSession.userType === "oauth") {
-            const dbUser = await db.query.users.findFirst({
-              where: eq(users.id, activeSession.userId),
-            });
-            if (dbUser) {
-              user = {
-                id: dbUser.id,
-                name: dbUser.name,
-                email: dbUser.email,
-                avatar: dbUser.avatar,
-                role: dbUser.role as "user" | "moderator" | "admin",
-                plan: dbUser.plan as "free" | "pro" | "ultra",
-                type: "oauth",
-              };
-            }
-          } else {
-            const dbUser = await db.query.localUsers.findFirst({
-              where: eq(localUsers.id, activeSession.userId),
-            });
-            if (dbUser) {
-              user = {
-                id: dbUser.id,
-                name: dbUser.name,
-                email: dbUser.email,
-                avatar: dbUser.avatar,
-                role: dbUser.role as "user" | "moderator" | "admin",
-                plan: dbUser.plan as "free" | "pro" | "ultra",
-                type: "local",
-                phone: dbUser.phone,
-              };
-            }
-          }
+  if (token) {
+    const { hex: tokenHashHex } = hashSessionToken(token);
 
-          if (user) {
-            const authver = await getAuthVersion(user.type, user.id);
-            await cacheResolvedSession(
-              tokenHashHex,
-              user,
-              activeSession.expiresAt,
-              authver,
-            );
+    // Fast Path (P1): 0 MySQL queries when principal is warm in Redis
+    const cached = await getCachedResolvedSession(tokenHashHex);
+    if (cached) {
+      user = cached.user;
+    } else {
+      // Fallback: Verify active database session
+      const activeSession = await validateActiveSessionToken(token);
+      if (activeSession) {
+        if (activeSession.userType === "oauth") {
+          const dbUser = await db.query.users.findFirst({
+            where: eq(users.id, activeSession.userId),
+          });
+          if (dbUser) {
+            user = {
+              id: dbUser.id,
+              name: dbUser.name,
+              email: dbUser.email,
+              avatar: dbUser.avatar,
+              role: dbUser.role as "user" | "moderator" | "admin",
+              plan: dbUser.plan as "free" | "pro" | "ultra",
+              type: "oauth",
+            };
           }
+        } else {
+          const dbUser = await db.query.localUsers.findFirst({
+            where: eq(localUsers.id, activeSession.userId),
+          });
+          if (dbUser) {
+            user = {
+              id: dbUser.id,
+              name: dbUser.name,
+              email: dbUser.email,
+              avatar: dbUser.avatar,
+              role: dbUser.role as "user" | "moderator" | "admin",
+              plan: dbUser.plan as "free" | "pro" | "ultra",
+              type: "local",
+              phone: dbUser.phone,
+            };
+          }
+        }
+
+        if (user) {
+          const authver = await getAuthVersion(user.type, user.id);
+          await cacheResolvedSession(
+            tokenHashHex,
+            user,
+            activeSession.expiresAt,
+            authver,
+          );
         }
       }
     }

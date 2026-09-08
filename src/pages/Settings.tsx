@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
+import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import { trpc } from "../providers/trpc";
 import { SEOMeta } from "../components/seo/SEOMeta";
 import { useTheme } from "next-themes";
@@ -24,7 +23,6 @@ import {
   User,
   Bell,
   BellRing,
-  ChevronLeft,
   ChevronRight,
   Fingerprint,
   Moon,
@@ -49,7 +47,7 @@ type SettingsView =
   | "business";
 
 const SETTINGS_VIEW_PATHS: Record<SettingsView, string> = {
-  main: "/settings",
+  main: "/more",
   profile: "/settings/profile",
   notifications: "/settings/notifications",
   passkeys: "/settings/security",
@@ -83,73 +81,13 @@ function resolveSettingsView(
   return "main";
 }
 
-interface SettingsMenuItemProps {
-  icon: React.ReactNode;
-  title: string;
-  description?: string;
-  onClick: () => void;
-  badge?: React.ReactNode;
-  iconClass?: string;
-  danger?: boolean;
-}
-
-function SettingsMenuItem({
-  icon,
-  title,
-  description,
-  onClick,
-  badge,
-  iconClass = "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400",
-  danger = false,
-}: SettingsMenuItemProps) {
-  return (
-    <motion.button
-      type="button"
-      onClick={onClick}
-      whileHover={{ scale: 1.01, y: -1 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ type: "spring", stiffness: 400, damping: 25 }}
-      className={`w-full flex items-center justify-between p-4 rounded-2xl border cursor-pointer text-end select-none outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition-colors min-h-[76px] ${
-        danger
-          ? "border-rose-200 dark:border-rose-950/40 bg-rose-50/10 dark:bg-rose-950/5 hover:bg-rose-50/20 dark:hover:bg-rose-950/10 text-rose-600 dark:text-rose-400"
-          : "border-slate-200/60 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/30 backdrop-blur-md hover:bg-slate-100/50 dark:hover:bg-slate-900/50"
-      }`}
-    >
-      <div className="flex items-center gap-3">
-        <div
-          className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm shrink-0 ${iconClass}`}
-        >
-          {icon}
-        </div>
-        <div className="text-end">
-          <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
-            {title}
-          </h4>
-          {description && (
-            <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">
-              {description}
-            </p>
-          )}
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        {badge}
-        {!danger && <ChevronLeft className="w-4 h-4 text-slate-400" />}
-      </div>
-    </motion.button>
-  );
-}
-
 export default function Settings() {
-  const { user } = useAuth();
   const { theme, setTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const legacyTab = new URLSearchParams(location.search).get("tab");
   const currentView = resolveSettingsView(location.pathname, legacyTab);
-  const openView = (view: Exclude<SettingsView, "main">) =>
-    navigate(SETTINGS_VIEW_PATHS[view]);
-  const closeView = () => navigate(SETTINGS_VIEW_PATHS.main);
+  const closeView = () => navigate("/more");
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
@@ -157,27 +95,7 @@ export default function Settings() {
   const trpcContext = trpc.useContext();
   const updateProfileMut = trpc.profile.updateSmartProfile.useMutation();
 
-  const isProfileComplete = profileQuery.data?.profileCompleted;
-
   const { isSupported, isSubscribed, subscribeToPush } = usePushNotifications();
-
-  const avatar = user?.avatar || "";
-
-  const completionScore = (() => {
-    if (!profileQuery.data) return 0;
-    const financial = profileQuery.data.financialInfo as any;
-    const lifestyle = profileQuery.data.lifestyleInfo as any;
-    const basic = profileQuery.data.basicInfo as any;
-
-    const checks = [
-      financial?.averageMonthlyIncome,
-      financial?.primaryGoal,
-      lifestyle?.livingSituation,
-      financial?.hasDebt !== undefined,
-      basic?.profession,
-    ];
-    return Math.round((checks.filter(Boolean).length / checks.length) * 100);
-  })();
 
   const rtlSubViewVariants: Variants = {
     initial: (isSubView: boolean) => ({
@@ -245,176 +163,7 @@ export default function Settings() {
           custom={currentView !== "main"}
         >
           {currentView === "main" && (
-            <motion.div
-              key="main"
-              custom={false}
-              variants={rtlSubViewVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className="space-y-6 will-change-transform transform-gpu"
-              style={{
-                backfaceVisibility: "hidden",
-                WebkitBackfaceVisibility: "hidden",
-              }}
-            >
-              {/* Header */}
-              <div className="text-end">
-                <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-                  الإعدادات
-                </h1>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  تفضيلات حسابك، إشعارات الموبايل والمظهر
-                </p>
-              </div>
-
-              {/* User Profile Summary Card */}
-              <motion.div
-                onClick={() => {
-                  setIsEditingProfile(false);
-                  openView("profile");
-                }}
-                whileHover={{ scale: 1.005 }}
-                whileTap={{ scale: 0.99 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                className="flex items-center justify-between p-4 sm:p-5 rounded-3xl bg-slate-900 dark:bg-slate-950 text-white border border-slate-800 shadow-xl cursor-pointer relative group overflow-hidden"
-              >
-                {/* Glow decor */}
-                <div className="absolute top-0 end-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-                <div className="absolute bottom-0 start-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
-
-                <div className="flex items-center gap-4 relative z-10">
-                  {avatar ? (
-                    <img
-                      src={avatar}
-                      alt="Profile"
-                      className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-emerald-400 shadow-md"
-                    />
-                  ) : (
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-800 flex items-center justify-center border-2 border-slate-700">
-                      <User className="w-6 h-6 sm:w-8 sm:h-8 text-slate-400" />
-                    </div>
-                  )}
-                  <div className="text-end">
-                    <h3 className="font-extrabold text-base sm:text-lg">
-                      {user?.name || "مستخدم SmartSpend"}
-                    </h3>
-                    <p className="text-xs text-slate-400 flex items-center gap-1 mt-1 font-medium">
-                      <Briefcase className="w-3.5 h-3.5 text-slate-500" />
-                      {(profileQuery.data?.basicInfo as any)?.profession ||
-                        "لم يتم تحديد المهنة"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-end gap-2 relative z-10">
-                  <div className="flex gap-2">
-                    <span className="text-[10px] font-black bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">
-                      {completionScore}% مكتمل
-                    </span>
-                    <span className="text-[10px] font-extrabold bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30 tracking-wider">
-                      {user?.plan === "pro"
-                        ? "PRO"
-                        : user?.plan === "ultra"
-                          ? "ULTRA"
-                          : "FREE"}
-                    </span>
-                  </div>
-                  <ChevronLeft className="w-5 h-5 text-slate-400 group-hover:-translate-x-1 transition-transform" />
-                </div>
-              </motion.div>
-
-              {/* Menu Groups */}
-              <div className="space-y-5 text-end">
-                {/* Group 1: Account Info */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-black text-slate-400 dark:text-slate-600 uppercase tracking-wider px-2">
-                    إدارة الحساب
-                  </h4>
-                  <div className="grid gap-2">
-                    <SettingsMenuItem
-                      icon={<Fingerprint className="w-5 h-5" />}
-                      title="الأمان والدخول بالبصمة"
-                      description="تفعيل الدخول السريع ببصمة الوجه أو الأصبع"
-                      onClick={() => openView("passkeys")}
-                    />
-                  </div>
-                </div>
-
-                {/* Group 1.5: Relationship Management */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-black text-slate-400 dark:text-slate-600 uppercase tracking-wider px-2">
-                    إدارة العلاقات
-                  </h4>
-                  <div className="grid gap-2">
-                    <SettingsMenuItem
-                      icon={<Users className="w-5 h-5" />}
-                      title="الأشخاص والعلاقات"
-                      description="إدارة الأسماء، العلاقات، والدمج"
-                      onClick={() => openView("people")}
-                    />
-                    <SettingsMenuItem
-                      icon={<Store className="w-5 h-5" />}
-                      title="مشروعك التجاري"
-                      description="فئات مخصصة وتصنيف تلقائي للمشروع"
-                      onClick={() => openView("business")}
-                    />
-                  </div>
-                </div>
-
-                {/* Group 2: App Preferences */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-black text-slate-400 dark:text-slate-600 uppercase tracking-wider px-2">
-                    تفضيلات التطبيق
-                  </h4>
-                  <div className="grid gap-2">
-                    <SettingsMenuItem
-                      icon={<BellRing className="w-5 h-5" />}
-                      title="إشعارات المتصفح والموبايل"
-                      description="التحكم بتنبيهات السقف المالي الفورية"
-                      onClick={() => openView("notifications")}
-                      badge={
-                        <span
-                          className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${isSubscribed ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50" : "bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"}`}
-                        >
-                          {isSubscribed ? "مفعلة" : "غير مفعلة"}
-                        </span>
-                      }
-                    />
-                    <SettingsMenuItem
-                      icon={
-                        theme === "dark" ? (
-                          <Moon className="w-5 h-5" />
-                        ) : theme === "light" ? (
-                          <Sun className="w-5 h-5" />
-                        ) : (
-                          <Monitor className="w-5 h-5" />
-                        )
-                      }
-                      title="مظهر التطبيق"
-                      description="التحويل بين المظهر الفاتح والداكن والتلقائي"
-                      onClick={() => openView("theme")}
-                      badge={
-                        <span className="text-[10px] font-black bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 px-2.5 py-0.5 rounded-full border border-indigo-100 dark:border-indigo-800/50">
-                          {theme === "dark"
-                            ? "داكن"
-                            : theme === "light"
-                              ? "فاتح"
-                              : "تلقائي"}
-                        </span>
-                      }
-                    />
-                    <SettingsMenuItem
-                      icon={<Sparkles className="w-5 h-5" />}
-                      title="التحليل الشهري بالذكاء الاصطناعي"
-                      description="إعدادات تقرير الواتساب وموعد الإرسال"
-                      onClick={() => openView("ai_report")}
-                      iconClass="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400"
-                    />
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+            <Navigate to="/more" replace />
           )}
 
           {/* Sub-view: Profile */}

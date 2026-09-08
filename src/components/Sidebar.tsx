@@ -50,7 +50,7 @@ const menuItems = [
 
 const bottomItems = [
   { icon: HelpCircle, label: "الدعم", href: "/support" },
-  { icon: Settings, label: "الإعدادات", href: "/settings" },
+  { icon: Menu, label: "المزيد", href: "/more" },
 ];
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {

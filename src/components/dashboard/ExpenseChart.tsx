@@ -37,6 +37,7 @@ import {
 import { getProviderMeta } from "../expenses/RecentExpenses";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { getTransactionDisplayMeta } from "@/lib/transactionDisplay";
 
 interface ExpenseChartProps {
   categoryData: any[];
@@ -1056,7 +1057,7 @@ export function ExpenseChart({
               electronicStats[selectedProviderWallet]?.transactions.map(
                 (item, idx) => {
                   const date = new Date(item.date);
-                  const isIncome = item.type === "income";
+                  const displayMeta = getTransactionDisplayMeta(item);
                   return (
                     <div
                       key={idx}
@@ -1069,6 +1070,14 @@ export function ExpenseChart({
                         <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-1">
                           <Badge className="py-0 px-1.5 text-[9px] border-0 bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                             {item.category}
+                          </Badge>
+                          <Badge
+                            className={cn(
+                              "py-0 px-1.5 text-[9px] border-0",
+                              displayMeta.badgeClass,
+                            )}
+                          >
+                            {displayMeta.label}
                           </Badge>
                           <span>
                             {date.toLocaleDateString("ar-EG", {
@@ -1084,12 +1093,10 @@ export function ExpenseChart({
                         <span
                           className={cn(
                             "font-bold text-base",
-                            isIncome
-                              ? "text-emerald-600 dark:text-emerald-400"
-                              : "text-rose-600 dark:text-rose-400",
+                            displayMeta.amountClass,
                           )}
                         >
-                          {isIncome ? "+" : "-"}
+                          {displayMeta.sign}
                           {Number(item.amount).toLocaleString("ar-EG")} ج.م
                         </span>
                         {typeof item.parsedMetadata?.balance_after ===

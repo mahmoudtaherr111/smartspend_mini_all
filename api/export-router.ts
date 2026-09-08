@@ -8,8 +8,94 @@ import {
 import { wrapReportAsPrintableHtml } from "./services/pro-report-engine";
 import { db } from "./queries/connection";
 import { expenses, users, localUsers } from "../db/schema";
-import { eq, and, gte, lte, sql } from "drizzle-orm";
-import * as XLSX from "xlsx";
+import { eq, and, gte, lte } from "drizzle-orm";
+import ExcelJS from "exceljs";
+
+export const FORMULA_TRIGGERS = ["=", "+", "-", "@", "\t", "\r"];
+
+/**
+ * Neutralizes spreadsheet formula injection (CWE-1236) by prepending a single quote (')
+ * to strings that begin with formula trigger characters (=, +, -, @, \t, \r).
+ * Normal text, numbers, and booleans are preserved as-is.
+ */
+export function sanitizeSpreadsheetField<T>(value: T): T | string {
+  if (value === null || value === undefined) return value;
+  if (typeof value === "number" || typeof value === "boolean") return value;
+
+  const str = String(value);
+  if (str.length === 0) return str;
+
+  const firstChar = str.charAt(0);
+  if (FORMULA_TRIGGERS.includes(firstChar)) {
+    return `'${str}`;
+  }
+  return str;
+}
+
+/**
+ * Helper: Generate CSV string with RFC 4180 escaping and formula sanitization.
+ */
+export function generateCsv(rows: Record<string, unknown>[]): string {
+  if (rows.length === 0) return "";
+  const headers = Object.keys(rows[0]);
+  const headerLine = headers.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(",");
+  const lines = rows.map((row) =>
+    headers
+      .map((header) => {
+        const val = sanitizeSpreadsheetField(row[header]);
+        const str = val === null || val === undefined ? "" : String(val);
+        return `"${str.replace(/"/g, '""')}"`;
+      })
+      .join(",")
+  );
+  return [headerLine, ...lines].join("\r\n");
+}
+
+/**
+ * Helper: Build ExcelJS Workbook buffer with native Arabic RTL support and formula sanitization.
+ */
+export async function generateExcelBuffer(
+  sheetName: string,
+  rows: Record<string, unknown>[],
+): Promise<string> {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "SmartSpend AI";
+  workbook.created = new Date();
+
+  const worksheet = workbook.addWorksheet(sheetName, {
+    views: [{ rightToLeft: true }],
+  });
+
+  if (rows.length > 0) {
+    const headers = Object.keys(rows[0]);
+    worksheet.columns = headers.map((header) => ({
+      header,
+      key: header,
+      width: Math.max(header.length * 3, 16),
+    }));
+
+    // Style header row
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
+    headerRow.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF1E293B" },
+    };
+    headerRow.alignment = { horizontal: "center", vertical: "middle" };
+
+    for (const row of rows) {
+      const sanitizedRow: Record<string, unknown> = {};
+      for (const key of headers) {
+        sanitizedRow[key] = sanitizeSpreadsheetField(row[key]);
+      }
+      worksheet.addRow(sanitizedRow);
+    }
+  }
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  return Buffer.from(buffer).toString("base64");
+}
 
 export const exportRouter = router({
   // ─── Export My Expenses ───
@@ -56,23 +142,18 @@ export const exportRouter = router({
         };
       }
 
-      const ws = XLSX.utils.json_to_sheet(formatted);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "المصاريف");
-
       if (input.format === "csv") {
-        const csv = XLSX.utils.sheet_to_csv(ws);
         return {
           format: "csv",
-          data: csv,
+          data: generateCsv(formatted),
           filename: `expenses_${ctx.user.id}.csv`,
         };
       }
 
-      const buf = XLSX.write(wb, { bookType: "xlsx", type: "buffer" });
+      const base64Data = await generateExcelBuffer("المصاريف", formatted);
       return {
         format: "xlsx",
-        data: buf.toString("base64"),
+        data: base64Data,
         filename: `expenses_${ctx.user.id}.xlsx`,
       };
     }),
@@ -158,22 +239,18 @@ export const exportRouter = router({
         };
       }
 
-      const ws = XLSX.utils.json_to_sheet(formatted);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "المستخدمين");
-
       if (input.format === "csv") {
         return {
           format: "csv",
-          data: XLSX.utils.sheet_to_csv(ws),
+          data: generateCsv(formatted),
           filename: "users_export.csv",
         };
       }
 
-      const buf = XLSX.write(wb, { bookType: "xlsx", type: "buffer" });
+      const base64Data = await generateExcelBuffer("المستخدمين", formatted);
       return {
         format: "xlsx",
-        data: buf.toString("base64"),
+        data: base64Data,
         filename: "users_export.xlsx",
       };
     }),

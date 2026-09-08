@@ -4,7 +4,7 @@ import { db } from "./queries/connection";
 import { sessions } from "../db/schema";
 import { env } from "./lib/env";
 import { getClientIp, getIncomingHeader } from "./lib/get-client-ip";
-import { randomBytes } from "crypto";
+import { createHash, randomBytes } from "crypto";
 import type { HonoRequest } from "hono";
 
 type SessionRequest = HonoRequest | Request;
@@ -51,7 +51,6 @@ import {
   hashSessionToken,
   invalidateCachedSession,
 } from "./lib/session-validation";
-import { or } from "drizzle-orm";
 
 export async function createSession(
   userId: number,
@@ -62,12 +61,12 @@ export async function createSession(
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
 
-  const { hex: tokenHash } = hashSessionToken(token);
+  const tokenHash = createHash("sha256").update(token).digest("hex");
 
   await db.insert(sessions).values({
     userId,
     userType,
-    token,
+    token: null,
     tokenHash,
     expiresAt,
     ipAddress: metadata.ipAddress || null,
@@ -77,10 +76,10 @@ export async function createSession(
 
 export async function invalidateSession(token: string) {
   await invalidateCachedSession(token);
-  const { hex: tokenHash } = hashSessionToken(token);
+  const tokenHash = createHash("sha256").update(token).digest("hex");
   await db
     .delete(sessions)
-    .where(or(eq(sessions.tokenHash, tokenHash), eq(sessions.token, token)));
+    .where(eq(sessions.tokenHash, tokenHash));
 }
 
 // Smart phone validation for Egyptian numbers

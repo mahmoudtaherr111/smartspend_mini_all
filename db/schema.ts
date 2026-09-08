@@ -312,7 +312,7 @@ export const sessions = mysqlTable(
     userId: int("user_id").notNull(),
     userType: varchar("user_type", { length: 50 }).notNull(),
     token: varchar("token", { length: 500 }),
-    tokenHash: binary32("token_hash"),
+    tokenHash: varchar("token_hash", { length: 64 }),
     ipAddress: varchar("ip_address", { length: 100 }),
     userAgent: text("user_agent"),
     expiresAt: datetime("expires_at").notNull(),
@@ -320,7 +320,6 @@ export const sessions = mysqlTable(
   },
   (t) => [
     index("sessions_user_idx").on(t.userId, t.userType),
-    index("sessions_token_idx").on(t.token),
     uniqueIndex("sessions_token_hash_idx").on(t.tokenHash),
     index("sessions_expires_idx").on(t.expiresAt),
   ],

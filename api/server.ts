@@ -19,7 +19,7 @@ import "dotenv/config";
 import { serve } from "@hono/node-server";
 import { WebSocketServer } from "ws";
 import { handleVoiceCallWebSocket } from "./services/voice-call-service";
-import { app, isAllowedWebSocketOrigin } from "./boot";
+import { app, configureSecurityApp, isAllowedWebSocketOrigin } from "./boot";
 import { env } from "./lib/env";
 
 // Prevent DoS from unhandled promise rejections / uncaught exceptions crashing the process
@@ -58,3 +58,5 @@ server.on("upgrade", (request, socket, head) => {
 wss.on("connection", (ws, request) => {
   handleVoiceCallWebSocket(ws, request);
 });
+
+export { app, configureSecurityApp, server, wss };

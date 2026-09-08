@@ -103,23 +103,50 @@ ${personalization}
   return { systemInstruction, userPrompt };
 }
 
+export function escapeHtml(str: string): string {
+  const sanitized = str
+    .replace(/\bon[a-z]+\s*=\s*(?:'[^']*'|"[^"]*"|[^\s>]+)/gi, "")
+    .replace(/javascript\s*:/gi, "nojavascript:");
+
+  return sanitized
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export function wrapReportAsPrintableHtml(
   reportJson: Record<string, unknown>,
   month: string,
   userName?: string,
 ): string {
-  const text = String(reportJson.response_text || "").replace(/\n/g, "<br/>");
-  const header = String(
-    reportJson.invoice_header || `تقرير SpinSmart Pro — ${month}`,
-  );
-  const footer = String(
-    reportJson.invoice_footer || "تم إنشاؤه بواسطة SpinSmart",
-  );
+  const rawText = String(reportJson.response_text || "");
+  const text = escapeHtml(rawText).replace(/\n/g, "<br/>");
+
+  const headerRaw =
+    reportJson.invoice_header !== undefined && reportJson.invoice_header !== null
+      ? String(reportJson.invoice_header)
+      : `تقرير SpinSmart Pro — ${month}`;
+  const header = escapeHtml(headerRaw);
+
+  const footerRaw =
+    reportJson.invoice_footer !== undefined && reportJson.invoice_footer !== null
+      ? String(reportJson.invoice_footer)
+      : "تم إنشاؤه بواسطة SpinSmart";
+  const footer = escapeHtml(footerRaw);
+
+  const safeMonth = escapeHtml(String(month || ""));
+  const safeUserName = userName ? escapeHtml(userName) : "";
+
   const alerts = Array.isArray(reportJson.alerts)
-    ? (reportJson.alerts as string[]).map((a) => `<li>${a}</li>`).join("")
+    ? (reportJson.alerts as unknown[])
+        .map((a) => `<li>${escapeHtml(String(a ?? ""))}</li>`)
+        .join("")
     : "";
 
   return `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline';"/>
 <title>${header}</title>
 <style>
 body{font-family:Segoe UI,Tahoma,sans-serif;max-width:720px;margin:24px auto;padding:24px;color:#111}
@@ -132,7 +159,7 @@ body{font-family:Segoe UI,Tahoma,sans-serif;max-width:720px;margin:24px auto;pad
 @media print{body{margin:0}}
 </style></head><body>
 <div class="header"><h1>${header}</h1>
-<p class="meta">${userName ? `لـ ${userName} · ` : ""}${month}</p></div>
+<p class="meta">${safeUserName ? `لـ ${safeUserName} · ` : ""}${safeMonth}</p></div>
 <div class="content">${text}</div>
 ${alerts ? `<div class="alerts"><strong>تنبيهات</strong><ul>${alerts}</ul></div>` : ""}
 <div class="footer">${footer}</div></body></html>`;

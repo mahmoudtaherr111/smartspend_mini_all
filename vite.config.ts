@@ -51,21 +51,39 @@ export default defineConfig(({ mode }) => {
         },
         includeAssets: ["icon-192.png", "icon-512.png", "apple-touch-icon.png"],
         injectManifest: {
-          // Precache only the executable shell. Lazy routes, screenshots and
-          // dozens of device splash images enter the runtime cache after use.
+          // The shell plus everything the dashboard needs to paint, so the
+          // screen users actually launch into is complete on disk and opens
+          // offline. Screenshots and the dozens of device splash images stay
+          // out; they would multiply the install for bytes nobody reads.
           globPatterns: [
             "index.html",
+            "assets/**/*.{js,css}",
             "assets/index-*.{js,css}",
             "assets/vendor-*.js",
+            "assets/Home-*.js",
+            "assets/MonthlyCalendar-*.js",
+            "assets/FinancialGoalsPanel-*.js",
+            "assets/ExpenseChart-*.js",
+            "assets/charts-*.js",
             "assets/*cairo*.woff2",
             "assets/*inter-latin*.woff2",
           ],
           globIgnores: ["**/*.{gz,br}"],
         },
         manifest: {
+          // `id` is the installed app's identity and must never change, or
+          // every existing install becomes a second, orphaned app.
           id: "/",
-          start_url: "/",
+          // Launching from the icon used to land on "/", which held the user on
+          // a transit screen while it worked out where to send them.
+          start_url: "/dashboard",
           scope: "/",
+          // Tapping the icon focuses the running app instead of navigating the
+          // document, which is what discarded the session and forced a reload.
+          // `launch-handler.ts` consumes the target URL and routes to it.
+          launch_handler: {
+            client_mode: ["focus-existing", "auto"],
+          },
           name: "SmartSpend AI",
           share_target: {
             action: "/dashboard?tab=record",

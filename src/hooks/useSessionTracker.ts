@@ -3,13 +3,13 @@ import { trpc } from "@/providers/trpc";
 import { useAuth } from "./useAuth";
 
 export function useSessionTracker() {
-  const { user } = useAuth();
+  const { user, isVerified } = useAuth();
   const trackEvent = trpc.analytics.trackEvent.useMutation();
   const startTime = useRef<number>(Date.now());
   const hasTracked = useRef(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !isVerified) return;
 
     startTime.current = Date.now();
     hasTracked.current = false;
