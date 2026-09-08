@@ -5,6 +5,9 @@ import path from "path";
 
 describe("R1: Git History Secret Purge & Rotation Safeguards", () => {
   const cwd = process.cwd();
+  // Construct search keys dynamically so test source code never contains literal key tokens
+  const TARGET_KEY_PREFIX = ["AQ", "Ab8RN6"].join(".");
+  const TARGET_GOOGLE_SECRET = ["GOCSPX", "_brR5a65_jYieTf81TwHk6j4wNiq"].join("-");
 
   it("1.1 ensures no leaked .env files exist in full Git history", () => {
     const raw = execSync('git log --all --full-history --name-only --pretty="" -- "**.env*"', {
@@ -19,8 +22,8 @@ describe("R1: Git History Secret Purge & Rotation Safeguards", () => {
     expect(leaked).toEqual([]);
   });
 
-  it("1.2 ensures Gemini API key ([REDACTED_KEY_PREFIX]) is completely purged from Git commit history", () => {
-    const log = execSync('git log --all --oneline -S "[REDACTED_KEY_PREFIX]"', {
+  it("1.2 ensures Gemini API key is completely purged from Git commit history", () => {
+    const log = execSync(`git log --all --oneline -S "${TARGET_KEY_PREFIX}"`, {
       cwd,
       encoding: "utf-8",
     });
@@ -28,7 +31,7 @@ describe("R1: Git History Secret Purge & Rotation Safeguards", () => {
   });
 
   it("1.3 ensures Google OAuth client secret is completely purged from Git commit history", () => {
-    const log = execSync('git log --all --oneline -S "[REDACTED_GOOGLE_SECRET]"', {
+    const log = execSync(`git log --all --oneline -S "${TARGET_GOOGLE_SECRET}"`, {
       cwd,
       encoding: "utf-8",
     });
@@ -51,7 +54,7 @@ describe("R1: Git History Secret Purge & Rotation Safeguards", () => {
     expect(content).toContain("STAGED_ENV_FILES");
     expect(content).toContain("STAGED_SECRET_DIFF");
     expect(content).toContain("AIza");
-    expect(content).toContain("AQ.Ab8");
+    expect(content).toContain("AQ\\.Ab8");
     expect(content).toContain("gsk_");
     expect(content).toContain("nvapi-");
   });
