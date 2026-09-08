@@ -35,13 +35,7 @@
     "frontend:dev": "vite --mode frontend",
     "frontend:build": "cross-env NODE_ENV=production vite build --mode frontend",
     "cap:sync": "tsx scripts/sync-capacitor-assets.ts",
-    "git:reset:agents": "git reset HEAD .agents/",
-    "git:commit": "git commit -m \"feat(security): complete security remediations M1-M4 (R2-R8) and harden gitignore\"",
-    "git:bundle": "git bundle create smartspend_pre_purge_backup.bundle --all",
-    "git:reflog": "git reflog expire --expire=now --all && git gc --prune=now",
-    "git:verify:env": "git log --all --full-history -- \"**.env*\"",
-    "git:verify:purge": "node scripts/verify-purge.js",
-    "git:verify:health": "git status && git log -n 5"
+    "assets:splash": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-pwa-splashes.ps1"
   },
   "dependencies": {
     "@capacitor/app": "^8.0.0",
