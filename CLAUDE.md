@@ -1,20 +1,11 @@
-# CLAUDE.md
+@AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+# Claude Code notes
 
-Read **@AGENTS.md** first — it is the authoritative brief for this repo (stack, commands,
-layout, invariants). Everything below is only what AGENTS.md does not already cover.
-
-## Testing
-
-- Single file: `npm run test -- <path>` · single case: `npm run test -- -t "<name>"`
-  (neither is a package.json script).
-- `vitest.config.ts` injects dummy `DATABASE_URL` / `GEMINI_API_KEY` / etc., so unit tests
-  run with no real MySQL or Redis. Redis integration tests are opt-in via `npm run test:redis`.
-
-## Doc trust order
-
-`db/schema.ts` > `AGENTS.md` > `docs/`. The `docs/` specs have drifted on counts —
-`docs/01-ARCHITECTURE.md` claims 48 tables / 44 relations; the code has **52 tables**
-(`db/schema.ts`) and **48 relation exports** (`db/relations.ts`). Verify counts against the
-schema before quoting any number.
+- This checkout is on Windows: `CLAUDE.md` imports `AGENTS.md` instead of symlinking it, and each folder
+  with its own `AGENTS.md` has a `CLAUDE.md` that does the same.
+- The `likec4` MCP server in `.mcp.json` answers questions about the architecture model (for example
+  "who writes expenses" or "what does chat.sendMessage use"). It needs `npm run arch:install` once.
+- Single test: `npx vitest run <path>`; by name: `npx vitest run -t "<name>"`. `vitest.config.ts`
+  injects dummy `DATABASE_URL`, `GEMINI_API_KEY` and OAuth values, so unit tests start without real
+  services; tests that talk to MySQL fail without one.
