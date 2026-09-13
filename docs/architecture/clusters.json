@@ -1,0 +1,336 @@
+{
+  "$comment": "Hand-maintained map from runtime source files to architecture clusters. The first matching rule wins. `npm run atlas` warns about every runtime file that no rule matches, so a new file forces a decision instead of disappearing from the map.",
+  "clusters": [
+    {
+      "id": "api-core",
+      "title": "API server core",
+      "description": "Hono app and server entry points, request context, tRPC procedure builders and the root router.",
+      "paths": ["api/boot.ts", "api/server.ts", "api/context.ts", "api/middleware.ts", "api/router.ts"]
+    },
+    {
+      "id": "api-routers",
+      "title": "tRPC routers and HTTP sub-apps",
+      "description": "One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts.",
+      "paths": ["api/*-router.ts"]
+    },
+    {
+      "id": "auth",
+      "title": "Authentication and sessions",
+      "description": "Password hashing, JWT session creation, session validation and login brute-force protection.",
+      "paths": ["api/local-auth-utils.ts", "api/lib/session-validation.ts", "api/lib/login-protection.ts"]
+    },
+    {
+      "id": "security",
+      "title": "Request security",
+      "description": "Rate limiting, allowed origins, client IP resolution, ownership checks, upload signature checks, bot protection and security logging.",
+      "paths": [
+        "api/lib/rate-limit.ts",
+        "api/lib/origin-policy.ts",
+        "api/lib/http-origin-security.ts",
+        "api/lib/get-client-ip.ts",
+        "api/lib/ownership-guard.ts",
+        "api/lib/image-magic-bytes.ts",
+        "api/lib/admin-safe-fields.ts",
+        "api/lib/security-logger.ts",
+        "api/lib/anonymizer.ts",
+        "api/services/turnstile-service.ts"
+      ]
+    },
+    {
+      "id": "platform",
+      "title": "Platform services",
+      "description": "Environment validation, Redis client and cache keys, system settings, business time zone helpers, scheduled-job locks and error logging.",
+      "paths": [
+        "api/lib/env.ts",
+        "api/lib/redis-client.ts",
+        "api/lib/cache-keys.ts",
+        "api/lib/settings-cache.ts",
+        "api/lib/system-settings-registry.ts",
+        "api/lib/app-time.ts",
+        "api/lib/error-logger.ts",
+        "api/services/scheduler-lock.ts"
+      ]
+    },
+    {
+      "id": "database",
+      "title": "Database schema and access",
+      "description": "Drizzle schema, relations, storage classes and the MySQL connection pool.",
+      "paths": ["db/**", "api/queries/**"]
+    },
+    {
+      "id": "contracts",
+      "title": "Shared contracts",
+      "description": "Types, limits and billing plans shared by the web app and the API.",
+      "paths": ["contracts/**"]
+    },
+    {
+      "id": "billing",
+      "title": "Billing",
+      "description": "Paymob hosted checkout and subscription grants.",
+      "paths": ["api/lib/paymob.ts", "api/lib/subscription-service.ts"]
+    },
+    {
+      "id": "ledger",
+      "title": "Ledger aggregates",
+      "description": "expense-rollups.ts and financial-month.ts.",
+      "paths": ["api/services/expense-rollups.ts", "api/services/financial-month.ts"]
+    },
+    {
+      "id": "accounts",
+      "title": "Account lifecycle",
+      "description": "user-purge-service.ts.",
+      "paths": ["api/services/user-purge-service.ts"]
+    },
+    {
+      "id": "jobs",
+      "title": "Scheduled job bodies",
+      "description": "Job implementations scheduled from api/boot.ts.",
+      "paths": ["api/jobs/**"]
+    },
+    {
+      "id": "notifications",
+      "title": "Notifications",
+      "description": "notification-engine.ts and firebase.ts.",
+      "paths": ["api/notification-engine.ts", "api/services/firebase.ts"]
+    },
+    {
+      "id": "whatsapp",
+      "title": "WhatsApp",
+      "description": "Baileys WhatsApp client and the in-process OTP state it verifies against.",
+      "paths": ["api/services/whatsapp-service.ts", "api/services/otp-cache.ts"]
+    },
+    {
+      "id": "voice",
+      "title": "Voice",
+      "description": "voice-call-service.ts, voice-context-service.ts and api/services/voice-kernel/.",
+      "paths": ["api/services/voice-kernel/**", "api/services/voice-call-service.ts", "api/services/voice-context-service.ts"]
+    },
+    {
+      "id": "ai-providers",
+      "title": "AI provider access",
+      "description": "Provider clients, the provider registry, model name mapping, routing and fallback chains.",
+      "paths": [
+        "api/lib/ai-gateway.ts",
+        "api/lib/ai-provider-registry.ts",
+        "api/lib/ai-routing.ts",
+        "api/lib/llm-provider-chain.ts",
+        "api/lib/llm-router.ts",
+        "api/lib/groq-client.ts",
+        "api/lib/fireworks-client.ts",
+        "api/lib/fireworks-embedding-client.ts",
+        "api/lib/nvidia-client.ts",
+        "api/lib/deepseek-client.ts",
+        "api/lib/model-mapper.ts",
+        "api/lib/provider-health.ts"
+      ]
+    },
+    {
+      "id": "ai-governance",
+      "title": "AI usage and cost governance",
+      "description": "ai-usage-policy.ts, ai-cost-analytics.ts and ai-cost-policy.ts.",
+      "paths": ["api/lib/ai-usage-policy.ts", "api/services/ai-cost-analytics.ts", "api/services/ai-cost-policy.ts"]
+    },
+    {
+      "id": "arabic-nlp",
+      "title": "Arabic and Egyptian text processing",
+      "description": "Normalizers, dictionaries, Arabic number parsing, negation detection, fuzzy matching and speech-to-text corrections.",
+      "paths": [
+        "api/lib/arabic-number-parser.ts",
+        "api/lib/arabic-token-match.ts",
+        "api/lib/egyptian-dictionary.ts",
+        "api/lib/egyptian-names-dictionary.ts",
+        "api/lib/normalizer-v2.ts",
+        "api/lib/text-normalizer.ts",
+        "api/lib/unified-normalizer.ts",
+        "api/lib/negation-detector.ts",
+        "api/lib/fuzzy-match.ts",
+        "api/lib/stt-corrections.ts"
+      ]
+    },
+    {
+      "id": "ingestion-parsers",
+      "title": "Ingestion parsers",
+      "description": "sms-ai-parser.ts, sms-rule-parser.ts, receipt-image-parser.ts and shortcut-generator.ts.",
+      "paths": [
+        "api/lib/sms-ai-parser.ts",
+        "api/lib/sms-rule-parser.ts",
+        "api/lib/receipt-image-parser.ts",
+        "api/lib/shortcut-generator.ts"
+      ]
+    },
+    {
+      "id": "classification-qa",
+      "title": "Classification benchmark helpers",
+      "description": "benchmark-taxonomy-assert.ts, final-acceptance.ts and real-user-sim.ts, which live in api/lib.",
+      "paths": ["api/lib/benchmark-taxonomy-assert.ts", "api/lib/final-acceptance.ts", "api/lib/real-user-sim.ts"]
+    },
+    {
+      "id": "classification",
+      "title": "Expense classification pipeline",
+      "description": "smart-pipeline.ts and the modules it composes: rules, muscle memory, embeddings, taxonomy, confidence, decomposition and verification.",
+      "paths": [
+        "api/lib/smart-pipeline.ts",
+        "api/lib/rule-engine.ts",
+        "api/lib/muscle-memory.ts",
+        "api/lib/embedding-engine.ts",
+        "api/lib/generate-embeddings-cache.ts",
+        "api/lib/post-classifier-verifier.ts",
+        "api/lib/admissibility-gate.ts",
+        "api/lib/classification-*.ts",
+        "api/lib/classifier-contract.ts",
+        "api/lib/confidence-*.ts",
+        "api/lib/correction-rules.ts",
+        "api/lib/category-registry.ts",
+        "api/lib/taxonomy-*.ts",
+        "api/lib/direction-governed-taxonomy.ts",
+        "api/lib/keyword-category-priors.ts",
+        "api/lib/entity-extractor.ts",
+        "api/lib/narrative-decomposer.ts",
+        "api/lib/intent-detector.ts",
+        "api/lib/person-resolver.ts",
+        "api/lib/relationship-normalizer.ts",
+        "api/lib/amount-ledger.ts",
+        "api/lib/amount-linker.ts",
+        "api/lib/financial-event-plan.ts",
+        "api/lib/voice-intake-gate.ts",
+        "api/lib/anomaly-detector.ts",
+        "api/services/parser-trace.ts"
+      ]
+    },
+    {
+      "id": "ai-kernel",
+      "title": "AI Center kernel",
+      "description": "api/services/ai-kernel/ (intent-router, agent-planner, clarification-machine, context-packer, data-need-compiler, response-normalizer, retrieval-policy, capability-registry, ai-trace-logger).",
+      "paths": ["api/services/ai-kernel/**"]
+    },
+    {
+      "id": "ai-actions",
+      "title": "AI action runtime",
+      "description": "api/services/action-runtime/ (artifacts, extended-actions, goal-create).",
+      "paths": ["api/services/action-runtime/**"]
+    },
+    {
+      "id": "ai-memory",
+      "title": "AI memory",
+      "description": "api/services/ai-memory/ (memory writer and retriever, embedding client and settings, vector stores).",
+      "paths": ["api/services/ai-memory/**"]
+    },
+    {
+      "id": "finance-semantic-layer",
+      "title": "Finance semantic layer",
+      "description": "api/services/finance-semantic-layer/ (period resolver, row aggregators, resolvers, proactive insights, chart artifacts, cache).",
+      "paths": ["api/services/finance-semantic-layer/**"]
+    },
+    {
+      "id": "site-guide",
+      "title": "Site guide",
+      "description": "api/services/site-guide/ (knowledge base, embedding, retriever).",
+      "paths": ["api/services/site-guide/**"]
+    },
+    {
+      "id": "storage",
+      "title": "File storage",
+      "description": "api/services/storage/ (avatar service, local and S3-compatible drivers).",
+      "paths": ["api/services/storage/**"]
+    },
+    {
+      "id": "ai-insights",
+      "title": "AI insights and reports",
+      "description": "adaptive-question-engine.ts, lifestyle-inference-engine.ts, personal-context-builder.ts, pro-report-engine.ts, report-personalization-engine.ts, user-profile-service.ts and batch-ai-service.ts.",
+      "paths": [
+        "api/services/adaptive-question-engine.ts",
+        "api/services/lifestyle-inference-engine.ts",
+        "api/services/personal-context-builder.ts",
+        "api/services/pro-report-engine.ts",
+        "api/services/report-personalization-engine.ts",
+        "api/services/user-profile-service.ts",
+        "api/services/batch-ai-service.ts"
+      ]
+    },
+    {
+      "id": "web-shell",
+      "title": "Web app shell",
+      "description": "Entry point, providers, layout, route guards and PWA or native integration.",
+      "paths": [
+        "src/main.tsx",
+        "src/App.tsx",
+        "src/providers/**",
+        "src/pwa/**",
+        "src/components/layout/**",
+        "src/components/routing/**",
+        "src/components/pwa/**"
+      ]
+    },
+    {
+      "id": "web-pages",
+      "title": "Web pages",
+      "description": "Route-level page components lazy-loaded by src/App.tsx.",
+      "paths": ["src/pages/**"]
+    },
+    {
+      "id": "web-ui-kit",
+      "title": "UI primitives",
+      "description": "src/components/ui/.",
+      "paths": ["src/components/ui/**"]
+    },
+    {
+      "id": "web-admin",
+      "title": "Admin UI",
+      "description": "src/components/admin/.",
+      "paths": ["src/components/admin/**"]
+    },
+    {
+      "id": "web-ai",
+      "title": "AI Center UI",
+      "description": "src/components/ai/.",
+      "paths": ["src/components/ai/**"]
+    },
+    {
+      "id": "web-finance",
+      "title": "Finance UI",
+      "description": "src/components/dashboard/, expenses/, goals/ and insights/.",
+      "paths": [
+        "src/components/dashboard/**",
+        "src/components/expenses/**",
+        "src/components/goals/**",
+        "src/components/insights/**"
+      ]
+    },
+    {
+      "id": "web-account",
+      "title": "Account UI",
+      "description": "src/components/auth/, profile/, settings/, bank-sync/ and notifications/.",
+      "paths": [
+        "src/components/auth/**",
+        "src/components/profile/**",
+        "src/components/settings/**",
+        "src/components/bank-sync/**",
+        "src/components/notifications/**"
+      ]
+    },
+    {
+      "id": "web-growth",
+      "title": "Ads and SEO UI",
+      "description": "src/components/ads/ and seo/.",
+      "paths": ["src/components/ads/**", "src/components/seo/**"]
+    },
+    {
+      "id": "web-shared",
+      "title": "Shared web components",
+      "description": "Components at the root of src/components.",
+      "paths": ["src/components/*.tsx"]
+    },
+    {
+      "id": "web-hooks",
+      "title": "Web hooks",
+      "description": "src/hooks/.",
+      "paths": ["src/hooks/**"]
+    },
+    {
+      "id": "web-lib",
+      "title": "Web utilities",
+      "description": "src/lib/, src/types/ and loose files at the root of src/.",
+      "paths": ["src/lib/**", "src/types/**", "src/*.ts"]
+    }
+  ]
+}

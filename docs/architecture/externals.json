@@ -1,0 +1,102 @@
+{
+  "$comment": "Hand-maintained classification of what runtime code talks to. A package is either an external system (listed under systems) or a plain library (matched by libraries). `npm run atlas` warns about any imported package that is neither. Hosts are matched against string literals; files map modules that reach a system through a configurable URL.",
+  "ignoreHostLiteralsIn": ["api/boot.ts"],
+  "systems": [
+    { "id": "mysql", "title": "MySQL", "kind": "datastore", "packages": ["mysql2"] },
+    { "id": "redis", "title": "Redis", "kind": "datastore", "packages": ["redis"] },
+    {
+      "id": "qdrant",
+      "title": "Qdrant vector store",
+      "kind": "datastore",
+      "files": ["api/services/ai-memory/qdrant-vector-store.ts"]
+    },
+    {
+      "id": "object-storage",
+      "title": "S3-compatible object storage (R2/S3)",
+      "kind": "datastore",
+      "files": ["api/services/storage/s3-driver.ts"]
+    },
+    {
+      "id": "gemini",
+      "title": "Google Gemini API",
+      "kind": "ai-provider",
+      "packages": ["@google/generative-ai"],
+      "hosts": ["generativelanguage.googleapis.com"]
+    },
+    { "id": "groq", "title": "Groq", "kind": "ai-provider", "packages": ["groq-sdk"], "hosts": ["api.groq.com"] },
+    { "id": "fireworks", "title": "Fireworks AI", "kind": "ai-provider", "hosts": ["api.fireworks.ai"] },
+    { "id": "nvidia", "title": "NVIDIA NIM", "kind": "ai-provider", "hosts": ["integrate.api.nvidia.com"] },
+    { "id": "deepseek", "title": "DeepSeek API", "kind": "ai-provider", "hosts": ["api.deepseek.com"] },
+    { "id": "openrouter", "title": "OpenRouter", "kind": "ai-provider", "hosts": ["openrouter.ai"] },
+    {
+      "id": "google-oauth",
+      "title": "Google OAuth 2.0",
+      "kind": "identity",
+      "hosts": ["accounts.google.com", "oauth2.googleapis.com", "www.googleapis.com"]
+    },
+    { "id": "paymob", "title": "Paymob (Accept)", "kind": "payments", "hosts": ["accept.paymob.com"] },
+    { "id": "turnstile", "title": "Cloudflare Turnstile", "kind": "bot-protection", "hosts": ["challenges.cloudflare.com"] },
+    { "id": "whatsapp", "title": "WhatsApp through Baileys", "kind": "messaging", "packages": ["@whiskeysockets/baileys"] },
+    { "id": "firebase", "title": "Firebase", "kind": "push", "packages": ["firebase-admin", "firebase"] },
+    { "id": "web-push", "title": "Web Push", "kind": "push", "packages": ["web-push"] },
+    { "id": "sentry", "title": "Sentry", "kind": "observability", "packages": ["@sentry/node", "@sentry/profiling-node"] },
+    {
+      "id": "capacitor",
+      "title": "Capacitor native shell",
+      "kind": "native-runtime",
+      "packages": [
+        "@capacitor/core",
+        "@capacitor/app",
+        "@capacitor/haptics",
+        "@capacitor/keyboard",
+        "@capacitor/splash-screen",
+        "@capacitor/status-bar"
+      ]
+    }
+  ],
+  "libraries": [
+    "@fontsource-variable/*",
+    "@hono/*",
+    "@hookform/*",
+    "@radix-ui/*",
+    "@simplewebauthn/*",
+    "@tanstack/*",
+    "@trpc/*",
+    "bcryptjs",
+    "class-variance-authority",
+    "clsx",
+    "cmdk",
+    "cookie",
+    "damerau-levenshtein",
+    "date-fns",
+    "decimal.js",
+    "dotenv",
+    "drizzle-orm",
+    "embla-carousel-react",
+    "exceljs",
+    "framer-motion",
+    "hono",
+    "input-otp",
+    "jose",
+    "jsonwebtoken",
+    "lru-cache",
+    "lucide-react",
+    "next-themes",
+    "node-cron",
+    "pino",
+    "qrcode",
+    "react",
+    "react-day-picker",
+    "react-dom",
+    "react-hook-form",
+    "react-resizable-panels",
+    "react-router-dom",
+    "recharts",
+    "sonner",
+    "superjson",
+    "tailwind-merge",
+    "vaul",
+    "ws",
+    "zod"
+  ]
+}
