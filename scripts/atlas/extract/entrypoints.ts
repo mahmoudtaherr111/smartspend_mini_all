@@ -15,6 +15,9 @@ export interface RouteInfo {
   file: string;
   line: number;
   uses: string[];
+  /** Tables the handler itself reads or writes (helpers in the same file are followed, imported ones are listed in uses). */
+  read: string[];
+  write: string[];
 }
 
 export interface MiddlewareInfo {
@@ -98,6 +101,8 @@ function subAppRoutes(
       file: ctx.file,
       line: call.getStartLineNumber(),
       uses: cleanUses(usage.files, ctx.file),
+      read: uniqSorted(usage.read),
+      write: uniqSorted(usage.write),
     });
   }
   return routes;
@@ -183,6 +188,8 @@ export function extractEntrypoints(
           file: appFile,
           line: call.getStartLineNumber(),
           uses: ["api/router.ts"],
+          read: [],
+          write: [],
         });
       } else {
         middleware.push({ path, handler: describeHandler(handler), file: appFile, line: call.getStartLineNumber() });
@@ -210,6 +217,8 @@ export function extractEntrypoints(
         file: appFile,
         line: call.getStartLineNumber(),
         uses: cleanUses(usage.files, appFile),
+        read: uniqSorted(usage.read),
+        write: uniqSorted(usage.write),
       });
     }
   }

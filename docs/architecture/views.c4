@@ -1,0 +1,39 @@
+// Hand-written views. A view is a query over the model, so it follows the code without edits.
+// One view per router and per module is generated into generated/views.c4.
+views {
+  view index {
+    title 'SmartSpend AI — system context'
+    description 'People and apps around SmartSpend, and the outside systems it depends on.'
+    include *
+  }
+
+  view containers of smartspend {
+    title 'Containers'
+    include *
+  }
+
+  view api of smartspend.api {
+    title 'API server'
+    include *
+  }
+
+  view web of smartspend.web {
+    title 'Web app'
+    include *
+  }
+
+  view server_modules of smartspend.api.modules {
+    title 'Server modules and their dependencies'
+    include *
+  }
+
+  view database of smartspend.mysql {
+    title 'MySQL tables'
+    include *
+  }
+
+  view who_touches_expenses {
+    title 'Everything that reads or writes expenses'
+    include smartspend.mysql.expenses, -> smartspend.mysql.expenses
+  }
+}

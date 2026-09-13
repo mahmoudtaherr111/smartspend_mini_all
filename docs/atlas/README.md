@@ -3,8 +3,8 @@
 # Atlas
 
 Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothing here is written by hand.
-- Regenerate after changing code: `npm run atlas`.
-- `npm run atlas:check` (part of `npm run check`) fails when any file here no longer matches the code.
+- Regenerate after changing code: `npm run atlas`. The same run writes the LikeC4 model in `docs/architecture/generated/`.
+- `npm run atlas:check` (part of `npm run check`) fails when any file here, or any generated model file, no longer matches the code.
 - On a merge conflict inside this folder, do not resolve it by hand: take either side and run `npm run atlas`.
 
 ## Files

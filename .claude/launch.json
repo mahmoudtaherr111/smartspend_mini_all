@@ -6,6 +6,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["cross-env", "NODE_ENV=production", "PORT=3005", "node", "dist/boot.js"],
       "port": 3005
+    },
+    {
+      "name": "architecture-map",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["tools/architecture/node_modules/likec4/bin/likec4.mjs", "start", "docs/architecture", "--port", "5174"],
+      "port": 5174
     }
   ]
 }

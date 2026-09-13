@@ -28,6 +28,11 @@
       "type": "local",
       "command": ["npx", "-y", "@playwright/mcp"],
       "enabled": true
+    },
+    "likec4": {
+      "type": "local",
+      "command": ["node", "tools/architecture/node_modules/likec4/bin/likec4.mjs", "mcp", "--stdio", "docs/architecture"],
+      "enabled": true
     }
   }
 }

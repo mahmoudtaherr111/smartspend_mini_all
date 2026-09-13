@@ -32,6 +32,13 @@ export interface FrontendFacts {
   pages: PageFacts[];
   shell: PageFacts;
   calls: TrpcCall[];
+  /** `useMutation` hooks assigned to a variable nothing else in the file references; not counted as calls. */
+  unusedMutations: TrpcCall[];
+}
+
+interface FileHooks {
+  calls: TrpcCall[];
+  unusedMutations: TrpcCall[];
 }
 
 type ContextFor = (file: string) => FileContext;
@@ -164,12 +171,37 @@ function extractRoutes(ctx: FileContext, pages: Map<string, string>): BrowserRou
   return routes.sort((a, b) => compareStrings(a.path, b.path));
 }
 
-function callsInFile(ctx: FileContext): TrpcCall[] {
+/** The variable a `trpc.x.y.useMutation()` call is assigned to, when it is a plain identifier. */
+function mutationVariable(access: Node): string | null {
+  const call = access.getParent();
+  if (!call || !Node.isCallExpression(call)) return null;
+  const callee = call.getExpression();
+  if (callee.getStart() !== access.getStart() || callee.getEnd() !== access.getEnd()) return null;
+  const declaration = call.getParent();
+  if (!declaration || !Node.isVariableDeclaration(declaration)) return null;
+  const nameNode = declaration.getNameNode();
+  return Node.isIdentifier(nameNode) ? nameNode.getText() : null;
+}
+
+function identifierCounts(ctx: FileContext): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const identifier of ctx.sf.getDescendantsOfKind(SyntaxKind.Identifier)) {
+    const text = identifier.getText();
+    counts.set(text, (counts.get(text) ?? 0) + 1);
+  }
+  return counts;
+}
+
+/**
+ * A mutation hook sends nothing until `mutate` is called, so a hook whose variable is never used
+ * again is not a caller. Query hooks are different: they fetch on mount, so they always count.
+ */
+function hooksInFile(ctx: FileContext): FileHooks {
   const trpcNames = new Set<string>();
   for (const [local, target] of ctx.imports) {
     if (target.kind === "file" && target.file === TRPC_PROVIDER && target.importedName === "trpc") trpcNames.add(local);
   }
-  if (trpcNames.size === 0) return [];
+  if (trpcNames.size === 0) return { calls: [], unusedMutations: [] };
 
   const utilsNames = new Set<string>();
   for (const declaration of ctx.sf.getDescendantsOfKind(SyntaxKind.VariableDeclaration)) {
@@ -180,7 +212,9 @@ function callsInFile(ctx: FileContext): TrpcCall[] {
     }
   }
 
+  let counts: Map<string, number> | null = null;
   const calls: TrpcCall[] = [];
+  const unusedMutations: TrpcCall[] = [];
   for (const access of ctx.sf.getDescendantsOfKind(SyntaxKind.PropertyAccessExpression)) {
     const parent = access.getParent();
     if (parent && Node.isPropertyAccessExpression(parent) && parent.getExpression() === access) continue;
@@ -188,14 +222,23 @@ function callsInFile(ctx: FileContext): TrpcCall[] {
     if (!parts) continue;
     const line = access.getStartLineNumber();
     if (trpcNames.has(parts[0]) && parts.length === 4 && HOOKS.has(parts[3])) {
-      calls.push({ router: parts[1], procedure: parts[2], method: parts[3], file: ctx.file, line });
+      const call = { router: parts[1], procedure: parts[2], method: parts[3], file: ctx.file, line };
+      const variable = parts[3] === "useMutation" ? mutationVariable(access) : null;
+      if (variable) {
+        counts ??= identifierCounts(ctx);
+        if ((counts.get(variable) ?? 0) <= 1) {
+          unusedMutations.push(call);
+          continue;
+        }
+      }
+      calls.push(call);
     } else if (utilsNames.has(parts[0]) && parts.length === 4 && CACHE_OPERATIONS.has(parts[3])) {
       calls.push({ router: parts[1], procedure: parts[2], method: `utils.${parts[3]}`, file: ctx.file, line });
     } else if (utilsNames.has(parts[0]) && parts.length === 3 && CACHE_OPERATIONS.has(parts[2])) {
       calls.push({ router: parts[1], procedure: null, method: `utils.${parts[2]}`, file: ctx.file, line });
     }
   }
-  return calls;
+  return { calls, unusedMutations };
 }
 
 function closure(start: string[], contextFor: ContextFor, excluded: Set<string>): string[] {
@@ -220,15 +263,16 @@ export function extractFrontend(contextFor: ContextFor): FrontendFacts {
   const appCtx = contextFor(appFile);
   const pages = lazyPages(appCtx);
   const routes = extractRoutes(appCtx, pages);
-  const callCache = new Map<string, TrpcCall[]>();
-  const callsFor = (file: string) => {
-    let calls = callCache.get(file);
-    if (!calls) {
-      calls = callsInFile(contextFor(file));
-      callCache.set(file, calls);
+  const hookCache = new Map<string, FileHooks>();
+  const hooksFor = (file: string) => {
+    let hooks = hookCache.get(file);
+    if (!hooks) {
+      hooks = hooksInFile(contextFor(file));
+      hookCache.set(file, hooks);
     }
-    return calls;
+    return hooks;
   };
+  const callsFor = (file: string) => hooksFor(file).calls;
 
   const pageFiles = new Set(pages.values());
   const shellFiles = closure([appFile], contextFor, pageFiles);
@@ -247,5 +291,12 @@ export function extractFrontend(contextFor: ContextFor): FrontendFacts {
     .sort(byKey((page) => page.name));
 
   const everyFile = uniqSorted([...shellFiles, ...pageFacts.flatMap((page) => page.files)]);
-  return { appFile, routes, pages: pageFacts, shell, calls: everyFile.flatMap(callsFor) };
+  return {
+    appFile,
+    routes,
+    pages: pageFacts,
+    shell,
+    calls: everyFile.flatMap(callsFor),
+    unusedMutations: everyFile.flatMap((file) => hooksFor(file).unusedMutations),
+  };
 }

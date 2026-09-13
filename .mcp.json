@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "likec4": {
+      "command": "node",
+      "args": ["tools/architecture/node_modules/likec4/bin/likec4.mjs", "mcp", "--stdio", "docs/architecture"]
+    }
+  }
+}

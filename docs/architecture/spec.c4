@@ -1,0 +1,83 @@
+// Hand-written: the element and relationship kinds of the SmartSpend model.
+// Tags come from the code and are generated into generated/specification.c4.
+specification {
+  element actor {
+    style {
+      shape person
+      color secondary
+    }
+  }
+  element external {
+    style {
+      color muted
+    }
+  }
+  element system
+  element app {
+    style {
+      shape browser
+    }
+  }
+  element service
+  element area {
+    style {
+      border dashed
+    }
+  }
+  element module {
+    style {
+      shape component
+    }
+  }
+  element router {
+    style {
+      color indigo
+    }
+  }
+  element procedure
+  element endpoint {
+    style {
+      color sky
+    }
+  }
+  element job {
+    style {
+      color amber
+    }
+  }
+  element page {
+    style {
+      shape browser
+      color green
+    }
+  }
+  element database {
+    style {
+      shape cylinder
+    }
+  }
+  element store {
+    style {
+      shape storage
+    }
+  }
+  element table {
+    style {
+      shape storage
+      color slate
+    }
+  }
+
+  relationship calls
+  relationship uses
+  relationship reads {
+    line dotted
+  }
+  relationship writes {
+    color red
+  }
+  relationship imports {
+    line dashed
+    color muted
+  }
+}

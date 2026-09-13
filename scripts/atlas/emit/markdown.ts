@@ -214,13 +214,15 @@ function renderEntrypoints(graph: AtlasGraph): string {
     entrypoints.middleware.map((entry, index) => [String(index + 1), code(entry.path), code(entry.handler)]),
   );
   const routes = mdTable(
-    ["Method", "Path", "Kind", "Declared in", "Depends on"],
+    ["Method", "Path", "Kind", "Declared in", "Depends on", "Reads", "Writes"],
     entrypoints.routes.map((route) => [
       route.method,
       code(route.path),
       route.kind,
       code(route.file),
       codeList(withoutInfra(route.uses)),
+      codeList(route.read),
+      codeList(route.write),
     ]),
   );
   const websockets = mdTable(
@@ -305,6 +307,17 @@ function renderFrontend(graph: AtlasGraph): string {
       section("Browser routes", routes),
       section("App shell (rendered around every page)", renderPage(frontend.shell.name, frontend.shell.file, frontend.shell.files, frontend.shell.calls)),
       section("Pages", ...frontend.pages.map((p) => renderPage(p.name, p.file, p.files, p.calls))),
+      section(
+        "Mutation hooks that are never invoked",
+        "These files create a tRPC mutation hook but never use the variable it is assigned to, so no request is sent. They are not counted as callers anywhere in the atlas.",
+        mdTable(
+          ["Procedure", "File"],
+          uniqSorted(frontend.unusedMutations.map((call) => `${call.router}.${call.procedure} ${call.file}`)).map((key) => {
+            const [procedure, file] = key.split(" ");
+            return [code(procedure), code(file)];
+          }),
+        ),
+      ),
     ],
   );
 }
@@ -457,8 +470,8 @@ function renderReadme(graph: AtlasGraph): string {
     "Atlas",
     [
       "Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothing here is written by hand.",
-      "- Regenerate after changing code: `npm run atlas`.",
-      "- `npm run atlas:check` (part of `npm run check`) fails when any file here no longer matches the code.",
+      "- Regenerate after changing code: `npm run atlas`. The same run writes the LikeC4 model in `docs/architecture/generated/`.",
+      "- `npm run atlas:check` (part of `npm run check`) fails when any file here, or any generated model file, no longer matches the code.",
       "- On a merge conflict inside this folder, do not resolve it by hand: take either side and run `npm run atlas`.",
     ].join("\n"),
     [

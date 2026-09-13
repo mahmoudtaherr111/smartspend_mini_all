@@ -1,0 +1,18 @@
+// Hand-written flow. tests/knowledge/flows.test.ts fails when a step here is not backed by a relationship
+// generated from the code. Write one step per line with full element names; end a step the code cannot
+// show (a human action) with `// intent: <why>`.
+views {
+  dynamic view flow_sms_ingest {
+    title 'Flow · bank SMS forwarded from a phone'
+    description 'The Android forwarder or an iOS Shortcut posts the SMS with the user’s webhook token. The route resolves the token, keeps the raw message, parses it with rules and then AI, and writes the transaction directly.'
+
+    androidSms -> smartspend.api.http.post_sms_ingest 'POST the SMS with the webhook token'
+    smartspend.api.http.post_sms_ingest -> smartspend.mysql.webhook_tokens 'resolve the token to a user'
+    smartspend.api.http.post_sms_ingest -> smartspend.mysql.raw_sms_events 'keep the raw message'
+    smartspend.api.http.post_sms_ingest -> smartspend.api.modules.ingestion-parsers 'rule parser first, AI parser second'
+    smartspend.api.modules.ingestion-parsers -> gemini 'AI parse when the rules cannot read it'
+    smartspend.api.http.post_sms_ingest -> smartspend.mysql.expenses 'insert the transaction'
+    smartspend.api.http.post_sms_ingest -> smartspend.api.modules.ledger 'rollup delta'
+    smartspend.api.modules.ledger -> smartspend.mysql.expense_daily_rollups 'upsert the day'
+  }
+}

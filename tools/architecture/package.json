@@ -1,0 +1,14 @@
+{
+  "name": "smartspend-architecture-tools",
+  "private": true,
+  "description": "LikeC4 tooling for docs/architecture. Kept out of the app's dependency tree because likec4 needs React 19 and Node >= 22.22.3.",
+  "scripts": {
+    "start": "likec4 start ../../docs/architecture",
+    "build": "likec4 build ../../docs/architecture -o ../../.atlas/site",
+    "validate": "likec4 validate --no-layout ../../docs/architecture",
+    "mcp": "likec4 mcp --stdio ../../docs/architecture"
+  },
+  "dependencies": {
+    "likec4": "1.59.3"
+  }
+}

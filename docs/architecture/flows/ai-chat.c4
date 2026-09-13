@@ -1,0 +1,23 @@
+// Hand-written flow. tests/knowledge/flows.test.ts fails when a step here is not backed by a relationship
+// generated from the code. Write one step per line with full element names; end a step the code cannot
+// show (a human action) with `// intent: <why>`.
+views {
+  dynamic view flow_ai_chat {
+    title 'Flow · a question in the AI Center'
+    description 'chat.sendMessage stores the message and hands it to the plan-first kernel, which answers from the finance semantic layer and calls a model only for wording. Actions are drafted as pending and run only after chat.confirmAction.'
+
+    user -> smartspend.web.pages.AICenter 'asks a question or requests an action' // intent: the person opens the page
+    smartspend.web.pages.AICenter -> smartspend.api.trpc.chat.sendMessage 'send the message'
+    smartspend.api.trpc.chat.sendMessage -> smartspend.mysql.chat_messages 'store the user message'
+    smartspend.api.trpc.chat.sendMessage -> smartspend.api.modules.ai-kernel 'plan-first kernel: intent and data needs'
+    smartspend.api.modules.ai-kernel -> smartspend.api.modules.finance-semantic-layer 'resolve the facts'
+    smartspend.api.modules.ai-kernel -> smartspend.api.modules.ai-providers 'model call only when wording is needed'
+    smartspend.api.modules.ai-providers -> fireworks 'default chat model'
+    smartspend.api.trpc.chat.sendMessage -> smartspend.api.modules.ai-actions 'draft an action for confirmation'
+    smartspend.api.modules.ai-actions -> smartspend.mysql.ai_pending_actions 'pending action'
+    smartspend.web.pages.AICenter <- smartspend.api.trpc.chat.sendMessage 'answer, artifacts and any draft action'
+    smartspend.web.pages.AICenter -> smartspend.api.trpc.chat.confirmAction 'user confirms the draft'
+    smartspend.api.trpc.chat.confirmAction -> smartspend.api.modules.ai-actions 'execute the confirmed action'
+    smartspend.api.modules.ai-actions -> smartspend.mysql.expenses 'for example, record an expense'
+  }
+}

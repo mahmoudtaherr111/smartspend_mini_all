@@ -1,0 +1,48 @@
+// Hand-written: the people and apps around SmartSpend, and the containers the generated model fills.
+// Everything inside web, api, shared and mysql comes from generated/ (npm run atlas).
+// Keep relationships here at the top level and written with full names: tests/knowledge/flows.test.ts reads them.
+model {
+  user = actor 'User' {
+    description 'Records spending by text, voice, forwarded bank SMS or receipts, and asks the AI Center about it.'
+  }
+  admin = actor 'Admin' {
+    description 'Runs settings, AI providers, users, ads and notifications from the admin screens.'
+  }
+  androidSms = external 'Android SMS forwarder' {
+    description 'Companion app that forwards bank SMS with the user’s webhook token.'
+  }
+  iosShortcut = external 'iOS Shortcut' {
+    description 'Generated Shortcut that forwards bank SMS or Apple Pay notifications with the webhook token.'
+  }
+
+  smartspend = system 'SmartSpend AI' {
+    web = app 'Web app' {
+      technology 'React 18 + Vite PWA, packaged for Android and iOS with Capacitor'
+      pages = area 'Pages'
+      modules = area 'Web code modules'
+    }
+    api = service 'API server' {
+      technology 'Node.js, Hono and tRPC (api/boot.ts, api/server.ts)'
+      trpc = area 'tRPC API'
+      http = area 'HTTP routes'
+      ws = area 'WebSocket upgrades'
+      scheduler = area 'Scheduled jobs' {
+        description 'node-cron inside the API process; runs only where ENABLE_CRONS=true.'
+      }
+      modules = area 'Server code modules'
+    }
+    shared = area 'Shared contracts' {
+      description 'Types, limits and plans imported by both the web app and the API.'
+    }
+    mysql = database 'MySQL' {
+      technology 'MySQL 8 through Drizzle ORM, no foreign-key constraints'
+    }
+  }
+
+  user -> smartspend.web 'uses'
+  admin -> smartspend.web 'administers'
+  androidSms -> smartspend.api.http.post_sms_ingest 'forwards bank SMS'
+  iosShortcut -> smartspend.api.http.post_sms_ingest 'forwards bank SMS'
+  paymob -> smartspend.api.http.post_webhooks_paymob 'payment callback'
+  smartspend.web -> smartspend.api.ws.voice_live 'live voice call'
+}

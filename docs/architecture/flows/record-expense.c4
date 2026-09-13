@@ -1,0 +1,22 @@
+// Hand-written flow. tests/knowledge/flows.test.ts fails when a step here is not backed by a relationship
+// generated from the code. Write one step per line with full element names; end a step the code cannot
+// show (a human action) with `// intent: <why>`.
+views {
+  dynamic view flow_record_expense {
+    title 'Flow · record an expense from text'
+    description 'The home screen sends the sentence to ai.parseExpense, which runs the classification pipeline and only asks a model about clauses the local pass cannot categorise. The user reviews the items; expense.create stores them and updates the daily rollups.'
+
+    user -> smartspend.web.pages.Home 'types or dictates a spending sentence' // intent: the person opens the page
+    smartspend.web.pages.Home -> smartspend.api.trpc.ai.parseExpense 'parse the text'
+    smartspend.api.trpc.ai.parseExpense -> smartspend.api.modules.classification 'runSmartPipeline: event plan, muscle memory, rules, embeddings'
+    smartspend.api.modules.classification -> smartspend.api.modules.ai-providers 'clauses the local pass could not categorise'
+    smartspend.api.modules.ai-providers -> gemini 'provider chain with fallbacks'
+    smartspend.api.trpc.ai.parseExpense -> smartspend.mysql.classification_logs 'decision trace'
+    smartspend.api.trpc.ai.parseExpense -> smartspend.mysql.pending_clarifications 'when the decision is clarify'
+    smartspend.web.pages.Home <- smartspend.api.trpc.ai.parseExpense 'items and decision: auto_save, review or clarify'
+    smartspend.web.pages.Home -> smartspend.api.trpc.expense.create 'save the reviewed items'
+    smartspend.api.trpc.expense.create -> smartspend.mysql.expenses 'insert'
+    smartspend.api.trpc.expense.create -> smartspend.api.modules.ledger 'rollup delta'
+    smartspend.api.modules.ledger -> smartspend.mysql.expense_daily_rollups 'upsert the day'
+  }
+}

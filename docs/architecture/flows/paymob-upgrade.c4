@@ -1,0 +1,19 @@
+// Hand-written flow. tests/knowledge/flows.test.ts fails when a step here is not backed by a relationship
+// generated from the code. Write one step per line with full element names; end a step the code cannot
+// show (a human action) with `// intent: <why>`.
+views {
+  dynamic view flow_paymob_upgrade {
+    title 'Flow · upgrade a plan through Paymob'
+    description 'The Pro page asks the API for a Paymob checkout. Paymob later calls the webhook, which verifies the HMAC and grants the plan by writing the subscription and the user’s plan.'
+
+    user -> smartspend.web.pages.Pro 'chooses a plan' // intent: the person opens the page
+    smartspend.web.pages.Pro -> smartspend.api.trpc.pro.createCheckoutSession 'start checkout'
+    smartspend.api.trpc.pro.createCheckoutSession -> smartspend.api.modules.billing 'build the Paymob payment'
+    smartspend.api.modules.billing -> paymob 'create the payment'
+    smartspend.web.pages.Pro <- smartspend.api.trpc.pro.createCheckoutSession 'hosted checkout URL'
+    paymob -> smartspend.api.http.post_webhooks_paymob 'transaction callback'
+    smartspend.api.http.post_webhooks_paymob -> smartspend.api.modules.billing 'verify the HMAC and grant the plan'
+    smartspend.api.modules.billing -> smartspend.mysql.pro_subscriptions 'record the subscription'
+    smartspend.api.modules.billing -> smartspend.mysql.users 'set the plan'
+  }
+}

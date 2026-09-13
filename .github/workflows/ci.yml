@@ -24,7 +24,7 @@ jobs:
       - run: npx tsc -b
 
   knowledge:
-    name: Atlas freshness (docs/atlas matches the code)
+    name: Knowledge freshness (atlas and architecture model match the code)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,8 +32,13 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            tools/architecture/package-lock.json
       - run: npm ci
       - run: npm run atlas:check
+      - run: npm run arch:install
+      - run: npm run arch:validate
 
   lint:
     name: ESLint

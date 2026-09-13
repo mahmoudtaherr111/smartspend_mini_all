@@ -20,24 +20,24 @@ How traffic and time enter the backend. Everything below is read from `api/boot.
 
 ## HTTP routes
 
-| Method | Path | Kind | Declared in | Depends on |
-| --- | --- | --- | --- | --- |
-| GET | `/api/auth/google/callback` | http | `api/boot.ts` | `api/context.ts`, `api/lib/env.ts`, `api/router.ts` |
-| GET | `/api/auth/google/start` | http | `api/boot.ts` | `api/auth-router.ts`, `api/lib/env.ts` |
-| GET | `/api/sms/android-connect` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` |
-| POST | `/api/sms/android-status` | http | `api/sms-router.ts` | — |
-| POST | `/api/sms/exchange` | http | `api/sms-router.ts` | — |
-| POST | `/api/sms/ingest` | http | `api/sms-router.ts` | `api/lib/settings-cache.ts`, `api/lib/sms-ai-parser.ts`, `api/lib/sms-rule-parser.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts` |
-| GET | `/api/sms/logs` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` |
-| GET | `/api/sms/metrics` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` |
-| GET | `/api/sms/shortcut-download` | http | `api/sms-router.ts` | `api/lib/shortcut-generator.ts` |
-| GET | `/api/sms/token` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` |
-| POST | `/api/sms/token/generate` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` |
-| GET | `/api/sms/unparsed` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` |
-| GET | `/api/sse/otp` | sse | `api/boot.ts` | `api/lib/get-client-ip.ts`, `api/services/whatsapp-service.ts` |
-| ALL | `/api/trpc/*` | trpc | `api/boot.ts` | `api/router.ts` |
-| POST | `/api/webhooks/paymob` | webhook | `api/boot.ts` | `api/lib/env.ts`, `api/lib/paymob.ts`, `api/lib/subscription-service.ts`, `contracts/plans.ts` |
-| GET | `/health` | http | `api/boot.ts` | — |
+| Method | Path | Kind | Declared in | Depends on | Reads | Writes |
+| --- | --- | --- | --- | --- | --- | --- |
+| GET | `/api/auth/google/callback` | http | `api/boot.ts` | `api/context.ts`, `api/lib/env.ts`, `api/router.ts` | — | — |
+| GET | `/api/auth/google/start` | http | `api/boot.ts` | `api/auth-router.ts`, `api/lib/env.ts` | — | — |
+| GET | `/api/sms/android-connect` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | `webhook_tokens` | `webhook_tokens` |
+| POST | `/api/sms/android-status` | http | `api/sms-router.ts` | — | `webhook_tokens` | — |
+| POST | `/api/sms/exchange` | http | `api/sms-router.ts` | — | — | — |
+| POST | `/api/sms/ingest` | http | `api/sms-router.ts` | `api/lib/settings-cache.ts`, `api/lib/sms-ai-parser.ts`, `api/lib/sms-rule-parser.ts`, `api/services/expense-rollups.ts`, `api/services/finance-semantic-layer/index.ts` | `local_users`, `raw_sms_events`, `users`, `webhook_tokens` | `expenses`, `raw_sms_events` |
+| GET | `/api/sms/logs` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | `raw_sms_events` | — |
+| GET | `/api/sms/metrics` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | `raw_sms_events` | — |
+| GET | `/api/sms/shortcut-download` | http | `api/sms-router.ts` | `api/lib/shortcut-generator.ts` | — | — |
+| GET | `/api/sms/token` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | `webhook_tokens` | — |
+| POST | `/api/sms/token/generate` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | — | `webhook_tokens` |
+| GET | `/api/sms/unparsed` | http | `api/sms-router.ts` | `api/lib/session-validation.ts` | `raw_sms_events` | — |
+| GET | `/api/sse/otp` | sse | `api/boot.ts` | `api/lib/get-client-ip.ts`, `api/services/whatsapp-service.ts` | — | — |
+| ALL | `/api/trpc/*` | trpc | `api/boot.ts` | `api/router.ts` | — | — |
+| POST | `/api/webhooks/paymob` | webhook | `api/boot.ts` | `api/lib/env.ts`, `api/lib/paymob.ts`, `api/lib/subscription-service.ts`, `contracts/plans.ts` | — | — |
+| GET | `/health` | http | `api/boot.ts` | — | — | — |
 
 ## WebSocket upgrades
 

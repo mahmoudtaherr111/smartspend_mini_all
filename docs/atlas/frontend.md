@@ -181,7 +181,6 @@ _None._
 | Procedure | Calls | Files |
 | --- | --- | --- |
 | `ai.getUserLimits` | useQuery | `src/components/expenses/ExpenseForm.tsx` |
-| `ai.learnWord` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
 | `ai.parseExpense` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
 | `ai.parseVoiceExpense` | useMutation | `src/components/expenses/ExpenseForm.tsx` |
 | `auth.logout` | useMutation | `src/hooks/useAuth.ts` |
@@ -446,3 +445,11 @@ _None._
 | Procedure | Calls | Files |
 | --- | --- | --- |
 | `seo.getPage` | useQuery | `src/components/seo/SEOMeta.tsx` |
+
+## Mutation hooks that are never invoked
+
+These files create a tRPC mutation hook but never use the variable it is assigned to, so no request is sent. They are not counted as callers anywhere in the atlas.
+
+| Procedure | File |
+| --- | --- |
+| `ai.learnWord` | `src/components/expenses/ExpenseForm.tsx` |
