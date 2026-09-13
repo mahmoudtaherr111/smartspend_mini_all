@@ -16,7 +16,7 @@ function formatBytes(bytes: number): string {
 }
 
 describe("Storage Baseline & Instrumentation (P0)", () => {
-  it("generates docs/STORAGE_BASELINE.md from live information_schema", async () => {
+  it("generates docs/reports/STORAGE_BASELINE.md from live information_schema", async () => {
     const dbUrl = process.env.DATABASE_URL;
     expect(dbUrl).toBeDefined();
 
@@ -169,7 +169,7 @@ describe("Storage Baseline & Instrumentation (P0)", () => {
         }
       }
 
-      const baselinePath = path.resolve(process.cwd(), "docs", "STORAGE_BASELINE.md");
+      const baselinePath = path.resolve(process.cwd(), "docs", "reports", "STORAGE_BASELINE.md");
       fs.writeFileSync(baselinePath, md, "utf8");
       expect(fs.existsSync(baselinePath)).toBe(true);
       expect(tableStats.length).toBeGreaterThanOrEqual(48);

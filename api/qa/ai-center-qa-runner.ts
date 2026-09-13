@@ -340,7 +340,7 @@ function markdownReport(result: QARunResult): string {
 }
 
 async function writeReport(result: QARunResult): Promise<void> {
-  writeFileSync(resolve(process.cwd(), "docs/AI_CENTER_QA_RUNNER_LAST_RESULT.md"), markdownReport(result), "utf8");
+  writeFileSync(resolve(process.cwd(), "docs/reports/AI_CENTER_QA_RUNNER_LAST_RESULT.md"), markdownReport(result), "utf8");
 }
 
 export async function runAICenterQA(): Promise<QARunResult> {

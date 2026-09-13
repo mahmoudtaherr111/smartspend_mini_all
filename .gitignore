@@ -44,6 +44,17 @@ whatsapp_auth_info/
 .audit-pwa-build*/
 .audit-server-build/
 
+# Local worktrees and on-demand knowledge output (npm run atlas:report, arch:build)
+.claude/worktrees/
+.atlas/
+
+# Orchestrator session files some agent tools write to the repo root.
+# Session artifacts belong in .agents/<run>/, never in the tracked tree.
+/ORIGINAL_REQUEST.md
+/PROJECT.md
+/TEST_INFRA.md
+/TEST_READY.md
+
 # Temporary files
 diff.txt
 diff_utf8.txt

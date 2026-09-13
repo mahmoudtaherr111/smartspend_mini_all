@@ -161,9 +161,9 @@ async function runReport() {
     // Print to stdout
     console.log(md);
 
-    // Save to docs/STORAGE_BASELINE.md if requested or if flag is passed
+    // Save to docs/reports/STORAGE_BASELINE.md if requested or if flag is passed
     if (process.argv.includes("--save-baseline")) {
-      const baselinePath = path.resolve(process.cwd(), "docs", "STORAGE_BASELINE.md");
+      const baselinePath = path.resolve(process.cwd(), "docs", "reports", "STORAGE_BASELINE.md");
       fs.writeFileSync(baselinePath, md, "utf8");
       console.log(`\nBaseline successfully written to ${baselinePath}`);
     }

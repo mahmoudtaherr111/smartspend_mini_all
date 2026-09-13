@@ -70,7 +70,7 @@ describe("dev-only browser QA paths", () => {
     expect(runner).toContain("retrieveMemoryContext");
     expect(runner).toContain('embedding:fireworks');
     expect(runner).toContain('retrievalPolicy.embedding === "fireworks_qwen"');
-    expect(runner).toContain("docs/AI_CENTER_QA_RUNNER_LAST_RESULT.md");
+    expect(runner).toContain("docs/reports/AI_CENTER_QA_RUNNER_LAST_RESULT.md");
   });
 
   it("keeps the classification benchmark runnable and its live pass gated", () => {
@@ -106,7 +106,7 @@ describe("dev-only browser QA paths", () => {
     // The offline report path is asserted elsewhere in the pipeline; the live one is
     // separate on purpose so a live run cannot overwrite the committed baseline report.
     const report = source("api/qa/classification-report.ts");
-    expect(report).toContain("docs/CLASSIFICATION_BENCHMARK_LAST_RESULT.md");
-    expect(report).toContain("docs/CLASSIFICATION_BENCHMARK_LIVE_RESULT.md");
+    expect(report).toContain("docs/reports/CLASSIFICATION_BENCHMARK_LAST_RESULT.md");
+    expect(report).toContain("docs/reports/CLASSIFICATION_BENCHMARK_LIVE_RESULT.md");
   });
 });

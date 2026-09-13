@@ -4,7 +4,7 @@
  * Writes nothing unless CLASSIFY_BENCH_REPORT=1 (or `force`), so a plain
  * `npm run test` runs the same assertions without dirtying the working tree.
  *
- * Report paths are deliberately distinct from docs/AI_CENTER_QA_RUNNER_LAST_RESULT.md,
+ * Report paths are deliberately distinct from docs/reports/AI_CENTER_QA_RUNNER_LAST_RESULT.md,
  * which api/dev-qa-paths.test.ts locks to the AI-Center runner.
  */
 import { execSync } from "node:child_process";
@@ -38,8 +38,8 @@ export interface BenchmarkRun {
   aborted?: { reason: string; atCase: string };
 }
 
-export const OFFLINE_REPORT_PATH = "docs/CLASSIFICATION_BENCHMARK_LAST_RESULT.md";
-export const LIVE_REPORT_PATH = "docs/CLASSIFICATION_BENCHMARK_LIVE_RESULT.md";
+export const OFFLINE_REPORT_PATH = "docs/reports/CLASSIFICATION_BENCHMARK_LAST_RESULT.md";
+export const LIVE_REPORT_PATH = "docs/reports/CLASSIFICATION_BENCHMARK_LIVE_RESULT.md";
 export const RAW_DIR = "scratch/benchmarks";
 
 export interface ReportInput {
