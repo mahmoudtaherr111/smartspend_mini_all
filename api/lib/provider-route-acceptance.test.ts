@@ -6,7 +6,7 @@
  * one guessed for it; a timeout covers the headers and not the body; a breaker records
  * that a provider is down and then tries it anyway.
  *
- * From docs/reviews/2026-09-05-expense-classification-audit.md: H11, M07, M08, M09, M10.
+ * Findings H11, M07, M08, M09 and M10 of the classification review of 5 September 2026.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {

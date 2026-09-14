@@ -130,7 +130,7 @@ export const adminRouter = router({
       .select({ count: count() })
       .from(localUsers);
 
-    // Optimized from expenseDailyRollups (§P8 / STORAGE_OVERHAUL_REPORT)
+    // Totals come from expenseDailyRollups instead of scanning expenses.
     const todayKey = businessDateKey();
     const [rollupTotals] = await db
       .select({

@@ -17,6 +17,8 @@ const HAND_WRITTEN = [
   "docs/README.md",
   "docs/architecture/README.md",
   "docs/ar/README.md",
+  "docs/guides/deploy.md",
+  "android-app/README.md",
 ];
 
 /** Paths that exist only locally or after a build, so a fresh checkout cannot resolve them. */

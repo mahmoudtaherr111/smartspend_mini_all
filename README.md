@@ -22,6 +22,7 @@ The variables the server requires at boot are listed in [docs/atlas/env.md](docs
 | Rules and commands for contributors, human or AI | [AGENTS.md](AGENTS.md) |
 | Facts generated from the code: API, database, routes, pages, modules | [docs/atlas/](docs/atlas/README.md) |
 | The architecture as an interactive map | `npm run arch:install`, then `npm run arch`; see [docs/architecture/](docs/architecture/README.md) |
+| Deploy with Docker or to a server | [docs/guides/deploy.md](docs/guides/deploy.md) |
 | How the documentation is organised | [docs/README.md](docs/README.md) |
 
 ## Repository layout

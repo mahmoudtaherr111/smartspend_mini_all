@@ -1,8 +1,8 @@
 /**
  * A1 acceptance: nothing writes to the ledger without earning it.
  *
- * Every case here is an artefact of the classification audit
- * (docs/reviews/2026-09-05-expense-classification-audit.md, section 8) reproduced
+ * Every case here is a defect found by the classification review of 5 September 2026
+ * (its report was retired after each finding was re-checked in the code), reproduced
  * against the real entry point. They are grouped by the claim they defend, not by the
  * module they touch, because each of these bugs was invisible in its own module and
  * only appeared where two layers met.
