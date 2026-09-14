@@ -14,7 +14,7 @@ that are never invoked). Diagram: `npm run arch`, view `web`.
 
 ## Rules
 1. Reach the server only through `trpc.<router>.<procedure>`. From `api/`, import types only
-   (`import type { AppRouter }`); never runtime code from `api/` or `db/`. (unenforced)
+   (`import type { AppRouter }`); never runtime code from `api/` or `db/`. (`tests/knowledge/architecture.test.ts`)
 2. The interface is Arabic and right-to-left: use logical utilities (`ms-`, `me-`, `ps-`, `pe-`, `start-`,
    `end-`) instead of left and right ones. (unenforced)
 3. After a mutation, invalidate the queries it changes through `trpc.useUtils()`.

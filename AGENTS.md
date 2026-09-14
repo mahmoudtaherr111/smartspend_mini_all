@@ -49,26 +49,29 @@ Never quote a count from memory or from an old document; read it from `docs/atla
 
 Known state (2026-09-14): `npm run check` fails on type errors in `src/components/profile/SmartProfileSettings.tsx`,
 `src/pages/Admin.tsx` and `api/profile-router.ts`, and the full test run has failures that need a live MySQL.
+`npm run lint` fails on existing errors in `api/`, `src/` and `tests/`.
 Do not run the whole suite with uncommitted work: `tests/unlock.test.ts` runs `git add -A && git commit`.
 
 ## Golden rules
 1. Identity is a pair. Google users live in `users`, phone/password users in `local_users`; every
    user-owned row carries `user_id` and `user_type`, and every query filters on both. Take the caller
-   from `ctx.user`. (unenforced)
+   from `ctx.user`. (the index is checked by `tests/knowledge/architecture.test.ts`; query filters are unenforced)
 2. `role` is admin/moderator access; `plan` (`free`, `pro`, `ultra`) is the subscription. Never compare
-   `role` with a plan name. (unenforced)
+   `role` with a plan name. (`tests/knowledge/architecture.test.ts`)
 3. Every tRPC procedure uses a builder exported by `api/middleware.ts` and is mounted through
-   `api/router.ts`. (`npm run atlas` warns about builders it cannot resolve)
+   `api/router.ts`. (`tests/knowledge/architecture.test.ts`)
 4. There are no foreign keys. Integrity lives in application code, relations in `db/relations.ts`, and
-   every table has a storage class in `db/table-classes.ts`. (`tests/table-classes.test.ts`)
+   every table has a storage class in `db/table-classes.ts`; see `docs/decisions/`.
+   (`tests/table-classes.test.ts`, `tests/knowledge/architecture.test.ts`)
 5. Read `system_settings` through `getSystemSettings()` in `api/lib/settings-cache.ts` and call
-   `invalidateSettingsCache()` after writing it. The cache is per process. (unenforced)
+   `invalidateSettingsCache()` after writing it. The cache is per process. (writers are checked by
+   `tests/knowledge/architecture.test.ts`; reads are unenforced)
 6. Ledger days and months are Cairo business time: use `api/lib/app-time.ts`, not server-local `Date`
    arithmetic or `toISOString()` slices. (unenforced)
 7. Background work is registered with `scheduleProtectedJob` in `api/boot.ts`; it takes a MySQL advisory
-   lock and runs only where `ENABLE_CRONS=true`. (listed in `docs/atlas/entrypoints.md`)
+   lock and runs only where `ENABLE_CRONS=true`. (`tests/knowledge/architecture.test.ts`)
 8. Server configuration is validated in `api/lib/env.ts`; add a variable there instead of reading
-   `process.env`. (`docs/atlas/env.md` lists direct reads)
+   `process.env`. (`tests/knowledge/architecture.test.ts` rejects new direct reads)
 9. Model ids go through `mapModelName()` in `api/lib/model-mapper.ts`. (unenforced)
 10. Never log message text, OTP codes, tokens, phone numbers or voice transcripts. (unenforced)
 11. Generated files are never edited or merged by hand. On a conflict in `docs/atlas/` or

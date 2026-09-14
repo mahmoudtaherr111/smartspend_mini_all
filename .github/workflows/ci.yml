@@ -24,7 +24,7 @@ jobs:
       - run: npx tsc -b
 
   knowledge:
-    name: Knowledge freshness (atlas and architecture model match the code)
+    name: Knowledge (atlas, architecture model and rules match the code)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,6 +37,8 @@ jobs:
             tools/architecture/package-lock.json
       - run: npm ci
       - run: npm run atlas:check
+      # Docs, flows and architecture rules. Runs on its own so it gates even while the full suite is red.
+      - run: npx vitest run tests/knowledge
       - run: npm run arch:install
       - run: npm run arch:validate
 
