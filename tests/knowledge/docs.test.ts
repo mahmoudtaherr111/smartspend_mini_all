@@ -17,9 +17,18 @@ const HAND_WRITTEN = [
   "docs/README.md",
   "docs/architecture/README.md",
   "docs/ar/README.md",
-  "docs/guides/deploy.md",
   "android-app/README.md",
+  ...markdownIn("docs/guides"),
+  ...markdownIn("docs/decisions"),
 ];
+
+function markdownIn(folder: string): string[] {
+  return fs
+    .readdirSync(path.join(ROOT, folder))
+    .filter((name) => name.endsWith(".md"))
+    .sort()
+    .map((name) => `${folder}/${name}`);
+}
 
 /** Paths that exist only locally or after a build, so a fresh checkout cannot resolve them. */
 const LOCAL_ONLY = /^(?:\.atlas|dist|node_modules|coverage)(?:\/|$)/;

@@ -31,6 +31,8 @@ Never quote a count from memory or from an old document; read it from `docs/atla
 | Environment variables | `docs/atlas/env.md` |
 | The system or one journey as a diagram | `npm run arch`, see `docs/architecture/README.md` |
 | Rules for a folder | `api/AGENTS.md`, `api/lib/AGENTS.md`, `src/AGENTS.md`, `db/AGENTS.md` |
+| Why something is built the way it is | `docs/decisions/` |
+| Deployment, Docker, production environment | `docs/guides/deploy.md` |
 
 ## Commands
 | Task | Command |
