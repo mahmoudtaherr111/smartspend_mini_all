@@ -17,7 +17,7 @@ import {
 } from "../db/schema";
 import { getSystemSettings } from "./lib/settings-cache";
 import { parseNameAndRelationship } from "./lib/relationship-normalizer";
-import { eq, and, gte, lte, desc, sql, lt, inArray } from "drizzle-orm";
+import { eq, and, or, like, gte, lte, desc, sql, lt, inArray } from "drizzle-orm";
 import Decimal from "decimal.js";
 import { ExpenseInputLimits } from "../contracts/constants";
 import { invalidateUserMemory } from "./lib/muscle-memory";
@@ -870,12 +870,21 @@ export const expenseRouter = router({
       const userId = ctx.user!.id;
       const userType = ctx.user!.type;
 
-      // Search across category, subCategory, description, and rawText
+      // Search across category, subCategory, description, and rawText.
+      //
+      // The text matches go through or(), which parenthesizes them. and() does not wrap a
+      // raw fragment, so the bare `a LIKE ? OR b LIKE ?` this used to pass bound tighter
+      // to the user filter than to the other matches and returned other users' rows.
       const q = `%${input.query}%`;
       const conditions = and(
         eq(expenses.userId, userId),
         eq(expenses.userType, userType),
-        sql`${expenses.category} LIKE ${q} OR ${expenses.subCategory} LIKE ${q} OR ${expenses.description} LIKE ${q} OR ${expenses.rawText} LIKE ${q}`,
+        or(
+          like(expenses.category, q),
+          like(expenses.subCategory, q),
+          like(expenses.description, q),
+          like(expenses.rawText, q),
+        ),
       );
 
       const items = await db

@@ -24,6 +24,7 @@ views `api`, `server_modules` and one `router_*` view per router.
    business, contact), check it with `lib/ownership-guard.ts`.
 3. Drizzle's `and()` does not parenthesize its arguments. A raw `sql` fragment containing `OR` inside
    `and(...)` must be wrapped in `or(...)` or parentheses, or the query escapes the user filter.
+   (`tests/knowledge/architecture.test.ts`)
 4. Money-moving writes run in `db.transaction()`, apply the daily rollup delta from
    `services/expense-rollups.ts`, and invalidate the user's expense cache after commit.
 5. Before paying for a model call, check the budget (`assertAiBudget` in `lib/ai-usage-policy.ts`); record

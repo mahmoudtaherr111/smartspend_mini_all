@@ -8,6 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { AtlasGraph } from "../atlas/graph";
 import { REPO_ROOT } from "../atlas/lib/util";
+import { unparenthesizedOrFragments } from "./sql-fragments";
 import type { RuleResult } from "./types";
 
 const PLAN_NAMES = ["free", "pro", "ultra"];
@@ -163,6 +164,15 @@ const RULES: RuleDefinition[] = [
       graph.env.server
         .filter((variable) => !variable.declared && !UNVALIDATED_ENV.includes(variable.name))
         .map((variable) => `${variable.name} (${variable.usedBy.join(", ")})`),
+  },
+  {
+    id: "sql-or-parenthesized",
+    title: "api/AGENTS.md rule 3: a raw sql fragment keeps its OR inside parentheses",
+    fix: "Build the alternatives with or(...) from drizzle-orm, or put them in parentheses inside the fragment: and() does not parenthesize its arguments.",
+    check: (graph, root) =>
+      graph.modules
+        .filter((module) => module.file.startsWith("api/"))
+        .flatMap((module) => unparenthesizedOrFragments(module.file, source(root, module.file))),
   },
   {
     id: "web-imports-types-only",

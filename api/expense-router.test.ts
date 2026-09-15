@@ -1,4 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
+import { MySqlDialect } from "drizzle-orm/mysql-core";
+import type { SQL } from "drizzle-orm";
 import { expenseRouter } from "./expense-router";
 import { db } from "./queries/connection";
 import { expenses } from "../db/schema";
@@ -51,9 +53,38 @@ describe("Expense Router", () => {
     const caller = expenseRouter.createCaller({
       user: { id: 1, type: "oauth", email: "test@example.com", name: "Test" },
     });
-    
+
     const result = await caller.list({ limit: 10 });
     expect(result.items).toHaveLength(1);
     expect(result.items[0].id).toBe(1);
+  });
+
+  it("keeps the search's text matches inside the user filter", async () => {
+    let where: SQL | undefined;
+    dbMock.select.mockImplementationOnce(() => {
+      const chain: any = {
+        from: vi.fn(() => chain),
+        where: vi.fn((condition: SQL) => {
+          where = condition;
+          return chain;
+        }),
+        orderBy: vi.fn(() => chain),
+        limit: vi.fn(() => Promise.resolve([])),
+      };
+      return chain;
+    });
+    const caller = expenseRouter.createCaller({
+      user: { id: 7, type: "local", email: "search@example.com", name: "Search" },
+    });
+
+    await caller.searchTransactions({ query: "كارفور" });
+
+    // and() does not parenthesize its arguments, so the alternatives need their own group:
+    // `user = ? and a like ? or b like ?` matches every user's rows through b (api/AGENTS.md rule 3).
+    const query = new MySqlDialect().sqlToQuery(where!);
+    expect(query.sql).toMatch(
+      /^\(`expenses`\.`user_id` = \? and `expenses`\.`user_type` = \? and \(.+ or .+\)\)$/,
+    );
+    expect(query.params.slice(0, 2)).toEqual([7, "local"]);
   });
 });

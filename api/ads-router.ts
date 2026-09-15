@@ -7,7 +7,7 @@ import {
 } from "./middleware";
 import { db } from "./queries/connection";
 import { ads, adClicks } from "../db/schema";
-import { eq, and, or, sql, count, desc } from "drizzle-orm";
+import { eq, and, or, isNull, lte, gte, sql, count, desc } from "drizzle-orm";
 
 const safeUrlSchema = z.string().url().optional().or(z.literal(""));
 
@@ -28,8 +28,8 @@ export const adsRouter = router({
 
       const conditions = [
         eq(ads.isActive, true),
-        sql`${ads.startDate} IS NULL OR ${ads.startDate} <= ${now}`,
-        sql`${ads.endDate} IS NULL OR ${ads.endDate} >= ${now}`,
+        or(isNull(ads.startDate), lte(ads.startDate, now)),
+        or(isNull(ads.endDate), gte(ads.endDate, now)),
         or(eq(ads.targetPlan, "all"), eq(ads.targetPlan, plan)),
       ];
 
