@@ -297,7 +297,6 @@ model {
   smartspend.api.modules.billing -[writes]-> smartspend.mysql.users
   smartspend.api.modules.classification -[imports]-> smartspend.api.modules.ai-providers
   smartspend.api.modules.classification -[imports]-> smartspend.api.modules.arabic-nlp
-  smartspend.api.modules.classification -[imports]-> smartspend.api.modules.classification-qa
   smartspend.api.modules.classification -[reads]-> smartspend.mysql.classification_logs
   smartspend.api.modules.classification -[reads]-> smartspend.mysql.expenses
   smartspend.api.modules.classification -[reads]-> smartspend.mysql.user_correction_rules

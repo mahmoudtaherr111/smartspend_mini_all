@@ -1,5 +1,5 @@
 {
-  "$comment": "Hand-maintained map from runtime source files to architecture clusters. The first matching rule wins. `npm run atlas` warns about every runtime file that no rule matches, so a new file forces a decision instead of disappearing from the map.",
+  "$comment": "Hand-maintained map from runtime source files to architecture modules. The first matching rule wins. `npm run atlas` warns about every runtime file that no rule matches, and the knowledge rules fail on a path that no longer exists. A description says what the module does, checked against its code; it is shown in the map and to agents through MCP.",
   "clusters": [
     {
       "id": "api-core",
@@ -66,19 +66,19 @@
     {
       "id": "billing",
       "title": "Billing",
-      "description": "Paymob hosted checkout and subscription grants.",
+      "description": "Paymob checkout requests, webhook verification settings and the subscription grant that sets a user's plan.",
       "paths": ["api/lib/paymob.ts", "api/lib/subscription-service.ts"]
     },
     {
       "id": "ledger",
       "title": "Ledger aggregates",
-      "description": "expense-rollups.ts and financial-month.ts.",
+      "description": "Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), the expense_details side table, and salary-cycle month ranges.",
       "paths": ["api/services/expense-rollups.ts", "api/services/financial-month.ts"]
     },
     {
       "id": "accounts",
       "title": "Account lifecycle",
-      "description": "user-purge-service.ts.",
+      "description": "Account deletion: purgeUserData removes every row a user owns, inside the caller's transaction.",
       "paths": ["api/services/user-purge-service.ts"]
     },
     {
@@ -90,7 +90,7 @@
     {
       "id": "notifications",
       "title": "Notifications",
-      "description": "notification-engine.ts and firebase.ts.",
+      "description": "Web push (VAPID) and Firebase Cloud Messaging delivery, scheduled and event-triggered notifications, budget alerts, activity nudges and the default templates.",
       "paths": ["api/notification-engine.ts", "api/services/firebase.ts"]
     },
     {
@@ -102,7 +102,7 @@
     {
       "id": "voice",
       "title": "Voice",
-      "description": "voice-call-service.ts, voice-context-service.ts and api/services/voice-kernel/.",
+      "description": "Live voice calls: a WebSocket bridged to the Gemini Live API, with session checks, voice quotas, tools that draft actions, the financial context for the call and the call archive.",
       "paths": ["api/services/voice-kernel/**", "api/services/voice-call-service.ts", "api/services/voice-context-service.ts"]
     },
     {
@@ -127,7 +127,7 @@
     {
       "id": "ai-governance",
       "title": "AI usage and cost governance",
-      "description": "ai-usage-policy.ts, ai-cost-analytics.ts and ai-cost-policy.ts.",
+      "description": "Per-plan token limits and per-request caps, burst counting, AI cost metrics and the admin cost overview, and the check of model-written numbers against facts.",
       "paths": ["api/lib/ai-usage-policy.ts", "api/services/ai-cost-analytics.ts", "api/services/ai-cost-policy.ts"]
     },
     {
@@ -150,7 +150,7 @@
     {
       "id": "ingestion-parsers",
       "title": "Ingestion parsers",
-      "description": "sms-ai-parser.ts, sms-rule-parser.ts, receipt-image-parser.ts and shortcut-generator.ts.",
+      "description": "Bank SMS parsing (rules first, then an AI parser with a per-user cache), receipt parsing with a vision model, and the generator of the personal iOS Shortcut.",
       "paths": [
         "api/lib/sms-ai-parser.ts",
         "api/lib/sms-rule-parser.ts",
@@ -161,13 +161,13 @@
     {
       "id": "classification-qa",
       "title": "Classification benchmark helpers",
-      "description": "benchmark-taxonomy-assert.ts, final-acceptance.ts and real-user-sim.ts, which live in api/lib.",
-      "paths": ["api/lib/benchmark-taxonomy-assert.ts", "api/lib/final-acceptance.ts", "api/lib/real-user-sim.ts"]
+      "description": "Helpers used only by the classification benchmark and QA scripts: taxonomy assertions and simulated users.",
+      "paths": ["api/lib/benchmark-taxonomy-assert.ts", "api/lib/real-user-sim.ts"]
     },
     {
       "id": "classification",
       "title": "Expense classification pipeline",
-      "description": "smart-pipeline.ts and the modules it composes: rules, muscle memory, embeddings, taxonomy, confidence, decomposition and verification.",
+      "description": "smart-pipeline.ts and the modules it composes: financial events, admissibility, rules, muscle memory, embeddings, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance.",
       "paths": [
         "api/lib/smart-pipeline.ts",
         "api/lib/rule-engine.ts",
@@ -176,6 +176,7 @@
         "api/lib/generate-embeddings-cache.ts",
         "api/lib/post-classifier-verifier.ts",
         "api/lib/admissibility-gate.ts",
+        "api/lib/final-acceptance.ts",
         "api/lib/classification-*.ts",
         "api/lib/classifier-contract.ts",
         "api/lib/confidence-*.ts",
@@ -200,43 +201,43 @@
     {
       "id": "ai-kernel",
       "title": "AI Center kernel",
-      "description": "api/services/ai-kernel/ (intent-router, agent-planner, clarification-machine, context-packer, data-need-compiler, response-normalizer, retrieval-policy, capability-registry, ai-trace-logger).",
+      "description": "Plans each AI Center turn without a model (intent, data needs, clarifying questions), packs the context, applies the capability registry and retrieval policy, words the answer with at most one model call, and logs traces.",
       "paths": ["api/services/ai-kernel/**"]
     },
     {
       "id": "ai-actions",
       "title": "AI action runtime",
-      "description": "api/services/action-runtime/ (artifacts, extended-actions, goal-create).",
+      "description": "Actions the assistant proposes, such as recording an expense, updating a wallet or creating a goal: stored as pending drafts and executed only after the user confirms, with the artifacts shown in chat.",
       "paths": ["api/services/action-runtime/**"]
     },
     {
       "id": "ai-memory",
       "title": "AI memory",
-      "description": "api/services/ai-memory/ (memory writer and retriever, embedding client and settings, vector stores).",
+      "description": "Long-term memory about each user: conversation capsules and running summaries, extracted facts, embeddings and backfill, and retrieval from Qdrant or a quantized local vector store.",
       "paths": ["api/services/ai-memory/**"]
     },
     {
       "id": "finance-semantic-layer",
       "title": "Finance semantic layer",
-      "description": "api/services/finance-semantic-layer/ (period resolver, row aggregators, resolvers, proactive insights, chart artifacts, cache).",
+      "description": "Answers factual finance questions from the ledger: period resolution, category matching, row aggregation, monthly report facts, proactive insights, chart artifacts and a per-user cache.",
       "paths": ["api/services/finance-semantic-layer/**"]
     },
     {
       "id": "site-guide",
       "title": "Site guide",
-      "description": "api/services/site-guide/ (knowledge base, embedding, retriever).",
+      "description": "How-to answers about using SmartSpend (linking SMS, cards and wallets, goals, reports) from a built-in knowledge base with embedding retrieval.",
       "paths": ["api/services/site-guide/**"]
     },
     {
       "id": "storage",
       "title": "File storage",
-      "description": "api/services/storage/ (avatar service, local and S3-compatible drivers).",
+      "description": "File storage behind one driver interface (local disk or S3-compatible storage such as R2), plus the avatar service.",
       "paths": ["api/services/storage/**"]
     },
     {
       "id": "ai-insights",
       "title": "AI insights and reports",
-      "description": "adaptive-question-engine.ts, lifestyle-inference-engine.ts, personal-context-builder.ts, pro-report-engine.ts, report-personalization-engine.ts, user-profile-service.ts and batch-ai-service.ts.",
+      "description": "Personalization: the smart profile, onboarding questions, lifestyle inference and behaviour snapshots, personal context for prompts, Pro report building and Gemini batch jobs.",
       "paths": [
         "api/services/adaptive-question-engine.ts",
         "api/services/lifestyle-inference-engine.ts",
@@ -270,25 +271,25 @@
     {
       "id": "web-ui-kit",
       "title": "UI primitives",
-      "description": "src/components/ui/.",
+      "description": "shadcn and Radix UI primitives in src/components/ui/.",
       "paths": ["src/components/ui/**"]
     },
     {
       "id": "web-admin",
       "title": "Admin UI",
-      "description": "src/components/admin/.",
+      "description": "Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration.",
       "paths": ["src/components/admin/**"]
     },
     {
       "id": "web-ai",
       "title": "AI Center UI",
-      "description": "src/components/ai/.",
+      "description": "AI Center screens: the chatbot, the AI memory manager, the monthly AI report and the live voice call.",
       "paths": ["src/components/ai/**"]
     },
     {
       "id": "web-finance",
       "title": "Finance UI",
-      "description": "src/components/dashboard/, expenses/, goals/ and insights/.",
+      "description": "Home dashboard (summaries, calendar, charts, search, streaks), expense entry with receipt capture, recent expenses, goals and AI insights.",
       "paths": [
         "src/components/dashboard/**",
         "src/components/expenses/**",
@@ -299,7 +300,7 @@
     {
       "id": "web-account",
       "title": "Account UI",
-      "description": "src/components/auth/, profile/, settings/, bank-sync/ and notifications/.",
+      "description": "Biometric lock and passkeys, the smart profile, business and people settings, SMS webhook settings, bank sync setup for Android and iOS, and the push prompt.",
       "paths": [
         "src/components/auth/**",
         "src/components/profile/**",
@@ -311,25 +312,25 @@
     {
       "id": "web-growth",
       "title": "Ads and SEO UI",
-      "description": "src/components/ads/ and seo/.",
+      "description": "The ad banner and SEO meta tags.",
       "paths": ["src/components/ads/**", "src/components/seo/**"]
     },
     {
       "id": "web-shared",
       "title": "Shared web components",
-      "description": "Components at the root of src/components.",
+      "description": "Shell components at the root of src/components: sidebar, notification bell, onboarding card, product tour and loading skeleton.",
       "paths": ["src/components/*.tsx"]
     },
     {
       "id": "web-hooks",
       "title": "Web hooks",
-      "description": "src/hooks/.",
+      "description": "React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycle, biometrics, navigation, keyboard and haptics.",
       "paths": ["src/hooks/**"]
     },
     {
       "id": "web-lib",
       "title": "Web utilities",
-      "description": "src/lib/, src/types/ and loose files at the root of src/.",
+      "description": "Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/.",
       "paths": ["src/lib/**", "src/types/**", "src/*.ts"]
     }
   ]

@@ -26,8 +26,8 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `ai-governance` | AI usage and cost governance | 3 | `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `jobs`, `voice` | — |
 | `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `classification`, `ingestion-parsers` | — |
 | `ingestion-parsers` | Ingestion parsers | 4 | `ai-providers`, `arabic-nlp`, `classification`, `platform` | `api-routers` | `gemini` |
-| `classification-qa` | Classification benchmark helpers | 3 | `classification` | `classification` | — |
-| `classification` | Expense classification pipeline | 32 | `ai-providers`, `arabic-nlp`, `classification-qa`, `database` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-core`, `api-routers`, `arabic-nlp`, `classification-qa`, `finance-semantic-layer`, `ingestion-parsers` | `gemini` |
+| `classification-qa` | Classification benchmark helpers | 2 | `classification` | — | — |
+| `classification` | Expense classification pipeline | 33 | `ai-providers`, `arabic-nlp`, `database` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-core`, `api-routers`, `arabic-nlp`, `classification-qa`, `finance-semantic-layer`, `ingestion-parsers` | `gemini` |
 | `ai-kernel` | AI Center kernel | 11 | `ai-governance`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-routers`, `voice` | — |
 | `ai-actions` | AI action runtime | 5 | `ai-governance`, `ai-insights`, `ai-memory`, `classification`, `database`, `finance-semantic-layer`, `ledger` | `api-routers`, `voice` | — |
 | `ai-memory` | AI memory | 12 | `ai-governance`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-routers`, `voice` | `fireworks`, `qdrant` |
@@ -181,7 +181,7 @@ Types, limits and billing plans shared by the web app and the API.
 
 ### `billing` — Billing
 
-Paymob hosted checkout and subscription grants.
+Paymob checkout requests, webhook verification settings and the subscription grant that sets a user's plan.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -190,7 +190,7 @@ Paymob hosted checkout and subscription grants.
 
 ### `ledger` — Ledger aggregates
 
-expense-rollups.ts and financial-month.ts.
+Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), the expense_details side table, and salary-cycle month ranges.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -199,7 +199,7 @@ expense-rollups.ts and financial-month.ts.
 
 ### `accounts` — Account lifecycle
 
-user-purge-service.ts.
+Account deletion: purgeUserData removes every row a user owns, inside the caller's transaction.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -219,7 +219,7 @@ Job implementations scheduled from api/boot.ts.
 
 ### `notifications` — Notifications
 
-notification-engine.ts and firebase.ts.
+Web push (VAPID) and Firebase Cloud Messaging delivery, scheduled and event-triggered notifications, budget alerts, activity nudges and the default templates.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -237,7 +237,7 @@ Baileys WhatsApp client and the in-process OTP state it verifies against.
 
 ### `voice` — Voice
 
-voice-call-service.ts, voice-context-service.ts and api/services/voice-kernel/.
+Live voice calls: a WebSocket bridged to the Gemini Live API, with session checks, voice quotas, tools that draft actions, the financial context for the call and the call archive.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -273,7 +273,7 @@ Provider clients, the provider registry, model name mapping, routing and fallbac
 
 ### `ai-governance` — AI usage and cost governance
 
-ai-usage-policy.ts, ai-cost-analytics.ts and ai-cost-policy.ts.
+Per-plan token limits and per-request caps, burst counting, AI cost metrics and the admin cost overview, and the check of model-written numbers against facts.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -300,7 +300,7 @@ Normalizers, dictionaries, Arabic number parsing, negation detection, fuzzy matc
 
 ### `ingestion-parsers` — Ingestion parsers
 
-sms-ai-parser.ts, sms-rule-parser.ts, receipt-image-parser.ts and shortcut-generator.ts.
+Bank SMS parsing (rules first, then an AI parser with a per-user cache), receipt parsing with a vision model, and the generator of the personal iOS Shortcut.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -311,17 +311,16 @@ sms-ai-parser.ts, sms-rule-parser.ts, receipt-image-parser.ts and shortcut-gener
 
 ### `classification-qa` — Classification benchmark helpers
 
-benchmark-taxonomy-assert.ts, final-acceptance.ts and real-user-sim.ts, which live in api/lib.
+Helpers used only by the classification benchmark and QA scripts: taxonomy assertions and simulated users.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `api/lib/benchmark-taxonomy-assert.ts` | `classification` | — | — | — |
-| `api/lib/final-acceptance.ts` | `classification` | — | — | — |
 | `api/lib/real-user-sim.ts` | `classification` | — | — | — |
 
 ### `classification` — Expense classification pipeline
 
-smart-pipeline.ts and the modules it composes: rules, muscle memory, embeddings, taxonomy, confidence, decomposition and verification.
+smart-pipeline.ts and the modules it composes: financial events, admissibility, rules, muscle memory, embeddings, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -332,7 +331,7 @@ smart-pipeline.ts and the modules it composes: rules, muscle memory, embeddings,
 | `api/lib/category-registry.ts` | `arabic-nlp` | — | — | — |
 | `api/lib/classification-decision.ts` | — | — | — | — |
 | `api/lib/classification-evidence.ts` | — | — | — | — |
-| `api/lib/classification-merge.ts` | `classification-qa` | — | — | — |
+| `api/lib/classification-merge.ts` | — | — | — | — |
 | `api/lib/classification-prompt.ts` | — | — | — | — |
 | `api/lib/classifier-contract.ts` | — | `gemini` | — | — |
 | `api/lib/confidence-calibration.generated.ts` | — | — | — | — |
@@ -342,6 +341,7 @@ smart-pipeline.ts and the modules it composes: rules, muscle memory, embeddings,
 | `api/lib/direction-governed-taxonomy.ts` | `arabic-nlp` | — | — | — |
 | `api/lib/embedding-engine.ts` | `ai-providers`, `arabic-nlp` | — | — | — |
 | `api/lib/entity-extractor.ts` | `arabic-nlp` | — | — | — |
+| `api/lib/final-acceptance.ts` | — | — | — | — |
 | `api/lib/financial-event-plan.ts` | `arabic-nlp` | — | — | — |
 | `api/lib/generate-embeddings-cache.ts` | — | `gemini` | — | — |
 | `api/lib/intent-detector.ts` | `arabic-nlp` | — | — | — |
@@ -349,10 +349,10 @@ smart-pipeline.ts and the modules it composes: rules, muscle memory, embeddings,
 | `api/lib/muscle-memory.ts` | `arabic-nlp`, `database` | — | `classification_logs` | — |
 | `api/lib/narrative-decomposer.ts` | `ai-providers`, `arabic-nlp` | `gemini` | — | — |
 | `api/lib/person-resolver.ts` | `arabic-nlp` | — | — | — |
-| `api/lib/post-classifier-verifier.ts` | `arabic-nlp`, `classification-qa` | — | — | — |
+| `api/lib/post-classifier-verifier.ts` | `arabic-nlp` | — | — | — |
 | `api/lib/relationship-normalizer.ts` | `arabic-nlp` | — | — | — |
 | `api/lib/rule-engine.ts` | `arabic-nlp` | — | — | — |
-| `api/lib/smart-pipeline.ts` | `ai-providers`, `arabic-nlp`, `classification-qa`, `database` | `gemini` | `expenses` | — |
+| `api/lib/smart-pipeline.ts` | `ai-providers`, `arabic-nlp`, `database` | `gemini` | `expenses` | — |
 | `api/lib/taxonomy-adapter.ts` | — | — | — | — |
 | `api/lib/taxonomy-ssot.ts` | — | — | — | — |
 | `api/lib/voice-intake-gate.ts` | — | — | — | — |
@@ -360,7 +360,7 @@ smart-pipeline.ts and the modules it composes: rules, muscle memory, embeddings,
 
 ### `ai-kernel` — AI Center kernel
 
-api/services/ai-kernel/ (intent-router, agent-planner, clarification-machine, context-packer, data-need-compiler, response-normalizer, retrieval-policy, capability-registry, ai-trace-logger).
+Plans each AI Center turn without a model (intent, data needs, clarifying questions), packs the context, applies the capability registry and retrieval policy, words the answer with at most one model call, and logs traces.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -378,7 +378,7 @@ api/services/ai-kernel/ (intent-router, agent-planner, clarification-machine, co
 
 ### `ai-actions` — AI action runtime
 
-api/services/action-runtime/ (artifacts, extended-actions, goal-create).
+Actions the assistant proposes, such as recording an expense, updating a wallet or creating a goal: stored as pending drafts and executed only after the user confirms, with the artifacts shown in chat.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -390,7 +390,7 @@ api/services/action-runtime/ (artifacts, extended-actions, goal-create).
 
 ### `ai-memory` — AI memory
 
-api/services/ai-memory/ (memory writer and retriever, embedding client and settings, vector stores).
+Long-term memory about each user: conversation capsules and running summaries, extracted facts, embeddings and backfill, and retrieval from Qdrant or a quantized local vector store.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -409,7 +409,7 @@ api/services/ai-memory/ (memory writer and retriever, embedding client and setti
 
 ### `finance-semantic-layer` — Finance semantic layer
 
-api/services/finance-semantic-layer/ (period resolver, row aggregators, resolvers, proactive insights, chart artifacts, cache).
+Answers factual finance questions from the ledger: period resolution, category matching, row aggregation, monthly report facts, proactive insights, chart artifacts and a per-user cache.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -426,7 +426,7 @@ api/services/finance-semantic-layer/ (period resolver, row aggregators, resolver
 
 ### `site-guide` — Site guide
 
-api/services/site-guide/ (knowledge base, embedding, retriever).
+How-to answers about using SmartSpend (linking SMS, cards and wallets, goals, reports) from a built-in knowledge base with embedding retrieval.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -438,7 +438,7 @@ api/services/site-guide/ (knowledge base, embedding, retriever).
 
 ### `storage` — File storage
 
-api/services/storage/ (avatar service, local and S3-compatible drivers).
+File storage behind one driver interface (local disk or S3-compatible storage such as R2), plus the avatar service.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -450,7 +450,7 @@ api/services/storage/ (avatar service, local and S3-compatible drivers).
 
 ### `ai-insights` — AI insights and reports
 
-adaptive-question-engine.ts, lifestyle-inference-engine.ts, personal-context-builder.ts, pro-report-engine.ts, report-personalization-engine.ts, user-profile-service.ts and batch-ai-service.ts.
+Personalization: the smart profile, onboarding questions, lifestyle inference and behaviour snapshots, personal context for prompts, Pro report building and Gemini batch jobs.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -511,7 +511,7 @@ Route-level page components lazy-loaded by src/App.tsx.
 
 ### `web-ui-kit` — UI primitives
 
-src/components/ui/.
+shadcn and Radix UI primitives in src/components/ui/.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -573,7 +573,7 @@ src/components/ui/.
 
 ### `web-admin` — Admin UI
 
-src/components/admin/.
+Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -600,7 +600,7 @@ src/components/admin/.
 
 ### `web-ai` — AI Center UI
 
-src/components/ai/.
+AI Center screens: the chatbot, the AI memory manager, the monthly AI report and the live voice call.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -611,7 +611,7 @@ src/components/ai/.
 
 ### `web-finance` — Finance UI
 
-src/components/dashboard/, expenses/, goals/ and insights/.
+Home dashboard (summaries, calendar, charts, search, streaks), expense entry with receipt capture, recent expenses, goals and AI insights.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -634,7 +634,7 @@ src/components/dashboard/, expenses/, goals/ and insights/.
 
 ### `web-account` — Account UI
 
-src/components/auth/, profile/, settings/, bank-sync/ and notifications/.
+Biometric lock and passkeys, the smart profile, business and people settings, SMS webhook settings, bank sync setup for Android and iOS, and the push prompt.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -653,7 +653,7 @@ src/components/auth/, profile/, settings/, bank-sync/ and notifications/.
 
 ### `web-growth` — Ads and SEO UI
 
-src/components/ads/ and seo/.
+The ad banner and SEO meta tags.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -662,7 +662,7 @@ src/components/ads/ and seo/.
 
 ### `web-shared` — Shared web components
 
-Components at the root of src/components.
+Shell components at the root of src/components: sidebar, notification bell, onboarding card, product tour and loading skeleton.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -674,7 +674,7 @@ Components at the root of src/components.
 
 ### `web-hooks` — Web hooks
 
-src/hooks/.
+React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycle, biometrics, navigation, keyboard and haptics.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -702,7 +702,7 @@ src/hooks/.
 
 ### `web-lib` — Web utilities
 
-src/lib/, src/types/ and loose files at the root of src/.
+Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |

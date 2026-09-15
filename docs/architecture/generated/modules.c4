@@ -4,42 +4,42 @@
 model {
   extend smartspend.api.modules {
     accounts = module 'Account lifecycle' {
-      description 'user-purge-service.ts.'
+      description 'Account deletion: purgeUserData removes every row a user owns, inside the caller’s transaction.'
       metadata {
         files '1'
         paths 'api/services/user-purge-service.ts'
       }
     }
     ai-actions = module 'AI action runtime' {
-      description 'api/services/action-runtime/ (artifacts, extended-actions, goal-create).'
+      description 'Actions the assistant proposes, such as recording an expense, updating a wallet or creating a goal: stored as pending drafts and executed only after the user confirms, with the artifacts shown in chat.'
       metadata {
         files '5'
         paths 'api/services/action-runtime/**'
       }
     }
     ai-governance = module 'AI usage and cost governance' {
-      description 'ai-usage-policy.ts, ai-cost-analytics.ts and ai-cost-policy.ts.'
+      description 'Per-plan token limits and per-request caps, burst counting, AI cost metrics and the admin cost overview, and the check of model-written numbers against facts.'
       metadata {
         files '3'
         paths 'api/lib/ai-usage-policy.ts, api/services/ai-cost-analytics.ts, api/services/ai-cost-policy.ts'
       }
     }
     ai-insights = module 'AI insights and reports' {
-      description 'adaptive-question-engine.ts, lifestyle-inference-engine.ts, personal-context-builder.ts, pro-report-engine.ts, report-personalization-engine.ts, user-profile-service.ts and batch-ai-service.ts.'
+      description 'Personalization: the smart profile, onboarding questions, lifestyle inference and behaviour snapshots, personal context for prompts, Pro report building and Gemini batch jobs.'
       metadata {
         files '7'
         paths 'api/services/adaptive-question-engine.ts, api/services/lifestyle-inference-engine.ts, api/services/personal-context-builder.ts, api/services/pro-report-engine.ts, api/services/report-personalization-engine.ts, api/services/user-profile-service.ts, api/services/batch-ai-service.ts'
       }
     }
     ai-kernel = module 'AI Center kernel' {
-      description 'api/services/ai-kernel/ (intent-router, agent-planner, clarification-machine, context-packer, data-need-compiler, response-normalizer, retrieval-policy, capability-registry, ai-trace-logger).'
+      description 'Plans each AI Center turn without a model (intent, data needs, clarifying questions), packs the context, applies the capability registry and retrieval policy, words the answer with at most one model call, and logs traces.'
       metadata {
         files '11'
         paths 'api/services/ai-kernel/**'
       }
     }
     ai-memory = module 'AI memory' {
-      description 'api/services/ai-memory/ (memory writer and retriever, embedding client and settings, vector stores).'
+      description 'Long-term memory about each user: conversation capsules and running summaries, extracted facts, embeddings and backfill, and retrieval from Qdrant or a quantized local vector store.'
       metadata {
         files '12'
         paths 'api/services/ai-memory/**'
@@ -81,24 +81,24 @@ model {
       }
     }
     billing = module 'Billing' {
-      description 'Paymob hosted checkout and subscription grants.'
+      description 'Paymob checkout requests, webhook verification settings and the subscription grant that sets a user’s plan.'
       metadata {
         files '2'
         paths 'api/lib/paymob.ts, api/lib/subscription-service.ts'
       }
     }
     classification = module 'Expense classification pipeline' {
-      description 'smart-pipeline.ts and the modules it composes: rules, muscle memory, embeddings, taxonomy, confidence, decomposition and verification.'
+      description 'smart-pipeline.ts and the modules it composes: financial events, admissibility, rules, muscle memory, embeddings, taxonomy, confidence calibration, decomposition, verification and the final per-item acceptance.'
       metadata {
-        files '32'
-        paths 'api/lib/smart-pipeline.ts, api/lib/rule-engine.ts, api/lib/muscle-memory.ts, api/lib/embedding-engine.ts, api/lib/generate-embeddings-cache.ts, api/lib/post-classifier-verifier.ts, api/lib/admissibility-gate.ts, api/lib/classification-*.ts, api/lib/classifier-contract.ts, api/lib/confidence-*.ts, api/lib/correction-rules.ts, api/lib/category-registry.ts, api/lib/taxonomy-*.ts, api/lib/direction-governed-taxonomy.ts, api/lib/keyword-category-priors.ts, api/lib/entity-extractor.ts, api/lib/narrative-decomposer.ts, api/lib/intent-detector.ts, api/lib/person-resolver.ts, api/lib/relationship-normalizer.ts, api/lib/amount-ledger.ts, api/lib/amount-linker.ts, api/lib/financial-event-plan.ts, api/lib/voice-intake-gate.ts, api/lib/anomaly-detector.ts, api/services/parser-trace.ts'
+        files '33'
+        paths 'api/lib/smart-pipeline.ts, api/lib/rule-engine.ts, api/lib/muscle-memory.ts, api/lib/embedding-engine.ts, api/lib/generate-embeddings-cache.ts, api/lib/post-classifier-verifier.ts, api/lib/admissibility-gate.ts, api/lib/final-acceptance.ts, api/lib/classification-*.ts, api/lib/classifier-contract.ts, api/lib/confidence-*.ts, api/lib/correction-rules.ts, api/lib/category-registry.ts, api/lib/taxonomy-*.ts, api/lib/direction-governed-taxonomy.ts, api/lib/keyword-category-priors.ts, api/lib/entity-extractor.ts, api/lib/narrative-decomposer.ts, api/lib/intent-detector.ts, api/lib/person-resolver.ts, api/lib/relationship-normalizer.ts, api/lib/amount-ledger.ts, api/lib/amount-linker.ts, api/lib/financial-event-plan.ts, api/lib/voice-intake-gate.ts, api/lib/anomaly-detector.ts, api/services/parser-trace.ts'
       }
     }
     classification-qa = module 'Classification benchmark helpers' {
-      description 'benchmark-taxonomy-assert.ts, final-acceptance.ts and real-user-sim.ts, which live in api/lib.'
+      description 'Helpers used only by the classification benchmark and QA scripts: taxonomy assertions and simulated users.'
       metadata {
-        files '3'
-        paths 'api/lib/benchmark-taxonomy-assert.ts, api/lib/final-acceptance.ts, api/lib/real-user-sim.ts'
+        files '2'
+        paths 'api/lib/benchmark-taxonomy-assert.ts, api/lib/real-user-sim.ts'
       }
     }
     database = module 'Database schema and access' {
@@ -109,14 +109,14 @@ model {
       }
     }
     finance-semantic-layer = module 'Finance semantic layer' {
-      description 'api/services/finance-semantic-layer/ (period resolver, row aggregators, resolvers, proactive insights, chart artifacts, cache).'
+      description 'Answers factual finance questions from the ledger: period resolution, category matching, row aggregation, monthly report facts, proactive insights, chart artifacts and a per-user cache.'
       metadata {
         files '10'
         paths 'api/services/finance-semantic-layer/**'
       }
     }
     ingestion-parsers = module 'Ingestion parsers' {
-      description 'sms-ai-parser.ts, sms-rule-parser.ts, receipt-image-parser.ts and shortcut-generator.ts.'
+      description 'Bank SMS parsing (rules first, then an AI parser with a per-user cache), receipt parsing with a vision model, and the generator of the personal iOS Shortcut.'
       metadata {
         files '4'
         paths 'api/lib/sms-ai-parser.ts, api/lib/sms-rule-parser.ts, api/lib/receipt-image-parser.ts, api/lib/shortcut-generator.ts'
@@ -130,14 +130,14 @@ model {
       }
     }
     ledger = module 'Ledger aggregates' {
-      description 'expense-rollups.ts and financial-month.ts.'
+      description 'Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), the expense_details side table, and salary-cycle month ranges.'
       metadata {
         files '2'
         paths 'api/services/expense-rollups.ts, api/services/financial-month.ts'
       }
     }
     notifications = module 'Notifications' {
-      description 'notification-engine.ts and firebase.ts.'
+      description 'Web push (VAPID) and Firebase Cloud Messaging delivery, scheduled and event-triggered notifications, budget alerts, activity nudges and the default templates.'
       metadata {
         files '2'
         paths 'api/notification-engine.ts, api/services/firebase.ts'
@@ -158,21 +158,21 @@ model {
       }
     }
     site-guide = module 'Site guide' {
-      description 'api/services/site-guide/ (knowledge base, embedding, retriever).'
+      description 'How-to answers about using SmartSpend (linking SMS, cards and wallets, goals, reports) from a built-in knowledge base with embedding retrieval.'
       metadata {
         files '5'
         paths 'api/services/site-guide/**'
       }
     }
     storage = module 'File storage' {
-      description 'api/services/storage/ (avatar service, local and S3-compatible drivers).'
+      description 'File storage behind one driver interface (local disk or S3-compatible storage such as R2), plus the avatar service.'
       metadata {
         files '5'
         paths 'api/services/storage/**'
       }
     }
     voice = module 'Voice' {
-      description 'voice-call-service.ts, voice-context-service.ts and api/services/voice-kernel/.'
+      description 'Live voice calls: a WebSocket bridged to the Gemini Live API, with session checks, voice quotas, tools that draft actions, the financial context for the call and the call archive.'
       metadata {
         files '10'
         paths 'api/services/voice-kernel/**, api/services/voice-call-service.ts, api/services/voice-context-service.ts'
@@ -199,49 +199,49 @@ model {
 
   extend smartspend.web.modules {
     web-account = module 'Account UI' {
-      description 'src/components/auth/, profile/, settings/, bank-sync/ and notifications/.'
+      description 'Biometric lock and passkeys, the smart profile, business and people settings, SMS webhook settings, bank sync setup for Android and iOS, and the push prompt.'
       metadata {
         files '12'
         paths 'src/components/auth/**, src/components/profile/**, src/components/settings/**, src/components/bank-sync/**, src/components/notifications/**'
       }
     }
     web-admin = module 'Admin UI' {
-      description 'src/components/admin/.'
+      description 'Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration.'
       metadata {
         files '20'
         paths 'src/components/admin/**'
       }
     }
     web-ai = module 'AI Center UI' {
-      description 'src/components/ai/.'
+      description 'AI Center screens: the chatbot, the AI memory manager, the monthly AI report and the live voice call.'
       metadata {
         files '4'
         paths 'src/components/ai/**'
       }
     }
     web-finance = module 'Finance UI' {
-      description 'src/components/dashboard/, expenses/, goals/ and insights/.'
+      description 'Home dashboard (summaries, calendar, charts, search, streaks), expense entry with receipt capture, recent expenses, goals and AI insights.'
       metadata {
         files '16'
         paths 'src/components/dashboard/**, src/components/expenses/**, src/components/goals/**, src/components/insights/**'
       }
     }
     web-growth = module 'Ads and SEO UI' {
-      description 'src/components/ads/ and seo/.'
+      description 'The ad banner and SEO meta tags.'
       metadata {
         files '2'
         paths 'src/components/ads/**, src/components/seo/**'
       }
     }
     web-hooks = module 'Web hooks' {
-      description 'src/hooks/.'
+      description 'React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycle, biometrics, navigation, keyboard and haptics.'
       metadata {
         files '21'
         paths 'src/hooks/**'
       }
     }
     web-lib = module 'Web utilities' {
-      description 'src/lib/, src/types/ and loose files at the root of src/.'
+      description 'Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/.'
       metadata {
         files '9'
         paths 'src/lib/**, src/types/**, src/*.ts'
@@ -255,7 +255,7 @@ model {
       }
     }
     web-shared = module 'Shared web components' {
-      description 'Components at the root of src/components.'
+      description 'Shell components at the root of src/components: sidebar, notification bell, onboarding card, product tour and loading skeleton.'
       metadata {
         files '5'
         paths 'src/components/*.tsx'
@@ -269,7 +269,7 @@ model {
       }
     }
     web-ui-kit = module 'UI primitives' {
-      description 'src/components/ui/.'
+      description 'shadcn and Radix UI primitives in src/components/ui/.'
       metadata {
         files '55'
         paths 'src/components/ui/**'
