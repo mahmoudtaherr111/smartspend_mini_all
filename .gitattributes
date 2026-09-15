@@ -7,3 +7,11 @@ docs/architecture/** text eol=lf
 # on a merge conflict, take either side and re-run `npm run atlas`.
 docs/atlas/** linguist-generated=true
 docs/architecture/generated/** linguist-generated=true
+
+# Generated knowledge never needs a hand merge: the driver keeps one side and the post-merge hook regenerates
+# it. `npm run hooks:install` registers the driver; without it git falls back to a normal merge.
+docs/atlas/** merge=smartspend-generated
+docs/architecture/generated/** merge=smartspend-generated
+
+# Git hooks run under sh, which needs LF line endings.
+.githooks/* text eol=lf

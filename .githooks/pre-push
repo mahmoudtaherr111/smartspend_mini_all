@@ -1,0 +1,8 @@
+#!/bin/sh
+# smartspend-managed-hook: installed from .githooks/ by `npm run hooks:install`. Edit the tracked copy.
+# Refuses a push while a knowledge rule is broken. A person can skip it once with SMARTSPEND_SKIP_PREPUSH=1.
+if [ -f scripts/agent/git-hook.mjs ] && command -v node >/dev/null 2>&1; then
+  node scripts/agent/git-hook.mjs pre-push "$@"
+  exit $?
+fi
+exit 0

@@ -1,0 +1,7 @@
+#!/bin/sh
+# smartspend-managed-hook: installed from .githooks/ by `npm run hooks:install`. Edit the tracked copy.
+# Adds an "Agent: <tool>" trailer, so the history records which tool made each change.
+if [ -f scripts/agent/git-hook.mjs ] && command -v node >/dev/null 2>&1; then
+  node scripts/agent/git-hook.mjs prepare-commit-msg "$@" || true
+fi
+exit 0

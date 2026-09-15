@@ -1,0 +1,28 @@
+#!/bin/sh
+# smartspend-managed-hook: installed from .githooks/ by `npm run hooks:install`. Edit the tracked copy.
+
+# 1. Block environment files and known secret formats. This part needs only git and grep, so it runs in
+#    every worktree whatever branch is checked out.
+STAGED_ENV_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E "(\.env|\.env\..+|.*\.env.*)" | grep -v "\.env\.example$" || true)
+if [ -n "$STAGED_ENV_FILES" ]; then
+  echo ""
+  echo "❌ [SECURITY ERROR] Attempting to commit environment file(s):"
+  echo "$STAGED_ENV_FILES"
+  echo "Commit rejected. Sensitive variables must stay in .env (gitignored)."
+  exit 1
+fi
+
+STAGED_SECRET_DIFF=$(git diff --cached -U0 -- . ':(exclude)*.test.*' ':(exclude)*.example*' ':(exclude)*.sample' ':(exclude).agents/*' | grep -E "^\+[^+]" | grep -E "(AIza[0-9A-Za-z_-]{30,}|AQ\.Ab8[0-9A-Za-z_-]{30,}|gsk_[0-9A-Za-z_-]{20,}|nvapi-[0-9A-Za-z_-]{40,}|fw_[0-9A-Za-z_-]{15,}|GOCSPX-[0-9A-Za-z_-]{20,})" || true)
+if [ -n "$STAGED_SECRET_DIFF" ]; then
+  echo ""
+  echo "❌ [SECURITY ERROR] Potential API Key / Secret detected in staged changes:"
+  echo "$STAGED_SECRET_DIFF" | head -n 5
+  echo "Commit rejected. Please use process.env references and keep secrets in .env (gitignored)."
+  exit 1
+fi
+
+# 2. Keep the generated atlas in the same commit as the code it describes (never blocks the commit).
+if [ -f scripts/agent/git-hook.mjs ] && command -v node >/dev/null 2>&1; then
+  node scripts/agent/git-hook.mjs pre-commit || true
+fi
+exit 0

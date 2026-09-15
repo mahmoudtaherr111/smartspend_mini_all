@@ -31,7 +31,8 @@ Thumbs.db
 .idea/
 
 # Dev artifacts
-.agents/
+.agents/*
+!.agents/rules/
 scratch/
 .gemini/
 *.prompt.md
