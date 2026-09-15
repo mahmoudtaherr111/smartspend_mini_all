@@ -47,7 +47,7 @@ export interface SmartUserProfile {
 }
 
 export interface OnboardingAnswer {
-  value: unknown;
+  value?: unknown;
   skipped?: boolean;
   answeredAt?: string;
   updatedAt?: string;

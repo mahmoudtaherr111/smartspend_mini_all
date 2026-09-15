@@ -50,9 +50,11 @@ export const safePrimitiveSchema = z.union([
 
 export const safeArraySchema = z.array(z.string().max(200)).max(50);
 
+// null clears a field: the smart profile settings screen sends null for every value left empty.
 export const safeProfileValueSchema = z.union([
   safePrimitiveSchema,
   safeArraySchema,
+  z.null(),
 ]);
 
 export const safeProfileSectionSchema = z
