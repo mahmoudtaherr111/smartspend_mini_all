@@ -36,7 +36,10 @@ jobs:
             package-lock.json
             tools/architecture/package-lock.json
       - run: npm ci
-      - run: npm run atlas:check
+      - name: Generated knowledge matches the code
+        # On main, the knowledge autofix workflow regenerates a stale atlas instead of failing.
+        if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+        run: npm run atlas:check
       # Docs, flows and architecture rules. Runs on its own so it gates even while the full suite is red.
       - run: npx vitest run tests/knowledge
       - run: npm run arch:install

@@ -1,0 +1,56 @@
+name: Knowledge autofix
+
+# When code reaches main without its regenerated atlas, rebuild docs/atlas and docs/architecture/generated
+# from the code and commit them to main, and write a summary of what changed in the system. Pushes made with
+# GITHUB_TOKEN do not start other workflows, so the bot commit cannot loop.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: knowledge-autofix
+  cancel-in-progress: false
+
+jobs:
+  regenerate:
+    name: Regenerate the atlas on main
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Summarize the system changes of this push
+        continue-on-error: true
+        run: npm run --silent changes -- --from "${{ github.event.before }}" --to "${{ github.sha }}" --lang ar >> "$GITHUB_STEP_SUMMARY"
+      - name: Regenerate, and commit when the atlas is stale
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for attempt in 1 2 3; do
+            npm run atlas
+            if git diff --quiet -- docs/atlas docs/architecture/generated \
+              && [ -z "$(git ls-files --others --exclude-standard -- docs/atlas docs/architecture/generated)" ]; then
+              echo "The atlas already matches the code on main."
+              exit 0
+            fi
+            git add -- docs/atlas docs/architecture/generated
+            git commit -m "chore(atlas): regenerate from the code on main" -m "Agent: ci-autofix"
+            if git push origin HEAD:main; then
+              echo "Committed the regenerated atlas to main."
+              exit 0
+            fi
+            echo "main moved while regenerating; retrying on the new tip (attempt $attempt)."
+            git fetch origin main
+            git reset --hard origin/main
+          done
+          echo "Could not push the regenerated atlas after 3 attempts; the next push to main retries."
