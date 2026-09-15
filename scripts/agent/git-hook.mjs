@@ -19,6 +19,8 @@ import { GENERATED_PATHS, git, lines, repoRoot, runTsx, statusPath, tryGit, tsxA
 
 /** Files whose change can change the generated atlas. */
 const ATLAS_INPUT = /^(api|src|db|contracts)\/|^docs\/architecture\/(clusters|externals)\.json$|^scripts\/atlas\//;
+/** Folder notes such as db/AGENTS.md sit beside the code but never change the atlas. */
+const isAtlasInput = (name) => ATLAS_INPUT.test(name) && !name.endsWith(".md");
 
 const root = repoRoot();
 const [command, ...args] = process.argv.slice(2);
@@ -39,18 +41,18 @@ function generatedChanged() {
 function uncommittedInputs() {
   return lines(tryGit(["status", "--porcelain=v1", "-uall"], { cwd: root }))
     .map(statusPath)
-    .filter((file) => ATLAS_INPUT.test(file));
+    .filter((file) => isAtlasInput(file));
 }
 
 function preCommit() {
   if (process.env.SMARTSPEND_SKIP_ATLAS === "1" || !canRegenerate()) return 0;
   const staged = lines(tryGit(["diff", "--cached", "--name-only", "--diff-filter=ACMRD"], { cwd: root }));
-  if (!staged.some((file) => ATLAS_INPUT.test(file))) return 0;
+  if (!staged.some((file) => isAtlasInput(file))) return 0;
 
   const notStaged = [
     ...lines(tryGit(["diff", "--name-only"], { cwd: root })),
     ...lines(tryGit(["ls-files", "--others", "--exclude-standard"], { cwd: root })),
-  ].filter((file) => ATLAS_INPUT.test(file));
+  ].filter((file) => isAtlasInput(file));
   if (notStaged.length > 0) {
     console.log(
       `[atlas] Not regenerated: ${notStaged.length} code file(s) have changes outside this commit (first: ${notStaged[0]}), ` +
@@ -105,7 +107,7 @@ function prepareCommitMsg([messageFile, source]) {
 function afterHistoryChange() {
   if (process.env.SMARTSPEND_SKIP_ATLAS === "1" || !canRegenerate()) return 0;
   const diff = tryGit(["diff", "--name-only", "ORIG_HEAD", "HEAD"], { cwd: root });
-  if (diff !== null && !lines(diff).some((file) => ATLAS_INPUT.test(file))) return 0;
+  if (diff !== null && !lines(diff).some((file) => isAtlasInput(file))) return 0;
   const uncommitted = uncommittedInputs();
   if (uncommitted.length > 0) {
     console.log(
@@ -134,7 +136,7 @@ function prePush() {
   if (!root || !fs.existsSync(path.join(root, "scripts", "agent", "finish.ts")) || !tsxAvailable(root)) return 0;
   const uncommitted = lines(tryGit(["status", "--porcelain=v1"], { cwd: root })).filter((line) => {
     const file = statusPath(line);
-    return ATLAS_INPUT.test(file) || file.startsWith("docs/architecture/");
+    return isAtlasInput(file) || file.startsWith("docs/architecture/");
   });
   if (uncommitted.length > 0) {
     console.log("[knowledge] Uncommitted code or model changes: the check reads the files on disk, which may differ from what you push.");
