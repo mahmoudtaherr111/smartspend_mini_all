@@ -254,8 +254,11 @@ export async function getRedisClient(): Promise<RedisClientType | null> {
 
 export async function cacheGet(key: string): Promise<string | null> {
   const client = await getRedisClient();
+  // Where the memory fallback is not allowed (production without AI_ALLOW_MEMORY_CACHE_IN_PRODUCTION), the
+  // process never answers from its own RAM, as the warning in warnDisabledProductionFallback promises.
+  const memoryAllowed = memoryFallbackAllowed();
   if (!client) {
-    const val = memoryGet(key);
+    const val = memoryAllowed ? memoryGet(key) : null;
     if (val !== null) cacheHits++;
     else cacheMisses++;
     return val;
@@ -268,7 +271,7 @@ export async function cacheGet(key: string): Promise<string | null> {
     return val;
   } catch (err) {
     console.warn(`[Redis] cacheGet error for ${key}:`, err);
-    const val = memoryGet(key);
+    const val = memoryAllowed ? memoryGet(key) : null;
     if (val !== null) cacheHits++;
     else cacheMisses++;
     return val;
@@ -281,7 +284,8 @@ export async function cacheSet(
   value: string,
 ): Promise<void> {
   const client = await getRedisClient();
-  memorySet(key, ttlSeconds, value); // always maintain in local process too
+  // The process-local copy answers when Redis is missing or failing, where that fallback is allowed.
+  if (memoryFallbackAllowed()) memorySet(key, ttlSeconds, value);
 
   if (!client) return;
 
@@ -481,6 +485,8 @@ export async function withCacheStatus<T>(
   ttlSeconds: number,
   compute: () => Promise<T>,
 ): Promise<CacheStatusResult<T>> {
+  const backend = (): CacheBackend =>
+    redisClient ? "redis" : memoryFallbackAllowed() ? "memory" : "disabled";
   const cached = await cacheGet(key);
   if (cached !== null) {
     try {
@@ -488,7 +494,7 @@ export async function withCacheStatus<T>(
         key,
         value: JSON.parse(cached) as T,
         hit: true,
-        backend: redisClient ? "redis" : "memory",
+        backend: backend(),
       };
     } catch {
       // JSON parse error, recompute
@@ -504,7 +510,7 @@ export async function withCacheStatus<T>(
     key,
     value: result,
     hit: false,
-    backend: redisClient ? "redis" : "memory",
+    backend: backend(),
   };
 }
 
