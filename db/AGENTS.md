@@ -13,7 +13,8 @@ Diagram: `npm run arch`, view `database`.
    and an index that starts with both columns.
 2. Add its relations to `relations.ts`; user-owned tables relate to both `localUser` and `oauthUser`.
 3. Give it a storage class in `table-classes.ts`; `tests/table-classes.test.ts` fails without one.
-4. If it holds user data, delete its rows in `api/services/user-purge-service.ts`. (unenforced)
+4. If it holds user data, delete its rows in `api/services/user-purge-service.ts`. (checked by
+   `tests/knowledge/architecture.test.ts` for tables with `user_id` and `user_type`)
 5. Run `npm run db:generate`, read the generated SQL, run `npm run db:migrate`, then `npm run atlas`.
 
 ## Values
