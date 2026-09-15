@@ -111,7 +111,8 @@ describe("Self-Hosted Variable Fonts Suite", () => {
     });
   });
 
-  describe("R4: Build Artifacts & Offline PWA Precaching", () => {
+  // Checks the output of `npm run build`: runs after the build in CI (npm run test:build).
+  describe.runIf(fs.existsSync(DIST_PUBLIC) || process.env.REQUIRE_BUILD === "1")("R4: Build Artifacts & Offline PWA Precaching", () => {
     it("verifies compiled dist/public directory exists", () => {
       expect(fs.existsSync(DIST_PUBLIC)).toBe(true);
     });

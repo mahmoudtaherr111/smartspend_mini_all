@@ -38,6 +38,7 @@ Never quote a count from memory or from an old document; read it from `docs/atla
 | Rules for a folder | `api/AGENTS.md`, `api/lib/AGENTS.md`, `src/AGENTS.md`, `db/AGENTS.md` |
 | Why something is built the way it is | `docs/decisions/` |
 | How agents work here and what the hooks do | `docs/guides/agent-workflow.md` |
+| Which tests exist, what they need, where CI runs them | `docs/guides/testing.md` |
 | Deployment, Docker, production environment | `docs/guides/deploy.md` |
 
 The generated files are large: search them for a name instead of reading them whole.
@@ -69,14 +70,15 @@ conflicting, and pre-push refuses a push while a rule is broken. Claude Code and
 | API alone (`api/server.ts`) | `npm run backend:dev` |
 | Types and generated facts | `npm run check` |
 | One test file / tests of the files you changed | `npx vitest run <path>` / `npx vitest related --run <files>` |
+| Database, Redis and build-output tests (`docs/guides/testing.md`) | `npm run test:db`, `npm run test:redis`, `npm run test:build` |
 | Regenerate the atlas and the architecture model | `npm run atlas` |
 | Architecture map / validation | `npm run arch` / `npm run arch:validate` |
 | Schema change | `npm run db:generate`, review, `npm run db:migrate` (`db:push` only on a throwaway local database) |
 | Production build and start (the Docker image runs `dist/boot.js`) | `npm run build`, `npm start` |
 
-If `npm run check`, lint or the full test run fails on files you did not touch, say so in your report and
-carry on; do not change unrelated code to make it pass. Never run the whole suite with uncommitted work:
-`tests/unlock.test.ts` runs `git add -A && git commit`.
+Lint errors that predate the lint rules are frozen in `eslint-suppressions.json`: a new violation fails
+`npm run lint`, and after fixing old ones run `npm run lint:prune`. If a check fails on files you did not
+touch, say so in your report and do not change unrelated code to make it pass.
 
 ## Golden rules
 1. Identity is a pair. Google users live in `users`, phone/password users in `local_users`; every

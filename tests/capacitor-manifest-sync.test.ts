@@ -131,7 +131,8 @@ describe("Capacitor Native Manifest & Asset Synchronization", () => {
     });
   });
 
-  it("manifest.webmanifest across iOS, Android, and dist/public have identical manifest schemas", () => {
+  // Compares with the output of `npm run build`: runs after the build in CI (npm run test:build).
+  it.runIf(fs.existsSync(path.join(DIST_PUBLIC, "manifest.webmanifest")) || process.env.REQUIRE_BUILD === "1")("manifest.webmanifest across iOS, Android, and dist/public have identical manifest schemas", () => {
     const distManifest = JSON.parse(
       fs.readFileSync(path.join(DIST_PUBLIC, "manifest.webmanifest"), "utf-8"),
     );

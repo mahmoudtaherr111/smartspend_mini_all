@@ -26,7 +26,8 @@ describe("Data Retention & Lifecycle (P4)", () => {
     }
   });
 
-  it("runs in dry-run mode without modifying data and reports counts (P4 Gate)", async () => {
+  // Counting rows needs a migrated MySQL database: npm run test:db (docs/guides/testing.md).
+  it.runIf(process.env.RUN_DB_INTEGRATION === "1")("runs in dry-run mode without modifying data and reports counts (P4 Gate)", async () => {
     const result = await runDataRetentionJob({ dryRun: true });
 
     expect(result.dryRun).toBe(true);

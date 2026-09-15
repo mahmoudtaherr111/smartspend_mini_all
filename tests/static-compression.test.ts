@@ -99,7 +99,8 @@ function createProductionStaticApp() {
   return app;
 }
 
-describe("Static File Pre-Compression & Serving E2E Suite", () => {
+// Serves the output of `npm run build`: runs after the build in CI (npm run test:build).
+describe.runIf(fs.existsSync(DIST_PUBLIC) || process.env.REQUIRE_BUILD === "1")("Static File Pre-Compression & Serving E2E Suite", () => {
   let prodApp: Hono;
   let sampleJsFile: string;
   let sampleCssFile: string;
@@ -182,19 +183,16 @@ describe("Static File Pre-Compression & Serving E2E Suite", () => {
       expect(htmlBrSize).toBeLessThanOrEqual(htmlGzSize);
     });
 
-    it("emits manifest.webmanifest alongside .br and .gz companion files", () => {
+    // VitePWA writes manifest.webmanifest after the compression plugin has run, so the build leaves no .br or
+    // .gz companion; the compress() middleware compresses the manifest when a browser requests it.
+    it("serves manifest.webmanifest compressed although the build writes no companion files", async () => {
       const manifestPath = path.join(DIST_PUBLIC, "manifest.webmanifest");
-      const manifestBrPath = path.join(DIST_PUBLIC, "manifest.webmanifest.br");
-      const manifestGzPath = path.join(DIST_PUBLIC, "manifest.webmanifest.gz");
-
       expect(fs.existsSync(manifestPath)).toBe(true);
-      if (fs.statSync(manifestPath).size >= 1024) {
-        expect(fs.existsSync(manifestBrPath)).toBe(true);
-        expect(fs.existsSync(manifestGzPath)).toBe(true);
 
-        const rawSize = fs.statSync(manifestPath).size;
-        expect(fs.statSync(manifestBrPath).size).toBeLessThan(rawSize);
-        expect(fs.statSync(manifestGzPath).size).toBeLessThan(rawSize);
+      const res = await prodApp.request("/manifest.webmanifest", { headers: { "Accept-Encoding": "br, gzip" } });
+      expect(res.status).toBe(200);
+      if (fs.statSync(manifestPath).size >= 1024) {
+        expect(res.headers.get("content-encoding")).toMatch(/^(br|gzip)$/);
       }
     });
 

@@ -13,6 +13,9 @@ import { eq, and, sql, gte, lt } from "drizzle-orm";
 import { businessDateKey } from "../api/lib/app-time";
 import { expenseRouter } from "../api/expense-router";
 
+// Tests 2 to 6 need a migrated MySQL database: npm run test:db (docs/guides/testing.md).
+const itWithDatabase = it.runIf(process.env.RUN_DB_INTEGRATION === "1");
+
 describe("Expense Daily Rollups Architecture & Reconciliation (P3 Overhaul)", () => {
   const testUserId = 88802;
   const testUserType = "local";
@@ -73,7 +76,7 @@ describe("Expense Daily Rollups Architecture & Reconciliation (P3 Overhaul)", ()
     expect(toDayString("2026-09-04")).toBe("2026-09-04");
   });
 
-  it("2. allows signed negative rollup deltas without GREATEST(0, ...) clamping", async () => {
+  itWithDatabase("2. allows signed negative rollup deltas without GREATEST(0, ...) clamping", async () => {
     const testDay = "2026-09-04";
 
     // 1. Initial positive rollup: 150.00
@@ -123,7 +126,7 @@ describe("Expense Daily Rollups Architecture & Reconciliation (P3 Overhaul)", ()
     expect(row.txnCount).toBe(-1);
   });
 
-  it("3. unifies status filtering: unconfirmed expenses generate 0 delta and are ignored by reconciliation", async () => {
+  itWithDatabase("3. unifies status filtering: unconfirmed expenses generate 0 delta and are ignored by reconciliation", async () => {
     const testDay = "2026-09-04";
 
     // Unconfirmed / pending clarification expense
@@ -171,7 +174,7 @@ describe("Expense Daily Rollups Architecture & Reconciliation (P3 Overhaul)", ()
     expect(rollups).toHaveLength(0);
   });
 
-  it("4. transfers business rollups to personal (businessId = 0) on business deletion", async () => {
+  itWithDatabase("4. transfers business rollups to personal (businessId = 0) on business deletion", async () => {
     const testDay = "2026-09-04";
     const testBizId = 991;
 
@@ -316,7 +319,7 @@ describe("Expense Daily Rollups Architecture & Reconciliation (P3 Overhaul)", ()
     };
   }
 
-  it("5. verifies exact numerical parity between router procedures and raw ledger truth with custom salary day, Cairo boundary instant, updates, and deletes", async () => {
+  itWithDatabase("5. verifies exact numerical parity between router procedures and raw ledger truth with custom salary day, Cairo boundary instant, updates, and deletes", async () => {
     // 1. Create expenses via router
     // Exp 1: Regular expense inside Sept 5 cycle
     const exp1 = await caller.create({
@@ -480,7 +483,7 @@ describe("Expense Daily Rollups Architecture & Reconciliation (P3 Overhaul)", ()
     expect(yearlyStats.count).toBe(groundTruthYearly.count);
   });
 
-  it("6. detects and repairs real artificial drift: corrupted amounts, orphaned ghost rows, and zero-drift clean passes", async () => {
+  itWithDatabase("6. detects and repairs real artificial drift: corrupted amounts, orphaned ghost rows, and zero-drift clean passes", async () => {
     const testDay = "2026-09-15";
 
     // 1. Seed legitimate expense: 300.00

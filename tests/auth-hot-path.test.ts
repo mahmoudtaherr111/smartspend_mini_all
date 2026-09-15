@@ -13,7 +13,8 @@ import { db } from "../api/queries/connection";
 import { users, localUsers, sessions } from "../db/schema";
 import { eq } from "drizzle-orm";
 
-describe("Authentication Hot Path & Redis Session Caching (P1)", () => {
+// Needs a migrated MySQL database: npm run test:db (docs/guides/testing.md).
+describe.runIf(process.env.RUN_DB_INTEGRATION === "1")("Authentication Hot Path & Redis Session Caching (P1)", () => {
   const dummyOauthId = 99901;
   const dummyLocalId = 99902;
 

@@ -80,6 +80,71 @@ jobs:
           TRUST_PROXY: "true"
           REDIS_URL: ""
 
+  integration-tests:
+    name: Integration tests (MySQL and Redis)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: smartspend_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -ptest"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 30
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      DATABASE_URL: "mysql://root:test@127.0.0.1:3306/smartspend_test"
+      REDIS_URL: "redis://127.0.0.1:6379"
+      GOOGLE_CLIENT_ID: test
+      GOOGLE_CLIENT_SECRET: test
+      JWT_SECRET: test-secret-for-ci
+      GEMINI_API_KEY: test
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Create the schema from db/schema.ts
+        run: npx drizzle-kit push --force
+      - run: npm run test:db
+      - run: npm run test:redis
+
+  build:
+    name: Production build and build-output checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test:build
+        env:
+          DATABASE_URL: "mysql://test:test@localhost:3306/test"
+          GOOGLE_CLIENT_ID: test
+          GOOGLE_CLIENT_SECRET: test
+          JWT_SECRET: test-secret-for-ci
+          GEMINI_API_KEY: test
+          NODE_ENV: test
+
   security-audit:
     name: Security & Dependency Audit
     runs-on: ubuntu-latest
