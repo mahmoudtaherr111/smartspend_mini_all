@@ -136,7 +136,7 @@ export const exportRouter = router({
 
       if (input.format === "json") {
         return {
-          format: "json",
+          format: "json" as const,
           data: formatted,
           filename: `expenses_${ctx.user.id}.json`,
         };
@@ -144,7 +144,7 @@ export const exportRouter = router({
 
       if (input.format === "csv") {
         return {
-          format: "csv",
+          format: "csv" as const,
           data: generateCsv(formatted),
           filename: `expenses_${ctx.user.id}.csv`,
         };
@@ -152,7 +152,7 @@ export const exportRouter = router({
 
       const base64Data = await generateExcelBuffer("المصاريف", formatted);
       return {
-        format: "xlsx",
+        format: "xlsx" as const,
         data: base64Data,
         filename: `expenses_${ctx.user.id}.xlsx`,
       };
@@ -233,7 +233,7 @@ export const exportRouter = router({
 
       if (input.format === "json") {
         return {
-          format: "json",
+          format: "json" as const,
           data: formatted,
           filename: "users_export.json",
         };
@@ -241,7 +241,7 @@ export const exportRouter = router({
 
       if (input.format === "csv") {
         return {
-          format: "csv",
+          format: "csv" as const,
           data: generateCsv(formatted),
           filename: "users_export.csv",
         };
@@ -249,7 +249,7 @@ export const exportRouter = router({
 
       const base64Data = await generateExcelBuffer("المستخدمين", formatted);
       return {
-        format: "xlsx",
+        format: "xlsx" as const,
         data: base64Data,
         filename: "users_export.xlsx",
       };
