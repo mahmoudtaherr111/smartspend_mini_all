@@ -7,8 +7,9 @@
  * not conflict: the merge driver keeps one side and the post-merge hook regenerates it; when the hooks are not
  * installed, this script does that work itself.
  *
- * Shipping refuses uncommitted changes to tracked files, syncs, and pushes HEAD to main, where the pre-push
- * hook checks the knowledge rules first. When main moved in the meantime, it syncs and pushes again.
+ * Shipping refuses uncommitted changes to tracked files, syncs, checks the knowledge rules (the pre-push hook
+ * does, or this script when the hooks are not installed) and pushes HEAD to main. When main moved in the
+ * meantime, it syncs and pushes again.
  */
 import { spawnSync } from "node:child_process";
 import path from "node:path";
@@ -25,6 +26,9 @@ if (!root) {
 const env = { ...process.env, GIT_TERMINAL_PROMPT: "0", GCM_INTERACTIVE: "never" };
 const run = (args) => spawnSync("git", args, { cwd: root, stdio: "inherit", env });
 const count = (range) => Number(tryGit(["rev-list", "--count", range], { cwd: root }) ?? "0");
+/** Runs one of the git hook handlers directly, for checkouts where the hooks are not installed. */
+const runHook = (name) =>
+  spawnSync(process.execPath, [path.join(root, "scripts", "agent", "git-hook.mjs"), name], { cwd: root, stdio: "inherit", env });
 
 function fetchOrigin() {
   if (run(["fetch", "--quiet", "origin"]).status !== 0) {
@@ -59,7 +63,7 @@ function mergeOriginMain() {
 
   if (!gitHooksInstalled(root)) {
     // Without the installed post-merge hook, do its work here: regenerate the atlas for the merged code and commit it.
-    spawnSync(process.execPath, [path.join(root, "scripts", "agent", "git-hook.mjs"), "post-merge"], { cwd: root, stdio: "inherit", env });
+    runHook("post-merge");
     console.log("Tip: run npm run hooks:install once so merges regenerate the atlas on their own.");
   }
   const changed = lines(tryGit(["diff", "--name-only", before, "HEAD"], { cwd: root }));
@@ -96,6 +100,8 @@ function ship() {
       console.log("Nothing to ship: main already has every commit of this branch.");
       return;
     }
+    // Without the installed pre-push hook, run its knowledge check here.
+    if (!gitHooksInstalled(root) && runHook("pre-push").status !== 0) process.exit(1);
     if (run(["push", "origin", "HEAD:main"]).status === 0) {
       console.log(`\nShipped: main is now ${tryGit(["rev-parse", "--short", "HEAD"], { cwd: root })}.`);
       return;
