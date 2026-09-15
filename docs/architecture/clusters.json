@@ -22,8 +22,9 @@
     {
       "id": "security",
       "title": "Request security",
-      "description": "Rate limiting, allowed origins, client IP resolution, ownership checks, upload signature checks, bot protection and security logging.",
+      "description": "HTTPS redirection and security headers, rate limiting, allowed origins, client IP resolution, ownership checks, upload signature checks, bot protection and security logging.",
       "paths": [
+        "api/lib/security-headers.ts",
         "api/lib/rate-limit.ts",
         "api/lib/origin-policy.ts",
         "api/lib/http-origin-security.ts",

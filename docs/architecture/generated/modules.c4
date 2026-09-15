@@ -151,10 +151,10 @@ model {
       }
     }
     security = module 'Request security' {
-      description 'Rate limiting, allowed origins, client IP resolution, ownership checks, upload signature checks, bot protection and security logging.'
+      description 'HTTPS redirection and security headers, rate limiting, allowed origins, client IP resolution, ownership checks, upload signature checks, bot protection and security logging.'
       metadata {
-        files '10'
-        paths 'api/lib/rate-limit.ts, api/lib/origin-policy.ts, api/lib/http-origin-security.ts, api/lib/get-client-ip.ts, api/lib/ownership-guard.ts, api/lib/image-magic-bytes.ts, api/lib/admin-safe-fields.ts, api/lib/security-logger.ts, api/lib/anonymizer.ts, api/services/turnstile-service.ts'
+        files '11'
+        paths 'api/lib/security-headers.ts, api/lib/rate-limit.ts, api/lib/origin-policy.ts, api/lib/http-origin-security.ts, api/lib/get-client-ip.ts, api/lib/ownership-guard.ts, api/lib/image-magic-bytes.ts, api/lib/admin-safe-fields.ts, api/lib/security-logger.ts, api/lib/anonymizer.ts, api/services/turnstile-service.ts'
       }
     }
     site-guide = module 'Site guide' {

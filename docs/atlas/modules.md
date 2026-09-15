@@ -11,7 +11,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `api-core` | API server core | 5 | `ai-providers`, `api-routers`, `auth`, `billing`, `classification`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `api-routers` | `sentry` |
 | `api-routers` | tRPC routers and HTTP sub-apps | 23 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `ledger`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq`, `web-push` |
 | `auth` | Authentication and sessions | 3 | `database`, `platform`, `security` | `api-core`, `api-routers`, `billing`, `jobs`, `voice`, `whatsapp` | — |
-| `security` | Request security | 10 | `database`, `platform` | `api-core`, `api-routers`, `auth` | `turnstile` |
+| `security` | Request security | 11 | `database`, `platform` | `api-core`, `api-routers`, `auth` | `turnstile` |
 | `platform` | Platform services | 8 | `database` | `ai-governance`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `jobs`, `ledger`, `notifications`, `security`, `voice` | `redis` |
 | `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `classification`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `mysql` |
 | `contracts` | Shared contracts | 4 | — | `api-core`, `api-routers`, `billing`, `web-finance` | — |
@@ -66,7 +66,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `qdrant` | Qdrant vector store | datastore | `ai-memory` | `api/services/ai-memory/qdrant-vector-store.ts` |
 | `redis` | Redis | datastore | `platform` | `api/lib/redis-client.ts` |
 | `sentry` | Sentry | observability | `api-core` | `api/boot.ts` |
-| `turnstile` | Cloudflare Turnstile | bot-protection | `security` | `api/services/turnstile-service.ts` |
+| `turnstile` | Cloudflare Turnstile | bot-protection | `security` | `api/lib/security-headers.ts`, `api/services/turnstile-service.ts` |
 | `web-push` | Web Push | push | `api-routers`, `notifications` | `api/admin-router.ts`, `api/notification-engine.ts` |
 | `whatsapp` | WhatsApp through Baileys | messaging | `whatsapp` | `api/services/whatsapp-service.ts` |
 
@@ -126,7 +126,7 @@ Password hashing, JWT session creation, session validation and login brute-force
 
 ### `security` — Request security
 
-Rate limiting, allowed origins, client IP resolution, ownership checks, upload signature checks, bot protection and security logging.
+HTTPS redirection and security headers, rate limiting, allowed origins, client IP resolution, ownership checks, upload signature checks, bot protection and security logging.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -138,6 +138,7 @@ Rate limiting, allowed origins, client IP resolution, ownership checks, upload s
 | `api/lib/origin-policy.ts` | — | — | — | — |
 | `api/lib/ownership-guard.ts` | `database` | — | `financial_goals`, `user_businesses`, `user_contacts`, `user_wallets` | — |
 | `api/lib/rate-limit.ts` | `platform` | — | — | — |
+| `api/lib/security-headers.ts` | — | `turnstile` | — | — |
 | `api/lib/security-logger.ts` | `platform` | — | — | — |
 | `api/services/turnstile-service.ts` | — | `turnstile` | — | — |
 

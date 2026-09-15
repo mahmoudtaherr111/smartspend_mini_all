@@ -8,10 +8,10 @@ How traffic and time enter the backend. Everything below is read from `api/boot.
 
 | # | Path | Handler |
 | --- | --- | --- |
-| 1 | `*` | `inline handler` |
+| 1 | `*` | `httpsRedirect()` |
 | 2 | `*` | `logger()` |
 | 3 | `*` | `compress()` |
-| 4 | `*` | `secureHeaders()` |
+| 4 | `*` | `securityHeaders()` |
 | 5 | `*` | `inline handler` |
 | 6 | `*` | `applyOriginSecurity(app)` |
 | 7 | `onError` | `inline handler` |
