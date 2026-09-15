@@ -37,6 +37,7 @@ export default defineConfig({
       "dist/**",
     ],
     globals: true,
+    setupFiles: ["./tests/setup/jest-dom.ts"],
     testTimeout: 15000,
     env: {
       DATABASE_URL: process.env.DATABASE_URL || "mysql://test:test@localhost:3306/test",

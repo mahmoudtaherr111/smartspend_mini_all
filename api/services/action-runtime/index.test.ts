@@ -43,6 +43,8 @@ const { dbMock, insertedRows, updatedRows, state } = vi.hoisted(() => {
       }),
     })),
   };
+  // Money-moving actions write inside a transaction; the callback runs against the same fake.
+  dbMock.transaction = vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(dbMock));
 
   return { dbMock, insertedRows, updatedRows, state };
 });
@@ -51,8 +53,16 @@ vi.mock("../../queries/connection", () => ({
   db: dbMock,
 }));
 
+// The rollup and detail writes are covered by tests/expense-rollups.test.ts against a real database.
+vi.mock("../expense-rollups", () => ({
+  applyExpenseRollupDelta: vi.fn(async () => undefined),
+  expenseToRollupDelta: vi.fn(() => ({})),
+  syncExpenseDetails: vi.fn(async () => undefined),
+}));
+
 vi.mock("../finance-semantic-layer", () => ({
   invalidateFinanceUserCache: vi.fn(async () => 0),
+  bumpFinanceCacheGen: vi.fn(async () => 0),
 }));
 
 vi.mock("../../lib/muscle-memory", () => ({

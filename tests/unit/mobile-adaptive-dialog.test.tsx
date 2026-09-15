@@ -38,30 +38,37 @@ vi.hoisted(() => {
   }
 });
 
-// Helper to mock matchMedia
+// matchMedia mock. Like a browser, it notifies subscribed media queries when the viewport width changes.
+type MediaListener = (event: { matches: boolean }) => void;
+const mediaListeners = new Set<{ query: string; listener: MediaListener }>();
+
+function queryMatches(query: string, width: number): boolean {
+  if (query.includes("max-width: 768px")) return width <= 768;
+  if (query.includes("max-width: 1024px")) return width <= 1024;
+  if (query.includes("min-width: 768px")) return width >= 768;
+  return false;
+}
+
 function setViewportWidth(width: number) {
   Object.defineProperty(window, "matchMedia", {
     writable: true,
-    value: vi.fn().mockImplementation((query: string) => {
-      let matches = false;
-      if (query.includes("max-width: 768px")) {
-        matches = width <= 768;
-      } else if (query.includes("max-width: 1024px")) {
-        matches = width <= 1024;
-      } else if (query.includes("min-width: 768px")) {
-        matches = width >= 768;
-      }
-      return {
-        matches,
-        media: query,
-        onchange: null,
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        dispatchEvent: vi.fn(),
-      };
-    }),
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: queryMatches(query, width),
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn((_type: string, listener: MediaListener) => {
+        mediaListeners.add({ query, listener });
+      }),
+      removeEventListener: vi.fn((_type: string, listener: MediaListener) => {
+        for (const entry of mediaListeners) if (entry.listener === listener) mediaListeners.delete(entry);
+      }),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+  act(() => {
+    for (const { query, listener } of [...mediaListeners]) listener({ matches: queryMatches(query, width) });
   });
 }
 
@@ -132,7 +139,7 @@ describe("Tier 1: AdaptiveDialog Feature Coverage", () => {
   it("1.3 Shows Grabber Pill on Mobile Content by Default", () => {
     setViewportWidth(390);
 
-    const { container } = render(
+    render(
       <AdaptiveDialog open={true}>
         <AdaptiveDialogContent>
           <AdaptiveDialogTitle>العنوان</AdaptiveDialogTitle>
@@ -141,7 +148,8 @@ describe("Tier 1: AdaptiveDialog Feature Coverage", () => {
       </AdaptiveDialog>
     );
 
-    const grabber = container.querySelector(".w-12.h-1\\.5.rounded-full");
+    // The drawer renders in a portal on document.body, outside the render container.
+    const grabber = document.body.querySelector(".w-12.h-1\\.5.rounded-full");
     expect(grabber).not.toBeNull();
   });
 
@@ -472,8 +480,10 @@ describe("Tier 4: AdaptiveDialog Real-World Workload Workflows", () => {
     expect(screen.getByText("هل أنت متأكد من الحذف؟")).toBeTruthy();
     expect(backButtonManager.getStackLength()).toBe(2);
 
-    // Step 2: Cancel Delete via hardware back button
-    backButtonManager.executeTopHandler();
+    // Step 2: Cancel Delete via hardware back button (the handler updates React state, as a real back press does)
+    act(() => {
+      backButtonManager.executeTopHandler();
+    });
     // Confirm modal closed, details sheet remains open
     expect(backButtonManager.getStackLength()).toBe(1);
 

@@ -407,20 +407,18 @@ describe("Adversarial Stress Test: Viewport Zoom Lock & Meta Configuration", () 
   const indexHtml = readFileSync(resolve(process.cwd(), "index.html"), "utf8");
   const indexCss = readFileSync(resolve(process.cwd(), "src/index.css"), "utf8");
 
-  it("locks viewport scale parameters to prevent synthetic and manual zooming", () => {
+  // Since 33795ec index.html no longer locks zoom: the viewport keeps notch and keyboard handling only.
+  it("sizes the viewport to the device, edge to edge, with the keyboard resizing only the visual viewport", () => {
     expect(indexHtml).toMatch(/name="viewport"[^>]*content="[^"]*width=device-width/);
     expect(indexHtml).toMatch(/name="viewport"[^>]*content="[^"]*initial-scale=1\.0/);
-    expect(indexHtml).toMatch(/name="viewport"[^>]*content="[^"]*maximum-scale=1\.0/);
-    expect(indexHtml).toMatch(/name="viewport"[^>]*content="[^"]*minimum-scale=1\.0/);
-    expect(indexHtml).toMatch(/name="viewport"[^>]*content="[^"]*user-scalable=no/);
     expect(indexHtml).toMatch(/name="viewport"[^>]*content="[^"]*viewport-fit=cover/);
     expect(indexHtml).toMatch(/name="viewport"[^>]*content="[^"]*interactive-widget=resizes-visual/);
   });
 
-  it("intercepts mobile WebKit pinch gestures via passive:false event listeners in index.html", () => {
-    expect(indexHtml).toContain("document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });");
-    expect(indexHtml).toContain("document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });");
-    expect(indexHtml).toContain("document.addEventListener('gestureend', function(e) { e.preventDefault(); }, { passive: false });");
+  it("lets people zoom: no scale lock and no pinch-gesture blocking", () => {
+    expect(indexHtml).not.toMatch(/user-scalable=no/);
+    expect(indexHtml).not.toMatch(/maximum-scale=1/);
+    expect(indexHtml).not.toContain("gesturestart");
   });
 
   it("configures touch-action: manipulation across html, inputs, buttons and links to eliminate double-tap zoom delay", () => {

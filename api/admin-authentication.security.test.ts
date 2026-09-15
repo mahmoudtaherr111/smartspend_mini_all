@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { sign } from "hono/jwt";
 import { MySqlDialect } from "drizzle-orm/mysql-core";
@@ -63,19 +64,21 @@ beforeEach(() => {
   });
   mocks.session.mockImplementation(({ where }: { where: SQL }) => {
     const query = new MySqlDialect().sqlToQuery(where);
-    expect(query.sql).toContain("`sessions`.`token` = ?");
+    // Sessions are looked up by the SHA-256 hash of the token, never by the token itself.
+    expect(query.sql).toContain("`sessions`.`token_hash` = ?");
+    expect(query.sql).not.toContain("`sessions`.`token` = ?");
     expect(query.sql).toContain("`sessions`.`user_id` = ?");
     expect(query.sql).toContain("`sessions`.`user_type` = ?");
     expect(query.sql).toContain("`sessions`.`expires_at` > ?");
-    const [, token, userId, userType, now] = query.params;
+    const [tokenHash, userId, userType, now] = query.params;
     // Drizzle serializes DATETIME parameters in UTC without a timezone suffix.
     const cutoff = new Date(`${String(now).replace(" ", "T")}Z`);
     return storedSession &&
-      storedSession.token === token &&
+      createHash("sha256").update(storedSession.token).digest("hex") === tokenHash &&
       storedSession.userId === userId &&
       storedSession.userType === userType &&
       storedSession.expiresAt > cutoff
-        ? { ...storedSession, tokenHash: null }
+        ? { ...storedSession, tokenHash }
         : undefined;
   });
   for (const mock of [mocks.oauth, mocks.local]) {
