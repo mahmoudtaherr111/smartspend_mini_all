@@ -31,6 +31,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          # LikeC4 needs Node 22.22.3 or newer; the runner's cached 22.x can be older.
+          check-latest: true
           cache: npm
           cache-dependency-path: |
             package-lock.json
