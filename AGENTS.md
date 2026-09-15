@@ -5,17 +5,21 @@ code, and every rule names the check that enforces it (`unenforced` means nothin
 
 ## The product
 SmartSpend AI is an Arabic-first money app for Egypt. People record spending by typing or speaking
-Egyptian Arabic, by forwarding bank SMS, or from receipts; the API turns each sentence into categorized
-transactions, and an AI Center answers questions about the ledger.
+Egyptian Arabic, by forwarding bank and wallet notifications from their phone, or from receipts; the API
+turns each sentence into categorized transactions, and an AI Center answers questions about the ledger.
 
 `src/` React + Vite PWA (Capacitor shells in `android/` and `ios/`) · `api/` Hono + tRPC on Node ·
-`db/` Drizzle schema for MySQL · `contracts/` code shared by both · `android-app/` native SMS forwarder.
+`db/` Drizzle schema for MySQL · `contracts/` code shared by both · `android-app/` native companion that
+forwards bank and wallet notifications.
 
 ## Trust order
 1. The code.
-2. Generated facts: `docs/atlas/` and `docs/architecture/generated/`. `npm run atlas:check` fails when they drift.
-3. The rules in this file and in the nearest folder `AGENTS.md`.
-4. `docs/architecture/flows/`: hand-drawn flows, held to the code by `tests/knowledge/flows.test.ts`.
+2. Generated facts: `docs/atlas/` and `docs/architecture/generated/`, rebuilt from the code by `npm run atlas`.
+3. The rules in this file and in the nearest folder `AGENTS.md`, each backed by the check it names.
+4. Hand-written descriptions: flows in `docs/architecture/flows/` (their steps are held to the code by
+   `tests/knowledge/flows.test.ts`), module descriptions in `docs/architecture/clusters.json`, `docs/guides/`
+   and `docs/decisions/`. They were checked against the code when written; confirm a detail in the code
+   before you rely on it.
 5. `docs/reports/`: output of past runs. History, never current truth.
 
 Never quote a count from memory or from an old document; read it from `docs/atlas/README.md`.
@@ -27,35 +31,56 @@ Never quote a count from memory or from an old document; read it from `docs/atla
 | Tables, storage classes, relations, who reads and writes each table | `docs/atlas/database.md` |
 | HTTP routes, webhooks, SSE, WebSocket, scheduled jobs, middleware order | `docs/atlas/entrypoints.md` |
 | Browser routes, route guards, procedures per page | `docs/atlas/frontend.md` |
-| Code modules, their dependencies, external systems | `docs/atlas/modules.md` |
+| Code modules, what each one does, their dependencies, external systems | `docs/atlas/modules.md` |
 | Environment variables | `docs/atlas/env.md` |
-| The system or one journey as a diagram | `npm run arch`, see `docs/architecture/README.md` |
+| Impact questions ("who writes expenses?") or one journey as a diagram | the `likec4` MCP server, or `npm run arch`; see `docs/architecture/README.md` |
+| What changed recently, and which tool changed it | `npm run changes` |
 | Rules for a folder | `api/AGENTS.md`, `api/lib/AGENTS.md`, `src/AGENTS.md`, `db/AGENTS.md` |
 | Why something is built the way it is | `docs/decisions/` |
+| How agents work here and what the hooks do | `docs/guides/agent-workflow.md` |
 | Deployment, Docker, production environment | `docs/guides/deploy.md` |
+
+The generated files are large: search them for a name instead of reading them whole.
+
+## Working protocol
+Several agents change this repository at the same time. These steps keep everyone on the same code:
+1. Start: `npm run sync` merges `origin/main` into your branch. Claude Code and Codex are told their sync
+   status when a session starts; other tools run it at the start of every task.
+2. Before editing a folder, read its `AGENTS.md` (`api/`, `api/lib/`, `src/`, `db/`). Codex and some other
+   tools do not load nested instruction files on their own.
+3. Finish: `npm run agent:finish` regenerates the atlas and checks every rule below. Fix what it reports,
+   commit the code together with the regenerated files, run `npm run sync`, then push.
+4. Keep steps small and push them the same day; a branch that lives for days collects conflicts.
+
+Git hooks back this up for every tool, and `npm install` or `npm run hooks:install` installs them:
+pre-commit puts the regenerated atlas into the commit and adds an `Agent:` trailer naming the tool, merges
+regenerate the atlas instead of conflicting, and pre-push refuses a push while a rule is broken. Claude Code
+and Codex also run `agent:finish` when a turn ends, and CI regenerates a stale atlas on main. Details and
+per-tool setup: `docs/guides/agent-workflow.md`.
 
 ## Commands
 | Task | Command |
 | --- | --- |
-| Install | `npm ci`; architecture tools: `npm run arch:install` |
+| Install (also installs the git hooks) | `npm ci`; architecture tools: `npm run arch:install` |
+| Start a task / finish a task | `npm run sync` / `npm run agent:finish` |
 | App in development (Vite on port 3000 with the API from `api/boot.ts`) | `npm run dev` |
 | API alone (`api/server.ts`) | `npm run backend:dev` |
 | Types and generated facts | `npm run check` |
-| One test file | `npx vitest run <path>` |
+| One test file / tests of the files you changed | `npx vitest run <path>` / `npx vitest related --run <files>` |
 | Regenerate the atlas and the architecture model | `npm run atlas` |
 | Architecture map / validation | `npm run arch` / `npm run arch:validate` |
 | Schema change | `npm run db:generate`, review, `npm run db:migrate` (`db:push` only on a throwaway local database) |
 | Production build and start (the Docker image runs `dist/boot.js`) | `npm run build`, `npm start` |
 
-Known state (2026-09-14): `npm run check` fails on type errors in `src/components/profile/SmartProfileSettings.tsx`,
-`src/pages/Admin.tsx` and `api/profile-router.ts`, and the full test run has failures that need a live MySQL.
-`npm run lint` fails on existing errors in `api/`, `src/` and `tests/`.
-Do not run the whole suite with uncommitted work: `tests/unlock.test.ts` runs `git add -A && git commit`.
+If `npm run check`, lint or the full test run fails on files you did not touch, say so in your report and
+carry on; do not change unrelated code to make it pass. Never run the whole suite with uncommitted work:
+`tests/unlock.test.ts` runs `git add -A && git commit`.
 
 ## Golden rules
 1. Identity is a pair. Google users live in `users`, phone/password users in `local_users`; every
    user-owned row carries `user_id` and `user_type`, and every query filters on both. Take the caller
-   from `ctx.user`. (the index is checked by `tests/knowledge/architecture.test.ts`; query filters are unenforced)
+   from `ctx.user`. (the user index and account deletion are checked by `tests/knowledge/architecture.test.ts`;
+   query filters are unenforced)
 2. `role` is admin/moderator access; `plan` (`free`, `pro`, `ultra`) is the subscription. Never compare
    `role` with a plan name. (`tests/knowledge/architecture.test.ts`)
 3. Every tRPC procedure uses a builder exported by `api/middleware.ts` and is mounted through
@@ -74,15 +99,18 @@ Do not run the whole suite with uncommitted work: `tests/unlock.test.ts` runs `g
    `process.env`. (`tests/knowledge/architecture.test.ts` rejects new direct reads)
 9. Model ids go through `mapModelName()` in `api/lib/model-mapper.ts`. (unenforced)
 10. Never log message text, OTP codes, tokens, phone numbers or voice transcripts. (unenforced)
-11. Generated files are never edited or merged by hand. On a conflict in `docs/atlas/` or
-    `docs/architecture/generated/`, take either side and run `npm run atlas`. (`npm run atlas:check`)
+11. Generated files are never edited or merged by hand. The merge driver and the hooks regenerate them; if a
+    conflict still appears, take either side and run `npm run atlas`. (`npm run agent:finish`, CI)
 
 ## Definition of done
-1. `npm run check` passes (see known state), and the tests covering the files you touched pass.
-2. You changed a router, procedure, table, route, job, page, environment variable or module: run
-   `npm run atlas` and commit the regenerated files in the same commit.
-3. A new runtime file that no module rule matches: add it to `docs/architecture/clusters.json`. A new
-   SDK or host of an outside service: add it to `docs/architecture/externals.json`.
-4. You changed a journey drawn in `docs/architecture/flows/`: update the flow so
-   `tests/knowledge/flows.test.ts` still passes.
-5. Plans, prompts, hand-offs and session notes stay out of `docs/` (use `.agents/`, which git ignores).
+1. `npm run agent:finish` reports no broken rule, and the tests of the files you touched pass (it prints the
+   `npx vitest related` command for them).
+2. The regenerated files in `docs/atlas/` and `docs/architecture/generated/` are in the same commit as the
+   code. The pre-commit hook adds them when every changed code file is staged.
+3. A new runtime file that no module rule matches: add it to `docs/architecture/clusters.json`, with a
+   description of what the module does that you checked in the code. A new SDK or host of an outside
+   service: add it to `docs/architecture/externals.json`.
+4. You changed a journey drawn in `docs/architecture/flows/`: update its steps and its description.
+5. A decision that changes how the system is built: add a record to `docs/decisions/`.
+6. Plans, prompts, hand-offs and session notes stay out of `docs/`: put them in `.agents/`, which git ignores
+   except for `.agents/rules/`.

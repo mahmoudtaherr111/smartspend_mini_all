@@ -4,6 +4,9 @@
 
 - This checkout is on Windows: `CLAUDE.md` imports `AGENTS.md` instead of symlinking it, and each folder
   with its own `AGENTS.md` has a `CLAUDE.md` that does the same.
+- `.claude/settings.json` runs `scripts/agent/session-start.mjs` when a session starts (sync status, and it
+  installs the git hooks) and `scripts/agent/stop.mjs` when a turn ends (it runs `npm run agent:finish` and
+  sends you back once when a rule is broken).
 - The `likec4` MCP server in `.mcp.json` answers questions about the architecture model (for example
   "who writes expenses" or "what does chat.sendMessage use"). It needs `npm run arch:install` once.
 - Single test: `npx vitest run <path>`; by name: `npx vitest run -t "<name>"`. `vitest.config.ts`

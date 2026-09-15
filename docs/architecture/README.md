@@ -11,6 +11,7 @@ questions through MCP.
   HTML file.
 - `npm run arch:validate` checks syntax and references. CI runs it.
 - Agents: the `likec4` server in `.mcp.json` (and in `.opencode/opencode.json`) exposes the model.
+- `npm run changes` compares the model at two points in history and reports what changed.
 
 ## Files
 | File | Written by | Content |
@@ -19,10 +20,14 @@ questions through MCP.
 | `spec.c4` | people | element kinds and relationship kinds |
 | `context.c4` | people | the people and apps around the system, and the containers the generator fills |
 | `views.c4` | people | overview views; `generated/views.c4` adds one view per router and module |
-| `flows/*.c4` | people | important journeys as dynamic views |
-| `clusters.json` | people | which runtime file belongs to which module (first matching rule wins) |
+| `flows/*.c4` | people | important journeys as dynamic views, each with a description |
+| `clusters.json` | people | which runtime file belongs to which module (first matching rule wins), and what each module does |
 | `externals.json` | people | which packages, hosts or files mean an outside system |
 | `likec4.config.json` | people | project name |
+
+Module and flow descriptions are prose written by people and checked against the code when written. The
+knowledge rules in `scripts/knowledge/` catch a path that no longer exists or a flow step the code no longer
+makes, not a sentence that became untrue: update a description whenever you change what it describes.
 
 ## Names in the model
 - `smartspend.web.pages.<Page>`, `smartspend.web.shell`, `smartspend.web.modules.<module>`
@@ -38,8 +43,10 @@ underscore.
 
 ## Writing a flow
 - One step per line with full names: `a.b -> c.d 'what happens'`; a reply is `a <- b 'result'`.
-- Every step needs a generated relationship between the two elements or their children;
-  `tests/knowledge/flows.test.ts` fails otherwise. End a step the code cannot show, such as a person
-  opening a page, with `// intent: <reason>`.
-- In hand-written model files keep relationships at the top level of `model { }` and use full names, so
-  the test can read them without LikeC4.
+- Every step needs a generated relationship between the two elements or their children, or
+  `scripts/knowledge/flows-rules.ts` fails (it runs in `tests/knowledge/flows.test.ts` and in
+  `npm run agent:finish`). End a step the code cannot show, such as a person opening a page, with
+  `// intent: <reason>`.
+- Keep the description true to the code: people and agents read it first.
+- In hand-written model files keep relationships at the top level of `model { }` and use full names, so the
+  rules can read them without LikeC4.
