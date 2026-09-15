@@ -11,4 +11,4 @@ This rule only points Antigravity at the project's instructions; it holds no fac
 - Facts about the code come from `docs/atlas/`, which is generated from the code. Never write counts or file
   lists from memory.
 - Start a task with `npm run sync`. Before you report it done, run `npm run agent:finish`, fix what it reports,
-  and commit the code together with the regenerated files.
+  commit the code together with the regenerated files, then run `npm run ship` to push it to main.

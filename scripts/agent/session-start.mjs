@@ -52,7 +52,7 @@ async function main() {
   if (uncommitted > 0) report.push(`- ${uncommitted} uncommitted change(s) here. Commit finished work in small steps.`);
   report.push(
     "- Read AGENTS.md and the AGENTS.md of each folder you edit (api/, api/lib/, src/, db/); not every tool loads them on its own.",
-    "- Before reporting a task done: `npm run agent:finish`, commit the code with the regenerated files, `npm run sync`, then push.",
+    "- Before reporting a task done: `npm run agent:finish`, commit the code with the regenerated files, then `npm run ship` (merges origin/main and pushes to main).",
   );
 
   if (behind > 0) {

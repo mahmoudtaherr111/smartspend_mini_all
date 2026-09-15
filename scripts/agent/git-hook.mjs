@@ -15,12 +15,13 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { GENERATED_PATHS, git, lines, repoRoot, runTsx, statusPath, tryGit, tsxAvailable } from "./lib.mjs";
+import { GENERATED_PATHS, git, lines, repoRoot, runTsx, stateDir, statusPath, tryGit, tsxAvailable } from "./lib.mjs";
 
 /** Files whose change can change the generated atlas. */
 const ATLAS_INPUT = /^(api|src|db|contracts)\/|^docs\/architecture\/(clusters|externals)\.json$|^scripts\/atlas\//;
 /** Folder notes such as db/AGENTS.md sit beside the code but never change the atlas. */
 const isAtlasInput = (name) => ATLAS_INPUT.test(name) && !name.endsWith(".md");
+const isGenerated = (name) => GENERATED_PATHS.some((dir) => name.startsWith(`${dir}/`));
 
 const root = repoRoot();
 const [command, ...args] = process.argv.slice(2);
@@ -92,8 +93,8 @@ function detectAgent() {
   return null;
 }
 
-function prepareCommitMsg([messageFile, source]) {
-  if (!messageFile || source === "merge" || source === "squash") return 0;
+function prepareCommitMsg([messageFile]) {
+  if (!messageFile) return 0;
   if (/^Agent:/im.test(fs.readFileSync(messageFile, "utf8"))) return 0;
   const agent = detectAgent();
   if (!agent) return 0;
@@ -104,30 +105,49 @@ function prepareCommitMsg([messageFile, source]) {
   return 0;
 }
 
-function afterHistoryChange() {
+/**
+ * Commits the regenerated atlas on top of HEAD and leaves the rest of the index alone. Plumbing, because
+ * post-merge runs while MERGE_HEAD still exists, and there `git commit` refuses a commit of chosen paths.
+ */
+function commitGenerated(message) {
+  const head = git(["rev-parse", "HEAD"], { cwd: root });
+  const indexFile = path.join(stateDir(root), "atlas-index");
+  const withIndex = { cwd: root, env: { ...process.env, GIT_INDEX_FILE: indexFile } };
+  try {
+    git(["read-tree", head], withIndex);
+    git(["add", "--", ...GENERATED_PATHS], withIndex);
+    const tree = git(["write-tree"], withIndex);
+    if (tree === git(["rev-parse", `${head}^{tree}`], { cwd: root })) return false;
+    const commit = git(["commit-tree", tree, "-p", head, "-m", message, "-m", "Agent: git-hook"], { cwd: root });
+    git(["update-ref", "-m", message, "HEAD", commit, head], { cwd: root });
+  } finally {
+    fs.rmSync(indexFile, { force: true });
+  }
+  git(["add", "--", ...GENERATED_PATHS], { cwd: root });
+  return true;
+}
+
+function afterHistoryChange(event) {
   if (process.env.SMARTSPEND_SKIP_ATLAS === "1" || !canRegenerate()) return 0;
+  // Generated files count as well: the merge driver keeps one side of them, which leaves them stale even
+  // when the merged code is the same as before.
   const diff = tryGit(["diff", "--name-only", "ORIG_HEAD", "HEAD"], { cwd: root });
-  if (diff !== null && !lines(diff).some((file) => isAtlasInput(file))) return 0;
+  if (diff !== null && !lines(diff).some((file) => isAtlasInput(file) || isGenerated(file))) return 0;
   const uncommitted = uncommittedInputs();
   if (uncommitted.length > 0) {
     console.log(
-      `[atlas] Not regenerated after the merge: ${uncommitted.length} code file(s) have uncommitted changes (first: ${uncommitted[0]}). ` +
+      `[atlas] Not regenerated after the ${event}: ${uncommitted.length} code file(s) have uncommitted changes (first: ${uncommitted[0]}). ` +
         "The pre-commit hook regenerates it with your next commit, or run npm run atlas.",
     );
     return 0;
   }
   if (!regenerate()) {
-    console.log("[atlas] Could not regenerate the atlas for the merged code. Run npm run atlas.");
+    console.log(`[atlas] Could not regenerate the atlas after the ${event}. Run npm run atlas.`);
     return 0;
   }
-  if (!generatedChanged()) return 0;
-  git(["add", "--", ...GENERATED_PATHS], { cwd: root });
-  const commit = spawnSync(
-    "git",
-    ["commit", "--quiet", "-m", "chore(atlas): regenerate after merge", "-m", "Agent: git-hook", "--", ...GENERATED_PATHS],
-    { cwd: root, stdio: "inherit", env: { ...process.env, SMARTSPEND_SKIP_ATLAS: "1" } },
-  );
-  if (commit.status === 0) console.log("[atlas] Regenerated the atlas for the merged code and committed it.");
+  if (generatedChanged() && commitGenerated(`chore(atlas): regenerate after ${event}`)) {
+    console.log(`[atlas] Regenerated the atlas for the code after the ${event} and committed it.`);
+  }
   return 0;
 }
 
@@ -158,8 +178,8 @@ function prePush() {
 const handlers = {
   "pre-commit": preCommit,
   "prepare-commit-msg": () => prepareCommitMsg(args),
-  "post-merge": afterHistoryChange,
-  "post-rewrite": () => (args[0] === "rebase" ? afterHistoryChange() : 0),
+  "post-merge": () => afterHistoryChange("merge"),
+  "post-rewrite": () => (args[0] === "rebase" ? afterHistoryChange("rebase") : 0),
   "pre-push": prePush,
 };
 

@@ -20,7 +20,9 @@ keeps the documentation true without anyone updating it by hand. It is written f
 3. Work in small commits.
 4. Finish: `npm run agent:finish` regenerates `docs/atlas` and `docs/architecture/generated`, then checks the
    architecture rules, the hand-written documents and the flows, and prints the tests for the changed files.
-5. Commit the code together with the regenerated files, run `npm run sync` again, push.
+5. Commit the code together with the regenerated files, then `npm run ship`: it refuses uncommitted changes,
+   merges `origin/main` again and pushes the branch to `main`. When `main` moved in the meantime, it merges
+   and pushes again.
 
 ## What runs on its own
 | When | Set up in | What happens |

@@ -48,21 +48,23 @@ Several agents change this repository at the same time. These steps keep everyon
    status when a session starts; other tools run it at the start of every task.
 2. Before editing a folder, read its `AGENTS.md` (`api/`, `api/lib/`, `src/`, `db/`). Codex and some other
    tools do not load nested instruction files on their own.
-3. Finish: `npm run agent:finish` regenerates the atlas and checks every rule below. Fix what it reports,
-   commit the code together with the regenerated files, run `npm run sync`, then push.
-4. Keep steps small and push them the same day; a branch that lives for days collects conflicts.
+3. Finish: `npm run agent:finish` regenerates the atlas and checks every rule below. Fix what it reports and
+   commit the code together with the regenerated files.
+4. Ship: `npm run ship` merges `origin/main` again and pushes your branch to `main`; when `main` moved
+   meanwhile, it merges and pushes again. Ship each finished step the same day: a branch that lives for days
+   collects conflicts.
 
-Git hooks back this up for every tool, and `npm install` or `npm run hooks:install` installs them:
-pre-commit puts the regenerated atlas into the commit and adds an `Agent:` trailer naming the tool, merges
-regenerate the atlas instead of conflicting, and pre-push refuses a push while a rule is broken. Claude Code
-and Codex also run `agent:finish` when a turn ends, and CI regenerates a stale atlas on main. Details and
-per-tool setup: `docs/guides/agent-workflow.md`.
+Git hooks back this up for every tool, and `npm install` or `npm run hooks:install` installs them: commits
+get the regenerated atlas and an `Agent:` trailer naming the tool, merges regenerate the atlas instead of
+conflicting, and pre-push refuses a push while a rule is broken. Claude Code and Codex also run
+`agent:finish` when a turn ends, and CI regenerates a stale atlas on main. Details and per-tool setup:
+`docs/guides/agent-workflow.md`.
 
 ## Commands
 | Task | Command |
 | --- | --- |
 | Install (also installs the git hooks) | `npm ci`; architecture tools: `npm run arch:install` |
-| Start a task / finish a task | `npm run sync` / `npm run agent:finish` |
+| Start a task / check it / publish it to `main` | `npm run sync` / `npm run agent:finish` / `npm run ship` |
 | App in development (Vite on port 3000 with the API from `api/boot.ts`) | `npm run dev` |
 | API alone (`api/server.ts`) | `npm run backend:dev` |
 | Types and generated facts | `npm run check` |

@@ -19,6 +19,7 @@
     "agent:finish": "tsx scripts/agent/finish.ts",
     "changes": "tsx scripts/agent/changes.ts",
     "sync": "node scripts/agent/sync.mjs",
+    "ship": "node scripts/agent/sync.mjs --push",
     "hooks:install": "node scripts/agent/install-git-hooks.cjs",
     "prepare": "node -e \"try{require('./scripts/agent/install-git-hooks.cjs')}catch(e){if(e.code!=='MODULE_NOT_FOUND')throw e}\"",
     "format": "prettier --write .",
