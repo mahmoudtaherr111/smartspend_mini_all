@@ -16,4 +16,5 @@ Trust order: the code, then `atlas/` and `architecture/generated/`, then the rul
 then `reports/` (history only).
 
 Agents start at the root `AGENTS.md`. To find the part of the app a task belongs to, start at
-`systems/README.md`.
+`systems/README.md`; for what is waiting to be fixed and how fresh each explanation is, `atlas/systems/state.md`
+(and `docs/atlas/systems/state.ar.md` for the same in Arabic).

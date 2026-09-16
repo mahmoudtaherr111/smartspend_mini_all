@@ -3,13 +3,16 @@
  * SessionStart hook for Claude Code (.claude/settings.json) and Codex (.codex/hooks.json).
  *
  * Before an agent starts, it learns whether its branch is behind origin/main, which changes on main it does
- * not have, and the steps every tool follows here. The hook also installs the shared git hooks when they are
- * missing. It never blocks a session.
+ * not have, who else is changing the repository right now (scripts/agent/who.mjs, from git alone), and the
+ * steps every tool follows here. The hook also installs the shared git hooks when they are missing. It never
+ * blocks a session.
  */
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { lines, readStdin, repoRoot, tryGit } from "./lib.mjs";
+import { activeWork, summarize } from "./who.mjs";
+import { summarizeMain } from "./main-health.mjs";
 
 function installGitHooks(root) {
   const installer = path.join(root, "scripts", "agent", "install-git-hooks.cjs");
@@ -55,6 +58,22 @@ async function main() {
     "- Before editing a file, find its system in docs/atlas/systems/files.md and read that system's page in docs/systems/; it carries the behaviour and the known issues no generated file can.",
     "- Before reporting a task done: `npm run agent:finish` (it also names any system page your change made stale — fix it, then `npm run docs:verify -- <id>`), commit the code with the regenerated files, then `npm run ship` (merges origin/main and pushes to main).",
   );
+
+  // Both answers are hints, gathered at once so the hook stays short, and skipped in silence when they fail:
+  // a session must start with no network and in a worktree that cannot be read.
+  const [work, mainState] = await Promise.all([
+    activeWork(root).catch(() => null),
+    summarizeMain(root).catch(() => []),
+  ]);
+  if (work) {
+    const others = summarize(work, 4);
+    if (others.length > 0) {
+      report.push("Others are working in this repository right now (from git; nobody announced it):", ...others);
+      const clash = [...work.worktrees, ...work.branches].some((entry) => entry.shared.length > 0);
+      if (clash) report.push('  A line marked "also changed here" is a file two sessions are editing: ship early or take a different file.');
+    }
+  }
+  if (mainState.length > 0) report.push(...mainState);
 
   if (behind > 0) {
     const recent = lines(

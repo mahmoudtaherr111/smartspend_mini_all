@@ -78,6 +78,21 @@ The rule of thumb when a check names your system: read the page, fix what no lon
 including the known issues, which are the part that rots fastest — then record it. Do not record a page you
 have not read against the code.
 
+## Seeing who else is working
+Agents in parallel used to be invisible to each other: two sessions could spend an hour in the same file and
+meet only in a merge. Nobody announces anything — `npm run who` derives it from git:
+
+- every worktree on the machine, its branch, how far behind main it is, and the files it has changed but not
+  committed;
+- every branch pushed to origin in the last week that is ahead of main, with the files it changes;
+- each file mapped to its systems through `docs/atlas/systems/files.md`, and the files that overlap with what
+  this worktree has changed.
+
+`scripts/agent/session-start.mjs` prints the first few lines of that, overlaps first, so an agent knows before
+it starts. It also asks GitHub whether main's last completed run of each workflow passed
+(`scripts/agent/main-health.mjs`), so a red main is a fact the agent knows rather than a surprise at push time.
+Both are best-effort: no token, short timeouts, and silence when the answer does not arrive.
+
 ## Seeing what changed
 `npm run changes` lists the commits of the last seven days with the tool that made each one, and what changed
 in the shape of the system: tables, procedures, HTTP routes, jobs, pages, modules and outside systems that

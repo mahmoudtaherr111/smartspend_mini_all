@@ -32,6 +32,10 @@ Each system has three pages:
 Before you change a file, find its systems in `docs/atlas/systems/files.md` and read their explanations. A file
 that several systems share is split there down to single procedures, routes and jobs.
 
+Looking for something to pick up, or wondering how fresh these pages are? `docs/atlas/systems/state.md` gathers
+every known issue from every page, with each system's last check, the tests it names, and whether its Arabic page
+is in line. It is generated, so it can never disagree with the pages themselves.
+
 ## How these pages stay true
 - Each explanation was checked against the source it describes, listed at the end of its facts page. The check is
   recorded in `docs/systems/verified.json` as a fingerprint per file, or per procedure, route or job of a shared

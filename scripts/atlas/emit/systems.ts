@@ -14,6 +14,7 @@ import { REST_OF_FILE, routeKey, type SystemFacts } from "../extract/systems";
 import { REPO_ROOT, code, codeList, compareStrings, mdTable, uniqSorted } from "../lib/util";
 import { parseArchitectureModel } from "../../knowledge/flows-rules";
 import { endpointId, safeId, socketId } from "./likec4";
+import { renderState } from "./state";
 
 export const SYSTEMS_DIR = "docs/atlas/systems";
 
@@ -625,6 +626,7 @@ export function renderSystems(graph: AtlasGraph): Map<string, string> {
   return new Map([
     [`${SYSTEMS_DIR}/README.md`, renderIndex(graph, dependencies)],
     [`${SYSTEMS_DIR}/files.md`, renderFileIndex(graph)],
+    ...renderState(graph, SYSTEMS_DIR),
     ...graph.systems.systems.map(
       (system): [string, string] => [`${SYSTEMS_DIR}/${system.id}.md`, renderSystem(graph, system, flows, labelOf, dependencies)],
     ),
