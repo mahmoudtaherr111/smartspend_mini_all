@@ -222,6 +222,11 @@ views {
     include *
   }
 
+  view module_receipt_parsing of smartspend.api.modules.receipt-parsing {
+    title 'Module · Receipt parsing'
+    include *
+  }
+
   view module_security of smartspend.api.modules.security {
     title 'Module · Request security'
     include *
@@ -257,6 +262,16 @@ views {
     include *
   }
 
+  view module_web_bank_sync of smartspend.web.modules.web-bank-sync {
+    title 'Module · Bank sync UI'
+    include *
+  }
+
+  view module_web_capture of smartspend.web.modules.web-capture {
+    title 'Module · Expense entry UI'
+    include *
+  }
+
   view module_web_finance of smartspend.web.modules.web-finance {
     title 'Module · Finance UI'
     include *
@@ -269,6 +284,11 @@ views {
 
   view module_web_hooks of smartspend.web.modules.web-hooks {
     title 'Module · Web hooks'
+    include *
+  }
+
+  view module_web_insights of smartspend.web.modules.web-insights {
+    title 'Module · Insights UI'
     include *
   }
 
@@ -294,6 +314,11 @@ views {
 
   view module_web_ui_kit of smartspend.web.modules.web-ui-kit {
     title 'Module · UI primitives'
+    include *
+  }
+
+  view module_web_voice_call of smartspend.web.modules.web-voice-call {
+    title 'Module · Live voice call UI'
     include *
   }
 

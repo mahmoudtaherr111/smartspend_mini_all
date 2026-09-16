@@ -1,0 +1,189 @@
+{
+  "$comment": "Hand-maintained map from the code to the systems people think in. Every module (clusters.json), tRPC procedure, page, HTTP route, WebSocket and scheduled job belongs to exactly one system: a router's procedures belong to the router's system unless a procedure is listed under another system. `npm run atlas` writes one facts page per system to docs/atlas/systems/, and the knowledge rules fail on anything unassigned or assigned twice. `extraPaths` names files the TypeScript analysis cannot see, such as the Android companion, whose change also asks for a new check of the system's explanation. Each system is explained in docs/systems/<id>.md, and for people who do not read code in docs/ar/systems/<id>.md. Summaries say what the system does and were checked against the code.",
+  "systems": [
+    {
+      "id": "expense-capture",
+      "title": "Recording spending",
+      "titleAr": "تسجيل المصاريف",
+      "summary": "Turns a typed or dictated sentence, or a receipt photo, into categorized transactions: the entry form, the classification pipeline, Arabic text handling, clarifying questions and saving the items.",
+      "summaryAr": "بيحوّل جملة مكتوبة أو متقالة أو صورة إيصال لمعاملات متصنفة: خانة الإدخال وخط التصنيف وفهم العربي والأسئلة التوضيحية وحفظ البنود.",
+      "clusters": ["classification", "classification-qa", "arabic-nlp", "receipt-parsing", "web-capture"],
+      "routers": ["image"],
+      "procedures": [
+        "ai.parseExpense",
+        "ai.parseVoiceExpense",
+        "ai.speechToText",
+        "ai.learnWord",
+        "expense.create",
+        "expense.batchCreate",
+        "expense.answerClarification",
+        "expense.getPendingClarifications",
+        "expense.createCategory",
+        "expense.getCategoryList"
+      ],
+      "jobs": ["classification-log-cleanup"],
+      "flows": ["flow_record_expense"]
+    },
+    {
+      "id": "bank-messages",
+      "title": "Bank and wallet messages",
+      "titleAr": "رسائل البنوك والمحافظ",
+      "summary": "Receives bank and wallet notifications forwarded by the Android companion app or a personal iOS Shortcut, and parses them with rules first and a model second.",
+      "summaryAr": "بيستقبل إشعارات البنوك والمحافظ اللي بيبعتها تطبيق أندرويد المساعد أو اختصار iOS الشخصي، ويفهمها بالقواعد الأول وبالموديل بعدها.",
+      "clusters": ["ingestion-parsers", "web-bank-sync"],
+      "extraPaths": [
+        "android-app/app/src/main/java/**",
+        "android-app/app/src/main/AndroidManifest.xml",
+        "android-app/app/build.gradle",
+        ".github/workflows/build-apk.yml"
+      ],
+      "procedures": ["profile.generateWebhookToken", "profile.getWebhookToken", "profile.getSmsLogs", "profile.generateMagicCode"],
+      "pages": ["BankSyncPage"],
+      "routes": [
+        "GET /api/sms/android-connect",
+        "POST /api/sms/android-status",
+        "POST /api/sms/exchange",
+        "POST /api/sms/ingest",
+        "GET /api/sms/logs",
+        "GET /api/sms/metrics",
+        "GET /api/sms/shortcut-download",
+        "GET /api/sms/token",
+        "POST /api/sms/token/generate",
+        "GET /api/sms/unparsed"
+      ],
+      "flows": ["flow_sms_ingest"]
+    },
+    {
+      "id": "voice-calls",
+      "title": "Live voice assistant",
+      "titleAr": "المكالمة الصوتية",
+      "summary": "A live voice call with the assistant over a WebSocket bridged to the Gemini Live API, with session checks, voice quotas, tools that draft actions, the financial context for the call and a call archive.",
+      "summaryAr": "مكالمة صوتية مباشرة مع المساعد عن طريق WebSocket متوصل بـGemini Live، فيها فحص للجلسة وحصص للصوت وأدوات بتجهّز إجراءات وأرشيف للمكالمات.",
+      "clusters": ["voice", "web-voice-call"],
+      "procedures": ["ai.runVoiceToolQa"],
+      "websockets": ["/api/voice/live"]
+    },
+    {
+      "id": "ai-center",
+      "title": "AI Center",
+      "titleAr": "مركز الذكاء الاصطناعي",
+      "summary": "The chat assistant: plans each turn without a model, answers finance questions from the ledger, keeps a long-term memory about the user, and proposes actions that run only after the user confirms.",
+      "summaryAr": "المساعد اللي بتكلمه: بيخطط لكل رد من غير موديل، ويجاوب أسئلة الفلوس من الدفتر، ويفتكر معلومات عنك، ويقترح إجراءات ماتتنفذش غير لما توافق.",
+      "clusters": ["ai-kernel", "ai-actions", "ai-memory", "finance-semantic-layer", "site-guide", "web-ai"],
+      "routers": ["chat"],
+      "pages": ["AICenter"],
+      "flows": ["flow_ai_chat"]
+    },
+    {
+      "id": "insights",
+      "title": "Reports, insights and the smart profile",
+      "titleAr": "التقارير والتحليلات والملف الذكي",
+      "summary": "Monthly and yearly insights, month comparisons and the Pro report, built on a smart profile that onboarding questions and spending behaviour fill in.",
+      "summaryAr": "تحليلات الشهر والسنة ومقارنة الشهور وتقرير Pro، مبنية على ملف ذكي بيتملى من أسئلة التعريف ومن طريقة صرفك.",
+      "clusters": ["ai-insights", "web-insights"],
+      "procedures": [
+        "ai.generateMonthlyInsights",
+        "ai.generateYearlyInsights",
+        "ai.getCachedMonthlyInsights",
+        "ai.compareMonths",
+        "export.monthlyReportHtml",
+        "profile.getSmartProfile",
+        "profile.updateSmartProfile",
+        "profile.getQuestions",
+        "profile.getNextOnboardingQuestion",
+        "profile.submitOnboardingAnswer",
+        "profile.dismissOnboarding",
+        "profile.refreshInferences"
+      ],
+      "jobs": ["monthly-behavior-snapshots", "monthly-report-generation"]
+    },
+    {
+      "id": "money",
+      "title": "Money: expenses, wallets, budgets, goals and businesses",
+      "titleAr": "الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة",
+      "summary": "The ledger once an item is saved: the dashboard, expense lists and statistics, wallets, budgets, savings goals, business mode, the people the user deals with, daily rollups and exports.",
+      "summaryAr": "الدفتر بعد ما البند يتسجل: الشاشة الرئيسية وقوايم المصاريف والإحصائيات والمحافظ والميزانيات وأهداف الادخار ووضع البيزنس والناس اللي بتتعامل معاهم والتجميع اليومي والتصدير.",
+      "clusters": ["ledger", "web-finance"],
+      "routers": ["expense", "wallet", "budget", "goals", "business"],
+      "procedures": ["export.myExpenses", "profile.listContacts", "profile.addContact", "profile.updateContact", "profile.deleteContact", "profile.mergeContacts"],
+      "pages": ["Home"],
+      "jobs": ["nightly-rollup-reconciliation"]
+    },
+    {
+      "id": "accounts",
+      "title": "Accounts, sign-in and security",
+      "titleAr": "الحسابات وتسجيل الدخول والأمان",
+      "summary": "Google sign-in, phone and password accounts with verification codes, passkeys, sessions, request security (rate limits, origins, headers) and account deletion.",
+      "summaryAr": "الدخول بجوجل، والحسابات بالموبايل والباسورد مع أكواد التأكيد، ومفاتيح المرور، والجلسات، وحماية الطلبات، ومسح الحساب.",
+      "clusters": ["auth", "security", "accounts", "web-account"],
+      "routers": ["auth", "localAuth", "session", "webauthn"],
+      "procedures": ["profile.getMyProfile", "profile.updateProfile", "profile.updateUserInfo", "profile.requestPhoneChange", "profile.confirmPhoneChange"],
+      "pages": ["Login", "AuthCallback", "Settings"],
+      "routes": ["GET /api/auth/google/start", "GET /api/auth/google/callback", "GET /api/sse/otp"],
+      "jobs": ["daily-auth-cleanup"]
+    },
+    {
+      "id": "billing",
+      "title": "Plans and payments",
+      "titleAr": "الباقات والدفع",
+      "summary": "The Free, Pro and Ultra plans and the Ultra members page, checkout through Paymob and its webhook, referral codes, and the daily job that ends expired subscriptions.",
+      "summaryAr": "باقات Free وPro وUltra وصفحة مشتركي Ultra، والدفع عن طريق Paymob وإشعاره للسيرفر، وأكواد الإحالة، والمهمة اليومية اللي بتنهي الاشتراكات المنتهية.",
+      "clusters": ["billing"],
+      "routers": ["pro", "referral"],
+      "pages": ["Pro", "UltraLounge"],
+      "routes": ["POST /api/webhooks/paymob"],
+      "jobs": ["daily-subscription-expiry"],
+      "flows": ["flow_paymob_upgrade"]
+    },
+    {
+      "id": "notifications",
+      "title": "Notifications and WhatsApp",
+      "titleAr": "الإشعارات وواتساب",
+      "summary": "Web push and phone notifications, in-app notifications, scheduled and activity-triggered messages, and the WhatsApp service with its verification code state.",
+      "summaryAr": "إشعارات المتصفح والموبايل والإشعارات جوه التطبيق والرسايل المجدولة ورسايل النشاط، وخدمة واتساب ومعاها حالة أكواد التأكيد.",
+      "clusters": ["notifications", "whatsapp"],
+      "routers": ["adminWhatsapp"],
+      "procedures": ["profile.savePushSubscription", "profile.getInAppNotifications", "profile.markInAppNotificationRead", "profile.sendBiometricPromptNotification"],
+      "jobs": ["scheduled-notifications", "smart-activity-notifications", "seed-default-templates"]
+    },
+    {
+      "id": "admin",
+      "title": "Admin console, support and growth tools",
+      "titleAr": "لوحة الإدارة والدعم وأدوات النمو",
+      "summary": "The admin console (users and plans, settings, AI providers, notification templates, learned rules, discount codes), support tickets, ads, SEO pages and usage analytics.",
+      "summaryAr": "لوحة الإدارة (المستخدمين والباقات والإعدادات ومزودي الذكاء الاصطناعي وقوالب الإشعارات والقواعد المتعلمة وأكواد الخصم)، وتذاكر الدعم، والإعلانات، وصفحات SEO، وإحصائيات الاستخدام.",
+      "clusters": ["web-admin"],
+      "routers": ["admin", "ads", "seo", "support", "analytics"],
+      "procedures": ["export.allUsers"],
+      "pages": ["Admin", "Support"]
+    },
+    {
+      "id": "ai-platform",
+      "title": "AI providers and usage limits",
+      "titleAr": "مزودي الذكاء الاصطناعي وحدود الاستخدام",
+      "summary": "Clients for the model providers, routing and fallback between them, model name mapping, provider health, per-plan token limits and AI cost accounting.",
+      "summaryAr": "الاتصال بمزودي الموديلات والتنقل بينهم لو واحد وقع، وأسماء الموديلات، وصحة المزودين، وحدود الاستخدام لكل باقة، وحساب تكلفة الذكاء الاصطناعي.",
+      "clusters": ["ai-providers", "ai-governance"],
+      "procedures": ["ai.getUserLimits"]
+    },
+    {
+      "id": "platform",
+      "title": "Server platform and data",
+      "titleAr": "منصة السيرفر والبيانات",
+      "summary": "The Hono server and tRPC wiring, environment validation, the Redis and settings caches, the MySQL schema and its storage classes, file storage, shared contracts, scheduled job bodies and data retention.",
+      "summaryAr": "السيرفر وتوصيل الـAPI، والتحقق من الإعدادات، والكاش، وقاعدة البيانات وتصنيف تخزينها، وتخزين الملفات، والأنواع المشتركة، وأجسام المهام المجدولة، ومدة الاحتفاظ بالبيانات.",
+      "clusters": ["api-core", "api-routers", "platform", "database", "contracts", "jobs", "storage"],
+      "routes": ["GET /health", "ALL /api/trpc/*"],
+      "jobs": ["data-retention-lifecycle"]
+    },
+    {
+      "id": "web-app",
+      "title": "Web and mobile app shell",
+      "titleAr": "هيكل تطبيق الويب والموبايل",
+      "summary": "The React app around every page: routes and guards, providers, layout and navigation, PWA install and offline behaviour, shared UI components, hooks and client utilities.",
+      "summaryAr": "هيكل التطبيق حوالين كل صفحة: التنقل والحماية، والتخطيط وشريط التنقل، وتثبيت التطبيق والشغل من غير نت، والمكونات والأدوات المشتركة.",
+      "clusters": ["web-shell", "web-pages", "web-ui-kit", "web-shared", "web-hooks", "web-lib", "web-growth"],
+      "pages": ["App shell", "Landing", "More", "NotFound", "Privacy", "Terms"]
+    }
+  ]
+}

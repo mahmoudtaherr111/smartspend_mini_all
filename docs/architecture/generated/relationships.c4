@@ -188,6 +188,7 @@ model {
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.ledger
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.notifications
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.platform
+  smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.receipt-parsing
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.security
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.voice
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.whatsapp
@@ -315,8 +316,6 @@ model {
   smartspend.api.modules.finance-semantic-layer -[reads]-> smartspend.mysql.user_profiles
   smartspend.api.modules.finance-semantic-layer -[reads]-> smartspend.mysql.user_wallets
   smartspend.api.modules.ingestion-parsers -[imports]-> smartspend.api.modules.ai-providers
-  smartspend.api.modules.ingestion-parsers -[imports]-> smartspend.api.modules.arabic-nlp
-  smartspend.api.modules.ingestion-parsers -[imports]-> smartspend.api.modules.classification
   smartspend.api.modules.ingestion-parsers -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.ingestion-parsers -[uses]-> gemini
   smartspend.api.modules.jobs -[imports]-> smartspend.api.modules.ai-governance
@@ -381,6 +380,10 @@ model {
   smartspend.api.modules.platform -[reads]-> smartspend.mysql.system_settings
   smartspend.api.modules.platform -[uses]-> smartspend.redis
   smartspend.api.modules.platform -[writes]-> smartspend.mysql.api_key_errors
+  smartspend.api.modules.receipt-parsing -[imports]-> smartspend.api.modules.ai-providers
+  smartspend.api.modules.receipt-parsing -[imports]-> smartspend.api.modules.arabic-nlp
+  smartspend.api.modules.receipt-parsing -[imports]-> smartspend.api.modules.classification
+  smartspend.api.modules.receipt-parsing -[uses]-> gemini
   smartspend.api.modules.security -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.security -[reads]-> smartspend.mysql.financial_goals
   smartspend.api.modules.security -[reads]-> smartspend.mysql.user_businesses
@@ -841,9 +844,9 @@ model {
   smartspend.api.trpc.image.parseReceipt -[uses]-> smartspend.api.modules.ai-providers
   smartspend.api.trpc.image.parseReceipt -[uses]-> smartspend.api.modules.classification
   smartspend.api.trpc.image.parseReceipt -[uses]-> smartspend.api.modules.finance-semantic-layer
-  smartspend.api.trpc.image.parseReceipt -[uses]-> smartspend.api.modules.ingestion-parsers
   smartspend.api.trpc.image.parseReceipt -[uses]-> smartspend.api.modules.ledger
   smartspend.api.trpc.image.parseReceipt -[uses]-> smartspend.api.modules.platform
+  smartspend.api.trpc.image.parseReceipt -[uses]-> smartspend.api.modules.receipt-parsing
   smartspend.api.trpc.image.parseReceipt -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.image.parseReceipt -[writes]-> smartspend.mysql.expenses
   smartspend.api.trpc.image.parseReceipt -[writes]-> smartspend.mysql.local_users
@@ -1033,12 +1036,18 @@ model {
   smartspend.web.modules.web-admin -[imports]-> smartspend.web.modules.web-ui-kit
   smartspend.web.modules.web-admin -[uses]-> fireworks
   smartspend.web.modules.web-admin -[uses]-> openrouter
-  smartspend.web.modules.web-ai -[imports]-> smartspend.web.modules.web-finance
   smartspend.web.modules.web-ai -[imports]-> smartspend.web.modules.web-hooks
+  smartspend.web.modules.web-ai -[imports]-> smartspend.web.modules.web-insights
   smartspend.web.modules.web-ai -[imports]-> smartspend.web.modules.web-lib
   smartspend.web.modules.web-ai -[imports]-> smartspend.web.modules.web-shell
   smartspend.web.modules.web-ai -[imports]-> smartspend.web.modules.web-ui-kit
-  smartspend.web.modules.web-finance -[imports]-> smartspend.shared.contracts
+  smartspend.web.modules.web-bank-sync -[imports]-> smartspend.web.modules.web-shell
+  smartspend.web.modules.web-bank-sync -[imports]-> smartspend.web.modules.web-ui-kit
+  smartspend.web.modules.web-capture -[imports]-> smartspend.shared.contracts
+  smartspend.web.modules.web-capture -[imports]-> smartspend.web.modules.web-hooks
+  smartspend.web.modules.web-capture -[imports]-> smartspend.web.modules.web-lib
+  smartspend.web.modules.web-capture -[imports]-> smartspend.web.modules.web-shell
+  smartspend.web.modules.web-capture -[imports]-> smartspend.web.modules.web-ui-kit
   smartspend.web.modules.web-finance -[imports]-> smartspend.web.modules.web-hooks
   smartspend.web.modules.web-finance -[imports]-> smartspend.web.modules.web-lib
   smartspend.web.modules.web-finance -[imports]-> smartspend.web.modules.web-shell
@@ -1049,10 +1058,15 @@ model {
   smartspend.web.modules.web-hooks -[imports]-> smartspend.web.modules.web-shell
   smartspend.web.modules.web-hooks -[uses]-> capacitor
   smartspend.web.modules.web-hooks -[uses]-> firebase
+  smartspend.web.modules.web-insights -[imports]-> smartspend.web.modules.web-hooks
+  smartspend.web.modules.web-insights -[imports]-> smartspend.web.modules.web-shell
+  smartspend.web.modules.web-insights -[imports]-> smartspend.web.modules.web-ui-kit
   smartspend.web.modules.web-lib -[uses]-> capacitor
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-account
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-admin
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-ai
+  smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-bank-sync
+  smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-capture
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-finance
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-growth
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-hooks
@@ -1060,6 +1074,7 @@ model {
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-shared
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-shell
   smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-ui-kit
+  smartspend.web.modules.web-pages -[imports]-> smartspend.web.modules.web-voice-call
   smartspend.web.modules.web-shared -[imports]-> smartspend.web.modules.web-hooks
   smartspend.web.modules.web-shared -[imports]-> smartspend.web.modules.web-lib
   smartspend.web.modules.web-shared -[imports]-> smartspend.web.modules.web-shell
@@ -1075,6 +1090,9 @@ model {
   smartspend.web.modules.web-shell -[uses]-> firebase
   smartspend.web.modules.web-ui-kit -[imports]-> smartspend.web.modules.web-hooks
   smartspend.web.modules.web-ui-kit -[imports]-> smartspend.web.modules.web-lib
+  smartspend.web.modules.web-voice-call -[imports]-> smartspend.web.modules.web-hooks
+  smartspend.web.modules.web-voice-call -[imports]-> smartspend.web.modules.web-lib
+  smartspend.web.modules.web-voice-call -[imports]-> smartspend.web.modules.web-ui-kit
   smartspend.web.pages.AICenter -[calls]-> smartspend.api.trpc.ai.compareMonths
   smartspend.web.pages.AICenter -[calls]-> smartspend.api.trpc.ai.generateMonthlyInsights
   smartspend.web.pages.AICenter -[calls]-> smartspend.api.trpc.ai.getCachedMonthlyInsights

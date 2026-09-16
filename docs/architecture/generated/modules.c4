@@ -25,7 +25,7 @@ model {
       }
     }
     ai-insights = module 'AI insights and reports' {
-      description 'Personalization: the smart profile, onboarding questions, lifestyle inference and behaviour snapshots, personal context for prompts, Pro report building and Gemini batch jobs.'
+      description 'The smart profile and the contacts it reads from user_contacts, adaptive onboarding questions, monthly behaviour snapshots, the personal context added to classification and report prompts, and the printable Pro report. The Gemini batch service only simulates its calls.'
       metadata {
         files '7'
         paths 'api/services/adaptive-question-engine.ts, api/services/lifestyle-inference-engine.ts, api/services/personal-context-builder.ts, api/services/pro-report-engine.ts, api/services/report-personalization-engine.ts, api/services/user-profile-service.ts, api/services/batch-ai-service.ts'
@@ -39,7 +39,7 @@ model {
       }
     }
     ai-memory = module 'AI memory' {
-      description 'Long-term memory about each user: conversation capsules and running summaries, extracted facts, embeddings and backfill, and retrieval from Qdrant or a quantized local vector store.'
+      description 'Long-term memory about each user: conversation capsules and running summaries, memories extracted by rules, optional Fireworks embeddings stored in MySQL with a backfill, and retrieval that scores memories by words and, when embeddings are on, by vector similarity. The Qdrant and quantized on-disk stores are used only by tests.'
       metadata {
         files '12'
         paths 'api/services/ai-memory/**'
@@ -116,10 +116,10 @@ model {
       }
     }
     ingestion-parsers = module 'Ingestion parsers' {
-      description 'Bank SMS parsing (rules first, then an AI parser with a per-user cache), receipt parsing with a vision model, and the generator of the personal iOS Shortcut.'
+      description 'Bank SMS parsing (rules first, then an AI parser with a per-user cache) and the generator of the personal iOS Shortcut.'
       metadata {
-        files '4'
-        paths 'api/lib/sms-ai-parser.ts, api/lib/sms-rule-parser.ts, api/lib/receipt-image-parser.ts, api/lib/shortcut-generator.ts'
+        files '3'
+        paths 'api/lib/sms-ai-parser.ts, api/lib/sms-rule-parser.ts, api/lib/shortcut-generator.ts'
       }
     }
     jobs = module 'Scheduled job bodies' {
@@ -148,6 +148,13 @@ model {
       metadata {
         files '8'
         paths 'api/lib/env.ts, api/lib/redis-client.ts, api/lib/cache-keys.ts, api/lib/settings-cache.ts, api/lib/system-settings-registry.ts, api/lib/app-time.ts, api/lib/error-logger.ts, api/services/scheduler-lock.ts'
+      }
+    }
+    receipt-parsing = module 'Receipt parsing' {
+      description 'Receipt parsing with a vision model.'
+      metadata {
+        files '1'
+        paths 'api/lib/receipt-image-parser.ts'
       }
     }
     security = module 'Request security' {
@@ -199,9 +206,9 @@ model {
 
   extend smartspend.web.modules {
     web-account = module 'Account UI' {
-      description 'Biometric lock and passkeys, the smart profile, business and people settings, SMS webhook settings, bank sync setup for Android and iOS, and the push prompt.'
+      description 'Biometric lock and passkeys, the smart profile, business and people settings, and the push prompt.'
       metadata {
-        files '12'
+        files '8'
         paths 'src/components/auth/**, src/components/profile/**, src/components/settings/**, src/components/bank-sync/**, src/components/notifications/**'
       }
     }
@@ -213,17 +220,31 @@ model {
       }
     }
     web-ai = module 'AI Center UI' {
-      description 'AI Center screens: the chatbot, the AI memory manager, the monthly AI report and the live voice call.'
+      description 'AI Center screens: the chatbot, the AI memory manager and the monthly AI report.'
       metadata {
-        files '4'
+        files '3'
         paths 'src/components/ai/**'
       }
     }
-    web-finance = module 'Finance UI' {
-      description 'Home dashboard (summaries, calendar, charts, search, streaks), expense entry with receipt capture, recent expenses, goals and AI insights.'
+    web-bank-sync = module 'Bank sync UI' {
+      description 'The bank sync screens: iPhone Shortcut and Android companion setup, the digital wallet view shown once a phone is connected, and the SMS webhook settings panel.'
       metadata {
-        files '16'
-        paths 'src/components/dashboard/**, src/components/expenses/**, src/components/goals/**, src/components/insights/**'
+        files '4'
+        paths 'src/components/bank-sync/**, src/components/settings/SmsWebhookSettings.tsx'
+      }
+    }
+    web-capture = module 'Expense entry UI' {
+      description 'The expense form on the home screen: typed, spoken and photographed entries, the review and clarification steps, the offline text queue, local suggestions and offline input checks, and image compression before a receipt is uploaded.'
+      metadata {
+        files '4'
+        paths 'src/components/expenses/ExpenseForm.tsx, src/components/expenses/ReceiptCapture.tsx, src/lib/clientRulesEngine.ts, src/lib/compress-image.ts'
+      }
+    }
+    web-finance = module 'Finance UI' {
+      description 'Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals.'
+      metadata {
+        files '13'
+        paths 'src/components/dashboard/**, src/components/expenses/**, src/components/goals/**'
       }
     }
     web-growth = module 'Ads and SEO UI' {
@@ -236,14 +257,21 @@ model {
     web-hooks = module 'Web hooks' {
       description 'React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycle, biometrics, navigation, keyboard and haptics.'
       metadata {
-        files '21'
+        files '20'
         paths 'src/hooks/**'
+      }
+    }
+    web-insights = module 'Insights UI' {
+      description 'The monthly AI insights view shown in the AI Center’s analysis tab.'
+      metadata {
+        files '1'
+        paths 'src/components/insights/**'
       }
     }
     web-lib = module 'Web utilities' {
       description 'Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/.'
       metadata {
-        files '9'
+        files '7'
         paths 'src/lib/**, src/types/**, src/*.ts'
       }
     }
@@ -273,6 +301,13 @@ model {
       metadata {
         files '55'
         paths 'src/components/ui/**'
+      }
+    }
+    web-voice-call = module 'Live voice call UI' {
+      description 'The live voice call screen in the AI Center and its hook: voice selection, microphone capture resampled to 16 kHz PCM, the WebSocket to /api/voice/live, playback of the assistant’s audio and the tool trace panel.'
+      metadata {
+        files '2'
+        paths 'src/components/ai/AIVoiceCall.tsx, src/hooks/useVoiceCall.ts'
       }
     }
   }

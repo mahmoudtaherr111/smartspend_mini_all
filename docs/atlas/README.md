@@ -11,6 +11,8 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 
 | File | Answers |
 | --- | --- |
+| [systems/README.md](systems/README.md) | Which system owns each module, procedure, screen, route and job, with a diagram and the facts of every system |
+| [systems/files.md](systems/files.md) | Which system's explanation describes each source file, down to single procedures, routes and jobs of shared files |
 | [api.md](api.md) | Which procedures exist, who may call them, which tables they touch, which web files call them |
 | [database.md](database.md) | Tables, storage classes, relations, and which files read or write each table |
 | [entrypoints.md](entrypoints.md) | Middleware order, HTTP routes, webhooks, SSE, WebSocket upgrades, scheduled jobs |
@@ -36,9 +38,10 @@ Facts about SmartSpend extracted from the source code by `scripts/atlas`. Nothin
 | Browser routes | 16 |
 | Lazy-loaded pages | 15 |
 | Runtime source files | 379 |
-| Clusters | 38 |
+| Clusters | 43 |
 | External systems in use | 18 |
 | Validated server env vars | 43 |
+| Systems | 13 |
 
 ## Generator warnings
 

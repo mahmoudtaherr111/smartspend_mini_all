@@ -151,13 +151,18 @@
     {
       "id": "ingestion-parsers",
       "title": "Ingestion parsers",
-      "description": "Bank SMS parsing (rules first, then an AI parser with a per-user cache), receipt parsing with a vision model, and the generator of the personal iOS Shortcut.",
+      "description": "Bank SMS parsing (rules first, then an AI parser with a per-user cache) and the generator of the personal iOS Shortcut.",
       "paths": [
         "api/lib/sms-ai-parser.ts",
         "api/lib/sms-rule-parser.ts",
-        "api/lib/receipt-image-parser.ts",
         "api/lib/shortcut-generator.ts"
       ]
+    },
+    {
+      "id": "receipt-parsing",
+      "title": "Receipt parsing",
+      "description": "Receipt parsing with a vision model.",
+      "paths": ["api/lib/receipt-image-parser.ts"]
     },
     {
       "id": "classification-qa",
@@ -214,7 +219,7 @@
     {
       "id": "ai-memory",
       "title": "AI memory",
-      "description": "Long-term memory about each user: conversation capsules and running summaries, extracted facts, embeddings and backfill, and retrieval from Qdrant or a quantized local vector store.",
+      "description": "Long-term memory about each user: conversation capsules and running summaries, memories extracted by rules, optional Fireworks embeddings stored in MySQL with a backfill, and retrieval that scores memories by words and, when embeddings are on, by vector similarity. The Qdrant and quantized on-disk stores are used only by tests.",
       "paths": ["api/services/ai-memory/**"]
     },
     {
@@ -238,7 +243,7 @@
     {
       "id": "ai-insights",
       "title": "AI insights and reports",
-      "description": "Personalization: the smart profile, onboarding questions, lifestyle inference and behaviour snapshots, personal context for prompts, Pro report building and Gemini batch jobs.",
+      "description": "The smart profile and the contacts it reads from user_contacts, adaptive onboarding questions, monthly behaviour snapshots, the personal context added to classification and report prompts, and the printable Pro report. The Gemini batch service only simulates its calls.",
       "paths": [
         "api/services/adaptive-question-engine.ts",
         "api/services/lifestyle-inference-engine.ts",
@@ -282,26 +287,54 @@
       "paths": ["src/components/admin/**"]
     },
     {
+      "id": "web-voice-call",
+      "title": "Live voice call UI",
+      "description": "The live voice call screen in the AI Center and its hook: voice selection, microphone capture resampled to 16 kHz PCM, the WebSocket to /api/voice/live, playback of the assistant's audio and the tool trace panel.",
+      "paths": ["src/components/ai/AIVoiceCall.tsx", "src/hooks/useVoiceCall.ts"]
+    },
+    {
       "id": "web-ai",
       "title": "AI Center UI",
-      "description": "AI Center screens: the chatbot, the AI memory manager, the monthly AI report and the live voice call.",
+      "description": "AI Center screens: the chatbot, the AI memory manager and the monthly AI report.",
       "paths": ["src/components/ai/**"]
+    },
+    {
+      "id": "web-capture",
+      "title": "Expense entry UI",
+      "description": "The expense form on the home screen: typed, spoken and photographed entries, the review and clarification steps, the offline text queue, local suggestions and offline input checks, and image compression before a receipt is uploaded.",
+      "paths": [
+        "src/components/expenses/ExpenseForm.tsx",
+        "src/components/expenses/ReceiptCapture.tsx",
+        "src/lib/clientRulesEngine.ts",
+        "src/lib/compress-image.ts"
+      ]
+    },
+    {
+      "id": "web-insights",
+      "title": "Insights UI",
+      "description": "The monthly AI insights view shown in the AI Center's analysis tab.",
+      "paths": ["src/components/insights/**"]
     },
     {
       "id": "web-finance",
       "title": "Finance UI",
-      "description": "Home dashboard (summaries, calendar, charts, search, streaks), expense entry with receipt capture, recent expenses, goals and AI insights.",
+      "description": "Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals.",
       "paths": [
         "src/components/dashboard/**",
         "src/components/expenses/**",
-        "src/components/goals/**",
-        "src/components/insights/**"
+        "src/components/goals/**"
       ]
+    },
+    {
+      "id": "web-bank-sync",
+      "title": "Bank sync UI",
+      "description": "The bank sync screens: iPhone Shortcut and Android companion setup, the digital wallet view shown once a phone is connected, and the SMS webhook settings panel.",
+      "paths": ["src/components/bank-sync/**", "src/components/settings/SmsWebhookSettings.tsx"]
     },
     {
       "id": "web-account",
       "title": "Account UI",
-      "description": "Biometric lock and passkeys, the smart profile, business and people settings, SMS webhook settings, bank sync setup for Android and iOS, and the push prompt.",
+      "description": "Biometric lock and passkeys, the smart profile, business and people settings, and the push prompt.",
       "paths": [
         "src/components/auth/**",
         "src/components/profile/**",

@@ -9,12 +9,12 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | Cluster | Title | Files | Depends on | Used by | External systems referenced |
 | --- | --- | --- | --- | --- | --- |
 | `api-core` | API server core | 5 | `ai-providers`, `api-routers`, `auth`, `billing`, `classification`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `api-routers` | `sentry` |
-| `api-routers` | tRPC routers and HTTP sub-apps | 23 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `ledger`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq`, `web-push` |
+| `api-routers` | tRPC routers and HTTP sub-apps | 23 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `ledger`, `notifications`, `platform`, `receipt-parsing`, `security`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq`, `web-push` |
 | `auth` | Authentication and sessions | 3 | `database`, `platform`, `security` | `api-core`, `api-routers`, `billing`, `jobs`, `voice`, `whatsapp` | — |
 | `security` | Request security | 11 | `database`, `platform` | `api-core`, `api-routers`, `auth` | `turnstile` |
 | `platform` | Platform services | 8 | `database` | `ai-governance`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `jobs`, `ledger`, `notifications`, `security`, `voice` | `redis` |
 | `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `classification`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `mysql` |
-| `contracts` | Shared contracts | 4 | — | `api-core`, `api-routers`, `billing`, `web-finance` | — |
+| `contracts` | Shared contracts | 4 | — | `api-core`, `api-routers`, `billing`, `web-capture` | — |
 | `billing` | Billing | 2 | `auth`, `contracts`, `database`, `platform` | `api-core`, `api-routers` | `paymob` |
 | `ledger` | Ledger aggregates | 2 | `database`, `finance-semantic-layer`, `platform` | `ai-actions`, `api-routers`, `jobs` | — |
 | `accounts` | Account lifecycle | 1 | `database` | `api-routers` | — |
@@ -22,12 +22,13 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `notifications` | Notifications | 2 | `database`, `platform` | `api-core`, `api-routers` | `firebase`, `web-push` |
 | `whatsapp` | WhatsApp | 2 | `auth`, `database` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
 | `voice` | Voice | 10 | `ai-actions`, `ai-governance`, `ai-kernel`, `ai-memory`, `auth`, `database`, `finance-semantic-layer`, `platform` | `api-core`, `api-routers` | `gemini` |
-| `ai-providers` | AI provider access | 12 | `database`, `platform` | `ai-kernel`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
+| `ai-providers` | AI provider access | 12 | `database`, `platform` | `ai-kernel`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs`, `receipt-parsing` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
 | `ai-governance` | AI usage and cost governance | 3 | `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `jobs`, `voice` | — |
-| `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `classification`, `ingestion-parsers` | — |
-| `ingestion-parsers` | Ingestion parsers | 4 | `ai-providers`, `arabic-nlp`, `classification`, `platform` | `api-routers` | `gemini` |
+| `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `classification`, `receipt-parsing` | — |
+| `ingestion-parsers` | Ingestion parsers | 3 | `ai-providers`, `platform` | `api-routers` | `gemini` |
+| `receipt-parsing` | Receipt parsing | 1 | `ai-providers`, `arabic-nlp`, `classification` | `api-routers` | `gemini` |
 | `classification-qa` | Classification benchmark helpers | 2 | `classification` | — | — |
-| `classification` | Expense classification pipeline | 33 | `ai-providers`, `arabic-nlp`, `database` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-core`, `api-routers`, `arabic-nlp`, `classification-qa`, `finance-semantic-layer`, `ingestion-parsers` | `gemini` |
+| `classification` | Expense classification pipeline | 33 | `ai-providers`, `arabic-nlp`, `database` | `ai-actions`, `ai-insights`, `ai-kernel`, `api-core`, `api-routers`, `arabic-nlp`, `classification-qa`, `finance-semantic-layer`, `receipt-parsing` | `gemini` |
 | `ai-kernel` | AI Center kernel | 11 | `ai-governance`, `ai-memory`, `ai-providers`, `arabic-nlp`, `classification`, `database`, `finance-semantic-layer`, `platform`, `site-guide` | `api-routers`, `voice` | — |
 | `ai-actions` | AI action runtime | 5 | `ai-governance`, `ai-insights`, `ai-memory`, `classification`, `database`, `finance-semantic-layer`, `ledger` | `api-routers`, `voice` | — |
 | `ai-memory` | AI memory | 12 | `ai-governance`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-routers`, `voice` | `fireworks`, `qdrant` |
@@ -35,17 +36,21 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `site-guide` | Site guide | 5 | — | `ai-kernel` | — |
 | `storage` | File storage | 5 | — | — | `object-storage` |
 | `ai-insights` | AI insights and reports | 7 | `classification`, `database` | `ai-actions`, `api-routers`, `jobs` | `gemini` |
-| `web-shell` | Web app shell | 18 | `web-account`, `web-growth`, `web-hooks`, `web-lib`, `web-pages`, `web-shared`, `web-ui-kit` | `web-account`, `web-admin`, `web-ai`, `web-finance`, `web-growth`, `web-hooks`, `web-pages`, `web-shared` | `capacitor`, `firebase` |
-| `web-pages` | Web pages | 15 | `web-account`, `web-admin`, `web-ai`, `web-finance`, `web-growth`, `web-hooks`, `web-lib`, `web-shared`, `web-shell`, `web-ui-kit` | `web-shell` | — |
-| `web-ui-kit` | UI primitives | 55 | `web-hooks`, `web-lib` | `web-account`, `web-admin`, `web-ai`, `web-finance`, `web-pages`, `web-shared`, `web-shell` | — |
+| `web-shell` | Web app shell | 18 | `web-account`, `web-growth`, `web-hooks`, `web-lib`, `web-pages`, `web-shared`, `web-ui-kit` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-insights`, `web-pages`, `web-shared` | `capacitor`, `firebase` |
+| `web-pages` | Web pages | 15 | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-lib`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `web-shell` | — |
+| `web-ui-kit` | UI primitives | 55 | `web-hooks`, `web-lib` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-insights`, `web-pages`, `web-shared`, `web-shell`, `web-voice-call` | — |
 | `web-admin` | Admin UI | 20 | `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | `fireworks`, `openrouter` |
-| `web-ai` | AI Center UI | 4 | `web-finance`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
-| `web-finance` | Finance UI | 16 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-account`, `web-ai`, `web-pages` | — |
-| `web-account` | Account UI | 12 | `web-finance`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | — |
+| `web-voice-call` | Live voice call UI | 2 | `web-hooks`, `web-lib`, `web-ui-kit` | `web-pages` | — |
+| `web-ai` | AI Center UI | 3 | `web-hooks`, `web-insights`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
+| `web-capture` | Expense entry UI | 4 | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages` | — |
+| `web-insights` | Insights UI | 1 | `web-hooks`, `web-shell`, `web-ui-kit` | `web-ai` | — |
+| `web-finance` | Finance UI | 13 | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-account`, `web-pages` | — |
+| `web-bank-sync` | Bank sync UI | 4 | `web-shell`, `web-ui-kit` | `web-pages` | — |
+| `web-account` | Account UI | 8 | `web-finance`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | — |
 | `web-growth` | Ads and SEO UI | 2 | `web-hooks`, `web-shell` | `web-pages`, `web-shell` | — |
 | `web-shared` | Shared web components | 5 | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | `web-pages`, `web-shell` | — |
-| `web-hooks` | Web hooks | 21 | `web-lib`, `web-shell` | `web-account`, `web-ai`, `web-finance`, `web-growth`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit` | `capacitor`, `firebase` |
-| `web-lib` | Web utilities | 9 | — | `web-account`, `web-admin`, `web-ai`, `web-finance`, `web-hooks`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit` | `capacitor` |
+| `web-hooks` | Web hooks | 20 | `web-lib`, `web-shell` | `web-account`, `web-ai`, `web-capture`, `web-finance`, `web-growth`, `web-insights`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor`, `firebase` |
+| `web-lib` | Web utilities | 7 | — | `web-account`, `web-admin`, `web-ai`, `web-capture`, `web-finance`, `web-hooks`, `web-pages`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `capacitor` |
 
 ## External systems
 
@@ -55,7 +60,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `deepseek` | DeepSeek API | ai-provider | `ai-providers` | `api/lib/llm-provider-chain.ts` |
 | `firebase` | Firebase | push | `notifications`, `web-hooks`, `web-shell` | `api/services/firebase.ts`, `src/hooks/usePushNotifications.ts`, `src/pwa/firebase.ts` |
 | `fireworks` | Fireworks AI | ai-provider | `ai-memory`, `ai-providers`, `api-routers`, `jobs`, `web-admin` | `api/chat-router.ts`, `api/jobs/monthly-report-job.ts`, `api/lib/fireworks-client.ts`, `api/lib/fireworks-embedding-client.ts`, `api/lib/llm-provider-chain.ts`, `api/services/ai-memory/embedding-settings.ts`, `src/components/admin/settings/AdminPlansTab.tsx` |
-| `gemini` | Google Gemini API | ai-provider | `ai-insights`, `ai-providers`, `api-routers`, `classification`, `ingestion-parsers`, `voice` | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/goals-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/classifier-contract.ts`, `api/lib/generate-embeddings-cache.ts`, `api/lib/llm-router.ts`, `api/lib/narrative-decomposer.ts`, `api/lib/receipt-image-parser.ts`, `api/lib/smart-pipeline.ts`, `api/lib/sms-ai-parser.ts`, `api/services/batch-ai-service.ts`, `api/services/voice-call-service.ts` |
+| `gemini` | Google Gemini API | ai-provider | `ai-insights`, `ai-providers`, `api-routers`, `classification`, `ingestion-parsers`, `receipt-parsing`, `voice` | `api/admin-router.ts`, `api/ai-router.ts`, `api/business-router.ts`, `api/goals-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/classifier-contract.ts`, `api/lib/generate-embeddings-cache.ts`, `api/lib/llm-router.ts`, `api/lib/narrative-decomposer.ts`, `api/lib/receipt-image-parser.ts`, `api/lib/smart-pipeline.ts`, `api/lib/sms-ai-parser.ts`, `api/services/batch-ai-service.ts`, `api/services/voice-call-service.ts` |
 | `google-oauth` | Google OAuth 2.0 | identity | `api-routers` | `api/auth-router.ts` |
 | `groq` | Groq | ai-provider | `ai-providers`, `api-routers` | `api/ai-router.ts`, `api/lib/groq-client.ts`, `api/lib/llm-provider-chain.ts` |
 | `mysql` | MySQL | datastore | `database` | `api/queries/connection.ts` |
@@ -102,7 +107,7 @@ One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted 
 | `api/expense-router.ts` | `ai-insights`, `api-core`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ledger`, `notifications`, `platform`, `security` | — | `business_categories`, `classification_logs`, `expense_categories`, `expense_daily_rollups`, `expenses`, `pending_clarifications`, `user_businesses`, `user_contacts`, `user_dictionaries` | `classification_logs`, `expense_categories`, `expenses`, `local_users`, `pending_clarifications`, `user_contacts`, `users` |
 | `api/export-router.ts` | `ai-insights`, `api-core`, `database` | — | `expenses`, `local_users`, `users` | — |
 | `api/goals-router.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `contracts`, `database`, `finance-semantic-layer`, `platform` | `gemini` | `expenses`, `financial_goals` | `financial_goals`, `local_users`, `user_budgets`, `users` |
-| `api/image-router.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `classification`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `ledger`, `platform`, `security` | — | `expenses`, `user_dictionaries` | `expenses`, `local_users`, `users` |
+| `api/image-router.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `classification`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `receipt-parsing`, `security` | — | `expenses`, `user_dictionaries` | `expenses`, `local_users`, `users` |
 | `api/local-auth-router.ts` | `accounts`, `api-core`, `auth`, `database`, `platform`, `security`, `whatsapp` | — | `expenses`, `local_users` | `local_users` |
 | `api/pro-router.ts` | `api-core`, `billing`, `contracts`, `database`, `platform` | — | `local_users`, `pro_subscriptions`, `users` | `local_users`, `pro_subscriptions`, `users` |
 | `api/profile-router.ts` | `ai-insights`, `api-core`, `auth`, `classification`, `database`, `platform`, `security`, `whatsapp` | — | `expenses`, `in_app_notifications`, `local_users`, `onboarding_questions`, `push_subscriptions`, `raw_sms_events`, `user_contacts`, `user_profiles`, `webhook_tokens` | `expenses`, `in_app_notifications`, `local_users`, `monthly_behavior_snapshots`, `push_subscriptions`, `user_contacts`, `user_profiles`, `users`, `webhook_tokens` |
@@ -301,14 +306,21 @@ Normalizers, dictionaries, Arabic number parsing, negation detection, fuzzy matc
 
 ### `ingestion-parsers` — Ingestion parsers
 
-Bank SMS parsing (rules first, then an AI parser with a per-user cache), receipt parsing with a vision model, and the generator of the personal iOS Shortcut.
+Bank SMS parsing (rules first, then an AI parser with a per-user cache) and the generator of the personal iOS Shortcut.
+
+| File | Imports from clusters | External systems referenced | Reads | Writes |
+| --- | --- | --- | --- | --- |
+| `api/lib/shortcut-generator.ts` | — | — | — | — |
+| `api/lib/sms-ai-parser.ts` | `ai-providers`, `platform` | `gemini` | — | — |
+| `api/lib/sms-rule-parser.ts` | — | — | — | — |
+
+### `receipt-parsing` — Receipt parsing
+
+Receipt parsing with a vision model.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `api/lib/receipt-image-parser.ts` | `ai-providers`, `arabic-nlp`, `classification` | `gemini` | — | — |
-| `api/lib/shortcut-generator.ts` | — | — | — | — |
-| `api/lib/sms-ai-parser.ts` | `ai-providers`, `platform` | `gemini` | — | — |
-| `api/lib/sms-rule-parser.ts` | — | — | — | — |
 
 ### `classification-qa` — Classification benchmark helpers
 
@@ -391,7 +403,7 @@ Actions the assistant proposes, such as recording an expense, updating a wallet 
 
 ### `ai-memory` — AI memory
 
-Long-term memory about each user: conversation capsules and running summaries, extracted facts, embeddings and backfill, and retrieval from Qdrant or a quantized local vector store.
+Long-term memory about each user: conversation capsules and running summaries, memories extracted by rules, optional Fireworks embeddings stored in MySQL with a backfill, and retrieval that scores memories by words and, when embeddings are on, by vector similarity. The Qdrant and quantized on-disk stores are used only by tests.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -451,7 +463,7 @@ File storage behind one driver interface (local disk or S3-compatible storage su
 
 ### `ai-insights` — AI insights and reports
 
-Personalization: the smart profile, onboarding questions, lifestyle inference and behaviour snapshots, personal context for prompts, Pro report building and Gemini batch jobs.
+The smart profile and the contacts it reads from user_contacts, adaptive onboarding questions, monthly behaviour snapshots, the personal context added to classification and report prompts, and the printable Pro report. The Gemini batch service only simulates its calls.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -494,11 +506,11 @@ Route-level page components lazy-loaded by src/App.tsx.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `src/pages/AICenter.tsx` | `web-ai`, `web-hooks`, `web-lib`, `web-ui-kit` | — | — | — |
+| `src/pages/AICenter.tsx` | `web-ai`, `web-hooks`, `web-lib`, `web-ui-kit`, `web-voice-call` | — | — | — |
 | `src/pages/Admin.tsx` | `web-admin`, `web-growth`, `web-hooks`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/pages/AuthCallback.tsx` | — | — | — | — |
-| `src/pages/BankSyncPage.tsx` | `web-account`, `web-growth`, `web-shell` | — | — | — |
-| `src/pages/Home.tsx` | `web-account`, `web-finance`, `web-hooks`, `web-lib`, `web-shared`, `web-shell`, `web-ui-kit` | — | — | — |
+| `src/pages/BankSyncPage.tsx` | `web-bank-sync`, `web-growth`, `web-shell` | — | — | — |
+| `src/pages/Home.tsx` | `web-account`, `web-capture`, `web-finance`, `web-hooks`, `web-lib`, `web-shared`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/pages/Landing.tsx` | `web-growth`, `web-ui-kit` | — | — | — |
 | `src/pages/Login.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 | `src/pages/More.tsx` | `web-hooks`, `web-ui-kit` | — | — | — |
@@ -599,20 +611,47 @@ Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, 
 | `src/components/admin/settings/AdminSettingsShared.tsx` | `web-ui-kit` | — | — | — |
 | `src/components/admin/settings/RoutingRangesEditor.tsx` | `web-ui-kit` | — | — | — |
 
+### `web-voice-call` — Live voice call UI
+
+The live voice call screen in the AI Center and its hook: voice selection, microphone capture resampled to 16 kHz PCM, the WebSocket to /api/voice/live, playback of the assistant's audio and the tool trace panel.
+
+| File | Imports from clusters | External systems referenced | Reads | Writes |
+| --- | --- | --- | --- | --- |
+| `src/components/ai/AIVoiceCall.tsx` | `web-hooks`, `web-lib`, `web-ui-kit` | — | — | — |
+| `src/hooks/useVoiceCall.ts` | — | — | — | — |
+
 ### `web-ai` — AI Center UI
 
-AI Center screens: the chatbot, the AI memory manager, the monthly AI report and the live voice call.
+AI Center screens: the chatbot, the AI memory manager and the monthly AI report.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `src/components/ai/AIChatbot.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/ai/AIMemoryManager.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
-| `src/components/ai/AIMonthlyReport.tsx` | `web-finance`, `web-hooks`, `web-ui-kit` | — | — | — |
-| `src/components/ai/AIVoiceCall.tsx` | `web-hooks`, `web-lib`, `web-ui-kit` | — | — | — |
+| `src/components/ai/AIMonthlyReport.tsx` | `web-hooks`, `web-insights`, `web-ui-kit` | — | — | — |
+
+### `web-capture` — Expense entry UI
+
+The expense form on the home screen: typed, spoken and photographed entries, the review and clarification steps, the offline text queue, local suggestions and offline input checks, and image compression before a receipt is uploaded.
+
+| File | Imports from clusters | External systems referenced | Reads | Writes |
+| --- | --- | --- | --- | --- |
+| `src/components/expenses/ExpenseForm.tsx` | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
+| `src/components/expenses/ReceiptCapture.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
+| `src/lib/clientRulesEngine.ts` | — | — | — | — |
+| `src/lib/compress-image.ts` | — | — | — | — |
+
+### `web-insights` — Insights UI
+
+The monthly AI insights view shown in the AI Center's analysis tab.
+
+| File | Imports from clusters | External systems referenced | Reads | Writes |
+| --- | --- | --- | --- | --- |
+| `src/components/insights/AIInsights.tsx` | `web-hooks`, `web-shell`, `web-ui-kit` | — | — | — |
 
 ### `web-finance` — Finance UI
 
-Home dashboard (summaries, calendar, charts, search, streaks), expense entry with receipt capture, recent expenses, goals and AI insights.
+Home dashboard (summaries, calendar, charts, search, streaks), recent expenses and goals.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -627,30 +666,34 @@ Home dashboard (summaries, calendar, charts, search, streaks), expense entry wit
 | `src/components/dashboard/StatsView.tsx` | `web-lib`, `web-ui-kit` | — | — | — |
 | `src/components/dashboard/StreakCounter.tsx` | `web-lib` | — | — | — |
 | `src/components/dashboard/UserIntelligencePanel.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
-| `src/components/expenses/ExpenseForm.tsx` | `contracts`, `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
-| `src/components/expenses/ReceiptCapture.tsx` | `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/expenses/RecentExpenses.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/goals/FinancialGoalsPanel.tsx` | `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
-| `src/components/insights/AIInsights.tsx` | `web-hooks`, `web-shell`, `web-ui-kit` | — | — | — |
+
+### `web-bank-sync` — Bank sync UI
+
+The bank sync screens: iPhone Shortcut and Android companion setup, the digital wallet view shown once a phone is connected, and the SMS webhook settings panel.
+
+| File | Imports from clusters | External systems referenced | Reads | Writes |
+| --- | --- | --- | --- | --- |
+| `src/components/bank-sync/AndroidSetupFlow.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
+| `src/components/bank-sync/DigitalBankingSuite.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
+| `src/components/bank-sync/IosSetupFlow.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
+| `src/components/settings/SmsWebhookSettings.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 
 ### `web-account` — Account UI
 
-Biometric lock and passkeys, the smart profile, business and people settings, SMS webhook settings, bank sync setup for Android and iOS, and the push prompt.
+Biometric lock and passkeys, the smart profile, business and people settings, and the push prompt.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `src/components/auth/BiometricLockOverlay.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/auth/BiometricOnboardingModal.tsx` | `web-hooks`, `web-ui-kit` | — | — | — |
 | `src/components/auth/PasskeySettings.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
-| `src/components/bank-sync/AndroidSetupFlow.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
-| `src/components/bank-sync/DigitalBankingSuite.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
-| `src/components/bank-sync/IosSetupFlow.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/notifications/PushNotificationPrompt.tsx` | `web-hooks`, `web-ui-kit` | — | — | — |
 | `src/components/profile/SmartProfileSettings.tsx` | `web-hooks`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/profile/SmartProfileView.tsx` | `web-finance`, `web-lib`, `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/settings/BusinessSettingsView.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 | `src/components/settings/PeopleSettingsView.tsx` | `web-hooks`, `web-shell`, `web-ui-kit` | — | — | — |
-| `src/components/settings/SmsWebhookSettings.tsx` | `web-shell`, `web-ui-kit` | — | — | — |
 
 ### `web-growth` — Ads and SEO UI
 
@@ -699,7 +742,6 @@ React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycl
 | `src/hooks/useSheetManager.ts` | `web-lib` | — | — | — |
 | `src/hooks/useSwipeNavigation.ts` | — | — | — | — |
 | `src/hooks/useVirtualKeyboard.ts` | `web-lib` | `capacitor` | — | — |
-| `src/hooks/useVoiceCall.ts` | — | — | — | — |
 
 ### `web-lib` — Web utilities
 
@@ -710,8 +752,6 @@ Client utilities (back-button handling, biometric auth, client rules engine, ima
 | `src/lib/back-button-manager.ts` | — | `capacitor` | — | — |
 | `src/lib/backButtonManager.ts` | — | — | — | — |
 | `src/lib/biometricAuth.ts` | — | — | — | — |
-| `src/lib/clientRulesEngine.ts` | — | — | — | — |
-| `src/lib/compress-image.ts` | — | — | — | — |
 | `src/lib/financial-taxonomy.ts` | — | — | — | — |
 | `src/lib/queryPersister.ts` | — | — | — | — |
 | `src/lib/transactionDisplay.ts` | — | — | — | — |
