@@ -117,9 +117,6 @@
     "@typescript-eslint/ban-ts-comment": {
       "count": 4
     },
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 2
     }

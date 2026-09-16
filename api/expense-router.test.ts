@@ -5,13 +5,16 @@ import { expenseRouter } from "./expense-router";
 import { db } from "./queries/connection";
 import { expenses } from "../db/schema";
 
+/** A Drizzle query builder is a chain of methods returning itself; the test only needs the calls it makes. */
+type QueryChain = Record<string, ReturnType<typeof vi.fn>>;
+
 const { dbMock } = vi.hoisted(() => {
   const rows = [{ id: 1, amount: "100" }];
   const countRows = [{ count: 1 }];
-  const mock: any = {
+  const mock = {
     select: vi.fn((fields?: Record<string, unknown>) => {
       const isCountQuery = Boolean(fields?.count);
-      const chain: any = {
+      const chain: QueryChain = {
         from: vi.fn(() => chain),
         where: vi.fn(() => (isCountQuery ? Promise.resolve(countRows) : chain)),
         orderBy: vi.fn(() => chain),
@@ -62,7 +65,7 @@ describe("Expense Router", () => {
   it("keeps the search's text matches inside the user filter", async () => {
     let where: SQL | undefined;
     dbMock.select.mockImplementationOnce(() => {
-      const chain: any = {
+      const chain: QueryChain = {
         from: vi.fn(() => chain),
         where: vi.fn((condition: SQL) => {
           where = condition;

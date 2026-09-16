@@ -73,7 +73,7 @@ export function referencedPaths(text: string): string[] {
 
 /** Backticked `path#name` references: a file, and a function, type or constant it declares. */
 export function referencedSymbols(text: string): Array<{ file: string; symbol: string }> {
-  return [...text.matchAll(/`([\w@.\/-]+\.\w+)#([A-Za-z_$][\w$]*)`/g)].map((match) => ({ file: match[1], symbol: match[2] }));
+  return [...text.matchAll(/`([\w@./-]+\.\w+)#([A-Za-z_$][\w$]*)`/g)].map((match) => ({ file: match[1], symbol: match[2] }));
 }
 
 function symbolResolves(root: string, doc: string, reference: { file: string; symbol: string }): boolean {
