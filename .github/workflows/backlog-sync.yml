@@ -12,6 +12,7 @@ on:
     paths:
       - "docs/atlas/systems/state.md"
       - "docs/systems/*.md"
+      - ".github/workflows/backlog-sync.yml"
   workflow_dispatch:
     inputs:
       severity:
@@ -47,7 +48,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SEVERITY: ${{ inputs.severity || 'security' }}
-          APPLY: ${{ inputs.apply == false && 'no' || 'yes' }}
+          # An unset input is null, and `null == false` is true in a GitHub expression: written the obvious
+          # way, every push would have been a dry run. Only a deliberate dispatch can ask for one.
+          APPLY: ${{ (github.event_name == 'workflow_dispatch' && inputs.apply == false) && 'no' || 'yes' }}
         run: |
           if [ "$APPLY" = "yes" ]; then
             npm run --silent issues:sync -- --severity "$SEVERITY" --apply | tee -a "$GITHUB_STEP_SUMMARY"
