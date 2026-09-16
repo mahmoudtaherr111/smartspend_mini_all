@@ -138,47 +138,47 @@ printable HTML file that the browser downloads.
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. The WhatsApp report describes the month that has just started: the scheduler calls `runMonthlyReportJob` without a
+1. **Bug.** The WhatsApp report describes the month that has just started: the scheduler calls `runMonthlyReportJob` without a
    month at 02:00 on the 1st, and the job takes the month from `new Date().toISOString()`.
-2. Names given in the onboarding questions (children, partner, siblings, parents, pets, regular contacts) are saved
+2. **Gap.** Names given in the onboarding questions (children, partner, siblings, parents, pets, regular contacts) are saved
    in the profile but never copied into `user_contacts` once the profile is marked as migrated, which its first save
    does; `getSmartProfile` then blanks those lists, so classification prompts and reports never see them.
-3. `getSmartProfile` appends the latest learning events, with literal `\n` text, to the inferred spending behaviour.
+3. **Bug.** `getSmartProfile` appends the latest learning events, with literal `\n` text, to the inferred spending behaviour.
    Every onboarding answer or profile edit saves that value, so it grows until the next behaviour refresh replaces
    it, and `summarizeProfileForAI` sends it to classification prompts.
-4. Refreshing a month that already has a report skips the waiting period, so the analysis of that month can be
+4. **Bug.** Refreshing a month that already has a report skips the waiting period, so the analysis of that month can be
    regenerated, with a paid model call, as often as the AI rate limit allows. A `report_limit_<plan>` of 0 falls back
    to 30 days.
-5. Only users on the `pro` plan get the WhatsApp report: Ultra users never do, the job ignores the "send the report on
+5. **Bug.** Only users on the `pro` plan get the WhatsApp report: Ultra users never do, the job ignores the "send the report on
    WhatsApp" switch in Settings (`whatsappReportsEnabled`), and it writes each recipient's phone number to the log
    (golden rule 10).
-6. With a facts pack, the report prompt ignores the admin's report settings and never includes the personal and
+6. **Bug.** With a facts pack, the report prompt ignores the admin's report settings and never includes the personal and
    family context `generateMonthlyInsights` builds; the model sees the facts, the name, the salary day and the
    financial month only.
-7. Numbers in a model-written report are measured against the facts but not enforced: unlike the chat, a report with
+7. **Bug.** Numbers in a model-written report are measured against the facts but not enforced: unlike the chat, a report with
    unsupported numbers is shown as it is.
-8. The analysis and the comparison show a technical trace (route, tools, tokens, model) to every user, not only in
+8. **Bug.** The analysis and the comparison show a technical trace (route, tools, tokens, model) to every user, not only in
    development.
-9. The basic report says the user ran out of AI tokens whenever there is no Gemini client, including when no key is
+9. **Bug.** The basic report says the user ran out of AI tokens whenever there is no Gemini client, including when no key is
    configured; and when the client cannot be built, the `<plan>_ai_analysis` switch is never checked.
-10. No `assertAiBudget` check runs before either report model call, and the WhatsApp job records no tokens for the
+10. **Gap.** No `assertAiBudget` check runs before either report model call, and the WhatsApp job records no tokens for the
     user (`api/AGENTS.md`, rule 5).
-11. Month boundaries use server-local dates and `toISOString()` (golden rule 6). With a salary day, the previous period
+11. **Bug.** Month boundaries use server-local dates and `toISOString()` (golden rule 6). With a salary day, the previous period
     is derived from `toISOString().slice(0, 7)` of a local date, which is a month too early on a server whose clock is
     ahead of UTC; snapshot days are grouped by UTC date.
-12. The printable report is branded "SpinSmart" in its default header and footer (`api/services/pro-report-engine.ts`).
-13. `saveSmartProfile` never writes `last_ai_refresh_at`, and `getSmartProfile` adds missing `user_profiles` columns
+12. **Bug.** The printable report is branded "SpinSmart" in its default header and footer (`api/services/pro-report-engine.ts`).
+13. **Debt.** `saveSmartProfile` never writes `last_ai_refresh_at`, and `getSmartProfile` adds missing `user_profiles` columns
     with `ALTER TABLE` when a read fails, outside the migrations in `db/`.
-14. The behaviour snapshots are written but not read: `getProactiveInsights` in
+14. **Debt.** The behaviour snapshots are written but not read: `getProactiveInsights` in
     `api/services/finance-semantic-layer/proactive-insights.ts` has no caller, and no caller asks the facts pack to
     prefer a snapshot.
-15. Unused code: `api/services/batch-ai-service.ts` only simulates a Gemini batch job; `buildProReportPrompt` and
+15. **Debt.** Unused code: `api/services/batch-ai-service.ts` only simulates a Gemini batch job; `buildProReportPrompt` and
     `analyzeAndLogBehavior` have no caller; `profile.getQuestions` and the `onboarding_questions` table it reads are
     not part of the question flow; `ai.generateYearlyInsights` has no screen; `profile.refreshInferences` is called
     only from `src/components/dashboard/UserIntelligencePanel.tsx`, which no screen shows.
-16. The flexible-spending lists in `generateMonthlyInsights` and `buildBehaviorSnapshot` name categories that
+16. **Bug.** The flexible-spending lists in `generateMonthlyInsights` and `buildBehaviorSnapshot` name categories that
     `api/lib/category-registry.ts` no longer has (رفاهية, خروجات) or stores under another name (هدايا وصدقات).
-17. The contact helpers log the names they save or reject, which come from users' messages.
+17. **Security.** The contact helpers log the names they save or reject, which come from users' messages.
 
 ## Related systems
 - [AI Center](ai-center.md): hosts the analysis tab and owns the finance layer the facts come from.

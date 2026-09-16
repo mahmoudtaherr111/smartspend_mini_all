@@ -1,10 +1,10 @@
 /**
  * `docs/atlas/systems/state.md` and `state.ar.md`: where the project stands, generated from the explanations.
  *
- * Every system page already carries the two things a reader needs to decide what to do next — how recently it
- * was checked against the code, and the issues it names — but they sit in thirteen files, so nobody sees the
- * whole. These pages gather them: one table of systems, then every known issue grouped by system, in English
- * for agents and in Egyptian Arabic for the owner.
+ * Every system page already carries the three things a reader needs to decide what to do next — how recently
+ * it was checked against the code, the issues it names, and how serious each one is — but they sit in thirteen
+ * files, so nobody sees the whole. These pages gather them: one table of systems, then every known issue
+ * grouped by severity and system, in English for agents and in Egyptian Arabic for the owner.
  *
  * Nothing here is written by hand and nothing comes from git history, so the pages are a pure function of the
  * repository and stay true through the same hooks that keep the rest of the atlas true.
@@ -21,6 +21,42 @@ const BANNER =
 /** Headings that introduce the issues an explanation lists, in each language. */
 const ISSUES_HEADING = { en: "## Known issues", ar: "## حاجات مهم تعرفها" };
 const TESTS_HEADING = "## Tests";
+
+/**
+ * How serious an issue is, in the order a reader should care about it.
+ *
+ * The word is written at the start of the item on the page itself, so it travels with the text when the item
+ * is reworded and a reader of the page sees the same judgement as a reader of this report. An item with no
+ * word is counted as `debt`: the least alarming reading of an unclassified item.
+ */
+export const SEVERITIES = ["security", "bug", "gap", "debt"] as const;
+export type Severity = (typeof SEVERITIES)[number];
+
+const SEVERITY_WORD: Record<Severity, { en: string; ar: string }> = {
+  security: { en: "Security", ar: "أمن" },
+  bug: { en: "Bug", ar: "عطل" },
+  gap: { en: "Gap", ar: "ناقص" },
+  debt: { en: "Debt", ar: "دين تقني" },
+};
+
+const SEVERITY_TITLE: Record<Severity, { en: string; ar: string }> = {
+  security: { en: "Security", ar: "أمن: تسريب بيانات أو تجاوز صلاحية أو أسرار في السجلات" },
+  bug: { en: "Bugs", ar: "أعطال: المستخدم بيشوف نتيجة غلط أو بيضيّع شغل" },
+  gap: { en: "Gaps", ar: "ناقص: كود من غير شاشة، أو وعد في الواجهة من غير تنفيذ" },
+  debt: { en: "Debt", ar: "دين تقني: كود ميت أو تكرار أو أرقام تقديرية أو اختبارات ناقصة" },
+};
+
+const TAG = new RegExp(
+  `^\\*\\*(${Object.values(SEVERITY_WORD)
+    .flatMap((word) => [word.en, word.ar])
+    .join("|")})\\.\\*\\*\\s*`,
+);
+
+export interface Issue {
+  severity: Severity;
+  /** The item without its severity word: the report groups by severity, so repeating it would be noise. */
+  text: string;
+}
 
 /**
  * The lines of one `## ` section, without its heading.
@@ -58,13 +94,27 @@ function numberedItems(lines: string[]): string[] {
   return items;
 }
 
+/** Splits the severity word off an item. An item without one is debt, not a crash. */
+function classify(item: string): Issue {
+  const match = TAG.exec(item);
+  if (!match) return { severity: "debt", text: item };
+  const word = match[1];
+  const severity =
+    SEVERITIES.find((id) => SEVERITY_WORD[id].en === word || SEVERITY_WORD[id].ar === word) ?? "debt";
+  return { severity, text: item.slice(match[0].length) };
+}
+
+export function issuesOf(text: string, language: "en" | "ar"): Issue[] {
+  return numberedItems(section(text, ISSUES_HEADING[language])).map(classify);
+}
+
 /** Test files an explanation names, which the documentation rules already hold to files that exist. */
 function testsNamed(text: string): string[] {
   const body = section(text, TESTS_HEADING).join(" ");
   return [...new Set([...body.matchAll(/`([^`]+\.test\.tsx?)`/g)].map((match) => match[1]))];
 }
 
-interface SystemState {
+export interface SystemState {
   id: string;
   title: string;
   titleAr: string;
@@ -72,11 +122,13 @@ interface SystemState {
   arabicChecked: string;
   arabicInLine: boolean;
   tests: string[];
-  issues: string[];
-  issuesAr: string[];
+  issues: Issue[];
+  issuesAr: Issue[];
 }
 
-function collect(graph: AtlasGraph): SystemState[] {
+const count = (issues: Issue[], severity: Severity) => issues.filter((issue) => issue.severity === severity).length;
+
+export function collectState(graph: AtlasGraph): SystemState[] {
   const ledger = (() => {
     try {
       return readLedger(REPO_ROOT);
@@ -97,40 +149,61 @@ function collect(graph: AtlasGraph): SystemState[] {
       arabicChecked: entry?.arabicChecked ?? "",
       arabicInLine: Boolean(english) && entry?.arabic === fingerprint(english),
       tests: testsNamed(english),
-      issues: numberedItems(section(english, ISSUES_HEADING.en)),
-      issuesAr: numberedItems(section(arabic, ISSUES_HEADING.ar)),
+      issues: issuesOf(english, "en"),
+      issuesAr: issuesOf(arabic, "ar"),
     };
   });
 }
 
-function renderEnglish(states: SystemState[]): string {
-  const total = states.reduce((sum, state) => sum + state.issues.length, 0);
-  const untested = states.filter((state) => state.tests.length === 0);
+/** One section per severity, and inside it one list per system: what to fix, hardest first. */
+function backlog(
+  states: SystemState[],
+  language: "en" | "ar",
+  pick: (state: SystemState) => Issue[],
+  link: (state: SystemState) => string,
+): string[] {
+  const out: string[] = [];
+  for (const severity of SEVERITIES) {
+    const withIssues = states
+      .map((state) => ({ state, issues: pick(state).filter((issue) => issue.severity === severity) }))
+      .filter((entry) => entry.issues.length > 0);
+    if (withIssues.length === 0) continue;
+    const total = withIssues.reduce((sum, entry) => sum + entry.issues.length, 0);
+    out.push(`### ${SEVERITY_TITLE[severity][language]} (${total})`);
+    for (const { state, issues } of withIssues) {
+      out.push(
+        [`**${language === "en" ? state.title : state.titleAr}** — ${link(state)}`, ...issues.map((issue) => `- ${issue.text}`)].join(
+          "\n",
+        ),
+      );
+    }
+  }
+  return out;
+}
 
-  const backlog = states
-    .filter((state) => state.issues.length > 0)
-    .map((state) =>
-      [
-        `### ${state.title} — [docs/systems/${state.id}.md](../../systems/${state.id}.md)`,
-        ...state.issues.map((issue, index) => `${index + 1}. ${issue}`),
-      ].join("\n"),
-    );
+function renderEnglish(states: SystemState[]): string {
+  const all = states.flatMap((state) => state.issues);
+  const untested = states.filter((state) => state.tests.length === 0);
+  const queue = all.filter((issue) => issue.severity === "security" || issue.severity === "bug").length;
 
   return `${[
     BANNER,
     "# Project state",
     [
-      "What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists.",
-      "An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.",
+      "What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.",
+      `Security and bugs are what \`npm run issues:sync\` turns into GitHub issues (${queue} of ${all.length} today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.`,
     ].join("\n\n"),
     ["## Systems", mdTable(
-      ["System", "Explanation checked", "Arabic page", "Tests it names", "Known issues"],
+      ["System", "Explanation checked", "Arabic page", "Tests it names", "Security", "Bugs", "Gaps", "Debt"],
       states.map((state) => [
         `[${state.title}](${state.id}.md)<br/>${state.titleAr}`,
         state.checked || "not recorded",
         state.arabicInLine ? state.arabicChecked || "in line" : "behind the English page",
         state.tests.length === 0 ? "**none**" : String(state.tests.length),
-        state.issues.length === 0 ? "none listed" : String(state.issues.length),
+        count(state.issues, "security") === 0 ? "—" : `**${count(state.issues, "security")}**`,
+        count(state.issues, "bug") === 0 ? "—" : String(count(state.issues, "bug")),
+        count(state.issues, "gap") === 0 ? "—" : String(count(state.issues, "gap")),
+        count(state.issues, "debt") === 0 ? "—" : String(count(state.issues, "debt")),
       ]),
     )].join("\n\n"),
     [
@@ -142,41 +215,35 @@ function renderEnglish(states: SystemState[]): string {
             .join(", ")}.`,
     ].join("\n\n"),
     [
-      `## What is waiting (${total} issue(s))`,
-      "Every known issue the explanations list, system by system. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.",
-      ...backlog,
+      `## What is waiting (${all.length} issue(s))`,
+      "Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.",
+      ...backlog(states, "en", (state) => state.issues, (state) => `[docs/systems/${state.id}.md](../../systems/${state.id}.md)`),
     ].join("\n\n"),
   ].join("\n\n")}\n`;
 }
 
 function renderArabic(states: SystemState[]): string {
-  const total = states.reduce((sum, state) => sum + state.issuesAr.length, 0);
+  const all = states.flatMap((state) => state.issuesAr);
   const untested = states.filter((state) => state.tests.length === 0);
-
-  const backlog = states
-    .filter((state) => state.issuesAr.length > 0)
-    .map((state) =>
-      [
-        `### ${state.titleAr} — [الصفحة بالعربي](../../ar/systems/${state.id}.md)`,
-        ...state.issuesAr.map((issue, index) => `${index + 1}. ${issue}`),
-      ].join("\n"),
-    );
 
   return `${[
     BANNER,
     "# حالة المشروع",
     [
-      "الصفحة دي بتتولّد لوحدها من صفحات الأنظمة، وبتقولك في مكان واحد: كل نظام اتراجع شرحه إمتى، والصفحة العربي بتاعته متأخرة ولا لأ، وعنده كام اختبار، وإيه المشاكل المعروفة فيه.",
-      "المشاكل المكتوبة تحت كلها اتلقت في الكود وقت كتابة الصفحة، وأي تعديل في نفس الكود بيخلي الشرح يتراجع تاني. دي قايمة الشغل اللي قدامك.",
+      "الصفحة دي بتتولّد لوحدها من صفحات الأنظمة، وبتقولك في مكان واحد: كل نظام اتراجع شرحه إمتى، والصفحة العربي بتاعته متأخرة ولا لأ، وعنده كام اختبار، وإيه المشاكل المعروفة فيه ودرجة خطورتها.",
+      "المشاكل المكتوبة تحت كلها اتلقت في الكود وقت كتابة الصفحة، وأي تعديل في نفس الكود بيخلي الشرح يتراجع تاني. دي قايمة الشغل اللي قدامك، الأخطر الأول.",
     ].join("\n\n"),
     ["## الأنظمة", mdTable(
-      ["النظام", "آخر مراجعة للشرح", "الصفحة العربي", "اختبارات مذكورة", "مشاكل معروفة"],
+      ["النظام", "آخر مراجعة للشرح", "الصفحة العربي", "اختبارات مذكورة", "أمن", "أعطال", "ناقص", "دين تقني"],
       states.map((state) => [
         `[${state.titleAr}](../../ar/systems/${state.id}.md)`,
         state.checked || "مش متسجل",
         state.arabicInLine ? state.arabicChecked || "متطابقة" : "متأخرة عن الإنجليزي",
         state.tests.length === 0 ? "**ولا واحد**" : String(state.tests.length),
-        state.issuesAr.length === 0 ? "مفيش" : String(state.issuesAr.length),
+        count(state.issuesAr, "security") === 0 ? "—" : `**${count(state.issuesAr, "security")}**`,
+        count(state.issuesAr, "bug") === 0 ? "—" : String(count(state.issuesAr, "bug")),
+        count(state.issuesAr, "gap") === 0 ? "—" : String(count(state.issuesAr, "gap")),
+        count(state.issuesAr, "debt") === 0 ? "—" : String(count(state.issuesAr, "debt")),
       ]),
     )].join("\n\n"),
     [
@@ -188,16 +255,16 @@ function renderArabic(states: SystemState[]): string {
             .join("، ")}.`,
     ].join("\n\n"),
     [
-      `## اللي مستني شغل (${total} حاجة)`,
-      "كل المشاكل المعروفة مجمّعة من صفحات الأنظمة. لو عايز تطلب إصلاح واحدة، قول للـagent: «اقرا صفحة النظام الفلاني وصلّح المشكلة رقم كذا».",
-      ...backlog,
+      `## اللي مستني شغل (${all.length} حاجة)`,
+      "كل المشاكل المعروفة مجمّعة من صفحات الأنظمة ومرتّبة بالخطورة. لو عايز تطلب إصلاح واحدة، قول للـagent: «اقرا صفحة النظام الفلاني وصلّح المشكلة دي».",
+      ...backlog(states, "ar", (state) => state.issuesAr, (state) => `[الصفحة بالعربي](../../ar/systems/${state.id}.md)`),
     ].join("\n\n"),
   ].join("\n\n")}\n`;
 }
 
 /** The two state pages, keyed by the file they belong in. */
 export function renderState(graph: AtlasGraph, dir: string): Map<string, string> {
-  const states = collect(graph);
+  const states = collectState(graph);
   return new Map([
     [`${dir}/state.md`, renderEnglish(states)],
     [`${dir}/state.ar.md`, renderArabic(states)],
@@ -209,4 +276,4 @@ export function readPage(file: string): string {
   return fs.readFileSync(path.join(REPO_ROOT, file), "utf8");
 }
 
-export const __testing = { section, numberedItems, testsNamed };
+export const __testing = { section, numberedItems, testsNamed, classify };

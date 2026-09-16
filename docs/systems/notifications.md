@@ -92,28 +92,28 @@ No test covers this system.
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. Nothing tests notification delivery, the templates, the activity checks or the WhatsApp service.
-2. The admin console always shows WhatsApp verification as off: `adminWhatsapp.getSettings` returns a fixed "temporarily
+1. **Debt.** Nothing tests notification delivery, the templates, the activity checks or the WhatsApp service.
+2. **Bug.** The admin console always shows WhatsApp verification as off: `adminWhatsapp.getSettings` returns a fixed "temporarily
    disabled" answer, while `adminWhatsapp.toggleOtpVerification` still changes the `whatsapp_otp_enabled` setting that
    registration reads.
-3. The permission prompt promises weekly follow-ups, daily voice reminders and alerts for category budgets and unusual
+3. **Bug.** The permission prompt promises weekly follow-ups, daily voice reminders and alerts for category budgets and unusual
    spending; the server sends none of those. The budget alert compares the month with the profile's income, and the
    reminder reaches only users with a streak whose last recorded day was 12 to 36 hours ago.
-4. The default Pro upsell promises a 30% discount that checkout never gives ([billing](billing.md)).
-5. When `VITE_VAPID_PUBLIC_KEY` is missing, the browser subscribes with a public key written in
+4. **Bug.** The default Pro upsell promises a 30% discount that checkout never gives ([billing](billing.md)).
+5. **Bug.** When `VITE_VAPID_PUBLIC_KEY` is missing, the browser subscribes with a public key written in
    `src/hooks/usePushNotifications.ts`, and those subscriptions receive nothing unless the server's keys match.
    `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` are read from `process.env` instead of `api/lib/env.ts` (golden rule 8).
-6. WhatsApp broadcasts are automated bulk messages through an unofficial client, spaced by random pauses and varied
+6. **Security.** WhatsApp broadcasts are automated bulk messages through an unofficial client, spaced by random pauses and varied
    wording, which risks a ban of the number; the queue lives in process memory and is lost on restart, and nothing
    checks that recipients agreed.
-7. The WhatsApp service logs codes, whole incoming messages and phone numbers, and broadcasts log every recipient's
+7. **Security.** The WhatsApp service logs codes, whole incoming messages and phone numbers, and broadcasts log every recipient's
    number (golden rule 10).
-8. The WhatsApp session is a folder on one server's disk, lost with the container and not shareable between replicas.
-9. Push cannot be turned off from the app, a device cannot be removed, the bell has no "mark all read" or clearing, and
+8. **Debt.** The WhatsApp session is a folder on one server's disk, lost with the container and not shareable between replicas.
+9. **Gap.** Push cannot be turned off from the app, a device cannot be removed, the bell has no "mark all read" or clearing, and
    nothing prunes `in_app_notifications` or `notification_logs` apart from account deletion.
-10. The activity checks run at 20:00 server time, not Cairo time, and each takes at most 1000 users per account table a
+10. **Bug.** The activity checks run at 20:00 server time, not Cairo time, and each takes at most 1000 users per account table a
     day; a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
-11. `whatsapp_otp_codes` is a table nothing writes: `api/local-auth-router.ts` and `api/services/whatsapp-service.ts`
+11. **Debt.** `whatsapp_otp_codes` is a table nothing writes: `api/local-auth-router.ts` and `api/services/whatsapp-service.ts`
     import it, while the codes live in memory.
 
 ## Related systems

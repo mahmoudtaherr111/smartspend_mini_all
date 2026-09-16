@@ -125,23 +125,23 @@ When the browser closes, sends `end_call`, Gemini closes, or the time is up, the
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. A call can use one data or draft tool in total, because the voice policy caps tool rounds at one, while the
+1. **Bug.** A call can use one data or draft tool in total, because the voice policy caps tool rounds at one, while the
    system prompt tells the model to call a tool for every exact question: the second such question in a call gets
    `voice_tool_limit_exceeded`.
-2. A high-risk draft (stopping a goal) asks for confirmation in the interface, but the call screen and
+2. **Security.** A high-risk draft (stopping a goal) asks for confirmation in the interface, but the call screen and
    `useVoiceCall` have no such confirmation, so it cannot complete from a call.
-3. The handler logs the text messages the browser sends (including transcripts), the assistant's text, the tool
+3. **Security.** The handler logs the text messages the browser sends (including transcripts), the assistant's text, the tool
    calls with their arguments and the user's name, against golden rule 10.
-4. The defaults written in `handleVoiceCallWebSocket` (for example five free minutes a month and a model named
+4. **Bug.** The defaults written in `handleVoiceCallWebSocket` (for example five free minutes a month and a model named
    `gemini-2.5-flash-native-audio-latest`) differ from the defaults in `api/lib/system-settings-registry.ts`, and
    the handler's apply whenever a setting was never saved.
-5. The month's allowance adds up every `voice_usage` row of the month, including seconds spent dictating expenses,
+5. **Bug.** The month's allowance adds up every `voice_usage` row of the month, including seconds spent dictating expenses,
    and the month is the server's calendar month rather than Cairo business time (golden rule 6).
-6. The model id skips `mapModelName` (golden rule 9): `resolveLiveModelId` only adds a prefix.
-7. Usage is written when the call ends; a process that stops mid-call records nothing.
-8. The prefetched facts are stored in the session state, but nothing reads them afterwards; the prefetch only warms
+6. **Debt.** The model id skips `mapModelName` (golden rule 9): `resolveLiveModelId` only adds a prefix.
+7. **Bug.** Usage is written when the call ends; a process that stops mid-call records nothing.
+8. **Debt.** The prefetched facts are stored in the session state, but nothing reads them afterwards; the prefetch only warms
    the finance layer's cache.
-9. `api/services/voice-context-service.ts#getUserFinancialContextSummary` has no caller, and `ai.runVoiceToolQa` is
+9. **Debt.** `api/services/voice-context-service.ts#getUserFinancialContextSummary` has no caller, and `ai.runVoiceToolQa` is
    used only by a development query parameter of the call screen.
 
 ## Related systems

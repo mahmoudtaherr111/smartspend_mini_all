@@ -251,25 +251,25 @@ expense with source `image`, without a review step. The form offers the camera o
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. Answering a clarification twice saves its items twice: `answerClarification` loads the row by id and owner
+1. **Bug.** Answering a clarification twice saves its items twice: `answerClarification` loads the row by id and owner
    without checking that its status is still `pending`.
-2. Saves made from a clarification skip what `expense.create` does after writing: muscle memory and the
+2. **Bug.** Saves made from a clarification skip what `expense.create` does after writing: muscle memory and the
    classification cache are not cleared, the streak is not updated, the rows get source `manual`, and the
    free-answer mode links no contact and no classification log.
-3. Receipts are saved without review. The saved amount is the first item the pipeline read from the OCR text,
+3. **Bug.** Receipts are saved without review. The saved amount is the first item the pipeline read from the OCR text,
    which can differ from the total the vision model returned, and a base64 image longer than the parser's cap
    is cut short instead of refused (`api/lib/receipt-image-parser.ts#guardImagePayloadSize`), although the
    procedure accepts larger payloads.
-4. The voice endpoints count the month differently: `speechToText` from the subscription or sign-up day,
+4. **Bug.** The voice endpoints count the month differently: `speechToText` from the subscription or sign-up day,
    `parseVoiceExpense` from the first of the calendar month. `parseVoiceExpense` also creates contacts for the
    people it resolves while parsing, before the user saves anything.
-5. When every event escalates and a Fireworks key is present, the whole-sentence embedding shortcut makes one item
+5. **Bug.** When every event escalates and a Fireworks key is present, the whole-sentence embedding shortcut makes one item
    from the first amount; the other amounts then become a question.
-6. Correction learning cannot be reached from the app: `api/lib/correction-rules.ts#recordCorrection` runs only in
+6. **Gap.** Correction learning cannot be reached from the app: `api/lib/correction-rules.ts#recordCorrection` runs only in
    `expense.update`, which the web app does not call. `ai.learnWord`, `expense.createCategory` and
    `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is
    not rendered anywhere.
-7. The comment above the threshold settings in `classifyAdmittedEvents` says the older `confidence_*` keys win;
+7. **Debt.** The comment above the threshold settings in `classifyAdmittedEvents` says the older `confidence_*` keys win;
    the code reads the `parser_*` keys first.
 
 ## Related systems

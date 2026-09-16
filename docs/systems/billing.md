@@ -87,21 +87,21 @@ The journey is drawn as `flow_paymob_upgrade` in `docs/architecture/flows/paymob
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. Ultra cannot be bought: the Ultra card links to `/ultra`, a placeholder page that `src/App.tsx` guards only with a
+1. **Gap.** Ultra cannot be bought: the Ultra card links to `/ultra`, a placeholder page that `src/App.tsx` guards only with a
    sign-in, not with `UltraFeatureRoute`; no procedure uses `ultraProcedure`; and the yearly Pro plan has no screen.
-2. The referral discount is only shown: checkout always charges the plan's full price, nothing rewards the referrer,
+2. **Gap.** The referral discount is only shown: checkout always charges the plan's full price, nothing rewards the referrer,
    and the discount codes admins create in `discount_codes` are never applied.
-3. Nothing renews a subscription, since each Paymob payment is a one-time charge; `pro.cancel` only changes the status
+3. **Gap.** Nothing renews a subscription, since each Paymob payment is a one-time charge; `pro.cancel` only changes the status
    the plans screen shows, and there is no refund path.
-4. The feature list on the plans screen and in `pro.myPlan` is fixed text that does not match the app: ten AI requests a
+4. **Bug.** The feature list on the plans screen and in `pro.myPlan` is fixed text that does not match the app: ten AI requests a
    day for Free (the chat's limit is `chatbot_daily_limit_free`, 20 by default), spreadsheet export (no screen calls
    `export.myExpenses`) and switching AI models.
-5. The webhook writes every Paymob payload, with its card and billing data, to the log; outside production without
+5. **Security.** The webhook writes every Paymob payload, with its card and billing data, to the log; outside production without
    `PAYMOB_HMAC_SECRET` it accepts unsigned callbacks and grants plans from them.
-6. `pro.myPlan` downgrades an expired user without bumping the auth version, so cached sessions keep the paid plan for
+6. **Security.** `pro.myPlan` downgrades an expired user without bumping the auth version, so cached sessions keep the paid plan for
    up to 15 minutes.
-7. In development without `BILLING_SIMULATE=true`, checkout answers `simulate` but `pro.upgrade` refuses it.
-8. No test covers the webhook's verification, the grant, the expiry job or referrals.
+7. **Debt.** In development without `BILLING_SIMULATE=true`, checkout answers `simulate` but `pro.upgrade` refuses it.
+8. **Debt.** No test covers the webhook's verification, the grant, the expiry job or referrals.
 
 ## Related systems
 - [Accounts, sign-in and security](accounts.md): the user rows that carry the plan, and the auth version.

@@ -151,33 +151,33 @@ Then, per procedure:
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. Phone sign-up with WhatsApp verification cannot finish: `localAuth.generateVerificationCode` never returns the code
+1. **Bug.** Phone sign-up with WhatsApp verification cannot finish: `localAuth.generateVerificationCode` never returns the code
    the Login screen tells the user to send, so the WhatsApp message carries an empty code, and "skip" calls
    `localAuth.register`, which refuses a number that is not verified. With `whatsapp_otp_enabled` off, any number can
    register without proof that it belongs to the person.
-2. In production the code request is refused, because the web app sends no Turnstile token; meanwhile
+2. **Security.** In production the code request is refused, because the web app sends no Turnstile token; meanwhile
    `verifyTurnstileToken` accepts Cloudflare's public always-pass test token without asking Cloudflare.
    `tests/security/r3-turnstile-defense.test.ts` tests its own copy of these functions, not
    `api/services/turnstile-service.ts`.
-3. `localAuth.verifyOtp` creates a session for a phone number and a matching code without checking that the code was
+3. **Security.** `localAuth.verifyOtp` creates a session for a phone number and a matching code without checking that the code was
    confirmed over WhatsApp. No screen uses it and codes never leave the server today, but returning the code to the
    client, the obvious repair for issue 1, would let anyone who requests a code for a number sign in as its owner.
-4. Verification codes, their limits and the sender blocklist live in process memory (`api/services/otp-cache.ts`), so
+4. **Bug.** Verification codes, their limits and the sender blocklist live in process memory (`api/services/otp-cache.ts`), so
    verification fails when requests reach different replicas (`api/AGENTS.md`, rule 6).
-5. Saving the profile in Settings never changes the name or avatar, and says nothing: `SmartProfileSettings` always
+5. **Bug.** Saving the profile in Settings never changes the name or avatar, and says nothing: `SmartProfileSettings` always
    sends the phone field, which `profile.updateUserInfo` rejects without a code (and rejects when empty, for Google
    users). Changing a phone number has no screen, and with verification off its code is never sent.
-6. A passkey cannot be removed; users cannot see or end their sessions (`session.listMine` and `session.revokeMine`
+6. **Gap.** A passkey cannot be removed; users cannot see or end their sessions (`session.listMine` and `session.revokeMine`
    have no screen) or delete their own account.
-7. The phone-account token sits in `localStorage` and is sent as a Bearer header, where an injected script could read
+7. **Security.** The phone-account token sits in `localStorage` and is sent as a Bearer header, where an injected script could read
    it, while the content security policy allows inline scripts (`src/AGENTS.md`, rule 4).
-8. `/api/sse/otp` answers for any phone number without signing in, sends the sender's number in its fraud event, and
+8. **Security.** `/api/sse/otp` answers for any phone number without signing in, sends the sender's number in its fraud event, and
    never prunes its per-IP counters.
-9. `localAuth.updateRole` does not bump the auth version, so a changed role stays in cached sessions for up to
+9. **Security.** `localAuth.updateRole` does not bump the auth version, so a changed role stays in cached sessions for up to
    15 minutes; the `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
-10. The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the
+10. **Security.** The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the
     same storage.
-11. `api/services/whatsapp-service.ts` logs the codes it receives, whole incoming messages and the senders' phone
+11. **Security.** `api/services/whatsapp-service.ts` logs the codes it receives, whole incoming messages and the senders' phone
     numbers (golden rule 10).
 
 ## Related systems

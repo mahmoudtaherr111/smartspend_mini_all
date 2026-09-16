@@ -99,26 +99,26 @@ the rule checks in `tests/knowledge/`.
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8):
+1. **Debt.** Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8):
    `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and
    public URL; `api/lib/ai-gateway.ts` reads the key that encrypts provider keys; the embedding warm-up in
    `api/boot.ts` reads the Fireworks key.
-2. The Paymob webhook logs the whole payload it receives before verifying it (golden rule 10), so card
+2. **Security.** The Paymob webhook logs the whole payload it receives before verifying it (golden rule 10), so card
    metadata and the payer's details reach the server log ([billing](billing.md)).
-3. In production every 404 that is not an API path reads `dist/public/index.html` from disk again, with no
+3. **Debt.** In production every 404 that is not an API path reads `dist/public/index.html` from disk again, with no
    cache.
-4. The OTP stream keeps its per-IP counters in a plain map that nothing prunes, so the map grows with the
+4. **Debt.** The OTP stream keeps its per-IP counters in a plain map that nothing prunes, so the map grows with the
    number of distinct addresses until the process restarts.
-5. Sentry, when configured, is initialised with full tracing and profiling (`tracesSampleRate: 1.0`), which
+5. **Debt.** Sentry, when configured, is initialised with full tracing and profiling (`tracesSampleRate: 1.0`), which
    samples every request in production.
-6. `ai_cost_monthly` is written by the retention rollup and read by nothing but account deletion, so the
+6. **Debt.** `ai_cost_monthly` is written by the retention rollup and read by nothing but account deletion, so the
    history the admin screens show ends where the ninety-day pruning starts.
-7. `user_analytics` is pruned after thirty days, which also drops the upgrade events the founder metrics count
+7. **Bug.** `user_analytics` is pruned after thirty days, which also drops the upgrade events the founder metrics count
    and the AI cost events the cost overview reads ([admin](admin.md)).
-8. `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.
-9. `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library
+8. **Debt.** `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.
+9. **Debt.** `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library
    update can silently turn into zeroes.
-10. The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the
+10. **Debt.** The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the
     entry and `NODE_ENV=production`; `api/server.ts` repeats the WebSocket wiring for the standalone
     deployment, and the two copies have to be kept in step by hand.
 

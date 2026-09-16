@@ -176,26 +176,26 @@ database.
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. A reply to a clarifying question starts over: `sendMessage` stores the clarification state in the conversation's
+1. **Bug.** A reply to a clarifying question starts over: `sendMessage` stores the clarification state in the conversation's
    metadata, but reads it from `requireOwnedConversation`, which selects only the id, so the state is never found and
    the reply is planned as a new message.
-2. The runtime records a risk for each action (stopping a goal and undo are high) but does not act on it: the chat's
+2. **Security.** The runtime records a risk for each action (stopping a goal and undo are high) but does not act on it: the chat's
    confirm button and typed confirmations run every action the same way.
-3. A pending action expires 30 minutes after it is drafted plus the server's offset from UTC.
-4. Finance periods are computed with the server's local date functions in
+3. **Bug.** A pending action expires 30 minutes after it is drafted plus the server's offset from UTC.
+4. **Bug.** Finance periods are computed with the server's local date functions in
    `api/services/finance-semantic-layer/period-resolver.ts`, not with `api/lib/app-time.ts` (golden rule 6).
-5. No AI budget is checked before the model call (`api/AGENTS.md`, rule 5): only the daily message count limits the
+5. **Gap.** No AI budget is checked before the model call (`api/AGENTS.md`, rule 5): only the daily message count limits the
    chat. The model id skips `mapModelName` (golden rule 9), the `chatbot_max_tokens_<plan>` settings are read but do
    not limit replies, and the retry time in the daily-limit error is counted to the server's midnight.
-6. Memory embeddings stay off unless `ai_memory_embedding_enabled` is set to `true`, a key
+6. **Gap.** Memory embeddings stay off unless `ai_memory_embedding_enabled` is set to `true`, a key
    `api/lib/system-settings-registry.ts` does not list. The Qdrant, quantized on-disk and in-memory vector stores
    exported by `api/services/ai-memory/index.ts` are used only by tests.
-7. An expense recorded by an action does not clear the classification cache or check budget alerts, as
+7. **Bug.** An expense recorded by an action does not clear the classification cache or check budget alerts, as
    `expense.create` does.
-8. Undo cannot reverse an expense or a budget that an action created: `findUndoTarget` in
+8. **Bug.** Undo cannot reverse an expense or a budget that an action created: `findUndoTarget` in
    `api/services/action-runtime/extended-actions.ts` leaves them out, so the undo code for them is never reached.
-9. When the kernel throws, the user sees the same message as when an operator turned the assistant off.
-10. `runAIKernelShadow` in `api/services/ai-kernel/index.ts` has no caller.
+9. **Bug.** When the kernel throws, the user sees the same message as when an operator turned the assistant off.
+10. **Debt.** `runAIKernelShadow` in `api/services/ai-kernel/index.ts` has no caller.
 
 ## Related systems
 - [Live voice assistant](voice-calls.md): uses the finance layer, memory and action runtime from a call.

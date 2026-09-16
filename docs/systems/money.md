@@ -149,28 +149,28 @@ cases run with `npm run test:db` (`docs/guides/testing.md`), and `src/components
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. Budgets have no screen and no alert of their own: the "budget exceeded" notification compares the calendar month's
+1. **Gap.** Budgets have no screen and no alert of their own: the "budget exceeded" notification compares the calendar month's
    spending, business included, with the monthly income in the profile, not with `user_budgets`.
-2. The home screen uses the salary cycle only when "fixed salary" is switched on in Settings (`hasFixedSalary`); a
+2. **Bug.** The home screen uses the salary cycle only when "fixed salary" is switched on in Settings (`hasFixedSalary`); a
    salary day given in the onboarding questions does not change it, while the AI Center and the reports use the salary
    day either way.
-3. The daily average divides the month's spending by the days since the user's first item ever, capped at 30, so an
+3. **Bug.** The daily average divides the month's spending by the days since the user's first item ever, capped at 30, so an
    established account sees a low daily average early in the month.
-4. The budget tab, the electronic-payments tab and the hour heatmap work from the month's latest 200 items and
+4. **Bug.** The budget tab, the electronic-payments tab and the hour heatmap work from the month's latest 200 items and
    under-count busy months; the budget tab assumes a 10,000 EGP budget when neither the profile nor the month has
    income.
-5. The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour
+5. **Bug.** The statistics show the "spiky" and "concentrated" behaviours as balanced, and the statistics, the behaviour
    snapshot of [insights](insights.md) and the monthly report each define spending personality differently.
-6. In business mode the summary cards still show personal totals: `expense.getMonthSummary` has no business filter.
-7. The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP
+6. **Bug.** In business mode the summary cards still show personal totals: `expense.getMonthSummary` has no business filter.
+7. **Gap.** The Pro goal analysis is saved but no screen shows it; a goal created without a cost gets a target of 50,000 EGP
    (`src/components/goals/FinancialGoalsPanel.tsx`); the upsell Free users see says "SpinSmart Pro".
-8. A saved item cannot be edited in the web app: nothing calls `expense.update`, so the corrections it records never
+8. **Gap.** A saved item cannot be edited in the web app: nothing calls `expense.update`, so the corrections it records never
    happen (`api/lib/AGENTS.md`, rule 5).
-9. The calendar's day list sends local times without a time zone, which the server reads in its own zone.
-10. `business.suggestCategories` calls a fixed Gemini model without `mapModelName`, a budget check or a token record;
+9. **Bug.** The calendar's day list sends local times without a time zone, which the server reads in its own zone.
+10. **Gap.** `business.suggestCategories` calls a fixed Gemini model without `mapModelName`, a budget check or a token record;
     `business.get` returns the user's first business even when it is inactive.
-11. Wallet balances are stored as whatever text the client sends.
-12. `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments
+11. **Bug.** Wallet balances are stored as whatever text the client sends.
+12. **Gap.** `export.myExpenses` and `expense.getYearlyStats` have no screen; the export would label transfers and investments
     as spending, every source except voice as manual, and dates by UTC day.
 
 ## Related systems

@@ -105,37 +105,37 @@ and `api/lib/admin-model-switch.test.ts`.
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. `admin.revokeSession` deletes the session row but not its cached copy, so a session revoked from the audit
+1. **Security.** `admin.revokeSession` deletes the session row but not its cached copy, so a session revoked from the audit
    tab or from a user's session list keeps working for up to fifteen minutes; `session.revokeMine` clears the
    cache and bumps the auth version.
-2. Nothing records what admins do. The audit tab lists recent sessions, and changing a role or plan, editing
+2. **Gap.** Nothing records what admins do. The audit tab lists recent sessions, and changing a role or plan, editing
    settings, deleting an account or sending a message leaves no trail.
-3. A settings change reaches the other replicas only when their five-minute cache expires
+3. **Debt.** A settings change reaches the other replicas only when their five-minute cache expires
    (`api/lib/settings-cache.ts`).
-4. The quota inspector compares usage with fixed ceilings of 50,000, 500,000 and 2,000,000, not with the
+4. **Bug.** The quota inspector compares usage with fixed ceilings of 50,000, 500,000 and 2,000,000, not with the
    `<plan>_token_limit` settings and the per-user limit that `api/lib/ai-usage-policy.ts` enforces — and that
    the settings tab writes.
-5. Opening the AI tab fetches `admin.getAICostOverview`, `admin.getAIClassificationStats`,
+5. **Debt.** Opening the AI tab fetches `admin.getAICostOverview`, `admin.getAIClassificationStats`,
    `admin.getClassificationLogs` and `admin.getVoiceUsageStats` and displays none of them: the panel that would
    show the classification numbers, `src/pages/Admin.tsx#ClassificationDashboard`, is never mounted.
-6. The backup button returns settings with secrets masked, discount codes, onboarding questions and ads to the
+6. **Gap.** The backup button returns settings with secrets masked, discount codes, onboarding questions and ads to the
    browser; nothing backs up the database.
-7. Answering a ticket does not notify the user, while the support page promises a reply within a day. The
+7. **Gap.** Answering a ticket does not notify the user, while the support page promises a reply within a day. The
    reply box is drawn for moderators too, though they cannot reach the console and `support.respond` refuses
    them, and `support.assign` has no screen.
-8. Nothing serves the sitemap: `seo.sitemap` is a tRPC query, there is no HTTP route and no file for it, and it
+8. **Gap.** Nothing serves the sitemap: `seo.sitemap` is a tRPC query, there is no HTTP route and no file for it, and it
    would list `/admin` and a hard-coded `https://smartspend.app`. No screen edits SEO pages either
    (`seo.upsert`, `seo.list` and `seo.delete` have no caller).
-9. Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero;
+9. **Bug.** Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero;
    `ads.list` trusts the plan the client sends, and `analytics.trackEvent` stores any event name and metadata a
    signed-in caller sends.
-10. Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`,
+10. **Gap.** Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`,
     `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`,
     `admin.resetUserTokens`, `admin.setUserTokenLimit`, `admin.updateUserPlan` (the console uses the `V2` one),
     `support.getById`, `support.assign` and every statistic of `analytics`.
-11. Discount codes are created here but checkout never applies them ([billing](billing.md)), and the WhatsApp
+11. **Bug.** Discount codes are created here but checkout never applies them ([billing](billing.md)), and the WhatsApp
     tab always shows verification as off ([notifications](notifications.md)).
-12. The founder metrics count active users from sessions created since the server's midnight, not Cairo's
+12. **Bug.** The founder metrics count active users from sessions created since the server's midnight, not Cairo's
     (golden rule 6), and upgrades only from `upgrade_to_pro` events, so an upgrade to Ultra is not counted.
 
 ## Related systems

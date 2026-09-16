@@ -130,26 +130,26 @@ cards, dates and balances. Nothing tests the ingest route, the rule templates or
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. Connecting Android fails for phone and password accounts: `AndroidSetupFlow` sends `auth_token` from browser
+1. **Bug.** Connecting Android fails for phone and password accounts: `AndroidSetupFlow` sends `auth_token` from browser
    storage, which the app never writes (login stores `local_auth_token`, and the `smartspend_token` session cookie is
    HttpOnly), while `getUserFromSession` accepts only the `google_session` cookie or a Bearer header.
-2. The APK link, `/downloads/smartspend-sync.apk`, is not in the repository, so the download serves the web app
+2. **Bug.** The APK link, `/downloads/smartspend-sync.apk`, is not in the repository, so the download serves the web app
    instead (`android-app/README.md`).
-3. The model path skips the controls other model calls go through: `parseSmsFinancialData` uses `GEMINI_API_KEY`
+3. **Gap.** The model path skips the controls other model calls go through: `parseSmsFinancialData` uses `GEMINI_API_KEY`
    directly, ignores the providers the admin configured, checks no AI budget and records no tokens.
-4. `parseSmsFinancialData` logs the first 50 characters of the condensed message on every cache hit and write,
+4. **Security.** `parseSmsFinancialData` logs the first 50 characters of the condensed message on every cache hit and write,
    against golden rule 10.
-5. Most subcategories `mapSmsToExpenseCategory` writes (for example "انستاباي وارد", "سحب نقدي / ATM",
+5. **Bug.** Most subcategories `mapSmsToExpenseCategory` writes (for example "انستاباي وارد", "سحب نقدي / ATM",
    "Apple Pay") are not in the category registry, card payments use the merchant's name as subcategory, and nothing
    normalizes them against the registry.
-6. The monthly limit counts from the first of the month in server time rather than Cairo business time (golden
+6. **Bug.** The monthly limit counts from the first of the month in server time rather than Cairo business time (golden
    rule 6).
-7. `raw_sms_events` has storage class E, pruned on a schedule according to `db/table-classes.ts`, but
+7. **Debt.** `raw_sms_events` has storage class E, pruned on a schedule according to `db/table-classes.ts`, but
    `api/jobs/data-retention-job.ts` has no policy for it: full message texts stay until the account is deleted.
-8. The route calls `parseSmsByRules` without the sender, so provider detection from the sender name never runs.
-9. With several server processes, a one-time code created on one cannot be exchanged on another, and each process
+8. **Bug.** The route calls `parseSmsByRules` without the sender, so provider detection from the sender name never runs.
+9. **Bug.** With several server processes, a one-time code created on one cannot be exchanged on another, and each process
    counts the rate limit on its own.
-10. Saving a message does not check budget alerts as `expense.create` does, and
+10. **Gap.** Saving a message does not check budget alerts as `expense.create` does, and
     `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
 
 ## Related systems

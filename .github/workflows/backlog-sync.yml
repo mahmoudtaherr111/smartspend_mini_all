@@ -1,0 +1,56 @@
+name: Backlog sync
+
+# The known issues of the system pages, as GitHub issues: a queue any agent can take from and the owner can
+# read on a phone. `scripts/agent/issues-sync.ts` is idempotent — an item already opened is skipped, and an
+# item that disappears from its page (fixed, and the page corrected in the same change) closes its issue.
+#
+# Severity comes from the pages themselves. The default is the security list; run it by hand with
+# "security,bug" or "all" to widen the queue.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/atlas/systems/state.md"
+      - "docs/systems/*.md"
+  workflow_dispatch:
+    inputs:
+      severity:
+        description: 'Which severities to open: "security", "security,bug", or "all"'
+        required: false
+        default: security
+      apply:
+        description: "Write to GitHub. Leave false for a dry run in the log."
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: backlog-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Open and close issues from the system pages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Sync
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SEVERITY: ${{ inputs.severity || 'security' }}
+          APPLY: ${{ inputs.apply == false && 'no' || 'yes' }}
+        run: |
+          if [ "$APPLY" = "yes" ]; then
+            npm run --silent issues:sync -- --severity "$SEVERITY" --apply | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            npm run --silent issues:sync -- --severity "$SEVERITY" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi

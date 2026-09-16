@@ -100,20 +100,20 @@ and the component tests beside their files.
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page
+1. **Gap.** `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page
    itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in
    `src/components/routing/PlanGates.tsx` are unused, so the plan is checked on the server only.
-2. The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the
+2. **Security.** The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the
    API also accepts ([accounts](accounts.md)).
-3. `src/components/ProductTour.tsx` is never mounted, and `src/lib/backButtonManager.ts` only re-exports
+3. **Debt.** `src/components/ProductTour.tsx` is never mounted, and `src/lib/backButtonManager.ts` only re-exports
    `src/lib/back-button-manager.ts` for an importer that no longer exists.
-4. The list of routes that show the tab bar lives in `BOTTOM_NAV_ROUTES` next to the route table, so a new
+4. **Debt.** The list of routes that show the tab bar lives in `BOTTOM_NAV_ROUTES` next to the route table, so a new
    screen has to be added in both places or it loses its navigation.
-5. Logging out deletes the offline queues (`smartspend_offline_texts` and `smartspend_offline_manual`) from
+5. **Bug.** Logging out deletes the offline queues (`smartspend_offline_texts` and `smartspend_offline_manual`) from
    `localStorage`, so anything recorded offline and not yet sent is lost with the session.
-6. The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten
+6. **Gap.** The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten
    seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
-7. When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in
+7. **Bug.** When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in
    the code ([notifications](notifications.md)).
 
 ## Related systems

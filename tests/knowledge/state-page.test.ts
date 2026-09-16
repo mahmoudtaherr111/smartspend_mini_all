@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 import { __testing } from "../../scripts/atlas/emit/state";
 
-const { section, numberedItems, testsNamed } = __testing;
+const { section, numberedItems, testsNamed, classify } = __testing;
 
 const PAGE = [
   "# Money",
@@ -16,7 +16,7 @@ const PAGE = [
   "",
   "## Known issues",
   "Checked against the code; each one names where it lives.",
-  "1. Budgets can be set but no screen shows them, and nothing warns when one is passed;",
+  "1. **Gap.** Budgets can be set but no screen shows them, and nothing warns when one is passed;",
   "   `api/budget-router.ts` has no caller.",
   "2. The daily average divides by thirty whatever the month.",
   "",
@@ -38,7 +38,7 @@ describe("reading a system page for the state report", () => {
     const issues = numberedItems(section(PAGE, "## Known issues"));
     expect(issues).toHaveLength(2);
     expect(issues[0]).toBe(
-      "Budgets can be set but no screen shows them, and nothing warns when one is passed; `api/budget-router.ts` has no caller.",
+      "**Gap.** Budgets can be set but no screen shows them, and nothing warns when one is passed; `api/budget-router.ts` has no caller.",
     );
     expect(issues[1]).toBe("The daily average divides by thirty whatever the month.");
   });

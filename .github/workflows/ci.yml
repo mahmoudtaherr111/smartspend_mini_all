@@ -59,6 +59,25 @@ jobs:
       - run: npm ci
       - run: npm run lint
 
+  dead-code:
+    name: Dead code (knip)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Reported, not enforced, while the first findings are triaged: several are already written up as known
+      # issues in docs/systems, and the rest need a read before anything is deleted. Drop --no-exit-code to
+      # make it a gate.
+      - name: Files and dependencies nothing reaches
+        run: |
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          npm run --silent knip -- --no-exit-code | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
   unit-tests:
     name: Vitest Unit Tests
     runs-on: ubuntu-latest

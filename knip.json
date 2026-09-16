@@ -1,0 +1,35 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/components/ui/**/*.{ts,tsx}",
+    "api/router.ts",
+    "api/qa/**/*.ts",
+    "api/scripts/**/*.ts",
+    "scripts/**/*.{ts,mts,mjs,cjs}",
+    "tests/**/*.{ts,tsx}",
+    "**/*.test.{ts,tsx}",
+    "tests/e2e/**/*.spec.ts"
+  ],
+  "project": [
+    "{api,src,db,contracts,scripts,tests}/**/*.{ts,tsx,mts,mjs,cjs}"
+  ],
+  "vitest": {
+    "config": [
+      "vitest.config.ts"
+    ]
+  },
+  "playwright": {
+    "config": [
+      "playwright.config.ts"
+    ]
+  },
+  "ignoreDependencies": [
+    "@fontsource-variable/cairo",
+    "@fontsource-variable/inter",
+    "workbox-core",
+    "workbox-expiration",
+    "workbox-precaching",
+    "workbox-routing",
+    "workbox-strategies"
+  ]
+}

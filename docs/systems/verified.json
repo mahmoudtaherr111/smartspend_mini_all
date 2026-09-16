@@ -45,8 +45,8 @@
         "src/pages/Settings.tsx": "0d88f7c557e3"
       },
       "checked": "2026-09-16 b51229f",
-      "arabic": "202daccec12d",
-      "arabicChecked": "2026-09-16 b51229f"
+      "arabic": "8728ea9eb477",
+      "arabicChecked": "2026-09-16 0610413"
     },
     "admin": {
       "files": {
@@ -81,8 +81,8 @@
         "src/pages/Support.tsx": "9175518fbc4c"
       },
       "checked": "2026-09-16 b51229f",
-      "arabic": "1c0d3366bb85",
-      "arabicChecked": "2026-09-16 b51229f"
+      "arabic": "3cb097282e6c",
+      "arabicChecked": "2026-09-16 0610413"
     },
     "ai-center": {
       "files": {
@@ -136,8 +136,8 @@
         "src/pages/AICenter.tsx": "7a2d6ce14d6b"
       },
       "checked": "2026-09-16 b51229f",
-      "arabic": "02acd94f7fe8",
-      "arabicChecked": "2026-09-16 b51229f"
+      "arabic": "152ef5a49a3c",
+      "arabicChecked": "2026-09-16 0610413"
     },
     "ai-platform": {
       "files": {
@@ -160,8 +160,8 @@
         "api/services/ai-cost-policy.ts": "e4536dd88d77"
       },
       "checked": "2026-09-16 b51229f",
-      "arabic": "77a7eef2d4ea",
-      "arabicChecked": "2026-09-16 b51229f"
+      "arabic": "2572b8b8a539",
+      "arabicChecked": "2026-09-16 0610413"
     },
     "bank-messages": {
       "files": {
@@ -186,8 +186,8 @@
         "src/pages/BankSyncPage.tsx": "6d1d3cba9e6c"
       },
       "checked": "2026-09-16 b51229f",
-      "arabic": "14d1ee119c1f",
-      "arabicChecked": "2026-09-16 b51229f"
+      "arabic": "8c215e1bc325",
+      "arabicChecked": "2026-09-16 0610413"
     },
     "billing": {
       "files": {
@@ -202,8 +202,8 @@
         "src/pages/UltraLounge.tsx": "a27cc01e2364"
       },
       "checked": "2026-09-16 b51229f",
-      "arabic": "49b4c50c25ef",
-      "arabicChecked": "2026-09-16 b51229f"
+      "arabic": "cff73511d92c",
+      "arabicChecked": "2026-09-16 0610413"
     },
     "expense-capture": {
       "files": {
@@ -273,8 +273,8 @@
         "src/lib/compress-image.ts": "88b07e0fb763"
       },
       "checked": "2026-09-16 b51229f",
-      "arabic": "8ffa2e2bd571",
-      "arabicChecked": "2026-09-16 b51229f"
+      "arabic": "9f35a852a890",
+      "arabicChecked": "2026-09-16 0610413"
     },
     "insights": {
       "files": {
@@ -307,8 +307,8 @@
         "src/components/insights/AIInsights.tsx": "4b618cdf3ad2"
       },
       "checked": "2026-09-16 b51229f",
-      "arabic": "21ad4fd34a88",
-      "arabicChecked": "2026-09-16 b51229f"
+      "arabic": "78dd473e60ad",
+      "arabicChecked": "2026-09-16 0610413"
     },
     "money": {
       "files": {
@@ -353,8 +353,8 @@
         "src/pages/Home.tsx": "c38066378122"
       },
       "checked": "2026-09-16 b51229f",
-      "arabic": "498a451bfac7",
-      "arabicChecked": "2026-09-16 b51229f"
+      "arabic": "4440b805595f",
+      "arabicChecked": "2026-09-16 0610413"
     },
     "notifications": {
       "files": {
@@ -373,8 +373,8 @@
         "api/services/whatsapp-service.ts": "cb416af4a8b5"
       },
       "checked": "2026-09-16 b51229f",
-      "arabic": "c27d54789d94",
-      "arabicChecked": "2026-09-16 b51229f"
+      "arabic": "30be056d8ddd",
+      "arabicChecked": "2026-09-16 0610413"
     },
     "platform": {
       "files": {
@@ -411,8 +411,8 @@
         "db/table-classes.ts": "30875c0abaf8"
       },
       "checked": "2026-09-16 b51229f",
-      "arabic": "8ef70d8c6b74",
-      "arabicChecked": "2026-09-16 b51229f"
+      "arabic": "05a136ce8bc9",
+      "arabicChecked": "2026-09-16 0610413"
     },
     "voice-calls": {
       "files": {
@@ -434,8 +434,8 @@
         "src/hooks/useVoiceCall.ts": "42e8abf8b193"
       },
       "checked": "2026-09-16 b51229f",
-      "arabic": "b8f1c5ee4756",
-      "arabicChecked": "2026-09-16 b51229f"
+      "arabic": "1878ce08b2d1",
+      "arabicChecked": "2026-09-16 0610413"
     },
     "web-app": {
       "files": {
@@ -553,8 +553,8 @@
         "src/pwa/register-sw.ts": "1da8e20514f5"
       },
       "checked": "2026-09-16 b51229f",
-      "arabic": "454a92366fbe",
-      "arabicChecked": "2026-09-16 b51229f"
+      "arabic": "38698b40a53e",
+      "arabicChecked": "2026-09-16 0610413"
     }
   }
 }

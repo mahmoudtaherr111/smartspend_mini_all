@@ -100,36 +100,36 @@ There are two accountings, and they do not cover the same calls:
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. `executeAiGateway` — the execution half of the "universal gateway", with its own price-based cost
+1. **Debt.** `executeAiGateway` — the execution half of the "universal gateway", with its own price-based cost
    calculation and ledger write — has no caller. Only its route resolution is used, by
    `api/lib/smart-pipeline.ts`.
-2. Provider keys are encrypted with `AI_GATEWAY_SECRET`, or `JWT_SECRET` when it is unset, both read straight
+2. **Security.** Provider keys are encrypted with `AI_GATEWAY_SECRET`, or `JWT_SECRET` when it is unset, both read straight
    from `process.env` instead of `api/lib/env.ts` (golden rule 8). Rotating `JWT_SECRET` without setting
    `AI_GATEWAY_SECRET` makes every stored provider key undecryptable, and such a route is dropped silently:
    the console still lists the provider, and traffic quietly falls back to whatever key is left.
-3. With neither secret set, the keys are encrypted with a random key held in memory, so a key saved by one
+3. **Security.** With neither secret set, the keys are encrypted with a random key held in memory, so a key saved by one
    process cannot be read by another replica or after a restart.
-4. Cost in `ai_token_ledgers` is not the model's price: `trackTokens` bills every call at 0.14 USD per million
+4. **Bug.** Cost in `ai_token_ledgers` is not the model's price: `trackTokens` bills every call at 0.14 USD per million
    tokens and converts at a fixed 50.5, while the settings hold an exchange rate that only the unused gateway
    reads. The admin's cost and telemetry screens show those numbers.
-5. The two accountings leave gaps: the AI Center chat and voice calls never reach `ai_token_ledgers`, so the
+5. **Bug.** The two accountings leave gaps: the AI Center chat and voice calls never reach `ai_token_ledgers`, so the
    telemetry tab under-reports them, and the screen that would show the `ai_cost_*` side is not mounted
    ([admin](admin.md)).
-6. `api/lib/ai-provider-registry.ts` carries a model catalogue with tiers, purposes and prices, "last verified"
+6. **Debt.** `api/lib/ai-provider-registry.ts` carries a model catalogue with tiers, purposes and prices, "last verified"
    in a comment, and nothing reads it: `isKnownModel`, `getModelEntry`, `listModels`, `resolveApiKey` and the
    per-plan defaults have no caller, and only `DEPRECATED_MODEL_MAP` is used. Model defaults live a second
    time in `api/lib/model-mapper.ts` and a third time in the fixed lists of `admin.getAvailableModels`.
-7. The legacy path is still the one most traffic takes: `resolveRoutingConfig` reads `free_routing_ranges` and
+7. **Bug.** The legacy path is still the one most traffic takes: `resolveRoutingConfig` reads `free_routing_ranges` and
    `pro_routing_ranges` from the settings, so an Ultra user is routed by the Pro ranges, and the keys come from
    settings or the environment rather than from the providers the console manages.
-8. The breaker, the route cache (one minute) and the settings cache (five minutes) are per process, so during
+8. **Debt.** The breaker, the route cache (one minute) and the settings cache (five minutes) are per process, so during
    an outage each replica learns on its own and an admin's change reaches them at different times.
-9. `ai.getUserLimits` computes the billing cycle with server-local `Date` arithmetic instead of Cairo business
+9. **Bug.** `ai.getUserLimits` computes the billing cycle with server-local `Date` arithmetic instead of Cairo business
    time (golden rule 6), so the cycle turns over at the server's midnight.
-10. The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and
+10. **Debt.** The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and
     `api/lib/ai-gateway.ts`, and the burst guard only sees channels that call `recordAiUsageEvent` — the chat,
     report, SMS and voice paths do not.
-11. `admin.checkProviderHealth` has no screen, so `ai_providers.healthStatus` is only ever written by the
+11. **Gap.** `admin.checkProviderHealth` has no screen, so `ai_providers.healthStatus` is only ever written by the
     breaker during real traffic ([admin](admin.md)).
 
 ## Related systems
