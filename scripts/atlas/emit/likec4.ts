@@ -135,12 +135,12 @@ function procedureLocalId(routerKey: string, procedurePath: string): string {
 }
 
 /** `POST /api/sms/ingest` → `post_sms_ingest`. */
-function endpointId(method: string, routePath: string): string {
+export function endpointId(method: string, routePath: string): string {
   const cleaned = routePath.replace(/^\/(?:api\/)?/, "").replace(/\*/g, "all");
   return safeId(`${method.toLowerCase()}_${cleaned}`);
 }
 
-function socketId(pathPrefix: string): string {
+export function socketId(pathPrefix: string): string {
   return safeId(pathPrefix.replace(/^\/api\//, "").replace(/^\//, ""));
 }
 

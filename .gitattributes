@@ -13,5 +13,9 @@ docs/architecture/generated/** linguist-generated=true
 docs/atlas/** merge=smartspend-generated
 docs/architecture/generated/** merge=smartspend-generated
 
+# docs/systems/verified.json records what each system page was last checked against. Its driver merges it entry by
+# entry, so two branches that re-check the same system do not conflict; `npm run hooks:install` registers it.
+docs/systems/verified.json text eol=lf merge=smartspend-verified
+
 # Git hooks run under sh, which needs LF line endings.
 .githooks/* text eol=lf

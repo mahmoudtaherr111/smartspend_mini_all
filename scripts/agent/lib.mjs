@@ -19,6 +19,7 @@ export const KNOWLEDGE_INPUTS = [
   "docs/ar",
   "docs/guides",
   "docs/decisions",
+  "docs/systems",
   "docs/README.md",
   "AGENTS.md",
   "CLAUDE.md",

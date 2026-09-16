@@ -32,6 +32,8 @@ export interface ProcedureInfo {
   hasInput: boolean;
   file: string;
   line: number;
+  /** Last line of the declaration, so a change inside one procedure can be told from a change elsewhere in its file. */
+  endLine: number;
   uses: string[];
   packages: string[];
   read: string[];
@@ -159,6 +161,7 @@ function collectProcedures(
       hasInput,
       file: ctx.file,
       line: property.getStartLineNumber(),
+      endLine: property.getEndLineNumber(),
       uses: uniqSorted([...usage.files].filter((file) => file !== ctx.file)),
       packages: uniqSorted(usage.packages),
       read: uniqSorted(usage.read),

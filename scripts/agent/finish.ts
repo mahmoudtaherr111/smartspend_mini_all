@@ -2,8 +2,9 @@
  * `npm run agent:finish`: the one command to run before reporting a task done.
  *
  * It regenerates docs/atlas and docs/architecture/generated from the code (they describe the code, so they
- * are rebuilt, never edited), then checks the architecture rules, the hand-written documents and the drawn
- * flows. It exits 1 when a rule is broken.
+ * are rebuilt, never edited), then checks the architecture rules, the system explanations, the hand-written
+ * documents and the drawn flows. It exits 1 when a rule is broken. A problem the branch did not cause, such as
+ * a system page someone else left unchecked on origin/main, is listed as a notice and does not fail the run.
  *
  *   --check   write nothing; generated files that no longer match the code count as a broken rule
  *   --json    print a machine-readable report (read by scripts/agent/stop.mjs)
@@ -15,12 +16,18 @@ import { REPO_ROOT } from "../atlas/lib/util";
 import { checkArchitecture } from "../knowledge/architecture-rules";
 import { checkDocs } from "../knowledge/docs-rules";
 import { checkFlows } from "../knowledge/flows-rules";
+import { checkSystemDocs, filesChangedSince } from "../knowledge/systems-docs";
 import type { RuleResult } from "../knowledge/types";
+
+/** The branch every agent ships to; what a branch changed is measured against it. */
+const BASELINE = "origin/main";
 
 export interface FinishReport {
   mode: "write" | "check";
   regenerated: string[];
   broken: RuleResult[];
+  /** Rules with problems the current change did not cause; they do not fail the run. */
+  notices: RuleResult[];
   changedSources: string[];
   durationMs: number;
 }
@@ -49,9 +56,14 @@ export async function finish(mode: "write" | "check"): Promise<FinishReport> {
   const regenerated = mode === "write" ? writeGenerated(rendered) : [];
   const stale = mode === "check" ? compareGenerated(rendered) : [];
 
-  const broken = [...checkArchitecture(graph), ...checkDocs(), ...checkFlows()].filter(
-    (result) => result.violations.length > 0,
-  );
+  const results = [
+    ...checkArchitecture(graph),
+    ...checkSystemDocs(graph, REPO_ROOT, { changedSinceBaseline: filesChangedSince(BASELINE) ?? undefined }),
+    ...checkDocs(),
+    ...checkFlows(),
+  ];
+  const broken = results.filter((result) => result.violations.length > 0);
+  const notices = results.filter((result) => (result.notices ?? []).length > 0);
   if (stale.length > 0) {
     broken.unshift({
       id: "atlas-fresh",
@@ -60,7 +72,7 @@ export async function finish(mode: "write" | "check"): Promise<FinishReport> {
       violations: stale,
     });
   }
-  return { mode, regenerated, broken, changedSources: changedSourceFiles(), durationMs: Date.now() - started };
+  return { mode, regenerated, broken, notices, changedSources: changedSourceFiles(), durationMs: Date.now() - started };
 }
 
 function printReport(report: FinishReport): void {
@@ -74,7 +86,7 @@ function printReport(report: FinishReport): void {
     );
   }
   if (report.broken.length === 0) {
-    lines.push("All architecture, documentation and flow rules hold.");
+    lines.push("All architecture, system documentation, documentation and flow rules hold.");
   } else {
     lines.push(`${report.broken.length} rule(s) broken:`);
     for (const rule of report.broken) {
@@ -82,6 +94,14 @@ function printReport(report: FinishReport): void {
       lines.push(...rule.violations.slice(0, 20).map((violation) => `    - ${violation}`));
       if (rule.violations.length > 20) lines.push(`    ... and ${rule.violations.length - 20} more`);
       lines.push(`  fix: ${rule.fix}`);
+    }
+  }
+  if (report.notices.length > 0) {
+    lines.push("", `Not caused by your changes (compared with ${BASELINE}); fix them when you know the area:`);
+    for (const rule of report.notices) {
+      const notices = rule.notices ?? [];
+      lines.push(`  ${rule.title} [${rule.id}]`, ...notices.slice(0, 10).map((notice) => `    - ${notice}`));
+      if (notices.length > 10) lines.push(`    ... and ${notices.length - 10} more`);
     }
   }
   if (report.changedSources.length > 0) {

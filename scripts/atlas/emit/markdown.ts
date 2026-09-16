@@ -448,11 +448,14 @@ function renderReadme(graph: AtlasGraph): string {
       ["Clusters", String(graph.clusters.length)],
       ["External systems in use", String(usedSystems.length)],
       ["Validated server env vars", String(env.server.filter((v) => v.declared).length)],
+      ["Systems", String(graph.systems.systems.length)],
     ],
   );
   const files = mdTable(
     ["File", "Answers"],
     [
+      ["[systems/README.md](systems/README.md)", "Which system owns each module, procedure, screen, route and job, with a diagram and the facts of every system"],
+      ["[systems/files.md](systems/files.md)", "Which system's explanation describes each source file, down to single procedures, routes and jobs of shared files"],
       ["[api.md](api.md)", "Which procedures exist, who may call them, which tables they touch, which web files call them"],
       ["[database.md](database.md)", "Tables, storage classes, relations, and which files read or write each table"],
       ["[entrypoints.md](entrypoints.md)", "Middleware order, HTTP routes, webhooks, SSE, WebSocket upgrades, scheduled jobs"],

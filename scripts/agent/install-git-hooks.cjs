@@ -2,7 +2,8 @@
 /**
  * Installs the shared git hooks from .githooks/ into the repository's common hooks folder, so every worktree
  * and every tool that commits (Claude Code, Codex, Antigravity, Cursor, OpenCode, people) runs them, and
- * registers the merge driver that lets generated files merge without conflicts.
+ * registers the merge drivers that let generated files and the system page check record
+ * (docs/systems/verified.json) merge without conflicts.
  *
  * Runs from `npm run hooks:install`, from `npm install` and `npm ci` (package.json "prepare"), and from the
  * agent SessionStart hook. It skips CI and folders that are not git checkouts. CommonJS, so "prepare" can
@@ -71,6 +72,8 @@ function main() {
 
   git(["config", "merge.smartspend-generated.name", "generated knowledge: keep one side, the post-merge hook regenerates it"], root);
   git(["config", "merge.smartspend-generated.driver", "true"], root);
+  git(["config", "merge.smartspend-verified.name", "system page check record: merge entry by entry"], root);
+  git(["config", "merge.smartspend-verified.driver", "node scripts/agent/verified-ledger.mjs merge %O %A %B"], root);
   log(installed > 0 ? `[hooks] Installed ${installed} git hook(s) into ${hooksDir}.` : "[hooks] Git hooks are up to date.");
 }
 

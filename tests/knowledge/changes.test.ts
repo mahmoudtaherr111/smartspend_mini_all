@@ -3,7 +3,7 @@
  * architecture model. This checks the comparison and the Arabic report on small models, without git.
  */
 import { describe, expect, it } from "vitest";
-import { diffModels, renderReport } from "../../scripts/agent/changes";
+import { diffModels, parseFileIndex, renderReport } from "../../scripts/agent/changes";
 import { parseArchitectureModel } from "../../scripts/knowledge/flows-rules";
 
 const model = (text: string) => parseArchitectureModel([{ file: "docs/architecture/generated/test.c4", text }]);
@@ -68,5 +68,38 @@ describe("npm run changes", () => {
     expect(report).toContain("feat: invoices — codex");
     expect(report).toContain("جدول `invoices`");
     expect(report).toContain("procedure في الـAPI `expense.create` بطّل يكتب في جدول `expenses`");
+  });
+
+  it("names the systems each commit changed and the explanations that were checked again", () => {
+    const systems = {
+      systems: [
+        { id: "expense-capture", title: "Recording spending", titleAr: "تسجيل المصاريف" },
+        { id: "money", title: "Money", titleAr: "الفلوس" },
+      ],
+      byFile: parseFileIndex(
+        [
+          "| File | Systems |",
+          "| --- | --- |",
+          "| `api/expense-router.ts` | [expense-capture](expense-capture.md): `expense.create` · [money](money.md): `expense.list` · rest of the file: [expense-capture](expense-capture.md), [money](money.md) |",
+          "| `api/lib/smart-pipeline.ts` | [expense-capture](expense-capture.md) |",
+        ].join("\n"),
+      ),
+      rechecked: new Set(["expense-capture"]),
+    };
+    const report = renderReport(
+      { from: "aaaaaaa1", to: "bbbbbbb2" },
+      [
+        { hash: "ccccccc", date: "2026-09-15", subject: "fix: split amounts", agent: "codex", files: ["api/lib/smart-pipeline.ts"] },
+        { hash: "ddddddd", date: "2026-09-15", subject: "feat: list filter", agent: "claude-code", files: ["api/expense-router.ts", "README.md"] },
+      ],
+      diffModels(before, before),
+      { before, after: before },
+      "ar",
+      systems,
+    );
+    expect(report).toContain("fix: split amounts — codex · expense-capture");
+    expect(report).toContain("feat: list filter — claude-code · expense-capture, money");
+    expect(report).toContain("- تسجيل المصاريف (`expense-capture`): 2 commit من claude-code، codex؛ شرحه اتراجع على الكود");
+    expect(report).toContain("- الفلوس (`money`): 1 commit من claude-code");
   });
 });

@@ -7,6 +7,7 @@ import path from "node:path";
 import type { AtlasGraph } from "./graph";
 import { ATLAS_DIR, renderAtlas } from "./emit/markdown";
 import { ARCH_GENERATED_DIR, renderLikeC4 } from "./emit/likec4";
+import { SYSTEMS_DIR, renderSystems } from "./emit/systems";
 import { REPO_ROOT } from "./lib/util";
 
 interface Output {
@@ -17,6 +18,7 @@ interface Output {
 
 const OUTPUTS: Output[] = [
   { dir: ATLAS_DIR, extension: ".md", render: renderAtlas },
+  { dir: SYSTEMS_DIR, extension: ".md", render: renderSystems },
   { dir: ARCH_GENERATED_DIR, extension: ".c4", render: renderLikeC4 },
 ];
 

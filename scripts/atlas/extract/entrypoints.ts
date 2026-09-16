@@ -14,6 +14,8 @@ export interface RouteInfo {
   kind: "http" | "trpc" | "sse" | "webhook";
   file: string;
   line: number;
+  /** Last line of the registration. */
+  endLine: number;
   uses: string[];
   /** Tables the handler itself reads or writes (helpers in the same file are followed, imported ones are listed in uses). */
   read: string[];
@@ -32,6 +34,8 @@ export interface JobInfo {
   schedule: string;
   file: string;
   line: number;
+  /** Last line of the registration. */
+  endLine: number;
   uses: string[];
   read: string[];
   write: string[];
@@ -43,6 +47,8 @@ export interface WebSocketInfo {
   handlerFile: string | null;
   file: string;
   line: number;
+  /** Last line of the upgrade handler registration. */
+  endLine: number;
 }
 
 export interface EntrypointFacts {
@@ -100,6 +106,7 @@ function subAppRoutes(
       kind: routeKind(fullPath),
       file: ctx.file,
       line: call.getStartLineNumber(),
+      endLine: call.getEndLineNumber(),
       uses: cleanUses(usage.files, ctx.file),
       read: uniqSorted(usage.read),
       write: uniqSorted(usage.write),
@@ -141,6 +148,7 @@ export function extractEntrypoints(
         schedule,
         file: appFile,
         line: call.getStartLineNumber(),
+        endLine: call.getEndLineNumber(),
         uses: cleanUses(usage.files, appFile),
         read: uniqSorted(usage.read),
         write: uniqSorted(usage.write),
@@ -161,6 +169,7 @@ export function extractEntrypoints(
         schedule: "once at boot",
         file: appFile,
         line: call.getStartLineNumber(),
+        endLine: call.getEndLineNumber(),
         uses: cleanUses(usage.files, appFile),
         read: uniqSorted(usage.read),
         write: uniqSorted(usage.write),
@@ -187,6 +196,7 @@ export function extractEntrypoints(
           kind: "trpc",
           file: appFile,
           line: call.getStartLineNumber(),
+          endLine: call.getEndLineNumber(),
           uses: ["api/router.ts"],
           read: [],
           write: [],
@@ -216,6 +226,7 @@ export function extractEntrypoints(
         kind: routeKind(path),
         file: appFile,
         line: call.getStartLineNumber(),
+        endLine: call.getEndLineNumber(),
         uses: cleanUses(usage.files, appFile),
         read: uniqSorted(usage.read),
         write: uniqSorted(usage.write),
@@ -253,6 +264,7 @@ export function extractEntrypoints(
           handlerFile: handlerTarget?.kind === "file" ? handlerTarget.file : null,
           file,
           line: call.getStartLineNumber(),
+          endLine: call.getEndLineNumber(),
         });
       }
     }

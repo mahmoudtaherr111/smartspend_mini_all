@@ -1,6 +1,7 @@
 /**
- * Rules for the hand-written documents agents read. They must not point at things that do not exist and
- * must not quote facts that drift: counts, file lists and relationships belong to docs/atlas and
+ * Rules for the hand-written documents agents read. They must not point at things that do not exist (a
+ * backticked path must resolve, and a backticked `path#name` must name something in that file) and must not
+ * quote facts that drift: counts, file lists and relationships belong to docs/atlas and
  * docs/architecture/generated, which `npm run atlas` regenerates from the code.
  *
  * Shared by tests/knowledge/docs.test.ts and `npm run agent:finish`.
@@ -49,6 +50,8 @@ export function handWrittenDocs(root = REPO_ROOT): string[] {
     ...FIXED_DOCS,
     ...markdownIn(root, "docs/guides"),
     ...markdownIn(root, "docs/decisions"),
+    ...markdownIn(root, "docs/systems"),
+    ...markdownIn(root, "docs/ar/systems"),
   ];
 }
 
@@ -66,6 +69,20 @@ export function referencedPaths(text: string): string[] {
         /^[\w@.-]+(?:\/[\w@.-]+)+\/?$/.test(token) ||
         /^[\w.-]+\.(?:ts|tsx|md|json|c4|ya?ml|cjs|mjs|css|html)$/.test(token),
     );
+}
+
+/** Backticked `path#name` references: a file, and a function, type or constant it declares. */
+export function referencedSymbols(text: string): Array<{ file: string; symbol: string }> {
+  return [...text.matchAll(/`([\w@.\/-]+\.\w+)#([A-Za-z_$][\w$]*)`/g)].map((match) => ({ file: match[1], symbol: match[2] }));
+}
+
+function symbolResolves(root: string, doc: string, reference: { file: string; symbol: string }): boolean {
+  const file = [path.join(root, path.dirname(doc), reference.file), path.join(root, reference.file)].find(
+    (candidate) => fs.existsSync(candidate) && fs.statSync(candidate).isFile(),
+  );
+  if (!file) return false;
+  const name = reference.symbol.replace(/\$/g, "\\$");
+  return new RegExp(`(?<![\\w$])${name}(?![\\w$])`).test(fs.readFileSync(file, "utf8"));
 }
 
 function resolves(root: string, doc: string, reference: string): boolean {
@@ -96,6 +113,16 @@ export function checkDocs(root = REPO_ROOT): RuleResult[] {
         referencedPaths(read(root, doc))
           .filter((reference) => !resolves(root, doc, reference))
           .map((reference) => `${doc}: ${reference}`),
+      ),
+    },
+    {
+      id: "docs-symbols-resolve",
+      title: "hand-written documents name only functions, types and constants that exist in the file they cite",
+      fix: "Point the `path#name` reference at the current file and name, or delete the sentence if that code is gone.",
+      violations: present.flatMap((doc) =>
+        referencedSymbols(read(root, doc))
+          .filter((reference) => !symbolResolves(root, doc, reference))
+          .map((reference) => `${doc}: ${reference.file}#${reference.symbol}`),
       ),
     },
     {

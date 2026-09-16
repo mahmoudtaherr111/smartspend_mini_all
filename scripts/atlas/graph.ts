@@ -13,6 +13,7 @@ import {
   type ModuleFacts,
 } from "./extract/modules";
 import { extractEnv, type EnvFacts } from "./extract/env";
+import { extractSystems, type SystemsFacts } from "./extract/systems";
 
 export interface AtlasGraph {
   database: DatabaseFacts;
@@ -23,6 +24,7 @@ export interface AtlasGraph {
   clusters: ClusterRule[];
   externals: ExternalsConfig;
   env: EnvFacts;
+  systems: SystemsFacts;
   warnings: string[];
 }
 
@@ -67,6 +69,7 @@ export async function buildAtlasGraph(): Promise<AtlasGraph> {
   );
   const modules = extractModules(runtimeFiles, contextFor, tables, clusters, externals, warnings);
   const env = extractEnv(runtimeFiles, contextFor, warnings);
+  const systems = extractSystems({ api, entrypoints, frontend, clusters, modules }, warnings);
 
   const routerKeys = new Set(api.routers.map((router) => router.key));
   const procedurePaths = new Set(api.routers.flatMap((router) => router.procedures.map((p) => p.path)));
@@ -95,6 +98,7 @@ export async function buildAtlasGraph(): Promise<AtlasGraph> {
     clusters,
     externals,
     env,
+    systems,
     warnings: uniqSorted(stableWarnings),
   };
 }
