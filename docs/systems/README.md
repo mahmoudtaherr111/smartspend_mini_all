@@ -57,6 +57,11 @@ is in line. It is generated, so it can never disagree with the pages themselves.
 - Name code as `path#name`, for example `api/lib/smart-pipeline.ts#runSmartPipeline`: the documentation rules fail
   when the file or the name disappears. Refer to line numbers nowhere.
 - No counts of things the atlas counts (procedures, tables, routes, pages); link the facts page instead.
+- Start every known issue with its severity: `**Security.**` for a leak, a bypass or secrets in a log,
+  `**Bug.**` when the user sees a wrong result or loses work, `**Gap.**` for code with no screen or a promise
+  with no code, `**Debt.**` for dead code, duplication, estimates and missing tests. The Arabic page uses
+  `**أمن.**`, `**عطل.**`, `**ناقص.**` and `**دين تقني.**`. The state page sorts by these words, and
+  `npm run issues:sync` opens issues for the serious ones.
 - Keep the sections: the pieces, the journey step by step, where to change what, rules for changes, tests, known
   issues (each one verified and located), related systems.
 - The Arabic page tells the same story for someone who does not program: what the system does for the user, a small

@@ -93,6 +93,27 @@ it starts. It also asks GitHub whether main's last completed run of each workflo
 (`scripts/agent/main-health.mjs`), so a red main is a fact the agent knows rather than a surprise at push time.
 Both are best-effort: no token, short timeouts, and silence when the answer does not arrive.
 
+## The queue, and who works it
+An explanation cannot be assigned or closed, so the serious part of what the pages know is mirrored into
+GitHub issues:
+
+- Every known issue starts with its severity (`Security`, `Bug`, `Gap`, `Debt`; in Arabic `أمن`, `عطل`,
+  `ناقص`, `دين تقني`), which `docs/atlas/systems/state.md` sorts by.
+- `npm run issues:sync` opens one issue per security item — `--severity security,bug` or `all` widens it —
+  labelled `agent-ready`, `system:<id>` and `severity:<x>`. It is idempotent: an issue carries a hidden
+  fingerprint of the item's text, so a second run changes nothing, and an item that leaves its page (fixed,
+  and the page corrected in the same change) closes its issue with a comment.
+- `.github/workflows/backlog-sync.yml` runs it on main with the repository's own token; nothing is published
+  and no secret is added.
+- Any agent can take one: `@codex` on the issue works today with no setup, and `@claude` works as soon as
+  `ANTHROPIC_API_KEY` exists in the repository secrets (`.github/workflows/agent.yml`, which also re-checks
+  the oldest explanation every Monday and opens a pull request with the corrections). Until that secret
+  exists, both jobs are skipped by their own preflight.
+
+Two more checks report without blocking: `npm run knip` names files, exports and dependencies nothing
+reaches — the class of problem a program can find on its own, and the one the pages were listing by hand —
+and `lychee` walks the links that point outside the repository once a week.
+
 ## Seeing what changed
 `npm run changes` lists the commits of the last seven days with the tool that made each one, and what changed
 in the shape of the system: tables, procedures, HTTP routes, jobs, pages, modules and outside systems that

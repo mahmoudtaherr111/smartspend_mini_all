@@ -1,0 +1,140 @@
+name: Agent
+
+# An agent that works in the repository without a person driving it. Two jobs:
+#
+#   1. @claude on an issue or a pull request — pick a queued issue (they come from `npm run issues:sync`),
+#      read the system page it names, make the change, open a pull request.
+#   2. Weekly: take the system whose explanation was checked longest ago, read it against the code it
+#      describes, and open a pull request with the corrections. This is the reviewer the ledger cannot be:
+#      `docs/systems/verified.json` proves a page was recorded, not that anyone read it.
+#
+# Both jobs do nothing until ANTHROPIC_API_KEY exists in the repository secrets: `preflight` is what every
+# other job waits on, so adding the key turns this on and removing it turns it off, with no edit here.
+#
+# Security, in a workflow that runs a model with write access:
+#   - only comments from the owner, a member or a collaborator start it — never a drive-by comment;
+#   - the token's permissions are the narrowest that let it open a pull request;
+#   - the action is pinned to a major version, and should be pinned to a commit SHA before this is relied on
+#     (a prompt-injection path through this action was fixed in May 2026 — the fix is in the version, so the
+#     version matters).
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [assigned]
+  schedule:
+    # Mondays, 05:00 UTC — before the week's work starts.
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-${{ github.event.issue.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Is the agent configured?
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.key.outputs.enabled }}
+    steps:
+      - id: key
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "The agent is configured." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "No ANTHROPIC_API_KEY, so the agent stays off. Add the secret to turn it on." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  mention:
+    name: "@claude on an issue or pull request"
+    needs: preflight
+    if: >-
+      needs.preflight.outputs.enabled == 'true' &&
+      (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
+      contains(github.event.comment.body, '@claude') &&
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            You are working in SmartSpend. Read AGENTS.md first, then the system page named in the issue
+            (docs/systems/<id>.md) before changing anything: it carries the behaviour and the known issues no
+            generated file can.
+
+            Definition of done, from AGENTS.md: a test that fails on the old behaviour; `npm run agent:finish`
+            clean; the system page corrected where it no longer matches the code, and re-recorded with
+            `npm run docs:verify -- <id>` (and `-- <id> --ar` for the Arabic page); the regenerated files in
+            the same commit. Open a pull request — never push to main from here.
+
+  gardener:
+    name: Re-check the oldest explanation
+    needs: preflight
+    if: needs.preflight.outputs.enabled == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Which explanation was checked longest ago
+        id: oldest
+        run: |
+          node -e '
+            const ledger = require("./docs/systems/verified.json").systems;
+            const rows = Object.entries(ledger).map(([id, entry]) => [id, entry.checked || ""]);
+            rows.sort((a, b) => a[1].localeCompare(b[1]));
+            const [id, checked] = rows[0] ?? ["expense-capture", ""];
+            console.log(`system=${id}`);
+            console.log(`checked=${checked}`);
+          ' >> "$GITHUB_OUTPUT"
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Re-check one explanation against the code, the way a reviewer would.
+
+            System: ${{ steps.oldest.outputs.system }} (last recorded ${{ steps.oldest.outputs.checked }}).
+
+            Read docs/systems/${{ steps.oldest.outputs.system }}.md, then read the source it describes — the
+            list is at the end of docs/atlas/systems/${{ steps.oldest.outputs.system }}.md. Check every claim,
+            and the "Known issues" section hardest: those rot first. An issue that is fixed comes out; a claim
+            that no longer matches the code is rewritten; something you find that is not listed goes in, with
+            its severity word (Security, Bug, Gap or Debt) and where it lives.
+
+            Then bring docs/ar/systems/${{ steps.oldest.outputs.system }}.md in line, run
+            `npm run docs:verify -- ${{ steps.oldest.outputs.system }}` and `-- ${{ steps.oldest.outputs.system }} --ar`,
+            and `npm run agent:finish`. Open a pull request titled
+            "docs(${{ steps.oldest.outputs.system }}): re-checked against the code", and say in its body what
+            changed and what you verified. If everything still matches, say so and re-record it anyway — that
+            is a result too.

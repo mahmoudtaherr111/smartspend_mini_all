@@ -31,6 +31,7 @@ Never quote a count from memory or from an old document; read it from `docs/atla
 | --- | --- |
 | What a part of the app does end to end, how to change it, and its known issues | `docs/systems/README.md`, then that system's page |
 | What is waiting to be fixed, and how fresh each explanation is | `docs/atlas/systems/state.md` |
+| Something to pick up, with its own issue | the GitHub issues labelled `agent-ready`, opened from that page |
 | Who else is changing this repository right now, and whether they touch your files | `npm run who` |
 | Which systems a file belongs to (shared files are split by procedure, route and job) | `docs/atlas/systems/files.md` |
 | Which procedures exist, who may call them, which tables they touch, which screens call them | `docs/atlas/api.md` |
@@ -81,6 +82,9 @@ conflicting, and pre-push refuses a push while a rule is broken. Claude Code and
 | Regenerate the atlas and the architecture model | `npm run atlas` |
 | Record a system explanation as checked against the code | `npm run docs:verify -- <id>`, and `-- <id> --ar` for the Arabic page |
 | Who else is working, and on which files | `npm run who` |
+| Open issues from the known issues of the pages | `npm run issues:sync` (add `--apply` to write) |
+| Files, exports and dependencies nothing reaches | `npm run knip` (`knip:all` for exports and types too) |
+| The pages as a searchable site for people who do not read code | `npm --prefix docs-site run build` |
 | Architecture map / validation | `npm run arch` / `npm run arch:validate` |
 | Schema change | `npm run db:generate`, review, `npm run db:migrate` (`db:push` only on a throwaway local database) |
 | Production build and start (the Docker image runs `dist/boot.js`) | `npm run build`, `npm start` |
