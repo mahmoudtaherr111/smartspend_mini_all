@@ -8,6 +8,8 @@ keeps the documentation true without anyone updating it by hand. It is written f
 ## The idea
 - Facts about the code are generated from the code (`npm run atlas`) and never written by hand, so a change
   to the code changes the facts in the same commit.
+- What the code is FOR is written by hand once per system, and every page is recorded as checked against the
+  source it describes, so a change to that source asks the agent who made it to read the page again.
 - Rules are checks in `scripts/knowledge/`, so breaking one fails a command instead of hiding in a document.
 - Regeneration and checks run on their own at the moments work changes hands: when a session starts, when an
   agent ends a turn, when anyone commits, merges or pushes, and when main changes.
@@ -16,10 +18,12 @@ keeps the documentation true without anyone updating it by hand. It is written f
 
 ## A task, step by step
 1. Start: `npm run sync` merges `origin/main` into the branch.
-2. Read `AGENTS.md` and the `AGENTS.md` of each folder to be edited.
+2. Read `AGENTS.md`, the system explanation of what you are about to change (find it in
+   `docs/atlas/systems/files.md`), and the `AGENTS.md` of each folder to be edited.
 3. Work in small commits.
 4. Finish: `npm run agent:finish` regenerates `docs/atlas` and `docs/architecture/generated`, then checks the
-   architecture rules, the hand-written documents and the flows, and prints the tests for the changed files.
+   architecture rules, the hand-written documents, the flows and the system explanations, and prints the tests
+   for the changed files.
 5. Commit the code together with the regenerated files, then `npm run ship`: it refuses uncommitted changes,
    merges `origin/main` again and pushes the branch to `main`. When `main` moved in the meantime, it merges
    and pushes again.
@@ -50,6 +54,29 @@ branch still gets the secret guard.
 | OpenCode | `.opencode/opencode.json`, which loads `AGENTS.md` | git hooks |
 | Other tools and people | `AGENTS.md` | git hooks, CI |
 
+## Explanations that cannot go stale quietly
+Generated facts say what exists. `docs/systems/` says what it is for, how it behaves, and what is wrong with
+it today — which no generator can know. Both are kept honest the same way: by the code itself.
+
+- Every system in `docs/architecture/systems.json` owns a set of source units: whole files, or single
+  procedures, routes and jobs of a file that several systems share. `docs/atlas/systems/files.md` is the map
+  from a file to its systems.
+- `docs/systems/verified.json` records, per unit, the fingerprint of the source as it was when the explanation
+  was last checked, and the commit that recorded it. `npm run docs:verify -- <id>` writes that record after
+  you have read the page against the code; `-- <id> --ar` records the Arabic page against the English one.
+- `npm run agent:finish` compares the fingerprints with the working tree. A unit your branch changed makes its
+  explanation **stale**: it is reported, and `.githooks/pre-push` refuses the push until you re-check it. A
+  unit someone else changed is reported as a notice, so a stale page never blocks work that did not cause it.
+- `scripts/knowledge/systems-docs.ts` also refuses a page that names a file or a symbol that no longer exists,
+  that quotes a count the atlas owns, or that has an English page without its Arabic twin;
+  `tests/knowledge/systems.test.ts` and `tests/knowledge/systems-ledger.test.ts` run those rules in CI.
+- `docs/systems/verified.json` merges entry by entry through `scripts/agent/verified-ledger.mjs` (registered in
+  `.gitattributes`), so two branches that re-check different systems do not conflict. Never edit it by hand.
+
+The rule of thumb when a check names your system: read the page, fix what no longer matches the code —
+including the known issues, which are the part that rots fastest — then record it. Do not record a page you
+have not read against the code.
+
 ## Seeing what changed
 `npm run changes` lists the commits of the last seven days with the tool that made each one, and what changed
 in the shape of the system: tables, procedures, HTTP routes, jobs, pages, modules and outside systems that
@@ -62,6 +89,9 @@ from the generated model, so it cannot drift from what happened.
 - The atlas did not go into a commit: some changed code was not staged. Stage it, or run `npm run atlas`.
 - A person has to push while a rule is broken: set `SMARTSPEND_SKIP_PREPUSH=1` for that one push, then fix
   the rule.
+- The pre-push hook fails open: where `tsx` cannot run it returns success silently, and any other failure
+  prints that it could not run and lets the push through. Never treat a successful push as proof that the
+  rules passed; run `npm run agent:finish` yourself.
 - `SMARTSPEND_SKIP_ATLAS=1` turns off regeneration in the git hooks for one command.
 - Codex runs no hooks: trust the project in Codex so it loads `.codex/hooks.json`; its hook commands assume the
   session starts at the repository root.

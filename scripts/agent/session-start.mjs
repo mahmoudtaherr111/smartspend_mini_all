@@ -52,7 +52,8 @@ async function main() {
   if (uncommitted > 0) report.push(`- ${uncommitted} uncommitted change(s) here. Commit finished work in small steps.`);
   report.push(
     "- Read AGENTS.md and the AGENTS.md of each folder you edit (api/, api/lib/, src/, db/); not every tool loads them on its own.",
-    "- Before reporting a task done: `npm run agent:finish`, commit the code with the regenerated files, then `npm run ship` (merges origin/main and pushes to main).",
+    "- Before editing a file, find its system in docs/atlas/systems/files.md and read that system's page in docs/systems/; it carries the behaviour and the known issues no generated file can.",
+    "- Before reporting a task done: `npm run agent:finish` (it also names any system page your change made stale — fix it, then `npm run docs:verify -- <id>`), commit the code with the regenerated files, then `npm run ship` (merges origin/main and pushes to main).",
   );
 
   if (behind > 0) {

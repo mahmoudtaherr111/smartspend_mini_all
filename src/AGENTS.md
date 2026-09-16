@@ -3,6 +3,9 @@
 Facts: `docs/atlas/frontend.md` (browser routes, guards, the procedures each page calls, and mutation hooks
 that are never invoked). Diagram: `npm run arch`, view `web`.
 
+What a screen does end to end, with its known issues: the system pages in `docs/systems/` — the shell itself
+is `docs/systems/web-app.md`. Find the system of a file in `docs/atlas/systems/files.md` before editing it.
+
 ## Layout
 - `App.tsx`: routes. Pages are lazy-loaded from `pages/` and wrapped in the route guards `ProtectedRoute`,
   `AdminRoute` and `PublicOnlyRoute`.

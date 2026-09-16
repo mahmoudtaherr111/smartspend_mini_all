@@ -3,6 +3,9 @@
 Facts: `docs/atlas/database.md` (every table with its storage class, relations, readers and writers).
 Diagram: `npm run arch`, view `database`.
 
+Who writes a table and why: the system pages in `docs/systems/`; `docs/systems/platform.md` covers the schema,
+the pool and data retention.
+
 - `schema.ts`: Drizzle tables for MySQL.
 - `relations.ts`: application-level relations used by `db.query`. The schema declares no foreign keys.
 - `table-classes.ts`: the storage class of every table and what each class means for growth and retention.

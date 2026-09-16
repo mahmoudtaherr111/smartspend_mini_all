@@ -3,6 +3,9 @@
 Facts: `docs/atlas/api.md`, `docs/atlas/entrypoints.md`, `docs/atlas/modules.md`. Diagram: `npm run arch`,
 views `api`, `server_modules` and one `router_*` view per router.
 
+What the code here does end to end, with its known issues: the system pages in `docs/systems/`. Find the
+system of the file you are about to change in `docs/atlas/systems/files.md` and read it before editing.
+
 ## Layout
 - `boot.ts`: the Hono app (middleware, Google OAuth start and callback, WhatsApp OTP SSE, Paymob webhook,
   the `/api/sms` sub-app, `/api/trpc`), cron registration, and the HTTP server that `npm start` runs.

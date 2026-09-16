@@ -22,8 +22,13 @@ questions through MCP.
 | `views.c4` | people | overview views; `generated/views.c4` adds one view per router and module |
 | `flows/*.c4` | people | important journeys as dynamic views, each with a description |
 | `clusters.json` | people | which runtime file belongs to which module (first matching rule wins), and what each module does |
+| `systems.json` | people | which modules, procedures, routes and jobs belong to which system, and the title and description of each system; the atlas fails on anything unassigned |
 | `externals.json` | people | which packages, hosts or files mean an outside system |
 | `likec4.config.json` | people | project name |
+
+The systems in `systems.json` are the parts people talk about; each one has an explanation in
+`docs/systems/`, an Arabic page in `docs/ar/systems/` and a generated facts page with diagrams in
+`docs/atlas/systems/`. See `docs/systems/README.md`.
 
 Module and flow descriptions are prose written by people and checked against the code when written. The
 knowledge rules in `scripts/knowledge/` catch a path that no longer exists or a flow step the code no longer

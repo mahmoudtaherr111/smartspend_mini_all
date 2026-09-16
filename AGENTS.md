@@ -16,17 +16,21 @@ forwards bank and wallet notifications.
 1. The code.
 2. Generated facts: `docs/atlas/` and `docs/architecture/generated/`, rebuilt from the code by `npm run atlas`.
 3. The rules in this file and in the nearest folder `AGENTS.md`, each backed by the check it names.
-4. Hand-written descriptions: flows in `docs/architecture/flows/` (their steps are held to the code by
+4. System explanations in `docs/systems/`: hand-written, but each one is recorded as checked against the code
+   it describes, and `npm run agent:finish` asks for a new check as soon as that code changes.
+5. Other hand-written descriptions: flows in `docs/architecture/flows/` (their steps are held to the code by
    `tests/knowledge/flows.test.ts`), module descriptions in `docs/architecture/clusters.json`, `docs/guides/`
    and `docs/decisions/`. They were checked against the code when written; confirm a detail in the code
    before you rely on it.
-5. `docs/reports/`: output of past runs. History, never current truth.
+6. `docs/reports/`: output of past runs. History, never current truth.
 
 Never quote a count from memory or from an old document; read it from `docs/atlas/README.md`.
 
 ## Where to look
 | Question | Look at |
 | --- | --- |
+| What a part of the app does end to end, how to change it, and its known issues | `docs/systems/README.md`, then that system's page |
+| Which systems a file belongs to (shared files are split by procedure, route and job) | `docs/atlas/systems/files.md` |
 | Which procedures exist, who may call them, which tables they touch, which screens call them | `docs/atlas/api.md` |
 | Tables, storage classes, relations, who reads and writes each table | `docs/atlas/database.md` |
 | HTTP routes, webhooks, SSE, WebSocket, scheduled jobs, middleware order | `docs/atlas/entrypoints.md` |
@@ -47,8 +51,9 @@ The generated files are large: search them for a name instead of reading them wh
 Several agents change this repository at the same time. These steps keep everyone on the same code:
 1. Start: `npm run sync` merges `origin/main` into your branch. Claude Code and Codex are told their sync
    status when a session starts; other tools run it at the start of every task.
-2. Before editing a folder, read its `AGENTS.md` (`api/`, `api/lib/`, `src/`, `db/`). Codex and some other
-   tools do not load nested instruction files on their own.
+2. Before editing, read the explanation of the system you are touching — find it through
+   `docs/atlas/systems/files.md` — and the `AGENTS.md` of the folder (`api/`, `api/lib/`, `src/`, `db/`).
+   Codex and some other tools do not load nested instruction files on their own.
 3. Finish: `npm run agent:finish` regenerates the atlas and checks every rule below. Fix what it reports and
    commit the code together with the regenerated files.
 4. Ship: `npm run ship` merges `origin/main` again and pushes your branch to `main`; when `main` moved
@@ -72,6 +77,7 @@ conflicting, and pre-push refuses a push while a rule is broken. Claude Code and
 | One test file / tests of the files you changed | `npx vitest run <path>` / `npx vitest related --run <files>` |
 | Database, Redis and build-output tests (`docs/guides/testing.md`) | `npm run test:db`, `npm run test:redis`, `npm run test:build` |
 | Regenerate the atlas and the architecture model | `npm run atlas` |
+| Record a system explanation as checked against the code | `npm run docs:verify -- <id>`, and `-- <id> --ar` for the Arabic page |
 | Architecture map / validation | `npm run arch` / `npm run arch:validate` |
 | Schema change | `npm run db:generate`, review, `npm run db:migrate` (`db:push` only on a throwaway local database) |
 | Production build and start (the Docker image runs `dist/boot.js`) | `npm run build`, `npm start` |
@@ -111,10 +117,15 @@ touch, say so in your report and do not change unrelated code to make it pass.
    `npx vitest related` command for them).
 2. The regenerated files in `docs/atlas/` and `docs/architecture/generated/` are in the same commit as the
    code. The pre-commit hook adds them when every changed code file is staged.
-3. A new runtime file that no module rule matches: add it to `docs/architecture/clusters.json`, with a
-   description of what the module does that you checked in the code. A new SDK or host of an outside
-   service: add it to `docs/architecture/externals.json`.
-4. You changed a journey drawn in `docs/architecture/flows/`: update its steps and its description.
-5. A decision that changes how the system is built: add a record to `docs/decisions/`.
-6. Plans, prompts, hand-offs and session notes stay out of `docs/`: put them in `.agents/`, which git ignores
+3. `agent:finish` names a system explanation your change made stale: read it, correct whatever no longer
+   matches the code — including the known issues — then `npm run docs:verify -- <id>`. An edited English page
+   asks for the Arabic page in `docs/ar/systems/` to be brought in line and re-checked with `--ar`. The
+   pre-push hook refuses the push while a page your branch made stale is unchecked.
+4. A new runtime file that no module rule matches: add it to `docs/architecture/clusters.json`, with a
+   description of what the module does that you checked in the code, and give the file a system in
+   `docs/architecture/systems.json`. A new SDK or host of an outside service: add it to
+   `docs/architecture/externals.json`.
+5. You changed a journey drawn in `docs/architecture/flows/`: update its steps and its description.
+6. A decision that changes how the system is built: add a record to `docs/decisions/`.
+7. Plans, prompts, hand-offs and session notes stay out of `docs/`: put them in `.agents/`, which git ignores
    except for `.agents/rules/`.

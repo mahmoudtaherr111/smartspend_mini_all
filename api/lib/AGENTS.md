@@ -3,7 +3,9 @@
 Most of this folder is the expense classification pipeline. Entry point: `smart-pipeline.ts`
 (`runSmartPipeline`). The journey is drawn in `docs/architecture/flows/record-expense.c4`; the modules are
 listed in `docs/atlas/modules.md` (`classification`, `arabic-nlp`, `ai-providers`, `ingestion-parsers`,
-`security`, `platform`).
+`security`, `platform`). The explanations are `docs/systems/expense-capture.md` for the pipeline and
+`docs/systems/ai-platform.md` for the providers and limits; `docs/atlas/systems/files.md` maps any other file
+here to its system.
 
 ## Pipeline order
 Read `smart-pipeline.ts` before changing any stage.
