@@ -8,6 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { AtlasGraph } from "../atlas/graph";
 import { REPO_ROOT } from "../atlas/lib/util";
+import { guardedAccessWrites } from "./access-writes";
 import { unparenthesizedOrFragments } from "./sql-fragments";
 import type { RuleResult } from "./types";
 
@@ -164,6 +165,15 @@ const RULES: RuleDefinition[] = [
       graph.env.server
         .filter((variable) => !variable.declared && !UNVALIDATED_ENV.includes(variable.name))
         .map((variable) => `${variable.name} (${variable.usedBy.join(", ")})`),
+  },
+  {
+    id: "access-writes-owned",
+    title: "role, plan and session writes live in api/lib/access-control.ts",
+    fix: "Use setRole, setPlan, revokeSession, revokeAllSessions, revokeSessionByToken or purgeExpiredSessions from api/lib/access-control.ts. They invalidate the cached principal, which is what keeps a revoked session, a removed role and an expired plan from surviving for fifteen minutes.",
+    check: (graph, root) =>
+      graph.modules
+        .filter((module) => module.file.startsWith("api/"))
+        .flatMap((module) => guardedAccessWrites(module.file, source(root, module.file))),
   },
   {
     id: "sql-or-parenthesized",

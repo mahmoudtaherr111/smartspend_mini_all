@@ -80,7 +80,9 @@ The journey is drawn as `flow_paymob_upgrade` in `docs/architecture/flows/paymob
 2. Prices live in `contracts/plans.ts`, and the webhook accepts only the exact amount.
 3. Compare `plan` with plan names and `role` with roles, never across (golden rule 2, checked by
    `tests/knowledge/architecture.test.ts`).
-4. After changing a user's plan, bump the auth version.
+4. Plan writes go through `setPlan` in `api/lib/access-control.ts` — with the caller's transaction when the
+   plan must commit with something else, as the grant does — so the cached session never keeps a plan the
+   row no longer has (`tests/knowledge/architecture.test.ts`).
 
 ## Tests
 `api/lib/billing-plans.test.ts` covers the plan contract.
@@ -98,10 +100,8 @@ Checked against the code; each one names where it lives.
    `export.myExpenses`) and switching AI models.
 5. **Security.** The webhook writes every Paymob payload, with its card and billing data, to the log; outside production without
    `PAYMOB_HMAC_SECRET` it accepts unsigned callbacks and grants plans from them.
-6. **Security.** `pro.myPlan` downgrades an expired user without bumping the auth version, so cached sessions keep the paid plan for
-   up to 15 minutes.
-7. **Debt.** In development without `BILLING_SIMULATE=true`, checkout answers `simulate` but `pro.upgrade` refuses it.
-8. **Debt.** No test covers the webhook's verification, the grant, the expiry job or referrals.
+6. **Debt.** In development without `BILLING_SIMULATE=true`, checkout answers `simulate` but `pro.upgrade` refuses it.
+7. **Debt.** No test covers the webhook's verification, the grant, the expiry job or referrals.
 
 ## Related systems
 - [Accounts, sign-in and security](accounts.md): the user rows that carry the plan, and the auth version.

@@ -138,7 +138,9 @@ Then, per procedure:
 2. Store only hashes of anything that works as a credential, and select admin fields from the allowlists.
 3. Registration, verification and sign-in procedures use `strictPublicProcedure`; phone logins go through login
    protection.
-4. After changing a user's role, plan or phone, bump the auth version so cached sessions pick it up.
+4. Role, plan and session writes go through `api/lib/access-control.ts`, which invalidates the cached
+   principal in the same call; a phone change calls `invalidatePrincipal` for the same reason. Nothing else
+   may write `role` or `plan` or delete a session (`tests/knowledge/architecture.test.ts`).
 5. A new user-owned table is added to `purgeUserData`.
 6. Never log tokens, codes or phone numbers (golden rule 10).
 
@@ -173,8 +175,7 @@ Checked against the code; each one names where it lives.
    it, while the content security policy allows inline scripts (`src/AGENTS.md`, rule 4).
 8. **Security.** `/api/sse/otp` answers for any phone number without signing in, sends the sender's number in its fraud event, and
    never prunes its per-IP counters.
-9. **Security.** `localAuth.updateRole` does not bump the auth version, so a changed role stays in cached sessions for up to
-   15 minutes; the `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
+9. **Gap.** The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
 10. **Security.** The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the
     same storage.
 11. **Security.** `api/services/whatsapp-service.ts` logs the codes it receives, whole incoming messages and the senders' phone

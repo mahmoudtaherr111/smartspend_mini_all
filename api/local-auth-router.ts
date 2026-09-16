@@ -61,6 +61,7 @@ import {
   releaseLoginAttempt,
   setLoginRateLimitHeaders,
 } from "./lib/login-protection";
+import { setRole } from "./lib/access-control";
 
 // A fixed cost-12 hash keeps nonexistent-account failures on the same bcrypt
 // path as incorrect passwords without deriving a hash during each request.
@@ -549,10 +550,7 @@ export const localAuthRouter = router({
       }),
     )
     .mutation(async ({ input }) => {
-      await db
-        .update(localUsers)
-        .set({ role: input.role })
-        .where(eq(localUsers.id, input.id));
+      await setRole("local", input.id, input.role);
       return { success: true };
     }),
 });

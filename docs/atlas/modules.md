@@ -10,7 +10,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | --- | --- | --- | --- | --- | --- |
 | `api-core` | API server core | 5 | `ai-providers`, `api-routers`, `auth`, `billing`, `classification`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `api-routers` | `sentry` |
 | `api-routers` | tRPC routers and HTTP sub-apps | 23 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `ledger`, `notifications`, `platform`, `receipt-parsing`, `security`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq`, `web-push` |
-| `auth` | Authentication and sessions | 3 | `database`, `platform`, `security` | `api-core`, `api-routers`, `billing`, `jobs`, `voice`, `whatsapp` | — |
+| `auth` | Authentication and sessions | 4 | `database`, `platform`, `security` | `api-core`, `api-routers`, `billing`, `jobs`, `voice`, `whatsapp` | — |
 | `security` | Request security | 11 | `database`, `platform` | `api-core`, `api-routers`, `auth` | `turnstile` |
 | `platform` | Platform services | 8 | `database` | `ai-governance`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `jobs`, `ledger`, `notifications`, `security`, `voice` | `redis` |
 | `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `classification`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `mysql` |
@@ -83,7 +83,7 @@ Hono app and server entry points, request context, tRPC procedure builders and t
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/boot.ts` | `ai-providers`, `api-routers`, `billing`, `classification`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `sentry` | — | `auth_challenges`, `classification_logs`, `sessions` |
+| `api/boot.ts` | `ai-providers`, `api-routers`, `auth`, `billing`, `classification`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `sentry` | — | `auth_challenges`, `classification_logs` |
 | `api/context.ts` | `auth`, `database`, `security` | — | `local_users`, `users` | — |
 | `api/middleware.ts` | `security` | — | — | — |
 | `api/router.ts` | `api-routers` | — | — | — |
@@ -95,7 +95,7 @@ One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted 
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/admin-router.ts` | `accounts`, `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `auth`, `classification`, `database`, `notifications`, `platform` | `gemini`, `web-push` | `ads`, `ai_models`, `ai_providers`, `ai_token_ledgers`, `classification_logs`, `discount_codes`, `expense_daily_rollups`, `expenses`, `local_users`, `notification_logs`, `notification_templates`, `onboarding_questions`, `pending_clarifications`, `pro_subscriptions`, `push_subscriptions`, `raw_sms_events`, `sessions`, `support_tickets`, `system_settings`, `user_analytics`, `user_dictionaries`, `users`, `voice_usage` | `ai_models`, `ai_providers`, `discount_codes`, `local_users`, `notification_templates`, `pending_clarifications`, `sessions`, `system_settings`, `user_dictionaries`, `users` |
+| `api/admin-router.ts` | `accounts`, `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `auth`, `classification`, `database`, `notifications`, `platform` | `gemini`, `web-push` | `ads`, `ai_models`, `ai_providers`, `ai_token_ledgers`, `classification_logs`, `discount_codes`, `expense_daily_rollups`, `expenses`, `local_users`, `notification_logs`, `notification_templates`, `onboarding_questions`, `pending_clarifications`, `pro_subscriptions`, `push_subscriptions`, `raw_sms_events`, `sessions`, `support_tickets`, `system_settings`, `user_analytics`, `user_dictionaries`, `users`, `voice_usage` | `ai_models`, `ai_providers`, `discount_codes`, `local_users`, `notification_templates`, `pending_clarifications`, `system_settings`, `user_dictionaries`, `users` |
 | `api/admin-whatsapp-router.ts` | `api-core`, `database`, `platform`, `whatsapp` | — | `local_users`, `users` | `system_settings` |
 | `api/ads-router.ts` | `api-core`, `database` | — | `ads` | `ad_clicks`, `ads` |
 | `api/ai-router.ts` | `ai-governance`, `ai-insights`, `ai-kernel`, `ai-providers`, `api-core`, `arabic-nlp`, `classification`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `security`, `voice` | `gemini`, `groq` | `ai_summaries`, `business_categories`, `expenses`, `local_users`, `pending_clarifications`, `pro_subscriptions`, `user_businesses`, `user_dictionaries`, `users`, `voice_usage` | `ai_summaries`, `ai_token_ledgers`, `classification_logs`, `local_users`, `monthly_behavior_snapshots`, `pending_clarifications`, `user_dictionaries`, `users`, `voice_usage` |
@@ -109,11 +109,11 @@ One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted 
 | `api/goals-router.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `contracts`, `database`, `finance-semantic-layer`, `platform` | `gemini` | `expenses`, `financial_goals` | `financial_goals`, `local_users`, `user_budgets`, `users` |
 | `api/image-router.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `api-core`, `classification`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `receipt-parsing`, `security` | — | `expenses`, `user_dictionaries` | `expenses`, `local_users`, `users` |
 | `api/local-auth-router.ts` | `accounts`, `api-core`, `auth`, `database`, `platform`, `security`, `whatsapp` | — | `expenses`, `local_users` | `local_users` |
-| `api/pro-router.ts` | `api-core`, `billing`, `contracts`, `database`, `platform` | — | `local_users`, `pro_subscriptions`, `users` | `local_users`, `pro_subscriptions`, `users` |
+| `api/pro-router.ts` | `api-core`, `auth`, `billing`, `contracts`, `database`, `platform` | — | `local_users`, `pro_subscriptions`, `users` | `pro_subscriptions` |
 | `api/profile-router.ts` | `ai-insights`, `api-core`, `auth`, `classification`, `database`, `platform`, `security`, `whatsapp` | — | `expenses`, `in_app_notifications`, `local_users`, `onboarding_questions`, `push_subscriptions`, `raw_sms_events`, `user_contacts`, `user_profiles`, `webhook_tokens` | `expenses`, `in_app_notifications`, `local_users`, `monthly_behavior_snapshots`, `push_subscriptions`, `user_contacts`, `user_profiles`, `users`, `webhook_tokens` |
 | `api/referral-router.ts` | `api-core`, `database`, `platform` | — | `discount_codes`, `local_users`, `referrals`, `users` | `local_users`, `referrals`, `users` |
 | `api/seo-router.ts` | `api-core`, `database` | — | `seo_pages` | `seo_pages` |
-| `api/session-router.ts` | `api-core`, `auth`, `database`, `platform`, `security` | — | `sessions` | `sessions`, `user_analytics` |
+| `api/session-router.ts` | `api-core`, `auth`, `database`, `security` | — | `sessions` | `user_analytics` |
 | `api/sms-router.ts` | `auth`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `ledger`, `platform` | — | `local_users`, `raw_sms_events`, `users`, `webhook_tokens` | `expenses`, `raw_sms_events`, `webhook_tokens` |
 | `api/support-router.ts` | `api-core`, `database` | — | `local_users`, `support_tickets`, `users` | `support_tickets` |
 | `api/wallet-router.ts` | `api-core`, `database` | — | `expenses`, `user_wallets` | `expenses`, `user_wallets` |
@@ -121,10 +121,11 @@ One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted 
 
 ### `auth` — Authentication and sessions
 
-Password hashing, JWT session creation, session validation and login brute-force protection.
+Password hashing, JWT session creation, session validation, login brute-force protection, and the one module that changes a role, a plan or a session and invalidates the cached principal with it.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
+| `api/lib/access-control.ts` | `database`, `platform` | — | `sessions` | `local_users`, `sessions`, `users` |
 | `api/lib/login-protection.ts` | `platform`, `security` | — | — | — |
 | `api/lib/session-validation.ts` | `database`, `platform` | — | `sessions` | — |
 | `api/local-auth-utils.ts` | `database`, `platform`, `security` | — | — | `sessions` |
@@ -192,7 +193,7 @@ Paymob checkout requests, webhook verification settings and the subscription gra
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
 | `api/lib/paymob.ts` | `contracts`, `platform` | `paymob` | — | — |
-| `api/lib/subscription-service.ts` | `auth`, `contracts`, `database` | — | `pro_subscriptions` | `local_users`, `pro_subscriptions`, `user_analytics`, `users` |
+| `api/lib/subscription-service.ts` | `auth`, `contracts`, `database` | — | `pro_subscriptions` | `pro_subscriptions`, `user_analytics` |
 
 ### `ledger` — Ledger aggregates
 
@@ -221,7 +222,7 @@ Job implementations scheduled from api/boot.ts.
 | `api/jobs/monthly-behavior-job.ts` | `api-routers`, `database` | — | `expenses`, `user_profiles` | — |
 | `api/jobs/monthly-report-job.ts` | `ai-governance`, `ai-insights`, `ai-providers`, `database`, `finance-semantic-layer`, `platform`, `whatsapp` | `fireworks` | `local_users`, `monthly_reports`, `users` | `monthly_reports` |
 | `api/jobs/rollup-reconciliation-job.ts` | `database`, `ledger`, `platform` | — | `expense_daily_rollups`, `expenses` | — |
-| `api/jobs/subscription-expiry-job.ts` | `auth`, `database` | — | `pro_subscriptions` | `local_users`, `pro_subscriptions`, `users` |
+| `api/jobs/subscription-expiry-job.ts` | `auth`, `database` | — | `pro_subscriptions` | `pro_subscriptions` |
 
 ### `notifications` — Notifications
 

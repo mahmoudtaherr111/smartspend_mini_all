@@ -1,5 +1,4 @@
 import { sign } from "hono/jwt";
-import { eq } from "drizzle-orm";
 import { db } from "./queries/connection";
 import { sessions } from "../db/schema";
 import { env } from "./lib/env";
@@ -47,11 +46,6 @@ export async function generateToken(
   );
 }
 
-import {
-  hashSessionToken,
-  invalidateCachedSession,
-} from "./lib/session-validation";
-
 export async function createSession(
   userId: number,
   userType: "oauth" | "local",
@@ -75,11 +69,10 @@ export async function createSession(
 }
 
 export async function invalidateSession(token: string) {
-  await invalidateCachedSession(token);
-  const tokenHash = createHash("sha256").update(token).digest("hex");
-  await db
-    .delete(sessions)
-    .where(eq(sessions.tokenHash, tokenHash));
+  // Signing out of one device: the token leaves the table and the cache, and the user's other devices are
+  // left alone (api/lib/access-control.ts).
+  const { revokeSessionByToken } = await import("./lib/access-control");
+  await revokeSessionByToken(token);
 }
 
 // Smart phone validation for Egyptian numbers

@@ -371,11 +371,6 @@
       "count": 24
     }
   },
-  "api/local-auth-utils.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "api/middleware.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2

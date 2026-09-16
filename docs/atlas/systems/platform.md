@@ -116,7 +116,6 @@ flowchart LR
   mod_api_core -.-> tbl_users
   mod_api_core ==> tbl_auth_challenges
   mod_api_core ==> tbl_classification_logs
-  mod_api_core ==> tbl_sessions
   mod_api_routers --> ext_fireworks
   mod_api_routers --> ext_gemini
   mod_api_routers --> ext_google_oauth
@@ -138,6 +137,7 @@ flowchart LR
   mod_api_routers -.-> tbl_expense_daily_rollups
   mod_api_routers -.-> tbl_notification_logs
   mod_api_routers -.-> tbl_onboarding_questions
+  mod_api_routers -.-> tbl_sessions
   mod_api_routers ==> tbl_ad_clicks
   mod_api_routers ==> tbl_ads
   mod_api_routers ==> tbl_ai_conversation_summaries
@@ -166,7 +166,6 @@ flowchart LR
   mod_api_routers ==> tbl_raw_sms_events
   mod_api_routers ==> tbl_referrals
   mod_api_routers ==> tbl_seo_pages
-  mod_api_routers ==> tbl_sessions
   mod_api_routers ==> tbl_support_tickets
   mod_api_routers ==> tbl_system_settings
   mod_api_routers ==> tbl_user_analytics
@@ -193,7 +192,9 @@ flowchart LR
   mod_jobs --> sys_notifications
   mod_jobs -.-> tbl_expense_daily_rollups
   mod_jobs -.-> tbl_expenses
+  mod_jobs -.-> tbl_local_users
   mod_jobs -.-> tbl_user_profiles
+  mod_jobs -.-> tbl_users
   mod_jobs ==> tbl_ad_clicks
   mod_jobs ==> tbl_ad_stats_daily
   mod_jobs ==> tbl_ai_action_audit_logs
@@ -204,14 +205,12 @@ flowchart LR
   mod_jobs ==> tbl_auth_challenges
   mod_jobs ==> tbl_chat_messages
   mod_jobs ==> tbl_classification_logs
-  mod_jobs ==> tbl_local_users
   mod_jobs ==> tbl_monthly_reports
   mod_jobs ==> tbl_notification_logs
   mod_jobs ==> tbl_pending_clarifications
   mod_jobs ==> tbl_pro_subscriptions
   mod_jobs ==> tbl_profile_learning_events
   mod_jobs ==> tbl_user_analytics
-  mod_jobs ==> tbl_users
   mod_jobs ==> tbl_voice_usage
   mod_platform --> ext_redis
   mod_platform -.-> tbl_system_settings
@@ -274,7 +273,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `expenses` | B | `api-routers` | `api-routers`, `jobs` |
 | `financial_goals` | C | `api-routers` | `api-routers` |
 | `in_app_notifications` | D | `api-routers` | `api-routers` |
-| `local_users` | A | `api-routers`, `jobs` | `api-core`, `api-routers`, `jobs` |
+| `local_users` | A | `api-routers` | `api-core`, `api-routers`, `jobs` |
 | `monthly_behavior_snapshots` | C | `api-routers` | — |
 | `monthly_reports` | C | `jobs` | `jobs` |
 | `notification_logs` | E | `jobs` | `api-routers` |
@@ -287,7 +286,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `raw_sms_events` | E | `api-routers` | `api-routers` |
 | `referrals` | A | `api-routers` | `api-routers` |
 | `seo_pages` | A | `api-routers` | `api-routers` |
-| `sessions` | D | `api-core`, `api-routers` | `api-routers` |
+| `sessions` | D | — | `api-routers` |
 | `support_tickets` | A | `api-routers` | `api-routers` |
 | `system_settings` | A | `api-routers` | `api-routers`, `platform` |
 | `user_analytics` | E | `api-routers`, `jobs` | `api-routers` |
@@ -298,7 +297,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `user_dictionaries` | F | `api-routers` | `api-routers` |
 | `user_profiles` | A | `api-routers` | `api-routers`, `jobs` |
 | `user_wallets` | A | `api-routers` | `api-routers` |
-| `users` | A | `api-routers`, `jobs` | `api-core`, `api-routers`, `jobs` |
+| `users` | A | `api-routers` | `api-core`, `api-routers`, `jobs` |
 | `voice_usage` | E | `api-routers`, `jobs` | `api-routers` |
 | `webhook_tokens` | D | `api-routers` | `api-routers` |
 

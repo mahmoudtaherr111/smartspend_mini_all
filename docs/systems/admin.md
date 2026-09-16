@@ -57,8 +57,10 @@ support page, the ads shown in the app, the SEO metadata of public pages and the
   every secret with dots plus its last four characters (`maskSettingsForClient`). `admin.updateSettings`
   accepts only registry keys, skips a value that is still masked — so saving an unrelated field cannot
   overwrite a working key with dots — upserts the rest and clears this process's settings cache.
-- **Role and plan.** `admin.updateUserRole` and `admin.updateUserPlanV2` write the user row and bump the auth
-  version, so cached sessions pick the change up at once.
+- **Role, plan and sessions.** `admin.updateUserRole`, `admin.updateUserPlanV2`, `admin.revokeSession` and
+  `admin.deleteUser` go through `api/lib/access-control.ts`, which writes the row and invalidates the cached
+  principal in the same call: a changed role, a changed plan and a revoked session take effect on the next
+  request rather than up to fifteen minutes later.
 - **Deleting a user.** `admin.deleteUser` runs `purgeUserData` in a transaction ([accounts](accounts.md)).
 - **Messaging one user.** The dialog in the users tab sends through WhatsApp (`adminWhatsapp.sendDirectMessage`,
   server side) or, for email, opens the admin's own mail application with a `mailto:` link: nothing is sent or
@@ -97,7 +99,8 @@ support page, the ads shown in the app, the SEO metadata of public pages and the
    session tokens or unmasked keys.
 3. A settings write goes through `admin.updateSettings` or calls `invalidateSettingsCache()` (golden rule 5,
    checked by `tests/knowledge/architecture.test.ts`).
-4. After changing a user's role or plan, bump the auth version.
+4. Role, plan and session writes go through `api/lib/access-control.ts`; nothing else may make them
+   (`tests/knowledge/architecture.test.ts`).
 
 ## Tests
 `api/admin-access.test.ts`, `api/admin-router.security.test.ts`, `api/admin-authentication.security.test.ts`
@@ -105,37 +108,34 @@ and `api/lib/admin-model-switch.test.ts`.
 
 ## Known issues
 Checked against the code; each one names where it lives.
-1. **Security.** `admin.revokeSession` deletes the session row but not its cached copy, so a session revoked from the audit
-   tab or from a user's session list keeps working for up to fifteen minutes; `session.revokeMine` clears the
-   cache and bumps the auth version.
-2. **Gap.** Nothing records what admins do. The audit tab lists recent sessions, and changing a role or plan, editing
+1. **Gap.** Nothing records what admins do. The audit tab lists recent sessions, and changing a role or plan, editing
    settings, deleting an account or sending a message leaves no trail.
-3. **Debt.** A settings change reaches the other replicas only when their five-minute cache expires
+2. **Debt.** A settings change reaches the other replicas only when their five-minute cache expires
    (`api/lib/settings-cache.ts`).
-4. **Bug.** The quota inspector compares usage with fixed ceilings of 50,000, 500,000 and 2,000,000, not with the
+3. **Bug.** The quota inspector compares usage with fixed ceilings of 50,000, 500,000 and 2,000,000, not with the
    `<plan>_token_limit` settings and the per-user limit that `api/lib/ai-usage-policy.ts` enforces — and that
    the settings tab writes.
-5. **Debt.** Opening the AI tab fetches `admin.getAICostOverview`, `admin.getAIClassificationStats`,
+4. **Debt.** Opening the AI tab fetches `admin.getAICostOverview`, `admin.getAIClassificationStats`,
    `admin.getClassificationLogs` and `admin.getVoiceUsageStats` and displays none of them: the panel that would
    show the classification numbers, `src/pages/Admin.tsx#ClassificationDashboard`, is never mounted.
-6. **Gap.** The backup button returns settings with secrets masked, discount codes, onboarding questions and ads to the
+5. **Gap.** The backup button returns settings with secrets masked, discount codes, onboarding questions and ads to the
    browser; nothing backs up the database.
-7. **Gap.** Answering a ticket does not notify the user, while the support page promises a reply within a day. The
+6. **Gap.** Answering a ticket does not notify the user, while the support page promises a reply within a day. The
    reply box is drawn for moderators too, though they cannot reach the console and `support.respond` refuses
    them, and `support.assign` has no screen.
-8. **Gap.** Nothing serves the sitemap: `seo.sitemap` is a tRPC query, there is no HTTP route and no file for it, and it
+7. **Gap.** Nothing serves the sitemap: `seo.sitemap` is a tRPC query, there is no HTTP route and no file for it, and it
    would list `/admin` and a hard-coded `https://smartspend.app`. No screen edits SEO pages either
    (`seo.upsert`, `seo.list` and `seo.delete` have no caller).
-9. **Bug.** Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero;
+8. **Bug.** Nothing calls `ads.impression`, so the impressions and the click-through rate in the ads tab stay at zero;
    `ads.list` trusts the plan the client sends, and `analytics.trackEvent` stores any event name and metadata a
    signed-in caller sends.
-10. **Gap.** Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`,
-    `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`,
-    `admin.resetUserTokens`, `admin.setUserTokenLimit`, `admin.updateUserPlan` (the console uses the `V2` one),
-    `support.getById`, `support.assign` and every statistic of `analytics`.
-11. **Bug.** Discount codes are created here but checkout never applies them ([billing](billing.md)), and the WhatsApp
+9. **Gap.** Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`,
+   `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`,
+   `admin.resetUserTokens`, `admin.setUserTokenLimit`, `admin.updateUserPlan` (the console uses the `V2` one),
+   `support.getById`, `support.assign` and every statistic of `analytics`.
+10. **Bug.** Discount codes are created here but checkout never applies them ([billing](billing.md)), and the WhatsApp
     tab always shows verification as off ([notifications](notifications.md)).
-12. **Bug.** The founder metrics count active users from sessions created since the server's midnight, not Cairo's
+11. **Bug.** The founder metrics count active users from sessions created since the server's midnight, not Cairo's
     (golden rule 6), and upgrades only from `upgrade_to_pro` events, so an upgrade to Ultra is not counted.
 
 ## Related systems

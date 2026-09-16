@@ -4,24 +4,24 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (80 of 135 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (77 of 133 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-16 b51229f | 2026-09-16 0610413 | 17 | — | 5 | 1 | 1 |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-16 b51229f | 2026-09-16 0610413 | 1 | **1** | 6 | 2 | 1 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-16 bc4b459 | 2026-09-16 0610413 | 1 | **1** | 6 | 2 | 1 |
 | [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-16 b51229f | 2026-09-16 0610413 | 6 | **2** | 4 | — | 3 |
 | [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-16 b51229f | 2026-09-16 0610413 | 4 | **1** | 6 | 2 | 1 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-16 b51229f | 2026-09-16 0610413 | 6 | **1** | 11 | 2 | 3 |
-| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-16 b51229f | 2026-09-16 0610413 | 3 | — | 7 | 5 | — |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-16 b51229f | 2026-09-16 0610413 | 12 | **7** | 3 | 1 | — |
-| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-16 b51229f | 2026-09-16 0610413 | 1 | **2** | 1 | 3 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-16 b51229f | 2026-09-16 0610413 | **none** | **2** | 5 | 1 | 3 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-16 b51229f | 2026-09-16 0610413 | 4 | **1** | 4 | 5 | 2 |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-16 bc4b459 | 2026-09-16 0610413 | 6 | **1** | 11 | 2 | 3 |
+| [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-16 bc4b459 | 2026-09-16 0610413 | 3 | — | 7 | 5 | — |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-16 bc4b459 | 2026-09-16 bc4b459 | 12 | **6** | 3 | 2 | — |
+| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-16 bc4b459 | 2026-09-16 bc4b459 | 1 | **1** | 1 | 3 | 2 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-16 bc4b459 | 2026-09-16 0610413 | **none** | **2** | 5 | 1 | 3 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-16 bc4b459 | 2026-09-16 bc4b459 | 4 | — | 4 | 5 | 2 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-16 b51229f | 2026-09-16 0610413 | 7 | **2** | 4 | 1 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-16 b51229f | 2026-09-16 0610413 | 5 | **1** | 1 | — | 8 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-16 bc4b459 | 2026-09-16 0610413 | 5 | **1** | 1 | — | 8 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-16 b51229f | 2026-09-16 0610413 | 7 | **1** | 2 | 2 | 2 |
 
 
@@ -29,11 +29,11 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (80 of
 
 These systems' explanations name no test at all, so nothing fails when they break: [Notifications and WhatsApp](notifications.md).
 
-## What is waiting (135 issue(s))
+## What is waiting (133 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
-### Security (21)
+### Security (18)
 
 **Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
 - `parseSmsFinancialData` logs the first 50 characters of the condensed message on every cache hit and write, against golden rule 10.
@@ -53,20 +53,15 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `localAuth.verifyOtp` creates a session for a phone number and a matching code without checking that the code was confirmed over WhatsApp. No screen uses it and codes never leave the server today, but returning the code to the client, the obvious repair for issue 1, would let anyone who requests a code for a number sign in as its owner.
 - The phone-account token sits in `localStorage` and is sent as a Bearer header, where an injected script could read it, while the content security policy allows inline scripts (`src/AGENTS.md`, rule 4).
 - `/api/sse/otp` answers for any phone number without signing in, sends the sender's number in its fraud event, and never prunes its per-IP counters.
-- `localAuth.updateRole` does not bump the auth version, so a changed role stays in cached sessions for up to 15 minutes; the `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
 - The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the same storage.
 - `api/services/whatsapp-service.ts` logs the codes it receives, whole incoming messages and the senders' phone numbers (golden rule 10).
 
 **Plans and payments** — [docs/systems/billing.md](../../systems/billing.md)
 - The webhook writes every Paymob payload, with its card and billing data, to the log; outside production without `PAYMOB_HMAC_SECRET` it accepts unsigned callbacks and grants plans from them.
-- `pro.myPlan` downgrades an expired user without bumping the auth version, so cached sessions keep the paid plan for up to 15 minutes.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
 - WhatsApp broadcasts are automated bulk messages through an unofficial client, spaced by random pauses and varied wording, which risks a ban of the number; the queue lives in process memory and is lost on restart, and nothing checks that recipients agreed.
 - The WhatsApp service logs codes, whole incoming messages and phone numbers, and broadcasts log every recipient's number (golden rule 10).
-
-**Admin console, support and growth tools** — [docs/systems/admin.md](../../systems/admin.md)
-- `admin.revokeSession` deletes the session row but not its cached copy, so a session revoked from the audit tab or from a user's session list keeps working for up to fifteen minutes; `session.revokeMine` clears the cache and bumps the auth version.
 
 **AI providers and usage limits** — [docs/systems/ai-platform.md](../../systems/ai-platform.md)
 - Provider keys are encrypted with `AI_GATEWAY_SECRET`, or `JWT_SECRET` when it is unset, both read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8). Rotating `JWT_SECRET` without setting `AI_GATEWAY_SECRET` makes every stored provider key undecryptable, and such a route is dropped silently: the console still lists the provider, and traffic quietly falls back to whatever key is left.
@@ -165,7 +160,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Logging out deletes the offline queues (`smartspend_offline_texts` and `smartspend_offline_manual`) from `localStorage`, so anything recorded offline and not yet sent is lost with the session.
 - When Firebase's web configuration is missing the app silently falls back to Web Push with a key written in the code ([notifications](notifications.md)).
 
-### Gaps (25)
+### Gaps (26)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - Correction learning cannot be reached from the app: `api/lib/correction-rules.ts#recordCorrection` runs only in `expense.update`, which the web app does not call. `ai.learnWord`, `expense.createCategory` and `expense.getCategoryList` have no caller in the web app, and `src/components/expenses/ReceiptCapture.tsx` is not rendered anywhere.
@@ -191,6 +186,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
 - A passkey cannot be removed; users cannot see or end their sessions (`session.listMine` and `session.revokeMine` have no screen) or delete their own account.
+- The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
 
 **Plans and payments** — [docs/systems/billing.md](../../systems/billing.md)
 - Ultra cannot be bought: the Ultra card links to `/ultra`, a placeholder page that `src/App.tsx` guards only with a sign-in, not with `UltraFeatureRoute`; no procedure uses `ultraProcedure`; and the yearly Pro plan has no screen.

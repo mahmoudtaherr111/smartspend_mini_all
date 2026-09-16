@@ -4,7 +4,7 @@
 views {
   dynamic view flow_paymob_upgrade {
     title 'Flow · upgrade a plan through Paymob'
-    description 'The Pro page asks the API for a Paymob checkout. Paymob later calls the webhook, which verifies the HMAC and grants the plan by writing the subscription and the user’s plan.'
+    description 'The Pro page asks the API for a Paymob checkout. Paymob later calls the webhook, which verifies the HMAC and grants the plan: the subscription row and the user’s plan are written in one transaction, and the cached session is invalidated so the paid plan is visible on the next request.'
 
     user -> smartspend.web.pages.Pro 'chooses a plan' // intent: the person opens the page
     smartspend.web.pages.Pro -> smartspend.api.trpc.pro.createCheckoutSession 'start checkout'
@@ -14,6 +14,7 @@ views {
     paymob -> smartspend.api.http.post_webhooks_paymob 'transaction callback'
     smartspend.api.http.post_webhooks_paymob -> smartspend.api.modules.billing 'verify the HMAC and grant the plan'
     smartspend.api.modules.billing -> smartspend.mysql.pro_subscriptions 'record the subscription'
-    smartspend.api.modules.billing -> smartspend.mysql.users 'set the plan'
+    smartspend.api.modules.billing -> smartspend.api.modules.auth 'set the plan, in the same transaction'
+    smartspend.api.modules.auth -> smartspend.mysql.users 'write the plan and invalidate the cached session'
   }
 }

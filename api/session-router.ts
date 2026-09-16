@@ -4,6 +4,7 @@ import { sessionMetadataFields } from "./lib/admin-safe-fields";
 import { db } from "./queries/connection";
 import { sessions, userAnalytics } from "../db/schema";
 import { eq, desc, and, sql, count, gte } from "drizzle-orm";
+import { revokeSession } from "./lib/access-control";
 
 export const sessionRouter = router({
   // ─── My Sessions ───
@@ -24,32 +25,11 @@ export const sessionRouter = router({
   revokeMine: authedProcedure
     .input(z.object({ sessionId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const session = await db.query.sessions.findFirst({
-        where: and(
-          eq(sessions.id, input.sessionId),
-          eq(sessions.userId, ctx.user.id),
-          eq(sessions.userType, ctx.user.type),
-        ),
+      // Scoped to the caller inside the helper, so a session id belonging to someone else finds nothing.
+      await revokeSession({
+        sessionId: input.sessionId,
+        owner: { userId: ctx.user.id, userType: ctx.user.type },
       });
-
-      if (session) {
-        await db
-          .delete(sessions)
-          .where(eq(sessions.id, session.id));
-
-        const { bumpAuthVersion, hashSessionToken } = await import(
-          "./lib/session-validation"
-        );
-        const { cacheDel } = await import("./lib/redis-client");
-        const { CacheKeys } = await import("./lib/cache-keys");
-
-        if (session.tokenHash) {
-          await cacheDel(CacheKeys.session(session.tokenHash));
-        } else if (session.token) {
-          await cacheDel(CacheKeys.session(hashSessionToken(session.token).hex));
-        }
-        await bumpAuthVersion(ctx.user.type, ctx.user.id);
-      }
 
       return { success: true };
     }),

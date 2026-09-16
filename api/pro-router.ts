@@ -11,6 +11,7 @@ import {
   createPaymobHostedCheckoutUrl,
 } from "./lib/paymob";
 import { BILLING_PLAN_IDS } from "../contracts/plans";
+import { setPlan } from "./lib/access-control";
 
 function hasPaidFeatures(plan: string, role: string) {
   return plan === "pro" || plan === "ultra" || role === "admin";
@@ -52,10 +53,10 @@ export const proRouter = router({
         .update(proSubscriptions)
         .set({ status: "expired" })
         .where(eq(proSubscriptions.id, sub.id));
-      await db
-        .update(table)
-        .set({ plan: "free" })
-        .where(eq(table.id, ctx.user.id));
+      // A read that writes, on purpose: the daily job in api/jobs/subscription-expiry-job.ts is the owner of
+      // this downgrade, and this is the safety net for the hours between its runs. It goes through the same
+      // helper so the paid plan does not survive in a cached session.
+      await setPlan(ctx.user.type, ctx.user.id, "free");
       plan = "free";
       sub.status = "expired";
     }

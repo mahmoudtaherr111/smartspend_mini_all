@@ -28,9 +28,10 @@ import { applyOriginSecurity } from "./lib/http-origin-security";
 import { streamSSE } from "hono/streaming";
 import { otpEvents } from "./services/whatsapp-service";
 import { db } from "./queries/connection";
-import { sessions, classificationLogs, authChallenges } from "../db/schema";
+import { classificationLogs, authChallenges } from "../db/schema";
 import { lt } from "drizzle-orm";
 import { installProviderHealthReporter } from "./lib/provider-health";
+import { purgeExpiredSessions } from "./lib/access-control";
 import fs from "fs";
 import path from "path";
 import { whatsappService } from "./services/whatsapp-service";
@@ -97,7 +98,7 @@ if (cronsEnabled) {
 scheduleProtectedJob("0 0 * * *", "daily-auth-cleanup", async () => {
   const now = new Date();
   await Promise.all([
-    db.delete(sessions).where(lt(sessions.expiresAt, now)),
+    purgeExpiredSessions(now),
     db.delete(authChallenges).where(lt(authChallenges.expiresAt, now)),
   ]);
   console.log("[Cron] Cleaned expired sessions and WebAuthn challenges");

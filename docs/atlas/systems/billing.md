@@ -44,17 +44,16 @@ flowchart LR
   mod_billing --> ext_paymob
   mod_billing --> sys_accounts
   mod_billing --> sys_platform
-  mod_billing ==> tbl_local_users
   mod_billing ==> tbl_pro_subscriptions
   mod_billing ==> tbl_user_analytics
-  mod_billing ==> tbl_users
   page_Pro --> router_pro
   page_Pro --> router_referral
   router_pro --> mod_billing
+  router_pro --> sys_accounts
   router_pro --> sys_platform
-  router_pro ==> tbl_local_users
+  router_pro -.-> tbl_local_users
+  router_pro -.-> tbl_users
   router_pro ==> tbl_pro_subscriptions
-  router_pro ==> tbl_users
   router_referral --> sys_platform
   router_referral -.-> tbl_discount_codes
   router_referral ==> tbl_local_users
@@ -69,7 +68,7 @@ flowchart LR
 
 ### upgrade a plan through Paymob
 
-The Pro page asks the API for a Paymob checkout. Paymob later calls the webhook, which verifies the HMAC and grants the plan by writing the subscription and the user’s plan.
+The Pro page asks the API for a Paymob checkout. Paymob later calls the webhook, which verifies the HMAC and grants the plan: the subscription row and the user’s plan are written in one transaction, and the cached session is invalidated so the paid plan is visible on the next request.
 
 ```mermaid
 sequenceDiagram
@@ -80,7 +79,8 @@ sequenceDiagram
   participant p5 as Paymob (Accept)
   participant p6 as POST /api/webhooks/paymob
   participant p7 as pro_subscriptions table
-  participant p8 as users table
+  participant p8 as Authentication and sessions
+  participant p9 as users table
   p1->>p2: chooses a plan
   p2->>p3: start checkout
   p3->>p4: build the Paymob payment
@@ -89,7 +89,8 @@ sequenceDiagram
   p5->>p6: transaction callback
   p6->>p4: verify the HMAC and grant the plan
   p4->>p7: record the subscription
-  p4->>p8: set the plan
+  p4->>p8: set the plan, in the same transaction
+  p8->>p9: write the plan and invalidate the cached session
 ```
 
 Drawn in `docs/architecture/flows/paymob-upgrade.c4`; in the interactive map it is the view `flow_paymob_upgrade`.
@@ -107,7 +108,7 @@ Drawn in `docs/architecture/flows/paymob-upgrade.c4`; in the interactive map it 
 | `pro.cancel` | mutation | `authedProcedure` | — | `pro_subscriptions` | `More`, `Pro` |
 | `pro.createCheckoutSession` | mutation | `authedProcedure` | — | — | `More`, `Pro` |
 | `pro.listSubscriptions` | query | `adminProcedure` | `pro_subscriptions` | — | — |
-| `pro.myPlan` | query | `authedProcedure` | `local_users`, `pro_subscriptions`, `users` | `local_users`, `pro_subscriptions`, `users` | `Home`, `More`, `Pro` |
+| `pro.myPlan` | query | `authedProcedure` | `local_users`, `pro_subscriptions`, `users` | `pro_subscriptions` | `Home`, `More`, `Pro` |
 | `pro.upgrade` | mutation | `authedProcedure` | — | — | `More`, `Pro` |
 | `referral.applyCode` | mutation | `authedProcedure` | `local_users`, `referrals`, `users` | `local_users`, `referrals`, `users` | `More`, `Pro` |
 | `referral.listAll` | query | `adminProcedure` | `referrals` | — | — |
@@ -128,11 +129,11 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | Table | Storage class | Written by | Read by |
 | --- | --- | --- | --- |
 | `discount_codes` | A | — | `referral.myCode` |
-| `local_users` | A | `billing`, `pro.myPlan`, `referral.applyCode`, `referral.myCode` | `pro.myPlan`, `referral.applyCode`, `referral.myCode` |
+| `local_users` | A | `referral.applyCode`, `referral.myCode` | `pro.myPlan`, `referral.applyCode`, `referral.myCode` |
 | `pro_subscriptions` | A | `billing`, `pro.cancel`, `pro.myPlan` | `billing`, `pro.listSubscriptions`, `pro.myPlan` |
 | `referrals` | A | `referral.applyCode` | `referral.applyCode`, `referral.listAll`, `referral.myCode`, `referral.myReferrals` |
 | `user_analytics` | E | `billing` | — |
-| `users` | A | `billing`, `pro.myPlan`, `referral.applyCode`, `referral.myCode` | `pro.myPlan`, `referral.applyCode`, `referral.myCode` |
+| `users` | A | `referral.applyCode`, `referral.myCode` | `pro.myPlan`, `referral.applyCode`, `referral.myCode` |
 
 ## Outside systems
 

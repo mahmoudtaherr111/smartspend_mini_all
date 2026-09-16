@@ -7,7 +7,8 @@
         "api/boot.ts#GET /api/auth/google/callback": "4aa70d89b69f",
         "api/boot.ts#GET /api/auth/google/start": "30860aaa6f6e",
         "api/boot.ts#GET /api/sse/otp": "f865b41c8a1c",
-        "api/boot.ts#job:daily-auth-cleanup": "9cc55afdcd10",
+        "api/boot.ts#job:daily-auth-cleanup": "5c88f2aa5eca",
+        "api/lib/access-control.ts": "cca3d73f1965",
         "api/lib/admin-safe-fields.ts": "cfb73d6bbe66",
         "api/lib/anonymizer.ts": "5c18efa7eec1",
         "api/lib/get-client-ip.ts": "72af77e654a4",
@@ -20,17 +21,17 @@
         "api/lib/security-headers.ts": "0b1a83577095",
         "api/lib/security-logger.ts": "23e02f6971e7",
         "api/lib/session-validation.ts": "ac2005332694",
-        "api/local-auth-router.ts": "7593bb94da1c",
-        "api/local-auth-utils.ts": "326021ce2a37",
-        "api/profile-router.ts#profile.confirmPhoneChange": "3dff722a3d4f",
+        "api/local-auth-router.ts": "8889b5588d78",
+        "api/local-auth-utils.ts": "099855526fd9",
+        "api/profile-router.ts#profile.confirmPhoneChange": "0a0f3d1d7c1f",
         "api/profile-router.ts#profile.getMyProfile": "f179af96f735",
         "api/profile-router.ts#profile.requestPhoneChange": "e167392e505a",
         "api/profile-router.ts#profile.updateProfile": "9aba6a0c3710",
-        "api/profile-router.ts#profile.updateUserInfo": "e15c78c0f250",
-        "api/profile-router.ts#rest-of-file": "9ae0f838bad6",
+        "api/profile-router.ts#profile.updateUserInfo": "ae7508bea9bd",
+        "api/profile-router.ts#rest-of-file": "570bb8d8aab9",
         "api/services/turnstile-service.ts": "5702a2e46626",
         "api/services/user-purge-service.ts": "6bdb77f3851e",
-        "api/session-router.ts": "75926ddab72d",
+        "api/session-router.ts": "e255f9db4207",
         "api/webauthn-router.ts": "10e55c7473d8",
         "src/components/auth/BiometricLockOverlay.tsx": "c1ce277a617a",
         "src/components/auth/BiometricOnboardingModal.tsx": "bf1276a98d91",
@@ -44,13 +45,13 @@
         "src/pages/Login.tsx": "cc14b37780a0",
         "src/pages/Settings.tsx": "0d88f7c557e3"
       },
-      "checked": "2026-09-16 b51229f",
-      "arabic": "8728ea9eb477",
-      "arabicChecked": "2026-09-16 0610413"
+      "checked": "2026-09-16 bc4b459",
+      "arabic": "abda74e0ac4c",
+      "arabicChecked": "2026-09-16 bc4b459"
     },
     "admin": {
       "files": {
-        "api/admin-router.ts": "43fd5238f67a",
+        "api/admin-router.ts": "f2b8f90971e7",
         "api/ads-router.ts": "3492acf11584",
         "api/analytics-router.ts": "f4dfac1f9ab6",
         "api/export-router.ts#export.allUsers": "c142aeea8326",
@@ -80,9 +81,9 @@
         "src/pages/Admin.tsx": "42d9a43037ce",
         "src/pages/Support.tsx": "9175518fbc4c"
       },
-      "checked": "2026-09-16 b51229f",
-      "arabic": "3cb097282e6c",
-      "arabicChecked": "2026-09-16 0610413"
+      "checked": "2026-09-16 bc4b459",
+      "arabic": "6f611cd40094",
+      "arabicChecked": "2026-09-16 bc4b459"
     },
     "ai-center": {
       "files": {
@@ -177,7 +178,7 @@
         "api/profile-router.ts#profile.generateWebhookToken": "be8d7316579a",
         "api/profile-router.ts#profile.getSmsLogs": "c25c54979dfd",
         "api/profile-router.ts#profile.getWebhookToken": "8a850e31cd9d",
-        "api/profile-router.ts#rest-of-file": "9ae0f838bad6",
+        "api/profile-router.ts#rest-of-file": "570bb8d8aab9",
         "api/sms-router.ts": "132aa21cca25",
         "src/components/bank-sync/AndroidSetupFlow.tsx": "68fd301a1dfb",
         "src/components/bank-sync/DigitalBankingSuite.tsx": "b5ee9812af75",
@@ -185,7 +186,7 @@
         "src/components/settings/SmsWebhookSettings.tsx": "6d934cb57744",
         "src/pages/BankSyncPage.tsx": "6d1d3cba9e6c"
       },
-      "checked": "2026-09-16 b51229f",
+      "checked": "2026-09-16 bc4b459",
       "arabic": "8c215e1bc325",
       "arabicChecked": "2026-09-16 0610413"
     },
@@ -193,17 +194,17 @@
       "files": {
         "api/boot.ts#POST /api/webhooks/paymob": "94d106b27383",
         "api/boot.ts#job:daily-subscription-expiry": "09b9a4b6fc93",
-        "api/jobs/subscription-expiry-job.ts": "c04acdeeabd4",
+        "api/jobs/subscription-expiry-job.ts": "a872fab7affa",
         "api/lib/paymob.ts": "356f82099a7d",
-        "api/lib/subscription-service.ts": "4c54e08fd70c",
-        "api/pro-router.ts": "2b0294d92ac0",
+        "api/lib/subscription-service.ts": "f3666e029e61",
+        "api/pro-router.ts": "f0ab881cee0c",
         "api/referral-router.ts": "2f418245f778",
         "src/pages/Pro.tsx": "eb2f5e9dba55",
         "src/pages/UltraLounge.tsx": "a27cc01e2364"
       },
-      "checked": "2026-09-16 b51229f",
-      "arabic": "cff73511d92c",
-      "arabicChecked": "2026-09-16 0610413"
+      "checked": "2026-09-16 bc4b459",
+      "arabic": "7b4b4a3b6c99",
+      "arabicChecked": "2026-09-16 bc4b459"
     },
     "expense-capture": {
       "files": {
@@ -296,7 +297,7 @@
         "api/profile-router.ts#profile.refreshInferences": "a5e6ec461dbc",
         "api/profile-router.ts#profile.submitOnboardingAnswer": "a596328fbc29",
         "api/profile-router.ts#profile.updateSmartProfile": "28d67008ded5",
-        "api/profile-router.ts#rest-of-file": "9ae0f838bad6",
+        "api/profile-router.ts#rest-of-file": "570bb8d8aab9",
         "api/services/adaptive-question-engine.ts": "a6437894905a",
         "api/services/batch-ai-service.ts": "d0e332df353f",
         "api/services/lifestyle-inference-engine.ts": "6b11ba98e172",
@@ -306,7 +307,7 @@
         "api/services/user-profile-service.ts": "dc89c253e3c8",
         "src/components/insights/AIInsights.tsx": "4b618cdf3ad2"
       },
-      "checked": "2026-09-16 b51229f",
+      "checked": "2026-09-16 bc4b459",
       "arabic": "78dd473e60ad",
       "arabicChecked": "2026-09-16 0610413"
     },
@@ -333,7 +334,7 @@
         "api/profile-router.ts#profile.listContacts": "90da0645d250",
         "api/profile-router.ts#profile.mergeContacts": "7ade643df213",
         "api/profile-router.ts#profile.updateContact": "a729d41858de",
-        "api/profile-router.ts#rest-of-file": "9ae0f838bad6",
+        "api/profile-router.ts#rest-of-file": "570bb8d8aab9",
         "api/services/expense-rollups.ts": "55147ed1287a",
         "api/services/financial-month.ts": "50ad98190246",
         "api/wallet-router.ts": "7d5e5a1398e9",
@@ -352,7 +353,7 @@
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
         "src/pages/Home.tsx": "c38066378122"
       },
-      "checked": "2026-09-16 b51229f",
+      "checked": "2026-09-16 bc4b459",
       "arabic": "4440b805595f",
       "arabicChecked": "2026-09-16 0610413"
     },
@@ -367,12 +368,12 @@
         "api/profile-router.ts#profile.markInAppNotificationRead": "3ece83e41efc",
         "api/profile-router.ts#profile.savePushSubscription": "788ec5760eef",
         "api/profile-router.ts#profile.sendBiometricPromptNotification": "ae8ae7ea27ee",
-        "api/profile-router.ts#rest-of-file": "9ae0f838bad6",
+        "api/profile-router.ts#rest-of-file": "570bb8d8aab9",
         "api/services/firebase.ts": "3b9319b2c3a5",
         "api/services/otp-cache.ts": "8023e02f8c99",
         "api/services/whatsapp-service.ts": "cb416af4a8b5"
       },
-      "checked": "2026-09-16 b51229f",
+      "checked": "2026-09-16 bc4b459",
       "arabic": "30be056d8ddd",
       "arabicChecked": "2026-09-16 0610413"
     },
@@ -381,7 +382,7 @@
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "0ee93a8d634b",
+        "api/boot.ts#rest-of-file": "f17bc22506ac",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "e83854efb800",
         "api/lib/app-time.ts": "23f0c001bb84",
@@ -410,7 +411,7 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "30875c0abaf8"
       },
-      "checked": "2026-09-16 b51229f",
+      "checked": "2026-09-16 bc4b459",
       "arabic": "05a136ce8bc9",
       "arabicChecked": "2026-09-16 0610413"
     },

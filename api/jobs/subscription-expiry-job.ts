@@ -1,7 +1,7 @@
 import { db } from "../queries/connection";
-import { proSubscriptions, users, localUsers } from "../../db/schema";
+import { proSubscriptions } from "../../db/schema";
 import { and, eq, lte, or, inArray, gt } from "drizzle-orm";
-import { bumpAuthVersion } from "../lib/session-validation";
+import { setPlan } from "../lib/access-control";
 
 /**
  * Daily cron job to expire pro subscriptions and downgrade users to free (§3.4 Decision 3).
@@ -74,13 +74,7 @@ export async function runSubscriptionExpiryJob(): Promise<{
         continue;
       }
 
-      const table = userType === "oauth" ? users : localUsers;
-      await db
-        .update(table)
-        .set({ plan: "free" })
-        .where(eq(table.id, userId));
-
-      await bumpAuthVersion(userType, userId);
+      await setPlan(userType, userId, "free");
     } catch (err) {
       console.error(
         `[SubscriptionExpiryJob] Failed to process downgrade for user ${userType}:${userId}:`,

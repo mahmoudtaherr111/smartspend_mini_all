@@ -74,10 +74,10 @@ model {
       }
     }
     auth = module 'Authentication and sessions' {
-      description 'Password hashing, JWT session creation, session validation and login brute-force protection.'
+      description 'Password hashing, JWT session creation, session validation, login brute-force protection, and the one module that changes a role, a plan or a session and invalidates the cached principal with it.'
       metadata {
-        files '3'
-        paths 'api/local-auth-utils.ts, api/lib/session-validation.ts, api/lib/login-protection.ts'
+        files '4'
+        paths 'api/lib/access-control.ts, api/local-auth-utils.ts, api/lib/session-validation.ts, api/lib/login-protection.ts'
       }
     }
     billing = module 'Billing' {

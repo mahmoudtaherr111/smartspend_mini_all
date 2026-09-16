@@ -171,7 +171,6 @@ model {
   smartspend.api.modules.api-core -[uses]-> sentry
   smartspend.api.modules.api-core -[writes]-> smartspend.mysql.auth_challenges
   smartspend.api.modules.api-core -[writes]-> smartspend.mysql.classification_logs
-  smartspend.api.modules.api-core -[writes]-> smartspend.mysql.sessions
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.accounts
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.ai-actions
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.ai-governance
@@ -268,7 +267,6 @@ model {
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.raw_sms_events
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.referrals
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.seo_pages
-  smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.sessions
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.support_tickets
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.system_settings
   smartspend.api.modules.api-routers -[writes]-> smartspend.mysql.user_analytics
@@ -286,16 +284,16 @@ model {
   smartspend.api.modules.auth -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.auth -[imports]-> smartspend.api.modules.security
   smartspend.api.modules.auth -[reads]-> smartspend.mysql.sessions
+  smartspend.api.modules.auth -[writes]-> smartspend.mysql.local_users
   smartspend.api.modules.auth -[writes]-> smartspend.mysql.sessions
+  smartspend.api.modules.auth -[writes]-> smartspend.mysql.users
   smartspend.api.modules.billing -[imports]-> smartspend.api.modules.auth
   smartspend.api.modules.billing -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.billing -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.billing -[reads]-> smartspend.mysql.pro_subscriptions
   smartspend.api.modules.billing -[uses]-> paymob
-  smartspend.api.modules.billing -[writes]-> smartspend.mysql.local_users
   smartspend.api.modules.billing -[writes]-> smartspend.mysql.pro_subscriptions
   smartspend.api.modules.billing -[writes]-> smartspend.mysql.user_analytics
-  smartspend.api.modules.billing -[writes]-> smartspend.mysql.users
   smartspend.api.modules.classification -[imports]-> smartspend.api.modules.ai-providers
   smartspend.api.modules.classification -[imports]-> smartspend.api.modules.arabic-nlp
   smartspend.api.modules.classification -[reads]-> smartspend.mysql.classification_logs
@@ -347,14 +345,12 @@ model {
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.auth_challenges
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.chat_messages
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.classification_logs
-  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.local_users
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.monthly_reports
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.notification_logs
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.pending_clarifications
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.pro_subscriptions
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.profile_learning_events
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.user_analytics
-  smartspend.api.modules.jobs -[writes]-> smartspend.mysql.users
   smartspend.api.modules.jobs -[writes]-> smartspend.mysql.voice_usage
   smartspend.api.modules.ledger -[imports]-> smartspend.api.modules.finance-semantic-layer
   smartspend.api.modules.ledger -[imports]-> smartspend.api.modules.platform
@@ -416,8 +412,8 @@ model {
   smartspend.api.modules.whatsapp -[imports]-> smartspend.api.modules.auth
   smartspend.api.modules.whatsapp -[uses]-> whatsapp
   smartspend.api.scheduler.classification-log-cleanup -[writes]-> smartspend.mysql.classification_logs
+  smartspend.api.scheduler.daily-auth-cleanup -[uses]-> smartspend.api.modules.auth
   smartspend.api.scheduler.daily-auth-cleanup -[writes]-> smartspend.mysql.auth_challenges
-  smartspend.api.scheduler.daily-auth-cleanup -[writes]-> smartspend.mysql.sessions
   smartspend.api.scheduler.daily-subscription-expiry -[uses]-> smartspend.api.modules.jobs
   smartspend.api.scheduler.data-retention-lifecycle -[uses]-> smartspend.api.modules.jobs
   smartspend.api.scheduler.monthly-behavior-snapshots -[uses]-> smartspend.api.modules.jobs
@@ -442,6 +438,7 @@ model {
   smartspend.api.trpc.admin.deleteLearnedRule -[writes]-> smartspend.mysql.user_dictionaries
   smartspend.api.trpc.admin.deleteNotificationTemplate -[writes]-> smartspend.mysql.notification_templates
   smartspend.api.trpc.admin.deleteUser -[uses]-> smartspend.api.modules.accounts
+  smartspend.api.trpc.admin.deleteUser -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.admin.discoverProviderModels -[uses]-> smartspend.api.modules.ai-providers
   smartspend.api.trpc.admin.getAIClassificationStats -[reads]-> smartspend.mysql.classification_logs
   smartspend.api.trpc.admin.getAICostOverview -[uses]-> smartspend.api.modules.ai-governance
@@ -501,7 +498,7 @@ model {
   smartspend.api.trpc.admin.resetUserTokens -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.admin.resolveApiKeyError -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.admin.resolveClarification -[writes]-> smartspend.mysql.pending_clarifications
-  smartspend.api.trpc.admin.revokeSession -[writes]-> smartspend.mysql.sessions
+  smartspend.api.trpc.admin.revokeSession -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.admin.saveAiModels -[reads]-> smartspend.mysql.ai_models
   smartspend.api.trpc.admin.saveAiModels -[uses]-> smartspend.api.modules.ai-providers
   smartspend.api.trpc.admin.saveAiModels -[writes]-> smartspend.mysql.ai_models
@@ -524,14 +521,8 @@ model {
   smartspend.api.trpc.admin.updateSettings -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.admin.updateSettings -[writes]-> smartspend.mysql.system_settings
   smartspend.api.trpc.admin.updateUserPlan -[uses]-> smartspend.api.modules.auth
-  smartspend.api.trpc.admin.updateUserPlan -[writes]-> smartspend.mysql.local_users
-  smartspend.api.trpc.admin.updateUserPlan -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.admin.updateUserPlanV2 -[uses]-> smartspend.api.modules.auth
-  smartspend.api.trpc.admin.updateUserPlanV2 -[writes]-> smartspend.mysql.local_users
-  smartspend.api.trpc.admin.updateUserPlanV2 -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.admin.updateUserRole -[uses]-> smartspend.api.modules.auth
-  smartspend.api.trpc.admin.updateUserRole -[writes]-> smartspend.mysql.local_users
-  smartspend.api.trpc.admin.updateUserRole -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.admin.validateApiKey -[uses]-> smartspend.api.modules.ai-providers
   smartspend.api.trpc.admin.validateApiKey -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.adminWhatsapp.broadcastMessage -[reads]-> smartspend.mysql.local_users
@@ -876,7 +867,7 @@ model {
   smartspend.api.trpc.localAuth.register -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.localAuth.register -[uses]-> smartspend.api.modules.whatsapp
   smartspend.api.trpc.localAuth.register -[writes]-> smartspend.mysql.local_users
-  smartspend.api.trpc.localAuth.updateRole -[writes]-> smartspend.mysql.local_users
+  smartspend.api.trpc.localAuth.updateRole -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.localAuth.verifyOtp -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.localAuth.verifyOtp -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.localAuth.verifyOtp -[uses]-> smartspend.api.modules.whatsapp
@@ -888,9 +879,8 @@ model {
   smartspend.api.trpc.pro.myPlan -[reads]-> smartspend.mysql.local_users
   smartspend.api.trpc.pro.myPlan -[reads]-> smartspend.mysql.pro_subscriptions
   smartspend.api.trpc.pro.myPlan -[reads]-> smartspend.mysql.users
-  smartspend.api.trpc.pro.myPlan -[writes]-> smartspend.mysql.local_users
+  smartspend.api.trpc.pro.myPlan -[uses]-> smartspend.api.modules.auth
   smartspend.api.trpc.pro.myPlan -[writes]-> smartspend.mysql.pro_subscriptions
-  smartspend.api.trpc.pro.myPlan -[writes]-> smartspend.mysql.users
   smartspend.api.trpc.pro.upgrade -[uses]-> smartspend.api.modules.billing
   smartspend.api.trpc.pro.upgrade -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.pro.upgrade -[uses]-> smartspend.shared.contracts
@@ -979,10 +969,7 @@ model {
   smartspend.api.trpc.session.listAll -[uses]-> smartspend.api.modules.security
   smartspend.api.trpc.session.listMine -[reads]-> smartspend.mysql.sessions
   smartspend.api.trpc.session.listMine -[uses]-> smartspend.api.modules.security
-  smartspend.api.trpc.session.revokeMine -[reads]-> smartspend.mysql.sessions
   smartspend.api.trpc.session.revokeMine -[uses]-> smartspend.api.modules.auth
-  smartspend.api.trpc.session.revokeMine -[uses]-> smartspend.api.modules.platform
-  smartspend.api.trpc.session.revokeMine -[writes]-> smartspend.mysql.sessions
   smartspend.api.trpc.session.stats -[reads]-> smartspend.mysql.sessions
   smartspend.api.trpc.session.trackEvent -[writes]-> smartspend.mysql.user_analytics
   smartspend.api.trpc.support.assign -[reads]-> smartspend.mysql.support_tickets

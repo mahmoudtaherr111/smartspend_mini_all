@@ -1,10 +1,5 @@
 import { db } from "../queries/connection";
-import {
-  users,
-  localUsers,
-  proSubscriptions,
-  userAnalytics,
-} from "../../db/schema";
+import { proSubscriptions, userAnalytics } from "../../db/schema";
 import { and, desc, eq, gt } from "drizzle-orm";
 import { getBillingPlan, type BillingPlan } from "../../contracts/plans";
 
@@ -77,14 +72,10 @@ export async function grantProSubscription(input: {
       });
 
       // 4. Update user entitlement tier
-      const table = input.userType === "oauth" ? users : localUsers;
-      await tx
-        .update(table)
-        .set({ plan: billingPlan.entitlement })
-        .where(eq(table.id, input.userId));
-
-      const { bumpAuthVersion } = await import("./session-validation");
-      await bumpAuthVersion(input.userType, input.userId);
+      // Written through the transaction so the entitlement and the subscription row commit together, and
+      // through the same helper as every other plan change so the cached session sees it at once.
+      const { setPlan } = await import("./access-control");
+      await setPlan(input.userType, input.userId, billingPlan.entitlement, { tx });
 
       // 5. Track analytics event
       await tx

@@ -33,6 +33,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/jobs/monthly-report-job.ts` | [insights](insights.md) |
 | `api/jobs/rollup-reconciliation-job.ts` | [money](money.md) |
 | `api/jobs/subscription-expiry-job.ts` | [billing](billing.md) |
+| `api/lib/access-control.ts` | [accounts](accounts.md) |
 | `api/lib/admin-safe-fields.ts` | [accounts](accounts.md) |
 | `api/lib/admissibility-gate.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/ai-gateway.ts` | [ai-platform](ai-platform.md) |

@@ -92,8 +92,8 @@ flowchart LR
   http__api_auth --> sys_platform
   http__api_sse --> mod_security
   http__api_sse --> sys_notifications
+  job_daily_auth_cleanup --> mod_auth
   job_daily_auth_cleanup ==> tbl_auth_challenges
-  job_daily_auth_cleanup ==> tbl_sessions
   mod_accounts ==> tbl_ad_clicks
   mod_accounts ==> tbl_ai_action_audit_logs
   mod_accounts ==> tbl_ai_action_memory
@@ -141,7 +141,9 @@ flowchart LR
   mod_accounts ==> tbl_webhook_tokens
   mod_auth --> mod_security
   mod_auth --> sys_platform
+  mod_auth ==> tbl_local_users
   mod_auth ==> tbl_sessions
+  mod_auth ==> tbl_users
   mod_security --> ext_turnstile
   mod_security --> sys_platform
   mod_security -.-> tbl_financial_goals
@@ -175,8 +177,7 @@ flowchart LR
   router_profile ==> tbl_users
   router_session --> mod_auth
   router_session --> mod_security
-  router_session --> sys_platform
-  router_session ==> tbl_sessions
+  router_session -.-> tbl_sessions
   router_session ==> tbl_user_analytics
   router_webauthn --> mod_auth
   router_webauthn --> mod_security
@@ -202,7 +203,7 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `accounts` — Account lifecycle | Account deletion: purgeUserData removes every row a user owns, inside the caller's transaction. | 1 |
-| `auth` — Authentication and sessions | Password hashing, JWT session creation, session validation and login brute-force protection. | 3 |
+| `auth` — Authentication and sessions | Password hashing, JWT session creation, session validation, login brute-force protection, and the one module that changes a role, a plan or a session and invalidates the cached principal with it. | 4 |
 | `security` — Request security | HTTPS redirection and security headers, rate limiting, allowed origins, client IP resolution, ownership checks, upload signature checks, bot protection and security logging. | 11 |
 | `web-account` — Account UI | Biometric lock and passkeys, the smart profile, business and people settings, and the push prompt. | 8 |
 
@@ -225,7 +226,7 @@ flowchart LR
 | `localAuth.logout` | mutation | `publicProcedure` | — | — | `AICenter`, `Admin`, `App shell`, `Home`, `More`, `Settings`, `Support` |
 | `localAuth.me` | query | `publicProcedure` | `local_users` | — | `AICenter`, `Admin`, `App shell`, `Home`, `More`, `Settings`, `Support` |
 | `localAuth.register` | mutation | `strictPublicProcedure` | `local_users` | `local_users` | `Login` |
-| `localAuth.updateRole` | mutation | `adminProcedure` | — | `local_users` | — |
+| `localAuth.updateRole` | mutation | `adminProcedure` | — | — | — |
 | `localAuth.verifyOtp` | mutation | `strictPublicProcedure` | `local_users` | — | — |
 | `profile.confirmPhoneChange` | mutation | `authedProcedure` | `local_users` | `local_users` | — |
 | `profile.getMyProfile` | query | `authedProcedure` | `user_profiles` | — | — |
@@ -234,7 +235,7 @@ flowchart LR
 | `profile.updateUserInfo` | mutation | `authedProcedure` | `local_users` | `local_users`, `users` | `More`, `Settings` |
 | `session.listAll` | query | `adminProcedure` | `sessions` | — | — |
 | `session.listMine` | query | `authedProcedure` | `sessions` | — | — |
-| `session.revokeMine` | mutation | `authedProcedure` | `sessions` | `sessions` | — |
+| `session.revokeMine` | mutation | `authedProcedure` | — | — | — |
 | `session.stats` | query | `adminProcedure` | `sessions` | — | — |
 | `session.trackEvent` | mutation | `authedProcedure` | — | `user_analytics` | — |
 | `webauthn.checkHasPasskey` | query | `authedProcedure` | `user_credentials` | — | `App shell`, `More`, `Settings` |
@@ -279,7 +280,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `expenses` | B | `accounts` | `accounts`, `localAuth.getStats`, `localAuth.listUsers` |
 | `financial_goals` | C | `accounts` | `security` |
 | `in_app_notifications` | D | `accounts` | — |
-| `local_users` | A | `accounts`, `localAuth.login`, `localAuth.register`, `localAuth.updateRole`, `profile.confirmPhoneChange`, `profile.updateUserInfo` | `localAuth.getStats`, `localAuth.listUsers`, `localAuth.login`, `localAuth.me`, `localAuth.register`, `localAuth.verifyOtp`, `profile.confirmPhoneChange`, `profile.requestPhoneChange`, `profile.updateUserInfo`, `webauthn.generateRegistrationOptions` |
+| `local_users` | A | `accounts`, `auth`, `localAuth.login`, `localAuth.register`, `profile.confirmPhoneChange`, `profile.updateUserInfo` | `localAuth.getStats`, `localAuth.listUsers`, `localAuth.login`, `localAuth.me`, `localAuth.register`, `localAuth.verifyOtp`, `profile.confirmPhoneChange`, `profile.requestPhoneChange`, `profile.updateUserInfo`, `webauthn.generateRegistrationOptions` |
 | `monthly_behavior_snapshots` | C | `accounts` | — |
 | `monthly_reports` | C | `accounts` | — |
 | `notification_logs` | E | `accounts` | — |
@@ -289,7 +290,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `push_subscriptions` | A | `accounts` | — |
 | `raw_sms_events` | E | `accounts` | — |
 | `referrals` | A | `accounts` | — |
-| `sessions` | D | `accounts`, `auth`, `daily-auth-cleanup`, `session.revokeMine` | `auth`, `session.listAll`, `session.listMine`, `session.revokeMine`, `session.stats` |
+| `sessions` | D | `accounts`, `auth` | `auth`, `session.listAll`, `session.listMine`, `session.stats` |
 | `support_tickets` | A | `accounts` | — |
 | `user_analytics` | E | `accounts`, `session.trackEvent` | — |
 | `user_budgets` | C | `accounts` | — |
@@ -300,7 +301,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | `user_dictionaries` | F | `accounts` | — |
 | `user_profiles` | A | `accounts`, `profile.updateProfile` | `profile.getMyProfile` |
 | `user_wallets` | A | `accounts` | `security` |
-| `users` | A | `accounts`, `auth.googleCallback`, `profile.updateUserInfo` | `auth.googleCallback`, `auth.me`, `webauthn.generateRegistrationOptions` |
+| `users` | A | `accounts`, `auth`, `auth.googleCallback`, `profile.updateUserInfo` | `auth.googleCallback`, `auth.me`, `webauthn.generateRegistrationOptions` |
 | `voice_usage` | E | `accounts` | — |
 | `webhook_tokens` | D | `accounts` | — |
 
@@ -340,13 +341,14 @@ Used by: [Admin console, support and growth tools](admin.md), [AI Center](ai-cen
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/accounts.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>40 files and declarations</summary>
+<details><summary>41 files and declarations</summary>
 
 - `api/auth-router.ts`
 - `api/boot.ts#GET /api/auth/google/callback`
 - `api/boot.ts#GET /api/auth/google/start`
 - `api/boot.ts#GET /api/sse/otp`
 - `api/boot.ts#job:daily-auth-cleanup`
+- `api/lib/access-control.ts`
 - `api/lib/admin-safe-fields.ts`
 - `api/lib/anonymizer.ts`
 - `api/lib/get-client-ip.ts`

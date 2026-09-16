@@ -5,19 +5,32 @@
       "id": "api-core",
       "title": "API server core",
       "description": "Hono app and server entry points, request context, tRPC procedure builders and the root router.",
-      "paths": ["api/boot.ts", "api/server.ts", "api/context.ts", "api/middleware.ts", "api/router.ts"]
+      "paths": [
+        "api/boot.ts",
+        "api/server.ts",
+        "api/context.ts",
+        "api/middleware.ts",
+        "api/router.ts"
+      ]
     },
     {
       "id": "api-routers",
       "title": "tRPC routers and HTTP sub-apps",
       "description": "One file per router mounted in api/router.ts, plus the SMS Hono sub-app mounted in api/boot.ts.",
-      "paths": ["api/*-router.ts"]
+      "paths": [
+        "api/*-router.ts"
+      ]
     },
     {
       "id": "auth",
       "title": "Authentication and sessions",
-      "description": "Password hashing, JWT session creation, session validation and login brute-force protection.",
-      "paths": ["api/local-auth-utils.ts", "api/lib/session-validation.ts", "api/lib/login-protection.ts"]
+      "description": "Password hashing, JWT session creation, session validation, login brute-force protection, and the one module that changes a role, a plan or a session and invalidates the cached principal with it.",
+      "paths": [
+        "api/lib/access-control.ts",
+        "api/local-auth-utils.ts",
+        "api/lib/session-validation.ts",
+        "api/lib/login-protection.ts"
+      ]
     },
     {
       "id": "security",
@@ -56,55 +69,80 @@
       "id": "database",
       "title": "Database schema and access",
       "description": "Drizzle schema, relations, storage classes and the MySQL connection pool.",
-      "paths": ["db/**", "api/queries/**"]
+      "paths": [
+        "db/**",
+        "api/queries/**"
+      ]
     },
     {
       "id": "contracts",
       "title": "Shared contracts",
       "description": "Types, limits and billing plans shared by the web app and the API.",
-      "paths": ["contracts/**"]
+      "paths": [
+        "contracts/**"
+      ]
     },
     {
       "id": "billing",
       "title": "Billing",
       "description": "Paymob checkout requests, webhook verification settings and the subscription grant that sets a user's plan.",
-      "paths": ["api/lib/paymob.ts", "api/lib/subscription-service.ts"]
+      "paths": [
+        "api/lib/paymob.ts",
+        "api/lib/subscription-service.ts"
+      ]
     },
     {
       "id": "ledger",
       "title": "Ledger aggregates",
       "description": "Daily expense rollups (the delta applied inside every expense write, and reconciliation against the ledger), the expense_details side table, and salary-cycle month ranges.",
-      "paths": ["api/services/expense-rollups.ts", "api/services/financial-month.ts"]
+      "paths": [
+        "api/services/expense-rollups.ts",
+        "api/services/financial-month.ts"
+      ]
     },
     {
       "id": "accounts",
       "title": "Account lifecycle",
       "description": "Account deletion: purgeUserData removes every row a user owns, inside the caller's transaction.",
-      "paths": ["api/services/user-purge-service.ts"]
+      "paths": [
+        "api/services/user-purge-service.ts"
+      ]
     },
     {
       "id": "jobs",
       "title": "Scheduled job bodies",
       "description": "Job implementations scheduled from api/boot.ts.",
-      "paths": ["api/jobs/**"]
+      "paths": [
+        "api/jobs/**"
+      ]
     },
     {
       "id": "notifications",
       "title": "Notifications",
       "description": "Web push (VAPID) and Firebase Cloud Messaging delivery, scheduled and event-triggered notifications, budget alerts, activity nudges and the default templates.",
-      "paths": ["api/notification-engine.ts", "api/services/firebase.ts"]
+      "paths": [
+        "api/notification-engine.ts",
+        "api/services/firebase.ts"
+      ]
     },
     {
       "id": "whatsapp",
       "title": "WhatsApp",
       "description": "Baileys WhatsApp client and the in-process OTP state it verifies against.",
-      "paths": ["api/services/whatsapp-service.ts", "api/services/otp-cache.ts"]
+      "paths": [
+        "api/services/whatsapp-service.ts",
+        "api/services/otp-cache.ts"
+      ]
     },
     {
       "id": "voice",
       "title": "Voice",
       "description": "Live voice calls: a WebSocket bridged to the Gemini Live API, with session checks, voice quotas, tools that draft actions, the financial context for the call and the call archive.",
-      "paths": ["api/services/voice-kernel/**", "api/services/voice-call-service.ts", "api/services/voice-context-service.ts"]
+      "paths": [
+        "api/services/voice-kernel/**",
+        "api/services/voice-call-service.ts",
+        "api/services/voice-context-service.ts"
+      ]
     },
     {
       "id": "ai-providers",
@@ -129,7 +167,11 @@
       "id": "ai-governance",
       "title": "AI usage and cost governance",
       "description": "Per-plan token limits and per-request caps, burst counting, AI cost metrics and the admin cost overview, and the check of model-written numbers against facts.",
-      "paths": ["api/lib/ai-usage-policy.ts", "api/services/ai-cost-analytics.ts", "api/services/ai-cost-policy.ts"]
+      "paths": [
+        "api/lib/ai-usage-policy.ts",
+        "api/services/ai-cost-analytics.ts",
+        "api/services/ai-cost-policy.ts"
+      ]
     },
     {
       "id": "arabic-nlp",
@@ -162,13 +204,18 @@
       "id": "receipt-parsing",
       "title": "Receipt parsing",
       "description": "Receipt parsing with a vision model.",
-      "paths": ["api/lib/receipt-image-parser.ts"]
+      "paths": [
+        "api/lib/receipt-image-parser.ts"
+      ]
     },
     {
       "id": "classification-qa",
       "title": "Classification benchmark helpers",
       "description": "Helpers used only by the classification benchmark and QA scripts: taxonomy assertions and simulated users.",
-      "paths": ["api/lib/benchmark-taxonomy-assert.ts", "api/lib/real-user-sim.ts"]
+      "paths": [
+        "api/lib/benchmark-taxonomy-assert.ts",
+        "api/lib/real-user-sim.ts"
+      ]
     },
     {
       "id": "classification",
@@ -208,37 +255,49 @@
       "id": "ai-kernel",
       "title": "AI Center kernel",
       "description": "Plans each AI Center turn without a model (intent, data needs, clarifying questions), packs the context, applies the capability registry and retrieval policy, words the answer with at most one model call, and logs traces.",
-      "paths": ["api/services/ai-kernel/**"]
+      "paths": [
+        "api/services/ai-kernel/**"
+      ]
     },
     {
       "id": "ai-actions",
       "title": "AI action runtime",
       "description": "Actions the assistant proposes, such as recording an expense, updating a wallet or creating a goal: stored as pending drafts and executed only after the user confirms, with the artifacts shown in chat.",
-      "paths": ["api/services/action-runtime/**"]
+      "paths": [
+        "api/services/action-runtime/**"
+      ]
     },
     {
       "id": "ai-memory",
       "title": "AI memory",
       "description": "Long-term memory about each user: conversation capsules and running summaries, memories extracted by rules, optional Fireworks embeddings stored in MySQL with a backfill, and retrieval that scores memories by words and, when embeddings are on, by vector similarity. The Qdrant and quantized on-disk stores are used only by tests.",
-      "paths": ["api/services/ai-memory/**"]
+      "paths": [
+        "api/services/ai-memory/**"
+      ]
     },
     {
       "id": "finance-semantic-layer",
       "title": "Finance semantic layer",
       "description": "Answers factual finance questions from the ledger: period resolution, category matching, row aggregation, monthly report facts, proactive insights, chart artifacts and a per-user cache.",
-      "paths": ["api/services/finance-semantic-layer/**"]
+      "paths": [
+        "api/services/finance-semantic-layer/**"
+      ]
     },
     {
       "id": "site-guide",
       "title": "Site guide",
       "description": "How-to answers about using SmartSpend (linking SMS, cards and wallets, goals, reports) from a built-in knowledge base with embedding retrieval.",
-      "paths": ["api/services/site-guide/**"]
+      "paths": [
+        "api/services/site-guide/**"
+      ]
     },
     {
       "id": "storage",
       "title": "File storage",
       "description": "File storage behind one driver interface (local disk or S3-compatible storage such as R2), plus the avatar service.",
-      "paths": ["api/services/storage/**"]
+      "paths": [
+        "api/services/storage/**"
+      ]
     },
     {
       "id": "ai-insights",
@@ -272,31 +331,42 @@
       "id": "web-pages",
       "title": "Web pages",
       "description": "Route-level page components lazy-loaded by src/App.tsx.",
-      "paths": ["src/pages/**"]
+      "paths": [
+        "src/pages/**"
+      ]
     },
     {
       "id": "web-ui-kit",
       "title": "UI primitives",
       "description": "shadcn and Radix UI primitives in src/components/ui/.",
-      "paths": ["src/components/ui/**"]
+      "paths": [
+        "src/components/ui/**"
+      ]
     },
     {
       "id": "web-admin",
       "title": "Admin UI",
       "description": "Admin console tabs: ads, audit log, raw SMS, learned rules, settings, WhatsApp, clarifications, notifications and the AI Center administration.",
-      "paths": ["src/components/admin/**"]
+      "paths": [
+        "src/components/admin/**"
+      ]
     },
     {
       "id": "web-voice-call",
       "title": "Live voice call UI",
       "description": "The live voice call screen in the AI Center and its hook: voice selection, microphone capture resampled to 16 kHz PCM, the WebSocket to /api/voice/live, playback of the assistant's audio and the tool trace panel.",
-      "paths": ["src/components/ai/AIVoiceCall.tsx", "src/hooks/useVoiceCall.ts"]
+      "paths": [
+        "src/components/ai/AIVoiceCall.tsx",
+        "src/hooks/useVoiceCall.ts"
+      ]
     },
     {
       "id": "web-ai",
       "title": "AI Center UI",
       "description": "AI Center screens: the chatbot, the AI memory manager and the monthly AI report.",
-      "paths": ["src/components/ai/**"]
+      "paths": [
+        "src/components/ai/**"
+      ]
     },
     {
       "id": "web-capture",
@@ -313,7 +383,9 @@
       "id": "web-insights",
       "title": "Insights UI",
       "description": "The monthly AI insights view shown in the AI Center's analysis tab.",
-      "paths": ["src/components/insights/**"]
+      "paths": [
+        "src/components/insights/**"
+      ]
     },
     {
       "id": "web-finance",
@@ -329,7 +401,10 @@
       "id": "web-bank-sync",
       "title": "Bank sync UI",
       "description": "The bank sync screens: iPhone Shortcut and Android companion setup, the digital wallet view shown once a phone is connected, and the SMS webhook settings panel.",
-      "paths": ["src/components/bank-sync/**", "src/components/settings/SmsWebhookSettings.tsx"]
+      "paths": [
+        "src/components/bank-sync/**",
+        "src/components/settings/SmsWebhookSettings.tsx"
+      ]
     },
     {
       "id": "web-account",
@@ -347,25 +422,36 @@
       "id": "web-growth",
       "title": "Ads and SEO UI",
       "description": "The ad banner and SEO meta tags.",
-      "paths": ["src/components/ads/**", "src/components/seo/**"]
+      "paths": [
+        "src/components/ads/**",
+        "src/components/seo/**"
+      ]
     },
     {
       "id": "web-shared",
       "title": "Shared web components",
       "description": "Shell components at the root of src/components: sidebar, notification bell, onboarding card, product tour and loading skeleton.",
-      "paths": ["src/components/*.tsx"]
+      "paths": [
+        "src/components/*.tsx"
+      ]
     },
     {
       "id": "web-hooks",
       "title": "Web hooks",
       "description": "React hooks for auth, admin, plan and ads data, push notifications, PWA lifecycle, biometrics, navigation, keyboard and haptics.",
-      "paths": ["src/hooks/**"]
+      "paths": [
+        "src/hooks/**"
+      ]
     },
     {
       "id": "web-lib",
       "title": "Web utilities",
       "description": "Client utilities (back-button handling, biometric auth, client rules engine, image compression, financial taxonomy, query persistence, transaction display), src/types and loose files at the root of src/.",
-      "paths": ["src/lib/**", "src/types/**", "src/*.ts"]
+      "paths": [
+        "src/lib/**",
+        "src/types/**",
+        "src/*.ts"
+      ]
     }
   ]
 }

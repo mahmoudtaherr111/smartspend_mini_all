@@ -58,4 +58,25 @@ describe("reading a system page for the state report", () => {
   it("counts no tests for a page that says it has none", () => {
     expect(testsNamed("## Tests\nNo test covers this system.\n")).toEqual([]);
   });
+
+  it("reads the severity word and takes it off the text", () => {
+    expect(classify("**Security.** The token is readable by any script.")).toEqual({
+      severity: "security",
+      text: "The token is readable by any script.",
+    });
+    expect(classify("**أمن.** التوكن متخزن في ذاكرة المتصفح.")).toEqual({
+      severity: "security",
+      text: "التوكن متخزن في ذاكرة المتصفح.",
+    });
+    expect(classify("**دين تقني.** x").severity).toBe("debt");
+    expect(classify("**عطل.** x").severity).toBe("bug");
+    expect(classify("**Gap.** No screen calls it.").severity).toBe("gap");
+  });
+
+  it("treats an item with no severity word as debt, keeping its text whole", () => {
+    expect(classify("Nobody wrote a word in front of this one.")).toEqual({
+      severity: "debt",
+      text: "Nobody wrote a word in front of this one.",
+    });
+  });
 });

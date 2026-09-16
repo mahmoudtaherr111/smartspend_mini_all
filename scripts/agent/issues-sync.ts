@@ -119,7 +119,7 @@ function plan(states: SystemState[], severities: Set<Severity>): Planned[] {
   return planned;
 }
 
-async function api(slug: string, route: string, token: string, init?: RequestInit): Promise<any> {
+async function api<T = unknown>(slug: string, route: string, token: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API}/repos/${slug}/${route}`, {
     ...init,
     headers: {
@@ -133,19 +133,19 @@ async function api(slug: string, route: string, token: string, init?: RequestIni
   if (!response.ok) {
     throw new Error(`${init?.method ?? "GET"} ${route} -> ${response.status} ${(await response.text()).slice(0, 300)}`);
   }
-  return response.status === 204 ? null : response.json();
+  return (response.status === 204 ? null : await response.json()) as T;
 }
 
 /** Every open issue this script has opened before, by marker. */
 async function openIssues(slug: string, token: string): Promise<OpenIssue[]> {
   const found: OpenIssue[] = [];
   for (let page = 1; page <= 10; page++) {
-    const batch = (await api(slug, `issues?state=open&labels=${LABEL}&per_page=100&page=${page}`, token)) as Array<{
+    const batch = await api<Array<{
       number: number;
       title: string;
       body: string | null;
       pull_request?: unknown;
-    }>;
+    }>>(slug, `issues?state=open&labels=${LABEL}&per_page=100&page=${page}`, token);
     for (const issue of batch) {
       if (issue.pull_request) continue;
       const key = new RegExp(`<!-- ${MARKER} ([^\\s]+) -->`).exec(issue.body ?? "")?.[1];
@@ -209,7 +209,7 @@ async function main(): Promise<void> {
   }
 
   for (const item of create) {
-    const created = await api(slug, "issues", token, {
+    const created = await api<{ number: number }>(slug, "issues", token, {
       method: "POST",
       body: JSON.stringify({
         title: item.title,

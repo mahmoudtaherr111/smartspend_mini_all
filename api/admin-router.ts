@@ -5,7 +5,7 @@ import { db, getPoolMetrics } from "./queries/connection";
 import { getSystemSettings, invalidateSettingsCache } from "./lib/settings-cache";
 import { getCacheRuntimeStatus } from "./lib/redis-client";
 import { businessDateKey } from "./lib/app-time";
-import { bumpAuthVersion } from "./lib/session-validation";
+import { invalidatePrincipal, revokeSession, setPlan, setRole } from "./lib/access-control";
 import {
   users,
   localUsers,
@@ -392,12 +392,7 @@ export const adminRouter = router({
       }),
     )
     .mutation(async ({ input }) => {
-      const table = input.userType === "oauth" ? users : localUsers;
-      await db
-        .update(table)
-        .set({ role: input.role })
-        .where(eq(table.id, input.userId));
-      await bumpAuthVersion(input.userType, input.userId);
+      await setRole(input.userType, input.userId, input.role);
       return { success: true, message: "تم تحديث الدور بنجاح" };
     }),
 
@@ -411,12 +406,7 @@ export const adminRouter = router({
       }),
     )
     .mutation(async ({ input }) => {
-      const table = input.userType === "oauth" ? users : localUsers;
-      await db
-        .update(table)
-        .set({ plan: input.plan })
-        .where(eq(table.id, input.userId));
-      await bumpAuthVersion(input.userType, input.userId);
+      await setPlan(input.userType, input.userId, input.plan);
       return { success: true, message: "تم تحديث الخطة بنجاح" };
     }),
 
@@ -434,6 +424,9 @@ export const adminRouter = router({
       await db.transaction(async (tx) => {
         await purgeUserData(tx, userId, userType);
       });
+      // The rows are gone, but a principal resolved a minute ago is still cached: without this the deleted
+      // account keeps answering for up to fifteen minutes.
+      await invalidatePrincipal(userType, userId);
 
       return { success: true, message: "تم حذف المستخدم بنجاح" };
     }),
@@ -472,8 +465,11 @@ export const adminRouter = router({
   revokeSession: adminProcedure
     .input(z.object({ sessionId: z.number() }))
     .mutation(async ({ input }) => {
-      await db.delete(sessions).where(eq(sessions.id, input.sessionId));
-      return { success: true, message: "تم إلغاء الجلسة" };
+      // Ends the session everywhere it is remembered, not only in the table: see api/lib/access-control.ts.
+      const revoked = await revokeSession({ sessionId: input.sessionId });
+      return revoked
+        ? { success: true, message: "تم إلغاء الجلسة" }
+        : { success: false, message: "الجلسة دي مش موجودة أصلاً" };
     }),
 
   // ─── Get Activity Log ───
@@ -597,12 +593,7 @@ export const adminRouter = router({
       }),
     )
     .mutation(async ({ input }) => {
-      const table = input.userType === "oauth" ? users : localUsers;
-      await db
-        .update(table)
-        .set({ plan: input.plan })
-        .where(eq(table.id, input.userId));
-      await bumpAuthVersion(input.userType, input.userId);
+      await setPlan(input.userType, input.userId, input.plan);
       return { success: true, message: "تم تحديث الخطة بنجاح" };
     }),
 

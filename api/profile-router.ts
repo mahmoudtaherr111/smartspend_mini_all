@@ -37,7 +37,7 @@ import { cleanPhoneNumber, validatePhone } from "./local-auth-utils";
 import { otpCache } from "./services/otp-cache";
 import { whatsappService } from "./services/whatsapp-service";
 import { getSystemSettings } from "./lib/settings-cache";
-import { bumpAuthVersion } from "./lib/session-validation";
+import { invalidatePrincipal } from "./lib/access-control";
 import { validateBusinessOwnership } from "./lib/ownership-guard";
 
 // ─── Strict Profile Validation Schemas (Eliminating z.any() wildcards) ───
@@ -533,7 +533,8 @@ export const profileRouter = router({
         .set({ phone: clean })
         .where(eq(localUsers.id, ctx.user.id));
 
-      await bumpAuthVersion("local", ctx.user.id);
+      // The phone is part of the cached principal, so the cache has to resolve again.
+      await invalidatePrincipal("local", ctx.user.id);
 
       return {
         success: true,
@@ -590,7 +591,7 @@ export const profileRouter = router({
           .set({ phone: clean })
           .where(eq(localUsers.id, ctx.user.id));
 
-        await bumpAuthVersion("local", ctx.user.id);
+        await invalidatePrincipal("local", ctx.user.id);
       }
 
       if (ctx.user.type === "oauth") {
