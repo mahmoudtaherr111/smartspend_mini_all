@@ -1,0 +1,57 @@
+name: Documentation site
+
+# The same pages as `docs/`, as a site a person can search: the Arabic system pages, the project state, and
+# the interactive architecture map. Built into an artifact on every push to main, never published: the content
+# names every known weakness of the product, so where it goes is a decision, not a default.
+#
+# Download it from the run's Artifacts, unzip, and open "افتح-الشرح.cmd" (Windows) or run ./open-docs.sh.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "docs-site/**"
+      - ".github/workflows/docs-site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-site-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build the site as a private artifact
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # The map comes from the LikeC4 model, which lives in its own package with its own Node requirement.
+      - run: npm ci
+      - run: npm run arch:install
+      - name: Install the site's dependencies
+        run: npm --prefix docs-site install --no-audit --no-fund
+      - name: Build
+        run: npm --prefix docs-site run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: smartspend-docs-site
+          path: docs-site/dist
+          retention-days: 30
+      - name: Say what was built
+        run: |
+          {
+            echo "### شرح SmartSpend"
+            echo
+            echo "الموقع اتبنى من \`docs/\`. نزّله من Artifacts فوق، فك الضغط، وافتح **افتح-الشرح.cmd**."
+            echo
+            echo '```'
+            du -sh docs-site/dist
+            ls docs-site/dist | head -20
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

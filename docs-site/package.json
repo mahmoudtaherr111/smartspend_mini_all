@@ -1,0 +1,19 @@
+{
+  "name": "smartspend-docs-site",
+  "private": true,
+  "type": "module",
+  "description": "A searchable site built from docs/ for readers who do not open a repository: the Arabic system pages, the project state, and the interactive map. Kept out of the app's dependency tree, like tools/architecture.",
+  "scripts": {
+    "collect": "node scripts/collect.mjs",
+    "map": "node scripts/build-map.mjs",
+    "build": "npm run collect && npm run map && astro build && node scripts/package.mjs",
+    "dev": "npm run collect && astro dev",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "0.36.1",
+    "astro": "5.17.1",
+    "mermaid": "11.12.0",
+    "sharp": "0.34.4"
+  }
+}

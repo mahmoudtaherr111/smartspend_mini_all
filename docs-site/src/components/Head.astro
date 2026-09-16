@@ -1,0 +1,67 @@
+---
+// Starlight's own head, plus the Mermaid renderer.
+//
+// The system pages carry Mermaid diagrams because they render on GitHub without any tooling; the site has to
+// draw the same fences itself. Mermaid is bundled from the site's dependencies rather than fetched from a CDN,
+// so the built folder still draws every diagram with no network at all.
+import Default from "@astrojs/starlight/components/Head.astro";
+---
+
+<Default><slot /></Default>
+
+<script>
+  import mermaid from "mermaid";
+
+  const theme = () => (document.documentElement.dataset.theme === "light" ? "default" : "dark");
+
+  /**
+   * The source of a fenced block, with its line breaks.
+   *
+   * Starlight renders code through Expressive Code, which wraps every line in its own element: reading
+   * `textContent` off the block would hand Mermaid one long line and it would refuse to draw anything.
+   */
+  function sourceOf(block: HTMLElement): string {
+    const lines = block.querySelectorAll(".ec-line");
+    if (lines.length === 0) return block.textContent ?? "";
+    return [...lines].map((line) => line.textContent ?? "").join("\n");
+  }
+
+  async function draw() {
+    const blocks = document.querySelectorAll<HTMLElement>('pre[data-language="mermaid"], pre.mermaid');
+    if (blocks.length === 0) return;
+
+    const nodes: HTMLElement[] = [];
+    for (const block of blocks) {
+      const holder = document.createElement("div");
+      holder.className = "mermaid";
+      holder.textContent = sourceOf(block);
+      // Replace the whole code frame, not just the <pre>, so the diagram does not sit inside a code window.
+      const frame = block.closest("figure") ?? block;
+      frame.replaceWith(holder);
+      nodes.push(holder);
+    }
+
+    mermaid.initialize({ startOnLoad: false, theme: theme(), securityLevel: "strict" });
+    await mermaid.run({ nodes });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => void draw());
+  // Starlight swaps pages without a full load.
+  document.addEventListener("astro:page-load", () => void draw());
+</script>
+
+<style is:global>
+  .mermaid {
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+  }
+  /* The diagrams are drawn left to right even on an Arabic page: the labels inside them read right to left
+     on their own, but the flow itself is part of the drawing. */
+  .mermaid svg {
+    direction: ltr;
+    max-width: 100%;
+    height: auto;
+  }
+</style>

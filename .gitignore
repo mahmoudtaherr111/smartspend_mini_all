@@ -59,3 +59,10 @@ whatsapp_auth_info/
 # Temporary files
 diff.txt
 diff_utf8.txt
+
+# The documentation site is built from docs/; everything it generates stays out of git.
+docs-site/node_modules/
+docs-site/dist/
+docs-site/.astro/
+docs-site/public/map/
+docs-site/src/content/docs/
