@@ -35,6 +35,10 @@ export interface LedgerEntry {
   files: Record<string, string>;
   /** Fingerprint of the English page the Arabic page was last brought in line with. */
   arabic?: string;
+  /** `<YYYY-MM-DD> <commit>`: when the English page was last recorded, and the commit HEAD was on. */
+  checked?: string;
+  /** The same for the Arabic page. */
+  arabicChecked?: string;
 }
 
 export interface Ledger {

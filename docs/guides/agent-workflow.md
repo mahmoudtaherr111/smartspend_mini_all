@@ -62,7 +62,8 @@ it today — which no generator can know. Both are kept honest the same way: by 
   procedures, routes and jobs of a file that several systems share. `docs/atlas/systems/files.md` is the map
   from a file to its systems.
 - `docs/systems/verified.json` records, per unit, the fingerprint of the source as it was when the explanation
-  was last checked, and the commit that recorded it. `npm run docs:verify -- <id>` writes that record after
+  was last checked, plus the day each page was recorded and the commit HEAD was on; the generated index
+  `docs/atlas/systems/README.md` shows that day per system. `npm run docs:verify -- <id>` writes that record after
   you have read the page against the code; `-- <id> --ar` records the Arabic page against the English one.
 - `npm run agent:finish` compares the fingerprints with the working tree. A unit your branch changed makes its
   explanation **stale**: it is reported, and `.githooks/pre-push` refuses the push until you re-check it. A

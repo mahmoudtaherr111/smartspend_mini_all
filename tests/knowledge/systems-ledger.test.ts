@@ -33,6 +33,28 @@ describe("merging the check record", () => {
     });
   });
 
+  it("carries the day each page was recorded, from whichever side re-checked it", () => {
+    const withStamps = {
+      systems: { money: { files: { "a.ts": "1", "b.ts": "1" }, arabic: "x", checked: "2026-09-01 aaaaaaa" } },
+    };
+    const ours = {
+      systems: { money: { files: { "a.ts": "2", "b.ts": "1" }, arabic: "x", checked: "2026-09-16 bbbbbbb" } },
+    };
+    const theirs = {
+      systems: { money: { files: { "a.ts": "1", "b.ts": "1" }, arabic: "y", checked: "2026-09-01 aaaaaaa", arabicChecked: "2026-09-10 ccccccc" } },
+    };
+    expect(mergeLedgers(withStamps, ours, theirs)).toEqual({
+      systems: {
+        money: {
+          files: { "a.ts": "2", "b.ts": "1" },
+          arabic: "y",
+          checked: "2026-09-16 bbbbbbb",
+          arabicChecked: "2026-09-10 ccccccc",
+        },
+      },
+    });
+  });
+
   it("keeps ours when both sides changed an entry, drops what one side removed and adds what one side added", () => {
     const ours = { systems: { money: { files: { "a.ts": "2" }, arabic: "x" } } };
     const theirs = {

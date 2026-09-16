@@ -1,5 +1,5 @@
 {
-  "$comment": "Written by npm run docs:verify; never edit it by hand. files: the fingerprint of every unit of source docs/systems/<id>.md was last checked against. arabic: the fingerprint of docs/systems/<id>.md when docs/ar/systems/<id>.md was last brought in line with it.",
+  "$comment": "Written by npm run docs:verify; never edit it by hand. files: the fingerprint of every unit of source docs/systems/<id>.md was last checked against. arabic: the fingerprint of docs/systems/<id>.md when docs/ar/systems/<id>.md was last brought in line with it. checked / arabicChecked: the day each page was last recorded and the commit HEAD was on, for the reader who wants to know how recent an explanation is.",
   "systems": {
     "accounts": {
       "files": {
@@ -44,7 +44,9 @@
         "src/pages/Login.tsx": "cc14b37780a0",
         "src/pages/Settings.tsx": "0d88f7c557e3"
       },
-      "arabic": "202daccec12d"
+      "checked": "2026-09-16 b51229f",
+      "arabic": "202daccec12d",
+      "arabicChecked": "2026-09-16 b51229f"
     },
     "admin": {
       "files": {
@@ -78,7 +80,9 @@
         "src/pages/Admin.tsx": "42d9a43037ce",
         "src/pages/Support.tsx": "9175518fbc4c"
       },
-      "arabic": "1c0d3366bb85"
+      "checked": "2026-09-16 b51229f",
+      "arabic": "1c0d3366bb85",
+      "arabicChecked": "2026-09-16 b51229f"
     },
     "ai-center": {
       "files": {
@@ -131,7 +135,9 @@
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
         "src/pages/AICenter.tsx": "7a2d6ce14d6b"
       },
-      "arabic": "02acd94f7fe8"
+      "checked": "2026-09-16 b51229f",
+      "arabic": "02acd94f7fe8",
+      "arabicChecked": "2026-09-16 b51229f"
     },
     "ai-platform": {
       "files": {
@@ -153,7 +159,9 @@
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "e4536dd88d77"
       },
-      "arabic": "77a7eef2d4ea"
+      "checked": "2026-09-16 b51229f",
+      "arabic": "77a7eef2d4ea",
+      "arabicChecked": "2026-09-16 b51229f"
     },
     "bank-messages": {
       "files": {
@@ -177,7 +185,9 @@
         "src/components/settings/SmsWebhookSettings.tsx": "6d934cb57744",
         "src/pages/BankSyncPage.tsx": "6d1d3cba9e6c"
       },
-      "arabic": "14d1ee119c1f"
+      "checked": "2026-09-16 b51229f",
+      "arabic": "14d1ee119c1f",
+      "arabicChecked": "2026-09-16 b51229f"
     },
     "billing": {
       "files": {
@@ -191,7 +201,9 @@
         "src/pages/Pro.tsx": "eb2f5e9dba55",
         "src/pages/UltraLounge.tsx": "a27cc01e2364"
       },
-      "arabic": "49b4c50c25ef"
+      "checked": "2026-09-16 b51229f",
+      "arabic": "49b4c50c25ef",
+      "arabicChecked": "2026-09-16 b51229f"
     },
     "expense-capture": {
       "files": {
@@ -260,7 +272,9 @@
         "src/lib/clientRulesEngine.ts": "be221ab0c77b",
         "src/lib/compress-image.ts": "88b07e0fb763"
       },
-      "arabic": "8ffa2e2bd571"
+      "checked": "2026-09-16 b51229f",
+      "arabic": "8ffa2e2bd571",
+      "arabicChecked": "2026-09-16 b51229f"
     },
     "insights": {
       "files": {
@@ -292,7 +306,9 @@
         "api/services/user-profile-service.ts": "dc89c253e3c8",
         "src/components/insights/AIInsights.tsx": "4b618cdf3ad2"
       },
-      "arabic": "21ad4fd34a88"
+      "checked": "2026-09-16 b51229f",
+      "arabic": "21ad4fd34a88",
+      "arabicChecked": "2026-09-16 b51229f"
     },
     "money": {
       "files": {
@@ -336,7 +352,9 @@
         "src/components/goals/FinancialGoalsPanel.tsx": "16aa1a2726aa",
         "src/pages/Home.tsx": "c38066378122"
       },
-      "arabic": "498a451bfac7"
+      "checked": "2026-09-16 b51229f",
+      "arabic": "498a451bfac7",
+      "arabicChecked": "2026-09-16 b51229f"
     },
     "notifications": {
       "files": {
@@ -354,7 +372,9 @@
         "api/services/otp-cache.ts": "8023e02f8c99",
         "api/services/whatsapp-service.ts": "cb416af4a8b5"
       },
-      "arabic": "c27d54789d94"
+      "checked": "2026-09-16 b51229f",
+      "arabic": "c27d54789d94",
+      "arabicChecked": "2026-09-16 b51229f"
     },
     "platform": {
       "files": {
@@ -390,7 +410,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "30875c0abaf8"
       },
-      "arabic": "8ef70d8c6b74"
+      "checked": "2026-09-16 b51229f",
+      "arabic": "8ef70d8c6b74",
+      "arabicChecked": "2026-09-16 b51229f"
     },
     "voice-calls": {
       "files": {
@@ -411,7 +433,9 @@
         "src/components/ai/AIVoiceCall.tsx": "a48952518da3",
         "src/hooks/useVoiceCall.ts": "42e8abf8b193"
       },
-      "arabic": "b8f1c5ee4756"
+      "checked": "2026-09-16 b51229f",
+      "arabic": "b8f1c5ee4756",
+      "arabicChecked": "2026-09-16 b51229f"
     },
     "web-app": {
       "files": {
@@ -528,7 +552,9 @@
         "src/pwa/launch-handler.ts": "d67a8f34d738",
         "src/pwa/register-sw.ts": "1da8e20514f5"
       },
-      "arabic": "454a92366fbe"
+      "checked": "2026-09-16 b51229f",
+      "arabic": "454a92366fbe",
+      "arabicChecked": "2026-09-16 b51229f"
     }
   }
 }

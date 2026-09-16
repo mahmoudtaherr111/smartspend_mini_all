@@ -35,7 +35,9 @@ that several systems share is split there down to single procedures, routes and 
 ## How these pages stay true
 - Each explanation was checked against the source it describes, listed at the end of its facts page. The check is
   recorded in `docs/systems/verified.json` as a fingerprint per file, or per procedure, route or job of a shared
-  file.
+  file, together with the day it was recorded and the commit the work sat on. The generated index
+  [docs/atlas/systems/README.md](../atlas/systems/README.md) shows that day per system, so you can see at a
+  glance how recent an explanation is.
 - When that source changes, `npm run agent:finish` names the explanation and what changed. Read the change,
   correct the page wherever it no longer matches the code, then run `npm run docs:verify -- <id>`.
 - An edited English page asks for the Arabic page to be brought in line; then run

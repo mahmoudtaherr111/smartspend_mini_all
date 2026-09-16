@@ -3,9 +3,11 @@
  *
  * Run it after you read the changes `npm run agent:finish` names and corrected the page. It writes
  * docs/systems/verified.json: without --ar, the fingerprint of every unit of source docs/systems/<id>.md describes;
- * with --ar, the fingerprint of docs/systems/<id>.md as the version docs/ar/systems/<id>.md now matches. --all
- * applies to every system. Entries of systems that no longer exist are dropped.
+ * with --ar, the fingerprint of docs/systems/<id>.md as the version docs/ar/systems/<id>.md now matches. It also
+ * stamps the day and the commit HEAD was on, so a reader can see how recent an explanation is. --all applies to
+ * every system. Entries of systems that no longer exist are dropped.
  */
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { buildAtlasGraph } from "../atlas/graph";
@@ -21,6 +23,17 @@ import {
   readText,
   type Ledger,
 } from "../knowledge/systems-docs";
+
+/** `<YYYY-MM-DD> <commit>` — the day the page was recorded, and the commit the work sat on. */
+function stamp(): string {
+  const day = new Date().toISOString().slice(0, 10);
+  try {
+    const commit = execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: REPO_ROOT, encoding: "utf8" }).trim();
+    return commit ? `${day} ${commit}` : day;
+  } catch {
+    return day;
+  }
+}
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -64,10 +77,14 @@ async function main(): Promise<void> {
         continue;
       }
       entry.arabic = fingerprint(english);
-      console.log(`${plainPath(id)}: recorded as matching ${narrativePath(id)}.`);
+      entry.arabicChecked = stamp();
+      console.log(`${plainPath(id)}: recorded as matching ${narrativePath(id)} (${entry.arabicChecked}).`);
     } else {
       entry.files = coverageFingerprints(REPO_ROOT, system.coverage);
-      console.log(`${narrativePath(id)}: recorded as checked against ${system.coverage.length} unit(s) of source.`);
+      entry.checked = stamp();
+      console.log(
+        `${narrativePath(id)}: recorded as checked against ${system.coverage.length} unit(s) of source (${entry.checked}).`,
+      );
     }
     ledger.systems[id] = entry;
   }
