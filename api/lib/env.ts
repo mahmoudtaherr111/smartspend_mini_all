@@ -14,6 +14,12 @@ const envSchema = z.object({
   // JWT
   JWT_SECRET: z.string().min(1),
 
+  // The secret that seals the provider keys saved in the admin console (api/lib/provider-key-crypto.ts). Unset,
+  // they are sealed with JWT_SECRET and rotating it loses them. During a rotation the old value goes in
+  // AI_GATEWAY_SECRET_PREVIOUS until the console shows no key left on it.
+  AI_GATEWAY_SECRET: z.string().optional(),
+  AI_GATEWAY_SECRET_PREVIOUS: z.string().optional(),
+
   // AI
   GEMINI_API_KEY: z.string().min(1),
   GEMINI_MODEL_FREE: z.string().default("gemini-3.1-flash-lite"),

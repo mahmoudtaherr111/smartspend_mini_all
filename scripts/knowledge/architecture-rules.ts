@@ -25,7 +25,6 @@ const NOT_TRPC_ROUTERS: Record<string, string> = {
  * delete them here; never add a name.
  */
 const UNVALIDATED_ENV = [
-  "AI_GATEWAY_SECRET",
   "AWS_ACCESS_KEY_ID",
   "AWS_REGION",
   "AWS_SECRET_ACCESS_KEY",

@@ -30,7 +30,7 @@ Users, credentials, settings, providers, templates, categories
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `ads` | `ads` | 14 | 2 | — | `clicks → ad_clicks` | `api/admin-router.ts`, `api/ads-router.ts` | `api/ads-router.ts` |
 | `ai_models` | `aiModels` | 18 | 3 | — | `provider → ai_providers` | `api/admin-router.ts`, `api/lib/ai-gateway.ts` | `api/admin-router.ts` |
-| `ai_providers` | `aiProviders` | 13 | 2 | — | `ledgers → ai_token_ledgers`, `models → ai_models` | `api/admin-router.ts`, `api/lib/ai-gateway.ts` | `api/admin-router.ts`, `api/lib/provider-health.ts` |
+| `ai_providers` | `aiProviders` | 13 | 2 | — | `ledgers → ai_token_ledgers`, `models → ai_models` | `api/admin-router.ts`, `api/lib/ai-gateway.ts` | `api/admin-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/provider-health.ts` |
 | `business_categories` | `businessCategories` | 12 | 1 | — | `business → user_businesses` | `api/ai-router.ts`, `api/business-router.ts`, `api/expense-router.ts` | `api/business-router.ts`, `api/services/user-purge-service.ts` |
 | `discount_codes` | `discountCodes` | 9 | 1 | — | `localUser → local_users`, `oauthUser → users` | `api/admin-router.ts`, `api/referral-router.ts` | `api/admin-router.ts` |
 | `expense_categories` | `expenseCategories` | 8 | 1 | `user_id` + `user_type` | `localUser → local_users`, `oauthUser → users` | `api/expense-router.ts` | `api/expense-router.ts`, `api/services/user-purge-service.ts` |

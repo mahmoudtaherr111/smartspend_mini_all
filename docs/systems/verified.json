@@ -51,7 +51,7 @@
     },
     "admin": {
       "files": {
-        "api/admin-router.ts": "f2b8f90971e7",
+        "api/admin-router.ts": "ed24c6d4b476",
         "api/ads-router.ts": "3492acf11584",
         "api/analytics-router.ts": "f4dfac1f9ab6",
         "api/export-router.ts#export.allUsers": "c142aeea8326",
@@ -69,7 +69,7 @@
         "src/components/admin/NotificationsTab.tsx": "fdc4e8874fd7",
         "src/components/admin/ai-center/AiCommandCenter.tsx": "214fff2f54c0",
         "src/components/admin/ai-center/modals/TokenAnatomyModal.tsx": "5d1eb48a7da5",
-        "src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx": "a54b44002cfa",
+        "src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx": "6d7349c52736",
         "src/components/admin/ai-center/tabs/AiRuleSandboxTab.tsx": "f776695feeb5",
         "src/components/admin/ai-center/tabs/AiTelemetryTab.tsx": "c90405d7e803",
         "src/components/admin/ai-center/tabs/AiUserQuotaInspectorTab.tsx": "10ff32f1e785",
@@ -81,9 +81,9 @@
         "src/pages/Admin.tsx": "42d9a43037ce",
         "src/pages/Support.tsx": "9175518fbc4c"
       },
-      "checked": "2026-09-16 bc4b459",
-      "arabic": "6f611cd40094",
-      "arabicChecked": "2026-09-16 bc4b459"
+      "checked": "2026-09-18 49da160",
+      "arabic": "4c1b0c0c4a43",
+      "arabicChecked": "2026-09-18 49da160"
     },
     "ai-center": {
       "files": {
@@ -144,7 +144,7 @@
       "files": {
         "api/ai-router.ts#ai.getUserLimits": "e14dc68ec481",
         "api/ai-router.ts#rest-of-file": "17d48b21e072",
-        "api/lib/ai-gateway.ts": "7ab50ef0f18a",
+        "api/lib/ai-gateway.ts": "dd37e994af37",
         "api/lib/ai-provider-registry.ts": "907773f2208f",
         "api/lib/ai-routing.ts": "14a1e099f1f2",
         "api/lib/ai-usage-policy.ts": "5b8ecba284b3",
@@ -157,12 +157,13 @@
         "api/lib/model-mapper.ts": "e685d8cca9a5",
         "api/lib/nvidia-client.ts": "564dadb63ac4",
         "api/lib/provider-health.ts": "56a6f6eb8217",
+        "api/lib/provider-key-crypto.ts": "3c64d3f05284",
         "api/services/ai-cost-analytics.ts": "f4b70f519855",
         "api/services/ai-cost-policy.ts": "e4536dd88d77"
       },
-      "checked": "2026-09-16 b51229f",
-      "arabic": "2572b8b8a539",
-      "arabicChecked": "2026-09-16 0610413"
+      "checked": "2026-09-18 49da160",
+      "arabic": "8e6d2fa7d009",
+      "arabicChecked": "2026-09-18 49da160"
     },
     "bank-messages": {
       "files": {
@@ -382,12 +383,12 @@
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "3384e9412772",
+        "api/boot.ts#rest-of-file": "933d7d1d9bc4",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "e83854efb800",
         "api/lib/app-time.ts": "23f0c001bb84",
         "api/lib/cache-keys.ts": "9540209b7d64",
-        "api/lib/env.ts": "605be8a8a267",
+        "api/lib/env.ts": "89af581ce089",
         "api/lib/error-logger.ts": "9cb0f25fe459",
         "api/lib/error-reporting.ts": "9dc005caede0",
         "api/lib/log.ts": "65a6302d6f7d",
@@ -413,9 +414,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "30875c0abaf8"
       },
-      "checked": "2026-09-18 b0c2f3b",
-      "arabic": "18f18efcd94f",
-      "arabicChecked": "2026-09-18 b0c2f3b"
+      "checked": "2026-09-18 49da160",
+      "arabic": "7fa6c1e038d5",
+      "arabicChecked": "2026-09-18 49da160"
     },
     "voice-calls": {
       "files": {

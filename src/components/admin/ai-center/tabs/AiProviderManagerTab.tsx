@@ -20,8 +20,57 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Server, Trash2, Cpu, RefreshCw, CheckCircle2 } from "lucide-react";
+import { Plus, Server, Trash2, Cpu, RefreshCw, CheckCircle2, KeyRound } from "lucide-react";
 import { toast } from "sonner";
+
+interface ProviderState {
+  keyState: "sealed" | "stale" | "plaintext" | "unreadable" | "empty";
+  keySecret: "AI_GATEWAY_SECRET" | "AI_GATEWAY_SECRET_PREVIOUS" | "JWT_SECRET" | null;
+  healthStatus: string;
+}
+
+/**
+ * Whether the provider can answer. A key no secret opens keeps it out of routing whatever the breaker last saw,
+ * so it is red too; a provider nothing has called yet is grey rather than green.
+ */
+function providerDot(p: ProviderState): { className: string; label: string } {
+  if (p.keyState === "unreadable" || p.keyState === "empty" || p.healthStatus === "down") {
+    return { className: "bg-rose-500", label: "لا يعمل" };
+  }
+  if (p.healthStatus === "degraded") return { className: "bg-amber-500", label: "متعثر" };
+  if (p.healthStatus === "healthy") return { className: "bg-emerald-500 animate-pulse", label: "يعمل" };
+  return { className: "bg-slate-500", label: "لم يُستدعَ بعد" };
+}
+
+/** What the admin needs to know about the stored key, and what to do about it (api/lib/provider-key-crypto.ts). */
+function keyNotice(p: ProviderState): { tone: "danger" | "warning" | "ok"; text: string } {
+  if (p.keyState === "unreadable") {
+    return {
+      tone: "danger",
+      text: "لا يفتح أي سر مضبوط على السيرفر هذا المفتاح، لذلك المزود خارج التوجيه. أدخل المفتاح من جديد.",
+    };
+  }
+  if (p.keyState === "empty") return { tone: "danger", text: "لا يوجد مفتاح محفوظ لهذا المزود." };
+  if (p.keySecret === "JWT_SECRET") {
+    return {
+      tone: "warning",
+      text: "المفتاح مشفّر بـ JWT_SECRET. اضبط AI_GATEWAY_SECRET على السيرفر قبل تغيير JWT_SECRET، وسينتقل المفتاح إليه تلقائيًا.",
+    };
+  }
+  if (p.keyState === "stale" || p.keyState === "plaintext") {
+    return {
+      tone: "warning",
+      text: "المفتاح لم ينتقل بعد إلى AI_GATEWAY_SECRET. ينتقل تلقائيًا عند تحميل المزودين؛ إن بقيت هذه الرسالة فراجع سجل السيرفر.",
+    };
+  }
+  return { tone: "ok", text: "المفتاح محمي بـ AI_GATEWAY_SECRET" };
+}
+
+const NOTICE_STYLES = {
+  danger: "bg-rose-500/10 border-rose-500/30 text-rose-300",
+  warning: "bg-amber-500/10 border-amber-500/30 text-amber-300",
+  ok: "bg-slate-950/60 border-slate-800 text-slate-400",
+} as const;
 
 interface DiscoveredModelItem {
   id: string;
@@ -38,6 +87,9 @@ export function AiProviderManagerTab() {
   const [protocol, setProtocol] = useState<"openai" | "gemini" | "anthropic">("openai");
   const [baseUrl, setBaseUrl] = useState("https://openrouter.ai/api/v1");
   const [apiKey, setApiKey] = useState("");
+  const [replacingKeyFor, setReplacingKeyFor] = useState<number | null>(null);
+  const [replacementKey, setReplacementKey] = useState("");
+  const utils = trpc.useUtils();
 
   const [discoveredModels, setDiscoveredModels] = useState<DiscoveredModelItem[]>([]);
   const [selectedModels, setSelectedModels] = useState<Record<string, {
@@ -72,6 +124,17 @@ export function AiProviderManagerTab() {
     onSuccess: () => {
       providersQuery.refetch();
       toast.success("تم تحديث حالة المزود");
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  // Entering the key again is how an unreadable key is repaired, without deleting the provider and its models.
+  const replaceKeyMutation = trpc.admin.updateAiProvider.useMutation({
+    onSuccess: () => {
+      toast.success("تم حفظ المفتاح الجديد");
+      setReplacingKeyFor(null);
+      setReplacementKey("");
+      void utils.admin.getAiProviders.invalidate();
     },
     onError: (err) => toast.error(err.message),
   });
@@ -200,12 +263,14 @@ export function AiProviderManagerTab() {
         ) : (
           providers.map((p) => {
             const providerModels = configuredModels.filter((m) => m.providerId === p.id);
+            const dot = providerDot(p);
+            const notice = keyNotice(p);
             return (
               <Card key={p.id} className="bg-slate-900/70 border-slate-800 shadow-md">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className={`w-2.5 h-2.5 rounded-full ${dot.className}`} title={dot.label} aria-label={dot.label} />
                       <CardTitle className="text-base font-bold text-slate-100">{p.displayName}</CardTitle>
                     </div>
                     <Badge variant="outline" className="border-slate-700 bg-slate-950 font-mono text-[10px]">
@@ -220,6 +285,75 @@ export function AiProviderManagerTab() {
                   <div className="flex items-center justify-between text-xs text-slate-400 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
                     <span>الموديلات النشطة:</span>
                     <span className="font-bold text-indigo-400 font-mono">{providerModels.length} موديل</span>
+                  </div>
+
+                  <div className={`space-y-2 text-xs p-2.5 rounded-lg border ${NOTICE_STYLES[notice.tone]}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-1.5">
+                        <KeyRound className="w-3.5 h-3.5 shrink-0" />
+                        {notice.text}
+                      </span>
+                      {p.keyState !== "unreadable" && p.keyState !== "empty" && (
+                        <span className="font-mono text-slate-500 shrink-0" dir="ltr">
+                          {p.apiKeyMasked}
+                        </span>
+                      )}
+                    </div>
+                    {replacingKeyFor === p.id ? (
+                      <form
+                        className="flex items-center gap-2"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          if (replacementKey.trim()) {
+                            replaceKeyMutation.mutate({ id: p.id, apiKey: replacementKey.trim() });
+                          }
+                        }}
+                      >
+                        <Input
+                          type="password"
+                          autoComplete="off"
+                          dir="ltr"
+                          value={replacementKey}
+                          onChange={(e) => setReplacementKey(e.target.value)}
+                          placeholder="المفتاح الجديد"
+                          aria-label={`المفتاح الجديد لـ ${p.displayName}`}
+                          className="h-8 text-xs bg-slate-950 border-slate-700"
+                        />
+                        <Button
+                          type="submit"
+                          size="sm"
+                          className="h-8 text-xs"
+                          disabled={replaceKeyMutation.isPending || !replacementKey.trim()}
+                        >
+                          حفظ
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 text-xs"
+                          onClick={() => {
+                            setReplacingKeyFor(null);
+                            setReplacementKey("");
+                          }}
+                        >
+                          إلغاء
+                        </Button>
+                      </form>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs text-slate-300 hover:bg-slate-800"
+                        onClick={() => {
+                          setReplacingKeyFor(p.id);
+                          setReplacementKey("");
+                        }}
+                      >
+                        تغيير المفتاح
+                      </Button>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">

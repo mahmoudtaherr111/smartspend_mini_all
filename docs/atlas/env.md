@@ -9,6 +9,8 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | Variable | Required | Default | Read by |
 | --- | --- | --- | --- |
 | `AI_ALLOW_MEMORY_CACHE_IN_PRODUCTION` | no | — | `api/lib/redis-client.ts` |
+| `AI_GATEWAY_SECRET` | no | — | `api/lib/provider-key-crypto.ts` |
+| `AI_GATEWAY_SECRET_PREVIOUS` | no | — | `api/lib/provider-key-crypto.ts` |
 | `ALLOWED_ORIGINS` | no | — | `api/lib/origin-policy.ts` |
 | `APP_TIMEZONE` | no | `Africa/Cairo` | `api/lib/app-time.ts` |
 | `APP_URL` | no | `http://localhost:5173` | `api/lib/origin-policy.ts`, `api/notification-engine.ts`, `api/webauthn-router.ts` |
@@ -29,13 +31,13 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `GOOGLE_CLIENT_SECRET` | yes | — | `api/auth-router.ts` |
 | `GOOGLE_REDIRECT_URI` | no | `http://localhost:3000/api/auth/google/callback` | `api/auth-router.ts` |
 | `GROQ_API_KEY` | no | — | `api/ai-router.ts` |
-| `JWT_SECRET` | yes | — | `api/lib/ai-gateway.ts`, `api/lib/login-protection.ts`, `api/lib/session-validation.ts`, `api/local-auth-utils.ts` |
+| `JWT_SECRET` | yes | — | `api/lib/login-protection.ts`, `api/lib/provider-key-crypto.ts`, `api/lib/session-validation.ts`, `api/local-auth-utils.ts` |
 | `LOGIN_ACCOUNT_MAX_FAILURES` | no | `5` | `api/lib/login-protection.ts` |
 | `LOGIN_IP_BURST_MAX_FAILURES` | no | `10` | `api/lib/login-protection.ts` |
 | `LOGIN_IP_MAX_FAILURES` | no | `50` | `api/lib/login-protection.ts` |
 | `LOGIN_PAIR_MAX_FAILURES` | no | `5` | `api/lib/login-protection.ts` |
 | `LOG_SLOW_QUERIES` | no | `true` | `api/queries/connection.ts` |
-| `NODE_ENV` | no | `development` | `api/ai-router.ts`, `api/boot.ts`, `api/chat-router.ts`, `api/lib/log.ts`, `api/lib/login-protection.ts`, `api/lib/origin-policy.ts`, `api/lib/redis-client.ts`, `api/lib/security-logger.ts`, `api/local-auth-router.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts`, `api/services/turnstile-service.ts` |
+| `NODE_ENV` | no | `development` | `api/ai-router.ts`, `api/boot.ts`, `api/chat-router.ts`, `api/lib/ai-gateway.ts`, `api/lib/log.ts`, `api/lib/login-protection.ts`, `api/lib/origin-policy.ts`, `api/lib/redis-client.ts`, `api/lib/security-logger.ts`, `api/local-auth-router.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts`, `api/services/turnstile-service.ts` |
 | `NVIDIA_API_KEY` | no | — | `api/ai-router.ts` |
 | `OWNER_EMAIL` | no | — | — |
 | `PAYMOB_API_KEY` | no | — | `api/lib/paymob.ts` |
@@ -56,7 +58,6 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 
 | Variable | Read by |
 | --- | --- |
-| `AI_GATEWAY_SECRET` | `api/lib/ai-gateway.ts` |
 | `AWS_ACCESS_KEY_ID` | `api/services/storage/s3-driver.ts` |
 | `AWS_REGION` | `api/services/storage/s3-driver.ts` |
 | `AWS_SECRET_ACCESS_KEY` | `api/services/storage/s3-driver.ts` |

@@ -15,8 +15,12 @@ import { aiProviders, aiModels, aiTokenLedgers, users, localUsers } from "../../
 import { eq, and, sql, desc, inArray } from "drizzle-orm";
 import { getSystemSettings } from "./settings-cache";
 import { TRPCError } from "@trpc/server";
-import { createCipheriv, createDecipheriv, randomBytes, createHash } from "node:crypto";
 import { businessDateKey } from "./app-time";
+import { env } from "./env";
+import { createLogger } from "./log";
+import { keyRing, needsReseal, openProviderKey, sealProviderKey, type OpenedKey } from "./provider-key-crypto";
+
+const log = createLogger("ai-gateway");
 
 // ─── Types & Interfaces ─────────────────────────────────────────────
 
@@ -106,50 +110,59 @@ export interface DiscoveredModel {
   supportsReasoning?: boolean;
 }
 
-// ─── Key Encryption Helper ──────────────────────────────────────────
+// ─── Stored provider keys ───────────────────────────────────────────
+// Sealing and opening live in `./provider-key-crypto`. Loading the providers is where a key reaches the
+// newest secret and where an unreadable one is reported: every provider row passes through here within a
+// minute of a process starting to route model calls.
 
-let ephemeralAiGatewayKey: Buffer | null = null;
+/** An unreadable key is logged once per stored value per process, not once a minute. */
+const reportedUnreadable = new Set<string>();
+let warnedAboutJwtSealing = false;
 
-function getEncryptionKey(): Buffer {
-  const secret = process.env.AI_GATEWAY_SECRET || process.env.JWT_SECRET;
-  if (secret) {
-    return createHash("sha256").update(secret).digest();
+type StoredProvider = typeof aiProviders.$inferSelect;
+
+/**
+ * Writes a key opened with an older secret (or stored as plain text) back sealed with the current one.
+ *
+ * The write is conditional on the stored value being unchanged, so a key the admin replaced meanwhile, or
+ * another replica resealing the same row, is left alone; and it never fails the refresh that asked for it.
+ */
+async function resealProviderKeys(providers: StoredProvider[], opened: Map<number, OpenedKey>): Promise<void> {
+  for (const provider of providers) {
+    const key = opened.get(provider.id);
+    if (!key || !needsReseal(key)) continue;
+    try {
+      await db
+        .update(aiProviders)
+        .set({ apiKeyEncrypted: sealProviderKey(key.key) })
+        .where(and(eq(aiProviders.id, provider.id), eq(aiProviders.apiKeyEncrypted, provider.apiKeyEncrypted)));
+      log.info(
+        { event: "ai_gateway.key_resealed", provider: provider.slug, from: key.secret ?? key.state, to: keyRing().sealing.secret },
+        "Moved a provider key to the current secret",
+      );
+    } catch (err) {
+      log.warn({ err, event: "ai_gateway.key_reseal_failed", provider: provider.slug }, "Could not reseal a provider key");
+    }
   }
-  if (!ephemeralAiGatewayKey) {
-    console.warn("⚠️ Neither AI_GATEWAY_SECRET nor JWT_SECRET is configured. Using ephemeral cryptographic key for AI gateway encryption.");
-    ephemeralAiGatewayKey = randomBytes(32);
-  }
-  return ephemeralAiGatewayKey;
 }
 
-export function encryptApiKey(plainKey: string): string {
-  if (!plainKey) return "";
-  const keyHash = getEncryptionKey();
-  const iv = randomBytes(12);
-  const cipher = createCipheriv("aes-256-gcm", keyHash, iv);
-  let encrypted = cipher.update(plainKey, "utf8", "hex");
-  encrypted += cipher.final("hex");
-  const authTag = cipher.getAuthTag().toString("hex");
-  return `${iv.toString("hex")}:${authTag}:${encrypted}`;
-}
-
-export function decryptApiKey(encryptedData: string): string {
-  if (!encryptedData) return "";
-  try {
-    const parts = encryptedData.split(":");
-    if (parts.length !== 3) return encryptedData; // Unencrypted fallback
-    const [ivHex, authTagHex, encryptedText] = parts;
-    const iv = Buffer.from(ivHex, "hex");
-    const authTag = Buffer.from(authTagHex, "hex");
-    const keyHash = getEncryptionKey();
-    const decipher = createDecipheriv("aes-256-gcm", keyHash, iv);
-    decipher.setAuthTag(authTag);
-    let decrypted = decipher.update(encryptedText, "hex", "utf8");
-    decrypted += decipher.final("utf8");
-    return decrypted;
-  } catch (err) {
-    console.warn("[AI Gateway] Decryption error, key may need re-entry:", err);
-    return "";
+function reportKeyProblems(providers: StoredProvider[], opened: Map<number, OpenedKey>): void {
+  for (const provider of providers) {
+    if (opened.get(provider.id)?.state !== "unreadable") continue;
+    const fingerprint = `${provider.id}:${provider.apiKeyEncrypted.slice(-16)}`;
+    if (reportedUnreadable.has(fingerprint)) continue;
+    reportedUnreadable.add(fingerprint);
+    log.error(
+      { event: "ai_gateway.key_unreadable", provider: provider.slug, active: provider.isActive },
+      "No configured secret opens this provider's key; it is left out of routing until the key is entered again",
+    );
+  }
+  if (!warnedAboutJwtSealing && env.NODE_ENV === "production" && keyRing().sealing.secret === "JWT_SECRET") {
+    warnedAboutJwtSealing = true;
+    log.warn(
+      { event: "ai_gateway.sealed_with_jwt_secret" },
+      "Provider keys are sealed with JWT_SECRET; set AI_GATEWAY_SECRET before rotating JWT_SECRET",
+    );
   }
 }
 
@@ -237,11 +250,13 @@ const CACHE_TTL_MS = 60_000; // 1 minute TTL
 
 export async function refreshGatewayCache(): Promise<void> {
   try {
-    const activeProviders = await db
-      .select()
-      .from(aiProviders)
-      .where(eq(aiProviders.isActive, true))
-      .orderBy(aiProviders.priority);
+    // Every provider, not only the active ones: a key switched off today is still moved to the current
+    // secret, so it opens when it is switched back on after a rotation.
+    const allProviders = await db.select().from(aiProviders).orderBy(aiProviders.priority);
+    const opened = new Map(allProviders.map((provider) => [provider.id, openProviderKey(provider.apiKeyEncrypted)]));
+    await resealProviderKeys(allProviders, opened);
+    reportKeyProblems(allProviders, opened);
+    const activeProviders = allProviders.filter((provider) => provider.isActive);
 
     if (!activeProviders.length) {
       _gatewayRouteCache.clear();
@@ -270,7 +285,7 @@ export async function refreshGatewayCache(): Promise<void> {
           displayName: provider.displayName,
           protocol: provider.protocol,
           baseUrl: provider.baseUrl,
-          apiKey: decryptApiKey(provider.apiKeyEncrypted),
+          apiKey: opened.get(provider.id)?.key ?? "",
         },
         model: {
           id: model.id,
@@ -301,7 +316,7 @@ export async function refreshGatewayCache(): Promise<void> {
     _gatewayRouteCache = newMap;
     _lastCacheUpdate = Date.now();
   } catch (err) {
-    console.error("[Universal AI Gateway] Failed to refresh route cache:", err);
+    log.error({ err, event: "ai_gateway.refresh_failed" }, "Could not refresh the provider routes");
   }
 }
 
@@ -358,9 +373,9 @@ export async function resolveAdminRoutes(
   const seen = new Set<string>();
   const routes: AdminRoute[] = [];
   const preferredEntry = _gatewayRouteCache.get(`route:${purpose}:${tier}`);
-  // A route with no usable key is not a route. `decryptApiKey` returns "" when the
-  // ciphertext no longer matches the secret, and offering that provider anyway spends a
-  // request to learn what we already know — while pushing the working provider down the
+  // A route with no usable key is not a route. A key no configured secret opens comes back
+  // empty (and is reported when the providers load), and offering that provider anyway spends
+  // a request to learn what we already know — while pushing the working provider down the
   // queue behind it.
   const preferred =
     preferredEntry && preferredEntry.provider.apiKey ? toRoute(preferredEntry, 0) : null;

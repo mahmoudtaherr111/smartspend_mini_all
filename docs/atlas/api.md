@@ -51,8 +51,8 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `admin.addAiProvider` | mutation | `adminProcedure` | yes | — | `ai_providers` | `api/lib/ai-gateway.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.checkProviderHealth` | mutation | `adminProcedure` | no | `ai_providers` | `ai_providers` | `api/lib/ai-gateway.ts` | — |
+| `admin.addAiProvider` | mutation | `adminProcedure` | yes | — | `ai_providers` | `api/lib/ai-gateway.ts`, `api/lib/provider-key-crypto.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.checkProviderHealth` | mutation | `adminProcedure` | no | `ai_providers` | `ai_providers` | `api/lib/ai-gateway.ts`, `api/lib/provider-key-crypto.ts` | — |
 | `admin.clearAllApiKeyErrors` | mutation | `adminProcedure` | no | — | — | `api/lib/error-logger.ts` | `src/pages/Admin.tsx` |
 | `admin.createDiscountCode` | mutation | `adminProcedure` | yes | `discount_codes` | `discount_codes` | — | `src/components/admin/settings/AdminCodesTab.tsx` |
 | `admin.createNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | — | `src/components/admin/NotificationsTab.tsx` |
@@ -66,7 +66,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `admin.getAICostOverview` | query | `adminProcedure` | yes | — | — | `api/services/ai-cost-analytics.ts` | `src/pages/Admin.tsx` |
 | `admin.getActivityLog` | query | `adminProcedure` | yes | `local_users`, `sessions`, `users` | — | — | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
 | `admin.getAiModels` | query | `adminProcedure` | no | `ai_models` | — | — | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.getAiProviders` | query | `adminProcedure` | no | `ai_providers` | — | `api/lib/ai-gateway.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.getAiProviders` | query | `adminProcedure` | no | `ai_providers` | — | `api/lib/provider-key-crypto.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.getAiTelemetryOverview` | query | `adminProcedure` | no | `ai_token_ledgers` | — | `api/lib/ai-gateway.ts` | `src/components/admin/ai-center/tabs/AiTelemetryTab.tsx` |
 | `admin.getAiTokenLedger` | query | `adminProcedure` | yes | `ai_token_ledgers` | — | — | — |
 | `admin.getApiKeyErrors` | query | `adminProcedure` | yes | — | — | `api/lib/error-logger.ts` | `src/pages/Admin.tsx` |
@@ -100,7 +100,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 | `admin.toggleNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | — | `src/components/admin/NotificationsTab.tsx` |
 | `admin.triggerActivityCheck` | mutation | `adminProcedure` | no | — | — | `api/notification-engine.ts` | `src/components/admin/NotificationsTab.tsx` |
 | `admin.triggerBackupDemo` | mutation | `adminProcedure` | no | `ads`, `discount_codes`, `onboarding_questions` | — | `api/lib/settings-cache.ts` | `src/components/admin/AdminSettingsTab.tsx` |
-| `admin.updateAiProvider` | mutation | `adminProcedure` | yes | — | `ai_providers` | `api/lib/ai-gateway.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.updateAiProvider` | mutation | `adminProcedure` | yes | — | `ai_providers` | `api/lib/ai-gateway.ts`, `api/lib/provider-key-crypto.ts` | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.updateNotificationTemplate` | mutation | `adminProcedure` | yes | — | `notification_templates` | — | `src/components/admin/NotificationsTab.tsx` |
 | `admin.updateSettings` | mutation | `adminProcedure` | yes | — | `system_settings` | `api/lib/settings-cache.ts`, `api/lib/system-settings-registry.ts` | `src/components/admin/AdminSettingsTab.tsx` |
 | `admin.updateUserPlan` | mutation | `adminProcedure` | yes | — | — | `api/lib/access-control.ts` | — |

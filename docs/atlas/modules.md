@@ -22,7 +22,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `notifications` | Notifications | 2 | `database`, `platform` | `api-core`, `api-routers` | `firebase`, `web-push` |
 | `whatsapp` | WhatsApp | 2 | `auth`, `database`, `platform` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
 | `voice` | Voice | 10 | `ai-actions`, `ai-governance`, `ai-kernel`, `ai-memory`, `auth`, `database`, `finance-semantic-layer`, `platform` | `api-core`, `api-routers` | `gemini` |
-| `ai-providers` | AI provider access | 12 | `database`, `platform` | `ai-kernel`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs`, `receipt-parsing` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
+| `ai-providers` | AI provider access | 13 | `database`, `platform` | `ai-kernel`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs`, `receipt-parsing` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
 | `ai-governance` | AI usage and cost governance | 3 | `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `jobs`, `voice` | — |
 | `arabic-nlp` | Arabic and Egyptian text processing | 10 | `classification` | `ai-kernel`, `api-routers`, `classification`, `receipt-parsing` | — |
 | `ingestion-parsers` | Ingestion parsers | 3 | `ai-providers`, `platform` | `api-routers` | `gemini` |
@@ -263,11 +263,11 @@ Live voice calls: a WebSocket bridged to the Gemini Live API, with session check
 
 ### `ai-providers` — AI provider access
 
-Provider clients, the provider registry, model name mapping, routing and fallback chains.
+Provider clients, the provider registry, model name mapping, routing and fallback chains, and the sealing of the provider keys saved in the admin console, which move to a new secret on their own.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/lib/ai-gateway.ts` | `database`, `platform` | `gemini` | `ai_models`, `ai_providers` | `ai_token_ledgers`, `local_users`, `users` |
+| `api/lib/ai-gateway.ts` | `database`, `platform` | `gemini` | `ai_models`, `ai_providers` | `ai_providers`, `ai_token_ledgers`, `local_users`, `users` |
 | `api/lib/ai-provider-registry.ts` | — | — | — | — |
 | `api/lib/ai-routing.ts` | — | — | — | — |
 | `api/lib/deepseek-client.ts` | — | — | — | — |
@@ -279,6 +279,7 @@ Provider clients, the provider registry, model name mapping, routing and fallbac
 | `api/lib/model-mapper.ts` | — | — | — | — |
 | `api/lib/nvidia-client.ts` | — | `nvidia` | — | — |
 | `api/lib/provider-health.ts` | `database` | — | — | `ai_providers` |
+| `api/lib/provider-key-crypto.ts` | `platform` | — | — | — |
 
 ### `ai-governance` — AI usage and cost governance
 

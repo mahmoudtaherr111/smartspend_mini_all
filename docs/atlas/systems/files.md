@@ -96,6 +96,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/person-resolver.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/post-classifier-verifier.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/provider-health.ts` | [ai-platform](ai-platform.md) |
+| `api/lib/provider-key-crypto.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/rate-limit.ts` | [accounts](accounts.md) |
 | `api/lib/real-user-sim.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/receipt-image-parser.ts` | [expense-capture](expense-capture.md) |

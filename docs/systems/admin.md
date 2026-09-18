@@ -67,7 +67,10 @@ support page, the ads shown in the app, the SEO metadata of public pages and the
   recorded by the server.
 - **AI providers.** Keys are stored encrypted and listed masked; adding, editing or deleting a provider, or
   saving its models, refreshes the gateway cache that routes model calls ([AI providers and usage
-  limits](ai-platform.md)). `admin.validateApiKey` proves a key the cheapest way there is — by listing the
+  limits](ai-platform.md)). Each provider's card says which secret its key is sealed with — a warning while it is
+  `JWT_SECRET`, in red when no configured secret opens it — and "تغيير المفتاح" saves a new key through
+  `admin.updateAiProvider` without deleting the provider or its models. The dot beside the name follows
+  `ai_providers.healthStatus`: grey until the breaker has seen the provider, and red for a key nothing opens. `admin.validateApiKey` proves a key the cheapest way there is — by listing the
   models it can reach — and works for any provider, not a fixed list.
 - **Support.** Users open tickets from `src/pages/Support.tsx` (`support.create`, which prepends an optional
   phone or email to the message text) and see their own list (`support.listMine`); a ticket is readable and

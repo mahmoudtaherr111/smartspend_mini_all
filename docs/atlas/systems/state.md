@@ -4,7 +4,7 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (71 of 128 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (69 of 126 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
@@ -19,9 +19,9 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (71 of
 | [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 12 | **5** | 3 | 2 | — |
 | [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 1 | **1** | 1 | 3 | 2 |
 | [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | **none** | **1** | 5 | 1 | 3 |
-| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-16 bc4b459 | 2026-09-16 bc4b459 | 4 | — | 4 | 5 | 2 |
-| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-16 b51229f | 2026-09-16 0610413 | 7 | **2** | 4 | 1 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 5 | — | 1 | — | 9 |
+| [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-18 49da160 | 2026-09-18 49da160 | 4 | — | 4 | 5 | 2 |
+| [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-18 49da160 | 2026-09-18 49da160 | 9 | — | 4 | 1 | 4 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-18 49da160 | 2026-09-18 49da160 | 5 | — | 1 | — | 9 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-16 b51229f | 2026-09-16 0610413 | 7 | **1** | 2 | 2 | 2 |
 
 
@@ -29,11 +29,11 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (71 of
 
 These systems' explanations name no test at all, so nothing fails when they break: [Notifications and WhatsApp](notifications.md).
 
-## What is waiting (128 issue(s))
+## What is waiting (126 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
-### Security (12)
+### Security (10)
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
 - A high-risk draft (stopping a goal) asks for confirmation in the interface, but the call screen and `useVoiceCall` have no such confirmation, so it cannot complete from a call.
@@ -53,10 +53,6 @@ Every known issue the explanations list, most serious first. Fixing one means co
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
 - WhatsApp broadcasts are automated bulk messages through an unofficial client, spaced by random pauses and varied wording, which risks a ban of the number; the queue lives in process memory and is lost on restart, and nothing checks that recipients agreed.
-
-**AI providers and usage limits** — [docs/systems/ai-platform.md](../../systems/ai-platform.md)
-- Provider keys are encrypted with `AI_GATEWAY_SECRET`, or `JWT_SECRET` when it is unset, both read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8). Rotating `JWT_SECRET` without setting `AI_GATEWAY_SECRET` makes every stored provider key undecryptable, and such a route is dropped silently: the console still lists the provider, and traffic quietly falls back to whatever key is left.
-- With neither secret set, the keys are encrypted with a random key held in memory, so a key saved by one process cannot be read by another replica or after a restart.
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
@@ -192,7 +188,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - Procedures without a screen: `admin.sendPushNotification`, `admin.checkProviderHealth`, `admin.getAiTokenLedger`, `admin.getPipelineVersionStats`, `admin.getStorageRuntimeMetrics`, `admin.resetUserTokens`, `admin.setUserTokenLimit`, `admin.updateUserPlan` (the console uses the `V2` one), `support.getById`, `support.assign` and every statistic of `analytics`.
 
 **AI providers and usage limits** — [docs/systems/ai-platform.md](../../systems/ai-platform.md)
-- `admin.checkProviderHealth` has no screen, so `ai_providers.healthStatus` is only ever written by the breaker during real traffic ([admin](admin.md)).
+- `admin.checkProviderHealth` has no screen, so `ai_providers.healthStatus` — the dot on each provider's card — is only ever written by the breaker during real traffic ([admin](admin.md)).
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in `src/components/routing/PlanGates.tsx` are unused, so the plan is checked on the server only.
@@ -239,7 +235,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and `api/lib/ai-gateway.ts`, and the burst guard only sees channels that call `recordAiUsageEvent` — the chat, report, SMS and voice paths do not.
 
 **Server platform and data** — [docs/systems/platform.md](../../systems/platform.md)
-- Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8): `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and public URL; `api/lib/ai-gateway.ts` reads the key that encrypts provider keys; the embedding warm-up in `api/boot.ts` reads the Fireworks key.
+- Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8): `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and public URL; the embedding warm-up in `api/boot.ts` reads the Fireworks key.
 - In production every 404 that is not an API path reads `dist/public/index.html` from disk again, with no cache.
 - The OTP stream keeps its per-IP counters in a plain map that nothing prunes, so the map grows with the number of distinct addresses until the process restarts.
 - Sentry, when configured, is initialised with full tracing and profiling (`tracesSampleRate: 1.0`), which samples every request in production.

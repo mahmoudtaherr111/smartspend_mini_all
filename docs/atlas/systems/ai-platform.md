@@ -75,7 +75,7 @@ flowchart LR
 | Module | What it does | Files |
 | --- | --- | --- |
 | `ai-governance` — AI usage and cost governance | Per-plan token limits and per-request caps, burst counting, AI cost metrics and the admin cost overview, and the check of model-written numbers against facts. | 3 |
-| `ai-providers` — AI provider access | Provider clients, the provider registry, model name mapping, routing and fallback chains. | 12 |
+| `ai-providers` — AI provider access | Provider clients, the provider registry, model name mapping, routing and fallback chains, and the sealing of the provider keys saved in the admin console, which move to a new secret on their own. | 13 |
 
 ## API procedures
 
@@ -124,15 +124,17 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 | Variable | Validated in api/lib/env.ts | Read by |
 | --- | --- | --- |
-| `AI_GATEWAY_SECRET` | no | `api/lib/ai-gateway.ts` |
+| `AI_GATEWAY_SECRET` | yes | `api/lib/provider-key-crypto.ts` |
+| `AI_GATEWAY_SECRET_PREVIOUS` | yes | `api/lib/provider-key-crypto.ts` |
 | `GEMINI_API_KEY` | yes | `api/lib/ai-gateway.ts` |
-| `JWT_SECRET` | yes | `api/lib/ai-gateway.ts` |
+| `JWT_SECRET` | yes | `api/lib/provider-key-crypto.ts` |
+| `NODE_ENV` | yes | `api/lib/ai-gateway.ts` |
 
 ## Source its explanation describes
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/ai-platform.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>17 files and declarations</summary>
+<details><summary>18 files and declarations</summary>
 
 - `api/ai-router.ts#ai.getUserLimits`
 - `api/ai-router.ts#rest-of-file`
@@ -149,6 +151,7 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/model-mapper.ts`
 - `api/lib/nvidia-client.ts`
 - `api/lib/provider-health.ts`
+- `api/lib/provider-key-crypto.ts`
 - `api/services/ai-cost-analytics.ts`
 - `api/services/ai-cost-policy.ts`
 

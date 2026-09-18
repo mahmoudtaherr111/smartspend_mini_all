@@ -111,8 +111,7 @@ the rule checks in `tests/knowledge/`.
 Checked against the code; each one names where it lives.
 1. **Debt.** Configuration read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8):
    `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and
-   public URL; `api/lib/ai-gateway.ts` reads the key that encrypts provider keys; the embedding warm-up in
-   `api/boot.ts` reads the Fireworks key.
+   public URL; the embedding warm-up in `api/boot.ts` reads the Fireworks key.
 2. **Debt.** In production every 404 that is not an API path reads `dist/public/index.html` from disk again, with no
    cache.
 3. **Debt.** The OTP stream keeps its per-IP counters in a plain map that nothing prunes, so the map grows with the

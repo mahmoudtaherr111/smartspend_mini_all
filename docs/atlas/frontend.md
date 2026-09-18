@@ -93,7 +93,7 @@ Browser routes come from `src/App.tsx`. For each page, the generator follows imp
 | `admin.getAICostOverview` | useQuery | `src/pages/Admin.tsx` |
 | `admin.getActivityLog` | useQuery | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
 | `admin.getAiModels` | useQuery | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.getAiProviders` | useQuery | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.getAiProviders` | useQuery, utils.invalidate | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.getAiTelemetryOverview` | useQuery | `src/components/admin/ai-center/tabs/AiTelemetryTab.tsx` |
 | `admin.getApiKeyErrors` | useQuery, utils.invalidate | `src/pages/Admin.tsx` |
 | `admin.getAvailableModels` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |
@@ -251,7 +251,7 @@ _None._
 | `admin.getAICostOverview` | useQuery | `src/pages/Admin.tsx` |
 | `admin.getActivityLog` | useQuery | `src/components/admin/AdminAuditTab.tsx`, `src/hooks/useAdmin.ts` |
 | `admin.getAiModels` | useQuery | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
-| `admin.getAiProviders` | useQuery | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
+| `admin.getAiProviders` | useQuery, utils.invalidate | `src/components/admin/ai-center/tabs/AiProviderManagerTab.tsx` |
 | `admin.getAiTelemetryOverview` | useQuery | `src/components/admin/ai-center/tabs/AiTelemetryTab.tsx` |
 | `admin.getApiKeyErrors` | useQuery, utils.invalidate | `src/pages/Admin.tsx` |
 | `admin.getAvailableModels` | useQuery | `src/components/admin/AdminSettingsTab.tsx` |

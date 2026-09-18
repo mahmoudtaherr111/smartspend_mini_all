@@ -41,12 +41,11 @@ import {
   aiTokenLedgers,
 } from "../db/schema";
 import {
-  encryptApiKey,
-  decryptApiKey,
   discoverRemoteModels,
   refreshGatewayCache,
   resolveBillingPeriod,
 } from "./lib/ai-gateway";
+import { openProviderKey, sealProviderKey } from "./lib/provider-key-crypto";
 import {
   eq,
   sql,
@@ -1368,7 +1367,7 @@ export const adminRouter = router({
     const results = await Promise.all(
       providers.map(async (provider) => {
         const startedAt = Date.now();
-        const apiKey = decryptApiKey(provider.apiKeyEncrypted);
+        const apiKey = openProviderKey(provider.apiKeyEncrypted).key;
         if (!apiKey) {
           return {
             slug: provider.slug,
@@ -1761,17 +1760,10 @@ export const adminRouter = router({
   getAiProviders: adminProcedure.query(async () => {
     const list = await db.select().from(aiProviders).orderBy(aiProviders.priority);
     return list.map((p) => {
-      let mask = "••••••••";
-      if (p.apiKeyEncrypted) {
-        try {
-          const dec = decryptApiKey(p.apiKeyEncrypted);
-          if (dec && dec.length >= 4) {
-            mask = "••••••••" + dec.slice(-4);
-          }
-        } catch {
-          mask = "••••••••";
-        }
-      }
+      // Which secret the key is on is what the card shows: an unreadable key has to be entered again, and a
+      // key still on JWT_SECRET is lost if JWT_SECRET is rotated before AI_GATEWAY_SECRET is set.
+      const key = openProviderKey(p.apiKeyEncrypted);
+      const mask = key.key.length >= 4 ? "••••••••" + key.key.slice(-4) : "••••••••";
       return {
         id: p.id,
         slug: p.slug,
@@ -1779,6 +1771,8 @@ export const adminRouter = router({
         protocol: p.protocol,
         baseUrl: p.baseUrl,
         apiKeyMasked: mask,
+        keyState: key.state,
+        keySecret: key.secret ?? null,
         supportsModelDiscovery: p.supportsModelDiscovery,
         isActive: p.isActive,
         priority: p.priority,
@@ -1802,7 +1796,7 @@ export const adminRouter = router({
       }),
     )
     .mutation(async ({ input }) => {
-      const encrypted = encryptApiKey(input.apiKey);
+      const encrypted = sealProviderKey(input.apiKey);
       const [newRow] = await db.insert(aiProviders).values({
         slug: input.slug.toLowerCase().trim(),
         displayName: input.displayName.trim(),
@@ -1833,7 +1827,7 @@ export const adminRouter = router({
       if (input.displayName !== undefined) updateData.displayName = input.displayName.trim();
       if (input.protocol !== undefined) updateData.protocol = input.protocol;
       if (input.baseUrl !== undefined) updateData.baseUrl = input.baseUrl.trim();
-      if (input.apiKey !== undefined) updateData.apiKeyEncrypted = encryptApiKey(input.apiKey);
+      if (input.apiKey !== undefined) updateData.apiKeyEncrypted = sealProviderKey(input.apiKey);
       if (input.priority !== undefined) updateData.priority = input.priority;
       if (input.isActive !== undefined) updateData.isActive = input.isActive;
 

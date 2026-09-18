@@ -11,8 +11,8 @@ the per-plan token budget every paid call is measured against, and the two place
 ## The pieces
 | Piece | Where | What it does |
 | --- | --- | --- |
-| Admin routes | `api/lib/ai-gateway.ts` | Reads `ai_providers` and `ai_models` into a per-process cache, decrypts the keys, and answers "which provider and model did the admin pick for this purpose and plan" |
-| Key encryption | `encryptApiKey` and `decryptApiKey` in `api/lib/ai-gateway.ts` | AES-256-GCM over the provider keys stored in `ai_providers` |
+| Admin routes | `api/lib/ai-gateway.ts` | Reads `ai_providers` and `ai_models` into a per-process cache, opens the keys (moving any on an older secret to the current one), and answers "which provider and model did the admin pick for this purpose and plan" |
+| Provider keys | `sealProviderKey` and `openProviderKey` in `api/lib/provider-key-crypto.ts` | AES-256-GCM over the keys stored in `ai_providers`, sealed with `AI_GATEWAY_SECRET` (or `JWT_SECRET` while it is unset) and opened with any secret the server still holds |
 | Model discovery | `discoverRemoteModels` in `api/lib/ai-gateway.ts` | Asks a provider for the models a key can reach ([admin](admin.md)) |
 | Provider chain | `api/lib/llm-provider-chain.ts` | Builds the ordered list of routes: the admin's rows first, then every built-in provider whose key is present |
 | Router | `api/lib/llm-router.ts` | Sends the request, classifies the failure, moves to the next route, opens the breaker, and reports what every attempt cost |
@@ -28,7 +28,8 @@ the per-plan token budget every paid call is measured against, and the two place
 ## Choosing a provider
 1. The caller asks for a purpose and a tier. `resolveAdminRoutes` returns the model the admin marked as the
    default for that pair, plus every other model allowed for that purpose as fallbacks, ordered by
-   `ai_providers.priority`. A route whose key will not decrypt is dropped instead of being tried.
+   `ai_providers.priority`. A route whose key no configured secret opens is left out instead of being tried,
+   and says so (see Provider keys).
 2. `buildProviderChain` puts the requested provider first, then the admin's other rows, then a second Gemini
    key, then every built-in provider that has a key (Gemini, Groq, Fireworks, NVIDIA), then DeepSeek and
    OpenRouter if they have one. A route needs both a key and a model to stay in the list, and a model that
@@ -36,6 +37,24 @@ the per-plan token budget every paid call is measured against, and the two place
 3. `executeLlmChain` tries the routes in order under one deadline for the whole chain. Gemini goes through the
    Google SDK; everything else speaks the OpenAI-compatible shape, which is why adding a provider is a row and
    a key rather than code.
+
+## Provider keys
+- The admin console saves a provider's key sealed with AES-256-GCM under SHA-256 of `AI_GATEWAY_SECRET`, or of
+  `JWT_SECRET` while that is unset (`api/lib/provider-key-crypto.ts`). The stored shape, `<iv>:<tag>:<data>`, is
+  the one earlier versions wrote, so a rollback reads what this version writes.
+- A stored key is opened with `AI_GATEWAY_SECRET`, then `AI_GATEWAY_SECRET_PREVIOUS`, then `JWT_SECRET`; GCM's
+  tag makes a wrong secret fail rather than return noise. A value with three colon-separated parts is treated as
+  sealed, so a damaged one is never sent to a provider as its key; anything else predates sealing and is read as
+  it is.
+- Loading the providers — at boot, then whenever the route cache is older than a minute or an admin saves one —
+  reseals every key, active or not, that opened with an older secret or was stored as plain text, with a write
+  that lands only if the stored value is unchanged. Setting `AI_GATEWAY_SECRET` and deploying therefore moves
+  every key to it. A rotation is: the old value into `AI_GATEWAY_SECRET_PREVIOUS`, the new one into
+  `AI_GATEWAY_SECRET`, deploy, and remove the old value once no key shows it.
+- A key none of them opens stays stored and is left out of routing; it is logged once per process
+  (`ai_gateway.key_unreadable`) and shown on the provider's card, where the admin can enter it again without
+  deleting the provider ([admin](admin.md)). In production without `AI_GATEWAY_SECRET`, each process warns once
+  that the keys are sealed with `JWT_SECRET` (`ai_gateway.sealed_with_jwt_secret`).
 
 ## When a call fails
 - Failures are classified: rate limited, auth, unsupported schema, server, timeout, network, empty response,
@@ -82,6 +101,7 @@ There are two accountings, and they do not cover the same calls:
 | A model name, shorthand or per-plan default | `api/lib/model-mapper.ts` | `api/lib/model-mapper.test.ts` |
 | Plan limits and per-request ceilings | the settings, then `api/lib/ai-usage-policy.ts` for the hard ceilings | |
 | Which route classification takes per plan | `api/lib/ai-routing.ts` | `api/lib/ai-routing.test.ts` |
+| How provider keys are sealed, and which secrets open them | `api/lib/provider-key-crypto.ts`, `AI_GATEWAY_SECRET` in `api/lib/env.ts` | `api/lib/provider-key-crypto.test.ts`, `api/lib/provider-key-reseal.test.ts` |
 
 ## Rules for changes here
 1. Model ids go through `mapModelName()` (golden rule 9), and a provider's model through
@@ -92,45 +112,42 @@ There are two accountings, and they do not cover the same calls:
    OpenAI-compatible shape instead of a new client file.
 4. The route cache and the breaker are per process (`api/AGENTS.md`, rule 6): never assume one replica's view
    of a provider is another's.
+5. Store a provider key only through `sealProviderKey` and read it only through `openProviderKey`; never log a
+   key, and never change the stored shape without a way for the previous version to read it.
 
 ## Tests
 `api/lib/llm-router.test.ts`, `api/lib/provider-route-acceptance.test.ts`, `api/lib/admin-model-switch.test.ts`,
 `api/lib/ai-routing.test.ts`, `api/lib/model-mapper.test.ts`, `api/services/ai-cost-policy.test.ts` and
-`api/services/ai-cost-analytics.test.ts`.
+`api/services/ai-cost-analytics.test.ts`; the provider keys in `api/lib/provider-key-crypto.test.ts` and
+`api/lib/provider-key-reseal.test.ts`.
 
 ## Known issues
 Checked against the code; each one names where it lives.
 1. **Debt.** `executeAiGateway` — the execution half of the "universal gateway", with its own price-based cost
    calculation and ledger write — has no caller. Only its route resolution is used, by
    `api/lib/smart-pipeline.ts`.
-2. **Security.** Provider keys are encrypted with `AI_GATEWAY_SECRET`, or `JWT_SECRET` when it is unset, both read straight
-   from `process.env` instead of `api/lib/env.ts` (golden rule 8). Rotating `JWT_SECRET` without setting
-   `AI_GATEWAY_SECRET` makes every stored provider key undecryptable, and such a route is dropped silently:
-   the console still lists the provider, and traffic quietly falls back to whatever key is left.
-3. **Security.** With neither secret set, the keys are encrypted with a random key held in memory, so a key saved by one
-   process cannot be read by another replica or after a restart.
-4. **Bug.** Cost in `ai_token_ledgers` is not the model's price: `trackTokens` bills every call at 0.14 USD per million
+2. **Bug.** Cost in `ai_token_ledgers` is not the model's price: `trackTokens` bills every call at 0.14 USD per million
    tokens and converts at a fixed 50.5, while the settings hold an exchange rate that only the unused gateway
    reads. The admin's cost and telemetry screens show those numbers.
-5. **Bug.** The two accountings leave gaps: the AI Center chat and voice calls never reach `ai_token_ledgers`, so the
+3. **Bug.** The two accountings leave gaps: the AI Center chat and voice calls never reach `ai_token_ledgers`, so the
    telemetry tab under-reports them, and the screen that would show the `ai_cost_*` side is not mounted
    ([admin](admin.md)).
-6. **Debt.** `api/lib/ai-provider-registry.ts` carries a model catalogue with tiers, purposes and prices, "last verified"
+4. **Debt.** `api/lib/ai-provider-registry.ts` carries a model catalogue with tiers, purposes and prices, "last verified"
    in a comment, and nothing reads it: `isKnownModel`, `getModelEntry`, `listModels`, `resolveApiKey` and the
    per-plan defaults have no caller, and only `DEPRECATED_MODEL_MAP` is used. Model defaults live a second
    time in `api/lib/model-mapper.ts` and a third time in the fixed lists of `admin.getAvailableModels`.
-7. **Bug.** The legacy path is still the one most traffic takes: `resolveRoutingConfig` reads `free_routing_ranges` and
+5. **Bug.** The legacy path is still the one most traffic takes: `resolveRoutingConfig` reads `free_routing_ranges` and
    `pro_routing_ranges` from the settings, so an Ultra user is routed by the Pro ranges, and the keys come from
    settings or the environment rather than from the providers the console manages.
-8. **Debt.** The breaker, the route cache (one minute) and the settings cache (five minutes) are per process, so during
+6. **Debt.** The breaker, the route cache (one minute) and the settings cache (five minutes) are per process, so during
    an outage each replica learns on its own and an admin's change reaches them at different times.
-9. **Bug.** `ai.getUserLimits` computes the billing cycle with server-local `Date` arithmetic instead of Cairo business
+7. **Bug.** `ai.getUserLimits` computes the billing cycle with server-local `Date` arithmetic instead of Cairo business
    time (golden rule 6), so the cycle turns over at the server's midnight.
-10. **Debt.** The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and
-    `api/lib/ai-gateway.ts`, and the burst guard only sees channels that call `recordAiUsageEvent` — the chat,
-    report, SMS and voice paths do not.
-11. **Gap.** `admin.checkProviderHealth` has no screen, so `ai_providers.healthStatus` is only ever written by the
-    breaker during real traffic ([admin](admin.md)).
+8. **Debt.** The token estimate exists twice with the same formula, in `api/lib/ai-usage-policy.ts` and
+   `api/lib/ai-gateway.ts`, and the burst guard only sees channels that call `recordAiUsageEvent` — the chat,
+   report, SMS and voice paths do not.
+9. **Gap.** `admin.checkProviderHealth` has no screen, so `ai_providers.healthStatus` — the dot on each provider's card —
+   is only ever written by the breaker during real traffic ([admin](admin.md)).
 
 ## Related systems
 - [Recording spending](expense-capture.md): the classification pipeline, the biggest caller of the chain.

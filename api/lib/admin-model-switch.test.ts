@@ -48,7 +48,8 @@ vi.mock("./settings-cache", () => ({
   invalidateSettingsCache: () => {},
 }));
 
-import { encryptApiKey, refreshGatewayCache, resolveAdminRoutes } from "./ai-gateway";
+import { refreshGatewayCache, resolveAdminRoutes } from "./ai-gateway";
+import { sealProviderKey } from "./provider-key-crypto";
 import { buildProviderChain } from "./llm-provider-chain";
 
 function provider(overrides: Record<string, unknown> = {}) {
@@ -58,7 +59,7 @@ function provider(overrides: Record<string, unknown> = {}) {
     displayName: "OpenRouter",
     protocol: "openai",
     baseUrl: "https://openrouter.ai/api/v1",
-    apiKeyEncrypted: encryptApiKey("sk-admin-key"),
+    apiKeyEncrypted: sealProviderKey("sk-admin-key"),
     isActive: true,
     priority: 1,
     ...overrides,

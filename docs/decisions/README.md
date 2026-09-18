@@ -12,3 +12,4 @@ A record explains why the code looks the way it does. What the code does today i
 | [0002](0002-integrity-in-application-code.md) | No foreign keys; integrity lives in application code |
 | [0003](0003-local-first-classification.md) | Local-first classification; a model only chooses categories |
 | [0004](0004-commercial-module-scope.md) | Scope of the commercial (B2B) module |
+| [0005](0005-provider-key-ring.md) | Provider keys: a key ring over the existing format, resealed on load |

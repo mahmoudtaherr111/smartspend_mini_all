@@ -29,6 +29,7 @@ import { db } from "./queries/connection";
 import { classificationLogs, authChallenges } from "../db/schema";
 import { lt } from "drizzle-orm";
 import { installProviderHealthReporter } from "./lib/provider-health";
+import { refreshGatewayCache } from "./lib/ai-gateway";
 import { purgeExpiredSessions } from "./lib/access-control";
 import { createLogger } from "./lib/log";
 import { initErrorReporting } from "./lib/error-reporting";
@@ -186,6 +187,11 @@ import { getRedisClient, getCacheRuntimeStatus } from "./lib/redis-client";
 })();
 
 installProviderHealthReporter();
+
+// Loading the providers is what moves their keys to the current secret (api/lib/provider-key-crypto.ts), so
+// doing it at boot makes a deploy with a new AI_GATEWAY_SECRET enough, without waiting for a model call.
+// Tests that import this module never reach the database.
+if (env.NODE_ENV !== "test") void refreshGatewayCache();
 
 const app = new Hono();
 
