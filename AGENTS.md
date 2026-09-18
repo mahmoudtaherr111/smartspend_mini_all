@@ -115,7 +115,10 @@ touch, say so in your report and do not change unrelated code to make it pass.
 8. Server configuration is validated in `api/lib/env.ts`; add a variable there instead of reading
    `process.env`. (`tests/knowledge/architecture.test.ts` rejects new direct reads)
 9. Model ids go through `mapModelName()` in `api/lib/model-mapper.ts`. (unenforced)
-10. Never log message text, OTP codes, tokens, phone numbers or voice transcripts. (unenforced)
+10. Never log message text, OTP codes, tokens, phone numbers or voice transcripts. Server code logs through
+    `createLogger()` in `api/lib/log.ts`: it redacts those fields, writes a phone as its last four digits and an
+    error without the values of a failed query; log an event and ids, never content. (`no-console` for `api/**`,
+    today's calls frozen in `eslint-suppressions.json`; `tests/security/logging-redaction.test.ts`)
 11. Generated files are never edited or merged by hand. The merge driver and the hooks regenerate them; if a
     conflict still appears, take either side and run `npm run atlas`. (`npm run agent:finish`, CI)
 

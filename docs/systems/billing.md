@@ -37,6 +37,8 @@ job that ends subscriptions, referral codes, and the Ultra members page.
    otherwise. On `simulate` the screen calls `pro.upgrade`, which grants the plan only when `BILLING_SIMULATE=true` and
    never in production.
 4. Paymob calls `POST /api/webhooks/paymob`:
+   - the log gets the transaction id, its success and pending flags, the amount and whether it was signed — never
+     the payload, which carries the payer's card metadata and billing details (golden rule 10);
    - in production without `PAYMOB_HMAC_SECRET` the callback is refused;
    - with the secret, the `hmac` query value must equal the HMAC-SHA512 of Paymob's transaction fields, compared in
      constant time;
@@ -98,8 +100,8 @@ Checked against the code; each one names where it lives.
 4. **Bug.** The feature list on the plans screen and in `pro.myPlan` is fixed text that does not match the app: ten AI requests a
    day for Free (the chat's limit is `chatbot_daily_limit_free`, 20 by default), spreadsheet export (no screen calls
    `export.myExpenses`) and switching AI models.
-5. **Security.** The webhook writes every Paymob payload, with its card and billing data, to the log; outside production without
-   `PAYMOB_HMAC_SECRET` it accepts unsigned callbacks and grants plans from them.
+5. **Security.** Outside production without `PAYMOB_HMAC_SECRET`, the webhook accepts unsigned callbacks and grants plans
+   from them.
 6. **Debt.** In development without `BILLING_SIMULATE=true`, checkout answers `simulate` but `pro.upgrade` refuses it.
 7. **Debt.** No test covers the webhook's verification, the grant, the expiry job or referrals.
 

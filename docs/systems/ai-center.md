@@ -166,6 +166,9 @@ database.
 3. One model call per turn at most, and only when the plan says synthesis; deterministic answers cost nothing.
 4. Everything reads and writes by `userId` and `userType`, including memory, contacts and pending actions.
 5. A write to the ledger from here must bump the finance cache generation.
+6. Never log a message, a memory or a draft (golden rule 10). A failed kernel call, draft, confirmation or memory
+   write is logged as the error itself through `api/lib/log.ts`, never as `error.message` text: a failed write's
+   message holds the user's words as the query's values, and only the error object can be written without them.
 
 ## Tests
 `api/chat-router.phase0.test.ts` through `api/chat-router.phase9.test.ts`; the kernel tests in

@@ -114,7 +114,9 @@ When the browser closes, sends `end_call`, Gemini closes, or the time is up, the
    spends money.
 2. Never invent numbers in voice: exact figures come from `finance_query`, never from the model.
 3. Actions stay two-step: a draft, then an explicit confirmation. High-risk actions must not run by voice.
-4. Never log what the user or the assistant said (golden rule 10 in the root `AGENTS.md`).
+4. Never log what the user or the assistant said (golden rule 10 in the root `AGENTS.md`): the handler logs the user's
+   id and plan, the type and length of a browser message, the length of the assistant's text and the names of the
+   tools it asked for — never a transcript, a reply or a tool's arguments.
 5. Session state belongs in Redis; the memory fallback exists for development and single-process setups.
 
 ## Tests
@@ -130,18 +132,16 @@ Checked against the code; each one names where it lives.
    `voice_tool_limit_exceeded`.
 2. **Security.** A high-risk draft (stopping a goal) asks for confirmation in the interface, but the call screen and
    `useVoiceCall` have no such confirmation, so it cannot complete from a call.
-3. **Security.** The handler logs the text messages the browser sends (including transcripts), the assistant's text, the tool
-   calls with their arguments and the user's name, against golden rule 10.
-4. **Bug.** The defaults written in `handleVoiceCallWebSocket` (for example five free minutes a month and a model named
+3. **Bug.** The defaults written in `handleVoiceCallWebSocket` (for example five free minutes a month and a model named
    `gemini-2.5-flash-native-audio-latest`) differ from the defaults in `api/lib/system-settings-registry.ts`, and
    the handler's apply whenever a setting was never saved.
-5. **Bug.** The month's allowance adds up every `voice_usage` row of the month, including seconds spent dictating expenses,
+4. **Bug.** The month's allowance adds up every `voice_usage` row of the month, including seconds spent dictating expenses,
    and the month is the server's calendar month rather than Cairo business time (golden rule 6).
-6. **Debt.** The model id skips `mapModelName` (golden rule 9): `resolveLiveModelId` only adds a prefix.
-7. **Bug.** Usage is written when the call ends; a process that stops mid-call records nothing.
-8. **Debt.** The prefetched facts are stored in the session state, but nothing reads them afterwards; the prefetch only warms
+5. **Debt.** The model id skips `mapModelName` (golden rule 9): `resolveLiveModelId` only adds a prefix.
+6. **Bug.** Usage is written when the call ends; a process that stops mid-call records nothing.
+7. **Debt.** The prefetched facts are stored in the session state, but nothing reads them afterwards; the prefetch only warms
    the finance layer's cache.
-9. **Debt.** `api/services/voice-context-service.ts#getUserFinancialContextSummary` has no caller, and `ai.runVoiceToolQa` is
+8. **Debt.** `api/services/voice-context-service.ts#getUserFinancialContextSummary` has no caller, and `ai.runVoiceToolQa` is
    used only by a development query parameter of the call screen.
 
 ## Related systems

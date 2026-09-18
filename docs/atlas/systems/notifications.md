@@ -61,6 +61,7 @@ flowchart LR
   mod_notifications ==> tbl_push_subscriptions
   mod_whatsapp --> ext_whatsapp
   mod_whatsapp --> sys_accounts
+  mod_whatsapp --> sys_platform
   router_adminWhatsapp --> mod_whatsapp
   router_adminWhatsapp --> sys_platform
   router_adminWhatsapp -.-> tbl_local_users

@@ -14,19 +14,24 @@ import { whatsappOtpCodes } from "../../db/schema";
 import { eq, and } from "drizzle-orm";
 import { EventEmitter } from "events";
 import { otpCache, isSenderBlocked, recordWrongAttempt } from "./otp-cache";
+import { createLogger, phoneTail } from "../lib/log";
+
+// Codes, message text and phone numbers never reach a log line from here (golden rule 10); a number is
+// written as its last four digits.
+const log = createLogger("whatsapp");
 
 export const otpEvents = new EventEmitter();
 
 function matchPhoneNumber(expectedPhone: string, senderPhone: string): boolean {
-  const expectedClean = expectedPhone.replace(/\D/g, ""); // e.g. "01062975286"
-  const senderClean = senderPhone.replace(/\D/g, "");     // e.g. "39934824042693"
+  const expectedClean = expectedPhone.replace(/\D/g, ""); // e.g. "010XXXXXXXX"
+  const senderClean = senderPhone.replace(/\D/g, "");     // e.g. a 14-digit LID
   
   if (expectedClean === senderClean) return true;
   
   // Format as 20xxxxxxxxx
   let internationalPhone = expectedClean;
   if (expectedClean.startsWith("0")) {
-    internationalPhone = "2" + expectedClean.substring(1); // "201062975286"
+    internationalPhone = "2" + expectedClean.substring(1); // "2010XXXXXXXX"
   } else if (!expectedClean.startsWith("2")) {
     internationalPhone = "20" + expectedClean;
   }
@@ -36,14 +41,14 @@ function matchPhoneNumber(expectedPhone: string, senderPhone: string): boolean {
     const lidFile = path.join(process.cwd(), "whatsapp_auth_info", `lid-mapping-${internationalPhone}.json`);
     if (fs.existsSync(lidFile)) {
       const content = fs.readFileSync(lidFile, "utf-8").trim();
-      const mappedLid = JSON.parse(content); // e.g. "39934824042693"
+      const mappedLid = JSON.parse(content); // e.g. a 14-digit LID
       if (mappedLid.replace(/\D/g, "") === senderClean) {
-        console.log(`[WhatsApp] Successfully mapped JID ${internationalPhone} to LID ${senderClean}`);
+        log.info({ event: "whatsapp.lid.matched", phone: phoneTail(internationalPhone) }, "Sender matched through its LID");
         return true;
       }
     }
   } catch (e) {
-    console.error(`[WhatsApp] Error reading LID mapping:`, e);
+    log.error({ err: e, event: "whatsapp.lid.read_failed" }, "Could not read a LID mapping");
   }
   
   // Also try reverse LID file
@@ -51,7 +56,7 @@ function matchPhoneNumber(expectedPhone: string, senderPhone: string): boolean {
     const reverseLidFile = path.join(process.cwd(), "whatsapp_auth_info", `lid-mapping-${senderClean}_reverse.json`);
     if (fs.existsSync(reverseLidFile)) {
       const content = fs.readFileSync(reverseLidFile, "utf-8").trim();
-      const mappedJid = JSON.parse(content); // e.g. "201062975286@s.whatsapp.net"
+      const mappedJid = JSON.parse(content); // e.g. "2010XXXXXXXX@s.whatsapp.net"
       const mappedPhone = mappedJid.split("@")[0].replace(/\D/g, "");
       
       let mappedClean = mappedPhone;
@@ -60,12 +65,12 @@ function matchPhoneNumber(expectedPhone: string, senderPhone: string): boolean {
       }
       
       if (mappedClean === expectedClean) {
-        console.log(`[WhatsApp] Successfully mapped reverse LID ${senderClean} to phone ${expectedClean}`);
+        log.info({ event: "whatsapp.lid.reverse_matched", phone: phoneTail(expectedClean) }, "Sender matched through a reverse LID");
         return true;
       }
     }
   } catch (e) {
-    console.error(`[WhatsApp] Error reading reverse LID mapping:`, e);
+    log.error({ err: e, event: "whatsapp.lid.reverse_read_failed" }, "Could not read a reverse LID mapping");
   }
 
   return false;
@@ -139,7 +144,7 @@ class WhatsAppService {
         this.status = "qr";
         // Generate QR Code as Data URL for the frontend
         this.qrCode = await QRCode.toDataURL(qr);
-        console.log("[WhatsApp] New QR Code generated for admin to scan.");
+        log.info({ event: "whatsapp.qr" }, "New QR code for the admin to scan");
       }
 
       if (connection === "close") {
@@ -150,11 +155,9 @@ class WhatsAppService {
         this.status = "disconnected";
         this.qrCode = null;
 
-        console.log(
-          "[WhatsApp] Connection closed due to",
-          lastDisconnect?.error,
-          ", reconnecting:",
-          shouldReconnect
+        log.warn(
+          { err: lastDisconnect?.error, event: "whatsapp.connection.closed", reconnecting: shouldReconnect },
+          "WhatsApp connection closed",
         );
 
         if (shouldReconnect) {
@@ -170,10 +173,10 @@ class WhatsAppService {
           if (fs.existsSync(this.sessionDir)) {
             fs.rmSync(this.sessionDir, { recursive: true, force: true });
           }
-          console.log("[WhatsApp] Logged out. Session deleted.");
+          log.info({ event: "whatsapp.logged_out" }, "Logged out; the session was deleted");
         }
       } else if (connection === "open") {
-        console.log("[WhatsApp] Connection opened successfully!");
+        log.info({ event: "whatsapp.connection.open" }, "WhatsApp connected");
         this.status = "connected";
         this.qrCode = null; // No longer need QR
       }
@@ -190,9 +193,9 @@ class WhatsAppService {
             fs.writeFileSync(lidFile, JSON.stringify(lidClean));
             const reverseLidFile = path.join(this.sessionDir, `lid-mapping-${lidClean}_reverse.json`);
             fs.writeFileSync(reverseLidFile, JSON.stringify(contact.id));
-            console.log(`[WhatsApp] Saved LID mapping for ${phoneClean} <-> ${lidClean}`);
+            log.info({ event: "whatsapp.lid.saved", phone: phoneTail(phoneClean) }, "Saved a LID mapping");
           } catch (e) {
-            console.error(`[WhatsApp] Failed to save LID mapping:`, e);
+            log.error({ err: e, event: "whatsapp.lid.save_failed" }, "Could not save a LID mapping");
           }
         }
       }
@@ -219,9 +222,6 @@ class WhatsAppService {
 
             if (!code) continue;
 
-              console.log("[WhatsApp Debug] msg.key:", JSON.stringify(msg.key));
-              console.log("[WhatsApp Debug] msg.message:", JSON.stringify(msg.message));
-
               const remoteJid = msg.key.remoteJid;
               if (!remoteJid) continue;
 
@@ -239,11 +239,9 @@ class WhatsAppService {
                 senderPhone = "0" + senderPhone.substring(2);
               }
 
-              console.log(`[WhatsApp] Cleaned Sender Phone: ${senderPhone}`);
-
               // Anti Brute-Force: Check if the sender is currently blocked
               if (isSenderBlocked(senderPhone)) {
-                console.log(`[WhatsApp Blocklist] Ignoring message from blocked sender: ${senderPhone}`);
+                log.warn({ event: "whatsapp.otp.blocked_sender", phone: phoneTail(senderPhone) }, "Ignored a code from a blocked sender");
                 continue;
               }
 
@@ -259,11 +257,14 @@ class WhatsAppService {
                   // Mark as verified in memory (0 database writes!)
                   record.verified = true;
 
-                  console.log(`[WhatsApp] Code ${code} verified successfully! (Sender: ${senderPhone})`);
+                  log.info({ event: "whatsapp.otp.verified", phone: phoneTail(senderPhone) }, "A number proved it sent its code");
                   otpEvents.emit(`otp:${record.phone}`, { status: "verified" });
                   
                 } else {
-                  console.log(`[WhatsApp] Fraud attempt detected! Code ${code} belongs to ${record.phone} but sent by ${senderPhone}`);
+                  log.warn(
+                    { event: "whatsapp.otp.wrong_sender", expected: phoneTail(record.phone), sender: phoneTail(senderPhone) },
+                    "A code arrived from a number other than the one it was issued for",
+                  );
                   
                   // Record failed attempt for sender
                   recordWrongAttempt(senderPhone);
@@ -277,7 +278,7 @@ class WhatsAppService {
               } else {
                 // Invalid code, record failed attempt to prevent scanning
                 recordWrongAttempt(senderPhone);
-                console.log(`[WhatsApp] Invalid or expired code received: ${code} from ${senderPhone}`);
+                log.warn({ event: "whatsapp.otp.unknown_code", phone: phoneTail(senderPhone) }, "An unknown or expired code arrived");
               }
           }
         }
@@ -292,7 +293,7 @@ class WhatsAppService {
     }
     this.status = "disconnected";
     this.qrCode = null;
-    console.log("[WhatsApp] Service stopped manually.");
+    log.info({ event: "whatsapp.stopped" }, "WhatsApp stopped by an admin");
   }
 
   public async sendMessage(phone: string, text: string) {

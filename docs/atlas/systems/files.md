@@ -67,6 +67,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/entity-extractor.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/env.ts` | [platform](platform.md) |
 | `api/lib/error-logger.ts` | [platform](platform.md) |
+| `api/lib/error-reporting.ts` | [platform](platform.md) |
 | `api/lib/final-acceptance.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/financial-event-plan.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/fireworks-client.ts` | [ai-platform](ai-platform.md) |
@@ -81,6 +82,7 @@ Most files belong to one system. A file whose procedures, routes or jobs belong 
 | `api/lib/keyword-category-priors.ts` | [expense-capture](expense-capture.md) |
 | `api/lib/llm-provider-chain.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/llm-router.ts` | [ai-platform](ai-platform.md) |
+| `api/lib/log.ts` | [platform](platform.md) |
 | `api/lib/login-protection.ts` | [accounts](accounts.md) |
 | `api/lib/model-mapper.ts` | [ai-platform](ai-platform.md) |
 | `api/lib/muscle-memory.ts` | [expense-capture](expense-capture.md) |

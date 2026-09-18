@@ -5,6 +5,9 @@ import webpush from "web-push";
 import { messaging, isFirebaseInitialized } from "./services/firebase";
 import { env } from "./lib/env";
 import { businessDateKey, businessDayRange, businessMonthRange } from "./lib/app-time";
+import { createLogger } from "./lib/log";
+
+const log = createLogger("notifications");
 
 const appUrl = env.APP_URL || "http://localhost:3000";
 const logoUrl = `${appUrl}/photos/white_mode_logo-removebg-preview.png`;
@@ -339,7 +342,8 @@ export async function sendPush(sub: any, title: string, body: string, actionUrl:
       });
       return true;
     } catch (err: any) {
-      console.error("FCM push failed for token:", sub.fcmToken, err);
+      // A registration token lets anyone holding the server key push to that phone: the row id is enough.
+      log.error({ err, event: "push.fcm.failed", subscriptionId: sub.id }, "FCM push failed");
       // Clean up invalid or stale tokens
       if (
         err.code === "messaging/registration-token-not-registered" || 

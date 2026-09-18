@@ -112,7 +112,7 @@ Root router: `api/router.ts`. Procedure builders: `api/middleware.ts`. The HTTP 
 
 | Procedure | Kind | Builder | Input | Reads | Writes | Depends on | Called from src/ |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `adminWhatsapp.broadcastMessage` | mutation | `adminProcedure` | yes | `local_users` | — | `api/services/whatsapp-service.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
+| `adminWhatsapp.broadcastMessage` | mutation | `adminProcedure` | yes | `local_users` | — | `api/lib/log.ts`, `api/services/whatsapp-service.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `adminWhatsapp.clearQueue` | mutation | `adminProcedure` | no | — | — | — | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `adminWhatsapp.getSettings` | query | `adminProcedure` | no | — | — | `api/lib/settings-cache.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |
 | `adminWhatsapp.getStatus` | query | `adminProcedure` | no | — | — | `api/services/whatsapp-service.ts` | `src/components/admin/AdminWhatsAppTab.tsx` |

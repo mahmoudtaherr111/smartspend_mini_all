@@ -10,6 +10,11 @@ import { normalizeRelationship, parseNameAndRelationship, isRelationshipTerm } f
 import { extractExplicitPeopleContext, cleanPersonName } from "../lib/person-resolver";
 import { invalidateUserClassificationCache } from "../lib/smart-pipeline";
 import { invalidateUserMemory } from "../lib/muscle-memory";
+import { createLogger } from "../lib/log";
+
+// A profile holds income, goals and the names of the people in someone's life: log counts and ids only
+// (golden rule 10).
+const log = createLogger("user-profile");
 
 export const SMART_PROFILE_VERSION = 2;
 
@@ -322,9 +327,7 @@ export async function getSmartProfile(
   } catch (err) {
     if (!isSmartProfileSchemaError(err)) throw err;
 
-    console.warn(
-      "[getSmartProfile] Full read failed, attempting auto-repair...",
-    );
+    log.warn({ err, event: "profile.read.repairing", userId }, "Profile read failed; repairing the table");
     try {
       await autoRepairProfileSchema();
       // Retry full read after repair
@@ -339,12 +342,9 @@ export async function getSmartProfile(
         )
         .limit(1);
       row = rows[0];
-      console.log("[getSmartProfile] Auto-repair + retry succeeded!");
+      log.info({ event: "profile.read.repaired", userId }, "Profile table repaired");
     } catch (retryErr) {
-      console.error(
-        "[getSmartProfile] Retry failed, using legacy read:",
-        retryErr instanceof Error ? retryErr.message : retryErr,
-      );
+      log.error({ err: retryErr, event: "profile.read.legacy", userId }, "Profile repair failed; reading the legacy columns");
       const legacyRows = await db
         .select({
           monthlyIncome: userProfiles.monthlyIncome,
@@ -524,11 +524,18 @@ export async function getSmartProfile(
           .join("\\n");
     }
   } catch(err) {
-    console.error("[getSmartProfile] Failed to load extra smart context:", err);
+    log.error({ err, event: "profile.context.failed", userId }, "Could not load the profile's extra context");
   }
 
-  console.log(
-    `[getSmartProfile] user=${userId}, hasRow=${!!row}, hasOnboardingAnswers=${row?.onboardingAnswers ? Object.keys(row.onboardingAnswers).length : 0}, resultAnswers=${Object.keys(result.onboardingAnswers).length}`,
+  log.debug(
+    {
+      event: "profile.read",
+      userId,
+      hasRow: !!row,
+      storedAnswers: row?.onboardingAnswers ? Object.keys(row.onboardingAnswers).length : 0,
+      answers: Object.keys(result.onboardingAnswers).length,
+    },
+    "Profile read",
   );
   return result;
 }
@@ -587,14 +594,17 @@ export async function saveSmartProfile(
           avatar_id = VALUES(avatar_id),
           profile_version = VALUES(profile_version)`,
     );
-    console.log(
-      `[saveSmartProfile] ✅ Saved. answers=${Object.keys(profile.onboardingAnswers).length}, completed=${profile.profileCompleted}`,
+    log.info(
+      {
+        event: "profile.saved",
+        userId,
+        answers: Object.keys(profile.onboardingAnswers).length,
+        completed: profile.profileCompleted,
+      },
+      "Profile saved",
     );
   } catch (err) {
-    console.error(
-      "[saveSmartProfile] Save failed:",
-      err instanceof Error ? err.message : err,
-    );
+    log.error({ err, event: "profile.save.failed", userId }, "Profile save failed; trying the legacy columns");
 
     // Fallback: try saving just the legacy columns
     try {
@@ -620,11 +630,9 @@ export async function saveSmartProfile(
             onboardingAnswers: profile.onboardingAnswers,
           },
         });
-      console.warn(
-        "[saveSmartProfile] ⚠️ Legacy fallback used — JSON data NOT saved!",
-      );
+      log.warn({ event: "profile.save.legacy", userId }, "Profile saved to the legacy columns only; its JSON was not saved");
     } catch (legacyErr) {
-      console.error("[saveSmartProfile] Even legacy save failed:", legacyErr);
+      log.error({ err: legacyErr, event: "profile.save.legacy_failed", userId }, "Legacy profile save failed too");
       throw err;
     }
   }
@@ -653,11 +661,11 @@ async function autoRepairProfileSchema(): Promise<void> {
       await db.execute(
         `ALTER TABLE user_profiles ADD COLUMN \`${col.name}\` ${col.type}`,
       );
-      console.log(`  [auto-repair] Added column: ${col.name}`);
+      log.info({ event: "profile.repair.column_added", column: col.name }, "Added a missing profile column");
     } catch (e: any) {
       // Column already exists — ignore
       if (!e.message?.includes("Duplicate column")) {
-        console.warn(`  [auto-repair] Could not add ${col.name}:`, e.message);
+        log.warn({ err: e, event: "profile.repair.column_failed", column: col.name }, "Could not add a profile column");
       }
     }
   }
@@ -958,7 +966,7 @@ export async function addDynamicContact(
 } | null> {
   const cleaned = cleanNameAndRelationship(name, relationship);
   if (!cleaned.name || !cleaned.relationship) {
-    console.log(`[Profile Healing] Rejected saving invalid/noisy contact: name="${name}", rel="${relationship}"`);
+    log.info({ event: "contact.rejected", userId }, "A contact name was rejected as noise");
     return null;
   }
 
@@ -1011,7 +1019,7 @@ export async function addDynamicContact(
         .where(and(eq(userContacts.userId, userId), eq(userContacts.userType, userType)));
       invalidateUserClassificationCache(userId);
       invalidateUserMemory(userId, userType);
-      console.log(`[Profile Healing] Saved contact to DB: name="${cleanName}", rel="${normalized}"`);
+      log.info({ event: "contact.saved", userId }, "Saved a new contact");
       const [created] = await db
         .select({ id: userContacts.id })
         .from(userContacts)
@@ -1030,7 +1038,7 @@ export async function addDynamicContact(
       };
     }
   } catch (err) {
-    console.error("[addDynamicContact] DB write failed:", err);
+    log.error({ err, event: "contact.save_failed", userId }, "Could not save a contact");
     return null;
   }
 }
@@ -1046,7 +1054,7 @@ export async function silenceContact(
 ): Promise<void> {
   const cleaned = cleanNameAndRelationship(name, "جهة اتصال عامة");
   if (!cleaned.name) {
-    console.log(`[Profile Healing] Silence: rejected invalid name="${name}"`);
+    log.info({ event: "contact.silence_rejected", userId }, "A contact name to silence was rejected as noise");
     return;
   }
 
@@ -1082,9 +1090,9 @@ export async function silenceContact(
 
     invalidateUserClassificationCache(userId);
     invalidateUserMemory(userId, userType);
-    console.log(`[Profile Healing] Silenced contact: name="${cleanName}"`);
+    log.info({ event: "contact.silenced", userId }, "Silenced a contact");
   } catch (err) {
-    console.error("[silenceContact] DB write failed:", err);
+    log.error({ err, event: "contact.silence_failed", userId }, "Could not silence a contact");
   }
 }
 
@@ -1126,7 +1134,7 @@ export async function getUserContacts(
       transactionCount: r.transactionCount ?? 0,
     }));
   } catch (err) {
-    console.error("[getUserContacts] Failed:", err);
+    log.error({ err, event: "contact.list_failed", userId }, "Could not list contacts");
     return [];
   }
 }

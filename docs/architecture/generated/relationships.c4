@@ -111,6 +111,7 @@ model {
   smartspend.api.modules.ai-governance -[reads]-> smartspend.mysql.users
   smartspend.api.modules.ai-governance -[writes]-> smartspend.mysql.user_analytics
   smartspend.api.modules.ai-insights -[imports]-> smartspend.api.modules.classification
+  smartspend.api.modules.ai-insights -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.ai-insights -[reads]-> smartspend.mysql.expenses
   smartspend.api.modules.ai-insights -[reads]-> smartspend.mysql.local_users
   smartspend.api.modules.ai-insights -[reads]-> smartspend.mysql.profile_learning_events
@@ -168,7 +169,6 @@ model {
   smartspend.api.modules.api-core -[imports]-> smartspend.shared.contracts
   smartspend.api.modules.api-core -[reads]-> smartspend.mysql.local_users
   smartspend.api.modules.api-core -[reads]-> smartspend.mysql.users
-  smartspend.api.modules.api-core -[uses]-> sentry
   smartspend.api.modules.api-core -[writes]-> smartspend.mysql.auth_challenges
   smartspend.api.modules.api-core -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.modules.api-routers -[imports]-> smartspend.api.modules.accounts
@@ -374,6 +374,7 @@ model {
   smartspend.api.modules.notifications -[writes]-> smartspend.mysql.push_subscriptions
   smartspend.api.modules.platform -[reads]-> smartspend.mysql.api_key_errors
   smartspend.api.modules.platform -[reads]-> smartspend.mysql.system_settings
+  smartspend.api.modules.platform -[uses]-> sentry
   smartspend.api.modules.platform -[uses]-> smartspend.redis
   smartspend.api.modules.platform -[writes]-> smartspend.mysql.api_key_errors
   smartspend.api.modules.receipt-parsing -[imports]-> smartspend.api.modules.ai-providers
@@ -410,6 +411,7 @@ model {
   smartspend.api.modules.voice -[writes]-> smartspend.mysql.chat_messages
   smartspend.api.modules.voice -[writes]-> smartspend.mysql.voice_usage
   smartspend.api.modules.whatsapp -[imports]-> smartspend.api.modules.auth
+  smartspend.api.modules.whatsapp -[imports]-> smartspend.api.modules.platform
   smartspend.api.modules.whatsapp -[uses]-> whatsapp
   smartspend.api.scheduler.classification-log-cleanup -[writes]-> smartspend.mysql.classification_logs
   smartspend.api.scheduler.daily-auth-cleanup -[uses]-> smartspend.api.modules.auth
@@ -526,6 +528,7 @@ model {
   smartspend.api.trpc.admin.validateApiKey -[uses]-> smartspend.api.modules.ai-providers
   smartspend.api.trpc.admin.validateApiKey -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.adminWhatsapp.broadcastMessage -[reads]-> smartspend.mysql.local_users
+  smartspend.api.trpc.adminWhatsapp.broadcastMessage -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.adminWhatsapp.broadcastMessage -[uses]-> smartspend.api.modules.whatsapp
   smartspend.api.trpc.adminWhatsapp.getSettings -[uses]-> smartspend.api.modules.platform
   smartspend.api.trpc.adminWhatsapp.getStatus -[uses]-> smartspend.api.modules.whatsapp

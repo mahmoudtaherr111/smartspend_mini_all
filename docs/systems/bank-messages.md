@@ -121,7 +121,9 @@ statistics per provider) and `GET /api/sms/unparsed`.
 2. Keep the rules path first. A model call per message costs money, and the templates are exact for the formats
    they know.
 3. A saved message is a money-moving write: one transaction with the rollup delta (`api/AGENTS.md`, rule 4).
-4. Never log message text (golden rule 10 in the root `AGENTS.md`).
+4. Never log message text (golden rule 10 in the root `AGENTS.md`): the route and the parser log an event with the
+   user, the type, the provider or the message's length (`sms.ingested`, `sms.parse.cache_hit`), never the text,
+   the amount or the category.
 5. The rate limit, the one-time codes and the AI cache live in one server process's memory.
 
 ## Tests
@@ -137,20 +139,18 @@ Checked against the code; each one names where it lives.
    instead (`android-app/README.md`).
 3. **Gap.** The model path skips the controls other model calls go through: `parseSmsFinancialData` uses `GEMINI_API_KEY`
    directly, ignores the providers the admin configured, checks no AI budget and records no tokens.
-4. **Security.** `parseSmsFinancialData` logs the first 50 characters of the condensed message on every cache hit and write,
-   against golden rule 10.
-5. **Bug.** Most subcategories `mapSmsToExpenseCategory` writes (for example "انستاباي وارد", "سحب نقدي / ATM",
+4. **Bug.** Most subcategories `mapSmsToExpenseCategory` writes (for example "انستاباي وارد", "سحب نقدي / ATM",
    "Apple Pay") are not in the category registry, card payments use the merchant's name as subcategory, and nothing
    normalizes them against the registry.
-6. **Bug.** The monthly limit counts from the first of the month in server time rather than Cairo business time (golden
+5. **Bug.** The monthly limit counts from the first of the month in server time rather than Cairo business time (golden
    rule 6).
-7. **Debt.** `raw_sms_events` has storage class E, pruned on a schedule according to `db/table-classes.ts`, but
+6. **Debt.** `raw_sms_events` has storage class E, pruned on a schedule according to `db/table-classes.ts`, but
    `api/jobs/data-retention-job.ts` has no policy for it: full message texts stay until the account is deleted.
-8. **Bug.** The route calls `parseSmsByRules` without the sender, so provider detection from the sender name never runs.
-9. **Bug.** With several server processes, a one-time code created on one cannot be exchanged on another, and each process
+7. **Bug.** The route calls `parseSmsByRules` without the sender, so provider detection from the sender name never runs.
+8. **Bug.** With several server processes, a one-time code created on one cannot be exchanged on another, and each process
    counts the rate limit on its own.
-10. **Gap.** Saving a message does not check budget alerts as `expense.create` does, and
-    `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
+9. **Gap.** Saving a message does not check budget alerts as `expense.create` does, and
+   `src/components/settings/SmsWebhookSettings.tsx` is not rendered anywhere.
 
 ## Related systems
 - [Money](money.md): the ledger the messages are saved into, and the wallets the digital wallet view manages.

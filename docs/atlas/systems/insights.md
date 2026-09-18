@@ -54,6 +54,7 @@ flowchart LR
   job_monthly_report_generation --> sys_platform
   mod_ai_insights --> ext_gemini
   mod_ai_insights --> sys_expense_capture
+  mod_ai_insights --> sys_platform
   mod_ai_insights -.-> tbl_expenses
   mod_ai_insights -.-> tbl_local_users
   mod_ai_insights -.-> tbl_users

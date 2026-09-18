@@ -30,6 +30,10 @@ import { env } from "./lib/env";
 import { validateActiveSessionToken } from "./lib/session-validation";
 import { getCookie } from "hono/cookie";
 import { bumpFinanceCacheGen } from "./services/finance-semantic-layer";
+import { createLogger } from "./lib/log";
+
+// A bank message is someone's balance and payees: it is stored, never logged (golden rule 10).
+const log = createLogger("sms-ingest");
 
 export const smsApp = new Hono();
 
@@ -299,7 +303,7 @@ smsApp.post("/ingest", async (c) => {
     });
     smsId = (inserted as any)?.insertId || null;
   } catch (err) {
-    console.error("[SMS Ingest] Failed to record raw SMS event:", err);
+    log.error({ err, event: "sms.raw.record_failed", userId, userType }, "Could not record a bank message");
   }
 
   // ── Step 2: Run Rule-Based Parser (Fast Path) ──
@@ -502,9 +506,8 @@ smsApp.post("/ingest", async (c) => {
 
   await bumpFinanceCacheGen(userId, userType);
 
-  console.log(
-    `✅ [SMS Ingest] User ${userId} | ${type} | ${parseResult.amount} EGP | ${category} | ${parseResult.provider}`,
-  );
+  // The amount and the category are the user's finances: they are in the ledger, not in the log.
+  log.info({ event: "sms.ingested", userId, userType, type, provider: parseResult.provider }, "Bank message recorded");
 
   return c.json(
     {
@@ -788,8 +791,15 @@ smsApp.post("/android-status", async (c) => {
     /* optional body */
   }
 
-  console.log(
-    `[Android Status] User ${tokenRecord.userId} | App v${body.appVersion || "?"} | Android ${body.androidVersion || "?"} | ${body.deviceModel || "?"}`,
+  log.info(
+    {
+      event: "android.status",
+      userId: tokenRecord.userId,
+      appVersion: body.appVersion,
+      androidVersion: body.androidVersion,
+      deviceModel: body.deviceModel,
+    },
+    "Android companion checked in",
   );
 
   return c.json({

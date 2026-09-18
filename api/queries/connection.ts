@@ -3,6 +3,10 @@ import mysql from "mysql2/promise";
 import * as schema from "../../db/schema";
 import * as relations from "../../db/relations";
 import { env } from "../lib/env";
+import { hideQueryValuesFromConsole } from "../lib/log";
+
+// A failed query carries every value it was writing; printing one must not print them (golden rule 10).
+hideQueryValuesFromConsole();
 
 export const mysqlPool = mysql.createPool({
   uri: env.DATABASE_URL,

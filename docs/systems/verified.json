@@ -45,9 +45,9 @@
         "src/pages/Login.tsx": "cc14b37780a0",
         "src/pages/Settings.tsx": "0d88f7c557e3"
       },
-      "checked": "2026-09-16 bc4b459",
-      "arabic": "abda74e0ac4c",
-      "arabicChecked": "2026-09-16 bc4b459"
+      "checked": "2026-09-18 b0c2f3b",
+      "arabic": "60e95b2e39c0",
+      "arabicChecked": "2026-09-18 b0c2f3b"
     },
     "admin": {
       "files": {
@@ -87,7 +87,7 @@
     },
     "ai-center": {
       "files": {
-        "api/chat-router.ts": "6604a297a322",
+        "api/chat-router.ts": "0842653d13c1",
         "api/services/action-runtime/artifacts.ts": "f902de888eaf",
         "api/services/action-runtime/extended-actions.ts": "c67720db8a89",
         "api/services/action-runtime/goal-create.ts": "cd23a9134d6b",
@@ -136,9 +136,9 @@
         "src/components/ai/AIMonthlyReport.tsx": "a241a3b3ae67",
         "src/pages/AICenter.tsx": "7a2d6ce14d6b"
       },
-      "checked": "2026-09-16 b51229f",
-      "arabic": "152ef5a49a3c",
-      "arabicChecked": "2026-09-16 0610413"
+      "checked": "2026-09-18 b0c2f3b",
+      "arabic": "c8565d43fd59",
+      "arabicChecked": "2026-09-18 b0c2f3b"
     },
     "ai-platform": {
       "files": {
@@ -172,27 +172,27 @@
         "android-app/app/src/main/java/com/smartspend/sync/DeepLinkActivity.kt": "d0cd83e77b4d",
         "android-app/app/src/main/java/com/smartspend/sync/SyncService.kt": "375f3c6035f0",
         "api/lib/shortcut-generator.ts": "fbf02d8e0f5d",
-        "api/lib/sms-ai-parser.ts": "602c77ba8a53",
+        "api/lib/sms-ai-parser.ts": "12218d2e375a",
         "api/lib/sms-rule-parser.ts": "e6e1e7b524d5",
         "api/profile-router.ts#profile.generateMagicCode": "7030c40bf22b",
         "api/profile-router.ts#profile.generateWebhookToken": "be8d7316579a",
         "api/profile-router.ts#profile.getSmsLogs": "c25c54979dfd",
         "api/profile-router.ts#profile.getWebhookToken": "8a850e31cd9d",
         "api/profile-router.ts#rest-of-file": "570bb8d8aab9",
-        "api/sms-router.ts": "132aa21cca25",
+        "api/sms-router.ts": "ade33db053eb",
         "src/components/bank-sync/AndroidSetupFlow.tsx": "68fd301a1dfb",
         "src/components/bank-sync/DigitalBankingSuite.tsx": "b5ee9812af75",
         "src/components/bank-sync/IosSetupFlow.tsx": "e3bd2e8139d6",
         "src/components/settings/SmsWebhookSettings.tsx": "6d934cb57744",
         "src/pages/BankSyncPage.tsx": "6d1d3cba9e6c"
       },
-      "checked": "2026-09-16 bc4b459",
-      "arabic": "8c215e1bc325",
-      "arabicChecked": "2026-09-16 0610413"
+      "checked": "2026-09-18 b0c2f3b",
+      "arabic": "7391e71dfe31",
+      "arabicChecked": "2026-09-18 b0c2f3b"
     },
     "billing": {
       "files": {
-        "api/boot.ts#POST /api/webhooks/paymob": "94d106b27383",
+        "api/boot.ts#POST /api/webhooks/paymob": "963235ae5bce",
         "api/boot.ts#job:daily-subscription-expiry": "09b9a4b6fc93",
         "api/jobs/subscription-expiry-job.ts": "a872fab7affa",
         "api/lib/paymob.ts": "356f82099a7d",
@@ -202,9 +202,9 @@
         "src/pages/Pro.tsx": "eb2f5e9dba55",
         "src/pages/UltraLounge.tsx": "a27cc01e2364"
       },
-      "checked": "2026-09-16 bc4b459",
-      "arabic": "7b4b4a3b6c99",
-      "arabicChecked": "2026-09-16 bc4b459"
+      "checked": "2026-09-18 b0c2f3b",
+      "arabic": "12a24379e3b8",
+      "arabicChecked": "2026-09-18 b0c2f3b"
     },
     "expense-capture": {
       "files": {
@@ -289,7 +289,7 @@
         "api/export-router.ts#export.monthlyReportHtml": "4e216141c003",
         "api/export-router.ts#rest-of-file": "b3683e8bd650",
         "api/jobs/monthly-behavior-job.ts": "41da3de3a5f6",
-        "api/jobs/monthly-report-job.ts": "a389a894f925",
+        "api/jobs/monthly-report-job.ts": "f438a36c0f8f",
         "api/profile-router.ts#profile.dismissOnboarding": "575744cb7639",
         "api/profile-router.ts#profile.getNextOnboardingQuestion": "45b300c9691a",
         "api/profile-router.ts#profile.getQuestions": "ec6916cf9c0c",
@@ -304,12 +304,12 @@
         "api/services/personal-context-builder.ts": "fd10e7c32f57",
         "api/services/pro-report-engine.ts": "a18b77479006",
         "api/services/report-personalization-engine.ts": "003d11c89295",
-        "api/services/user-profile-service.ts": "dc89c253e3c8",
+        "api/services/user-profile-service.ts": "70cb6f7c802a",
         "src/components/insights/AIInsights.tsx": "4b618cdf3ad2"
       },
-      "checked": "2026-09-16 bc4b459",
-      "arabic": "78dd473e60ad",
-      "arabicChecked": "2026-09-16 0610413"
+      "checked": "2026-09-18 b0c2f3b",
+      "arabic": "489dff8fdb8c",
+      "arabicChecked": "2026-09-18 b0c2f3b"
     },
     "money": {
       "files": {
@@ -359,41 +359,43 @@
     },
     "notifications": {
       "files": {
-        "api/admin-whatsapp-router.ts": "c64e8189b29b",
+        "api/admin-whatsapp-router.ts": "12e2ab2242e3",
         "api/boot.ts#job:scheduled-notifications": "6ea4c4d1ef31",
         "api/boot.ts#job:seed-default-templates": "d552cda74417",
         "api/boot.ts#job:smart-activity-notifications": "f8e2642a5b89",
-        "api/notification-engine.ts": "a30be8a65253",
+        "api/notification-engine.ts": "4df50e6f01fa",
         "api/profile-router.ts#profile.getInAppNotifications": "ff2aee79554d",
         "api/profile-router.ts#profile.markInAppNotificationRead": "3ece83e41efc",
         "api/profile-router.ts#profile.savePushSubscription": "788ec5760eef",
         "api/profile-router.ts#profile.sendBiometricPromptNotification": "ae8ae7ea27ee",
         "api/profile-router.ts#rest-of-file": "570bb8d8aab9",
         "api/services/firebase.ts": "3b9319b2c3a5",
-        "api/services/otp-cache.ts": "8023e02f8c99",
-        "api/services/whatsapp-service.ts": "cb416af4a8b5"
+        "api/services/otp-cache.ts": "b3b4d0e1ebcd",
+        "api/services/whatsapp-service.ts": "b6475adf12bd"
       },
-      "checked": "2026-09-16 bc4b459",
-      "arabic": "30be056d8ddd",
-      "arabicChecked": "2026-09-16 0610413"
+      "checked": "2026-09-18 b0c2f3b",
+      "arabic": "2bb6882db98e",
+      "arabicChecked": "2026-09-18 b0c2f3b"
     },
     "platform": {
       "files": {
         "api/boot.ts#ALL /api/trpc/*": "9b75025af2c4",
         "api/boot.ts#GET /health": "c7c09b6177c9",
         "api/boot.ts#job:data-retention-lifecycle": "de699d131b58",
-        "api/boot.ts#rest-of-file": "f17bc22506ac",
+        "api/boot.ts#rest-of-file": "3384e9412772",
         "api/context.ts": "d2add89863df",
         "api/jobs/data-retention-job.ts": "e83854efb800",
         "api/lib/app-time.ts": "23f0c001bb84",
         "api/lib/cache-keys.ts": "9540209b7d64",
         "api/lib/env.ts": "605be8a8a267",
         "api/lib/error-logger.ts": "9cb0f25fe459",
+        "api/lib/error-reporting.ts": "9dc005caede0",
+        "api/lib/log.ts": "65a6302d6f7d",
         "api/lib/redis-client.ts": "e5b4196e64a2",
         "api/lib/settings-cache.ts": "8bd804a02a6e",
         "api/lib/system-settings-registry.ts": "cf50f2fc2937",
         "api/middleware.ts": "12291c5b90f3",
-        "api/queries/connection.ts": "22778e801b02",
+        "api/queries/connection.ts": "49fd2ab76893",
         "api/router.ts": "95e987cd807b",
         "api/server.ts#rest-of-file": "f7d714e11e60",
         "api/services/scheduler-lock.ts": "861ab6f129a3",
@@ -411,9 +413,9 @@
         "db/seed.ts": "811d2a0df636",
         "db/table-classes.ts": "30875c0abaf8"
       },
-      "checked": "2026-09-16 bc4b459",
-      "arabic": "05a136ce8bc9",
-      "arabicChecked": "2026-09-16 0610413"
+      "checked": "2026-09-18 b0c2f3b",
+      "arabic": "18f18efcd94f",
+      "arabicChecked": "2026-09-18 b0c2f3b"
     },
     "voice-calls": {
       "files": {
@@ -421,7 +423,7 @@
         "api/ai-router.ts#rest-of-file": "17d48b21e072",
         "api/boot.ts#ws:/api/voice/live": "9b250c4814f7",
         "api/server.ts#ws:/api/voice/live": "47522c8315bf",
-        "api/services/voice-call-service.ts": "d01d0d5ec702",
+        "api/services/voice-call-service.ts": "fc077d13a5f7",
         "api/services/voice-context-service.ts": "fae3cbb5d693",
         "api/services/voice-kernel/hot-context.ts": "e093679a39fc",
         "api/services/voice-kernel/index.ts": "843e5e65c01e",
@@ -434,9 +436,9 @@
         "src/components/ai/AIVoiceCall.tsx": "a48952518da3",
         "src/hooks/useVoiceCall.ts": "42e8abf8b193"
       },
-      "checked": "2026-09-16 b51229f",
-      "arabic": "1878ce08b2d1",
-      "arabicChecked": "2026-09-16 0610413"
+      "checked": "2026-09-18 b0c2f3b",
+      "arabic": "d7d34be560b2",
+      "arabicChecked": "2026-09-18 b0c2f3b"
     },
     "web-app": {
       "files": {

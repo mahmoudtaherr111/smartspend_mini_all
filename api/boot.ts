@@ -20,8 +20,6 @@ import {
   isBillingPlan,
 } from "../contracts/plans";
 import { isPaymobWebhookVerificationConfigured } from "./lib/paymob";
-import * as Sentry from "@sentry/node";
-import { nodeProfilingIntegration } from "@sentry/profiling-node";
 import cron from "node-cron";
 import { createOriginPolicy } from "./lib/origin-policy";
 import { applyOriginSecurity } from "./lib/http-origin-security";
@@ -32,6 +30,8 @@ import { classificationLogs, authChallenges } from "../db/schema";
 import { lt } from "drizzle-orm";
 import { installProviderHealthReporter } from "./lib/provider-health";
 import { purgeExpiredSessions } from "./lib/access-control";
+import { createLogger } from "./lib/log";
+import { initErrorReporting } from "./lib/error-reporting";
 import fs from "fs";
 import path from "path";
 import { whatsappService } from "./services/whatsapp-service";
@@ -58,14 +58,9 @@ function directPeerAddress(c: HonoContext): string | undefined {
   }
 }
 
-if (env.SENTRY_DSN) {
-  Sentry.init({
-    dsn: env.SENTRY_DSN,
-    integrations: [nodeProfilingIntegration()],
-    tracesSampleRate: 1.0,
-    profilesSampleRate: 1.0,
-  });
-}
+initErrorReporting();
+
+const paymobLog = createLogger("paymob-webhook");
 
 const cronsEnabled = env.ENABLE_CRONS === "true";
 
@@ -446,23 +441,34 @@ app.post("/api/webhooks/paymob", async (c) => {
   } catch {
     parsed = { raw };
   }
-  console.info("[paymob webhook]", JSON.stringify(parsed));
+  // The callback carries the payer's card metadata and billing details. Log what identifies the transaction,
+  // never the object: rule 10, and a webhook log is exactly where card data should not collect.
+  paymobLog.info(
+    {
+      event: "paymob.webhook.received",
+      transactionId: parsed?.obj?.id ?? null,
+      success: parsed?.obj?.success ?? null,
+      pending: parsed?.obj?.pending ?? null,
+      amountCents: parsed?.obj?.amount_cents ?? null,
+      signed: Boolean(hmacParam),
+    },
+    "Paymob callback received",
+  );
 
   const secret = env.PAYMOB_HMAC_SECRET;
   if (
     env.NODE_ENV === "production" &&
     !isPaymobWebhookVerificationConfigured()
   ) {
-    console.error(
-      "Paymob webhook rejected: PAYMOB_HMAC_SECRET is not configured",
+    paymobLog.error(
+      { event: "paymob.webhook.unconfigured" },
+      "Paymob callback rejected: PAYMOB_HMAC_SECRET is not configured",
     );
     return c.json({ error: "Webhook verification is unavailable" }, 503);
   }
   if (secret) {
     if (!hmacParam) {
-      console.warn(
-        "Paymob webhook verification failed: Missing hmac query parameter",
-      );
+      paymobLog.warn({ event: "paymob.webhook.unsigned" }, "Paymob callback rejected: no signature");
       return c.json({ error: "Missing signature" }, 401);
     }
     const obj = parsed.obj;
@@ -510,7 +516,7 @@ app.post("/api/webhooks/paymob", async (c) => {
       calculatedBuffer.length !== receivedBuffer.length ||
       !timingSafeEqual(calculatedBuffer, receivedBuffer)
     ) {
-      console.warn("Paymob webhook verification failed: signature mismatch");
+      paymobLog.warn({ event: "paymob.webhook.bad_signature" }, "Paymob callback rejected: signature mismatch");
       return c.json({ error: "Invalid signature" }, 401);
     }
   }
@@ -538,14 +544,16 @@ app.post("/api/webhooks/paymob", async (c) => {
       isBillingPlan(plan)
     ) {
       if (!hasExactPlanAmount(plan, obj.amount_cents)) {
-        console.warn(
-          `Paymob webhook: amount mismatch — expected ${expectedAmountCents} cents for ${plan}, got ${paidCents}. Rejecting.`,
+        paymobLog.warn(
+          { event: "paymob.webhook.amount_mismatch", plan, expectedAmountCents, paidCents, transactionId: obj.id },
+          "Paymob callback rejected: the amount does not match the plan",
         );
         return c.json({ error: "Amount mismatch" }, 400);
       }
 
-      console.info(
-        `Granting Pro subscription to user ${userId} (${userType}) via Paymob webhook`,
+      paymobLog.info(
+        { event: "paymob.webhook.grant", userId, userType, plan, transactionId: obj.id },
+        "Granting the plan from a Paymob callback",
       );
       try {
         await grantProSubscription({
@@ -557,13 +565,14 @@ app.post("/api/webhooks/paymob", async (c) => {
           transactionId: String(obj.id),
         });
       } catch (err) {
-        console.error("Failed to grant subscription in Paymob webhook:", err);
+        paymobLog.error({ err, event: "paymob.webhook.grant_failed", userId, userType, plan }, "Granting the plan failed");
         return c.json({ error: "Failed to update subscription" }, 500);
       }
     } else {
-      console.warn(
-        "Paymob webhook: missing or invalid user metadata in extra_data",
-        extraData,
+      // Which fields were there, not what they said: the metadata is whatever the payment page was given.
+      paymobLog.warn(
+        { event: "paymob.webhook.bad_metadata", fields: Object.keys(extraData ?? {}), transactionId: obj.id },
+        "Paymob callback rejected: missing or invalid user metadata",
       );
       return c.json({ error: "Invalid payment metadata" }, 400);
     }

@@ -20,6 +20,11 @@ import {
 } from "./voice-kernel";
 import { embeddingApiCallsFromCacheHits, embeddingApiStatusFor, type DataNeed } from "./ai-kernel";
 import { recordAICostMetric, resolveAICostPolicy } from "./ai-cost-policy";
+import { createLogger } from "../lib/log";
+
+// A call is the caller's own voice and words: the transcript goes to the call's memory, never to a log line
+// (golden rule 10).
+const log = createLogger("voice-call");
 
 // Helper to parse cookies
 function parseCookie(cookieHeader: string | undefined, name: string): string | undefined {
@@ -202,7 +207,7 @@ export async function handleVoiceCallWebSocket(ws: WebSocket, request: any) {
   }
 
   const { user, userType } = auth;
-  console.log(`[Voice Call] User connected: ${user.name} (${user.plan})`);
+  log.info({ event: "voice.connected", userId: user.id, userType, plan: user.plan }, "Voice call connected");
 
   // Load current settings
   const { getSystemSettings } = await import("../lib/settings-cache");
@@ -558,8 +563,8 @@ export async function handleVoiceCallWebSocket(ws: WebSocket, request: any) {
     } else {
       try {
         const text = data.toString();
-        console.log("[Voice Call] Received text from browser:", text);
         const parsed = JSON.parse(text);
+        log.debug({ event: "voice.browser_message", type: parsed?.type, length: text.length }, "Message from the browser");
         if (parsed.type === "end_call") {
           endCallSession(1000, "User clicked end call");
         }
@@ -588,7 +593,14 @@ export async function handleVoiceCallWebSocket(ws: WebSocket, request: any) {
       }
       
       if (msg.toolCall) {
-        console.log("[Voice Call] Received toolCall from Gemini Live API:", msg.toolCall);
+        // The arguments are what the caller said (amounts, people, notes): the tool names are enough.
+        log.info(
+          {
+            event: "voice.tool_call",
+            tools: (msg.toolCall.functionCalls ?? []).map((call: { name?: string }) => call.name),
+          },
+          "The model asked for tools",
+        );
         
         const functionResponses = [];
         for (const call of msg.toolCall.functionCalls) {
@@ -692,7 +704,7 @@ export async function handleVoiceCallWebSocket(ws: WebSocket, request: any) {
           for (const part of modelTurn.parts) {
             // Forward text parts to UI
             if (part.text) {
-              console.log("[Voice Call] Gemini text part:", part.text);
+              log.debug({ event: "voice.model_text", length: part.text.length }, "Text from the model");
               callTranscript.push({ role: "assistant", content: part.text });
               if (ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({

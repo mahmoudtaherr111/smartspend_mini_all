@@ -5,6 +5,9 @@ import { whatsappService } from "./services/whatsapp-service";
 import { db } from "./queries/connection";
 import { localUsers, systemSettings, users } from "../db/schema";
 import { isNotNull, and, ne, eq } from "drizzle-orm";
+import { createLogger, phoneTail } from "./lib/log";
+
+const broadcastLog = createLogger("whatsapp-broadcast");
 
 // A simple in-memory queue for broadcasting
 let broadcastQueue: { phone: string; text: string }[] = [];
@@ -36,11 +39,11 @@ async function processBroadcastQueue() {
       try {
         const finalMessage = applySpintax(job.text);
         await whatsappService.sendMessage(job.phone, finalMessage);
-        console.log(`[WhatsApp Broadcast] Sent message to ${job.phone}`);
+        broadcastLog.info({ event: "whatsapp.broadcast.sent", phone: phoneTail(job.phone) }, "Broadcast message sent");
       } catch (err) {
-        console.error(
-          `[WhatsApp Broadcast] Failed to send message to ${job.phone}:`,
-          err
+        broadcastLog.error(
+          { err, event: "whatsapp.broadcast.failed", phone: phoneTail(job.phone) },
+          "Broadcast message failed",
         );
       }
       // Wait a random delay between 2 to 4 minutes (120s to 240s) to simulate real human behavior and prevent bans

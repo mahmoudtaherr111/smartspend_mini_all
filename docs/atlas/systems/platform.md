@@ -101,7 +101,6 @@ flowchart LR
   sys_voice_calls[["Live voice assistant (system)"]]
   http__api_trpc --> mod_api_core
   job_data_retention_lifecycle --> mod_jobs
-  mod_api_core --> ext_sentry
   mod_api_core --> mod_api_routers
   mod_api_core --> mod_contracts
   mod_api_core --> mod_jobs
@@ -213,6 +212,7 @@ flowchart LR
   mod_jobs ==> tbl_user_analytics
   mod_jobs ==> tbl_voice_usage
   mod_platform --> ext_redis
+  mod_platform --> ext_sentry
   mod_platform -.-> tbl_system_settings
   mod_platform ==> tbl_api_key_errors
   mod_storage --> ext_object_storage
@@ -227,7 +227,7 @@ flowchart LR
 | `contracts` — Shared contracts | Types, limits and billing plans shared by the web app and the API. | 4 |
 | `database` — Database schema and access | Drizzle schema, relations, storage classes and the MySQL connection pool. | 5 |
 | `jobs` — Scheduled job bodies | Job implementations scheduled from api/boot.ts. | 5 |
-| `platform` — Platform services | Environment validation, Redis client and cache keys, system settings, business time zone helpers, scheduled-job locks and error logging. | 8 |
+| `platform` — Platform services | Environment validation, Redis client and cache keys, system settings, business time zone helpers, scheduled-job locks, the server logger (it redacts message text, codes, tokens and phone numbers, and writes a failed query without its values), Sentry error reporting under the same rule, and the record of AI provider key errors. | 10 |
 | `storage` — File storage | File storage behind one driver interface (local disk or S3-compatible storage such as R2), plus the avatar service. | 5 |
 
 ## API procedures
@@ -312,7 +312,7 @@ Who in this system writes or reads each table: procedures, routes, jobs and code
 | MySQL | datastore | `database` |
 | S3-compatible object storage (R2/S3) | datastore | `storage` |
 | Redis | datastore | `platform` |
-| Sentry | observability | `api-core` |
+| Sentry | observability | `platform` |
 | Web Push | push | `api-routers` |
 
 ## Other systems
@@ -345,7 +345,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 | `GOOGLE_REDIRECT_URI` | yes | `api/auth-router.ts` |
 | `GROQ_API_KEY` | yes | `api/ai-router.ts` |
 | `LOG_SLOW_QUERIES` | yes | `api/queries/connection.ts` |
-| `NODE_ENV` | yes | `api/ai-router.ts`, `api/boot.ts`, `api/chat-router.ts`, `api/lib/redis-client.ts`, `api/local-auth-router.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts` |
+| `NODE_ENV` | yes | `api/ai-router.ts`, `api/boot.ts`, `api/chat-router.ts`, `api/lib/log.ts`, `api/lib/redis-client.ts`, `api/local-auth-router.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts` |
 | `NVIDIA_API_KEY` | yes | `api/ai-router.ts` |
 | `PAYMOB_HMAC_SECRET` | yes | `api/boot.ts` |
 | `PORT` | yes | `api/boot.ts`, `api/server.ts` |
@@ -358,7 +358,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 | `REDIS_URL` | yes | `api/lib/redis-client.ts` |
 | `S3_BUCKET` | no | `api/services/storage/s3-driver.ts` |
 | `S3_ENDPOINT` | no | `api/services/storage/s3-driver.ts` |
-| `SENTRY_DSN` | yes | `api/boot.ts` |
+| `SENTRY_DSN` | yes | `api/lib/error-reporting.ts` |
 | `SLOW_QUERY_THRESHOLD_MS` | yes | `api/queries/connection.ts` |
 | `STORAGE_DRIVER` | no | `api/services/storage/index.ts` |
 | `STORAGE_PUBLIC_URL` | no | `api/services/storage/s3-driver.ts` |
@@ -370,7 +370,7 @@ Used by: [Accounts, sign-in and security](accounts.md), [Admin console, support 
 
 When any of it changes, `npm run agent:finish` asks for a new check of `docs/systems/platform.md`. A name after `#` is one procedure, route or job of a file that several systems share; `rest-of-file` is the rest of such a file.
 
-<details><summary>31 files and declarations</summary>
+<details><summary>33 files and declarations</summary>
 
 - `api/boot.ts#ALL /api/trpc/*`
 - `api/boot.ts#GET /health`
@@ -382,6 +382,8 @@ When any of it changes, `npm run agent:finish` asks for a new check of `docs/sys
 - `api/lib/cache-keys.ts`
 - `api/lib/env.ts`
 - `api/lib/error-logger.ts`
+- `api/lib/error-reporting.ts`
+- `api/lib/log.ts`
 - `api/lib/redis-client.ts`
 - `api/lib/settings-cache.ts`
 - `api/lib/system-settings-registry.ts`

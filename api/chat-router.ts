@@ -62,6 +62,9 @@ import {
 } from "./services/action-runtime";
 import type { ActionDraftResult, GoalCreatePayload, RuntimeActionName, RuntimeActionPayload } from "./services/action-runtime/types";
 import { displayFinanceCategory } from "./services/finance-semantic-layer/category-matcher";
+import { createLogger } from "./lib/log";
+
+const log = createLogger("chat");
 
 // ─── Helpers ───
 
@@ -693,8 +696,7 @@ export const chatRouter = router({
             input.message,
             activeConversationId,
           ).catch((error: unknown) => {
-            const message = error instanceof Error ? error.message : String(error);
-            console.warn("[AI Action Runtime] text confirmation failed", message);
+            log.warn({ err: error, event: "chat.action.confirmation_failed" }, "Text confirmation of an action failed");
             return null;
           })
         : null;
@@ -770,8 +772,7 @@ export const chatRouter = router({
             model: config.model,
             maxTokens: chatPolicy.maxOutputTokens,
           }).catch((error: unknown) => {
-            const message = error instanceof Error ? error.message : String(error);
-            console.warn("[AI Kernel Active] failed", message);
+            log.warn({ err: error, event: "chat.kernel.failed" }, "The AI kernel failed; answering without it");
             return undefined;
           })
         : undefined;
@@ -861,9 +862,8 @@ export const chatRouter = router({
               )
           : maybeCreateActionDraftFromMessage(actionCtx, input.message)
         ).catch((error: unknown) => {
-          const message = error instanceof Error ? error.message : String(error);
-          actionDraftError = message;
-          console.warn("[AI Action Runtime] draft failed", message);
+          actionDraftError = error instanceof Error ? error.message : String(error);
+          log.warn({ err: error, event: "chat.action.draft_failed" }, "Drafting an action failed");
           return null;
         });
       }
@@ -924,8 +924,7 @@ export const chatRouter = router({
           messages: memoryMessages,
         };
         const memoryWrite = writeConversationMemory(memoryInput).catch((error: unknown) => {
-          const message = error instanceof Error ? error.message : String(error);
-          console.warn("[AI Memory] write failed", message);
+          log.warn({ err: error, event: "chat.memory.write_failed" }, "Writing the conversation memory failed");
         });
         if (hasSemanticMemoryCandidate(memoryInput.messages)) {
           await memoryWrite;

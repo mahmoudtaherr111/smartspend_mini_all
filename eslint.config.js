@@ -26,6 +26,14 @@ export default defineConfig([
     },
   },
   {
+    // Golden rule 10: the server logs through api/lib/log.ts, which keeps message text, codes, tokens and phone
+    // numbers out of the log. The console calls that predate it are frozen in eslint-suppressions.json, so their
+    // number can only go down. One-off scripts and QA tools print to a terminal, not to the server log.
+    files: ["api/**/*.ts"],
+    ignores: ["api/qa/**", "api/scripts/**", "api/**/*.test.ts"],
+    rules: { "no-console": "error" },
+  },
+  {
     // React rules only where React runs. Server code and Playwright fixtures call functions named use* that are
     // not React hooks (Baileys' useMultiFileAuthState, Playwright's use).
     files: ["src/**/*.{ts,tsx}", "tests/**/*.tsx"],

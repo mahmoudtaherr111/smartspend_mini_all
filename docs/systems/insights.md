@@ -129,7 +129,9 @@ printable HTML file that the browser downloads.
 3. A report model call is paid: check the plan's switch and budget first (`assertAiBudget` in
    `api/lib/ai-usage-policy.ts`) and record the tokens afterwards.
 4. Month boundaries use Cairo business time from `api/lib/app-time.ts` (golden rule 6).
-5. Never log phone numbers, names from messages or report text (golden rule 10).
+5. Never log phone numbers, names from messages or report text (golden rule 10): the report job logs the user's id
+   and the last four digits of the number it sent to, and the contact helpers log the user's id and what happened
+   to the contact, never its name.
 
 ## Tests
 `api/ai-router.monthly-report-guard.test.ts`, `api/jobs/monthly-report-job.test.ts`,
@@ -149,9 +151,8 @@ Checked against the code; each one names where it lives.
 4. **Bug.** Refreshing a month that already has a report skips the waiting period, so the analysis of that month can be
    regenerated, with a paid model call, as often as the AI rate limit allows. A `report_limit_<plan>` of 0 falls back
    to 30 days.
-5. **Bug.** Only users on the `pro` plan get the WhatsApp report: Ultra users never do, the job ignores the "send the report on
-   WhatsApp" switch in Settings (`whatsappReportsEnabled`), and it writes each recipient's phone number to the log
-   (golden rule 10).
+5. **Bug.** Only users on the `pro` plan get the WhatsApp report: Ultra users never do, and the job ignores the "send the
+   report on WhatsApp" switch in Settings (`whatsappReportsEnabled`).
 6. **Bug.** With a facts pack, the report prompt ignores the admin's report settings and never includes the personal and
    family context `generateMonthlyInsights` builds; the model sees the facts, the name, the salary day and the
    financial month only.
@@ -178,7 +179,6 @@ Checked against the code; each one names where it lives.
     only from `src/components/dashboard/UserIntelligencePanel.tsx`, which no screen shows.
 16. **Bug.** The flexible-spending lists in `generateMonthlyInsights` and `buildBehaviorSnapshot` name categories that
     `api/lib/category-registry.ts` no longer has (رفاهية, خروجات) or stores under another name (هدايا وصدقات).
-17. **Security.** The contact helpers log the names they save or reject, which come from users' messages.
 
 ## Related systems
 - [AI Center](ai-center.md): hosts the analysis tab and owns the finance layer the facts come from.

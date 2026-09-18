@@ -8,11 +8,11 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 
 | Cluster | Title | Files | Depends on | Used by | External systems referenced |
 | --- | --- | --- | --- | --- | --- |
-| `api-core` | API server core | 5 | `ai-providers`, `api-routers`, `auth`, `billing`, `classification`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `api-routers` | `sentry` |
+| `api-core` | API server core | 5 | `ai-providers`, `api-routers`, `auth`, `billing`, `classification`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `api-routers` | — |
 | `api-routers` | tRPC routers and HTTP sub-apps | 23 | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `arabic-nlp`, `auth`, `billing`, `classification`, `contracts`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `ledger`, `notifications`, `platform`, `receipt-parsing`, `security`, `voice`, `whatsapp` | `api-core`, `jobs` | `fireworks`, `gemini`, `google-oauth`, `groq`, `web-push` |
 | `auth` | Authentication and sessions | 4 | `database`, `platform`, `security` | `api-core`, `api-routers`, `billing`, `jobs`, `voice`, `whatsapp` | — |
 | `security` | Request security | 11 | `database`, `platform` | `api-core`, `api-routers`, `auth` | `turnstile` |
-| `platform` | Platform services | 8 | `database` | `ai-governance`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `jobs`, `ledger`, `notifications`, `security`, `voice` | `redis` |
+| `platform` | Platform services | 10 | `database` | `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `database`, `finance-semantic-layer`, `ingestion-parsers`, `jobs`, `ledger`, `notifications`, `security`, `voice`, `whatsapp` | `redis`, `sentry` |
 | `database` | Database schema and access | 5 | `platform` | `accounts`, `ai-actions`, `ai-governance`, `ai-insights`, `ai-kernel`, `ai-memory`, `ai-providers`, `api-core`, `api-routers`, `auth`, `billing`, `classification`, `finance-semantic-layer`, `jobs`, `ledger`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `mysql` |
 | `contracts` | Shared contracts | 4 | — | `api-core`, `api-routers`, `billing`, `web-capture` | — |
 | `billing` | Billing | 2 | `auth`, `contracts`, `database`, `platform` | `api-core`, `api-routers` | `paymob` |
@@ -20,7 +20,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `accounts` | Account lifecycle | 1 | `database` | `api-routers` | — |
 | `jobs` | Scheduled job bodies | 5 | `ai-governance`, `ai-insights`, `ai-providers`, `api-routers`, `auth`, `database`, `finance-semantic-layer`, `ledger`, `platform`, `whatsapp` | `api-core` | `fireworks` |
 | `notifications` | Notifications | 2 | `database`, `platform` | `api-core`, `api-routers` | `firebase`, `web-push` |
-| `whatsapp` | WhatsApp | 2 | `auth`, `database` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
+| `whatsapp` | WhatsApp | 2 | `auth`, `database`, `platform` | `api-core`, `api-routers`, `jobs` | `whatsapp` |
 | `voice` | Voice | 10 | `ai-actions`, `ai-governance`, `ai-kernel`, `ai-memory`, `auth`, `database`, `finance-semantic-layer`, `platform` | `api-core`, `api-routers` | `gemini` |
 | `ai-providers` | AI provider access | 12 | `database`, `platform` | `ai-kernel`, `api-core`, `api-routers`, `classification`, `ingestion-parsers`, `jobs`, `receipt-parsing` | `deepseek`, `fireworks`, `gemini`, `groq`, `nvidia`, `openrouter` |
 | `ai-governance` | AI usage and cost governance | 3 | `database`, `platform` | `ai-actions`, `ai-kernel`, `ai-memory`, `api-routers`, `jobs`, `voice` | — |
@@ -35,7 +35,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `finance-semantic-layer` | Finance semantic layer | 10 | `classification`, `database`, `platform` | `ai-actions`, `ai-kernel`, `api-routers`, `jobs`, `ledger`, `voice` | — |
 | `site-guide` | Site guide | 5 | — | `ai-kernel` | — |
 | `storage` | File storage | 5 | — | — | `object-storage` |
-| `ai-insights` | AI insights and reports | 7 | `classification`, `database` | `ai-actions`, `api-routers`, `jobs` | `gemini` |
+| `ai-insights` | AI insights and reports | 7 | `classification`, `database`, `platform` | `ai-actions`, `api-routers`, `jobs` | `gemini` |
 | `web-shell` | Web app shell | 18 | `web-account`, `web-growth`, `web-hooks`, `web-lib`, `web-pages`, `web-shared`, `web-ui-kit` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-insights`, `web-pages`, `web-shared` | `capacitor`, `firebase` |
 | `web-pages` | Web pages | 15 | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-growth`, `web-hooks`, `web-lib`, `web-shared`, `web-shell`, `web-ui-kit`, `web-voice-call` | `web-shell` | — |
 | `web-ui-kit` | UI primitives | 55 | `web-hooks`, `web-lib` | `web-account`, `web-admin`, `web-ai`, `web-bank-sync`, `web-capture`, `web-finance`, `web-insights`, `web-pages`, `web-shared`, `web-shell`, `web-voice-call` | — |
@@ -70,7 +70,7 @@ Runtime source files (tests, `api/qa/` and `api/scripts/` excluded), grouped by 
 | `paymob` | Paymob (Accept) | payments | `billing` | `api/lib/paymob.ts` |
 | `qdrant` | Qdrant vector store | datastore | `ai-memory` | `api/services/ai-memory/qdrant-vector-store.ts` |
 | `redis` | Redis | datastore | `platform` | `api/lib/redis-client.ts` |
-| `sentry` | Sentry | observability | `api-core` | `api/boot.ts` |
+| `sentry` | Sentry | observability | `platform` | `api/lib/error-reporting.ts` |
 | `turnstile` | Cloudflare Turnstile | bot-protection | `security` | `api/lib/security-headers.ts`, `api/services/turnstile-service.ts` |
 | `web-push` | Web Push | push | `api-routers`, `notifications` | `api/admin-router.ts`, `api/notification-engine.ts` |
 | `whatsapp` | WhatsApp through Baileys | messaging | `whatsapp` | `api/services/whatsapp-service.ts` |
@@ -83,7 +83,7 @@ Hono app and server entry points, request context, tRPC procedure builders and t
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/boot.ts` | `ai-providers`, `api-routers`, `auth`, `billing`, `classification`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | `sentry` | — | `auth_challenges`, `classification_logs` |
+| `api/boot.ts` | `ai-providers`, `api-routers`, `auth`, `billing`, `classification`, `contracts`, `database`, `jobs`, `notifications`, `platform`, `security`, `voice`, `whatsapp` | — | — | `auth_challenges`, `classification_logs` |
 | `api/context.ts` | `auth`, `database`, `security` | — | `local_users`, `users` | — |
 | `api/middleware.ts` | `security` | — | — | — |
 | `api/router.ts` | `api-routers` | — | — | — |
@@ -150,7 +150,7 @@ HTTPS redirection and security headers, rate limiting, allowed origins, client I
 
 ### `platform` — Platform services
 
-Environment validation, Redis client and cache keys, system settings, business time zone helpers, scheduled-job locks and error logging.
+Environment validation, Redis client and cache keys, system settings, business time zone helpers, scheduled-job locks, the server logger (it redacts message text, codes, tokens and phone numbers, and writes a failed query without its values), Sentry error reporting under the same rule, and the record of AI provider key errors.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
@@ -158,6 +158,8 @@ Environment validation, Redis client and cache keys, system settings, business t
 | `api/lib/cache-keys.ts` | — | — | — | — |
 | `api/lib/env.ts` | — | — | — | — |
 | `api/lib/error-logger.ts` | `database` | — | `api_key_errors` | `api_key_errors` |
+| `api/lib/error-reporting.ts` | — | `sentry` | — | — |
+| `api/lib/log.ts` | — | — | — | — |
 | `api/lib/redis-client.ts` | — | `redis` | — | — |
 | `api/lib/settings-cache.ts` | `database` | — | `system_settings` | — |
 | `api/lib/system-settings-registry.ts` | — | — | — | — |
@@ -239,8 +241,8 @@ Baileys WhatsApp client and the in-process OTP state it verifies against.
 
 | File | Imports from clusters | External systems referenced | Reads | Writes |
 | --- | --- | --- | --- | --- |
-| `api/services/otp-cache.ts` | `auth` | — | — | — |
-| `api/services/whatsapp-service.ts` | `database` | `whatsapp` | — | — |
+| `api/services/otp-cache.ts` | `auth`, `platform` | — | — | — |
+| `api/services/whatsapp-service.ts` | `database`, `platform` | `whatsapp` | — | — |
 
 ### `voice` — Voice
 
@@ -474,7 +476,7 @@ The smart profile and the contacts it reads from user_contacts, adaptive onboard
 | `api/services/personal-context-builder.ts` | `classification` | — | — | — |
 | `api/services/pro-report-engine.ts` | — | — | — | — |
 | `api/services/report-personalization-engine.ts` | — | — | — | — |
-| `api/services/user-profile-service.ts` | `classification`, `database` | — | `local_users`, `profile_learning_events`, `user_contacts`, `user_profiles`, `users` | `profile_learning_events`, `user_contacts`, `user_profiles` |
+| `api/services/user-profile-service.ts` | `classification`, `database`, `platform` | — | `local_users`, `profile_learning_events`, `user_contacts`, `user_profiles`, `users` | `profile_learning_events`, `user_contacts`, `user_profiles` |
 
 ### `web-shell` — Web app shell
 

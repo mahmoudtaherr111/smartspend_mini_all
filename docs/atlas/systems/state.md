@@ -4,24 +4,24 @@
 
 What each part of the product is worth looking at now, gathered from the explanations themselves: how recently each one was checked against the code, whether its Arabic page is in line, the tests it names, and every issue it lists with how serious it is.
 
-Security and bugs are what `npm run issues:sync` turns into GitHub issues (77 of 133 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
+Security and bugs are what `npm run issues:sync` turns into GitHub issues (71 of 128 today). An issue below was located in the code when the page was written, and the page is re-checked whenever that code changes — but check it again in the code before you act on it.
 
 ## Systems
 
 | System | Explanation checked | Arabic page | Tests it names | Security | Bugs | Gaps | Debt |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Recording spending](expense-capture.md)<br/>تسجيل المصاريف | 2026-09-16 b51229f | 2026-09-16 0610413 | 17 | — | 5 | 1 | 1 |
-| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-16 bc4b459 | 2026-09-16 0610413 | 1 | **1** | 6 | 2 | 1 |
-| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-16 b51229f | 2026-09-16 0610413 | 6 | **2** | 4 | — | 3 |
-| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-16 b51229f | 2026-09-16 0610413 | 4 | **1** | 6 | 2 | 1 |
-| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-16 bc4b459 | 2026-09-16 0610413 | 6 | **1** | 11 | 2 | 3 |
+| [Bank and wallet messages](bank-messages.md)<br/>رسائل البنوك والمحافظ | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 1 | — | 6 | 2 | 1 |
+| [Live voice assistant](voice-calls.md)<br/>المكالمة الصوتية | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 6 | **1** | 4 | — | 3 |
+| [AI Center](ai-center.md)<br/>مركز الذكاء الاصطناعي | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 4 | **1** | 6 | 2 | 1 |
+| [Reports, insights and the smart profile](insights.md)<br/>التقارير والتحليلات والملف الذكي | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 6 | — | 11 | 2 | 3 |
 | [Money: expenses, wallets, budgets, goals and businesses](money.md)<br/>الفلوس: المصاريف والمحافظ والميزانيات والأهداف والأنشطة | 2026-09-16 bc4b459 | 2026-09-16 0610413 | 3 | — | 7 | 5 | — |
-| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-16 bc4b459 | 2026-09-16 bc4b459 | 12 | **6** | 3 | 2 | — |
-| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-16 bc4b459 | 2026-09-16 bc4b459 | 1 | **1** | 1 | 3 | 2 |
-| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-16 bc4b459 | 2026-09-16 0610413 | **none** | **2** | 5 | 1 | 3 |
+| [Accounts, sign-in and security](accounts.md)<br/>الحسابات وتسجيل الدخول والأمان | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 12 | **5** | 3 | 2 | — |
+| [Plans and payments](billing.md)<br/>الباقات والدفع | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 1 | **1** | 1 | 3 | 2 |
+| [Notifications and WhatsApp](notifications.md)<br/>الإشعارات وواتساب | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | **none** | **1** | 5 | 1 | 3 |
 | [Admin console, support and growth tools](admin.md)<br/>لوحة الإدارة والدعم وأدوات النمو | 2026-09-16 bc4b459 | 2026-09-16 bc4b459 | 4 | — | 4 | 5 | 2 |
 | [AI providers and usage limits](ai-platform.md)<br/>مزودي الذكاء الاصطناعي وحدود الاستخدام | 2026-09-16 b51229f | 2026-09-16 0610413 | 7 | **2** | 4 | 1 | 4 |
-| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-16 bc4b459 | 2026-09-16 0610413 | 5 | **1** | 1 | — | 8 |
+| [Server platform and data](platform.md)<br/>منصة السيرفر والبيانات | 2026-09-18 b0c2f3b | 2026-09-18 b0c2f3b | 5 | — | 1 | — | 9 |
 | [Web and mobile app shell](web-app.md)<br/>هيكل تطبيق الويب والموبايل | 2026-09-16 b51229f | 2026-09-16 0610413 | 7 | **1** | 2 | 2 | 2 |
 
 
@@ -29,24 +29,17 @@ Security and bugs are what `npm run issues:sync` turns into GitHub issues (77 of
 
 These systems' explanations name no test at all, so nothing fails when they break: [Notifications and WhatsApp](notifications.md).
 
-## What is waiting (133 issue(s))
+## What is waiting (128 issue(s))
 
 Every known issue the explanations list, most serious first. Fixing one means correcting its page in the same change, which `npm run agent:finish` will ask for.
 
-### Security (18)
-
-**Bank and wallet messages** — [docs/systems/bank-messages.md](../../systems/bank-messages.md)
-- `parseSmsFinancialData` logs the first 50 characters of the condensed message on every cache hit and write, against golden rule 10.
+### Security (12)
 
 **Live voice assistant** — [docs/systems/voice-calls.md](../../systems/voice-calls.md)
 - A high-risk draft (stopping a goal) asks for confirmation in the interface, but the call screen and `useVoiceCall` have no such confirmation, so it cannot complete from a call.
-- The handler logs the text messages the browser sends (including transcripts), the assistant's text, the tool calls with their arguments and the user's name, against golden rule 10.
 
 **AI Center** — [docs/systems/ai-center.md](../../systems/ai-center.md)
 - The runtime records a risk for each action (stopping a goal and undo are high) but does not act on it: the chat's confirm button and typed confirmations run every action the same way.
-
-**Reports, insights and the smart profile** — [docs/systems/insights.md](../../systems/insights.md)
-- The contact helpers log the names they save or reject, which come from users' messages.
 
 **Accounts, sign-in and security** — [docs/systems/accounts.md](../../systems/accounts.md)
 - In production the code request is refused, because the web app sends no Turnstile token; meanwhile `verifyTurnstileToken` accepts Cloudflare's public always-pass test token without asking Cloudflare. `tests/security/r3-turnstile-defense.test.ts` tests its own copy of these functions, not `api/services/turnstile-service.ts`.
@@ -54,21 +47,16 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The phone-account token sits in `localStorage` and is sent as a Bearer header, where an injected script could read it, while the content security policy allows inline scripts (`src/AGENTS.md`, rule 4).
 - `/api/sse/otp` answers for any phone number without signing in, sends the sender's number in its fraud event, and never prunes its per-IP counters.
 - The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the same storage.
-- `api/services/whatsapp-service.ts` logs the codes it receives, whole incoming messages and the senders' phone numbers (golden rule 10).
 
 **Plans and payments** — [docs/systems/billing.md](../../systems/billing.md)
-- The webhook writes every Paymob payload, with its card and billing data, to the log; outside production without `PAYMOB_HMAC_SECRET` it accepts unsigned callbacks and grants plans from them.
+- Outside production without `PAYMOB_HMAC_SECRET`, the webhook accepts unsigned callbacks and grants plans from them.
 
 **Notifications and WhatsApp** — [docs/systems/notifications.md](../../systems/notifications.md)
 - WhatsApp broadcasts are automated bulk messages through an unofficial client, spaced by random pauses and varied wording, which risks a ban of the number; the queue lives in process memory and is lost on restart, and nothing checks that recipients agreed.
-- The WhatsApp service logs codes, whole incoming messages and phone numbers, and broadcasts log every recipient's number (golden rule 10).
 
 **AI providers and usage limits** — [docs/systems/ai-platform.md](../../systems/ai-platform.md)
 - Provider keys are encrypted with `AI_GATEWAY_SECRET`, or `JWT_SECRET` when it is unset, both read straight from `process.env` instead of `api/lib/env.ts` (golden rule 8). Rotating `JWT_SECRET` without setting `AI_GATEWAY_SECRET` makes every stored provider key undecryptable, and such a route is dropped silently: the console still lists the provider, and traffic quietly falls back to whatever key is left.
 - With neither secret set, the keys are encrypted with a random key held in memory, so a key saved by one process cannot be read by another replica or after a restart.
-
-**Server platform and data** — [docs/systems/platform.md](../../systems/platform.md)
-- The Paymob webhook logs the whole payload it receives before verifying it (golden rule 10), so card metadata and the payer's details reach the server log ([billing](billing.md)).
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - The session token is kept in `localStorage` and sent as a Bearer header, next to the HttpOnly cookie the API also accepts ([accounts](accounts.md)).
@@ -108,7 +96,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - The WhatsApp report describes the month that has just started: the scheduler calls `runMonthlyReportJob` without a month at 02:00 on the 1st, and the job takes the month from `new Date().toISOString()`.
 - `getSmartProfile` appends the latest learning events, with literal `\n` text, to the inferred spending behaviour. Every onboarding answer or profile edit saves that value, so it grows until the next behaviour refresh replaces it, and `summarizeProfileForAI` sends it to classification prompts.
 - Refreshing a month that already has a report skips the waiting period, so the analysis of that month can be regenerated, with a paid model call, as often as the AI rate limit allows. A `report_limit_<plan>` of 0 falls back to 30 days.
-- Only users on the `pro` plan get the WhatsApp report: Ultra users never do, the job ignores the "send the report on WhatsApp" switch in Settings (`whatsappReportsEnabled`), and it writes each recipient's phone number to the log (golden rule 10).
+- Only users on the `pro` plan get the WhatsApp report: Ultra users never do, and the job ignores the "send the report on WhatsApp" switch in Settings (`whatsappReportsEnabled`).
 - With a facts pack, the report prompt ignores the admin's report settings and never includes the personal and family context `generateMonthlyInsights` builds; the model sees the facts, the name, the salary day and the financial month only.
 - Numbers in a model-written report are measured against the facts but not enforced: unlike the chat, a report with unsupported numbers is shown as it is.
 - The analysis and the comparison show a technical trace (route, tools, tokens, model) to every user, not only in development.
@@ -210,7 +198,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `/ultra` is wrapped in `ProtectedRoute`, so any signed-in user opens the Ultra lounge — while the page itself tells the reader it is protected by `UltraFeatureRoute`. Both gates in `src/components/routing/PlanGates.tsx` are unused, so the plan is checked on the server only.
 - The only usage event the app sends is `session_duration`, and only when a visit lasted more than ten seconds, so the founder metrics see almost nothing of what people do ([admin](admin.md)).
 
-### Debt (30)
+### Debt (31)
 
 **Recording spending** — [docs/systems/expense-capture.md](../../systems/expense-capture.md)
 - The comment above the threshold settings in `classifyAdmittedEvents` says the older `confidence_*` keys win; the code reads the `parser_*` keys first.
@@ -259,6 +247,7 @@ Every known issue the explanations list, most serious first. Fixing one means co
 - `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.
 - `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library update can silently turn into zeroes.
 - The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the entry and `NODE_ENV=production`; `api/server.ts` repeats the WebSocket wiring for the standalone deployment, and the two copies have to be kept in step by hand.
+- The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten: they write plain text without event names, and only an error handed to them whole is scrubbed. The ones that print `error.message` as text print provider, socket and storage errors today, or failed reads whose values are ids and dates (`api/ai-router.ts`, `api/services/voice-call-service.ts`, `api/services/storage/s3-driver.ts`); moving a file to `createLogger()` removes the difference.
 
 **Web and mobile app shell** — [docs/systems/web-app.md](../../systems/web-app.md)
 - `src/components/ProductTour.tsx` is never mounted, and `src/lib/backButtonManager.ts` only re-exports `src/lib/back-button-manager.ts` for an importer that no longer exists.

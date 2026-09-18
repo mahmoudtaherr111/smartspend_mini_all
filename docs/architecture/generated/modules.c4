@@ -144,10 +144,10 @@ model {
       }
     }
     platform = module 'Platform services' {
-      description 'Environment validation, Redis client and cache keys, system settings, business time zone helpers, scheduled-job locks and error logging.'
+      description 'Environment validation, Redis client and cache keys, system settings, business time zone helpers, scheduled-job locks, the server logger (it redacts message text, codes, tokens and phone numbers, and writes a failed query without its values), Sentry error reporting under the same rule, and the record of AI provider key errors.'
       metadata {
-        files '8'
-        paths 'api/lib/env.ts, api/lib/redis-client.ts, api/lib/cache-keys.ts, api/lib/settings-cache.ts, api/lib/system-settings-registry.ts, api/lib/app-time.ts, api/lib/error-logger.ts, api/services/scheduler-lock.ts'
+        files '10'
+        paths 'api/lib/env.ts, api/lib/log.ts, api/lib/error-reporting.ts, api/lib/redis-client.ts, api/lib/cache-keys.ts, api/lib/settings-cache.ts, api/lib/system-settings-registry.ts, api/lib/app-time.ts, api/lib/error-logger.ts, api/services/scheduler-lock.ts'
       }
     }
     receipt-parsing = module 'Receipt parsing' {

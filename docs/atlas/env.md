@@ -35,7 +35,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `LOGIN_IP_MAX_FAILURES` | no | `50` | `api/lib/login-protection.ts` |
 | `LOGIN_PAIR_MAX_FAILURES` | no | `5` | `api/lib/login-protection.ts` |
 | `LOG_SLOW_QUERIES` | no | `true` | `api/queries/connection.ts` |
-| `NODE_ENV` | no | `development` | `api/ai-router.ts`, `api/boot.ts`, `api/chat-router.ts`, `api/lib/login-protection.ts`, `api/lib/origin-policy.ts`, `api/lib/redis-client.ts`, `api/lib/security-logger.ts`, `api/local-auth-router.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts`, `api/services/turnstile-service.ts` |
+| `NODE_ENV` | no | `development` | `api/ai-router.ts`, `api/boot.ts`, `api/chat-router.ts`, `api/lib/log.ts`, `api/lib/login-protection.ts`, `api/lib/origin-policy.ts`, `api/lib/redis-client.ts`, `api/lib/security-logger.ts`, `api/local-auth-router.ts`, `api/middleware.ts`, `api/pro-router.ts`, `api/queries/connection.ts`, `api/services/turnstile-service.ts` |
 | `NVIDIA_API_KEY` | no | — | `api/ai-router.ts` |
 | `OWNER_EMAIL` | no | — | — |
 | `PAYMOB_API_KEY` | no | — | `api/lib/paymob.ts` |
@@ -45,7 +45,7 @@ The server validates its environment once, at boot, in `api/lib/env.ts`. A varia
 | `PORT` | no | `3000` | `api/boot.ts`, `api/lib/origin-policy.ts`, `api/server.ts` |
 | `RATE_LIMIT_KEY_SECRET` | no | — | `api/lib/login-protection.ts` |
 | `REDIS_URL` | no | — | `api/lib/redis-client.ts` |
-| `SENTRY_DSN` | no | — | `api/boot.ts` |
+| `SENTRY_DSN` | no | — | `api/lib/error-reporting.ts` |
 | `SLOW_QUERY_THRESHOLD_MS` | no | `100` | `api/queries/connection.ts` |
 | `TRUSTED_PROXY_HEADER` | no | `x-forwarded-for` | `api/lib/get-client-ip.ts` |
 | `TRUSTED_PROXY_IPS` | no | — | `api/lib/get-client-ip.ts` |

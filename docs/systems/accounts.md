@@ -178,8 +178,6 @@ Checked against the code; each one names where it lives.
 9. **Gap.** The `localAuth` admin procedures and `session.trackEvent` have no screen or caller.
 10. **Security.** The app lock's PIN is four digits hashed with a fixed salt in `localStorage`, and its lockout counter sits in the
     same storage.
-11. **Security.** `api/services/whatsapp-service.ts` logs the codes it receives, whole incoming messages and the senders' phone
-    numbers (golden rule 10).
 
 ## Related systems
 - [Notifications and WhatsApp](notifications.md): the WhatsApp bot that receives the codes, and push subscriptions.

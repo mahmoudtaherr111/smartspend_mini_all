@@ -1,5 +1,8 @@
 // SmartSpend In-Memory Security & Performance Cache for WhatsApp OTP
 import { validatePhone, cleanPhoneNumber } from "../local-auth-utils";
+import { createLogger, phoneTail } from "../lib/log";
+
+const log = createLogger("otp-cache");
 
 interface OtpSession {
   code: string;
@@ -82,7 +85,7 @@ export function recordWrongAttempt(sender: string) {
       if (block.attempts >= 3) {
         // Block for 15 minutes
         block.blockUntil = now + 15 * 60 * 1000;
-        console.log(`[WhatsApp Blocklist] Sender ${sender} blocked for 15 minutes due to 3 failed attempts.`);
+        log.warn({ event: "whatsapp.sender_blocked", phone: phoneTail(sender) }, "Sender blocked for 15 minutes after 3 wrong codes");
       }
     }
   } else {

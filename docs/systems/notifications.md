@@ -83,7 +83,9 @@ with `ENABLE_CRONS=true`, and again before the scheduled and activity runs.
 ## Rules for changes here
 1. Send through a template with `triggerEventNotification` or the batch sender, so the notification reaches the bell,
    the log and every device.
-2. Never log message text, codes or phone numbers (golden rule 10).
+2. Never log message text, codes or phone numbers (golden rule 10): the WhatsApp service, the code blocklist and
+   broadcasts log a number as its last four digits and never a code or a message, and a failed push logs the
+   subscription's id, never the device token.
 3. Anything sent to many users is paced and runs as a scheduled job, which holds a lock on one replica.
 4. The WhatsApp session belongs to one process: never start it on more than one replica.
 
@@ -106,14 +108,12 @@ Checked against the code; each one names where it lives.
 6. **Security.** WhatsApp broadcasts are automated bulk messages through an unofficial client, spaced by random pauses and varied
    wording, which risks a ban of the number; the queue lives in process memory and is lost on restart, and nothing
    checks that recipients agreed.
-7. **Security.** The WhatsApp service logs codes, whole incoming messages and phone numbers, and broadcasts log every recipient's
-   number (golden rule 10).
-8. **Debt.** The WhatsApp session is a folder on one server's disk, lost with the container and not shareable between replicas.
-9. **Gap.** Push cannot be turned off from the app, a device cannot be removed, the bell has no "mark all read" or clearing, and
+7. **Debt.** The WhatsApp session is a folder on one server's disk, lost with the container and not shareable between replicas.
+8. **Gap.** Push cannot be turned off from the app, a device cannot be removed, the bell has no "mark all read" or clearing, and
    nothing prunes `in_app_notifications` or `notification_logs` apart from account deletion.
-10. **Bug.** The activity checks run at 20:00 server time, not Cairo time, and each takes at most 1000 users per account table a
-    day; a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
-11. **Debt.** `whatsapp_otp_codes` is a table nothing writes: `api/local-auth-router.ts` and `api/services/whatsapp-service.ts`
+9. **Bug.** The activity checks run at 20:00 server time, not Cairo time, and each takes at most 1000 users per account table a
+   day; a scheduled template that fails half-way stays active and is sent again from the start on the next minute.
+10. **Debt.** `whatsapp_otp_codes` is a table nothing writes: `api/local-auth-router.ts` and `api/services/whatsapp-service.ts`
     import it, while the codes live in memory.
 
 ## Related systems

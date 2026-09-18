@@ -6,6 +6,9 @@ import { getSmartProfile } from "../services/user-profile-service";
 import { buildMonthlyReportFactsPack } from "../services/finance-semantic-layer";
 import { recordAICostMetric, resolveAICostPolicy } from "../services/ai-cost-policy";
 import { callFireworksAPI } from "../lib/fireworks-client";
+import { createLogger, phoneTail } from "../lib/log";
+
+const log = createLogger("monthly-report");
 
 export const MONTHLY_REPORT_CACHE_VERSION = "semantic_report_v2";
 
@@ -341,7 +344,7 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
           }
         }
       } catch (err: any) {
-        console.error(`[MonthlyReportJob] Report generation error for user ${u.id}:`, err.message);
+        log.error({ err, event: "monthly_report.failed", userId: u.id }, "Monthly report generation failed");
         // Fallback message
         reportContent = `🌟 *تقريرك الشهري من SmartSpend* 🌟\n\nأهلاً بك!\nتم تجهيز ملخص شهر ${month}. يرجى فتح التطبيق للاطلاع على التفاصيل.`;
       }
@@ -349,7 +352,7 @@ export async function runMonthlyReportJob(targetMonth?: string | MonthlyReportJo
       // 4. Send via WhatsApp
       if (sendWhatsApp) {
         await whatsappService.sendMessage(targetPhone, reportContent);
-        console.log(`[MonthlyReportJob] Sent report to user ${u.id} at ${targetPhone}`);
+        log.info({ event: "monthly_report.sent", userId: u.id, phone: phoneTail(targetPhone) }, "Monthly report sent");
       } else {
         console.log(`[MonthlyReportJob] Generated report for user ${u.id}; WhatsApp send skipped.`);
       }

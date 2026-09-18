@@ -5,6 +5,9 @@
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 11
+    },
+    "no-console": {
+      "count": 7
     }
   },
   "api/admin-whatsapp-router.ts": {
@@ -29,6 +32,9 @@
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 26
+    },
+    "no-console": {
+      "count": 21
     },
     "no-empty": {
       "count": 2
@@ -59,6 +65,9 @@
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
+    },
+    "no-console": {
+      "count": 25
     }
   },
   "api/business-router.security.test.ts": {
@@ -75,6 +84,9 @@
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 2
+    },
+    "no-console": {
+      "count": 1
     }
   },
   "api/chat-router.phase0.test.ts": {
@@ -111,6 +123,9 @@
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 2
+    },
+    "no-console": {
+      "count": 1
     }
   },
   "api/expense-router.test.ts": {
@@ -128,6 +143,9 @@
     "@typescript-eslint/no-unused-vars": {
       "count": 2
     },
+    "no-console": {
+      "count": 9
+    },
     "no-empty": {
       "count": 3
     },
@@ -143,11 +161,17 @@
   "api/jobs/data-retention-job.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
+    },
+    "no-console": {
+      "count": 4
     }
   },
   "api/jobs/monthly-behavior-job.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
+    },
+    "no-console": {
+      "count": 3
     }
   },
   "api/jobs/monthly-report-job.ts": {
@@ -156,11 +180,22 @@
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
+    },
+    "no-console": {
+      "count": 10
     }
   },
   "api/jobs/rollup-reconciliation-job.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
+    },
+    "no-console": {
+      "count": 4
+    }
+  },
+  "api/jobs/subscription-expiry-job.ts": {
+    "no-console": {
+      "count": 3
     }
   },
   "api/lib/ai-gateway.ts": {
@@ -169,6 +204,9 @@
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
+    },
+    "no-console": {
+      "count": 4
     },
     "prefer-const": {
       "count": 7
@@ -204,9 +242,17 @@
       "count": 1
     }
   },
+  "api/lib/correction-rules.ts": {
+    "no-console": {
+      "count": 3
+    }
+  },
   "api/lib/deepseek-client.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
+    },
+    "no-console": {
+      "count": 2
     }
   },
   "api/lib/e2e-classification.test.ts": {
@@ -225,6 +271,9 @@
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 6
+    },
+    "no-console": {
+      "count": 10
     }
   },
   "api/lib/entity-extractor.ts": {
@@ -235,16 +284,25 @@
   "api/lib/error-logger.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
+    },
+    "no-console": {
+      "count": 2
     }
   },
   "api/lib/fireworks-client.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
+    },
+    "no-console": {
+      "count": 1
     }
   },
   "api/lib/fireworks-embedding-client.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 5
+    },
+    "no-console": {
+      "count": 9
     }
   },
   "api/lib/fuzzy-match.ts": {
@@ -261,6 +319,9 @@
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
+    },
+    "no-console": {
+      "count": 21
     }
   },
   "api/lib/groq-client.ts": {
@@ -281,11 +342,19 @@
       "count": 1
     }
   },
+  "api/lib/model-mapper.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
   "api/lib/muscle-memory.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
     },
     "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "no-console": {
       "count": 1
     },
     "no-useless-escape": {
@@ -298,6 +367,9 @@
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 4
+    },
+    "no-console": {
+      "count": 1
     }
   },
   "api/lib/normalizer-v2.ts": {
@@ -308,6 +380,9 @@
   "api/lib/nvidia-client.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 4
+    },
+    "no-console": {
+      "count": 1
     }
   },
   "api/lib/person-resolver.ts": {
@@ -320,9 +395,24 @@
       "count": 1
     }
   },
+  "api/lib/provider-health.ts": {
+    "no-console": {
+      "count": 2
+    }
+  },
+  "api/lib/real-user-sim.ts": {
+    "no-console": {
+      "count": 13
+    }
+  },
   "api/lib/receipt-image-parser.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
+    }
+  },
+  "api/lib/redis-client.ts": {
+    "no-console": {
+      "count": 12
     }
   },
   "api/lib/relationship-normalizer.ts": {
@@ -333,6 +423,9 @@
   "api/lib/rule-engine.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 2
+    },
+    "no-console": {
+      "count": 1
     }
   },
   "api/lib/smart-pipeline.ts": {
@@ -340,6 +433,9 @@
       "count": 11
     },
     "@typescript-eslint/no-unused-vars": {
+      "count": 13
+    },
+    "no-console": {
       "count": 13
     },
     "prefer-const": {
@@ -383,6 +479,9 @@
     "@typescript-eslint/no-unused-vars": {
       "count": 3
     },
+    "no-console": {
+      "count": 10
+    },
     "no-empty": {
       "count": 1
     },
@@ -397,6 +496,9 @@
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     },
+    "no-console": {
+      "count": 5
+    },
     "prefer-const": {
       "count": 1
     }
@@ -409,6 +511,9 @@
   "api/queries/connection.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 14
+    },
+    "no-console": {
+      "count": 1
     }
   },
   "api/referral-router.ts": {
@@ -429,6 +534,11 @@
       "count": 1
     }
   },
+  "api/server.ts": {
+    "no-console": {
+      "count": 3
+    }
+  },
   "api/services/action-runtime/extended-actions.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
@@ -447,11 +557,24 @@
   "api/services/action-runtime/index.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
+    },
+    "no-console": {
+      "count": 1
+    }
+  },
+  "api/services/ai-cost-policy.ts": {
+    "no-console": {
+      "count": 1
     }
   },
   "api/services/ai-kernel/agent-golden-contract.test.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 4
+    }
+  },
+  "api/services/ai-kernel/ai-trace-logger.ts": {
+    "no-console": {
+      "count": 2
     }
   },
   "api/services/ai-kernel/capability-registry.ts": {
@@ -474,6 +597,11 @@
       "count": 1
     }
   },
+  "api/services/ai-memory/embedding-backfill.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
   "api/services/ai-memory/embedding-settings.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 2
@@ -484,12 +612,20 @@
       "count": 2
     }
   },
+  "api/services/ai-memory/memory-writer.ts": {
+    "no-console": {
+      "count": 3
+    }
+  },
   "api/services/batch-ai-service.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
     },
     "@typescript-eslint/no-unused-vars": {
       "count": 1
+    },
+    "no-console": {
+      "count": 4
     }
   },
   "api/services/expense-rollups.ts": {
@@ -497,6 +633,14 @@
       "count": 7
     },
     "@typescript-eslint/no-unused-vars": {
+      "count": 3
+    },
+    "no-console": {
+      "count": 1
+    }
+  },
+  "api/services/firebase.ts": {
+    "no-console": {
       "count": 3
     }
   },
@@ -536,6 +680,9 @@
   "api/services/storage/s3-driver.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
+    },
+    "no-console": {
+      "count": 3
     }
   },
   "api/services/turnstile-service.ts": {
@@ -566,6 +713,9 @@
     "@typescript-eslint/no-unused-vars": {
       "count": 3
     },
+    "no-console": {
+      "count": 30
+    },
     "no-empty": {
       "count": 1
     },
@@ -573,9 +723,19 @@
       "count": 1
     }
   },
+  "api/services/voice-context-service.ts": {
+    "no-console": {
+      "count": 1
+    }
+  },
   "api/services/voice-kernel/voice-prefetch.test.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
+    }
+  },
+  "api/services/voice-kernel/voice-session-state.ts": {
+    "no-console": {
+      "count": 3
     }
   },
   "api/services/whatsapp-service.ts": {

@@ -11,6 +11,10 @@ import {
   cleanSmsText,
   normalizeSmsText,
 } from "./sms-rule-parser";
+import { createLogger } from "./log";
+
+// A bank message is someone's balance and payees: log its length, never its text (golden rule 10).
+const log = createLogger("sms-ai-parser");
 
 // Re-export shared cleaners for external consumers
 export { condenseSmsNotification, cleanSmsText, normalizeSmsText };
@@ -160,9 +164,7 @@ export async function parseSmsFinancialData(
   const condensedKey = getCacheKey(condensedMessage, userContext);
   const cached = aiParseCache.get(rawKey) || aiParseCache.get(condensedKey);
   if (cached && cached.expiresAt > now) {
-    console.log(
-      `[SMS AI Parser] Cache HIT for message: "${condensedMessage.slice(0, 50)}..."`,
-    );
+    log.info({ event: "sms.parse.cache_hit", length: condensedMessage.length }, "Bank message parse served from cache");
     return cached.result;
   }
 
@@ -204,14 +206,12 @@ export async function parseSmsFinancialData(
     if (finalResult.transaction_detected) {
       setCacheEntry(rawKey, finalResult);
       setCacheEntry(condensedKey, finalResult);
-      console.log(
-        `[SMS AI Parser] Cache SET for message: "${condensedMessage.slice(0, 50)}..."`,
-      );
+      log.info({ event: "sms.parse.cached", length: condensedMessage.length }, "Bank message parse cached");
     }
 
     return finalResult;
   } catch (error: any) {
-    console.error("[SMS AI Parser] Error:", error?.message ?? error);
+    log.error({ err: error, event: "sms.parse.failed" }, "Bank message parse failed");
     return null;
   }
 }

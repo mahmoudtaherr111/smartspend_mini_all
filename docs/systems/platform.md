@@ -27,6 +27,8 @@ storage, the contracts shared with the web app, and the retention job that prune
 | File storage | `api/services/storage/` | One driver interface over local disk or S3-compatible storage, plus the avatar service |
 | Shared contracts | `contracts/` | Input limits, plan prices and shared types the web app imports |
 | Error log | `api/lib/error-logger.ts` | Classifies provider errors and records them in `api_key_errors` for the admin console |
+| Logging | `api/lib/log.ts` | The server logger. It redacts the fields that carry message text, codes, tokens and phone numbers (`text`, `body`, `code`, `token`, `phone` and others, three levels deep; a phone keeps its last four digits), and writes an error with its codes and statement but without the values of a failed query |
+| Error reporting | `api/lib/error-reporting.ts` | Sentry, when `SENTRY_DSN` is set, under the same rule: console breadcrumbs are dropped, query strings, request bodies, cookies and credentials are removed, and a failed query's values are cut before an event leaves |
 
 ## A request, end to end
 1. HTTPS redirect (production), request log, compression, security headers, the forwarded-IP warning when
@@ -45,6 +47,11 @@ storage, the contracts shared with the web app, and the retention job that prune
 ## Data
 - MySQL through one pool: thirty connections in production, ten elsewhere, `utf8mb4`, keep-alive, and every
   query timed — anything over `SLOW_QUERY_THRESHOLD_MS` is logged.
+- A failed query carries every value it was writing: Drizzle puts them in its message, and the mysql2 error
+  inside keeps the statement with the values filled in. `api/queries/connection.ts` installs
+  `hideQueryValuesFromConsole()`, so `console.*` prints such an error without them, as the logger does. The
+  error object itself is untouched — code that recognises a duplicate by its message still does — so text built
+  from `error.message` keeps the values.
 - There are no foreign keys (golden rule 4). `db/relations.ts` describes the relations for Drizzle's query
   API, and integrity lives in application code. Every table has a storage class in `db/table-classes.ts`,
   from A (identity and configuration) to G (conversations), and `tests/table-classes.test.ts` fails when a new
@@ -82,6 +89,7 @@ rollup reconciliation (04:00), data retention (05:00) and subscription expiry (0
 | How long telemetry is kept | `RETENTION_POLICIES` in `api/jobs/data-retention-job.ts` | `tests/data-retention-job.test.ts` |
 | Where files are stored | `api/services/storage/` | `tests/storage-driver.test.ts` |
 | Day and month boundaries | `api/lib/app-time.ts` (golden rule 6) | |
+| What may reach the log or Sentry | `api/lib/log.ts`, `api/lib/error-reporting.ts` (golden rule 10) | `tests/security/logging-redaction.test.ts` |
 
 ## Rules for changes here
 1. Read configuration through `api/lib/env.ts`, never `process.env` (golden rule 8).
@@ -90,7 +98,9 @@ rollup reconciliation (04:00), data retention (05:00) and subscription expiry (0
 3. Background work is registered with `scheduleProtectedJob` (golden rule 7).
 4. Anything that must hold across replicas belongs in Redis or MySQL; in-process caches are per replica
    (`api/AGENTS.md`, rule 6).
-5. Never log message text, codes, tokens, phone numbers or transcripts (golden rule 10).
+5. Log through `createLogger()` from `api/lib/log.ts`: an event name and ids, never content, and a phone only as
+   `phoneTail()` (golden rule 10). `no-console` rejects a new `console.*` in `api/**`; the calls that predate
+   the logger are frozen in `eslint-suppressions.json`.
 
 ## Tests
 `tests/table-classes.test.ts`, `tests/data-retention-job.test.ts`, `tests/storage-driver.test.ts`,
@@ -103,24 +113,27 @@ Checked against the code; each one names where it lives.
    `api/services/storage/index.ts` and the S3 driver read the storage driver, bucket, endpoint, keys and
    public URL; `api/lib/ai-gateway.ts` reads the key that encrypts provider keys; the embedding warm-up in
    `api/boot.ts` reads the Fireworks key.
-2. **Security.** The Paymob webhook logs the whole payload it receives before verifying it (golden rule 10), so card
-   metadata and the payer's details reach the server log ([billing](billing.md)).
-3. **Debt.** In production every 404 that is not an API path reads `dist/public/index.html` from disk again, with no
+2. **Debt.** In production every 404 that is not an API path reads `dist/public/index.html` from disk again, with no
    cache.
-4. **Debt.** The OTP stream keeps its per-IP counters in a plain map that nothing prunes, so the map grows with the
+3. **Debt.** The OTP stream keeps its per-IP counters in a plain map that nothing prunes, so the map grows with the
    number of distinct addresses until the process restarts.
-5. **Debt.** Sentry, when configured, is initialised with full tracing and profiling (`tracesSampleRate: 1.0`), which
+4. **Debt.** Sentry, when configured, is initialised with full tracing and profiling (`tracesSampleRate: 1.0`), which
    samples every request in production.
-6. **Debt.** `ai_cost_monthly` is written by the retention rollup and read by nothing but account deletion, so the
+5. **Debt.** `ai_cost_monthly` is written by the retention rollup and read by nothing but account deletion, so the
    history the admin screens show ends where the ninety-day pruning starts.
-7. **Bug.** `user_analytics` is pruned after thirty days, which also drops the upgrade events the founder metrics count
+6. **Bug.** `user_analytics` is pruned after thirty days, which also drops the upgrade events the founder metrics count
    and the AI cost events the cost overview reads ([admin](admin.md)).
-8. **Debt.** `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.
-9. **Debt.** `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library
+7. **Debt.** `db/seed.ts` is an empty stub, so `npm run db:seed` prints two lines and exits.
+8. **Debt.** `getPoolMetrics` reads private fields of the mysql2 pool (`_allConnections` and friends), which a library
    update can silently turn into zeroes.
-10. **Debt.** The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the
-    entry and `NODE_ENV=production`; `api/server.ts` repeats the WebSocket wiring for the standalone
-    deployment, and the two copies have to be kept in step by hand.
+9. **Debt.** The static files, the voice WebSocket and the production server only start when `api/boot.ts` is the
+   entry and `NODE_ENV=production`; `api/server.ts` repeats the WebSocket wiring for the standalone
+   deployment, and the two copies have to be kept in step by hand.
+10. **Debt.** The `console.*` calls that predate the logger are frozen in `eslint-suppressions.json`, not rewritten:
+    they write plain text without event names, and only an error handed to them whole is scrubbed. The ones that
+    print `error.message` as text print provider, socket and storage errors today, or failed reads whose values
+    are ids and dates (`api/ai-router.ts`, `api/services/voice-call-service.ts`,
+    `api/services/storage/s3-driver.ts`); moving a file to `createLogger()` removes the difference.
 
 ## Related systems
 - [Accounts, sign-in and security](accounts.md): sessions, the principal cache and the auth version.
